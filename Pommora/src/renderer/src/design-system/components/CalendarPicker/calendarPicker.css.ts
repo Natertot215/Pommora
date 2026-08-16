@@ -62,7 +62,7 @@ export const navBtn = style({
 })
 
 /* ── Month / Year / time-segment dropdowns: the option list inside a nested PickerMenu, portal'd
-      to body — centered on the trigger phantom (the beak's natural aim), lifted, hit-enabled
+      to body — centered on the trigger phantom, lifted, hit-enabled
       (the phantom itself is pointer-inert). ── */
 export const ddWrap = style({ display: 'contents' })
 globalStyle(`${ddWrap} > div`, { zIndex: 30, pointerEvents: 'auto' })
@@ -70,7 +70,7 @@ export const menuList = style({
   display: 'flex',
   flexDirection: 'column',
   gap: '2px',
-  minWidth: '56px', // shrink-wrap to content; the floor only protects the beak's corner clamp
+  minWidth: '56px', // shrink-wrap to content; the floor keeps a one-word list off its own corners
   maxHeight: '136px', // ≈6 option rows before it over-scrolls (rides the shared edge-fade)
   overflowY: 'auto',
   scrollbarWidth: 'none',
@@ -87,8 +87,6 @@ export const optionRow = style({
   fontSize: font.scale.body.size, // the pane's own scale (matches the Month/Year title)
   color: c.label.control,
 })
-export const optionCheck = style({ flex: 'none', color: 'var(--accent)' })
-
 /* ── Week headings: Mon…Sun ── */
 export const weekRow = style({
   display: 'grid',

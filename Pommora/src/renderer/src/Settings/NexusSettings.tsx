@@ -201,7 +201,6 @@ function NexusSettingsBody({ closing }: { closing: boolean }): React.JSX.Element
       toolbar="floating"
       className="settings-window"
       ariaLabel="Settings"
-      tintOpacity={90}
       left={{
         windowId: 'settings-rail',
         bounds: RAIL,

@@ -2,12 +2,11 @@
 
 ### Current Focus
 
-- [ ] The closeout of the AutoLink & Table Fixes arc, and the planning of the `PickerMenu` ↔ `PopoutMenu` merge and disambiguation. 
+- [ ] PM-104's second half — one row shape for every menu model — and the three visual calls left open by the menu and glass consolidation. 
 
 ### Immediate Work
 
-- [ ] Rework the `PickerMenu` for double-chevron consumers to an edited version of the autocomplete's existing surface; the new component replaces it with a Popout menu that inherits the PickerMenu glass and surface but removes the notch in favor of the autocomplete's native-like, faster-revealing motion and rectangular shape. Additionally, PickerMenu's styling and functionality being closer to native OS menus opens the door for a "Use Native Menus" configuration option in settings. 
-- [ ] **One row shape for every menu model.** `{ label, action, separatorBefore? }` is hand-restated in seven shared modules, because the type it should be — `ActionItem<A>` — lives in `main/returningMenu.ts` where `src/shared` can't reach it; it is Electron-free and belongs in `shared/pageMenu.ts` with main importing it back. The same move settles a second vocabulary: `separatorBefore` and the property menu's `destructive` both mean "a divider goes above this row", each with its own expander in main, and one word should say it. Rides the picker work, which has those files open anyway.
+- [ ] **One row shape for every menu model.** `{ label, action, separatorBefore? }` is hand-restated in seven shared modules, because the type it should be — `ActionItem<A>` — lives in `main/returningMenu.ts` where `src/shared` can't reach it; it is Electron-free and belongs in `shared/pageMenu.ts` with main importing it back. The same move settles a second vocabulary: `separatorBefore` and the property menu's `destructive` both mean "a divider goes above this row", each with its own expander in main, and one word should say it. Stands alone now — the picker work landed without it. 
 
 ### Pending Focuses
 
@@ -33,6 +32,7 @@
 - **A lock key is a fact, and two spellings of one file are two locks.** Any file more than one surface rewrites whole needs its key built in the path module rather than assembled per call site, the read has to sit inside the lock beside the write, and a relocate holds the lock of the path it is leaving.
 - **Every menu opens on what reaches a thing and ends on what destroys it**, with the destructive row behind a separator; what sits between is that menu's own call.
 - **A renderer `preventDefault` cannot suppress main's `context-menu` event.** Any editable target pops main's own editor menu regardless, so a surface that wants its own menu there has to be the only claimant — which is why the table widget reports non-editable and why two menus over one field is the recurring symptom.
+- **Frost comes in three tiers, and the names finally mean them.** `GlassSurface` is the app's fixed chrome (brightest, clear), `GlassPane` floats over it a step dimmer, and `GlassWindow` is that pane carrying the shared body. One `SOLID_FILL` sits behind every darkened surface, and a pane opening over another pane asks `GlassPane` for `solid` rather than writing a background. Only `MenuSurface` still wears a beak, and it is the only shell drawing its own outline.
 - **Two rules any future in-app window must respect**, both learned on PreviewPane: openness drivers stay declared per-window, and a FLIP measures from the surface root via a real ref rather than by walking `parentElement`.
 
 #### II. Debt & Ride-Alongs
@@ -60,6 +60,12 @@
 
 ### Recent Work
 
+#### PM-104 || Menu & Surface Consolidation
+
+Menus and pickers stopped being bubbles. `PickerMenu` gave up its beak and became the app's one rectangular pane — worn by every picker, grid, calendar, hover card and fixed-option menu — while `MenuSurface` keeps the beak for the toolbar dropdown that hangs off a named button, and is now the only surface drawing its own outline by hand. Dropping the beak dropped its scaffolding: the shell fell from 204 lines to 109, and mounting the glass material directly restored the border, lighting and shadow that hand-drawn outline had been suppressing. Rows split by what they hold rather than which shell they sit in — a fixed option set takes a label with an accent mark, a user-authored value keeps its chip — and the hover-and-focus recipe both shared became one `rowShell`. The chosen-row mark had four definitions across three surfaces and seven rows carrying none; it has one. Panes now straddle their trigger where the whole pane fits and fall back to an edge where it would be clamped, decided once per open.
+
+Underneath, glass gained honest tiers. `GlassWindow` and `GlassSurface` had been byte-identical, so they merged under the name describing the app's fixed chrome, and `GlassWindow` was rebuilt as a real third tier: the pane's chrome carrying a body. The four spellings of "darken this" collapsed into one `SOLID_FILL`, ending a mismatch two windows carried while a comment insisted they matched.
+
 #### PM-103 || AutoLink & Table Fixes
 
 An address pasted into any editor surface can now become a link rather than literal text, in whichever of three forms a per-Nexus default names, and that default settled a vocabulary: `link-full`, `link-short` and `link-title` name the same three forms wherever a link reads — a URL property's Format, a view column's, or a link in a page body — replacing two older sets that disagreed about how many forms there were. The markdown-link grammar widened to CommonMark's balanced-parenthesis destination, Page Title writes the domain and swaps the fetched title in against an anchored range, and a link's right-click menu grew from Copy Link alone into Rename · Edit Link · Copy Link · Format ▸ with Remove Link and Delete below a separator. ⌘⇧V does the inverse of whatever ⌘V is set to do, while `Paste As` and `Insert Link` cover what a default cannot. A markdown table's resting cell — which is not an editor and draws its links as plain spans — carries the whole of a link's behavior now, through one decision about what a right-clicked link is offered.
@@ -75,10 +81,6 @@ Two drag surfaces living outside the shared layer moved onto it. The gesture ske
 #### PM-100 || Trash Surface V1
 
 The deletion record gained its reading half: `.trash` had been complete and unreachable, and a leaf at the foot of the Nexus Settings rail now lists every bundle as a row carrying its kind's glyph, its title, a breadcrumb resolved live from the recorded parent id, and the time read back out of the bundle's own folder stamp. Restore returns an entity to the tree and to reach at once, and where its recorded home is gone it opens instead into the places that kind may legally land. Delete spends the bundle the other way, handing the artifact to the operating system's trash or erasing it per a new **Permanently Delete Files** switch that main reads for itself at each operation. 
-
-#### PM-099 || Ghost Creation, Page Icons & One Page Menu
-
-Typing in a table stopped throwing the page's scroll: the block was reporting one line's height on every keystroke because the widget never answered CodeMirror's height question. The hover-born creators — the New Page row, card and sidebar leaf — became one shared effect, which a New Option slot in the property editors now rides, seating where the pointer rests rather than at the list's end. A page's actions gained one definition wherever it is right-clicked, with Copy Link, Copy Path and Reveal Location joining them, and a page's own header began drawing the icon it has always stored.
 
 ### Guidelines
 

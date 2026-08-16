@@ -37,8 +37,6 @@ export function ColorPicker({
       onDismiss={onDismiss}
       triggerRef={triggerRef}
       direction="down"
-      radius={8}
-      notchWidth={14}
     >
       <div className={s.grid}>
         {SWATCHES.map((color) => (

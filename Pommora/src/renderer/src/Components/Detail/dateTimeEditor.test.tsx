@@ -33,10 +33,10 @@ const mount = async (style: ColumnStyle, onChange = vi.fn()): Promise<typeof onC
   return onChange
 }
 
-/** A trigger/option button whose accessible name / text reads exactly `name`, from anywhere (the
- *  PickerMenu portals to document.body). */
-const buttonFor = (name: string): HTMLButtonElement => {
-  const el = [...document.querySelectorAll<HTMLButtonElement>('button')].find(
+/** A trigger/option whose accessible name / text reads exactly `name`, from anywhere (the menu
+ *  portals to document.body). Matches the role, not the tag: a menu row is a `role="button"` div. */
+const buttonFor = (name: string): HTMLElement => {
+  const el = [...document.querySelectorAll<HTMLElement>('button, [role="button"]')].find(
     (b) => b.getAttribute('aria-label') === name || b.textContent === name,
   )
   if (!el) throw new Error(`no button "${name}"`)

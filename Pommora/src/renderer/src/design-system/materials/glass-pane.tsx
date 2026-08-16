@@ -21,6 +21,12 @@ export interface FrostParams {
   shadow?: string
 }
 
+/** KNOB — how much `--bg-window` sits behind the frost on anything that carries a body. ONE figure:
+ *  a window and a picker opening over another pane want the same thing for the same reason, and two
+ *  numbers required to match are two numbers that eventually don't. Short of 1 on purpose — an
+ *  opaque pane still computes its backdrop blur, paying for a frost nothing can see through. */
+export const SOLID_FILL = 0.9
+
 export const PANE_FROST: FrostParams = {
   blur: 6,
   brightness: 90,
@@ -33,8 +39,13 @@ export const PANE_FROST: FrostParams = {
   rimBlur: 18,
 }
 
+/** The pane recipe carrying the shared body — `GlassWindow`'s material, and what `GlassPane` wears
+ *  when a caller asks for `solid`. The chrome is the pane's own; only the fill is added. */
+export const WINDOW_FROST: FrostParams = { ...PANE_FROST, fill: SOLID_FILL }
+
 /** The drag ghost's glass — filled and edge-free, so the chip stays legible mid-flight and
- *  reads as lifted rather than framed. */
+ *  reads as lifted rather than framed. Its own fill: a chip in flight stays lighter than a resting
+ *  surface so the drop target reads through it. */
 export const GHOST_FROST: FrostParams = {
   blur: 6,
   brightness: 100,
@@ -81,13 +92,18 @@ export function frostStyle(p: FrostParams): CSSProperties {
 export function GlassPane({
   children,
   style,
+  solid = false,
   ...rest
 }: {
   children?: ReactNode
   ref?: Ref<HTMLDivElement>
+  /** Add the shared body — for a pane that opens OVER another pane, where clear glass on clear glass
+   *  leaves the rows underneath reading through. Adds the fill only; the chrome is already the
+   *  pane's. */
+  solid?: boolean
 } & HTMLAttributes<HTMLDivElement>): React.JSX.Element {
   return (
-    <div style={{ ...frostStyle(PANE_FROST), ...style }} {...rest}>
+    <div style={{ ...frostStyle(solid ? WINDOW_FROST : PANE_FROST), ...style }} {...rest}>
       {children}
     </div>
   )

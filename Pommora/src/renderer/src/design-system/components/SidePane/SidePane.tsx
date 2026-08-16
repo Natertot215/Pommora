@@ -1,5 +1,5 @@
 import { useLayoutEffect, useState, type PointerEvent as ReactPointerEvent } from 'react'
-import { GlassWindow } from '@renderer/design-system/materials'
+import { GlassSurface } from '@renderer/design-system/materials'
 import { cx } from '@renderer/design-system/cx'
 import './sidePane.css'
 
@@ -79,13 +79,13 @@ export function SidePane({
 
   return (
     <>
-      <GlassWindow
+      <GlassSurface
         className={cx('sidepane', className)}
         style={{ background: 'var(--state-muted)' }}
         aria-hidden={!open}
       >
         {children}
-      </GlassWindow>
+      </GlassSurface>
       {open && (
         <div
           className={cx('sidepane-resize', resizeClassName)}

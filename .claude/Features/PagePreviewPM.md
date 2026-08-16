@@ -44,13 +44,13 @@ Warmth is session-only and per-tab: serialized editor state, undo included, plus
 
 ### The Hover Card
 
-Resting on a resolved connection past a short intent delay raises the hover preview card — a compact, read-only view of the target page rendered through the shared embed framework without its banner or inline title, on the PickerMenu chassis rather than a PreviewPane, mounted once at app level so one card exists app-wide. The card resolves its content before it opens (a page that can't load opens nothing), everything inside it renders inert, and it centers on the live link with the beak sliding along its edge to keep pointing at it.
+Resting on a resolved connection past a short intent delay raises the hover preview card — a compact, read-only view of the target page rendered through the shared embed framework without its banner or inline title, on the PickerMenu chassis rather than a PreviewPane, mounted once at app level so one card exists app-wide. The card resolves its content before it opens (a page that can't load opens nothing), everything inside it renders inert, and it centers on the live link, tracking it as the line reflows.
 
 Content scrolls within the card, headings fold on click, and the caret never enters. It anchors to the link through scroll and closes on hover-off, Escape, navigation, or the link leaving view; the Settings ▸ Pages linger slider extends the stay (→ [[ConfigurationPM]]). It resizes from its right and bottom edges to one per-machine remembered size. 
 
 ### The NavWindow Model
 
-The NavWindow is tab 1 of its own flavor: a perma-pinned, icon-only, non-orderable map tab whose content is the window's whole body. "Open Preview" from its rows adds page tabs beside it when the window's routing override is on; off routes to the floating window. An active page tab swaps the body for the editable embed and slides the rail closed; the map tab is the return, refocusing the search. The strip lives in the content column beside the full-height rail, so tabs start right of the sidebar exactly like the app's tab bar, and the row exists only past one tab, its height nudging the search down. A page tab whose own icon is the map glyph renders its type icon instead. Opening the window over a live page preview morphs it — a FLIP from the preview's rect, the outgoing preview hiding instantly — one window changing shape rather than a dismiss and a fresh open. The two windows carry different tint opacities, the NavWindow the more opaque, so the morph steps. The window's tab set is durable multi-session, restored on every open.
+The NavWindow is tab 1 of its own flavor: a perma-pinned, icon-only, non-orderable map tab whose content is the window's whole body. "Open Preview" from its rows adds page tabs beside it when the window's routing override is on; off routes to the floating window. An active page tab swaps the body for the editable embed and slides the rail closed; the map tab is the return, refocusing the search. The strip lives in the content column beside the full-height rail, so tabs start right of the sidebar exactly like the app's tab bar, and the row exists only past one tab, its height nudging the search down. A page tab whose own icon is the map glyph renders its type icon instead. Opening the window over a live page preview morphs it — a FLIP from the preview's rect, the outgoing preview hiding instantly — one window changing shape rather than a dismiss and a fresh open. Both windows wear the same window-tier glass, so the morph changes shape without changing background. The window's tab set is durable multi-session, restored on every open.
 
 ### The Inspector
 
@@ -68,5 +68,4 @@ The window root (`.ppane`) declares its vocabulary as a scoped `--ppane-*` famil
 
 - The engulf's landing when the promoted page's main-pane fetch outlasts the FLIP; the pane can show the prior view for a beat, usually masked by warmth.
 - The nav flavor's last-tab close motion is clipped by the strip row's height collapse (cosmetic).
-- Whether the NavWindow should adopt the floating preview's tint so the flavor morph carries one background, or the two stay a step apart — no ruling either way.
 - Multi-preview (A-B testing two windows) — the geometry store and slice shapes are ready; the singleton rule is product, not architecture.

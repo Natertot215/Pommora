@@ -30,7 +30,6 @@ import { DatetimeValuePicker } from '../../Detail/Views/PropertyEditing/Datetime
 import { parseEditorValue } from '../../Detail/Views/Cards/cardValueInput'
 import { side } from '../../design-system/components/menu/menu.css'
 import { propertyTypeIconName } from './PropertyTypes'
-import { iconOption } from '@renderer/design-system/components/PickerMenu/pickerMenu.css'
 import { useSession } from '../../store'
 import * as s from './pageProperties.css'
 
@@ -321,23 +320,22 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
           {hiddenContexts.map((t) => (
             <PickerOption
               key={t.id}
+              leading={<Icon name={t.icon} size={13} />}
               onClick={() => {
                 setAddOpen(false)
                 setSetAside((prev) => new Set([...prev].filter((r) => r !== t.id)))
               }}
             >
-              <span className={iconOption}>
-                <Icon name={t.icon} size={13} />
-                {t.label}
-              </span>
+              {t.label}
             </PickerOption>
           ))}
           {hiddenProps.map((def) => (
-            <PickerOption key={def.id} onClick={() => revealAndEdit(def)}>
-              <span className={iconOption}>
-                <Icon name={propertyIcon(def)} size={13} />
-                {def.name}
-              </span>
+            <PickerOption
+              key={def.id}
+              leading={<Icon name={propertyIcon(def)} size={13} />}
+              onClick={() => revealAndEdit(def)}
+            >
+              {def.name}
             </PickerOption>
           ))}
         </PickerMenu>

@@ -15,7 +15,8 @@ export const backdrop = style({
   background: tintAt(c.system.black, TINT_STEPS.secondary),
 })
 
-/** Dialog panel — layout on top of the GlassSurface frost Material (the design-system surface glass). */
+/** Dialog panel — layout on top of the GlassWindow frost Material: the modal floats over the app,
+ *  so it carries the window tier's body rather than the chrome tier's clear glass. */
 export const panel = style({
   display: 'flex',
   flexDirection: 'column',

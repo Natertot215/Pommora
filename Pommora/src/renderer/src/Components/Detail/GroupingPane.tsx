@@ -48,6 +48,7 @@ import { Chip, chipShapeForType } from '../Chip'
 import { chipColorFor } from '../../design-system/tokens/colorMap'
 import { cx } from '../../design-system/cx'
 import { useSession } from '../../store'
+import { MenuOption } from '@renderer/design-system/components/PickerMenu'
 import { PickerControl, type PickerChoice } from './PickerControl'
 import { propertyTypeIconName } from './PropertyTypes'
 import { useGroupingListDrag, type GroupingDrop } from './groupingDnd'
@@ -259,21 +260,21 @@ export function GroupingPane({
       <Reveal open={groupByOpen}>
         <div>
           {view.type === 'cards' && (
-            <MenuItem
+            <MenuOption
               leading={<Icon name="circle-off" size={13} />}
-              trailing={group.kind === 'flat' ? <Icon name="check" size={12} /> : undefined}
+              selected={group.kind === 'flat'}
               onClick={() => pickGroupBy('none')}
             >
               None
-            </MenuItem>
+            </MenuOption>
           )}
-          <MenuItem
+          <MenuOption
             leading={<Icon name="folder" size={13} />}
-            trailing={structural ? <Icon name="check" size={12} /> : undefined}
+            selected={structural}
             onClick={() => pickGroupBy('location')}
           >
             Location
-          </MenuItem>
+          </MenuOption>
           {groupable.map((d) => (
             <MenuItem
               key={d.id}
@@ -283,11 +284,7 @@ export function GroupingPane({
                   size={13}
                 />
               }
-              trailing={
-                group.kind === 'property' && group.property_id === d.id ? (
-                  <Icon name="check" size={12} />
-                ) : undefined
-              }
+              selected={group.kind === 'property' && group.property_id === d.id}
               onClick={() => pickGroupBy(d)}
             >
               {d.name}

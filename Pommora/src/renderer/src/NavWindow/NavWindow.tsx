@@ -156,8 +156,6 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       toolbar="floating"
       className={cx('navwindow', pageTarget !== null && 'is-page-tab')}
       ariaLabel="Navigation"
-      // Matches the preview window's tint — the flavor swap must keep one background, no opacity jump.
-      tintOpacity={90}
       onScan={promote}
       actions={
         <PreviewActions

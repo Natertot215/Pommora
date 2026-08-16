@@ -20,7 +20,6 @@ export function MenuSurface({
     <NotchedPane
       className={cx(s.surface, className)}
       animationClass={closing ? dropdownMenuClosing : dropdownMenu}
-      radius={12}
       notchInsetRight={notchInsetRight}
     >
       {children}

@@ -8,8 +8,7 @@ export const CELL = 34
 const GUTTER = 8
 
 /** The pane's SOLE surface class (PickerMenu `bareSurface`) — owns 100% of the gutter. Padding equals
- *  the inter-row gap, so the search sits with the same space above it as below it to the divider; the
- *  uniform inset also clears the beak (≥ its depth) on whichever of the four edges it rides. */
+ *  the inter-row gap, so the search sits with the same space above it as below it to the divider. */
 export const content = style({
   display: 'flex',
   flexDirection: 'column',
@@ -20,13 +19,6 @@ export const content = style({
   boxSizing: 'border-box',
 })
 
-// The beak eats into the gutter on the edge it rides, so add its depth (`--notch-h`) back to that
-// side — the search/content then sits a full, uniform gap in from the visible pane body on every edge.
-// Keyed to the requested direction (the near-edge auto-flip case is a minor cosmetic exception).
-export const beakDown = style({ paddingTop: `calc(${GUTTER}px + var(--notch-h, 0px))` })
-export const beakUp = style({ paddingBottom: `calc(${GUTTER}px + var(--notch-h, 0px))` })
-export const beakLeft = style({ paddingLeft: `calc(${GUTTER}px + var(--notch-h, 0px))` })
-export const beakRight = style({ paddingRight: `calc(${GUTTER}px + var(--notch-h, 0px))` })
 
 // The body portal escapes the app's type context, so the ramp is pinned explicitly.
 export const search = style([

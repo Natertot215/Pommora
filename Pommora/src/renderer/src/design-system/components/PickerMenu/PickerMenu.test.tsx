@@ -211,3 +211,52 @@ describe('PickerMenu focus contract', () => {
     expect(document.activeElement).toBe(find('trigger'))
   })
 })
+
+// Whether a pane CENTRES is a decision, not a look — the pixels stay visual truth, but which of the
+// two placements it takes has to hold.
+describe('PickerMenu auto-centring', () => {
+  const PANE_W = 200
+  let triggerCentre = 512
+  const realRect = Element.prototype.getBoundingClientRect
+  const realWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetWidth')
+  const realHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight')
+
+  beforeEach(() => {
+    Element.prototype.getBoundingClientRect = (): DOMRect => {
+      const left = triggerCentre - 20
+      return { left, right: left + 40, top: 100, bottom: 120, width: 40, height: 20 } as DOMRect
+    }
+    Object.defineProperty(HTMLElement.prototype, 'offsetWidth', {
+      configurable: true,
+      get: () => PANE_W,
+    })
+    Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
+      configurable: true,
+      get: () => 120,
+    })
+  })
+  afterEach(() => {
+    Element.prototype.getBoundingClientRect = realRect
+    if (realWidth) Object.defineProperty(HTMLElement.prototype, 'offsetWidth', realWidth)
+    if (realHeight) Object.defineProperty(HTMLElement.prototype, 'offsetHeight', realHeight)
+  })
+
+  const layer = (): HTMLElement =>
+    find('first').closest('[data-picker-portal]') as HTMLElement
+
+  it('straddles the trigger when the whole pane fits there', async () => {
+    triggerCentre = 512 // mid-viewport (jsdom is 1024 wide)
+    await render(<Host open={false} />)
+    await render(<Host open />)
+    expect(layer().style.transform).toBe('translateX(-50%)')
+    expect(layer().style.left).toBe('512px')
+  })
+
+  it('falls back to the edge anchor when centring would be clamped', async () => {
+    triggerCentre = 60 // half a pane-width would run past the left margin
+    await render(<Host open={false} />)
+    await render(<Host open />)
+    expect(layer().style.transform).toBe('')
+    expect(layer().style.right).not.toBe('')
+  })
+})

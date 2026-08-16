@@ -1,8 +1,10 @@
 import type { HTMLAttributes, ReactNode } from 'react'
 import { frostMaterial } from './glass-material'
 
-/** Its own component (not a re-export of frostMaterial) so surface glass can diverge from
- *  window/control glass later. */
+/** The app's fixed chrome — the sidebar, the inspector, a side rail. It sits a step BRIGHTER than
+ *  the floating tiers and stays clear: it's the ground the app is built on rather than something
+ *  hovering over it, so nothing needs to read through it. `GlassPane` floats above it, and
+ *  `GlassWindow` is that pane carrying a body. */
 export function GlassSurface({
   children,
   style,

@@ -117,8 +117,8 @@ export function PropertyOptionRows({
   onPick: (value: string) => void
 }): React.JSX.Element {
   if (options.length === 0)
-    // An empty option list (a Select/Multi with all options removed) — the spacer keeps the
-    // notch pane's proportions so it doesn't collapse into a degenerate beak. Tune here.
+    // An empty option list (a Select/Multi with all options removed) — the spacer keeps the pane's
+    // proportions so it doesn't collapse to nothing. Tune here.
     return <div style={{ minWidth: 96, height: 24 }} />
   return (
     <>

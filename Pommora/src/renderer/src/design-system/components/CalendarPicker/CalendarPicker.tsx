@@ -4,6 +4,7 @@ import { Icon } from '../../symbols'
 import { Switch } from '../Switches/Switch'
 import { OverflowScroll } from '../OverflowScroll'
 import { PickerMenu, PickerOption } from '../PickerMenu/PickerMenu'
+import { chosenMark } from '../PickerMenu/pickerMenu.css'
 import { useExitPresence } from '../../useExitPresence'
 import { stack } from '../../tokens/stack'
 import { cx } from '../../cx'
@@ -552,7 +553,7 @@ export function CalendarPicker({
   const optionRow = (label: string | number, selected: boolean): React.JSX.Element => (
     <span className={s.optionRow}>
       {label}
-      {selected && <Icon name="check" size={12} className={s.optionCheck} />}
+      {selected && <Icon name="check" size={12} className={chosenMark} />}
     </span>
   )
   const selectionMenu = (kind: 'month' | 'year'): React.JSX.Element | null =>

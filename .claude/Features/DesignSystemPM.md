@@ -191,20 +191,40 @@ Stacking is named rather than numbered — separate ladders for the shell frame'
 
 #### Materials
 
-Two distinct glass systems. **Frost** is a CSS `backdrop-filter` recipe — a dimmed blur with a glassy edge — parameterized by `FrostParams` and worn by panes, dropdowns, and the drag ghost; zero-valued edge pieces emit nothing. **Liquid** is "Liquid Glass" — a real edge-refraction shader over the live app — worn by the in-use button controls and on-control segments. 
+Two distinct glass systems. **Frost** is a CSS `backdrop-filter` recipe — a dimmed blur with a glassy edge — parameterized by `FrostParams`; zero-valued edge pieces emit nothing. **Liquid** is "Liquid Glass" — a real edge-refraction shader over the live app — worn by the in-use button controls and on-control segments.
+
+Frost comes in three tiers, and the ladder is what says how far a surface sits from the app. The **surface** is the fixed chrome the app is built on and stays brightest and clear; the **pane** floats over it a step dimmer; the **window** is that same pane carrying a body, because a window has to hold its own content legible over whatever it floats above where a menu is gone before that matters. A pane opening over another pane asks for `solid` and gets the window's fill and nothing else — the chrome it already has isn't restated.
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/materials/glass-pane.tsx` · `materials/glass-material.ts` · `materials/glass-controls.tsx`
 
-| Title | Token | PANE_FROST | GHOST_FROST |
+| Title | Token | PANE_FROST | WINDOW_FROST | GHOST_FROST |
+| --- | --- | --- | --- | --- |
+| Blur | `.blur` | `6` | `6` | `6` |
+| Brightness | `.brightness` | `90` | `90` | `100` |
+| Border Alpha | `.borderAlpha` | `0.12` | `0.12` | `0`  |
+| Top Specular | `.topSpecular` | `0.35` | `0.35` | `0` |
+| Inner Ring | `.innerRing` | `0.08` | `0.08` | `0` |
+| Lower Rim / Depth / Rim Blur | `.lowerRim` / `.depth` / `.rimBlur` | `0.08` / `12` / `18` | `0.08` / `12` / `18` | `0` / `0` / `0` |
+| Fill | `.fill` · `SOLID_FILL` | unset (transparent) | `--bg-window` @ 90% | `--bg-window` @ 78% |
+| Shadow | `.shadow` | standard | standard | lift |
+
+`WINDOW_FROST` is `PANE_FROST` with the fill added and nothing else changed, so the two can't drift apart. The ghost keeps its own lighter fill on purpose: a chip in flight has to let the drop target read through it.
+
+#### Glass & Menus
+
+Which tier each surface wears, and the two menu shells built on the pane.
+
+**SOURCE:** `Pommora/src/renderer/src/design-system/materials/glass-pane.tsx` · `materials/glass-material.ts` · `materials/glass-window.tsx` · `materials/glass-surface.tsx` · `components/PickerMenu/pickerMenu.css.ts` · `components/notchedPane.css.ts`
+
+| Title | Token | Value | Used By |
 | --- | --- | --- | --- |
-| Blur | `.blur` | `6` | `6` |
-| Brightness | `.brightness` | `90` | `100` |
-| Border Alpha | `.borderAlpha` | `0.12` | `0`  |
-| Top Specular | `.topSpecular` | `0.35` | `0` |
-| Inner Ring | `.innerRing` | `0.08` | `0` |
-| Lower Rim / Depth / Rim Blur | `.lowerRim` / `.depth` / `.rimBlur` | `0.08` / `12` / `18` | `0` / `0` / `0` |
-| Fill | `.fill` | unset (transparent) | `--bg-window` @ 78% |
-| Shadow | `.shadow` | standard | lift |
+| Surfaces | `GlassSurface` · `frostMaterial` | brightness `95`, clear | sidebar · inspector · side rail |
+| Panes  | `GlassPane` · `PANE_FROST` | brightness `90`, clear | menus · pickers · the autocomplete |
+| Windows  | `GlassWindow` · `WINDOW_FROST` | brightness `90`, filled | preview · nav · settings · the crop modal |
+| Shared body | `SOLID_FILL` | `0.9` of `--bg-window` | the window tier, and any pane asking for `solid` |
+| Ghost | `GHOST_FROST` | brightness `100`, edge-free | the drag chip |
+| Rectangular menu | `PANE_RADIUS` | `12` | `PickerMenu` — every menu and picker |
+| Beaked menu | `BEAK_RADIUS` | `12` | `MenuSurface` — the large toolbar dropdown, alone |
 
 
 ### Component Chrome
@@ -215,7 +235,9 @@ The reusable pieces mirror the Figma library and consume semantic tokens only; a
 - **Chevrons and twisties** — disclosure glyphs ride the fold-chevron mask tokens (`--fold-chevron-mask`, `--code-chevron-mask` — inline SVG masks bridged from theme-vars) at the tertiary label tone, stepping by the disclosure indent.
 - **The drag grip** — the six-dot glyph is one masked asset (`--grip-glyph`).
 - **The ActionBand** (`Detail/ActionBand.css`) is the shared home for toolbar-row affordances any surface mounts — ViewSegments first, plus the hover-revealed settings button; a segment's collapsible title rides Segmented-Controls' `labelSlot`.
-- **The dropdown shell** splits in two — `MenuSurface` is the pane (notched glass, open and retract beats, state-free); `MenuDropdown` is the shell around a trigger (open state, outside-dismiss, anchored surface, optional growth bound). Surface-specific geometry stays with the surface that means it.
+- **Two menu shells.** `PickerMenu` is the rectangle every menu and picker mounts, owning anchoring, dismissal, focus and the scroll cap; `MenuSurface` is the beaked pane the large toolbar dropdown hangs off a named button, and the only surface still drawing its own outline. Why the beak sits where it does, and how each blooms, is [[InteractionPM]]'s.
+- **The toolbar dropdown shell** splits again — `MenuSurface` is the pane (state-free); `MenuDropdown` is the shell around a trigger (open state, outside-dismiss, anchored surface, optional growth bound). Surface-specific geometry stays with the surface that means it.
+- **Menu rows come in two.** A fixed option set takes the menu row — leading label, trailing accent mark on the chosen one, the mark slot laid out on every row so the pane can't resize as the selection moves. A user-authored value takes the chip row, whose fill already says "chosen", so it never also takes the mark: two signals on one row read as two states.
 - **The drop chrome** — the insertion line, dot, host, and `DragGhost` live in `design-system/interactions` (`dropChrome.css`, `DropLine.tsx`, `DragGhost.tsx`).
 - **The capped label** — ellipsis at rest, scroll-on-hover with a mask fade at the leading edge — is the app-wide overflow treatment for constrained text, defined with the type tokens.
 ### Showcase
@@ -228,7 +250,7 @@ The atlas continues in the specs that own each family: the editor's token pocket
 
 ### Known Issues
 
-- **Voiding Liquid Glass can't be done in place** — its `backdrop-filter` displacement is a dynamically-generated SVG filter id CSS can neither reconstruct nor interpolate, so the inspector "swallow" renders the pill as a two-layer control: a fading glass layer behind a solid bare-button layer.
+- **Voiding Liquid Glass can't be done in place** — its `backdrop-filter` displacement is a dynamically generated SVG filter ID CSS can neither reconstruct nor interpolate, so the inspector "swallow" renders the pill as a two-layer control: a fading glass layer behind a solid bare-button layer.
 - **Scrollbars are hidden app-wide** — Chromium's default bar reads heavy and the native auto-hiding overlay isn't reliably available, so scrolling is trackpad and wheel only.
 
 ### Pending

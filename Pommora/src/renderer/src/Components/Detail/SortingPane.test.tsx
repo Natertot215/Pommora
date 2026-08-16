@@ -76,6 +76,10 @@ const click = async (el: Element | null | undefined): Promise<void> => {
 }
 const rowWithText = (t: string): Element | undefined =>
   [...host.querySelectorAll('*')].filter((el) => el.textContent === t).at(-1)
+/** A clickable from anywhere, since a menu portals to body. Matched by ROLE, not tag: a menu row is
+ *  a `role="button"` div. */
+const clickable = (match: (el: Element) => boolean): Element | undefined =>
+  [...document.querySelectorAll('button, [role="button"]')].find(match)
 
 beforeEach(() => {
   host = document.createElement('div')
@@ -128,9 +132,7 @@ describe('SortingPane rows', () => {
     await mount(view({ sort: [{ property_id: 'prop_when', direction: 'ascending' }] }))
     const trigger = host.querySelector('button[aria-label="Sub-Sort"]') as HTMLElement
     await click(trigger)
-    await click(
-      [...document.querySelectorAll('button')].find((el) => el.textContent?.includes('Status')),
-    )
+    await click(clickable((el) => el.textContent?.includes('Status') ?? false))
     expect(lastSaved().sort).toEqual([
       { property_id: 'prop_when', direction: 'ascending' },
       { property_id: 'prop_status', direction: 'ascending' },
@@ -192,7 +194,7 @@ describe('SortingPane rows', () => {
     await mount(view({ sort: [{ property_id: 'prop_status', direction: 'descending' }] }))
     const trigger = host.querySelectorAll('button[aria-label="Order"]')[0] as HTMLElement
     await click(trigger)
-    await click([...document.querySelectorAll('button')].find((el) => el.textContent === 'Custom'))
+    await click(clickable((el) => el.textContent === 'Custom'))
     expect(lastSaved().sort).toEqual([
       { property_id: 'prop_status', direction: 'descending', order: ['done', 'todo'] }, // seeded reversed
     ])
@@ -214,7 +216,7 @@ describe('SortingPane rows', () => {
     )
     const trigger = host.querySelectorAll('button[aria-label="Order"]')[0] as HTMLElement
     await click(trigger)
-    await click([...document.querySelectorAll('button')].find((el) => el.textContent === 'Default'))
+    await click(clickable((el) => el.textContent === 'Default'))
     expect(lastSaved().sort).toEqual([{ property_id: 'prop_status', direction: 'ascending' }])
   })
 

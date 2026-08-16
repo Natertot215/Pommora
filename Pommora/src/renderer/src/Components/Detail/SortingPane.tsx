@@ -13,6 +13,7 @@ import { useSaveView } from '@renderer/Embeds/ViewEmbedScope'
 import { declaredType } from '../../Detail/Views/pipeline/value'
 import { cx } from '../../design-system/cx'
 import { useSession } from '../../store'
+import { MenuOption } from '@renderer/design-system/components/PickerMenu'
 import { PickerControl, type PickerChoice } from './PickerControl'
 import { CustomList, PropertyPreview, optionsOf } from './GroupingPane'
 import { bucketOrder } from '../../Detail/Views/pipeline/group'
@@ -212,23 +213,21 @@ export function SortingPane({
       </MenuItem>
       <Reveal open={sortByOpen}>
         <div className={`${gp.middle} overflow-eclipse-y`}>
-          <MenuItem
+          <MenuOption
             leading={<Icon name="circle-off" size={13} />}
-            trailing={!primary ? <Icon name="check" size={12} /> : undefined}
+            selected={!primary}
             onClick={() => pickPrimary(null)}
           >
             None
-          </MenuItem>
+          </MenuOption>
           {view.type === 'cards' && (
-            <MenuItem
+            <MenuOption
               leading={<Icon name="folder" size={13} />}
-              trailing={
-                primary?.property_id === LOCATION_SORT ? <Icon name="check" size={12} /> : undefined
-              }
+              selected={primary?.property_id === LOCATION_SORT}
               onClick={() => pickPrimary(LOCATION_SORT)}
             >
               Location
-            </MenuItem>
+            </MenuOption>
           )}
           {targets
             .filter((t) => t.id !== sub?.property_id)
@@ -236,9 +235,7 @@ export function SortingPane({
               <MenuItem
                 key={t.id}
                 leading={<Icon name={t.icon ?? 'tag'} size={13} />}
-                trailing={
-                  primary?.property_id === t.id ? <Icon name="check" size={12} /> : undefined
-                }
+                selected={primary?.property_id === t.id}
                 onClick={() => pickPrimary(t.id)}
               >
                 {t.label}

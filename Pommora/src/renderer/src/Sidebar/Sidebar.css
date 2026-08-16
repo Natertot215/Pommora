@@ -1,4 +1,4 @@
-/* Sidebar: the glass panel's LAYOUT (the MATERIAL lives in GlassWindow / glass-material.ts), its
+/* Sidebar: the glass panel's LAYOUT (the MATERIAL lives in GlassSurface / glass-material.ts), its
    content, collapse/expand + resize affordances, section headers, rows, and tree-drag styling. */
 
 /* Sidebar glass = LAYOUT only — a floating overlay inset from the window edge. */
