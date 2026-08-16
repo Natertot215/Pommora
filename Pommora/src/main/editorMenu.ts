@@ -31,7 +31,11 @@ export function setGripHot(on: boolean): void {
 const dispatch = (wc: WebContents, action: string) => () =>
   wc.send('menu:action', EDITOR_ACTION_PREFIX + action)
 
-function systemItems(wc: WebContents, params: ContextMenuParams): MenuItemConstructorOptions[] {
+function systemItems(
+  wc: WebContents,
+  params: ContextMenuParams,
+  editorFocused: boolean,
+): MenuItemConstructorOptions[] {
   const f = params.editFlags
   const items: MenuItemConstructorOptions[] = []
 
@@ -55,6 +59,12 @@ function systemItems(wc: WebContents, params: ContextMenuParams): MenuItemConstr
     { role: 'cut', enabled: f.canCut },
     { role: 'copy', enabled: f.canCopy },
     { role: 'paste', enabled: f.canPaste },
+    // The paste block reads outward from the plain act: paste, paste as something else, paste with
+    // nothing carried over. Paste As only means anything where a markdown surface is receiving it.
+    ...(editorFocused ? pasteAsItems(wc) : []),
+    // The `pasteAndMatchStyle` role would take ⌘⇧V's accelerator back, and that chord belongs to the
+    // inverse paste now (→ ConfigurationPM §Commands). The act itself is unchanged.
+    { label: 'Paste Without Formatting', enabled: f.canPaste, click: () => wc.pasteAndMatchStyle() },
     { role: 'selectAll' },
   )
   return items
@@ -184,7 +194,6 @@ function pommoraItems(wc: WebContents, s: FormatState): MenuItemConstructorOptio
         { label: 'Table', click: act('block:table') },
       ],
     },
-    ...pasteAsItems(wc),
   ]
 }
 
@@ -210,7 +219,7 @@ export function installEditorContextMenu(win: BrowserWindow): void {
   win.webContents.on('context-menu', (_e, params) => {
     if (gripHot) return // a grip right-click → the renderer pops that grip's own menu
     if (!params.isEditable) return // sidebar + read-only surfaces keep their own menus
-    const items = systemItems(win.webContents, params)
+    const items = systemItems(win.webContents, params, lastState?.focused === true)
     if (lastState?.focused) items.push(...pommoraItems(win.webContents, lastState))
     items.push(...speechShareItems(params))
     Menu.buildFromTemplate(items).popup({ window: win })

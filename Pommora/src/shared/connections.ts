@@ -144,10 +144,11 @@ export const CONN_OPEN_ACTIONS = [
  *  keeps the label as prose, `link:delete` keeps nothing.
  *
  *  A list rather than a bare union because the menu resolves the wider `ConnMenuAction`, and narrowing
- *  back to what this branch can act on is a membership test. `rename` sits in `ConnEditAction` too, and
- *  means the same thing in both. */
+ *  back to what this branch can act on is a membership test. `rename` and `editLink` are shared with
+ *  `ConnEditAction`: both name the same halves of a link, whichever syntax wrote it. */
 export const CONN_URL_ACTIONS = [
   'rename',
+  'editLink',
   'format:link-full',
   'format:link-short',
   'format:link-title',
