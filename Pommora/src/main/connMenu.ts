@@ -15,9 +15,10 @@ import { popReturningMenu } from './returningMenu'
 // built only for a surface that can take the edit, rather than shown and refused.
 //
 // A web address reaches no page, so nothing that needs one is offered; what it gets instead is the
-// three that edit how the link reads and the two that take it off the text. Format carries no radio
-// state because there is none to carry: the label is ordinary text and a link written in one form is
-// indistinguishable from the same words typed by hand.
+// items that edit the link itself — its two halves first, then the address on the clipboard, then how
+// it reads and whether it stays a link at all. Format carries no radio state because there is none to
+// carry: the label is ordinary text, and a link written in one form is indistinguishable from the
+// same words typed by hand.
 export function popConnMenu(
   win: BrowserWindow,
   ctx: ConnMenuContext,
@@ -28,6 +29,12 @@ export function popConnMenu(
         ...(ctx.editable
           ? [
               { label: 'Rename', click: pick('rename') },
+              { label: 'Edit Link', click: pick('editLink') },
+            ]
+          : []),
+        ...pageMenuTemplate(pageMetaMenuSubset(['title:copylink']), pick),
+        ...(ctx.editable
+          ? [
               {
                 label: 'Format',
                 submenu: LINK_DISPLAYS.map((d) => ({
@@ -35,10 +42,9 @@ export function popConnMenu(
                   click: pick(`format:${d}`),
                 })),
               },
+              ...pageMenuTemplate(CONN_UNLINK_ROWS, pick),
             ]
           : []),
-        ...pageMenuTemplate(pageMetaMenuSubset(['title:copylink']), pick),
-        ...(ctx.editable ? pageMenuTemplate(CONN_UNLINK_ROWS, pick) : []),
       ]
     const items: MenuItemConstructorOptions[] = pageMenuTemplate(
       pageMetaMenuSubset(CONN_OPEN_ACTIONS, ctx.alreadyOpen),
