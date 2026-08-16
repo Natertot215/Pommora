@@ -26,7 +26,10 @@ type CellMenuKind =
       clearable?: boolean
       barCapable?: boolean
     }
-  | { kind: 'style-edit'; type: 'url' | 'file'; current: ColumnStyle }
+  // Files alone: a url cell's Format is its column's or its property's, never the cell's own
+  // (Nathan's call) — a link that carries its own Format menu is a link in a markdown table, which
+  // is a different surface with a different menu.
+  | { kind: 'style-edit'; type: 'file'; current: ColumnStyle }
   | { kind: 'link'; filled: boolean }
   | { kind: 'clear-only' }
   | { kind: 'remove-only' }
