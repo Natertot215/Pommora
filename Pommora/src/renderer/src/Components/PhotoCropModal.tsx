@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { GlassSurface } from '@renderer/design-system/materials'
+import { GlassWindow } from '@renderer/design-system/materials'
 import * as s from './photoCropModal.css'
 
 // The circle's bounding box is what gets exported.
@@ -95,7 +95,7 @@ export function PhotoCropModal({
 
   return createPortal(
     <div className={s.backdrop} onPointerDown={(e) => e.target === e.currentTarget && onCancel()}>
-      <GlassSurface className={s.panel}>
+      <GlassWindow className={s.panel}>
         <span className={s.title}>Move and Scale</span>
         <div
           className={`${s.viewport}${dragging ? ` ${s.grabbing}` : ''}`}
@@ -164,7 +164,7 @@ export function PhotoCropModal({
             Choose
           </button>
         </div>
-      </GlassSurface>
+      </GlassWindow>
     </div>,
     document.body,
   )

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type Ref } from 'react'
-import { GlassPane } from '@renderer/design-system/materials'
+import { GlassWindow } from '@renderer/design-system/materials'
 import { Icon } from '@renderer/design-system/symbols'
 import { cx } from '@renderer/design-system/cx'
 import {
@@ -53,8 +53,6 @@ export interface PreviewPaneProps {
   style?: CSSProperties
   /** Hosts running a FLIP measure their rect from here. */
   rootRef?: Ref<HTMLDivElement>
-  /** The colour itself is the `--ppane-bg` var, which a host restyles from its own stylesheet. */
-  tintOpacity?: number
   toolbar?: PreviewPaneToolbar
   onScan?: () => void
   scanLabel?: string
@@ -87,7 +85,6 @@ export function PreviewPane({
   className,
   style,
   rootRef,
-  tintOpacity,
   toolbar = 'band',
   onScan,
   scanLabel = 'Open Full Page',
@@ -165,7 +162,7 @@ export function PreviewPane({
   )
 
   return (
-    <GlassPane
+    <GlassWindow
       ref={rootRef}
       className={cx(
         'ppane',
@@ -178,13 +175,9 @@ export function PreviewPane({
         hasFooter && footerNear && 'is-footer-near',
         closing && 'closing',
       )}
-      // GlassPane's frost hard-sets a transparent background, so the composed fill has to land
-      // inline to win. Its two inputs stay in the stylesheet, where a host can restyle them.
       style={
         {
           ...winStyle,
-          background: 'color-mix(in srgb, var(--ppane-bg) var(--ppane-bg-a), transparent)',
-          ...(tintOpacity !== undefined && { '--ppane-bg-a': `${tintOpacity}%` }),
           ...(left && { '--ppane-side-l-w': `${leftW}px` }),
           ...(right && { '--ppane-side-r-w': `${rightW}px` }),
           ...style,
@@ -247,6 +240,6 @@ export function PreviewPane({
       {left?.mode === 'overlay' && pane(left, 'left')}
       {right?.mode === 'overlay' && pane(right, 'right')}
       <FloatingResizeCorners startDrag={startDrag} />
-    </GlassPane>
+    </GlassWindow>
   )
 }

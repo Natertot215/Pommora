@@ -1,4 +1,4 @@
-import { GlassWindow } from '@renderer/design-system/materials'
+import { GlassSurface } from '@renderer/design-system/materials'
 import './inspector-panel.css'
 
 /**
@@ -8,8 +8,8 @@ import './inspector-panel.css'
  */
 export function InspectorPanel({ open }: { open: boolean }): React.JSX.Element {
   return (
-    <GlassWindow className="inspector-glass" aria-hidden={!open}>
+    <GlassSurface className="inspector-glass" aria-hidden={!open}>
       <div className="inspector-body" />
-    </GlassWindow>
+    </GlassSurface>
   )
 }

@@ -6,15 +6,9 @@ import { focusRing } from '../fieldRing'
 
 const c = vars.color
 
-/** The pane's own gutter — tighter than PickerMenu's default surface gutter (the top still clears
- *  the beak band via `--notch-h`). */
-export const content = style({
-  paddingTop: 'calc(var(--notch-h, 0px) + 4px) !important',
-  paddingRight: '4px !important',
-  paddingBottom: '4px !important',
-  paddingLeft: '4px !important',
-  alignItems: 'flex-start', // the field left-anchors in the pane so its caret sits at the left edge, never centred
-})
+/** The field left-anchors in the pane so its caret sits at the left edge, never centred. The gutter
+ *  is the shared surface's. */
+export const content = style({ alignItems: 'flex-start' })
 
 /** Bar-number value editing: the shared field chrome as a fixed-width one-line box — the value fills the
  *  left and the "/ N" out-of hint pins to the right. Focus lights the accent stroke via :focus-within,

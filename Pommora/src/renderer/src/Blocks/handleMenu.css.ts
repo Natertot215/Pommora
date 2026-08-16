@@ -84,8 +84,6 @@ export const titleFieldLocIcon = style({ selectors: { '&&': { color: c.label.ter
 export const scaleMenu = style({ minWidth: 58 })
 
 /** The current step's check — deliberately not the row's label tone. */
-export const scaleCheck = style({ selectors: { '&&': { color: 'var(--accent)' } } })
-
 /** The Scale row's trailing value + double-chevron trigger — a bare button, mirroring titleFieldLoc;
  *  the chevron a step quieter than the value. */
 export const scaleTrailing = style({

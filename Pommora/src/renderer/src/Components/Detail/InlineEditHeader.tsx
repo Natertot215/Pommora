@@ -5,7 +5,7 @@ import { RenamableLabel } from '../RenamableLabel'
 import { DashIcon } from './DashIcon'
 import * as s from './settingsPane.css'
 
-/** `iconRef` registers the icon button's element so an external picker's beak can anchor to it. */
+/** `iconRef` registers the icon button's element so an external picker can anchor to it. */
 export function InlineEditHeader({
   value,
   icon,

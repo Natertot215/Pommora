@@ -1,5 +1,4 @@
 import {
-  useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -11,13 +10,16 @@ import {
 import { createPortal } from 'react-dom'
 import { dropdownOpen, dropdownClose } from '../../animations.css'
 import { useExitPresence } from '../../useExitPresence'
-import { NotchedPane } from '../NotchedPane'
-import { MenuScrollFrame } from '../menu/Menu'
+import { GlassPane } from '../../materials'
+import { MenuItem, MenuScrollFrame } from '../menu/Menu'
+import { Icon } from '../../symbols'
 import { cx } from '../../cx'
 import { DROPDOWN_GAP as GAP } from '../dropdownAnchor'
 import * as s from './pickerMenu.css'
 
 const VIEWPORT_MARGIN = 8
+// The chosen-row mark reads at the shared menu-row glyph size.
+const CHECK = 12
 
 // React events cross portals: an un-stopped pointerdown here bubbles to a trigger's drag-handle
 // ancestor and pointer-capture steals the click. Stopping it here covers every consumer.
@@ -46,6 +48,14 @@ const tabStops = (root: HTMLElement): HTMLElement[] =>
 // `data-picker-portal` because useDismiss's containment check can't see through the portal.
 export type PickerDirection = 'down' | 'up' | 'left' | 'right'
 
+/** KNOB — how far past the trigger's centre the pane's near edge sits, and with it where the Bloom
+ *  starts. `MenuSurface` is the one shell that still wears a beak; here the same offset survives as
+ *  an origin-only figure, so a pane still zooms out of the point nearest what opened it. */
+const ANCHOR_RESERVE = 30
+
+// How far the Bloom's start point stays off a corner, so it never originates outside the pane's arc.
+const CORNER_CLEAR = s.PANE_RADIUS + 2
+
 export function PickerMenu({
   children,
   open,
@@ -53,12 +63,8 @@ export function PickerMenu({
   triggerRef,
   closing: closingProp = false,
   solid = false,
-  radius = 14,
-  notchWidth = 28,
-  notchHeight = 8,
-  notchCurve = 0.225,
   direction = 'down',
-  origin = 'right',
+  origin = 'auto',
   anchorX,
   anchorY,
   maxHeight,
@@ -75,12 +81,12 @@ export function PickerMenu({
   triggerRef?: RefObject<Element | null>
   closing?: boolean
   solid?: boolean
-  radius?: number
-  notchWidth?: number
-  notchHeight?: number
-  notchCurve?: number
   direction?: PickerDirection
-  origin?: 'right' | 'center' | 'left'
+  /** `auto` centres the pane on its trigger when it fits there whole, and falls back to the
+   *  right-edge anchor when centring would have to be clamped against a viewport edge. Name an
+   *  edge to pin one: a pane whose content RESIZES while open must, or its rows walk sideways
+   *  out from under the cursor. */
+  origin?: 'auto' | 'right' | 'center' | 'left'
   anchorX?: number
   /** Pair with `anchorX` to open at a POINT — a right-click's cursor — instead of against an
    *  element. Both together stand in for the trigger entirely, so no `triggerRef` is needed. */
@@ -94,7 +100,7 @@ export function PickerMenu({
   contentClassName?: string
   style?: CSSProperties
   /** Reports the effective (post-flip) direction each placement pass — for a consumer whose own
-   *  chrome depends on which side the pane opened (NotchedPane.onResize's publication pattern). */
+   *  chrome depends on which side the pane opened. */
   onDirection?: (dir: PickerDirection) => void
 }): React.JSX.Element | null {
   const selfManaged = open !== undefined
@@ -114,15 +120,18 @@ export function PickerMenu({
     [],
   )
   const paneRef = useRef<HTMLDivElement>(null)
+  const glassRef = useRef<HTMLDivElement>(null)
   const markerRef = useRef<HTMLSpanElement>(null)
   const [pos, setPos] = useState<{
     top?: number
     bottom?: number
     right?: number
     left?: number
-    notchInset?: number
-    notchInsetLeft?: number
-    notchInsetBottom?: number
+    /** Where the Bloom starts — the point on the pane's edge nearest the trigger, as a
+     *  `transform-origin` pair. */
+    origin?: string
+    /** Straddling the trigger, so the layer needs its half-width shift. */
+    centred?: boolean
   } | null>(null)
   // Auto-flips to 'down' when the requested direction wouldn't fit the viewport. Down is the
   // terminal fallback, so flips always converge.
@@ -130,22 +139,38 @@ export function PickerMenu({
   // Decided ONCE per open: re-deciding on every re-measure would let a growing pane teleport above
   // its trigger mid-interaction, yanking rows out from under the cursor.
   const decidedDir = useRef<PickerDirection | null>(null)
+  // Decided once per open for the same reason: a pane that grows past the point where centring fits
+  // must not hop to an edge anchor mid-interaction.
+  const decidedCentre = useRef<boolean | null>(null)
   // Keyed on `open`, not `mounted`: a fast reopen during the exit-timer window would otherwise
   // inherit stale placement and, if the trigger moved, park the pane off-screen.
-  if (open === false && decidedDir.current !== null) decidedDir.current = null
+  if (open === false && decidedDir.current !== null) {
+    decidedDir.current = null
+    decidedCentre.current = null
+  }
 
-  // NotchedPane already measures itself for the beak path and publishes it here, so placement never
-  // re-reads the element the shell owns. `place` being null is what freezes the pane through Bloom-out.
+  // The pane's own size, watched here because placement is the only thing that needs it. `place`
+  // being null is what freezes the pane through the Bloom-out.
   const paneBox = useRef({ w: 0, h: 0 })
   const place = useRef<(() => void) | null>(null)
-  const onPaneResize = useCallback((w: number, h: number): void => {
-    paneBox.current = { w, h }
-    place.current?.()
-  }, [])
+  useLayoutEffect(() => {
+    const el = glassRef.current
+    if (!el) return
+    // Bail on unchanged sizes: the RO fires every frame while pane content animates its height, and
+    // a placement pass forces layout. offsetWidth/Height are integral, so jitter can't defeat it.
+    const measure = (): void => {
+      const w = el.offsetWidth
+      const h = el.offsetHeight
+      if (paneBox.current.w === w && paneBox.current.h === h) return
+      paneBox.current = { w, h }
+      place.current?.()
+    }
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [mounted])
 
-  // `reserve` = how far the beak's clamp allows it toward the corner radius, so pushing the pane's
-  // right edge `reserve` past the trigger centre lands the clamp-limited beak exactly on the trigger.
-  const reserve = radius + notchWidth / 2 + 2
   useLayoutEffect(() => {
     // Freeze the pane's position through the Bloom-out: once closing, a trigger that detached or moved
     // (e.g. a pick re-grouped its row) must not re-measure to zeros and snap the fading pane away.
@@ -175,45 +200,58 @@ export function PickerMenu({
       }
       setEffDir(eff)
       onDirection?.(eff)
-      // Sideways: vertical mirror of the right-anchored default — anchor the far edge, beak `reserve` from it.
+      // The Bloom's start point, kept clear of the corner arc on whichever edge it lands on.
+      const edge = (along: number, at: number): number =>
+        Math.min(Math.max(at, CORNER_CLEAR), Math.max(CORNER_CLEAR, along - CORNER_CLEAR))
+      // Sideways: vertical mirror of the right-anchored default — anchor the far edge, start point in from it.
       if (eff === 'left' || eff === 'right') {
         const cy = t.top + t.height / 2
-        const bottom = Math.max(VIEWPORT_MARGIN, window.innerHeight - cy - reserve)
-        if (eff === 'right') setPos({ left: t.right + GAP, bottom, notchInsetBottom: reserve })
-        else setPos({ right: window.innerWidth - t.left + GAP, bottom, notchInsetBottom: reserve })
+        const bottom = Math.max(VIEWPORT_MARGIN, window.innerHeight - cy - ANCHOR_RESERVE)
+        const y = edge(ph, ph - ANCHOR_RESERVE)
+        if (eff === 'right') setPos({ left: t.right + GAP, bottom, origin: `0px ${y}px` })
+        else setPos({ right: window.innerWidth - t.left + GAP, bottom, origin: `${pw}px ${y}px` })
         return
       }
+      const near = (x: number): string => `${edge(pw, x)}px ${eff === 'up' ? ph : 0}px`
+      // `auto` takes the centred placement only where it lands whole — a centred pane that had to be
+      // clamped sits off its trigger anyway, and the edge anchor at least stays put as content grows.
+      if (decidedCentre.current === null)
+        decidedCentre.current =
+          origin === 'center' ||
+          (origin === 'auto' &&
+            c - pw / 2 >= VIEWPORT_MARGIN &&
+            c + pw / 2 <= window.innerWidth - VIEWPORT_MARGIN)
       // Centred origin: straddle the trigger, clamped by half-width so an edge trigger can't push it off-screen.
-      if (origin === 'center') {
+      if (decidedCentre.current) {
         const half = pw / 2
         const left = Math.min(
           Math.max(c, VIEWPORT_MARGIN + half),
           window.innerWidth - VIEWPORT_MARGIN - half,
         )
-        // The beak slides to the anchor: the layer is translateX(-50%)-anchored, so the inset
-        // measures from its left EDGE (left − half). Unclamped this reduces to half — exactly the
-        // centered beak every existing consumer already shows; a viewport clamp is what moves it.
-        const notchInsetLeft = c - (left - half)
-        if (eff === 'up') setPos({ bottom: window.innerHeight - t.top + GAP, left, notchInsetLeft })
-        else setPos({ top: t.bottom + GAP, left, notchInsetLeft })
+        // The start point slides to the anchor: the layer is translateX(-50%)-anchored, so it
+        // measures from the pane's left EDGE (left − half). Unclamped this reduces to half — dead
+        // centre, which is what an unclamped pane already shows; a viewport clamp is what moves it.
+        const vertical =
+          eff === 'up' ? { bottom: window.innerHeight - t.top + GAP } : { top: t.bottom + GAP }
+        setPos({ ...vertical, left, centred: true, origin: near(c - (left - half)) })
         return
       }
-      // Mirror of the default: pin the LEFT edge `reserve` before the anchor so the pane grows
+      // Mirror of the default: pin the LEFT edge that far before the anchor so the pane grows
       // rightward and a row's x never moves when content resizes.
       if (origin === 'left') {
         const left = Math.min(
-          Math.max(VIEWPORT_MARGIN, c - reserve),
+          Math.max(VIEWPORT_MARGIN, c - ANCHOR_RESERVE),
           Math.max(VIEWPORT_MARGIN, window.innerWidth - VIEWPORT_MARGIN - pw),
         )
         const vertical =
           eff === 'up' ? { bottom: window.innerHeight - t.top + GAP } : { top: t.bottom + GAP }
-        setPos({ ...vertical, left, notchInsetLeft: reserve })
+        setPos({ ...vertical, left, origin: near(ANCHOR_RESERVE) })
         return
       }
-      const right = Math.max(VIEWPORT_MARGIN, window.innerWidth - c - reserve)
-      if (eff === 'up')
-        setPos({ bottom: window.innerHeight - t.top + GAP, right, notchInset: reserve })
-      else setPos({ top: t.bottom + GAP, right, notchInset: reserve })
+      const right = Math.max(VIEWPORT_MARGIN, window.innerWidth - c - ANCHOR_RESERVE)
+      const vertical =
+        eff === 'up' ? { bottom: window.innerHeight - t.top + GAP } : { top: t.bottom + GAP }
+      setPos({ ...vertical, right, origin: near(pw - ANCHOR_RESERVE) })
     }
     place.current = measure
     measure()
@@ -241,7 +279,6 @@ export function PickerMenu({
   }, [
     selfManaged,
     mounted,
-    reserve,
     triggerRef,
     closing,
     origin,
@@ -321,45 +358,34 @@ export function PickerMenu({
   }
 
   const up = effDir === 'up'
-  const horizontal = effDir === 'left' || effDir === 'right'
-  const notchSide =
-    effDir === 'up' ? 'bottom' : effDir === 'left' ? 'right' : effDir === 'right' ? 'left' : 'top'
+  // A rounded rect is a border and a radius, so the material draws its own outline, lighting and
+  // shadow — nothing is suppressed and re-drawn by hand. The Bloom class rides the frost element
+  // ITSELF: on an ancestor it would become the backdrop root and the backdrop-filter would silently
+  // sample nothing.
   const pane = (
-    <NotchedPane
-      // bareSurface or a sideways pane owns its full gutter via contentClassName — the top/bottom
-      // notch gutter is either unwanted or the wrong axis.
-      className={
-        horizontal || bareSurface
-          ? contentClassName
-          : cx(s.surface, up && s.surfaceUp, contentClassName)
-      }
-      animationClass={closing ? dropdownClose : dropdownOpen}
+    <GlassPane
+      ref={glassRef}
       solid={solid}
-      radius={radius}
-      notchWidth={notchWidth}
-      notchHeight={notchHeight}
-      notchCurve={notchCurve}
-      notchInsetRight={pos?.notchInset}
-      notchInsetLeft={pos?.notchInsetLeft}
-      notchInsetBottom={pos?.notchInsetBottom}
-      notchSide={notchSide}
-      onResize={onPaneResize}
+      className={cx(s.pane, !bareSurface && s.surface, contentClassName, closing ? dropdownClose : dropdownOpen)}
       // Through the Bloom-out the pane paints but mustn't ACT: content goes pointer-inert so a stray
       // click can't re-fire an option, while the layer below stays interactive to swallow the click.
-      style={{
-        ...(width !== undefined ? { width } : null),
-        ...style,
-        ...(closing ? { pointerEvents: 'none' as const } : null),
-      }}
+      style={
+        {
+          ...(pos?.origin ? { '--dropdown-origin': pos.origin } : null),
+          ...(width !== undefined ? { width } : null),
+          ...style,
+          ...(closing ? { pointerEvents: 'none' as const } : null),
+        } as CSSProperties
+      }
     >
-      {/* The surface keeps the notch gutter (must never scroll) — the frame's body is the ONE
-          overflow region + edge fade. */}
+      {/* The surface keeps its gutter (must never scroll) — the frame's body is the ONE overflow
+          region + edge fade. */}
       {maxHeight === undefined ? (
         children
       ) : (
         <MenuScrollFrame maxHeight={maxHeight}>{children}</MenuScrollFrame>
       )}
-    </NotchedPane>
+    </GlassPane>
   )
 
   if (!selfManaged) {
@@ -395,13 +421,13 @@ export function PickerMenu({
             onContextMenu={stopContextBubble}
             onKeyDown={managed ? trapTab : undefined}
             style={{
-              // Vertical panes anchor by `top`; sideways panes by `bottom` (aiming the side beak).
+              // Vertical panes anchor by `top`; sideways panes by `bottom`.
               ...(pos?.top !== undefined ? { top: `${pos.top}px` } : null),
               ...(pos?.bottom !== undefined ? { bottom: `${pos.bottom}px` } : null),
               ...(pos?.left !== undefined
                 ? {
                     left: `${pos.left}px`,
-                    ...(origin === 'center' ? { transform: 'translateX(-50%)' } : null),
+                    ...(pos.centred ? { transform: 'translateX(-50%)' } : null),
                   }
                 : pos?.right !== undefined
                   ? { right: `${pos.right}px` }
@@ -440,6 +466,43 @@ export function PointMenu({
   )
 }
 
+/** The row for a FIXED option set — leading label, trailing mark on the chosen one, the native
+ *  pop-up idiom. `PickerOption` below is its counterpart for user-authored values, whose chips carry
+ *  their own colour and say "chosen" by fill. */
+export function MenuOption({
+  children,
+  onClick,
+  selected = false,
+  leading,
+  disabled = false,
+  className,
+}: {
+  children: ReactNode
+  onClick?: () => void
+  selected?: boolean
+  leading?: ReactNode
+  disabled?: boolean
+  className?: string
+}): React.JSX.Element {
+  return (
+    <MenuItem
+      className={className}
+      leading={leading}
+      disabled={disabled}
+      trailing={
+        <Icon
+          name="check"
+          size={CHECK}
+          className={cx(s.chosenMark, !selected && s.chosenMarkHidden)}
+        />
+      }
+      onClick={onClick}
+    >
+      {children}
+    </MenuItem>
+  )
+}
+
 // Chip overflow (truncate + scroll) is handled by `chipLabel` in design-system/tokens — no overflow
 // logic needed here.
 export function PickerOption({
@@ -447,6 +510,7 @@ export function PickerOption({
   onClick,
   selected = false,
   ring = false,
+  leading,
 }: {
   children: ReactNode
   onClick?: () => void
@@ -455,6 +519,9 @@ export function PickerOption({
    *  fill alone is easy to lose in a packed list. A chip row must NOT set this: its own fill
    *  already says "chosen", and two signals on one row read as two different states. */
   ring?: boolean
+  /** A glyph ahead of the label. A row that leads with one reads left — a centred cluster leaves a
+   *  ragged glyph column — so the slot carries that alignment rather than each caller restating it. */
+  leading?: ReactNode
 }): React.JSX.Element {
   return (
     <button
@@ -462,7 +529,14 @@ export function PickerOption({
       className={cx(s.option, selected && s.optionSelected, selected && ring && s.optionRing)}
       onClick={onClick}
     >
-      {children}
+      {leading == null ? (
+        children
+      ) : (
+        <span className={s.leadingRow}>
+          {leading}
+          {children}
+        </span>
+      )}
     </button>
   )
 }

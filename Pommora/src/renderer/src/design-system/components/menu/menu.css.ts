@@ -28,30 +28,38 @@ export const TITLE_X_TWISTY_ONLY = ROW_PAD_X + TWISTY_W + ROW_GAP
  *  the rail runs straight through the parent chevron rather than beside it. */
 export const TWISTY_CENTER_X = ROW_PAD_X + TWISTY_W / 2
 
+/** The interactive shell EVERY row in the menu family wears — its radius, its rest cursor, its hover
+ *  wash and its keyboard-focus ring. Stated once because a row that highlights or focuses unlike the
+ *  row beside it is a bug rather than a variant; what each row type brings of its own is the type
+ *  ramp, the tone and the layout. `fieldRing` holds the ring's geometry for the same reason. */
+export const rowShell = style({
+  borderRadius: '8px',
+  cursor: 'default',
+  selectors: {
+    '&:hover': { background: c.state.hover },
+    // Keyboard focus only. `:focus-visible` never matches the programmatic focus that follows a
+    // click, so a mouse-opened menu looks untouched and a keyboard-opened one shows where it is.
+    // The tone is the FIELD's focus tone through the same channel — a step lighter than the
+    // selection ring's, so a focused row and a chosen one stay tellable apart at the same weight.
+    '&:focus-visible': {
+      outline: 'none',
+      boxShadow: fieldRing(ROW_RING),
+      vars: { '--field-ring': tintAt('var(--accent)', TINT_STEPS.secondary) },
+    },
+  },
+})
+
 export const item = style([
   text.body.standard,
+  rowShell,
   {
     display: 'flex',
     alignItems: 'center',
     gap: `${ROW_GAP}px`,
     minHeight: '24px',
     padding: `6px ${ROW_PAD_X}px`,
-    borderRadius: '8px',
     color: c.label.primary,
-    cursor: 'default',
     userSelect: 'none',
-    selectors: {
-      '&:hover': { background: c.state.hover },
-      // Keyboard focus only. `:focus-visible` never matches the programmatic focus that follows a
-      // click, so a mouse-opened menu looks untouched and a keyboard-opened one shows where it is.
-      // The tone is the FIELD's focus tone through the same channel — a step lighter than the
-      // selection ring's, so a focused row and a chosen one stay tellable apart at the same weight.
-      '&:focus-visible': {
-        outline: 'none',
-        boxShadow: fieldRing(ROW_RING),
-        vars: { '--field-ring': tintAt('var(--accent)', TINT_STEPS.secondary) },
-      },
-    },
   },
 ])
 
