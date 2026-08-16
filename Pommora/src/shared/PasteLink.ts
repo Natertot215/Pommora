@@ -52,7 +52,7 @@ export function pastedUrl(clipboard: string): string | null {
   return isValidLink(s) ? s : null
 }
 
-const link = (text: string, target: string, wantsTitle = false): PasteDecision => ({
+const link = (text: string, target: string, wantsTitle = false): LinkPaste => ({
   kind: 'link',
   text,
   target,
@@ -67,6 +67,18 @@ const link = (text: string, target: string, wantsTitle = false): PasteDecision =
  *  exactly once and in exactly one place. */
 export function linkMarkdown(url: string, display: LinkDisplay, title?: string): string {
   return serializeLink({ url, alias: linkDisplayText(url, display, title) })
+}
+
+/** The link an address becomes in a given form: its markdown, and whether the label is only standing
+ *  in until a fetched title arrives. Every writer of a formatted link comes through here — the paste,
+ *  the Paste As pick, and the Format rewrite — so none of them can answer either question
+ *  differently, and a link waiting on a title is announced the same way however it came to be. */
+export function linkPaste(url: string, display: LinkDisplay, title?: string): LinkPaste {
+  return link(
+    linkMarkdown(url, display, title),
+    url,
+    display === 'link-title' && title === undefined,
+  )
 }
 
 export function decidePaste(input: PasteInput): PasteDecision {
@@ -84,9 +96,5 @@ export function decidePaste(input: PasteInput): PasteDecision {
   const format = wrappable ? input.autoFormat : input.inverse ? !input.autoFormat : input.autoFormat
   if (!format) return LITERAL
 
-  return link(
-    linkMarkdown(target, input.format, input.title),
-    target,
-    input.format === 'link-title' && input.title === undefined,
-  )
+  return linkPaste(target, input.format, input.title)
 }

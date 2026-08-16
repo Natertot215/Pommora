@@ -1,7 +1,7 @@
 import type { EditorView } from '@codemirror/view'
 import type { ConnUrlAction } from '@shared/connections'
 import { unescapeAlias } from '@shared/links'
-import { linkMarkdown } from '@shared/PasteLink'
+import { linkPaste } from '@shared/PasteLink'
 import type { LinkDisplay } from '@shared/properties'
 import { useSession } from '../../store'
 import { linkTarget, tokenize } from '../tokens'
@@ -72,12 +72,11 @@ function rewriteLabel(
   display: LinkDisplay,
 ): void {
   const { linkTitles, resolveLinkTitle } = useSession.getState()
-  const title = linkTitles[url]
-  const wantsTitle = display === 'link-title' && title === undefined
-  const text = linkMarkdown(url, display, title)
+  const { text, wantsTitle } = linkPaste(url, display, linkTitles[url])
   const to = span.from + text.length
   view.dispatch({
-    changes: view.state.sliceDoc(span.from, span.to) === text ? undefined : { ...span, insert: text },
+    changes:
+      view.state.sliceDoc(span.from, span.to) === text ? undefined : { ...span, insert: text },
     effects: wantsTitle ? awaitTitle.of({ from: span.from, to, url, text }) : undefined,
   })
   if (wantsTitle) resolveLinkTitle(url)

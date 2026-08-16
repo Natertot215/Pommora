@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { markdownLinkRegex } from './links'
 import { pasteAsRows, pasteAsTarget, pasteAsWrite, type PasteAsForm } from './PasteAsMenu'
 
 const URL = 'https://www.example.com/a/b'
@@ -66,6 +67,16 @@ describe('what each form writes', () => {
   // the same way every other writer of that syntax does.
   it('encodes a page title the markdown form cannot carry raw', () => {
     expect(written('[[Notes (draft)]]', 'markdown')).toBe('[Notes (draft)](Notes%20%28draft%29)')
+  })
+
+  // The label has its own grammar to survive, and an unescaped `]` ends it early — the whole link
+  // then tokenizes as nothing rather than as a link with a truncated name. An opening `[` is
+  // ordinary label text and is left as the title wrote it.
+  it('escapes the bracket that would end the label early', () => {
+    const text = written('[[Notes [WIP] final]]', 'markdown')
+    expect(text).toBe('[Notes [WIP\\] final](Notes%20%5BWIP%5D%20final)')
+    // The claim under the escape: what it wrote is a link the grammar reads back whole.
+    expect(markdownLinkRegex().exec(text ?? '')?.[0]).toBe(text)
   })
 
   it('writes nothing for a form the clipboard cannot take', () => {

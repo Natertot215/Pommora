@@ -138,13 +138,14 @@ export const CONN_OPEN_ACTIONS = [
   'title:newtab',
 ] as const satisfies readonly ConnOpenAction[]
 
-/** Everything a link pointing at a web address can be told to do, in the order the menu offers it.
- *  The three `format:` ids rewrite the label alone — no per-link state is stored anywhere, so nothing
- *  can come to disagree with the file — and the last two are the two readings of taking a link off
- *  the words it wears: `link:remove` keeps the label as prose, `link:delete` keeps nothing.
+/** Everything a link pointing at a web address can be told to do. The three `format:` ids rewrite the
+ *  label alone — no per-link state is stored anywhere, so nothing can come to disagree with the file
+ *  — and the last two are the two readings of taking a link off the words it wears: `link:remove`
+ *  keeps the label as prose, `link:delete` keeps nothing.
  *
- *  The union is derived from the list rather than written beside it, so an action cannot exist
- *  without a place in the order. */
+ *  A list rather than a bare union because the menu resolves the wider `ConnMenuAction`, and narrowing
+ *  back to what this branch can act on is a membership test. `rename` sits in `ConnEditAction` too, and
+ *  means the same thing in both. */
 export const CONN_URL_ACTIONS = [
   'rename',
   'format:link-full',
