@@ -644,7 +644,7 @@ Not blocking, still open:
 ### Lessons
 
 ### Sequenced After
-- **The `PopupMenu` split** — formalize the beak-less pane the autocomplete panel uses (`NotchedPane` with `notchHeight={0}`, body-portalled, no backdrop, Bloom motion) as a component, and move fixed-option pickers onto it. Default Format is one of its call sites. PropertyPickers and variable-input pickers keep `PickerMenu`.
+- **The `PopoutMenu` split** — formalize the beak-less pane the autocomplete panel uses (`NotchedPane` with `notchHeight={0}`, body-portalled, no backdrop, Bloom motion) as a component, give it the row treatment regular menus use, and move fixed-option pickers onto it. Default Format is one of its call sites. PropertyPickers keep `PickerMenu`. **Scoped** in `PopoutMenu — Scope.md`, where the migration unit turns out to be `PickerControl` itself rather than its call sites, and four decisions are named as open.
 - **Bare-URL autolinking** — a GFM-style token so an unwrapped address is clickable, styled, and Format-able. Needs a tokenizer rule, a decoration, a click path, and a CommonMark-versus-GFM call. Nothing here forecloses it: the formatter and the Format menu both read from the token, so an autolink token slots in as a second producer.
 - **A general prose context menu** — Paste As is deliberately the only addition. What else belongs on the editor's right-click is its own decision.
 - **Fetched metadata beyond `<title>`** — favicon, OpenGraph, description. The fetcher is already main-side and cached.
