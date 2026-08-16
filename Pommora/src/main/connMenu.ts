@@ -1,19 +1,45 @@
 import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
-import { CONN_OPEN_ACTIONS, type ConnMenuAction, type ConnMenuContext } from '@shared/connections'
+import {
+  CONN_OPEN_ACTIONS,
+  CONN_UNLINK_ROWS,
+  type ConnMenuAction,
+  type ConnMenuContext,
+} from '@shared/connections'
 import { PAGE_CLIPBOARD_ACTIONS, pageMetaMenuSubset } from '@shared/pageMenu'
+import { LINK_DISPLAY_LABELS, LINK_DISPLAYS } from '@shared/properties'
 import { pageMenuTemplate } from './pageMenu'
 import { popReturningMenu } from './returningMenu'
 
 // The link right-click menu — popCellMenu's shape: main pops at the cursor, resolves the chosen
-// action; resolve(null) covers a dismissed menu so the renderer no-ops. The authoring pair is built
-// only for a surface that can take the edit, rather than shown and refused. A web address reaches no
-// page, so it keeps only the item that copies the address itself.
+// action; resolve(null) covers a dismissed menu so the renderer no-ops. The authoring items are
+// built only for a surface that can take the edit, rather than shown and refused.
+//
+// A web address reaches no page, so nothing that needs one is offered; what it gets instead is the
+// three that edit how the link reads and the two that take it off the text. Format carries no radio
+// state because there is none to carry: the label is ordinary text and a link written in one form is
+// indistinguishable from the same words typed by hand.
 export function popConnMenu(
   win: BrowserWindow,
   ctx: ConnMenuContext,
 ): Promise<ConnMenuAction | null> {
   return popReturningMenu<ConnMenuAction>(win, (pick) => {
-    if (ctx.external) return pageMenuTemplate(pageMetaMenuSubset(['title:copylink']), pick)
+    if (ctx.external)
+      return [
+        ...(ctx.editable
+          ? [
+              { label: 'Rename', click: pick('rename') },
+              {
+                label: 'Format',
+                submenu: LINK_DISPLAYS.map((d) => ({
+                  label: LINK_DISPLAY_LABELS[d],
+                  click: pick(`format:${d}`),
+                })),
+              },
+            ]
+          : []),
+        ...pageMenuTemplate(pageMetaMenuSubset(['title:copylink']), pick),
+        ...(ctx.editable ? pageMenuTemplate(CONN_UNLINK_ROWS, pick) : []),
+      ]
     const items: MenuItemConstructorOptions[] = pageMenuTemplate(
       pageMetaMenuSubset(CONN_OPEN_ACTIONS, ctx.alreadyOpen),
       pick,

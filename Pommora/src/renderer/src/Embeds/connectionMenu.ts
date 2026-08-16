@@ -1,4 +1,5 @@
 import type { ConnMenuTarget } from '@renderer/MarkdownPM/connections'
+import { isConnUrlAction } from '@shared/connections'
 import { pageLinkText, pagePathText } from '@shared/pageMenu'
 import { isOpenInTabs } from '../Tabs/tabsModel'
 import { useSession } from '../store'
@@ -7,10 +8,12 @@ import { useSession } from '../store'
  *  contextMenu contract). Shared by every ConnectionsApi host. */
 export function showConnectionMenu(target: ConnMenuTarget): void {
   if (target.kind === 'url') {
+    const apply = target.apply
     void window.nexus
-      .connMenu({ editable: false, hasAlias: false, external: true })
+      .connMenu({ editable: apply !== undefined, hasAlias: false, external: true })
       .then((action) => {
         if (action === 'title:copylink') void window.nexus.writeClipboard(target.url)
+        else if (action !== null && isConnUrlAction(action)) apply?.(action)
       })
     return
   }
@@ -38,7 +41,10 @@ export function showConnectionMenu(target: ConnMenuTarget): void {
         case 'title:copypath':
           void window.nexus.writeClipboard(pagePathText(page.path))
           return
-        default:
+        // The two authoring gestures, named rather than caught: the action vocabulary is wider than
+        // this menu, and a url-only action arriving here has no page span to act on.
+        case 'rename':
+        case 'editLink':
           target.apply?.(action)
       }
     })

@@ -97,7 +97,7 @@ describe('a markdown link’s menu follows what its target names', () => {
     connMenu.mockResolvedValue('title:copylink')
     const view = await mountEditor({ initialBody: BODY, connections: conn })
     await rightClick(view, 5, '.md-link')
-    expect(connMenu).toHaveBeenCalledWith({ editable: false, hasAlias: false, external: true })
+    expect(connMenu).toHaveBeenCalledWith({ editable: true, hasAlias: false, external: true })
     expect(writeClipboard).toHaveBeenCalledWith('https://x.test')
   })
 

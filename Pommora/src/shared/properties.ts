@@ -30,6 +30,15 @@ export type PropertyType = z.infer<typeof propertyType>
 export const LINK_DISPLAYS = ['link-full', 'link-short', 'link-title'] as const
 export type LinkDisplay = (typeof LINK_DISPLAYS)[number]
 
+/** What each form is called wherever one is picked — a URL property's Format control, the nexus-wide
+ *  default in Settings, and a link's own Format menu, which main builds and so cannot read a
+ *  renderer's list. */
+export const LINK_DISPLAY_LABELS: Record<LinkDisplay, string> = {
+  'link-full': 'Full Link',
+  'link-short': 'Short Link',
+  'link-title': 'Page Title',
+}
+
 /** Number format families. `number` = plain, `percent` = literal + `%` (NOT ×100), `currency` = an ISO code. */
 export const NUMBER_FAMILIES = ['number', 'percent', 'currency'] as const
 export type NumberFamily = (typeof NUMBER_FAMILIES)[number]
