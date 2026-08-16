@@ -524,16 +524,16 @@ It is built **on the menu `installEditorContextMenu` already pops**, not as a re
 **Steps:**
 - [x] **Observed (O-1):** one menu, not two — links need no hot-flag treatment. The contingent step this task carried is dropped.
 - [x] **Observed (O-2, O-3):** a cell gets no menu at all, active or resting. The link half is Task 8's mount; the prose half never pops over the non-editable table widget, and R4 accepts Paste As as absent in cells — so this task builds nothing for them.
-- [ ] Write the failing model tests: each clipboard shape → the exact option set, in order; a non-link clipboard → no submenu at all.
-- [ ] Run — expect red.
-- [ ] Add the option-set push channel. A channel added to `Asks` with no handler is a compile error, so all three sites land together.
-- [ ] Implement the shared model; re-run — expect green.
-- [ ] Append the submenu in `editorMenu.ts`'s `pommoraItems`, and handle its ids in `applyEditorAction`.
-- [ ] Wire `menu={{ pushState, onAction }}` in `MarkdownBlock.tsx` and `PageEmbed.tsx`. Verify the existing `Format ▸` starts working in those surfaces — that is the observable proof the wiring landed.
-- [ ] Update `MarkdownPM.md`.
-- [ ] Run the app: each clipboard shape, in a page body and a table cell, in a block and an embed.
-- [ ] Full gate — expect green.
-- [ ] Commit: `feat(links): Paste As offers the forms the clipboard can take`
+- [x] Write the failing model tests: each clipboard shape → the exact option set, in order; a non-link clipboard → no submenu at all.
+- [x] Run — expect red.
+- [x] ~~Add the option-set push channel.~~ Dropped — no channel is needed. Every shape with anything to offer says what it is in its own text (an address, a `[[Title]]`, a markdown link read through its target), so main decides the offer from the clipboard it can already read synchronously. See Deviations.
+- [x] Implement the shared model; re-run — expect green.
+- [x] Append the submenu in `editorMenu.ts`'s `pommoraItems`, and handle its ids in `applyEditorAction`.
+- [x] Wire the menu seam in `MarkdownBlock.tsx` and `PageEmbed.tsx`. Verify the existing `Format ▸` starts working in those surfaces — that is the observable proof the wiring landed. → Gate 4.
+- [x] Update `MarkdownPM.md`.
+- [ ] Run the app: each clipboard shape, in a page body and a table cell, in a block and an embed. → Gate 4.
+- [x] Full gate — expect green.
+- [x] Commit: `feat(links): Paste As offers the forms the clipboard can take`
 
 #### Gate 4 — both menus, in every surface
 - [ ] Gate commands green, exit codes read directly.
@@ -559,10 +559,10 @@ It is built **on the menu `installEditorContextMenu` already pops**, not as a re
   - [x] Task 5 — The paste formatter · `5f50d9f3`
   - [x] Task 6 — Mount the paste handler in both editors · `6ceaa384`
   - [x] Task 7 — The deferred Page Title rewrite · `44c47449`, simplified in `3db60832`
-- [ ] **Phase 4** — The menus
+- [x] **Phase 4** — The menus
   - [x] Task 8 — The link menu, and links in cells · `<commit>`
   - [x] Task 9 — The inverse-paste chord · `<commit>`
-  - [ ] Task 10 — `Paste As >` on the prose menu · `<commit>`
+  - [x] Task 10 — `Paste As >` on the prose menu · `<commit>`
 
 ### Observations
 
@@ -612,6 +612,8 @@ Not blocking, still open:
 
 ### Deviations
 
+- **Task 10 — the option-set push channel was never needed.** The plan had the renderer resolve the clipboard's target and push the result to main, because main cannot resolve a page title against the renderer's index. It doesn't have to: the shapes worth offering are all self-describing — an address, a `[[Title]]` (which is exactly what a page's own Copy Link puts on the clipboard), and a markdown link read through its target — so main decides the offer from `clipboard.readText()` in the same turn the `context-menu` event fires. One IPC channel, one preload line and one push site were dropped. The one case this cannot serve is a bare page title as ordinary text, which nothing in the requirement asks for.
+- **Task 10 — the menu seam became one object instead of three.** `PageView`, `MarkdownBlock` and `PageEmbed` would each have spelled the same `{ pushState, onAction }` pair; it is a single `nativeEditorMenu` const the three now pass. Wiring it also reached the hover preview's editor, whose suite had to learn the two channels.
 - **Task 9 — the chord is matched at the editor, not at the window.** The plan pointed at `App.tsx`'s window-level keydown as where chords are matched; that listener knows nothing about which editor has focus, and the paste needs the `EditorView` it is aimed at. The binding stays data in `DEFAULT_COMMANDS` as planned, but it is read live inside the paste extension — the same place and for the same reason the personalization knobs are read there rather than closed over at mount.
 - **Task 9 — deciding and writing split apart.** Claiming the paste event after the write left a window where anything throwing in between produced the link *and* the platform's own literal paste, which a missing test stub surfaced as a doubled document. The decision is now its own call, so the event is claimed on the decision alone.
 - **Task 8 — no new `ConnMenuContext` field, and the compile error landed in the other branch.** The plan had the context gain a field distinguishing a markdown link from a wikilink; `external` already draws that line, and `editable` already says whether the surface can take an edit, so the url branch reads both from what was there. The predicted enforcement arrived from the opposite direction: widening `ConnMenuAction` broke the *page* branch's `default: target.apply?.(action)`, whose parameter is `ConnEditAction` — so the two authoring ids are now named explicitly there, and the url branch routes through an `isConnUrlAction` guard.

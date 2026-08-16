@@ -17,17 +17,27 @@ class ResizeObserverStub {
 const page = { id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }
 const detail = { id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md', frontmatter: {}, body: 'hi' }
 
+/** The bridge a mounted preview reads. The editor inside it takes the native-menu seam like every
+ *  other surface, so every stub carries those two channels whatever else a test drives. */
+const stubNexus = (extra: Record<string, unknown>): void => {
+  ;(window as unknown as { nexus: unknown }).nexus = {
+    setEditorFormatState: () => {},
+    onMenuAction: () => () => {},
+    ...extra,
+  }
+}
+
 let host: HTMLDivElement
 let root: Root
 
 beforeEach(() => {
   useSession.setState({ activeTabId: 'tab-1' })
-  ;(window as unknown as { nexus: unknown }).nexus = {
+  stubNexus({
     hoverCard: {
       load: async () => ({ ok: true, value: null }),
       save: async () => ({ ok: true, value: null }),
     },
-  }
+  })
   cachePageDetail(detail)
   host = document.createElement('div')
   document.body.appendChild(host)
@@ -65,9 +75,7 @@ describe('the hover entry', () => {
 
   it('a cold page opens only once its fetch lands, still under the pointer', async () => {
     dropPageDetail(page.path)
-    ;(window as unknown as { nexus: unknown }).nexus = {
-      openPage: async () => ({ ok: true, value: detail }),
-    }
+    stubNexus({ openPage: async () => ({ ok: true, value: detail }) })
     const el = link()
     const hoverSpy = vi.spyOn(el, 'matches').mockReturnValue(true)
     act(() => hoverConnection(page, el))
@@ -79,9 +87,7 @@ describe('the hover entry', () => {
 
   it('a flick-away during the fetch opens nothing', async () => {
     dropPageDetail(page.path)
-    ;(window as unknown as { nexus: unknown }).nexus = {
-      openPage: async () => ({ ok: true, value: detail }),
-    }
+    stubNexus({ openPage: async () => ({ ok: true, value: detail }) })
     const el = link()
     vi.spyOn(el, 'matches').mockReturnValue(false)
     act(() => hoverConnection(page, el))
@@ -91,9 +97,7 @@ describe('the hover entry', () => {
 
   it('a failed open blooms nothing', async () => {
     dropPageDetail(page.path)
-    ;(window as unknown as { nexus: unknown }).nexus = {
-      openPage: async () => ({ ok: false, error: { code: 'io', message: 'gone' } }),
-    }
+    stubNexus({ openPage: async () => ({ ok: false, error: { code: 'io', message: 'gone' } }) })
     act(() => hoverConnection(page, link()))
     await flush()
     expect(cardOpen()).toBe(false)

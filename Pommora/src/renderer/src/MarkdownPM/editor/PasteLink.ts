@@ -1,5 +1,6 @@
 import { EditorView } from '@codemirror/view'
 import { decidePaste, pastedUrl, type LinkPaste } from '@shared/PasteLink'
+import { pasteAsTarget, pasteAsWrite, type PasteAsForm } from '@shared/PasteAsMenu'
 import { matchesCommand } from '../../Commands'
 import { useSession } from '../../store'
 import { awaitTitle } from './PendingTitle'
@@ -56,6 +57,24 @@ function writeLink(view: EditorView, link: LinkPaste): void {
   // Fire-and-forget into the shared cache: the anchor above is what picks the answer back up, and a
   // property cell showing the same address gets it for free.
   if (link.wantsTitle) useSession.getState().resolveLinkTitle(link.target)
+}
+
+/** Paste As: put the clipboard in as the form the menu picked, rather than as whatever the settings
+ *  would have made of it. The forms are decided and written by the shared model, so this menu can
+ *  never offer something the writer can't produce. */
+export async function pasteAs(view: EditorView, form: PasteAsForm): Promise<void> {
+  const text = await window.nexus.readClipboard()
+  // The menu is popped by main and can be held open indefinitely — the surface it was popped over
+  // may be gone, and a table cell's editor is destroyed the moment its cell deactivates.
+  if (!text || !view.dom.isConnected || view.state.readOnly) return
+  if (view.state.selection.ranges.length !== 1) return
+  const target = pasteAsTarget(text)
+  const cached = target?.kind === 'url' ? useSession.getState().linkTitles[target.url] : undefined
+  const write = pasteAsWrite(target, form, cached)
+  if (!write) return
+  if (write.kind === 'link') writeLink(view, write)
+  else view.dispatch(view.state.replaceSelection(write.text))
+  view.focus()
 }
 
 export const pasteLink = EditorView.domEventHandlers({
