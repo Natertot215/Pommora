@@ -2,7 +2,8 @@ import { useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { EntityIcon } from '@renderer/Components/EntityIcon'
 import { Icon } from '@renderer/design-system/symbols'
-import { NotchedPane } from '@renderer/design-system/components/NotchedPane'
+import { GlassPane } from '@renderer/design-system/materials'
+import { cx } from '@renderer/design-system/cx'
 import { dropdownOpen, dropdownClose } from '@renderer/design-system/animations.css'
 import { useExitPresence } from '@renderer/design-system/useExitPresence'
 import { ChipRemoveButton } from '@renderer/Components/Chip'
@@ -42,12 +43,10 @@ export function AutocompletePanel({
   // to ITSELF — misplacing and clipping the panel. Popups never render inside a
   // tile's subtree.
   return createPortal(
-    // The shared beak-less pane surface (PickerMenu's own), beak height zero — the panel stays
-    // caret-anchored fixed with no backdrop; only the chrome is shared.
-    <NotchedPane
-      notchHeight={0}
-      className="mdpm-ac"
-      animationClass={closing ? dropdownClose : dropdownOpen}
+    // The house pane material, mounted directly: the panel stays caret-anchored fixed with no
+    // backdrop, so it needs the glass and nothing else a menu shell would bring.
+    <GlassPane
+      className={cx('mdpm-ac', closing ? dropdownClose : dropdownOpen)}
       style={
         {
           position: 'fixed',
@@ -93,7 +92,7 @@ export function AutocompletePanel({
           )}
         </div>
       ))}
-    </NotchedPane>,
+    </GlassPane>,
     document.body,
   )
 }

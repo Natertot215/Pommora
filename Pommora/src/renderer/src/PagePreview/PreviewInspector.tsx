@@ -9,7 +9,6 @@ import { asRenderableIcon, Icon } from '@renderer/design-system/symbols'
 import { propertyTypeIconName } from '../Components/Detail/PropertyTypes'
 import { text } from '@renderer/design-system/tokens'
 import { PickerMenu, PickerOption } from '@renderer/design-system/components/PickerMenu'
-import { iconOption } from '@renderer/design-system/components/PickerMenu/pickerMenu.css'
 import { Cell } from '../Detail/Views/Table/Cell'
 import { buildResolveContext, type ResolveContext } from '../Detail/Views/Table/resolveContext'
 import { contextOptionsFor } from '../Detail/Views/pipeline/contextOptions'
@@ -314,21 +313,23 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
           {contextRows
             .filter((t) => !isAssigned(t.id))
             .map((t) => (
-              <PickerOption key={t.id} onClick={() => revealAndEdit(t.id)}>
-                <span className={iconOption}>
-                  <Icon name={t.icon} size={13} />
-                  {t.label}
-                </span>
+              <PickerOption
+                key={t.id}
+                leading={<Icon name={t.icon} size={13} />}
+                onClick={() => revealAndEdit(t.id)}
+              >
+                {t.label}
               </PickerOption>
             ))}
           {schema
             .filter((d) => !isAssigned(d.id))
             .map((d) => (
-              <PickerOption key={d.id} onClick={() => revealAndEdit(d.id, d)}>
-                <span className={iconOption}>
-                  <Icon name={propertyIcon(d)} size={13} />
-                  {d.name}
-                </span>
+              <PickerOption
+                key={d.id}
+                leading={<Icon name={propertyIcon(d)} size={13} />}
+                onClick={() => revealAndEdit(d.id, d)}
+              >
+                {d.name}
               </PickerOption>
             ))}
         </PickerMenu>

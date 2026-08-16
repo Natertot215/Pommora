@@ -1,7 +1,6 @@
 import { useRef, useState } from 'react'
 import { Icon } from '@renderer/design-system/symbols'
-import { PickerMenu, PickerOption } from '../../design-system/components/PickerMenu'
-import { iconOption } from '@renderer/design-system/components/PickerMenu/pickerMenu.css'
+import { PickerMenu, MenuOption } from '../../design-system/components/PickerMenu'
 import * as s from './pickerControl.css'
 
 export type PickerChoice<T extends string> = {
@@ -14,7 +13,7 @@ export const labelOf = <T extends string>(opts: PickerChoice<T>[], v: T): string
   opts.find((o) => o.value === v)?.label ?? opts[0].label
 
 /** Two options toggle in place — a dual-option control is always a toggleable double-chevron, never
- *  a dropdown; three+ pop a centered PickerMenu of radio options. */
+ *  a dropdown; three+ pop a centered PickerMenu, the house surface for a fixed option set. */
 export function PickerControl<T extends string>({
   ariaLabel,
   value,
@@ -60,23 +59,17 @@ export function PickerControl<T extends string>({
         solid={solid}
       >
         {options.map((o) => (
-          <PickerOption
+          <MenuOption
             key={o.value}
             selected={o.value === value}
+            leading={o.icon ? <Icon name={o.icon} size={13} /> : undefined}
             onClick={() => {
               onPick(o.value)
               setOpen(false)
             }}
           >
-            {o.icon ? (
-              <span className={iconOption}>
-                <Icon name={o.icon} size={13} />
-                {o.label}
-              </span>
-            ) : (
-              o.label
-            )}
-          </PickerOption>
+            {o.label}
+          </MenuOption>
         ))}
       </PickerMenu>
     </>

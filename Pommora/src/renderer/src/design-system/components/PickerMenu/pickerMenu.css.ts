@@ -5,6 +5,7 @@ import { TINT_STEPS, tintAt } from '../../tokens/tint'
 import { stack } from '../../tokens/stack'
 import { dropdownAnchor } from '../dropdownAnchor'
 import { fieldRing, ROW_RING } from '../fieldRing'
+import { rowShell } from '../menu/menu.css'
 
 const c = colorVars.color
 
@@ -70,8 +71,19 @@ globalStyle(BELOW.flatMap((b) => ABOVE.map((a) => `${b} ${optionRing}:has(${a})`
 })
 
 export const anchor = style(dropdownAnchor('center', stack.local.overlay))
-/** Upward-opening variant — the pane hangs ABOVE its trigger (beak-down NotchedPane). */
+/** Upward-opening variant — the pane hangs ABOVE its trigger. */
 export const anchorUp = style(dropdownAnchor('up', stack.local.overlay))
+
+/** THE chosen-row mark, for every menu that marks one — a row wearing a different mark from the row
+ *  beside it is a bug, not a variant. It carries the accent whole rather than at a tint step: the
+ *  tints exist to keep a FILL off the label underneath, and a glyph has no label to protect. It also
+ *  has to override the trailing slot's secondary tone, which is the tone for detail, not for state. */
+export const chosenMark = style({ color: 'var(--accent)', flex: 'none' })
+
+/** The mark slot is laid out on EVERY row and only painted on the chosen one: rendering it
+ *  conditionally would resize the pane whenever the selection moved between labels of unequal
+ *  length. */
+export const chosenMarkHidden = style({ visibility: 'hidden' })
 /** The self-managed top layer — a fixed body-portal position (set inline from the measured trigger)
  *  so the pane escapes any clipping ancestor (the settings dropdown's frost clip). */
 export const layer = style({ position: 'fixed', zIndex: stack.top.menu })
@@ -80,22 +92,24 @@ export const layer = style({ position: 'fixed', zIndex: stack.top.menu })
  *  on the trigger itself) lands here and dismisses, so the trigger's own click can't reopen. */
 export const backdrop = style({ position: 'fixed', inset: 0, zIndex: stack.top.menuBackdrop })
 
-// GlassPane's rect border/shadow are suppressed by NotchedPane (can't trace the beak); the top
-// gutter clears the beak band via the shell's published --notch-h.
-export const surface = style({
+/** KNOB — the pane's corner radius. `MenuSurface` is the one shell that still wears a beak; this one
+ *  is a plain rounded rect, so its gutter is even on all four sides and needs no directional twin. */
+export const PANE_RADIUS = 12
+
+/** The shape itself, worn by every pane including the bare ones — it rounds the frost, the
+ *  material's own border, and the scrolled body in a single declaration. */
+export const pane = style({
   position: 'relative',
   zIndex: 0,
-  padding: '0 6px 6px',
-  paddingTop: 'calc(var(--notch-h, 0px) + 6px)',
+  borderRadius: `${PANE_RADIUS}px`,
+})
+
+/** The default gutter, for a pane that doesn't bring its own. */
+export const surface = style({
+  padding: '4px',
   display: 'flex',
   flexDirection: 'column',
   gap: '2px',
-})
-/** Beak-down twin: the notch band moves to the bottom gutter. Composed after `surface` so its
- *  padding wins. */
-export const surfaceUp = style({
-  paddingTop: '6px',
-  paddingBottom: 'calc(var(--notch-h, 0px) + 6px)',
 })
 
 // The portal escapes any label-tone context, so the option must set its OWN type + colour (else it
@@ -103,6 +117,7 @@ export const surfaceUp = style({
 // control scale at the control tone.
 export const option = style([
   text.control.standard,
+  rowShell,
   {
     display: 'flex',
     alignItems: 'center',
@@ -111,18 +126,7 @@ export const option = style([
     padding: '3px 4px',
     border: 'none',
     background: 'none',
-    borderRadius: '8px',
     color: c.label.control,
-    cursor: 'default',
-    selectors: {
-      '&:hover': { background: c.state.hover },
-
-      '&:focus-visible': {
-        outline: 'none',
-        boxShadow: fieldRing(ROW_RING),
-        vars: { '--field-ring': tintAt('var(--accent)', TINT_STEPS.secondary) },
-      },
-    },
   },
 ])
 
@@ -131,12 +135,13 @@ export const optionSelected = style({
   selectors: { '&:hover': { background: c.state.selected } },
 })
 
-/** An icon-bearing option row — leading glyph + label, LEFT-aligned (the option's own centering
- *  yields to the row layout when a glyph leads). */
-export const iconOption = style({
+/** The layout a glyph-led option takes — the option's own centring yields to it. Not exported: the
+ *  alignment is `PickerOption`'s `leading` slot's business, not a caller's. */
+const leadingRow = style({
   display: 'flex',
   alignItems: 'center',
   gap: '6px',
   width: '100%',
   justifyContent: 'flex-start',
 })
+export { leadingRow }

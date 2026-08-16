@@ -45,7 +45,6 @@ import { cx } from '../../design-system/cx'
 import { useSaveView } from '../../Embeds/ViewEmbedScope'
 import { useSession } from '../../store'
 import { PickerControl, type PickerChoice } from './PickerControl'
-import { iconOption } from '@renderer/design-system/components/PickerMenu/pickerMenu.css'
 import { optionsOf } from './GroupingPane'
 import {
   type Connector,
@@ -588,15 +587,13 @@ export function FilterPane({
       <PickerOption
         key={t.id}
         selected={false}
+        leading={<Icon name={t.icon ?? 'tag'} size={13} />}
         onClick={() => {
           close()
           onPick(t.id)
         }}
       >
-        <span className={iconOption}>
-          <Icon name={t.icon ?? 'tag'} size={13} />
-          {t.label}
-        </span>
+        {t.label}
       </PickerOption>
     ))
 
@@ -748,6 +745,7 @@ export function FilterPane({
                     key={o.label}
                     selected={o === current}
                     ring
+                    {...(isCheckbox ? { leading: checkboxBox(o) } : {})}
                     onClick={() => {
                       close()
                       // Operands survive only within the same slot; an implied value writes through.
@@ -766,14 +764,7 @@ export function FilterPane({
                       })
                     }}
                   >
-                    {isCheckbox ? (
-                      <span className={iconOption}>
-                        {checkboxBox(o)}
-                        {o.label}
-                      </span>
-                    ) : (
-                      o.label
-                    )}
+                    {o.label}
                   </PickerOption>
                 )
               })

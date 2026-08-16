@@ -5,8 +5,8 @@ import { useIsCompact } from './helpers'
 // Materials · Glass — a live tuner for the Pommora CSS frost. A param-driven glass
 // panel over a switchable backdrop, with the knobs as a side rail on desktop and a
 // dropdown on a compact screen. "Window" / "Surface" / "Control" restore the three
-// material presets (identical today — all are `frostMaterial` — but distinct slots
-// ready to diverge, mirroring GlassWindow / GlassSurface / GlassControls).
+// material presets. The knobs below mirror the SURFACE recipe (glass-material.ts); the
+// pane tier runs the same recipe a step dimmer, and the window tier adds a body to that.
 
 type FrostParams = {
   blur: number

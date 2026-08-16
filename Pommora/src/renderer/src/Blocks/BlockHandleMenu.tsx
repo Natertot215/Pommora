@@ -8,7 +8,7 @@ import type {
   ViewPickerItem,
 } from '@shared/blocks'
 import { Icon } from '@renderer/design-system/symbols'
-import { PickerMenu } from '@renderer/design-system/components/PickerMenu'
+import { PickerMenu, MenuOption } from '@renderer/design-system/components/PickerMenu'
 import { PICKER_MAX_HEIGHT } from '@renderer/design-system/components/PickerMenu/pickerMenu.css'
 import {
   MenuBottomRow,
@@ -343,14 +343,14 @@ export function BlockHandleMenu({
       />
 
       {(['bordered', 'borderless'] as const).map((v) => (
-        <MenuItem
+        <MenuOption
           key={v}
           className={s.row}
-          trailing={style === v ? <Icon name="check" size={GLYPH} /> : undefined}
+          selected={style === v}
           onClick={act(() => onStyle(v))}
         >
           {v === 'bordered' ? 'Bordered' : 'Borderless'}
-        </MenuItem>
+        </MenuOption>
       ))}
     </div>
   )
@@ -384,18 +384,14 @@ export function BlockHandleMenu({
         <PickerMenu open triggerRef={scaleTriggerRef} solid>
           <div className={cx(s.barScale, s.scaleMenu)} data-scale-menu>
             {ZOOM_STEPS.map((st) => (
-              <MenuItem
+              <MenuOption
                 key={st.label}
                 className={s.row}
-                trailing={
-                  currentStep.factor === st.factor ? (
-                    <Icon name="check" size={GLYPH} className={s.scaleCheck} />
-                  ) : undefined
-                }
+                selected={currentStep.factor === st.factor}
                 onClick={() => onSetZoom?.(st.factor)}
               >
                 {st.label}
-              </MenuItem>
+              </MenuOption>
             ))}
           </div>
         </PickerMenu>

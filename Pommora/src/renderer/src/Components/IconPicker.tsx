@@ -25,7 +25,7 @@ const { CELL } = s
 interface Props {
   open: boolean
   onClose: () => void
-  /** The element the beak points at (an icon glyph is an SVG, so `Element`, not just `HTMLElement`).
+  /** The element the pane anchors to (an icon glyph is an SVG, so `Element`, not just `HTMLElement`).
    *  Omit ⇒ PickerMenu anchors to the picker's own mount point. */
   triggerRef?: RefObject<Element | null>
   value?: string
@@ -122,8 +122,6 @@ export function IconPicker({
     scrollMargin,
   })
 
-  const beak = { down: s.beakDown, up: s.beakUp, left: s.beakLeft, right: s.beakRight }[direction]
-
   return (
     <PickerMenu
       open={open}
@@ -132,7 +130,7 @@ export function IconPicker({
       direction={direction}
       origin="center"
       bareSurface
-      contentClassName={cx(s.content, beak)}
+      contentClassName={s.content}
     >
       <SearchField
         className={s.search}

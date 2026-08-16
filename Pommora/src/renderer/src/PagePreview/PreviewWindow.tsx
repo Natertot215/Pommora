@@ -191,7 +191,6 @@ function PreviewWindowBody({
       onEscape={() => (inspectorOpen ? setInspectorOpen(false) : closePreview())}
       dragSurfaces={DRAG_SURFACES}
       ariaLabel="Page Preview"
-      tintOpacity={85}
       // --mdpm-scale mirrors the embed's so the footer aligns to its text column.
       style={{ '--mdpm-scale': EMBED_SCALE } as React.CSSProperties}
       onScan={promote}

@@ -196,7 +196,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   const beginGesture = usePointerGesture()
   const [iconPickerOpen, setIconPickerOpen] = useState(false)
   // The page a title:icon menu targeted (captured before the menu await — the row is out of scope by
-  // the time the picker commits). The cell element anchors the picker's beak.
+  // the time the picker commits). The cell element is what the picker anchors to.
   const [iconTarget, setIconTarget] = useState<{ path: string; icon?: string } | null>(null)
   const iconCellRef = useRef<HTMLElement | null>(null)
   // Columns fit → the rounded content-inset look; columns overflow → the right inset flattens and

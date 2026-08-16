@@ -2,8 +2,12 @@ import { useState, type ReactNode } from 'react'
 import { ChipsLeaf } from './ChipsLeaf'
 import { MenuLeaf } from './MenuLeaf'
 import { CalendarPicker } from '@renderer/design-system/components/CalendarPicker/CalendarPicker'
-import { PickerMenu, PickerOption } from '@renderer/design-system/components/PickerMenu/PickerMenu'
-import { NotchedPane } from '@renderer/design-system/components/NotchedPane'
+import {
+  PickerMenu,
+  PickerOption,
+  MenuOption,
+} from '@renderer/design-system/components/PickerMenu/PickerMenu'
+import { MenuSurface } from '@renderer/design-system/components/menu'
 import { Chip } from '@renderer/Components/Chip'
 import { condensedDate, formatDate } from '@renderer/Detail/Views/PropertyEditing/formatValue'
 
@@ -37,6 +41,9 @@ const PICKER_LABELS = [
   { label: 'Complete', color: 'green' },
 ] as const
 
+// A fixed option set — what a popout is for, against the picker's user-authored values above.
+const POPOUT_LABELS = ['As Link', 'As Title', 'Plain URL'] as const
+
 /** ONE components page holds it all: the popup triggers, the chip system (with switches +
  *  checkboxes), and the menu primitives. Adding a component = a section or a PopupButton here. */
 export function ComponentsLeaf(): React.JSX.Element {
@@ -65,10 +72,19 @@ export function ComponentsLeaf(): React.JSX.Element {
               ))}
             </PickerMenu>
           </PopupButton>
-          <PopupButton label="NotchedPane">
-            <NotchedPane solid style={{ padding: '18px 22px' }}>
-              <span>The notched dropdown chrome — frost clip + outline + beak.</span>
-            </NotchedPane>
+          <PopupButton label="MenuOption rows">
+            <PickerMenu solid>
+              {POPOUT_LABELS.map((label, i) => (
+                <MenuOption key={label} selected={i === 0} onClick={() => {}}>
+                  {label}
+                </MenuOption>
+              ))}
+            </PickerMenu>
+          </PopupButton>
+          <PopupButton label="MenuSurface">
+            <MenuSurface>
+              <span>The beaked dropdown chrome — frost clip + outline + beak.</span>
+            </MenuSurface>
           </PopupButton>
         </div>
       </section>
