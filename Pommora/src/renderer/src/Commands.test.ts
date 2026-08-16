@@ -27,5 +27,14 @@ describe('matchesCommand', () => {
   it('an absent or empty spec never matches', () => {
     expect(matchesCommand(undefined, key('e', { metaKey: true }))).toBe(false)
     expect(matchesCommand('', key('e', { metaKey: true }))).toBe(false)
+    expect(matchesCommand('+++', key('e', { metaKey: true }))).toBe(false)
+  })
+  // Asked repeatedly on a keydown path, so the answer must not drift once a spec has been parsed
+  // and kept.
+  it('answers a repeated spec the same way every time', () => {
+    for (let i = 0; i < 3; i++) {
+      expect(matchesCommand('cmd+shift+v', key('v', { metaKey: true, shiftKey: true }))).toBe(true)
+      expect(matchesCommand('cmd+shift+v', key('v', { metaKey: true }))).toBe(false)
+    }
   })
 })
