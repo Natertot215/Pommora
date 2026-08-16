@@ -1,4 +1,4 @@
-import { styleMenuItems, type StyleMenuItem } from './columnMenu'
+import { styleMenuItems, styleMenuLabel, type StyleMenuItem } from './columnMenu'
 import type { ColumnStyle } from './columnStyles'
 import {
   type PageMetaAction,
@@ -46,8 +46,9 @@ export type CellMenuAction =
 
 export interface CellMenuModel {
   items: Array<{ label: string; action: CellMenuAction; separatorBefore?: boolean }>
-  /** Rendered as a `Style ▸` submenu ahead of `items` when present. */
+  /** Rendered as a submenu ahead of `items` when present, under `styleLabel`. */
   style?: StyleMenuItem[]
+  styleLabel?: string
 }
 
 /** The right-click menu context for a value cell: title = page meta; url/file = the column's
@@ -133,11 +134,13 @@ function baseCellMenuModel(ctx: CellMenuContext): CellMenuModel {
       return {
         items: ctx.clearable ? [{ label: 'Clear', action: 'cell:clear' }] : [],
         style: styleMenuItems({ type: ctx.type, current: ctx.current, barCapable: ctx.barCapable }),
+        styleLabel: styleMenuLabel(ctx.type),
       }
     case 'style-edit':
       return {
         items: [{ label: 'Edit', action: 'cell:edit' }],
         style: styleMenuItems({ type: ctx.type, current: ctx.current }),
+        styleLabel: styleMenuLabel(ctx.type),
       }
     case 'link':
       // A URL / Link cell: Edit the URL inline; a FILLED one adds Rename (give it an alias) + Clear

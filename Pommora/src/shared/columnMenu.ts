@@ -39,6 +39,13 @@ export interface StyleMenuContext {
   barCapable?: boolean
 }
 
+/** What a type's own submenu is called. The two whose rows name a *format* say so — a url's three
+ *  link forms and a number's, which its own editor pane has always called Format — while the rest
+ *  offer looks, which is a different word for a different thing. (Nathan's call) */
+export function styleMenuLabel(type: PropertyType): string {
+  return type === 'url' || type === 'number' ? 'Format' : 'Style'
+}
+
 /** One Style submenu row — a radio keyed by the ColumnStyle field it sets. `separatorBefore`
  *  splits the datetime menu's date radios from its time radios (Electron groups radios per
  *  separator-bounded run, so the two groups check independently). */
