@@ -536,10 +536,10 @@ It is built **on the menu `installEditorContextMenu` already pops**, not as a re
 - [ ] **Phase 2** — The settings · base `ad635af5`
   - [x] Task 3 — Three personalization keys · `360ebf91`
   - [x] Task 4 — Generalize the settings leaf to row kinds · `a450973b`, simplified in `81d80804`
-- [ ] **Phase 3** — The paste path
-  - [ ] Task 5 — The paste formatter · `<commit>`
-  - [ ] Task 6 — Mount the paste handler in both editors · `<commit>`
-  - [ ] Task 7 — The deferred Page Title rewrite · `<commit>`
+- [x] **Phase 3** — The paste path · base `e84d5509`
+  - [x] Task 5 — The paste formatter · `5f50d9f3`
+  - [x] Task 6 — Mount the paste handler in both editors · `6ceaa384`
+  - [x] Task 7 — The deferred Page Title rewrite · `44c47449`, simplified in `3db60832`
 - [ ] **Phase 4** — The menus
   - [ ] Task 8 — `Format >` on the link menu · `<commit>`
   - [ ] Task 9 — The inverse-paste chord · `<commit>`
@@ -595,6 +595,8 @@ Not blocking, still open:
 - **Task 1 — two comments the Made False table missed.** `encodeLinkTarget`'s doc block and its inline note both justified escaping a page title's parens by "the grammar's target group ends at the first `)`", and `links.test.ts` carried the same sentence over the escaping test. Widening the grammar falsifies all three. The escaping itself stays load-bearing for a changed reason — a page title's parens need not balance, and a lone `(` now leaves the link untokenizable rather than merely truncated — so the comments were restated rather than dropped, in Task 1's commit.
 - **Task 2 — the whole `linkValue` module moved, not just the formatter.** The correction recorded moving `linkDisplayText` into `src/shared/`; in practice it calls `parseLink` from the same file, so moving one without the other would need either a second parser or a shared module importing the renderer. The module is already pure, so it moved whole to `src/shared/linkValue.ts` beside `propertyValue.ts`, with its nine importers repointed to `@shared/linkValue`. It kept its camelCase name to match every other file in `shared/`. Later tasks import the formatter from there.
 - **Task 2 — the `'link-url'` sweep floor is 1, not 0.** The migration test feeds the old value deliberately to prove `.catch(undefined)` drops it and the call-site default catches it. That is the evidence the rename is free, so it stays; the Dead Vocabulary entry now names it as the one legitimate hit.
+- **Task 6 — `clipboard:read` deferred to Task 9**, for the same reason the picker variant was deferred to 6: nothing in Task 6 reads the clipboard through IPC, because a `paste` event carries its own `clipboardData`. The channel lands with the keydown-matched chord that actually needs it.
+- **Task 6 — two fixes the work surfaced, neither in the plan.** The row separator had to be scoped to direct children of the section: a disclosed row sits inside `Reveal`'s wrapper, where it matches `:last-child` and loses the rule it still needs — the opposite of the stray-rule problem the plan predicted. And the test setup needed a `Range.getClientRects` stub: CodeMirror measures a Range to learn its default character size, which it only does when the document is empty, so any editor suite mounting a blank doc took an uncaught TypeError out of a `requestAnimationFrame` *after* its tests passed — vitest exits non-zero on that while reporting every test green.
 - **Task 4 — the `picker` row variant deferred to Task 6.** The plan had Task 4 introduce all three variants (`toggle` · `picker` · `slider`), but only `toggle` and `slider` have rows to exercise them at this point. A `picker` member with no consumer is a type written against a guess at what Task 6 needs, and nothing verifies it until then. Task 6 adds the variant with its first row, which is a small edit to a union that has already proven it generalizes by absorbing `LingerRow`. Task 4's baseline invariant is unaffected.
 - **Task 1 — the derivation count in the task body was stale.** It read 6 with an enumeration omitting `detect/detect.test.ts`; the correction to 10 had been recorded under Open Against Later Tasks but never folded into the task. Re-derived at 10 across six files and the body rewritten to match.
 
