@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseStyleAction, styleMenuItems, type StyleMenuContext } from './columnMenu'
+import { styleMenuLabel, parseStyleAction, styleMenuItems, type StyleMenuContext } from './columnMenu'
 
 const items = (
   type: StyleMenuContext['type'],
@@ -112,5 +112,17 @@ describe('parseStyleAction', () => {
   it('rejects non-style or malformed actions', () => {
     expect(parseStyleAction('align:left')).toBeNull()
     expect(parseStyleAction('style:bogus_key:x')).toBeNull()
+  })
+})
+
+// Two types' rows name a value's format; the rest offer looks, which is a different word.
+describe('styleMenuLabel', () => {
+  it('says Format for the two whose rows are one', () => {
+    expect(styleMenuLabel('url')).toBe('Format')
+    expect(styleMenuLabel('number')).toBe('Format')
+  })
+  it('leaves the rest as Style', () => {
+    for (const t of ['status', 'checkbox', 'file', 'datetime', 'last_edited_time'] as const)
+      expect(styleMenuLabel(t)).toBe('Style')
   })
 })
