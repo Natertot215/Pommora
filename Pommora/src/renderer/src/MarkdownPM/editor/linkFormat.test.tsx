@@ -123,6 +123,13 @@ describe('the three that act on the link itself', () => {
     expect(view.state.sliceDoc(sel.from, sel.to)).toBe('Home')
   })
 
+  // Both halves are selected rather than merely reached: each is a thing you replace outright.
+  it('Edit Link selects the address', async () => {
+    const view = await choose('editLink')
+    const sel = view.state.selection.main
+    expect(view.state.sliceDoc(sel.from, sel.to)).toBe(URL)
+  })
+
   it('Remove Link leaves the label as prose', async () => {
     const view = await choose('link:remove')
     expect(view.state.doc.toString()).toBe('a Home b')

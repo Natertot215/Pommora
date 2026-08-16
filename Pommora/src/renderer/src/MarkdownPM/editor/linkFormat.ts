@@ -37,6 +37,14 @@ export function applyUrlLinkAction(
     case 'rename':
       focusRange(view, at(tk.contentRange[0]), at(tk.contentRange[1]))
       return
+    // Both halves are selected rather than merely reached, because both are things you replace: the
+    // words you show, and the address they point at. The wikilink form seats a bare caret instead —
+    // its target is a page title you nudge, not an address you retype.
+    case 'editLink': {
+      const [, close] = tk.markerRanges
+      focusRange(view, at(close[0]) + 2, at(close[1]) - 1)
+      return
+    }
     case 'link:remove':
       // The label survived the link syntax escaped; as prose it is just the words again.
       view.dispatch({
