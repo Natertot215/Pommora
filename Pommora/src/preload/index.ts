@@ -55,6 +55,8 @@ const api = {
   container: { configure: ask('container:configure') },
   // The ViewDropdown right-click menu — resolves the picked action (or null on dismiss).
   viewButtonMenu: ask('view-button-menu'),
+  // A saved view row's right-click menu, shared by the view pane and the view embed's segments.
+  viewRowMenu: ask('view-row-menu'),
   // The view embed's title-row right-click menu (Hide/Show Icon · Title Size · Hide Title).
   viewEmbedTitleMenu: ask('view-embed-title-menu'),
   // The view embed switcher area's right-click menu (Hide/Show Titles · New View · Style).

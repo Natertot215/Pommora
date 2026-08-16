@@ -14,7 +14,6 @@ import { vars as colorVars } from '@renderer/design-system/tokens/color.css'
 import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
 import { TINT_STEPS, tintAt } from '@renderer/design-system/tokens/tint'
 import { ColorPicker } from '@renderer/Components/Detail/ColorPicker'
-import { ViewRowMenu } from '@renderer/Components/ViewRowMenu'
 import { PickerMenu } from '@renderer/design-system/components/PickerMenu'
 import {
   AccessoryButton,
@@ -237,12 +236,6 @@ export function ViewEmbedBlock({
   const [renaming, setRenaming] = useState<number | null>(null)
   const [iconFor, setIconFor] = useState<number | null>(null)
   const [colorFor, setColorFor] = useState<number | null>(null)
-  const [rowMenuAt, setRowMenuAt] = useState<{
-    i: number
-    animate: boolean
-    x: number
-    y: number
-  } | null>(null)
   // The right-clicked segment/row — captured at menu time so every follow-up picker
   // (icon, color) drops from the chip itself, never the embed. Element, not HTMLElement: the title
   // row's anchor is the SVG icon glyph.
@@ -421,12 +414,30 @@ export function ViewEmbedBlock({
     else if (action === 'style-toolbar') patchEntry({ view_style: undefined })
   }
   // `animate` routes the pill's delete through the slide-out; the dropdown list removes in place.
-  const rowMenu = (i: number, e: React.MouseEvent, animate: boolean): void => {
+  const rowMenu = async (i: number, e: React.MouseEvent, animate: boolean): Promise<void> => {
     e.preventDefault()
     e.stopPropagation() // the switcher row underneath owns the area menu
     if (locked) return
     menuAnchorRef.current = e.currentTarget as HTMLElement
-    setRowMenuAt({ i, animate, x: e.clientX, y: e.clientY })
+    const action = await window.nexus.viewRowMenu({
+      colorable: true,
+      titlesShown: labeled,
+      deletable: entry.views.length > 1,
+    })
+    switch (action) {
+      case 'rename':
+        return setRenaming(i)
+      case 'icon':
+        return setIconFor(i)
+      case 'color':
+        return setColorFor(i)
+      case 'titles':
+        return toggleTitles()
+      case 'delete':
+        return (animate ? beginDeleteView : deleteViewAt)(i)
+      default:
+        return
+    }
   }
   const pillAnimEnd = (id: string): void => {
     if (exitingId === id) finishExit(id)
@@ -508,7 +519,7 @@ export function ViewEmbedBlock({
             labeled={labeled}
             renameNode={renaming === i ? renameField(i) : null}
             onSwitch={() => patchEntry({ active: i })}
-            onMenu={(e) => rowMenu(i, e, true)}
+            onMenu={(e) => void rowMenu(i, e, true)}
             onAnimEnd={() => pillAnimEnd(v.id)}
           />
         ))}
@@ -594,7 +605,7 @@ export function ViewEmbedBlock({
                     className={i === index ? optionRing : undefined}
                     leading={<Icon name={viewIcon(v)} size={16} />}
                     onClick={renaming === i ? undefined : () => patchEntry({ active: i })}
-                    onContextMenu={(e) => rowMenu(i, e, false)}
+                    onContextMenu={(e) => void rowMenu(i, e, false)}
                   >
                     {renaming === i ? renameField(i) : v.name}
                   </MenuItem>
@@ -603,18 +614,6 @@ export function ViewEmbedBlock({
             </MenuScrollFrame>
           </div>
         </PickerMenu>
-        {rowMenuAt && (
-          <ViewRowMenu
-            at={rowMenuAt}
-            onDismiss={() => setRowMenuAt(null)}
-            onRename={() => setRenaming(rowMenuAt.i)}
-            onIcon={() => setIconFor(rowMenuAt.i)}
-            onColor={() => setColorFor(rowMenuAt.i)}
-            titles={{ shown: labeled, onToggle: toggleTitles }}
-            onDelete={() => (rowMenuAt.animate ? beginDeleteView : deleteViewAt)(rowMenuAt.i)}
-            deletable={entry.views.length > 1}
-          />
-        )}
         <IconPicker
           open={iconFor !== null}
           onClose={() => setIconFor(null)}
