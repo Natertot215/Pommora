@@ -1,6 +1,7 @@
 import { EditorView } from '@codemirror/view'
 import { decidePaste, pastedUrl, type LinkPaste } from '@shared/PasteLink'
 import { pasteAsTarget, pasteAsWrite, type PasteAsForm } from '@shared/PasteAsMenu'
+import { DEFAULT_LINK_DISPLAY } from '@shared/properties'
 import { matchesCommand } from '../../Commands'
 import { useSession } from '../../store'
 import { awaitTitle } from './PendingTitle'
@@ -34,7 +35,7 @@ function linkFor(view: EditorView, text: string, inverse: boolean): LinkPaste | 
     autoFormat: personalization.autoFormatPastedLinks === true,
     pasteIntoText: personalization.pasteLinkIntoText === true,
     inverse,
-    format: personalization.defaultLinkFormat ?? 'link-full',
+    format: personalization.defaultLinkFormat ?? DEFAULT_LINK_DISPLAY,
     title: url ? linkTitles[url] : undefined,
   })
   return decision.kind === 'literal' ? null : decision

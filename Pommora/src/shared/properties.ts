@@ -33,6 +33,11 @@ export type LinkDisplay = (typeof LINK_DISPLAYS)[number]
 export const isLinkDisplay = (v: string | undefined): v is LinkDisplay =>
   (LINK_DISPLAYS as readonly (string | undefined)[]).includes(v)
 
+/** The form a link takes where nothing has said otherwise — a property with no Format set, a column
+ *  naming none, and the nexus-wide paste default. Read from the vocabulary rather than spelled at
+ *  each of those, so "the first is the default" is a fact one place holds. */
+export const DEFAULT_LINK_DISPLAY: LinkDisplay = LINK_DISPLAYS[0]
+
 /** What each form is called wherever one is picked — a URL property's Format control, the nexus-wide
  *  default in Settings, and a link's own Format menu, which main builds and so cannot read a
  *  renderer's list. */

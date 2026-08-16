@@ -199,6 +199,43 @@ describe('a link’s menu in a resting cell', () => {
     expect(settled).toHaveBeenCalled()
   })
 
+  // A native menu can be held open for as long as the user likes, and an undo or an outside write can
+  // move the cell underneath it — the same window the editor's own applier guards against.
+  it('declines once the cell no longer holds the link the menu was popped on', async () => {
+    committed.mockReset()
+    container = document.createElement('div')
+    document.body.appendChild(container)
+    root = createRoot(container)
+    let popped: ConnMenuTarget | null = null
+    const linked: ConnectionsApi = {
+      ...conn,
+      menu: (t) => {
+        popped = t
+      },
+    }
+    const render = (rows: string[][]): Promise<void> =>
+      act(async () =>
+        root.render(
+          createElement(TableView, {
+            ...props,
+            model: { ...model, rows },
+            connections: () => linked,
+            onCellCommit: (_r: number, _c: number, text: string) => committed(text),
+          }),
+        ),
+      )
+    await render([[`a [Home](${URL}) b`]])
+    const link = container.querySelector('.md-link') as HTMLElement
+    await act(async () => {
+      link.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }))
+    })
+    // The cell changes while the menu stands open.
+    await render([['something else entirely']])
+    const target = popped as ConnMenuTarget | null
+    if (target?.kind === 'url') await act(async () => target.apply?.('link:delete'))
+    expect(committed).not.toHaveBeenCalled()
+  })
+
   it('leaves the label as prose on Remove Link', async () => {
     await mountLink('link:remove')
     await rightClick()

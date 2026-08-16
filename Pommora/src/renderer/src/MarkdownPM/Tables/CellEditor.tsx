@@ -187,26 +187,24 @@ export function CellEditor({
       }),
     })
     viewRef.current = view
-    // Focus + land the caret: at the click point (posAtCoords) if one was captured, else at the end.
-    // posAtCoords reads layout and can throw before the view has measured — fall back to the end.
+    // Focus + land the caret: over the span a menu action asked for, else at the click point
+    // (posAtCoords) if one was captured, else at the end. posAtCoords reads layout and can throw
+    // before the view has measured — fall back to the end.
     view.focus()
-    if (initialSelect) {
-      const end = view.state.doc.length
-      view.dispatch({
-        selection: { anchor: Math.min(initialSelect[0], end), head: Math.min(initialSelect[1], end) },
-      })
-      return () => {
-        view.destroy()
-        viewRef.current = null
+    const end = view.state.doc.length
+    let pos: number | null = null
+    if (!initialSelect && caretCoords) {
+      try {
+        pos = view.posAtCoords(caretCoords)
+      } catch {
+        pos = null
       }
     }
-    let pos: number | null = null
-    try {
-      if (caretCoords) pos = view.posAtCoords({ x: caretCoords.x, y: caretCoords.y })
-    } catch {
-      pos = null
-    }
-    view.dispatch({ selection: { anchor: pos ?? view.state.doc.length } })
+    view.dispatch({
+      selection: initialSelect
+        ? { anchor: Math.min(initialSelect[0], end), head: Math.min(initialSelect[1], end) }
+        : { anchor: pos ?? end },
+    })
     return () => {
       view.destroy()
       viewRef.current = null
