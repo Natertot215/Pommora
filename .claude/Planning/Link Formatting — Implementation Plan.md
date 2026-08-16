@@ -21,7 +21,7 @@ Bounded to the link feature. The `PopupMenu` design-system split is a separate c
 6. `Format >` on a markdown link's right-click menu, rewriting the label only.
 7. `Paste As >` on the prose right-click menu, offering what the clipboard's target can become.
 8. All of it applies in every MarkdownPM surface, including table cells — with one ruled exception: `Paste As` is absent inside a markdown table, because main's prose menu does not pop over a non-editable widget (O-3, R4). Paste behavior and `Format >` still reach cells.
-9. A markdown link's right-click menu carries **Rename · Format ▸ · Copy Link · Delete**. Today an external-URL link is offered Copy Link alone, which is thinner than what a link needs to be editable at all. Added late, at Nathan's direction (R5).
+9. A markdown link's right-click menu carries **Rename · Format ▸ · Copy Link**, then below a separator **Remove Link · Delete**. Remove Link unwraps the link to its bare label text; Delete removes the whole `[label](target)` token. Today an external-URL link is offered Copy Link alone, which is thinner than what a link needs to be editable at all. Added late, at Nathan's direction (R5).
 
 **Acceptance — the whole thing working**
 
@@ -415,9 +415,16 @@ Default Format never applies to a wrap — the selection is the label. A clipboa
 - **Rename** — edit the `[…]` label. The wikilink menu's `rename` already means exactly this for an alias; the markdown form needs its own applier because `applyLinkAction` matches `t.kind === 'wikiLink'` and returns silently otherwise.
 - **Format ▸** — Full Link · Short Link · Page Title, rewriting the label only (Requirement 6). Page Title with no cached title writes Short Link and registers a `PendingTitle` anchor, reusing Task 7's machinery rather than a second mechanism.
 - **Copy Link** — already there; keep it.
-- **Delete** — **[open] see R5.** Removes the link. Whether that means the whole `[label](target)` token or an unwrap to the bare label text is Nathan's call and is not yet made.
+- **Remove Link** — unwraps to the bare label text, leaving `Mercury` where `[Mercury](https://…)` stood. What "remove link" means in every editor that has it.
+- **Delete** — removes the whole token, text and all.
 
-**Scope note:** these are for the *external-URL* branch. A markdown link whose target resolves to a page is drawn and menued as a connection, and Format has nothing to offer it. Whether that branch also gains Delete is part of R5.
+The last two sit **below a separator**, apart from the three that edit a link you are keeping. `main/pageMenu.ts` expands a `separatorBefore` flag into a real separator, which is the mechanism to use rather than a hand-placed `{ type: 'separator' }`.
+
+**Failure half for the pair:** an empty label (`[](url)`) → Remove Link leaves nothing, which is the same as Delete and is fine · a label carrying escapes (`\]`, `\\`) → Remove Link writes the *unescaped* text, since it is prose now and `unescapeAlias` is what reverses the writer · both guard the stale span the way `linkEdit.ts:21` does, because a native menu can be held open indefinitely.
+
+**Must agree:** Remove Link's output must equal the label Format would show for the same link — both read the label through the same accessor, or unwrapping a Short Link would produce different text than the link displayed.
+
+**Scope note:** these are for the *external-URL* branch. A markdown link whose target resolves to a page is drawn and menued as a connection, and Format has nothing to offer it. **[open]** Whether that connection menu also gains Remove Link and Delete is not decided; it already has Rename. Ask before widening it — this task ships the external branch.
 
 **Why:** The nexus-wide default applies at paste time; Format is how one link departs from it. It rewrites the `[…]` label and stores nothing — no sidecar, no per-link state, so nothing can disagree with the file and there is no override layer for the default to defer to. It lands before Paste As because it is the smaller of the two menu changes and it establishes the action-id shape Paste As reuses.
 
@@ -568,7 +575,7 @@ The two the review could not settle statically, taken on the running app before 
   - **Consequence for Task 10 — R2 cannot reach table cells,** and **R4 accepts that.** Paste As rides the menu `editorMenu` already pops, and that menu never pops in a cell, so Paste As is absent there. Nothing else in the feature is affected: ⌘V and the inverse chord are DOM and keyboard paths that work in a cell once Task 6 mounts them, and Task 8's `Format >` rides the renderer's own link menu, which the cell mount restores.
 
 ### Rulings
-- **R5 — the link menu carries Rename · Format ▸ · Copy Link · Delete** (Nathan, added during Gate 3). Requirement 9. An external-URL link is offered Copy Link alone today, which is not enough to edit a link at all. **One piece is still open: what Delete removes** — the whole `[label](target)` token, or just the link syntax, leaving the label behind as prose. Task 8 is not executable until that is settled.
+- **R5 — the link menu carries Rename · Format ▸ · Copy Link, then Remove Link · Delete below a separator** (Nathan, added during Gate 3, settled the same session). Requirement 9. An external-URL link is offered Copy Link alone today, which is not enough to edit a link at all. The two readings of "delete the link" were both wanted, so both ship as their own item: **Remove Link** unwraps to the bare label text, **Delete** removes the whole token. Task 8 is unblocked.
 - **R4 — Paste As is accepted as absent inside table cells** (Nathan: "Accept it"). The prose menu never pops over the non-editable table widget (O-3), and reversing that would mean making the widget report as editable — a change well outside this feature's blast radius. Requirement 8 now states the exception rather than being quietly false. Nothing else about cells changes: pasting still formats there, and `Format >` still reaches links there once Task 8 mounts the link handler.
 - **R1 — two ⌘Z presses are accepted** (Nathan). The title swap stays an ordinary history entry rather than growing a custom undo command; the cost lands only on the first paste of a URL, since the title is cached afterwards.
 - **E-7 — ⌘⇧V is taken from Paste and Match Style** (Nathan). The role is expanded and the item dropped from both menus.

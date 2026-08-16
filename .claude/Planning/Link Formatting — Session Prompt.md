@@ -20,14 +20,18 @@ Shipped and live: the link grammar reads balanced parentheses two levels deep; o
 
 **Left to build — Phase 4, Tasks 8, 9, 10.** All three touch `src/main`, so none of them appear on a ⌘R; they need a full dev restart to see.
 
-### Task 8 — the link menu (blocked, see below)
+### Task 8 — the link menu
 
-A markdown link pointing at a website is offered **Copy Link and nothing else** today (`main/connMenu.ts`, the `ctx.external` branch). It gains four items: **Rename · Format ▸ · Copy Link · Delete** (Requirement 9, ruling R5).
+A markdown link pointing at a website is offered **Copy Link and nothing else** today (`main/connMenu.ts`, the `ctx.external` branch). It gains five items — **Rename · Format ▸ · Copy Link**, then a separator, then **Remove Link · Delete** (Requirement 9, ruling R5).
 
 - **Rename** edits the `[…]` label. `applyLinkAction` matches `t.kind === 'wikiLink'` and returns silently otherwise, so the markdown form needs its own applier over the `link` token's `contentRange`.
 - **Format ▸** is Full Link · Short Link · Page Title, rewriting the label only. Page Title with nothing cached writes Short Link and registers a `PendingTitle` anchor — reuse Task 7's machinery, never a second mechanism.
-- **Delete** — **BLOCKED on R5.** Whether it removes the whole `[label](target)` token or unwraps it to the bare label text is Nathan's call and is not yet made. Ask before building it; everything else in Task 8 can proceed.
+- **Remove Link** unwraps to the bare label text — `Mercury` where `[Mercury](https://…)` stood. It writes the *unescaped* label, since that text is prose now.
+- **Delete** removes the whole token, text and all.
+- The last two sit below a separator, built through `main/pageMenu.ts`'s `separatorBefore` flag rather than a hand-placed separator object.
 - Task 8 also **mounts `markdownLinkClicks` in `Tables/CellEditor.tsx`** — per observation O-2 it is absent there, so a link in a table cell has no menu at all.
+
+**Still open, ask before widening:** whether the *connection* menu (a markdown link whose target resolves to a page, plus wikilinks) also gains Remove Link and Delete. It already has Rename, and Format has nothing to offer it. This task ships the external-URL branch only.
 
 Three of Task 8's original premises were wrong and the task body has been rewritten; read it rather than the summary. In particular: `apply` sits only on `ConnMenuTarget`'s `page` variant and must be *added* to the `url` variant, `ConnMenuContext.external` already distinguishes the two cases, and the `default: target.apply?.(action)` that was supposed to catch a missed id lives in the page branch, which Format never reaches — so add an explicit exhaustive switch in the url branch.
 
@@ -75,9 +79,9 @@ Reach into blocks and embeds comes from wiring `menu={{ pushState, onAction }}` 
 
 **Full dev restart**; Phase 4 is nearly all main-process.
 
-- **Format ▸** on a real link, cycling all three forms, and the label changing in the document each time.
-- **Rename** retitling a link; **Delete** doing whatever R5 settles on.
-- All four items present on an external link, and a page-resolving link still getting the connection menu instead.
+- **Format ▸** on a real link, cycling all three forms, and the label changing in the document each time. Use a *real* parenthesized address for the Page Title check — `…/wiki/Mercury_(planet)` resolves; a made-up article 404s and correctly keeps its Short Link.
+- **Rename** retitling a link. **Remove Link** leaving the bare label as prose. **Delete** taking the whole thing.
+- All five items present on an external link, with the separator above the last two, and a page-resolving link still getting the connection menu instead.
 - `Format ▸` reaching a link **inside a table cell** — it has no menu at all today.
 - **Paste As ▸** on prose, offering the right set for a URL, a `[[Connection]]`, and a non-link clipboard; present in a page, a block and an embed; absent in a table cell.
 - **⌘⇧V** doing the inverse of ⌘V in every matrix cell, and Paste and Match Style gone from the Edit menu.
