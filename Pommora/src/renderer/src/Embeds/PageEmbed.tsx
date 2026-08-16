@@ -3,6 +3,7 @@ import { titleFromPath } from '@shared/connections'
 import type { PageDetail } from '@shared/types'
 import { MarkdownEditor, type WarmSeam } from '@renderer/MarkdownPM'
 import type { ConnectionsApi } from '@renderer/MarkdownPM/connections'
+import { nativeEditorMenu } from '@renderer/MarkdownPM/editor/menu'
 import { flushPageSave, schedulePageSave } from '@renderer/Detail/pageFlush'
 import { cachePageDetail, readPageDetail } from '@renderer/Tabs/warmCache'
 import { useSession } from '../store'
@@ -156,6 +157,7 @@ export function PageEmbed({
           schedulePageSave(path, next)
         }}
         connections={connections}
+        menu={nativeEditorMenu}
         readOnly={!editing}
         autoFocus
         zoom={EMBED_ZOOM}

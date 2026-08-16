@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { BlockHostRef } from '@shared/blocks'
 import { MarkdownEditor } from '@renderer/MarkdownPM'
 import type { ConnectionsApi } from '@renderer/MarkdownPM/connections'
+import { nativeEditorMenu } from '@renderer/MarkdownPM/editor/menu'
 
 const SAVE_DEBOUNCE_MS = 400
 
@@ -77,6 +78,7 @@ export function MarkdownBlock({
         initialBody={body}
         onChange={scheduleSave}
         connections={connections}
+        menu={nativeEditorMenu}
         readOnly={!editing}
         autoFocus
         edgeFade

@@ -1,6 +1,8 @@
 import type { EditorView } from '@codemirror/view'
 import { EDITOR_ACTION_PREFIX, type FormatState } from '@shared/editorMenu'
+import { PASTE_AS_PREFIX, type PasteAsForm } from '@shared/PasteAsMenu'
 import { embedInsertAtCaret } from './embedInsert'
+import { pasteAs } from './PasteLink'
 import {
   toggleInline,
   setHeading,
@@ -17,6 +19,14 @@ import {
 export interface EditorMenuApi {
   pushState: (s: FormatState) => void
   onAction: (cb: (action: string) => void) => () => void
+}
+
+/** The seam over the real bridge. Every surface that mounts an editor passes this one — a menu built
+ *  from the last-pushed state can only be right for whichever editor pushed last, so an editor that
+ *  doesn't push gets no Pommora items at all. */
+export const nativeEditorMenu: EditorMenuApi = {
+  pushState: (s) => window.nexus.setEditorFormatState(s),
+  onAction: (cb) => window.nexus.onMenuAction(cb),
 }
 
 function editFor(action: string, doc: string, from: number, to: number): FormatEdit | null {
@@ -41,6 +51,11 @@ export function applyEditorAction(view: EditorView, raw: string): boolean {
   const action = raw.slice(EDITOR_ACTION_PREFIX.length)
   // Page embeds type the opener and hand off to the autocomplete, not a plain format edit.
   if (action === 'block:page') return embedInsertAtCaret(view)
+  // Paste As reads the clipboard back over the bridge, so it finishes a turn later than the rest.
+  if (action.startsWith(PASTE_AS_PREFIX)) {
+    void pasteAs(view, action.slice(PASTE_AS_PREFIX.length) as PasteAsForm)
+    return true
+  }
   const sel = view.state.selection.main
   const edit = editFor(action, view.state.doc.toString(), sel.from, sel.to)
   if (!edit) return false
