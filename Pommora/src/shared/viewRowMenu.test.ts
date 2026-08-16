@@ -5,17 +5,8 @@ const labels = (ctx: Parameters<typeof viewRowMenuItems>[0]): string[] =>
   viewRowMenuItems(ctx).map((r) => r.label)
 
 describe('a saved view row’s menu', () => {
-  it('offers only what the host can perform', () => {
-    expect(labels({ deletable: true })).toEqual(['Rename', 'Edit Icon', 'Delete'])
-  })
-
-  it('adds the colour row where a picker exists to open', () => {
-    expect(labels({ colorable: true, deletable: true })).toEqual([
-      'Rename',
-      'Edit Icon',
-      'Edit Color',
-      'Delete',
-    ])
+  it('offers the rows every host can perform', () => {
+    expect(labels({ deletable: true })).toEqual(['Rename', 'Edit Icon', 'Edit Color', 'Delete'])
   })
 
   // The titles toggle belongs to the embed's own chrome, and its label reads the state it will leave.
@@ -25,7 +16,7 @@ describe('a saved view row’s menu', () => {
   })
 
   it('separates Delete from the rows that edit a view you are keeping', () => {
-    const rows = viewRowMenuItems({ colorable: true, deletable: true })
+    const rows = viewRowMenuItems({ deletable: true })
     expect(rows.filter((r) => r.separatorBefore).map((r) => r.action)).toEqual(['delete'])
   })
 

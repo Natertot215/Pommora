@@ -420,7 +420,6 @@ export function ViewEmbedBlock({
     if (locked) return
     menuAnchorRef.current = e.currentTarget as HTMLElement
     const action = await window.nexus.viewRowMenu({
-      colorable: true,
       titlesShown: labeled,
       deletable: entry.views.length > 1,
     })
