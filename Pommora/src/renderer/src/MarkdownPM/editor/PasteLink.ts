@@ -20,7 +20,7 @@ export const pasteLink = EditorView.domEventHandlers({
     // One caret, one link. A multi-range paste is CodeMirror's own business.
     if (view.state.selection.ranges.length !== 1) return false
 
-    const { personalization, linkTitles } = useSession.getState()
+    const { personalization, linkTitles, resolveLinkTitle } = useSession.getState()
     const url = pastedUrl(text)
     const sel = view.state.selection.main
     const decision = decidePaste({
@@ -48,7 +48,7 @@ export const pasteLink = EditorView.domEventHandlers({
     })
     // Fire-and-forget into the shared cache: the anchor above is what picks the answer back up, and
     // a property cell showing the same address gets it for free.
-    if (decision.wantsTitle) useSession.getState().resolveLinkTitle(decision.target)
+    if (decision.wantsTitle) resolveLinkTitle(decision.target)
     return true
   },
 })
