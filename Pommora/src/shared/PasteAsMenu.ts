@@ -7,7 +7,9 @@
 
 import { pageLinkPattern } from './connections'
 import { MD_LINK, encodeLinkTarget, isValidLink, targetTitle } from './links'
-import { linkMarkdown, type LinkPaste } from './PasteLink'
+import { serializeLink } from './linkValue'
+import { pageLinkText } from './pageMenu'
+import { linkPaste, type LinkPaste } from './PasteLink'
 import { LINK_DISPLAY_LABELS, LINK_DISPLAYS, type LinkDisplay } from './properties'
 
 /** The three link forms, plus the address bare and the two syntaxes that reach a page. */
@@ -85,17 +87,17 @@ export function pasteAsWrite(
 ): LinkPaste | TextPaste | null {
   if (!target) return null
   if (target.kind === 'page') {
-    if (form === 'connection') return { kind: 'text', text: `[[${target.title}]]` }
+    if (form === 'connection') return { kind: 'text', text: pageLinkText(target.title) }
+    // Through the serializer, so a title carrying `]` is escaped by the one writer that knows how —
+    // spelled inline, `Notes [WIP]` would compose a link that tokenizes as nothing at all.
     if (form === 'markdown')
-      return { kind: 'text', text: `[${target.title}](${encodeLinkTarget(target.title)})` }
+      return {
+        kind: 'text',
+        text: serializeLink({ url: encodeLinkTarget(target.title), alias: target.title }),
+      }
     return null
   }
   if (form === 'plain') return { kind: 'text', text: target.url }
   if (form === 'connection' || form === 'markdown') return null
-  return {
-    kind: 'link',
-    text: linkMarkdown(target.url, form, title),
-    target: target.url,
-    wantsTitle: form === 'link-title' && title === undefined,
-  }
+  return linkPaste(target.url, form, title)
 }
