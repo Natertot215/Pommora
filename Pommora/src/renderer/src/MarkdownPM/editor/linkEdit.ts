@@ -3,13 +3,37 @@ import { EditorSelection, type EditorState, type Extension, type Line } from '@c
 import { aliasSpanAt, emptyAliasPipeAt, linkAt, type ConnEditAction } from '@shared/connections'
 import { useSession } from '../../store'
 import type { ConnectionsApi } from '../connections'
-import { tokenize } from '../tokens'
+import { tokenize, type Token } from '../tokens'
 import { focusRange } from './input'
 import { restedOnLink } from './linkGestures'
 
-/** The two authoring gestures, both seating the caret where their names imply. They work off the
- *  token's own spans rather than the rendered text: a displayed alias hides where the title is, so
- *  the only thing that still knows both is the token. */
+/** Where a wikilink's authoring gesture lands in the text holding it: the pipe it may have to write
+ *  first, and the span to select or seat afterwards, in the text as that write leaves it.
+ *
+ *  Pure of any editor, because a connection in a resting table cell has none — that cell commits the
+ *  pipe and enters with the same span selected rather than keeping its own idea of where a link keeps
+ *  its parts. It reads the token's spans rather than the rendered text: a displayed alias hides where
+ *  the title is, so the only thing that still knows both is the token. */
+export function wikiAuthorTarget(
+  text: string,
+  tk: Token,
+  action: ConnEditAction,
+): { pipeAt?: number; select: [number, number] } {
+  // Edit Link targets the page pointed at — the title's last character, ahead of any alias.
+  if (action === 'editLink') {
+    const [, titleEnd] = tk.resolveRange ?? tk.contentRange
+    return { select: [titleEnd, titleEnd] }
+  }
+  // Rename targets the words shown. An existing alias is selected so typing replaces it.
+  if (tk.resolveRange) return { select: [tk.contentRange[0], tk.contentRange[1]] }
+  // No alias yet: the pipe is what creates one, and the caret lands after it. A pipe already sitting
+  // there is an Add Title that was abandoned — reuse it rather than stacking a second.
+  const afterTitle = tk.contentRange[1]
+  const seat: [number, number] = [afterTitle + 1, afterTitle + 1]
+  return text[afterTitle] === '|' ? { select: seat } : { pipeAt: afterTitle, select: seat }
+}
+
+/** The two authoring gestures, both seating the caret where their names imply. */
 export function applyLinkAction(
   view: EditorView,
   action: ConnEditAction,
@@ -25,29 +49,10 @@ export function applyLinkAction(
   )
   if (!tk) return
   const at = (n: number): number => line.from + n
-
-  // Edit Link targets the page pointed at — the title's last character, ahead of any alias.
-  if (action === 'editLink') {
-    const [, titleEnd] = tk.resolveRange ?? tk.contentRange
-    focusRange(view, at(titleEnd))
-    return
-  }
-
-  // Rename targets the words shown. An existing alias is selected so typing replaces it.
-  if (tk.resolveRange) {
-    focusRange(view, at(tk.contentRange[0]), at(tk.contentRange[1]))
-    return
-  }
-  // No alias yet: the pipe is what creates one, and the caret lands after it. A pipe already sitting
-  // there is an Add Title that was abandoned — reuse it rather than stacking a second.
-  const afterTitle = tk.contentRange[1]
-  if (line.text[afterTitle] === '|') {
-    focusRange(view, at(afterTitle) + 1)
-    return
-  }
-  const pipe = at(afterTitle)
-  view.dispatch({ changes: { from: pipe, to: pipe, insert: '|' } })
-  focusRange(view, pipe + 1)
+  const { pipeAt, select } = wikiAuthorTarget(line.text, tk, action)
+  if (pipeAt !== undefined)
+    view.dispatch({ changes: { from: at(pipeAt), to: at(pipeAt), insert: '|' } })
+  focusRange(view, at(select[0]), at(select[1]))
 }
 
 /** Enter inside an alias finishes it rather than breaking the line. The picker is bounded to the
