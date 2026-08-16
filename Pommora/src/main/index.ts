@@ -131,6 +131,8 @@ import { popOptionMenu } from './optionMenu'
 import { popIconFavoriteMenu } from './iconFavoriteMenu'
 import { popViewButtonMenu } from './viewButtonMenu'
 import { popReturningMenu } from './returningMenu'
+import { popViewRowMenu } from './viewRowMenu'
+import type { ViewRowAction } from '@shared/viewRowMenu'
 import { popEmbedTitleMenu, popEmbedAreaMenu } from './viewEmbedMenu'
 import type {
   EmbedAreaMenuAction,
@@ -1418,6 +1420,18 @@ serveBridge(
     },
 
     // The view embed's title-row right-click menu (Hide/Show Icon · Title Size · Hide Title).
+    // A saved view row's right-click menu, shared by the view pane and the embed's segments.
+    'view-row-menu': {
+      kind: 'menu',
+      fn: async (win: BrowserWindow, ctx: unknown): Promise<ViewRowAction | null> => {
+        const c = ctx as { colorable?: unknown; titlesShown?: unknown; deletable?: unknown } | null
+        return popViewRowMenu(win, {
+          colorable: c?.colorable === true,
+          ...(typeof c?.titlesShown === 'boolean' ? { titlesShown: c.titlesShown } : {}),
+          deletable: c?.deletable === true,
+        })
+      },
+    },
     'view-embed-title-menu': {
       kind: 'menu',
       fn: async (win: BrowserWindow, arg: unknown): Promise<EmbedTitleMenuAction | null> => {

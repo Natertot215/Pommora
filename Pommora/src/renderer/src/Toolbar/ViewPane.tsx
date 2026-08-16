@@ -18,7 +18,6 @@ import type { PaneDrop, PaneRow, paneSlot } from '../Components/Detail/paneDndMo
 import { useSaveView, useViewEmbedScope } from '@renderer/Embeds/ViewEmbedScope'
 import { ColorPicker } from '../Components/Detail/ColorPicker'
 import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
-import { ViewRowMenu } from '../Components/ViewRowMenu'
 import { RenamableLabel } from '../Components/RenamableLabel'
 import { IconPicker } from '../Components/IconPicker'
 import { useSession } from '../store'
@@ -76,7 +75,6 @@ export function ViewPane({
   // and the pane's `editing` is the drill target — null whenever that list is on screen.
   const [iconFor, setIconFor] = useState<SavedView | null>(null)
   const [colorFor, setColorFor] = useState<SavedView | null>(null)
-  const [rowMenuAt, setRowMenuAt] = useState<{ view: SavedView; x: number; y: number } | null>(null)
   const menuAnchorRef = useRef<HTMLElement | null>(null)
   const scope = useViewEmbedScope()
   // Never mounts inside a view embed until the payload switcher lands — CRUD here would bypass the scope.
@@ -116,11 +114,23 @@ export function ViewPane({
     setRenamingId(null)
     void saveView({ ...v, name: next })
   }
-  const rowMenu = (v: SavedView, e: React.MouseEvent): void => {
+  const rowMenu = async (v: SavedView, e: React.MouseEvent): Promise<void> => {
     e.preventDefault()
-    // The row the menu opened from is what its color picker anchors against.
+    // The row the menu opened from is what a picker it leads to anchors against.
     menuAnchorRef.current = e.currentTarget as HTMLElement
-    setRowMenuAt({ view: v, x: e.clientX, y: e.clientY })
+    const action = await window.nexus.viewRowMenu({ colorable: true, deletable: views.length > 1 })
+    switch (action) {
+      case 'rename':
+        return setRenamingId(v.id)
+      case 'icon':
+        return setIconFor(v)
+      case 'color':
+        return setColorFor(v)
+      case 'delete':
+        return void deleteRow(v)
+      default:
+        return
+    }
   }
   const deleteRow = async (v: SavedView): Promise<void> => {
     const res = await window.nexus.views.delete(node.path, node.kind, v.id)
@@ -179,7 +189,7 @@ export function ViewPane({
                     </button>
                   }
                   onClick={renamingId === v.id ? undefined : () => switchTo(v.id)}
-                  onContextMenu={(e) => rowMenu(v, e)}
+                  onContextMenu={(e) => void rowMenu(v, e)}
                 >
                   <RenamableLabel
                     renames="title"
@@ -218,17 +228,6 @@ export function ViewPane({
         minWidth={PANE_SQUARE}
         minHeight={PANE_SQUARE}
       />
-      {rowMenuAt && (
-        <ViewRowMenu
-          at={rowMenuAt}
-          onDismiss={() => setRowMenuAt(null)}
-          onRename={() => setRenamingId(rowMenuAt.view.id)}
-          onIcon={() => setIconFor(rowMenuAt.view)}
-          onColor={() => setColorFor(rowMenuAt.view)}
-          onDelete={() => void deleteRow(rowMenuAt.view)}
-          deletable={views.length > 1}
-        />
-      )}
       <IconPicker
         open={!!iconFor}
         onClose={() => setIconFor(null)}
