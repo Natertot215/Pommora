@@ -15,7 +15,7 @@ export function popColumnMenu(
     if (ctx.alignable) items.push({ label: 'Align', submenu: alignSubmenu(ctx.align, pick) })
     const styleRows = ctx.style ? styleMenuItems(ctx.style) : []
     if (styleRows.length > 0) {
-      items.push({ label: 'Style', submenu: styleSubmenu(styleRows, pick) })
+      items.push({ label: 'Format', submenu: styleSubmenu(styleRows, pick) })
     }
     if (ctx.iconsShown !== undefined) {
       items.push({

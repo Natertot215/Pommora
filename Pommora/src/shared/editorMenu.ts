@@ -21,3 +21,7 @@ export interface FormatState {
 
 /** Menu-action strings (sent main→renderer), namespaced so other `menu:action` listeners ignore them. */
 export const EDITOR_ACTION_PREFIX = 'mdpm:'
+
+/** Turn a selected bare address into a link pointing at itself. Named once, because main decides
+ *  whether to offer it and the renderer decides what it writes. */
+export const INSERT_LINK_ACTION = 'link:insert'

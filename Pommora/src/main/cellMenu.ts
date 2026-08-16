@@ -14,7 +14,7 @@ export function popCellMenu(
   return popReturningMenu<CellMenuAction>(win, (pick) => {
     const items: MenuItemConstructorOptions[] = []
     if (model.style && model.style.length > 0) {
-      items.push({ label: 'Style', submenu: styleSubmenu(model.style, pick) })
+      items.push({ label: 'Format', submenu: styleSubmenu(model.style, pick) })
     }
     if (items.length > 0 && model.items.length > 0) items.push({ type: 'separator' })
     items.push(...pageMenuTemplate(model.items, pick, ctx.kind === 'title' ? ctx : undefined))
