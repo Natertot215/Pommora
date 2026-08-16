@@ -116,9 +116,9 @@ export function ViewPane({
   }
   const rowMenu = async (v: SavedView, e: React.MouseEvent): Promise<void> => {
     e.preventDefault()
-    // The row the menu opened from is what a picker it leads to anchors against.
+    // The row the menu opened from is what its color picker anchors against.
     menuAnchorRef.current = e.currentTarget as HTMLElement
-    const action = await window.nexus.viewRowMenu({ colorable: true, deletable: views.length > 1 })
+    const action = await window.nexus.viewRowMenu({ deletable: views.length > 1 })
     switch (action) {
       case 'rename':
         return setRenamingId(v.id)

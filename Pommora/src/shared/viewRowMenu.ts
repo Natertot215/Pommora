@@ -1,14 +1,12 @@
 // A saved view row's right-click menu, shared by the toolbar's view pane and the view embed — the
-// two surfaces that list the same container's views. Each row appears only where its host can
-// perform it: the titles toggle belongs to the embed's own chrome, and Edit Color to a surface that
-// carries a colour picker. Delete is refused on a container's last view, mirroring the write path.
+// two surfaces that list the same container's views. The titles toggle belongs to the embed's own
+// chrome and appears only there; Delete is refused on a container's last view, mirroring the write
+// path.
 
 export type ViewRowAction = 'rename' | 'icon' | 'color' | 'titles' | 'delete'
 
 /** What a host can offer for the row that was right-clicked. */
 export interface ViewRowMenuContext {
-  /** Absent where the host has no colour picker to open. */
-  colorable?: boolean
   /** Absent where the host draws no titles; present carries the state the label reads from. */
   titlesShown?: boolean
   deletable: boolean
@@ -25,7 +23,7 @@ export function viewRowMenuItems(
   return [
     { label: 'Rename', action: 'rename' },
     { label: 'Edit Icon', action: 'icon' },
-    ...(ctx.colorable ? [{ label: 'Edit Color', action: 'color' as const }] : []),
+    { label: 'Edit Color', action: 'color' },
     ...(ctx.titlesShown === undefined
       ? []
       : [{ label: ctx.titlesShown ? 'Hide Titles' : 'Show Titles', action: 'titles' as const }]),

@@ -46,17 +46,17 @@ export type CellMenuAction =
 
 export interface CellMenuModel {
   items: Array<{ label: string; action: CellMenuAction; separatorBefore?: boolean }>
-  /** Rendered as a submenu ahead of `items` when present, under `styleLabel`. */
-  style?: StyleMenuItem[]
-  styleLabel?: string
+  /** Rendered as a submenu ahead of `items` when present. Rows and the name they sit under travel
+   *  together so a type can't be given radios under the wrong word. */
+  style?: { label: string; rows: StyleMenuItem[] }
 }
 
-/** The right-click menu context for a value cell: title = page meta; url/file = the column's
- *  Style radios + Edit; status/datetime (picker-based) = Style + Clear; the inline-clearable style
- *  types (checkbox/number/last_edited_time) = Style alone; context and select/multi = Clear
- *  alone. Clear is offered ONLY on a `filled` cell — a clear-only cell with no value has no menu at
- *  all, and a styleable one drops just its Clear. Anything else has no menu (null). Portable across
- *  the container views (Table cells, Cards values). */
+/** The right-click menu context for a value cell: title = page meta; url = Edit (+ Rename/Clear
+ *  once filled); file = the column's Style radios + Edit; status/datetime (picker-based) = Style +
+ *  Clear; the inline-clearable style types (checkbox/number/last_edited_time) = Style alone;
+ *  context and select/multi = Clear alone. Clear is offered ONLY on a `filled` cell — a clear-only
+ *  cell with no value has no menu at all, and a styleable one drops just its Clear. Anything else
+ *  has no menu (null). Portable across the container views (Table cells, Cards values). */
 export function cellMenuContextFor(
   col: ResolvedColumn,
   type: PropertyType | 'title' | undefined,
@@ -133,14 +133,22 @@ function baseCellMenuModel(ctx: CellMenuContext): CellMenuModel {
     case 'style-only':
       return {
         items: ctx.clearable ? [{ label: 'Clear', action: 'cell:clear' }] : [],
-        style: styleMenuItems({ type: ctx.type, current: ctx.current, barCapable: ctx.barCapable }),
-        styleLabel: styleMenuLabel(ctx.type),
+        style: {
+          label: styleMenuLabel(ctx.type),
+          rows: styleMenuItems({
+            type: ctx.type,
+            current: ctx.current,
+            barCapable: ctx.barCapable,
+          }),
+        },
       }
     case 'style-edit':
       return {
         items: [{ label: 'Edit', action: 'cell:edit' }],
-        style: styleMenuItems({ type: ctx.type, current: ctx.current }),
-        styleLabel: styleMenuLabel(ctx.type),
+        style: {
+          label: styleMenuLabel(ctx.type),
+          rows: styleMenuItems({ type: ctx.type, current: ctx.current }),
+        },
       }
     case 'link':
       // A URL / Link cell: Edit the URL inline; a FILLED one adds Rename (give it an alias) + Clear
