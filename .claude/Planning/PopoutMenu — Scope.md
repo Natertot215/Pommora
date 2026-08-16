@@ -8,6 +8,8 @@ The **PopoutMenu** is the beak-less pane the MarkdownPM autocomplete already dra
 
 The autocomplete's surface today (`MarkdownPM/AutocompletePanel.tsx`) is a `NotchedPane` with `notchHeight={0}` — the only such override in the codebase — body-portalled so a transformed ancestor can't re-anchor it, no backdrop, and Bloom motion off the shared `dropdownOpen` / `dropdownClose` classes. It is **not** a `PickerMenu`, and that is the whole reason this component has to exist rather than being a `PickerMenu` prop.
 
+It keeps `PickerMenu`'s glass and surface and gives up the notch, taking the autocomplete's rectangular shape and its faster, more native-feeling reveal. Reading closer to an OS menu is also what would make a **Use Native Menus** setting coherent — one switch choosing between two surfaces that already behave alike, rather than between two idioms.
+
 ### The Row Treatment Is The Point
 
 This is the substance of the change, and it is what every migrated surface will visibly inherit.
@@ -32,8 +34,10 @@ A PopoutMenu row is the left column: primary label text, secondary trailing glyp
 That leaves three genuinely separate pieces of work:
 
 1. **`PickerControl`'s menu** → PopoutMenu. Moves every fixed-option picker at once.
-2. **The block Scale picker** (`Blocks/BlockHandleMenu.tsx`) — hand-rolled: a bespoke trigger, a raw `PickerMenu solid` of `MenuItem` rows with a check glyph, and **no `onDismiss`** (a document listener at `BlockHandleMenu.tsx:177` owns dismissal instead). Moving it retires that bespoke dismissal as well as the duplicated rows.
-3. **The autocomplete panel** → PopoutMenu, which is what makes the component real rather than a rename.
+2. **The autocomplete panel** → PopoutMenu, which is what makes the component real rather than a rename.
+3. **The hand-rolled double-chevron pickers** — FilterPane's `FieldPicker`, and Group By / Sort By, which open an inline `Reveal` list rather than any menu. They wear the trigger, so they come along; none of them moves for free.
+
+**The block Scale picker stays as it is** (Nathan's call). It is `SurfacePM`'s grip, and its menu is already `MenuItem` rows rather than `PickerOption` — the surface it would gain is the one it half has.
 
 ### What The Autocomplete Needs That `PickerMenu` Doesn't Give
 
@@ -53,15 +57,18 @@ The sweep found fixed-option pickers that ride `PickerControl` and were not in t
 - **Default Format** in Nexus Settings (`NexusSettings.tsx`) — the pasted-link default, which is the same option set as the URL property's Format.
 - **The Sorting and Grouping panes' Order, Date By, Sub-Sort and Sub-Group rows.** Several of these are *conditionally* a menu: `directionOptions` returns a two-entry list for most property types (so the control toggles) while `CUSTOM_OPTION_DIRECTIONS` and `OPTION_ORDER` return three (so it opens). The same control is a toggle or a menu depending on the property it is pointed at — which is another reason to migrate the component rather than enumerate call sites.
 
-### Decisions Needed Before Building
+### Ruled
 
-1. **The two variable-option double-chevrons.** **Sub-Sort** (`SortingPane.tsx:283`) and **Sub-Group** (`GroupingPane.tsx:921`) are double-chevron controls whose options are the view's own schema properties. The original deferral said variable-input pickers keep `PickerMenu`; the trigger says PopoutMenu. They cannot have both. Ruling needed: does the *trigger* decide, or the *option source*?
-2. **Does PopoutMenu subsume `PointMenu`?** Both are anchored to a point and carry no beak. If it does, right-click menus drawn in-app move to it too, and that is a wider blast radius than the pickers.
-3. **The three hand-rolled variable pickers stay put, or come along?** **Group By** and **Sort By** open an inline `Reveal` list rather than any menu, and FilterPane's **FieldPicker** opens a raw `PickerMenu` with render-prop children. All three wear the double-chevron. They are not `PickerControl` consumers, so none of them moves for free.
-4. **Whether `PickerControl` keeps its `solid` prop.** It exists for pickers that open over another pane; whether PopoutMenu needs the same escape hatch depends on where it ends up in the stack.
+- **The trigger decides, not the option source** (Nathan: "moving all double-chevron pickers to this"). **Sub-Sort** (`SortingPane.tsx:283`) and **Sub-Group** (`GroupingPane.tsx:921`) are double-chevron controls over the view's own schema properties, and they come along with the rest. The earlier deferral's "variable-input pickers keep `PickerMenu`" is superseded: what a control *looks like* is what says which surface it opens.
+- **The block Scale picker stays** — `SurfacePM`'s grip is untouched.
+
+### Still Open
+
+1. **Does PopoutMenu subsume `PointMenu`?** Both are anchored to a point and carry no beak. If it does, right-click menus drawn in-app move to it too, and that is a wider blast radius than the pickers.
+2. **Whether `PickerControl` keeps its `solid` prop.** It exists for pickers that open over another pane; whether PopoutMenu needs the same escape hatch depends on where it ends up in the stack.
 
 ### What This Is Not
 
 - It is not a change to `PickerMenu`. Property pickers, the icon and colour grids, calendar dropdowns, hover cards and the free-text picker all keep the notched surface.
-- It is not a change to any two-option control.
+- It is not a change to any two-option control, nor to the block Scale picker.
 - It is not a data change. Nothing here touches what is stored.

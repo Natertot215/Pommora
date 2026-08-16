@@ -25,7 +25,7 @@ Bounded to the link feature. The `PopupMenu` design-system split is a separate c
 
 **Acceptance — the whole thing working**
 
-In a running nexus with *Automatically Format Pasted Links* on and Default Format set to Page Title: copy `https://en.wikipedia.org/wiki/Foo_(bar)` from a browser, paste into a page body, and the line shows the site's domain immediately and becomes the page's real title within a second or two. ⌘Z restores the domain; a second ⌘Z removes the paste. Right-click that link → `Format > Short Link` and it reads as the domain again. Right-click empty prose → `Paste As > Full Link` and the whole address appears as its own label. Repeat the paste inside a table cell and the cell behaves the same. Open the `.md` in a plain text editor: the target reads `https://en.wikipedia.org/wiki/Foo_(bar)` with no percent-encoding, and the link renders correctly in any CommonMark reader.
+In a running nexus with *Automatically Format Pasted Links* on and Default Format set to Page Title: copy `https://en.wikipedia.org/wiki/Mercury_(planet)` from a browser, paste into a page body, and the line shows the site's domain immediately and becomes the page's real title within a second or two. ⌘Z restores the domain; a second ⌘Z removes the paste. Right-click that link → `Format > Short Link` and it reads as the domain again. Right-click empty prose → `Paste As > Full Link` and the whole address appears as its own label. Repeat the paste inside a table cell and the cell behaves the same. Open the `.md` in a plain text editor: the target reads `https://en.wikipedia.org/wiki/Mercury_(planet)` with no percent-encoding, and the link renders correctly in any CommonMark reader.
 
 **Forced By**
 
