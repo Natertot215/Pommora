@@ -138,5 +138,36 @@ export const CONN_OPEN_ACTIONS = [
   'title:newtab',
 ] as const satisfies readonly ConnOpenAction[]
 
+/** Everything a link pointing at a web address can be told to do, in the order the menu offers it.
+ *  The three `format:` ids rewrite the label alone — no per-link state is stored anywhere, so nothing
+ *  can come to disagree with the file — and the last two are the two readings of taking a link off
+ *  the words it wears: `link:remove` keeps the label as prose, `link:delete` keeps nothing.
+ *
+ *  The union is derived from the list rather than written beside it, so an action cannot exist
+ *  without a place in the order. */
+export const CONN_URL_ACTIONS = [
+  'rename',
+  'format:link-full',
+  'format:link-short',
+  'format:link-title',
+  'link:remove',
+  'link:delete',
+] as const
+export type ConnUrlAction = (typeof CONN_URL_ACTIONS)[number]
+
+/** The pair that ends the menu, below a separator: they act on the link's existence rather than on
+ *  how it reads, which is what sets them apart from the three above. */
+export const CONN_UNLINK_ROWS: readonly {
+  label: string
+  action: ConnUrlAction
+  separatorBefore?: boolean
+}[] = [
+  { label: 'Remove Link', action: 'link:remove', separatorBefore: true },
+  { label: 'Delete', action: 'link:delete' },
+]
+
 /** The link native context menu's actions (conn-menu IPC). */
-export type ConnMenuAction = ConnOpenAction | ConnEditAction | PageClipboardAction
+export type ConnMenuAction = ConnOpenAction | ConnEditAction | PageClipboardAction | ConnUrlAction
+
+export const isConnUrlAction = (action: ConnMenuAction): action is ConnUrlAction =>
+  (CONN_URL_ACTIONS as readonly string[]).includes(action)

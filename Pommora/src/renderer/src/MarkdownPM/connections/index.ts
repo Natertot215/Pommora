@@ -1,4 +1,9 @@
-import { normalizeTitle, type ConnEditAction, type LinkStatus } from '@shared/connections'
+import {
+  normalizeTitle,
+  type ConnEditAction,
+  type ConnUrlAction,
+  type LinkStatus,
+} from '@shared/connections'
 import { isValidLink, targetTitle } from '@shared/links'
 
 /** What was right-clicked, and how to act on it. The menu is popped asynchronously by a free
@@ -16,7 +21,7 @@ export type ConnMenuTarget =
       hasAlias: boolean
       apply?: (action: ConnEditAction) => void
     }
-  | { kind: 'url'; url: string }
+  | { kind: 'url'; url: string; apply?: (action: ConnUrlAction) => void }
 
 export interface ConnPage {
   id: string

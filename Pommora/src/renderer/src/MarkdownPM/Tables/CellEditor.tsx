@@ -9,6 +9,7 @@ import { autoPair, autoDelete, type Edit } from '../input'
 import { AC_MAX, aliasRows, pageRow } from '../autocomplete'
 import { aliasOnLeave } from '../editor/linkEdit'
 import { linkRest, linkTyping } from '../editor/linkGestures'
+import { markdownLinkClicks } from '../editor/links'
 import { pasteLink } from '../editor/PasteLink'
 import { pendingTitle } from '../editor/PendingTitle'
 import {
@@ -103,6 +104,10 @@ export function CellEditor({
           // A cell's editor dies the moment the cell deactivates, so a fetch that lands after you
           // tab away reaches nothing and the Short Link stands — recoverable later through Format.
           pendingTitle,
+          // A link in a cell is a link: it follows, previews, and carries its own menu, the same as
+          // one in the body. Nothing else pops a menu over a cell — the table widget reports as
+          // non-editable, so the prose menu stands down across the whole of it.
+          markdownLinkClicks(() => connections?.()),
           linkRest,
           linkTyping,
           customCaret,
