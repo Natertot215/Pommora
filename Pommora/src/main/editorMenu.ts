@@ -10,7 +10,8 @@ import type {
   MenuItemConstructorOptions,
   WebContents,
 } from 'electron'
-import { EDITOR_ACTION_PREFIX, type FormatState } from '@shared/editorMenu'
+import { EDITOR_ACTION_PREFIX, INSERT_LINK_ACTION, type FormatState } from '@shared/editorMenu'
+import { isValidLink } from '@shared/links'
 import { PASTE_AS_PREFIX, pasteAsRows } from '@shared/PasteAsMenu'
 
 let lastState: FormatState | null = null
@@ -80,7 +81,11 @@ function speechShareItems(params: ContextMenuParams): MenuItemConstructorOptions
   ]
 }
 
-function pommoraItems(wc: WebContents, s: FormatState): MenuItemConstructorOptions[] {
+function pommoraItems(
+  wc: WebContents,
+  s: FormatState,
+  selection: string,
+): MenuItemConstructorOptions[] {
   const act = (a: string): (() => void) => dispatch(wc, a)
   const heading = (label: string, level: number): MenuItemConstructorOptions => ({
     label,
@@ -90,6 +95,13 @@ function pommoraItems(wc: WebContents, s: FormatState): MenuItemConstructorOptio
   })
   return [
     { type: 'separator' },
+    // An address sitting in the prose as ordinary text, selected: the one gesture that turns it into
+    // a link without retyping it. Offered only when the selection IS one, which is what keeps it
+    // apart from Format ▸ Link — that one opens an empty target for words you have yet to point
+    // anywhere.
+    ...(isValidLink(selection)
+      ? [{ label: 'Insert Link', click: act(INSERT_LINK_ACTION) }]
+      : []),
     {
       label: 'Format',
       submenu: [
@@ -220,7 +232,8 @@ export function installEditorContextMenu(win: BrowserWindow): void {
     if (gripHot) return // a grip right-click → the renderer pops that grip's own menu
     if (!params.isEditable) return // sidebar + read-only surfaces keep their own menus
     const items = systemItems(win.webContents, params, lastState?.focused === true)
-    if (lastState?.focused) items.push(...pommoraItems(win.webContents, lastState))
+    if (lastState?.focused)
+      items.push(...pommoraItems(win.webContents, lastState, params.selectionText))
     items.push(...speechShareItems(params))
     Menu.buildFromTemplate(items).popup({ window: win })
   })

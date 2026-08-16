@@ -134,6 +134,13 @@ export function TableView({
     return res?.status === 'resolved' && res.page ? res.page : null
   }
 
+  /** Whatever the hover was about to show, or is showing, goes away — the pair every gesture that
+   *  replaces the pointer's meaning owes it. */
+  const dismissHoverCard = (): void => {
+    intent.cancel()
+    closeActiveHoverCard()
+  }
+
   // A resting cell's connection navigates, as it does in the body. The static cell has no editor to
   // claim the press, so the wrap claims it — and it claims it on MOUSEDOWN, because that is when the
   // cell swaps itself into an editor. Claiming the click instead arrives after the swap, which is
@@ -395,8 +402,7 @@ export function TableView({
         onActivate={(coords) => {
           // Activation swaps the cell into its editor — a pending or open hover card over the
           // cell must not hang above the editing seat.
-          intent.cancel()
-          closeActiveHoverCard()
+          dismissHoverCard()
           caretCoords.current = coords
           initialSelect.current = null
           setActive({ row, col })
@@ -410,8 +416,7 @@ export function TableView({
           onSettled?.()
         }}
         onSelect={(range) => {
-          intent.cancel()
-          closeActiveHoverCard()
+          dismissHoverCard()
           caretCoords.current = null
           initialSelect.current = range
           setActive({ row, col })
@@ -453,6 +458,9 @@ export function TableView({
       onMouseOut={intent.cancel}
       onMouseDownCapture={onLinkDown}
       onClickCapture={onLinkClick}
+      // A menu is opening, so whatever the pointer was about to raise must not arrive behind it.
+      // Captured, because a cell's own menu handler claims the event before it could bubble here.
+      onContextMenuCapture={dismissHoverCard}
     >
       <table className="mdpm-tbl" ref={tableRef}>
         <colgroup>
