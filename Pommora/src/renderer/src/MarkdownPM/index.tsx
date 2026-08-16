@@ -32,6 +32,7 @@ import { calloutGuard } from './editor/calloutGuard'
 import { connectionClicks } from './editor/connections'
 import { markdownLinkClicks } from './editor/links'
 import { pasteLink } from './editor/PasteLink'
+import { pendingTitle } from './editor/PendingTitle'
 import { aliasOnLeave } from './editor/linkEdit'
 import { linkRest, linkTyping } from './editor/linkGestures'
 import { markdownFolding, applySavedFolds, type FoldsApi } from './editor/folding'
@@ -253,6 +254,7 @@ export function MarkdownEditor({
       connectionClicks(() => connectionsRef.current),
       markdownLinkClicks(() => connectionsRef.current),
       pasteLink,
+      pendingTitle,
       aliasOnLeave(() => connectionsRef.current),
       linkRest,
       linkTyping,

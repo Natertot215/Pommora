@@ -1,4 +1,5 @@
-// Page-title resolution for URL properties in the `link-title` look. Main owns the network (the
+// Page-title resolution for anything showing a link in its Page Title form — a URL property's cells
+// and a pasted link in the editor alike. Main owns the network (the
 // renderer never fetches) and the authoritative in-memory cache, persisted a row at a time in
 // nexus.db. A title is fetched at most once per URL per session. Off the read path entirely.
 import { StringDecoder } from 'node:string_decoder'

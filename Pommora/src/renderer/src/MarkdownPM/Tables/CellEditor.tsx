@@ -10,6 +10,7 @@ import { AC_MAX, aliasRows, pageRow } from '../autocomplete'
 import { aliasOnLeave } from '../editor/linkEdit'
 import { linkRest, linkTyping } from '../editor/linkGestures'
 import { pasteLink } from '../editor/PasteLink'
+import { pendingTitle } from '../editor/PendingTitle'
 import {
   useConnectionAutocomplete,
   detectConnectionQuery,
@@ -99,6 +100,9 @@ export function CellEditor({
           // this the mode it offers is one it can never contribute to, and an abandoned pipe reaches disk.
           aliasOnLeave(() => connections?.()),
           pasteLink,
+          // A cell's editor dies the moment the cell deactivates, so a fetch that lands after you
+          // tab away reaches nothing and the Short Link stands — recoverable later through Format.
+          pendingTitle,
           linkRest,
           linkTyping,
           customCaret,

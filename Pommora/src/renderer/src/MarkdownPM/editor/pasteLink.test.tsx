@@ -28,7 +28,9 @@ const settings = (p: Partial<Personalization>): void => {
 
 beforeEach(() => {
   stubEditorBridge()
-  settings({})
+  // The title cache is store state and outlives a test — one left populated makes the next paste
+  // resolve instantly and shifts every offset a hand-written edit depends on.
+  useSession.setState({ personalization: {}, linkTitles: {} })
 })
 afterEach(async () => {
   await cleanupEditor()
@@ -84,6 +86,40 @@ describe('pasting an address into the editor', () => {
     const view = await mountEditor({ initialBody: 'body', readOnly: true })
     await act(async () => paste(view, URL))
     expect(view.state.doc.toString()).toBe('body')
+  })
+
+  it('writes the domain in Page Title form, then swaps the title in when it lands', async () => {
+    settings({ autoFormatPastedLinks: true, defaultLinkFormat: 'link-title' })
+    const view = await mountEditor({ initialBody: '' })
+    await act(async () => paste(view, URL))
+    expect(view.state.doc.toString()).toBe(`[example.com](${URL})`)
+
+    await act(async () => {
+      useSession.setState({ linkTitles: { [URL]: 'Example Domain' } })
+    })
+    expect(view.state.doc.toString()).toBe(`[Example Domain](${URL})`)
+  })
+
+  it('leaves the label alone if it was retitled before the fetch landed', async () => {
+    settings({ autoFormatPastedLinks: true, defaultLinkFormat: 'link-title' })
+    const view = await mountEditor({ initialBody: '' })
+    await act(async () => paste(view, URL))
+    // Retitle it by hand, the way Format or a plain edit would.
+    await act(async () => {
+      view.dispatch({ changes: { from: 1, to: 12, insert: 'My Words' } })
+    })
+    await act(async () => {
+      useSession.setState({ linkTitles: { [URL]: 'Example Domain' } })
+    })
+    expect(view.state.doc.toString()).toBe(`[My Words](${URL})`)
+  })
+
+  it('asks for no title when the cache already holds one', async () => {
+    settings({ autoFormatPastedLinks: true, defaultLinkFormat: 'link-title' })
+    useSession.setState({ linkTitles: { [URL]: 'Example Domain' } })
+    const view = await mountEditor({ initialBody: '' })
+    await act(async () => paste(view, URL))
+    expect(view.state.doc.toString()).toBe(`[Example Domain](${URL})`)
   })
 
   it('puts the caret after the link it wrote', async () => {
