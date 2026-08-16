@@ -478,14 +478,14 @@ The last two sit **below a separator**, apart from the three that edit a link yo
 **Failure half:** the chord fires with an empty clipboard → ordinary paste · with a non-URL clipboard → ordinary paste · in a read-only surface → declined · outside any editor → not handled.
 
 **Steps:**
-- [ ] Confirm the branch with the user before touching anything.
-- [ ] Add the `DEFAULT_COMMANDS` row.
-- [ ] Branch A: expand the role, drop the item from both menus, and verify by hand that the chord now reaches the renderer — this is the whole risk of the branch and it is observable in one keypress.
-- [ ] Wire `inverse` through the paste handler; extend Task 5's matrix tests to cover it if the chord's plumbing changed their inputs.
-- [ ] Update the Commands roster in `ConfigurationPM.md`.
-- [ ] Run the app: every inverse cell of the matrix.
-- [ ] Full gate — expect green.
-- [ ] Commit: `feat(links): the inverse paste chord`
+- [x] Confirm the branch with the user before touching anything. Ruled already, as E-7.
+- [x] Add the `DEFAULT_COMMANDS` row.
+- [x] Branch A: expand the role, drop the item from both menus. Whether the chord now reaches the renderer is the whole risk of the branch and is observable in one keypress → Gate 4.
+- [x] Wire `inverse` through the paste handler; six matrix cases cover the chord at the DOM level, where the decision's own inverse cases were already covered pure.
+- [x] Update the Commands roster in `ConfigurationPM.md`.
+- [ ] Run the app: every inverse cell of the matrix. → Gate 4.
+- [x] Full gate — expect green.
+- [x] Commit: `feat(links): the inverse paste chord`
 
 #### Task 10: `Paste As >` on the prose menu
 
@@ -561,7 +561,7 @@ It is built **on the menu `installEditorContextMenu` already pops**, not as a re
   - [x] Task 7 — The deferred Page Title rewrite · `44c47449`, simplified in `3db60832`
 - [ ] **Phase 4** — The menus
   - [x] Task 8 — The link menu, and links in cells · `<commit>`
-  - [ ] Task 9 — The inverse-paste chord · `<commit>`
+  - [x] Task 9 — The inverse-paste chord · `<commit>`
   - [ ] Task 10 — `Paste As >` on the prose menu · `<commit>`
 
 ### Observations
@@ -612,6 +612,8 @@ Not blocking, still open:
 
 ### Deviations
 
+- **Task 9 — the chord is matched at the editor, not at the window.** The plan pointed at `App.tsx`'s window-level keydown as where chords are matched; that listener knows nothing about which editor has focus, and the paste needs the `EditorView` it is aimed at. The binding stays data in `DEFAULT_COMMANDS` as planned, but it is read live inside the paste extension — the same place and for the same reason the personalization knobs are read there rather than closed over at mount.
+- **Task 9 — deciding and writing split apart.** Claiming the paste event after the write left a window where anything throwing in between produced the link *and* the platform's own literal paste, which a missing test stub surfaced as a doubled document. The decision is now its own call, so the event is claimed on the decision alone.
 - **Task 8 — no new `ConnMenuContext` field, and the compile error landed in the other branch.** The plan had the context gain a field distinguishing a markdown link from a wikilink; `external` already draws that line, and `editable` already says whether the surface can take an edit, so the url branch reads both from what was there. The predicted enforcement arrived from the opposite direction: widening `ConnMenuAction` broke the *page* branch's `default: target.apply?.(action)`, whose parameter is `ConnEditAction` — so the two authoring ids are now named explicitly there, and the url branch routes through an `isConnUrlAction` guard.
 - **Task 8 — the three form labels moved into `shared/`.** Main builds the Format submenu and cannot read a renderer module, so `LINK_DISPLAY_LABELS` sits beside `LINK_DISPLAYS` in `shared/properties.ts` and `LINK_FORMAT_OPTIONS` now derives its rows from it. Otherwise the menu and the two pickers would each spell "Full Link · Short Link · Page Title" separately.
 - **Task 8 — mounting the link handler in a cell restores more than the menu.** `markdownLinkClicks` carries following, the hover preview and the right-click menu in one extension, so a markdown link in a focused cell now behaves as one in the body does rather than only gaining its menu. `MarkdownPM.md`'s claim that the focused cell editor carries no link behaviour is rewritten. A `[[ ]]` connection in a focused cell is unaffected — `connectionClicks` is still not mounted there.

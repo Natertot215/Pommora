@@ -1532,6 +1532,7 @@ serveBridge(
         if (typeof text === 'string') clipboard.writeText(text)
       },
     },
+    'clipboard:read': { kind: 'raw', fn: () => clipboard.readText() },
     'path:reveal': {
       kind: 'raw',
       fn: async (p: unknown) => {
