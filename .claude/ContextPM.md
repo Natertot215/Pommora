@@ -2,11 +2,11 @@
 
 ### Current Focus
 
-- [ ] None yet
+- [ ] The closeout of the AutoLink & Table Fixes arc, and the planning of the `PickerMenu` ↔ `PopoutMenu` merge and disambiguation. 
 
 ### Immediate Work
 
-- [ ] Rework the `PickerMenu` across 
+- [ ] Rework the `PickerMenu` for double-chevron consumers to an edited version of the autocomplete's existing surface; the new component replaces it with a Popout menu that inherits the PickerMenu glass and surface but removes the notch in favor of the autocomplete's native-like, faster-revealing motion and rectangular shape. Additionally, PickerMenu's styling and functionality being closer to native OS menus opens the door for a "Use Native Menus" configuration option in settings. 
 
 ### Pending Focuses
 
@@ -25,13 +25,15 @@
 
 ### Important Information
 
-- **`aliasPickerOnCommit` is a personalization key with no switch behind it.** It governs whether accepting a page from the connection picker opens its alias slot when that page already has names worth offering, and it defaults on. This is intentionally invisible because the language used to describe the toggle on the settings surface hasn't been decided yet — do this sooner rather than later. 
+- **`aliasPickerOnCommit` is a personalization key with no switch behind it.** It governs whether accepting a page from the connection picker opens its alias slot when that page already has names to offer, and it defaults to on. This is intentionally invisible because the language used to describe the toggle on the settings surface hasn't been decided yet — do this sooner rather than later. 
 - **The reachability razor cuts guards, never structure.** Before defending against a state, name who produces it — nobody means no guard. The recurring failure is over-applying it: an unreached code path is dead weight the razor says nothing about.
 - **A whole-surface drag handle steals its own children's clicks.** The drag engine captures the pointer on pointerdown, so any interactive descendant has to stop pointerdown — a container only on its own empty space, so the title still drags.
-- **A caret that doesn't appear belongs to `nativeCaret.ts`, never to the field.** The browser's own caret is hidden app-wide and the drawn replacement is positioned by JS, so a working I-beam cursor beside a missing caret points at the overlay rather than at focus.
+- **A caret that doesn't appear belongs to `nativeCaret.ts`, never to the field.** The browser's own caret is hidden app-wide, and the drawn replacement is positioned by JS, so a working I-beam cursor beside a missing caret points at the overlay rather than at focus.
 - **A lock key is a fact, and two spellings of one file are two locks.** Any file more than one surface rewrites whole needs its key built in the path module rather than assembled per call site, the read has to sit inside the lock beside the write, and a relocate holds the lock of the path it is leaving.
-- **CodeMirror asks a block widget how tall to assume it is, on every edit inside its range.** Answering "unknown" means one line, so the document's height lies until the next measure — the cause of a block widget's surface jerking the scroll while it is typed in. It hands `destroy(dom)` the node so per-node resources can be released, and calls it only when the node is truly dropped; a widget replaced over a reused DOM is never destroyed.
+- **CodeMirror asks a block widget how tall to assume it is, on every edit inside its range.** Answering "unknown" means one line, so the document's height lies until the next measure — the cause of a block widget's surface jerking the scroll while it is typed in. It hands `the node to destroy(dom), so per-node resources can be released, and calls it only when the node is truly dropped; a widget replaced over a reused DOM is never destroyed.
 - **A parse given a fragment answers about the fragment.** The editor tokenizes a slice, so anything whose meaning depends on the lines above it — fence parity, list indentation — comes out wrong unless the slice opens somewhere unambiguous.
+- **A renderer `preventDefault` cannot suppress main's `context-menu` event.** Any editable target pops main's own editor menu regardless, so a surface that wants its own menu there has to be the only claimant — which is why the table widget reports non-editable and why two menus over one field is the recurring symptom.
+- **A table cell settles when its editor demotes, and a resting cell has no editor to demote.** Anything that writes to a cell without entering it must settle the table itself, or the edit lands in the document and the widget keeps drawing what was there before.
 - **Two rules any future in-app window must respect**, both learned on PreviewPane: openness drivers stay declared per-window, and a FLIP measures from the surface root via a real ref rather than by walking `parentElement`.
 
 #### II. Debt & Ride-Alongs
@@ -45,6 +47,7 @@
 - [ ] The `Creator` shape is stated three times — the named type in `shared/mutate.ts`, and inline in `shared/bridge.ts` and `store.ts`.
 - [ ] `useDismiss` coordinates with picker portals via per-event DOM queries; a shared open-picker counter removes the handshake.
 - [ ] The preview window's two halves share a path-keyed detail cache but neither dedupes an in-flight fetch, so navigating with the inspector already open still calls `openPage` twice.
+- [ ] `ActionItem<A>` is defined in `main/returningMenu.ts` while three shared menu models re-type its shape by hand; it is Electron-free and belongs in `shared/pageMenu.ts`, which `src/shared` can import and `src/main` can read back.
 - [ ] View format, grouping, and banner saves still trigger a full vault walk, as does `submitPropertyRename`; both want an optimistic targeted patch.
 
 ### Known Issues
@@ -55,8 +58,21 @@
 - [ ] How MarkdownPMs headings are given their top-bottom padding is still unclear; what's standard paragraph → heading spacing on Obsidian collapses on Pommora where the block above the heading doesn't seem to have any additional padding, or it's at least extremely minimal compared to the padding that headings have below them. 
 - [ ] The CardView banner-type toggle should likely be within the SettingPane rather than the LayoutPane; it makes more sense to group the two toggles together, though non-blocking.
 - [ ] Selection highlighting and caret placement in MarkdownPM lists don't properly recognize list placement.
+- [ ] The editor's heading grip-drag likely compounds a trailing blank line on repeated reorders — `blockMoveChanges` is handed a section range that includes it. The outline's own path was trimmed against this; the editor's was not.
 
 ### Recent Work
+
+#### PM-103 || AutoLink & Table Fixes
+
+An address pasted into any editor surface can now become a link rather than literal text, in whichever of three forms a per-Nexus default names, and that default settled a vocabulary: `link-full`, `link-short` and `link-title` name the same three forms wherever a link reads — a URL property's Format, a view column's, or a link in a page body — replacing two older sets that disagreed about how many forms there were. The markdown-link grammar widened to CommonMark's balanced-parenthesis destination, Page Title writes the domain and swaps the fetched title in against an anchored range, and a link's right-click menu grew from Copy Link alone into Rename · Edit Link · Copy Link · Format ▸ with Remove Link and Delete below a separator. ⌘⇧V does the inverse of whatever ⌘V is set to do, while `Paste As` and `Insert Link` cover what a default cannot. A markdown table's resting cell — which is not an editor and draws its links as plain spans — carries the whole of a link's behavior now, through one decision about what a right-clicked link is offered.
+
+#### PM-102 || Interaction & Outline Work
+
+The Subfield breadcrumb stopped collapsing on the way back up, tracing the whole path to the deepest node visited on it and holding that tail across a click that switches to a tab already showing its target. The Page Outline dropdown became a working surface rather than a viewer: it holds open until Escape or a re-press, a right-click renames a heading inline, and a heading row drags to move its whole section. The editor's fold chevron picked up its own menu — Rename, Size, and a Delete that drops the heading line alone — riding the one shared hot-line list the grip menu already reads.
+
+#### PM-101 || PommoraDND Dragging Fixtures
+
+Two drag surfaces living outside the shared layer moved onto it. The gesture skeleton had no answer for a press that can mean two things, so `onTap` now fires on a sub-threshold release and on no other ending — a cancel, an Escape, a window blur and a lost release all stay aborts — which is what MarkdownPM's drags need, since the glyph that doesn't drag toggles a checkbox and the grip that doesn't drag folds its section. `listDrag` and `blockDrag` handed their lifecycles over and kept only their geometry, and `EditorGesture`'s `ViewPlugin` gave a CodeMirror extension the unmount abort a React component gets for free.
 
 #### PM-100 || Trash Surface V1
 
@@ -65,20 +81,6 @@ The deletion record gained its reading half: `.trash` had been complete and unre
 #### PM-099 || Ghost Creation, Page Icons & One Page Menu
 
 Typing in a table stopped throwing the page's scroll: the block was reporting one line's height on every keystroke because the widget never answered CodeMirror's height question. The hover-born creators — the New Page row, card and sidebar leaf — became one shared effect, which a New Option slot in the property editors now rides, seating where the pointer rests rather than at the list's end. A page's actions gained one definition wherever it is right-clicked, with Copy Link, Copy Path and Reveal Location joining them, and a page's own header began drawing the icon it has always stored.
-
-#### PM-098 || Page Alias' V1
-
-A connection's visible words became the author's to choose: `[[Title|Alias]]` renders as its alias while resolving on title, the connection menu authors and repoints one, a page remembers every name it has been given and offers them back with a × that forgets for good, and `[Title](Page)` reaches a page beside the wikilink form — one grammar, one resolver, one rename sweep. A link now says what it is as it is written, wearing a `link-2` glyph in front of its target when revealed.
-
-#### PM-097 || CardView Creation Affordance
-**DATE:** 08-11-2026 → 08-12-2026
-
-Creation reached Cards and the sidebar on two extracted hooks the table refit onto — `useViewCreation` (seeds, order writes, create-then-name) and `useGhostAnchor` (dwell/grace, suppression, the pointerdown stand-down). The ghost card grows flow-after as the card's own skeleton with its neighbors FLIPed aside on the drag shift's feel; the sidebar ghost rides the row chrome at its own longer dwell. The rename slot gained an owner fence (a live set-band double-mount bug died with it, and an unclaimed session self-heals), Cards' naming unified onto the inline field, and the order-settle law now covers creates, cross-location drops, and the set-card reply gap alike. 
-
-#### PM-096 || TableView Creation Affordance
-**DATE:** 08-11-2026
-
-In-TableView page creation shipped whole: `createPage` carries seeds and a full-membership order slot in one write, a just-created page's first naming disambiguates like a create and skips the link cascade, and every trigger — the band "+", the grip menu's New Page Above/Below, the sidebar pair, and the hover ghost row on the shared disclosure motion — opens an empty naming field over a page already real on disk. `--state-inactive` joined the opacity ramp and `--state-disabled` died into it, and the in-drop label renames landed everywhere: Open New Tab · Open Preview.
 
 ### Guidelines
 

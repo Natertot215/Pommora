@@ -107,10 +107,17 @@
 | 06-14-2026 | PM-001 | Genesis — The Walking Skeleton |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot |
 
-#### PM-102 || AutoLink & Table Fixes
+#### PM-103 || AutoLink & Table Fixes
 **DATE:** 08-15-2026
 
+An address pasted into any editor surface can now become a link rather than literal text, in whichever of three forms — the whole address, its bare domain, or the site's fetched page title — a per-Nexus default says. That default was the occasion to settle a vocabulary: `link-full`, `link-short` and `link-title` now name the same three forms wherever a link reads, whether that is a URL property's own Format control, a view column's, or a link in a page body, replacing two older sets that disagreed about how many forms there were. Around the paste path came the menus that let one link depart from the default, and the machinery underneath them turned out to reach further than the editor — into table cells, which had never carried a link's behavior at all.
 
+**The Links:** The markdown-link grammar was widened first, to read CommonMark's balanced-parenthesis destination, so an address carrying parentheses survives however it was authored — one edit at the grammar rather than an encoding around it at each of its four consumers. Page Title cannot be known at paste time, so it writes the domain immediately and swaps the fetched title in when it lands, anchored to the range it inserted and mapped through every edit since, declining if those words have changed hands. A link's right-click menu grew from Copy Link alone into the items that edit a link — Rename and Edit Link for its two halves, each selected rather than merely reached, then Copy Link, Format, and below a separator the two readings of being rid of it: Remove Link leaves the label as prose, Delete takes the whole token. ⌘⇧V does the opposite of whatever ⌘V is set to do, on whichever knob a selection puts in question, and `Paste As` and `Insert Link` cover the two cases the default cannot: a clipboard offering more than one form, and an address already sitting in the prose as ordinary text.
+
+**Table Fixes:** A markdown table's cell is not an editor until you enter it — it draws as plain spans — so a link inside a resting one had no menu, no click, and no hover preview, and right-clicking it selected the word underneath. It carries the whole of a link's behavior now, both syntaxes, through one decision about what a right-clicked link is offered: the actions that only rewrite text commit against the cell without entering it, while Rename and Edit Link enter it with what you came to replace already selected. The span arithmetic each action needs was hoisted out of the two editor appliers so the cell performs the same edits rather than keeping its own idea of where a link keeps its parts, and it re-reads the cell when an action is chosen, since a native menu stands open as long as it likes. A resting cell's commit also settles the table now — settling was what a demoting cell editor did, and a cell never entered has none to demote, so an edit sat undrawn until something else entered and left.
+
+- **Commits:** `ed8aeed6^..6b00f167`
+- **Diff:** Net +1184 | +1580 / −396
 
 #### PM-102 || Interaction & Outline Work
 **DATE:** 08-14-2026

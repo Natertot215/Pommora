@@ -1,51 +1,57 @@
 ## Handoff — Pommora
 
-> **User Prompt:** *"Find what already exists first before scoping out or trying to make any change."*
+> **User Prompt:** *"Every action must be confirmed operational."*
 
 #### Current Focus
 
-**Session ID:** e019edf8-752e-43c2-a5a8-d2c34ad3f36a
-**Dates:** 08-14-2026
-**Model:** Opus 4.8 (1M context)
+**Session ID:** 7ff23352-9a5e-4972-be78-cf28011a0315
+**Dates:** 08-15-2026
+**Model:** Opus 5
 
-**Interaction polish, then the outline earned its drag.** The session opened on a batch of small interaction asks and closed with the Page Outline becoming a real working surface. The Subfield breadcrumb was the largest piece: it collapsed the moment you backed up a path, and it now keeps the deeper segments dimmed and re-navigable. The first attempt keyed the tail off the tab's forward `navStack` — wrong, because walking *up* a breadcrumb never puts the deeper nodes ahead in history — so it was rebuilt around `crumbDepth`, the deepest node visited on the current path, held while walking its own spine and reset on a branch. A breadcrumb click was then made to switch to a tab already showing its target while still holding the tail. The smaller asks landed alongside: ViewEmbed's title row gained **Change Icon** anchored to the glyph, and MarkdownPM's Insert and Format submenus reordered by inserted-character count.
+**Pasted links, then the table cells nobody had reached.** The session ran a ten-task plan to its end and then kept going through four rounds of live feedback. The plan's own arc was the paste path: the markdown-link grammar widened to CommonMark's balanced-parenthesis destination (one edit at the grammar, not an encoding around it at four consumers), one `link-full` / `link-short` / `link-title` vocabulary replaced two disagreeing sets, three settings landed under Pages, and Page Title learned to write the domain immediately and swap the fetched title in against a range anchored through every edit since. Phase 4 added the menus — a link's own right-click menu, the ⌘⇧V inverse chord taken from Paste and Match Style, and `Paste As ▸` on the prose menu.
 
-**Then the outline.** It closes only on Escape or a re-press now (so it survives a click into the page), its rail centres on the chevron at the shared disclosure step, a right-click renames a heading inline, and a heading row drags to reorder its whole section — reusing the editor's `blockMoveChanges`, with the range trimmed to the last non-blank line so the single-blank fencing never compounds on repeated reorders. The editor's fold chevron gained its own menu (Rename / Size / Delete-line-only) on the one shared hot-line list the grip menu already reads. Closed out with a simplification pass (the tripled section-span walk consolidated into `folding.sectionEnd`) and an adversarial review. A follow-on ride-along folded a standing drag debt: the collapsed-group spring-open bracket that four DnD surfaces hand-wrote — begin at press, end in teardown, split apart — now belongs to the gesture skeleton as an `onDisclose` hook, the way `onWindowScroll` already is (behavior-identical, correctness-reviewed, −18 lines).
+**Then the feedback.** Gate 4 sent back four corrections that mattered more than they looked: `Edit Link` had only ever been offered to a link naming a *page*, so the one form whose target can't be renamed through anything else had no way to be edited; the paste block wanted Paste → Paste As → Paste Without Formatting; and a resting table cell — which is not an editor and draws its links as plain spans — had no link menu at all, so Task 8's `CellEditor` mount only ever reached a cell already entered. That last one became its own piece of work: the actions that only rewrite text commit against the cell without entering it, while Rename and Edit Link enter it with their half already selected, with the span arithmetic hoisted out of both editor appliers so the two paths cannot diverge. A url column's Style menu then turned out to be offering two of three link forms in words nothing else used, writing a `look` no renderer read.
 
-**What is verified:** every gate green on the final state — typecheck 0, lint 0, 2618 tests across 229 files. The breadcrumb and the outline drag were driven live by Nathan and confirmed. The build-breaking review surfaced one real Medium — the global `crumbDepth` leaking a wrong tail across tabs — which was fixed by resetting it in `syncActiveDetail` (the tab-focus choke point), not the navigation path. **What is assumed:** the heading chevron menu (Rename / Size / Delete) is unrun — it touches the main process, so it needs a dev restart, and no automation clicks a native menu.
+**What is verified:** every gate green on the final state — typecheck 0, lint 0 **diagnostics**, 2732 tests across 235 files. Gates 1–4 were driven live by Nathan and confirmed. Three simplification passes ran, and every finding was checked against the code before folding: one found a real second writer (the "is a title still owed" verdict had drifted into three copies while the link text stayed consolidated) and one found a real defect (Paste As composed its label unescaped, so a page titled `Notes [WIP] final` produced a link the grammar reads back as nothing). **What is assumed:** nothing outstanding — the last live pass came back clean.
 
 #### Completion Criteria
 
-- [x] **Breadcrumb keeps the full path dimmed on nav-back**, re-navigable, driven by per-path `crumbDepth`; the old single-ghost `trail` removed.
-- [x] **Breadcrumb clicks switch to an open tab yet hold the tail**; a tab-focus change resets it (the cross-tab leak the review found, fixed).
-- [x] **ViewEmbed title menu offers Change Icon**, anchored to the title glyph.
-- [x] **Insert + Format submenus ordered by inserted-character count.**
-- [x] **Outline closes on Esc/re-press only, rail on the chevron, inline rename, drag-to-reorder sections** — fenced to one blank, no compounding.
-- [x] **Editor fold-chevron menu — Rename / Size / Delete (heading line only)** — on the shared hot-line list, generic menu stands down over the chevron.
-- [x] **Gates green; the review's one finding fixed and re-verified; section-walk consolidated.**
-- [x] **Drag-disclose bracket folded onto the gesture skeleton** (`onDisclose`) — four surfaces stop hand-wiring begin/end; behavior-identical, correctness-review verified.
+- [x] **The grammar reads balanced parentheses two levels deep**, so a parenthesized address survives however it was authored.
+- [x] **One `LinkDisplay` vocabulary** across URL properties, view columns, the editor and the nexus-wide default; the old `link-url` gone but for two migration tests that prove it falls back.
+- [x] **Three per-Nexus settings under Pages**, clean-file, with Default Format disclosed only while auto-format is on.
+- [x] **The paste path in both editors** — the page body and a table cell — honoring the inverse rule.
+- [x] **Page Title defers to the fetch** against an anchored range, declining once those words have changed hands.
+- [x] **A link's menu: Rename · Edit Link · Copy Link · Format ▸**, then Remove Link · Delete below a separator.
+- [x] **⌘⇧V does the inverse of ⌘V**; Paste and Match Style keeps its act as **Paste Without Formatting**, without the accelerator.
+- [x] **`Paste As ▸` on the prose menu**, and **`Insert Link`** over a selected address.
+- [x] **Links in table cells, resting and active, both syntaxes** — menu, follow, hover preview.
+- [x] **A url column's looks are the link forms**, defaulting to the property's own Format.
+- [x] **A saved view row pops the OS menu its siblings pop** — the view pane's rows and the embed's segments, off one shared model.
+- [x] **Gates green; three simplification passes folded after verification; the PopoutMenu scope written.**
 
 #### Next Session
 
-- **The Page Outline dropdown has no feature doc.** Its close behavior, inline rename, and section drag now warrant one — MarkdownPM covers only the editor-side chevron menu. Wait for Nathan's call.
-- **The editor's own heading grip-drag likely compounds a trailing blank** the same way the outline did before the range-trim — only the outline path was fixed. `blockMoveChanges` passes a heading section range that includes the trailing blank.
+- **The pickers.** `PopoutMenu — Scope.md` is written and two of its four decisions are ruled: every double-chevron picker moves, the block Scale picker stays. The migration unit is `PickerControl` itself — repointing its one menu moves all twenty-five consumers together — and two decisions remain open: whether PopoutMenu subsumes `PointMenu`, and whether `PickerControl` keeps its `solid` prop.
+- **The autocomplete panel is the piece that makes the component real** rather than a rename. It needs point anchoring, no focus management, a left origin, its own exit presence, and a stacking rung of its own — each of those is why it isn't already a `PickerMenu`.
+- **The Page Outline dropdown still has no feature doc** — carried from the previous session, still awaiting Nathan's call.
 
 #### Feedback
 
-- "Find what already exists first before scoping out or trying to make any change." — standing; every fixture opened with a read of what was reusable.
-- "Make it so that the breadcrumb NAVIGATES to the opened tab rather than creating it in place, but still preserves the path." — the tail is a property of the path, not the tab, so a switch can hold it.
-- "it should not auto-add a space, all it should do is ensure one exists" — idempotent fencing; a reorder must not accrete blanks.
-- "change icon needs to use the icons placement as the geometrical binding" — a picker anchors to the thing it edits, not the row around it.
-- "keep both" — the Insert *and* Format reorders, not one instead of the other.
+- "Every action must be confirmed operational." — standing; each gate was handed over for a live pass rather than claimed.
+- "a url cell on a markdown table does; TableView doesn't" — the two surfaces hold different things: a markdown cell holds a *link*, a view cell holds a property *value* whose form is its column's.
+- "only number + link should use Format for their headers on the View styling, the rest keep Style" — a status's Pill and a checkbox's Switch are looks, not formats.
+- "that violates the on-every-x rule and should be simplified" — a keydown path may not allocate; a shortcut spec is parsed once and kept.
+- "Do the menu reversal without listing it here as its what was always supposed to be done in the first place" — a correction to obvious is written as though the right way was always intended.
 
 #### Session Pointers
 
-- `Pommora/src/renderer/src/Detail/Subfield/crumbs.ts` — `subfieldCrumbs` builds the spine from `crumbDepth` and dims past the current node; `crumbDepthFor` is the hold-while-ancestor rule.
-- `Pommora/src/renderer/src/store.ts` — `crumbDepth` updates at the top of `select`; `navigateCrumb` delegates to `select` and flips the slide; `syncActiveDetail` resets the depth on a tab-focus change.
-- `Pommora/src/renderer/src/Toolbar/OutlineDnd.tsx` — the trimmed drag engine (snapshot, autoscroll, DropLine); `pageEditor.moveHeadingSection` is the document mutation it commits.
-- `Pommora/src/renderer/src/MarkdownPM/editor/gripMenu.ts` + `src/main/gripMenu.ts` — the chevron menu rides the grip-menu IPC; `HOT_MENU_LINES` is the one list the hit-tests and the hover flag share.
-- `Pommora/src/renderer/src/MarkdownPM/editor/folding.ts` — `sectionEnd` is the single section-span walk (was tripled across the outline and the mover).
-- `Pommora/src/renderer/src/design-system/interactions/gesture.ts` — the gesture skeleton owns `onDisclose` (the drag-disclose bracket) beside `onWindowScroll`; `group.tsx` is the one hand-rolled engine that stays manual.
+- `Pommora/src/shared/PasteLink.ts` — `decidePaste` is the pure decision; `linkPaste` answers both halves of what a formatted link is (its markdown, and whether a title is still owed) so no writer can answer either differently.
+- `Pommora/src/renderer/src/MarkdownPM/editor/PasteLink.ts` — deciding is separate from writing so the paste event is claimed on the decision alone; `pasteAs` and the ⌘⇧V chord share `writeLink`.
+- `Pommora/src/renderer/src/MarkdownPM/editor/PendingTitle.ts` — the anchored range Page Title swaps into, mapped with inward assoc and pruned the moment the text there stops reading as what was written.
+- `Pommora/src/renderer/src/MarkdownPM/editor/linkFormat.ts` — `linkActionText` and `linkHalves` are the pure span math the editor and a resting table cell both perform.
+- `Pommora/src/renderer/src/MarkdownPM/Tables/cellStatic.tsx` — a resting cell's own link menu; `still()` re-reads the cell when an action is chosen, since a native menu stands open as long as it likes.
+- `Pommora/src/shared/columnStyles.ts` — a url column's default look is its property's Format, which is why `defaultStyleFor` takes the definition.
+- `.claude/Planning/Link Formatting — Implementation Plan.md` — the Implementation Log at the bottom holds the rulings, observations and deviations; several things that look like defects are decisions.
 
 #### Working Notes
 
