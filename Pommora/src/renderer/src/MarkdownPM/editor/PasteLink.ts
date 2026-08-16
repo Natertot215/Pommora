@@ -1,6 +1,7 @@
 import { EditorView } from '@codemirror/view'
 import { decidePaste, pastedUrl } from '@shared/PasteLink'
 import { useSession } from '../../store'
+import { awaitTitle } from './PendingTitle'
 
 // Turns a pasted address into a markdown link, in the form the nexus is set to. Mounted in BOTH
 // editors: the page body and a table cell each build their own EditorView, and a URL pasted into a
@@ -34,11 +35,20 @@ export const pasteLink = EditorView.domEventHandlers({
     if (decision.kind === 'literal') return false
 
     event.preventDefault()
+    // The inserted span, in the coordinates the transaction leaves behind — an insert at `from`
+    // does not move `from` itself.
+    const to = sel.from + decision.text.length
     view.dispatch({
       changes: { from: sel.from, to: sel.to, insert: decision.text },
-      selection: { anchor: sel.from + decision.text.length },
+      selection: { anchor: to },
       userEvent: 'input.paste',
+      effects: decision.wantsTitle
+        ? awaitTitle.of({ from: sel.from, to, url: decision.target, text: decision.text })
+        : undefined,
     })
+    // Fire-and-forget into the shared cache: the anchor above is what picks the answer back up, and
+    // a property cell showing the same address gets it for free.
+    if (decision.wantsTitle) useSession.getState().resolveLinkTitle(decision.target)
     return true
   },
 })
