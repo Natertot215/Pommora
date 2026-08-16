@@ -69,6 +69,22 @@ A value is decoded against the type its definition declares — the key names th
 - **No value, no key.** Setting a property to null, or to any empty value, clears its key from the member file — a member without a value never carries a placeholder, and the rule reaches the Remove-cache the same way. Checkbox false and number zero are real values and stay.
 - **An unmatched wrapped key persists inert.** A key naming no registry entry is preserved by value and read by nothing.
 
+Here's an example of how the frontmatter page with both Pommora-managed and externally-applied frontmatter would appear:
+
+```yaml
+(Projects):
+  - Pommora
+<Tags>:
+  - Claude
+  - Docs
+Areas:
+ - Work
+ - Personal
+tags
+  - Obsidian
+  - Task
+```
+
 ### Property Types
 
 #### II. Status
@@ -106,7 +122,7 @@ Select stores a bare string and renders one colored chip; Multi-Select stores a 
 
 A URL property renders each value as a clickable link, opened through the sanctioned IPC. Its look is set on the property and applies everywhere, though a view's column may read its links differently — the column style carries the same three forms, and a column that names none takes the property's:
 
-- **Format** — one of the three link formats: **Full Link** the whole address, **Short Link** its bare domain, **Page Title** the site's fetched title. These are the same three the editor writes a pasted link in, named the same way.
+- **Format** — one of the three link formats: **Full Link** the whole address, **Short Link** its bare domain, **Page Title** the site's fetched title.
 - **Underline** — on or off.
 - **Color** — the link color, a palette key chosen from the chip beside it (Default = the app accent), which also themes the editor pane's own controls.
 

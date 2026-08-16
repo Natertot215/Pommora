@@ -1,4 +1,4 @@
-import { memo } from 'react'
+import { memo, useRef } from 'react'
 import { linkTarget, tokenize, type Token } from '../tokens'
 import { CONTENT_CLASS } from '../decorations/intent'
 import { resolveMdTarget, type ConnectionsApi, type ConnMenuTarget } from '../connections'
@@ -119,6 +119,13 @@ function StaticCellImpl({
   /** Enter the cell with `range` selected, for the actions that put you in position to retype. */
   onSelect: (range: [number, number]) => void
 }): React.JSX.Element {
+  // What the cell reads NOW, not when its menu was popped. A native menu can be held open for as long
+  // as the user likes, and an undo or an outside write can move the cell underneath it — the editor's
+  // own applier re-reads its document for the same reason. The render keeps this current because a
+  // cell re-renders on exactly one prop.
+  const live = useRef(text)
+  live.current = text
+
   // A link carries its own menu wherever it is drawn, and a resting cell draws links — both syntaxes
   // of them. Which menu it gets is the shared resolver's answer, exactly as in the body: what only
   // rewrites text is performed as a commit, since entering the cell to change how a link reads would
@@ -128,11 +135,23 @@ function StaticCellImpl({
     const span = linkSpanAt(e.target)
     const api = connections?.()
     if (!span || !api?.menu) return
-    const tk = tokenize(text).find(
-      (t) => t.range[0] === span[0] && (t.kind === 'link' || t.kind === 'wikiLink'),
+    const found = linkTokenAt(text, span[0])
+    if (!found) return
+    const target = menuTarget(
+      // Re-found against the cell as it stands when the action is chosen; a cell that has since
+      // changed no longer holds the link the menu was popped on, and the action declines.
+      () => {
+        const now = linkTokenAt(live.current, span[0])
+        return now && live.current.slice(...now.range) === text.slice(...found.range)
+          ? { text: live.current, tk: now }
+          : null
+      },
+      found,
+      text,
+      api,
+      onCommit,
+      onSelect,
     )
-    if (!tk) return
-    const target = menuTarget(text, tk, api, span, onCommit, onSelect)
     if (!target) return
     e.preventDefault()
     e.stopPropagation()
@@ -163,13 +182,25 @@ function StaticCellImpl({
   )
 }
 
+/** The link token starting at `at`, whichever syntax wrote it. */
+function linkTokenAt(text: string, at: number): Token | null {
+  return (
+    tokenize(text).find(
+      (t) => t.range[0] === at && (t.kind === 'link' || t.kind === 'wikiLink'),
+    ) ?? null
+  )
+}
+
 /** What this link is offered, and how a resting cell carries it out. Null where it names nothing to
- *  act on — the same bail the editor's own handler makes on an unresolvable target. */
+ *  act on — the same bail the editor's own handler makes on an unresolvable target.
+ *
+ *  `still` re-reads the link at the moment an action is chosen; `tk` and `text` are what the menu was
+ *  built from, which is what decides which menu it is. */
 function menuTarget(
-  text: string,
+  still: () => { text: string; tk: Token } | null,
   tk: Token,
+  text: string,
   api: ConnectionsApi,
-  span: [number, number],
   onCommit: (text: string) => void,
   onSelect: (range: [number, number]) => void,
 ): ConnMenuTarget | null {
@@ -183,13 +214,17 @@ function menuTarget(
       editable: true,
       hasAlias: tk.resolveRange !== undefined,
       apply: (action) => {
-        const { pipeAt, select } = wikiAuthorTarget(text, tk, action)
-        if (pipeAt !== undefined) onCommit(`${text.slice(0, pipeAt)}|${text.slice(pipeAt)}`)
+        const now = still()
+        if (!now) return
+        const { pipeAt, select } = wikiAuthorTarget(now.text, now.tk, action)
+        if (pipeAt !== undefined)
+          onCommit(`${now.text.slice(0, pipeAt)}|${now.text.slice(pipeAt)}`)
         onSelect(select)
       },
     }
   }
-  const target = resolveMdTarget(api, linkTarget(text, tk))
+  const url = linkTarget(text, tk)
+  const target = resolveMdTarget(api, url)
   // A target naming a page is menued as the connection it is drawn as, minus the authoring pair that
   // belongs to `[[ ]]` — the same subset the body offers it.
   if (target.kind === 'page')
@@ -197,13 +232,17 @@ function menuTarget(
   if (target.kind === 'invalid') return null
   return {
     kind: 'url',
-    url: linkTarget(text, tk),
+    url,
     apply: (action) => {
+      const now = still()
+      if (!now) return
       if (action === 'rename' || action === 'editLink')
-        return onSelect(linkHalves(tk)[action === 'rename' ? 'label' : 'address'])
-      const edit = linkActionText(text, tk, action)
+        return onSelect(linkHalves(now.tk)[action === 'rename' ? 'label' : 'address'])
+      const edit = linkActionText(now.text, now.tk, action)
       if (!edit) return
-      onCommit(text.slice(0, span[0]) + edit.insert + text.slice(span[1]))
+      // The token's own span, so what is replaced is exactly what the edit was computed from — the
+      // editor replaces `tk.range` too, and the two cannot come to mean different things.
+      onCommit(now.text.slice(0, now.tk.range[0]) + edit.insert + now.text.slice(now.tk.range[1]))
       // No editor here means no anchor to swap the title into when it lands, so the domain stands and
       // the fetch is requested for its own sake — the next Format finds it cached.
       if (edit.wantsTitle) useSession.getState().resolveLinkTitle(edit.url)
