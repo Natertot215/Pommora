@@ -20,17 +20,20 @@ export interface PasteInput {
   title?: string
 }
 
+/** A link a paste should be written as, rather than the text it arrived as. */
+export interface LinkPaste {
+  kind: 'link'
+  text: string
+  /** The address the link points at, for a title fetch to resolve against. */
+  target: string
+  /** Whether the label is standing in until a page title arrives. */
+  wantsTitle: boolean
+}
+
 export type PasteDecision =
   /** Nothing to do — let the editor's own paste run. */
   | { kind: 'literal' }
-  | {
-      kind: 'link'
-      text: string
-      /** The address the link points at, for a title fetch to resolve against. */
-      target: string
-      /** Whether the label is standing in until a page title arrives. */
-      wantsTitle: boolean
-    }
+  | LinkPaste
 
 const LITERAL: PasteDecision = { kind: 'literal' }
 

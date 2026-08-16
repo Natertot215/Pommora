@@ -74,6 +74,9 @@ export interface Asks {
   // Two small services a page action needs from main: the system clipboard, and revealing a
   // nexus-relative path in the file manager (validated against the root before it resolves).
   'clipboard:write': { args: [text: string]; reply: undefined }
+  // Read is the keyboard's door to what a paste event carries for free: a chord matched on keydown
+  // has no `clipboardData` of its own.
+  'clipboard:read': { args: []; reply: string }
   'path:reveal': { args: [nexusRelativePath: string]; reply: undefined }
 
   // Pages

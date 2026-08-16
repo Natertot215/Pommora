@@ -195,6 +195,7 @@ const api = {
   // A table row grip's right-click menu (page meta + New Page Above/Below).
   rowGripMenu: ask('row-grip-menu'),
   writeClipboard: ask('clipboard:write'),
+  readClipboard: ask('clipboard:read'),
   revealPath: ask('path:reveal'),
   pageActionsMenu: ask('page-actions-menu'),
   // A card's right-click menu (page meta + Add Property ▸).

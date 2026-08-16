@@ -54,7 +54,6 @@ function systemItems(wc: WebContents, params: ContextMenuParams): MenuItemConstr
     { role: 'cut', enabled: f.canCut },
     { role: 'copy', enabled: f.canCopy },
     { role: 'paste', enabled: f.canPaste },
-    { role: 'pasteAndMatchStyle', enabled: f.canPaste },
     { role: 'selectAll' },
   )
   return items

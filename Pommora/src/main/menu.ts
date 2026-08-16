@@ -78,7 +78,25 @@ export async function installAppMenu(win: BrowserWindow, adopt: AdoptFn): Promis
         { role: 'close' },
       ],
     },
-    { role: 'editMenu' },
+    // The `editMenu` role spelled out, minus Paste and Match Style: its ⌘⇧V accelerator is claimed
+    // main-side, and while the item exists the chord never reaches the renderer at all. CodeMirror
+    // strips a paste to plain text regardless, and every other input in the app is plain, so the item
+    // had nothing left to do that Paste doesn't already.
+    {
+      label: 'Edit',
+      submenu: [
+        { role: 'undo' },
+        { role: 'redo' },
+        { type: 'separator' },
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' },
+        { role: 'delete' },
+        { role: 'selectAll' },
+        { type: 'separator' },
+        { label: 'Speech', submenu: [{ role: 'startSpeaking' }, { role: 'stopSpeaking' }] },
+      ],
+    },
     {
       label: 'View',
       submenu: [
