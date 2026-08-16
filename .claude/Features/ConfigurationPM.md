@@ -40,6 +40,7 @@ Keyboard shortcuts are data, not code: the `commands` object in `.nexus/settings
 
 - **toggle-ribbon** — slides the sidebar's ribbon strip away and back.
 - **toggle-nav** — summons the Navigation window.
+- **paste-inverse** — pastes into an editor the opposite way the Pages settings say a plain paste behaves (→ [[MarkdownPM]] §Pasted links). It takes the chord the system's Paste and Match Style holds by default, so that item is dropped from the Edit menu and from the editor's own right-click menu; the editor strips a paste to plain text regardless, which is all that item did here.
 
 ### Write Discipline
 
