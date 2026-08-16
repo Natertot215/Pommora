@@ -100,7 +100,7 @@ Input-time only; each fires as one atomic transaction with a re-entry guard, all
 
 ### Context Menu + Shortcuts
 
-Right-click pops the OS-native menu, built in the main process off the `context-menu` event so the system edit roles, spelling, Speech, and Share come native, with Pommora submenus (Format / Heading / Lists / Insert) whose active state reads the live `EditorState`. Shortcuts: ⌘B / I / E / K, ⌘⇧X (strike), ⌘⇧K (connection), and ⌘⇧V for the inverse paste (→ [[ConfigurationPM]] §Commands).
+Right-click pops the OS-native menu, built in the main process off the `context-menu` event so the system edit roles, spelling, Speech, and Share come native, with Pommora submenus (Format / Heading / Lists / Insert) whose active state reads the live `EditorState`. **Paste As ▸** closes that block, offering what the clipboard could become rather than what a plain paste would make of it: an address offers the three link forms and the address itself, a copied `[[Connection]]` offers either syntax that reaches its page, and a markdown link is read through its target the same way a link's own menu reads one. A clipboard holding none of those shows no submenu at all. The menu is main's, built off the `context-menu` event, so it never pops over a table's non-editable widget — Paste As is absent inside a cell, where ⌘V and the inverse chord still work. Shortcuts: ⌘B / I / E / K, ⌘⇧X (strike), ⌘⇧K (connection), and ⌘⇧V for the inverse paste (→ [[ConfigurationPM]] §Commands).
 
 ### Module Shape
 
