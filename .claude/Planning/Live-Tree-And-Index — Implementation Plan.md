@@ -153,9 +153,9 @@ At the end of this plan, none of that survives as a hot path. Main holds a **liv
 **Failure half:** patch on a null tree → null (caller refreshes); a refresh rejecting (transient FS state) → the held tree stays as last-known and the promise slot clears so the next caller retries — but a rejection identifying a missing root drops the held tree so reads report the error instead of a ghost nexus; a stale walk (epoch moved) → discarded **and re-walked, never discarded-and-trusted** — the walk's context-resolution pass mutates cache-shared nodes in place, so a discarded walk may already have touched nodes the live tree holds, and only the re-walk re-converges them; root switch mid-walk → discarded, matching `sessionRoot()` guards elsewhere.
 
 **Steps:**
-- [ ] Write failing tests: single-flight (two concurrent refreshes, one walk — count via an injected walker), patch-then-get identity, null-patch fallback signal, the stale-walk epoch discard (patch mid-walk → walk result discarded → second walk installs), root-switch discard, missing-root drop.
-- [ ] Implement; re-run — expect pass.
-- [ ] Full gates green. Commit: `feat(main): a live tree, walked once and patched thereafter`
+- [x] Write failing tests: single-flight (two concurrent refreshes, one walk — count via an injected walker), patch-then-get identity, null-patch fallback signal, the stale-walk epoch discard (patch mid-walk → walk result discarded → second walk installs), root-switch discard, missing-root drop.
+- [x] Implement; re-run — expect pass.
+- [x] Full gates green. Commit: `feat(main): a live tree, walked once and patched thereafter`
 
 #### Task 3: Reads serve the live tree
 
