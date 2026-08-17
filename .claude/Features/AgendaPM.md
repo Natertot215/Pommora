@@ -20,7 +20,7 @@ Agenda currently carries no on-disk format, no CRUD, and no read surface — the
 
 Exactly one Tasks folder and one Events folder are canonical, recorded by sidecar id at the nexus level. A hand-made config names an id the record doesn't hold and is inert; a nested one is inert on depth alone. A copy is the harder case, since every duplication mechanism reproduces the id the record keys on — two root folders claiming one record register neither, and a copy filed below the root stays where its owner put it.
 
-A slot whose folder name is already taken goes unregistered — seeding refuses to write an agenda config into a folder that already exists, keeping it from claiming a user's own `Tasks/` of notes. Nothing fills that slot afterwards, because nexus creation is the registration record's only writer; adopting or disambiguating such a folder needs a second writer, and what one may do is the Agenda work's call.
+A slot whose folder name is already taken goes unregistered — seeding refuses to write an agenda config into a folder that already exists, keeping it from claiming a user's own `Tasks/` of notes. Nothing fills that slot afterward, because nexus creation is the registration record's only writer; adopting or disambiguating such a folder needs a second writer, and what one may do is the Agenda work's call.
 
 ### Pending
 
