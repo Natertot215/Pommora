@@ -168,7 +168,7 @@ export function ViewSettings({
   const cardsFooting =
     view.type === 'cards' ? (
       <MenuBottomRow>
-        {formatToggle('cards-grid', 'Style')}
+        {formatToggle('palette', 'Style')}
         <div className={cx(item, flushTrailing, vs.scaleRow)}>
           <span className={side}>
             <span className={footingSymbol}>

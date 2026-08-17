@@ -69,6 +69,8 @@ export function PickerMenu({
   anchorY,
   anchorHeight = 0,
   bounds,
+  header,
+  footer,
   maxHeight,
   width,
   bareSurface = false,
@@ -99,6 +101,11 @@ export function PickerMenu({
   /** The box the pane slides within, viewport coords; the viewport when omitted. A pane that stops
    *  at the window edge has already crossed whatever pane sits beside its own. */
   bounds?: { left: number; right: number }
+  /** A pinned top / bottom bar, the menu family's own (MenuPaneTopRow, MenuBottomRow). Either one
+   *  puts the rows in the scroll frame, so the bars hold their place while the body scrolls between
+   *  them. Both wear the ActionRow tier, a step under the rows they frame. */
+  header?: ReactNode
+  footer?: ReactNode
   maxHeight?: number
   /** Pair with `origin="left"`: without this, widening content near a viewport edge still drags
    *  every row sideways via the position clamp. */
@@ -127,6 +134,14 @@ export function PickerMenu({
     },
     [],
   )
+  // The rows the pane paints through its Bloom-out. A caller's children are built from the state
+  // that opened the pane, and closing usually clears that state in the same tick — so the pane would
+  // otherwise retract empty, collapsing as it fades. Held here rather than in each consumer: a
+  // picker that retracts with its rows intact is the component's business, not a caller's.
+  const heldChildren = useRef<ReactNode>(children)
+  if (!closing) heldChildren.current = children
+  const body = closing ? heldChildren.current : children
+
   const paneRef = useRef<HTMLDivElement>(null)
   const glassRef = useRef<HTMLDivElement>(null)
   const markerRef = useRef<HTMLSpanElement>(null)
@@ -391,10 +406,16 @@ export function PickerMenu({
     >
       {/* The surface keeps its gutter (must never scroll) — the frame's body is the ONE overflow
           region + edge fade. */}
-      {maxHeight === undefined ? (
-        children
+      {maxHeight === undefined && !header && !footer ? (
+        body
       ) : (
-        <MenuScrollFrame maxHeight={maxHeight}>{children}</MenuScrollFrame>
+        <MenuScrollFrame
+          maxHeight={maxHeight ?? s.PICKER_MAX_HEIGHT}
+          header={header}
+          footer={footer}
+        >
+          {body}
+        </MenuScrollFrame>
       )}
     </GlassPane>
   )
@@ -458,20 +479,31 @@ export function PickerMenu({
 
 /**
  * A menu opened AT a point — the cursor of the right-click that spawned it, rather than an element.
- * The caller holds that point in state and keeps its own `state && …` guard, which is what narrows
- * the rest of the state it captured alongside the coordinates.
+ * The caller holds that point in state and passes it straight through: `null` IS the closed state,
+ * so the menu stays mounted and retracts rather than being torn out mid-Bloom. The last point is
+ * held through the exit, since the pane has to finish where it opened.
  */
 export function PointMenu({
   at,
   onDismiss,
   children,
 }: {
-  at: { x: number; y: number }
+  at: { x: number; y: number } | null
   onDismiss: () => void
   children: ReactNode
 }): React.JSX.Element {
+  const held = useRef(at)
+  if (at) held.current = at
+  const point = at ?? held.current
   return (
-    <PickerMenu solid open onDismiss={onDismiss} anchorX={at.x} anchorY={at.y} origin="center">
+    <PickerMenu
+      solid
+      open={at !== null}
+      onDismiss={onDismiss}
+      anchorX={point?.x ?? 0}
+      anchorY={point?.y ?? 0}
+      origin="center"
+    >
       {children}
     </PickerMenu>
   )

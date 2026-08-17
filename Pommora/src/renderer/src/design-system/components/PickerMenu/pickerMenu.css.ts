@@ -1,6 +1,6 @@
 import { globalStyle, style } from '@vanilla-extract/css'
 import { vars as colorVars } from '../../tokens/color.css'
-import { text } from '../../tokens/typography.css'
+import { font, text } from '../../tokens/typography.css'
 import { TINT_STEPS, tintAt } from '../../tokens/tint'
 import { stack } from '../../tokens/stack'
 import { dropdownAnchor } from '../dropdownAnchor'
@@ -102,6 +102,14 @@ export const pane = style({
   position: 'relative',
   zIndex: 0,
   borderRadius: `${PANE_RADIUS}px`,
+  // A picker's rows are a control's options, not a menu's commands, so the whole family reads the
+  // control RAMP rather than the menu's body default. The tone stays the menu's: a row is still a
+  // row, and only its size marks it as belonging to a control. Set once on the pane — every row
+  // inside, the shared MenuItem included, inherits it, so no row states a ramp of its own.
+  vars: {
+    '--menu-row-size': font.scale.control.size,
+    '--menu-row-line': font.scale.control.line,
+  },
 })
 
 /** The default gutter, for a pane that doesn't bring its own. */
@@ -109,7 +117,7 @@ export const surface = style({
   padding: '4px',
   display: 'flex',
   flexDirection: 'column',
-  gap: '2px',
+  gap: '0px',
 })
 
 // The portal escapes any label-tone context, so the option must set its OWN type + colour (else it

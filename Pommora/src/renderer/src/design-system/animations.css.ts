@@ -19,7 +19,7 @@ export const dropdownMenu = style({
 // Retract — pane shrinks back toward its trigger so a dismiss withdraws rather than cuts.
 globalKeyframes('dropdown-menu-out', {
   from: { opacity: 1, transform: 'scale(1)' },
-  to: { opacity: 0, transform: 'scale(0.92)' },
+  to: { opacity: 0, transform: 'scale(0.75)' },
 })
 
 export const dropdownMenuClosing = style({

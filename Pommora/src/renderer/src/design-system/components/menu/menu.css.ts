@@ -1,7 +1,7 @@
 import { globalStyle, style } from '@vanilla-extract/css'
 import { vars as colorVars } from '../../tokens/color.css'
 import { DISCLOSURE_INDENT } from '../../tokens/size.css'
-import { text, truncateHoverScroll } from '../../tokens/typography.css'
+import { font, text, truncateHoverScroll } from '../../tokens/typography.css'
 import { duration, easing } from '../../tokens/motion'
 import { TINT_STEPS, tintAt } from '../../tokens/tint'
 import { fieldRing, ROW_RING } from '../fieldRing'
@@ -49,6 +49,13 @@ export const rowShell = style({
   },
 })
 
+/** KNOBS — the ramp a row wears, so a surface can restate it once on itself instead of every row
+ *  overriding the base by hand. The default is the menu family's: a menu row is body text. A picker
+ *  drops to the control pair, because its rows are a control's options rather than a menu's commands.
+ *  The TONE is not a knob — every row in the family reads primary, whatever its size. */
+const ROW_SIZE = `var(--menu-row-size, ${font.scale.body.size})`
+const ROW_LINE = `var(--menu-row-line, ${font.scale.body.line})`
+
 export const item = style([
   text.body.standard,
   rowShell,
@@ -58,6 +65,8 @@ export const item = style([
     gap: `${ROW_GAP}px`,
     minHeight: '24px',
     padding: `6px ${ROW_PAD_X}px`,
+    fontSize: ROW_SIZE,
+    lineHeight: ROW_LINE,
     color: c.label.primary,
     userSelect: 'none',
   },
@@ -260,6 +269,12 @@ export const accessoryGhostRest = style({
 })
 // ── TopRow / BottomRow rhythm ──
 
+/** ActionRow — the menu family's ancillary tier, worn by a pane's pinned header and footer. A bar
+ *  frames the rows rather than joining them, so it reads a full ramp under them at the secondary
+ *  tone. Every bar part composes this; a part that sits lower still (a breadcrumb) restates only its
+ *  TONE, never a second size. */
+export const actionRow = style([text.footnote.emphasized, { color: c.label.secondary }])
+
 /** A pane TopRow's vertical padding + heading tone — drops the base row-height floor to the caption line. */
 export const topRowPad = style({
   paddingBlock: 'var(--top-row-block, 2px)',
@@ -271,9 +286,9 @@ export const topRowPad = style({
 // brighter than trailing (the current pane), so the back destination sits a step above the breadcrumb.
 // Each knob colours the text/glyph itself, so it beats the surface's dropdown-title rule. All surfaces
 // route here via MenuTopRow / MenuPaneTopRow.
-export const topBarLeadingLabel = style([text.callout.emphasized, { color: c.label.secondary }])
+export const topBarLeadingLabel = style([actionRow])
 export const topBarLeadingSymbol = style({ display: 'inline-flex', color: c.label.secondary })
-export const topBarTrailingLabel = style([text.caption.emphasized, { color: c.label.tertiary }])
+export const topBarTrailingLabel = style([actionRow, { color: c.label.tertiary }])
 export const topBarTrailingSymbol = style({ display: 'inline-flex', color: c.label.tertiary })
 /** The gap below the header separator — tied to the same `--top-row-block` rhythm knob. */
 export const paneSeparator = style({ marginBottom: 'var(--top-row-block, 2px)' })
@@ -298,7 +313,7 @@ export const bottomBar = style({ marginTop: 'auto' })
 // ── Footing tone knobs — the pinned footer's parts (the cards Style row, the +/⋮ BottomRow). A footing
 // reads a step quieter than a body row, an ancillary action; its symbol sits a step under the TopBar
 // chevron. One source; the Style row + MenuBottomRow route here.
-export const footingLabel = style([text.callout.emphasized, { color: c.label.secondary }])
+export const footingLabel = style([actionRow])
 /** A pinned-footer text action — footing tone over the accessory hover pill. */
 export const footerAction = style([
   footingLabel,
