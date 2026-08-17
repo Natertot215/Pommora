@@ -391,7 +391,8 @@ const embedAtomic = EditorView.atomicRanges.of((view) => {
   if (ranges.length === 0) return Decoration.none
   const b = new RangeSetBuilder<Decoration>()
   const len = view.state.doc.length
-  for (const r of ranges) b.add(Math.max(0, r.from - 1), Math.min(len, r.to + 1), Decoration.mark({}))
+  for (const r of ranges)
+    b.add(Math.max(0, r.from - 1), Math.min(len, r.to + 1), Decoration.mark({}))
   return b.finish()
 })
 

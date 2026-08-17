@@ -148,8 +148,6 @@ export function pageMetaMenuSubset<A extends PageMetaAction>(
     move: true,
     clipboard: true,
     reveal: true,
-  }).filter((i): i is ActionItem<A> =>
-    (actions as readonly PageMetaAction[]).includes(i.action),
-  )
+  }).filter((i): i is ActionItem<A> => (actions as readonly PageMetaAction[]).includes(i.action))
   return kept.map((item, i) => (i === 0 ? { ...item, separatorBefore: undefined } : item))
 }

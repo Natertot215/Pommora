@@ -16,7 +16,12 @@ const tree = {
       id: 'col',
       title: 'Notes',
       path: 'Notes',
-      pages: ['x', 'y', 'z', 'n'].map((id) => ({ kind: 'page', id, title: id, path: `Notes/${id}.md` })),
+      pages: ['x', 'y', 'z', 'n'].map((id) => ({
+        kind: 'page',
+        id,
+        title: id,
+        path: `Notes/${id}.md`,
+      })),
       sets: [],
     },
   ],
@@ -115,10 +120,7 @@ describe('previewTabs — durable sets (H-3/H-6/H-10)', () => {
         navSet: null,
         origins: {
           x: {
-            tabs: [
-              { target: { kind: 'page', id: 'x' } },
-              { target: { kind: 'page', id: 'y' } },
-            ],
+            tabs: [{ target: { kind: 'page', id: 'x' } }, { target: { kind: 'page', id: 'y' } }],
             activeIndex: 1,
           },
         },
@@ -178,9 +180,7 @@ describe('previewTabs — durable sets (H-3/H-6/H-10)', () => {
     useSession.getState().closePreviewTab(p.tabs[0].id)
     const file = useSession.getState().previewsFile
     expect(file.origins.x).toBeUndefined()
-    expect(file.origins.y?.tabs).toEqual([
-      { target: { kind: 'page', id: 'y' } },
-    ])
+    expect(file.origins.y?.tabs).toEqual([{ target: { kind: 'page', id: 'y' } }])
     expect(file.open).toEqual({ flavor: 'page', originId: 'y' })
   })
 

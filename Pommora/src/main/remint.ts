@@ -167,7 +167,10 @@ function copyDeviceRows(target: RemintTarget, fresh: string, viewIds: Map<string
  *  per-machine key two boards must never share — each tile's views pass through the same
  *  re-mint every in-app tile copy uses. */
 function copyBlockDocRow(oldId: string, fresh: string): void {
-  const doc = readKey<Record<string, unknown>>('blockDoc', blockHostKey({ kind: 'space', id: oldId }))
+  const doc = readKey<Record<string, unknown>>(
+    'blockDoc',
+    blockHostKey({ kind: 'space', id: oldId }),
+  )
   if (doc === null) return
   const blocks = Array.isArray(doc.blocks)
     ? doc.blocks.map((b) =>

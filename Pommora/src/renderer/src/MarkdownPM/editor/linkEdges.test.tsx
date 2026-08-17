@@ -2,7 +2,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
-import { buildPageIndex, type ConnectionsApi, type ConnPage } from '@renderer/MarkdownPM/connections'
+import {
+  buildPageIndex,
+  type ConnectionsApi,
+  type ConnPage,
+} from '@renderer/MarkdownPM/connections'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '@renderer/testing/editorHarness'
 
 class ResizeObserverStub {

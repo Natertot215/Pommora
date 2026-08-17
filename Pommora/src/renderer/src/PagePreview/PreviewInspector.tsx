@@ -303,35 +303,35 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
         )}
       </div>
       <PickerMenu
-          solid
-          open={addOpen}
-          onDismiss={() => setAddOpen(false)}
-          triggerRef={addRef}
-          origin="center"
-        >
-          {contextRows
-            .filter((t) => !isAssigned(t.id))
-            .map((t) => (
-              <PickerOption
-                key={t.id}
-                leading={<Icon name={t.icon} size={13} />}
-                onClick={() => revealAndEdit(t.id)}
-              >
-                {t.label}
-              </PickerOption>
-            ))}
-          {schema
-            .filter((d) => !isAssigned(d.id))
-            .map((d) => (
-              <PickerOption
-                key={d.id}
-                leading={<Icon name={propertyIcon(d)} size={13} />}
-                onClick={() => revealAndEdit(d.id, d)}
-              >
-                {d.name}
-              </PickerOption>
-            ))}
-        </PickerMenu>
+        solid
+        open={addOpen}
+        onDismiss={() => setAddOpen(false)}
+        triggerRef={addRef}
+        origin="center"
+      >
+        {contextRows
+          .filter((t) => !isAssigned(t.id))
+          .map((t) => (
+            <PickerOption
+              key={t.id}
+              leading={<Icon name={t.icon} size={13} />}
+              onClick={() => revealAndEdit(t.id)}
+            >
+              {t.label}
+            </PickerOption>
+          ))}
+        {schema
+          .filter((d) => !isAssigned(d.id))
+          .map((d) => (
+            <PickerOption
+              key={d.id}
+              leading={<Icon name={propertyIcon(d)} size={13} />}
+              onClick={() => revealAndEdit(d.id, d)}
+            >
+              {d.name}
+            </PickerOption>
+          ))}
+      </PickerMenu>
       {editingDef && editing?.mode === 'picker' && (
         <PropertyPicker
           def={editingDef}

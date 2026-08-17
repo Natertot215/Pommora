@@ -197,7 +197,11 @@ export function calloutLines(
       continue
     }
     let j = i + 1
-    while (j < lines.length && isBlockquoteLine(lines[j]) && !(isCalloutHead(lines[j]) && !codeAt(j)))
+    while (
+      j < lines.length &&
+      isBlockquoteLine(lines[j]) &&
+      !(isCalloutHead(lines[j]) && !codeAt(j))
+    )
       j++
     const headPrefix = blockquotePrefixRe.exec(lines[i])?.[0] ?? ''
     const tag = calloutTagRe.exec(lines[i].slice(headPrefix.length))

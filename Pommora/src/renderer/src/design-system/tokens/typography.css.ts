@@ -9,14 +9,14 @@ import { createGlobalTheme, style } from '@vanilla-extract/css'
 export const font = createGlobalTheme(':root', {
   family:
     "'Inter Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
-  
+
   weight: {
     standard: '400',
     emphasized: '500',
     semibold: '600',
     bold: '700',
   },
- 
+
   scale: {
     largeTitle: { size: '26px', line: '32px' },
     title1: { size: '22px', line: '26px' },
@@ -71,7 +71,7 @@ export const text = {
  * Capped label — ellipsis at rest, scroll-on-hover. The one source for the "truncate a single-line
  * label, reveal the full value by scrolling on hover" behaviour shared by chips and menu / sidebar
  * rows. The WIDTH cap is the consumer's: a `maxWidth` for chips, the flex parent for rows (minWidth:0
- * lets it shrink to the available track). 
+ * lets it shrink to the available track).
  */
 export const truncateHoverScroll = style({
   minWidth: 0,

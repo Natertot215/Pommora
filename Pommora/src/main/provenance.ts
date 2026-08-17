@@ -197,7 +197,9 @@ export async function gatherSpaceRecord(
   const id = await sidecarId(abs, SPACE_SIDECAR)
   if (!id) return null
   const contextTitle = basename(dirname(abs))
-  const def = registry?.ok ? registry.value.contexts.find((c) => c.title === contextTitle) : undefined
+  const def = registry?.ok
+    ? registry.value.contexts.find((c) => c.title === contextTitle)
+    : undefined
   const captured = swept?.captured ?? []
   const members = captured
     .filter((c): c is SweepCapture & { id: string } => typeof c.id === 'string')
@@ -359,7 +361,9 @@ export function resolveRecord(
       baseName,
       group.spaces.map((s) => s.title),
     )
-    return { place: { dir: `.nexus/contexts/${group.def.title}`, finalName: finalTitle, finalTitle } }
+    return {
+      place: { dir: `.nexus/contexts/${group.def.title}`, finalName: finalTitle, finalTitle },
+    }
   }
 
   switch (record.parent.kind) {
@@ -381,7 +385,10 @@ export function resolveRecord(
       if (!parent)
         return live[record.parent.id] ? { refuse: 'cannot-hold' } : { refuse: 'parent-gone' }
       // A page and a Set share one folder namespace — both sibling sets block both kinds.
-      const siblings = [...parent.pages.map((p) => p.title), ...(parent.sets ?? []).map((s) => s.title)]
+      const siblings = [
+        ...parent.pages.map((p) => p.title),
+        ...(parent.sets ?? []).map((s) => s.title),
+      ]
       if (record.entity === 'page') {
         const finalTitle = disambiguate(baseName.replace(/\.md$/i, ''), siblings)
         return { place: { dir: parent.path, finalName: `${finalTitle}.md` } }
@@ -575,8 +582,7 @@ function withDestination(
 ): Result<ArtifactRecord> {
   switch (record.entity) {
     case 'space':
-      if (destination.kind !== 'context')
-        return fail('invalid-path', 'A Space lives in a Context.')
+      if (destination.kind !== 'context') return fail('invalid-path', 'A Space lives in a Context.')
       if (!tree.contexts?.some((g) => g.def.id === destination.id))
         return fail('not-found', 'That Context no longer exists.')
       return ok({ ...record, parent: { kind: 'context', id: destination.id } })

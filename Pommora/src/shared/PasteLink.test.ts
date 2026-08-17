@@ -158,9 +158,7 @@ describe('the label agrees with the property cell', () => {
   it('matches linkDisplayText for every form', () => {
     for (const format of ['link-full', 'link-short', 'link-title'] as const) {
       const d = at({ autoFormat: true, format, title: 'Example Domain' })
-      expect(textOf(d), format).toBe(
-        `[${linkDisplayText(URL, format, 'Example Domain')}](${URL})`,
-      )
+      expect(textOf(d), format).toBe(`[${linkDisplayText(URL, format, 'Example Domain')}](${URL})`)
     }
   })
 })

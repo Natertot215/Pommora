@@ -138,7 +138,10 @@ describe('the re-mint writes', () => {
       JSON.stringify({ id: SPACE, color: 'blue', keep_me: 'foreign' }),
     )
     await mkdir(join(root, 'Library', 'Fiction'), { recursive: true })
-    await writeFile(join(root, 'Library', '_pagecollection.json'), JSON.stringify({ id: 'col-lib' }))
+    await writeFile(
+      join(root, 'Library', '_pagecollection.json'),
+      JSON.stringify({ id: 'col-lib' }),
+    )
     await writeFile(
       join(root, 'Library', 'Fiction', '_pageset.json'),
       JSON.stringify({
@@ -269,9 +272,7 @@ describe('the re-mint writes', () => {
     const copyDoc = readKey<Doc>('blockDoc', blockHostKey({ kind: 'space', id: copySpace.id }))!
     expect(originalDoc.blocks[0].views[0].config.id).toBe('cfg-original')
     expect(isUlidShaped(copyDoc.blocks[0].views[0].config.id)).toBe(true)
-    expect(copyDoc.blocks[0].views[0].config.id).not.toBe(
-      originalDoc.blocks[0].views[0].config.id,
-    )
+    expect(copyDoc.blocks[0].views[0].config.id).not.toBe(originalDoc.blocks[0].views[0].config.id)
   })
 
   it('a selection naming a view the container no longer has does not travel at all', async () => {
@@ -352,7 +353,9 @@ describe('the whole-Collection copy — the acceptance shape', () => {
       expect(original.page).toContain('01KVGMT8BFG350FZZXAMG1QDWC')
 
       const copy = {
-        col: JSON.parse(await readFile(join(root2, 'Library copy', '_pagecollection.json'), 'utf8')),
+        col: JSON.parse(
+          await readFile(join(root2, 'Library copy', '_pagecollection.json'), 'utf8'),
+        ),
         set: JSON.parse(
           await readFile(join(root2, 'Library copy', 'Fiction', '_pageset.json'), 'utf8'),
         ),

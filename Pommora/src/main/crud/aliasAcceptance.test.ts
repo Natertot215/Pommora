@@ -40,10 +40,7 @@ beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'alias-acceptance-'))
   const col = join(root, 'Notes')
   await mkdir(col, { recursive: true })
-  await writeFile(
-    join(col, '_pagecollection.json'),
-    JSON.stringify({ id: 'c1', properties: [] }),
-  )
+  await writeFile(join(col, '_pagecollection.json'), JSON.stringify({ id: 'c1', properties: [] }))
   await writeFile(join(col, 'Q3 Plan.md'), '---\nid: p1\n---\ntarget\n')
   host = join(col, 'Host.md')
   await writeFile(host, `---\nid: p2\n---\n${body()}`)

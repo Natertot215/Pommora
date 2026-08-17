@@ -185,9 +185,8 @@ function StaticCellImpl({
 /** The link token starting at `at`, whichever syntax wrote it. */
 function linkTokenAt(text: string, at: number): Token | null {
   return (
-    tokenize(text).find(
-      (t) => t.range[0] === at && (t.kind === 'link' || t.kind === 'wikiLink'),
-    ) ?? null
+    tokenize(text).find((t) => t.range[0] === at && (t.kind === 'link' || t.kind === 'wikiLink')) ??
+    null
   )
 }
 
@@ -217,8 +216,7 @@ function menuTarget(
         const now = still()
         if (!now) return
         const { pipeAt, select } = wikiAuthorTarget(now.text, now.tk, action)
-        if (pipeAt !== undefined)
-          onCommit(`${now.text.slice(0, pipeAt)}|${now.text.slice(pipeAt)}`)
+        if (pipeAt !== undefined) onCommit(`${now.text.slice(0, pipeAt)}|${now.text.slice(pipeAt)}`)
         onSelect(select)
       },
     }

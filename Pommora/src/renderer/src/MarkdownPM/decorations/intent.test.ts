@@ -67,9 +67,7 @@ describe('decoration intents', () => {
   it('a literal > inside an unquoted fence keeps its bytes — no quote chrome, no prefix hide', () => {
     const t = '```\n> quoted\n```'
     const intents = decorationsFor(t, tokenize(t), new Set(), 0) // caret on line 1
-    expect(
-      intents.some((d) => d.kind === 'line' && d.className.startsWith('md-bq')),
-    ).toBe(false)
+    expect(intents.some((d) => d.kind === 'line' && d.className.startsWith('md-bq'))).toBe(false)
     // the `> ` prefix (offset 4) is content, never hidden as chrome
     expect(intents.some((d) => d.kind === 'hide' && d.from === 4)).toBe(false)
   })
@@ -77,9 +75,7 @@ describe('decoration intents', () => {
   it('an UNCLOSED fence keeps box chrome below it — typing ``` must not flatten the document', () => {
     const t = '```\n> a quote'
     const intents = decorationsFor(t, tokenize(t), new Set(), 0)
-    expect(
-      intents.some((d) => d.kind === 'line' && d.className.startsWith('md-bq')),
-    ).toBe(true)
+    expect(intents.some((d) => d.kind === 'line' && d.className.startsWith('md-bq'))).toBe(true)
   })
 
   it('a fence nested in a blockquote keeps the box chrome and hides the quote prefix', () => {
@@ -166,7 +162,13 @@ describe('decoration intents', () => {
   })
 
   it('every list type marks its content as the line’s one wrapping region', () => {
-    for (const t of ['- item text', '3. item text', '→ item text', '+ item text', '- [ ] item text']) {
+    for (const t of [
+      '- item text',
+      '3. item text',
+      '→ item text',
+      '+ item text',
+      '- [ ] item text',
+    ]) {
       const intents = decorationsFor(t, tokenize(t), new Set(), 99)
       const mark = intents.find((d) => d.kind === 'class' && d.className === 'md-li-text')
       expect(mark, t).toBeDefined()
@@ -287,7 +289,9 @@ describe('decoration intents', () => {
     expect(inContent.filter((d) => d.kind === 'hide')).toHaveLength(1)
     const onOpen = decorationsFor(t, tokenize(t), new Set(), 2) // caret on the ```js line
     expect(onOpen.filter((d) => d.kind === 'hide')).toHaveLength(0)
-    expect(onOpen.filter((d) => d.kind === 'lineWidget' && d.className === 'md-cb-lang')).toHaveLength(0)
+    expect(
+      onOpen.filter((d) => d.kind === 'lineWidget' && d.className === 'md-cb-lang'),
+    ).toHaveLength(0)
   })
 
   it('an indented typed fence hides only its info word — never its own backticks', () => {

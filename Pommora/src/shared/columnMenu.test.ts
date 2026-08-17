@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { styleMenuLabel, parseStyleAction, styleMenuItems, type StyleMenuContext } from './columnMenu'
+import {
+  styleMenuLabel,
+  parseStyleAction,
+  styleMenuItems,
+  type StyleMenuContext,
+} from './columnMenu'
 
 const items = (
   type: StyleMenuContext['type'],

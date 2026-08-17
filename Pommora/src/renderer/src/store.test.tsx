@@ -452,8 +452,8 @@ describe('store — applyTree reconciles the preview tabs (D-6)', () => {
 
 describe('store — recents reorder + batched close', () => {
   const savedRecents = (): unknown =>
-    (window as unknown as { nexus: { nav: { write: { mock: { calls: unknown[][] } } } } }).nexus
-      .nav.write
+    (window as unknown as { nexus: { nav: { write: { mock: { calls: unknown[][] } } } } }).nexus.nav
+      .write
 
   it('reorderRecent rewrites the order to the source and persists immediately (drag)', () => {
     const a = ctx('a')

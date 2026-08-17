@@ -15,9 +15,7 @@ import { contextsRegistryFile } from './paths'
  *  registry and entry level, so foreign data round-trips every rewrite. */
 function parseRegistry(raw: Record<string, unknown>): Result<ContextsRegistry> {
   const parsed = contextsRegistry.safeParse(raw)
-  return parsed.success
-    ? ok(parsed.data)
-    : fail('operation-failed', 'Invalid contexts registry.')
+  return parsed.success ? ok(parsed.data) : fail('operation-failed', 'Invalid contexts registry.')
 }
 
 /** Read the registry, seeding a nexus that has none from the labels and writing it. */

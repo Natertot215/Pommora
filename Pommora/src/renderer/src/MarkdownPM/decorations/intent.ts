@@ -183,7 +183,11 @@ function lineIntentsInto(
     const qm = blockquotePrefixRe.exec(inner) // all remaining `>` levels → one inset quote (depth flattens)
     // Inside a closed fence, an inset quote is chrome only if the fence itself was opened behind one
     // (depth ≥ 2 — callout level + inset level); a shallower fence's extra `>`s are code bytes.
-    if (qm && isBlockquoteLine(inner) && (fence === undefined || !fence.closed || fence.depth > 1)) {
+    if (
+      qm &&
+      isBlockquoteLine(inner) &&
+      (fence === undefined || !fence.closed || fence.depth > 1)
+    ) {
       // first/last span the contiguous run of nested-quote lines (not a depth match — a run can vary in depth
       // yet flatten to one block), mirroring how the plain-quote branch tests its neighbours.
       const first = !calloutNestedQuote(lines, callouts, i - 1)
@@ -230,13 +234,23 @@ function lineIntentsInto(
     // fence never hides its own marker.
     const infoStart = ls + fence.markerEnd
     if (fence.role === 'open' && fence.lang && !caretOnLine && infoStart < le) {
-      intents.push({ kind: 'lineWidget', from: infoStart, className: 'md-cb-lang', text: fence.lang })
+      intents.push({
+        kind: 'lineWidget',
+        from: infoStart,
+        className: 'md-cb-lang',
+        text: fence.lang,
+      })
       intents.push({ kind: 'hide', from: infoStart, to: le })
     }
     // Line-count chrome: every content line carries its number; the personalization root class
     // decides whether any of it renders.
     if (fence.ordinal !== undefined)
-      intents.push({ kind: 'lineWidget', from: ls, className: 'md-cb-ln', text: String(fence.ordinal) })
+      intents.push({
+        kind: 'lineWidget',
+        from: ls,
+        className: 'md-cb-ln',
+        text: String(fence.ordinal),
+      })
     return null
   }
 

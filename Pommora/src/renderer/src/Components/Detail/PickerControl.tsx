@@ -58,7 +58,13 @@ export function PickerControl<T extends string>({
   }
 
   const trigger = (
-    <button ref={ref} type="button" className={s.trigger} aria-label={ariaLabel} onClick={onTrigger}>
+    <button
+      ref={ref}
+      type="button"
+      className={s.trigger}
+      aria-label={ariaLabel}
+      onClick={onTrigger}
+    >
       <span className={s.value}>{labelOf(options, value)}</span>
       <Icon name="chevrons-up-down" size={12} />
     </button>

@@ -133,7 +133,6 @@ describe('following one', () => {
   })
 })
 
-
 // Naming the target finishes half the link. A markdown link's display text is free — unlike a
 // connection, whose title IS its target — so the press that names the page should leave you typing
 // what the link says, not hunting for the slot.

@@ -70,7 +70,7 @@ globalStyle(':root', {
     // the ghost "New Page" row. Worn as `opacity:` over the element's standard chrome.
     '--state-inactive': '0.55', // KNOB
     // Drag insertion line — the drop-target marker (accent line + leading dot) shared by every drop-line
-    // DnD surface: table rows/bands AND the settings-pane property reorder. 
+    // DnD surface: table rows/bands AND the settings-pane property reorder.
     '--drag-line': 'var(--accent)',
     '--drop-line-thickness': '2px',
     '--drop-dot-size': '7px',

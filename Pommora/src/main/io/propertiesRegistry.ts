@@ -97,7 +97,10 @@ export function mutateRegistry<T>(
       for (const [id, raw] of Object.entries(unparsed)) if (!(id in defs)) defs[id] = raw
       // Unparsed ids keep their order membership too (appended — a repaired def re-lists
       // rather than vanishing from the pane), while fn's own ordering stays authoritative.
-      const order = [...next.order, ...Object.keys(unparsed).filter((id) => !next.order.includes(id))]
+      const order = [
+        ...next.order,
+        ...Object.keys(unparsed).filter((id) => !next.order.includes(id)),
+      ]
       await writeRegistry(root, { order, defs })
     }
     return result

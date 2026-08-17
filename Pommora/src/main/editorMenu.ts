@@ -65,7 +65,11 @@ function systemItems(
     ...(editorFocused ? pasteAsItems(wc) : []),
     // The `pasteAndMatchStyle` role would take ⌘⇧V's accelerator back, and that chord belongs to the
     // inverse paste now (→ ConfigurationPM §Commands). The act itself is unchanged.
-    { label: 'Paste Without Formatting', enabled: f.canPaste, click: () => wc.pasteAndMatchStyle() },
+    {
+      label: 'Paste Without Formatting',
+      enabled: f.canPaste,
+      click: () => wc.pasteAndMatchStyle(),
+    },
     { role: 'selectAll' },
   )
   return items
@@ -99,9 +103,7 @@ function pommoraItems(
     // a link without retyping it. Offered only when the selection IS one, which is what keeps it
     // apart from Format ▸ Link — that one opens an empty target for words you have yet to point
     // anywhere.
-    ...(isValidLink(selection)
-      ? [{ label: 'Insert Link', click: act(INSERT_LINK_ACTION) }]
-      : []),
+    ...(isValidLink(selection) ? [{ label: 'Insert Link', click: act(INSERT_LINK_ACTION) }] : []),
     {
       label: 'Format',
       submenu: [

@@ -6,7 +6,12 @@ import { TableView } from './TableView'
 import type { TableModel } from './model'
 import { EditorView } from '@codemirror/view'
 import type { ConnUrlAction } from '@shared/connections'
-import { buildPageIndex, type ConnectionsApi, type ConnMenuTarget, type ConnPage } from '../connections'
+import {
+  buildPageIndex,
+  type ConnectionsApi,
+  type ConnMenuTarget,
+  type ConnPage,
+} from '../connections'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 if (!('ResizeObserver' in globalThis)) {
@@ -69,7 +74,9 @@ async function clickLink(): Promise<HTMLElement> {
   await act(async () => {
     link.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
     link.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0 }))
-    link.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0, detail: 1 }))
+    link.dispatchEvent(
+      new MouseEvent('click', { bubbles: true, cancelable: true, button: 0, detail: 1 }),
+    )
   })
   return link
 }
@@ -96,8 +103,12 @@ describe('a connection in a resting cell behaves like one in the body', () => {
     await mount()
     const cell = container.querySelector('tbody .mdpm-tbl-cell-static') as HTMLElement
     await act(async () => {
-      cell.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, cancelable: true, button: 0 }))
-      cell.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0 }))
+      cell.dispatchEvent(
+        new MouseEvent('pointerdown', { bubbles: true, cancelable: true, button: 0 }),
+      )
+      cell.dispatchEvent(
+        new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0 }),
+      )
     })
     expect(opened).not.toHaveBeenCalled()
     expect(container.querySelectorAll('.cm-editor').length).toBeGreaterThan(0)
@@ -112,8 +123,12 @@ describe('the picker survives being clicked', () => {
     await mount()
     const cell = container.querySelector('tbody .mdpm-tbl-cell-static') as HTMLElement
     await act(async () => {
-      cell.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, cancelable: true, button: 0 }))
-      cell.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0 }))
+      cell.dispatchEvent(
+        new MouseEvent('pointerdown', { bubbles: true, cancelable: true, button: 0 }),
+      )
+      cell.dispatchEvent(
+        new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0 }),
+      )
     })
     expect(container.querySelectorAll('.cm-editor').length).toBeGreaterThan(0)
 
@@ -121,7 +136,9 @@ describe('the picker survives being clicked', () => {
     panel.className = 'mdpm-ac'
     document.body.appendChild(panel)
     await act(async () => {
-      panel.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, cancelable: true, button: 0 }))
+      panel.dispatchEvent(
+        new MouseEvent('pointerdown', { bubbles: true, cancelable: true, button: 0 }),
+      )
     })
     expect(container.querySelectorAll('.cm-editor').length).toBeGreaterThan(0)
     panel.remove()
@@ -131,8 +148,12 @@ describe('the picker survives being clicked', () => {
     await mount()
     const cell = container.querySelector('tbody .mdpm-tbl-cell-static') as HTMLElement
     await act(async () => {
-      cell.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, cancelable: true, button: 0 }))
-      cell.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0 }))
+      cell.dispatchEvent(
+        new MouseEvent('pointerdown', { bubbles: true, cancelable: true, button: 0 }),
+      )
+      cell.dispatchEvent(
+        new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0 }),
+      )
     })
     await act(async () => {
       document.body.dispatchEvent(
@@ -179,7 +200,9 @@ describe('a link’s menu in a resting cell', () => {
   const rightClick = async (): Promise<void> => {
     const link = container.querySelector('.md-link') as HTMLElement
     await act(async () => {
-      link.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 2 }))
+      link.dispatchEvent(
+        new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 2 }),
+      )
       link.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }))
     })
   }
@@ -285,12 +308,18 @@ describe('a connection’s menu in a resting cell', () => {
     }
     await act(async () =>
       root.render(
-        createElement(TableView, { ...props, model: { ...model, rows: [[body]] }, connections: () => linked }),
+        createElement(TableView, {
+          ...props,
+          model: { ...model, rows: [[body]] },
+          connections: () => linked,
+        }),
       ),
     )
     const link = container.querySelector('.md-connection-resolved') as HTMLElement
     await act(async () => {
-      link.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 2 }))
+      link.dispatchEvent(
+        new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 2 }),
+      )
       link.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }))
     })
   }

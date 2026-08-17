@@ -263,10 +263,7 @@ export interface PageRecord {
  *  Unknown file is skipped exactly like an unreadable one, which is the same treatment a stray
  *  `.png` in a Collection already gets. A file with NO key is admitted and wears a synthetic id
  *  until adoption stamps it. */
-export async function readPageRecord(
-  absFile: string,
-  relFile: string,
-): Promise<PageRecord | null> {
+export async function readPageRecord(absFile: string, relFile: string): Promise<PageRecord | null> {
   return cachedParse(absFile, async () => {
     const fm = splitFrontmatter(await readFile(absFile, 'utf8'))
     const admission = admitContentFile(fm, 'page')
@@ -292,9 +289,7 @@ async function readDirectPages(
   relDir: string,
   unreadable: string[],
 ): Promise<PageNode[]> {
-  const files = (await listEntries(absDir)).filter(
-    isContentFile,
-  )
+  const files = (await listEntries(absDir)).filter(isContentFile)
   const out = await Promise.all(
     files.map(async (e) => {
       const rel = relDir ? `${relDir}/${e.name}` : e.name
@@ -337,11 +332,21 @@ async function readChildSets(
   )
   // A nested folder is a Set only if the resolver says so — one carrying an agenda config
   // renders as nothing rather than as an ordinary Set.
-  const kinds = await Promise.all(dirs.map((e) => resolveFolderKind(join(absDir, e.name), 'nested', kindCtx)))
+  const kinds = await Promise.all(
+    dirs.map((e) => resolveFolderKind(join(absDir, e.name), 'nested', kindCtx)),
+  )
   const sets = dirs.filter((_, i) => kinds[i] === 'set')
   return Promise.all(
     sets.map((e) =>
-      readSet(join(absDir, e.name), `${relDir}/${e.name}`, e.name, kindCtx, excluded, fb, unreadable),
+      readSet(
+        join(absDir, e.name),
+        `${relDir}/${e.name}`,
+        e.name,
+        kindCtx,
+        excluded,
+        fb,
+        unreadable,
+      ),
     ),
   )
 }
@@ -559,7 +564,16 @@ async function walkNexus(root: string): Promise<NexusTree> {
     rootDirs.map(async (e) => {
       const abs = join(root, e.name)
       if ((await resolveFolderKind(abs, 'root', kindCtx)) !== 'collection') return null
-      return readPageCollection(abs, e.name, e.name, kindCtx, excluded, fb, registry.defs, unreadable)
+      return readPageCollection(
+        abs,
+        e.name,
+        e.name,
+        kindCtx,
+        excluded,
+        fb,
+        registry.defs,
+        unreadable,
+      )
     }),
   )
   const allCollections = maybeCollections.filter((c): c is CollectionNode => c !== null)

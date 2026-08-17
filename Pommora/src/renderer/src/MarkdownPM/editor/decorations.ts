@@ -246,7 +246,9 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): Built {
     if (claimed.length > 0)
       tokens = tokens.filter(
         (tk) =>
-          !(tk.kind === 'embed' && claimed.some((e) => tk.range[0] >= e.from && tk.range[1] <= e.to)),
+          !(
+            tk.kind === 'embed' && claimed.some((e) => tk.range[0] >= e.from && tk.range[1] <= e.to)
+          ),
       )
   }
   const active = focused
@@ -257,7 +259,8 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): Built {
   const intents = tokenIntents(tokens, active)
   // Loop, never spread — spreading into push throws past V8's argument ceiling on a huge outline,
   // and CM answers a crashed plugin by deactivating it for good (the page falls back to raw source).
-  for (const it of assembleLineIntents(scan, docLineIntentsOf(view.state.doc), head)) intents.push(it)
+  for (const it of assembleLineIntents(scan, docLineIntentsOf(view.state.doc), head))
+    intents.push(it)
   const ranges: Range<Decoration>[] = []
   // The marker slots the caret must step over. The intent pass names them, and names them only where
   // a widget stands in the marker's place — the caret's own line reveals its raw source and emits
@@ -274,7 +277,9 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): Built {
     }
     if (it.kind === 'lineWidget') {
       ranges.push(
-        Decoration.widget({ widget: new LineWidget(it.className, it.text), side: -1 }).range(it.from),
+        Decoration.widget({ widget: new LineWidget(it.className, it.text), side: -1 }).range(
+          it.from,
+        ),
       )
       continue
     }

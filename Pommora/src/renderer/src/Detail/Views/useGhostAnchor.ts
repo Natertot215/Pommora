@@ -95,8 +95,7 @@ export function useGhostAnchor(opts: GhostAnchorOptions): GhostAnchor {
       timers.dwell = window.setTimeout(() => {
         // Re-checked at fire time — a suppressor opened mid-dwell must not leave a ghost
         // armed to snap in the instant it closes.
-        if (!blocked())
-          setGhost((g) => (g?.anchorId === id ? g : { anchorId: id, closing: false }))
+        if (!blocked()) setGhost((g) => (g?.anchorId === id ? g : { anchorId: id, closing: false }))
       }, optsRef.current.dwellMs)
     }
     const clear = (anchorId?: string): void => {
@@ -164,7 +163,7 @@ export function useGhostAnchor(opts: GhostAnchorOptions): GhostAnchor {
       clearTimer('exit')
       setGhost((g) => (g?.closing ? null : g))
     }
-    const suppressWrap = async <T,>(menu: () => Promise<T>): Promise<T> => {
+    const suppressWrap = async <T>(menu: () => Promise<T>): Promise<T> => {
       clearTimer('dwell')
       clearTimer('grace')
       closeGhost()

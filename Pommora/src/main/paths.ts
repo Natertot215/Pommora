@@ -2,12 +2,7 @@
 
 import { join } from 'node:path'
 
-export type SidecarKind =
-  | 'space'
-  | 'collection'
-  | 'set'
-  | 'taskConfig'
-  | 'eventConfig'
+export type SidecarKind = 'space' | 'collection' | 'set' | 'taskConfig' | 'eventConfig'
 
 /** Per-kind sidecar filenames (the kind authority on disk). */
 export const SIDECAR_FILENAME: Record<SidecarKind, string> = {

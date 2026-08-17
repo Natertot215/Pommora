@@ -20,9 +20,9 @@ describe('normalizeTitle', () => {
 describe('aliasSpanAt', () => {
   const line = 'see [[Q3 Plan|the plan]] end'
   it('finds the alias span from anywhere inside it', () => {
-    expect(line.slice(...(aliasSpanAt(line, line.indexOf('the plan') + 3) as [number, number]))).toBe(
-      'the plan',
-    )
+    expect(
+      line.slice(...(aliasSpanAt(line, line.indexOf('the plan') + 3) as [number, number])),
+    ).toBe('the plan')
   })
   it('includes both ends, so a `]` at either is still refused', () => {
     expect(aliasSpanAt(line, line.indexOf('the plan'))).not.toBeNull()

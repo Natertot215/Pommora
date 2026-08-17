@@ -23,8 +23,7 @@ const NAV_KINDS = new Set([
   'event',
 ])
 
-const navigationPath = (root: string): string =>
-  nexusConfig(root, NEXUS_CONFIG_FILES.navigation)
+const navigationPath = (root: string): string => nexusConfig(root, NEXUS_CONFIG_FILES.navigation)
 
 function isNavRef(v: unknown): v is NavRef {
   if (!isPlainObject(v) || typeof v.kind !== 'string' || !NAV_KINDS.has(v.kind)) return false

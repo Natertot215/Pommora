@@ -1,4 +1,12 @@
-import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import {
   GhostSuppress,
   useClearStrandedGhost,
@@ -427,7 +435,11 @@ function ContainerRow({
   children: React.ReactNode
 }): React.JSX.Element {
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
-  const icon = entityIcon(node.kind === 'collection' ? 'collection' : 'set', node.icon, defaultIcons)
+  const icon = entityIcon(
+    node.kind === 'collection' ? 'collection' : 'set',
+    node.icon,
+    defaultIcons,
+  )
   const openIcon: IconName | undefined = icon === 'folder-closed' ? 'folder-open' : undefined
   return (
     <Disclosure
@@ -793,35 +805,35 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
 
   return (
     <SidebarGhost.Provider value={ghostValue}>
-    <SidebarGhostApi.Provider value={sidebarGhostApi}>
-    <GhostSuppress.Provider value={ghostApi.suppressWrap}>
-    <nav ref={navRef} className="sidebar edge-fade">
-      <div className="sidebar-mode-stage">
-        {exit && (
-          <div
-            key={exit.epoch}
-            className="sidebar-mode mode-exit"
-            style={{ transform: `translateY(${-exit.scroll}px)` }}
-            onAnimationEnd={(e) => e.target === e.currentTarget && setExit(null)}
-          >
-            {layerFor(exit.mode)}
-          </div>
-        )}
-        <div key={mode} className={cx('sidebar-mode', exit !== null && 'mode-enter')}>
-          {/* Permanent (class-only toggle) — swapping the element shape at animation end would
+      <SidebarGhostApi.Provider value={sidebarGhostApi}>
+        <GhostSuppress.Provider value={ghostApi.suppressWrap}>
+          <nav ref={navRef} className="sidebar edge-fade">
+            <div className="sidebar-mode-stage">
+              {exit && (
+                <div
+                  key={exit.epoch}
+                  className="sidebar-mode mode-exit"
+                  style={{ transform: `translateY(${-exit.scroll}px)` }}
+                  onAnimationEnd={(e) => e.target === e.currentTarget && setExit(null)}
+                >
+                  {layerFor(exit.mode)}
+                </div>
+              )}
+              <div key={mode} className={cx('sidebar-mode', exit !== null && 'mode-enter')}>
+                {/* Permanent (class-only toggle) — swapping the element shape at animation end would
               remount the whole mode tree. */}
-          {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
-          <div
-            className={cx('mode-body', exit !== null && 'mode-enter-slide')}
-            onContextMenu={modeCtx(onCreate)}
-          >
-            {activeNode}
-          </div>
-        </div>
-      </div>
-    </nav>
-    </GhostSuppress.Provider>
-    </SidebarGhostApi.Provider>
+                {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
+                <div
+                  className={cx('mode-body', exit !== null && 'mode-enter-slide')}
+                  onContextMenu={modeCtx(onCreate)}
+                >
+                  {activeNode}
+                </div>
+              </div>
+            </div>
+          </nav>
+        </GhostSuppress.Provider>
+      </SidebarGhostApi.Provider>
     </SidebarGhost.Provider>
   )
 }

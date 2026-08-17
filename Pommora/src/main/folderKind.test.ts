@@ -36,10 +36,12 @@ const dir = async (name: string, files: Record<string, unknown> = {}): Promise<s
 
 describe('readAgendaRegistration', () => {
   it('reads a recorded pair', () => {
-    expect(readAgendaRegistration({ agenda_singletons: { tasks: TASKS, events: EVENTS } })).toEqual({
-      tasks: TASKS,
-      events: EVENTS,
-    })
+    expect(readAgendaRegistration({ agenda_singletons: { tasks: TASKS, events: EVENTS } })).toEqual(
+      {
+        tasks: TASKS,
+        events: EVENTS,
+      },
+    )
   })
 
   // A nexus that records nothing registers nothing — and every agenda config it holds is inert,
@@ -58,7 +60,9 @@ describe('readAgendaRegistration', () => {
   })
 
   it('takes the half it can read when only one slot is recorded', () => {
-    expect(readAgendaRegistration({ agenda_singletons: { tasks: TASKS } })).toEqual({ tasks: TASKS })
+    expect(readAgendaRegistration({ agenda_singletons: { tasks: TASKS } })).toEqual({
+      tasks: TASKS,
+    })
   })
 })
 
@@ -66,7 +70,11 @@ describe('agendaContext', () => {
   // No entries means no claims, which contests nothing — a root that cannot be listed is no
   // evidence anything duplicated the recorded pair, so the registration stands.
   it('keeps the recorded registration when the root cannot be listed', async () => {
-    const ctx = await agendaContext(join(root, 'gone'), { agenda_singletons: { tasks: TASKS } }, true)
+    const ctx = await agendaContext(
+      join(root, 'gone'),
+      { agenda_singletons: { tasks: TASKS } },
+      true,
+    )
     expect(ctx.agenda).toEqual({ tasks: TASKS })
   })
 
@@ -94,7 +102,9 @@ describe('resolveFolderKind', () => {
   // The registration IS the guard: a hand-made config matches no record, so it stays inert bytes
   // rather than becoming a second Tasks folder feeding the same list.
   it('leaves an unregistered agenda config unknown, however well-formed', async () => {
-    const d = await dir('Fake Tasks', { [SIDECAR_FILENAME.taskConfig]: { id: 'ANOTHERULID000000000000000' } })
+    const d = await dir('Fake Tasks', {
+      [SIDECAR_FILENAME.taskConfig]: { id: 'ANOTHERULID000000000000000' },
+    })
     expect(await resolveFolderKind(d, 'root', REG())).toBe('unknown')
   })
 
@@ -118,8 +128,12 @@ describe('resolveFolderKind', () => {
   })
 
   it('classifies containers by position once no agenda config is in play', async () => {
-    const c = await dir('Notes', { [SIDECAR_FILENAME.collection]: { id: '01KVGMT8BFG350FZZXAMG1QDC2' } })
-    const s = await dir('Notes/Daily', { [SIDECAR_FILENAME.set]: { id: '01KVGMT8BFG350FZZXAMG1QDS1' } })
+    const c = await dir('Notes', {
+      [SIDECAR_FILENAME.collection]: { id: '01KVGMT8BFG350FZZXAMG1QDC2' },
+    })
+    const s = await dir('Notes/Daily', {
+      [SIDECAR_FILENAME.set]: { id: '01KVGMT8BFG350FZZXAMG1QDS1' },
+    })
     const bare = await dir('Notes/Bare')
     expect(await resolveFolderKind(c, 'root', REG())).toBe('collection')
     expect(await resolveFolderKind(s, 'nested', REG())).toBe('set')

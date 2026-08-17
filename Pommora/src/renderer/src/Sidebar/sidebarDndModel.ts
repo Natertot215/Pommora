@@ -4,12 +4,7 @@
 
 import type { CollectionNode, NexusTree, PageNode, SetNode } from '@shared/types'
 
-export type Kind =
-  | 'collection'
-  | 'set'
-  | 'page'
-  | 'space'
-  | 'contextGroup'
+export type Kind = 'collection' | 'set' | 'page' | 'space' | 'contextGroup'
 export type Entry = {
   id: string
   kind: Kind

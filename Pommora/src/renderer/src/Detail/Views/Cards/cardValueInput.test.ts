@@ -3,7 +3,12 @@ import type { PropertyDefinition } from '@shared/properties'
 import { propertyKey } from '@shared/propertyValue'
 import type { ResolvedColumn, ViewRow } from '@shared/types'
 import type { ResolveContext } from '../Table/resolveContext'
-import { type AddEntry, orderAddableEntries, parseEditorValue, shownColumnsFor } from './cardValueInput'
+import {
+  type AddEntry,
+  orderAddableEntries,
+  parseEditorValue,
+  shownColumnsFor,
+} from './cardValueInput'
 
 describe('parseEditorValue', () => {
   it('number: parses a finite value, trims, clears on empty, rejects garbage', () => {

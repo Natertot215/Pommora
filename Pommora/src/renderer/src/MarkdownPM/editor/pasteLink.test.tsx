@@ -4,11 +4,7 @@ import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
 import type { Personalization } from '@shared/types'
 import { useSession } from '@renderer/store'
-import {
-  stubEditorBridge,
-  mountEditor,
-  cleanupEditor,
-} from '@renderer/testing/editorHarness'
+import { stubEditorBridge, mountEditor, cleanupEditor } from '@renderer/testing/editorHarness'
 import { pendingTitles } from './PendingTitle'
 
 const URL = 'https://www.example.com/a/b'

@@ -33,7 +33,10 @@ beforeEach(async () => {
   handed.length = 0
   root = await mkdtemp(join(tmpdir(), 'pom-e2e-'))
   await mkdir(join(root, '.nexus'), { recursive: true })
-  await writeFile(join(root, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nx', createdAt: '2026' }))
+  await writeFile(
+    join(root, '.nexus', 'nexus.json'),
+    JSON.stringify({ id: 'nx', createdAt: '2026' }),
+  )
   await writeFile(
     contextsRegistryFile(root),
     JSON.stringify({
@@ -69,7 +72,10 @@ beforeEach(async () => {
     join(root, 'Journal', '_pagecollection.json'),
     JSON.stringify({ id: 'col-journal', properties: ['prop_status'] }),
   )
-  await writeFile(join(root, 'Journal', 'Daily', '_pageset.json'), JSON.stringify({ id: 'set-daily' }))
+  await writeFile(
+    join(root, 'Journal', 'Daily', '_pageset.json'),
+    JSON.stringify({ id: 'set-daily' }),
+  )
   await writeFile(
     join(root, 'Journal', 'Daily', 'Alpha.md'),
     '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVA\n<Status>: live\n---\nbody\n',
@@ -99,10 +105,12 @@ describe('end to end — deleted, listed, restored', () => {
   it('a renamed parent is followed — the row reads the new name and the file lands in it', async () => {
     await del('Journal/Daily/Alpha.md', 'page')
     expect(
-      (await handleMutate(
-        { op: 'rename', path: 'Journal', kind: 'collection', newName: 'Logbook' },
-        deps,
-      )).ok,
+      (
+        await handleMutate(
+          { op: 'rename', path: 'Journal', kind: 'collection', newName: 'Logbook' },
+          deps,
+        )
+      ).ok,
     ).toBe(true)
     const row = await find('Alpha')
     expect(row.crumbs.map((c) => c.title)).toEqual(['Logbook', 'Daily'])
@@ -113,12 +121,19 @@ describe('end to end — deleted, listed, restored', () => {
   it('a Space restores into a RENAMED Context, and its breadcrumb said so first', async () => {
     await del('.nexus/contexts/Projects/Pommora', 'space')
     expect(
-      (await handleMutate({ op: 'renameContext', contextId: 'ctx_projects', newName: 'Ventures' }, deps)).ok,
+      (
+        await handleMutate(
+          { op: 'renameContext', contextId: 'ctx_projects', newName: 'Ventures' },
+          deps,
+        )
+      ).ok,
     ).toBe(true)
     const row = await find('Pommora')
     expect(row.crumbs).toEqual([{ kind: 'context', title: 'Ventures' }])
     expect((await handleMutate({ op: 'restore', bundlePath: row.bundlePath }, deps)).ok).toBe(true)
-    expect(await pathExists(join(contextsDir(root), 'Ventures', 'Pommora', '_space.json'))).toBe(true)
+    expect(await pathExists(join(contextsDir(root), 'Ventures', 'Pommora', '_space.json'))).toBe(
+      true,
+    )
   })
 
   it('the restoration matrix: every homeless kind lands where it is told', async () => {
@@ -126,10 +141,16 @@ describe('end to end — deleted, listed, restored', () => {
     await del('Journal/Daily/Alpha.md', 'page')
     let row = await find('Alpha')
     expect(
-      (await handleMutate(
-        { op: 'restore', bundlePath: row.bundlePath, destination: { kind: 'container', id: 'set-daily' } },
-        deps,
-      )).ok,
+      (
+        await handleMutate(
+          {
+            op: 'restore',
+            bundlePath: row.bundlePath,
+            destination: { kind: 'container', id: 'set-daily' },
+          },
+          deps,
+        )
+      ).ok,
     ).toBe(true)
     expect(await pathExists(join(root, 'Journal', 'Daily', 'Alpha.md'))).toBe(true)
 
@@ -141,20 +162,32 @@ describe('end to end — deleted, listed, restored', () => {
     expect(row.historical).toBe(true)
     expect((await handleMutate({ op: 'restore', bundlePath: row.bundlePath }, deps)).ok).toBe(false)
     expect(
-      (await handleMutate(
-        { op: 'restore', bundlePath: row.bundlePath, destination: { kind: 'container', id: 'col-journal' } },
-        deps,
-      )).ok,
+      (
+        await handleMutate(
+          {
+            op: 'restore',
+            bundlePath: row.bundlePath,
+            destination: { kind: 'container', id: 'col-journal' },
+          },
+          deps,
+        )
+      ).ok,
     ).toBe(true)
     expect(await pathExists(join(root, 'Journal', 'Alpha.md'))).toBe(true)
 
     // Set → Collection
     const setRow = await find('Daily')
     expect(
-      (await handleMutate(
-        { op: 'restore', bundlePath: setRow.bundlePath, destination: { kind: 'container', id: 'col-journal' } },
-        deps,
-      )).ok,
+      (
+        await handleMutate(
+          {
+            op: 'restore',
+            bundlePath: setRow.bundlePath,
+            destination: { kind: 'container', id: 'col-journal' },
+          },
+          deps,
+        )
+      ).ok,
     ).toBe(true)
     expect(await pathExists(join(root, 'Journal', 'Daily', '_pageset.json'))).toBe(true)
 
@@ -164,10 +197,16 @@ describe('end to end — deleted, listed, restored', () => {
     const spaceRow = await find('Pommora')
     expect(spaceRow.homeResolves).toBe(false)
     expect(
-      (await handleMutate(
-        { op: 'restore', bundlePath: spaceRow.bundlePath, destination: { kind: 'context', id: 'ctx_areas' } },
-        deps,
-      )).ok,
+      (
+        await handleMutate(
+          {
+            op: 'restore',
+            bundlePath: spaceRow.bundlePath,
+            destination: { kind: 'context', id: 'ctx_areas' },
+          },
+          deps,
+        )
+      ).ok,
     ).toBe(true)
     expect(await pathExists(join(contextsDir(root), 'Areas', 'Pommora', '_space.json'))).toBe(true)
   })
@@ -177,10 +216,16 @@ describe('end to end — deleted, listed, restored', () => {
     await del('Journal/Daily', 'set')
     const row = await find('Alpha')
     expect(
-      (await handleMutate(
-        { op: 'restore', bundlePath: row.bundlePath, destination: { kind: 'container', id: 'col-plain' } },
-        deps,
-      )).ok,
+      (
+        await handleMutate(
+          {
+            op: 'restore',
+            bundlePath: row.bundlePath,
+            destination: { kind: 'container', id: 'col-plain' },
+          },
+          deps,
+        )
+      ).ok,
     ).toBe(true)
     const landed = await readFile(join(root, 'Plain', 'Alpha.md'), 'utf8')
     expect(landed.includes('<Status>')).toBe(false)
@@ -205,16 +250,23 @@ describe('end to end — deleted, listed, restored', () => {
   it('emptying hands the artifact over, and the switch decides whether it goes at all', async () => {
     await del('Journal/Daily/Alpha.md', 'page')
     let row = await find('Alpha')
-    expect((await handleMutate({ op: 'emptyBundle', bundlePath: row.bundlePath }, deps)).ok).toBe(true)
+    expect((await handleMutate({ op: 'emptyBundle', bundlePath: row.bundlePath }, deps)).ok).toBe(
+      true,
+    )
     expect(handed).toHaveLength(1)
     expect(handed[0].endsWith('Alpha.md')).toBe(true)
     expect(await rows()).toHaveLength(0)
 
-    await writeFile(join(root, 'Journal', 'Beta.md'), '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVB\n---\nb\n')
+    await writeFile(
+      join(root, 'Journal', 'Beta.md'),
+      '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVB\n---\nb\n',
+    )
     await del('Journal/Beta.md', 'page')
     row = await find('Beta')
     const permanent: MutateDeps = { ...deps, permanentDelete: true }
-    expect((await handleMutate({ op: 'emptyBundle', bundlePath: row.bundlePath }, permanent)).ok).toBe(true)
+    expect(
+      (await handleMutate({ op: 'emptyBundle', bundlePath: row.bundlePath }, permanent)).ok,
+    ).toBe(true)
     expect(handed).toHaveLength(1) // unchanged: it never reached the system trash
     expect(await rows()).toHaveLength(0)
   })

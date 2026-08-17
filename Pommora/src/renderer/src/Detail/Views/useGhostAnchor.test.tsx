@@ -92,9 +92,11 @@ describe('useGhostAnchor', () => {
     })
     let settled = false
     await act(async () => {
-      void api.suppressWrap(() => menu).then(() => {
-        settled = true
-      })
+      void api
+        .suppressWrap(() => menu)
+        .then(() => {
+          settled = true
+        })
     })
     expect(api.ghost?.closing).toBe(true)
     await act(async () => api.onHover('b', true))
@@ -161,7 +163,7 @@ describe('useGhostAnchor', () => {
     expect(api.ghost).toEqual({ anchorId: 'b', closing: false })
   })
 
-  it('take() kills every armed timer — a crossed row\'s dwell never fires post-create', async () => {
+  it("take() kills every armed timer — a crossed row's dwell never fires post-create", async () => {
     await dwellOpen('a')
     // Crossing row b toward the ghost arms b's dwell; the ghost click takes before it fires.
     await act(async () => api.onHover('b', true))
@@ -238,7 +240,7 @@ describe('useGhostAnchor travel hold', () => {
     expect(api.ghost).toEqual({ anchorId: 'a', closing: false })
   })
 
-  it('the hold expiring closes the ghost and arms the rested anchor\'s own dwell', async () => {
+  it("the hold expiring closes the ghost and arms the rested anchor's own dwell", async () => {
     inZone.add('b')
     await dwellOpen('a')
     await act(async () => api.onHover('b', true))

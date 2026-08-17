@@ -168,9 +168,7 @@ export function SettingsPane(): React.JSX.Element | null {
         value={scope ? view.name : node.title}
         readOnly={configLocked}
         icon={
-          scope
-            ? iconNameOr(view.icon, 'table')
-            : entityIcon(node.kind, node.icon, defaultIcons)
+          scope ? iconNameOr(view.icon, 'table') : entityIcon(node.kind, node.icon, defaultIcons)
         }
         iconRef={iconRef}
         onIconClick={() => setIconOpen(true)}

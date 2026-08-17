@@ -222,9 +222,7 @@ export async function writeMarkdownBlock(
 
 async function listBlockHosts(root: string): Promise<{ host: BlockHostRef; dir: string }[]> {
   const homepage: BlockHostRef = { kind: 'homepage' }
-  const hosts: { host: BlockHostRef; dir: string }[] = [
-    { host: homepage, dir: blockHostDir(root) },
-  ]
+  const hosts: { host: BlockHostRef; dir: string }[] = [{ host: homepage, dir: blockHostDir(root) }]
   try {
     const world = await loadContextWorld(root)
     if (world.ok)
