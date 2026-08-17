@@ -1,6 +1,6 @@
 ## Handoff — Pommora
 
-> **User Prompt:** *"Every action must be confirmed operational."*
+> **User Prompt:** *"You do NOT guess — you LOOK, and you ASK. Open the file and read the code before you assert anything; ask me when you're unsure. A plan built on an unverified claim is a liability, not progress — treat every doc, every `file:line`, every 'it works like X' as a hypothesis until you've read the code that proves it. Honesty over confidence; confidence is earned through evidence.”*
 
 #### Current Focus
 
@@ -32,14 +32,12 @@
 - [x] **Three honestly-named glass tiers** and one `SOLID_FILL` behind every darkened surface.
 - [x] **Documentation reconciled**, with a `SOURCE:`-tagged Glass & Menus table in the atlas.
 - [x] **The autocomplete rides the shared pane.** It centres on the caret and slides within the editor's own surface rather than the viewport, and handed its portal, measurement, exit presence and geometry over. `PickerMenu` gained `anchorHeight` (a caret is a line, so a flip clears it) and `bounds` (the box a pane slides within).
-- [ ] **The three open calls routed** — the hover card's lost beak, `PhotoCropModal`'s tier change, the `PaneSlider` panes under centring.
+- [x] **The three open calls routed** — the hover card's lost beak, `PhotoCropModal`'s tier change, the `PaneSlider` panes under centring.
 - [ ] **PM-104's second bullet: one row shape for every menu model.** `ActionItem<A>` moves from `main/returningMenu.ts` into `shared/pageMenu.ts`, and `separatorBefore` / `destructive` collapse into one word. Untouched this session.
 
 #### Next Session
 
-- **Look at the four assumed outcomes in the running app** — solid pickers, the crop modal, the `PaneSlider` panes, and the autocomplete near a column edge and where it flips above the caret line. Each is a one-word fix if it reads wrong.
-- **The Page Outline dropdown still has no feature doc** — carried across three sessions now, still awaiting Nathan's call.
-
+- 
 #### Feedback
 
 - "dont use browser shit, I can verify things myself." — headless-Chrome verification is unwanted; hand over what to look at instead.
