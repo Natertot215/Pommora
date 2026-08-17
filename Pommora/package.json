@@ -19,7 +19,7 @@
     "build:app": "vite build -c vite.config.app.ts",
     "package": "electron-vite build && electron-builder",
     "format": "biome format --write .",
-    "lint": "biome lint .",
+    "lint": "biome check .",
     "check": "biome check --write ."
   },
   "devDependencies": {
