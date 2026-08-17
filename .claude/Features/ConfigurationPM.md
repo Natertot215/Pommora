@@ -54,6 +54,8 @@ Every entity kind carries a **renameable display label** in `settings.json` — 
 
 Cross-session, machine-local state in `pommora.json` under the app's userData directory: the last-opened Nexus, the roll-off list of recently opened Nexuses behind Open Recent, and the delete target (in-Nexus trash vs the system trash). It is never part of a Nexus and never syncs. The Navigation layer's own recents are a separate stream — visited entities within one Nexus, stored in that Nexus's database. 
 
+A second class of machine-local state sits in the Nexus's own database rather than beside the app: preferences that belong to the pair of a machine and a Nexus. **Use Native Menus** is the first — with it on, menus that are plain lists are drawn by the operating system instead of as in-app panes, which is a property of the system in front of the user rather than of the Nexus, so opening the same Nexus on another computer reads however that computer is set. Menus that are not lists — a grid, a calendar, a text field, anything holding a sliding pane — have no system equivalent and are unaffected either way.
+
 ### The Settings Window
 
 A floating window summoned from the sidebar ribbon's settings glyph, mounted on the shared **PreviewPane** surface — inheriting its glass shell, geometry, and dismissal contract, and opening smaller than a content window through that surface's bounds override. A category rail runs the window's full height as an in-flow side pane; the rail is the roster new panels register in.

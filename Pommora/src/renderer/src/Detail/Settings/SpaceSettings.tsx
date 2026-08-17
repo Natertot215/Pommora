@@ -85,19 +85,17 @@ export function SpaceSettingsContent({ id }: { id: string }): React.JSX.Element 
           />
         </div>
       </MenuScrollFrame>
-      {headerMenu && (
-        <PointMenu at={headerMenu} onDismiss={() => setHeaderMenu(null)}>
-          <MenuItem
-            leading={<Icon name="palette" size={13} />}
-            onClick={() => {
-              setHeaderMenu(null)
-              setColorOpen(true)
-            }}
-          >
-            Change Color
-          </MenuItem>
-        </PointMenu>
-      )}
+      <PointMenu at={headerMenu} onDismiss={() => setHeaderMenu(null)}>
+        <MenuItem
+          leading={<Icon name="palette" size={13} />}
+          onClick={() => {
+            setHeaderMenu(null)
+            setColorOpen(true)
+          }}
+        >
+          Change Color
+        </MenuItem>
+      </PointMenu>
       <IconPicker
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}

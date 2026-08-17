@@ -401,8 +401,10 @@ export const configRow = style({
   minHeight: '24px',
 })
 
-/** The row label — Underline · Full URL · Color · Style. */
-export const configLabel = style([text.control.emphasized, { color: c.label.control }])
+/** The row label — Underline · Full URL · Color · Style. Control DENSITY at the primary tone: the
+ *  pane sits at control scale, but a label is what the row says, so it reads at full strength while
+ *  its glyph and its value stay a step under. */
+export const configLabel = style([text.control.emphasized, { color: c.label.primary }])
 
 /** The Switch at pane density — shrunk to sit level with the emphasized labels + colour chip (the same
  *  scale the CalendarPicker uses for its picker-scale Switches). Zoom is the house density knob. */

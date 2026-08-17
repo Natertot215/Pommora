@@ -110,6 +110,10 @@ export function MenuCaption({ children }: { children: ReactNode }): React.JSX.El
   return <div className={s.caption}>{children}</div>
 }
 
+/** KNOB — a bar's glyph, sized against the ActionRow ramp its label rides rather than against the
+ *  body rows below it. */
+const BAR_GLYPH = 12
+
 /** A pane's TopRow — a leading ‹ chevron + label that pops the nav stack one level. The trailing
  *  action rides the row's trailing slot so it reads — and colours — as part of the TopRow, not a
  *  floating toolbar button beside it. */
@@ -129,7 +133,7 @@ export function MenuTopRow({
       className={cx(s.topRow, trailing != null && s.flushTrailing, className)}
       leading={
         <span className={s.topBarLeadingSymbol}>
-          <Icon name="chevron-left" size={14} />
+          <Icon name="chevron-left" size={BAR_GLYPH} />
         </span>
       }
       trailing={trailing}
