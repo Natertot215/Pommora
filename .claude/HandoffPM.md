@@ -14,9 +14,11 @@
 
 **That exposed the glass vocabulary as wrong rather than merely imprecise.** `GlassWindow` and `GlassSurface` were byte-identical, each carrying a comment promising divergence "later," so three named tiers were really two and the one real distinction — 95% versus 90% brightness — was invisible in the names. Nathan's call: merge them under `GlassSurface` for the app's fixed chrome, keep `GlassPane` for floating transients, and rebuild `GlassWindow` as the pane's chrome carrying a body. Four spellings of "darken this" (a boolean at 100%, a `tintOpacity` number at 85/90, a `fill` at 78, a hand-written `--state-muted`) collapsed onto one `SOLID_FILL`, which ended a live mismatch: `NavWindow` passed 90 while its own comment insisted it matched `PreviewWindow`, which passed 85.
 
-**What is verified:** every gate green on the final state — typecheck clean both projects, Biome clean across 800 files, 2733 tests across 235 files, 21 atlas tables agreeing with source. The auto-centring branch is pinned by two tests that were mutation-checked (reverting the default makes one fail). The restored border's layout effect was measured rather than reasoned about — it does grow a shrink-to-fit pane by 2px, which `box-sizing: border-box` does not prevent, and `IconPicker`'s column count survives because it derives from a live `clientWidth` rather than its width constant.
+**What is verified:** every gate green on the final state — typecheck clean both projects, Biome clean across 800 files, 2736 tests across 235 files, 21 atlas tables agreeing with source. The auto-centring branch is pinned by two tests that were mutation-checked (reverting the default makes one fail). The restored border's layout effect was measured rather than reasoned about — it does grow a shrink-to-fit pane by 2px, which `box-sizing: border-box` does not prevent, and `IconPicker`'s column count survives because it derives from a live `clientWidth` rather than its width constant.
 
-**What is assumed:** three visual outcomes nobody has looked at in the running app — the eleven solid pickers at 90% instead of opaque, `PhotoCropModal` on the window tier, and the `PaneSlider` panes now growing both directions under auto-centring. All three are seconds of use to judge and invisible in a screenshot.
+**The autocomplete then landed on top of that**, in two commits so the behavior and the refactor revert separately: it centres on the caret and slides within the editor's nearest scrolling ancestor rather than the viewport, then handed its own portal, measurement, exit presence and geometry to `PickerMenu`. A simplification pass over that fold caught a defect it introduced — both hosts rebuilt `bounds` as an inline literal, minting a fresh identity per render, which rebuilt a ResizeObserver and two window listeners on the keystroke path — plus two staleness holes in the cached surface lookup, all three fixed.
+
+**What is assumed:** four visual outcomes nobody has looked at in the running app — the eleven solid pickers at 90% instead of opaque, `PhotoCropModal` on the window tier, the `PaneSlider` panes now growing both directions under auto-centring, and the autocomplete near the column edges and where it flips above the caret line. All are seconds of use to judge and invisible in a screenshot.
 
 #### Completion Criteria
 
@@ -29,14 +31,13 @@
 - [x] **Auto-centring** — straddle the trigger where the whole pane fits, edge-anchor where it would be clamped, decided once per open.
 - [x] **Three honestly-named glass tiers** and one `SOLID_FILL` behind every darkened surface.
 - [x] **Documentation reconciled**, with a `SOURCE:`-tagged Glass & Menus table in the atlas.
-- [ ] **The autocomplete anchored flush at the caret.** It mounts the shared pane but still places itself, because `origin="left"` insets by `ANCHOR_RESERVE` — right against an element, wrong against a text caret.
+- [x] **The autocomplete rides the shared pane.** It centres on the caret and slides within the editor's own surface rather than the viewport, and handed its portal, measurement, exit presence and geometry over. `PickerMenu` gained `anchorHeight` (a caret is a line, so a flip clears it) and `bounds` (the box a pane slides within).
 - [ ] **The three open calls routed** — the hover card's lost beak, `PhotoCropModal`'s tier change, the `PaneSlider` panes under centring.
 - [ ] **PM-104's second bullet: one row shape for every menu model.** `ActionItem<A>` moves from `main/returningMenu.ts` into `shared/pageMenu.ts`, and `separatorBefore` / `destructive` collapse into one word. Untouched this session.
 
 #### Next Session
 
-- **Look at the three assumed outcomes in the running app** — solid pickers, the crop modal, the `PaneSlider` panes. Each is a one-word fix if it reads wrong.
-- **The autocomplete's caret anchoring** — a flush-left placement branch in `PickerMenu`, not a wrapper tweak.
+- **Look at the four assumed outcomes in the running app** — solid pickers, the crop modal, the `PaneSlider` panes, and the autocomplete near a column edge and where it flips above the caret line. Each is a one-word fix if it reads wrong.
 - **The Page Outline dropdown still has no feature doc** — carried across three sessions now, still awaiting Nathan's call.
 
 #### Feedback
@@ -55,6 +56,7 @@
 - `design-system/components/menu/menu.css.ts` — `rowShell` is the one hover-and-focus recipe both row types compose.
 - `design-system/components/NotchedPane.tsx` — the beaked shell, now top-beak-only, with `MenuSurface` as its sole consumer.
 - `design-system/components/PickerMenu/PickerMenu.test.tsx` — the auto-centring tests, and the `offsetWidth` / `getBoundingClientRect` stubbing pattern for testing placement in jsdom.
+- `MarkdownPM/useConnectionAutocomplete.ts` — `surfaceOf` resolves and caches the box the panel slides within; `AcState` carries that box, built once so its identity doesn't churn a hook dep.
 - `.claude/Planning/PopoutMenu — Tasks.md` — the arc's tracker: done, open with what each is waiting on, and deferred by ruling.
 - `DesignSystemPM.md` §Glass & Menus — which tier each surface wears; `node scripts/check-atlas.mjs` verifies it.
 
@@ -63,6 +65,7 @@
 - **`box-sizing: border-box` does not protect a shrink-to-fit box.** It applies only where a width is stated; an auto-width pane still grows by its border. Harmless here because panes anchor by an edge, but it will matter the moment something sets an explicit width and does arithmetic on it.
 - **The atlas checker validates column 2's backticked tokens and column 3+'s literals**, skipping bare numbers under 8 and any prose derivation. A new table needs its `SOURCE:` files to actually contain both, or it fails.
 - **`MenuOption` lays out its mark slot on every row and only paints the chosen one** — deliberate, so the pane can't resize as the selection moves between labels of unequal length.
+- **An object literal built inline in JSX is a fresh identity every render**, and as a hook dependency that is an effect tearing itself down on a path that runs per keystroke. Build it where the values are read, not where they're passed.
 - **A comment asserting two values match is worse than no comment.** `NavWindow`'s said it matched `PreviewWindow`'s tint; it made the mismatch harder to find, because reading it told you not to check.
 
 #### Changes
