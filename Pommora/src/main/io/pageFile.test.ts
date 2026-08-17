@@ -90,7 +90,8 @@ describe('renameFrontmatterKey — the key keeps its place', () => {
     out === null ? null : splitEnvelope(out).frontmatter
 
   it('renames the key where it sits, keeping the comment attached to it', () => {
-    const before = 'title: Alpha\n# which clients this is for\n(Projects):\n  - Pommora\nstatus: draft'
+    const before =
+      'title: Alpha\n# which clients this is for\n(Projects):\n  - Pommora\nstatus: draft'
     const out = renameFrontmatterKey(page(before), '(Projects)', '(Ventures)', 'prefer-new')
     expect(fmOf(out)).toBe(
       'title: Alpha\n# which clients this is for\n(Ventures):\n  - Pommora\nstatus: draft',
@@ -114,7 +115,9 @@ describe('renameFrontmatterKey — the key keeps its place', () => {
 
   it('merge folds both lists into one at the renamed key’s place, deduped', () => {
     const out = renameFrontmatterKey(
-      page('id: p2\n# tags\n(Projects):\n  - Pommora\n(Ventures):\n  - Other\n  - Pommora\nforeign: 1'),
+      page(
+        'id: p2\n# tags\n(Projects):\n  - Pommora\n(Ventures):\n  - Other\n  - Pommora\nforeign: 1',
+      ),
       '(Projects)',
       '(Ventures)',
       'merge',

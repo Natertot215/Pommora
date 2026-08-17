@@ -275,7 +275,9 @@ describe('agenda singleton adoption', () => {
 
     await stampAdopted(root)
     // The registration names this exact folder, and the root is the only place it is valid.
-    expect(await readFile(join(root, 'Tasks', SIDECAR_FILENAME.taskConfig), 'utf8')).toContain(TASKS)
+    expect(await readFile(join(root, 'Tasks', SIDECAR_FILENAME.taskConfig), 'utf8')).toContain(
+      TASKS,
+    )
     await expect(
       readFile(join(root, 'Notes', 'Tasks', SIDECAR_FILENAME.taskConfig), 'utf8'),
     ).rejects.toThrow()
@@ -346,7 +348,9 @@ describe('agenda singleton adoption', () => {
     await writeFile(join(root, 'Stray', 'Note.md'), 'no frontmatter\n')
 
     await stampAdopted(root)
-    const coll = JSON.parse(await readFile(join(root, 'Stray', SIDECAR_FILENAME.collection), 'utf8'))
+    const coll = JSON.parse(
+      await readFile(join(root, 'Stray', SIDECAR_FILENAME.collection), 'utf8'),
+    )
     expect(coll.id).toBe(SET_ID) // the identity survived the crossing
     expect(coll.icon).toBe('box') // and so did everything riding with it
     await expect(readFile(join(root, 'Stray', SIDECAR_FILENAME.set), 'utf8')).rejects.toThrow()

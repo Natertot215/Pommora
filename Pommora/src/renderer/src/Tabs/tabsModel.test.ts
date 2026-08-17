@@ -324,7 +324,10 @@ describe('tabsModel — hydrateTabs (the lockstep owner)', () => {
   })
 
   it('mints paths and preserves a pointer that survives pruning', () => {
-    const [t] = hydrateTabs([stored('t1', 'b', ['a', 'gone', 'b'], 2)], reconcileIndexOf(mkTree('a', 'b')))
+    const [t] = hydrateTabs(
+      [stored('t1', 'b', ['a', 'gone', 'b'], 2)],
+      reconcileIndexOf(mkTree('a', 'b')),
+    )
     expect(t.target).toEqual(pt('b'))
     expect(t.navStack).toEqual([pt('a'), pt('b')])
     expect(t.navIndex).toBe(1) // 'gone' pruned ahead of it — the pointer re-based, not re-found
@@ -343,7 +346,10 @@ describe('tabsModel — hydrateTabs (the lockstep owner)', () => {
 
   it('drops a tab whose target no longer resolves; newtab passes through empty', () => {
     const tabs = hydrateTabs(
-      [stored('t1', 'gone', ['gone'], 0), { id: 'n', target: { kind: 'newtab' as const }, navStack: [], navIndex: -1 }],
+      [
+        stored('t1', 'gone', ['gone'], 0),
+        { id: 'n', target: { kind: 'newtab' as const }, navStack: [], navIndex: -1 },
+      ],
       reconcileIndexOf(mkTree('a')),
     )
     expect(tabs.map((t) => t.id)).toEqual(['n'])
@@ -362,7 +368,9 @@ describe('tabsModel — derivePinnedTabs', () => {
   it('drops agenda refs and refs that no longer resolve', () => {
     const agendaRef: NavRef = { kind: 'task', id: 'tk' }
     expect(
-      derivePinnedTabs([agendaRef, pin('gone'), pin('a')], reconcileIndexOf(mkTree('a'))).map((t) => t.id),
+      derivePinnedTabs([agendaRef, pin('gone'), pin('a')], reconcileIndexOf(mkTree('a'))).map(
+        (t) => t.id,
+      ),
     ).toEqual(['pin:page:a'])
   })
 })

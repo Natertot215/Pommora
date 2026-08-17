@@ -43,8 +43,7 @@ const press = (view: EditorView, pos: number, target: HTMLElement): void => {
   target.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0, detail: 1 }))
 }
 
-const label = (view: EditorView): HTMLElement =>
-  view.dom.querySelector('.md-link') as HTMLElement
+const label = (view: EditorView): HTMLElement => view.dom.querySelector('.md-link') as HTMLElement
 
 describe('an external link opens from its label and nowhere else', () => {
   it('a click on the label opens it', async () => {

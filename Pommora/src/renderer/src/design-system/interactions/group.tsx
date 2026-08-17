@@ -84,7 +84,11 @@ type ColumnModel = { lefts: number[]; stride: number; cols: number }
 function columnModelOf(rects: Box[], containerWidth: number): ColumnModel {
   const lefts = [...new Set(rects.map((r) => Math.round(r.left)))].sort((a, b) => a - b)
   const stride = lefts.length >= 2 ? lefts[1] - lefts[0] : (rects[0]?.width ?? 1) + 1
-  const cols = Math.max(lefts.length, containerWidth > 0 ? Math.round(containerWidth / stride) : 1, 1)
+  const cols = Math.max(
+    lefts.length,
+    containerWidth > 0 ? Math.round(containerWidth / stride) : 1,
+    1,
+  )
   return { lefts, stride, cols }
 }
 
@@ -92,8 +96,14 @@ function columnModelOf(rects: Box[], containerWidth: number): ColumnModel {
 // between invalidations — and the invalidators REPLACE the rects array, never mutate it in place,
 // so identity is the cache key and dead arrays release with the WeakMap. A future writer that
 // shifts rects in place would silently serve stale rows; replace the array instead.
-const zoneGeometry = new WeakMap<Box[], { rows: Map<number, ZoneRows>; models: Map<number, ColumnModel> }>()
-function geometryOf(rects: Box[]): { rows: Map<number, ZoneRows>; models: Map<number, ColumnModel> } {
+const zoneGeometry = new WeakMap<
+  Box[],
+  { rows: Map<number, ZoneRows>; models: Map<number, ColumnModel> }
+>()
+function geometryOf(rects: Box[]): {
+  rows: Map<number, ZoneRows>
+  models: Map<number, ColumnModel>
+} {
   let g = zoneGeometry.get(rects)
   if (!g) {
     g = { rows: new Map(), models: new Map() }

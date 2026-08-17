@@ -160,8 +160,7 @@ export function PaneDnd({
 
   const begin = (id: string, e: ReactPointerEvent): void => {
     // `button` beyond the band guard: a row's +, the twisty, and rename inputs never arm a drag.
-    if ((e.target as HTMLElement).closest?.(`button, ${EDITABLE_TARGETS}`))
-      return
+    if ((e.target as HTMLElement).closest?.(`button, ${EDITABLE_TARGETS}`)) return
     const el = els.current.get(id)
     if (!el) return
     // swallowActiveEscape: an active drag's Escape must cancel the DRAG, not let the Toolbar's

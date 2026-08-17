@@ -102,7 +102,11 @@ describe('resolveFieldValue memoization', () => {
       id: 'p1',
       title: 'One',
       path: 'C/One.md',
-      frontmatter: { [PAGE_ID_KEY]: 'p1', ...propsAtRoot({ prop_s: 'open' }, schema), '(Areas)': ['a'] },
+      frontmatter: {
+        [PAGE_ID_KEY]: 'p1',
+        ...propsAtRoot({ prop_s: 'open' }, schema),
+        '(Areas)': ['a'],
+      },
     }
     // Every kind returns the cached object now — there is no per-call re-tag left to make a fresh
     // one. No consumer keys identity on the resolved value (Cell resolves fresh; rowById keys on

@@ -191,7 +191,9 @@ export async function cascadePages(
 ): Promise<void> {
   for (const folder of await allCollectionFolders(root)) {
     for (const file of await listMarkdownFiles(folder)) {
-      await rewritePageSerialized(file, (content) => (sweepAdmits(content) ? rewrite(content) : null))
+      await rewritePageSerialized(file, (content) =>
+        sweepAdmits(content) ? rewrite(content) : null,
+      )
     }
   }
 }

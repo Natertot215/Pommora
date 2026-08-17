@@ -319,7 +319,8 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         if (write) await write(await gatherSpaceRecord(abs, registry, null))
         // Unlink the Space's title as a value everywhere BEFORE the folder trashes.
         const swept = await unlinkSpaceValue(root, basename(dirname(abs)), basename(abs))
-        if (write) await write(await gatherSpaceRecord(abs, registry, swept.ok ? swept.value : null))
+        if (write)
+          await write(await gatherSpaceRecord(abs, registry, swept.ok ? swept.value : null))
       } else if (req.kind === 'context') {
         const title = basename(abs)
         // The title→id window closes at the registry erase, so the evidence is taken first.
@@ -458,7 +459,8 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
           next = rel
         }
         await writeNavigationState(root, { banner: next })
-        if (prevNav && prevNav !== next) await rm(join(root, prevNav), { force: true }).catch(() => {})
+        if (prevNav && prevNav !== next)
+          await rm(join(root, prevNav), { force: true }).catch(() => {})
         return ok({})
       }
       // Resolve the config holding the banner field + the asset-folder key, per owner kind. The
@@ -701,4 +703,3 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
     }
   }
 }
-

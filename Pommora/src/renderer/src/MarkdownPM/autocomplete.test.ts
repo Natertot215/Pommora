@@ -197,7 +197,8 @@ describe('what accepting a suggestion finishes', () => {
     const ac = autocompleteQuery(doc, doc.indexOf('th') + 1)!
     expect(ac.form).toBe('alias')
     const edit = commitEdit(ac, alias)
-    const text = doc.slice(0, edit.changes[0].from) + edit.changes[0].insert + doc.slice(edit.changes[0].to)
+    const text =
+      doc.slice(0, edit.changes[0].from) + edit.changes[0].insert + doc.slice(edit.changes[0].to)
     expect(text).toBe('a [[Alpha|the plan]] b')
     expect(edit.anchor).toBe('a [[Alpha|the plan]]'.length)
   })
@@ -206,7 +207,8 @@ describe('what accepting a suggestion finishes', () => {
     const doc = 'a [[Alph]] b'
     const ac = autocompleteQuery(doc, doc.indexOf('Alph') + 2)!
     const edit = commitEdit(ac, page, { openAlias: true })
-    const text = doc.slice(0, edit.changes[0].from) + edit.changes[0].insert + doc.slice(edit.changes[0].to)
+    const text =
+      doc.slice(0, edit.changes[0].from) + edit.changes[0].insert + doc.slice(edit.changes[0].to)
     expect(text).toBe('a [[Alpha|]] b')
     expect(edit.opensAlias).toBe(true)
     expect(edit.anchor).toBe('a [[Alpha|'.length)
@@ -216,7 +218,8 @@ describe('what accepting a suggestion finishes', () => {
     const doc = 'a [[Alph]] b'
     const ac = autocompleteQuery(doc, doc.indexOf('Alph') + 2)!
     const edit = commitEdit(ac, page)
-    const text = doc.slice(0, edit.changes[0].from) + edit.changes[0].insert + doc.slice(edit.changes[0].to)
+    const text =
+      doc.slice(0, edit.changes[0].from) + edit.changes[0].insert + doc.slice(edit.changes[0].to)
     expect(text).toBe('a [[Alpha]] b')
     expect(edit.opensAlias).toBeUndefined()
   })

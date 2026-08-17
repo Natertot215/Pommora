@@ -125,11 +125,7 @@ describe('latchBaseline', () => {
   })
 
   it('a walked path that is also listed unreadable records unreadable — the listing wins', () => {
-    const latched = latchBaseline(
-      projected(page('page-a', 'A', 'Library')),
-      ['Library/A.md'],
-      null,
-    )
+    const latched = latchBaseline(projected(page('page-a', 'A', 'Library')), ['Library/A.md'], null)
     expect(latched['page-a'].state).toBe('unreadable')
   })
 
@@ -316,7 +312,10 @@ describe('runOpenRecord — the open sequence', () => {
       JSON.stringify({ id: 'nx-open', createdAt: '2026' }),
     )
     await mkdir(join(root, 'Library'))
-    await writeFile(join(root, 'Library', '_pagecollection.json'), JSON.stringify({ id: 'col-lib' }))
+    await writeFile(
+      join(root, 'Library', '_pagecollection.json'),
+      JSON.stringify({ id: 'col-lib' }),
+    )
     await writeFile(join(root, 'Library', 'Notes.md'), `---\nPageID: ${NOTES}\n---\nbody`)
     openSessionDb(root)
   })

@@ -61,7 +61,10 @@ beforeAll(() => {
   raw = mkdtempSync(join(tmpdir(), 'pom-raw-'))
   d(join(raw, 'Collection A', 'Set A', 'Sub A'))
   w(join(raw, 'Collection A', 'Set A', 'Sub A', 'Deep.md'), '# deep (depth-3, proves no cap)')
-  w(join(raw, 'Collection A', 'Set A', 'Page A.md'), '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRP\nicon: star\n---\n\nbody')
+  w(
+    join(raw, 'Collection A', 'Set A', 'Page A.md'),
+    '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRP\nicon: star\n---\n\nbody',
+  )
   w(join(raw, 'Collection A', 'Set A', 'Page B.md'), 'no frontmatter, just body')
   w(join(raw, 'Collection A', 'Root Page.md'), '# collection-root page')
   d(join(raw, 'Collection B'))
@@ -75,10 +78,7 @@ beforeAll(() => {
   // --- sidecar-driven nexus (_pagecollection.json at the top, recursive _pageset.json below) ---
   sidecar = mkdtempSync(join(tmpdir(), 'pom-sc-'))
   d(join(sidecar, '.nexus'))
-  w(
-    join(sidecar, '.nexus', 'nexus.json'),
-    JSON.stringify({ id: 'nx1', createdAt: '2026' }),
-  )
+  w(join(sidecar, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nx1', createdAt: '2026' }))
   w(join(sidecar, '.nexus', 'settings.json'), JSON.stringify({ excluded_folders: ['Archive'] }))
   w(
     join(sidecar, '.nexus', 'properties.json'),
@@ -96,10 +96,7 @@ beforeAll(() => {
     join(sidecar, 'Notes', '_pagecollection.json'),
     JSON.stringify({ id: 'col-notes', properties: ['prop_p1'] }),
   )
-  w(
-    join(sidecar, 'Notes', 'Daily', '_pageset.json'),
-    JSON.stringify({ id: 'set-daily' }),
-  )
+  w(join(sidecar, 'Notes', 'Daily', '_pageset.json'), JSON.stringify({ id: 'set-daily' }))
   w(join(sidecar, 'Notes', 'Daily', 'Entry.md'), '---\nid: e1\n---\n')
   w(join(sidecar, 'Notes', 'Loose.md'), 'collection-root page')
   d(join(sidecar, 'Archive'))
@@ -182,10 +179,7 @@ describe('readNexus — agenda is config-driven, never name-reserved', () => {
     const root = mkdtempSync(join(tmpdir(), 'pom-agenda-'))
     roots.push(root)
     d(join(root, '.nexus'))
-    w(
-      join(root, '.nexus', 'nexus.json'),
-      JSON.stringify({ id: 'nxg', createdAt: '2026' }),
-    )
+    w(join(root, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nxg', createdAt: '2026' }))
     build(root)
     return root
   }
@@ -225,10 +219,7 @@ describe('readNexus — registry-backed contexts', () => {
   beforeAll(() => {
     reg = mkdtempSync(join(tmpdir(), 'pom-reg-'))
     d(join(reg, '.nexus'))
-    w(
-      join(reg, '.nexus', 'nexus.json'),
-      JSON.stringify({ id: 'nxr', createdAt: '2026' }),
-    )
+    w(join(reg, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nxr', createdAt: '2026' }))
     w(
       join(reg, '.nexus', 'contexts.json'),
       JSON.stringify({
@@ -266,7 +257,10 @@ describe('readNexus — registry-backed contexts', () => {
     )
     d(join(reg, 'Notes'))
     w(join(reg, 'Notes', '_pagecollection.json'), JSON.stringify({ id: 'col-n' }))
-    w(join(reg, 'Notes', 'Linked.md'), '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRQ\n(Projects):\n  - Pommora\n---\nbody')
+    w(
+      join(reg, 'Notes', 'Linked.md'),
+      '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRQ\n(Projects):\n  - Pommora\n---\nbody',
+    )
     w(join(reg, 'Notes', 'Plain.md'), '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRR\n---\nbody')
   })
   afterAll(() => rmSync(reg, { recursive: true, force: true }))
@@ -317,7 +311,10 @@ describe('readNexus — the walk names what it cannot read', () => {
       JSON.stringify({ contexts: [{ id: 'ctx_a', title: 'Areas', singular: 'Area' }] }),
     )
     d(join(root, '.nexus', 'contexts', 'Areas', 'Good'))
-    w(join(root, '.nexus', 'contexts', 'Areas', 'Good', '_space.json'), JSON.stringify({ id: 'sp-good' }))
+    w(
+      join(root, '.nexus', 'contexts', 'Areas', 'Good', '_space.json'),
+      JSON.stringify({ id: 'sp-good' }),
+    )
     d(join(root, '.nexus', 'contexts', 'Areas', 'Bad'))
     w(join(root, '.nexus', 'contexts', 'Areas', 'Bad', '_space.json'), '{corrupt')
     d(join(root, '.nexus', 'contexts', 'Areas', 'Plain')) // no _space.json -> not a Space, silent
@@ -382,17 +379,13 @@ describe('readNexus — real test nexus (optional smoke)', () => {
   })
 })
 
-
 describe('readNexus — personalization', () => {
   const roots: string[] = []
   const mk = (settings: object): string => {
     const root = mkdtempSync(join(tmpdir(), 'pom-pers-'))
     roots.push(root)
     d(join(root, '.nexus'))
-    w(
-      join(root, '.nexus', 'nexus.json'),
-      JSON.stringify({ id: 'nxp', createdAt: '2026' }),
-    )
+    w(join(root, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nxp', createdAt: '2026' }))
     w(join(root, '.nexus', 'settings.json'), JSON.stringify(settings))
     return root
   }
@@ -497,10 +490,7 @@ describe('readNexus — structured labels', () => {
     const root = mkdtempSync(join(tmpdir(), 'pom-labels-'))
     roots.push(root)
     d(join(root, '.nexus'))
-    w(
-      join(root, '.nexus', 'nexus.json'),
-      JSON.stringify({ id: 'nxl', createdAt: '2026' }),
-    )
+    w(join(root, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nxl', createdAt: '2026' }))
     w(join(root, '.nexus', 'settings.json'), JSON.stringify(settings))
     return root
   }
@@ -561,10 +551,7 @@ describe('readNexus — profile (from settings)', () => {
     const root = mkdtempSync(join(tmpdir(), 'pom-profile-'))
     roots.push(root)
     d(join(root, '.nexus'))
-    w(
-      join(root, '.nexus', 'nexus.json'),
-      JSON.stringify({ id: 'nxp', createdAt: '2026' }),
-    )
+    w(join(root, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nxp', createdAt: '2026' }))
     w(join(root, '.nexus', 'settings.json'), JSON.stringify(settings))
     return root
   }
@@ -596,20 +583,11 @@ describe('readNexus — container paths (nexus-relative, for mutation addressing
     d(join(root, '.nexus'))
     // Collection -> Set -> Sub-Set -> Page.
     d(join(root, 'Notes', 'Daily', 'Morning'))
-    w(
-      join(root, '.nexus', 'nexus.json'),
-      JSON.stringify({ id: 'nxp', createdAt: '2026' }),
-    )
+    w(join(root, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nxp', createdAt: '2026' }))
     w(join(root, '.nexus', 'settings.json'), '{}')
     w(join(root, 'Notes', '_pagecollection.json'), JSON.stringify({ id: 'c-notes' }))
-    w(
-      join(root, 'Notes', 'Daily', '_pageset.json'),
-      JSON.stringify({ id: 's-daily' }),
-    )
-    w(
-      join(root, 'Notes', 'Daily', 'Morning', '_pageset.json'),
-      JSON.stringify({ id: 's-morning' }),
-    )
+    w(join(root, 'Notes', 'Daily', '_pageset.json'), JSON.stringify({ id: 's-daily' }))
+    w(join(root, 'Notes', 'Daily', 'Morning', '_pageset.json'), JSON.stringify({ id: 's-morning' }))
     w(join(root, 'Notes', 'Daily', 'Morning', 'Entry.md'), '---\nid: e1\n---\n')
   })
   afterAll(() => rmSync(root, { recursive: true, force: true }))

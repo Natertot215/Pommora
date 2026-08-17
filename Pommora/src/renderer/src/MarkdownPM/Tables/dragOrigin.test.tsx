@@ -46,7 +46,9 @@ afterEach(async () => {
   roCallbacks.length = 0
 })
 
-async function mount(onReorder: (axis: 'col' | 'row', from: number, to: number) => boolean): Promise<void> {
+async function mount(
+  onReorder: (axis: 'col' | 'row', from: number, to: number) => boolean,
+): Promise<void> {
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)

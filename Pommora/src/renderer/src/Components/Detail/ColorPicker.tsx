@@ -32,12 +32,7 @@ export function ColorPicker({
   triggerRef: RefObject<Element | null>
 }): React.JSX.Element | null {
   return (
-    <PickerMenu
-      open={open}
-      onDismiss={onDismiss}
-      triggerRef={triggerRef}
-      direction="down"
-    >
+    <PickerMenu open={open} onDismiss={onDismiss} triggerRef={triggerRef} direction="down">
       <div className={s.grid}>
         {SWATCHES.map((color) => (
           <button

@@ -29,7 +29,15 @@ beforeEach(async () => {
   onInput = vi.fn()
   await act(async () => {
     root.render(
-      <Slider value={1} min={0} max={2} step={0.5} ariaLabel="S" onCommit={onCommit} onInput={onInput} />,
+      <Slider
+        value={1}
+        min={0}
+        max={2}
+        step={0.5}
+        ariaLabel="S"
+        onCommit={onCommit}
+        onInput={onInput}
+      />,
     )
   })
   const strip = host.querySelector('[role="slider"]')

@@ -59,9 +59,7 @@ export function subtreeIds(node: SetTreeNode): string[] {
  *  structural path — nested, flattened, sub-grouped — excludes its pages by construction. */
 export function pruneHiddenSets(tree: SetTreeNode[], hidden: ReadonlySet<string>): SetTreeNode[] {
   return tree.flatMap((node) =>
-    hidden.has(node.id)
-      ? []
-      : [{ id: node.id, children: pruneHiddenSets(node.children, hidden) }],
+    hidden.has(node.id) ? [] : [{ id: node.id, children: pruneHiddenSets(node.children, hidden) }],
   )
 }
 

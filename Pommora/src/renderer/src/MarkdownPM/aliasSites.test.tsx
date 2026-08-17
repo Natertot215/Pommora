@@ -3,7 +3,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act, createElement } from 'react'
 import { createRoot } from 'react-dom/client'
 import type { EditorView } from '@codemirror/view'
-import { buildPageIndex, type ConnectionsApi, type ConnPage } from '@renderer/MarkdownPM/connections'
+import {
+  buildPageIndex,
+  type ConnectionsApi,
+  type ConnPage,
+} from '@renderer/MarkdownPM/connections'
 import { renderCellContent } from '@renderer/MarkdownPM/Tables/cellStatic'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '@renderer/testing/editorHarness'
 
@@ -58,7 +62,15 @@ async function renderCell(text: string): Promise<HTMLElement> {
   const host = document.createElement('div')
   document.body.appendChild(host)
   const root = createRoot(host)
-  await act(async () => root.render(createElement('div', null, renderCellContent(text, () => conn))))
+  await act(async () =>
+    root.render(
+      createElement(
+        'div',
+        null,
+        renderCellContent(text, () => conn),
+      ),
+    ),
+  )
   return host
 }
 

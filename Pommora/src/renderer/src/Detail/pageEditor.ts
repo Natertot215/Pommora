@@ -90,7 +90,8 @@ export function moveHeadingSection(dragKey: string, beforeKey: string | null): v
   // heading — the mover re-fences with one blank, so carrying the trailing blank too would compound
   // an extra blank on every reorder.
   const range = { from, to: from + doc.slice(from, sectionEndPos).trimEnd().length }
-  const at = beforeKey === null ? doc.length : (heads.find((x) => x.key === beforeKey)?.from ?? doc.length)
+  const at =
+    beforeKey === null ? doc.length : (heads.find((x) => x.key === beforeKey)?.from ?? doc.length)
   const changes = blockMoveChanges(doc, range, { at })
   if (changes?.length) view.dispatch({ changes, userEvent: 'input' })
 }

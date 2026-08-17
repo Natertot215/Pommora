@@ -2,7 +2,12 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdtemp, rm, mkdir, writeFile, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { readDefaultViewScale, readPermanentDelete, updateSettings, writePersonalization } from './settings'
+import {
+  readDefaultViewScale,
+  readPermanentDelete,
+  updateSettings,
+  writePersonalization,
+} from './settings'
 import { nexusDir, nexusConfig, NEXUS_CONFIG_FILES } from './paths'
 
 let root: string

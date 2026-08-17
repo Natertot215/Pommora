@@ -76,7 +76,10 @@ function walk(tree: NexusTree): NodeRecord[] {
     crumbs: [],
   })
   for (const g of tree.contexts ?? []) {
-    const groupCrumb: PathCrumb = { icon: entityIcon('context', g.def.icon, di), title: g.def.title }
+    const groupCrumb: PathCrumb = {
+      icon: entityIcon('context', g.def.icon, di),
+      title: g.def.title,
+    }
     for (const s of g.spaces)
       nodes.push({
         key: navKey({ kind: 'space', id: s.id }),

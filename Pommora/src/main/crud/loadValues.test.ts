@@ -22,7 +22,10 @@ describe('loadValues', () => {
       join(root, 'Col', 'p1.md'),
       '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDR1\n(Areas):\n  - Work\n<Status>: in_progress\n---\n\nbody\n',
     )
-    await writeFile(join(root, 'Col', 'SetA', 'p2.md'), '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDR2\n<Count>: 7\n---\n\nbody\n')
+    await writeFile(
+      join(root, 'Col', 'SetA', 'p2.md'),
+      '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDR2\n<Count>: 7\n---\n\nbody\n',
+    )
 
     const values = await loadValues(root, 'Col')
     expect(Object.keys(values).sort()).toEqual([P1, P2])

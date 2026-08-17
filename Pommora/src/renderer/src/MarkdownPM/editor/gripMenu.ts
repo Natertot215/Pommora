@@ -112,7 +112,10 @@ function popHeadingMenu(view: EditorView, headingEl: HTMLElement): void {
       case 'delete': {
         // The heading LINE alone — its body stays, folding up under the previous heading.
         const span = blockDeleteSpan(doc, { from: line.from, to: line.to })
-        view.dispatch({ changes: { from: span.from, to: span.to, insert: '' }, userEvent: 'delete' })
+        view.dispatch({
+          changes: { from: span.from, to: span.to, insert: '' },
+          userEvent: 'delete',
+        })
         window.nexus?.setGripHot?.(false) // the chevron is gone and no mousemove fires under a modal
         break
       }

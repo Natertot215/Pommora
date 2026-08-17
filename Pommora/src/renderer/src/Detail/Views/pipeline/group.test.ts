@@ -512,9 +512,18 @@ describe('property grouping — configured / reversed / checkbox / date', () => 
   it('buckets dates by granularity (same month together)', () => {
     const dateSchema: PropertyDefinition[] = [{ id: 'prop_when', name: 'When', type: 'datetime' }]
     const values = {
-      p1: { [PAGE_ID_KEY]: 'p1', ...propsAtRoot({ prop_when: '2026-06-10T12:00:00Z' }, dateSchema) },
-      p2: { [PAGE_ID_KEY]: 'p2', ...propsAtRoot({ prop_when: '2026-06-25T12:00:00Z' }, dateSchema) },
-      p3: { [PAGE_ID_KEY]: 'p3', ...propsAtRoot({ prop_when: '2026-07-15T12:00:00Z' }, dateSchema) },
+      p1: {
+        [PAGE_ID_KEY]: 'p1',
+        ...propsAtRoot({ prop_when: '2026-06-10T12:00:00Z' }, dateSchema),
+      },
+      p2: {
+        [PAGE_ID_KEY]: 'p2',
+        ...propsAtRoot({ prop_when: '2026-06-25T12:00:00Z' }, dateSchema),
+      },
+      p3: {
+        [PAGE_ID_KEY]: 'p3',
+        ...propsAtRoot({ prop_when: '2026-07-15T12:00:00Z' }, dateSchema),
+      },
     }
     const { rows, setTree } = flattenContainer(
       collection([], [page('p1'), page('p2'), page('p3')]),
@@ -540,7 +549,9 @@ describe('property grouping — configured / reversed / checkbox / date', () => 
 
   it('buckets a date-only value by its stored date (no timezone shift)', () => {
     const dueSchema: PropertyDefinition[] = [{ id: 'prop_due', name: 'Due', type: 'datetime' }]
-    const values = { p1: { [PAGE_ID_KEY]: 'p1', ...propsAtRoot({ prop_due: '2026-06-27' }, dueSchema) } }
+    const values = {
+      p1: { [PAGE_ID_KEY]: 'p1', ...propsAtRoot({ prop_due: '2026-06-27' }, dueSchema) },
+    }
     const { rows, setTree } = flattenContainer(collection([], [page('p1')]), values)
     const groups = resolveGroups(
       rows,

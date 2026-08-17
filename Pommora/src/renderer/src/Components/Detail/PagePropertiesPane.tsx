@@ -310,34 +310,34 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
         )}
       </div>
       <PickerMenu
-          solid
-          open={addOpen}
-          onDismiss={() => setAddOpen(false)}
-          triggerRef={addRef}
-          origin="center"
-        >
-          {hiddenContexts.map((t) => (
-            <PickerOption
-              key={t.id}
-              leading={<Icon name={t.icon} size={13} />}
-              onClick={() => {
-                setAddOpen(false)
-                setSetAside((prev) => new Set([...prev].filter((r) => r !== t.id)))
-              }}
-            >
-              {t.label}
-            </PickerOption>
-          ))}
-          {hiddenProps.map((def) => (
-            <PickerOption
-              key={def.id}
-              leading={<Icon name={propertyIcon(def)} size={13} />}
-              onClick={() => revealAndEdit(def)}
-            >
-              {def.name}
-            </PickerOption>
-          ))}
-        </PickerMenu>
+        solid
+        open={addOpen}
+        onDismiss={() => setAddOpen(false)}
+        triggerRef={addRef}
+        origin="center"
+      >
+        {hiddenContexts.map((t) => (
+          <PickerOption
+            key={t.id}
+            leading={<Icon name={t.icon} size={13} />}
+            onClick={() => {
+              setAddOpen(false)
+              setSetAside((prev) => new Set([...prev].filter((r) => r !== t.id)))
+            }}
+          >
+            {t.label}
+          </PickerOption>
+        ))}
+        {hiddenProps.map((def) => (
+          <PickerOption
+            key={def.id}
+            leading={<Icon name={propertyIcon(def)} size={13} />}
+            onClick={() => revealAndEdit(def)}
+          >
+            {def.name}
+          </PickerOption>
+        ))}
+      </PickerMenu>
       {editingDef && editing?.mode === 'picker' && (
         <PropertyPicker
           def={editingDef}

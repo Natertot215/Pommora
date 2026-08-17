@@ -43,9 +43,7 @@ async function tileView(body: string): Promise<{
 // the headless-Chrome pass covers the vertical pair with identical results.
 type Cmd = (view: EditorView) => boolean
 const boundCommands: Cmd[] = [
-  ...new Set(
-    [...defaultKeymap, ...historyKeymap].flatMap((b) => [b.run, b.shift]).filter(Boolean),
-  ),
+  ...new Set([...defaultKeymap, ...historyKeymap].flatMap((b) => [b.run, b.shift]).filter(Boolean)),
 ] as Cmd[]
 void commands
 

@@ -250,8 +250,7 @@ export function PickerMenu({
       // clamped sits off its trigger anyway, and the edge anchor at least stays put as content grows.
       if (decidedCentre.current === null)
         decidedCentre.current =
-          origin === 'center' ||
-          (origin === 'auto' && c - pw / 2 >= edgeL && c + pw / 2 <= edgeR)
+          origin === 'center' || (origin === 'auto' && c - pw / 2 >= edgeL && c + pw / 2 <= edgeR)
       // Centred origin: straddle the trigger, clamped by half-width so an edge trigger can't push it off-screen.
       if (decidedCentre.current) {
         const half = pw / 2
@@ -389,7 +388,12 @@ export function PickerMenu({
     <GlassPane
       ref={glassRef}
       solid={solid}
-      className={cx(s.pane, !bareSurface && s.surface, contentClassName, closing ? dropdownClose : dropdownOpen)}
+      className={cx(
+        s.pane,
+        !bareSurface && s.surface,
+        contentClassName,
+        closing ? dropdownClose : dropdownOpen,
+      )}
       // Through the Bloom-out the pane paints but mustn't ACT: content goes pointer-inert so a stray
       // click can't re-fire an option, while the layer below stays interactive to swallow the click.
       style={

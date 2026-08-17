@@ -1,14 +1,7 @@
 // `tabs` is the UNPINNED set (the persisted row) — pinned tabs are derived live from the
 // pinned refs against the tree and passed in separately wherever a decision must see them.
 
-import type {
-  NavRef,
-  NewTabSentinel,
-  SelectTarget,
-  StoredTab,
-  Tab,
-  TabTarget,
-} from '@shared/types'
+import type { NavRef, NewTabSentinel, SelectTarget, StoredTab, Tab, TabTarget } from '@shared/types'
 import type { MutableKind } from '@shared/mutate'
 import { navKey } from '../Navigation/navRecents'
 import { reconcileWith, type ReconcileIndex } from '../selection'

@@ -11,7 +11,11 @@ stubPointerCapture()
 
 const ORDER = ['a', 'b', 'c']
 
-function List({ onReorder }: { onReorder: (value: string, to: number) => void }): React.JSX.Element {
+function List({
+  onReorder,
+}: {
+  onReorder: (value: string, to: number) => void
+}): React.JSX.Element {
   const dnd = useOptionReorder(ORDER, onReorder)
   return (
     <div ref={dnd.containerRef} data-box>

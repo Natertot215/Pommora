@@ -125,7 +125,8 @@ describe('a renamed Context key keeps its place on every page carrying it', () =
 
   it('a page whose frontmatter cannot round-trip is left byte-identical, and the rename completes around it', async () => {
     // A tab-indented sequence: admitted by identity, refused by the round-trip gate.
-    const unwritable = '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVA\n(Projects):\n\t- Pommora\n---\nbody'
+    const unwritable =
+      '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVA\n(Projects):\n\t- Pommora\n---\nbody'
     await writeFile(other(), unwritable)
     expect((await renameContextOp(root, 'ctx_projects', 'Ventures')).ok).toBe(true)
     expect(await readFile(other(), 'utf8')).toBe(unwritable)

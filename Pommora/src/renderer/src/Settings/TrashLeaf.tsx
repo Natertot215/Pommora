@@ -155,11 +155,16 @@ export function TrashLeaf(): React.JSX.Element {
     // homeless row was never attempted and its picker is waiting, where a refused one was attempted
     // and main said why. Reporting them as one would send a user to a menu that cannot help.
     const homeless = targets.filter((r) => !r.homeResolves)
-    void window.nexus.reportTrash(`Restored ${countPhrase(done)}.`, [
-      homeless.length > 0 &&
-        `${countPhrase(homeless)} had nowhere to go — restore those one at a time to choose where.`,
-      ...refused.map((r) => `${r.row.title}: ${r.why}`),
-    ].filter(Boolean).join('\n') || 'Everything went back where it came from.')
+    void window.nexus.reportTrash(
+      `Restored ${countPhrase(done)}.`,
+      [
+        homeless.length > 0 &&
+          `${countPhrase(homeless)} had nowhere to go — restore those one at a time to choose where.`,
+        ...refused.map((r) => `${r.row.title}: ${r.why}`),
+      ]
+        .filter(Boolean)
+        .join('\n') || 'Everything went back where it came from.',
+    )
   }
 
   const emptyBatch = async (targets: TrashRow[]): Promise<void> => {

@@ -50,7 +50,12 @@ describe('what each form writes', () => {
 
   it('stands the domain in for a title it does not have yet, and says so', () => {
     const w = pasteAsWrite(pasteAsTarget(URL), 'link-title')
-    expect(w).toEqual({ kind: 'link', text: `[example.com](${URL})`, target: URL, wantsTitle: true })
+    expect(w).toEqual({
+      kind: 'link',
+      text: `[example.com](${URL})`,
+      target: URL,
+      wantsTitle: true,
+    })
   })
 
   it('writes the address alone as plain text', () => {

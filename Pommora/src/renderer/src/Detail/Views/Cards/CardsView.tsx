@@ -712,183 +712,183 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     // The suppress handle travels by context — the memoized cards pop native menus themselves,
     // where caller-side wrapping can't reach.
     <GhostSuppress.Provider value={ghostApi.suppressWrap}>
-    <div
-      ref={rootRef}
-      className={cx('cards-view', banner === 'none' && 'is-compact')}
-      data-view-id={view.id}
-      style={{ '--card-scale': view.card_size ?? 1 } as React.CSSProperties}
-    >
-      {showSetCards && (
-        <div className="set-cards-row">
-          <SortableZone
-            items={sets.map((s) => s.id)}
-            layout="grid"
-            onReorder={reorderSets}
-            getItemLabel={(id) => sets.find((s) => s.id === id)?.title ?? id}
-          >
-            {sets.map((s) => (
-              <DraggableSetCard key={s.id} set={s} />
-            ))}
-          </SortableZone>
-        </div>
-      )}
-      {/* One DragGroup spans every band so a card can be dragged ACROSS bands. The lifted card floats
-          as a portal overlay while the columns reflow to show its landing. */}
-      <DragGroup
-        onCommit={onCardDrop}
-        crossZone={canReassign || canRelocate}
-        // The lifted card IS the whole card (the nav-gallery drag look), not a partial glyph — the same
-        // CardFace the live card renders, at is-dragging opacity, floating under the pointer while its
-        // slot reflows to show the landing. The `.cards-view` carrier re-declares the knob vars +
-        // view zoom that the body-portaled overlay would otherwise lose (thumb/scale/compact reserve).
-        renderOverlay={(id) => {
-          const r = rowById.get(id)
-          if (!r || !ctx) return null
-          const oCover = typeof r.frontmatter.cover === 'string' ? r.frontmatter.cover : undefined
-          const oSrc =
-            banner === 'cover'
-              ? oCover
-                ? assetUrl(oCover)
-                : undefined
-              : banner === 'preview'
-                ? thumbSrc(nexusId, r.id, 0)
-                : undefined
-          return (
-            <div
-              className={cx('cards-view', banner === 'none' && 'is-compact')}
-              style={
-                {
-                  zoom: effectiveZoom,
-                  '--card-scale': view.card_size ?? 1,
-                  width: '100%',
-                  height: '100%',
-                } as React.CSSProperties
-              }
-            >
-              <div
-                className="page-card is-dragging page-card-ghost"
-                style={{ width: '100%', height: '100%' }}
-              >
-                <div className="page-card-body">
-                  <CardFace
-                    row={r}
-                    view={view}
-                    banner={banner}
-                    ctx={ctx}
-                    labels={labels}
-                    crumbs={locByRow.get(id) ?? NO_CRUMBS}
-                    src={oSrc}
-                    iconName={entityIcon('page', r.icon, defaultIcons)}
-                    columns={columns}
-                    allowInlineRemove={false}
-                    naming={false}
-                    onCommitValue={NOOP}
-                    onStyle={NOOP}
-                    onHide={NOOP}
-                    onOpenValuePicker={NOOP}
-                  />
-                </div>
-              </div>
-            </div>
-          )
-        }}
+      <div
+        ref={rootRef}
+        className={cx('cards-view', banner === 'none' && 'is-compact')}
+        data-view-id={view.id}
+        style={{ '--card-scale': view.card_size ?? 1 } as React.CSSProperties}
       >
-        {/* One flat level of bands, so a drop is always a reorder — a top set's whole subtree
-            already rolls into its own band here, leaving no depth for a nest to land in. */}
-        <BandDnd bands={bands} labelFor={bandLabel} onDrop={onBandDrop} nestable={false}>
-          {groups.map((g) => {
-            const rows = flattenGroups([g])
-            // Group By: None is one headerless, force-open band — a stale collapse from another grouping
-            // would otherwise hide every card with no head to toggle.
-            const isCollapsed = !flatMode && collapsed.has(g.key)
+        {showSetCards && (
+          <div className="set-cards-row">
+            <SortableZone
+              items={sets.map((s) => s.id)}
+              layout="grid"
+              onReorder={reorderSets}
+              getItemLabel={(id) => sets.find((s) => s.id === id)?.title ?? id}
+            >
+              {sets.map((s) => (
+                <DraggableSetCard key={s.id} set={s} />
+              ))}
+            </SortableZone>
+          </div>
+        )}
+        {/* One DragGroup spans every band so a card can be dragged ACROSS bands. The lifted card floats
+          as a portal overlay while the columns reflow to show its landing. */}
+        <DragGroup
+          onCommit={onCardDrop}
+          crossZone={canReassign || canRelocate}
+          // The lifted card IS the whole card (the nav-gallery drag look), not a partial glyph — the same
+          // CardFace the live card renders, at is-dragging opacity, floating under the pointer while its
+          // slot reflows to show the landing. The `.cards-view` carrier re-declares the knob vars +
+          // view zoom that the body-portaled overlay would otherwise lose (thumb/scale/compact reserve).
+          renderOverlay={(id) => {
+            const r = rowById.get(id)
+            if (!r || !ctx) return null
+            const oCover = typeof r.frontmatter.cover === 'string' ? r.frontmatter.cover : undefined
+            const oSrc =
+              banner === 'cover'
+                ? oCover
+                  ? assetUrl(oCover)
+                  : undefined
+                : banner === 'preview'
+                  ? thumbSrc(nexusId, r.id, 0)
+                  : undefined
             return (
-              <ViewGroupBand
-                key={g.key}
-                group={g}
-                view={liveView}
-                ctx={ctx}
-                setNames={setNames}
-                setIcons={setIcons}
-                source={source}
-                collapsed={isCollapsed}
-                onToggle={() => toggleCollapse(g.key)}
-                onAdd={setPaths.has(g.key) ? () => bandAdd(g.key) : undefined}
-                headless={flatMode}
-                fill
+              <div
+                className={cx('cards-view', banner === 'none' && 'is-compact')}
+                style={
+                  {
+                    zoom: effectiveZoom,
+                    '--card-scale': view.card_size ?? 1,
+                    width: '100%',
+                    height: '100%',
+                  } as React.CSSProperties
+                }
               >
-              <SortableZone
-                group="cards"
-                id={g.key}
-                items={rows.map((r) => r.id)}
-                className="cards-grid"
-              >
-                {rows.flatMap((row) => {
-                  const card = (
-                    <PageCard
-                      key={row.id}
-                      row={row}
+                <div
+                  className="page-card is-dragging page-card-ghost"
+                  style={{ width: '100%', height: '100%' }}
+                >
+                  <div className="page-card-body">
+                    <CardFace
+                      row={r}
                       view={view}
                       banner={banner}
-                      nexusId={nexusId}
-                      columns={columns}
                       ctx={ctx}
                       labels={labels}
-                      loc={locByRow.get(row.id)}
-                      draggable={cardDragEnabled}
-                      onCommitValue={cardApi.onCommitValue}
-                      onStyle={cardApi.onStyle}
-                      onOpen={cardApi.onOpen}
-                      onReveal={cardApi.onReveal}
-                      onHide={cardApi.onHide}
-                      onOpenValuePicker={cardApi.onOpenValuePicker}
-                      onOpenAddPicker={cardApi.onOpenAddPicker}
-                      onRefreshValues={cardApi.onRefreshValues}
-                      onNewBelow={cardApi.onNewBelow}
-                      onHover={cardApi.onHover}
-                      onIconPicker={cardApi.onIconPicker}
-                      allowInlineRemove={effectiveZoom >= 0.8}
-                    />
-                  )
-                  if (ghostShown !== row.id && pendingSeat !== row.id) return [card]
-                  return [
-                    card,
-                    <GhostCard
-                      key={`ghost-${row.id}`}
-                      banner={banner}
-                      view={view}
+                      crumbs={locByRow.get(id) ?? NO_CRUMBS}
+                      src={oSrc}
+                      iconName={entityIcon('page', r.icon, defaultIcons)}
                       columns={columns}
-                      ctx={ctx}
-                      iconName={entityIcon('page', undefined, defaultIcons)}
-                      onEnter={ghostApi.onGhostEnter}
-                      onLeave={ghostApi.onGhostLeave}
-                      onCreate={ghostCreate}
-                    />,
-                  ]
-                  })}
-                </SortableZone>
-              </ViewGroupBand>
+                      allowInlineRemove={false}
+                      naming={false}
+                      onCommitValue={NOOP}
+                      onStyle={NOOP}
+                      onHide={NOOP}
+                      onOpenValuePicker={NOOP}
+                    />
+                  </div>
+                </div>
+              </div>
             )
-          })}
-        </BandDnd>
-      </DragGroup>
-      {ctx && (
-        <CardPickerHost
-          value={valuePicker}
-          add={addPicker}
-          rowById={rowById}
-          view={view}
-          ctx={ctx}
-          labels={labels}
-          columns={columns}
-          commitValue={commitValue}
-          contextOptionsFor={contextOptionsFor}
-          onReveal={revealProperty}
-          onOpenValue={setValuePicker}
-          onDismissValue={() => setValuePicker(null)}
-          onDismissAdd={() => setAddPicker(null)}
-        />
-      )}
-    </div>
+          }}
+        >
+          {/* One flat level of bands, so a drop is always a reorder — a top set's whole subtree
+            already rolls into its own band here, leaving no depth for a nest to land in. */}
+          <BandDnd bands={bands} labelFor={bandLabel} onDrop={onBandDrop} nestable={false}>
+            {groups.map((g) => {
+              const rows = flattenGroups([g])
+              // Group By: None is one headerless, force-open band — a stale collapse from another grouping
+              // would otherwise hide every card with no head to toggle.
+              const isCollapsed = !flatMode && collapsed.has(g.key)
+              return (
+                <ViewGroupBand
+                  key={g.key}
+                  group={g}
+                  view={liveView}
+                  ctx={ctx}
+                  setNames={setNames}
+                  setIcons={setIcons}
+                  source={source}
+                  collapsed={isCollapsed}
+                  onToggle={() => toggleCollapse(g.key)}
+                  onAdd={setPaths.has(g.key) ? () => bandAdd(g.key) : undefined}
+                  headless={flatMode}
+                  fill
+                >
+                  <SortableZone
+                    group="cards"
+                    id={g.key}
+                    items={rows.map((r) => r.id)}
+                    className="cards-grid"
+                  >
+                    {rows.flatMap((row) => {
+                      const card = (
+                        <PageCard
+                          key={row.id}
+                          row={row}
+                          view={view}
+                          banner={banner}
+                          nexusId={nexusId}
+                          columns={columns}
+                          ctx={ctx}
+                          labels={labels}
+                          loc={locByRow.get(row.id)}
+                          draggable={cardDragEnabled}
+                          onCommitValue={cardApi.onCommitValue}
+                          onStyle={cardApi.onStyle}
+                          onOpen={cardApi.onOpen}
+                          onReveal={cardApi.onReveal}
+                          onHide={cardApi.onHide}
+                          onOpenValuePicker={cardApi.onOpenValuePicker}
+                          onOpenAddPicker={cardApi.onOpenAddPicker}
+                          onRefreshValues={cardApi.onRefreshValues}
+                          onNewBelow={cardApi.onNewBelow}
+                          onHover={cardApi.onHover}
+                          onIconPicker={cardApi.onIconPicker}
+                          allowInlineRemove={effectiveZoom >= 0.8}
+                        />
+                      )
+                      if (ghostShown !== row.id && pendingSeat !== row.id) return [card]
+                      return [
+                        card,
+                        <GhostCard
+                          key={`ghost-${row.id}`}
+                          banner={banner}
+                          view={view}
+                          columns={columns}
+                          ctx={ctx}
+                          iconName={entityIcon('page', undefined, defaultIcons)}
+                          onEnter={ghostApi.onGhostEnter}
+                          onLeave={ghostApi.onGhostLeave}
+                          onCreate={ghostCreate}
+                        />,
+                      ]
+                    })}
+                  </SortableZone>
+                </ViewGroupBand>
+              )
+            })}
+          </BandDnd>
+        </DragGroup>
+        {ctx && (
+          <CardPickerHost
+            value={valuePicker}
+            add={addPicker}
+            rowById={rowById}
+            view={view}
+            ctx={ctx}
+            labels={labels}
+            columns={columns}
+            commitValue={commitValue}
+            contextOptionsFor={contextOptionsFor}
+            onReveal={revealProperty}
+            onOpenValue={setValuePicker}
+            onDismissValue={() => setValuePicker(null)}
+            onDismissAdd={() => setAddPicker(null)}
+          />
+        )}
+      </div>
     </GhostSuppress.Provider>
   )
 }
@@ -1448,29 +1448,29 @@ const PageCard = memo(function PageCard({
           the drag engine, and the body is hover-pop's surface whose stylesheet transitions
           transform (an inverse transform there would animate — a wrong-direction hop). */}
       <div className="card-displace">
-      <div className="page-card-body hover-pop">
-        <CardFace
-          row={row}
-          view={view}
-          banner={banner}
-          ctx={ctx}
-          labels={labels}
-          crumbs={crumbs}
-          src={failed ? undefined : src}
-          iconName={iconName}
-          columns={columns}
-          allowInlineRemove={allowInlineRemove}
-          naming={naming}
-          onImgError={onImgError}
-          textRef={textRef}
-          onThumbContextMenu={onThumbContextMenu}
-          onZoneClick={openAdd}
-          onCommitValue={onCommitValue}
-          onStyle={onStyle}
-          onHide={onHide}
-          onOpenValuePicker={onOpenValuePicker}
-        />
-      </div>
+        <div className="page-card-body hover-pop">
+          <CardFace
+            row={row}
+            view={view}
+            banner={banner}
+            ctx={ctx}
+            labels={labels}
+            crumbs={crumbs}
+            src={failed ? undefined : src}
+            iconName={iconName}
+            columns={columns}
+            allowInlineRemove={allowInlineRemove}
+            naming={naming}
+            onImgError={onImgError}
+            textRef={textRef}
+            onThumbContextMenu={onThumbContextMenu}
+            onZoneClick={openAdd}
+            onCommitValue={onCommitValue}
+            onStyle={onStyle}
+            onHide={onHide}
+            onOpenValuePicker={onOpenValuePicker}
+          />
+        </div>
       </div>
       {/* A persistent mount riding `open` — the Bloom-out plays on dismiss (a conditional mount
           tears the instance out mid-exit). The add-picker lives at the grid-level host, not here. */}

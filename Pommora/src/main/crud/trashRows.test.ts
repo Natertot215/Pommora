@@ -26,7 +26,10 @@ const del = (
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'pom-rows-'))
   await mkdir(join(root, '.nexus'), { recursive: true })
-  await writeFile(join(root, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nx', createdAt: '2026' }))
+  await writeFile(
+    join(root, '.nexus', 'nexus.json'),
+    JSON.stringify({ id: 'nx', createdAt: '2026' }),
+  )
   await writeFile(
     contextsRegistryFile(root),
     JSON.stringify({ contexts: [{ id: 'ctx_projects', title: 'Projects', singular: 'Project' }] }),
@@ -38,7 +41,10 @@ beforeEach(async () => {
   )
   await mkdir(join(root, 'Notes', 'Daily'), { recursive: true })
   await writeFile(join(root, 'Notes', '_pagecollection.json'), JSON.stringify({ id: 'col-notes' }))
-  await writeFile(join(root, 'Notes', 'Daily', '_pageset.json'), JSON.stringify({ id: 'set-daily' }))
+  await writeFile(
+    join(root, 'Notes', 'Daily', '_pageset.json'),
+    JSON.stringify({ id: 'set-daily' }),
+  )
   await writeFile(join(root, 'Notes', 'Daily', 'Alpha.md'), `---\nPageID: ${PAGE_A}\n---\nbody`)
   await openSession(root)
 })

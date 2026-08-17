@@ -76,7 +76,7 @@ async function gripMenu(view: EditorView, lineText: string): Promise<void> {
 }
 
 describe("a list grip's Type switch", () => {
-  it('offers the block\'s current kind, and switching rewrites every marker', async () => {
+  it("offers the block's current kind, and switching rewrites every marker", async () => {
     const view = await mount('- alpha\n- beta')
     nextPick = { action: 'listKind', kind: 'ordered' }
     await gripMenu(view, 'alpha')

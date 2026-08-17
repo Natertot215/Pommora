@@ -73,9 +73,9 @@ describe('admitContentFile', () => {
       expect(admitContentFile({ [KIND_ID_KEY.page]: empty }, 'page')).toEqual({ state: 'missing' })
     }
     // And an emptied key alongside a real one is not "dual" — there is only one key.
-    expect(admitContentFile({ [KIND_ID_KEY.page]: ULID, [KIND_ID_KEY.task]: null }, 'page')).toEqual(
-      { state: 'member', id: ULID },
-    )
+    expect(
+      admitContentFile({ [KIND_ID_KEY.page]: ULID, [KIND_ID_KEY.task]: null }, 'page'),
+    ).toEqual({ state: 'member', id: ULID })
   })
 
   it('rejects a value that cannot be an identity — hand-authored keys are a supported input', () => {
@@ -88,9 +88,9 @@ describe('admitContentFile', () => {
   })
 
   it('rejects two kind keys outright, ahead of any shape or agreement check', () => {
-    expect(admitContentFile({ [KIND_ID_KEY.page]: ULID, [KIND_ID_KEY.task]: ULID }, 'page')).toEqual(
-      { state: 'unknown', reason: 'dual' },
-    )
+    expect(
+      admitContentFile({ [KIND_ID_KEY.page]: ULID, [KIND_ID_KEY.task]: ULID }, 'page'),
+    ).toEqual({ state: 'unknown', reason: 'dual' })
     // Dual wins even when one of the two is itself garbage — the file is ambiguous either way.
     expect(
       admitContentFile({ [KIND_ID_KEY.page]: ULID, [KIND_ID_KEY.event]: 'junk' }, 'page'),

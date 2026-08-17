@@ -20,4 +20,3 @@ export const value = style([
   text.control.standard,
   { selectors: { '&&': { color: c.label.secondary } } },
 ])
-

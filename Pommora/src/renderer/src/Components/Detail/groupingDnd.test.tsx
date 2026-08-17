@@ -61,8 +61,7 @@ afterEach(() => {
 
 const handle = (id: string): HTMLElement =>
   host.querySelector(`[data-handle="${id}"]`) as HTMLElement
-const lineY = (): string | null =>
-  host.querySelector('[data-line]')?.getAttribute('data-y') ?? null
+const lineY = (): string | null => host.querySelector('[data-line]')?.getAttribute('data-y') ?? null
 
 describe('grouping drag snapshot invalidation', () => {
   it('a mid-drag scroll re-measures, so the line aims at the moved rows', async () => {

@@ -70,7 +70,10 @@ beforeEach(async () => {
   settleFails = false
   root = await mkdtemp(join(tmpdir(), 'pom-order-'))
   await mkdir(join(root, '.nexus'), { recursive: true })
-  await writeFile(join(root, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nx', createdAt: '2026' }))
+  await writeFile(
+    join(root, '.nexus', 'nexus.json'),
+    JSON.stringify({ id: 'nx', createdAt: '2026' }),
+  )
   await writeFile(
     contextsRegistryFile(root),
     JSON.stringify({ contexts: [{ id: 'ctx_projects', title: 'Projects' }] }),
@@ -194,5 +197,4 @@ describe('a deletion cut short leaves evidence, never silence', () => {
     expect(await anyRecord()).toMatchObject({ members: [{ id: PAGE_A, kind: 'page' }] })
     expect(await listBundles(root)).toHaveLength(0)
   })
-
 })

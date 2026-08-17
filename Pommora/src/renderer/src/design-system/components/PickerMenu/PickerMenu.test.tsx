@@ -247,8 +247,7 @@ describe('PickerMenu auto-centring', () => {
     if (realHeight) Object.defineProperty(HTMLElement.prototype, 'offsetHeight', realHeight)
   })
 
-  const layer = (): HTMLElement =>
-    find('first').closest('[data-picker-portal]') as HTMLElement
+  const layer = (): HTMLElement => find('first').closest('[data-picker-portal]') as HTMLElement
 
   it('straddles the trigger when the whole pane fits there', async () => {
     triggerCentre = 512 // mid-viewport (jsdom is 1024 wide)

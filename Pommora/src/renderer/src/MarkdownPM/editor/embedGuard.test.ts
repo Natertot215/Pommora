@@ -22,7 +22,10 @@ const conn2: ConnectionsApi = {
   open: () => {},
 }
 const mk2 = (doc: string): EditorState =>
-  EditorState.create({ doc, extensions: [embedTiles({ getConn: () => conn2, ancestors: ['Host.md'] })] })
+  EditorState.create({
+    doc,
+    extensions: [embedTiles({ getConn: () => conn2, ancestors: ['Host.md'] })],
+  })
 
 const apply = (state: EditorState, spec: TransactionSpec): string =>
   state.update(spec).state.doc.toString()
@@ -101,8 +104,10 @@ describe('the rebuild gate reads the scanner', () => {
   it('a fence typed above a tile dissolves it; deleting the fence restores it', () => {
     // The field must track the scan's exclusion set, not just the tile's own lines.
     let state = mk('x\n\n![[Alpha]]')
-    const tiles = (): number => state.field(embedField as never, false) === undefined ? -1 :
-      (state.field(embedField as never) as { ranges: unknown[] }).ranges.length
+    const tiles = (): number =>
+      state.field(embedField as never, false) === undefined
+        ? -1
+        : (state.field(embedField as never) as { ranges: unknown[] }).ranges.length
     expect(tiles()).toBe(1)
     state = state.update({ changes: { from: 0, to: 0, insert: '```\n' } }).state
     expect(tiles()).toBe(0)

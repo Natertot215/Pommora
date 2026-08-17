@@ -77,7 +77,8 @@ export function frostStyle(p: FrostParams): CSSProperties {
     p.borderAlpha > 0 && OUTLINE_INSET,
     p.topSpecular > 0 && `inset 0 1px 0 #FFFFFF${hexA(p.topSpecular)}`,
     p.innerRing > 0 && `inset 0 0 0 1px #FFFFFF${hexA(p.innerRing)}`,
-    p.lowerRim > 0 && `inset 0 -${p.depth}px ${p.rimBlur}px -${p.depth}px #FFFFFF${hexA(p.lowerRim)}`,
+    p.lowerRim > 0 &&
+      `inset 0 -${p.depth}px ${p.rimBlur}px -${p.depth}px #FFFFFF${hexA(p.lowerRim)}`,
     p.shadow ?? shadowStandardVar,
   ].filter(Boolean)
   return {

@@ -130,7 +130,11 @@ function OutlineRow({
         setRenaming(node.key)
       }}
       wrap={(row) => (
-        <div ref={drag.ref} {...drag.handle} className={drag.isDragging ? o.rowDragging : undefined}>
+        <div
+          ref={drag.ref}
+          {...drag.handle}
+          className={drag.isDragging ? o.rowDragging : undefined}
+        >
           {row}
         </div>
       )}

@@ -34,7 +34,10 @@ beforeEach(async () => {
     join(root, 'Notes', 'Daily', 'Alpha.md'),
     '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRA\n(Areas):\n  - Work\n---\n\nSee [[Beta]] for more.',
   )
-  await writeFile(join(root, 'Notes', 'Daily', 'Beta.md'), '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRB\n---\n\nbody')
+  await writeFile(
+    join(root, 'Notes', 'Daily', 'Beta.md'),
+    '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRB\n---\n\nbody',
+  )
   await openSession(root)
 })
 afterEach(async () => {
@@ -128,9 +131,7 @@ describe('handleMutate — create', () => {
     }
     expect(sidecar.page_order).toEqual([r.value.created?.id, A_ID, B_ID])
     const tree = await readNexus(root)
-    const daily = tree.collections
-      .flatMap((c) => c.sets)
-      .find((s) => s.path === 'Notes/Daily')
+    const daily = tree.collections.flatMap((c) => c.sets).find((s) => s.path === 'Notes/Daily')
     expect(daily?.pages.map((p) => p.title).slice(0, 3)).toEqual(['Ordered', 'Alpha', 'Beta'])
   })
 })
@@ -150,10 +151,7 @@ describe('handleMutate — rename', () => {
   })
 
   it('a fromCreate rename disambiguates a collision instead of rejecting, and reports what landed', async () => {
-    await handleMutate(
-      { op: 'createPage', parentPath: 'Notes/Daily', name: 'Untitled' },
-      nexusDeps,
-    )
+    await handleMutate({ op: 'createPage', parentPath: 'Notes/Daily', name: 'Untitled' }, nexusDeps)
     const r = await handleMutate(
       {
         op: 'rename',
@@ -289,7 +287,10 @@ describe('handleMutate — move + guards', () => {
         views: [{ id: 'v1', type: 'table' }],
       }),
     )
-    await writeFile(join(root, 'Notes', 'Daily', 'Gamma.md'), '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRG\n---\n\nbody')
+    await writeFile(
+      join(root, 'Notes', 'Daily', 'Gamma.md'),
+      '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRG\n---\n\nbody',
+    )
     const r = await handleMutate(
       {
         op: 'movePage',
@@ -339,7 +340,10 @@ describe('handleMutate — move + guards', () => {
       join(root, 'Notes', 'Daily', 'SetX', '_pageset.json'),
       JSON.stringify({ id: 'sx' }),
     )
-    await writeFile(join(root, 'Notes', 'Daily', 'SetX', 'Inner.md'), '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRN\n---\n\nbody')
+    await writeFile(
+      join(root, 'Notes', 'Daily', 'SetX', 'Inner.md'),
+      '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRN\n---\n\nbody',
+    )
     await mkdir(join(root, 'Notes', 'Weekly'), { recursive: true })
     await writeFile(join(root, 'Notes', 'Weekly', '_pageset.json'), JSON.stringify({ id: 'wk' }))
     const r = await handleMutate(
@@ -462,7 +466,10 @@ describe('handleMutate — review-round hardening', () => {
     expect(await pathExists(join(root, 'Notes/Daily/Beta.md'))).toBe(true)
     await mkdir(join(root, 'Notes', 'Other'), { recursive: true })
     await writeFile(join(root, 'Notes', 'Other', '_pageset.json'), JSON.stringify({ id: 'oth' }))
-    await writeFile(join(root, 'Notes', 'Other', 'Beta.md'), '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRZ\n---\n')
+    await writeFile(
+      join(root, 'Notes', 'Other', 'Beta.md'),
+      '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRZ\n---\n',
+    )
     const clash = await handleMutate(
       { op: 'movePage', path: 'Notes/Daily/Beta.md', newParentPath: 'Notes/Other' },
       nexusDeps,

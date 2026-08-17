@@ -38,7 +38,10 @@ async function cycle(rel: string, kind: 'page' | 'set', mutateWorld: () => Promi
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'pom-scrub-'))
   await mkdir(join(root, '.nexus'), { recursive: true })
-  await writeFile(join(root, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nx', createdAt: '2026' }))
+  await writeFile(
+    join(root, '.nexus', 'nexus.json'),
+    JSON.stringify({ id: 'nx', createdAt: '2026' }),
+  )
   await writeFile(
     contextsRegistryFile(root),
     JSON.stringify({ contexts: [{ id: 'ctx_projects', title: 'Projects' }] }),
@@ -67,7 +70,10 @@ beforeEach(async () => {
   )
   await mkdir(join(root, 'Notes', 'Daily'), { recursive: true })
   await writeFile(join(root, 'Notes', '_pagecollection.json'), registry([PROP]))
-  await writeFile(join(root, 'Notes', 'Daily', '_pageset.json'), JSON.stringify({ id: 'set-daily' }))
+  await writeFile(
+    join(root, 'Notes', 'Daily', '_pageset.json'),
+    JSON.stringify({ id: 'set-daily' }),
+  )
   await writeFile(
     join(root, 'Notes', 'Alpha.md'),
     `---\nPageID: ${PAGE_A}\n(Projects):\n  - Pommora\n<Priority>: hi\n---\nbody`,
@@ -90,7 +96,10 @@ describe('a returning artifact is reconciled against the world it comes back to'
 
   it('drops a value whose property was deleted while it sat in the trash', async () => {
     await cycle('Notes/Alpha.md', 'page', async () => {
-      await writeFile(join(root, '.nexus', 'properties.json'), JSON.stringify({ order: [], defs: {} }))
+      await writeFile(
+        join(root, '.nexus', 'properties.json'),
+        JSON.stringify({ order: [], defs: {} }),
+      )
       await writeFile(join(root, 'Notes', '_pagecollection.json'), registry([]))
     })
     const f = await fm('Notes/Alpha.md')
@@ -179,7 +188,10 @@ describe('a returning artifact is reconciled against the world it comes back to'
       `---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVB\n(Projects):\n  - Pommora\n<Priority>: lo\n---\nb`,
     )
     await cycle('Notes/Daily', 'set', async () => {
-      await writeFile(join(root, '.nexus', 'properties.json'), JSON.stringify({ order: [], defs: {} }))
+      await writeFile(
+        join(root, '.nexus', 'properties.json'),
+        JSON.stringify({ order: [], defs: {} }),
+      )
       await writeFile(join(root, 'Notes', '_pagecollection.json'), registry([]))
     })
     const f = await fm('Notes/Daily/Journal.md')
@@ -295,18 +307,29 @@ describe('a Space sidecar is a context root too', () => {
   it('drops a passenger tag whose Context died while the subtree sat in the trash', async () => {
     await seedPassenger()
     expect(
-      (await handleMutate({ op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' }, nexusDeps))
-        .ok,
+      (
+        await handleMutate(
+          { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
+          nexusDeps,
+        )
+      ).ok,
     ).toBe(true)
     expect(
-      (await handleMutate({ op: 'delete', path: '.nexus/contexts/Areas', kind: 'context' }, nexusDeps))
-        .ok,
+      (
+        await handleMutate(
+          { op: 'delete', path: '.nexus/contexts/Areas', kind: 'context' },
+          nexusDeps,
+        )
+      ).ok,
     ).toBe(true)
     const projects = (await listBundles(root)).find(
       (b) => b.record.entity === 'context' && b.bundlePath.includes('Projects'),
     )
     expect(projects).toBeDefined()
-    const r = await handleMutate({ op: 'restore', bundlePath: projects?.bundlePath ?? '' }, nexusDeps)
+    const r = await handleMutate(
+      { op: 'restore', bundlePath: projects?.bundlePath ?? '' },
+      nexusDeps,
+    )
     expect(r.ok).toBe(true)
 
     const sap = await sidecar('Projects/Sapphire')
@@ -324,11 +347,14 @@ describe('a Space sidecar is a context root too', () => {
       join(contextsDir(root), 'Projects', 'Sapphire', '_space.json'),
       JSON.stringify({ id: 'sp-sap', '(Projects)': ['Pommora'] }),
     )
-    await handleMutate({ op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' }, nexusDeps)
-    const [listed] = await listBundles(root)
-    expect((await handleMutate({ op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)).ok).toBe(
-      true,
+    await handleMutate(
+      { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
+      nexusDeps,
     )
+    const [listed] = await listBundles(root)
+    expect(
+      (await handleMutate({ op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)).ok,
+    ).toBe(true)
     expect((await sidecar('Projects/Sapphire'))['(Projects)']).toEqual(['Pommora'])
   })
 })

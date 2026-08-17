@@ -350,7 +350,8 @@ describe('isInsideCode answers exactly what codeMask answers, at every offset', 
   it('agrees offset for offset', () => {
     const mask = codeMask(doc)
     const disagreements: number[] = []
-    for (let o = 0; o <= doc.length; o++) if (isInsideCode(o, doc) !== mask(o)) disagreements.push(o)
+    for (let o = 0; o <= doc.length; o++)
+      if (isInsideCode(o, doc) !== mask(o)) disagreements.push(o)
     expect(disagreements).toEqual([])
   })
 
@@ -358,7 +359,8 @@ describe('isInsideCode answers exactly what codeMask answers, at every offset', 
     const crlf = doc.split('\n').join('\r\n')
     const mask = codeMask(crlf)
     const disagreements: number[] = []
-    for (let o = 0; o <= crlf.length; o++) if (isInsideCode(o, crlf) !== mask(o)) disagreements.push(o)
+    for (let o = 0; o <= crlf.length; o++)
+      if (isInsideCode(o, crlf) !== mask(o)) disagreements.push(o)
     expect(disagreements).toEqual([])
   })
 })

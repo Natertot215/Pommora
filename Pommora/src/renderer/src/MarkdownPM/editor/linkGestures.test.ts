@@ -42,8 +42,7 @@ describe('a link rests only where a gesture left it', () => {
 // inspecting an unresolved link, and it should look unresolved — so the field follows the typing,
 // not the caret.
 describe('a connection is only "being typed" while it is being typed', () => {
-  const state = (doc: string): EditorState =>
-    EditorState.create({ doc, extensions: [linkTyping] })
+  const state = (doc: string): EditorState => EditorState.create({ doc, extensions: [linkTyping] })
 
   it('an edit landing inside a link marks that link', () => {
     const s = state('a [[Alph]] b')

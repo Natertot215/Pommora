@@ -224,7 +224,12 @@
 .mdpm-editor .cm-line.md-block-handle::before {
   content: "";
   position: absolute;
-  left: calc(-1 * var(--fold-gutter) + (var(--fold-gutter) - var(--icon-sm) * var(--glyph-scale)) / 2);
+  left: calc(
+    -1 *
+    var(--fold-gutter) +
+    (var(--fold-gutter) - var(--icon-sm) * var(--glyph-scale)) /
+    2
+  );
   /* Centre on the FIRST visual row's text, so it lines up with the content even when the block's
      first line wraps. --grip-top is the knob; box blocks raise it. */
   top: var(--grip-top, calc(0.8em - var(--icon-sm) / 2 * var(--glyph-scale)));
@@ -238,7 +243,12 @@
    but positioned + hover-revealed exactly like the rail grips. The drag rides md-bq-first. */
 .mdpm-editor .cm-line.md-bq-first .md-bq-grip {
   position: absolute;
-  left: calc(-1 * var(--fold-gutter) + (var(--fold-gutter) - var(--icon-sm) * var(--glyph-scale)) / 2);
+  left: calc(
+    -1 *
+    var(--fold-gutter) +
+    (var(--fold-gutter) - var(--icon-sm) * var(--glyph-scale)) /
+    2
+  );
   top: var(--grip-top, calc(0.8em - var(--icon-sm) / 2 * var(--glyph-scale)));
   transition: opacity var(--duration-fast) var(--ease-standard);
 }

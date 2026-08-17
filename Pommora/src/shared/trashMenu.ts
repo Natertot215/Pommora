@@ -39,9 +39,7 @@ export const TRASH_DATE_FORMATS: { value: DateFormat; label: string }[] = [
   { value: 'full', label: 'Full Date' },
 ]
 
-export type TrashColumnAction =
-  | { kind: 'format'; format: DateFormat }
-  | { kind: 'toggleTime' }
+export type TrashColumnAction = { kind: 'format'; format: DateFormat } | { kind: 'toggleTime' }
 
 export interface TrashColumnContext {
   /** The format in force, so its row can read as chosen. */

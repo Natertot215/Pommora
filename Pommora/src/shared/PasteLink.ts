@@ -32,8 +32,7 @@ export interface LinkPaste {
 
 export type PasteDecision =
   /** Nothing to do — let the editor's own paste run. */
-  | { kind: 'literal' }
-  | LinkPaste
+  { kind: 'literal' } | LinkPaste
 
 const LITERAL: PasteDecision = { kind: 'literal' }
 

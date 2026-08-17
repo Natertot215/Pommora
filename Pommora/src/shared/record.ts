@@ -18,4 +18,3 @@ export interface EntityRecord {
   path: string
   state: ExistState
 }
-

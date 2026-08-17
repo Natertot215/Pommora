@@ -487,7 +487,10 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
     id: 'col',
     title: 'Col',
     path: 'Col',
-    sets: [set('sOuter', [page('p_outer')], [set('sInner', [page('p_inner')])]), set('sB', [page('p_b')])],
+    sets: [
+      set('sOuter', [page('p_outer')], [set('sInner', [page('p_inner')])]),
+      set('sB', [page('p_b')]),
+    ],
     pages: [],
   }
 

@@ -36,7 +36,6 @@ export interface Block {
   kind: BlockKind
 }
 
-
 // Per-line classification shared by blockAt + blockStarts: the line table and every "what owns this line"
 // predicate, built once. `kindAt(i)` returns the membership kind of line i (paragraph here means "claimed by
 // nothing else") or null on a blank line; `claimed` is the paragraph-boundary test.

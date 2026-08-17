@@ -124,7 +124,12 @@ export function tileMenuModel(ctx: TileMenuContext): TileMenuModel {
     })),
   })
 
-  items.push({ label: 'Duplicate', action: 'tile:duplicate', separatorBefore: true, disabled: locked })
+  items.push({
+    label: 'Duplicate',
+    action: 'tile:duplicate',
+    separatorBefore: true,
+    disabled: locked,
+  })
   items.push({ label: 'Delete', action: 'tile:delete', disabled: locked })
 
   items.push({

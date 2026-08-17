@@ -118,11 +118,17 @@ describe('serialization', () => {
     await mutateRegistry(root, () => ({ next: { order: [], defs: {} }, result: undefined }))
     await Promise.all([
       mutateRegistry(root, (reg) => ({
-        next: { order: [...reg.order, 'prop_a'], defs: { ...reg.defs, prop_a: def('prop_a', 'A') } },
+        next: {
+          order: [...reg.order, 'prop_a'],
+          defs: { ...reg.defs, prop_a: def('prop_a', 'A') },
+        },
         result: undefined,
       })),
       mutateRegistry(root, (reg) => ({
-        next: { order: [...reg.order, 'prop_b'], defs: { ...reg.defs, prop_b: def('prop_b', 'B') } },
+        next: {
+          order: [...reg.order, 'prop_b'],
+          defs: { ...reg.defs, prop_b: def('prop_b', 'B') },
+        },
         result: undefined,
       })),
     ])
