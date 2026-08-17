@@ -1013,17 +1013,15 @@
   user-select: none;
 }
 
-/* KNOBS: --ac-radius / --ac-rows (visible before scroll) */
+/* KNOB: --ac-rows (visible before scroll). The pane is a PickerMenu, which owns its placement, its
+   z rung, its glass and its radius; this is the panel's own sizing and gutter on top of that. */
 .mdpm-ac {
-  --ac-radius: 12px;
   --ac-rows: 4;
-  /* Positioning + the z rung are set inline from AutocompletePanel, against viewport coords. */
   min-width: 180px;
   max-width: 320px;
   max-height: calc(var(--ac-rows) * 28px + 8px);
   overflow-y: auto;
   padding: 4px;
-  border-radius: var(--ac-radius);
   font-size: var(--editor-font-size, 15px);
 }
 .mdpm-ac-row {

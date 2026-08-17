@@ -6,7 +6,7 @@
 
 ### Immediate Work
 
-- [ ] **One row shape for every menu model.** `{ label, action, separatorBefore? }` is hand-restated in seven shared modules, because the type it should be — `ActionItem<A>` — lives in `main/returningMenu.ts` where `src/shared` can't reach it; it is Electron-free and belongs in `shared/pageMenu.ts` with main importing it back. The same move settles a second vocabulary: `separatorBefore` and the property menu's `destructive` both mean "a divider goes above this row", each with its own expander in main, and one word should say it. Stands alone now — the picker work landed without it. 
+- [ ] **One row shape for every menu model.** `{ label, action, separatorBefore? }` is hand-restated in seven shared modules, because the type it should be — `ActionItem<A>` — lives in `main/returningMenu.ts` where `src/shared` can't reach it; it is Electron-free and belongs in `shared/pageMenu.ts` with main importing it back. The same move settles a second vocabulary: `separatorBefore` and the property menu's `destructive` both mean "a divider goes above this row", each with its own expander in main, and one word should say it. Stands alone now — the picker work landed without it.
 
 ### Pending Focuses
 

@@ -67,6 +67,8 @@ export function PickerMenu({
   origin = 'auto',
   anchorX,
   anchorY,
+  anchorHeight = 0,
+  bounds,
   maxHeight,
   width,
   bareSurface = false,
@@ -91,6 +93,12 @@ export function PickerMenu({
   /** Pair with `anchorX` to open at a POINT — a right-click's cursor — instead of against an
    *  element. Both together stand in for the trigger entirely, so no `triggerRef` is needed. */
   anchorY?: number
+  /** How tall the anchored thing is, for a point that isn't one: a text caret is a LINE, and a pane
+   *  that flips above a zero-height anchor lands back over it. */
+  anchorHeight?: number
+  /** The box the pane slides within, viewport coords; the viewport when omitted. A pane that stops
+   *  at the window edge has already crossed whatever pane sits beside its own. */
+  bounds?: { left: number; right: number }
   maxHeight?: number
   /** Pair with `origin="left"`: without this, widening content near a viewport edge still drags
    *  every row sideways via the position clamp. */
@@ -179,7 +187,14 @@ export function PickerMenu({
     // edges, and collapsing them onto one coordinate is what "open here" means.
     const point =
       anchorX !== undefined && anchorY !== undefined
-        ? { left: anchorX, right: anchorX, top: anchorY, bottom: anchorY, width: 0, height: 0 }
+        ? {
+            left: anchorX,
+            right: anchorX,
+            top: anchorY,
+            bottom: anchorY + anchorHeight,
+            width: 0,
+            height: anchorHeight,
+          }
         : null
     const trigger = triggerRef?.current ?? markerRef.current?.parentElement
     const rectOf = point ? () => point : trigger ? () => trigger.getBoundingClientRect() : null
@@ -187,6 +202,8 @@ export function PickerMenu({
     const measure = (): void => {
       const t = rectOf()
       const c = anchorX ?? t.left + t.width / 2
+      const edgeL = (bounds?.left ?? 0) + VIEWPORT_MARGIN
+      const edgeR = (bounds?.right ?? window.innerWidth) - VIEWPORT_MARGIN
       const { w: pw, h: ph } = paneBox.current
       let eff = decidedDir.current ?? direction
       if (decidedDir.current === null) {
@@ -218,16 +235,11 @@ export function PickerMenu({
       if (decidedCentre.current === null)
         decidedCentre.current =
           origin === 'center' ||
-          (origin === 'auto' &&
-            c - pw / 2 >= VIEWPORT_MARGIN &&
-            c + pw / 2 <= window.innerWidth - VIEWPORT_MARGIN)
+          (origin === 'auto' && c - pw / 2 >= edgeL && c + pw / 2 <= edgeR)
       // Centred origin: straddle the trigger, clamped by half-width so an edge trigger can't push it off-screen.
       if (decidedCentre.current) {
         const half = pw / 2
-        const left = Math.min(
-          Math.max(c, VIEWPORT_MARGIN + half),
-          window.innerWidth - VIEWPORT_MARGIN - half,
-        )
+        const left = Math.min(Math.max(c, edgeL + half), edgeR - half)
         // The start point slides to the anchor: the layer is translateX(-50%)-anchored, so it
         // measures from the pane's left EDGE (left − half). Unclamped this reduces to half — dead
         // centre, which is what an unclamped pane already shows; a viewport clamp is what moves it.
@@ -239,16 +251,13 @@ export function PickerMenu({
       // Mirror of the default: pin the LEFT edge that far before the anchor so the pane grows
       // rightward and a row's x never moves when content resizes.
       if (origin === 'left') {
-        const left = Math.min(
-          Math.max(VIEWPORT_MARGIN, c - ANCHOR_RESERVE),
-          Math.max(VIEWPORT_MARGIN, window.innerWidth - VIEWPORT_MARGIN - pw),
-        )
+        const left = Math.min(Math.max(edgeL, c - ANCHOR_RESERVE), Math.max(edgeL, edgeR - pw))
         const vertical =
           eff === 'up' ? { bottom: window.innerHeight - t.top + GAP } : { top: t.bottom + GAP }
         setPos({ ...vertical, left, origin: near(ANCHOR_RESERVE) })
         return
       }
-      const right = Math.max(VIEWPORT_MARGIN, window.innerWidth - c - ANCHOR_RESERVE)
+      const right = Math.max(window.innerWidth - edgeR, window.innerWidth - c - ANCHOR_RESERVE)
       const vertical =
         eff === 'up' ? { bottom: window.innerHeight - t.top + GAP } : { top: t.bottom + GAP }
       setPos({ ...vertical, right, origin: near(pw - ANCHOR_RESERVE) })
@@ -284,6 +293,8 @@ export function PickerMenu({
     origin,
     direction,
     anchorX,
+    anchorHeight,
+    bounds,
     anchorY,
     width,
     onDirection,

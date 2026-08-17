@@ -1,5 +1,4 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
-import { createPortal } from 'react-dom'
 import { EditorView, keymap } from '@codemirror/view'
 import { Annotation, EditorState, Prec } from '@codemirror/state'
 import { defaultKeymap } from '@codemirror/commands'
@@ -81,7 +80,7 @@ export function CellEditor({
   const onRedoRef = useRef(onRedo)
   onRedoRef.current = onRedo
 
-  const { ac, setAc, candidates, acIndex, acTop, commit, acCtl } = useConnectionAutocomplete(
+  const { ac, setAc, candidates, acIndex, commit, acCtl } = useConnectionAutocomplete(
     viewRef,
     (q) => {
       const conn = connections?.()
@@ -229,19 +228,17 @@ export function CellEditor({
   return (
     <>
       <div ref={host} className="mdpm-tbl-cell-editor" />
-      {createPortal(
-        <AutocompletePanel
-          open={ac !== null}
-          candidates={candidates}
-          index={acIndex}
-          caretX={ac?.caretX ?? 0}
-          bounds={{ left: ac?.boundsLeft ?? 0, right: ac?.boundsRight ?? 0 }}
-          top={acTop}
-          query={ac?.query ?? ''}
-          onPick={commit}
-        />,
-        document.body,
-      )}
+      <AutocompletePanel
+        open={ac !== null}
+        candidates={candidates}
+        index={acIndex}
+        caretX={ac?.caretX ?? 0}
+        caretTop={ac?.caretTop ?? 0}
+        caretBottom={ac?.caretBottom ?? 0}
+        bounds={{ left: ac?.boundsLeft ?? 0, right: ac?.boundsRight ?? 0 }}
+        query={ac?.query ?? ''}
+        onPick={commit}
+      />
     </>
   )
 }
