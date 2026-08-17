@@ -2,6 +2,7 @@
 
 | Date | ID | Entry |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 08-16-2026 | PM-104 | Menu & Surface Consolidation |
 | 08-15-2026 | PM-103 | AutoLink & Table Fixes |
 | 08-14-2026 | PM-102 | Interaction & Outline Work |
 | 08-14-2026 | PM-101 | PommoraDND Dragging Fixtures |
@@ -106,6 +107,20 @@
 | 06-14-2026 → 06-15 | PM-002 | The Headless Data Layer |
 | 06-14-2026 | PM-001 | Genesis — The Walking Skeleton |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot |
+
+#### PM-104 || Menu & Surface Consolidation
+**DATE:** 08-16-2026
+
+`PickerMenu` gave up its beak and became the app's one menu surface, worn by every picker, grid, calendar, hover card and fixed-option menu; `MenuSurface` keeps a beak alone, for the toolbar dropdown that hangs off a named button and has something to point at. The beak had been load-bearing for more than its silhouette: a CSS border cannot trace one, so `NotchedPane` cut the frost to a hand-drawn curve and stroked the same curve as an SVG outline, which required switching off `GlassPane`'s own border — and since CSS carries the border, the top specular, the inner ring and the lower rim in one `box-shadow`, menus had been three lighting layers thinner than every other pane for as long as they had beaks. Removing the shell from that path returned them, and reduced `NotchedPane` from 204 lines to 109 once its sideways path, flip, three inset props and resize publication had no caller.
+
+**The Rows:** Rows now split by what they hold rather than which shell they sit in. A fixed option set takes `MenuOption` — a leading label with a trailing mark on the chosen row, the mark slot laid out on every row so the pane cannot resize as the selection moves — while a user-authored value keeps `PickerOption`'s chip, whose fill already reads as chosen. The hover and keyboard-focus recipe both had been stated twice and became `rowShell`; the chosen-row mark had four definitions across `pickerMenu.css.ts`, `handleMenu.css.ts` and `calendarPicker.css.ts` plus seven rows carrying none, and became `chosenMark`. `PickerOption` took the `leading` slot that six callers had been hand-rolling as `iconOption`. `PickerControl` moved fourteen consumers at once by repointing its single menu.
+
+**The Glass:** `GlassWindow` and `GlassSurface` were byte-identical, each carrying a comment promising divergence later, so three named tiers were really two and the one real distinction — 95% against 90% brightness — was invisible in the names. They merged under `GlassSurface` for the app's fixed chrome, and `GlassWindow` was rebuilt as the pane's chrome carrying a body, which is what a floating window needs and a menu does not. Four spellings of the same instruction — a boolean at 100%, `tintOpacity` at 85 and 90, `FrostParams.fill` at 78 — collapsed onto `SOLID_FILL`, ending a mismatch `NavWindow` and `PreviewWindow` carried while a comment between them asserted they matched.
+
+**The Autocomplete:** The wikilink panel had put its left edge at the caret and clamped against nothing, so it opened lopsided and ran off whatever edge it reached. It centres on the caret now and slides within the editor's nearest scrolling ancestor rather than the viewport, since a pane stopping at the window edge has already crossed the sidebar or the inspector. That surface resolves to the detail pane in the main window, a floating window's body inside one, and a tile's own box on a dashboard, without any of the three being named, and is cached per editor because resolving it reads computed styles up the tree on the keystroke path. The panel then handed its portal, measurement, exit presence and geometry to `PickerMenu`, which gained `anchorHeight` — a caret is a line, and a pane flipping above a zero-height point lands back on it — and `bounds`, the box a pane slides within.
+
+- **Commits:** `eade51a1^..e5df7266`
+- **Diff:** Net −76 | +358 / −434
 
 #### PM-103 || AutoLink & Table Fixes
 **DATE:** 08-15-2026
