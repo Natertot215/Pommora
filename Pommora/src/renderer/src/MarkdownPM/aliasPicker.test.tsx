@@ -93,7 +93,8 @@ describe('the forget × is inert until it is revealed', () => {
           index={0}
           caretX={0}
         bounds={{ left: 0, right: 1024 }}
-          top={0}
+          caretTop={0}
+        caretBottom={16}
           query=""
           onPick={onPick}
         />,

@@ -19,10 +19,14 @@ function Host({
   open,
   manageFocus,
   manual,
+  bounds,
+  origin,
 }: {
   open: boolean
   manageFocus?: boolean
   manual?: boolean
+  bounds?: { left: number; right: number }
+  origin?: 'auto' | 'center' | 'left' | 'right'
 }): React.JSX.Element {
   const ref = useRef<HTMLButtonElement>(null)
   const menu = (
@@ -47,6 +51,8 @@ function Host({
           open={open}
           onDismiss={() => {}}
           triggerRef={ref}
+          {...(bounds ? { bounds } : {})}
+          {...(origin ? { origin } : {})}
           {...(manageFocus === undefined ? {} : { manageFocus })}
         >
           {menu}
@@ -250,6 +256,33 @@ describe('PickerMenu auto-centring', () => {
     await render(<Host open />)
     expect(layer().style.transform).toBe('translateX(-50%)')
     expect(layer().style.left).toBe('512px')
+  })
+
+  // A named `center` slides within its bounds; `auto` declines to centre at all once it would have
+  // to be clamped, which is the rule below.
+  it('slides a centred pane within a given bounds rather than the viewport', async () => {
+    // Mid-viewport, so nothing about the WINDOW would move it; the surface is what does.
+    triggerCentre = 580
+    const b = { left: 200, right: 600 }
+    await render(<Host open={false} origin="center" bounds={b} />)
+    await render(<Host open origin="center" bounds={b} />)
+    expect(layer().style.transform).toBe('translateX(-50%)')
+    expect(layer().style.left).toBe('492px') // centring would overhang the surface's right edge
+  })
+
+  it('centres freely at that same point when nothing bounds it', async () => {
+    triggerCentre = 580
+    await render(<Host open={false} origin="center" />)
+    await render(<Host open origin="center" />)
+    expect(layer().style.left).toBe('580px')
+  })
+
+  it('declines to centre under `auto` when the bounds would clamp it', async () => {
+    triggerCentre = 580
+    const b = { left: 200, right: 600 }
+    await render(<Host open={false} bounds={b} />)
+    await render(<Host open bounds={b} />)
+    expect(layer().style.transform).toBe('')
   })
 
   it('falls back to the edge anchor when centring would be clamped', async () => {
