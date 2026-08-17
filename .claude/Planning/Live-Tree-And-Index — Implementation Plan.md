@@ -132,10 +132,10 @@ At the end of this plan, none of that survives as a hot path. Main holds a **liv
 **Must agree:** a transform-built node and a walk-built node of the same entity are `stabilize`-identical — one test builds a fixture both ways (walk the fixture; apply the equivalent create transform) and asserts `stabilize` returns reference equality per subtree.
 
 **Steps:**
-- [ ] Move both files; update the two import sites to `@shared/treePatch`.
-- [ ] Write the failing shape-parity and reparenting tests; upgrade the arms and add the factories; adopt the factories in `readNexus.ts`.
-- [ ] Run the gates — expect green; the type gate flags any importer the grep missed.
-- [ ] Commit: `refactor(shared): the tree patch transforms serve both processes as canon`
+- [x] Move both files; update the two import sites to `@shared/treePatch`.
+- [x] Write the failing shape-parity and reparenting tests; upgrade the arms and add the factories; adopt the factories in `readNexus.ts`.
+- [x] Run the gates — expect green; the type gate flags any importer the grep missed.
+- [x] Commit: `refactor(shared): the tree patch transforms serve both processes as canon`
 
 #### Task 2: The live tree module
 
@@ -416,7 +416,7 @@ At the end of this plan, none of that survives as a hot path. Main holds a **liv
 ## Implementation Log
 
 ### Progress
-- [ ] **Phase 1** — The patch seam and the live tree · base `<commit>`
+- [ ] **Phase 1** — The patch seam and the live tree · base `9c714e2a`
   - [ ] Task 1 — transforms to shared, canon-grade
   - [ ] Task 2 — the live tree module
   - [ ] Task 3 — reads serve the live tree
@@ -446,6 +446,7 @@ At the end of this plan, none of that survives as a hot path. Main holds a **liv
 
 ### Open Against Later Tasks
 ### Deviations
+- Task 1: `treeStabilize.ts` and its test moved to `src/shared` alongside the transforms. The shape-parity test crosses main's walk and `stabilize`, and the composite tsconfigs bar a main-side test from importing renderer files — `stabilize` is pure `@shared`-only code, so shared is its natural home. Plan searched for later assumptions: only Grounding names its old path; no task consumes it elsewhere. The parity test's red state was proven by a transform bypassing the factory (sabotaging the factory itself proves nothing — the walk shares it).
 ### Lessons
 ### Sequenced After
 - The property-cascade journal (record the owed sweep before sweeping; heal at open) — the next session after this plan closes.
