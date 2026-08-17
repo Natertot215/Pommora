@@ -51,18 +51,13 @@
   cursor: pointer;
 }
 
-/* Resizing wears the hot accent stroke tiles and embeds use, painted onto the pane's own frame
-   path (the pop div is the one holding both the card and its frame svg) — breathing in and out
-   on the same beat as the tile border it mirrors. */
-[data-picker-portal] div:has(.conn-hover-body) > svg > path {
-  transition: stroke var(--duration-base) var(--ease-standard);
-}
-[data-picker-portal] div:has(.conn-hover-resize-e:hover) > svg > path,
-[data-picker-portal] div:has(.conn-hover-resize-s:hover) > svg > path,
-[data-picker-portal] div:has(.conn-hover-resize-se:hover) > svg > path,
-[data-picker-portal] div:has(.conn-hover-body.is-resizing) > svg > path {
-  stroke: var(--accent-stroke-hot);
-  stroke-opacity: 1;
+/* Resizing wears the hot accent stroke tiles and embeds use, set on the glass's own outline knob —
+   breathing in and out on the same beat as the tile border it mirrors. */
+[data-picker-portal] div:has(.conn-hover-resize-e:hover),
+[data-picker-portal] div:has(.conn-hover-resize-s:hover),
+[data-picker-portal] div:has(.conn-hover-resize-se:hover),
+[data-picker-portal] div:has(.conn-hover-body.is-resizing) {
+  --glass-outline: var(--accent-stroke-hot);
 }
 
 /* Free-edge resize strips — right, bottom, and their corner (the tile-edge treatment: a thin

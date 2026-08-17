@@ -309,10 +309,9 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
           </button>
         )}
       </div>
-      {addOpen && (
-        <PickerMenu
+      <PickerMenu
           solid
-          open
+          open={addOpen}
           onDismiss={() => setAddOpen(false)}
           triggerRef={addRef}
           origin="center"
@@ -339,7 +338,6 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
             </PickerOption>
           ))}
         </PickerMenu>
-      )}
       {editingDef && editing?.mode === 'picker' && (
         <PropertyPicker
           def={editingDef}
@@ -357,14 +355,19 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
           onDismiss={() => setEditing(null)}
         />
       )}
-      {editing?.mode === 'date' && (
-        <PickerMenu solid open onDismiss={() => setEditing(null)} triggerRef={triggerRef}>
+      <PickerMenu
+        solid
+        open={editing?.mode === 'date'}
+        onDismiss={() => setEditing(null)}
+        triggerRef={triggerRef}
+      >
+        {editing?.mode === 'date' && (
           <DatetimeValuePicker
             value={resolveFieldValue(row, editing.id, schema)}
             onCommit={(v) => commitValue(editing.id, v)}
           />
-        </PickerMenu>
-      )}
+        )}
+      </PickerMenu>
     </>,
   )
 }

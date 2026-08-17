@@ -302,10 +302,9 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
           </button>
         )}
       </div>
-      {addOpen && (
-        <PickerMenu
+      <PickerMenu
           solid
-          open
+          open={addOpen}
           onDismiss={() => setAddOpen(false)}
           triggerRef={addRef}
           origin="center"
@@ -333,7 +332,6 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
               </PickerOption>
             ))}
         </PickerMenu>
-      )}
       {editingDef && editing?.mode === 'picker' && (
         <PropertyPicker
           def={editingDef}
@@ -351,14 +349,19 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
           onDismiss={closeEditing}
         />
       )}
-      {editing?.mode === 'date' && (
-        <PickerMenu solid open onDismiss={closeEditing} triggerRef={triggerRef}>
+      <PickerMenu
+        solid
+        open={editing?.mode === 'date'}
+        onDismiss={closeEditing}
+        triggerRef={triggerRef}
+      >
+        {editing?.mode === 'date' && (
           <DatetimeValuePicker
             value={resolveFieldValue(row, editing.id, schema)}
             onCommit={(v) => commitValue(editing.id, v)}
           />
-        </PickerMenu>
-      )}
+        )}
+      </PickerMenu>
     </div>
   )
 }

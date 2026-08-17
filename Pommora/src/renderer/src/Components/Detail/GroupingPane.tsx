@@ -259,6 +259,7 @@ export function GroupingPane({
       </MenuItem>
       <Reveal open={groupByOpen}>
         <div>
+          <MenuSeparator flush />
           {view.type === 'cards' && (
             <MenuOption
               leading={<Icon name="circle-off" size={13} />}
