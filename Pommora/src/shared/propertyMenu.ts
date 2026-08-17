@@ -1,3 +1,5 @@
+import type { ActionItem } from './menuModel'
+
 /** The Properties pane's native menus. The editor's ⋮ carries Remove AND Delete —
  *  Delete is deliberately reachable ONLY inside the property's own pane, behind main's confirm
  *  dialog. An assigned row right-clicks to Rename · Remove; a registry row to Rename only
@@ -18,19 +20,12 @@ export type PropertyMenuAction =
   | 'value:clear'
   | 'value:remove'
 
-export interface PropertyMenuItem {
-  label: string
-  action: PropertyMenuAction
-  /** Main separates a destructive item from the rest and gates it behind the confirm dialog. */
-  destructive?: boolean
-}
-
-export function propertyMenuModel(ctx: PropertyMenuContext): PropertyMenuItem[] {
+export function propertyMenuModel(ctx: PropertyMenuContext): ActionItem<PropertyMenuAction>[] {
   switch (ctx.kind) {
     case 'editor':
       return [
         { label: 'Remove', action: 'property:remove' },
-        { label: 'Delete', action: 'property:destroy', destructive: true },
+        { label: 'Delete', action: 'property:destroy', separatorBefore: true },
       ]
     case 'assigned-row':
       return [

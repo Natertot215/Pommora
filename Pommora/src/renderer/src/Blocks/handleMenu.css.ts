@@ -13,20 +13,6 @@ export const PANE_MAX_W = 180
 
 export const pane = style({ minWidth: PANE_W, maxWidth: PANE_MAX_W, boxSizing: 'border-box' })
 
-/** The && doubles specificity over MenuItem's own class, so this row's type/tone override sticks. */
-export const row = style({
-  selectors: {
-    '&&': {
-      fontSize: font.scale.control.size,
-      lineHeight: font.scale.control.line,
-      color: c.label.control,
-    },
-  },
-})
-
-/** Header/footer density for this thin menu — the house zoom knob scales the whole bar. */
-export const barScale = style({ zoom: 0.85 })
-
 /** The page-embed title field — the source page's identity as a bordered "field" reading like an
  *  input but acting as a link: clicking it opens the page full-view. Its border wears the accent tint
  *  (accent @ tint-secondary), the same signal as the embed's own border on the surface, so the menu's

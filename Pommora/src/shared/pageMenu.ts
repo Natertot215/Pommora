@@ -6,6 +6,8 @@
 // the extras render only where they're requested, so no menu carries an action its router
 // doesn't serve.
 
+import type { ActionItem } from './menuModel'
+
 /** What Copy Link puts on the clipboard: the connection syntax that reaches this page from any
  *  MarkdownPM surface, so a copied page pastes as a working link rather than as its name. */
 export function pageLinkText(title: string): string {
@@ -98,7 +100,7 @@ export function pageMetaMenuItems(
     clipboard?: boolean
     reveal?: boolean
   } = {},
-): Array<{ label: string; action: PageMetaAction; separatorBefore?: boolean }> {
+): ActionItem<PageMetaAction>[] {
   return [
     ...(opts.preview ? [{ label: 'Open Preview', action: 'title:preview' as const }] : []),
     { label: alreadyOpen ? 'Open' : 'Open New Tab', action: 'title:newtab' },
@@ -139,14 +141,14 @@ export function pageMetaMenuItems(
 export function pageMetaMenuSubset<A extends PageMetaAction>(
   actions: readonly A[],
   alreadyOpen?: boolean,
-): Array<{ label: string; action: A; separatorBefore?: boolean }> {
+): ActionItem<A>[] {
   const kept = pageMetaMenuItems(alreadyOpen, {
     preview: true,
     newPages: 'pair',
     move: true,
     clipboard: true,
     reveal: true,
-  }).filter((i): i is { label: string; action: A; separatorBefore?: boolean } =>
+  }).filter((i): i is ActionItem<A> =>
     (actions as readonly PageMetaAction[]).includes(i.action),
   )
   return kept.map((item, i) => (i === 0 ? { ...item, separatorBefore: undefined } : item))

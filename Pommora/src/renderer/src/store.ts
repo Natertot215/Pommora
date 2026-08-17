@@ -79,6 +79,7 @@ import { flushAllPageSaves } from './Detail/pageFlush'
 import { dropCapturedOutside } from './Navigation/useNavThumbnails'
 import { stabilize } from './treeStabilize'
 import { applyAccent, applySystemAccent } from './design-system/accent'
+import type { DevicePrefs } from '@shared/devicePrefs'
 import { applyPersonalization, applyPersonalizationKey } from './design-system/personalization'
 import { findCollection, findSet, findCollectionForSet, isDepth1Set } from './Detail/Scope'
 import { crumbDepthFor } from './Detail/Subfield/crumbs'
@@ -219,6 +220,9 @@ interface SessionState {
   setNavViewMode: (mode: NavViewMode) => void
   personalization: Personalization
   setPersonalization: <K extends keyof Personalization>(key: K, value: Personalization[K]) => void
+  /** Machine-local, not the Nexus's — loaded alongside it, saved to nexus.db. */
+  devicePrefs: DevicePrefs
+  setDevicePref: <K extends keyof DevicePrefs>(key: K, value: DevicePrefs[K]) => void
   linkTitles: Record<string, string>
   resolveLinkTitle: (url: string) => void
   activeViews: Record<string, string>
@@ -376,6 +380,9 @@ const COLD_SWAP_DEADLINE = 200
 let coldStampSeq = -1
 
 let systemAccentCache: string | null | undefined
+// Read once per NEXUS, not per reconcile: applyTree runs on every tree change and must never carry
+// a round trip, but nexus.db travels inside the Nexus — so opening a different one reads again.
+let devicePrefsLoaded = false
 
 export const useSession = create<SessionState>((set, get) => {
   // One writer for both alias gestures. The slice mirrors exactly what a reload gives back, so a
@@ -394,6 +401,7 @@ export const useSession = create<SessionState>((set, get) => {
   // Clearing activeTabId marks the tab set never-seeded, so load() re-reads the new nexus's sidecars.
   const resetNexusSession = (): void => {
     pageFetchSeq++
+    devicePrefsLoaded = false
     set({
       selection: { kind: 'none' },
       pageStatus: 'idle',
@@ -912,6 +920,11 @@ export const useSession = create<SessionState>((set, get) => {
       applySystemAccent(systemColor)
       set({ personalization: tree.personalization, commands: tree.commands })
       applyPersonalization(tree.personalization)
+      if (!devicePrefsLoaded) {
+        devicePrefsLoaded = true
+        const prefs = await window.nexus.devicePrefs.load()
+        if (prefs.ok) set({ devicePrefs: prefs.value ?? {} })
+      }
     },
 
     choose: () => openVia(() => window.nexus.choose()),
@@ -973,6 +986,12 @@ export const useSession = create<SessionState>((set, get) => {
         .set({ window: s.navWindowMode, view: s.navViewMode })
         .catch(() => undefined)
     },
+    devicePrefs: {},
+    setDevicePref: (key, value) => {
+      set((s) => ({ devicePrefs: { ...s.devicePrefs, [key]: value } }))
+      void window.nexus.devicePrefs.save(get().devicePrefs)
+    },
+
     personalization: {},
     setPersonalization: (key, value) => {
       // One writer, both projections — but the tree copy re-identifies only for defaultIcons,

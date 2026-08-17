@@ -9,6 +9,7 @@ import {
   offersMove,
   pageMetaMenuItems,
 } from './pageMenu'
+import type { ActionItem } from './menuModel'
 
 export type RowGripMenuAction = PageMetaAction | PageMoveAction
 
@@ -17,7 +18,7 @@ export interface RowGripMenuContext extends PageMoveContext {
 }
 
 export function rowGripMenuModel(ctx: RowGripMenuContext): {
-  items: Array<{ label: string; action: RowGripMenuAction; separatorBefore?: boolean }>
+  items: ActionItem<RowGripMenuAction>[]
 } {
   return {
     items: pageMetaMenuItems(ctx.alreadyOpen, {

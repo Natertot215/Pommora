@@ -1,6 +1,7 @@
 import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
 import { PAGE_MOVE_ROW, type PageMoveContext } from '@shared/pageMenu'
-import { type ActionItem, destinationNodes, popReturningMenu } from './returningMenu'
+import type { ActionItem } from '@shared/menuModel'
+import { destinationNodes, popReturningMenu } from './returningMenu'
 
 // A menu model's rows as a native template: `separatorBefore` expands into real separator rows, and
 // the one row that isn't an act — Move To ▸ — opens the destination tree, where the leaf a person

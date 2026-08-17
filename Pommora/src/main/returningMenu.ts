@@ -14,6 +14,9 @@ export function popReturningMenu<A>(
     pick: (action: A) => () => void,
     pickAfter: (ask: () => Promise<A | null>) => () => void,
   ) => MenuItemConstructorOptions[],
+  /** Where the menu opens, in window DIPs. Omitted pops at the cursor — right where a right-click
+   *  already is, and wrong for a control the user clicked, which the menu should hang from. */
+  at?: { x: number; y: number },
 ): Promise<A | null> {
   return new Promise((resolve) => {
     let acted = false
@@ -34,21 +37,12 @@ export function popReturningMenu<A>(
     }
     Menu.buildFromTemplate(template).popup({
       window: win,
+      ...at,
       callback: () => {
         if (!acted) resolve(null)
       },
     })
   })
-}
-
-/** The row shape every shared menu model emits. */
-export interface ActionItem<A> {
-  label: string
-  action: A
-  separatorBefore?: boolean
-  /** Shown and refused rather than absent — for a row whose reason for being unavailable is worth
-   *  stating. Absent reads as available. */
-  disabled?: boolean
 }
 
 /** A destination tree as native submenus. A parent item cannot itself be clicked, so a container

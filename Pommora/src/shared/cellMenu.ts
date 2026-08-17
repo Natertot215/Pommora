@@ -9,6 +9,7 @@ import {
 } from './pageMenu'
 import type { PropertyType } from './properties'
 import type { ResolvedColumn } from './types'
+import type { ActionItem } from './menuModel'
 
 /** The table-cell right-click menu (right-click always opens a menu, never acts).
  *  Title cells get the page meta menu; style-bearing cells get their COLUMN's Style radios;
@@ -45,7 +46,7 @@ export type CellMenuAction =
   | `style:${string}:${string}`
 
 export interface CellMenuModel {
-  items: Array<{ label: string; action: CellMenuAction; separatorBefore?: boolean }>
+  items: ActionItem<CellMenuAction>[]
   /** Rendered as a submenu ahead of `items` when present. Rows and the name they sit under travel
    *  together so a type can't be given radios under the wrong word. */
   style?: { label: string; rows: StyleMenuItem[] }

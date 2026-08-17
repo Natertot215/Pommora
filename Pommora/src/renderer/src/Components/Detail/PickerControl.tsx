@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { Icon } from '@renderer/design-system/symbols'
 import { PickerMenu, MenuOption } from '../../design-system/components/PickerMenu'
+import { useSession } from '../../store'
 import * as s from './pickerControl.css'
 
 export type PickerChoice<T extends string> = {
@@ -30,7 +31,31 @@ export function PickerControl<T extends string>({
 }): React.JSX.Element {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLButtonElement>(null)
+  const native = useSession((st) => st.devicePrefs.nativeMenus ?? false)
   const isToggle = options.length === 2
+
+  // The OS draws the same list from the same options — no leading glyph, since a system menu draws
+  // its own marks and there is no honest way to hand it one; the chosen row reads as a checkmark
+  // instead. The menu hangs from the trigger, which is why the rect crosses with it.
+  const popNative = (): void => {
+    const box = ref.current?.getBoundingClientRect()
+    void window.nexus
+      .rowMenu({
+        items: options.map((o) => ({
+          label: o.label,
+          action: o.value,
+          checked: o.value === value,
+        })),
+        anchor: box && { left: box.left, top: box.top, width: box.width, height: box.height },
+      })
+      .then((picked) => {
+        // Resolved back through the options rather than cast: the reply is a bare string by the
+        // time it crosses, and only a value this control actually offered may be committed.
+        const chosen = options.find((o) => o.value === picked)
+        if (chosen) onPick(chosen.value)
+      })
+  }
+
   const trigger = (
     <button
       ref={ref}
@@ -40,14 +65,16 @@ export function PickerControl<T extends string>({
       onClick={
         isToggle
           ? () => onPick((options.find((o) => o.value !== value) ?? options[0]).value)
-          : () => setOpen(true)
+          : native
+            ? popNative
+            : () => setOpen(true)
       }
     >
       <span className={s.value}>{labelOf(options, value)}</span>
       <Icon name="chevrons-up-down" size={12} />
     </button>
   )
-  if (isToggle) return trigger
+  if (isToggle || native) return trigger
   return (
     <>
       {trigger}

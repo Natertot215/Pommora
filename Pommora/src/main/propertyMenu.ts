@@ -16,7 +16,7 @@ export function popPropertyMenu(
   return popReturningMenu<PropertyMenuAction>(win, (pick, pickAfter) => {
     const items: MenuItemConstructorOptions[] = []
     for (const it of propertyMenuModel(ctx)) {
-      if (it.destructive) items.push({ type: 'separator' })
+      if (it.separatorBefore) items.push({ type: 'separator' })
       items.push({
         label: it.label,
         click:

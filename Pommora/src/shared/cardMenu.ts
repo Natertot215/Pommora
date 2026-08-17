@@ -10,6 +10,7 @@ import {
   offersMove,
   pageMetaMenuItems,
 } from './pageMenu'
+import type { ActionItem } from './menuModel'
 
 export type CardMenuAction = PageMetaAction | `add:${string}` | PageMoveAction
 
@@ -21,9 +22,9 @@ export interface CardMenuContext extends PageMoveContext {
 }
 
 export interface CardMenuModel {
-  items: Array<{ label: string; action: CardMenuAction; separatorBefore?: boolean }>
+  items: ActionItem<CardMenuAction>[]
   /** The Add Property ▸ submenu; absent when the card has no addable property. */
-  addProperty?: Array<{ label: string; action: CardMenuAction }>
+  addProperty?: ActionItem<CardMenuAction>[]
 }
 
 /** The pure per-card item model — main maps it to Electron MenuItems. */
