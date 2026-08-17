@@ -1,6 +1,6 @@
 ## Lint & Accessibility
 
-`npm run lint` is Biome, and it runs **clean** — zero errors, zero warnings, zero infos. Treat that as the floor: a change that adds a diagnostic isn't done. Formatting stays automatic (a hook formats every write); this doc is about the linter's judgment calls, not its formatting.
+`npm run lint` is `biome check`, and it runs **clean** — zero errors, zero warnings, zero infos, and no unformatted file. Treat that as the floor: a change that adds a diagnostic isn't done. Formatting is normally automatic, since a hook formats every write, but a write that goes around the hook goes around the formatter too — the gate covers both so neither can pass unnoticed. This doc is about the linter's judgment calls; `npm run format` settles the rest.
 
 ### The Disabled Rules, and Why
 
