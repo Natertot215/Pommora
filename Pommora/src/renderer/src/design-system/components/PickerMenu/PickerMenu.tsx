@@ -10,6 +10,7 @@ import {
 import { createPortal } from 'react-dom'
 import { dropdownOpen, dropdownClose } from '../../animations.css'
 import { useExitPresence } from '../../useExitPresence'
+import { useHeld } from '../../useHeld'
 import { GlassPane } from '../../materials'
 import { MenuItem, MenuScrollFrame } from '../menu/Menu'
 import { Icon } from '../../symbols'
@@ -134,13 +135,9 @@ export function PickerMenu({
     },
     [],
   )
-  // The rows the pane paints through its Bloom-out. A caller's children are built from the state
-  // that opened the pane, and closing usually clears that state in the same tick — so the pane would
-  // otherwise retract empty, collapsing as it fades. Held here rather than in each consumer: a
+  // The rows the pane paints through its Bloom-out. Held here rather than in each consumer: a
   // picker that retracts with its rows intact is the component's business, not a caller's.
-  const heldChildren = useRef<ReactNode>(children)
-  if (!closing) heldChildren.current = children
-  const body = closing ? heldChildren.current : children
+  const body = useHeld(children, !closing)
 
   const paneRef = useRef<HTMLDivElement>(null)
   const glassRef = useRef<HTMLDivElement>(null)
@@ -492,9 +489,7 @@ export function PointMenu({
   onDismiss: () => void
   children: ReactNode
 }): React.JSX.Element {
-  const held = useRef(at)
-  if (at) held.current = at
-  const point = at ?? held.current
+  const point = useHeld(at, at !== null)
   return (
     <PickerMenu
       solid

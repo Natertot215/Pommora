@@ -22,9 +22,25 @@ export function anchorPoint(
   }
 }
 
-/** A model's rows as a native template. `separatorBefore` expands into real separator rows; a row
- *  carrying `checked` becomes a checkbox so the choice in force reads at a glance. Icons are left
- *  behind on purpose — an OS menu draws its own, and there is no honest way to hand it one. */
+/** One model row as a native item — the single statement of what a row becomes, whichever menu
+ *  carries it. A row carrying `checked` becomes a checkbox so the choice in force reads at a glance.
+ *  Icons are left behind on purpose: an OS menu draws its own, and there is no honest way to hand it
+ *  one. */
+export function nativeRow<A extends string>(
+  item: ActionItem<A>,
+  pick: (action: A) => () => void,
+): MenuItemConstructorOptions {
+  return {
+    label: item.label,
+    enabled: !item.disabled,
+    ...(item.checked !== undefined && { type: 'checkbox' as const, checked: item.checked }),
+    // A row that leads somewhere takes no click of its own: the OS opens the branch, and the leaf
+    // resolves. Giving it both would resolve the parent the moment the pointer rested on it.
+    ...(item.submenu ? { submenu: rowTemplate(item.submenu, pick) } : { click: pick(item.action) }),
+  }
+}
+
+/** A model's rows as a native template — `separatorBefore` expands into real separator rows. */
 export function rowTemplate<A extends string>(
   items: readonly ActionItem<A>[],
   pick: (action: A) => () => void,
@@ -32,16 +48,7 @@ export function rowTemplate<A extends string>(
   const template: MenuItemConstructorOptions[] = []
   for (const item of items) {
     if (item.separatorBefore && template.length > 0) template.push({ type: 'separator' })
-    template.push({
-      label: item.label,
-      enabled: !item.disabled,
-      ...(item.checked !== undefined && { type: 'checkbox' as const, checked: item.checked }),
-      // A row that leads somewhere takes no click of its own: the OS opens the branch, and the leaf
-      // resolves. Giving it both would resolve the parent the moment the pointer rested on it.
-      ...(item.submenu
-        ? { submenu: rowTemplate(item.submenu, pick) }
-        : { click: pick(item.action) }),
-    })
+    template.push(nativeRow(item, pick))
   }
   return template
 }

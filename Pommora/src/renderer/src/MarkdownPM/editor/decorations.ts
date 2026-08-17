@@ -220,6 +220,11 @@ function visibleInlineTokens(view: EditorView, text: string, scan: DocScan): Tok
  *  has interior positions with nothing on screen to stand for them. */
 interface Built {
   deco: DecorationSet
+  /** The marker slots a widget stands in. A list line's `- ` is replaced whole, so the position
+   *  between the dash and its space is a seat with nothing on screen to mark it: the caret can land
+   *  there, the drawn caret renders at the widget's edge instead, and a selection anchored there
+   *  takes marker characters the reader can't see. The callout prefix is guarded this way for the
+   *  same reason. */
   atomic: DecorationSet
 }
 
@@ -401,17 +406,9 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): Built {
 export function markdownDecorations(getConn: () => ConnectionsApi | undefined): Extension {
   return ViewPlugin.fromClass(
     class {
-      decorations: DecorationSet
-      /** The marker slots a widget stands in. A list line's `- ` is replaced whole, so the position
-       *  between the dash and its space is a seat with nothing on screen to mark it: the caret can
-       *  land there, the drawn caret renders at the widget's edge instead, and a selection anchored
-       *  there takes marker characters the reader can't see. The callout prefix is guarded this way
-       *  for the same reason. */
-      atomic: DecorationSet
+      built: Built
       constructor(view: EditorView) {
-        const built = build(view, getConn())
-        this.decorations = built.deco
-        this.atomic = built.atomic
+        this.built = build(view, getConn())
       }
       update(u: ViewUpdate): void {
         // Inline tokens are viewport-scoped, so scroll (viewportChanged) must rebuild too — newly
@@ -422,17 +419,14 @@ export function markdownDecorations(getConn: () => ConnectionsApi | undefined): 
           u.focusChanged ||
           u.viewportChanged ||
           u.transactions.some((tr) => tr.effects.some((e) => e.is(resolutionNudge)))
-        ) {
-          const built = build(u.view, getConn())
-          this.decorations = built.deco
-          this.atomic = built.atomic
-        }
+        )
+          this.built = build(u.view, getConn())
       }
     },
     {
-      decorations: (v) => v.decorations,
+      decorations: (v) => v.built.deco,
       provide: (plugin) =>
-        EditorView.atomicRanges.of((view) => view.plugin(plugin)?.atomic ?? Decoration.none),
+        EditorView.atomicRanges.of((view) => view.plugin(plugin)?.built.atomic ?? Decoration.none),
     },
   )
 }

@@ -69,7 +69,6 @@ export const titleFieldLocIcon = style({ selectors: { '&&': { color: c.label.ter
 /** The Scale dropdown body — a tight column of the five step rows (narrower than the menu's own pane). */
 export const scaleMenu = style({ minWidth: 58 })
 
-/** The current step's check — deliberately not the row's label tone. */
 /** The Scale row's trailing value + double-chevron trigger — a bare button, mirroring titleFieldLoc;
  *  the chevron a step quieter than the value. */
 export const scaleTrailing = style({
