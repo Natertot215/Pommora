@@ -989,8 +989,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       setIconPickerOpen(true)
     } else if (action === 'title:newabove') void newPageAdjacent(row, 'above')
     else if (action === 'title:newbelow') void newPageAdjacent(row, 'below')
-    else if (action === 'title:delete')
-      void mutate({ op: 'delete', path: row.path, kind: 'page' })
+    else if (action === 'title:delete') void mutate({ op: 'delete', path: row.path, kind: 'page' })
     else if (action === 'title:rename' || action === 'cell:edit')
       setEditing({ rowId: row.id, colId: col.id, mode: 'editor' })
     else if (action === 'cell:rename') {

@@ -3,36 +3,20 @@
   "icon": "rectangle.stack",
   "outside_field": 2,
   "_foreign_collection_key": "preserved",
-  "properties": [
-    "prop_status",
-    "prop_when"
-  ],
+  "properties": ["prop_status", "prop_when"],
   "views": [
     {
       "id": "view_1",
       "name": "Table",
       "type": "table",
       "_foreign_view_key": "preserved",
-      "property_order": [
-        "prop_status",
-        "_title",
-        "ctx_projects",
-        "ctx_topics",
-        "ctx_areas"
-      ],
-      "hidden_properties": [
-        "_modified_at"
-      ],
+      "property_order": ["prop_status", "_title", "ctx_projects", "ctx_topics", "ctx_areas"],
+      "hidden_properties": ["_modified_at"],
       "group": {
         "kind": "property",
         "property_id": "prop_status",
         "order_mode": "manual",
-        "order": [
-          "in_progress",
-          "opt_open",
-          "not_started",
-          "done"
-        ],
+        "order": ["in_progress", "opt_open", "not_started", "done"],
         "empty_placement": "bottom",
         "hide_empty_groups": false
       },

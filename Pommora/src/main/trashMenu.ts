@@ -31,7 +31,10 @@ export function popTrashMenu(
         ),
       })
     } else {
-      items.push({ label: label.restore, click: pick({ kind: ctx.batch ? 'restoreAll' : 'restore' }) })
+      items.push({
+        label: label.restore,
+        click: pick({ kind: ctx.batch ? 'restoreAll' : 'restore' }),
+      })
     }
     items.push({ type: 'separator' })
     items.push({ label: label.delete, click: pick({ kind: ctx.batch ? 'deleteAll' : 'delete' }) })

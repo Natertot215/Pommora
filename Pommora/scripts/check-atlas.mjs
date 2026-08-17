@@ -37,7 +37,15 @@ for (const doc of readdirSync(featuresDir).filter((f) => f.endsWith('.md'))) {
       .map((s) => {
         if (existsSync(join(repoRoot, s))) return readFileSync(join(repoRoot, s), 'utf8')
         if (base) {
-          const guess = join(repoRoot, base.split('/src/')[0], 'src', 'renderer', 'src', 'design-system', s)
+          const guess = join(
+            repoRoot,
+            base.split('/src/')[0],
+            'src',
+            'renderer',
+            'src',
+            'design-system',
+            s,
+          )
           if (existsSync(guess)) {
             missingFiles.splice(missingFiles.indexOf(s), 1)
             return readFileSync(guess, 'utf8')
@@ -62,20 +70,27 @@ for (const doc of readdirSync(featuresDir).filter((f) => f.endsWith('.md'))) {
       const valueCell = cells.slice(3).join(' ')
       for (const [, ident] of tokenCell.matchAll(/`([^`]+)`/g)) {
         for (const piece of ident.split(/\s*[·/]\s*/)) {
-          const name = piece.replace(/^@property\s+/, '').replace(/[…*]+$/, '').trim()
+          const name = piece
+            .replace(/^@property\s+/, '')
+            .replace(/[…*]+$/, '')
+            .trim()
           if (!name || SKIP_IDENTS.has(name) || !IDENT.test(name)) continue
           const quoted = name.match(/\['([^']+)'\]/)
           const probe = quoted ? quoted[1] : name.includes('.') ? name.split('.').pop() : name
           const haystack = name.startsWith('--') ? text + bridgeText : text
-          if (probe.length > 2 && !haystack.includes(probe)) problems.push(`token not in source: ${name}`)
+          if (probe.length > 2 && !haystack.includes(probe))
+            problems.push(`token not in source: ${name}`)
         }
       }
-      for (const [lit] of valueCell.matchAll(/#[0-9A-Fa-f]{6,8}\b|\b\d+(?:\.\d+)?(?:px|ms|s|ch|em)?(?=[\s`·/|]|$)/g)) {
+      for (const [lit] of valueCell.matchAll(
+        /#[0-9A-Fa-f]{6,8}\b|\b\d+(?:\.\d+)?(?:px|ms|s|ch|em)?(?=[\s`·/|]|$)/g,
+      )) {
         if (/^\d+(?:\.\d+)?$/.test(lit) && Number(lit) < 8) continue
         const hay = (text + bridgeText).toLowerCase()
         if (!hay.includes(lit.toLowerCase())) {
           const bare = lit.replace(/(px|ms|s|ch|em)$/, '')
-          if (!hay.includes(`'${lit.toLowerCase()}'`) && !hay.includes(bare)) problems.push(`value not in source: ${lit}`)
+          if (!hay.includes(`'${lit.toLowerCase()}'`) && !hay.includes(bare))
+            problems.push(`value not in source: ${lit}`)
         }
       }
     }
@@ -87,5 +102,7 @@ for (const doc of readdirSync(featuresDir).filter((f) => f.endsWith('.md'))) {
   }
 }
 
-console.log(`${tables} atlas tables checked — ${failures ? `${failures} FAILED` : 'all agree with source'}`)
+console.log(
+  `${tables} atlas tables checked — ${failures ? `${failures} FAILED` : 'all agree with source'}`,
+)
 process.exit(failures ? 1 : 0)

@@ -82,7 +82,8 @@ function insert(
     if (c.path === parentPath) {
       done = true
       if (node.kind !== 'page') return { ...c, sets: [...(c.sets ?? []), node] }
-      const at = pageAt !== undefined && pageAt >= 0 ? Math.min(pageAt, c.pages.length) : c.pages.length
+      const at =
+        pageAt !== undefined && pageAt >= 0 ? Math.min(pageAt, c.pages.length) : c.pages.length
       return { ...c, pages: [...c.pages.slice(0, at), node, ...c.pages.slice(at)] }
     }
     if (c.sets?.length) {

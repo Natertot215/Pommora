@@ -154,7 +154,12 @@ export function SidebarDnd({
         return {
           depth: entry.depth,
           lineY: edge - contentTop,
-          commit: { op: 'movePage', path: draggedEntry.path, newParentPath: entry.parentPath, order },
+          commit: {
+            op: 'movePage',
+            path: draggedEntry.path,
+            newParentPath: entry.parentPath,
+            order,
+          },
           noop: entry.parentId === draggedEntry.parentId && sameOrder(order, container.pageIds),
         }
       }
@@ -178,7 +183,12 @@ export function SidebarDnd({
         return {
           depth: draggedEntry.depth,
           lineY: (below ? over.top : over.bottom) - contentTop,
-          commit: { op: 'movePage', path: draggedEntry.path, newParentPath: draggedEntry.parentPath, order },
+          commit: {
+            op: 'movePage',
+            path: draggedEntry.path,
+            newParentPath: draggedEntry.parentPath,
+            order,
+          },
           noop: sameOrder(order, pageIds),
         }
       }

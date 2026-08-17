@@ -48,10 +48,7 @@ export type Admission =
  * invisible, not adoptable, or adoption stamps a second key onto it and the file becomes ambiguous
  * forever. Everything it rejects is Unknown — not an error, not a member, and never stamped over.
  */
-export function admitContentFile(
-  fm: Record<string, unknown>,
-  expected: ContentKind,
-): Admission {
+export function admitContentFile(fm: Record<string, unknown>, expected: ContentKind): Admission {
   const present = presentKeys(fm)
   // Ambiguity outranks every other question: with two keys there is no "the" key to judge.
   if (present.length > 1) return { state: 'unknown', reason: 'dual' }

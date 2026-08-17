@@ -68,4 +68,3 @@ export function destinationNodes<T extends { label: string; children?: T[] }>(
   }
   return targets.map(node)
 }
-

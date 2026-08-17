@@ -87,7 +87,9 @@ async function pageRoots(root: string, scope: SweepScope): Promise<string[]> {
 /** Space sidecars are context roots, so only a nexus-wide sweep reaches them: a property value
  *  answers to a Collection's schema, and no schema governs a Space. */
 const sidecarRoots = (root: string, scope: SweepScope): Promise<string[]> =>
-  scope.kind === 'nexus' ? listFilesRecursive(contextsDir(root), [SPACE_SIDECAR]) : Promise.resolve([])
+  scope.kind === 'nexus'
+    ? listFilesRecursive(contextsDir(root), [SPACE_SIDECAR])
+    : Promise.resolve([])
 
 /**
  * Run `rewrite` over every root the scope reaches, each under its own file lock. A page is merged

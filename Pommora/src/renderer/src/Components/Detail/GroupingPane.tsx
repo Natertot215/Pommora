@@ -185,8 +185,7 @@ export function GroupingPane({
 
   const saveSub = (sub: SubGroupConfig | undefined): void => save({ sub_group: sub })
   // View-level with the property config's field as the pre-hoist fallback — resolveView's read.
-  const hideEmpty =
-    view.hide_empty_groups ?? (group.kind === 'property' && group.hide_empty_groups)
+  const hideEmpty = view.hide_empty_groups ?? (group.kind === 'property' && group.hide_empty_groups)
 
   const footings = groupByOpen ? undefined : (
     <MenuBottomRow>
@@ -534,14 +533,20 @@ export function CustomList({
             key={v}
             ref={dnd.rowRef(v)}
             {...dnd.rowHandle(v)}
-            className={cx(gp.chipRow, hiddenSet?.has(v) && hiddenRow, dnd.draggingId === v && gp.ghosted)}
+            className={cx(
+              gp.chipRow,
+              hiddenSet?.has(v) && hiddenRow,
+              dnd.draggingId === v && gp.ghosted,
+            )}
           >
             <Chip color={chipColorFor(o.color)} label={o.label} shape={chipShapeForType(type)} />
             {rowEye(o.label, v, { hiddenSet, onToggleHidden })}
           </div>,
         ]
       })}
-      {dnd.line && <div className={cx('drop-line', gp.dropLineInset)} style={{ top: dnd.line.y }} />}
+      {dnd.line && (
+        <div className={cx('drop-line', gp.dropLineInset)} style={{ top: dnd.line.y }} />
+      )}
       <DragGhost
         x={dnd.ghost?.x ?? null}
         y={dnd.ghost?.y ?? null}
@@ -834,7 +839,9 @@ function LocationHierarchy({
   return (
     <div ref={dnd.containerRef} className="drop-line-host">
       {(source.sets ?? []).map(renderSet)}
-      {dnd.line && <div className={cx('drop-line', gp.dropLineInset)} style={{ top: dnd.line.y }} />}
+      {dnd.line && (
+        <div className={cx('drop-line', gp.dropLineInset)} style={{ top: dnd.line.y }} />
+      )}
       <DragGhost x={dnd.ghost?.x ?? null} y={dnd.ghost?.y ?? null} label={ghostLabel()} />
     </div>
   )

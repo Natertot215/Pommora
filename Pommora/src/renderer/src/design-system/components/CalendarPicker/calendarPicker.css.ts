@@ -176,7 +176,11 @@ export const pillRowFirst = style({ borderRadius: '7px 0 0 7px', inset: '1px 0 1
 export const pillRowLast = style({ borderRadius: '0 7px 7px 0', inset: '1px 1px 1px 0' })
 
 /* ── Divider between the calendar and the value/boolean area ── */
-export const divider = style({ height: '1px', background: c.separator.border, margin: '7px 2px 8px' })
+export const divider = style({
+  height: '1px',
+  background: c.separator.border,
+  margin: '7px 2px 8px',
+})
 
 /* ── Value fields: separator-stroked inputs, icon + value (or the -- empty). The block keeps
       EQUAL breathing room above and below, mirroring the divider's own bottom margin. ── */

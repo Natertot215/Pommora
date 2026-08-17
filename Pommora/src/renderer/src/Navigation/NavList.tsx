@@ -259,11 +259,7 @@ export function NavList({
         ),
       )}
       {extras?.map((e) => (
-        <div
-          key={e.key}
-          className="nav-item nav-item-inert"
-          title="This result can't be opened"
-        >
+        <div key={e.key} className="nav-item nav-item-inert" title="This result can't be opened">
           <OverflowScroll className="nav-item-title">{e.title}</OverflowScroll>
           <OverflowScroll className={cx('nav-item-path', text.caption.standard)}>
             {e.kind}

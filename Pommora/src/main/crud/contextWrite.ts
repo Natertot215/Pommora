@@ -20,12 +20,7 @@ import { SOLID_COLORS, type SpaceNode } from '@shared/types'
 import { ok, fail, type Result } from '@shared/result'
 import { mutateRegistryFile, readRegistryStrict } from '../contextsRegistry'
 import { adoptedId, newId } from '../ids'
-import {
-  atomicWriteFile,
-  pathExists,
-  readJsonStrict,
-  rmwJsonStrict,
-} from '../io/atomicWrite'
+import { atomicWriteFile, pathExists, readJsonStrict, rmwJsonStrict } from '../io/atomicWrite'
 import { serializeOnFile } from '../io/fileLock'
 import { isMarkdownFile } from '../io/walk'
 import { mergeFrontmatter, splitEnvelope } from '../io/pageFile'

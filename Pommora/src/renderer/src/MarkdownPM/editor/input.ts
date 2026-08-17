@@ -78,10 +78,7 @@ const onForwardDelete = (view: EditorView): boolean => {
 
 const onBackspace = (view: EditorView): boolean => {
   const s = view.state.selection.main
-  if (
-    s.empty &&
-    embedTileRanges(view.state).some((r) => s.from === r.to + 1 || s.from === r.to)
-  )
+  if (s.empty && embedTileRanges(view.state).some((r) => s.from === r.to + 1 || s.from === r.to))
     return true
   const doc = docString(view.state.doc)
   return apply(view, smartBackspace(doc, s.from, s.to) ?? autoDelete(doc, s.from, s.to))
@@ -126,8 +123,7 @@ export function focusAt(view: EditorView, pos: number): void {
  *  worth seating into here abuts hidden marker text. */
 export function focusRange(view: EditorView, from: number, to = from): void {
   view.dispatch({
-    selection:
-      from === to ? EditorSelection.cursor(from, 1) : EditorSelection.range(from, to),
+    selection: from === to ? EditorSelection.cursor(from, 1) : EditorSelection.range(from, to),
   })
   view.focus()
 }

@@ -51,7 +51,9 @@ export interface FolderKindContext {
 /** The registration recorded on `nexus.json`, read leniently: a nexus that records nothing simply
  *  registers nothing, and every agenda config it holds is inert. Only a string id can register a
  *  folder, so garbage in the field registers nothing rather than matching something. */
-export function readAgendaRegistration(identity: Record<string, unknown> | null): AgendaRegistration {
+export function readAgendaRegistration(
+  identity: Record<string, unknown> | null,
+): AgendaRegistration {
   const raw = identity?.agenda_singletons
   if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return {}
   const rec = raw as Record<string, unknown>

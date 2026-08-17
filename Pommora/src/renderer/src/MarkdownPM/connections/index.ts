@@ -53,10 +53,7 @@ export interface ConnectionsApi extends PageIndex {
 
 /** What a markdown link's target turns out to name. One resolver behind the click path and both
  *  renderers, so a link can never be coloured as one thing and act as another. */
-export type MdTarget =
-  | { kind: 'page'; page: ConnPage }
-  | { kind: 'external' }
-  | { kind: 'invalid' }
+export type MdTarget = { kind: 'page'; page: ConnPage } | { kind: 'external' } | { kind: 'invalid' }
 
 /** Resolve a markdown link's `( )`. Page resolution is tried FIRST and deliberately: `isValidLink`
  *  accepts any dotted host, so `Notes.md` and `Node.js` would otherwise be read as websites and the

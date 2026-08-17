@@ -84,9 +84,7 @@ type Row =
 
 /** What a leaf puts in the body. Most are a list of rows; a leaf may instead bring a surface,
  *  which owns its own layout, its own scroller and whatever state it fetches. */
-type LeafBody =
-  | { kind: 'rows'; rows: Row[] }
-  | { kind: 'surface'; Body: () => React.JSX.Element }
+type LeafBody = { kind: 'rows'; rows: Row[] } | { kind: 'surface'; Body: () => React.JSX.Element }
 
 const LEAVES: Record<CategoryKey, LeafBody> = {
   general: {

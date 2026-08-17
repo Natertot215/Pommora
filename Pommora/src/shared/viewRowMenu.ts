@@ -14,9 +14,7 @@ export interface ViewRowMenuContext {
   deletable: boolean
 }
 
-export function viewRowMenuItems(
-  ctx: ViewRowMenuContext,
-): ActionItem<ViewRowAction>[] {
+export function viewRowMenuItems(ctx: ViewRowMenuContext): ActionItem<ViewRowAction>[] {
   return [
     { label: 'Rename', action: 'rename' },
     { label: 'Edit Icon', action: 'icon' },

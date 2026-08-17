@@ -72,7 +72,14 @@ import {
   reorderWithinZone,
   tabKey,
 } from './Tabs/tabsModel'
-import { captureWarm, clearWarm, dropPageDetail, dropWarmDetail, dropWarmTab, readWarm } from './Tabs/warmCache'
+import {
+  captureWarm,
+  clearWarm,
+  dropPageDetail,
+  dropWarmDetail,
+  dropWarmTab,
+  readWarm,
+} from './Tabs/warmCache'
 import { clearPreviewWarm, dropPreviewWarm } from './PagePreview/previewWarm'
 import { stashWindowMorph } from './PagePreview/WindowMorph'
 import { flushAllPageSaves } from './Detail/pageFlush'
@@ -324,7 +331,10 @@ interface SessionState {
 
   reloadPage: () => Promise<void>
   newPage: () => Promise<void>
-  createFromMenu: (items: { label: string; req: MutateRequest }[], host?: RenameHost) => Promise<void>
+  createFromMenu: (
+    items: { label: string; req: MutateRequest }[],
+    host?: RenameHost,
+  ) => Promise<void>
 
   renamingPath: string | null
   /** The open rename is a just-created entity's naming session — the field opens empty and a
@@ -557,8 +567,7 @@ export const useSession = create<SessionState>((set, get) => {
   const findActiveTab = (): Tab | undefined => {
     const s = get()
     return (
-      s.tabs.find((t) => t.id === s.activeTabId) ??
-      s.pinnedTabs.find((t) => t.id === s.activeTabId)
+      s.tabs.find((t) => t.id === s.activeTabId) ?? s.pinnedTabs.find((t) => t.id === s.activeTabId)
     )
   }
 
@@ -615,7 +624,13 @@ export const useSession = create<SessionState>((set, get) => {
     if (live.has(s.activeTabId)) return
     const focus = s.tabMru.find((id) => live.has(id)) ?? s.tabs[0]?.id ?? s.pinnedTabs[0]?.id
     if (focus !== undefined) {
-      set({ activeTabId: focus, tabMru: pushMru(s.tabMru.filter((id) => live.has(id)), focus) })
+      set({
+        activeTabId: focus,
+        tabMru: pushMru(
+          s.tabMru.filter((id) => live.has(id)),
+          focus,
+        ),
+      })
     } else {
       const seeded = newTabTab(makeTabId())
       set({ tabs: [seeded], activeTabId: seeded.id, tabMru: [seeded.id] })
@@ -686,7 +701,9 @@ export const useSession = create<SessionState>((set, get) => {
     // target must move in lockstep with navIndex — openTab's dedup keys off target, so a stale
     // one would mis-dedup the very next click on the shown entity, destroying the Forward stack.
     set({
-      tabs: get().tabs.map((t) => (t.id === active.id ? { ...t, navIndex: i, target: resolved } : t)),
+      tabs: get().tabs.map((t) =>
+        t.id === active.id ? { ...t, navIndex: i, target: resolved } : t,
+      ),
       navSlide: {
         tabId: active.id,
         dir: i < active.navIndex ? 'back' : 'forward',
@@ -1779,7 +1796,8 @@ export const useSession = create<SessionState>((set, get) => {
       // Writes the tree cannot see never pay a re-walk — the "reload the entire Y" hot path this
       // codebase forbids. A value-only write is already shown by the caller's optimistic patch, and
       // emptying a bundle happens wholly inside `.trash`, which the walk skips by construction.
-      const invisible = req.op === 'setProperty' || req.op === 'setContext' || req.op === 'emptyBundle'
+      const invisible =
+        req.op === 'setProperty' || req.op === 'setContext' || req.op === 'emptyBundle'
       if (!invisible) await get().load()
       if (!createdShown && res.value.created && onCreated) await onCreated(res.value.created)
       return true

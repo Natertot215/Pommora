@@ -6,7 +6,12 @@
 import { basename, dirname } from 'node:path'
 import type { NexusTree, TrashCrumb, TrashRow } from '@shared/types'
 import { CONTEXTS_DIR_REL } from '../paths'
-import { type ArtifactRecord, containerChain, type ListedBundle, resolveRecord } from '../provenance'
+import {
+  type ArtifactRecord,
+  containerChain,
+  type ListedBundle,
+  resolveRecord,
+} from '../provenance'
 
 /** `trashStamp` writes an ISO instant with `:` and `.` flattened to `-`, so reading it back is a
  *  fixed unreplace rather than a guess. The optional counter that follows de-collides same-instant

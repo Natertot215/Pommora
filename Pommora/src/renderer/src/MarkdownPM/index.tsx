@@ -221,9 +221,7 @@ export function MarkdownEditor({
       embedTiles({
         getConn: () => connectionsRef.current,
         ancestors: embedAncestorsRef.current,
-        saveHeights: embedHeightsRef.current
-          ? (h) => embedHeightsRef.current?.save(h)
-          : undefined,
+        saveHeights: embedHeightsRef.current ? (h) => embedHeightsRef.current?.save(h) : undefined,
       }),
       // Grab a list glyph (•, number, or checkbox) to drag-reorder the item; click toggles/places caret.
       listDragExtension,

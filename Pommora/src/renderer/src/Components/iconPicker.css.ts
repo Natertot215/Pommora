@@ -19,7 +19,6 @@ export const content = style({
   boxSizing: 'border-box',
 })
 
-
 // The body portal escapes the app's type context, so the ramp is pinned explicitly.
 export const search = style([
   text.body.standard,

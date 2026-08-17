@@ -204,7 +204,8 @@ export function commitEdit(
   const { insert, caret } = connectionInsert(row.value, ac.from, ac.form, opts.keepAlias)
   // Accepting an alias finishes the link it belongs to, rather than leaving the caret inside it for
   // a second gesture that only ever means "yes, I meant that".
-  if (ac.form === 'alias') return { changes: [{ from: ac.from, to: ac.to, insert }], anchor: caret + 2 }
+  if (ac.form === 'alias')
+    return { changes: [{ from: ac.from, to: ac.to, insert }], anchor: caret + 2 }
   if (ac.form === 'target') {
     // Naming the target finishes only half the link: a markdown link's display text is free, where a
     // connection's IS its target. An empty label takes the page's own title so the link has
@@ -219,9 +220,7 @@ export function commitEdit(
     // tokenizes as nothing at all. Same escape the URL-property form has always used.
     const label = fill ? escapeAlias(row.value) : ''
     return {
-      changes: fill
-        ? [{ from: fill.from, to: fill.to, insert: label }, retarget]
-        : [retarget],
+      changes: fill ? [{ from: fill.from, to: fill.to, insert: label }, retarget] : [retarget],
       anchor: caret + label.length + 1,
     }
   }
