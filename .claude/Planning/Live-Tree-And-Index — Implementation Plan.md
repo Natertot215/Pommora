@@ -1,6 +1,6 @@
 ## Live Tree & Content Index — Implementation Plan
 
-> **Status:** revised after attack round 3 — presented for ratification · Spec: this session's ratified decisions (recorded under Goal and Rulings) · Execute tasks in order.
+> **Status:** ratified — in execution · Spec: this session's ratified decisions (recorded under Goal and Rulings) · Execute tasks in order.
 > Citations name files and symbols; re-derive before editing. Line numbers appear only in Task 1.
 
 **Goal**
@@ -442,6 +442,7 @@ At the end of this plan, none of that survives as a hot path. Main holds a **liv
 - Attack round 2 (build-breaking-agent): 9 folds confirmed closed, 5 partial; 10 new findings (3 High, 3 Medium, 4 Low) — all verified and folded; none rejected. The recurring failure shape both rounds exposed: a fold that stops at the literal wording of the finding instead of the property it names. Round 2's sound-list (registry defs reference-identical across `tree.registry`/`CollectionNode.properties`; `allCollectionFolders` → `tree.collections` equivalence; epoch-starvation impossible; `applySchema` cost negligible) stands with round 1's kills.
 - Attack round 3 (build-breaking-agent, final round): 8 of 10 folds closed, 2 blocking (index keyed absolute dies on nexus rename; `personalization:set` outside the push set) + 5 notes — all verified and folded; none rejected. Round 3's kills stand: the `indexed_files` racy-mtime worry (a miss needs two same-bucket edits straddling an app close), `restoreProperty` needing no scope intersection (it sweeps per-page, not per-corpus), and the Gate 1/Gate 4 caller arithmetic.
 - **Total exclusion** — Nathan, this session: `excluded_folders` excludes a folder from *everything* — reads, index, sweeps, rewrites — via the one `excludedMatcher`, so a future exclusions Settings surface sits on a list every subsystem already obeys. Consequence, ratified knowingly: a rename no longer rewrites links inside excluded folders (today it does — that behavior was itself flagged debt). Un-adopted ≠ excluded; un-adopted folders remain fully indexed and reachable.
+- **Plan ratified** — Nathan, 08-17-2026, after three attack rounds with all findings folded and the residual (the round-3 folds facing no fourth reviewer) disclosed. Execution proceeds under `Live-Tree-Execution-Brief.md`.
 
 ### Open Against Later Tasks
 ### Deviations
