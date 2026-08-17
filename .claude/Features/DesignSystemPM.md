@@ -223,6 +223,7 @@ Which tier each surface wears, and the two menu shells built on the pane.
 | Windows  | `GlassWindow` · `WINDOW_FROST` | brightness `90`, filled | preview · nav · settings · the crop modal |
 | Shared body | `SOLID_FILL` | `0.9` of `--bg-window` | the window tier, and any pane asking for `solid` |
 | Ghost | `GHOST_FROST` | brightness `100`, edge-free | the drag chip |
+| Acted-on edge | `--glass-outline` | unset | any tier being resized or driven |
 | Rectangular menu | `PANE_RADIUS` | `12` | `PickerMenu` — every menu and picker |
 | Beaked menu | `BEAK_RADIUS` | `12` | `MenuSurface` — the large toolbar dropdown, alone |
 
@@ -238,6 +239,9 @@ The reusable pieces mirror the Figma library and consume semantic tokens only; a
 - **Two menu shells.** `PickerMenu` is the rectangle every menu and picker mounts, owning anchoring, dismissal, focus and the scroll cap; `MenuSurface` is the beaked pane the large toolbar dropdown hangs off a named button, and the only surface still drawing its own outline. Why the beak sits where it does, and how each blooms, is [[InteractionPM]]'s.
 - **The toolbar dropdown shell** splits again — `MenuSurface` is the pane (state-free); `MenuDropdown` is the shell around a trigger (open state, outside-dismiss, anchored surface, optional growth bound). Surface-specific geometry stays with the surface that means it.
 - **Menu rows come in two.** A fixed option set takes the menu row — leading label, trailing accent mark on the chosen one, the mark slot laid out on every row so the pane can't resize as the selection moves. A user-authored value takes the chip row, whose fill already says "chosen", so it never also takes the mark: two signals on one row read as two states.
+- **Rows read at two tiers.** A menu row is body text; a picker's rows drop to the control ramp, because they are a control's options rather than a menu's commands. The picker's pane states that once and every row inside inherits it, so no row carries a ramp of its own. Both tiers read the primary tone — only size marks the difference.
+- **A pane's pinned bars are the ActionRow tier** — a full ramp under the rows they frame, at the secondary tone, since a header or footer borders the list rather than joining it. `PickerMenu` takes a header and a footer, so any picker can carry them.
+- **The acted-on edge.** `--glass-outline` re-colours a tier's edge while its surface is being driven — a resize in flight, an active embed. It paints twice, as the border and once inward, because a tint on a one-pixel border reads far fainter than the same colour on the thicker borders tiles wear, and widening the border would shift everything inside it.
 - **The drop chrome** — the insertion line, dot, host, and `DragGhost` live in `design-system/interactions` (`dropChrome.css`, `DropLine.tsx`, `DragGhost.tsx`).
 - **The capped label** — ellipsis at rest, scroll-on-hover with a mask fade at the leading edge — is the app-wide overflow treatment for constrained text, defined with the type tokens.
 ### Showcase
