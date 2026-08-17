@@ -231,40 +231,6 @@ export function commitEdit(
   return { changes: [{ from: ac.from, to: ac.to, insert }], anchor: caret }
 }
 
-// Panel geometry — shared by the main editor and table cells. AC_ROW_H/AC_PADDING track .mdpm-ac in Styles.css.
+// Row cap — how many suggestions are ranked before the rest are dropped.
 export const AC_MAX = 6
-const AC_ROW_H = 28
-const AC_PADDING = 8
-const AC_MAX_ROWS = 4
-const AC_GAP = 4
 
-// Anchor the panel below the caret; flip above when it would overflow the viewport bottom. Coords are
-// viewport-relative (the panel is position:fixed), so this works the same from the main editor or a cell.
-export function acPanelTop(caretTop: number, caretBottom: number, count: number): number {
-  const h = Math.min(count, AC_MAX_ROWS) * AC_ROW_H + AC_PADDING
-  return caretBottom + AC_GAP + h > window.innerHeight
-    ? caretTop - h - AC_GAP
-    : caretBottom + AC_GAP
-}
-
-/** KNOB — how close the panel may sit to the edge of the surface it's bounded by. */
-const AC_EDGE = 8
-
-/**
- * Centre the panel on the caret, sliding it sideways only as far as the surface requires. The bound
- * is the editor's own scrolling surface rather than the viewport: a panel that stops at the window
- * edge has already crossed the sidebar or the inspector, which is a different pane's space.
- *
- * A surface narrower than the panel has no honest answer, so it pins to the leading edge rather than
- * centring on a negative gap.
- */
-export function acPanelLeft(
-  caretX: number,
-  panelW: number,
-  boundsLeft: number,
-  boundsRight: number,
-): number {
-  const min = boundsLeft + AC_EDGE
-  const max = boundsRight - AC_EDGE - panelW
-  return max < min ? min : Math.min(Math.max(caretX - panelW / 2, min), max)
-}

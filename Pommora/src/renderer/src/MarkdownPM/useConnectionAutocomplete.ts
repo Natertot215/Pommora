@@ -3,7 +3,6 @@ import type { EditorView } from '@codemirror/view'
 import {
   autocompleteQuery,
   commitEdit,
-  acPanelTop,
   type AcRow,
   type AcQuery,
   type AutocompleteQuery,
@@ -43,7 +42,6 @@ export interface ConnectionAutocomplete {
   setAc: (s: AcState | null) => void
   candidates: AcRow[]
   acIndex: number
-  acTop: number
   commit: (row: AcRow) => void
   acCtl: RefObject<AcCtl>
 }
@@ -138,9 +136,7 @@ export function useConnectionAutocomplete(
 
   useEffect(() => setAcIndex(0), [ac?.query])
 
-  const acTop = ac ? acPanelTop(ac.caretTop, ac.caretBottom, candidates.length) : 0
-
-  return { ac, setAc, candidates, acIndex: selected, acTop, commit, acCtl }
+  return { ac, setAc, candidates, acIndex: selected, commit, acCtl }
 }
 
 /**

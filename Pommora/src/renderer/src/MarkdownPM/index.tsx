@@ -152,7 +152,7 @@ export function MarkdownEditor({
   // CM6 extensions are built once at mount, so they read live state + actions through refs. The `[[…]]`
   // autocomplete state machine is shared with table cells; this editor's seams are the candidate source
   // (over-fetch one to drop the page's own title) and the inline panel placement (rendered below).
-  const { ac, setAc, candidates, acIndex, acTop, commit, acCtl } = useConnectionAutocomplete(
+  const { ac, setAc, candidates, acIndex, commit, acCtl } = useConnectionAutocomplete(
     viewRef,
     (q) => {
       const conn = connectionsRef.current
@@ -436,8 +436,9 @@ export function MarkdownEditor({
         candidates={candidates}
         index={acIndex}
         caretX={ac?.caretX ?? 0}
+        caretTop={ac?.caretTop ?? 0}
+        caretBottom={ac?.caretBottom ?? 0}
         bounds={{ left: ac?.boundsLeft ?? 0, right: ac?.boundsRight ?? 0 }}
-        top={acTop}
         query={ac?.query ?? ''}
         onPick={commit}
       />
