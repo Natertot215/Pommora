@@ -37,7 +37,7 @@ import {
   renameNodeInTree,
   reorderChildrenInTree,
   reorderTopInTree,
-} from './treeMove'
+} from '@shared/treePatch'
 import {
   closeTabIn,
   deriveTarget,
@@ -84,7 +84,7 @@ import { clearPreviewWarm, dropPreviewWarm } from './PagePreview/previewWarm'
 import { stashWindowMorph } from './PagePreview/WindowMorph'
 import { flushAllPageSaves } from './Detail/pageFlush'
 import { dropCapturedOutside } from './Navigation/useNavThumbnails'
-import { stabilize } from './treeStabilize'
+import { stabilize } from '@shared/treeStabilize'
 import { applyAccent, applySystemAccent } from './design-system/accent'
 import type { DevicePrefs } from '@shared/devicePrefs'
 import { applyPersonalization, applyPersonalizationKey } from './design-system/personalization'

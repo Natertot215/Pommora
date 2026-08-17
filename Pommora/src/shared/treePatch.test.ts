@@ -12,7 +12,7 @@ import {
   reorderChildrenInTree,
   reorderPagesInTree,
   reorderTopInTree,
-} from './treeMove'
+} from './treePatch'
 
 /** A two-Collection tree: Notes (with a nested Set) and Work. */
 function tree(): NexusTree {
@@ -168,6 +168,7 @@ describe('insertCreatedInTree', () => {
       id: 'sp1',
       title: 'Astral',
       path: '.nexus/contexts/Realms/Astral',
+      headingIconHidden: false,
       contextId: 'g1',
     })
   })
@@ -210,19 +211,27 @@ describe('patchContextGroupsInTree', () => {
     ],
   })
 
-  it('renames a Context group and a Space in place', () => {
+  it('renames a Context group, moving every member Space path under the new group dir', () => {
     const t1 = patchContextGroupsInTree(groupedTree(), {
       op: 'renameContext',
       contextId: 'g1',
       newName: 'Planes',
     })
     expect(t1?.contexts?.[0].def.title).toBe('Planes')
+    expect(t1?.contexts?.[0].spaces.map((s) => s.path)).toEqual([
+      '.nexus/contexts/Planes/Astral',
+      '.nexus/contexts/Planes/Umbral',
+    ])
+  })
+
+  it('renames a Space in place, swapping its own path tail', () => {
     const t2 = patchContextGroupsInTree(groupedTree(), {
       op: 'renameSpace',
       spaceId: 'sp2',
       newName: 'Shade',
     })
     expect(t2?.contexts?.[0].spaces[1].title).toBe('Shade')
+    expect(t2?.contexts?.[0].spaces[1].path).toBe('.nexus/contexts/Realms/Shade')
   })
 
   it('sets and clears a Space color', () => {

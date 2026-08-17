@@ -34,7 +34,7 @@ import {
 import { cx } from '@renderer/design-system/cx'
 import { assetUrl } from '../../../assetUrl'
 import { useSession } from '../../../store'
-import { byOrder } from '../../../treeMove'
+import { byOrder } from '@shared/treePatch'
 import { findCollectionForSet } from '@renderer/Detail/Scope'
 import { useSaveView } from '@renderer/Embeds/ViewEmbedScope'
 import { spliceBeside, tieOrderWith } from '../creationOrder'
