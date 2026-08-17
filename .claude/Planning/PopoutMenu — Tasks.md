@@ -29,26 +29,28 @@ second component beside it.
       fall back to the edge anchor when centring would be clamped. Decided once per open.
 - [x] **`PickerOption` gained a `leading` slot**, so a glyph-led row's alignment is the component's
       business rather than six callers restating it.
+- [x] **The autocomplete rides the shared pane.** It centres on the caret and slides within the
+      editor's nearest scrolling ancestor — the detail pane in the main window, a floating window's
+      body inside one, a tile's own box on a dashboard — rather than the viewport. `PickerMenu`
+      gained `anchorHeight`, since a caret is a line and a pane flipping above a zero-height point
+      lands back on it, and `bounds`, the box a pane slides within.
 
 ### Open
 
-- [ ] **The autocomplete's caret anchoring.** It mounts the same pane but places itself, because
-      `origin="left"` insets by `ANCHOR_RESERVE` — correct against an element, wrong against a text
-      caret, which wants the pane's left edge flush. **Waiting on:** a flush-left placement branch.
 - [ ] **The hover card's beak.** `ConnectionHoverCard` rode the picker chassis, so it lost a beak
       that used to slide along the card's edge to keep pointing at the live link. It still tracks
       the link. **Waiting on:** a ruling — restore it as the one picker-family exception, or accept
       the loss as landed.
+- [ ] **`PhotoCropModal` on the window tier.** It moved from clear chrome to a filled window — the
+      one consumer whose TIER changed rather than its name. **Waiting on:** a look.
 - [ ] **The `PaneSlider` panes under auto-centring.** Add Property, the block handle menu and the
       tile Settings pane swap between panes of different widths while open, and now grow in both
       directions rather than one. **Waiting on:** use — obvious in seconds, invisible in a
       screenshot. One word per surface (`origin="left"`) if any reads unsteady.
-- [ ] **PM-104's second half — one row shape for every menu model.** `{ label, action,
-      separatorBefore? }` is restated in seven shared modules because `ActionItem<A>` lives in
-      `main/returningMenu.ts`, where `src/shared` can't reach it. It is Electron-free and belongs in
-      `shared/pageMenu.ts`, with main importing it back. The same move settles `separatorBefore` and
-      the property menu's `destructive`, which both mean "a divider goes above this row".
-      **Waiting on:** nothing — untouched by the surface work, and the files are no longer open.
+- [ ] **PM-104's second half — one row shape for every menu model.** Stated in full in
+      `ContextPM.md` §Immediate Work, which owns it. Named here only because it belongs to the same
+      PM number. **Waiting on:** nothing — untouched by the surface work, and it never depended on
+      it.
 
 ### Deferred By Ruling
 
