@@ -78,6 +78,10 @@ export type WidgetSpec =
 export type DecoIntent =
   | { kind: 'class'; from: number; to: number; className: string }
   | { kind: 'hide'; from: number; to: number }
+  /** A span the caret must not enter, because a widget stands where its characters would be. Carried
+   *  as its own intent rather than inferred from the replaces: a marker's slot is the run from its
+   *  first character through the gap before its text, which no single replace spans. */
+  | { kind: 'atomic'; from: number; to: number }
   | { kind: 'widget'; from: number; to: number; spec: WidgetSpec }
   | { kind: 'lineWidget'; from: number; className: string; text?: string }
   | { kind: 'line'; from: number; className: string; level?: number }
@@ -438,6 +442,11 @@ function pushConstruct(
         from: innerStart + lm.box.end,
         to: innerStart + lm.contentStart,
       })
+      intents.push({
+        kind: 'atomic',
+        from: innerStart + lm.markerStart,
+        to: innerStart + lm.contentStart,
+      })
     }
     return lm
   } else if (lm?.kind === 'bullet' && lm.bullet === '-' && !lm.box) {
@@ -455,6 +464,11 @@ function pushConstruct(
         from: bulletAbsorbs ? ls : innerStart,
         to: innerStart + lm.contentStart,
         spec: { type: 'bullet' },
+      })
+      intents.push({
+        kind: 'atomic',
+        from: innerStart + lm.markerStart,
+        to: innerStart + lm.contentStart,
       })
     }
     return lm
