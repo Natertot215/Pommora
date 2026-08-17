@@ -6,6 +6,7 @@ import { Switch } from '@renderer/design-system/components/Switches/Switch'
 import { Slider } from '@renderer/design-system/components/Slider/Slider'
 import { PreviewPane } from '@renderer/design-system/components/PreviewPane/PreviewPane'
 import { Reveal } from '@renderer/design-system/components/Reveal'
+import type { DevicePrefs } from '@shared/devicePrefs'
 import { PickerControl, type PickerChoice } from '@renderer/Components/Detail/PickerControl'
 import { LINK_FORMAT_OPTIONS } from '@renderer/Components/Detail/LinkFormat'
 import { DEFAULT_LINK_DISPLAY, type LinkDisplay } from '@shared/properties'
@@ -75,6 +76,10 @@ type Row =
       max: number
       format: (v: number) => string
     })
+  | (RowText & {
+      kind: 'device'
+      key: keyof DevicePrefs
+    })
   | PickerRow<LinkDisplay>
 
 /** What a leaf puts in the body. Most are a list of rows; a leaf may instead bring a surface,
@@ -117,6 +122,12 @@ const LEAVES: Record<CategoryKey, LeafBody> = {
         key: 'revealTabBarOnHover',
         label: 'Reveal Tab Bar On Hover',
         hint: 'Keep the tab bar hidden until the pointer nears it.',
+      },
+      {
+        kind: 'device',
+        key: 'nativeMenus',
+        label: 'Use Native Menus',
+        hint: 'Menus that are plain lists open as system menus. Belongs to this computer rather than to the nexus.',
       },
       {
         kind: 'toggle',
@@ -313,6 +324,8 @@ function RowControl({ row }: { row: Row }): React.JSX.Element {
       return <SliderRow row={row} />
     case 'picker':
       return <PickerRow row={row} />
+    case 'device':
+      return <DeviceRow row={row} />
   }
 }
 
@@ -328,6 +341,23 @@ function ToggleRow({ row }: { row: Extract<Row, { kind: 'toggle' }> }): React.JS
         ariaLabel={row.label}
         // Stores only the OFF state — an untouched nexus keeps a clean file (no-empties discipline).
         onChange={(next) => setPersonalization(row.key, row.defaultOn && next ? undefined : next)}
+      />
+    </SettingsRow>
+  )
+}
+
+/** A machine-local row — same switch, a different store. It writes to nexus.db rather than to the
+ *  nexus's own personalization, so one nexus can read differently on a different computer. */
+function DeviceRow({ row }: { row: Extract<Row, { kind: 'device' }> }): React.JSX.Element {
+  const on = useSession((s) => s.devicePrefs[row.key] ?? false)
+  const setDevicePref = useSession((s) => s.setDevicePref)
+  return (
+    <SettingsRow label={row.label} hint={row.hint}>
+      <Switch
+        checked={on}
+        ariaLabel={row.label}
+        // Off stores no key — the clean-file discipline every row follows.
+        onChange={(next) => setDevicePref(row.key, next || undefined)}
       />
     </SettingsRow>
   )

@@ -19,6 +19,7 @@ beforeEach(() => {
       load: vi.fn(async () => ({ ok: true, value: null })),
     },
     systemAccent: vi.fn(async () => '#000000'),
+    devicePrefs: { load: vi.fn(async () => ({ ok: true, value: null })) },
   }
 })
 

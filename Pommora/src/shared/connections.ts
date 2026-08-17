@@ -11,6 +11,8 @@
 // fs, no React. normalizeTitle is the SINGLE normalization the scanner, the phantom key,
 // resolution, and uniqueness all share, so they can never disagree.
 
+import type { ActionItem } from './menuModel'
+
 import type { PageClipboardAction, PageMetaAction } from './pageMenu'
 
 /** A page's display title from its Nexus-relative path — the basename, extension dropped. */
@@ -159,11 +161,7 @@ export type ConnUrlAction = (typeof CONN_URL_ACTIONS)[number]
 
 /** The pair that ends the menu, below a separator: they act on the link's existence rather than on
  *  how it reads, which is what sets them apart from the three above. */
-export const CONN_UNLINK_ROWS: readonly {
-  label: string
-  action: ConnUrlAction
-  separatorBefore?: boolean
-}[] = [
+export const CONN_UNLINK_ROWS: readonly ActionItem<ConnUrlAction>[] = [
   { label: 'Remove Link', action: 'link:remove', separatorBefore: true },
   { label: 'Delete', action: 'link:delete' },
 ]

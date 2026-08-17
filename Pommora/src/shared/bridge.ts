@@ -54,6 +54,8 @@ import type {
 import type { NavRowMenuAction, NavRowMenuContext } from './navRowMenu'
 import type { PropertyMenuAction, PropertyMenuContext } from './propertyMenu'
 import type { OptionMenuAction, OptionMenuContext } from './optionMenu'
+import type { RowMenuRequest } from './menuModel'
+import type { DevicePrefs } from './devicePrefs'
 import type { ColumnMenuAction, ColumnMenuContext } from './columnMenu'
 import type { EmbedAreaMenuAction, EmbedTitleMenuAction, ViewButtonMenuAction } from './viewMenus'
 import type { ViewRowAction, ViewRowMenuContext } from './viewRowMenu'
@@ -237,6 +239,8 @@ export interface Asks {
   // The hover card's universal size — one device-local db row.
   'hoverCard:load': { args: []; reply: Result<HoverCardSize | null> }
   'hoverCard:save': { args: [size: HoverCardSize]; reply: Result<null> }
+  'devicePrefs:load': { args: []; reply: Result<DevicePrefs | null> }
+  'devicePrefs:save': { args: [prefs: DevicePrefs]; reply: Result<null> }
   'capture:thumbnail': {
     args: [navKey: string, rect: ThumbRect, scaleFactor: number]
     reply: Result<{ url: string }>
@@ -313,6 +317,9 @@ export interface Asks {
   'conn-menu': { args: [ctx: ConnMenuContext]; reply: ConnMenuAction | null }
   'property-menu': { args: [ctx: PropertyMenuContext]; reply: PropertyMenuAction | null }
   'option-menu': { args: [ctx: OptionMenuContext]; reply: OptionMenuAction | null }
+  /** The generic list menu — any surface whose menu is plain rows. Replies with the chosen row's
+   *  action, or null on dismissal. */
+  'row-menu': { args: [req: RowMenuRequest]; reply: string | null }
 }
 
 /** Fire-and-forget sends (`send` → `on`) — no reply channel. */
