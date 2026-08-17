@@ -1,6 +1,7 @@
 import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
 import { PAGE_MOVE_ROW, type PageMoveContext } from '@shared/pageMenu'
 import type { ActionItem } from '@shared/menuModel'
+import { nativeRow } from './rowMenu'
 import { destinationNodes, popReturningMenu } from './returningMenu'
 
 // A menu model's rows as a native template: `separatorBefore` expands into real separator rows, and
@@ -24,12 +25,7 @@ export function pageMenuTemplate<A extends string>(
           (t) => t.path === move?.currentParentPath,
         ),
       })
-    else
-      template.push({
-        label: item.label,
-        enabled: !item.disabled,
-        click: click(item.action),
-      })
+    else template.push(nativeRow(item, click))
   }
   return template
 }

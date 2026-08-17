@@ -1,5 +1,6 @@
 import type { CSSProperties, HTMLAttributes, ReactNode, Ref } from 'react'
 import { shadowLiftVar, shadowStandardVar } from '../tokens/color.css'
+import { OUTLINE_INSET, OUTLINE_TRANSITION } from './glass-material'
 
 /** The static frostMaterial's recipe (glass-material.ts) — a dimmed blur with a glassy edge — made
  *  parametric so a pane can be tuned live. PANE_FROST is that recipe at a slightly deeper dim; every
@@ -72,11 +73,8 @@ export function frostStyle(p: FrostParams): CSSProperties {
   // Zero-valued edge pieces emit nothing — an edge-free frost (the ghost) carries no phantom
   // border geometry or invisible inset layers.
   const edges = [
-    // The outline's second pass, and only where there is an edge to double. A tinted edge on a 1px
-    // border reads far fainter than the same colour on the thicker borders tiles and embeds wear,
-    // and widening the border would shift everything inside it — so the weight goes inward instead,
-    // where nothing can move.
-    p.borderAlpha > 0 && `inset 0 0 0 1px var(--glass-outline, transparent)`,
+    // Only where there is an edge to double.
+    p.borderAlpha > 0 && OUTLINE_INSET,
     p.topSpecular > 0 && `inset 0 1px 0 #FFFFFF${hexA(p.topSpecular)}`,
     p.innerRing > 0 && `inset 0 0 0 1px #FFFFFF${hexA(p.innerRing)}`,
     p.lowerRim > 0 && `inset 0 -${p.depth}px ${p.rimBlur}px -${p.depth}px #FFFFFF${hexA(p.lowerRim)}`,
@@ -91,9 +89,7 @@ export function frostStyle(p: FrostParams): CSSProperties {
     WebkitBackdropFilter: filter,
     ...(p.borderAlpha > 0 && {
       border: `1px solid var(--glass-outline, #FFFFFF${hexA(p.borderAlpha)})`,
-      // Both passes of the outline move together: a colour easing in beside an edge that snapped
-      // is the desync that made the old stroke flash white for a frame.
-      transition: `border-color var(--duration-base) var(--ease-standard), box-shadow var(--duration-base) var(--ease-standard)`,
+      transition: OUTLINE_TRANSITION,
     }),
     boxShadow: edges.join(', '),
   }
