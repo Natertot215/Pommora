@@ -3,6 +3,7 @@ import type { NexusTree } from '@shared/types'
 import { dropLiveTree, getLiveTree, patchLiveTree, refreshTree } from './liveTree'
 import { readNexus } from './readNexus'
 import { pathExists } from './io/atomicWrite'
+import { recordWrite } from './io/writeEcho'
 
 vi.mock('./readNexus', () => ({ readNexus: vi.fn() }))
 vi.mock('./io/atomicWrite', () => ({ pathExists: vi.fn() }))
@@ -94,6 +95,21 @@ describe('refreshTree', () => {
     exists.mockResolvedValueOnce(false)
     await expect(refreshTree('/r')).rejects.toThrow('not found')
     expect(getLiveTree()).toBeNull()
+  })
+})
+
+describe('the write-invalidation bridge', () => {
+  it('an app write invalidates the held tree so the next read walks fresh', async () => {
+    const tA = T('a')
+    walk.mockResolvedValueOnce(tA)
+    await refreshTree('/r')
+    expect(getLiveTree()).toBe(tA)
+    recordWrite('/r/Notes/A.md')
+    expect(getLiveTree()).toBeNull()
+    const tB = T('b')
+    walk.mockResolvedValueOnce(tB)
+    expect(await refreshTree('/r')).toBe(tB)
+    expect(getLiveTree()).toBe(tB)
   })
 })
 

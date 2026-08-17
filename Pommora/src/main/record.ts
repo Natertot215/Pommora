@@ -9,6 +9,7 @@ import { errText } from '@shared/result'
 import type { NexusTree, PageNode, SetNode } from '@shared/types'
 import { readKey, writeKey } from './db/localState'
 import { isAdoptedId } from './ids'
+import { refreshTree, seedLiveTree } from './liveTree'
 import { CONTEXTS_REGISTRY_REL } from './paths'
 import { readNexus } from './readNexus'
 import { applyRemints, runRemintPass } from './remint'
@@ -160,6 +161,21 @@ export async function runOpenRecord(root: string): Promise<void> {
     const projection = applyRemints(walked, reminted)
     await recordEldest(root, projection, prior)
     writeBaseline(latchBaseline(projection, unreadablePaths, prior))
+    // This walk observed pre-remint disk, so it may seed the session only when the remint
+    // wrote nothing — otherwise two entities would share an id all session, colliding every
+    // id-keyed store. A written remint forces the fresh walk; if that fails, the pre-remint
+    // tree still serves (stale ids beat no tree).
+    seedLiveTree(tree)
+    if (reminted.length > 0) {
+      try {
+        await refreshTree(root)
+      } catch (e) {
+        console.error(
+          'record: the post-remint walk failed; the pre-remint tree serves:',
+          errText(e),
+        )
+      }
+    }
   } catch (e) {
     console.error('record: the open pass failed; the prior record stands:', errText(e))
   }

@@ -171,9 +171,9 @@ At the end of this plan, none of that survives as a hot path. Main holds a **liv
 **Failure half:** `nexus:state` with no live tree and a failing walk → the existing error envelope, unchanged; trash listing with a null tree → refresh first (trash is never hot); a remint-forced second walk failing → the pre-remint tree still serves (stale ids for the session beat no tree), logged.
 
 **Steps:**
-- [ ] Wire the handlers; tests: ⌘R provably forces a walk (refresh spy) while a second `nexus:state` call provably doesn't; a reminted open provably re-walks (fixture with a duplicated id); a missing-root refresh surfaces `status: 'error'`.
-- [ ] Full gates green. Manual: launch the dev app, confirm one walk logged at open on a clean nexus, sidebar intact, ⌘R walks again.
-- [ ] Commit: `feat(main): reads serve the live tree; open and reload are the verification points`
+- [x] Wire the handlers; tests: ⌘R provably forces a walk (refresh spy) while a second `nexus:state` call provably doesn't; a reminted open provably re-walks (fixture with a duplicated id); a missing-root refresh surfaces `status: 'error'`.
+- [x] Full gates green. Manual: launch the dev app, confirm one walk logged at open on a clean nexus, sidebar intact, ⌘R walks again. *(Deferred to Gate 1's manual check, immediately below.)*
+- [x] Commit: `feat(main): reads serve the live tree; open and reload are the verification points`
 
 #### Gate 1 — the tree lives in main
 - [ ] Gates green, exit codes read directly.
@@ -257,6 +257,7 @@ At the end of this plan, none of that survives as a hot path. Main holds a **liv
 
 **Steps:**
 - [ ] Tests per arm: patched tree matches a fresh walk of the mutated fixture (reuse the Task 4 must-agree harness); registry rename shows the *disk-normalized* name inside a collection's embedded defs; view save and `container:configure` show in the container node; `setContext` patches with zero walks; an option rename via `PropertiesPane` and a nexus rename via `Banner` each land without ⌘R; the negative control both halves.
+- [ ] Remove the Task 3 write-invalidation bridge — the `onRecordedWrite` registration in `liveTree.ts` (and the listener seam in `writeEcho.ts` if nothing else consumes it): with every write channel patching for itself, a blanket drop-on-write would defeat each patch it rides behind. The bridge test in `liveTree.test.ts` goes with it.
 - [ ] Full gates green.
 - [ ] Commit: `feat(main): every write channel confirms by patch and push`
 
@@ -446,6 +447,8 @@ At the end of this plan, none of that survives as a hot path. Main holds a **liv
 
 ### Open Against Later Tasks
 ### Deviations
+- Task 3, **the write-invalidation bridge**: with `nexus:state` serving the held tree, every in-app write became invisible until Task 6 exists — app writes are echo-suppressed from the watcher, and nothing patches the tree until Phase 3. The reload being deleted was silently guaranteeing write freshness for every channel at once (the plan's governing caution, landing at this site). Bridge: `writeEcho.recordWrite` — the one funnel every app write crosses — notifies `liveTree`, which nulls the held tree and bumps the epoch, so the next read walks fresh and an in-flight walk re-runs. Walk count in the bridge window matches today's (one per confirming `load()`). **Task 6 must remove the bridge** (the `onRecordedWrite` registration in `liveTree.ts`) when the write channels patch for themselves — a step added to Task 6.
+- Task 3, **⌘R forces the walk by dropping, not by calling `refreshTree` at the menu**: `Reload` is a real `webContents.reload`, and a menu-side `refreshTree` would race the booting renderer's read (which would serve the stale held tree with no push to correct it). The menu click calls `dropLiveTree()`; the boot read's `getLiveTree() ?? refreshTree` arm then performs the forced walk, and a rejection reaches the error envelope through that same arm. Seeding also moved *inside* `runOpenRecord` (it holds the walked tree and the remint verdict; both its call sites — adopt and launch-restore — need the seed), rather than returning `{tree, reminted}` for `adoptNexusInner` to interpret.
 - Task 1: `treeStabilize.ts` and its test moved to `src/shared` alongside the transforms. The shape-parity test crosses main's walk and `stabilize`, and the composite tsconfigs bar a main-side test from importing renderer files — `stabilize` is pure `@shared`-only code, so shared is its natural home. Plan searched for later assumptions: only Grounding names its old path; no task consumes it elsewhere. The parity test's red state was proven by a transform bypassing the factory (sabotaging the factory itself proves nothing — the walk shares it).
 ### Lessons
 ### Sequenced After

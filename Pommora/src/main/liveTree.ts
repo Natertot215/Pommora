@@ -5,6 +5,7 @@
 
 import type { NexusTree } from '@shared/types'
 import { pathExists } from './io/atomicWrite'
+import { onRecordedWrite } from './io/writeEcho'
 import { readNexus } from './readNexus'
 
 interface WalkSlot {
@@ -37,6 +38,19 @@ export function dropLiveTree(): void {
   tree = null
   slot = null
 }
+
+/** Install a tree walked outside the seam — the open record pass, whose walk already ran. */
+export function seedLiveTree(t: NexusTree): void {
+  tree = t
+}
+
+// An app write makes the held tree stale, and no writer patches it in place yet — invalidate
+// so the next read walks fresh; an in-flight walk re-runs via the epoch. The echo funnel is
+// the one seam every app write already crosses.
+onRecordedWrite(() => {
+  tree = null
+  epoch++
+})
 
 export function refreshTree(root: string): Promise<NexusTree> {
   if (slot && slot.root === root) return slot.promise
