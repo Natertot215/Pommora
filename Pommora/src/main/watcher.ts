@@ -141,6 +141,9 @@ async function settle(root: string, win: BrowserWindow, excluded: string[]): Pro
     const before = getLiveTree()
     const outcome = await applyWatchEvents(root, events, excluded)
     const tree = outcome === 'refresh' ? await refreshTree(root) : getLiveTree()
+    // Re-checked after the awaits: a session that switched mid-settle must not receive the
+    // OLD root's walked tree (a superseded walk still returns it to its awaiters).
+    if (sessionRoot() !== root || win.isDestroyed()) return
     if (tree && tree !== before) pushToWindow(win, 'nexus:changed', tree)
   } catch {
     // Transient FS state mid-write — the next settle re-reads (Reload is the fallback).
