@@ -1,6 +1,6 @@
-// Live filesystem watcher: on a debounced settle it re-reads the tree and pushes it to the
-// renderer over 'nexus:changed'. No pause flag — an in-app write that echoes back is a
-// harmless redundant re-read. ⌘R Reload stays as the manual fallback.
+// Live filesystem watcher: events accumulate through a debounced settle, then classify to
+// targeted patches against the live tree — the unclassifiable fall back to one verification
+// walk. The path is spent, not discarded. ⌘R Reload stays as the manual fallback.
 
 import { relative, sep } from 'node:path'
 import chokidar, { type FSWatcher } from 'chokidar'
@@ -13,14 +13,16 @@ import { isRecentWrite } from './io/writeEcho'
 import { isMarkdownFile } from './io/walk'
 import { HOMEPAGE_HOST_DIRNAME, nexusConfig, NEXUS_CONFIG_FILES } from './paths'
 import { push as pushToWindow } from './ipc'
-import { refreshTree } from './liveTree'
+import { getLiveTree, refreshTree } from './liveTree'
 import { sessionRoot } from './session'
+import { applyWatchEvents, type WatchEvent, type WatchEventName } from './watchPatch'
 
 const SETTLE_MS = 200
 
 let watcher: FSWatcher | null = null
 let debounce: ReturnType<typeof setTimeout> | null = null
 let navDebounce: ReturnType<typeof setTimeout> | null = null
+let batch: WatchEvent[] = []
 
 /** The navigation file — its changes push nav state only, never a tree re-walk (nav data isn't
  *  in the tree). */
@@ -79,29 +81,32 @@ export async function startWatcher(root: string, win: BrowserWindow): Promise<vo
     awaitWriteFinish: { stabilityThreshold: SETTLE_MS, pollInterval: 50 },
     atomic: true, // coalesce the mv-_tmp atomic writes our writers use
   })
-  const onEvent = (path: string): void => {
-    // Navigation events skip the echo suppression BELOW it — the window exists to spare wasted
-    // full tree walks, and a nav event never walks the tree. A hand-edit landing right after the
-    // app's own write is therefore never swallowed; a self-write's echo is one debounced re-read
-    // of a small file whose content the renderer already holds.
-    if (isNavPath(root, path)) {
-      if (navDebounce) clearTimeout(navDebounce)
-      navDebounce = setTimeout(() => void pushNav(root, win), SETTLE_MS)
-      return
+  const onEvent =
+    (event: WatchEventName) =>
+    (path: string): void => {
+      // Navigation events skip the echo suppression BELOW it — the window exists to spare
+      // wasted tree work, and a nav event never touches the tree. A hand-edit landing right
+      // after the app's own write is therefore never swallowed; a self-write's echo is one
+      // debounced re-read of a small file whose content the renderer already holds.
+      if (isNavPath(root, path)) {
+        if (navDebounce) clearTimeout(navDebounce)
+        navDebounce = setTimeout(() => void pushNav(root, win), SETTLE_MS)
+        return
+      }
+      // The app's own atomic writes echo back here — skip them: every tree-relevant
+      // in-app write confirms through its own channel, so the echo only buys wasted
+      // work (hot under block gestures + embed typing). External edits still land.
+      if (isRecentWrite(path)) return
+      batch.push({ event, absPath: path })
+      if (debounce) clearTimeout(debounce)
+      debounce = setTimeout(() => void settle(root, win, excluded), SETTLE_MS)
     }
-    // The app's own atomic writes echo back here — skip them: every tree-relevant
-    // in-app write refetches explicitly, so the echo only buys a wasted full walk
-    // (hot under block gestures + embed typing). External edits still walk.
-    if (isRecentWrite(path)) return
-    if (debounce) clearTimeout(debounce)
-    debounce = setTimeout(() => void push(root, win), SETTLE_MS)
-  }
   watcher
-    .on('add', onEvent)
-    .on('change', onEvent)
-    .on('unlink', onEvent)
-    .on('addDir', onEvent)
-    .on('unlinkDir', onEvent)
+    .on('add', onEvent('add'))
+    .on('change', onEvent('change'))
+    .on('unlink', onEvent('unlink'))
+    .on('addDir', onEvent('addDir'))
+    .on('unlinkDir', onEvent('unlinkDir'))
     // An unhandled 'error' on an EventEmitter is RE-THROWN → it would crash the main
     // process (EMFILE/ENOSPC from fd/inotify-watch exhaustion, EPERM, a watched dir
     // vanishing). Log + no-op; the tree stays as last-read and ⌘R Reload recovers.
@@ -122,15 +127,21 @@ export function stopWatcher(): void {
     void watcher.close()
     watcher = null
   }
+  batch = []
 }
 
-async function push(root: string, win: BrowserWindow): Promise<void> {
+/** Spend the settle window's batch: patch what classifies, walk for the rest — through the
+ *  seam either way, so what the renderer receives is exactly what main now holds. Push only
+ *  when the tree object moved (an all-index-only batch changes nothing anyone renders). */
+async function settle(root: string, win: BrowserWindow, excluded: string[]): Promise<void> {
   if (sessionRoot() !== root || win.isDestroyed()) return
+  const events = batch
+  batch = []
   try {
-    // Through the seam, so the walked tree also INSTALLS — a push the held tree never saw
-    // would leave main serving a pre-edit world to every later read.
-    const tree = await refreshTree(root)
-    pushToWindow(win, 'nexus:changed', tree)
+    const before = getLiveTree()
+    const outcome = await applyWatchEvents(root, events, excluded)
+    const tree = outcome === 'refresh' ? await refreshTree(root) : getLiveTree()
+    if (tree && tree !== before) pushToWindow(win, 'nexus:changed', tree)
   } catch {
     // Transient FS state mid-write — the next settle re-reads (Reload is the fallback).
   }

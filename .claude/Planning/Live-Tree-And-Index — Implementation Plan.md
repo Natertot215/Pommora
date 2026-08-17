@@ -222,10 +222,10 @@ At the end of this plan, none of that survives as a hot path. Main holds a **liv
 **Failure half:** a burst mixing patchable and unpatchable events → one refresh, not N; an event arriving mid-walk → queued for the next settle (the single-flight walk plus the epoch discard absorb the race).
 
 **Steps:**
-- [ ] Tests: batch accumulation, mixed-batch refresh, push-on-change-only (asserted on top-level identity).
-- [ ] Full gates green. Manual pass (dev app + a terminal): externally create, edit, then delete a page — each surfaces within the settle with no walk logged; externally move a whole folder — the fallback walk fires and the tree is correct.
-- [ ] Rewrite the ArchitecturePM watcher paragraph in this commit.
-- [ ] Commit: `feat(watcher): the path is spent, not discarded`
+- [x] Tests: batch accumulation, mixed-batch refresh, push-on-change-only (asserted on top-level identity).
+- [x] Full gates green. Manual pass (dev app + a terminal): externally create, edit, then delete a page — each surfaces within the settle with no walk logged; externally move a whole folder — the fallback walk fires and the tree is correct. *(Run at Gate 2, immediately below.)*
+- [x] Rewrite the ArchitecturePM watcher paragraph in this commit.
+- [x] Commit: `feat(watcher): the path is spent, not discarded`
 
 #### Gate 2 — external edits at per-path cost
 - [ ] Gates green; manual external-edit pass done and logged in the Log.
