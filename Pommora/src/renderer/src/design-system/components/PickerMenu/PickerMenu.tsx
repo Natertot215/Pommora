@@ -230,6 +230,10 @@ export function PickerMenu({
         return
       }
       const near = (x: number): string => `${edge(pw, x)}px ${eff === 'up' ? ph : 0}px`
+      // Every vertical placement hangs off the same edge of the anchor; only the horizontal anchor
+      // below tells them apart.
+      const vertical =
+        eff === 'up' ? { bottom: window.innerHeight - t.top + GAP } : { top: t.bottom + GAP }
       // `auto` takes the centred placement only where it lands whole — a centred pane that had to be
       // clamped sits off its trigger anyway, and the edge anchor at least stays put as content grows.
       if (decidedCentre.current === null)
@@ -243,8 +247,6 @@ export function PickerMenu({
         // The start point slides to the anchor: the layer is translateX(-50%)-anchored, so it
         // measures from the pane's left EDGE (left − half). Unclamped this reduces to half — dead
         // centre, which is what an unclamped pane already shows; a viewport clamp is what moves it.
-        const vertical =
-          eff === 'up' ? { bottom: window.innerHeight - t.top + GAP } : { top: t.bottom + GAP }
         setPos({ ...vertical, left, centred: true, origin: near(c - (left - half)) })
         return
       }
@@ -252,14 +254,12 @@ export function PickerMenu({
       // rightward and a row's x never moves when content resizes.
       if (origin === 'left') {
         const left = Math.min(Math.max(edgeL, c - ANCHOR_RESERVE), Math.max(edgeL, edgeR - pw))
-        const vertical =
-          eff === 'up' ? { bottom: window.innerHeight - t.top + GAP } : { top: t.bottom + GAP }
         setPos({ ...vertical, left, origin: near(ANCHOR_RESERVE) })
         return
       }
+      // The default anchors the pane's RIGHT edge, so the bound arrives mirrored: an inset from the
+      // window's right rather than a coordinate from its left.
       const right = Math.max(window.innerWidth - edgeR, window.innerWidth - c - ANCHOR_RESERVE)
-      const vertical =
-        eff === 'up' ? { bottom: window.innerHeight - t.top + GAP } : { top: t.bottom + GAP }
       setPos({ ...vertical, right, origin: near(pw - ANCHOR_RESERVE) })
     }
     place.current = measure

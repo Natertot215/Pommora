@@ -233,4 +233,3 @@ export function commitEdit(
 
 // Row cap — how many suggestions are ranked before the rest are dropped.
 export const AC_MAX = 6
-

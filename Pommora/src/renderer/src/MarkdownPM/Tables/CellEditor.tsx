@@ -235,7 +235,7 @@ export function CellEditor({
         caretX={ac?.caretX ?? 0}
         caretTop={ac?.caretTop ?? 0}
         caretBottom={ac?.caretBottom ?? 0}
-        bounds={{ left: ac?.boundsLeft ?? 0, right: ac?.boundsRight ?? 0 }}
+        bounds={ac?.bounds}
         query={ac?.query ?? ''}
         onPick={commit}
       />

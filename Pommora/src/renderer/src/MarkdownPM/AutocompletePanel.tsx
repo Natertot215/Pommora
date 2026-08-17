@@ -15,7 +15,7 @@ interface Props {
   caretTop: number
   caretBottom: number
   /** The editor's own surface, which the pane slides within rather than the viewport. */
-  bounds: { left: number; right: number }
+  bounds?: { left: number; right: number }
   query: string
   onPick: (row: AcRow) => void
 }
