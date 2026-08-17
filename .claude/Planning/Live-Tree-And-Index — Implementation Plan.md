@@ -176,11 +176,11 @@ At the end of this plan, none of that survives as a hot path. Main holds a **liv
 - [x] Commit: `feat(main): reads serve the live tree; open and reload are the verification points`
 
 #### Gate 1 — the tree lives in main
-- [ ] Gates green, exit codes read directly.
-- [ ] Clean-open path walks exactly once (log evidence); `nexus:state` serves without walking; ⌘R forces the walk and propagates failure; a nexus rename reseeds (no dead root path in the tree).
-- [ ] `grep -rn "readNexus(" src/main --include="*.ts"` excluding tests → `readNexus.ts`, `liveTree.ts`, `record.ts`, **plus `watcher.ts` (converts in Task 5) and `assignment.ts` (dies in Task 11)** — the strict three-file form is Gate 4's check, not this one's.
-- [ ] Simplification + review dispatched against `<base>..HEAD`; concerns fixed or ruled.
-- [ ] Progress hashes filled in.
+- [x] Gates green, exit codes read directly.
+- [x] Clean-open path walks exactly once (log evidence); `nexus:state` serves without walking; ⌘R forces the walk and propagates failure; a nexus rename reseeds (no dead root path in the tree). *(See Evidence.)*
+- [x] `grep -rn "readNexus(" src/main --include="*.ts"` excluding tests → `readNexus.ts`, `liveTree.ts`, `record.ts`, `assignment.ts` (dies in Task 11) — `watcher.ts` converted at this gate already (the review's stale-serving finding), ahead of Task 5's full classification work.
+- [x] Simplification + review dispatched against `<base>..HEAD`; concerns fixed or ruled. *(Review: 5 findings — the at-write-start invalidation race and the watcher's install bypass fixed here; the error-path late clobber guarded; the epoch-churn note is bridge-lifetime by construction; the `assignment.ts` walk is Task 11's planned kill. Simplifier: two folds, both verified equivalent.)*
+- [x] Progress hashes filled in.
 
 ---
 
@@ -257,7 +257,7 @@ At the end of this plan, none of that survives as a hot path. Main holds a **liv
 
 **Steps:**
 - [ ] Tests per arm: patched tree matches a fresh walk of the mutated fixture (reuse the Task 4 must-agree harness); registry rename shows the *disk-normalized* name inside a collection's embedded defs; view save and `container:configure` show in the container node; `setContext` patches with zero walks; an option rename via `PropertiesPane` and a nexus rename via `Banner` each land without ⌘R; the negative control both halves.
-- [ ] Remove the Task 3 write-invalidation bridge — the `onRecordedWrite` registration in `liveTree.ts` (and the listener seam in `writeEcho.ts` if nothing else consumes it): with every write channel patching for itself, a blanket drop-on-write would defeat each patch it rides behind. The bridge test in `liveTree.test.ts` goes with it.
+- [ ] Remove the Task 3 write-invalidation bridge — the `writesSeen()` bracket in `ipc.ts`'s ask wrapper and the context-menu confirm's `invalidateLiveTree()` call in `index.ts` (keep `invalidateLiveTree` itself if a fallback arm still wants it; delete `writesSeen` if nothing else consumes it): with every write channel patching for itself, a blanket drop-on-write would defeat each patch it rides behind.
 - [ ] Full gates green.
 - [ ] Commit: `feat(main): every write channel confirms by patch and push`
 
@@ -417,10 +417,10 @@ At the end of this plan, none of that survives as a hot path. Main holds a **liv
 ## Implementation Log
 
 ### Progress
-- [ ] **Phase 1** — The patch seam and the live tree · base `9c714e2a`
-  - [ ] Task 1 — transforms to shared, canon-grade
-  - [ ] Task 2 — the live tree module
-  - [ ] Task 3 — reads serve the live tree
+- [x] **Phase 1** — The patch seam and the live tree · base `9c714e2a` · gate `eccb3876` → `88b497e4` → `bfae0ca7` → gate-fold commit
+  - [x] Task 1 — transforms to shared, canon-grade · `eccb3876`
+  - [x] Task 2 — the live tree module · `88b497e4`
+  - [x] Task 3 — reads serve the live tree · `bfae0ca7`
 - [ ] **Phase 2** — The watcher spends its path
   - [ ] Task 4 — event classification
   - [ ] Task 5 — the watcher patches
@@ -447,9 +447,12 @@ At the end of this plan, none of that survives as a hot path. Main holds a **liv
 
 ### Open Against Later Tasks
 ### Deviations
-- Task 3, **the write-invalidation bridge**: with `nexus:state` serving the held tree, every in-app write became invisible until Task 6 exists — app writes are echo-suppressed from the watcher, and nothing patches the tree until Phase 3. The reload being deleted was silently guaranteeing write freshness for every channel at once (the plan's governing caution, landing at this site). Bridge: `writeEcho.recordWrite` — the one funnel every app write crosses — notifies `liveTree`, which nulls the held tree and bumps the epoch, so the next read walks fresh and an in-flight walk re-runs. Walk count in the bridge window matches today's (one per confirming `load()`). **Task 6 must remove the bridge** (the `onRecordedWrite` registration in `liveTree.ts`) when the write channels patch for themselves — a step added to Task 6.
+- Task 3, **the write-invalidation bridge**: with `nexus:state` serving the held tree, every in-app write became invisible until Task 6 exists — app writes are echo-suppressed from the watcher, and nothing patches the tree until Phase 3. The reload being deleted was silently guaranteeing write freshness for every channel at once (the plan's governing caution, landing at this site). Bridge: the IPC serve layer brackets every ask handler with `writeEcho.writesSeen()` and calls `invalidateLiveTree()` (null tree + epoch bump) when a handler wrote — at handler **completion**, because the writes are finished by then; Gate 1's review proved an at-write-start invalidation lets the epoch-discarded walk's immediate re-run install mid-write disk as canon. The native context menu outlives its handler, so its post-mutation confirm invalidates explicitly. Walk count in the bridge window matches today's (one per confirming `load()`). **Task 6 must remove the bridge** — a step added to Task 6.
 - Task 3, **⌘R forces the walk by dropping, not by calling `refreshTree` at the menu**: `Reload` is a real `webContents.reload`, and a menu-side `refreshTree` would race the booting renderer's read (which would serve the stale held tree with no push to correct it). The menu click calls `dropLiveTree()`; the boot read's `getLiveTree() ?? refreshTree` arm then performs the forced walk, and a rejection reaches the error envelope through that same arm. Seeding also moved *inside* `runOpenRecord` (it holds the walked tree and the remint verdict; both its call sites — adopt and launch-restore — need the seed), rather than returning `{tree, reminted}` for `adoptNexusInner` to interpret.
 - Task 1: `treeStabilize.ts` and its test moved to `src/shared` alongside the transforms. The shape-parity test crosses main's walk and `stabilize`, and the composite tsconfigs bar a main-side test from importing renderer files — `stabilize` is pure `@shared`-only code, so shared is its natural home. Plan searched for later assumptions: only Grounding names its old path; no task consumes it elsewhere. The parity test's red state was proven by a transform bypassing the factory (sabotaging the factory itself proves nothing — the walk shares it).
+### Evidence
+- **Gate 1 manual pass** (sandboxed dev instance — separate userData via a temporary env-gated `app.setPath` line, so Nathan's live session and real config stayed untouched; scratch nexus; temporary `[walk]` log in `readNexus`, both instruments removed after the pass): clean open logged **exactly one walk**; two consecutive `nexus:state` calls and a full renderer reload (`Page.reload`) added **zero walks** (the held tree serves across reloads); `nexus:rename` to a new folder name reseeded — the served tree carried the new `rootPath`/`name` with all child paths intact and no dead-root residue. The rename settle also logged one watcher walk on the new root — the watcher is unconverted until Task 5, where that walk becomes a classification. The menu-⌘R drop itself is three inspected lines whose drop→next-read-walks semantics are unit-covered in `liveTree.test.ts`; missing-root rejection reaching the error envelope is likewise unit-covered (drop test) plus the unchanged `nexus:state` catch arm.
+
 ### Lessons
 ### Sequenced After
 - The property-cascade journal (record the owed sweep before sweeping; heal at open) — the next session after this plan closes.

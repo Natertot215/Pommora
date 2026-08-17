@@ -453,11 +453,7 @@ export function patchNodeInTree(
 /** Stable order-by-id: listed ids in `order` order, unknown ids after in their current order.
  *  Exported so an optimistic view-local override ranks by the same law the tree patch applies. */
 export function byOrder<T extends { id: string }>(arr: T[], order: string[]): T[] {
-  const pos = new Map(order.map((id, i) => [id, i]))
-  return [...arr].sort(
-    (a, b) =>
-      (pos.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (pos.get(b.id) ?? Number.MAX_SAFE_INTEGER),
-  )
+  return reorderById(arr, order, (item) => item.id)
 }
 
 export function reorderTopInTree(tree: NexusTree, _key: StateOrderKey, order: string[]): NexusTree {

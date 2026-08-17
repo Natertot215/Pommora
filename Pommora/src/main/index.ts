@@ -25,7 +25,7 @@ import { errText, fail, ok, type Result } from '@shared/result'
 import { BUSY, NO_NEXUS, push, scopeGet, scopeSet, serveBridge } from './ipc'
 import type { MutateRequest, ContextTarget } from '@shared/mutate'
 import { WINDOW_BG } from '@shared/theme'
-import { dropLiveTree, getLiveTree, refreshTree } from './liveTree'
+import { dropLiveTree, getLiveTree, invalidateLiveTree, refreshTree } from './liveTree'
 import { runOpenRecord } from './record'
 import { readPage } from './readPage'
 import {
@@ -371,15 +371,16 @@ async function adoptNexusInner(path: string, latchRecord: boolean): Promise<void
   // the closed window left rather than whatever a sync daemon materializes first. Every root
   // switch drops and reseeds the live tree, latch or no latch — a re-point (nexus rename)
   // skips the record but must not keep serving the dead root's tree.
-  const rootChanged = root !== priorRoot
-  if (rootChanged) dropLiveTree()
-  if (latchRecord && rootChanged) {
-    await runOpenRecord(root)
-  } else if (rootChanged) {
-    try {
-      await refreshTree(root)
-    } catch (e) {
-      console.error('adopt: the seed walk failed; reads will retry:', errText(e))
+  if (root !== priorRoot) {
+    dropLiveTree()
+    if (latchRecord) {
+      await runOpenRecord(root)
+    } else {
+      try {
+        await refreshTree(root)
+      } catch (e) {
+        console.error('adopt: the seed walk failed; reads will retry:', errText(e))
+      }
     }
   }
   // A user-initiated open always has a window; launch-restore starts its watcher after
@@ -1361,6 +1362,9 @@ serveBridge(
       fn: async (win: BrowserWindow | null, target: ContextTarget): Promise<void> => {
         if (!win) return
         await showContextMenu(win, target, await mutateDeps(), () => {
+          // The menu outlives its IPC handler, so the completion-time invalidation above
+          // misses these writes; this confirm fires after the mutation finished.
+          invalidateLiveTree()
           push(win, 'menu:action', 'reload-state')
         })
       },
