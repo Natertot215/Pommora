@@ -27,6 +27,8 @@ import { entityIcon, iconNameOr } from '@renderer/design-system/symbols'
 import type { EntityIconKind } from '@shared/types'
 import { useSession } from '@renderer/store'
 import { tileMenuModel } from '@shared/tileMenu'
+import { popRowMenu, useNativeMenus } from '@renderer/nativeMenus'
+import { useHeld } from '@renderer/design-system/useHeld'
 import { findCollection, findCollectionForSet, findSet } from '@renderer/Detail/Scope'
 import { mintDefaultView } from '@shared/views'
 import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
@@ -207,7 +209,7 @@ export function BlockSurface({ host }: { host: BlockHostRef }): React.JSX.Elemen
   )
 
   const [handleMenu, setHandleMenu] = useState<{ id: string; el: HTMLElement } | null>(null)
-  const nativeMenus = useSession((st) => st.devicePrefs.nativeMenus ?? false)
+  const nativeMenus = useNativeMenus()
   // The native path never sets `handleMenu`, so the in-app pane is never mounted for it — one menu
   // opens, and which one is the preference's whole job.
   const popNativeMenu = useRef<(id: string, el: HTMLElement) => void>(() => undefined)
@@ -221,9 +223,7 @@ export function BlockSurface({ host }: { host: BlockHostRef }): React.JSX.Elemen
   )
   // The menu stays mounted through its Bloom-out, so the tile it belongs to has to outlive the
   // dismissal that cleared it — otherwise React tears the pane out before it can retract.
-  const heldMenu = useRef(handleMenu)
-  if (handleMenu) heldMenu.current = handleMenu
-  const menu = handleMenu ?? heldMenu.current
+  const menu = useHeld(handleMenu, handleMenu !== null)
   const setStyle = useCallback(
     (id: string, style: BlockStyle) => {
       saveBlocks((cur) =>
@@ -410,25 +410,23 @@ export function BlockSurface({ host }: { host: BlockHostRef }): React.JSX.Elemen
       locked: (entry.locked ?? false) || hostLocked,
       containerLocked: hostLocked,
     })
-    const box = el.getBoundingClientRect()
-    void window.nexus
-      .rowMenu({
-        items,
-        anchor: { left: box.left, top: box.top, width: box.width, height: box.height },
-      })
-      .then((action) => {
-        if (action === null) return
-        const pickIdx = action.startsWith('tile:pick:') ? Number(action.slice(10)) : -1
-        const chosen = pickIdx >= 0 ? picks[pickIdx] : undefined
-        if (chosen?.kind === 'page') applyPagePick(id, chosen.value)
-        else if (chosen?.kind === 'view') applyViewPick(id, chosen.value)
-        else if (action === 'tile:style:bordered') setStyle(id, 'bordered')
-        else if (action === 'tile:style:borderless') setStyle(id, 'borderless')
-        else if (action.startsWith('tile:zoom:')) setBlockZoom(id, Number(action.slice(10)))
-        else if (action === 'tile:duplicate') duplicateBlock(id)
-        else if (action === 'tile:delete') confirmRemove(id)
-        else if (action === 'tile:lock') toggleLock(id)
-      })
+    void popRowMenu(items, el).then((action) => {
+      if (action === null) return
+      // The two rows that carry a value carry it in their action, so each names its prefix once.
+      const arg = (prefix: string): string | undefined =>
+        action.startsWith(prefix) ? action.slice(prefix.length) : undefined
+      const picked = arg('tile:pick:')
+      const zoom = arg('tile:zoom:')
+      const chosen = picked === undefined ? undefined : picks[Number(picked)]
+      if (chosen?.kind === 'page') applyPagePick(id, chosen.value)
+      else if (chosen?.kind === 'view') applyViewPick(id, chosen.value)
+      else if (zoom !== undefined) setBlockZoom(id, Number(zoom))
+      else if (action === 'tile:style:bordered') setStyle(id, 'bordered')
+      else if (action === 'tile:style:borderless') setStyle(id, 'borderless')
+      else if (action === 'tile:duplicate') duplicateBlock(id)
+      else if (action === 'tile:delete') confirmRemove(id)
+      else if (action === 'tile:lock') toggleLock(id)
+    })
   }
 
   return (

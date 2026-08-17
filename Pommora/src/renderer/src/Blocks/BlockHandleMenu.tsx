@@ -57,27 +57,21 @@ function DrillLevel({
     <div className={s.pane}>
       <MenuScrollFrame
         maxHeight={PICKER_MAX_HEIGHT}
-        header={
-          <MenuPaneTopRow
-            label={backLabel}
-            current={title}
-            onBack={onBack}
-          />
-        }
+        header={<MenuPaneTopRow label={backLabel} current={title} onBack={onBack} />}
         footer={
           footerNodes.length ? (
             <MenuBottomRow
-                leading={footerNodes.map((n, i) => (
-                  <button
-                    key={`${n.label}-${String(i)}`}
-                    type="button"
-                    className={footerAction}
-                    onClick={n.pick === undefined ? undefined : () => resolve(n.pick)}
-                  >
-                    {n.label}
-                  </button>
-                ))}
-              />
+              leading={footerNodes.map((n, i) => (
+                <button
+                  key={`${n.label}-${String(i)}`}
+                  type="button"
+                  className={footerAction}
+                  onClick={n.pick === undefined ? undefined : () => resolve(n.pick)}
+                >
+                  {n.label}
+                </button>
+              ))}
+            />
           ) : undefined
         }
       >
@@ -210,28 +204,25 @@ export function BlockHandleMenu({
       <MenuScrollFrame
         footer={
           <MenuBottomRow
-              leading={
-                containerLocked ? (
-                  <span
-                    className={`${footerLockAction} ${rowDisabled}`}
-                    title="Locked by the board"
-                  >
-                    <Icon name="lock" size={GLYPH} className={lockIcon} />
-                    Locked
-                  </span>
-                ) : (
-                  <button
-                    type="button"
-                    className={footerLockAction}
-                    aria-label={locked ? 'Unlock tile' : 'Lock tile'}
-                    onClick={() => onToggleLock()}
-                  >
-                    <Icon name="lock" size={GLYPH} className={lockIcon} />
-                    {locked ? 'Unlock' : 'Lock'}
-                  </button>
-                )
-              }
-            />
+            leading={
+              containerLocked ? (
+                <span className={`${footerLockAction} ${rowDisabled}`} title="Locked by the board">
+                  <Icon name="lock" size={GLYPH} className={lockIcon} />
+                  Locked
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  className={footerLockAction}
+                  aria-label={locked ? 'Unlock tile' : 'Lock tile'}
+                  onClick={() => onToggleLock()}
+                >
+                  <Icon name="lock" size={GLYPH} className={lockIcon} />
+                  {locked ? 'Unlock' : 'Lock'}
+                </button>
+              )
+            }
+          />
         }
       >
         {entry.type === 'page' && pageInfo && (
@@ -333,17 +324,9 @@ export function BlockHandleMenu({
 
   const stylePane = (
     <div className={s.pane}>
-      <MenuPaneTopRow
-        label="Menu"
-        current="Style"
-        onBack={() => setPane('root')}
-      />
+      <MenuPaneTopRow label="Menu" current="Style" onBack={() => setPane('root')} />
       {(['bordered', 'borderless'] as const).map((v) => (
-        <MenuOption
-          key={v}
-          selected={style === v}
-          onClick={act(() => onStyle(v))}
-        >
+        <MenuOption key={v} selected={style === v} onClick={act(() => onStyle(v))}>
           {v === 'bordered' ? 'Bordered' : 'Borderless'}
         </MenuOption>
       ))}
@@ -376,18 +359,18 @@ export function BlockHandleMenu({
       </PickerMenu>
       {/* No onDismiss — the document listener above owns dismissal, so a pick can leave it open. */}
       <PickerMenu open={open && scaleOpen} triggerRef={scaleTriggerRef} solid>
-          <div className={s.scaleMenu} data-scale-menu>
-            {ZOOM_STEPS.map((st) => (
-              <MenuOption
-                key={st.label}
-                selected={currentStep.factor === st.factor}
-                onClick={() => onSetZoom?.(st.factor)}
-              >
-                {st.label}
-              </MenuOption>
-            ))}
-          </div>
-        </PickerMenu>
+        <div className={s.scaleMenu} data-scale-menu>
+          {ZOOM_STEPS.map((st) => (
+            <MenuOption
+              key={st.label}
+              selected={currentStep.factor === st.factor}
+              onClick={() => onSetZoom?.(st.factor)}
+            >
+              {st.label}
+            </MenuOption>
+          ))}
+        </div>
+      </PickerMenu>
     </>
   )
 }
