@@ -2,7 +2,7 @@
 import {
   Decoration,
   type DecorationSet,
-  type EditorView,
+  EditorView,
   ViewPlugin,
   type ViewUpdate,
   WidgetType,
@@ -172,6 +172,8 @@ function widgetFor(spec: WidgetSpec): WidgetType {
 }
 
 const hideMarker = Decoration.replace({})
+/** Carries no styling — `atomicRanges` reads only the range, the way the callout prefix's does. */
+const atomicSpan = Decoration.mark({})
 const NO_ACTIVE = new Set<number>()
 
 const INDENTED = /^[ \t]/
@@ -213,7 +215,15 @@ function visibleInlineTokens(view: EditorView, text: string, scan: DocScan): Tok
   })
 }
 
-function build(view: EditorView, conn: ConnectionsApi | undefined): DecorationSet {
+/** What the plugin derives in one pass: what to draw, and which of those spans the caret must not
+ *  enter. The two travel together because they are the same fact — a marker slot filled by a widget
+ *  has interior positions with nothing on screen to stand for them. */
+interface Built {
+  deco: DecorationSet
+  atomic: DecorationSet
+}
+
+function build(view: EditorView, conn: ConnectionsApi | undefined): Built {
   const text = docString(view.state.doc)
   // The whole-doc scan, the caret-free line intents, AND the viewport tokenize are each one derivation
   // per doc VERSION (docCache) — a caret move or focus flip re-derives only the caret's own affected
@@ -244,6 +254,10 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): DecorationSe
   // and CM answers a crashed plugin by deactivating it for good (the page falls back to raw source).
   for (const it of assembleLineIntents(scan, docLineIntentsOf(view.state.doc), head)) intents.push(it)
   const ranges: Range<Decoration>[] = []
+  // The marker slots the caret must step over. The intent pass names them, and names them only where
+  // a widget stands in the marker's place — the caret's own line reveals its raw source and emits
+  // none, so a revealed marker stays ordinary editable text.
+  const atomic: Range<Decoration>[] = []
   for (const it of intents) {
     if (it.kind === 'line') {
       const spec =
@@ -269,6 +283,10 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): DecorationSe
       continue
     }
     if (it.to <= it.from) continue
+    if (it.kind === 'atomic') {
+      atomic.push(atomicSpan.range(it.from, it.to))
+      continue
+    }
     if (it.kind === 'class')
       ranges.push(Decoration.mark({ class: it.className }).range(it.from, it.to))
     else if (it.kind === 'hide') ranges.push(hideMarker.range(it.from, it.to))
@@ -377,15 +395,23 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): DecorationSe
       ranges.push(Decoration.mark({ class: 'md-sym-bidir' }).range(p, p + 1))
     }
   }
-  return Decoration.set(ranges, true)
+  return { deco: Decoration.set(ranges, true), atomic: Decoration.set(atomic, true) }
 }
 
 export function markdownDecorations(getConn: () => ConnectionsApi | undefined): Extension {
   return ViewPlugin.fromClass(
     class {
       decorations: DecorationSet
+      /** The marker slots a widget stands in. A list line's `- ` is replaced whole, so the position
+       *  between the dash and its space is a seat with nothing on screen to mark it: the caret can
+       *  land there, the drawn caret renders at the widget's edge instead, and a selection anchored
+       *  there takes marker characters the reader can't see. The callout prefix is guarded this way
+       *  for the same reason. */
+      atomic: DecorationSet
       constructor(view: EditorView) {
-        this.decorations = build(view, getConn())
+        const built = build(view, getConn())
+        this.decorations = built.deco
+        this.atomic = built.atomic
       }
       update(u: ViewUpdate): void {
         // Inline tokens are viewport-scoped, so scroll (viewportChanged) must rebuild too — newly
@@ -396,10 +422,17 @@ export function markdownDecorations(getConn: () => ConnectionsApi | undefined): 
           u.focusChanged ||
           u.viewportChanged ||
           u.transactions.some((tr) => tr.effects.some((e) => e.is(resolutionNudge)))
-        )
-          this.decorations = build(u.view, getConn())
+        ) {
+          const built = build(u.view, getConn())
+          this.decorations = built.deco
+          this.atomic = built.atomic
+        }
       }
     },
-    { decorations: (v) => v.decorations },
+    {
+      decorations: (v) => v.decorations,
+      provide: (plugin) =>
+        EditorView.atomicRanges.of((view) => view.plugin(plugin)?.atomic ?? Decoration.none),
+    },
   )
 }

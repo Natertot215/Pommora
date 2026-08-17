@@ -2,11 +2,11 @@
 
 ### Current Focus
 
-- [ ] PM-104's second half — one row shape for every menu model — and the three visual calls left open by the menu and glass consolidation. 
+- [ ] None. PM-104 closed with the menu arc and its native option both landed; the next focus is whichever one is chosen.
 
 ### Immediate Work
 
-- [ ] **One row shape for every menu model.** `{ label, action, separatorBefore? }` is hand-restated in seven shared modules, because the type it should be — `ActionItem<A>` — lives in `main/returningMenu.ts` where `src/shared` can't reach it; it is Electron-free and belongs in `shared/pageMenu.ts` with main importing it back. The same move settles a second vocabulary: `separatorBefore` and the property menu's `destructive` both mean "a divider goes above this row", each with its own expander in main, and one word should say it. Stands alone now — the picker work landed without it.                     [[w]]
+- [ ] **Decide what to work on.** Nothing is owed. The Boring Work and the Next-Feature Candidates below are the standing menu, and the Known Issues are each small enough to take on their own.
 
 ### Pending Focuses
 
@@ -30,9 +30,9 @@
 - **A whole-surface drag handle steals its own children's clicks.** The drag engine captures the pointer on pointerdown, so any interactive descendant has to stop pointerdown — a container only on its own empty space, so the title still drags.
 - **A caret that doesn't appear belongs to `nativeCaret.ts`, never to the field.** The browser's own caret is hidden app-wide, and the drawn replacement is positioned by JS, so a working I-beam cursor beside a missing caret points at the overlay rather than at focus.
 - **A lock key is a fact, and two spellings of one file are two locks.** Any file more than one surface rewrites whole needs its key built in the path module rather than assembled per call site, the read has to sit inside the lock beside the write, and a relocate holds the lock of the path it is leaving.
-- **Every menu opens on what reaches a thing and ends on what destroys it**, with the destructive row behind a separator; what sits between is that menu's own call.
 - **A renderer `preventDefault` cannot suppress main's `context-menu` event.** Any editable target pops main's own editor menu regardless, so a surface that wants its own menu there has to be the only claimant — which is why the table widget reports non-editable and why two menus over one field is the recurring symptom.
 - **Frost comes in three tiers, and the names finally mean them.** `GlassSurface` is the app's fixed chrome (brightest, clear), `GlassPane` floats over it a step dimmer, and `GlassWindow` is that pane carrying the shared body. One `SOLID_FILL` sits behind every darkened surface, and a pane opening over another pane asks `GlassPane` for `solid` rather than writing a background. Only `MenuSurface` still wears a beak, and it is the only shell drawing its own outline.
+- **A settings write built on a failed parse destroys the file.** The settings readers are lenient by design — a malformed `settings.json` reads as empty — but the writers are read-modify-write against that same parse, so with the file unparseable any single toggle rewrites it holding only that one key. A hand-edit that breaks the JSON therefore looks like "every preference reset" and is one switch away from becoming true. The merge path should refuse when the current file didn't parse.
 - **Two rules any future in-app window must respect**, both learned on PreviewPane: openness drivers stay declared per-window, and a FLIP measures from the surface root via a real ref rather than by walking `parentElement`.
 
 #### II. Debt & Ride-Alongs
@@ -55,16 +55,17 @@
 - [ ] The link-rename field shows a leading empty space — the shared field recipe's horizontal padding surviving the TextPicker input override, with the pane gutter adding to it. A visual inset rather than a stored character (deprioritized).
 - [ ] How MarkdownPMs headings are given their top-bottom padding is still unclear; what's standard paragraph → heading spacing on Obsidian collapses on Pommora where the block above the heading doesn't seem to have any additional padding, or it's at least extremely minimal compared to the padding that headings have below them. 
 - [ ] The CardView banner-type toggle should likely be within the SettingPane rather than the LayoutPane; it makes more sense to group the two toggles together, though non-blocking.
-- [ ] Selection highlighting and caret placement in MarkdownPM lists don't properly recognize list placement.
 - [ ] The editor's heading grip-drag likely compounds a trailing blank line on repeated reorders — `blockMoveChanges` is handed a section range that includes it. The outline's own path was trimmed against this; the editor's was not.
 
 ### Recent Work
 
 #### PM-104 || Menu & Surface Consolidation
 
-Menus and pickers stopped being bubbles. `PickerMenu` gave up its beak and became the app's one rectangular pane — worn by every picker, grid, calendar, hover card and fixed-option menu — while `MenuSurface` keeps the beak for the toolbar dropdown that hangs off a named button, and is now the only surface drawing its own outline by hand. Dropping the beak dropped its scaffolding: the shell fell from 204 lines to 109, and mounting the glass material directly restored the border, lighting and shadow that hand-drawn outline had been suppressing. Rows split by what they hold rather than which shell they sit in — a fixed option set takes a label with an accent mark, a user-authored value keeps its chip — and the hover-and-focus recipe both shared became one `rowShell`. The chosen-row mark had four definitions across three surfaces and seven rows carrying none; it has one. Panes now straddle their trigger where the whole pane fits and fall back to an edge where it would be clamped, decided once per open.
+Menus and pickers stopped being bubbles. `PickerMenu` gave up its beak and became the app's one rectangular pane — worn by every picker, grid, calendar, hover card and fixed-option menu — while `MenuSurface` keeps the beak for the toolbar dropdown that hangs off a named button, and is now the only surface drawing its own outline by hand. Dropping the beak dropped its scaffolding: the shell fell from 204 lines to 109, and mounting the glass material directly restored the border, lighting and shadow that hand-drawn outline had been suppressing. Underneath, glass gained honest tiers — `GlassWindow` and `GlassSurface` had been byte-identical, so they merged under the name describing the app's fixed chrome, and `GlassWindow` was rebuilt as the pane's chrome carrying a body, with four spellings of "darken this" collapsed into one `SOLID_FILL`. The material later gained `--glass-outline`, the tinted edge a tier wears while its surface is being driven.
 
-Underneath, glass gained honest tiers. `GlassWindow` and `GlassSurface` had been byte-identical, so they merged under the name describing the app's fixed chrome, and `GlassWindow` was rebuilt as a real third tier: the pane's chrome carrying a body. The four spellings of "darken this" collapsed into one `SOLID_FILL`, ending a mismatch two windows carried while a comment insisted they matched.
+Rows then settled into two tiers: a menu row reads body text, a picker's rows the control ramp, stated once as a variable the picker's pane sets and every row inherits. A pane's pinned header and footer became `ActionRow` and are available to any picker through new header and footer slots. The exit motion was finished as well — the retract had withdrawn by eight percent where the open bloomed from half scale, and seven surfaces had been mounting their picker conditionally, so a dismissal tore the pane out before it could retract at all.
+
+The second half made a list menu something the operating system can draw. `ActionItem` in `src/shared` is the one row model both renderers read, collapsing ten hand-restatements; one channel serves every list menu; and placement converts renderer pixels to popup coordinates through the window's zoom in a single helper. **Use Native Menus** is a device-local preference in `nexus.db` — the fixed-option control routes all fourteen of its call sites through it at once, and the surface tile's menu reads the same model as its pane, with its drills as submenus and its source page's name as an inert header.
 
 #### PM-103 || AutoLink & Table Fixes
 
