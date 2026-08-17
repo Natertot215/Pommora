@@ -239,4 +239,3 @@ describe('an empty alias asks for the picker by its shape alone', () => {
     expect(autocompleteQuery(doc, doc.indexOf('|') + 1)?.query).toBe(' ')
   })
 })
-

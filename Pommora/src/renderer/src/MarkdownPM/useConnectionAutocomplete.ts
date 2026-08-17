@@ -18,8 +18,7 @@ export interface AcState extends AutocompleteQuery {
   caretTop: number
   caretBottom: number
   /** The surface the panel may slide within, in viewport coords. */
-  boundsLeft: number
-  boundsRight: number
+  bounds: { left: number; right: number }
 }
 
 export interface AcCtl {
@@ -146,13 +145,21 @@ export function useConnectionAutocomplete(
  * rather than the room available, and `scrollDOM` is the wrong answer here.
  *
  * Cached per editor: this runs on the keystroke path while the panel is open, and walking ancestors
- * for computed styles on every one of those is exactly the work that rule forbids. The rect is still
- * re-read each pass, so a resized pane or a scrolled surface stays honest.
+ * for computed styles on every one of those is exactly the work that rule forbids. Only the surface's
+ * IDENTITY is cached — its rect is re-read each pass, so a resized pane or a scrolled surface stays
+ * honest.
  */
 const surfaces = new WeakMap<HTMLElement, HTMLElement>()
 function surfaceOf(view: EditorView): HTMLElement {
+  // Containment, not connectedness: a cached surface can still be in the document while the editor
+  // has been re-slotted out of it, and "is that box still on screen" is a different question from
+  // "is this editor still inside it".
   const cached = surfaces.get(view.dom)
-  if (cached?.isConnected) return cached
+  if (cached?.contains(view.dom)) return cached
+  // A detached editor has no surface to walk to, and the answer must not be cached: the loop bottoms
+  // out at the body, which is connected by definition, so nothing would ever re-walk. The outer
+  // editor detaches tile DOM mid-sync on a re-slot (→ Embeds/tileWarm.ts), so this is a real pass.
+  if (!view.dom.isConnected) return document.body
   let el = view.dom.parentElement
   while (el && el !== document.body) {
     const oy = getComputedStyle(el).overflowY
@@ -185,8 +192,7 @@ export function detectConnectionQuery(
         caretX: Math.round(c.left),
         caretTop: Math.round(c.top),
         caretBottom: Math.round(c.bottom),
-        boundsLeft: Math.round(b.left),
-        boundsRight: Math.round(b.right),
+        bounds: { left: Math.round(b.left), right: Math.round(b.right) },
       }
     }
   }
