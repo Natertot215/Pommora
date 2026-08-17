@@ -180,6 +180,56 @@ export function readLabels(raw: unknown): NexusLabels {
   }
 }
 
+/** Every tree leaf `settings.json` feeds, decoded in one place — the walk and the watcher's
+ *  settings patch read the same file through the same coercions, so they cannot disagree. */
+export interface SettingsLeaves {
+  excluded: string[]
+  labels: NexusLabels
+  accent: AccentSetting
+  timeFormat: NexusTree['timeFormat']
+  personalization: Personalization
+  commands: Record<string, string>
+  /** A nexus-relative asset path the renderer serves via nexus-asset://. Profile image,
+   *  icon and subtitle live in settings, not nexus.json — preferences, not identity. */
+  profileImage: string | null
+  profileIcon: string | undefined
+  profileSubtitle: string
+}
+
+export function readSettingsLeaves(settings: Json): SettingsLeaves {
+  const rawPersonalization =
+    settings.personalization != null &&
+    typeof settings.personalization === 'object' &&
+    !Array.isArray(settings.personalization)
+      ? (settings.personalization as Record<string, unknown>)
+      : {}
+  return {
+    excluded: asStringArray(settings.excluded_folders) ?? [],
+    labels: readLabels(settings.labels),
+    accent: resolveAccent(asString(rawPersonalization.accent)),
+    timeFormat: settings.time_format === 'twentyFourHour' ? 'twentyFourHour' : DEFAULT_TIME_FORMAT,
+    personalization: readPersonalization(rawPersonalization),
+    commands: readCommands(settings.commands),
+    profileImage: asString(settings.profile_image) ?? null,
+    profileIcon: asString(settings.profile_icon),
+    profileSubtitle: asString(settings.profile_subtitle) ?? '',
+  }
+}
+
+/** Resolve an entity root's parenthesized keys against the live Context groups — the walk's
+ *  assembly pass shaped for one node, for callers patching outside a walk. Undefined = no
+ *  registered links (the key stays absent; no empties). */
+export function resolveEntityContexts(
+  raw: Json,
+  groups: ContextGroup[],
+): Record<string, string[]> | undefined {
+  if (!groups.length) return undefined
+  const registry: ContextsRegistry = { contexts: groups.map((g) => g.def) }
+  const spacesByContext = new Map(groups.map((g) => [g.def.id, g.spaces]))
+  const links = resolveContextKeys(raw, registry, spacesByContext)
+  return links.size ? Object.fromEntries(links) : undefined
+}
+
 /** Lenient frontmatter split — the same recovering parser the page writer reads with
  *  (`parseDocument`), so the walk and the write side can never disagree about which keys a
  *  page holds (a duplicate key recovers here exactly as it does there). */
@@ -307,7 +357,7 @@ async function readDirectPages(
 
 /** Lenient read of a sidecar `views[]` — drops any view that fails to decode rather than
  *  poisoning the whole container read; absent/empty ⇒ undefined. */
-function parseViews(raw: unknown): SavedView[] | undefined {
+export function parseViews(raw: unknown): SavedView[] | undefined {
   if (!Array.isArray(raw)) return undefined
   const out: SavedView[] = []
   for (const v of raw) {
@@ -513,24 +563,8 @@ async function walkNexus(root: string): Promise<NexusTree> {
   const fb: Fallback = sidecarMode ? 'id' : 'title'
   const kindCtx = await agendaContext(root, identity, sidecarMode)
 
-  const excluded = asStringArray(settings.excluded_folders) ?? []
-  const labels = readLabels(settings.labels)
-  const rawPersonalization =
-    settings.personalization != null &&
-    typeof settings.personalization === 'object' &&
-    !Array.isArray(settings.personalization)
-      ? (settings.personalization as Record<string, unknown>)
-      : {}
-  const accent = resolveAccent(asString(rawPersonalization.accent))
-  const personalization = readPersonalization(rawPersonalization)
-  const commands = readCommands(settings.commands)
-  const timeFormat =
-    settings.time_format === 'twentyFourHour' ? 'twentyFourHour' : DEFAULT_TIME_FORMAT
-  // Profile image + subtitle live in settings, not nexus.json — they're preferences, not identity.
-  // profileImage is a nexus-relative asset path the renderer serves via nexus-asset://.
-  const profileImage = asString(settings.profile_image) ?? null
-  const profileIcon = asString(settings.profile_icon)
-  const profileSubtitle = asString(settings.profile_subtitle) ?? ''
+  const leaves = readSettingsLeaves(settings)
+  const excluded = leaves.excluded
   // Contexts. Registry-backed when `.nexus/contexts.json` parses (the walk never writes —
   // seeding/migration are open-path mutations). No registry (raw/unmigrated) → `contexts`
   // is [] — the open path migrates + seeds BEFORE anything renders, so the walk never
@@ -603,18 +637,25 @@ async function walkNexus(root: string): Promise<NexusTree> {
   }
 
   return {
-    nexus: { id, rootPath: root, name: basename(root), profileImage, profileIcon, profileSubtitle },
+    nexus: {
+      id,
+      rootPath: root,
+      name: basename(root),
+      profileImage: leaves.profileImage,
+      profileIcon: leaves.profileIcon,
+      profileSubtitle: leaves.profileSubtitle,
+    },
     homepage: {
       banner: asString(homepageConfig.banner),
       headingIconHidden: homepageConfig.heading_icon_hidden === true,
     },
     contexts: contexts ?? [],
     collections,
-    labels,
-    accent,
-    timeFormat,
-    personalization,
-    commands,
+    labels: leaves.labels,
+    accent: leaves.accent,
+    timeFormat: leaves.timeFormat,
+    personalization: leaves.personalization,
+    commands: leaves.commands,
     registry: orderedDefs(registry),
     ...(unreadable.length ? { unreadable: unreadable.map((path) => ({ path })) } : {}),
   }

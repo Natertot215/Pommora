@@ -205,9 +205,9 @@ At the end of this plan, none of that survives as a hot path. Main holds a **liv
 **Failure half:** the per-path read failing mid-write → `refresh` (transient state; the walk path already models this); a path deleted between event and read → `page-remove`; an empty batch → no-op, no push.
 
 **Steps:**
-- [ ] Failing tests: each classification arm (including the three structural-input refreshes), the must-agree fixture, the failure halves.
-- [ ] Implement; re-run — expect pass. Full gates green.
-- [ ] Commit: `feat(main): watcher events classify to targeted patches`
+- [x] Failing tests: each classification arm (including the three structural-input refreshes), the must-agree fixture, the failure halves.
+- [x] Implement; re-run — expect pass. Full gates green.
+- [x] Commit: `feat(main): watcher events classify to targeted patches`
 
 #### Task 5: The watcher patches
 
@@ -417,11 +417,11 @@ At the end of this plan, none of that survives as a hot path. Main holds a **liv
 ## Implementation Log
 
 ### Progress
-- [x] **Phase 1** — The patch seam and the live tree · base `9c714e2a` · gate `eccb3876` → `88b497e4` → `bfae0ca7` → gate-fold commit
+- [x] **Phase 1** — The patch seam and the live tree · base `9c714e2a` · gate folds `cd831480`
   - [x] Task 1 — transforms to shared, canon-grade · `eccb3876`
   - [x] Task 2 — the live tree module · `88b497e4`
   - [x] Task 3 — reads serve the live tree · `bfae0ca7`
-- [ ] **Phase 2** — The watcher spends its path
+- [ ] **Phase 2** — The watcher spends its path · base `cd831480`
   - [ ] Task 4 — event classification
   - [ ] Task 5 — the watcher patches
 - [ ] **Phase 3** — Writes patch instead of reload
@@ -447,6 +447,7 @@ At the end of this plan, none of that survives as a hot path. Main holds a **liv
 
 ### Open Against Later Tasks
 ### Deviations
+- Task 4: the union gained an **`ignored`** arm (excluded paths and nothing else) — the task's own must-agree line requires exclusions to "classify as ignored", and routing them to `full-refresh` would buy walks for churn the walk can't even see; an **unreadable-list guard** routes any path on `tree.unreadable` to `full-refresh`, because those entries carry walk-owned bookkeeping a patcher can't maintain; Unknown-admission upserts refresh for the same reason (the walk records them). `classifyEvent` takes `(tree, root, event, excluded)` and `applyWatchEvents` takes a third `excluded` parameter — the settings-leaf arm needs the watcher's compiled exclusion list to detect a structural exclusions change, and the classifier needs it for the `ignored` arm. `readSettingsLeaves` was extracted in `readNexus.ts` (the walk and the settings patch decode `settings.json` through one definition), along with exported `parseViews` and `resolveEntityContexts`.
 - Task 3, **the write-invalidation bridge**: with `nexus:state` serving the held tree, every in-app write became invisible until Task 6 exists — app writes are echo-suppressed from the watcher, and nothing patches the tree until Phase 3. The reload being deleted was silently guaranteeing write freshness for every channel at once (the plan's governing caution, landing at this site). Bridge: the IPC serve layer brackets every ask handler with `writeEcho.writesSeen()` and calls `invalidateLiveTree()` (null tree + epoch bump) when a handler wrote — at handler **completion**, because the writes are finished by then; Gate 1's review proved an at-write-start invalidation lets the epoch-discarded walk's immediate re-run install mid-write disk as canon. The native context menu outlives its handler, so its post-mutation confirm invalidates explicitly. Walk count in the bridge window matches today's (one per confirming `load()`). **Task 6 must remove the bridge** — a step added to Task 6.
 - Task 3, **⌘R forces the walk by dropping, not by calling `refreshTree` at the menu**: `Reload` is a real `webContents.reload`, and a menu-side `refreshTree` would race the booting renderer's read (which would serve the stale held tree with no push to correct it). The menu click calls `dropLiveTree()`; the boot read's `getLiveTree() ?? refreshTree` arm then performs the forced walk, and a rejection reaches the error envelope through that same arm. Seeding also moved *inside* `runOpenRecord` (it holds the walked tree and the remint verdict; both its call sites — adopt and launch-restore — need the seed), rather than returning `{tree, reminted}` for `adoptNexusInner` to interpret.
 - Task 1: `treeStabilize.ts` and its test moved to `src/shared` alongside the transforms. The shape-parity test crosses main's walk and `stabilize`, and the composite tsconfigs bar a main-side test from importing renderer files — `stabilize` is pure `@shared`-only code, so shared is its natural home. Plan searched for later assumptions: only Grounding names its old path; no task consumes it elsewhere. The parity test's red state was proven by a transform bypassing the factory (sabotaging the factory itself proves nothing — the walk shares it).
