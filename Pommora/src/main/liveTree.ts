@@ -5,7 +5,6 @@
 
 import type { NexusTree } from '@shared/types'
 import { pathExists } from './io/atomicWrite'
-import { onRecordedWrite } from './io/writeEcho'
 import { readNexus } from './readNexus'
 
 interface WalkSlot {
@@ -44,13 +43,15 @@ export function seedLiveTree(t: NexusTree): void {
   tree = t
 }
 
-// An app write makes the held tree stale, and no writer patches it in place yet — invalidate
-// so the next read walks fresh; an in-flight walk re-runs via the epoch. The echo funnel is
-// the one seam every app write already crosses.
-onRecordedWrite(() => {
+/** An app write COMPLETED and no writer patches the tree in place yet — forget the held tree
+ *  so the next read walks fresh; an in-flight walk re-runs via the epoch. Fired at the end of
+ *  any write-bearing IPC handler and at the native menus' post-mutation confirms — never at
+ *  write start, where a discarded walk's immediate re-run could still observe mid-write disk
+ *  and install it as canon. */
+export function invalidateLiveTree(): void {
   tree = null
   epoch++
-})
+}
 
 export function refreshTree(root: string): Promise<NexusTree> {
   if (slot && slot.root === root) return slot.promise
@@ -69,8 +70,11 @@ async function runWalk(root: string, entry: WalkSlot): Promise<NexusTree> {
     } catch (err) {
       if (slot === entry) {
         slot = null
-        // A vanished root must surface as the error, never as the ghost of the last tree.
-        if (!(await pathExists(root))) tree = null
+        // A vanished root must surface as the error, never as the ghost of the last tree —
+        // but only if nothing installed a tree while the existence check was in flight
+        // (a root switch may have seeded the new nexus by then).
+        const held = tree
+        if (!(await pathExists(root)) && tree === held) tree = null
       }
       throw err
     }

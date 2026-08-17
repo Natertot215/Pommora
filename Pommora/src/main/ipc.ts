@@ -2,6 +2,8 @@ import { BrowserWindow, ipcMain } from 'electron'
 import type { Asks, Pushes, Tells } from '@shared/bridge'
 import { errText, fail, ok, type Result } from '@shared/result'
 import { readScope, writeKey, type Scope } from './db/localState'
+import { invalidateLiveTree } from './liveTree'
+import { writesSeen } from './io/writeEcho'
 
 /** THE two session refusals — one spelling, one code, everywhere. A handler refuses through
  *  these or not at all. */
@@ -39,21 +41,30 @@ export function serveBridge(asks: BridgeAsks, tells: BridgeTells): void {
       // The wire hands back `any[]`; the map's tuple is the declared truth for this channel,
       // and the per-kind `fn` unions can't be correlated to it without the assertion.
       const args = raw as Args<keyof Asks>
-      switch (entry.kind) {
-        case 'raw':
-          return entry.fn(...args)
-        case 'envelope':
-          try {
+      // A handler that wrote anything leaves the held tree stale; the check rides handler
+      // COMPLETION because the writes are finished by the time an awaited handler returns —
+      // an invalidation at write start would let a discarded walk's immediate re-run install
+      // mid-write disk as canon.
+      const writesBefore = writesSeen()
+      try {
+        switch (entry.kind) {
+          case 'raw':
             return await entry.fn(...args)
-          } catch (err) {
-            return fail('operation-failed', errText(err))
+          case 'envelope':
+            try {
+              return await entry.fn(...args)
+            } catch (err) {
+              return fail('operation-failed', errText(err))
+            }
+          case 'menu': {
+            const win = BrowserWindow.fromWebContents(e.sender)
+            return win ? await entry.fn(win, ...args) : null
           }
-        case 'menu': {
-          const win = BrowserWindow.fromWebContents(e.sender)
-          return win ? entry.fn(win, ...args) : null
+          case 'window':
+            return await entry.fn(BrowserWindow.fromWebContents(e.sender), ...args)
         }
-        case 'window':
-          return entry.fn(BrowserWindow.fromWebContents(e.sender), ...args)
+      } finally {
+        if (writesSeen() !== writesBefore) invalidateLiveTree()
       }
     })
   }
