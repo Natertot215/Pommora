@@ -228,10 +228,10 @@ At the end of this plan, none of that survives as a hot path. Main holds a **liv
 - [x] Commit: `feat(watcher): the path is spent, not discarded`
 
 #### Gate 2 — external edits at per-path cost
-- [ ] Gates green; manual external-edit pass done and logged in the Log.
-- [ ] Must-agree fixture test in place and green.
-- [ ] Simplification + review against `<base>..HEAD`; concerns fixed or ruled.
-- [ ] Progress hashes filled in.
+- [x] Gates green; manual external-edit pass done and logged in the Log. *(See Evidence.)*
+- [x] Must-agree fixture test in place and green (stabilize-identity over a seven-event batch).
+- [x] Simplification + review against `<base>..HEAD`; concerns fixed or ruled. *(Review: 5 findings, all verified — container-meta gained the raw-mode gate and kind-matched sidecar name; an id moved under an existing path re-derives its position; the unreadable guard checks the owner directory; patches are root-pinned and the settle re-checks its session before pushing. The partial-batch-then-failed-walk residue is accepted: rare, self-healing on the next event or read. Simplifier: replaceNode/removePage/readHomepageLeaves folds, all verified; it also caught the watcher test's fixed-sleep flake, fixed here by outcome polling.)*
+- [x] Progress hashes filled in.
 
 ---
 
@@ -421,9 +421,9 @@ At the end of this plan, none of that survives as a hot path. Main holds a **liv
   - [x] Task 1 — transforms to shared, canon-grade · `eccb3876`
   - [x] Task 2 — the live tree module · `88b497e4`
   - [x] Task 3 — reads serve the live tree · `bfae0ca7`
-- [ ] **Phase 2** — The watcher spends its path · base `cd831480`
-  - [ ] Task 4 — event classification
-  - [ ] Task 5 — the watcher patches
+- [x] **Phase 2** — The watcher spends its path · base `cd831480` · gate folds ride the Gate 2 commit
+  - [x] Task 4 — event classification · `3df2b33d`
+  - [x] Task 5 — the watcher patches · `6332e192`
 - [ ] **Phase 3** — Writes patch instead of reload
   - [ ] Task 6 — every write channel confirms by push
   - [ ] Task 7 — the renderer stops reloading
@@ -452,6 +452,7 @@ At the end of this plan, none of that survives as a hot path. Main holds a **liv
 - Task 3, **⌘R forces the walk by dropping, not by calling `refreshTree` at the menu**: `Reload` is a real `webContents.reload`, and a menu-side `refreshTree` would race the booting renderer's read (which would serve the stale held tree with no push to correct it). The menu click calls `dropLiveTree()`; the boot read's `getLiveTree() ?? refreshTree` arm then performs the forced walk, and a rejection reaches the error envelope through that same arm. Seeding also moved *inside* `runOpenRecord` (it holds the walked tree and the remint verdict; both its call sites — adopt and launch-restore — need the seed), rather than returning `{tree, reminted}` for `adoptNexusInner` to interpret.
 - Task 1: `treeStabilize.ts` and its test moved to `src/shared` alongside the transforms. The shape-parity test crosses main's walk and `stabilize`, and the composite tsconfigs bar a main-side test from importing renderer files — `stabilize` is pure `@shared`-only code, so shared is its natural home. Plan searched for later assumptions: only Grounding names its old path; no task consumes it elsewhere. The parity test's red state was proven by a transform bypassing the factory (sabotaging the factory itself proves nothing — the walk shares it).
 ### Evidence
+- **Gate 2 manual pass** (same sandboxed-instance harness as Gate 1, temporary `[walk]` log removed after): open logged one walk; an external page **create**, **edit**, and **delete** each surfaced in the served tree within the settle with **zero walks logged**; an external **whole-folder move** (`mv Library Archive`) logged exactly one fallback walk and the served tree carried the renamed folder with its page intact.
 - **Gate 1 manual pass** (sandboxed dev instance — separate userData via a temporary env-gated `app.setPath` line, so Nathan's live session and real config stayed untouched; scratch nexus; temporary `[walk]` log in `readNexus`, both instruments removed after the pass): clean open logged **exactly one walk**; two consecutive `nexus:state` calls and a full renderer reload (`Page.reload`) added **zero walks** (the held tree serves across reloads); `nexus:rename` to a new folder name reseeded — the served tree carried the new `rootPath`/`name` with all child paths intact and no dead-root residue. The rename settle also logged one watcher walk on the new root — the watcher is unconverted until Task 5, where that walk becomes a classification. The menu-⌘R drop itself is three inspected lines whose drop→next-read-walks semantics are unit-covered in `liveTree.test.ts`; missing-root rejection reaching the error envelope is likewise unit-covered (drop test) plus the unchanged `nexus:state` catch arm.
 
 ### Lessons

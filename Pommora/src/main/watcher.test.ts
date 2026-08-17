@@ -40,11 +40,16 @@ const ULID_C = '01CX5ZZKBKACTAV9WEVGEMMVRC'
 let root: string
 const abs = (...segs: string[]): string => join(root, ...segs)
 const emit = (event: string, ...segs: string[]): void => handlers.get(event)?.(abs(...segs))
-const settleAll = async (): Promise<void> => {
+// After the fake-timer debounce fires, the settle's apply work runs on real time — poll for
+// the outcome (with a hard ceiling) rather than sleeping a fixed budget a loaded suite can
+// overrun; a no-outcome caller gets the ceiling's worth of quiet.
+const settleAll = async (until?: () => boolean): Promise<void> => {
   await vi.advanceTimersByTimeAsync(250)
   vi.useRealTimers()
-  // The settle's async apply work runs on real time once the debounce fired.
-  await new Promise((r) => setTimeout(r, 25))
+  const deadline = Date.now() + (until ? 3000 : 300)
+  do {
+    await new Promise((r) => setTimeout(r, 20))
+  } while (Date.now() < deadline && !until?.())
   vi.useFakeTimers()
 }
 
@@ -76,7 +81,7 @@ describe('the watcher settle', () => {
     await writeFile(abs('Notes', 'C.md'), `---\nPageID: ${ULID_C}\n---\n\ngamma\n`)
     emit('add', 'Notes', 'B.md')
     emit('add', 'Notes', 'C.md')
-    await settleAll()
+    await settleAll(() => pushMock.mock.calls.length > 0)
     expect(pushMock).toHaveBeenCalledTimes(1)
     const pushed = pushMock.mock.calls[0][2]
     expect(pushed).toBe(getLiveTree())
@@ -97,7 +102,7 @@ describe('the watcher settle', () => {
     await writeFile(abs('.nexus', 'state.json'), JSON.stringify({ collection_order: ['c1'] }))
     emit('add', 'Notes', 'B.md')
     emit('change', '.nexus', 'state.json')
-    await settleAll()
+    await settleAll(() => pushMock.mock.calls.length > 0)
     expect(pushMock).toHaveBeenCalledTimes(1)
     const pushed = pushMock.mock.calls[0][2]
     expect(pushed).toBe(getLiveTree())

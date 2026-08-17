@@ -113,6 +113,18 @@ describe('applyWatchEvents — must agree with the walk', () => {
     expect(getLiveTree()?.collections[0]?.pages.map((p) => p.title)).toEqual(['A'])
   })
 
+  it('a page whose id moved re-derives its position instead of swapping in place', async () => {
+    await writeFile(abs('Notes', 'B.md'), `---\nPageID: ${ULID_B}\n---\n\nbeta\n`)
+    await refreshTree(root)
+    expect(getLiveTree()?.collections[0]?.pages.map((p) => p.id)).toEqual([ULID_A, ULID_B])
+    const ULID_C = '01CX5ZZKBKACTAV9WEVGEMMVRC'
+    await writeFile(abs('Notes', 'A.md'), `---\nPageID: ${ULID_C}\n---\n\nalpha\n`)
+    expect(await applyWatchEvents(root, [ev('change', 'Notes', 'A.md')], [])).toBe('patched')
+    const live = getLiveTree()
+    expect(live?.collections[0]?.pages.map((p) => p.id)).toEqual([ULID_B, ULID_C])
+    expect(stabilize(await readNexus(root), live)).toBe(live)
+  })
+
   it('an empty batch is a no-op that preserves tree identity', async () => {
     await refreshTree(root)
     const before = getLiveTree()
@@ -171,5 +183,37 @@ describe('classifyEvent', () => {
     expect(kind(ev('unlink', 'Notes', '_pagecollection.json'))).toBe('full-refresh')
     expect(kind(ev('add', 'Loose', '_pageset.json'))).toBe('full-refresh')
     expect(kind(ev('change', 'Notes', 'photo.png'))).toBe('full-refresh')
+    // A stray wrong-kind sidecar is not this container's meta — the walk ignores it.
+    expect(kind(ev('change', 'Notes', '_pageset.json'))).toBe('full-refresh')
+  })
+
+  it('a raw nexus never classifies container-meta — the walk reads no sidecars there', async () => {
+    const raw = await mkdtemp(join(tmpdir(), 'pom-raw-'))
+    try {
+      await mkdir(join(raw, 'Things'), { recursive: true })
+      await writeFile(join(raw, 'Things', 'note.md'), 'text\n')
+      dropLiveTree()
+      const tree = await refreshTree(raw)
+      const cls = classifyEvent(
+        tree,
+        raw,
+        { event: 'change', absPath: join(raw, 'Things', '_pagecollection.json') },
+        [],
+      )
+      expect(cls.kind).toBe('full-refresh')
+    } finally {
+      dropLiveTree()
+      await rm(raw, { recursive: true, force: true })
+    }
+  })
+
+  it('an event under an unreadable-listed owner defers to the walk', async () => {
+    await writeFile(abs('Notes', '_pagecollection.json'), '{corrupt')
+    await refreshTree(root)
+    const tree = getLiveTree()
+    if (tree === null) throw new Error('no tree')
+    expect(tree.unreadable?.map((u) => u.path)).toContain('Notes')
+    const cls = classifyEvent(tree, root, ev('change', 'Notes', '_pagecollection.json'), [])
+    expect(cls.kind).toBe('full-refresh')
   })
 })
