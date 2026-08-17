@@ -13,7 +13,7 @@ import { fail, ok, type Result } from '@shared/result'
 import { readRegistry } from '../io/propertiesRegistry'
 import type { RecordFile } from '../provenance'
 import { projectBaseline } from '../record'
-import { readNexus } from '../readNexus'
+import { refreshTree } from '../liveTree'
 import { readSidecar } from '../sidecarIO'
 import { serializeOnFile } from '../io/fileLock'
 import { allCollectionFolders, assignInner } from './assignment'
@@ -62,7 +62,7 @@ async function restoreInner(root: string, record: PropertyRecord): Promise<Resul
     if (folder) await assignInner(root, folder, record.id)
   }
 
-  const roots = projectBaseline(await readNexus(root)).entries
+  const roots = projectBaseline(await refreshTree(root)).entries
   let dropped = 0
   for (const [pageId, raw] of Object.entries(record.values)) {
     const entry = roots[pageId]

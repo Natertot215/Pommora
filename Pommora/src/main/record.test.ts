@@ -14,6 +14,7 @@ import {
   writeBaseline,
 } from './record'
 import { closeSessionDb, openSessionDb } from './sessionDb'
+import { dropLiveTree, getLiveTree } from './liveTree'
 
 const page = (id: string, title: string, dir: string): PageNode => ({
   kind: 'page',
@@ -378,6 +379,24 @@ describe('runOpenRecord — the open sequence', () => {
     // Two claimants, neither at the recorded path: the entry drops from the baseline, because
     // two copies on disk are not a deletion and the id is in flux until one is adjudicated.
     expect(readBaseline()?.[NOTES]).toBeUndefined()
+  })
+
+  it('a clean open seeds the live tree from the record walk', async () => {
+    dropLiveTree()
+    await runOpenRecord(root)
+    const tree = getLiveTree()
+    expect(tree).not.toBeNull()
+    expect(tree?.collections[0]?.pages[0]?.id).toBe(NOTES)
+  })
+
+  it('a reminted open re-walks, so the live tree never holds a shared id', async () => {
+    await runOpenRecord(root)
+    await writeFile(join(root, 'Library', 'Copy.md'), `---\nPageID: ${NOTES}\n---\nbody`)
+    dropLiveTree()
+    await runOpenRecord(root)
+    const ids = (getLiveTree()?.collections[0]?.pages ?? []).map((p) => p.id)
+    expect(ids).toHaveLength(2)
+    expect(new Set(ids).size).toBe(2)
   })
 
   it('a sidecar corrupted while closed reads as an unreadable transition, never a removal', async () => {

@@ -39,7 +39,8 @@ import { serializeOnFile } from './io/fileLock'
 import { mergeFrontmatter, splitEnvelope } from './io/pageFile'
 import { recordWrite } from './io/writeEcho'
 import { SIDECAR_FILENAME, SPACE_SIDECAR } from './paths'
-import { readNexus, splitFrontmatter } from './readNexus'
+import { refreshTree } from './liveTree'
+import { splitFrontmatter } from './readNexus'
 import { projectBaseline } from './record'
 
 /** The underscore is load-bearing, not decoration: the artifact shares this folder under its own
@@ -623,7 +624,7 @@ export async function restoreArtifact(
   if (!artifactAbs)
     return fail('not-found', 'That deletion never finished; there is nothing to restore.')
 
-  const tree = await readNexus(root)
+  const tree = await refreshTree(root)
   // The substitution happens once, here, and everything downstream reads the rehomed record — the
   // resolver's placement, the reconcile's owning Collection, and a Space's membership reapply,
   // which must write the key of the Context it is landing in rather than the one it left.

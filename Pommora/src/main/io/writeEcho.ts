@@ -8,6 +8,13 @@
 import { sep } from 'node:path'
 
 const recent = new Map<string, number>()
+// The funnel doubles as the one seam every app write crosses — a listener here observes
+// "the app wrote something" without a second write path existing to forget.
+let listener: (() => void) | null = null
+
+export function onRecordedWrite(fn: () => void): void {
+  listener = fn
+}
 const WINDOW_MS = 2000
 // Descendant (prefix) suppression gets a tighter window: a folder rename's child echoes all land
 // within chokidar's settle pipeline (~400ms), while every prefix-suppressed millisecond is also a
@@ -16,6 +23,7 @@ const WINDOW_MS = 2000
 const PREFIX_WINDOW_MS = 800
 
 export function recordWrite(absPath: string): void {
+  listener?.()
   recent.set(absPath, Date.now())
   if (recent.size > 256) {
     const cutoff = Date.now() - WINDOW_MS

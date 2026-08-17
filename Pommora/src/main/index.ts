@@ -25,7 +25,7 @@ import { errText, fail, ok, type Result } from '@shared/result'
 import { BUSY, NO_NEXUS, push, scopeGet, scopeSet, serveBridge } from './ipc'
 import type { MutateRequest, ContextTarget } from '@shared/mutate'
 import { WINDOW_BG } from '@shared/theme'
-import { readNexus } from './readNexus'
+import { dropLiveTree, getLiveTree, refreshTree } from './liveTree'
 import { runOpenRecord } from './record'
 import { readPage } from './readPage'
 import {
@@ -368,8 +368,20 @@ async function adoptNexusInner(path: string, latchRecord: boolean): Promise<void
   // Best-effort: a null handle costs the session its persisted chrome, never its content.
   openSessionDb(root)
   // The record's one explicit walk — BEFORE the watcher starts, so the baseline latches what
-  // the closed window left rather than whatever a sync daemon materializes first.
-  if (latchRecord && root !== priorRoot) await runOpenRecord(root)
+  // the closed window left rather than whatever a sync daemon materializes first. Every root
+  // switch drops and reseeds the live tree, latch or no latch — a re-point (nexus rename)
+  // skips the record but must not keep serving the dead root's tree.
+  const rootChanged = root !== priorRoot
+  if (rootChanged) dropLiveTree()
+  if (latchRecord && rootChanged) {
+    await runOpenRecord(root)
+  } else if (rootChanged) {
+    try {
+      await refreshTree(root)
+    } catch (e) {
+      console.error('adopt: the seed walk failed; reads will retry:', errText(e))
+    }
+  }
   // A user-initiated open always has a window; launch-restore starts its watcher after
   // createWindow below instead.
   if (mainWindow) void startWatcher(root, mainWindow)
@@ -517,7 +529,7 @@ serveBridge(
         const root = sessionRoot()
         if (root === null) return { status: 'empty' }
         try {
-          const tree = await readNexus(root)
+          const tree = getLiveTree() ?? (await refreshTree(root))
           return { status: 'open', tree }
         } catch (e) {
           return { status: 'error', error: errText(e) }
@@ -1331,7 +1343,7 @@ serveBridge(
       fn: async () => {
         const root = sessionRoot()
         if (root === null) return NO_NEXUS
-        return ok(trashRows(await listBundles(root), await readNexus(root)))
+        return ok(trashRows(await listBundles(root), getLiveTree() ?? (await refreshTree(root))))
       },
     },
 

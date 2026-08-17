@@ -3,6 +3,7 @@ import type { MenuItemConstructorOptions } from 'electron'
 import { basename } from 'node:path'
 import { readAppConfig, updateAppConfig } from './appConfig'
 import { push } from './ipc'
+import { dropLiveTree } from './liveTree'
 import { pruneRecents, sessionRoot } from './session'
 import { readDefaultViewScale } from './settings'
 import { VIEW_SCALE_DEFAULT } from '@shared/types'
@@ -71,7 +72,12 @@ export async function installAppMenu(win: BrowserWindow, adopt: AdoptFn): Promis
           // lifecycle); reload the live focused window, and guard so a dead one is a no-op, not a crash.
           click: () => {
             const w = BrowserWindow.getFocusedWindow() ?? win
-            if (!w.isDestroyed()) w.webContents.reload()
+            if (!w.isDestroyed()) {
+              // Reload is the deliberate verification point: forget the held tree so the
+              // booting renderer's read walks disk fresh instead of serving from memory.
+              dropLiveTree()
+              w.webContents.reload()
+            }
           },
         },
         { type: 'separator' },
