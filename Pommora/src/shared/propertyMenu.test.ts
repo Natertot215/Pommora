@@ -5,7 +5,7 @@ describe('propertyMenuModel', () => {
   it('editor ⋮ yields Remove then a destructive Delete (A-8)', () => {
     expect(propertyMenuModel({ kind: 'editor', name: 'Status' })).toEqual([
       { label: 'Remove', action: 'property:remove' },
-      { label: 'Delete', action: 'property:destroy', destructive: true },
+      { label: 'Delete', action: 'property:destroy', separatorBefore: true },
     ])
   })
 

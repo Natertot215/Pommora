@@ -3,20 +3,15 @@
  *  option. Remove and Clear are destructive — main pops a confirm and resolves only on confirm, so
  *  the renderer never runs an unconfirmed strip. Pure model — main maps it to Electron MenuItems. */
 
+import type { ActionItem } from './menuModel'
+
 export interface OptionMenuContext {
   name: string
 }
 
 export type OptionMenuAction = 'option:rename' | 'option:remove' | 'option:clear'
 
-export interface OptionMenuItem {
-  label: string
-  action: OptionMenuAction
-  /** Main gates the action behind a confirm dialog (Remove / Clear). */
-  confirm?: boolean
-}
-
-export function optionMenuModel(): OptionMenuItem[] {
+export function optionMenuModel(): ActionItem<OptionMenuAction>[] {
   return [
     { label: 'Rename', action: 'option:rename' },
     { label: 'Remove', action: 'option:remove', confirm: true },

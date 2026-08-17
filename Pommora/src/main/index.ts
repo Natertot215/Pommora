@@ -19,6 +19,7 @@ import type {
   SubfieldConfig,
   ThumbRect,
 } from '@shared/types'
+import { type DevicePrefs, packDevicePrefs } from '@shared/devicePrefs'
 import { isPlainObject } from '@shared/propertyValue'
 import { errText, fail, ok, type Result } from '@shared/result'
 import { BUSY, NO_NEXUS, push, scopeGet, scopeSet, serveBridge } from './ipc'
@@ -128,6 +129,7 @@ import { popNavRowMenu } from './navRowMenu'
 import type { NavRowMenuContext } from '@shared/navRowMenu'
 import { popPropertyMenu } from './propertyMenu'
 import { popOptionMenu } from './optionMenu'
+import { popRowMenu } from './rowMenu'
 import { popIconFavoriteMenu } from './iconFavoriteMenu'
 import { popViewButtonMenu } from './viewButtonMenu'
 import { popReturningMenu } from './returningMenu'
@@ -603,6 +605,24 @@ serveBridge(
         if (adopting()) return BUSY
         if (!isCardSize(size)) return fail('operation-failed', 'A card size needs finite w and h.')
         if (!writeValue('hoverCard', { w: size.w, h: size.h })) return NO_NEXUS
+        return ok(null)
+      },
+    },
+
+    // Device-local preferences — how this machine draws the Nexus, never the Nexus itself.
+    'devicePrefs:load': {
+      kind: 'envelope',
+      fn: () => {
+        if (sessionRoot() === null) return NO_NEXUS
+        return ok(readValue<DevicePrefs>('devicePrefs'))
+      },
+    },
+
+    'devicePrefs:save': {
+      kind: 'raw',
+      fn: (prefs: unknown) => {
+        if (adopting()) return BUSY
+        if (!writeValue('devicePrefs', packDevicePrefs(prefs))) return NO_NEXUS
         return ok(null)
       },
     },
@@ -1626,6 +1646,7 @@ serveBridge(
     'property-menu': { kind: 'menu', fn: popPropertyMenu },
 
     'option-menu': { kind: 'menu', fn: popOptionMenu },
+    'row-menu': { kind: 'menu', fn: popRowMenu },
 
     // Open a page-attached file in its OS default app. The renderer-supplied path validates under the
     // session root (resolveUnderRoot) — a `..` climb or symlink smuggle never reaches shell.openPath.

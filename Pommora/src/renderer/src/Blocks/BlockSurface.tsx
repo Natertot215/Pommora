@@ -26,10 +26,11 @@ import { SurfaceView, type BackdropTarget } from '@renderer/SurfacePM/SurfaceVie
 import { entityIcon, iconNameOr } from '@renderer/design-system/symbols'
 import type { EntityIconKind } from '@shared/types'
 import { useSession } from '@renderer/store'
+import { tileMenuModel } from '@shared/tileMenu'
 import { findCollection, findCollectionForSet, findSet } from '@renderer/Detail/Scope'
 import { mintDefaultView } from '@shared/views'
 import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
-import { zoomStep } from './blockZoom'
+import { ZOOM_STEPS, zoomStep } from './blockZoom'
 import { MarkdownBlock } from './MarkdownBlock'
 import { BlockHandleMenu } from './BlockHandleMenu'
 import { ViewEmbedBlock } from './ViewEmbedBlock'
@@ -206,9 +207,23 @@ export function BlockSurface({ host }: { host: BlockHostRef }): React.JSX.Elemen
   )
 
   const [handleMenu, setHandleMenu] = useState<{ id: string; el: HTMLElement } | null>(null)
-  const onHandleMenu = useCallback((id: string, e: React.MouseEvent) => {
-    setHandleMenu({ id, el: e.currentTarget as HTMLElement })
-  }, [])
+  const nativeMenus = useSession((st) => st.devicePrefs.nativeMenus ?? false)
+  // The native path never sets `handleMenu`, so the in-app pane is never mounted for it — one menu
+  // opens, and which one is the preference's whole job.
+  const popNativeMenu = useRef<(id: string, el: HTMLElement) => void>(() => undefined)
+  const onHandleMenu = useCallback(
+    (id: string, e: React.MouseEvent) => {
+      const el = e.currentTarget as HTMLElement
+      if (nativeMenus) popNativeMenu.current(id, el)
+      else setHandleMenu({ id, el })
+    },
+    [nativeMenus],
+  )
+  // The menu stays mounted through its Bloom-out, so the tile it belongs to has to outlive the
+  // dismissal that cleared it — otherwise React tears the pane out before it can retract.
+  const heldMenu = useRef(handleMenu)
+  if (handleMenu) heldMenu.current = handleMenu
+  const menu = handleMenu ?? heldMenu.current
   const setStyle = useCallback(
     (id: string, style: BlockStyle) => {
       saveBlocks((cur) =>
@@ -378,6 +393,44 @@ export function BlockSurface({ host }: { host: BlockHostRef }): React.JSX.Elemen
         icon: entityIcon(menuLoc.kind, menuLoc.icon, defaultIcons),
       }
     : undefined
+  // The same offering the pane draws, popped by the OS instead. Assigned rather than called: the
+  // gesture handler is memoized against the preference alone, so it must reach the current build
+  // through a ref rather than closing over this render's tiles.
+  popNativeMenu.current = (id, el) => {
+    const entry = entries.get(id)
+    if (!entry || !tree) return
+    const page = entry.type === 'page' ? pagesById.get(entry.page_id) : undefined
+    const { items, picks } = tileMenuModel({
+      entry,
+      pageInfo: page && { title: page.title },
+      pageItems: pagePickerItems(tree, defaultIcons),
+      viewItems: viewPickerItems(tree, defaultIcons),
+      zoomSteps: ZOOM_STEPS,
+      currentFactor: zoomStep(entry.zoom).factor,
+      locked: (entry.locked ?? false) || hostLocked,
+      containerLocked: hostLocked,
+    })
+    const box = el.getBoundingClientRect()
+    void window.nexus
+      .rowMenu({
+        items,
+        anchor: { left: box.left, top: box.top, width: box.width, height: box.height },
+      })
+      .then((action) => {
+        if (action === null) return
+        const pickIdx = action.startsWith('tile:pick:') ? Number(action.slice(10)) : -1
+        const chosen = pickIdx >= 0 ? picks[pickIdx] : undefined
+        if (chosen?.kind === 'page') applyPagePick(id, chosen.value)
+        else if (chosen?.kind === 'view') applyViewPick(id, chosen.value)
+        else if (action === 'tile:style:bordered') setStyle(id, 'bordered')
+        else if (action === 'tile:style:borderless') setStyle(id, 'borderless')
+        else if (action.startsWith('tile:zoom:')) setBlockZoom(id, Number(action.slice(10)))
+        else if (action === 'tile:duplicate') duplicateBlock(id)
+        else if (action === 'tile:delete') confirmRemove(id)
+        else if (action === 'tile:lock') toggleLock(id)
+      })
+  }
+
   return (
     <div
       className={`blk-surface${editingId ? ' has-live-editor' : ''}${hostLocked ? ' is-host-locked' : ''}`}
@@ -392,26 +445,27 @@ export function BlockSurface({ host }: { host: BlockHostRef }): React.JSX.Elemen
         onHandleMenu={onHandleMenu}
         onBackdrop={onBackdrop}
       />
-      {handleMenu && entries.get(handleMenu.id) && tree && (
+      {menu && entries.get(menu.id) && tree && (
         <BlockHandleMenu
-          entry={entries.get(handleMenu.id) as BlockEntry}
-          anchor={handleMenu.el}
+          open={handleMenu !== null}
+          entry={entries.get(menu.id) as BlockEntry}
+          anchor={menu.el}
           pageItems={pagePickerItems(tree, defaultIcons)}
           viewItems={viewPickerItems(tree, defaultIcons)}
           pageInfo={menuPageInfo}
           location={menuLocInfo}
           onClose={() => setHandleMenu(null)}
-          onPickPage={(pageId) => applyPagePick(handleMenu.id, pageId)}
-          onPickView={(pick) => applyViewPick(handleMenu.id, pick)}
-          onStyle={(style) => setStyle(handleMenu.id, style)}
-          onDuplicate={() => duplicateBlock(handleMenu.id)}
-          onRemove={() => confirmRemove(handleMenu.id)}
-          onToggleLock={() => toggleLock(handleMenu.id)}
+          onPickPage={(pageId) => applyPagePick(menu.id, pageId)}
+          onPickView={(pick) => applyViewPick(menu.id, pick)}
+          onStyle={(style) => setStyle(menu.id, style)}
+          onDuplicate={() => duplicateBlock(menu.id)}
+          onRemove={() => confirmRemove(menu.id)}
+          onToggleLock={() => toggleLock(menu.id)}
           onOpenPage={() =>
             menuPage && select({ kind: 'page', id: menuPage.id, path: menuPage.path })
           }
           zoom={menuEntry?.zoom}
-          onSetZoom={(factor) => setBlockZoom(handleMenu.id, factor)}
+          onSetZoom={(factor) => setBlockZoom(menu.id, factor)}
           containerLocked={hostLocked}
         />
       )}

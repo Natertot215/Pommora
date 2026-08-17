@@ -141,6 +141,8 @@ const api = {
   previews: { load: ask('previews:load'), save: ask('previews:save') },
   // The hover card's universal size — one device-local db row.
   hoverCard: { load: ask('hoverCard:load'), save: ask('hoverCard:save') },
+  devicePrefs: { load: ask('devicePrefs:load'), save: ask('devicePrefs:save') },
+  rowMenu: ask('row-menu'),
   // capture returns the nexus-asset:// URL; evict prunes thumbnails outside the live recents∪pins set.
   capture: { thumbnail: ask('capture:thumbnail'), evict: ask('nav:evictThumbs') },
   // Persists one key; the tree surfaces current values, so there's no get. Hand-typed so the

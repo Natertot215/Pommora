@@ -62,13 +62,11 @@ function DrillLevel({
             label={backLabel}
             current={title}
             onBack={onBack}
-            contentClassName={s.barScale}
           />
         }
         footer={
           footerNodes.length ? (
-            <div className={s.barScale}>
-              <MenuBottomRow
+            <MenuBottomRow
                 leading={footerNodes.map((n, i) => (
                   <button
                     key={`${n.label}-${String(i)}`}
@@ -80,7 +78,6 @@ function DrillLevel({
                   </button>
                 ))}
               />
-            </div>
           ) : undefined
         }
       >
@@ -88,7 +85,7 @@ function DrillLevel({
           n.submenu ? (
             <MenuItem
               key={`${n.label}-${String(i)}`}
-              className={cx(s.row, n.submenu.length === 0 && rowDisabled)}
+              className={n.submenu.length === 0 ? rowDisabled : undefined}
               leading={n.icon ? <Icon name={n.icon} size={GLYPH} /> : undefined}
               trailing={chevron}
               onClick={() => setOpenIdx(i)}
@@ -98,7 +95,7 @@ function DrillLevel({
           ) : (
             <MenuItem
               key={`${n.label}-${String(i)}`}
-              className={cx(s.row, n.pick === undefined && rowDisabled)}
+              className={n.pick === undefined ? rowDisabled : undefined}
               leading={n.icon ? <Icon name={n.icon} size={GLYPH} /> : undefined}
               onClick={n.pick === undefined ? undefined : () => resolve(n.pick)}
             >
@@ -130,6 +127,7 @@ function DrillLevel({
 
 // Delete still confirms natively in main.
 export function BlockHandleMenu({
+  open,
   entry,
   anchor,
   pageItems,
@@ -148,6 +146,8 @@ export function BlockHandleMenu({
   onSetZoom,
   containerLocked = false,
 }: {
+  /** False plays the retract; the host keeps this mounted until it finishes. */
+  open: boolean
   entry: BlockEntry
   anchor: HTMLElement
   pageItems: PagePickerItem[]
@@ -209,8 +209,7 @@ export function BlockHandleMenu({
     <div className={s.pane}>
       <MenuScrollFrame
         footer={
-          <div className={s.barScale}>
-            <MenuBottomRow
+          <MenuBottomRow
               leading={
                 containerLocked ? (
                   <span
@@ -233,7 +232,6 @@ export function BlockHandleMenu({
                 )
               }
             />
-          </div>
         }
       >
         {entry.type === 'page' && pageInfo && (
@@ -261,7 +259,7 @@ export function BlockHandleMenu({
         {entry.type === 'markdown' ? (
           <>
             <MenuItem
-              className={cx(s.row, rowMute)}
+              className={rowMute}
               leading={<Icon name="link" size={GLYPH} />}
               trailing={chevron}
               onClick={locked ? undefined : () => setPane('view')}
@@ -269,7 +267,7 @@ export function BlockHandleMenu({
               Link View
             </MenuItem>
             <MenuItem
-              className={cx(s.row, rowMute)}
+              className={rowMute}
               leading={<Icon name="link" size={GLYPH} />}
               trailing={chevron}
               onClick={locked ? undefined : () => setPane('page')}
@@ -279,7 +277,7 @@ export function BlockHandleMenu({
           </>
         ) : (
           <MenuItem
-            className={cx(s.row, entry.type === 'view' && rowDisabled, rowMute)}
+            className={cx(entry.type === 'view' && rowDisabled, rowMute)}
             leading={<Icon name="link" size={GLYPH} />}
             trailing={chevron}
             onClick={!locked && entry.type === 'page' ? () => setPane('page') : undefined}
@@ -288,7 +286,7 @@ export function BlockHandleMenu({
           </MenuItem>
         )}
         <MenuItem
-          className={cx(s.row, rowMute)}
+          className={rowMute}
           leading={<Icon name="palette" size={GLYPH} />}
           trailing={chevron}
           onClick={locked ? undefined : () => setPane('style')}
@@ -298,7 +296,7 @@ export function BlockHandleMenu({
         {/* Markdown/page tiles freeze-inset (only content + glyphs scale); a view tile scales as a
             unit — the grid's own CSS zoom compounds with --block-zoom. */}
         <MenuItem
-          className={cx(s.row, rowMute)}
+          className={rowMute}
           leading={<Icon name="scaling" size={GLYPH} />}
           trailing={
             <button
@@ -316,14 +314,14 @@ export function BlockHandleMenu({
         </MenuItem>
         <MenuSeparator flush />
         <MenuItem
-          className={cx(s.row, rowMute)}
+          className={rowMute}
           leading={<Icon name="copy" size={GLYPH} />}
           onClick={locked ? undefined : act(onDuplicate)}
         >
           Duplicate
         </MenuItem>
         <MenuItem
-          className={cx(s.row, rowMute)}
+          className={rowMute}
           leading={<Icon name="x" size={GLYPH} />}
           onClick={locked ? undefined : act(onRemove)}
         >
@@ -339,13 +337,10 @@ export function BlockHandleMenu({
         label="Menu"
         current="Style"
         onBack={() => setPane('root')}
-        contentClassName={s.barScale}
       />
-
       {(['bordered', 'borderless'] as const).map((v) => (
         <MenuOption
           key={v}
-          className={s.row}
           selected={style === v}
           onClick={act(() => onStyle(v))}
         >
@@ -376,17 +371,15 @@ export function BlockHandleMenu({
 
   return (
     <>
-      <PickerMenu open onDismiss={onClose} triggerRef={{ current: anchor }} origin="center">
+      <PickerMenu open={open} onDismiss={onClose} triggerRef={{ current: anchor }} origin="center">
         <PaneSlider open={pane !== 'root'} root={root} detail={detail} />
       </PickerMenu>
-      {scaleOpen && (
-        // No onDismiss — the document listener above owns dismissal, so a pick can leave it open.
-        <PickerMenu open triggerRef={scaleTriggerRef} solid>
-          <div className={cx(s.barScale, s.scaleMenu)} data-scale-menu>
+      {/* No onDismiss — the document listener above owns dismissal, so a pick can leave it open. */}
+      <PickerMenu open={open && scaleOpen} triggerRef={scaleTriggerRef} solid>
+          <div className={s.scaleMenu} data-scale-menu>
             {ZOOM_STEPS.map((st) => (
               <MenuOption
                 key={st.label}
-                className={s.row}
                 selected={currentStep.factor === st.factor}
                 onClick={() => onSetZoom?.(st.factor)}
               >
@@ -395,7 +388,6 @@ export function BlockHandleMenu({
             ))}
           </div>
         </PickerMenu>
-      )}
     </>
   )
 }

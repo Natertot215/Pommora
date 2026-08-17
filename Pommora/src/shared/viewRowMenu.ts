@@ -3,6 +3,8 @@
 // chrome and appears only there; Delete is refused on a container's last view, mirroring the write
 // path.
 
+import type { ActionItem } from './menuModel'
+
 export type ViewRowAction = 'rename' | 'icon' | 'color' | 'titles' | 'delete'
 
 /** What a host can offer for the row that was right-clicked. */
@@ -14,12 +16,7 @@ export interface ViewRowMenuContext {
 
 export function viewRowMenuItems(
   ctx: ViewRowMenuContext,
-): Array<{
-  label: string
-  action: ViewRowAction
-  separatorBefore?: boolean
-  disabled?: boolean
-}> {
+): ActionItem<ViewRowAction>[] {
   return [
     { label: 'Rename', action: 'rename' },
     { label: 'Edit Icon', action: 'icon' },
