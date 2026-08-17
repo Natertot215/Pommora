@@ -45,6 +45,7 @@ import {
 import { savedView, type SavedView } from '@shared/views'
 import { coerceOpenIn, coerceViewButton, coerceViewStyle } from '@shared/schemas'
 import { LINK_DISPLAYS, type PropertyDefinition } from '@shared/properties'
+import { makeCollectionNode, makePageNode, makeSetNode, makeSpaceNode } from '@shared/treePatch'
 import { adoptedId } from './ids'
 import { pathExists, readJsonObject, readJsonStrict } from './io/atomicWrite'
 import { isContentFile, listEntries } from './io/walk'
@@ -268,13 +269,12 @@ export async function readPageRecord(absFile: string, relFile: string): Promise<
     const fm = splitFrontmatter(await readFile(absFile, 'utf8'))
     const admission = admitContentFile(fm, 'page')
     if (admission.state === 'unknown') return null
-    const node: PageNode = {
-      kind: 'page',
+    const node = makePageNode({
       id: admission.state === 'member' ? admission.id : adoptedId(relFile),
       title: basenameNoMd(basename(absFile)),
       icon: asString(fm.icon),
       path: relFile,
-    }
+    })
     retainContextKeys(node, fm)
     return { node, fm }
   })
@@ -365,8 +365,7 @@ async function readSet(
     readChildSets(absDir, relDir, kindCtx, excluded, fb, unreadable),
     readDirectPages(absDir, relDir, unreadable),
   ])
-  return {
-    kind: 'set',
+  return makeSetNode({
     id: asString(meta.id) ?? adoptedId(relDir),
     title: name,
     icon: asString(meta.icon),
@@ -378,7 +377,7 @@ async function readSet(
     views: parseViews(meta.views),
     viewButton: coerceViewButton(meta.view_button),
     viewStyle: coerceViewStyle(meta.view_style),
-  }
+  })
 }
 
 /** effectiveSchema(C): assignment ids → their registry defs, in order; drops dangling refs
@@ -410,8 +409,7 @@ async function readPageCollection(
     readChildSets(absDir, relDir, kindCtx, excluded, fb, unreadable),
     readDirectPages(absDir, relDir, unreadable),
   ])
-  return {
-    kind: 'collection',
+  return makeCollectionNode({
     id: asString(meta.id) ?? adoptedId(relDir),
     title: name,
     icon: asString(meta.icon),
@@ -425,7 +423,7 @@ async function readPageCollection(
     openIn: coerceOpenIn(meta.open_in),
     viewButton: coerceViewButton(meta.view_button),
     viewStyle: coerceViewStyle(meta.view_style),
-  }
+  })
 }
 
 // ---------- contexts ----------
@@ -441,8 +439,7 @@ async function readSpace(
   // unparseable one names itself on the list rather than reading as deleted.
   const sc = await readSidecarNaming(join(absDir, SPACE_SIDECAR), relDir, unreadable)
   if (!sc) return null
-  const node: SpaceNode = {
-    kind: 'space',
+  const node = makeSpaceNode({
     id: asString(sc.id) ?? adoptedId(relDir),
     title: name,
     icon: asString(sc.icon),
@@ -451,7 +448,7 @@ async function readSpace(
     headingIconHidden: sc.heading_icon_hidden === true,
     color: asString(sc.color),
     contextId,
-  }
+  })
   retainContextKeys(node, sc)
   return node
 }

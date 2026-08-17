@@ -1,6 +1,6 @@
-// Reflects a just-written move or create in the in-memory tree INSTANTLY — the reload confirms
-// canon a beat later. A request that can't be resolved here returns null → the caller skips
-// optimism and waits for the reload.
+// Pure tree patch transforms — the one definition both processes apply: the renderer
+// optimistically, main as canon. A request that can't be resolved against the given tree
+// returns null → the caller falls back to a full walk.
 
 import { NEW_PAGE_SLOT, type MutateRequest, type StateOrderKey } from '@shared/mutate'
 import { titleFromPath } from '@shared/connections'
@@ -8,10 +8,15 @@ import type {
   CollectionNode,
   ContextGroup,
   NexusTree,
+  OpenIn,
   PageNode,
   SetNode,
   SpaceNode,
+  ViewButton,
+  ViewStyle,
 } from '@shared/types'
+import type { PropertyDefinition } from '@shared/properties'
+import type { SavedView } from '@shared/views'
 
 const basename = (path: string): string => path.slice(path.lastIndexOf('/') + 1)
 // '' for a root-level path — a bare slice(0, lastIndexOf) would eat the name's last character.
@@ -20,6 +25,105 @@ const parentOf = (path: string): string => {
   return i === -1 ? '' : path.slice(0, i)
 }
 const joinPath = (parent: string, name: string): string => (parent ? `${parent}/${name}` : name)
+
+// ---------- node factories ----------
+// The walk's literal node shapes, stated once. Every producer builds nodes here, so a
+// transform-built node and a walk-built node of the same entity carry identical key sets —
+// which is what lets `stabilize` prove tree convergence by reference identity.
+
+export function makePageNode(f: {
+  id: string
+  title: string
+  path: string
+  icon?: string
+}): PageNode {
+  return { kind: 'page', id: f.id, title: f.title, icon: f.icon, path: f.path }
+}
+
+export function makeSpaceNode(f: {
+  id: string
+  title: string
+  path: string
+  contextId: string
+  icon?: string
+  banner?: string
+  headingIconHidden?: boolean
+  color?: string
+}): SpaceNode {
+  return {
+    kind: 'space',
+    id: f.id,
+    title: f.title,
+    icon: f.icon,
+    path: f.path,
+    banner: f.banner,
+    headingIconHidden: f.headingIconHidden ?? false,
+    color: f.color,
+    contextId: f.contextId,
+  }
+}
+
+export function makeSetNode(f: {
+  id: string
+  title: string
+  path: string
+  icon?: string
+  banner?: string
+  headingIconHidden?: boolean
+  sets?: SetNode[]
+  pages?: PageNode[]
+  views?: SavedView[]
+  viewButton?: ViewButton
+  viewStyle?: ViewStyle
+}): SetNode {
+  return {
+    kind: 'set',
+    id: f.id,
+    title: f.title,
+    icon: f.icon,
+    path: f.path,
+    banner: f.banner,
+    headingIconHidden: f.headingIconHidden ?? false,
+    sets: f.sets ?? [],
+    pages: f.pages ?? [],
+    views: f.views,
+    viewButton: f.viewButton,
+    viewStyle: f.viewStyle,
+  }
+}
+
+export function makeCollectionNode(f: {
+  id: string
+  title: string
+  path: string
+  icon?: string
+  banner?: string
+  headingIconHidden?: boolean
+  properties?: PropertyDefinition[]
+  sets?: SetNode[]
+  pages?: PageNode[]
+  views?: SavedView[]
+  openIn?: OpenIn
+  viewButton?: ViewButton
+  viewStyle?: ViewStyle
+}): CollectionNode {
+  return {
+    kind: 'collection',
+    id: f.id,
+    title: f.title,
+    icon: f.icon,
+    path: f.path,
+    banner: f.banner,
+    headingIconHidden: f.headingIconHidden ?? false,
+    properties: f.properties,
+    sets: f.sets ?? [],
+    pages: f.pages ?? [],
+    views: f.views,
+    openIn: f.openIn,
+    viewButton: f.viewButton,
+    viewStyle: f.viewStyle,
+  }
+}
 
 /** The ORIGINAL oldPath/newPath thread through the whole recursion — swapping against a child's
  *  already-swapped path would re-prepend its segment and corrupt every grandchild. */
@@ -110,12 +214,11 @@ export function relocateNodeInTree(
   if (!pulled.node) return null
   const moved = reparentPaths(pulled.node, path, newPath)
   const placed = insert(pulled.containers, newParentPath, moved)
-  // Destination unresolved — skip optimism and let the confirming reload settle it.
   if (!placed.done) return null
   return { ...tree, collections: placed.containers as CollectionNode[] }
 }
 
-/** Its row (icon + rename input) appears before the confirming reload. */
+/** Insert a just-created entity at its slot. */
 export function insertCreatedInTree(
   tree: NexusTree,
   req: MutateRequest,
@@ -131,13 +234,12 @@ export function insertCreatedInTree(
   }
   if (req.op === 'createSpace') {
     if (!tree.contexts?.some((g) => g.def.id === req.contextId)) return null
-    const node: SpaceNode = {
-      kind: 'space',
+    const node = makeSpaceNode({
       id: created.id,
       title: basename(created.path),
       path: created.path,
       contextId: req.contextId,
-    }
+    })
     return {
       ...tree,
       contexts: tree.contexts.map((g) =>
@@ -146,38 +248,31 @@ export function insertCreatedInTree(
     }
   }
   if (req.op === 'createContainer' && req.kind === 'collection') {
-    // Only top-level collections are walked as CollectionNodes — a nested one gets no optimism
-    // (returning a set-shaped node here would render the wrong kind for a beat).
+    // Only top-level collections are walked as CollectionNodes — a nested one is unresolvable
+    // here (a set-shaped node would render the wrong kind), so the caller walks.
     if (req.parentPath !== '') return null
-    const node: CollectionNode = {
+    const node = makeCollectionNode({
       id: created.id,
-      kind: 'collection',
       title: basename(created.path),
       path: created.path,
-      sets: [],
-      pages: [],
-    }
+    })
     return { ...tree, collections: [...tree.collections, node] }
   }
   if (req.op === 'createContainer' || req.op === 'createPage') {
     const node: PageNode | SetNode =
       req.op === 'createPage'
-        ? {
-            kind: 'page',
+        ? makePageNode({
             id: created.id,
             title: titleFromPath(created.path),
             path: created.path,
-          }
-        : {
-            kind: 'set',
+          })
+        : makeSetNode({
             id: created.id,
             title: basename(created.path),
             path: created.path,
-            sets: [],
-            pages: [],
-          }
+          })
     // A positional create's row must appear AT its slot — the order array already names it, and
-    // an appended row would flash at the container's bottom until the confirming walk lands.
+    // an appended row would flash at the container's bottom.
     const pageAt =
       req.op === 'createPage' && req.order ? req.order.indexOf(NEW_PAGE_SLOT) : undefined
     const placed = insert(tree.collections, req.parentPath, node, pageAt)
@@ -187,8 +282,9 @@ export function insertCreatedInTree(
   return null
 }
 
-/** Titles/colors/order land instantly; a renamed folder's stale child paths settle on the
- *  confirming reload. */
+/** Context-layer patches. A Context's folder and a Space's folder are both named by title, so a
+ *  rename moves paths too: a Space is a leaf and swaps its own tail; a Context rename prefix-swaps
+ *  every member Space's path under the renamed group directory. */
 export function patchContextGroupsInTree(tree: NexusTree, req: MutateRequest): NexusTree | null {
   const groups = tree.contexts
   if (!groups.length) return null
@@ -197,14 +293,28 @@ export function patchContextGroupsInTree(tree: NexusTree, req: MutateRequest): N
     case 'renameContext':
       return withGroups(
         groups.map((g) =>
-          g.def.id === req.contextId ? { ...g, def: { ...g.def, title: req.newName } } : g,
+          g.def.id === req.contextId
+            ? {
+                ...g,
+                def: { ...g.def, title: req.newName },
+                spaces: g.spaces.map((s) => {
+                  const groupDir = parentOf(s.path)
+                  const newDir = joinPath(parentOf(groupDir), req.newName)
+                  return { ...s, path: joinPath(newDir, basename(s.path)) }
+                }),
+              }
+            : g,
         ),
       )
     case 'renameSpace':
       return withGroups(
         groups.map((g) => ({
           ...g,
-          spaces: g.spaces.map((s) => (s.id === req.spaceId ? { ...s, title: req.newName } : s)),
+          spaces: g.spaces.map((s) =>
+            s.id === req.spaceId
+              ? { ...s, title: req.newName, path: joinPath(parentOf(s.path), req.newName) }
+              : s,
+          ),
         })),
       )
     case 'setSpaceColor':
