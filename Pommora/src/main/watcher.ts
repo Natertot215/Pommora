@@ -13,7 +13,7 @@ import { isRecentWrite } from './io/writeEcho'
 import { isMarkdownFile } from './io/walk'
 import { HOMEPAGE_HOST_DIRNAME, nexusConfig, NEXUS_CONFIG_FILES } from './paths'
 import { push as pushToWindow } from './ipc'
-import { readNexus } from './readNexus'
+import { refreshTree } from './liveTree'
 import { sessionRoot } from './session'
 
 const SETTLE_MS = 200
@@ -127,7 +127,9 @@ export function stopWatcher(): void {
 async function push(root: string, win: BrowserWindow): Promise<void> {
   if (sessionRoot() !== root || win.isDestroyed()) return
   try {
-    const tree = await readNexus(root)
+    // Through the seam, so the walked tree also INSTALLS — a push the held tree never saw
+    // would leave main serving a pre-edit world to every later read.
+    const tree = await refreshTree(root)
     pushToWindow(win, 'nexus:changed', tree)
   } catch {
     // Transient FS state mid-write — the next settle re-reads (Reload is the fallback).
