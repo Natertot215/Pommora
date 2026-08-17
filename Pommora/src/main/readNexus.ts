@@ -216,6 +216,15 @@ export function readSettingsLeaves(settings: Json): SettingsLeaves {
   }
 }
 
+/** The tree leaves `homepage.json` feeds — same decoding for the walk and the watcher's
+ *  homepage patch, so they cannot disagree. */
+export function readHomepageLeaves(config: Json): NexusTree['homepage'] {
+  return {
+    banner: asString(config.banner),
+    headingIconHidden: config.heading_icon_hidden === true,
+  }
+}
+
 /** Resolve an entity root's parenthesized keys against the live Context groups — the walk's
  *  assembly pass shaped for one node, for callers patching outside a walk. Undefined = no
  *  registered links (the key stays absent; no empties). */
@@ -645,10 +654,7 @@ async function walkNexus(root: string): Promise<NexusTree> {
       profileIcon: leaves.profileIcon,
       profileSubtitle: leaves.profileSubtitle,
     },
-    homepage: {
-      banner: asString(homepageConfig.banner),
-      headingIconHidden: homepageConfig.heading_icon_hidden === true,
-    },
+    homepage: readHomepageLeaves(homepageConfig),
     contexts: contexts ?? [],
     collections,
     labels: leaves.labels,

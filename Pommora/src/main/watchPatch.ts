@@ -17,6 +17,7 @@ import { resolveOrder } from './order'
 import { NEXUS_CONFIG_FILES, SIDECAR_FILENAME, SPACE_SIDECAR, nexusConfig } from './paths'
 import {
   parseViews,
+  readHomepageLeaves,
   readPageRecord,
   readSettingsLeaves,
   resolveAssignedSchema,
@@ -24,7 +25,7 @@ import {
 } from './readNexus'
 import { coerceOpenIn, coerceViewButton, coerceViewStyle } from '@shared/schemas'
 import { makeCollectionNode, makeSetNode, makeSpaceNode } from '@shared/treePatch'
-import { removeNodeInTree, updateNodeInTree } from '@shared/treePatch'
+import { removeNodeInTree, type TreeEntity, updateNodeInTree } from '@shared/treePatch'
 
 export type WatchEventName = 'add' | 'change' | 'unlink' | 'addDir' | 'unlinkDir'
 
@@ -102,8 +103,11 @@ export function classifyEvent(
   // the walk, the corpus, and every cascade honor.
   if (excludedMatcher(excluded)(segs)) return { kind: 'ignored' }
   // A path on the unreadable list carries walk-owned bookkeeping (the entry must drop or
-  // transition) — only the walk may adjudicate it.
-  if (tree.unreadable?.some((u) => u.path === rel)) return { kind: 'full-refresh' }
+  // transition) — only the walk may adjudicate it. Container and Space sidecars record their
+  // OWNER directory there, so the parent is checked too.
+  const dirOfRel = parentOf(rel)
+  if (tree.unreadable?.some((u) => u.path === rel || u.path === dirOfRel))
+    return { kind: 'full-refresh' }
   if (segs[0] === '.nexus') {
     if (rel === `.nexus/${NEXUS_CONFIG_FILES.settings}`) return { kind: 'settings-leaf' }
     if (rel === `.nexus/${NEXUS_CONFIG_FILES.homepage}`) return { kind: 'homepage-leaf' }
@@ -131,10 +135,16 @@ export function classifyEvent(
   }
   if (
     (name === SIDECAR_FILENAME.collection || name === SIDECAR_FILENAME.set) &&
-    (ev.event === 'add' || ev.event === 'change')
+    (ev.event === 'add' || ev.event === 'change') &&
+    // A raw nexus classifies by position alone — the walk never opens container sidecars
+    // there, so an edit to one must not patch what the walk would ignore.
+    !isAdoptedId(tree.nexus.id)
   ) {
     const dirRel = parentOf(rel)
-    if (dirRel !== '' && findContainer(tree, dirRel)) {
+    const container = dirRel !== '' ? findContainer(tree, dirRel) : null
+    // Only the kind-matching sidecar feeds the walk; a stray wrong-kind file is not this
+    // container's meta and takes the default arm.
+    if (container && name === SIDECAR_FILENAME[container.kind]) {
       return { kind: 'container-meta', dirRel, abs: ev.absPath }
     }
   }
@@ -158,9 +168,21 @@ export async function applyWatchEvents(
   return 'patched'
 }
 
-/** Null from the transform means the patch could not land — degrade to the walk, never drift. */
-const applyPatch = (fn: (t: NexusTree) => NexusTree | null): 'ok' | 'refresh' =>
-  patchLiveTree(fn) === null ? 'refresh' : 'ok'
+/** Null from the transform means the patch could not land — degrade to the walk, never drift.
+ *  The root pin closes a settle that outlived its session: a switch mid-apply installs the NEW
+ *  nexus's tree, and an old-root event must never patch into it. */
+const applyPatch = (root: string, fn: (t: NexusTree) => NexusTree | null): 'ok' | 'refresh' => {
+  if (getLiveTree()?.nexus.rootPath !== root) return 'refresh'
+  return patchLiveTree(fn) === null ? 'refresh' : 'ok'
+}
+
+/** Swap the node at `rel` for one already built. A vanished target leaves the tree untouched:
+ *  the caller resolved it against the same live tree a moment ago. */
+const replaceNode = (root: string, rel: string, next: TreeEntity): 'ok' | 'refresh' =>
+  applyPatch(root, (t) => updateNodeInTree(t, rel, () => next) ?? t)
+
+const removePage = (root: string, rel: string): 'ok' | 'refresh' =>
+  applyPatch(root, (t) => (findPage(t, rel) ? removeNodeInTree(t, rel) : t))
 
 async function applyOne(
   root: string,
@@ -172,13 +194,13 @@ async function applyOne(
     case 'index-only':
       return 'ok'
     case 'page-remove':
-      return applyPatch((t) => (findPage(t, c.rel) ? removeNodeInTree(t, c.rel) : t))
+      return removePage(root, c.rel)
     case 'page-upsert':
       return applyPageUpsert(root, c.rel, c.abs)
     case 'container-meta':
       return applyContainerMeta(root, c.dirRel, c.abs)
     case 'space-meta':
-      return applySpaceMeta(c.dirRel, c.abs)
+      return applySpaceMeta(root, c.dirRel, c.abs)
     case 'settings-leaf':
       return applySettingsLeaf(root, watchedExcluded)
     case 'homepage-leaf':
@@ -198,9 +220,7 @@ async function applyPageUpsert(root: string, rel: string, abs: string): Promise<
   } catch {
     // Deleted between event and read → a remove; still present → mid-write transient, and
     // the walk path models that the same way.
-    return (await pathExists(abs))
-      ? 'refresh'
-      : applyPatch((t) => (findPage(t, rel) ? removeNodeInTree(t, rel) : t))
+    return (await pathExists(abs)) ? 'refresh' : removePage(root, rel)
   }
   const tree = getLiveTree()
   if (!tree) return 'refresh'
@@ -210,9 +230,10 @@ async function applyPageUpsert(root: string, rel: string, abs: string): Promise<
   const links = resolveEntityContexts(record.fm, tree.contexts)
   if (links) node.contextValues = links
   else delete node.contextValues
-  if (findPage(tree, rel)) {
-    return applyPatch((t) => updateNodeInTree(t, rel, () => node) ?? t)
-  }
+  // In-place swap only while the id held — order derives from the id (the fallback sort and
+  // `page_order` membership both key on it), so an id that moved re-derives its position.
+  const existing = findPage(tree, rel)
+  if (existing && existing.id === node.id) return replaceNode(root, rel, node)
   const dirRel = parentOf(rel)
   const container = findContainer(tree, dirRel)
   if (!container) return 'refresh'
@@ -221,6 +242,7 @@ async function applyPageUpsert(root: string, rel: string, abs: string): Promise<
     : {}
   const fb = orderFallback(tree)
   return applyPatch(
+    root,
     (t) =>
       updateNodeInTree(t, dirRel, (n) =>
         n.kind === 'collection' || n.kind === 'set'
@@ -276,10 +298,14 @@ async function applyContainerMeta(
           openIn: coerceOpenIn(meta.open_in),
         })
       : makeSetNode(shared)
-  return applyPatch((t) => updateNodeInTree(t, dirRel, () => next) ?? t)
+  return replaceNode(root, dirRel, next)
 }
 
-async function applySpaceMeta(dirRel: string, abs: string): Promise<'ok' | 'refresh'> {
+async function applySpaceMeta(
+  root: string,
+  dirRel: string,
+  abs: string,
+): Promise<'ok' | 'refresh'> {
   const sc = await readJsonObject(abs)
   if (sc === null) return 'refresh'
   const tree = getLiveTree()
@@ -300,7 +326,7 @@ async function applySpaceMeta(dirRel: string, abs: string): Promise<'ok' | 'refr
   })
   const links = resolveEntityContexts(sc, tree.contexts)
   if (links) next.contextValues = links
-  return applyPatch((t) => updateNodeInTree(t, dirRel, () => next) ?? t)
+  return replaceNode(root, dirRel, next)
 }
 
 async function applySettingsLeaf(
@@ -314,7 +340,7 @@ async function applySettingsLeaf(
     leaves.excluded.length === watchedExcluded.length &&
     leaves.excluded.every((v, i) => v === watchedExcluded[i])
   if (!same) return 'refresh'
-  return applyPatch((t) => ({
+  return applyPatch(root, (t) => ({
     ...t,
     labels: leaves.labels,
     accent: leaves.accent,
@@ -332,11 +358,5 @@ async function applySettingsLeaf(
 
 async function applyHomepageLeaf(root: string): Promise<'ok' | 'refresh'> {
   const config = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.homepage))) ?? {}
-  return applyPatch((t) => ({
-    ...t,
-    homepage: {
-      banner: asString(config.banner),
-      headingIconHidden: config.heading_icon_hidden === true,
-    },
-  }))
+  return applyPatch(root, (t) => ({ ...t, homepage: readHomepageLeaves(config) }))
 }
