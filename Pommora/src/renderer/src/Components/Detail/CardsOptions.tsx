@@ -1,21 +1,14 @@
 import type { CollectionNode, SetNode } from '@shared/types'
-import type { CardBanner, SavedView } from '@shared/views'
+import type { SavedView } from '@shared/views'
 import { Icon } from '@renderer/design-system/symbols'
 import { Switch } from '@renderer/design-system/components/Switches/Switch'
 import { MenuItem } from '../../design-system/components/menu'
 import { flushTrailing } from '../../design-system/components/menu/menu.css'
 import { cx } from '../../design-system/cx'
 import { useSaveView } from '@renderer/Embeds/ViewEmbedScope'
-import { PickerControl, type PickerChoice } from './PickerControl'
 import { ICON, switchScale, toggleRow } from './settingsPane.css'
 
-const BANNERS: PickerChoice<CardBanner>[] = [
-  { value: 'cover', label: 'Cover' },
-  { value: 'preview', label: 'Preview' },
-  { value: 'none', label: 'None' },
-]
-
-/** Card Style + Scale live in the ViewSettings footing, not here. */
+/** Style, Banner and Scale live in the ViewSettings footing, not here. */
 export function CardsOptions({
   source,
   view,
@@ -28,21 +21,6 @@ export function CardsOptions({
 
   return (
     <>
-      <MenuItem
-        className={cx(flushTrailing, toggleRow)}
-        leading={<Icon name="image" size={ICON.rootEntry} />}
-        trailing={
-          <PickerControl
-            ariaLabel="Card Banner"
-            value={view.card_banner ?? 'cover'}
-            options={BANNERS}
-            onPick={(v) => write({ card_banner: v })}
-            solid
-          />
-        }
-      >
-        Card Banner
-      </MenuItem>
       <MenuItem
         className={cx(flushTrailing, toggleRow)}
         leading={<Icon name="map" size={ICON.rootEntry} />}
