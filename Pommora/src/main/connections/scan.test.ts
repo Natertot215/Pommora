@@ -4,7 +4,7 @@
 // below guard all of them, not just this file.
 
 import { describe, it, expect } from 'vitest'
-import { mentionsTitle } from './scan'
+import { extractMentions, mentionsTitle } from './scan'
 
 describe('mentionsTitle', () => {
   it('matches a page link by its normalized title', () => {
@@ -48,5 +48,40 @@ describe('mentionsTitle', () => {
     // The title is capped at the filesystem name limit (255): at the bound matches, past it doesn't.
     expect(mentionsTitle(`[[${'x'.repeat(255)}]]`, 'x'.repeat(255))).toBe(true)
     expect(mentionsTitle(`[[${'x'.repeat(256)}]]`, 'x'.repeat(256))).toBe(false)
+  })
+})
+
+describe('extractMentions MUST AGREE with mentionsTitle', () => {
+  // Every link syntax, every masking rule: the index's extractor and the cascade's per-file
+  // confirmation answer over the same bodies, and a disagreement is a silently skipped rewrite.
+  const bodies = [
+    'plain [[Alpha]] link',
+    'aliased [[Alpha|shown words]] link',
+    'an embed ![[Alpha]] is swept too',
+    'markdown [label](Alpha) link',
+    'markdown [label](Alpha.md) with extension',
+    'a URL [site](https://example.com/Alpha) names no page',
+    '```\n[[Alpha]]\n```\ncode is a sample',
+    'inline `[[Alpha]]` sample',
+    'NFD Álpha as [[Álpha]]',
+    'two [[Alpha]] and [[Beta]]',
+    'none at all',
+  ]
+  const titles = ['alpha', 'beta', 'álpha']
+
+  it('yields exactly the titles mentionsTitle affirms, body by body', () => {
+    for (const body of bodies) {
+      const extracted = extractMentions(body)
+      for (const key of titles) {
+        expect(extracted.has(key), `"${body}" × "${key}"`).toBe(mentionsTitle(body, key))
+      }
+    }
+  })
+
+  it('extraction reads the concrete set the syntax names', () => {
+    expect(extractMentions('see [[Alpha]] and [x](Beta) and ![[Gamma]]')).toEqual(
+      new Set(['alpha', 'beta', 'gamma']),
+    )
+    expect(extractMentions('nothing here')).toEqual(new Set())
   })
 })
