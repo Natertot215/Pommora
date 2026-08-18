@@ -6,6 +6,7 @@ import type { ContextDef } from './contexts'
 import type { LinkDisplay, PropertyDefinition } from './properties'
 import type { PageFrontmatter } from './schemas'
 import type { DateFormat } from './columnStyles'
+import type { PommoraError } from './result'
 import type { SavedView } from './views'
 
 export type NodeKind = 'space' | 'collection' | 'set' | 'page'
@@ -318,7 +319,7 @@ export interface NexusTree {
 export type NexusState =
   | { status: 'empty' }
   | { status: 'open'; tree: NexusTree }
-  | { status: 'error'; error: string }
+  | { status: 'error'; error: PommoraError }
 
 /** What the renderer currently has open: a container, a page, or nothing. */
 export type SelectionState =

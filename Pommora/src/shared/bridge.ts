@@ -24,7 +24,7 @@ import type {
   ViewButton,
   ViewStyle,
 } from './types'
-import type { ContextTarget, MutateReply, MutateRequest, RenameHost } from './mutate'
+import type { ContextTarget, Creator, MutateReply, MutateRequest, RenameHost } from './mutate'
 import type { Result } from './result'
 import type { FormatState } from './editorMenu'
 import type { SavedView } from './views'
@@ -263,7 +263,7 @@ export interface Asks {
   // biome-ignore lint/suspicious/noConfusingVoidType: the wire resolves nothing — void IS the reply
   'context-menu': { args: [target: ContextTarget]; reply: void }
   'create-menu': {
-    args: [items: { label: string; req: MutateRequest }[]]
+    args: [items: Creator[]]
     reply: MutateRequest | null
   }
   // biome-ignore lint/suspicious/noConfusingVoidType: the wire resolves nothing — void IS the reply
