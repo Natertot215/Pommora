@@ -54,6 +54,9 @@ export async function listMarkdownFiles(
     .map((r) => join(dir, r))
 }
 
+/** Top-level names the corpus never reaches into, whichever direction a path is resolved from. */
+export const NON_CORPUS_TOP: ReadonlySet<string> = new Set(['.nexus', '.trash'])
+
 /** What the pens can reach — THE corpus, stated once: every `.md` under the nexus outside its
  *  own `.nexus`/`.trash` and outside the user's `excluded_folders`, as nexus-relative POSIX
  *  paths (the tree's and the index's shared key convention). The index seed, its reconciler,
@@ -67,12 +70,11 @@ export async function corpusFiles(root: string, excluded: string[]): Promise<str
   } catch {
     return []
   }
-  const skip = new Set(['.nexus', '.trash'])
   const out: string[] = []
   for (const rel of rels) {
     if (!isMarkdownFile(rel)) continue
     const segs = rel.split(/[/\\]/)
-    if (skip.has(segs[0]) || isExcluded(segs)) continue
+    if (NON_CORPUS_TOP.has(segs[0]) || isExcluded(segs)) continue
     out.push(segs.join('/'))
   }
   return out
