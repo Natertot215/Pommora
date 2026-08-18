@@ -58,6 +58,12 @@ describe('mergeFrontmatter — foreign preservation (the contract)', () => {
     expect(out).toContain('plugin_key: keepme')
   })
 
+  it('a body-only merge of a frontmatter-less file invents no envelope', () => {
+    expect(mergeFrontmatter('plain note, no fences\n', {}, [], 'rewritten body\n')).toBe(
+      'rewritten body\n',
+    )
+  })
+
   it('deletes a modeled key when omitted, leaving foreign keys intact', () => {
     const existing = assembleEnvelope('id: X\nicon: star\nplugin: keep\n', 'B')
     const { frontmatter } = splitEnvelope(

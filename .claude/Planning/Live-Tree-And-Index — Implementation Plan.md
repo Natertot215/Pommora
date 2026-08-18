@@ -357,9 +357,9 @@ At the end of this plan, none of that survives as a hot path. Main holds a **liv
 **Negative control:** a fixture where 3 of 40 pages mention the title, one of them in an un-adopted folder — the cascade provably opened exactly those 3 (instrument via the rewrite callback), and with the query artificially returning all paths the same test's open-count assertion goes red.
 
 **Steps:**
-- [ ] Failing test per the negative control; implement; green. Full gates green.
-- [ ] Rewrite the ConnectionsPM cascade paragraph in this commit.
-- [ ] Commit: `feat(crud): a rename opens only the files that mention it`
+- [x] Failing test per the negative control; implement; green. Full gates green. *(Red-proven by routing the cascade past the query: exactly the open-count test failed. The control also surfaced a pre-existing defect — `mergeFrontmatter`'s body-only arm invented a `---\nnull\n---` envelope on a frontmatter-less file, so every rename cascade was stamping null frontmatter onto un-adopted notes; fixed at the cause with its own test.)*
+- [x] Rewrite the ConnectionsPM cascade paragraph in this commit. *(Plus ArchitecturePM §Folder Exclusion's cascade-exception sentence — Requirement 9's total exclusion. The ContextPM "still read on every rename" cost entry named in Made False no longer exists in the doc — nothing to rewrite.)*
+- [x] Commit: `feat(crud): a rename opens only the files that mention it`
 
 #### Task 11: The property cascades query
 

@@ -88,6 +88,9 @@ export function mergeFrontmatter(
   body: string,
 ): string {
   const { frontmatter } = splitEnvelope(existingContent)
+  // A body-only rewrite of a file holding no frontmatter invents none — an un-adopted note
+  // keeps exactly its own bytes, the link swap aside.
+  if (frontmatter === '' && modeledKeys.length === 0) return body
   // Empty frontmatter ⇒ contents is null; doc.set auto-creates a block map below.
   const doc = parseDocument(frontmatter)
   // The body still saves with the original frontmatter bytes passed through verbatim (a body-only
