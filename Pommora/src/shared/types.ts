@@ -148,7 +148,7 @@ export interface Personalization {
  *  value can't make the window unusable; absent/invalid → 1.0 (100%). */
 export const VIEW_SCALE_DEFAULT = 1
 export const VIEW_SCALE_MIN = 0.5
-export const VIEW_SCALE_MAX = 3
+export const VIEW_SCALE_MAX = 1.5
 export function coerceViewScale(v: unknown): number {
   if (typeof v !== 'number' || !Number.isFinite(v)) return VIEW_SCALE_DEFAULT
   return Math.min(VIEW_SCALE_MAX, Math.max(VIEW_SCALE_MIN, v))

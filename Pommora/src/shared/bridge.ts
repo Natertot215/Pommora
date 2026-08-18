@@ -327,6 +327,9 @@ export interface Tells {
   'editor:format-state': [state: FormatState]
   'win:dragBy': [dx: number, dy: number]
   'win:zoom': []
+  /** Per-tick interface scale while the Settings slider is dragged — applied without persisting,
+   *  so a scrub previews live and only the released value reaches settings.json. */
+  'win:viewScale': [scale: number]
   'editor:grip-hot': [on: boolean]
 }
 
