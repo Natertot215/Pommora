@@ -11,6 +11,12 @@ describe('blockAt', () => {
     expect(slice(doc, b)).toBe('# A\nbody\nmore')
   })
 
+  it('a heading section stops at its last content character, not the blank line before the next heading', () => {
+    const doc = '# A\nbody\n\n# B\nx'
+    const b = blockAt(doc, 0)
+    expect(slice(doc, b)).toBe('# A\nbody')
+  })
+
   it('a body-less heading is one line', () => {
     const doc = '# A\n# B\nx'
     const b = blockAt(doc, 0)

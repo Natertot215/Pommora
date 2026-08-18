@@ -201,8 +201,16 @@ export function blockAt(doc: string, pos: number): Block | null {
     }
     case 'heading': {
       const sec = headingSections(doc).find((s) => s.from === starts[li])
+      // The section's `to` reaches the blank line before the next heading — the fold wants that
+      // span, a block doesn't: the drag's mover re-fences with one blank, so a range carrying the
+      // trailing blank would compound an extra blank on every reorder (the outline's mover
+      // applies the same trim).
       return sec
-        ? { from: sec.from, to: sec.to, kind: 'heading' }
+        ? {
+            from: sec.from,
+            to: sec.from + doc.slice(sec.from, sec.to).trimEnd().length,
+            kind: 'heading',
+          }
         : { from: starts[li], to: ends[li], kind: 'heading' }
     }
     case 'list': {

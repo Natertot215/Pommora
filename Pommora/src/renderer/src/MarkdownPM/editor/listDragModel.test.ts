@@ -19,6 +19,7 @@ describe('subBlockAt × block math', () => {
     expect(doc.slice(b!.from, b!.to)).toBe('- one')
   })
 })
+import { blockAt } from './blockModel'
 import {
   subBlockAt,
   dropChanges,
@@ -197,6 +198,16 @@ describe('blockMoveChanges (blank-separated block move)', () => {
   it('preserves a trailing newline and does not double-blank on a move to EOF', () => {
     const doc = 'A\n\nB\n\nC\n'
     expect(apply(doc, { from: 0, to: 1 }, doc.length)).toBe('B\n\nC\n\nA\n')
+  })
+
+  it('a heading-section reorder round-trips without compounding a blank (blockAt feeds the range)', () => {
+    const doc = '# A\nbody\n\n# B\nx'
+    const secA = blockAt(doc, 0)
+    expect(secA).not.toBeNull()
+    const moved = applyChanges(doc, blockMoveChanges(doc, secA!, { at: doc.length })!)
+    expect(moved).toBe('# B\nx\n\n# A\nbody')
+    const secBack = blockAt(moved, moved.indexOf('# A'))
+    expect(applyChanges(moved, blockMoveChanges(moved, secBack!, { at: 0 })!)).toBe(doc)
   })
 
   it('snaps a blank-line drop target to the next content block', () => {
