@@ -39,7 +39,6 @@
 Known shortcuts, none broken today. Each is cheap on its own and best taken when its owning file is next touched — or swept together as one batch session.
 
 - [ ] **Table perf ceilings.** Tables render every row with no virtualization, so a very long collection will eventually feel it; and a value edited outside the app doesn't live-refresh an open table.
-- [ ] **Editor reached by CSS selector.** `pageEditor` and `ConnectionHoverCard` find the editor by querying the DOM, while `sidebarDnd`, `paneDnd`, and `useOptionReorder` already use the registered-handle pattern that replaces it — same fix, just not applied at these two sites.
 - [ ] **Scroll waits by timer, not by signal.** `revealPageOffset` sleeps for a fold animation's duration to wait it out, even though `folding.ts` owns the real completion signal it could listen to.
 - [ ] **Dismiss checks for pickers the hard way.** `useDismiss` decides whether a click was "outside" by querying the DOM for open picker portals on every event; a shared open-picker counter removes the handshake entirely.
 
