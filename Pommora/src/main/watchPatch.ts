@@ -8,7 +8,7 @@
 import { join, relative, sep } from 'node:path'
 import type { CollectionNode, NexusTree, PageNode, SetNode, SpaceNode } from '@shared/types'
 import { asString, asStringArray } from './coerce'
-import { excludedMatcher } from './exclusion'
+import { excludedMatcher, sameExclusions } from './exclusion'
 import { adoptedId, isAdoptedId } from './ids'
 import { pathExists, readJsonObject } from './io/atomicWrite'
 import { isMarkdownFile } from './io/walk'
@@ -28,8 +28,15 @@ import {
   type SettingsLeaves,
 } from './readNexus'
 import { coerceOpenIn, coerceViewButton, coerceViewStyle } from '@shared/schemas'
-import { makeCollectionNode, makeSetNode, makeSpaceNode, parentOf } from '@shared/treePatch'
-import { removeNodeInTree, type TreeEntity, updateNodeInTree } from '@shared/treePatch'
+import {
+  makeCollectionNode,
+  makeSetNode,
+  makeSpaceNode,
+  parentOf,
+  removeNodeInTree,
+  type TreeEntity,
+  updateNodeInTree,
+} from '@shared/treePatch'
 
 export type WatchEventName = 'add' | 'change' | 'unlink' | 'addDir' | 'unlinkDir'
 
@@ -222,7 +229,7 @@ async function applyOne(
  *  event AND an in-app write that touched the page's frontmatter. Exact by construction: the
  *  node is rebuilt by the walk's own reader. */
 export async function patchPageFromDisk(root: string, rel: string): Promise<'ok' | 'refresh'> {
-  const abs = join(root, ...rel.split('/'))
+  const abs = join(root, rel)
   let record: Awaited<ReturnType<typeof readPageRecord>>
   try {
     record = await readPageRecord(abs, rel)
@@ -283,7 +290,7 @@ export async function patchContainerFromDisk(
   if (held && !sidecarMode(held)) return 'ok'
   const kind = held && findContainer(held, dirRel)?.kind
   if (!kind) return 'refresh'
-  const meta = await readJsonObject(join(root, ...dirRel.split('/'), SIDECAR_FILENAME[kind]))
+  const meta = await readJsonObject(join(root, dirRel, SIDECAR_FILENAME[kind]))
   // Absent or unparseable: the walk's unreadable-list bookkeeping owns that state.
   if (meta === null) return 'refresh'
   const tree = getLiveTree()
@@ -322,7 +329,7 @@ export async function patchContainerFromDisk(
 
 /** Re-read a Space's sidecar and rebuild its node — the shared confirmer for its edits. */
 export async function patchSpaceFromDisk(root: string, dirRel: string): Promise<'ok' | 'refresh'> {
-  const sc = await readJsonObject(join(root, ...dirRel.split('/'), SPACE_SIDECAR))
+  const sc = await readJsonObject(join(root, dirRel, SPACE_SIDECAR))
   if (sc === null) return 'refresh'
   const tree = getLiveTree()
   if (!tree) return 'refresh'
@@ -354,10 +361,9 @@ async function applySettingsLeaf(
 ): Promise<'ok' | 'refresh'> {
   const leaves = await readSettings(root)
   // An exclusion change moves what the walk and watcher can even see — structural, not a leaf.
-  const same =
-    leaves.excluded.length === watchedExcluded.length &&
-    leaves.excluded.every((v, i) => v === watchedExcluded[i])
-  return same ? applySettingsLeaves(root, leaves) : 'refresh'
+  return sameExclusions(leaves.excluded, watchedExcluded)
+    ? applySettingsLeaves(root, leaves)
+    : 'refresh'
 }
 
 /** Re-read `settings.json` and patch every leaf it feeds — the shared confirmer for the
