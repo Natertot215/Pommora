@@ -87,6 +87,9 @@ interface Props {
   edgeFade?: boolean
   /** Warm-tab state seam — page editors only; embeds/blocks mount cold. */
   warm?: WarmSeam
+  /** Handle registration for hosts that reach into this editor programmatically (the page
+   *  surface's outline seam): the live view at mount, null at teardown. */
+  register?: (view: EditorView | null) => void
 }
 
 export function MarkdownEditor({
@@ -111,6 +114,7 @@ export function MarkdownEditor({
   readOnly = false,
   edgeFade = false,
   warm,
+  register,
 }: Props): React.JSX.Element {
   const readOnlyGate = useRef(new Compartment())
   const readOnlyAtMount = useRef(readOnly)
@@ -132,6 +136,8 @@ export function MarkdownEditor({
   tableHeadingColsRef.current = tableHeadingColumns
   const menuRef = useRef(menu)
   menuRef.current = menu
+  const registerRef = useRef(register)
+  registerRef.current = register
   const lastFormatRef = useRef<FormatState | null>(null)
 
   // The restyle nudge: connection colors and embed tiles resolve against the live page index, but
@@ -309,6 +315,7 @@ export function MarkdownEditor({
       warmState ? { state: warmState, parent } : { doc: initialBody, parent, extensions },
     )
     viewRef.current = view
+    registerRef.current?.(view)
     // Track scroll continuously for the unmount capture — at cleanup time React may have already
     // detached the DOM, where reading scrollTop yields 0 and would wipe the saved position.
     let lastScrollTop = saved?.scrollTop ?? 0
@@ -374,6 +381,7 @@ export function MarkdownEditor({
           scrollTop: lastScrollTop,
         })
       }
+      registerRef.current?.(null)
       view.destroy()
       viewRef.current = null
     }
