@@ -74,7 +74,7 @@ const scrubCardScale = (v: number, viewId: string): void => {
 // ── KNOB — ViewSettings' own height ceiling (its own, not the shared MENU_MAX_HEIGHT): the full door
 // stacks the tallest content (title + grid + four leaf rows + the pinned footing), so it earns more
 // room before the body scrolls. Applies to the editor + its Layout leaf. ──
-const VIEWSETTINGS_MAX_HEIGHT = 375
+const VIEWSETTINGS_MAX_HEIGHT = 410
 // ── KNOB — the leaf slider's floors (matches the SettingsPane sibling): a blank Group/Filter/Sort leaf
 // reserves this square instead of collapsing to a bare header strip mid-slide. ──
 const LEAF_MIN_WIDTH = 225
@@ -193,6 +193,7 @@ export function ViewSettings({
               options={BANNERS}
               onPick={(v) => write({ card_banner: v })}
               solid
+              footing
             />
           }
         >
