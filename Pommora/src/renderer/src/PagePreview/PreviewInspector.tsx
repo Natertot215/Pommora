@@ -27,7 +27,7 @@ import { resolveFieldValue } from '../Detail/Views/pipeline/value'
 import { isValidLink } from '@shared/links'
 import { contextKey, type ContextsRegistry } from '@shared/contexts'
 import { resolveContextKeys } from '@shared/contextResolve'
-import { cachePageDetail, readPageDetail } from '../Tabs/warmCache'
+import { fetchPageDetail, readPageDetail } from '../Tabs/warmCache'
 import { useSession, type PreviewTarget } from '../store'
 
 // Editable through the SAME primitives the table views use (Cell render, PropertyPicker/
@@ -71,11 +71,10 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
     }
     let live = true
     setFm(null)
-    void window.nexus.openPage(target.path).then((r) => {
-      if (!live || !r.ok) return
-      cachePageDetail(r.value)
-      setFm(r.value.frontmatter as PageFrontmatter)
-      setTitle(r.value.title)
+    void fetchPageDetail(target.path).then((detail) => {
+      if (!live || !detail) return
+      setFm(detail.frontmatter as PageFrontmatter)
+      setTitle(detail.title)
     })
     return () => {
       live = false

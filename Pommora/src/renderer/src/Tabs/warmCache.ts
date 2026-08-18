@@ -61,6 +61,26 @@ export function readPageDetail(path: string): PageDetail | undefined {
   return detailByPath.get(path)
 }
 
+const inFlight = new Map<string, Promise<PageDetail | null>>()
+
+/** The one fetch for a path — concurrent callers (the preview's embed and inspector mount in the
+ *  same frame) share a single openPage round-trip. A landed detail is cached; a failed open
+ *  resolves null. A drop or clear mid-flight disowns the fetch: its caller still gets the read,
+ *  but the landing can't seed the cache with a pre-write or previous-nexus detail. */
+export function fetchPageDetail(path: string): Promise<PageDetail | null> {
+  const pending = inFlight.get(path)
+  if (pending) return pending
+  const p: Promise<PageDetail | null> = window.nexus.openPage(path).then((r) => {
+    const owned = inFlight.get(path) === p
+    if (owned) inFlight.delete(path)
+    if (!r.ok) return null
+    if (owned) cachePageDetail(r.value)
+    return r.value
+  })
+  inFlight.set(path, p)
+  return p
+}
+
 /** The save scheduler's write-through — the slot's body must never lag a pending write, or a
  *  remounting tile would seed on pre-edit prose and the next keystroke would save it back. */
 export function writeThroughBody(path: string, body: string): void {
@@ -70,6 +90,7 @@ export function writeThroughBody(path: string, body: string): void {
 
 export function dropPageDetail(path: string): void {
   detailByPath.delete(path)
+  inFlight.delete(path)
 }
 
 /** Drop every warm `pageDetail` captured for `path`, across all tabs — a frontmatter fact changed
@@ -80,6 +101,7 @@ export function dropWarmDetail(path: string): void {
     for (const entry of tabMap.values())
       if (entry.pageDetail?.path === path) delete entry.pageDetail
   detailByPath.delete(path)
+  inFlight.delete(path)
 }
 
 export function dropWarmTab(tabId: string): void {
@@ -89,4 +111,5 @@ export function dropWarmTab(tabId: string): void {
 export function clearWarm(): void {
   cache.clear()
   detailByPath.clear()
+  inFlight.clear()
 }
