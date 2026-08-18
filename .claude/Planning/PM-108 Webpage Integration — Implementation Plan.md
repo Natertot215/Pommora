@@ -1,6 +1,6 @@
 ## PM-108 Webpage Integration — Implementation Plan
 
-> **Status:** written, pending review · Spec: `.claude/Planning/PM-108 Webpage Integration — Decision Log.md` · Execute tasks in order.
+> **Status:** ratified — in execution · Spec: `.claude/Planning/PM-108 Webpage Integration — Decision Log.md` · Execute tasks in order.
 > Citations name files and symbols; re-derive before editing.
 
 **Goal**
