@@ -108,7 +108,9 @@ Each handler declares its boundary policy beside its body. Enveloped channels �
 
 ### The Device-Local Database
 
-`<nexus>/.nexus/nexus.db` travels with the Nexus, keeping a moved or renamed one intact without re-pathing, and holds one table of substance — `local_state`, keyed by `(scope, key)`. DDL is canonical in `src/main/db/schema.ts`; `node:sqlite` sits behind `driver.ts` as the swappable seam.
+`<nexus>/.nexus/nexus.db` travels with the Nexus, keeping a moved or renamed one intact without re-pathing. Two stores live inside: `local_state`, the operational store keyed by `(scope, key)`, and the content index — `mentions` and `page_values`, rows keyed by nexus-relative POSIX path (so a nexus rename invalidates nothing) and gated by `indexed_files`'s `(mtime, size)` stamps. DDL is canonical in `src/main/db/schema.ts`; `node:sqlite` sits behind `driver.ts` as the swappable seam. Additive tables ride `CREATE … IF NOT EXISTS` with no version bump — the opener re-applies the schema to an existing database on every open, so a file created before a table existed gains it with every row intact, and a re-apply that fails (read-only media) costs only the new tables while the session keeps its state.
+
+**The content index** records which pages mention which titles and which property-wrapped frontmatter keys and values each page carries. It is derived state, disposable by construction: deleting `nexus.db` costs it nothing — the open-time seed rebuilds it from the corpus, reading only files whose `(mtime, size)` moved since they were last indexed and pruning paths the corpus no longer yields, so the full-corpus read happens once per database, ever. The corpus is the sweeps' own — every markdown file outside `.nexus`, `.trash`, and the user's excluded folders, un-adopted folders included — enumerated through one helper (`corpusFiles`), so "indexed" and "rewritable" name the same set of files, and mention extraction shares the cascade prefilter's parse, so a title the index recorded is exactly one the prefilter affirms. A query answers null when there is no index — no database handle, or tables that never landed — and its caller falls back to a full scan; an empty answer is a real one.
 
 **What lives here** is per-machine chrome — folded headings, the active view per container, manual row order under a sort, table heading columns, the fetched-title cache, the aliases each Page has been given, the tab set, the preview sets, the recents stream, and every block host's document; none of it is authored content, and two machines interleaving any of it has no correct answer. The alias record is the clearest statement of the boundary: the alias itself is written on-page in universal syntax, and what the database keeps is the accelerator that offers it back.
 
@@ -116,7 +118,7 @@ Each handler declares its boundary policy beside its body. Enveloped channels �
 
 A Pommora-governed frontmatter key is recognized by its wrap alone — `(Context)` for the organization layer, `<Property>` for the attribute layer — partitioning the keyspace with no reserved-name blocklist while every foreign key and comment survives a rewrite. Recognizing a key is not resolving one; a key registers as a live value only on a registry match. 
 
-Every database action is one statement — a change is a single-row upsert, and an emptied value deletes its key. Navigation intent is the one operational write going to disk, and it keeps the before-quit gate deferring exit until the write settles.
+Every operational-state action is one statement — a change is a single-row upsert, and an emptied value deletes its key. Navigation intent is the one operational write going to disk, and it keeps the before-quit gate deferring exit until the write settles.
 
 **Versioned, not migrated.** A schema mismatch on open deletes the file and starts clean, costing a machine its chrome once — the schema stays small enough that the trade is worth it.
 
@@ -173,4 +175,4 @@ The database side is covered above — a version mismatch deletes the file and s
 ### Pending
 
 - **Folder-exclusion editing UI** — `excluded_folders` is hand-edited; its Settings surface is deferred.
-- **The content index** — Linked-From, backlinks, ContextView, and full-text search all need a content index, and none exists. Its replacement gets written alongside the query layer that reads it, updating a row at a time; the database, the driver seam, and the version handshake are already in place for it.
+- **Index consumers** — Linked-From, backlinks, ContextView membership, and full-text search each ride the content index as their own arcs; the FTS table is the one piece of schema still unwritten.

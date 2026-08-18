@@ -1,10 +1,13 @@
 // Nothing here is content — the filesystem stays canonical — so a version mismatch drops the file
 // and starts clean rather than migrating in place. That costs a user their folds and tab set once,
-// exactly as a corrupt sidecar always has.
+// exactly as a corrupt sidecar always has; the content-index tables reseed from the corpus at
+// open, so a drop costs them nothing at all.
 
 import type { Db } from './driver'
 
-/** A mismatch drops + recreates the file. Bump on any DDL change. */
+/** A mismatch drops + recreates the file. Bump when an EXISTING table's shape changes; additive
+ *  tables and indexes ride `IF NOT EXISTS` and reach existing files through the opener's
+ *  re-apply, keeping every row already there. */
 export const SCHEMA_VERSION = 1
 
 const DDL = `
@@ -17,6 +20,24 @@ const DDL = `
     key TEXT NOT NULL,
     value TEXT NOT NULL,
     PRIMARY KEY (scope, key)
+  );
+  CREATE TABLE IF NOT EXISTS mentions (
+    path TEXT NOT NULL,
+    title TEXT NOT NULL,
+    PRIMARY KEY (path, title)
+  );
+  CREATE INDEX IF NOT EXISTS mentions_by_title ON mentions (title);
+  CREATE TABLE IF NOT EXISTS page_values (
+    path TEXT NOT NULL,
+    key TEXT NOT NULL,
+    value TEXT NOT NULL,
+    PRIMARY KEY (path, key)
+  );
+  CREATE INDEX IF NOT EXISTS page_values_by_key ON page_values (key);
+  CREATE TABLE IF NOT EXISTS indexed_files (
+    path TEXT PRIMARY KEY,
+    mtime_ms REAL NOT NULL,
+    size INTEGER NOT NULL
   );`
 
 export function applySchema(db: Db): void {

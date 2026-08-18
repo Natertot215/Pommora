@@ -38,7 +38,18 @@ export function openNexusDb(nexusRoot: string): Db | null {
       )
       return null
     }
-    if (readSchemaVersion(existing) === SCHEMA_VERSION) return existing
+    if (readSchemaVersion(existing) === SCHEMA_VERSION) {
+      // Additive DDL must reach databases that have already been opened — the idempotent
+      // re-apply is how a pre-index file gains the index tables without a version bump. A throw
+      // (read-only media, a lock) costs only the new tables: the session keeps its folds and
+      // tabs, and the index queries answer null so their callers scan.
+      try {
+        applySchema(existing)
+      } catch (e) {
+        console.error(`nexus.db: schema re-apply failed — the content index is unavailable:`, e)
+      }
+      return existing
+    }
     existing.close()
     removeDbFiles(dbPath)
   }

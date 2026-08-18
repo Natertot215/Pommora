@@ -6,6 +6,7 @@
 import { readdir } from 'node:fs/promises'
 import type { Dirent } from 'node:fs'
 import { join } from 'node:path'
+import { excludedMatcher } from '../exclusion'
 
 /** Whether a name (or a path ending in one) is Markdown. Case-INSENSITIVE, and stated once: a
  *  `.MD` written by another editor is the same file to the person who wrote it, and a walk that
@@ -51,6 +52,30 @@ export async function listMarkdownFiles(
     .filter(isMarkdownFile)
     .filter((r) => !skip.has(r.split(/[/\\]/)[0]))
     .map((r) => join(dir, r))
+}
+
+/** What the pens can reach — THE corpus, stated once: every `.md` under the nexus outside its
+ *  own `.nexus`/`.trash` and outside the user's `excluded_folders`, as nexus-relative POSIX
+ *  paths (the tree's and the index's shared key convention). The index seed, its reconciler,
+ *  and every cascade fallback scan enumerate through here, so "indexed", "swept", and
+ *  "rewritable" can never mean three different sets of files. */
+export async function corpusFiles(root: string, excluded: string[]): Promise<string[]> {
+  const isExcluded = excludedMatcher(excluded)
+  let rels: string[]
+  try {
+    rels = await readdir(root, { recursive: true })
+  } catch {
+    return []
+  }
+  const skip = new Set(['.nexus', '.trash'])
+  const out: string[] = []
+  for (const rel of rels) {
+    if (!isMarkdownFile(rel)) continue
+    const segs = rel.split(/[/\\]/)
+    if (skip.has(segs[0]) || isExcluded(segs)) continue
+    out.push(segs.join('/'))
+  }
+  return out
 }
 
 /** Every file under `dir` (recursive) matching one of `suffixes`, as absolute paths —

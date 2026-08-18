@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdtemp, rm, mkdir, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, relative } from 'node:path'
-import { listMarkdownFiles } from './walk'
+import { corpusFiles, listMarkdownFiles } from './walk'
 
 let root: string
 beforeEach(async () => {
@@ -42,5 +42,30 @@ describe('listMarkdownFiles', () => {
 
   it('returns [] for a missing dir', async () => {
     expect(await listMarkdownFiles(join(root, 'nope'))).toEqual([])
+  })
+})
+
+describe('corpusFiles', () => {
+  it('yields the cascade corpus minus exclusions, as nexus-relative POSIX paths', async () => {
+    await mkdir(join(root, 'Hidden', 'deep'), { recursive: true })
+    await writeFile(join(root, 'Hidden', 'h.md'), 'x', 'utf8')
+    await writeFile(join(root, 'Hidden', 'deep', 'hh.md'), 'x', 'utf8')
+    await writeFile(join(root, 'sub', 'CAPS.MD'), 'x', 'utf8')
+    expect((await corpusFiles(root, [])).sort()).toEqual([
+      'Hidden/deep/hh.md',
+      'Hidden/h.md',
+      'a.md',
+      'sub/CAPS.MD',
+      'sub/b.md',
+    ])
+    expect((await corpusFiles(root, ['Hidden'])).sort()).toEqual([
+      'a.md',
+      'sub/CAPS.MD',
+      'sub/b.md',
+    ])
+  })
+
+  it('returns [] for a missing root', async () => {
+    expect(await corpusFiles(join(root, 'nope'), [])).toEqual([])
   })
 })
