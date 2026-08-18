@@ -10,10 +10,9 @@ import { stripPageMember } from './pageValue'
 import { readSidecar } from '../sidecarIO'
 import { propertyValueStands } from './standing'
 import { pageCollectionSidecar } from '@shared/schemas'
-import { listMarkdownFiles } from '../io/walk'
 import { sidecarPath } from '../paths'
 import { readTextOrNull, rewritePageSerialized, rmwJsonStrict } from '../io/atomicWrite'
-import { indexWrittenPage } from '../indexSeed'
+import { folderCorpus, indexWrittenPage } from '../indexSeed'
 import { readFrontmatterFields, mergeFrontmatter, splitEnvelope } from '../io/pageFile'
 import { readRegistry } from '../io/propertiesRegistry'
 import { encodeValue, isPlainObject, propertyKey } from '@shared/propertyValue'
@@ -44,7 +43,7 @@ async function removeInner(
   if (!def) return ok(null)
   const key = propertyKey(def)
 
-  const files = await listMarkdownFiles(collectionFolder)
+  const files = await folderCorpus(root, collectionFolder)
   // Snapshot each page's value for the restore cache — read BEFORE stripping so the cache is
   // written first (below): a failure mid-strip can then never lose a value it didn't capture.
   const values: Record<string, unknown> = {}
@@ -116,7 +115,7 @@ export async function restoreCachedValues(
   const key = propertyKey(def)
   // Map page id → file; the value write re-reads fresh inside the file lock.
   const byId = new Map<string, string>()
-  for (const file of await listMarkdownFiles(collectionFolder)) {
+  for (const file of await folderCorpus(root, collectionFolder)) {
     const content = await readTextOrNull(file)
     if (content === null) continue
     const id = contentId(readFrontmatterFields(content))

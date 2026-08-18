@@ -13,12 +13,13 @@
 // captured on the way past.
 
 import { readFile } from 'node:fs/promises'
+import { join } from 'node:path'
 import { parseGovernedKey } from '@shared/governedKeys'
 import { atomicWriteFile, readJsonObject, writeJson } from '../io/atomicWrite'
 import { serializeOnFile } from '../io/fileLock'
-import { indexWrittenPage } from '../indexSeed'
+import { indexWrittenPage, nexusCorpus } from '../indexSeed'
 import { mergeFrontmatter, splitEnvelope } from '../io/pageFile'
-import { listFilesRecursive, listMarkdownFiles } from '../io/walk'
+import { listFilesRecursive } from '../io/walk'
 import { contextsDir, SPACE_SIDECAR } from '../paths'
 import { splitFrontmatter } from '../readNexus'
 import { nowIso, sweepAdmits } from './util'
@@ -29,10 +30,8 @@ export type Raw = Record<string, unknown>
  *  sidecar, while a property value only means anything inside the Collection whose schema governs
  *  it, so the scope IS the difference between the two families. */
 export type SweepScope =
-  /** Every `.md` outside `.nexus`/`.trash`, plus every Space sidecar. */
+  /** The whole corpus — every `.md` the pens can reach — plus every Space sidecar. */
   | { kind: 'nexus' }
-  /** Every `.md` under each given Collection folder. */
-  | { kind: 'collections'; folders: string[] }
   /** An explicit page list the call site already targeted and scoped (the key-holder query);
    *  sidecars unreached. The query decision never lives in here — the Context cascade shares
    *  this function and its governed keys are outside the index. */
@@ -76,12 +75,7 @@ const changedKeys = (raw: Raw, next: Raw): string[] =>
 async function pageRoots(root: string, scope: SweepScope): Promise<string[]> {
   switch (scope.kind) {
     case 'nexus':
-      return listMarkdownFiles(root, { skipTopLevel: ['.nexus', '.trash'] })
-    case 'collections': {
-      const out: string[] = []
-      for (const folder of scope.folders) out.push(...(await listMarkdownFiles(folder)))
-      return out
-    }
+      return (await nexusCorpus(root)).map((rel) => join(root, rel))
     case 'files':
       return scope.files
     default: {

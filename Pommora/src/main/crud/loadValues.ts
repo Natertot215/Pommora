@@ -9,14 +9,14 @@ import { join, relative, sep } from 'node:path'
 import { PAGE_ID_KEY } from '@shared/identity'
 import { pageFrontmatter, type PageFrontmatter } from '@shared/schemas'
 import { readPageRecord } from '../readNexus'
-import { listMarkdownFiles } from '../io/walk'
+import { folderCorpus } from '../indexSeed'
 
 export async function loadValues(
   rootPath: string,
   containerRelPath: string,
 ): Promise<Record<string, PageFrontmatter>> {
   const absFolder = join(rootPath, containerRelPath)
-  const files = await listMarkdownFiles(absFolder)
+  const files = await folderCorpus(rootPath, absFolder)
   const records = await Promise.all(
     files.map((absFile) => {
       const relFile = relative(rootPath, absFile).split(sep).join('/')
