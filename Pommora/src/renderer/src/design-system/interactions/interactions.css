@@ -28,55 +28,6 @@
   line-height: 1.5;
   color: var(--label-secondary);
 }
-.ix-feel {
-  flex: none;
-  width: 300px;
-  background: var(--surface-secondary);
-  border: 1px solid var(--separator-border);
-  border-radius: 12px;
-  padding: 14px;
-}
-.ix-feel-presets {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 10px;
-}
-.ix-preset {
-  flex: 1;
-  font: inherit;
-  font-size: 11.5px;
-  color: var(--label-secondary);
-  background: var(--surface-tertiary);
-  border: 1px solid var(--separator-border);
-  border-radius: 7px;
-  padding: 6px 0;
-  cursor: pointer;
-}
-.ix-preset.is-on {
-  color: var(--accent-text);
-  background: var(--accent-fill);
-  border-color: var(--accent-text);
-}
-.ix-feel-row {
-  display: grid;
-  grid-template-columns: 64px 1fr 44px;
-  align-items: center;
-  gap: 10px;
-  font-size: 11.5px;
-  color: var(--label-secondary);
-  padding: 2px 0 10px;
-}
-.ix-feel-row input[type="range"] {
-  width: 100%;
-  accent-color: var(--accent);
-  cursor: pointer;
-}
-.ix-feel-val {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-  color: var(--label-tertiary);
-}
-
 /* Section cards */
 .ix-sections {
   display: grid;

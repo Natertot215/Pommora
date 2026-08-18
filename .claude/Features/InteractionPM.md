@@ -82,7 +82,7 @@ Both slots stay mounted, each measured by a `ResizeObserver`, so the target size
 
 ### Drag Motion
 
-Owned by the in-house engine (→ [[PommoraDND]]). In brief: a live "feel" (duration + easing) shared across every surface via `--ix-dur`/`--ix-ease` (presets Glide / Smooth-default / Snappy, `interactions/feel.tsx`); decide-then-animate commits on `transitionend`; and the app-wide auto-scroll primitive every drag feeds. Every insertion-line surface draws its chrome from the shared owners in `design-system/interactions` — the `DragGhost` component (its glass the `GHOST_FROST` recipe) and the `drop-line`/`drop-dot`/`drop-line-host` classes on the drag-line tokens; the editor block-drag keeps its own lifecycle while its overlay wears the same classes (`editor/dragChrome.ts`) — all positioned 1:1 with the pointer, not timed.
+Owned by the in-house engine (→ [[PommoraDND]]). In brief: one fixed "feel" (duration + easing) — `DEFAULT_FEEL` in `interactions/feel.tsx`, its named presets kept for the surfaces that pass one explicitly — read as a constant by every drag surface; decide-then-animate commits on `transitionend`; and the app-wide auto-scroll primitive every drag feeds. Every insertion-line surface draws its chrome from the shared owners in `design-system/interactions` — the `DragGhost` component (its glass the `GHOST_FROST` recipe) and the `drop-line`/`drop-dot`/`drop-line-host` classes on the drag-line tokens; the editor block-drag keeps its own lifecycle while its overlay wears the same classes (`editor/dragChrome.ts`) — all positioned 1:1 with the pointer, not timed.
 
 ### Scroll Glide
 
