@@ -1,69 +1,177 @@
 ## Configuration
 ```
 Configuration
+├── Settings
+│   ├── General
+│   ├── Interface
+│   ├── Navigation
+│   ├── Appearance
+│   ├── Files & Links
+│   ├── Properties
+│   ├── Pages & Editor
+│   ├── Automations
+│   ├── Shortcuts
+│   └── Trash
+├── Collections
+├── Pages
 ├── Personalization
-├── Commands
-├── Write Discipline
 ├── Labels
+├── Write Discipline
 ├── App Configuration (Per-Device)
-├── The Settings Window
 └── Pending
 ```
 
-How a Nexus and the app get personalized. Two scopes: a per-Nexus layer in `.nexus/settings.json` — **personalization**, **labels**, the profile (image + subtitle), and the Subfield's own `subfield` key — that travels with the Nexus and syncs, and a per-device **app config** that stays on the machine. A third scope — per-machine chrome such as folds, the active view, and the tab and preview sets — is never synced and lives in the Nexus's device-local database. 
+Configuration reads at three scopes. A **Nexus** is configured from the Settings window, whose knobs live in `.nexus/settings.json` and travel with the Nexus. A **Collection** is configured from its own sidecar, governing how its pages open and how its views present themselves. A **Page** carries its own frontmatter. Beneath all three sits a per-device layer that never syncs: the app config beside the application, and the machine-and-Nexus preferences in the Nexus's own database.
+
+### Settings
+
+A floating window summoned from the sidebar ribbon's settings glyph, mounted on the shared **PreviewPane** surface — inheriting its glass shell, geometry, and dismissal behavior. 
+
+#### General
+
+| Setting | Key | Description | Options |
+| --- | --- | --- | --- |
+| Date Format | `dateFormat` | The date form every column without one of its own takes. | MM/DD/YYYY · DD/MM/YYYY · Short Date · **Full Date** · Relative |
+| Time Format | `timeFormat` | The Nexus's clock, wherever a time renders. | **12 Hours** · 24 Hours |
+
+#### Interface
+
+| Setting                  | Key                   | Description                                                                                                                | Options      |
+| ------------------------ | --------------------- | -------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| Hide Disclosure Chevrons | `hideChevrons`        | Collapses the sidebar's chevron gutter.                                                                                    | On · **Off** |
+| Reveal Tab Bar On Hover  | `revealTabBarOnHover` | Keeps the tab bar hidden until the pointer nears it.                                                                       | On · **Off** |
+| Use Native Menus         | `nativeMenus`         | Draws plain-list menus as system menus. Belongs to the computer rather than the Nexus, so it lives in the device database. | On · **Off** |
+
+#### Navigation
+
+| Setting                     | Key                        | Description                                                                                              | Options                 |
+| --------------------------- | -------------------------- | -------------------------------------------------------------------------------------------------------- | ----------------------- |
+| Close Navigation On Select  | `navCloseOnSelect`         | Picking an entity dismisses the Navigation window.                                                       | **On** · Off            |
+| Open Connections In Preview | `connectionsOpenInPreview` | A connection click opens the preview window instead of navigating. ⌘-click always takes the other route. | On · **Off**            |
+| Hover Preview Linger        | `hoverPreviewLinger`       | How long a connection's hover preview stays open after hovering off.                                     | **None** · 1–30 seconds |
+
+#### Appearance
+
+Seated and empty. Accent, connection color, default icons, and the default view scale land here once they have controls.
+
+| Setting | Key | Description | Options |
+| ------- | --- | ----------- | ------- |
+|         |     |             |         |
+
+#### Files & Links
+
+**Pasted Links**
+
+| Setting                           | Key                     | Description                                                                                  | Options                                 |
+| --------------------------------- | ----------------------- | -------------------------------------------------------------------------------------------- | --------------------------------------- |
+| Automatically Format Pasted Links | `autoFormatPastedLinks` | Writes a pasted address as a link rather than as literal text.                               | On · **Off**                            |
+| Default Format                    | `defaultLinkFormat`     | Which form that link takes. Disclosed only while the row above is on.                        | **Full Link** · Short Link · Page Title |
+| Paste Link Into Text              | `pasteLinkIntoText`     | Pasting an address over selected text turns that text into the link instead of replacing it. | On · **Off**                            |
+
+**Connections**
+
+| Setting | Key | Description | Options |
+| --- | --- | --- | --- |
+| Remove Title On Link Change | `removeTitleOnLinkChange` | Pointing a connection at another page drops the alias it was wearing. | **On** · Off |
+| Automatically Suggest Existing Aliases When Linking A Page | `aliasPickerOnCommit` | Accepting a page from the connection picker offers the names it already carries. | **On** · Off |
+
+**Deletion**
+
+| Setting | Key | Description | Options |
+| --- | --- | --- | --- |
+| Permanently Delete Files | `permanentDelete` | Erases an emptied item from the computer rather than handing it to the system trash. | On · **Off** |
+
+#### Properties
+
+Seated and empty.
+
+| Setting | Key | Description | Options |
+| ------- | --- | ----------- | ------- |
+|         |     |             |         |
+
+#### Pages & Editor
+
+| Setting                        | Key                  | Description                                             | Options      |
+| ------------------------------ | -------------------- | ------------------------------------------------------- | ------------ |
+| Show Line Count In Code Blocks | `codeblockLineCount` | Numbers a codeblock's content lines as rendered glyphs. | On · **Off** |
+| Outliner Lines                 | `outlinerLines`      | Draws indent rails on nested lists in the editor.       | On · **Off** |
+
+#### Automations
+
+Seated and empty.
+
+| Setting | Key | Description | Options |
+| --- | --- | --- | --- |
+
+#### Shortcuts
+
+Keyboard shortcuts are data, not code: the `commands` object in `.nexus/settings.json` maps command ids to shortcut specs, and every future rebindable shortcut registers as a row in that map. Defaults live in code and are overlaid with the on-disk block on read — a malformed or absent entry falls back to its built-in binding rather than losing the shortcut. Specs are `+`-joined modifier chains ending in a key, matched exactly so overlapping bindings can't double-fire. The leaf has no interface yet, so rebinding is hand-edited.
+
+| Command           | Key             | Description                                                                                                                                                                                                                                              | Binding |
+| ----------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| Toggle Ribbon     | `toggle-ribbon` | Slides the sidebar's ribbon strip away and back.                                                                                                                                                                                                         | ⌘T      |
+| Toggle Navigation | `toggle-nav`    | Summons the Navigation window.                                                                                                                                                                                                                           | ⌘O      |
+| Inverse Paste     | `paste-inverse` | Pastes the opposite way a plain paste is set to behave (→ [[MarkdownPM]] §Pasted links). It takes the chord Paste and Match Style holds by default, so that item keeps its act under the name **Paste Without Formatting** but gives up its accelerator. | ⌘⇧V     |
+
+#### Trash
+
+The one surface leaf, anchored below the rail's separator. Its body is the deletion record's browser (→ [[NexusRecordPM]] §Trash & Deletion) rather than a list of rows, and the column's own heading menu carries its two display knobs.
+
+| Setting | Key | Description | Options |
+| --- | --- | --- | --- |
+| Date Format | `trashDateFormat` | How the browser writes a deletion's date. Unset, it follows the Nexus's own date form. | Short Date · Full Date |
+| Show Time | `trashHideTime` | Whether that date carries its clock. | **Shown** · Hidden |
+
+### Collections
+
+A Collection's own configuration, stored in its `_pagecollection.json` sidecar and set from the collection's Configuration pane. A Set carries the same keys in `_pageset.json` at any depth, except `open_in`, which is Collection-owned and proxied by its Sets.
+
+| Setting    | Key           | Description                                                                  | Options                      |
+| ---------- | ------------- | ---------------------------------------------------------------------------- | ---------------------------- |
+| Open In    | `open_in`     | How a page opens from its container.                                         | **Full Page** · Page Preview |
+| Show Title | `view_button` | Whether the view dropdown's button carries the view's name beside its glyph. | **Icon** · Labeled           |
+| View Style | `view_style`  | How the view switcher presents itself — unimplementes                        | **Dropdown** · Toolbar       |
+
+The sidecar's remaining fields are structure rather than configuration: the entity's id and icon, its banner, its page and set ordering, its property assignment list, and its saved views (→ [[ViewsPM]]).
+
+### Pages
+
+A page's frontmatter carries its identity and its property values. Its configuration is not yet documented here.
+
+| Setting | Key | Description | Options |
+| --- | --- | --- | --- |
 
 ### Personalization
 
-Nexus-wide interface config, stored as the `personalization` object in `.nexus/settings.json`. A key the schema doesn't parse is dropped on read and falls back to its default, so a hand-typed bad value reverts on the next open.
+Nexus-wide interface config, stored as the `personalization` object in `.nexus/settings.json`. A key the schema doesn't parse is dropped on read and falls back to its default, so a hand-typed bad value reverts on the next open. Every key the Settings window writes is tabled above; the rest are written by the app itself rather than by a row.
 
 - **accent** — the app-wide accent: a spectrum solid, or `system` to follow the OS.
 - **connectionColor** — the inline `[[Title]]` connection color; tracks the accent live by default, or pins a specific solid.
-- **hideChevrons** — collapse the sidebar's disclosure-chevron gutter.
-- **outlinerLines** — nested-list indent rails in MarkdownPM.
 - **defaultIcons** — the per-kind default icon, overriding the built-in seed; an entity's own icon still wins over it.
-- **setPlacement / subSetPlacement** — where the folders sit: a Collection's depth-1 Sets and a Set's Sub-Sets sit above (the default) or below their container's loose pages, so "pages on top" is spelled `bottom`. The knobs are independent tiers — `setPlacement` never moves a Set's own pages, and set-level pages answer only to `subSetPlacement`. The folder block stays contiguous; a full folder↔page interleave is the eventual model.
-- **sidebarMode** — the sidebar ribbon's active content mode (Collections, Contexts, or Agenda); absent defaults to Collections. Written live by the ribbon and remembered across restarts.
-- **ribbonOrder** — the ribbon's launcher-icon order below the pinned Homepage. Written by drag-to-reorder; a partial or stale value is repaired on read so a newly-added icon never vanishes.
-- **navCloseOnSelect** — whether picking an entity from the Navigation window dismisses it. Defaults on.
-- **revealTabBarOnHover** — keep the toolbar's tab bar hidden until the pointer nears it.
-- **connectionsOpenInPreview** — a `[[Connection]]` click opens the Page Preview window instead of navigating. ⌘-click always takes the full-page route, whichever way this knob is set.
 - **favoriteIcons** — the icons favorited in the Icon Picker, in display order. Written by the picker itself.
-- **defaultViewScale** — the window zoom a nexus opens at, and what ⌘0 resets to. Clamped on read and applied main-side, so a hand-typed value can't push the renderer somewhere unusable.
-- **hoverPreviewLinger** — how long a connection's hover preview stays open after hovering off, in whole seconds. Absent is **None** — only the short pointer-travel grace. Written by the Settings window's Pages slider; clamped on read, with zero or junk reading as None.
-- **autoFormatPastedLinks** — whether an address pasted into MarkdownPM is written as a markdown link rather than as literal text. Absent is literal.
-- **defaultLinkFormat** — which form that link takes: the whole address, its bare domain, or the site's page title (→ [[MarkdownPM]] §Pasted links). Absent is the whole address. Disclosed in Settings only while the knob above it is on.
-- **pasteLinkIntoText** — whether pasting an address over selected text turns that text into the link instead of replacing it. Absent replaces.
-
-### Commands
-
-Keyboard shortcuts are data, not code: the `commands` object in `.nexus/settings.json` maps command ids to shortcut specs, and every future rebindable shortcut registers as a row in this map. Defaults live in code and are overlaid with the on-disk block on read — a malformed or absent entry falls back to its built-in binding rather than losing the shortcut. Specs are `+`-joined modifier chains ending in a key, matched exactly so overlapping bindings can't double-fire. Rebinding is hand-edited.
-
-- **toggle-ribbon** — slides the sidebar's ribbon strip away and back.
-- **toggle-nav** — summons the Navigation window.
-- **paste-inverse** — pastes into an editor the opposite way the Pages settings say a plain paste behaves (→ [[MarkdownPM]] §Pasted links). It takes the chord the system's Paste and Match Style holds by default, so that item keeps its act under the name **Paste Without Formatting** but gives up its accelerator — while the role holds ⌘⇧V main-side, the keypress never reaches the editor at all.
-
-### Write Discipline
-
-Every `settings.json` write funnels through one per-file serialize lock, so concurrent writers can't drop each other's keys. Unrecognized keys are preserved by value on write, so a key one build doesn't know — desktop ↔ mobile version skew — survives the round-trip.
+- **setPlacement / subSetPlacement** — where the folders sit: a Collection's depth-1 Sets and a Set's Sub-Sets sit above (the default) or below their container's loose pages, so "pages on top" is spelled `bottom`. The knobs are independent tiers — `setPlacement` never moves a Set's own pages, and set-level pages answer only to `subSetPlacement`. The folder block stays contiguous; a full folder↔page interleave is the eventual model.
+- **sidebarMode** — the sidebar ribbon's active content mode. Written live by the ribbon and remembered across restarts.
+- **ribbonOrder** — the ribbon's launcher-icon order below the pinned Homepage. Written by drag-to-reorder; a partial or stale value is repaired on read so a newly-added icon never vanishes.
+- **defaultViewScale** — the window zoom a Nexus opens at, and what ⌘0 resets to. Stated as a multiplier where 1.0 is the interface at its intended size; the host zoom it resolves to is a step below that, so the chrome reads at its drawn scale rather than the browser's. Clamped on read and applied main-side.
 
 ### Labels
 
 Every entity kind carries a **renameable display label** in `settings.json` — the code identity is fixed, the shown name is the user's. Each is a **LabelPair** of singular and plural; the deeper-Set label derives from the Set singular and is never stored. Seeding a fresh Nexus's Context registry takes its Context titles from the matching label plurals; from then on live Context names read from the registry itself. A partial or absent `labels` blob falls back per field, so an unset name still resolves to its default.
 
+### Write Discipline
+
+Every `settings.json` write funnels through one per-file serialize lock, so concurrent writers can't drop each other's keys. Unrecognized keys are preserved by value on write, so a key one build doesn't know — desktop ↔ mobile version skew — survives the round-trip.
+
 ### App Configuration (Per-Device)
 
-Cross-session, machine-local state in `pommora.json` under the app's userData directory: the last-opened Nexus, the roll-off list of recently opened Nexuses behind Open Recent, and the delete target (in-Nexus trash vs the system trash). It is never part of a Nexus and never syncs. The Navigation layer's own recents are a separate stream — visited entities within one Nexus, stored in that Nexus's database. 
+Cross-session, machine-local state in `pommora.json` under the app's userData directory: the last-opened Nexus, the roll-off list of recently opened Nexuses behind Open Recent, and the delete target. It is never part of a Nexus and never syncs. The Navigation layer's own recents are a separate stream — visited entities within one Nexus, stored in that Nexus's database.
 
-A second class of machine-local state sits in the Nexus's own database rather than beside the app: preferences that belong to the pair of a machine and a Nexus. **Use Native Menus** is the first — with it on, menus that are plain lists are drawn by the operating system instead of as in-app panes, which is a property of the system in front of the user rather than of the Nexus, so opening the same Nexus on another computer reads however that computer is set. Menus that are not lists — a grid, a calendar, a text field, anything holding a sliding pane — have no system equivalent and are unaffected either way.
-
-### The Settings Window
-
-A floating window summoned from the sidebar ribbon's settings glyph, mounted on the shared **PreviewPane** surface — inheriting its glass shell, geometry, and dismissal contract, and opening smaller than a content window through that surface's bounds override. A category rail runs the window's full height as an in-flow side pane; the rail is the roster new panels register in.
-
-Its rows are per-Nexus knobs — boolean switches, pickers, and the hover-preview linger's slider — written through the shared personalization setter and applied live. A row may be disclosed by another row's value rather than always shown, folding into place when the knob above it turns on. A leaf may instead carry a surface of its own: the rail's foot holds **Trash**, whose body is the deletion record's browser (→ [[NexusRecordPM]] §Trash & Deletion) rather than a list of toggles. The switch that browser obeys, **Permanently Delete Files**, is an ordinary General row — off, an emptied item goes to the operating system's trash; on, it is erased from the machine. A knob resting at its default stores no key (a default-ON switch stores only its OFF state, the slider's None stores nothing), so an untouched nexus keeps a clean settings file.
+A second class of machine-local state sits in the Nexus's own database rather than beside the app: preferences belonging to the pair of a machine and a Nexus. **Use Native Menus** is the first, tabled under §Interface above.
 
 ### Pending
 
-- **Beyond the boolean knobs** — accent, connection color, default icons, both placement knobs, and the default view scale have no in-app writer and are hand-set in `settings.json`, with the watcher applying the change live. Accent and connection color need pickers, the placement knobs are two-value choices, and default icons need the Icon Picker per kind — all wireable through the existing setter.
+- **Beyond the knobs that ship** — accent, connection color, default icons, both placement knobs, and the default view scale have no in-app writer and are hand-set in `settings.json`, with the watcher applying the change live. All are wireable through the existing setter.
 - **Scopes with no renderer-facing setter** — labels and the per-device app config have no IPC a UI could write through; each needs a handler first. The profile is further along: its image and icon are written from the ribbon's identity menu, and the subtitle has an op and handler waiting on a surface to drive them.
-- **Command rebinding** — data-ready and unbuilt; shortcuts don't ship without per-shortcut sign-off.
+- **Command rebinding** — data-ready and unbuilt; shortcuts don't ship without per-shortcut sign-off. The Shortcuts leaf lists its bindings and offers no control over them until they do.
+- **Two names for one date form** — the Trash column's own menu calls `monthDayYear` "Short Date", where every other surface calls it "MM/DD/YYYY" and reserves "Short Date" for the `short` form. The two vocabularies need reconciling.
+- **Page configuration** — §Pages is scaffolded and unwritten.
