@@ -25,12 +25,12 @@ The closing ask was a capability check: the shared window surface holding two si
 - [x] **`dateFormat` and `timeFormat`** — both in the personalization block, the date form reaching every unoverridden column through one resolver.
 - [x] **Two-sided windows** — a pane on either edge at once, an opening side moving the window's own edge, confirmed by measurement.
 - [x] **Docs reconciled** — ConfigurationPM re-scaffolded to three scopes with option tables; SymbolsPM, PropertiesPM, MarkdownPM, ViewsPM, CardViewPM, SidebarPM and InteractionPM corrected.
-- [ ] **Appearance filled** — accent, connection color and default icons have working keys and no controls.
+- [ ] **Appearance filled** — accent, connection color, default icons and the default view scale have working keys and no controls.
 - [ ] **Properties and Automations answered** — both are seated and empty; neither has a backing key, and Automations has no feature behind it yet.
 
 #### Next Session
 
-- **Fill Appearance.** Accent and connection color need pickers, and `ColorPicker` already exists; the two placement knobs are two-value choices; default icons need the Icon Picker per kind. All write through the existing `setPersonalization` — no new plumbing.
+- **Fill Appearance.** Accent and connection color need pickers, and `ColorPicker` already exists; the two placement knobs are two-value choices; the default view scale is a slider; default icons need the Icon Picker per kind. All four write through the existing `setPersonalization` — no new plumbing.
 - **Decide what Properties configures.** The category is seated with nothing behind it; no personalization key is property-scoped today.
 - **Shortcuts is data-ready and control-free.** `DEFAULT_COMMANDS` holds three bindings the leaf could display read-only before rebinding is designed.
 - **The inspector the two-sided window now allows** — the capability shipped ahead of a consumer; nothing yet opens a right pane in Settings.
@@ -43,8 +43,6 @@ The closing ask was a capability check: the shared window surface holding two si
 - "Adjust the order appropriately" — a sketch's ordering defers to the rail's actual order.
 - "ViewsPM can keep its description, just not as elaborate." — tightening prose means shortening it, not replacing it with a pointer.
 - "Short and simply, as minimal wording or padding as possible."
-
-**Interface Scale shipped after the record commit** — the slider row generalized to carry a floor, a step, and a `live` hook, and `win:viewScale` applies a per-tick scale without persisting. `VIEW_SCALE_MAX` came down from 3 to 1.5 with it. The live path is wired and gate-green but **unverified end to end**: it crosses IPC into the Electron main process, which this session had no way to drive.
 
 #### Session Pointers
 
