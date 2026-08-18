@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { VIEW_SCALE_MAX, VIEW_SCALE_MIN } from '@shared/types'
 import { mkdtemp, rm, mkdir, writeFile, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -62,9 +61,9 @@ describe('readDefaultViewScale', () => {
 
   it('clamps out-of-range values so a typo cannot brick the window', async () => {
     await write({ personalization: { defaultViewScale: 125 } })
-    expect(await readDefaultViewScale(root)).toBe(VIEW_SCALE_MAX)
+    expect(await readDefaultViewScale(root)).toBe(3) // MAX
     await write({ personalization: { defaultViewScale: 0.1 } })
-    expect(await readDefaultViewScale(root)).toBe(VIEW_SCALE_MIN)
+    expect(await readDefaultViewScale(root)).toBe(0.5) // MIN
   })
 
   it('falls back to 1.0 on a non-numeric or malformed value', async () => {

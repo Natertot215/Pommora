@@ -169,7 +169,6 @@ const api = {
   // hover, so the bar drives the move itself via per-pointermove screen deltas.
   winDragBy: tell('win:dragBy'),
   winZoom: tell('win:zoom'),
-  winViewScale: tell('win:viewScale'),
   // Resolves with the picked request, for the renderer's store to run.
   popCreateMenu: ask('create-menu'),
   // Surface a failure natively (renderer can't show a native dialog itself).
