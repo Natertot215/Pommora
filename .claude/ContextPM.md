@@ -6,14 +6,14 @@
 
 ### Immediate Work
 
-- [ ] **A journal behind the property cascades** (below) — the one item the closed arc left owed; everything else remains the standing menu.
+- [ ] **A journal behind the property cascades** (below) — the record is the final piece of the abstract-plumbing arc (live tree → content index → crash journal); everything else remains the standing menu.
 
 ### Pending Focuses
 
 #### II. The Boring Work
 
 - [ ] **The store split.** Renderer state — active tab, selection, pins, the open preview, the page being edited — composes into domain slice files that build the same single store. The shared room is what lets features react to each other and what killed a whole class of two-copies bugs, so the shape stays and only the file boundary moves. Best taken immediately before the next store-heavy feature, rather than as a standalone ceremony.
-- [ ] **A journal behind the property cascades.** A property rename commits the registry, then sweeps the new key across every page, and a delete scrubs values off every page; neither records that the sweep is owed, so a crash partway leaves the registry saying one thing and half the pages another. The rename's outcome is recoverable — the values go invisible and renaming back returns them — where the delete's is not, which is the half that earns the work. The Context rename's journal and its open-time replay are the pattern to reuse, and the one decision to make first is whether that single-record journal becomes a list or the cascades get their own: nothing today stops a Context rename and a schema write being in flight at once, so folding both into one record invents a collision that doesn't exist.
+- [ ] **A journal behind the property cascades — the final piece of the abstract-plumbing arc.** A property rename commits the registry, then sweeps the new key across every page, and a delete scrubs values off every page; neither records that the sweep is owed, so a crash partway leaves the registry saying one thing and half the pages another. The Context rename's journal and its open-time replay are the pattern to reuse. Ratified: the schema ops get their **own sibling record** beside the Context journal (two records, never a shared list — the two chains serialize independently and folding them invents a collision that doesn't exist); the journaled ops are **delete and rename** (whether the option cascades join is confirmed at planning); the record is a **file under `.nexus`**, matching the Context journal, since the db is optional exactly when things went wrong. The record carries **intent, never a snapshot** — the replay re-runs the idempotent sweep against current disk, re-deriving its targets through the content index's key-holder query, so it stays most-recent-wins and self-healing where a remembered page list would go stale.
 - [ ] **`mutate.ts` organization.** Every change funnels through a single dispatcher in the file-owning process, which is deliberate: a single entry point means a single place for safety policy. Early operations used tidy crud// modules, where later ones were written inline, and each arm moves when its file is next touched.
 
 #### II. Next-Feature Candidates
@@ -21,6 +21,8 @@
 - [ ] **View QuickFilter:** A dropdown or toggle that holds single-property filtering options; the recently added ActionBand would be its natural placement for SurfacePM embeds, and the Subfield is an initial idea for where this could be placed in full-detail views.
 - [ ] **Auto-Linter:** A MarkdownPM, nexus-level-configurable auto-linter that could place its action button in the subfield, or an approved command combination.
 - [ ] **Per-tab Subfield `crumbDepth`**, if cross-tab tail memory is ever wanted. It resets on tab switch today (correct, no leak); a per-tab field would let each tab remember its own dimmed tail across switches — a feature, not a fix.
+- [ ] **MarkdownPM Footnotes:** Auto-ordered footnotes. 
+- [ ] **Settings UI:** Proper scaffolding of the configuration UI. 
 
 ### Important Information
 
@@ -36,15 +38,17 @@
 
 #### II. Debt & Ride-Alongs
 
-- [ ] `feel.tsx`'s animation context is not provided anywhere outside the showcase, so both engines always read the default, while SurfacePM delivers the same value as a prop — wrap the shell in a provider or delete the context; a product call.
-- [ ] NOR filters are hand-authored only — the mode lives on disk and in the evaluator while the pane offers All and Any.
-- [ ] Perf debt: no row virtualization, and an external value edit doesn't live-refresh an open table.
-- [ ] `SessionState.error` and `pageError` hold strings while the wire carries `PommoraError` whole — widening them is near-zero churn.
-- [ ] `pageEditor` and `ConnectionHoverCard` reach the editor by CSS selector; the registered-handle pattern that replaces it is already established in `sidebarDnd`, `paneDnd`, and `useOptionReorder`.
-- [ ] `revealPageOffset` sleeps on a duration to wait out a fold animation while `folding.ts` owns the real completion signal.
-- [ ] The `Creator` shape is stated three times — the named type in `shared/mutate.ts`, and inline in `shared/bridge.ts` and `store.ts`.
-- [ ] `useDismiss` coordinates with picker portals via per-event DOM queries; a shared open-picker counter removes the handshake.
-- [ ] The preview window's two halves share a path-keyed detail cache but neither dedupes an in-flight fetch, so navigating with the inspector already open still calls `openPage` twice.
+Known shortcuts, none broken today. Each is cheap on its own and best taken when its owning file is next touched — or swept together as one batch session.
+
+- [ ] **Animation context that nothing provides.** `feel.tsx` defines an animation-settings context, but only the showcase ever provides it — in the app both drag engines always read the default while SurfacePM hands the same value along as a prop. Either wrap the shell in a real provider or delete the context; which is a product call.
+- [ ] **NOR filters are hand-authored only.** The on-disk format and the evaluator both understand a NOR mode, but the filter pane only offers All and Any — the third mode can only be reached by editing the view file by hand.
+- [ ] **Table perf ceilings.** Tables render every row with no virtualization, so a very long collection will eventually feel it; and a value edited outside the app doesn't live-refresh an open table.
+- [ ] **Errors flattened to strings.** The wire delivers the full structured `PommoraError`, but the session store keeps only its message string in `SessionState.error` and `pageError` — widening the two fields is near-zero churn and would let surfaces react to the error's code.
+- [ ] **Editor reached by CSS selector.** `pageEditor` and `ConnectionHoverCard` find the editor by querying the DOM, while `sidebarDnd`, `paneDnd`, and `useOptionReorder` already use the registered-handle pattern that replaces it — same fix, just not applied at these two sites.
+- [ ] **Scroll waits by timer, not by signal.** `revealPageOffset` sleeps for a fold animation's duration to wait it out, even though `folding.ts` owns the real completion signal it could listen to.
+- [ ] **The `Creator` shape stated three times.** Once as the named type in `shared/mutate.ts`, then re-spelled inline in `shared/bridge.ts` and `store.ts` — the two inline copies should import the one definition.
+- [ ] **Dismiss checks for pickers the hard way.** `useDismiss` decides whether a click was "outside" by querying the DOM for open picker portals on every event; a shared open-picker counter removes the handshake entirely.
+- [ ] **The preview fetches twice.** The preview window's two halves share a path-keyed cache but neither dedupes a fetch already in flight, so navigating with the inspector open still calls `openPage` twice for the same page.
 
 ### Known Issues
 

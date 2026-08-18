@@ -67,10 +67,10 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 │   │   ├── [ArchitecturePM.md]          | • The data layer — on-disk Nexus, reads, nexus.db, atomic writes, watcher
 │   │   ├── [CardViewPM.md]              | • The Cards renderer — a resizable card grid on the view pipeline
 │   │   ├── [CollectionsPM.md]           | • The schema-bearing tier and its sidecars
-│   │   ├── [ConfigurationPM.md]         | • Per-Nexus personalization, labels, and profile
+│   │   ├── [ConfigurationPM.md]         | • Per-Nexus personalization, settings, and profile
 │   │   ├── [ConnectionsPM.md]           | • Inline title links — the sole connection syntax
 │   │   ├── [ContextsPM.md]              | • The organization layer, its registry, and Context identity
-│   │   ├── [DesignSystemPM.md]          | • The design system — the token atlas and the materials on it
+│   │   ├── [DesignSystemPM.md]          | • The design system — the token atlas and the materials on it.
 │   │   ├── [InteractionPM.md]           | • The animation system — motion tokens and named aliases
 │   │   ├── [MarkdownPM.md]              | • The in-house Markdown editor on a CodeMirror 6 substrate
 │   │   ├── [NavigationPM.md]            | • Tabs, per-tab history, breadcrumbs, and nav search
@@ -127,7 +127,7 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 │   │           ├── // PagePreview       | • The floating page window
 │   │           ├── // Settings          | • The settings surface
 │   │           ├── // Sidebar           | • The ribbon and its content column
-│   │           ├── // SurfacePM         | • The dashboard engine — core and sensors
+│   │           ├── // SurfacePM         | • The tile-based dashboard engine
 │   │           ├── // Tabs              | • The tabs + navigational overlays
 │   │           ├── // Toolbar           | • The window toolbar
 │   │           ├── // design-system     | • The design system
