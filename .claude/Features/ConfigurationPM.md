@@ -30,25 +30,25 @@ A floating window summoned from the sidebar ribbon's settings glyph, mounted on 
 #### General
 
 | Setting | Key | Description | Options |
-| --- | --- | --- | --- |
-| Date Format | `dateFormat` | The date form every column without one of its own takes. | MM/DD/YYYY · DD/MM/YYYY · Short Date · **Full Date** · Relative |
+| -- | -- | ----- | --- |
+| Date Format | `dateFormat` | The date format that every interface without one of its own takes. | MM/DD/YYYY · DD/MM/YYYY · Short Date · **Full Date** · Relative |
 | Time Format | `timeFormat` | The Nexus's clock, wherever a time renders. | **12 Hours** · 24 Hours |
 
 #### Interface
 
-| Setting                  | Key                   | Description                                                                                                                | Options      |
-| ------------------------ | --------------------- | -------------------------------------------------------------------------------------------------------------------------- | ------------ |
-| Hide Disclosure Chevrons | `hideChevrons`        | Collapses the sidebar's chevron gutter.                                                                                    | On · **Off** |
-| Reveal Tab Bar On Hover  | `revealTabBarOnHover` | Keeps the tab bar hidden until the pointer nears it.                                                                       | On · **Off** |
-| Use Native Menus         | `nativeMenus`         | Draws plain-list menus as system menus. Belongs to the computer rather than the Nexus, so it lives in the device database. | On · **Off** |
+| Setting | Key | Description | Options |
+| ------------------------------------ | ---------------------------------- | ------------------------------------------------------------------------------------------------- | ------------ |
+| Hide Disclosure Chevrons | `hideChevrons` | Collapses the sidebar's chevron gutter. | On · **Off** |
+| Reveal Tab Bar On Hover | `revealTabBarOnHover` | Keeps the tab bar hidden until the pointer nears it. | On · **Off** |
+| Use Native Menus | `nativeMenus` | Draws plain-list menus as system menus. Belongs to the computer rather than the Nexus, so it lives in the device database. | On · **Off** |
 
 #### Navigation
 
-| Setting                     | Key                        | Description                                                                                              | Options                 |
-| --------------------------- | -------------------------- | -------------------------------------------------------------------------------------------------------- | ----------------------- |
-| Close Navigation On Select  | `navCloseOnSelect`         | Picking an entity dismisses the Navigation window.                                                       | **On** · Off            |
-| Open Connections In Preview | `connectionsOpenInPreview` | A connection click opens the preview window instead of navigating. ⌘-click always takes the other route. | On · **Off**            |
-| Hover Preview Linger        | `hoverPreviewLinger`       | How long a connection's hover preview stays open after hovering off.                                     | **None** · 1–30 seconds |
+| Setting | Key | Description | Options |
+| --------------------------- | ----------------------------------------- | ----------------------------------------------------------------------------------------- | ----------------------- |
+| Close Navigation On Select | `navCloseOnSelect` | Picking an entity dismisses the Navigation window. | **On** · Off |
+| Open Connections In Preview | `connectionsOpenInPreview` | A connection click opens the preview window instead of navigating. ⌘-click always takes the other route. | On · **Off** |
+| Hover Preview Linger | `hoverPreviewLinger` | How long a connection's hover preview stays open after hovering off. | **None** · 1–30 seconds |
 
 #### Appearance
 
@@ -62,11 +62,11 @@ Seated and empty. Accent, connection color, default icons, and the default view 
 
 **Pasted Links**
 
-| Setting                           | Key                     | Description                                                                                  | Options                                 |
-| --------------------------------- | ----------------------- | -------------------------------------------------------------------------------------------- | --------------------------------------- |
-| Automatically Format Pasted Links | `autoFormatPastedLinks` | Writes a pasted address as a link rather than as literal text.                               | On · **Off**                            |
-| Default Format                    | `defaultLinkFormat`     | Which form that link takes. Disclosed only while the row above is on.                        | **Full Link** · Short Link · Page Title |
-| Paste Link Into Text              | `pasteLinkIntoText`     | Pasting an address over selected text turns that text into the link instead of replacing it. | On · **Off**                            |
+| Setting | Key | Description | Options |
+| --------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------- | --------------------------------------- |
+| Automatically Format Pasted Links | `autoFormatPastedLinks` | Writes a pasted address as a link rather than as literal text. | On · **Off** |
+| Default Format | `defaultLinkFormat` | Which form that link takes. Disclosed only while the row above is on. | **Full Link** · Short Link · Page Title |
+| Paste Link Into Text | `pasteLinkIntoText` | Pasting an address over selected text turns that text into the link instead of replacing it. | On · **Off** |
 
 **Connections**
 
@@ -107,11 +107,11 @@ Seated and empty.
 
 Keyboard shortcuts are data, not code: the `commands` object in `.nexus/settings.json` maps command ids to shortcut specs, and every future rebindable shortcut registers as a row in that map. Defaults live in code and are overlaid with the on-disk block on read — a malformed or absent entry falls back to its built-in binding rather than losing the shortcut. Specs are `+`-joined modifier chains ending in a key, matched exactly so overlapping bindings can't double-fire. The leaf has no interface yet, so rebinding is hand-edited.
 
-| Command           | Key             | Description                                                                                                                                                                                                                                              | Binding |
-| ----------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| Toggle Ribbon     | `toggle-ribbon` | Slides the sidebar's ribbon strip away and back.                                                                                                                                                                                                         | ⌘T      |
-| Toggle Navigation | `toggle-nav`    | Summons the Navigation window.                                                                                                                                                                                                                           | ⌘O      |
-| Inverse Paste     | `paste-inverse` | Pastes the opposite way a plain paste is set to behave (→ [[MarkdownPM]] §Pasted links). It takes the chord Paste and Match Style holds by default, so that item keeps its act under the name **Paste Without Formatting** but gives up its accelerator. | ⌘⇧V     |
+| Command | Key | Description | Binding |
+| -------------------------------------- | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| Toggle Ribbon | `toggle-ribbon` | Slides the sidebar's ribbon strip away and back. | ⌘T |
+| Toggle Navigation | `toggle-nav` | Summons the Navigation window. | ⌘O |
+| Inverse Paste | `paste-inverse` | Pastes the opposite way a plain paste is set to behave (→ [[MarkdownPM]] §Pasted links). It takes the chord Paste and Match Style holds by default, so that item keeps its act under the name **Paste Without Formatting** but gives up its accelerator. | ⌘⇧V |
 
 #### Trash
 
@@ -126,11 +126,11 @@ The one surface leaf, anchored below the rail's separator. Its body is the delet
 
 A Collection's own configuration, stored in its `_pagecollection.json` sidecar and set from the collection's Configuration pane. A Set carries the same keys in `_pageset.json` at any depth, except `open_in`, which is Collection-owned and proxied by its Sets.
 
-| Setting    | Key           | Description                                                                  | Options                      |
-| ---------- | ------------- | ---------------------------------------------------------------------------- | ---------------------------- |
-| Open In    | `open_in`     | How a page opens from its container.                                         | **Full Page** · Page Preview |
-| Show Title | `view_button` | Whether the view dropdown's button carries the view's name beside its glyph. | **Icon** · Labeled           |
-| View Style | `view_style`  | How the view switcher presents itself — unimplementes                        | **Dropdown** · Toolbar       |
+| Setting | Key | Description | Options |
+| --------------- | ---------------- | -------------------------------------------------------------------- | ---------------------------- |
+| Open In | `open_in` | How a page opens from its container. | **Full Page** · Page Preview |
+| Show Title | `view_button` | Whether the view dropdown's button carries the view's name beside its glyph. | **Icon** · Labeled |
+| View Style | `view_style` | How the view switcher presents itself — unimplementes | **Dropdown** · Toolbar |
 
 The sidecar's remaining fields are structure rather than configuration: the entity's id and icon, its banner, its page and set ordering, its property assignment list, and its saved views (→ [[ViewsPM]]).
 
