@@ -105,6 +105,21 @@ function pommoraItems(
     // anywhere.
     ...(isValidLink(selection) ? [{ label: 'Insert Link', click: act(INSERT_LINK_ACTION) }] : []),
     {
+      label: 'Insert',
+      submenu: [
+        {
+          label: 'Blockquote',
+          type: 'checkbox',
+          checked: s.block === 'quote',
+          click: act('block:quote'),
+        },
+        { label: 'Horizontal Rule', click: act('block:hr') },
+        { label: 'Code Block', click: act('block:code') },
+        { label: 'Callout', click: act('block:callout') },
+        { label: 'Table', click: act('block:table') },
+      ],
+    },
+    {
       label: 'Format',
       submenu: [
         // Accelerators are display-only (registerAccelerator: false); the keys are bound in formatKeymap.ts.
@@ -159,6 +174,10 @@ function pommoraItems(
       ],
     },
     {
+      label: 'Embed',
+      submenu: [{ label: 'Internal Page', click: act('block:page') }],
+    },
+    {
       label: 'Heading',
       submenu: [
         heading('Paragraph', 0),
@@ -190,22 +209,6 @@ function pommoraItems(
           checked: s.list === 'task',
           click: act('list:task'),
         },
-      ],
-    },
-    {
-      label: 'Insert',
-      submenu: [
-        {
-          label: 'Blockquote',
-          type: 'checkbox',
-          checked: s.block === 'quote',
-          click: act('block:quote'),
-        },
-        { label: 'Page', click: act('block:page') },
-        { label: 'Horizontal Rule', click: act('block:hr') },
-        { label: 'Code Block', click: act('block:code') },
-        { label: 'Callout', click: act('block:callout') },
-        { label: 'Table', click: act('block:table') },
       ],
     },
   ]

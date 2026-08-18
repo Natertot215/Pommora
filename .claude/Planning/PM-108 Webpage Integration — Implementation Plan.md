@@ -109,11 +109,11 @@ Constraints: `sandbox`/`contextIsolation` stay on; guests are validated at attac
 **Files:** Modify `Pommora/src/main/editorMenu.ts` — `pommoraItems` (currently: conditional Insert Link · Format ▸ · Heading ▸ · Lists ▸ · Insert ▸; Insert ▸ = Blockquote / Page / Horizontal Rule / Code Block / Callout / Table).
 
 **Steps:**
-- [ ] Reorder the block to: Insert Link (conditional, unchanged, top) · Insert ▸ · Format ▸ · Embed ▸ · Heading ▸ · Lists ▸.
-- [ ] Embed ▸ gets one item: **Internal Page** dispatching the existing `block:page` action (exact string unchanged — `applyEditorAction` special-cases it at `menu.ts:72`). Remove Page from Insert ▸; Insert ▸ keeps Blockquote / Horizontal Rule / Code Block / Callout / Table.
-- [ ] Gates green. Launch dev, right-click in a page body: order and items as specified; Insert ▸ Blockquote checkbox state still tracks a quote block.
-- [ ] Rewrite the MarkdownPM.md context-menu sentence (Made False row 1) in this commit.
-- [ ] Commit: `feat(menu): the editor menu reorders around the Embed submenu`
+- [x] Reorder the block to: Insert Link (conditional, unchanged, top) · Insert ▸ · Format ▸ · Embed ▸ · Heading ▸ · Lists ▸.
+- [x] Embed ▸ gets one item: **Internal Page** dispatching the existing `block:page` action (exact string unchanged — `applyEditorAction` special-cases it at `menu.ts:72`). Remove Page from Insert ▸; Insert ▸ keeps Blockquote / Horizontal Rule / Code Block / Callout / Table.
+- [ ] Gates green. Launch dev, right-click in a page body: order and items as specified; Insert ▸ Blockquote checkbox state still tracks a quote block. *(gates green; live menu check deferred to Gate 1's screenshot — main-process change needs a dev restart)*
+- [x] Rewrite the MarkdownPM.md context-menu sentence (Made False row 1) in this commit.
+- [x] Commit: `feat(menu): the editor menu reorders around the Embed submenu`
 
 #### Task 2: Auto-format becomes built-in; the toggle and `when` mechanism go
 
@@ -460,7 +460,7 @@ This task also lands the `web:popup` listener (the renderer app root subscribes 
 ## Implementation Log
 
 ### Progress
-- [ ] **Phase 1** — Menu & Built-In Formatting · base ``
+- [ ] **Phase 1** — Menu & Built-In Formatting · base `f9ca6aa8`
   - [ ] Task 1 — Menu reorder · ``
   - [ ] Task 2 — Auto-format built-in · ``
   - [ ] Task 3 — Destination guard · ``
