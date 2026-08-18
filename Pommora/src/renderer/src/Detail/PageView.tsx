@@ -10,6 +10,7 @@ import { IconPicker } from '../Components/IconPicker'
 import { entityIcon } from '@renderer/design-system/symbols'
 import { navKey } from '../Navigation/navRecents'
 import { captureWarm, readWarm } from '../Tabs/warmCache'
+import { registerPageEditor } from './pageEditor'
 import { schedulePageSave } from './pageFlush'
 
 // Live stats settle just behind the keystroke so a long page isn't Markdown-scanned on every char.
@@ -133,6 +134,7 @@ export function PageView(): React.JSX.Element {
               save: (indices) => void window.nexus.tableHeadingColumns.set(pageDetail.id, indices),
             }}
             menu={nativeEditorMenu}
+            register={registerPageEditor}
             // The editor freezes this at mount, so the capture lands under the tab that OWNED this
             // page even though activeTabId moves before the unmount (select switches synchronously).
             // restore carries the store's rename fence: a warm entry whose captured path diverges from
