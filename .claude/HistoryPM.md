@@ -122,8 +122,8 @@ Main now holds the nexus tree instead of re-deriving it: one walk at open builds
 
 **The Content Index:** Three tables ride `CREATE … IF NOT EXISTS` with no version bump — the opener re-applies the schema to existing databases, guarded so read-only media costs only the new tables — and rows key by nexus-relative POSIX paths, so renaming the nexus invalidates nothing. The seed reads the whole corpus once per database ever, then stat-sweeps, pinned to the handle it started against and pruning only from its own pre-pass snapshot; queries answer null until the seed stamps the handle ready, and every null caller falls back to its scan. One enumeration — the cascade corpus minus `excluded_folders` — now defines what every pen can reach: excluded folders are unread, unindexed, and unrewritten everywhere, while un-adopted folders stay fully reachable. Every page-writing seam maintains rows in the same motion, proven by tests that compare maintained rows against a from-scratch reconcile after each seam fires. The rename cascade and the property sweeps query first and keep their per-file checks as the belt — a stale row costs one wasted read, never a wrong rewrite — with key-holder queries intersected against the governing Collections so the index answering nexus-wide never widens a deliberately scoped sweep. The old whole-corpus walks died with `allCollectionFolders`, and the reach instrumentation surfaced a latent writer bug on the way: a body-only rewrite of a frontmatter-less note had been inventing `null` frontmatter, fixed at the merge itself.
 
-- **Commits:** `eccb3876^..7bd6f153`
-- **Diff:** Net +1073 | +1316 / −243 (code only; raw incl. tests +3142 / −390)
+- **Commits:** `eccb3876^..ecb0eda8`
+- **Diff:** Net +1163 | +1417 / −254 (code only; raw incl. tests +3298 / −404)
 
 #### PM-104 || Menu & Surface Consolidation
 **DATE:** 08-16-2026
