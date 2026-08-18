@@ -25,7 +25,6 @@
 
 ### Important Information
 
-- **`aliasPickerOnCommit` is a personalization key with no switch behind it.** It governs whether accepting a page from the connection picker opens its alias slot when that page already has names to offer, and it defaults to on. This is intentionally invisible because the language used to describe the toggle on the settings surface hasn't been decided yet — do this sooner rather than later. 
 - **The reachability razor cuts guards, never structure.** Before defending against a state, name who produces it — nobody means no guard. The recurring failure is over-applying it: an unreached code path is dead weight the razor says nothing about.
 - **A whole-surface drag handle steals its own children's clicks.** The drag engine captures the pointer on pointerdown, so any interactive descendant has to stop pointerdown — a container only on its own empty space, so the title still drags.
 - **A caret that doesn't appear belongs to `nativeCaret.ts`, never to the field.** The browser's own caret is hidden app-wide, and the drawn replacement is positioned by JS, so a working I-beam cursor beside a missing caret points at the overlay rather than at focus.
@@ -39,8 +38,6 @@
 
 Known shortcuts, none broken today. Each is cheap on its own and best taken when its owning file is next touched — or swept together as one batch session.
 
-- [ ] **Animation context that nothing provides.** `feel.tsx` defines an animation-settings context, but only the showcase ever provides it — in the app both drag engines always read the default while SurfacePM hands the same value along as a prop. Either wrap the shell in a real provider or delete the context; which is a product call.
-- [ ] **NOR filters are hand-authored only.** The on-disk format and the evaluator both understand a NOR mode, but the filter pane only offers All and Any — the third mode can only be reached by editing the view file by hand.
 - [ ] **Table perf ceilings.** Tables render every row with no virtualization, so a very long collection will eventually feel it; and a value edited outside the app doesn't live-refresh an open table.
 - [ ] **Errors flattened to strings.** The wire delivers the full structured `PommoraError`, but the session store keeps only its message string in `SessionState.error` and `pageError` — widening the two fields is near-zero churn and would let surfaces react to the error's code.
 - [ ] **Editor reached by CSS selector.** `pageEditor` and `ConnectionHoverCard` find the editor by querying the DOM, while `sidebarDnd`, `paneDnd`, and `useOptionReorder` already use the registered-handle pattern that replaces it — same fix, just not applied at these two sites.
