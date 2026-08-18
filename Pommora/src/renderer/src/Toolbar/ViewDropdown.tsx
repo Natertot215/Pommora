@@ -24,7 +24,6 @@ export function ViewDropdown(): React.JSX.Element | null {
 
 function ViewDropdownInner({ node }: { node: CollectionNode | SetNode }): React.JSX.Element {
   const tree = useSession((st) => st.tree)
-  const load = useSession((st) => st.load)
   const labeled = (node.viewButton ?? 'icon') === 'labeled'
 
   const schema =
@@ -47,7 +46,6 @@ function ViewDropdownInner({ node }: { node: CollectionNode | SetNode }): React.
           ? { view_style: 'dropdown' as const }
           : { view_style: 'toolbar' as const }
     await window.nexus.container.configure(node.path, node.kind, patch)
-    await load()
   }
 
   return (

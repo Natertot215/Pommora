@@ -66,8 +66,7 @@ export function ViewPane({
   onClose: () => void
 }): React.JSX.Element | null {
   const setActiveView = useSession((s) => s.setActiveView)
-  const load = useSession((s) => s.load)
-  const saveView = useSaveView(node, load)
+  const saveView = useSaveView(node)
   const storedActive = useSession((s) => s.activeViews[node.id])
   const [editingId, setEditingId] = useState<string | null>(null)
   const [renamingId, setRenamingId] = useState<string | null>(null)
@@ -94,7 +93,6 @@ export function ViewPane({
   const switchTo = (id: string): void => void setActiveView(node.id, id)
   const createView = async (): Promise<void> => {
     await window.nexus.views.save(node.path, node.kind, mintNewView('Untitled', schema))
-    await load()
   }
 
   const paneRows: PaneRow[] = rows.map((v) => ({ id: v.id, group: 'assigned' as const }))
@@ -106,7 +104,6 @@ export function ViewPane({
     void (async () => {
       const res = await window.nexus.views.reorder(node.path, node.kind, order)
       if (!res.ok) return void window.nexus.showError(res.error.message)
-      await load()
     })()
   }
 
@@ -135,7 +132,6 @@ export function ViewPane({
   const deleteRow = async (v: SavedView): Promise<void> => {
     const res = await window.nexus.views.delete(node.path, node.kind, v.id)
     if (!res.ok) return void window.nexus.showError(res.error.message)
-    await load()
   }
 
   const list = (

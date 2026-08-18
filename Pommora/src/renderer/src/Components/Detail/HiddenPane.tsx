@@ -120,8 +120,7 @@ export function VisibilityList({
   /** Height ceiling override — the ViewSettings Layout leaf passes ViewSettings' own max. */
   maxHeight?: number
 }): React.JSX.Element | null {
-  const load = useSession((st) => st.load)
-  const saveView = useSaveView(source, load)
+  const saveView = useSaveView(source)
   const tree = useSession((st) => st.tree)
   if (!tree) return null
 

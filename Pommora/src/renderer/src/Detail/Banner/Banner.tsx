@@ -13,7 +13,6 @@ import { useBannerMenu } from './useBannerMenu'
 export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {
   const mutate = useSession((s) => s.mutate)
   const submitRename = useSession((s) => s.submitRename)
-  const load = useSession((s) => s.load)
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
   const nexus = useSession((s) => s.tree?.nexus)
   const [iconPickerOpen, setIconPickerOpen] = useState(false)
@@ -45,7 +44,6 @@ export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {
     setEditingHome(false)
     void window.nexus.renameNexus(next).then(async (res) => {
       if (!res.ok) await window.nexus.showError(res.error.message)
-      else await load()
     })
   }
   const homeTitle = (className: string): React.ReactNode => (

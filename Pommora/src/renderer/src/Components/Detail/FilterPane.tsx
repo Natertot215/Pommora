@@ -43,7 +43,6 @@ import { CheckboxGlyph } from '../../Detail/Views/Table/checkboxLook'
 import { onActivateKey } from '../../design-system/interactions/activate'
 import { cx } from '../../design-system/cx'
 import { useSaveView } from '../../Embeds/ViewEmbedScope'
-import { useSession } from '../../store'
 import { PickerControl, type PickerChoice } from './PickerControl'
 import { optionsOf } from './GroupingPane'
 import {
@@ -467,10 +466,9 @@ export function FilterPane({
   label: string
   onBack: () => void
 }): React.JSX.Element {
-  const load = useSession((st) => st.load)
   // The shared view-config writer: in an embed this updates the tile payload instead of the source
   // collection's sidecar. Every other config surface routes here.
-  const saveView = useSaveView(source, load)
+  const saveView = useSaveView(source)
   // The "+" draft — local until it gains a target (an incomplete rule is never written). Cleared
   // synchronously in the same handler that dispatches its write; the hosts key the pane by view id,
   // so a view switch can never float a stale draft onto another view's rows.
