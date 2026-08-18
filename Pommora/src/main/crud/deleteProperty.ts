@@ -13,7 +13,7 @@ import { readRegistry, type PropertyRegistry } from '../io/propertiesRegistry'
 import { removeFromRegistry } from './registryProperty'
 import { collectionFolders } from './assignment'
 import { keyHolderFiles } from './keyHolders'
-import { clearSchemaJournal, writeSchemaJournal } from './propertyJournal'
+import { clearSchemaJournal, writeSchemaJournal, type SchemaJournal } from './propertyJournal'
 import { serializeSchemaOp } from './schemaChain'
 import { sweepGovernedRoots } from './governedSweep'
 import { readSidecar, writeSidecar, withSidecarLock } from '../sidecarIO'
@@ -84,15 +84,20 @@ async function deleteInner(root: string, propertyId: string): Promise<Result<nul
   const files = await keyHolderFiles(root, key, folders)
   await snapshot(root, propertyId, def, folders, files)
   // Journaled AFTER the snapshot — a replay re-runs the strip tail, never the bundle mint.
-  await writeSchemaJournal(root, { op: 'delete', id: propertyId, name: def.name })
+  const record: SchemaJournal = { op: 'delete', id: propertyId, name: def.name }
+  await writeSchemaJournal(root, record)
 
   // Strip the value from every page a Collection's schema governs — the one sweep, scoped to
   // the folders that carry the schema this definition belonged to.
-  await sweepGovernedRoots(root, { kind: 'files', files }, stripKeyRewrite(key), { stamp: true })
+  const swept = await sweepGovernedRoots(root, { kind: 'files', files }, stripKeyRewrite(key), {
+    stamp: true,
+  })
 
   for (const folder of folders) await unassignAndPurge(folder, propertyId)
   const removed = await removeFromRegistry(root, propertyId)
-  await clearSchemaJournal(root)
+  // A holder the sweep could not read holds the record — with the def now gone and the name
+  // free, the replay's freed-name arm re-strips the stragglers at the next open.
+  if (!swept.skipped.length) await clearSchemaJournal(root, record)
   return removed
 }
 

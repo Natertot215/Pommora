@@ -72,6 +72,7 @@ import { updatePageBody } from './crud/page'
 import { listBundles } from './provenance'
 import { trashRows } from './crud/trashRows'
 import { replayPendingRename } from './crud/contextCascade'
+import { replaySchemaCascade } from './crud/replaySchemaCascade'
 import {
   flushNavigation,
   hasPendingNavigation,
@@ -389,6 +390,10 @@ async function adoptNexusInner(path: string, latchRecord: boolean): Promise<void
     // Unconditional on every root switch, latch or no latch — a nexus rename that skipped this
     // would leave relative rows valid but the reconcile owed, and the cascades querying stale.
     await seedContentIndex(root)
+    // Post-seed on purpose (warm index, warm tree — nothing it heals is read during open the
+    // way contexts are); a same-root re-adopt correctly skips it, since a live session's record
+    // belongs to an op still on the schema chain, which the replay would only queue behind.
+    await replaySchemaCascade(root)
   }
   // A user-initiated open always has a window; launch-restore starts its watcher after
   // createWindow below instead.
@@ -1840,6 +1845,8 @@ app
         openSessionDb(root)
         await runOpenRecord(root)
         await seedContentIndex(root)
+        // Post-seed for the same warmth the adopt path buys; serialized against live ops.
+        await replaySchemaCascade(root)
       }
     } catch (e) {
       console.error('Restore skipped (config unreadable):', e)

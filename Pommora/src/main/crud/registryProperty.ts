@@ -11,7 +11,12 @@ import {
   KEY_REFUSAL,
 } from '@shared/governedKeys'
 import { cascadePages } from './optionOps'
-import { clearSchemaJournal, readSchemaJournal, writeSchemaJournal } from './propertyJournal'
+import {
+  clearSchemaJournal,
+  readSchemaJournal,
+  writeSchemaJournal,
+  type SchemaJournal,
+} from './propertyJournal'
 import { serializeSchemaOp } from './schemaChain'
 
 // Seed defaults for a def that has NONE (the field is undefined — a fresh create, or a type-change
@@ -33,16 +38,7 @@ export async function createProperty(
   root: string,
   def: PropertyDefinition,
 ): Promise<Result<{ id: string }>> {
-  // A create wearing a journaled delete's name or id supersedes the record: it's a re-create
-  // (or a restore, which funnels through here with the recorded id), and a later replay
-  // completing that delete would strip the living property instead of a dead one.
-  const journal = await readSchemaJournal(root)
-  if (
-    journal?.op === 'delete' &&
-    (journal.name === normalizePropertyName(def.name ?? '') || journal.id === def.id)
-  )
-    await clearSchemaJournal(root)
-  return mutateRegistry<Result<{ id: string }>>(root, (registry) => {
+  const created = await mutateRegistry<Result<{ id: string }>>(root, (registry) => {
     const candidate = seeded({
       ...def,
       name: normalizePropertyName(def.name ?? ''),
@@ -61,6 +57,19 @@ export async function createProperty(
       result: ok({ id: candidate.id }),
     }
   })
+  // A LANDED create wearing a journaled delete's name or id supersedes the record: it's a
+  // re-create (or a restore, which funnels through here with the recorded id), and a later
+  // replay completing that delete would strip the living property instead of a dead one. Only
+  // after the commit — a refused create must not spend the record it never displaced.
+  if (created.ok) {
+    const journal = await readSchemaJournal(root)
+    if (
+      journal?.op === 'delete' &&
+      (journal.name === normalizePropertyName(def.name ?? '') || journal.id === created.value.id)
+    )
+      await clearSchemaJournal(root, journal)
+  }
+  return created
 }
 
 /** A property rename commits the registry BEFORE its sweep, so a value written while the sweep runs
@@ -68,8 +77,9 @@ export async function createProperty(
 const NEW_KEY_IS_FRESHER: KeyCollision = 'prefer-new'
 
 /** Rewrite one property's key across every page that holds it, in place — the key keeps its
- *  position and its comment. A page holding neither key is left untouched. */
-export function renameSweep(root: string, oldName: string, newName: string): Promise<void> {
+ *  position and its comment. A page holding neither key is left untouched. Returns the holders
+ *  it could not read, so a journaled caller holds its record while any remain. */
+export function renameSweep(root: string, oldName: string, newName: string): Promise<number> {
   const oldKey = wrapKey('property', oldName)
   const newKey = wrapKey('property', newName)
   // Queried by the OLD key: a page holding only the new one needs no rewrite, and one holding
@@ -96,10 +106,13 @@ export function editProperty(
     // advisory (mutateRegistry below revalidates); a record for an edit that then fails is
     // cleared on that path, and one stranded by a throw is disposed of by the id-gated replay.
     const prior = (await readRegistry(root)).defs[propertyId]
+    let record: SchemaJournal | null = null
     if (prior && typeof changes.name === 'string') {
       const to = normalizePropertyName(changes.name)
-      if (to && to !== prior.name)
-        await writeSchemaJournal(root, { op: 'rename', id: propertyId, from: prior.name, to })
+      if (to && to !== prior.name) {
+        record = { op: 'rename', id: propertyId, from: prior.name, to }
+        await writeSchemaJournal(root, record)
+      }
     }
     const edit = await mutateRegistry<Result<Rename | null>>(root, (registry) => {
       let rename: Rename | null = null
@@ -122,13 +135,14 @@ export function editProperty(
       }
     })
     if (!edit.ok) {
-      await clearSchemaJournal(root)
+      if (record) await clearSchemaJournal(root, record)
       return edit
     }
     // Registry first, then one sweep: every write during it resolves the new name, so the new
-    // key is always the fresher of the two and no comparison is needed.
-    if (edit.value) await renameSweep(root, edit.value.from, edit.value.to)
-    await clearSchemaJournal(root)
+    // key is always the fresher of the two and no comparison is needed. A holder the sweep
+    // could not read holds the record — the next open's replay retries.
+    const skipped = edit.value ? await renameSweep(root, edit.value.from, edit.value.to) : 0
+    if (record && !skipped) await clearSchemaJournal(root, record)
     return ok(null)
   })
 }
