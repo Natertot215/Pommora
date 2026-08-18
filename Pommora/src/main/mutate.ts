@@ -265,8 +265,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
           // "Untitled" could rewrite unrelated [[Untitled]] links.
           const r = await createDisambiguated(req.newName, (name) => renamePage(abs, name))
           if (!r.ok) return r
-          moveIndexPaths(root, abs, r.value.path)
-          await indexWrittenPage(root, r.value.path)
+          await moveIndexPaths(root, abs, r.value.path)
           return renamedReply(r.value.path)
         }
         const r = await renamePage(abs, req.newName)
@@ -288,14 +287,13 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         try {
           await rewriteBlockConnections(root, oldTitle, req.newName)
         } catch {}
-        moveIndexPaths(root, abs, r.value.path)
-        await indexWrittenPage(root, r.value.path)
+        await moveIndexPaths(root, abs, r.value.path)
         return renamedReply(r.value.path)
       }
       // No link cascade — [[links]] target pages, and a container's title is referenced nowhere else.
       const r = await renameFolderEntity(abs, req.newName)
       if (!r.ok) return r
-      moveIndexPaths(root, abs, r.value.path)
+      await moveIndexPaths(root, abs, r.value.path)
       return ok({})
     }
 
@@ -620,8 +618,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       // the file has already moved, and reporting a failed order write as a failed move leaves
       // the renderer showing the page where it no longer is. Order falls back to title instead.
       if (req.order) await setChildOrder(dst.value, 'page_order', req.order)
-      moveIndexPaths(root, src.value, r.value.path)
-      await indexWrittenPage(root, r.value.path)
+      await moveIndexPaths(root, src.value, r.value.path)
       return ok({})
     }
 
@@ -637,7 +634,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       if (!r.ok) return r
       // Best-effort for the same reason as movePage — the folder has already moved.
       await setChildOrder(dst.value, 'set_order', req.order)
-      moveIndexPaths(root, src.value, r.value.path)
+      await moveIndexPaths(root, src.value, r.value.path)
       return ok({})
     }
 

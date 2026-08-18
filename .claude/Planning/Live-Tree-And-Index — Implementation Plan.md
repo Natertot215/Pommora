@@ -383,10 +383,10 @@ At the end of this plan, none of that survives as a hot path. Main holds a **liv
 - [x] Commit: `feat(crud): property sweeps open only the pages that hold the key`
 
 #### Gate 4 — the cascades are targeted
-- [ ] Gates green; all negative controls red-tested and green.
-- [ ] Dead vocabulary at 0 against a live control.
-- [ ] Simplification + review against `<base>..HEAD`; concerns fixed or ruled.
-- [ ] Progress hashes filled in.
+- [x] Gates green; all negative controls red-tested and green.
+- [x] Dead vocabulary at 0 against a live control.
+- [x] Simplification + review against `<base>..HEAD`; concerns fixed or ruled. *(Review: 6 findings, each verified against the code — four folded: the seed now pins its db handle and bails on a session swap (a stale seed could pour the old corpus into the new database, then prune it empty); the reconcile became a snapshot prune over the pre-seed stat gate, so a page born mid-seed survives (`reconcileIndex` deleted with it); the prefix-rename SQL computes its suffix offset with SQLite's own `length()` — the JS/UTF-16 mix swallowed the separator after an astral folder name (regression test in place); queries answer null until the seed stamps the handle ready, closing the empty-tables masquerade before the first seed. Two ruled no-change: an exclusions edit already classifies `refresh`, whose settle re-seeds and — under the new prune — drops the excluded rows, so the mid-session-exclusion finding was already handled by composition; nested dot-folder rows going stale between opens is accepted residue — the watcher's scope stance predates the index and the seed heals at open. Simplifier: `nexusCorpus`, `moveIndexPaths` absorbing the move re-read, the `queried` read-side helper, and `stripCascade` — all verified equivalent; its judgment keeps (`guarded`/`queried` unmerged, prefix SQL explicit) match design intent.)*
+- [x] Progress hashes filled in.
 
 ---
 
@@ -429,11 +429,11 @@ At the end of this plan, none of that survives as a hot path. Main holds a **liv
 - [x] **Phase 3** — Writes patch instead of reload · base `740d8814` · gate folds ride the Gate 3 commit
   - [x] Task 6 — every write channel confirms by push · `d666332b`
   - [x] Task 7 — the renderer stops reloading · `e57e6741`
-- [ ] **Phase 4** — The content index · base `97cd08e3`
-  - [ ] Task 8 — tables, opener, reconciler
-  - [ ] Task 9 — writers maintain rows
-  - [ ] Task 10 — rename cascade queries
-  - [ ] Task 11 — property cascades query
+- [x] **Phase 4** — The content index · base `97cd08e3` · gate folds ride the Gate 4 commit
+  - [x] Task 8 — tables, opener, reconciler · `946c8c22`
+  - [x] Task 9 — writers maintain rows · `d911fc97`
+  - [x] Task 10 — rename cascade queries · `1cf46b86`
+  - [x] Task 11 — property cascades query · `89d85b11`
 - [ ] **Phase 5** — Closeout
   - [ ] Task 12 — reconcile the record
 
@@ -455,6 +455,7 @@ At the end of this plan, none of that survives as a hot path. Main holds a **liv
 - Task 3, **⌘R forces the walk by dropping, not by calling `refreshTree` at the menu**: `Reload` is a real `webContents.reload`, and a menu-side `refreshTree` would race the booting renderer's read (which would serve the stale held tree with no push to correct it). The menu click calls `dropLiveTree()`; the boot read's `getLiveTree() ?? refreshTree` arm then performs the forced walk, and a rejection reaches the error envelope through that same arm. Seeding also moved *inside* `runOpenRecord` (it holds the walked tree and the remint verdict; both its call sites — adopt and launch-restore — need the seed), rather than returning `{tree, reminted}` for `adoptNexusInner` to interpret.
 - Task 1: `treeStabilize.ts` and its test moved to `src/shared` alongside the transforms. The shape-parity test crosses main's walk and `stabilize`, and the composite tsconfigs bar a main-side test from importing renderer files — `stabilize` is pure `@shared`-only code, so shared is its natural home. Plan searched for later assumptions: only Grounding names its old path; no task consumes it elsewhere. The parity test's red state was proven by a transform bypassing the factory (sabotaging the factory itself proves nothing — the walk shares it).
 - Task 8: the seed has **two call sites**, not one — launch-restore opens a session without passing through `adoptNexusInner` (the same dual-site fact Task 3 recorded for `runOpenRecord`), so `seedContentIndex` lands after both open paths: `adoptNexusInner`'s root-switch block and the `whenReady` restore. The stat gate reads whole (`readIndexedStats(): Map | null` — one SELECT, not a query per file), and missing-tables detection lives there: a null map stands the seed down exactly as a null Db does. The per-file extraction (`extractPageIndex(content)` — admission + mentions + property-wrapped values) lives in `indexSeed.ts` for Task 9's writers to share; `scan.ts` exports only the mention half (`extractMentions`), with `mentionsTitle` now delegating to it so agreement is by construction.
+- Gate 4: `reconcileIndex` no longer exists — the seed prunes `preSeedStats − corpus` itself, which is what lets a mid-seed create survive; `markIndexReady()` (contentIndex) is the readiness stamp the seed sets and `queryMentions`/`queryKeyHolders` require; `nexusCorpus(root)` (indexSeed) replaced the `readExcludedFolders` + `corpusFiles` pair as the one fallback enumeration.
 ### Evidence
 - **Gate 3 write sweep** (sandboxed instance, temporary `[walk]` log, push counter armed in-page; instruments removed after): create, rename, icon, top-reorder, view save, property rename, option rename, and a cell edit all driven through the real bridge — **every op landed in the served tree** (icon, view name, disk-normalized property and option names all present) with **exactly one push per tree-moving op and zero pushes for the cell edit**. Walks: zero for every op except the property/option renames, whose cascades still ride `allCollectionFolders` — isolated re-runs proved a page rename walks zero and an option rename walks exactly one; that caller is Task 11's planned kill, so Gate 3's zero-walk claim holds for everything Phase 3 owns. **Drift check:** the fully-patched served tree was captured, one verification walk forced (an unclassifiable watcher event), and the walked tree **deep-equals the patched tree byte-for-byte** — the patched sequence never drifted.
 - **Gate 2 manual pass** (same sandboxed-instance harness as Gate 1, temporary `[walk]` log removed after): open logged one walk; an external page **create**, **edit**, and **delete** each surfaced in the served tree within the settle with **zero walks logged**; an external **whole-folder move** (`mv Library Archive`) logged exactly one fallback walk and the served tree carried the renamed folder with its page intact.
