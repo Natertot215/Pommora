@@ -8,6 +8,7 @@ import type { BannerOwnerKind, MutableKind, MutateRequest } from '@shared/mutate
 import type { NexusTree } from '@shared/types'
 import {
   insertCreatedInTree,
+  parentOf,
   patchContextGroupsInTree,
   relocateNodeInTree,
   removeNodeInTree,
@@ -58,14 +59,14 @@ export function patchForMutation(
       const moved = relocateNodeInTree(tree, req.path, req.newParentPath)
       // A null relocate means "already in that parent" only when it IS that parent — an
       // unresolved node must walk, never commit an order-only patch that lies about the move.
-      if (!moved && parentOfPath(req.path) !== req.newParentPath) return null
+      if (!moved && parentOf(req.path) !== req.newParentPath) return null
       return req.order
         ? (reorderPagesInTree(moved ?? tree, req.newParentPath, req.order) ?? moved)
         : moved
     }
     case 'moveSet': {
       const moved = relocateNodeInTree(tree, req.path, req.newParentPath)
-      if (!moved && parentOfPath(req.path) !== req.newParentPath) return null
+      if (!moved && parentOf(req.path) !== req.newParentPath) return null
       return reorderChildrenInTree(moved ?? tree, req.newParentPath, req.order) ?? moved
     }
     case 'rename':
@@ -89,11 +90,6 @@ export function patchForMutation(
 }
 
 const isSpacePath = (path: string): boolean => path.startsWith(`${CONTEXTS_DIR_REL}/`)
-
-const parentOfPath = (path: string): string => {
-  const i = path.lastIndexOf('/')
-  return i === -1 ? '' : path.slice(0, i)
-}
 
 /** Which disk-confirmer owns an entity kind — one statement, shared by every field write that
  *  names its target by kind. Null = the kind is not one of the walk's per-entity files. */
