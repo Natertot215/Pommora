@@ -377,10 +377,10 @@ At the end of this plan, none of that survives as a hot path. Main holds a **liv
 **Negative control:** a fixture where 2 of 30 pages hold the key — the delete provably read those 2 in snapshot and rewrote those 2 in the sweep (the sweep's `touched` output plus open-count instrumentation), and with targeting disabled the open-count assertion goes red. A Context unlink on the same fixture still rewrites its tagged pages (proving the Context path kept its scan).
 
 **Steps:**
-- [ ] Failing tests per the negative control (all three halves); implement; green. Full gates green (typecheck enumerates every `allCollectionFolders` consumer).
-- [ ] Dead-vocabulary sweep: `allCollectionFolders` → 0 against the `readNexus` control.
-- [ ] Rewrite the PropertiesPM cascade descriptions in this commit.
-- [ ] Commit: `feat(crud): property sweeps open only the pages that hold the key`
+- [x] Failing tests per the negative control (all three halves); implement; green. Full gates green (typecheck enumerates every `allCollectionFolders` consumer). *(`keyHolders.test.ts` — both sabotage halves red-proven in isolation: intersection removed → the un-governed note's value was stripped; targeting bypassed → the option rename's open count blew past 2. The Context-unlink half rides `contextCascade.test.ts`, whose path this task never touched and whose suite stays green. The one consumer the grep missed at planning — `registryProperty.renameSweep` — was enumerated by the type gate exactly as predicted and queries by the old key.)*
+- [x] Dead-vocabulary sweep: `allCollectionFolders` → 0 against the `readNexus` control *(control: `readNexus.ts`, `liveTree.ts`, `record.ts` — `assignment.ts` converted off the list)*.
+- [x] Rewrite the PropertiesPM cascade descriptions in this commit.
+- [x] Commit: `feat(crud): property sweeps open only the pages that hold the key`
 
 #### Gate 4 — the cascades are targeted
 - [ ] Gates green; all negative controls red-tested and green.

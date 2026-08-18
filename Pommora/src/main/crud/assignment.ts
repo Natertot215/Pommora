@@ -5,7 +5,7 @@
 import { join } from 'node:path'
 import { readSidecar, writeSidecar, withSidecarLock } from '../sidecarIO'
 import { pageCollectionSidecar } from '@shared/schemas'
-import { readNexus } from '../readNexus'
+import { getLiveTree, refreshTree } from '../liveTree'
 import { restoreCachedValues } from './removeProperty'
 import { serializeSchemaOp } from './schemaChain'
 import type { CollectionNode, SetNode } from '@shared/types'
@@ -110,11 +110,13 @@ export function assignPropertyAt(
   })
 }
 
-/** Absolute folder paths of EVERY Collection in the tree (schema-owning folders only —
- *  Sets inherit). The shared walk for global fan-outs that must reach non-assigners too:
- *  a Remove-cache lives on a sidecar that no longer assigns the id. */
-export async function allCollectionFolders(root: string): Promise<string[]> {
-  const tree = await readNexus(root)
+/** Absolute folder paths of EVERY Collection (schema-owning folders only — Sets inherit),
+ *  read from the live tree. The shared list for global fan-outs that must reach
+ *  non-assigners too: a Remove-cache lives on a sidecar that no longer assigns the id. */
+export async function collectionFolders(root: string): Promise<string[]> {
+  // Root-pinned like every patch consumer: a held tree answers only for its own nexus.
+  const held = getLiveTree()
+  const tree = held?.nexus.rootPath === root ? held : await refreshTree(root)
   const out: string[] = []
   const visit = (node: CollectionNode | SetNode): void => {
     if (node.kind === 'collection') out.push(join(root, node.path))

@@ -62,7 +62,9 @@ const NEW_KEY_IS_FRESHER: KeyCollision = 'prefer-new'
 export function renameSweep(root: string, oldName: string, newName: string): Promise<void> {
   const oldKey = wrapKey('property', oldName)
   const newKey = wrapKey('property', newName)
-  return cascadePages(root, (content) =>
+  // Queried by the OLD key: a page holding only the new one needs no rewrite, and one holding
+  // both holds the old one too, so the holder set covers every fold the collision arm can meet.
+  return cascadePages(root, oldKey, (content) =>
     renameFrontmatterKey(content, oldKey, newKey, NEW_KEY_IS_FRESHER),
   )
 }
