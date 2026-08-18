@@ -2,6 +2,7 @@
 
 | Date | ID | Entry |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 08-18-2026 | PM-107 | Settings' Scaffolding |
 | 08-17-2026 → 08-18 | PM-106 | The Property-Cascade Journal |
 | 08-17-2026 | PM-105 | The Live Tree & The Content Index |
 | 08-16-2026 | PM-104 | Menu & Surface Consolidation |
@@ -109,6 +110,14 @@
 | 06-14-2026 → 06-15 | PM-002 | The Headless Data Layer |
 | 06-14-2026 | PM-001 | Genesis — The Walking Skeleton |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot |
+
+#### PM-107 || Settings' Scaffolding
+**DATE:** 08-18-2026
+
+`NexusSettings.tsx` held two structures keyed by the same name — a `CATEGORIES` rail roster and a `LEAVES` body map — which collapsed into one declaration where a leaf states its label, glyph, foot placement, and either sections of rows or a `Surface` of its own; the `never` arm on each side of that union makes a leaf naming both fail to compile, and a `roster()` helper keeps the keys literal so `CategoryKey` still rejects an unknown one. Sections are named row groups, giving a leaf an interior before it needs one, and the rail seats General, Interface, Navigation, Appearance, Files & Links, Properties, Pages & Editor, Automations and Shortcuts with Trash anchored below its separator. `personalization.dateFormat` joined as the live fallback every date renders through unless its column names one, entering at `defaultStyleFor` the way that function's `url` arm already reads `link_display`, with `useStyleFor` binding the resolver so five surfaces subscribe once each rather than threading an argument through eight call sites; `timeFormat` moved out of `settings.json`'s top level into the same block, retiring `NexusTree.timeFormat` once `FilterPane` and `DatetimeValuePicker` read the store slice instead of a tree copy that only refreshed on a disk round-trip. A compatibility read for the older top-level spelling was written and then removed: `time_format` never had a writer, so it guarded a file that cannot exist while re-applying itself over the absent key the new picker stores for its default. `useFloatingWindow` gained `widenBy`, which `PreviewPane` calls on a side pane's open or close, so a window carrying a pane on either edge moves its own edge by that pane's width instead of taking it from the body — measured at 850 → 1110 opening an inspector beside an open rail, the body holding its width throughout. `DEFAULT_NEXUS_ICON` resolved four hardcoded nexus glyphs that disagreed — two `square-dashed`, two `house` — onto `orbit`, `DEFAULT_ACCENT` became cyan, the File property type took `file-chart-column`, and `VIEW_SCALE_BASE` rebased the interface so a stated 1.0 resolves to 0.9 host zoom through `viewScaleZoom`.
+
+- **Commits:** `56d3eb6a`, plus the closing record commit
+- **Diff:** Net +385 | +557 / −172 (code only; raw incl. tests and docs +930 / −246)
 
 #### PM-106 || The Property-Cascade Journal
 **DATE:** 08-17-2026 → 08-18
