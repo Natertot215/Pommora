@@ -12,6 +12,7 @@ import { extractMentions } from './connections/scan'
 import { sweepAdmitsBody } from './crud/util'
 import {
   markIndexReady,
+  readIndexedStat,
   readIndexedStats,
   removePathIndex,
   removePathPrefixIndex,
@@ -122,11 +123,11 @@ export async function seedContentIndex(root: string): Promise<void> {
     const seen = new Set(rels)
     for (const rel of rels) {
       const abs = join(root, rel)
+      const prior = indexed.get(rel)
       let st: Awaited<ReturnType<typeof stat>>
       let content: string
       try {
         st = await stat(abs)
-        const prior = indexed.get(rel)
         if (prior && prior.mtimeMs === st.mtimeMs && prior.size === st.size) continue
         content = await readFile(abs, 'utf8')
       } catch {
@@ -135,6 +136,10 @@ export async function seedContentIndex(root: string): Promise<void> {
         continue
       }
       if (sessionDb() !== db0) return
+      // A maintaining writer that landed while this file's read was in flight left a fresher
+      // row than the snapshot knew — keep theirs; this read predates their write.
+      const row = readIndexedStat(rel)
+      if (row && (row.mtimeMs !== prior?.mtimeMs || row.size !== prior?.size)) continue
       recordPage(rel, content, { mtimeMs: st.mtimeMs, size: st.size })
     }
     if (sessionDb() !== db0) return

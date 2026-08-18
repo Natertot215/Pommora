@@ -433,7 +433,14 @@ type ResolvedViewContainer = Result<{ folder: string; kind: 'collection' | 'set'
 // The write channels' confirmation push — one place, so a confirmed write that moved the tree
 // reaches the renderer over the same channel the watcher uses.
 function pushConfirmed(tree: NexusTree | null): void {
-  if (tree && mainWindow && !mainWindow.isDestroyed()) push(mainWindow, 'nexus:changed', tree)
+  if (!tree) return
+  // The send is deferred one macrotask so the invoke's own reply always reaches the renderer
+  // FIRST: its continuation captures the pre-push tree, mounts an optimistic create in the
+  // same commit as its callback state, and the confirming push reconciles a beat later.
+  // Deferrals are FIFO, so consecutive confirms still arrive in completion order.
+  setImmediate(() => {
+    if (mainWindow && !mainWindow.isDestroyed()) push(mainWindow, 'nexus:changed', tree)
+  })
 }
 
 /** Run one channel's confirmer against the session root and push what it moved. */

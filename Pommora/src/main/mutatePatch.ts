@@ -5,6 +5,7 @@
 // patch degrades to one verification walk, never to a silently stale tree.
 
 import type { BannerOwnerKind, MutableKind, MutateRequest } from '@shared/mutate'
+import type { CollectionNode, SetNode } from '@shared/types'
 import type { NexusTree } from '@shared/types'
 import {
   insertCreatedInTree,
@@ -19,7 +20,7 @@ import {
 } from '@shared/treePatch'
 import { isAdoptedId } from './ids'
 import { orderedDefs, readRegistry } from './io/propertiesRegistry'
-import { dropLiveTree, getLiveTree, refreshTree } from './liveTree'
+import { dropLiveTree, getLiveTree, noteDiskMoved, refreshTree } from './liveTree'
 import {
   applyPatch,
   patchContainerFromDisk,
@@ -91,6 +92,19 @@ export function patchForMutation(
 
 const isSpacePath = (path: string): boolean => path.startsWith(`${CONTEXTS_DIR_REL}/`)
 
+/** Whether the entity at `path`, or anything beneath it, rides a path-derived adopted id. */
+function subtreeHoldsAdoptedId(tree: NexusTree, path: string): boolean {
+  const under = (p: string): boolean => p === path || p.startsWith(`${path}/`)
+  const scan = (containers: readonly (CollectionNode | SetNode)[]): boolean =>
+    containers.some(
+      (c) =>
+        (under(c.path) && isAdoptedId(c.id)) ||
+        c.pages.some((p) => under(p.path) && isAdoptedId(p.id)) ||
+        (c.sets ? scan(c.sets) : false),
+    )
+  return scan(tree.collections)
+}
+
 /** Which disk-confirmer owns an entity kind — one statement, shared by every field write that
  *  names its target by kind. Null = the kind is not one of the walk's per-entity files. */
 function patchEntityFromDisk(
@@ -146,12 +160,21 @@ async function routeMutation(
     default: {
       const tree = getLiveTree()
       if (!tree) return 'refresh'
+      // An adopted id is a hash of the very path a rename or move changes, and re-deriving it
+      // lives main-side — so an affected subtree degrades to the walk, which derives every id
+      // fresh, instead of holding an id the next walk can never produce.
+      if (
+        (req.op === 'rename' || req.op === 'movePage' || req.op === 'moveSet') &&
+        subtreeHoldsAdoptedId(tree, req.path)
+      )
+        return 'refresh'
       const patched = patchForMutation(tree, req, reply)
       if (patched === 'no-change') return 'ok'
       if (patched === null) return 'refresh'
       if (applyPatch(root, () => patched) === 'refresh') return 'refresh'
-      // A create's position derives from an order file the transform didn't read — one more
-      // targeted read pins it to exactly what the walk would derive.
+      // A create's or a reorder's landed position derives from an order file the transform
+      // didn't read — one more targeted read pins it to exactly what the walk would derive
+      // (the transforms rank unlisted entities by current order; the walk ranks them by title).
       switch (req.op) {
         case 'createPage':
           return req.order ? 'ok' : patchContainerFromDisk(root, req.parentPath)
@@ -165,6 +188,12 @@ async function routeMutation(
             : patchContainerFromDisk(root, req.parentPath)
         }
         case 'createSpace':
+          return patchSpaceOrderFromDisk(root, req.contextId)
+        case 'reorderChildren':
+          return patchContainerFromDisk(root, req.parentPath)
+        case 'reorderTop':
+          return patchTopOrderFromDisk(root)
+        case 'reorderSpaces':
           return patchSpaceOrderFromDisk(root, req.contextId)
         default:
           return 'ok'
@@ -212,6 +241,8 @@ export async function confirmBy(
   const before = getLiveTree()
   if ((await work()) === 'refresh') {
     try {
+      // The write already landed, so any walk still in flight predates it.
+      noteDiskMoved()
       await refreshTree(root)
     } catch {
       // The write landed but the verification walk failed — the held tree predates the write
