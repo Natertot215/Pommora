@@ -1,7 +1,13 @@
 import { useRef, useState } from 'react'
 import type { CollectionNode, SetNode } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
-import { DEFAULT_VIEW_ID, isCompact, type SavedView, type ViewType } from '@shared/views'
+import {
+  type CardBanner,
+  DEFAULT_VIEW_ID,
+  isCompact,
+  type SavedView,
+  type ViewType,
+} from '@shared/views'
 import { Icon, type IconName } from '@renderer/design-system/symbols'
 import {
   MenuItem,
@@ -27,6 +33,7 @@ import { InlineEditHeader } from './InlineEditHeader'
 import { VisibilityList } from './HiddenPane'
 import { LayoutToggles } from './LayoutToggles'
 import { CardsOptions } from './CardsOptions'
+import { PickerControl, type PickerChoice } from './PickerControl'
 import { GroupingPane } from './GroupingPane'
 import { SortingPane } from './SortingPane'
 import { FilterPane } from './FilterPane'
@@ -49,6 +56,12 @@ const IMPLEMENTED: ReadonlySet<ViewType> = new Set(['table', 'cards'])
 
 const SCALE_MIN = 0.5
 const SCALE_MAX = 1.5
+
+const BANNERS: PickerChoice<CardBanner>[] = [
+  { value: 'cover', label: 'Cover' },
+  { value: 'preview', label: 'Preview' },
+  { value: 'none', label: 'None' },
+]
 
 // Live scrub: while the Scale knob drags, push the factor straight onto the configured view's mounted
 // cards root(s) — scoped by data-view-id so a sibling cards view on the same surface isn't dragged
@@ -166,6 +179,25 @@ export function ViewSettings({
     view.type === 'cards' ? (
       <MenuBottomRow>
         {formatToggle('palette', 'Style')}
+        <MenuItem
+          className={flushTrailing}
+          leading={
+            <span className={footingSymbol}>
+              <Icon name="image" size={12} />
+            </span>
+          }
+          trailing={
+            <PickerControl
+              ariaLabel="Card Banner"
+              value={view.card_banner ?? 'cover'}
+              options={BANNERS}
+              onPick={(v) => write({ card_banner: v })}
+              solid
+            />
+          }
+        >
+          <span className={footingLabel}>Banner</span>
+        </MenuItem>
         <div className={cx(item, flushTrailing, vs.scaleRow)}>
           <span className={side}>
             <span className={footingSymbol}>

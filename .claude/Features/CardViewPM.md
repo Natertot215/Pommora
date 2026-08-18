@@ -73,7 +73,7 @@ Creating a page never leaves the grid; on the table's own creation act (→ [[Ta
 
 ### Surfaces & Insets
 
-Cards live in the ViewSettings type grid and carry their options in the Layout leaf, with Style and Scale pinned in the footing; the grouping and sorting leaves reuse the shared panes. A view switched to a type inherits the new type's default glyph only when it still wore the old default. Cards ride the block-surface inset regime: in a full-page pane, a pane-body rule supplies the surface inset so the view itself never pads, while an embedded cards view runs the tight inter-tile lane directly on its grid. An embedded view also keeps its own tail seam — the last card row sits off the tile's bottom edge on the card rhythm, matching the view's top seam.
+Cards live in the ViewSettings type grid and carry their options in the Layout leaf, with Style, Card Banner and Scale pinned in the footing; the grouping and sorting leaves reuse the shared panes. A view switched to a type inherits the new type's default glyph only when it still wore the old default. Cards ride the block-surface inset regime: in a full-page pane, a pane-body rule supplies the surface inset so the view itself never pads, while an embedded cards view runs the tight inter-tile lane directly on its grid. An embedded view also keeps its own tail seam — the last card row sits off the tile's bottom edge on the card rhythm, matching the view's top seam.
 
 ### Card Tokens
 

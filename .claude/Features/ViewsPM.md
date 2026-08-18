@@ -67,7 +67,7 @@ A navigation dropdown opened by the ViewDropdown — a row per saved view (click
 
 #### II. ViewSettings
 
-The shared per-view editor, reachable two ways — the ViewPane row's chevron (the full door, carrying the ⋮ Duplicate/Delete and the leaf rows) or the SettingsPane's Layout entry (the flat door, for the active view, minus the ⋮ and leafs). It holds the view's click-to-rename name, a 3×2 type-picker grid (the four unbuilt types render at full weight but don't switch), and the type's options — four leaf rows, Layout · Group · Filter · Sort. For [[TableViewPM|Tables]], the Layout leaf is the visibility list over the table's layout switches. For [[CardViewPM|Cards]] it carries the cards options (Card Banner · Hide Location · Wrap Titles · Hide Icons · Set Cards) with Style + Scale pinned in the footing.
+The shared per-view editor, reachable two ways — the ViewPane row's chevron (the full door, carrying the ⋮ Duplicate/Delete and the leaf rows) or the SettingsPane's Layout entry (the flat door, for the active view, minus the ⋮ and leafs). It holds the view's click-to-rename name, a 3×2 type-picker grid (the four unbuilt types render at full weight but don't switch), and the type's options — four leaf rows, Layout · Group · Filter · Sort. For [[TableViewPM|Tables]], the Layout leaf is the visibility list over the table's layout switches. For [[CardViewPM|Cards]] it carries the cards options (Hide Location · Wrap Titles · Hide Icons · Set Cards) with Style + Card Banner + Scale pinned in the footing.
 
 #### II. The SettingsPane
 
