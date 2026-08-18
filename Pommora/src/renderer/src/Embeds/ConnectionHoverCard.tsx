@@ -9,7 +9,7 @@ import { toggleFoldAt } from '@renderer/MarkdownPM/editor/folding'
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import type { HoverCardSize } from '@shared/types'
 import { pageIndexOf } from '../treeIndex'
-import { cachePageDetail, readPageDetail } from '../Tabs/warmCache'
+import { fetchPageDetail, readPageDetail } from '../Tabs/warmCache'
 import { useSession } from '../store'
 import { PageEmbed } from './PageEmbed'
 import { CARD_MIN, hoverCardSize, seedHoverCardSize, setHoverCardSize } from './hoverCardSize'
@@ -60,9 +60,8 @@ export function hoverConnection(page: ConnPage, el: Element): void {
     return
   }
   const token = ++pendingFetch
-  void window.nexus.openPage(page.path).then((r) => {
-    if (token !== pendingFetch || !r.ok) return
-    cachePageDetail(r.value)
+  void fetchPageDetail(page.path).then((detail) => {
+    if (token !== pendingFetch || !detail) return
     if (el.matches(':hover')) present?.({ page, el })
   })
 }

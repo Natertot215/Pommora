@@ -42,7 +42,6 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 - [ ] **Editor reached by CSS selector.** `pageEditor` and `ConnectionHoverCard` find the editor by querying the DOM, while `sidebarDnd`, `paneDnd`, and `useOptionReorder` already use the registered-handle pattern that replaces it — same fix, just not applied at these two sites.
 - [ ] **Scroll waits by timer, not by signal.** `revealPageOffset` sleeps for a fold animation's duration to wait it out, even though `folding.ts` owns the real completion signal it could listen to.
 - [ ] **Dismiss checks for pickers the hard way.** `useDismiss` decides whether a click was "outside" by querying the DOM for open picker portals on every event; a shared open-picker counter removes the handshake entirely.
-- [ ] **The preview fetches twice.** The preview window's two halves share a path-keyed cache but neither dedupes a fetch already in flight, so navigating with the inspector open still calls `openPage` twice for the same page.
 
 ### Known Issues
 
