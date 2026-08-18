@@ -4,7 +4,7 @@
 // a file they would skip gets no rows, only a stat entry so it isn't re-read forever.
 
 import { readFile, stat } from 'node:fs/promises'
-import { isAbsolute, join, relative } from 'node:path'
+import { isAbsolute, join, relative, sep } from 'node:path'
 import { isGovernedKey } from '@shared/governedKeys'
 import { errText } from '@shared/result'
 import { asStringArray } from './coerce'
@@ -46,6 +46,14 @@ export function extractPageIndex(content: string): PageIndexEntry | null {
 export async function nexusCorpus(root: string): Promise<string[]> {
   const settings = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings))) ?? {}
   return corpusFiles(root, asStringArray(settings.excluded_folders) ?? [])
+}
+
+/** The corpus under one folder — `nexusCorpus` filtered to the subtree, as absolute paths.
+ *  The per-folder sweeps and readers enumerate through here so a folder nested inside a
+ *  Collection but named by `excluded_folders` stays exactly as unreachable as the walk says. */
+export async function folderCorpus(root: string, absFolder: string): Promise<string[]> {
+  const rels = await nexusCorpus(root)
+  return rels.map((rel) => join(root, rel)).filter((abs) => abs.startsWith(absFolder + sep))
 }
 
 /** Nexus-relative POSIX path when `abs` sits inside the corpus's reach, else null — the app's
