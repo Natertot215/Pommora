@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, rm, mkdir, readFile } from 'node:fs/promises'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { mkdtemp, rm, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { PAGE_ID_KEY } from '@shared/identity'
@@ -7,6 +7,16 @@ import { renameCascade } from './cascade'
 import { createPage } from './page'
 import { splitFrontmatter } from '../readNexus'
 import { splitEnvelope } from '../io/pageFile'
+import { rewritePageSerialized } from '../io/atomicWrite'
+import { openSessionDb, closeSessionDb } from '../sessionDb'
+import { seedContentIndex } from '../indexSeed'
+
+vi.mock('../io/atomicWrite', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('../io/atomicWrite')>()
+  return { ...mod, rewritePageSerialized: vi.fn(mod.rewritePageSerialized) }
+})
+
+const openSpy = vi.mocked(rewritePageSerialized)
 
 let root: string
 let dir: string
@@ -53,5 +63,63 @@ describe('renameCascade', () => {
     const r = await renameCascade(root, 'Ghost', 'Phantom')
     expect(r.ok).toBe(true)
     if (r.ok) expect(r.value.touched).toEqual([])
+  })
+})
+
+describe('the cascade queries the index', () => {
+  const hidden = (): string => join(root, 'Hidden', 'Secret.md')
+
+  /** 40 pages, 3 of them mentioning — one in an un-adopted folder — plus an EXCLUDED note
+   *  that also mentions and must stay unread and byte-untouched (Requirement 9). */
+  const seedFixture = async (): Promise<void> => {
+    await mkdir(join(root, '.nexus'), { recursive: true })
+    await writeFile(
+      join(root, '.nexus', 'settings.json'),
+      JSON.stringify({ excluded_folders: ['Hidden'] }),
+    )
+    for (let i = 0; i < 37; i++) {
+      const c = await createPage(dir, `Filler ${i}`, { body: 'no links here' })
+      if (!c.ok) throw new Error('setup failed')
+    }
+    const a = await createPage(dir, 'Cites A', { body: 'see [[Target]]' })
+    const b = await createPage(dir, 'Cites B', { body: '[[target]] again' })
+    if (!a.ok || !b.ok) throw new Error('setup failed')
+    await mkdir(join(root, 'Loose'), { recursive: true })
+    await writeFile(join(root, 'Loose', 'Note.md'), 'un-adopted [[Target]]\n')
+    await mkdir(join(root, 'Hidden'), { recursive: true })
+    await writeFile(hidden(), 'excluded [[Target]]\n')
+  }
+
+  afterEach(() => {
+    closeSessionDb()
+  })
+
+  it('opens exactly the files whose rows name the title — the un-adopted note included', async () => {
+    await seedFixture()
+    openSessionDb(root)
+    await seedContentIndex(root)
+    openSpy.mockClear()
+    const r = await renameCascade(root, 'Target', 'New Target')
+    expect(r.ok).toBe(true)
+    if (!r.ok) return
+    expect(r.value.touched).toHaveLength(3)
+    expect(openSpy).toHaveBeenCalledTimes(3)
+    expect(await readFile(join(root, 'Loose', 'Note.md'), 'utf8')).toBe(
+      'un-adopted [[New Target]]\n',
+    )
+    expect(await readFile(hidden(), 'utf8')).toBe('excluded [[Target]]\n')
+  })
+
+  it('a null index falls back to the corpus scan — excluded folders unreachable either way', async () => {
+    await seedFixture()
+    openSpy.mockClear()
+    const r = await renameCascade(root, 'Target', 'New Target')
+    expect(r.ok).toBe(true)
+    if (!r.ok) return
+    expect(r.value.touched).toHaveLength(3)
+    // The fallback reads the whole corpus — every filler too — but never the excluded note.
+    expect(openSpy).toHaveBeenCalledTimes(40)
+    expect(openSpy.mock.calls.some(([file]) => (file as string).includes('Hidden'))).toBe(false)
+    expect(await readFile(hidden(), 'utf8')).toBe('excluded [[Target]]\n')
   })
 })
