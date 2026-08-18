@@ -6,12 +6,13 @@ import { openDb } from './driver'
 import { openSessionDb, closeSessionDb, sessionDb } from '../sessionDb'
 import { readScope } from './localState'
 import {
+  markIndexReady,
   queryKeyHolders,
   queryMentions,
   readIndexedStats,
-  reconcileIndex,
   removePathIndex,
   renamePathIndex,
+  renamePathPrefixIndex,
   upsertPageIndex,
 } from './contentIndex'
 
@@ -19,6 +20,7 @@ let root: string
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'pom-cindex-'))
   openSessionDb(root)
+  markIndexReady()
 })
 afterEach(async () => {
   closeSessionDb()
@@ -62,7 +64,22 @@ describe('the content index', () => {
     expect(readIndexedStats()).toBeNull()
     expect(() => upsertPageIndex('Notes/A.md', { mentions: ['x'], values: {} }, STAT)).not.toThrow()
     expect(() => removePathIndex('Notes/A.md')).not.toThrow()
-    expect(() => reconcileIndex(new Set())).not.toThrow()
+  })
+
+  it('queries answer null until a seed stamps the handle ready — empty tables never masquerade', async () => {
+    closeSessionDb()
+    await rm(join(root, '.nexus'), { recursive: true, force: true })
+    openSessionDb(root)
+    upsertPageIndex('Notes/A.md', { mentions: ['beta'], values: {} }, STAT)
+    expect(queryMentions('beta')).toBeNull()
+    markIndexReady()
+    expect(queryMentions('beta')).toEqual(['Notes/A.md'])
+  })
+
+  it('a prefix rename survives an astral folder name (SQL-side character arithmetic)', () => {
+    upsertPageIndex('Projects 🚀/A.md', { mentions: ['beta'], values: {} }, STAT)
+    renamePathPrefixIndex('Projects 🚀', 'Launchpad')
+    expect(queryMentions('beta')).toEqual(['Launchpad/A.md'])
   })
 
   it('a rename moves every row to the new path', () => {
@@ -80,17 +97,6 @@ describe('the content index', () => {
     expect(queryMentions('beta')).toEqual([])
     expect(queryKeyHolders('<Status>')).toEqual([])
     expect(readIndexedStats()?.has('Notes/A.md')).toBe(false)
-  })
-
-  it('reconcile prunes paths the corpus no longer yields — an empty corpus empties the tables', () => {
-    upsertPageIndex('Notes/A.md', { mentions: ['beta'], values: {} }, STAT)
-    upsertPageIndex('Notes/B.md', { mentions: ['beta'], values: { '<Status>': 'x' } }, STAT)
-    reconcileIndex(new Set(['Notes/A.md']))
-    expect(queryMentions('beta')).toEqual(['Notes/A.md'])
-    expect(queryKeyHolders('<Status>')).toEqual([])
-    reconcileIndex(new Set())
-    expect(queryMentions('beta')).toEqual([])
-    expect(readIndexedStats()?.size).toBe(0)
   })
 })
 
@@ -114,6 +120,7 @@ describe('upgrade in place', () => {
     v1.close()
 
     openSessionDb(root)
+    markIndexReady()
     expect(readScope('folds')).toEqual({ p1: ['x'] })
     upsertPageIndex('Notes/A.md', { mentions: ['beta'], values: {} }, STAT)
     expect(queryMentions('beta')).toEqual(['Notes/A.md'])

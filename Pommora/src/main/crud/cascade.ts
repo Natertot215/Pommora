@@ -11,14 +11,13 @@
 import { join } from 'node:path'
 import { splitEnvelope, mergeFrontmatter } from '../io/pageFile'
 import { rewritePageSerialized } from '../io/atomicWrite'
-import { corpusFiles } from '../io/walk'
 import { sweepAdmitsBody } from './util'
 import { mentionsTitle } from '../connections/scan'
 import { rewriteConnections } from '../connections/rewrite'
 import { normalizeTitle } from '@shared/connections'
 import { ok, type Result } from '@shared/result'
 import { queryMentions } from '../db/contentIndex'
-import { indexWrittenPage, readExcludedFolders } from '../indexSeed'
+import { indexWrittenPage, nexusCorpus } from '../indexSeed'
 
 /** Rewrite every page body that links `oldTitle` to link `newTitle`, atomically.
  *  Body-only rewrite — frontmatter (incl. `modified_at`) is preserved untouched
@@ -31,8 +30,7 @@ export async function renameCascade(
 ): Promise<Result<{ touched: string[] }>> {
   const oldKey = normalizeTitle(oldTitle)
   const touched: string[] = []
-  const rels =
-    queryMentions(oldKey) ?? (await corpusFiles(nexusRoot, await readExcludedFolders(nexusRoot)))
+  const rels = queryMentions(oldKey) ?? (await nexusCorpus(nexusRoot))
   for (const rel of rels) {
     const file = join(nexusRoot, rel)
     const wrote = await rewritePageSerialized(file, (content) => {

@@ -87,32 +87,41 @@ export function removePathPrefixIndex(dir: string): void {
 export function renamePathPrefixIndex(oldDir: string, newDir: string): void {
   guarded(`rename ${oldDir}/`, (db) => {
     for (const table of TABLES) {
+      // The suffix offset is computed by SQL's own length() — SQLite counts characters where a
+      // JS .length counts UTF-16 units, and mixing the two swallows the separator after any
+      // astral character (an emoji folder name).
       db.prepare(
-        `UPDATE OR REPLACE ${table} SET path = ? || substr(path, ?) WHERE path >= ? || '/' AND path < ? || '0'`,
-      ).run(newDir, oldDir.length + 1, oldDir, oldDir)
+        `UPDATE OR REPLACE ${table} SET path = ? || substr(path, length(?) + 1) WHERE path >= ? || '/' AND path < ? || '0'`,
+      ).run(newDir, oldDir, oldDir, oldDir)
     }
   })
 }
 
-/** Prune every row whose path the corpus enumeration no longer yields. */
-export function reconcileIndex(seen: ReadonlySet<string>): void {
-  guarded('reconcile', (db) => {
-    for (const table of TABLES) {
-      const rows = db.prepare(`SELECT DISTINCT path FROM ${table}`).all() as { path: string }[]
-      const del = db.prepare(`DELETE FROM ${table} WHERE path = ?`)
-      for (const row of rows) if (!seen.has(row.path)) del.run(row.path)
-    }
-  })
+// The seed stamps the handle it finished against; until then the tables may exist EMPTY or
+// half-filled, and an empty answer from them would masquerade as "no matches" — exactly what
+// the null contract forbids. Queries answer null for an unstamped handle, so every caller
+// scans instead; a session switch swaps the handle and unsets readiness by identity.
+let readyDb: Db | null = null
+
+export function markIndexReady(): void {
+  readyDb = sessionDb()
 }
 
-function queryPaths(sql: string, param: string): string[] | null {
+/** The read side of `guarded`: null is NO INDEX — no Db, or a table that never landed. Silent
+ *  where the writers log, because every caller answers a null by scanning instead. */
+function queried<T>(run: (db: Db) => T): T | null {
   const db = sessionDb()
   if (!db) return null
   try {
-    return (db.prepare(sql).all(param) as { path: string }[]).map((r) => r.path)
+    return run(db)
   } catch {
     return null
   }
+}
+
+function queryPaths(sql: string, param: string): string[] | null {
+  if (sessionDb() !== readyDb) return null
+  return queried((db) => (db.prepare(sql).all(param) as { path: string }[]).map((r) => r.path))
 }
 
 /** Paths whose bodies mention `normalizedTitle`, or null when there is no index. */
@@ -128,16 +137,12 @@ export function queryKeyHolders(key: string): string[] | null {
 /** The whole stat gate, or null when there is no index — the seed stands down on null rather
  *  than reading a corpus it has nowhere to record. */
 export function readIndexedStats(): Map<string, IndexedStat> | null {
-  const db = sessionDb()
-  if (!db) return null
-  try {
+  return queried((db) => {
     const rows = db.prepare('SELECT path, mtime_ms, size FROM indexed_files').all() as {
       path: string
       mtime_ms: number
       size: number
     }[]
     return new Map(rows.map((r) => [r.path, { mtimeMs: r.mtime_ms, size: r.size }]))
-  } catch {
-    return null
-  }
+  })
 }

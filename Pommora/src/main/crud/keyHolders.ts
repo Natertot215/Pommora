@@ -7,15 +7,14 @@
 
 import { join, sep } from 'node:path'
 import { queryKeyHolders } from '../db/contentIndex'
-import { readExcludedFolders } from '../indexSeed'
-import { corpusFiles } from '../io/walk'
+import { nexusCorpus } from '../indexSeed'
 
 export async function keyHolderFiles(
   root: string,
   key: string,
   folders: string[],
 ): Promise<string[]> {
-  const rels = queryKeyHolders(key) ?? (await corpusFiles(root, await readExcludedFolders(root)))
+  const rels = queryKeyHolders(key) ?? (await nexusCorpus(root))
   return rels
     .map((rel) => join(root, rel))
     .filter((abs) => folders.some((folder) => abs.startsWith(folder + sep)))
