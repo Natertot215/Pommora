@@ -1,4 +1,4 @@
-import { mutateRegistry } from '../io/propertiesRegistry'
+import { mutateRegistry, readRegistry } from '../io/propertiesRegistry'
 import { validateDefinition, validateName } from '../properties/schema'
 import { mintPropertyId } from '../ids'
 import { defaultStatusSeed, defaultSelectSeed, type PropertyDefinition } from '@shared/properties'
@@ -11,6 +11,7 @@ import {
   KEY_REFUSAL,
 } from '@shared/governedKeys'
 import { cascadePages } from './optionOps'
+import { clearSchemaJournal, readSchemaJournal, writeSchemaJournal } from './propertyJournal'
 import { serializeSchemaOp } from './schemaChain'
 
 // Seed defaults for a def that has NONE (the field is undefined — a fresh create, or a type-change
@@ -28,10 +29,19 @@ function seeded(def: PropertyDefinition): PropertyDefinition {
 
 /** Mint + persist a nexus-wide definition, appending its id to the nexus order. A title already
  *  taken is refused, case-folded: the title IS the key a property's values write under. */
-export function createProperty(
+export async function createProperty(
   root: string,
   def: PropertyDefinition,
 ): Promise<Result<{ id: string }>> {
+  // A create wearing a journaled delete's name or id supersedes the record: it's a re-create
+  // (or a restore, which funnels through here with the recorded id), and a later replay
+  // completing that delete would strip the living property instead of a dead one.
+  const journal = await readSchemaJournal(root)
+  if (
+    journal?.op === 'delete' &&
+    (journal.name === normalizePropertyName(def.name ?? '') || journal.id === def.id)
+  )
+    await clearSchemaJournal(root)
   return mutateRegistry<Result<{ id: string }>>(root, (registry) => {
     const candidate = seeded({
       ...def,
@@ -81,6 +91,16 @@ export function editProperty(
   changes: Partial<PropertyDefinition>,
 ): Promise<Result<null>> {
   return serializeSchemaOp(async () => {
+    // Journal BEFORE the commit: registry-first ordering means a crash between commit and sweep
+    // is recoverable from nowhere else — the old name survives only here. The pre-read is
+    // advisory (mutateRegistry below revalidates); a record for an edit that then fails is
+    // cleared on that path, and one stranded by a throw is disposed of by the id-gated replay.
+    const prior = (await readRegistry(root)).defs[propertyId]
+    if (prior && typeof changes.name === 'string') {
+      const to = normalizePropertyName(changes.name)
+      if (to && to !== prior.name)
+        await writeSchemaJournal(root, { op: 'rename', id: propertyId, from: prior.name, to })
+    }
     const edit = await mutateRegistry<Result<Rename | null>>(root, (registry) => {
       let rename: Rename | null = null
       const current = registry.defs[propertyId]
@@ -101,10 +121,14 @@ export function editProperty(
         result: ok(rename),
       }
     })
-    if (!edit.ok) return edit
+    if (!edit.ok) {
+      await clearSchemaJournal(root)
+      return edit
+    }
     // Registry first, then one sweep: every write during it resolves the new name, so the new
     // key is always the fresher of the two and no comparison is needed.
     if (edit.value) await renameSweep(root, edit.value.from, edit.value.to)
+    await clearSchemaJournal(root)
     return ok(null)
   })
 }

@@ -18,8 +18,9 @@ import {
   renameStatusOption as renameStatusInArray,
   type Option,
 } from '@shared/optionModel'
-import type { PropertyType, StatusGroup } from '@shared/properties'
+import type { PropertyDefinition, PropertyType, StatusGroup } from '@shared/properties'
 import { propertyKey } from '@shared/propertyValue'
+import { clearSchemaJournal, writeSchemaJournal } from './propertyJournal'
 
 /** These ops edit `select_options`, so they apply to Select / Multi-Select only. A Status property's
  *  options live in `status_groups` (its own per-group ops below); other types have none. Reject anything
@@ -86,6 +87,45 @@ export function setStatusGroups(
   )
 }
 
+/** Every option value a def holds, whichever shape its type stores them in — the read the
+ *  crash replay shares with nobody else restating it. */
+export function optionValues(def: PropertyDefinition): string[] {
+  if (def.type === 'status')
+    return (def.status_groups ?? []).flatMap((g) => g.options.map((o) => o.value))
+  return (def.select_options ?? []).map((o) => o.value)
+}
+
+/** Drop one option value from a def's registry entry, whichever shape holds it — the remove
+ *  ops' registry finish, shared with the crash replay so both run the identical edit. A value
+ *  already gone is a completed finish, not a failure. */
+export function dropOptionFromDef(
+  root: string,
+  propertyId: string,
+  value: string,
+): Promise<Result<null>> {
+  return mutateRegistry<Result<null>>(root, (registry) => {
+    const current = registry.defs[propertyId]
+    if (!current) return { result: fail('not-found', 'Property not found.') }
+    const next =
+      current.type === 'status'
+        ? {
+            ...current,
+            status_groups: (current.status_groups ?? []).map((g) => ({
+              ...g,
+              options: g.options.filter((o) => o.value !== value),
+            })),
+          }
+        : {
+            ...current,
+            select_options: (current.select_options ?? []).filter((o) => o.value !== value),
+          }
+    return {
+      next: { ...registry, defs: { ...registry.defs, [propertyId]: next } },
+      result: ok(null),
+    }
+  })
+}
+
 /** What a page cascade needs about the property it is rewriting: the key the values sit under,
  *  and the type the rewrite must speak. Resolved from the authoritative def, never re-read. */
 type CascadeTarget = { type: PropertyType; key: string }
@@ -128,6 +168,13 @@ export function renameStatusOption(
   newTitle: string,
 ): Promise<Result<null>> {
   return serializeSchemaOp(async () => {
+    if ((await readRegistry(root)).defs[propertyId])
+      await writeSchemaJournal(root, {
+        op: 'option-rename',
+        id: propertyId,
+        from: oldValue,
+        to: newTitle,
+      })
     const edit = await mutateRegistry<Result<string>>(root, (registry) => {
       const def = registry.defs[propertyId]
       if (!def) return { result: fail('not-found', 'Property not found.') }
@@ -142,10 +189,14 @@ export function renameStatusOption(
         result: ok(propertyKey(def)),
       }
     })
-    if (!edit.ok) return edit
+    if (!edit.ok) {
+      await clearSchemaJournal(root)
+      return edit
+    }
     await cascadePages(root, edit.value, (content) =>
       replacePageValue(content, edit.value, oldValue, newTitle, 'status'),
     )
+    await clearSchemaJournal(root)
     return ok(null)
   })
 }
@@ -159,7 +210,9 @@ export function clearStatusOption(
   return serializeSchemaOp(async () => {
     const r = await resolveForCascade(root, propertyId, requireStatusType)
     if (!r.ok) return r
+    await writeSchemaJournal(root, { op: 'option-strip', id: propertyId, value, drop: false })
     await stripCascade(root, r.value, value)
+    await clearSchemaJournal(root)
     return ok(null)
   })
 }
@@ -174,22 +227,11 @@ export function removeStatusOption(
   return serializeSchemaOp(async () => {
     const r = await resolveForCascade(root, propertyId, requireStatusType)
     if (!r.ok) return r
+    await writeSchemaJournal(root, { op: 'option-strip', id: propertyId, value, drop: true })
     await stripCascade(root, r.value, value)
-    return mutateRegistry<Result<null>>(root, (registry) => {
-      const current = registry.defs[propertyId]
-      if (!current) return { result: fail('not-found', 'Property not found.') }
-      const nextGroups = (current.status_groups ?? []).map((g) => ({
-        ...g,
-        options: g.options.filter((o) => o.value !== value),
-      }))
-      return {
-        next: {
-          ...registry,
-          defs: { ...registry.defs, [propertyId]: { ...current, status_groups: nextGroups } },
-        },
-        result: ok(null),
-      }
-    })
+    const dropped = await dropOptionFromDef(root, propertyId, value)
+    await clearSchemaJournal(root)
+    return dropped
   })
 }
 
@@ -224,6 +266,17 @@ export function renameOption(
   newTitle: string,
 ): Promise<Result<null>> {
   return serializeSchemaOp(async () => {
+    // Journal BEFORE the commit (registry-first order): a crash between commit and cascade is
+    // recoverable only from this record. Def-gated so an op the registry will refuse outright
+    // journals nothing; a record stranded by a refusal or throw is disposed of by the replay's
+    // holds-to-and-not-from gate.
+    if ((await readRegistry(root)).defs[propertyId])
+      await writeSchemaJournal(root, {
+        op: 'option-rename',
+        id: propertyId,
+        from: oldValue,
+        to: newTitle,
+      })
     const edit = await mutateRegistry<Result<CascadeTarget>>(root, (registry) => {
       const def = registry.defs[propertyId]
       if (!def) return { result: fail('not-found', 'Property not found.') }
@@ -238,10 +291,14 @@ export function renameOption(
         result: ok({ type: def.type, key: propertyKey(def) }),
       }
     })
-    if (!edit.ok) return edit
+    if (!edit.ok) {
+      await clearSchemaJournal(root)
+      return edit
+    }
     await cascadePages(root, edit.value.key, (content) =>
       replacePageValue(content, edit.value.key, oldValue, newTitle, edit.value.type),
     )
+    await clearSchemaJournal(root)
     return ok(null)
   })
 }
@@ -256,7 +313,9 @@ export function clearOption(
   return serializeSchemaOp(async () => {
     const r = await resolveForCascade(root, propertyId, requireOptionType)
     if (!r.ok) return r
+    await writeSchemaJournal(root, { op: 'option-strip', id: propertyId, value, drop: false })
     await stripCascade(root, r.value, value)
+    await clearSchemaJournal(root)
     return ok(null)
   })
 }
@@ -271,18 +330,10 @@ export function removeOption(
   return serializeSchemaOp(async () => {
     const r = await resolveForCascade(root, propertyId, requireOptionType)
     if (!r.ok) return r
+    await writeSchemaJournal(root, { op: 'option-strip', id: propertyId, value, drop: true })
     await stripCascade(root, r.value, value)
-    return mutateRegistry<Result<null>>(root, (registry) => {
-      const current = registry.defs[propertyId]
-      if (!current) return { result: fail('not-found', 'Property not found.') }
-      const nextOptions = (current.select_options ?? []).filter((o) => o.value !== value)
-      return {
-        next: {
-          ...registry,
-          defs: { ...registry.defs, [propertyId]: { ...current, select_options: nextOptions } },
-        },
-        result: ok(null),
-      }
-    })
+    const dropped = await dropOptionFromDef(root, propertyId, value)
+    await clearSchemaJournal(root)
+    return dropped
   })
 }
