@@ -13,6 +13,7 @@ import { readRegistry, type PropertyRegistry } from '../io/propertiesRegistry'
 import { removeFromRegistry } from './registryProperty'
 import { collectionFolders } from './assignment'
 import { keyHolderFiles } from './keyHolders'
+import { clearSchemaJournal, writeSchemaJournal } from './propertyJournal'
 import { serializeSchemaOp } from './schemaChain'
 import { sweepGovernedRoots } from './governedSweep'
 import { readSidecar, writeSidecar, withSidecarLock } from '../sidecarIO'
@@ -82,29 +83,35 @@ async function deleteInner(root: string, propertyId: string): Promise<Result<nul
   // The one candidate set for the snapshot AND the sweep: the key's holders, scope-intersected.
   const files = await keyHolderFiles(root, key, folders)
   await snapshot(root, propertyId, def, folders, files)
+  // Journaled AFTER the snapshot — a replay re-runs the strip tail, never the bundle mint.
+  await writeSchemaJournal(root, { op: 'delete', id: propertyId, name: def.name })
 
   // Strip the value from every page a Collection's schema governs — the one sweep, scoped to
   // the folders that carry the schema this definition belonged to.
-  await sweepGovernedRoots(
-    root,
-    { kind: 'files', files },
-    (raw) => {
-      if (!(key in raw)) return null
-      const next = { ...raw }
-      delete next[key]
-      return { next }
-    },
-    { stamp: true },
-  )
+  await sweepGovernedRoots(root, { kind: 'files', files }, stripKeyRewrite(key), { stamp: true })
 
   for (const folder of folders) await unassignAndPurge(folder, propertyId)
-  return removeFromRegistry(root, propertyId)
+  const removed = await removeFromRegistry(root, propertyId)
+  await clearSchemaJournal(root)
+  return removed
+}
+
+/** The delete's page rewrite, named so the crash replay runs the identical strip. */
+export function stripKeyRewrite(
+  key: string,
+): (raw: Record<string, unknown>) => { next: Record<string, unknown> } | null {
+  return (raw) => {
+    if (!(key in raw)) return null
+    const next = { ...raw }
+    delete next[key]
+    return { next }
+  }
 }
 
 /** Drop the id from one Collection's assignments and purge its Remove-cache block, under that
  *  sidecar's lock so a concurrent view/order/icon write can't be reverted by this read-merge-write.
  *  The `.trash` bundle is the recovery net, so this needn't be atomic. */
-function unassignAndPurge(folder: string, propertyId: string): Promise<void> {
+export function unassignAndPurge(folder: string, propertyId: string): Promise<void> {
   return withSidecarLock(folder, 'collection', async () => {
     const sidecar = await readSidecar(folder, 'collection', pageCollectionSidecar)
     if (!sidecar) return
