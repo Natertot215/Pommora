@@ -357,7 +357,9 @@ async function adoptNexus(path: string, latchRecord = true): Promise<void> {
   }
 }
 
-async function adoptNexusInner(path: string, latchRecord: boolean): Promise<void> {
+// The one open sequence — a user adopt and the launch restore both run it. Returns the
+// canonical root.
+async function openNexusSequence(path: string, latchRecord: boolean): Promise<string> {
   // Re-adopting the already-open nexus (Open Recent's head, a re-pick in the picker) is a
   // re-point of a live session, not a genuine open — the latch below compares roots and
   // stands down, or every in-session change would diff against the launch baseline as drift.
@@ -395,6 +397,11 @@ async function adoptNexusInner(path: string, latchRecord: boolean): Promise<void
     // belongs to an op still on the schema chain, which the replay would only queue behind.
     await replaySchemaCascade(root)
   }
+  return root
+}
+
+async function adoptNexusInner(path: string, latchRecord: boolean): Promise<void> {
+  const root = await openNexusSequence(path, latchRecord)
   // A user-initiated open always has a window; launch-restore starts its watcher after
   // createWindow below instead.
   if (mainWindow) void startWatcher(root, mainWindow)
@@ -1834,17 +1841,7 @@ app
     try {
       const config = await readAppConfig(app.getPath('userData'))
       const restore = await resolveRestorePath(config)
-      if (restore) {
-        await openSession(restore)
-        const root = sessionRoot() ?? restore
-        await prepareOpenedNexus(root)
-        await replayPendingRename(root)
-        openSessionDb(root)
-        await runOpenRecord(root)
-        await seedContentIndex(root)
-        // Post-seed for the same warmth the adopt path buys; serialized against live ops.
-        await replaySchemaCascade(root)
-      }
+      if (restore) await openNexusSequence(restore, true)
     } catch (e) {
       console.error('Restore skipped (config unreadable):', e)
     }
