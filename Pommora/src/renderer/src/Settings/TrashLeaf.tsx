@@ -19,11 +19,6 @@ import '../Detail/Views/Table/table-tokens.css'
 import '../Detail/Views/Table/Table.css'
 import './trashLeaf.css'
 
-/** A deleted entity carries no column configuration to read a format from, so this column carries
- *  its own — chosen from its heading's menu and kept in personalization. Unchosen, it takes the same
- *  default a date column takes when nothing configures it, so the two never disagree by accident. */
-const DEFAULT_DATE_FORMAT: DateFormat = defaultStyleFor('datetime').date_format ?? 'full'
-
 /** Identity-stable, so a tree push with no collections can't re-run the destination walk. */
 const EMPTY_COLLECTIONS: CollectionNode[] = []
 
@@ -69,8 +64,14 @@ export function filterRows(rows: TrashRow[], query: string): TrashRow[] {
 }
 
 export function TrashLeaf(): React.JSX.Element {
-  const nexusClock = useSession((s) => s.tree?.timeFormat ?? DEFAULT_TIME_FORMAT)
-  const dateFormat = useSession((s) => s.personalization.trashDateFormat ?? DEFAULT_DATE_FORMAT)
+  const nexusClock = useSession((s) => s.personalization.timeFormat ?? DEFAULT_TIME_FORMAT)
+  // A deleted entity carries no column configuration to read a format from, so this column carries
+  // its own — chosen from its heading's menu and kept in personalization. Unchosen, it takes the
+  // same default a date column takes, computed through the same seam so the two cannot disagree.
+  const nexusDateFormat = useSession((s) => s.personalization.dateFormat)
+  const columnDefault: DateFormat =
+    defaultStyleFor('datetime', undefined, nexusDateFormat).date_format ?? 'full'
+  const dateFormat = useSession((s) => s.personalization.trashDateFormat) ?? columnDefault
   const timeShown = useSession((s) => s.personalization.trashHideTime !== true)
   const setPersonalization = useSession((s) => s.setPersonalization)
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
@@ -194,7 +195,7 @@ export function TrashLeaf(): React.JSX.Element {
     else
       setPersonalization(
         'trashDateFormat',
-        action.format === DEFAULT_DATE_FORMAT ? undefined : action.format,
+        action.format === columnDefault ? undefined : action.format,
       )
   }
 

@@ -6,7 +6,7 @@ import { PickerMenu } from '@renderer/design-system/components/PickerMenu/Picker
 import { TextPicker } from '@renderer/design-system/components/TextPicker'
 import type { ContextOption } from '../pipeline/contextOptions'
 import { declaredType, resolveFieldValue } from '../pipeline/value'
-import { styleFor } from '../Table/columnStyles'
+import { useStyleFor } from '../Table/columnStyles'
 import { parseLink, urlValueFromEdit } from '@shared/linkValue'
 import { solidColorCss } from '../Table/solidColor'
 import type { ResolveContext } from '../Table/resolveContext'
@@ -71,6 +71,7 @@ export function CardPickerHost({
   onDismissValue: () => void
   onDismissAdd: () => void
 }): React.JSX.Element {
+  const styleFor = useStyleFor()
   const tree = useSession((s) => s.tree)
   // The last non-null requests render through the closing frames (exit presence keeps the pane
   // mounted after dismiss); the anchor rides a plain ref object PickerMenu can track.

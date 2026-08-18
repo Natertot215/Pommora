@@ -12,7 +12,7 @@
 
 import type { EntityRecord } from '@shared/record'
 import type { NavRef, NexusTree, PageNode, SetNode } from '@shared/types'
-import { entityIcon, iconNameOr } from '@renderer/design-system/symbols'
+import { DEFAULT_NEXUS_ICON, entityIcon, iconNameOr } from '@renderer/design-system/symbols'
 import { buildPageIndex, type ConnPage, type PageIndex } from './MarkdownPM/connections'
 import { navKey } from './Navigation/navRecents'
 import type { NavCore, PathCrumb, ResolveIndex } from './Navigation/navResolve'
@@ -71,7 +71,7 @@ function walk(tree: NexusTree): NodeRecord[] {
     kind: 'homepage',
     id: '',
     title: tree.nexus.name,
-    icon: iconNameOr(tree.nexus.profileIcon, 'house'),
+    icon: iconNameOr(tree.nexus.profileIcon, DEFAULT_NEXUS_ICON),
     path: '',
     crumbs: [],
   })

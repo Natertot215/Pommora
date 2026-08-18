@@ -53,4 +53,31 @@ describe('styleFor', () => {
     const v = view({ column_styles: { prop_status: { look: 'zebra' } } } as never)
     expect(styleFor('prop_status', schema, v)).toEqual({ look: 'pill' })
   })
+
+  it("takes the nexus's date form where the column set none", () => {
+    expect(styleFor('prop_date', schema, view({}), 'relative')).toEqual({
+      date_format: 'relative',
+      time_format: 'none',
+      weekday: 'none',
+    })
+  })
+
+  it("a column's own date form outranks the nexus's", () => {
+    const v = view({ column_styles: { prop_date: { date_format: 'short' } } })
+    expect(styleFor('prop_date', schema, v, 'relative').date_format).toBe('short')
+  })
+
+  it('an absent nexus form reads as it always has', () => {
+    expect(styleFor('prop_date', schema, view({}), undefined).date_format).toBe('full')
+  })
+
+  it('reaches Modified columns, which share the datetime arm', () => {
+    const withModified: PropertyDefinition[] = [
+      ...schema,
+      { id: 'prop_m', name: 'Modified', type: 'last_edited_time' },
+    ]
+    expect(styleFor('prop_m', withModified, view({}), 'dayMonthYear').date_format).toBe(
+      'dayMonthYear',
+    )
+  })
 })

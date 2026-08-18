@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 import { useSession } from '../../store'
-import { Icon } from '../../design-system/symbols'
+import { DEFAULT_NEXUS_ICON, Icon } from '../../design-system/symbols'
 import { InteractionField } from '../../design-system/components/InteractionField'
 import { MenuBottomRow, MenuScrollFrame } from '../../design-system/components/menu'
 import { footerLockAction, lockIcon } from '@renderer/design-system/components/menu/menu.css'
@@ -66,7 +66,7 @@ export function SettingsScaffold(): React.JSX.Element | null {
             {photoUrl ? (
               <img className={s.headerPhotoImg} src={photoUrl} alt="" />
             ) : (
-              <Icon name={profileIcon ?? 'square-dashed'} />
+              <Icon name={profileIcon ?? DEFAULT_NEXUS_ICON} />
             )}
           </button>
           <InteractionField className={s.titleField}>{tree.nexus.name}</InteractionField>

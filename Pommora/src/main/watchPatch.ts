@@ -377,7 +377,6 @@ function applySettingsLeaves(root: string, leaves: SettingsLeaves): 'ok' | 'refr
     ...t,
     labels: leaves.labels,
     accent: leaves.accent,
-    timeFormat: leaves.timeFormat,
     personalization: leaves.personalization,
     commands: leaves.commands,
     nexus: {

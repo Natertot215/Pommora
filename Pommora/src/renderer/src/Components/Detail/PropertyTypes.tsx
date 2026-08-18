@@ -9,7 +9,7 @@ import {
 import { DashIcon } from './DashIcon'
 
 /**
- * The single source for per-property-type presentation, catalogued in Features/Icons.md.
+ * The single source for per-property-type presentation, catalogued in Features/SymbolsPM.md.
  * `context` backs Context columns only, and `last_edited_time` is auto-managed — neither is
  * `creatable`.
  */
@@ -27,7 +27,7 @@ const PROPERTY_TYPES: Record<PropertyType, TypeMeta> = {
   multi_select: { label: 'Multi-Select', icon: 'tags', creatable: true },
   status: { label: 'Status', icon: 'progress-check', creatable: true },
   url: { label: 'Link', icon: 'link', creatable: true },
-  file: { label: 'File', icon: 'import', creatable: true },
+  file: { label: 'File', icon: 'file-chart-column', creatable: true },
   // The one type naming an entity kind rather than a value shape, so it draws the kind's glyph
   // from where that is decided instead of restating it.
   context: { label: 'Context', icon: DEFAULT_ENTITY_ICONS.context },

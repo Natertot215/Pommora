@@ -16,7 +16,7 @@ export function DatetimeValuePicker({
   dateFormat?: ColumnStyle['date_format']
   onCommit: (value: PropertyValue | null) => void
 }): React.JSX.Element {
-  const timeFormat = useSession((s) => s.tree?.timeFormat)
+  const timeFormat = useSession((s) => s.personalization.timeFormat)
   const fmt = dateFormat === 'relative' ? 'short' : (dateFormat ?? 'full')
   return (
     <CalendarPicker

@@ -3,7 +3,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync } from 'node:
 import { tmpdir, homedir } from 'node:os'
 import { join } from 'node:path'
 import { readCommands, readNexus, readPersonalization, splitFrontmatter } from './readNexus'
-import { DEFAULT_COMMANDS } from '@shared/types'
+import { DEFAULT_ACCENT, DEFAULT_COMMANDS } from '@shared/types'
 
 const PAGE_A = '01KVGMT8BFG350FZZXAMG1QDRP'
 const PG_LINKED = '01KVGMT8BFG350FZZXAMG1QDRQ'
@@ -401,9 +401,9 @@ describe('readNexus — personalization', () => {
   })
   it('an unknown accent name or a foreign top-level key resolves the default', async () => {
     expect((await readNexus(mk({ personalization: { accent: 'chartreuse' } }))).accent).toBe(
-      'lavender',
+      DEFAULT_ACCENT,
     )
-    expect((await readNexus(mk({ outside_accent: 'red' }))).accent).toBe('lavender')
+    expect((await readNexus(mk({ outside_accent: 'red' }))).accent).toBe(DEFAULT_ACCENT)
   })
   it('reads the block, dropping invalid fields + unknown icon kinds', async () => {
     const t = await readNexus(
@@ -456,6 +456,19 @@ describe('readNexus — personalization', () => {
     expect(await at(900)).toBe(30)
     expect(await at(0)).toBeUndefined()
     expect(await at('abc')).toBeUndefined()
+  })
+  it('the nexus date format survives the round-trip, and an unrecognized one reads as absent', async () => {
+    const at = async (v: unknown): Promise<string | undefined> =>
+      (await readNexus(mk({ personalization: { dateFormat: v } }))).personalization.dateFormat
+    expect(await at('relative')).toBe('relative')
+    expect(await at('nonsense')).toBeUndefined()
+  })
+  it('the clock reads from personalization; absent and junk alike read as the default', async () => {
+    const at = async (settings: Record<string, unknown>): Promise<string | undefined> =>
+      (await readNexus(mk(settings))).personalization.timeFormat
+    expect(await at({ personalization: { timeFormat: 'twentyFourHour' } })).toBe('twentyFourHour')
+    expect(await at({})).toBeUndefined()
+    expect(await at({ personalization: { timeFormat: 'nonsense' } })).toBeUndefined()
   })
   it('the trash date format survives the round-trip, and an unrecognized one reads as absent', async () => {
     const at = async (v: unknown): Promise<string | undefined> =>

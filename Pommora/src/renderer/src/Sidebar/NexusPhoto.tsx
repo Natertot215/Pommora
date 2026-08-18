@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { Icon } from '@renderer/design-system/symbols'
+import { DEFAULT_NEXUS_ICON, Icon } from '@renderer/design-system/symbols'
 import { IconPicker } from '../Components/IconPicker'
 import { PhotoCropModal } from '../Components/PhotoCropModal'
 import { useNexusIcon } from '../Components/useNexusIcon'
@@ -39,7 +39,7 @@ export function NexusPhoto({ size }: { size: number }): React.JSX.Element {
         {photoUrl ? (
           <img className={s.photoImg} src={photoUrl} alt="" />
         ) : (
-          <Icon name={profileIcon ?? 'square-dashed'} size={Math.round(size * 0.6)} />
+          <Icon name={profileIcon ?? DEFAULT_NEXUS_ICON} size={Math.round(size * 0.6)} />
         )}
       </span>
       <IconPicker
