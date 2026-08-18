@@ -90,6 +90,52 @@ describe('confirmMutation', () => {
     expect(stabilize(await readNexus(root), live)).toBe(live)
   })
 
+  it('a created container carries its own seeded sidecar view, walk-identically', async () => {
+    await mkdir(abs('Notes', 'Drafts'), { recursive: true })
+    await writeFile(
+      abs('Notes', 'Drafts', '_pageset.json'),
+      JSON.stringify({
+        id: 's9',
+        views: [{ id: 'view_seed', name: 'Default', type: 'table' }],
+      }),
+    )
+    const pushed = await confirmMutation(
+      root,
+      { op: 'createContainer', parentPath: 'Notes', kind: 'set', name: 'Drafts' },
+      { created: { id: 's9', path: 'Notes/Drafts' } },
+    )
+    expect(pushed).not.toBeNull()
+    expect(walkSpy).not.toHaveBeenCalled()
+    const live = getLiveTree()
+    expect(live?.collections[0]?.sets?.[0]?.views?.[0]?.id).toBe('view_seed')
+    expect(stabilize(await readNexus(root), live)).toBe(live)
+  })
+
+  it('a Space delete walks — its cascade rewrote contextValues the transform never touches', async () => {
+    await writeFile(
+      abs('Notes', 'A.md'),
+      `---\nPageID: ${ULID_A}\n(Areas):\n  - Home\n---\n\nalpha\n`,
+    )
+    dropLiveTree()
+    await refreshTree(root)
+    expect(getLiveTree()?.collections[0]?.pages[0]?.contextValues).toEqual({ ctx1: ['sp1'] })
+    walkSpy.mockClear()
+    // The real delete trashes the folder and unlinks the value from every member.
+    await rm(abs('.nexus', 'contexts', 'Areas', 'Home'), { recursive: true, force: true })
+    await writeFile(abs('Notes', 'A.md'), `---\nPageID: ${ULID_A}\n---\n\nalpha\n`)
+    const pushed = await confirmMutation(
+      root,
+      { op: 'delete', path: '.nexus/contexts/Areas/Home', kind: 'space' },
+      {},
+    )
+    expect(pushed).not.toBeNull()
+    expect(walkSpy).toHaveBeenCalledTimes(1)
+    const live = getLiveTree()
+    expect(live?.contexts[0]?.spaces).toHaveLength(0)
+    expect(live?.collections[0]?.pages[0]?.contextValues).toBeUndefined()
+    expect(stabilize(await readNexus(root), live)).toBe(live)
+  })
+
   it('the no-change arm: a cell edit costs zero walks AND zero pushes', async () => {
     const before = getLiveTree()
     const pushed = await confirmMutation(

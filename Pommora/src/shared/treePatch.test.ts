@@ -138,6 +138,29 @@ describe('insertCreatedInTree', () => {
     ).toBeNull()
   })
 
+  it('is idempotent: an entity the tree already holds inserts as null, never a duplicate', () => {
+    const withPage = insertCreatedInTree(
+      tree(),
+      { op: 'createPage', parentPath: 'Notes', name: 'C' },
+      { id: 'x9', path: 'Notes/C.md' },
+    )
+    expect(withPage).not.toBeNull()
+    expect(
+      insertCreatedInTree(
+        withPage as NexusTree,
+        { op: 'createPage', parentPath: 'Notes', name: 'C' },
+        { id: 'x9', path: 'Notes/C.md' },
+      ),
+    ).toBeNull()
+    expect(
+      insertCreatedInTree(
+        tree(),
+        { op: 'createContainer', parentPath: '', kind: 'collection', name: 'Work' },
+        { id: 'c2', path: 'Work' },
+      ),
+    ).toBeNull()
+  })
+
   it('returns null when the parent container is unresolved', () => {
     expect(
       insertCreatedInTree(

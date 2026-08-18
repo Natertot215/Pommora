@@ -218,12 +218,30 @@ export function relocateNodeInTree(
   return { ...tree, collections: placed.containers as CollectionNode[] }
 }
 
-/** Insert a just-created entity at its slot. */
+function holdsPath(containers: (CollectionNode | SetNode)[], path: string): boolean {
+  return containers.some(
+    (c) =>
+      c.path === path ||
+      c.pages.some((p) => p.path === path) ||
+      (c.sets ? holdsPath(c.sets, path) : false),
+  )
+}
+
+/** Insert a just-created entity at its slot. Null when it's already present — the confirming
+ *  push can land before the caller's reply continuation runs, and a second insert would
+ *  duplicate the node; null keeps the optimistic layer idempotent. */
 export function insertCreatedInTree(
   tree: NexusTree,
   req: MutateRequest,
   created: { id: string; path: string },
 ): NexusTree | null {
+  const present =
+    req.op === 'createContextGroup'
+      ? (tree.contexts?.some((g) => g.def.id === created.id) ?? false)
+      : req.op === 'createSpace'
+        ? (tree.contexts?.some((g) => g.spaces.some((s) => s.path === created.path)) ?? false)
+        : holdsPath(tree.collections, created.path)
+  if (present) return null
   if (req.op === 'createContextGroup') {
     const title = basename(created.path)
     const group: ContextGroup = {

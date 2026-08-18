@@ -282,12 +282,12 @@ At the end of this plan, none of that survives as a hot path. Main holds a **liv
 - [x] Commit: `feat(renderer): the push is the confirmation`
 
 #### Gate 3 — zero walks on the write path
-- [ ] Gates green; the manual write sweep and the ⌘R drift check both logged in the Log.
-- [ ] Derivation re-run against its control; every surviving `load()` caller named with its reason.
-- [ ] Temporary walk-count instrumentation removed (or ruled kept).
-- [ ] Simplification + review against `<base>..HEAD`; concerns fixed or ruled.
-- [ ] Any user-visible surface seen running (the write sweep covers it).
-- [ ] Progress hashes filled in.
+- [x] Gates green; the manual write sweep and the ⌘R drift check both logged in the Log. *(See Gate 3 Evidence — byte-for-byte drift parity.)*
+- [x] Derivation re-run against its control; every surviving `load()` caller named with its reason. *(In Task 7's step notes.)*
+- [x] Temporary walk-count instrumentation removed (or ruled kept). *(Removed; grep-verified via the clean working tree.)*
+- [x] Simplification + review against `<base>..HEAD`; concerns fixed or ruled. *(Review: 7 findings, all verified and folded — the push-before-reply ordering made optimistic creates duplicate (inserts are now idempotent by a presence guard in the shared transform) and stale-name capture dead (captured before the ask); a created container's seeded default view now confirms from its own sidecar; a Space delete refreshes because its cascade rewrites other nodes' contextValues; a failed verification walk drops the held tree instead of serving pre-write canon; moves distinguish same-parent from unresolved; the registry confirm gained the raw-mode gate. Simplifier: confirmWrite consolidation + patchEntityFromDisk + the shared `readSpaceOrders` decode, all verified.)*
+- [x] Any user-visible surface seen running (the write sweep covers it).
+- [x] Progress hashes filled in.
 
 ---
 
@@ -424,9 +424,9 @@ At the end of this plan, none of that survives as a hot path. Main holds a **liv
 - [x] **Phase 2** — The watcher spends its path · base `cd831480` · gate folds ride the Gate 2 commit
   - [x] Task 4 — event classification · `3df2b33d`
   - [x] Task 5 — the watcher patches · `6332e192`
-- [ ] **Phase 3** — Writes patch instead of reload · base `740d8814`
-  - [ ] Task 6 — every write channel confirms by push
-  - [ ] Task 7 — the renderer stops reloading
+- [x] **Phase 3** — Writes patch instead of reload · base `740d8814` · gate folds ride the Gate 3 commit
+  - [x] Task 6 — every write channel confirms by push · `d666332b`
+  - [x] Task 7 — the renderer stops reloading · `e57e6741`
 - [ ] **Phase 4** — The content index
   - [ ] Task 8 — tables, opener, reconciler
   - [ ] Task 9 — writers maintain rows
