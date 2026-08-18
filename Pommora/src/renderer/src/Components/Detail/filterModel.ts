@@ -23,10 +23,7 @@ export interface FilterRow {
   rule: FilterRule
 }
 
-/** The modes the PANE may author. `MatchMode` keeps `none` — the on-disk contract and the evaluator
- *  both still honour a hand-authored NOR — so this narrows only what the pane is allowed to WRITE,
- *  putting the invariant in the compiler's hands instead of a comment's. */
-export type PaneMode = Exclude<MatchMode, 'none'>
+export type PaneMode = MatchMode
 
 export type DecodedFilter = { kind: 'rows'; mode: PaneMode; rows: FilterRow[] } | { kind: 'locked' }
 
@@ -60,13 +57,6 @@ export function encodeFilter(mode: PaneMode, rows: FilterRow[]): FilterGroup | u
  *  connectors display mode `all` ("Or" is a valid deviation under All). */
 export function decodeFilter(filter: FilterGroup | undefined): DecodedFilter {
   if (!filter) return { kind: 'rows', mode: 'all', rows: [] }
-
-  // NOR is not authorable — the pane offers All and Any only. A `none` root can still arrive from a
-  // hand-authored file, and showing it as rows would be a lie in two directions: the Matches control
-  // falls back to its FIRST option, so a NOR would read "All", and one toggle would then rewrite the
-  // tree's polarity. Locked parks it behind Reset, the same contract every other shape the pane can't
-  // represent already gets. The evaluator still runs `none`, so the file keeps working untouched.
-  if (filter.match === 'none') return { kind: 'locked' }
 
   // A flat all is one And-run of leaves — no split, so every connector reads And.
   if (filter.match !== 'any' && filter.rules.every(isLeaf)) {

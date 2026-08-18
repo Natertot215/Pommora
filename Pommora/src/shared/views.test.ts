@@ -238,7 +238,7 @@ describe('mint seam', () => {
 })
 
 describe('filter codec', () => {
-  it('round-trips a filter with values[], match none, and nesting', () => {
+  it('round-trips a filter with values[] and nesting', () => {
     const view = savedView.parse({
       id: 'view_x',
       name: 'T',
@@ -246,22 +246,29 @@ describe('filter codec', () => {
       property_order: [],
       hidden_properties: [],
       filter: {
-        match: 'none',
+        match: 'any',
         rules: [
-          {
-            match: 'any',
-            rules: [
-              { property_id: 'prop_tags', op: 'contains_any', values: ['a', 'b'] },
-              { match: 'all', rules: [{ property_id: 'prop_sel', op: 'is', value: 'x' }] },
-            ],
-          },
+          { property_id: 'prop_tags', op: 'contains_any', values: ['a', 'b'] },
+          { match: 'all', rules: [{ property_id: 'prop_sel', op: 'is', value: 'x' }] },
         ],
       },
     })
     const group = view.filter as FilterGroup
-    expect(group.match).toBe('none')
-    const inner = group.rules[0] as FilterGroup
-    expect(inner.match).toBe('any')
-    expect((inner.rules[0] as FilterRule).values).toEqual(['a', 'b'])
+    expect(group.match).toBe('any')
+    expect((group.rules[0] as FilterRule).values).toEqual(['a', 'b'])
+    expect((group.rules[1] as FilterGroup).match).toBe('all')
+  })
+
+  it('a filter the schema no longer admits drops alone — the view survives unfiltered', () => {
+    const view = savedView.parse({
+      id: 'view_x',
+      name: 'T',
+      type: 'table',
+      property_order: [],
+      hidden_properties: [],
+      filter: { match: 'nonsense', rules: [] },
+    })
+    expect(view.filter).toBeUndefined()
+    expect(view.id).toBe('view_x')
   })
 })
