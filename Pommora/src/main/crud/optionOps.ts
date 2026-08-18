@@ -152,6 +152,22 @@ function stripCascade(root: string, target: CascadeTarget, value: string): Promi
   )
 }
 
+/** Stage an option rename's record, def-gated so an op the registry will refuse outright journals
+ *  nothing. BEFORE the commit (registry-first order): a crash between commit and cascade is
+ *  recoverable only from this record, and one stranded by a refusal or throw is disposed of by the
+ *  replay's holds-to-and-not-from gate. Returned staged or not — clearing a record the slot never
+ *  held is already a no-op, so the caller's settle reads the same either way. */
+async function stageOptionRename(
+  root: string,
+  propertyId: string,
+  from: string,
+  to: string,
+): Promise<SchemaJournal> {
+  const record: SchemaJournal = { op: 'option-rename', id: propertyId, from, to }
+  if ((await readRegistry(root)).defs[propertyId]) await writeSchemaJournal(root, record)
+  return record
+}
+
 /** These ops edit a Status property's `status_groups`; reject anything else up front. */
 function requireStatusType(type: PropertyType): Result<null> {
   return type === 'status'
@@ -168,13 +184,7 @@ export function renameStatusOption(
   newTitle: string,
 ): Promise<Result<null>> {
   return serializeSchemaOp(async () => {
-    const record: SchemaJournal = {
-      op: 'option-rename',
-      id: propertyId,
-      from: oldValue,
-      to: newTitle,
-    }
-    if ((await readRegistry(root)).defs[propertyId]) await writeSchemaJournal(root, record)
+    const record = await stageOptionRename(root, propertyId, oldValue, newTitle)
     const edit = await mutateRegistry<Result<string>>(root, (registry) => {
       const def = registry.defs[propertyId]
       if (!def) return { result: fail('not-found', 'Property not found.') }
@@ -275,17 +285,7 @@ export function renameOption(
   newTitle: string,
 ): Promise<Result<null>> {
   return serializeSchemaOp(async () => {
-    // Journal BEFORE the commit (registry-first order): a crash between commit and cascade is
-    // recoverable only from this record. Def-gated so an op the registry will refuse outright
-    // journals nothing; a record stranded by a refusal or throw is disposed of by the replay's
-    // holds-to-and-not-from gate.
-    const record: SchemaJournal = {
-      op: 'option-rename',
-      id: propertyId,
-      from: oldValue,
-      to: newTitle,
-    }
-    if ((await readRegistry(root)).defs[propertyId]) await writeSchemaJournal(root, record)
+    const record = await stageOptionRename(root, propertyId, oldValue, newTitle)
     const edit = await mutateRegistry<Result<CascadeTarget>>(root, (registry) => {
       const def = registry.defs[propertyId]
       if (!def) return { result: fail('not-found', 'Property not found.') }

@@ -15,7 +15,7 @@ import { collectionFolders } from './assignment'
 import { keyHolderFiles } from './keyHolders'
 import { clearSchemaJournal, writeSchemaJournal, type SchemaJournal } from './propertyJournal'
 import { serializeSchemaOp } from './schemaChain'
-import { sweepGovernedRoots } from './governedSweep'
+import { sweepGovernedRoots, type Rewrite } from './governedSweep'
 import { readSidecar, writeSidecar, withSidecarLock } from '../sidecarIO'
 import { pageCollectionSidecar } from '@shared/schemas'
 import { splitFrontmatter } from '../readNexus'
@@ -102,9 +102,7 @@ async function deleteInner(root: string, propertyId: string): Promise<Result<nul
 }
 
 /** The delete's page rewrite, named so the crash replay runs the identical strip. */
-export function stripKeyRewrite(
-  key: string,
-): (raw: Record<string, unknown>) => { next: Record<string, unknown> } | null {
+export function stripKeyRewrite(key: string): Rewrite<never> {
   return (raw) => {
     if (!(key in raw)) return null
     const next = { ...raw }
