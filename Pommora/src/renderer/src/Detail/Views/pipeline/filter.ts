@@ -2,7 +2,7 @@
 // nested groups (a rule child may itself be a FilterGroup, expressing mixed AND/OR like
 // `(A AND B) OR C`), title + context + any-depth location matrices, and multi-operand `values[]`
 // chip ops. `op` raw strings are snake_case (on-disk parity). Match modes are all = AND and
-// any = OR at every depth; negation lives on the per-rule operators, never on the group.
+// any = OR at every depth; negation lives on the per-rule operators.
 //
 // A rule that CANNOT be applied — unknown op, dead property or set, an operand not yet supplied —
 // abstains rather than voting, so a filter never excludes on what it can't apply. That has to be a
