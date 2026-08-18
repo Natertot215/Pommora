@@ -38,7 +38,6 @@ A floating window summoned from the sidebar ribbon's settings glyph, mounted on 
 
 | Setting                  | Key                   | Description                                                                                                                | Options      |
 | ------------------------ | --------------------- | -------------------------------------------------------------------------------------------------------------------------- | ------------ |
-| Interface Scale          | `defaultViewScale`    | How large the interface is drawn, and what ⌘0 returns to. Applies while the slider moves rather than on release.           | 50%–150%, **100%** |
 | Hide Disclosure Chevrons | `hideChevrons`        | Collapses the sidebar's chevron gutter.                                                                                    | On · **Off** |
 | Reveal Tab Bar On Hover  | `revealTabBarOnHover` | Keeps the tab bar hidden until the pointer nears it.                                                                       | On · **Off** |
 | Use Native Menus         | `nativeMenus`         | Draws plain-list menus as system menus. Belongs to the computer rather than the Nexus, so it lives in the device database. | On · **Off** |
@@ -153,6 +152,7 @@ Nexus-wide interface config, stored as the `personalization` object in `.nexus/s
 - **setPlacement / subSetPlacement** — where the folders sit: a Collection's depth-1 Sets and a Set's Sub-Sets sit above (the default) or below their container's loose pages, so "pages on top" is spelled `bottom`. The knobs are independent tiers — `setPlacement` never moves a Set's own pages, and set-level pages answer only to `subSetPlacement`. The folder block stays contiguous; a full folder↔page interleave is the eventual model.
 - **sidebarMode** — the sidebar ribbon's active content mode. Written live by the ribbon and remembered across restarts.
 - **ribbonOrder** — the ribbon's launcher-icon order below the pinned Homepage. Written by drag-to-reorder; a partial or stale value is repaired on read so a newly-added icon never vanishes.
+- **defaultViewScale** — the window zoom a Nexus opens at, and what ⌘0 resets to. Stated as a multiplier where 1.0 is the interface at its intended size; the host zoom it resolves to is a step below that, so the chrome reads at its drawn scale rather than the browser's. Clamped on read and applied main-side.
 
 ### Labels
 
@@ -170,7 +170,7 @@ A second class of machine-local state sits in the Nexus's own database rather th
 
 ### Pending
 
-- **Beyond the knobs that ship** — accent, connection color, default icons, and both placement knobs have no in-app writer and are hand-set in `settings.json`, with the watcher applying the change live. All are wireable through the existing setter.
+- **Beyond the knobs that ship** — accent, connection color, default icons, both placement knobs, and the default view scale have no in-app writer and are hand-set in `settings.json`, with the watcher applying the change live. All are wireable through the existing setter.
 - **Scopes with no renderer-facing setter** — labels and the per-device app config have no IPC a UI could write through; each needs a handler first. The profile is further along: its image and icon are written from the ribbon's identity menu, and the subtitle has an op and handler waiting on a surface to drive them.
 - **Command rebinding** — data-ready and unbuilt; shortcuts don't ship without per-shortcut sign-off. The Shortcuts leaf lists its bindings and offers no control over them until they do.
 - **Two names for one date form** — the Trash column's own menu calls `monthDayYear` "Short Date", where every other surface calls it "MM/DD/YYYY" and reserves "Short Date" for the `short` form. The two vocabularies need reconciling.

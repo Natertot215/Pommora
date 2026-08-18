@@ -15,9 +15,6 @@ import { DEFAULT_LINK_DISPLAY, type LinkDisplay } from '@shared/properties'
 import {
   DEFAULT_TIME_FORMAT,
   HOVER_LINGER_MAX,
-  VIEW_SCALE_DEFAULT,
-  VIEW_SCALE_MAX,
-  VIEW_SCALE_MIN,
   TIME_FORMAT_LABELS,
   TIME_FORMAT_SETTINGS,
   type Personalization,
@@ -76,15 +73,8 @@ type Row =
   | (RowText & {
       kind: 'slider'
       key: KeyOf<number>
-      min?: number
       max: number
-      step?: number
-      /** The resting value, which writes no key back. Absent rests at the floor. */
-      rest?: number
       format: (v: number) => string
-      /** Applied per tick while the slider is dragged, before anything is persisted — for a knob
-       *  whose effect is worth seeing at the value you are choosing rather than after release. */
-      live?: (v: number) => void
     })
   | (RowText & {
       kind: 'device'
@@ -167,18 +157,6 @@ const LEAVES = roster([
     sections: [
       {
         rows: [
-          {
-            kind: 'slider',
-            key: 'defaultViewScale',
-            label: 'Interface Scale',
-            hint: 'How large the interface is drawn. Applies as you drag, and is what ⌘0 returns to.',
-            min: VIEW_SCALE_MIN,
-            max: VIEW_SCALE_MAX,
-            step: 0.05,
-            rest: VIEW_SCALE_DEFAULT,
-            format: (v: number) => `${Math.round(v * 100)}%`,
-            live: (v: number) => window.nexus.winViewScale(v),
-          },
           {
             kind: 'toggle',
             key: 'hideChevrons',
@@ -556,33 +534,19 @@ function PickerRow({ row }: { row: RowOf<'picker'> }): React.JSX.Element {
 }
 
 function SliderRow({ row }: { row: RowOf<'slider'> }): React.JSX.Element {
-  const min = row.min ?? 0
-  const step = row.step ?? 1
-  const rest = row.rest ?? min
-  const value = useSession((s) => s.personalization[row.key] ?? rest)
+  const value = useSession((s) => s.personalization[row.key] ?? 0)
   const setPersonalization = useSession((s) => s.setPersonalization)
-  // A step finer than one carries decimals a round() would flatten, so the commit snaps to the
-  // step's own grid rather than to whole numbers.
-  const snap = (v: number): number => Number((Math.round(v / step) * step).toFixed(2))
   return (
     <SettingsRow label={row.label} hint={row.hint}>
       <Slider
         value={value}
-        min={min}
+        min={0}
         max={row.max}
-        step={step}
+        step={1}
         ariaLabel={row.label}
         format={row.format}
-        onInput={row.live}
-        // Commit applies as well as persists: an arrow-key step reaches this without ever passing
-        // through onInput, so leaving the effect to the drag path alone would strand the keyboard.
-        // The resting value stores no key — the clean-file discipline every row follows — but is
-        // still applied, so the window lands where the readout says it does.
-        onCommit={(v) => {
-          const next = snap(v)
-          row.live?.(next)
-          setPersonalization(row.key, next === rest ? undefined : next)
-        }}
+        // Zero stores no key — the clean-file discipline every default-valued row follows.
+        onCommit={(v) => setPersonalization(row.key, v > 0 ? Math.round(v) : undefined)}
       />
     </SettingsRow>
   )
