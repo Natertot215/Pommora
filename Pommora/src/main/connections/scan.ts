@@ -4,31 +4,40 @@
 // which is why one predicate answers for both syntaxes. No I/O.
 
 import { normalizeTitle, pageEmbedPattern, pageLinkPattern, titleOf } from '@shared/connections'
-import { markdownLinkRegex, targetNamesTitle } from '@shared/links'
+import { markdownLinkRegex, targetTitle } from '@shared/links'
 import { codeMask } from '@shared/markdownCode'
 
-/** The cascade's prefilter: does this body name `title` in any of the three syntaxes?
- *  Code-interior matches stay samples for all of them. */
-export function mentionsTitle(body: string, normalizedKey: string): boolean {
-  // The cascade reads every markdown file in the nexus, and this is a full parse with no cheap gate
-  // in front of it. A body holding none of the three openers can't hold a reference. The gate is on
-  // SYNTAX rather than the title itself: a substring test against the key would pass every test here
-  // while breaking the NFC invariant normalizeTitle exists for, so an NFD-composed body would stop
-  // matching the NFC title it names and a rename would skip it silently.
-  if (!body.includes('[[') && !body.includes('](')) return false
+/** Every normalized title this body names in any of the three syntaxes — the one parse the
+ *  content index seeds from and the cascade's prefilter answers through, so a title the index
+ *  recorded is exactly one the prefilter would affirm. The gate in front is on SYNTAX rather
+ *  than any title: a substring test would break the NFC invariant normalizeTitle exists for, so
+ *  an NFD-composed body would stop matching the NFC title it names and a rename would skip it
+ *  silently. Code-interior matches stay samples for all three syntaxes. */
+export function extractMentions(body: string): Set<string> {
+  const out = new Set<string>()
+  if (!body.includes('[[') && !body.includes('](')) return out
   const inCode = codeMask(body)
   for (const m of body.matchAll(pageLinkPattern())) {
     if (m.index !== undefined && inCode(m.index)) continue
     const key = normalizeTitle(titleOf(m[1]))
-    if (key && key === normalizedKey) return true
+    if (key) out.add(key)
   }
   for (const m of body.matchAll(pageEmbedPattern())) {
     if (m.index !== undefined && inCode(m.index)) continue
-    if (normalizeTitle(m[1]) === normalizedKey) return true
+    const key = normalizeTitle(m[1])
+    if (key) out.add(key)
   }
   for (const m of body.matchAll(markdownLinkRegex())) {
     if (m.index !== undefined && inCode(m.index)) continue
-    if (targetNamesTitle(m[2], normalizedKey)) return true
+    const named = targetTitle(m[2])
+    if (named === null) continue
+    const key = normalizeTitle(named)
+    if (key) out.add(key)
   }
-  return false
+  return out
+}
+
+/** The cascade's prefilter: does this body name `title` in any of the three syntaxes? */
+export function mentionsTitle(body: string, normalizedKey: string): boolean {
+  return normalizedKey !== '' && extractMentions(body).has(normalizedKey)
 }

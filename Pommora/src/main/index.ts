@@ -30,6 +30,7 @@ import { dropLiveTree, getLiveTree, refreshTree } from './liveTree'
 import { confirmBy, confirmMutation, confirmRegistry } from './mutatePatch'
 import { patchContainerFromDisk, patchSettingsFromDisk } from './watchPatch'
 import { runOpenRecord } from './record'
+import { seedContentIndex } from './indexSeed'
 import { readPage } from './readPage'
 import {
   convertTileToPage,
@@ -385,6 +386,9 @@ async function adoptNexusInner(path: string, latchRecord: boolean): Promise<void
         console.error('adopt: the seed walk failed; reads will retry:', errText(e))
       }
     }
+    // Unconditional on every root switch, latch or no latch — a nexus rename that skipped this
+    // would leave relative rows valid but the reconcile owed, and the cascades querying stale.
+    await seedContentIndex(root)
   }
   // A user-initiated open always has a window; launch-restore starts its watcher after
   // createWindow below instead.
@@ -1827,6 +1831,7 @@ app
         await replayPendingRename(root)
         openSessionDb(root)
         await runOpenRecord(root)
+        await seedContentIndex(root)
       }
     } catch (e) {
       console.error('Restore skipped (config unreadable):', e)
