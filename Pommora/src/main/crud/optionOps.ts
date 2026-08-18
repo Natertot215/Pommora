@@ -20,7 +20,7 @@ import {
 } from '@shared/optionModel'
 import type { PropertyDefinition, PropertyType, StatusGroup } from '@shared/properties'
 import { propertyKey } from '@shared/propertyValue'
-import { clearSchemaJournal, writeSchemaJournal } from './propertyJournal'
+import { clearSchemaJournal, writeSchemaJournal, type SchemaJournal } from './propertyJournal'
 
 /** These ops edit `select_options`, so they apply to Select / Multi-Select only. A Status property's
  *  options live in `status_groups` (its own per-group ops below); other types have none. Reject anything
@@ -146,7 +146,7 @@ async function resolveForCascade(
 
 /** Strip `value` from every page holding the target's key — the shared tail of clear and remove
  *  on both Select and Status, which differ only in the type check that resolved the target. */
-function stripCascade(root: string, target: CascadeTarget, value: string): Promise<void> {
+function stripCascade(root: string, target: CascadeTarget, value: string): Promise<number> {
   return cascadePages(root, target.key, (content) =>
     stripPageValue(content, target.key, value, target.type),
   )
@@ -168,13 +168,13 @@ export function renameStatusOption(
   newTitle: string,
 ): Promise<Result<null>> {
   return serializeSchemaOp(async () => {
-    if ((await readRegistry(root)).defs[propertyId])
-      await writeSchemaJournal(root, {
-        op: 'option-rename',
-        id: propertyId,
-        from: oldValue,
-        to: newTitle,
-      })
+    const record: SchemaJournal = {
+      op: 'option-rename',
+      id: propertyId,
+      from: oldValue,
+      to: newTitle,
+    }
+    if ((await readRegistry(root)).defs[propertyId]) await writeSchemaJournal(root, record)
     const edit = await mutateRegistry<Result<string>>(root, (registry) => {
       const def = registry.defs[propertyId]
       if (!def) return { result: fail('not-found', 'Property not found.') }
@@ -190,18 +190,19 @@ export function renameStatusOption(
       }
     })
     if (!edit.ok) {
-      await clearSchemaJournal(root)
+      await clearSchemaJournal(root, record)
       return edit
     }
-    await cascadePages(root, edit.value, (content) =>
+    const skipped = await cascadePages(root, edit.value, (content) =>
       replacePageValue(content, edit.value, oldValue, newTitle, 'status'),
     )
-    await clearSchemaJournal(root)
+    if (!skipped) await clearSchemaJournal(root, record)
     return ok(null)
   })
 }
 
-/** Clear a status option's value from every page, keeping the option in its group. Registry untouched. */
+/** Clear a status option's value from every page, keeping the option in its group. Registry
+ *  untouched, and unjournaled for it — see clearOption. */
 export function clearStatusOption(
   root: string,
   propertyId: string,
@@ -210,15 +211,14 @@ export function clearStatusOption(
   return serializeSchemaOp(async () => {
     const r = await resolveForCascade(root, propertyId, requireStatusType)
     if (!r.ok) return r
-    await writeSchemaJournal(root, { op: 'option-strip', id: propertyId, value, drop: false })
     await stripCascade(root, r.value, value)
-    await clearSchemaJournal(root)
     return ok(null)
   })
 }
 
 /** Remove a status option: strip its value from every page, then drop it from its group. Pages first,
- *  so a def-edit failure never leaves the option gone with its page values orphaned. */
+ *  so a def-edit failure never leaves the option gone with its page values orphaned; a skipped
+ *  holder defers the drop with the record, as removeOption does. */
 export function removeStatusOption(
   root: string,
   propertyId: string,
@@ -227,10 +227,12 @@ export function removeStatusOption(
   return serializeSchemaOp(async () => {
     const r = await resolveForCascade(root, propertyId, requireStatusType)
     if (!r.ok) return r
-    await writeSchemaJournal(root, { op: 'option-strip', id: propertyId, value, drop: true })
-    await stripCascade(root, r.value, value)
+    const record: SchemaJournal = { op: 'option-remove', id: propertyId, value }
+    await writeSchemaJournal(root, record)
+    const skipped = await stripCascade(root, r.value, value)
+    if (skipped) return ok(null)
     const dropped = await dropOptionFromDef(root, propertyId, value)
-    await clearSchemaJournal(root)
+    await clearSchemaJournal(root, record)
     return dropped
   })
 }
@@ -241,19 +243,26 @@ export function removeStatusOption(
  *  file lock — the SAME lock the cell-write path takes — so a cascade and a concurrent cell
  *  edit on one page can't clobber each other. Per file, not all-or-nothing across pages: a
  *  partly-applied rename/strip is recoverable by re-running and each page stays individually
- *  valid. Shared by rename (replace) and remove/clear (strip). */
+ *  valid. Shared by rename (replace) and remove/clear (strip). Returns how many holders it
+ *  could not read — the rewrite callback only runs on a read that landed, so its silence is
+ *  the skip signal; a journaled caller holds its record while any remain. */
 export async function cascadePages(
   root: string,
   key: string,
   rewrite: (content: string) => string | null,
-): Promise<void> {
+): Promise<number> {
   const folders = await collectionFolders(root)
+  let unreadable = 0
   for (const file of await keyHolderFiles(root, key, folders)) {
-    const wrote = await rewritePageSerialized(file, (content) =>
-      sweepAdmits(content) ? rewrite(content) : null,
-    )
+    let read = false
+    const wrote = await rewritePageSerialized(file, (content) => {
+      read = true
+      return sweepAdmits(content) ? rewrite(content) : null
+    })
+    if (!read) unreadable++
     if (wrote) await indexWrittenPage(root, file)
   }
+  return unreadable
 }
 
 /** Rename an option (value=label → newTitle) and cascade the new value onto every page that held the
@@ -270,13 +279,13 @@ export function renameOption(
     // recoverable only from this record. Def-gated so an op the registry will refuse outright
     // journals nothing; a record stranded by a refusal or throw is disposed of by the replay's
     // holds-to-and-not-from gate.
-    if ((await readRegistry(root)).defs[propertyId])
-      await writeSchemaJournal(root, {
-        op: 'option-rename',
-        id: propertyId,
-        from: oldValue,
-        to: newTitle,
-      })
+    const record: SchemaJournal = {
+      op: 'option-rename',
+      id: propertyId,
+      from: oldValue,
+      to: newTitle,
+    }
+    if ((await readRegistry(root)).defs[propertyId]) await writeSchemaJournal(root, record)
     const edit = await mutateRegistry<Result<CascadeTarget>>(root, (registry) => {
       const def = registry.defs[propertyId]
       if (!def) return { result: fail('not-found', 'Property not found.') }
@@ -292,19 +301,21 @@ export function renameOption(
       }
     })
     if (!edit.ok) {
-      await clearSchemaJournal(root)
+      await clearSchemaJournal(root, record)
       return edit
     }
-    await cascadePages(root, edit.value.key, (content) =>
+    const skipped = await cascadePages(root, edit.value.key, (content) =>
       replacePageValue(content, edit.value.key, oldValue, newTitle, edit.value.type),
     )
-    await clearSchemaJournal(root)
+    if (!skipped) await clearSchemaJournal(root, record)
     return ok(null)
   })
 }
 
 /** Clear an option's value from every page, keeping the option in the def. Page-only fan-out on the
- *  serializeSchemaOp chain; the registry is untouched. */
+ *  serializeSchemaOp chain; the registry is untouched — which is why it is also unjournaled: its
+ *  crash residue disagrees with nothing (every remaining value is still a legal option), the same
+ *  razor that keeps removeProperty outside the journal. */
 export function clearOption(
   root: string,
   propertyId: string,
@@ -313,15 +324,15 @@ export function clearOption(
   return serializeSchemaOp(async () => {
     const r = await resolveForCascade(root, propertyId, requireOptionType)
     if (!r.ok) return r
-    await writeSchemaJournal(root, { op: 'option-strip', id: propertyId, value, drop: false })
     await stripCascade(root, r.value, value)
-    await clearSchemaJournal(root)
     return ok(null)
   })
 }
 
 /** Remove an option: strip its value from every page, then drop it from the def. Pages first (as
- *  deleteProperty does) so a def edit failure never leaves the option gone with its values orphaned. */
+ *  deleteProperty does) so a def edit failure never leaves the option gone with its values orphaned.
+ *  A strip that could not read every holder defers the registry drop with it — the record stays,
+ *  and the next open's replay re-runs both once the pages read. */
 export function removeOption(
   root: string,
   propertyId: string,
@@ -330,10 +341,12 @@ export function removeOption(
   return serializeSchemaOp(async () => {
     const r = await resolveForCascade(root, propertyId, requireOptionType)
     if (!r.ok) return r
-    await writeSchemaJournal(root, { op: 'option-strip', id: propertyId, value, drop: true })
-    await stripCascade(root, r.value, value)
+    const record: SchemaJournal = { op: 'option-remove', id: propertyId, value }
+    await writeSchemaJournal(root, record)
+    const skipped = await stripCascade(root, r.value, value)
+    if (skipped) return ok(null)
     const dropped = await dropOptionFromDef(root, propertyId, value)
-    await clearSchemaJournal(root)
+    await clearSchemaJournal(root, record)
     return dropped
   })
 }

@@ -132,11 +132,13 @@ One attack round (build-breaking-agent, against the plan at `e8c1735a`): 9 findi
 - [x] Task 2 — rename + delete writers, create-side consumer
 - [x] Task 3 — option-op writers + shared helpers
 - [x] Phase 1 gate
-- [ ] Task 4 — replay module
-- [ ] Task 5 — open wiring
-- [ ] Phase 2 gate (red-proof + attack review)
+- [x] Task 4 — replay module
+- [x] Task 5 — open wiring
+- [x] Phase 2 gate (red-proof + attack review)
 - [ ] Task 6 — docs + simplifier + final commit
 
 ### Log
+
+**Phase 2** — base `f2b57dd6`. Gates: typecheck 0 · 2866 tests 0 · lint 0. Red-proof: inverting the rename arm's gate flipped exactly the four rename-path tests red (including the never-landed guard — a genuine control, not a tautology); restored by inverse edit. **Deviations, all from the gate's attack round (4 findings — 3 Medium, 1 Low — every one verified against the code before folding):** (1) The Grounding's "`cascadePages` throws on an unreadable file" was FALSE — the sweep layer skips. Folded as: `cascadePages` counts unreadable holders (the rewrite callback only runs on a landed read, so its silence is the signal), `sweepGovernedRoots.skipped` is finally consumed, and **skips hold the record** at every journaled settle; the replay treats its own skips the same way, so the record survives until every holder reads. (2) The single-slot record protected: a write never displaces a different held record (the new op runs unjournaled in that already-faulted state), and a clear lands only for the record its caller staged. (3) `clearOption`/`clearStatusOption` are UNJOURNALED — pages-only residue disagrees with nothing (the removeProperty razor), and a stale clear record was itself the destructive path; the record shape simplified to `option-remove { id, value }`, gated on the value still standing in the def (pages-first order makes that the exact owed state). (4) `createProperty` consumes a matching delete record only AFTER its commit lands. Also corrected from the round: the delete arm forward-completes on def-present-under-journaled-name (the registry commits last, so that IS the crash state — the plan's Task 4 §3 text was wrong, the code is right) and additionally acts on the freed-name state (delete finished, record held for skipped stragglers).
 
 **Phase 1** — base `b453cfd9`. Gates: typecheck 0 · 2849 tests 0 · lint 0. Simplification ruling: inline pass only (the diff is ~120 lines across four files; every wiring re-read after Biome's reflow) — no agent warranted. **Deviation:** the option-rename pair's journal write is def-gated (`readRegistry` pre-check) rather than unconditional-before-`mutateRegistry` as Task 3 stated: the ops' contract is Result-never-throw, and an unconditional journal write on a nexus refusing the op for an unknown id was the wiring suite's own ENOENT counterexample. The gate loses nothing — a record for a nonexistent def is exactly what the replay's def-absent arm clears; `editProperty` (prior-gated) and the strip ops (post-`resolveForCascade`) already carried the same shape.
