@@ -778,9 +778,8 @@ export const useSession = create<SessionState>((set, get) => {
             // A mutation refetch must NOT re-read the sidecar here — its debounced write trails
             // the in-memory tab set, so a re-read would roll the tabs backward.
             if (get().activeTabId === '') {
-              // Disk leads exactly here (the first load) and on the external-edit push — a
-              // mutation-driven load() never re-reads navigation, so a just-made change can't
-              // roll back.
+              // Disk leads exactly here (the first load) and on the external-edit push —
+              // navigation is never re-read mid-session, so a just-made change can't roll back.
               const read = await window.nexus.nav.read().catch(() => null)
               const nav = read?.ok ? read.value : null
               const pinned = nav?.pinned ?? []
@@ -1451,7 +1450,7 @@ export const useSession = create<SessionState>((set, get) => {
             pageError: undefined,
           })
           const col = findCollection(get().tree, target.id)
-          if (col) ensureContainerView(col, col.properties ?? [], get().load)
+          if (col) ensureContainerView(col, col.properties ?? [])
           return
         }
         case 'set': {
@@ -1466,7 +1465,6 @@ export const useSession = create<SessionState>((set, get) => {
             ensureContainerView(
               setNode,
               findCollectionForSet(get().tree, target.id)?.properties ?? [],
-              get().load,
             )
           return
         }
@@ -1688,7 +1686,6 @@ export const useSession = create<SessionState>((set, get) => {
       }
       const before = get().tree?.registry.find((d) => d.id === target.propertyId)?.name
       const after = normalizePropertyName(newName)
-      await get().load()
       if (before !== undefined && before !== after)
         get().bumpValuesEpoch(wrapKey('property', before), wrapKey('property', after))
       return true
@@ -1699,8 +1696,8 @@ export const useSession = create<SessionState>((set, get) => {
         await window.nexus.showError(res.error.message)
         return false
       }
-      // Instant optimistic patch; load() below confirms canon with no flicker (stabilize()
-      // makes a matching reload a no-op).
+      // Instant optimistic patch; main's confirming push lands a beat later with no flicker
+      // (stabilize() makes a matching push a no-op).
       const cur = get().tree
       let patched: NexusTree | null = null
       if (cur) {
@@ -1793,12 +1790,6 @@ export const useSession = create<SessionState>((set, get) => {
           createdShown = true
         }
       }
-      // Writes the tree cannot see never pay a re-walk — the "reload the entire Y" hot path this
-      // codebase forbids. A value-only write is already shown by the caller's optimistic patch, and
-      // emptying a bundle happens wholly inside `.trash`, which the walk skips by construction.
-      const invisible =
-        req.op === 'setProperty' || req.op === 'setContext' || req.op === 'emptyBundle'
-      if (!invisible) await get().load()
       if (!createdShown && res.value.created && onCreated) await onCreated(res.value.created)
       return true
     },

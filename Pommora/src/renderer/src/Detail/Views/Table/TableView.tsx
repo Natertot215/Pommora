@@ -134,11 +134,10 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   const tree = useSession((s) => s.tree)
   const selection = useSession((s) => s.selection)
   const select = useSession((s) => s.select)
-  // The store's one write path — runs the op AND refetches immediately (load()), so a table reorder /
-  // reassign propagates to the sidebar right away instead of waiting on the fs watcher to settle.
+  // The store's one write path — main confirms it by patching its live tree and pushing, so a
+  // table reorder / reassign propagates to the sidebar without waiting on the fs watcher.
   const mutate = useSession((s) => s.mutate)
-  const load = useSession((s) => s.load)
-  const saveView = useSaveView(source, load)
+  const saveView = useSaveView(source)
   const [values, setValues] = useState<Record<string, PageFrontmatter>>({})
   // Optimistic property patches keyed by page id (cross-group reassignment): the loaded values
   // never re-read on a write, so a reassigned row re-groups only because this patch feeds the pipeline.
@@ -486,16 +485,12 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   // Persist the saved view + every live override (order + collapse) + a patch, so no one mutation
   // clobbers another's unsaved state — the reorder/resize data-loss class this guards against.
   // Adopt-only: if this fires while the entry-mint is still in flight, it awaits the minted id and
-  // saves against it — never mints a rival default from its own sentinel. skipRefetch defaults true:
-  // order/width/align/collapse/style all show through a live override, so a refetch would only repaint
-  // redundantly. A patch with NO optimistic layer (hide_column_icons) passes false so it actually reflects.
-  const persistView = (
-    patch: Partial<SavedView>,
-    opts?: { skipRefetch?: boolean; viewState?: boolean },
-  ): void => {
+  // saves against it — never mints a rival default from its own sentinel. Order/width/align/collapse/
+  // style all show through a live override; main's confirming push reconciles the rest.
+  const persistView = (patch: Partial<SavedView>, opts?: { viewState?: boolean }): void => {
     void saveView(
       mergeOverrides(liveView, widthOverride, alignOverride, collapsed, patch, styleOverride),
-      { skipRefetch: opts?.skipRefetch ?? true, viewState: opts?.viewState },
+      { viewState: opts?.viewState },
     )
   }
   const toggleCollapse = (key: string): void => {
@@ -648,10 +643,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     })
     if (action === 'column:hide') hideColumn(id)
     else if (action === 'column:toggle-icons')
-      persistView(
-        { hide_column_icons: !(liveView.hide_column_icons ?? true) },
-        { skipRefetch: false },
-      )
+      persistView({ hide_column_icons: !(liveView.hide_column_icons ?? true) })
     else if (action?.startsWith('align:'))
       setColumnAlign(id, action.slice('align:'.length) as ColumnAlign)
     else if (action?.startsWith('style:')) {

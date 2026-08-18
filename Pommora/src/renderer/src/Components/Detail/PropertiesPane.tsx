@@ -180,8 +180,7 @@ export function PropertiesPane({
   onBack: () => void
   source: CollectionNode | SetNode
 }): React.JSX.Element {
-  const load = useSession((st) => st.load)
-  const saveView = useSaveView(source, load)
+  const saveView = useSaveView(source)
   const { view: activeView } = useActiveView(source, schema)
   const registry = useSession((st) => st.tree?.registry) ?? []
   const bumpValuesEpoch = useSession((st) => st.bumpValuesEpoch)
@@ -240,7 +239,6 @@ export function PropertiesPane({
       await window.nexus.showError(res.error.message)
       return false
     }
-    await load()
     return true
   }
 
@@ -251,7 +249,6 @@ export function PropertiesPane({
       type,
     })
     if (res.ok) {
-      await load()
       openDetail({ kind: 'edit', id: res.value.id })
     } else await window.nexus.showError(res.error.message)
   }

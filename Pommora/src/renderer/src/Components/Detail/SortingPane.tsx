@@ -12,7 +12,6 @@ import { Reveal } from '../../design-system/components/Reveal'
 import { useSaveView } from '@renderer/Embeds/ViewEmbedScope'
 import { declaredType } from '../../Detail/Views/pipeline/value'
 import { cx } from '../../design-system/cx'
-import { useSession } from '../../store'
 import { MenuOption } from '@renderer/design-system/components/PickerMenu'
 import { PickerControl, type PickerChoice } from './PickerControl'
 import { CustomList, PropertyPreview, optionsOf } from './GroupingPane'
@@ -129,9 +128,8 @@ export function SortingPane({
   label: string
   onBack: () => void
 }): React.JSX.Element {
-  const load = useSession((st) => st.load)
   const [sortByOpen, setSortByOpen] = useState(false)
-  const saveView = useSaveView(source, load)
+  const saveView = useSaveView(source)
   const save = (sort: SortCriterion[] | undefined): void => void saveView({ ...view, sort })
 
   const primary = view.sort?.[0]

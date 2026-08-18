@@ -78,7 +78,6 @@ export function SettingsPane(): React.JSX.Element | null {
   const selection = useSession((st) => st.selection)
   const defaultIcons = useSession((st) => st.personalization.defaultIcons)
   const tree = useSession((st) => st.tree)
-  const load = useSession((st) => st.load)
   const submitRename = useSession((st) => st.submitRename)
   const mutate = useSession((st) => st.mutate)
   const [pane, setPane] = useState<PaneId | 'root'>('root')
@@ -125,7 +124,6 @@ export function SettingsPane(): React.JSX.Element | null {
   const setOpenIn = async (v: OpenIn): Promise<void> => {
     if (!schemaCollection) return
     await window.nexus.container.configure(schemaCollection.path, 'collection', { open_in: v })
-    await load()
   }
   const toggleOpenIn = (): void => {
     void setOpenIn(openInValue === 'page-preview' ? 'full-page' : 'page-preview')
