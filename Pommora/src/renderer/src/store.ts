@@ -18,13 +18,14 @@ import {
   type Tab,
 } from '@shared/types'
 import {
+  type Creator,
   DEFAULT_NEW_NAME,
   type MutableKind,
   type MutateRequest,
   type RenameHost,
 } from '@shared/mutate'
 import { orderWithSlot } from './Detail/Views/creationOrder'
-import { errText, fail, type Result } from '@shared/result'
+import { caught, errText, fail, type PommoraError, type Result } from '@shared/result'
 import { reconcileSelection, reconcileWith } from './selection'
 import { navKeysOf, reconcileIndexOf } from './treeIndex'
 import {
@@ -205,7 +206,7 @@ type PageStatus = 'idle' | 'loading' | 'ready' | 'error'
 interface SessionState {
   status: 'idle' | 'loading' | 'ready' | 'error' | 'empty'
   tree: NexusTree | null
-  error?: string
+  error?: PommoraError
   sidebarVisible: boolean
   ribbonVisible: boolean
   toggleRibbon: () => void
@@ -255,7 +256,7 @@ interface SessionState {
   pageStatus: PageStatus
   pageFrozen: boolean
   pageDetail: PageDetail | null
-  pageError?: string
+  pageError?: PommoraError
   liveBody: { path: string; body: string } | null
   setLiveBody: (path: string, body: string) => void
   /** `{ record: false }` refreshes the shown detail without touching the tab set or recents
@@ -331,10 +332,7 @@ interface SessionState {
 
   reloadPage: () => Promise<void>
   newPage: () => Promise<void>
-  createFromMenu: (
-    items: { label: string; req: MutateRequest }[],
-    host?: RenameHost,
-  ) => Promise<void>
+  createFromMenu: (items: Creator[], host?: RenameHost) => Promise<void>
 
   renamingPath: string | null
   /** The open rename is a just-created entity's naming session — the field opens empty and a
@@ -458,7 +456,7 @@ export const useSession = create<SessionState>((set, get) => {
       await flushAllPageSaves()
       const opened = await attempt()
       if (!opened.ok) {
-        set({ status: 'error', error: opened.error.message })
+        set({ status: 'error', error: opened.error })
         return
       }
       if (opened.value) {
@@ -466,7 +464,7 @@ export const useSession = create<SessionState>((set, get) => {
         await get().load()
       }
     } catch (e) {
-      set({ status: 'error', error: errText(e) })
+      set({ status: 'error', error: caught(e) })
     }
   }
 
@@ -831,7 +829,7 @@ export const useSession = create<SessionState>((set, get) => {
             break
         }
       } catch (e) {
-        set({ status: 'error', error: errText(e) })
+        set({ status: 'error', error: caught(e) })
       }
     },
 
@@ -1524,7 +1522,7 @@ export const useSession = create<SessionState>((set, get) => {
               selection: pageSel,
               pageStatus: 'error',
               pageDetail: null,
-              pageError: res.error.message,
+              pageError: res.error,
               pageFrozen: false,
             })
           }

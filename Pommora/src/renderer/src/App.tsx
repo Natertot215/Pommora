@@ -248,7 +248,7 @@ export function App(): React.JSX.Element {
         {status === 'error' && (
           <div className="state state-error">
             Couldn’t Open Nexus
-            <span className="state-detail">{error}</span>
+            <span className="state-detail">{error?.message}</span>
           </div>
         )}
         {status === 'ready' && tree && <Sidebar tree={tree} />}

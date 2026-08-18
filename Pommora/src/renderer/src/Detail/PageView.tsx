@@ -86,7 +86,7 @@ export function PageView(): React.JSX.Element {
       return (
         <div className="detail-placeholder detail-error">
           Couldn’t open page
-          <span className="detail-detail">{pageError}</span>
+          <span className="detail-detail">{pageError?.message}</span>
         </div>
       )
     case 'ready':
