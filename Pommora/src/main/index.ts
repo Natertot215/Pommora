@@ -22,9 +22,9 @@ import type {
 } from '@shared/types'
 import { type DevicePrefs, packDevicePrefs } from '@shared/devicePrefs'
 import { isPlainObject } from '@shared/propertyValue'
-import { errText, fail, ok, type Result } from '@shared/result'
+import { caught, errText, fail, ok, type Result } from '@shared/result'
 import { BUSY, NO_NEXUS, push, scopeGet, scopeSet, serveBridge } from './ipc'
-import type { MutateRequest, ContextTarget } from '@shared/mutate'
+import type { Creator, MutateRequest, ContextTarget } from '@shared/mutate'
 import { WINDOW_BG } from '@shared/theme'
 import { dropLiveTree, getLiveTree, refreshTree } from './liveTree'
 import { confirmBy, confirmMutation, confirmRegistry } from './mutatePatch'
@@ -574,7 +574,7 @@ serveBridge(
           const tree = getLiveTree() ?? (await refreshTree(root))
           return { status: 'open', tree }
         } catch (e) {
-          return { status: 'error', error: errText(e) }
+          return { status: 'error', error: caught(e) }
         }
       },
     },
@@ -1448,10 +1448,7 @@ serveBridge(
     // optimistic-insert flow as every other mutation, instead of forcing a full reload here.
     'create-menu': {
       kind: 'menu',
-      fn: async (
-        win: BrowserWindow,
-        items: { label: string; req: MutateRequest }[],
-      ): Promise<MutateRequest | null> => {
+      fn: async (win: BrowserWindow, items: Creator[]): Promise<MutateRequest | null> => {
         return popReturningMenu<MutateRequest>(win, (pick) =>
           items.map((it) => ({ label: it.label, click: pick(it.req) })),
         )

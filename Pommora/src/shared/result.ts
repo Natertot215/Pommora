@@ -28,6 +28,12 @@ export function errText(e: unknown): string {
   return e instanceof Error ? e.message : String(e)
 }
 
+/** A caught throw as a PommoraError — no code survives a throw, so every one reads as
+ *  the operation failing. */
+export function caught(e: unknown): PommoraError {
+  return { code: 'operation-failed', message: errText(e) }
+}
+
 export function ok<T>(value: T): Result<T, never> {
   return { ok: true, value }
 }
