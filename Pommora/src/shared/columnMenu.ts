@@ -1,5 +1,6 @@
 import {
   COLUMN_LOOKS,
+  DATE_FORMAT_LABELS,
   DATE_FORMATS,
   TIME_FORMATS,
   WEEKDAY_FORMATS,
@@ -91,11 +92,7 @@ export function styleMenuItems(ctx: StyleMenuContext): StyleMenuItem[] {
       const weekday = row('weekday', current.weekday)
       const time = row('time_format', current.time_format)
       return [
-        date('MM/DD/YYYY', 'monthDayYear'),
-        date('DD/MM/YYYY', 'dayMonthYear'),
-        date('Short Date', 'short'),
-        date('Full Date', 'full'),
-        date('Relative', 'relative'),
+        ...DATE_FORMATS.map((f) => date(DATE_FORMAT_LABELS[f], f)),
         weekday('Full', 'long', true),
         weekday('Short', 'short'),
         weekday('Hidden', 'none'),

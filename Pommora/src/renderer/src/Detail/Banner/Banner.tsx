@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import type { MutableKind } from '@shared/mutate'
-import { Icon, entityIcon } from '@renderer/design-system/symbols'
+import { DEFAULT_NEXUS_ICON, Icon, entityIcon } from '@renderer/design-system/symbols'
 import { IconPicker } from '@renderer/Components/IconPicker'
 import { useSession } from '../../store'
 import { isSurfaceKind, type BannerOwner } from '../Scope'
@@ -27,7 +27,7 @@ export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {
     const cls = iconHidden ? 'banner-home-icon is-hidden' : 'banner-home-icon'
     if (nexus?.profileImage)
       return <img className={cls} src={assetUrl(nexus.profileImage)} alt="" />
-    return <Icon name={nexus?.profileIcon ?? 'house'} className={cls} />
+    return <Icon name={nexus?.profileIcon ?? DEFAULT_NEXUS_ICON} className={cls} />
   }
   const openHomeTitleMenu = async (e: React.MouseEvent): Promise<void> => {
     e.preventDefault()

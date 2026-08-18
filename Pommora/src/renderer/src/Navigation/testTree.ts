@@ -56,7 +56,6 @@ export function makeTree(): NexusTree {
     ],
     labels: DEFAULT_LABELS,
     accent: 'lavender',
-    timeFormat: 'twelveHour',
     personalization: {},
     commands: {},
     registry: [],

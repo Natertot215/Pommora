@@ -6,7 +6,7 @@ import { push } from './ipc'
 import { dropLiveTree } from './liveTree'
 import { pruneRecents, sessionRoot } from './session'
 import { readDefaultViewScale } from './settings'
-import { VIEW_SCALE_DEFAULT } from '@shared/types'
+import { VIEW_SCALE_DEFAULT, viewScaleZoom } from '@shared/types'
 
 type AdoptFn = (path: string) => Promise<void>
 
@@ -124,7 +124,7 @@ export async function installAppMenu(win: BrowserWindow, adopt: AdoptFn): Promis
             const root = sessionRoot()
             const scale = root ? await readDefaultViewScale(root) : VIEW_SCALE_DEFAULT
             const w = BrowserWindow.getFocusedWindow() ?? win
-            if (!w.isDestroyed()) w.webContents.setZoomFactor(scale)
+            if (!w.isDestroyed()) w.webContents.setZoomFactor(viewScaleZoom(scale))
           },
         },
         { role: 'zoomIn' },

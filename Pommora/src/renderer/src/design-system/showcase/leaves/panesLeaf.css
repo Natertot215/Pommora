@@ -1,0 +1,34 @@
+/* The window is viewport-fixed, so its ground has to be too — a clipped stage would crop the very
+   corners this leaf exists to show. Sits behind the window and above nothing else. */
+.panes-stage {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 22% 26%, rgba(80, 170, 190, 0.5), transparent 46%),
+    radial-gradient(circle at 78% 68%, rgba(150, 110, 200, 0.42), transparent 50%),
+    linear-gradient(140deg, #2b3340, #171a20 62%);
+}
+.panes-leaf {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.panes-knobs {
+  display: flex;
+  gap: 24px;
+}
+.panes-knob {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.panes-dim {
+  color: var(--label-secondary);
+}
+
+.panes-inspector {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}

@@ -16,7 +16,7 @@ import type { ColumnStyle } from '@shared/columnStyles'
 import type { CollectionNode, SetNode } from '@shared/types'
 import { useActiveView } from '../../Detail/Views/useActiveView'
 import { useSaveView } from '@renderer/Embeds/ViewEmbedScope'
-import { styleFor } from '../../Detail/Views/Table/columnStyles'
+import { useStyleFor } from '../../Detail/Views/Table/columnStyles'
 import { DateTimeEditor } from './DateTimeEditor'
 import { CheckboxEditor } from './CheckboxEditor'
 import { NumberEditor } from './NumberEditor'
@@ -180,6 +180,7 @@ export function PropertiesPane({
   onBack: () => void
   source: CollectionNode | SetNode
 }): React.JSX.Element {
+  const styleFor = useStyleFor()
   const saveView = useSaveView(source)
   const { view: activeView } = useActiveView(source, schema)
   const registry = useSession((st) => st.tree?.registry) ?? []

@@ -61,7 +61,7 @@ import { useActiveView } from '../useActiveView'
 import { columnLabel } from '../Table/columnLabel'
 import { contextIdsOf } from '../pipeline/contextIdentity'
 import { resolveContainerSchema } from '../Table/TableView'
-import { styleFor } from '../Table/columnStyles'
+import { useStyleFor } from '../Table/columnStyles'
 import { writeContextValue } from '../contextCellWrite'
 import { groupKeyToValue, REASSIGNABLE_GROUP_TYPES } from '../Table/reassign'
 import { buildSetIcons, buildSetNames, buildSetPaths } from '../Table/cellResolve'
@@ -1079,6 +1079,7 @@ function CardProperties({
   shown: ResolvedColumn[]
   onZoneClick: (e: React.MouseEvent) => void
 }): React.JSX.Element | null {
+  const styleFor = useStyleFor()
   if (!ctx || !labels) return null
   const compact = isCompact(view)
   // The RESOLVED style (type defaults under the saved entry) — the table's shared resolver, so the

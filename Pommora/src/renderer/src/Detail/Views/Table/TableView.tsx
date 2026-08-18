@@ -50,7 +50,7 @@ import { resolveBandHead } from '../GroupBand'
 import { columnLabel } from './columnLabel'
 import { clampWidth, widthFor } from './columnWidths'
 import { alignFor } from './columnAlign'
-import { styleFor } from './columnStyles'
+import { useStyleFor } from './columnStyles'
 import { reorderColumns } from './columnReorder'
 import { mergeOverrides, mergeStyleRecords } from './viewMerge'
 import { groupKeyToValue, REASSIGNABLE_GROUP_TYPES } from './reassign'
@@ -131,6 +131,7 @@ const sameIds = (a: string[], b: string[]): boolean =>
   a.length === b.length && a.every((x, i) => x === b[i])
 
 export function TableView({ source }: { source: CollectionNode | SetNode }): React.JSX.Element {
+  const styleFor = useStyleFor()
   const tree = useSession((s) => s.tree)
   const selection = useSession((s) => s.selection)
   const select = useSession((s) => s.select)

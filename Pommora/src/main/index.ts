@@ -153,7 +153,7 @@ import type {
   TitleMenuAction,
 } from '@shared/identityMenus'
 import type { ViewButton, ViewStyle } from '@shared/types'
-import { VIEW_SCALE_DEFAULT } from '@shared/types'
+import { VIEW_SCALE_DEFAULT, viewScaleZoom } from '@shared/types'
 import { installEditorContextMenu, setFormatState, setGripHot } from './editorMenu'
 import type { FormatState } from '@shared/editorMenu'
 import { isValidLink, normalizeLinkUrl } from '@shared/links'
@@ -257,7 +257,7 @@ async function applyDefaultZoom(win: BrowserWindow): Promise<void> {
   // screen never inherits a prior nexus's host zoom (Electron zoom is per-render-host, shared).
   const root = sessionRoot()
   const scale = root ? await readDefaultViewScale(root) : VIEW_SCALE_DEFAULT
-  if (!win.isDestroyed()) win.webContents.setZoomFactor(scale)
+  if (!win.isDestroyed()) win.webContents.setZoomFactor(viewScaleZoom(scale))
 }
 
 function createWindow(): void {
