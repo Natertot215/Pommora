@@ -268,7 +268,10 @@ describe('patchContextGroupsInTree', () => {
       op: 'setSpaceColor',
       spaceId: 'sp1',
     })
-    expect('color' in (cleared?.contexts?.[0].spaces[0] ?? {})).toBe(false)
+    // The key survives the clear, undefined-valued — the factories emit every key the walk
+    // does, and stabilize counts keys, so a dropped one would read as drift.
+    expect(cleared?.contexts?.[0].spaces[0].color).toBeUndefined()
+    expect('color' in (cleared?.contexts?.[0].spaces[0] ?? {})).toBe(true)
   })
 
   it('reorders groups and spaces, keeping unlisted items at the tail', () => {

@@ -90,7 +90,7 @@ import type { DevicePrefs } from '@shared/devicePrefs'
 import { applyPersonalization, applyPersonalizationKey } from './design-system/personalization'
 import { findCollection, findSet, findCollectionForSet, isDepth1Set } from './Detail/Scope'
 import { crumbDepthFor } from './Detail/Subfield/crumbs'
-import { ensureContainerView } from './Detail/Views/viewMint'
+import { ensureContainerView, wireViewAdopted } from './Detail/Views/viewMint'
 import { normalizePropertyName, wrapKey } from '@shared/governedKeys'
 
 interface RenameClaim {
@@ -928,9 +928,14 @@ export const useSession = create<SessionState>((set, get) => {
           savePreviewsFile({ ...file, origins })
         }
       }
-      // Read from the module cache, not an awaited IPC call — applyTree runs on every watcher
-      // push, and a round-trip here would gate the whole reconcile behind it. load() refreshes it.
+      // Read from the module cache, not an awaited IPC call — applyTree runs on every push,
+      // and a round-trip here would gate the whole reconcile behind it. Each pass refreshes
+      // the cache fire-and-forget, so the NEXT push sees a system-accent change.
       if (systemAccentCache === undefined) systemAccentCache = await window.nexus.systemAccent()
+      else
+        void window.nexus.systemAccent().then((c) => {
+          systemAccentCache = c
+        })
       const systemColor = systemAccentCache
       applyAccent(tree.accent, systemColor)
       applySystemAccent(systemColor)
@@ -1797,3 +1802,9 @@ export const useSession = create<SessionState>((set, get) => {
     },
   }
 })
+
+// A sentinel view adoption happens inside store-free viewMint; the pointer it persisted lands
+// in the slice here, or the slice serves a stale fallback until the next reload.
+wireViewAdopted((containerId, viewId) =>
+  useSession.setState((s) => ({ activeViews: { ...s.activeViews, [containerId]: viewId } })),
+)
