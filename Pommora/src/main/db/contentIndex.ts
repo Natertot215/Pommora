@@ -72,6 +72,28 @@ export function renamePathIndex(oldPath: string, newPath: string): void {
   })
 }
 
+// The prefix pair below selects `dir`'s descendants by range — `path >= dir||'/' AND
+// path < dir||'0'` is exact because '0' is the code point after '/', where a LIKE would let
+// a legal '%' in a folder name over-match.
+
+export function removePathPrefixIndex(dir: string): void {
+  guarded(`remove ${dir}/`, (db) => {
+    for (const table of TABLES) {
+      db.prepare(`DELETE FROM ${table} WHERE path >= ? || '/' AND path < ? || '0'`).run(dir, dir)
+    }
+  })
+}
+
+export function renamePathPrefixIndex(oldDir: string, newDir: string): void {
+  guarded(`rename ${oldDir}/`, (db) => {
+    for (const table of TABLES) {
+      db.prepare(
+        `UPDATE OR REPLACE ${table} SET path = ? || substr(path, ?) WHERE path >= ? || '/' AND path < ? || '0'`,
+      ).run(newDir, oldDir.length + 1, oldDir, oldDir)
+    }
+  })
+}
+
 /** Prune every row whose path the corpus enumeration no longer yields. */
 export function reconcileIndex(seen: ReadonlySet<string>): void {
   guarded('reconcile', (db) => {

@@ -13,6 +13,7 @@ import { isRecentWrite } from './io/writeEcho'
 import { isMarkdownFile } from './io/walk'
 import { HOMEPAGE_HOST_DIRNAME, nexusConfig, NEXUS_CONFIG_FILES } from './paths'
 import { push as pushToWindow } from './ipc'
+import { seedContentIndex } from './indexSeed'
 import { getLiveTree, refreshTree } from './liveTree'
 import { sessionRoot } from './session'
 import { applyWatchEvents, type WatchEvent, type WatchEventName } from './watchPatch'
@@ -145,6 +146,9 @@ async function settle(root: string, win: BrowserWindow, excluded: string[]): Pro
     // OLD root's walked tree (a superseded walk still returns it to its awaiters).
     if (sessionRoot() !== root || win.isDestroyed()) return
     if (tree && tree !== before) pushToWindow(win, 'nexus:changed', tree)
+    // A refresh means the corpus may have moved in ways no arm named — the stat-gated seed
+    // reconciles the index for the same cost as the walk's own stats.
+    if (outcome === 'refresh' && sessionRoot() === root) await seedContentIndex(root)
   } catch {
     // Transient FS state mid-write — the next settle re-reads (Reload is the fallback).
   }

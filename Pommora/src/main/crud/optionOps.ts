@@ -5,6 +5,7 @@
 
 import { mutateRegistry, readRegistry } from '../io/propertiesRegistry'
 import { rewritePageSerialized } from '../io/atomicWrite'
+import { indexWrittenPage } from '../indexSeed'
 import { validateOptionValues } from '../properties/schema'
 import { allCollectionFolders } from './assignment'
 import { serializeSchemaOp } from './schemaChain'
@@ -191,9 +192,10 @@ export async function cascadePages(
 ): Promise<void> {
   for (const folder of await allCollectionFolders(root)) {
     for (const file of await listMarkdownFiles(folder)) {
-      await rewritePageSerialized(file, (content) =>
+      const wrote = await rewritePageSerialized(file, (content) =>
         sweepAdmits(content) ? rewrite(content) : null,
       )
+      if (wrote) await indexWrittenPage(root, file)
     }
   }
 }
