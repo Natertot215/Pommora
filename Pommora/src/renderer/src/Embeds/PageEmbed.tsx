@@ -5,7 +5,7 @@ import { MarkdownEditor, type WarmSeam } from '@renderer/MarkdownPM'
 import type { ConnectionsApi } from '@renderer/MarkdownPM/connections'
 import { nativeEditorMenu } from '@renderer/MarkdownPM/editor/menu'
 import { flushPageSave, schedulePageSave } from '@renderer/Detail/pageFlush'
-import { cachePageDetail, readPageDetail } from '@renderer/Tabs/warmCache'
+import { fetchPageDetail, readPageDetail } from '@renderer/Tabs/warmCache'
 import { useSession } from '../store'
 import { useBannerMenu } from '../Detail/Banner/useBannerMenu'
 import { NavCrumbs } from '../Navigation/NavList'
@@ -92,14 +92,9 @@ export function PageEmbed({
   useEffect(() => {
     if (entry !== null) return
     let live = true
-    void window.nexus.openPage(path).then((r) => {
+    void fetchPageDetail(path).then((detail) => {
       if (!live) return
-      if (!r.ok) {
-        setLoaded({ path, body: null })
-        return
-      }
-      cachePageDetail(r.value)
-      setLoaded(entryFrom(path, r.value))
+      setLoaded(detail ? entryFrom(path, detail) : { path, body: null })
     })
     return () => {
       live = false
@@ -123,10 +118,10 @@ export function PageEmbed({
           title={entry.title ?? titleFromPath(path)}
           cover={entry.cover}
           onChanged={() =>
-            void window.nexus.openPage(path).then((r) => {
+            void fetchPageDetail(path).then((detail) => {
               // Merge the cover only — nulling would unmount the live editor mid-edit and race the
               // debounced body write; the body seed stays untouched.
-              if (r.ok) setLoaded((l) => (l ? { ...l, cover: coverOf(r.value) } : l))
+              if (detail) setLoaded((l) => (l ? { ...l, cover: coverOf(detail) } : l))
             })
           }
         />
