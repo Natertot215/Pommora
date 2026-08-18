@@ -32,11 +32,12 @@ export function patchLiveTree(fn: (t: NexusTree) => NexusTree | null): NexusTree
   return next
 }
 
-/** Mark disk as moved without holding a patch. The refresh arms call this before walking:
+/** Walk for a change that already landed on disk. The epoch bump comes first because
  *  `refreshTree` joins any in-flight walk, and one that started before the change would
  *  otherwise install pre-change disk as canon with nothing scheduled to correct it. */
-export function noteDiskMoved(): void {
+export function refreshAfterWrite(root: string): Promise<NexusTree> {
   epoch++
+  return refreshTree(root)
 }
 
 /** Session close or root switch: the held tree and any in-flight walk are both dead. */

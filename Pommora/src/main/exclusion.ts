@@ -20,6 +20,13 @@ export function shouldSkipDir(name: string, relPath: string, excluded: string[])
   return excludedMatcher(excluded)(relPath.split('/'))
 }
 
+/** Whether a freshly-read `excluded_folders` is the list a watcher was armed with. Both the
+ *  compiled matcher and chokidar's own ignore filter capture the list at arm time, so a change
+ *  to it is structural — the classifier and the settings-leaf arm ask this same question. */
+export function sameExclusions(a: string[], b: string[]): boolean {
+  return a.length === b.length && a.every((v, i) => v === b[i])
+}
+
 /** Precompiled `excluded_folders` matcher: root-anchored, whole-segment prefix match over
  *  normalized segments. Curried so per-event callers (the watcher) compile the list once. */
 export function excludedMatcher(excluded: string[]): (segs: string[]) => boolean {
