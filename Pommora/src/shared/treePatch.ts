@@ -204,6 +204,35 @@ function insert(
 }
 
 /** Relocate the node at `path` under `newParentPath`, updating paths. Null if unresolved or a no-op. */
+/** Re-point (or, with `newPath` null, prune) the walk-owned unreadable bookkeeping riding a
+ *  path change — a stale entry buys spurious walks at a dead address and blinds the classifier
+ *  to the live one. */
+function retargetUnreadable(
+  tree: NexusTree,
+  oldPath: string,
+  newPath: string | null,
+): NexusTree['unreadable'] {
+  const list = tree.unreadable
+  const hit = (p: string): boolean => p === oldPath || p.startsWith(`${oldPath}/`)
+  if (!list?.some((u) => hit(u.path))) return list
+  const out: { path: string }[] = []
+  for (const u of list) {
+    if (!hit(u.path)) out.push(u)
+    else if (newPath !== null) out.push({ path: newPath + u.path.slice(oldPath.length) })
+  }
+  return out.length ? out : undefined
+}
+
+/** Attach a retargeted unreadable list without inventing the key — the walk's tree carries
+ *  `unreadable` only when nonempty, and `stabilize` counts keys. */
+function withUnreadable(tree: NexusTree, list: NexusTree['unreadable']): NexusTree {
+  if (list === tree.unreadable) return tree
+  const next = { ...tree }
+  if (list === undefined) delete next.unreadable
+  else next.unreadable = list
+  return next
+}
+
 export function relocateNodeInTree(
   tree: NexusTree,
   path: string,
@@ -216,7 +245,8 @@ export function relocateNodeInTree(
   const moved = reparentPaths(pulled.node, path, newPath)
   const placed = insert(pulled.containers, newParentPath, moved)
   if (!placed.done) return null
-  return { ...tree, collections: placed.containers as CollectionNode[] }
+  const next = { ...tree, collections: placed.containers as CollectionNode[] }
+  return withUnreadable(next, retargetUnreadable(next, path, newPath))
 }
 
 function holdsPath(containers: (CollectionNode | SetNode)[], path: string): boolean {
@@ -229,8 +259,9 @@ function holdsPath(containers: (CollectionNode | SetNode)[], path: string): bool
 }
 
 /** Insert a just-created entity at its slot. Null when it's already present — the confirming
- *  push can land before the caller's reply continuation runs, and a second insert would
- *  duplicate the node; null keeps the optimistic layer idempotent. */
+ *  push is deferred behind the invoke reply, but a watcher echo or a replay can still hand the
+ *  optimistic layer a tree that holds the newborn, and a second insert would duplicate the
+ *  node; null keeps the insert idempotent. */
 export function insertCreatedInTree(
   tree: NexusTree,
   req: MutateRequest,
@@ -342,8 +373,9 @@ export function patchContextGroupsInTree(tree: NexusTree, req: MutateRequest): N
           ...g,
           spaces: g.spaces.map((s) => {
             if (s.id !== req.spaceId) return s
-            const { color: _color, ...rest } = s
-            return req.color ? { ...rest, color: req.color } : rest
+            // The key stays even when cleared — the factories emit every key the walk does,
+            // and `stabilize` counts keys, so a dropped one reads as drift.
+            return { ...s, color: req.color ?? undefined }
           }),
         })),
       )
@@ -438,18 +470,25 @@ function updateInContainers(
  *  Only valid after the write succeeded — a collision fails main-side and never patches. */
 export function renameNodeInTree(tree: NexusTree, path: string, newName: string): NexusTree | null {
   const parent = parentOf(path)
-  return updateNodeInTree(tree, path, (node) => {
+  // A page path wears `.md`; every container and Space path is bare — the same distinction
+  // the per-kind arms below encode, needed here for the bookkeeping re-point.
+  const newPath = path.endsWith('.md')
+    ? joinPath(parent, `${newName}.md`)
+    : joinPath(parent, newName)
+  const next = updateNodeInTree(tree, path, (node) => {
     if (node.kind === 'page')
       return { ...node, title: newName, path: joinPath(parent, `${newName}.md`) }
     if (node.kind === 'collection' || node.kind === 'set')
       return { ...reparentPaths(node, path, joinPath(parent, newName)), title: newName }
     return { ...node, title: newName, path: joinPath(parent, newName) }
   })
+  return next ? withUnreadable(next, retargetUnreadable(next, path, newPath)) : null
 }
 
 /** Remove the entity at `path` (a just-confirmed delete). */
 export function removeNodeInTree(tree: NexusTree, path: string): NexusTree | null {
-  return updateNodeInTree(tree, path, () => null)
+  const next = updateNodeInTree(tree, path, () => null)
+  return next ? withUnreadable(next, retargetUnreadable(next, path, null)) : null
 }
 
 /** Patch renderer-knowable display fields on the entity at `path` (icon / heading-icon chrome). */
@@ -460,10 +499,9 @@ export function patchNodeInTree(
 ): NexusTree | null {
   return updateNodeInTree(tree, path, (node) => {
     const next = { ...node }
-    if ('icon' in patch) {
-      if (patch.icon === null || patch.icon === undefined) delete next.icon
-      else next.icon = patch.icon
-    }
+    // A cleared icon keeps its key (undefined-valued), matching the factories' walk shape —
+    // `stabilize` counts keys, so deleting one reads as drift.
+    if ('icon' in patch) next.icon = patch.icon ?? undefined
     if (patch.headingIconHidden !== undefined) next.headingIconHidden = patch.headingIconHidden
     return next
   })

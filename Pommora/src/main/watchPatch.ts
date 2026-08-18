@@ -277,6 +277,10 @@ export async function patchContainerFromDisk(
 ): Promise<'ok' | 'refresh'> {
   // This read only picks WHICH sidecar to open; the post-await read below is the authoritative one.
   const held = getLiveTree()
+  // A raw nexus's walk never opens container sidecars — patching one in would show state ⌘R
+  // erases. The gate lives HERE so every consumer (watcher arm, field confirms, create pins)
+  // answers identically; in raw mode the tree already holds everything the walk would derive.
+  if (held && !sidecarMode(held)) return 'ok'
   const kind = held && findContainer(held, dirRel)?.kind
   if (!kind) return 'refresh'
   const meta = await readJsonObject(join(root, ...dirRel.split('/'), SIDECAR_FILENAME[kind]))

@@ -11,6 +11,13 @@ import { DEFAULT_VIEW_ID, mintDefaultView, type SavedView } from '@shared/views'
 
 const inFlight = new Map<string, Promise<string>>()
 
+// Wired by the store at creation — a sentinel adoption must land in the activeViews slice,
+// and this module stays store-free (the store imports it, so the import can't run backwards).
+let onViewAdopted: (containerId: string, viewId: string) => void = () => {}
+export function wireViewAdopted(fn: (containerId: string, viewId: string) => void): void {
+  onViewAdopted = fn
+}
+
 export const pendingViewMint = (containerId: string): Promise<string> | undefined =>
   inFlight.get(containerId)
 
@@ -48,7 +55,10 @@ export async function saveViewAdopting(
     // A sentinel save adopts its real id (freshly minted, or the in-flight entry-mint's) as the active
     // view so the writer's edits stay on the view they see — keyed off the ORIGINAL id, since toSave.id
     // has already been swapped to the minted id by here.
-    if (wasSentinel) await window.nexus.activeViews.set(source.id, res.value.id)
+    if (wasSentinel) {
+      await window.nexus.activeViews.set(source.id, res.value.id)
+      onViewAdopted(source.id, res.value.id)
+    }
   }
   return res
 }

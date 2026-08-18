@@ -14,7 +14,7 @@ import { isMarkdownFile } from './io/walk'
 import { HOMEPAGE_HOST_DIRNAME, nexusConfig, NEXUS_CONFIG_FILES } from './paths'
 import { push as pushToWindow } from './ipc'
 import { seedContentIndex } from './indexSeed'
-import { getLiveTree, refreshTree } from './liveTree'
+import { getLiveTree, noteDiskMoved, refreshTree } from './liveTree'
 import { sessionRoot } from './session'
 import { applyWatchEvents, type WatchEvent, type WatchEventName } from './watchPatch'
 
@@ -141,7 +141,12 @@ async function settle(root: string, win: BrowserWindow, excluded: string[]): Pro
   try {
     const before = getLiveTree()
     const outcome = await applyWatchEvents(root, events, excluded)
-    const tree = outcome === 'refresh' ? await refreshTree(root) : getLiveTree()
+    let tree = getLiveTree()
+    if (outcome === 'refresh') {
+      // The events describe writes that already landed — a walk still in flight predates them.
+      noteDiskMoved()
+      tree = await refreshTree(root)
+    }
     // Re-checked after the awaits: a session that switched mid-settle must not receive the
     // OLD root's walked tree (a superseded walk still returns it to its awaiters).
     if (sessionRoot() !== root || win.isDestroyed()) return
@@ -149,6 +154,16 @@ async function settle(root: string, win: BrowserWindow, excluded: string[]): Pro
     // A refresh means the corpus may have moved in ways no arm named — the stat-gated seed
     // reconciles the index for the same cost as the walk's own stats.
     if (outcome === 'refresh' && sessionRoot() === root) await seedContentIndex(root)
+    // The compiled exclusion list this watcher was armed with is spent state: an exclusions
+    // edit classifies `refresh` above, but the classifier and chokidar's own ignore filter
+    // would keep reading the stale capture — and a note under a newly-excluded folder would
+    // ride `index-only` back into the queryable rows. A changed list re-arms the watcher.
+    if (outcome === 'refresh' && sessionRoot() === root && !win.isDestroyed()) {
+      const settings = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings))) ?? {}
+      const current = asStringArray(settings.excluded_folders) ?? []
+      const same = current.length === excluded.length && current.every((v, i) => v === excluded[i])
+      if (!same) void startWatcher(root, win)
+    }
   } catch {
     // Transient FS state mid-write — the next settle re-reads (Reload is the fallback).
   }

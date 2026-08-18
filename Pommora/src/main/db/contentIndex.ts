@@ -134,6 +134,17 @@ export function queryKeyHolders(key: string): string[] | null {
   return queryPaths('SELECT path FROM page_values WHERE key = ? ORDER BY path', key)
 }
 
+/** One stat-gate row — the seed's pre-write check that a maintaining writer didn't land
+ *  fresher rows while its own read was in flight. Null: absent row or no index. */
+export function readIndexedStat(path: string): IndexedStat | null {
+  return queried((db) => {
+    const row = db.prepare('SELECT mtime_ms, size FROM indexed_files WHERE path = ?').get(path) as
+      | { mtime_ms: number; size: number }
+      | undefined
+    return row ? { mtimeMs: row.mtime_ms, size: row.size } : null
+  })
+}
+
 /** The whole stat gate, or null when there is no index — the seed stands down on null rather
  *  than reading a corpus it has nowhere to record. */
 export function readIndexedStats(): Map<string, IndexedStat> | null {
