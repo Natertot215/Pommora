@@ -4,139 +4,70 @@
 
 #### Current Focus
 
-**Session ID:** 6e36b069-0658-4a96-b4ef-7474821cfd46
-**Dates:** 08-16-2026
-**Model:** Opus 5
+**Session ID:** b0908f7d-f069-4dee-abeb-10cee48cc7fe
+**Dates:** 08-17-2026 → 08-18
+**Model:** Fable 5
 
-**PM-104 — Menu & Surface Consolidation.** The session opened on the first of PM-104's two bullets: rework `PickerMenu` for double-chevron consumers onto the autocomplete's beak-less surface. `PopoutMenu — Scope.md` had scoped that as a second component beside `PickerMenu`, and every count in it re-derived correctly against the code — but the scoping answered the wrong question. Once Nathan ruled that all menus move and nothing keeps a notch, the answer stopped being "add a component" and became "`PickerMenu` stops having a beak," at which point `PopoutMenu` folded back in after one commit of existence.
+**PM-105's closing pass, then PM-106 — the property-cascade journal — end to end overnight.** The session opened by sealing the live-tree & content-index arc: a simplification review over the whole range folded nine duplications and surfaced two real defects (the rename bookkeeping's case-sensitive `.md` check against the walk's case-insensitive admit, and `folderCorpus` paying a whole-nexus readdir on every container open — fixed with `corpusFilesUnder`, a subtree-scoped form of the one corpus law). Then the journal ran the full writing-plans arc headless: scouting, plan, plan-attack (9 findings folded — both Highs were name-keyed replay arms that would have merged unrelated properties' values), three phases of execution, an implementation attack (4 findings folded — the big one being that the sweep layer *skips* unreadable pages rather than throwing, which forced "skips hold the record"), a simplifier pass, and a neutral verification round that adjudicated all four folds FIXED with executed evidence.
 
-**The beak was load-bearing for more than its shape.** A beak is not a silhouette a CSS border can trace, so `NotchedPane` cut the frost to a hand-drawn curve and stroked the same curve as an SVG outline — which meant switching off `GlassPane`'s own border first. CSS bundles the border, the top specular, the inner ring and the lower rim into one `box-shadow` property, so switching off the border switched off the lighting too. Menus had been three lighting layers thinner than every other pane in the app for as long as they had beaks. Dropping the middleman restored them, cut `NotchedPane` from 204 lines to 109 (its sideways path, flip, three inset props and resize publication were all unreachable once `MenuSurface` was its only consumer), and made `PickerMenu` and `PreviewPane` genuinely the same surface rather than nominally.
-
-**That exposed the glass vocabulary as wrong rather than merely imprecise.** `GlassWindow` and `GlassSurface` were byte-identical, each carrying a comment promising divergence "later," so three named tiers were really two and the one real distinction — 95% versus 90% brightness — was invisible in the names. Nathan's call: merge them under `GlassSurface` for the app's fixed chrome, keep `GlassPane` for floating transients, and rebuild `GlassWindow` as the pane's chrome carrying a body. Four spellings of "darken this" (a boolean at 100%, a `tintOpacity` number at 85/90, a `fill` at 78, a hand-written `--state-muted`) collapsed onto one `SOLID_FILL`, which ended a live mismatch: `NavWindow` passed 90 while its own comment insisted it matched `PreviewWindow`, which passed 85.
-
-**What is verified:** every gate green on the final state — typecheck clean both projects, Biome clean across 800 files, 2736 tests across 235 files, 21 atlas tables agreeing with source. The auto-centring branch is pinned by two tests that were mutation-checked (reverting the default makes one fail). The restored border's layout effect was measured rather than reasoned about — it does grow a shrink-to-fit pane by 2px, which `box-sizing: border-box` does not prevent, and `IconPicker`'s column count survives because it derives from a live `clientWidth` rather than its width constant.
-
-**The autocomplete then landed on top of that**, in two commits so the behavior and the refactor revert separately: it centres on the caret and slides within the editor's nearest scrolling ancestor rather than the viewport, then handed its own portal, measurement, exit presence and geometry to `PickerMenu`. A simplification pass over that fold caught a defect it introduced — both hosts rebuilt `bounds` as an inline literal, minting a fresh identity per render, which rebuilt a ResizeObserver and two window listeners on the keystroke path — plus two staleness holes in the cached surface lookup, all three fixed.
-
-**What is assumed:** four visual outcomes nobody has looked at in the running app — the eleven solid pickers at 90% instead of opaque, `PhotoCropModal` on the window tier, the `PaneSlider` panes now growing both directions under auto-centring, and the autocomplete near the column edges and where it flips above the caret line. All are seconds of use to judge and invisible in a screenshot.
+**The shipped shape:** `.nexus/property-cascade.json` — one id-keyed intent record, written before each dual-writer cascade (rename, delete, option-rename, option-remove), cleared on settle, replayed at open post-index-seed under one law: act only on the exactly-mapped state, clear on every other. The slot protects a stranded record from later ops; skips hold it; option-clear and `removeProperty` stay unjournaled because their residue disagrees with nothing. The crash-window suite proves heals byte-identical to uninterrupted ops (modulo `modified_at` on stamping ops), with a red-proof on the gates.
 
 #### Completion Criteria
 
-- [x] **One beak-less rectangular shell** carrying every menu, picker, grid, calendar and hover card; `MenuSurface` alone keeps the beak, for the toolbar dropdown that hangs off a named button.
-- [x] **`PickerControl` migrated**, moving its fourteen consumers together.
-- [x] **`PopoutMenu` folded into `PickerMenu`**, with `PointMenu` and the fixed-option row re-homed.
-- [x] **The pass-through removed** — `PickerMenu` and the autocomplete mount `GlassPane` directly, restoring the material's border, lighting and shadow.
-- [x] **Rows split by what they hold**, not which shell they sit in; `rowShell` states hover and focus once.
-- [x] **The chosen-row mark is accent from one definition**, replacing four across three surfaces and seven rows carrying none.
-- [x] **Auto-centring** — straddle the trigger where the whole pane fits, edge-anchor where it would be clamped, decided once per open.
-- [x] **Three honestly-named glass tiers** and one `SOLID_FILL` behind every darkened surface.
-- [x] **Documentation reconciled**, with a `SOURCE:`-tagged Glass & Menus table in the atlas.
-- [x] **The autocomplete rides the shared pane.** It centres on the caret and slides within the editor's own surface rather than the viewport, and handed its portal, measurement, exit presence and geometry over. `PickerMenu` gained `anchorHeight` (a caret is a line, so a flip clears it) and `bounds` (the box a pane slides within).
-- [x] **The three open calls routed** — the hover card's lost beak, `PhotoCropModal`'s tier change, the `PaneSlider` panes under centring.
-- [ ] **PM-104's second bullet: one row shape for every menu model.** `ActionItem<A>` moves from `main/returningMenu.ts` into `shared/pageMenu.ts`, and `separatorBefore` / `destructive` collapse into one word. Untouched this session.
+- [x] **PM-105 sealed** — simplifier folds verified personally, two defects fixed with regression tests, gates green, tree clean at `ab0f25ce`.
+- [x] **The record module** — write/read/clear with the no-displace and clear-own-only guards; the Context journal's clear gained the same watcher echo.
+- [x] **Every dual-writer op journaled** — rename (pre-commit, id-carrying), delete (post-snapshot), option-rename (def-gated pre-commit), option-remove (pre-strip, drop deferred on skips).
+- [x] **The replay** — one wrapped `serializeSchemaOp` entry, per-op id-gated verification, never blocks an open, wired post-seed at both open paths.
+- [x] **The failure half** — unreadable holders hold the record; `createProperty` consumes a matching delete record only after its commit; all four attack findings independently re-adjudicated FIXED.
+- [x] **Docs made true** — PropertiesPM §Schema Mutations carries the journal; ContextsPM cross-references the sibling; ContextPM resolved + Recent Work refreshed; HistoryPM PM-106.
 
 #### Next Session
 
-- 
+- The abstract-plumbing era is closed. The menu: **full-text search** (the index makes it cheap; the most user-visible payoff of the plumbing) or **View QuickFilter** (first new user-facing feature) as the pivot back to visible work; the store split, `mutate.ts` arm moves, and the debt list remain standing get-it-done options — see ContextPM.
+
 #### Feedback
 
-- "dont use browser shit, I can verify things myself." — headless-Chrome verification is unwanted; hand over what to look at instead.
-- "checkmarks must still be accent on the menues like I told you to" — an instruction applied to one row type is not applied; the sweep is the deliverable, not the first site.
-- "Give me a no bullshit and no filler approach design" — a design is the files, the values and what breaks; the preamble is not part of it.
-- "Try moving PhotoCropModal to Window just for the hell of it." — experiments are welcome when they're cheap and reversible.
+- "Run headlessly through this work… ping me during milestones using the mobile notification tool" — overnight arcs proceed without pausing; PushNotification at phase boundaries, not per-step.
+- "Don't leave any docs in the working tree on any final commits" — every commit sweeps the session's doc edits; a final commit leaves `git status` clean.
+- "Explain the review findings as you're going into phase 2" / "explain the plan in plain english and give a codemap diff report when done" — review outcomes and plans get non-technical explanations in-chat; a closing report includes the codemap-formatted diff.
+- "Go for your own review afterwards to simplify rather than trying to catch more bugs. Review from agents, you fold, then look over for any birds-eye-view insights" — after agent reviews: verify + fold personally, then a birds-eye simplification pass, no extra bug-hunt rounds.
 
 #### Session Pointers
 
-- `design-system/materials/index.ts` — the tier ladder is documented at the barrel; read it before touching any glass.
-- `design-system/materials/glass-pane.tsx` — `SOLID_FILL`, `WINDOW_FROST` (which is `PANE_FROST` plus the fill and nothing else), and `GlassPane`'s `solid`.
-- `design-system/components/PickerMenu/PickerMenu.tsx` — `ANCHOR_RESERVE` places the pane, `CORNER_CLEAR` keeps the Bloom off the arc, `decidedCentre` freezes the centring choice per open.
-- `design-system/components/PickerMenu/pickerMenu.css.ts` — `PANE_RADIUS`, `chosenMark`, and the `pane` / `surface` split (shape versus gutter).
-- `design-system/components/menu/menu.css.ts` — `rowShell` is the one hover-and-focus recipe both row types compose.
-- `design-system/components/NotchedPane.tsx` — the beaked shell, now top-beak-only, with `MenuSurface` as its sole consumer.
-- `design-system/components/PickerMenu/PickerMenu.test.tsx` — the auto-centring tests, and the `offsetWidth` / `getBoundingClientRect` stubbing pattern for testing placement in jsdom.
-- `MarkdownPM/useConnectionAutocomplete.ts` — `surfaceOf` resolves and caches the box the panel slides within; `AcState` carries that box, built once so its identity doesn't churn a hook dep.
-- `.claude/Planning/PopoutMenu — Tasks.md` — the arc's tracker: done, open with what each is waiting on, and deferred by ruling.
-- `DesignSystemPM.md` §Glass & Menus — which tier each surface wears; `node scripts/check-atlas.mjs` verifies it.
+- `Pommora/src/main/crud/propertyJournal.ts` — the record: shapes, `sameRecord`, the no-displace write, the clear-own-only + session-root + echo guards.
+- `Pommora/src/main/crud/replaySchemaCascade.ts` — the replay and its per-op law; the delete arm's crashed/freed states are the subtle pair.
+- `Pommora/src/main/crud/replaySchemaCascade.test.ts` — the crash-window suite; `seedNexus`/`renameCrashState` are the fixture pattern, `unstamped` is the modulo-`modified_at` compare.
+- `Pommora/src/main/crud/journalWiring.test.ts` — the ordering spies (journal present during page writes) via the `io/atomicWrite` triple mock.
+- `Pommora/src/main/io/walk.ts` — `corpusFilesUnder`, the subtree-scoped corpus law; `corpusFiles` delegates to it.
+- `.claude/Planning/Property-Cascade-Journal — Implementation Plan.md` — the closed plan; its Log carries every deviation and both attack rounds' foldings.
 
 #### Working Notes
 
-- **`box-sizing: border-box` does not protect a shrink-to-fit box.** It applies only where a width is stated; an auto-width pane still grows by its border. Harmless here because panes anchor by an edge, but it will matter the moment something sets an explicit width and does arithmetic on it.
-- **The atlas checker validates column 2's backticked tokens and column 3+'s literals**, skipping bare numbers under 8 and any prose derivation. A new table needs its `SOURCE:` files to actually contain both, or it fails.
-- **`MenuOption` lays out its mark slot on every row and only paints the chosen one** — deliberate, so the pane can't resize as the selection moves between labels of unequal length.
-- **An object literal built inline in JSX is a fresh identity every render**, and as a hook dependency that is an effect tearing itself down on a path that runs per keystroke. Build it where the values are read, not where they're passed.
-- **A comment asserting two values match is worse than no comment.** `NavWindow`'s said it matched `PreviewWindow`'s tint; it made the mismatch harder to find, because reading it told you not to check.
+- **`rewritePageSerialized` conflates "unreadable" with "unchanged" in its boolean** — the disambiguator is the rewrite callback itself, which only runs on a landed read. `cascadePages` counts silence as a skip; any future sweep consumer needs the same trick, never the boolean alone.
+- **The registry commits LAST in a delete and FIRST in a rename** — so a delete record meeting its def still present is the *owed* state, while a rename record meeting its old name still present is the *never-landed* state. Any future replay arm must derive its gate from the op's own commit order, not by analogy to a sibling.
+- **`serializeSchemaOp` wraps entry points only** — the replay is one wrapped entry calling unwrapped internals; wrapping any internal it calls deadlocks every open holding a record.
+- **A vitest fixture root must be `realpath`ed** before comparing against `sessionRoot()` — macOS `/var` → `/private/var` breaks identity guards silently.
+- **`sameRecord`'s `b.op === a.op` after the early return is TS narrowing, not redundancy** — don't let a cleanup pass strip it.
 
 #### Changes
 
 **FILES ADDED**
 
-- `.claude/Planning/PopoutMenu — Tasks.md`
+- `.claude/Planning/Property-Cascade-Journal — Implementation Plan.md`
+- `Pommora/src/main/crud/propertyJournal.ts` (+ test)
+- `Pommora/src/main/crud/replaySchemaCascade.ts` (+ test)
+- `Pommora/src/main/crud/journalWiring.test.ts`
 
 **FILES MODIFIED**
 
-- `.claude/CLAUDE.md`
-- `.claude/ContextPM.md`
-- `.claude/Features/DesignSystemPM.md`
-- `.claude/Features/InteractionPM.md`
-- `.claude/Features/PagePreviewPM.md`
-- `Pommora/src/renderer/src/Blocks/BlockHandleMenu.tsx`
-- `Pommora/src/renderer/src/Blocks/handleMenu.css.ts`
-- `Pommora/src/renderer/src/Components/Detail/ColorPicker.tsx`
-- `Pommora/src/renderer/src/Components/Detail/FilterPane.tsx`
-- `Pommora/src/renderer/src/Components/Detail/GroupingPane.tsx`
-- `Pommora/src/renderer/src/Components/Detail/InlineEditHeader.tsx`
-- `Pommora/src/renderer/src/Components/Detail/PagePropertiesPane.tsx`
-- `Pommora/src/renderer/src/Components/Detail/PickerControl.tsx`
-- `Pommora/src/renderer/src/Components/Detail/SortingPane.tsx`
-- `Pommora/src/renderer/src/Components/Detail/SortingPane.test.tsx`
-- `Pommora/src/renderer/src/Components/Detail/dateTimeEditor.test.tsx`
-- `Pommora/src/renderer/src/Components/Detail/propertiesPane.datetime.test.tsx`
-- `Pommora/src/renderer/src/Components/IconPicker.tsx`
-- `Pommora/src/renderer/src/Components/iconPicker.css.ts`
-- `Pommora/src/renderer/src/Components/PhotoCropModal.tsx`
-- `Pommora/src/renderer/src/Components/photoCropModal.css.ts`
-- `Pommora/src/renderer/src/Components/Surface.tsx`
-- `Pommora/src/renderer/src/Detail/InspectorPanel/InspectorPanel.tsx`
-- `Pommora/src/renderer/src/Detail/InspectorPanel/inspector-panel.css`
-- `Pommora/src/renderer/src/Detail/Views/PropertyEditing/PropertyPicker.tsx`
-- `Pommora/src/renderer/src/Detail/Views/Table/TableView.tsx`
-- `Pommora/src/renderer/src/MarkdownPM/AutocompletePanel.tsx`
-- `Pommora/src/renderer/src/MarkdownPM/Styles.css`
-- `Pommora/src/renderer/src/NavWindow/NavWindow.tsx`
-- `Pommora/src/renderer/src/PagePreview/PreviewInspector.tsx`
-- `Pommora/src/renderer/src/PagePreview/PreviewWindow.tsx`
-- `Pommora/src/renderer/src/Settings/NexusSettings.tsx`
-- `Pommora/src/renderer/src/Sidebar/Sidebar.css`
-- `Pommora/src/renderer/src/design-system/components/CalendarPicker/CalendarPicker.tsx`
-- `Pommora/src/renderer/src/design-system/components/CalendarPicker/calendarPicker.css.ts`
-- `Pommora/src/renderer/src/design-system/components/NotchedPane.tsx`
-- `Pommora/src/renderer/src/design-system/components/notchedPane.css.ts`
-- `Pommora/src/renderer/src/design-system/components/PickerMenu/PickerMenu.tsx`
-- `Pommora/src/renderer/src/design-system/components/PickerMenu/PickerMenu.test.tsx`
-- `Pommora/src/renderer/src/design-system/components/PickerMenu/pickerMenu.css.ts`
-- `Pommora/src/renderer/src/design-system/components/PickerMenu/index.ts`
-- `Pommora/src/renderer/src/design-system/components/PreviewPane/PreviewPane.tsx`
-- `Pommora/src/renderer/src/design-system/components/PreviewPane/previewPane.css`
-- `Pommora/src/renderer/src/design-system/components/SidePane/SidePane.tsx`
-- `Pommora/src/renderer/src/design-system/components/TextPicker/TextPicker.tsx`
-- `Pommora/src/renderer/src/design-system/components/TextPicker/textPicker.css.ts`
-- `Pommora/src/renderer/src/design-system/components/menu/MenuSurface.tsx`
-- `Pommora/src/renderer/src/design-system/components/menu/menu.css.ts`
-- `Pommora/src/renderer/src/design-system/components/menu/menuSurface.css.ts`
-- `Pommora/src/renderer/src/design-system/materials/glass-pane.tsx`
-- `Pommora/src/renderer/src/design-system/materials/glass-surface.tsx`
-- `Pommora/src/renderer/src/design-system/materials/glass-window.tsx`
-- `Pommora/src/renderer/src/design-system/materials/index.ts`
-- `Pommora/src/renderer/src/design-system/showcase/leaves/ComponentsLeaf.tsx`
-- `Pommora/src/renderer/src/design-system/showcase/leaves/GlassLeaf.tsx`
+- `.claude/ContextPM.md` · `.claude/HistoryPM.md` · `.claude/Features/PropertiesPM.md` · `.claude/Features/ContextsPM.md`
+- `Pommora/src/main/crud/registryProperty.ts` · `deleteProperty.ts` · `optionOps.ts` · `contextJournal.ts` · `keyHolders.ts`
+- `Pommora/src/main/liveTree.ts` · `mutatePatch.ts` · `watcher.ts` · `watchPatch.ts` · `exclusion.ts` · `indexSeed.ts` · `index.ts`
+- `Pommora/src/main/io/walk.ts` · `Pommora/src/shared/treePatch.ts` (+ test)
 
-**FILES REMOVED**
+**FILES DELETED**
 
-- None. `design-system/components/PopoutMenu/` was created and folded back in within the session, never committed.
-
-**COMMITS**
-
-- None. The whole arc sits uncommitted against `c84cdb43`.
+- `.claude/Planning/Link Formatting — Implementation Plan.md` · `.claude/Planning/Live-Tree-Execution-Brief.md` (spent, removed by Nathan, bundled)
 
 #### Handoff Guidelines
 

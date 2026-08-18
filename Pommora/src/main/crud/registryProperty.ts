@@ -93,6 +93,25 @@ export function renameSweep(root: string, oldName: string, newName: string): Pro
  *  left the name alone. */
 type Rename = { from: string; to: string }
 
+/** Stage a rename's record, or null when this edit renames nothing. BEFORE the commit:
+ *  registry-first ordering means a crash between commit and sweep is recoverable from nowhere
+ *  else — the old name survives only here. The pre-read is advisory (mutateRegistry revalidates);
+ *  a record for an edit that then fails is cleared on that path, and one stranded by a throw is
+ *  disposed of by the id-gated replay. */
+async function stageRename(
+  root: string,
+  propertyId: string,
+  name: string | undefined,
+): Promise<SchemaJournal | null> {
+  const prior = (await readRegistry(root)).defs[propertyId]
+  if (!prior || typeof name !== 'string') return null
+  const to = normalizePropertyName(name)
+  if (!to || to === prior.name) return null
+  const record: SchemaJournal = { op: 'rename', id: propertyId, from: prior.name, to }
+  await writeSchemaJournal(root, record)
+  return record
+}
+
 /** Edit the global definition in place — every assigning Collection sees the change on next read.
  *  A name change commits the registry first, then sweeps the pages once. */
 export function editProperty(
@@ -101,19 +120,7 @@ export function editProperty(
   changes: Partial<PropertyDefinition>,
 ): Promise<Result<null>> {
   return serializeSchemaOp(async () => {
-    // Journal BEFORE the commit: registry-first ordering means a crash between commit and sweep
-    // is recoverable from nowhere else — the old name survives only here. The pre-read is
-    // advisory (mutateRegistry below revalidates); a record for an edit that then fails is
-    // cleared on that path, and one stranded by a throw is disposed of by the id-gated replay.
-    const prior = (await readRegistry(root)).defs[propertyId]
-    let record: SchemaJournal | null = null
-    if (prior && typeof changes.name === 'string') {
-      const to = normalizePropertyName(changes.name)
-      if (to && to !== prior.name) {
-        record = { op: 'rename', id: propertyId, from: prior.name, to }
-        await writeSchemaJournal(root, record)
-      }
-    }
+    const record = await stageRename(root, propertyId, changes.name)
     const edit = await mutateRegistry<Result<Rename | null>>(root, (registry) => {
       let rename: Rename | null = null
       const current = registry.defs[propertyId]

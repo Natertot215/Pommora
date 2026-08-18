@@ -2,18 +2,17 @@
 
 ### Current Focus
 
-- [ ] None. The live-tree & content-index arc closed — main serves a patched tree with zero write-path walks, and the cascades open only the files the index names.
+- [ ] None. The abstract-plumbing arc is complete — live tree, content index, and the property-cascade journal all shipped; a crash mid-cascade now forward-completes at the next open instead of stranding pages against the registry.
 
 ### Immediate Work
 
-- [ ] **A journal behind the property cascades** (below) — the record is the final piece of the abstract-plumbing arc (live tree → content index → crash journal); everything else remains the standing menu.
+- [ ] None — the standing menu below is the field.
 
 ### Pending Focuses
 
 #### II. The Boring Work
 
 - [ ] **The store split.** Renderer state — active tab, selection, pins, the open preview, the page being edited — composes into domain slice files that build the same single store. The shared room is what lets features react to each other and what killed a whole class of two-copies bugs, so the shape stays and only the file boundary moves. Best taken immediately before the next store-heavy feature, rather than as a standalone ceremony.
-- [ ] **A journal behind the property cascades — the final piece of the abstract-plumbing arc.** A property rename commits the registry, then sweeps the new key across every page, and a delete scrubs values off every page; neither records that the sweep is owed, so a crash partway leaves the registry saying one thing and half the pages another. The Context rename's journal and its open-time replay are the pattern to reuse. Ratified: the schema ops get their **own sibling record** beside the Context journal (two records, never a shared list — the two chains serialize independently and folding them invents a collision that doesn't exist); the journaled ops are **delete and rename** (whether the option cascades join is confirmed at planning); the record is a **file under `.nexus`**, matching the Context journal, since the db is optional exactly when things went wrong. The record carries **intent, never a snapshot** — the replay re-runs the idempotent sweep against current disk, re-deriving its targets through the content index's key-holder query, so it stays most-recent-wins and self-healing where a remembered page list would go stale.
 - [ ] **`mutate.ts` organization.** Every change funnels through a single dispatcher in the file-owning process, which is deliberate: a single entry point means a single place for safety policy. Early operations used tidy crud// modules, where later ones were written inline, and each arm moves when its file is next touched.
 
 #### II. Next-Feature Candidates
@@ -53,12 +52,19 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 ### Known Issues
 
 - [ ] On menu rows where property values are expected to be positioned horizontally rather than stacked vertically, there isn't currently a constraint on how far indented relative to its properties label itself; this makes multi-value property rows have its values land its left-side padding tight against the property label; its right-side overflow scroll is properly done, however the lack of left-side padding against the value itself makes the menus cramped. Multiple CSS tries have been applied and reverted; a pane-width-relative max-width that these values can take on the left side of its field needs to be determined. 
-
 - [ ] How MarkdownPMs headings are given their top-bottom padding is still unclear; what's standard paragraph → heading spacing on Obsidian collapses on Pommora where the block above the heading doesn't seem to have any additional padding, or it's at least extremely minimal compared to the padding that headings have below them. 
 - [ ] The CardView banner-type toggle should likely be within the SettingPane rather than the LayoutPane; it makes more sense to group the two toggles together, though non-blocking.
 - [ ] The editor's heading grip-drag likely compounds a trailing blank line on repeated reorders — `blockMoveChanges` is handed a section range that includes it. The outline's own path was trimmed against this; the editor's was not.
 
 ### Recent Work
+
+#### PM-106 || The Property-Cascade Journal
+
+The schema cascades gained a crash record — the final piece of the abstract-plumbing arc. Every op that writes to both the registry and pages (property rename, global delete, option rename, option removal) states its intent in `.nexus/property-cascade.json` before the work and deletes it after; a record surviving a crash replays at the next open, forward-completing the interrupted sweep against current disk through the content index's key-holder query. The replay's one law: act only on the state the record exactly maps, identity-checked by id, and clear on every other — so a stale record can never merge two properties' values or strip a value the user re-set. Skips hold the record: a cascade that cannot read one holder keeps its journal and the next open finishes the job; a stranded record is never displaced or cleared by a later op. Clearing an option's values and the per-Collection Remove stay unjournaled on the same razor — their residue disagrees with nothing. Two attack rounds shaped the verification layer; the crash-window suite proves every heal byte-identical to an uninterrupted op.
+
+#### PM-105 || The Live Tree & The Content Index
+
+Main stopped re-deriving the nexus tree: one walk at open builds it, every mutation and watcher event patches it in place, and the same push that always carried trees now confirms every write channel — the renderer's load-after-write reloads died app-wide. Alongside it, `nexus.db` gained the content index (mentions + property values per page), so a rename or property sweep opens only the files it will actually change: a rename that once read every markdown file opened exactly its four mentioners on the acceptance nexus, and a table cell edit costs zero walks and zero pushes. One corpus enumeration now defines what every pen can reach, making `excluded_folders` a total exclusion — unread, unindexed, unswept, unrewritten — while un-adopted folders stay fully reachable. The closing pass folded nine duplications and surfaced two real defects: a case-sensitive `.md` check diverging from the walk's case-insensitive admit, and a per-folder enumeration paying a whole-nexus readdir on every container open, both fixed at the cause.
 
 #### PM-104 || Menu & Surface Consolidation
 
@@ -75,14 +81,6 @@ An address pasted into any editor surface can now become a link rather than lite
 #### PM-102 || Interaction & Outline Work
 
 The Subfield breadcrumb stopped collapsing on the way back up, tracing the whole path to the deepest node visited on it and holding that tail across a click that switches to a tab already showing its target. The Page Outline dropdown became a working surface rather than a viewer: it holds open until Escape or a re-press, a right-click renames a heading inline, and a heading row drags to move its whole section. The editor's fold chevron picked up its own menu — Rename, Size, and a Delete that drops the heading line alone — riding the one shared hot-line list the grip menu already reads.
-
-#### PM-101 || PommoraDND Dragging Fixtures
-
-Two drag surfaces living outside the shared layer moved onto it. The gesture skeleton had no answer for a press that can mean two things, so `onTap` now fires on a sub-threshold release and on no other ending — a cancel, an Escape, a window blur and a lost release all stay aborts — which is what MarkdownPM's drags need, since the glyph that doesn't drag toggles a checkbox and the grip that doesn't drag folds its section. `listDrag` and `blockDrag` handed their lifecycles over and kept only their geometry, and `EditorGesture`'s `ViewPlugin` gave a CodeMirror extension the unmount abort a React component gets for free.
-
-#### PM-100 || Trash Surface V1
-
-The deletion record gained its reading half: `.trash` had been complete and unreachable, and a leaf at the foot of the Nexus Settings rail now lists every bundle as a row carrying its kind's glyph, its title, a breadcrumb resolved live from the recorded parent id, and the time read back out of the bundle's own folder stamp. Restore returns an entity to the tree and to reach at once, and where its recorded home is gone it opens instead into the places that kind may legally land. Delete spends the bundle the other way, handing the artifact to the operating system's trash or erasing it per a new **Permanently Delete Files** switch that main reads for itself at each operation. 
 
 ### Guidelines
 
