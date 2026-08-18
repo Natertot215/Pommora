@@ -2,11 +2,11 @@
 
 ### Current Focus
 
-- [ ] None. PM-104 closed with the menu arc and its native option both landed; the next focus is whichever one is chosen.
+- [ ] None. The live-tree & content-index arc closed — main serves a patched tree with zero write-path walks, and the cascades open only the files the index names.
 
 ### Immediate Work
 
-- [ ] **Decide what to work on.** Nothing is owed. The Boring Work and the Next-Feature Candidates below are the standing menu, and the Known Issues are each small enough to take on their own.
+- [ ] **A journal behind the property cascades** (below) — the one item the closed arc left owed; everything else remains the standing menu.
 
 ### Pending Focuses
 
