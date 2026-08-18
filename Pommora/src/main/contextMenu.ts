@@ -53,12 +53,13 @@ async function creatorsFor(
 }
 
 /** Build + pop the native context menu for `target`, applying actions main-side. `onChanged`
- *  fires after any mutation so the renderer refetches its tree. */
+ *  fires after any successful mutation, carrying what ran so the caller can confirm the
+ *  live tree the way every renderer-driven mutation is confirmed. */
 export async function showContextMenu(
   win: BrowserWindow,
   target: ContextTarget,
   deps: MutateDeps,
-  onChanged: () => void,
+  onChanged: (req: MutateRequest, reply: { created?: { id: string; path: string } }) => void,
 ): Promise<void> {
   const root = sessionRoot()
   if (root === null) return
@@ -66,7 +67,7 @@ export async function showContextMenu(
   const run = async (req: MutateRequest): Promise<void> => {
     const res = await handleMutate(req, deps)
     if (res.ok) {
-      onChanged()
+      onChanged(req, res.value)
       // A create lands in its rename field — same contract as the renderer's own create menus.
       if (res.value.created)
         push(win, 'begin-rename', { path: res.value.created.path, create: true, host: target.host })
