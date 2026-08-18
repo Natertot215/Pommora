@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { Icon } from '@renderer/design-system/symbols'
 import { PickerMenu, MenuOption } from '../../design-system/components/PickerMenu'
+import { detail } from '../../design-system/components/menu/menu.css'
 import { popRowMenu, useNativeMenus } from '../../nativeMenus'
 import * as s from './pickerControl.css'
 
@@ -21,6 +22,7 @@ export function PickerControl<T extends string>({
   options,
   onPick,
   solid = false,
+  footing = false,
 }: {
   ariaLabel: string
   value: T
@@ -28,6 +30,8 @@ export function PickerControl<T extends string>({
   onPick: (v: T) => void
   /** Opaque menu surface — for pickers that open over another pane (the block Scale idiom). */
   solid?: boolean
+  /** Pinned-footer tone — the value reads `detail`, sitting level with the Style row's label. */
+  footing?: boolean
 }): React.JSX.Element {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLButtonElement>(null)
@@ -65,7 +69,7 @@ export function PickerControl<T extends string>({
       aria-label={ariaLabel}
       onClick={onTrigger}
     >
-      <span className={s.value}>{labelOf(options, value)}</span>
+      <span className={footing ? detail : s.value}>{labelOf(options, value)}</span>
       <Icon name="chevrons-up-down" size={12} />
     </button>
   )
