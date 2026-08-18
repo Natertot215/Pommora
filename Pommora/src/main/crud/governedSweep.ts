@@ -33,6 +33,10 @@ export type SweepScope =
   | { kind: 'nexus' }
   /** Every `.md` under each given Collection folder. */
   | { kind: 'collections'; folders: string[] }
+  /** An explicit page list the call site already targeted and scoped (the key-holder query);
+   *  sidecars unreached. The query decision never lives in here — the Context cascade shares
+   *  this function and its governed keys are outside the index. */
+  | { kind: 'files'; files: string[] }
 
 /** What the sweep did, per root. `skipped` is a root it could not read, `refused` one it may not
  *  rewrite — kept apart because a record built from this reports them as the same kind of
@@ -78,6 +82,8 @@ async function pageRoots(root: string, scope: SweepScope): Promise<string[]> {
       for (const folder of scope.folders) out.push(...(await listMarkdownFiles(folder)))
       return out
     }
+    case 'files':
+      return scope.files
     default: {
       const _exhaustive: never = scope
       return _exhaustive

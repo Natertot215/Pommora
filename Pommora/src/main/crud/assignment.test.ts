@@ -3,7 +3,8 @@ import { it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { assignProperty, reorderAssignment, allCollectionFolders } from './assignment'
+import { assignProperty, reorderAssignment, collectionFolders } from './assignment'
+import { dropLiveTree } from '../liveTree'
 import { createFolderEntity } from './folderEntity'
 import { readSidecar } from '../sidecarIO'
 import { pageCollectionSidecar } from '@shared/schemas'
@@ -18,6 +19,7 @@ beforeEach(async () => {
   notes = c.value.path
 })
 afterEach(async () => {
+  dropLiveTree()
   await rm(root, { recursive: true, force: true })
 })
 
@@ -38,10 +40,10 @@ it('reorder moves within the assignment array', async () => {
   expect(await ids(notes)).toEqual(['prop_c', 'prop_a', 'prop_b'])
 })
 
-it('allCollectionFolders walks every collection folder in the tree', async () => {
+it('collectionFolders lists every collection folder from the live tree', async () => {
   const t = await createFolderEntity(root, 'collection', 'Tasks')
   if (!t.ok) throw new Error('setup failed')
-  expect((await allCollectionFolders(root)).sort()).toEqual([notes, t.value.path].sort())
+  expect((await collectionFolders(root)).sort()).toEqual([notes, t.value.path].sort())
 })
 
 it('a Remove racing an Assign on ONE collection never loses either write (breaker H-2)', async () => {
