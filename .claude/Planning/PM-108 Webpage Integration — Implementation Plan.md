@@ -5,7 +5,7 @@
 
 **Goal**
 
-The editor learns to embed live webpages the way it embeds Pages. At the end: a URL on its own line renders as a live, resizable website tile inside a Page body; the right-click menu is reorganized around an Embed submenu; external links can open in a floating in-app browser; one persistent web session authenticates every embed surface per machine, managed from a General ▸ Accounts section; and hovering a website link raises a live preview card. None of this exists today — Pommora currently renders web addresses as outbound links and nothing more.
+The editor learns to embed live webpages the way it embeds Pages. At the end: a URL on its own line renders as a live, resizable website tile inside a Page body; the right-click menu is reorganized around an Embed submenu; pasting an address always writes a formatted link — auto-formatting graduates from setting to built-in behavior; external links can open in a floating in-app browser; one persistent web session authenticates every embed surface per machine, managed from a General ▸ Accounts section; and hovering a website link raises a live preview card. None of this exists today — Pommora currently renders web addresses as outbound links and nothing more.
 
 The shape: webpage tiles ride the **existing embed framework** (chassis, fencing, guard, heights, grip) with a new React payload around a **visibility-managed `<webview>`** — the only mechanism that is process-isolated *and* a real DOM element, empirically proven to clip correctly while fully visible and to bleed when partially clipped, hence the management. The in-app browser and hover card mount the same webview inside surfaces that own their region. Alternatives — iframes (framing-blocked by most login sites), WebContentsView (cannot be DOM-clipped), static bookmark tiles (Notion's model) — were weighed and rejected in the decision log with Nathan's sign-off.
 
@@ -93,7 +93,7 @@ Constraints: `sandbox`/`contextIsolation` stay on; guests are validated at attac
 **Dead Vocabulary**
 - `autoFormatPastedLinks` → expect 0 in `Pommora/src`. Legitimate hits: none.
 - `when:` as a settings-row field (search `when?: (p` in `NexusSettings.tsx`) → expect 0.
-- Control: `rg -F "pasteLinkIntoText" Pommora/src` → 5 at planning time. Zero here means the sweep never ran.
+- Control: `rg -F "pasteLinkIntoText" Pommora/src` → 7 at planning time. Zero here means the sweep never ran.
 
 ---
 
@@ -120,7 +120,7 @@ Constraints: `sandbox`/`contextIsolation` stay on; guests are validated at attac
 
 **Why:** Two features (paste and embed titles) now read `defaultLinkFormat`, so its gating toggle is retired as product (Nathan's G-1). Removal shape: let the compiler enumerate — delete the key from `Personalization` and the type gate lists every reader.
 
-**Files:** Modify `Pommora/src/shared/types.ts` (drop `autoFormatPastedLinks`), `src/main/readNexus.ts` (drop its coercion), `src/renderer/src/MarkdownPM/editor/PasteLink.ts` (`autoFormat` hardwires true in the `linkFor` input), `src/shared/PasteLink.ts` (`decidePaste` loses the `autoFormat` input — the format axis is unconditional; the no-selection inverse still yields literal), `src/renderer/src/Settings/NexusSettings.tsx` (row removed; Default Format row loses its `when`; the `when` field, its `Reveal` gating in `LeafRow`, and the `RowText.when` type go — it has no other consumer). Tests: `src/shared/PasteLink` test file — invert the toggle-off cases to always-format expectations in the same commit.
+**Files:** Modify `Pommora/src/shared/types.ts` (drop `autoFormatPastedLinks`), `src/main/readNexus.ts` (drop its coercion; its test `readNexus.test.ts` carries the key too), `src/renderer/src/MarkdownPM/editor/PasteLink.ts` (`autoFormat` hardwires true in the `linkFor` input), `src/shared/PasteLink.ts` (`decidePaste` loses the `autoFormat` input; the correct fold of its format branch is `if (!wrappable && input.inverse) return LITERAL` — **the no-selection inverse is the only surviving literal path**, a conditional; "always format" naively applied would delete ⌘⇧V's raw paste and its test would go green certifying the loss), `src/renderer/src/Settings/NexusSettings.tsx` (row removed; Default Format row loses its `when`; the `when` field, its `Reveal` gating in `LeafRow`, and the `RowText.when` type go — it has no other consumer). Tests: the PasteLink test files (`pasteLink.test.tsx` carries 11 key hits) — invert the toggle-off cases to always-format expectations, **except the inverse-chord block**, which is the carve-out: no-selection ⌘⇧V still expects literal.
 
 **Failure half:** a stale `autoFormatPastedLinks` key in an existing `settings.json` is simply unread and survives round-trips under the preserve-unknown-keys write discipline — assert no reader remains rather than adding migration.
 
@@ -171,7 +171,9 @@ Constraints: `sandbox`/`contextIsolation` stay on; guests are validated at attac
 **Files:** Create `Pommora/src/main/webGuests.ts`. Modify `src/main/index.ts` — `webviewTag: true` in the window's `webPreferences` (sandbox/contextIsolation/nodeIntegration untouched); install the module at window creation. Modify `src/shared/bridge.ts` — one push channel `web:popup` (url: string). Modify `src/preload/index.ts` — the `onWebPopup` subscriber. Shared constant `WEB_PARTITION = 'persist:pommora-web'` in `src/shared/types.ts`.
 
 **Interfaces**
-- Produces: `installWebGuests(win)` — hooks `will-attach-webview` (strip any preload, force `partition: WEB_PARTITION`, deny `nodeintegration`/`webpreferences` overrides) and `web-contents-created` (for guest webContents: `setWindowOpenHandler` → push the URL over `web:popup` and deny; apply the current host zoom factor; deny `will-navigate` is NOT applied to guests — guests navigate freely). Exposes `syncGuestZoom(factor)` for the three host-zoom sites (`ready-to-show`/`did-finish-load` application, ⌘0 reset, zoomIn/Out — main already owns all three).
+- Produces: `installWebGuests(win)` — hooks `will-attach-webview` (strip any preload, force `partition: WEB_PARTITION`, set `params.allowpopups` — **popups are disabled by default in Electron and without this the guest's `window.open` dies inside Blink before `setWindowOpenHandler` is ever consulted**, deadening the whole F-3 story; deny `nodeintegration`/`webpreferences` overrides) and `web-contents-created` (for guest webContents: `setWindowOpenHandler` → push the URL over `web:popup` and deny; apply the current host zoom factor; `will-navigate` hardening is NOT applied to guests — guests navigate freely).
+- Produces: `syncGuestZoom(factor)`, called from `applyDefaultZoom` — the **single** `setZoomFactor` owner, whose three callers are `ready-to-show`, `did-finish-load`, and the nexus switch (`adoptNexusInner`). ⌘+/⌘− are currently native `{role: 'zoomIn'/'zoomOut'}` items (`menu.ts:130-131`) that Chromium handles internally with **no JS callback to hook** — this task de-roles them into custom `click` items mirroring ⌘0's shape (zoom via `setZoomFactor` + `syncGuestZoom`), or guest zoom silently diverges on the first ⌘+.
+- Step check: after install, verify in the dev harness that a webview attached with no `partition` attribute still lands on `WEB_PARTITION` (`guest.session === session.fromPartition(WEB_PARTITION)`) — the `will-attach-webview` override timing for `persist:` partitions is the one unverified Electron behavior here; if it fails, the fallback is passing the partition attribute at every surface (they all default to the shared constant anyway).
 - Produces: the partition's UA treatment at install — Ferdium's surgical recipe: a UA with the `Electron/x` and app tokens stripped session-wide, plus the Chrome-version-suffix strip scoped to `accounts.google.com`, applied post-navigation. Best-effort by decision; never touches the default session.
 - Assumed by: Tasks 7 (tile webview), 14 (browser), 16 (Accounts session access), 18 (hover card).
 
@@ -216,10 +218,15 @@ Constraints: `sandbox`/`contextIsolation` stay on; guests are validated at attac
 
 **Why:** Webpage lines must enter the **one** claim owner (Editor-Internals) with a URL key (labels collide by construction under Short Link), and claims must form only off-caret (`isValidLink` passes typed prefixes). The formation gate is the spec's most-reviewed mechanism; its triggers are doc change, mount, and selection-departure — the predicate ("selection not on the line") is what protects typing, the triggers are what reach lines the selection never visited.
 
-**Files:** Modify `Pommora/src/renderer/src/MarkdownPM/detect/index.ts` (webpage lines join the per-doc scan beside `blockEmbedLines`, same exclusions), `editor/embedRanges.ts` (`claimedEmbeds` gains the kind-aware key: page claims key on normalized title with first-occurrence, webpage claims key on the URL with no dedupe), `editor/embedWidget.tsx` (the tile field carries webpage ranges; formation state — a claimed-set member survives regardless of selection once formed; unclaimed candidates re-checked on the three triggers only; `editAffectsEmbeds` extended so a doc change touching a candidate rebuilds). Tests: extend the embed-widget flow tests with webpage cases.
+**Files:** Modify `Pommora/src/renderer/src/MarkdownPM/detect/index.ts` (webpage lines join the per-doc scan beside `blockEmbedLines`, same exclusions), `editor/embedRanges.ts` (`claimedEmbeds` gains the kind-aware key: page claims key on normalized title with first-occurrence, webpage claims key on the URL with no dedupe), `editor/embedWidget.tsx` — three named owners inside it:
+- the tile field carries webpage ranges; a claimed-set member survives regardless of selection once formed; `editAffectsEmbeds` extended so a doc change touching a candidate rebuilds;
+- **`embedGuard` goes kind-aware**: its fence/gluing check (`loneEmbedTitle(line.text) !== r.title`) and its gone-whole test (`` line.text.includes(`![[${r.title}]]`) ``) are `![[…]]`-literal — for a webpage range both branches `continue` and a boundary-seat insertion un-forms the tile unrepaired, where a page tile gets `boundaryRepair`. Both tests branch on `r.kind`, reading Task 5's grammar and `composeWebpageEmbedLine`, so webpage tiles earn the same repair;
+- **a new ViewPlugin owns the impure half** (the `sweepOnTitles` shape — a StateField cannot dispatch): it fires the formation check's selection-departure trigger and carries Task 8's fill dispatch. The field stays pure; the plugin is the dispatcher.
+Tests: extend the embed-widget flow tests with webpage cases.
 
 **Interfaces**
-- Produces: `TileRange` gains `kind: 'page' | 'webpage'` (webpage carries `url`, `label`); `embedTileRanges` consumers compile against it.
+- Produces: `TileRange` becomes a **discriminated union** — `{ kind: 'page'; title } | { kind: 'webpage'; url; label }` — so every `t.title` reader is a compile error the executor must handle, not a silent leak.
+- **Must agree:** `embedExclusions` (feeding the `![[` autocomplete pool and the grip pick tree via `embeddable`) admits **page ranges only** — a webpage label entering it would delete any identically-titled Page from both surfaces (Short Link and Page Title labels collide with real page names by construction). One test: a webpage tile labeled like an existing Page leaves that Page pickable.
 - Assumed by: Tasks 7, 8, 10, 11 and the grip path.
 
 **Failure half:** a multi-line paste containing a valid webpage line away from the landing caret → forms on that doc change · undo restoring a tile line → reforms · mount with caret at 0 over an existing tile line → forms · the selection sitting on a valid line → stays raw until departure · two tiles, same URL → both claim.
@@ -239,7 +246,7 @@ Constraints: `sandbox`/`contextIsolation` stay on; guests are validated at attac
 **Files:** Create `Pommora/src/renderer/src/Embeds/WebpageEmbed.tsx` (+ styles in `Embeds/embeds.css`). Modify `editor/embedWidget.tsx` — `EmbedTileWidget` renders the payload by `kind`; `estimatedHeight` returns the fit-capped value. The chassis, fencing, resize handle, and grip seat are inherited untouched.
 
 **Interfaces**
-- Produces: `WebpageEmbed({ url, label, height })` — renders the chassis body: the `<webview>` (partition from the shared constant, `display:flex`, no preload attribute) when fully visible; the loading face while attached-but-loading or detached; the failure face on `did-fail-load` (quiet, token-styled, no meta text — F-6). One `IntersectionObserver` per editor scroller (threshold 1, small negative margin as pre-arm hysteresis) and one `ResizeObserver` on the scroller re-evaluating the F-5d fit cap — both shared across tiles, transitions only, per the no-per-scroll-work rule.
+- Produces: `WebpageEmbed({ url, label, height, partition = WEB_PARTITION })` — the partition is a prop with the shared default on every webview surface (the per-account-partitions don't-foreclose: swapping partitions later is a prop, not a sweep). Renders the chassis body: the `<webview>` (`display:flex`, no preload attribute) when fully visible **at ancestor depth 0 — `state.facet(EmbedHost).ancestors.length > 0` renders the static face unconditionally**, since nested editors (a page-embed's body at depth 1, the hover card's page render) are themselves scrollable surfaces whose inner "fully visible" reading reproduces the spike's bleed against the outer clip (F-5b's second half); the loading face while attached-but-loading or detached; the failure face on `did-fail-load` (quiet, token-styled, no meta text — F-6). One `IntersectionObserver` per editor scroller (threshold 1, small negative margin as pre-arm hysteresis) and one `ResizeObserver` on the scroller re-evaluating the F-5d fit cap — both shared across tiles, transitions only, per the no-per-scroll-work rule. The component stays editor-agnostic (the dashboard-tile don't-foreclose): it receives its visibility and outside-click signals as props/hooks; nothing in it imports CodeMirror.
 - Assumed by: Task 10 (engagement/retention), Task 15 (browser reuses the webview conventions, not the component), Task 18 (hover flavor).
 
 **Failure half:** dead URL/offline → failure face, tile and document unharmed · a guest crash (`render-process-gone`) → failure face, re-attach on next visibility transition · zero-height scrollport (window mid-resize) → cap floors at `TILE_MIN_PX`.
@@ -256,7 +263,7 @@ Constraints: `sandbox`/`contextIsolation` stay on; guests are validated at attac
 
 **Why:** An empty-label tile must gain its label once, honestly undoable, and Page Title must land without destroying the tile — the exact failure surface three review rounds circled. All writes compose through Task 5's one assembly path.
 
-**Files:** Modify `editor/embedWidget.tsx` (formation dispatches the one-shot label fill as its own transaction with a retiring effect — PendingTitle's discipline), `editor/PendingTitle.ts` (a webpage-line anchor swaps by whole-line `composeWebpageEmbedLine`, never `linkMarkdown`), the formation path (Page Title mode: fill with `linkDomain` placeholder, arm the deferred fetch through the existing `linkTitles` store path). Tests: fill-once/undo-honest, swap-preserves-tile, bracket-title escape survives the round trip.
+**Files:** Modify `editor/embedWidget.tsx` — **Task 6's ViewPlugin is the dispatcher** (a StateField cannot dispatch): it reads freshly-formed empty-label webpage ranges out of the field and dispatches the fill as its own transaction with a retiring effect, PendingTitle's discipline. Modify `editor/PendingTitle.ts` (a webpage-line anchor swaps by whole-line `composeWebpageEmbedLine`, never `linkMarkdown`), the formation path (Page Title mode: fill with `linkDomain` placeholder, arm the deferred fetch through the existing `linkTitles` store path). Tests: fill-once/undo-honest, swap-preserves-tile, bracket-title escape survives the round trip.
 
 **Must agree:** after any fill or swap, `loneWebpageEmbed` still matches the line and the claim key (URL) is unchanged — one test crosses writer and detector.
 
@@ -296,7 +303,7 @@ Constraints: `sandbox`/`contextIsolation` stay on; guests are validated at attac
 
 **Why:** A live guest steals scroll and keys; page-embed law (click-in to interact, click-out to leave) transfers by explicit mechanism, not inheritance — `ignoreEvent` defaults true and host click paths don't exist inside a guest. The spike proved hidden guests keep state, so the visibility swap upgrades from destroy (Task 7) to hide, bounded by an LRV cap.
 
-**Files:** Modify `Embeds/WebpageEmbed.tsx` — inert state (`pointer-events:none` on the webview + a transparent click-catcher that engages); engaged state (catcher gone, guest interactive); click-out via the editor's existing outside-pointerdown seam; disengage-and-swap on clip transition (F-5); the detach path becomes `visibility`-hide with a module-level LRV registry — visible tiles always live, hidden retainees capped (start `KNOB`-marked at 5), evicted guests fall back to the loading face and reload on re-visibility.
+**Files:** Modify `Embeds/WebpageEmbed.tsx` — engagement lives in a **`useEngagement` hook owned by the component, with the outside-click source injected as a prop** (the editor host passes its outside-pointerdown seam; a future dashboard host passes its own — the standalone-component don't-foreclose): inert state (`pointer-events:none` on the webview + a transparent click-catcher that engages); engaged state (catcher gone, guest interactive); click-out disengages; disengage-and-swap on clip transition (F-5). Engagement state is the component's, never a second writer into `embedField.editing` (that field is the page-embed edit path). The detach path becomes `visibility`-hide with a module-level LRV registry — visible tiles always live, hidden retainees capped (start `KNOB`-marked at 5), evicted guests fall back to the loading face and reload on re-visibility.
 
 **Failure half:** eviction while the site held half-typed input → that state is lost by design *only* at the cap's edge, never on a plain scroll — the ordering (visible > hidden-recent > evicted) is the test's subject · engagement requested while the guest is mid-load → catcher stays until `did-finish-load`.
 
@@ -304,6 +311,7 @@ Constraints: `sandbox`/`contextIsolation` stay on; guests are validated at attac
 
 **Steps:**
 - [ ] Implement; gates green. Dev app: wheel over inert tile scrolls the document; click engages (guest scroll/typing work); click-out disengages; scrolling an engaged tile to the edge disengages and swaps; scrolling back shows the same guest state (retention proven); >cap tiles evict oldest.
+- [ ] Two build-phase checks land here, not at Task 18: **focus return** — engage, click into a site's text box, scroll the tile away, type: keystrokes must land in the document, not a hidden guest (if focus sticks, the disengage path explicitly refocuses the editor); **mousemove starvation** — with the pointer resting on an engaged guest, host hover lifecycles must still run (informs Task 18's overlay). Record both in the Log.
 - [ ] Commit: `feat(embeds): tiles engage on click and retain hidden guests under a cap`
 
 #### Task 11: The hover-title and the grip's Edit Link arm
@@ -335,7 +343,7 @@ Constraints: `sandbox`/`contextIsolation` stay on; guests are validated at attac
 
 **Why:** The preference must exist before the browser has a reason to open. One key, one coercion, one row, and the branch at the three renderer call sites — the renderer is the single adjudicator (main's popup push defers to it).
 
-**Files:** Modify `src/shared/types.ts` (`openLinksInApp?: boolean` on `Personalization` — exact key naming per existing conventions), `src/main/readNexus.ts` (coercion line), `Settings/NexusSettings.tsx` (Files & Links row, switch control, default off = system browser), and the three call sites: `MarkdownPM/editor/links.ts` (~:120), `Detail/Views/Table/LinkCell.tsx` (~:54), `Detail/Views/Table/TableView.tsx` (~:738) — each branches to a shared `openWebLink(url)` helper (renderer-side, one owner) that either calls `openExternal` or summons the browser (Task 14's entry; until it lands, the helper routes external regardless — stated resting state).
+**Files:** Modify `src/shared/types.ts` (`openLinksInApp?: boolean` on `Personalization` — exact key naming per existing conventions), `src/main/readNexus.ts` (coercion line), `Settings/NexusSettings.tsx` (Files & Links row, switch control, default off = system browser), and the **four** call sites: `MarkdownPM/editor/links.ts` (~:120), `Detail/Views/Table/LinkCell.tsx` (~:54), `Detail/Views/Table/TableView.tsx` (~:738), and `Embeds/WebpageEmbed.tsx` (the hover-title, which Task 11 wired to `openExternal` as its stated resting state — this task migrates it) — each branches to a shared `openWebLink(url)` helper (renderer-side, one owner) that either calls `openExternal` or summons the browser (Task 14's entry; until it lands, the helper routes external regardless — stated resting state).
 
 **Steps:**
 - [ ] Implement key/row/helper; gates green. Rewrite ConfigurationPM (Made False row 6a) in this commit.
@@ -359,7 +367,7 @@ Constraints: `sandbox`/`contextIsolation` stay on; guests are validated at attac
 
 **Why:** The in-app destination. A flavor of the existing floating window: the body is one webview owning its whole region (no clipping constraint), the toolbar drops the promote glyph for back/forward, and the centered title is the escalating link.
 
-**Files:** Create `Pommora/src/renderer/src/PagePreview/BrowserWindow.tsx` (working name; follow PascalCase + the PagePreview module's conventions) mounting the PreviewPane chassis: band toolbar, left cluster = back/forward glyphs (registry: pull the pair into `design-system/symbols` — SymbolsPM rides this commit), right cluster = ×; no inspector, no footer, no tab strip in V1. Body: the webview on the shared partition (guest module governs it). Title: centered two-tone, live from the guest's `page-title-updated`/navigation events, click → `openExternal(currentURL)`. Back/forward drive `webview.goBack/goForward`, enabled state from `canGoBack/canGoForward` on navigation events (event-driven, no polling). `openWebLink` summons it (singleton like the page preview; a new summon retakes the window). Window geometry persists per the PreviewPane's own per-window-id mechanics.
+**Files:** Create `Pommora/src/renderer/src/PagePreview/BrowserWindow.tsx` (working name; follow PascalCase + the PagePreview module's conventions) mounting the PreviewPane chassis: band toolbar, left cluster = back/forward glyphs (registry: pull the pair into `design-system/symbols` — SymbolsPM rides this commit), right cluster = ×; no inspector, no footer, no tab strip in V1. Body: the webview on the shared partition (guest module governs it). Title: centered two-tone, live from the guest's `page-title-updated`/navigation events, click → `openExternal(currentURL)`. Back/forward drive `webview.goBack/goForward`, enabled state from `canGoBack/canGoForward` on navigation events (event-driven, no polling). The module exports **`openInAppBrowser(url)` as the direct entry**; `openWebLink` is one caller of it, and Task 16's Add Account is another — a knob-independent summon, since Accounts must open in-app regardless of the preference or the sign-in cookie lands in the wrong browser (singleton like the page preview; a new summon retakes the window). Window geometry persists per the PreviewPane's own per-window-id mechanics. The chrome also carries the **Add Account completion affordance** Task 16 consumes (shown only when summoned by that flow) — it lives in this file, so this task's Files own it even though Task 16 wires it.
 
 **Failure half:** navigation to a dead page → the guest shows its own error surface (a browser browses; no app-level face) · the window closed mid-load → guest torn down with it.
 
@@ -372,7 +380,7 @@ Constraints: `sandbox`/`contextIsolation` stay on; guests are validated at attac
 
 #### Gate 5 — links open where Nathan says
 - [ ] Gates green; review + simplification on the range; concerns fixed or ruled.
-- [ ] The knob's both settings exercised across all three call sites + a guest popup; browser seen running; screenshots shown.
+- [ ] The knob's both settings exercised across all **four** call sites (editor link, table cell, table view, tile hover-title) + a guest popup; browser seen running; screenshots shown.
 
 ---
 
@@ -384,7 +392,7 @@ Constraints: `sandbox`/`contextIsolation` stay on; guests are validated at attac
 
 **Why:** The renderer may never touch the session; main exposes exactly the three verbs the section needs. Account rows are *recorded at Add Account completion* (the cookie store can't distinguish signed-in from visited), stored device-locally in `nexus.db` beside the other machine-scoped records.
 
-**Files:** Modify `src/main/webGuests.ts` (or a sibling `src/main/webAccounts.ts` if it reads cleaner — one owner either way): `webAccounts:list` (recorded rows), `webAccounts:add` (record a row: domain + display name derived from the sign-in URL), `webAccounts:signOut` (delete the row + `clearStorageData({ origin })` — full storage, not cookies), `webAccounts:clearBrowsing` (partition-wide `clearStorageData`, rows untouched? No — rows whose origin data was cleared are stale: clear removes all rows too; one semantics, stated in the row's hint). Bridge entries + preload for each; `db/localState.ts` gains the `webAccounts` scope.
+**Files:** Modify `src/main/webGuests.ts` (or a sibling `src/main/webAccounts.ts` if it reads cleaner — one owner either way): `webAccounts:list` (recorded rows), `webAccounts:add` (record a row: domain + display name derived from the sign-in URL), `webAccounts:signOut` (delete the row + `clearStorageData({ origin })` — full storage, not cookies), `webAccounts:clearBrowsing` — **semantics are Nathan's call, presented at approval:** the ratified D-1a sentence says the affordance covers "the rest of the store," i.e. account rows and their sessions survive, which means enumerating the partition's origins and clearing the non-account ones; the alternative (partition-wide wipe, rows removed too) is simpler but reverses the ratified sentence. The plan defaults to the ratified reading pending the ruling. Bridge entries + preload for each; `db/localState.ts` gains the `webAccounts` scope.
 
 **Failure half:** sign-out for an origin with no stored data → succeeds, row still removed · a `clearStorageData` rejection → the `Result` envelope carries the error; the row is not removed (no half-state).
 
@@ -398,7 +406,7 @@ Constraints: `sandbox`/`contextIsolation` stay on; guests are validated at attac
 
 **Why:** The user-facing half. **Hard design stop first:** the section's rows, the Add Account presentation, and its glyphs are undesigned — disclose a concrete proposal to Nathan (rows, controls, copy) and get his yes *before* building; D-1a pins mechanism only.
 
-**Files:** Modify `Settings/NexusSettings.tsx` — the `general` leaf gains an Accounts `Section`: an Add Account action (opens the in-app browser at a sign-in URL — the flow records the row on completion via `webAccounts:add`; V1's completion signal is the user's own "done" affordance in the flow, per the ratified design), the recorded rows with per-row Sign Out, and Clear Browsing Data. Controls compose from existing settings primitives; no new row kinds unless the ratified design demands one.
+**Files:** Modify `Settings/NexusSettings.tsx` — the `general` leaf gains an Accounts `Section`: an Add Account action calling **Task 14's `openInAppBrowser` directly** (knob-independent — a default install must not route sign-in to Safari, where the cookie misses the partition), the flow recording its row on completion via `webAccounts:add` through the browser's completion affordance (Task 14's chrome owns it; this task wires it), the recorded rows with per-row Sign Out, and Clear Browsing Data. Controls compose from existing settings primitives; no new row kinds unless the ratified design demands one.
 
 **Steps:**
 - [ ] Present the design; on Nathan's yes, build; gates green.
@@ -408,7 +416,7 @@ Constraints: `sandbox`/`contextIsolation` stay on; guests are validated at attac
 
 #### Gate 6 — one sign-in, everywhere, until revoked
 - [ ] Gates green; review + simplification; concerns fixed or ruled.
-- [ ] The acceptance chain's auth leg exercised end-to-end and recorded (sign in → second tile → relaunch → sign out → logged out).
+- [ ] The acceptance chain's auth leg exercised end-to-end and recorded (sign in → second tile → relaunch → sign out → logged out) — **with the open-in knob explicitly set to its default (system) first**, proving Add Account is knob-independent rather than passing on a knob left flipped from Phase 5.
 
 ---
 
