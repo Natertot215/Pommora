@@ -25,9 +25,10 @@ import {
   readSpaceOrders,
   resolveAssignedSchema,
   resolveEntityContexts,
+  type SettingsLeaves,
 } from './readNexus'
 import { coerceOpenIn, coerceViewButton, coerceViewStyle } from '@shared/schemas'
-import { makeCollectionNode, makeSetNode, makeSpaceNode } from '@shared/treePatch'
+import { makeCollectionNode, makeSetNode, makeSpaceNode, parentOf } from '@shared/treePatch'
 import { removeNodeInTree, type TreeEntity, updateNodeInTree } from '@shared/treePatch'
 
 export type WatchEventName = 'add' | 'change' | 'unlink' | 'addDir' | 'unlinkDir'
@@ -47,11 +48,6 @@ export type WatchClass =
   | { kind: 'index-only'; rel: string }
   | { kind: 'ignored' }
   | { kind: 'full-refresh' }
-
-const parentOf = (rel: string): string => {
-  const i = rel.lastIndexOf('/')
-  return i === -1 ? '' : rel.slice(0, i)
-}
 
 const toPosixRel = (root: string, absPath: string): string | null => {
   const rel = relative(root, absPath)
@@ -92,6 +88,11 @@ function findSpace(tree: NexusTree, dirRel: string): SpaceNode | null {
 /** Mirrors `isContentFile` for a bare name — the walk's page admission, minus the Dirent. */
 const isContentName = (name: string): boolean => !name.startsWith('_') && isMarkdownFile(name)
 
+/** Whether the walk reads this nexus's container sidecars at all — a raw nexus derives every
+ *  container fact from position, so its sidecars are files the walk never opens. */
+const sidecarMode = (tree: NexusTree): boolean => !isAdoptedId(tree.nexus.id)
+const orderFallback = (tree: NexusTree): 'id' | 'title' => (sidecarMode(tree) ? 'id' : 'title')
+
 export function classifyEvent(
   tree: NexusTree,
   root: string,
@@ -108,8 +109,8 @@ export function classifyEvent(
   // A path on the unreadable list carries walk-owned bookkeeping (the entry must drop or
   // transition) — only the walk may adjudicate it. Container and Space sidecars record their
   // OWNER directory there, so the parent is checked too.
-  const dirOfRel = parentOf(rel)
-  if (tree.unreadable?.some((u) => u.path === rel || u.path === dirOfRel))
+  const dirRel = parentOf(rel)
+  if (tree.unreadable?.some((u) => u.path === rel || u.path === dirRel))
     return { kind: 'full-refresh' }
   if (segs[0] === '.nexus') {
     if (rel === `.nexus/${NEXUS_CONFIG_FILES.settings}`) return { kind: 'settings-leaf' }
@@ -118,16 +119,15 @@ export function classifyEvent(
       segs[1] === 'contexts' &&
       segs.length === 5 &&
       name === SPACE_SIDECAR &&
-      (ev.event === 'add' || ev.event === 'change')
+      (ev.event === 'add' || ev.event === 'change') &&
+      findSpace(tree, dirRel)
     ) {
-      const dirRel = segs.slice(0, 4).join('/')
-      if (findSpace(tree, dirRel)) return { kind: 'space-meta', dirRel }
+      return { kind: 'space-meta', dirRel }
     }
     return { kind: 'full-refresh' }
   }
   if (ev.event === 'addDir' || ev.event === 'unlinkDir') return { kind: 'full-refresh' }
   if (isContentName(name)) {
-    const dirRel = parentOf(rel)
     if (dirRel !== '' && findContainer(tree, dirRel)) {
       return ev.event === 'unlink' ? { kind: 'page-remove', rel } : { kind: 'page-upsert', rel }
     }
@@ -137,11 +137,10 @@ export function classifyEvent(
   if (
     (name === SIDECAR_FILENAME.collection || name === SIDECAR_FILENAME.set) &&
     (ev.event === 'add' || ev.event === 'change') &&
-    // A raw nexus classifies by position alone — the walk never opens container sidecars
-    // there, so an edit to one must not patch what the walk would ignore.
-    !isAdoptedId(tree.nexus.id)
+    // A raw nexus classifies by position alone, so an edit to a sidecar the walk never opens
+    // must not patch what the walk would ignore.
+    sidecarMode(tree)
   ) {
-    const dirRel = parentOf(rel)
     const container = dirRel !== '' ? findContainer(tree, dirRel) : null
     // Only the kind-matching sidecar feeds the walk; a stray wrong-kind file is not this
     // container's meta and takes the default arm.
@@ -218,9 +217,6 @@ async function applyOne(
       return 'refresh'
   }
 }
-
-const sidecarMode = (tree: NexusTree): boolean => !isAdoptedId(tree.nexus.id)
-const orderFallback = (tree: NexusTree): 'id' | 'title' => (sidecarMode(tree) ? 'id' : 'title')
 
 /** Re-read one page file and patch its node in — the shared confirmer for an external page
  *  event AND an in-app write that touched the page's frontmatter. Exact by construction: the
@@ -345,24 +341,28 @@ export async function patchSpaceFromDisk(root: string, dirRel: string): Promise<
   return replaceNode(root, dirRel, next)
 }
 
+const readSettings = async (root: string): Promise<SettingsLeaves> =>
+  readSettingsLeaves((await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings))) ?? {})
+
 async function applySettingsLeaf(
   root: string,
   watchedExcluded: string[],
 ): Promise<'ok' | 'refresh'> {
-  const settings = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings))) ?? {}
+  const leaves = await readSettings(root)
   // An exclusion change moves what the walk and watcher can even see — structural, not a leaf.
-  const excluded = readSettingsLeaves(settings).excluded
   const same =
-    excluded.length === watchedExcluded.length && excluded.every((v, i) => v === watchedExcluded[i])
-  if (!same) return 'refresh'
-  return patchSettingsFromDisk(root)
+    leaves.excluded.length === watchedExcluded.length &&
+    leaves.excluded.every((v, i) => v === watchedExcluded[i])
+  return same ? applySettingsLeaves(root, leaves) : 'refresh'
 }
 
 /** Re-read `settings.json` and patch every leaf it feeds — the shared confirmer for the
  *  personalization and profile writes as well as external settings edits. */
 export async function patchSettingsFromDisk(root: string): Promise<'ok' | 'refresh'> {
-  const settings = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings))) ?? {}
-  const leaves = readSettingsLeaves(settings)
+  return applySettingsLeaves(root, await readSettings(root))
+}
+
+function applySettingsLeaves(root: string, leaves: SettingsLeaves): 'ok' | 'refresh' {
   return applyPatch(root, (t) => ({
     ...t,
     labels: leaves.labels,
