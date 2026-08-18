@@ -13,6 +13,7 @@ import { useExitPresence } from '../../useExitPresence'
 import { useHeld } from '../../useHeld'
 import { GlassPane } from '../../materials'
 import { MenuItem, MenuScrollFrame } from '../menu/Menu'
+import { markPickerOpen } from '../useDismiss'
 import { Icon } from '../../symbols'
 import { cx } from '../../cx'
 import { DROPDOWN_GAP as GAP } from '../dropdownAnchor'
@@ -45,8 +46,9 @@ const tabStops = (root: HTMLElement): HTMLElement[] =>
 // Uses the `dropdown` motion token (shared with AutocompletePanel). Self-managed (pass `open` +
 // `onDismiss`) owns its own mount/unmount and portals to a fixed top layer, escaping any clipping
 // ancestor; its backdrop also covers the trigger so a toggle can't dismiss-then-reopen. Manual
-// (pass `closing`, mount it yourself) is for bespoke close logic. Both layers carry
-// `data-picker-portal` because useDismiss's containment check can't see through the portal.
+// (pass `closing`, mount it yourself) is for bespoke close logic. A portal'd open reports itself
+// to useDismiss's picker counter (a containment check can't see through the portal); both layers
+// keep `data-picker-portal` as the top-layer styling and test hook.
 export type PickerDirection = 'down' | 'up' | 'left' | 'right'
 
 /** KNOB — how far past the trigger's centre the pane's near edge sits, and with it where the Bloom
@@ -122,6 +124,12 @@ export function PickerMenu({
   const selfManaged = open !== undefined
   const { mounted, closing: exitClosing } = useExitPresence(open ?? true)
   const closing = selfManaged ? exitClosing : closingProp
+  // The portal's presence, reported for dismissal — held through the Bloom-out so the closing
+  // pane still shields the host beneath it.
+  useEffect(() => {
+    if (!selfManaged || !mounted) return
+    return markPickerOpen()
+  }, [selfManaged, mounted])
   // A picker unmounted while open/exiting skips its Bloom-out — every consumer must mount
   // persistently and drive `open`; this screams in dev when one doesn't.
   const liveRef = useRef(false)
