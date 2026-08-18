@@ -2,11 +2,13 @@
 
 ### Current Focus
 
-- [ ] None. The abstract-plumbing arc is complete — live tree, content index, and the property-cascade journal all shipped; a crash mid-cascade now forward-completes at the next open instead of stranding pages against the registry.
+**Populating the Settings feature.** PM-107 built the foundation and seated the rail; the work from here is filling it. The window's panels are declared in one roster where a leaf names its label, glyph, placement, and either sections of rows or a surface of its own, so a new setting is one entry rather than a change to the window's plumbing. Nine categories are seated in the order they will keep, with Trash anchored below the separator.
+
+Four of those categories hold nothing yet. Appearance is the nearest: accent, connection color, default icons and the default view scale are working keys with no controls, all wireable through the existing setter. Properties and Automations are seated against features that do not exist yet — Automations especially, since settings cannot be designed before the thing they configure. Shortcuts has three bindings in code and no way to rebind them. The open question in front of the next piece is which of these earns a control next, and what the empty three are actually for.
 
 ### Immediate Work
 
-- [ ] None — the standing menu below is the field.
+- [ ] **Fill Appearance.** Accent and connection color need pickers and `ColorPicker` already exists; the placement knobs are two-value choices; the default view scale is a slider; default icons need the Icon Picker per kind. None of it needs new plumbing — every one writes through `setPersonalization`.
 
 ### Pending Focuses
 
@@ -21,10 +23,10 @@
 - [ ] **Auto-Linter:** A MarkdownPM, nexus-level-configurable auto-linter that could place its action button in the subfield, or an approved command combination.
 - [ ] **Per-tab Subfield `crumbDepth`**, if cross-tab tail memory is ever wanted. It resets on tab switch today (correct, no leak); a per-tab field would let each tab remember its own dimmed tail across switches — a feature, not a fix.
 - [ ] **MarkdownPM Footnotes:** Auto-ordered footnotes. 
-- [ ] **Settings UI:** Proper scaffolding of the configuration UI. 
 
 ### Important Information
 
+- **A personalization key has to take its readers with it.** A surface left reading the tree's copy of a setting sees a value that only refreshes on a disk round-trip, which presents as a settings row that doesn't work — the store slice is what updates live.
 - **The reachability razor cuts guards, never structure.** Before defending against a state, name who produces it — nobody means no guard. The recurring failure is over-applying it: an unreached code path is dead weight the razor says nothing about.
 - **A whole-surface drag handle steals its own children's clicks.** The drag engine captures the pointer on pointerdown, so any interactive descendant has to stop pointerdown — a container only on its own empty space, so the title still drags.
 - **A caret that doesn't appear belongs to `nativeCaret.ts`, never to the field.** The browser's own caret is hidden app-wide, and the drawn replacement is positioned by JS, so a working I-beam cursor beside a missing caret points at the overlay rather than at focus.
@@ -48,6 +50,10 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 
 ### Recent Work
 
+#### PM-107 || Settings' Scaffolding
+
+The Settings window gained the foundation settings accumulate into: one roster replacing the rail list and body map that were keyed by the same name, where a leaf declares its label, glyph, foot placement, and either named sections of rows or a surface of its own — never both, enforced at compile time. The rail seats General, Interface, Navigation, Appearance, Files & Links, Properties, Pages & Editor, Automations and Shortcuts, with Trash anchored below its separator; Appearance, Properties and Automations are seated and empty. Two settings joined the personalization block — `dateFormat`, the live fallback every date renders through unless its column names one, entering at `defaultStyleFor` where the `url` arm already reads a setting rather than a constant; and `timeFormat`, relocated out of the settings file's top level, which retired the tree's own copy once its readers moved to the store slice. Underneath, the shared floating window learned to carry a pane on either edge at once and to move its own edge outward by that pane's width when one opens, so a second pane never squeezes what the first left.
+
 #### PM-106 || The Property-Cascade Journal
 
 The schema cascades gained a crash record — the final piece of the abstract-plumbing arc. Every op that writes to both the registry and pages (property rename, global delete, option rename, option removal) states its intent in `.nexus/property-cascade.json` before the work and deletes it after; a record surviving a crash replays at the next open, forward-completing the interrupted sweep against current disk through the content index's key-holder query. The replay's one law: act only on the state the record exactly maps, identity-checked by id, and clear on every other — so a stale record can never merge two properties' values or strip a value the user re-set. Skips hold the record: a cascade that cannot read one holder keeps its journal and the next open finishes the job; a stranded record is never displaced or cleared by a later op. Clearing an option's values and the per-Collection Remove stay unjournaled on the same razor — their residue disagrees with nothing. 
@@ -67,10 +73,6 @@ The second half made a list menu something the operating system can draw. `Actio
 #### PM-103 || AutoLink & Table Fixes
 
 An address pasted into any editor surface can now become a link rather than literal text, in whichever of three forms a per-Nexus default names, and that default settled a vocabulary: `link-full`, `link-short` and `link-title` name the same three forms wherever a link reads — a URL property's Format, a view column's, or a link in a page body — replacing two older sets that disagreed about how many forms there were. The markdown-link grammar widened to CommonMark's balanced-parenthesis destination, Page Title writes the domain and swaps the fetched title in against an anchored range, and a link's right-click menu grew from Copy Link alone into Rename · Edit Link · Copy Link · Format ▸ with Remove Link and Delete below a separator. ⌘⇧V does the inverse of whatever ⌘V is set to do, while `Paste As` and `Insert Link` cover what a default cannot. A markdown table's resting cell — which is not an editor and draws its links as plain spans — carries the whole of a link's behavior now, through one decision about what a right-clicked link is offered.
-
-#### PM-102 || Interaction & Outline Work
-
-The Subfield breadcrumb stopped collapsing on the way back up, tracing the whole path to the deepest node visited on it and holding that tail across a click that switches to a tab already showing its target. The Page Outline dropdown became a working surface rather than a viewer: it holds open until Escape or a re-press, a right-click renames a heading inline, and a heading row drags to move its whole section. The editor's fold chevron picked up its own menu — Rename, Size, and a Delete that drops the heading line alone — riding the one shared hot-line list the grip menu already reads.
 
 ### Guidelines
 
