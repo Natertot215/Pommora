@@ -88,6 +88,7 @@ Constraints: `sandbox`/`contextIsolation` stay on; guests are validated at attac
 | ConfigurationPM.md | Files & Links has no link-opening knob; General has no Accounts | Knob task; Accounts task | 12 · 16 |
 | PagePreviewPM.md | The window's flavors (floating page, NavWindow) | The browser flavor | 14 |
 | PagePreviewPM.md §Hover Card | The card is "a compact, read-only view of the target page" | The website flavor | 18 |
+| **WeblinkPM.md (new)** | — | The feature's own doc in `.claude/Features/`: webpage embeds, the in-app browser, web sessions & Accounts, website hover previews. Seeded in Task 7's commit with the tile; each later phase extends it in its own commits; CLAUDE.md's codebase map gains its row at closeout. | 7 → 18 |
 | SymbolsPM.md | Registry contents | Back/forward + webpage glyphs | 14 |
 
 **Dead Vocabulary**
@@ -462,7 +463,7 @@ Tests: extend the embed-widget flow tests with webpage cases.
 - [ ] Neutral verifier (general-purpose): claim vs **the decision log** and the full commit range — "is this true?"
 - [ ] Then the attack pass (`build-breaking-agent`) against the shipped range — separate dispatch.
 - [ ] Nathan's walkthrough of every user-visible surface (the deferred-UIX convention): menu, tile lifecycle, engagement, grip, browser, knob, Accounts, hover previews.
-- [ ] Dead-vocabulary sweep against its control; Made False table audited row by row.
+- [ ] Dead-vocabulary sweep against its control; Made False table audited row by row; WeblinkPM.md complete and listed in CLAUDE.md's codebase map.
 - [ ] Lessons routed to `.claude/Guidelines`; History entry drafted per the History format; the spec's H-section build checks all carry recorded observations.
 
 ---
