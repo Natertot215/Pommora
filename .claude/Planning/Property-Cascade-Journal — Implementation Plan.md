@@ -128,10 +128,10 @@ One attack round (build-breaking-agent, against the plan at `e8c1735a`): 9 findi
 
 ### Progress
 
-- [ ] Task 1 — record module (+ sibling echo line)
-- [ ] Task 2 — rename + delete writers, create-side consumer
-- [ ] Task 3 — option-op writers + shared helpers
-- [ ] Phase 1 gate
+- [x] Task 1 — record module (+ sibling echo line)
+- [x] Task 2 — rename + delete writers, create-side consumer
+- [x] Task 3 — option-op writers + shared helpers
+- [x] Phase 1 gate
 - [ ] Task 4 — replay module
 - [ ] Task 5 — open wiring
 - [ ] Phase 2 gate (red-proof + attack review)
@@ -139,4 +139,4 @@ One attack round (build-breaking-agent, against the plan at `e8c1735a`): 9 findi
 
 ### Log
 
-*(base commits, deviations, rulings — filled at execution)*
+**Phase 1** — base `b453cfd9`. Gates: typecheck 0 · 2849 tests 0 · lint 0. Simplification ruling: inline pass only (the diff is ~120 lines across four files; every wiring re-read after Biome's reflow) — no agent warranted. **Deviation:** the option-rename pair's journal write is def-gated (`readRegistry` pre-check) rather than unconditional-before-`mutateRegistry` as Task 3 stated: the ops' contract is Result-never-throw, and an unconditional journal write on a nexus refusing the op for an unknown id was the wiring suite's own ENOENT counterexample. The gate loses nothing — a record for a nonexistent def is exactly what the replay's def-absent arm clears; `editProperty` (prior-gated) and the strip ops (post-`resolveForCascade`) already carried the same shape.

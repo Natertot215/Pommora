@@ -6,6 +6,7 @@
 import { rm } from 'node:fs/promises'
 import { ok, type Result } from '@shared/result'
 import { readJsonObject, writeJson } from '../io/atomicWrite'
+import { recordWrite } from '../io/writeEcho'
 import { nexusConfig } from '../paths'
 
 const JOURNAL_FILE = 'context-rename.json'
@@ -48,5 +49,7 @@ export async function readJournal(root: string): Promise<RenameJournal | null> {
 }
 
 export async function clearJournal(root: string): Promise<void> {
+  // The unlink is a `.nexus` event the watcher classifies full-refresh; echo it away.
+  recordWrite(journalPath(root))
   await rm(journalPath(root), { force: true })
 }
