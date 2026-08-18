@@ -10,6 +10,7 @@ import { createProperty } from './registryProperty'
 import { renameOption } from './optionOps'
 import { deleteProperty } from './deleteProperty'
 import { keyHolderFiles } from './keyHolders'
+import { sweepGovernedRoots } from './governedSweep'
 
 vi.mock('../io/atomicWrite', async (importOriginal) => {
   const mod = await importOriginal<typeof import('../io/atomicWrite')>()
@@ -75,6 +76,21 @@ describe('the property cascades open only the holders', () => {
     expect(openSpy).toHaveBeenCalledTimes(2)
     expect(await readFile(abs('Notes', 'HolderA.md'), 'utf8')).toContain('Sketch')
     expect(await readFile(abs('Loose', 'Note.md'), 'utf8')).toContain('Draft')
+  })
+
+  it('a nexus-wide governed sweep cannot reach an excluded folder (Requirement 9, total exclusion)', async () => {
+    await writeFile(abs('.nexus', 'settings.json'), JSON.stringify({ excluded_folders: ['Vault'] }))
+    await mkdir(abs('Vault'), { recursive: true })
+    const excludedPage = `---\nPageID: 01ARZ3NDEKTSV4RRFFQ69G5XYZ\n(Areas):\n  - Home\n---\n\nbody\n`
+    await writeFile(abs('Vault', 'Tagged.md'), excludedPage)
+    const swept = await sweepGovernedRoots(root, { kind: 'nexus' }, (raw) => {
+      if (!('(Areas)' in raw)) return null
+      const next = { ...raw }
+      delete next['(Areas)']
+      return { next }
+    })
+    expect(swept.touched).toEqual([])
+    expect(await readFile(abs('Vault', 'Tagged.md'), 'utf8')).toBe(excludedPage)
   })
 
   it('a delete snapshots and strips exactly the scoped holders — the un-governed note untouched', async () => {

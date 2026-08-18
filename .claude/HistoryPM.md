@@ -2,6 +2,7 @@
 
 | Date | ID | Entry |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 08-17-2026 | PM-105 | The Live Tree & The Content Index |
 | 08-16-2026 | PM-104 | Menu & Surface Consolidation |
 | 08-15-2026 | PM-103 | AutoLink & Table Fixes |
 | 08-14-2026 | PM-102 | Interaction & Outline Work |
@@ -107,6 +108,22 @@
 | 06-14-2026 → 06-15 | PM-002 | The Headless Data Layer |
 | 06-14-2026 | PM-001 | Genesis — The Walking Skeleton |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot |
+
+#### PM-105 || The Live Tree & The Content Index
+**DATE:** 08-17-2026
+
+Main now holds the nexus tree instead of re-deriving it: one walk at open builds it, every mutation and watcher event patches it in place, and the same `nexus:changed` push that always carried trees now carries the confirmation for every write channel. The full walk survives on purpose as the verification pass — open and ⌘R — and a live drift check proved a fully-patched tree byte-identical to a forced walk of the same disk. Alongside it, `nexus.db` gained the content index: which pages mention which titles, and which property keys and values each carries, so a rename or property sweep opens only the files it will actually change. A ~200-page acceptance nexus put numbers on the arc: a rename that once read every markdown file opened exactly its four mentioners, and a table cell edit — the hottest write in the app — costs zero walks and zero pushes.
+
+**The Live Tree:** The renderer's optimistic patch transforms moved to shared and were promoted to canon grade — node factories now state the walk's full key shape once (the walk adopts them too, so `stabilize` can prove parity by identity), and the space/context rename arms complete the child paths the old confirming reload used to heal. `liveTree.ts` owns the held tree behind a single-flight walk: concurrent refreshes share one walk, a mutation landing mid-walk discards the result and re-walks, a root switch discards outright, and a missing root drops the tree so reads report the error instead of a ghost nexus. `nexus:state` serves the held tree; open and reload are the deliberate walk points, and a reminted open re-walks so no session pins pre-remint ids.
+
+**The Watcher Spends Its Path:** Events classify instead of triggering a wholesale re-walk — a page edited, created, or deleted externally costs one file read through the walk's own readers, container and Space sidecar edits patch their nodes, settings and homepage edits patch their leaves, and anything unclassifiable (directories, registries, orderings, exclusion changes) falls back to the full refresh, self-healing by construction. A note outside the live tree entirely rides an index-only arm: its rows update with no tree change, no push, and no walk. Admission agrees with the walk by construction, proven by a must-agree fixture driven through both.
+
+**Writes Patch Instead Of Reload:** Every write channel confirms by patching the live tree and pushing once — field writes re-read the one file they changed through the walk's own readers, creates pin their position with one order re-read, the registry family re-reads `properties.json` and re-resolves the affected collections so disk-normalized values land in both of a def's homes reference-identically, and the rare transform-less ops degrade to a refresh rather than drift. The push lands before the invoke resolves, so the renderer's optimism became idempotent (inserts guard on presence) and captures precede their asks. With main confirming everything, the renderer's load-after-write died: the mutate path's closing reload, the view-save refetch machinery, and every write-confirm reload across the panes — the hottest walk triggers in the app — are gone.
+
+**The Content Index:** Three tables ride `CREATE … IF NOT EXISTS` with no version bump — the opener re-applies the schema to existing databases, guarded so read-only media costs only the new tables — and rows key by nexus-relative POSIX paths, so renaming the nexus invalidates nothing. The seed reads the whole corpus once per database ever, then stat-sweeps, pinned to the handle it started against and pruning only from its own pre-pass snapshot; queries answer null until the seed stamps the handle ready, and every null caller falls back to its scan. One enumeration — the cascade corpus minus `excluded_folders` — now defines what every pen can reach: excluded folders are unread, unindexed, and unrewritten everywhere, while un-adopted folders stay fully reachable. Every page-writing seam maintains rows in the same motion, proven by tests that compare maintained rows against a from-scratch reconcile after each seam fires. The rename cascade and the property sweeps query first and keep their per-file checks as the belt — a stale row costs one wasted read, never a wrong rewrite — with key-holder queries intersected against the governing Collections so the index answering nexus-wide never widens a deliberately scoped sweep. The old whole-corpus walks died with `allCollectionFolders`, and the reach instrumentation surfaced a latent writer bug on the way: a body-only rewrite of a frontmatter-less note had been inventing `null` frontmatter, fixed at the merge itself.
+
+- **Commits:** `eccb3876^..81ee1651`
+- **Diff:** Net +1075 | +1305 / −230 (code only; raw incl. tests +3110 / −375)
 
 #### PM-104 || Menu & Surface Consolidation
 **DATE:** 08-16-2026
