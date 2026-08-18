@@ -1,4 +1,4 @@
-import { EditorView } from '@codemirror/view'
+import type { EditorView } from '@codemirror/view'
 import { duration } from '@renderer/design-system/tokens/motion'
 import { SEEK_GLIDE, scrollGlide } from '@renderer/design-system/interactions/autoscroll'
 import { expandFoldsAt, headingOutline, sectionEnd } from '@renderer/MarkdownPM/editor/folding'
@@ -20,12 +20,18 @@ function headerZone(view: EditorView): number {
 // The reveal's own beat plus a frame, so the scroll measures the section at its opened height.
 const SETTLE_MS = Number.parseInt(duration.disclosure, 10) + 30
 
-/** The open page's live editor. Scoped to the detail pane and taken in document order, so an embedded
- *  tile's own editor — which nests inside this one — is never picked up instead, and the floating
- *  preview stays out of reach as its own surface. */
+// The open page's live editor — registered by the page surface at mount, so an embedded tile's
+// editor or the floating preview's can never be picked up instead.
+let pageView: EditorView | null = null
+
+/** The page surface's handle registration — PageView hands its editor's view in at mount and
+ *  null at teardown, through MarkdownEditor's `register` seam. */
+export function registerPageEditor(view: EditorView | null): void {
+  pageView = view
+}
+
 function pageEditorView(): EditorView | null {
-  const host = document.querySelector('.detail-page .cm-editor')
-  return host instanceof HTMLElement ? EditorView.findFromDOM(host) : null
+  return pageView
 }
 
 /** Travel the open page to `pos`, opening whatever was hiding it. The document and the caret are
