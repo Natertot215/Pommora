@@ -153,7 +153,7 @@ import type {
   TitleMenuAction,
 } from '@shared/identityMenus'
 import type { ViewButton, ViewStyle } from '@shared/types'
-import { VIEW_SCALE_DEFAULT, viewScaleZoom } from '@shared/types'
+import { coerceViewScale, VIEW_SCALE_DEFAULT, viewScaleZoom } from '@shared/types'
 import { installEditorContextMenu, setFormatState, setGripHot } from './editorMenu'
 import type { FormatState } from '@shared/editorMenu'
 import { isValidLink, normalizeLinkUrl } from '@shared/links'
@@ -1804,6 +1804,12 @@ serveBridge(
       fn: (win) => {
         if (win.isMaximized()) win.unmaximize()
         else win.maximize()
+      },
+    },
+    'win:viewScale': {
+      kind: 'window',
+      fn: (win, scale: number) => {
+        if (!win.isDestroyed()) win.webContents.setZoomFactor(viewScaleZoom(coerceViewScale(scale)))
       },
     },
 
