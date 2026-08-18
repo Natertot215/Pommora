@@ -37,9 +37,6 @@ describe('encodeFilter', () => {
     expect(encodeFilter('all', [])).toBeUndefined()
     expect(encodeFilter('any', [])).toBeUndefined()
   })
-
-  // `PaneMode` excludes 'none', so NOR has no encode path to test — the compiler rejects one. The
-  // decode side still has to handle a hand-authored NOR; those cases live in the decodeFilter block.
 })
 
 describe('decodeFilter', () => {

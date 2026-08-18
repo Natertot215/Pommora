@@ -12,6 +12,8 @@
 
 **The shipped shape:** `.nexus/property-cascade.json` — one id-keyed intent record, written before each dual-writer cascade (rename, delete, option-rename, option-remove), cleared on settle, replayed at open post-index-seed under one law: act only on the exactly-mapped state, clear on every other. The slot protects a stranded record from later ops; skips hold it; option-clear and `removeProperty` stay unjournaled because their residue disagrees with nothing. The crash-window suite proves heals byte-identical to uninterrupted ops (modulo `modified_at` on stamping ops), with a red-proof on the gates.
 
+**Three debt rulings then landed post-arc:** the `feel.tsx` animation context deleted (engines read `DEFAULT_FEEL` as a constant; `GLIDE_FEEL` rides the dashboard's prop path; the showcase lost its feel knobs with the context that fed them), the group-level NOR filter mode removed entirely (negation is the per-rule operators — Isn't, Doesn't Contain — and an unreadable on-disk filter now drops alone via `.catch` while its view survives), and `aliasPickerOnCommit` surfaced in Settings → Pages as "Automatically Suggest Existing Aliases When Linking A Page". A closeout pass folded `PaneMode` onto `MatchMode` and named the two surviving feel constants.
+
 #### Completion Criteria
 
 - [x] **PM-105 sealed** — simplifier folds verified personally, two defects fixed with regression tests, gates green, tree clean at `ab0f25ce`.

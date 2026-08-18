@@ -73,7 +73,7 @@ export interface FilterRule {
 }
 
 /** A group of filter rules combined by `match`: all = AND, any = OR — negation lives on the
- *  per-rule operators (Isn't, Doesn't Contain), never on the group. RECURSIVE: a child may
+ *  per-rule operators (Isn't, Doesn't Contain). RECURSIVE: a child may
  *  itself be a FilterGroup, expressing mixed AND/OR like `(A AND B) OR C`
  *  Whether the filter APPLIES is a separate axis —
  *  `SavedView.filter_enabled` — so turning it off never costs it its authored mode. */

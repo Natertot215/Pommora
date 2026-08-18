@@ -23,22 +23,22 @@ export interface FilterRow {
   rule: FilterRule
 }
 
-export type PaneMode = MatchMode
-
-export type DecodedFilter = { kind: 'rows'; mode: PaneMode; rows: FilterRow[] } | { kind: 'locked' }
+export type DecodedFilter =
+  | { kind: 'rows'; mode: MatchMode; rows: FilterRow[] }
+  | { kind: 'locked' }
 
 const isLeaf = (node: FilterRule | FilterGroup): node is FilterRule => !('rules' in node)
 const isAllOfLeaves = (node: FilterRule | FilterGroup): node is FilterGroup =>
   !isLeaf(node) && node.match === 'all' && node.rules.every(isLeaf)
 
 /** The encoder's structure rule and the pane's row seeding both read the default connector from here. */
-export const connectorFor = (mode: PaneMode): Connector => (mode === 'any' ? 'or' : 'and')
+export const connectorFor = (mode: MatchMode): Connector => (mode === 'any' ? 'or' : 'and')
 
 /** Rows → tree. Connectors derive the structure: the list splits into AND-runs at each 'or'; one run
  *  is a flat group in the base mode, several become of-runs (a one-rule run stays a bare leaf). A
  *  split under All becomes an `any` of `all`-runs — the OR-of-ANDs the connectors literally spell
  *  out; under Any the root already is `any`, so it holds. */
-export function encodeFilter(mode: PaneMode, rows: FilterRow[]): FilterGroup | undefined {
+export function encodeFilter(mode: MatchMode, rows: FilterRow[]): FilterGroup | undefined {
   if (rows.length === 0) return undefined
   const runs: FilterRule[][] = [[]]
   for (const row of rows) {
@@ -78,7 +78,7 @@ export function decodeFilter(filter: FilterGroup | undefined): DecodedFilter {
   }
   // A pure-leaf `any` is genuinely Any; one carrying an all-of-leaves run is a mixed tree, which the
   // pane shows as All with the Or as a deviation.
-  const mode: PaneMode = filter.rules.every(isLeaf) ? 'any' : 'all'
+  const mode: MatchMode = filter.rules.every(isLeaf) ? 'any' : 'all'
   return { kind: 'rows', mode, rows }
 }
 

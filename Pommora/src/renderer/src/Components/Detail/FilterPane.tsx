@@ -48,7 +48,7 @@ import { optionsOf } from './GroupingPane'
 import {
   type Connector,
   type DecodedFilter,
-  type PaneMode,
+  type MatchMode,
   type OperatorChoice,
   type FilterRow,
   decodeFilter,
@@ -60,10 +60,7 @@ import {
 import * as gp from './groupingPane.css'
 import * as fp from './filterPane.css'
 
-/** NOR isn't offered: it can't be reached from the row connectors either, so a `none` tree is
- *  hand-authoring only and decodes as locked rather than being shown as an All it would silently
- *  become. */
-const MATCH_OPTIONS: PickerChoice<PaneMode>[] = [
+const MATCH_OPTIONS: PickerChoice<MatchMode>[] = [
   { value: 'all', label: 'All' },
   { value: 'any', label: 'Any' },
 ]
@@ -480,7 +477,7 @@ export function FilterPane({
   const [justAdded, setJustAdded] = useState<number | null>(null)
   // A mode picked before any rule exists has nowhere to persist — an empty filter encodes to
   // `undefined` — so it's held here and applied by the write that mints the first rule.
-  const [pendingMode, setPendingMode] = useState<PaneMode | null>(null)
+  const [pendingMode, setPendingMode] = useState<MatchMode | null>(null)
 
   // Every write derives from the last view this pane WROTE, not from the render prop. A save
   // round-trips through a full tree reload, so two writes in one gesture — a value's blur-commit
@@ -502,11 +499,11 @@ export function FilterPane({
   const decoded: DecodedFilter = decodeFilter(liveView.filter)
   const enabled = liveView.filter_enabled !== false
   const rows: FilterRow[] = decoded.kind === 'rows' ? decoded.rows : []
-  const decodedMode: PaneMode = decoded.kind === 'rows' ? decoded.mode : 'all'
-  const mode: PaneMode = rows.length === 0 ? (pendingMode ?? decodedMode) : decodedMode
+  const decodedMode: MatchMode = decoded.kind === 'rows' ? decoded.mode : 'all'
+  const mode: MatchMode = rows.length === 0 ? (pendingMode ?? decodedMode) : decodedMode
 
   // Reads writtenRef at CALL time, never the render-time `liveView` — same reason as above.
-  const save = (nextMode: PaneMode, nextRows: FilterRow[]): void =>
+  const save = (nextMode: MatchMode, nextRows: FilterRow[]): void =>
     commit({ ...writtenRef.current, filter: encodeFilter(nextMode, nextRows) })
 
   /** Every mutation maps over writtenRef, never the render-time `rows` — same reason as above. */
@@ -526,7 +523,7 @@ export function FilterPane({
   const defById = new Map(schema.map((d) => [d.id, d]))
   const targetById = new Map(targets.map((t) => [t.id, t]))
 
-  const pickMatch = (pick: PaneMode): void => {
+  const pickMatch = (pick: MatchMode): void => {
     if (pick === mode) return
     const current = liveRows()
     if (current.length === 0) {

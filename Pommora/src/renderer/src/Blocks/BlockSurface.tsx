@@ -10,7 +10,7 @@ import {
   type ViewPick,
   type ViewPickerItem,
 } from '@shared/blocks'
-import { FEEL_PRESETS } from '@renderer/design-system/interactions/feel'
+import { GLIDE_FEEL } from '@renderer/design-system/interactions/feel'
 import type { ConnPage, ConnectionsApi } from '@renderer/MarkdownPM/connections'
 import {
   containersByPathOf,
@@ -437,7 +437,7 @@ export function BlockSurface({ host }: { host: BlockHostRef }): React.JSX.Elemen
         layout={layout}
         onLayoutChange={setLayout}
         renderTile={renderTile}
-        feel={FEEL_PRESETS.Glide}
+        feel={GLIDE_FEEL}
         tileClassName={tileClassName}
         isTileStatic={(id) => hostLocked || (entries.get(id)?.locked ?? false)}
         onHandleMenu={onHandleMenu}
