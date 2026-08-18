@@ -1675,6 +1675,9 @@ export const useSession = create<SessionState>((set, get) => {
       const target = get().renamingProperty
       set({ renamingProperty: null })
       if (!target) return false
+      // Captured BEFORE the ask: main's confirming push can rename the registry in this
+      // store before the reply's continuation runs.
+      const before = get().tree?.registry.find((d) => d.id === target.propertyId)?.name
       const res = await window.nexus.schema.rename(
         target.collectionPath,
         target.propertyId,
@@ -1684,7 +1687,6 @@ export const useSession = create<SessionState>((set, get) => {
         await window.nexus.showError(res.error.message)
         return false
       }
-      const before = get().tree?.registry.find((d) => d.id === target.propertyId)?.name
       const after = normalizePropertyName(newName)
       if (before !== undefined && before !== after)
         get().bumpValuesEpoch(wrapKey('property', before), wrapKey('property', after))

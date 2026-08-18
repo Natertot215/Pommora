@@ -432,23 +432,21 @@ function pushConfirmed(tree: NexusTree | null): void {
   if (tree && mainWindow && !mainWindow.isDestroyed()) push(mainWindow, 'nexus:changed', tree)
 }
 
+/** Run one channel's confirmer against the session root and push what it moved. */
+async function confirmWrite(work: (root: string) => Promise<NexusTree | null>): Promise<void> {
+  const root = sessionRoot()
+  if (root !== null) pushConfirmed(await work(root))
+}
+
 async function confirmContainerWrite(containerPath: unknown): Promise<void> {
-  const root = sessionRoot()
-  if (root === null || typeof containerPath !== 'string') return
-  pushConfirmed(await confirmBy(root, () => patchContainerFromDisk(root, containerPath)))
+  if (typeof containerPath !== 'string') return
+  await confirmWrite((root) => confirmBy(root, () => patchContainerFromDisk(root, containerPath)))
 }
 
-async function confirmRegistryWrite(): Promise<void> {
-  const root = sessionRoot()
-  if (root === null) return
-  pushConfirmed(await confirmRegistry(root))
-}
+const confirmRegistryWrite = (): Promise<void> => confirmWrite(confirmRegistry)
 
-async function confirmSettingsWrite(): Promise<void> {
-  const root = sessionRoot()
-  if (root === null) return
-  pushConfirmed(await confirmBy(root, () => patchSettingsFromDisk(root)))
-}
+const confirmSettingsWrite = (): Promise<void> =>
+  confirmWrite((root) => confirmBy(root, () => patchSettingsFromDisk(root)))
 
 async function resolveViewContainer(
   containerPath: unknown,
@@ -1408,8 +1406,7 @@ serveBridge(
       kind: 'raw',
       fn: async (req: MutateRequest) => {
         const reply = await handleMutate(req, await mutateDeps())
-        const root = sessionRoot()
-        if (reply.ok && root !== null) pushConfirmed(await confirmMutation(root, req, reply.value))
+        if (reply.ok) await confirmWrite((root) => confirmMutation(root, req, reply.value))
         return reply
       },
     },
@@ -1420,14 +1417,11 @@ serveBridge(
       kind: 'window',
       fn: async (win: BrowserWindow | null, target: ContextTarget): Promise<void> => {
         if (!win) return
-        await showContextMenu(win, target, await mutateDeps(), (req, reply) => {
+        await showContextMenu(win, target, await mutateDeps(), async (req, reply) => {
           // The menu outlives its IPC handler, so this confirm fires after the mutation
           // finished — the same patch-and-push every renderer-driven mutation gets.
-          void (async () => {
-            const root = sessionRoot()
-            if (root !== null) pushConfirmed(await confirmMutation(root, req, reply))
-            push(win, 'menu:action', 'reload-state')
-          })()
+          await confirmWrite((root) => confirmMutation(root, req, reply))
+          push(win, 'menu:action', 'reload-state')
         })
       },
     },

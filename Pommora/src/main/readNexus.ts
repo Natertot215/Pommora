@@ -225,6 +225,14 @@ export function readHomepageLeaves(config: Json): NexusTree['homepage'] {
   }
 }
 
+/** `state.json`'s per-Context Space-order blob — one decode for the walk and the order patch,
+ *  so the two cannot derive different trees from the same bytes. */
+export function readSpaceOrders(state: Json): Json {
+  return state.space_orders != null && typeof state.space_orders === 'object'
+    ? (state.space_orders as Json)
+    : {}
+}
+
 /** Resolve an entity root's parenthesized keys against the live Context groups — the walk's
  *  assembly pass shaped for one node, for callers patching outside a walk. Undefined = no
  *  registered links (the key stays absent; no empties). */
@@ -580,10 +588,7 @@ async function walkNexus(root: string): Promise<NexusTree> {
   // reads the legacy area/topic/project dirs itself.
   const ctxParsed = ctxRegistryRaw ? contextsRegistrySchema.safeParse(ctxRegistryRaw) : null
   const ctxRegistry = ctxParsed?.success ? ctxParsed.data : null
-  const spaceOrders =
-    state.space_orders != null && typeof state.space_orders === 'object'
-      ? (state.space_orders as Json)
-      : {}
+  const spaceOrders = readSpaceOrders(state)
   const unreadable: string[] = []
   // An unusable registry blanks the whole Contexts layer for the session — every group and
   // Space leaves the walk at once. Absent is real raw mode and stays silent; present names

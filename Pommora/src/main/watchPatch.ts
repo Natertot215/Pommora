@@ -20,6 +20,7 @@ import {
   readHomepageLeaves,
   readPageRecord,
   readSettingsLeaves,
+  readSpaceOrders,
   resolveAssignedSchema,
   resolveEntityContexts,
 } from './readNexus'
@@ -271,11 +272,11 @@ export async function patchContainerFromDisk(
   root: string,
   dirRel: string,
 ): Promise<'ok' | 'refresh'> {
-  const tree0 = getLiveTree()
-  if (!tree0) return 'refresh'
-  const holder = findContainer(tree0, dirRel)
-  if (!holder) return 'refresh'
-  const meta = await readJsonObject(join(root, ...dirRel.split('/'), SIDECAR_FILENAME[holder.kind]))
+  // This read only picks WHICH sidecar to open; the post-await read below is the authoritative one.
+  const held = getLiveTree()
+  const kind = held && findContainer(held, dirRel)?.kind
+  if (!kind) return 'refresh'
+  const meta = await readJsonObject(join(root, ...dirRel.split('/'), SIDECAR_FILENAME[kind]))
   // Absent or unparseable: the walk's unreadable-list bookkeeping owns that state.
   if (meta === null) return 'refresh'
   const tree = getLiveTree()
@@ -391,12 +392,7 @@ export async function patchSpaceOrderFromDisk(
   contextId: string,
 ): Promise<'ok' | 'refresh'> {
   const state = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.state))) ?? {}
-  const orders =
-    state.space_orders != null &&
-    typeof state.space_orders === 'object' &&
-    !Array.isArray(state.space_orders)
-      ? (state.space_orders as Record<string, unknown>)
-      : {}
+  const orders = readSpaceOrders(state)
   return applyPatch(root, (t) => ({
     ...t,
     contexts: t.contexts.map((g) =>

@@ -4,7 +4,7 @@
 // walk's own readers) — and the caller pushes when the tree object moved. A write with no
 // patch degrades to one verification walk, never to a silently stale tree.
 
-import type { MutateRequest } from '@shared/mutate'
+import type { BannerOwnerKind, MutableKind, MutateRequest } from '@shared/mutate'
 import type { NexusTree } from '@shared/types'
 import {
   insertCreatedInTree,
@@ -16,8 +16,9 @@ import {
   reorderPagesInTree,
   reorderTopInTree,
 } from '@shared/treePatch'
+import { isAdoptedId } from './ids'
 import { orderedDefs, readRegistry } from './io/propertiesRegistry'
-import { getLiveTree, refreshTree } from './liveTree'
+import { dropLiveTree, getLiveTree, refreshTree } from './liveTree'
 import {
   applyPatch,
   patchContainerFromDisk,
@@ -55,12 +56,16 @@ export function patchForMutation(
       return reply.created ? insertCreatedInTree(tree, req, reply.created) : null
     case 'movePage': {
       const moved = relocateNodeInTree(tree, req.path, req.newParentPath)
+      // A null relocate means "already in that parent" only when it IS that parent — an
+      // unresolved node must walk, never commit an order-only patch that lies about the move.
+      if (!moved && parentOfPath(req.path) !== req.newParentPath) return null
       return req.order
         ? (reorderPagesInTree(moved ?? tree, req.newParentPath, req.order) ?? moved)
         : moved
     }
     case 'moveSet': {
       const moved = relocateNodeInTree(tree, req.path, req.newParentPath)
+      if (!moved && parentOfPath(req.path) !== req.newParentPath) return null
       return reorderChildrenInTree(moved ?? tree, req.newParentPath, req.order) ?? moved
     }
     case 'rename':
@@ -85,6 +90,31 @@ export function patchForMutation(
 
 const isSpacePath = (path: string): boolean => path.startsWith(`${CONTEXTS_DIR_REL}/`)
 
+const parentOfPath = (path: string): string => {
+  const i = path.lastIndexOf('/')
+  return i === -1 ? '' : path.slice(0, i)
+}
+
+/** Which disk-confirmer owns an entity kind — one statement, shared by every field write that
+ *  names its target by kind. Null = the kind is not one of the walk's per-entity files. */
+function patchEntityFromDisk(
+  root: string,
+  kind: MutableKind | BannerOwnerKind,
+  path: string,
+): Promise<'ok' | 'refresh'> | null {
+  switch (kind) {
+    case 'page':
+      return patchPageFromDisk(root, path)
+    case 'collection':
+    case 'set':
+      return patchContainerFromDisk(root, path)
+    case 'space':
+      return patchSpaceFromDisk(root, path)
+    default:
+      return null
+  }
+}
+
 /** Route one confirmed mutation to its patch. `'ok'` means the live tree already reflects the
  *  write; `'refresh'` means the caller owes one verification walk. */
 async function routeMutation(
@@ -92,31 +122,21 @@ async function routeMutation(
   req: MutateRequest,
   reply: MutateOutcome,
 ): Promise<'ok' | 'refresh'> {
+  // Deleting a Space (or a Context group) unlinks its value from every member's frontmatter —
+  // a cascade across nodes the remove transform never touches; only the walk re-derives their
+  // contextValues.
+  if (req.op === 'delete' && (req.kind === 'space' || req.kind === 'context')) return 'refresh'
   switch (req.op) {
     // Field writes land through the writer's own normalization — confirm by re-reading the
     // one file that changed, with the walk's readers.
     case 'setIcon':
-      if (req.kind === 'page') return patchPageFromDisk(root, req.path)
-      if (req.kind === 'collection' || req.kind === 'set')
-        return patchContainerFromDisk(root, req.path)
-      if (req.kind === 'space') return patchSpaceFromDisk(root, req.path)
-      return 'refresh' // a Context's icon lives in its registry — a structural walk input
+      // A Context's icon lives in its registry — a structural walk input.
+      return patchEntityFromDisk(root, req.kind, req.path) ?? 'refresh'
     case 'setBanner':
     case 'setHeadingIconHidden':
-      switch (req.kind) {
-        case 'homepage':
-          return patchHomepageFromDisk(root)
-        case 'navview':
-          return 'ok' // navigation.json is a file the walk never reads
-        case 'page':
-          return patchPageFromDisk(root, req.path)
-        case 'collection':
-        case 'set':
-          return patchContainerFromDisk(root, req.path)
-        case 'space':
-          return patchSpaceFromDisk(root, req.path)
-      }
-      return 'refresh'
+      if (req.kind === 'homepage') return patchHomepageFromDisk(root)
+      if (req.kind === 'navview') return 'ok' // navigation.json is a file the walk never reads
+      return patchEntityFromDisk(root, req.kind, req.path) ?? 'refresh'
     case 'setContext':
       return isSpacePath(req.path)
         ? patchSpaceFromDisk(root, req.path)
@@ -139,10 +159,15 @@ async function routeMutation(
       switch (req.op) {
         case 'createPage':
           return req.order ? 'ok' : patchContainerFromDisk(root, req.parentPath)
-        case 'createContainer':
+        case 'createContainer': {
+          // The creation seeded the NEW sidecar (a default view) — read it in, then pin the
+          // parent's order.
+          const own = reply.created ? await patchContainerFromDisk(root, reply.created.path) : 'ok'
+          if (own === 'refresh') return 'refresh'
           return req.parentPath === ''
             ? patchTopOrderFromDisk(root)
             : patchContainerFromDisk(root, req.parentPath)
+        }
         case 'createSpace':
           return patchSpaceOrderFromDisk(root, req.contextId)
         default:
@@ -172,7 +197,11 @@ async function routeRegistry(root: string): Promise<'ok' | 'refresh'> {
   const registry = await readRegistry(root)
   if (applyPatch(root, (t) => ({ ...t, registry: orderedDefs(registry) })) === 'refresh')
     return 'refresh'
-  for (const c of getLiveTree()?.collections ?? []) {
+  const tree = getLiveTree()
+  // A raw nexus's walk never opens container sidecars, so there are no embedded defs to
+  // re-point — the same gate the watcher's classifier applies.
+  if (!tree || isAdoptedId(tree.nexus.id)) return 'ok'
+  for (const c of tree.collections) {
     if ((await patchContainerFromDisk(root, c.path)) === 'refresh') return 'refresh'
   }
   return 'ok'
@@ -189,7 +218,10 @@ export async function confirmBy(
     try {
       await refreshTree(root)
     } catch {
-      // As above.
+      // The write landed but the verification walk failed — the held tree predates the write
+      // and must not keep serving as canon. Dropped, every later read walks (and surfaces the
+      // failure honestly if the walk keeps failing).
+      dropLiveTree()
     }
   }
   const now = getLiveTree()
