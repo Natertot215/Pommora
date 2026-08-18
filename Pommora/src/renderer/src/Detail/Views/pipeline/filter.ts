@@ -1,12 +1,12 @@
 // Type-aware view filter. A per-rule, per-type operator matrix with
 // nested groups (a rule child may itself be a FilterGroup, expressing mixed AND/OR like
 // `(A AND B) OR C`), title + context + any-depth location matrices, and multi-operand `values[]`
-// chip ops. `op` raw strings are snake_case (on-disk parity). Match modes are all = AND, any = OR,
-// none = NOR at every depth.
+// chip ops. `op` raw strings are snake_case (on-disk parity). Match modes are all = AND and
+// any = OR at every depth; negation lives on the per-rule operators, never on the group.
 //
 // A rule that CANNOT be applied — unknown op, dead property or set, an operand not yet supplied —
 // abstains rather than voting, so a filter never excludes on what it can't apply. That has to be a
-// third verdict, not a `true`: under NOR a pass would read as a match and blank the whole view.
+// third verdict, not a `true`: a pass would hand the parent group a vote it never earned.
 // Pure: no fs, no React.
 
 import type { FilterGroup, FilterRule } from '@shared/views'
@@ -108,10 +108,9 @@ function matchesGroup(
 ): Verdict {
   // A GROUP abstains too, and must — returning `true` here would hand the parent a vote its own
   // NO_OP filter can't strip, so a fully-unauthored `(A and B)` inside `(A and B) or C` would read
-  // as a match and suppress C's filtering entirely. Under `none` it blanks the view instead.
+  // as a match and suppress C's filtering entirely.
   if (group.rules.length === 0) return NO_OP
-  // Only rules that can actually be applied get a vote. A no-op verdict must never read as a MATCH:
-  // under `none` that would invert the guarantee and exclude every row on a half-authored rule.
+  // Only rules that can actually be applied get a vote — a no-op verdict never reads as a MATCH.
   const votes = group.rules
     .map((node) =>
       isGroup(node)
@@ -125,8 +124,6 @@ function matchesGroup(
       return votes.every(Boolean)
     case 'any':
       return votes.some(Boolean)
-    case 'none':
-      return !votes.some(Boolean)
   }
 }
 

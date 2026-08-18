@@ -149,11 +149,11 @@ describe('applyFilter — a blank value answers no positive comparison', () => {
     ).toEqual([])
   })
 
-  it('none-mode keeps the blank row instead of blanking the table', () => {
+  it('the negated op keeps the blank row — a row holding nothing cannot contain the value', () => {
     expect(
       ids(rows, {
-        match: 'none',
-        rules: [{ property_id: 'prop_url', op: 'contains', value: 'example' }],
+        match: 'all',
+        rules: [{ property_id: 'prop_url', op: 'does_not_contain', value: 'example' }],
       }),
     ).toEqual(['none'])
   })
@@ -358,56 +358,25 @@ describe('applyFilter — no-op passes', () => {
   })
 })
 
-describe('applyFilter — none + registry', () => {
+describe('applyFilter — negation + registry', () => {
   const rows = [row('r1', { props: { prop_sel: 'a' } }), row('r2', { props: { prop_sel: 'b' } })]
 
-  it('a root none keeps only the rows NO rule matches', () => {
+  it("per-rule negation carries what group NOR used to — Isn't keeps the non-matchers", () => {
     expect(
-      ids(rows, { match: 'none', rules: [{ property_id: 'prop_sel', op: 'is', value: 'a' }] }),
+      ids(rows, { match: 'all', rules: [{ property_id: 'prop_sel', op: 'is_not', value: 'a' }] }),
     ).toEqual(['r2'])
-  })
-
-  it('none is NOR at every depth, not a root-only special case', () => {
-    expect(
-      ids(rows, {
-        match: 'all',
-        rules: [{ match: 'none', rules: [{ property_id: 'prop_sel', op: 'is', value: 'a' }] }],
-      }),
-    ).toEqual(['r2'])
-  })
-
-  it('an empty none group still passes — a half-authored row never blanks the table', () => {
-    expect(ids(rows, { match: 'none', rules: [] })).toEqual(['r1', 'r2'])
-  })
-
-  // A no-op verdict must ABSTAIN, never count as a match: under NOR a "pass" would exclude every
-  // row, so the guarantee that a filter never excludes on what it can't apply would invert.
-  it('an operandless rule under none abstains rather than blanking the view', () => {
-    expect(ids(rows, { match: 'none', rules: [{ property_id: 'prop_sel', op: 'is' }] })).toEqual([
-      'r1',
-      'r2',
-    ])
-  })
-
-  it('an unknown op and an absent property both abstain under none', () => {
-    expect(
-      ids(rows, { match: 'none', rules: [{ property_id: 'prop_sel', op: 'not_a_real_op' }] }),
-    ).toEqual(['r1', 'r2'])
-    expect(
-      ids(rows, { match: 'none', rules: [{ property_id: 'prop_gone', op: 'is', value: 'a' }] }),
-    ).toEqual(['r1', 'r2'])
   })
 
   it('an abstaining rule beside a real one leaves the real one deciding', () => {
     expect(
       ids(rows, {
-        match: 'none',
+        match: 'all',
         rules: [
           { property_id: 'prop_sel', op: 'is' },
           { property_id: 'prop_sel', op: 'is', value: 'a' },
         ],
       }),
-    ).toEqual(['r2'])
+    ).toEqual(['r1'])
   })
 
   it('registers every new op raw string', () => {

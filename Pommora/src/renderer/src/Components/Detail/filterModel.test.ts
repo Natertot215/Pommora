@@ -89,28 +89,6 @@ describe('decodeFilter', () => {
     ).toBe('locked')
   })
 
-  // NOR is hand-authoring only — the pane offers All and Any. Every `none` shape locks, WHATEVER its
-  // nesting: shown as rows it would read "All" (the Matches control falls back to its first option)
-  // and one toggle would invert the filter. Locked keeps the file intact behind an explicit Reset.
-  it('locks a flat none — the shape is legible but the mode is not authorable', () => {
-    expect(decodeFilter({ match: 'none', rules: [r('a'), r('b')] })).toEqual({ kind: 'locked' })
-  })
-
-  it('locks a none over of-runs', () => {
-    expect(
-      decodeFilter({ match: 'none', rules: [r('a'), { match: 'all', rules: [r('b')] }] }),
-    ).toEqual({ kind: 'locked' })
-  })
-
-  it('locks a none whose children nest deeper than one run', () => {
-    expect(
-      decodeFilter({
-        match: 'none',
-        rules: [{ match: 'any', rules: [r('a'), r('b')] }],
-      }).kind,
-    ).toBe('locked')
-  })
-
   it('undefined → empty rows in the all mode', () => {
     expect(decodeFilter(undefined)).toEqual({ kind: 'rows', mode: 'all', rows: [] })
   })
