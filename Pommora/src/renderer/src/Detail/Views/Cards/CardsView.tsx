@@ -52,7 +52,7 @@ import {
   useClearStrandedGhost,
   useGhostAnchor,
 } from '../useGhostAnchor'
-import { useFeel } from '@renderer/design-system/interactions/feel'
+import { DEFAULT_FEEL } from '@renderer/design-system/interactions/feel'
 import { useViewCreation } from '../useViewCreation'
 import { declaredType } from '../pipeline/value'
 import { resolveView } from '../pipeline/resolveView'
@@ -509,7 +509,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   // old seat (FLIP, deltas in local px — the grid lives under a CSS zoom). The layout read is
   // dwell-gated, never per-pointer-move; a create skips the exit animation outright, since the
   // real card takes the ghost's seat frames later.
-  const feel = useFeel()
+  const feel = DEFAULT_FEEL
   const anyNaming = useSession((s) => s.renamingPath !== null)
   const flipPrev = useRef<Map<Element, DOMRect> | null>(null)
   const ghostLiveId =
