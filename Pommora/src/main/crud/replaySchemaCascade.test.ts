@@ -6,6 +6,7 @@ import { describe, it, expect, afterEach } from 'vitest'
 import { chmod, mkdtemp, mkdir, readFile, realpath, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import type { PropertyDefinition } from '@shared/properties'
 import { closeSession, openSession } from '../session'
 import { closeSessionDb, openSessionDb } from '../sessionDb'
 import { dropLiveTree } from '../liveTree'
@@ -48,7 +49,7 @@ async function seedNexus(): Promise<string> {
       { value: 'Draft', label: 'Draft' },
       { value: 'Done', label: 'Done' },
     ],
-  } as Parameters<typeof createProperty>[1])
+  } as PropertyDefinition)
   await writeFile(
     join(root, 'Col', '_pagecollection.json'),
     JSON.stringify({ id: 'c1', properties: ['prop_s'] }),

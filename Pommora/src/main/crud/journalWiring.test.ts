@@ -6,6 +6,7 @@ import { existsSync } from 'node:fs'
 import { mkdtemp, mkdir, readFile, realpath, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import type { PropertyDefinition } from '@shared/properties'
 import { atomicWriteFile, rewritePageSerialized, writeJson } from '../io/atomicWrite'
 import { closeSession, openSession } from '../session'
 import { dropLiveTree } from '../liveTree'
@@ -136,7 +137,7 @@ describe('the option-op writers', () => {
         { value: 'Draft', label: 'Draft' },
         { value: 'Done', label: 'Done' },
       ],
-    } as Parameters<typeof createProperty>[1])
+    } as PropertyDefinition)
     await writeFile(
       abs('Col', '_pagecollection.json'),
       JSON.stringify({ id: 'c1', properties: ['prop_s', 'prop_t'] }),
@@ -231,7 +232,8 @@ describe('the create-side consumer', () => {
 
 describe('the slot protects a stranded record', () => {
   it('an unrelated op neither displaces nor clears a held heal', async () => {
-    await withStranded()
+    // A rename record stranded by a prior faulted session, unrelated to any live op.
+    await writeSchemaJournal(root, { op: 'rename', id: 'prop_x', from: 'Old', to: 'New' })
     const r = await deleteProperty(root, 'prop_s')
     expect(r.ok).toBe(true)
     expect(await readSchemaJournal(root)).toEqual({
@@ -242,8 +244,3 @@ describe('the slot protects a stranded record', () => {
     })
   })
 })
-
-/** A rename record stranded by a prior faulted session, unrelated to any live op. */
-async function withStranded(): Promise<void> {
-  await writeSchemaJournal(root, { op: 'rename', id: 'prop_x', from: 'Old', to: 'New' })
-}
