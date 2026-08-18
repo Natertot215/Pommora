@@ -35,10 +35,10 @@ export interface WatchEvent {
 }
 
 export type WatchClass =
-  | { kind: 'page-upsert'; rel: string; abs: string }
+  | { kind: 'page-upsert'; rel: string }
   | { kind: 'page-remove'; rel: string }
-  | { kind: 'container-meta'; dirRel: string; abs: string }
-  | { kind: 'space-meta'; dirRel: string; abs: string }
+  | { kind: 'container-meta'; dirRel: string }
+  | { kind: 'space-meta'; dirRel: string }
   | { kind: 'settings-leaf' }
   | { kind: 'homepage-leaf' }
   | { kind: 'index-only'; rel: string }
@@ -118,7 +118,7 @@ export function classifyEvent(
       (ev.event === 'add' || ev.event === 'change')
     ) {
       const dirRel = segs.slice(0, 4).join('/')
-      if (findSpace(tree, dirRel)) return { kind: 'space-meta', dirRel, abs: ev.absPath }
+      if (findSpace(tree, dirRel)) return { kind: 'space-meta', dirRel }
     }
     return { kind: 'full-refresh' }
   }
@@ -126,9 +126,7 @@ export function classifyEvent(
   if (isContentName(name)) {
     const dirRel = parentOf(rel)
     if (dirRel !== '' && findContainer(tree, dirRel)) {
-      return ev.event === 'unlink'
-        ? { kind: 'page-remove', rel }
-        : { kind: 'page-upsert', rel, abs: ev.absPath }
+      return ev.event === 'unlink' ? { kind: 'page-remove', rel } : { kind: 'page-upsert', rel }
     }
     // In the cascade corpus but outside the live tree — an un-adopted folder's note.
     return { kind: 'index-only', rel }
@@ -145,7 +143,7 @@ export function classifyEvent(
     // Only the kind-matching sidecar feeds the walk; a stray wrong-kind file is not this
     // container's meta and takes the default arm.
     if (container && name === SIDECAR_FILENAME[container.kind]) {
-      return { kind: 'container-meta', dirRel, abs: ev.absPath }
+      return { kind: 'container-meta', dirRel }
     }
   }
   return { kind: 'full-refresh' }
@@ -169,9 +167,12 @@ export async function applyWatchEvents(
 }
 
 /** Null from the transform means the patch could not land — degrade to the walk, never drift.
- *  The root pin closes a settle that outlived its session: a switch mid-apply installs the NEW
- *  nexus's tree, and an old-root event must never patch into it. */
-const applyPatch = (root: string, fn: (t: NexusTree) => NexusTree | null): 'ok' | 'refresh' => {
+ *  The root pin closes a confirm that outlived its session: a switch mid-apply installs the
+ *  NEW nexus's tree, and an old-root write must never patch into it. */
+export const applyPatch = (
+  root: string,
+  fn: (t: NexusTree) => NexusTree | null,
+): 'ok' | 'refresh' => {
   if (getLiveTree()?.nexus.rootPath !== root) return 'refresh'
   return patchLiveTree(fn) === null ? 'refresh' : 'ok'
 }
@@ -196,15 +197,15 @@ async function applyOne(
     case 'page-remove':
       return removePage(root, c.rel)
     case 'page-upsert':
-      return applyPageUpsert(root, c.rel, c.abs)
+      return patchPageFromDisk(root, c.rel)
     case 'container-meta':
-      return applyContainerMeta(root, c.dirRel, c.abs)
+      return patchContainerFromDisk(root, c.dirRel)
     case 'space-meta':
-      return applySpaceMeta(root, c.dirRel, c.abs)
+      return patchSpaceFromDisk(root, c.dirRel)
     case 'settings-leaf':
       return applySettingsLeaf(root, watchedExcluded)
     case 'homepage-leaf':
-      return applyHomepageLeaf(root)
+      return patchHomepageFromDisk(root)
     case 'full-refresh':
       return 'refresh'
   }
@@ -213,7 +214,11 @@ async function applyOne(
 const sidecarMode = (tree: NexusTree): boolean => !isAdoptedId(tree.nexus.id)
 const orderFallback = (tree: NexusTree): 'id' | 'title' => (sidecarMode(tree) ? 'id' : 'title')
 
-async function applyPageUpsert(root: string, rel: string, abs: string): Promise<'ok' | 'refresh'> {
+/** Re-read one page file and patch its node in — the shared confirmer for an external page
+ *  event AND an in-app write that touched the page's frontmatter. Exact by construction: the
+ *  node is rebuilt by the walk's own reader. */
+export async function patchPageFromDisk(root: string, rel: string): Promise<'ok' | 'refresh'> {
+  const abs = join(root, ...rel.split('/'))
   let record: Awaited<ReturnType<typeof readPageRecord>>
   try {
     record = await readPageRecord(abs, rel)
@@ -259,12 +264,18 @@ async function applyPageUpsert(root: string, rel: string, abs: string): Promise<
   )
 }
 
-async function applyContainerMeta(
+/** Re-read a container's kind-matching sidecar and rebuild its node (children kept, fields
+ *  and orders re-derived) — the shared confirmer for sidecar edits, view saves, and container
+ *  configuration. */
+export async function patchContainerFromDisk(
   root: string,
   dirRel: string,
-  abs: string,
 ): Promise<'ok' | 'refresh'> {
-  const meta = await readJsonObject(abs)
+  const tree0 = getLiveTree()
+  if (!tree0) return 'refresh'
+  const holder = findContainer(tree0, dirRel)
+  if (!holder) return 'refresh'
+  const meta = await readJsonObject(join(root, ...dirRel.split('/'), SIDECAR_FILENAME[holder.kind]))
   // Absent or unparseable: the walk's unreadable-list bookkeeping owns that state.
   if (meta === null) return 'refresh'
   const tree = getLiveTree()
@@ -301,12 +312,9 @@ async function applyContainerMeta(
   return replaceNode(root, dirRel, next)
 }
 
-async function applySpaceMeta(
-  root: string,
-  dirRel: string,
-  abs: string,
-): Promise<'ok' | 'refresh'> {
-  const sc = await readJsonObject(abs)
+/** Re-read a Space's sidecar and rebuild its node — the shared confirmer for its edits. */
+export async function patchSpaceFromDisk(root: string, dirRel: string): Promise<'ok' | 'refresh'> {
+  const sc = await readJsonObject(join(root, ...dirRel.split('/'), SPACE_SIDECAR))
   if (sc === null) return 'refresh'
   const tree = getLiveTree()
   if (!tree) return 'refresh'
@@ -334,12 +342,19 @@ async function applySettingsLeaf(
   watchedExcluded: string[],
 ): Promise<'ok' | 'refresh'> {
   const settings = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings))) ?? {}
-  const leaves = readSettingsLeaves(settings)
   // An exclusion change moves what the walk and watcher can even see — structural, not a leaf.
+  const excluded = readSettingsLeaves(settings).excluded
   const same =
-    leaves.excluded.length === watchedExcluded.length &&
-    leaves.excluded.every((v, i) => v === watchedExcluded[i])
+    excluded.length === watchedExcluded.length && excluded.every((v, i) => v === watchedExcluded[i])
   if (!same) return 'refresh'
+  return patchSettingsFromDisk(root)
+}
+
+/** Re-read `settings.json` and patch every leaf it feeds — the shared confirmer for the
+ *  personalization and profile writes as well as external settings edits. */
+export async function patchSettingsFromDisk(root: string): Promise<'ok' | 'refresh'> {
+  const settings = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings))) ?? {}
+  const leaves = readSettingsLeaves(settings)
   return applyPatch(root, (t) => ({
     ...t,
     labels: leaves.labels,
@@ -356,7 +371,48 @@ async function applySettingsLeaf(
   }))
 }
 
-async function applyHomepageLeaf(root: string): Promise<'ok' | 'refresh'> {
+/** Re-read `state.json` and re-derive the top-level Collection order — the confirmer for a
+ *  top-level create, whose transform appended what the order file now places. */
+export async function patchTopOrderFromDisk(root: string): Promise<'ok' | 'refresh'> {
+  const state = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.state))) ?? {}
+  return applyPatch(root, (t) => ({
+    ...t,
+    collections: resolveOrder(
+      t.collections,
+      asStringArray(state.collection_order),
+      orderFallback(t),
+    ),
+  }))
+}
+
+/** Re-read `state.json`'s `space_orders` for one Context and re-derive its Space order. */
+export async function patchSpaceOrderFromDisk(
+  root: string,
+  contextId: string,
+): Promise<'ok' | 'refresh'> {
+  const state = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.state))) ?? {}
+  const orders =
+    state.space_orders != null &&
+    typeof state.space_orders === 'object' &&
+    !Array.isArray(state.space_orders)
+      ? (state.space_orders as Record<string, unknown>)
+      : {}
+  return applyPatch(root, (t) => ({
+    ...t,
+    contexts: t.contexts.map((g) =>
+      g.def.id === contextId
+        ? {
+            ...g,
+            spaces: resolveOrder(g.spaces, asStringArray(orders[contextId]), orderFallback(t)),
+          }
+        : g,
+    ),
+  }))
+}
+
+/** Re-read `homepage.json` and patch its two leaves — shared by the watcher and the
+ *  homepage banner/heading writes. */
+export async function patchHomepageFromDisk(root: string): Promise<'ok' | 'refresh'> {
   const config = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.homepage))) ?? {}
   return applyPatch(root, (t) => ({ ...t, homepage: readHomepageLeaves(config) }))
 }

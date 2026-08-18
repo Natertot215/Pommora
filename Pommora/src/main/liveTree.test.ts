@@ -1,12 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { NexusTree } from '@shared/types'
-import {
-  dropLiveTree,
-  getLiveTree,
-  invalidateLiveTree,
-  patchLiveTree,
-  refreshTree,
-} from './liveTree'
+import { dropLiveTree, getLiveTree, patchLiveTree, refreshTree } from './liveTree'
 import { readNexus } from './readNexus'
 import { pathExists } from './io/atomicWrite'
 
@@ -100,33 +94,6 @@ describe('refreshTree', () => {
     exists.mockResolvedValueOnce(false)
     await expect(refreshTree('/r')).rejects.toThrow('not found')
     expect(getLiveTree()).toBeNull()
-  })
-})
-
-describe('the write-invalidation bridge', () => {
-  it('invalidation forgets the held tree so the next read walks fresh', async () => {
-    const tA = T('a')
-    walk.mockResolvedValueOnce(tA)
-    await refreshTree('/r')
-    expect(getLiveTree()).toBe(tA)
-    invalidateLiveTree()
-    expect(getLiveTree()).toBeNull()
-    const tB = T('b')
-    walk.mockResolvedValueOnce(tB)
-    expect(await refreshTree('/r')).toBe(tB)
-    expect(getLiveTree()).toBe(tB)
-  })
-
-  it('invalidation mid-walk discards the result and re-walks', async () => {
-    const d = deferred<NexusTree>()
-    const tStale = T('stale')
-    const tFresh = T('fresh')
-    walk.mockReturnValueOnce(d.promise).mockResolvedValueOnce(tFresh)
-    const p = refreshTree('/r')
-    invalidateLiveTree()
-    d.resolve(tStale)
-    expect(await p).toBe(tFresh)
-    expect(getLiveTree()).toBe(tFresh)
   })
 })
 
