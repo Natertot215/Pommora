@@ -14,15 +14,20 @@ import {
   Clock,
   ClockFading,
   ClockPlus,
+  Cog,
   Columns3Cog,
+  Command,
   Copy,
   Ellipsis,
   EllipsisVertical,
   Eye,
   EyeOff,
+  FileChartColumn,
+  FilePen,
   FileText,
   FolderClosed,
   FolderOpen,
+  FolderTree,
   GalleryVerticalEnd,
   Grid3x2,
   GripHorizontal,
@@ -35,6 +40,7 @@ import {
   Import,
   LayoutDashboard,
   LayoutGrid,
+  Laptop,
   LayoutPanelLeft,
   Layers,
   Link,
@@ -46,6 +52,7 @@ import {
   type LucideProps,
   Map as MapIcon,
   Minus,
+  Orbit,
   Palette,
   PanelRight,
   Plus,
@@ -61,9 +68,11 @@ import {
   SquareSplitHorizontal,
   Tag,
   Tags,
+  Trash,
   TextAlignJustify,
   Type,
   WrapText,
+  Zap,
   X,
 } from 'lucide-react'
 import { forwardRef } from 'react'
@@ -78,6 +87,7 @@ import { size as sizeTokens, type IconSize } from '../tokens/size.css'
  *  override. */
 export const icons = {
   house: House,
+  orbit: Orbit,
   calendar: Calendar,
   clock: Clock,
   'clock-fading': ClockFading,
@@ -87,12 +97,20 @@ export const icons = {
   'folder-closed': FolderClosed,
   'folder-open': FolderOpen,
   'file-text': FileText,
+  'file-chart-column': FileChartColumn,
   'layout-grid': LayoutGrid,
   check: Check,
   'circle-dashed': CircleDashed,
   minus: Minus,
   tags: Tags,
   'sliders-horizontal': SlidersHorizontal,
+  cog: Cog,
+  laptop: Laptop,
+  'folder-tree': FolderTree,
+  'file-pen': FilePen,
+  zap: Zap,
+  command: Command,
+  trash: Trash,
   'chevron-left': ChevronLeft,
   'chevron-right': ChevronRight,
   'chevron-up': ChevronUp,
@@ -165,6 +183,11 @@ export const iconNameOr = (value: unknown, fallback: IconName): string =>
   typeof value === 'string' && (value in icons || lucideGlyph(value) !== undefined)
     ? value
     : fallback
+
+/** The nexus's own glyph wherever it is drawn without a photo and without a chosen icon — the
+ *  ribbon's homepage button, the homepage banner, the settings header and the navigation index all
+ *  resolve here, so the nexus reads as one identity across every surface. */
+export const DEFAULT_NEXUS_ICON: IconName = 'orbit'
 
 /** The seed for `personalization.defaultIcons`. A nexus can override a kind's default; an
  *  entity's own `icon` overrides that in turn. */

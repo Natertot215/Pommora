@@ -11,7 +11,7 @@ export type PickerChoice<T extends string> = {
   icon?: React.ComponentProps<typeof Icon>['name']
 }
 
-export const labelOf = <T extends string>(opts: PickerChoice<T>[], v: T): string =>
+export const labelOf = <T extends string>(opts: readonly PickerChoice<T>[], v: T): string =>
   opts.find((o) => o.value === v)?.label ?? opts[0].label
 
 /** Two options toggle in place — a dual-option control is always a toggleable double-chevron, never
@@ -26,7 +26,7 @@ export function PickerControl<T extends string>({
 }: {
   ariaLabel: string
   value: T
-  options: PickerChoice<T>[]
+  options: readonly PickerChoice<T>[]
   onPick: (v: T) => void
   /** Opaque menu surface — for pickers that open over another pane (the block Scale idiom). */
   solid?: boolean

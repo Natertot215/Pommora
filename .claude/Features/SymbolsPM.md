@@ -41,7 +41,7 @@ Pommora's standard semantic icons — the canonical glyph for each pane, propert
 | Date         | `calendar`           |
 | Status       | `progress-check`     |
 | Link         | `link`               |
-| File         | `import`             |
+| File         | `file-chart-column`  |
 | Context      | `layout-grid`        |
 | Select       | `send`               |
 | Multi-Select | `tags`               |

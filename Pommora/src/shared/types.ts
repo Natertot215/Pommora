@@ -23,16 +23,22 @@ export type AccentSetting = SolidColor | 'system'
 
 /** Default when settings.json omits or has an invalid `accent`. A concrete spectrum color
  *  (never `system`) so it always resolves to a hex; users opt into `system` explicitly. */
-export const DEFAULT_ACCENT: SolidColor = 'lavender'
+export const DEFAULT_ACCENT: SolidColor = 'cyan'
 
 /** Connection color — the inline [[Title]] connection link color. `'accent'` (the default) tracks
  *  the app accent live via `--connection: var(--accent)`; a spectrum solid pins it to that color. */
 export type ConnectionColorSetting = SolidColor | 'accent'
 
-/** The `time_format` value in .nexus/settings.json — the nexus-wide clock for the datetime
- *  picker (twelveHour = AM/PM segments, the default; twentyFourHour = flat HH:MM). */
-export type TimeFormatSetting = 'twelveHour' | 'twentyFourHour'
+/** The nexus-wide clock for the datetime picker (twelveHour = AM/PM segments, the default;
+ *  twentyFourHour = flat HH:MM). Lives at `personalization.timeFormat`. */
+export const TIME_FORMAT_SETTINGS = ['twelveHour', 'twentyFourHour'] as const
+export type TimeFormatSetting = (typeof TIME_FORMAT_SETTINGS)[number]
 export const DEFAULT_TIME_FORMAT: TimeFormatSetting = 'twelveHour'
+
+export const TIME_FORMAT_LABELS: Record<TimeFormatSetting, string> = {
+  twelveHour: '12 Hours',
+  twentyFourHour: '24 Hours',
+}
 
 /** Entity kinds that carry a nexus-wide default icon; an entity's own `icon` still overrides it. */
 export const ENTITY_ICON_KINDS = ['collection', 'set', 'space', 'page', 'context'] as const
@@ -118,6 +124,11 @@ export interface Personalization {
   /** What emptying an item from the trash means. Absent = the artifact goes to the operating
    *  system's trash and the OS owns the last undo; true erases it from the machine outright. */
   permanentDelete?: boolean
+  /** The nexus's own date form — the live fallback every date renders through unless its column
+   *  overrides it. Absent = `full`, the form the app has always seeded. */
+  dateFormat?: DateFormat
+  /** The nexus's clock. Absent = twelve-hour. */
+  timeFormat?: TimeFormatSetting
   /** How the trash browser writes a deletion's date. Absent = `short`, the worded form. */
   trashDateFormat?: DateFormat
   /** Whether that date drops its clock. Absent = the nexus's own time format is shown. */
@@ -132,8 +143,9 @@ export interface Personalization {
   defaultLinkFormat?: LinkDisplay
 }
 
-/** The per-nexus default window zoom (`personalization.defaultViewScale`). Clamped so a hand-typed
- *  settings.json value can't make the window unusable; absent/invalid → 1.0 (100%). */
+/** The per-nexus default window zoom (`personalization.defaultViewScale`), stated as the multiplier
+ *  a user reads: 1.0 is the interface at its own intended size. Clamped so a hand-typed settings.json
+ *  value can't make the window unusable; absent/invalid → 1.0 (100%). */
 export const VIEW_SCALE_DEFAULT = 1
 export const VIEW_SCALE_MIN = 0.5
 export const VIEW_SCALE_MAX = 3
@@ -141,6 +153,13 @@ export function coerceViewScale(v: unknown): number {
   if (typeof v !== 'number' || !Number.isFinite(v)) return VIEW_SCALE_DEFAULT
   return Math.min(VIEW_SCALE_MAX, Math.max(VIEW_SCALE_MIN, v))
 }
+
+/** What the interface's own 1.0 is worth as a host zoom factor. The chrome is drawn a step below the
+ *  browser's scale, so a stated multiplier is never a zoom factor — every site that sets zoom passes
+ *  through `viewScaleZoom`, and the two numbers stay distinguishable by name. */
+export const VIEW_SCALE_BASE = 0.9
+
+export const viewScaleZoom = (scale: number): number => scale * VIEW_SCALE_BASE
 
 /** The hover card's linger ceiling (`personalization.hoverPreviewLinger`). Whole seconds; a
  *  hand-typed value clamps in, and zero or junk reads as None (the key's absence). */
@@ -293,9 +312,6 @@ export interface NexusTree {
   labels: NexusLabels
   /** Resolved app accent from .nexus/settings.json (defaults to DEFAULT_ACCENT). */
   accent: AccentSetting
-  /** Nexus-wide time format (.nexus/settings.json `time_format`) — drives the datetime picker's
-   *  segment set. Defaults to twelveHour (AM/PM). */
-  timeFormat: TimeFormatSetting
   /** Nexus-wide interface personalization (`settings.json` `personalization`) — the DRY config the
    *  renderer's apply-map consumes. Accent is surfaced separately as `accent` above (resolved). */
   personalization: Personalization

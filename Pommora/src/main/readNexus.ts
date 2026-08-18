@@ -37,7 +37,6 @@ import {
   DEFAULT_ACCENT,
   DEFAULT_COMMANDS,
   DEFAULT_LABELS,
-  DEFAULT_TIME_FORMAT,
   ENTITY_ICON_KINDS,
   coerceHoverLinger,
   coerceViewScale,
@@ -127,6 +126,8 @@ export function readPersonalization(raw: unknown): Personalization {
     defaultViewScale: coerceViewScale(p.defaultViewScale),
     hoverPreviewLinger: coerceHoverLinger(p.hoverPreviewLinger),
     permanentDelete: bool(p.permanentDelete),
+    dateFormat: DATE_FORMATS.find((f) => f === p.dateFormat),
+    timeFormat: p.timeFormat === 'twentyFourHour' ? 'twentyFourHour' : undefined,
     trashDateFormat: DATE_FORMATS.find((f) => f === p.trashDateFormat),
     trashHideTime: bool(p.trashHideTime),
     autoFormatPastedLinks: bool(p.autoFormatPastedLinks),
@@ -186,7 +187,6 @@ export interface SettingsLeaves {
   excluded: string[]
   labels: NexusLabels
   accent: AccentSetting
-  timeFormat: NexusTree['timeFormat']
   personalization: Personalization
   commands: Record<string, string>
   /** A nexus-relative asset path the renderer serves via nexus-asset://. Profile image,
@@ -207,7 +207,6 @@ export function readSettingsLeaves(settings: Json): SettingsLeaves {
     excluded: asStringArray(settings.excluded_folders) ?? [],
     labels: readLabels(settings.labels),
     accent: resolveAccent(asString(rawPersonalization.accent)),
-    timeFormat: settings.time_format === 'twentyFourHour' ? 'twentyFourHour' : DEFAULT_TIME_FORMAT,
     personalization: readPersonalization(rawPersonalization),
     commands: readCommands(settings.commands),
     profileImage: asString(settings.profile_image) ?? null,
@@ -664,7 +663,6 @@ async function walkNexus(root: string): Promise<NexusTree> {
     collections,
     labels: leaves.labels,
     accent: leaves.accent,
-    timeFormat: leaves.timeFormat,
     personalization: leaves.personalization,
     commands: leaves.commands,
     registry: orderedDefs(registry),

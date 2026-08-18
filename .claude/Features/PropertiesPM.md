@@ -113,7 +113,7 @@ The **look** is per-view — **Number** (formatted text) or **Bar**, a progress 
 
 #### II. Date & Time
 
-Stores a single ISO value — a date-only string folds into Date on read, a with-time string carries the clock. Its **formats** are per-view: a Date format (numeric, worded, or Relative), a conditional weekday offered only for the worded formats, and a Time. A cell opens the **CalendarPicker**, a calendar grid plus segmented time editor whose clock follows the nexus-wide `time_format`. The editor pane exposes the same formats as one discoverable section.
+Stores a single ISO value — a date-only string folds into Date on read, a with-time string carries the clock. Its **formats** are per-view: a Date format (numeric, worded, or Relative), a conditional weekday offered only for the worded formats, and a Time. A cell opens the **CalendarPicker**, a calendar grid plus segmented time editor whose clock follows the Nexus's own **timeFormat** (→ [[ConfigurationPM]] §General). A view that names no Date format takes the Nexus's **dateFormat**, so an unconfigured column follows the Nexus rather than a constant. The editor pane exposes the same formats as one discoverable section.
 
 #### II. Select & Multi-Select
 
@@ -236,5 +236,5 @@ The remove-× melt (the hover-revealed remove zone, the crisp and blurred label 
 - **Per-Type Editor Panes** — File is the one creatable type whose editor body is blank; it follows the shipped panes' patterns.
 - **Number Show-as for dynamic views** — the completion **Ring** and the Notion-style Number/Bar/Ring tile grid belong to view types with vertical room (Gallery/Board); the table ships the Number/Bar look row only. The bar's stroke is held pending a visual pass.
 - **Larger Color Picker** — option colors store an open solid-palette key (resolved through `chipColorFor` with a legacy read-map for old Notion values), so the ColorPicker's grid can grow into a much larger selector over the shared color tokens with no schema churn.
-- **Calendar Picker refinements** — range values (a datetime value is a single ISO on disk, so the value picker disables the shared picker's range mode), keyboard stepping on the time segments, an in-app control for the `time_format` setting, and test coverage.
+- **Calendar Picker refinements** — range values (a datetime value is a single ISO on disk, so the value picker disables the shared picker's range mode), keyboard stepping on the time segments, and test coverage.
 - **Per-View Link Styling** — a URL property's look is entirely property-level. Letting a view override it is a prospect; the `column_styles` seam already carries per-view looks for the other types.

@@ -48,7 +48,6 @@ function tree(): NexusTree {
     collections: [notes, work],
     labels: DEFAULT_LABELS,
     accent: 'lavender',
-    timeFormat: 'twelveHour',
     personalization: {},
     commands: {},
     registry: [],

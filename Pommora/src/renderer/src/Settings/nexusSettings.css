@@ -68,6 +68,19 @@
   display: flex;
   flex-direction: column;
 }
+/* A leaf's groups breathe apart; the first sits flush under the panel heading. */
+.settings-section + .settings-section {
+  margin-top: 22px;
+}
+.settings-section-title {
+  color: var(--label-secondary);
+  margin: 0 0 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.settings-empty {
+  color: var(--label-tertiary);
+}
 
 .settings-row {
   display: flex;

@@ -34,7 +34,8 @@ import { Reveal } from '../../design-system/components/Reveal'
 import { duration as motion } from '../../design-system/tokens/motion'
 import { CalendarPicker } from '../../design-system/components/CalendarPicker/CalendarPicker'
 import { contextIdsOf, isContextColumnId } from '../../Detail/Views/pipeline/contextIdentity'
-import { styleFor } from '../../Detail/Views/Table/columnStyles'
+import { useStyleFor } from '../../Detail/Views/Table/columnStyles'
+import { useSession } from '../../store'
 import { condensedDate, formatDate } from '../../Detail/Views/PropertyEditing/formatValue'
 import { contextOptionsFor, type ContextOption } from '../../Detail/Views/pipeline/contextOptions'
 import { declaredType } from '../../Detail/Views/pipeline/value'
@@ -463,6 +464,8 @@ export function FilterPane({
   label: string
   onBack: () => void
 }): React.JSX.Element {
+  const styleFor = useStyleFor()
+  const nexusClock = useSession((s) => s.personalization.timeFormat)
   // The shared view-config writer: in an embed this updates the tile payload instead of the source
   // collection's sidecar. Every other config surface routes here.
   const saveView = useSaveView(source)
@@ -634,7 +637,7 @@ export function FilterPane({
             <CalendarPicker
               range={false}
               value={rule.value ?? null}
-              timeFormat={tree?.timeFormat}
+              timeFormat={nexusClock}
               formatDateValue={(k, condensed) =>
                 condensed ? condensedDate(k, fmt, condensed.withYear) : formatDate(k, fmt, 'none')
               }

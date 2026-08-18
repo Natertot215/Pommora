@@ -20,13 +20,13 @@ The Cards renderer draws a [[CollectionsPM|Collection's]] (or a depth-1 Set's) P
 
 ### Card Anatomy & Sizing
 
-A page card is an image band over a text area — title, then properties, then an optional location footing. The image band is a fixed height scaled by the card factor; the text extends below, and every card in a grid row matches its tallest sibling. The grid is an auto-fill track set off a column-width floor, so a partly-filled band keeps the same card size as a full one. The card chassis — grid mechanics, borders, and the shared hover-pop lift — shares the [[NavigationPM|Navigation]] gallery card's values; the inner title and property area is the cards renderer's own. The location breadcrumb is always positioned as a footer, pinned to the card's bottom under a divider, whether or not properties sit above it.
+A page card is an image band over a text area — title, then properties, then an optional location footing. The image band is a fixed height scaled by the card factor; the text extends below, and every card in a grid row matches its tallest sibling. The grid is an auto-fill track set off a column-width floor, so a partly-filled band keeps the same card size as a full one. The card chassis — grid mechanics, borders, and the shared hover-pop lift — shares the [[NavigationPM|Navigation]] gallery card's values; the inner title and property area is the cards renderer's own. The location breadcrumb pins to the card's bottom under a divider, whether or not properties sit above it.
 
 **Scale** is a slider in the ViewSettings footing, drafting live while dragging and writing the view on release; the scrub is scoped per view, leaving a sibling cards embed on the same surface unmoved. The factor persists as `card_size`, a bare number.
 
 ### Card Image
 
-A per-view **Card Banner** control chooses the image source: **Cover** (the page's banner), **Preview** (the captured page thumbnail, on the nav gallery's pipeline and the shared thumbnail cache), or **None** (imageless, compact cards). A page lacking an image under Cover or Preview shows the placeholder, keeping heights uniform within a view. Right-clicking the image band pops the native banner menu — Add when the page has no cover, Change / Remove when it does — worded for the view's source and editing the page's one banner image through the PageHeader flow, so the card refreshes live on the write.
+A per-view **Card Banner** control chooses the image source: **Cover** (the page's banner), **Preview** (the captured page thumbnail), or **None** (imageless, compact cards). A page lacking an image under Cover or Preview shows the placeholder, keeping heights uniform within a view. Right-clicking the image band pops the native banner menu — Add when the page has no cover, Change / Remove when it does — worded for the view's source and editing the page's one banner image through the PageHeader flow, so the card refreshes live on the write.
 
 ### Layouts
 

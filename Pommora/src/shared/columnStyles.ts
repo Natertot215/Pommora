@@ -21,8 +21,18 @@ export const COLUMN_LOOKS = [
 ] as const
 export type ColumnLook = (typeof COLUMN_LOOKS)[number]
 
-export const DATE_FORMATS = ['short', 'full', 'dayMonthYear', 'monthDayYear', 'relative'] as const
+export const DATE_FORMATS = ['monthDayYear', 'dayMonthYear', 'short', 'full', 'relative'] as const
 export type DateFormat = (typeof DATE_FORMATS)[number]
+
+/** How each date form is named wherever one is offered — the column menu's style rows and the
+ *  nexus-wide default alike, so the two can never drift into two vocabularies. */
+export const DATE_FORMAT_LABELS: Record<DateFormat, string> = {
+  monthDayYear: 'MM/DD/YYYY',
+  dayMonthYear: 'DD/MM/YYYY',
+  short: 'Short Date',
+  full: 'Full Date',
+  relative: 'Relative',
+}
 
 export const TIME_FORMATS = ['none', 'twelveHour', 'twentyFourHour'] as const
 export type TimeFormat = (typeof TIME_FORMATS)[number]
@@ -47,6 +57,8 @@ export function defaultStyleFor(
   declaredType: string | undefined,
   /** The column's property, for the one type whose default look is a setting rather than a constant. */
   def?: Pick<PropertyDefinition, 'link_display'>,
+  /** The nexus's own date form. Absent falls to `full`, so an unset nexus reads as it always has. */
+  nexusDateFormat?: DateFormat,
 ): ColumnStyle {
   switch (declaredType) {
     case 'status':
@@ -61,7 +73,7 @@ export function defaultStyleFor(
       return { look: 'filename' }
     case 'datetime':
     case 'last_edited_time':
-      return { date_format: 'full', time_format: 'none', weekday: 'none' }
+      return { date_format: nexusDateFormat ?? 'full', time_format: 'none', weekday: 'none' }
     case 'number':
       return { look: 'number' }
     default:
