@@ -38,6 +38,14 @@ export function extractPageIndex(content: string): PageIndexEntry | null {
   return { mentions: [...extractMentions(splitEnvelope(content).body)], values }
 }
 
+/** The user's `excluded_folders`, read for the passes that enumerate the corpus outside a
+ *  walk (the seed, the cascade fallback scans). A missing or unreadable settings file
+ *  excludes nothing, exactly as the walk reads it. */
+export async function readExcludedFolders(root: string): Promise<string[]> {
+  const settings = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings))) ?? {}
+  return asStringArray(settings.excluded_folders) ?? []
+}
+
 /** Nexus-relative POSIX path when `abs` sits inside the corpus's reach, else null — the app's
  *  pens never write into excluded folders, so the shape check alone suffices here. */
 function relCorpusPath(root: string, abs: string): string | null {
@@ -91,9 +99,7 @@ export async function seedContentIndex(root: string): Promise<void> {
   const indexed = readIndexedStats()
   if (!indexed) return
   try {
-    const settings = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings))) ?? {}
-    const excluded = asStringArray(settings.excluded_folders) ?? []
-    const rels = await corpusFiles(root, excluded)
+    const rels = await corpusFiles(root, await readExcludedFolders(root))
     const seen = new Set(rels)
     for (const rel of rels) {
       let st: Awaited<ReturnType<typeof stat>>
