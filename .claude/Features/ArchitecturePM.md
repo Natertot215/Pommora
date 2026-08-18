@@ -94,11 +94,11 @@ A deleted entity moves to `.trash/` under the folder chain it came from, as a bu
 
 The read side is one eager, read-only walk in main (`readNexus`) producing a pre-ordered `NexusTree` — the whole tree in a single pass, consumed by the renderer without re-sorting and held in a Zustand store. There is no per-kind manager layer, no per-entity cache, and no dependency-injection graph.
 
-The single walk stays cheap through an mtime-gated parse cache that reuses decoded sidecars and frontmatter for unchanged files, self-write suppression that keeps the watcher from re-walking the app's own mutations, and a structural-sharing stabilize pass that collapses an unchanged subtree back to its previous object identity so a refetch re-renders only what moved.
+The walk runs at open and on Reload — the deliberate verification points — and main holds its result as the live tree, serving reads from memory and patching it in place as writes confirm and watcher events classify. The walk stays cheap through an mtime-gated parse cache that reuses decoded sidecars and frontmatter for unchanged files, and a structural-sharing stabilize pass in the renderer collapses an unchanged subtree back to its previous object identity so a push re-renders only what moved.
 
 Renderer lookups over the tree derive from `treeIndex` — one record per entity (kind, id, title, resolved icon, path, breadcrumbs), cached against the tree object itself. The record list keeps duplicate ids so title resolution can still answer "ambiguous," while the keyed projections collapse last-wins; the reconcile, resolve, search, connections, and thumbnail tables all derive from the same records. The reserved `context` selection kind always reconciles to nothing — a Context group is a disclosure rather than a destination, so no stored selection may resolve to one.
 
-The write path never runs inside a read, and every write is followed by one refetch.
+The write path never runs inside a read. Every write channel confirms itself: after a successful write, main applies the matching change to its live tree — a pure transform where the request carries the whole fact, a one-file re-read where the writer normalizes — and pushes the tree when it moved. A write with no patch degrades to one verification walk; a value-only write, which the tree cannot see, costs nothing at all.
 
 ### The IPC Bridge
 

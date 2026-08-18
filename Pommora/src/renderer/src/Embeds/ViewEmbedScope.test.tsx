@@ -105,7 +105,7 @@ afterEach(() => {
 })
 
 function Probe({ onResult }: { onResult: (r: unknown) => void }): null {
-  const save = useSaveView(source, async () => {})
+  const save = useSaveView(source)
   useEffect(() => {
     void save({ ...view, name: 'Renamed' }).then(onResult)
   }, [save, onResult])
@@ -113,11 +113,11 @@ function Probe({ onResult }: { onResult: (r: unknown) => void }): null {
 }
 
 function StateProbe({ onResult }: { onResult: (r: unknown) => void }): null {
-  const save = useSaveView(source, async () => {})
+  const save = useSaveView(source)
   useEffect(() => {
     void save(
       { ...view, collapsed_groups: ['Done'], column_widths: { _title: 420 } },
-      { skipRefetch: true, viewState: true },
+      { viewState: true },
     ).then(onResult)
   }, [save, onResult])
   return null

@@ -125,9 +125,8 @@ export function GroupingPane({
   subGrouping?: boolean
   onBack: () => void
 }): React.JSX.Element {
-  const load = useSession((st) => st.load)
   const [groupByOpen, setGroupByOpen] = useState(false)
-  const saveView = useSaveView(source, load)
+  const saveView = useSaveView(source)
   const save = (patch: Partial<SavedView>): void => void saveView({ ...view, ...patch })
   const saveGroup = (group: GroupConfig): void => save({ group })
 

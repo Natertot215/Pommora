@@ -126,7 +126,7 @@ describe('the All Properties section (T5)', () => {
     expect(all?.textContent).not.toContain('Title') // reserved
   })
 
-  it('+ assigns through the IPC and the row promotes on the refreshed schema', async () => {
+  it('+ assigns through the IPC; the confirming push carries the promotion, not a reload', async () => {
     useSession.setState({ tree: { registry: [effortDef] } as never })
     await mountPane([])
     await act(async () => {
@@ -136,7 +136,7 @@ describe('the All Properties section (T5)', () => {
       host.querySelector<HTMLButtonElement>('[aria-label="Assign Effort"]')!.click()
     })
     expect(assignSpy).toHaveBeenCalledWith('Col', 'prop_x')
-    expect(loadSpy).toHaveBeenCalled()
+    expect(loadSpy).not.toHaveBeenCalled()
   })
 
   it('header ⊕ opens the type picker; the footer create-row is gone (A-9)', async () => {

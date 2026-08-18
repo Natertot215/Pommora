@@ -33,14 +33,10 @@ export const useViewEmbedScope = (): ViewEmbedScopeValue | null => useContext(Ct
  *  `viewState` survives the lock but narrows to the state keys; an unlocked write stays whole. */
 export function useSaveView(
   source: CollectionNode | SetNode,
-  refetch: () => Promise<void>,
-): (
-  view: SavedView,
-  opts?: { skipRefetch?: boolean; viewState?: boolean },
-) => Promise<Result<{ id: string }>> {
+): (view: SavedView, opts?: { viewState?: boolean }) => Promise<Result<{ id: string }>> {
   const scope = useViewEmbedScope()
   if (scope) {
-    // An embed re-renders off its own tile payload — persistConfig updates it in place, no refetch path.
+    // An embed re-renders off its own tile payload — persistConfig updates it in place.
     return (view, opts) => {
       if (scope.locked) {
         if (!opts?.viewState) return Promise.resolve(fail('operation-failed', VIEW_CONFIG_LOCKED))
@@ -51,5 +47,5 @@ export function useSaveView(
       return Promise.resolve(ok({ id: view.id }))
     }
   }
-  return (view, opts) => saveViewAdopting(source, view, refetch, opts)
+  return (view) => saveViewAdopting(source, view)
 }

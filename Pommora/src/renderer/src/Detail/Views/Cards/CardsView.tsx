@@ -113,7 +113,6 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   const tree = useSession((s) => s.tree)
   const select = useSession((s) => s.select)
   const openPreview = useSession((s) => s.openPreview)
-  const load = useSession((s) => s.load)
   const nexusId = useSession((s) => s.tree?.nexus.id ?? '')
   const [values, setValues] = useState<Record<string, PageFrontmatter>>({})
 
@@ -137,7 +136,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     groupingKeyOf(view),
   )
   const liveView = useMemo(() => (bandPatch ? { ...view, ...bandPatch } : view), [view, bandPatch])
-  const saveView = useSaveView(source, load)
+  const saveView = useSaveView(source)
   const mutate = useSession((s) => s.mutate)
 
   // Optimistic property patches keyed by page id (the table's pattern): loadValues never re-reads
@@ -181,14 +180,11 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   }
   // Every view write goes out over the LIVE view, so one persist can't fold a band drop's unsaved
   // order back to what disk still says (the table's law).
-  const persistView = (
-    patch: Partial<SavedView>,
-    opts?: { skipRefetch?: boolean; viewState?: boolean },
-  ): void => {
+  const persistView = (patch: Partial<SavedView>, opts?: { viewState?: boolean }): void => {
     void saveView({ ...liveView, ...patch }, opts)
   }
   // One card-value Style key — persists per-key into the view's column_styles (the table's writer
-  // minus its live override, so a style change flashes through a load() round-trip: v1-acceptable).
+  // minus its live override, so a style change shows when the confirming push lands: v1-acceptable).
   const setColumnStyle = (colId: string, key: keyof ColumnStyle & string, value: string): void => {
     persistView({
       column_styles: {
@@ -334,7 +330,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     else next.add(key)
     setCollapsed(next)
     // The local `collapsed` state already shows the toggle — skip the refetch's redundant full walk.
-    persistView({ collapsed_groups: [...next] }, { skipRefetch: true, viewState: true })
+    persistView({ collapsed_groups: [...next] }, { viewState: true })
   }
 
   const banner: CardBanner = view.card_banner ?? 'cover'
@@ -977,7 +973,6 @@ function DraggableSetCard({ set }: { set: SetNode }): React.JSX.Element {
 function SetCard({ set, drag }: { set: SetNode; drag?: DragItem }): React.JSX.Element {
   const select = useSession((s) => s.select)
   const mutate = useSession((s) => s.mutate)
-  const load = useSession((s) => s.load)
   const [failed, setFailed] = useState(false)
   const src = set.banner ? assetUrl(set.banner) : undefined
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
@@ -992,7 +987,7 @@ function SetCard({ set, drag }: { set: SetNode; drag?: DragItem }): React.JSX.El
     if (!action) return
     const dataUrl = action === 'remove' ? null : await window.nexus.pickImage()
     if (action === 'remove' || dataUrl) {
-      if (await mutate({ op: 'setBanner', path: set.path, kind: 'set', dataUrl })) void load()
+      await mutate({ op: 'setBanner', path: set.path, kind: 'set', dataUrl })
     }
   }
   return (

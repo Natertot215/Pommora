@@ -101,7 +101,6 @@ export function ViewSettings({
   onBack: () => void
   onClose: () => void
 }): React.JSX.Element {
-  const load = useSession((s) => s.load)
   const tree = useSession((s) => s.tree)
   const [leaf, setLeaf] = useState<Leaf | null>(null)
   const [itemMenuOpen, setItemMenuOpen] = useState(false)
@@ -109,7 +108,7 @@ export function ViewSettings({
   const views = source.views ?? []
   const canDelete = views.length > 1 && view.id !== DEFAULT_VIEW_ID
 
-  const saveView = useSaveView(source, load)
+  const saveView = useSaveView(source)
   const write = (patch: Partial<SavedView>): void => void saveView({ ...view, ...patch })
   const rename = (name: string): void => {
     if (name && name !== view.name) write({ name })
@@ -135,12 +134,10 @@ export function ViewSettings({
       ids.splice(at < 0 ? ids.length : at + 1, 0, res.value.id)
       await window.nexus.views.reorder(source.path, source.kind, ids)
     }
-    await load()
   }
   const deleteView = async (): Promise<void> => {
     await window.nexus.views.delete(source.path, source.kind, view.id)
     onClose()
-    await load()
   }
 
   const formatToggle = (glyph: IconName, label: string): React.JSX.Element => (
