@@ -19,8 +19,9 @@ import type { PropertyDefinition } from '@shared/properties'
 import type { SavedView } from '@shared/views'
 
 const basename = (path: string): string => path.slice(path.lastIndexOf('/') + 1)
-// '' for a root-level path — a bare slice(0, lastIndexOf) would eat the name's last character.
-const parentOf = (path: string): string => {
+/** The containing directory of a nexus-relative POSIX path, '' at the root — a bare
+ *  slice(0, lastIndexOf) would eat the name's last character. */
+export const parentOf = (path: string): string => {
   const i = path.lastIndexOf('/')
   return i === -1 ? '' : path.slice(0, i)
 }
