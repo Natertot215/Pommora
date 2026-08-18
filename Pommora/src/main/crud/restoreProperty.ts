@@ -16,7 +16,7 @@ import { projectBaseline } from '../record'
 import { refreshTree } from '../liveTree'
 import { readSidecar } from '../sidecarIO'
 import { serializeOnFile } from '../io/fileLock'
-import { allCollectionFolders, assignInner } from './assignment'
+import { collectionFolders, assignInner } from './assignment'
 import { updatePageProperty } from './page'
 import { createProperty } from './registryProperty'
 import { propertyValueStands } from './standing'
@@ -29,7 +29,7 @@ type PropertyRecord = Extract<RecordFile, { entity: 'property' }>
  *  for a folder that has no persisted id, which is an address rather than the identity recorded. */
 async function foldersById(root: string): Promise<Map<string, string>> {
   const out = new Map<string, string>()
-  for (const folder of await allCollectionFolders(root)) {
+  for (const folder of await collectionFolders(root)) {
     const sidecar = await readSidecar(folder, 'collection', pageCollectionSidecar)
     if (typeof sidecar?.id === 'string') out.set(sidecar.id, folder)
   }

@@ -11,12 +11,12 @@ import { writePropertyBundle } from '../provenance'
 import { withoutCacheBlock } from './assignment'
 import { readRegistry, type PropertyRegistry } from '../io/propertiesRegistry'
 import { removeFromRegistry } from './registryProperty'
-import { allCollectionFolders } from './assignment'
+import { collectionFolders } from './assignment'
+import { keyHolderFiles } from './keyHolders'
 import { serializeSchemaOp } from './schemaChain'
 import { sweepGovernedRoots } from './governedSweep'
 import { readSidecar, writeSidecar, withSidecarLock } from '../sidecarIO'
 import { pageCollectionSidecar } from '@shared/schemas'
-import { listMarkdownFiles } from '../io/walk'
 import { splitFrontmatter } from '../readNexus'
 import { isPlainObject, propertyKey } from '@shared/propertyValue'
 import { nowIso } from './util'
@@ -29,6 +29,7 @@ async function snapshot(
   propertyId: string,
   def: PropertyRegistry[string],
   folders: string[],
+  files: string[],
 ): Promise<void> {
   const key = propertyKey(def)
   const values: Record<string, unknown> = {}
@@ -41,20 +42,20 @@ async function snapshot(
     const holds = ((sidecar?.properties as string[] | undefined) ?? []).includes(propertyId)
     if (holds && typeof sidecar?.id === 'string') assignments.push(sidecar.id)
     else if (holds) partial = true
-    for (const file of await listMarkdownFiles(folder)) {
-      let fm: Record<string, unknown>
-      try {
-        fm = splitFrontmatter(await readFile(file, 'utf8')) as Record<string, unknown>
-      } catch {
-        continue
-      }
-      if (!(key in fm)) continue
-      const id = contentId(fm)
-      // A duplicated id can hold only one entry — last wins, and the record says it is thin.
-      if (id && id in values) partial = true
-      if (id) values[id] = fm[key]
-      else partial = true
+  }
+  for (const file of files) {
+    let fm: Record<string, unknown>
+    try {
+      fm = splitFrontmatter(await readFile(file, 'utf8')) as Record<string, unknown>
+    } catch {
+      continue
     }
+    if (!(key in fm)) continue
+    const id = contentId(fm)
+    // A duplicated id can hold only one entry — last wins, and the record says it is thin.
+    if (id && id in values) partial = true
+    if (id) values[id] = fm[key]
+    else partial = true
   }
   await writePropertyBundle(root, {
     entity: 'property',
@@ -77,14 +78,16 @@ async function deleteInner(root: string, propertyId: string): Promise<Result<nul
 
   // EVERY collection folder, not just current assigners — a Remove-cache block lives on a
   // sidecar that no longer assigns the id, and pre-cache dormant values may sit on any page.
-  const folders = await allCollectionFolders(root)
-  await snapshot(root, propertyId, def, folders)
+  const folders = await collectionFolders(root)
+  // The one candidate set for the snapshot AND the sweep: the key's holders, scope-intersected.
+  const files = await keyHolderFiles(root, key, folders)
+  await snapshot(root, propertyId, def, folders, files)
 
   // Strip the value from every page a Collection's schema governs — the one sweep, scoped to
   // the folders that carry the schema this definition belonged to.
   await sweepGovernedRoots(
     root,
-    { kind: 'collections', folders },
+    { kind: 'files', files },
     (raw) => {
       if (!(key in raw)) return null
       const next = { ...raw }

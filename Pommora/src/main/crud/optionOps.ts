@@ -7,9 +7,9 @@ import { mutateRegistry, readRegistry } from '../io/propertiesRegistry'
 import { rewritePageSerialized } from '../io/atomicWrite'
 import { indexWrittenPage } from '../indexSeed'
 import { validateOptionValues } from '../properties/schema'
-import { allCollectionFolders } from './assignment'
+import { collectionFolders } from './assignment'
+import { keyHolderFiles } from './keyHolders'
 import { serializeSchemaOp } from './schemaChain'
-import { listMarkdownFiles } from '../io/walk'
 import { sweepAdmits } from './util'
 import { replacePageValue, stripPageValue } from './pageValue'
 import { ok, fail, type Result } from '@shared/result'
@@ -131,7 +131,7 @@ export function renameStatusOption(
       }
     })
     if (!edit.ok) return edit
-    await cascadePages(root, (content) =>
+    await cascadePages(root, edit.value, (content) =>
       replacePageValue(content, edit.value, oldValue, newTitle, 'status'),
     )
     return ok(null)
@@ -147,7 +147,9 @@ export function clearStatusOption(
   return serializeSchemaOp(async () => {
     const r = await resolveForCascade(root, propertyId, requireStatusType)
     if (!r.ok) return r
-    await cascadePages(root, (content) => stripPageValue(content, r.value.key, value, r.value.type))
+    await cascadePages(root, r.value.key, (content) =>
+      stripPageValue(content, r.value.key, value, r.value.type),
+    )
     return ok(null)
   })
 }
@@ -162,7 +164,9 @@ export function removeStatusOption(
   return serializeSchemaOp(async () => {
     const r = await resolveForCascade(root, propertyId, requireStatusType)
     if (!r.ok) return r
-    await cascadePages(root, (content) => stripPageValue(content, r.value.key, value, r.value.type))
+    await cascadePages(root, r.value.key, (content) =>
+      stripPageValue(content, r.value.key, value, r.value.type),
+    )
     return mutateRegistry<Result<null>>(root, (registry) => {
       const current = registry.defs[propertyId]
       if (!current) return { result: fail('not-found', 'Property not found.') }
@@ -181,22 +185,24 @@ export function removeStatusOption(
   })
 }
 
-/** Rewrite every assigning collection's pages through `rewrite` (null = the page doesn't hold it,
- *  skip). Each page's read-modify-write runs under its file lock — the SAME lock the cell-write path
- *  takes — so a cascade and a concurrent cell edit on one page can't clobber each other. Per
- *  file, not all-or-nothing across pages: a partly-applied rename/strip is recoverable by re-running
- *  and each page stays individually valid. Shared by rename (replace) and remove/clear (strip). */
+/** Rewrite the pages holding `key` through `rewrite` (null = the page doesn't hold it, skip) —
+ *  the key's queried holders when an index answers, else the corpus, both intersected with the
+ *  Collection folders whose schemas govern values. Each page's read-modify-write runs under its
+ *  file lock — the SAME lock the cell-write path takes — so a cascade and a concurrent cell
+ *  edit on one page can't clobber each other. Per file, not all-or-nothing across pages: a
+ *  partly-applied rename/strip is recoverable by re-running and each page stays individually
+ *  valid. Shared by rename (replace) and remove/clear (strip). */
 export async function cascadePages(
   root: string,
+  key: string,
   rewrite: (content: string) => string | null,
 ): Promise<void> {
-  for (const folder of await allCollectionFolders(root)) {
-    for (const file of await listMarkdownFiles(folder)) {
-      const wrote = await rewritePageSerialized(file, (content) =>
-        sweepAdmits(content) ? rewrite(content) : null,
-      )
-      if (wrote) await indexWrittenPage(root, file)
-    }
+  const folders = await collectionFolders(root)
+  for (const file of await keyHolderFiles(root, key, folders)) {
+    const wrote = await rewritePageSerialized(file, (content) =>
+      sweepAdmits(content) ? rewrite(content) : null,
+    )
+    if (wrote) await indexWrittenPage(root, file)
   }
 }
 
@@ -229,7 +235,7 @@ export function renameOption(
       }
     })
     if (!edit.ok) return edit
-    await cascadePages(root, (content) =>
+    await cascadePages(root, edit.value.key, (content) =>
       replacePageValue(content, edit.value.key, oldValue, newTitle, edit.value.type),
     )
     return ok(null)
@@ -246,7 +252,9 @@ export function clearOption(
   return serializeSchemaOp(async () => {
     const r = await resolveForCascade(root, propertyId, requireOptionType)
     if (!r.ok) return r
-    await cascadePages(root, (content) => stripPageValue(content, r.value.key, value, r.value.type))
+    await cascadePages(root, r.value.key, (content) =>
+      stripPageValue(content, r.value.key, value, r.value.type),
+    )
     return ok(null)
   })
 }
@@ -261,7 +269,9 @@ export function removeOption(
   return serializeSchemaOp(async () => {
     const r = await resolveForCascade(root, propertyId, requireOptionType)
     if (!r.ok) return r
-    await cascadePages(root, (content) => stripPageValue(content, r.value.key, value, r.value.type))
+    await cascadePages(root, r.value.key, (content) =>
+      stripPageValue(content, r.value.key, value, r.value.type),
+    )
     return mutateRegistry<Result<null>>(root, (registry) => {
       const current = registry.defs[propertyId]
       if (!current) return { result: fail('not-found', 'Property not found.') }
