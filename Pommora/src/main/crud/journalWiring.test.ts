@@ -180,14 +180,14 @@ describe('the option-op writers', () => {
     expect(await readFile(abs('Col', 'C.md'), 'utf8')).not.toContain('<Tags>: Draft')
   })
 
-  it('option-clear strips journaled, keeps the option, and clears', async () => {
+  it('option-clear never writes a record — its residue disagrees with nothing', async () => {
     await withOptions()
     const r = await clearOption(root, 'prop_t', 'Draft')
     expect(r.ok).toBe(true)
-    expect(pageWrites().every((w) => w.journaled)).toBe(true)
-    expect(await readSchemaJournal(root)).toBeNull()
+    expect(observed.some((o) => o.path === journalFile())).toBe(false)
     const def = (await readRegistry(root)).defs.prop_t
     expect(def?.select_options?.map((o) => o.value)).toEqual(['Draft', 'Done'])
+    expect(await readFile(abs('Col', 'C.md'), 'utf8')).not.toContain('<Tags>: Draft')
   })
 
   it('setOptions never writes a record', async () => {
@@ -219,4 +219,31 @@ describe('the create-side consumer', () => {
       name: 'Priority',
     })
   })
+
+  it('a REFUSED create never spends the record it did not displace', async () => {
+    // The crash state: the delete's def still stands, so a same-name create is a duplicate.
+    await writeSchemaJournal(root, { op: 'delete', id: 'prop_s', name: 'Stage' })
+    const r = await createProperty(root, { id: '', name: 'Stage', type: 'select' })
+    expect(r.ok).toBe(false)
+    expect(await readSchemaJournal(root)).toEqual({ op: 'delete', id: 'prop_s', name: 'Stage' })
+  })
 })
+
+describe('the slot protects a stranded record', () => {
+  it('an unrelated op neither displaces nor clears a held heal', async () => {
+    await withStranded()
+    const r = await deleteProperty(root, 'prop_s')
+    expect(r.ok).toBe(true)
+    expect(await readSchemaJournal(root)).toEqual({
+      op: 'rename',
+      id: 'prop_x',
+      from: 'Old',
+      to: 'New',
+    })
+  })
+})
+
+/** A rename record stranded by a prior faulted session, unrelated to any live op. */
+async function withStranded(): Promise<void> {
+  await writeSchemaJournal(root, { op: 'rename', id: 'prop_x', from: 'Old', to: 'New' })
+}
