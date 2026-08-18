@@ -16,6 +16,7 @@ import type {
   NavigationState,
   NavViewModes,
   NexusState,
+  NexusTree,
   SubfieldConfig,
   ThumbRect,
 } from '@shared/types'
@@ -25,7 +26,9 @@ import { errText, fail, ok, type Result } from '@shared/result'
 import { BUSY, NO_NEXUS, push, scopeGet, scopeSet, serveBridge } from './ipc'
 import type { MutateRequest, ContextTarget } from '@shared/mutate'
 import { WINDOW_BG } from '@shared/theme'
-import { dropLiveTree, getLiveTree, invalidateLiveTree, refreshTree } from './liveTree'
+import { dropLiveTree, getLiveTree, refreshTree } from './liveTree'
+import { confirmBy, confirmMutation, confirmRegistry } from './mutatePatch'
+import { patchContainerFromDisk, patchSettingsFromDisk } from './watchPatch'
 import { runOpenRecord } from './record'
 import { readPage } from './readPage'
 import {
@@ -423,6 +426,30 @@ const isIndexArray = (v: unknown): v is number[] =>
 // View persistence — save / reorder / delete a SavedView in a container's synced `views[]` sidecar.
 // (View SELECTION is the per-machine activeViews pointer above; this is the view DEFINITION.)
 type ResolvedViewContainer = Result<{ folder: string; kind: 'collection' | 'set' }>
+// The write channels' confirmation push — one place, so a confirmed write that moved the tree
+// reaches the renderer over the same channel the watcher uses.
+function pushConfirmed(tree: NexusTree | null): void {
+  if (tree && mainWindow && !mainWindow.isDestroyed()) push(mainWindow, 'nexus:changed', tree)
+}
+
+async function confirmContainerWrite(containerPath: unknown): Promise<void> {
+  const root = sessionRoot()
+  if (root === null || typeof containerPath !== 'string') return
+  pushConfirmed(await confirmBy(root, () => patchContainerFromDisk(root, containerPath)))
+}
+
+async function confirmRegistryWrite(): Promise<void> {
+  const root = sessionRoot()
+  if (root === null) return
+  pushConfirmed(await confirmRegistry(root))
+}
+
+async function confirmSettingsWrite(): Promise<void> {
+  const root = sessionRoot()
+  if (root === null) return
+  pushConfirmed(await confirmBy(root, () => patchSettingsFromDisk(root)))
+}
+
 async function resolveViewContainer(
   containerPath: unknown,
   kind: unknown,
@@ -813,6 +840,7 @@ serveBridge(
         if (!parsed.success) return fail('operation-failed', 'Invalid view payload.')
         const { folder, kind: k } = c.value
         const r = await saveView(folder, k, parsed.data)
+        if (r.ok) await confirmContainerWrite(containerPath)
         return r.ok ? ok({ id: r.value.id }) : r
       },
     },
@@ -826,6 +854,7 @@ serveBridge(
         }
         const { folder, kind: k } = c.value
         const r = await reorderViews(folder, k, orderedIds)
+        if (r.ok) await confirmContainerWrite(containerPath)
         return r.ok ? ok(null) : r
       },
     },
@@ -837,6 +866,7 @@ serveBridge(
         if (typeof viewId !== 'string') return fail('operation-failed', 'A view id is required.')
         const { folder, kind: k } = c.value
         const r = await deleteView(folder, k, viewId)
+        if (r.ok) await confirmContainerWrite(containerPath)
         return r.ok ? ok(null) : r
       },
     },
@@ -851,6 +881,7 @@ serveBridge(
         if (patch === null || typeof patch !== 'object') return NEEDS_CONFIG_PATCH
         const { folder, kind: k } = c.value
         const r = await setContainerConfig(folder, k, patch as ContainerConfigPatch)
+        if (r.ok) await confirmContainerWrite(containerPath)
         return r.ok ? ok(null) : r
       },
     },
@@ -882,6 +913,7 @@ serveBridge(
           await removeFromRegistry(c.value.root, created.value.id)
           return assigned
         }
+        await confirmRegistryWrite()
         return ok({ id: created.value.id })
       },
     },
@@ -895,6 +927,7 @@ serveBridge(
           return fail('operation-failed', 'propertyId and newName must be strings.')
         }
         const r = await editProperty(c.value.root, propertyId, { name: newName })
+        if (r.ok) await confirmRegistryWrite()
         return r.ok ? ok(null) : r
       },
     },
@@ -908,6 +941,7 @@ serveBridge(
           return fail('operation-failed', 'propertyId (string) and toIndex (number) are required.')
         }
         const r = await reorderAssignment(c.value.folder, propertyId, toIndex)
+        if (r.ok) await confirmRegistryWrite()
         return r.ok ? ok(null) : r
       },
     },
@@ -919,6 +953,7 @@ serveBridge(
         if (!c.ok) return c
         if (typeof propertyId !== 'string') return NEEDS_PROPERTY_ID
         const r = await removeProperty(c.value.root, c.value.folder, propertyId)
+        if (r.ok) await confirmRegistryWrite()
         return r.ok ? ok(null) : r
       },
     },
@@ -936,6 +971,7 @@ serveBridge(
           propertyId,
           typeof toIndex === 'number' ? toIndex : undefined,
         )
+        if (r.ok) await confirmRegistryWrite()
         return r.ok ? ok(null) : r
       },
     },
@@ -949,6 +985,7 @@ serveBridge(
           return fail('operation-failed', 'propertyId (string) and toIndex (number) are required.')
         }
         const r = await reorderRegistry(root, propertyId, toIndex)
+        if (r.ok) await confirmRegistryWrite()
         return r.ok ? ok(null) : r
       },
     },
@@ -965,6 +1002,7 @@ serveBridge(
         // strip lands with the assign-surface UI (opts.dropConflictingValues is accepted, unused).
         void opts
         const r = await editProperty(c.value.root, propertyId, { type: parsedType.data })
+        if (r.ok) await confirmRegistryWrite()
         return r.ok ? ok(null) : r
       },
     },
@@ -978,6 +1016,7 @@ serveBridge(
         if (root === null) return NO_NEXUS
         if (typeof propertyId !== 'string') return NEEDS_PROPERTY_ID
         const r = await deletePropertyGlobal(root, propertyId)
+        if (r.ok) await confirmRegistryWrite()
         return r.ok ? ok(null) : r
       },
     },
@@ -991,6 +1030,7 @@ serveBridge(
         if (!isOptionArray(options))
           return fail('operation-failed', 'Options must be an array of { value, label }.')
         const r = await setOptions(root, propertyId, options)
+        if (r.ok) await confirmRegistryWrite()
         return r.ok ? ok(null) : r
       },
     },
@@ -1004,6 +1044,7 @@ serveBridge(
         if (!Array.isArray(groups))
           return fail('operation-failed', 'Status groups must be an array.')
         const r = await setStatusGroups(root, propertyId, groups as StatusGroup[])
+        if (r.ok) await confirmRegistryWrite()
         return r.ok ? ok(null) : r
       },
     },
@@ -1025,6 +1066,7 @@ serveBridge(
         if ('link_color' in p)
           changes.link_color = typeof p.link_color === 'string' ? p.link_color : undefined
         const r = await editProperty(root, propertyId, changes)
+        if (r.ok) await confirmRegistryWrite()
         return r.ok ? ok(null) : r
       },
     },
@@ -1040,6 +1082,7 @@ serveBridge(
         const r = await editProperty(root, propertyId, {
           checkbox_color: typeof color === 'string' ? color : undefined,
         })
+        if (r.ok) await confirmRegistryWrite()
         return r.ok ? ok(null) : r
       },
     },
@@ -1054,6 +1097,7 @@ serveBridge(
         const r = await editProperty(root, propertyId, {
           icon: typeof icon === 'string' ? icon : undefined,
         })
+        if (r.ok) await confirmRegistryWrite()
         return r.ok ? ok(null) : r
       },
     },
@@ -1090,6 +1134,7 @@ serveBridge(
           changes.number_denominator =
             typeof p.number_denominator === 'number' ? p.number_denominator : undefined
         const r = await editProperty(root, propertyId, changes)
+        if (r.ok) await confirmRegistryWrite()
         return r.ok ? ok(null) : r
       },
     },
@@ -1107,6 +1152,7 @@ serveBridge(
           return fail('operation-failed', 'propertyId, oldValue, and newTitle are required.')
         }
         const r = await renameOption(root, propertyId, oldValue, newTitle)
+        if (r.ok) await confirmRegistryWrite()
         return r.ok ? ok(null) : r
       },
     },
@@ -1118,6 +1164,7 @@ serveBridge(
         if (root === null) return NO_NEXUS
         if (typeof propertyId !== 'string' || typeof value !== 'string') return NEEDS_ID_AND_VALUE
         const r = await removeOption(root, propertyId, value)
+        if (r.ok) await confirmRegistryWrite()
         return r.ok ? ok(null) : r
       },
     },
@@ -1129,6 +1176,7 @@ serveBridge(
         if (root === null) return NO_NEXUS
         if (typeof propertyId !== 'string' || typeof value !== 'string') return NEEDS_ID_AND_VALUE
         const r = await clearOption(root, propertyId, value)
+        if (r.ok) await confirmRegistryWrite()
         return r.ok ? ok(null) : r
       },
     },
@@ -1146,6 +1194,7 @@ serveBridge(
           return fail('operation-failed', 'propertyId, oldValue, and newTitle are required.')
         }
         const r = await renameStatusOption(root, propertyId, oldValue, newTitle)
+        if (r.ok) await confirmRegistryWrite()
         return r.ok ? ok(null) : r
       },
     },
@@ -1157,6 +1206,7 @@ serveBridge(
         if (root === null) return NO_NEXUS
         if (typeof propertyId !== 'string' || typeof value !== 'string') return NEEDS_ID_AND_VALUE
         const r = await removeStatusOption(root, propertyId, value)
+        if (r.ok) await confirmRegistryWrite()
         return r.ok ? ok(null) : r
       },
     },
@@ -1168,6 +1218,7 @@ serveBridge(
         if (root === null) return NO_NEXUS
         if (typeof propertyId !== 'string' || typeof value !== 'string') return NEEDS_ID_AND_VALUE
         const r = await clearStatusOption(root, propertyId, value)
+        if (r.ok) await confirmRegistryWrite()
         return r.ok ? ok(null) : r
       },
     },
@@ -1335,6 +1386,9 @@ serveBridge(
         if (typeof key !== 'string' || !key)
           return fail('operation-failed', 'Invalid personalization key.')
         await writePersonalization(root, key, value)
+        // No renderer confirm exists for this channel (the slice patches optimistically), yet
+        // it writes a field the walk reads — the push set's membership predicate.
+        await confirmSettingsWrite()
         return ok(null)
       },
     },
@@ -1352,7 +1406,12 @@ serveBridge(
     // orchestration.
     mutate: {
       kind: 'raw',
-      fn: async (req: MutateRequest) => handleMutate(req, await mutateDeps()),
+      fn: async (req: MutateRequest) => {
+        const reply = await handleMutate(req, await mutateDeps())
+        const root = sessionRoot()
+        if (reply.ok && root !== null) pushConfirmed(await confirmMutation(root, req, reply.value))
+        return reply
+      },
     },
 
     // A right-clicked sidebar entity's menu; its items act main-side (handleMutate / confirm /
@@ -1361,11 +1420,14 @@ serveBridge(
       kind: 'window',
       fn: async (win: BrowserWindow | null, target: ContextTarget): Promise<void> => {
         if (!win) return
-        await showContextMenu(win, target, await mutateDeps(), () => {
-          // The menu outlives its IPC handler, so the completion-time invalidation above
-          // misses these writes; this confirm fires after the mutation finished.
-          invalidateLiveTree()
-          push(win, 'menu:action', 'reload-state')
+        await showContextMenu(win, target, await mutateDeps(), (req, reply) => {
+          // The menu outlives its IPC handler, so this confirm fires after the mutation
+          // finished — the same patch-and-push every renderer-driven mutation gets.
+          void (async () => {
+            const root = sessionRoot()
+            if (root !== null) pushConfirmed(await confirmMutation(root, req, reply))
+            push(win, 'menu:action', 'reload-state')
+          })()
         })
       },
     },
@@ -1703,6 +1765,8 @@ serveBridge(
         // rather than replicate the calls — opting out of the record latch, which belongs to
         // genuine opens only.
         await adoptNexus(newRoot, false)
+        // The re-point reseeded the live tree; the push is the renderer's confirmation.
+        pushConfirmed(getLiveTree())
         return ok(null)
       },
     },

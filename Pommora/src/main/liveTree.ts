@@ -43,16 +43,6 @@ export function seedLiveTree(t: NexusTree): void {
   tree = t
 }
 
-/** An app write COMPLETED and no writer patches the tree in place yet — forget the held tree
- *  so the next read walks fresh; an in-flight walk re-runs via the epoch. Fired at the end of
- *  any write-bearing IPC handler and at the native menus' post-mutation confirms — never at
- *  write start, where a discarded walk's immediate re-run could still observe mid-write disk
- *  and install it as canon. */
-export function invalidateLiveTree(): void {
-  tree = null
-  epoch++
-}
-
 export function refreshTree(root: string): Promise<NexusTree> {
   if (slot && slot.root === root) return slot.promise
   const entry: WalkSlot = { root, promise: undefined as unknown as Promise<NexusTree> }
