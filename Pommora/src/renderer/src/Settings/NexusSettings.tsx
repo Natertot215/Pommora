@@ -151,10 +151,13 @@ const LEAVES: Record<CategoryKey, LeafBody> = {
         hint: 'Pointing a connection at another page drops the alias it was wearing.',
         defaultOn: true,
       },
-      // `aliasPickerOnCommit` belongs here and is deliberately absent: this is intentionally invisible
-      // because the language used to describe the toggle on the settings surface hasn't been decided
-      // yet — do this sooner rather than later. It reads and writes like any other personalization key
-      // in the meantime, so a hand-edited settings file turns it off.
+      {
+        kind: 'toggle',
+        key: 'aliasPickerOnCommit',
+        label: 'Automatically Suggest Existing Aliases When Linking A Page',
+        hint: 'Accepting a page from the connection picker offers the names it already carries.',
+        defaultOn: true,
+      },
       {
         kind: 'toggle',
         key: 'autoFormatPastedLinks',
