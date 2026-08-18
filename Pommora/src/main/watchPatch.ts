@@ -12,6 +12,8 @@ import { excludedMatcher } from './exclusion'
 import { adoptedId, isAdoptedId } from './ids'
 import { pathExists, readJsonObject } from './io/atomicWrite'
 import { isMarkdownFile } from './io/walk'
+import { removePathIndex } from './db/contentIndex'
+import { indexWrittenPage } from './indexSeed'
 import { getLiveTree, patchLiveTree } from './liveTree'
 import { resolveOrder } from './order'
 import { NEXUS_CONFIG_FILES, SIDECAR_FILENAME, SPACE_SIDECAR, nexusConfig } from './paths'
@@ -193,11 +195,16 @@ async function applyOne(
 ): Promise<'ok' | 'refresh'> {
   switch (c.kind) {
     case 'ignored':
+      return 'ok'
     case 'index-only':
+      // Rows update; nothing else moves — an un-adopted folder's note stays queryable.
+      await indexWrittenPage(root, join(root, c.rel))
       return 'ok'
     case 'page-remove':
+      removePathIndex(c.rel)
       return removePage(root, c.rel)
     case 'page-upsert':
+      await indexWrittenPage(root, join(root, c.rel))
       return patchPageFromDisk(root, c.rel)
     case 'container-meta':
       return patchContainerFromDisk(root, c.dirRel)
