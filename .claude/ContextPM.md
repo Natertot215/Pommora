@@ -4,11 +4,11 @@
 
 **Populating the Settings feature.** PM-107 built the foundation and seated the rail; the work from here is filling it. The window's panels are declared in one roster where a leaf names its label, glyph, placement, and either sections of rows or a surface of its own, so a new setting is one entry rather than a change to the window's plumbing. Nine categories are seated in the order they will keep, with Trash anchored below the separator.
 
-Four of those categories hold nothing yet. Appearance is the nearest: accent, connection color, default icons and the default view scale are working keys with no controls, all wireable through the existing setter. Properties and Automations are seated against features that do not exist yet — Automations especially, since settings cannot be designed before the thing they configure. Shortcuts has three bindings in code and no way to rebind them. The open question in front of the next piece is which of these earns a control next, and what the empty three are actually for.
+Four of those categories hold nothing yet. Appearance is the nearest: accent, connection color and default icons are working keys with no controls, all wireable through the existing setter. Interface took the first control the empty categories were waiting on — an Interface Scale slider that applies as it moves, through a per-tick tell that previews without persisting. Properties and Automations are seated against features that do not exist yet — Automations especially, since settings cannot be designed before the thing they configure. Shortcuts has three bindings in code and no way to rebind them. The open question in front of the next piece is which of these earns a control next, and what the empty three are actually for.
 
 ### Immediate Work
 
-- [ ] **Fill Appearance.** Accent and connection color need pickers and `ColorPicker` already exists; the placement knobs are two-value choices; the default view scale is a slider; default icons need the Icon Picker per kind. None of it needs new plumbing — every one writes through `setPersonalization`.
+- [ ] **Fill Appearance.** Accent and connection color need pickers and `ColorPicker` already exists; the placement knobs are two-value choices; default icons need the Icon Picker per kind. None of it needs new plumbing — every one writes through `setPersonalization`.
 
 ### Pending Focuses
 
