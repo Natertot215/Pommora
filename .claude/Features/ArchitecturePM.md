@@ -88,7 +88,7 @@ A deleted entity moves to `.trash/` under the folder chain it came from, as a bu
 
 #### Folder Exclusion
 
-`excluded_folders` on `settings.json` takes anchored nexus-relative paths the read walk, the adoption pass, and the watcher ignore at any depth — never adopted, shown, indexed, or auto-tagged. The rename cascades are the exception: they rewrite every `.md` under the root, keeping an excluded folder's `[[link]]`s and Context keys correct.
+`excluded_folders` on `settings.json` takes anchored nexus-relative paths, and exclusion is total: one predicate is honored by the read walk, the adoption pass, the watcher, the content index's corpus, and every cascade — query path and fallback scan alike. Nothing under an excluded folder is read, shown, indexed, swept, or rewritten, so a rename leaves an excluded note's `[[link]]`s as they were. Un-adopted folders are not excluded folders: they stay outside the tree but fully indexed and cascade-reachable.
 
 ### The Read + State Layer
 
