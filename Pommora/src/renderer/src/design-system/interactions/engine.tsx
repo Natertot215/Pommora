@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from 'react'
 import { stack } from '../tokens/stack'
-import { useFeel, type Feel } from './feel'
+import { DEFAULT_FEEL, type Feel } from './feel'
 import { findScroller, startAutoScroll } from './autoscroll'
 import { announce, ensureInstructions, INSTRUCTIONS_ID } from './a11y'
 import { ARROW_DIRS, keyboardNext } from './keyboard'
@@ -122,13 +122,11 @@ export function Zone({
   children,
   ...notify
 }: ZoneProps): React.JSX.Element {
-  const feel = useFeel()
+  const feel = DEFAULT_FEEL
 
   const els = useRef(new Map<string, HTMLElement>())
   const idsRef = useRef(ids)
   idsRef.current = ids
-  const feelRef = useRef(feel)
-  feelRef.current = feel
   const notifyRef = useRef(notify)
   notifyRef.current = notify
   const cbRef = useRef({ onReorder, canReorder })
@@ -308,7 +306,7 @@ export function Zone({
       if (e.target === el && e.propertyName === 'transform') finish()
     }
     el?.addEventListener('transitionend', onEnd)
-    window.setTimeout(finish, feelRef.current.duration + SETTLE_FALLBACK)
+    window.setTimeout(finish, feel.duration + SETTLE_FALLBACK)
   }
 
   // Decide-then-animate, shared by pointer drop and keyboard drop. `kbdEl` is the element to
@@ -468,7 +466,7 @@ export function Zone({
     }),
     // begin/liftKeyboard close over `disabled`, so recreating them each render is intentional — not
     // memoized, since identity churn here is fine. Pointer delta deliberately NOT here (see track).
-    [ids, feel, activeId, overIndex, rects, dropState, keyboard, disabled, swap, itemRole],
+    [ids, activeId, overIndex, rects, dropState, keyboard, disabled, swap, itemRole],
   )
   return <ZoneCtx.Provider value={value}>{children}</ZoneCtx.Provider>
 }

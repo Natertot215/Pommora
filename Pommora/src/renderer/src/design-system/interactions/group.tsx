@@ -11,7 +11,7 @@ import {
 } from 'react'
 import { createPortal } from 'react-dom'
 import { stack } from '../tokens/stack'
-import { useFeel } from './feel'
+import { DEFAULT_FEEL } from './feel'
 import { announce } from './a11y'
 import { findScroller, startAutoScroll } from './autoscroll'
 import { beginDragDisclose, endDragDisclose } from './dragDisclose'
@@ -172,9 +172,7 @@ export function DragGroup({
   crossZone = true,
   children,
 }: DragGroupProps): React.JSX.Element {
-  const feel = useFeel()
-  const feelRef = useRef(feel)
-  feelRef.current = feel
+  const feel = DEFAULT_FEEL
   const onCommitRef = useRef(onCommit)
   onCommitRef.current = onCommit
   const crossZoneRef = useRef(crossZone)
@@ -477,7 +475,7 @@ export function DragGroup({
       fn()
     }
     commitRef.current = once
-    timerRef.current = window.setTimeout(once, feelRef.current.duration + SETTLE_FALLBACK)
+    timerRef.current = window.setTimeout(once, DEFAULT_FEEL.duration + SETTLE_FALLBACK)
   }
 
   // After the move, items (incl. the inserted card) sit contiguously from the zone's first slot,
@@ -752,7 +750,7 @@ export function useGroupedDragItem(id: string): DragItem {
   if (!group || zoneId == null)
     throw new Error('useGroupedDragItem must be used inside a grouped <SortableZone>')
   const { transform, hidden, animate } = group.itemState(zoneId, id)
-  const feel = useFeel()
+  const feel = DEFAULT_FEEL
   const isDragging = group.active?.id === id
   return {
     setNodeRef: (el) => group.registerItem(zoneId, id, el),
