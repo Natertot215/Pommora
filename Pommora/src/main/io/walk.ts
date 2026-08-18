@@ -5,7 +5,7 @@
 
 import { readdir } from 'node:fs/promises'
 import type { Dirent } from 'node:fs'
-import { join } from 'node:path'
+import { join, relative } from 'node:path'
 import { excludedMatcher } from '../exclusion'
 
 /** Whether a name (or a path ending in one) is Markdown. Case-INSENSITIVE, and stated once: a
@@ -63,17 +63,29 @@ export const NON_CORPUS_TOP: ReadonlySet<string> = new Set(['.nexus', '.trash'])
  *  and every cascade fallback scan enumerate through here, so "indexed", "swept", and
  *  "rewritable" can never mean three different sets of files. */
 export async function corpusFiles(root: string, excluded: string[]): Promise<string[]> {
+  return corpusFilesUnder(root, root, excluded)
+}
+
+/** The same corpus law scoped to one subtree: only `absDir` is walked, so a per-container
+ *  enumeration never pays a whole-nexus readdir, while exclusion still matches against the
+ *  root-anchored path the way the full walk does. */
+export async function corpusFilesUnder(
+  root: string,
+  absDir: string,
+  excluded: string[],
+): Promise<string[]> {
   const isExcluded = excludedMatcher(excluded)
+  const base = relative(root, absDir).split(/[/\\]/).filter(Boolean)
   let rels: string[]
   try {
-    rels = await readdir(root, { recursive: true })
+    rels = await readdir(absDir, { recursive: true })
   } catch {
     return []
   }
   const out: string[] = []
   for (const rel of rels) {
     if (!isMarkdownFile(rel)) continue
-    const segs = rel.split(/[/\\]/)
+    const segs = [...base, ...rel.split(/[/\\]/)]
     if (NON_CORPUS_TOP.has(segs[0]) || isExcluded(segs)) continue
     out.push(segs.join('/'))
   }

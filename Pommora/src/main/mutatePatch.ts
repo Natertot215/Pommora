@@ -5,8 +5,7 @@
 // patch degrades to one verification walk, never to a silently stale tree.
 
 import type { BannerOwnerKind, MutableKind, MutateRequest } from '@shared/mutate'
-import type { CollectionNode, SetNode } from '@shared/types'
-import type { NexusTree } from '@shared/types'
+import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
 import {
   insertCreatedInTree,
   parentOf,
@@ -20,7 +19,7 @@ import {
 } from '@shared/treePatch'
 import { isAdoptedId } from './ids'
 import { orderedDefs, readRegistry } from './io/propertiesRegistry'
-import { dropLiveTree, getLiveTree, noteDiskMoved, refreshTree } from './liveTree'
+import { dropLiveTree, getLiveTree, refreshAfterWrite } from './liveTree'
 import {
   applyPatch,
   patchContainerFromDisk,
@@ -187,12 +186,11 @@ async function routeMutation(
             ? patchTopOrderFromDisk(root)
             : patchContainerFromDisk(root, req.parentPath)
         }
-        case 'createSpace':
-          return patchSpaceOrderFromDisk(root, req.contextId)
         case 'reorderChildren':
           return patchContainerFromDisk(root, req.parentPath)
         case 'reorderTop':
           return patchTopOrderFromDisk(root)
+        case 'createSpace':
         case 'reorderSpaces':
           return patchSpaceOrderFromDisk(root, req.contextId)
         default:
@@ -241,9 +239,7 @@ export async function confirmBy(
   const before = getLiveTree()
   if ((await work()) === 'refresh') {
     try {
-      // The write already landed, so any walk still in flight predates it.
-      noteDiskMoved()
-      await refreshTree(root)
+      await refreshAfterWrite(root)
     } catch {
       // The write landed but the verification walk failed — the held tree predates the write
       // and must not keep serving as canon. Dropped, every later read walks (and surfaces the

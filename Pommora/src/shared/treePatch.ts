@@ -203,36 +203,31 @@ function insert(
   return { containers: next, done }
 }
 
-/** Relocate the node at `path` under `newParentPath`, updating paths. Null if unresolved or a no-op. */
 /** Re-point (or, with `newPath` null, prune) the walk-owned unreadable bookkeeping riding a
  *  path change — a stale entry buys spurious walks at a dead address and blinds the classifier
- *  to the live one. */
-function retargetUnreadable(
-  tree: NexusTree,
+ *  to the live one. The key is never invented: the walk's tree carries `unreadable` only when
+ *  nonempty, and `stabilize` counts keys. */
+function repointUnreadable(
+  tree: NexusTree | null,
   oldPath: string,
   newPath: string | null,
-): NexusTree['unreadable'] {
+): NexusTree | null {
+  if (!tree) return null
   const list = tree.unreadable
   const hit = (p: string): boolean => p === oldPath || p.startsWith(`${oldPath}/`)
-  if (!list?.some((u) => hit(u.path))) return list
-  const out: { path: string }[] = []
+  if (!list?.some((u) => hit(u.path))) return tree
+  const kept: { path: string }[] = []
   for (const u of list) {
-    if (!hit(u.path)) out.push(u)
-    else if (newPath !== null) out.push({ path: newPath + u.path.slice(oldPath.length) })
+    if (!hit(u.path)) kept.push(u)
+    else if (newPath !== null) kept.push({ path: newPath + u.path.slice(oldPath.length) })
   }
-  return out.length ? out : undefined
-}
-
-/** Attach a retargeted unreadable list without inventing the key — the walk's tree carries
- *  `unreadable` only when nonempty, and `stabilize` counts keys. */
-function withUnreadable(tree: NexusTree, list: NexusTree['unreadable']): NexusTree {
-  if (list === tree.unreadable) return tree
   const next = { ...tree }
-  if (list === undefined) delete next.unreadable
-  else next.unreadable = list
+  if (kept.length) next.unreadable = kept
+  else delete next.unreadable
   return next
 }
 
+/** Relocate the node at `path` under `newParentPath`, updating paths. Null if unresolved or a no-op. */
 export function relocateNodeInTree(
   tree: NexusTree,
   path: string,
@@ -246,7 +241,7 @@ export function relocateNodeInTree(
   const placed = insert(pulled.containers, newParentPath, moved)
   if (!placed.done) return null
   const next = { ...tree, collections: placed.containers as CollectionNode[] }
-  return withUnreadable(next, retargetUnreadable(next, path, newPath))
+  return repointUnreadable(next, path, newPath)
 }
 
 function holdsPath(containers: (CollectionNode | SetNode)[], path: string): boolean {
@@ -471,8 +466,9 @@ function updateInContainers(
 export function renameNodeInTree(tree: NexusTree, path: string, newName: string): NexusTree | null {
   const parent = parentOf(path)
   // A page path wears `.md`; every container and Space path is bare — the same distinction
-  // the per-kind arms below encode, needed here for the bookkeeping re-point.
-  const newPath = path.endsWith('.md')
+  // the per-kind arms below encode, needed here for the bookkeeping re-point. Case-insensitive
+  // to match the walk's admit: a `.MD` page renames onto the canonical lowercase extension.
+  const newPath = /\.md$/i.test(path)
     ? joinPath(parent, `${newName}.md`)
     : joinPath(parent, newName)
   const next = updateNodeInTree(tree, path, (node) => {
@@ -482,13 +478,16 @@ export function renameNodeInTree(tree: NexusTree, path: string, newName: string)
       return { ...reparentPaths(node, path, joinPath(parent, newName)), title: newName }
     return { ...node, title: newName, path: joinPath(parent, newName) }
   })
-  return next ? withUnreadable(next, retargetUnreadable(next, path, newPath)) : null
+  return repointUnreadable(next, path, newPath)
 }
 
 /** Remove the entity at `path` (a just-confirmed delete). */
 export function removeNodeInTree(tree: NexusTree, path: string): NexusTree | null {
-  const next = updateNodeInTree(tree, path, () => null)
-  return next ? withUnreadable(next, retargetUnreadable(next, path, null)) : null
+  return repointUnreadable(
+    updateNodeInTree(tree, path, () => null),
+    path,
+    null,
+  )
 }
 
 /** Patch renderer-knowable display fields on the entity at `path` (icon / heading-icon chrome). */

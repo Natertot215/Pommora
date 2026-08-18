@@ -6,7 +6,7 @@ import { relative, sep } from 'node:path'
 import chokidar, { type FSWatcher } from 'chokidar'
 import type { BrowserWindow } from 'electron'
 import { asStringArray } from './coerce'
-import { excludedMatcher } from './exclusion'
+import { excludedMatcher, sameExclusions } from './exclusion'
 import { readJsonObject } from './io/atomicWrite'
 import { readNavigationFile } from './io/navigationFile'
 import { isRecentWrite } from './io/writeEcho'
@@ -14,7 +14,7 @@ import { isMarkdownFile } from './io/walk'
 import { HOMEPAGE_HOST_DIRNAME, nexusConfig, NEXUS_CONFIG_FILES } from './paths'
 import { push as pushToWindow } from './ipc'
 import { seedContentIndex } from './indexSeed'
-import { getLiveTree, noteDiskMoved, refreshTree } from './liveTree'
+import { getLiveTree, refreshAfterWrite } from './liveTree'
 import { sessionRoot } from './session'
 import { applyWatchEvents, type WatchEvent, type WatchEventName } from './watchPatch'
 
@@ -142,28 +142,23 @@ async function settle(root: string, win: BrowserWindow, excluded: string[]): Pro
     const before = getLiveTree()
     const outcome = await applyWatchEvents(root, events, excluded)
     let tree = getLiveTree()
-    if (outcome === 'refresh') {
-      // The events describe writes that already landed — a walk still in flight predates them.
-      noteDiskMoved()
-      tree = await refreshTree(root)
-    }
+    if (outcome === 'refresh') tree = await refreshAfterWrite(root)
     // Re-checked after the awaits: a session that switched mid-settle must not receive the
     // OLD root's walked tree (a superseded walk still returns it to its awaiters).
     if (sessionRoot() !== root || win.isDestroyed()) return
     if (tree && tree !== before) pushToWindow(win, 'nexus:changed', tree)
+    if (outcome !== 'refresh') return
     // A refresh means the corpus may have moved in ways no arm named — the stat-gated seed
     // reconciles the index for the same cost as the walk's own stats.
-    if (outcome === 'refresh' && sessionRoot() === root) await seedContentIndex(root)
+    await seedContentIndex(root)
+    if (sessionRoot() !== root || win.isDestroyed()) return
     // The compiled exclusion list this watcher was armed with is spent state: an exclusions
     // edit classifies `refresh` above, but the classifier and chokidar's own ignore filter
     // would keep reading the stale capture — and a note under a newly-excluded folder would
     // ride `index-only` back into the queryable rows. A changed list re-arms the watcher.
-    if (outcome === 'refresh' && sessionRoot() === root && !win.isDestroyed()) {
-      const settings = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings))) ?? {}
-      const current = asStringArray(settings.excluded_folders) ?? []
-      const same = current.length === excluded.length && current.every((v, i) => v === excluded[i])
-      if (!same) void startWatcher(root, win)
-    }
+    const settings = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings))) ?? {}
+    const current = asStringArray(settings.excluded_folders) ?? []
+    if (!sameExclusions(current, excluded)) void startWatcher(root, win)
   } catch {
     // Transient FS state mid-write — the next settle re-reads (Reload is the fallback).
   }

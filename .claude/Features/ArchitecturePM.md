@@ -118,7 +118,7 @@ Each handler declares its boundary policy beside its body. Enveloped channels �
 
 A Pommora-governed frontmatter key is recognized by its wrap alone — `(Context)` for the organization layer, `<Property>` for the attribute layer — partitioning the keyspace with no reserved-name blocklist while every foreign key and comment survives a rewrite. Recognizing a key is not resolving one; a key registers as a live value only on a registry match. 
 
-Every operational-state action is one statement — a change is a single-row upsert, and an emptied value deletes its key. Navigation intent is the one operational write going to disk, and it keeps the before-quit gate deferring exit until the write settles.
+Every operational-state action is a single statement — a change is a single-row upsert, and an empty value deletes its key. Navigation intent is the one operational write that goes to disk, and it keeps the before-quit gate deferred, delaying exit until the write settles.
 
 **Versioned, not migrated.** A schema mismatch on open deletes the file and starts clean, costing a machine its chrome once — the schema stays small enough that the trade is worth it.
 

@@ -24,7 +24,7 @@ import {
 } from './db/contentIndex'
 import { readJsonObject } from './io/atomicWrite'
 import { splitEnvelope } from './io/pageFile'
-import { corpusFiles, isMarkdownFile, NON_CORPUS_TOP } from './io/walk'
+import { corpusFiles, corpusFilesUnder, isMarkdownFile, NON_CORPUS_TOP } from './io/walk'
 import { nexusConfig, NEXUS_CONFIG_FILES } from './paths'
 import { splitFrontmatter } from './readNexus'
 import { sessionDb } from './sessionDb'
@@ -41,20 +41,35 @@ export function extractPageIndex(content: string): PageIndexEntry | null {
   return { mentions: [...extractMentions(splitEnvelope(content).body)], values }
 }
 
-/** Every corpus file of the nexus at `root`, honoring the user's `excluded_folders` — the one
- *  enumeration behind the seed and behind every cascade's fallback scan. A missing or
- *  unreadable settings file excludes nothing, exactly as the walk reads it. */
-export async function nexusCorpus(root: string): Promise<string[]> {
+/** The user's `excluded_folders`, read the way the walk reads them — a missing or unreadable
+ *  settings file excludes nothing. */
+async function excludedFolders(root: string): Promise<string[]> {
   const settings = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings))) ?? {}
-  return corpusFiles(root, asStringArray(settings.excluded_folders) ?? [])
+  return asStringArray(settings.excluded_folders) ?? []
 }
 
-/** The corpus under one folder — `nexusCorpus` filtered to the subtree, as absolute paths.
- *  The per-folder sweeps and readers enumerate through here so a folder nested inside a
- *  Collection but named by `excluded_folders` stays exactly as unreachable as the walk says. */
+/** Every corpus file of the nexus at `root`, honoring the user's `excluded_folders` — the one
+ *  enumeration behind the seed and behind every cascade's fallback scan. */
+export async function nexusCorpus(root: string): Promise<string[]> {
+  return corpusFiles(root, await excludedFolders(root))
+}
+
+/** Corpus rels as absolute paths, kept to those inside one of `folders` — the separator is part
+ *  of the prefix so a folder never swallows a sibling whose name merely extends it. Shared by
+ *  the per-folder enumeration below and the key-holder query's scope intersection. */
+export function corpusUnder(root: string, rels: string[], folders: string[]): string[] {
+  return rels
+    .map((rel) => join(root, rel))
+    .filter((abs) => folders.some((folder) => abs.startsWith(folder + sep)))
+}
+
+/** The corpus under one folder, as absolute paths — the subtree walked directly, never the
+ *  whole nexus (this sits on the container-open hot path). The per-folder sweeps and readers
+ *  enumerate through here so a folder nested inside a Collection but named by
+ *  `excluded_folders` stays exactly as unreachable as the walk says. */
 export async function folderCorpus(root: string, absFolder: string): Promise<string[]> {
-  const rels = await nexusCorpus(root)
-  return rels.map((rel) => join(root, rel)).filter((abs) => abs.startsWith(absFolder + sep))
+  const rels = await corpusFilesUnder(root, absFolder, await excludedFolders(root))
+  return rels.map((rel) => join(root, rel))
 }
 
 /** Nexus-relative POSIX path when `abs` sits inside the corpus's reach, else null — the app's
