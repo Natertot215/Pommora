@@ -337,8 +337,10 @@ At the end of this plan, none of that survives as a hot path. Main holds a **liv
 **Failure half:** an index write failing after a successful file write → logged, never fatal (the open-time reconcile heals it); a trash restore → rows reappear via the restore path's existing read.
 
 **Steps:**
-- [ ] Tests: a mutated fixture's rows match a from-scratch reconcile after each seam fires (rename, edit, delete, restore, external event).
-- [ ] Full gates green. Commit: `feat(main): every page write keeps the index current`
+- [x] Tests: a mutated fixture's rows match a from-scratch reconcile after each seam fires (rename, edit, delete, restore, external event). *(`indexMaintenance.test.ts` — six seams, each asserting maintained rows deep-equal a wiped-and-reseeded index of the same disk.)*
+- [x] Full gates green. Commit: `feat(main): every page write keeps the index current`
+
+*Derivation re-run and adjudicated (control ≥1 held): **index** — `crud/page` create (hooked at the mutate cases), `governedWrite` page writes (hooked at `setProperty`; `setContext` is row-invisible, below), the sweeps (`cascade.ts`, `governedSweep.ts` both page arms, `optionOps.cascadePages`, `removeProperty` strip + `restoreCachedValues`), the `page:updateBody` channel, and rename/move/delete path ops (`moveIndexPaths`/`deindexPath`; `restore` confirms via the stat-gated `seedContentIndex`). **Don't index** — `blocks.ts` and `contextWrite.ts` (`.nexus`-resident, outside the corpus), sidecar/config `atomicWriteFile` writers, `remint.ts`/`adopt.ts` (open-time, the seed follows them), and the row-invisible page writers (`setIcon`/`setBanner`/`setHeadingIconHidden`/`setContext` — icon, banner, and Context keys hold no rows; their stale stat re-reads once at the next open).*
 
 #### Task 10: The rename cascade queries
 

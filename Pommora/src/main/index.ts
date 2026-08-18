@@ -30,7 +30,7 @@ import { dropLiveTree, getLiveTree, refreshTree } from './liveTree'
 import { confirmBy, confirmMutation, confirmRegistry } from './mutatePatch'
 import { patchContainerFromDisk, patchSettingsFromDisk } from './watchPatch'
 import { runOpenRecord } from './record'
-import { seedContentIndex } from './indexSeed'
+import { indexWrittenPage, seedContentIndex } from './indexSeed'
 import { readPage } from './readPage'
 import {
   convertTileToPage,
@@ -780,6 +780,7 @@ serveBridge(
         const resolved = await resolveUnderRoot(root, relPath)
         if (!resolved.ok) return resolved
         const r = await updatePageBody(resolved.value, body)
+        if (r.ok) await indexWrittenPage(root, resolved.value)
         return r.ok ? ok(null) : r
       },
     },

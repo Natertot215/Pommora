@@ -12,6 +12,7 @@ import { mentionsTitle } from '../connections/scan'
 import { rewriteConnections } from '../connections/rewrite'
 import { normalizeTitle } from '@shared/connections'
 import { ok, type Result } from '@shared/result'
+import { indexWrittenPage } from '../indexSeed'
 
 const SKIP_TOP_LEVEL = ['.nexus', '.trash']
 
@@ -35,7 +36,10 @@ export async function renameCascade(
       if (newBody === body) return null
       return mergeFrontmatter(content, {}, [], newBody)
     })
-    if (wrote) touched.push(file)
+    if (wrote) {
+      touched.push(file)
+      await indexWrittenPage(nexusRoot, file)
+    }
   }
   return ok({ touched })
 }

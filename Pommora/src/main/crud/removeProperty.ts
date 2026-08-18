@@ -13,6 +13,7 @@ import { pageCollectionSidecar } from '@shared/schemas'
 import { listMarkdownFiles } from '../io/walk'
 import { sidecarPath } from '../paths'
 import { readTextOrNull, rewritePageSerialized, rmwJsonStrict } from '../io/atomicWrite'
+import { indexWrittenPage } from '../indexSeed'
 import { readFrontmatterFields, mergeFrontmatter, splitEnvelope } from '../io/pageFile'
 import { readRegistry } from '../io/propertiesRegistry'
 import { encodeValue, isPlainObject, propertyKey } from '@shared/propertyValue'
@@ -70,9 +71,10 @@ async function removeInner(
   )
   if (!written.ok) return written
   for (const file of files) {
-    await rewritePageSerialized(file, (content) =>
+    const wrote = await rewritePageSerialized(file, (content) =>
       sweepAdmits(content) ? stripPageMember(content, key) : null,
     )
+    if (wrote) await indexWrittenPage(root, file)
   }
   return ok(null)
 }
@@ -132,7 +134,7 @@ export async function restoreCachedValues(
     // one can never disagree about whether they may come back.
     const standing = propertyValueStands(def, raw)
     if (!standing.stands) return false
-    return rewritePageSerialized(file, (content) =>
+    const wrote = await rewritePageSerialized(file, (content) =>
       !sweepAdmits(content)
         ? null
         : mergeFrontmatter(
@@ -142,6 +144,8 @@ export async function restoreCachedValues(
             splitEnvelope(content).body,
           ),
     )
+    if (wrote) await indexWrittenPage(root, file)
+    return wrote
   })
   // The page walk above deliberately runs unlocked.
   const written = await rmwJsonStrict(sidecarPath(collectionFolder, 'collection'), (cur) =>

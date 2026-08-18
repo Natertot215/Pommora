@@ -69,6 +69,7 @@ import type { PropertyValue } from '@shared/propertyValue'
 import { NO_NEXUS } from './ipc'
 import type { TrashMode } from './appConfig'
 import { readRegistry } from './io/propertiesRegistry'
+import { deindexPath, indexWrittenPage, moveIndexPaths, seedContentIndex } from './indexSeed'
 
 /** What the orchestration needs from the Electron layer (injected to keep this testable). */
 export interface MutateDeps {
@@ -222,6 +223,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
           'page_order',
           req.order.map((x) => (x === NEW_PAGE_SLOT ? r.value.id : x)),
         )
+      await indexWrittenPage(root, r.value.path)
       return ok({
         created: { id: r.value.id, path: relJoin(req.parentPath, basename(r.value.path)) },
       })
@@ -263,6 +265,8 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
           // "Untitled" could rewrite unrelated [[Untitled]] links.
           const r = await createDisambiguated(req.newName, (name) => renamePage(abs, name))
           if (!r.ok) return r
+          moveIndexPaths(root, abs, r.value.path)
+          await indexWrittenPage(root, r.value.path)
           return renamedReply(r.value.path)
         }
         const r = await renamePage(abs, req.newName)
@@ -284,11 +288,14 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         try {
           await rewriteBlockConnections(root, oldTitle, req.newName)
         } catch {}
+        moveIndexPaths(root, abs, r.value.path)
+        await indexWrittenPage(root, r.value.path)
         return renamedReply(r.value.path)
       }
       // No link cascade — [[links]] target pages, and a container's title is referenced nowhere else.
       const r = await renameFolderEntity(abs, req.newName)
       if (!r.ok) return r
+      moveIndexPaths(root, abs, r.value.path)
       return ok({})
     }
 
@@ -348,6 +355,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         recordWrite(abs) // in-nexus trash records inside settleBundle; the OS route records here
         await deps.trashToSystem(abs)
       }
+      deindexPath(root, abs)
       return ok({})
     }
 
@@ -355,7 +363,11 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       const resolved = await resolveUnderRoot(root, req.bundlePath)
       if (!resolved.ok) return resolved
       const r = await restoreArtifact(root, resolved.value, req.destination)
-      return r.ok ? ok({}) : r
+      if (!r.ok) return r
+      // A restore lands an arbitrary subtree back in the corpus; the stat-gated seed reads
+      // exactly the files that returned.
+      await seedContentIndex(root)
+      return ok({})
     }
 
     case 'emptyBundle': {
@@ -588,7 +600,9 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         const def = (await readRegistry(root)).defs[req.propertyId]
         if (!def) return fail('not-found', 'Property not found.')
         const r = await updatePageProperty(resolved.value, def, req.value)
-        return r.ok ? ok({}) : r
+        if (!r.ok) return r
+        await indexWrittenPage(root, resolved.value)
+        return ok({})
       })
     }
 
@@ -606,6 +620,8 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       // the file has already moved, and reporting a failed order write as a failed move leaves
       // the renderer showing the page where it no longer is. Order falls back to title instead.
       if (req.order) await setChildOrder(dst.value, 'page_order', req.order)
+      moveIndexPaths(root, src.value, r.value.path)
+      await indexWrittenPage(root, r.value.path)
       return ok({})
     }
 
@@ -621,6 +637,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       if (!r.ok) return r
       // Best-effort for the same reason as movePage — the folder has already moved.
       await setChildOrder(dst.value, 'set_order', req.order)
+      moveIndexPaths(root, src.value, r.value.path)
       return ok({})
     }
 

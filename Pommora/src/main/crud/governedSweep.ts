@@ -16,6 +16,7 @@ import { readFile } from 'node:fs/promises'
 import { parseGovernedKey } from '@shared/governedKeys'
 import { atomicWriteFile, readJsonObject, writeJson } from '../io/atomicWrite'
 import { serializeOnFile } from '../io/fileLock'
+import { indexWrittenPage } from '../indexSeed'
 import { mergeFrontmatter, splitEnvelope } from '../io/pageFile'
 import { listFilesRecursive, listMarkdownFiles } from '../io/walk'
 import { contextsDir, SPACE_SIDECAR } from '../paths'
@@ -125,6 +126,7 @@ export async function sweepGovernedRoots<C>(
         const next = opts.rewriteText(content, file)
         if (next === null) return
         await atomicWriteFile(file, next)
+        await indexWrittenPage(root, file)
         out.touched.push(file)
         return
       }
@@ -143,6 +145,7 @@ export async function sweepGovernedRoots<C>(
         file,
         mergeFrontmatter(content, modeled, merged, splitEnvelope(content).body),
       )
+      await indexWrittenPage(root, file)
       if (decided.capture !== undefined) out.captured.push(decided.capture)
       out.touched.push(file)
     })
