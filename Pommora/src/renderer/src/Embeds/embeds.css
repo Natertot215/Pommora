@@ -31,21 +31,21 @@
 }
 
 /* The website flavor: the guest owns the card's whole box; the shield above it keeps the card a
-   glance surface — pointer events land on the host, never the site. */
-.conn-hover-web {
-  position: absolute;
-  /* Escapes the pane's own 4px gutter: the site reads edge-to-edge like a page preview's body.
-     The guest clips its own corners — a pane clip can't reach a composited guest surface. The
-     shield rides the same box. */
-  inset: -4px;
-  display: flex;
-  border-radius: var(--glass-radius);
-  overflow: hidden;
-}
+   glance surface — pointer events land on the host, never the site. The box both wear escapes the
+   pane's own 4px gutter so the site reads edge-to-edge like a page preview's body, and clips its
+   own corners — a pane clip can't reach a composited guest surface. Stated once, so the shield
+   can never drift off the surface it covers. */
+.conn-hover-web,
 .conn-hover-web-shield {
   position: absolute;
   inset: -4px;
   border-radius: var(--glass-radius);
+}
+.conn-hover-web {
+  display: flex;
+  overflow: hidden;
+}
+.conn-hover-web-shield {
   background: var(--surface-primary);
   transition: opacity var(--duration-base) var(--ease-standard);
 }

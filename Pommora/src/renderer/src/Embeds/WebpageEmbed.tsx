@@ -182,17 +182,16 @@ export function WebpageEmbed({
       const d = e as Event & { isMainFrame?: boolean; errorCode?: number }
       if (d.isMainFrame !== false && d.errorCode !== -3) fail()
     }
-    const onGone = (): void => fail()
     const onLoad = (): void => {
       setFailed(false)
       setLoaded(true)
     }
     wv.addEventListener('did-fail-load', onFail)
-    wv.addEventListener('render-process-gone', onGone)
+    wv.addEventListener('render-process-gone', fail)
     wv.addEventListener('did-finish-load', onLoad)
     return () => {
       wv.removeEventListener('did-fail-load', onFail)
-      wv.removeEventListener('render-process-gone', onGone)
+      wv.removeEventListener('render-process-gone', fail)
       wv.removeEventListener('did-finish-load', onLoad)
     }
   })
