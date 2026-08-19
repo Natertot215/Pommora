@@ -275,12 +275,10 @@ interface WebTileDom extends TileDom {
   _obs?: WebObservers
 }
 
-// KNOB — the pre-arm hysteresis: the guest swaps to its face this many px BEFORE the tile
-// touches the clip edge, so a fast scroll never catches a partially-clipped live guest.
-const WEB_PREARM_PX = 8
-// The fit cap's breathing room below the scrollport edges — a tile exactly as tall as the
-// scrollport can never read fully-visible, and a never-fully-visible tile never goes live.
-const WEB_FIT_MARGIN = 2 * WEB_PREARM_PX + 24
+// KNOB — the fit cap's breathing room below the port edges: the pane's vertical insets sit
+// inside the viewport, and a tile taller than the port minus this margin can never read
+// fully-visible — a never-fully-visible tile never goes live.
+const WEB_FIT_MARGIN = 96
 // Full visibility with subpixel slack: fractional zoom can report ~0.999 for a fully visible
 // tile, and demanding an exact 1 there would hold it on its static face forever.
 const WEB_FULL_RATIO = 0.99
@@ -309,13 +307,12 @@ function observersFor(view: EditorView): WebObservers {
           }
         }
       },
-      // The acceptance ratio must itself be a threshold: fractional layout tops a fully visible
-      // tile out just below 1, and a lone threshold of 1 then never fires the callback at all.
-      {
-        root: view.scrollDOM,
-        threshold: [0, WEB_FULL_RATIO, 1],
-        rootMargin: `-${WEB_PREARM_PX}px 0px`,
-      },
+      // Viewport root, never an element: the page's real scroller is a pane ABOVE the editor
+      // (scrollDOM doesn't scroll there), and an element root only counts the clips between
+      // target and root — the viewport folds in every clipping ancestor there is. The acceptance
+      // ratio must itself be a threshold: fractional layout tops a fully visible tile out just
+      // below 1, and a lone threshold of 1 then never fires the callback at all.
+      { threshold: [0, WEB_FULL_RATIO, 1] },
     )
     const ro = new ResizeObserver(() => {
       for (const d of tiles) d._renderW?.()
@@ -359,9 +356,14 @@ class WebpageTileWidget extends WidgetType {
 
   private renderInto(dom: WebTileDom, view: EditorView): void {
     dom.className = 'mdpm-embed-tile tile-chassis'
-    // The fit cap, applied and re-applied at render time: a tile taller than its scrollport can
-    // never be fully visible, so the stored height yields to what the port can hold.
-    const port = view.scrollDOM.clientHeight
+    // The fit cap, applied and re-applied at render time: a tile taller than its port can never
+    // be fully visible, so the stored height yields to what the port can hold. The port is the
+    // tighter of the editor's own scroller and the window — scrollDOM doesn't scroll on the page
+    // surface, where its clientHeight is the whole document's.
+    const port = Math.min(
+      view.scrollDOM.clientHeight || Number.POSITIVE_INFINITY,
+      document.documentElement.clientHeight,
+    )
     const wanted = this.height ?? TILE_DEFAULT_PX
     const capped =
       port > 0 ? Math.max(TILE_MIN_PX, Math.min(wanted, port - WEB_FIT_MARGIN)) : wanted
