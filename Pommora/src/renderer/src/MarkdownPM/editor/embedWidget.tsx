@@ -29,8 +29,7 @@ import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { TILE_MIN_PX } from '@renderer/design-system/tokens/size.css'
 import { normalizeTitle, titleFromPath } from '@shared/connections'
 import '@renderer/design-system/tile-chassis.css'
-import { composeWebpageEmbedLine, loneWebpageEmbed } from '@shared/webpageEmbed'
-import { normalizeLinkUrl } from '@shared/links'
+import { loneWebpageEmbed } from '@shared/webpageEmbed'
 import { docScan } from './docCache'
 import { loneEmbedTitle } from '../detect'
 import { claimedEmbeds } from './embedRanges'
@@ -53,6 +52,10 @@ const embedHost = Facet.define<EmbedHost, EmbedHost>({
 /** Flips which tile (by target path) holds the live edit; null ends it. */
 export const setEmbedEditing = StateEffect.define<string | null>()
 
+/** The webpage line Edit Link seated the caret in — held raw until the selection leaves it, so the
+ *  address is edited in place and the site is asked to load again only once the line re-forms. */
+export const setWebLinkSeat = StateEffect.define<number | null>()
+
 /** The resolution nudge — dispatched when the page index changes identity, so tiles and
  *  connection styling react to a rename/delete/restore without waiting for a caret move. */
 export const resolutionNudge = StateEffect.define<null>()
@@ -60,9 +63,6 @@ export const resolutionNudge = StateEffect.define<null>()
 /** Replaces the host page's persisted tile heights (target page id → px) — loaded once at mount,
  *  updated whole on each resize commit. */
 export const setEmbedHeights = StateEffect.define<Record<string, number>>()
-
-/** Opens the Edit Link picker on the webpage tile whose line starts here; null closes it. */
-export const setWebLinkEdit = StateEffect.define<number | null>()
 
 /** Persistence callbacks the host page supplies; absent (preview, blocks) hides the resize handle. */
 export interface EmbedHeightsApi {
@@ -78,13 +78,13 @@ interface EmbedTiles {
   deco: DecorationSet
   ranges: TileRange[]
   editing: string | null
+  /** The webpage line being re-aimed in place, or null. */
+  seat: number | null
   /** Persisted tile heights, target page id → px; {} until the host's load lands. */
   heights: Record<string, number>
   /** Webpage candidates the formation gate declined (the selection sat on their line) — a
    *  selection move re-evaluates only while this is non-zero. */
   unformed: number
-  /** The line start of the webpage tile whose Edit Link picker is open, or null. */
-  linkEdit: number | null
 }
 
 // PageEmbed mounts MarkdownEditor, which registers this extension — a static import would be the
@@ -334,40 +334,6 @@ const LazyWebpageEmbed = lazy(() =>
   import('@renderer/Embeds/WebpageEmbed').then((m) => ({ default: m.WebpageEmbed })),
 )
 
-/** The Edit Link commit — a whole-line re-aim: the line becomes the bare `![](url)` form (the
- *  display layer derives the new title; an old hand label described a different page), and the
- *  persisted height follows the tile to its new URL key, but only where the old key isn't shared
- *  by a sibling tile and the new key isn't already someone's height. The gate is the detector
- *  itself — composing and re-reading refuses any address the grammar can't hold (an unbalanced
- *  `)`, an over-length target), which a plain URL-validity test would wave through and dissolve
- *  the tile into raw text. Refusal leaves the picker standing; the same address just closes it. */
-function commitWebLink(view: EditorView, next: string): void {
-  const url = normalizeLinkUrl(next.trim())
-  const line = composeWebpageEmbedLine('', url)
-  if (loneWebpageEmbed(line)?.url !== url) return
-  const f = view.state.field(embedField)
-  const r = f.ranges.find(
-    (x): x is Extract<TileRange, { kind: 'webpage' }> =>
-      x.kind === 'webpage' && x.from === f.linkEdit,
-  )
-  if (!r || url === r.url) {
-    view.dispatch({ effects: setWebLinkEdit.of(null) })
-    return
-  }
-  let heights = f.heights
-  const oldShared = f.ranges.some((x) => x !== r && x.kind === 'webpage' && x.url === r.url)
-  if (heights[r.url] !== undefined && !oldShared && heights[url] === undefined) {
-    heights = { ...heights, [url]: heights[r.url] }
-    delete heights[r.url]
-  }
-  view.dispatch({
-    changes: { from: r.from, to: r.to, insert: line },
-    effects: [setWebLinkEdit.of(null), setEmbedHeights.of(heights)],
-    userEvent: 'input',
-  })
-  if (heights !== f.heights) view.state.facet(embedHost).saveHeights?.(heights)
-}
-
 class WebpageTileWidget extends WidgetType {
   constructor(
     readonly url: string,
@@ -377,8 +343,6 @@ class WebpageTileWidget extends WidgetType {
      *  card) render the face unconditionally. NOT an ancestors-length read — the page surface
      *  carries its own path in the chain as the cycle guard, so length can't tell it apart. */
     readonly pageSurface: boolean,
-    /** This tile's Edit Link picker is open (the grip menu's re-aim). */
-    readonly linkEdit: boolean,
   ) {
     super()
   }
@@ -388,8 +352,7 @@ class WebpageTileWidget extends WidgetType {
       o.url === this.url &&
       o.label === this.label &&
       o.height === this.height &&
-      o.pageSurface === this.pageSurface &&
-      o.linkEdit === this.linkEdit
+      o.pageSurface === this.pageSurface
     )
   }
 
@@ -432,9 +395,6 @@ class WebpageTileWidget extends WidgetType {
               label: this.label,
               visible: this.pageSurface && dom._visible === true,
               refocusHost: () => view.focus(),
-              linkEdit: this.linkEdit,
-              onLinkCommit: (next: string) => commitWebLink(view, next),
-              onLinkDismiss: () => view.dispatch({ effects: setWebLinkEdit.of(null) }),
             }),
           ),
         ),
@@ -494,7 +454,7 @@ function buildTiles(
   editing: string | null,
   heights: Record<string, number>,
   prev: readonly TileRange[] | 'mount',
-  linkEdit: number | null,
+  seat: number | null,
 ): EmbedTiles {
   const host = state.facet(embedHost)
   const conn = host.getConn()
@@ -532,14 +492,16 @@ function buildTiles(
   }
   // The formation gate: a valid line claims at mount, or once the selection is off it — typing
   // `https://example.c` mid-address passes the grammar, so the grammar can never be the whole
-  // test. A tile formed once survives regardless of where the selection goes next.
+  // test. A tile formed once survives regardless of where the selection goes next, unless Edit
+  // Link seated the caret in it on purpose, which returns the line to the address it holds.
   for (const w of scan.webpages) {
     const formed =
-      prev === 'mount' ||
-      prev.some(
-        (p) => p.kind === 'webpage' && p.url === w.url && p.from <= w.to && p.to >= w.from,
-      ) ||
-      !selectionOn(state, w.from, w.to)
+      w.from !== seat &&
+      (prev === 'mount' ||
+        prev.some(
+          (p) => p.kind === 'webpage' && p.url === w.url && p.from <= w.to && p.to >= w.from,
+        ) ||
+        !selectionOn(state, w.from, w.to))
     if (!formed) {
       unformed++
       continue
@@ -553,19 +515,11 @@ function buildTiles(
           w.label,
           heights[w.url],
           host.saveHeights !== undefined,
-          linkEdit === w.from,
         ),
       }),
       range: { kind: 'webpage', from: w.from, to: w.to, url: w.url, label: w.label },
     })
   }
-  // A linkEdit position no tile answers to is stale — its tile was deleted or never formed — and
-  // held, it would spring the picker open unprompted on whatever tile later lands on it.
-  const openEdit =
-    linkEdit !== null &&
-    entries.some((e) => e.range.kind === 'webpage' && e.range.from === linkEdit)
-      ? linkEdit
-      : null
   entries.sort((a, b) => a.from - b.from)
 
   const builder = new RangeSetBuilder<Decoration>()
@@ -592,7 +546,7 @@ function buildTiles(
     }
     ranges.push(en.range)
   }
-  return { deco: builder.finish(), ranges, editing, heights, unformed, linkEdit: openEdit }
+  return { deco: builder.finish(), ranges, editing, heights, unformed, seat }
 }
 
 // Rebuild when the doc's embed set itself moved — read from the SAME cached scan every keystroke
@@ -642,36 +596,42 @@ export const embedField = StateField.define<EmbedTiles>({
   update(value, tr) {
     let editing = value.editing
     let heights = value.heights
-    let linkEdit = value.linkEdit === null ? null : tr.changes.mapPos(value.linkEdit, 1)
+    let seat = value.seat === null ? null : tr.changes.mapPos(value.seat, 1)
     let nudged = false
     for (const e of tr.effects) {
-      if (e.is(setEmbedEditing)) editing = e.value
+      if (e.is(setWebLinkSeat)) seat = e.value
+      else if (e.is(setEmbedEditing)) editing = e.value
       else if (e.is(resolutionNudge)) nudged = true
       else if (e.is(setEmbedHeights)) heights = e.value
-      else if (e.is(setWebLinkEdit)) linkEdit = e.value
     }
     // Selection changes are transactions, so the selection-departure trigger needs no dispatcher:
     // while unformed candidates exist, any selection move re-runs the formation check. Undo/redo
     // form like a mount — a restored tile line was a tile, and the restoring selection sits on it.
     const selMoved = !tr.startState.selection.eq(tr.state.selection)
     const formationDue = value.unformed > 0 && selMoved
+    // Leaving the seated line IS the submission: the seat clears, and the line re-forms around
+    // whatever address it now holds.
+    if (seat !== null && selMoved && seat <= tr.state.doc.length) {
+      const line = tr.state.doc.lineAt(seat)
+      if (!selectionOn(tr.state, line.from, line.to)) seat = null
+    }
     const restored = tr.isUserEvent('undo') || tr.isUserEvent('redo')
     if (!tr.docChanged) {
       return nudged ||
         editing !== value.editing ||
         heights !== value.heights ||
-        linkEdit !== value.linkEdit ||
+        seat !== value.seat ||
         formationDue
-        ? buildTiles(tr.state, editing, heights, value.ranges, linkEdit)
+        ? buildTiles(tr.state, editing, heights, value.ranges, seat)
         : value
     }
-    if (editAffectsEmbeds(value, tr) || formationDue || restored)
+    if (editAffectsEmbeds(value, tr) || formationDue || restored || seat !== value.seat)
       return buildTiles(
         tr.state,
         editing,
         heights,
         restored ? 'mount' : mapRanges(value.ranges, tr),
-        linkEdit,
+        seat,
       )
     return {
       deco: value.deco.map(tr.changes),
@@ -679,7 +639,7 @@ export const embedField = StateField.define<EmbedTiles>({
       editing,
       heights,
       unformed: value.unformed,
-      linkEdit,
+      seat,
     }
   },
   provide: (f) => EditorView.decorations.from(f, (v) => v.deco),

@@ -11,7 +11,6 @@ import { linkDomain } from '@shared/links'
 import { DEFAULT_LINK_DISPLAY } from '@shared/properties'
 import { WEB_PARTITION } from '@shared/types'
 import { webpageTileTitle } from '@shared/webpageEmbed'
-import { TextPicker } from '@renderer/design-system/components/TextPicker'
 import { useDismiss } from '@renderer/design-system/components/useDismiss'
 import { useSession } from '../store'
 import { openWebLink } from '../openWebLink'
@@ -43,9 +42,6 @@ export function WebpageEmbed({
   label = '',
   visible,
   refocusHost,
-  linkEdit = false,
-  onLinkCommit,
-  onLinkDismiss,
   partition = WEB_PARTITION,
 }: {
   url: string
@@ -56,10 +52,6 @@ export function WebpageEmbed({
   visible: boolean
   /** Where focus returns when a clip transition disengages a guest that held it. */
   refocusHost?: () => void
-  /** The Edit Link picker is open on this tile — anchored here, seeded with the URL. */
-  linkEdit?: boolean
-  onLinkCommit?: (next: string) => void
-  onLinkDismiss?: () => void
   partition?: string
 }): React.JSX.Element {
   const title = useWebpageTitle(label, url)
@@ -245,15 +237,6 @@ export function WebpageEmbed({
       >
         {title}
       </button>
-      {onLinkCommit && onLinkDismiss ? (
-        <TextPicker
-          open={linkEdit}
-          onDismiss={onLinkDismiss}
-          triggerRef={rootRef}
-          value={url}
-          onCommit={onLinkCommit}
-        />
-      ) : null}
     </div>
   )
 }
