@@ -68,8 +68,8 @@ function BrowserWindowBody({
   const [title, setTitle] = useState('')
   const [current, setCurrent] = useState(url)
   const [nav, setNav] = useState({ back: false, forward: false })
-  // The site's own theme color tints the toolbar strip, so the chrome reads as the page's —
-  // null (no meta theme-color, or a navigation away) falls back to the clear strip.
+  // The site's reported theme color judges the clear strip's label contrast — null (no meta
+  // theme-color, or a navigation away) keeps the light-label default.
   const [theme, setTheme] = useState<string | null>(null)
 
   // A retake aims the standing guest at the address — imperatively, because the guest may have
@@ -117,7 +117,6 @@ function BrowserWindowBody({
     <PreviewPane
       id="web-browser"
       className={cx('wbrowser', theme !== null && lightColor(theme) && 'is-light-chrome')}
-      style={theme ? ({ '--wbrowser-theme': theme } as React.CSSProperties) : undefined}
       closing={closing}
       onClose={closeBrowser}
       bounds={BOUNDS}
