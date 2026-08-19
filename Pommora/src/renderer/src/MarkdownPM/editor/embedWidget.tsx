@@ -264,28 +264,158 @@ class EmbedTileWidget extends WidgetType {
 
 /** The webpage tile's seat on the shared chassis. This task ships the claim mechanics; the live
  *  payload replaces the blank body in the next. */
+interface WebTileDom extends TileDom {
+  _visible?: boolean
+  _renderW?: () => void
+  _obs?: WebObservers
+}
+
+// KNOB — the pre-arm hysteresis: the guest swaps to its face this many px BEFORE the tile
+// touches the clip edge, so a fast scroll never catches a partially-clipped live guest.
+const WEB_PREARM_PX = 8
+// The fit cap's breathing room below the scrollport edges — a tile exactly as tall as the
+// scrollport can never read fully-visible, and a never-fully-visible tile never goes live.
+const WEB_FIT_MARGIN = 2 * WEB_PREARM_PX + 24
+
+interface WebObservers {
+  io: IntersectionObserver
+  ro: ResizeObserver
+  tiles: Set<WebTileDom>
+}
+
+// One observer pair per editor scroller, shared by its tiles — transitions only, per the
+// no-per-scroll-work rule. Keyed weakly so a destroyed editor's pair collects with it.
+const webObservers = new WeakMap<HTMLElement, WebObservers>()
+function observersFor(view: EditorView): WebObservers {
+  let o = webObservers.get(view.scrollDOM)
+  if (!o) {
+    const tiles = new Set<WebTileDom>()
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const en of entries) {
+          const d = en.target as WebTileDom
+          const visible = en.intersectionRatio >= 1
+          if (d._visible !== visible) {
+            d._visible = visible
+            d._renderW?.()
+          }
+        }
+      },
+      { root: view.scrollDOM, threshold: 1, rootMargin: `-${WEB_PREARM_PX}px 0px` },
+    )
+    const ro = new ResizeObserver(() => {
+      for (const d of tiles) d._renderW?.()
+    })
+    ro.observe(view.scrollDOM)
+    o = { io, ro, tiles }
+    webObservers.set(view.scrollDOM, o)
+  }
+  return o
+}
+
+const LazyWebpageEmbed = lazy(() =>
+  import('@renderer/Embeds/WebpageEmbed').then((m) => ({ default: m.WebpageEmbed })),
+)
+
 class WebpageTileWidget extends WidgetType {
   constructor(
     readonly url: string,
     readonly label: string,
     readonly height: number | undefined,
+    /** Nested editors (a page-embed body, the hover card) are themselves scrollable surfaces
+     *  whose inner fully-visible reading reproduces the spike's bleed against the outer clip —
+     *  below depth 0 the face renders unconditionally. */
+    readonly depth0: boolean,
   ) {
     super()
   }
 
   eq(o: WebpageTileWidget): boolean {
-    return o.url === this.url && o.label === this.label && o.height === this.height
+    return (
+      o.url === this.url &&
+      o.label === this.label &&
+      o.height === this.height &&
+      o.depth0 === this.depth0
+    )
   }
 
   get estimatedHeight(): number {
     return this.height ?? 320
   }
 
-  toDOM(): HTMLElement {
-    const dom = document.createElement('span')
+  private renderInto(dom: WebTileDom, view: EditorView): void {
     dom.className = 'mdpm-embed-tile tile-chassis'
-    if (this.height !== undefined) dom.style.height = `${this.height}px`
+    // The fit cap, applied and re-applied at render time: a tile taller than its scrollport can
+    // never be fully visible, so the stored height yields to what the port can hold.
+    const port = view.scrollDOM.clientHeight
+    const wanted = this.height ?? 320
+    const capped =
+      port > 0 ? Math.max(TILE_MIN_PX, Math.min(wanted, port - WEB_FIT_MARGIN)) : wanted
+    dom.style.height = `${capped}px`
+    let root = dom._root
+    if (!root) {
+      root = createRoot(dom)
+      dom._root = root
+    }
+    const host = view.state.facet(embedHost)
+    root.render(
+      createElement(
+        Fragment,
+        null,
+        createElement(
+          Suspense,
+          { fallback: null },
+          createElement(
+            'div',
+            { className: 'tile-chassis-body' },
+            createElement(LazyWebpageEmbed, {
+              url: this.url,
+              visible: this.depth0 && dom._visible === true,
+            }),
+          ),
+        ),
+        // Heights ride the same persisted blob as page tiles, URL-keyed — the blob's keys are
+        // free by design. Outside the Suspense boundary, as on the page tile.
+        this.depth0 && host.saveHeights
+          ? createElement(EmbedResizeHandle, { view, targetId: this.url })
+          : null,
+      ),
+    )
+  }
+
+  toDOM(view: EditorView): HTMLElement {
+    const dom = document.createElement('span') as WebTileDom
+    dom._renderW = () => this.renderInto(dom, view)
+    if (this.depth0) {
+      const o = observersFor(view)
+      o.tiles.add(dom)
+      o.io.observe(dom)
+      dom._obs = o
+    }
+    this.renderInto(dom, view)
     return dom
+  }
+
+  updateDOM(dom: HTMLElement, view: EditorView): boolean {
+    const d = dom as WebTileDom
+    if (!d._root) return false
+    d._renderW = () => this.renderInto(d, view)
+    this.renderInto(d, view)
+    return true
+  }
+
+  destroy(dom: HTMLElement): void {
+    const d = dom as WebTileDom
+    d._obs?.io.unobserve(d)
+    d._obs?.tiles.delete(d)
+    // The page tile's own reuse discipline: CM hands DOM to a successor on rebuilds, so only a
+    // node still detached after the update settles unmounts.
+    queueMicrotask(() => {
+      const root = d._root
+      if (d.isConnected || !root) return
+      d._root = undefined
+      root.unmount()
+    })
   }
 
   ignoreEvent(): boolean {
@@ -360,7 +490,7 @@ function buildTiles(
       from: w.from,
       to: w.to,
       deco: Decoration.replace({
-        widget: new WebpageTileWidget(w.url, w.label, heights[w.url]),
+        widget: new WebpageTileWidget(w.url, w.label, heights[w.url], host.ancestors.length === 0),
       }),
       range: { kind: 'webpage', from: w.from, to: w.to, url: w.url, label: w.label },
     })
