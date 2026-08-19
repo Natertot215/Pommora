@@ -82,7 +82,7 @@ export function WebpageEmbed({
           allowpopups
         />
       ) : (
-        <div className={cx('wpembed-face', failed && 'is-failed')}>
+        <div className="wpembed-face">
           {failed ? (
             <span className={cx('wpembed-face-domain', text.footnote.standard)}>
               {linkDomain(url)}
