@@ -73,8 +73,13 @@ export function EditableInput({
           : undefined
       }
       onKeyDown={(e) => {
-        if (e.key === 'Enter') e.currentTarget.blur()
-        else if (e.key === 'Escape') {
+        if (e.key === 'Enter') {
+          // Also cancels the keydown's default action: as the blur commits and a hosting picker
+          // closes, focus can restore to the trigger button before the action runs — which would
+          // activate that button and reopen the picker on the same press.
+          e.preventDefault()
+          e.currentTarget.blur()
+        } else if (e.key === 'Escape') {
           settled.current = true
           onCancel()
         }
