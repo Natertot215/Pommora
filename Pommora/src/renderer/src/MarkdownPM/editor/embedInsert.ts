@@ -24,19 +24,29 @@ export function embedInsertAfter(
   }
 }
 
-export function embedInsertAtCaret(view: EditorView): boolean {
+function insertEmbedToken(view: EditorView, token: string, caretBack: number): boolean {
   if (view.state.readOnly) return false
   const doc = docString(view.state.doc)
   const head = view.state.selection.main.head
   const block = blockAt(doc, head)
   const after = block ? block.to : view.state.doc.lineAt(head).to
-  const c = embedInsertAfter(doc, after, '![[]]')
+  const c = embedInsertAfter(doc, after, token)
   view.dispatch({
     changes: c,
-    selection: { anchor: c.caret - ']]'.length },
+    selection: { anchor: c.caret - caretBack },
     userEvent: 'input',
     scrollIntoView: true,
   })
   view.focus()
   return true
+}
+
+export function embedInsertAtCaret(view: EditorView): boolean {
+  return insertEmbedToken(view, '![[]]', ']]'.length)
+}
+
+/** Embed ▸ Webpage: the empty pair with the caret seated inside `()` — the destination guard
+ *  keeps a pasted address literal there, and leaving the line forms the tile. */
+export function webpageInsertAtCaret(view: EditorView): boolean {
+  return insertEmbedToken(view, '![]()', ')'.length)
 }
