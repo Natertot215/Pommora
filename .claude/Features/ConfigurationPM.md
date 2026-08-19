@@ -25,7 +25,7 @@ Configuration reads at three scopes. A **[[ArchitecturePM|Nexus]]** is configure
 
 ### Settings
 
-A floating window summoned from the sidebar ribbon's settings glyph, mounted on the shared **PreviewPane** surface — inheriting its glass shell, geometry, and dismissal behavior. 
+The Nexus' primary settings are placed on a floating window summoned from the sidebar ribbon's settings glyph, mounted on the shared **PreviewPane** surface — inheriting its glass shell, geometry, and dismissal behavior. 
 
 #### General
 
