@@ -25,6 +25,10 @@ import {
 import { resolveMdTarget, type ConnectionsApi } from '../connections'
 import type { LinkStatus } from '@shared/connections'
 
+/** The class a valid external link wears — the hover gate reads the same constant, so the
+ *  decorator and the arming selector cannot drift. */
+export const MD_LINK_CLASS = 'md-link'
+
 /** The `link-2` glyph a revealed connection wears in front of its target. It reports whether that
  *  target resolves — the connection color means a page answers to it — which is the one thing the
  *  syntax itself can't say. Worn as a mask so the color comes from the class, not the artwork. */
@@ -321,7 +325,7 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): Built {
         class: internal
           ? `md-connection-resolved${isActive ? ' md-connection-open' : ''}`
           : valid
-            ? 'md-link'
+            ? MD_LINK_CLASS
             : 'md-link-invalid',
       }).range(tk.contentRange[0], tk.contentRange[1]),
     )

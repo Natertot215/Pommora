@@ -49,6 +49,8 @@ export interface ConnectionsApi extends PageIndex {
   /** Fired after the hover-intent delay on a resolved connection, with the link's live element —
    *  the consumer measures it (and detects detachment) itself. */
   hover?: (page: ConnPage, el: Element) => void
+  /** Fired after the same dwell on a valid external link — the website hover preview's entry. */
+  hoverSite?: (url: string, el: Element) => void
 }
 
 /** What a markdown link's target turns out to name. One resolver behind the click path and both

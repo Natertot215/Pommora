@@ -1,13 +1,12 @@
 /* The browser flavor of the floating window: the guest owns the whole body below the toolbar
    strip, and the centered title is the escalating link. */
 
-/* See-through chrome: the strip paints nothing of its own — the window glass shows through —
-   and the page sits below it, never beneath it. */
+/* See-through chrome: the strip paints nothing of its own and the page flows under it — the
+   controls float above the site, and the strip region shows the site itself. */
 .wbrowser-body {
   flex: 1;
   min-height: 0;
   display: flex;
-  padding-top: var(--ppane-toolbar-h);
 }
 /* biome-ignore lint/correctness/noUnknownTypeSelector: webview is Electron's guest element */
 .wbrowser-body webview {

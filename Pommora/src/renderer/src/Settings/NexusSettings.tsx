@@ -29,7 +29,6 @@ import { DATE_FORMAT_LABELS, DATE_FORMATS, type DateFormat } from '@shared/colum
 import { useExitPresence } from '../design-system/useExitPresence'
 import { useSession } from '../store'
 import { TrashLeaf } from './TrashLeaf'
-import { BrowsingSection } from './BrowsingSection'
 import { SettingsRow, type RowText } from './SettingsRow'
 import './nexusSettings.css'
 
@@ -99,11 +98,6 @@ type Row =
       kind: 'webzoom'
       key: KeyOf<number>
     })
-  | {
-      /** The web-session rows — the component owns them; the entry is just the slot. */
-      kind: 'browsing'
-      key: 'clearBrowsing'
-    }
 
 type RowOf<K extends Row['kind']> = Extract<Row, { kind: K }>
 
@@ -168,10 +162,6 @@ const LEAVES = roster([
             options: timeFormatOptions,
           },
         ],
-      },
-      {
-        title: 'Browsing',
-        rows: [{ kind: 'browsing', key: 'clearBrowsing' }],
       },
     ],
   },
@@ -516,8 +506,6 @@ function RowControl({ row }: { row: Row }): React.JSX.Element {
       return <PickerRow row={row} />
     case 'webzoom':
       return <WebZoomRow row={row} />
-    case 'browsing':
-      return <BrowsingSection />
     case 'device':
       return <DeviceRow row={row} />
     case 'color':
