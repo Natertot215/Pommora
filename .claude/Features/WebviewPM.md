@@ -39,7 +39,7 @@ Every web surface — tiles, the browser, hover cards — shares one persistent 
 
 ### Website Hover Previews
 
-Dwelling on a website link raises the shared hover card as a live, non-interactive render of the site (→ [[PagePreviewPM]] §The Hover Card): the card opens wearing a quiet cover, the site fades in once it paints, and a page that fails or never paints closes the card whole. The card's guest takes no interaction and allows no popups — a glance surface by contract.
+Dwelling on a website link raises the shared hover card as a live render of the site (→ [[PagePreviewPM]] §The Hover Card): the card opens wearing a quiet cover, the site fades in once it paints, and a page that fails or never paints closes the card whole. The card's guest allows no popups and takes no clicks — a glance surface by contract — but it reads past its first screen: the wheel is handed down to the guest through the main process, since the covering chrome holds the pointer on the card's behalf and the guest would otherwise never see it.
 
 ### Pending
 

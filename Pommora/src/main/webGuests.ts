@@ -139,6 +139,20 @@ function syncGuestZoom(): void {
   for (const g of webviewGuests()) if (!g.isDestroyed()) stampGuestZoom(g)
 }
 
+/** Scrolls a guest from its host's wheel. A guest whose host chrome owns the pointer sees no wheel
+ *  of its own, so the event is replayed into it at the position the pointer sits over. */
+export function wheelGuest(
+  guestId: number,
+  x: number,
+  y: number,
+  deltaX: number,
+  deltaY: number,
+): void {
+  const guest = webContents.fromId(guestId)
+  if (!guest || guest.isDestroyed() || guest.getType() !== 'webview') return
+  guest.sendInputEvent({ type: 'mouseWheel', x, y, deltaX, deltaY, canScroll: true })
+}
+
 /** The single seam every host-zoom writer uses; a bare `setZoomFactor` elsewhere leaves guests
  *  at the old scale. */
 export function setHostZoom(wc: WebContents, factor: number): void {
