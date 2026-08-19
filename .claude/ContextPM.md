@@ -2,16 +2,24 @@
 
 ### Current Focus
 
-**The web layer is delivered and awaiting its walkthrough.** PM-108 shipped websites embedded in Page bodies, an in-app browser, one remembered session, and live hover previews, all under one main-process guest governor and one renderer open-link adjudicator. Every gate the plan defines has run — including a closing fresh-context review that found the arc at its floor — so what stands between it and finished is what only Nathan can do: see it running, prove a sign-in survives a relaunch, and settle the two open design verdicts (the browser chrome's resting band and the Pages & Editor ▸ Webpages rows). The plan's own §Known Issues records the one thing that shipped short of its reference, and why it can't be reproduced literally over a webview.
+**The web layer is delivered, its follow-ons are in, and it awaits a walkthrough.** PM-108 shipped websites embedded in Page bodies, an in-app browser, one remembered session, and live hover previews, all under one main-process guest governor and one renderer open-link adjudicator; a round of live direction then landed on top of it — the webpage preferences gathered under Interface, a typeable webpage scale, scrollable hover previews, tab surfaces that park instead of reloading, and an Edit Link that edits in the line. Every gate has run, including a closing fresh-context review that found the arc at its floor. What stands between it and finished is what only Nathan can do: see it running, prove a sign-in survives a relaunch, and settle the browser chrome's resting band. The plan's own §Known Issues records the one thing that shipped short of its reference, and why it can't be reproduced literally over a webview.
 
 **Populating Settings continues underneath it.** The rail is seated in the order it will keep and Appearance now holds working color controls. Properties and Automations are seated against features that do not exist yet — Automations especially, since settings cannot be designed before the thing they configure — and Shortcuts has three bindings in code and no way to rebind them. The open question in front of the next piece is which of these earns a control next, and what the empty categories are actually for.
 
 ### Immediate Work
 
-- [ ] **Walk PM-108.** The tile lifecycle, the grip, the browser, and hover previews seen running; ⌘± zoom stamping and trackpad feel, neither of which is drivable headlessly; a sign-in that survives a relaunch. Everything else in the arc is verified.
+- [ ] **Walk the web layer.** The tile lifecycle, the grip's Edit Link, the browser, hover previews and their scroll, a tab flip on a page holding a live site, and the settings placement; plus ⌘± zoom stamping and trackpad feel, neither of which is drivable headlessly, and a sign-in that survives a relaunch. Everything else is verified.
 - [ ] **Finish Appearance.** The three color controls are built; default icons still need the Icon Picker per kind, and the default view scale a slider. Both write through the existing `setPersonalization` — no new plumbing.
 
 ### Pending Focuses
+
+#### II. Open Against The Web Layer
+
+- [ ] **The browser chrome's Safari treatment.** The strip holds its band above the page and paints nothing; the reading Nathan wants — the page's own color showing through the bar — can't be reproduced literally over a webview, since a guest scrolls internally and a backdrop filter can't sample its pixels. Candidates: painting the strip with the guest's sampled top-edge color, or revisiting once a guest can report its scroll position.
+- [ ] **Site hovers in resting table cells.** A static cell arms page hovers but not site hovers — it reads `data-conn-title` only, so the site route needs URL derivation at the wrap-delegated hover site. The same link previews in the body.
+- [ ] **A guest's scripted popups ride the open-link chain with no user-gesture gate** — acceptable for trusted embeds, ungated by decision pending Nathan's ruling.
+- [ ] **Retention's two bounds.** A tile scrolled far enough loses its widget to the editor's viewport recycling regardless of the cap, and a retained guest keeps playing audio by design — whether scroll-out should mute is a product call.
+- [ ] **A re-aimed tile takes the default height.** Edit Link edits in the line now, so a tile pointed at a new address no longer carries its remembered height across; a migration at formation is the fix if it reads wrong in use.
 
 #### II. The Boring Work
 
@@ -57,7 +65,9 @@ The chip palette became a grid: `tokens/ramp.ts` owns what a color is — eight 
 
 #### PM-108 || Webpage Integration
 
-The editor embeds live websites the way it embeds Pages. A markdown link alone on its own line carrying an explicit scheme renders as a live tile on the shared embed framework — the bytes stay plain CommonMark, and formation waits until the selection leaves the line. One main-process module governs every guest (the attach validator, the popup router that opens no OS window, the navigation scheme gate, and the zoom sync), and one renderer adjudicator decides where every external link opens, guest popups included. A guest is live only while its tile is fully visible, because a partially clipped webview paints outside its own box; a clipped tile keeps its last captured frame, and scrolled-out guests hide under a capped retention rather than unmounting. The in-app browser is a flavor of the floating preview window, and a dwell on a website link raises the shared hover card as a live, inert render of the site. All surfaces share one persistent partition, so a sign-in anywhere authenticates everywhere per machine — there is no management surface by decision; the session simply remembers.
+The editor embeds live websites the way it embeds Pages. A markdown link alone on its own line carrying an explicit scheme renders as a live tile on the shared embed framework — the bytes stay plain CommonMark, and formation waits until the selection leaves the line. One main-process module governs every guest (the attach validator, the popup router that opens no OS window, the navigation scheme gate, and the zoom sync), and one renderer adjudicator decides where every external link opens, guest popups included. A guest is live only while its tile is fully visible, because a partially clipped webview paints outside its own box; a clipped tile keeps its last captured frame, and scrolled-out guests hide under a capped retention rather than unmounting. The in-app browser is a flavor of the floating preview window, and a dwell on a website link raises the shared hover card as a live render of the site that takes no clicks but scrolls, its wheel replayed into the guest from the main process. All surfaces share one persistent partition, so a sign-in anywhere authenticates everywhere per machine — there is no management surface by decision; the session simply remembers. The preferences sit together in Interface ▸ Webpages, where the scale offers its steps and takes any percent typed into it.
+
+Retention reaches across tab switches: the detail pane holds page surfaces per tab and parks the unshown ones off screen rather than tearing them down, so their sites pause and resume with their sessions instead of reloading, and a flip costs about a quarter of what rebuilding the surface did. A tile's Edit Link re-aims its address in the line like every other Edit Link — the tile returns to raw text with the address selected, and only re-forms, and reloads, when the selection leaves.
 
 #### PM-107 || Settings' Scaffolding
 
