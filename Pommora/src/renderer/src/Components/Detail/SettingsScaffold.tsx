@@ -48,7 +48,7 @@ export function SettingsScaffold(): React.JSX.Element | null {
                 className={footerLockAction}
                 onClick={() => void setLocked(!locked)}
               >
-                <Icon name="lock" size={12} className={lockIcon} />
+                <Icon name="lock" size="control" className={lockIcon} />
                 {locked ? 'Unlock' : 'Lock'}
               </button>
             }

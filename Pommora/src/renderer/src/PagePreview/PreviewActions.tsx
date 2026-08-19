@@ -13,7 +13,7 @@ export function PreviewActions({
     <>
       {/* Parked — this toolbar's own settings surface hasn't landed; the ribbon's Settings glyph is the live one. */}
       <button type="button" className="ppane-action" title="Settings" disabled>
-        <Icon name="sliders-horizontal" size={13} />
+        <Icon name="sliders-horizontal" size="body" />
       </button>
       <button
         type="button"
@@ -22,7 +22,7 @@ export function PreviewActions({
         aria-pressed={inspectorOpen}
         onClick={onToggleInspector}
       >
-        <Icon name="panel-right" size={13} />
+        <Icon name="panel-right" size="body" />
       </button>
     </>
   )

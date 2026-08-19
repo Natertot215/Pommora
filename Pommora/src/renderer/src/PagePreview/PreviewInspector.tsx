@@ -235,7 +235,7 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
                     }}
                   >
                     <span className={cx('pgpreview-insp-label', text.caption.standard)}>
-                      <Icon name={icon} size={12} />
+                      <Icon name={icon} size="control" />
                       {label}
                     </span>
                     {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix */}
@@ -296,7 +296,7 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
             className={cx('pgpreview-insp-add', text.footnote.standard)}
             onClick={() => setAddOpen(true)}
           >
-            <Icon name="plus" size={11} />
+            <Icon name="plus" size="caption" />
             <span>Add Property</span>
           </button>
         )}
@@ -313,7 +313,7 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
           .map((t) => (
             <PickerOption
               key={t.id}
-              leading={<Icon name={t.icon} size={13} />}
+              leading={<Icon name={t.icon} size="body" />}
               onClick={() => revealAndEdit(t.id)}
             >
               {t.label}
@@ -324,7 +324,7 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
           .map((d) => (
             <PickerOption
               key={d.id}
-              leading={<Icon name={propertyIcon(d)} size={13} />}
+              leading={<Icon name={propertyIcon(d)} size="body" />}
               onClick={() => revealAndEdit(d.id, d)}
             >
               {d.name}

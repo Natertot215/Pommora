@@ -209,8 +209,8 @@
 .mdpm-editor .cm-line.md-block-handle::before,
 .mdpm-editor .cm-line.md-bq-first .md-bq-grip,
 .mdpm-editor .cm-line.md-callout-first::after {
-  width: calc(var(--icon-sm) * var(--glyph-scale));
-  height: calc(var(--icon-sm) * var(--glyph-scale));
+  width: calc(var(--icon-body) * var(--glyph-scale));
+  height: calc(var(--icon-body) * var(--glyph-scale));
   background-color: var(--label-secondary);
   -webkit-mask: var(--grip-glyph) center / contain no-repeat;
   mask: var(--grip-glyph) center / contain no-repeat;
@@ -227,12 +227,12 @@
   left: calc(
     -1 *
     var(--fold-gutter) +
-    (var(--fold-gutter) - var(--icon-sm) * var(--glyph-scale)) /
+    (var(--fold-gutter) - var(--icon-body) * var(--glyph-scale)) /
     2
   );
   /* Center on the FIRST visual row's text, so it lines up with the content even when the block's
      first line wraps. --grip-top is the knob; box blocks raise it. */
-  top: var(--grip-top, calc(0.8em - var(--icon-sm) / 2 * var(--glyph-scale)));
+  top: var(--grip-top, calc(0.8em - var(--icon-body) / 2 * var(--glyph-scale)));
   transition: opacity var(--duration-fast) var(--ease-standard);
 }
 .mdpm-editor .cm-line.md-block-handle.md-grip-hot::before {
@@ -246,10 +246,10 @@
   left: calc(
     -1 *
     var(--fold-gutter) +
-    (var(--fold-gutter) - var(--icon-sm) * var(--glyph-scale)) /
+    (var(--fold-gutter) - var(--icon-body) * var(--glyph-scale)) /
     2
   );
-  top: var(--grip-top, calc(0.8em - var(--icon-sm) / 2 * var(--glyph-scale)));
+  top: var(--grip-top, calc(0.8em - var(--icon-body) / 2 * var(--glyph-scale)));
   transition: opacity var(--duration-fast) var(--ease-standard);
 }
 .mdpm-editor .cm-line.md-bq-first.md-grip-hot .md-bq-grip {

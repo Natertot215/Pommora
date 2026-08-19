@@ -18,7 +18,7 @@ export function ContextChip({
   return (
     <span className={cx(chipContext, chipColor[color], onRemove && chipRemovable)}>
       {onRemove ? <ChipRemoveButton onRemove={onRemove} /> : null}
-      {icon ? <Icon name={icon} size={12} /> : null}
+      {icon ? <Icon name={icon} size="control" /> : null}
       <ChipLabel label={title} removable={!!onRemove} />
     </span>
   )

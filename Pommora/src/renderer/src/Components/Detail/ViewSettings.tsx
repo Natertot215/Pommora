@@ -158,14 +158,14 @@ export function ViewSettings({
       className={flushTrailing}
       leading={
         <span className={footingSymbol}>
-          <Icon name={glyph} size={12} />
+          <Icon name={glyph} size="control" />
         </span>
       }
       trailing={
         <span className={side}>
           <span className={detail}>{isCompact(view) ? 'Compact' : 'Standard'}</span>
           <span className={footingSymbol}>
-            <Icon name="chevrons-up-down" size={12} />
+            <Icon name="chevrons-up-down" size="control" />
           </span>
         </span>
       }
@@ -183,7 +183,7 @@ export function ViewSettings({
           className={flushTrailing}
           leading={
             <span className={footingSymbol}>
-              <Icon name="image" size={12} />
+              <Icon name="image" size="control" />
             </span>
           }
           trailing={
@@ -202,7 +202,7 @@ export function ViewSettings({
         <div className={cx(item, flushTrailing, vs.scaleRow)}>
           <span className={side}>
             <span className={footingSymbol}>
-              <Icon name="scaling" size={12} />
+              <Icon name="scaling" size="control" />
             </span>
           </span>
           <span className={footingLabel}>Scale</span>
@@ -285,7 +285,7 @@ export function ViewSettings({
           aria-label={t}
           onClick={() => IMPLEMENTED.has(t) && setType(t)}
         >
-          <Icon name={TYPE_GLYPH[t]} size={24} />
+          <Icon name={TYPE_GLYPH[t]} size="title1" />
         </button>
       ))}
     </div>
@@ -301,7 +301,7 @@ export function ViewSettings({
             <AccessoryButton
               ref={itemMenuRef}
               icon="ellipsis-vertical"
-              size={14}
+              size="body"
               box={20}
               ariaLabel="View menu"
               onClick={() => setItemMenuOpen(true)}
@@ -313,7 +313,7 @@ export function ViewSettings({
               triggerRef={itemMenuRef}
             >
               <MenuItem
-                leading={<Icon name="copy" size={13} />}
+                leading={<Icon name="copy" size="body" />}
                 onClick={() => {
                   setItemMenuOpen(false)
                   void duplicateView()
@@ -325,7 +325,7 @@ export function ViewSettings({
               {/* Refusing the last view is the write path's rule; the row mirrors it. */}
               <MenuItem
                 disabled={!canDelete}
-                leading={<Icon name="trash" size={13} />}
+                leading={<Icon name="trash" size="body" />}
                 onClick={() => {
                   setItemMenuOpen(false)
                   void deleteView()
@@ -345,8 +345,8 @@ export function ViewSettings({
     <MenuItem
       key={r.id}
       className={flushTrailing}
-      leading={<Icon name={r.icon} size={16} />}
-      trailing={<Icon name="chevron-right" size={16} />}
+      leading={<Icon name={r.icon} size="title3" />}
+      trailing={<Icon name="chevron-right" size="title3" />}
       onClick={() => setLeaf(r.id)}
     >
       {r.label}

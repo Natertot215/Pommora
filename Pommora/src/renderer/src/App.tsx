@@ -242,7 +242,7 @@ export function App(): React.JSX.Element {
           aria-label="Collapse sidebar"
           title="Collapse sidebar"
         >
-          <Icon name="log-out" size={18} className="flip-x" />
+          <Icon name="log-out" size="title2" className="flip-x" />
         </button>
         {status === 'loading' && <div className="state">Loading Nexus…</div>}
         {status === 'empty' && (
@@ -284,7 +284,7 @@ export function App(): React.JSX.Element {
         aria-label="Show sidebar"
         title="Show sidebar"
       >
-        <Icon name="log-out" size={18} />
+        <Icon name="log-out" size="title2" />
       </button>
       {status === 'ready' && <InspectorPanel open={inspectorOpen} />}
       {status === 'ready' && <NavWindow />}

@@ -213,7 +213,12 @@ export function PropertiesPane({
   const actionHeader = (
     label: string,
     onBackClick: () => void,
-    action: { icon: IconName; size: number; ariaLabel: string; onClick: () => void },
+    action: {
+      icon: IconName
+      size: React.ComponentProps<typeof Icon>['size']
+      ariaLabel: string
+      onClick: () => void
+    },
   ): React.JSX.Element => (
     <MenuPaneTopRow
       label={label}
@@ -487,7 +492,7 @@ export function PropertiesPane({
           leading={
             <AccessoryButton
               icon="plus"
-              size={12}
+              size="control"
               box={20}
               create
               ariaLabel="New Property"

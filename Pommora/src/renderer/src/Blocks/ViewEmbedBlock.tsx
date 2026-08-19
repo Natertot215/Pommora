@@ -467,14 +467,14 @@ export function ViewEmbedBlock({
       aria-label="View settings"
       onClick={() => setCfgOpen(true)}
     >
-      <Icon name="sliders-horizontal" size={14} />
+      <Icon name="sliders-horizontal" size="body" />
     </button>
   )
 
   const newViewButton = (
     <AccessoryButton
       icon="plus"
-      size={12}
+      size="control"
       box={20}
       create
       ariaLabel="New View"
@@ -496,7 +496,7 @@ export function ViewEmbedBlock({
       <span className={cx(labelSlot, !labeled && labelSlotHidden)}>
         <span className={labelText}>{view.name}</span>
       </span>
-      <Icon name="chevron-down" size={10} className={segmentTrail} />
+      <Icon name="chevron-down" size="footnote" className={segmentTrail} />
     </button>
   ) : (
     <>
@@ -602,7 +602,7 @@ export function ViewEmbedBlock({
                   <MenuItem
                     key={v.id}
                     className={i === index ? optionRing : undefined}
-                    leading={<Icon name={viewIcon(v)} size={16} />}
+                    leading={<Icon name={viewIcon(v)} size="title3" />}
                     onClick={renaming === i ? undefined : () => patchEntry({ active: i })}
                     onContextMenu={(e) => void rowMenu(i, e, false)}
                   >

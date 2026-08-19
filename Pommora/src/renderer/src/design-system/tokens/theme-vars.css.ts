@@ -114,10 +114,26 @@ globalStyle(':root', {
     '--weight-emphasized': font.weight.emphasized,
     '--weight-semibold': font.weight.semibold,
     '--weight-bold': font.weight.bold,
-    // Type sizes plain CSS needs (single-sourced from the scale); add more as consumers appear.
+    // Type sizes — the full ramp, so plain CSS names a step rather than restating a pixel value.
+    '--text-large-title-size': font.scale.largeTitle.size,
+    '--text-title1-size': font.scale.title1.size,
+    '--text-title2-size': font.scale.title2.size,
     '--text-title3-size': font.scale.title3.size,
+    '--text-headline-size': font.scale.headline.size,
+    '--text-body-size': font.scale.body.size,
+    '--text-callout-size': font.scale.callout.size,
+    '--text-control-size': font.scale.control.size,
     '--text-caption-size': font.scale.caption.size,
+    '--text-footnote-size': font.scale.footnote.size,
     '--text-subline-size': font.scale.subline.size,
+    // The control-size bundles — plain CSS sizes a button by naming its alias rather than
+    // restating the height its .ts sibling already holds.
+    '--button-small-height': size.control['button-small'].height,
+    '--button-medium-height': size.control['button-medium'].height,
+    '--button-large-height': size.control['button-large'].height,
+    '--button-small-radius': size.control['button-small'].radius,
+    '--button-medium-radius': size.control['button-medium'].radius,
+    '--button-large-radius': size.control['button-large'].radius,
     // The per-level disclosure inset every hierarchy steps by (sidebar, table nesting, panes).
     '--disclosure-indent': `${DISCLOSURE_INDENT}px`,
     // The fold/grip lane the editor, table views, block tiles, and embeds all carve from the content
@@ -149,11 +165,17 @@ globalStyle(':root', {
     '--solid-lavender': colorVars.color.solid.lavender,
     '--solid-grey': colorVars.color.solid.grey,
     // Icon-size ladder — so plain-CSS glyphs (e.g. the fold chevron) route to the same steps.
-    '--icon-xs': size.icon.xs,
-    '--icon-sm': size.icon.sm,
-    '--icon-md': size.icon.md,
-    '--icon-lg': size.icon.lg,
-    '--icon-xl': size.icon.xl,
+    '--icon-large-title': size.icon.largeTitle,
+    '--icon-title1': size.icon.title1,
+    '--icon-title2': size.icon.title2,
+    '--icon-title3': size.icon.title3,
+    '--icon-headline': size.icon.headline,
+    '--icon-body': size.icon.body,
+    '--icon-callout': size.icon.callout,
+    '--icon-control': size.icon.control,
+    '--icon-caption': size.icon.caption,
+    '--icon-footnote': size.icon.footnote,
+    '--icon-subline': size.icon.subline,
     // Motion — shared durations + easing so every transition reads as one system.
     '--duration-fast': duration.fast,
     '--duration-dropdown': duration.dropdown,

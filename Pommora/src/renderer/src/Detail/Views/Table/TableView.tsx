@@ -578,7 +578,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     if (id === RESERVED_PROPERTY_ID.createdAt) {
       return (
         <span className="col-header-icon">
-          <Icon name="clock-plus" size={13} />
+          <Icon name="clock-plus" size="body" />
         </span>
       )
     }
@@ -586,7 +586,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     if (contextIcon) {
       return (
         <span className="col-header-icon">
-          <Icon name={contextIcon} size={13} />
+          <Icon name={contextIcon} size="body" />
         </span>
       )
     }
@@ -594,7 +594,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     if (t === undefined) return null
     return (
       <span className="col-header-icon">
-        <PropertyTypeIcon type={t} size={13} />
+        <PropertyTypeIcon type={t} size="body" />
       </span>
     )
   }
@@ -821,7 +821,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     if (col.kind !== 'title' || liveView.hide_page_icons) return editor
     return (
       <span className="cell-rename">
-        <EntityIcon kind="page" icon={row.icon} size={14} />
+        <EntityIcon kind="page" icon={row.icon} size="body" />
         {editor}
       </span>
     )
@@ -1784,7 +1784,7 @@ function GhostRow({
           >
             {c.kind === 'title' && (
               <span className="cell-title">
-                {hideIcon ? null : <EntityIcon kind="page" size={14} />}
+                {hideIcon ? null : <EntityIcon kind="page" size="body" />}
                 <span className="cell-title-text">New Page</span>
               </span>
             )}
@@ -1925,7 +1925,7 @@ const DataRow = memo(function DataRow({
               onClick={(e) => e.stopPropagation()}
               title={dragDisabled ? undefined : 'Drag to reorder'}
             >
-              <Icon name="grip-vertical" size={14} />
+              <Icon name="grip-vertical" size="body" />
             </span>
             {content}
           </div>

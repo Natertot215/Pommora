@@ -98,7 +98,7 @@ export const cell = style({
   background: 'transparent',
   borderRadius: 8,
   color: vars.color.label.control,
-  fontSize: vars.size.icon.lg, // glyphs render at 1em, so the cell's font-size is the icon size
+  fontSize: vars.size.icon.title2, // glyphs render at 1em, so the cell's font-size is the icon size
   cursor: 'pointer',
   selectors: {
     '&:hover': { background: vars.color.state.hover },

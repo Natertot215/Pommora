@@ -192,7 +192,7 @@ export function GroupingPane({
         className={flushTrailing}
         leading={
           <span className={footingSymbol}>
-            <Icon name="eye-off" size={12} />
+            <Icon name="eye-off" size="control" />
           </span>
         }
         trailing={
@@ -356,7 +356,7 @@ function FootingPick<T extends string>({
       className={`${flushTrailing} ${gp.pickerTone}`}
       leading={
         <span className={footingSymbol}>
-          <Icon name={icon} size={12} />
+          <Icon name={icon} size="control" />
         </span>
       }
       trailing={<PickerControl ariaLabel={label} value={value} options={options} onPick={onPick} />}
@@ -731,7 +731,7 @@ function LocationHierarchy({
       <DisclosureRow
         key={s.id}
         title={s.title}
-        icon={<EntityIcon kind="set" icon={s.icon} size={13} />}
+        icon={<EntityIcon kind="set" icon={s.icon} size="body" />}
         twisty={disclosable && !hideChevrons ? 'chevron' : 'none'}
         open={expanded.has(s.id)}
         onToggle={() => expanded.toggle(s.id)}

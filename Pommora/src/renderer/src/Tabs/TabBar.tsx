@@ -262,7 +262,7 @@ function TabBarBody({
         title="New Tab"
         onClick={openNewTab}
       >
-        <Icon name="plus" size={13} />
+        <Icon name="plus" size="body" />
       </button>
     </div>
   )
@@ -301,7 +301,7 @@ function PinnedTab({
       }}
       onContextMenu={onMenu}
     >
-      <EntityGlyph item={entry.res} size={14} className="tab-icon" />
+      <EntityGlyph item={entry.res} size="body" className="tab-icon" />
     </div>
   )
 }
@@ -375,11 +375,11 @@ function UnpinnedTab({
         {isNewTab || !entry.res ? (
           <Icon
             name={isNewTab ? 'copy' : 'file'}
-            size={14}
+            size="body"
             className={cx('tab-icon', slideClass)}
           />
         ) : (
-          <EntityGlyph item={entry.res} size={14} className={cx('tab-icon', slideClass)} />
+          <EntityGlyph item={entry.res} size="body" className={cx('tab-icon', slideClass)} />
         )}
         <OverflowScroll className={cx('tab-label', slideClass)}>{title}</OverflowScroll>
       </Fragment>
@@ -394,7 +394,7 @@ function UnpinnedTab({
           onClose()
         }}
       >
-        <Icon name="x" size={11} strokeWidth={3} />
+        <Icon name="x" size="caption" strokeWidth={3} />
       </button>
     </div>
   )

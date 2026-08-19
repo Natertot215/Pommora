@@ -1,5 +1,7 @@
 import { useRef } from 'react'
 import { DEFAULT_NEXUS_ICON, Icon } from '@renderer/design-system/symbols'
+import { ICON_PX } from '@renderer/design-system/tokens/size.css'
+import type { IconSize } from '@renderer/design-system/tokens/size.css'
 import { IconPicker } from '../Components/IconPicker'
 import { PhotoCropModal } from '../Components/PhotoCropModal'
 import { useNexusIcon } from '../Components/useNexusIcon'
@@ -8,7 +10,7 @@ import * as s from './nexusHeader.css'
 
 /** Click (homepage select) is owned by the wrapping ribbon button, not here. Rename-nexus lives
  *  on the homepage banner title, not here either. */
-export function NexusPhoto({ size }: { size: number }): React.JSX.Element {
+export function NexusPhoto({ size }: { size: IconSize }): React.JSX.Element {
   const {
     profileImage,
     profileIcon,
@@ -22,7 +24,10 @@ export function NexusPhoto({ size }: { size: number }): React.JSX.Element {
   } = useNexusIcon()
   const ref = useRef<HTMLSpanElement>(null)
   const photoUrl = profileImage ? assetUrl(profileImage) : null
-  const dim = { width: size, height: size }
+  // The photo is an element, not a glyph — it needs the step's pixel value, and the fallback
+  // glyph is drawn inset within it.
+  const px = ICON_PX[size]
+  const dim = { width: px, height: px }
   return (
     <>
       {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
@@ -39,7 +44,7 @@ export function NexusPhoto({ size }: { size: number }): React.JSX.Element {
         {photoUrl ? (
           <img className={s.photoImg} src={photoUrl} alt="" />
         ) : (
-          <Icon name={profileIcon ?? DEFAULT_NEXUS_ICON} size={Math.round(size * 0.6)} />
+          <Icon name={profileIcon ?? DEFAULT_NEXUS_ICON} size={Math.round(px * 0.6)} />
         )}
       </span>
       <IconPicker

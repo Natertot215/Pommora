@@ -74,7 +74,7 @@ export function Ribbon(): React.JSX.Element {
         aria-label="Homepage"
         onClick={() => void select({ kind: 'homepage' })}
       >
-        <NexusPhoto size={24} />
+        <NexusPhoto size="title1" />
       </button>
       <SortableZone items={keys} layout="list" axis="y" onReorder={reorderIcons}>
         {keys.map((k) => (
@@ -117,7 +117,7 @@ function RibbonTab({
         if (!isDragging) onClick()
       }}
     >
-      <Icon name={icon} size={18} />
+      <Icon name={icon} size="title2" />
     </button>
   )
 }

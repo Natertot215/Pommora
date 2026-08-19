@@ -927,7 +927,7 @@ function GhostCard({
         {banner !== 'none' && (
           <div className="page-card-thumb">
             <span className="page-card-ph">
-              <Icon name={iconName} size={22} />
+              <Icon name={iconName} size="title1" />
             </span>
           </div>
         )}
@@ -1009,7 +1009,7 @@ function SetCard({ set, drag }: { set: SetNode; drag?: DragItem }): React.JSX.El
             <img src={src} alt="" onError={() => setFailed(true)} />
           ) : (
             <span className="page-card-ph">
-              <Icon name={iconName} size={26} />
+              <Icon name={iconName} size="largeTitle" />
             </span>
           )}
         </div>
@@ -1222,7 +1222,7 @@ const CardFace = memo(function CardFace({
             <img src={src} alt="" onError={onImgError} />
           ) : (
             <span className="page-card-ph">
-              <Icon name={iconName} size={22} />
+              <Icon name={iconName} size="title1" />
             </span>
           )}
         </div>
@@ -1258,7 +1258,7 @@ const CardFace = memo(function CardFace({
         {crumbs.length > 0 && (
           // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
           <div className="page-card-loc-zone" onClick={onZoneClick}>
-            <NavCrumbs path={crumbs} className="page-card-loc" iconSize={11} />
+            <NavCrumbs path={crumbs} className="page-card-loc" iconSize="caption" />
           </div>
         )}
       </div>

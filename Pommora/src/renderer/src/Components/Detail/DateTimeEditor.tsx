@@ -40,7 +40,7 @@ function PickerRow<T extends string>({
   return (
     <div className={s.row}>
       <span className={s.leading}>
-        <Icon name={glyph} size={16} />
+        <Icon name={glyph} size="title3" />
       </span>
       <span className={s.label}>{label}</span>
       <PickerControl ariaLabel={ariaLabel} value={value} options={options} onPick={onPick} />

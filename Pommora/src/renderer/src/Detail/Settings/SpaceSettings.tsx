@@ -43,14 +43,14 @@ export function SpaceSettingsContent({ id }: { id: string }): React.JSX.Element 
                 className={footerLockAction}
                 onClick={() => void setHostLocked({ kind: 'space', id }, !locked)}
               >
-                <Icon name="lock" size={12} className={lockIcon} />
+                <Icon name="lock" size="control" className={lockIcon} />
                 {locked ? 'Unlock' : 'Lock'}
               </button>
             }
             trailing={
               // Stub — its menu is a later arrival.
               <button type="button" aria-label="More actions" className={footerLockAction} disabled>
-                <Icon name="ellipsis" size={13} />
+                <Icon name="ellipsis" size="body" />
               </button>
             }
           />
@@ -84,7 +84,7 @@ export function SpaceSettingsContent({ id }: { id: string }): React.JSX.Element 
       </MenuScrollFrame>
       <PointMenu at={headerMenu} onDismiss={() => setHeaderMenu(null)}>
         <MenuItem
-          leading={<Icon name="palette" size={13} />}
+          leading={<Icon name="palette" size="body" />}
           onClick={() => {
             setHeaderMenu(null)
             setColorOpen(true)
