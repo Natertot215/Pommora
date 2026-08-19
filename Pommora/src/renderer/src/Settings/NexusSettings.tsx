@@ -29,6 +29,7 @@ import { DATE_FORMAT_LABELS, DATE_FORMATS, type DateFormat } from '@shared/colum
 import { useExitPresence } from '../design-system/useExitPresence'
 import { useSession } from '../store'
 import { TrashLeaf } from './TrashLeaf'
+import { AccountsSection } from './AccountsSection'
 import './nexusSettings.css'
 
 // KNOB — the window's opening size and its resize floor. The floor is what a leaf carrying a
@@ -102,6 +103,11 @@ type Row =
       kind: 'webzoom'
       key: KeyOf<number>
     })
+  | {
+      /** The Accounts rows — fetched, so the component owns them; the entry is just the slot. */
+      kind: 'accounts'
+      key: 'webAccounts'
+    }
 
 type RowOf<K extends Row['kind']> = Extract<Row, { kind: K }>
 
@@ -166,6 +172,10 @@ const LEAVES = roster([
             options: timeFormatOptions,
           },
         ],
+      },
+      {
+        title: 'Accounts',
+        rows: [{ kind: 'accounts', key: 'webAccounts' }],
       },
     ],
   },
@@ -527,6 +537,8 @@ function RowControl({ row }: { row: Row }): React.JSX.Element {
       return <PickerRow row={row} />
     case 'webzoom':
       return <WebZoomRow row={row} />
+    case 'accounts':
+      return <AccountsSection />
     case 'device':
       return <DeviceRow row={row} />
     case 'color':
