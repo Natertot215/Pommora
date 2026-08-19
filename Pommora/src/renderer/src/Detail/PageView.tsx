@@ -5,7 +5,7 @@ import type { ConnectionsApi } from '../MarkdownPM/connections'
 import { nativeEditorMenu } from '../MarkdownPM/editor/menu'
 import { pageIndexOf } from '../treeIndex'
 import { showConnectionMenu } from '../Embeds/connectionMenu'
-import { hoverConnection } from '../Embeds/ConnectionHoverCard'
+import { hoverConnection, hoverWebsite } from '../Embeds/ConnectionHoverCard'
 import { IconPicker } from '../Components/IconPicker'
 import { entityIcon } from '@renderer/design-system/symbols'
 import { navKey } from '../Navigation/navRecents'
@@ -67,6 +67,7 @@ export function PageView(): React.JSX.Element {
       bypass: (page) =>
         void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true }),
       hover: hoverConnection,
+      hoverSite: hoverWebsite,
       menu: showConnectionMenu,
     }
   }, [tree, select, openPreview, openInPreview])
