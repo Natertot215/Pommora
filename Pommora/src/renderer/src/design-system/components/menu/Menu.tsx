@@ -23,7 +23,7 @@ type MenuItemProps = {
 }
 
 /** The row primitive (menu item + sidebar row). Geometry + states only — every
- *  behaviour (selection, rename, drag, context menu) is the consumer's, passed in. */
+ *  behavior (selection, rename, drag, context menu) is the consumer's, passed in. */
 export function MenuItem({
   leading,
   subLabel,
@@ -115,7 +115,7 @@ export function MenuCaption({ children }: { children: ReactNode }): React.JSX.El
 const BAR_GLYPH = 12
 
 /** A pane's TopRow — a leading ‹ chevron + label that pops the nav stack one level. The trailing
- *  action rides the row's trailing slot so it reads — and colours — as part of the TopRow, not a
+ *  action rides the row's trailing slot so it reads — and colors — as part of the TopRow, not a
  *  floating toolbar button beside it. */
 export function MenuTopRow({
   label,

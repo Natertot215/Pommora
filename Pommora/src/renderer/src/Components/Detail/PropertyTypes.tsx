@@ -9,7 +9,7 @@ import {
 import { DashIcon } from './DashIcon'
 
 /**
- * The single source for per-property-type presentation, catalogued in Features/SymbolsPM.md.
+ * The single source for per-property-type presentation, catalogd in Features/SymbolsPM.md.
  * `context` backs Context columns only, and `last_edited_time` is auto-managed — neither is
  * `creatable`.
  */

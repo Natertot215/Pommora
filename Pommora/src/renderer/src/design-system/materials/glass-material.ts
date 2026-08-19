@@ -6,15 +6,15 @@ import { shadowStandardVar } from '../tokens/color.css'
 // soft light pooling at the lower rim — so the edge reads like glass, not a flat panel.
 // One source for surfaces + windows; layout (size / position / radius) is the consumer's.
 //
-// `--glass-outline` re-colours that edge — the tinted outline a surface wears while it's being acted
+// `--glass-outline` re-colors that edge — the tinted outline a surface wears while it's being acted
 // on (a resize in flight, an active embed). One value carrying its own alpha, so the tint can never
 // desynchronise from an opacity animating separately beside it.
 /** The outline's second pass, inward — a tinted edge on a 1px border reads far fainter than the same
- *  colour on the thicker borders tiles and embeds wear, and widening the border would shift
+ *  color on the thicker borders tiles and embeds wear, and widening the border would shift
  *  everything inside it, so the weight goes where nothing can move. */
 export const OUTLINE_INSET = 'inset 0 0 0 1px var(--glass-outline, transparent)'
 
-/** Both passes of the outline move together: a colour easing in beside an edge that snapped is the
+/** Both passes of the outline move together: a color easing in beside an edge that snapped is the
  *  desync that made the old stroke flash white for a frame. */
 export const OUTLINE_TRANSITION =
   'border-color var(--duration-base) var(--ease-standard), box-shadow var(--duration-base) var(--ease-standard)'

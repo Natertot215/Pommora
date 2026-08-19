@@ -69,7 +69,7 @@ export const text = {
 
 /**
  * Capped label — ellipsis at rest, scroll-on-hover. The one source for the "truncate a single-line
- * label, reveal the full value by scrolling on hover" behaviour shared by chips and menu / sidebar
+ * label, reveal the full value by scrolling on hover" behavior shared by chips and menu / sidebar
  * rows. The WIDTH cap is the consumer's: a `maxWidth` for chips, the flex parent for rows (minWidth:0
  * lets it shrink to the available track).
  */

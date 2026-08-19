@@ -10,7 +10,7 @@ interface Props {
   open: boolean
   candidates: AcRow[]
   index: number
-  /** The caret, as the line it is — the pane centres on `caretX` and opens clear of the line's height. */
+  /** The caret, as the line it is — the pane centers on `caretX` and opens clear of the line's height. */
   caretX: number
   caretTop: number
   caretBottom: number

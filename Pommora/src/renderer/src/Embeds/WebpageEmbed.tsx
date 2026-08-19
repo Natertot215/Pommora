@@ -142,6 +142,8 @@ export function WebpageEmbed({
   })
 
   const live = guest && !failed
+  // The guest is on screen rather than retained behind the face.
+  const shown = live && visible
   return (
     <div className="wpembed" ref={rootRef}>
       {live ? (
@@ -155,7 +157,7 @@ export function WebpageEmbed({
           className={cx(!visible && 'is-retained', !engaged && 'is-inert')}
         />
       ) : null}
-      {!live || !visible ? (
+      {!shown ? (
         <div className="wpembed-face">
           {failed ? (
             <span className={cx('wpembed-face-domain', text.footnote.standard)}>
@@ -164,7 +166,7 @@ export function WebpageEmbed({
           ) : null}
         </div>
       ) : null}
-      {live && visible && !engaged ? (
+      {shown && !engaged ? (
         // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: a click-to-engage shield over the guest, not a control — the site behind it carries its own semantics
         <div
           className="wpembed-catcher"

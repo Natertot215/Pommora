@@ -127,7 +127,7 @@ export function PreviewPane({
   const rightOpen = right ? right.open !== false : false
 
   // A side opening widens the window by that pane's width, so the body keeps the width it had
-  // and a second pane never squeezes the first one's neighbour. Width DRAGS are deliberately not
+  // and a second pane never squeezes the first one's neighbor. Width DRAGS are deliberately not
   // reflected: dragging a pane's own strip reallocates inside the window, which is what the grip
   // means. Only an open/close transition moves the window's own edge.
   const sidesOpen = useRef({ left: leftOpen, right: rightOpen })

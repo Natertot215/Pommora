@@ -276,7 +276,7 @@ export function stopGlide(): void {
  *  and correcting afterwards is a visible jump at the end of an otherwise smooth move.
  *
  *  Cancels on any real scroll input — a glide that keeps pulling while the reader scrolls away fights
- *  them, which the drag loop never has to worry about because the pointer is held. Honours
+ *  them, which the drag loop never has to worry about because the pointer is held. Honors
  *  reduced-motion by arriving immediately. */
 export function scrollGlide(
   scroller: HTMLElement,

@@ -86,7 +86,7 @@ textarea,
   }
 }
 
-/* RectangleMarker sizes the stem (height = line box, width via CSS); we centre it on the text position. */
+/* RectangleMarker sizes the stem (height = line box, width via CSS); we center it on the text position. */
 .mdpm-caret {
   display: none;
   width: var(--caret-width);

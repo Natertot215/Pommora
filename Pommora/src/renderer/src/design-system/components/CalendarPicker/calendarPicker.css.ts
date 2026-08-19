@@ -273,4 +273,3 @@ export const switchLabel = style({
   fontWeight: font.weight.emphasized,
   color: c.label.control,
 })
-/* The real Switch at picker scale — zoom is the house density knob (the table uses the same). */

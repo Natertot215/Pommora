@@ -21,7 +21,7 @@ export function Checkbox({
 }): React.JSX.Element {
   const mark = small ? 9 : 12
   return (
-    // biome-ignore lint/a11y/useSemanticElements: the rule's element is a void one — it cannot hold the centred mark this look is drawn from, and its indeterminate state is a DOM property no attribute sets; role="checkbox" on a focusable element is the pattern
+    // biome-ignore lint/a11y/useSemanticElements: the rule's element is a void one — it cannot hold the centered mark this look is drawn from, and its indeterminate state is a DOM property no attribute sets; role="checkbox" on a focusable element is the pattern
     <button
       type="button"
       role="checkbox"

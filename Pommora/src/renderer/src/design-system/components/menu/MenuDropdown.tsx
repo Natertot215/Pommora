@@ -50,7 +50,7 @@ export function MenuDropdown({
   useDismiss(wrapRef, () => setOpen(false), open, dismissOnOutside)
   const pane = useExitPresence(open)
 
-  // The pane is centred on the button, so the room to that button's right counts twice. Measured from
+  // The pane is centered on the button, so the room to that button's right counts twice. Measured from
   // a live rect rather than offsetWidth because the comparison is against the window: a cluster riding
   // a translate puts the on-screen position exactly where the transform contributes.
   useLayoutEffect(() => {

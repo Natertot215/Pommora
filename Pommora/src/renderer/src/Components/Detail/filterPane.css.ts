@@ -74,7 +74,7 @@ export const whatCell = style({
 })
 
 /** The house ring CHANNEL, not a hand-rolled shadow: interactionField already paints
- *  `inset 0 0 0 1px var(--field-ring)`, so a field only sets the colour. Overriding boxShadow
+ *  `inset 0 0 0 1px var(--field-ring)`, so a field only sets the color. Overriding boxShadow
  *  instead would also stomp the channel for any ancestor that sets it. */
 const restRing = { vars: { '--field-ring': c.separator.border } }
 
@@ -221,11 +221,11 @@ const SEGMENT_DIVIDER_INSET = '3px'
  *  it dissolves a whole run rather than one word, and the × it clears sits inside that ramp. */
 const SEGMENT_FADE = '30px'
 
-/** A Location run — the picked Sets divided by the house segment hairline. A Set carries no colour
- *  of its own, so a chip would render as a colourless box pretending to be a value; a divided run
+/** A Location run — the picked Sets divided by the house segment hairline. A Set carries no color
+ *  of its own, so a chip would render as a colorless box pretending to be a value; a divided run
  *  is the honest treatment for a list of plain titles.
  *  Spacing is the run's GAP, never margins on the pieces — the tab strip's recipe. A divider spaced
- *  by its own margins sits evenly only while its neighbours are symmetric, and a segment's trailing
+ *  by its own margins sits evenly only while its neighbors are symmetric, and a segment's trailing
  *  × breaks exactly that. It STRETCHES so the hairline can measure itself against the field. */
 export const segmentRun = style({
   display: 'inline-flex',

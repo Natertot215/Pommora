@@ -1,4 +1,4 @@
-// Single source for the app substrate colour (the window background). The main
+// Single source for the app substrate color (the window background). The main
 // process can't read renderer CSS vars or vanilla-extract tokens, so this plain
 // constant is the seam both sides share:
 //   main/index.ts → BrowserWindow backgroundColor: WINDOW_BG
@@ -7,11 +7,11 @@
 // Change it here and all three follow.
 export const WINDOW_BG = '#1A1A1C'
 
-// The spectrum solids, for the same reason: main validates a stored accent and a stored Space
-// color against these keys and cannot read a vanilla-extract token, while color.css.ts needs the
-// values to build the :root vars. Written once here, mirrored from the Figma color collection.
+// The spectrum solids, for the same reason: main can't read a vanilla-extract token, while
+// color.css.ts needs the values to build the :root vars. Written once here, mirrored from the
+// Figma color collection.
 //   color.css.ts → color.solid tokens → every --color-* consumer
-//   types.ts     → SOLID_COLORS, the key vocabulary both processes validate against
+//   isColorKey   → the legacy half of the storable-color vocabulary, beside the ramp cells
 export const SPECTRUM = {
   red: '#FF453A',
   orange: '#FF9F0A',

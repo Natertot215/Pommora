@@ -92,7 +92,7 @@ export function StatusEditor({
   }
 
   /** The naming chip in its seat, or the ghost standing in that seat. A status option names itself in
-   *  its group's colour, the way it will wear it once it exists. */
+   *  its group's color, the way it will wear it once it exists. */
   const slotAt = (g: StatusGroup, index: number, anchorId: string): React.JSX.Element | null =>
     adding?.groupId === g.id && adding.index === index ? (
       <div className={s.optionRow}>

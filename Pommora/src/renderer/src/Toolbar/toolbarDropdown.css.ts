@@ -23,8 +23,8 @@ export const wrapper = style({
   transform: 'translateX(calc(-1 * var(--toolbar-swallow)))',
 } as Parameters<typeof style>[0])
 
-/** The dropdown anchor — hangs straight down, centred on the button (the beak points up at its
- *  centre via the surface's default centred notch). */
+/** The dropdown anchor — hangs straight down, centered on the button (the beak points up at its
+ *  center via the surface's default centered notch). */
 export const anchor = style(dropdownAnchor('center', stack.local.lifted))
 
 /** The right-edge variant — the NavPane hangs off the toolbar's trailing cluster. */

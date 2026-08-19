@@ -30,7 +30,7 @@ export function addOption(
 // ── Status: the same transforms, applied to one group's options within the StatusGroup[] array ──
 
 /** Append an option to one status group (matched by id). value = label = title (the value=title
- *  model); no color, so the chip inherits the group's colour until it's recolored. */
+ *  model); no color, so the chip inherits the group's color until it's recolored. */
 export function addStatusOption(
   groups: StatusGroup[],
   groupId: string,
@@ -47,7 +47,7 @@ export function addStatusOption(
 }
 
 /** Recolor a status option (by value, wherever it lives). undefined clears the key → the chip falls
- *  back to its group's colour. */
+ *  back to its group's color. */
 export function recolorStatusOption(
   groups: StatusGroup[],
   value: string,
@@ -88,7 +88,7 @@ export function relabelStatusGroup(
 }
 
 /** Move an option (by value) into `toGroupId` at `toIndex`, reassigning its group_id. Same group = a
- *  reorder; a different group = a cross-group move (it inherits the new group's colour unless it carries
+ *  reorder; a different group = a cross-group move (it inherits the new group's color unless it carries
  *  its own). toIndex is in the target group's without-the-dragged coordinate space. */
 export function moveStatusOption(
   groups: StatusGroup[],

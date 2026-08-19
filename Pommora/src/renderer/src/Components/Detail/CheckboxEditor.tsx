@@ -1,9 +1,7 @@
-import { useRef, useState } from 'react'
 import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
 import { solidColorCss } from '@renderer/Detail/Views/Table/solidColor'
-import { tintAt, TINT_STEPS } from '@renderer/design-system/tokens/tint'
 import type { ChipColorName } from '@renderer/design-system/tokens/chip.css'
-import { ColorPicker } from './ColorPicker'
+import { ColorSwatchField } from './ColorPicker'
 import { PickerControl } from './PickerControl'
 import * as s from './settingsPane.css'
 
@@ -22,7 +20,7 @@ function resolveColor(color: string | undefined): { name: ChipColorName; css: st
   return { name: chipColorFor(color), css: solidColorCss(color) }
 }
 
-/** The two controls write to different scopes: Colour → the property def (`setCheckboxColor`,
+/** The two controls write to different scopes: Color → the property def (`setCheckboxColor`,
  *  applies everywhere), Style → this view's `column_styles` alone. */
 export function CheckboxEditor({
   color,
@@ -35,39 +33,18 @@ export function CheckboxEditor({
   onSetColor: (color: string | undefined) => void
   onSetStyle: (look: CheckboxLook) => void
 }): React.JSX.Element {
-  const [coloring, setColoring] = useState(false)
-  const chipRef = useRef<HTMLButtonElement>(null)
   const chosen = resolveColor(color)
 
   return (
     <div className={s.configEditor}>
       <div className={s.configRow}>
         <span className={s.configLabel}>Color</span>
-        <span className={s.colorCluster}>
-          <button
-            ref={chipRef}
-            type="button"
-            className={s.colorChip}
-            aria-label="Color"
-            onClick={() => setColoring((v) => !v)}
-          >
-            <span
-              className={s.colorSwatch}
-              style={{ '--sw': tintAt(chosen.css, TINT_STEPS.primary) } as React.CSSProperties}
-            />
-          </button>
-          <ColorPicker
-            greyscale={false}
-            open={coloring}
-            selected={chosen.name}
-            onPick={(next) => {
-              onSetColor(next)
-              setColoring(false)
-            }}
-            onDismiss={() => setColoring(false)}
-            triggerRef={chipRef}
-          />
-        </span>
+        <ColorSwatchField
+          label="Color"
+          selected={chosen.name}
+          css={chosen.css}
+          onPick={onSetColor}
+        />
       </div>
       <div className={s.configRow}>
         <span className={s.configLabel}>Style</span>

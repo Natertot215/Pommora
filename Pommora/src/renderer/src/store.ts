@@ -447,7 +447,7 @@ export const useSession = create<SessionState>((set, get) => {
 
   const openVia = async (attempt: () => Promise<Result<boolean>>): Promise<void> => {
     try {
-      // Close before the root can flip, even if the adopt is then cancelled — data safety
+      // Close before the root can flip, even if the adopt is then canceled — data safety
       // beats window persistence.
       set({ navOpen: false, preview: null, previewTarget: null })
       // Flush every pending page-body write to the CURRENT nexus before an adopt flips the root —

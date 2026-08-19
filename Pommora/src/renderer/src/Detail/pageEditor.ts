@@ -81,7 +81,7 @@ export function renameHeadingAtOffset(from: number, next: string): void {
  *  the document end when it's null. Levels are untouched; the outline re-nests the moved section by
  *  level on its own. Offsets are recomputed from the LIVE doc by heading key (the outline body can
  *  trail the editor by a beat), and `blockMoveChanges` carries the blank-line fencing, so the section
- *  never lands jammed against a neighbour. */
+ *  never lands jammed against a neighbor. */
 export function moveHeadingSection(dragKey: string, beforeKey: string | null): void {
   const view = pageEditorView()
   if (!view) return

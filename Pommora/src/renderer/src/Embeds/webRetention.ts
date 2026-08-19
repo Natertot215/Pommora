@@ -17,24 +17,23 @@ export interface WebRetention {
   readonly hiddenCount: number
 }
 
+interface Retained {
+  at: number
+  evict: () => void
+}
+
 export function createRetention(cap: number): WebRetention {
-  const hidden = new Map<symbol, { at: number; evict: () => void }>()
+  const hidden = new Map<symbol, Retained>()
   let tick = 0
   return {
     hide(id, evict) {
       hidden.set(id, { at: ++tick, evict })
       if (hidden.size <= cap) return
-      let oldest: symbol | undefined
-      let min = Number.POSITIVE_INFINITY
-      for (const [k, v] of hidden)
-        if (v.at < min) {
-          min = v.at
-          oldest = k
-        }
-      if (oldest === undefined) return
-      const r = hidden.get(oldest)
-      hidden.delete(oldest)
-      r?.evict()
+      let oldest: [symbol, Retained] | null = null
+      for (const e of hidden) if (oldest === null || e[1].at < oldest[1].at) oldest = e
+      if (oldest === null) return
+      hidden.delete(oldest[0])
+      oldest[1].evict()
     },
     show(id) {
       hidden.delete(id)

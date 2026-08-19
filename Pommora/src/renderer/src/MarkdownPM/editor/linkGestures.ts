@@ -26,7 +26,7 @@ export const linkRest = StateField.define<number | null>({
 
 /** The link the caret is currently TYPING inside, as that link's start, or null.
  *
- *  A connection takes the connection colour from its first character rather than reading as prose
+ *  A connection takes the connection color from its first character rather than reading as prose
  *  until a title happens to match. But that belongs to writing one: clicking into a link that names
  *  no page is inspecting an unresolved link, and it should look unresolved. Typing keeps this alive
  *  keystroke by keystroke; moving the caret without editing ends it. */

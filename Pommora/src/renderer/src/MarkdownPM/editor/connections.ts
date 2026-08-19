@@ -102,7 +102,7 @@ function pointerLink(view: EditorView, api: ConnectionsApi, event: MouseEvent): 
 }
 
 export function connectionClicks(getApi: GetApi): ReturnType<typeof EditorView.domEventHandlers> {
-  // The pending hover intent — armed on mouseover of a resolved connection, cancelled the
+  // The pending hover intent — armed on mouseover of a resolved connection, canceled the
   // moment the pointer leaves it (mouseout fires per CM6 text span; re-entry re-arms fresh).
   const intent = hoverIntent()
   // Was the caret in this link BEFORE the press moved it? CM seats the caret on mousedown, so the

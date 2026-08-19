@@ -24,7 +24,7 @@ const TWISTY_W = 12
  *  own `--menu-rail-x` accordingly. */
 export const TITLE_X_TWISTY_ONLY = ROW_PAD_X + TWISTY_W + ROW_GAP
 
-/** The x of the twisty's centre. An icon-less disclosing surface points its `--menu-rail-x` here so
+/** The x of the twisty's center. An icon-less disclosing surface points its `--menu-rail-x` here so
  *  the rail runs straight through the parent chevron rather than beside it. */
 export const TWISTY_CENTER_X = ROW_PAD_X + TWISTY_W / 2
 
@@ -124,7 +124,7 @@ export const itemSelected = style({
 })
 
 /** Row variant: the title carries weight. For rows that ARE structure rather than choices — an
- *  outline's headings — so the hierarchy reads without a second glyph or colour doing the work.
+ *  outline's headings — so the hierarchy reads without a second glyph or color doing the work.
  *  KNOB: step to `text.body.semibold`/`.bold` for a heavier outline. */
 export const itemEmphasized = style([text.body.emphasized])
 
@@ -171,11 +171,11 @@ export const titleWrap = style({
   gap: '2px',
 })
 
-/** Title line — inherits the row's size + colour; ellipsis at rest, scrolls the full value on hover
- *  (shared `truncateHoverScroll`, the chip-label behaviour). */
+/** Title line — inherits the row's size + color; ellipsis at rest, scrolls the full value on hover
+ *  (shared `truncateHoverScroll`, the chip-label behavior). */
 export const titleText = style([truncateHoverScroll])
 
-/** Inline-rename field for a menu row — sits flush in the title slot: the row's own font, colour, and
+/** Inline-rename field for a menu row — sits flush in the title slot: the row's own font, color, and
  *  metrics with no border/padding/background of its own, so swapping it in for the title text is
  *  dimensionally identical (no row nudge). The caret alone marks edit mode. */
 export const titleInput = style({
@@ -197,7 +197,7 @@ export const subLabel = style([
   { color: c.label.secondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
 ])
 
-/** Trailing detail — colour inherited from `side`. */
+/** Trailing detail — color inherited from `side`. */
 export const detail = style([text.footnote.emphasized])
 
 /** Separator — a band with a centered hairline (Apple's menu separator height). */
@@ -212,10 +212,10 @@ export const separatorLine = style({ height: '1px', width: '100%', background: c
 /** Flush variant — no side inset, so the hairline spans the surface gutter edge-to-edge. */
 export const separatorFlush = style({ padding: 0 })
 
-/** Gutter-flush affordance — the shared geometry/colour for the TopRow heading nav and the pane
+/** Gutter-flush affordance — the shared geometry/color for the TopRow heading nav and the pane
  *  footer actions: no item inset (so the ‹ heading and the +/Delete footer line up at one left edge),
  *  a tight icon↔label gap, and its own text tone. Each consumer sets its own type; the
- *  destructive footer (Delete) re-overrides the colour. */
+ *  destructive footer (Delete) re-overrides the color. */
 export const flushAffordance = style({ paddingLeft: 0, gap: '4px', color: c.label.secondary })
 
 /** Flush-trailing row — the trailing cluster (chevron, detail) sits against the gutter edge where
@@ -284,7 +284,7 @@ export const topRowPad = style({
 
 // ── TopBar tone knobs — every pane header's four parts, one source. Leading (the ‹ back nav) reads
 // brighter than trailing (the current pane), so the back destination sits a step above the breadcrumb.
-// Each knob colours the text/glyph itself, so it beats the surface's dropdown-title rule. All surfaces
+// Each knob colors the text/glyph itself, so it beats the surface's dropdown-title rule. All surfaces
 // route here via MenuTopRow / MenuPaneTopRow.
 export const topBarLeadingLabel = style([actionRow])
 export const topBarLeadingSymbol = style({ display: 'inline-flex', color: c.label.secondary })

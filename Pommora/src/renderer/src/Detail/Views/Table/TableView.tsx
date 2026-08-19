@@ -70,7 +70,7 @@ import { TableRowDnd, useTableRowDrag } from './tableDnd'
 import { solidColorCss } from './solidColor'
 import { parseLink, urlClickTarget, urlValueFromEdit, urlValueFromRename } from '@shared/linkValue'
 
-// ── TUNABLE ── how far past a column's edge the dragged column's centre must travel before the slot
+// ── TUNABLE ── how far past a column's edge the dragged column's center must travel before the slot
 // flips (the sticky zone around the current slot). Larger = more deliberate / harder to leave a slot;
 // smaller = snappier. Bump this one number to taste.
 const COL_SHIFT_HYSTERESIS = 25
@@ -145,19 +145,19 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   const [valueOverride, setValueOverride] = useState<Record<string, PageFrontmatter> | null>(null)
   const [viewOrders, setViewOrders] = useState<Record<string, string[]>>({})
 
-  // Lazy value load + manual-order cache on container open; `cancelled` guards a fast container swap.
+  // Lazy value load + manual-order cache on container open; `canceled` guards a fast container swap.
   // (The active-view pointer is the shared store slice — read via useActiveView, not fetched here.)
   useEffect(() => {
-    let cancelled = false
+    let canceled = false
     setValueOverride(null) // canonical values for the new container supersede any optimistic patches
     void window.nexus.loadValues(source.path).then((v) => {
-      if (!cancelled) setValues(v)
+      if (!canceled) setValues(v)
     })
     void window.nexus.viewOrders.get().then((m) => {
-      if (!cancelled) setViewOrders(m)
+      if (!canceled) setViewOrders(m)
     })
     return () => {
-      cancelled = true
+      canceled = true
     }
   }, [source.path])
 
@@ -891,7 +891,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     )
   }
   // The rename popover — a TextPicker hung off the editing cell (like cellPicker), for a link's alias.
-  // Its --accent is scoped to the link's own colour, so the field's focus stroke wears it; committing an
+  // Its --accent is scoped to the link's own color, so the field's focus stroke wears it; committing an
   // empty alias drops it back to a bare URL. The alias always wins at render, so this is the only surface
   // that sets it (Edit rewrites the URL and preserves it).
   const renameField = (): React.ReactNode => {
@@ -1205,13 +1205,13 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   const groupIndent = (depth: number): string => `calc(var(--row-indent) * ${depth})`
 
   // Column smooth-shift: grab a header → the whole column (header + every body cell + divider)
-  // slides with the cursor, neighbours shifting by the dragged column's width to open the gap, the
+  // slides with the cursor, neighbors shifting by the dragged column's width to open the gap, the
   // track order committing on drop. The shared gesture skeleton drives it (the header re-renders
   // mid-drag, so a node-bound listener would drop). `zoom` divides the screen delta back into the
   // grid's pre-zoom track space. The target slot is edge-based: whichever column's span the dragged
-  // column's centre sits over, with a sticky hysteresis zone around the current slot. Edge-based
-  // (not closest-centre) so a far column can't shift while the dragged one is still mid-traverse
-  // over a wide neighbour. A horizontal scroll re-bases the edges and re-resolves the slot.
+  // column's center sits over, with a sticky hysteresis zone around the current slot. Edge-based
+  // (not closest-center) so a far column can't shift while the dragged one is still mid-traverse
+  // over a wide neighbor. A horizontal scroll re-bases the edges and re-resolves the slot.
   const startColumnDrag = (e: React.PointerEvent, from: number): void => {
     if (e.button !== 0) return // left-button drags; a right-press falls through to the column menu
     e.preventDefault()
@@ -1238,10 +1238,10 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     const resolve = (): void => {
       const projected = startCenter + (lastX - startX)
       const cur = current?.to ?? from
-      // Edge-based slot: which column's span the dragged column's centre is actually over. Hold the
-      // current slot until the centre leaves its span by COL_SHIFT_HYSTERESIS (a sticky zone — no flicker
-      // at a boundary). This is correct for wildly-varying widths where a closest-centre rule would let a
-      // far column shift while the dragged one is still mid-traverse over a wide neighbour (e.g. Title).
+      // Edge-based slot: which column's span the dragged column's center is actually over. Hold the
+      // current slot until the center leaves its span by COL_SHIFT_HYSTERESIS (a sticky zone — no flicker
+      // at a boundary). This is correct for wildly-varying widths where a closest-center rule would let a
+      // far column shift while the dragged one is still mid-traverse over a wide neighbor (e.g. Title).
       const curLeft = gridLeft + lefts[cur]
       const curRight = curLeft + widths[cur]
       let to = cur
@@ -1259,7 +1259,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       }
       // The cursor-follow is a grid-level var (one style write; the .col-dragging cells consume
       // it) — React state updates only on activation + slot flips, never per move. Anchored to the
-      // column's FLOWED centre, which scrolls with the grid, so an auto-scroll can't slide the
+      // column's FLOWED center, which scrolls with the grid, so an auto-scroll can't slide the
       // lifted column off the pointer.
       grid.style.setProperty(
         '--col-drag-x',
@@ -1285,7 +1285,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
         // (that ratio bakes in the grid's layout slack).
         zoom = Number.parseFloat(getComputedStyle(grid).getPropertyValue('zoom')) || 1
         const hr = header.getBoundingClientRect()
-        startCenter = hr.left + hr.width / 2 // the dragged column's centre; it tracks the cursor 1:1
+        startCenter = hr.left + hr.width / 2 // the dragged column's center; it tracks the cursor 1:1
         startX = ev.clientX
         lastX = ev.clientX
         gridLeft = grid.getBoundingClientRect().left
@@ -1872,8 +1872,8 @@ const DataRow = memo(function DataRow({
         }
         // The lead cell's indent (loose-inset + group nesting) is a LEFT treatment — it tucks left-read
         // content like the Title. A centered first column (a checkbox/switch/chip moved before the Title)
-        // must NOT get it: the indent eats the narrow cell and shoves the control off-centre / past the
-        // fold, so it clips left. Center-aligned lead → no padding, the control centres in the full cell.
+        // must NOT get it: the indent eats the narrow cell and shoves the control off-center / past the
+        // fold, so it clips left. Center-aligned lead → no padding, the control centers in the full cell.
         if (i === 0 && alignByCol[i] === 'left') style.paddingLeft = padLeft
         // Borderless reveal: the edited cell wears the faint accent ring (Table.css, no-borders only).
         const stateCx = activeCol === c.id && 'cell-active'

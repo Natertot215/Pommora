@@ -864,12 +864,12 @@ function DateBucketList({
 } & HideControls): React.JSX.Element | null {
   const [values, setValues] = useState<Record<string, PageFrontmatter>>({})
   useEffect(() => {
-    let cancelled = false
+    let canceled = false
     void window.nexus.loadValues(source.path).then((v) => {
-      if (!cancelled) setValues(v)
+      if (!canceled) setValues(v)
     })
     return () => {
-      cancelled = true
+      canceled = true
     }
   }, [source.path])
 

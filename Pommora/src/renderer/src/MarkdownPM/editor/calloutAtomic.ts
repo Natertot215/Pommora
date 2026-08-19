@@ -2,7 +2,7 @@
 // can't land inside it, so NO delete variant (Backspace, Shift/Cmd/Alt+Backspace, forward-Delete, …) can corrupt
 // it char-by-char: it either removes the whole prefix as one unit or leaves it untouched. The head can't be
 // demoted to a quote, and a body line can't lose its space (`> `→`>`) and silently fall out of the box. The
-// custom Backspace handler still runs first (Prec.high) for its join behaviour — atomic ranges don't block a
+// custom Backspace handler still runs first (Prec.high) for its join behavior — atomic ranges don't block a
 // programmatic dispatch, only CM's own default cursor-motion/deletion.
 import { EditorView, Decoration } from '@codemirror/view'
 import { RangeSetBuilder, type RangeSet } from '@codemirror/state'

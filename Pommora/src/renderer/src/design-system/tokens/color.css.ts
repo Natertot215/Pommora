@@ -85,7 +85,7 @@ globalStyle(':root', {
 export const inputFieldVar = 'var(--input-field)'
 
 // Shadows — the standard glass drop shadow, one source for every frost surface (Surface / dropdowns /
-// pickers). Not a colour, but this is the design-system's named-token home. Consume via `shadowStandardVar`.
+// pickers). Not a color, but this is the design-system's named-token home. Consume via `shadowStandardVar`.
 globalStyle(':root', {
   vars: {
     '--shadow-standard': '0 8px 25px #00000040',

@@ -1,4 +1,4 @@
-// CSS can only recolour the browser's native caret, never reshape it, so this paints the SAME
+// CSS can only recolor the browser's native caret, never reshape it, so this paints the SAME
 // `.mdpm-caret` visual over whichever field is focused. Attaches globally — one focus listener at
 // the document root — without editing components. The native caret is hidden in Carets.css; here
 // we only position the drawn bar.

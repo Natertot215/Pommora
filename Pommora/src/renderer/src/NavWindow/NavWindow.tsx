@@ -67,7 +67,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   const searchRef = useRef<HTMLInputElement>(null)
 
   // An open sourced from a live page preview FLIPs from its stashed rect; the css intro is
-  // cancelled pre-paint so only one motion plays.
+  // canceled pre-paint so only one motion plays.
   const rootRef = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => {
     const from = consumeWindowMorph()

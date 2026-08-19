@@ -62,17 +62,17 @@ export function useNavThumbnails(): void {
   useEffect(() => {
     if (navOpen || selection.kind === 'none') return
     if (selection.kind === 'page' && pageStatus !== 'ready') return
-    let cancelled = false
+    let canceled = false
     const timer = setTimeout(() => {
       void (async () => {
         const pane = document.querySelector('.content-pane')
-        if (!pane || cancelled) return
+        if (!pane || canceled) return
         await document.fonts?.ready
         await imagesReady(pane)
         await new Promise<void>((r) =>
           requestAnimationFrame(() => requestAnimationFrame(() => r())),
         )
-        if (cancelled || useSession.getState().navOpen) return
+        if (canceled || useSession.getState().navOpen) return
         const key = navKey(selection)
         // The gate — read at capture time so the marker reflects what the shot will show.
         const s = useSession.getState()
@@ -92,14 +92,14 @@ export function useNavThumbnails(): void {
           contentRect(pane),
           window.devicePixelRatio,
         )
-        if (!cancelled && res.ok) {
+        if (!canceled && res.ok) {
           captured.set(key, marker)
           bumpThumb(key)
         }
       })()
     }, 300)
     return () => {
-      cancelled = true
+      canceled = true
       clearTimeout(timer)
     }
   }, [selection, pageStatus, navOpen, bumpThumb])
