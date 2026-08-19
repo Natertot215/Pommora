@@ -2,7 +2,7 @@
 // live on, where their popups go, and how they track the host's zoom. Every embed surface —
 // tiles, the in-app browser, hover cards — attaches under these rules; none carries its own.
 
-import { app, session, webContents, BrowserWindow, type WebContents } from 'electron'
+import { app, session, webContents, BrowserWindow, type Session, type WebContents } from 'electron'
 import { isHttpLink } from '@shared/links'
 import { WEB_PARTITION, WEB_ZOOM_DEFAULT } from '@shared/types'
 import { push } from './ipc'
@@ -35,6 +35,9 @@ const hostOf = (url: string): string => {
   }
 }
 
+/** The one session every guest lives on — the wiring stamps it, the wipes clear it. */
+const webSession = (): Session => session.fromPartition(WEB_PARTITION)
+
 const webviewGuests = (): WebContents[] =>
   webContents.getAllWebContents().filter((wc) => wc.getType() === 'webview')
 
@@ -62,7 +65,7 @@ function wireAppLevel(): void {
   if (appWired) return
   appWired = true
 
-  const ses = session.fromPartition(WEB_PARTITION)
+  const ses = webSession()
   const baseUA = cleanedUA()
   const googleUA = baseUA.replace(/\sChrome\/[\d.]+/, '')
   ses.setUserAgent(baseUA)
@@ -160,8 +163,7 @@ export function stepHostZoom(wc: WebContents, dir: 1 | -1): void {
 /** Sign-out: the origin's whole storage (not just cookies), then the row — in that order, so a
  *  wipe failure surfaces as the operation's error with the row still standing (no half-state). */
 export async function signOutWebAccount(domain: string): Promise<void> {
-  const ses = session.fromPartition(WEB_PARTITION)
-  await ses.clearStorageData({ origin: `https://${domain}` })
+  await webSession().clearStorageData({ origin: `https://${domain}` })
   removeWebAccount(domain)
 }
 
@@ -169,7 +171,6 @@ export async function signOutWebAccount(domain: string): Promise<void> {
  *  Electron cannot enumerate storage-holding origins reliably enough for the rows to survive
  *  truthfully. */
 export async function clearWebBrowsing(): Promise<void> {
-  const ses = session.fromPartition(WEB_PARTITION)
-  await ses.clearStorageData()
+  await webSession().clearStorageData()
   clearWebAccounts()
 }

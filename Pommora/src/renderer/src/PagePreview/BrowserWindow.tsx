@@ -21,14 +21,17 @@ export function openInAppBrowser(url: string): void {
   useSession.getState().openBrowser(url)
 }
 
+const LIGHT_LUMA = 150
+
 /** Whether a reported theme color reads light — the chrome's labels flip dark over it. Only the
  *  hex forms are judged; an exotic value keeps the light-label default. */
 function lightColor(color: string): boolean {
-  const m = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(color.trim())
-  if (!m) return false
-  const h = m[1].length === 3 ? [...m[1]].map((c) => c + c).join('') : m[1]
-  const [r, g, b] = [0, 2, 4].map((i) => Number.parseInt(h.slice(i, i + 2), 16))
-  return 0.299 * r + 0.587 * g + 0.114 * b > 150
+  const match = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(color.trim())
+  if (!match) return false
+  const hex = match[1].length === 3 ? [...match[1]].map((c) => c + c).join('') : match[1]
+  const n = Number.parseInt(hex, 16)
+  const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255]
+  return 0.299 * r + 0.587 * g + 0.114 * b > LIGHT_LUMA
 }
 
 /** What the guest element answers with once attached — the navigation surface the toolbar drives. */
@@ -65,6 +68,9 @@ function BrowserWindowBody({
   const [title, setTitle] = useState('')
   const [current, setCurrent] = useState(url)
   const [nav, setNav] = useState({ back: false, forward: false })
+  // The site's own theme color tints the toolbar strip, so the chrome reads as the page's —
+  // null (no meta theme-color, or a navigation away) falls back to the clear strip.
+  const [theme, setTheme] = useState<string | null>(null)
 
   // A retake aims the standing guest at the address — imperatively, because the guest may have
   // navigated away from the very url being re-summoned, which the src attribute reads as
@@ -82,10 +88,6 @@ function BrowserWindowBody({
       // A pre-attach guest answers no navigation calls; src still owns its first aim.
     }
   }, [url, seq])
-
-  // The site's own theme color tints the toolbar strip, so the chrome reads as the page's —
-  // null (no meta theme-color, or a navigation away) falls back to the clear strip.
-  const [theme, setTheme] = useState<string | null>(null)
 
   useEffect(() => {
     const wv = ref.current
