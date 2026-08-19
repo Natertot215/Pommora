@@ -9,6 +9,10 @@ import { normalizeTitle } from './connections'
  *  second copy widened on its own would disagree with the first about what a URL even is. */
 const HAS_SCHEME = /^[a-z][a-z0-9+.-]*:/i
 
+/** How long a link is given to resolve — the title fetch and the hover card's site load share
+ *  the one deadline, so "resolves" means the same thing everywhere. */
+export const LINK_RESOLVE_TIMEOUT_MS = 6000
+
 /** The `[alias](url)` markdown-link shape — a URL property's Renamed (aliased) form. The codec stores
  *  it as a plain string (the declared-type coercion re-tags it as a url at read time); this regex backs
  *  the renderer's link parse + the Edit/Rename writes.
