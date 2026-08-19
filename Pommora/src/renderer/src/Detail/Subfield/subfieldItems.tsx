@@ -75,7 +75,7 @@ function AddMenuItem(): React.JSX.Element | null {
       aria-label="Add"
       title={creators.map((c) => c.label).join(' / ')}
     >
-      <Icon name="plus" size="sm" />
+      <Icon name="plus" size="body" />
     </button>
   )
 }
@@ -92,7 +92,7 @@ function ViewTypeItem(): React.JSX.Element {
       onClick={() => setMode(mode === 'list' ? 'gallery' : 'list')}
       title={mode === 'list' ? 'Switch to Gallery' : 'Switch to List'}
     >
-      <Icon name="chevrons-up-down" size="sm" />
+      <Icon name="chevrons-up-down" size="body" />
       <span>{mode === 'list' ? 'List' : 'Gallery'}</span>
     </button>
   )

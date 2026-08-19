@@ -214,7 +214,7 @@ export function DetailPane(): React.JSX.Element {
             aria-label={expanded ? 'Hide footer' : 'Show footer'}
             title={expanded ? 'Hide footer' : 'Show footer'}
           >
-            <Icon name={expanded ? 'chevron-down' : 'chevron-up'} size="md" />
+            <Icon name={expanded ? 'chevron-down' : 'chevron-up'} size="title3" />
           </button>
           <div className="subfield-reveal">
             <Subfield />

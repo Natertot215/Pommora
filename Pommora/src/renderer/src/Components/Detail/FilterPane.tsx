@@ -132,7 +132,7 @@ function FieldPicker({
   const leadGlyph =
     lead ??
     (icon ? (
-      <Icon name={icon} size={13} {...(iconColor ? { style: { color: iconColor } } : {})} />
+      <Icon name={icon} size="body" {...(iconColor ? { style: { color: iconColor } } : {})} />
     ) : null)
   return (
     <>
@@ -147,7 +147,7 @@ function FieldPicker({
         <OverflowScroll className={cx(fp.fieldLabel, display === null && fp.placeholder)}>
           {display ?? placeholder}
         </OverflowScroll>
-        {chevron ? <Icon name="chevrons-up-down" size={12} className={fp.chevron} /> : null}
+        {chevron ? <Icon name="chevrons-up-down" size="control" className={fp.chevron} /> : null}
       </button>
       {/* Built only while mounted: JSX children evaluate on EVERY render, so an un-gated render prop
           allocates each option element per row, per render, and throws them away. */}
@@ -298,7 +298,7 @@ function LocationField({
       <DisclosureRow
         key={s.id}
         title={s.title}
-        icon={<EntityIcon kind="set" icon={s.icon} size={13} />}
+        icon={<EntityIcon kind="set" icon={s.icon} size="body" />}
         // The row picks a value here, so the chevron is the only way into a child Set — it survives
         // the Hide Chevrons personalization, and a leaf holds its width so glyphs stay in one column.
         twisty={kids.length > 0 ? 'chevron' : 'spacer'}
@@ -328,7 +328,12 @@ function LocationField({
                 <Fragment key={v}>
                   {i > 0 && <span className={fp.segmentDivider} />}
                   <span className={fp.segment}>
-                    <EntityIcon kind="set" icon={set?.icon} size={13} className={fp.segmentIcon} />
+                    <EntityIcon
+                      kind="set"
+                      icon={set?.icon}
+                      size="body"
+                      className={fp.segmentIcon}
+                    />
                     {/* The chip's own label + remove, at their defaults: the melt machinery is what
                         blurs the title tail under the ×, and it only ever needed a `chipRemovable`
                         host and this label — never a chip's fill. */}
@@ -337,7 +342,7 @@ function LocationField({
                       <ChipRemoveButton
                         className={fp.segmentRemove}
                         label="Remove location"
-                        size={10}
+                        size="footnote"
                         onRemove={() => toggle(v)}
                       />
                     </span>
@@ -590,7 +595,7 @@ export function FilterPane({
         key={t.id}
         selected={t.id === current}
         ring
-        leading={<Icon name={t.icon ?? 'tag'} size={13} />}
+        leading={<Icon name={t.icon ?? 'tag'} size="body" />}
         onClick={() => {
           close()
           onPick(t.id)
@@ -714,7 +719,7 @@ export function FilterPane({
                 onClick={() => toggleConnector(index)}
               >
                 {row.connector === 'and' ? 'And' : 'Or'}
-                <Icon name="chevrons-up-down" size={12} className={fp.chevron} />
+                <Icon name="chevrons-up-down" size="control" className={fp.chevron} />
               </button>
             )}
             <FieldPicker
@@ -784,7 +789,7 @@ export function FilterPane({
             aria-label="Remove filter"
             onClick={() => removeRow(index)}
           >
-            <Icon name="x" size={11} />
+            <Icon name="x" size="caption" />
           </button>
         </div>
       </RevealRow>
@@ -809,7 +814,7 @@ export function FilterPane({
               onClick={() => setDraft(draft === 'or' ? 'and' : 'or')}
             >
               {draft === 'or' ? 'Or' : 'And'}
-              <Icon name="chevrons-up-down" size={12} className={fp.chevron} />
+              <Icon name="chevrons-up-down" size="control" className={fp.chevron} />
             </button>
           )}
           <FieldPicker
@@ -830,7 +835,7 @@ export function FilterPane({
             aria-label="Remove filter"
             onClick={() => setDraft(false)}
           >
-            <Icon name="x" size={11} />
+            <Icon name="x" size="caption" />
           </button>
         )}
       </div>
@@ -849,7 +854,7 @@ export function FilterPane({
             className={flushTrailing}
             leading={
               <span className={footingSymbol}>
-                <Icon name="rotate-ccw" size={12} />
+                <Icon name="rotate-ccw" size="control" />
               </span>
             }
             onClick={() => save('all', [])}
@@ -872,7 +877,7 @@ export function FilterPane({
                 draft === false && setDraft(rows.length === 0 ? null : connectorFor(mode))
               }
             >
-              <Icon name="plus" size={13} />
+              <Icon name="plus" size="body" />
             </button>
           </div>
         </div>

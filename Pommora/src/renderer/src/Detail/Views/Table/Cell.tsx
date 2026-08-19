@@ -49,7 +49,7 @@ export function Cell({
   if (column.kind === 'title') {
     return (
       <OverflowScroll className="cell-title">
-        {hideIcon ? null : <EntityIcon kind="page" icon={row.icon} size={14} />}
+        {hideIcon ? null : <EntityIcon kind="page" icon={row.icon} size="body" />}
         <span className="cell-title-text">{row.title}</span>
       </OverflowScroll>
     )
@@ -89,7 +89,7 @@ export function Cell({
         ) : (
           <span className={cx(chipBox, chipColor[chipColorFor(opt?.color)])}>
             {group && group !== 'upcoming' ? (
-              <Icon name={statusGroupGlyph(group)} size={12} strokeWidth={3} />
+              <Icon name={statusGroupGlyph(group)} size="control" strokeWidth={3} />
             ) : null}
           </span>
         )

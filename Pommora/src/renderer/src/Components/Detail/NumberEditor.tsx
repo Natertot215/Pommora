@@ -56,7 +56,7 @@ function ValueField({
   onCommit: (n: number | undefined) => void
 }): React.JSX.Element {
   const [editing, setEditing] = useState(false)
-  const chevron = <Icon name="chevrons-up-down" size={12} />
+  const chevron = <Icon name="chevrons-up-down" size="control" />
   if (editing) {
     return (
       <span className={s.valueControl}>

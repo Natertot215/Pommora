@@ -11,7 +11,7 @@ export function AddBannerButton({ onClick }: { onClick: () => void }): React.JSX
         aria-label="Add banner"
         title="Add a banner"
       >
-        <Icon name="square-plus" size={14} />
+        <Icon name="square-plus" size="body" />
         Add Banner
       </button>
     </div>

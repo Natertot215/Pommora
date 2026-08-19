@@ -135,9 +135,9 @@ export function CardAddPicker({
                   key={e.id}
                   className={cx(flushTrailing, compactRow)}
                   leading={
-                    <Icon name={propertyTypeIconName(e.type) ?? 'square-dashed'} size={14} />
+                    <Icon name={propertyTypeIconName(e.type) ?? 'square-dashed'} size="body" />
                   }
-                  trailing={e.revealOnly ? undefined : <Icon name="chevron-right" size={14} />}
+                  trailing={e.revealOnly ? undefined : <Icon name="chevron-right" size="body" />}
                   onClick={() => {
                     if (e.revealOnly) {
                       onReveal(e)

@@ -2,6 +2,7 @@ import { globalStyle, style } from '@vanilla-extract/css'
 import { track as switchTrack } from '../../design-system/components/Switches/switch.css'
 import { vars as colorVars, inputFieldVar } from '../../design-system/tokens/color.css'
 import { text } from '../../design-system/tokens/typography.css'
+import type { IconSize } from '../../design-system/tokens/size.css'
 import { duration, easing } from '../../design-system/tokens/motion'
 import {
   accessoryButton,
@@ -48,20 +49,20 @@ const OPTION = {
   groupGap: 12, // status only: gap between one group's block (heading + chips) and the next
 }
 
-/** — ICONS — glyph sizes, consumed by PropertiesPane/ViewPane TSX. The TopRow's own
- *  ‹ chevron is the shared MenuTopRow's (12, in Menu.tsx) — not a pane-local knob. */
+/** — ICONS — which ladder step each glyph in this pane names, consumed by PropertiesPane/ViewPane
+ *  TSX. The TopRow's own ‹ chevron is the shared MenuTopRow's — not a pane-local knob. */
 export const ICON = {
-  add: 14, // the header ⊕ (square-plus) — sized to the back-row heading
-  editorMenu: 14, // the editor header's ⋮ — sized to the back-row heading
-  doc: 12, // the property-type icon on every row (assigned · registry · type picker)
-  rowChevron: 16, // the trailing › on navigable rows (root entries + assigned rows)
-  rootEntry: 16, // the root menu's leading icons (Properties · Visibility · …)
-  twisty: 12, // the All Properties disclosure chevron
-  rowPlus: 12, // the registry row's + glyph
-  eye: 14, // the Visibility pane's eye / eye-off glyph
-  optionsAdd: 12, // the option editor's "Options" + glyph
-  palette: 14, // the option row's hover recolor glyph
-}
+  add: 'body', // the header ⊕ (square-plus) — sized to the back-row heading
+  editorMenu: 'body', // the editor header's ⋮ — sized to the back-row heading
+  doc: 'control', // the property-type icon on every row (assigned · registry · type picker)
+  rowChevron: 'title3', // the trailing › on navigable rows (root entries + assigned rows)
+  rootEntry: 'title3', // the root menu's leading icons (Properties · Visibility · …)
+  twisty: 'control', // the All Properties disclosure chevron
+  rowPlus: 'control', // the registry row's + glyph
+  eye: 'body', // the Visibility pane's eye / eye-off glyph
+  optionsAdd: 'control', // the option editor's "Options" + glyph
+  palette: 'body', // the option row's hover recolor glyph
+} satisfies Record<string, IconSize>
 
 // ═══════════════════════════════════════════════════════════════════════════
 // § SHELL — the dropdown anchor under the toolbar Settings button

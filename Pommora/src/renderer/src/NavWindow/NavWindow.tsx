@@ -180,7 +180,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
               className={cx('navwindow-style-toggle', text.footnote.emphasized)}
               onClick={toggleViewMode}
             >
-              <Icon name="chevrons-up-down" size={12} />
+              <Icon name="chevrons-up-down" size="control" />
               <span>{viewMode === 'list' ? 'List' : 'Gallery'}</span>
             </button>
           </>

@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import { Icon } from '@renderer/design-system/symbols'
+import type { IconSize } from '@renderer/design-system/tokens/size.css'
 import { cx } from '@renderer/design-system/cx'
 import { text } from '@renderer/design-system/tokens'
 import { OverflowScroll } from '@renderer/design-system/components/OverflowScroll'
@@ -24,7 +25,7 @@ export function NavCrumbs({
 }: {
   path: ResolvedNav['path']
   className: string
-  iconSize: number
+  iconSize: IconSize
 }): React.JSX.Element | null {
   if (path.length === 0) return null
   return (
@@ -142,7 +143,7 @@ export function NavPinButton({
       onClick={toggle}
       aria-label={it.pinned ? 'Unpin' : 'Pin'}
     >
-      <Icon name="pin" size={13} />
+      <Icon name="pin" size="body" />
     </button>
   )
 }
@@ -179,9 +180,9 @@ function NavRow({
     >
       <NavPinButton it={it} className="nav-item-pin" />
       <div className="nav-item-main">
-        <EntityGlyph item={it} size={15} className="nav-item-lead" />
+        <EntityGlyph item={it} size="title3" className="nav-item-lead" />
         <OverflowScroll className="nav-item-title">{it.title}</OverflowScroll>
-        <NavCrumbs path={it.path} className="nav-item-path" iconSize={12} />
+        <NavCrumbs path={it.path} className="nav-item-path" iconSize="control" />
       </div>
     </div>
   )

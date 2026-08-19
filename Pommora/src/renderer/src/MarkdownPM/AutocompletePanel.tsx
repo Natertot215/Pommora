@@ -70,9 +70,9 @@ export function AutocompletePanel({
           }}
         >
           {row.isPage ? (
-            <EntityIcon kind="page" size={14} className="mdpm-ac-icon" />
+            <EntityIcon kind="page" size="body" className="mdpm-ac-icon" />
           ) : (
-            <Icon name="square-split-horizontal" size={14} className="mdpm-ac-icon" />
+            <Icon name="square-split-horizontal" size="body" className="mdpm-ac-icon" />
           )}
           <span className="mdpm-ac-title">
             <span className="mdpm-ac-match">{row.label.slice(0, matchLen)}</span>

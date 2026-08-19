@@ -1,16 +1,6 @@
 import { useRef, useState } from 'react'
-import {
-  Server,
-  Eye,
-  LayoutDashboard,
-  Layers,
-  ListFilter,
-  ArrowUpDown,
-  SlidersHorizontal,
-  type LucideIcon,
-} from 'lucide-react'
 import type { OpenIn } from '@shared/types'
-import { Icon, entityIcon, iconNameOr } from '@renderer/design-system/symbols'
+import { Icon, entityIcon, iconNameOr, type IconName } from '@renderer/design-system/symbols'
 import { EntityIcon } from '@renderer/Components/EntityIcon'
 import {
   detail as detailText,
@@ -48,17 +38,17 @@ type PaneId = 'configuration' | 'properties' | 'visibility' | 'layout' | 'filter
 interface MenuEntry {
   id: PaneId
   label: string
-  Icon: LucideIcon
+  icon: IconName
 }
 
 const ENTRIES: MenuEntry[] = [
-  { id: 'configuration', label: 'Configuration', Icon: SlidersHorizontal },
-  { id: 'properties', label: 'Properties', Icon: Server },
-  { id: 'visibility', label: 'Visibility', Icon: Eye },
-  { id: 'layout', label: 'Layout', Icon: LayoutDashboard },
-  { id: 'group', label: 'Group', Icon: Layers },
-  { id: 'filter', label: 'Filter', Icon: ListFilter },
-  { id: 'sort', label: 'Sort', Icon: ArrowUpDown },
+  { id: 'configuration', label: 'Configuration', icon: 'sliders-horizontal' },
+  { id: 'properties', label: 'Properties', icon: 'server' },
+  { id: 'visibility', label: 'Visibility', icon: 'eye' },
+  { id: 'layout', label: 'Layout', icon: 'layout-dashboard' },
+  { id: 'group', label: 'Group', icon: 'layers' },
+  { id: 'filter', label: 'Filter', icon: 'list-filter' },
+  { id: 'sort', label: 'Sort', icon: 'arrow-up-down' },
 ]
 
 // A detail pane's right-side breadcrumb — the entry label, but Group/Filter/Sort read the active tense.
@@ -183,7 +173,7 @@ export function SettingsPane(): React.JSX.Element | null {
         <MenuItem
           key={e.id}
           className={cx(flushTrailing, frozen(e.id) && rowDisabled)}
-          leading={<e.Icon size={ICON.rootEntry} />}
+          leading={<Icon name={e.icon} size={ICON.rootEntry} />}
           trailing={<Icon name="chevron-right" size={ICON.rowChevron} />}
           onClick={frozen(e.id) ? undefined : () => open(e.id)}
         >
@@ -200,14 +190,14 @@ export function SettingsPane(): React.JSX.Element | null {
           leading={
             <span className={crumbRow}>
               <span className={footingSymbol}>
-                <EntityIcon kind="collection" icon={schemaCollection.icon} size={12} />
+                <EntityIcon kind="collection" icon={schemaCollection.icon} size="control" />
               </span>
               <span>{schemaCollection.title}</span>
               {node.kind === 'set' && (
                 <>
                   <span>›</span>
                   <span className={footingSymbol}>
-                    <EntityIcon kind="set" icon={node.icon} size={12} />
+                    <EntityIcon kind="set" icon={node.icon} size="control" />
                   </span>
                   <span>{node.title}</span>
                 </>
@@ -217,7 +207,7 @@ export function SettingsPane(): React.JSX.Element | null {
           trailing={
             <AccessoryButton
               icon="lock"
-              size={12}
+              size="control"
               box={20}
               ariaLabel={scope.locked ? 'Unlock view configuration' : 'Lock view configuration'}
               className={scope.locked ? `${footerLock} ${footerLockActive}` : footerLock}

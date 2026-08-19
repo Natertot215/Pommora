@@ -109,7 +109,7 @@ function BrowserWindowBody({
             disabled={!nav.back}
             onClick={() => ref.current?.goBack()}
           >
-            <Icon name="chevron-left" size={14} />
+            <Icon name="chevron-left" size="body" />
           </button>
           <button
             type="button"
@@ -118,7 +118,7 @@ function BrowserWindowBody({
             disabled={!nav.forward}
             onClick={() => ref.current?.goForward()}
           >
-            <Icon name="chevron-right" size={14} />
+            <Icon name="chevron-right" size="body" />
           </button>
         </>
       }

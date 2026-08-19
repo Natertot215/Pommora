@@ -11,9 +11,6 @@
   --tab-pinned-w: 34px; /* compact pinned tab (icon + accent) */
   --tab-pad-x: 12px;
   --tab-gap: 6px;
-  --tab-icon: 14px; /* entity icon size (TabBar.tsx mirrors it) */
-  --tab-x: 11px; /* close-× glyph (strokeWidth 3, chip spec) */
-  --tab-plus: 13px;
   --tab-divider-w: 2px; /* pinned│unpinned segment divider */
   --tab-divider-h: 16px;
   --tab-edge-fade: 20px;

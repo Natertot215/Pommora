@@ -49,10 +49,10 @@ export const TITLE_META: TypeMeta = { label: 'Title', icon: 'text-align-justify'
 
 export function PropertyTypeIcon({
   type,
-  size = 16,
+  size = 'title3',
 }: {
   type: PropertyType | 'title'
-  size?: number
+  size?: React.ComponentProps<typeof Icon>['size']
 }): React.JSX.Element {
   const name = (type === 'title' ? TITLE_META : PROPERTY_TYPES[type]).icon
   return name ? <Icon name={name} size={size} /> : <DashIcon />

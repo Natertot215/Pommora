@@ -264,7 +264,7 @@ export function TrashLeaf(): React.JSX.Element {
       <div className={cx('trash-head', 'table-head', text.caption.semibold)}>
         <span className="trash-head-name col-header">
           <span className="trash-head-glyph">
-            <PropertyTypeIcon type="title" size={13} />
+            <PropertyTypeIcon type="title" size="body" />
           </span>
           File Name
         </span>
@@ -276,7 +276,7 @@ export function TrashLeaf(): React.JSX.Element {
             void openColumnMenu()
           }}
         >
-          <Icon name="clock-fading" size={13} />
+          <Icon name="clock-fading" size="body" />
           Time Deleted
         </span>
       </div>
@@ -356,7 +356,7 @@ function TrashRowView({
         ariaLabel={`Select ${row.title}`}
       />
       <div className="nav-item-main">
-        <Icon name={icon} size={15} className="nav-item-lead" />
+        <Icon name={icon} size="title3" className="nav-item-lead" />
         <OverflowScroll className="nav-item-title">{row.title}</OverflowScroll>
         {row.crumbs.length > 0 && (
           <OverflowScroll className={cx('nav-item-path', text.caption.standard)}>
@@ -367,7 +367,7 @@ function TrashRowView({
                 {crumb.kind && (
                   <Icon
                     name={entityIcon(crumb.kind, undefined, defaultIcons)}
-                    size={12}
+                    size="control"
                     className="nav-path-icon"
                   />
                 )}

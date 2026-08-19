@@ -1,5 +1,4 @@
 import { useRef, useState } from 'react'
-import { Server } from 'lucide-react'
 import { entityIcon, Icon } from '@renderer/design-system/symbols'
 import { useSession } from '../../store'
 import {
@@ -65,7 +64,7 @@ export function PageMenu(): React.JSX.Element | null {
       <MenuSeparator flush />
       <MenuItem
         className={flushTrailing}
-        leading={<Server size={ICON.rootEntry} />}
+        leading={<Icon name="server" size={ICON.rootEntry} />}
         trailing={<Icon name="chevron-right" size={ICON.rowChevron} />}
         onClick={() => setPane('properties')}
       >
@@ -83,7 +82,7 @@ export function PageMenu(): React.JSX.Element | null {
               // Parked: a page has no board to lock. Inert rather than a live button wired to a
               // no-op, which reads as broken instead of pending.
               <button type="button" aria-label="Lock" className={footerLockAction} disabled>
-                <Icon name="lock" size={12} className={lockIcon} />
+                <Icon name="lock" size="control" className={lockIcon} />
                 Lock
               </button>
             }
@@ -94,7 +93,7 @@ export function PageMenu(): React.JSX.Element | null {
                 className={footerLockAction}
                 onClick={() => void runFooterAction()}
               >
-                <Icon name="ellipsis" size={13} />
+                <Icon name="ellipsis" size="body" />
               </button>
             }
           />

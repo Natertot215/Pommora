@@ -82,7 +82,7 @@ export function PickerControl<T extends string>({
       }
     >
       <span className={footing ? detail : s.value}>{labelOf(options, value)}</span>
-      <Icon name="chevrons-up-down" size={12} />
+      <Icon name="chevrons-up-down" size="control" />
     </button>
   )
   if (isToggle || native) return trigger
@@ -101,7 +101,7 @@ export function PickerControl<T extends string>({
             key={o.value}
             selected={o.value === value}
             ring
-            leading={o.icon ? <Icon name={o.icon} size={13} /> : undefined}
+            leading={o.icon ? <Icon name={o.icon} size="body" /> : undefined}
             onClick={() => {
               onPick(o.value)
               setOpen(false)

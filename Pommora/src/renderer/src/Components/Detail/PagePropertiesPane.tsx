@@ -244,7 +244,7 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
                     }}
                   >
                     <span className={side}>
-                      <Icon name={icon} size="xs" />
+                      <Icon name={icon} size="control" />
                     </span>
                     <span className={s.label}>{label}</span>
                     {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix */}
@@ -304,7 +304,7 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
         )}
         {(hiddenProps.length > 0 || hiddenContexts.length > 0) && (
           <button type="button" ref={addRef} className={s.add} onClick={() => setAddOpen(true)}>
-            <Icon name="plus" size="xs" />
+            <Icon name="plus" size="control" />
             <span>Add Property</span>
           </button>
         )}
@@ -319,7 +319,7 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
         {hiddenContexts.map((t) => (
           <PickerOption
             key={t.id}
-            leading={<Icon name={t.icon} size={13} />}
+            leading={<Icon name={t.icon} size="body" />}
             onClick={() => {
               setAddOpen(false)
               setSetAside((prev) => new Set([...prev].filter((r) => r !== t.id)))
@@ -331,7 +331,7 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
         {hiddenProps.map((def) => (
           <PickerOption
             key={def.id}
-            leading={<Icon name={propertyIcon(def)} size={13} />}
+            leading={<Icon name={propertyIcon(def)} size="body" />}
             onClick={() => revealAndEdit(def)}
           >
             {def.name}
