@@ -13,7 +13,7 @@ import { PageView } from './PageView'
 import { NavView } from '../Tabs/NavView'
 import { Subfield } from './Subfield/Subfield'
 
-function DetailView(): React.JSX.Element {
+function DetailView(): React.JSX.Element | null {
   const selection = useSession((s) => s.selection)
   const tree = useSession((s) => s.tree)
 
@@ -56,8 +56,10 @@ function DetailView(): React.JSX.Element {
       )
     }
     case 'page':
-      // The page surfaces are hosted per tab below, so the routed view stands down for them.
-      return <div className="detail" />
+      // The page surfaces are hosted per tab below, so the routed view stands down for them —
+      // rendering nothing rather than an empty box, which would stack its own full height
+      // against the host's inside the pane.
+      return null
   }
 }
 
@@ -65,24 +67,31 @@ function DetailView(): React.JSX.Element {
 // Each costs a live editor's DOM; what it buys is a tab flip that resumes rather than reloads.
 const WARM_TABS = 2
 
+/** One held-open page surface. The shown one reads its page from the store, so only a parked host
+ *  carries one of its own. */
+type Host = { tabId: string; detail?: PageDetail }
+
 /** The page surfaces to hold open: the shown one first, then the most recently visited page tabs
  *  behind it. Keyed by tab, so becoming shown (or being parked again) is a class change rather
  *  than a remount — which is the whole point, since a remount reloads every embedded site. One
  *  surface per page: a second tab on the same file would put two editors on one document. */
-function useHosts(): { tabId: string; detail?: PageDetail }[] {
+function useHosts(): Host[] {
   const selection = useSession((s) => s.selection)
   const tabs = useSession((s) => s.tabs)
   const tabMru = useSession((s) => s.tabMru)
   const activeTabId = useSession((s) => s.activeTabId)
   return useMemo(() => {
-    const hosts: { tabId: string; detail?: PageDetail }[] = []
+    const hosts: Host[] = []
     const paths = new Set<string>()
     if (selection.kind === 'page') {
       hosts.push({ tabId: activeTabId })
       paths.add(selection.path)
     }
+    // The budget counts parked surfaces alone, so the knob means the same number whether or not
+    // the shown surface is itself a page.
+    let parked = 0
     for (const id of tabMru) {
-      if (hosts.length > WARM_TABS || id === activeTabId) continue
+      if (parked >= WARM_TABS || id === activeTabId) continue
       const target = tabs.find((t) => t.id === id)?.target
       if (target?.kind !== 'page') continue
       // Only a tab that has actually been shown has a page in hand to park — one opened in the
@@ -91,6 +100,7 @@ function useHosts(): { tabId: string; detail?: PageDetail }[] {
       if (!detail || paths.has(detail.path)) continue
       paths.add(detail.path)
       hosts.push({ tabId: id, detail })
+      parked++
     }
     // Rendered in a fixed order, never most-recent-first: reordering keyed children moves their
     // DOM, and a moved webview is re-attached — which ends the very guest this exists to keep.

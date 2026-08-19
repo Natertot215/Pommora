@@ -14,7 +14,9 @@ import { headingParts } from '../detect'
 import { type Block, blockAt } from './blockModel'
 import { docString } from './docCache'
 import { embeddable } from './embedRanges'
-import { embedExclusions, setWebLinkEdit } from './embedWidget'
+import { embedExclusions, setWebLinkSeat } from './embedWidget'
+import { focusRange } from './input'
+import { webpageEmbedUrlSpan } from '@shared/webpageEmbed'
 
 /** The line classes carrying a grip that has a menu. The hit-test below and the host's hot-grip flag
  *  read this one list, so the generic editor menu can never stand down over a grip that offers nothing. */
@@ -160,10 +162,18 @@ export const gripMenu = EditorView.domEventHandlers({
             userEvent: 'input',
           })
           break
-        case 'editLink':
-          // Opens the tile's own picker — the tile renders it anchored on itself, seeded with its URL.
-          view.dispatch({ effects: setWebLinkEdit.of(block.from) })
+        case 'editLink': {
+          // In the line itself, like every other Edit Link: the seat un-forms the tile back to its
+          // raw address with that address selected, and leaving the line re-forms it. The site is
+          // only asked to load again once the new address is the document's.
+          const line = view.state.doc.lineAt(block.from)
+          const span = webpageEmbedUrlSpan(line.text)
+          if (span) {
+            view.dispatch({ effects: setWebLinkSeat.of(line.from) })
+            focusRange(view, line.from + span[0], line.from + span[1])
+          }
           break
+        }
         case 'listKind': {
           const { changes } = setListKind(doc, block.from, block.to, action.kind)
           if (changes.length > 0) view.dispatch({ changes, userEvent: 'input' })

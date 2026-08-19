@@ -43,14 +43,21 @@ type Hovered =
 
 const keyOf = (h: Hovered): string => (h.kind === 'page' ? `p:${h.page.id}` : `s:${h.url}`)
 
+/** What the guest element answers with once attached — the handle the replayed wheel is aimed at. */
+type ScrollableGuest = HTMLElement & { getWebContentsId?: () => number }
+
 /** Hands a wheel to the guest under the shield. The id read throws before the guest attaches (the
  *  method sits on the prototype first), and the wheel's own sign is inverted: a DOM delta counts
  *  the content's travel, the input event the wheel's. */
-function scrollGuest(el: HTMLElement | null, x: number, y: number, dx: number, dy: number): void {
+function scrollGuest(
+  el: ScrollableGuest | null,
+  x: number,
+  y: number,
+  dx: number,
+  dy: number,
+): void {
   try {
-    const id = (
-      el as (HTMLElement & { getWebContentsId?: () => number }) | null
-    )?.getWebContentsId?.()
+    const id = el?.getWebContentsId?.()
     if (id !== undefined) window.nexus.wheelGuest(id, Math.round(x), Math.round(y), -dx, -dy)
   } catch {
     // A guest that hasn't attached has nothing to scroll yet.

@@ -32,9 +32,9 @@ The strip compacts off an open side pane, stopping at the pane's leading edge ra
 
 ### Persistence & Warmth
 
-One device-local row holds the NavWindow flavor's set, the per-origin page sets — re-keyed to the new origin on re-parent, retiring when emptied — and the open pointer, recorded but never auto-summoned at launch. Two machines with different previews open have no correct merge, so each keeps its own. Stored sets hold bare refs; restores hydrate against the live tree before showing — a dead ref drops, a resolving one gets its path minted fresh, an emptied set falls back to the bare origin. A foreign-root tree push wipes the per-nexus session state before any reconcile can leak one nexus's sets into another's.
+The window's tab sets are kept per machine (→ [[NavigationPM]] §State Persistence) — the NavWindow flavor's set, the per-origin page sets, re-keyed to the new origin on re-parent and retiring when emptied, and the open pointer, recorded but never auto-summoned at launch. Two machines with different previews open have no correct merge, so each keeps its own. Stored sets hold bare refs; restores hydrate against the live tree before showing — a dead ref drops, a resolving one gets its path minted fresh, an emptied set falls back to the bare origin. A foreign-root tree push wipes the per-nexus session state before any reconcile can leak one nexus's sets into another's.
 
-Warmth is session-only and per-tab: serialized editor state, undo included, plus the body's scroll, restored on switch-back with the fetch skipped entirely so the doc mounts synchronously.
+Warmth is per-tab: serialized editor state, undo included, plus the body's scroll, restored on switch-back with the fetch skipped entirely so the doc mounts synchronously.
 
 ### Routing In
 

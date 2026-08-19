@@ -220,3 +220,40 @@ describe('every other grip', () => {
     expect(calls).toHaveLength(0)
   })
 })
+
+describe("a webpage tile's Edit Link", () => {
+  const URL = 'https://example.com/one'
+  const LINE = `![](${URL})`
+
+  it('seats the selection on the address in the line, un-forming the tile until it leaves', async () => {
+    const view = await mount(`intro\n${LINE}`)
+    // The tile forms while the selection sits on the first line.
+    expect(view.dom.querySelector('.mdpm-embed-tile')).not.toBeNull()
+
+    nextPick = { action: 'editLink' }
+    await gripMenu(view, 'tile')
+
+    // The address is selected, exactly — Edit Link replaces it by typing, as every other does.
+    const at = view.state.doc.line(2).from
+    expect(view.state.selection.main.from).toBe(at + LINE.indexOf(URL))
+    expect(view.state.selection.main.to).toBe(at + LINE.indexOf(URL) + URL.length)
+    // Seated in the line, the tile is back to raw text — nothing reloads to show a caret.
+    expect(view.dom.querySelector('.mdpm-embed-tile')).toBeNull()
+    expect(view.state.doc.toString()).toBe(`intro\n${LINE}`)
+
+    // Re-aim, then leave: the tile re-forms once, around the new address.
+    await act(async () => {
+      view.dispatch({
+        changes: {
+          from: view.state.selection.main.from,
+          to: view.state.selection.main.to,
+          insert: 'https://example.org/two',
+        },
+      })
+      view.dispatch({ selection: { anchor: 0 } })
+      await Promise.resolve()
+    })
+    expect(view.state.doc.toString()).toBe('intro\n![](https://example.org/two)')
+    expect(view.dom.querySelector('.mdpm-embed-tile')).not.toBeNull()
+  })
+})
