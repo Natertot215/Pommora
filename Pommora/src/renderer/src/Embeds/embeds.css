@@ -257,14 +257,22 @@
   pointer-events: auto;
 }
 
-/* The static faces: quiet chassis surface — a loading tile is simply blank, a failed one carries
-   only the site's domain (the same fallback identity every link surface shows). */
+/* The static faces: a clipped or reloading tile wears the guest's last captured frame, a failed
+   one carries only the site's domain (the same fallback identity every link surface shows), and a
+   first load with no frame yet is simply blank. */
 .wpembed-face {
   position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+.wpembed-face-snap {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 .wpembed-face-domain {
   color: var(--label-tertiary);
