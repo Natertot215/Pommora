@@ -62,7 +62,7 @@
   height: 100%;
   flex: 0 0 auto;
   color: var(--label-tertiary);
-  cursor: pointer;
+  cursor: default;
   transition: color var(--duration-base) var(--ease-standard);
 }
 .tab-pinned:hover {
