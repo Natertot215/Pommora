@@ -242,8 +242,6 @@ export interface Asks {
   'devicePrefs:load': { args: []; reply: Result<DevicePrefs | null> }
   'devicePrefs:save': { args: [prefs: DevicePrefs]; reply: Result<null> }
 
-  // The one web-session verb: the partition remembers sign-ins by itself; this wipes it whole.
-  'web:clearBrowsing': { args: []; reply: Result<null> }
   'capture:thumbnail': {
     args: [navKey: string, rect: ThumbRect, scaleFactor: number]
     reply: Result<{ url: string }>

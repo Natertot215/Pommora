@@ -27,7 +27,7 @@ import { BUSY, NO_NEXUS, push, scopeGet, scopeSet, serveBridge } from './ipc'
 import type { Creator, MutateRequest, ContextTarget } from '@shared/mutate'
 import { WINDOW_BG } from '@shared/theme'
 import { dropLiveTree, getLiveTree, refreshTree } from './liveTree'
-import { installWebGuests, setHostZoom, setWebZoomFactor, clearWebBrowsing } from './webGuests'
+import { installWebGuests, setHostZoom, setWebZoomFactor } from './webGuests'
 import { confirmBy, confirmMutation, confirmRegistry } from './mutatePatch'
 import { patchContainerFromDisk, patchSettingsFromDisk } from './watchPatch'
 import { runOpenRecord } from './record'
@@ -692,14 +692,6 @@ serveBridge(
       fn: (prefs: unknown) => {
         if (adopting()) return BUSY
         if (!writeValue('devicePrefs', packDevicePrefs(prefs))) return NO_NEXUS
-        return ok(null)
-      },
-    },
-
-    'web:clearBrowsing': {
-      kind: 'envelope',
-      fn: async () => {
-        await clearWebBrowsing()
         return ok(null)
       },
     },
