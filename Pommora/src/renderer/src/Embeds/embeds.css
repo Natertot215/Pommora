@@ -201,3 +201,33 @@
 .mdpm-embed-tile:hover .pgembed-crumbs {
   opacity: 1;
 }
+
+/* ── Webpage tiles ─────────────────────────────────────────────────────── */
+
+/* The guest owns the whole body; display:flex is the spike-proven form (block leaves the OOPIF
+   with a phantom baseline gap). */
+.wpembed {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  border-radius: inherit;
+}
+/* biome-ignore lint/correctness/noUnknownTypeSelector: webview is Electron's guest element */
+.wpembed webview {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+/* The static faces: quiet chassis surface — a loading tile is simply blank, a failed one carries
+   only the site's domain (the same fallback identity every link surface shows). */
+.wpembed-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.wpembed-face-domain {
+  color: var(--label-tertiary);
+}

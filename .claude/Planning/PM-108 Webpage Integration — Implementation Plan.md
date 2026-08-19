@@ -253,10 +253,9 @@ Tests: extend the embed-widget flow tests with webpage cases.
 **Failure half:** dead URL/offline → failure face, tile and document unharmed · a guest crash (`render-process-gone`) → failure face, re-attach on next visibility transition · zero-height scrollport (window mid-resize) → cap floors at `TILE_MIN_PX`.
 
 **Steps:**
-- [ ] Build; typecheck/lint green. ⌘R the dev app; on a throwaway page type a URL line, leave it: tile forms, site renders, rounded corners clip.
-- [ ] Scroll the tile past the edge: face swaps at the boundary, no guest paint outside the chassis (the spike's failure case) — screenshot both states for Nathan (design stop: loading/failure faces disclosed here).
-- [ ] Drag the bottom edge: height persists (host→URL rides the existing `embedHeights` blob mechanics — value-validated, keys free); relaunch: height restored, capped to the scrollport.
-- [ ] Gates green. Commit: `feat(embeds): the webpage tile renders live at full visibility`
+- [x] Build; typecheck/lint green.
+- [ ] ⌘R the dev app; on a throwaway page type a URL line, leave it: tile forms, site renders, rounded corners clip. Scroll past the edge: face swaps, no guest paint outside the chassis. Drag the bottom edge: height persists, capped. *(Nathan's live instance holds the single-instance lock — the whole live sweep is the Phase 3 gate walkthrough, his ⌘R + eyes. Face design disclosed in the gate report: loading = blank chassis; failure = bare domain in tertiary footnote type, centered.)*
+- [x] Gates green. Commit: `feat(embeds): the webpage tile renders live at full visibility`
 
 #### Task 8: Display-only titles
 
