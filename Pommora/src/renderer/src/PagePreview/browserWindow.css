@@ -1,6 +1,20 @@
 /* The browser flavor of the floating window: the guest owns the whole body below the toolbar
    strip, and the centered title is the escalating link. */
 
+/* Clear chrome that takes the site's color: the strip paints the page's reported theme-color and
+   stays transparent (the window glass) when the site offers none. Labels flip dark over a light
+   site color via .is-light-chrome. */
+.wbrowser .ppane-toolbar {
+  background: var(--wbrowser-theme, transparent);
+}
+.wbrowser.is-light-chrome .ppane-action,
+.wbrowser.is-light-chrome .wbrowser-title-page {
+  color: rgb(0 0 0 / 0.65);
+}
+.wbrowser.is-light-chrome .wbrowser-title-domain {
+  color: rgb(0 0 0 / 0.4);
+}
+
 .wbrowser-body {
   flex: 1;
   min-height: 0;

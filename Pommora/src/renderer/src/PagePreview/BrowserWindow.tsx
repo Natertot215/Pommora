@@ -21,6 +21,16 @@ export function openInAppBrowser(url: string): void {
   useSession.getState().openBrowser(url)
 }
 
+/** Whether a reported theme color reads light — the chrome's labels flip dark over it. Only the
+ *  hex forms are judged; an exotic value keeps the light-label default. */
+function lightColor(color: string): boolean {
+  const m = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(color.trim())
+  if (!m) return false
+  const h = m[1].length === 3 ? [...m[1]].map((c) => c + c).join('') : m[1]
+  const [r, g, b] = [0, 2, 4].map((i) => Number.parseInt(h.slice(i, i + 2), 16))
+  return 0.299 * r + 0.587 * g + 0.114 * b > 150
+}
+
 /** What the guest element answers with once attached — the navigation surface the toolbar drives. */
 interface BrowserGuest extends HTMLElement {
   goBack(): void
@@ -73,10 +83,16 @@ function BrowserWindowBody({
     }
   }, [url, seq])
 
+  // The site's own theme color tints the toolbar strip, so the chrome reads as the page's —
+  // null (no meta theme-color, or a navigation away) falls back to the clear strip.
+  const [theme, setTheme] = useState<string | null>(null)
+
   useEffect(() => {
     const wv = ref.current
     if (!wv) return
     const onTitle = (e: Event): void => setTitle((e as Event & { title?: string }).title ?? '')
+    const onTheme = (e: Event): void =>
+      setTheme((e as Event & { themeColor?: string | null }).themeColor ?? null)
     // Event-driven, never polled: every commit (page loads, pushState hops, back/forward) lands
     // one of these, and the toolbar re-reads the guest's truth there.
     const onNavigate = (): void => {
@@ -84,10 +100,12 @@ function BrowserWindowBody({
       setNav({ back: wv.canGoBack(), forward: wv.canGoForward() })
     }
     wv.addEventListener('page-title-updated', onTitle)
+    wv.addEventListener('did-change-theme-color', onTheme)
     wv.addEventListener('did-navigate', onNavigate)
     wv.addEventListener('did-navigate-in-page', onNavigate)
     return () => {
       wv.removeEventListener('page-title-updated', onTitle)
+      wv.removeEventListener('did-change-theme-color', onTheme)
       wv.removeEventListener('did-navigate', onNavigate)
       wv.removeEventListener('did-navigate-in-page', onNavigate)
     }
@@ -96,7 +114,8 @@ function BrowserWindowBody({
   return (
     <PreviewPane
       id="web-browser"
-      className="wbrowser"
+      className={cx('wbrowser', theme !== null && lightColor(theme) && 'is-light-chrome')}
+      style={theme ? ({ '--wbrowser-theme': theme } as React.CSSProperties) : undefined}
       closing={closing}
       onClose={closeBrowser}
       bounds={BOUNDS}
