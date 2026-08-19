@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { Icon } from '@renderer/design-system/symbols'
-import { PickerMenu, MenuOption } from '../../design-system/components/PickerMenu'
+import { PickerMenu, PickerOption } from '../../design-system/components/PickerMenu'
 import { detail } from '../../design-system/components/menu/menu.css'
 import { popRowMenu, useNativeMenus } from '../../nativeMenus'
 import * as s from './pickerControl.css'
@@ -97,9 +97,10 @@ export function PickerControl<T extends string>({
         solid={solid}
       >
         {options.map((o) => (
-          <MenuOption
+          <PickerOption
             key={o.value}
             selected={o.value === value}
+            ring
             leading={o.icon ? <Icon name={o.icon} size={13} /> : undefined}
             onClick={() => {
               onPick(o.value)
@@ -107,7 +108,7 @@ export function PickerControl<T extends string>({
             }}
           >
             {o.label}
-          </MenuOption>
+          </PickerOption>
         ))}
       </PickerMenu>
     </>
