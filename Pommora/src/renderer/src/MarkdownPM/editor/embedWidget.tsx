@@ -566,8 +566,6 @@ function buildTiles(
     entries.some((e) => e.range.kind === 'webpage' && e.range.from === linkEdit)
       ? linkEdit
       : null
-  if (entries.length === 0)
-    return { deco: Decoration.none, ranges: [], editing, heights, unformed, linkEdit: openEdit }
   entries.sort((a, b) => a.from - b.from)
 
   const builder = new RangeSetBuilder<Decoration>()
