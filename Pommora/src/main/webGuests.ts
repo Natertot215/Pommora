@@ -10,6 +10,11 @@ const guests = new Set<WebContents>()
 let hostZoom = 1
 let hostWindow: BrowserWindow | null = null
 
+/** The host that trips on the Chrome token, and so gets the stripped UA variant. */
+const GOOGLE_SIGNIN_HOST = 'accounts.google.com'
+
+const isWebUrl = (url: string): boolean => /^https?:\/\//i.test(url)
+
 /** The fallback UA with the tokens that name this as an Electron app removed — Ferdium's recipe,
  *  session-wide. Google sign-in additionally trips on the Chrome token's presence: on
  *  accounts.google.com the guest presents the suffix-stripped form, restored on leaving. All of it
@@ -21,11 +26,11 @@ function cleanedUA(): string {
     .replace(new RegExp(`\\s${name}\\/\\S+`, 'i'), '')
 }
 
-const googleUA = (): string => cleanedUA().replace(/\sChrome\/[\d.]+/, '')
-
 export function installWebGuests(win: BrowserWindow): void {
   hostWindow = win
-  session.fromPartition(WEB_PARTITION).setUserAgent(cleanedUA())
+  const baseUA = cleanedUA()
+  const googleUA = baseUA.replace(/\sChrome\/[\d.]+/, '')
+  session.fromPartition(WEB_PARTITION).setUserAgent(baseUA)
 
   win.webContents.on('will-attach-webview', (event, webPreferences, params) => {
     // Validator, not rewriter — spike-proven: `params` edits here don't reach the attach, so the
@@ -34,7 +39,7 @@ export function installWebGuests(win: BrowserWindow): void {
     // doesn't wear the shared partition — or wears a hostile src — is denied outright. The
     // renderer's own scheme gate makes both unreachable from app code; this is the trust boundary.
     const src = params.src ?? ''
-    if ((src !== '' && !/^https?:\/\//i.test(src)) || params.partition !== WEB_PARTITION) {
+    if ((src !== '' && !isWebUrl(src)) || params.partition !== WEB_PARTITION) {
       event.preventDefault()
       return
     }
@@ -51,7 +56,7 @@ export function installWebGuests(win: BrowserWindow): void {
     // A guest's window.open answers only its own handler. The renderer's one open-link
     // adjudicator decides where the URL goes; no OS window ever opens from a guest.
     contents.setWindowOpenHandler(({ url }) => {
-      if (hostWindow && /^https?:\/\//i.test(url)) push(hostWindow, 'web:popup', url)
+      if (hostWindow && isWebUrl(url)) push(hostWindow, 'web:popup', url)
       return { action: 'deny' }
     })
 
@@ -61,14 +66,14 @@ export function installWebGuests(win: BrowserWindow): void {
       try {
         host = new URL(url).hostname
       } catch {}
-      contents.setUserAgent(host === 'accounts.google.com' ? googleUA() : cleanedUA())
+      contents.setUserAgent(host === GOOGLE_SIGNIN_HOST ? googleUA : baseUA)
     })
   })
 }
 
 /** Guests don't inherit host zoom (per-render-host, and theirs is their own) — every host zoom
  *  write flows through here so the tiles track ⌘0/⌘+/⌘− and the nexus default alike. */
-export function syncGuestZoom(factor: number): void {
+function syncGuestZoom(factor: number): void {
   hostZoom = factor
   for (const g of guests) if (!g.isDestroyed()) g.setZoomFactor(factor)
 }
