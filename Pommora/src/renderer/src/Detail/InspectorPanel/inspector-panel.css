@@ -11,7 +11,9 @@
   border-radius: var(--glass-radius);
   overflow: hidden;
   /* Slide driven by --io (shell): fully off-screen at 0, home at 1. No own transition — --io carries it. */
-  transform: translateX(calc((1 - var(--io)) * (100% + var(--glass-inset) + 14px)));
+  transform: translateX(
+    calc((1 - var(--io)) * (100% + var(--glass-inset) + var(--park-clearance)))
+  );
   pointer-events: none;
   -webkit-app-region: no-drag;
 }
@@ -23,14 +25,9 @@
   padding: 16px;
 }
 
-/* Invisible edge-drag resize strip at the inspector's left edge — mirror of .sidebar-resize. */
 .inspector-resize {
-  position: absolute;
   top: var(--glass-inset);
   bottom: var(--glass-inset);
   right: calc(var(--glass-inset) + var(--inspector-width) - 3px);
-  width: 9px;
   z-index: var(--z-inspector-resize);
-  cursor: col-resize;
-  -webkit-app-region: no-drag;
 }

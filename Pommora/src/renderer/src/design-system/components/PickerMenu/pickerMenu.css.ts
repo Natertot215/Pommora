@@ -5,7 +5,7 @@ import { TINT_STEPS, tintAt } from '../../tokens/tint'
 import { stack } from '../../tokens/stack'
 import { dropdownAnchor } from '../dropdownAnchor'
 import { fieldRing, ROW_RING } from '../fieldRing'
-import { rowShell } from '../menu/menu.css'
+import { rowShell, ROW_LINE, ROW_SIZE } from '../menu/menu.css'
 
 const c = colorVars.color
 
@@ -134,6 +134,8 @@ export const option = style([
     border: 'none',
     background: 'none',
     color: c.label.primary,
+    fontSize: ROW_SIZE,
+    lineHeight: ROW_LINE,
   },
 ])
 

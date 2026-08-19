@@ -121,11 +121,3 @@
 .detail-error {
   color: var(--error);
 }
-
-.detail-detail {
-  display: block;
-  margin-top: 6px;
-  font-size: 11px;
-  color: var(--label-primary);
-  opacity: var(--state-inactive);
-}

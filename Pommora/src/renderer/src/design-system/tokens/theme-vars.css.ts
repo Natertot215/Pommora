@@ -51,8 +51,14 @@ globalStyle(':root', {
     // controls, the outliner rail.
     '--radius-full': '999px',
     // Over-image legibility scrim for a title/search/icon sitting on a banner cover — one source for the
-    // banner title, the NavView search, and the editor's banner overlay (text-shadow / drop-shadow).
+    // banner title, the NavView search, and the editor's banner overlay. `-shadow` is the color alone,
+    // for a caller that composes its own; `-cast` is the whole shadow, worn as `text-shadow` on type
+    // and inside `drop-shadow()` on a glyph.
     '--banner-shadow': '#0000008c',
+    '--banner-cast': '0 1px 4px var(--banner-shadow)',
+    // The container title's type size — the heading a Collection, Set, or page wears at the top of its
+    // own surface, over a banner cover or on the bare header that replaces one.
+    '--container-title-size': font.scale.title1.size,
     // Interaction states — a system-grey wash, hover lighter than selected.
     '--state-hover': colorVars.color.state.hover,
     '--state-selected': colorVars.color.state.selected,
@@ -134,6 +140,12 @@ globalStyle(':root', {
     '--button-small-radius': size.control['button-small'].radius,
     '--button-medium-radius': size.control['button-medium'].radius,
     '--button-large-radius': size.control['button-large'].radius,
+    // How far past its own edge a floating pane travels to park fully off-screen — enough that its
+    // shadow clears the window too, not just its box. The sidebar and the inspector park by the same
+    // magnitude in opposite directions.
+    '--park-clearance': '14px',
+    // The top inset a floating window's content keeps so it clears the × floating over its corner.
+    '--close-clearance': '30px',
     // The per-level disclosure inset every hierarchy steps by (sidebar, table nesting, panes).
     '--disclosure-indent': `${DISCLOSURE_INDENT}px`,
     // The fold/grip lane the editor, table views, block tiles, and embeds all carve from the content

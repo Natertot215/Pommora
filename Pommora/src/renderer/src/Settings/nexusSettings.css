@@ -57,8 +57,7 @@
   overflow-y: auto;
   scrollbar-width: none;
   padding: var(--settings-inset);
-  /* Clear the × at the top-right. */
-  padding-top: 30px;
+  padding-top: var(--close-clearance);
 }
 .settings-heading {
   display: flex;

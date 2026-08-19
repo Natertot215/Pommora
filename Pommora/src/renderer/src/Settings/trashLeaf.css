@@ -29,8 +29,7 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  /* Clears the window's floating ×, exactly as the toggle panel's body does. */
-  padding-top: 30px;
+  padding-top: var(--close-clearance);
 }
 
 /* The heading is the table's, borrowed: `.table-head` brings the control tone, `.col-header` the

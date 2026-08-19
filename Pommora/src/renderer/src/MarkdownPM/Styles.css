@@ -155,11 +155,11 @@
 }
 .mdpm-banner-overlay .detail-title-text,
 .mdpm-banner-overlay .detail-title-input {
-  text-shadow: 0 1px 4px var(--banner-shadow);
+  text-shadow: var(--banner-cast);
 }
 .mdpm-banner-overlay .detail-title-icon {
   color: var(--label-primary);
-  filter: drop-shadow(0 1px 4px var(--banner-shadow));
+  filter: drop-shadow(var(--banner-cast));
 }
 
 /* HEADING FOLD — the chevron is a masked ::before ANCHORED to the heading line in the content layer, NOT a

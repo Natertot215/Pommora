@@ -33,22 +33,23 @@ The ladder mirrors the type ramp one-to-one: eleven names over eight values, `fo
 
 Bridge the token gaps first; converting consumers before that just hardcodes around the same holes.
 
-- [ ] `theme-vars.css.ts` — bridge the four unbridged type sizes and the control-size bundle
-- [ ] Convert the 13 hardcoded `font-size` values and the five restatements of the large-button height
-- [ ] Delete `--row-h`, `.section-header`, `.detail-detail`, `TITLE_X_TWISTY_ONLY`
-- [ ] Token swaps — `navList.css:118` opacity · `Carets.css:56,111` easings ·
-      `calendarPicker.css.ts:68` z-index · `feel.tsx:5` easing constant · `GroupBand.css:78` accent
-      stroke · the ribbon divider's fill tone
-- [ ] `.open-btn` rests transparent and brightens on hover; correct whichever of
-      `theme-vars.css.ts:56` / `color.css.ts:64` is wrong
-- [ ] Extract the card chassis from `CardsView.css` and `navGallery.css`, carrying the descender fix
-- [ ] Extract the reveal bar and its chevron from `previewPane.css` and `subfield.css`, keeping
-      `:focus-visible`
-- [ ] Fold four resize strips into `.sidepane-resize`
-- [ ] One base for the two Sidebar icon buttons
-- [ ] Name the five constants — park clearance, close-button clearance, banner shadow geometry,
-      container-title size, the 1px divider weight
-- [ ] `PickerOption` reads the `--menu-row-size` knob rather than hardcoding its ramp
+- [x] `theme-vars.css.ts` — the full type ramp and the control-size bundles bridged
+- [x] Convert the hardcoded `font-size` values and the restatements of the large-button height —
+      `navView.css:34` keeps its own, a KNOB set deliberately off the ramp
+- [x] Delete `--row-h`, `.section-header`, `.detail-detail`, `TITLE_X_TWISTY_ONLY`
+- [x] Token swaps — `navList.css` opacity · `calendarPicker.css.ts` z-index · `feel.tsx` easing
+      constant. The Carets easings were already keywords rather than literals, and the ribbon divider
+      stays `--fill-secondary`: it is a painted fill band, not a hairline (Nathan's call)
+- [x] `.open-btn` rests transparent and brightens on hover. Neither cited comment was wrong — the
+      tokens read as documented; only the button consumed them backwards
+- [x] Extract the card chassis from `CardsView.css` and `navGallery.css`, carrying the descender fix
+- [x] Extract the reveal bar and its chevron from `previewPane.css` and `subfield.css`, keeping
+      `:focus-visible` — the subfield toggle gains the focus reveal it lacked
+- [x] Fold four resize strips into `.sidepane-resize`
+- [x] One base for the two Sidebar icon buttons
+- [x] Name the constants — park clearance, close-button clearance, banner shadow geometry,
+      container-title size. The 1px divider has exactly one shipped consumer, so it stays inline
+- [x] `PickerOption` reads the `--menu-row-size` knob rather than hardcoding its ramp
 
 ### Step 3 — Native Menus
 
