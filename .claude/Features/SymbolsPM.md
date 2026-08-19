@@ -6,6 +6,7 @@ SymbolsPM
 │   ├── View Settings Panes
 │   ├── Property Types
 │   └── View Types
+├── Sizes
 ├── Additional Assignments
 ├── The Picker
 ├── Known Issues
@@ -60,6 +61,34 @@ Pommora's standard semantic icons — the canonical glyph for each pane, propert
 | Calendar | `calendar-days`         |
 | Timeline | `chart-gantt`           |
 
+### Sizes
+
+Every glyph draws at a size taken from one ladder, so a symbol's scale is a named step rather than a per-surface number. A step sets the icon's `font-size` and the glyph renders at `1em`, which keeps stroke weight proportional and lets a symbol inherit its surrounding type when no step is named.
+
+| Step | Size |
+| ---- | ---- |
+| `xs` | 12px |
+| `sm` | 14px |
+| `md` | 16px |
+| `lg` | 18px |
+| `xl` | 20px |
+
+**SOURCE:** `design-system/tokens/size.css.ts` — the ladder, bridged to CSS variables in `theme-vars.css.ts`.
+
+#### Roles
+
+A handful of glyph roles recur across the app, each carrying a consistent meaning wherever it appears. A role's scale is a property of the role, not of the surface hosting it.
+
+| Role | What it marks | Scale |
+| ---- | ------------- | ----- |
+| Chip remove | The × dismissing a value inside a chip | Smallest — it sits within a chip's own box |
+| Action button | A standalone add, remove, or close affordance — a tab's ×, a filter row's remove, a pane's + | One step above the chip remove |
+| Disclosure | The double-chevron toggle opening a picker or a value control | Matched to the control's label |
+| Footing symbol | The leading glyph on a pane footer row | Matched to the control's label |
+| Entity glyph | A page, Set, Context, or property's own assigned icon | Matched to the surrounding row's text |
+| Confirmation | A checkmark inside a checkbox or a picker row | Matched to the box containing it |
+| Lock | The state marker on a locked pane footer | Matched to the surrounding row's text |
+
 ### Additional Assignments
 
 `list-tree` is the page outline's glyph — the toolbar button that opens a page's heading tree (→ [[PagesPM]]). It reads as nested structure rather than a flat list, distinct from `list-rounded`'s view type and `list-filter`'s predicate. The Context property type draws the Context entity kind's own glyph rather than naming one, so a column and the Context it points at can never wear different marks.
@@ -71,6 +100,8 @@ The curated registry above is the app's own semantic vocabulary — the fixed gl
 ### Known Issues
 
 - **Two curated keys shadow real Lucide ids.** `table` and `lock` name Pommora's own glyphs in the registry and are also the ids of different Lucide glyphs the picker offers from the full set. Registry-first resolution renders Pommora's glyph instead of the one the picker cell showed. The resolution is open.
+- **Call sites name a scale in pixels rather than a ladder step.** Roles that share a meaning can therefore carry different sizes on different surfaces — the same close affordance draws at one scale on a toolbar tab and another on a preview tab — and the ladder holds no step for several of the scales in use.
+
 ### Pending
 
 - **`link-2`** — registered and reserved as the Connections glyph; the `[[Title]]` connections surface doesn't render it.

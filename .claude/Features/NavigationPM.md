@@ -35,7 +35,7 @@ The summoned wayfinding overlay — a non-modal, movable, resizable floating gla
 
 Reorder drag differs by view mode: the **gallery** displaces, cards reflowing to open a slot — pins among pins, recents among recents, never across — while the **list** uses the sidebar's insertion-line drag. Only recents reorder in search — a result set has no stored order to drag against — and the rail's Style toggle governs its search results too: searching changes what is listed, never how it's drawn. Inert hits, whose kind has no click destination, have no card form and surface in List only. A row's own right-click menu opens it, pins it, favorites it or drops it from the list, and where the row resolves to a live page it carries the same send block every other page menu does — Move To ▸ · Copy Link · Copy Path.
 
-The NavWindow is also tab 1 of the Page Preview's nav flavor — a perma-pinned map tab whose page tabs open beside it, tab-neutral to the app's own tabs (→ [[PagePreviewPM]]).
+The NavWindow is also tab 1 of the Page Preview's window — a perma-pinned map tab whose page tabs open beside it, tab-neutral to the app's own tabs (→ [[PagePreviewPM]]).
 
 ### Toolbar Tabs
 
@@ -65,58 +65,57 @@ The footer carries a breadcrumb of the active tab's path, extended with a dimmed
 
 ### State Persistence
 
-What Pommora remembers, and for how long. Four tiers, told by where a thing is written rather than by how important it is: the Nexus's own files travel with it, its database stays on the machine that made it, the app's own preferences sit outside every Nexus, and everything else lasts the run. The storage mechanisms themselves are [[ArchitecturePM]]'s (→ §The Nexus Layout, §The Device-Local Database); this is the map of what lands where.
+What Pommora remembers, and for how long. Four tiers, told by where a thing is written rather than by how important it is: the Nexus's own files travel with it, its database stays on the machine that made it, the app's own preferences sit outside every Nexus, and everything else lasts the run. 
 
 **Travels With The Nexus.** Written into `.nexus/` files, so a synced or copied Nexus arrives with all of it, and a hand edit from outside is read back live.
 
-| State | Where it lives | What clears it |
-| --- | --- | --- |
-| Every setting in the Settings window | `settings.json` (→ [[ConfigurationPM]]) | Changing it; a row at its default stores no key |
-| Pins and Favorites | `navigation.json`, as ordered identity refs | Unpinning or removing; an entry that stops resolving hides but is never dropped |
-| Property definitions and their order | `properties.json` (→ [[PropertiesPM]]) | Editing the registry |
-| Top-level Collection and Context order | `state.json` | Reordering |
-| Saved views and what a container is | Each container's own sidecar (→ [[ViewsPM]], [[CollectionsPM]]) | Editing the view; deleting the container |
-| Page bodies, frontmatter, and their property values | The Markdown files themselves | Editing the page |
+| State                                               | Where it lives                | What clears it                                                                  |
+| --------------------------------------------------- | ----------------------------- | ------------------------------------------------------------------------------- |
+| Every setting in the Settings window                | `settings.json`               | Changing it; a row at its default stores no key                                 |
+| Pins and Favorites                                  | `navigation.json`             | Unpinning or removing; an entry that stops resolving hides but is never dropped |
+| Property definitions and their order                | `properties.json`             | Editing the registry                                                            |
+| Top-level Collection and Context order              | `state.json`                  | Reordering                                                                      |
+| Saved views and what a container is                 | Each container's own sidecar. | Editing the view; deleting the container                                        |
+| Page bodies, frontmatter, and their property values | The Markdown files themselves | Editing the page                                                                |
 
 **Stays On This Machine, Inside The Nexus.** `nexus.db` sits beside those files and travels with a moved Nexus, but never syncs — it holds what is true of this computer's session rather than of the content. 
 
-| State | What it remembers | What clears it |
-| --- | --- | --- |
-| Tabs | The open set, which was active, and each tab's Back/Forward history as bare refs | Closing a tab; a schema-version change |
-| Folds | Which headings and lists are collapsed, per page | Unfolding; emptying the list deletes the row |
-| Embed heights · heading columns · header glyph | Per-page editor chrome — a tile's dragged height, a table's heading column, whether the page shows its icon | Changing it back |
-| Active view and manual page order | Which saved view a container opens on, and the hand order inside it | Picking another view; reordering |
-| Preview and NavWindow tab sets | The floating window's tabs per origin page, and which preview was open | Closing the last tab of a set |
-| Recents | The navigation trail, most-recent-first, capped by roll-off | Roll-off; two machines interleaving one history has no correct answer, which is why it sits here |
-| Hover card size | The one universal preview-card size | Resizing it |
-| Fetched link titles | A URL's page title, so the same link never refetches | Nothing — a cached title is kept |
-| Dashboard blocks | Each block surface's layout and its blocks | Editing the surface |
-| Use Native Menus | The one machine-level preference | Toggling it |
+| State                                          | What it remembers                                                                                           | What clears it                                                                                   |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Tabs                                           | The open set, which was active, and each tab's Back/Forward history as bare refs                            | Closing a tab; a schema-version change                                                           |
+| Folds                                          | Which headings and lists are collapsed, per page                                                            | Unfolding; emptying the list deletes the row                                                     |
+| Embed heights · heading columns · header glyph | Per-page editor chrome — a tile's dragged height, a table's heading column, whether the page shows its icon | Changing it back                                                                                 |
+| Active view and manual page order              | Which saved view a container opens on, and the hand order inside it                                         | Picking another view; reordering                                                                 |
+| Preview and NavWindow tab sets                 | The floating window's tabs per origin page, and which preview was open                                      | Closing the last tab of a set                                                                    |
+| Recents                                        | The navigation trail, most-recent-first, capped by roll-off                                                 | Roll-off; two machines interleaving one history has no correct answer, which is why it sits here |
+| Hover card size                                | The one universal preview-card size                                                                         | Resizing it                                                                                      |
+| Fetched link titles                            | A URL's page title, so the same link never refetches                                                        | Nothing — a cached title is kept                                                                 |
+| Dashboard blocks                               | Each block surface's layout and its blocks                                                                  | Editing the surface                                                                              |
+| Use Native Menus                               | The one machine-level preference                                                                            | Toggling it                                                                                      |
 
 **Stays On This Computer, Outside Every Nexus.** Belongs to the app rather than to any Nexus, so it holds no matter which one is open.
 
-| State | What it remembers | What clears it |
-| --- | --- | --- |
-| The last Nexus opened, the recent Nexus list, and the trash mode | Where to reopen, and what deleting means | Opening another Nexus; the list rolls off at ten |
-| Sidebar and Inspector widths, and which sidebar sections are open | The shell's own proportions | Dragging them; an out-of-range value self-corrects on read |
-| Web sessions | Cookies, logins, and site storage for every embedded page, browser tab, and hover preview — one shared session, so a sign-in anywhere is a sign-in everywhere (→ [[WebviewPM]]) | Nothing in the app clears it today |
+| State                                                             | What it remembers                                                                                                                                              | What clears it                                             |
+| ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| The last Nexus opened, the recent Nexus list, and the trash mode  | Where to reopen, and what deleting means                                                                                                                       | Opening another Nexus; the list rolls off at ten           |
+| Sidebar and Inspector widths, and which sidebar sections are open | The shell's own proportions                                                                                                                                    | Dragging them; an out-of-range value self-corrects on read |
+| Web sessions                                                      | Cookies, logins, and site storage for every embedded page, browser tab, and hover preview — one shared session, so a sign-in anywhere is a sign-in everywhere. | Nothing in the app clears it today                         |
 
 **Lasts The Run.** Held in memory, gone when Pommora closes — the difference between returning to a page and rebuilding it.
 
-| State | What it remembers | What ends it |
-| --- | --- | --- |
-| Parked page surfaces | The two most recent page tabs stay built, held off screen, so a flip resumes them (→ §Toolbar Tabs) | A third tab taking the slot; closing the tab |
-| Warm tab state | Serialized editor state — text, caret, undo history — plus scroll, for every tab beyond the parked ones | Twenty entries per tab, then the oldest goes; closing the tab; an outside edit to that page |
-| Retained web guests | A scrolled-out or parked site stays alive, paused, keeping its scroll, its typed input, and its playing media | Five hidden guests, then the least recent is torn down; the tile then reloads on its next entry |
-| Embed tile and preview-window warmth | The same editor state for tiles inside a page and for preview tabs | The page's body changing since capture; closing the preview window |
-| Pending page saves | A typed body waiting on its debounce, flushed on unmount, Nexus switch, and window close | The write landing |
+| State                                | What it remembers                                                                                             | What ends it                                                                                    |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Parked page surfaces                 | The two most recent page tabs stay built, held off screen, so a flip resumes them (→ §Toolbar Tabs)           | A third tab taking the slot; closing the tab                                                    |
+| Warm tab state                       | Serialized editor state — text, caret, undo history — plus scroll, for every tab beyond the parked ones       | Twenty entries per tab, then the oldest goes; closing the tab; an outside edit to that page     |
+| Retained web guests                  | A scrolled-out or parked site stays alive, paused, keeping its scroll, its typed input, and its playing media | Five hidden guests, then the least recent is torn down; the tile then reloads on its next entry |
+| Embed tile and preview-window warmth | The same editor state for tiles inside a page and for preview tabs                                            | The page's body changing since capture; closing the preview window                              |
+| Pending page saves                   | A typed body waiting on its debounce, flushed on unmount, Nexus switch, and window close                      | The write landing                                                                               |
 
 **Never Kept.** Deliberate, not missing: the window opens at one size every launch, and floating windows re-center rather than reopening where they were left — a remembered position strands chrome off screen when the display changes.
 
 ### Pending
 
 - **NavPane** — the toolbar Navigation button's dropdown, a blank placeholder on the shared beak-glass menu surface at a fixed height. Its content is undecided.
-- **Open design** — the NavWindow's Figma gallery form. Whether the rail as built is the intended rail or a stand-in has no ruling; nor does whether the shipped hover pin marker settles the row marker. List rows carry no current-item treatment; gallery cards do.
 - **Agenda is unsearchable** — Tasks and Events are absent from the tree the index builds from, and no selection kind opens one. Both wait on Agenda joining the walk; the persistence layer admits their refs, and the inert-row rendering exists.
 - **Body and full-text search** waits on a SQLite FTS layer that doesn't exist.
 
