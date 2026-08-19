@@ -159,6 +159,16 @@ export interface Personalization {
  *  surface, per machine, surviving restarts. Surfaces take it as a prop defaulting to this. */
 export const WEB_PARTITION = 'persist:pommora-web'
 
+/** One recorded web account — a device-local row (nexus.db), written at Add Account. */
+export interface WebAccount {
+  /** The sign-in address's hostname — the row's identity and the sign-out wipe's target. */
+  domain: string
+  /** The display name, derived from the site's own label at record time. */
+  name: string
+  /** Epoch milliseconds at record time — the rows' display order. */
+  addedAt: number
+}
+
 /** The web-guest scale steps the settings picker offers, and the clamp a hand-typed
  *  `personalization.webZoomFactor` reads through; absent/invalid → 1.0. */
 export const WEB_ZOOM_STEPS = [0.5, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2] as const

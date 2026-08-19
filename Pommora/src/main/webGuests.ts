@@ -6,6 +6,7 @@ import { app, session, webContents, BrowserWindow, type WebContents } from 'elec
 import { isHttpLink } from '@shared/links'
 import { WEB_PARTITION, WEB_ZOOM_DEFAULT } from '@shared/types'
 import { push } from './ipc'
+import { clearWebAccounts, removeWebAccount } from './webAccounts'
 
 /** The sign-in host whose server-side detection additionally trips on the Chrome token; requests
  *  to it carry the suffix-stripped UA variant. */
@@ -154,4 +155,21 @@ const ZOOM_FACTOR_MAX = 5
 export function stepHostZoom(wc: WebContents, dir: 1 | -1): void {
   const factor = wc.getZoomFactor() * 1.2 ** (dir * 0.5)
   setHostZoom(wc, Math.min(ZOOM_FACTOR_MAX, Math.max(ZOOM_FACTOR_MIN, factor)))
+}
+
+/** Sign-out: the origin's whole storage (not just cookies), then the row — in that order, so a
+ *  wipe failure surfaces as the operation's error with the row still standing (no half-state). */
+export async function signOutWebAccount(domain: string): Promise<void> {
+  const ses = session.fromPartition(WEB_PARTITION)
+  await ses.clearStorageData({ origin: `https://${domain}` })
+  removeWebAccount(domain)
+}
+
+/** The one honest wipe-everything: partition-wide storage, and the account rows with it —
+ *  Electron cannot enumerate storage-holding origins reliably enough for the rows to survive
+ *  truthfully. */
+export async function clearWebBrowsing(): Promise<void> {
+  const ses = session.fromPartition(WEB_PARTITION)
+  await ses.clearStorageData()
+  clearWebAccounts()
 }

@@ -23,6 +23,7 @@ import type {
   TrashRow,
   ViewButton,
   ViewStyle,
+  WebAccount,
 } from './types'
 import type { ContextTarget, Creator, MutateReply, MutateRequest, RenameHost } from './mutate'
 import type { Result } from './result'
@@ -241,6 +242,12 @@ export interface Asks {
   'hoverCard:save': { args: [size: HoverCardSize]; reply: Result<null> }
   'devicePrefs:load': { args: []; reply: Result<DevicePrefs | null> }
   'devicePrefs:save': { args: [prefs: DevicePrefs]; reply: Result<null> }
+
+  // Web accounts — recorded rows plus the session wipes behind sign-out and clear-browsing.
+  'webAccounts:list': { args: []; reply: Result<WebAccount[]> }
+  'webAccounts:add': { args: [url: string]; reply: Result<WebAccount> }
+  'webAccounts:signOut': { args: [domain: string]; reply: Result<null> }
+  'webAccounts:clearBrowsing': { args: []; reply: Result<null> }
   'capture:thumbnail': {
     args: [navKey: string, rect: ThumbRect, scaleFactor: number]
     reply: Result<{ url: string }>
