@@ -235,6 +235,8 @@ const api = {
   onNavChanged: on('nav:changed'),
   // The live watcher pushed a fresh tree (external FS change) — swap it in place.
   onNexusChanged: on('nexus:changed'),
+  // A guest webview's window.open — the renderer's open-link adjudicator answers it.
+  onWebPopup: on('web:popup'),
 }
 
 contextBridge.exposeInMainWorld('nexus', api)
