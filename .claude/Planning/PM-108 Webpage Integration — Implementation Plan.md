@@ -210,8 +210,8 @@ Constraints: `sandbox`/`contextIsolation` stay on; guests are validated at attac
 **Failure half:** label with unescaped `]` → null (and the compose half proves escaping prevents ever producing that line) · URL with unbalanced `(` → null · the degenerate `![]()` → null (empty URL) · indented line → null (list continuation, mirroring `loneEmbedRe`'s anchor).
 
 **Steps:**
-- [ ] Failing tests across the matrix above plus F-1's scheme table; implement; green; gates green.
-- [ ] Commit: `feat(shared): the lone-line webpage-embed grammar`
+- [x] Failing tests across the matrix above plus F-1's scheme table; implement; green; gates green.
+- [x] Commit: `feat(shared): the lone-line webpage-embed grammar`
 
 #### Task 6: Detection, the kind-aware claim, and the formation gate
 
@@ -464,10 +464,10 @@ This task also lands the `web:popup` listener (the renderer app root subscribes 
   - [x] Task 1 — Menu reorder · `4a754b3c`
   - [x] Task 2 — Auto-format built-in · `f46f7e6f`
   - [x] Task 3 — Destination guard · `8869f7f1`
-- [ ] **Phase 2** — Main-Process Web Foundation · base `4e5116e2`
-  - [x] Task 4 — Guest lifecycle + partition · ``
-- [ ] **Phase 3** — The Webpage Tile · base ``
-  - [ ] Task 5 — The grammar · ``
+- [x] **Phase 2** — Main-Process Web Foundation · base `4e5116e2` · simplify `7c61fe77` · review folds `35bcb588`
+  - [x] Task 4 — Guest lifecycle + partition · `3ddee5f2`
+- [ ] **Phase 3** — The Webpage Tile · base `35bcb588`
+  - [x] Task 5 — The grammar · ``
   - [ ] Task 6 — Detection, claim, formation gate · ``
   - [ ] Task 7 — The live tile · ``
   - [ ] Task 8 — Display-only titles · ``

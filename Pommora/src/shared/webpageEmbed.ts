@@ -3,7 +3,29 @@
 // recognize a link mid-authoring read the empty-tolerant variant instead of the tokenizer.
 // No fs, no React; both processes may import it.
 
-import { emptyTolerantLinkRegex } from './links'
+import { emptyTolerantLinkRegex, escapeAlias, isValidLink, unescapeAlias } from './links'
+
+/** The lone-line webpage embed: `![label](url)` alone on its line, trailing whitespace tolerated,
+ *  never indented (an indented line is list continuation, mirroring the page embed's anchor).
+ *  The label may be empty; the URL must carry an explicit http(s) scheme and be an address the
+ *  link system would open — a mid-typed prefix like `https://example.c` passes here, which is
+ *  why claims are formation-gated on the selection rather than on the grammar. */
+export function loneWebpageEmbed(lineText: string): { label: string; url: string } | null {
+  if (!lineText.startsWith('![')) return null
+  const line = lineText.replace(/\s+$/, '')
+  const m = emptyTolerantLinkRegex().exec(line)
+  if (!m || m.index !== 1 || m.index + m[0].length !== line.length) return null
+  const url = m[2]
+  if (!url || !/^https?:\/\//i.test(url) || !isValidLink(url)) return null
+  return { label: unescapeAlias(m[1]), url }
+}
+
+/** The ONLY assembly path any webpage-embed writer uses — `serializeLink` emits no bang and
+ *  collapses an empty alias to the bare URL, so composing through it would write a line the
+ *  detector refuses. */
+export function composeWebpageEmbedLine(label: string, url: string): string {
+  return `![${escapeAlias(label)}](${url})`
+}
 
 /** Whether `col` sits inside the `()` destination of a markdown link on the line — the span a
  *  character typed at `col` would land in. Two shapes count: a complete link, empty halves
