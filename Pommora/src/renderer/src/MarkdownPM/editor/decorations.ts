@@ -10,7 +10,7 @@ import {
 import type { Extension, Range } from '@codemirror/state'
 import { chipBoxGeometry } from '../../design-system/tokens'
 import { tokenize, activeTokenIndices, linkTarget, shiftToken, type Token } from '../tokens'
-import { docLineIntentsOf, docScan, docSpanTokens, docString } from './docCache'
+import { docBidirMarks, docLineIntentsOf, docScan, docSpanTokens, docString } from './docCache'
 import { claimedEmbeds } from './embedRanges'
 import { resolutionNudge } from './embedWidget'
 import { linkRest, linkTyping } from './linkGestures'
@@ -403,12 +403,9 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): Built {
       for (const [s, e] of tk.markerRanges) ranges.push(bracket.range(s, e))
     })
   }
-  for (const { from, to } of view.visibleRanges) {
-    for (const m of text.slice(from, to).matchAll(/↔/g)) {
-      const p = from + m.index
+  for (const p of docBidirMarks(view.state.doc))
+    if (view.visibleRanges.some(({ from, to }) => p >= from && p < to))
       ranges.push(Decoration.mark({ class: 'md-sym-bidir' }).range(p, p + 1))
-    }
-  }
   return { deco: Decoration.set(ranges, true), atomic: Decoration.set(atomic, true) }
 }
 

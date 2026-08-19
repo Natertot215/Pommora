@@ -7,6 +7,7 @@ import { applyUrlLinkAction } from './linkFormat'
 import { hasWebScheme, normalizeLinkUrl } from '@shared/links'
 import { MD_LINK_CLASS } from './decorations'
 import { openWebLink } from '../../openWebLink'
+import { closeActiveHoverCard } from '@renderer/Embeds/ConnectionHoverCard'
 
 type GetApi = () => ConnectionsApi | undefined
 
@@ -68,6 +69,10 @@ export function markdownLinkClicks(getApi: GetApi): ReturnType<typeof EditorView
   // hover preview. The connection handler can't do it: its hit-test reads wikiLink tokens, and this
   // is a `link`. Without this the same link previews in a table cell and not in the body.
   const intent = hoverIntent()
+  // A link that has just been acted on stops arming until the pointer leaves it. Cancelling once
+  // isn't enough: a native menu takes the pointer away and hands it back over the same link, and
+  // that re-entry is a fresh mouseover that would bloom a preview behind the menu you just used.
+  let actedOnLink = false
   return EditorView.domEventHandlers({
     mouseover(event, view) {
       const api = getApi()
@@ -79,7 +84,7 @@ export function markdownLinkClicks(getApi: GetApi): ReturnType<typeof EditorView
       const el = (event.target as HTMLElement).closest?.(
         `.md-connection-resolved, .${MD_LINK_CLASS}`,
       )
-      if (!el) return false
+      if (!el || actedOnLink) return false
       const hit = linkUnder(view, getApi, event)
       if (!hit?.onText || hit.target.kind === 'invalid') return false
       // A link the caret is already inside is open for editing, and no dwell should carry you away
@@ -100,6 +105,7 @@ export function markdownLinkClicks(getApi: GetApi): ReturnType<typeof EditorView
     },
     mouseout() {
       intent.cancel()
+      actedOnLink = false
       return false
     },
     mousedown(event, view) {
@@ -124,22 +130,35 @@ export function markdownLinkClicks(getApi: GetApi): ReturnType<typeof EditorView
       return true
     },
     click(event, view) {
+      // A click consumes the link — an intent armed during the dwell must not bloom over
+      // whatever the click opened.
+      intent.cancel()
+      actedOnLink = true
       if (event.button !== 0 || event.detail !== 1 || !view.state.selection.main.empty) return false
       if (editingOnPress) return false
       const hit = linkUnder(view, getApi, event)
       if (!hit?.onText) return false
       event.preventDefault()
-      intent.cancel()
       // A target that names a page navigates there; a web address goes through the one
       // open-link adjudicator, a page through the connections host's own router.
-      if (hit.target.kind === 'page') getApi()?.open(hit.target.page)
-      else openWebLink(hit.url)
+      if (hit.target.kind === 'page') {
+        const api = getApi()
+        // The one modifier branch: ⌘ takes the host's other route when it offers one — the same
+        // gesture the same link answers to in a resting table cell.
+        if (event.metaKey && api?.bypass) api.bypass(hit.target.page)
+        else api?.open(hit.target.page)
+      } else openWebLink(hit.url)
       return true
     },
     // Right-click hands off to the host's menu hook, told what the target turned out to be — the same
     // resolver the click path reads. A link naming a page is menued as the connection it is drawn as;
     // an invalid target names nothing to act on at all.
     contextmenu(event, view) {
+      // The pair every gesture that replaces the pointer's meaning owes it: cancel what is armed,
+      // and dismiss what is already open.
+      intent.cancel()
+      closeActiveHoverCard()
+      actedOnLink = true
       const api = getApi()
       if (!api?.menu) return false
       const hit = linkUnder(view, getApi, event)
@@ -147,7 +166,6 @@ export function markdownLinkClicks(getApi: GetApi): ReturnType<typeof EditorView
       // Inside its syntax you're editing prose, and prose has its own menu.
       if (caretInside(view, hit.range)) return false
       event.preventDefault()
-      intent.cancel()
       api.menu(
         hit.target.kind === 'page'
           ? { kind: 'page', page: hit.target.page, editable: false, hasAlias: false }

@@ -5,6 +5,7 @@
 import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { blockAt, blockStarts } from './blockModel'
+import { docString } from './docCache'
 import { shadeField } from './dragChrome'
 import { beginRelocateDrag, editorGestureCleanup } from './EditorGesture'
 import { lineElementAt } from './lineDom'
@@ -29,13 +30,35 @@ interface Cand {
   right: number
   noop: boolean // the "stay put" slot (a drop here moves nothing) — hittable so release-in-place cancels, but draws no line
 }
-function collectCands(view: EditorView, block: { from: number; to: number }): Cand[] {
-  const doc = view.state.doc.toString()
+/** What the document says about where blocks begin — read once at activation. The gesture holds the
+ *  document still, so only the geometry below it moves. */
+interface BlockShape {
+  starts: number[]
+  docLength: number
+  /** The boundary just past the dragged block: dropping at it, or at the block's own start, leaves
+   *  the block where it already is. */
+  afterBlock: number
+}
+
+function blockShape(view: EditorView, block: { from: number; to: number }): BlockShape {
+  const doc = docString(view.state.doc)
+  const starts = blockStarts(doc).map((b) => b.from)
+  return {
+    starts,
+    docLength: doc.length,
+    afterBlock: starts.find((s) => s > block.to) ?? doc.length,
+  }
+}
+
+function collectCands(
+  view: EditorView,
+  block: { from: number; to: number },
+  shape: BlockShape,
+): Cand[] {
   const rect = view.contentDOM.getBoundingClientRect()
   const right = rect.right - (parseFloat(getComputedStyle(view.contentDOM).paddingRight) || 0)
-  const starts = blockStarts(doc).map((b) => b.from)
-  const afterBlock = starts.find((s) => s > block.to) ?? doc.length // the boundary just past the dragged block
-  const isNoop = (at: number): boolean => at === block.from || at === afterBlock // dropping there leaves the block put
+  const { starts, docLength, afterBlock } = shape
+  const isNoop = (at: number): boolean => at === block.from || at === afterBlock
   const out: Cand[] = []
   for (let i = 0; i < starts.length; i++) {
     const from = starts[i]
@@ -44,7 +67,7 @@ function collectCands(view: EditorView, block: { from: number; to: number }): Ca
     if (!c) continue // folded away or off-screen → auto-scroll brings scrollable ones in
     const topY = lineElementAt(view, from)?.getBoundingClientRect().top ?? c.top // OUTER top (above a box's border)
     out.push({ at: from, y: topY, left: c.left, right, noop: isNoop(from) }) // ABOVE this block
-    const nextFrom = i + 1 < starts.length ? starts[i + 1] : doc.length
+    const nextFrom = i + 1 < starts.length ? starts[i + 1] : docLength
     const botY = bottomAbove(view, nextFrom) // this block's OUTER bottom (below a box's border)
     if (botY !== null)
       out.push({ at: nextFrom, y: botY, left: c.left, right, noop: isNoop(nextFrom) }) // BELOW this block
@@ -80,12 +103,13 @@ export function startBlockDrag(
   const { onClick, onDragStart, line } = opts
   if (e.button !== 0) return // only the left button drags; a right-press falls through to the context menu (e.g. the table grip's Delete Table)
   e.preventDefault()
+  const shape = blockShape(view, block)
   beginRelocateDrag(view, e, block, {
-    measure: () => collectCands(view, block),
+    measure: () => collectCands(view, block, shape),
     pick: nearest,
     lineFor: (slot) =>
       slot.noop ? null : { left: slot.left, top: slot.y, width: slot.right - slot.left },
-    commit: (slot) => blockMoveChanges(view.state.doc.toString(), block, { at: slot.at }),
+    commit: (slot) => blockMoveChanges(docString(view.state.doc), block, { at: slot.at }),
     onDragStart: () => onDragStart?.(view, block),
     onTap: line ? () => onClick?.(view, line) : undefined,
   })
@@ -118,7 +142,7 @@ export function createBlockDragGesture({ gate, onClick, onDragStart }: DragConfi
         if (e.button !== 0) return false
         const line = (e.target as HTMLElement).closest?.(sel) as HTMLElement | null
         if (!line || e.clientX >= line.getBoundingClientRect().left) return false // not the handle zone
-        const block = blockAt(view.state.doc.toString(), view.posAtDOM(line))
+        const block = blockAt(docString(view.state.doc), view.posAtDOM(line))
         if (!block) return false
         startBlockDrag(view, e, block, { onClick, onDragStart, line })
         return true

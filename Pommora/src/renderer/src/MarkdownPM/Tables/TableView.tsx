@@ -364,6 +364,7 @@ export function TableView({
         if (dashDelta === 0 || !onResize(i, dashDelta)) setResize(null)
       },
       onAbort: () => setResize(null),
+      activation: 0, // a resize arms on the first move, the SurfacePM edge precedent
     })
   }
 
