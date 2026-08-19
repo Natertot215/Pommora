@@ -287,9 +287,9 @@ Tests: extend the embed-widget flow tests with webpage cases.
 - [x] Commit: `feat(menu): Embed ▸ Webpage types the empty embed and seats the target`
 
 #### Gate 3 — a URL line is a live tile
-- [ ] Gates green; derivations/controls re-run; review + simplification on the range; concerns fixed or ruled.
-- [ ] Seen running: form, faces, height, labels, door — screenshots shown (design stop for the faces recorded as Nathan-approved or amended).
-- [ ] Plan re-assessed; Progress hashes filled.
+- [x] Gates green; derivations/controls re-run; review + simplification on the range; concerns fixed or ruled.
+- [ ] Seen running: form, faces, height, labels, door — Nathan's walkthrough (design stop for the faces recorded as Nathan-approved or amended).
+- [x] Plan re-assessed; Progress hashes filled.
 
 ---
 
@@ -465,7 +465,7 @@ This task also lands the `web:popup` listener (the renderer app root subscribes 
   - [x] Task 3 — Destination guard · `8869f7f1`
 - [x] **Phase 2** — Main-Process Web Foundation · base `4e5116e2` · simplify `7c61fe77` · review folds `35bcb588`
   - [x] Task 4 — Guest lifecycle + partition · `3ddee5f2`
-- [ ] **Phase 3** — The Webpage Tile · base `35bcb588` · *(gate open: review + simplification + Nathan's walkthrough pending)*
+- [ ] **Phase 3** — The Webpage Tile · base `35bcb588` · simplify `51488e97` · folds `230d5a03` · *(gate holds one box: Nathan's live walkthrough + the face-design stop)*
   - [x] Task 5 — The grammar · `28a555d2`
   - [x] Task 6 — Detection, claim, formation gate · `de73e16d`
   - [x] Task 7 — The live tile · `bf094dc5`
