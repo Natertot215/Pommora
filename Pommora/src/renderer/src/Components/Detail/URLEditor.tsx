@@ -1,24 +1,19 @@
 import { useRef, useState, type CSSProperties } from 'react'
-import { chipColorFor, colorLabel } from '@renderer/design-system/tokens/colorMap'
+import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
 import { solidColorCss } from '@renderer/Detail/Views/Table/solidColor'
+import { tintAt, TINT_STEPS } from '@renderer/design-system/tokens/tint'
 import type { ChipColorName } from '@renderer/design-system/tokens/chip.css'
 import { Switch } from '@renderer/design-system/components/Switches/Switch'
 import type { LinkConfig, LinkDisplay } from '@shared/properties'
-import { Chip } from '../Chip'
 import { ColorPicker } from './ColorPicker'
 import { PickerControl } from './PickerControl'
 import { LINK_FORMAT_OPTIONS } from './LinkFormat'
 import * as s from './settingsPane.css'
 
 /** Shared with the URL cell's own render via solidColorCss, so the two stay in sync. */
-function resolveLinkColor(color: string | undefined): {
-  name: ChipColorName
-  label: string
-  css: string
-} {
-  if (!color) return { name: 'accent', label: 'Default', css: solidColorCss(undefined) }
-  const name = chipColorFor(color)
-  return { name, label: colorLabel(name), css: solidColorCss(color) }
+function resolveLinkColor(color: string | undefined): { name: ChipColorName; css: string } {
+  if (!color) return { name: 'accent', css: solidColorCss(undefined) }
+  return { name: chipColorFor(color), css: solidColorCss(color) }
 }
 
 /**
@@ -59,11 +54,16 @@ export function URLEditor({
             ref={chipRef}
             type="button"
             className={s.colorChip}
+            aria-label="Color"
             onClick={() => setColoring((v) => !v)}
           >
-            <Chip shape="label" color={link.name} label={link.label} />
+            <span
+              className={s.colorSwatch}
+              style={{ '--sw': tintAt(link.css, TINT_STEPS.primary) } as React.CSSProperties}
+            />
           </button>
           <ColorPicker
+            greyscale={false}
             open={coloring}
             selected={link.name}
             onPick={(next) => {

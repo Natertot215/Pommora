@@ -56,22 +56,31 @@ const buttonFor = (name: string): HTMLButtonElement => {
   return el
 }
 
+/** The color control's swatch — nameless, so it is found by the control's own accessible name. */
+const swatchFill = (): string => {
+  const el = buttonFor('Color').querySelector('span')
+  return (el as HTMLElement).style.getPropertyValue('--sw')
+}
+
 describe('CheckboxEditor', () => {
-  it('shows Color and Style rows, the color reading Accent when unset', async () => {
+  it('shows Color and Style rows', async () => {
     await mount({ accent: 'cyan' })
     expect(host.textContent).toContain('Color')
     expect(host.textContent).toContain('Style')
-    expect(host.textContent).toContain('Accent')
   })
 
-  it('labels a chosen color that equals the accent as Accent too', async () => {
-    await mount({ color: 'cyan', accent: 'cyan' })
-    expect(host.textContent).toContain('Accent')
+  // The control carries no color NAME — the ramp's cells have none. An unset checkbox simply shows
+  // what the live accent paints, which is the same thing picking that color would show.
+  it('shows the accent in the swatch when unset', async () => {
+    await mount({ accent: 'cyan' })
+    expect(host.textContent).not.toContain('Accent')
+    expect(swatchFill()).toContain('--system-accent')
   })
 
-  it('labels a chosen color that differs from the accent by its palette name', async () => {
+  it('shows the chosen color in the swatch, unnamed', async () => {
     await mount({ color: 'blue-1', accent: 'cyan' })
-    expect(host.textContent).toContain('Blue')
+    expect(host.textContent).not.toContain('Blue')
+    expect(swatchFill()).toBeTruthy()
   })
 
   it('reflects the current look in the Style trigger', async () => {
@@ -90,8 +99,7 @@ describe('CheckboxEditor', () => {
   it('emits a color key when a new swatch is picked', async () => {
     const onSetColor = vi.fn()
     await mount({ accent: 'cyan', onSetColor })
-    // open the picker (the color chip button wraps the "Accent" chip)
-    await act(async () => buttonFor('Accent').click())
+    await act(async () => buttonFor('Color').click())
     await act(async () => buttonFor('blue-1').click())
     expect(onSetColor).toHaveBeenCalledWith('blue-1')
   })

@@ -426,6 +426,18 @@ export const colorChip = style({
   display: 'flex',
 })
 
+/** The chosen color, worn as the Switch's own shell — same track geometry and outline as the
+ *  switches it shares a pane with, filled with the color at tint-primary. Nameless on purpose: the
+ *  ramp's cells carry no display names, and the swatch says more than a family name could. */
+export const colorSwatch = style({
+  width: '54px',
+  height: '24px',
+  borderRadius: '12px',
+  border: '1px solid var(--label-secondary)',
+  background: 'var(--sw)',
+  boxSizing: 'border-box',
+})
+
 /** The scoped-pane footer breadcrumb — the embed's source path, `(icon) Collection › (icon) Set`;
  *  the lock rides the trailing slot. */
 export const crumbRow = style([
