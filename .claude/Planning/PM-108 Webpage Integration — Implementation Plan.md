@@ -466,16 +466,15 @@ This task also lands the `web:popup` listener (the renderer app root subscribes 
 - [x] **Phase 2** — Main-Process Web Foundation · base `4e5116e2` · simplify `7c61fe77` · review folds `35bcb588`
   - [x] Task 4 — Guest lifecycle + partition · `3ddee5f2`
 - [ ] **Phase 3** — The Webpage Tile · base `35bcb588` · simplify `51488e97` · folds `230d5a03` · walkthrough fixes `b2858554` `5da8894a` `cb3546d7` · *(gate holds one box: Nathan's live walkthrough + the face-design stop; Phase 4 opened on Nathan's call with that box pending)*
-- [ ] **Phase 4** — Engagement & Retention · base `cb3546d7` · T10 `ed442782` · T11 `19388798` · simplify `c50463c0` (+ riders in Nathan's `b3dbc3ff`) · *(review folds committed at the gate; walkthrough = Nathan's, bundled with Phase 3's)*
   - [x] Task 5 — The grammar · `28a555d2`
   - [x] Task 6 — Detection, claim, formation gate · `de73e16d`
   - [x] Task 7 — The live tile · `bf094dc5`
   - [x] Task 8 — Display-only titles · `0a325efc`
   - [x] Task 9 — The Webpage door · `8f9563a0`
-- [ ] **Phase 4** — Engagement & Retention · base ``
-  - [ ] Task 10 — Engagement + retention cap · ``
-  - [ ] Task 11 — Hover-title + Edit Link arm · ``
-- [ ] **Phase 5** — Link Opening & Browser · base ``
+- [ ] **Phase 4** — Engagement & Retention · base `cb3546d7` · simplify `c50463c0` (+ riders in Nathan's `b3dbc3ff`) · review folds `438e397a` · *(walkthrough = Nathan's, bundled with Phase 3's)*
+  - [x] Task 10 — Engagement + retention cap · `ed442782`
+  - [x] Task 11 — Hover-title + Edit Link arm · `19388798`
+- [ ] **Phase 5** — Link Opening & Browser · base `438e397a`
   - [ ] Task 12 — The open-in knob + popup routing (absorbed Task 13) · ``
   - [ ] Task 14 — The browser flavor · ``
 - [ ] **Phase 6** — Accounts · base ``
@@ -484,6 +483,15 @@ This task also lands the `web:popup` listener (the renderer app root subscribes 
 - [ ] **Phase 7** — Hover Previews · base ``
   - [ ] Task 17 — Arming gates · ``
   - [ ] Task 18 — Website hover card · ``
+
+### Walkthrough Pre-Verification (overnight, CDP-driven on the live instance)
+Nathan's walkthrough boxes stay his; every check CDP can drive was pre-verified on the real PM-Issues-index page, appended below his content:
+- **Formation:** a typed `![](https://github.com)` line stays raw under the caret and forms on selection departure; the tile mounts and paints the live site.
+- **Engagement chain:** wheel over the inert tile scrolls the *document* (negative control — scrollTop moved, guest untouched); click engages (catcher unmounts, `is-inert` drops); click-out re-arms both; a click inside the engaged guest navigates it (GitHub nav → `/pricing` observed).
+- **Hover-title:** pointer entry reveals the resolved title (`YouTube` from the cache) at full opacity.
+- **Retention:** with two tiles, scrolling the first out of full visibility flips it to `is-retained` (guest alive, hidden) behind its face while the second runs live; a fully-visible tile at max scroll correctly *stays* live.
+- **No on-every-X:** 240 rAF frames of continuous scrolling across both tiles, retention transitions included — 16.7ms average, 18.7ms worst, zero frames over 32ms, zero long tasks.
+- **Not CDP-reachable:** ⌘± zoom stamping (native menu accelerators bypass injected renderer keys) and real-trackpad feel — those remain in Nathan's walkthrough.
 
 ### Rulings
 - **Gate 1 review round** (8 angles, deduped): folded — guard ordering in `linkFor` (cheap URL test first); one grammar source (`links.ts` fragments now build both `markdownLinkRegex` and the empty-tolerant variant; the `!?` branch dropped as unnecessary — the scan matches from `[` regardless); the guard gained the unclosed-destination clause (agrees with the smart-dash guard's reading) and an early break; **the code-context guard** (a paste inside a fence or inline span lands literal — `isInsideCode` with insertion semantics; in-flight behavioral addition, disclosed at the gate); **the Paste As destination guard** (an explicit pick inside a link's `()` pastes literal — the pick overrides settings, never syntax; Paste As stays unguarded in code context, the explicit pick is the deliberate escape there); `Insert ▸ Page` naming residue in embedInsert; the stale Reveal comment in nexusSettings.css.
@@ -505,6 +513,8 @@ This task also lands the `web:popup` listener (the renderer app root subscribes 
 - **Task 4, spike-proven:** `will-attach-webview` cannot rewrite `params` — a forced partition and `allowpopups` set there never reach the attach. The plan's named fallback is the shipped shape: every surface carries `partition` (defaulting to `WEB_PARTITION`) **and `allowpopups`** as attributes, and the hook is a validator that denies a wrong-partition or hostile-src attach outright. Tasks 7/14/18 inherit the attribute pair.
 - **Task 6:** the planned formation-gate ViewPlugin fell away — selection changes are themselves transactions the StateField sees, so the selection-departure trigger is a pure re-check inside the field's update (gated on a stored unformed count), and no dispatcher exists to own. Undo/redo form like a mount: the restoring selection sits on the restored line by construction. The webpage claim's kind-aware key also stayed inside the tile field rather than widening `claimedEmbeds`' signature — the claim's only reader is the field (webpage lines produce no `embed` token to suppress), and the page-only caller in `decorations.ts` would have had to fabricate a formation oracle.
 - **Task 4:** `applyDefaultZoom` was not the only `setZoomFactor` writer — ⌘0's menu click was a fourth, in-place. Every host-zoom write now flows through `setHostZoom`/`stepHostZoom` (the guest-sync seam); ⌘+/⌘− are de-roled with a hidden `⌘=` alias item preserving the native role's unshifted chord.
+- **Task 12, Nathan's directive (08-18):** the knob's home moved — settings gain a **Pages & Editor ▸ Webpages** section scoped to the web preferences (the open-in knob and the guest zoom factor), superseding the planned Files & Links row. The zoom-factor control is an addition to the task's scope on the same directive.
+- **Overnight design stops (Nathan's directive):** Tasks 14 and 16 carry design stops, but the overnight run builds both to the decision log's spec and presents screenshots for his morning verdict instead of waiting.
 - **Task 7, the blank-tile walkthrough arc:** the tile rendered its face permanently for a reason none of the observer theories held — the live gate read `host.ancestors.length === 0` as "top-level", but the page surface carries its OWN path in the chain as the cycle guard, so the gate was never open anywhere. It now reads the page-surface marker (`saveHeights` presence), named `pageSurface`. The observer rewrite that rode the same arc stands on its own merit: visibility measures against the viewport root (the page's real scroller is a pane above the editor, and an element root only counts clips between target and root), the acceptance ratio is itself a threshold, and the `WEB_PREARM_PX` pre-arm KNOB died with the wrong-rooted design (disclosed; `WEB_FIT_MARGIN` is the surviving knob). The Embed ▸ insert also stopped stacking blanks — it reuses standing blank lines (`embedInsertAfter`'s lead derives from the caret line's own blankness).
 ### Lessons
 ### Sequenced After
