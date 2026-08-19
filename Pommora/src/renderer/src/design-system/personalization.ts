@@ -49,10 +49,7 @@ export function applyPersonalizationKey<K extends keyof Personalization>(
 }
 
 export function applyPersonalization(p: Personalization): void {
-  for (const key of Object.keys(LINK_VARS) as (keyof typeof LINK_VARS)[])
-    applyPersonalizationKey(key, p[key])
-  for (const key of Object.keys(ROOT_CLASSES) as (keyof Personalization)[])
-    applyPersonalizationKey(key, p[key])
-  for (const key of Object.keys(ROOT_VALUE_CLASSES) as (keyof Personalization)[])
-    applyPersonalizationKey(key, p[key])
+  for (const table of [LINK_VARS, ROOT_CLASSES, ROOT_VALUE_CLASSES])
+    for (const key of Object.keys(table) as (keyof Personalization)[])
+      applyPersonalizationKey(key, p[key])
 }
