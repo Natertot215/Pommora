@@ -108,11 +108,13 @@ checkmarks rather than radios (Nathan's call).
 
 Small, found during the picker work.
 
-- [ ] `ValueRow` is defined identically in `GroupingPane` and `SortingPane` — one component
-- [ ] `CalendarPicker` draws its own checkmark outside the picker system and never answers
-      `pickerSelection`
-- [ ] BlockHandleMenu's Style and Scale lists read centered since losing `MenuOption` — confirm or
-      give them glyphs
+- [x] `ValueRow` is one component (banked, `36567bff`)
+- [x] `CalendarPicker`'s Month, Year, and time rows are already `PickerOption`s, so the shared row
+      drew a mark AND the row's children drew a second one. The hand-drawn mark retires; the choice
+      now reads the way it does in every other picker and answers `pickerSelection`
+- [x] BlockHandleMenu's Style and Scale lists read left again — the old `MenuOption` wrapped a
+      left-aligned menu row, so centering them was a regression rather than the system's default
+      landing on them (Nathan's call)
 
 ### Phase 2 — Verification and Close
 
