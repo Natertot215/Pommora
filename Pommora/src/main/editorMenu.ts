@@ -175,7 +175,10 @@ function pommoraItems(
     },
     {
       label: 'Embed',
-      submenu: [{ label: 'Internal Page', click: act('block:page') }],
+      submenu: [
+        { label: 'Webpage', click: act('block:webpage') },
+        { label: 'Internal Page', click: act('block:page') },
+      ],
     },
     {
       label: 'Heading',

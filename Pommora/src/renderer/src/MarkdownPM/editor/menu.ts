@@ -3,7 +3,7 @@ import { EDITOR_ACTION_PREFIX, INSERT_LINK_ACTION, type FormatState } from '@sha
 import { isValidLink, normalizeLinkUrl } from '@shared/links'
 import { serializeLink } from '@shared/linkValue'
 import { PASTE_AS_PREFIX, type PasteAsForm } from '@shared/PasteAsMenu'
-import { embedInsertAtCaret } from './embedInsert'
+import { embedInsertAtCaret, webpageInsertAtCaret } from './embedInsert'
 import { pasteAs } from './PasteLink'
 import {
   toggleInline,
@@ -70,6 +70,7 @@ export function applyEditorAction(view: EditorView, raw: string): boolean {
   const action = raw.slice(EDITOR_ACTION_PREFIX.length)
   // Page embeds type the opener and hand off to the autocomplete, not a plain format edit.
   if (action === 'block:page') return embedInsertAtCaret(view)
+  if (action === 'block:webpage') return webpageInsertAtCaret(view)
   if (action === INSERT_LINK_ACTION) return insertLinkOverSelection(view)
   // Paste As reads the clipboard back over the bridge, so it finishes a turn later than the rest.
   if (action.startsWith(PASTE_AS_PREFIX)) {
