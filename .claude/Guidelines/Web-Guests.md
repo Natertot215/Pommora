@@ -1,6 +1,6 @@
 ## Web Guest Gotchas
 
-Hard-won traps around Electron `<webview>` guests and the React surfaces that host them. Read before touching any web surface (→ [[WeblinkPM]]).
+Hard-won traps around Electron `<webview>` guests and the React surfaces that host them. Read before touching any web surface (→ [[WebviewPM]]).
 
 ### Mounting & Attributes
 

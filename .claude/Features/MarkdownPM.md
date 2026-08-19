@@ -86,7 +86,7 @@ The line must hold exactly one`![[Title]]`, and resolution is the discriminator:
 
 ### Webpage Embeds
 
-The editor's second embedding type: `![Label](url)` alone on a line, with an explicit http(s) scheme, renders the live website as a tile on the same embed framework — the markdown mirror of the wiki form, so a Nexus still reads as plain CommonMark outside Pommora. The tile, its engagement model, and everything web-facing belong to [[WeblinkPM]]; the editor's own concerns — the grammar, the claim, the formation gate, and the Embed ▸ Webpage door — ride the same machinery the page tiles use.
+The editor's second embedding type: `![Label](url)` alone on a line, with an explicit http(s) scheme, renders the live website as a tile on the same embed framework — the markdown mirror of the wiki form, so a Nexus still reads as plain CommonMark outside Pommora. The tile, its engagement model, and everything web-facing belong to [[WebviewPM]]; the editor's own concerns — the grammar, the claim, the formation gate, and the Embed ▸ Webpage door — ride the same machinery the page tiles use.
 
 ### Block Drag & The Grip Menu
 
@@ -191,7 +191,7 @@ One pastel recipe: `color-mix(in srgb, var(--tok-solid) var(--tok-tint), var(--s
 - A mid-drag column hide/show or watcher view-push is silently reverted by a column drop's persist (`reorderColumn` reads grab-time state) — reachable only by mutating columns while holding a drag; a ref-read at commit fixes it if it's ever felt.
 ### Pending
 
-- **Image + LaTeX render seams** — LaTeX is detected and styled only, and the wiki-image form rests inert: an image-style `![[file.png]]` target fails page resolution and renders nothing. The bang-paren form is spoken for — `![Label](url)` alone on a line is a webpage embed (→ [[WeblinkPM]]) — so a future image renderer arrives through the wiki form.
+- **Image + LaTeX render seams** — LaTeX is detected and styled only, and the wiki-image form rests inert: an image-style `![[file.png]]` target fails page resolution and renders nothing. The bang-paren form is spoken for — `![Label](url)` alone on a line is a webpage embed (→ [[WebviewPM]]) — so a future image renderer arrives through the wiki form.
 - **Fenced-code copy button** · **zoom slider** UI placement · **heading-fold inside a callout** (headings render there, but the fold chevron isn't prefix-aware) · **table inside a callout** (renders as raw text; needs prefix-aware region detection).
 - **Outliner rails on ordered / arrow / `+` lists** — the guide is bullets + checkboxes only; the other glyphs need their own glyph-center math before their rails read straight.
 - **Codeblock Style ▸ Language grip menu** — retyping a block's language from its grip; the list's Type ▸ arm is the pattern it follows. Widening the curated language set is one description in the highlight module plus its package.
