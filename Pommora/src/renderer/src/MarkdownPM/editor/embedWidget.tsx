@@ -309,7 +309,13 @@ function observersFor(view: EditorView): WebObservers {
           }
         }
       },
-      { root: view.scrollDOM, threshold: 1, rootMargin: `-${WEB_PREARM_PX}px 0px` },
+      // The acceptance ratio must itself be a threshold: fractional layout tops a fully visible
+      // tile out just below 1, and a lone threshold of 1 then never fires the callback at all.
+      {
+        root: view.scrollDOM,
+        threshold: [0, WEB_FULL_RATIO, 1],
+        rootMargin: `-${WEB_PREARM_PX}px 0px`,
+      },
     )
     const ro = new ResizeObserver(() => {
       for (const d of tiles) d._renderW?.()
