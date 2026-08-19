@@ -1,17 +1,29 @@
 // THE lone-line page embeds for a doc — one derivation of the exclusion set (an `![[…]]` line inside
 // a fence or table region is content there, never an embed). Every layer that must agree on what an
 // embed line is reads THIS: the block resolver, the decoration pass's gates, and the tile field.
-import { blockEmbedLines, type EmbedLine, fencedCodeRanges } from '../detect'
+import {
+  blockEmbedLines,
+  blockWebpageLines,
+  type EmbedLine,
+  type WebpageLine,
+  fencedCodeRanges,
+} from '../detect'
 import { docMathRanges } from './mathRanges'
 import { tableRegions } from '../Tables/regions'
 import { normalizeTitle, type LinkStatus } from '@shared/connections'
 
+const embedExcluded = (doc: string): [number, number][] => [
+  ...fencedCodeRanges(doc),
+  ...tableRegions(doc).map((r): [number, number] => [r.from, r.to]),
+  ...docMathRanges(doc),
+]
+
 export function docEmbedLines(doc: string): EmbedLine[] {
-  return blockEmbedLines(doc, [
-    ...fencedCodeRanges(doc),
-    ...tableRegions(doc).map((r): [number, number] => [r.from, r.to]),
-    ...docMathRanges(doc),
-  ])
+  return blockEmbedLines(doc, embedExcluded(doc))
+}
+
+export function docWebpageLines(doc: string): WebpageLine[] {
+  return blockWebpageLines(doc, embedExcluded(doc))
 }
 
 /** Whether a page title can be embedded here: the `![[…]]` syntax cannot express a `]`, and a title
