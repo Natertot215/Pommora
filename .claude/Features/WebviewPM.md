@@ -29,7 +29,7 @@ Retention carries across tab switches for as many recent page tabs as stay parke
 
 ### Titles & The Grip
 
-Tile titles are display-only and resolved at render — a hand-written label wins, an empty one derives through the nexus's default link format, sharing the fetched-title path table cells use. Nothing is ever written back into the document. The hover-revealed title is itself a link, opening the address per the open-in preference. The tile's grip menu carries **Edit Link** above Delete: a popover re-aims the whole line at a new address in place, migrating the tile's remembered height with it, and refusing an address the grammar can't round-trip rather than dissolving the tile into text.
+Tile titles are display-only and resolved at render — a hand-written label wins, an empty one derives through the nexus's default link format, sharing the fetched-title path table cells use. Nothing is ever written back into the document. The hover-revealed title is itself a link, opening the address per the open-in preference. The tile's grip menu carries **Edit Link** above Delete, and it edits in the line like every other Edit Link does: the tile returns to the raw address it holds with that address selected, so typing replaces it, and leaving the line re-forms the tile. The site is asked to load only once the new address is the document's — nothing reloads to show a caret. A tile re-aimed this way takes the default height, since a remembered height belongs to an address.
 
 ### Link Opening
 
@@ -37,7 +37,7 @@ One renderer adjudicator decides where every external link opens — editor clic
 
 ### Web Sessions
 
-Every web surface — tiles, the browser, hover cards — shares one persistent session partition: sign into a site in any of them and every other one is signed in, per machine, surviving restarts. There is nothing to manage and no settings surface; the partition simply remembers. The session wears a cleaned user agent, with a further surgical variant for Google's sign-in host, best-effort by design. Embedded pages scale with the window's zoom times the **Webpage Zoom** preference, stamped from the main process on every navigation.
+Every web surface — tiles, the browser, hover cards — shares one session: sign into a site in any of them and every other one is signed in, per machine, surviving restarts (→ [[NavigationPM]] §State Persistence). There is nothing to manage and no settings surface; the session simply remembers. The session wears a cleaned user agent, with a further surgical variant for Google's sign-in host, best-effort by design. Embedded pages scale with the window's zoom times the **Webpage Zoom** preference, stamped from the main process on every navigation.
 
 ### Website Hover Previews
 
