@@ -65,14 +65,15 @@ function blockContext(doc: string): BlockContext {
   const { maths, embeds, webpages } = docLineScan(doc)
   const inFence = (i: number): boolean =>
     i >= 0 && i < n && fences.some(([f, t]) => starts[i] >= f && starts[i] <= t)
-  const inTable = (i: number): boolean =>
-    i >= 0 && i < n && tables.some((r) => starts[i] >= r.from && starts[i] <= r.to)
+  const spanned =
+    (spans: readonly { from: number; to: number }[]) =>
+    (i: number): boolean =>
+      i >= 0 && i < n && spans.some((s) => starts[i] >= s.from && starts[i] <= s.to)
+  const inTable = spanned(tables)
   const inMath = (i: number): boolean =>
     i >= 0 && i < n && maths.some(([f, t]) => starts[i] >= f && starts[i] <= t)
-  const inEmbed = (i: number): boolean =>
-    i >= 0 && i < n && embeds.some((e) => starts[i] >= e.from && starts[i] <= e.to)
-  const inWebpage = (i: number): boolean =>
-    i >= 0 && i < n && webpages.some((w) => starts[i] >= w.from && starts[i] <= w.to)
+  const inEmbed = spanned(embeds)
+  const inWebpage = spanned(webpages)
 
   // List membership: marker lines PLUS their indented continuations (a wrapped item body), but only where a
   // run actually holds a marker — so a bare indented paragraph isn't swept in. A blank line breaks a run, so
@@ -134,6 +135,7 @@ function blockContext(doc: string): BlockContext {
     inTable(i) ||
     inMath(i) ||
     inEmbed(i) ||
+    inWebpage(i) ||
     heading[i] ||
     listMember[i] ||
     hr[i]
@@ -223,11 +225,9 @@ export function blockAt(doc: string, pos: number): Block | null {
       return { from: starts[a], to: ends[b], kind: 'list' }
     }
     case 'hr':
-      return { from: starts[li], to: ends[li], kind: 'hr' }
     case 'embed':
-      return { from: starts[li], to: ends[li], kind: 'embed' }
     case 'webpage':
-      return { from: starts[li], to: ends[li], kind: 'webpage' }
+      return { from: starts[li], to: ends[li], kind }
     case 'paragraph': {
       let a = li
       while (a > 0 && !ctx.claimed(a - 1)) a--
