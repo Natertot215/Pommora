@@ -92,6 +92,22 @@ interface TileDom extends HTMLElement {
   _root?: Root
 }
 
+/** The height a tile reports and occupies before a persisted one exists. */
+const TILE_DEFAULT_PX = 320
+
+// CM hands a tile's DOM to its successor widget on rebuilds and relocations, and calls destroy
+// BEFORE detaching on a real delete — so connectivity is only decidable after the update settles:
+// an adopted node is still in the document (unmounting would blank the reused tile), a deleted one
+// is gone and its root must unmount or the nested editor leaks whole.
+function unmountIfDetached(d: TileDom): void {
+  queueMicrotask(() => {
+    const root = d._root
+    if (d.isConnected || !root) return
+    d._root = undefined
+    root.unmount()
+  })
+}
+
 /** The bottom-edge resize strip: drag sets the tile's height live (writing the widget span and
  *  remeasuring — CM's observer watches only scrollDOM, so a widget growing inside it is invisible
  *  without requestMeasure), Escape restores, drop persists through the host's save callback. */
@@ -173,7 +189,7 @@ class EmbedTileWidget extends WidgetType {
   // height before their first measure; CM corrects on render. Tracks the persisted height so a
   // resized tile reports true even before it scrolls in.
   get estimatedHeight(): number {
-    return this.height ?? 320
+    return this.height ?? TILE_DEFAULT_PX
   }
 
   private renderInto(dom: TileDom, view: EditorView): void {
@@ -244,17 +260,7 @@ class EmbedTileWidget extends WidgetType {
   }
 
   destroy(dom: HTMLElement): void {
-    // CM hands a tile's DOM to its successor widget on rebuilds and relocations, and calls destroy
-    // BEFORE detaching on a real delete — so connectivity is only decidable after the update
-    // settles: an adopted node is still in the document (unmounting would blank the reused tile),
-    // a deleted one is gone and its root must unmount or the nested editor leaks whole.
-    const d = dom as TileDom
-    queueMicrotask(() => {
-      const root = d._root
-      if (d.isConnected || !root) return
-      d._root = undefined
-      root.unmount()
-    })
+    unmountIfDetached(dom as TileDom)
   }
 
   ignoreEvent(): boolean {
@@ -340,7 +346,7 @@ class WebpageTileWidget extends WidgetType {
   }
 
   get estimatedHeight(): number {
-    return this.height ?? 320
+    return this.height ?? TILE_DEFAULT_PX
   }
 
   private renderInto(dom: WebTileDom, view: EditorView): void {
@@ -348,7 +354,7 @@ class WebpageTileWidget extends WidgetType {
     // The fit cap, applied and re-applied at render time: a tile taller than its scrollport can
     // never be fully visible, so the stored height yields to what the port can hold.
     const port = view.scrollDOM.clientHeight
-    const wanted = this.height ?? 320
+    const wanted = this.height ?? TILE_DEFAULT_PX
     const capped =
       port > 0 ? Math.max(TILE_MIN_PX, Math.min(wanted, port - WEB_FIT_MARGIN)) : wanted
     dom.style.height = `${capped}px`
@@ -408,14 +414,7 @@ class WebpageTileWidget extends WidgetType {
     const d = dom as WebTileDom
     d._obs?.io.unobserve(d)
     d._obs?.tiles.delete(d)
-    // The page tile's own reuse discipline: CM hands DOM to a successor on rebuilds, so only a
-    // node still detached after the update settles unmounts.
-    queueMicrotask(() => {
-      const root = d._root
-      if (d.isConnected || !root) return
-      d._root = undefined
-      root.unmount()
-    })
+    unmountIfDetached(d)
   }
 
   ignoreEvent(): boolean {
@@ -537,28 +536,26 @@ function editAffectsEmbeds(value: EmbedTiles, tr: Transaction): boolean {
     const to = doc.lineAt(Math.min(doc.length, r.to + 1)).to
     if (tr.changes.touchesRange(from, to) !== false) return true
   }
-  const before = docScan(tr.startState.doc).embeds
-  const after = docScan(tr.state.doc).embeds
+  const before = docScan(tr.startState.doc)
+  const after = docScan(tr.state.doc)
+  return (
+    scanMoved(before.embeds, after.embeds, tr, (a, b) => a.title === b.title) ||
+    scanMoved(before.webpages, after.webpages, tr, (a, b) => a.url === b.url && a.label === b.label)
+  )
+}
+
+/** Whether one scanned line set gained, lost, changed identity, or slid off where the changes map
+ *  its members to — the per-kind half of editAffectsEmbeds. */
+function scanMoved<T extends { from: number }>(
+  before: readonly T[],
+  after: readonly T[],
+  tr: Transaction,
+  sameIdentity: (a: T, b: T) => boolean,
+): boolean {
   if (before.length !== after.length) return true
-  for (let i = 0; i < before.length; i++) {
-    if (
-      after[i].title !== before[i].title ||
-      after[i].from !== tr.changes.mapPos(before[i].from, 1)
-    )
-      return true
-  }
-  const wBefore = docScan(tr.startState.doc).webpages
-  const wAfter = docScan(tr.state.doc).webpages
-  if (wBefore.length !== wAfter.length) return true
-  for (let i = 0; i < wBefore.length; i++) {
-    if (
-      wAfter[i].url !== wBefore[i].url ||
-      wAfter[i].label !== wBefore[i].label ||
-      wAfter[i].from !== tr.changes.mapPos(wBefore[i].from, 1)
-    )
-      return true
-  }
-  return false
+  return before.some(
+    (b, i) => !sameIdentity(b, after[i]) || after[i].from !== tr.changes.mapPos(b.from, 1),
+  )
 }
 
 /** The prior ranges in the new doc's coordinates — what formation matches candidates against. */
