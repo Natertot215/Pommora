@@ -43,7 +43,7 @@ A [[CollectionsPM|Collection]] assigns which registry properties its [[PagesPM|P
 
 ### Identity & Linking
 
-Every entity carries a stable **`id`** — a ULID assigned at creation, stored under the key naming its kind for content files and in the sidecar for containers — and a **title**, the filename or folder name, freely renameable 
+Every entity carries a stable **`id`** — a ULID assigned at creation, stored under the key naming its kind for content files and in the sidecar for containers — and a **title**, the filename or folder name, freely renameable
 
 | Link                       | Stored As                                                           | Purpose                |
 | -------------------------- | ------------------------------------------------------------------- | ---------------------- |

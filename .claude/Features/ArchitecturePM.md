@@ -84,7 +84,7 @@ A copy is the case the record can't settle alone. Every ordinary duplication —
 
 #### The Trash
 
-A deleted entity moves to `.trash/` under the folder chain it came from, as a bundle holding the artifact and a record of what departed. Nothing in the trash is pruned. The record and restore model are the NexusRecords.
+A deleted entity moves to `.trash/` under the folder chain it came from, as a bundle holding the artifact and a record of what departed. Nothing in the trash is pruned. The record and restore model are the [[NexusRecordPM|Nexus Records]].
 
 #### Folder Exclusion
 
@@ -102,13 +102,21 @@ The write path never runs inside a read. Every write channel confirms itself: af
 
 ### The IPC Bridge
 
-Every channel between the renderer and main is declared once in `src/shared/bridge.ts` — name, direction, argument tuple, and reply type — and both processes derive from that map. Adding a channel is one map entry plus one handler.
+**SOURCE:** `Pommora/src/shared/bridge.ts` · `Pommora/src/shared/result.ts` · `Pommora/src/main/ipc.ts` · `Pommora/src/preload`
 
-Each handler declares its boundary policy beside its body. Enveloped channels — every data read and write — return the shared `Result` whole, carrying the structured error (`code` + `message` + optional `scope`) to the renderer; a throw lands as a failure envelope rather than a rejection. Bare channels — native menus resolving an action-or-null, pickers, and the sentinel reads whose absence is a valid answer — keep their raw replies. Pushes are typed on both halves. The bridge stays pure types; the sandboxed preload may require only Electron, and everything it consumes from shared carries zero runtime imports.
+The interface between the window and the process that owns the filesystem is declared in one place: every channel names its direction, what it carries, and what it answers with, and both sides read that one declaration. A channel that exists on only one side is a build error rather than a failure at runtime.
+
+Requests that read or write data always answer, never fail outright. An answer carries either the value or a structured refusal naming what went wrong and where, so a surface can report a refusal in its own terms instead of the window falling over. A few channels answer more plainly — a menu resolving to the action a person chose or to nothing at all, a lookup whose absence is itself the answer — and those return their reply directly.
+
+The declaration holds types alone and no running code, which is what lets the sandboxed layer between the two processes stay as thin as it is.
 
 ### The Device-Local Database
 
-`<nexus>/.nexus/nexus.db` travels with the Nexus, keeping a moved or renamed one intact without re-pathing. Two stores live inside: `local_state`, the operational store keyed by `(scope, key)`, and the content index — `mentions` and `page_values`, rows keyed by nexus-relative POSIX path (so a nexus rename invalidates nothing) and gated by `indexed_files`'s `(mtime, size)` stamps. DDL is canonical in `src/main/db/schema.ts`; `node:sqlite` sits behind `driver.ts` as the swappable seam. Additive tables ride `CREATE … IF NOT EXISTS` with no version bump — the opener re-applies the schema to an existing database on every open, so a file created before a table existed gains it with every row intact, and a re-apply that fails (read-only media) costs only the new tables while the session keeps its state.
+**SOURCE:** `Pommora/src/main/db/schema.ts` · `Pommora/src/main/db/driver.ts` · `Pommora/src/main/indexSeed.ts`
+
+A database file lives inside the Nexus itself, so moving or renaming the folder leaves it intact and travelling with its content. It holds two things: the state that belongs to this machine, and an index of what the Nexus's pages say.
+
+Its structure grows without migrations. A database made before a feature existed gains that feature's storage the next time the app opens it, with every existing row untouched. Where the file cannot be written to at all — read-only media — the session simply carries on without the newest additions.
 
 **The content index** records which pages mention which titles and which property-wrapped frontmatter keys and values each page carries. It is derived state, disposable by construction: deleting `nexus.db` costs it nothing — the open-time seed rebuilds it from the corpus, reading only files whose `(mtime, size)` moved since they were last indexed and pruning paths the corpus no longer yields, so the full-corpus read happens once per database, ever. The corpus is the sweeps' own — every markdown file outside `.nexus`, `.trash`, and the user's excluded folders, un-adopted folders included — enumerated through one helper (`corpusFiles`), so "indexed" and "rewritable" name the same set of files, and mention extraction shares the cascade prefilter's parse, so a title the index recorded is exactly one the prefilter affirms. A query answers null when there is no index — no database handle, or tables that never landed — and its caller falls back to a full scan; an empty answer is a real one.
 
@@ -116,7 +124,7 @@ Each handler declares its boundary policy beside its body. Enveloped channels �
 
 **What doesn't:** pinned and favorites live in `navigation.json` — rarely written, and the one part of Navigation worth following a user across machines — as ordered arrays of bare `{kind, id}` refs written as a serialized patch. A markdown tile's body stays a file; it is prose and lives in the connections graph. Everything canonical — the registry, Contexts, settings, schemas, and each host's sidecar — stays a file, where a Nexus's meaning survives without Pommora.
 
-A Pommora-governed frontmatter key is recognized by its wrap alone — `(Context)` for the organization layer, `<Property>` for the attribute layer — partitioning the keyspace with no reserved-name blocklist while every foreign key and comment survives a rewrite. Recognizing a key is not resolving one; a key registers as a live value only on a registry match. 
+A Pommora-governed frontmatter key is recognized by its wrap alone — `(Context)` for the organization layer, `<Property>` for the attribute layer — partitioning the keyspace with no reserved-name blocklist while every foreign key and comment survives a rewrite. Recognizing a key is not resolving one; a key registers as a live value only on a registry match.
 
 Every operational-state action is a single statement — a change is a single-row upsert, and an empty value deletes its key. Navigation intent is the one operational write that goes to disk, and it keeps the before-quit gate deferred, delaying exit until the write settles.
 
@@ -126,9 +134,9 @@ Every operational-state action is a single statement — a change is a single-ro
 
 Every file write goes through an atomic path — temp-file plus rename, leaving either the whole old file or the whole new file after a crash:
 
-- **YAML + Markdown write** — Pages. The body follows the closing fence directly, with no separator blank line. Only modeled keys are re-serialized; every foreign frontmatter key and comment survives by value. 
+- **YAML + Markdown write** — Pages. The body follows the closing fence directly, with no separator blank line. Only modeled keys are re-serialized; every foreign frontmatter key and comment survives by value.
 - **JSON write** — sidecars, Contexts, Settings, Homepage.
-- **Schema transaction** — multi-file commits that succeed or fail as a unit, such as a Collection-scoped property delete or a lossy type change: stage every payload to a temp sibling, rename each over its target, and roll the filesystem back on any failure. The nexus-wide property delete runs per-file over a `.trash` snapshot instead 
+- **Schema transaction** — multi-file commits that succeed or fail as a unit, such as a Collection-scoped property delete or a lossy type change: stage every payload to a temp sibling, rename each over its target, and roll the filesystem back on any failure. The nexus-wide property delete runs per-file over a `.trash` snapshot instead
 
 Atomicity keeps a file from tearing; serialization keeps an update from being lost. Every read-modify-write runs under a lock keyed on the file it rewrites and reads fresh inside that lock, queueing two writers to one file. The JSON primitive takes the lock itself, deriving the key from the path it writes; a write needing a wider span — most often a schema-validated read — holds the lock at the caller over the read/write pair. A page's path key is shared by its body write, its property writes, and the relocate a rename or move performs; a container's sidecar key is taken by every writer of that file.
 
@@ -144,7 +152,7 @@ Every in-app write records itself, and the watcher skips recorded paths — in-a
 
 ### Adoption
 
-Opening a folder as a Nexus stamps every un-adopted entity with a real ULID — a raw folder gets its sidecar, an externally-authored page gets its kind's id key, and nothing stamped depends on a sibling having been stamped first. Root folders holding content become Page Collections and everything nested becomes a Set; excluded and hidden folders, empty sidecar-less folders, and anything the resolver can't place are left alone, and an unrecognized sidecar stays inert beside the one Pommora writes. A registered agenda singleton stamps its own direct `.md` members under the agenda kind and never recurses. The pass is silent, best-effort, idempotent, and safe to re-run on partial state. 
+Opening a folder as a Nexus stamps every un-adopted entity with a real ULID — a raw folder gets its sidecar, an externally-authored page gets its kind's id key, and nothing stamped depends on a sibling having been stamped first. Root folders holding content become Page Collections and everything nested becomes a Set; excluded and hidden folders, empty sidecar-less folders, and anything the resolver can't place are left alone, and an unrecognized sidecar stays inert beside the one Pommora writes. A registered agenda singleton stamps its own direct `.md` members under the agenda kind and never recurses. The pass is silent, best-effort, idempotent, and safe to re-run on partial state.
 
 **A move is refused unless its destination holds pages.** Every page and Set move passes one main-side check admitting only a Collection or a Set — not the nexus root, not an agenda singleton, not a folder the resolver can't place.
 

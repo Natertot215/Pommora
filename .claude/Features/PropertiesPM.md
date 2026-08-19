@@ -78,9 +78,9 @@ Here's an example of how the frontmatter page with both Pommora-managed and exte
   - Claude
   - Docs
 Areas:
- - Work
- - "[[Personal]]"
-tags
+  - Work
+  - "[[Personal]]"
+tags:
   - Obsidian
   - Task
 ```
@@ -139,19 +139,21 @@ Context links are the only relation-type connection. They store as **parenthesiz
   - Website
 ```
 
-In a Task, an Event, or a `_space.json` the same key rides the JSON root, quoted there because JSON quotes every key. They're never schema definitions — each registry Context resolves to one column at runtime, alongside the assigned schema rather than inside it, and every entry carries an ordinary minted ULID. 
+In a Task, an Event, or a `_space.json` the same key rides the JSON root, quoted there because JSON quotes every key. They're never schema definitions — each registry Context resolves to one column at runtime, alongside the assigned schema rather than inside it, and every entry carries an ordinary minted ULID.
 
 ### Auto-Managed Properties
 
-Every Page, Task, and Event carries its kind's id key (`PageID` / `TaskID` / `EventID`, holding a ULID assigned at creation), `created_at`, and `modified_at` — maintained by Pommora, not user-creatable. It surfaces as **Last Edited Time**, whose column shows the stored `modified_at` stamp; sorting and filtering fall back to `created_at` for a never-modified page. Additionally, pages may carry a `cover` property used for storing their banners. 
+Every Page, Task, and Event carries its kind's id key (`PageID` / `TaskID` / `EventID`, holding a ULID assigned at creation), `created_at`, and `modified_at` — maintained by Pommora, not user-creatable. It surfaces as **Last Edited Time**, whose column shows the stored `modified_at` stamp; sorting and filtering fall back to `created_at` for a never-modified page. Additionally, pages may carry a `cover` property used for storing their banners.
 
 **A schema edit is not a page edit.** Renaming a property definition, changing its type, or reordering an assignment leaves every member page's `modified_at` untouched. Only a property's value change counts, along with a text edit, a move, and a rename.
+
 ```yaml
 PageID:
 created_at:
 modified_at:
 cover:
 ```
+
 ### Where Properties Live
 
 Three layers hold the system: a **definition** (the nexus-wide registry, `.nexus/properties.json`, alongside a nexus-wide cosmetic display order) says what a property is; an **assignment** (a Collection's sidecar) says which definitions that Collection carries; a **value** (a Page's frontmatter) says what one entity holds. The read walk joins definition to assignment so every surface receives a resolved schema, and the tree carries the full ordered registry. Of the three, the definition is the only layer the storage line permits moving into the database.
@@ -186,7 +188,7 @@ At every write, a created property's `name` is non-empty and its `id` is unique 
 
 ### The Index
 
-**The sigil governs; the registry registers.** A wrapped key is Pommora's — sweepable, and distinguishable from foreign frontmatter. A key registers as a live value only when its name matches a definition, so resolution runs definition-first: the schema supplies the key, and the frontmatter is read at it. Context keys resolve at walk assembly; property values load when a container opens, each container building one id→definition index. 
+**The sigil governs; the registry registers.** A wrapped key is Pommora's — sweepable, and distinguishable from foreign frontmatter. A key registers as a live value only when its name matches a definition, so resolution runs definition-first: the schema supplies the key, and the frontmatter is read at it. Context keys resolve at walk assembly; property values load when a container opens, each container building one id→definition index.
 
 ### Chip Tokens
 
@@ -227,6 +229,7 @@ The remove-× melt (the hover-revealed remove zone, the crisp and blurred label 
 ### Known Issues
 
 - **A stray bare-string Multi-Select value reads as Select.** The read-side coercion for shape-vs-column mismatches handles only the single-string types (URL / Select / Date), so a Multi-Select value stored as a lone string remains classified as Select and drops out of grouping and filtering. Unreachable while nothing writes that shape; it goes live when the Lossy Change-Type Strip performs a Select→Multi-Select change — fix it there as a value migration (bare string → single-element array).
+
 ### Pending
 
 - **Page Property Panel** — the surface for setting property values on a Page in the main pane, and on a Task or Event anywhere. The Page Preview's front-matter inspector covers a Page inside the preview only; the main pane renders no property rows, and Agenda items have no value surface at all.

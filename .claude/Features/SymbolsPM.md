@@ -7,6 +7,7 @@ SymbolsPM
 │   ├── Property Types
 │   └── View Types
 ├── Sizes
+│   └── Roles
 ├── Additional Assignments
 ├── The Picker
 ├── Known Issues

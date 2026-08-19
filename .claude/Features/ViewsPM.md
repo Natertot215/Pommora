@@ -33,6 +33,7 @@ The **active view is tracked per-machine**, kept out of the synced sidecar (→ 
 One pure pipeline feeds the renderer — **columns → filter → group → sort** — reading each Page's frontmatter, loaded lazily per container over a batch IPC.
 
 In-view creation is likewise one engine worn per-renderer: a shared creation act (the page exists on disk as Untitled the moment a gesture fires, born with what its context implies, its order settled in the same act) and a shared hover-ghost mechanism (dwell, grace, suppression, travel-hold) that each surface dresses in its own chrome.
+
 #### II. Filter
 
 A recursive group of rules under a match mode, evaluated at every depth: All (AND) and Any (OR). Negation lives on the per-rule operators — Isn't, Isn't Empty, Doesn't Contain and their kin — so "none of these" is spelled as an All of negated rules. A filter the schema cannot read drops alone on read and the view survives unfiltered. Whether the filter runs at all is a separate axis, `filter_enabled`, so parking a filter costs it neither its rules nor its mode.
@@ -71,7 +72,7 @@ The shared per-view editor, reachable two ways — the ViewPane row's chevron (t
 
 #### II. The SettingsPane
 
-The toolbar sliders button, carrying the container's identity and config: **Configuration** (the collection's Open In — full-page vs page-preview, Collection-owned), **Properties**Visibility**, and the Layout / Group / Filter / Sort leafs.
+The toolbar sliders button, carrying the container's identity and config: **Configuration** (the collection's Open In — full-page vs page-preview, Collection-owned), **Properties**, **Visibility**, and the Layout / Group / Filter / Sort leafs.
 
 #### II. The Grouping Pane
 

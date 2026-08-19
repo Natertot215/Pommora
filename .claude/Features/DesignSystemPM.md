@@ -13,8 +13,10 @@ Design System
 │   ├── Separators
 │   ├── Shadows
 │   ├── Spectrum
+│   ├── Ramp
 │   ├── Geometry
-│   └── Materials
+│   ├── Materials
+│   └── Glass & Menus
 ├── Component Chrome
 ├── Showcase
 ├── Where the Rest Lives
@@ -23,6 +25,7 @@ Design System
 ```
 
 The Pommora design system — the code mirror of the Figma "Pommora - React" library, which is canonical for design values and the visual reference for components. Tokens come in two tiers: raw **primitives**, and the meaningful **semantic** aliases built on them.
+
 ### Tooling
 
 - **vanilla-extract** — token files are `*.css.ts`; the theme primitives emit real CSS variables and a typed `vars` object, making a mistyped token a compile error. The plugin is wired into the renderer Vite config.
@@ -48,7 +51,7 @@ The three raw system tones every derived grey, white, and black is an opacity of
 
 #### Surfaces
 
-The opaque content planes layered on the window substrate — addressed by role, and their own literals rather than derivations. 
+The opaque content planes layered on the window substrate — addressed by role, and their own literals rather than derivations.
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/color.css.ts`
 
@@ -182,7 +185,7 @@ The ten selectable solids plus the neutral chip default and the ramp's pink seat
 
 #### Geometry
 
-The glyph ladder, the per-size control bundles, and the bare layout constants JS math consumes as numbers. 
+The glyph ladder, the per-size control bundles, and the bare layout constants JS math consumes as numbers.
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/size.css.ts` · `tokens/theme-vars.css.ts`
 
@@ -257,6 +260,7 @@ The reusable pieces mirror the Figma library and consume semantic tokens only; a
 - **The acted-on edge.** `--glass-outline` re-colors a tier's edge while its surface is being driven — a resize in flight, an active embed. It paints twice, as the border and once inward, because a tint on a one-pixel border reads far fainter than the same color on the thicker borders tiles wear, and widening the border would shift everything inside it.
 - **The drop chrome** — the insertion line, dot, host, and `DragGhost` live in `design-system/interactions` (`dropChrome.css`, `DropLine.tsx`, `DragGhost.tsx`).
 - **The capped label** — ellipsis at rest, scroll-on-hover with a mask fade at the leading edge — is the app-wide overflow treatment for constrained text, defined with the type tokens.
+
 ### Showcase
 
 A data-driven design-system site (`npm run showcase`) with a live accent picker, built statically and deployed at https://pommora-design-system.vercel.app.

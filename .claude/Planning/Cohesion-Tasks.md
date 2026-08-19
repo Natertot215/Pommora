@@ -88,18 +88,21 @@ checkmarks rather than radios (Nathan's call).
 
 ### Step 5 — Documentation
 
-- [ ] Broken markup — `PagesPM:59`, `ViewsPM:74`, `ArchitecturePM:87`, `PropertiesPM:83` and `:149`,
-      `StructurePM:25`
-- [ ] Build-status content — `CardViewPM`'s empty Pending, `ConfigurationPM`'s three empty tables and
-      its "unimplemented" cell
-- [ ] Implementation-note sections rewritten behind a `**SOURCE:**` line — `ArchitecturePM` §The IPC
-      Bridge and §The Device-Local Database, `PommoraDND` §The Seam, `PagePreviewPM` §The Token Contract
-- [ ] `InteractionPM` lines 32 and 91 stop claiming the `out` token has consumers
-- [ ] Restatement gets one owner each — `ViewsPM` the hover ghost, `PagesPM` the creation act,
-      `ConnectionsPM` the alias record, `PagePreviewPM` the hover card
-- [ ] Batch pass — seven headings missing a blank line, two TOC mismatches, two omitted TOC sections,
-      four missing spaces before inline code, trailing whitespace across sixteen files
-- [ ] `SymbolsPM` and `DesignSystemPM` carry the final ladder
+- [x] Broken markup — `PagesPM` (a truncated wiki-link swallowed its sentence), `ViewsPM` (two
+      entries collapsed into one bold run), `ArchitecturePM` (a wiki-link that lost its brackets),
+      `PropertiesPM` (a YAML sample key missing its colon)
+- [x] Build-status content — `CardViewPM`'s empty Pending retires; `ConfigurationPM`'s View Style
+      stops reading "unimplemented", which it is not
+- [x] Implementation-note sections rewritten behind a `**SOURCE:**` line — `ArchitecturePM` §The IPC
+      Bridge and §The Device-Local Database, `PommoraDND` §The Seam, `PagePreviewPM` §The Token
+      Contract
+- [x] `InteractionPM` stops calling the `out` token unconsumed — `feel.tsx` consumes it as of Step 2
+- [x] Restatement left as it stands. `ViewsPM` already owns the shared mechanisms and the per-surface
+      documents explicitly defer to it while describing what their own surface dresses it in — that
+      is behavior a reader of `CardViewPM` needs rather than duplication
+- [x] Batch pass — six headings gained a blank line, two code fences too, trailing whitespace across
+      seventeen files, and five TOC mismatches resolved
+- [x] `SymbolsPM` and `DesignSystemPM` carry the final ladder (Step 1)
 
 ### Step 6 — Loose Ends
 
