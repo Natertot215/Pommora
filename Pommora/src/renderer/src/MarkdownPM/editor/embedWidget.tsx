@@ -30,6 +30,7 @@ import { TILE_MIN_PX } from '@renderer/design-system/tokens/size.css'
 import { normalizeTitle, titleFromPath } from '@shared/connections'
 import '@renderer/design-system/tile-chassis.css'
 import { loneWebpageEmbed } from '@shared/webpageEmbed'
+import type { PointerSeam } from '@renderer/Embeds/WebpageEmbed'
 import { docScan } from './docCache'
 import { loneEmbedTitle } from '../detect'
 import { claimedEmbeds } from './embedRanges'
@@ -328,6 +329,15 @@ const LazyWebpageEmbed = lazy(() =>
   import('@renderer/Embeds/WebpageEmbed').then((m) => ({ default: m.WebpageEmbed })),
 )
 
+// The editor host's outside-pointerdown seam — document-level capture, the same phase the
+// editing-exit plugin listens on. Injected into the payload so engagement stays the component's
+// own while the host decides where outside events come from.
+const documentPointerSeam: PointerSeam = (onDown) => {
+  const h = (e: PointerEvent): void => onDown(e.target)
+  document.addEventListener('pointerdown', h, true)
+  return () => document.removeEventListener('pointerdown', h, true)
+}
+
 class WebpageTileWidget extends WidgetType {
   constructor(
     readonly url: string,
@@ -387,6 +397,8 @@ class WebpageTileWidget extends WidgetType {
             createElement(LazyWebpageEmbed, {
               url: this.url,
               visible: this.pageSurface && dom._visible === true,
+              engageSeam: documentPointerSeam,
+              refocusHost: () => view.focus(),
             }),
           ),
         ),
