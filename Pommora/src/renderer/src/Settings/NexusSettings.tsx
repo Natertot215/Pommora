@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { cx } from '@renderer/design-system/cx'
 import { Icon } from '@renderer/design-system/symbols'
 import { text } from '@renderer/design-system/tokens'
@@ -9,6 +9,11 @@ import type { FloatingBounds } from '@renderer/design-system/interactions/Floati
 import type { SidePaneBounds } from '@renderer/design-system/components/SidePane/SidePane'
 import type { DevicePrefs } from '@shared/devicePrefs'
 import { PickerControl, type PickerChoice } from '@renderer/Components/Detail/PickerControl'
+import { ColorPicker } from '@renderer/Components/Detail/ColorPicker'
+import * as pane from '@renderer/Components/Detail/settingsPane.css'
+import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
+import { solidColorCss } from '@renderer/Detail/Views/Table/solidColor'
+import { TINT_STEPS, tintAt } from '@renderer/design-system/tokens/tint'
 import { LINK_FORMAT_OPTIONS } from '@renderer/Components/Detail/LinkFormat'
 import { DEFAULT_LINK_DISPLAY, type LinkDisplay } from '@shared/properties'
 import {
@@ -16,6 +21,7 @@ import {
   HOVER_LINGER_MAX,
   TIME_FORMAT_LABELS,
   TIME_FORMAT_SETTINGS,
+  type ColorSetting,
   type Personalization,
   type TimeFormatSetting,
 } from '@shared/types'
@@ -75,6 +81,14 @@ type Row =
   | (RowText & {
       kind: 'device'
       key: keyof DevicePrefs
+    })
+  | (RowText & {
+      kind: 'color'
+      key: KeyOf<ColorSetting<string>>
+      /** Written when the user clears the swatch — the sentinel naming what this color inherits. */
+      inherits: 'system' | 'accent'
+      /** The CSS var the cleared state resolves to, so the swatch shows what it is actually wearing. */
+      inheritsVar: string
     })
   | PickerRow<LinkDisplay>
   | PickerRow<DateFormat>
@@ -211,7 +225,37 @@ const LEAVES = roster([
     key: 'appearance',
     label: 'Appearance',
     icon: 'palette',
-    sections: [],
+    sections: [
+      {
+        title: 'Color',
+        rows: [
+          {
+            kind: 'color',
+            key: 'accent',
+            label: 'Accent Color',
+            hint: 'The color every accented surface derives from. Cleared follows the system accent.',
+            inherits: 'system',
+            inheritsVar: 'var(--system-accent)',
+          },
+          {
+            kind: 'color',
+            key: 'connectionColor',
+            label: 'Internal Link Color',
+            hint: 'Connections to other pages. Cleared follows the accent.',
+            inherits: 'accent',
+            inheritsVar: 'var(--accent)',
+          },
+          {
+            kind: 'color',
+            key: 'externalLinkColor',
+            label: 'External Link Color',
+            hint: 'Links out to the web. Cleared follows the system accent.',
+            inherits: 'system',
+            inheritsVar: 'var(--system-accent)',
+          },
+        ],
+      },
+    ],
   },
   {
     key: 'files',
@@ -406,7 +450,10 @@ function LeafBodyView({ category }: { category: CategoryKey }): React.JSX.Elemen
   const { sections } = leaf
   return (
     <div className="settings-body edge-fade">
-      <h2 className={cx('settings-heading', text.title3.emphasized)}>{leaf.label}</h2>
+      <h2 className={cx('settings-heading', text.title3.emphasized)}>
+        <Icon name={leaf.icon} className="settings-heading-icon" />
+        {leaf.label}
+      </h2>
       {sections.length === 0 ? (
         <p className={cx('settings-empty', text.body.standard)}>Nothing to set here yet.</p>
       ) : (
@@ -454,7 +501,53 @@ function RowControl({ row }: { row: Row }): React.JSX.Element {
       return <PickerRow row={row} />
     case 'device':
       return <DeviceRow row={row} />
+    case 'color':
+      return <ColorRow row={row} />
   }
+}
+
+/** A color row: the ramp grid, minus its greyscale families — a link or the accent painted from the
+ *  window substrate would be invisible against it. Clearing the swatch writes the row's own
+ *  inheritance sentinel rather than deleting the key, since absent and "follow the OS" differ. */
+function ColorRow({ row }: { row: RowOf<'color'> }): React.JSX.Element {
+  const value = useSession((s) => s.personalization[row.key]) as string | undefined
+  const setPersonalization = useSession((s) => s.setPersonalization)
+  const [open, setOpen] = useState(false)
+  const swatchRef = useRef<HTMLButtonElement>(null)
+
+  const inheriting = !value || value === row.inherits
+  const key = inheriting ? 'default' : chipColorFor(value)
+  const css = inheriting ? row.inheritsVar : solidColorCss(value)
+
+  return (
+    <SettingsRow label={row.label} hint={row.hint}>
+      <span className={pane.colorCluster}>
+        <button
+          ref={swatchRef}
+          type="button"
+          className={pane.colorChip}
+          aria-label={row.label}
+          onClick={() => setOpen((v) => !v)}
+        >
+          <span
+            className={pane.colorSwatch}
+            style={{ '--sw': tintAt(css, TINT_STEPS.primary) } as React.CSSProperties}
+          />
+        </button>
+        <ColorPicker
+          greyscale={false}
+          open={open}
+          selected={key}
+          onPick={(next) => {
+            setPersonalization(row.key, (next ?? row.inherits) as never)
+            setOpen(false)
+          }}
+          onDismiss={() => setOpen(false)}
+          triggerRef={swatchRef}
+        />
+      </span>
+    </SettingsRow>
+  )
 }
 
 function ToggleRow({ row }: { row: RowOf<'toggle'> }): React.JSX.Element {

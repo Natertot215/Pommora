@@ -1,7 +1,7 @@
 // Single source of truth for the cross-process contract.
 // Imported by main, preload, and renderer — NO fs, NO React here.
 
-import { SPECTRUM } from './theme'
+import { SPECTRUM, type CellKey } from './theme'
 import type { ContextDef } from './contexts'
 import type { LinkDisplay, PropertyDefinition } from './properties'
 import type { PageFrontmatter } from './schemas'
@@ -18,16 +18,24 @@ export type NodeKind = 'space' | 'collection' | 'set' | 'page'
 export const SOLID_COLORS = Object.keys(SPECTRUM) as SolidColor[]
 export type SolidColor = keyof typeof SPECTRUM
 
-/** The `accent` value in .nexus/settings.json: a spectrum solid, or follow-the-OS. */
-export type AccentSetting = SolidColor | 'system'
+/** A deferring color setting: a ramp cell, a legacy solid name still on disk, or the sentinel naming
+ *  what it inherits when the user has picked nothing. Each setting below names its own sentinel. */
+export type ColorSetting<Inherit extends string> = CellKey | SolidColor | Inherit
+
+/** The `accent` value in .nexus/settings.json. `'system'` follows the OS accent. */
+export type AccentSetting = ColorSetting<'system'>
 
 /** Default when settings.json omits or has an invalid `accent`. A concrete spectrum color
  *  (never `system`) so it always resolves to a hex; users opt into `system` explicitly. */
 export const DEFAULT_ACCENT: SolidColor = 'cyan'
 
-/** Connection color — the inline [[Title]] connection link color. `'accent'` (the default) tracks
- *  the app accent live via `--connection: var(--accent)`; a spectrum solid pins it to that color. */
-export type ConnectionColorSetting = SolidColor | 'accent'
+/** Internal link color — the inline [[Title]] connection color. `'accent'` (the default) tracks the
+ *  app accent live via `--connection: var(--accent)`; a ramp cell pins it to that color. */
+export type ConnectionColorSetting = ColorSetting<'accent'>
+
+/** External link color — the `[text](url)` color. `'system'` (the default) tracks the OS accent live
+ *  via `--link: var(--system-accent)`; a ramp cell pins it to that color. */
+export type ExternalLinkColorSetting = ColorSetting<'system'>
 
 /** The nexus-wide clock for the datetime picker (twelveHour = AM/PM segments, the default;
  *  twentyFourHour = flat HH:MM). Lives at `personalization.timeFormat`. */
@@ -84,6 +92,7 @@ export type SidebarMode = 'collections' | 'contexts' | 'agenda'
 export interface Personalization {
   accent?: AccentSetting
   connectionColor?: ConnectionColorSetting
+  externalLinkColor?: ExternalLinkColorSetting
   hideChevrons?: boolean
   outlinerLines?: boolean
   /** Line numbers on codeblock content lines (rendered chrome, never editable text). */

@@ -9,7 +9,6 @@ import { parseDocument } from 'yaml'
 import { admitContentFile } from '@shared/identity'
 import { agendaContext, resolveFolderKind, type FolderKindContext } from './folderKind'
 import type {
-  SolidColor,
   AccentSetting,
   CollectionNode,
   ContextGroup,
@@ -20,6 +19,7 @@ import type {
   SetNode,
   SpaceNode,
   ConnectionColorSetting,
+  ExternalLinkColorSetting,
   EntityIconKind,
   FolderPlacement,
   Personalization,
@@ -33,7 +33,6 @@ import {
 import { resolveContextKeys } from '@shared/contextResolve'
 import { DATE_FORMATS } from '@shared/columnStyles'
 import {
-  SOLID_COLORS,
   DEFAULT_ACCENT,
   DEFAULT_COMMANDS,
   DEFAULT_LABELS,
@@ -41,6 +40,7 @@ import {
   coerceHoverLinger,
   coerceViewScale,
 } from '@shared/types'
+import { isColorKey } from '@shared/theme'
 import { savedView, type SavedView } from '@shared/views'
 import { coerceOpenIn, coerceViewButton, coerceViewStyle } from '@shared/schemas'
 import { LINK_DISPLAYS, type PropertyDefinition } from '@shared/properties'
@@ -66,13 +66,11 @@ import {
 type Json = Record<string, unknown>
 type Fallback = 'id' | 'title'
 
-const ACCENT_COLOR_SET = new Set<string>(SOLID_COLORS)
-
 // ---------- low-level helpers ----------
 
 function resolveAccent(raw: string | undefined): AccentSetting {
   if (raw === 'system') return 'system'
-  if (raw != null && ACCENT_COLOR_SET.has(raw)) return raw as SolidColor
+  if (raw != null && isColorKey(raw)) return raw as AccentSetting
   return DEFAULT_ACCENT
 }
 
@@ -92,6 +90,7 @@ export function readPersonalization(raw: unknown): Personalization {
     ? p.ribbonOrder.filter((v): v is string => typeof v === 'string' && v.length > 0)
     : []
   const conn = asString(p.connectionColor)
+  const ext = asString(p.externalLinkColor)
   const rawIcons =
     p.defaultIcons != null && typeof p.defaultIcons === 'object' && !Array.isArray(p.defaultIcons)
       ? (p.defaultIcons as Record<string, unknown>)
@@ -106,8 +105,12 @@ export function readPersonalization(raw: unknown): Personalization {
     : []
   return {
     connectionColor:
-      conn === 'accent' || (conn != null && ACCENT_COLOR_SET.has(conn))
+      conn === 'accent' || (conn != null && isColorKey(conn))
         ? (conn as ConnectionColorSetting)
+        : undefined,
+    externalLinkColor:
+      ext === 'system' || (ext != null && isColorKey(ext))
+        ? (ext as ExternalLinkColorSetting)
         : undefined,
     hideChevrons: bool(p.hideChevrons),
     outlinerLines: bool(p.outlinerLines),

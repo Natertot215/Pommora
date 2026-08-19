@@ -39,13 +39,11 @@ export function URLEditor({
     <div className={s.configEditor} style={{ '--accent': link.css } as CSSProperties}>
       <div className={s.configRow}>
         <span className={s.configLabel}>Underline</span>
-        <span className={s.switchScale}>
-          <Switch
-            checked={underline}
-            onChange={(v) => onSetConfig({ link_underline: v })}
-            ariaLabel="Underline links"
-          />
-        </span>
+        <Switch
+          checked={underline}
+          onChange={(v) => onSetConfig({ link_underline: v })}
+          ariaLabel="Underline links"
+        />
       </div>
       <div className={s.configRow}>
         <span className={s.configLabel}>Color</span>

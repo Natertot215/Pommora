@@ -1,4 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css'
+import { track as switchTrack } from '../../design-system/components/Switches/switch.css'
 import { vars as colorVars, inputFieldVar } from '../../design-system/tokens/color.css'
 import { text } from '../../design-system/tokens/typography.css'
 import { duration, easing } from '../../design-system/tokens/motion'
@@ -406,10 +407,6 @@ export const configRow = style({
  *  its glyph and its value stay a step under. */
 export const configLabel = style([text.control.emphasized, { color: c.label.primary }])
 
-/** The Switch at pane density — shrunk to sit level with the emphasized labels + colour chip (the same
- *  scale the CalendarPicker uses for its picker-scale Switches). Zoom is the house density knob. */
-export const switchScale = style({ zoom: 0.8 })
-
 /** The colour control cluster — the clickable chip; the ColorPicker anchors below. */
 export const colorCluster = style({
   position: 'relative',
@@ -426,17 +423,14 @@ export const colorChip = style({
   display: 'flex',
 })
 
-/** The chosen color, worn as the Switch's own shell — same track geometry and outline as the
- *  switches it shares a pane with, filled with the color at tint-primary. Nameless on purpose: the
- *  ramp's cells carry no display names, and the swatch says more than a family name could. */
-export const colorSwatch = style({
-  width: '54px',
-  height: '24px',
-  borderRadius: '12px',
-  border: '1px solid var(--label-secondary)',
-  background: 'var(--sw)',
-  boxSizing: 'border-box',
-})
+/** The chosen color, worn as the Switch's own shell — it composes the switch's real track rather
+ *  than restating its box, so the two can never drift and the swatch rides `--switch-zoom` with it.
+ *  The doubled selector outguns the track's own background. Nameless on purpose: the ramp's cells
+ *  carry no display names, and the swatch says more than a family name could. */
+export const colorSwatch = style([
+  switchTrack,
+  { selectors: { '&&': { background: 'var(--sw)' } } },
+])
 
 /** The scoped-pane footer breadcrumb — the embed's source path, `(icon) Collection › (icon) Set`;
  *  the lock rides the trailing slot. */
