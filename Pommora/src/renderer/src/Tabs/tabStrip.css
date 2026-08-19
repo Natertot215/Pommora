@@ -16,7 +16,7 @@
   max-width: var(--tab-max, 240px);
   padding: 0 var(--tab-pad-x, 12px);
   color: var(--label-tertiary);
-  cursor: pointer;
+  cursor: default;
   white-space: nowrap;
   overflow: hidden;
   /* Open/close = width motion on the standard token (--duration-base). On OPEN the width is delayed one
