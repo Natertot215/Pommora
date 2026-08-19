@@ -48,6 +48,14 @@ export function webpageTileTitle(
   return label !== '' ? label : linkDisplayText(url, display, title)
 }
 
+/** The address span of a lone webpage embed, in line-relative offsets — what Edit Link selects, so
+ *  a tile's address is replaced by typing the way every other link's is. */
+export function webpageEmbedUrlSpan(lineText: string): [number, number] | null {
+  if (!loneWebpageEmbed(lineText)) return null
+  const span = emptyTolerantLinkRegex().exec(lineText.replace(/\s+$/, ''))?.indices?.[2]
+  return span ? [span[0], span[1]] : null
+}
+
 /** Whether `col` sits inside the `()` destination of a markdown link on the line — the span a
  *  character typed at `col` would land in. Two shapes count: a complete link, empty halves
  *  included (the caret ⌘K seats sits inside `[]()` before anything is typed), and a destination

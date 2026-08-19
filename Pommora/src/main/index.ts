@@ -1821,11 +1821,7 @@ serveBridge(
     // is the only one that pops on the right-press.
     'editor:grip-hot': { kind: 'raw', fn: (on: boolean) => setGripHot(on) },
 
-    'web:wheel': {
-      kind: 'raw',
-      fn: (guestId: number, x: number, y: number, deltaX: number, deltaY: number) =>
-        wheelGuest(guestId, x, y, deltaX, deltaY),
-    },
+    'web:wheel': { kind: 'raw', fn: wheelGuest },
   },
 )
 

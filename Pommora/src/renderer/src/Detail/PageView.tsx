@@ -118,8 +118,9 @@ export function PageView({
           <span className="detail-detail">{pageError?.message}</span>
         </div>
       )
-    case 'ready':
+    case 'ready': {
       if (!pageDetail) return <div className="detail-placeholder">Page render — coming next</div>
+      const warmKey = navKey({ kind: 'page', id: pageDetail.id, path: pageDetail.path })
       return (
         <>
           <MarkdownEditor
@@ -172,18 +173,10 @@ export function PageView({
             // mounts cold (id-keyed warmth must never revive a stale-path doc).
             warm={{
               restore: () => {
-                const entry = readWarm(
-                  tabId,
-                  navKey({ kind: 'page', id: pageDetail.id, path: pageDetail.path }),
-                )
+                const entry = readWarm(tabId, warmKey)
                 return entry?.pageDetail?.path === pageDetail.path ? entry : undefined
               },
-              capture: (state) =>
-                captureWarm(
-                  tabId,
-                  navKey({ kind: 'page', id: pageDetail.id, path: pageDetail.path }),
-                  state,
-                ),
+              capture: (state) => captureWarm(tabId, warmKey, state),
             }}
           />
           <IconPicker
@@ -200,5 +193,6 @@ export function PageView({
           />
         </>
       )
+    }
   }
 }

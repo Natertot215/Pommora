@@ -73,11 +73,12 @@ export function PickerControl<T extends string>({
       aria-label={ariaLabel}
       onClick={onTrigger}
       onDoubleClick={
-        onDoubleClick &&
-        (() => {
-          setOpen(false)
-          onDoubleClick()
-        })
+        onDoubleClick
+          ? () => {
+              setOpen(false)
+              onDoubleClick()
+            }
+          : undefined
       }
     >
       <span className={footing ? detail : s.value}>{labelOf(options, value)}</span>
