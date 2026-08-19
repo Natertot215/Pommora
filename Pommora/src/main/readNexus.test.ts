@@ -45,6 +45,17 @@ describe('readPersonalization: ribbon knobs', () => {
   })
 })
 
+describe('readPersonalization: picker selection', () => {
+  it('reads the stored mode back so a set survives the next tree push', () => {
+    expect(readPersonalization({ pickerSelection: 'checked' }).pickerSelection).toBe('checked')
+  })
+  it('holds nothing for the default or for a value it does not offer', () => {
+    expect(readPersonalization({ pickerSelection: 'outlined' }).pickerSelection).toBeUndefined()
+    expect(readPersonalization({ pickerSelection: 'bogus' }).pickerSelection).toBeUndefined()
+    expect(readPersonalization({}).pickerSelection).toBeUndefined()
+  })
+})
+
 const d = (p: string): void => {
   mkdirSync(p, { recursive: true })
 }
