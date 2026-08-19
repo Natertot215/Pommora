@@ -16,9 +16,9 @@ export function useValuesEpoch(
   const valuesEpoch = useSession((st) => st.valuesEpoch)
   useEffect(() => {
     if (!valuesEpoch) return
-    let cancelled = false
+    let canceled = false
     void window.nexus.loadValues(path).then((v) => {
-      if (!cancelled) setValues(v)
+      if (!canceled) setValues(v)
     })
     const { oldKey, newKey } = valuesEpoch
     setValueOverride((prev) => {
@@ -33,7 +33,7 @@ export function useValuesEpoch(
       )
     })
     return () => {
-      cancelled = true
+      canceled = true
     }
   }, [valuesEpoch, path, setValues, setValueOverride])
 }

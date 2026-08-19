@@ -59,7 +59,7 @@ describe('a connection acts on its text, and leaves its edges to the caret', () 
   // NOT covered here: that a navigating press refuses the caret seat. CM seats the caret from real
   // coordinates, which jsdom never produces, and `defaultPrevented` reads true at every position
   // because CM prevents default on its own content — so any assertion about it passes with the
-  // behaviour removed. Live check only.
+  // behavior removed. Live check only.
   it('a link the caret was already inside when pressed does not navigate', async () => {
     opened.mockClear()
     const view = await mountEditor({ initialBody: 'a [[Alpha]] b', connections: conn })
@@ -152,7 +152,7 @@ describe('a link that leads nowhere still takes the caret where it was pressed',
   })
 
   // An ambiguous link hides its brackets like a resolved one, so it keeps the edge seat — but its
-  // own drawn text has to be recognised as drawn text. `a [[Beta]] b` draws its content over [4,8].
+  // own drawn text has to be recognized as drawn text. `a [[Beta]] b` draws its content over [4,8].
   it('a press on an ambiguous link’s text is left to the editor', async () => {
     const view = await mountEditor({ initialBody: 'a [[Beta]] b', connections: ambiguous })
     await act(async () => view.focus())

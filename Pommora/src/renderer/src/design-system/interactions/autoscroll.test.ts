@@ -231,7 +231,7 @@ describe('startAutoScroll / stopAutoScroll — loop lifecycle', () => {
     expect(aBeforeReplace).toBeGreaterThan(400) // A was driven
     // Replace with B — a fresh loop with fresh intent, so re-arm it out of the band, then into it.
     startAutoScroll({ getPoint: () => ({ x: 150, y }), scroller: b.el, dragEl: doc, axis: 'y' })
-    expect(rafMap.size).toBe(1) // the one-driver invariant: A's rAF was actually cancelled, not orphaned
+    expect(rafMap.size).toBe(1) // the one-driver invariant: A's rAF was actually canceled, not orphaned
     y = 150
     flush(3)
     y = 299

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { checkboxBoxStyle } from './checkboxLook'
 
 describe('checkboxBoxStyle', () => {
-  it('unchecked → no fill, just the label-control check colour', () => {
+  it('unchecked → no fill, just the label-control check color', () => {
     const s = checkboxBoxStyle(false, undefined)
     expect(s.background).toBeUndefined()
     expect(s.color).toBe('var(--label-control)')

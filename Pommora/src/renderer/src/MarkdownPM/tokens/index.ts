@@ -36,7 +36,7 @@ export interface Token {
 
 /** What a `link` token's `( )` holds, still encoded. Both producers close a link with `](target)`,
  *  and the three surfaces that resolve one used to re-derive this from a different span each — so a
- *  target read for colouring could drift from the one read for the click, which is the disagreement
+ *  target read for coloring could drift from the one read for the click, which is the disagreement
  *  the shared resolver downstream exists to prevent. */
 export function linkTarget(text: string, tk: Token): string {
   const [, close] = tk.markerRanges
@@ -186,7 +186,7 @@ export function tokenize(text: string): Token[] {
     close: 2,
   })
   // `[[Title]](target)` stays a connection trailed by literal parens, which is what Obsidian shows
-  // and therefore what a shared vault means by it. CommonMark would read it as a link labelled
+  // and therefore what a shared vault means by it. CommonMark would read it as a link labeled
   // `[Title]`; reading it that way here creates a link the rename cascade's grammar cannot match,
   // so renaming its target rots it silently.
   const wikis = wikiLinkTokens(text, inCode).filter(notOverlapping([...embeds, ...code]))

@@ -48,16 +48,16 @@ export function useBlockDoc(host: BlockHostRef): BlockDocSession {
   const hostKey = blockHostKey(host)
   const seedHostLock = useSession((s) => s.seedHostLock)
   useEffect(() => {
-    let cancelled = false
+    let canceled = false
     void window.nexus.blocks.get(hostRef.current).then((r) => {
-      if (cancelled || !r.ok) return
+      if (canceled || !r.ok) return
       const layout = decodeLayout(r.value.layout) ?? emptyLayout()
       liveLayout.current = layout
       setState({ layout, blocks: r.value.blocks, ready: true })
       seedHostLock(hostRef.current, r.value.locked)
     })
     return () => {
-      cancelled = true
+      canceled = true
     }
   }, [hostKey, seedHostLock])
 

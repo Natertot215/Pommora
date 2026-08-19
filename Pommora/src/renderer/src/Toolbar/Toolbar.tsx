@@ -36,7 +36,7 @@ export function Toolbar({
   const settingsP = useExitPresence(panel === 'settings')
 
   // Publishes the pill's width for the ride math in toolbar.css (offsetWidth ignores the ride
-  // transform). Also measures each button's centre against the pill's right edge — that distance
+  // transform). Also measures each button's center against the pill's right edge — that distance
   // is the button's beak inset.
   useEffect(() => {
     const el = trioRef.current

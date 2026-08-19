@@ -106,7 +106,7 @@
   top: calc(var(--ppane-side-inset) + 4px);
   pointer-events: auto;
   /* Corner-pinned: children hang from the cluster's top edge, so a taller × never nudges its
-     neighbours off that line. */
+     neighbors off that line. */
   align-items: flex-start;
 }
 .ppane-toolbar-floating .ppane-actions-lead {

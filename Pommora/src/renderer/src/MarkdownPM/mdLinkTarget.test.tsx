@@ -82,7 +82,7 @@ describe('what a markdown link’s target names', () => {
 })
 
 // The two syntaxes must reach the same page, and the two renderers must say the same thing about it
-// — a link coloured as a connection in the body and as broken in a cell is one link with two truths.
+// — a link colored as a connection in the body and as broken in a cell is one link with two truths.
 describe('both syntaxes and both renderers agree', () => {
   const target = encodeLinkTarget('Work Notes')
 
@@ -185,8 +185,8 @@ describe('picking a page inside the parens', () => {
 
 // A connection being typed should read as a link from its first character rather than as prose that
 // happens to turn blue once a title matches.
-describe('a connection takes its colour as it is typed', () => {
-  it('an unresolved connection being typed wears the connection colour', async () => {
+describe('a connection takes its color as it is typed', () => {
+  it('an unresolved connection being typed wears the connection color', async () => {
     const view = await mountEditor({ initialBody: 'see [[Wo]] end', connections: conn })
     await act(async () => {
       view.focus()
@@ -196,7 +196,7 @@ describe('a connection takes its colour as it is typed', () => {
   })
 
   // Clicking into a link that names no page is inspecting an unresolved link, and it should look
-  // unresolved. Only writing one earns the colour.
+  // unresolved. Only writing one earns the color.
   it('but merely clicking into one leaves it raw', async () => {
     const view = await mountEditor({ initialBody: 'see [[Wor]] end', connections: conn })
     await act(async () => {
@@ -305,7 +305,7 @@ describe('an alias reveals what it hides', () => {
     expect(view.dom.querySelector('.md-conn-glyph')).toBeNull()
   })
 
-  // Standing on its own the title IS the link's words, so it keeps their colour — but it still earns
+  // Standing on its own the title IS the link's words, so it keeps their color — but it still earns
   // the glyph, which is the confirmation that a page answers to it.
   it('a link wearing no pipe keeps its title tinted, and still wears the glyph', async () => {
     const view = await openAt('see [[Work Notes]] end', 10)

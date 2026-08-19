@@ -91,7 +91,7 @@ describe('a rename reaches every form a connection takes', () => {
     expect(after).toContain('[[Q3 Plan]] and [x](Q3%20Plan)')
   })
 
-  // A re-encoded target has to remain something the prefilter still recognises, or the SECOND
+  // A re-encoded target has to remain something the prefilter still recognizes, or the SECOND
   // rename of a page silently skips every markdown link that the first one rewrote.
   it('survives a second rename, and a title needing more encoding than the first', async () => {
     await renameCascade(root, 'Q3 Plan', 'Atomic Habits (Book)')

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { cx } from '@renderer/design-system/cx'
 import { Icon } from '@renderer/design-system/symbols'
 import { text } from '@renderer/design-system/tokens'
@@ -9,11 +9,9 @@ import type { FloatingBounds } from '@renderer/design-system/interactions/Floati
 import type { SidePaneBounds } from '@renderer/design-system/components/SidePane/SidePane'
 import type { DevicePrefs } from '@shared/devicePrefs'
 import { PickerControl, type PickerChoice } from '@renderer/Components/Detail/PickerControl'
-import { ColorPicker } from '@renderer/Components/Detail/ColorPicker'
-import * as pane from '@renderer/Components/Detail/settingsPane.css'
+import { ColorSwatchField } from '@renderer/Components/Detail/ColorPicker'
 import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
 import { solidColorCss } from '@renderer/Detail/Views/Table/solidColor'
-import { TINT_STEPS, tintAt } from '@renderer/design-system/tokens/tint'
 import { LINK_FORMAT_OPTIONS } from '@renderer/Components/Detail/LinkFormat'
 import { DEFAULT_LINK_DISPLAY, type LinkDisplay } from '@shared/properties'
 import {
@@ -64,6 +62,10 @@ type PickerRow<T extends string> = RowText & {
   fallback: T
 }
 
+/** Every sentinel a color setting can defer to. Keeping it a closed union is what stops a color row
+ *  from naming an unrelated string key — `ColorSetting<string>` widens to plain `string`. */
+type InheritSentinel = 'system' | 'accent'
+
 /** A row in a leaf's section: the words, and the control that writes one key. */
 type Row =
   | (RowText & {
@@ -84,9 +86,9 @@ type Row =
     })
   | (RowText & {
       kind: 'color'
-      key: KeyOf<ColorSetting<string>>
+      key: KeyOf<ColorSetting<InheritSentinel>>
       /** Written when the user clears the swatch — the sentinel naming what this color inherits. */
-      inherits: 'system' | 'accent'
+      inherits: InheritSentinel
       /** The CSS var the cleared state resolves to, so the swatch shows what it is actually wearing. */
       inheritsVar: string
     })
@@ -512,40 +514,17 @@ function RowControl({ row }: { row: Row }): React.JSX.Element {
 function ColorRow({ row }: { row: RowOf<'color'> }): React.JSX.Element {
   const value = useSession((s) => s.personalization[row.key]) as string | undefined
   const setPersonalization = useSession((s) => s.setPersonalization)
-  const [open, setOpen] = useState(false)
-  const swatchRef = useRef<HTMLButtonElement>(null)
 
   const inheriting = !value || value === row.inherits
-  const key = inheriting ? 'default' : chipColorFor(value)
-  const css = inheriting ? row.inheritsVar : solidColorCss(value)
 
   return (
     <SettingsRow label={row.label} hint={row.hint}>
-      <span className={pane.colorCluster}>
-        <button
-          ref={swatchRef}
-          type="button"
-          className={pane.colorChip}
-          aria-label={row.label}
-          onClick={() => setOpen((v) => !v)}
-        >
-          <span
-            className={pane.colorSwatch}
-            style={{ '--sw': tintAt(css, TINT_STEPS.primary) } as React.CSSProperties}
-          />
-        </button>
-        <ColorPicker
-          greyscale={false}
-          open={open}
-          selected={key}
-          onPick={(next) => {
-            setPersonalization(row.key, (next ?? row.inherits) as never)
-            setOpen(false)
-          }}
-          onDismiss={() => setOpen(false)}
-          triggerRef={swatchRef}
-        />
-      </span>
+      <ColorSwatchField
+        label={row.label}
+        selected={inheriting ? 'default' : chipColorFor(value)}
+        css={inheriting ? row.inheritsVar : solidColorCss(value)}
+        onPick={(next) => setPersonalization(row.key, (next ?? row.inherits) as never)}
+      />
     </SettingsRow>
   )
 }

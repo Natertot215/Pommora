@@ -26,8 +26,8 @@ import { resolveMdTarget, type ConnectionsApi } from '../connections'
 import type { LinkStatus } from '@shared/connections'
 
 /** The `link-2` glyph a revealed connection wears in front of its target. It reports whether that
- *  target resolves — the connection colour means a page answers to it — which is the one thing the
- *  syntax itself can't say. Worn as a mask so the colour comes from the class, not the artwork. */
+ *  target resolves — the connection color means a page answers to it — which is the one thing the
+ *  syntax itself can't say. Worn as a mask so the color comes from the class, not the artwork. */
 class ConnGlyphWidget extends WidgetType {
   constructor(readonly status: LinkStatus) {
     super()
@@ -132,7 +132,7 @@ class LineWidget extends WidgetType {
 }
 
 // One outliner rail: an ancestor-level vertical guide, pinned at the line start (side -1) and positioned +
-// shaped entirely in CSS from --rail-level (its ancestor column) plus the type class (glyph-centre offset).
+// shaped entirely in CSS from --rail-level (its ancestor column) plus the type class (glyph-center offset).
 // first/last carry the run-end caps, so a rail only rounds where its run actually begins/ends.
 class OutlinerRailWidget extends WidgetType {
   constructor(
@@ -303,7 +303,7 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): Built {
     else ranges.push(Decoration.replace({ widget: widgetFor(it.spec) }).range(it.from, it.to))
   }
   // Markdown links by what their target turns out to name. A target resolving to a page wears the
-  // connection colour and leads there; a valid URL is md-link; neither is md-link-invalid (dimmed).
+  // connection color and leads there; a valid URL is md-link; neither is md-link-invalid (dimmed).
   // Brackets `[ ]`: always shown dimmed for invalid (the broken-link tell), hidden-until-caret otherwise.
   // The `(url)` stays hidden at rest either way; on caret it reveals (valid → italic+underline, invalid → dimmed).
   tokens.forEach((tk, i) => {
@@ -312,7 +312,7 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): Built {
     const bracketEnd = close[0] + 1 // the `]`
     const target = resolveMdTarget(conn, linkTarget(text, tk))
     const valid = target.kind !== 'invalid'
-    // What the target turns out to name decides both the words' colour and, once revealed, the
+    // What the target turns out to name decides both the words' color and, once revealed, the
     // treatment of the target itself — so it is decided once here.
     const internal = target.kind === 'page'
     const isActive = active.has(i)
@@ -366,14 +366,14 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): Built {
       if (open && (pipe || status === 'resolved')) {
         ranges.push(connGlyph(status, tk.range[0] + 2))
         // Only where an alias took the title's place does the title stop being what's shown and
-        // become a destination. Standing on its own, it IS the link's words and keeps their colour.
+        // become a destination. Standing on its own, it IS the link's words and keeps their color.
         if (pipe) ranges.push(Decoration.mark({ class: 'md-conn-target' }).range(pipe[0], pipe[1]))
       }
       if (status === 'phantom') {
         // A connection that names no page stays raw `[[Foo]]` — brackets visible and inert — and
         // clicking into one is inspecting an unresolved link, which should look unresolved.
         //
-        // One being TYPED takes the connection colour from its first character instead of reading as
+        // One being TYPED takes the connection color from its first character instead of reading as
         // plain prose until a title happens to match: the author is writing a link and the text
         // should say so. It is not resolved, and doesn't claim to be. Typing is what earns that, not
         // the caret's position, so the field tracks the gesture.

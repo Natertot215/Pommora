@@ -22,7 +22,7 @@ export const PICKER_TREE_WIDTH = 210
 // Selection paints at the shared row weight; only the TONE separates it from keyboard focus.
 const OPTION_RING = `${ROW_RING}px`
 
-/** The selected-row RING — the tile-selection tone, for lists whose rows carry no colour of their
+/** The selected-row RING — the tile-selection tone, for lists whose rows carry no color of their
  *  own (Sets, operators). A chip already signals selection with its fill, so it never gets this:
  *  two signals on one row read as two different states. Painted through the house `--field-ring`
  *  channel, and INSET, so it rides inside the row's radius and never reflows the list. */
@@ -34,7 +34,7 @@ export const optionRing = style({
 // ── Vertical unification: a RUN of adjacent selected rows reads as ONE outlined region, the way a
 // multi-line blockquote extends its rule rather than restating it per line. Two stacked rings would
 // otherwise draw a double edge between them and read as two separate things.
-// This is default behaviour of the ring itself, not something a consumer opts into: any list whose
+// This is default behavior of the ring itself, not something a consumer opts into: any list whose
 // selected rows are siblings gets it for free. A COLLAPSED Reveal between two rows is transparent to
 // the run — it is a zero-height spacer, not a separator (hence the `data-reveal` hop).
 const RING = 'var(--field-ring, transparent)'
@@ -62,7 +62,7 @@ globalStyle(BELOW.map((b) => `${b} ${optionRing}`).join(', '), {
   boxShadow: [SIDES.left, SIDES.right, SIDES.bottom].join(', '),
   ...SQUARE_TOP,
 })
-// Interior — both neighbours selected, so only the run's flanks survive. More compound than either
+// Interior — both neighbors selected, so only the run's flanks survive. More compound than either
 // rule above, so it wins on specificity where a row matches both.
 globalStyle(BELOW.flatMap((b) => ABOVE.map((a) => `${b} ${optionRing}:has(${a})`)).join(', '), {
   boxShadow: [SIDES.left, SIDES.right].join(', '),
@@ -120,7 +120,7 @@ export const surface = style({
   gap: '0px',
 })
 
-// The portal escapes any label-tone context, so the option must set its OWN type + colour (else it
+// The portal escapes any label-tone context, so the option must set its OWN type + color (else it
 // falls to the UA default — black, unsized — and the pane wraps). Matches a dropdown row title: the
 // control scale at the control tone.
 export const option = style([
@@ -143,7 +143,7 @@ export const optionSelected = style({
   selectors: { '&:hover': { background: c.state.selected } },
 })
 
-/** The layout a glyph-led option takes — the option's own centring yields to it. Not exported: the
+/** The layout a glyph-led option takes — the option's own centering yields to it. Not exported: the
  *  alignment is `PickerOption`'s `leading` slot's business, not a caller's. */
 const leadingRow = style({
   display: 'flex',

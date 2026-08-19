@@ -5,7 +5,7 @@ import { createGlobalTheme } from '@vanilla-extract/css'
  * Two scales, mirrored from Figma:
  *
  * - `icon.*` — the five-step glyph ladder. A named step routes here the
- *   way a colour name routes to color.css.ts; `<Icon size="md" />` resolves to it.
+ *   way a color name routes to color.css.ts; `<Icon size="md" />` resolves to it.
  * - `control.button.*` — per-component size aliases (`button-small/medium/large`).
  *   Each is a geometry bundle whose `icon` field *references* the icon ladder rather
  *   than restating a dimension. The bundles are drawn values, not a formula: heights

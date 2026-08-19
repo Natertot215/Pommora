@@ -315,7 +315,7 @@ describe('shift+enter', () => {
   })
 })
 
-describe('nested list behaviour inside a callout', () => {
+describe('nested list behavior inside a callout', () => {
   const callout = (body: string): string => `> [!callout] head\n${body}`
   it('Enter continues a bullet inside the box (keeps the `>` prefix)', () => {
     const doc = callout('> - item')

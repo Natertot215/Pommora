@@ -216,7 +216,7 @@
 /* Collapse — sidebar top-right corner; hidden until you hover the sidebar (uncluttered at rest),
    then rides the sidebar off as it slides while the expand reveals at the top-left. */
 .sidebar-collapse {
-  /* Inside the glass, puts the button's centre on the toolbar buttons' row (the glass top is already
+  /* Inside the glass, puts the button's center on the toolbar buttons' row (the glass top is already
      inset by --glass-inset; the toolbar sits an optical hair further in). */
   top: 1px;
   right: 10px;
@@ -234,7 +234,7 @@
    open sidebar's collapse button; as the sidebar slides off it fades + eases in (revealed, close
    tucking behind it), and fades back out as the sidebar slides in to overtake it. */
 .sidebar-expand {
-  /* Same row as the toolbar buttons, centred between the traffic lights and Back/Forward (which
+  /* Same row as the toolbar buttons, centered between the traffic lights and Back/Forward (which
      reserves the matching right gap via the sidebar-hidden toolbar padding). */
   top: calc(var(--glass-inset) + 1px);
   left: 96px;
@@ -270,7 +270,7 @@
 }
 
 /* Type (control / semibold) comes from the text.control.semibold alias composed in SectionHeader —
-   no raw size/weight here. Layout + colour only. */
+   no raw size/weight here. Layout + color only. */
 .section-header {
   display: flex;
   align-items: center;

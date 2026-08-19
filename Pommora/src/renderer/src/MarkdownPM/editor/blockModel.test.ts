@@ -272,7 +272,7 @@ describe('blockAt', () => {
     ])
   })
 
-  // A code/table block on the FIRST line looks its previous line up off the top edge — that neighbour
+  // A code/table block on the FIRST line looks its previous line up off the top edge — that neighbor
   // lookup must not crash the editor's initial parse.
   it('a doc starting with a code fence does not crash and starts a code block at 0', () => {
     const doc = '```js\nconst x = 1\n```\npara'

@@ -108,7 +108,7 @@ const TEXT_OPS: OperatorChoice[] = [
 ]
 
 /** Before/After are the INCLUSIVE ops (on-or-before / on-or-after) — the boundary date matching is
- *  the behaviour people expect, so it's the default rather than a second, longer-labelled entry. The
+ *  the behavior people expect, so it's the default rather than a second, longer-labeled entry. The
  *  strict variants stay registered in the evaluator for hand-authored files; the pane doesn't offer
  *  them, because a second pair of near-identical labels costs more width than the distinction buys. */
 const DATE_OPS: OperatorChoice[] = [

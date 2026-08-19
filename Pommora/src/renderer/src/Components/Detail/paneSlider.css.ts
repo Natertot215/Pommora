@@ -26,7 +26,7 @@ export const trackAnimated = style({ transition: `transform ${duration.base} ${e
 export const slot = style({ flex: '0 0 auto', display: 'flex', flexDirection: 'column' })
 
 /** A settled off-screen slot must not paint. The track is shifted by a measured width, and any
- *  disagreement between that shift and the slot's true edge leaves its neighbour showing as a
+ *  disagreement between that shift and the slot's true edge leaves its neighbor showing as a
  *  hairline down the viewport's leading edge. Hidden rather than unmounted or `display:none`, so the
  *  slot keeps its box and the size observer still reads it. Only while settled — both slots paint
  *  through the slide, or the outgoing one would vanish instead of leaving. */

@@ -17,7 +17,7 @@ export const container = style({
   overflow: 'hidden',
 })
 
-// One segment. No persistent active/pressed fill (Apple toolbar behaviour) — the
+// One segment. No persistent active/pressed fill (Apple toolbar behavior) — the
 // only feedback is a faint hover (state.hover). Disabled dims the glyph.
 export const segment = style({
   display: 'inline-flex',
@@ -47,7 +47,7 @@ export const divider = style({
   // Width is fixed (constant across every control size); only the height varies per instance.
   width: '2px',
   // The stable CSS var (theme-vars), not the vanilla-extract object ref — the var name never rehashes, so
-  // an HMR token-hash shift can't leave the divider colourless (the toolbar-segment regression).
+  // an HMR token-hash shift can't leave the divider colorless (the toolbar-segment regression).
   background: 'var(--separator-segment)',
   borderRadius: 'var(--radius-full)',
 })

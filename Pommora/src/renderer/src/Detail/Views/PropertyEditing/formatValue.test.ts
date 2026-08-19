@@ -93,7 +93,7 @@ describe('formatDate relative', () => {
 })
 
 describe('formatNumber', () => {
-  it('groups by default and honours separators off', () => {
+  it('groups by default and honors separators off', () => {
     expect(formatNumber(1234.5, { number_family: 'number', number_separators: true })).toBe(
       '1,234.5',
     )

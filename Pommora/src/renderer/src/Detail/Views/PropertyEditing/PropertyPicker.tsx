@@ -58,8 +58,8 @@ export function PropertyPicker({
   current: PropertyValue | null
   open: boolean
   triggerRef: RefObject<HTMLElement | null>
-  /** Click x (viewport px). When set, the pane centres on the click point instead of the trigger's
-   *  fixed centre (the card value gesture). Omitted → the default right-anchored dropdown. */
+  /** Click x (viewport px). When set, the pane centers on the click point instead of the trigger's
+   *  fixed center (the card value gesture). Omitted → the default right-anchored dropdown. */
   anchorX?: number
   /** The column's resolved look — a status column on a glyph look (checkbox/capsule) renders
    *  its OPTIONS as capsule chips too (deliberate); pill columns keep labeled pills. */

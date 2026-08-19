@@ -38,7 +38,7 @@ describe('a link rests only where a gesture left it', () => {
   })
 })
 
-// A connection takes the connection colour as it is written. Clicking into one that names no page is
+// A connection takes the connection color as it is written. Clicking into one that names no page is
 // inspecting an unresolved link, and it should look unresolved — so the field follows the typing,
 // not the caret.
 describe('a connection is only "being typed" while it is being typed', () => {

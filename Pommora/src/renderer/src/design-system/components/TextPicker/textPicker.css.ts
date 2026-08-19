@@ -6,7 +6,7 @@ import { focusRing } from '../fieldRing'
 
 const c = vars.color
 
-/** The field left-anchors in the pane so its caret sits at the left edge, never centred. The gutter
+/** The field left-anchors in the pane so its caret sits at the left edge, never centered. The gutter
  *  is the shared surface's. */
 export const content = style({ alignItems: 'flex-start' })
 
@@ -60,7 +60,7 @@ export const trailing = style({
  *  the native caret scales with the font). `field-sizing` grows it to its text between a floor and a
  *  cap, then it scrolls internally. Focused, an `--accent` stroke fades
  *  in over duration-fast; a consumer may scope `--accent` on the pane to tint it (a link wears its own
- *  colour), else it inherits the app accent. */
+ *  color), else it inherits the app accent. */
 export const input = style([
   field,
   {

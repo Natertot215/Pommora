@@ -272,8 +272,8 @@ function ValueFieldShell({
   )
 }
 
-/** The Location field — Sets have no colour of their own, so the picked ones read as titles divided
- *  by the house segment hairline rather than as colourless chips. Its PICKER is the Grouping pane's
+/** The Location field — Sets have no color of their own, so the picked ones read as titles divided
+ *  by the house segment hairline rather than as colorless chips. Its PICKER is the Grouping pane's
  *  set list: a MenuItem per Set wearing that Set's own icon, children disclosed on the rail behind a
  *  twisty. The chevron discloses, the row selects. */
 function LocationField({
@@ -306,7 +306,7 @@ function LocationField({
         onToggle={() => expanded.toggle(s.id)}
         onClick={() => toggle(s.id)}
         selected={picked}
-        // A Set row carries no colour of its own, so the selected fill alone is easy to lose in a
+        // A Set row carries no color of its own, so the selected fill alone is easy to lose in a
         // packed tree — the ring is what makes a pick obvious at a glance.
         className={picked ? optionRing : undefined}
       >

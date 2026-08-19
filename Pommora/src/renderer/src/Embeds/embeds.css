@@ -179,7 +179,7 @@
 .pgembed .mdpm-banner-img {
   -webkit-user-drag: none;
 }
-/* Size only — the span is a .detail-title-text, which already carries the weight and colour. */
+/* Size only — the span is a .detail-title-text, which already carries the weight and color. */
 .pgembed .mdpm-banner-overlay {
   /* The title size var the shared .detail-title-text reads — defined here because the embed omits
      .mdpm-header (the parking layer), whose scope normally carries it. */
@@ -187,7 +187,10 @@
   left: calc(16px * var(--mdpm-scale));
   right: calc(16px * var(--mdpm-scale));
 }
-.pgembed-crumbs {
+/* The tile's hover-revealed identity, one treatment for both tile kinds: centered at the top,
+   hidden until the tile is hovered. The embedded page shows its breadcrumb, a webpage its title. */
+.pgembed-crumbs,
+.wpembed-title {
   position: absolute;
   top: calc(8px * var(--mdpm-scale));
   left: 50%;
@@ -198,7 +201,8 @@
   pointer-events: none;
   transition: opacity var(--duration-base) var(--ease-standard);
 }
-.mdpm-embed-tile:hover .pgembed-crumbs {
+.mdpm-embed-tile:hover .pgembed-crumbs,
+.mdpm-embed-tile:hover .wpembed-title {
   opacity: 1;
 }
 
@@ -236,19 +240,10 @@
   inset: 0;
 }
 
-/* The hover-title: the page-crumb's reveal — centered at the tile's top, hidden until the tile is
-   hovered — but pointer-enabled and above both the guest and its catcher, so the title stays
-   clickable whether or not the tile is engaged. */
+/* The title rides above both the guest and its catcher, and takes the pointer once revealed, so it
+   stays clickable whether or not the tile is engaged. */
 .wpembed-title {
-  position: absolute;
-  top: calc(8px * var(--mdpm-scale));
-  left: 50%;
-  transform: translateX(-50%);
-  max-width: 70%;
   z-index: 3;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity var(--duration-base) var(--ease-standard);
   border: none;
   background: none;
   padding: 0;
@@ -259,7 +254,6 @@
   text-overflow: ellipsis;
 }
 .mdpm-embed-tile:hover .wpembed-title {
-  opacity: 1;
   pointer-events: auto;
 }
 

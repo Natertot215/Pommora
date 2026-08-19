@@ -82,7 +82,7 @@ export const titleSpaceHidden = style({
 export const titleSpaceInner = style({ minHeight: 0, overflow: 'hidden' })
 
 /** The title text + its in-place rename input. Size + weight come from the `.md-hN` class the caller
- *  appends (markdownPM's own heading code); this carries only colour, truncation, and the input reset. */
+ *  appends (markdownPM's own heading code); this carries only color, truncation, and the input reset. */
 export const titleText = style({
   flex: '1 1 auto',
   minWidth: 0,

@@ -237,7 +237,7 @@ function diffAsSingleReplace(a: string, b: string): ChangeSpec[] {
 
 /** Move a top-level block to start at `slot.at`, preserving single-blank-line separation. A block owns the
  *  blank line after it: the cut takes the block plus one adjoining blank (following preferred, preceding at
- *  EOF) so old neighbours collapse to one blank, and re-inserts with a blank separator. Null for a no-op. */
+ *  EOF) so old neighbors collapse to one blank, and re-inserts with a blank separator. Null for a no-op. */
 export function blockMoveChanges(
   doc: string,
   range: BlockRange,
@@ -262,7 +262,7 @@ export function blockMoveChanges(
   if (tLine >= bStart && tLine <= bEnd + 1) return null // onto itself, after the snap
 
   const blockLines = lines.slice(bStart, bEnd + 1)
-  // Cut the block plus one adjoining blank if it has one, so its old neighbours don't keep a doubled blank.
+  // Cut the block plus one adjoining blank if it has one, so its old neighbors don't keep a doubled blank.
   let cutStart = bStart
   let cutEnd = bEnd
   if (isBlank(bEnd + 1)) cutEnd = bEnd + 1

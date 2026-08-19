@@ -345,7 +345,7 @@ export const ghostOptionRow = style([
 
 /** Outline only — the chip's border and label with its fill dropped, so a slot reads as a shape
  *  waiting to be filled rather than as a value that already has one. `--chip-fill` follows the
- *  background it no longer has, keeping the melt twins off a colour the chip isn't wearing. */
+ *  background it no longer has, keeping the melt twins off a color the chip isn't wearing. */
 export const ghostChip = style({
   selectors: {
     '&&': { background: 'transparent', vars: { '--chip-fill': 'transparent' } },
@@ -386,7 +386,7 @@ export const paletteButton = style([
 // chip + style picker). One row primitive, one label tone, one color cluster.
 // ═══════════════════════════════════════════════════════════════════════════
 
-/** A config body. The Link editor root also scopes `--accent` (inline) to the chosen colour, so its
+/** A config body. The Link editor root also scopes `--accent` (inline) to the chosen color, so its
  *  Switches' on-track tints to it — that pane only. */
 export const configEditor = style({
   display: 'flex',
@@ -407,7 +407,7 @@ export const configRow = style({
  *  its glyph and its value stay a step under. */
 export const configLabel = style([text.control.emphasized, { color: c.label.primary }])
 
-/** The colour control cluster — the clickable chip; the ColorPicker anchors below. */
+/** The color control cluster — the clickable chip; the ColorPicker anchors below. */
 export const colorCluster = style({
   position: 'relative',
   display: 'flex',

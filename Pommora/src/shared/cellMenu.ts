@@ -154,7 +154,7 @@ function baseCellMenuModel(ctx: CellMenuContext): CellMenuModel {
     case 'link':
       // A URL / Link cell: Edit the URL inline; a FILLED one adds Rename (give it an alias) + Clear
       // (clear the value) — both are no-ops on an empty cell, so only Edit shows there. No per-view
-      // Style — a link's look (underline / colour / full-url ⇄ title) is per-property.
+      // Style — a link's look (underline / color / full-url ⇄ title) is per-property.
       return {
         items: ctx.filled
           ? [

@@ -32,7 +32,7 @@ export function contextOptionsFor(contextId: string, tree: NexusTree): ContextOp
 
 function buildOptions(contextId: string, tree: NexusTree): ContextOption[] {
   const group = tree.contexts?.find((g) => g.def.id === contextId)
-  // Identity — title, glyph, colour — comes from the seam, never re-derived here: resolving the
+  // Identity — title, glyph, color — comes from the seam, never re-derived here: resolving the
   // glyph locally is what let a picker chip disagree with the sidebar on a personalized nexus.
   // Order is this function's own concern: options list in the Context's sidebar order.
   const byId = spacesByIdOf(tree)

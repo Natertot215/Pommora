@@ -13,7 +13,7 @@ import { useSession } from '../store'
 import { restedOnLink } from './editor/linkGestures'
 
 export interface AcState extends AutocompleteQuery {
-  /** The caret's x — what the panel centres on, not where its edge lands. */
+  /** The caret's x — what the panel centers on, not where its edge lands. */
   caretX: number
   caretTop: number
   caretBottom: number

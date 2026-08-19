@@ -8,7 +8,7 @@ import { wikiAuthorTarget } from '../editor/linkEdit'
 import { useSession } from '../../store'
 
 // A cell's resting render WITHOUT a CodeMirror instance: inline marks styled + markers hidden +
-// connections coloured by status, matching the nested editor's look. Only the focused cell mounts a
+// connections colored by status, matching the nested editor's look. Only the focused cell mounts a
 // real editor (see TableView), so a table scrolling into view doesn't build R×C editors in one frame.
 // Block-level markdown (headings, lists, fences) isn't reproduced here — it doesn't occur in a cell.
 export function renderCellContent(
@@ -49,9 +49,9 @@ export function renderCellContent(
         )
     } else if (tk.kind === 'link') {
       const url = linkTarget(text, tk)
-      // A target naming a page wears the connection's colour here as it does in the editor. Without
+      // A target naming a page wears the connection's color here as it does in the editor. Without
       // the shared resolver a cell would call an encoded internal target broken — `isValidLink` is
-      // false for `Work%20Notes` — and colour the same link two different ways on two surfaces.
+      // false for `Work%20Notes` — and color the same link two different ways on two surfaces.
       const target = resolveMdTarget(conn, url)
       out.push(
         target.kind === 'page' ? (

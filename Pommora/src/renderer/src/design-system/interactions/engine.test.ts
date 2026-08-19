@@ -70,8 +70,8 @@ describe('keyboardNext — arrow navigation', () => {
     const g = grid(9, 3) // 3x3
     expect(keyboardNext(g, 0, ARROW_DIRS.ArrowRight)).toBe(1) // 0 → 1
     expect(keyboardNext(g, 0, ARROW_DIRS.ArrowDown)).toBe(3) // 0 → directly below
-    expect(keyboardNext(g, 4, ARROW_DIRS.ArrowUp)).toBe(1) // centre → directly above
-    expect(keyboardNext(g, 4, ARROW_DIRS.ArrowLeft)).toBe(3) // centre → left neighbour
-    expect(keyboardNext(g, 4, ARROW_DIRS.ArrowRight)).toBe(5) // centre → right neighbour
+    expect(keyboardNext(g, 4, ARROW_DIRS.ArrowUp)).toBe(1) // center → directly above
+    expect(keyboardNext(g, 4, ARROW_DIRS.ArrowLeft)).toBe(3) // center → left neighbor
+    expect(keyboardNext(g, 4, ARROW_DIRS.ArrowRight)).toBe(5) // center → right neighbor
   })
 })

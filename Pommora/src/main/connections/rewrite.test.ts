@@ -64,7 +64,7 @@ describe('rewriteConnections — code is a sample, never a connection', () => {
     )
   })
 
-  it('honours a ~~~ fence and treats a ``` line inside it as content', () => {
+  it('honors a ~~~ fence and treats a ``` line inside it as content', () => {
     const body = ['~~~', '[[Old]]', '```', '[[Old]]', '~~~', '[[Old]]'].join('\n')
     expect(rewriteConnections(body, 'Old', 'New')).toBe(
       ['~~~', '[[Old]]', '```', '[[Old]]', '~~~', '[[New]]'].join('\n'),

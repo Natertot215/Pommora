@@ -55,7 +55,7 @@ type GroupValue = {
 const GroupCtx = createContext<GroupValue | null>(null)
 
 // Groups frozen rects into visual ROWS by vertical-span overlap — cards top-align with unequal
-// heights, so a per-card centre/bottom split would flip-flop the insertion index. Each row
+// heights, so a per-card center/bottom split would flip-flop the insertion index. Each row
 // carries a SHARED band [top, bottom] so the whole row reads as one.
 type ZoneRows = Array<{ top: number; bottom: number; items: Array<{ i: number; cx: number }> }>
 function rowsOf(rects: Box[], skip: number): ZoneRows {
@@ -215,7 +215,7 @@ export function DragGroup({
   })
 
   const commitRef = useRef<(() => void) | null>(null) // armed on drop; fired by overlay transitionend or fallback
-  const timerRef = useRef<number | null>(null) // fallback-commit timer, kept so it can be cancelled
+  const timerRef = useRef<number | null>(null) // fallback-commit timer, kept so it can be canceled
   const stopScroll = useRef<(() => void) | null>(null) // this group's auto-scroll loop stopper
 
   const ensure = (zoneId: string): ZoneReg => {
@@ -312,14 +312,14 @@ export function DragGroup({
     return null
   }
 
-  // Insertion index in a zone by pointer Y: counts non-active items whose centre is above the
+  // Insertion index in a zone by pointer Y: counts non-active items whose center is above the
   // pointer, over the FROZEN rects (never live — transform-contaminated mid-drag).
   const indexAt = (zoneId: string, x: number, y: number): number => {
     const rects = frozen.current.get(zoneId)
     if (!rects) return 0
     const skip = zoneId === drag.current.zone ? drag.current.srcIdx : -1
     // Rows entirely above the pointer count whole; in the pointer's own row, count the cards left
-    // of it (x past centre); below all rows, everything counts. One row band per visual row means
+    // of it (x past center); below all rows, everything counts. One row band per visual row means
     // a vertical wobble never re-buckets a card, so the index holds steady across a row.
     const rows = rowsOfCached(rects, skip)
     let idx = 0
@@ -329,7 +329,7 @@ export function DragGroup({
         continue
       }
       if (y < row.top) break
-      // A single-card row has no horizontal neighbour, so a lone card / single column orders by the
+      // A single-card row has no horizontal neighbor, so a lone card / single column orders by the
       // row's vertical midpoint; a real multi-card row orders by x.
       if (row.items.length === 1) idx += y > (row.top + row.bottom) / 2 ? 1 : 0
       else for (const it of row.items) if (x > it.cx) idx++
@@ -354,7 +354,7 @@ export function DragGroup({
     if (zid && !frozen.current.has(zid)) frozen.current.set(zid, measure(zid))
     let idx = zid ? indexAt(zid, cx, cy) : d.overIndex
     // Hysteresis: hold the current index until the pointer travels HYSTERESIS from where the index
-    // last changed. A boundary wobble (near a card's centre) can't flip it back and forth per frame.
+    // last changed. A boundary wobble (near a card's center) can't flip it back and forth per frame.
     if (zid === d.overZone && idx !== d.overIndex) {
       if (Math.hypot(cx - d.idxAnchorX, cy - d.idxAnchorY) < HYSTERESIS) idx = d.overIndex
       else {

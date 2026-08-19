@@ -999,7 +999,7 @@ describe('restore — into a chosen destination', () => {
   })
 
   it('refuses a destination whose own label contradicts the id it carries', async () => {
-    // A live Context id, arriving labelled as a container. Honouring it would place the Space
+    // A live Context id, arriving labeled as a container. Honoring it would place the Space
     // correctly by accident on a message that is malformed — the label is the sender's claim, and
     // a claim that disagrees with its own id is not a claim this path acts on.
     await handleMutate(
@@ -1109,7 +1109,7 @@ describe('restore — into a chosen destination', () => {
     )
     expect(r.ok).toBe(true)
     const landed = await readFile(join(root, 'Plain', 'Beta.md'), 'utf8')
-    // The value travelled; the destination's configuration decided it could not stay.
+    // The value traveled; the destination's configuration decided it could not stay.
     expect(landed.includes('<Status>')).toBe(false)
     expect(landed.includes('PageID:')).toBe(true)
   })
