@@ -86,7 +86,7 @@
 .nav-item-title {
   flex: 1 1 auto;
   min-width: 0;
-  font-size: 13px;
+  font-size: var(--text-body-size);
   color: var(--label-primary);
   --edge-fade: 16px;
   --scroll-fade: 16px;
@@ -115,7 +115,7 @@
   vertical-align: middle;
 }
 .nav-item-inert {
-  opacity: 0.55;
+  opacity: var(--state-inactive);
   padding: 5px var(--navwindow-inset, 8px);
   gap: 7px;
   cursor: default;

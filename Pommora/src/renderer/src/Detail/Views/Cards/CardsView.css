@@ -151,58 +151,18 @@
 .set-card .page-card-thumb {
   flex: 0 0 var(--thumb-share);
 }
-.page-card-thumb img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: top;
-  transform: scale(var(--cover-zoom, 1));
-  transform-origin: top left;
-  -webkit-user-drag: none;
-}
-.page-card-ph {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--label-tertiary);
-  background: var(--fill-quaternary);
-}
 
+/* Cards reserves a body floor so an empty card keeps its image:body proportion. */
 .page-card-text {
-  flex: 1;
   min-height: var(--card-body-min);
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  gap: 4px;
-  padding: 8px 9px;
-  min-width: 0;
-  background: var(--state-muted);
-  border-top: var(--border-cell);
 }
 .cards-view.is-compact .page-card .page-card-text {
   border-top: none;
 }
 
-.page-card-title,
-.page-card-loc {
-  flex: 0 0 auto; /* each is its own fixed row — the title never grows to fill / recenter */
-  display: flex;
-  align-items: center;
-  min-width: 0;
-  --edge-fade: 14px;
-  --scroll-fade: 14px;
-}
 .page-card-title {
   gap: 5px;
   color: var(--label-primary);
-  /* overflow-y:hidden (truncateHoverScroll) clips at the padding box; descenders sit at the content
-     edge and get sliced when the line-box rounds tight at zoom. A hair of vertical padding pushes the
-     clip past them without touching the horizontal truncation fade. */
-  padding-block: 1px;
 }
 /* The naming session's title row — a plain flex row (never the truncating scroll box, whose clip
    would hide the field's caret travel); the glyph keeps its seat beside the field. */

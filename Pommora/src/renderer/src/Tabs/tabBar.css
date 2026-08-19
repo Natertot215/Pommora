@@ -4,7 +4,7 @@
 
 .tab-bar {
   /* KNOBS — the whole bar tunes here. */
-  --tab-height: 32px; /* matches the button-large row */
+  --tab-height: var(--button-large-height); /* matches the button-large row */
   --tab-min: 90px; /* unpinned floor ≈ icon + ~6ch */
   --tab-pref: 180px; /* preferred (browser-tab feel) */
   --tab-max: 240px;

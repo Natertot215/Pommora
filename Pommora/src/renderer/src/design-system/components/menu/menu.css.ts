@@ -18,12 +18,6 @@ const ROW_PAD_X = 6
 const ROW_GAP = 8
 const TWISTY_W = 12
 
-/** The column a row's title starts at when its leading slot holds only the twisty. A disclosed run on
- *  an icon-less surface hangs from here, so the children sit under their parent's text rather than
- *  under its glyph. A surface whose rows carry an icon starts its title further right and sets its
- *  own `--menu-rail-x` accordingly. */
-export const TITLE_X_TWISTY_ONLY = ROW_PAD_X + TWISTY_W + ROW_GAP
-
 /** The x of the twisty's center. An icon-less disclosing surface points its `--menu-rail-x` here so
  *  the rail runs straight through the parent chevron rather than beside it. */
 export const TWISTY_CENTER_X = ROW_PAD_X + TWISTY_W / 2
@@ -53,8 +47,8 @@ export const rowShell = style({
  *  overriding the base by hand. The default is the menu family's: a menu row is body text. A picker
  *  drops to the control pair, because its rows are a control's options rather than a menu's commands.
  *  The TONE is not a knob — every row in the family reads primary, whatever its size. */
-const ROW_SIZE = `var(--menu-row-size, ${font.scale.body.size})`
-const ROW_LINE = `var(--menu-row-line, ${font.scale.body.line})`
+export const ROW_SIZE = `var(--menu-row-size, ${font.scale.body.size})`
+export const ROW_LINE = `var(--menu-row-line, ${font.scale.body.line})`
 
 export const item = style([
   text.body.standard,

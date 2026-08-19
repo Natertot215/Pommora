@@ -17,7 +17,7 @@
 /* Collapsed: slide the panel fully off the left edge — pure slide, no fade, so the motion reads
    on the way OUT (not just in); the detail reclaims the gutter. */
 .shell.sidebar-hidden .surface-glass {
-  transform: translateX(calc(-100% - var(--glass-inset) - 14px));
+  transform: translateX(calc(-100% - var(--glass-inset) - var(--park-clearance)));
   pointer-events: none;
 }
 /* During an edge-drag resize, track the cursor 1:1 (no easing lag). */
@@ -72,22 +72,31 @@
   width: 1.75px;
   background: var(--fill-secondary);
 }
-.ribbon-icon {
+/* The sidebar's icon buttons — a square button-large box, borderless over its own transparency,
+   the secondary tone lifting on hover. The ribbon's glyphs and the pane toggle share it; each keeps
+   only its own radius, cursor, and placement. */
+.ribbon-icon,
+.sidebar-toggle {
   -webkit-app-region: no-drag;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  /* Match the toolbar buttons (button-large) so they read as part of the same row. */
+  width: var(--button-large-height);
+  height: var(--button-large-height);
   padding: 0;
   border: 0;
-  border-radius: 8px;
   background: transparent;
   color: var(--label-secondary);
-  cursor: default;
 }
-.ribbon-icon:hover {
+.ribbon-icon:hover,
+.sidebar-toggle:hover {
   background: var(--state-hover);
+}
+
+.ribbon-icon {
+  border-radius: 8px;
+  cursor: default;
 }
 
 /* --- sidebar content --- */
@@ -187,28 +196,14 @@
 /* Sidebar collapse / expand toggle (log-out glyph — flipped = collapse, normal = expand).
    Both no-drag + clickable; icon in label-secondary, lifting to primary on hover. */
 .sidebar-toggle {
-  -webkit-app-region: no-drag;
   position: absolute;
   z-index: var(--z-sidebar-toggle);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  /* Match the toolbar buttons (button-large) so the toggle reads as part of the same row. */
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  border: 0;
   border-radius: 6px;
-  background: transparent;
-  color: var(--label-secondary);
   cursor: pointer;
   transition:
     opacity var(--duration-fast) var(--ease-standard),
     color var(--duration-fast) var(--ease-standard),
     background var(--duration-fast) var(--ease-standard);
-}
-.sidebar-toggle:hover {
-  background: var(--state-hover);
 }
 .sidebar-toggle .flip-x {
   transform: scaleX(-1);
@@ -253,30 +248,15 @@
   pointer-events: auto;
 }
 
-/* Invisible edge-drag resize strip straddling the sidebar's right edge — no visible handle. */
 .sidebar-resize {
-  position: absolute;
   top: var(--glass-inset);
   bottom: var(--glass-inset);
   left: calc(var(--glass-inset) + var(--sidebar-width) - 3px);
-  width: 9px;
   z-index: var(--z-sidebar-resize);
-  cursor: col-resize;
-  -webkit-app-region: no-drag;
 }
 
 .section {
   margin-bottom: 14px;
-}
-
-/* Type (control / semibold) comes from the text.control.semibold alias composed in SectionHeader —
-   no raw size/weight here. Layout + color only. */
-.section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  color: var(--label-tertiary);
-  padding: 4px 8px;
 }
 
 /* Inline rename styling is the menu system's flush titleInput (dimensionally identical to the

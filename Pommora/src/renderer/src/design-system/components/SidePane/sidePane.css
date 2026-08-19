@@ -9,6 +9,3 @@
   padding: 6px;
   border-radius: var(--glass-radius);
 }
-.sidepane-resize {
-  cursor: ew-resize;
-}

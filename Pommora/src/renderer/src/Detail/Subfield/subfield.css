@@ -70,7 +70,7 @@ button.subfield-crumb.ghost:hover {
    text so the glyphs stay legible. */
 .subfield-sep {
   flex: none;
-  font-size: 12px;
+  font-size: var(--text-control-size);
   font-weight: var(--weight-bold);
   color: var(--label-secondary);
 }
@@ -120,14 +120,6 @@ button.subfield-crumb.ghost:hover {
   background: var(--state-hover);
 }
 
-/* App-level collapse: the bar's fixed-height reveal slides open/closed; the chevron rides directly
-   above it (mirrors its height) so it bounces up and down with the toggle. */
-.subfield-reveal {
-  flex: none;
-  height: 0;
-  overflow: hidden;
-  transition: height var(--duration-base) var(--ease-standard);
-}
 .detail-pane.subfield-open .subfield-reveal {
   height: var(--subline-h);
 }
@@ -135,43 +127,18 @@ button.subfield-crumb.ghost:hover {
   transition: none;
 }
 
-/* The chevron rides above the bar when open (mirrors its height) so it never overlaps the bar's
-   items. It reveals when the cursor enters its general area — a large bottom-right region tracked in
-   DetailPane (`.subfield-near`), so the reveal zone can be big without an invisible button blocking
-   clicks to the content beneath — or on direct hover. The button itself stays a small click target. */
+/* The near-region this toggle reveals from is tracked in DetailPane (`.subfield-near`). */
 .subfield-toggle {
-  position: absolute;
-  right: 0;
-  bottom: 0;
   z-index: 2;
   width: 44px;
   height: var(--subline-h);
-  display: inline-flex;
-  align-items: center;
-  justify-content: flex-end;
-  appearance: none;
-  border: 0;
-  background: none;
   padding: 0 12px 0 0;
-  border-radius: 5px;
-  color: var(--label-secondary);
-  cursor: default;
-  opacity: 0;
-  -webkit-app-region: no-drag;
-  transition:
-    bottom var(--duration-base) var(--ease-standard),
-    opacity var(--duration-fast) var(--ease-standard),
-    background var(--duration-fast) var(--ease-standard);
 }
 .detail-pane.subfield-open .subfield-toggle {
   bottom: var(--subline-h);
 }
 .detail-pane.subfield-near .subfield-toggle {
   opacity: 1;
-}
-.subfield-toggle:hover {
-  opacity: 1;
-  background: var(--state-hover);
 }
 .shell.is-resizing .subfield-toggle {
   transition: none;

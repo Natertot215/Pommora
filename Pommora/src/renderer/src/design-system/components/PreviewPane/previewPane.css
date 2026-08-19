@@ -170,15 +170,11 @@
   pointer-events: auto;
 }
 
-/* The overlay resize twin: an edge-drag strip at the pane's inner seam. */
 .ppane-side-right-overlay-resize,
 .ppane-side-left-overlay-resize {
-  position: absolute;
   top: var(--ppane-side-inset);
   bottom: var(--ppane-side-inset);
-  width: 9px;
   z-index: 4;
-  cursor: col-resize;
 }
 .ppane-side-right-overlay-resize {
   right: calc(var(--ppane-side-inset) + var(--ppane-side-r-w) - 3px);
@@ -229,9 +225,7 @@
 /* ---- footer: a bar pinned at the window bottom, squeezing left of an open right pane exactly
    as the body does. Its own border-top is the flush body/footer divider. ---- */
 .ppane-footer {
-  flex-shrink: 0;
-  height: 0;
-  overflow: hidden;
+  /* The footer also squeezes left of an open right pane, so it animates its padding too. */
   transition:
     height var(--duration-base) var(--ease-standard),
     padding-right var(--duration-base) var(--ease-standard);
@@ -243,39 +237,17 @@
   padding-right: calc(var(--ppane-side-r-w) + var(--ppane-side-inset));
 }
 .ppane-footer-toggle {
-  position: absolute;
   right: 16px; /* KNOB — clears the se resize corner */
-  bottom: 0;
   z-index: 4;
   width: 40px;
   height: var(--ppane-footer-h);
-  display: inline-flex;
-  align-items: center;
-  justify-content: flex-end;
-  appearance: none;
-  border: 0;
-  background: none;
   padding: 0 6px 0 0;
-  border-radius: 5px;
-  color: var(--label-secondary);
-  cursor: default;
-  opacity: 0;
-  -webkit-app-region: no-drag;
-  transition:
-    bottom var(--duration-base) var(--ease-standard),
-    opacity var(--duration-fast) var(--ease-standard),
-    background var(--duration-fast) var(--ease-standard);
 }
 .ppane.is-footer-open .ppane-footer-toggle {
   bottom: var(--ppane-footer-h);
 }
-.ppane.is-footer-near .ppane-footer-toggle,
-.ppane-footer-toggle:hover,
-.ppane-footer-toggle:focus-visible {
+.ppane.is-footer-near .ppane-footer-toggle {
   opacity: 1;
-}
-.ppane-footer-toggle:hover {
-  background: var(--state-hover);
 }
 
 /* The trailing pair rides the right pane's edge: it holds at home until the pane's leading edge
