@@ -70,6 +70,12 @@ The three colors the interface derives from. Each opens the ramp grid without it
 | Default Format | `defaultLinkFormat` | Which form a pasted address is written in. | **Full Link** · Short Link · Page Title |
 | Paste Link Into Text | `pasteLinkIntoText` | Pasting an address over selected text turns that text into the link instead of replacing it. | On · **Off** |
 
+**Web Links**
+
+| Setting | Key | Description | Options |
+| --- | --- | --- | --- |
+| Open Links In Pommora | `openLinksInApp` | External links open the floating browser instead of the system one. | On · **Off** |
+
 **Connections**
 
 | Setting | Key | Description | Options |
@@ -100,10 +106,9 @@ Seated and empty.
 
 **Webpages**
 
-| Setting               | Key             | Description                                                         | Options            |
-| --------------------- | --------------- | ------------------------------------------------------------------- | ------------------ |
-| Open Links In Pommora | `openLinksInApp` | External links open the floating browser instead of the system one. | On · **Off**       |
-| Webpage Zoom          | `webZoomFactor` | How embedded webpages scale, relative to the window.                | 50%–200% (**100%**) |
+| Setting      | Key             | Description                                          | Options             |
+| ------------ | --------------- | ---------------------------------------------------- | ------------------- |
+| Webpage Zoom | `webZoomFactor` | How embedded webpages scale, relative to the window. | 50%–200% (**100%**) |
 
 #### Automations
 
