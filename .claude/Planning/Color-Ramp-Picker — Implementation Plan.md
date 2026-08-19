@@ -1,6 +1,6 @@
 ## Color Ramp Picker — Implementation Plan
 
-> **Status:** written, pending review · Spec: `PickerSandboxLeaf.tsx` (the settled design, live at `#picker-sandbox`) · Execute tasks in order.
+> **Status:** ratified — in execution · Spec: `PickerSandboxLeaf.tsx` (the settled design, live at `#picker-sandbox`) · Execute tasks in order.
 > Citations name files and symbols; re-derive before editing.
 
 **Goal**
