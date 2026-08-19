@@ -13,8 +13,7 @@ import {
   type CalloutLine,
 } from '../detect'
 import { fencedCodeRanges, scanFencedCode } from '../detect'
-import { docMathRanges } from './mathRanges'
-import { docEmbedLines } from './embedRanges'
+import { docLineScan } from './embedRanges'
 import { tableRegions } from '../Tables/regions'
 import { headingSections } from './folding'
 
@@ -62,8 +61,7 @@ function blockContext(doc: string): BlockContext {
   const rawCallout = calloutLines(lines)
   const fences = fencedCodeRanges(doc)
   const tables = tableRegions(doc)
-  const maths = docMathRanges(doc)
-  const embeds = docEmbedLines(doc)
+  const { maths, embeds } = docLineScan(doc)
   const inFence = (i: number): boolean =>
     i >= 0 && i < n && fences.some(([f, t]) => starts[i] >= f && starts[i] <= t)
   const inTable = (i: number): boolean =>

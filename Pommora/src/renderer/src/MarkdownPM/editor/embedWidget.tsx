@@ -268,8 +268,7 @@ class EmbedTileWidget extends WidgetType {
   }
 }
 
-/** The webpage tile's seat on the shared chassis. This task ships the claim mechanics; the live
- *  payload replaces the blank body in the next. */
+/** The webpage tile's seat on the shared chassis. */
 interface WebTileDom extends TileDom {
   _visible?: boolean
   _renderW?: () => void
@@ -282,6 +281,9 @@ const WEB_PREARM_PX = 8
 // The fit cap's breathing room below the scrollport edges — a tile exactly as tall as the
 // scrollport can never read fully-visible, and a never-fully-visible tile never goes live.
 const WEB_FIT_MARGIN = 2 * WEB_PREARM_PX + 24
+// Full visibility with subpixel slack: fractional zoom can report ~0.999 for a fully visible
+// tile, and demanding an exact 1 there would hold it on its static face forever.
+const WEB_FULL_RATIO = 0.99
 
 interface WebObservers {
   io: IntersectionObserver
@@ -300,7 +302,7 @@ function observersFor(view: EditorView): WebObservers {
       (entries) => {
         for (const en of entries) {
           const d = en.target as WebTileDom
-          const visible = en.intersectionRatio >= 1
+          const visible = en.intersectionRatio >= WEB_FULL_RATIO
           if (d._visible !== visible) {
             d._visible = visible
             d._renderW?.()
