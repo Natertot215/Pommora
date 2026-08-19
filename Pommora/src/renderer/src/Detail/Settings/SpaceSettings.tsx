@@ -6,6 +6,7 @@ import { MenuBottomRow, MenuItem, MenuScrollFrame } from '@renderer/design-syste
 import { PointMenu } from '@renderer/design-system/components/PickerMenu'
 import { vars as colorVars } from '@renderer/design-system/tokens/color.css'
 import { TINT_STEPS, tintAt } from '@renderer/design-system/tokens/tint'
+import { cellColor } from '@renderer/design-system/tokens/ramp'
 import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
 import { footerLockAction, lockIcon } from '@renderer/design-system/components/menu/menu.css'
 import { useSession } from '../../store'
@@ -30,9 +31,7 @@ export function SpaceSettingsContent({ id }: { id: string }): React.JSX.Element 
   if (!node) return null
 
   const resolved = chipColorFor(color)
-  const solid = (SOLID_COLORS as readonly string[]).includes(resolved)
-    ? colorVars.color.solid[resolved as SolidColor]
-    : null
+  const solid = resolved === 'default' ? null : cellColor(resolved)
 
   return (
     <div style={{ minWidth: 225, minHeight: 245, display: 'flex', flexDirection: 'column' }}>

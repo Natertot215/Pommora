@@ -1,27 +1,9 @@
-import { style, styleVariants } from '@vanilla-extract/css'
-import { vars as colorVars } from '../../design-system/tokens/color.css'
-
-const solid = colorVars.color.solid
+import { style } from '@vanilla-extract/css'
 
 export const grid = style({
   display: 'grid',
   gridTemplateColumns: 'repeat(2, 16px)',
   gap: '4px',
-})
-
-/** Each swatch's solid, published as `--sw` and DRY'd off the shared colour tokens so a new palette
- *  entry drops straight in. */
-export const swatchColor = styleVariants({
-  red: { vars: { '--sw': solid.red } },
-  orange: { vars: { '--sw': solid.orange } },
-  yellow: { vars: { '--sw': solid.yellow } },
-  green: { vars: { '--sw': solid.green } },
-  lightBlue: { vars: { '--sw': solid.lightBlue } },
-  cyan: { vars: { '--sw': solid.cyan } },
-  blue: { vars: { '--sw': solid.blue } },
-  purple: { vars: { '--sw': solid.purple } },
-  lavender: { vars: { '--sw': solid.lavender } },
-  grey: { vars: { '--sw': solid.grey } },
 })
 
 export const swatch = style({

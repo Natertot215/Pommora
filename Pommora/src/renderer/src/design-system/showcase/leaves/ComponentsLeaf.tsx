@@ -36,9 +36,9 @@ function PopupButton({
 }
 
 const PICKER_LABELS = [
-  { label: 'Active', color: 'blue' },
-  { label: 'On Hold', color: 'orange' },
-  { label: 'Complete', color: 'green' },
+  { label: 'Active', color: 'blue-1' },
+  { label: 'On Hold', color: 'orange-3' },
+  { label: 'Complete', color: 'green-3' },
 ] as const
 
 // A fixed option set — what a popout is for, against the picker's user-authored values above.
