@@ -39,6 +39,7 @@ import {
   ENTITY_ICON_KINDS,
   coerceHoverLinger,
   coerceViewScale,
+  coerceWebZoom,
 } from '@shared/types'
 import { isColorKey } from '@shared/theme'
 import { savedView, type SavedView } from '@shared/views'
@@ -135,6 +136,8 @@ export function readPersonalization(raw: unknown): Personalization {
     trashHideTime: bool(p.trashHideTime),
     pasteLinkIntoText: bool(p.pasteLinkIntoText),
     defaultLinkFormat: LINK_DISPLAYS.find((d) => d === p.defaultLinkFormat),
+    openLinksInApp: bool(p.openLinksInApp),
+    webZoomFactor: typeof p.webZoomFactor === 'number' ? coerceWebZoom(p.webZoomFactor) : undefined,
   }
 }
 

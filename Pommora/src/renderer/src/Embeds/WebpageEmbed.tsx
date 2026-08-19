@@ -14,6 +14,7 @@ import { webpageTileTitle } from '@shared/webpageEmbed'
 import { TextPicker } from '@renderer/design-system/components/TextPicker'
 import { useDismiss } from '@renderer/design-system/components/useDismiss'
 import { useSession } from '../store'
+import { openWebLink } from '../openWebLink'
 import { webGuestRetention } from './webRetention'
 import './embeds.css'
 
@@ -188,7 +189,10 @@ export function WebpageEmbed({
           }}
           src={url}
           partition={partition}
-          allowpopups
+          // The empty-string form, cast past React's boolean typing: React only serializes
+          // string values for attributes it doesn't know, so a bare boolean never reaches the
+          // attach — and popups then die inside Blink.
+          allowpopups={'' as unknown as boolean}
           className={cx(!onScreen && 'is-retained', !engaged && 'is-inert')}
         />
       ) : null}
@@ -216,7 +220,7 @@ export function WebpageEmbed({
       <button
         type="button"
         className={cx('wpembed-title', text.footnote.standard)}
-        onClick={() => void window.nexus.openExternal(url)}
+        onClick={() => openWebLink(url)}
       >
         {title}
       </button>

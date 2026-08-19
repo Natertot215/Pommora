@@ -7,6 +7,7 @@ import { cx } from '@renderer/design-system/cx'
 import { OverflowScroll } from '@renderer/design-system/components/OverflowScroll'
 import { parseLink, linkDisplayText } from '@shared/linkValue'
 import { solidColorCss } from './solidColor'
+import { openWebLink } from '@renderer/openWebLink'
 
 /** The url-cell body, split out so ONLY url cells pay for the page-title store subscription + the
  *  on-demand fetch — Cell's other branches stay pure renders under the row memo. The alias always wins;
@@ -51,7 +52,7 @@ export function LinkCell({
           e.preventDefault()
           e.stopPropagation()
           if (e.ctrlKey) return // Ctrl+Click = macOS secondary-click; let the contextmenu menu win
-          void window.nexus.openExternal(url)
+          openWebLink(url)
         }}
       >
         {showFullLink ? url : linkDisplayText(raw, display, title)}

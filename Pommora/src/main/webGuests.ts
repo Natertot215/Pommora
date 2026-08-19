@@ -4,7 +4,7 @@
 
 import { app, session, webContents, BrowserWindow, type WebContents } from 'electron'
 import { isHttpLink } from '@shared/links'
-import { WEB_PARTITION } from '@shared/types'
+import { WEB_PARTITION, WEB_ZOOM_DEFAULT } from '@shared/types'
 import { push } from './ipc'
 
 /** The sign-in host whose server-side detection additionally trips on the Chrome token; requests
@@ -36,6 +36,23 @@ const hostOf = (url: string): string => {
 
 const webviewGuests = (): WebContents[] =>
   webContents.getAllWebContents().filter((wc) => wc.getType() === 'webview')
+
+// The user's web-guest scale (personalization.webZoomFactor) — guests render at their host's
+// factor times this. Not derivable here: settings live per-nexus, so the boot read and the
+// settings write both push the coerced value in.
+let webZoom = WEB_ZOOM_DEFAULT
+
+/** The settings seam: re-stamps every living guest so a changed preference applies in place. */
+export function setWebZoomFactor(factor: number): void {
+  webZoom = factor
+  syncGuestZoom()
+}
+
+// One derivation of a guest's factor — its own host's zoom scaled by the preference.
+function stampGuestZoom(g: WebContents): void {
+  const factor = g.hostWebContents?.getZoomFactor()
+  if (factor) g.setZoomFactor(factor * webZoom)
+}
 
 // App-level wiring registers exactly once — createWindow re-runs on macOS activate, and a
 // listener registered per window would stack for the process lifetime.
@@ -76,10 +93,7 @@ function wireAppLevel(): void {
     // Guests don't inherit host zoom (per-render-host, and theirs is their own), and their zoom
     // is per-origin in their session — every commit re-stamps from the embedder's live factor,
     // so a slow page never renders unscaled while it loads.
-    contents.on('did-navigate', () => {
-      const factor = contents.hostWebContents?.getZoomFactor()
-      if (factor) contents.setZoomFactor(factor)
-    })
+    contents.on('did-navigate', () => stampGuestZoom(contents))
   })
 }
 
@@ -113,20 +127,20 @@ export function installWebGuests(win: BrowserWindow): void {
   // so the sync reads the settled factor a tick later.
   win.webContents.on('zoom-changed', () =>
     setImmediate(() => {
-      if (!win.isDestroyed()) syncGuestZoom(win.webContents.getZoomFactor())
+      if (!win.isDestroyed()) syncGuestZoom()
     }),
   )
 }
 
-function syncGuestZoom(factor: number): void {
-  for (const g of webviewGuests()) if (!g.isDestroyed()) g.setZoomFactor(factor)
+function syncGuestZoom(): void {
+  for (const g of webviewGuests()) if (!g.isDestroyed()) stampGuestZoom(g)
 }
 
 /** The single seam every host-zoom writer uses; a bare `setZoomFactor` elsewhere leaves guests
  *  at the old scale. */
 export function setHostZoom(wc: WebContents, factor: number): void {
   wc.setZoomFactor(factor)
-  syncGuestZoom(factor)
+  syncGuestZoom()
 }
 
 // Chromium's visual zoom range; the de-roled step clamps to it where the native roles let the

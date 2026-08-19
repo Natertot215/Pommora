@@ -20,6 +20,7 @@ import { contextTargetToSelect } from './Tabs/tabsModel'
 import { useNavThumbnails } from './Navigation/useNavThumbnails'
 import { Icon } from '@renderer/design-system/symbols'
 import { matchesCommand } from './Commands'
+import { openWebLink } from './openWebLink'
 
 export function App(): React.JSX.Element {
   // Per-field selectors, never the bare hook — the shell must not re-render on every store set().
@@ -133,6 +134,12 @@ export function App(): React.JSX.Element {
   useEffect(() => {
     return window.nexus.onNavChanged((nav) => applyNavChanged(nav))
   }, [applyNavChanged])
+
+  // A guest's window.open lands here — the same adjudicator link clicks use, so popups and
+  // clicks can never open in different places.
+  useEffect(() => {
+    return window.nexus.onWebPopup((url) => openWebLink(url))
+  }, [])
 
   useEffect(() => {
     return window.nexus.onMenuAction((action) => {
