@@ -66,25 +66,6 @@
   overflow: hidden;
   background: var(--fill-tertiary);
 }
-.nav-gallery-thumb img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: top; /* the page's inline title banner sits at the top of the shot */
-  transform: scale(var(--cover-zoom, 1));
-  transform-origin: top left; /* anchor the zoom at the title / line-starts so it never clips them */
-  -webkit-user-drag: none; /* the image never drags on its own — the card owns the drag (or nothing) */
-}
-.nav-gallery-ph {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--label-tertiary);
-  background: var(--fill-quaternary);
-}
 
 /* Pin overlaid top-right ON the thumbnail — no fill. Hover-revealed on unpinned cards; solid (still
    no background) once pinned. */
@@ -109,34 +90,13 @@
   opacity: 1;
 }
 
+/* The gallery card is aspect-locked, so its title area takes what the cover band leaves. */
 .nav-gallery-text {
-  flex: 1;
   min-height: 0;
-  /* Title pinned to the TOP of the title-area (flex-start), never centered — so a card with no location
-     keeps its title in the same fixed top spot as one with a location. Title + location are two rows. */
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  gap: 4px;
-  padding: 8px 9px;
-  min-width: 0;
-  /* The muted dimming veil over the pane glass — reads as a slightly-darker glass shelf, mirroring the
-     glass's own dimming. (A nested backdrop-filter wouldn't: Chromium doesn't stack frost-in-frost.) */
-  background: var(--state-muted);
-  border-top: var(--border-cell);
-}
-.nav-gallery-title,
-.nav-gallery-loc {
-  flex: 0 0 auto; /* each is its own fixed row — the title never grows to fill / recenter */
-  display: flex;
-  align-items: center;
-  min-width: 0;
 }
 .nav-gallery-title {
   gap: 5px;
   color: var(--label-primary);
-  --edge-fade: 14px;
-  --scroll-fade: 14px;
 }
 .nav-gallery-title-icon {
   flex: 0 0 auto;
@@ -144,8 +104,6 @@
 }
 .nav-gallery-loc {
   color: var(--label-secondary);
-  --edge-fade: 14px;
-  --scroll-fade: 14px;
 }
 /* Typography scales with the card: cqi = 1% of the card's width (the card is the query container), so
    a bigger card reads bigger text. Clamped so tiny/huge cards stay legible. Card-prefixed to outrank

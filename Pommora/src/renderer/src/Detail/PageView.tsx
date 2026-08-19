@@ -115,7 +115,7 @@ export function PageView({
       return (
         <div className="detail-placeholder detail-error">
           Couldn’t open page
-          <span className="detail-detail">{pageError?.message}</span>
+          <span className="state-detail">{pageError?.message}</span>
         </div>
       )
     case 'ready': {

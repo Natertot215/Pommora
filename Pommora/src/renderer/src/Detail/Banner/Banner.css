@@ -4,6 +4,9 @@
 .banner {
   position: relative;
   height: 230px;
+  /* The banner title's type size — the identity icon beside it is sized to match, so both read the
+     one declaration rather than each restating the number. */
+  --detail-title-size: var(--container-title-size);
   border-bottom: var(
     --border-heading
   ); /* the shared heading↔body seam (same token as the table heading) */
@@ -21,7 +24,7 @@
    (same Banner) stay identical. */
 .banner-title,
 .banner-empty-title {
-  font-size: 20px;
+  font-size: var(--text-title1-size);
   font-weight: var(--weight-semibold);
   color: var(--label-primary);
   overflow: hidden;
@@ -38,7 +41,7 @@
   display: flex;
   align-items: center;
   gap: 8px; /* the shared detail-title icon gap */
-  text-shadow: 0 1px 4px var(--banner-shadow);
+  text-shadow: var(--banner-cast);
   pointer-events: none;
   transition: left var(--duration-base) var(--ease-standard);
 }
@@ -62,7 +65,6 @@
    hits, so a right-click on empty overlay width still reaches the banner's Change/Remove menu.
    Size/weight/color re-skin the header to the banner-title look via its own surface knob. */
 .banner-title .detail-title {
-  --detail-title-size: 20px;
   min-width: 0;
 }
 .banner-title .detail-title-icon,
@@ -72,7 +74,7 @@
 }
 .banner-title .detail-title-icon {
   color: var(--label-primary);
-  filter: drop-shadow(0 1px 4px var(--banner-shadow));
+  filter: drop-shadow(var(--banner-cast));
 }
 .banner-title .detail-title-text,
 .banner-title .detail-title-input {
@@ -83,16 +85,16 @@
    title re-enable pointer hits (the overlay is otherwise inert) so their right-click reaches the
    Hide/Show-Icon menu and the title's double-click rename fires. */
 .banner-home-icon {
-  width: var(--detail-title-size, 20px);
-  height: var(--detail-title-size, 20px);
-  max-width: var(--detail-title-size, 20px);
+  width: var(--detail-title-size);
+  height: var(--detail-title-size);
+  max-width: var(--detail-title-size);
   min-width: 0;
   flex: 0 0 auto;
   border-radius: 5px;
   object-fit: cover;
   overflow: hidden;
   color: var(--label-primary);
-  filter: drop-shadow(0 1px 4px var(--banner-shadow));
+  filter: drop-shadow(var(--banner-cast));
   /* Hide/show slides the icon in/out on the slide token (--duration-base) — max-width collapses the
      space, the translate carries it, and the negative margin swallows the banner-title gap. */
   transition:
@@ -147,7 +149,7 @@
 /* The banner-less header hosts the same DetailTitleHeader as the banner overlay — re-skin it to
    the shared container-title size (no shadow/pointer tricks: there's no image underneath). */
 .banner-empty-title .detail-title {
-  --detail-title-size: 20px;
+  --detail-title-size: var(--container-title-size);
   min-width: 0;
 }
 .banner-empty-title .detail-title-text,
@@ -174,7 +176,7 @@
   background: none;
   padding: 2px 4px;
   font: inherit;
-  font-size: 12px;
+  font-size: var(--text-control-size);
   color: var(--label-tertiary);
   cursor: default;
   border-radius: 5px;

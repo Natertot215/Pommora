@@ -3,6 +3,7 @@ import { vars } from '../../tokens/color.css'
 import { duration, easing } from '../../tokens/motion'
 import { TINT_STEPS, tintAt } from '../../tokens/tint'
 import { font } from '../../tokens/typography.css'
+import { stack } from '../../tokens/stack'
 
 const c = vars.color
 // Selection tints: endpoints at a stronger tint, the in-between band a
@@ -65,7 +66,7 @@ export const navBtn = style({
       to body — centered on the trigger phantom, lifted, hit-enabled
       (the phantom itself is pointer-inert). ── */
 export const ddWrap = style({ display: 'contents' })
-globalStyle(`${ddWrap} > div`, { zIndex: 30, pointerEvents: 'auto' })
+globalStyle(`${ddWrap} > div`, { zIndex: stack.top.menuOverlay, pointerEvents: 'auto' })
 export const menuList = style({
   display: 'flex',
   flexDirection: 'column',
