@@ -16,7 +16,8 @@ import {
 import { reconcileContextKeys } from '@shared/contextResolve'
 import { blockHostKey, NEW_TILE_H } from '@shared/blocks'
 import { writeKey } from '../db/localState'
-import { SOLID_COLORS, type SpaceNode } from '@shared/types'
+import type { SpaceNode } from '@shared/types'
+import { isColorKey } from '@shared/theme'
 import { ok, fail, type Result } from '@shared/result'
 import { mutateRegistryFile, readRegistryStrict } from '../contextsRegistry'
 import { adoptedId, newId } from '../ids'
@@ -259,14 +260,14 @@ export async function createSpace(
   })
 }
 
-/** Set/clear a Space's chip color on its `_space.json` — chip solids only. */
+/** Set/clear a Space's chip color on its `_space.json` — ramp cells and the legacy anchor names. */
 export async function setSpaceColor(
   root: string,
   spaceId: string,
   color: string | undefined,
 ): Promise<Result<null>> {
-  if (color !== undefined && !(SOLID_COLORS as readonly string[]).includes(color))
-    return fail('invalid-name', `"${color}" is not a chip solid.`)
+  if (color !== undefined && !isColorKey(color))
+    return fail('invalid-name', `"${color}" is not a chip color.`)
   const world = await loadContextWorld(root)
   if (!world.ok) return world
   const ref = world.value.spaceById.get(spaceId)

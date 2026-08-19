@@ -178,17 +178,28 @@ describe('setSpaceContext (G-1, cross-context)', () => {
 })
 
 describe('setSpaceColor', () => {
-  it('accepts a chip solid, clears on undefined, rejects a non-solid', async () => {
+  const sidecar = async (): Promise<Record<string, unknown>> =>
+    JSON.parse(await readFile(join(contextsDir(root), 'Projects', 'Pommora', '_space.json'), 'utf8'))
+
+  it('accepts a legacy anchor name, clears on undefined, rejects a non-color', async () => {
     expect((await setSpaceColor(root, 'sp-pom', 'cyan')).ok).toBe(true)
-    let sc = JSON.parse(
-      await readFile(join(contextsDir(root), 'Projects', 'Pommora', '_space.json'), 'utf8'),
-    )
-    expect(sc.color).toBe('cyan')
+    expect((await sidecar()).color).toBe('cyan')
     expect((await setSpaceColor(root, 'sp-pom', undefined)).ok).toBe(true)
-    sc = JSON.parse(
-      await readFile(join(contextsDir(root), 'Projects', 'Pommora', '_space.json'), 'utf8'),
-    )
-    expect('color' in sc).toBe(false)
+    expect('color' in (await sidecar())).toBe(false)
     expect((await setSpaceColor(root, 'sp-pom', 'magenta')).ok).toBe(false)
+  })
+
+  // The guard's positive half: a ramp cell must provably reach disk, written verbatim — the write
+  // path never normalizes, so what the picker emits is what the sidecar holds.
+  it('writes a ramp cell through verbatim', async () => {
+    expect((await setSpaceColor(root, 'sp-pom', 'blue-6')).ok).toBe(true)
+    expect((await sidecar()).color).toBe('blue-6')
+  })
+
+  // Its negative half: removing the guard makes these pass, which is what makes them worth having.
+  it('refuses keys outside the grammar', async () => {
+    for (const bad of ['blue-8', 'chartreuse', '']) {
+      expect((await setSpaceColor(root, 'sp-pom', bad)).ok).toBe(false)
+    }
   })
 })

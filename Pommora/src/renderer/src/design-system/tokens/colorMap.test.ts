@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { RAMP_FAMILIES, RAMP_STEPS, SPECTRUM } from '@shared/theme'
-import { chipColorFor, colorLabel } from './colorMap'
+import { chipColorFor } from './colorMap'
 import { ANCHOR_CELLS } from './ramp'
 
 describe('chipColorFor', () => {
@@ -37,15 +37,5 @@ describe('chipColorFor', () => {
   // round-trip in from disk.
   it('refuses the accent sentinel', () => {
     expect(chipColorFor('accent')).toBe('default')
-  })
-})
-
-describe('colorLabel', () => {
-  it('keeps Cobalt on the cobalt anchor', () => {
-    expect(colorLabel(ANCHOR_CELLS.lightBlue)).toBe('Cobalt')
-  })
-
-  it('Title-cases anything else', () => {
-    expect(colorLabel('default')).toBe('Default')
   })
 })
