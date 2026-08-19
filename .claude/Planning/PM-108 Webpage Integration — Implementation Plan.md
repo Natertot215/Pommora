@@ -268,9 +268,9 @@ Tests: extend the embed-widget flow tests with webpage cases.
 **Failure half:** fetch never lands → the domain stands (the cache never stores empty titles — nothing loops or retries hot) · a hand-written label containing `]` was escaped by the author or the line never claimed (detector's rule) — display unescapes exactly as `unescapeAlias` does for link values.
 
 **Steps:**
-- [ ] Failing resolution-matrix test; implement; green; gates green.
-- [ ] Dev app: embed under each of the three formats; Page Title shows the domain, then the fetched title, with the document bytes unchanged throughout (verify by reading the file).
-- [ ] Commit: `feat(embeds): tile titles resolve at render through the shared title path`
+- [x] Failing resolution-matrix test; implement; green; gates green *(full suite green excluding the parallel session's uncommitted `ramp.test.ts` — external red, recorded)*.
+- [ ] Dev app: embed under each of the three formats; Page Title shows the domain, then the fetched title, with the document bytes unchanged throughout (verify by reading the file). *(Gate 3 walkthrough — instance lock.)*
+- [x] Commit: `feat(embeds): tile titles resolve at render through the shared title path`
 
 #### Task 9: The Embed ▸ Webpage door
 
