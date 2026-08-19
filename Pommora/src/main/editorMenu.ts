@@ -10,7 +10,14 @@ import type {
   MenuItemConstructorOptions,
   WebContents,
 } from 'electron'
-import { EDITOR_ACTION_PREFIX, INSERT_LINK_ACTION, type FormatState } from '@shared/editorMenu'
+import {
+  acceleratorFor,
+  EDITOR_ACTION_PREFIX,
+  type FormatChordAction,
+  type FormatState,
+  INSERT_LINK_ACTION,
+} from '@shared/editorMenu'
+import { HEADING_LEVELS } from '@shared/gripMenu'
 import { isValidLink } from '@shared/links'
 import { PASTE_AS_PREFIX, pasteAsRows } from '@shared/PasteAsMenu'
 
@@ -91,6 +98,25 @@ function pommoraItems(
   selection: string,
 ): MenuItemConstructorOptions[] {
   const act = (a: string): (() => void) => dispatch(wc, a)
+  /** The Format submenu's rows, in the order they read. Each names the chord it displays and the
+   *  FormatState flag whose checkmark it wears — only the boolean fields, since a row is a checkbox. */
+  type FormatFlag = {
+    [K in keyof FormatState]: FormatState[K] extends boolean ? K : never
+  }[keyof FormatState]
+
+  const FORMAT_ROWS: readonly {
+    label: string
+    action: FormatChordAction
+    state: FormatFlag
+  }[] = [
+    { label: 'Italic', action: 'format:italic', state: 'italic' },
+    { label: 'Inline Code', action: 'format:inlineCode', state: 'inlineCode' },
+    { label: 'Bold', action: 'format:bold', state: 'bold' },
+    { label: 'Strikethrough', action: 'format:strikethrough', state: 'strikethrough' },
+    { label: 'Connection', action: 'format:connection', state: 'connection' },
+    { label: 'Link', action: 'format:link', state: 'link' },
+  ]
+
   const heading = (label: string, level: number): MenuItemConstructorOptions => ({
     label,
     type: 'radio',
@@ -121,57 +147,16 @@ function pommoraItems(
     },
     {
       label: 'Format',
-      submenu: [
-        // Accelerators are display-only (registerAccelerator: false); the keys are bound in formatKeymap.ts.
-        {
-          label: 'Italic',
-          type: 'checkbox',
-          checked: s.italic,
-          accelerator: 'CmdOrCtrl+I',
-          registerAccelerator: false,
-          click: act('format:italic'),
-        },
-        {
-          label: 'Inline Code',
-          type: 'checkbox',
-          checked: s.inlineCode,
-          accelerator: 'CmdOrCtrl+E',
-          registerAccelerator: false,
-          click: act('format:inlineCode'),
-        },
-        {
-          label: 'Bold',
-          type: 'checkbox',
-          checked: s.bold,
-          accelerator: 'CmdOrCtrl+B',
-          registerAccelerator: false,
-          click: act('format:bold'),
-        },
-        {
-          label: 'Strikethrough',
-          type: 'checkbox',
-          checked: s.strikethrough,
-          accelerator: 'CmdOrCtrl+Shift+X',
-          registerAccelerator: false,
-          click: act('format:strikethrough'),
-        },
-        {
-          label: 'Connection',
-          type: 'checkbox',
-          checked: s.connection,
-          accelerator: 'CmdOrCtrl+Shift+K',
-          registerAccelerator: false,
-          click: act('format:connection'),
-        },
-        {
-          label: 'Link',
-          type: 'checkbox',
-          checked: s.link,
-          accelerator: 'CmdOrCtrl+K',
-          registerAccelerator: false,
-          click: act('format:link'),
-        },
-      ],
+      // Accelerators are display-only (registerAccelerator: false); the keys are bound in
+      // formatKeymap.ts, from the same FORMAT_CHORDS this reads.
+      submenu: FORMAT_ROWS.map(({ label, action, state }) => ({
+        label,
+        type: 'checkbox' as const,
+        checked: s[state],
+        accelerator: acceleratorFor(action),
+        registerAccelerator: false,
+        click: act(action),
+      })),
     },
     {
       label: 'Embed',
@@ -182,14 +167,7 @@ function pommoraItems(
     },
     {
       label: 'Heading',
-      submenu: [
-        heading('Paragraph', 0),
-        heading('Heading 1', 1),
-        heading('Heading 2', 2),
-        heading('Heading 3', 3),
-        heading('Heading 4', 4),
-        heading('Heading 5', 5),
-      ],
+      submenu: HEADING_LEVELS.map(({ level, label }) => heading(label, level)),
     },
     {
       label: 'Lists',

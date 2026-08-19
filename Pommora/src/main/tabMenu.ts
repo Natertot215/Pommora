@@ -1,7 +1,7 @@
 import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
 import type { TabMenuAction, TabMenuContext } from '@shared/tabMenu'
 import { pageMetaMenuSubset, pageSendActions } from '@shared/pageMenu'
-import { pageMenuTemplate } from './pageMenu'
+import { rowTemplate } from './rowMenu'
 import { popReturningMenu } from './returningMenu'
 
 // The tab right-click menu: Open Preview · the send block · Pin/Unpin · Close, gated by the tab's
@@ -16,7 +16,7 @@ export function popTabMenu(win: BrowserWindow, ctx: TabMenuContext): Promise<Tab
       items.push(
         { label: 'Open Preview', click: pick('preview') },
         { type: 'separator' },
-        ...pageMenuTemplate(pageMetaMenuSubset(pageSendActions(ctx)), pick, ctx),
+        ...rowTemplate(pageMetaMenuSubset(pageSendActions(ctx)), pick, ctx),
         { type: 'separator' },
       )
     if (!ctx.isNewTab)

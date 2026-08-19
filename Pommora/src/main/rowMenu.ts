@@ -3,7 +3,8 @@
 // model reach the OS or an in-app pane without either renderer knowing about the other.
 import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
 import type { ActionItem, MenuAnchor, RowMenuRequest } from '@shared/menuModel'
-import { popReturningMenu } from './returningMenu'
+import { PAGE_MOVE_ROW, type PageMoveContext } from '@shared/pageMenu'
+import { destinationNodes, popReturningMenu } from './returningMenu'
 
 /** The renderer measures in CSS pixels; `popup` places in window DIPs, and the two differ by
  *  exactly the zoom the window is running at. Converted in one place: an anchor that skips this
@@ -40,17 +41,39 @@ export function nativeRow<A extends string>(
   }
 }
 
-/** A model's rows as a native template — `separatorBefore` expands into real separator rows. */
+/** A model's rows as a native template. `separatorBefore` expands into real separator rows, and a
+ *  leading one is dropped since it separates nothing. The one row that isn't an act — Move To ▸ —
+ *  opens the destination tree, where the leaf a person lands on is what resolves back as the move;
+ *  a menu carrying that row passes the context it moves within. Every native menu built from a
+ *  model comes through here, so the send block can't drift between the surfaces that carry it. */
 export function rowTemplate<A extends string>(
   items: readonly ActionItem<A>[],
   pick: (action: A) => () => void,
+  move?: PageMoveContext,
 ): MenuItemConstructorOptions[] {
   const template: MenuItemConstructorOptions[] = []
   for (const item of items) {
     if (item.separatorBefore && template.length > 0) template.push({ type: 'separator' })
-    template.push(nativeRow(item, pick))
+    if (item.action === PAGE_MOVE_ROW)
+      template.push({
+        label: item.label,
+        submenu: destinationNodes(
+          move?.moveTargets ?? [],
+          (t) => pick(`move:${t.path}` as A),
+          (t) => t.path === move?.currentParentPath,
+        ),
+      })
+    else template.push(nativeRow(item, pick))
   }
   return template
+}
+
+/** A menu that is nothing but its model's rows: pop them, resolve the pick. */
+export function popModelMenu<A extends string>(
+  win: BrowserWindow,
+  items: readonly ActionItem<A>[],
+): Promise<A | null> {
+  return popReturningMenu<A>(win, (pick) => rowTemplate(items, pick))
 }
 
 export function popRowMenu(win: BrowserWindow, req: RowMenuRequest): Promise<string | null> {

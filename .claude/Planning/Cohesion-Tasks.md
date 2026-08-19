@@ -53,12 +53,25 @@ Bridge the token gaps first; converting consumers before that just hardcodes aro
 
 ### Step 3 — Native Menus
 
-- [ ] `pageMenuTemplate` merges into `rowTemplate`, carrying the move-row submenu case
-- [ ] `pageMenu.ts:18` gains the leading-separator guard its twin has
-- [ ] `shared/pageMenu.ts:152`'s third copy of the separator drop retires
-- [ ] Label and enable logic moves into `shared/` per menu, following `shared/viewRowMenu.ts`
-- [ ] Main-side files collapse to popping the converted model
-- [ ] Tests in `shared/` for the moved logic
+- [x] `pageMenuTemplate` merges into `rowTemplate`, carrying the move-row submenu case —
+      `main/pageMenu.ts` retires, its ten consumers repointed
+- [x] `pageMenu.ts:18` gains the leading-separator guard its twin has (carried by the merge)
+- [x] `shared/pageMenu.ts:152`'s copy of the separator drop stays — a test asserts the MODEL drops a
+      leading separator, which is a contract on the model rather than an artifact of rendering
+- [x] Label and enable logic moves into `shared/` per menu, following `shared/viewRowMenu.ts` —
+      `tableMenu` (52→11), `viewEmbedMenu` (47→26), `viewButtonMenu` (22→13); `viewStyleSubmenu`
+      retires with its last caller
+- [x] The six editor format chords are declared once in `shared/editorMenu.ts` and formatted by each
+      side, so the menu can no longer display a shortcut the editor doesn't bind
+- [x] The heading ladder and the list-marker labels are named once in `shared/gripMenu.ts`
+- [x] Main-side files collapse to popping the converted model
+- [x] Tests in `shared/` for the moved logic — 11 across three files
+
+Left where they are, with reason: `gripMenu` resolves object actions through an arbitrary-depth pick
+tree, which `ActionItem` cannot express; `trashMenu` already keeps its labels in `shared/` and pops
+through the nesting primitive its own comment names; `contextMenu` runs its writes inline rather than
+resolving an action, so it is a different chassis rather than a model. The table's Align rows read as
+checkmarks rather than radios (Nathan's call).
 
 ### Step 4 — MarkdownPM
 

@@ -1,8 +1,6 @@
 import type { MenuItemConstructorOptions } from 'electron'
 import type { StyleMenuItem } from '@shared/columnMenu'
-import type { ViewStyle } from '@shared/types'
 import { COLUMN_ALIGNS, type ColumnAlign } from '@shared/views'
-import type { ViewStyleAction } from '@shared/viewMenus'
 
 type StyleAction = `style:${string}:${string}`
 
@@ -18,22 +16,6 @@ export function alignSubmenu(
     checked: current === a,
     click: pick(`align:${a}`),
   }))
-}
-
-/** The Style submenu shared by the toolbar's view button and the view embed — which surface a
- *  container's views are picked from. Checkboxes rather than radios: the pair reads as two states
- *  of one setting, and Electron scopes a radio group to its separator run. */
-export function viewStyleSubmenu(
-  current: ViewStyle,
-  pick: (a: ViewStyleAction) => () => void,
-): MenuItemConstructorOptions[] {
-  const row = (label: string, style: ViewStyle): MenuItemConstructorOptions => ({
-    label,
-    type: 'checkbox',
-    checked: current === style,
-    click: pick(`style-${style}`),
-  })
-  return [row('Dropdown', 'dropdown'), row('Toolbar', 'toolbar')]
 }
 
 /** The Style submenu template shared by the column-header and cell menus: each row is a radio, and a

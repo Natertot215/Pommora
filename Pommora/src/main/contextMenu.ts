@@ -21,7 +21,7 @@ import {
   type PageMetaAction,
   type PageMoveAction,
 } from '@shared/pageMenu'
-import { pageMenuTemplate } from './pageMenu'
+import { rowTemplate } from './rowMenu'
 import type { ContextTarget, Creator, MutableKind, MutateRequest } from '@shared/mutate'
 import { readNexusLabels } from './readNexus'
 
@@ -148,7 +148,7 @@ export async function showContextMenu(
   // menu rather than a subset of this one.
   if (target.kind === 'page') {
     items.push(
-      ...pageMenuTemplate(
+      ...rowTemplate(
         pageMetaMenuItems(target.alreadyOpen, {
           preview: true,
           newPages: 'pair',
