@@ -18,6 +18,12 @@ import { openWebLink } from '../openWebLink'
 import { webGuestRetention } from './webRetention'
 import './embeds.css'
 
+/** What the guest element answers with once attached — the parting frame's only surface. */
+type CapturableGuest = HTMLElement & { capturePage?: () => Promise<{ toDataURL(): string }> }
+
+// How long a capture may hang before the clip proceeds without a frame.
+const CAPTURE_DEADLINE_MS = 200
+
 /** The live half of the resolution: the store's format and cache, arming the shared fetch in Page
  *  Title mode exactly as a cell does (in-flight dedupe and the never-store-empty rule are the
  *  cache's own). */
@@ -105,7 +111,7 @@ export function WebpageEmbed({
     // The clip transition: disengage, hand focus back if the guest held it, capture the parting
     // frame, and retain the hidden guest under the cap.
     setEngaged(false)
-    const el = ref.current
+    const el = ref.current as CapturableGuest | null
     if (el && document.activeElement === el) {
       el.blur()
       refocusRef.current?.()
@@ -116,8 +122,7 @@ export function WebpageEmbed({
       // A re-entry mid-capture means the guest never went hidden — nothing to retain.
       if (!visibleRef.current && guestRef.current) webGuestRetention.hide(id, () => setGuest(false))
     }
-    const wv = el as (HTMLElement & { capturePage?: () => Promise<{ toDataURL(): string }> }) | null
-    if (!wv?.capturePage) {
+    if (!el?.capturePage) {
       retain()
       return
     }
@@ -129,12 +134,12 @@ export function WebpageEmbed({
       if (dataUrl) setSnap(dataUrl)
       retain()
     }
-    wv.capturePage().then(
+    el.capturePage().then(
       (img) => settle(img.toDataURL()),
       () => settle(null),
     )
     // The deadline that stops a hung capture from keeping the clipped guest painted.
-    setTimeout(() => settle(null), 200)
+    setTimeout(() => settle(null), CAPTURE_DEADLINE_MS)
   }, [visible, id])
 
   useEffect(() => () => webGuestRetention.drop(id), [id])
