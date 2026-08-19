@@ -140,13 +140,13 @@ export interface Personalization {
   defaultLinkFormat?: LinkDisplay
 }
 
-/** The per-nexus default window zoom (`personalization.defaultViewScale`), stated as the multiplier
- *  a user reads: 1.0 is the interface at its own intended size. Clamped so a hand-typed settings.json
- *  value can't make the window unusable; absent/invalid → 1.0 (100%). */
 /** The one session every guest webview lives on — a sign-in anywhere authenticates every embed
  *  surface, per machine, surviving restarts. Surfaces take it as a prop defaulting to this. */
 export const WEB_PARTITION = 'persist:pommora-web'
 
+/** The per-nexus default window zoom (`personalization.defaultViewScale`), stated as the multiplier
+ *  a user reads: 1.0 is the interface at its own intended size. Clamped so a hand-typed settings.json
+ *  value can't make the window unusable; absent/invalid → 1.0 (100%). */
 export const VIEW_SCALE_DEFAULT = 1
 export const VIEW_SCALE_MIN = 0.5
 export const VIEW_SCALE_MAX = 3
