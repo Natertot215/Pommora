@@ -41,6 +41,7 @@ The Nexus' primary settings are placed on a floating window summoned from the si
 | Hide Disclosure Chevrons | `hideChevrons` | Collapses the sidebar's chevron gutter. | On · **Off** |
 | Reveal Tab Bar On Hover | `revealTabBarOnHover` | Keeps the tab bar hidden until the pointer nears it. | On · **Off** |
 | Use Native Menus | `nativeMenus` | Draws plain-list menus as system menus. Belongs to the computer rather than the Nexus, so it lives in the device database. | On · **Off** |
+| Show Selection In Pickers As | `pickerSelection` | How every picker marks the row you are on — a filled, outlined row or a trailing checkmark. | **Outlined** · Checked |
 
 **Webpages**
 
