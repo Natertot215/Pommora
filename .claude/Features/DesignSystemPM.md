@@ -103,7 +103,7 @@ The five-step system-grey overlay ramp for cards, chips, and fields sitting on a
 
 #### Tints
 
-The one opacity ladder any base color is mixed at — `tintAt(base, step)` is `color-mix` of the base toward transparent, short-circuiting to the raw base at 100. The chip recipe and the accent strokes both read these steps.
+The one opacity ladder any base color is mixed at. `mixAt(base, pct, into)` is the underlying primitive — a `color-mix` of the base toward anything, in sRGB or oklch, short-circuiting to the raw base at 100; `tintAt(base, step)` is that mix toward transparent. The chip recipe, the ramp, and the accent strokes all read these steps.
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/tint.ts`
 
@@ -114,6 +114,18 @@ The one opacity ladder any base color is mixed at — `tintAt(base, step)` is `c
 | Tint Secondary  | `TINT_STEPS.secondary` · `--tint-secondary`   | 40%   |
 | Tint Tertiary   | `TINT_STEPS.tertiary` · `--tint-tertiary`     | 20%   |
 | Tint Quaternary | `TINT_STEPS.quaternary` · `--tint-quaternary` | 15%   |
+
+#### Ramp
+
+The color grid behind every chip and the picker that assigns one: eight families, eight steps each, running dark on the left to light on the right, with each spectrum solid seated on an exact cell so a color stored before the ramp resolves into it unchanged. Five families shade from a single anchor by one knob; blue crosses between two anchors in oklch so the passage keeps its chroma; purple seats three; the greyscale row is the app's own surface tokens rather than a computed ramp, and carries the only rendering exceptions — its brightest cells tint from a darkened base, and all eight outline against the label ramp.
+
+**SOURCE:** `Pommora/src/renderer/src/design-system/tokens/ramp.ts`
+
+| Title           | Token           | Value                                    |
+| --------------- | --------------- | ---------------------------------------- |
+| Shading Step    | `RAMP_STEP`     | `15`                                     |
+| Darkness Step   | `DARKNESS_STEP` | `15`                                     |
+| Grey Outlines   | `GREY_OUTLINES` | `35` · `45` · `55` · `65` · `75` · `85` · `95` · `100` |
 
 #### Separators
 
@@ -142,7 +154,7 @@ The two drop shadows — resting glass and lifted or dragged chrome. Every frost
 
 #### Spectrum
 
-The ten selectable solids plus the neutral chip default — authored once in `@shared/theme`, validated by main and renderer alike. The accent is a single user value resolved from this palette (or `system`, the OS accent, read at load); accented surfaces derive from `--accent` through the tint steps, so changing the accent recolors everything at once.
+The ten selectable solids plus the neutral chip default and the ramp's pink seat — authored once in `@shared/theme`, validated by main and renderer alike. The ten are what an accent may be set to; the ramp widens what a chip may be colored, not what the accent may be. The accent is a single user value resolved from this palette (or `system`, the OS accent, read at load); accented surfaces derive from `--accent` through the tint steps, so changing the accent recolors everything at once.
 
 **SOURCE:** `Pommora/src/shared/theme.ts` · `tokens/theme-vars.css.ts`
 
@@ -159,7 +171,8 @@ The ten selectable solids plus the neutral chip default — authored once in `@s
 | Lavender          | `SPECTRUM.lavender` · `--solid-lavender`    | `#A78BCC`                                  |
 | Grey              | `SPECTRUM.grey` · `--solid-grey`            | `#8E8E93`                                  |
 | Default           | `GREY_DEFAULT`                              | `#48484A`                                  |
-| Default Accent    | `DEFAULT_ACCENT`                            | `lavender`                                 |
+| Pink              | `PINK`                                      | `#DC519F`                                  |
+| Default Accent    | `DEFAULT_ACCENT`                            | `cyan`                                     |
 | Accent            | `--accent`                                  | `applyAccent`                              |
 | Accent Fill       | `--accent-fill`                             | accent @ 15%                               |
 | Accent Stroke     | `--accent-stroke` / `--accent-stroke-hot`   | accent @ 40% / accent @ 60%                |
