@@ -1,9 +1,9 @@
 import { style, styleVariants } from '@vanilla-extract/css'
+import { RAMP_FAMILIES, RAMP_STEPS, type CellKey } from '@shared/theme'
 import { vars as colorVars } from './color.css'
 import { text, truncateHoverScroll } from './typography.css'
-import { TINT_STEPS, tint, tintAt } from './tint'
-
-const solid = colorVars.color.solid
+import { cellColor, cellTint } from './ramp'
+import { tint } from './tint'
 
 // ═══════════════════════════════════════════════════════════════════════════
 // § SHAPE PRIMITIVES — one class per chip shape, each complete on its own.
@@ -240,32 +240,38 @@ export const chipLabelBlur = style({
 // every shape above composes with any `chipColor.*`.
 // ═══════════════════════════════════════════════════════════════════════════
 
-/** tint() + the chip's FILL color as a var so descendants can paint in it — the blurred twin
+/** A tint recipe + the chip's FILL color as a var so descendants can paint in it — the blurred twin
  *  melts the label's tail INTO the fill, not into a text-colored haze. A surface that overrides
- *  the fill (ContextChip's neutral tone) must override `--chip-fill` alongside it. */
-const chipTint = (base: string): ReturnType<typeof tint> & { vars: Record<string, string> } => ({
-  ...tint(base),
-  vars: {
-    '--chip-fill': tintAt(base, TINT_STEPS.primary),
-    // The chip's saturated identity color, for surfaces that want the color itself rather than tint's
-    // mostly-neutral text mix — the ContextChip's × paints in it (see chipRemove) so the remove reads
-    // as the context's color over the neutral fill instead of a colorless glyph.
-    '--chip-accent': base,
-  },
+ *  the fill (ContextChip's neutral tone) must override `--chip-fill` alongside it. `accent` is the
+ *  chip's saturated identity color, for surfaces wanting the color itself rather than tint's
+ *  mostly-neutral text mix — the ContextChip's × paints in it (see chipRemove) so the remove reads
+ *  as the context's color over the neutral fill instead of a colorless glyph. */
+const chipFrom = (
+  recipe: ReturnType<typeof tint>,
+  accent: string,
+): ReturnType<typeof tint> & { vars: Record<string, string> } => ({
+  ...recipe,
+  vars: { '--chip-fill': recipe.background, '--chip-accent': accent },
 })
 
+const chipTint = (base: string): ReturnType<typeof chipFrom> => chipFrom(tint(base), base)
+
+// One variant per ramp cell, generated rather than listed: the palette DERIVES from the ramp, so a
+// retuned cell or an added family can't leave a chip behind.
+const cellVariants = Object.fromEntries(
+  RAMP_FAMILIES.flatMap((family) =>
+    RAMP_STEPS.map((step) => {
+      const key = `${family}-${step}` as CellKey
+      return [key, chipFrom(cellTint(key), cellColor(key))]
+    }),
+  ),
+) as Record<CellKey, ReturnType<typeof chipFrom>>
+
 export const chipColor = styleVariants({
-  red: chipTint(solid.red),
-  blue: chipTint(solid.blue),
-  green: chipTint(solid.green),
-  purple: chipTint(solid.purple),
-  lavender: chipTint(solid.lavender),
-  cyan: chipTint(solid.cyan),
-  lightBlue: chipTint(solid.lightBlue),
-  orange: chipTint(solid.orange),
-  yellow: chipTint(solid.yellow),
-  grey: chipTint(solid.grey),
-  default: chipTint(solid.greyDefault),
+  ...cellVariants,
+  // `default` shares grey-4's value but stays its OWN key: it must not be a grid cell, or an
+  // uncolored value would open the picker with that cell ringed and clearing would be unreachable.
+  default: chipTint(cellColor('grey-4')),
   // The link-color "Default": the runtime system accent, tinted like any solid. A link seeds to this
   // (the picker's no-selection state), so it must be a real palette key — not the neutral grey default.
   accent: chipTint('var(--system-accent)'),

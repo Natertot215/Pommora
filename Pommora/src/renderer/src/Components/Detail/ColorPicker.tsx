@@ -1,23 +1,12 @@
 import type { RefObject } from 'react'
 import { PickerMenu } from '@renderer/design-system/components/PickerMenu/PickerMenu'
 import type { ChipColorName } from '@renderer/design-system/tokens/chip.css'
+import { ANCHOR_CELLS, cellColor } from '@renderer/design-system/tokens/ramp'
 import { cx } from '@renderer/design-system/cx'
 import * as s from './colorPicker.css'
 
-const SWATCHES = [
-  'red',
-  'orange',
-  'yellow',
-  'green',
-  'lightBlue',
-  'cyan',
-  'blue',
-  'purple',
-  'lavender',
-  'grey',
-] as const
+const SWATCHES = Object.values(ANCHOR_CELLS)
 
-/** A larger picker over the same tokens is a Prospect — the swatch list is the only thing that grows. */
 export function ColorPicker({
   open,
   selected,
@@ -39,7 +28,8 @@ export function ColorPicker({
             key={color}
             type="button"
             aria-label={color}
-            className={cx(s.swatch, s.swatchColor[color])}
+            className={cx(s.swatch)}
+            style={{ '--sw': cellColor(color) } as React.CSSProperties}
             onClick={() => onPick(selected === color ? undefined : color)}
           />
         ))}
