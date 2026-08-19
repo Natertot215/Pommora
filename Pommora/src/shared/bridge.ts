@@ -329,6 +329,9 @@ export interface Tells {
   'win:dragBy': [dx: number, dy: number]
   'win:zoom': []
   'editor:grip-hot': [on: boolean]
+  // A wheel over a surface that holds the pointer on the host's behalf, handed to the guest it
+  // covers — the only way a host-owned pointer can still scroll the page beneath it.
+  'web:wheel': [guestId: number, x: number, y: number, deltaX: number, deltaY: number]
 }
 
 /** Main→renderer pushes — the preload derives an `on*` subscriber (returning an unsubscribe)

@@ -27,7 +27,7 @@ import { BUSY, NO_NEXUS, push, scopeGet, scopeSet, serveBridge } from './ipc'
 import type { Creator, MutateRequest, ContextTarget } from '@shared/mutate'
 import { WINDOW_BG } from '@shared/theme'
 import { dropLiveTree, getLiveTree, refreshTree } from './liveTree'
-import { installWebGuests, setHostZoom, setWebZoomFactor } from './webGuests'
+import { installWebGuests, setHostZoom, setWebZoomFactor, wheelGuest } from './webGuests'
 import { confirmBy, confirmMutation, confirmRegistry } from './mutatePatch'
 import { patchContainerFromDisk, patchSettingsFromDisk } from './watchPatch'
 import { runOpenRecord } from './record'
@@ -1820,6 +1820,12 @@ serveBridge(
     // Flagged on hover so the generic editor menu stands down and the hovered grip's own menu
     // is the only one that pops on the right-press.
     'editor:grip-hot': { kind: 'raw', fn: (on: boolean) => setGripHot(on) },
+
+    'web:wheel': {
+      kind: 'raw',
+      fn: (guestId: number, x: number, y: number, deltaX: number, deltaY: number) =>
+        wheelGuest(guestId, x, y, deltaX, deltaY),
+    },
   },
 )
 

@@ -43,6 +43,20 @@ type Hovered =
 
 const keyOf = (h: Hovered): string => (h.kind === 'page' ? `p:${h.page.id}` : `s:${h.url}`)
 
+/** Hands a wheel to the guest under the shield. The id read throws before the guest attaches (the
+ *  method sits on the prototype first), and the wheel's own sign is inverted: a DOM delta counts
+ *  the content's travel, the input event the wheel's. */
+function scrollGuest(el: HTMLElement | null, x: number, y: number, dx: number, dy: number): void {
+  try {
+    const id = (
+      el as (HTMLElement & { getWebContentsId?: () => number }) | null
+    )?.getWebContentsId?.()
+    if (id !== undefined) window.nexus.wheelGuest(id, Math.round(x), Math.round(y), -dx, -dy)
+  } catch {
+    // A guest that hasn't attached has nothing to scroll yet.
+  }
+}
+
 let present: ((next: Hovered | null) => void) | null = null
 
 // Supersession token for the cold-page fetch: only the newest hover's resolve may open.
@@ -400,8 +414,16 @@ export function ConnectionHoverCard(): React.JSX.Element {
             />
             {/* The shield is both the loading face and the pointer owner: opaque until the site
                 paints, transparent after — and always above the guest, so the card's mousemove
-                leave lifecycle keeps running while the pointer rests on it. */}
-            <div className={`conn-hover-web-shield${siteReady ? ' is-lifted' : ''}`} />
+                leave lifecycle keeps running while the pointer rests on it. The wheel is the one
+                gesture it passes down, so a glance surface reads past its own first screen without
+                becoming interactive. */}
+            <div
+              className={`conn-hover-web-shield${siteReady ? ' is-lifted' : ''}`}
+              onWheel={(e) => {
+                const box = e.currentTarget.getBoundingClientRect()
+                scrollGuest(siteEl, e.clientX - box.left, e.clientY - box.top, e.deltaX, e.deltaY)
+              }}
+            />
           </>
         )}
         <div className="conn-hover-resize-e" onPointerDown={startResize({ x: true })} />
