@@ -27,13 +27,14 @@ function linkFor(view: EditorView, text: string, inverse: boolean): LinkPaste | 
   // One caret, one link. A multi-range paste is CodeMirror's own business.
   if (view.state.selection.ranges.length !== 1) return null
 
-  const { personalization, linkTitles } = useSession.getState()
-  const url = pastedUrl(text)
   const sel = view.state.selection.main
   // A caret inside a link's `()` — seated by ⌘K, or by Embed ▸ Webpage — receives the address as
   // the literal text the destination is made of; formatting here would nest a link inside one.
   const line = view.state.doc.lineAt(sel.from)
   if (linkDestinationAt(line.text, sel.from - line.from)) return null
+
+  const { personalization, linkTitles } = useSession.getState()
+  const url = pastedUrl(text)
   const decision = decidePaste({
     clipboard: text,
     selectionText: view.state.sliceDoc(sel.from, sel.to),
