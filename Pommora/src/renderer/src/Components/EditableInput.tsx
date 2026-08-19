@@ -81,6 +81,9 @@ export function EditableInput({
           e.currentTarget.blur()
         } else if (e.key === 'Escape') {
           settled.current = true
+          // Hand focus back before the host tears the field down: a focused field removed from the
+          // DOM fires no blur, which would strand the drawn caret blinking where it stood.
+          e.currentTarget.blur()
           onCancel()
         }
       }}

@@ -203,6 +203,34 @@ describe('PickerMenu focus contract', () => {
     expect(field.selectionStart).toBe('Alias'.length)
   })
 
+  it('gives the field’s focus up when Escape aborts it', async () => {
+    function RenameHost({ open }: { open: boolean }): React.JSX.Element {
+      const ref = useRef<HTMLButtonElement>(null)
+      return (
+        <>
+          <button ref={ref} type="button" data-id="trigger">
+            Trigger
+          </button>
+          <TextPicker
+            open={open}
+            onDismiss={() => {}}
+            triggerRef={ref}
+            value="Alias"
+            onCommit={() => {}}
+          />
+        </>
+      )
+    }
+    await render(<RenameHost open={false} />)
+    await render(<RenameHost open />)
+    const field = document.querySelector('input') as HTMLInputElement
+    await act(async () => {
+      field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    })
+    // A field torn down while focused fires no blur, which strands the drawn caret where it stood.
+    expect(document.activeElement).not.toBe(field)
+  })
+
   it('takes no focus when manageFocus is off', async () => {
     await render(<Host open={false} manageFocus={false} />)
     find('trigger').focus()
