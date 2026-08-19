@@ -1,9 +1,20 @@
-import type { ConnectionColorSetting, Personalization } from '@shared/types'
-import { vars } from './tokens'
+import type { Personalization } from '@shared/types'
+import { chipColorFor } from './tokens/colorMap'
+import { cellColor } from './tokens/ramp'
 
-function connectionColorCss(setting: ConnectionColorSetting | undefined): string {
-  return !setting || setting === 'accent' ? 'var(--accent)' : vars.color.solid[setting]
+/** A link color resolves to its own cell, or defers to whatever it inherits — the sentinel and the
+ *  absent key mean the same thing, so one helper serves both link settings. */
+function linkColorCss(setting: string | undefined, inherit: string): string {
+  if (!setting || setting === 'accent' || setting === 'system') return inherit
+  const key = chipColorFor(setting)
+  return key === 'default' ? inherit : cellColor(key)
 }
+
+/** The two link vars each setting writes, and what each falls back to. */
+const LINK_VARS = {
+  connectionColor: { cssVar: '--connection', inherit: 'var(--accent)' },
+  externalLinkColor: { cssVar: '--link', inherit: 'var(--system-accent)' },
+} as const
 
 /** The knobs that render as a root class toggled by a boolean — a new one is an entry here. */
 const ROOT_CLASSES: Partial<Record<keyof Personalization, string>> = {
@@ -18,11 +29,9 @@ export function applyPersonalizationKey<K extends keyof Personalization>(
 ): void {
   if (typeof document === 'undefined') return
   const el = document.documentElement
-  if (key === 'connectionColor') {
-    el.style.setProperty(
-      '--connection',
-      connectionColorCss(value as ConnectionColorSetting | undefined),
-    )
+  const link = LINK_VARS[key as keyof typeof LINK_VARS]
+  if (link) {
+    el.style.setProperty(link.cssVar, linkColorCss(value as string | undefined, link.inherit))
     return
   }
   // Anything with no class here has no DOM effect at this seam: accent → applyAccent;
@@ -32,7 +41,8 @@ export function applyPersonalizationKey<K extends keyof Personalization>(
 }
 
 export function applyPersonalization(p: Personalization): void {
-  applyPersonalizationKey('connectionColor', p.connectionColor)
+  for (const key of Object.keys(LINK_VARS) as (keyof typeof LINK_VARS)[])
+    applyPersonalizationKey(key, p[key])
   for (const key of Object.keys(ROOT_CLASSES) as (keyof Personalization)[])
     applyPersonalizationKey(key, p[key])
 }

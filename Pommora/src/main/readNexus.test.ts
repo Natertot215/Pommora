@@ -399,11 +399,36 @@ describe('readNexus — personalization', () => {
     expect((await readNexus(mk({ personalization: { accent: 'blue' } }))).accent).toBe('blue')
     expect((await readNexus(mk({ personalization: { accent: 'system' } }))).accent).toBe('system')
   })
+  // The accent speaks the ramp's grammar now, so a stepped cell survives the read; a legacy solid
+  // name still does too, since nothing on disk was rewritten.
+  it('accepts a ramp cell as the accent', async () => {
+    expect((await readNexus(mk({ personalization: { accent: 'purple-6' } }))).accent).toBe(
+      'purple-6',
+    )
+    expect((await readNexus(mk({ personalization: { accent: 'grey-0' } }))).accent).toBe('grey-0')
+  })
   it('an unknown accent name or a foreign top-level key resolves the default', async () => {
     expect((await readNexus(mk({ personalization: { accent: 'chartreuse' } }))).accent).toBe(
       DEFAULT_ACCENT,
     )
     expect((await readNexus(mk({ outside_accent: 'red' }))).accent).toBe(DEFAULT_ACCENT)
+    expect((await readNexus(mk({ personalization: { accent: 'purple-8' } }))).accent).toBe(
+      DEFAULT_ACCENT,
+    )
+  })
+
+  // Each link color defers differently when unset, so each keeps its own sentinel on disk.
+  it('reads both link colors, cells and sentinels alike', async () => {
+    const read = async (p: Record<string, unknown>): Promise<Record<string, unknown>> =>
+      (await readNexus(mk({ personalization: p }))).personalization as Record<string, unknown>
+    expect((await read({ connectionColor: 'accent' })).connectionColor).toBe('accent')
+    expect((await read({ connectionColor: 'red-6' })).connectionColor).toBe('red-6')
+    expect((await read({ externalLinkColor: 'system' })).externalLinkColor).toBe('system')
+    expect((await read({ externalLinkColor: 'blue-1' })).externalLinkColor).toBe('blue-1')
+    expect((await read({ externalLinkColor: 'chartreuse' })).externalLinkColor).toBeUndefined()
+    // The sentinels are not interchangeable — each names what its own setting inherits.
+    expect((await read({ externalLinkColor: 'accent' })).externalLinkColor).toBeUndefined()
+    expect((await read({ connectionColor: 'system' })).connectionColor).toBeUndefined()
   })
   it('reads the block, dropping invalid fields + unknown icon kinds', async () => {
     const t = await readNexus(

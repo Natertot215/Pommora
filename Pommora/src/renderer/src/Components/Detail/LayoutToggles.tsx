@@ -6,7 +6,7 @@ import { MenuItem, MenuSeparator } from '../../design-system/components/menu'
 import { flushTrailing } from '../../design-system/components/menu/menu.css'
 import { cx } from '../../design-system/cx'
 import { useSaveView } from '@renderer/Embeds/ViewEmbedScope'
-import { ICON, switchScale, toggleRow } from './settingsPane.css'
+import { ICON, toggleRow } from './settingsPane.css'
 
 export function LayoutToggles({
   source,
@@ -25,13 +25,11 @@ export function LayoutToggles({
         className={cx(flushTrailing, toggleRow)}
         leading={<Icon name="columns-3-cog" size={ICON.rootEntry} />}
         trailing={
-          <span className={switchScale}>
-            <Switch
-              checked={!(view.hide_column_icons ?? true)}
-              onChange={(next) => write({ hide_column_icons: !next })}
-              ariaLabel="Column Icons"
-            />
-          </span>
+          <Switch
+            checked={!(view.hide_column_icons ?? true)}
+            onChange={(next) => write({ hide_column_icons: !next })}
+            ariaLabel="Column Icons"
+          />
         }
       >
         Column Icons
@@ -40,13 +38,11 @@ export function LayoutToggles({
         className={cx(flushTrailing, toggleRow)}
         leading={<Icon name="table" size={ICON.rootEntry} />}
         trailing={
-          <span className={switchScale}>
-            <Switch
-              checked={view.hide_borders ?? false}
-              onChange={(next) => write({ hide_borders: next })}
-              ariaLabel="Hide Borders"
-            />
-          </span>
+          <Switch
+            checked={view.hide_borders ?? false}
+            onChange={(next) => write({ hide_borders: next })}
+            ariaLabel="Hide Borders"
+          />
         }
       >
         Hide Borders
@@ -55,13 +51,11 @@ export function LayoutToggles({
         className={cx(flushTrailing, toggleRow)}
         leading={<Icon name="file-text" size={ICON.rootEntry} />}
         trailing={
-          <span className={switchScale}>
-            <Switch
-              checked={!(view.hide_page_icons ?? false)}
-              onChange={(next) => write({ hide_page_icons: !next })}
-              ariaLabel="Page Icons"
-            />
-          </span>
+          <Switch
+            checked={!(view.hide_page_icons ?? false)}
+            onChange={(next) => write({ hide_page_icons: !next })}
+            ariaLabel="Page Icons"
+          />
         }
       >
         Page Icons

@@ -8,7 +8,7 @@ import { numberDivisor } from '@renderer/Detail/Views/PropertyEditing/formatValu
 import { cx } from '../../design-system/cx'
 import { PickerControl, type PickerChoice } from './PickerControl'
 import { Reveal } from '../../design-system/components/Reveal'
-import { configLabel, configRow, switchScale } from './settingsPane.css'
+import { configLabel, configRow } from './settingsPane.css'
 import { value as pickerValue } from './pickerControl.css'
 import * as s from './numberEditor.css'
 
@@ -128,13 +128,11 @@ export function NumberEditor({
 
       <Reveal open={!isPercent} fill>
         <Row label="Separators">
-          <span className={switchScale}>
-            <Switch
-              checked={config.number_separators ?? true}
-              onChange={(next) => onSetConfig({ number_separators: next })}
-              ariaLabel="Separators"
-            />
-          </span>
+          <Switch
+            checked={config.number_separators ?? true}
+            onChange={(next) => onSetConfig({ number_separators: next })}
+            ariaLabel="Separators"
+          />
         </Row>
       </Reveal>
 
@@ -149,13 +147,11 @@ export function NumberEditor({
 
       <Reveal open={!isPercent} fill>
         <Row label="Fraction">
-          <span className={switchScale}>
-            <Switch
-              checked={fraction}
-              onChange={(next) => onSetConfig({ number_fraction: next })}
-              ariaLabel="Fraction"
-            />
-          </span>
+          <Switch
+            checked={fraction}
+            onChange={(next) => onSetConfig({ number_fraction: next })}
+            ariaLabel="Fraction"
+          />
         </Row>
       </Reveal>
 

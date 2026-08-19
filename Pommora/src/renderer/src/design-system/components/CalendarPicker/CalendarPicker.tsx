@@ -719,33 +719,29 @@ export function CalendarPicker({
         {range && (
           <div className={s.switchRow}>
             <span className={s.switchLabel}>End Date</span>
-            <span className={s.switchScale}>
-              <Switch
-                checked={endOn}
-                ariaLabel="End Date"
-                onChange={(v) => {
-                  setEndOn(v)
-                  if (!v) setEnd(null)
-                  setSegEdit(null)
-                  setTimeMenu(null)
-                }}
-              />
-            </span>
-          </div>
-        )}
-        <div className={s.switchRow}>
-          <span className={s.switchLabel}>Use Time</span>
-          <span className={s.switchScale}>
             <Switch
-              checked={timeOn}
-              ariaLabel="Use Time"
+              checked={endOn}
+              ariaLabel="End Date"
               onChange={(v) => {
-                setTimeOn(v)
+                setEndOn(v)
+                if (!v) setEnd(null)
                 setSegEdit(null)
                 setTimeMenu(null)
               }}
             />
-          </span>
+          </div>
+        )}
+        <div className={s.switchRow}>
+          <span className={s.switchLabel}>Use Time</span>
+          <Switch
+            checked={timeOn}
+            ariaLabel="Use Time"
+            onChange={(v) => {
+              setTimeOn(v)
+              setSegEdit(null)
+              setTimeMenu(null)
+            }}
+          />
         </div>
       </SizeMorph>
     </div>

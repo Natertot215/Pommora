@@ -52,7 +52,7 @@ import { MenuOption } from '@renderer/design-system/components/PickerMenu'
 import { PickerControl, type PickerChoice } from './PickerControl'
 import { propertyTypeIconName } from './PropertyTypes'
 import { useGroupingListDrag, type GroupingDrop } from './groupingDnd'
-import { hiddenRow, switchScale } from './settingsPane.css'
+import { hiddenRow } from './settingsPane.css'
 import * as gp from './groupingPane.css'
 
 /** Checkbox is deliberately absent — the pipeline still renders it from a foreign sidecar; the
@@ -196,13 +196,11 @@ export function GroupingPane({
           </span>
         }
         trailing={
-          <span className={switchScale}>
-            <Switch
-              checked={hideEmpty}
-              onChange={(next) => save({ hide_empty_groups: next })}
-              ariaLabel="Hide Empty Groups"
-            />
-          </span>
+          <Switch
+            checked={hideEmpty}
+            onChange={(next) => save({ hide_empty_groups: next })}
+            ariaLabel="Hide Empty Groups"
+          />
         }
       >
         <span className={footingLabel}>Hide Empty Groups</span>
