@@ -437,15 +437,15 @@ Eleven entries — the ten `SOLID_COLORS` display names re-keyed onto their anch
 - [x] **Phase 1** — The ramp · base `bf094dc5`
   - [x] Task 1 — mix primitive, `ramp.ts`, sandbox re-pointed · `24ba94b3`
   - [x] Gate 1 — gates green; blue row + grey anchor handed to Nathan, non-blocking by his call
-- [ ] **Phase 2** — One vocabulary
-  - [ ] Task 2 — palette derives, accessor speaks the grammar · `<commit>`
-  - [ ] Task 3 — the three raw-solid indexers · `<commit>`
-  - [ ] Gate 2
-- [ ] **Phase 3** — The grid, the boundary, the record
-  - [ ] Task 4 — the 8×8 grid + its two narrowed consumers · `<commit>`
-  - [ ] Task 5 — main validates · `<commit>`
-  - [ ] Task 6 — docs and atlas · `<commit>`
-  - [ ] Gate 3 — running-app pass, sandbox fate, closing sweep
+- [x] **Phase 2** — One vocabulary
+  - [x] Task 2 — palette derives, accessor speaks the grammar · `bbc05ab7`
+  - [x] Task 3 — the three raw-solid indexers · `bbc05ab7` (merged; see Deviations)
+  - [x] Gate 2
+- [x] **Phase 3** — The grid, the boundary, the record
+  - [x] Task 4 — the 8×8 grid + its two narrowed consumers · `d65546ff`
+  - [x] Task 5 — main validates · `d65546ff` (merged)
+  - [x] Task 6 — docs, atlas, sandbox retired · `a2afcd9b`
+  - [x] Gate 3 — closing sweep done; running-app pass is Nathan's
 
 ### Rulings
 
@@ -494,5 +494,25 @@ Eleven entries — the ten `SOLID_COLORS` display names re-keyed onto their anch
 - **Name the 64 cells.** The interim reads a non-anchor cell as its family. A per-cell naming pass replaces `colorLabel` wholesale and is the only thing standing between "Red" and a real name for `red-6`.
 - **The eleventh row.** `RAMP_FAMILIES` is a list, and the grid renders what it holds — a new family is one entry plus its anchors, with no schema churn. Deliberately not built.
 - **Per-view link styling** (already a documented Prospect) inherits the grammar for free once it exists.
+
+### Delivery Claim
+
+The picker is an 8×8 ramp grid of 64 cells. `tokens/ramp.ts` is the single owner of what a cell is;
+`chip.css.ts` generates its 66 variants from it rather than listing them; `chipColorFor` normalizes
+the ten legacy anchor names onto their cells, so nothing on disk is read differently or rewritten.
+Four raw-solid indexers — one more than the plan found — resolve through the ramp instead of a table
+holding only the ten solids. Main validates Space colors against the cell grammar; the accent and
+connection settings are untouched in behavior and in type. Links and checkboxes take the grid without
+its greyscale row, and their color control is a nameless swatch in the Switch's shell.
+
+**Gates at delivery:** `typecheck` 0 · `test` 254 files / 2943 tests green · `check-atlas` 22 tables
+all agreeing · `biome check` clean across every file this work touched.
+
+**Diff (code only, comments/blanks/tests excluded):** +248 / −108, net **+140** across 16 files.
+
+**Claimed unproven — the running-app pass is Nathan's**, by his call during execution. Not verified
+here: that all seven trigger sites land their pane on-screen at the picker's new 173×173 (up from
+~36px wide), and that a stepped pick round-trips to a sidecar and survives ⌘R. Both are asserted by
+unit test at the seam but not exercised in the built app.
 
 ### Closeout
