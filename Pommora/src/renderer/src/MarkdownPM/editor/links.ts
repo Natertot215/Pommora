@@ -44,7 +44,7 @@ function linkUnder(view: EditorView, getApi: GetApi, event: MouseEvent): LinkHit
   const target = resolveMdTarget(getApi(), url)
   // An internal target is drawn as a connection, so it answers to that class too.
   const el = (event.target as HTMLElement).closest?.(
-    '.md-link, .md-link-invalid, .md-connection-resolved',
+    `.${MD_LINK_CLASS}, .md-link-invalid, .md-connection-resolved`,
   )
   return {
     url,
@@ -71,7 +71,7 @@ export function markdownLinkClicks(getApi: GetApi): ReturnType<typeof EditorView
     mouseover(event, view) {
       const api = getApi()
       intent.cancel()
-      if (!api?.hover) return false
+      if (!api?.hover && !api?.hoverSite) return false
       // Cheap class gate FIRST (the every-mouseover hard rule) — only a drawn internal link or a
       // valid external one warrants the layout read and the tokenize below. Both gates are
       // required: external links wear the link class, not the connection one.
