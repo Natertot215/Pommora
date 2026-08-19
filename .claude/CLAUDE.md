@@ -14,7 +14,7 @@ Pommora is Nathan’s main project — a personal management and all-in-one prod
 - **Properties:** the nexus-wide typed attributes that collections assign, and their members fill in — Select, Status, Date, and the rest; the schema is nexus-wide, collections validate properties for their pages to use; assigned as frontmatter via `[Property]:` syntax.
 - **Connections:** inline `[[Title]]` colored-text links inside MarkdownPM surfaces and resolve against an in-memory title map built from the page tree — connecting to another Page as the Content ↔ Content matrix. They **aren't** displayed anywhere outside the Markdown body, and content-to-content relational properties **don't** exist.
 
-**Files are canonical for content.** Pages, Tasks, and Events are all markdown distinguishable via `PageID` / `TaskID` / `EventID`. Contexts and container sidecars are JSON. An entity's kind comes from an agreement between its folder's sidecar file and the file itself — a file whose key contradicts what its folder expects is Unknown: invisible, untouched, never stamped over. Foreign keys are preserved on every write.  
+**Files are canonical for content.** Pages, Tasks, and Events are all markdown distinguishable via `PageID` / `TaskID` / `EventID`. Contexts and container sidecars are JSON. An entity's kind comes from an agreement between its folder's sidecar file and the file itself — a file whose key contradicts what its folder expects is Unknown: invisible, untouched, never stamped over. 
 
 ### Codebase Information
 
@@ -38,9 +38,8 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 - **Read and write are cleanly separable.** The read path is read-only by construction; mutations are additive, never woven into reads.
 - **Condensed control flow / DRY / simplicity-first** — model finite states as unions + switch; hoist shared logic; never allow two writers or definitions for the same thing; anything that does this and is found must be reported. 
 - **Never do expensive work "on every X," never "reload the entire Y."** No O(N) / allocating / layout-reading work on a high-frequency trigger, and no full-nexus rebuild / re-walk when an incremental or cached update works — it’s *the* lag source.
-- **Docs name; code holds exacts.** These docs describe the *system* and reference the product specifications — they rarely restate exact code values. The same discipline must apply equally to code comments. **The one sanctioned exception is the token atlas** — `DesignSystemPM.md` and the `SOURCE:`-tagged tables it charters across the feature specs state literal values on purpose, and `node scripts/check-atlas.mjs` (from `Pommora/`) verifies them against their sources.
 - **Placeholders** never display build-status or meta text — an unbuilt surface is simply blank.
-- **Ask before designing.** Stop to disclose assumptions and clarify direction before any design or interaction-based decision — don't guess at how something looks or behaves. Any in-flight decisions must be disclosed as they’re being made.
+- **Ask before designing.** Stop to disclose assumptions and clarify direction before any design or interaction-based decision — don't guess at how something looks or behaves; the codebase usually describes something that already exists. Any in-flight decisions must be disclosed as they’re being made.
 - **Tokens must** be pulled from their sources in `/design-system`— never hand-roll tokens without explicit direction; dual-option toggles must always use either switches or double-chevron toggles.
 - **Most recent wins** is the primary philosophy around handling concurrency, cross-device, and external editing conflicts.
 

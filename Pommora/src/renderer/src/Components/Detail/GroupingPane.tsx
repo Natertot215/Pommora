@@ -25,7 +25,6 @@ import {
   footingLabel,
   footingSymbol,
 } from '../../design-system/components/menu/menu.css'
-import { Reveal } from '../../design-system/components/Reveal'
 import { registerDiscloseTarget } from '../../design-system/interactions/dragDisclose'
 import { DragGhost } from '@renderer/design-system/interactions/DragGhost'
 import { EyeToggle } from './EyeToggle'
@@ -48,7 +47,6 @@ import { Chip, chipShapeForType } from '../Chip'
 import { chipColorFor } from '../../design-system/tokens/colorMap'
 import { cx } from '../../design-system/cx'
 import { useSession } from '../../store'
-import { MenuOption } from '@renderer/design-system/components/PickerMenu'
 import { PickerControl, type PickerChoice } from './PickerControl'
 import { propertyTypeIconName } from './PropertyTypes'
 import { useGroupingListDrag, type GroupingDrop } from './groupingDnd'
@@ -125,7 +123,6 @@ export function GroupingPane({
   subGrouping?: boolean
   onBack: () => void
 }): React.JSX.Element {
-  const [groupByOpen, setGroupByOpen] = useState(false)
   const saveView = useSaveView(source)
   const save = (patch: Partial<SavedView>): void => void saveView({ ...view, ...patch })
   const saveGroup = (group: GroupConfig): void => save({ group })
@@ -160,7 +157,6 @@ export function GroupingPane({
   // Preservation is free: structural_order_mode / sub_group are view-level, so switching the
   // one group slot never touches them — flip back to Location and they're still in force.
   const pickGroupBy = (target: 'location' | 'none' | PropertyDefinition): void => {
-    setGroupByOpen(false)
     if (target === 'none') {
       // Group By: None = the flat GroupConfig (cards render it as one headerless band).
       if (group.kind !== 'flat') saveGroup({ kind: 'flat' })
@@ -182,11 +178,40 @@ export function GroupingPane({
     })
   }
 
+  // Group By reads as a value row like every other setting in the pane: the slot names its current
+  // grouping and picks a new one through the shared control, so the option list is stated once here
+  // rather than mirrored as an inline list.
+  const groupByValue =
+    group.kind === 'flat'
+      ? 'none'
+      : !structural && group.kind === 'property'
+        ? group.property_id
+        : 'location'
+  const groupByOptions: PickerChoice<string>[] = [
+    ...(view.type === 'cards'
+      ? [{ value: 'none', label: 'None', icon: 'circle-off' as const }]
+      : []),
+    { value: 'location', label: 'Location', icon: 'folder' as const },
+    ...groupable.map((d) => ({
+      value: d.id,
+      label: d.name,
+      icon: asRenderableIcon(d.icon) ?? propertyTypeIconName(d.type) ?? 'tag',
+    })),
+  ]
+  const pickGroupByValue = (v: string): void => {
+    if (v === 'none' || v === 'location') {
+      pickGroupBy(v)
+      return
+    }
+    const def = groupable.find((d) => d.id === v)
+    if (def) pickGroupBy(def)
+  }
+
   const saveSub = (sub: SubGroupConfig | undefined): void => save({ sub_group: sub })
   // View-level with the property config's field as the pre-hoist fallback — resolveView's read.
   const hideEmpty = view.hide_empty_groups ?? (group.kind === 'property' && group.hide_empty_groups)
 
-  const footings = groupByOpen ? undefined : (
+  const footings = (
     <MenuBottomRow>
       <MenuItem
         className={flushTrailing}
@@ -236,154 +261,104 @@ export function GroupingPane({
       header={<MenuPaneTopRow label={label} current="Grouping" onBack={onBack} />}
       footer={footings}
     >
-      <MenuItem
-        className={flushTrailing}
-        leading={<Icon name="layers" size={14} />}
-        trailing={
-          <span className={gp.groupByValue}>
-            {group.kind === 'flat'
-              ? 'None'
-              : structural
-                ? 'Location'
-                : (activeDef?.name ?? 'Location')}
-            <Icon name="chevrons-up-down" size={12} />
-          </span>
-        }
-        onClick={() => setGroupByOpen((o) => !o)}
-      >
-        Group By
-      </MenuItem>
-      <Reveal open={groupByOpen}>
-        <div>
-          <MenuSeparator flush />
-          {view.type === 'cards' && (
-            <MenuOption
-              leading={<Icon name="circle-off" size={13} />}
-              selected={group.kind === 'flat'}
-              onClick={() => pickGroupBy('none')}
-            >
-              None
-            </MenuOption>
-          )}
-          <MenuOption
-            leading={<Icon name="folder" size={13} />}
-            selected={structural}
-            onClick={() => pickGroupBy('location')}
-          >
-            Location
-          </MenuOption>
-          {groupable.map((d) => (
-            <MenuItem
-              key={d.id}
-              leading={
-                <Icon
-                  name={asRenderableIcon(d.icon) ?? propertyTypeIconName(d.type) ?? 'tag'}
-                  size={13}
-                />
-              }
-              selected={group.kind === 'property' && group.property_id === d.id}
-              onClick={() => pickGroupBy(d)}
-            >
-              {d.name}
-            </MenuItem>
-          ))}
-        </div>
-      </Reveal>
-      {!groupByOpen && (
+      <ValueRow
+        icon="layers"
+        label="Group By"
+        value={groupByValue}
+        options={groupByOptions}
+        onPick={pickGroupByValue}
+      />
+      {group.kind === 'property' && declaredType(group.property_id, schema) === 'datetime' && (
+        <ValueRow
+          icon="calendar"
+          label="Date By"
+          value={group.date_granularity ?? 'month'}
+          options={GRANULARITY}
+          onPick={(g) => saveGroup({ ...group, date_granularity: g })}
+        />
+      )}
+      {!structural && group.kind === 'property' ? (
+        <ValueRow
+          icon="arrow-up-down"
+          label="Order"
+          value={group.order_mode}
+          options={orderOptionsFor(declaredType(group.property_id, schema))}
+          onPick={(m) => saveGroup({ ...group, order_mode: m })}
+        />
+      ) : (
+        <ValueRow
+          tier={subGroup ? 'sub' : 'primary'}
+          icon="arrow-up-down"
+          label="Order"
+          value={view.structural_order_mode ?? 'custom'}
+          options={STRUCTURAL_ORDER}
+          onPick={(m) => save({ structural_order_mode: m })}
+        />
+      )}
+      {structural && subGrouping && (
         <>
-          {group.kind === 'property' && declaredType(group.property_id, schema) === 'datetime' && (
+          <SubGroupRow subGroup={subGroup} groupable={groupable} onSave={saveSub} />
+          {subGroup && declaredType(subGroup.property_id, schema) === 'datetime' && (
             <ValueRow
               icon="calendar"
               label="Date By"
-              value={group.date_granularity ?? 'month'}
+              value={subGroup.date_granularity ?? 'month'}
               options={GRANULARITY}
-              onPick={(g) => saveGroup({ ...group, date_granularity: g })}
+              onPick={(g) => saveSub({ ...subGroup, date_granularity: g })}
             />
           )}
-          {!structural && group.kind === 'property' ? (
+          {subGroup && (
             <ValueRow
+              tier="sub"
               icon="arrow-up-down"
               label="Order"
-              value={group.order_mode}
-              options={orderOptionsFor(declaredType(group.property_id, schema))}
-              onPick={(m) => saveGroup({ ...group, order_mode: m })}
-            />
-          ) : (
-            <ValueRow
-              tier={subGroup ? 'sub' : 'primary'}
-              icon="arrow-up-down"
-              label="Order"
-              value={view.structural_order_mode ?? 'custom'}
-              options={STRUCTURAL_ORDER}
-              onPick={(m) => save({ structural_order_mode: m })}
+              value={subGroup.order_mode}
+              options={orderOptionsFor(declaredType(subGroup.property_id, schema))}
+              onPick={(m) => saveSub({ ...subGroup, order_mode: m })}
             />
           )}
-          {structural && subGrouping && (
-            <>
-              <SubGroupRow subGroup={subGroup} groupable={groupable} onSave={saveSub} />
-              {subGroup && declaredType(subGroup.property_id, schema) === 'datetime' && (
-                <ValueRow
-                  icon="calendar"
-                  label="Date By"
-                  value={subGroup.date_granularity ?? 'month'}
-                  options={GRANULARITY}
-                  onPick={(g) => saveSub({ ...subGroup, date_granularity: g })}
-                />
-              )}
-              {subGroup && (
-                <ValueRow
-                  tier="sub"
-                  icon="arrow-up-down"
-                  label="Order"
-                  value={subGroup.order_mode}
-                  options={orderOptionsFor(declaredType(subGroup.property_id, schema))}
-                  onPick={(m) => saveSub({ ...subGroup, order_mode: m })}
-                />
-              )}
-            </>
-          )}
-          <MenuSeparator flush />
-          <div className={`${gp.middle} overflow-eclipse-y`}>
-            {!structural && group.kind === 'property' ? (
-              declaredType(group.property_id, schema) === 'datetime' ? (
-                <DateBucketList
-                  source={source}
-                  view={view}
-                  group={group}
-                  def={activeDef}
-                  schema={schema}
-                  hiddenSet={hiddenSet}
-                  onToggleHidden={toggleHidden}
-                />
-              ) : group.order_mode === 'manual' ? (
-                <CustomList
-                  group={group}
-                  def={activeDef}
-                  onSave={(order) => saveGroup({ ...group, order })}
-                  hiddenSet={hiddenSet}
-                  onToggleHidden={toggleHidden}
-                />
-              ) : (
-                <PropertyPreview
-                  group={group}
-                  def={activeDef}
-                  hiddenSet={hiddenSet}
-                  onToggleHidden={toggleHidden}
-                />
-              )
-            ) : (
-              <LocationHierarchy
-                source={source}
-                view={view}
-                subDef={subGroup ? schema.find((d) => d.id === subGroup.property_id) : undefined}
-                onSaveView={save}
-                hiddenSet={hiddenSet}
-                onToggleHidden={toggleHidden}
-              />
-            )}
-          </div>
         </>
       )}
+      <MenuSeparator flush />
+      <div className={`${gp.middle} overflow-eclipse-y`}>
+        {!structural && group.kind === 'property' ? (
+          declaredType(group.property_id, schema) === 'datetime' ? (
+            <DateBucketList
+              source={source}
+              view={view}
+              group={group}
+              def={activeDef}
+              schema={schema}
+              hiddenSet={hiddenSet}
+              onToggleHidden={toggleHidden}
+            />
+          ) : group.order_mode === 'manual' ? (
+            <CustomList
+              group={group}
+              def={activeDef}
+              onSave={(order) => saveGroup({ ...group, order })}
+              hiddenSet={hiddenSet}
+              onToggleHidden={toggleHidden}
+            />
+          ) : (
+            <PropertyPreview
+              group={group}
+              def={activeDef}
+              hiddenSet={hiddenSet}
+              onToggleHidden={toggleHidden}
+            />
+          )
+        ) : (
+          <LocationHierarchy
+            source={source}
+            view={view}
+            subDef={subGroup ? schema.find((d) => d.id === subGroup.property_id) : undefined}
+            onSaveView={save}
+            hiddenSet={hiddenSet}
+            onToggleHidden={toggleHidden}
+          />
+        )}
+      </div>
     </MenuScrollFrame>
   )
 }
