@@ -85,7 +85,8 @@
 }
 .settings-section-title {
   color: var(--label-secondary);
-  margin: 0 0 2px;
+  /* Carries the top padding the rows gave up, so a group's label breathes off what precedes it. */
+  margin: 10px 0 2px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -114,5 +115,5 @@
   color: var(--label-primary);
 }
 .settings-row-hint {
-  color: var(--label-tertiary);
+  color: var(--label-secondary);
 }
