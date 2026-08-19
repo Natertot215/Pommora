@@ -149,9 +149,9 @@ Constraints: `sandbox`/`contextIsolation` stay on; guests are validated at attac
 **Negative control:** the test proves the paste *ran* both ways — inside a destination the clipboard lands literal (no new `[` written); outside it on the same line the same clipboard writes a formatted link. With the guard disabled the first case goes red by producing the nested form.
 
 **Steps:**
-- [ ] Failing tests: caret inside `![]()` · inside `[label]()` · inside a full link's URL · outside any link (control) · at the line's other text.
-- [ ] Implement; run — green. Gates green.
-- [ ] Commit: `fix(paste): a link never writes into another link's destination`
+- [x] Failing tests: caret inside `![]()` · inside `[label]()` · inside a full link's URL · outside any link (control) · at the line's other text.
+- [x] Implement; run — green. Gates green.
+- [x] Commit: `fix(paste): a link never writes into another link's destination`
 
 #### Gate 1 — the menu leads with Insert; paste formatting is law
 - [ ] Gates green, exit codes direct. Dead-vocabulary sweep for `autoFormatPastedLinks` → 0 against its control.

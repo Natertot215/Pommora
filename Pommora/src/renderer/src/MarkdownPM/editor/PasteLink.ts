@@ -2,6 +2,7 @@ import { EditorView } from '@codemirror/view'
 import { decidePaste, pastedUrl, type LinkPaste } from '@shared/PasteLink'
 import { pasteAsTarget, pasteAsWrite, type PasteAsForm } from '@shared/PasteAsMenu'
 import { DEFAULT_LINK_DISPLAY } from '@shared/properties'
+import { linkDestinationAt } from '@shared/webpageEmbed'
 import { matchesCommand } from '../../Commands'
 import { useSession } from '../../store'
 import { awaitTitle } from './PendingTitle'
@@ -29,6 +30,10 @@ function linkFor(view: EditorView, text: string, inverse: boolean): LinkPaste | 
   const { personalization, linkTitles } = useSession.getState()
   const url = pastedUrl(text)
   const sel = view.state.selection.main
+  // A caret inside a link's `()` — seated by ⌘K, or by Embed ▸ Webpage — receives the address as
+  // the literal text the destination is made of; formatting here would nest a link inside one.
+  const line = view.state.doc.lineAt(sel.from)
+  if (linkDestinationAt(line.text, sel.from - line.from)) return null
   const decision = decidePaste({
     clipboard: text,
     selectionText: view.state.sliceDoc(sel.from, sel.to),
