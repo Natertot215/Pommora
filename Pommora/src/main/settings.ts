@@ -4,6 +4,7 @@
 
 import {
   coerceViewScale,
+  coerceWebZoom,
   type NavViewMode,
   type NavViewModes,
   type SubfieldConfig,
@@ -38,6 +39,11 @@ async function readPersonalizationKey(root: string, key: string): Promise<unknow
  *  opens at and ⌘0 resets to, clamped to a usable range; absent/malformed → 1.0. */
 export async function readDefaultViewScale(root: string): Promise<number> {
   return coerceViewScale(await readPersonalizationKey(root, 'defaultViewScale'))
+}
+
+/** The web-guest scale from `personalization.webZoomFactor`, clamped; absent/malformed → 1.0. */
+export async function readWebZoomFactor(root: string): Promise<number> {
+  return coerceWebZoom(await readPersonalizationKey(root, 'webZoomFactor'))
 }
 
 /** Whether emptying the trash erases outright rather than handing the artifact to the operating

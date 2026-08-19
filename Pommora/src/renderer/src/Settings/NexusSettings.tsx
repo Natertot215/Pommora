@@ -19,6 +19,8 @@ import {
   HOVER_LINGER_MAX,
   TIME_FORMAT_LABELS,
   TIME_FORMAT_SETTINGS,
+  WEB_ZOOM_DEFAULT,
+  WEB_ZOOM_STEPS,
   type ColorSetting,
   type Personalization,
   type TimeFormatSetting,
@@ -95,6 +97,11 @@ type Row =
   | PickerRow<LinkDisplay>
   | PickerRow<DateFormat>
   | PickerRow<TimeFormatSetting>
+  | (RowText & {
+      /** The web-guest scale — a numeric factor offered through the percent vocabulary. */
+      kind: 'webzoom'
+      key: KeyOf<number>
+    })
 
 type RowOf<K extends Row['kind']> = Extract<Row, { kind: K }>
 
@@ -342,6 +349,23 @@ const LEAVES = roster([
           },
         ],
       },
+      {
+        title: 'Webpages',
+        rows: [
+          {
+            kind: 'toggle',
+            key: 'openLinksInApp',
+            label: 'Open Links In Pommora',
+            hint: 'External links open the floating browser instead of the system one.',
+          },
+          {
+            kind: 'webzoom',
+            key: 'webZoomFactor',
+            label: 'Webpage Zoom',
+            hint: 'How embedded webpages scale, relative to the window.',
+          },
+        ],
+      },
     ],
   },
   {
@@ -501,6 +525,8 @@ function RowControl({ row }: { row: Row }): React.JSX.Element {
       return <SliderRow row={row} />
     case 'picker':
       return <PickerRow row={row} />
+    case 'webzoom':
+      return <WebZoomRow row={row} />
     case 'device':
       return <DeviceRow row={row} />
     case 'color':
@@ -558,6 +584,33 @@ function DeviceRow({ row }: { row: RowOf<'device'> }): React.JSX.Element {
         ariaLabel={row.label}
         // Off stores no key — the clean-file discipline every row follows.
         onChange={(next) => setDevicePref(row.key, next || undefined)}
+      />
+    </SettingsRow>
+  )
+}
+
+/** The web-guest scale through the shared picker: numeric factors worn as percents. A hand-typed
+ *  off-step value displays as its nearest step; the default stores no key. */
+const webZoomChoices = WEB_ZOOM_STEPS.map((f) => ({
+  value: String(f),
+  label: `${Math.round(f * 100)}%`,
+}))
+function WebZoomRow({ row }: { row: RowOf<'webzoom'> }): React.JSX.Element {
+  const stored = useSession((s) => s.personalization[row.key]) ?? WEB_ZOOM_DEFAULT
+  const setPersonalization = useSession((s) => s.setPersonalization)
+  const nearest = WEB_ZOOM_STEPS.reduce((a, b) =>
+    Math.abs(b - stored) < Math.abs(a - stored) ? b : a,
+  )
+  return (
+    <SettingsRow label={row.label} hint={row.hint}>
+      <PickerControl
+        ariaLabel={row.label}
+        value={String(nearest)}
+        options={webZoomChoices}
+        onPick={(v) => {
+          const factor = Number(v)
+          setPersonalization(row.key, factor === WEB_ZOOM_DEFAULT ? undefined : factor)
+        }}
       />
     </SettingsRow>
   )

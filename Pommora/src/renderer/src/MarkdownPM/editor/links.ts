@@ -4,6 +4,7 @@ import { resolveMdTarget, type ConnectionsApi, type MdTarget } from '../connecti
 import { seatAtNearerEdge } from './input'
 import { caretInside, hoverIntent } from './connections'
 import { applyUrlLinkAction } from './linkFormat'
+import { openWebLink } from '../../openWebLink'
 
 type GetApi = () => ConnectionsApi | undefined
 
@@ -115,10 +116,10 @@ export function markdownLinkClicks(getApi: GetApi): ReturnType<typeof EditorView
       if (!hit?.onText) return false
       event.preventDefault()
       intent.cancel()
-      // A target that names a page navigates there. Opening is host-owned either way — main's
-      // shell.openExternal through the bridge, or the connections host's own router.
+      // A target that names a page navigates there; a web address goes through the one
+      // open-link adjudicator, a page through the connections host's own router.
       if (hit.target.kind === 'page') getApi()?.open(hit.target.page)
-      else void window.nexus.openExternal(hit.url)
+      else openWebLink(hit.url)
       return true
     },
     // Right-click hands off to the host's menu hook, told what the target turned out to be — the same

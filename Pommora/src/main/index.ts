@@ -27,7 +27,7 @@ import { BUSY, NO_NEXUS, push, scopeGet, scopeSet, serveBridge } from './ipc'
 import type { Creator, MutateRequest, ContextTarget } from '@shared/mutate'
 import { WINDOW_BG } from '@shared/theme'
 import { dropLiveTree, getLiveTree, refreshTree } from './liveTree'
-import { installWebGuests, setHostZoom } from './webGuests'
+import { installWebGuests, setHostZoom, setWebZoomFactor } from './webGuests'
 import { confirmBy, confirmMutation, confirmRegistry } from './mutatePatch'
 import { patchContainerFromDisk, patchSettingsFromDisk } from './watchPatch'
 import { runOpenRecord } from './record'
@@ -61,6 +61,7 @@ import { ensureContextsRegistry } from './contextsRegistry'
 import {
   readDefaultViewScale,
   readNavViewModes,
+  readWebZoomFactor,
   readPermanentDelete,
   readSubfield,
   writeNavViewModes,
@@ -154,7 +155,7 @@ import type {
   TitleMenuAction,
 } from '@shared/identityMenus'
 import type { ViewButton, ViewStyle } from '@shared/types'
-import { VIEW_SCALE_DEFAULT, viewScaleZoom } from '@shared/types'
+import { VIEW_SCALE_DEFAULT, viewScaleZoom, WEB_ZOOM_DEFAULT, coerceWebZoom } from '@shared/types'
 import { installEditorContextMenu, setFormatState, setGripHot } from './editorMenu'
 import type { FormatState } from '@shared/editorMenu'
 import { isValidLink, normalizeLinkUrl } from '@shared/links'
@@ -258,6 +259,8 @@ async function applyDefaultZoom(win: BrowserWindow): Promise<void> {
   // screen never inherits a prior nexus's host zoom (Electron zoom is per-render-host, shared).
   const root = sessionRoot()
   const scale = root ? await readDefaultViewScale(root) : VIEW_SCALE_DEFAULT
+  // The guests' own scale rides the same read points — launch, reload, and nexus switch.
+  setWebZoomFactor(root ? await readWebZoomFactor(root) : WEB_ZOOM_DEFAULT)
   if (!win.isDestroyed()) setHostZoom(win.webContents, viewScaleZoom(scale))
 }
 
@@ -1413,6 +1416,8 @@ serveBridge(
         if (typeof key !== 'string' || !key)
           return fail('operation-failed', 'Invalid personalization key.')
         await writePersonalization(root, key, value)
+        // The one personalization key with a main-side effect: guests re-stamp in place.
+        if (key === 'webZoomFactor') setWebZoomFactor(coerceWebZoom(value))
         // No renderer confirm exists for this channel (the slice patches optimistically), yet
         // it writes a field the walk reads — the push set's membership predicate.
         await confirmSettingsWrite()

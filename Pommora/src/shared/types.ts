@@ -147,11 +147,26 @@ export interface Personalization {
   pasteLinkIntoText?: boolean
   /** Which form a pasted address is written in. Absent = the whole address as its own label. */
   defaultLinkFormat?: LinkDisplay
+  /** Whether an external link opens Pommora's floating browser rather than the system one.
+   *  Absent = the system browser. */
+  openLinksInApp?: boolean
+  /** How web guests scale relative to the window's own zoom — every guest renders at the host
+   *  factor times this. Absent = 1.0, the window's scale as-is. */
+  webZoomFactor?: number
 }
 
 /** The one session every guest webview lives on — a sign-in anywhere authenticates every embed
  *  surface, per machine, surviving restarts. Surfaces take it as a prop defaulting to this. */
 export const WEB_PARTITION = 'persist:pommora-web'
+
+/** The web-guest scale steps the settings picker offers, and the clamp a hand-typed
+ *  `personalization.webZoomFactor` reads through; absent/invalid → 1.0. */
+export const WEB_ZOOM_STEPS = [0.5, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2] as const
+export const WEB_ZOOM_DEFAULT = 1
+export function coerceWebZoom(v: unknown): number {
+  if (typeof v !== 'number' || !Number.isFinite(v)) return WEB_ZOOM_DEFAULT
+  return Math.min(WEB_ZOOM_STEPS[WEB_ZOOM_STEPS.length - 1], Math.max(WEB_ZOOM_STEPS[0], v))
+}
 
 /** The per-nexus default window zoom (`personalization.defaultViewScale`), stated as the multiplier
  *  a user reads: 1.0 is the interface at its own intended size. Clamped so a hand-typed settings.json
