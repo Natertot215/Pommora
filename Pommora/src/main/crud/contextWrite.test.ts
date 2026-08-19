@@ -179,7 +179,9 @@ describe('setSpaceContext (G-1, cross-context)', () => {
 
 describe('setSpaceColor', () => {
   const sidecar = async (): Promise<Record<string, unknown>> =>
-    JSON.parse(await readFile(join(contextsDir(root), 'Projects', 'Pommora', '_space.json'), 'utf8'))
+    JSON.parse(
+      await readFile(join(contextsDir(root), 'Projects', 'Pommora', '_space.json'), 'utf8'),
+    )
 
   it('accepts a legacy anchor name, clears on undefined, rejects a non-color', async () => {
     expect((await setSpaceColor(root, 'sp-pom', 'cyan')).ok).toBe(true)
