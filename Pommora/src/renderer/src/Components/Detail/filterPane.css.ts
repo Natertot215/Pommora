@@ -120,6 +120,10 @@ export const leadGlyph = style({
   alignItems: 'center',
   marginRight: LEAD_GAP,
   flexShrink: 0,
+  // The glyph reads a step under its label, the menu row's leading-slot tone: a field states its
+  // value in the brighter text and marks WHICH value with the dimmer glyph. An assigned icon color
+  // (a Context's, a Status group's) is an inline style and still wins.
+  color: c.label.secondary,
 })
 
 /** The Control (operator) cell — takes exactly its own label, so an `Is` row's operator is

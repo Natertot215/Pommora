@@ -69,13 +69,22 @@ const mount = async (v: SavedView): Promise<void> => {
   })
 }
 const texts = (): string => host.textContent ?? ''
+/** A picker's rows portal out of the host — the open menu reads from the document. */
+const menuTexts = (): string => document.body.textContent ?? ''
 const click = async (el: Element | null | undefined): Promise<void> => {
   await act(async () => {
     ;(el as HTMLElement).click()
   })
 }
-const rowWithText = (t: string): Element | undefined =>
-  [...host.querySelectorAll('*')].filter((el) => el.textContent === t).at(-1)
+const openPicker = (label: string): Promise<void> =>
+  click(document.querySelector(`button[aria-label="${label}"]`))
+/** The LAST match: the trigger states the current value, the menu row that follows it is the pick. */
+const pickOption = (t: string): Promise<void> =>
+  click(
+    [...document.querySelectorAll('button, [role="button"]')]
+      .filter((e) => e.textContent === t)
+      .at(-1),
+  )
 /** A clickable from anywhere, since a menu portals to body. Matched by ROLE, not tag: a menu row is
  *  a `role="button"` div. */
 const clickable = (match: (el: Element) => boolean): Element | undefined =>
@@ -108,15 +117,15 @@ describe('SortingPane rows', () => {
     expect(texts()).not.toContain('Sub-Sort')
   })
 
-  it('the disclosure lists None + Title + Modified + sortable defs, excluding file, and a pick writes slot 0', async () => {
+  it('the Sort By picker lists None + Title + Modified + sortable defs, excluding file, and a pick writes slot 0', async () => {
     await mount(view())
-    await click(rowWithText('Sort By')?.closest('[class]'))
-    expect(texts()).toContain('Title')
-    expect(texts()).toContain('Modified')
-    expect(texts()).toContain('Status')
-    expect(texts()).toContain('When')
-    expect(texts()).not.toContain('Attachment') // file sorts to a no-op — never offered
-    await click(rowWithText('Status')?.closest('[class]'))
+    await openPicker('Sort By')
+    expect(menuTexts()).toContain('Title')
+    expect(menuTexts()).toContain('Modified')
+    expect(menuTexts()).toContain('Status')
+    expect(menuTexts()).toContain('When')
+    expect(menuTexts()).not.toContain('Attachment') // file sorts to a no-op — never offered
+    await pickOption('Status')
     expect(lastSaved().sort).toEqual([{ property_id: 'prop_status', direction: 'ascending' }])
   })
 
@@ -159,8 +168,8 @@ describe('SortingPane rows', () => {
 
   it('None on Sort By writes sort: undefined — never []', async () => {
     await mount(view({ sort: [{ property_id: 'prop_status', direction: 'ascending' }] }))
-    await click(rowWithText('Sort By')?.closest('[class]'))
-    await click(rowWithText('None')?.closest('[class]'))
+    await openPicker('Sort By')
+    await pickOption('None')
     expect(saveSpy).toHaveBeenCalled()
     expect(lastSaved().sort).toBeUndefined()
   })
@@ -175,8 +184,8 @@ describe('SortingPane rows', () => {
         ],
       }),
     )
-    await click(rowWithText('Sort By')?.closest('[class]'))
-    await click(rowWithText('Title')?.closest('[class]'))
+    await openPicker('Sort By')
+    await pickOption('Title')
     expect(lastSaved().sort).toEqual([
       { property_id: '_title', direction: 'ascending' },
       { property_id: 'prop_status', direction: 'ascending' },
@@ -237,8 +246,8 @@ describe('SortingPane rows', () => {
   it('a dead primary shows its raw id and None still clears it', async () => {
     await mount(view({ sort: [{ property_id: 'prop_gone', direction: 'ascending' }] }))
     expect(texts()).toContain('prop_gone')
-    await click(rowWithText('Sort By')?.closest('[class]'))
-    await click(rowWithText('None')?.closest('[class]'))
+    await openPicker('Sort By')
+    await pickOption('None')
     expect(lastSaved().sort).toBeUndefined()
   })
 })

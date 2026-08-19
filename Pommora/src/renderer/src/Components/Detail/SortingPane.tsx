@@ -1,6 +1,5 @@
 // The pane owns the sort slot WHOLESALE — every write is [primary], [primary, sub], or undefined;
 // a foreign 3+-key tail renders by its first two slots until the first write replaces the slot.
-import { useState } from 'react'
 import type { CollectionNode, SetNode } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
 import { RESERVED_PROPERTY_ID } from '@shared/properties'
@@ -8,11 +7,9 @@ import { LOCATION_SORT, type SavedView, type SortCriterion } from '@shared/views
 import { Icon } from '@renderer/design-system/symbols'
 import { MenuItem, MenuPaneTopRow, MenuSeparator } from '../../design-system/components/menu'
 import { flushTrailing } from '../../design-system/components/menu/menu.css'
-import { Reveal } from '../../design-system/components/Reveal'
 import { useSaveView } from '@renderer/Embeds/ViewEmbedScope'
 import { declaredType } from '../../Detail/Views/pipeline/value'
 import { cx } from '../../design-system/cx'
-import { MenuOption } from '@renderer/design-system/components/PickerMenu'
 import { PickerControl, type PickerChoice } from './PickerControl'
 import { CustomList, PropertyPreview, optionsOf } from './GroupingPane'
 import { bucketOrder } from '../../Detail/Views/pipeline/group'
@@ -128,7 +125,6 @@ export function SortingPane({
   label: string
   onBack: () => void
 }): React.JSX.Element {
-  const [sortByOpen, setSortByOpen] = useState(false)
   const saveView = useSaveView(source)
   const save = (sort: SortCriterion[] | undefined): void => void saveView({ ...view, sort })
 
@@ -144,7 +140,6 @@ export function SortingPane({
       : (targetById.get(c.property_id)?.label ?? c.property_id)
 
   const pickPrimary = (id: string | null): void => {
-    setSortByOpen(false)
     if (id === null) {
       if (primary) save(undefined)
       return
@@ -186,6 +181,19 @@ export function SortingPane({
       new Set(optionsOf(finiteDef).map((o) => o.value)),
     )
 
+  const sortByOptions: PickerChoice<string>[] = [
+    { value: '_none', label: 'None', icon: 'circle-off' as const },
+    ...(view.type === 'cards'
+      ? [{ value: LOCATION_SORT, label: 'Location', icon: 'folder' as const }]
+      : []),
+    ...targets
+      .filter((t) => t.id !== sub?.property_id)
+      .map((t) => ({ value: t.id, label: t.label, icon: t.icon })),
+    ...(primary && !targets.some((t) => t.id === primary.property_id)
+      ? [{ value: primary.property_id, label: nameOf(primary), icon: 'tag' as const }]
+      : []),
+  ]
+
   const subOptions: PickerChoice<string>[] = [
     { value: '_none', label: 'None', icon: 'circle-off' as const },
     ...targets
@@ -196,52 +204,14 @@ export function SortingPane({
   return (
     <>
       <MenuPaneTopRow label={label} current="Sorting" onBack={onBack} />
-      <MenuItem
-        className={flushTrailing}
-        leading={<Icon name="arrow-up-down" size={14} />}
-        trailing={
-          <span className={gp.groupByValue}>
-            {primary ? nameOf(primary) : 'None'}
-            <Icon name="chevrons-up-down" size={12} />
-          </span>
-        }
-        onClick={() => setSortByOpen((o) => !o)}
-      >
-        Sort By
-      </MenuItem>
-      <Reveal open={sortByOpen}>
-        <div className={`${gp.middle} overflow-eclipse-y`}>
-          <MenuOption
-            leading={<Icon name="circle-off" size={13} />}
-            selected={!primary}
-            onClick={() => pickPrimary(null)}
-          >
-            None
-          </MenuOption>
-          {view.type === 'cards' && (
-            <MenuOption
-              leading={<Icon name="folder" size={13} />}
-              selected={primary?.property_id === LOCATION_SORT}
-              onClick={() => pickPrimary(LOCATION_SORT)}
-            >
-              Location
-            </MenuOption>
-          )}
-          {targets
-            .filter((t) => t.id !== sub?.property_id)
-            .map((t) => (
-              <MenuItem
-                key={t.id}
-                leading={<Icon name={t.icon ?? 'tag'} size={13} />}
-                selected={primary?.property_id === t.id}
-                onClick={() => pickPrimary(t.id)}
-              >
-                {t.label}
-              </MenuItem>
-            ))}
-        </div>
-      </Reveal>
-      {!sortByOpen && primary && (
+      <ValueRow
+        icon="arrow-up-down"
+        label="Sort By"
+        value={primary?.property_id ?? '_none'}
+        options={sortByOptions}
+        onPick={(v) => pickPrimary(v === '_none' ? null : v)}
+      />
+      {primary && (
         <>
           {primary.property_id === LOCATION_SORT ? (
             // The location sort ranks by the filesystem (Location) or the view's manual order

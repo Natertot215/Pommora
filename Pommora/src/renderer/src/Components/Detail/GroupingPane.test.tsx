@@ -70,6 +70,21 @@ const mount = async (v: SavedView): Promise<void> => {
   })
 }
 const texts = (): string => host.textContent ?? ''
+/** A picker's rows portal out of the host — the open menu reads from the document. */
+const menuTexts = (): string => document.body.textContent ?? ''
+const openPicker = async (label: string): Promise<void> => {
+  await act(async () => {
+    ;(document.querySelector(`button[aria-label="${label}"]`) as HTMLElement).click()
+  })
+}
+const pickOption = async (t: string): Promise<void> => {
+  const el = [...document.querySelectorAll('button, [role="button"]')]
+    .filter((e) => e.textContent === t)
+    .at(-1)
+  await act(async () => {
+    ;(el as HTMLElement).click()
+  })
+}
 
 beforeEach(() => {
   host = document.createElement('div')
@@ -125,20 +140,13 @@ describe('GroupingPane rows', () => {
     expect(texts()).toContain('Ascending')
   })
 
-  it('the Group By disclosure lists Location + groupable properties and a pick writes the group', async () => {
+  it('the Group By picker lists Location + groupable properties and a pick writes the group', async () => {
     await mount(view())
-    const groupByRow = [...host.querySelectorAll('*')].find((el) => el.textContent === 'Group By')
-    await act(async () => {
-      ;(groupByRow!.closest('[class]') as HTMLElement).click()
-    })
-    expect(texts()).toContain('Status')
-    expect(texts()).toContain('When')
-    const statusOption = [...host.querySelectorAll('*')]
-      .filter((el) => el.textContent === 'Status')
-      .at(-1)
-    await act(async () => {
-      ;(statusOption!.closest('[class]') as HTMLElement).click()
-    })
+    await openPicker('Group By')
+    expect(menuTexts()).toContain('Location')
+    expect(menuTexts()).toContain('Status')
+    expect(menuTexts()).toContain('When')
+    await pickOption('Status')
     expect(lastSaved().group).toMatchObject({
       kind: 'property',
       property_id: 'prop_status',
@@ -333,16 +341,8 @@ describe('GroupingPane rows', () => {
       sub_group: { property_id: 'prop_status', order_mode: 'manual', order: ['todo'] },
     })
     await mount(v)
-    const groupByRow = [...host.querySelectorAll('*')].find((el) => el.textContent === 'Group By')
-    await act(async () => {
-      ;(groupByRow!.closest('[class]') as HTMLElement).click()
-    })
-    const statusOption = [...host.querySelectorAll('*')]
-      .filter((el) => el.textContent === 'Status')
-      .at(-1)
-    await act(async () => {
-      ;(statusOption!.closest('[class]') as HTMLElement).click()
-    })
+    await openPicker('Group By')
+    await pickOption('Status')
     // the write replaced only `group`; the view-level sub_group rode through untouched
     expect(lastSaved().sub_group).toEqual({
       property_id: 'prop_status',
