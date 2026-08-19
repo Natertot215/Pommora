@@ -64,6 +64,8 @@ export interface PreviewPaneProps {
   toolbar?: PreviewPaneToolbar
   onScan?: () => void
   scanLabel?: string
+  /** The lead cluster's own controls, after the scan glyph when both are present. */
+  lead?: ReactNode
   /** `band` mode only — a `floating` toolbar is zero-height and pointer-inert, so a title there
    *  is clipped away silently. */
   title?: ReactNode
@@ -99,6 +101,7 @@ export function PreviewPane({
   toolbar = 'band',
   onScan,
   scanLabel = 'Open Full Page',
+  lead,
   title,
   actions,
   left,
@@ -240,6 +243,7 @@ export function PreviewPane({
               <Icon name="scan" size={13} />
             </button>
           )}
+          {lead}
         </div>
         {/* Rendered bare, not wrapped: a tab strip contributes its own flex child (and an
             absolutely-positioned title beside it), which a wrapper would collapse into one box. */}

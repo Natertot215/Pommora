@@ -1,0 +1,44 @@
+/* The browser flavor of the floating window: the guest owns the whole body below the toolbar
+   strip, and the centered title is the escalating link. */
+
+.wbrowser-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  padding-top: var(--ppane-toolbar-h);
+}
+/* biome-ignore lint/correctness/noUnknownTypeSelector: webview is Electron's guest element */
+.wbrowser-body webview {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Centered in the strip, two-tone like the preview's crumb: the domain stands back, the page
+   title carries. Ellipsized from the middle out so a long title never crowds the clusters. */
+.wbrowser-title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 55%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: none;
+  padding: 2px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.wbrowser-title:hover {
+  background: var(--state-hover);
+}
+.wbrowser-title-domain {
+  color: var(--label-tertiary);
+}
+.wbrowser-title-page {
+  color: var(--label-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

@@ -1,0 +1,133 @@
+// The in-app browser — the floating window's browser flavor: back/forward lead the toolbar, the
+// centered title is the link itself (click escalates the CURRENT page to the system browser), and
+// one webview owns the whole body on the shared partition. A summon while open retakes the window
+// in place; the singleton the page preview also is.
+import { useEffect, useRef, useState } from 'react'
+import { cx } from '@renderer/design-system/cx'
+import { text } from '@renderer/design-system/tokens'
+import { Icon } from '@renderer/design-system/symbols'
+import { PreviewPane } from '@renderer/design-system/components/PreviewPane/PreviewPane'
+import type { FloatingBounds } from '@renderer/design-system/interactions/FloatingWindow'
+import { linkDomain } from '@shared/links'
+import { WEB_PARTITION } from '@shared/types'
+import { useExitPresence } from '../design-system/useExitPresence'
+import { useSession } from '../store'
+import './browserWindow.css'
+
+const BOUNDS: FloatingBounds = { minW: 480, minH: 360, defW: 1000, defH: 700 }
+
+/** The knob-independent summon — `openWebLink` is one caller, Add Account another. */
+export function openInAppBrowser(url: string): void {
+  useSession.getState().openBrowser(url)
+}
+
+/** What the guest element answers with once attached — the navigation surface the toolbar drives. */
+interface BrowserGuest extends HTMLElement {
+  goBack(): void
+  goForward(): void
+  canGoBack(): boolean
+  canGoForward(): boolean
+  getURL(): string
+}
+
+export function BrowserWindow(): React.JSX.Element | null {
+  const url = useSession((s) => s.browserUrl)
+  const { mounted, closing } = useExitPresence(url !== null)
+  // Held through the exit animation (the store nulls the address at close). An overtake swaps the
+  // guest's destination in place; the window never remounts.
+  const held = useRef(url)
+  if (url) held.current = url
+  if (!mounted || !held.current) return null
+  return <BrowserWindowBody url={held.current} closing={closing} />
+}
+
+function BrowserWindowBody({ url, closing }: { url: string; closing: boolean }): React.JSX.Element {
+  const closeBrowser = useSession((s) => s.closeBrowser)
+  const ref = useRef<BrowserGuest | null>(null)
+  const [title, setTitle] = useState('')
+  const [current, setCurrent] = useState(url)
+  const [nav, setNav] = useState({ back: false, forward: false })
+
+  // A retake aims the standing guest at the new address; navigation state re-derives from the
+  // guest's own events.
+  useEffect(() => {
+    setTitle('')
+    setCurrent(url)
+  }, [url])
+
+  useEffect(() => {
+    const wv = ref.current
+    if (!wv) return
+    const onTitle = (e: Event): void => setTitle((e as Event & { title?: string }).title ?? '')
+    // Event-driven, never polled: every commit (page loads, pushState hops, back/forward) lands
+    // one of these, and the toolbar re-reads the guest's truth there.
+    const onNavigate = (): void => {
+      setCurrent(wv.getURL())
+      setNav({ back: wv.canGoBack(), forward: wv.canGoForward() })
+    }
+    wv.addEventListener('page-title-updated', onTitle)
+    wv.addEventListener('did-navigate', onNavigate)
+    wv.addEventListener('did-navigate-in-page', onNavigate)
+    return () => {
+      wv.removeEventListener('page-title-updated', onTitle)
+      wv.removeEventListener('did-navigate', onNavigate)
+      wv.removeEventListener('did-navigate-in-page', onNavigate)
+    }
+  }, [])
+
+  return (
+    <PreviewPane
+      id="web-browser"
+      className="wbrowser"
+      closing={closing}
+      onClose={closeBrowser}
+      bounds={BOUNDS}
+      ariaLabel="Browser"
+      lead={
+        <>
+          <button
+            type="button"
+            className="ppane-action"
+            title="Back"
+            disabled={!nav.back}
+            onClick={() => ref.current?.goBack()}
+          >
+            <Icon name="chevron-left" size={14} />
+          </button>
+          <button
+            type="button"
+            className="ppane-action"
+            title="Forward"
+            disabled={!nav.forward}
+            onClick={() => ref.current?.goForward()}
+          >
+            <Icon name="chevron-right" size={14} />
+          </button>
+        </>
+      }
+      title={
+        <button
+          type="button"
+          className={cx('wbrowser-title', text.footnote.standard)}
+          title="Open in system browser"
+          onClick={() => void window.nexus.openExternal(current)}
+        >
+          <span className="wbrowser-title-domain">{linkDomain(current)}</span>
+          {title ? <span className="wbrowser-title-page">{title}</span> : null}
+        </button>
+      }
+    >
+      <div className="wbrowser-body">
+        <webview
+          ref={(el) => {
+            ref.current = el as BrowserGuest | null
+          }}
+          src={url}
+          partition={WEB_PARTITION}
+          // The empty-string form, cast past React's boolean typing — see WebpageEmbed.
+          allowpopups={'' as unknown as boolean}
+        />
+      </div>
+    </PreviewPane>
+  )
+}

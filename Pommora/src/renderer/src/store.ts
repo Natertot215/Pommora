@@ -316,6 +316,12 @@ interface SessionState {
   closeSettings: () => void
   toggleSettings: () => void
 
+  /** The in-app browser's current address; null = closed. A summon while open retakes the
+   *  window in place — the singleton the page preview also is. */
+  browserUrl: string | null
+  openBrowser: (url: string) => void
+  closeBrowser: () => void
+
   preview: PreviewState | null
   previewsFile: PreviewsFile
   previewTarget: PreviewTarget | null
@@ -1279,6 +1285,10 @@ export const useSession = create<SessionState>((set, get) => {
     openSettings: () => set({ settingsOpen: true }),
     closeSettings: () => set({ settingsOpen: false }),
     toggleSettings: () => set((s) => ({ settingsOpen: !s.settingsOpen })),
+
+    browserUrl: null,
+    openBrowser: (url) => set({ browserUrl: url }),
+    closeBrowser: () => set({ browserUrl: null }),
     preview: null,
     previewsFile: EMPTY_PREVIEWS,
     previewTarget: null,
