@@ -6,6 +6,7 @@ import { ComponentsLeaf } from './ComponentsLeaf'
 import { GlassLeaf } from './GlassLeaf'
 import { InteractionsLeaf } from './InteractionsLeaf'
 import { PanesLeaf } from './PanesLeaf'
+import { PickerSandboxLeaf } from './PickerSandboxLeaf'
 import { SurfaceLab } from '@renderer/SurfacePM/SurfaceLab'
 
 // The leaf catalog — the single source of which leaves the showcase has. Adding a
@@ -58,6 +59,13 @@ export const LEAVES: readonly Leaf[] = [
     icon: 'tag',
     section: 'components',
     render: () => <ComponentsLeaf />,
+  },
+  {
+    id: 'picker-sandbox',
+    label: 'Picker Sandbox',
+    icon: 'palette',
+    section: 'components',
+    render: () => <PickerSandboxLeaf />,
   },
   {
     id: 'glass',
