@@ -34,9 +34,23 @@ export const MD_LINK = /^\[((?:[^\]\\]|\\.)*)\]\((.*)\)$/
  *  quadratically at every start position — the same ReDoS `pageLinkPattern` caps itself against, and
  *  it freezes the cascade and the live tokenizer alike on one pathological body. The target's nested
  *  alternations avoid adding a second such run because each level's branches are disjoint on their
- *  first character (`(` against not-`(`), leaving nothing for the quantifiers to backtrack between. */
+ *  first character (`(` against not-`(`), leaving nothing for the quantifiers to backtrack between.
+ *
+ *  Both halves are assembled from one fragment each, shared with the empty-tolerant variant below —
+ *  the escape class, the paren nesting, and the caps are stated once, so the two grammars can only
+ *  differ by the floors that define them. */
+const LINK_LABEL = (min: 0 | 1): string => `((?:[^\\]\\\\\\r\\n]|\\\\.){${min},255})`
+const LINK_DEST = (min: 0 | 1): string =>
+  `((?:[^()\\r\\n]|\\((?:[^()\\r\\n]|\\([^()\\r\\n]*\\))*\\)){${min},2048})`
+
 export const markdownLinkRegex = (): RegExp =>
-  /\[((?:[^\]\\\r\n]|\\.){1,255})\]\(((?:[^()\r\n]|\((?:[^()\r\n]|\([^()\r\n]*\))*\)){1,2048})\)/dg
+  new RegExp(`\\[${LINK_LABEL(1)}\\]\\(${LINK_DEST(1)}\\)`, 'dg')
+
+/** The same grammar with empty halves admitted — the shapes mid-authoring leaves behind (`[]()`,
+ *  `[docs]()`) that the tokenizer deliberately refuses. Only the surfaces that must recognize a link
+ *  before it is one read this form. */
+export const emptyTolerantLinkRegex = (): RegExp =>
+  new RegExp(`\\[${LINK_LABEL(0)}\\]\\(${LINK_DEST(0)}\\)`, 'dg')
 
 /** Escape a user-typed alias for the `[alias](url)` form: `\` and `]` (the only chars that can break
  *  the shape) become `\\` and `\]`, standard-markdown style. Inverse of unescapeAlias. */
