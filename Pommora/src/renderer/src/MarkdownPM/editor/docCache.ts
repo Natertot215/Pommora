@@ -59,3 +59,15 @@ export function docSpanTokens(doc: Text, key: string, derive: () => Token[]): To
   }
   return v.tokens
 }
+
+// Every ↔ in the document, one scan per doc VERSION. Only the text says where they are, so a caret
+// move, a focus flip, and a scroll read the positions back rather than re-scanning for them.
+const bidirMarks = new WeakMap<Text, number[]>()
+export function docBidirMarks(doc: Text): number[] {
+  let v = bidirMarks.get(doc)
+  if (!v) {
+    v = [...docString(doc).matchAll(/↔/g)].map((m) => m.index)
+    bidirMarks.set(doc, v)
+  }
+  return v
+}

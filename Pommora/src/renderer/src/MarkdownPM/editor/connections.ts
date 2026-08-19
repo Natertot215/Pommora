@@ -4,6 +4,7 @@ import { tokenize } from '../tokens'
 import type { ConnectionsApi, ConnPage } from '../connections'
 import { seatAtNearerEdge } from './input'
 import { applyLinkAction } from './linkEdit'
+import { closeActiveHoverCard } from '@renderer/Embeds/ConnectionHoverCard'
 
 type GetApi = () => ConnectionsApi | undefined
 
@@ -193,7 +194,10 @@ export function connectionClicks(getApi: GetApi): ReturnType<typeof EditorView.d
     },
     // Right-click on a resolved connection hands off to the host's menu hook (Open Preview et al).
     contextmenu(event, view) {
+      // The pair every gesture that replaces the pointer's meaning owes it: cancel what is armed,
+      // and dismiss what is already open.
       intent.cancel()
+      closeActiveHoverCard()
       actedOnLink = true
       const api = getApi()
       if (!api?.menu) return false
