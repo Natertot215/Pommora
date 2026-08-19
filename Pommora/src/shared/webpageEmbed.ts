@@ -14,8 +14,8 @@ const anyLink = (): RegExp =>
  *  seated by ⌘K or Embed ▸ Webpage sits inside `[]()` before anything is typed. */
 export function linkDestinationAt(lineText: string, col: number): boolean {
   for (const m of lineText.matchAll(anyLink())) {
-    const [start, end] = (m as RegExpMatchArray & { indices: [number, number][] }).indices[2]
-    if (col >= start && col <= end) return true
+    const span = m.indices?.[2]
+    if (span && col >= span[0] && col <= span[1]) return true
   }
   return false
 }
