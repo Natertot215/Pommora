@@ -1,5 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import type { PageDetail } from '@shared/types'
 import { useSession } from '../store'
+import { navKey } from '../Navigation/navRecents'
+import { readWarm } from '../Tabs/warmCache'
 import { duration, easing } from '@renderer/design-system/tokens'
 import { Icon } from '@renderer/design-system/symbols'
 import { findCollection, findSet } from './Scope'
@@ -53,12 +56,46 @@ function DetailView(): React.JSX.Element {
       )
     }
     case 'page':
-      return (
-        <div className="detail detail-page">
-          <PageView />
-        </div>
-      )
+      // The page surfaces are hosted per tab below, so the routed view stands down for them.
+      return <div className="detail" />
   }
+}
+
+// KNOB — how many recently-visited page tabs keep their surface parked behind the shown one.
+// Each costs a live editor's DOM; what it buys is a tab flip that resumes rather than reloads.
+const WARM_TABS = 2
+
+/** The page surfaces to hold open: the shown one first, then the most recently visited page tabs
+ *  behind it. Keyed by tab, so becoming shown (or being parked again) is a class change rather
+ *  than a remount — which is the whole point, since a remount reloads every embedded site. One
+ *  surface per page: a second tab on the same file would put two editors on one document. */
+function useHosts(): { tabId: string; detail?: PageDetail }[] {
+  const selection = useSession((s) => s.selection)
+  const tabs = useSession((s) => s.tabs)
+  const tabMru = useSession((s) => s.tabMru)
+  const activeTabId = useSession((s) => s.activeTabId)
+  return useMemo(() => {
+    const hosts: { tabId: string; detail?: PageDetail }[] = []
+    const paths = new Set<string>()
+    if (selection.kind === 'page') {
+      hosts.push({ tabId: activeTabId })
+      paths.add(selection.path)
+    }
+    for (const id of tabMru) {
+      if (hosts.length > WARM_TABS || id === activeTabId) continue
+      const target = tabs.find((t) => t.id === id)?.target
+      if (target?.kind !== 'page') continue
+      // Only a tab that has actually been shown has a page in hand to park — one opened in the
+      // background has nothing warm to keep.
+      const detail = readWarm(id, navKey(target))?.pageDetail
+      if (!detail || paths.has(detail.path)) continue
+      paths.add(detail.path)
+      hosts.push({ tabId: id, detail })
+    }
+    // Rendered in a fixed order, never most-recent-first: reordering keyed children moves their
+    // DOM, and a moved webview is re-attached — which ends the very guest this exists to keep.
+    return hosts.sort((a, b) => (a.tabId < b.tabId ? -1 : 1))
+  }, [selection, tabs, tabMru, activeTabId])
 }
 
 const VIEW_SLIDE_PX = 14
@@ -78,6 +115,8 @@ export function DetailPane(): React.JSX.Element {
   const navSlide = useSession((s) => s.navSlide)
   const expanded = useSession((s) => s.subfieldExpanded)
   const setExpanded = useSession((s) => s.setSubfieldExpanded)
+  const activeTabId = useSession((s) => s.activeTabId)
+  const hosts = useHosts()
 
   // Directional view slide: when a stamped navigation's swap commits, the incoming view slides in
   // via WAAPI on the wrapper (no remount) — `seq` guards against replay, and a plain sidebar select
@@ -137,6 +176,18 @@ export function DetailPane(): React.JSX.Element {
       }}
     >
       <div ref={viewRef} className={frozen ? 'detail-pane-view is-frozen' : 'detail-pane-view'}>
+        {hosts.map((h) => {
+          const parked = h.tabId !== activeTabId
+          return (
+            <div
+              key={h.tabId}
+              className={parked ? 'detail detail-page is-parked' : 'detail detail-page'}
+              aria-hidden={parked || undefined}
+            >
+              <PageView tabId={h.tabId} parked={parked} detail={parked ? h.detail : undefined} />
+            </div>
+          )
+        })}
         <DetailView />
       </div>
       {showSubfield && (
