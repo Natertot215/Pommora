@@ -320,6 +320,7 @@ interface SessionState {
    *  distinct event, so re-clicking a link the window has navigated away from still re-aims it —
    *  a bare url would read as unchanged. */
   browserSummon: { url: string; seq: number } | null
+  browserSeq: number
   openBrowser: (url: string) => void
   closeBrowser: () => void
 
@@ -1288,8 +1289,10 @@ export const useSession = create<SessionState>((set, get) => {
     toggleSettings: () => set((s) => ({ settingsOpen: !s.settingsOpen })),
 
     browserSummon: null,
-    openBrowser: (url) =>
-      set((s) => ({ browserSummon: { url, seq: (s.browserSummon?.seq ?? 0) + 1 } })),
+    // Monotonic across closes: the sequence lives outside the summon object, so a re-summon
+    // inside the window's exit presence (which skips the remount) still reads as a new event.
+    browserSeq: 0,
+    openBrowser: (url) => set((s) => ({ browserSeq: s.browserSeq + 1, browserSummon: { url, seq: s.browserSeq + 1 } })),
     closeBrowser: () => set({ browserSummon: null }),
     preview: null,
     previewsFile: EMPTY_PREVIEWS,
