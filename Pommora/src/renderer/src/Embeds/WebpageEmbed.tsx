@@ -7,8 +7,25 @@ import { useEffect, useRef, useState } from 'react'
 import { cx } from '@renderer/design-system/cx'
 import { text } from '@renderer/design-system/tokens'
 import { linkDomain } from '@shared/links'
+import { DEFAULT_LINK_DISPLAY } from '@shared/properties'
 import { WEB_PARTITION } from '@shared/types'
+import { webpageTileTitle } from '@shared/webpageEmbed'
+import { useSession } from '../store'
 import './embeds.css'
+
+/** The live half of the resolution: the store's format and cache, arming the shared fetch in Page
+ *  Title mode exactly as a cell does (in-flight dedupe and the never-store-empty rule are the
+ *  cache's own). */
+export function useWebpageTitle(label: string, url: string): string {
+  const display = useSession((s) => s.personalization.defaultLinkFormat ?? DEFAULT_LINK_DISPLAY)
+  const title = useSession((s) => s.linkTitles[url])
+  const resolveLinkTitle = useSession((s) => s.resolveLinkTitle)
+  const wantsTitle = label === '' && display === 'link-title'
+  useEffect(() => {
+    if (wantsTitle && !title) resolveLinkTitle(url)
+  }, [wantsTitle, title, url, resolveLinkTitle])
+  return webpageTileTitle(label, url, display, title)
+}
 
 interface WebviewEl extends HTMLElement {
   reload: () => void
