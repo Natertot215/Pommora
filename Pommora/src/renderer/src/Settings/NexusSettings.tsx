@@ -26,6 +26,7 @@ import {
   coerceWebZoom,
   type ColorSetting,
   type Personalization,
+  type PickerSelection,
   type TimeFormatSetting,
 } from '@shared/types'
 import { DATE_FORMAT_LABELS, DATE_FORMATS, type DateFormat } from '@shared/columnStyles'
@@ -96,6 +97,7 @@ type Row =
   | PickerRow<LinkDisplay>
   | PickerRow<DateFormat>
   | PickerRow<TimeFormatSetting>
+  | PickerRow<PickerSelection>
   | (RowText & {
       /** The web-guest scale — a numeric factor offered through the percent vocabulary. */
       kind: 'webzoom'
@@ -125,6 +127,11 @@ type Leaf = {
   | { sections: readonly Section[]; Surface?: never }
   | { Surface: () => React.JSX.Element; sections?: never }
 )
+
+const pickerSelectionOptions: readonly PickerChoice<PickerSelection>[] = [
+  { value: 'outlined', label: 'Outlined' },
+  { value: 'checked', label: 'Checked' },
+]
 
 const dateFormatOptions: readonly PickerChoice<DateFormat>[] = DATE_FORMATS.map((value) => ({
   value,
@@ -186,6 +193,14 @@ const LEAVES = roster([
             key: 'revealTabBarOnHover',
             label: 'Reveal Tab Bar On Hover',
             hint: 'Keep the tab bar hidden until the pointer nears it.',
+          },
+          {
+            kind: 'picker',
+            key: 'pickerSelection',
+            label: 'Show Selection In Pickers As',
+            hint: 'How every picker marks the row you are on.',
+            fallback: 'outlined',
+            options: pickerSelectionOptions,
           },
           {
             kind: 'device',

@@ -12,7 +12,7 @@ import { dropdownOpen, dropdownClose } from '../../animations.css'
 import { useExitPresence } from '../../useExitPresence'
 import { useHeld } from '../../useHeld'
 import { GlassPane } from '../../materials'
-import { MenuItem, MenuScrollFrame } from '../menu/Menu'
+import { MenuScrollFrame } from '../menu/Menu'
 import { markPickerOpen } from '../useDismiss'
 import { Icon } from '../../symbols'
 import { cx } from '../../cx'
@@ -521,45 +521,11 @@ export function PointMenu({
   )
 }
 
-/** The row for a FIXED option set — leading label, trailing mark on the chosen one, the native
- *  pop-up idiom. `PickerOption` below is its counterpart for user-authored values, whose chips carry
- *  their own color and say "chosen" by fill. */
-export function MenuOption({
-  children,
-  onClick,
-  selected = false,
-  leading,
-  disabled = false,
-  className,
-}: {
-  children: ReactNode
-  onClick?: () => void
-  selected?: boolean
-  leading?: ReactNode
-  disabled?: boolean
-  className?: string
-}): React.JSX.Element {
-  return (
-    <MenuItem
-      className={className}
-      leading={leading}
-      disabled={disabled}
-      trailing={
-        <Icon
-          name="check"
-          size={CHECK}
-          className={cx(s.chosenMark, !selected && s.chosenMarkHidden)}
-        />
-      }
-      onClick={onClick}
-    >
-      {children}
-    </MenuItem>
-  )
-}
-
-// Chip overflow (truncate + scroll) is handled by `chipLabel` in design-system/tokens — no overflow
-// logic needed here.
+/** THE row inside a picker — a fixed option set and a set of user-authored values alike. How it
+ *  marks the chosen one is the nexus's `pickerSelection` setting, resolved in CSS off a root class,
+ *  so no call site states a mode and every picker in the app answers the setting together.
+ *
+ *  Chip overflow (truncate + scroll) is `chipLabel`'s in design-system/tokens — none of it here. */
 export function PickerOption({
   children,
   onClick,
@@ -588,10 +554,11 @@ export function PickerOption({
         children
       ) : (
         <span className={s.leadingRow}>
-          {leading}
+          <span className={s.optionGlyph}>{leading}</span>
           {children}
         </span>
       )}
+      {selected && <Icon name="check" size={CHECK} className={s.optionCheck} />}
     </button>
   )
 }

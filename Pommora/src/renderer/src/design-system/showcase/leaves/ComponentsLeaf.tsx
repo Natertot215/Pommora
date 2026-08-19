@@ -2,11 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { ChipsLeaf } from './ChipsLeaf'
 import { MenuLeaf } from './MenuLeaf'
 import { CalendarPicker } from '@renderer/design-system/components/CalendarPicker/CalendarPicker'
-import {
-  PickerMenu,
-  PickerOption,
-  MenuOption,
-} from '@renderer/design-system/components/PickerMenu/PickerMenu'
+import { PickerMenu, PickerOption } from '@renderer/design-system/components/PickerMenu/PickerMenu'
 import { MenuSurface } from '@renderer/design-system/components/menu'
 import { Chip } from '@renderer/Components/Chip'
 import { condensedDate, formatDate } from '@renderer/Detail/Views/PropertyEditing/formatValue'
@@ -72,12 +68,12 @@ export function ComponentsLeaf(): React.JSX.Element {
               ))}
             </PickerMenu>
           </PopupButton>
-          <PopupButton label="MenuOption rows">
+          <PopupButton label="PickerOption rows">
             <PickerMenu solid>
               {POPOUT_LABELS.map((label, i) => (
-                <MenuOption key={label} selected={i === 0} onClick={() => {}}>
+                <PickerOption key={label} ring selected={i === 0} onClick={() => {}}>
                   {label}
-                </MenuOption>
+                </PickerOption>
               ))}
             </PickerMenu>
           </PopupButton>

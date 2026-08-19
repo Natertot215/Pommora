@@ -84,6 +84,8 @@ export type FolderPlacement = 'top' | 'bottom'
 
 /** Which surface the sidebar content column renders. Homepage is a selection, not a mode. */
 export type SidebarMode = 'collections' | 'contexts' | 'agenda'
+/** How a picker marks the row you're on. */
+export type PickerSelection = 'outlined' | 'checked'
 
 /** Nexus-wide interface personalization — the `personalization` object in `.nexus/settings.json`
  *  (canonical, synced). Every field optional; absent = the built-in default. One schema behind one
@@ -119,6 +121,9 @@ export interface Personalization {
   sidebarMode?: SidebarMode
   /** Hide the toolbar tab bar until hovered. Absent = always shown. */
   revealTabBarOnHover?: boolean
+  /** How every picker marks its chosen row — a filled, outlined row or a trailing checkmark.
+   *  Absent = `outlined`. */
+  pickerSelection?: PickerSelection
   /** Wiki-link clicks open the Page Preview window instead of navigating. ⌘-click takes
    *  the other route. Absent = navigate. */
   connectionsOpenInPreview?: boolean

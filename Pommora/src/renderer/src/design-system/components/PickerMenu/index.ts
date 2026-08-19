@@ -1,1 +1,1 @@
-export { PickerMenu, PickerOption, MenuOption, PointMenu } from './PickerMenu'
+export { PickerMenu, PickerOption, PointMenu } from './PickerMenu'

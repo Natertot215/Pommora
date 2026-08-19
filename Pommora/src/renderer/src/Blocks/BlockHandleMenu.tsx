@@ -8,7 +8,7 @@ import type {
   ViewPickerItem,
 } from '@shared/blocks'
 import { Icon } from '@renderer/design-system/symbols'
-import { PickerMenu, MenuOption } from '@renderer/design-system/components/PickerMenu'
+import { PickerMenu, PickerOption } from '@renderer/design-system/components/PickerMenu'
 import { PICKER_MAX_HEIGHT } from '@renderer/design-system/components/PickerMenu/pickerMenu.css'
 import {
   MenuBottomRow,
@@ -326,9 +326,9 @@ export function BlockHandleMenu({
     <div className={s.pane}>
       <MenuPaneTopRow label="Menu" current="Style" onBack={() => setPane('root')} />
       {(['bordered', 'borderless'] as const).map((v) => (
-        <MenuOption key={v} selected={style === v} onClick={act(() => onStyle(v))}>
+        <PickerOption key={v} ring selected={style === v} onClick={act(() => onStyle(v))}>
           {v === 'bordered' ? 'Bordered' : 'Borderless'}
-        </MenuOption>
+        </PickerOption>
       ))}
     </div>
   )
@@ -361,13 +361,14 @@ export function BlockHandleMenu({
       <PickerMenu open={open && scaleOpen} triggerRef={scaleTriggerRef} solid>
         <div className={s.scaleMenu} data-scale-menu>
           {ZOOM_STEPS.map((st) => (
-            <MenuOption
+            <PickerOption
               key={st.label}
+              ring
               selected={currentStep.factor === st.factor}
               onClick={() => onSetZoom?.(st.factor)}
             >
               {st.label}
-            </MenuOption>
+            </PickerOption>
           ))}
         </div>
       </PickerMenu>

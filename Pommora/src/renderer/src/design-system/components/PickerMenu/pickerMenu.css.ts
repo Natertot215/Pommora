@@ -80,10 +80,6 @@ export const anchorUp = style(dropdownAnchor('up', stack.local.overlay))
  *  has to override the trailing slot's secondary tone, which is the tone for detail, not for state. */
 export const chosenMark = style({ color: 'var(--accent)', flex: 'none' })
 
-/** The mark slot is laid out on EVERY row and only painted on the chosen one: rendering it
- *  conditionally would resize the pane whenever the selection moved between labels of unequal
- *  length. */
-export const chosenMarkHidden = style({ visibility: 'hidden' })
 /** The self-managed top layer — a fixed body-portal position (set inline from the measured trigger)
  *  so the pane escapes any clipping ancestor (the settings dropdown's frost clip). */
 export const layer = style({ position: 'fixed', zIndex: stack.top.menu })
@@ -127,21 +123,53 @@ export const option = style([
   text.control.standard,
   rowShell,
   {
+    position: 'relative',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     whiteSpace: 'nowrap',
-    padding: '3px 4px',
+    padding: '4px',
     border: 'none',
     background: 'none',
-    color: c.label.control,
+    color: c.label.primary,
   },
 ])
+
+/** A row's leading glyph — a step under its label, the menu row's leading-slot tone. An assigned
+ *  color (a Context's, a Status group's) is an inline style and still wins. */
+export const optionGlyph = style({ display: 'inline-flex', color: c.label.secondary })
+
+/** The chosen mark. It rides ABOVE the row rather than in its flow so a centered row stays centered
+ *  and a glyph-led row keeps its left edge — the mark is the only thing the two modes disagree on,
+ *  and neither alignment may shift when the mode flips. */
+export const optionCheck = style({
+  position: 'absolute',
+  right: '4px',
+  top: '50%',
+  transform: 'translateY(-50%)',
+  color: 'var(--accent)',
+  pointerEvents: 'none',
+})
 
 export const optionSelected = style({
   background: c.state.selected,
   selectors: { '&:hover': { background: c.state.selected } },
 })
+
+// `checked` mode states the choice with the mark alone — the fill and the ring stand down, so a row
+// never carries two signals for one state. The mark rides over the row's own padding and reserves no
+// track: a centered row must read centered in both modes, so neither mode may take width from it.
+globalStyle(`${option} ${optionCheck}`, { display: 'none' })
+globalStyle(`:root.picker-checked ${option} ${optionCheck}`, { display: 'inline-flex' })
+// The repeated class outranks the run-unification rules above, which compound `:has()` and a sibling
+// combinator and would otherwise keep painting a ring the mode has stood down.
+globalStyle(`:root.picker-checked ${optionSelected}${optionSelected}`, {
+  background: 'transparent',
+})
+globalStyle(`:root.picker-checked ${optionSelected}${optionSelected}:hover`, {
+  background: c.state.hover,
+})
+globalStyle(`:root.picker-checked ${optionRing}${optionRing}${optionRing}`, { boxShadow: 'none' })
 
 /** The layout a glyph-led option takes — the option's own centering yields to it. Not exported: the
  *  alignment is `PickerOption`'s `leading` slot's business, not a caller's. */
