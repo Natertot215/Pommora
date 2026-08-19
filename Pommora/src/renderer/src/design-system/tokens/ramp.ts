@@ -1,5 +1,5 @@
 // Kept in a PLAIN module (not a *.css.ts) so it can export functions — same constraint as tint.ts.
-import { PINK, SPECTRUM, type CellKey, type RampFamily, type RampStep } from '@shared/theme'
+import { PINK, type SPECTRUM, type CellKey, type RampFamily, type RampStep } from '@shared/theme'
 import { vars as colorVars } from './color.css'
 import { TINT_STEPS, mixAt, tint, tintAt } from './tint'
 
@@ -46,11 +46,11 @@ const pair = (dark: string, light: string): Row => [
 /** Three seats — purple → lavender → pink — bridged by oklch blends. Its shading amounts were
  *  settled by eye rather than by `shade`, so the row states them. */
 const purpleRow: Row = [
-  mixAt(SPECTRUM.purple, 70, BLACK),
-  SPECTRUM.purple,
-  blend(SPECTRUM.lavender, 50, SPECTRUM.purple),
-  SPECTRUM.lavender,
-  blend(PINK, 50, SPECTRUM.lavender),
+  mixAt(c.solid.purple, 70, BLACK),
+  c.solid.purple,
+  blend(c.solid.lavender, 50, c.solid.purple),
+  c.solid.lavender,
+  blend(PINK, 50, c.solid.lavender),
   PINK,
   mixAt(PINK, 80, WHITE),
   mixAt(PINK, 60, WHITE),
@@ -69,12 +69,12 @@ const greyRow: Row = [
 ]
 
 const RAMP: Record<RampFamily, Row> = {
-  red: single(SPECTRUM.red),
-  orange: single(SPECTRUM.orange),
-  yellow: single(SPECTRUM.yellow),
-  green: single(SPECTRUM.green),
-  cyan: single(SPECTRUM.cyan),
-  blue: pair(SPECTRUM.blue, SPECTRUM.lightBlue),
+  red: single(c.solid.red),
+  orange: single(c.solid.orange),
+  yellow: single(c.solid.yellow),
+  green: single(c.solid.green),
+  cyan: single(c.solid.cyan),
+  blue: pair(c.solid.blue, c.solid.lightBlue),
   purple: purpleRow,
   grey: greyRow,
 }
