@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { composeWebpageEmbedLine, linkDestinationAt, loneWebpageEmbed } from './webpageEmbed'
+import {
+  composeWebpageEmbedLine,
+  linkDestinationAt,
+  loneWebpageEmbed,
+  webpageTileTitle,
+} from './webpageEmbed'
 
 const URL = 'https://www.example.com/a/b'
 
@@ -59,6 +64,23 @@ describe('composeWebpageEmbedLine — the ONE assembly path', () => {
 
   it('writes the bare form for an empty label', () => {
     expect(composeWebpageEmbedLine('', URL)).toBe(`![](${URL})`)
+  })
+})
+
+describe('webpageTileTitle — display-only resolution', () => {
+  it('a hand-written label wins verbatim, in every format', () => {
+    for (const display of ['link-full', 'link-short', 'link-title'] as const)
+      expect(webpageTileTitle('My Site', URL, display, 'Fetched')).toBe('My Site')
+  })
+
+  it('an empty label derives per the format', () => {
+    expect(webpageTileTitle('', URL, 'link-full')).toBe(URL)
+    expect(webpageTileTitle('', URL, 'link-short')).toBe('example.com')
+  })
+
+  it('Page Title shows the cached title, the domain until one lands, and the domain forever if none does', () => {
+    expect(webpageTileTitle('', URL, 'link-title', 'Example Domain')).toBe('Example Domain')
+    expect(webpageTileTitle('', URL, 'link-title')).toBe('example.com')
   })
 })
 
