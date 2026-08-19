@@ -163,9 +163,12 @@ export const WEB_PARTITION = 'persist:pommora-web'
  *  `personalization.webZoomFactor` reads through; absent/invalid → 1.0. */
 export const WEB_ZOOM_STEPS = [0.5, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2] as const
 export const WEB_ZOOM_DEFAULT = 1
+// The clamp is the offered range itself, derived rather than restated.
+export const WEB_ZOOM_MIN = WEB_ZOOM_STEPS[0]
+export const WEB_ZOOM_MAX = WEB_ZOOM_STEPS[WEB_ZOOM_STEPS.length - 1]
 export function coerceWebZoom(v: unknown): number {
   if (typeof v !== 'number' || !Number.isFinite(v)) return WEB_ZOOM_DEFAULT
-  return Math.min(WEB_ZOOM_STEPS[WEB_ZOOM_STEPS.length - 1], Math.max(WEB_ZOOM_STEPS[0], v))
+  return Math.min(WEB_ZOOM_MAX, Math.max(WEB_ZOOM_MIN, v))
 }
 
 /** The per-nexus default window zoom (`personalization.defaultViewScale`), stated as the multiplier
