@@ -7,7 +7,7 @@ import {
 } from '@shared/connections'
 import { PAGE_CLIPBOARD_ACTIONS, pageMetaMenuSubset } from '@shared/pageMenu'
 import { LINK_DISPLAY_LABELS, LINK_DISPLAYS } from '@shared/properties'
-import { pageMenuTemplate } from './pageMenu'
+import { rowTemplate } from './rowMenu'
 import { popReturningMenu } from './returningMenu'
 
 // The link right-click menu — popCellMenu's shape: main pops at the cursor, resolves the chosen
@@ -32,7 +32,7 @@ export function popConnMenu(
               { label: 'Edit Link', click: pick('editLink') },
             ]
           : []),
-        ...pageMenuTemplate(pageMetaMenuSubset(['title:copylink']), pick),
+        ...rowTemplate(pageMetaMenuSubset(['title:copylink']), pick),
         ...(ctx.editable
           ? [
               {
@@ -42,11 +42,11 @@ export function popConnMenu(
                   click: pick(`format:${d}`),
                 })),
               },
-              ...pageMenuTemplate(CONN_UNLINK_ROWS, pick),
+              ...rowTemplate(CONN_UNLINK_ROWS, pick),
             ]
           : []),
       ]
-    const items: MenuItemConstructorOptions[] = pageMenuTemplate(
+    const items: MenuItemConstructorOptions[] = rowTemplate(
       pageMetaMenuSubset(CONN_OPEN_ACTIONS, ctx.alreadyOpen),
       pick,
     )
@@ -59,7 +59,7 @@ export function popConnMenu(
       )
     items.push(
       { type: 'separator' },
-      ...pageMenuTemplate(pageMetaMenuSubset(PAGE_CLIPBOARD_ACTIONS), pick),
+      ...rowTemplate(pageMetaMenuSubset(PAGE_CLIPBOARD_ACTIONS), pick),
     )
     return items
   })

@@ -1,6 +1,6 @@
 import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
 import { cardMenuModel, type CardMenuAction, type CardMenuContext } from '@shared/cardMenu'
-import { pageMenuTemplate } from './pageMenu'
+import { rowTemplate } from './rowMenu'
 import { popReturningMenu } from './returningMenu'
 
 // The card's right-click menu — the page-meta items plus an Add Property ▸ submenu of the card's
@@ -19,7 +19,7 @@ export function popCardMenu(
       })
       items.push({ type: 'separator' })
     }
-    items.push(...pageMenuTemplate(model.items, pick, ctx))
+    items.push(...rowTemplate(model.items, pick, ctx))
     return items
   })
 }

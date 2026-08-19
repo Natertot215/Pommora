@@ -31,3 +31,23 @@ export type GripMenuAction =
   | { action: 'rename' }
   | { action: 'size'; level: number }
   | { action: 'delete' }
+
+/** The heading ladder a block can be set to, named once for every menu that offers it — the editor's
+ *  Format ▸ Heading submenu and the heading grip's own Size submenu. H6 exists in the document but
+ *  stays off the picker. */
+export const HEADING_LEVELS: readonly { level: number; label: string }[] = [
+  { level: 0, label: 'Paragraph' },
+  { level: 1, label: 'Heading 1' },
+  { level: 2, label: 'Heading 2' },
+  { level: 3, label: 'Heading 3' },
+  { level: 4, label: 'Heading 4' },
+  { level: 5, label: 'Heading 5' },
+]
+
+/** The four list markers with the names a menu shows for them. */
+export const LIST_KIND_LABELS: readonly { kind: ListKind; label: string }[] = [
+  { kind: 'ordered', label: 'Numbered' },
+  { kind: 'bullet', label: 'Bulleted' },
+  { kind: 'checkbox', label: 'Checklist' },
+  { kind: 'arrow', label: 'Arrowed' },
+]

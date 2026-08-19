@@ -2,7 +2,8 @@
 // landed; main pops the native menu and resolves the chosen action (null if dismissed); the renderer
 // applies it. No fs, no React — both sides import this.
 
-import type { ColumnAlign } from './views'
+import type { ActionItem } from './menuModel'
+import { COLUMN_ALIGNS, type ColumnAlign } from './views'
 
 export type TableMenuKind = 'column' | 'row' | 'header'
 
@@ -31,3 +32,48 @@ export type TableMenuAction =
   | 'row:clear'
   | 'row:delete'
   | 'table:delete'
+
+/** The rows a table grip's menu offers, by where the click landed. The Align row leads a nested
+ *  list — one row per alignment, the current one checked — and the heading-column toggle is offered
+ *  on the first column alone, since only it can read as the header. */
+export function tableMenuItems(ctx: TableMenuContext): ActionItem<TableMenuAction>[] {
+  if (ctx.kind === 'header') return [{ label: 'Delete Table', action: 'table:delete' }]
+  if (ctx.kind === 'row')
+    return [
+      { label: 'Insert Row Above', action: 'row:insert-above' },
+      { label: 'Insert Row Below', action: 'row:insert-below' },
+      { label: 'Clear', action: 'row:clear', separatorBefore: true },
+      { label: 'Delete', action: 'row:delete' },
+    ]
+  return [
+    {
+      label: 'Align',
+      action: 'align:left',
+      submenu: COLUMN_ALIGNS.map((a) => ({
+        label: `${a[0].toUpperCase()}${a.slice(1)}`,
+        action: `align:${a}` as TableMenuAction,
+        checked: ctx.align === a,
+      })),
+    },
+    // The first column can read like the header row — a Pommora-only visual; the .md stays a plain
+    // table. The label states the state it is in rather than only what pressing it does.
+    ...(ctx.index === 0
+      ? [
+          {
+            label: ctx.headingColumn ? 'Heading Column' : 'Make Heading Column',
+            action: 'col:toggle-heading' as const,
+            checked: ctx.headingColumn ?? false,
+            separatorBefore: true,
+          },
+        ]
+      : []),
+    {
+      label: 'Insert Column Left',
+      action: 'col:insert-left',
+      separatorBefore: ctx.index !== 0,
+    },
+    { label: 'Insert Column Right', action: 'col:insert-right' },
+    { label: 'Clear', action: 'col:clear', separatorBefore: true },
+    { label: 'Delete', action: 'col:delete' },
+  ]
+}
