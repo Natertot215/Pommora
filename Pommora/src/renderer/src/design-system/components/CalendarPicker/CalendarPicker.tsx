@@ -4,7 +4,6 @@ import { Icon } from '../../symbols'
 import { Switch } from '../Switches/Switch'
 import { OverflowScroll } from '../OverflowScroll'
 import { PickerMenu, PickerOption } from '../PickerMenu/PickerMenu'
-import { chosenMark } from '../PickerMenu/pickerMenu.css'
 import { useExitPresence } from '../../useExitPresence'
 import { stack } from '../../tokens/stack'
 import { cx } from '../../cx'
@@ -430,7 +429,7 @@ export function CalendarPicker({
             <div className={cx(s.menuList, 'edge-fade')}>
               {(part === 'h' ? (twelve ? HOURS_12 : HOURS_24) : MINUTES).map((v) => (
                 <PickerOption key={v} selected={v === current} onClick={() => choose(v)}>
-                  {optionRow(part === 'h' ? hourText(v) : pad(v), v === current)}
+                  {optionRow(part === 'h' ? hourText(v) : pad(v))}
                 </PickerOption>
               ))}
             </div>
@@ -550,11 +549,10 @@ export function CalendarPicker({
   const monthName = (m: number): string =>
     new Date(2026, m, 1).toLocaleDateString('en-US', { month: 'long' })
 
-  const optionRow = (label: string | number, selected: boolean): React.JSX.Element => (
-    <span className={s.optionRow}>
-      {label}
-      {selected && <Icon name="check" size="control" className={chosenMark} />}
-    </span>
+  // The row's own mark is PickerOption's — it lays one out on every row and paints the chosen one,
+  // so the choice reads the way it does in every other picker.
+  const optionRow = (label: string | number): React.JSX.Element => (
+    <span className={s.optionRow}>{label}</span>
   )
   const selectionMenu = (kind: 'month' | 'year'): React.JSX.Element | null =>
     menuPresence.mounted && lastMenu.current ? (
@@ -574,7 +572,7 @@ export function CalendarPicker({
                       selected={m === cursor.getMonth()}
                       onClick={() => jump(year, m)}
                     >
-                      {optionRow(monthName(m), m === cursor.getMonth())}
+                      {optionRow(monthName(m))}
                     </PickerOption>
                   ))
                 : yearChoices.map((y) => (
@@ -583,7 +581,7 @@ export function CalendarPicker({
                       selected={y === year}
                       onClick={() => jump(y, cursor.getMonth())}
                     >
-                      {optionRow(y, y === year)}
+                      {optionRow(y)}
                     </PickerOption>
                   ))}
             </div>

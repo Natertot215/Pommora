@@ -326,7 +326,13 @@ export function BlockHandleMenu({
     <div className={s.pane}>
       <MenuPaneTopRow label="Menu" current="Style" onBack={() => setPane('root')} />
       {(['bordered', 'borderless'] as const).map((v) => (
-        <PickerOption key={v} ring selected={style === v} onClick={act(() => onStyle(v))}>
+        <PickerOption
+          key={v}
+          ring
+          align="start"
+          selected={style === v}
+          onClick={act(() => onStyle(v))}
+        >
           {v === 'bordered' ? 'Bordered' : 'Borderless'}
         </PickerOption>
       ))}
@@ -364,6 +370,7 @@ export function BlockHandleMenu({
             <PickerOption
               key={st.label}
               ring
+              align="start"
               selected={currentStep.factor === st.factor}
               onClick={() => onSetZoom?.(st.factor)}
             >
