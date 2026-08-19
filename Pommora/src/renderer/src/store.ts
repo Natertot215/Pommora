@@ -1292,7 +1292,11 @@ export const useSession = create<SessionState>((set, get) => {
     // Monotonic across closes: the sequence lives outside the summon object, so a re-summon
     // inside the window's exit presence (which skips the remount) still reads as a new event.
     browserSeq: 0,
-    openBrowser: (url) => set((s) => ({ browserSeq: s.browserSeq + 1, browserSummon: { url, seq: s.browserSeq + 1 } })),
+    openBrowser: (url) =>
+      set((s) => {
+        const seq = s.browserSeq + 1
+        return { browserSeq: seq, browserSummon: { url, seq } }
+      }),
     closeBrowser: () => set({ browserSummon: null }),
     preview: null,
     previewsFile: EMPTY_PREVIEWS,

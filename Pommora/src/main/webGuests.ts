@@ -3,7 +3,7 @@
 // tiles, the in-app browser, hover cards — attaches under these rules; none carries its own.
 
 import { app, session, webContents, BrowserWindow, type Session, type WebContents } from 'electron'
-import { isHttpLink } from '@shared/links'
+import { hasWebScheme, isHttpLink } from '@shared/links'
 import { WEB_PARTITION, WEB_ZOOM_DEFAULT } from '@shared/types'
 import { push } from './ipc'
 
@@ -14,7 +14,7 @@ const GOOGLE_SIGNIN_HOST = 'accounts.google.com'
 /** The explicit scheme is required on top of the shared validation — `isHttpLink` alone normalizes
  *  a schemeless string to https, which would admit at the trust boundary what the renderer's own
  *  gate refuses. */
-const isWebUrl = (url: string): boolean => /^https?:\/\//i.test(url) && isHttpLink(url)
+const isWebUrl = (url: string): boolean => hasWebScheme(url) && isHttpLink(url)
 
 /** The fallback UA with the tokens that name this as an Electron app removed — Ferdium's recipe,
  *  session-wide. All of it best-effort by decision: the detection is server-side policy, not a UA

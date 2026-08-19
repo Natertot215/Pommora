@@ -9,6 +9,13 @@ import { normalizeTitle } from './connections'
  *  second copy widened on its own would disagree with the first about what a URL even is. */
 const HAS_SCHEME = /^[a-z][a-z0-9+.-]*:/i
 
+/** An explicit http(s) scheme, spelled written-out rather than inferred. Normalization promotes a
+ *  bare `example.com` to https, so every surface that must know what the author actually wrote —
+ *  the embed grammar, the guest attach gate, the website hover route — layers this on top of link
+ *  validity instead of trusting the normalized form. */
+const WEB_SCHEME = /^https?:\/\//i
+export const hasWebScheme = (url: string): boolean => WEB_SCHEME.test(url)
+
 /** How long a link is given to resolve — the title fetch and the hover card's site load share
  *  the one deadline, so "resolves" means the same thing everywhere. */
 export const LINK_RESOLVE_TIMEOUT_MS = 6000
@@ -139,7 +146,7 @@ export function linkDomain(url: string): string {
  *  isValidLink but has no page to fetch) so the main fetch gate and the cell's fetch trigger never
  *  disagree by a scheme — a mailto in title mode shows itself, it doesn't waste a round-trip. */
 export function isHttpLink(url: string): boolean {
-  return isValidLink(url) && /^https?:\/\//i.test(normalizeLinkUrl(url))
+  return isValidLink(url) && hasWebScheme(normalizeLinkUrl(url))
 }
 
 /** A statically-openable link: a well-formed http(s) URL with a dotted host, or a plausible mailto.
@@ -149,7 +156,7 @@ export function isValidLink(url: string): boolean {
   if (!u || /\s/.test(u)) return false
   const n = normalizeLinkUrl(u)
   if (/^mailto:/i.test(n)) return /^mailto:[^\s@]+@[^\s@]+\.[^\s@]+$/i.test(n)
-  if (!/^https?:\/\//i.test(n)) return false
+  if (!hasWebScheme(n)) return false
   try {
     const host = new URL(n).hostname
     return host.length > 2 && host.includes('.') && !host.startsWith('.') && !host.endsWith('.')
