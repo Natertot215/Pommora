@@ -672,8 +672,17 @@ const editingExit = ViewPlugin.fromClass(
 
     constructor(view: EditorView) {
       this.onDown = (e) => {
-        if (!view.state.field(embedField).editing) return
         const t = e.target as HTMLElement | null
+        // A press inside a tile is the tile's, and CM never hears it (ignoreEvent takes the whole
+        // event out of the pipeline) — but the browser still drags the host's selection to the
+        // nearest seat it can take, the line above the tile, and leaves a live caret blinking
+        // there. The host gives its caret up instead. Read a frame later, after the press's own
+        // focus work: a surface inside the tile that took the focus itself makes this a no-op.
+        if (t?.closest?.('.mdpm-embed-tile') && view.dom.contains(t))
+          requestAnimationFrame(() => {
+            if (view.hasFocus) view.contentDOM.blur()
+          })
+        if (!view.state.field(embedField).editing) return
         if (t?.closest?.('.mdpm-embed-tile.is-editing-tile')) return
         view.dispatch({ effects: setEmbedEditing.of(null) })
       }

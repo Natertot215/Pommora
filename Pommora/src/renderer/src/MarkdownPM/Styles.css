@@ -379,13 +379,20 @@
 
 /* The embedded-page tile — the shared chassis on a real .cm-line, gutter-width like the other box
    constructs. Transitions are per-consumer by the chassis contract; the accent trigger (hover OR
-   live edit) is this host's own, riding the chassis's --tile-border-color. */
+   live edit) is this host's own, riding the chassis's --tile-border-color. A tile is an object, not
+   text: it wears the arrow and refuses the caret outright — without that the host seats a selection
+   INSIDE the widget on a chrome press, which CM then normalizes onto the line above, stranding a
+   live caret beside the tile. The embedded page's own content re-takes both on the shared rules
+   (the I-beam in Carets.css, selection on the app-wide contenteditable rule). */
 .mdpm-embed-tile {
   display: block;
   position: relative;
   /* KNOB — the tile's resting height; content past it rest-scrolls inside. */
   height: 320px;
   margin: 4px 0;
+  cursor: default;
+  user-select: none;
+  -webkit-user-select: none;
   transition: border-color var(--duration-base) var(--ease-standard);
 }
 .mdpm-embed-tile:hover,

@@ -401,7 +401,10 @@ export function MarkdownEditor({
     view.dispatch({
       effects: readOnlyGate.current.reconfigure(EditorState.readOnly.of(readOnly)),
     })
-    if (!readOnly && autoFocus) view.focus()
+    // A press inside the surface is what flips it, and that press already seated a caret — but
+    // `focus()` writes the state's own selection back over whatever the DOM holds, discarding it
+    // and costing a second click. Focus is taken only for an entry from outside the surface.
+    if (!readOnly && autoFocus && !view.hasFocus) view.focus()
   }, [readOnly, autoFocus])
 
   // Body top-padding tracks the header height, so toggling the banner resizes the gutter automatically.
