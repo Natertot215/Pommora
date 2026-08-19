@@ -8,6 +8,7 @@ import { cx } from '@renderer/design-system/cx'
 import { text } from '@renderer/design-system/tokens'
 import { AccessoryButton } from '@renderer/design-system/components/menu/Menu'
 import { TextPicker } from '@renderer/design-system/components/TextPicker/TextPicker'
+import { normalizeLinkUrl } from '@shared/links'
 import type { WebAccount } from '@shared/types'
 import { openInAppBrowser } from '../PagePreview/BrowserWindow'
 
@@ -26,7 +27,7 @@ export function AccountsSection(): React.JSX.Element {
   const add = (raw: string): void => {
     const typed = raw.trim()
     if (!typed) return
-    const url = /^https?:\/\//i.test(typed) ? typed : `https://${typed}`
+    const url = normalizeLinkUrl(typed)
     setAdding(false)
     void window.nexus.webAccounts.add(url).then((r) => {
       if (!r.ok) return
