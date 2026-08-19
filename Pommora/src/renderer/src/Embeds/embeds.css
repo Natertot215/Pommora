@@ -236,6 +236,33 @@
   inset: 0;
 }
 
+/* The hover-title: the page-crumb's reveal — centered at the tile's top, hidden until the tile is
+   hovered — but pointer-enabled and above both the guest and its catcher, so the title stays
+   clickable whether or not the tile is engaged. */
+.wpembed-title {
+  position: absolute;
+  top: calc(8px * var(--mdpm-scale));
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 70%;
+  z-index: 3;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-base) var(--ease-standard);
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--label-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mdpm-embed-tile:hover .wpembed-title {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 /* The static faces: quiet chassis surface — a loading tile is simply blank, a failed one carries
    only the site's domain (the same fallback identity every link surface shows). */
 .wpembed-face {

@@ -26,6 +26,7 @@ export type BlockKind =
   | 'table'
   | 'math'
   | 'embed'
+  | 'webpage'
   | 'hr'
   | 'paragraph'
 
@@ -61,7 +62,7 @@ function blockContext(doc: string): BlockContext {
   const rawCallout = calloutLines(lines)
   const fences = fencedCodeRanges(doc)
   const tables = tableRegions(doc)
-  const { maths, embeds } = docLineScan(doc)
+  const { maths, embeds, webpages } = docLineScan(doc)
   const inFence = (i: number): boolean =>
     i >= 0 && i < n && fences.some(([f, t]) => starts[i] >= f && starts[i] <= t)
   const inTable = (i: number): boolean =>
@@ -70,6 +71,8 @@ function blockContext(doc: string): BlockContext {
     i >= 0 && i < n && maths.some(([f, t]) => starts[i] >= f && starts[i] <= t)
   const inEmbed = (i: number): boolean =>
     i >= 0 && i < n && embeds.some((e) => starts[i] >= e.from && starts[i] <= e.to)
+  const inWebpage = (i: number): boolean =>
+    i >= 0 && i < n && webpages.some((w) => starts[i] >= w.from && starts[i] <= w.to)
 
   // List membership: marker lines PLUS their indented continuations (a wrapped item body), but only where a
   // run actually holds a marker — so a bare indented paragraph isn't swept in. A blank line breaks a run, so
@@ -149,6 +152,7 @@ function blockContext(doc: string): BlockContext {
     if (inTable(i)) return 'table'
     if (inMath(i)) return 'math'
     if (inEmbed(i)) return 'embed'
+    if (inWebpage(i)) return 'webpage'
     if (heading[i]) return 'heading'
     if (listMember[i]) return 'list'
     if (hr[i]) return 'hr'
@@ -222,6 +226,8 @@ export function blockAt(doc: string, pos: number): Block | null {
       return { from: starts[li], to: ends[li], kind: 'hr' }
     case 'embed':
       return { from: starts[li], to: ends[li], kind: 'embed' }
+    case 'webpage':
+      return { from: starts[li], to: ends[li], kind: 'webpage' }
     case 'paragraph': {
       let a = li
       while (a > 0 && !ctx.claimed(a - 1)) a--
@@ -286,7 +292,7 @@ export function blockStarts(doc: string): BlockStart[] {
         first = ctx.claimed(i - 1)
         break
       default:
-        first = true // heading, hr, and embed are always single-line block starts
+        first = true // heading, hr, and the embed kinds are always single-line block starts
     }
     if (first) out.push({ from: starts[i], kind })
   }

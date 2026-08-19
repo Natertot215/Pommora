@@ -53,6 +53,8 @@ export function popGripMenu(
           return ctx.tree.length > 0
             ? [{ label: 'Page Source', submenu: ctx.tree.map(source) }]
             : [{ label: 'Page Source', enabled: false }]
+        case 'webpage':
+          return [{ label: 'Edit Link', click: pick({ action: 'editLink' }) }]
         case 'list':
           return [
             {

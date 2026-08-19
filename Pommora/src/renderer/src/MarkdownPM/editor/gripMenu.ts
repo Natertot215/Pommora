@@ -14,7 +14,7 @@ import { headingParts } from '../detect'
 import { type Block, blockAt } from './blockModel'
 import { docString } from './docCache'
 import { embeddable } from './embedRanges'
-import { embedExclusions } from './embedWidget'
+import { embedExclusions, setWebLinkEdit } from './embedWidget'
 
 /** The line classes carrying a grip that has a menu. The hit-test below and the host's hot-grip flag
  *  read this one list, so the generic editor menu can never stand down over a grip that offers nothing. */
@@ -77,6 +77,8 @@ function contextFor(view: EditorView, doc: string, block: Block): GripMenuContex
       const tree = useSession.getState().tree
       return { kind: 'embed', tree: tree ? embedPickTree(tree, embedExclusions(view.state)) : [] }
     }
+    case 'webpage':
+      return { kind: 'webpage' }
     case 'list':
       return { kind: 'list', current: listKindOf(doc, block.from, block.to) }
     default:
@@ -157,6 +159,10 @@ export const gripMenu = EditorView.domEventHandlers({
             changes: { from: block.from, to: block.to, insert: `![[${action.title}]]` },
             userEvent: 'input',
           })
+          break
+        case 'editLink':
+          // Opens the tile's own picker — the tile renders it anchored on itself, seeded with its URL.
+          view.dispatch({ effects: setWebLinkEdit.of(block.from) })
           break
         case 'listKind': {
           const { changes } = setListKind(doc, block.from, block.to, action.kind)
