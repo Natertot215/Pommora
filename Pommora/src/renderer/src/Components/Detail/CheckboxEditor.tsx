@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react'
-import { chipColorFor, colorLabel } from '@renderer/design-system/tokens/colorMap'
+import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
+import { solidColorCss } from '@renderer/Detail/Views/Table/solidColor'
+import { tintAt, TINT_STEPS } from '@renderer/design-system/tokens/tint'
 import type { ChipColorName } from '@renderer/design-system/tokens/chip.css'
-import { Chip } from '../Chip'
 import { ColorPicker } from './ColorPicker'
 import { PickerControl } from './PickerControl'
 import * as s from './settingsPane.css'
@@ -13,14 +14,14 @@ const STYLE_OPTIONS: { value: CheckboxLook; label: string }[] = [
   { value: 'switch', label: 'Switch' },
 ]
 
-/** The accent is a live user config, so it's always labeled "Accent," never frozen to a palette name. */
+/** With no color of its own a checkbox follows the live app accent, so it resolves to whatever the
+ *  accent currently paints rather than to a frozen palette entry. */
 function resolveColor(
   color: string | undefined,
   accentName: ChipColorName,
-): { name: ChipColorName; label: string } {
-  if (!color) return { name: accentName, label: 'Accent' }
-  const name = chipColorFor(color)
-  return { name, label: name === accentName ? 'Accent' : colorLabel(name) }
+): { name: ChipColorName; css: string } {
+  if (!color) return { name: accentName, css: solidColorCss(undefined) }
+  return { name: chipColorFor(color), css: solidColorCss(color) }
 }
 
 /** The two controls write to different scopes: Colour → the property def (`setCheckboxColor`,
@@ -51,11 +52,16 @@ export function CheckboxEditor({
             ref={chipRef}
             type="button"
             className={s.colorChip}
+            aria-label="Color"
             onClick={() => setColoring((v) => !v)}
           >
-            <Chip shape="label" color={chosen.name} label={chosen.label} />
+            <span
+              className={s.colorSwatch}
+              style={{ '--sw': tintAt(chosen.css, TINT_STEPS.primary) } as React.CSSProperties}
+            />
           </button>
           <ColorPicker
+            greyscale={false}
             open={coloring}
             selected={chosen.name}
             onPick={(next) => {
