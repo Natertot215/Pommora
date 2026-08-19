@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { SPECTRUM } from '@shared/theme'
-import { cellColor } from '@renderer/design-system/tokens/ramp'
+import { vars as colorVars } from '@renderer/design-system/tokens/color.css'
+import { ANCHOR_CELLS, cellColor } from '@renderer/design-system/tokens/ramp'
 import { solidColorCss } from './solidColor'
 
 describe('solidColorCss', () => {
@@ -9,7 +9,8 @@ describe('solidColorCss', () => {
   })
 
   it('resolves a legacy anchor name to its own solid', () => {
-    expect(solidColorCss('red')).toBe(SPECTRUM.red)
+    expect(solidColorCss('red')).toBe(colorVars.color.solid.red)
+    expect(solidColorCss('red')).toBe(cellColor(ANCHOR_CELLS.red))
   })
 
   // The regression this exists to catch: before the ramp, a stepped key indexed a table holding only

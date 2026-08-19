@@ -30,7 +30,7 @@ describe('the single-anchor rows reproduce the settled ladder', () => {
   const LIGHT = [85, 70, 55, 40]
 
   it.each(['red', 'orange', 'yellow', 'green', 'cyan'] as const)('%s', (family) => {
-    const hex = SPECTRUM[family]
+    const hex = c.solid[family]
     DARK.forEach((pct, i) => {
       expect(cellColor(`${family}-${i}` as CellKey)).toBe(
         `color-mix(in srgb, ${hex} ${pct}%, ${BLACK})`,
@@ -49,14 +49,14 @@ describe('the single-anchor rows reproduce the settled ladder', () => {
 // hand-tuned 70 / 80 / 55 onto the shared ladder. Pinned so the move is deliberate, never drift.
 describe('the paired blue row', () => {
   it('seats both anchors exactly', () => {
-    expect(cellColor('blue-1')).toBe(SPECTRUM.blue)
-    expect(cellColor('blue-5')).toBe(SPECTRUM.lightBlue)
+    expect(cellColor('blue-1')).toBe(c.solid.blue)
+    expect(cellColor('blue-5')).toBe(c.solid.lightBlue)
   })
 
   it('rides the shared ladder at its ends', () => {
-    expect(cellColor('blue-0')).toBe(`color-mix(in srgb, ${SPECTRUM.blue} 85%, ${BLACK})`)
-    expect(cellColor('blue-6')).toBe(`color-mix(in srgb, ${SPECTRUM.lightBlue} 85%, ${WHITE})`)
-    expect(cellColor('blue-7')).toBe(`color-mix(in srgb, ${SPECTRUM.lightBlue} 70%, ${WHITE})`)
+    expect(cellColor('blue-0')).toBe(`color-mix(in srgb, ${c.solid.blue} 85%, ${BLACK})`)
+    expect(cellColor('blue-6')).toBe(`color-mix(in srgb, ${c.solid.lightBlue} 85%, ${WHITE})`)
+    expect(cellColor('blue-7')).toBe(`color-mix(in srgb, ${c.solid.lightBlue} 70%, ${WHITE})`)
   })
 
   it('crosses in even oklch quarters', () => {
@@ -66,26 +66,19 @@ describe('the paired blue row', () => {
       [4, 75],
     ] as const) {
       expect(cellColor(`blue-${step}` as CellKey)).toBe(
-        `color-mix(in oklch, ${SPECTRUM.lightBlue} ${pct}%, ${SPECTRUM.blue})`,
+        `color-mix(in oklch, ${c.solid.lightBlue} ${pct}%, ${c.solid.blue})`,
       )
     }
   })
 })
 
 describe('anchors', () => {
-  it('round-trips every chromatic solid back to its own hex', () => {
-    const chromatic = (Object.keys(SPECTRUM) as (keyof typeof SPECTRUM)[]).filter(
-      (k) => k !== 'grey',
-    )
-    for (const key of chromatic) {
-      expect(cellColor(ANCHOR_CELLS[key])).toBe(SPECTRUM[key])
+  // Every anchor resolves to the design-system TOKEN, not the literal behind it, so a chip still
+  // indirects through --color-solid-* exactly as it did before the ramp existed.
+  it('round-trips every spectrum solid back to its own token', () => {
+    for (const key of Object.keys(SPECTRUM) as (keyof typeof SPECTRUM)[]) {
+      expect(cellColor(ANCHOR_CELLS[key])).toBe(c.solid[key])
     }
-  })
-
-  // The greyscale row is a TOKEN ladder, so its anchor is the solid's var rather than the literal
-  // both resolve to. Same painted color; different string.
-  it('seats grey on its token', () => {
-    expect(cellColor(ANCHOR_CELLS.grey)).toBe(c.solid.grey)
   })
 
   // Consequence of that seat: grey-6 falls inside the darkness-offset zone, so a chip carrying the
@@ -105,7 +98,7 @@ describe('anchors', () => {
 
 describe('cellTint', () => {
   it('is the plain chip recipe off the grid', () => {
-    expect(cellTint('red-3')).toEqual(tint(SPECTRUM.red))
+    expect(cellTint('red-3')).toEqual(tint(c.solid.red))
   })
 
   it('darkens the base of the two brightest greys so their text still reads', () => {
@@ -159,7 +152,7 @@ describe('the anchors survive the generation unchanged', () => {
       (k) => k !== 'grey',
     )
     for (const key of chromatic) {
-      expect(cellTint(ANCHOR_CELLS[key])).toEqual(tint(SPECTRUM[key]))
+      expect(cellTint(ANCHOR_CELLS[key])).toEqual(tint(c.solid[key]))
     }
   })
 
