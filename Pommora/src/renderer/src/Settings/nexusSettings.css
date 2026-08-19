@@ -97,7 +97,11 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 10px 0;
+}
+/* Rows stand on their own height and space only from each other — the padding they carried was
+   there to give the dividers air on both sides, and it doubled between every pair. */
+.settings-row + .settings-row {
+  margin-top: 10px;
 }
 .settings-row-text {
   display: flex;
