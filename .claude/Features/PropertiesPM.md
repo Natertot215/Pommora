@@ -103,7 +103,7 @@ The **Status editor** edits it in place — a group-labeled option list (double-
 
 #### II. Checkbox
 
-A boolean with two per-view looks and one property-wide color. The **look** (`column_styles`) is **Checkbox** (a rounded box) or **Switch** (the Figma switch) — toggling one on assigns `true` in place, toggling off strips the key. The **color** (def-level `checkbox_color`) applies to the ON state only: a checked box fills with it and a switch's on-track tints, while an empty box and an off switch stay neutral grey. An absent color is **Accent** — the nexus-configured accent — and a chosen color equal to that accent reads "Accent" too. The **Checkbox editor** pane pairs a color chip (opening the recolor picker) with a Style picker (Checkbox ⇄ Switch, the shared double-chevron control).
+A boolean with two per-view looks and one property-wide color. The **look** (`column_styles`) is **Checkbox** (a rounded box) or **Switch** (the Figma switch) — toggling one on assigns `true` in place, toggling off strips the key. The **color** (def-level `checkbox_color`) applies to the ON state only: a checked box fills with it and a switch's on-track tints, while an empty box and an off switch stay neutral grey. An absent color follows the nexus-configured accent live. The **Checkbox editor** pane pairs a color control (a nameless swatch wearing the Switch's own shell, opening the recolor picker) with a Style picker (Checkbox ⇄ Switch, the shared double-chevron control). Its picker withholds the greyscale row, whose dark end is the window substrate itself.
 
 #### II. Number
 
@@ -190,14 +190,14 @@ At every write, a created property's `name` is non-empty and its `id` is unique 
 
 ### Chip Tokens
 
-The chip is the property value's rendered form, so its design vocabulary lives here. One tint recipe drives every color — the picked base solid at fixed tint steps (a heavier fill, a lighter stroke, a near-white text wash carrying a faint tint of the base) — and it composes with any shape; no custom colors, no lightening. 
+The chip is the property value's rendered form, so its design vocabulary lives here. One tint recipe drives every color — the picked cell at fixed tint steps (a heavier fill, a lighter stroke, a near-white text wash carrying a faint tint of the base) — and it composes with any shape. The color itself comes from the ramp, whose rows run a family from dark to light; the greyscale row is the one exception, tinting its brightest cells from a darkened base and outlining all eight against the label ramp so they read on any surface.
 
-**SOURCE:** `Pommora/src/renderer/src/design-system/tokens/chip.css.ts` · `tokens/tint.ts` · `tokens/colorMap.ts`
+**SOURCE:** `Pommora/src/renderer/src/design-system/tokens/chip.css.ts` · `tokens/tint.ts` · `tokens/colorMap.ts` · `tokens/ramp.ts`
 
 #### II. Shapes
 | Title | Token | Value |
 | --- | --- | --- |
-| Base | `chipBase` | zoom `var(--chip-zoom, 0.9)` · gap `4px` · type `text.control.semibold` |
+| Base | `chipBase` | zoom `var(--chip-zoom, 1.0)` · gap `4px` · type `text.control.semibold` |
 | Pill | `chipPill` | h `20px` · pad `0 var(--chip-pad-x, 6px)` · radius `10px` · border `2px` |
 | Label | `chipLabel` | h `20px` · same pad · radius `6px` · border `2px` |
 | Context | `chipContext` | h `22px` · `--chip-pad-x: 8px` · neutral fill, color on border and text |
@@ -210,13 +210,13 @@ The chip is the property value's rendered form, so its design vocabulary lives h
 | Background | `tint(base).background` | base @ tint-primary (60%) |
 | Border | `tint(base).borderColor` | base @ tint-secondary (40%) |
 | Text | `tint(base).color` | base @ 15% mixed toward label-primary |
-| Variants | `chipColor.*` | the ten spectrum solids + `default` (`GREY_DEFAULT`) + `accent` (`--system-accent`) |
-| Palette Accessor | `chipColorFor(color)` | the key when it's a spectrum solid, else `default` |
+| Variants | `chipColor.*` | the 64 ramp cells + `default` (`grey-4`'s value) + `accent` (`--system-accent`) |
+| Palette Accessor | `chipColorFor(color)` | the cell when it's one, a legacy solid name normalized to its anchor cell, else `default` |
 
 #### II. Knobs
 | Title | Token | Value |
 | --- | --- | --- |
-| Zoom | `--chip-zoom` | fallback `0.9`; Cards retunes `0.85` |
+| Zoom | `--chip-zoom` | fallback `1.0`; Cards retunes `0.85` |
 | Pad X | `--chip-pad-x` | fallback `6px`; Cards `4px`, the option editor its own |
 | Capsule Pad X | `--chip-capsule-pad-x` | fallback `6px` |
 | Label Cap | `--chip-max` | fallback `80px` |
@@ -226,7 +226,6 @@ The remove-× melt (the hover-revealed remove zone, the crisp and blurred label 
 
 ### Known Issues
 
-- **A checkbox's "Accent" reads neutral in the pane under a `system` accent.** The cell box and switch tint the true accent via var(--accent); the editor's color chip is resolved through a palette key, and `system` (follow-the-OS) has no palette key, falling back to the neutral default chip. Only the settings chip shows the mismatch.
 - **A stray bare-string Multi-Select value reads as Select.** The read-side coercion for shape-vs-column mismatches handles only the single-string types (URL / Select / Date), so a Multi-Select value stored as a lone string remains classified as Select and drops out of grouping and filtering. Unreachable while nothing writes that shape; it goes live when the Lossy Change-Type Strip performs a Select→Multi-Select change — fix it there as a value migration (bare string → single-element array).
 ### Pending
 
@@ -235,6 +234,5 @@ The remove-× melt (the hover-revealed remove zone, the crisp and blurred label 
 - **Lossy Change-Type Strip** — the cross-assigner value strip a lossy type change should trigger. `changeType` accepts the drop flag and ignores it, applying a plain global definition edit.
 - **Per-Type Editor Panes** — File is the one creatable type whose editor body is blank; it follows the shipped panes' patterns.
 - **Number Show-as for dynamic views** — the completion **Ring** and the Notion-style Number/Bar/Ring tile grid belong to view types with vertical room (Gallery/Board); the table ships the Number/Bar look row only. The bar's stroke is held pending a visual pass.
-- **Larger Color Picker** — option colors store an open solid-palette key (resolved through `chipColorFor` with a legacy read-map for old Notion values), so the ColorPicker's grid can grow into a much larger selector over the shared color tokens with no schema churn.
 - **Calendar Picker refinements** — range values (a datetime value is a single ISO on disk, so the value picker disables the shared picker's range mode), keyboard stepping on the time segments, and test coverage.
 - **Per-View Link Styling** — a URL property's look is entirely property-level. Letting a view override it is a prospect; the `column_styles` seam already carries per-view looks for the other types.

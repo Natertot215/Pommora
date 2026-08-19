@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ViewBlockEntry } from '@shared/blocks'
-import type { CollectionNode, SetNode, SolidColor } from '@shared/types'
+import type { CollectionNode, SetNode } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
 import {
   DEFAULT_VIEW_ID,
@@ -10,7 +10,6 @@ import {
   type ViewState,
 } from '@shared/views'
 import { Icon, iconNameOr } from '@renderer/design-system/symbols'
-import { vars as colorVars } from '@renderer/design-system/tokens/color.css'
 import { cellColor } from '@renderer/design-system/tokens/ramp'
 import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
 import { TINT_STEPS, tintAt } from '@renderer/design-system/tokens/tint'

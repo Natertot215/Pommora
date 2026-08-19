@@ -13,4 +13,3 @@ export function chipColorFor(color: string | undefined): CellKey | 'default' {
   if (anchor) return anchor
   return isColorKey(color) ? (color as CellKey) : 'default'
 }
-
