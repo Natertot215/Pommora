@@ -10,7 +10,7 @@ import type {
   StructuralOrderMode,
   SubGroupConfig,
 } from '@shared/views'
-import { Icon, asRenderableIcon, type IconName } from '@renderer/design-system/symbols'
+import { Icon, asRenderableIcon } from '@renderer/design-system/symbols'
 import {
   DisclosureRow,
   MenuItem,
@@ -48,6 +48,7 @@ import { chipColorFor } from '../../design-system/tokens/colorMap'
 import { cx } from '../../design-system/cx'
 import { useSession } from '../../store'
 import { PickerControl, type PickerChoice } from './PickerControl'
+import { ValueRow } from './ValueRow'
 import { propertyTypeIconName } from './PropertyTypes'
 import { useGroupingListDrag, type GroupingDrop } from './groupingDnd'
 import { hiddenRow } from './settingsPane.css'
@@ -79,32 +80,6 @@ const GRANULARITY: PickerChoice<DateGranularity>[] = [
 
 const orderOptionsFor = (type: string | undefined): PickerChoice<GroupOrderMode>[] =>
   type === 'datetime' ? DATE_ORDER : OPTION_ORDER
-
-function ValueRow<T extends string>({
-  tier = 'primary',
-  icon,
-  label,
-  value,
-  options,
-  onPick,
-}: {
-  tier?: 'primary' | 'sub'
-  icon?: IconName
-  label: string
-  value: T
-  options: PickerChoice<T>[]
-  onPick: (v: T) => void
-}): React.JSX.Element {
-  return (
-    <MenuItem
-      className={cx(flushTrailing, gp.pickerTone, tier === 'sub' && gp.subRow)}
-      leading={icon ? <Icon name={icon} size={14} /> : undefined}
-      trailing={<PickerControl ariaLabel={label} value={value} options={options} onPick={onPick} />}
-    >
-      {tier === 'sub' ? <span className={gp.subLabel}>{label}</span> : label}
-    </MenuItem>
-  )
-}
 
 export function GroupingPane({
   source,

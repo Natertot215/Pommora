@@ -77,8 +77,11 @@ export const anchorUp = style(dropdownAnchor('up', stack.local.overlay))
 /** THE chosen-row mark, for every menu that marks one — a row wearing a different mark from the row
  *  beside it is a bug, not a variant. It carries the accent whole rather than at a tint step: the
  *  tints exist to keep a FILL off the label underneath, and a glyph has no label to protect. It also
- *  has to override the trailing slot's secondary tone, which is the tone for detail, not for state. */
-export const chosenMark = style({ color: 'var(--accent)', flex: 'none' })
+ *  has to override the trailing slot's secondary tone, which is the tone for detail, not for state.
+ *  Spread rather than composed: `optionCheck` builds on it and is also a `globalStyle` target, which
+ *  a composed class cannot be. */
+const CHOSEN_MARK = { color: 'var(--accent)', flex: 'none' } as const
+export const chosenMark = style(CHOSEN_MARK)
 
 /** The self-managed top layer — a fixed body-portal position (set inline from the measured trigger)
  *  so the pane escapes any clipping ancestor (the settings dropdown's frost clip). */
@@ -123,7 +126,6 @@ export const option = style([
   text.control.standard,
   rowShell,
   {
-    position: 'relative',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -139,24 +141,19 @@ export const option = style([
  *  color (a Context's, a Status group's) is an inline style and still wins. */
 export const optionGlyph = style({ display: 'inline-flex', color: c.label.secondary })
 
-/** The width the mark asks of a row that has to hold it — the glyph plus the gutter it sits in. */
-const MARK_TRACK = 18
-
-/** A row that reads left rather than centered. Carried as its own class because alignment is no
- *  longer implied by the leading slot: a row can lead with nothing and still want its left edge. */
-export const optionStart = style({})
-
-/** The chosen mark. It rides ABOVE the row's flow, and the row reserves the track it needs instead
- *  of laying it out — so a centered row can hold the mark and stay centered, which it could not do
- *  if the mark were a flex item taking width from one side. */
+/** The chosen mark, laid out at the row's trailing edge. It is the row's own width that grows to
+ *  hold it, never a track carved out of the body — so a label sits where it sat before the mark
+ *  existed, and the pane widens to the right to make room. */
 export const optionCheck = style({
-  position: 'absolute',
-  right: '4px',
-  top: '50%',
-  transform: 'translateY(-50%)',
-  color: 'var(--accent)',
+  ...CHOSEN_MARK,
+  marginLeft: '6px',
   pointerEvents: 'none',
 })
+
+/** Laid out on every row and painted only on the chosen one. The pane measures the mark once and
+ *  grows by it; hiding rather than dropping the unchosen slot is what stops that width from moving
+ *  as the selection travels between labels of unequal length. */
+export const optionCheckHidden = style({ visibility: 'hidden' })
 
 export const optionSelected = style({
   background: c.state.selected,
@@ -164,18 +161,16 @@ export const optionSelected = style({
 })
 
 // `checked` mode states the choice with the mark alone — the fill and the ring stand down, so a row
-// never carries two signals for one state. The mark rides over the row's own padding and reserves no
-// track: a centered row must read centered in both modes, so neither mode may take width from it.
+// never carries two signals for one state. Outlined mode states it by fill alone, so the mark leaves
+// the layout outright and the pane measures as though it had never been there.
 globalStyle(`${option} ${optionCheck}`, { display: 'none' })
-globalStyle(`:root.picker-checked ${option} ${optionCheck}`, { display: 'inline-flex' })
-// The row grows by the mark's track so a label never runs beneath it. A left-reading row owes the
-// track only on its trailing edge; a centered one owes it on both, or its content sits off-centre by
-// half the mark.
-globalStyle(`:root.picker-checked ${option}`, {
-  paddingLeft: `${MARK_TRACK}px`,
-  paddingRight: `${MARK_TRACK}px`,
+// The slot appears only in a pane that actually holds a mark. A picker whose value is unset — a
+// filter's draft row, a list nothing has been chosen from — reserves nothing and sizes as though the
+// mark did not exist; once one row wears it, every row holds its width so the labels stay put as the
+// choice travels.
+globalStyle(`:root.picker-checked ${pane}:has(${optionSelected}) ${optionCheck}`, {
+  display: 'inline-flex',
 })
-globalStyle(`:root.picker-checked ${option}${optionStart}`, { paddingLeft: '4px' })
 // The repeated class outranks the run-unification rules above, which compound `:has()` and a sibling
 // combinator and would otherwise keep painting a ring the mode has stood down.
 globalStyle(`:root.picker-checked ${optionSelected}${optionSelected}`, {
@@ -186,13 +181,17 @@ globalStyle(`:root.picker-checked ${optionSelected}${optionSelected}:hover`, {
 })
 globalStyle(`:root.picker-checked ${optionRing}${optionRing}${optionRing}`, { boxShadow: 'none' })
 
-/** The layout a glyph-led option takes — the option's own centering yields to it. Not exported: the
- *  alignment is `PickerOption`'s `leading` slot's business, not a caller's. */
-const leadingRow = style({
+/** The box a row's content sits in, whichever way it reads. Which of the two a row takes is
+ *  `PickerOption`'s to resolve from its `leading` slot and its `align`, not a caller's to name. */
+const rowBody = style({
   display: 'flex',
   alignItems: 'center',
   gap: '6px',
-  width: '100%',
-  justifyContent: 'flex-start',
+  // The body takes the row's width and yields the mark's back to it. The mark therefore grows the
+  // pane to the RIGHT and takes nothing from the body's own box, so content sits where it sat before
+  // the mark existed instead of sliding left by half of it.
+  flex: '1 1 auto',
+  minWidth: 0,
 })
-export { leadingRow }
+export const leadingRow = style([rowBody, { justifyContent: 'flex-start' }])
+export const centeredRow = style([rowBody, { justifyContent: 'center' }])

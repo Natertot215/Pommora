@@ -553,23 +553,18 @@ export function PickerOption({
   return (
     <button
       type="button"
-      className={cx(
-        s.option,
-        readsLeft && s.optionStart,
-        selected && s.optionSelected,
-        selected && ring && s.optionRing,
-      )}
+      className={cx(s.option, selected && s.optionSelected, selected && ring && s.optionRing)}
       onClick={onClick}
     >
-      {readsLeft ? (
-        <span className={s.leadingRow}>
-          {leading != null && <span className={s.optionGlyph}>{leading}</span>}
-          {children}
-        </span>
-      ) : (
-        children
-      )}
-      {selected && <Icon name="check" size={CHECK} className={s.optionCheck} />}
+      <span className={readsLeft ? s.leadingRow : s.centeredRow}>
+        {leading != null && <span className={s.optionGlyph}>{leading}</span>}
+        {children}
+      </span>
+      <Icon
+        name="check"
+        size={CHECK}
+        className={cx(s.optionCheck, !selected && s.optionCheckHidden)}
+      />
     </button>
   )
 }
