@@ -54,7 +54,6 @@ Everything is committed and gated — typecheck 0, **2957 tests / 255 files**, l
 - `Pommora/src/renderer/src/MarkdownPM/editor/embedWidget.tsx` — `setWebLinkSeat` and the formation gate that reads it.
 - `Pommora/src/renderer/src/MarkdownPM/gripMenuFlow.test.tsx` — the Edit Link seat test, and the harness that stubs the native grip menu.
 - `Pommora/src/main/webGuests.ts` — `wheelGuest`, the guest-side wheel replay.
-- `.claude/Planning/PM-110 Web Layer Follow-Ons — Task List.md` — what was asked, in order, with what each verification actually showed.
 - The CDP driver is this session's scratchpad `cdp.mjs`; `guest.mjs` beside it evaluates inside a guest by URL fragment, which is how guest survival was proven.
 
 #### Working Notes
@@ -70,7 +69,7 @@ Everything is committed and gated — typecheck 0, **2957 tests / 255 files**, l
 
 **FILES ADDED**
 
-- `.claude/Planning/PM-110 Web Layer Follow-Ons — Task List.md`
+- None. *(The arc's task list was written, worked through, and retired with the Planning sweep below.)*
 
 **FILES MODIFIED**
 
@@ -85,7 +84,7 @@ Everything is committed and gated — typecheck 0, **2957 tests / 255 files**, l
 
 **FILES REMOVED**
 
-- None.
+- `.claude/Planning/` — the four finished plans: `PM-110 Web Layer Follow-Ons — Task List.md` · `Live-Tree-And-Index — Implementation Plan.md` · `NexusSettings Leaf Framework — Decision Log.md` · `Property-Cascade-Journal — Implementation Plan.md`
 
 **COMMITS**
 
@@ -94,6 +93,7 @@ Everything is committed and gated — typecheck 0, **2957 tests / 255 files**, l
 - `521f547c` — feat(embeds): a hovered site reads past its first screen
 - `03f3fc49` — feat(detail): a recent tab's page surface parks instead of tearing down
 - `13de245b` — feat(editor): a tile's Edit Link re-aims the address in the line
+- `923956fa` — fix(detail): a parked surface is kept by its own tab's page, not the shown one
 
 #### Handoff Guidelines
 
