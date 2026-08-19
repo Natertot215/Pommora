@@ -75,8 +75,8 @@ function resolveAccent(raw: string | undefined): AccentSetting {
   return DEFAULT_ACCENT
 }
 
-// Per-field: absent/invalid → undefined = the built-in default. Accent is resolved
-// separately into tree.accent, so it isn't surfaced here.
+// Per-field: absent/invalid → undefined = the built-in default. Accent is the exception — it
+// resolves to a concrete setting so the row that shows it can never disagree with what paints.
 export function readPersonalization(raw: unknown): Personalization {
   const p =
     raw != null && typeof raw === 'object' && !Array.isArray(raw)
@@ -105,6 +105,7 @@ export function readPersonalization(raw: unknown): Personalization {
     ? p.favoriteIcons.filter((v): v is string => typeof v === 'string' && v.length > 0)
     : []
   return {
+    accent: resolveAccent(asString(p.accent)),
     connectionColor:
       conn === 'accent' || (conn != null && isColorKey(conn))
         ? (conn as ConnectionColorSetting)
@@ -208,11 +209,12 @@ export function readSettingsLeaves(settings: Json): SettingsLeaves {
     !Array.isArray(settings.personalization)
       ? (settings.personalization as Record<string, unknown>)
       : {}
+  const personalization = readPersonalization(rawPersonalization)
   return {
     excluded: asStringArray(settings.excluded_folders) ?? [],
     labels: readLabels(settings.labels),
-    accent: resolveAccent(asString(rawPersonalization.accent)),
-    personalization: readPersonalization(rawPersonalization),
+    accent: personalization.accent ?? DEFAULT_ACCENT,
+    personalization,
     commands: readCommands(settings.commands),
     profileImage: asString(settings.profile_image) ?? null,
     profileIcon: asString(settings.profile_icon),
