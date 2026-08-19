@@ -186,7 +186,7 @@ One pastel recipe: `color-mix(in srgb, var(--tok-solid) var(--tok-tint), var(--s
 - A mid-drag column hide/show or watcher view-push is silently reverted by a column drop's persist (`reorderColumn` reads grab-time state) — reachable only by mutating columns while holding a drag; a ref-read at commit fixes it if it's ever felt.
 ### Pending
 
-- **Image + LaTeX render seams** — both are detected and styled only; no renderer and no injection seam exists, and an image-style `![[file.png]]` target fails page resolution and rests inert.
+- **Image + LaTeX render seams** — LaTeX is detected and styled only, and the wiki-image form rests inert: an image-style `![[file.png]]` target fails page resolution and renders nothing. The bang-paren form is spoken for — `![Label](url)` alone on a line is a webpage embed (→ [[WeblinkPM]]) — so a future image renderer arrives through the wiki form.
 - **Fenced-code copy button** · **zoom slider** UI placement · **heading-fold inside a callout** (headings render there, but the fold chevron isn't prefix-aware) · **table inside a callout** (renders as raw text; needs prefix-aware region detection).
 - **Outliner rails on ordered / arrow / `+` lists** — the guide is bullets + checkboxes only; the other glyphs need their own glyph-center math before their rails read straight.
 - **Codeblock Style ▸ Language grip menu** — retyping a block's language from its grip; the list's Type ▸ arm is the pattern it follows. Widening the curated language set is one description in the highlight module plus its package.
