@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import type { EditorView } from '@codemirror/view'
+import type { PageDetail } from '@shared/types'
 import { useSession } from '../store'
 import { MarkdownEditor } from '../MarkdownPM'
 import type { ConnectionsApi } from '../MarkdownPM/connections'
@@ -16,10 +18,25 @@ import { schedulePageSave } from './pageFlush'
 // Live stats settle just behind the keystroke so a long page isn't Markdown-scanned on every char.
 const STATS_DEBOUNCE_MS = 120
 
-export function PageView(): React.JSX.Element {
-  const pageStatus = useSession((s) => s.pageStatus)
-  const pageDetail = useSession((s) => s.pageDetail)
-  const activeTabId = useSession((s) => s.activeTabId)
+export function PageView({
+  tabId,
+  parked = false,
+  detail,
+}: {
+  /** The tab this surface belongs to — its own, not whichever is active, so a parked surface warms
+   *  and captures under the tab that owns it. */
+  tabId: string
+  /** Held open behind the active surface: the same DOM, off screen. Its editor stays out of the
+   *  page-editor registry, which answers for the surface the user is actually looking at. */
+  parked?: boolean
+  /** The page this surface shows. A parked one carries its own, since the store's page describes
+   *  whichever tab is active now. */
+  detail?: PageDetail
+}): React.JSX.Element {
+  const storeStatus = useSession((s) => s.pageStatus)
+  const storeDetail = useSession((s) => s.pageDetail)
+  const pageDetail = detail ?? storeDetail
+  const pageStatus = detail ? 'ready' : storeStatus
   const pageError = useSession((s) => s.pageError)
   const submitRename = useSession((s) => s.submitRename)
   const mutate = useSession((s) => s.mutate)
@@ -48,6 +65,16 @@ export function PageView(): React.JSX.Element {
       live = false
     }
   }, [pageId])
+  // The registry holds one editor — the one the outline, its rename, and its section mover act on.
+  // A surface publishes its own only while it is the shown one, and re-publishes when a parked
+  // surface becomes it, since the handle was registered before that flip.
+  const editorRef = useRef<EditorView | null>(null)
+  useEffect(() => {
+    if (parked) return
+    registerPageEditor(editorRef.current)
+    return () => registerPageEditor(null)
+  }, [parked])
+
   const toggleHeadingIcon = (): void => {
     if (!pageId) return
     const next = !iconHidden
@@ -135,22 +162,25 @@ export function PageView(): React.JSX.Element {
               save: (indices) => void window.nexus.tableHeadingColumns.set(pageDetail.id, indices),
             }}
             menu={nativeEditorMenu}
-            register={registerPageEditor}
-            // The editor freezes this at mount, so the capture lands under the tab that OWNED this
-            // page even though activeTabId moves before the unmount (select switches synchronously).
-            // restore carries the store's rename fence: a warm entry whose captured path diverges from
-            // the mounting page's mounts cold (id-keyed warmth must never revive a stale-path doc).
+            register={(view) => {
+              editorRef.current = view
+              if (!parked) registerPageEditor(view)
+            }}
+            // Keyed on the surface's OWN tab, so a capture lands under the tab that held this page
+            // rather than whichever is active when the teardown runs. restore carries the store's
+            // rename fence: a warm entry whose captured path diverges from the mounting page's
+            // mounts cold (id-keyed warmth must never revive a stale-path doc).
             warm={{
               restore: () => {
                 const entry = readWarm(
-                  activeTabId,
+                  tabId,
                   navKey({ kind: 'page', id: pageDetail.id, path: pageDetail.path }),
                 )
                 return entry?.pageDetail?.path === pageDetail.path ? entry : undefined
               },
               capture: (state) =>
                 captureWarm(
-                  activeTabId,
+                  tabId,
                   navKey({ kind: 'page', id: pageDetail.id, path: pageDetail.path }),
                   state,
                 ),

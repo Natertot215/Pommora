@@ -40,6 +40,17 @@
   overflow: hidden;
 }
 
+/* A page surface held open for a tab that isn't shown. Moved off screen rather than hidden: its
+   embedded webpages then read as out of view and pause under their own retention, where a hidden
+   subtree would keep them painting — and where unmounting would end their sessions outright, which
+   is what makes a tab flip reload a site today. */
+.detail-page.is-parked {
+  position: absolute;
+  inset: 0;
+  transform: translateX(-200vw);
+  pointer-events: none;
+}
+
 /* Banner-bearing views: a full-bleed scroller so the banner sits edge-to-edge behind the sidebar
    + toolbar glass; the padding moves to an inner body. */
 .detail-scroll {
