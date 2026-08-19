@@ -6,6 +6,7 @@ Page Preview
 ├── The Tab Model
 ├── Persistence & Warmth
 ├── Routing In
+├── The Browser Flavor
 ├── The Hover Card
 ├── The NavWindow Flavor
 ├── The Inspector
@@ -42,9 +43,15 @@ Warmth is session-only and per-tab: serialized editor state, undo included, plus
 - **Connections** — the nexus-wide `connectionsOpenInPreview` knob routes wiki-link clicks to the preview (→ [[ConfigurationPM]]); from inside a preview a ⌘-click is additive — a new app tab opens behind, the preview stays.
 - **⌘N while the floating preview is open** promotes the active tab to a new app tab and closes it (the window when it was the last) — routed through the native menu's new-tab message, since a renderer keydown can't beat a native accelerator.
 
+### The Browser Flavor
+
+The in-app browser is a flavor of the same floating window (→ [[WeblinkPM]]): back and forward glyphs lead the toolbar where the page flavor carries its promote scan, the centered two-tone title tracks the guest's current page and escalates it to the system browser on click, and one webview on the shared web partition owns the whole body. The toolbar strip holds its own band above the page and paints nothing — the window glass shows through it. The window is a singleton like the page preview: a summon while open retakes it in place, re-aiming the standing guest even at an address it has navigated away from. Geometry persists on its own window id through the shared floating-window mechanics.
+
 ### The Hover Card
 
 Resting on a resolved connection past a short intent delay raises the hover preview card — a compact, read-only view of the target page rendered through the shared embed framework without its banner or inline title, on the PickerMenu chassis rather than a PreviewPane, mounted once at app level so one card exists app-wide. The card resolves its content before it opens (a page that can't load opens nothing), everything inside it renders inert, and it centers on the live link, tracking it as the line reflows.
+
+The card has a second flavor: a markdown link naming a website raises the same card as a live, non-interactive render of the site itself (→ [[WeblinkPM]]). The site card opens on the dwell wearing a quiet cover that fades once the page has painted; a page that fails or never paints closes the card whole. The guest fills the card edge-to-edge, a shield above it keeps every pointer event on the card's own lifecycle, and the same anchor, leave, linger, and resize behavior carries over unchanged.
 
 Content scrolls within the card, headings fold on click, and the caret never enters. It anchors to the link through scroll and closes on hover-off, Escape, navigation, or the link leaving view; the Settings ▸ Pages linger slider extends the stay (→ [[ConfigurationPM]]). It resizes from its right and bottom edges to one per-machine remembered size. 
 

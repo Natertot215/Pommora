@@ -98,6 +98,13 @@ Seated and empty.
 | Show Line Count In Code Blocks | `codeblockLineCount` | Numbers a codeblock's content lines as rendered glyphs. | On · **Off** |
 | Outliner Lines                 | `outlinerLines`      | Draws indent rails on nested lists in the editor.       | On · **Off** |
 
+**Webpages**
+
+| Setting               | Key             | Description                                                         | Options            |
+| --------------------- | --------------- | ------------------------------------------------------------------- | ------------------ |
+| Open Links In Pommora | `openLinksInApp` | External links open the floating browser instead of the system one. | On · **Off**       |
+| Webpage Zoom          | `webZoomFactor` | How embedded webpages scale, relative to the window.                | 50%–200% (**100%**) |
+
 #### Automations
 
 Seated and empty.

@@ -88,11 +88,13 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 │   │   ├── [SymbolsPM.md]               | • The curated semantic icon registry
 │   │   ├── [TableViewPM.md]             | • The Table renderer over one shared CSS grid track set
 │   │   ├── [TypographyPM.md]            | • The type system and its token source of truth
-│   │   └── [ViewsPM.md]                 | • Saved presentations of a Collection — six modeled types
+│   │   ├── [ViewsPM.md]                 | • Saved presentations of a Collection — six modeled types
+│   │   └── [WeblinkPM.md]               | • The web layer — webpage embeds, the browser, sessions, hover previews
 │   ├── // Guidelines                    | • Behavioral rules and hard-won traps, grouped by domain
 │   │   ├── [Build-Gotchas.md]           | • Environment and toolchain traps — read before launching the GUI
 │   │   ├── [Editor-Internals.md]        | • MarkdownPM's internal invariants — read before editing the editor
-│   │   └── [Lint-And-Accessibility.md]  | • The lint floor and the three rules disabled on purpose
+│   │   ├── [Lint-And-Accessibility.md]  | • The lint floor and the three rules disabled on purpose
+│   │   └── [Web-Guests.md]              | • Webview guest traps — read before touching any web surface
 │   ├── // Mobile                        | • The companion iPhone build — specs, architecture, sync
 │   ├── // Resources                     | • Reference of external resources; both in-use and future prospectives.
 │   ├── // Planning                      | • Plans and temporary specifications; contents are transient

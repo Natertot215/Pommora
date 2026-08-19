@@ -7,6 +7,7 @@ MarkdownPM
 ├── Constructs
 ├── Tables
 ├── Page Embeds
+├── Webpage Embeds
 ├── Block Drag & The Grip Menu
 ├── Typing Transforms
 ├── Context Menu + Shortcuts
@@ -82,6 +83,10 @@ The line must hold exactly one`![[Title]]`, and resolution is the discriminator:
 **Creation has three doors:** the`![[` autocomplete (offering only pages the syntax can express — already-embedded pages, the host chain, and bracket-bearing titles omitted; an empty query browses the whole index), the context menu's **Embed ▸ Internal Page** (types the fenced empty pair with the autocomplete open), and the tile grip's **Page Source ▸** (a native Collections → Sets → Pages tree re-aiming the line in place).
 
 **Nothing stays hot.** Tiles live with their host view, rehydrate from the warm path-keyed detail slot, and die with the tab; a tile's reading state (scroll, caret, undo) survives teardown in a session-scoped cache keyed by the host chain, invalidated when the page's body changes elsewhere. The rename cascade sweeps`![[` targets in the same pass as connections; an embed is never a link-graph edge. Nested embeds render display-only one level down; sub-targets (`#heading`, `^block`, `|alias`) and prefix-hosted embeds are deferred, degrading to the inert token.
+
+### Webpage Embeds
+
+The editor's second embedding type: `![Label](url)` alone on a line, with an explicit http(s) scheme, renders the live website as a tile on the same embed framework — the markdown mirror of the wiki form, so a Nexus still reads as plain CommonMark outside Pommora. The tile, its engagement model, and everything web-facing belong to [[WeblinkPM]]; the editor's own concerns — the grammar, the claim, the formation gate, and the Embed ▸ Webpage door — ride the same machinery the page tiles use.
 
 ### Block Drag & The Grip Menu
 
