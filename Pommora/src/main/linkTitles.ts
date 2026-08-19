@@ -4,13 +4,12 @@
 // nexus.db. A title is fetched at most once per URL per session. Off the read path entirely.
 import { StringDecoder } from 'node:string_decoder'
 import { net } from 'electron'
-import { isHttpLink, normalizeLinkUrl } from '@shared/links'
+import { isHttpLink, normalizeLinkUrl, LINK_RESOLVE_TIMEOUT_MS } from '@shared/links'
 import { readScope, writeKey } from './db/localState'
 
 /** URL → fetched page title. Regeneratable from the network, so it never leaves the device. */
 export type LinkTitleCache = Record<string, string>
 
-const TIMEOUT_MS = 6000
 const MAX_BYTES = 65536 // the <title> lives in <head>; never pull a whole page down
 const USER_AGENT =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Pommora/1.0'
@@ -85,7 +84,7 @@ function fetchPageTitle(rawUrl: string): Promise<string | null> {
       }
       resolve(v)
     }
-    const timer = setTimeout(() => finish(null), TIMEOUT_MS)
+    const timer = setTimeout(() => finish(null), LINK_RESOLVE_TIMEOUT_MS)
     try {
       req = net.request({ url, redirect: 'follow' })
     } catch {

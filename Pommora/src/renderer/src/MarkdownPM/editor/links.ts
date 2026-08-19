@@ -4,6 +4,7 @@ import { resolveMdTarget, type ConnectionsApi, type MdTarget } from '../connecti
 import { seatAtNearerEdge } from './input'
 import { caretInside, hoverIntent } from './connections'
 import { applyUrlLinkAction } from './linkFormat'
+import { normalizeLinkUrl } from '@shared/links'
 import { MD_LINK_CLASS } from './decorations'
 import { openWebLink } from '../../openWebLink'
 
@@ -89,7 +90,10 @@ export function markdownLinkClicks(getApi: GetApi): ReturnType<typeof EditorView
         const page = hit.target.page
         intent.arm(() => api.hover?.(page, el))
       } else {
-        const url = hit.url
+        // Normalized to what a guest can actually load — the attach gate refuses anything but
+        // http(s), so a mailto: or other scheme arms nothing rather than a blank card.
+        const url = normalizeLinkUrl(hit.url)
+        if (!/^https?:\/\//i.test(url)) return false
         intent.arm(() => api.hoverSite?.(url, el))
       }
       return false
