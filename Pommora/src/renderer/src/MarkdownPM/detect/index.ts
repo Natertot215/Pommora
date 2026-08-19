@@ -104,6 +104,11 @@ export function fencedCodeRanges(text: string): [number, number][] {
   return fenceBlocks(lines, lineStarts).map((b) => [b.from, b.to])
 }
 
+/** Whether a line start falls inside one of the excluded regions — the one shared reading of the
+ *  exclusion contract every block scanner in this file applies. */
+const inExcluded = (at: number, excluded: [number, number][]): boolean =>
+  excluded.some(([f, t]) => at >= f && at <= t)
+
 /** Absolute ranges of display-math blocks: a LONE `$$` line opens, the next lone `$$` line closes,
  *  mirroring how ``` fences pair — never the token layer's span regex, whose lazy pairing a single
  *  stray `$$` in prose or inline code would flip for the whole document below it. Relocating bytes
@@ -118,7 +123,7 @@ export function blockMathRanges(text: string, excluded: [number, number][]): [nu
   let open = -1
   for (let i = 0; i < lines.length; i++) {
     if (lines[i].trim() !== '$$') continue
-    if (excluded.some(([f, t]) => lineStarts[i] >= f && lineStarts[i] <= t)) continue
+    if (inExcluded(lineStarts[i], excluded)) continue
     if (open < 0) {
       open = i
     } else {
@@ -156,7 +161,7 @@ export function blockEmbedLines(text: string, excluded: [number, number][]): Emb
   for (let i = 0; i < lines.length; i++) {
     const title = loneEmbedTitle(lines[i])
     if (title === null) continue
-    if (excluded.some(([f, t]) => lineStarts[i] >= f && lineStarts[i] <= t)) continue
+    if (inExcluded(lineStarts[i], excluded)) continue
     out.push({ from: lineStarts[i], to: lineStarts[i] + lines[i].length, title })
   }
   return out
@@ -179,7 +184,7 @@ export function blockWebpageLines(text: string, excluded: [number, number][]): W
   for (let i = 0; i < lines.length; i++) {
     const w = loneWebpageEmbed(lines[i])
     if (w === null) continue
-    if (excluded.some(([f, t]) => lineStarts[i] >= f && lineStarts[i] <= t)) continue
+    if (inExcluded(lineStarts[i], excluded)) continue
     out.push({
       from: lineStarts[i],
       to: lineStarts[i] + lines[i].length,
