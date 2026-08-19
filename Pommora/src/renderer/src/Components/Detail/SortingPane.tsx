@@ -4,13 +4,11 @@ import type { CollectionNode, SetNode } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
 import { RESERVED_PROPERTY_ID } from '@shared/properties'
 import { LOCATION_SORT, type SavedView, type SortCriterion } from '@shared/views'
-import { Icon } from '@renderer/design-system/symbols'
-import { MenuItem, MenuPaneTopRow, MenuSeparator } from '../../design-system/components/menu'
-import { flushTrailing } from '../../design-system/components/menu/menu.css'
+import { MenuPaneTopRow, MenuSeparator } from '../../design-system/components/menu'
 import { useSaveView } from '@renderer/Embeds/ViewEmbedScope'
 import { declaredType } from '../../Detail/Views/pipeline/value'
-import { cx } from '../../design-system/cx'
-import { PickerControl, type PickerChoice } from './PickerControl'
+import type { PickerChoice } from './PickerControl'
+import { ValueRow } from './ValueRow'
 import { CustomList, PropertyPreview, optionsOf } from './GroupingPane'
 import { bucketOrder } from '../../Detail/Views/pipeline/group'
 import { MODIFIED_TARGET, schemaTargets, TITLE_TARGET } from './PropertyTypes'
@@ -73,7 +71,7 @@ function directionOptions(
 interface SortTarget {
   id: string
   label: string
-  icon: React.ComponentProps<typeof Icon>['name'] | undefined
+  icon: PickerChoice<string>['icon']
 }
 
 /** Title and Modified sort via buildCriterion's reserved-id branches, not through the schema. */
@@ -83,32 +81,6 @@ function sortTargets(schema: PropertyDefinition[]): SortTarget[] {
     MODIFIED_TARGET,
     ...schemaTargets(schema, (d) => SORTABLE_PANE.has(declaredType(d.id, schema) ?? '')),
   ]
-}
-
-function ValueRow<T extends string>({
-  tier = 'primary',
-  icon,
-  label,
-  value,
-  options,
-  onPick,
-}: {
-  tier?: 'primary' | 'sub'
-  icon?: React.ComponentProps<typeof Icon>['name']
-  label: string
-  value: T
-  options: PickerChoice<T>[]
-  onPick: (v: T) => void
-}): React.JSX.Element {
-  return (
-    <MenuItem
-      className={cx(flushTrailing, gp.pickerTone, tier === 'sub' && gp.subRow)}
-      leading={icon ? <Icon name={icon} size={14} /> : undefined}
-      trailing={<PickerControl ariaLabel={label} value={value} options={options} onPick={onPick} />}
-    >
-      {tier === 'sub' ? <span className={gp.subLabel}>{label}</span> : label}
-    </MenuItem>
-  )
 }
 
 export function SortingPane({
