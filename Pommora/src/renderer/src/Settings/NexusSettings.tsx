@@ -287,6 +287,17 @@ const LEAVES = roster([
         ],
       },
       {
+        title: 'Web Links',
+        rows: [
+          {
+            kind: 'toggle',
+            key: 'openLinksInApp',
+            label: 'Open Links In Pommora',
+            hint: 'External links open the floating browser instead of the system one.',
+          },
+        ],
+      },
+      {
         title: 'Connections',
         rows: [
           {
@@ -348,12 +359,6 @@ const LEAVES = roster([
       {
         title: 'Webpages',
         rows: [
-          {
-            kind: 'toggle',
-            key: 'openLinksInApp',
-            label: 'Open Links In Pommora',
-            hint: 'External links open the floating browser instead of the system one.',
-          },
           {
             kind: 'webzoom',
             key: 'webZoomFactor',

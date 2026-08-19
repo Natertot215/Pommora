@@ -31,7 +31,7 @@ Tile titles are display-only and resolved at render — a hand-written label win
 
 ### Link Opening
 
-One renderer adjudicator decides where every external link opens — editor clicks, table cells, tile titles, and guest popups all route through it, honoring the **Open Links In Pommora** preference (→ [[ConfigurationPM]] §Pages & Editor): off opens the system browser, on summons the floating in-app browser (→ [[PagePreviewPM]] §The Browser Flavor). A guest's `window.open` never opens an OS window; main denies it and hands the address to the same adjudicator.
+One renderer adjudicator decides where every external link opens — editor clicks, table cells, tile titles, and guest popups all route through it, honoring the **Open Links In Pommora** preference (→ [[ConfigurationPM]] §Files & Links): off opens the system browser, on summons the floating in-app browser (→ [[PagePreviewPM]] §The Browser Flavor). A guest's `window.open` never opens an OS window; main denies it and hands the address to the same adjudicator.
 
 ### Web Sessions
 
