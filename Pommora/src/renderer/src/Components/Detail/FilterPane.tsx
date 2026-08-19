@@ -580,11 +580,16 @@ export function FilterPane({
     ])
   }
 
-  const targetOptions = (onPick: (id: string) => void, close: () => void): React.ReactNode =>
+  const targetOptions = (
+    onPick: (id: string) => void,
+    close: () => void,
+    current?: string,
+  ): React.ReactNode =>
     targets.map((t) => (
       <PickerOption
         key={t.id}
-        selected={false}
+        selected={t.id === current}
+        ring
         leading={<Icon name={t.icon ?? 'tag'} size={13} />}
         onClick={() => {
           close()
@@ -724,6 +729,7 @@ export function FilterPane({
                     id !== row.rule.property_id &&
                     replaceRule(index, mintRule(id, schema, contextIds)),
                   close,
+                  row.rule.property_id,
                 )
               }
             </FieldPicker>
@@ -743,6 +749,7 @@ export function FilterPane({
                     key={o.label}
                     selected={o === current}
                     ring
+                    align="start"
                     {...(isCheckbox ? { leading: checkboxBox(o) } : {})}
                     onClick={() => {
                       close()

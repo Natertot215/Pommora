@@ -139,9 +139,16 @@ export const option = style([
  *  color (a Context's, a Status group's) is an inline style and still wins. */
 export const optionGlyph = style({ display: 'inline-flex', color: c.label.secondary })
 
-/** The chosen mark. It rides ABOVE the row rather than in its flow so a centered row stays centered
- *  and a glyph-led row keeps its left edge — the mark is the only thing the two modes disagree on,
- *  and neither alignment may shift when the mode flips. */
+/** The width the mark asks of a row that has to hold it — the glyph plus the gutter it sits in. */
+const MARK_TRACK = 18
+
+/** A row that reads left rather than centered. Carried as its own class because alignment is no
+ *  longer implied by the leading slot: a row can lead with nothing and still want its left edge. */
+export const optionStart = style({})
+
+/** The chosen mark. It rides ABOVE the row's flow, and the row reserves the track it needs instead
+ *  of laying it out — so a centered row can hold the mark and stay centered, which it could not do
+ *  if the mark were a flex item taking width from one side. */
 export const optionCheck = style({
   position: 'absolute',
   right: '4px',
@@ -161,6 +168,14 @@ export const optionSelected = style({
 // track: a centered row must read centered in both modes, so neither mode may take width from it.
 globalStyle(`${option} ${optionCheck}`, { display: 'none' })
 globalStyle(`:root.picker-checked ${option} ${optionCheck}`, { display: 'inline-flex' })
+// The row grows by the mark's track so a label never runs beneath it. A left-reading row owes the
+// track only on its trailing edge; a centered one owes it on both, or its content sits off-centre by
+// half the mark.
+globalStyle(`:root.picker-checked ${option}`, {
+  paddingLeft: `${MARK_TRACK}px`,
+  paddingRight: `${MARK_TRACK}px`,
+})
+globalStyle(`:root.picker-checked ${option}${optionStart}`, { paddingLeft: '4px' })
 // The repeated class outranks the run-unification rules above, which compound `:has()` and a sibling
 // combinator and would otherwise keep painting a ring the mode has stood down.
 globalStyle(`:root.picker-checked ${optionSelected}${optionSelected}`, {
