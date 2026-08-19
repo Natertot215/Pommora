@@ -52,10 +52,13 @@ The Nexus' primary settings are placed on a floating window summoned from the si
 
 #### Appearance
 
-Seated and empty. Accent, connection color, default icons, and the default view scale land here once they have controls.
+The three colors the interface derives from. Each opens the ramp grid without its greyscale families — those cells run into the window substrate, so a link or an accent wearing one would be invisible against the page it sits on — and each clears to whatever it inherits rather than to nothing. Default icons and the default view scale land here once they have controls.
 
 | Setting | Key | Description | Options |
 | ------- | --- | ----------- | ------- |
+| Accent Color | `accent` | The color every accented surface derives from. | A ramp cell · **the system accent** |
+| Internal Link Color | `connectionColor` | Connections to other pages. | A ramp cell · **the accent** |
+| External Link Color | `externalLinkColor` | Links out to the web. | A ramp cell · **the system accent** |
 |         |     |             |         |
 
 #### Files & Links
@@ -144,8 +147,9 @@ A page's frontmatter carries its identity and its property values. Its configura
 
 Nexus-wide interface config, stored as the `personalization` object in `.nexus/settings.json`. A key the schema doesn't parse is dropped on read and falls back to its default, so a hand-typed bad value reverts on the next open. Every key the Settings window writes is tabled above; the rest are written by the app itself rather than by a row.
 
-- **accent** — the app-wide accent: a spectrum solid, or `system` to follow the OS.
-- **connectionColor** — the inline `[[Title]]` connection color; tracks the accent live by default, or pins a specific solid.
+- **accent** — the app-wide accent: a ramp cell, a legacy solid name, or `system` to follow the OS.
+- **connectionColor** — the inline `[[Title]]` connection color; tracks the accent live by default, or pins a ramp cell.
+- **externalLinkColor** — the `[text](url)` color; tracks the system accent live by default, or pins a ramp cell.
 - **defaultIcons** — the per-kind default icon, overriding the built-in seed; an entity's own icon still wins over it.
 - **favoriteIcons** — the icons favorited in the Icon Picker, in display order. Written by the picker itself.
 - **setPlacement / subSetPlacement** — where the folders sit: a Collection's depth-1 Sets and a Set's Sub-Sets sit above (the default) or below their container's loose pages, so "pages on top" is spelled `bottom`. The knobs are independent tiers — `setPlacement` never moves a Set's own pages, and set-level pages answer only to `subSetPlacement`. The folder block stays contiguous; a full folder↔page interleave is the eventual model.
@@ -169,7 +173,7 @@ A second class of machine-local state sits in the Nexus's own database rather th
 
 ### Pending
 
-- **Beyond the knobs that ship** — accent, connection color, default icons, both placement knobs, and the default view scale have no in-app writer and are hand-set in `settings.json`, with the watcher applying the change live. All are wireable through the existing setter.
+- **Beyond the knobs that ship** — default icons, both placement knobs, and the default view scale have no in-app writer and are hand-set in `settings.json`, with the watcher applying the change live. All are wireable through the existing setter.
 - **Scopes with no renderer-facing setter** — labels and the per-device app config have no IPC a UI could write through; each needs a handler first. The profile is further along: its image and icon are written from the ribbon's identity menu, and the subtitle has an op and handler waiting on a surface to drive them.
 - **Command rebinding** — data-ready and unbuilt; shortcuts don't ship without per-shortcut sign-off. The Shortcuts leaf lists its bindings and offers no control over them until they do.
 - **Two names for one date form** — the Trash column's own menu calls `monthDayYear` "Short Date", where every other surface calls it "MM/DD/YYYY" and reserves "Short Date" for the `short` form. The two vocabularies need reconciling.
