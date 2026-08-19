@@ -149,20 +149,22 @@ describe('pasting an address into the editor', () => {
     expect(view.state.doc.toString()).toBe(`[Example Domain](${URL})`)
   })
 
-  // Both halves observed: inside a destination the address lands literal (no nested `[` written);
-  // outside one on the same line, the same clipboard formats — proof the paste ran both ways.
-  it('lands literal inside a link destination, and formats outside it', async () => {
-    const body = `[docs]() tail`
-    const inside = await mountEditor({ initialBody: body })
-    inside.dispatch({ selection: { anchor: 7 } })
-    await act(async () => paste(inside, URL))
-    expect(inside.state.doc.toString()).toBe(`[docs](${URL}) tail`)
-    await cleanupEditor()
+  // The pair reads together: the same clipboard on the same line lands literal inside a destination
+  // (no nested `[` written) and formats outside one — proof the guard reads the column, not the line.
+  const LINKED = '[docs]() tail'
 
-    const outside = await mountEditor({ initialBody: body })
-    outside.dispatch({ selection: { anchor: body.length } })
-    await act(async () => paste(outside, URL))
-    expect(outside.state.doc.toString()).toBe(`[docs]() tail[${URL}](${URL})`)
+  it('lands literal inside a link destination', async () => {
+    const view = await mountEditor({ initialBody: LINKED })
+    view.dispatch({ selection: { anchor: 7 } })
+    await act(async () => paste(view, URL))
+    expect(view.state.doc.toString()).toBe(`[docs](${URL}) tail`)
+  })
+
+  it('formats outside a link destination on the same line', async () => {
+    const view = await mountEditor({ initialBody: LINKED })
+    view.dispatch({ selection: { anchor: LINKED.length } })
+    await act(async () => paste(view, URL))
+    expect(view.state.doc.toString()).toBe(`[docs]() tail[${URL}](${URL})`)
   })
 
   it('puts the caret after the link it wrote', async () => {

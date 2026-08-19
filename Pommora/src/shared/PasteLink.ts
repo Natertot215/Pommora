@@ -1,4 +1,4 @@
-// What a pasted URL becomes. Pure: a clipboard string, the selection, the two settings and the
+// What a pasted URL becomes. Pure: a clipboard string, the selection, the settings and the
 // chord in; the text to insert out. Split from the editor's paste handler because the same answer
 // has to serve two editors — the page body and a table cell each build their own EditorView — and
 // because a decision this branchy is worth exercising without fabricating clipboard events.
@@ -12,7 +12,7 @@ export interface PasteInput {
   /** Empty when the caret is bare. */
   selectionText: string
   pasteIntoText: boolean
-  /** The inverse chord was used, so whichever axis applies does the opposite of its setting. */
+  /** The inverse chord was used, so whichever axis applies does the opposite. */
   inverse: boolean
   format: LinkDisplay
   /** A page title already in the cache. Absent means Page Title has to ask for one. */
