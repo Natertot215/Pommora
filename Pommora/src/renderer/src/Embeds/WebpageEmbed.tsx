@@ -12,6 +12,7 @@ import { DEFAULT_LINK_DISPLAY } from '@shared/properties'
 import { WEB_PARTITION } from '@shared/types'
 import { webpageTileTitle } from '@shared/webpageEmbed'
 import { TextPicker } from '@renderer/design-system/components/TextPicker'
+import { useDismiss } from '@renderer/design-system/components/useDismiss'
 import { useSession } from '../store'
 import { webGuestRetention } from './webRetention'
 import './embeds.css'
@@ -30,17 +31,10 @@ export function useWebpageTitle(label: string, url: string): string {
   return webpageTileTitle(label, url, display, title)
 }
 
-/** A host's outside-pointerdown seam: subscribes a listener to the surface's pointerdowns and
- *  returns the unsubscribe. Injected so the component owns engagement while the host owns where
- *  outside events come from — a dashboard host passes its own. Guest-internal clicks never reach
- *  the host document, so engagement can only end from the host's side, which is the point. */
-export type PointerSeam = (onDown: (target: EventTarget | null) => void) => () => void
-
 export function WebpageEmbed({
   url,
   label = '',
   visible,
-  engageSeam,
   refocusHost,
   linkEdit = false,
   onLinkCommit,
@@ -53,8 +47,6 @@ export function WebpageEmbed({
   /** Fully visible in the owning scrollport — the host's observer decides; the guest is live
    *  only while this holds, and retained hidden (under the cap) while it doesn't. */
   visible: boolean
-  /** Outside pointerdowns, for click-out disengagement. */
-  engageSeam?: PointerSeam
   /** Where focus returns when a clip transition disengages a guest that held it. */
   refocusHost?: () => void
   /** The Edit Link picker is open on this tile — anchored here, seeded with the URL. */
@@ -67,16 +59,18 @@ export function WebpageEmbed({
   const [failed, setFailed] = useState(false)
   const [loaded, setLoaded] = useState(false)
   const [engaged, setEngaged] = useState(false)
-  // The guest exists: live while visible, retained hidden otherwise. Eviction clears it — the
-  // tile falls back to the loading face and reloads fresh on re-visibility.
+  // The guest exists: live while visible, retained hidden otherwise. Eviction and failure clear
+  // it — the tile falls back to a face and mounts a fresh guest on its next visibility entry.
   const [guest, setGuest] = useState(visible)
   const ref = useRef<HTMLElement | null>(null)
   const rootRef = useRef<HTMLDivElement | null>(null)
   const guestRef = useRef(guest)
   guestRef.current = guest
-  const idRef = useRef<symbol | null>(null)
-  if (idRef.current === null) idRef.current = Symbol('webguest')
-  const id = idRef.current
+  // Held in a ref so the visibility effect never re-runs on the host's render churn — a re-run
+  // of the hidden branch would re-stamp this guest's retention recency for no reason.
+  const refocusRef = useRef(refocusHost)
+  refocusRef.current = refocusHost
+  const id = useRef(Symbol('webguest')).current
 
   // A different site: the old guest's state, load, and engagement all described another page.
   useEffect(() => {
@@ -92,41 +86,48 @@ export function WebpageEmbed({
 
   useEffect(() => {
     if (visible) {
+      // Entry clears any standing failure, so the retry always happens in front of the user —
+      // never as an invisible load behind a hidden tile.
       webGuestRetention.show(id)
       setGuest(true)
+      setFailed(false)
       return
     }
-    // The clip transition: disengage, hand focus back if the guest held it, clear any failure so
-    // re-entry retries, and retain the hidden guest under the cap.
+    // The clip transition: disengage, hand focus back if the guest held it, and retain the
+    // hidden guest under the cap.
     setEngaged(false)
     const el = ref.current
     if (el && document.activeElement === el) {
       el.blur()
-      refocusHost?.()
+      refocusRef.current?.()
     }
-    setFailed(false)
     if (guestRef.current) webGuestRetention.hide(id, () => setGuest(false))
-  }, [visible, id, refocusHost])
+  }, [visible, id])
 
   useEffect(() => () => webGuestRetention.drop(id), [id])
 
-  useEffect(() => {
-    if (!engaged || !engageSeam) return
-    return engageSeam((target) => {
-      if (target instanceof Node && rootRef.current?.contains(target)) return
-      setEngaged(false)
-    })
-  }, [engaged, engageSeam])
+  // Click-out (and Escape) end engagement; the shared hook also shields the open Edit Link
+  // picker, whose portal renders outside this tree. Guest-internal clicks never reach the host
+  // document, so engagement can only end from the host's side — which is the point.
+  useDismiss(rootRef, () => setEngaged(false), engaged)
 
   useEffect(() => {
     const wv = ref.current
     if (!wv) return
+    // A failure tears the guest down whole: it holds no state worth retaining, so it never
+    // occupies a retention slot, and the failed face stands until the next visibility entry
+    // mounts a fresh guest to retry.
+    const fail = (): void => {
+      setFailed(true)
+      setGuest(false)
+      webGuestRetention.drop(id)
+    }
     const onFail = (e: Event): void => {
       // Subframe failures are the site's own business; -3 is the abort every redirect fires.
       const d = e as Event & { isMainFrame?: boolean; errorCode?: number }
-      if (d.isMainFrame !== false && d.errorCode !== -3) setFailed(true)
+      if (d.isMainFrame !== false && d.errorCode !== -3) fail()
     }
-    const onGone = (): void => setFailed(true)
+    const onGone = (): void => fail()
     const onLoad = (): void => {
       setFailed(false)
       setLoaded(true)
@@ -179,8 +180,6 @@ export function WebpageEmbed({
       <button
         type="button"
         className={cx('wpembed-title', text.footnote.standard)}
-        // The system browser is the resting route; the open-in preference takes this over when it
-        // lands, through the shared adjudicator.
         onClick={() => void window.nexus.openExternal(url)}
       >
         {title}
