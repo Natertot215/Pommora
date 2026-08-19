@@ -4,9 +4,11 @@ import type { EditorView } from '@codemirror/view'
 import { blockAt } from './blockModel'
 import { docString } from './docCache'
 
-/** The fenced insert below a block: always blank-separated above, and below whenever the next line
- *  holds content. `token` is the placed text — a full `![[Title]]`, or the bare opener when the
- *  autocomplete finishes the title. Returns the change spec plus where the caret lands. */
+/** The fenced insert below a block: blank-separated above and below wherever content adjoins,
+ *  reusing the blank lines already standing — a caret on a blank line supplies one fence newline
+ *  and takes the token itself, a blank (or the doc's start) above it supplies the other. `token`
+ *  is the placed text — a full `![[Title]]`, or the bare opener when the autocomplete finishes
+ *  the title. Returns the change spec plus where the caret lands. */
 export function embedInsertAfter(
   doc: string,
   blockTo: number,
@@ -16,11 +18,18 @@ export function embedInsertAfter(
   const nextLineEnd = doc.indexOf('\n', nextLineStart)
   const nextLine = doc.slice(nextLineStart, nextLineEnd === -1 ? doc.length : nextLineEnd)
   const trail = nextLine.trim() === '' ? '' : '\n'
+  const lineStart = doc.lastIndexOf('\n', blockTo - 1) + 1
+  const curBlank = doc.slice(lineStart, blockTo).trim() === ''
+  const prevBlank =
+    lineStart === 0 ||
+    doc.slice(doc.lastIndexOf('\n', lineStart - 2) + 1, lineStart - 1).trim() === ''
+  const lead = curBlank ? (prevBlank ? '' : '\n') : '\n\n'
+  const from = curBlank ? lineStart : blockTo
   return {
-    from: blockTo,
+    from,
     to: blockTo,
-    insert: `\n\n${token}${trail}`,
-    caret: blockTo + 2 + token.length,
+    insert: `${lead}${token}${trail}`,
+    caret: from + lead.length + token.length,
   }
 }
 

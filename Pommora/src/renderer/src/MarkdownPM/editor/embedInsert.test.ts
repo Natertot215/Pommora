@@ -15,6 +15,30 @@ describe('embedInsertAfter', () => {
     expect(doc.slice(0, c.from) + c.insert + doc.slice(c.to)).toBe('para\n\n![[T]]\n\nnext')
   })
 
+  it('a caret on a blank line below content supplies its own fence newline', () => {
+    const doc = 'para\n'
+    const c = embedInsertAfter(doc, 5, '![[T]]')
+    expect(doc.slice(0, c.from) + c.insert + doc.slice(c.to)).toBe('para\n\n![[T]]')
+  })
+
+  it('a caret on a blank line already fenced above takes the token in place', () => {
+    const doc = 'para\n\n'
+    const c = embedInsertAfter(doc, 6, '![[T]]')
+    expect(doc.slice(0, c.from) + c.insert + doc.slice(c.to)).toBe('para\n\n![[T]]')
+  })
+
+  it('a whitespace-only line is replaced, never indented into', () => {
+    const doc = 'para\n\n  '
+    const c = embedInsertAfter(doc, 8, '![[T]]')
+    expect(doc.slice(0, c.from) + c.insert + doc.slice(c.to)).toBe('para\n\n![[T]]')
+  })
+
+  it('an empty doc takes the token bare', () => {
+    const c = embedInsertAfter('', 0, '![[T]]')
+    expect(c.insert).toBe('![[T]]')
+    expect(c.caret).toBe(6)
+  })
+
   it('lands clean at EOF', () => {
     const doc = 'para'
     const c = embedInsertAfter(doc, 4, '![[T]]')
