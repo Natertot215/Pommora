@@ -85,8 +85,8 @@
 }
 .settings-section-title {
   color: var(--label-secondary);
-  /* Carries the top padding the rows gave up, so a group's label breathes off what precedes it. */
-  margin: 10px 0 2px;
+  /* The gap below carries the top padding its first row gave up. */
+  margin: 0 0 10px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
