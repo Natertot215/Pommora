@@ -1,29 +1,42 @@
-// THE lone-line page embeds for a doc — one derivation of the exclusion set (an `![[…]]` line inside
-// a fence or table region is content there, never an embed). Every layer that must agree on what an
-// embed line is reads THIS: the block resolver, the decoration pass's gates, and the tile field.
+// THE block-construct lines for a doc — one derivation of the exclusion set (a `$$`, `![[…]]`, or
+// webpage-embed line inside a fence or table region is content there, never a construct). Every
+// layer that must agree on what these lines are reads THIS: the block resolver, the decoration
+// pass's gates, the drag models, and the tile field.
 import {
   blockEmbedLines,
+  blockMathRanges,
   blockWebpageLines,
   type EmbedLine,
   type WebpageLine,
   fencedCodeRanges,
 } from '../detect'
-import { docMathRanges } from './mathRanges'
 import { tableRegions } from '../Tables/regions'
 import { normalizeTitle, type LinkStatus } from '@shared/connections'
 
-const embedExcluded = (doc: string): [number, number][] => [
-  ...fencedCodeRanges(doc),
-  ...tableRegions(doc).map((r): [number, number] => [r.from, r.to]),
-  ...docMathRanges(doc),
-]
-
-export function docEmbedLines(doc: string): EmbedLine[] {
-  return blockEmbedLines(doc, embedExcluded(doc))
+export interface DocLineScan {
+  maths: [number, number][]
+  embeds: EmbedLine[]
+  webpages: WebpageLine[]
 }
 
-export function docWebpageLines(doc: string): WebpageLine[] {
-  return blockWebpageLines(doc, embedExcluded(doc))
+/** All three construct kinds from one fence/table base — the base and the math ranges each compute
+ *  once per call, so a caller needing several kinds never re-scans the doc per kind. */
+export function docLineScan(doc: string): DocLineScan {
+  const base: [number, number][] = [
+    ...fencedCodeRanges(doc),
+    ...tableRegions(doc).map((r): [number, number] => [r.from, r.to]),
+  ]
+  const maths = blockMathRanges(doc, base)
+  const excluded = [...base, ...maths]
+  return {
+    maths,
+    embeds: blockEmbedLines(doc, excluded),
+    webpages: blockWebpageLines(doc, excluded),
+  }
+}
+
+export function docEmbedLines(doc: string): EmbedLine[] {
+  return docLineScan(doc).embeds
 }
 
 /** Whether a page title can be embedded here: the `![[…]]` syntax cannot express a `]`, and a title
