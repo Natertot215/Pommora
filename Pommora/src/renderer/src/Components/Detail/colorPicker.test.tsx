@@ -26,13 +26,13 @@ afterEach(() => {
   host.remove()
 })
 
-function mount(greyscale?: boolean): HTMLButtonElement[] {
+function mount(greyscale?: boolean, selected = 'default'): HTMLButtonElement[] {
   const ref = createRef<HTMLButtonElement>()
   act(() => {
     root.render(
       <ColorPicker
         open
-        selected="default"
+        selected={selected as never}
         onPick={() => {}}
         onDismiss={() => {}}
         triggerRef={ref}
@@ -56,6 +56,14 @@ describe('ColorPicker', () => {
     const cells = mount(false)
     expect(cells).toHaveLength(56)
     expect(cells.some((c) => c.getAttribute('aria-label')?.startsWith('grey'))).toBe(false)
+  })
+
+  // Clearing is bound to clicking the ringed cell, so withholding the row a stored value lives in
+  // would strand that value: visible in the table, unclearable in its own picker.
+  it('still shows the greyscale row when the stored value lives there', () => {
+    const cells = mount(false, 'grey-4')
+    expect(cells).toHaveLength(64)
+    expect(cells.filter((c) => c.className.includes('Selected'))).toHaveLength(1)
   })
 
   it('rings nothing when the value is uncolored', () => {

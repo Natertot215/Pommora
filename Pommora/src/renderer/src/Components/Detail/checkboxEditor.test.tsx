@@ -28,7 +28,6 @@ const mount = async (
   props: {
     color?: string
     look?: CheckboxLook
-    accent?: string
     onSetColor?: (c: string | undefined) => void
     onSetStyle?: (l: CheckboxLook) => void
   } = {},
@@ -38,7 +37,6 @@ const mount = async (
       <CheckboxEditor
         color={props.color}
         look={props.look ?? 'checkbox'}
-        accent={props.accent}
         onSetColor={props.onSetColor ?? (() => {})}
         onSetStyle={props.onSetStyle ?? (() => {})}
       />,
@@ -64,21 +62,22 @@ const swatchFill = (): string => {
 
 describe('CheckboxEditor', () => {
   it('shows Color and Style rows', async () => {
-    await mount({ accent: 'cyan' })
+    await mount({})
     expect(host.textContent).toContain('Color')
     expect(host.textContent).toContain('Style')
   })
 
-  // The control carries no color NAME — the ramp's cells have none. An unset checkbox simply shows
-  // what the live accent paints, which is the same thing picking that color would show.
-  it('shows the accent in the swatch when unset', async () => {
-    await mount({ accent: 'cyan' })
+  // The swatch must paint the SAME accent var the checked box itself tints with — the OS accent
+  // belongs to the link path, and borrowing it made three surfaces claim three colors for one value.
+  it('shows the app accent in the swatch when unset', async () => {
+    await mount({})
     expect(host.textContent).not.toContain('Accent')
-    expect(swatchFill()).toContain('--system-accent')
+    expect(swatchFill()).toContain('var(--accent)')
+    expect(swatchFill()).not.toContain('--system-accent')
   })
 
   it('shows the chosen color in the swatch, unnamed', async () => {
-    await mount({ color: 'blue-1', accent: 'cyan' })
+    await mount({ color: 'blue-1' })
     expect(host.textContent).not.toContain('Blue')
     expect(swatchFill()).toBeTruthy()
   })
@@ -98,7 +97,7 @@ describe('CheckboxEditor', () => {
 
   it('emits a color key when a new swatch is picked', async () => {
     const onSetColor = vi.fn()
-    await mount({ accent: 'cyan', onSetColor })
+    await mount({ onSetColor })
     await act(async () => buttonFor('Color').click())
     await act(async () => buttonFor('blue-1').click())
     expect(onSetColor).toHaveBeenCalledWith('blue-1')
