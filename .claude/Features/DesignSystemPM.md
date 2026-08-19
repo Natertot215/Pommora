@@ -245,7 +245,7 @@ Which tier each surface wears, and the two menu shells built on the pane.
 
 The reusable pieces mirror the Figma library and consume semantic tokens only; a component's own behavior lives in its spec.
 
-- **Switches and toggles** — the Switch wears the checkbox look at control scale with one disabled dim (`--state-inactive`); dual-option toggles are always switches or the toggleable double-chevron, never dropdown pickers.
+- **Switches and toggles** — the Switch wears the checkbox look at control scale with one disabled dim (`--state-inactive`) and carries its own size behind `--switch-zoom`, so a surface retunes it by setting that var rather than wrapping it; dual-option toggles are always switches or the toggleable double-chevron, never dropdown pickers.
 - **Chevrons and twisties** — disclosure glyphs ride the fold-chevron mask tokens (`--fold-chevron-mask`, `--code-chevron-mask` — inline SVG masks bridged from theme-vars) at the tertiary label tone, stepping by the disclosure indent.
 - **The drag grip** — the six-dot glyph is one masked asset (`--grip-glyph`).
 - **The ActionBand** (`Detail/ActionBand.css`) is the shared home for toolbar-row affordances any surface mounts — ViewSegments first, plus the hover-revealed settings button; a segment's collapsible title rides Segmented-Controls' `labelSlot`.
