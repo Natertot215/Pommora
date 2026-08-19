@@ -21,7 +21,7 @@ describe('embedInsertAfter', () => {
     expect(doc.slice(0, c.from) + c.insert + doc.slice(c.to)).toBe('para\n\n![[T]]')
   })
 
-  it('the Insert ▸ Page pair hands off to the embed autocomplete', () => {
+  it('the Embed ▸ Internal Page pair hands off to the embed autocomplete', () => {
     const doc = 'para\nnext'
     const c = embedInsertAfter(doc, 4, '![[]]')
     const next = doc.slice(0, c.from) + c.insert + doc.slice(c.to)

@@ -154,10 +154,10 @@ Constraints: `sandbox`/`contextIsolation` stay on; guests are validated at attac
 - [x] Commit: `fix(paste): a link never writes into another link's destination`
 
 #### Gate 1 — the menu leads with Insert; paste formatting is law
-- [ ] Gates green, exit codes direct. Dead-vocabulary sweep for `autoFormatPastedLinks` → 0 against its control.
-- [ ] Simplification (`code-simplifier`) + `/code-review` against `<base>..HEAD`, scoped to the phase's paths; reports cite files inside the range; every concern fixed or ruled.
-- [ ] Menu order and the ⌘K/paste guard seen in the running app (screenshot the menu for Nathan).
-- [ ] Progress hashes filled; plan re-assessed against what landed.
+- [x] Gates green, exit codes direct. Dead-vocabulary sweep for `autoFormatPastedLinks` → 0 against its control.
+- [x] Simplification (`code-simplifier`) + `/code-review` against `<base>..HEAD`, scoped to the phase's paths; reports cite files inside the range; every concern fixed or ruled (→ Rulings).
+- [ ] Menu order and the ⌘K/paste guard seen in the running app — *the context menu is OS-native and invisible to CDP capture; Nathan's eyes at his next dev restart.*
+- [x] Progress hashes filled; plan re-assessed against what landed.
 
 ---
 
@@ -460,10 +460,10 @@ This task also lands the `web:popup` listener (the renderer app root subscribes 
 ## Implementation Log
 
 ### Progress
-- [ ] **Phase 1** — Menu & Built-In Formatting · base `f9ca6aa8`
-  - [ ] Task 1 — Menu reorder · ``
-  - [ ] Task 2 — Auto-format built-in · ``
-  - [ ] Task 3 — Destination guard · ``
+- [x] **Phase 1** — Menu & Built-In Formatting · base `f9ca6aa8` · simplify `c04cca08` · review folds `(gate commit)`
+  - [x] Task 1 — Menu reorder · `4a754b3c`
+  - [x] Task 2 — Auto-format built-in · `f46f7e6f`
+  - [x] Task 3 — Destination guard · `8869f7f1`
 - [ ] **Phase 2** — Main-Process Web Foundation · base ``
   - [ ] Task 4 — Guest lifecycle + partition · ``
 - [ ] **Phase 3** — The Webpage Tile · base ``
@@ -486,7 +486,11 @@ This task also lands the `web:popup` listener (the renderer app root subscribes 
   - [ ] Task 18 — Website hover card · ``
 
 ### Rulings
+- **Gate 1 review round** (8 angles, deduped): folded — guard ordering in `linkFor` (cheap URL test first); one grammar source (`links.ts` fragments now build both `markdownLinkRegex` and the empty-tolerant variant; the `!?` branch dropped as unnecessary — the scan matches from `[` regardless); the guard gained the unclosed-destination clause (agrees with the smart-dash guard's reading) and an early break; **the code-context guard** (a paste inside a fence or inline span lands literal — `isInsideCode` with insertion semantics; in-flight behavioral addition, disclosed at the gate); **the Paste As destination guard** (an explicit pick inside a link's `()` pastes literal — the pick overrides settings, never syntax; Paste As stays unguarded in code context, the explicit pick is the deliberate escape there); `Insert ▸ Page` naming residue in embedInsert; the stale Reveal comment in nexusSettings.css.
+- Rejected findings, with reasons: one-item Embed submenu (Task 9 fills it; Nathan-ratified IA) · `![]()` "dead grammar" (Task 9's door) · module placement / use-the-tokenizer (`Forced By`: the tokenizer refuses the empty halves the guard exists for) · no-literal-paste-over-selection (spec G-1; Paste As ▸ Plain Text is the named path per Survivors) · stale on-disk key (Task 2's Failure half: no migration, assert no reader) · multi-line selection formats (deliberate fold, test-pinned) · guard misses on degenerate ⌘K products — >255-char labels, multi-line links, unescaped `]` (untokenizable prose either way; nesting inside broken syntax adds nothing) · selections straddling link syntax (degenerate; undo) · Format/Lists menu helper (untouched by the range) · InteractionPM "settings panes" (still true of the Detail panes Reveal backs).
 ### Open Against Later Tasks
+- Merge the smart-dash guard's `inLinkTarget` (`MarkdownPM/input/index.ts`) into `linkDestinationAt` — the two predicates now agree but exist twice; fold when Task 5 extends the grammar module.
+- Pre-existing, out of range: ⌘K with the caret inside an empty link's `()` writes a second `[]()` (`toggleLink` finds links via the tokenizer, which refuses empty halves). Same class the guard fixed for paste; candidate fixlet beside Task 5.
 ### Deviations
 - Task 2's control count read 7, not the step's 5 — the plan's Dead Vocabulary header already said 7; the step's number was stale. ConnectionsPM holds no toggle-gated paste sentence, so Made False row 3 rewrote MarkdownPM alone. The `when` removal also collapsed `LeafRow` into `RowControl` (it became a pass-through).
 ### Lessons

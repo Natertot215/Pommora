@@ -39,4 +39,23 @@ describe('linkDestinationAt — is the caret inside a destination', () => {
     expect(linkDestinationAt(line, 20)).toBe(false)
     expect(linkDestinationAt(line, 30)).toBe(true)
   })
+
+  it('sees a destination still open before the caret', () => {
+    // Mid-typing: `](` with no `)` yet — the shape the smart-dash guard also reads.
+    const line = '[docs](https://ex'
+    expect(linkDestinationAt(line, line.length)).toBe(true)
+    expect(linkDestinationAt('[docs](https://ex) after', 20)).toBe(false)
+  })
+
+  it('follows a destination through balanced parens', () => {
+    const line = '[w](https://en.wikipedia.org/wiki/A_(b)_c) tail'
+    expect(linkDestinationAt(line, line.indexOf('_c)'))).toBe(true)
+    expect(linkDestinationAt(line, line.length)).toBe(false)
+  })
+
+  it('reads the embed form through its bang', () => {
+    const line = '![label](https://example.com)'
+    expect(linkDestinationAt(line, 12)).toBe(true)
+    expect(linkDestinationAt(line, 4)).toBe(false)
+  })
 })

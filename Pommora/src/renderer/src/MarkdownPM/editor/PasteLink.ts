@@ -2,9 +2,11 @@ import { EditorView } from '@codemirror/view'
 import { decidePaste, pastedUrl, type LinkPaste } from '@shared/PasteLink'
 import { pasteAsTarget, pasteAsWrite, type PasteAsForm } from '@shared/PasteAsMenu'
 import { DEFAULT_LINK_DISPLAY } from '@shared/properties'
+import { isInsideCode } from '@shared/markdownCode'
 import { linkDestinationAt } from '@shared/webpageEmbed'
 import { matchesCommand } from '../../Commands'
 import { useSession } from '../../store'
+import { docString } from './docCache'
 import { awaitTitle } from './PendingTitle'
 
 // Turns a pasted address into a markdown link, in the form the nexus is set to, and carries the
@@ -27,23 +29,43 @@ function linkFor(view: EditorView, text: string, inverse: boolean): LinkPaste | 
   // One caret, one link. A multi-range paste is CodeMirror's own business.
   if (view.state.selection.ranges.length !== 1) return null
 
+  // A non-address always pastes literally, so the guards below only run for the pastes they can
+  // actually change.
+  const url = pastedUrl(text)
+  if (!url) return null
+
   const sel = view.state.selection.main
-  // A caret inside a link's `()` — seated by ⌘K, or by Embed ▸ Webpage — receives the address as
-  // the literal text the destination is made of; formatting here would nest a link inside one.
-  const line = view.state.doc.lineAt(sel.from)
-  if (linkDestinationAt(line.text, sel.from - line.from)) return null
+  if (destinationGuard(view, sel.from)) return null
+  if (insideCodeAtCaret(view, sel.from)) return null
 
   const { personalization, linkTitles } = useSession.getState()
-  const url = pastedUrl(text)
   const decision = decidePaste({
     clipboard: text,
     selectionText: view.state.sliceDoc(sel.from, sel.to),
     pasteIntoText: personalization.pasteLinkIntoText === true,
     inverse,
     format: personalization.defaultLinkFormat ?? DEFAULT_LINK_DISPLAY,
-    title: url ? linkTitles[url] : undefined,
+    title: linkTitles[url],
   })
   return decision.kind === 'literal' ? null : decision
+}
+
+/** A caret inside a link's `()` — the seat ⌘K leaves — receives an address as the literal text the
+ *  destination is made of; formatting there would nest a link inside one. One test for both paste
+ *  entry points, so the menu path and the keystroke path can never disagree about it. */
+function destinationGuard(view: EditorView, pos: number): boolean {
+  const line = view.state.doc.lineAt(pos)
+  return linkDestinationAt(line.text, pos - line.from)
+}
+
+/** A code span or fence renders nothing — a link written there is corrupted code, not a link.
+ *  `isInsideCode` answers for a character; an insertion at the span's exclusive end (the caret
+ *  before a closing backtick) still lands inside, so the position behind the caret answers too —
+ *  except across a newline, or the first column after a fence would read as the fence's. */
+function insideCodeAtCaret(view: EditorView, pos: number): boolean {
+  const s = docString(view.state.doc)
+  if (isInsideCode(pos, s)) return true
+  return pos > 0 && s[pos - 1] !== '\n' && isInsideCode(pos - 1, s)
 }
 
 /** Put the decided link in, over whatever the selection covers. */
@@ -74,6 +96,13 @@ export async function pasteAs(view: EditorView, form: PasteAsForm): Promise<void
   // may be gone, and a table cell's editor is destroyed the moment its cell deactivates.
   if (!text || !view.dom.isConnected || view.state.readOnly) return
   if (view.state.selection.ranges.length !== 1) return
+  // The explicit pick overrides the settings, never the syntax: a destination takes any clipboard
+  // as the text it is, or the picked form nests a link inside the link being authored.
+  if (destinationGuard(view, view.state.selection.main.from)) {
+    view.dispatch(view.state.replaceSelection(text))
+    view.focus()
+    return
+  }
   const target = pasteAsTarget(text)
   const cached = target?.kind === 'url' ? useSession.getState().linkTitles[target.url] : undefined
   const write = pasteAsWrite(target, form, cached)
