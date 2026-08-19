@@ -30,8 +30,7 @@ import { TILE_MIN_PX } from '@renderer/design-system/tokens/size.css'
 import { normalizeTitle, titleFromPath } from '@shared/connections'
 import '@renderer/design-system/tile-chassis.css'
 import { composeWebpageEmbedLine, loneWebpageEmbed } from '@shared/webpageEmbed'
-import { isHttpLink, normalizeLinkUrl } from '@shared/links'
-import type { PointerSeam } from '@renderer/Embeds/WebpageEmbed'
+import { normalizeLinkUrl } from '@shared/links'
 import { docScan } from './docCache'
 import { loneEmbedTitle } from '../detect'
 import { claimedEmbeds } from './embedRanges'
@@ -335,13 +334,38 @@ const LazyWebpageEmbed = lazy(() =>
   import('@renderer/Embeds/WebpageEmbed').then((m) => ({ default: m.WebpageEmbed })),
 )
 
-// The editor host's outside-pointerdown seam — document-level capture, the same phase the
-// editing-exit plugin listens on. Injected into the payload so engagement stays the component's
-// own while the host decides where outside events come from.
-const documentPointerSeam: PointerSeam = (onDown) => {
-  const h = (e: PointerEvent): void => onDown(e.target)
-  document.addEventListener('pointerdown', h, true)
-  return () => document.removeEventListener('pointerdown', h, true)
+/** The Edit Link commit — a whole-line re-aim: the line becomes the bare `![](url)` form (the
+ *  display layer derives the new title; an old hand label described a different page), and the
+ *  persisted height follows the tile to its new URL key, but only where the old key isn't shared
+ *  by a sibling tile and the new key isn't already someone's height. The gate is the detector
+ *  itself — composing and re-reading refuses any address the grammar can't hold (an unbalanced
+ *  `)`, an over-length target), which a plain URL-validity test would wave through and dissolve
+ *  the tile into raw text. Refusal leaves the picker standing; the same address just closes it. */
+function commitWebLink(view: EditorView, next: string): void {
+  const url = normalizeLinkUrl(next.trim())
+  const line = composeWebpageEmbedLine('', url)
+  if (loneWebpageEmbed(line)?.url !== url) return
+  const f = view.state.field(embedField)
+  const r = f.ranges.find(
+    (x): x is Extract<TileRange, { kind: 'webpage' }> =>
+      x.kind === 'webpage' && x.from === f.linkEdit,
+  )
+  if (!r || url === r.url) {
+    view.dispatch({ effects: setWebLinkEdit.of(null) })
+    return
+  }
+  let heights = f.heights
+  const oldShared = f.ranges.some((x) => x !== r && x.kind === 'webpage' && x.url === r.url)
+  if (heights[r.url] !== undefined && !oldShared && heights[url] === undefined) {
+    heights = { ...heights, [url]: heights[r.url] }
+    delete heights[r.url]
+  }
+  view.dispatch({
+    changes: { from: r.from, to: r.to, insert: line },
+    effects: [setWebLinkEdit.of(null), setEmbedHeights.of(heights)],
+    userEvent: 'input',
+  })
+  if (heights !== f.heights) view.state.facet(embedHost).saveHeights?.(heights)
 }
 
 class WebpageTileWidget extends WidgetType {
@@ -367,32 +391,6 @@ class WebpageTileWidget extends WidgetType {
       o.pageSurface === this.pageSurface &&
       o.linkEdit === this.linkEdit
     )
-  }
-
-  /** The re-aim: the whole line becomes the bare `![](url)` form — the display layer derives the
-   *  new title, and any old hand label drops since it described a different page. The persisted
-   *  height follows the tile to its new URL key. An invalid address refuses without dispatching
-   *  (the picker stays put); the same address is a no-op with no height churn. */
-  private commitLink(view: EditorView, next: string): void {
-    const url = normalizeLinkUrl(next.trim())
-    if (!isHttpLink(url)) return
-    const f = view.state.field(embedField)
-    const r = f.ranges.find((x) => x.kind === 'webpage' && x.from === f.linkEdit)
-    if (r?.kind !== 'webpage' || url === r.url) {
-      view.dispatch({ effects: setWebLinkEdit.of(null) })
-      return
-    }
-    let heights = f.heights
-    if (heights[r.url] !== undefined) {
-      heights = { ...heights, [url]: heights[r.url] }
-      delete heights[r.url]
-    }
-    view.dispatch({
-      changes: { from: r.from, to: r.to, insert: composeWebpageEmbedLine('', url) },
-      effects: [setWebLinkEdit.of(null), setEmbedHeights.of(heights)],
-      userEvent: 'input',
-    })
-    if (heights !== f.heights) view.state.facet(embedHost).saveHeights?.(heights)
   }
 
   get estimatedHeight(): number {
@@ -433,10 +431,9 @@ class WebpageTileWidget extends WidgetType {
               url: this.url,
               label: this.label,
               visible: this.pageSurface && dom._visible === true,
-              engageSeam: documentPointerSeam,
               refocusHost: () => view.focus(),
               linkEdit: this.linkEdit,
-              onLinkCommit: (next: string) => this.commitLink(view, next),
+              onLinkCommit: (next: string) => commitWebLink(view, next),
               onLinkDismiss: () => view.dispatch({ effects: setWebLinkEdit.of(null) }),
             }),
           ),
@@ -562,8 +559,15 @@ function buildTiles(
       range: { kind: 'webpage', from: w.from, to: w.to, url: w.url, label: w.label },
     })
   }
+  // A linkEdit position no tile answers to is stale — its tile was deleted or never formed — and
+  // held, it would spring the picker open unprompted on whatever tile later lands on it.
+  const openEdit =
+    linkEdit !== null &&
+    entries.some((e) => e.range.kind === 'webpage' && e.range.from === linkEdit)
+      ? linkEdit
+      : null
   if (entries.length === 0)
-    return { deco: Decoration.none, ranges: [], editing, heights, unformed, linkEdit }
+    return { deco: Decoration.none, ranges: [], editing, heights, unformed, linkEdit: openEdit }
   entries.sort((a, b) => a.from - b.from)
 
   const builder = new RangeSetBuilder<Decoration>()
@@ -590,7 +594,7 @@ function buildTiles(
     }
     ranges.push(en.range)
   }
-  return { deco: builder.finish(), ranges, editing, heights, unformed, linkEdit }
+  return { deco: builder.finish(), ranges, editing, heights, unformed, linkEdit: openEdit }
 }
 
 // Rebuild when the doc's embed set itself moved — read from the SAME cached scan every keystroke

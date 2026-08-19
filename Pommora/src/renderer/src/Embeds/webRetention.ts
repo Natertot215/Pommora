@@ -12,28 +12,24 @@ export interface WebRetention {
   hide(id: symbol, evict: () => void): void
   /** A guest re-entered visibility (or re-created its guest) — it is no longer retained. */
   show(id: symbol): void
-  /** The tile unmounted entirely. */
+  /** The tile unmounted, or its guest died — the slot frees without an eviction. */
   drop(id: symbol): void
   readonly hiddenCount: number
 }
 
-interface Retained {
-  at: number
-  evict: () => void
-}
-
 export function createRetention(cap: number): WebRetention {
-  const hidden = new Map<symbol, Retained>()
-  let tick = 0
+  // LRU by Map insertion order, the warm-cache idiom: every hide re-inserts, so the first key is
+  // always the least-recently-hidden.
+  const hidden = new Map<symbol, () => void>()
   return {
     hide(id, evict) {
-      hidden.set(id, { at: ++tick, evict })
+      hidden.delete(id)
+      hidden.set(id, evict)
       if (hidden.size <= cap) return
-      let oldest: [symbol, Retained] | null = null
-      for (const e of hidden) if (oldest === null || e[1].at < oldest[1].at) oldest = e
-      if (oldest === null) return
-      hidden.delete(oldest[0])
-      oldest[1].evict()
+      const oldest: symbol = hidden.keys().next().value as symbol
+      const evictOldest = hidden.get(oldest)
+      hidden.delete(oldest)
+      evictOldest?.()
     },
     show(id) {
       hidden.delete(id)
