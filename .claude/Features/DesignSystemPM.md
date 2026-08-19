@@ -188,10 +188,10 @@ The glyph ladder, the per-size control bundles, and the bare layout constants JS
 
 | Title                       | Token                                       | Value                                                                            |
 | --------------------------- | ------------------------------------------- | -------------------------------------------------------------------------------- |
-| Icon XS / SM / MD / LG / XL | `size.icon.*` · `--icon-xs`…`--icon-xl`     | `12px` · `14px` · `16px` · `18px` · `20px`                                       |
-| Button Small                | `size.control['button-small']`              | h `24px` · segment `20px` · padX `4px` · radius `8px` · icon SM                  |
-| Button Medium               | `size.control['button-medium']`             | h `28px` · segment `24px` · padX `5px` · radius `10px` · icon MD                 |
-| Button Large                | `size.control['button-large']`              | h `32px` · segment `28px` · padX `8px` · radius `12px` · icon MD                 |
+| Icon Ladder                 | `size.icon.*` · `--icon-*` · `ICON_PX`      | Eleven steps named for the type ramp — `largeTitle` `26px` through `subline` `10px` |
+| Button Small                | `size.control['button-small']`              | h `24px` · segment `20px` · padX `4px` · radius `8px` · icon `body`                  |
+| Button Medium               | `size.control['button-medium']`             | h `28px` · segment `24px` · padX `5px` · radius `10px` · icon `title3`                 |
+| Button Large                | `size.control['button-large']`              | h `32px` · segment `28px` · padX `8px` · radius `12px` · icon `title3`                 |
 | Disclosure Indent           | `DISCLOSURE_INDENT` · `--disclosure-indent` | `14px`                                                                           |
 | Fold Gutter                 | `FOLD_GUTTER` · `--fold-gutter-base`        | `20px`                                                                           |
 | Drop-Line Inset             | `DROP_LINE_INSET` · `--drop-line-inset`     | `2px`                                                                            |

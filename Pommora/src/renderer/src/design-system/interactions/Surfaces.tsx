@@ -35,7 +35,7 @@ export function ListSurface(): React.JSX.Element {
       <ul className="ix-vlist">
         {items.map((it) => (
           <Cell key={it.id} id={it.id} className="ix-row">
-            <Icon name="circle-dashed" size={14} />
+            <Icon name="circle-dashed" size="body" />
             <span>{it.label}</span>
           </Cell>
         ))}
@@ -110,7 +110,7 @@ function TableRow({ row }: { row: TableRowT }): React.JSX.Element {
   return (
     <tr ref={setNodeRef} style={style} {...handle}>
       <td>
-        <Icon name="file-text" size={14} /> {row.label}
+        <Icon name="file-text" size="body" /> {row.label}
       </td>
       <td className="ix-dim">{row.kind}</td>
       <td className="ix-dim">{row.context}</td>
@@ -265,7 +265,7 @@ export function ScrollSurface(): React.JSX.Element {
       <ul className="ix-vlist ix-scroll">
         {items.map((it) => (
           <Cell key={it.id} id={it.id} className="ix-row">
-            <Icon name="circle-dashed" size={14} />
+            <Icon name="circle-dashed" size="body" />
             <span>{it.label}</span>
           </Cell>
         ))}
@@ -299,12 +299,12 @@ function TreeNode({
       >
         {kids ? (
           <span className={`ix-caret${open ? ' open' : ''}`}>
-            <Icon name="chevron-right" size={14} />
+            <Icon name="chevron-right" size="body" />
           </span>
         ) : (
           <span className="ix-caret-gap" />
         )}
-        <Icon name={kids ? (open ? 'folder-open' : 'folder-closed') : 'file-text'} size={15} />
+        <Icon name={kids ? (open ? 'folder-open' : 'folder-closed') : 'file-text'} size="title3" />
         <span>{node.label}</span>
       </div>
       {kids && (

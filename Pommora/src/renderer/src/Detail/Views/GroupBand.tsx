@@ -40,7 +40,7 @@ export function resolveBandHead(
           <EntityIcon
             kind={source.kind === 'collection' ? 'collection' : 'set'}
             icon={source.icon}
-            size={13}
+            size="body"
           />
           {label}
         </span>
@@ -53,7 +53,7 @@ export function resolveBandHead(
       label: title,
       glyph: (
         <span className="group-name">
-          <EntityIcon kind="set" icon={setIcons.get(group.key)} size={13} />
+          <EntityIcon kind="set" icon={setIcons.get(group.key)} size="body" />
           {setPath ? (
             <RenamableTitle
               path={setPath}
@@ -141,7 +141,7 @@ export function resolveBandHead(
         label,
         glyph: (
           <span className="group-name">
-            {icon ? <Icon name={icon} size={13} /> : null}
+            {icon ? <Icon name={icon} size="body" /> : null}
             {dateLabel}
           </span>
         ),
@@ -233,7 +233,7 @@ export function GroupBand({
             >
               <Icon
                 name="chevron-right"
-                size={12}
+                size="control"
                 className={cx(twisty, !collapsed && twistyOpen)}
                 data-twisty
               />
@@ -268,7 +268,7 @@ export function GroupBand({
                 data-create
                 aria-label="New page in group"
               >
-                <Icon name="plus" size={13} />
+                <Icon name="plus" size="body" />
               </button>
             ) : null}
           </div>

@@ -203,5 +203,5 @@ function EmbedCrumbs({ id }: { id: string }): React.JSX.Element | null {
   const res = resolveWith(resolveIndexOf(tree), { kind: 'page', id })
   if (!res) return null
   const crumbs = [...res.path, { icon: res.icon, title: res.title }]
-  return <NavCrumbs path={crumbs} className="pgembed-crumbs crumb-two-tone" iconSize={11} />
+  return <NavCrumbs path={crumbs} className="pgembed-crumbs crumb-two-tone" iconSize="caption" />
 }

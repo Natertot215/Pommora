@@ -141,7 +141,7 @@ function Leaf({
       onContextMenu={ctxHandler(onContextMenu)}
       leading={chevronSpace ? <span className={twistySpacer} data-twisty-spacer /> : null}
     >
-      <Icon name={icon} size={16} className="row-icon" />
+      <Icon name={icon} size="title3" className="row-icon" />
       {rename ? <RowTitle path={rename.path} kind={rename.kind} title={title} /> : title}
     </MenuItem>
   )
@@ -276,7 +276,7 @@ function Disclosure({
       leading={
         <Icon
           name="chevron-right"
-          size={12}
+          size="control"
           className={cx(twisty, open && twistyOpen)}
           data-twisty
         />
@@ -284,7 +284,7 @@ function Disclosure({
     >
       {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: the surrounding row is the control; this narrows its hit area */}
       <span onClick={openView}>
-        <Icon name={open && openIcon ? openIcon : icon} size={16} className="row-icon" />
+        <Icon name={open && openIcon ? openIcon : icon} size="title3" className="row-icon" />
         {rename ? <RowTitle path={rename.path} kind={rename.kind} title={title} /> : title}
       </span>
     </MenuItem>
@@ -413,7 +413,11 @@ function GhostLeaf({ depth }: { depth: number }): React.JSX.Element {
           indent={depth}
           leading={<span className={twistySpacer} data-twisty-spacer />}
         >
-          <Icon name={entityIcon('page', undefined, defaultIcons)} size={16} className="row-icon" />
+          <Icon
+            name={entityIcon('page', undefined, defaultIcons)}
+            size="title3"
+            className="row-icon"
+          />
           New Page
         </MenuItem>
       </div>

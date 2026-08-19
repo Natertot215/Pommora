@@ -199,7 +199,11 @@ function PreviewWindowBody({
         <PreviewTabStrip
           index={resolveIndex}
           title={
-            <NavCrumbs path={crumbs} className="pgpreview-crumbs crumb-two-tone" iconSize={11} />
+            <NavCrumbs
+              path={crumbs}
+              className="pgpreview-crumbs crumb-two-tone"
+              iconSize="caption"
+            />
           }
         />
       }

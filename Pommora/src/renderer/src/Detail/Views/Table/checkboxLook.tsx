@@ -31,7 +31,7 @@ export function CheckboxGlyph({
       className={cx(chipBox, checked ? undefined : chipColor.default, className)}
       style={checkboxBoxStyle(checked, color)}
     >
-      {checked ? <Icon name="check" size={12} strokeWidth={3} /> : null}
+      {checked ? <Icon name="check" size="control" strokeWidth={3} /> : null}
     </span>
   )
 }

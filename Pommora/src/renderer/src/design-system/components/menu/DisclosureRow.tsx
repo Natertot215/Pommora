@@ -37,7 +37,7 @@ function twistyGlyph(kind: TwistyKind, open: boolean, onToggle: () => void): Rea
       return (
         <Icon
           name="chevron-right"
-          size={12}
+          size="control"
           className={cx(twisty, open && twistyOpen)}
           data-twisty
           onClick={(e) => {

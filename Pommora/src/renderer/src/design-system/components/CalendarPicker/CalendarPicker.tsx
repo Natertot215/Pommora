@@ -394,7 +394,7 @@ export function CalendarPicker({
     condensed?: { withYear: boolean },
   ): React.JSX.Element => (
     <div className={s.field} key={label}>
-      <Icon name="calendar" size={14} className={s.fieldIcon} />
+      <Icon name="calendar" size="body" className={s.fieldIcon} />
       <OverflowScroll className={s.fieldValue}>
         {k ? formatDateValue(k, condensed) : <span className={s.fieldEmpty}>--</span>}
       </OverflowScroll>
@@ -519,7 +519,7 @@ export function CalendarPicker({
     which: 'start' | 'end',
   ): React.JSX.Element => (
     <div className={cx(s.field, s.fieldTime)} key={label}>
-      <Icon name="clock" size={14} className={s.fieldIcon} />
+      <Icon name="clock" size="body" className={s.fieldIcon} />
       {mins !== null ? (
         <span className={s.timeSegs}>
           <span className={s.hmGroup}>
@@ -553,7 +553,7 @@ export function CalendarPicker({
   const optionRow = (label: string | number, selected: boolean): React.JSX.Element => (
     <span className={s.optionRow}>
       {label}
-      {selected && <Icon name="check" size={12} className={chosenMark} />}
+      {selected && <Icon name="check" size="control" className={chosenMark} />}
     </span>
   )
   const selectionMenu = (kind: 'month' | 'year'): React.JSX.Element | null =>
@@ -629,7 +629,7 @@ export function CalendarPicker({
               aria-label="Previous month"
               onClick={() => nav(-1)}
             >
-              <Icon name="chevron-left" size={16} />
+              <Icon name="chevron-left" size="title3" />
             </button>
             <span className={s.navSegment} aria-hidden />
             <button
@@ -638,7 +638,7 @@ export function CalendarPicker({
               aria-label="Next month"
               onClick={() => nav(1)}
             >
-              <Icon name="chevron-right" size={16} />
+              <Icon name="chevron-right" size="title3" />
             </button>
           </span>
         </div>

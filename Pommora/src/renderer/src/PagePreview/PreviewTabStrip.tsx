@@ -15,7 +15,7 @@ import './previewTabStrip.css'
 const BASE_MS = Number.parseInt(duration.base, 10)
 /** The toolbar strip's EXIT_MS twin. */
 const EXIT_MS = BASE_MS + Number.parseInt(duration.fast, 10)
-const TAB_ICON = 12
+const TAB_ICON = 'control'
 
 interface Entry {
   tab: PreviewTab
@@ -207,7 +207,7 @@ function PreviewTabItem({
             onClose()
           }}
         >
-          <Icon name="x" size={10} strokeWidth={3} />
+          <Icon name="x" size="caption" strokeWidth={3} />
         </button>
       )}
     </div>

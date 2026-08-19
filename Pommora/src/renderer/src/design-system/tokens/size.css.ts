@@ -4,8 +4,12 @@ import { createGlobalTheme } from '@vanilla-extract/css'
  * Size tokens — the single source for icon dimensions and control geometry.
  * Two scales, mirrored from Figma:
  *
- * - `icon.*` — the five-step glyph ladder. A named step routes here the
- *   way a color name routes to color.css.ts; `<Icon size="md" />` resolves to it.
+ * - `icon.*` — the glyph ladder, named one-to-one with the type ramp in
+ *   `typography.css.ts` so a glyph and the text beside it name the same step.
+ *   Eleven names over eight values, matching the ramp's own repeats.
+ *   `<Icon size="control" />` resolves to the var; `ICON_PX` carries the same
+ *   ladder as bare numbers for the few consumers that size an element rather
+ *   than a font (a profile photo's width/height).
  * - `control.button.*` — per-component size aliases (`button-small/medium/large`).
  *   Each is a geometry bundle whose `icon` field *references* the icon ladder rather
  *   than restating a dimension. The bundles are drawn values, not a formula: heights
@@ -15,14 +19,27 @@ import { createGlobalTheme } from '@vanilla-extract/css'
  *   hand until they're pulled.
  */
 
+/** The glyph ladder as bare numbers — the one place the pixel values live. Consumers that set a
+ *  font-size read the vars below; the few that size an element (a profile photo's width/height)
+ *  read these. */
+export const ICON_PX = {
+  largeTitle: 26,
+  title1: 22,
+  title2: 17,
+  title3: 15,
+  headline: 13,
+  body: 13,
+  callout: 12,
+  control: 12,
+  caption: 11,
+  footnote: 10,
+  subline: 10,
+} as const
+
 // The glyph ladder — its own theme so the control bundles can point at its vars.
 const iconScale = createGlobalTheme(':root', {
-  icon: {
-    xs: '12px',
-    sm: '14px',
-    md: '16px',
-    lg: '18px',
-    xl: '20px',
+  icon: Object.fromEntries(Object.entries(ICON_PX).map(([k, v]) => [k, `${v}px`])) as {
+    [K in keyof typeof ICON_PX]: string
   },
 })
 
@@ -37,7 +54,7 @@ const controlScale = createGlobalTheme(':root', {
       radius: '8px',
       segmentRadius: '4px',
       dividerHeight: '14px',
-      icon: iconScale.icon.sm,
+      icon: iconScale.icon.body,
     },
     'button-medium': {
       height: '28px',
@@ -46,7 +63,7 @@ const controlScale = createGlobalTheme(':root', {
       radius: '10px',
       segmentRadius: '5px',
       dividerHeight: '18px',
-      icon: iconScale.icon.md,
+      icon: iconScale.icon.title3,
     },
     'button-large': {
       height: '32px',
@@ -55,7 +72,7 @@ const controlScale = createGlobalTheme(':root', {
       radius: '12px',
       segmentRadius: '6px',
       dividerHeight: '14px',
-      icon: iconScale.icon.md,
+      icon: iconScale.icon.title3,
     },
   },
 })
@@ -79,7 +96,7 @@ export const DROP_LINE_INSET = 2
  *  it can be grabbed. */
 export const TILE_MIN_PX = 64
 
-/** One token object: `size.icon.md`, `size.control['button-large'].height`, … */
+/** One token object: `size.icon.control`, `size.control['button-large'].height`, … */
 export const size = {
   icon: iconScale.icon,
   control: controlScale.control,

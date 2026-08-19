@@ -519,7 +519,7 @@ export function TableView({
             })
           }}
         >
-          <Icon name="grip-horizontal" className="mdpm-tbl-grip" size="sm" strokeWidth={2} />
+          <Icon name="grip-horizontal" className="mdpm-tbl-grip" size="body" strokeWidth={2} />
         </div>
       ))}
       {geom.rows.map((r, j) => (
@@ -535,7 +535,7 @@ export function TableView({
             onMenu(j === 0 ? { kind: 'header', index: 0 } : { kind: 'row', index: j })
           }}
         >
-          <Icon name="grip-vertical" className="mdpm-tbl-grip" size="sm" strokeWidth={2} />
+          <Icon name="grip-vertical" className="mdpm-tbl-grip" size="body" strokeWidth={2} />
         </div>
       ))}
       <button
@@ -547,7 +547,7 @@ export function TableView({
         onMouseDown={swallowCaret}
         onClick={() => onAppend('col')}
       >
-        <Icon name="plus" size={14} />
+        <Icon name="plus" size="body" />
       </button>
       <button
         type="button"
@@ -557,7 +557,7 @@ export function TableView({
         onMouseDown={swallowCaret}
         onClick={() => onAppend('row')}
       >
-        <Icon name="plus" size={14} />
+        <Icon name="plus" size="body" />
       </button>
       {geom.cols.slice(0, -1).map((c, i) => (
         // biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only drag affordance; keyboard reordering is not implemented

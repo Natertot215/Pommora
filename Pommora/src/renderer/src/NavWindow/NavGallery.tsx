@@ -128,7 +128,7 @@ function GalleryCard({
         <div className="nav-gallery-thumb">
           {failed ? (
             <div className="nav-gallery-ph">
-              <EntityGlyph item={it} size={22} />
+              <EntityGlyph item={it} size="title1" />
             </div>
           ) : (
             <img src={src} loading="lazy" alt="" onError={() => setFailed(true)} />
@@ -137,10 +137,10 @@ function GalleryCard({
         </div>
         <div className="nav-gallery-text">
           <OverflowScroll className={cx('nav-gallery-title', text.footnote.emphasized)}>
-            <EntityGlyph item={it} size={13} className="nav-gallery-title-icon" />
+            <EntityGlyph item={it} size="body" className="nav-gallery-title-icon" />
             {it.title}
           </OverflowScroll>
-          <NavCrumbs path={it.path} className="nav-gallery-loc" iconSize={11} />
+          <NavCrumbs path={it.path} className="nav-gallery-loc" iconSize="caption" />
         </div>
       </div>
     </div>

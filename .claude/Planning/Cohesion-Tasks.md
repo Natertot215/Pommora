@@ -16,20 +16,18 @@ full Vitest suite.
 
 The ladder mirrors the type ramp one-to-one: eleven names over eight values, `footnote` the floor.
 
-- [ ] `size.css.ts` — the ladder becomes `largeTitle` 26 · `title1` 22 · `title2` 17 · `title3` 15 ·
+- [x] `size.css.ts` — the ladder becomes `largeTitle` 26 · `title1` 22 · `title2` 17 · `title3` 15 ·
       `headline` 13 · `body` 13 · `callout` 12 · `control` 12 · `caption` 11 · `footnote` 10 ·
-      `subline` 10
-- [ ] `theme-vars.css.ts` — bridge every step (five of the old five are bridged; the rest are not)
-- [ ] Rename the 85 sites already sitting on a step: 10 → `footnote`, 11 → `caption`, 12 → `control`,
-      13 → `body`, 15 → `title3`, 22 → `title1`, 26 → `largeTitle`
-- [ ] Move the 52 sites with no step: 14 → `body`, 16 → `title3`, 18 → `title2`, 20 → `title1`,
+      `subline` 10, with `ICON_PX` carrying the same values as numbers
+- [x] `theme-vars.css.ts` — every step bridged
+- [x] Rename the sites already sitting on a step
+- [x] Move the sites with no step: 14 → `body`, 16 → `title3`, 18 → `title2`, 20 → `title1`,
       24 → `title1`
-- [ ] Unify the two tab closes — `TabBar.tsx:397` and `PreviewTabStrip.tsx:210` do one job at two
-      sizes; both name the same step
-- [ ] `settingsPane.css.ts:53` — the private `ICON` map points at `size.icon.*`
-- [ ] `tabBar.css:14` — `--tab-icon` stops being declared in CSS and hardcoded in `TabBar.tsx`
-- [ ] `SettingsPane.tsx` and `PageMenu.tsx` — the two raw `lucide-react` imports go through the registry
-- [ ] Zero numeric `size={n}` remain outside the showcase
+- [x] Unify the two tab closes — both name `caption` (Nathan's call)
+- [x] `settingsPane.css.ts` — the private `ICON` map names ladder steps
+- [x] `tabBar.css` — `--tab-icon`, `--tab-x`, and `--tab-plus` retire; all three were unconsumed
+- [x] `SettingsPane.tsx` and `PageMenu.tsx` — the two raw `lucide-react` imports go through the registry
+- [x] Zero numeric `size={n}` remain outside the showcase
 
 ### Step 2 — CSS
 

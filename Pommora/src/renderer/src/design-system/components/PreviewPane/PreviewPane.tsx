@@ -240,7 +240,7 @@ export function PreviewPane({
         <div className="ppane-actions ppane-actions-lead">
           {onScan && (
             <button type="button" className="ppane-action" title={scanLabel} onClick={onScan}>
-              <Icon name="scan" size={13} />
+              <Icon name="scan" size="body" />
             </button>
           )}
           {lead}
@@ -251,7 +251,7 @@ export function PreviewPane({
         <div className="ppane-actions ppane-actions-trail">
           {actions && <div className="ppane-actions-flow">{actions}</div>}
           <button type="button" className="ppane-action" title="Close" onClick={onClose}>
-            <Icon name="x" size={14} />
+            <Icon name="x" size="body" />
           </button>
         </div>
       </div>
@@ -265,7 +265,7 @@ export function PreviewPane({
             aria-label={footerOpen ? 'Hide footer' : 'Show footer'}
             title={footerOpen ? 'Hide footer' : 'Show footer'}
           >
-            <Icon name={footerOpen ? 'chevron-down' : 'chevron-up'} size="md" />
+            <Icon name={footerOpen ? 'chevron-down' : 'chevron-up'} size="title3" />
           </button>
           <div className="ppane-footer">{footer}</div>
         </>

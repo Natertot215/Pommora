@@ -26,7 +26,7 @@ export function ValueRow<T extends string>({
   return (
     <MenuItem
       className={cx(flushTrailing, gp.pickerTone, tier === 'sub' && gp.subRow)}
-      leading={icon ? <Icon name={icon} size={14} /> : undefined}
+      leading={icon ? <Icon name={icon} size="body" /> : undefined}
       trailing={<PickerControl ariaLabel={label} value={value} options={options} onPick={onPick} />}
     >
       {tier === 'sub' ? <span className={gp.subLabel}>{label}</span> : label}

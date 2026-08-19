@@ -87,12 +87,12 @@ export function ChipRemoveButton({
   onRemove,
   className = chipRemove,
   label = 'Remove',
-  size = 11,
+  size = 'caption',
 }: {
   onRemove: () => void
   className?: string
   label?: string
-  size?: number
+  size?: React.ComponentProps<typeof Icon>['size']
 }): React.JSX.Element {
   return (
     <button

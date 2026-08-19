@@ -476,7 +476,7 @@ function RailTab({
       className={cx('settings-cat', text.body.standard, active === leaf.key && 'is-active')}
       onClick={() => onPick(leaf.key)}
     >
-      <Icon name={leaf.icon} size={14} />
+      <Icon name={leaf.icon} size="body" />
       <span>{leaf.label}</span>
     </button>
   )

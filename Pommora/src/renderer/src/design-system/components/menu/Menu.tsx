@@ -162,7 +162,7 @@ export const AccessoryButton = forwardRef<
   HTMLButtonElement,
   {
     icon: IconName
-    size: number
+    size: React.ComponentProps<typeof Icon>['size']
     ariaLabel: string
     box?: number
     onClick: () => void

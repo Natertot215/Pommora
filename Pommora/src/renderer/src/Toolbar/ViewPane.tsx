@@ -141,7 +141,7 @@ export function ViewPane({
           leading={
             <AccessoryButton
               icon="plus"
-              size={12}
+              size="control"
               box={20}
               create
               ariaLabel="New View"
@@ -153,7 +153,7 @@ export function ViewPane({
             // that swallows its own click.
             <AccessoryButton
               icon="dots"
-              size={12}
+              size="control"
               box={20}
               ariaLabel="More"
               disabled
@@ -170,7 +170,7 @@ export function ViewPane({
               <RowShell key={v.id} id={v.id}>
                 <MenuItem
                   className={activeId === v.id ? optionRing : undefined}
-                  leading={<Icon name={iconNameOr(v.icon, 'table')} size={16} />}
+                  leading={<Icon name={iconNameOr(v.icon, 'table')} size="title3" />}
                   trailing={
                     <button
                       type="button"
@@ -181,7 +181,7 @@ export function ViewPane({
                         setEditingId(v.id)
                       }}
                     >
-                      <Icon name="chevron-right" size={16} />
+                      <Icon name="chevron-right" size="title3" />
                     </button>
                   }
                   onClick={renamingId === v.id ? undefined : () => switchTo(v.id)}

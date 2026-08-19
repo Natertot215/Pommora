@@ -65,15 +65,23 @@ Pommora's standard semantic icons — the canonical glyph for each pane, propert
 
 Every glyph draws at a size taken from one ladder, so a symbol's scale is a named step rather than a per-surface number. A step sets the icon's `font-size` and the glyph renders at `1em`, which keeps stroke weight proportional and lets a symbol inherit its surrounding type when no step is named.
 
-| Step | Size |
-| ---- | ---- |
-| `xs` | 12px |
-| `sm` | 14px |
-| `md` | 16px |
-| `lg` | 18px |
-| `xl` | 20px |
+The ladder's names mirror the type ramp one for one, so a glyph and the text beside it name the same step. Eleven names carry eight values, repeating wherever the type ramp itself repeats.
 
-**SOURCE:** `design-system/tokens/size.css.ts` — the ladder, bridged to CSS variables in `theme-vars.css.ts`.
+| Step         | Size |
+| ------------ | ---- |
+| `largeTitle` | 26px |
+| `title1`     | 22px |
+| `title2`     | 17px |
+| `title3`     | 15px |
+| `headline`   | 13px |
+| `body`       | 13px |
+| `callout`    | 12px |
+| `control`    | 12px |
+| `caption`    | 11px |
+| `footnote`   | 10px |
+| `subline`    | 10px |
+
+**SOURCE:** `design-system/tokens/size.css.ts` — the ladder, bridged to CSS variables in `theme-vars.css.ts`. The same file exports the ladder as bare numbers for the few consumers that size an element rather than a font, such as a profile photo's width and height.
 
 #### Roles
 
@@ -100,7 +108,6 @@ The curated registry above is the app's own semantic vocabulary — the fixed gl
 ### Known Issues
 
 - **Two curated keys shadow real Lucide ids.** `table` and `lock` name Pommora's own glyphs in the registry and are also the ids of different Lucide glyphs the picker offers from the full set. Registry-first resolution renders Pommora's glyph instead of the one the picker cell showed. The resolution is open.
-- **Call sites name a scale in pixels rather than a ladder step.** Roles that share a meaning can therefore carry different sizes on different surfaces — the same close affordance draws at one scale on a toolbar tab and another on a preview tab — and the ladder holds no step for several of the scales in use.
 
 ### Pending
 

@@ -17,7 +17,7 @@ export function StatusCapsule({
 }): React.JSX.Element {
   return (
     <span className={cx(chipCapsule, chipColor[chipColorFor(color)])}>
-      <Icon name={statusGroupGlyph(group)} size={13} />
+      <Icon name={statusGroupGlyph(group)} size="body" />
     </span>
   )
 }
