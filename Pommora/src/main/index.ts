@@ -27,7 +27,14 @@ import { BUSY, NO_NEXUS, push, scopeGet, scopeSet, serveBridge } from './ipc'
 import type { Creator, MutateRequest, ContextTarget } from '@shared/mutate'
 import { WINDOW_BG } from '@shared/theme'
 import { dropLiveTree, getLiveTree, refreshTree } from './liveTree'
-import { installWebGuests, setHostZoom, setWebZoomFactor } from './webGuests'
+import {
+  installWebGuests,
+  setHostZoom,
+  setWebZoomFactor,
+  signOutWebAccount,
+  clearWebBrowsing,
+} from './webGuests'
+import { listWebAccounts, recordWebAccount } from './webAccounts'
 import { confirmBy, confirmMutation, confirmRegistry } from './mutatePatch'
 import { patchContainerFromDisk, patchSettingsFromDisk } from './watchPatch'
 import { runOpenRecord } from './record'
@@ -692,6 +699,46 @@ serveBridge(
       fn: (prefs: unknown) => {
         if (adopting()) return BUSY
         if (!writeValue('devicePrefs', packDevicePrefs(prefs))) return NO_NEXUS
+        return ok(null)
+      },
+    },
+
+    // Web accounts — rows in nexus.db plus the partition wipes. A wipe failure lands as the
+    // envelope's error with the row still standing; the row is only touched after the wipe.
+    'webAccounts:list': {
+      kind: 'envelope',
+      fn: () => {
+        if (sessionRoot() === null) return NO_NEXUS
+        return ok(listWebAccounts())
+      },
+    },
+
+    'webAccounts:add': {
+      kind: 'envelope',
+      fn: (url: unknown) => {
+        if (sessionRoot() === null) return NO_NEXUS
+        if (typeof url !== 'string') return fail('operation-failed', 'Invalid account address.')
+        const account = recordWebAccount(url)
+        return account ? ok(account) : fail('operation-failed', 'The address names no site.')
+      },
+    },
+
+    'webAccounts:signOut': {
+      kind: 'envelope',
+      fn: async (domain: unknown) => {
+        if (sessionRoot() === null) return NO_NEXUS
+        if (typeof domain !== 'string' || !domain)
+          return fail('operation-failed', 'Invalid account domain.')
+        await signOutWebAccount(domain)
+        return ok(null)
+      },
+    },
+
+    'webAccounts:clearBrowsing': {
+      kind: 'envelope',
+      fn: async () => {
+        if (sessionRoot() === null) return NO_NEXUS
+        await clearWebBrowsing()
         return ok(null)
       },
     },
