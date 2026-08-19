@@ -85,7 +85,12 @@ function useHosts(): Host[] {
     const paths = new Set<string>()
     if (selection.kind === 'page') {
       hosts.push({ tabId: activeTabId })
-      paths.add(selection.path)
+      // The page this surface will settle on is its TAB's, not the selection's: a cold switch holds
+      // the outgoing page in the store while the tab has already moved, and reading the selection
+      // there would count the page the parked tab owns as the shown one — dropping the very
+      // surface being parked, guest and all.
+      const target = tabs.find((t) => t.id === activeTabId)?.target
+      paths.add(target?.kind === 'page' ? target.path : selection.path)
     }
     // The budget counts parked surfaces alone, so the knob means the same number whether or not
     // the shown surface is itself a page.

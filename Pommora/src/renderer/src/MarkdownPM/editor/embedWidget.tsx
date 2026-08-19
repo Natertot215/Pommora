@@ -610,10 +610,13 @@ export const embedField = StateField.define<EmbedTiles>({
     const selMoved = !tr.startState.selection.eq(tr.state.selection)
     const formationDue = value.unformed > 0 && selMoved
     // Leaving the seated line IS the submission: the seat clears, and the line re-forms around
-    // whatever address it now holds.
-    if (seat !== null && selMoved && seat <= tr.state.doc.length) {
-      const line = tr.state.doc.lineAt(seat)
-      if (!selectionOn(tr.state, line.from, line.to)) seat = null
+    // whatever address it now holds. The seat also dies with its line — one that was deleted or
+    // is no longer an address has nothing to hold open, and a stale position would hold whatever
+    // tile later lands on it raw.
+    if (seat !== null) {
+      const line = seat <= tr.state.doc.length ? tr.state.doc.lineAt(seat) : null
+      if (!line || line.from !== seat || !loneWebpageEmbed(line.text)) seat = null
+      else if (selMoved && !selectionOn(tr.state, line.from, line.to)) seat = null
     }
     const restored = tr.isUserEvent('undo') || tr.isUserEvent('redo')
     if (!tr.docChanged) {

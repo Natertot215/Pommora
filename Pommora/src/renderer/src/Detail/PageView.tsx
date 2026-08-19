@@ -33,11 +33,11 @@ export function PageView({
    *  whichever tab is active now. */
   detail?: PageDetail
 }): React.JSX.Element {
-  const storeStatus = useSession((s) => s.pageStatus)
-  const storeDetail = useSession((s) => s.pageDetail)
-  const pageDetail = detail ?? storeDetail
-  const pageStatus = detail ? 'ready' : storeStatus
-  const pageError = useSession((s) => s.pageError)
+  // A surface carrying its own page reads nothing of the shown one — each selector answers from the
+  // prop instead, so a navigation re-renders only the surface it actually changed.
+  const pageDetail = useSession((s) => detail ?? s.pageDetail)
+  const pageStatus = useSession((s) => (detail ? 'ready' : s.pageStatus))
+  const pageError = useSession((s) => (detail ? undefined : s.pageError))
   const submitRename = useSession((s) => s.submitRename)
   const mutate = useSession((s) => s.mutate)
   const tree = useSession((s) => s.tree)
