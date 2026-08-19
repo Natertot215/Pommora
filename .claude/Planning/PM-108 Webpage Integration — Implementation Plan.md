@@ -181,9 +181,9 @@ Constraints: `sandbox`/`contextIsolation` stay on; guests are validated at attac
 **Failure half:** a `will-attach-webview` with a hostile `src` (`file:`, `javascript:`) — the attach is denied outright (`event.preventDefault()`); the renderer's own scheme gate (Task 6) makes this unreachable from app code, so this is the trust-boundary backstop, tested by unit where separable and asserted in review otherwise.
 
 **Steps:**
-- [ ] Write the module; wire install + the channel; typecheck green (main changes need a dev-process restart to observe).
-- [ ] Extend the clipping spike's harness (scratchpad) to point at the dev build's window: attach a webview from devtools, confirm the forced partition and the denied preload via `will-attach-webview` logging; confirm a guest `window.open` arrives on `web:popup` and no OS window appears.
-- [ ] Gates green. Commit: `feat(main): the web-guest lifecycle module and the pommora-web partition`
+- [x] Write the module; wire install + the channel; typecheck green (main changes need a dev-process restart to observe).
+- [x] Spike harness ran the real module (esbuild bundle) on a spike window — the dev build's window holds Nathan's single-instance lock, so the module was tested standalone instead: partition forced+shared (session identity), wrong-partition attach denied, hostile preload attribute stripped, guest `window.open` arrived on `web:popup` with zero OS windows, `setHostZoom(1.5)` reflected in the guest.
+- [x] Gates green. Commit: `feat(main): the web-guest lifecycle module and the pommora-web partition`
 
 #### Gate 2 — guests are governed before any ships
 - [ ] Gates green. Review + simplification against the range. Concerns fixed or ruled.
@@ -460,12 +460,12 @@ This task also lands the `web:popup` listener (the renderer app root subscribes 
 ## Implementation Log
 
 ### Progress
-- [x] **Phase 1** — Menu & Built-In Formatting · base `f9ca6aa8` · simplify `c04cca08` · review folds `(gate commit)`
+- [x] **Phase 1** — Menu & Built-In Formatting · base `f9ca6aa8` · simplify `c04cca08` · review folds `4e5116e2`
   - [x] Task 1 — Menu reorder · `4a754b3c`
   - [x] Task 2 — Auto-format built-in · `f46f7e6f`
   - [x] Task 3 — Destination guard · `8869f7f1`
-- [ ] **Phase 2** — Main-Process Web Foundation · base ``
-  - [ ] Task 4 — Guest lifecycle + partition · ``
+- [ ] **Phase 2** — Main-Process Web Foundation · base `4e5116e2`
+  - [x] Task 4 — Guest lifecycle + partition · ``
 - [ ] **Phase 3** — The Webpage Tile · base ``
   - [ ] Task 5 — The grammar · ``
   - [ ] Task 6 — Detection, claim, formation gate · ``
@@ -493,6 +493,8 @@ This task also lands the `web:popup` listener (the renderer app root subscribes 
 - Pre-existing, out of range: ⌘K with the caret inside an empty link's `()` writes a second `[]()` (`toggleLink` finds links via the tokenizer, which refuses empty halves). Same class the guard fixed for paste; candidate fixlet beside Task 5.
 ### Deviations
 - Task 2's control count read 7, not the step's 5 — the plan's Dead Vocabulary header already said 7; the step's number was stale. ConnectionsPM holds no toggle-gated paste sentence, so Made False row 3 rewrote MarkdownPM alone. The `when` removal also collapsed `LeafRow` into `RowControl` (it became a pass-through).
+- **Task 4, spike-proven:** `will-attach-webview` cannot rewrite `params` — a forced partition and `allowpopups` set there never reach the attach. The plan's named fallback is the shipped shape: every surface carries `partition` (defaulting to `WEB_PARTITION`) **and `allowpopups`** as attributes, and the hook is a validator that denies a wrong-partition or hostile-src attach outright. Tasks 7/14/18 inherit the attribute pair.
+- **Task 4:** `applyDefaultZoom` was not the only `setZoomFactor` writer — ⌘0's menu click was a fourth, in-place. Every host-zoom write now flows through `setHostZoom`/`stepHostZoom` (the guest-sync seam); ⌘+/⌘− are de-roled with a hidden `⌘=` alias item preserving the native role's unshifted chord.
 ### Lessons
 ### Sequenced After
 - Session Roaming (passphrase-encrypted cookie vault) — the spec's committed follow-up cycle.

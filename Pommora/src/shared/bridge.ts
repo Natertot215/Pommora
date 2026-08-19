@@ -345,4 +345,7 @@ export interface Pushes {
   'open-in-preview': ContextTarget
   'nav:changed': Omit<NavigationState, 'recents'>
   'nexus:changed': NexusTree
+  // A guest webview's window.open, denied main-side and handed to the renderer's one open-link
+  // adjudicator — popups and link clicks can never route differently.
+  'web:popup': string
 }

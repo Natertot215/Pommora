@@ -27,6 +27,7 @@ import { BUSY, NO_NEXUS, push, scopeGet, scopeSet, serveBridge } from './ipc'
 import type { Creator, MutateRequest, ContextTarget } from '@shared/mutate'
 import { WINDOW_BG } from '@shared/theme'
 import { dropLiveTree, getLiveTree, refreshTree } from './liveTree'
+import { installWebGuests, setHostZoom } from './webGuests'
 import { confirmBy, confirmMutation, confirmRegistry } from './mutatePatch'
 import { patchContainerFromDisk, patchSettingsFromDisk } from './watchPatch'
 import { runOpenRecord } from './record'
@@ -257,7 +258,7 @@ async function applyDefaultZoom(win: BrowserWindow): Promise<void> {
   // screen never inherits a prior nexus's host zoom (Electron zoom is per-render-host, shared).
   const root = sessionRoot()
   const scale = root ? await readDefaultViewScale(root) : VIEW_SCALE_DEFAULT
-  if (!win.isDestroyed()) win.webContents.setZoomFactor(viewScaleZoom(scale))
+  if (!win.isDestroyed()) setHostZoom(win.webContents, viewScaleZoom(scale))
 }
 
 function createWindow(): void {
@@ -277,6 +278,9 @@ function createWindow(): void {
       sandbox: true,
       contextIsolation: true,
       nodeIntegration: false,
+      // Guest webviews for the web-embed surfaces — every attach is validated and re-homed onto
+      // the shared partition by installWebGuests; nothing else about the window loosens.
+      webviewTag: true,
     },
   })
 
@@ -284,6 +288,7 @@ function createWindow(): void {
   // finally() guarantees show() even if the (error-swallowing) read stalls.
   win.on('ready-to-show', () => void applyDefaultZoom(win).finally(() => win.show()))
   installEditorContextMenu(win)
+  installWebGuests(win)
   mainWindow = win
   win.on('closed', () => {
     if (mainWindow === win) mainWindow = null

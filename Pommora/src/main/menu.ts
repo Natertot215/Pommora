@@ -6,9 +6,15 @@ import { push } from './ipc'
 import { dropLiveTree } from './liveTree'
 import { pruneRecents, sessionRoot } from './session'
 import { readDefaultViewScale } from './settings'
+import { setHostZoom, stepHostZoom } from './webGuests'
 import { VIEW_SCALE_DEFAULT, viewScaleZoom } from '@shared/types'
 
 type AdoptFn = (path: string) => Promise<void>
+
+const zoomStep = (win: BrowserWindow, dir: 1 | -1) => (): void => {
+  const w = BrowserWindow.getFocusedWindow() ?? win
+  if (!w.isDestroyed()) stepHostZoom(w.webContents, dir)
+}
 
 // Renderer-driven items send a 'menu:action' string the renderer handles; main-side items
 // (Open Recent, Reveal, Reload) act here. Rebuilt whenever the session or recents change.
@@ -124,11 +130,21 @@ export async function installAppMenu(win: BrowserWindow, adopt: AdoptFn): Promis
             const root = sessionRoot()
             const scale = root ? await readDefaultViewScale(root) : VIEW_SCALE_DEFAULT
             const w = BrowserWindow.getFocusedWindow() ?? win
-            if (!w.isDestroyed()) w.webContents.setZoomFactor(viewScaleZoom(scale))
+            if (!w.isDestroyed()) setHostZoom(w.webContents, viewScaleZoom(scale))
           },
         },
-        { role: 'zoomIn' },
-        { role: 'zoomOut' },
+        // De-roled: the native zoom roles are handled inside Chromium with no JS hook, which
+        // would leave guest webviews at the old scale on the first ⌘+. The hidden item keeps the
+        // role's unshifted ⌘= alias alive.
+        { label: 'Zoom In', accelerator: 'CmdOrCtrl+Plus', click: zoomStep(win, 1) },
+        {
+          label: 'Zoom In',
+          accelerator: 'CmdOrCtrl+=',
+          click: zoomStep(win, 1),
+          visible: false,
+          acceleratorWorksWhenHidden: true,
+        },
+        { label: 'Zoom Out', accelerator: 'CmdOrCtrl+-', click: zoomStep(win, -1) },
         { type: 'separator' },
         { role: 'togglefullscreen' },
         { role: 'toggleDevTools' },
