@@ -62,21 +62,29 @@ export function WebpageEmbed({
   // The guest exists: live while visible, retained hidden otherwise. Eviction and failure clear
   // it — the tile falls back to a face and mounts a fresh guest on its next visibility entry.
   const [guest, setGuest] = useState(visible)
+  // The guest's last frame, painted on the face so a clipped tile reads as a paused page rather
+  // than a blank. `parting` holds the guest on screen for the capture — the exit fires at a
+  // near-imperceptible clip, and a hidden guest can no longer be captured.
+  const [snap, setSnap] = useState<string | null>(null)
+  const [parting, setParting] = useState(false)
   const ref = useRef<HTMLElement | null>(null)
   const rootRef = useRef<HTMLDivElement | null>(null)
   const guestRef = useRef(guest)
   guestRef.current = guest
+  const visibleRef = useRef(visible)
+  visibleRef.current = visible
   // Held in a ref so the visibility effect never re-runs on the host's render churn — a re-run
   // of the hidden branch would re-stamp this guest's retention recency for no reason.
   const refocusRef = useRef(refocusHost)
   refocusRef.current = refocusHost
   const id = useRef(Symbol('webguest')).current
 
-  // A different site: the old guest's state, load, and engagement all described another page.
+  // A different site: the old guest's state, load, engagement, and frame all described another page.
   useEffect(() => {
     setFailed(false)
     setLoaded(false)
     setEngaged(false)
+    setSnap(null)
   }, [url])
 
   // An evicted or torn-down guest must load again before the catcher hands it interaction.
@@ -93,15 +101,39 @@ export function WebpageEmbed({
       setFailed(false)
       return
     }
-    // The clip transition: disengage, hand focus back if the guest held it, and retain the
-    // hidden guest under the cap.
+    // The clip transition: disengage, hand focus back if the guest held it, capture the parting
+    // frame, and retain the hidden guest under the cap.
     setEngaged(false)
     const el = ref.current
     if (el && document.activeElement === el) {
       el.blur()
       refocusRef.current?.()
     }
-    if (guestRef.current) webGuestRetention.hide(id, () => setGuest(false))
+    if (!guestRef.current) return
+    const retain = (): void => {
+      setParting(false)
+      // A re-entry mid-capture means the guest never went hidden — nothing to retain.
+      if (!visibleRef.current && guestRef.current) webGuestRetention.hide(id, () => setGuest(false))
+    }
+    const wv = el as (HTMLElement & { capturePage?: () => Promise<{ toDataURL(): string }> }) | null
+    if (!wv?.capturePage) {
+      retain()
+      return
+    }
+    setParting(true)
+    let settled = false
+    const settle = (dataUrl: string | null): void => {
+      if (settled) return
+      settled = true
+      if (dataUrl) setSnap(dataUrl)
+      retain()
+    }
+    wv.capturePage().then(
+      (img) => settle(img.toDataURL()),
+      () => settle(null),
+    )
+    // The deadline that stops a hung capture from keeping the clipped guest painted.
+    setTimeout(() => settle(null), 200)
   }, [visible, id])
 
   useEffect(() => () => webGuestRetention.drop(id), [id])
@@ -143,8 +175,10 @@ export function WebpageEmbed({
   })
 
   const live = guest && !failed
-  // The guest is on screen rather than retained behind the face.
-  const shown = live && visible
+  // The guest is on screen rather than retained behind the face; a parting guest stays painted
+  // until its frame is captured.
+  const onScreen = visible || parting
+  const shown = live && onScreen
   return (
     <div className="wpembed" ref={rootRef}>
       {live ? (
@@ -155,7 +189,7 @@ export function WebpageEmbed({
           src={url}
           partition={partition}
           allowpopups
-          className={cx(!visible && 'is-retained', !engaged && 'is-inert')}
+          className={cx(!onScreen && 'is-retained', !engaged && 'is-inert')}
         />
       ) : null}
       {!shown ? (
@@ -164,6 +198,8 @@ export function WebpageEmbed({
             <span className={cx('wpembed-face-domain', text.footnote.standard)}>
               {linkDomain(url)}
             </span>
+          ) : snap ? (
+            <img className="wpembed-face-snap" src={snap} alt="" />
           ) : null}
         </div>
       ) : null}
