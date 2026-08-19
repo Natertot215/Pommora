@@ -8,7 +8,7 @@ Page Preview
 ├── Routing In
 ├── The Browser Flavor
 ├── The Hover Card
-├── The NavWindow Flavor
+├── The NavWindow Model
 ├── The Inspector
 ├── The Token Contract
 └── Pending
@@ -53,7 +53,7 @@ Resting on a resolved connection past a short intent delay raises the hover prev
 
 The card has a second flavor: a markdown link naming a website raises the same card as a live, non-interactive render of the site itself (→ [[WebviewPM]]). The site card opens on the dwell wearing a quiet cover that fades once the page has painted; a page that fails or never paints closes the card whole. The guest fills the card edge-to-edge, a shield above it keeps every pointer event on the card's own lifecycle — passing down the wheel alone, so the site scrolls without becoming clickable — and the same anchor, leave, linger, and resize behavior carries over unchanged.
 
-Content scrolls within the card, headings fold on click, and the caret never enters. It anchors to the link through scroll and closes on hover-off, Escape, navigation, or the link leaving view; the Settings ▸ Pages linger slider extends the stay (→ [[ConfigurationPM]]). It resizes from its right and bottom edges to one per-machine remembered size. 
+Content scrolls within the card, headings fold on click, and the caret never enters. It anchors to the link through scroll and closes on hover-off, Escape, navigation, or the link leaving view; the Settings ▸ Pages linger slider extends the stay (→ [[ConfigurationPM]]). It resizes from its right and bottom edges to one per-machine remembered size.
 
 ### The NavWindow Model
 
@@ -69,7 +69,11 @@ Its body is the front-matter inspector, properties only — no title or banner r
 
 ### The Token Contract
 
-The window root (`.ppane`) declares its vocabulary as a scoped `--ppane-*` family — the toolbar height, the two side-pane widths, the footer height, and the flow/squeeze calculations that move the trailing controls as a side pane opens. Hosts retune legally by declaring on their own host class layered onto the same root: the NavWindow widens the trailing gap and sets its reveal distances, the floating preview supplies the footer height, and the component itself sets the measured widths inline. The window re-declares the `--io`/`--io-l` openness drivers to zero on its own root, firewalling the shell's inspector progress out of every floating window, and the flow-reveal property is registered non-inheriting, so a reveal distance must sit on the element that animates it. Exact values live in `design-system/components/PreviewPane/previewPane.css`.
+**SOURCE:** `Pommora/src/renderer/src/design-system/components/PreviewPane/previewPane.css`
+
+The window states its own dimensions — its toolbar height, the width of each side pane, its footer height, and how far the trailing controls slide aside as a pane opens. A host that embeds the window may retune any of them for itself without editing the window: the navigation window widens the trailing gap and sets its own reveal distances, and the floating preview supplies its footer height.
+
+A floating window is sealed off from the main shell's own pane geometry, so opening the inspector behind it never shifts anything inside it.
 
 ### Pending
 

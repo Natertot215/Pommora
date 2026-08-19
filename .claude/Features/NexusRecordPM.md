@@ -44,7 +44,7 @@ A bundle is a folder holding a record; the name alone decides nothing, since `.t
 
 #### The Sweep
 
-The delete's unlink sweep holds the record's dependencies. It never strips a passenger — a root under the delete target is leaving with its owner, and its keys stay true in the trash. It returns what it removed — touched, skipped, admission-refused, and the captured values per root, discriminated by which id key the root carries. One page can never fail the fan-out around it: a page that fails admission or cannot round-trip its frontmatter is left byte-identical and named as refused, which is how the record admits the sweep was thin. 
+The delete's unlink sweep holds the record's dependencies. It never strips a passenger — a root under the delete target is leaving with its owner, and its keys stay true in the trash. It returns what it removed — touched, skipped, admission-refused, and the captured values per root, discriminated by which id key the root carries. One page can never fail the fan-out around it: a page that fails admission or cannot round-trip its frontmatter is left byte-identical and named as refused, which is how the record admits the sweep was thin.
 
 #### Resolution & Restore
 

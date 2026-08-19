@@ -60,7 +60,7 @@ A construct's markers are **revealed** (literal editable text) when the caret is
 - **Markdown links** (`[text](target)`) — label-only at rest, the target resolved once for all of the editor, the cell renderer, and the click path. A target naming a Page reads and behaves as a connection; one naming a website carries the link color, underline, and navigation; one naming neither dims with its brackets shown. Targets carry balanced parentheses, as CommonMark's link destination does, so an address holding them survives however it was authored.
 - **A link's own menu** — right-clicking a link that names a website offers its two halves first, each selected rather than merely reached, since each is a thing you replace outright: **Rename** for the words shown, **Edit Link** for the address behind them. Then **Copy Link**, and **Format ▸**, which rewrites the label as the whole address, its bare domain, or the site's page title. Below a separator sit the two ways to be rid of it: **Remove Link** leaves the label behind as prose, and **Delete** takes the whole link. Format writes the label and nothing else — no per-link state is stored anywhere, so a link written in one form is indistinguishable from the same words typed by hand, and Page Title defers to the fetch exactly as a paste in that form does. A read-only surface is offered Copy Link alone.
 - **Pasted links** — an address pasted into any editor surface is written as a link rather than as literal text, in one of three forms: the whole address, its bare domain, or the site's page title. Which form is a per-Nexus default (→ [[ConfigurationPM]] §Files & Links), and a knob decides whether pasting over selected text turns that text into the link instead of replacing it. Only an address with an explicit scheme qualifies — a filename or a version number pasted from elsewhere stays the text it was — and position matters as much as shape: inside a code span or fence, or inside another link's `( )`, the address lands as the literal text those places are made of. Page Title writes the domain immediately and swaps the fetched title in when it arrives, tracking the span it inserted so the swap can never land on a different link or over words since edited by hand; a title that arrives after the surface closes is simply dropped. **⌘⇧V does the opposite of ⌘V**, on whichever axis a selection puts in question: with text selected it reverses whether the paste wraps it, and with none it pastes the address as the literal text a plain paste no longer leaves.
-- **The caret** — a drawn caret with a smooth symmetric fade and a custom I-beam cursor, an app-wide identity owned by the motion system. 
+- **The caret** — a drawn caret with a smooth symmetric fade and a custom I-beam cursor, an app-wide identity owned by the motion system.
 
 ### Tables
 
@@ -113,7 +113,7 @@ Right-click pops the OS-native menu, built in the main process off the `context-
 
 ### Design System
 
-The editor's entire design vocabulary lives in one stylesheet as scoped custom-property families — there is no separate theme module (`MarkdownPM/tokens/` is the *markdown tokenizer*, not design tokens). The editor doesn't consume the type ramp: everything scales in `em` multiples off its own zoom root. 
+The editor's entire design vocabulary lives in one stylesheet as scoped custom-property families — there is no separate theme module (`MarkdownPM/tokens/` is the *markdown tokenizer*, not design tokens). The editor doesn't consume the type ramp: everything scales in `em` multiples off its own zoom root.
 
 **SOURCE:** `Pommora/src/renderer/src/MarkdownPM/Styles.css`
 
@@ -189,6 +189,7 @@ One pastel recipe: `color-mix(in srgb, var(--tok-solid) var(--tok-tint), var(--s
 - **A selection paints around a revealed connection's link glyph rather than across it** — the browser highlights text and steps over a decorative box holding none, leaving a notch mid-link. Giving the glyph an invisible space to carry the highlight worked in isolation and not in the editor.
 - **Codeblock syntax cannot be rendered when on the first line of a callout** — an accepted limitation to handle later. The fence grammar admits only whitespace and `>` levels before its marker run, so a fence authored on the head line sits behind the `[!type]` tag and reads as prose.
 - A mid-drag column hide/show or watcher view-push is silently reverted by a column drop's persist (`reorderColumn` reads grab-time state) — reachable only by mutating columns while holding a drag; a ref-read at commit fixes it if it's ever felt.
+
 ### Pending
 
 - **Image + LaTeX render seams** — LaTeX is detected and styled only, and the wiki-image form rests inert: an image-style `![[file.png]]` target fails page resolution and renders nothing. The bang-paren form is spoken for — `![Label](url)` alone on a line is a webpage embed (→ [[WebviewPM]]) — so a future image renderer arrives through the wiki form.

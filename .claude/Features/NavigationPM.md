@@ -65,7 +65,7 @@ The footer carries a breadcrumb of the active tab's path, extended with a dimmed
 
 ### State Persistence
 
-What Pommora remembers, and for how long. Four tiers, told by where a thing is written rather than by how important it is: the Nexus's own files travel with it, its database stays on the machine that made it, the app's own preferences sit outside every Nexus, and everything else lasts the run. 
+What Pommora remembers, and for how long. Four tiers, told by where a thing is written rather than by how important it is: the Nexus's own files travel with it, its database stays on the machine that made it, the app's own preferences sit outside every Nexus, and everything else lasts the run.
 
 **Travels With The Nexus.** Written into `.nexus/` files, so a synced or copied Nexus arrives with all of it, and a hand edit from outside is read back live.
 
@@ -78,7 +78,7 @@ What Pommora remembers, and for how long. Four tiers, told by where a thing is w
 | Saved views and what a container is                 | Each container's own sidecar. | Editing the view; deleting the container                                        |
 | Page bodies, frontmatter, and their property values | The Markdown files themselves | Editing the page                                                                |
 
-**Stays On This Machine, Inside The Nexus.** `nexus.db` sits beside those files and travels with a moved Nexus, but never syncs — it holds what is true of this computer's session rather than of the content. 
+**Stays On This Machine, Inside The Nexus.** `nexus.db` sits beside those files and travels with a moved Nexus, but never syncs — it holds what is true of this computer's session rather than of the content.
 
 | State                                          | What it remembers                                                                                           | What clears it                                                                                   |
 | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |

@@ -30,7 +30,7 @@ The schema editor — create properties, rename, reorder, change a type, and see
 
 ### Open-In Mode
 
-Each Collection carries an `open_in` field that determines where its Pages open — the main detail pane or the floating [[PagePreviewPM|Page Preview]] window — defaulting to full-page when absent. Container-view title clicks and sidebar rows both honor it; ⌘-click is always the explicit full-page bypass to a new tab. The field is set from the SettingsPane's Configuration leaf. 
+Each Collection carries an `open_in` field that determines where its Pages open — the main detail pane or the floating [[PagePreviewPM|Page Preview]] window — defaulting to full-page when absent. Container-view title clicks and sidebar rows both honor it; ⌘-click is always the explicit full-page bypass to a new tab. The field is set from the SettingsPane's Configuration leaf.
 
 ### Move Semantics
 

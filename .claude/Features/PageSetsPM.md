@@ -22,11 +22,11 @@ Role is computed from depth at render time and never stored — the same folder 
 
 ### The Depth-1 View Rule
 
-Only a depth-1 Set is offered configurable [[ViewsPM|views]], and only it mints an active view on open. Eligibility is a render-time check against the folder tree, so it's move-safe — reparent a Set deeper and its views stop being offered; lift it back to depth-1 and they return. 
+Only a depth-1 Set is offered configurable [[ViewsPM|views]], and only it mints an active view on open. Eligibility is a render-time check against the folder tree, so it's move-safe — reparent a Set deeper and its views stop being offered; lift it back to depth-1 and they return.
 
 ### Selection + Navigation
 
-A selected depth-1 Set opens its own scoped view and carries its path for rename-safe reconciliation; a Sub-Set's row only toggles its disclosure. The depth rule is the sidebar's alone — nav search indexes every Set at any depth, and a `set` selection mounts the container view whatever its depth. 
+A selected depth-1 Set opens its own scoped view and carries its path for rename-safe reconciliation; a Sub-Set's row only toggles its disclosure. The depth rule is the sidebar's alone — nav search indexes every Set at any depth, and a `set` selection mounts the container view whatever its depth.
 
 ### Moves + CRUD
 

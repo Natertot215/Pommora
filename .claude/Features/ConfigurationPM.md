@@ -1,4 +1,5 @@
 ## Configuration
+
 ```
 Configuration
 ├── Settings
@@ -25,7 +26,7 @@ Configuration reads at three scopes. A **[[ArchitecturePM|Nexus]]** is configure
 
 ### Settings
 
-The Nexus' primary settings are placed on a floating window summoned from the sidebar ribbon's settings glyph, mounted on the shared **PreviewPane** surface — inheriting its glass shell, geometry, and dismissal behavior. 
+The Nexus' primary settings are placed on a floating window summoned from the sidebar ribbon's settings glyph, mounted on the shared **PreviewPane** surface — inheriting its glass shell, geometry, and dismissal behavior.
 
 #### General
 
@@ -141,7 +142,7 @@ A Collection's own configuration, stored in its `_pagecollection.json` sidecar a
 | --------------- | ---------------- | -------------------------------------------------------------------- | ---------------------------- |
 | Open In | `open_in` | How a page opens from its container. | **Full Page** · Page Preview |
 | Show Title | `view_button` | Whether the view dropdown button displays the view's name alongside its glyph. | **Icon** · Labeled |
-| View Style | `view_style` | How the view switcher presents itself — unimplemented | **Dropdown** · Toolbar |
+| View Style | `view_style` | How the view switcher presents itself | **Dropdown** · Toolbar |
 
 The sidecar's remaining fields are structure rather than configuration: the entity's ID and icon, its banner, its page and set ordering, its property assignment list, and its saved views (→ [[ViewsPM]]).
 
