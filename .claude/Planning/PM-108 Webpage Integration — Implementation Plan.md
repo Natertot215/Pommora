@@ -474,15 +474,23 @@ This task also lands the `web:popup` listener (the renderer app root subscribes 
 - [ ] **Phase 4** — Engagement & Retention · base `cb3546d7` · simplify `c50463c0` (+ riders in Nathan's `b3dbc3ff`) · review folds `438e397a` · *(walkthrough = Nathan's, bundled with Phase 3's)*
   - [x] Task 10 — Engagement + retention cap · `ed442782`
   - [x] Task 11 — Hover-title + Edit Link arm · `19388798`
-- [ ] **Phase 5** — Link Opening & Browser · base `438e397a`
-  - [ ] Task 12 — The open-in knob + popup routing (absorbed Task 13) · ``
-  - [ ] Task 14 — The browser flavor · ``
+- [ ] **Phase 5** — Link Opening & Browser · base `438e397a` · parting-frame fixlet `525666fa`
+  - [x] Task 12 — The open-in knob + popup routing (absorbed Task 13) · `5c572a77`
+  - [x] Task 14 — The browser flavor · `779d135d`
 - [ ] **Phase 6** — Accounts · base ``
   - [ ] Task 15 — Session IPC · ``
   - [ ] Task 16 — The Accounts section · ``
 - [ ] **Phase 7** — Hover Previews · base ``
   - [ ] Task 17 — Arming gates · ``
   - [ ] Task 18 — Website hover card · ``
+
+### Phase 5 Verification (overnight, CDP-driven)
+- **The popup chain found a real defect:** React only serializes *string* values for attributes it doesn't recognize, so the tile's bare-boolean `allowpopups` never reached the attach and every guest `window.open` died inside Blink. Fixed with the empty-string form (rides `5c572a77`); the full chain then proved live — guest `window.open` → no OS window (deny held, page-target count unchanged) → `web:popup` push received in the renderer → adjudicator → system browser (knob off). An `example.com` tab in Nathan's browser is this test's residue.
+- **Knob route:** with Open Links In Pommora on, the tile hover-title click summoned the floating browser; knob reset to default (off) afterward for Gate 6's precondition.
+- **Browser chrome:** back/forward truthful off the guest's own navigation events (Back enabled after an in-guest click; Forward after going back); the centered two-tone title tracks `page-title-updated` live; geometry on its own `web-browser` slot.
+- **C-2 drag repaint check:** mid-drag capture shows the guest riding the window whole — no detach, no blank region, content painted throughout.
+- **Webpage Zoom:** picker row live-stamps guests (host 0.855 × 1.25 = 1.06875 observed), reset returns them, and the default stores no key.
+- **Settings section:** the Pages & Editor ▸ Webpages group renders the two rows; screenshot for the morning verdict.
 
 ### Walkthrough Pre-Verification (overnight, CDP-driven on the live instance)
 Nathan's walkthrough boxes stay his; every check CDP can drive was pre-verified on the real PM-Issues-index page, appended below his content:
@@ -513,8 +521,11 @@ Nathan's walkthrough boxes stay his; every check CDP can drive was pre-verified 
 - **Task 4, spike-proven:** `will-attach-webview` cannot rewrite `params` — a forced partition and `allowpopups` set there never reach the attach. The plan's named fallback is the shipped shape: every surface carries `partition` (defaulting to `WEB_PARTITION`) **and `allowpopups`** as attributes, and the hook is a validator that denies a wrong-partition or hostile-src attach outright. Tasks 7/14/18 inherit the attribute pair.
 - **Task 6:** the planned formation-gate ViewPlugin fell away — selection changes are themselves transactions the StateField sees, so the selection-departure trigger is a pure re-check inside the field's update (gated on a stored unformed count), and no dispatcher exists to own. Undo/redo form like a mount: the restoring selection sits on the restored line by construction. The webpage claim's kind-aware key also stayed inside the tile field rather than widening `claimedEmbeds`' signature — the claim's only reader is the field (webpage lines produce no `embed` token to suppress), and the page-only caller in `decorations.ts` would have had to fabricate a formation oracle.
 - **Task 4:** `applyDefaultZoom` was not the only `setZoomFactor` writer — ⌘0's menu click was a fourth, in-place. Every host-zoom write now flows through `setHostZoom`/`stepHostZoom` (the guest-sync seam); ⌘+/⌘− are de-roled with a hidden `⌘=` alias item preserving the native role's unshifted chord.
+- **The parting frame (Nathan's directive, 08-18):** a clipped tile going blank read as gimmicky — the spec's snapshot Prospect pulled forward in its minimal form: on the clip transition the guest stays painted just long enough for a `capturePage`, and the face wears that frame (`525666fa`). A failed tile still shows only its domain; a first load with no frame is still blank.
 - **Task 12, Nathan's directive (08-18):** the knob's home moved — settings gain a **Pages & Editor ▸ Webpages** section scoped to the web preferences (the open-in knob and the guest zoom factor), superseding the planned Files & Links row. The zoom-factor control is an addition to the task's scope on the same directive.
 - **Overnight design stops (Nathan's directive):** Tasks 14 and 16 carry design stops, but the overnight run builds both to the decision log's spec and presents screenshots for his morning verdict instead of waiting.
+- **Docs batched to the docs pass (Nathan's docs-last directive):** the per-task Made False rewrites (ConfigurationPM 6a/6b, PagePreviewPM 7/8) land with the closing docs pass rather than riding their task commits. SymbolsPM row 9 dissolved — back/forward wear the registry's existing `chevron-left`/`chevron-right`, the app's own nav pair; no glyphs were added.
+- **Task 14:** the browser's back/forward are the registry's chevrons, not new arrow glyphs — consistency with the window toolbar's own history pair beat the browser-convention arrows. PreviewPane gained a `lead` slot for them (chassis extension, not a bespoke toolbar).
 - **Task 7, the blank-tile walkthrough arc:** the tile rendered its face permanently for a reason none of the observer theories held — the live gate read `host.ancestors.length === 0` as "top-level", but the page surface carries its OWN path in the chain as the cycle guard, so the gate was never open anywhere. It now reads the page-surface marker (`saveHeights` presence), named `pageSurface`. The observer rewrite that rode the same arc stands on its own merit: visibility measures against the viewport root (the page's real scroller is a pane above the editor, and an element root only counts clips between target and root), the acceptance ratio is itself a threshold, and the `WEB_PREARM_PX` pre-arm KNOB died with the wrong-rooted design (disclosed; `WEB_FIT_MARGIN` is the surviving knob). The Embed ▸ insert also stopped stacking blanks — it reuses standing blank lines (`embedInsertAfter`'s lead derives from the caret line's own blankness).
 ### Lessons
 ### Sequenced After
