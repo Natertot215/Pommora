@@ -1,5 +1,66 @@
 import { describe, it, expect } from 'vitest'
-import { linkDestinationAt } from './webpageEmbed'
+import { composeWebpageEmbedLine, linkDestinationAt, loneWebpageEmbed } from './webpageEmbed'
+
+const URL = 'https://www.example.com/a/b'
+
+describe('loneWebpageEmbed — what a webpage-embed line is', () => {
+  it('reads the lone line, empty label included', () => {
+    expect(loneWebpageEmbed(`![](${URL})`)).toEqual({ label: '', url: URL })
+    expect(loneWebpageEmbed(`![Docs](${URL})`)).toEqual({ label: 'Docs', url: URL })
+    expect(loneWebpageEmbed(`![Docs](${URL})   `)).toEqual({ label: 'Docs', url: URL })
+  })
+
+  it('unescapes the label it returns', () => {
+    expect(loneWebpageEmbed(`![Notes \\[WIP\\]](${URL})`)).toEqual({
+      label: 'Notes [WIP]',
+      url: URL,
+    })
+  })
+
+  it('requires an explicit http(s) scheme on a valid address', () => {
+    for (const bad of [
+      'file:///etc/hosts',
+      'javascript:alert(1)',
+      'mailto:a@b.com',
+      'www.example.com',
+      'example.com/path',
+      'https://',
+      'https://nodot',
+    ])
+      expect(loneWebpageEmbed(`![](${bad})`), bad).toBeNull()
+  })
+
+  it('refuses the degenerate and the non-lone shapes', () => {
+    expect(loneWebpageEmbed('![]()')).toBeNull()
+    expect(loneWebpageEmbed(`  ![](${URL})`)).toBeNull() // indented — list continuation
+    expect(loneWebpageEmbed(`![](${URL}) tail`)).toBeNull()
+    expect(loneWebpageEmbed(`lead ![](${URL})`)).toBeNull()
+    expect(loneWebpageEmbed(`[](${URL})`)).toBeNull() // no bang — an ordinary link
+  })
+
+  it('refuses a label whose ] is unescaped, and an unbalanced destination', () => {
+    expect(loneWebpageEmbed(`![a]b](${URL})`)).toBeNull()
+    expect(loneWebpageEmbed('![](https://example.com/a(b)')).toBeNull()
+  })
+
+  it('follows a destination through balanced parens', () => {
+    const wiki = 'https://en.wikipedia.org/wiki/A_(b)'
+    expect(loneWebpageEmbed(`![](${wiki})`)).toEqual({ label: '', url: wiki })
+  })
+})
+
+describe('composeWebpageEmbedLine — the ONE assembly path', () => {
+  it('writes the line the detector reads back — brackets and backslashes included', () => {
+    for (const label of ['', 'Docs', 'Notes [WIP]', 'a\\b', ']]', 'Chapter [2]']) {
+      const line = composeWebpageEmbedLine(label, URL)
+      expect(loneWebpageEmbed(line), JSON.stringify(label)).toEqual({ label, url: URL })
+    }
+  })
+
+  it('writes the bare form for an empty label', () => {
+    expect(composeWebpageEmbedLine('', URL)).toBe(`![](${URL})`)
+  })
+})
 
 describe('linkDestinationAt — is the caret inside a destination', () => {
   it('sees the empty embed pair the door seats the caret in', () => {
