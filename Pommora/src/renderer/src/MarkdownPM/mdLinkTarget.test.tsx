@@ -6,6 +6,7 @@ import { encodeLinkTarget } from '@shared/links'
 import { autocompleteQuery, commitEdit } from './autocomplete'
 import { activeTokenIndices, tokenize } from './tokens'
 import { CONN_HOVER_INTENT_MS } from './editor/connections'
+import { MD_LINK_CLASS } from './editor/decorations'
 import { buildPageIndex, resolveMdTarget, type ConnectionsApi, type ConnPage } from './connections'
 import { renderCellContent } from './Tables/cellStatic'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '@renderer/testing/editorHarness'
@@ -336,5 +337,38 @@ describe('an alias reveals what it hides', () => {
     const view = await openAt('see [[Work Notes|]] end', 17)
     expect(view.dom.querySelector('.md-conn-target')?.textContent).toBe('Work Notes')
     expect(view.dom.querySelector('.md-conn-glyph-resolved')).not.toBeNull()
+  })
+})
+
+// A valid external link owes the website hover preview on the same dwell. Both gates are pinned to
+// the one exported class constant, so the decorator and the arming selector cannot drift apart.
+describe('a website link previews live', () => {
+  it('the decorator marks the link with the class the hover gate reads', async () => {
+    const view = await mountEditor({
+      initialBody: 'see [GitHub](https://github.com) end',
+      connections: conn,
+    })
+    const span = view.dom.querySelector(`.${MD_LINK_CLASS}`) as HTMLElement
+    expect(span).not.toBeNull()
+    expect(span.textContent).toBe('GitHub')
+  })
+
+  it('arms the website hover on the drawn link, never the page one', async () => {
+    const hover = vi.fn()
+    const hoverSite = vi.fn()
+    const view = await mountEditor({
+      initialBody: 'see [GitHub](https://github.com) end',
+      connections: { ...conn, hover, hoverSite },
+    })
+    await act(async () => view.focus())
+    view.dispatch({ selection: { anchor: 0 } })
+    vi.spyOn(view, 'posAtCoords').mockReturnValue(6)
+    const span = view.dom.querySelector(`.${MD_LINK_CLASS}`) as HTMLElement
+    span.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }))
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, CONN_HOVER_INTENT_MS + 20))
+    })
+    expect(hoverSite).toHaveBeenCalledWith('https://github.com', span)
+    expect(hover).not.toHaveBeenCalled()
   })
 })
