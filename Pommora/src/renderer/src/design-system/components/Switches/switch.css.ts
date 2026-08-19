@@ -13,6 +13,9 @@ const control = 'var(--label-control)' // knob fill + tick glyphs
  * in the real liquid glass (GlassControls).
  */
 export const track = style({
+  // THE switch-size knob. The component owns its scale so no consumer has to wrap it — every
+  // surface but Cards wanted the same step down, and each was rolling its own zoom to get there.
+  zoom: 'var(--switch-zoom, 0.8)',
   position: 'relative',
   width: '54px',
   height: '24px',

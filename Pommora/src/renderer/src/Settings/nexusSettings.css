@@ -61,8 +61,19 @@
   padding-top: 30px;
 }
 .settings-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   color: var(--label-primary);
   margin: 0 0 14px;
+  padding-bottom: 10px;
+  /* The panel's one rule — it separates the leaf's title from its body, which is why the rows
+     beneath carry none of their own. */
+  border-bottom: 1px solid var(--separator-border);
+}
+.settings-heading-icon {
+  color: var(--label-secondary);
+  flex: 0 0 auto;
 }
 .settings-section {
   display: flex;
@@ -87,10 +98,6 @@
   align-items: center;
   gap: 16px;
   padding: 10px 0;
-  border-bottom: 1px solid var(--separator-segment);
-}
-.settings-section > .settings-row:last-child {
-  border-bottom: none;
 }
 .settings-row-text {
   display: flex;

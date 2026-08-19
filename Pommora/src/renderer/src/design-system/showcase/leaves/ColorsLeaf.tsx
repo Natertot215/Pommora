@@ -3,6 +3,7 @@ import { vars, chipPill, tint, tintAt, TINT_STEPS } from '@renderer/design-syste
 import { SortableZone, useDragItem, reorder } from '@renderer/design-system/interactions/drag'
 import { applyAccent, readCssAccentColor } from '../../accent'
 import { SOLID_COLORS, type AccentSetting } from '@shared/types'
+import { accentValue } from '@renderer/design-system/accent'
 import { humanize, formatColor, useComputedStyleText, useIsCompact } from './helpers'
 
 // Primitives first (the base palette), then the derived token groups. Accent is
@@ -122,7 +123,7 @@ function AccentDemo(): React.JSX.Element {
               }
               style={{
                 background:
-                  a === 'system' ? (systemColor ?? vars.color.solid.grey) : vars.color.solid[a],
+                  a === 'system' ? (systemColor ?? vars.color.solid.grey) : accentValue(a, null),
               }}
               onClick={() => pick(a)}
               title={a}

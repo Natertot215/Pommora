@@ -1,10 +1,17 @@
 import { DEFAULT_ACCENT, type AccentSetting } from '@shared/types'
-import { vars } from './tokens'
+import { chipColorFor } from './tokens/colorMap'
+import { ANCHOR_CELLS, cellColor } from './tokens/ramp'
 
-/** There is no separate "accent" color — it's always one of the spectrum solids. */
+/** There is no separate "accent" color — it's always a cell of the ramp, resolved the same way a
+ *  chip resolves one, so a legacy solid name and a stepped key both land on their own color. */
+const accentCell = (setting: string): string => {
+  const key = chipColorFor(setting)
+  return cellColor(key === 'default' ? ANCHOR_CELLS[DEFAULT_ACCENT] : key)
+}
+
 export function accentValue(setting: AccentSetting, systemColor: string | null): string {
-  if (setting === 'system') return systemColor ?? vars.color.solid[DEFAULT_ACCENT]
-  return vars.color.solid[setting]
+  if (setting === 'system') return systemColor ?? accentCell(DEFAULT_ACCENT)
+  return accentCell(setting)
 }
 
 /** `--accent-fill` / `--accent-text` are color-mix derivations of `--accent` (theme-vars.css.ts), so setting this one property recolors every accented surface. */
@@ -16,7 +23,7 @@ export function applyAccent(setting: AccentSetting, systemColor: string | null):
 /** Independent of the Pommora `--accent` setting. External `[text](url)` links bind to `--system-accent`; internal connections bind to `--accent`. */
 export function applySystemAccent(systemColor: string | null): void {
   if (typeof document === 'undefined') return
-  const value = systemColor ?? readCssAccentColor() ?? vars.color.solid[DEFAULT_ACCENT]
+  const value = systemColor ?? readCssAccentColor() ?? accentCell(DEFAULT_ACCENT)
   document.documentElement.style.setProperty('--system-accent', value)
 }
 
