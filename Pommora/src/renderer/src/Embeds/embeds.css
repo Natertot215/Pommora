@@ -219,6 +219,23 @@
   height: 100%;
 }
 
+/* A retained guest hides rather than unmounts — visibility (never display:none, which tears the
+   guest down) keeps its state alive under the retention cap. */
+/* biome-ignore lint/correctness/noUnknownTypeSelector: webview is Electron's guest element */
+.wpembed webview.is-retained {
+  visibility: hidden;
+}
+/* An inert guest takes no input; the catcher above it owns the engaging click, and wheel bubbles
+   past both so an unengaged tile scrolls the document. */
+/* biome-ignore lint/correctness/noUnknownTypeSelector: webview is Electron's guest element */
+.wpembed webview.is-inert {
+  pointer-events: none;
+}
+.wpembed-catcher {
+  position: absolute;
+  inset: 0;
+}
+
 /* The static faces: quiet chassis surface — a loading tile is simply blank, a failed one carries
    only the site's domain (the same fallback identity every link surface shows). */
 .wpembed-face {

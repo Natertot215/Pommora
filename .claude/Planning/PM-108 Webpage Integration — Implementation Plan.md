@@ -308,9 +308,9 @@ Tests: extend the embed-widget flow tests with webpage cases.
 **Negative control:** with the catcher disabled, a wheel over an inert tile scrolls the guest (red); with it enabled, the document scrolls (green) — both halves observed in the dev app and recorded.
 
 **Steps:**
-- [ ] Implement; gates green. Dev app: wheel over inert tile scrolls the document; click engages (guest scroll/typing work); click-out disengages; scrolling an engaged tile to the edge disengages and swaps; scrolling back shows the same guest state (retention proven); >cap tiles evict oldest.
-- [ ] Two build-phase checks land here, not at Task 18: **focus return** — engage, click into a site's text box, scroll the tile away, type: keystrokes must land in the document, not a hidden guest (if focus sticks, the disengage path explicitly refocuses the editor); **mousemove starvation** — with the pointer resting on an engaged guest, host hover lifecycles must still run (informs Task 18's overlay). Record both in the Log.
-- [ ] Commit: `feat(embeds): tiles engage on click and retain hidden guests under a cap`
+- [x] Implement; gates green. Dev app: wheel over inert tile scrolls the document; click engages (guest scroll/typing work); click-out disengages; scrolling an engaged tile to the edge disengages and swaps; scrolling back shows the same guest state (retention proven); >cap tiles evict oldest. *(The dev-app sweep and the negative control are Gate 4 walkthrough items — instance lock; the disengage path refocuses the editor defensively rather than waiting on the focus observation.)*
+- [ ] Two build-phase checks land here, not at Task 18: **focus return** — engage, click into a site's text box, scroll the tile away, type: keystrokes must land in the document, not a hidden guest (if focus sticks, the disengage path explicitly refocuses the editor); **mousemove starvation** — with the pointer resting on an engaged guest, host hover lifecycles must still run (informs Task 18's overlay). Record both in the Log. *(Gate 4 walkthrough.)*
+- [x] Commit: `feat(embeds): tiles engage on click and retain hidden guests under a cap`
 
 #### Task 11: The hover-title and the grip's Edit Link arm
 
@@ -465,7 +465,8 @@ This task also lands the `web:popup` listener (the renderer app root subscribes 
   - [x] Task 3 — Destination guard · `8869f7f1`
 - [x] **Phase 2** — Main-Process Web Foundation · base `4e5116e2` · simplify `7c61fe77` · review folds `35bcb588`
   - [x] Task 4 — Guest lifecycle + partition · `3ddee5f2`
-- [ ] **Phase 3** — The Webpage Tile · base `35bcb588` · simplify `51488e97` · folds `230d5a03` · *(gate holds one box: Nathan's live walkthrough + the face-design stop)*
+- [ ] **Phase 3** — The Webpage Tile · base `35bcb588` · simplify `51488e97` · folds `230d5a03` · walkthrough fixes `b2858554` `5da8894a` `cb3546d7` · *(gate holds one box: Nathan's live walkthrough + the face-design stop; Phase 4 opened on Nathan's call with that box pending)*
+- [ ] **Phase 4** — Engagement & Retention · base `cb3546d7`
   - [x] Task 5 — The grammar · `28a555d2`
   - [x] Task 6 — Detection, claim, formation gate · `de73e16d`
   - [x] Task 7 — The live tile · `bf094dc5`
@@ -500,6 +501,7 @@ This task also lands the `web:popup` listener (the renderer app root subscribes 
 - **Task 4, spike-proven:** `will-attach-webview` cannot rewrite `params` — a forced partition and `allowpopups` set there never reach the attach. The plan's named fallback is the shipped shape: every surface carries `partition` (defaulting to `WEB_PARTITION`) **and `allowpopups`** as attributes, and the hook is a validator that denies a wrong-partition or hostile-src attach outright. Tasks 7/14/18 inherit the attribute pair.
 - **Task 6:** the planned formation-gate ViewPlugin fell away — selection changes are themselves transactions the StateField sees, so the selection-departure trigger is a pure re-check inside the field's update (gated on a stored unformed count), and no dispatcher exists to own. Undo/redo form like a mount: the restoring selection sits on the restored line by construction. The webpage claim's kind-aware key also stayed inside the tile field rather than widening `claimedEmbeds`' signature — the claim's only reader is the field (webpage lines produce no `embed` token to suppress), and the page-only caller in `decorations.ts` would have had to fabricate a formation oracle.
 - **Task 4:** `applyDefaultZoom` was not the only `setZoomFactor` writer — ⌘0's menu click was a fourth, in-place. Every host-zoom write now flows through `setHostZoom`/`stepHostZoom` (the guest-sync seam); ⌘+/⌘− are de-roled with a hidden `⌘=` alias item preserving the native role's unshifted chord.
+- **Task 7, the blank-tile walkthrough arc:** the tile rendered its face permanently for a reason none of the observer theories held — the live gate read `host.ancestors.length === 0` as "top-level", but the page surface carries its OWN path in the chain as the cycle guard, so the gate was never open anywhere. It now reads the page-surface marker (`saveHeights` presence), named `pageSurface`. The observer rewrite that rode the same arc stands on its own merit: visibility measures against the viewport root (the page's real scroller is a pane above the editor, and an element root only counts clips between target and root), the acceptance ratio is itself a threshold, and the `WEB_PREARM_PX` pre-arm KNOB died with the wrong-rooted design (disclosed; `WEB_FIT_MARGIN` is the surviving knob). The Embed ▸ insert also stopped stacking blanks — it reuses standing blank lines (`embedInsertAfter`'s lead derives from the caret line's own blankness).
 ### Lessons
 ### Sequenced After
 - Session Roaming (passphrase-encrypted cookie vault) — the spec's committed follow-up cycle.
