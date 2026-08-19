@@ -32,7 +32,6 @@ function linkFor(view: EditorView, text: string, inverse: boolean): LinkPaste | 
   const decision = decidePaste({
     clipboard: text,
     selectionText: view.state.sliceDoc(sel.from, sel.to),
-    autoFormat: personalization.autoFormatPastedLinks === true,
     pasteIntoText: personalization.pasteLinkIntoText === true,
     inverse,
     format: personalization.defaultLinkFormat ?? DEFAULT_LINK_DISPLAY,

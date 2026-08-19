@@ -7,7 +7,6 @@ import { Slider } from '@renderer/design-system/components/Slider/Slider'
 import { PreviewPane } from '@renderer/design-system/components/PreviewPane/PreviewPane'
 import type { FloatingBounds } from '@renderer/design-system/interactions/FloatingWindow'
 import type { SidePaneBounds } from '@renderer/design-system/components/SidePane/SidePane'
-import { Reveal } from '@renderer/design-system/components/Reveal'
 import type { DevicePrefs } from '@shared/devicePrefs'
 import { PickerControl, type PickerChoice } from '@renderer/Components/Detail/PickerControl'
 import { LINK_FORMAT_OPTIONS } from '@renderer/Components/Detail/LinkFormat'
@@ -47,9 +46,6 @@ type KeyOf<V> = {
 interface RowText {
   label: string
   hint: string
-  /** Disclosed only while this boolean key is on. Every gating key so far is default-off, so the
-   *  stored value is the whole answer; a default-on gate would have to say so. */
-  when?: KeyOf<boolean>
 }
 
 /** A picker row, parameterized by the vocabulary it writes — a second one naming a different enum
@@ -226,17 +222,10 @@ const LEAVES = roster([
         title: 'Pasted Links',
         rows: [
           {
-            kind: 'toggle',
-            key: 'autoFormatPastedLinks',
-            label: 'Automatically Format Pasted Links',
-            hint: 'Write a pasted address as a link instead of plain text.',
-          },
-          {
             kind: 'picker',
             key: 'defaultLinkFormat',
             label: 'Default Format',
             hint: 'How a pasted link reads.',
-            when: 'autoFormatPastedLinks',
             fallback: DEFAULT_LINK_DISPLAY,
             options: LINK_FORMAT_OPTIONS,
           },
@@ -429,7 +418,7 @@ function LeafBodyView({ category }: { category: CategoryKey }): React.JSX.Elemen
               </h3>
             )}
             {section.rows.map((row) => (
-              <LeafRow key={row.key} row={row} />
+              <RowControl key={row.key} row={row} />
             ))}
           </div>
         ))
@@ -452,21 +441,6 @@ function SettingsRow({
       </div>
       {children}
     </div>
-  )
-}
-
-function LeafRow({ row }: { row: Row }): React.JSX.Element {
-  const gate = row.when
-  const disclosed = useSession((s) => (gate ? s.personalization[gate] === true : true))
-  const body = <RowControl row={row} />
-  // A dependent row folds rather than vanishing, and Reveal keeps its subtree out of the DOM while
-  // collapsed — so a hidden picker holds no store subscription.
-  return gate ? (
-    <Reveal open={disclosed} fill>
-      {body}
-    </Reveal>
-  ) : (
-    body
   )
 }
 

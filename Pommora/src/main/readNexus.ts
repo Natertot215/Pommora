@@ -130,7 +130,6 @@ export function readPersonalization(raw: unknown): Personalization {
     timeFormat: p.timeFormat === 'twentyFourHour' ? 'twentyFourHour' : undefined,
     trashDateFormat: DATE_FORMATS.find((f) => f === p.trashDateFormat),
     trashHideTime: bool(p.trashHideTime),
-    autoFormatPastedLinks: bool(p.autoFormatPastedLinks),
     pasteLinkIntoText: bool(p.pasteLinkIntoText),
     defaultLinkFormat: LINK_DISPLAYS.find((d) => d === p.defaultLinkFormat),
   }

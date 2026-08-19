@@ -8,7 +8,6 @@ const at = (over: Partial<PasteInput> = {}): ReturnType<typeof decidePaste> =>
   decidePaste({
     clipboard: URL,
     selectionText: '',
-    autoFormat: false,
     pasteIntoText: false,
     inverse: false,
     format: 'link-full',
@@ -57,15 +56,10 @@ describe('pastedUrl — what counts as a pasted address', () => {
 })
 
 // ⌘⇧V is the inverse of ⌘V, and which axis it inverts is chosen by whether a selection exists.
-describe('decidePaste — no selection, the auto-format axis', () => {
-  it('formats on ⌘V when the setting is on, and pastes literally under the inverse', () => {
-    expect(textOf(at({ autoFormat: true }))).toBe(`[${URL}](${URL})`)
-    expect(at({ autoFormat: true, inverse: true }).kind).toBe('literal')
-  })
-
-  it('pastes literally on ⌘V when the setting is off, and formats under the inverse', () => {
-    expect(at({ autoFormat: false }).kind).toBe('literal')
-    expect(textOf(at({ autoFormat: false, inverse: true }))).toBe(`[${URL}](${URL})`)
+describe('decidePaste — no selection, the format axis', () => {
+  it('formats on ⌘V, and pastes literally under the inverse', () => {
+    expect(textOf(at({}))).toBe(`[${URL}](${URL})`)
+    expect(at({ inverse: true }).kind).toBe('literal')
   })
 })
 
@@ -80,18 +74,12 @@ describe('decidePaste — a selection, the wrap axis', () => {
     expect(textOf(at({ ...sel, pasteIntoText: false, inverse: true }))).toBe(`[the docs](${URL})`)
   })
 
-  // Not wrapping means the selection is replaced, which is an ordinary paste at a caret — so it
-  // falls through to the auto-format rule. The inverse was already spent choosing the axis, so it
-  // does not flip that rule a second time.
-  it('falls through to the auto-format rule when it does not wrap', () => {
-    expect(at({ ...sel, pasteIntoText: false, autoFormat: false }).kind).toBe('literal')
-    expect(textOf(at({ ...sel, pasteIntoText: false, autoFormat: true }))).toBe(`[${URL}](${URL})`)
-    expect(at({ ...sel, pasteIntoText: true, inverse: true, autoFormat: false }).kind).toBe(
-      'literal',
-    )
-    expect(textOf(at({ ...sel, pasteIntoText: true, inverse: true, autoFormat: true }))).toBe(
-      `[${URL}](${URL})`,
-    )
+  // Not wrapping means the selection is replaced, which is an ordinary paste at a caret — and a
+  // caret paste formats. The inverse was already spent choosing the axis, so it does not flip the
+  // format a second time.
+  it('formats when it does not wrap', () => {
+    expect(textOf(at({ ...sel, pasteIntoText: false }))).toBe(`[${URL}](${URL})`)
+    expect(textOf(at({ ...sel, pasteIntoText: true, inverse: true }))).toBe(`[${URL}](${URL})`)
   })
 
   it('escapes a selection carrying the characters that would break the shape', () => {
@@ -101,9 +89,10 @@ describe('decidePaste — a selection, the wrap axis', () => {
   })
 
   // A multi-line selection is not a label — the link would straddle a line break and stop being one.
+  // The selection is replaced by the caret paste's formatted link instead.
   it('does not wrap a selection spanning a line break', () => {
-    expect(at({ selectionText: 'two\nlines', pasteIntoText: true, autoFormat: false }).kind).toBe(
-      'literal',
+    expect(textOf(at({ selectionText: 'two\nlines', pasteIntoText: true }))).toBe(
+      `[${URL}](${URL})`,
     )
   })
 
@@ -117,37 +106,35 @@ describe('decidePaste — a selection, the wrap axis', () => {
 })
 
 describe('decidePaste — which form the label takes', () => {
-  const on = { autoFormat: true }
-
   it('writes the whole address for Full Link', () => {
-    expect(textOf(at({ ...on, format: 'link-full' }))).toBe(`[${URL}](${URL})`)
+    expect(textOf(at({ format: 'link-full' }))).toBe(`[${URL}](${URL})`)
   })
 
   it('writes the bare domain for Short Link', () => {
-    expect(textOf(at({ ...on, format: 'link-short' }))).toBe(`[example.com](${URL})`)
+    expect(textOf(at({ format: 'link-short' }))).toBe(`[example.com](${URL})`)
   })
 
   it('writes a resolved title for Page Title, and asks for no fetch', () => {
-    const d = at({ ...on, format: 'link-title', title: 'Example Domain' })
+    const d = at({ format: 'link-title', title: 'Example Domain' })
     expect(textOf(d)).toBe(`[Example Domain](${URL})`)
     expect(d.kind === 'link' && d.wantsTitle).toBe(false)
   })
 
   it('writes Short Link for Page Title until the fetch lands, and asks for one', () => {
-    const d = at({ ...on, format: 'link-title' })
+    const d = at({ format: 'link-title' })
     expect(textOf(d)).toBe(`[example.com](${URL})`)
     expect(d.kind === 'link' && d.wantsTitle).toBe(true)
   })
 
   it('never asks for a fetch in a form that has no title to show', () => {
     for (const format of ['link-full', 'link-short'] as const) {
-      const d = at({ ...on, format })
+      const d = at({ format })
       expect(d.kind === 'link' && d.wantsTitle, format).toBe(false)
     }
   })
 
   it('reports the target it pointed at, whatever the label reads', () => {
-    const d = at({ ...on, format: 'link-short' })
+    const d = at({ format: 'link-short' })
     expect(d.kind === 'link' && d.target).toBe(URL)
   })
 })
@@ -157,7 +144,7 @@ describe('decidePaste — which form the label takes', () => {
 describe('the label agrees with the property cell', () => {
   it('matches linkDisplayText for every form', () => {
     for (const format of ['link-full', 'link-short', 'link-title'] as const) {
-      const d = at({ autoFormat: true, format, title: 'Example Domain' })
+      const d = at({ format, title: 'Example Domain' })
       expect(textOf(d), format).toBe(`[${linkDisplayText(URL, format, 'Example Domain')}](${URL})`)
     }
   })

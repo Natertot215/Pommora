@@ -11,7 +11,6 @@ export interface PasteInput {
   clipboard: string
   /** Empty when the caret is bare. */
   selectionText: string
-  autoFormat: boolean
   pasteIntoText: boolean
   /** The inverse chord was used, so whichever axis applies does the opposite of its setting. */
   inverse: boolean
@@ -91,9 +90,9 @@ export function decidePaste(input: PasteInput): PasteDecision {
     return link(serializeLink({ url: target, alias: input.selectionText }), target)
 
   // Not wrapping means the selection is simply replaced, which is an ordinary paste at a caret —
-  // so it falls through here. The chord is already spent in that case and does not flip again.
-  const format = wrappable ? input.autoFormat : input.inverse ? !input.autoFormat : input.autoFormat
-  if (!format) return LITERAL
+  // and a caret paste formats, unless the chord asked for the literal text. A chord spent choosing
+  // the wrap axis does not flip the format a second time.
+  if (!wrappable && input.inverse) return LITERAL
 
   return linkPaste(target, input.format, input.title)
 }
