@@ -158,10 +158,3 @@ export function stepHostZoom(wc: WebContents, dir: 1 | -1): void {
   const factor = wc.getZoomFactor() * 1.2 ** (dir * 0.5)
   setHostZoom(wc, Math.min(ZOOM_FACTOR_MAX, Math.max(ZOOM_FACTOR_MIN, factor)))
 }
-
-/** The one honest wipe-everything: the whole partition's storage — sign-ins live wherever the
- *  user made them, and Electron cannot enumerate storage-holding origins reliably enough for
- *  anything narrower to be truthful. */
-export async function clearWebBrowsing(): Promise<void> {
-  await webSession().clearStorageData()
-}

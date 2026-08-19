@@ -4,6 +4,7 @@ import { resolveMdTarget, type ConnectionsApi, type MdTarget } from '../connecti
 import { seatAtNearerEdge } from './input'
 import { caretInside, hoverIntent } from './connections'
 import { applyUrlLinkAction } from './linkFormat'
+import { MD_LINK_CLASS } from './decorations'
 import { openWebLink } from '../../openWebLink'
 
 type GetApi = () => ConnectionsApi | undefined
@@ -71,17 +72,26 @@ export function markdownLinkClicks(getApi: GetApi): ReturnType<typeof EditorView
       const api = getApi()
       intent.cancel()
       if (!api?.hover) return false
-      // Cheap class gate FIRST (the every-mouseover hard rule) — only a drawn internal link warrants
-      // the layout read and the tokenize below.
-      const el = (event.target as HTMLElement).closest?.('.md-connection-resolved')
+      // Cheap class gate FIRST (the every-mouseover hard rule) — only a drawn internal link or a
+      // valid external one warrants the layout read and the tokenize below. Both gates are
+      // required: external links wear the link class, not the connection one.
+      const el = (event.target as HTMLElement).closest?.(
+        `.md-connection-resolved, .${MD_LINK_CLASS}`,
+      )
       if (!el) return false
       const hit = linkUnder(view, getApi, event)
-      if (!hit?.onText || hit.target.kind !== 'page') return false
+      if (!hit?.onText || hit.target.kind === 'invalid') return false
       // A link the caret is already inside is open for editing, and no dwell should carry you away
       // from what you're typing.
       if (caretInside(view, hit.range)) return false
-      const page = hit.target.page
-      intent.arm(() => api.hover?.(page, el))
+      // Same dwell, two destinations: a page raises the page card, a website the live site card.
+      if (hit.target.kind === 'page') {
+        const page = hit.target.page
+        intent.arm(() => api.hover?.(page, el))
+      } else {
+        const url = hit.url
+        intent.arm(() => api.hoverSite?.(url, el))
+      }
       return false
     },
     mouseout() {
