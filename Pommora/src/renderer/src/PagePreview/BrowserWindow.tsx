@@ -16,7 +16,7 @@ import './browserWindow.css'
 
 const BOUNDS: FloatingBounds = { minW: 480, minH: 360, defW: 1000, defH: 700 }
 
-/** The knob-independent summon — `openWebLink` is one caller, Add Account another. */
+/** The direct summon of the floating browser, knob-independent by contract. */
 export function openInAppBrowser(url: string): void {
   useSession.getState().openBrowser(url)
 }
