@@ -1,6 +1,6 @@
 import type { BrowserWindow } from 'electron'
 import { type ViewRowAction, type ViewRowMenuContext, viewRowMenuItems } from '@shared/viewRowMenu'
-import { popModelMenu } from './pageMenu'
+import { popModelMenu } from './rowMenu'
 
 /** A saved view row's right-click menu — the model's rows, nothing else. */
 export function popViewRowMenu(

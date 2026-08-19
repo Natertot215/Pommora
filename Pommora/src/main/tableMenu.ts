@@ -1,52 +1,11 @@
-import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
-import type { TableMenuAction, TableMenuContext } from '@shared/tableMenu'
-import { popReturningMenu } from './returningMenu'
-import { alignSubmenu } from './styleMenu'
+import type { BrowserWindow } from 'electron'
+import { type TableMenuAction, type TableMenuContext, tableMenuItems } from '@shared/tableMenu'
+import { popModelMenu } from './rowMenu'
 
-function itemsFor(
-  ctx: TableMenuContext,
-  pick: (a: TableMenuAction) => () => void,
-): MenuItemConstructorOptions[] {
-  if (ctx.kind === 'header') {
-    return [{ label: 'Delete Table', click: pick('table:delete') }]
-  }
-  if (ctx.kind === 'row') {
-    return [
-      { label: 'Insert Row Above', click: pick('row:insert-above') },
-      { label: 'Insert Row Below', click: pick('row:insert-below') },
-      { type: 'separator' },
-      { label: 'Clear', click: pick('row:clear') },
-      { label: 'Delete', click: pick('row:delete') },
-    ]
-  }
-  // The first column can read like the header row (a Pommora-only visual; the .md stays a plain table).
-  // Checkbox carries the on/off state; the label reads "Heading Column" (✓) when on, "Make …" when off.
-  const heading: MenuItemConstructorOptions[] =
-    ctx.index === 0
-      ? [
-          {
-            label: ctx.headingColumn ? 'Heading Column' : 'Make Heading Column',
-            type: 'checkbox',
-            checked: ctx.headingColumn ?? false,
-            click: pick('col:toggle-heading'),
-          },
-        ]
-      : []
-  return [
-    { label: 'Align', submenu: alignSubmenu(ctx.align, pick) },
-    { type: 'separator' },
-    ...heading,
-    { label: 'Insert Column Left', click: pick('col:insert-left') },
-    { label: 'Insert Column Right', click: pick('col:insert-right') },
-    { type: 'separator' },
-    { label: 'Clear', click: pick('col:clear') },
-    { label: 'Delete', click: pick('col:delete') },
-  ]
-}
-
+/** The markdown table grip's right-click menu — the model's rows, nothing else. */
 export function popTableMenu(
   win: BrowserWindow,
   ctx: TableMenuContext,
 ): Promise<TableMenuAction | null> {
-  return popReturningMenu<TableMenuAction>(win, (pick) => itemsFor(ctx, pick))
+  return popModelMenu<TableMenuAction>(win, tableMenuItems(ctx))
 }
