@@ -120,10 +120,10 @@ The chip palette stopped being ten flat solids and became a grid. `tokens/ramp.t
 
 **The Picker:** the surface assigning those colors became an 8×8 grid, where clicking a ringed cell clears the selection, and active selections are highlighted with a color-matching tinted border. Links and checkboxes take the grid without its greyscale row, whose dark end is the window substrate itself and would render them invisible against the page — except when a value already lives there, since hiding a row also hides the only way to clear what it holds. Their color control dropped its name for the Switch's own shell filled with the chosen color, which retired the question of what to call sixty-four cells rather than answering it, and corrected a checkbox's unset state to follow the app accent it actually paints with. Widening the pane from roughly thirty-six pixels to a hundred and eighty exposed a placement branch that had clamped only its near edge for as long as it had existed.
 
-**Appearance:** the accent, the internal link color, and the external link color are set from a panel of their own. Each opens the ramp without its greyscale families, and each clears to what it inherits — the accent to the system accent, an internal link to the accent, an external link to the system accent — so a cleared control reads as *follow* rather than *none*, and the sentinels already on disk keep their meaning. All three validate against the grammar chips use and resolve through the ramp, and one generic states the vocabulary they share while each names its own default. The Switch carries its own scale behind a single knob a surface sets rather than wraps, and the panel's color control composes the Switch's own track, so the two hold one geometry between them. A leaf's heading wears its icon above the panel's one rule, and its rows space from each other beneath it.
+**Appearance:** the accent, the internal link color, and the external link color are set from a panel of their own. Each opens the ramp without its greyscale families, and each clears to what it inherits — the accent to the system accent, an internal link to the accent, an external link to the system accent — so a cleared control reads as *follow* rather than *none*, and the sentinels already on disk keep their meaning. All three validate against the grammar chips use and resolve through the ramp, and one generic states the vocabulary they share while each names its own default; the accent resolves inside the personalization read the controls themselves subscribe to, so the swatch a row shows and the color the app paints come from one source. The Switch carries its own scale behind a single knob a surface sets rather than wraps, and the panel's color control composes the Switch's own track, so the two hold one geometry between them. A leaf's heading wears its icon above the panel's one rule, and its rows space from each other beneath it.
 
-- **Commits:** `24ba94b3` · `bbc05ab7` · `d65546ff` · `a2afcd9b` · `79b504f2` · `97acebfb` · `3d9d4da3` · `7acb3864` · `d1ea8058` · `572f9626` · `ec3a209b`, plus the closing record commit
-- **Diff:** Net +191 | +495 / −304
+- **Commits:** `24ba94b3` · `bbc05ab7` · `d65546ff` · `a2afcd9b` · `79b504f2` · `97acebfb` · `3d9d4da3` · `7acb3864` · `d1ea8058` · `572f9626` · `ec3a209b` · `50f581a3`, plus the closing record commit
+- **Diff:** Net +193 | +501 / −308
 
 #### PM-108 || Webpage Integration
 **DATE:** 08-18-2026 → 08-19
@@ -140,8 +140,8 @@ The editor learned to embed live websites the way it embeds Pages, and the app g
 
 **Hover Previews:** a dwell on a website link raises the shared hover card as a live, inert render of the site — the card opens wearing a quiet cover that fades once the page paints, and a site that fails or never paints closes the card whole. The guest mounts visible behind the cover because a guest mounting inside a hidden subtree may never attach; the card's guest fills the pane edge-to-edge, clips its own corners, and a shield above it keeps every pointer event on the card's own leave lifecycle.
 
-- **Commits:** `f9ca6aa8..HEAD`'s webpage-integration line — 70 commits interleaved with the parallel settings and ramp work
-- **Diff:** Net +1292 | +2642 / −1350
+- **Commits:** `f9ca6aa8..0d713c3b`'s webpage-integration line — 70 commits interleaved with the parallel settings and ramp work, closing on `e3ae30a7`
+- **Diff:** Net +1289 | +2653 / −1364
 
 #### PM-107 || Settings' Scaffolding
 **DATE:** 08-18-2026
