@@ -465,12 +465,12 @@ This task also lands the `web:popup` listener (the renderer app root subscribes 
   - [x] Task 3 — Destination guard · `8869f7f1`
 - [x] **Phase 2** — Main-Process Web Foundation · base `4e5116e2` · simplify `7c61fe77` · review folds `35bcb588`
   - [x] Task 4 — Guest lifecycle + partition · `3ddee5f2`
-- [ ] **Phase 3** — The Webpage Tile · base `35bcb588`
-  - [x] Task 5 — The grammar · ``
-  - [ ] Task 6 — Detection, claim, formation gate · ``
-  - [ ] Task 7 — The live tile · ``
-  - [ ] Task 8 — Display-only titles · ``
-  - [ ] Task 9 — The Webpage door · ``
+- [ ] **Phase 3** — The Webpage Tile · base `35bcb588` · *(gate open: review + simplification + Nathan's walkthrough pending)*
+  - [x] Task 5 — The grammar · `28a555d2`
+  - [x] Task 6 — Detection, claim, formation gate · `de73e16d`
+  - [x] Task 7 — The live tile · `bf094dc5`
+  - [x] Task 8 — Display-only titles · `0a325efc`
+  - [x] Task 9 — The Webpage door · `8f9563a0`
 - [ ] **Phase 4** — Engagement & Retention · base ``
   - [ ] Task 10 — Engagement + retention cap · ``
   - [ ] Task 11 — Hover-title + Edit Link arm · ``
