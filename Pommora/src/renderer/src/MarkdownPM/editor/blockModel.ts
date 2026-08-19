@@ -146,7 +146,7 @@ function blockContext(doc: string): BlockContext {
   // inside a math/fence range — the RANGE claims it (see `claimed`), so a `$$…$$` holding a blank line
   // still resolves as one block from any of its content lines instead of splitting into two paragraphs.
   const kindAt = (i: number): BlockKind | null => {
-    if (i < 0 || i >= n) return null // a neighbour-lookup off either doc edge owns no block
+    if (i < 0 || i >= n) return null // a neighbor-lookup off either doc edge owns no block
     if (lines[i].trim() === '') return null
     if (callout[i]) return 'callout'
     if (bq[i]) return 'blockquote'
@@ -264,7 +264,7 @@ export function blockStarts(doc: string): BlockStart[] {
     const kind = ctx.kindAt(i)
     if (kind === null) continue
     // Only the FIRST line of a multi-line block starts a draggable block (a continuation line repeats its
-    // kind). Range-backed kinds test by RANGE IDENTITY, never by the previous line's kind — a neighbour
+    // kind). Range-backed kinds test by RANGE IDENTITY, never by the previous line's kind — a neighbor
     // test both double-starts a block whose interior holds a blank line (kindAt is null there, so the next
     // line reads as a fresh start — a drop candidate INSIDE a code fence) and swallows the second of two
     // glued blocks (the previous line is the first block's closer, same kind).
