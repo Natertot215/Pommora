@@ -103,7 +103,8 @@ Seated and empty.
 Seated and empty.
 
 | Setting | Key | Description | Options |
-| --- | --- | --- | --- |
+| ------- | --- | ----------- | ------- |
+|         |     |             |         |
 
 #### Shortcuts
 
@@ -141,7 +142,8 @@ The sidecar's remaining fields are structure rather than configuration: the enti
 A page's frontmatter carries its identity and its property values. Its configuration is not yet documented here.
 
 | Setting | Key | Description | Options |
-| --- | --- | --- | --- |
+| ------- | --- | ----------- | ------- |
+|         |     |             |         |
 
 ### Personalization
 
