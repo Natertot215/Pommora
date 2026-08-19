@@ -25,6 +25,8 @@ Formation is deliberate: a line the selection sits on stays raw text, and the ti
 
 A live tile is **inert until clicked in**: wheel and pointer pass to the document, and one click engages the site — from there interaction belongs to the page until a click lands outside the tile, Escape is pressed, or the tile scrolls into the clip zone. Guests scrolled out of view hide rather than unmount, keeping the site's own state alive under a capped least-recently-hidden retention; the cap's eviction tears the oldest hidden guest down, and its tile reloads fresh on its next entry.
 
+Retention carries across tab switches for as many recent page tabs as stay parked (→ [[NavigationPM]] §Toolbar Tabs): the tab's whole surface is held rather than rebuilt, so its guests pause the way a scrolled-out tile does and resume on return with the session, scroll, and playing media they had. A tab beyond that reach rebuilds its surface, and its sites load fresh.
+
 ### Titles & The Grip
 
 Tile titles are display-only and resolved at render — a hand-written label wins, an empty one derives through the nexus's default link format, sharing the fetched-title path table cells use. Nothing is ever written back into the document. The hover-revealed title is itself a link, opening the address per the open-in preference. The tile's grip menu carries **Edit Link** above Delete: a popover re-aims the whole line at a new address in place, migrating the tile's remembered height with it, and refusing an address the grammar can't round-trip rather than dissolving the tile into text.

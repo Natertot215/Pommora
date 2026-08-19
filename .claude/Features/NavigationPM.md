@@ -38,7 +38,9 @@ The NavWindow is also tab 1 of the Page Preview's nav flavor — a perma-pinned 
 
 ### Toolbar Tabs
 
-A tab bar in the toolbar holding the open working set, each tab **warm** — it keeps its own scroll and editor undo, so flipping back lands where you left off with only one view mounted at a time.
+A tab bar in the toolbar holding the open working set, each tab **warm** — it keeps its own scroll and editor undo, so flipping back lands where you left off.
+
+The most recently visited page tabs go further: their surface is **parked** rather than torn down, held off screen with its editor intact, so returning to one resumes it instead of rebuilding it. A parked surface's embedded webpages read as out of view and pause under their own retention, which is what lets a site survive a tab flip with its session, scroll, and playing media rather than reloading cold (→ [[WebviewPM]]). Older tabs fall back to the serialized warm state and rebuild on return. How many surfaces stay parked is a single tunable in the detail pane.
 
 - **Pinned tabs** dock left as compact, label-less entity icons, the full name revealing on hover; they are the pin set, persist, and are protected — navigating while a pinned tab is active opens a new tab rather than replacing it. **Unpinned tabs** sit to the right as scratch tabs, where navigating replaces the active one in place unless "Open New Tab" is used.
 - **The full tab set persists per machine** — closing Pommora never resets the tabs; they reopen cold on relaunch, each machine keeping its own set. Warm view-state is session-only; heading folds re-fold from their durable per-page store.
