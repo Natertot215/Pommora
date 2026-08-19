@@ -117,3 +117,18 @@
 .settings-row-hint {
   color: var(--label-secondary);
 }
+/* A row's text action — Sign Out, Clear: quiet until hovered, sized like the row's other
+   controls. */
+.settings-action {
+  border: none;
+  background: none;
+  padding: 3px 8px;
+  border-radius: 6px;
+  color: var(--label-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.settings-action:hover {
+  background: var(--state-hover);
+  color: var(--label-primary);
+}
