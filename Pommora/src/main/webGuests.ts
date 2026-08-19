@@ -148,6 +148,10 @@ export function wheelGuest(
   deltaX: number,
   deltaY: number,
 ): void {
+  // Numbers off the wire, and only ever a guest: a WebContents of any other type is the app's own,
+  // which no renderer may drive, and a non-finite delta is refused by the send itself.
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return
+  if (!Number.isFinite(deltaX) || !Number.isFinite(deltaY)) return
   const guest = webContents.fromId(guestId)
   if (!guest || guest.isDestroyed() || guest.getType() !== 'webview') return
   guest.sendInputEvent({ type: 'mouseWheel', x, y, deltaX, deltaY, canScroll: true })
