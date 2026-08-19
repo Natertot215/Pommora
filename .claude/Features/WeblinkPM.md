@@ -10,7 +10,11 @@ A **webpage embed** is a Markdown line of the form `![Label](url)` standing alon
 
 **The tile.** Webpage tiles ride the same chassis as page embeds: the rounded frame, the fencing blanks, the bottom-edge resize strip, and the same editing protections — the line can be removed whole but never eroded in place, boundary insertions repair onto their own line, and deleting a tile's lone fencing blank is refused. Tile heights persist per page, keyed by address, and a stored height is capped to what the scrollport can hold.
 
-**Live at full visibility.** The guest webpage exists only while its tile is fully visible inside the page's scrollport, with a small pre-arm margin — a partially clipped guest cannot be clipped correctly, so the tile swaps to a static face just before it touches the edge and returns to the live site once fully back. Inside nested surfaces (a page embed's body), the face renders unconditionally. While no guest is attached, or while one is loading, the face is the quiet chassis surface; a page that fails to load or whose renderer dies shows the site's bare domain and re-attaches on the next visibility transition.
+**Live at full visibility.** The guest webpage runs only while its tile is fully visible in the window — a partially clipped guest cannot be clipped correctly, so the tile swaps to a static face at the edge and returns to the live site once fully back. Inside nested surfaces (a page embed's body, the hover card), the face renders unconditionally. While no guest is attached, or while one is loading, the face is the quiet chassis surface; a page that fails to load or whose renderer dies shows the site's bare domain and retries on its next visibility entry.
+
+**Engagement.** A live tile starts inert: clicks and scrolls belong to the document, exactly as a page embed waits for its click-in. Clicking a settled tile engages it — the site takes the pointer and keyboard — and clicking anywhere outside disengages it, as does the tile leaving full visibility, which also hands focus back to the editor if the site held it. A tile still loading keeps its shield up until the site settles.
+
+**Retention.** A guest scrolled out of view keeps its state — the site's scroll position, half-typed input, playing media — by hiding rather than closing. Hidden guests are capped: beyond the cap, the least-recently-hidden guest is released, and its tile reloads fresh the next time it scrolls into view. Visible tiles are always live and never count against the cap.
 
 ### The Web Session
 
