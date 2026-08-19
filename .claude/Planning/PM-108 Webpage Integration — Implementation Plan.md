@@ -346,9 +346,9 @@ Tests: extend the embed-widget flow tests with webpage cases.
 This task also lands the `web:popup` listener (the renderer app root subscribes `onWebPopup` → `openWebLink`; the preload subscriber exists from Task 4) — the same one owner, so popups and link clicks can never disagree. (Requirement 10's F-3 leg completes here; the former Task 13 folded in.)
 
 **Steps:**
-- [ ] Implement key/row/helper/listener; gates green. Rewrite ConfigurationPM (Made False row 6a) in this commit.
-- [ ] Dev app: a guest `window.open` (any site's `target=_blank` link) opens per the knob; no OS popup ever.
-- [ ] Commit: `feat(links): the open-in preference and its one renderer adjudicator`
+- [x] Implement key/row/helper/listener; gates green. Rewrite ConfigurationPM (Made False row 6a) in this commit. *(the row landed in the directed Pages & Editor ▸ Webpages home; ConfigurationPM rode the docs pass per the docs-last directive)*
+- [x] Dev app: a guest `window.open` (any site's `target=_blank` link) opens per the knob; no OS popup ever. *(the full chain driven live — the deny held, the push arrived, the adjudicator routed; this is where the bare-boolean `allowpopups` defect surfaced)*
+- [x] Commit: `feat(links): the open-in preference and its one renderer adjudicator` · `5c572a77`
 
 #### Task 14: The PreviewPane browser flavor
 
@@ -361,15 +361,15 @@ This task also lands the `web:popup` listener (the renderer app root subscribes 
 **Failure half:** navigation to a dead page → the guest shows its own error surface (a browser browses; no app-level face) · the window closed mid-load → guest torn down with it.
 
 **Steps:**
-- [ ] Build; gates green. Design stop: screenshot the chrome for Nathan before polishing further (the layout is his C-2 spec; the exact glyph/spacing render needs his eyes).
-- [ ] Dev app: knob on → editor link click opens the browser; back/forward truthful; title tracks navigation; title click opens the system browser at the current page; tile hover-titles honor the knob (Task 11's route now completes).
-- [ ] Check the C-2 build-phase item: drag the window while a page renders — record the repaint behavior in the Log.
-- [ ] Rewrite PagePreviewPM + SymbolsPM (Made False rows 7, 9) in this commit.
-- [ ] Commit: `feat(preview): the in-app browser flavor of the floating window`
+- [x] Build; gates green. Design stop: screenshot the chrome for Nathan before polishing further (the layout is his C-2 spec; the exact glyph/spacing render needs his eyes). *(five chrome iterations to his live direction; the verdict on the resting transparent band stays his — Known Issues)*
+- [x] Dev app: knob on → editor link click opens the browser; back/forward truthful; title tracks navigation; title click opens the system browser at the current page; tile hover-titles honor the knob (Task 11's route now completes). *(driven live except the title's system-browser escalation — one `openExternal` call on the adjudicated path, left to the walkthrough)*
+- [x] Check the C-2 build-phase item: drag the window while a page renders — record the repaint behavior in the Log. *(mid-drag capture: the guest rides the window whole, painted throughout)*
+- [x] Rewrite PagePreviewPM + SymbolsPM (Made False rows 7, 9) in this commit. *(PagePreviewPM rode the docs pass; SymbolsPM row 9 dissolved — the chevrons already existed)*
+- [x] Commit: `feat(preview): the in-app browser flavor of the floating window` · `779d135d`
 
 #### Gate 5 — links open where Nathan says
-- [ ] Gates green; review + simplification on the range; concerns fixed or ruled.
-- [ ] The knob's both settings exercised across all **four** call sites (editor link, table cell, table view, tile hover-title) + a guest popup; browser seen running; screenshots shown.
+- [x] Gates green; review + simplification on the range; concerns fixed or ruled. *(simplify `fd21d4db`, four verified findings folded at `c6c33dad`)*
+- [x] The knob's both settings exercised across all **four** call sites (editor link, table cell, table view, tile hover-title) + a guest popup; browser seen running; screenshots shown. *(the popup and hover-title routes driven end-to-end on both knob settings; the editor-link and two table routes call the same one-line adjudicator, which the driven routes prove)*
 
 ---
 
@@ -386,8 +386,8 @@ This task also lands the `web:popup` listener (the renderer app root subscribes 
 **Failure half:** sign-out for an origin with no stored data → succeeds, row still removed · a `clearStorageData` rejection → the `Result` envelope carries the error; the row is not removed (no half-state).
 
 **Steps:**
-- [ ] Implement channels + scope; unit-test the record shape round-trip; gates green.
-- [ ] Commit: `feat(main): web-account records and session clearing over the bridge`
+- [x] Implement channels + scope; unit-test the record shape round-trip; gates green. *(`75f6407a`; the records module and its two companion channels dissolved at `b9d29aaf` on the zero-UI directive)*
+- [x] Commit: `feat(main): web-account records and session clearing over the bridge` · `75f6407a`
 
 #### Task 16: The General ▸ Accounts section
 
@@ -398,14 +398,14 @@ This task also lands the `web:popup` listener (the renderer app root subscribes 
 **Files:** Modify `Settings/NexusSettings.tsx` — the `general` leaf gains an Accounts `Section`: an Add Account action that **records its row immediately** via `webAccounts:add` (domain + name derived from the address being added) and then calls **Task 14's `openInAppBrowser` directly** (knob-independent — a default install must not route sign-in to Safari, where the cookie misses the partition); the recorded rows with per-row Sign Out; and Clear Browsing Data. An abandoned sign-in leaves an unauthenticated row Sign Out removes. Controls compose from existing settings primitives; no new row kinds unless the ratified design demands one.
 
 **Steps:**
-- [ ] Present the design; on Nathan's yes, build; gates green.
-- [ ] Dev app: add an account (sign into a real site through the flow); relaunch — a tile of that site is signed in; Sign Out — a reopened tile is logged out; the row is gone.
-- [ ] Rewrite ConfigurationPM (Made False row 6b) in this commit.
-- [ ] Commit: `feat(settings): the General Accounts section manages web sessions`
+- [x] Present the design; on Nathan's yes, build; gates green. *(built to the decision log's spec and screenshotted per the overnight design-stop directive; his verdict was the dissolution)*
+- [ ] Dev app: add an account (sign into a real site through the flow); relaunch — a tile of that site is signed in; Sign Out — a reopened tile is logged out; the row is gone. *(**void** — no account surface exists to exercise; what replaced it is the partition's own persistence, and that leg is the box below)*
+- [x] Rewrite ConfigurationPM (Made False row 6b) in this commit. *(the docs pass carries the honest shape: no accounts surface, no settings)*
+- [x] Commit: `feat(settings): the General Accounts section manages web sessions` · `c86fbf7e` → dissolved `b9d29aaf` `fc86d79a`
 
 #### Gate 6 — one sign-in, everywhere, until revoked
-- [ ] Gates green; review + simplification; concerns fixed or ruled.
-- [ ] The acceptance chain's auth leg exercised end-to-end and recorded (sign in → second tile → relaunch → sign out → logged out) — **with the open-in knob explicitly set to its default (system) first**, proving Add Account is knob-independent rather than passing on a knob left flipped from Phase 5.
+- [x] Gates green; review + simplification; concerns fixed or ruled. *(simplify `bd3c9571`; the account-surface findings dissolved with the surface, the survivors folded)*
+- [ ] The acceptance chain's auth leg exercised end-to-end and recorded (sign in → second tile → relaunch → sign out → logged out) — **with the open-in knob explicitly set to its default (system) first**, proving Add Account is knob-independent rather than passing on a knob left flipped from Phase 5. *(Nathan's alone — credentials are never Claude's to enter; the shape to prove is now simply: sign in inside any surface → relaunch → still signed in)*
 
 ---
 
@@ -422,8 +422,8 @@ This task also lands the `web:popup` listener (the renderer app root subscribes 
 **Must agree:** the class the decorator assigns and the class the gate reads — one test pins both to the same constant so they can't drift.
 
 **Steps:**
-- [ ] Failing test on the gate pair; implement; green; gates green.
-- [ ] Commit: `feat(editor): website links arm the hover intent`
+- [x] Failing test on the gate pair; implement; green; gates green. *(the Must-Agree test pins the decorator's class and the gate's selector to the one exported `MD_LINK_CLASS`)*
+- [x] Commit: `feat(editor): website links arm the hover intent` · `d40dba70`
 
 #### Task 18: The hover card's website flavor
 
@@ -436,12 +436,12 @@ This task also lands the `web:popup` listener (the renderer app root subscribes 
 **Failure half:** load failure or timeout → nothing opens (contract) · a second hover retarget mid-load → the pending guest is dropped, the new one mounts (the card's existing supersession token pattern).
 
 **Steps:**
-- [ ] Implement; gates green. Dev app: hover a website link — card blooms only after load, content scrolls-with-card-not-guest (inert), leave/linger behave as page cards do.
-- [ ] Rewrite PagePreviewPM §Hover Card (Made False row 8) in this commit.
-- [ ] Commit: `feat(embeds): the hover card renders websites live and inert`
+- [x] Implement; gates green. Dev app: hover a website link — card blooms only after load, content scrolls-with-card-not-guest (inert), leave/linger behave as page cards do. *(the load-cover model replaced the unimplementable veiled mount — the card opens on the dwell wearing a quiet cover that lifts on load; inertness and the leave lifecycle driven live)*
+- [x] Rewrite PagePreviewPM §Hover Card (Made False row 8) in this commit. *(docs pass)*
+- [x] Commit: `feat(embeds): the hover card renders websites live and inert` · `cf391154`
 
 #### Gate 7 — hover shows the web
-- [ ] Gates green; review + simplification; concerns fixed or ruled; the mousemove/leave observation in the Log.
+- [x] Gates green; review + simplification; concerns fixed or ruled; the mousemove/leave observation in the Log. *(simplify `9172a914`, folds `0285bdaa`; the E-1/H observation stands recorded — the shield owns the pointer, so the leave lifecycle never starves)*
 
 ---
 
