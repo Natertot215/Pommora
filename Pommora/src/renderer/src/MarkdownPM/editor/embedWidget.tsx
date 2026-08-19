@@ -333,10 +333,10 @@ class WebpageTileWidget extends WidgetType {
     readonly url: string,
     readonly label: string,
     readonly height: number | undefined,
-    /** Nested editors (a page-embed body, the hover card) are themselves scrollable surfaces
-     *  whose inner fully-visible reading reproduces the spike's bleed against the outer clip —
-     *  below depth 0 the face renders unconditionally. */
-    readonly depth0: boolean,
+    /** Guests run live only on the page surface; nested editors (a page-embed body, the hover
+     *  card) render the face unconditionally. NOT an ancestors-length read — the page surface
+     *  carries its own path in the chain as the cycle guard, so length can't tell it apart. */
+    readonly pageSurface: boolean,
   ) {
     super()
   }
@@ -346,7 +346,7 @@ class WebpageTileWidget extends WidgetType {
       o.url === this.url &&
       o.label === this.label &&
       o.height === this.height &&
-      o.depth0 === this.depth0
+      o.pageSurface === this.pageSurface
     )
   }
 
@@ -386,13 +386,13 @@ class WebpageTileWidget extends WidgetType {
             { className: 'tile-chassis-body' },
             createElement(LazyWebpageEmbed, {
               url: this.url,
-              visible: this.depth0 && dom._visible === true,
+              visible: this.pageSurface && dom._visible === true,
             }),
           ),
         ),
         // Heights ride the same persisted blob as page tiles, URL-keyed — the blob's keys are
         // free by design. Outside the Suspense boundary, as on the page tile.
-        this.depth0 && host.saveHeights
+        this.pageSurface && host.saveHeights
           ? createElement(EmbedResizeHandle, { view, targetId: this.url })
           : null,
       ),
@@ -402,7 +402,7 @@ class WebpageTileWidget extends WidgetType {
   toDOM(view: EditorView): HTMLElement {
     const dom = document.createElement('span') as WebTileDom
     dom._renderW = () => this.renderInto(dom, view)
-    if (this.depth0) {
+    if (this.pageSurface) {
       const o = observersFor(view)
       o.tiles.add(dom)
       o.io.observe(dom)
@@ -499,7 +499,12 @@ function buildTiles(
       from: w.from,
       to: w.to,
       deco: Decoration.replace({
-        widget: new WebpageTileWidget(w.url, w.label, heights[w.url], host.ancestors.length === 0),
+        widget: new WebpageTileWidget(
+          w.url,
+          w.label,
+          heights[w.url],
+          host.saveHeights !== undefined,
+        ),
       }),
       range: { kind: 'webpage', from: w.from, to: w.to, url: w.url, label: w.label },
     })
