@@ -13,17 +13,20 @@ export interface PickNode {
   children?: PickNode[]
 }
 
-/** What a grip's block offers above Delete: an embed tile re-aims through the pick tree, a list
- *  switches its markers, and every other kind offers Delete alone. A heading chevron is its own
- *  surface — Rename, Size (its level), and a Delete that drops the heading line but keeps its body. */
+/** What a grip's block offers above Delete: an embed tile re-aims through the pick tree, a webpage
+ *  tile re-aims through Edit Link, a list switches its markers, and every other kind offers Delete
+ *  alone. A heading chevron is its own surface — Rename, Size (its level), and a Delete that drops
+ *  the heading line but keeps its body. */
 export type GripMenuContext =
   | { kind: 'embed'; tree: PickNode[] }
+  | { kind: 'webpage' }
   | { kind: 'list'; current: ListKind | null }
   | { kind: 'heading'; level: number }
   | { kind: 'plain' }
 
 export type GripMenuAction =
   | { action: 'source'; title: string }
+  | { action: 'editLink' }
   | { action: 'listKind'; kind: ListKind }
   | { action: 'rename' }
   | { action: 'size'; level: number }

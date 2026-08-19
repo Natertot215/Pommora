@@ -16,6 +16,10 @@ A **webpage embed** is a Markdown line of the form `![Label](url)` standing alon
 
 **Retention.** A guest scrolled out of view keeps its state — the site's scroll position, half-typed input, playing media — by hiding rather than closing. Hidden guests are capped: beyond the cap, the least-recently-hidden guest is released, and its tile reloads fresh the next time it scrolls into view. Visible tiles are always live and never count against the cap.
 
+**The hover-title.** Hovering a tile reveals its title at the top center — the hand-written label where one exists, otherwise the address resolved through the nexus link format, including the fetched page title in Page Title mode. The title is clickable whether or not the tile is engaged, and opens the address outside the tile. The document is never written for display: the label on disk stays exactly as authored.
+
+**The grip.** A webpage tile's block grip carries **Edit Link** above **Delete**. Edit Link opens a text field anchored on the tile, seeded with the current address; committing a new one re-aims the tile in place — the line becomes the bare labelless form, the displayed title re-derives, and the tile's persisted height follows it. An invalid address refuses to commit, and re-committing the same address changes nothing. Delete removes the block whole, exactly as every grip's Delete does.
+
 ### The Web Session
 
 Every guest webpage lives on one persistent session partition owned by the main process. An attach that does not declare that partition — or that carries a non-web address or its own web preferences — is denied outright, and a guest can never navigate itself to anything but a web address. Signing into a site in one tile signs it in for every web surface, per machine, surviving restarts.

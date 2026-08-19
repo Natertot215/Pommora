@@ -323,9 +323,9 @@ Tests: extend the embed-widget flow tests with webpage cases.
 **Failure half:** TextPicker commit with an invalid URL → no dispatch, picker's ghost cue (existing `isValidLink` validation pattern) · re-aim to the same URL → no-op, no height churn.
 
 **Steps:**
-- [ ] Implement; gates green. Dev app: hover reveals the title, click opens per the knob (system browser until Phase 5 lands the knob — the call site routes through the existing `openExternal` until then, noted as the resting state); grip → Edit Link → new URL re-aims in place, the displayed title re-derives, height survives; Delete removes whole.
-- [ ] Screenshot title + picker for Nathan (design stop).
-- [ ] Commit: `feat(embeds): the clickable hover-title and the grip's Edit Link arm`
+- [x] Implement; gates green. Dev app: hover reveals the title, click opens per the knob (system browser until Phase 5 lands the knob — the call site routes through the existing `openExternal` until then, noted as the resting state); grip → Edit Link → new URL re-aims in place, the displayed title re-derives, height survives; Delete removes whole. *(Dev-app sweep = Gate 4 walkthrough — instance lock. The grip arm is a main-process change: the gate walkthrough needs a dev restart, not ⌘R.)*
+- [ ] Screenshot title + picker for Nathan (design stop). *(Instance lock — the design stop is Nathan's own eyes at the Gate 4 walkthrough.)*
+- [x] Commit: `feat(embeds): the clickable hover-title and the grip's Edit Link arm`
 
 #### Gate 4 — the tile behaves like Pommora
 - [ ] Gates green; review + simplification on the range; concerns fixed or ruled; negative-control observations in the Log.
