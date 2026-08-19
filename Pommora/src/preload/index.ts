@@ -142,6 +142,13 @@ const api = {
   // The hover card's universal size — one device-local db row.
   hoverCard: { load: ask('hoverCard:load'), save: ask('hoverCard:save') },
   devicePrefs: { load: ask('devicePrefs:load'), save: ask('devicePrefs:save') },
+  // Web accounts — the recorded rows and the session wipes behind them.
+  webAccounts: {
+    list: ask('webAccounts:list'),
+    add: ask('webAccounts:add'),
+    signOut: ask('webAccounts:signOut'),
+    clearBrowsing: ask('webAccounts:clearBrowsing'),
+  },
   rowMenu: ask('row-menu'),
   // capture returns the nexus-asset:// URL; evict prunes thumbnails outside the live recents∪pins set.
   capture: { thumbnail: ask('capture:thumbnail'), evict: ask('nav:evictThumbs') },
