@@ -128,11 +128,11 @@ Constraints: `sandbox`/`contextIsolation` stay on; guests are validated at attac
 **Survivors:** `pasteLinkIntoText` (the wrap axis) and ⌘⇧V's semantics — with no selection the inverse pastes literal text; with a selection the existing Paste As ▸ Plain Text row is the literal path (already shipped; nothing to add).
 
 **Steps:**
-- [ ] Invert the existing `decidePaste` tests for the removed axis first — expect red against current code.
-- [ ] Delete the key; follow the type gate through every listed reader; re-run tests — green.
-- [ ] `rg -F "autoFormatPastedLinks" Pommora/src` → 0 (control: `rg -F "pasteLinkIntoText" Pommora/src` → 5).
-- [ ] Gates green. Rewrite the ConfigurationPM/MarkdownPM/ConnectionsPM sentences (Made False rows 2–3) in this commit.
-- [ ] Commit: `feat(links): pasted addresses always format; the toggle retires`
+- [x] Invert the existing `decidePaste` tests for the removed axis first — expect red against current code. *(9 red as expected)*
+- [x] Delete the key; follow the type gate through every listed reader; re-run tests — green.
+- [x] `rg -F "autoFormatPastedLinks" Pommora/src` → 0 (control: `rg -F "pasteLinkIntoText" Pommora/src` → 7, matching the Dead Vocabulary header; this step's stated 5 was the plan's own inconsistency).
+- [x] Gates green. Rewrite the ConfigurationPM/MarkdownPM sentences (Made False rows 2–3) in this commit — ConnectionsPM carries no toggle-gated paste claim; row 3's ConnectionsPM half was overstated.
+- [x] Commit: `feat(links): pasted addresses always format; the toggle retires`
 
 #### Task 3: The destination guard — no link writes inside a link's target
 
@@ -488,6 +488,7 @@ This task also lands the `web:popup` listener (the renderer app root subscribes 
 ### Rulings
 ### Open Against Later Tasks
 ### Deviations
+- Task 2's control count read 7, not the step's 5 — the plan's Dead Vocabulary header already said 7; the step's number was stale. ConnectionsPM holds no toggle-gated paste sentence, so Made False row 3 rewrote MarkdownPM alone. The `when` removal also collapsed `LeafRow` into `RowControl` (it became a pass-through).
 ### Lessons
 ### Sequenced After
 - Session Roaming (passphrase-encrypted cookie vault) — the spec's committed follow-up cycle.

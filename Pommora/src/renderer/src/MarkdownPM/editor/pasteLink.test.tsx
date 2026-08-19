@@ -57,23 +57,14 @@ afterEach(async () => {
 })
 
 describe('pasting an address into the editor', () => {
-  // Declining hands the event back to CodeMirror, which inserts the text as typed — so the address
-  // landing bare is the positive evidence that the settings gate held.
-  it('leaves it literal while the setting is off', async () => {
-    const view = await mountEditor({ initialBody: '' })
-    await act(async () => paste(view, URL))
-    expect(view.state.doc.toString()).toBe(URL)
-  })
-
-  it('writes a link when the setting is on', async () => {
-    settings({ autoFormatPastedLinks: true })
+  it('writes a link', async () => {
     const view = await mountEditor({ initialBody: '' })
     await act(async () => paste(view, URL))
     expect(view.state.doc.toString()).toBe(`[${URL}](${URL})`)
   })
 
   it('writes the chosen form', async () => {
-    settings({ autoFormatPastedLinks: true, defaultLinkFormat: 'link-short' })
+    settings({ defaultLinkFormat: 'link-short' })
     const view = await mountEditor({ initialBody: '' })
     await act(async () => paste(view, URL))
     expect(view.state.doc.toString()).toBe(`[example.com](${URL})`)
@@ -87,29 +78,28 @@ describe('pasting an address into the editor', () => {
     expect(view.state.doc.toString()).toBe(`read the [docs](${URL}) now`)
   })
 
-  it('leaves a non-address alone even with the setting on', async () => {
-    settings({ autoFormatPastedLinks: true })
+  // Declining hands the event back to CodeMirror, which inserts the text as typed — so the address
+  // landing bare is the positive evidence that the gate held.
+  it('leaves a non-address alone', async () => {
     const view = await mountEditor({ initialBody: '' })
     await act(async () => paste(view, 'App.tsx'))
     expect(view.state.doc.toString()).toBe('App.tsx')
   })
 
   it('declines when the clipboard cannot be read', async () => {
-    settings({ autoFormatPastedLinks: true })
     const view = await mountEditor({ initialBody: '' })
     await act(async () => paste(view, null))
     expect(view.state.doc.toString()).toBe('')
   })
 
   it('leaves a read-only surface untouched', async () => {
-    settings({ autoFormatPastedLinks: true })
     const view = await mountEditor({ initialBody: 'body', readOnly: true })
     await act(async () => paste(view, URL))
     expect(view.state.doc.toString()).toBe('body')
   })
 
   it('writes the domain in Page Title form, then swaps the title in when it lands', async () => {
-    settings({ autoFormatPastedLinks: true, defaultLinkFormat: 'link-title' })
+    settings({ defaultLinkFormat: 'link-title' })
     const view = await mountEditor({ initialBody: '' })
     await act(async () => paste(view, URL))
     expect(view.state.doc.toString()).toBe(`[example.com](${URL})`)
@@ -121,7 +111,7 @@ describe('pasting an address into the editor', () => {
   })
 
   it('leaves the label alone if it was retitled before the fetch landed', async () => {
-    settings({ autoFormatPastedLinks: true, defaultLinkFormat: 'link-title' })
+    settings({ defaultLinkFormat: 'link-title' })
     const view = await mountEditor({ initialBody: '' })
     await act(async () => paste(view, URL))
     // Retitle it by hand, the way Format or a plain edit would.
@@ -139,7 +129,7 @@ describe('pasting an address into the editor', () => {
   // change, never fires. Without an explicit withdrawal the anchor would sit pending forever and
   // re-dispatch on every store write thereafter.
   it('stops waiting even when the fetched title reads exactly as the domain did', async () => {
-    settings({ autoFormatPastedLinks: true, defaultLinkFormat: 'link-title' })
+    settings({ defaultLinkFormat: 'link-title' })
     const view = await mountEditor({ initialBody: '' })
     await act(async () => paste(view, URL))
     expect(view.state.field(pendingTitles)).toHaveLength(1)
@@ -152,7 +142,7 @@ describe('pasting an address into the editor', () => {
   })
 
   it('asks for no title when the cache already holds one', async () => {
-    settings({ autoFormatPastedLinks: true, defaultLinkFormat: 'link-title' })
+    settings({ defaultLinkFormat: 'link-title' })
     useSession.setState({ linkTitles: { [URL]: 'Example Domain' } })
     const view = await mountEditor({ initialBody: '' })
     await act(async () => paste(view, URL))
@@ -160,25 +150,17 @@ describe('pasting an address into the editor', () => {
   })
 
   it('puts the caret after the link it wrote', async () => {
-    settings({ autoFormatPastedLinks: true })
     const view = await mountEditor({ initialBody: '' })
     await act(async () => paste(view, URL))
     expect(view.state.selection.main.head).toBe(view.state.doc.length)
   })
 })
 
-// ⌘⇧V does the opposite of whatever ⌘V is set to do, on whichever axis a selection selects: with
-// text selected the toggle in question is whether a paste wraps it, and without one it is whether an
-// address is formatted at all.
+// ⌘⇧V does the opposite of ⌘V, on whichever axis a selection selects: with text selected the
+// question is whether a paste wraps it, and without one it is the literal escape from the
+// always-formatted paste.
 describe('the inverse chord', () => {
-  it('writes a link where a plain paste would have left the address', async () => {
-    const view = await mountEditor({ initialBody: '' })
-    await act(async () => chord(view))
-    expect(view.state.doc.toString()).toBe(`[${URL}](${URL})`)
-  })
-
   it('leaves the address where a plain paste would have written a link', async () => {
-    settings({ autoFormatPastedLinks: true })
     const view = await mountEditor({ initialBody: '' })
     await act(async () => chord(view))
     expect(view.state.doc.toString()).toBe(URL)
@@ -191,12 +173,14 @@ describe('the inverse chord', () => {
     expect(view.state.doc.toString()).toBe(`read the [docs](${URL}) now`)
   })
 
-  it('replaces a selection where a plain paste would have wrapped it', async () => {
+  // The chord was spent choosing not to wrap; the replacing paste is an ordinary caret paste,
+  // and those format.
+  it('replaces a selection with the formatted link where a plain paste would have wrapped it', async () => {
     settings({ pasteLinkIntoText: true })
     const view = await mountEditor({ initialBody: 'read the docs now' })
     view.dispatch({ selection: { anchor: 9, head: 13 } })
     await act(async () => chord(view))
-    expect(view.state.doc.toString()).toBe('read the https://www.example.com/a/b now')
+    expect(view.state.doc.toString()).toBe(`read the [${URL}](${URL}) now`)
   })
 
   it('writes a non-address as the text it is', async () => {

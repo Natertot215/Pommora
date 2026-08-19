@@ -440,7 +440,6 @@ describe('readNexus — personalization', () => {
       'revealTabBarOnHover',
       'connectionsOpenInPreview',
       'permanentDelete',
-      'autoFormatPastedLinks',
       'pasteLinkIntoText',
     ] as const
     const t = await readNexus(

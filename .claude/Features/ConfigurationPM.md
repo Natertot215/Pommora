@@ -64,8 +64,7 @@ Seated and empty. Accent, connection color, default icons, and the default view 
 
 | Setting | Key | Description | Options |
 | --------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------- | --------------------------------------- |
-| Automatically Format Pasted Links | `autoFormatPastedLinks` | Writes a pasted address as a link rather than as literal text. | On · **Off** |
-| Default Format | `defaultLinkFormat` | Which form that link takes. Disclosed only while the row above is on. | **Full Link** · Short Link · Page Title |
+| Default Format | `defaultLinkFormat` | Which form a pasted address is written in. | **Full Link** · Short Link · Page Title |
 | Paste Link Into Text | `pasteLinkIntoText` | Pasting an address over selected text turns that text into the link instead of replacing it. | On · **Off** |
 
 **Connections**
@@ -111,7 +110,7 @@ Keyboard shortcuts are data, not code: the `commands` object in `.nexus/settings
 | -------------------------------------- | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
 | Toggle Ribbon | `toggle-ribbon` | Slides the sidebar's ribbon strip away and back. | ⌘T |
 | Toggle Navigation | `toggle-nav` | Summons the Navigation window. | ⌘O |
-| Inverse Paste | `paste-inverse` | Pastes the opposite way a plain paste is set to behave (→ [[MarkdownPM]] §Pasted links). It takes the chord Paste and Match Style holds by default, so that item keeps its act under the name **Paste Without Formatting** but gives up its accelerator. | ⌘⇧V |
+| Inverse Paste | `paste-inverse` | Pastes the opposite way a plain paste behaves (→ [[MarkdownPM]] §Pasted links). It takes the chord Paste and Match Style holds by default, so that item keeps its act under the name **Paste Without Formatting** but gives up its accelerator. | ⌘⇧V |
 
 #### Trash
 
