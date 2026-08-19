@@ -28,32 +28,50 @@ interface BrowserGuest extends HTMLElement {
   canGoBack(): boolean
   canGoForward(): boolean
   getURL(): string
+  loadURL(url: string): Promise<void>
 }
 
 export function BrowserWindow(): React.JSX.Element | null {
-  const url = useSession((s) => s.browserUrl)
-  const { mounted, closing } = useExitPresence(url !== null)
-  // Held through the exit animation (the store nulls the address at close). An overtake swaps the
+  const summon = useSession((s) => s.browserSummon)
+  const { mounted, closing } = useExitPresence(summon !== null)
+  // Held through the exit animation (the store nulls the summon at close). An overtake swaps the
   // guest's destination in place; the window never remounts.
-  const held = useRef(url)
-  if (url) held.current = url
+  const held = useRef(summon)
+  if (summon) held.current = summon
   if (!mounted || !held.current) return null
-  return <BrowserWindowBody url={held.current} closing={closing} />
+  return <BrowserWindowBody summon={held.current} closing={closing} />
 }
 
-function BrowserWindowBody({ url, closing }: { url: string; closing: boolean }): React.JSX.Element {
+function BrowserWindowBody({
+  summon,
+  closing,
+}: {
+  summon: { url: string; seq: number }
+  closing: boolean
+}): React.JSX.Element {
+  const { url, seq } = summon
   const closeBrowser = useSession((s) => s.closeBrowser)
   const ref = useRef<BrowserGuest | null>(null)
   const [title, setTitle] = useState('')
   const [current, setCurrent] = useState(url)
   const [nav, setNav] = useState({ back: false, forward: false })
 
-  // A retake aims the standing guest at the new address; navigation state re-derives from the
-  // guest's own events.
+  // A retake aims the standing guest at the address — imperatively, because the guest may have
+  // navigated away from the very url being re-summoned, which the src attribute reads as
+  // unchanged. The mount run stands down; src carries the first aim.
+  const applied = useRef(seq)
   useEffect(() => {
     setTitle('')
     setCurrent(url)
-  }, [url])
+    if (applied.current === seq) return
+    applied.current = seq
+    const wv = ref.current
+    try {
+      if (wv && wv.getURL() !== url) void wv.loadURL(url)
+    } catch {
+      // A pre-attach guest answers no navigation calls; src still owns its first aim.
+    }
+  }, [url, seq])
 
   useEffect(() => {
     const wv = ref.current

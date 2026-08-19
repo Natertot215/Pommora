@@ -4,7 +4,7 @@
 // scrolled out keeps its state by hiding rather than unmounting, under the retention cap. The
 // component is editor-agnostic: visibility and the outside-click seam arrive as props and nothing
 // here imports CodeMirror, so a future dashboard host mounts it unchanged.
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { cx } from '@renderer/design-system/cx'
 import { text } from '@renderer/design-system/tokens'
 import { linkDomain } from '@shared/links'
@@ -99,7 +99,9 @@ export function WebpageEmbed({
     if (!guest) setLoaded(false)
   }, [guest])
 
-  useEffect(() => {
+  // Layout effect, not passive: `parting` must hold the guest painted BEFORE the retained class
+  // reaches the compositor — a hidden guest captures an empty frame.
+  useLayoutEffect(() => {
     if (visible) {
       // Entry clears any standing failure, so the retry always happens in front of the user —
       // never as an invisible load behind a hidden tile.
@@ -128,18 +130,33 @@ export function WebpageEmbed({
     }
     setParting(true)
     let settled = false
+    let deadline: ReturnType<typeof setTimeout> | undefined
     const settle = (dataUrl: string | null): void => {
       if (settled) return
       settled = true
+      clearTimeout(deadline)
       if (dataUrl) setSnap(dataUrl)
       retain()
     }
-    el.capturePage().then(
-      (img) => settle(img.toDataURL()),
-      () => settle(null),
-    )
-    // The deadline that stops a hung capture from keeping the clipped guest painted.
-    setTimeout(() => settle(null), CAPTURE_DEADLINE_MS)
+    // The deadline arms first, and the call sits in a try: a pre-attach guest's capturePage
+    // throws synchronously (the method exists on the prototype before the guest does), and the
+    // clip must still complete without a frame.
+    deadline = setTimeout(() => settle(null), CAPTURE_DEADLINE_MS)
+    try {
+      el.capturePage().then(
+        (img) => settle(img.toDataURL()),
+        () => settle(null),
+      )
+    } catch {
+      settle(null)
+    }
+    // Unmount or re-entry cancels the pending capture — a settle landing after the drop would
+    // re-insert this guest's freed id into retention as a dead slot.
+    return () => {
+      settled = true
+      clearTimeout(deadline)
+      setParting(false)
+    }
   }, [visible, id])
 
   useEffect(() => () => webGuestRetention.drop(id), [id])
