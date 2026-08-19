@@ -34,23 +34,23 @@
    glance surface — pointer events land on the host, never the site. */
 .conn-hover-web {
   position: absolute;
-  inset: 0;
+  /* Escapes the pane's own 4px gutter: the site reads edge-to-edge like a page preview's body.
+     The guest clips its own corners — a pane clip can't reach a composited guest surface. The
+     shield rides the same box. */
+  inset: -4px;
   display: flex;
-  width: 100%;
-  height: 100%;
-}
-.conn-hover-web-cover {
-  position: absolute;
-  inset: 0;
-  background: var(--surface-primary);
-  transition: opacity var(--duration-base) var(--ease-standard);
-}
-.conn-hover-web-cover.is-lifted {
-  opacity: 0;
+  border-radius: var(--glass-radius);
+  overflow: hidden;
 }
 .conn-hover-web-shield {
   position: absolute;
-  inset: 0;
+  inset: -4px;
+  border-radius: var(--glass-radius);
+  background: var(--surface-primary);
+  transition: opacity var(--duration-base) var(--ease-standard);
+}
+.conn-hover-web-shield.is-lifted {
+  opacity: 0;
 }
 
 .conn-hover-body .pgembed {

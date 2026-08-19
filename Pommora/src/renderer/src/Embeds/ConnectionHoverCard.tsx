@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ConnectionsApi, ConnPage } from '@renderer/MarkdownPM/connections'
+import { LINK_RESOLVE_TIMEOUT_MS } from '@shared/links'
 import {
   PickerMenu,
   type PickerDirection,
@@ -23,9 +24,7 @@ import { CARD_MIN, hoverCardSize, seedHoverCardSize, setHoverCardSize } from './
 const VIEWPORT_MARGIN = 8
 const ANCHOR_GAP = 6
 const LEAVE_GRACE_MS = 200
-// The website flavor's resolve window — the linkTitles convention: a site that hasn't painted by
-// then opens nothing.
-const SITE_TIMEOUT_MS = 6000
+
 const RECT_SLOP = 6
 // A non-path host chain: nested `![[Embed]]` tiles inside the body count their depth past 1 and
 // render inert (a hover card must never put a third page's editor behind a click), while no real
@@ -42,7 +41,6 @@ type Hovered =
   | { kind: 'page'; page: ConnPage; el: Element }
   | { kind: 'site'; url: string; el: Element }
 
-/** What a target answers to for retarget comparison — a page by identity, a site by address. */
 const keyOf = (h: Hovered): string => (h.kind === 'page' ? `p:${h.page.id}` : `s:${h.url}`)
 
 let present: ((next: Hovered | null) => void) | null = null
@@ -71,11 +69,11 @@ export function hoverConnection(page: ConnPage, el: Element): void {
   })
 }
 
-/** The website flavor's entry — the same dwell, a live site instead of a page. The card opens on
- *  the dwell with a quiet cover; the site fades in on load-complete, and a failure or timeout
- *  closes the card whole. */
+/** The website flavor's entry — the same dwell, a live site instead of a page. */
 export function hoverWebsite(url: string, el: Element): void {
   if (!el.isConnected) return
+  // Superseding any in-flight cold-page fetch — its late resolve must not steal this card.
+  ++pendingFetch
   present?.({ kind: 'site', url, el })
 }
 
@@ -92,6 +90,7 @@ export function ConnectionHoverCard(): React.JSX.Element {
   // State, not a ref: the pane's portal lands a beat after the open render (exit-presence mounts
   // it), so the guest-lifecycle effect must re-run when the element actually exists.
   const [siteEl, setSiteEl] = useState<HTMLElement | null>(null)
+  const attachSiteEl = useCallback((el: Element | null) => setSiteEl(el as HTMLElement | null), [])
   // The website flavor loads in the open card behind a quiet cover that lifts on load-complete —
   // the tile's blank-face precedent. A guest mounted in a hidden pane never reliably attaches
   // (Chromium defers demoted subtrees), so the card cannot wait veiled for the load instead.
@@ -190,20 +189,29 @@ export function ConnectionHoverCard(): React.JSX.Element {
         retargetRaf.current = 0
       }
       const cur = hoveredRef.current
+      // A re-present of the SAME target is free — re-dwelling a link must not reset the site
+      // cover or re-arm the resolve deadline over an already-painted guest.
+      if (next && cur && keyOf(next) === keyOf(cur) && next.el === cur.el) return
+      // Readiness follows the GUEST, not the presenter: it resets only when the rendered site
+      // actually changes, so a same-url retarget (the guest survives on its key) stays lifted.
+      const freshGuest = next?.kind === 'site' && !(cur?.kind === 'site' && cur.url === next.url)
       // Retarget routes through a closed beat: PickerMenu re-decides its flip only on open=false,
       // and the Bloom replays at the new link. A different ELEMENT for the same page retargets
       // too — placement captured the old node, so an in-place swap would leave the card frozen
       // over the first link.
-      setSiteReady(false)
-      if (next && cur && (keyOf(next) !== keyOf(cur) || next.el !== cur.el)) {
+      if (next && cur) {
         setHovered(null)
         retargetRaf.current = requestAnimationFrame(() => {
           retargetRaf.current = 0
+          if (freshGuest) setSiteReady(false)
           setHovered(next)
         })
         return
       }
-      if (next) setSize(hoverCardSize()) // every open adopts the current universal size
+      if (next) {
+        if (freshGuest) setSiteReady(false)
+        setSize(hoverCardSize()) // every open adopts the current universal size
+      }
       setHovered(next)
     }
     return () => {
@@ -219,28 +227,33 @@ export function ConnectionHoverCard(): React.JSX.Element {
   const preview = useSession((s) => s.preview)
   useEffect(() => closeActiveHoverCard(), [selection, activeTabId, preview])
 
-  // The website guest's resolution: load blooms, failure or the timeout closes — a supersession
-  // remounts a fresh guest through the card's own closed beat.
+  // The guest's own lifecycle, for the card's whole life — a crash after load closes too. Closing
+  // goes through `present` so a queued retarget beat can never re-open over the closure.
   useEffect(() => {
-    if (hovered?.kind !== 'site' || siteReady) return
-    const close = (): void => setHovered(null)
+    if (hovered?.kind !== 'site' || !siteEl) return
+    const close = (): void => present?.(null)
     const onLoad = (): void => setSiteReady(true)
     const onFail = (e: Event): void => {
       // Subframe failures are the site's own business; -3 is the abort every redirect fires.
       const d = e as Event & { isMainFrame?: boolean; errorCode?: number }
       if (d.isMainFrame !== false && d.errorCode !== -3) close()
     }
-    siteEl?.addEventListener('did-finish-load', onLoad)
-    siteEl?.addEventListener('did-fail-load', onFail)
-    siteEl?.addEventListener('render-process-gone', close)
-    const deadline = setTimeout(close, SITE_TIMEOUT_MS)
+    siteEl.addEventListener('did-finish-load', onLoad)
+    siteEl.addEventListener('did-fail-load', onFail)
+    siteEl.addEventListener('render-process-gone', close)
     return () => {
-      clearTimeout(deadline)
-      siteEl?.removeEventListener('did-finish-load', onLoad)
-      siteEl?.removeEventListener('did-fail-load', onFail)
-      siteEl?.removeEventListener('render-process-gone', close)
+      siteEl.removeEventListener('did-finish-load', onLoad)
+      siteEl.removeEventListener('did-fail-load', onFail)
+      siteEl.removeEventListener('render-process-gone', close)
     }
-  }, [hovered, siteReady, siteEl])
+  }, [hovered, siteEl])
+
+  // The resolve deadline, measured from the open — a site that hasn't painted by then closes.
+  useEffect(() => {
+    if (hovered?.kind !== 'site' || siteReady) return
+    const deadline = setTimeout(() => present?.(null), LINK_RESOLVE_TIMEOUT_MS)
+    return () => clearTimeout(deadline)
+  }, [hovered, siteReady])
 
   // The linger: None (absent) keeps the short pointer-travel grace; a set duration holds the
   // card open that long after the pointer leaves link and card, re-entry cancelling the countdown
@@ -378,16 +391,17 @@ export function ConnectionHoverCard(): React.JSX.Element {
           <>
             <webview
               key={held.url}
-              ref={(el) => setSiteEl(el as HTMLElement | null)}
+              ref={attachSiteEl}
               src={held.url}
               partition={WEB_PARTITION}
+              // No allowpopups, unlike the tile and browser guests: a glance surface takes no
+              // interaction, so a popup has nowhere honest to come from.
               className="conn-hover-web"
             />
-            {/* The loading cover — the card's own quiet face until the site has painted. */}
-            <div className={`conn-hover-web-cover${siteReady ? ' is-lifted' : ''}`} />
-            {/* Live but inert by decision: the shield owns the pointer, so the card's own
-                mousemove leave lifecycle keeps running while the pointer rests on the guest. */}
-            <div className="conn-hover-web-shield" />
+            {/* The shield is both the loading face and the pointer owner: opaque until the site
+                paints, transparent after — and always above the guest, so the card's mousemove
+                leave lifecycle keeps running while the pointer rests on it. */}
+            <div className={`conn-hover-web-shield${siteReady ? ' is-lifted' : ''}`} />
           </>
         )}
         <div className="conn-hover-resize-e" onPointerDown={startResize({ x: true })} />
