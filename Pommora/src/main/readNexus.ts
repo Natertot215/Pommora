@@ -126,6 +126,7 @@ export function readPersonalization(raw: unknown): Personalization {
     subSetPlacement: placement(p.subSetPlacement),
     sidebarMode: mode(p.sidebarMode),
     revealTabBarOnHover: bool(p.revealTabBarOnHover),
+    pickerSelection: p.pickerSelection === 'checked' ? 'checked' : undefined,
     connectionsOpenInPreview: bool(p.connectionsOpenInPreview),
     ribbonOrder: ribbonOrder.length ? ribbonOrder : undefined,
     defaultViewScale: coerceViewScale(p.defaultViewScale),
