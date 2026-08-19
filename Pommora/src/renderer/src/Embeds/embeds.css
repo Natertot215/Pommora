@@ -26,6 +26,10 @@
 /* No overflow here: the pane's clip-path bounds the visuals and the pgembed owns the scroll,
    while the resize strips straddle this box's edge — clipping would leave the visible border
    inert under the pointer. */
+.conn-hover-body {
+  position: relative;
+}
+
 /* The website flavor: the guest owns the card's whole box; the shield above it keeps the card a
    glance surface — pointer events land on the host, never the site. */
 .conn-hover-web {
@@ -49,9 +53,6 @@
   inset: 0;
 }
 
-.conn-hover-body {
-  position: relative;
-}
 .conn-hover-body .pgembed {
   overflow-y: auto;
   overscroll-behavior: contain;

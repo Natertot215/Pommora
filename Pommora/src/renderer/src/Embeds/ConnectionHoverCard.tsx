@@ -223,7 +223,6 @@ export function ConnectionHoverCard(): React.JSX.Element {
   // remounts a fresh guest through the card's own closed beat.
   useEffect(() => {
     if (hovered?.kind !== 'site' || siteReady) return
-    const wv = siteEl
     const close = (): void => setHovered(null)
     const onLoad = (): void => setSiteReady(true)
     const onFail = (e: Event): void => {
@@ -231,15 +230,15 @@ export function ConnectionHoverCard(): React.JSX.Element {
       const d = e as Event & { isMainFrame?: boolean; errorCode?: number }
       if (d.isMainFrame !== false && d.errorCode !== -3) close()
     }
-    wv?.addEventListener('did-finish-load', onLoad)
-    wv?.addEventListener('did-fail-load', onFail)
-    wv?.addEventListener('render-process-gone', close)
+    siteEl?.addEventListener('did-finish-load', onLoad)
+    siteEl?.addEventListener('did-fail-load', onFail)
+    siteEl?.addEventListener('render-process-gone', close)
     const deadline = setTimeout(close, SITE_TIMEOUT_MS)
     return () => {
       clearTimeout(deadline)
-      wv?.removeEventListener('did-finish-load', onLoad)
-      wv?.removeEventListener('did-fail-load', onFail)
-      wv?.removeEventListener('render-process-gone', close)
+      siteEl?.removeEventListener('did-finish-load', onLoad)
+      siteEl?.removeEventListener('did-fail-load', onFail)
+      siteEl?.removeEventListener('render-process-gone', close)
     }
   }, [hovered, siteReady, siteEl])
 
