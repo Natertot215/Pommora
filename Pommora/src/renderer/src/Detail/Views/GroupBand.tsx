@@ -21,7 +21,7 @@ import { onActivateKey } from '@renderer/design-system/interactions/activate'
 import { twisty, twistyOpen } from '@renderer/design-system/components/menu/menu.css'
 
 /** The single home for group-band glyph resolution, shared by the table and cards views. Chip
- *  colour/shape resolve from the schema here, so `ResolvedGroup` stays colourless. */
+ *  color/shape resolve from the schema here, so `ResolvedGroup` stays colorless. */
 export function resolveBandHead(
   group: ResolvedGroup,
   view: SavedView,

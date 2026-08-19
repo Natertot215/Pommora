@@ -181,7 +181,7 @@ export interface CommitEdit {
 }
 
 /** The edit accepting `row` makes, as data. Pure so the rules below can be read and tested without
- *  an editor: what each form writes, and where each form leaves the caret, is the whole behaviour of
+ *  an editor: what each form writes, and where each form leaves the caret, is the whole behavior of
  *  the picker and the part a coordinate-less harness otherwise can't reach.
  *
  *  `keepAlias` is the alias a retargeted link should carry over, already decided by the caller's

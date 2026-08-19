@@ -20,7 +20,7 @@ import * as s from './settingsPane.css'
 const GHOST_GRACE_MS = 0 // KNOB
 
 /** One anchor per option list — a Status property has one per group, a Select has the single list.
- *  `busy` stands the slot down while a row is being named or recoloured; it latches in a ref because
+ *  `busy` stands the slot down while a row is being named or recolored; it latches in a ref because
  *  the mechanism re-reads it at the dwell's fire time, long after the render that set it — the way a
  *  cell editor stands the table's ghost down. */
 export function useGhostOptionAnchor(busy: boolean): GhostAnchor {

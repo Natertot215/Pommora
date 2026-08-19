@@ -51,7 +51,7 @@ const tabStops = (root: HTMLElement): HTMLElement[] =>
 // keep `data-picker-portal` as the top-layer styling and test hook.
 export type PickerDirection = 'down' | 'up' | 'left' | 'right'
 
-/** KNOB — how far past the trigger's centre the pane's near edge sits, and with it where the Bloom
+/** KNOB — how far past the trigger's center the pane's near edge sits, and with it where the Bloom
  *  starts. `MenuSurface` is the one shell that still wears a beak; here the same offset survives as
  *  an origin-only figure, so a pane still zooms out of the point nearest what opened it. */
 const ANCHOR_RESERVE = 30
@@ -89,8 +89,8 @@ export function PickerMenu({
   closing?: boolean
   solid?: boolean
   direction?: PickerDirection
-  /** `auto` centres the pane on its trigger when it fits there whole, and falls back to the
-   *  right-edge anchor when centring would have to be clamped against a viewport edge. Name an
+  /** `auto` centers the pane on its trigger when it fits there whole, and falls back to the
+   *  right-edge anchor when centering would have to be clamped against a viewport edge. Name an
    *  edge to pin one: a pane whose content RESIZES while open must, or its rows walk sideways
    *  out from under the cursor. */
   origin?: 'auto' | 'right' | 'center' | 'left'
@@ -159,7 +159,7 @@ export function PickerMenu({
      *  `transform-origin` pair. */
     origin?: string
     /** Straddling the trigger, so the layer needs its half-width shift. */
-    centred?: boolean
+    centered?: boolean
   } | null>(null)
   // Auto-flips to 'down' when the requested direction wouldn't fit the viewport. Down is the
   // terminal fallback, so flips always converge.
@@ -167,14 +167,14 @@ export function PickerMenu({
   // Decided ONCE per open: re-deciding on every re-measure would let a growing pane teleport above
   // its trigger mid-interaction, yanking rows out from under the cursor.
   const decidedDir = useRef<PickerDirection | null>(null)
-  // Decided once per open for the same reason: a pane that grows past the point where centring fits
+  // Decided once per open for the same reason: a pane that grows past the point where centering fits
   // must not hop to an edge anchor mid-interaction.
-  const decidedCentre = useRef<boolean | null>(null)
+  const decidedCenter = useRef<boolean | null>(null)
   // Keyed on `open`, not `mounted`: a fast reopen during the exit-timer window would otherwise
   // inherit stale placement and, if the trigger moved, park the pane off-screen.
   if (open === false && decidedDir.current !== null) {
     decidedDir.current = null
-    decidedCentre.current = null
+    decidedCenter.current = null
   }
 
   // The pane's own size, watched here because placement is the only thing that needs it. `place`
@@ -254,19 +254,19 @@ export function PickerMenu({
       // below tells them apart.
       const vertical =
         eff === 'up' ? { bottom: window.innerHeight - t.top + GAP } : { top: t.bottom + GAP }
-      // `auto` takes the centred placement only where it lands whole — a centred pane that had to be
+      // `auto` takes the centered placement only where it lands whole — a centered pane that had to be
       // clamped sits off its trigger anyway, and the edge anchor at least stays put as content grows.
-      if (decidedCentre.current === null)
-        decidedCentre.current =
+      if (decidedCenter.current === null)
+        decidedCenter.current =
           origin === 'center' || (origin === 'auto' && c - pw / 2 >= edgeL && c + pw / 2 <= edgeR)
-      // Centred origin: straddle the trigger, clamped by half-width so an edge trigger can't push it off-screen.
-      if (decidedCentre.current) {
+      // Centered origin: straddle the trigger, clamped by half-width so an edge trigger can't push it off-screen.
+      if (decidedCenter.current) {
         const half = pw / 2
         const left = Math.min(Math.max(c, edgeL + half), edgeR - half)
         // The start point slides to the anchor: the layer is translateX(-50%)-anchored, so it
         // measures from the pane's left EDGE (left − half). Unclamped this reduces to half — dead
-        // centre, which is what an unclamped pane already shows; a viewport clamp is what moves it.
-        setPos({ ...vertical, left, centred: true, origin: near(c - (left - half)) })
+        // center, which is what an unclamped pane already shows; a viewport clamp is what moves it.
+        setPos({ ...vertical, left, centered: true, origin: near(c - (left - half)) })
         return
       }
       // Mirror of the default: pin the LEFT edge that far before the anchor so the pane grows
@@ -473,7 +473,7 @@ export function PickerMenu({
               ...(pos?.left !== undefined
                 ? {
                     left: `${pos.left}px`,
-                    ...(pos.centred ? { transform: 'translateX(-50%)' } : null),
+                    ...(pos.centered ? { transform: 'translateX(-50%)' } : null),
                   }
                 : pos?.right !== undefined
                   ? { right: `${pos.right}px` }
@@ -523,7 +523,7 @@ export function PointMenu({
 
 /** The row for a FIXED option set — leading label, trailing mark on the chosen one, the native
  *  pop-up idiom. `PickerOption` below is its counterpart for user-authored values, whose chips carry
- *  their own colour and say "chosen" by fill. */
+ *  their own color and say "chosen" by fill. */
 export function MenuOption({
   children,
   onClick,
@@ -570,11 +570,11 @@ export function PickerOption({
   children: ReactNode
   onClick?: () => void
   selected?: boolean
-  /** Add the selection RING on top of the fill — for rows carrying no colour of their own, where the
+  /** Add the selection RING on top of the fill — for rows carrying no color of their own, where the
    *  fill alone is easy to lose in a packed list. A chip row must NOT set this: its own fill
    *  already says "chosen", and two signals on one row read as two different states. */
   ring?: boolean
-  /** A glyph ahead of the label. A row that leads with one reads left — a centred cluster leaves a
+  /** A glyph ahead of the label. A row that leads with one reads left — a centered cluster leaves a
    *  ragged glyph column — so the slot carries that alignment rather than each caller restating it. */
   leading?: ReactNode
 }): React.JSX.Element {

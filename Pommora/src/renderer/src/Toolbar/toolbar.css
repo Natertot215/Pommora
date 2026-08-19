@@ -41,7 +41,7 @@
 }
 .shell.sidebar-hidden .app-toolbar {
   left: 0;
-  /* Reserve room for the traffic lights + the expand toggle, centred between them and Back/Forward. */
+  /* Reserve room for the traffic lights + the expand toggle, centered between them and Back/Forward. */
   padding-left: 138px;
 }
 .shell.is-resizing .app-toolbar {

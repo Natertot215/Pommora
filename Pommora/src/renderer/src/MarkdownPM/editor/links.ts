@@ -55,7 +55,7 @@ function linkUnder(view: EditorView, getApi: GetApi, event: MouseEvent): LinkHit
 }
 
 // Follow a markdown link on a plain single-click (mirrors connectionClicks). Where it leads is the
-// shared resolver's answer, so a link can't be coloured as a page and then opened as a website.
+// shared resolver's answer, so a link can't be colored as a page and then opened as a website.
 export function markdownLinkClicks(getApi: GetApi): ReturnType<typeof EditorView.domEventHandlers> {
   // The same mousedown record connections keeps, and for the same reason: CM seats the caret before
   // `click` runs, so reading it live can never tell "I was editing this" from "I just clicked it" —

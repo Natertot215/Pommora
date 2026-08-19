@@ -8,7 +8,7 @@ import { TWISTY_CENTER_X } from '@renderer/design-system/components/menu/menu.cs
  *  what sizes to the rows; the value can't be written in CSS at all, since it depends on where the
  *  button sits on screen — the shell measures it into `--menu-dropdown-max`.
  *
- *  Rail: outline rows carry no icon, so the rail is pinned to the twisty's own centre — the line runs
+ *  Rail: outline rows carry no icon, so the rail is pinned to the twisty's own center — the line runs
  *  straight through the parent chevron, and the disclosed run clears it from there. */
 export const pane = style({
   maxWidth: 'var(--menu-dropdown-max)',

@@ -1,11 +1,10 @@
-import { useRef, useState, type CSSProperties } from 'react'
+import type { CSSProperties } from 'react'
 import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
 import { solidColorCss } from '@renderer/Detail/Views/Table/solidColor'
-import { tintAt, TINT_STEPS } from '@renderer/design-system/tokens/tint'
 import type { ChipColorName } from '@renderer/design-system/tokens/chip.css'
 import { Switch } from '@renderer/design-system/components/Switches/Switch'
 import type { LinkConfig, LinkDisplay } from '@shared/properties'
-import { ColorPicker } from './ColorPicker'
+import { ColorSwatchField } from './ColorPicker'
 import { PickerControl } from './PickerControl'
 import { LINK_FORMAT_OPTIONS } from './LinkFormat'
 import * as s from './settingsPane.css'
@@ -17,7 +16,7 @@ function resolveLinkColor(color: string | undefined): { name: ChipColorName; css
 }
 
 /**
- * The chosen colour themes the pane's own Switches via a scoped `--accent`. The alias (a per-value
+ * The chosen color themes the pane's own Switches via a scoped `--accent`. The alias (a per-value
  * Rename) overrides the chosen format at render time — it's not configured here.
  */
 export function URLEditor({
@@ -31,8 +30,6 @@ export function URLEditor({
   color: string | undefined
   onSetConfig: (patch: LinkConfig) => void
 }): React.JSX.Element {
-  const [coloring, setColoring] = useState(false)
-  const chipRef = useRef<HTMLButtonElement>(null)
   const link = resolveLinkColor(color)
 
   return (
@@ -47,31 +44,12 @@ export function URLEditor({
       </div>
       <div className={s.configRow}>
         <span className={s.configLabel}>Color</span>
-        <span className={s.colorCluster}>
-          <button
-            ref={chipRef}
-            type="button"
-            className={s.colorChip}
-            aria-label="Color"
-            onClick={() => setColoring((v) => !v)}
-          >
-            <span
-              className={s.colorSwatch}
-              style={{ '--sw': tintAt(link.css, TINT_STEPS.primary) } as React.CSSProperties}
-            />
-          </button>
-          <ColorPicker
-            greyscale={false}
-            open={coloring}
-            selected={link.name}
-            onPick={(next) => {
-              onSetConfig({ link_color: next })
-              setColoring(false)
-            }}
-            onDismiss={() => setColoring(false)}
-            triggerRef={chipRef}
-          />
-        </span>
+        <ColorSwatchField
+          label="Color"
+          selected={link.name}
+          css={link.css}
+          onPick={(next) => onSetConfig({ link_color: next })}
+        />
       </div>
       <div className={s.configRow}>
         <span className={s.configLabel}>Format</span>

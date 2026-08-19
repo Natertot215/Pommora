@@ -19,7 +19,7 @@ export function PropertyEditor({
   /** When set, non-empty text that fails it renders ghosted — a live "not a valid value yet" cue
    *  for the url field, which commits nothing until it passes. */
   validate?: (raw: string) => boolean
-  /** Overrides the field's text colour — the url field wears its link colour, so typing previews as the
+  /** Overrides the field's text color — the url field wears its link color, so typing previews as the
    *  link (ghosted until valid, then solid). */
   color?: string
   onCommit: (raw: string) => void

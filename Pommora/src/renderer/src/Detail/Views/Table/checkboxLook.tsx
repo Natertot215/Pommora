@@ -5,7 +5,7 @@ import { Icon } from '@renderer/design-system/symbols'
 import { tint } from '@renderer/design-system/tokens/tint'
 import { solidColorCss } from './solidColor'
 
-/** A checked box tints its colour — a set solid, else the system accent, so it matches the switch
+/** A checked box tints its color — a set solid, else the system accent, so it matches the switch
  *  look; the check glyph itself always stays label-control regardless. `verticalAlign: middle` pins
  *  the box's line box the SAME whether or not it holds the check glyph, so toggling a cell never
  *  changes the row height (an empty inline-flex box otherwise sits on the baseline and adds

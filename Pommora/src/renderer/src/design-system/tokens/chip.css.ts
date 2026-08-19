@@ -116,7 +116,7 @@ export const chipRemovable = style({ position: 'relative' })
 // The cap lives on the LABEL, not the chip (a % width is unreliable in a shrink-to-fit flex chip): the
 // label truncates at `--chip-max` and the chip wraps it snugly, so the ellipsis lands at the padding
 // edge instead of floating mid-chip. `--chip-max` is overridable per context. The
-// ellipsis-at-rest / scroll-on-hover behaviour is the shared `truncateHoverScroll`; the cap is the add.
+// ellipsis-at-rest / scroll-on-hover behavior is the shared `truncateHoverScroll`; the cap is the add.
 // `position: relative` anchors the removable chip's twins; masks NEVER go on this box — a
 // mask here erases every descendant, the twins included. On a REMOVABLE chip the label is
 // pointer-inert (inherited by the text): hovering the label body must do nothing, and if the
@@ -269,8 +269,8 @@ const cellVariants = Object.fromEntries(
 
 export const chipColor = styleVariants({
   ...cellVariants,
-  // `default` shares grey-4's value but stays its OWN key: it must not be a grid cell, or an
-  // uncolored value would open the picker with that cell ringed and clearing would be unreachable.
+  // `default` takes grey-4's base color but keeps the plain recipe — and stays its OWN key, since a
+  // grid cell would open the picker ringed on an uncolored value and leave clearing unreachable.
   default: chipTint(cellColor('grey-4')),
   // The link-color "Default": the runtime system accent, tinted like any solid. A link seeds to this
   // (the picker's no-selection state), so it must be a real palette key — not the neutral grey default.

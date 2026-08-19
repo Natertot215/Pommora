@@ -1,4 +1,4 @@
-// The pattern-level behaviour behind `mentionsTitle` — normalization, the code mask, bracket
+// The pattern-level behavior behind `mentionsTitle` — normalization, the code mask, bracket
 // tolerance, and the bounds on `pageLinkPattern` itself. The pattern has five other consumers
 // (the rewrite, the editor's tokens, its autocomplete), so the ReDoS and length-cap assertions
 // below guard all of them, not just this file.

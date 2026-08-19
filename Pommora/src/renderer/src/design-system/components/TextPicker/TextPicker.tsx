@@ -5,7 +5,7 @@ import * as s from './textPicker.css'
 
 /** The field grows with typing between a 100px floor and a 200px cap, then scrolls. Enter or
  *  blur commit the trimmed text; Escape cancels. `accent` scopes the pane's `--accent` so the
- *  focus stroke wears a caller's colour; omitted, it inherits the app accent. */
+ *  focus stroke wears a caller's color; omitted, it inherits the app accent. */
 export function TextPicker({
   open,
   onDismiss,

@@ -1,4 +1,4 @@
-/* The preview toolbar's centre region: the single-tab breadcrumb title and the multi-tab strip it
+/* The preview toolbar's center region: the single-tab breadcrumb title and the multi-tab strip it
    morphs into. Shared by every window that hosts preview tabs, so it lives with its component
    rather than in any one window's shell. Motion classes come from Tabs/tabStrip.css; geometry
    re-knobs here at caption scale. */

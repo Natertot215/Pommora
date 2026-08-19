@@ -94,9 +94,9 @@ export type DecoIntent =
       last: boolean
     }
 
-// The outliner rail's x sits on its ANCESTOR's glyph centre, so its class tracks the ancestor marker's TYPE
-// (--rail-x set in CSS per class) — a nested checkbox under a bullet parent gets the bullet centre, not its own.
-// Scoped to dash-bullets and checkboxes; ordered / arrow / `+` return null (no rail) — their glyph-centre maths
+// The outliner rail's x sits on its ANCESTOR's glyph center, so its class tracks the ancestor marker's TYPE
+// (--rail-x set in CSS per class) — a nested checkbox under a bullet parent gets the bullet center, not its own.
+// Scoped to dash-bullets and checkboxes; ordered / arrow / `+` return null (no rail) — their glyph-center maths
 // is deferred, so a rail is only drawn under an ancestor that is one of the two supported types.
 function railTypeClass(m: ListMarker): string | null {
   if (m.kind === 'checkbox') return 'md-outliner-task'
@@ -189,7 +189,7 @@ function lineIntentsInto(
       (fence === undefined || !fence.closed || fence.depth > 1)
     ) {
       // first/last span the contiguous run of nested-quote lines (not a depth match — a run can vary in depth
-      // yet flatten to one block), mirroring how the plain-quote branch tests its neighbours.
+      // yet flatten to one block), mirroring how the plain-quote branch tests its neighbors.
       const first = !calloutNestedQuote(lines, callouts, i - 1)
       const last = !calloutNestedQuote(lines, callouts, i + 1)
       intents.push({
@@ -276,8 +276,8 @@ function lineIntentsInto(
 
 // Outliner rails: one vertical guide per ANCESTOR level of each nested list line, each drawn as a continuous
 // run per level with rounded caps only at the run's two ends (mirrors the blockquote bar's first/last). A
-// level-K rail breaks wherever a neighbour's level ≤ K (or the neighbour isn't a list line). railKind tracks
-// the current ancestor's marker type at each level so the rail lands on THAT glyph's centre.
+// level-K rail breaks wherever a neighbor's level ≤ K (or the neighbor isn't a list line). railKind tracks
+// the current ancestor's marker type at each level so the rail lands on THAT glyph's center.
 function railIntentsInto(
   lineStarts: number[],
   listLevels: number[],
@@ -487,7 +487,7 @@ function pushConstruct(
     }
     return lm
   } else if (lm?.kind === 'arrow' || (lm?.kind === 'bullet' && lm.bullet === '+' && !lm.box)) {
-    // `→` and `+` ARE their own glyphs, so they stay literal source (like the ordered number): recoloured +
+    // `→` and `+` ARE their own glyphs, so they stay literal source (like the ordered number): recolored +
     // given the drag-handle class, the gap hidden the way the ordered branch hides its own (the visible
     // gap is the glyph's CSS margin). Share the `.md-li` bullet zone.
     intents.push({ kind: 'line', from: ls, className: 'md-li', level: lm.level })
@@ -506,7 +506,7 @@ function pushConstruct(
     })
     return lm
   } else if (lm?.kind === 'ordered') {
-    // `N.` stays literal recoloured source (no widget) so typing after the number can't hit an atomic range.
+    // `N.` stays literal recolored source (no widget) so typing after the number can't hit an atomic range.
     intents.push({ kind: 'line', from: ls, className: 'md-li md-li-ordered', level: lm.level })
     if (lm.markerStart > 0)
       intents.push({ kind: 'hide', from: innerStart, to: innerStart + lm.markerStart })

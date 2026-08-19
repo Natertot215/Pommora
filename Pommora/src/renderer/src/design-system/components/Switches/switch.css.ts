@@ -30,13 +30,13 @@ export const track = style({
 
 export const trackOn = style({ background: tintAt('var(--accent)', TINT_STEPS.primary) })
 
-// The sliding slot — vertically centred so the border never offsets it; it shrink-wraps the
+// The sliding slot — vertically centered so the border never offsets it; it shrink-wraps the
 // glass-wrapped fill and slides between off (left) and on (right).
 export const knob = style({
   position: 'absolute',
   top: '50%',
   left: '2px',
-  display: 'flex', // drops the inline-block baseline descender so translateY centres the glass exactly
+  display: 'flex', // drops the inline-block baseline descender so translateY centers the glass exactly
   transform: 'translateY(-50%)',
   transition: `transform ${ease}`,
   selectors: { [`${trackOn} &`]: { transform: 'translate(22px, -50%)' } },
@@ -50,7 +50,7 @@ export const knobFill = style({
   background: control,
 })
 
-// Both ticks: centred, fade on the same beat as the slide; one shows per state.
+// Both ticks: centered, fade on the same beat as the slide; one shows per state.
 const tickBase = style({
   position: 'absolute',
   top: '50%',

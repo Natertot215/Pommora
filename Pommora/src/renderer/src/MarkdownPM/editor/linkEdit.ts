@@ -95,7 +95,7 @@ function emptyPipeNear(state: EditorState, at: number): number | null {
 }
 
 /** Put a written alias into its target page's memory, so it can be offered back the next time that
- *  page is linked. Authoring is the only moment the memory is written: a body scan can't honour a
+ *  page is linked. Authoring is the only moment the memory is written: a body scan can't honor a
  *  real forget, and there is no other point at which the words are known to be finished. */
 function rememberAliasNear(view: EditorView, api: ConnectionsApi | undefined, at: number): void {
   if (!api) return

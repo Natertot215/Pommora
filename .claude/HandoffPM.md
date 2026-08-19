@@ -38,7 +38,7 @@ The closing ask was a capability check: the shared window surface holding two si
 
 #### Feedback
 
-- "It only needs one History-Format paragraph." — the PM-107 entry is a single paragraph rather than sub-labelled strands.
+- "It only needs one History-Format paragraph." — the PM-107 entry is a single paragraph rather than sub-labeled strands.
 - "use an actual SettingWindow example to capture proper rounding" — a demo that stands in for the real shell isn't the demonstration; the showcase leaf wears the Settings window's own class and bounds.
 - "Adjust the order appropriately" — a sketch's ordering defers to the rail's actual order.
 - "ViewsPM can keep its description, just not as elaborate." — tightening prose means shortening it, not replacing it with a pointer.
@@ -49,7 +49,7 @@ The closing ask was a capability check: the shared window surface holding two si
 - `Pommora/src/renderer/src/Settings/NexusSettings.tsx` — the roster. `roster()` and the `Leaf` union's `never` arms are the two type tricks; read their comments before editing either.
 - `Pommora/src/shared/columnStyles.ts` — `defaultStyleFor`'s third argument is the nexus date form; its `url` arm is the precedent that shape follows.
 - `Pommora/src/renderer/src/Detail/Views/Table/columnStyles.ts` — `useStyleFor`, the hook every date-rendering surface reads so the fallback is live.
-- `Pommora/src/renderer/src/design-system/interactions/FloatingWindow.tsx` — `widenBy`, its centre-outward growth and viewport clamp.
+- `Pommora/src/renderer/src/design-system/interactions/FloatingWindow.tsx` — `widenBy`, its center-outward growth and viewport clamp.
 - `Pommora/src/renderer/src/design-system/showcase/leaves/PanesLeaf.tsx` — the two-sided case, reproducible at `npm run showcase` → Interactions → Side Panes.
 - `.claude/Planning/NexusSettings Leaf Framework — Decision Log.md` — the spec, including both reversals and why they happened.
 - `.claude/Features/ConfigurationPM.md` — the settings tables; a new row belongs in the leaf's table there.

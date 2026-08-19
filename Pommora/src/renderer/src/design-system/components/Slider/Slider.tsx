@@ -56,7 +56,7 @@ export function Slider({
     const t = Math.max(0, Math.min(1, (clientX - r.left) / r.width))
     return Number((Math.round((min + t * (max - min)) / step) * step).toFixed(decimals))
   }
-  // A cancelled scrub reverts: the per-tick onInput has already driven the consumer, so the
+  // A canceled scrub reverts: the per-tick onInput has already driven the consumer, so the
   // committed value is reasserted through the same channel before the draft clears. The ref is
   // the guard — synchronous where the draft state waits on a render flush.
   const revertScrub = (): void => revertRef.current()

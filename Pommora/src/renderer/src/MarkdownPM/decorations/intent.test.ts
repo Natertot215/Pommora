@@ -192,7 +192,7 @@ describe('decoration intents', () => {
     expect(intents.some((d) => d.kind === 'widget')).toBe(false)
   })
 
-  it('ordered list → number kept as literal source (recolour mark), no widget', () => {
+  it('ordered list → number kept as literal source (recolor mark), no widget', () => {
     const t = '3. third'
     const intents = decorationsFor(t, tokenize(t), new Set(), 99)
     expect(
@@ -213,7 +213,7 @@ describe('decoration intents', () => {
   it.each([
     ['arrow', '→ step'],
     ['plus', '+ step'],
-  ])('%s list → marker kept as literal source (recolour + drag-handle class), gap hidden, no widget', (_n, t) => {
+  ])('%s list → marker kept as literal source (recolor + drag-handle class), gap hidden, no widget', (_n, t) => {
     const intents = decorationsFor(t, tokenize(t), new Set(), 99)
     expect(
       intents.some(
@@ -430,13 +430,13 @@ describe('outliner rails', () => {
     expect(rs.some((r) => r.level >= 2)).toBe(false) // level-2 item has ancestors 0 and 1 only
   })
 
-  it('a rail takes its ANCESTOR’s marker type, not the descendant’s (the checkbox-centre fix)', () => {
-    // bullet parent, checkbox child → the child’s rail centres on the bullet, not its own box.
+  it('a rail takes its ANCESTOR’s marker type, not the descendant’s (the checkbox-center fix)', () => {
+    // bullet parent, checkbox child → the child’s rail centers on the bullet, not its own box.
     const bulletParent = rails('- parent\n\t- [ ] child')
     expect(bulletParent).toHaveLength(1)
     expect(bulletParent[0].typeClass).toBe('md-outliner-bullet')
 
-    // checkbox parent, bullet child → the rail centres on the parent’s box.
+    // checkbox parent, bullet child → the rail centers on the parent’s box.
     const taskParent = rails('- [ ] parent\n\t- child')
     expect(taskParent).toHaveLength(1)
     expect(taskParent[0].typeClass).toBe('md-outliner-task')

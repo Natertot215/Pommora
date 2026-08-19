@@ -307,7 +307,7 @@ export const LOCATION_SORT = '__location__'
 
 /** True when a view sorts by Location AND takes the filesystem order — the pipeline flattens
  *  the structural walk, and the card drag's within-band reorder goes inert. Both must read the
- *  same predicate: when they disagree, one honours a key the other doesn't. */
+ *  same predicate: when they disagree, one honors a key the other doesn't. */
 export function isLocationFsOrder(view: SavedView): boolean {
   return (
     view.sort?.[0]?.property_id === LOCATION_SORT &&

@@ -131,10 +131,10 @@ A Collection's own configuration, stored in its `_pagecollection.json` sidecar a
 | Setting | Key | Description | Options |
 | --------------- | ---------------- | -------------------------------------------------------------------- | ---------------------------- |
 | Open In | `open_in` | How a page opens from its container. | **Full Page** · Page Preview |
-| Show Title | `view_button` | Whether the view dropdown's button carries the view's name beside its glyph. | **Icon** · Labeled |
-| View Style | `view_style` | How the view switcher presents itself — unimplementes | **Dropdown** · Toolbar |
+| Show Title | `view_button` | Whether the view dropdown button displays the view's name alongside its glyph. | **Icon** · Labeled |
+| View Style | `view_style` | How the view switcher presents itself — unimplemented | **Dropdown** · Toolbar |
 
-The sidecar's remaining fields are structure rather than configuration: the entity's id and icon, its banner, its page and set ordering, its property assignment list, and its saved views (→ [[ViewsPM]]).
+The sidecar's remaining fields are structure rather than configuration: the entity's ID and icon, its banner, its page and set ordering, its property assignment list, and its saved views (→ [[ViewsPM]]).
 
 ### Pages
 
@@ -169,7 +169,7 @@ Every `settings.json` write funnels through one per-file serialize lock, so conc
 
 Cross-session, machine-local state in `pommora.json` under the app's userData directory: the last-opened Nexus, the roll-off list of recently opened Nexuses behind Open Recent, and the delete target. It is never part of a Nexus and never syncs. The Navigation layer's own recents are a separate stream — visited entities within one Nexus, stored in that Nexus's database.
 
-A second class of machine-local state sits in the Nexus's own database rather than beside the app: preferences belonging to the pair of a machine and a Nexus. **Use Native Menus** is the first, tabled under §Interface above.
+A second class of machine-local state resides in the Nexus's own database rather than alongside the app: preferences for a machine-Nexus pair. **Use Native Menus** is the first, tabled under §Interface above.
 
 ### Pending
 

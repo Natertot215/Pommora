@@ -6,11 +6,11 @@
 
 Three rules are off in `biome.json`, each for a stated reason rather than convenience:
 
-- **`useExhaustiveDependencies`** — Biome's version is stricter than React's own, and this codebase deliberately omits dependencies in places where the omission IS the behaviour (mount-once editors, refs carrying live values, identity held stable so memoized rows survive unrelated tree pushes). Every such site explains itself in a plain comment. Editing dependency arrays to satisfy a linter is how stale-closure and re-render bugs get introduced into exactly the surfaces that took the longest to tune.
+- **`useExhaustiveDependencies`** — Biome's version is stricter than React's own, and this codebase deliberately omits dependencies in places where the omission IS the behavior (mount-once editors, refs carrying live values, identity held stable so memoized rows survive unrelated tree pushes). Every such site explains itself in a plain comment. Editing dependency arrays to satisfy a linter is how stale-closure and re-render bugs get introduced into exactly the surfaces that took the longest to tune.
 
 - **`noNonNullAssertion`** — the `!` assertion is an accepted idiom here, used where the surrounding logic already proves the value.
 
-- **`noDescendingSpecificity`** — stylesheets are organised by concern, so a base class often appears after a more specific rule targeting it. Specificity governs regardless of source order, so the code is correct; reordering to satisfy the rule would scatter the grouping and put the cascade at risk for no behavioural gain.
+- **`noDescendingSpecificity`** — stylesheets are organized by concern, so a base class often appears after a more specific rule targeting it. Specificity governs regardless of source order, so the code is correct; reordering to satisfy the rule would scatter the grouping and put the cascade at risk for no behavioral gain.
 
 Generated output (`graphify-out/`) is excluded from the linter's file scope. Linting a build artifact is noise.
 
@@ -31,7 +31,7 @@ The bar is real, not decorative. An element that behaves like a control **is** a
 
 - **Tab strips are tablists with roving tabindex.** Each tab carries its role and selected state, and only the active tab holds the tab stop, so a strip is one stop rather than one per tab.
 
-- **Don't claim what the code can't honour.** A resize strip that only responds to the pointer must not wear `role="separator"` with value attributes — that promises keyboard resize the app doesn't implement. Pointer-only affordances (drag grips, bubble guards, dismiss backdrops, right-click surfaces, drop targets, hover bookkeeping) take no interactive role and say why. Over-claiming is worse than claiming nothing: it puts a control in the accessibility tree that does nothing when reached.
+- **Don't claim what the code can't honor.** A resize strip that only responds to the pointer must not wear `role="separator"` with value attributes — that promises keyboard resize the app doesn't implement. Pointer-only affordances (drag grips, bubble guards, dismiss backdrops, right-click surfaces, drop targets, hover bookkeeping) take no interactive role and say why. Over-claiming is worse than claiming nothing: it puts a control in the accessibility tree that does nothing when reached.
 
 - **Decorative graphics are hidden explicitly**, on the element itself — a props spread is invisible to static analysis, so the attribute has to be literal.
 

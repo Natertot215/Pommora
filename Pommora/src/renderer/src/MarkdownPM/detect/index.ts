@@ -112,7 +112,7 @@ const inExcluded = (at: number, excluded: [number, number][]): boolean =>
 /** Absolute ranges of display-math blocks: a LONE `$$` line opens, the next lone `$$` line closes,
  *  mirroring how ``` fences pair — never the token layer's span regex, whose lazy pairing a single
  *  stray `$$` in prose or inline code would flip for the whole document below it. Relocating bytes
- *  needs line-anchored pairing; colouring a span doesn't. A delimiter line inside `excluded` (code
+ *  needs line-anchored pairing; coloring a span doesn't. A delimiter line inside `excluded` (code
  *  fences, table regions) is content, not a delimiter; an unclosed opener claims nothing. Hanging
  *  delimiters (`$$ x=1` … `y $$`) and single-line `$$x$$` stay ordinary lines. `to` is the closing
  *  line's end, exclusive of the trailing newline. `excluded` is required — every caller must state

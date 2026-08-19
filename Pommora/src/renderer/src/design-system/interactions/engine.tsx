@@ -410,7 +410,7 @@ export function Zone({
       const label = labelOf(activeId2)
       settle(d.activeIdx, () => {
         notifyRef.current.onDragCancel?.({ activeId: activeId2 })
-        announce(`Movement cancelled. ${label} returned to its original position.`)
+        announce(`Movement canceled. ${label} returned to its original position.`)
         requestAnimationFrame(() => el?.focus())
       })
     }

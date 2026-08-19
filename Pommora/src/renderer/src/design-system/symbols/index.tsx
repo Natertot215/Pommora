@@ -224,7 +224,7 @@ const isIconSize = (v: unknown): v is IconSize => typeof v === 'string' && v in 
  *   `font-size` while lucide stays at `1em`, so one source (`size.icon.*`) drives it.
  * - **Default** (`1em`) follows the context font-size (the type scale).
  * - **Number / CSS length** (`size={18}`) passes straight through as an escape hatch.
- * Colour follows `currentColor` in every case.
+ * Color follows `currentColor` in every case.
  */
 export const Icon = forwardRef<
   SVGSVGElement,

@@ -25,7 +25,7 @@ export function isContentFile(entry: Dirent): boolean {
 /** One level of `dir`, or [] when it can't be read. Every caller walks a tree of independent
  *  entities, so a directory that vanished mid-walk or refuses to open costs only itself — the
  *  levels above and beside it still enumerate. Shared so that stays one decision: two copies of
- *  a swallowed error drift into two different failure behaviours and nothing catches it. */
+ *  a swallowed error drift into two different failure behaviors and nothing catches it. */
 export async function listEntries(dir: string): Promise<Dirent[]> {
   try {
     return await readdir(dir, { withFileTypes: true })

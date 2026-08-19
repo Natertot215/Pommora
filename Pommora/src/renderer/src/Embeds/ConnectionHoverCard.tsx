@@ -163,7 +163,7 @@ export function ConnectionHoverCard(): React.JSX.Element {
   const retargetRaf = useRef(0)
   useEffect(() => {
     present = (next) => {
-      // A close or a newer target always beats a queued retarget — an uncancelled beat would
+      // A close or a newer target always beats a queued retarget — an uncanceled beat would
       // re-open the card right after the navigation that closed it.
       if (retargetRaf.current) {
         cancelAnimationFrame(retargetRaf.current)

@@ -64,7 +64,7 @@
 - **F-1:** [confirmed] `PreviewPane` already accepted `left` and `right` and rendered both in flow; the CSS carried both in-flow arms. Holding two panes at once needed no new structure.
 - **F-2:** [confirmed] What was missing is the width rule. `useFloatingWindow` gained `widenBy(dx)`, and the pane calls it on a side's open/close transition, so the window's own edge moves by that pane's width and the body keeps what it had.
 - **F-3:** [confirmed] Width DRAGS deliberately do not move the window's edge — dragging a pane's own strip reallocates inside the window, which is what the grip means. Only an open/close transition moves the frame.
-- **F-4:** [confirmed] The window walks left by half its growth so it opens outward from its own centre, and clamps at the viewport, where the body absorbs the remainder.
+- **F-4:** [confirmed] The window walks left by half its growth so it opens outward from its own center, and clamps at the viewport, where the body absorbs the remainder.
 - **F-5:** [confirmed] Verified in the browser on the real Settings shell: 850 → 1110 opening the inspector, 940 closing the rail, back to 850 — the body holding 676–678 throughout. A showcase leaf (`Side Panes`) keeps the case reproducible.
 
 ### Core (must-have)

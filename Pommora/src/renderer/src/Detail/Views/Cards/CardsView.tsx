@@ -118,13 +118,13 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
 
   // Lazy value load on container open — the same batch IPC the table rides.
   useEffect(() => {
-    let cancelled = false
+    let canceled = false
     setValueOverride(null)
     void window.nexus.loadValues(source.path).then((v) => {
-      if (!cancelled) setValues(v)
+      if (!canceled) setValues(v)
     })
     return () => {
-      cancelled = true
+      canceled = true
     }
   }, [source.path])
 
@@ -222,13 +222,13 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   const [setOrderOverride, setSetOrderOverride] = useState<string[] | null>(null)
   useEffect(() => setSetOrderOverride(null), [source])
   useEffect(() => {
-    let cancelled = false
+    let canceled = false
     setManualOverride(null)
     void window.nexus.viewOrders.get().then((m) => {
-      if (!cancelled) setViewOrders(m)
+      if (!canceled) setViewOrders(m)
     })
     return () => {
-      cancelled = true
+      canceled = true
     }
   }, [source.path])
   const sortKeys = useMemo(() => resolvedSortCount(view.sort, schema), [view.sort, schema])

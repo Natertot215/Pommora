@@ -41,8 +41,8 @@
 
 /* Header band + every data row share the column tracks; the final 1fr is the filler. Stretch (not center)
    so every cell fills the row height — an empty cell's full-height column divider then matches a filled
-   one's, instead of collapsing to a short centred bar. The row height is set by its tallest (content) cell,
-   so single-line content stays visually centred. */
+   one's, instead of collapsing to a short centered bar. The row height is set by its tallest (content) cell,
+   so single-line content stays visually centered. */
 .table-head,
 .data-row {
   display: grid;
@@ -98,9 +98,9 @@
   position: relative; /* containing block for the right-edge resize strip */
 }
 /* Column smooth-shift: the whole dragged column — header + every data cell + its right divider —
-   slides with the cursor as one solid band (an opaque backing so neighbours don't show through) carrying
-   the selected highlight so it reads as the lifted column; the neighbours slide to open the gap on the
-   shift curve. The lifted column tracks the cursor 1:1 (no transition); only the neighbours animate. */
+   slides with the cursor as one solid band (an opaque backing so neighbors don't show through) carrying
+   the selected highlight so it reads as the lifted column; the neighbors slide to open the gap on the
+   shift curve. The lifted column tracks the cursor 1:1 (no transition); only the neighbors animate. */
 .table-grid.col-dragging-active .col-header,
 .table-grid.col-dragging-active .data-cell {
   transition: transform var(--col-shift-ease);
@@ -150,7 +150,7 @@
   font: inherit;
   color: inherit;
 }
-/* Ghosted while the typed value isn't a valid link yet — the field wears the link's colour (set inline)
+/* Ghosted while the typed value isn't a valid link yet — the field wears the link's color (set inline)
    faded to the shared ghost opacity, so it previews as the link, dimmed, until it snaps solid. */
 .property-editor-ghost {
   opacity: var(--state-ghost);
@@ -180,7 +180,7 @@
 .table-grid.single-column .col-header::before {
   content: none;
 }
-/* Heading column dividers — a short, vertically-centred, fully-rounded segment bar (segmented-control
+/* Heading column dividers — a short, vertically-centered, fully-rounded segment bar (segmented-control
    feel), shorter than the row, instead of the data rows' full-height hairline. The ::after sits on each
    column's right edge; the first column also carries a ::before leading bar at the grid's left edge (the
    gutter↔Title junction) so the heading reads as a bounded segmented strip. Absolutely placed so they add
@@ -348,7 +348,7 @@
   ); /* the views gutter, left of the grid (same lane as the chevron) */
   width: var(
     --gutter
-  ); /* span the lane so justify-content centres the glyph in it, not flush-left */
+  ); /* span the lane so justify-content centers the glyph in it, not flush-left */
   top: 50%;
   transform: translateY(-50%);
   display: inline-flex;
@@ -394,7 +394,7 @@
   left: calc(-1 * var(--gutter));
   width: var(
     --gutter
-  ); /* span the lane so justify-content centres the chevron in it, not flush-left */
+  ); /* span the lane so justify-content centers the chevron in it, not flush-left */
   top: 50%;
   transform: translateY(-50%);
   justify-content: center;

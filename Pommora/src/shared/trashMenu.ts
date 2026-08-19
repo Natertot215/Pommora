@@ -33,7 +33,7 @@ export function trashMenuLabels(batch: boolean): { restore: string; delete: stri
 }
 
 /** The two ways this column writes a date: short is the numeric one, full is the worded one. A
- *  hand-edited settings file may still name any other `DateFormat` and the column will honour it. */
+ *  hand-edited settings file may still name any other `DateFormat` and the column will honor it. */
 export const TRASH_DATE_FORMATS: { value: DateFormat; label: string }[] = [
   { value: 'monthDayYear', label: 'Short Date' },
   { value: 'full', label: 'Full Date' },

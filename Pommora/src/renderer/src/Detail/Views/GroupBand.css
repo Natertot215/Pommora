@@ -35,7 +35,7 @@
 }
 /* The icon + label cluster shared by structural, checkbox, date, and fallback glyphs. The glyphs read
    at the shared icon tone; the label text stays its own. Direct child only, so a chip glyph (checkbox
-   box) keeps its own colour. */
+   box) keeps its own color. */
 .group-name {
   display: inline-flex;
   align-items: center;
