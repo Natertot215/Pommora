@@ -434,9 +434,9 @@ Eleven entries — the ten `SOLID_COLORS` display names re-keyed onto their anch
 
 ### Progress *(seeded unchecked — this tree is what a fresh agent reads first)*
 
-- [ ] **Phase 1** — The ramp · base `<commit>`
-  - [ ] Task 1 — mix primitive, `ramp.ts`, sandbox re-pointed · `<commit>`
-  - [ ] Gate 1 — **blocking:** Nathan sees the regularized blue row
+- [x] **Phase 1** — The ramp · base `bf094dc5`
+  - [x] Task 1 — mix primitive, `ramp.ts`, sandbox re-pointed · `24ba94b3`
+  - [x] Gate 1 — gates green; blue row + grey anchor handed to Nathan, non-blocking by his call
 - [ ] **Phase 2** — One vocabulary
   - [ ] Task 2 — palette derives, accessor speaks the grammar · `<commit>`
   - [ ] Task 3 — the three raw-solid indexers · `<commit>`
@@ -449,6 +449,13 @@ Eleven entries — the ten `SOLID_COLORS` display names re-keyed onto their anch
 
 ### Rulings
 
+- **The color control drops its name and wears the switch's shell** (Nathan, during execution):
+  the `Chip` showing "Red" / "Cobalt" / "Default" / "Accent" in the link and checkbox editors
+  becomes a nameless swatch — the switch track's 54×24 geometry and 1px `--label-secondary`
+  outline, filled with the chosen color at tint-primary. Unset simply shows the color it resolves
+  to. This retires `colorLabel` and `COLOR_LABELS` entirely, so **no per-cell naming has to be
+  established** — the picker's cells take the sandbox's positional `aria-label` (`red 4`).
+  Supersedes the interim label grammar Task 2 was going to carry.
 - **Pink gets a real hex beside `SPECTRUM`** (Nathan) — not inside it, which would make pink an accent option and a Space color.
 - **Regularize the single-anchor rows and the paired blue row; purple and greyscale keep their literals** (Nathan). The blue row's cells 0, 6, 7 move; Gate 1 blocks on him seeing it.
 - **Per-cell names are a second pass** (Nathan). The interim preserves the eleven names that exist today.
@@ -462,6 +469,25 @@ Eleven entries — the ten `SOLID_COLORS` display names re-keyed onto their anch
 
 ### Open Against Later Tasks
 ### Deviations
+
+- **`PINK` is the literal `#DC519F`,** computed as the sRGB lerp the sandbox expressed
+  (`#BF5AF2` 55% → `#FF453A`) and confirmed by arithmetic rather than the live readout. The
+  rounding to 8-bit makes `purple-4`'s oklch blend differ from the sandbox's by well under
+  1/255 — invisible, and the ruling (pink earns a hex) required the rounding anyway.
+- **`GREY_OUTLINES[7]` is now the bare `label.tertiary`,** not `color-mix(… 100%, transparent)`.
+  `tintAt` short-circuits at full strength where the sandbox's `outlineAt` did not. Same painted
+  color; one fewer no-op mix.
+- **The grey anchor renders darker than it did.** `ANCHOR_CELLS.grey` is `grey-6`, which sits
+  inside the greyscale row's darkness-offset zone (`step >= 6`), so a chip carrying the legacy
+  `grey` key tints from a base 15% toward black rather than from the bare solid. This is the
+  sandbox's settled greyscale exception meeting the back-compat seam — **it breaks the
+  "ten anchors unchanged" half of the baseline invariant, for `grey` alone.** Pinned by test
+  rather than hidden. Reversal, if wanted, is `step >= 6` → `step >= 7` in `ramp.ts`.
+- **Project-wide `npm run format` is barred for the rest of this plan.** It rewrote files the
+  parallel session had open. Lint is scoped to this plan's own paths via `npx biome check <paths>`.
+- **Two pre-existing gate failures belong to the parallel session, not this work:**
+  `webpageEmbed.ts` (a `useOptionalChain` lint error) and `MarkdownPM/embedAbsorb.test.tsx`
+  (a 5s timeout under full-suite load; passes in isolation). Neither is touched here.
 ### Lessons
 ### Sequenced After
 
