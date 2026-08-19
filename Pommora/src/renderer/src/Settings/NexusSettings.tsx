@@ -29,7 +29,8 @@ import { DATE_FORMAT_LABELS, DATE_FORMATS, type DateFormat } from '@shared/colum
 import { useExitPresence } from '../design-system/useExitPresence'
 import { useSession } from '../store'
 import { TrashLeaf } from './TrashLeaf'
-import { AccountsSection } from './AccountsSection'
+import { BrowsingSection } from './BrowsingSection'
+import { SettingsRow, type RowText } from './SettingsRow'
 import './nexusSettings.css'
 
 // KNOB — the window's opening size and its resize floor. The floor is what a leaf carrying a
@@ -49,11 +50,6 @@ const DRAG_SURFACES =
 type KeyOf<V> = {
   [K in keyof Personalization]-?: NonNullable<Personalization[K]> extends V ? K : never
 }[keyof Personalization]
-
-interface RowText {
-  label: string
-  hint: string
-}
 
 /** A picker row, parameterized by the vocabulary it writes — a second one naming a different enum
  *  joins the union rather than widening this. */
@@ -104,9 +100,9 @@ type Row =
       key: KeyOf<number>
     })
   | {
-      /** The Accounts rows — fetched, so the component owns them; the entry is just the slot. */
-      kind: 'accounts'
-      key: 'webAccounts'
+      /** The web-session rows — the component owns them; the entry is just the slot. */
+      kind: 'browsing'
+      key: 'clearBrowsing'
     }
 
 type RowOf<K extends Row['kind']> = Extract<Row, { kind: K }>
@@ -174,8 +170,8 @@ const LEAVES = roster([
         ],
       },
       {
-        title: 'Accounts',
-        rows: [{ kind: 'accounts', key: 'webAccounts' }],
+        title: 'Browsing',
+        rows: [{ kind: 'browsing', key: 'clearBrowsing' }],
       },
     ],
   },
@@ -510,23 +506,6 @@ function LeafBodyView({ category }: { category: CategoryKey }): React.JSX.Elemen
   )
 }
 
-/** The words every row wears, whatever writes beside them. */
-function SettingsRow({
-  label,
-  hint,
-  children,
-}: RowText & { children: React.ReactNode }): React.JSX.Element {
-  return (
-    <div className="settings-row">
-      <div className="settings-row-text">
-        <span className={cx('settings-row-label', text.body.standard)}>{label}</span>
-        <span className={cx('settings-row-hint', text.footnote.standard)}>{hint}</span>
-      </div>
-      {children}
-    </div>
-  )
-}
-
 function RowControl({ row }: { row: Row }): React.JSX.Element {
   switch (row.kind) {
     case 'toggle':
@@ -537,8 +516,8 @@ function RowControl({ row }: { row: Row }): React.JSX.Element {
       return <PickerRow row={row} />
     case 'webzoom':
       return <WebZoomRow row={row} />
-    case 'accounts':
-      return <AccountsSection />
+    case 'browsing':
+      return <BrowsingSection />
     case 'device':
       return <DeviceRow row={row} />
     case 'color':

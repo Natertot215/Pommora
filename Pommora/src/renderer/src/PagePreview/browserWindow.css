@@ -1,25 +1,21 @@
 /* The browser flavor of the floating window: the guest owns the whole body below the toolbar
    strip, and the centered title is the escalating link. */
 
-/* Clear chrome that takes the site's color: the strip paints the page's reported theme-color and
-   stays transparent (the window glass) when the site offers none. Labels flip dark over a light
-   site color via .is-light-chrome. */
-.wbrowser .ppane-toolbar {
-  background: var(--wbrowser-theme, transparent);
-}
+/* Literally clear chrome: the strip paints nothing and the page runs the full window beneath it,
+   so the toolbar wears the site's own color by showing it. Labels flip dark over a light site
+   (its reported theme-color) via .is-light-chrome. */
 .wbrowser.is-light-chrome .ppane-action,
 .wbrowser.is-light-chrome .wbrowser-title-page {
-  color: rgb(0 0 0 / 0.65);
+  color: color-mix(in srgb, var(--system-black) 65%, transparent);
 }
 .wbrowser.is-light-chrome .wbrowser-title-domain {
-  color: rgb(0 0 0 / 0.4);
+  color: color-mix(in srgb, var(--system-black) 40%, transparent);
 }
 
 .wbrowser-body {
   flex: 1;
   min-height: 0;
   display: flex;
-  padding-top: var(--ppane-toolbar-h);
 }
 /* biome-ignore lint/correctness/noUnknownTypeSelector: webview is Electron's guest element */
 .wbrowser-body webview {
