@@ -100,8 +100,7 @@ function popHeadingMenu(view: EditorView, headingEl: HTMLElement): void {
     switch (action?.action) {
       case 'rename':
         // Select the heading's text so a keystroke replaces it — the editor's own inline rename.
-        view.dispatch({ selection: { anchor: contentStart, head: line.to } })
-        view.focus()
+        focusRange(view, contentStart, line.to)
         break
       case 'size': {
         const edit = setHeading(doc, line.from, action.level as HeadingLevel)

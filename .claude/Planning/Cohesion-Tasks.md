@@ -75,15 +75,16 @@ checkmarks rather than radios (Nathan's call).
 
 ### Step 4 — MarkdownPM
 
-- [ ] `blockDrag.ts:32` — hoist the document string and block starts into `startBlockDrag`; use
-      `docString` and scope to `visibleRanges` as `listDrag.ts` does
-- [ ] `decorations.ts:406` — the `↔` scan moves into the per-version cached derivation
-- [ ] `Tables/widget.tsx:317` — `docString` rather than a fresh rope join
-- [ ] `gripMenu.ts:102` — `focusRange`, as the same file uses at `:173`
-- [ ] `links.ts` gains the ⌘-click bypass branch
-- [ ] `links.ts` gains the `actedOnLink` post-menu suppression
-- [ ] Both body context-menu paths pair `closeActiveHoverCard()` with `intent.cancel()`
-- [ ] `MarkdownPM/Tables/TableView.tsx:344` — `activation: 0`
+- [x] `blockDrag.ts` — the document read and the block starts hoist into `startBlockDrag` as a
+      `BlockShape`; only geometry is re-read per frame. `visibleRanges` scoping is unnecessary here:
+      the loop already skips off-screen blocks, since `coordsAtPos` returns null for them
+- [x] `decorations.ts` — the `↔` scan moves into `docBidirMarks`, cached per doc version
+- [x] `Tables/widget.tsx` — `docString` rather than a fresh rope join
+- [x] `gripMenu.ts` — `focusRange`, as the same file uses seventy lines later
+- [x] `links.ts` gains the ⌘-click bypass branch
+- [x] `links.ts` gains the `actedOnLink` post-menu suppression
+- [x] Both body context-menu paths pair `closeActiveHoverCard()` with `intent.cancel()`
+- [x] `MarkdownPM/Tables/TableView.tsx` — `activation: 0`
 
 ### Step 5 — Documentation
 
