@@ -89,7 +89,7 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 │   │   ├── [TableViewPM.md]             | • The Table renderer over one shared CSS grid track set
 │   │   ├── [TypographyPM.md]            | • The type system and its token source of truth
 │   │   ├── [ViewsPM.md]                 | • Saved presentations of a Collection — six modeled types
-│   │   └── [WeblinkPM.md]               | • The web layer — webpage embeds, the browser, sessions, hover previews
+│   │   └── [WebviewPM.md]               | • The web layer — webpage embeds, the browser, sessions, hover previews
 │   ├── // Guidelines                    | • Behavioral rules and hard-won traps, grouped by domain
 │   │   ├── [Build-Gotchas.md]           | • Environment and toolchain traps — read before launching the GUI
 │   │   ├── [Editor-Internals.md]        | • MarkdownPM's internal invariants — read before editing the editor

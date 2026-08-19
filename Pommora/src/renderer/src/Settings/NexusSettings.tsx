@@ -9,6 +9,8 @@ import type { FloatingBounds } from '@renderer/design-system/interactions/Floati
 import type { SidePaneBounds } from '@renderer/design-system/components/SidePane/SidePane'
 import type { DevicePrefs } from '@shared/devicePrefs'
 import { PickerControl, type PickerChoice } from '@renderer/Components/Detail/PickerControl'
+import { value as pickerValue } from '@renderer/Components/Detail/pickerControl.css'
+import { EditableInput } from '@renderer/Components/EditableInput'
 import { ColorSwatchField } from '@renderer/Components/Detail/ColorPicker'
 import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
 import { solidColorCss } from '@renderer/Detail/Views/Table/solidColor'
@@ -21,6 +23,7 @@ import {
   TIME_FORMAT_SETTINGS,
   WEB_ZOOM_DEFAULT,
   WEB_ZOOM_STEPS,
+  coerceWebZoom,
   type ColorSetting,
   type Personalization,
   type TimeFormatSetting,
@@ -192,6 +195,23 @@ const LEAVES = roster([
           },
         ],
       },
+      {
+        title: 'Webpages',
+        rows: [
+          {
+            kind: 'toggle',
+            key: 'openLinksInApp',
+            label: 'Open Links In Pommora',
+            hint: 'External links open the floating browser instead of the system one.',
+          },
+          {
+            kind: 'webzoom',
+            key: 'webZoomFactor',
+            label: 'Webpage Zoom',
+            hint: 'How embedded webpages scale, relative to the window.',
+          },
+        ],
+      },
     ],
   },
   {
@@ -287,17 +307,6 @@ const LEAVES = roster([
         ],
       },
       {
-        title: 'Web Links',
-        rows: [
-          {
-            kind: 'toggle',
-            key: 'openLinksInApp',
-            label: 'Open Links In Pommora',
-            hint: 'External links open the floating browser instead of the system one.',
-          },
-        ],
-      },
-      {
         title: 'Connections',
         rows: [
           {
@@ -353,17 +362,6 @@ const LEAVES = roster([
             key: 'outlinerLines',
             label: 'Outliner Lines',
             hint: 'Show indent rails on nested lists in the editor.',
-          },
-        ],
-      },
-      {
-        title: 'Webpages',
-        rows: [
-          {
-            kind: 'webzoom',
-            key: 'webZoomFactor',
-            label: 'Webpage Zoom',
-            hint: 'How embedded webpages scale, relative to the window.',
           },
         ],
       },
@@ -573,29 +571,49 @@ function DeviceRow({ row }: { row: RowOf<'device'> }): React.JSX.Element {
   )
 }
 
-/** The web-guest scale through the shared picker: numeric factors worn as percents. A hand-typed
- *  off-step value displays as its nearest step; the default stores no key. */
-const webZoomChoices = WEB_ZOOM_STEPS.map((f) => ({
+/** The web-guest scale through the shared picker: numeric factors worn as percents, with the steps
+ *  as the offered set and any scale typeable on a second press. The default stores no key. */
+const zoomPercent = (f: number): string => `${Math.round(f * 100)}%`
+const zoomChoice = (f: number): PickerChoice<string> => ({
   value: String(f),
-  label: `${Math.round(f * 100)}%`,
-}))
+  label: zoomPercent(f),
+})
+const webZoomChoices = WEB_ZOOM_STEPS.map(zoomChoice)
 function WebZoomRow({ row }: { row: RowOf<'webzoom'> }): React.JSX.Element {
   const stored = useSession((s) => s.personalization[row.key]) ?? WEB_ZOOM_DEFAULT
   const setPersonalization = useSession((s) => s.setPersonalization)
-  const nearest = WEB_ZOOM_STEPS.reduce((a, b) =>
-    Math.abs(b - stored) < Math.abs(a - stored) ? b : a,
-  )
+  const [editing, setEditing] = useState(false)
+  const commit = (factor: number): void =>
+    setPersonalization(row.key, factor === WEB_ZOOM_DEFAULT ? undefined : factor)
+  // A typed scale keeps its own place among the steps, so the control reads the real value rather
+  // than the step nearest it.
+  const choices = WEB_ZOOM_STEPS.some((f) => f === stored)
+    ? webZoomChoices
+    : [...WEB_ZOOM_STEPS, stored].sort((a, b) => a - b).map(zoomChoice)
   return (
     <SettingsRow label={row.label} hint={row.hint}>
-      <PickerControl
-        ariaLabel={row.label}
-        value={String(nearest)}
-        options={webZoomChoices}
-        onPick={(v) => {
-          const factor = Number(v)
-          setPersonalization(row.key, factor === WEB_ZOOM_DEFAULT ? undefined : factor)
-        }}
-      />
+      {editing ? (
+        <EditableInput
+          value={zoomPercent(stored)}
+          className={pickerValue}
+          caretAtEnd
+          autoSize
+          onCommit={(typed) => {
+            const percent = Number.parseFloat(typed.replace('%', '').trim())
+            if (Number.isFinite(percent)) commit(coerceWebZoom(percent / 100))
+            setEditing(false)
+          }}
+          onCancel={() => setEditing(false)}
+        />
+      ) : (
+        <PickerControl
+          ariaLabel={row.label}
+          value={String(stored)}
+          options={choices}
+          onPick={(v) => commit(Number(v))}
+          onDoubleClick={() => setEditing(true)}
+        />
+      )}
     </SettingsRow>
   )
 }

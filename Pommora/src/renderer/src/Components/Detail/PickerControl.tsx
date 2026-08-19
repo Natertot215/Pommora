@@ -21,6 +21,7 @@ export function PickerControl<T extends string>({
   value,
   options,
   onPick,
+  onDoubleClick,
   solid = false,
   footing = false,
 }: {
@@ -28,6 +29,9 @@ export function PickerControl<T extends string>({
   value: T
   options: readonly PickerChoice<T>[]
   onPick: (v: T) => void
+  /** A second press on the trigger, for a control whose value is also typeable. The menu the first
+   *  press opened closes through its own state, so it still plays its exit. */
+  onDoubleClick?: () => void
   /** Opaque menu surface — for pickers that open over another pane (the block Scale idiom). */
   solid?: boolean
   /** Pinned-footer tone — the value reads `detail`, sitting level with the Style row's label. */
@@ -68,6 +72,13 @@ export function PickerControl<T extends string>({
       className={s.trigger}
       aria-label={ariaLabel}
       onClick={onTrigger}
+      onDoubleClick={
+        onDoubleClick &&
+        (() => {
+          setOpen(false)
+          onDoubleClick()
+        })
+      }
     >
       <span className={footing ? detail : s.value}>{labelOf(options, value)}</span>
       <Icon name="chevrons-up-down" size={12} />

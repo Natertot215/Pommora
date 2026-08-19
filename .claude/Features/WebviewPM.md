@@ -1,7 +1,7 @@
-## Weblink
+## Webview
 
 ```
-Weblink
+Webview
 ├── Webpage Embeds
 ├── Engagement & Retention
 ├── Titles & The Grip
@@ -11,7 +11,7 @@ Weblink
 └── Pending
 ```
 
-Weblink is Pommora's web layer: live websites embedded in Page bodies, an in-app browser, one remembered web session, and live hover previews for website links. Every web surface renders through Electron's webview guests under one main-process governor — the attach validator, the popup router, and the zoom sync live in a single module, and no surface carries its own rules.
+Webview is Pommora's web layer: live websites embedded in Page bodies, an in-app browser, one remembered web session, and live hover previews for website links. Every web surface renders through Electron's webview guests under one main-process governor — the attach validator, the popup router, and the zoom sync live in a single module, and no surface carries its own rules.
 
 ### Webpage Embeds
 
@@ -31,7 +31,7 @@ Tile titles are display-only and resolved at render — a hand-written label win
 
 ### Link Opening
 
-One renderer adjudicator decides where every external link opens — editor clicks, table cells, tile titles, and guest popups all route through it, honoring the **Open Links In Pommora** preference (→ [[ConfigurationPM]] §Files & Links): off opens the system browser, on summons the floating in-app browser (→ [[PagePreviewPM]] §The Browser Flavor). A guest's `window.open` never opens an OS window; main denies it and hands the address to the same adjudicator.
+One renderer adjudicator decides where every external link opens — editor clicks, table cells, tile titles, and guest popups all route through it, honoring the **Open Links In Pommora** preference (→ [[ConfigurationPM]] §Interface): off opens the system browser, on summons the floating in-app browser (→ [[PagePreviewPM]] §The Browser Flavor). A guest's `window.open` never opens an OS window; main denies it and hands the address to the same adjudicator.
 
 ### Web Sessions
 
