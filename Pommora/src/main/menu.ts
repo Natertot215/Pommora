@@ -11,9 +11,16 @@ import { VIEW_SCALE_DEFAULT, viewScaleZoom } from '@shared/types'
 
 type AdoptFn = (path: string) => Promise<void>
 
-const zoomStep = (win: BrowserWindow, dir: 1 | -1) => (): void => {
+/** The window a menu accelerator acts on — the focused one, falling back to the captured `win`
+ *  (which can be stale: the menu outlives a window lifecycle), dead targets resolving to null. */
+const menuTarget = (win: BrowserWindow): BrowserWindow | null => {
   const w = BrowserWindow.getFocusedWindow() ?? win
-  if (!w.isDestroyed()) stepHostZoom(w.webContents, dir)
+  return w.isDestroyed() ? null : w
+}
+
+const zoomStep = (win: BrowserWindow, dir: 1 | -1) => (): void => {
+  const w = menuTarget(win)
+  if (w) stepHostZoom(w.webContents, dir)
 }
 
 // Renderer-driven items send a 'menu:action' string the renderer handles; main-side items
@@ -129,13 +136,13 @@ export async function installAppMenu(win: BrowserWindow, adopt: AdoptFn): Promis
           click: async () => {
             const root = sessionRoot()
             const scale = root ? await readDefaultViewScale(root) : VIEW_SCALE_DEFAULT
-            const w = BrowserWindow.getFocusedWindow() ?? win
-            if (!w.isDestroyed()) setHostZoom(w.webContents, viewScaleZoom(scale))
+            const w = menuTarget(win)
+            if (w) setHostZoom(w.webContents, viewScaleZoom(scale))
           },
         },
-        // De-roled: the native zoom roles are handled inside Chromium with no JS hook, which
-        // would leave guest webviews at the old scale on the first ⌘+. The hidden item keeps the
-        // role's unshifted ⌘= alias alive.
+        // De-roled: the native zoom roles act on whatever WebContents holds focus — a focused
+        // guest webview would zoom itself, not the host — and their writes bypass the guest-zoom
+        // sync. The hidden item keeps the role's unshifted ⌘= alias (US layout) alive.
         { label: 'Zoom In', accelerator: 'CmdOrCtrl+Plus', click: zoomStep(win, 1) },
         {
           label: 'Zoom In',
