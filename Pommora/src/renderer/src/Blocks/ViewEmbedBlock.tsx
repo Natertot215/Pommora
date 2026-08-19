@@ -11,6 +11,7 @@ import {
 } from '@shared/views'
 import { Icon, iconNameOr } from '@renderer/design-system/symbols'
 import { vars as colorVars } from '@renderer/design-system/tokens/color.css'
+import { cellColor } from '@renderer/design-system/tokens/ramp'
 import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
 import { TINT_STEPS, tintAt } from '@renderer/design-system/tokens/tint'
 import { ColorPicker } from '@renderer/Components/Detail/ColorPicker'
@@ -84,7 +85,7 @@ const viewIcon = (v: SavedView): string => iconNameOr(v.icon, 'table')
 const strokeStyle = (v: SavedView): React.CSSProperties | undefined => {
   const key = chipColorFor(v.color)
   if (key === 'default') return undefined
-  const stroke = tintAt(colorVars.color.solid[key as SolidColor], TINT_STEPS.primary)
+  const stroke = tintAt(cellColor(key), TINT_STEPS.primary)
   return { '--segment-stroke': stroke } as React.CSSProperties
 }
 

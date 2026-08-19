@@ -150,3 +150,20 @@ describe('isColorKey', () => {
     }
   })
 })
+
+// The refactor's baseline invariant: generating the palette from the ramp may not move any of the
+// ten anchors' rendered recipe. Grey is the one documented exception (see its own case above).
+describe('the anchors survive the generation unchanged', () => {
+  it('renders each chromatic anchor exactly as the bare solid did', () => {
+    const chromatic = (Object.keys(SPECTRUM) as (keyof typeof SPECTRUM)[]).filter(
+      (k) => k !== 'grey',
+    )
+    for (const key of chromatic) {
+      expect(cellTint(ANCHOR_CELLS[key])).toEqual(tint(SPECTRUM[key]))
+    }
+  })
+
+  it('seats default on grey-4 so the two share one source', () => {
+    expect(cellColor('grey-4')).toBe(c.solid.greyDefault)
+  })
+})

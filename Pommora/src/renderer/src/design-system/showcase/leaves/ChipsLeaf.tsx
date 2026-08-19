@@ -12,11 +12,14 @@ import {
 import { Switch } from '@renderer/design-system/components/Switches/Switch'
 import { Icon } from '@renderer/design-system/symbols'
 import { SortableZone, useDragItem, reorder } from '@renderer/design-system/interactions/drag'
+import type { ChipColorName } from '@renderer/design-system/tokens/chip.css'
+import { ANCHOR_CELLS, cellColor } from '@renderer/design-system/tokens/ramp'
 import { cx } from '@renderer/design-system/cx'
 import { humanize, useIsCompact } from './helpers'
 
-type ChipColorName = keyof typeof chipColor
-const CHIP_COLORS = Object.keys(chipColor) as ChipColorName[]
+// The demo rows show one chip per SPECTRUM anchor rather than all 64 cells — the ramp's shape is the
+// picker's story, not the chip shapes'.
+const CHIP_COLORS: ChipColorName[] = [...Object.values(ANCHOR_CELLS), 'default', 'accent']
 const pillClass = (color: ChipColorName): string => `${chipPill} ${chipColor[color]}`
 
 function ChipCell({
@@ -150,7 +153,7 @@ function SwitchDemo({ color }: { color: ChipColorName }): React.JSX.Element {
       ? vars.color.solid.greyDefault
       : color === 'accent'
         ? 'var(--system-accent)'
-        : vars.color.solid[color]
+        : cellColor(color)
   return (
     <span
       className="ds-switch-demo"

@@ -70,7 +70,7 @@ describe('CheckboxEditor', () => {
   })
 
   it('labels a chosen color that differs from the accent by its palette name', async () => {
-    await mount({ color: 'blue', accent: 'cyan' })
+    await mount({ color: 'blue-1', accent: 'cyan' })
     expect(host.textContent).toContain('Blue')
   })
 
@@ -92,7 +92,7 @@ describe('CheckboxEditor', () => {
     await mount({ accent: 'cyan', onSetColor })
     // open the picker (the color chip button wraps the "Accent" chip)
     await act(async () => buttonFor('Accent').click())
-    await act(async () => buttonFor('blue').click())
-    expect(onSetColor).toHaveBeenCalledWith('blue')
+    await act(async () => buttonFor('blue-1').click())
+    expect(onSetColor).toHaveBeenCalledWith('blue-1')
   })
 })
