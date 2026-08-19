@@ -281,10 +281,10 @@ Tests: extend the embed-widget flow tests with webpage cases.
 **Files:** Modify `Pommora/src/main/editorMenu.ts` (Embed ▸ gains **Webpage**, action `block:webpage`), `renderer/src/MarkdownPM/editor/menu.ts` (route it), `editor/embedInsert.ts` (a sibling that types `![]()`, caret between the parens). Test: the insert helper's coordinates.
 
 **Steps:**
-- [ ] Failing coordinate test; implement; green.
-- [ ] Dev app (menu = main change → restart): Embed ▸ Webpage types the pair; ⌘V of a URL lands literal inside the parens (Task 3's guard, live); caret-leave forms the tile, its title resolving display-side per Task 8.
-- [ ] Gates green. Rewrite the MarkdownPM Pending image-seam sentence + the ConnectionsPM lone-line sentence (Made False rows 4–5) in this commit — the syntax's meaning changes here.
-- [ ] Commit: `feat(menu): Embed ▸ Webpage types the empty embed and seats the target`
+- [x] Failing coordinate test; implement; green.
+- [ ] Dev app (menu = main change → restart): Embed ▸ Webpage types the pair; ⌘V of a URL lands literal inside the parens (Task 3's guard, live); caret-leave forms the tile, its title resolving display-side per Task 8. *(Gate 3 walkthrough — instance lock + main-process restart are both Nathan's.)*
+- [x] Gates green. Rewrite the MarkdownPM Pending image-seam sentence + the ConnectionsPM lone-line sentence (Made False rows 4–5) in this commit — the syntax's meaning changes here.
+- [x] Commit: `feat(menu): Embed ▸ Webpage types the empty embed and seats the target`
 
 #### Gate 3 — a URL line is a live tile
 - [ ] Gates green; derivations/controls re-run; review + simplification on the range; concerns fixed or ruled.
