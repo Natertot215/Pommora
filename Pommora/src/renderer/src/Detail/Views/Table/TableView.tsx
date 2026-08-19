@@ -68,6 +68,7 @@ import { GHOST_DWELL_MS, useClearStrandedGhost, useGhostAnchor } from '../useGho
 import { useViewCreation } from '../useViewCreation'
 import { TableRowDnd, useTableRowDrag } from './tableDnd'
 import { solidColorCss } from './solidColor'
+import { openWebLink } from '@renderer/openWebLink'
 import { parseLink, urlClickTarget, urlValueFromEdit, urlValueFromRename } from '@shared/linkValue'
 
 // ── TUNABLE ── how far past a column's edge the dragged column's center must travel before the slot
@@ -735,7 +736,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       // Filled → open the link (matching the rendered <a>); empty → the inline field to type one in.
       const v = resolveFieldValue(row, col.id, schema)
       const url = urlClickTarget(v.kind === 'url' ? v.value : undefined)
-      if (url) void window.nexus.openExternal(url)
+      if (url) openWebLink(url)
       else setEditing({ rowId: row.id, colId: col.id, mode: 'editor' })
     }
   }
