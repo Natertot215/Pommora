@@ -21,19 +21,6 @@ export function openInAppBrowser(url: string): void {
   useSession.getState().openBrowser(url)
 }
 
-const LIGHT_LUMA = 150
-
-/** Whether a reported theme color reads light — the chrome's labels flip dark over it. Only the
- *  hex forms are judged; an exotic value keeps the light-label default. */
-function lightColor(color: string): boolean {
-  const match = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(color.trim())
-  if (!match) return false
-  const hex = match[1].length === 3 ? [...match[1]].map((c) => c + c).join('') : match[1]
-  const n = Number.parseInt(hex, 16)
-  const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255]
-  return 0.299 * r + 0.587 * g + 0.114 * b > LIGHT_LUMA
-}
-
 /** What the guest element answers with once attached — the navigation surface the toolbar drives. */
 interface BrowserGuest extends HTMLElement {
   goBack(): void
@@ -68,10 +55,6 @@ function BrowserWindowBody({
   const [title, setTitle] = useState('')
   const [current, setCurrent] = useState(url)
   const [nav, setNav] = useState({ back: false, forward: false })
-  // The site's reported theme color judges the clear strip's label contrast — null (no meta
-  // theme-color, or a navigation away) keeps the light-label default.
-  const [theme, setTheme] = useState<string | null>(null)
-
   // A retake aims the standing guest at the address — imperatively, because the guest may have
   // navigated away from the very url being re-summoned, which the src attribute reads as
   // unchanged. The mount run stands down; src carries the first aim.
@@ -93,8 +76,6 @@ function BrowserWindowBody({
     const wv = ref.current
     if (!wv) return
     const onTitle = (e: Event): void => setTitle((e as Event & { title?: string }).title ?? '')
-    const onTheme = (e: Event): void =>
-      setTheme((e as Event & { themeColor?: string | null }).themeColor ?? null)
     // Event-driven, never polled: every commit (page loads, pushState hops, back/forward) lands
     // one of these, and the toolbar re-reads the guest's truth there.
     const onNavigate = (): void => {
@@ -102,12 +83,10 @@ function BrowserWindowBody({
       setNav({ back: wv.canGoBack(), forward: wv.canGoForward() })
     }
     wv.addEventListener('page-title-updated', onTitle)
-    wv.addEventListener('did-change-theme-color', onTheme)
     wv.addEventListener('did-navigate', onNavigate)
     wv.addEventListener('did-navigate-in-page', onNavigate)
     return () => {
       wv.removeEventListener('page-title-updated', onTitle)
-      wv.removeEventListener('did-change-theme-color', onTheme)
       wv.removeEventListener('did-navigate', onNavigate)
       wv.removeEventListener('did-navigate-in-page', onNavigate)
     }
@@ -116,7 +95,7 @@ function BrowserWindowBody({
   return (
     <PreviewPane
       id="web-browser"
-      className={cx('wbrowser', theme !== null && lightColor(theme) && 'is-light-chrome')}
+      className="wbrowser"
       closing={closing}
       onClose={closeBrowser}
       bounds={BOUNDS}
