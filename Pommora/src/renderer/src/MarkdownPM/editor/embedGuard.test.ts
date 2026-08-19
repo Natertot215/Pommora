@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { EditorState, type TransactionSpec } from '@codemirror/state'
-import { embedField, embedTiles } from './embedWidget'
+import { embedExclusions, embedField, embedTiles } from './embedWidget'
 import { buildPageIndex, type ConnectionsApi } from '../connections'
 
 const conn: ConnectionsApi = {
@@ -113,6 +113,111 @@ describe('the rebuild gate reads the scanner', () => {
     expect(tiles()).toBe(0)
     state = state.update({ changes: { from: 0, to: 4, insert: '' } }).state
     expect(tiles()).toBe(1)
+  })
+})
+
+const URL = 'https://www.example.com/a'
+const W = `![](${URL})`
+const ranges = (state: EditorState): { kind: string; from: number; to: number }[] =>
+  (state.field(embedField as never) as { ranges: { kind: string; from: number; to: number }[] })
+    .ranges
+
+describe('the webpage formation gate', () => {
+  it('forms at mount, selection seat regardless', () => {
+    const state = mk(W)
+    expect(ranges(state)).toEqual([{ kind: 'webpage', from: 0, to: W.length, url: URL, label: '' }])
+  })
+
+  it('stays raw under the selection, and forms on departure', () => {
+    let state = mk('x\n')
+    state = state.update({
+      changes: { from: 2, to: 2, insert: W },
+      selection: { anchor: 2 + W.length },
+    }).state
+    expect(ranges(state)).toHaveLength(0)
+    state = state.update({ selection: { anchor: 0 } }).state
+    expect(ranges(state)).toHaveLength(1)
+  })
+
+  it('forms on a doc change that lands a valid line away from the caret', () => {
+    let state = mk('x\n\ny')
+    state = state.update({ changes: { from: 2, to: 2, insert: `${W}\n` } }).state
+    expect(ranges(state)).toHaveLength(1)
+  })
+
+  it('leaving the line by Enter forms the tile', () => {
+    let state = mk('')
+    state = state.update({
+      changes: { from: 0, to: 0, insert: W },
+      selection: { anchor: W.length },
+    }).state
+    expect(ranges(state)).toHaveLength(0)
+    state = state.update({
+      changes: { from: W.length, to: W.length, insert: '\n' },
+      selection: { anchor: W.length + 1 },
+    }).state
+    expect(ranges(state)).toHaveLength(1)
+  })
+
+  it('claims duplicates — two tiles, same URL', () => {
+    const state = mk(`${W}\n\n${W}`)
+    expect(ranges(state)).toHaveLength(2)
+  })
+
+  it('reforms on undo even though the restoring selection sits on the line', () => {
+    let state = mk(`alpha\n${W}`)
+    expect(ranges(state)).toHaveLength(1)
+    state = state.update({ changes: { from: 5, to: 6 + W.length, insert: '' } }).state
+    expect(ranges(state)).toHaveLength(0)
+    state = state.update({
+      changes: { from: 5, to: 5, insert: `\n${W}` },
+      selection: { anchor: 6 + W.length },
+      userEvent: 'undo',
+    }).state
+    expect(ranges(state)).toHaveLength(1)
+  })
+
+  it('a formed tile survives the selection returning to its line', () => {
+    let state = mk(`x\n${W}`)
+    expect(ranges(state)).toHaveLength(1)
+    state = state.update({ selection: { anchor: 4 } }).state
+    expect(ranges(state)).toHaveLength(1)
+  })
+})
+
+describe('the webpage tile under the guard', () => {
+  it('refuses a join that would drag prose onto the tile line', () => {
+    const doc = `alpha\n${W}\nbeta`
+    expect(apply(mk(doc), { changes: { from: 6 + W.length, to: 7 + W.length, insert: '' } })).toBe(
+      doc,
+    )
+  })
+
+  it('repairs a boundary-seat insertion onto its own line', () => {
+    const doc = `alpha\n${W}\nbeta`
+    expect(apply(mk(doc), { changes: { from: 6, to: 6, insert: 'x ' } })).toBe(
+      `alpha\nx \n${W}\nbeta`,
+    )
+  })
+
+  it('allows a spanning delete that removes the tile whole', () => {
+    const doc = `alpha\n${W}\nbeta`
+    expect(apply(mk(doc), { changes: { from: 5, to: 6 + W.length, insert: '' } })).toBe(
+      'alpha\nbeta',
+    )
+  })
+
+  it('refuses deleting the lone fencing blank beside the tile', () => {
+    const doc = `alpha\n\n${W}\n\nbeta`
+    expect(apply(mk(doc), { changes: { from: 5, to: 6, insert: '' } })).toBe(doc)
+  })
+})
+
+describe('webpage labels never enter the page exclusions', () => {
+  it('a tile labeled like an existing Page leaves that Page pickable', () => {
+    const state = mk(`![Alpha](${URL})`)
+    expect(ranges(state)).toHaveLength(1)
+    expect(embedExclusions(state).has('alpha')).toBe(false)
   })
 })
 

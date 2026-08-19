@@ -235,8 +235,8 @@ Tests: extend the embed-widget flow tests with webpage cases.
 **Must agree:** the guard, the atomic ranges, the grip's block resolution, and token suppression all read the claimed set — one test asserts a claimed webpage line is guard-protected and grip-resolvable exactly as a page tile is.
 
 **Steps:**
-- [ ] Failing tests for the trigger/predicate matrix; implement scan + key + gate; green.
-- [ ] Gates green. Commit: `feat(editor): webpage lines claim through the shared embed owner`
+- [x] Failing tests for the trigger/predicate matrix; implement scan + key + gate; green.
+- [x] Gates green. Commit: `feat(editor): webpage lines claim through the shared embed owner`
 
 #### Task 7: The WebpageEmbed payload — a live tile at full visibility
 
@@ -496,6 +496,7 @@ This task also lands the `web:popup` listener (the renderer app root subscribes 
 ### Deviations
 - Task 2's control count read 7, not the step's 5 — the plan's Dead Vocabulary header already said 7; the step's number was stale. ConnectionsPM holds no toggle-gated paste sentence, so Made False row 3 rewrote MarkdownPM alone. The `when` removal also collapsed `LeafRow` into `RowControl` (it became a pass-through).
 - **Task 4, spike-proven:** `will-attach-webview` cannot rewrite `params` — a forced partition and `allowpopups` set there never reach the attach. The plan's named fallback is the shipped shape: every surface carries `partition` (defaulting to `WEB_PARTITION`) **and `allowpopups`** as attributes, and the hook is a validator that denies a wrong-partition or hostile-src attach outright. Tasks 7/14/18 inherit the attribute pair.
+- **Task 6:** the planned formation-gate ViewPlugin fell away — selection changes are themselves transactions the StateField sees, so the selection-departure trigger is a pure re-check inside the field's update (gated on a stored unformed count), and no dispatcher exists to own. Undo/redo form like a mount: the restoring selection sits on the restored line by construction. The webpage claim's kind-aware key also stayed inside the tile field rather than widening `claimedEmbeds`' signature — the claim's only reader is the field (webpage lines produce no `embed` token to suppress), and the page-only caller in `decorations.ts` would have had to fabricate a formation oracle.
 - **Task 4:** `applyDefaultZoom` was not the only `setZoomFactor` writer — ⌘0's menu click was a fourth, in-place. Every host-zoom write now flows through `setHostZoom`/`stepHostZoom` (the guest-sync seam); ⌘+/⌘− are de-roled with a hidden `⌘=` alias item preserving the native role's unshifted chord.
 ### Lessons
 ### Sequenced After

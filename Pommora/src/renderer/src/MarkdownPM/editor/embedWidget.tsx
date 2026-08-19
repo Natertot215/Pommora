@@ -29,6 +29,7 @@ import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { TILE_MIN_PX } from '@renderer/design-system/tokens/size.css'
 import { normalizeTitle, titleFromPath } from '@shared/connections'
 import '@renderer/design-system/tile-chassis.css'
+import { loneWebpageEmbed } from '@shared/webpageEmbed'
 import { docScan } from './docCache'
 import { loneEmbedTitle } from '../detect'
 import { claimedEmbeds } from './embedRanges'
@@ -65,12 +66,9 @@ export interface EmbedHeightsApi {
   save: (heights: Record<string, number>) => void
 }
 
-export interface TileRange {
-  from: number
-  to: number
-  path: string
-  title: string
-}
+export type TileRange =
+  | { kind: 'page'; from: number; to: number; path: string; title: string }
+  | { kind: 'webpage'; from: number; to: number; url: string; label: string }
 
 interface EmbedTiles {
   deco: DecorationSet
@@ -78,6 +76,9 @@ interface EmbedTiles {
   editing: string | null
   /** Persisted tile heights, target page id → px; {} until the host's load lands. */
   heights: Record<string, number>
+  /** Webpage candidates the formation gate declined (the selection sat on their line) — a
+   *  selection move re-evaluates only while this is non-zero. */
+  unformed: number
 }
 
 // PageEmbed mounts MarkdownEditor, which registers this extension — a static import would be the
@@ -261,57 +262,127 @@ class EmbedTileWidget extends WidgetType {
   }
 }
 
+/** The webpage tile's seat on the shared chassis. This task ships the claim mechanics; the live
+ *  payload replaces the blank body in the next. */
+class WebpageTileWidget extends WidgetType {
+  constructor(
+    readonly url: string,
+    readonly label: string,
+    readonly height: number | undefined,
+  ) {
+    super()
+  }
+
+  eq(o: WebpageTileWidget): boolean {
+    return o.url === this.url && o.label === this.label && o.height === this.height
+  }
+
+  get estimatedHeight(): number {
+    return this.height ?? 320
+  }
+
+  toDOM(): HTMLElement {
+    const dom = document.createElement('span')
+    dom.className = 'mdpm-embed-tile tile-chassis'
+    if (this.height !== undefined) dom.style.height = `${this.height}px`
+    return dom
+  }
+
+  ignoreEvent(): boolean {
+    return true
+  }
+}
+
 const fenceLine = Decoration.line({ class: 'mdpm-embed-fence' })
 // The tile's own line drops its text strut — the leading a line-height reserves for glyphs that
 // aren't there — so the tile sits at its margins, not a phantom line of space below them.
 const embedLine = Decoration.line({ class: 'mdpm-embed-line' })
 
+/** Whether any selection range touches the line span — the formation gate's predicate. */
+const selectionOn = (state: EditorState, from: number, to: number): boolean =>
+  state.selection.ranges.some((s) => s.from <= to && s.to >= from)
+
 function buildTiles(
   state: EditorState,
   editing: string | null,
   heights: Record<string, number>,
+  prev: readonly TileRange[] | 'mount',
 ): EmbedTiles {
   const host = state.facet(embedHost)
   const conn = host.getConn()
-  const embeds = docScan(state.doc).embeds
-  if (!conn || embeds.length === 0) return { deco: Decoration.none, ranges: [], editing, heights }
-  const claimed = claimedEmbeds(embeds, (t) => conn.resolve(t).status)
-  if (claimed.length === 0) return { deco: Decoration.none, ranges: [], editing, heights }
+  const scan = docScan(state.doc)
   const interactive = host.ancestors.length <= 1
+  let unformed = 0
+
+  const entries: { from: number; to: number; deco: Decoration; range: TileRange }[] = []
+  if (conn && scan.embeds.length > 0) {
+    for (const e of claimedEmbeds(scan.embeds, (t) => conn.resolve(t).status)) {
+      const r = conn.resolve(e.title)
+      if (r.status !== 'resolved' || !r.page) continue
+      const path = r.page.path
+      const cyclic = host.ancestors.includes(path)
+      entries.push({
+        from: e.from,
+        to: e.to,
+        deco: Decoration.replace({
+          widget: new EmbedTileWidget(
+            path,
+            e.title,
+            editing === path,
+            interactive && !cyclic,
+            cyclic,
+            host.ancestors,
+            r.page.id,
+            heights[r.page.id],
+          ),
+        }),
+        // The cycle token joins too: exclusions already cover it via the ancestors chain, and
+        // without a range here it would be the one replaced line with no absorb and no guard.
+        range: { kind: 'page', from: e.from, to: e.to, path, title: e.title },
+      })
+    }
+  }
+  // The formation gate: a valid line claims at mount, or once the selection is off it — typing
+  // `https://example.c` mid-address passes the grammar, so the grammar can never be the whole
+  // test. A tile formed once survives regardless of where the selection goes next.
+  for (const w of scan.webpages) {
+    const formed =
+      prev === 'mount' ||
+      prev.some(
+        (p) => p.kind === 'webpage' && p.url === w.url && p.from <= w.to && p.to >= w.from,
+      ) ||
+      !selectionOn(state, w.from, w.to)
+    if (!formed) {
+      unformed++
+      continue
+    }
+    entries.push({
+      from: w.from,
+      to: w.to,
+      deco: Decoration.replace({
+        widget: new WebpageTileWidget(w.url, w.label, heights[w.url]),
+      }),
+      range: { kind: 'webpage', from: w.from, to: w.to, url: w.url, label: w.label },
+    })
+  }
+  if (entries.length === 0) return { deco: Decoration.none, ranges: [], editing, heights, unformed }
+  entries.sort((a, b) => a.from - b.from)
+
   const builder = new RangeSetBuilder<Decoration>()
   const ranges: TileRange[] = []
   // The fencing blanks are mechanism, not content: they keep their seat and their deletion
   // refusal, but render collapsed so the tile sits against its real neighbors. A blank shared
   // between two tiles is one line and gets the class once.
   let lastFence = -1
-  for (const e of claimed) {
-    const r = conn.resolve(e.title)
-    if (r.status !== 'resolved' || !r.page) continue
-    const path = r.page.path
-    const cyclic = host.ancestors.includes(path)
-    const tileLine = state.doc.lineAt(e.from)
+  for (const en of entries) {
+    const tileLine = state.doc.lineAt(en.from)
     if (tileLine.number > 1) {
       const above = state.doc.line(tileLine.number - 1)
       if (above.text.trim() === '' && above.from !== lastFence)
         builder.add(above.from, above.from, fenceLine)
     }
     builder.add(tileLine.from, tileLine.from, embedLine)
-    builder.add(
-      e.from,
-      e.to,
-      Decoration.replace({
-        widget: new EmbedTileWidget(
-          path,
-          e.title,
-          editing === path,
-          interactive && !cyclic,
-          cyclic,
-          host.ancestors,
-          r.page.id,
-          heights[r.page.id],
-        ),
-      }),
-    )
+    builder.add(en.from, en.to, en.deco)
     if (tileLine.number < state.doc.lines) {
       const below = state.doc.line(tileLine.number + 1)
       if (below.text.trim() === '') {
@@ -319,11 +390,9 @@ function buildTiles(
         lastFence = below.from
       }
     }
-    // The cycle token joins too: exclusions already cover it via the ancestors chain, and without
-    // a range here it would be the one replaced line with no absorb and no guard.
-    ranges.push({ from: e.from, to: e.to, path, title: e.title })
+    ranges.push(en.range)
   }
-  return { deco: builder.finish(), ranges, editing, heights }
+  return { deco: builder.finish(), ranges, editing, heights, unformed }
 }
 
 // Rebuild when the doc's embed set itself moved — read from the SAME cached scan every keystroke
@@ -348,11 +417,30 @@ function editAffectsEmbeds(value: EmbedTiles, tr: Transaction): boolean {
     )
       return true
   }
+  const wBefore = docScan(tr.startState.doc).webpages
+  const wAfter = docScan(tr.state.doc).webpages
+  if (wBefore.length !== wAfter.length) return true
+  for (let i = 0; i < wBefore.length; i++) {
+    if (
+      wAfter[i].url !== wBefore[i].url ||
+      wAfter[i].label !== wBefore[i].label ||
+      wAfter[i].from !== tr.changes.mapPos(wBefore[i].from, 1)
+    )
+      return true
+  }
   return false
 }
 
+/** The prior ranges in the new doc's coordinates — what formation matches candidates against. */
+const mapRanges = (ranges: readonly TileRange[], tr: Transaction): TileRange[] =>
+  ranges.map((r) => ({
+    ...r,
+    from: tr.changes.mapPos(r.from, 1),
+    to: tr.changes.mapPos(r.to, -1),
+  }))
+
 export const embedField = StateField.define<EmbedTiles>({
-  create: (state) => buildTiles(state, null, {}),
+  create: (state) => buildTiles(state, null, {}, 'mount'),
   update(value, tr) {
     let editing = value.editing
     let heights = value.heights
@@ -362,21 +450,30 @@ export const embedField = StateField.define<EmbedTiles>({
       else if (e.is(resolutionNudge)) nudged = true
       else if (e.is(setEmbedHeights)) heights = e.value
     }
+    // Selection changes are transactions, so the selection-departure trigger needs no dispatcher:
+    // while unformed candidates exist, any selection move re-runs the formation check. Undo/redo
+    // form like a mount — a restored tile line was a tile, and the restoring selection sits on it.
+    const selMoved = !tr.startState.selection.eq(tr.state.selection)
+    const formationDue = value.unformed > 0 && selMoved
+    const restored = tr.isUserEvent('undo') || tr.isUserEvent('redo')
     if (!tr.docChanged) {
-      return nudged || editing !== value.editing || heights !== value.heights
-        ? buildTiles(tr.state, editing, heights)
+      return nudged || editing !== value.editing || heights !== value.heights || formationDue
+        ? buildTiles(tr.state, editing, heights, value.ranges)
         : value
     }
-    if (editAffectsEmbeds(value, tr)) return buildTiles(tr.state, editing, heights)
+    if (editAffectsEmbeds(value, tr) || formationDue || restored)
+      return buildTiles(
+        tr.state,
+        editing,
+        heights,
+        restored ? 'mount' : mapRanges(value.ranges, tr),
+      )
     return {
       deco: value.deco.map(tr.changes),
-      ranges: value.ranges.map((r) => ({
-        ...r,
-        from: tr.changes.mapPos(r.from, 1),
-        to: tr.changes.mapPos(r.to, -1),
-      })),
+      ranges: mapRanges(value.ranges, tr),
       editing,
       heights,
+      unformed: value.unformed,
     }
   },
   provide: (f) => EditorView.decorations.from(f, (v) => v.deco),
@@ -477,7 +574,11 @@ const embedGuard = EditorState.transactionFilter.of((tr) => {
     for (const r of ranges) {
       const mappedFrom = tr.changes.mapPos(r.from, 1)
       const line = tr.newDoc.lineAt(Math.min(mappedFrom, tr.newDoc.length))
-      if (loneEmbedTitle(line.text) !== r.title) continue
+      const stillLone =
+        r.kind === 'page'
+          ? loneEmbedTitle(line.text) === r.title
+          : loneWebpageEmbed(line.text)?.url === r.url
+      if (!stillLone) continue
       if (gluedOf(tr.newDoc, mappedFrom) > gluedOf(tr.startState.doc, r.from)) return []
     }
   }
@@ -494,8 +595,14 @@ const embedGuard = EditorState.transactionFilter.of((tr) => {
     if (interior) return []
     const mapped = tr.changes.mapPos(r.from, 1)
     const line = tr.newDoc.lineAt(Math.min(mapped, tr.newDoc.length))
-    if (!line.text.includes(`![[${r.title}]]`)) continue // syntax gone whole → a legal removal
-    if (loneEmbedTitle(line.text) !== null) continue // still lone → untouched or cleanly shifted
+    // The presence probe reads the URL verbatim rather than recomposing the line — a label whose
+    // on-disk escapes are non-canonical wouldn't round-trip through compose byte-identically.
+    const present =
+      r.kind === 'page' ? line.text.includes(`![[${r.title}]]`) : line.text.includes(`](${r.url})`)
+    if (!present) continue // syntax gone whole → a legal removal
+    const lone =
+      r.kind === 'page' ? loneEmbedTitle(line.text) !== null : loneWebpageEmbed(line.text) !== null
+    if (lone) continue // still lone → untouched or cleanly shifted
     const repair = boundaryRepair(tr, r)
     if (repair) {
       // The userEvent rides along — a filtered transaction rebuilds from startState and would
@@ -523,7 +630,10 @@ export function embedTileRanges(state: EditorState): readonly TileRange[] {
  *  The grip menu's pick tree and the `![[` autocomplete pool both filter on this one set. */
 export function embedExclusions(state: EditorState): Set<string> {
   const out = new Set<string>()
-  for (const t of embedTileRanges(state)) out.add(normalizeTitle(t.title))
+  // Page ranges only — a webpage label collides with real page titles by construction (Short
+  // Link, Page Title), and admitting one here would delete that page from the autocomplete pool
+  // and the grip's pick tree.
+  for (const t of embedTileRanges(state)) if (t.kind === 'page') out.add(normalizeTitle(t.title))
   for (const a of state.facet(embedHost).ancestors) out.add(normalizeTitle(titleFromPath(a)))
   return out
 }

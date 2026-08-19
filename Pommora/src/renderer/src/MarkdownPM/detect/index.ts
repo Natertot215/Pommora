@@ -1,6 +1,7 @@
 // Inline matchers return a fresh /g regex per call so callers never share lastIndex.
 import { parse } from '../parser'
 import { fenceLang, fenceSpans, lineOffsetsOf, quoteDepthOf } from '@shared/markdownCode'
+import { loneWebpageEmbed } from '@shared/webpageEmbed'
 import type { ListKind } from '@shared/gripMenu'
 export { markdownLinkRegex } from '@shared/links'
 
@@ -157,6 +158,34 @@ export function blockEmbedLines(text: string, excluded: [number, number][]): Emb
     if (title === null) continue
     if (excluded.some(([f, t]) => lineStarts[i] >= f && lineStarts[i] <= t)) continue
     out.push({ from: lineStarts[i], to: lineStarts[i] + lines[i].length, title })
+  }
+  return out
+}
+
+export interface WebpageLine {
+  /** Whole-line span, `to` exclusive of the trailing newline. */
+  from: number
+  to: number
+  label: string
+  url: string
+}
+
+/** Lone-line webpage embeds — the `![label](url)` sibling of blockEmbedLines, same lone-line and
+ *  exclusion contract: an indented line is list continuation, and one inside a fence, table, or
+ *  math region is content there. */
+export function blockWebpageLines(text: string, excluded: [number, number][]): WebpageLine[] {
+  const { lines, lineStarts } = splitWithOffsets(text)
+  const out: WebpageLine[] = []
+  for (let i = 0; i < lines.length; i++) {
+    const w = loneWebpageEmbed(lines[i])
+    if (w === null) continue
+    if (excluded.some(([f, t]) => lineStarts[i] >= f && lineStarts[i] <= t)) continue
+    out.push({
+      from: lineStarts[i],
+      to: lineStarts[i] + lines[i].length,
+      label: w.label,
+      url: w.url,
+    })
   }
   return out
 }

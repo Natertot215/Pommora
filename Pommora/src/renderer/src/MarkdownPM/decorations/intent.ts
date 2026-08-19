@@ -13,9 +13,10 @@ import {
   type EmbedLine,
   type FenceInfo,
   type ListMarker,
+  type WebpageLine,
 } from '../detect'
 import { docMathRanges } from '../editor/mathRanges'
-import { docEmbedLines } from '../editor/embedRanges'
+import { docEmbedLines, docWebpageLines } from '../editor/embedRanges'
 
 // A line is a nested quote INSIDE a callout when it's a callout line whose content (after the callout's own
 // `>` level) is itself a blockquote. Drives the md-bq-in run's first/last across a contiguous nested-quote run.
@@ -55,6 +56,7 @@ export interface DocScan {
   callouts: (CalloutLine | undefined)[]
   maths: [number, number][]
   embeds: EmbedLine[]
+  webpages: WebpageLine[]
 }
 
 export function scanDoc(text: string): DocScan {
@@ -67,6 +69,7 @@ export function scanDoc(text: string): DocScan {
     callouts: calloutLines(lines, fences),
     maths: docMathRanges(text),
     embeds: docEmbedLines(text),
+    webpages: docWebpageLines(text),
   }
 }
 
