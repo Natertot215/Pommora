@@ -532,6 +532,7 @@ export function PickerOption({
   selected = false,
   ring = false,
   leading,
+  align,
 }: {
   children: ReactNode
   onClick?: () => void
@@ -543,20 +544,30 @@ export function PickerOption({
   /** A glyph ahead of the label. A row that leads with one reads left — a centered cluster leaves a
    *  ragged glyph column — so the slot carries that alignment rather than each caller restating it. */
   leading?: ReactNode
+  /** Overrides what the leading slot implies. A glyph-led row reads left and a bare one centres, but
+   *  a list of plain words can want its left edge too — the operator list reads as a column of
+   *  choices, not a rank of chips. */
+  align?: 'start' | 'center'
 }): React.JSX.Element {
+  const readsLeft = align === 'start' || (align !== 'center' && leading != null)
   return (
     <button
       type="button"
-      className={cx(s.option, selected && s.optionSelected, selected && ring && s.optionRing)}
+      className={cx(
+        s.option,
+        readsLeft && s.optionStart,
+        selected && s.optionSelected,
+        selected && ring && s.optionRing,
+      )}
       onClick={onClick}
     >
-      {leading == null ? (
-        children
-      ) : (
+      {readsLeft ? (
         <span className={s.leadingRow}>
-          <span className={s.optionGlyph}>{leading}</span>
+          {leading != null && <span className={s.optionGlyph}>{leading}</span>}
           {children}
         </span>
+      ) : (
+        children
       )}
       {selected && <Icon name="check" size={CHECK} className={s.optionCheck} />}
     </button>
