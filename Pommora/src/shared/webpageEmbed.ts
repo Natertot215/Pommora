@@ -3,7 +3,13 @@
 // recognize a link mid-authoring read the empty-tolerant variant instead of the tokenizer.
 // No fs, no React; both processes may import it.
 
-import { emptyTolerantLinkRegex, escapeAlias, isValidLink, unescapeAlias } from './links'
+import {
+  emptyTolerantLinkRegex,
+  escapeAlias,
+  hasWebScheme,
+  isValidLink,
+  unescapeAlias,
+} from './links'
 import { linkDisplayText } from './linkValue'
 import type { LinkDisplay } from './properties'
 
@@ -16,9 +22,10 @@ export function loneWebpageEmbed(lineText: string): { label: string; url: string
   if (!lineText.startsWith('![')) return null
   const line = lineText.replace(/\s+$/, '')
   const m = emptyTolerantLinkRegex().exec(line)
-  if (!m || m.index !== 1 || m.index + m[0].length !== line.length) return null
+  if (!m) return null
+  if (m.index !== 1 || m.index + m[0].length !== line.length) return null
   const url = m[2]
-  if (!url || !/^https?:\/\//i.test(url) || !isValidLink(url)) return null
+  if (!url || !hasWebScheme(url) || !isValidLink(url)) return null
   return { label: unescapeAlias(m[1]), url }
 }
 
