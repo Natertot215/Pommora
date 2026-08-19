@@ -19,7 +19,7 @@ import {
   type ContainerCore,
 } from '@renderer/treeIndex'
 import { showConnectionMenu } from '@renderer/Embeds/connectionMenu'
-import { hoverConnection } from '@renderer/Embeds/ConnectionHoverCard'
+import { hoverConnection, hoverWebsite } from '@renderer/Embeds/ConnectionHoverCard'
 import { attachBelow, insertBand, removeTile as removeLeaf } from '@renderer/SurfacePM/core/ops'
 import { getTile } from '@renderer/SurfacePM/core/model'
 import { SurfaceView, type BackdropTarget } from '@renderer/SurfacePM/SurfaceView'
@@ -140,6 +140,7 @@ export function BlockSurface({ host }: { host: BlockHostRef }): React.JSX.Elemen
       bypass: (page) =>
         void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true }),
       hover: hoverConnection,
+      hoverSite: hoverWebsite,
       menu: showConnectionMenu,
     }
   }, [tree, select, openPreview, openInPreview])

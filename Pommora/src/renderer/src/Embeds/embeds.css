@@ -26,6 +26,29 @@
 /* No overflow here: the pane's clip-path bounds the visuals and the pgembed owns the scroll,
    while the resize strips straddle this box's edge — clipping would leave the visible border
    inert under the pointer. */
+/* The website flavor: the guest owns the card's whole box; the shield above it keeps the card a
+   glance surface — pointer events land on the host, never the site. */
+.conn-hover-web {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+.conn-hover-web-cover {
+  position: absolute;
+  inset: 0;
+  background: var(--surface-primary);
+  transition: opacity var(--duration-base) var(--ease-standard);
+}
+.conn-hover-web-cover.is-lifted {
+  opacity: 0;
+}
+.conn-hover-web-shield {
+  position: absolute;
+  inset: 0;
+}
+
 .conn-hover-body {
   position: relative;
 }

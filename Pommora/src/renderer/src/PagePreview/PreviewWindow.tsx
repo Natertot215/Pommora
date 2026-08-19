@@ -12,7 +12,7 @@ import { Subfield } from '../Detail/Subfield/Subfield'
 import type { SubfieldScope } from '../Detail/Subfield/subfieldItems'
 import type { ConnectionsApi } from '../MarkdownPM/connections'
 import { showConnectionMenu } from '../Embeds/connectionMenu'
-import { hoverConnection } from '../Embeds/ConnectionHoverCard'
+import { hoverConnection, hoverWebsite } from '../Embeds/ConnectionHoverCard'
 import { getDetailPaneRect } from '../Detail/DetailPane'
 import { NavCrumbs } from '../Navigation/NavList'
 import { resolveWith } from '../Navigation/navResolve'
@@ -112,6 +112,7 @@ function PreviewWindowBody({
       bypass: (page) =>
         void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true }),
       hover: hoverConnection,
+      hoverSite: hoverWebsite,
       menu: showConnectionMenu,
     }
   }, [tree, openPreviewTab, select])

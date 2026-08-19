@@ -12,7 +12,7 @@ import { useExitPresence } from '../design-system/useExitPresence'
 import { PageEmbed } from '../Embeds/PageEmbed'
 import type { ConnectionsApi } from '../MarkdownPM/connections'
 import { showConnectionMenu } from '../Embeds/connectionMenu'
-import { hoverConnection } from '../Embeds/ConnectionHoverCard'
+import { hoverConnection, hoverWebsite } from '../Embeds/ConnectionHoverCard'
 import { moveByKey } from '../Navigation/navRecents'
 import { pageIndexOf, resolveIndexOf } from '../treeIndex'
 import { useSession } from '../store'
@@ -140,6 +140,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       bypass: (page) =>
         void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true }),
       hover: hoverConnection,
+      hoverSite: hoverWebsite,
       menu: showConnectionMenu,
     }
   }, [tree, openPreviewTab, select])
