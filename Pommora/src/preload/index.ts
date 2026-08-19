@@ -215,6 +215,8 @@ const api = {
   optionMenu: ask('option-menu'),
   // Flag (on hover) whether the pointer sits on a block grip, so the generic editor menu stands down there.
   setGripHot: tell('editor:grip-hot'),
+  // Scrolls a guest whose covering chrome holds the pointer — the hover card's site flavor.
+  wheelGuest: tell('web:wheel'),
   // Rename the open nexus's root folder + re-point the live session to the new path.
   renameNexus: ask('nexus:rename'),
   // Native-menu actions pushed from main; each subscriber returns an unsubscribe.
