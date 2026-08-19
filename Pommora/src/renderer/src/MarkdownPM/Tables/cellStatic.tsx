@@ -1,5 +1,6 @@
 import { memo, useRef } from 'react'
 import { linkTarget, tokenize, type Token } from '../tokens'
+import { MD_LINK_CLASS } from '../editor/decorations'
 import { CONTENT_CLASS } from '../decorations/intent'
 import { resolveMdTarget, type ConnectionsApi, type ConnMenuTarget } from '../connections'
 import { titleOf } from '@shared/connections'
@@ -68,7 +69,7 @@ export function renderCellContent(
           // own right-click menu has to know which link it was popped on.
           <span
             key={key++}
-            className={target.kind === 'external' ? 'md-link' : 'md-link-invalid'}
+            className={target.kind === 'external' ? MD_LINK_CLASS : 'md-link-invalid'}
             data-link-span={`${s},${e}`}
           >
             {content}
@@ -102,7 +103,7 @@ function linkSpanAt(target: EventTarget | null): [number, number] | null {
   return [Number(raw[0]), Number(raw[1])]
 }
 
-const LINK_SELECTOR = '.md-link, .md-connection-resolved, [data-link-span]'
+const LINK_SELECTOR = `.${MD_LINK_CLASS}, .md-connection-resolved, [data-link-span]`
 
 function StaticCellImpl({
   text,
