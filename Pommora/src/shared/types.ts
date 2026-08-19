@@ -133,13 +133,10 @@ export interface Personalization {
   trashDateFormat?: DateFormat
   /** Whether that date drops its clock. Absent = the nexus's own time format is shown. */
   trashHideTime?: boolean
-  /** Whether a pasted URL is written as a markdown link rather than as literal text. Absent = literal.
-   *  The inverse paste chord always does the opposite of whatever this says. */
-  autoFormatPastedLinks?: boolean
   /** Whether pasting a URL over selected text wraps that text as the link's label rather than
-   *  replacing it. Absent = replaces. The inverse chord likewise flips this one. */
+   *  replacing it. Absent = replaces. The inverse chord flips this one. */
   pasteLinkIntoText?: boolean
-  /** Which form `autoFormatPastedLinks` writes. Absent = the whole address as its own label. */
+  /** Which form a pasted address is written in. Absent = the whole address as its own label. */
   defaultLinkFormat?: LinkDisplay
 }
 
