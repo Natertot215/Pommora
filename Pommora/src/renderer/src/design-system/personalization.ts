@@ -23,6 +23,12 @@ const ROOT_CLASSES: Partial<Record<keyof Personalization, string>> = {
   codeblockLineCount: 'cb-line-count',
 }
 
+/** The knobs that render as a root class when the key holds one particular value — the
+ *  string-valued sibling of ROOT_CLASSES, for a setting whose default writes no key at all. */
+const ROOT_VALUE_CLASSES: Partial<Record<keyof Personalization, { value: string; cls: string }>> = {
+  pickerSelection: { value: 'checked', cls: 'picker-checked' },
+}
+
 export function applyPersonalizationKey<K extends keyof Personalization>(
   key: K,
   value: Personalization[K],
@@ -38,11 +44,15 @@ export function applyPersonalizationKey<K extends keyof Personalization>(
   // defaultIcons → resolved per-render.
   const cls = ROOT_CLASSES[key]
   if (cls) el.classList.toggle(cls, value === true)
+  const valued = ROOT_VALUE_CLASSES[key]
+  if (valued) el.classList.toggle(valued.cls, value === valued.value)
 }
 
 export function applyPersonalization(p: Personalization): void {
   for (const key of Object.keys(LINK_VARS) as (keyof typeof LINK_VARS)[])
     applyPersonalizationKey(key, p[key])
   for (const key of Object.keys(ROOT_CLASSES) as (keyof Personalization)[])
+    applyPersonalizationKey(key, p[key])
+  for (const key of Object.keys(ROOT_VALUE_CLASSES) as (keyof Personalization)[])
     applyPersonalizationKey(key, p[key])
 }

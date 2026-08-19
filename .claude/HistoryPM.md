@@ -113,8 +113,6 @@
 | 06-14-2026 | PM-001 | Genesis — The Walking Skeleton |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot |
 
-![]()
-
 #### PM-109 || The Color Ramp
 **DATE:** 08-18-2026
 
@@ -122,7 +120,7 @@ The chip palette stopped being ten flat solids and became a grid. `tokens/ramp.t
 
 **The Picker:** the surface assigning those colors became an 8×8 grid, where clicking a ringed cell clears the selection, and active selections are highlighted with a color-matching tinted border. Links and checkboxes take the grid without its greyscale row, whose dark end is the window substrate itself and would render them invisible against the page — except when a value already lives there, since hiding a row also hides the only way to clear what it holds. Their color control dropped its name for the Switch's own shell filled with the chosen color, which retired the question of what to call sixty-four cells rather than answering it, and corrected a checkbox's unset state to follow the app accent it actually paints with. Widening the pane from roughly thirty-six pixels to a hundred and eighty exposed a placement branch that had clamped only its near edge for as long as it had existed.
 
-**Appearance:** the accent, the internal link color, and the external link color are set from a panel of their own. Each opens the ramp without its greyscale families, and each clears to what it inherits — the accent to the system accent, an internal link to the accent, an external link to the system accent — so a cleared control reads as *follow* rather than *none*, and the sentinels already on disk keep their meaning. All three validate against the grammar chips use and resolve through the ramp, and one generic states the vocabulary they share while each names its own default; the accent resolves inside the personalization read the controls themselves subscribe to, so the swatch a row shows and the color the app paints come from one source. The Switch carries its own scale behind a single knob a surface sets rather than wraps, and the panel's color control composes the Switch's own track, so the two hold one geometry between them. A leaf's heading wears its icon above the panel's one rule, and its rows space from each other beneath it.
+**Appearance:** the accent, internal link color, and external link color are set in their own panel. Each opens the ramp without its greyscale families, and each clears to what it inherits — the accent to the system accent, an internal link to the accent, an external link to the system accent — so a cleared control reads as *follow* rather than *none*, and the sentinels already on disk keep their meaning. All three validate against the grammar chips use and resolve through the ramp, and one generic states the vocabulary they share while each names its own default; the accent resolves inside the personalization read the controls themselves subscribe to, so the swatch a row shows and the color the app paints come from one source. The Switch carries its own scale behind a single knob, a surface that sets rather than wraps, and the panel's color control composes the Switch's own track, so the two share a single geometry. A leaf's heading wears its icon above the panel's one rule, and its rows space from each other beneath it.
 
 - **Commits:** `24ba94b3` · `bbc05ab7` · `d65546ff` · `a2afcd9b` · `79b504f2` · `97acebfb` · `3d9d4da3` · `7acb3864` · `d1ea8058` · `572f9626` · `ec3a209b` · `50f581a3`, plus the closing record commit
 - **Diff:** Net +193 | +501 / −308
