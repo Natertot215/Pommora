@@ -516,3 +516,18 @@ here: that all seven trigger sites land their pane on-screen at the picker's new
 unit test at the seam but not exercised in the built app.
 
 ### Closeout
+
+Neutral verification confirmed 12 of 13 claims. The one that did not hold: the ramp seated its
+chromatic anchors on the raw `@shared/theme` literals while its greyscale row read design-system
+tokens, so chips silently stopped indirecting through `--color-solid-*`. Same painted color, one
+module sourcing one kind of value two ways — fixed in `79b504f2`.
+
+The attack pass returned three findings, all in surfaces this work newly built rather than in the
+migration it was written to protect; all three fixed in `97acebfb`. A checkbox's unset swatch had
+borrowed the link path's OS accent while the checkbox itself painted the app accent. Withholding
+the greyscale row stranded any value stored in it, because clearing is bound to the ringed cell's
+presence. And `PickerMenu`'s right-anchored branch clamped only its near edge — latent since it was
+written, reachable for the first time at this pane's width.
+
+Lessons recorded in `.claude/Guidelines/Adversarial-Review-Log.md`. The sandbox retired with Task 6.
+**Still unverified: the running-app pass**, by Nathan's call.

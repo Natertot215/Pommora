@@ -2,6 +2,7 @@
 
 | Date | ID | Entry |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 08-18-2026 | PM-109 | The Color Ramp |
 | 08-18-2026 | PM-107 | Settings' Scaffolding |
 | 08-17-2026 → 08-18 | PM-106 | The Property-Cascade Journal |
 | 08-17-2026 | PM-105 | The Live Tree & The Content Index |
@@ -110,6 +111,16 @@
 | 06-14-2026 → 06-15 | PM-002 | The Headless Data Layer |
 | 06-14-2026 | PM-001 | Genesis — The Walking Skeleton |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot |
+
+#### PM-109 || The Color Ramp
+**DATE:** 08-18-2026
+
+The chip palette stopped being ten flat solids and became a grid. `tokens/ramp.ts` is now the single owner of what a color is — eight families of eight steps running dark to light, five of them shading from one anchor by a single knob, blue crossing between two anchors in oklch so the passage keeps its chroma rather than greying out through the middle, purple seating three, and greyscale reading the app's own surface tokens instead of computing anything. Every spectrum solid sits on an exact cell, so a bare `red` already on disk resolves to `red-3` through one accessor and nothing is migrated, rewritten, or read differently; `chip.css.ts` generates its variants from that table rather than listing them, which turns a retuned cell into a compile-time concern instead of a chip left behind. The mix helpers consolidated onto one primitive — `tintAt` had only ever mixed toward transparent, and the ramp needed black, white, and oklch — and four call sites that indexed a table holding only the ten solids were converted before a stepped key could reach them and paint nothing at all. Main validates Space colors against the new grammar at the write boundary while the accent and connection settings keep the older vocabulary, since widening what a chip may be is not widening what the accent may be.
+
+**The Picker:** the surface assigning those colors became an 8×8 grid where clicking the ringed cell clears, so no separate clear affordance exists. Links and checkboxes take the grid without its greyscale row, whose dark end is the window substrate itself and would render them invisible against the page — except when a value already lives there, since hiding a row also hides the only way to clear what it holds. Their color control dropped its name for the Switch's own shell filled with the chosen color, which retired the question of what to call sixty-four cells rather than answering it, and corrected a checkbox's unset state to follow the app accent it actually paints with. Widening the pane from roughly thirty-six pixels to a hundred and eighty exposed a placement branch that had clamped only its near edge for as long as it had existed.
+
+- **Commits:** `24ba94b3` · `bbc05ab7` · `d65546ff` · `a2afcd9b` · `79b504f2` · `97acebfb`, plus the closing record commit
+- **Diff:** Net +138 | +255 / −117
 
 #### PM-107 || Settings' Scaffolding
 **DATE:** 08-18-2026
