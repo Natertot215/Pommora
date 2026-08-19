@@ -277,8 +277,13 @@ export function PickerMenu({
         return
       }
       // The default anchors the pane's RIGHT edge, so the bound arrives mirrored: an inset from the
-      // window's right rather than a coordinate from its left.
-      const right = Math.max(window.innerWidth - edgeR, window.innerWidth - c - ANCHOR_RESERVE)
+      // window's right rather than a coordinate from its left — including the far-edge clamp, without
+      // which a pane wider than the anchor reserve hangs off the left of the window.
+      const iw = window.innerWidth
+      const right = Math.min(
+        Math.max(iw - edgeR, iw - c - ANCHOR_RESERVE),
+        Math.max(iw - edgeR, iw - edgeL - pw),
+      )
       setPos({ ...vertical, right, origin: near(pw - ANCHOR_RESERVE) })
     }
     place.current = measure

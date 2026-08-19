@@ -14,13 +14,11 @@ const STYLE_OPTIONS: { value: CheckboxLook; label: string }[] = [
   { value: 'switch', label: 'Switch' },
 ]
 
-/** With no color of its own a checkbox follows the live app accent, so it resolves to whatever the
- *  accent currently paints rather than to a frozen palette entry. */
-function resolveColor(
-  color: string | undefined,
-  accentName: ChipColorName,
-): { name: ChipColorName; css: string } {
-  if (!color) return { name: accentName, css: solidColorCss(undefined) }
+/** With no color of its own a checkbox follows the app accent live — the same `--accent` the checked
+ *  box itself tints with, never the OS accent the link path uses. It resolves to no palette key, so
+ *  the picker rings nothing and the accent's own cell stays assignable. */
+function resolveColor(color: string | undefined): { name: ChipColorName; css: string } {
+  if (!color) return { name: 'accent', css: 'var(--accent)' }
   return { name: chipColorFor(color), css: solidColorCss(color) }
 }
 
@@ -29,19 +27,17 @@ function resolveColor(
 export function CheckboxEditor({
   color,
   look,
-  accent,
   onSetColor,
   onSetStyle,
 }: {
   color: string | undefined
   look: CheckboxLook
-  accent: string | undefined
   onSetColor: (color: string | undefined) => void
   onSetStyle: (look: CheckboxLook) => void
 }): React.JSX.Element {
   const [coloring, setColoring] = useState(false)
   const chipRef = useRef<HTMLButtonElement>(null)
-  const chosen = resolveColor(color, accent ? chipColorFor(accent) : 'accent')
+  const chosen = resolveColor(color)
 
   return (
     <div className={s.configEditor}>

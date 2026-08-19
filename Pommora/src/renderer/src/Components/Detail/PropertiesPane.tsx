@@ -185,7 +185,6 @@ export function PropertiesPane({
   const { view: activeView } = useActiveView(source, schema)
   const registry = useSession((st) => st.tree?.registry) ?? []
   const bumpValuesEpoch = useSession((st) => st.bumpValuesEpoch)
-  const accent = useSession((st) => st.tree?.accent)
   const renamingProperty = useSession((st) => st.renamingProperty)
   const beginPropertyRename = useSession((st) => st.beginPropertyRename)
   const cancelPropertyRename = useSession((st) => st.cancelPropertyRename)
@@ -455,7 +454,6 @@ export function PropertiesPane({
           <CheckboxEditor
             color={def.checkbox_color}
             look={styleFor(def.id, schema, activeView).look === 'switch' ? 'switch' : 'checkbox'}
-            accent={accent}
             onSetColor={(next) => void saveCheckboxColor(def.id, next)}
             onSetStyle={(look) => void saveColumnStyle(def.id, { look })}
           />
