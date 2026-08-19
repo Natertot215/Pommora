@@ -172,6 +172,23 @@ describe('pasting an address into the editor', () => {
     await act(async () => paste(view, URL))
     expect(view.state.selection.main.head).toBe(view.state.doc.length)
   })
+
+  // A code span or fence renders nothing — a markdown link written there is corrupted code.
+  it('lands literal inside a fenced code block', async () => {
+    const body = '```\ncurl \n```'
+    const view = await mountEditor({ initialBody: body })
+    view.dispatch({ selection: { anchor: 9 } })
+    await act(async () => paste(view, URL))
+    expect(view.state.doc.toString()).toBe(`\`\`\`\ncurl ${URL}\n\`\`\``)
+  })
+
+  it('lands literal inside an inline code span', async () => {
+    const body = '`fetch ` after'
+    const view = await mountEditor({ initialBody: body })
+    view.dispatch({ selection: { anchor: 7 } })
+    await act(async () => paste(view, URL))
+    expect(view.state.doc.toString()).toBe(`\`fetch ${URL}\` after`)
+  })
 })
 
 // ⌘⇧V does the opposite of ⌘V, on whichever axis a selection selects: with text selected the

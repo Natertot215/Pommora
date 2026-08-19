@@ -1,4 +1,4 @@
-// Typing a page embed into the document — the Insert ▸ Page path. The token lands fenced on its own
+// Typing a page embed into the document — the Embed ▸ Internal Page path. The token lands fenced on its own
 // line below the caret's block, and the caret between the brackets so the embed autocomplete takes over.
 import type { EditorView } from '@codemirror/view'
 import { blockAt } from './blockModel'
