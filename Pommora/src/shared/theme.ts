@@ -28,3 +28,34 @@ export const SPECTRUM = {
 /** The chip "Default" neutral. A palette value, never a selectable spectrum color — which is why
  *  it sits beside SPECTRUM rather than in it. */
 export const GREY_DEFAULT = '#48484A'
+
+/** The purple row's light seat. A palette value beside SPECTRUM rather than inside it — pink is a
+ *  ramp cell, never a selectable accent or Space color. */
+export const PINK = '#DC519F'
+
+// The color-ramp vocabulary: the grammar a stored color key is written in. Main validates a stored
+// Space color against these keys and cannot read a renderer token, so the KEY SET lives here while
+// every cell's VALUE stays renderer-side (they are color-mix strings over CSS vars main can't resolve).
+export const RAMP_FAMILIES = [
+  'red',
+  'orange',
+  'yellow',
+  'green',
+  'cyan',
+  'blue',
+  'purple',
+  'grey',
+] as const
+export const RAMP_STEPS = [0, 1, 2, 3, 4, 5, 6, 7] as const
+
+export type RampFamily = (typeof RAMP_FAMILIES)[number]
+export type RampStep = (typeof RAMP_STEPS)[number]
+export type CellKey = `${RampFamily}-${RampStep}`
+
+const COLOR_KEYS: ReadonlySet<string> = new Set<string>([
+  ...RAMP_FAMILIES.flatMap((family) => RAMP_STEPS.map((step) => `${family}-${step}`)),
+  ...Object.keys(SPECTRUM),
+])
+
+/** A storable color: a ramp cell, or one of the ten bare anchor names already on disk. */
+export const isColorKey = (s: string): boolean => COLOR_KEYS.has(s)
