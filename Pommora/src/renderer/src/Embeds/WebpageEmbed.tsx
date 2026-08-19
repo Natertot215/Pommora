@@ -11,6 +11,7 @@ import { linkDomain } from '@shared/links'
 import { DEFAULT_LINK_DISPLAY } from '@shared/properties'
 import { WEB_PARTITION } from '@shared/types'
 import { webpageTileTitle } from '@shared/webpageEmbed'
+import { TextPicker } from '@renderer/design-system/components/TextPicker'
 import { useSession } from '../store'
 import { webGuestRetention } from './webRetention'
 import './embeds.css'
@@ -37,12 +38,18 @@ export type PointerSeam = (onDown: (target: EventTarget | null) => void) => () =
 
 export function WebpageEmbed({
   url,
+  label = '',
   visible,
   engageSeam,
   refocusHost,
+  linkEdit = false,
+  onLinkCommit,
+  onLinkDismiss,
   partition = WEB_PARTITION,
 }: {
   url: string
+  /** The on-disk hand label; empty resolves through the display format. */
+  label?: string
   /** Fully visible in the owning scrollport — the host's observer decides; the guest is live
    *  only while this holds, and retained hidden (under the cap) while it doesn't. */
   visible: boolean
@@ -50,8 +57,13 @@ export function WebpageEmbed({
   engageSeam?: PointerSeam
   /** Where focus returns when a clip transition disengages a guest that held it. */
   refocusHost?: () => void
+  /** The Edit Link picker is open on this tile — anchored here, seeded with the URL. */
+  linkEdit?: boolean
+  onLinkCommit?: (next: string) => void
+  onLinkDismiss?: () => void
   partition?: string
 }): React.JSX.Element {
+  const title = useWebpageTitle(label, url)
   const [failed, setFailed] = useState(false)
   const [loaded, setLoaded] = useState(false)
   const [engaged, setEngaged] = useState(false)
@@ -160,6 +172,24 @@ export function WebpageEmbed({
             // Mid-load, the catcher stays: interaction is handed over only to a settled guest.
             if (loaded) setEngaged(true)
           }}
+        />
+      ) : null}
+      <button
+        type="button"
+        className={cx('wpembed-title', text.footnote.standard)}
+        // The system browser is the resting route; the open-in preference takes this over when it
+        // lands, through the shared adjudicator.
+        onClick={() => void window.nexus.openExternal(url)}
+      >
+        {title}
+      </button>
+      {onLinkCommit && onLinkDismiss ? (
+        <TextPicker
+          open={linkEdit}
+          onDismiss={onLinkDismiss}
+          triggerRef={rootRef}
+          value={url}
+          onCommit={onLinkCommit}
         />
       ) : null}
     </div>

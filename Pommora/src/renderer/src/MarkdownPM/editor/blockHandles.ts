@@ -8,7 +8,7 @@ import type { Extension, Range } from '@codemirror/state'
 import { blockAt, blockStarts } from './blockModel'
 import { lineElementAt } from './lineDom'
 
-const GRIP_KINDS = new Set(['paragraph', 'code', 'list', 'hr', 'math', 'embed'])
+const GRIP_KINDS = new Set(['paragraph', 'code', 'list', 'hr', 'math', 'embed', 'webpage'])
 
 // Blocks whose grip reveals on a gutter hover of ANY of their lines (the grip itself sits on the first line):
 // GRIP_KINDS plus the box blocks that have a grip but aren't rail-pseudo grips. Tables are out — their rows
