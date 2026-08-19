@@ -11,7 +11,9 @@ import * as s from './colorPicker.css'
  * Clicking the selected cell clears, so there is no separate clear affordance.
  *
  * `greyscale` is withheld by the two surfaces that paint the RAW cell color: the row's dark end is
- * the window substrate itself, so a link or checkbox in it would be invisible against the page.
+ * the window substrate itself, so a link or checkbox in it would be invisible against the page. A
+ * value already stored there still shows its row, because clearing is bound to clicking the ringed
+ * cell — hide the row it lives in and the value becomes unclearable.
  */
 export function ColorPicker({
   open,
@@ -28,7 +30,8 @@ export function ColorPicker({
   triggerRef: RefObject<Element | null>
   greyscale?: boolean
 }): React.JSX.Element | null {
-  const families = greyscale ? RAMP_FAMILIES : RAMP_FAMILIES.filter((f) => f !== 'grey')
+  const showGrey = greyscale || selected.startsWith('grey-')
+  const families = showGrey ? RAMP_FAMILIES : RAMP_FAMILIES.filter((f) => f !== 'grey')
   return (
     <PickerMenu open={open} onDismiss={onDismiss} triggerRef={triggerRef} direction="down">
       <div className={s.grid}>
