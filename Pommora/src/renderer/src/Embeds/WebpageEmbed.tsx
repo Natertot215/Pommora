@@ -27,10 +27,6 @@ export function useWebpageTitle(label: string, url: string): string {
   return webpageTileTitle(label, url, display, title)
 }
 
-interface WebviewEl extends HTMLElement {
-  reload: () => void
-}
-
 export function WebpageEmbed({
   url,
   visible,
@@ -43,9 +39,14 @@ export function WebpageEmbed({
   partition?: string
 }): React.JSX.Element {
   const [failed, setFailed] = useState(false)
-  const ref = useRef<WebviewEl | null>(null)
+  const ref = useRef<HTMLElement | null>(null)
 
+  // A url change or a visibility exit clears the failure, so the next entry mounts a fresh guest —
+  // the webview only exists while live, so nothing else can ever reset a failed tile.
   useEffect(() => setFailed(false), [url])
+  useEffect(() => {
+    if (!visible) setFailed(false)
+  }, [visible])
 
   useEffect(() => {
     const wv = ref.current
@@ -67,15 +68,13 @@ export function WebpageEmbed({
     }
   })
 
-  // A guest that died renders the failure face until the next visibility transition remounts it —
-  // leaving visibility re-attaches by construction, since the webview exists only while visible.
   const live = visible && !failed
   return (
     <div className="wpembed">
       {live ? (
         <webview
           ref={(el) => {
-            ref.current = el as WebviewEl | null
+            ref.current = el as HTMLElement | null
           }}
           src={url}
           partition={partition}
