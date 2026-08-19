@@ -3,6 +3,7 @@
 | Date | ID | Entry |
 | ----------------------- | ------ | ---------------------------------------------------- |
 | 08-18-2026 | PM-109 | The Color Ramp |
+| 08-18-2026 → 08-19 | PM-108 | Webpage Integration |
 | 08-18-2026 | PM-107 | Settings' Scaffolding |
 | 08-17-2026 → 08-18 | PM-106 | The Property-Cascade Journal |
 | 08-17-2026 | PM-105 | The Live Tree & The Content Index |
@@ -123,6 +124,24 @@ The chip palette stopped being ten flat solids and became a grid. `tokens/ramp.t
 
 - **Commits:** `24ba94b3` · `bbc05ab7` · `d65546ff` · `a2afcd9b` · `79b504f2` · `97acebfb` · `3d9d4da3` · `7acb3864` · `d1ea8058` · `572f9626` · `ec3a209b`, plus the closing record commit
 - **Diff:** Net +191 | +495 / −304
+
+#### PM-108 || Webpage Integration
+**DATE:** 08-18-2026 → 08-19
+
+The editor learned to embed live websites the way it embeds Pages, and the app grew a web layer around them: one guest governor in the main process, one open-link adjudicator in the renderer, one persistent session, and live hover previews. A markdown link alone on its own line with an explicit http(s) scheme now renders as a live website tile on the shared embed framework — the document bytes stay plain CommonMark — with formation deferred until the selection leaves the line, so typing an address never pulls a tile in under the caret.
+
+**The Menu & Built-In Formatting:** the context menu reordered around an Embed submenu holding both embedding types, and pasted-link auto-formatting graduated from a setting to built-in behavior, retiring its toggle, its key, and the conditional-disclosure mechanism that existed only to serve it. A destination guard keeps a paste or ⌘K inside a link's own parentheses literal.
+
+**The Guest Foundation:** a single main-process module owns everything a webview guest is allowed to be — the attach validator that denies a wrong-partition or hostile attach outright, the popup handler that opens no OS window and hands every address to the renderer's adjudicator, the navigation scheme gate, and the zoom sync that stamps every guest from its host's factor times the webpage-zoom preference. All surfaces share one persistent partition wearing a cleaned user agent, so a sign-in anywhere authenticates everywhere, per machine, across restarts; the session simply remembers, and no management surface exists — an accounts section was built to the spec and dissolved the same night on the standing decision that persistence alone is the product.
+
+**The Tile:** a guest is live only while its tile is fully visible — the visibility model is the rendering model, since a partially clipped webview paints outside its box. A clipped tile keeps its last captured frame on its face rather than going blank, a failed one shows its domain, and re-entry retries in front of the user. The live tile is inert until clicked in, disengages on click-out or Escape, and scrolled-out guests hide under a capped least-recently-hidden retention rather than unmounting. Titles are display-only and resolve through the same fetched-title path table cells use; the grip's Edit Link re-aims the whole line in place through the grammar's own round-trip gate, migrating the tile's remembered height.
+
+**Links & The Browser:** every external open routes through one renderer adjudicator honoring the open-in preference, guest popups included. The in-app browser is a flavor of the floating preview window — back and forward lead the toolbar, the centered title tracks the guest's current page and escalates it to the system browser, and a summon while open retakes the window in place on a sequence that counts on monotonically across closes. The strip holds its own band above the page and paints nothing.
+
+**Hover Previews:** a dwell on a website link raises the shared hover card as a live, inert render of the site — the card opens wearing a quiet cover that fades once the page paints, and a site that fails or never paints closes the card whole. The guest mounts visible behind the cover because a guest mounting inside a hidden subtree may never attach; the card's guest fills the pane edge-to-edge, clips its own corners, and a shield above it keeps every pointer event on the card's own leave lifecycle.
+
+- **Commits:** `f9ca6aa8..HEAD`'s webpage-integration line — 70 commits interleaved with the parallel settings and ramp work
+- **Diff:** Net +1292 | +2642 / −1350
 
 #### PM-107 || Settings' Scaffolding
 **DATE:** 08-18-2026
