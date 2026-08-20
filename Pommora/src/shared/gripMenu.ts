@@ -3,6 +3,8 @@
 // maps it to the native menu; the pick comes back as the ask's resolution.
 
 /** The four list markers, named once for every layer that reads or writes one. */
+import type { HeadingLevel } from './editorMenu'
+
 export type ListKind = 'ordered' | 'bullet' | 'checkbox' | 'arrow'
 
 /** One node of the Collections → Sets → Pages pick tree — a `title`-bearing node is a page leaf,
@@ -35,7 +37,7 @@ export type GripMenuAction =
 /** The heading ladder a block can be set to, named once for every menu that offers it — the editor's
  *  Format ▸ Heading submenu and the heading grip's own Size submenu. H6 exists in the document but
  *  stays off the picker. */
-export const HEADING_LEVELS: readonly { level: number; label: string }[] = [
+export const HEADING_LEVELS: readonly { level: HeadingLevel; label: string }[] = [
   { level: 0, label: 'Paragraph' },
   { level: 1, label: 'Heading 1' },
   { level: 2, label: 'Heading 2' },

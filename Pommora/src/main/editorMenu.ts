@@ -13,7 +13,9 @@ import type {
 import {
   acceleratorFor,
   EDITOR_ACTION_PREFIX,
+  type EditorMenuAction,
   type FormatChordAction,
+  type HeadingLevel,
   type FormatState,
   INSERT_LINK_ACTION,
 } from '@shared/editorMenu'
@@ -36,7 +38,7 @@ export function setGripHot(on: boolean): void {
 
 // raw send: the context-menu event hands over a bare WebContents, not a BrowserWindow,
 // so the typed push (which takes a window) can't be used here.
-const dispatch = (wc: WebContents, action: string) => () =>
+const dispatch = (wc: WebContents, action: EditorMenuAction) => () =>
   wc.send('menu:action', EDITOR_ACTION_PREFIX + action)
 
 function systemItems(
@@ -118,8 +120,8 @@ function pommoraItems(
   s: FormatState,
   selection: string,
 ): MenuItemConstructorOptions[] {
-  const act = (a: string): (() => void) => dispatch(wc, a)
-  const heading = (label: string, level: number): MenuItemConstructorOptions => ({
+  const act = (a: EditorMenuAction): (() => void) => dispatch(wc, a)
+  const heading = (label: string, level: HeadingLevel): MenuItemConstructorOptions => ({
     label,
     type: 'radio',
     checked: s.heading === level,
@@ -209,7 +211,7 @@ function pasteAsItems(wc: WebContents): MenuItemConstructorOptions[] {
       label: 'Paste As',
       submenu: rows.map((r) => ({
         label: r.label,
-        click: dispatch(wc, PASTE_AS_PREFIX + r.form),
+        click: dispatch(wc, `${PASTE_AS_PREFIX}${r.form}`),
       })),
     },
   ]
