@@ -57,8 +57,9 @@ globalStyle(':root', {
     '--banner-shadow': '#0000008c',
     '--banner-cast': '0 1px 4px var(--banner-shadow)',
     // The container title's type size — the heading a Collection, Set, or page wears at the top of its
-    // own surface, over a banner cover or on the bare header that replaces one.
-    '--container-title-size': font.scale.title1.size,
+    // own surface, over a banner cover or on the bare header that replaces one. Its own value: the
+    // heading sits deliberately between the ramp's title steps.
+    '--container-title-size': '20px',
     // Interaction states — a system-grey wash, hover lighter than selected.
     '--state-hover': colorVars.color.state.hover,
     '--state-selected': colorVars.color.state.selected,
@@ -132,14 +133,12 @@ globalStyle(':root', {
     '--text-caption-size': font.scale.caption.size,
     '--text-footnote-size': font.scale.footnote.size,
     '--text-subline-size': font.scale.subline.size,
-    // The control-size bundles — plain CSS sizes a button by naming its alias rather than
-    // restating the height its .ts sibling already holds.
+    // The control-size heights — plain CSS sizes a row to a button by naming that button's alias
+    // rather than restating the height its .ts sibling already holds. The rest of each bundle
+    // (padding, radii, the divider) stays on the .ts side, where its only consumers are.
     '--button-small-height': size.control['button-small'].height,
     '--button-medium-height': size.control['button-medium'].height,
     '--button-large-height': size.control['button-large'].height,
-    '--button-small-radius': size.control['button-small'].radius,
-    '--button-medium-radius': size.control['button-medium'].radius,
-    '--button-large-radius': size.control['button-large'].radius,
     // How far past its own edge a floating pane travels to park fully off-screen — enough that its
     // shadow clears the window too, not just its box. The sidebar and the inspector park by the same
     // magnitude in opposite directions.

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { BrowserWindow } from 'electron'
-import { anchorPoint, rowTemplate } from './rowMenu'
+import { anchorPoint, menuTemplate, rowTemplate } from './rowMenu'
 
 const winAt = (zoom: number): BrowserWindow =>
   ({ webContents: { getZoomFactor: () => zoom } }) as unknown as BrowserWindow
@@ -39,8 +39,8 @@ describe('a row model as a native template', () => {
     expect(t.map((i) => i.type ?? i.label)).toEqual(['Rename', 'separator', 'Delete'])
   })
 
-  it('drops a leading separator, which would separate nothing', () => {
-    const t = rowTemplate([{ label: 'Delete', action: 'b', separatorBefore: true }], pick)
+  it('drops a separator leading the whole menu, which would separate nothing', () => {
+    const t = menuTemplate([{ label: 'Delete', action: 'b', separatorBefore: true }], pick)
     expect(t).toHaveLength(1)
   })
 
@@ -77,5 +77,20 @@ describe('a row model as a native template', () => {
   it('shows a disabled row rather than dropping it', () => {
     const t = rowTemplate([{ label: 'Delete', action: 'b', disabled: true }], pick)
     expect(t[0]).toMatchObject({ label: 'Delete', enabled: false })
+  })
+})
+
+describe('a fragment spliced beneath rows a menu already holds', () => {
+  // The unlink pair sits under Format ▸ in the link menu, and the divider above it is the one
+  // separating two destructive rows from the benign group. A fragment can't tell it leads a menu.
+  it('keeps the divider that separates it from the rows above', () => {
+    const rows = rowTemplate(
+      [
+        { label: 'Remove Link', action: 'link:remove', separatorBefore: true },
+        { label: 'Delete', action: 'link:delete' },
+      ],
+      () => () => {},
+    )
+    expect(rows.map((r) => r.type ?? r.label)).toEqual(['separator', 'Remove Link', 'Delete'])
   })
 })

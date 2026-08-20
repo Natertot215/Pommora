@@ -81,7 +81,6 @@ export const anchorUp = style(dropdownAnchor('up', stack.local.overlay))
  *  Spread rather than composed: `optionCheck` builds on it and is also a `globalStyle` target, which
  *  a composed class cannot be. */
 const CHOSEN_MARK = { color: 'var(--accent)', flex: 'none' } as const
-export const chosenMark = style(CHOSEN_MARK)
 
 /** The self-managed top layer — a fixed body-portal position (set inline from the measured trigger)
  *  so the pane escapes any clipping ancestor (the settings dropdown's frost clip). */

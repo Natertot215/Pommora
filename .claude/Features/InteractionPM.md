@@ -109,7 +109,7 @@ Motion timing has one canonical home — the duration scale and easings in the m
 | Slow | `duration.slow` · `--duration-slow` | `350ms` |
 | Standard Ease | `easing.standard` · `--ease-standard` | `ease` |
 | In-Out Ease | `easing.inOut` · `--ease-in-out` | `ease-in-out` |
-| Out Ease | `easing.out` · `--ease-out` | `cubic-bezier(0.22, 1, 0.36, 1)` |
+| Out Ease | `easing.out` · `--ease-out` | `cubic-bezier(0.22, 1, 0.36, 1)` — the drag feels read it directly; no CSS rule names the variable |
 | Bloom | `BLOOM` (`animations.css.ts`) | `cubic-bezier(0.32, 0.72, 0, 1)` — the one special-cased named curve |
 
 Two kinds of timing stay in code rather than tokens. The drag feel presets are numeric because the engine interpolates them, not CSS; the engine's settle timing is a fallback rather than a duration — a drag commit fires on the overlay's `transitionend` and only falls back to a computed deadline if that event never arrives. `useExitPresence`'s default exit window derives from the slow duration token plus a small settle slack, so retuning the token moves every pane's unmount window with it.
