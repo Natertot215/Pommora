@@ -149,18 +149,21 @@ Nothing draws in this phase. The boundary derivation lands first and is exercise
 
 **Requirement:** 1
 
-**Why:** Six layers need to know where the citations section begins, and a boundary each of them derives is a boundary they will disagree about — the failure the fence pass exists to prevent and that Editor-Internals names first among its rules. Putting it in `src/shared` rather than inside the editor is what lets the Subfield counter read the same answer without importing the renderer's decoration layer, The counter still *runs* the scan itself — sharing a module is not sharing a derivation — one more pass on a path that already pays one, and the accepted cost the Sequenced After item retires. It takes the fence mask as a required parameter, following `blockMathRanges` and `blockEmbedLines`, so no caller can forget to state its exclusion contract.
+**Why:** Six layers need to know where the citations section begins, and a boundary each of them derives is a boundary they will disagree about — the failure the fence pass exists to prevent and that Editor-Internals names first among its rules.
+
+**It joins the line-construct family in `detect/`, not `src/shared`.** Math, embeds and webpages are three readers of one shape — each takes the document's lines plus `excluded: [number, number][]`, returns absolute offsets, and walks through one shared helper — and `docLineScan` assembles that exclusion set once so a caller needing several kinds never re-scans per kind. A citation reader is the fourth. The `src/shared` placement was argued on a false premise: the Subfield counter **already imports eight symbols from `detect/`**, so nothing about it forces a shared home, and no main-process consumer of this scan exists anywhere in this plan. Joining the family also *widens* the exclusion for free — the house set is fences **and tables and math**, where a private fence mask leaves a `[^1]:` line inside a table region or a `$$` block unanswered.
 
 **Files:**
-- Create: `Pommora/src/shared/citations.ts` — the scan, the marker pattern, the types.
-- Create: `Pommora/src/shared/citations.test.ts`
+- Modify: `Pommora/src/renderer/src/MarkdownPM/detect/index.ts` — the citation reader, beside its three siblings.
+- Modify: `Pommora/src/renderer/src/MarkdownPM/editor/embedRanges.ts` — `docLineScan` returns citations as a fourth member of the set it already assembles.
+- Test: `Pommora/src/renderer/src/MarkdownPM/detect/citations.test.ts`
 
 **Interfaces**
 - Produces:
   - `interface CitationEntry { line: number; lastLine: number; label: string; contentStart: number; ordinal: number | null }` — `line` is the `[^label]:` line's index, `lastLine` its final continuation line, `contentStart` the line-relative offset where the citation's text begins, and `ordinal` its positional number, null when nothing binds to it (an orphan, or a duplicate that lost).
   - `interface MarkerRef { line: number; from: number; to: number; label: string; ordinal: number | null }` — one body marker, `ordinal` null when nothing binds it.
   - `interface CitationScan { entries: CitationEntry[]; markers: MarkerRef[]; mask: Uint8Array; firstLine: number }` — `mask[i] === 1` for every line belonging to the section, blanks between citations included; `firstLine` is the section's first line index, or `lines.length` when there is no section. **The body sweep runs here and only here:** first-use order is what numbers both a marker and its citation row, so deriving it twice is two things that can disagree about one answer. `entries[].ordinal` and `markers[].ordinal` come out of the same walk.
-  - `citationScan(lines: string[], fenced: Uint8Array): CitationScan`
+  - `citationScan(d: DocLines, excluded: [number, number][]): CitationScan` — the family's signature. `excluded` is required for the reason the math reader states: every caller must say which regions own their bytes, or two callers silently disagree. Offsets come out **absolute**, as every sibling returns them, so no consumer maps line-relative positions afterwards.
   - `firstLine` is the first **citation** line. `anchorLine = firstLine - 1`, or `-1` when the section starts at line 0 — the line a fold leaves visible, which therefore cannot be a citation. It is the *rendered* anchor only; the region's identity is the section's first citation offset (→ Task 11). A citation binds with or without a blank line above it (verified against the installed parser), so this is whatever line precedes the run, blank or prose.
   - **Trailing blank lines after the last citation are in `mask`** and inside the section: they belong to no other block, and leaving them out would put the fold's end and the counter's exclusion on different lines.
   - `firstLine` on a document with no section is `lines.length`. `scanDoc` splits an empty document to `['']`, so an empty document answers `1`, not `0`.
@@ -187,15 +190,15 @@ Nothing draws in this phase. The boundary derivation lands first and is exercise
 **Why:** Inside the editor every hot path reads one cached scan per document version; a second whole-document read on a per-keystroke path is the specific cost `docCache` exists to prevent, and Editor-Internals forbids it outright. Adding the field here means the decoration pass, the block resolver, the guard and the fold region all read the boundary for free, and none of them can disagree with the fence and table passes about the base it was computed from.
 
 **Files:**
-- Modify: `Pommora/src/renderer/src/MarkdownPM/decorations/intent.ts` — `DocScan` interface, `scanDoc` return literal.
+- Modify: `Pommora/src/renderer/src/MarkdownPM/decorations/intent.ts` — the `DocScan` interface only; `scanDoc`'s body is unchanged, since the spread already carries the new member.
 - Test: `Pommora/src/renderer/src/MarkdownPM/decorations/intent.test.ts` — extend the existing cached-vs-pure equivalence corpus.
 
 **Interfaces**
-- Produces: `DocScan.citations: CitationScan`, its fence mask derived from the `fences` array `scanDoc` has already built two lines above — **not** by calling the mask helper a second time over the same lines, which is the duplicate pass this field exists inside `scanDoc` to avoid.
+- Produces: `DocScan.citations`, arriving through the `docLineScan` spread `scanDoc` already performs — **no new field literal and no second mask call**. A fourth member of that set is spread in exactly as math, embeds and webpages are.
 - Assumed by: Tasks 5, 6, 7, 8, 11, 14, 15, 17, 19, 20.
 
 **Steps:**
-- [ ] Add the `citations` field to `DocScan` and one line to `scanDoc`'s return, deriving its fence mask from the existing `fences` result.
+- [ ] Add the `citations` member to `DocLineScan` and its type to `DocScan`. `scanDoc`'s body does not change.
 - [ ] Add one document carrying a citations section to the existing cached-versus-pure corpus. That suite already loops every caret offset and compares the two derivations byte for byte, so this is a string in an array rather than a new test.
 - [ ] Run the gate — expect green, no behavior change anywhere.
 - [ ] Commit: `feat(editor): the citations boundary joins the one document scan`
@@ -207,7 +210,7 @@ Nothing draws in this phase. The boundary derivation lands first and is exercise
 **Why:** R8 is the requirement most exposed to silent regression, because `lines` has never once depended on a mask — it is the raw split, and every other count is derived from a separately masked string. Routing the exclusion through one array read by both is the only structure in which the three numbers cannot drift apart. The marker's characters-but-no-word split is the single point where the two prose pipelines legitimately diverge, and it is one removal on the word path rather than a second stripped string. The character count needs one repair of its own: the counter's link pattern admits a `^`-leading label, so it swallows `[^1](url)` whole and loses seven characters the parser reads as prose. That is a pre-existing miscount this requirement forces into the open, and fixing it there is what lets the marker removal stay word-path-only.
 
 **Files:**
-- Modify: `Pommora/src/renderer/src/Detail/Subfield/subfieldStats.ts` — `computeStats`, its link pass's label class, and the module doc comment.
+- Modify: `Pommora/src/renderer/src/Detail/Subfield/subfieldStats.ts` — `computeStats`, its link pass's label class, and the module doc comment. It also returns the **citation count** it now derives anyway, so the Subfield's citations item reads one number rather than repeating the scan (→ Task 13).
 - Modify: `Pommora/src/renderer/src/Detail/Subfield/subfieldStats.test.ts` — new cases only; all 22 existing assertions stay byte-identical.
 - Modify: `.claude/Features/SubfieldPM.md` — the counter's description.
 
@@ -258,7 +261,7 @@ Nothing draws in this phase. The boundary derivation lands first and is exercise
 
 **Steps:**
 - [ ] Add `.md-cite-num` to the existing shared numeric-glyph selector list.
-- [ ] Add the citation line rule: the hanging indent pair (`padding-left` plus negative `text-indent`) over its own numeric zone, `white-space: pre` on the line. **The wrap restore joins the list content span's existing selector rather than being copied** — the indent pair already has three copies in this file, and a fourth wrap rule would be the one C2 has to answer for.
+- [ ] **Parameterize the hanging indent rather than copying it a fourth time.** The ordered marker, the checkbox line and the codeblock line-count row are three identically-shaped `padding-left` / negative `text-indent` pairs differing only in their zone variable; one rule taking the zone as a variable retires all four and leaves one place to tune. The wrap restore joins the list content span's existing selector for the same reason.
 - [ ] Add the continuation-line rule reusing that same indent pair without a glyph zone.
 - [ ] Add the text treatment — label-secondary, 0.75em — and the dimmed variant as `opacity: var(--state-inactive)` on the row. **The token exists and is exactly this case**: the States table's inactive step is the one still-here-but-not-active dim, worn as opacity over an element's standard chrome, and the editor already dims a whole line that way for a block in flight. Nothing is minted. (The design system's Pending entry names a different thing — an empty-state text *tone* between secondary and tertiary — which an orphaned citation does not need, because it dims as a whole row rather than recoloring its text.) The token carries a `KNOB` marker; leave it.
 - [ ] Run the gate — expect green; no selector matches anything yet.
@@ -296,18 +299,17 @@ Nothing draws in this phase. The boundary derivation lands first and is exercise
 
 **Requirement:** 2
 
-**Why:** This is the editor's first mid-line atomic range, and it needs a whole-document range set — the line-intent path is line-leading by construction, and the token path is viewport-scoped, so a marker derived from it would exist only while on screen and delete differently above the fold than below it. **The shape already exists:** the callout prefix's atomic provider is a standalone `atomicRanges` extension walking every line of the cached scan into a range builder, whole-document and outside `Built.atomic` entirely. The marker's provider is its sibling, which leaves the decoration pass's atomic assembly untouched. The marker also opts out of the caret-reveal mechanism rather than suppressing it per-position, because a range the caret cannot enter can never satisfy a caret-inside predicate anyway.
+**Why:** Two halves with different answers, and the plan has to keep them apart. **Drawing** is the token layer's job — a declarative spec, one map entry, and the existing intent pass does the rest, which also gives fence and inline-code exclusion from the shared code mask rather than from a rule written here. **Atomicity** cannot come from that layer: the token pass is viewport-scoped, so a marker derived from it would exist only while on screen and delete differently above the fold than below it. The atomic ranges therefore join the whole-document walk that already runs for the callout prefix. The marker also opts out of the caret-reveal mechanism rather than suppressing it per-position, because a range the caret cannot enter can never satisfy a caret-inside predicate anyway.
 
 **Files:**
-- Create: `Pommora/src/renderer/src/MarkdownPM/editor/markerAtomic.ts` — the atomic provider, a sibling of the callout prefix's. `Built.atomic` and its assembly are not touched.
-- Modify: `Pommora/src/renderer/src/MarkdownPM/index.tsx` — register the provider in the extension list, beside the callout prefix's.
-- Modify: `Pommora/src/renderer/src/MarkdownPM/editor/decorations.ts` — the marker's widget half only.
-- Modify: `Pommora/src/renderer/src/MarkdownPM/editor/docCache.ts` — one `perDoc` line mapping the scan's markers to absolute offsets, structurally identical to the existing bidirectional-mark cache.
+- Modify: `Pommora/src/renderer/src/MarkdownPM/tokens/index.ts` — **the marker is a declarative token spec**, not hand-built decoration work. The token layer already takes a `{ kind, re, open, close }` spec and emits the token's range, its content range and its marker ranges, dropping any match inside code from the shared mask. A footnote reference is that shape with `open: 2, close: 1`, the way an embed is with `open: 3, close: 2`.
+- Modify: `Pommora/src/renderer/src/MarkdownPM/decorations/intent.ts` — one entry in the token→class map. The existing `tokenIntents` then emits the class and the hide ranges, which is the whole drawing half.
+- Modify: `Pommora/src/renderer/src/MarkdownPM/editor/calloutAtomic.ts` — **the atomic ranges join the walk that already exists here**, rather than a second file and a second registration. That loop is already a whole-document pass over the cached scan with a running absolute offset into a range builder; the marker's ranges are three lines inside the same `for`, and its running offset is the mapping a separate cache would have had to recompute. Widen the module's comment to what it already means — every hidden range the caret must not enter.
 - Modify: `Pommora/src/renderer/src/MarkdownPM/Styles.css` — the marker's own treatment.
-- Test: `Pommora/src/renderer/src/MarkdownPM/editor/markerSeats.test.tsx`
+- Test: `Pommora/src/renderer/src/MarkdownPM/listMarkerSeats.test.tsx` — the existing suite, not a new file. It already builds this harness: the editor stub, the mount, and the step-left/step-right helpers over the same cursor-motion path the arrow keys take, so it exercises atomic ranges rather than asserting they exist. Its premise is the marker's premise — a hidden slot with interior positions nothing on screen stands for.
 
 **Interfaces**
-- Produces: `docMarkers(doc)` → the absolute-offset ranges of `docScan.citations.markers`, cached per document version. **It performs no sweep of its own** — the walk lives in Task 1, and a second one here is the C1 violation this task exists to avoid. Its only work is mapping line-relative offsets to document offsets.
+- Produces: nothing new to cache. Task 1's reader already returns absolute offsets, so there is no line-relative mapping to perform and no `perDoc` slot to add — the atomic walk reads the scan directly.
 - Assumed by: Tasks 7, 17, 18, 19.
 
 **Must agree:** every marker the decoration pass draws is one the counter scores as zero words — containment, not equality, because the counter also zero-words an unmatched marker that draws nothing (the 08-20 ruling). One test runs both over a document holding a bound marker, an unbound one and an escaped one, and asserts the drawn set is a strict subset of the zero-worded set, with the escaped marker in neither.
@@ -319,10 +321,10 @@ Nothing draws in this phase. The boundary derivation lands first and is exercise
 **Steps:**
 - [ ] Write the failing tests: the atomic pair above; a resolved marker draws its ordinal; an unmatched marker draws nothing; markers in fences, inline code and citation rows stay literal; backspace at a marker's right edge removes it whole.
 - [ ] Run — expect red.
-- [ ] Add the cached offset mapping over `docScan.citations.markers` — one `perDoc` line, no re-scan.
-- [ ] Emit the replace-with-widget decoration, and register the atomic provider as its own extension beside the callout prefix's.
+- [ ] Add the token spec and its map entry; the existing intent pass emits the class and the hides.
+- [ ] Add the marker's ranges to the existing atomic walk — no new file, no second registration.
 - [ ] Style the marker: accent at tint-primary through a `color-mix`, permanently opaque, `user-select` inherited so a sweep still selects it.
-- [ ] Set `ignoreEvent` false on the marker widget.
+
 - [ ] Run the gate — expect green.
 - [ ] Commit: `feat(editor): footnote markers draw as atomic positional glyphs`
 
@@ -330,10 +332,10 @@ Nothing draws in this phase. The boundary derivation lands first and is exercise
 
 **Requirement:** 2
 
-**Why:** A resting cell has no `EditorView` at all — it is plain spans over a hand-written renderer — so anything the body draws must be given to it separately or the marker draws raw at rest and morphs on entry, which is the one visible inconsistency R2 forbids. The focused cell editor already reuses the decoration pass and needs nothing.
+**Why:** A resting cell has no `EditorView` at all — plain spans over a hand-written renderer — so what the body draws must reach it separately or the marker draws raw at rest and morphs on entry, the one visible inconsistency R2 forbids. Making the marker a token in Task 6 does most of that for free, since the resting renderer walks the same tokenizer. What remains is the **ordinal**, which is a whole-document fact that no token carries and that two memo gates will otherwise hold stale.
 
 **Files:**
-- Modify: `Pommora/src/renderer/src/MarkdownPM/Tables/cellStatic.tsx` — a marker branch in the span renderer, and the cell memo's comparator.
+- Modify: `Pommora/src/renderer/src/MarkdownPM/Tables/cellStatic.tsx` — the ordinal lookup and the cell memo's comparator. No new render branch.
 - Modify: `Pommora/src/renderer/src/MarkdownPM/Tables/widget.tsx` — the ordinal resolved where the builder already reads the cached scan, and the widget's own equality, which gates above the cell memo.
 - Test: `Pommora/src/renderer/src/MarkdownPM/Tables/cellStatic.test.tsx`
 
@@ -342,9 +344,8 @@ Nothing draws in this phase. The boundary derivation lands first and is exercise
 **Failure half:** a cell containing an unmatched marker → literal text. A cell in a table that sits inside the citations section → cannot occur, since the section admits only citation lines and their continuations; assert it rather than guard it.
 
 **Steps:**
-- [ ] Add the marker branch, reusing the existing `[`-prefilter which already admits `[^1]`.
+- [ ] **No marker branch is needed.** The resting cell renderer already draws any token carrying an entry in the token→class map, and Task 6 added one. Its `[`-prefilter admits `[^1]` and the tokenizer now yields a token for it, so the marker-only cell — which used to fall through the empty-token early return — is answered by the same change.
 - [ ] Resolve the ordinal from the cached scan, which the widget builder already reads in the same loop that constructs each table — no plumbing into the extension. Pass it as a prop and **add it to both gates**: `StaticCell`'s memo comparator, which today compares the cell's text alone, *and* the table widget's own equality, which compares text, index and heading-column only. The outer gate runs first, so fixing the comparator alone never fires. A positional ordinal is a whole-document fact: a numeric label renumbers on disk so its text changes and the memo busts, but a word label never does, so `[^note]` drawing `1` would keep drawing `1` after an insert above the table moved it to 2. The comparator exists to stop a scrolling table building R×C editors in one frame; one extra scalar compare does not threaten that.
-- [ ] Handle the marker-only cell: the renderer returns raw text when `tokenize()` yields nothing, and the tokenizer emits nothing for `[^…]`, so a cell whose only markdown is a marker returns before any branch can draw it.
 - [ ] Test: a resting cell draws the ordinal; entering the cell keeps the same glyph; an unmatched marker stays literal in both states.
 - [ ] Run the gate — expect green.
 - [ ] Commit: `feat(editor): markers render in resting table cells`
@@ -410,7 +411,7 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 
 **Interfaces**
 - Produces: `window.nexus.citations.get(): Record<string, boolean>` and `.set(pageId, shown | null)`.
-- **The `headingIcon` template cannot express the clear.** `scopeSet` runs its validator *before* its emptiness rule, and `isEmptyValue` treats neither `null` nor `false` as empty — so a `typeof v === 'boolean'` validator rejects the `null` that C-3's clear-on-default depends on, with a structured error. This scope's validator admits `boolean | null` and the handler maps `null` straight to `writeKey(scope, key, null)`, which already deletes the row. Two lines, and without them the confirmed clearing rule silently cannot work.
+- **One character class stands between the template and the clear.** `scopeSet` runs its validator *before* anything else, so a `typeof v === 'boolean'` validator rejects the `null` that C-3's clear-on-default depends on. Everything downstream already works: the emptiness rule passes `null` through untouched, and the store's write is documented to clear a key when its value is null. So the whole change is the validator admitting `boolean | null` — no handler, no deviation from the template.
 - Assumed by: Tasks 11, 13.
 
 **Failure half:** a page with no row → absent, meaning follow the default. A non-boolean value arriving over IPC → refused by the validator with a structured error, never written. A copied page → its row travels, which is what `COPY_SCOPES` is for and what is silently lost if forgotten.
@@ -418,7 +419,7 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 **Steps:**
 - [ ] Add the scope member, the handler pair, the bridge declarations and the preload line, following the `headingIcon` pair exactly.
 - [ ] Add `'citations'` to `COPY_SCOPES`.
-- [ ] Widen this scope's validator to `boolean | null` and route `null` to the row deletion `writeKey` already performs — the store's half of the clear costs nothing, but the boundary's validator ladder refuses `null` before reaching it.
+- [ ] Widen this scope's validator to admit `boolean | null`. Nothing downstream changes — the write already deletes on null.
 - [ ] Test both directions at the boundary: a `true`/`false` write stores a row, a `null` write deletes it, and a non-boolean is still refused.
 - [ ] Run the gate — expect green.
 - [ ] Commit: `feat(main): a per-page store for the citations section's visibility`
@@ -460,7 +461,7 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 - Modify: `Pommora/src/renderer/src/MarkdownPM/editor/folding.ts` — `FoldKind`, the `KINDS` registry, the persist listener's filter, `applySavedFolds`, and the removal of `collapsedByDefault` from `FoldRegion`.
 - Modify: `Pommora/src/renderer/src/MarkdownPM/index.tsx` and `Pommora/src/renderer/src/Detail/PageView.tsx` — the seam that hands the resolved visibility in. The fold module is deliberately Electron-free and never learns where persisted state lives; it takes it as a prop, exactly as its fold-persistence seam already does.
 - **The other two editor mount sites** — the page embed (which backs the hover card, the floating preview and embedded tiles) and the board block — pass nothing today. They take the nexus-wide default, so an embed of a footnoted page agrees with a freshly-opened one; per-page overrides are the main pane's.
-- Modify: `Pommora/src/renderer/src/MarkdownPM/editor/headingScan.ts` — `headingSections` clamps its last section at the citations boundary.
+- Modify: `Pommora/src/renderer/src/MarkdownPM/editor/folding.ts` — **the clamp lives in the `KINDS.heading` generator, not in the heading scan.** `headingSections` takes a raw string and runs its own split and fence mask; it never sees the cached scan, so clamping there would mean a second citation derivation — the thing this plan's own constraint forbids. The generator holds the `Text` the cache is keyed on, so it clamps what the scan already answered.
 - Test: `Pommora/src/renderer/src/MarkdownPM/editor/foldState.test.tsx`
 
 **Derivation**
@@ -468,7 +469,7 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 - Control: `rg -F "FoldRegion" Pommora/src` → 4. Zero here means the search never ran.
 
 **Interfaces**
-- Produces: `FoldKind` gains `'citations'`; `FoldRegion` gains `persists: boolean`, false for the new kind.
+- Produces: `FoldKind` gains `'citations'`. **No `persists` field is added** — that would repeat `collapsedByDefault`'s mistake in the same task that retires it: a per-region flag describing a whole kind. Both filter points already hold the kind, so the persist listener and the saved-fold pass filter on it directly.
 - Assumed by: Tasks 12, 13, 14, 17.
 
 **Survivors:** heading folds keep persisting exactly as they do. `expandFoldsAt` and `FoldsApi` are unchanged.
@@ -485,9 +486,9 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 - [ ] Write the failing tests: the section folds and unfolds; its state does not appear in the persisted key set; **a mount with saved heading folds writes nothing**; Enter and Backspace on the rendered anchor line leave the fold intact; a collapsed heading stops at its start; the three-way boundary agreement; **the anchor-collision invariant above**; a section of exactly one citation folds; a document beginning with a citation has no region; the negative control's disabled half.
 - [ ] Add the `'citations'` kind to `KINDS` with `persists: false`, **separating the region's identity from the line it renders against**. A fold entry is identified by `anchor` alone and is pruned when no live region shares that offset, so putting identity on `anchorLine` — a line the user owns and edits — means one Enter or Backspace there moves the live anchor, orphans the entry, and pops a hidden section open with the override still reading hidden and nothing to resync it. Identity stays on the section's first citation offset, which the original anchoring already proved stable; `anchorLine` becomes the *rendered* anchor, a second field rather than the key. A fold hides `anchor.lineEnd + 1 .. to` and never its anchor line, so anchoring on the first citation would leave that row on screen — and on a one-citation section `bodyStart > to`, which makes both `toggleFold` and `applySavedFolds` bail and the section unhideable. Anchoring above fixes both. When `anchorLine` is `-1` the section starts at line 0, no region exists, and the section cannot hide — the right answer, since hiding it would render a blank page.
 - [ ] **Seed the fold from the override, carrying `initialFoldAnnotation`.** A state field reads the resolved visibility on mount and dispatches the fold effect, then follows later changes to that value. The annotation is not optional: the persist listener fires on any un-annotated fold effect and writes the whole surviving key set straight to disk with no debounce, and `applySavedFolds` sits two IPC round-trips deep behind `Promise.allSettled`, so an un-annotated seed lands *first* — with the citations entry present, the heading entries not yet restored, and the persisting-kinds filter reducing that to an empty array. The page's saved heading folds would be erased on every open of a footnoted page, invisibly until the next one. This is the only reader of the stored boolean and the only direction that turns it into visible behavior; writing it here rather than improvising it at Task 14 is what keeps a second writer from appearing at exactly the seam C-3 protects.
-- [ ] Filter the persist listener to regions that persist, and skip non-persisting kinds in `applySavedFolds`.
+- [ ] Filter the persist listener and the saved-fold pass on `kind`, which both already have in hand.
 - [ ] Delete `collapsedByDefault` and its read.
-- [ ] Clamp **every** heading section whose end reaches the citations boundary, not the array's last element. `endLine` runs to the document's last line for every heading with no equal-or-higher successor, so a page shaped `# Title` … `## Sources` … the run has *two* sections reaching the end; clamping one leaves `# Title` spanning the section, and collapsing it swallows the footnotes whole.
+- [ ] In the heading fold generator, clamp **every** section whose end reaches the citations boundary, not the array's last element. `endLine` runs to the document's last line for every heading with no equal-or-higher successor, so a page shaped `# Title` … `## Sources` … the run has *two* sections reaching the end; clamping one leaves `# Title` spanning the section, and collapsing it swallows the footnotes whole.
 - [ ] Run the gate — expect green.
 - [ ] Commit: `feat(editor): the citations section folds without joining the fold store`
 
@@ -531,7 +532,7 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 - Modify: `.claude/Features/SubfieldPM.md` and `.claude/Features/PagePreviewPM.md`.
 
 **Interfaces**
-- Consumes: the citation scan run over the store's live body — the cached document scan is keyed to the editor's document object and the Subfield holds only a string, so this is a second pass on that path beside the counter's, the same conceded cost the Sequenced After item retires. The override from Task 9, the default from Task 10, the fold state for the label.
+- Consumes: the citation count **returned by `computeStats` beside lines, words and characters** — not a scan of its own. Both items mount on a page, over the identical body string, on the same keystroke; two scans there would be one boundary derived twice on a per-keystroke path, which is C1 and C7 in the one place a plan can most easily concede them. The counter already runs the scan after Task 3, so the count is free. The override from Task 9, the default from Task 10, the fold state for the label.
 - Produces: nothing downstream.
 
 **Failure half:** a page with no citation lines → the item renders nothing at all, per R5. A page with only orphaned citations → the item renders, because a citation line exists and the section must stay reachable. A non-page selection → the item is not in that kind's defaults and never mounts. The preview's scope → reads its own body, never the shared live-body slot, which has a single owner.
@@ -541,7 +542,7 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 - [ ] Add the label to the shared two-state label module as one line beside the footer's — the module's whole point is that a control's wording is stated once. Note the List / Gallery item inlines its own ternary and is the counter-example, not the pattern.
 - [ ] Build the control as a text button and add its class to the List / Gallery item's existing CSS selector list — that rule is already the Subfield's text-control treatment, down to the hover state and the drag-region opt-out. No new block.
 - [ ] Take Enter and Space from the design system's activation primitive rather than a hand-rolled key handler.
-- [ ] Return null when the scan reports no citation lines.
+- [ ] Return null when the count is zero — the item registry's union already admits a null-returning item, as the add-menu item is on the wrong selection kind.
 - [ ] Resolve the shown state as override, then default; write through the override, clearing the row when the value matches the default. **Write the store slice optimistically and let the IPC be fire-and-forget** — the sixteen-times-copied persistence pattern — so the section moves within the frame instead of behind a round-trip.
 - [ ] Read the label's state from the **fold**, not the override, so a section opened by a marker jump or an outline reveal reports itself open.
 - [ ] Update both feature documents.
@@ -562,7 +563,7 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 **Failure half:** a document with no citations → no divider. A non-blank anchor line — a table's last row, a fence's close, a heading, a paragraph — → the fallback edge, never a rule drawn onto the user's content. The divider clicked while the section is already hidden → cannot occur, since a hidden section draws no divider; the Subfield control is the only way back.
 
 **Steps:**
-- [ ] Emit the divider as a line intent on the **rendered anchor line**, reusing the heading seam's border treatment as its bottom edge, drawn only while the section is open. **Only when that line is blank** — the ordinary shape, and the one the feature can safely decorate. A table's last row is replaced by a block widget so a line decoration there never renders at all; a fence's closing line would draw the rule inside the code block; a paragraph would read as if it headed the footnotes. When the anchor is not blank the divider falls back to the section's own top edge, and the Subfield control remains the way to hide it either way.
+- [ ] Emit the divider as a line intent on the **rendered anchor line**, joining the existing inset-rounded-rule seam's selector rather than restating its border — that rule already *is* the shared heading↔body seam as a drawn line. Its margins assume header chrome rather than a `cm-line`, so the geometry is the part that differs. Drawn only while the section is open. **Only when that line is blank** — the ordinary shape, and the one the feature can safely decorate. A table's last row is replaced by a block widget so a line decoration there never renders at all; a fence's closing line would draw the rule inside the code block; a paragraph would read as if it headed the footnotes. When the anchor is not blank the divider falls back to the section's own top edge, and the Subfield control remains the way to hide it either way.
 - [ ] Add the blur-fade on the disclosure duration and the standard easing, both read from the motion tokens.
 - [ ] Wire the click to the same write the Subfield control uses — the override, never the fold directly, so there is one state and one writer.
 - [ ] Use the keyboard activation primitive so Enter and Space reach it, and take no interactive role it cannot honor.
@@ -601,12 +602,13 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 **Why:** Atomicity stops CM's own cursor motion and deletion; it does not stop a programmatic dispatch, which the callout work proved the hard way — an atomic-only fix there produced a clean de-callout, which was still a break, and only a transaction filter closed it. The same holds here: the never-corrupt rule in the spec's own frame is a transaction-layer promise. Typing needs nothing special, because text typed inside the section lazily continues its citation exactly as the parser reads it; the guard exists for the changes that would still break the run.
 
 **Files:**
-- Create: `Pommora/src/renderer/src/MarkdownPM/editor/citationGuard.ts`
+- Modify: `Pommora/src/renderer/src/MarkdownPM/editor/calloutGuard.ts` — **lift the filter body into a `verdictFilter(verdictFn)` factory** and let the callout guard be its first caller. The body is identical for both: bail on no doc change, read the start state's cached scan, iterate changes into verdicts, short-circuit on cancel or no-repair, re-issue. Written as a sibling file instead, the codebase gains a second divergent re-issue path — and the callout guard keeps the annotation bug this task fixes, since only the copy would carry the repair.
+- Create: `Pommora/src/renderer/src/MarkdownPM/editor/citationGuard.ts` — the verdict function only.
 - Modify: `Pommora/src/renderer/src/MarkdownPM/index.tsx` — register it.
 - Test: `Pommora/src/renderer/src/MarkdownPM/editor/citationGuard.test.ts`
 
 **Interfaces**
-- Produces: `citationTailVerdict(doc, fromA, toA, inserted, scan)` → the callout guard's verdict shape **plus a fifth arm carrying replacement text**. The existing four only move range endpoints — the callout guard pushes its `inserted` through verbatim on every branch — and A-5b requires the inserted text be *rewritten* into continuation form, which no endpoint move can express. `inserted` joins the signature for the same reason. Exported pure for tests.
+- Produces: `citationTailVerdict(doc, fromA, toA, inserted, scan)` → the shared verdict shape **plus a fifth arm carrying replacement text**. The existing four only move range endpoints, and A-5b requires the inserted text be *rewritten* into continuation form. The change spec the loop builds already has an `insert` field the callout guard fills verbatim, so the new arm is a value swapped into a field that exists — not machinery. `inserted` joins the signature for the same reason. Exported pure for tests.
 
 **Negative control:** a test proving a paste below the section is shaped into continuation form *and* a test proving that with the guard unregistered it strands prose after the section and literalizes the whole thing.
 
@@ -618,7 +620,7 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 - [ ] Write the failing tests, including the negative control's unregistered half and the boundary agreement.
 - [ ] Implement the verdict function and the filter, reading the start state's cached scan and never re-splitting.
 - [ ] **Clamp any insertion landing at a citation line's first offset to its content start.** Atomic skipping relocates only strictly-interior positions, so that one seat stays reachable and is invisible — the prefix is zero-width there. This is the branch that makes Task 5's ungated atomic actually hold.
-- [ ] Re-carry the user event on re-issue **and every annotation the guard does not own** — a re-issued spec is rebuilt from the start state, and a dropped self-edit annotation makes a downstream filter treat a construct's own write as a user edit. Skip transactions carrying a self-edit annotation of this guard's own.
+- [ ] **In the shared factory**, re-carry the user event on re-issue **and every annotation the filter does not own** — a re-issued spec is rebuilt from the start state, and a dropped self-edit annotation makes a downstream filter treat a construct's own write as a user edit. Both guards get the fix; a copy would have repaired one.
 - [ ] Register it alongside the existing guards.
 - [ ] Run the gate — expect green.
 - [ ] Commit: `feat(editor): the citations section's tail is guarded at the transaction layer`
@@ -710,9 +712,8 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 **Why:** A cascade keyed to a gesture fires when the gesture happens; a cascade keyed to a range fires only when the deleted range is exactly the construct. That distinction is what stops a wide selection sweep from silently deleting citations the user never saw, and it is why backspace at a citation's content start and a menu Delete produce the same result while a mixed body-and-section sweep produces neither.
 
 **Files:**
-- Modify: `Pommora/src/renderer/src/MarkdownPM/input/index.ts` — the citation-start backspace only. **`lineMarkerRe` is deliberately left alone:** its one consumer fires at content start and deletes the prefix, the same caret and the same key C-9 gives to the whole-footnote delete. Two transforms claiming one keystroke means one silently wins, and if the shared regex won it would strip `[^1]: ` and leave bare prose inside the section — ending the trailing run and literalizing everything below it.
-- Modify: `Pommora/src/renderer/src/MarkdownPM/editor/input.ts` — the chain link.
-- Test: `Pommora/src/renderer/src/MarkdownPM/input/citationCascade.test.ts`
+- Modify: `Pommora/src/renderer/src/MarkdownPM/input/index.ts` — **a branch inside `smartBackspace`**, beside the callout head's. That branch is this requirement's exact analogue and states the same reason: backspace anywhere inside the hidden `> [!type] ` head removes the whole callout in one step, so a caret that wandered into the tag cannot corrupt it character by character. The citation prefix is the same hidden run with the same hazard. Because it lives inside `smartBackspace`, `editor/input.ts` needs no change — the backspace chain already calls it. **`lineMarkerRe` is deliberately left alone:** its one consumer fires at content start and deletes the prefix, the same caret and the same key C-9 gives to the whole-footnote delete. Two transforms claiming one keystroke means one silently wins, and if the shared regex won it would strip `[^1]: ` and leave bare prose inside the section — ending the trailing run and literalizing everything below it.
+- Test: `Pommora/src/renderer/src/MarkdownPM/input/input.test.ts` — a new `describe` beside the existing whole-marker backspace block, which is where every transform in this file is covered.
 
 **Negative control:** a test proving a selection spanning a marker plus surrounding prose deletes only the swept text *and* a test proving that with the range check relaxed to a gesture check, it also removes the citation.
 
@@ -720,7 +721,7 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 
 **Steps:**
 - [ ] Write the failing tests including both halves of the negative control.
-- [ ] Implement the citation-start transform and the marker cascade, each as one pure function returning one edit, dispatched once.
+- [ ] Implement the citation-start branch inside `smartBackspace`. **The cascade dispatches separately:** the edit shape that chain returns is a single range, and removing a citation plus its markers is two disjoint sites, so the cascade cannot ride it.
 - [ ] Run the gate — expect green.
 - [ ] Commit: `feat(editor): footnote deletions cascade by range, not by gesture`
 
@@ -769,8 +770,8 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 
 **Steps:**
 - [ ] Write the failing tests: mixed numeric and word labels; the orphan skip; the reorder; the no-op case producing no edits at all.
-- [ ] Implement `normalize` as a pure function over the scan, returning per-row edits.
-- [ ] **Drop the fold before applying, and re-fold after** when the section is collapsed and the edits reorder it. A fold entry maps its start forward and its end backward, so any edit reaching the section's first offset — which a reorder that moves the first row necessarily does — leaves the entry spanning a range that no longer lines up; a whole-section replace collapses it entirely. No offset discipline avoids this, because the edit legitimately owns that offset. The editor already answers it exactly this way for a heading drag: the fold is dropped at the start of the gesture, since it cannot survive the relocating edit, and re-collapses after. Same teardown, same reason.
+- [ ] Build the reordered section on a scratch string and **diff it back with the existing single-replace differ** rather than deriving edits by hand. That differ trims the common prefix and suffix, so an edit can never begin before the first character that actually changed — and since every citation opens `[^`, the edit always starts inside the section rather than on its first offset. The list drag's own reorder is this exact idiom: build the desired result, apply it to a scratch copy, diff back. The label-rewrite half has a direct precedent too, in the ordered-list renumber that emits specs only for the markers whose printed number changes.
+- [ ] **Drop the fold before applying, and re-fold after** when the section is collapsed and the edits reorder it. The differ protects the fold's *start*, not its end: a full reorder leaves almost no common suffix, so the edit runs to the section's last character and the fold's end — which maps backward — collapses onto the change's start. A fold entry maps its start forward and its end backward, so any edit reaching the section's first offset — which a reorder that moves the first row necessarily does — leaves the entry spanning a range that no longer lines up; a whole-section replace collapses it entirely. No offset discipline avoids this, because the edit legitimately owns that offset. The editor already answers it exactly this way for a heading drag: the fold is dropped at the start of the gesture, since it cannot survive the relocating edit, and re-collapses after. Same teardown, same reason.
 - [ ] Run the gate — expect green.
 - [ ] Commit: `feat(shared): one normalization for footnote order`
 
@@ -783,7 +784,8 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 **Files:**
 - Modify: `Pommora/src/main/editorMenu.ts` — the Insert submenu row, and the Paste As submenu builder, which composes only from the target-gated rows and so cannot surface the Footnote row on its own.
 - Modify: `Pommora/src/shared/PasteAsMenu.ts` — the new form and its row, offered on a **separate predicate** (a non-empty clipboard) rather than through `pasteAsTarget`. That function refuses any clipboard holding a newline because every existing form writes one line, so routing Footnote through it would make the multi-paragraph normalization D-3 exists for unreachable. Leaving it untouched keeps the three existing forms and their tests exactly as they are.
-- Modify: `Pommora/src/renderer/src/MarkdownPM/editor/menu.ts` — both action branches.
+- Modify: `Pommora/src/renderer/src/MarkdownPM/editor/menu.ts` — **one** branch, the Insert escape hatch. The Paste As side already routes by prefix and is form-agnostic.
+- Modify: `Pommora/src/renderer/src/MarkdownPM/editor/PasteLink.ts` — the Footnote form forks before the single-range write the existing forms share, since a pair is two sites. Everything above that fork — the clipboard read, the staleness check, the read-only refusal, the destination guard and the refocus — it gets unchanged.
 - Test: `Pommora/src/shared/PasteAsMenu.test.ts` — the Footnote row appears for a multi-paragraph clipboard, and the three existing forms still do not.
 
 **Failure half:** Insert with the caret inside a citation → refused; markers live in the body and cells only. Paste As with a multi-paragraph clipboard → blank lines collapsed, following lines shaped into continuations. Paste As with an empty clipboard → the row is not offered.
@@ -800,18 +802,20 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 
 **Requirement:** 6
 
-**Why:** Typing a fresh label is a creation gesture like any other, so it seeds the citation and normalizes the order — the same result the menu paths give, reached by typing. Typing a label that already has a citation is adoption instead, and rewrites nothing, which is what makes hand-typed sharing work. The transform joins the existing chain and bails inside code, wikilinks and link targets exactly as its two siblings do.
+**Why:** Typing a fresh label is a creation gesture like any other, so it seeds the citation and normalizes the order — the same result the menu paths give, reached by typing. Typing a label that already has a citation is adoption instead, and rewrites nothing, which is what makes hand-typed sharing work.
+
+**It cannot be a link in the typing chain.** Every transform there returns one range, and one dispatch applies it; a seed writes a marker at the caret *and* a citation at the document's end — two disjoint sites. Widening that shape for twelve transforms to serve one is the wrong trade, so this fires from the same input handler and dispatches on its own. It reuses the siblings' three bail gates, two of which are already exported; the third is module-private, so this transform stays in that file rather than exporting it for one caller.
 
 **Files:**
 - Modify: `Pommora/src/renderer/src/MarkdownPM/input/index.ts` — the transform.
-- Modify: `Pommora/src/renderer/src/MarkdownPM/editor/input.ts` — the chain link.
-- Test: `Pommora/src/renderer/src/MarkdownPM/input/citationSeed.test.ts`
+- Modify: `Pommora/src/renderer/src/MarkdownPM/editor/input.ts` — the handler call, **not** a link in the `??` chain.
+- Test: `Pommora/src/renderer/src/MarkdownPM/input/input.test.ts` — a new `describe`, where every transform in this file is covered.
 
 **Failure half:** an escaped `\[^1]` → no seed, because the escape suppresses the reference at the parser too. A shape GFM does not parse as a label, such as one containing a space → no seed. A label matching an existing citation → adopted, nothing seeded, nothing renumbered. Inside a table cell → the cell editor omits the input extension, so no seed fires, consistent with cell creation being a Prospect.
 
 **Steps:**
 - [ ] Write the failing tests including every failure-half case.
-- [ ] Implement the transform, firing on the closing bracket, bailing on the three existing gates.
+- [ ] Implement the transform, firing on the closing bracket, bailing on the three existing gates, and returning its two edits rather than one.
 - [ ] Route a fresh label through `normalize`; adopt an existing one without edits.
 - [ ] Dispatch once so the whole creation reverts on one undo.
 - [ ] Run the gate — expect green.
