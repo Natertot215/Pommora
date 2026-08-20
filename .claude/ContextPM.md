@@ -8,8 +8,8 @@
 
 ### Immediate Work
 
-- [ ] Finish the [[Cohesion-Audit]]'s MarkdownPM leg — nothing left behind — then fold its §One Definition Per Thing easy wins, first bullet included, and park the design-splits (Tables, Cards, the renderer lifting) as a pending focus.
-- [ ] MarkdownPM Footnotes → Plan & Execution, immediately after those; the decision log at [[Footnotes — Decision Log]] is the settled contract, two `[assumed]` entries pending Nathan's word.
+- [ ] Finish the [[Cohesion-Audit]]'s MarkdownPM leg — nothing left behind — then fold its §One Definition Per Thing easy wins and park the design-splits (Tables, Cards, the renderer lifting) as a pending focus. Finishing both eliminates the MarkdownPM cleanup bullet below, and that removal is the Footnotes greenlight.
+- [ ] MarkdownPM Footnotes → Plan & Execution, on that greenlight; the decision log at [[Footnotes — Decision Log]] is the settled contract, one `[assumed]` entry (C-3's clear-on-default) pending Nathan's word.
 - [ ] The remaining Cohesion arcs — Table hoisting, the `main/index.ts` split, the parked design-splits — complete after Footnotes.
 
 ### Pending Focuses

@@ -8,20 +8,20 @@
 **Dates:** 08-19-2026
 **Model:** Fable 5
 
-**Two coordinated lines of work, and this document is the shared record for both.** Line one is the Cohesion pass's MarkdownPM leg, running in a parallel session; line two is Footnotes, whose brainstorm this session completed. Nathan set the order explicitly: the MarkdownPM cohesion work finishes first with nothing left behind, the easy-win definition duplications fold next (the Cohesion-Audit's §One Definition Per Thing, its first bullet — `parentOf` — included), the design-splits across Tables, Cards, and their kin park as a pending focus in the cohesion pass rather than being built, then Footnotes gets planned and built, and only then does the rest of the cohesion arc complete.
+**Two coordinated lines of work, and this document is the shared record for both.** Line one is the Cohesion pass's MarkdownPM leg, running in a parallel session; line two is Footnotes, whose brainstorm this session completed. Nathan set the order explicitly: the MarkdownPM cohesion work finishes first with nothing left behind, the easy-win definition duplications fold next (the Cohesion-Audit's §One Definition Per Thing), and finishing both **eliminates the MarkdownPM cleanup bullet from ContextPM — that removal is the greenlight for Footnotes**. The design-splits across Tables, Cards, and their kin park as a pending focus in the cohesion pass rather than being built, then Footnotes gets planned and built, and only then does the rest of the cohesion arc complete.
 
 **This session produced the Footnotes decision log, from a blank slate.** The prior decision log had been deleted, so the brainstorm ran fresh off Nathan's spec message: three read-only explorers grounded the editor internals, the persistence/stats/settings plumbing, and the design tokens; parser behavior was verified by executing probes against the installed `micromark-extension-gfm` rather than recalled. The log then converged through several decision rounds and two adversarial review rounds — seventeen findings in round one, six in round two, every one resolved or explicitly accepted, the round-one High root being that the section boundary was defined twice in prose and never against the parser.
 
 **The design that settled:** GFM reference footnotes — atomic, never-revealing markers displaying positional numbers; label-binding (case-folded, GitHub-identical) with gesture-owned numeric labels and user-owned word labels; a hidden-by-default citations section whose boundary is the parser-defined trailing run, guarded at the transaction layer; visibility as a Default Visibility setting plus a per-page `nexus.db` override written by both the divider and the Subfield footnotes toggle; three creation doors (Insert ▸, Paste As ▸, the typed auto-seed, all normalizing); copy-paste as the sharing mechanism; and a Pages & Editor ▸ Footnotes settings trio. Mid-review, Nathan renamed the entity: every footnote "definition" is a **Citation**, in docs, code identifiers, and UI labels — "Definition" is reserved for a future, independent feature.
 
-**The log is fully tagged and converged, two `[assumed]` entries short of sign-off:** A-5b's two tail-guard repairs (Enter-on-empty-trailing-line exits the section; a plain ⌘V inside a citation lands as continuation lines) and C-3's clear-on-default (toggling a page to the value the default already gives clears the override row). Both were presented and await Nathan's word; everything else in the log carries his explicit confirmation.
+**The log is fully tagged and converged, one `[assumed]` entry short of sign-off:** C-3's clear-on-default (toggling a page to the value the default already gives clears the override row). It was presented and awaits Nathan's word; everything else in the log carries his explicit confirmation — including A-5b's tail guard, whose Enter-exit convention Nathan struck (Enter needs nothing special; lazy continuation and the guard's shaping cover it).
 
 **The parallel line stands mid-flight.** The cohesion pass's first two sessions are closed and recorded in the audit (the dusting; the main-process costs); the MarkdownPM leg was actively committing while this session ran (`9fd6da98`, `ab6ac262` among today's). Its plan and evidence live in [[MarkdownPM-Plan]] and [[MarkdownPM-Scoping]] — phase 7, the fold model's key widening, is the specific thing Footnotes blocks on.
 
 #### Completion Criteria
 
 - [ ] **The MarkdownPM cohesion leg is finished with nothing left behind** — every phase of [[MarkdownPM-Plan]] landed, including phase 7's fold-key widening, gates green, docs reconciled.
-- [ ] **The easy-win definition duplications are folded** — Cohesion-Audit §One Definition Per Thing, `parentOf` (the first bullet) through the smaller twins, each collapse verified by the gates.
+- [ ] **The easy-win definition duplications are folded** — Cohesion-Audit §One Definition Per Thing, `parentOf` through the smaller twins, each collapse verified by the gates — **and the MarkdownPM cleanup bullet is eliminated from ContextPM**, which is the Footnotes greenlight.
 - [ ] **The design-splits are parked, not built** — the renderer-lifting and view-host arcs across Tables, Cards, and siblings recorded as a pending focus in the cohesion pass with nothing half-started.
 - [ ] **Footnotes' two `[assumed]` entries carry Nathan's word** — A-5b's repairs and C-3's clear-on-default blessed or amended before the plan is written.
 - [ ] **Footnotes is planned, ratified, built, and closed out** — the decision log handed to the planning skill, the plan approved by Nathan before any code, the build through `/closeout` clean.
@@ -30,9 +30,9 @@
 #### Next Session
 
 - **Finish the MarkdownPM cohesion leg first.** If the parallel session is still writing, do not open a second tree-touching writer — confirm its tree has settled before taking the leg over.
-- **Fold the §One Definition Per Thing easy wins**, first bullet included, right behind it.
+- **Fold the §One Definition Per Thing easy wins** right behind it, then **eliminate the MarkdownPM cleanup bullet from ContextPM** — that removal greenlights Footnotes.
 - **Park the design-splits** (Cohesion-Audit §Renderer Lifting and the view-host arc) as a pending focus — a recording task, not a build.
-- **Then Footnotes:** get the two `[assumed]` entries blessed, hand the decision log to the planning skill, and check the reviewer's two live-layout unknowns during planning — whether the Subfield's hover rail admits a second control beside the collapse chevron, and whether disclosing the section flickers the toggle's at-bottom visibility condition.
+- **Then Footnotes:** get C-3's clear-on-default `[assumed]` blessed, hand the decision log to the planning skill, and check the reviewer's two live-layout unknowns during planning — whether the Subfield's hover rail admits a second control beside the collapse chevron, and whether disclosing the section flickers the toggle's at-bottom visibility condition.
 - **Leftover from the retired web-layer session:** Nathan's own pass over its five changes (settings placement, typed zoom, hover scroll, a live tab flip, inline Edit Link) — unverified unless he's since done it.
 
 #### Feedback
@@ -43,7 +43,7 @@
 
 #### Session Pointers
 
-- `.claude/Planning/Footnotes — Decision Log.md` — the brainstorm's sole artifact and the planner's contract: Frame (with the Citations vocabulary rule), Sources (the re-grounding list, parser probes included), every decision tagged, Core vs Prospects split. The two `[assumed]` entries are A-5b and inside C-3.
+- `.claude/Planning/Footnotes — Decision Log.md` — the brainstorm's sole artifact and the planner's contract: Frame (with the Citations vocabulary rule), Sources (the re-grounding list, parser probes included), every decision tagged, Core vs Prospects split. The one `[assumed]` left is C-3's clear-on-default.
 - `.claude/Planning/Cohesion-Audit.md` — the cohesion catalog: §One Definition Per Thing is the easy-win list; §Renderer Lifting and §Beyond a Session are what parks; §Open Calls need Nathan.
 - [[MarkdownPM-Plan]] + [[MarkdownPM-Scoping]] — the in-flight leg's plan and evidence; phase 7 (fold-key widening) is Footnotes' prerequisite.
 - `.claude/ContextPM.md` §Immediate Work — carries the same ordering this document details.
