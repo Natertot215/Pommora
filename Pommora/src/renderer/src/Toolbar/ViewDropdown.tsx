@@ -1,4 +1,4 @@
-import type { CollectionNode, SetNode, ViewButton, ViewStyle } from '@shared/types'
+import type { CollectionNode, SetNode } from '@shared/types'
 import { MenuDropdown } from '@renderer/design-system/components/menu'
 import { iconNameOr } from '@renderer/design-system/symbols'
 import { useSession } from '../store'
@@ -39,23 +39,16 @@ function ViewDropdownInner({ node }: { node: CollectionNode | SetNode }): React.
       viewStyle: node.viewStyle ?? 'dropdown',
     })
     if (!action) return
-    // Every arm named, so an action this menu grows and nobody handles is a compile error rather
-    // than a silent write of the last branch's value.
-    const patch = ((): { view_button?: ViewButton; view_style?: ViewStyle } | null => {
-      switch (action) {
-        case 'toggle-title':
-          return { view_button: labeled ? 'icon' : 'labeled' }
-        case 'style-dropdown':
-          return { view_style: 'dropdown' }
-        case 'style-toolbar':
-          return { view_style: 'toolbar' }
-        default: {
-          const _exhaustive: never = action
-          void _exhaustive
-          return null
-        }
-      }
-    })()
+    // Each arm names the action it answers — an unhandled one writes nothing, where a terminal
+    // `else` wrote whichever value it happened to hold.
+    const patch =
+      action === 'toggle-title'
+        ? { view_button: labeled ? ('icon' as const) : ('labeled' as const) }
+        : action === 'style-dropdown'
+          ? { view_style: 'dropdown' as const }
+          : action === 'style-toolbar'
+            ? { view_style: 'toolbar' as const }
+            : null
     if (!patch) return
     await window.nexus.container.configure(node.path, node.kind, patch)
   }

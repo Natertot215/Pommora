@@ -9,7 +9,7 @@ import { EditorView } from '@codemirror/view'
 import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
 import type { GripMenuContext, PickNode } from '@shared/gripMenu'
 import { useSession } from '../../store'
-import { listKindOf, setHeading, setListKind } from '../input/format'
+import { listKindOf, setHeading, setListKind, type HeadingLevel } from '../input/format'
 import { headingParts } from '../detect'
 import { type Block, blockAt } from './blockModel'
 import { docScan, docString } from './docCache'
@@ -110,7 +110,7 @@ function popHeadingMenu(view: EditorView, headingEl: HTMLElement): void {
         focusRange(view, contentStart, line.to)
         break
       case 'size': {
-        const edit = setHeading(doc, line.from, action.level)
+        const edit = setHeading(doc, line.from, action.level as HeadingLevel)
         view.dispatch({
           changes: edit.changes,
           selection: edit.selection !== undefined ? { anchor: edit.selection } : undefined,
