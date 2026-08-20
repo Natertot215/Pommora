@@ -42,7 +42,6 @@ export function WebpageEmbed({
   label = '',
   visible,
   refocusHost,
-  partition = WEB_PARTITION,
 }: {
   url: string
   /** The on-disk hand label; empty resolves through the display format. */
@@ -52,7 +51,6 @@ export function WebpageEmbed({
   visible: boolean
   /** Where focus returns when a clip transition disengages a guest that held it. */
   refocusHost?: () => void
-  partition?: string
 }): React.JSX.Element {
   const title = useWebpageTitle(label, url)
   const [failed, setFailed] = useState(false)
@@ -201,7 +199,7 @@ export function WebpageEmbed({
             ref.current = el as HTMLElement | null
           }}
           src={url}
-          partition={partition}
+          partition={WEB_PARTITION}
           // The empty-string form, cast past React's boolean typing: React only serializes
           // string values for attributes it doesn't know, so a bare boolean never reaches the
           // attach — and popups then die inside Blink.

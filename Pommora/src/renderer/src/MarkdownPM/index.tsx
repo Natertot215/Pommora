@@ -60,8 +60,6 @@ import { ZOOM_DEFAULT, zoomFontSize } from './zoom'
 import type { WarmSeam } from './warmSeam'
 import './Styles.css'
 
-export type { WarmSeam } from './warmSeam'
-
 interface Props {
   initialBody: string
   onChange: (body: string) => void
@@ -119,7 +117,9 @@ export function MarkdownEditor({
   register,
 }: Props): React.JSX.Element {
   const readOnlyGate = useRef(new Compartment())
-  const readOnlyAtMount = useRef(readOnly)
+  /** The readOnly value last applied to the editor — read at mount to seed the compartment, and
+   *  compared on every change to tell a real flip from a re-render. */
+  const lastReadOnly = useRef(readOnly)
   const host = useRef<HTMLDivElement>(null)
   const shellRef = useRef<HTMLDivElement>(null)
   const titleRef = useRef<HTMLDivElement>(null)
@@ -184,7 +184,7 @@ export function MarkdownEditor({
       // drawSelection layer), so the at-rest embed must remain a focusable contenteditable to be
       // selectable at all — never blocked by a non-editable DOM.
       EditorView.editable.of(true),
-      readOnlyGate.current.of(EditorState.readOnly.of(readOnlyAtMount.current)),
+      readOnlyGate.current.of(EditorState.readOnly.of(lastReadOnly.current)),
       // EditorState.readOnly is ADVISORY — it stops the view's own input pipeline but NOT a
       // programmatic view.dispatch({changes}) (formatKeymap, the list/table/checkbox commands). With a
       // focusable read-only portal that would let Cmd+B edit + autosave a read-only surface, so drop
@@ -348,7 +348,7 @@ export function MarkdownEditor({
     if (edgeFade) view.scrollDOM.classList.add('edge-fade', 'top-gated')
     // Click-to-edit surfaces (block tiles) mount THIS editor in response to a click
     // that landed on the at-rest render — without a focus the caret goes nowhere.
-    if (autoFocus && !readOnlyAtMount.current) view.focus()
+    if (autoFocus && !lastReadOnly.current) view.focus()
     // Restore this page's saved folds once the view's lines exist (the widget clones them). The warm
     // scroll restores AFTER folds settle — folding changes content height, so restoring first would
     // land on a pre-fold offset.
@@ -401,11 +401,11 @@ export function MarkdownEditor({
   // edit focuses when the surface asked for it.
   useEffect(() => {
     const view = viewRef.current
-    if (!view || readOnly === readOnlyAtMount.current) {
-      readOnlyAtMount.current = readOnly
+    if (!view || readOnly === lastReadOnly.current) {
+      lastReadOnly.current = readOnly
       return
     }
-    readOnlyAtMount.current = readOnly
+    lastReadOnly.current = readOnly
     view.dispatch({
       effects: readOnlyGate.current.reconfigure(EditorState.readOnly.of(readOnly)),
     })

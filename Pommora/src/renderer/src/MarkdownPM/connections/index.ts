@@ -108,3 +108,10 @@ export function buildPageIndex(pages: ConnPage[]): PageIndex {
     },
   }
 }
+
+/** Open a page the way a gesture asks for: ⌘ takes the host's other route when it offers one. The
+ *  one modifier branch in the editor, read by both link syntaxes and by a resting table cell. */
+export function openPage(api: ConnectionsApi, page: ConnPage, bypass: boolean): void {
+  if (bypass && api.bypass) api.bypass(page)
+  else api.open(page)
+}

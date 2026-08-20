@@ -1,7 +1,7 @@
 import type { Extension } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
 import { tokenize } from '../tokens'
-import type { ConnectionsApi, ConnPage } from '../connections'
+import { openPage, type ConnectionsApi, type ConnPage } from '../connections'
 import { applyLinkAction } from './linkEdit'
 import { pointerHandlers, type PointerTarget } from './pointerPath'
 
@@ -73,8 +73,7 @@ export function connectionClicks(getApi: GetApi): Extension {
     follow: ({ page }, _view, event) => {
       const api = getApi()
       if (!page || !api) return null
-      // The one modifier branch: ⌘ takes the host's other route when it offers one.
-      return () => (event.metaKey && api.bypass ? api.bypass(page) : api.open(page))
+      return () => openPage(api, page, event.metaKey)
     },
     dwell: ({ page }, el) => {
       const hover = getApi()?.hover

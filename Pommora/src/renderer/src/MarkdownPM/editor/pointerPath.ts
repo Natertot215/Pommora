@@ -28,7 +28,7 @@ export function hoverIntent(): { arm: (fire: () => void) => void; cancel: () => 
 
 /** Whether the caret currently sits inside the token — a link being edited. Read at mousedown for a
  *  click, since CM seats the caret before `click` fires and it would otherwise always read true. */
-export function caretInside(view: EditorView, range: [number, number]): boolean {
+function caretInside(view: EditorView, range: [number, number]): boolean {
   const head = view.state.selection.main.head
   return view.hasFocus && head >= range[0] && head <= range[1]
 }
@@ -47,7 +47,7 @@ export interface PointerTarget {
 
 /** One link-shaped construct's answers. Everything else — the caret record, the acted-on latch, the
  *  claim protocol, the clamp, the intent's cancel/dismiss pairing — is the factory's. */
-export interface PointerSpec<H extends PointerTarget> {
+interface PointerSpec<H extends PointerTarget> {
   /** The cheap class gate a mouseover passes before any layout read or tokenize (the every-mouseover
    *  hard rule). */
   hoverGate: string

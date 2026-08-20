@@ -2,7 +2,7 @@ import type { Extension } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
 import { hasWebScheme, normalizeLinkUrl } from '@shared/links'
 import { linkTarget, tokenize } from '../tokens'
-import { resolveMdTarget, type ConnectionsApi, type MdTarget } from '../connections'
+import { openPage, resolveMdTarget, type ConnectionsApi, type MdTarget } from '../connections'
 import { openWebLink } from '../../openWebLink'
 import { MD_LINK_CLASS } from './decorations'
 import { applyUrlLinkAction } from './linkFormat'
@@ -63,8 +63,7 @@ export function followTarget(
   if (target.kind === 'page') {
     if (!api) return null
     const page = target.page
-    // The one modifier branch: ⌘ takes the host's other route when it offers one.
-    return () => (bypass && api.bypass ? api.bypass(page) : api.open(page))
+    return () => openPage(api, page, bypass)
   }
   return () => openWebLink(url)
 }

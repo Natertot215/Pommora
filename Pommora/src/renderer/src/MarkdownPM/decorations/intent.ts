@@ -175,7 +175,7 @@ function lineIntentsInto(
     const f = fences[k]
     return f?.closed === true && f.depth === 0
   }
-  const quoteChromeAt = (k: number): boolean => isBlockquoteLine(lines[k]) && !literalQuoteAt(k)
+  const quoteChromeAt = (k: number): boolean => scan.quotes[k] && !literalQuoteAt(k)
 
   // Box chrome (callout/quote) is independent of what's inside it: a `> - item` gets BOTH the box line-class
   // AND the bullet, a `> ```` code block keeps its box. `base` is where the inner content begins, so every
@@ -216,7 +216,7 @@ function lineIntentsInto(
       intents.push({ kind: 'lineWidget', from: ls, className: 'md-bq-in-bar' })
       base += qm[0].length
     }
-  } else if (!literalQuoteAt(i) && isBlockquoteLine(line)) {
+  } else if (quoteChromeAt(i)) {
     const bm = blockquotePrefixRe.exec(line)
     if (bm) {
       const first = i === 0 || !quoteChromeAt(i - 1)
