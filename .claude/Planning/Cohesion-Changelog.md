@@ -145,5 +145,52 @@ footnotes blocks on.
 The phases, in order: the two loners · one document scan · one box · one pointer path · one drag ·
 tables · the stylesheet remainder · fold keys.
 
-Each phase ends on all three gates with its own doc corrections applied, and lands as one commit.
-Per-phase deltas and the tree fill in here as they do.
+Each phase ended on all three gates with its own doc corrections applied, and landed as one commit.
+KNOB 115 → 117 (two added, none stripped); the nine decision markers survive.
+
+| Phase | Commit | Est. | Actual |
+| ----- | ------ | ---- | ------ |
+| 0 · The two loners | `9fd6da98` | ~0 | +23 |
+| 1 · One document scan | `ab6ac262` | −40 | **−32** |
+| 2 · One box | `9c1ecf3d` | −140 | **−15** |
+| 3 · One pointer path | `6d047973` | −90 | +32 |
+| 4 · One drag | `aea208e7` | −100 | +3 |
+| 5 · Tables | `22c912e0` | −70 | +13 |
+| 6 · Stylesheet remainder | `f796fc65` | −60 | **−4** |
+| 7 · Fold keys | `6af1ab4d` | +40 | +42 |
+| — · The simplification pass | `a8988710` | — | 0 |
+
+**Net +62 against an estimate of −400.** The estimate counted the bodies a consolidation removes
+and not the signatures it threads; it assumed the four box constructs could share their paint, which
+they cannot; and it treated a shared factory as free when it is 135 lines two files stop spelling
+twice. The reduction that is real is in derivation rather than in text — seven document splits
+became one, a whole second block-context disappeared, five `clamp`s became one, and two second
+doors onto the shared scan closed.
+
+Two plan items were refused on inspection and recorded as such: the two drags' edge readers read
+different edges under different conditions, and the autocomplete row cannot take the menu
+primitive's metrics without changing how the panel looks.
+
+```
+// MarkdownPM                              | • Eight phases, six live defects, one arc
+├── // editor
+│   ├── [pointerPath.ts]                   | • NEW — one gesture grammar under both link syntaxes
+│   ├── [folding.ts]                       | • A fold is a region of some kind                  +106 −64
+│   ├── [connections.ts] · [links.ts]      | • Two specs over one factory                       +75 −169
+│   ├── [blockModel.ts]                    | • Reads the shared scan; its second copy is gone   +18 −61
+│   ├── [docCache.ts]                      | • One scan, two token slots                        +12 −11
+│   ├── [blockDrag.ts] · [listDrag.ts]     | • One boundary picker, viewport-scoped             +31 −44
+│   ├── [gripMenu.ts]                      | • Re-reads and matches after its menu              +9 −3
+│   ├── [mathRanges.ts]                    | • REMOVED — a second door onto the scan            −4
+│   └── [Styles.css]                       | • One box shape; the sheet says each thing once    +102 −124
+├── // decorations
+│   └── [intent.ts]                        | • THE whole-document derivation                    +34 −11
+├── // detect
+│   └── [index.ts]                         | • One split, one fence pass, one lone-line walk    +41 −69
+├── // Tables
+│   ├── [regions.ts] · [sync.ts]           | • No memo; a ragged row keeps its typing           +38 −27
+│   ├── [codec.ts] · [guard.ts]            | • GFM-correct escaping; the guard stands down      +9 −12
+│   └── [cellStatic.tsx] · [TableView.tsx] | • A resting cell follows and previews              +54 −48
+└── // main
+    └── [remint.ts]                        | • headingIcon and viewOrder travel                 +5 −1
+```

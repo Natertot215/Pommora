@@ -5,6 +5,9 @@ than following them. Four of the six live defects are symptoms of the duplicatio
 one disappears when its duplication is collapsed, so it is never fixed twice or fixed in one copy and
 not the other.
 
+**Status: every phase landed.** Commits `9fd6da98` … `a8988710`, gates green at each one, KNOB and
+decision-marker counts intact throughout (115 → 117; two knobs added, none stripped).
+
 The deliverable is not a set of changes plus a record of them. It is an editor where nothing —
 code, comment, or document — says something untrue about how it works. Every phase therefore closes
 on two fronts: the duplication it collapses, and the statements that duplication had made false. A
@@ -15,19 +18,28 @@ Line estimates are estimates. Actuals get reported per phase, code-only, comment
 
 ### The Shape
 
-| Phase | What merges | Repairs carried | Est. |
-| ----- | ----------- | --------------- | ---- |
-| 0 · The two loners | — | Menu broadcast, `COPY_SCOPES` | ~0 |
-| 1 · One document scan | `scanDoc`'s seven splits, three line predicates | Unclosed-fence slice | −40 |
-| 2 · One box | Four stylesheet box recipes | Nested code block under Show Line Count | −140 |
-| 3 · One pointer path | `connections.ts` + `links.ts` | Invalid link, cell wikilink | −90 |
-| 4 · One drag | `blockDrag` + `listDrag` + `listDragModel` | Grip menu's stale span | −100 |
-| 5 · Tables | Dead codec, twin geometry, misplaced generics | Ragged-row commit, escape round-trip, table scan per keystroke | −70 |
-| 6 · Stylesheet remainder | Nine smaller duplications | — | −60 |
-| 7 · Fold keys | — | Three fold-state defects | +40 |
+All eight landed. Actuals are code-only — comments, blanks and tests excluded.
 
-Roughly **−400** across phases 0–6, with phase 7 spending some of it back on the one thing that
-genuinely needs new code.
+| Phase | What merged | Repairs carried | Est. | Actual |
+| ----- | ----------- | --------------- | ---- | ------ |
+| 0 · The two loners ✓ | — | Menu broadcast, `COPY_SCOPES` | ~0 | +23 |
+| 1 · One document scan ✓ | `scanDoc`'s seven splits, three fence passes, the block resolver's whole second copy | Unclosed-fence slice | −40 | **−32** |
+| 2 · One box ✓ | The box skeleton under four recipes | Nested code block's head/foot padding, Show Line Count's inset | −140 | **−15** |
+| 3 · One pointer path ✓ | `connections.ts` + `links.ts` | Invalid link, cell wikilink, the resting cell's three drifts | −90 | +32 |
+| 4 · One drag ✓ | One boundary picker, one release-in-place | Grip menu's stale span | −100 | +3 |
+| 5 · Tables ✓ | The `<br>` second writer, five spellings of `clamp` | Ragged-row commit, escape round-trip, table scan per keystroke | −70 | +13 |
+| 6 · Stylesheet remainder ✓ | Six smaller duplications, `--font-mono`, the resize strip | — | −60 | **−4** |
+| 7 · Fold keys ✓ | — | Three fold-state defects, and the fold-region registry | +40 | +42 |
+
+**+62 across the arc**, against an estimate of −400. The estimate counted the bodies a
+consolidation removes and not the signatures it threads: turning `f(text)` into `f(lines)` is
+line-neutral at best under the formatter, and there were seven of those in phase 1 alone. Phase 2's
+−140 assumed the four box recipes could share their paint; they cannot, because a quote nested in a
+callout already spends that line's second pseudo-element. Phase 3's factory is 135 new lines that
+two files now share instead of spelling twice, which is a smaller file count and a larger line count.
+Where the reduction is real it is in what stops being *derived* twice rather than what stops being
+*written* twice — seven document splits became one, a whole second block-context disappeared, and
+five `clamp`s became one.
 
 Viewport-scoping the decoration build is not here. It adds code, serves speed rather than size, and
 carries the only rendering-correctness risk in the set; phase 1 takes the larger share of the same
@@ -241,10 +253,18 @@ their pins are written first.
 One commit per phase, or per coherent group inside a phase. Each commit carries its phase's
 corrections. Actual code-only deltas reported per phase.
 
-### Not In This Plan
+### What This Plan Deferred, And Why
 
-The `setList` / `setListKind` duplication is real and touches nothing footnotes need.
-`embedWidget.tsx`'s four responsibilities want splitting, but the split is a move rather than a
-reduction and its value is realized only when a second construct reuses the generic half — which is
-the footnote work, not this. The three `Embeds/` import cycles are latent and want their own pass.
-`PageHeader`'s seven threaded props are a restructure with a design question inside it.
+Four items were scoped out because the footnotes work is what makes them worth doing — or, in one
+case, because they carry a design question. Together they are what finishes the MarkdownPM cleanup
+arc, and they are the next work.
+
+- **`setList` / `setListKind`.** One rule for what a list marker becomes, written twice. Real, and
+  it touches nothing footnotes need — which is exactly why it waited.
+- **`embedWidget.tsx`'s four responsibilities.** The split is a move rather than a reduction, and
+  its value is only realized when a second construct reuses the generic half. The footnotes section
+  is that second construct.
+- **The three `Embeds/` import cycles.** Latent today. The pointer path's own cycle was found and
+  closed during this pass, which is the shape these take.
+- **`PageHeader`'s seven threaded props.** A restructure with a design question inside it, so it
+  needs Nathan before it needs code.
