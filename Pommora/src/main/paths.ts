@@ -1,13 +1,9 @@
-// Every absolute path main builds, resolved against the nexus root. The nexus-relative names
-// themselves are the cross-process contract and live in `@shared/nexusPaths`. node:path only; no fs.
+// Every absolute path main builds, resolved against the nexus root, plus the on-disk names only
+// main ever reads — sidecars, config filenames, the block host's folder. Names the renderer also
+// speaks are the cross-process contract and live in `@shared/nexusPaths`. node:path only; no fs.
 
 import { join } from 'node:path'
-import {
-  ASSETS_DIR_REL,
-  CONTEXTS_DIR_REL,
-  CONTEXTS_REGISTRY_REL,
-  NEXUS_DIR,
-} from '@shared/nexusPaths'
+import { CONTEXTS_DIR_REL, CONTEXTS_REGISTRY_REL, NEXUS_DIR } from '@shared/nexusPaths'
 
 export type SidecarKind = 'space' | 'collection' | 'set' | 'taskConfig' | 'eventConfig'
 
@@ -28,10 +24,6 @@ export function sidecarPath(absFolder: string, kind: SidecarKind): string {
 
 export function nexusDir(root: string): string {
   return join(root, NEXUS_DIR)
-}
-
-export function assetsDir(root: string): string {
-  return join(root, ASSETS_DIR_REL)
 }
 
 export function nexusConfig(root: string, file: string): string {

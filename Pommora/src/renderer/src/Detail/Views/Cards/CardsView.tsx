@@ -35,6 +35,8 @@ import { cx } from '@renderer/design-system/cx'
 import { assetUrl } from '../../../assetUrl'
 import { useSession } from '../../../store'
 import { byOrder, parentOf } from '@shared/treePatch'
+import { thumbKey, thumbRel } from '@shared/nexusPaths'
+import { navKey } from '@renderer/Navigation/navRecents'
 import { findCollectionForSet } from '@renderer/Detail/Scope'
 import { useSaveView } from '@renderer/Embeds/ViewEmbedScope'
 import { spliceBeside, tieOrderWith } from '../creationOrder'
@@ -96,9 +98,8 @@ import { titleInput } from '@renderer/design-system/components/menu'
 import { isOpenInTabs } from '../../../Tabs/tabsModel'
 import './CardsView.css'
 
-// A page's thumbnail file — navKey's `page:<id>` flips its colon to a dash on disk (io/thumbnails).
 const thumbSrc = (nexusId: string, pageId: string, v: number): string =>
-  `nexus-asset://nexus/.nexus/assets/${nexusId}/thumbnails/page-${pageId}.jpg?v=${v}`
+  `${assetUrl(thumbRel(nexusId, thumbKey(navKey({ kind: 'page', id: pageId }))))}?v=${v}`
 
 const cardTitleType = text.body.semibold
 

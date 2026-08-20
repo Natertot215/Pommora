@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from 'react'
 
-export interface ViewOrders {
+interface ViewOrders {
   /** viewId → the manual order it was last dropped into. */
   viewOrders: Record<string, string[]>
   /** Write one view's order. The wire write lands in the local copy too — nothing re-reads the

@@ -56,7 +56,7 @@ import { isAssetPath, readNavigationFile, writeNavigationState } from './io/navi
 import { serializeOnFile } from './io/fileLock'
 import { splitEnvelope, mergeFrontmatter, readFrontmatterFields } from './io/pageFile'
 import { basenameNoMd } from './coerce'
-import { assetsDir, nexusConfig, sidecarPath, NEXUS_CONFIG_FILES } from './paths'
+import { nexusConfig, sidecarPath, NEXUS_CONFIG_FILES } from './paths'
 import { ensureIdentity } from './identity'
 import { resolveFolderKind } from './folderKind'
 import { updateSettings } from './settings'
@@ -115,7 +115,7 @@ async function writeImageAsset(
   if (!decoded) return null
   const file = `${prefix}-${Math.random().toString(36).slice(2, 10)}.${decoded.ext}`
   const rel = assetKey ? `${ASSETS_DIR_REL}/${assetKey}/${file}` : `${ASSETS_DIR_REL}/${file}`
-  const absAsset = join(assetsDir(root), assetKey, file)
+  const absAsset = join(root, rel)
   await mkdir(dirname(absAsset), { recursive: true })
   await atomicWriteBinary(absAsset, decoded.buffer)
   return rel
