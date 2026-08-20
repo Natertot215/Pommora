@@ -7,6 +7,7 @@ import { PickerMenu, PickerOption } from '../PickerMenu/PickerMenu'
 import { useExitPresence } from '../../useExitPresence'
 import { stack } from '../../tokens/stack'
 import { cx } from '../../cx'
+import { pad } from '../../pad'
 import * as s from './calendarPicker.css'
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -74,7 +75,6 @@ function SizeMorph({ children }: { children: ReactNode }): React.JSX.Element {
     </div>
   )
 }
-const pad = (n: number): string => String(n).padStart(2, '0')
 // Local YYYY-MM-DD key (never toISOString — a UTC key shifts the day west of Greenwich; the
 // formatters parse date-only strings as LOCAL midnight, so the key must be minted locally too).
 const keyOf = (d: Date): string => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`

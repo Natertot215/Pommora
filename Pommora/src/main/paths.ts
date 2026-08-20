@@ -1,6 +1,13 @@
-// Pure path module — the one place that knows the on-disk layout. node:path only; no fs.
+// Every absolute path main builds, resolved against the nexus root. The nexus-relative names
+// themselves are the cross-process contract and live in `@shared/nexusPaths`. node:path only; no fs.
 
 import { join } from 'node:path'
+import {
+  ASSETS_DIR_REL,
+  CONTEXTS_DIR_REL,
+  CONTEXTS_REGISTRY_REL,
+  NEXUS_DIR,
+} from '@shared/nexusPaths'
 
 export type SidecarKind = 'space' | 'collection' | 'set' | 'taskConfig' | 'eventConfig'
 
@@ -20,25 +27,21 @@ export function sidecarPath(absFolder: string, kind: SidecarKind): string {
 }
 
 export function nexusDir(root: string): string {
-  return join(root, '.nexus')
+  return join(root, NEXUS_DIR)
+}
+
+export function assetsDir(root: string): string {
+  return join(root, ASSETS_DIR_REL)
 }
 
 export function nexusConfig(root: string, file: string): string {
   return join(nexusDir(root), file)
 }
 
-/** The Contexts registry's nexus-relative spelling — the walk's unreadable list and the
- *  record's baseline name it by this exact string. */
-export const CONTEXTS_REGISTRY_REL = '.nexus/contexts.json'
-
 /** The Contexts registry (per-Context id, title, singular, icon; array position is the order). */
 export function contextsRegistryFile(root: string): string {
   return join(root, CONTEXTS_REGISTRY_REL)
 }
-
-/** Where Contexts live, nexus-relative. `.trash` mirrors the nexus, so a trashed Space's frozen
- *  chain wears this prefix and the trash browser strips it back off. */
-export const CONTEXTS_DIR_REL = '.nexus/contexts'
 
 export function contextsDir(root: string): string {
   return join(root, CONTEXTS_DIR_REL)

@@ -3,6 +3,7 @@
 // computes a sibling group's new order after a drop.
 
 import type { CollectionNode, NexusTree, PageNode, SetNode } from '@shared/types'
+import { contextDirRel } from '@shared/nexusPaths'
 
 export type Kind = 'collection' | 'set' | 'page' | 'space' | 'contextGroup'
 export type Entry = {
@@ -87,7 +88,7 @@ export function buildIndex(tree: NexusTree): Index {
     byId.set(g.def.id, {
       id: g.def.id,
       kind: 'contextGroup',
-      path: `.nexus/contexts/${g.def.title}`,
+      path: contextDirRel(g.def.title),
       depth: 0,
       parentId: null,
       parentPath: null,

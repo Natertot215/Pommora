@@ -37,6 +37,7 @@ import {
   type TreeEntity,
   updateNodeInTree,
 } from '@shared/treePatch'
+import { CONTEXTS_DIRNAME, NEXUS_DIR } from '@shared/nexusPaths'
 
 export type WatchEventName = 'add' | 'change' | 'unlink' | 'addDir' | 'unlinkDir'
 
@@ -119,11 +120,11 @@ export function classifyEvent(
   const dirRel = parentOf(rel)
   if (tree.unreadable?.some((u) => u.path === rel || u.path === dirRel))
     return { kind: 'full-refresh' }
-  if (segs[0] === '.nexus') {
-    if (rel === `.nexus/${NEXUS_CONFIG_FILES.settings}`) return { kind: 'settings-leaf' }
-    if (rel === `.nexus/${NEXUS_CONFIG_FILES.homepage}`) return { kind: 'homepage-leaf' }
+  if (segs[0] === NEXUS_DIR) {
+    if (rel === `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.settings}`) return { kind: 'settings-leaf' }
+    if (rel === `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.homepage}`) return { kind: 'homepage-leaf' }
     if (
-      segs[1] === 'contexts' &&
+      segs[1] === CONTEXTS_DIRNAME &&
       segs.length === 5 &&
       name === SPACE_SIDECAR &&
       (ev.event === 'add' || ev.event === 'change') &&
@@ -173,7 +174,7 @@ export function touchesCorpus(root: string, events: WatchEvent[], excluded: stri
     const rel = toPosixRel(root, ev.absPath)
     if (rel === null) return true
     const segs = rel.split('/')
-    if (segs[0] === '.nexus' || isExcluded(segs)) return false
+    if (segs[0] === NEXUS_DIR || isExcluded(segs)) return false
     return ev.event === 'addDir' || ev.event === 'unlinkDir' || isMarkdownFile(rel)
   })
 }

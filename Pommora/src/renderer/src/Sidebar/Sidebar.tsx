@@ -14,6 +14,7 @@ import {
 } from '@renderer/Detail/Views/useGhostAnchor'
 import { Icon, type IconName, entityIcon } from '@renderer/design-system/symbols'
 import { cx } from '@renderer/design-system/cx'
+import { contextDirRel } from '@shared/nexusPaths'
 import { MenuItem, titleInput } from '@renderer/design-system/components/menu'
 import { Reveal } from '@renderer/design-system/components/Reveal'
 import { slideScrollBack } from '@renderer/design-system/components/OverflowScroll'
@@ -596,7 +597,7 @@ function SpaceRow({ node }: { node: SpaceNode }): React.JSX.Element {
 
 function ContextGroupDisclosure({ group }: { group: ContextGroup }): React.JSX.Element {
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
-  const path = `.nexus/contexts/${group.def.title}`
+  const path = contextDirRel(group.def.title)
   return (
     <Disclosure
       icon={entityIcon('context', group.def.icon, defaultIcons)}

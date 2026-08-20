@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from 'react'
 import { stack } from '../tokens/stack'
+import { moveItem } from '../moveItem'
 import { DEFAULT_FEEL, type Feel } from './feel'
 import { findScroller, startAutoScroll } from './autoscroll'
 import { announce, ensureInstructions, INSTRUCTIONS_ID } from './a11y'
@@ -485,10 +486,7 @@ function resolveBounds(kind: 'parent' | 'window' | undefined, rects: Box[]): Box
 }
 
 export function reflow(rects: Box[], overIndex: number, activeIdx: number, index: number): Box {
-  const a = rects.slice()
-  const [moved] = a.splice(overIndex, 1)
-  a.splice(activeIdx, 0, moved)
-  return a[index] ?? rects[index]
+  return moveItem(rects, overIndex, activeIdx)[index] ?? rects[index]
 }
 
 export function useZoneItem(id: string): DragItem {

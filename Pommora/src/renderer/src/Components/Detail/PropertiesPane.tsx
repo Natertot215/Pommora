@@ -3,6 +3,7 @@ import { Icon, type IconName } from '@renderer/design-system/symbols'
 import { useSession } from '../../store'
 import {
   DEFAULT_LINK_DISPLAY,
+  hasSelectOptions,
   isReservedPropertyId,
   type LinkConfig,
   type NumberConfig,
@@ -424,7 +425,7 @@ export function PropertiesPane({
           onCommit={(next) => void rename(def.id, next)}
         />
         <MenuSeparator flush />
-        {def.type === 'select' || def.type === 'multi_select' ? (
+        {hasSelectOptions(def.type) ? (
           <OptionEditor
             type={def.type}
             options={def.select_options ?? []}
