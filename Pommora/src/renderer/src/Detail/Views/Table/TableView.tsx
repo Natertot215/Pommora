@@ -922,7 +922,9 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     e.stopPropagation()
     // Captured before the await — the synthetic event is recycled by the time the menu resolves, so
     // the rename popover can't read `e.currentTarget` then (it anchors the TextPicker off this cell).
-    const cellEl = e.currentTarget as HTMLElement
+    // Resolved through the cell so a grip-borne open anchors off the cell rather than the grip.
+    const el = e.currentTarget as HTMLElement
+    const cellEl = el.closest<HTMLElement>('.data-cell') ?? el
     const filled = !isBlankValue(resolveFieldValue(row, col.id, schema))
     const dt = declaredType(col.id, schema)
     const barCapable = numberBarCapable(col.id, dt)
@@ -940,7 +942,9 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     const action = await holdGhost(() => window.nexus.cellMenu(ctx))
     if (!action) return
     if (runPageSendAction(action, row.path)) return
-    if (action === 'title:newtab')
+    if (action === 'title:preview')
+      useSession.getState().openPreview({ id: row.id, path: row.path })
+    else if (action === 'title:newtab')
       void useSession
         .getState()
         .select({ kind: 'page', id: row.id, path: row.path }, { newTab: true })
@@ -1033,11 +1037,9 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   }, [colDrag, columns])
   // ONE stable handler identity for every row — calls read the freshest closures through the ref,
   // so memoized rows never re-render for handler churn (and never call a stale state writer).
-  const cellApiRef = useRef({ openCellMenu, onCellClick, cellEditor, removeCellValue })
-  cellApiRef.current = { openCellMenu, onCellClick, cellEditor, removeCellValue }
-  // The grip menu rides its own ref: it's defined below with the creation handlers, after the
-  // writers it routes to.
-  const gripMenuRef = useRef<(row: ViewRow, e: React.MouseEvent) => Promise<void>>(null)
+  const titleCol = columns.find((c) => c.kind === 'title')
+  const cellApiRef = useRef({ openCellMenu, onCellClick, cellEditor, removeCellValue, titleCol })
+  cellApiRef.current = { openCellMenu, onCellClick, cellEditor, removeCellValue, titleCol }
   // The hover ghost row rides the shared mechanism. Hooks live here, above the loading/empty
   // returns; a cell editor suppresses the ghost, re-read at the dwell's fire time.
   const editingRef = useRef(editing)
@@ -1059,7 +1061,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   }, [strandedEditId])
   // In-view creation opens the title cell as an ordinary uncommitted rename whose field is
   // empty — the table's naming surface is its own cell editor.
-  const titleColId = columns.find((c) => c.kind === 'title')?.id
+  const titleColId = titleCol?.id
   const openCreateRename = (created: { id: string }): void => {
     if (titleColId)
       setEditing({ rowId: created.id, colId: titleColId, mode: 'editor', fromCreate: true })
@@ -1100,7 +1102,11 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       click: (row, col, e) => cellApiRef.current.onCellClick(row, col, e),
       overlay: (row, col) => cellApiRef.current.cellEditor(row, col),
       remove: (row, col, next) => cellApiRef.current.removeCellValue(row, col, next),
-      grip: (row, e) => void gripMenuRef.current?.(row, e),
+      // The grip pops the title cell's own menu — one menu for the row, wherever it's asked for.
+      grip: (row, e) => {
+        const col = cellApiRef.current.titleCol
+        if (col) void cellApiRef.current.openCellMenu(row, col, e)
+      },
       // Identity-stable straight off the hook — no ref detour needed.
       hover: (row, entering) => ghostApi.onHover(row.id, entering),
     }),
@@ -1391,38 +1397,6 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     persistViewOrder(orderIds)
   }
 
-  // The grip's right-click menu — page meta plus the New Page pair, on the block grips'
-  // right-click-vs-drag interaction model.
-  const openRowGripMenu = async (row: ViewRow, e: React.MouseEvent): Promise<void> => {
-    e.preventDefault()
-    e.stopPropagation()
-    const cellEl = (e.currentTarget as HTMLElement).closest<HTMLElement>('.data-cell')
-    const { tabs, pinned, tree } = useSession.getState()
-    const action = await holdGhost(() =>
-      window.nexus.rowGripMenu({
-        alreadyOpen: isOpenInTabs(tabs, pinned, { kind: 'page', id: row.id, path: row.path }),
-        ...pageMoveContext(tree, row.path),
-      }),
-    )
-    if (!action) return
-    if (runPageSendAction(action, row.path)) return
-    if (action === 'title:preview')
-      useSession.getState().openPreview({ id: row.id, path: row.path })
-    else if (action === 'title:newtab')
-      void useSession
-        .getState()
-        .select({ kind: 'page', id: row.id, path: row.path }, { newTab: true })
-    else if (action === 'title:rename') {
-      if (titleColId) setEditing({ rowId: row.id, colId: titleColId, mode: 'editor' })
-    } else if (action === 'title:icon') {
-      iconCellRef.current = cellEl
-      setIconTarget({ path: row.path, icon: typeof row.icon === 'string' ? row.icon : undefined })
-      setIconPickerOpen(true)
-    } else if (action === 'title:newabove') void newPageAdjacent(row, 'above')
-    else if (action === 'title:newbelow') void newPageAdjacent(row, 'below')
-    else if (action === 'title:delete') void mutate({ op: 'delete', path: row.path, kind: 'page' })
-  }
-  gripMenuRef.current = openRowGripMenu
   // The hover ghost row — pure chrome on the shared mechanism (useGhostAnchor): pixels only, no
   // page until the click, which runs the same immediate-create act as New Page Below. Dismissal
   // exits on the same Reveal collapse the entrance rode — `closing` holds the row mounted through

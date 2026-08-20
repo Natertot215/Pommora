@@ -196,8 +196,6 @@ const api = {
   columnMenu: ask('column-menu'),
   // A table cell's right-click menu (title meta / per-type Style / Edit).
   cellMenu: ask('cell-menu'),
-  // A table row grip's right-click menu (page meta + New Page Above/Below).
-  rowGripMenu: ask('row-grip-menu'),
   writeClipboard: ask('clipboard:write'),
   readClipboard: ask('clipboard:read'),
   revealPath: ask('path:reveal'),

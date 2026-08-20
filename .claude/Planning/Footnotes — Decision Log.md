@@ -1,12 +1,14 @@
 ## Footnotes — Decision Log
 
 ### Frame
+
 - **Purpose:** Bring GFM reference footnotes to MarkdownPM — `[^1]` markers in the body, `[^1]: text` citations gathered in a hidden-by-default section at the document's end — canonical GFM on disk, everything drawn being presentation.
 - **Core Value:** A page can carry footnotes that read as clean numbered markers in the body, stay portable GFM outside Pommora, and never corrupt the document through any gesture.
 - **Success Criteria:** Creating, reading, clicking, editing, and deleting footnotes all work through the paths this log settles; an unmatched marker or a mid-doc citation degrades to literal text exactly as specified; the disk stays plain GFM throughout.
 - **Vocabulary:** Each `[^label]: text` entry is a **Citation** — the term all docs, code identifiers, and UI labels use. **"Definition" is reserved** for a future feature that may exist independently of Footnotes; it never names a footnote construct. GFM's own node name (`footnoteDefinition`) appears only when citing the parser.
 
 ### Sources
+
 - [[MarkdownPM]] — the editor's architecture: behavior layer over CM6, disk == doc string, display-only UI state in `nexus.db`, dynamic-syntax reveal rules, typing transforms, the native context menu with Insert/Paste As.
 - [[Editor-Internals]] — hard invariants: per-doc-version derivations, fragment parses, atomic-transaction transforms, widget height answering, one-owner claim sets.
 - [[ConnectionsPM]] — the inline-link precedent: click routing, right-click menus per construct, autocomplete; footnote markers borrow interaction shapes from here.
@@ -36,6 +38,7 @@
 ### Decisions
 
 #### A — The Model
+
 - **A-1:** [confirmed] GFM reference footnotes only: `[^label]` markers in the body, `[^label]: text` citations. No inline `^[text]` syntax anywhere. Disk is plain GFM.
 - **A-1b:** [confirmed] Vocabulary: `label` is the text between `[^` and `]` — the footnote's on-disk identity key. Gestures mint numeric labels and keep them canonical; hand-typed or outside-authored labels are read as-is **when GFM parses them as labels** — a bracketed run with a space (`[^my note]`) is a CommonMark link definition, not a footnote, and never enters this feature (verified against the installed parser). Inside Pommora the label is invisible plumbing: never displayed (display is always positional), never editable in-page, meaningful only as the case-folded key pairing marker ↔ citation.
 - **A-2:** [confirmed] The footnote section is the trailing run of citations reaching the document's end (the boundary defined once, in A-5). Citation syntax anywhere else is literally plain text — not parsed. Accepted divergence from GitHub, which honors mid-doc citations (→ A-6).
@@ -47,6 +50,7 @@
 - **A-7:** [confirmed] **Label-binding.** A marker resolves iff a citation carries its case-folded label — GFM/GitHub/Obsidian-identical, verified against the installed parser. Labels are invisible plumbing: display is always positional, gestures keep labels canonical and the section sorted, and Pommora offers no in-page label editing, so nothing drifts inside Pommora. An outside edit that mismatches a label orphans that one footnote (marker goes literal), never the rest. Settled by the shared-citation round; order-binding rejected for its silent global misbinding under outside edits.
 
 #### B — Markers
+
 - **B-1:** [confirmed] A marker renders as its **positional number** (first-use order, GitHub/Google Docs style), accent at tint-primary, permanently opaque — no live-syntax reveal at any caret position; atomic and caret-proof, backspace removes it whole.
 - **B-2:** [confirmed] Click jumps to the citation — except the click-through case, defined once in B-6.
 - **B-3:** [confirmed] Marker right-click: **Edit** (jump caret into the citation), **Copy**, and **Delete**. Deleting a marker (backspace or menu) also deletes its citation when it was the last reference — one transaction, one undo, cascade scope per B-11.
@@ -60,6 +64,7 @@
 - **B-11:** [confirmed] **Cascades are range-keyed, not gesture-keyed:** a cascade fires only when the deleted range is exactly the construct — exactly the marker (atomic backspace or menu Delete) cascades its last-reference citation; exactly whole citation line(s) (select→delete, backspace at start, menu Delete) cascades their markers. Any wider sweep — mixed body-and-section, marker plus surrounding prose — deletes only the swept text, no cascade.
 
 #### C — The Section
+
 - **C-1:** [confirmed] Hidden by default (Default Visibility's factory default — F-4); the body shows numbered markers only. Open, the section wears the shared heading seam as its divider, and the divider itself is clickable to fold — no chevron on it.
 - **C-2:** [confirmed] **Show and Hide both live on the Subfield** as one control — **the Subfield footnotes toggle**, the name every entry uses — placed like the bar's hover-revealed collapse chevron — hover-revealed the same way, and always shown when the page is scrolled fully to the bottom. (Supersedes the earlier in-flow-at-doc-end placement.)
 - **C-3:** [confirmed] **Visibility is a default plus an override:** the nexus-wide default comes from the **Default Visibility** setting (Pages & Editor ▸ Footnotes); the per-page per-machine override is an explicit true/false in `nexus.db`, absent meaning follow-the-default. **The divider click and the Subfield toggle write that same override** — one state, two controls, never two writers. [assumed] A toggle landing on the value the current default already gives **clears the row** instead of writing it (the no-empties discipline), so a page returns to following the default and a nexus-wide default change isn't permanently pinned away by old toggles. Creation's auto-disclose (F-2) is transient view state and persists nothing; on the next open the page follows override/default again.
@@ -67,7 +72,7 @@
 - **C-4:** [confirmed] Citation text renders at label-secondary, 0.75em (the editor is em-scaled — the type ramp is not consumed). Connections and markdown links render normally inside citations.
 - **C-5:** [confirmed] Multi-line citations per GFM; Enter does not auto-continue one — text typed on the next line lazily continues the same citation, identically in Pommora and GFM (→ A-5).
 - **C-6:** [confirmed] When no footnotes exist, no control appears anywhere — nothing at the doc end, nothing on the Subfield. The toggle appears whenever at least one citation line exists, resolved or orphaned — a resolved pair always includes its citation, and unmatched markers alone are prose (→ A-3) with no section to show. A citations-only or orphan-only page therefore keeps its way in rather than presenting as a blank file.
-- **C-7:** [confirmed] **Citation lines render as listed items:** the `[^n]:` prefix draws as a number glyph in the list-marker manner — caret-proof, so the resolved order can't be hand-disrupted inside Pommora. Select→delete of a citation deletes the citation **and every** body marker sharing its label — the inverse of the body-side cascade, one transaction, one undo, cascade scope per B-11.
+- **C-7:** [confirmed] **Citation lines are ordered-list items wearing `[^n]:` as their source syntax** — the editor's existing numbered-list rendering draws them, so the glyph, the styling, the hanging indent and the marker's caret-proof delete-the-glyph-deletes-the-syntax behavior are the list's, not a parallel implementation. Only the source shape differs (`[^n]:` rather than `n.`) and the drawn number is positional rather than the source's. Select→delete of a citation deletes the citation **and every** body marker sharing its label — the inverse of the body-side cascade, one transaction, one undo, cascade scope per B-11.
 - **C-8:** [confirmed] Gesture renumbering also reorders the section's citation lines to match positional order.
 - **C-9:** [confirmed] Backspace at a citation's content start removes the whole footnote — citation and body marker(s) — content or not; one transaction, one undo.
 - **C-10:** [confirmed] Citation right-click: **Copy** and **Delete**.
@@ -75,25 +80,30 @@
 - **C-12:** [confirmed] **The section is inert to grip-drag both ways:** citations carry no grip, and a body block cannot drop into the section. The inertness is acceptable only because gestures own the ordering — every order-changing event (creation, deletion, and kin) re-normalizes the section properly (→ C-8, E-2/E-3); drag has no job left to do.
 
 #### D — Creating
+
 - **D-1:** [confirmed] Every creation path writes the complete marker + citation pair in one undoable transaction; whether it also auto-discloses the section and seats the caret in the citation follows the Jump To Citation On Creation toggle (F-2).
 - **D-2:** [confirmed] **Insert ▸ Footnote** (context-menu Insert submenu) — the pair written at the caret's footnote position; caret seating per F-2.
 - **D-3:** [confirmed] **Paste As ▸ Footnote** — pasted content becomes the citation, normalized into one valid citation: blank lines collapsed, following lines indented as continuations (a raw multi-paragraph paste would otherwise split the section). Internal targets offer Footnote · Connection · Markdown Link.
 - **D-4:** [confirmed] Typing `[^1]` by hand auto-seeds its empty citation (a typing transform) **and runs the same normalization as any creation gesture** (→ E-3); typing a label that matches an existing citation adopts it instead. The seed fires only on a shape GFM parses as a label, respects the `\[^1]` escape (verified — the escape suppresses the reference at the parser too), and the whole creation reverts on one ⌘Z. Empty citations are valid.
 
 #### E — Numbering
+
 - **E-1:** [confirmed] Display is always positional (first-use order).
 - **E-2:** [confirmed] Footnote **gestures** renumber the numeric disk labels and reorder the section to match position — inserts and deletes "re-run and normalize the order"; inserts mint the next `[^n]` by auto-ordering. **Non-creating hand edits never trigger rewrites.** Pommora offers no in-page way to edit a marker's label — markers are created through gestures and stay atomic.
 - **E-2b:** [confirmed] **Numeric labels are gesture-owned; word labels are user-owned; both hold a position.** A word label like `[^note]` is never rewritten but counts in the position arithmetic — body `[^1] [^note] [^3]` is canonical, the insert after `[^note]` minting `[^3]` because the word occupies slot 2. The section sorts and displays purely positionally (its glyphs read 1, 2, 3 over whatever labels sit beneath), so a numeric disk label always equals its display number — except where an orphan squats on a number, which minting skips (→ G-1), and between a hand-typed numeric label and the next gesture that normalizes it (disk `1,2,5` displaying `1,2,3` until then).
 - **E-3:** [confirmed] The renumbering gesture set: Insert ▸ Footnote, Paste As ▸ Footnote, **the typed auto-seed** (typing a fresh label is a creation gesture and normalizes like any other), marker-menu Delete, atomic marker backspace, and section-side citation deletion. Typing a label that matches an existing citation is adoption/sharing (→ G-1) and rewrites nothing. Non-creating hand edits — prose, selection sweeps, citation text — never rewrite.
 
 #### F — Stats & Settings
+
 - **F-1:** [confirmed] One Pages & Editor toggle: **Include Footnotes In Page Statistics**, default Off — **resolved markers and the section's lines** excluded from lines/words/chars; literal footnote syntax (unmatched markers, mid-doc citations) is prose and always counts. No metadata toggle; frontmatter is already excluded.
+- **F-1b:** [confirmed] **The exclusion is additive to the existing counters and changes nothing else about them.** Both pipelines get the same footnote-excluded base so the three numbers stay mutually consistent, footnote syntax inside a code fence counts as the prose it already is, and every count with the toggle On reads exactly as it reads today. A change that alters any non-footnote count is the failure condition, not a rounding difference.
 - **F-2:** [confirmed] A second toggle, **Jump To Citation On Creation**, default On: creation auto-discloses the section and seats/scrolls the caret into the new citation; Off writes the pair silently and leaves the caret at the marker. The disclosure is transient (→ C-3).
 - **F-3:** [confirmed] The Page Preview's scoped Subfield carries the Subfield footnotes toggle along.
 - **F-4:** [confirmed] **Default Visibility** lives under Pages & Editor ▸ **Footnotes** — the nexus-wide default the per-page override falls back to; its factory default is Hidden.
 - **F-5:** [confirmed] All three footnote settings (Default Visibility, Jump To Citation On Creation, Include Footnotes In Page Statistics) group under that Footnotes heading in the Pages & Editor leaf.
 
 #### G — Edge Behavior (from the don't-forget sweep)
+
 - **G-1:** [confirmed] **Orphaned citations render dimmed** — a citation no body marker references keeps its listed seat, numberless and dimmed, editable and deletable, never auto-removed. It un-dims and takes its positional number live the moment a marker **binds to it** (a pasted reference, or a hand-typed one — the auto-seed adopts an existing citation rather than seeding a duplicate), the same live re-resolution phantom connections get. The dim predicate is binding, not label-presence — a duplicate-loser (→ G-5) stays dimmed though markers carry its label. Gestures never resolve or remove orphans; renumbering routes around their labels.
 - **G-1b:** [confirmed] An orphan always draws a **visible** seat — a dimmed glyph even when its text is empty, so there is always something to click and right-click Delete — and stays fully editable while dimmed; the dim lifts when a marker binds to it (→ G-1). On gesture reorders orphans collect below the resolved citations at the section's end.
 - **G-2:** [confirmed] With the Subfield app-collapsed, the footnotes toggle is reachable only through the bar's own hover reveal — acceptable; no second affordance.
@@ -102,24 +112,28 @@
 - **G-5:** [confirmed] **Duplicate citations: first wins** (the parser's and GitHub's behavior — every marker binds to the first line carrying the label); a later same-label citation line renders dimmed and numberless like an orphan (nothing binds to it — the G-1 predicate), never auto-removed. Distinct from A-4's duplicate markers, which are the sharing feature.
 
 ### Core (must-have)
+
 - The section model: the parser-defined trailing-run boundary, label-binding with case-folding, unmatched markers literal (GitHub-identical), mid-doc citation syntax staying live prose.
 - Atomic, never-revealing positional markers: click-jump (link/connection click-through), the Edit · Copy · Delete menu, range-keyed cascades, rendering in table cells.
-- The section: listed-glyph citations (caret-proof prefixes), Copy · Delete menu, range-keyed citation deletion cascading to all referencing markers, heading-fold disclosure animation, the clickable seam divider, heading folds ending at its start, grip-drag inertness, label-secondary 0.75em text with live connections/links.
+- The section: citations drawn by the existing numbered-list renderer (caret-proof prefixes, positional glyphs), Copy · Delete menu, range-keyed citation deletion cascading to all referencing markers, heading-fold disclosure animation, the clickable seam divider, heading folds ending at its start, grip-drag inertness, label-secondary 0.75em text with live connections/links.
 - Visibility: the Subfield Show/Hide toggle (hover-revealed, persistent at full scroll, carried into Page Preview), Default Visibility setting + per-page `nexus.db` override as the single written state.
 - Creation: Insert ▸ Footnote, normalized Paste As ▸ Footnote, hand-typed auto-seed — complete pairs, one undo; gesture renumbering + section reordering; copy-paste sharing.
-- Settings: the Pages & Editor ▸ Footnotes trio; stats exclusion honoring both counting pipelines.
+- Settings: the Pages & Editor ▸ Footnotes trio; stats exclusion honoring both counting pipelines with no change to any non-footnote count.
 - Adopted source actions: the visibility-override scope joins `COPY_SCOPES`; feature tokens/classes avoid the bare `footnote` type-scale name and never use `definition`; the stale `.nexus/` persistence comment in `Tables/widget.tsx` is corrected in passing.
 
 #### Prospects (allowed later, not now)
+
 - Hover preview of a citation on its marker — spec-deferred.
 - Drag-to-reposition markers — spec-deferred.
 - Footnote creation from inside table cells — spec-deferred; markers still render and work in cells now.
 
 #### Out of Scope (won't do)
+
 - Inline `^[text]` footnote syntax — the pair syntax is the model.
 - Honoring mid-doc citations — accepted divergence from GitHub.
 
 #### Considered & Rejected
+
 - **Order-binding** (body's Nth distinct marker ↔ section's Nth citation, label text ignored) — one outside insertion or reorder in the section silently shifts every downstream binding; label-binding degrades per-footnote instead of globally.
 - **Merge-drag of citations** (drag citation A onto B to consolidate) — heaviest option for the rarest need, destructive of A's text, and has no inverse; no editor in this space built one either.
 - **Gesture-minted stable non-numeric labels** (never rewrite disk) — the raw file reads worse, cutting against Reasonable Legibility; gesture renumbering keeps canonical `1..N` labels instead.
@@ -128,5 +142,6 @@
 - **Clipboard provenance with foreign-paste escaping** (barring cross-page marker pastes) — weighed and reversed: doc-scoped binding is what the same bytes mean in that document, matches GitHub/Obsidian exactly, and the escaping machinery mutated legitimate imports to prevent a rare, visible-on-inspection case.
 
 #### Lessons
+
 - A region boundary described twice in prose will diverge — define membership once, by the parser's own spans, and let every consumer read that one derivation.
 - GFM citation continuation is lazier than its documentation reads: an unindented next line joins the citation above. Any footnote-adjacent scan that ignores lazy continuation contradicts the parser it fronts.
