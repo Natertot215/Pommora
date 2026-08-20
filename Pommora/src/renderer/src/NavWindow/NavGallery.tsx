@@ -11,8 +11,8 @@ import { EntityGlyph } from '../Navigation/EntityGlyph'
 import { NavCrumbs, NavPinButton, NavRowMenu } from '../Navigation/NavList'
 import './navGallery.css'
 import { onActivateKey } from '@renderer/design-system/interactions/activate'
-
-const thumbFile = (key: string): string => key.replace(':', '-')
+import { thumbKey, thumbRel } from '@shared/nexusPaths'
+import { assetUrl } from '../assetUrl'
 
 export function NavGallery({
   pins,
@@ -103,7 +103,7 @@ function GalleryCard({
   const [failed, setFailed] = useState(false)
 
   const active = selection.kind !== 'none' && navKey(selection) === it.key
-  const src = `nexus-asset://nexus/.nexus/assets/${nexusId}/thumbnails/${thumbFile(it.key)}.jpg?v=${version}`
+  const src = `${assetUrl(thumbRel(nexusId, thumbKey(it.key)))}?v=${version}`
   // The drag engine fires a synthesized click after a pointer drag — don't treat a reorder-drop as a
   // navigation (mirrors TableView's `!isDragging` guard).
   const open = (): void => {

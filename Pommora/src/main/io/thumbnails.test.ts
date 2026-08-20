@@ -3,7 +3,8 @@ import { mkdtemp, mkdir, writeFile, readdir, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { ensureIdentity } from '../identity'
-import { thumbKey, thumbRel, evictThumbnails } from './thumbnails'
+import { thumbKey, thumbRel } from '@shared/nexusPaths'
+import { evictThumbnails } from './thumbnails'
 
 describe('thumbnail keys + rel', () => {
   it('sanitizes the navKey colon for the filename', () => {

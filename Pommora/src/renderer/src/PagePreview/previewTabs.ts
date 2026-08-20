@@ -1,4 +1,5 @@
 import type { PreviewTabTarget } from '@shared/types'
+import { moveItem } from '@renderer/design-system/moveItem'
 
 // Bespoke close/spawn (NOT tabsModel's) — the last tab closing kills the window, and there are no pins.
 
@@ -37,10 +38,7 @@ export function reorderTabIn(p: PreviewState, activeId: string, overId: string):
   const to = p.tabs.findIndex((t) => t.id === overId)
   if (from === -1 || to === -1 || from === to) return p
   if (p.tabs[from].target.kind === 'navwindow' || p.tabs[to].target.kind === 'navwindow') return p
-  const tabs = p.tabs.slice()
-  const [moved] = tabs.splice(from, 1)
-  tabs.splice(to, 0, moved)
-  return { ...p, tabs }
+  return { ...p, tabs: moveItem(p.tabs, from, to) }
 }
 
 export function closeTabIn(p: PreviewState, id: string): PreviewState | null {

@@ -27,6 +27,15 @@ export const CONTEXTS_DIR_REL = `${NEXUS_DIR}/${CONTEXTS_DIRNAME}`
 /** Attachment storage, keyed per asset below it. */
 export const ASSETS_DIR_REL = `${NEXUS_DIR}/assets`
 
+/** A nav key names a thumbnail's file, with its colon flipped to a dash — a colon is legal in a key
+ *  and hostile in a filename. Stated here because the writer and every reader must agree on it. */
+export const thumbKey = (navKey: string): string => navKey.replace(':', '-')
+
+/** A nexus's synced thumbnail folder, and one thumbnail inside it. Served to the renderer through
+ *  the `nexus-asset://` scheme, so the same string addresses the file and the request for it. */
+export const thumbsRel = (nexusId: string): string => `${ASSETS_DIR_REL}/${nexusId}/thumbnails`
+export const thumbRel = (nexusId: string, key: string): string => `${thumbsRel(nexusId)}/${key}.jpg`
+
 /** A Context's own folder — its title names it, which is why a retitle is a folder rename. */
 export const contextDirRel = (title: string): string => `${CONTEXTS_DIR_REL}/${title}`
 
