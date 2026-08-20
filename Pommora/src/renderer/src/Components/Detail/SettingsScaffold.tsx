@@ -10,6 +10,7 @@ import { useNexusIcon } from '../useNexusIcon'
 import { blockHostKey, type BlockHostRef } from '@shared/blocks'
 import { assetUrl } from '../../assetUrl'
 import * as s from './settingsPane.css'
+import { lockLabel } from '@shared/toggleLabels'
 
 const HOMEPAGE_HOST: BlockHostRef = { kind: 'homepage' }
 
@@ -44,12 +45,12 @@ export function SettingsScaffold(): React.JSX.Element | null {
             leading={
               <button
                 type="button"
-                aria-label={locked ? 'Unlock board' : 'Lock board'}
+                aria-label={lockLabel(locked, 'board')}
                 className={footerLockAction}
                 onClick={() => void setLocked(!locked)}
               >
                 <Icon name="lock" size="control" className={lockIcon} />
-                {locked ? 'Unlock' : 'Lock'}
+                {lockLabel(locked)}
               </button>
             }
           />

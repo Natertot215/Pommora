@@ -15,6 +15,7 @@ import { navKey } from './navRecents'
 import type { ResolvedNav } from './navResolve'
 import { EntityGlyph } from './EntityGlyph'
 import './navList.css'
+import { pinLabel } from '@shared/toggleLabels'
 
 /** Shared by the list rows and the gallery cards — differing only by wrapper class + glyph size.
  *  Null when at root. */
@@ -141,7 +142,7 @@ export function NavPinButton({
       className={cx(className, it.pinned && 'is-pinned')}
       onPointerDown={(e) => e.stopPropagation()}
       onClick={toggle}
-      aria-label={it.pinned ? 'Unpin' : 'Pin'}
+      aria-label={pinLabel(it.pinned)}
     >
       <Icon name="pin" size="body" />
     </button>

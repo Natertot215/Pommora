@@ -4,6 +4,7 @@
 
 import type { ActionItem } from './menuModel'
 import type { ViewButton, ViewStyle } from './types'
+import { iconLabel } from './toggleLabels'
 
 /** Which surface a container's views are picked from — offered by both menus that can set it. */
 export type ViewStyleAction = 'style-dropdown' | 'style-toolbar'
@@ -48,7 +49,7 @@ export function embedTitleMenuItems(
   level: number,
 ): ActionItem<EmbedTitleMenuAction>[] {
   return [
-    { label: iconShown ? 'Hide Icon' : 'Show Icon', action: 'toggle-icon' },
+    { label: iconLabel(iconShown), action: 'toggle-icon' },
     ...(iconShown ? [{ label: 'Change Icon', action: 'change-icon' as const }] : []),
     {
       label: 'Title Size',

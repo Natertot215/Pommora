@@ -138,6 +138,7 @@ import { popPropertyMenu } from './propertyMenu'
 import { popOptionMenu } from './optionMenu'
 import { popRowMenu } from './rowMenu'
 import { popIconFavoriteMenu } from './iconFavoriteMenu'
+import { iconLabel } from '@shared/toggleLabels'
 import { popViewButtonMenu } from './viewButtonMenu'
 import { popReturningMenu } from './returningMenu'
 import { popViewRowMenu } from './viewRowMenu'
@@ -1607,7 +1608,7 @@ serveBridge(
           { label: 'Rename', click: pick('rename') },
           ...(opts.noEditIcon ? [] : [{ label: 'Change Icon', click: pick('editIcon') }]),
           ...(opts.toggleIcon
-            ? [{ label: opts.iconHidden ? 'Show Icon' : 'Hide Icon', click: pick('toggleIcon') }]
+            ? [{ label: iconLabel(!opts.iconHidden), click: pick('toggleIcon') }]
             : []),
         ])
       },
