@@ -4,7 +4,7 @@ import { aliasSpanAt, emptyAliasPipeAt, linkAt, type ConnEditAction } from '@sha
 import { useSession } from '../../store'
 import type { ConnectionsApi } from '../connections'
 import { tokenize, type Token } from '../tokens'
-import { focusRange } from './input'
+import { focusRange } from './caretSeat'
 import { restedOnLink } from './linkGestures'
 
 /** Where a wikilink's authoring gesture lands in the text holding it: the pipe it may have to write

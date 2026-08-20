@@ -5,7 +5,7 @@ import { linkPaste } from '@shared/PasteLink'
 import type { LinkDisplay } from '@shared/properties'
 import { useSession } from '../../store'
 import { linkTarget, tokenize, type Token } from '../tokens'
-import { focusRange } from './input'
+import { focusRange } from './caretSeat'
 import { awaitTitle } from './PendingTitle'
 
 /** What a link's whole span becomes, and whether the label written is only standing in until a

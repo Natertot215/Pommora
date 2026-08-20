@@ -1,4 +1,4 @@
-import type { WarmSeam } from '@renderer/MarkdownPM'
+import type { WarmSeam } from '@renderer/MarkdownPM/warmSeam'
 import { readPageDetail } from '../Tabs/warmCache'
 
 // The tile counterpart of the tab and preview warm caches: the outer editor tears a tile's DOM

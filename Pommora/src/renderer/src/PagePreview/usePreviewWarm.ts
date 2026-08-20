@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, type RefObject } from 'react'
-import type { WarmSeam } from '@renderer/MarkdownPM'
+import type { WarmSeam } from '@renderer/MarkdownPM/warmSeam'
 import { useSession } from '../store'
 import { capturePreviewWarm, readPreviewWarm, type PreviewWarmEntry } from './previewWarm'
 

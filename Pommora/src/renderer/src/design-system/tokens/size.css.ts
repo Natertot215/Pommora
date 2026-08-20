@@ -96,6 +96,11 @@ export const DROP_LINE_INSET = 2
  *  it can be grabbed. */
 export const TILE_MIN_PX = 64
 
+/** KNOB — the height a resizable tile reports and occupies before a persisted one exists. Read by
+ *  the widget that answers CM6's height question and by the CSS that paints the box, so the two
+ *  cannot disagree about how tall an unsized tile is. */
+export const TILE_DEFAULT_PX = 320
+
 /** One token object: `size.icon.control`, `size.control['button-large'].height`, … */
 export const size = {
   icon: iconScale.icon,
