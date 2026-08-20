@@ -32,6 +32,10 @@ plausible from the outside. Reopen any of them with a reason, not with a fresh r
 - No shared tested function computes a Pin/Unpin label — `shared/navRowMenu.ts` is types only. The
   toggle wording that *did* have a shared home and a hand-rolled twin was Open / Open New Tab, and
   the icon toggle's two spellings ran over opposite predicates.
+- `SavedView`'s interface and its zod codec are not an unguarded duplication, and a field on one
+  and not the other is **not** dropped on read — `z.looseObject` passes undeclared keys straight
+  through, which is what makes foreign keys survive a rewrite. The narrow real exposure is that an
+  interface field the codec never declares reads back unvalidated and without its `catch` default.
 - `parentOf` has one definition and had five callers written by hand; the bare
   `slice(0, lastIndexOf('/'))` those used eats a root-level name's last character, which no live
   path reaches only because pages always sit inside a Collection.
@@ -64,6 +68,15 @@ plausible from the outside. Reopen any of them with a reason, not with a fresh r
   indices, which is why that one earned a definition.
 - `Tables/operations.ts`'s `splice` helper is not `moveItem`. It is a mutable insert-and-delete over
   a table's cells, arity included; the shared one lifts a single item immutably.
+- `SavedView` keeps its hand-written interface, and `shared/views.ts` keeps the header rule that
+  contradicts `properties.ts` and `schemas.ts`. Those three files genuinely want different things:
+  a loose codec's inferred type carries an index signature, so deriving `SavedView` from
+  `savedView` would cost excess-property checking on a thirty-two-field object the whole renderer
+  writes — proven by a probe where the interface rejected a stray key and the inferred type
+  accepted it. The other files' shapes are small or internal enough not to pay that.
+- Table's row-selection tint is an editing mechanism — it marks the row you are inside — and does
+  not carry over to Cards (Nathan's call, 08-20). Cards wanting a came-from marker is a separate
+  question nobody has asked for.
 - `embedWidget.tsx` is not split. The split is a move rather than a reduction, and the construct that
   would have reused its generic half — a document's footnotes section — is a fold region rather than
   a block widget.

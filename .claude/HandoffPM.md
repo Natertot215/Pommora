@@ -23,7 +23,7 @@
 - [x] **The MarkdownPM cohesion leg is finished with nothing left behind** — all eight phases landed, phase 7's fold widening included, gates green, docs reconciled.
 - [x] **The MarkdownPM cleanup arc closes** — the four deferred items settled: one list vocabulary, `embedWidget.tsx` cleaned rather than split, three of four import cycles broken, `PageHeader` on one `page` object.
 - [x] **The MarkdownPM cleanup bullet is eliminated from ContextPM** — the Footnotes greenlight.
-- [x] **The design-splits are parked, not built** — recorded in full under ContextPM §The Remaining Cohesion Efforts, nothing half-started.
+- [x] **The design-splits are parked, not built** — since re-audited against the code and routed: what survived to [[Cohesive-Cleanup]], what had already closed retired there, nothing half-started.
 - [x] **The cohesion arc's transient records are drained and retired** — rulings to [[Cohesion-Rulings]], open decisions to ContextPM §Open Calls, live defects to §Known Issues, arcs to §Pending Focuses.
 - [x] **The cohesion arc's easy wins fold** — the helper deduplication and the main-side menus' label logic, both gone from ContextPM, with the `.MD` sidebar defect closed as part of it.
 - [x] **The whole range passes `/closeout` clean** — simplified, gates green, purged of the four things that outlived their use, and the two sites the sweep missed folded rather than left standing.
@@ -56,7 +56,7 @@ Read these five seams before planning the marker or the section — each was bui
 #### Session Pointers
 
 - `.claude/Planning/Footnotes — Decision Log.md` — the planner's contract, and the only live plan left. One `[assumed]`: C-3's clear-on-default.
-- `.claude/ContextPM.md` — the durable backlog. §Immediate Work, §The Remaining Cohesion Efforts, §Open Calls (ten needing you), §Known Issues, §Debt & Ride-Alongs.
+- `.claude/ContextPM.md` — the durable backlog. §Immediate Work, §Open Calls, §The Boring Work, §Known Issues, §Debt & Ride-Alongs. The session-sized cohesion queue is `.claude/Planning/Cohesive-Cleanup.md`.
 - `.claude/Guidelines/Cohesion-Rulings.md` — what a sweep re-derives wrongly and must stop re-proposing. Read before opening any cohesion finding.
 - `.claude/Guidelines/Editor-Internals.md` — the editor's hard invariants, including the box line's spent pseudo-elements and the `:is()` weight rule.
 - `.claude/HistoryPM.md` PM-110 — what the whole cohesion arc shipped, commits included. It covers the easy wins too and wants no second entry.
