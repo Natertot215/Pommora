@@ -23,39 +23,12 @@
 
 #### II. What Comes Off The Cohesion Pass
 
-The cohesion pass's dusting and its main-process costs are closed (→ PM-110); the catalog and
-where every finding stands are in [[Cohesion-Audit]]. Three scoped sessions come off it, in this
-order.
+The cohesion pass's dusting and its main-process costs are closed (→ PM-110); the catalog and where every finding stands are in [[Cohesion-Audit]]. Four scoped sessions come off it, in this order.
 
-- [ ] **MarkdownPM cleanup.** The remaining editor costs and divergences the first pass left alone
-      because they need the editor's full attention. The headline is the line-decoration rebuild,
-      which is not viewport-scoped — the largest cost left in the editor, and the one that touches
-      atomic ranges and caret motion, so pinned tests come before any change to it. With it:
-      unifying `connections.ts` and `links.ts` behind one parameterized factory taking a hit-tester,
-      since the first pass closed the three behaviors that had diverged but left the two
-      implementations standing and free to diverge again; the resize hit-strip token; the drop-line
-      DOM factory; and an internal pass over `Styles.css`, 1,084 lines the audit never opened.
-- [ ] **Table hoisting.** Eighteen modules outside `Detail/Views/Table/` import from it — the
-      navigation list uses the table's drag module — and `Table.css` loads globally from `main.tsx`,
-      so a table-scoped refactor reaches the nav gallery and the settings panes. A shared
-      `design-system/tables` is the wrong destination: the two table implementations share nothing,
-      correctly so, and what leaks out is a color token, a property-value renderer, property display
-      helpers, a checkbox glyph, and a drag module — four homes, not one. The first step is the
-      import cycle: `pickView` and `resolveContainerSchema` move out of `TableView` into
-      `Views/pipeline/`, which is zero behavior change and unblocks the rest. Splitting `Table.css`
-      needs screenshot verification of the nav gallery, both settings leaves, the preview inspector,
-      and the properties panes — a typecheck proves nothing there.
-- [ ] **The `main/index.ts` split.** Roughly a hundred and ten channel implementations share a file
-      with window creation, protocol registration, and application lifecycle, which makes it the one
-      file every parallel session collides on. The bridge seam itself is excellent and is not what
-      moves: `serveBridge` already takes a plain object, so the channels become per-domain partial
-      maps spread into one. The first step is carving out the context they all close over — the
-      shared refusals, the path resolvers, the confirm-and-push helpers, and the window reference
-      itself — since every domain map needs it and none of them can own it.
-- [ ] **§II's helper deduplication.** `parentOf`, `clamp`, `persistViewOrder`, and move-an-item-in-
-      an-array each exist in several spellings. Half of them live in `TableView.tsx` and
-      `CardsView.tsx`, so this lands immediately before the Table session rather than on its own —
-      otherwise those two files get opened twice.
+- [ ] **MarkdownPM cleanup.** Six live defects and the duplication they sit inside — four of them are symptoms of a rule written twice, so each collapse carries its own repair. The order, the estimates, and the statements that must stop being false are in [[MarkdownPM-Plan]]; the evidence behind them is in [[MarkdownPM-Scoping]]. Phase 7 is the fold model's key widening, which is what footnotes actually blocks on.
+- [ ] **Table hoisting.** Eighteen modules outside `Detail/Views/Table/` import from it — the navigation list uses the table's drag module — and `Table.css` loads globally from `main.tsx`, so a table-scoped refactor reaches the nav gallery and the settings panes. A shared `design-system/tables` is the wrong destination: the two table implementations share nothing, correctly so, and what leaks out is a color token, a property-value renderer, property display helpers, a checkbox glyph, and a drag module — four homes, not one. The first step is the import cycle: `pickView` and `resolveContainerSchema` move out of `TableView` into `Views/pipeline/`, which is zero behavior change and unblocks the rest. Splitting `Table.css` needs screenshot verification of the nav gallery, both settings leaves, the preview inspector, and the properties panes — a typecheck proves nothing there.
+- [ ] **The `main/index.ts` split.** Roughly a hundred and ten channel implementations share a file with window creation, protocol registration, and application lifecycle, which makes it the one file every parallel session collides on. The bridge seam itself is excellent and is not what moves: `serveBridge` already takes a plain object, so the channels become per-domain partial maps spread into one. The first step is carving out the context they all close over — the shared refusals, the path resolvers, the confirm-and-push helpers, and the window reference itself — since every domain map needs it and none of them can own it.
+- [ ] **§II's helper deduplication.** `parentOf`, `clamp`, `persistViewOrder`, and move-an-item-in-an-array each exist in several spellings. Half of them live in `TableView.tsx` and `CardsView.tsx`, so this lands immediately before the Table session rather than on its own — otherwise those two files get opened twice.
 
 #### II. The Boring Work
 
@@ -86,6 +59,7 @@ order.
 Known shortcuts, none broken today. Each is cheap on its own and best taken when its owning file is next touched — or swept together as one batch session.
 
 - [ ] **Table perf ceilings.** Tables render every row with no virtualization, so a very long collection will eventually feel it; and a value edited outside the app doesn't live-refresh an open table.
+- [ ] **The decoration build emits the whole document.** Line-level chrome is assembled and allocated for every line on every keystroke, arrow key, and scroll — measured at roughly 7ms on a twenty-thousand-line page. Scoping it to `view.viewport` (never `visibleRanges` — the viewport is what CM renders, and it already carries a thousand-pixel margin) needs only a line index on the cached rails and one line of overlap either side for the box first/last flags; the atomic ranges stay whole-document, since they drive caret motion rather than paint.
 - [ ] **Scroll waits by timer, and the signal can't simply replace it.** `revealPageOffset` sleeps for a fold animation's duration; folding's completion signal (`transitionend` → the fold entry dropping) only fires for widgets CM6 has rendered, and an outline jump's target fold is usually off-screen — waiting on it would deadlock travel against render. Retiring the timer means deciding to open off-screen folds without animation first.
 
 ### Known Issues
@@ -101,9 +75,9 @@ The chip palette became a grid: `tokens/ramp.ts` owns what a color is — eight 
 
 #### PM-108 || Webpage Integration
 
-The editor embeds live websites the way it embeds Pages. A markdown link alone on its own line carrying an explicit scheme renders as a live tile on the shared embed framework — the bytes stay plain CommonMark, and formation waits until the selection leaves the line. One main-process module governs every guest (the attach validator, the popup router that opens no OS window, the navigation scheme gate, and the zoom sync), and one renderer adjudicator decides where every external link opens, guest popups included. A guest is live only while its tile is fully visible, because a partially clipped webview paints outside its own box; a clipped tile keeps its last captured frame, and scrolled-out guests hide under a capped retention rather than unmounting. The in-app browser is a flavor of the floating preview window, and a dwell on a website link raises the shared hover card as a live render of the site that takes no clicks but scrolls, its wheel replayed into the guest from the main process. All surfaces share one persistent partition, so a sign-in anywhere authenticates everywhere per machine — there is no management surface by decision; the session simply remembers. The preferences sit together in Interface ▸ Webpages, where the scale offers its steps and takes any percent typed into it.
+The editor embeds live websites the way it embeds Pages. A markdown link on its own line, with an explicit scheme, renders as a live tile in the shared embed framework — the bytes remain plain CommonMark, and formatting waits until the selection leaves the line. One main-process module governs every guest (the attach validator, the popup router that opens no OS window, the navigation scheme gate, and the zoom sync), and one renderer adjudicator decides where every external link opens, guest popups included. A guest is live only while its tile is fully visible, because a partially clipped webview paints outside its own box; a clipped tile keeps its last captured frame, and scrolled-out guests hide under a capped retention rather than unmounting. The in-app browser is a flavor of the floating preview window, and a dwell on a website link raises the shared hover card as a live render of the site that takes no clicks but scrolls, its wheel replayed into the guest from the main process. All surfaces share one persistent partition, so a sign-in anywhere authenticates everywhere per machine — there is no management surface by decision; the session simply remembers.
 
-Retention reaches across tab switches: the detail pane holds page surfaces per tab and parks the unshown ones off screen rather than tearing them down, so their sites pause and resume with their sessions instead of reloading, and a flip costs about a quarter of what rebuilding the surface did. A tile's Edit Link re-aims its address in the line like every other Edit Link — the tile returns to raw text with the address selected, and only re-forms, and reloads, when the selection leaves.
+Retention spans tab switches: the detail pane holds page surfaces per tab and parks the unshown ones off-screen rather than tearing them down, so their sites pause and resume with their sessions instead of reloading, and a flip costs about a quarter of what rebuilding the surface did. A tile's Edit Link re-aims its address in the line like every other Edit Link — the tile returns to raw text with the address selected, and only re-forms and reloads when the selection leaves.
 
 #### PM-107 || Settings' Scaffolding
 

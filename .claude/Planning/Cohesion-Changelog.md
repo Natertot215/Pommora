@@ -1,8 +1,9 @@
 ## Cohesion Pass — Codemap Changelog
 
-Everything that moved in the pass specified in [[Cohesion-Audit]], grouped by step. Deltas are
-code-only: comment lines, blank lines, and test files are excluded, and each folder row carries the
-count of changed files beneath it with their summed delta.
+Everything that moved in the cohesion pass, grouped by step. What is left of the catalog is in
+[[Cohesion-Audit]]; the editor arc is scoped separately in [[MarkdownPM-Plan]]. Deltas are code-only:
+comment lines, blank lines, and test files are excluded, and each folder row carries the count of
+changed files beneath it with their summed delta.
 
 ### Session One — The Dusting
 
@@ -133,3 +134,16 @@ lines came off; the four cost items spent a few buying the transforms that repla
     ├── contextMenu.ts                     | • Reads the labels from their new home             +1 −1
     └── contextsRegistry.ts                | • The same                                         +1 −1
 ```
+
+### Session Three — MarkdownPM
+
+Eight phases against [[MarkdownPM-Plan]], ordered so that consolidation carries the repairs rather
+than following them: four of the six live defects are symptoms of the duplication they sit in and
+close when it collapses. Phase 7 is the fold model's key widening, which is the prerequisite
+footnotes blocks on.
+
+The phases, in order: the two loners · one document scan · one box · one pointer path · one drag ·
+tables · the stylesheet remainder · fold keys.
+
+Each phase ends on all three gates with its own doc corrections applied, and lands as one commit.
+Per-phase deltas and the tree fill in here as they do.

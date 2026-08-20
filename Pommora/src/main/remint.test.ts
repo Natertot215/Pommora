@@ -175,6 +175,7 @@ describe('the re-mint writes', () => {
     writeKey('folds', PAGE, ['intro'])
     writeKey('headingCols', PAGE, [0])
     writeKey('aliases', PAGE, ['the notes'])
+    writeKey('headingIcon', PAGE, true)
     writePreviewsState({
       navSet: null,
       origins: { [PAGE]: { tabs: [{ target: { kind: 'page', id: PAGE } }], activeIndex: 0 } },
@@ -199,6 +200,7 @@ describe('the re-mint writes', () => {
     expect(readKey('folds', fresh)).toEqual(['intro'])
     expect(readKey('headingCols', fresh)).toEqual([0])
     expect(readKey('aliases', fresh)).toEqual(['the notes'])
+    expect(readKey('headingIcon', fresh)).toBe(true)
     const previews = readPreviewsState()
     expect(previews.origins[PAGE]).toBeDefined()
     expect(previews.origins[fresh]).toBeDefined()
@@ -217,6 +219,7 @@ describe('the re-mint writes', () => {
 
   it('a copied container re-mints its sidecar id AND its views[].id; the board never shares a config id', async () => {
     writeKey('activeView', SET, 'view-2')
+    writeKey('viewOrder', 'view-2', ['page-b', 'page-a'])
     writeKey('blockDoc', blockHostKey({ kind: 'space', id: SPACE }), {
       blocks: [
         {
@@ -266,6 +269,11 @@ describe('the re-mint writes', () => {
     expect(readKey('activeView', SET)).toBe('view-2')
     expect(readKey('activeView', copySet.id)).toBe(copySet.views[1].id)
     expect(readKey('activeView', copySet.id)).not.toBe('view-2')
+
+    // The manual order keys ON the view, so it crosses under the copy's own view id — the
+    // original's row is left exactly where it was.
+    expect(readKey('viewOrder', 'view-2')).toEqual(['page-b', 'page-a'])
+    expect(readKey('viewOrder', copySet.views[1].id)).toEqual(['page-b', 'page-a'])
 
     type Doc = { blocks: { views: { config: { id: string } }[] }[] }
     const originalDoc = readKey<Doc>('blockDoc', blockHostKey({ kind: 'space', id: SPACE }))!
