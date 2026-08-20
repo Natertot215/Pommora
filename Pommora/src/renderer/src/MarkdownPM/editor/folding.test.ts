@@ -1,6 +1,23 @@
 import { describe, it, expect } from 'vitest'
 import { headingOutline, headingSections } from './folding'
 
+// `#` is the first keystroke of every heading, and the parser calls it a valid empty heading. The
+// editor does not: it would hide itself to a blank line, take a chevron, open an unnamed outline row
+// under an empty persisted fold key, and swallow the paragraphs below it into a draggable section.
+describe('a heading with no text is not a heading to this editor', () => {
+  it('a bare marker opens no section and no outline row', () => {
+    const doc = 'intro\n#\nbody a\nbody b'
+    expect(headingSections(doc)).toEqual([])
+    expect(headingOutline(doc)).toEqual([])
+  })
+  it('and the space alone is enough to make it one', () => {
+    expect(headingOutline('intro\n# \nbody').map((h) => h.text)).toEqual([''])
+  })
+  it('a tab-indented marker is indented code to both readers', () => {
+    expect(headingOutline('intro\n\t# a\nbody')).toEqual([])
+  })
+})
+
 describe('headingOutline — every heading, not just the foldable ones', () => {
   it('keeps a heading with no body beneath it (headingSections drops those)', () => {
     expect(headingOutline('# One\n# Two\nbody').map((h) => h.text)).toEqual(['One', 'Two'])

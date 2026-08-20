@@ -374,6 +374,7 @@ export function TableView({
           setActive({ row, col })
         }}
         onHoverArm={intent.arm}
+        onHoverLeave={intent.cancel}
         onHoverEnd={dismissHoverCard}
       />
     )

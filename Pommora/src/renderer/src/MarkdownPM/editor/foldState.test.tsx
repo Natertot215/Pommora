@@ -104,4 +104,17 @@ describe('the fold state machine', () => {
     await fold(view, 0)
     expect(foldedRegions(view.state)).toEqual([])
   })
+
+  // A body of exactly one empty line has nothing to collapse, and admitting it hands out a chevron
+  // over a fold whose widget never renders — so the transition that ends the animation never fires,
+  // the entry strands mid-phase, and the chevron stops answering after two clicks.
+  it('a heading whose body is one blank line offers no fold at all', async () => {
+    const view = await mountEditor({ initialBody: '# One\n\n# Two\nbody two' })
+    for (let i = 0; i < 4; i++) await fold(view, 0)
+    expect(foldedRegions(view.state)).toEqual([])
+    expect(view.dom.querySelectorAll('.mdpm-fold-reveal')).toHaveLength(0)
+    // And the heading that does have a body still folds.
+    await fold(view, '# One\n\n'.length)
+    expect(foldedRegions(view.state).map((r) => r.key)).toEqual(['Two'])
+  })
 })
