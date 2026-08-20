@@ -41,8 +41,9 @@ const tableConnections = Facet.define<ConnGetter, ConnGetter>({
 })
 
 // Heading-column UI state: the indices of this page's tables whose first column renders as a heading.
-// A Pommora-only visual with no GFM equivalent, persisted to `.nexus/` by the host (see the load/save
-// seam below + main/io/tableHeadingColumns). `setHeadingColsEffect` is the mount-time load (whole set);
+// A Pommora-only visual with no GFM equivalent, kept per machine rather than in the file — the host
+// stores it as `local_state` rows under the `headingCols` scope, keyed by page (see the load/save
+// seam below). `setHeadingColsEffect` is the mount-time load (whole set);
 // `toggleHeadingColEffect` is the menu action (one table index).
 export interface TableHeadingColsApi {
   load: () => Promise<number[]>

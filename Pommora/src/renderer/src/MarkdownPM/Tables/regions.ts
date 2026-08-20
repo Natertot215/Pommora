@@ -7,6 +7,10 @@ import { splitRow, parseDelimiter, type CellSpan } from './codec'
 export interface RowGeom {
   cells: CellSpan[]
   segments: [number, number][]
+  /** The row line's own span — what a commit replaces when the cell it names has no segment,
+   *  which is every cell a ragged row is short of. */
+  from: number
+  to: number
 }
 
 export interface TableRegion {
@@ -26,7 +30,11 @@ function isTable(block: string): boolean {
  *  version (`docCache.docScan`), so the micromark confirmations here are paid once. */
 export function tableRegions({ text, lines, lineStarts }: DocLines): TableRegion[] {
   const lineTo = (i: number): number => lineStarts[i] + lines[i].length
-  const geom = (i: number): RowGeom => splitRow(lines[i], lineStarts[i])
+  const geom = (i: number): RowGeom => ({
+    ...splitRow(lines[i], lineStarts[i]),
+    from: lineStarts[i],
+    to: lineTo(i),
+  })
   const inCode = codeMask(text)
   const regions: TableRegion[] = []
   let i = 1

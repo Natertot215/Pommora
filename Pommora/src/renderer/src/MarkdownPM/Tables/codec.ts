@@ -10,11 +10,14 @@ export interface RowSplit {
   segments: [number, number][] // untrimmed pipe-to-pipe span per cell (one flex item each)
 }
 
-// GFM table-cell escaping: a literal backslash or pipe inside a cell is backslash-escaped so it
-// round-trips through the pipe-delimited row without reading as a column boundary. Inverse pair —
-// escape on commit (sync.ts), unescape at the cell-display boundary (TableView). The model + segments
-// stay in raw source form; only the editable display is unescaped.
-export const escapeCell = (s: string): string => s.replace(/([\\|])/g, '\\$1')
+// GFM table-cell escaping: a pipe inside a cell is backslash-escaped so it round-trips through the
+// pipe-delimited row without reading as a column boundary, and so is a backslash that would
+// otherwise be read as escaping one. A backslash carrying anything else is ordinary markdown the
+// cell is passing through — `a \* b` is an escaped asterisk to every reader, and doubling it here
+// would rewrite a hand-authored file into `a \\* b` the first time it passed through the editor.
+// Inverse pair — escape on commit (sync.ts), unescape at the cell-display boundary (TableView). The
+// model + segments stay in raw source form; only the editable display is unescaped.
+export const escapeCell = (s: string): string => s.replace(/\\(?=[\\|])|\|/g, (m) => `\\${m}`)
 export const unescapeCell = (s: string): string => s.replace(/\\([\\|])/g, '$1')
 
 // A cell is single-line GFM on disk, so an in-cell line break serializes as `<br>` (literal newlines would
@@ -99,10 +102,9 @@ function delimCell(c: Column): string {
         : bar
 }
 export function serialize(m: TableModel): string {
-  // Sink guard: a cell carrying a raw newline would split its row across lines and break the GFM, so
-  // re-encode any in-cell newline as <br>. Defensive — a healthy model never holds one (cellToSource).
-  const row = (cells: string[]): string =>
-    `| ${cells.map((c) => c.replace(/\r?\n/g, '<br>')).join(' | ')} |`
+  // Cells arrive in source form — a model is only ever built from lines — so the `<br>` rule stays
+  // where the display boundary owns it, in cellToSource.
+  const row = (cells: string[]): string => `| ${cells.join(' | ')} |`
   return [row(m.header), `| ${m.columns.map(delimCell).join(' | ')} |`, ...m.rows.map(row)].join(
     '\n',
   )

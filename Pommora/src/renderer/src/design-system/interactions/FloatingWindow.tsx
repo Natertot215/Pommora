@@ -4,6 +4,7 @@ import {
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
 } from 'react'
+import { clamp } from '../clamp'
 import './floatingWindow.css'
 
 export interface FloatingBounds {
@@ -25,8 +26,6 @@ interface Geo {
 // Geometry survives each window's exit-presence unmount, keyed per window id — never a bare
 // module singleton (multiple simultaneous previews need windows that don't share one slot).
 const geoStore = new Map<string, Geo>()
-
-const clamp = (v: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, v))
 
 export function useFloatingWindow(
   id: string,

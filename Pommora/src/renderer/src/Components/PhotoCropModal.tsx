@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { clamp } from '@renderer/design-system/clamp'
 import { GlassWindow } from '@renderer/design-system/materials'
 import * as s from './photoCropModal.css'
 
@@ -9,7 +10,6 @@ const CIRCLE = 220
 const RADIUS = CIRCLE / 2
 const INSET = (VIEWPORT - CIRCLE) / 2
 const OUTPUT = 512
-const clamp = (v: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, v))
 
 export function PhotoCropModal({
   image,
