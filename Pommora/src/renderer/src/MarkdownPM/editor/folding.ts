@@ -3,6 +3,7 @@ import {
   StateField,
   StateEffect,
   Annotation,
+  type EditorState,
   type Extension,
   type Text,
   type Range,
@@ -128,6 +129,45 @@ function sectionsOf(doc: Text): HeadingSection[] {
   return s
 }
 
+// ── What a fold can be about ───────────────────────────────────────────────────
+// A heading section is one kind of foldable region; it is not the only possible one. A region is
+// named by its KIND and its anchor — the line the chevron sits on — and each kind says where its
+// regions are, what key persists one, and whether it starts collapsed. Everything below reads the
+// registry rather than assuming a heading, so a second kind is a registration and not a fork.
+
+export type FoldKind = 'heading'
+
+/** One foldable region of some kind, in document order. */
+export interface FoldRegion {
+  kind: FoldKind
+  /** The line the chevron sits on, and the region's identity within the document. */
+  anchor: number
+  /** End of the anchor line — the body begins after it. */
+  lineEnd: number
+  /** End of the last body line. */
+  to: number
+  /** What persists this fold across sessions, stable across renders. */
+  key: string
+  /** Whether a region of this kind is collapsed the first time it is ever seen. */
+  collapsedByDefault?: boolean
+}
+
+const KINDS: Record<FoldKind, (doc: Text) => FoldRegion[]> = {
+  heading: (doc) =>
+    sectionsOf(doc).map((s) => ({
+      kind: 'heading',
+      anchor: s.from,
+      lineEnd: s.lineEnd,
+      to: s.to,
+      key: s.key,
+    })),
+}
+
+/** Every foldable region in the document, of every kind. */
+function regionsOf(doc: Text): FoldRegion[] {
+  return Object.values(KINDS).flatMap((of) => of(doc))
+}
+
 // ── Custom fold state ──────────────────────────────────────────────────────────
 // CM6's native fold removes the body lines instantly. To mirror the sidebar's Reveal
 // (grid 0fr↔1fr), each fold is a block widget over the body lines whose own DOM
@@ -135,24 +175,29 @@ function sectionsOf(doc: Text): HeadingSection[] {
 
 type Phase = 'collapsing' | 'collapsed' | 'expanding'
 interface FoldEntry {
-  headingFrom: number
+  kind: FoldKind
+  anchor: number
   from: number // first body line start
   to: number // last body line end
   phase: Phase
+  /** The folded body's line DOM, captured when it was still on screen. It rides the ENTRY rather
+   *  than a map beside it: the entry is what remaps when the document moves, and a clone kept under
+   *  the old offset is both an empty reveal and an orphan nothing frees. A region that has never
+   *  been rendered — one collapsed the moment the document opens — has none, and draws none. */
+  clone?: HTMLElement
 }
 
 const foldEffect = StateEffect.define<{
-  headingFrom: number
+  kind: FoldKind
+  anchor: number
   from: number
   to: number
   animate: boolean
+  clone?: HTMLElement
 }>()
 const settleEffect = StateEffect.define<number>() // collapsing → collapsed (animation done)
 const expandEffect = StateEffect.define<number>() // collapsed → expanding (start opening)
 const dropEffect = StateEffect.define<number>() // expanding done → remove the fold
-
-// Faithful clones of the folded body's line DOM, captured at fold time, keyed by heading start.
-const cloneMap = new Map<number, HTMLElement>()
 
 function cloneBody(view: EditorView, from: number, to: number): HTMLElement {
   const wrap = document.createElement('div')
@@ -173,21 +218,23 @@ function cloneBody(view: EditorView, from: number, to: number): HTMLElement {
 
 class RevealWidget extends WidgetType {
   constructor(
-    readonly headingFrom: number,
+    readonly anchor: number,
     readonly phase: Phase,
+    readonly clone: HTMLElement | undefined,
   ) {
     super()
   }
   eq(o: RevealWidget): boolean {
-    return o.headingFrom === this.headingFrom && o.phase === this.phase
+    return o.anchor === this.anchor && o.phase === this.phase && o.clone === this.clone
   }
   toDOM(view: EditorView): HTMLElement {
     const outer = document.createElement('div')
     outer.className = 'mdpm-fold-reveal'
     const inner = document.createElement('div')
     inner.className = 'mdpm-fold-reveal-inner'
-    const clone = cloneMap.get(this.headingFrom)
-    if (clone) inner.appendChild(clone.cloneNode(true))
+    // A region collapsed before it was ever rendered has nothing to clone — the reveal opens on the
+    // real lines instead, which is what an unanimated collapse wants anyway.
+    if (this.clone) inner.appendChild(this.clone.cloneNode(true))
     outer.appendChild(inner)
 
     if (this.phase === 'collapsed') {
@@ -196,7 +243,7 @@ class RevealWidget extends WidgetType {
     }
     const open = this.phase === 'expanding'
     outer.style.gridTemplateRows = open ? '0fr' : '1fr'
-    const done = open ? dropEffect.of(this.headingFrom) : settleEffect.of(this.headingFrom)
+    const done = open ? dropEffect.of(this.anchor) : settleEffect.of(this.anchor)
     // Re-measure each frame so the lines below follow the animated height (CM6 only measures on update).
     const tick = (): void => {
       if (!outer.isConnected) return
@@ -209,13 +256,15 @@ class RevealWidget extends WidgetType {
         requestAnimationFrame(tick)
       })
     })
-    outer.addEventListener(
-      'transitionend',
-      (e) => {
-        if (e.propertyName === 'grid-template-rows') view.dispatch({ effects: done })
-      },
-      { once: true },
-    )
+    // NOT `once`: a transition bubbling up from a cloned descendant would spend the listener before
+    // the row transition ever fires, leaving the entry animating and `tick` measuring every frame
+    // for the life of the view. The property guard is what ends it, so the removal goes with it.
+    const settle = (e: TransitionEvent): void => {
+      if (e.propertyName !== 'grid-template-rows') return
+      outer.removeEventListener('transitionend', settle)
+      view.dispatch({ effects: done })
+    }
+    outer.addEventListener('transitionend', settle)
     return outer
   }
   get estimatedHeight(): number {
@@ -232,41 +281,39 @@ const foldField = StateField.define<FoldEntry[]>({
     let next: FoldEntry[] = tr.changes.empty
       ? entries
       : entries.map((e) => ({
-          headingFrom: tr.changes.mapPos(e.headingFrom),
+          ...e,
+          anchor: tr.changes.mapPos(e.anchor),
           from: tr.changes.mapPos(e.from, 1),
           to: tr.changes.mapPos(e.to, -1),
-          phase: e.phase,
         }))
-    // Prune entries whose heading no longer exists — deleting a folded heading would otherwise leave its
-    // body hidden behind a widget with no chevron anywhere to expand it (invisible until reload).
+    // Prune entries whose region no longer exists — deleting a folded heading would otherwise leave
+    // its body hidden behind a widget with no chevron anywhere to expand it (invisible until
+    // reload). Each entry is checked against the regions of ITS OWN kind: a kind absent from a
+    // document says nothing about a kind that is present.
     if (tr.docChanged && next.length > 0) {
-      const sections = sectionsOf(tr.state.doc)
-      next = next.filter((e) => {
-        if (sections.some((s) => s.from === e.headingFrom)) return true
-        cloneMap.delete(e.headingFrom)
-        return false
-      })
+      const live = regionsOf(tr.state.doc)
+      next = next.filter((e) => live.some((r) => r.kind === e.kind && r.anchor === e.anchor))
     }
     for (const ef of tr.effects) {
       if (ef.is(foldEffect)) {
         const v = ef.value
-        next = next.filter((e) => e.headingFrom !== v.headingFrom)
         next = [
-          ...next,
+          ...next.filter((e) => e.anchor !== v.anchor),
           {
-            headingFrom: v.headingFrom,
+            kind: v.kind,
+            anchor: v.anchor,
             from: v.from,
             to: v.to,
             phase: v.animate ? 'collapsing' : 'collapsed',
+            clone: v.clone,
           },
         ]
       } else if (ef.is(settleEffect)) {
-        next = next.map((e) => (e.headingFrom === ef.value ? { ...e, phase: 'collapsed' } : e))
+        next = next.map((e) => (e.anchor === ef.value ? { ...e, phase: 'collapsed' } : e))
       } else if (ef.is(expandEffect)) {
-        next = next.map((e) => (e.headingFrom === ef.value ? { ...e, phase: 'expanding' } : e))
+        next = next.map((e) => (e.anchor === ef.value ? { ...e, phase: 'expanding' } : e))
       } else if (ef.is(dropEffect)) {
-        cloneMap.delete(ef.value)
-        next = next.filter((e) => e.headingFrom !== ef.value)
+        next = next.filter((e) => e.anchor !== ef.value)
       }
     }
     return next
@@ -279,7 +326,7 @@ const foldField = StateField.define<FoldEntry[]>({
           ranges.push(
             Decoration.replace({
               block: true,
-              widget: new RevealWidget(e.headingFrom, e.phase),
+              widget: new RevealWidget(e.anchor, e.phase, e.clone),
             }).range(e.from, e.to),
           )
         }
@@ -288,20 +335,26 @@ const foldField = StateField.define<FoldEntry[]>({
     }),
 })
 
-function toggleFold(view: EditorView, s: HeadingSection): void {
-  const folded = view.state.field(foldField).some((e) => e.headingFrom === s.from)
+function toggleFold(view: EditorView, r: FoldRegion): void {
+  const folded = view.state.field(foldField).some((e) => e.anchor === r.anchor)
   if (folded) {
-    view.dispatch({ effects: expandEffect.of(s.from) })
+    view.dispatch({ effects: expandEffect.of(r.anchor) })
     return
   }
-  const bodyStart = s.lineEnd + 1
-  if (bodyStart > s.to) return
+  const bodyStart = r.lineEnd + 1
+  if (bodyStart > r.to) return
   // A caret inside the body being folded becomes unplaced (blur) rather than jumping to the next visible line.
   const sel = view.state.selection.main
-  const caretInBody = sel.to > s.lineEnd && sel.from <= s.to
-  cloneMap.set(s.from, cloneBody(view, bodyStart, s.to))
+  const caretInBody = sel.to > r.lineEnd && sel.from <= r.to
   view.dispatch({
-    effects: foldEffect.of({ headingFrom: s.from, from: bodyStart, to: s.to, animate: true }),
+    effects: foldEffect.of({
+      kind: r.kind,
+      anchor: r.anchor,
+      from: bodyStart,
+      to: r.to,
+      animate: true,
+      clone: cloneBody(view, bodyStart, r.to),
+    }),
   })
   if (caretInBody) view.contentDOM.blur()
 }
@@ -311,22 +364,38 @@ function toggleFold(view: EditorView, s: HeadingSection): void {
  *  has to let the reveal land before it measures, because a folded section has no height to scroll to. */
 export function expandFoldsAt(view: EditorView, pos: number): boolean {
   // An entry spans its heading's BODY, so a heading is opened by its own entry (matched on
-  // headingFrom) and by every ancestor entry whose body contains it.
+  // its anchor) and by every ancestor entry whose body contains it.
   const hiding = view.state
     .field(foldField)
-    .filter((e) => e.headingFrom === pos || (pos >= e.from && pos <= e.to))
+    .filter((e) => e.anchor === pos || (pos >= e.from && pos <= e.to))
   if (hiding.length === 0) return false
-  view.dispatch({ effects: hiding.map((e) => expandEffect.of(e.headingFrom)) })
+  view.dispatch({ effects: hiding.map((e) => expandEffect.of(e.anchor)) })
   return true
 }
 
 /** Toggle the fold of the heading whose line starts at `pos`. The chevron's own gesture and the
  *  hover card's click-a-heading affordance both land here, so fold behavior stays one fact. */
 export function toggleFoldAt(view: EditorView, pos: number): boolean {
-  const s = sectionsOf(view.state.doc).find((x) => x.from === pos)
-  if (!s) return false
-  toggleFold(view, s)
+  const r = regionsOf(view.state.doc).find((x) => x.anchor === pos)
+  if (!r) return false
+  toggleFold(view, r)
   return true
+}
+
+/** What is folded right now, as regions rather than offsets — the state machine's readable face. */
+export function foldedRegions(
+  state: EditorState,
+): { kind: FoldKind; anchor: number; key: string; hasBody: boolean }[] {
+  const live = regionsOf(state.doc)
+  return state
+    .field(foldField)
+    .filter((e) => e.phase !== 'expanding')
+    .flatMap((e) => {
+      const r = live.find((x) => x.kind === e.kind && x.anchor === e.anchor)
+      return r
+        ? [{ kind: e.kind, anchor: e.anchor, key: r.key, hasBody: e.clone !== undefined }]
+        : []
+    })
 }
 
 // Every foldable heading carries a chevron anchored to its line in the CONTENT layer (a ::before), NOT a CM
@@ -338,12 +407,12 @@ export function toggleFoldAt(view: EditorView, pos: number): boolean {
 const chevronDeco = EditorView.decorations.compute(['doc', foldField], (state) => {
   const entries = state.field(foldField)
   const ranges: Range<Decoration>[] = []
-  for (const s of sectionsOf(state.doc)) {
-    const closed = entries.some((e) => e.headingFrom === s.from && e.phase !== 'expanding')
+  for (const r of regionsOf(state.doc)) {
+    const closed = entries.some((e) => e.anchor === r.anchor && e.phase !== 'expanding')
     ranges.push(
       Decoration.line({
         class: closed ? 'md-foldable md-fold-closed' : 'md-foldable md-fold-open',
-      }).range(s.from),
+      }).range(r.anchor),
     )
   }
   return Decoration.set(ranges, true)
@@ -351,15 +420,23 @@ const chevronDeco = EditorView.decorations.compute(['doc', foldField], (state) =
 
 /** Re-apply a page's saved folds at mount (no animation), capturing clones from the freshly-rendered lines. */
 export function applySavedFolds(view: EditorView, keys: string[]): void {
-  if (keys.length === 0) return
   const wanted = new Set(keys)
   const effects: StateEffect<unknown>[] = []
-  for (const s of sectionsOf(view.state.doc)) {
-    if (!wanted.has(s.key)) continue
-    const bodyStart = s.lineEnd + 1
-    if (bodyStart > s.to) continue
-    cloneMap.set(s.from, cloneBody(view, bodyStart, s.to))
-    effects.push(foldEffect.of({ headingFrom: s.from, from: bodyStart, to: s.to, animate: false }))
+  for (const r of regionsOf(view.state.doc)) {
+    // A region nobody has an opinion about yet starts the way its kind says it does.
+    if (!(wanted.has(r.key) || (r.collapsedByDefault && !wanted.size))) continue
+    const bodyStart = r.lineEnd + 1
+    if (bodyStart > r.to) continue
+    effects.push(
+      foldEffect.of({
+        kind: r.kind,
+        anchor: r.anchor,
+        from: bodyStart,
+        to: r.to,
+        animate: false,
+        clone: cloneBody(view, bodyStart, r.to),
+      }),
+    )
   }
   if (effects.length) view.dispatch({ effects, annotations: initialFoldAnnotation.of(true) })
 }
@@ -373,13 +450,7 @@ export function markdownFolding(onFoldsChange: (keys: string[]) => void): Extens
         tr.effects.some((e) => e.is(foldEffect) || e.is(expandEffect) || e.is(dropEffect)),
     )
     if (!changed) return
-    const sections = sectionsOf(u.state.doc)
-    const keys = u.state
-      .field(foldField)
-      .filter((e) => e.phase !== 'expanding')
-      .map((e) => sections.find((s) => s.from === e.headingFrom)?.key)
-      .filter((k): k is string => k !== undefined)
-    onFoldsChange(keys)
+    onFoldsChange(foldedRegions(u.state).map((r) => r.key))
   })
   // The chevron strip doubles as a drag handle (shares the block-drag gesture): a sub-threshold release toggles
   // the fold; a press-drag relocates the whole heading section. A folded section unfolds at drag-start — a fold
@@ -388,11 +459,11 @@ export function markdownFolding(onFoldsChange: (keys: string[]) => void): Extens
   const headingDrag = createBlockDragGesture({
     gate: 'md-foldable',
     onClick: (view, line) => {
-      const s = sectionsOf(view.state.doc).find((x) => x.from === view.posAtDOM(line))
-      if (s) toggleFold(view, s)
+      const r = regionsOf(view.state.doc).find((x) => x.anchor === view.posAtDOM(line))
+      if (r) toggleFold(view, r)
     },
     onDragStart: (view, block) => {
-      if (view.state.field(foldField).some((en) => en.headingFrom === block.from))
+      if (view.state.field(foldField).some((en) => en.anchor === block.from))
         view.dispatch({ effects: dropEffect.of(block.from) })
     },
   })
