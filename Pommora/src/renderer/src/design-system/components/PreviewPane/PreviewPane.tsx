@@ -21,6 +21,7 @@ import {
   type SidePaneBounds,
 } from '@renderer/design-system/components/SidePane/SidePane'
 import './previewPane.css'
+import { footerLabel } from '@shared/toggleLabels'
 
 const BOUNDS: FloatingBounds = { minW: 360, minH: 280, defW: 850, defH: 600 }
 
@@ -262,8 +263,8 @@ export function PreviewPane({
             type="button"
             className="ppane-footer-toggle"
             onClick={() => setFooterOpen((v) => !v)}
-            aria-label={footerOpen ? 'Hide footer' : 'Show footer'}
-            title={footerOpen ? 'Hide footer' : 'Show footer'}
+            aria-label={footerLabel(footerOpen)}
+            title={footerLabel(footerOpen)}
           >
             <Icon name={footerOpen ? 'chevron-down' : 'chevron-up'} size="title3" />
           </button>

@@ -12,6 +12,7 @@ import { SpaceView } from './SpaceView'
 import { PageView } from './PageView'
 import { NavView } from '../Tabs/NavView'
 import { Subfield } from './Subfield/Subfield'
+import { footerLabel } from '@shared/toggleLabels'
 
 function DetailView(): React.JSX.Element | null {
   const selection = useSession((s) => s.selection)
@@ -211,8 +212,8 @@ export function DetailPane(): React.JSX.Element {
             type="button"
             className="subfield-toggle"
             onClick={() => setExpanded(!expanded)}
-            aria-label={expanded ? 'Hide footer' : 'Show footer'}
-            title={expanded ? 'Hide footer' : 'Show footer'}
+            aria-label={footerLabel(expanded)}
+            title={footerLabel(expanded)}
           >
             <Icon name={expanded ? 'chevron-down' : 'chevron-up'} size="title3" />
           </button>

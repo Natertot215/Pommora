@@ -12,6 +12,7 @@ import { findSpace } from '../Scope'
 import { IconPicker } from '../../Components/IconPicker'
 import { ColorPicker } from '../../Components/Detail/ColorPicker'
 import { InlineEditHeader } from '../../Components/Detail/InlineEditHeader'
+import { lockLabel } from '@shared/toggleLabels'
 
 export function SpaceSettingsContent({ id }: { id: string }): React.JSX.Element | null {
   const tree = useSession((s) => s.tree)
@@ -39,12 +40,12 @@ export function SpaceSettingsContent({ id }: { id: string }): React.JSX.Element 
             leading={
               <button
                 type="button"
-                aria-label={locked ? 'Unlock board' : 'Lock board'}
+                aria-label={lockLabel(locked, 'board')}
                 className={footerLockAction}
                 onClick={() => void setHostLocked({ kind: 'space', id }, !locked)}
               >
                 <Icon name="lock" size="control" className={lockIcon} />
-                {locked ? 'Unlock' : 'Lock'}
+                {lockLabel(locked)}
               </button>
             }
             trailing={
