@@ -1,6 +1,6 @@
 import { tokenize } from '../tokens'
 import { parseListMarker, headingParts } from '../detect'
-import { listFormatOf, isQuoteToggleable, splitPrefix } from '../input/format'
+import { isQuoteToggleable, splitPrefix } from '../input/format'
 import { lineStartAt, lineEndAt } from '../input'
 import type { FormatState } from '@shared/editorMenu'
 
@@ -39,7 +39,7 @@ export function readFormatState(
     link: tokens.some((tk) => tk.kind === 'link' && tk.range[0] <= f && t <= tk.range[1]),
     connection: tokens.some((tk) => tk.kind === 'wikiLink' && tk.range[0] <= f && t <= tk.range[1]),
     heading: hm ? hm.hashes.length : 0,
-    list: listFormatOf(lm),
+    list: lm?.kind ?? null,
     block: isQuoteToggleable(line) ? 'quote' : null,
   }
 }

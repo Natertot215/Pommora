@@ -1,3 +1,5 @@
+import type { ListKind } from './gripMenu'
+
 // The editor context-menu contract. The renderer computes the editor's active formatting state
 // (from CM6's EditorState — Electron's static menu params can't see it) and pushes it to main;
 // main builds the native menu, reading the last pushed state at popup time. A chosen Pommora item
@@ -15,7 +17,7 @@ export interface FormatState {
   link: boolean
   connection: boolean
   heading: number // 0 = paragraph, 1–6
-  list: 'bullet' | 'ordered' | 'task' | null
+  list: ListKind | null
   block: 'quote' | null
 }
 

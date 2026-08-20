@@ -28,23 +28,7 @@ export type InlineFormat =
   | 'link'
   | 'connection'
 export type HeadingLevel = 0 | 1 | 2 | 3 | 4 | 5 | 6
-export type ListFormat = 'bullet' | 'ordered' | 'task'
 export type BlockFormat = 'quote' | 'code' | 'hr' | 'callout' | 'table'
-
-/** The menu/toggle list-format a parsed marker represents (null for arrow / no marker). One source for both
- *  the format menu's active state and the list toggle. */
-export function listFormatOf(lm: ListMarker | null): ListFormat | null {
-  switch (lm?.kind) {
-    case 'checkbox':
-      return 'task'
-    case 'ordered':
-      return 'ordered'
-    case 'bullet':
-      return 'bullet'
-    default:
-      return null
-  }
-}
 
 /** A line carries a plain-quote prefix the quote toggle should strip — true for a real blockquote, but NOT a
  *  callout head (whose `>` is box chrome, stripping it orphans the `[!type]`). */
@@ -152,12 +136,6 @@ export function listMarkerText(kind: ListKind, n = 1): string {
   }
 }
 
-const LIST_PREFIXES: Record<ListFormat, string> = {
-  bullet: listMarkerText('bullet'),
-  ordered: listMarkerText('ordered'),
-  task: listMarkerText('checkbox'),
-}
-
 /** Split a line into its quote/callout chrome and the inner body the block transforms operate on. For a
  *  callout HEAD the chrome includes the hidden `[!type] ` tag, so a transform can never expose or demote it.
  *  Block transforms edit from AFTER the chrome — the prefix is never touched, which both preserves the box
@@ -188,13 +166,13 @@ export function setHeading(doc: string, pos: number, level: HeadingLevel): Forma
 
 /** Toggle the caret line into/out of a list kind (re-applying the same kind clears it). Prefix-aware like
  *  setHeading — the list marker lands inside the quote/callout, not in place of its chrome. */
-export function setList(doc: string, pos: number, fmt: ListFormat): FormatEdit {
+export function setList(doc: string, pos: number, kind: ListKind): FormatEdit {
   const ls = lineStartAt(doc, pos)
   const le = lineEndAt(doc, pos)
   const { prefix, body } = splitPrefix(doc.slice(ls, le))
-  const current = listFormatOf(parseListMarker(body))
+  const current = parseListMarker(body)?.kind ?? null
   const inner = stripInnerMarkers(body)
-  const next = current === fmt ? inner : `${LIST_PREFIXES[fmt]}${inner}`
+  const next = current === kind ? inner : `${listMarkerText(kind)}${inner}`
   return {
     changes: [{ from: ls + prefix.length, to: le, insert: next }],
     selection: ls + prefix.length + next.length,
