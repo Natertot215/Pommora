@@ -31,7 +31,7 @@ import {
   patchSpaceOrderFromDisk,
   patchTopOrderFromDisk,
 } from './watchPatch'
-import { CONTEXTS_DIR_REL } from './paths'
+import { CONTEXTS_DIR_REL } from '@shared/nexusPaths'
 
 export interface MutateOutcome {
   created?: { id: string; path: string }

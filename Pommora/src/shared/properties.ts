@@ -177,6 +177,13 @@ export function statusOptions(
   )
 }
 
+/** The types whose options live in `select_options` — the array's validator, its seeder, and its
+ *  editor all answer to this one predicate. A Status property's options live in `status_groups`
+ *  instead, and every other type has none, so writing `select_options` onto one of those corrupts
+ *  the definition and orphans the values its pages already hold. */
+export const hasSelectOptions = (type: PropertyType): type is 'select' | 'multi_select' =>
+  type === 'select' || type === 'multi_select'
+
 /** Every option value a definition offers, whichever list holds them. Keyed on the DECLARED type,
  *  never on which array happens to be present: a type change retains the array it moved away from,
  *  so a Status property can still carry select_options and shape inference would read the stale one. */

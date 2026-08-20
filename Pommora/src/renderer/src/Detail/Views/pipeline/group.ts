@@ -6,6 +6,7 @@
 import type { CollectionNode, PageNode, ResolvedGroup, SetNode, ViewRow } from '@shared/types'
 import type { DateGranularity, EmptyPlacement, GroupConfig, SubGroupConfig } from '@shared/views'
 import { PAGE_ID_KEY } from '@shared/identity'
+import { pad } from '@renderer/design-system/pad'
 import type { PageFrontmatter } from '@shared/schemas'
 import { optionValues, type PropertyDefinition } from '@shared/properties'
 import { UNGROUPED } from '@shared/types'
@@ -113,8 +114,6 @@ export function flattenContainer(
   walk(node, undefined)
   return { rows, setTree: buildSetTree(node.sets) }
 }
-
-const pad = (n: number, width: number): string => String(n).padStart(width, '0')
 
 /** ISO 8601 week + week-year from a calendar date's components (already resolved to the chosen zone
  *  by the caller), via UTC arithmetic so adding days never crosses a DST boundary. A week belongs to

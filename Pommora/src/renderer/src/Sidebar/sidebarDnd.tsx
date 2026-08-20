@@ -12,6 +12,7 @@ import { DISCLOSURE_INDENT } from '@renderer/design-system/tokens/size.css'
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { useDragSnapshot } from '@renderer/design-system/interactions/snapshot'
 import { EDITABLE_TARGETS } from '@renderer/design-system/interactions/shared'
+import { titleFromPath } from '@shared/connections'
 import { DragGhost } from '@renderer/design-system/interactions/DragGhost'
 import { DropLine } from '@renderer/design-system/interactions/DropLine'
 import { announce } from '@renderer/design-system/interactions/a11y'
@@ -298,7 +299,8 @@ export function SidebarDnd({
     resolveSlot()
   }, [index])
 
-  const labelOf = (rowId: string): string => base(indexRef.current.byId.get(rowId)?.path ?? '')
+  const labelOf = (rowId: string): string =>
+    titleFromPath(indexRef.current.byId.get(rowId)?.path ?? '')
 
   const begin = (id: string, e: ReactPointerEvent): void => {
     // The cheap refusals come before the layout read — a right-press or a busy gesture costs no rect.
@@ -389,10 +391,6 @@ export function SidebarDnd({
   )
 }
 
-const base = (p: string): string => {
-  const n = p.slice(p.lastIndexOf('/') + 1)
-  return n.endsWith('.md') ? n.slice(0, -3) : n
-}
 const sameOrder = (a: string[], b: string[]): boolean =>
   a.length === b.length && a.every((x, i) => x === b[i])
 

@@ -118,6 +118,7 @@ import {
 import type { PageFrontmatter } from '@shared/schemas'
 import { handleMutate, type MutateDeps } from './mutate'
 import { showContextMenu } from './contextMenu'
+import { ASSETS_DIR_REL } from '@shared/nexusPaths'
 import { installAppMenu } from './menu'
 import { popTableMenu } from './tableMenu'
 import { popGripMenu } from './gripMenu'
@@ -228,7 +229,7 @@ function registerAssetProtocol(): void {
     const root = sessionRoot()
     if (!root) return new Response('No nexus open', { status: 404 })
     const rel = decodeURIComponent(new URL(request.url).pathname).replace(/^\/+/, '')
-    if (!rel.startsWith('.nexus/assets/')) return new Response('Forbidden', { status: 403 })
+    if (!rel.startsWith(`${ASSETS_DIR_REL}/`)) return new Response('Forbidden', { status: 403 })
     const resolved = await resolveUnderRoot(root, rel)
     if (!resolved.ok) return new Response('Not found', { status: 404 })
     try {

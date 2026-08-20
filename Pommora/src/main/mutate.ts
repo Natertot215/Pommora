@@ -56,7 +56,7 @@ import { isAssetPath, readNavigationFile, writeNavigationState } from './io/navi
 import { serializeOnFile } from './io/fileLock'
 import { splitEnvelope, mergeFrontmatter, readFrontmatterFields } from './io/pageFile'
 import { basenameNoMd } from './coerce'
-import { nexusConfig, sidecarPath, NEXUS_CONFIG_FILES } from './paths'
+import { assetsDir, nexusConfig, sidecarPath, NEXUS_CONFIG_FILES } from './paths'
 import { ensureIdentity } from './identity'
 import { resolveFolderKind } from './folderKind'
 import { updateSettings } from './settings'
@@ -70,6 +70,7 @@ import { NO_NEXUS } from './ipc'
 import type { TrashMode } from './appConfig'
 import { readRegistry } from './io/propertiesRegistry'
 import { deindexPath, indexWrittenPage, moveIndexPaths, seedContentIndex } from './indexSeed'
+import { ASSETS_DIR_REL, NON_CORPUS_TOP, TRASH_DIR } from '@shared/nexusPaths'
 
 /** What the orchestration needs from the Electron layer (injected to keep this testable). */
 export interface MutateDeps {
@@ -113,8 +114,8 @@ async function writeImageAsset(
   const decoded = decodeImageDataUrl(dataUrl)
   if (!decoded) return null
   const file = `${prefix}-${Math.random().toString(36).slice(2, 10)}.${decoded.ext}`
-  const rel = assetKey ? `.nexus/assets/${assetKey}/${file}` : `.nexus/assets/${file}`
-  const absAsset = join(root, '.nexus', 'assets', assetKey, file)
+  const rel = assetKey ? `${ASSETS_DIR_REL}/${assetKey}/${file}` : `${ASSETS_DIR_REL}/${file}`
+  const absAsset = join(assetsDir(root), assetKey, file)
   await mkdir(dirname(absAsset), { recursive: true })
   await atomicWriteBinary(absAsset, decoded.buffer)
   return rel
@@ -128,7 +129,7 @@ async function writeImageAsset(
  *  makes `relative` mismatch and the guard silently passes. */
 async function isReserved(root: string, abs: string): Promise<boolean> {
   const rel = relative(await realpath(root), abs)
-  return rel === '' || rel === '.nexus' || rel === '.trash' || rel.startsWith(`.trash${sep}`)
+  return rel === '' || NON_CORPUS_TOP.has(rel) || rel.startsWith(`${TRASH_DIR}${sep}`)
 }
 
 const fault = (message: string): Result<never> => fail('operation-failed', message)

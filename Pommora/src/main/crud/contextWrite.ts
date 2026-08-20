@@ -14,6 +14,7 @@ import {
   type ContextsRegistry,
 } from '@shared/contexts'
 import { reconcileContextKeys } from '@shared/contextResolve'
+import { contextDirRel, spaceDirRel } from '@shared/nexusPaths'
 import { blockHostKey, NEW_TILE_H } from '@shared/blocks'
 import { writeKey } from '../db/localState'
 import type { SpaceNode } from '@shared/types'
@@ -69,7 +70,7 @@ export async function loadContextWorld(root: string): Promise<Result<ContextWorl
           if (sc.error.code === 'not-found') continue
           return fail('operation-failed', `Unreadable Space sidecar: ${e.name}`)
         }
-        const rel = `.nexus/contexts/${def.title}/${e.name}`
+        const rel = spaceDirRel(def.title, e.name)
         // Mirror the walk's id adoption so an id-less sidecar resolves identically here.
         const id = typeof sc.value.id === 'string' ? sc.value.id : adoptedId(rel)
         spaces.push({ kind: 'space', id, title: e.name, path: rel, contextId: def.id })
@@ -224,7 +225,7 @@ export async function createContextGroup(
   if (!written.value.contexts.some((c) => c.id === id))
     return fail('exists', `"${title}" already exists.`)
   await mkdir(join(contextsDir(root), title), { recursive: true })
-  return ok({ id, path: `.nexus/contexts/${title}` })
+  return ok({ id, path: contextDirRel(title) })
 }
 
 /** Create a Space: folder + `_space.json` (no icon, no color) seeded with the 2×2 block
@@ -256,7 +257,7 @@ export async function createSpace(
   })
   return ok({
     id: created.value.id,
-    path: `.nexus/contexts/${def.title}/${name}`,
+    path: spaceDirRel(def.title, name),
   })
 }
 

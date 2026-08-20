@@ -16,6 +16,7 @@ import { getLiveTree, refreshAfterWrite } from './liveTree'
 import { sessionRoot } from './session'
 import { readExcludedFolders } from './settings'
 import { applyWatchEvents, touchesCorpus, type WatchEvent, type WatchEventName } from './watchPatch'
+import { CONTEXTS_DIRNAME, NEXUS_DIR, TRASH_DIR } from '@shared/nexusPaths'
 
 const SETTLE_MS = 200
 
@@ -28,7 +29,7 @@ let batch: WatchEvent[] = []
  *  in the tree). */
 export function isNavPath(root: string, path: string): boolean {
   const segs = relative(root, path).split(sep)
-  return segs[0] === '.nexus' && segs[1] === NEXUS_CONFIG_FILES.navigation
+  return segs[0] === NEXUS_DIR && segs[1] === NEXUS_CONFIG_FILES.navigation
 }
 
 // Ignore only what ISN'T user-meaningful tree content: the SQLite databases (which thrash via
@@ -48,22 +49,22 @@ export function ignoredUnder(root: string, excluded: string[] = []): (path: stri
     return (
       segs.some(
         (seg) =>
-          seg === '.trash' ||
+          seg === TRASH_DIR ||
           // The walk skips it, so the tree can never hold it — and one install would otherwise
           // storm the settle window with thousands of directory events.
           seg === 'node_modules' ||
           seg.startsWith('nexus.db') || // our store + its WAL/SHM
-          (seg.startsWith('.') && seg !== '.nexus'), // dotfile cruft, but .nexus holds contexts + settings
+          (seg.startsWith('.') && seg !== NEXUS_DIR), // dotfile cruft, but .nexus holds contexts + settings
       ) ||
       // Block-host content loads through blocks:get, never the tree walk —
       // a debounced block-body write must not cost a full re-walk. The
       // homepage.json config FILE stays watched (the tree reads its banner).
-      (segs[0] === '.nexus' && segs[1] === HOMEPAGE_HOST_DIRNAME) ||
+      (segs[0] === NEXUS_DIR && segs[1] === HOMEPAGE_HOST_DIRNAME) ||
       // Space hosts get the same treatment file-granularly: a tile `.md` inside
       // `.nexus/contexts/<C>/<S>/` never walks, while `_space.json` (banner/color/tags
       // the tree reads) stays watched.
-      (segs[0] === '.nexus' &&
-        segs[1] === 'contexts' &&
+      (segs[0] === NEXUS_DIR &&
+        segs[1] === CONTEXTS_DIRNAME &&
         segs.length >= 5 &&
         isMarkdownFile(segs[segs.length - 1])) ||
       isExcluded(segs)

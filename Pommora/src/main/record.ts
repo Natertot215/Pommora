@@ -6,11 +6,11 @@ import { stat } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { EntityRecord } from '@shared/record'
 import { errText } from '@shared/result'
+import { contextDirRel, CONTEXTS_REGISTRY_REL } from '@shared/nexusPaths'
 import type { NexusTree, PageNode, SetNode } from '@shared/types'
 import { readKey, writeKey } from './db/localState'
 import { isAdoptedId } from './ids'
 import { refreshTree, seedLiveTree } from './liveTree'
-import { CONTEXTS_REGISTRY_REL } from './paths'
 import { readNexus } from './readNexus'
 import { applyRemints, runRemintPass } from './remint'
 
@@ -64,7 +64,7 @@ function buildBaseline(tree: NexusTree): Projection {
       id: g.def.id,
       kind: 'context',
       title: g.def.title,
-      path: `.nexus/contexts/${g.def.title}`,
+      path: contextDirRel(g.def.title),
       state: 'present',
     })
     for (const s of g.spaces)

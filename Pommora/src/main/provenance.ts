@@ -14,6 +14,7 @@ import { mkdir, readdir, readFile, rename, rm } from 'node:fs/promises'
 import { basename, dirname, isAbsolute, join, relative, sep } from 'node:path'
 import { z } from 'zod'
 import { contextKey, type ContextsRegistry } from '@shared/contexts'
+import { CONTEXTS_DIR_REL, contextDirRel, TRASH_DIR } from '@shared/nexusPaths'
 import { contentId } from '@shared/identity'
 import type { RestoreDestination } from '@shared/mutate'
 import { errText, fail, ok, type Result } from '@shared/result'
@@ -349,7 +350,7 @@ export function resolveRecord(
       record.registry.title,
       tree.contexts.map((g) => g.def.title),
     )
-    return { place: { dir: '.nexus/contexts', finalName: finalTitle, finalTitle } }
+    return { place: { dir: CONTEXTS_DIR_REL, finalName: finalTitle, finalTitle } }
   }
 
   if (record.entity === 'space') {
@@ -363,7 +364,7 @@ export function resolveRecord(
       group.spaces.map((s) => s.title),
     )
     return {
-      place: { dir: `.nexus/contexts/${group.def.title}`, finalName: finalTitle, finalTitle },
+      place: { dir: contextDirRel(group.def.title), finalName: finalTitle, finalTitle },
     }
   }
 
@@ -437,7 +438,7 @@ export async function listBundles(root: string): Promise<ListedBundle[]> {
       })
     }
   }
-  await walk(join(root, '.trash'))
+  await walk(join(root, TRASH_DIR))
   return out
 }
 
@@ -527,7 +528,7 @@ async function restoredSpaceTitles(absContextDir: string): Promise<Map<string, s
  *  Both sides are already canonical — the session root is realpath'd when it opens, and the op's
  *  path resolver realpaths both ends again before this is reached. */
 async function openBundle(root: string, bundleAbs: string): Promise<Result<RecordFile>> {
-  const trashPrefix = join(root, '.trash') + sep
+  const trashPrefix = join(root, TRASH_DIR) + sep
   if (!bundleAbs.startsWith(trashPrefix) || !bundleAbs.endsWith(BUNDLE_SUFFIX))
     return fail('operation-failed', 'Only a trash record can be spent.')
   const record = await readRecord(bundleAbs)
@@ -643,7 +644,7 @@ export async function restoreArtifact(
   if (
     targetRel.startsWith('..') ||
     isAbsolute(targetRel) ||
-    targetRel.split(sep)[0] === '.trash' ||
+    targetRel.split(sep)[0] === TRASH_DIR ||
     dirname(targetAbs) !== join(root, dir) ||
     basename(targetAbs) !== finalName
   )

@@ -16,6 +16,7 @@ import { parseStyleAction } from '@shared/columnMenu'
 import { type ColumnAlign, type SavedView, mintDefaultView } from '@shared/views'
 import { applyValueAtRoot, isBlankValue, type PropertyValue } from '@shared/propertyValue'
 import { isValidLink } from '@shared/links'
+import { parentOf } from '@shared/treePatch'
 import { flattenContainer, groupsStructurally, subtreeIds } from '../pipeline/group'
 import { resolveView } from '../pipeline/resolveView'
 import { useValuesEpoch } from '../useValuesEpoch'
@@ -32,6 +33,7 @@ import { pageMoveContext, runPageSendAction } from '../../../pageMenuActions'
 import { findCollectionForSet } from '../../Scope'
 import { isOpenInTabs } from '../../../Tabs/tabsModel'
 import { useActiveView } from '../useActiveView'
+import { useViewOrders } from '../useViewOrders'
 import { useSaveView } from '@renderer/Embeds/ViewEmbedScope'
 import type { SetTreeNode } from '../pipeline/group'
 import { buildResolveContext, type ResolveContext } from './resolveContext'
@@ -144,18 +146,14 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   // Optimistic property patches keyed by page id (cross-group reassignment): the loaded values
   // never re-read on a write, so a reassigned row re-groups only because this patch feeds the pipeline.
   const [valueOverride, setValueOverride] = useState<Record<string, PageFrontmatter> | null>(null)
-  const [viewOrders, setViewOrders] = useState<Record<string, string[]>>({})
 
-  // Lazy value load + manual-order cache on container open; `canceled` guards a fast container swap.
+  // Lazy value load on container open; `canceled` guards a fast container swap.
   // (The active-view pointer is the shared store slice — read via useActiveView, not fetched here.)
   useEffect(() => {
     let canceled = false
     setValueOverride(null) // canonical values for the new container supersede any optimistic patches
     void window.nexus.loadValues(source.path).then((v) => {
       if (!canceled) setValues(v)
-    })
-    void window.nexus.viewOrders.get().then((m) => {
-      if (!canceled) setViewOrders(m)
     })
     return () => {
       canceled = true
@@ -166,6 +164,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
 
   const schema = useMemo(() => (tree ? resolveContainerSchema(tree, source) : []), [tree, source])
   const { view } = useActiveView(source, schema)
+  const { viewOrders, persistViewOrder } = useViewOrders(source.path, view.id)
   // Local override layer — reorder + resize + hide + collapse apply instantly, persist async (watcher
   // confirms). Order + hidden go in `liveView` (the pipeline reads them); width stays a separate
   // override so a resize doesn't re-run the pipeline. All re-seed on view change.
@@ -1090,13 +1089,6 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   useEffect(() => {
     if (strandedEditId !== null) setEditing((e) => (e?.rowId === strandedEditId ? null : e))
   }, [strandedEditId])
-  // The viewOrders cache has no round-trip (nothing re-reads it mid-session), so every write
-  // lands in the local copy too — else the pipeline keeps ranking off the stale array until the
-  // next container open.
-  const persistViewOrder = (ids: string[]): void => {
-    setViewOrders((m) => ({ ...m, [view.id]: ids }))
-    void window.nexus.viewOrders.set(view.id, ids)
-  }
   // In-view creation opens the title cell as an ordinary uncommitted rename whose field is
   // empty — the table's naming surface is its own cell editor.
   const titleColId = columns.find((c) => c.kind === 'title')?.id
@@ -1393,7 +1385,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   const relocateRow = (pageId: string, destGroupKey: string): void => {
     const path = rowPath.get(pageId)
     const destPath = destGroupKey === UNGROUPED ? source.path : setPaths.get(destGroupKey)
-    if (!path || !destPath || destPath === path.slice(0, path.lastIndexOf('/'))) return
+    if (!path || !destPath || destPath === parentOf(path)) return
     // The band drop carries no index — the moved row joins the destination's end, but the order
     // still writes whole: absent, main's fallback re-ranks the destination by title. A stale
     // viewOrders entry (a formerly sorted config) would otherwise paint the row's old rank.
@@ -1418,7 +1410,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       const groupPages = orderIds.filter((id) => rowGroup.get(id) === groupKey)
       const firstPath = groupPages.length ? rowPath.get(groupPages[0]) : undefined
       if (firstPath) {
-        const containerPath = firstPath.slice(0, firstPath.lastIndexOf('/'))
+        const containerPath = parentOf(firstPath)
         void mutate({
           op: 'movePage',
           path: firstPath,

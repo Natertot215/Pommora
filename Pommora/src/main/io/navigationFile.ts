@@ -11,6 +11,7 @@ import { NEXUS_CONFIG_FILES, nexusConfig, nexusDir } from '../paths'
 import { readValue, writeValue } from '../db/localState'
 import { readJsonObject, readJsonStrict, writeJson } from './atomicWrite'
 import { serializeOnFile } from './fileLock'
+import { ASSETS_DIR_REL } from '@shared/nexusPaths'
 
 const NAV_KINDS = new Set([
   'homepage',
@@ -39,7 +40,7 @@ function isNavRef(v: unknown): v is NavRef {
 export function isAssetPath(v: unknown): v is string {
   return (
     typeof v === 'string' &&
-    v.startsWith('.nexus/assets/') &&
+    v.startsWith(`${ASSETS_DIR_REL}/`) &&
     !v.split('/').includes('..') &&
     !v.includes('\\')
   )
