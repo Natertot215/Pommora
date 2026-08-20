@@ -78,7 +78,7 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 - [ ] How MarkdownPMs headings are given their top-bottom padding is still unclear; what's standard paragraph → heading spacing on Obsidian collapses on Pommora where the block above the heading doesn't seem to have any additional padding, or it's at least extremely minimal compared to the padding that headings have below them. 
 
 ### Recent Work
-[Basic formatting syntax - Obsidian Help](https://obsidian.md/help/syntax)
+
 #### PM-110 || The Cohesion Pass
 
 An eight-agent read-only sweep produced a catalog of cohesion debt, and the sessions against it closed seven of its sections — the same app with fewer places to state the same thing twice, doing less work to say it. Glyph sizes stopped being numbers and became a ladder mirroring the type ramp name for name; four shapes that existed twice became one apiece; the page menu's template and the row menu's merged, and the six editor chords stopped living in two spellings that nothing tied together. Main's costs came down where whole-nexus work was being paid for single-field edits — a recolored checkbox no longer rebuilds every Collection, eight settings readers moved onto the tree the walk already decoded, and every corpus enumeration prunes `.trash` rather than walking it in full to discard it.

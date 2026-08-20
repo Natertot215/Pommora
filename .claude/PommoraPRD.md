@@ -28,11 +28,11 @@ Pommora's bet: a Markdown-canonical foundation with a fast property and query en
 
 ### Domain Model
 
-Two layers, PARA-aligned. The organization layer holds categorical anchors; the operational layer holds the actual data. Operational entities relate to organization entities through parenthesized Context keys at their frontmatter or JSON root.
+Two layers, PARA-aligned. The organization layer holds categorical anchors; the operational layer holds the actual data. Operational entities relate to organization entities via parenthesized Context keys at the frontmatter or the JSON root.
 
 #### Organization layer — Contexts
 
-User-defined, **free-standing** Context groups holding Spaces — the registry seeds three as ordinary, fully manageable entries. No Context contains, parents, or is restricted to another — a Project is not "inside" a Topic; a Topic does not belong to an Area. Each operational entity tags whichever Spaces fit, independently.
+User-defined, **free-standing** Context groups holding Spaces — the registry seeds three as ordinary, fully manageable entries. No Context contains, parents, or is restricted to another — a Project is not "inside" a Topic; a Topic does not belong to an Area. Each operational entity independently tags whichever Spaces fit.
 
 | Seeded Context | Role                                                      |
 | -------------- | --------------------------------------------------------- |
