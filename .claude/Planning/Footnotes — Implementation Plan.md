@@ -880,8 +880,8 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 ## Implementation Log
 
 ### Progress
-- [ ] **Phase 1** — One boundary, and the counter that proves it · base `<commit>`
-  - [ ] Task 1 — The shared citation scan · `<commit>`
+- [x] **Phase 1** — One boundary, and the counter that proves it · base `e4c5c04a`
+  - [x] Task 1 — The shared citation scan · `<commit>`
   - [ ] Task 2 — The scan joins the editor's document derivation · `<commit>`
   - [ ] Task 3 — Statistics stop counting the section · `<commit>`
 - [ ] **Phase 2** — The section and its markers draw
@@ -928,6 +928,9 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 - **A drop above the section — closed, not an issue.** `blockMoveChanges` already fences both seams: it emits a blank after every inserted block and heals the hole the cut leaves, with its own comment naming this exact hazard — a glue-adjacent block would otherwise lazily continue a list or merge two paragraphs. A paragraph dropped above the section always lands with a blank after it, so the first citation cannot become its continuation. **The adjacent case the round did not raise is real and already covered:** a block dropped at the document's end lands *after* the section, which is the strand A-5b forbids, and Task 15's rule is "at or after". Task 15 names it as a test case rather than leaving it implied.
 
 ### Deviations
+
+- **Task 1 — `contentStart` is absolute, not line-relative.** The Interfaces block described it as line-relative while the same block requires every offset to come out absolute, as the sibling readers do. Absolute is what the consumers want (the hide range, the guard's clamp), so the one clause loses to the rule.
+- **Task 1 — a table below a citation ends the run.** The parser absorbs `| a | b |` rows as lazy continuation; the house exclusion set owns those bytes, so the scan breaks the run there instead. The cross-check corpus excludes the shape, and the divergence is stated at `citationScan`.
 
 ### Lessons
 

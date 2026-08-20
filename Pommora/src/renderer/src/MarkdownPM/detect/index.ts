@@ -1,6 +1,6 @@
 // Inline matchers return a fresh /g regex per call so callers never share lastIndex.
 import { parse } from '../parser'
-import { fenceLang, fenceSpans, lineOffsetsOf, quoteDepthOf } from '@shared/markdownCode'
+import { codeMask, fenceLang, fenceSpans, lineOffsetsOf, quoteDepthOf } from '@shared/markdownCode'
 import { loneWebpageEmbed } from '@shared/webpageEmbed'
 import type { ListKind } from '@shared/gripMenu'
 export { markdownLinkRegex } from '@shared/links'
@@ -142,6 +142,159 @@ function loneLines<T>(
     out.push({ ...v, from: lineStarts[i], to: lineStarts[i] + lines[i].length })
   }
   return out
+}
+
+export interface CitationEntry {
+  /** The `[^label]:` line's index. */
+  line: number
+  /** The citation's final continuation line — its own line when it has none. */
+  lastLine: number
+  label: string
+  /** Absolute offset where the citation's text begins, past `[^label]:` and the spaces after it. */
+  contentStart: number
+  /** The positional number, null when nothing binds to it — an orphan, or a duplicate that lost. */
+  ordinal: number | null
+}
+
+export interface MarkerRef {
+  line: number
+  from: number
+  to: number
+  label: string
+  ordinal: number | null
+}
+
+export interface CitationScan {
+  entries: CitationEntry[]
+  markers: MarkerRef[]
+  /** 1 for every line of the section, the blanks between and after its citations included. */
+  mask: Uint8Array
+  /** The section's first citation line, or `lines.length` when there is no section. */
+  firstLine: number
+  /** The line a fold leaves visible — the one above the run, and -1 when nothing sits above it or
+   *  there is no section. It is the rendered anchor only; a region's identity is its first citation. */
+  anchorLine: number
+}
+
+// A head takes CommonMark's 0–3 space indent; four makes it indented code. The label admits neither
+// `]` nor whitespace, which is what separates a citation from the `[^my note]:` link definition.
+const citationHeadRe = /^ {0,3}\[\^([^\]\s]+)\]:[ \t]*/
+
+/** The body-marker grammar, fresh per call so no caller shares `lastIndex`. The lookbehind honors
+ *  the `\[^1]` escape, which suppresses the reference at the parser too — one pattern, so the
+ *  counter and the decoration pass can never disagree about what an escape means. */
+export const markerRegex = (): RegExp => /(?<!\\)\[\^([^\]\s]+)\]/g
+
+/** The case-fold every marker↔citation comparison runs through. Deliberately not the shared title
+ *  normalization: GFM defines its own folding for footnote labels, so coupling the two would let a
+ *  change to title matching silently move footnote binding. The double case swap is micromark's own,
+ *  which is what makes this agree with the parser on characters like ß. */
+export function foldLabel(label: string): string {
+  return label.toLowerCase().toUpperCase()
+}
+
+/** The trailing run of citations reaching the document's end, with every body marker bound to it by
+ *  case-folded label and numbered in first-use order. The section's boundary is derived HERE and
+ *  nowhere else — six layers read it, and a boundary each of them re-derived is one they would
+ *  eventually disagree about. Same exclusion contract as its siblings: a `[^1]:` line inside a
+ *  fence, table or math region is content there, and `excluded` is required so two callers cannot
+ *  silently disagree. A table immediately below a citation ends the run rather than continuing it —
+ *  the exclusion set owns those bytes. */
+export function citationScan(d: DocLines, excluded: [number, number][]): CitationScan {
+  const { text, lines, lineStarts } = d
+  const blank = (k: number): boolean => lines[k].trim() === ''
+  const breaks = (k: number): boolean =>
+    inExcluded(lineStarts[k], excluded) ||
+    isHeadingLine(lines[k]) ||
+    isThematicBreakLine(lines[k]) ||
+    isBlockquoteLine(lines[k]) ||
+    parseListMarker(lines[k]) !== null
+
+  const spans: Omit<CitationEntry, 'ordinal'>[] = []
+  for (let i = 0; i < lines.length; i++) {
+    const head = citationHeadRe.exec(lines[i])
+    if (!head || inExcluded(lineStarts[i], excluded)) continue
+    let lastLine = i
+    let k = i + 1
+    while (k < lines.length) {
+      if (blank(k)) {
+        // Past a blank, only an indented line still belongs to the citation above.
+        let m = k
+        while (m < lines.length && blank(m)) m++
+        if (m >= lines.length || citationHeadRe.test(lines[m]) || breaks(m)) break
+        if (!/^(?: {4}|\t)/.test(lines[m])) break
+        lastLine = m
+        k = m + 1
+        continue
+      }
+      if (citationHeadRe.test(lines[k]) || breaks(k)) break
+      lastLine = k
+      k++
+    }
+    spans.push({
+      line: i,
+      lastLine,
+      label: head[1],
+      contentStart: lineStarts[i] + head[0].length,
+    })
+    i = lastLine
+  }
+
+  const mask = new Uint8Array(lines.length)
+  let firstLine = lines.length
+  let entries: CitationEntry[] = []
+  const allBlank = (from: number, to: number): boolean => {
+    for (let k = from; k <= to; k++) if (!blank(k)) return false
+    return true
+  }
+  const last = spans[spans.length - 1]
+  if (last && allBlank(last.lastLine + 1, lines.length - 1)) {
+    let start = spans.length - 1
+    while (start > 0 && allBlank(spans[start - 1].lastLine + 1, spans[start].line - 1)) start--
+    firstLine = spans[start].line
+    entries = spans.slice(start).map((s) => ({ ...s, ordinal: null }))
+    mask.fill(1, firstLine)
+  }
+
+  // First-use order numbers a marker and its citation together: deriving it twice is two answers to
+  // one question. A marker inside code binds nothing and takes no number — the drawn set drops those
+  // from the shared code mask, so counting them here would print numbers that skip.
+  const firstFor = new Map<string, number>()
+  entries.forEach((e, idx) => {
+    const key = foldLabel(e.label)
+    if (!firstFor.has(key)) firstFor.set(key, idx)
+  })
+  const inCode = codeMask(text)
+  const markers: MarkerRef[] = []
+  let next = 1
+  for (let i = 0; i < firstLine && i < lines.length; i++) {
+    const headEnd = citationHeadRe.exec(lines[i])?.[0].length
+    const re = markerRegex()
+    let m = re.exec(lines[i])
+    for (; m !== null; m = re.exec(lines[i])) {
+      const from = lineStarts[i] + m.index
+      // A mid-document citation line is live prose (A-6), so its own head never draws as a marker.
+      if (headEnd !== undefined && m.index + m[0].length <= headEnd) continue
+      if (inCode(from)) continue
+      const idx = firstFor.get(foldLabel(m[1]))
+      if (idx !== undefined && entries[idx].ordinal === null) entries[idx].ordinal = next++
+      markers.push({
+        line: i,
+        from,
+        to: from + m[0].length,
+        label: m[1],
+        ordinal: idx === undefined ? null : entries[idx].ordinal,
+      })
+    }
+  }
+
+  return {
+    entries,
+    markers,
+    mask,
+    firstLine,
+    anchorLine: entries.length > 0 && firstLine > 0 ? firstLine - 1 : -1,
+  }
 }
 
 export interface EmbedLine {
