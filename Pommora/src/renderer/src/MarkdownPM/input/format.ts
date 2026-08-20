@@ -10,6 +10,9 @@ import {
   type ListMarker,
 } from '../detect'
 import type { ListKind } from '@shared/gripMenu'
+// The menu's vocabulary and this module's argument types are one fact — declared in shared so
+// main names rows from the same list the editor branches on.
+import type { BlockFormat, HeadingLevel, InlineFormat } from '@shared/editorMenu'
 import { lineStartAt, lineEndAt } from './index'
 import { emptyTable } from '../Tables/model'
 import { serialize } from '../Tables/codec'
@@ -19,11 +22,6 @@ export interface FormatEdit {
   changes: { from: number; to: number; insert: string }[]
   selection?: number
 }
-
-// The menu's vocabulary and this module's argument types are one fact — declared in shared so
-// main names rows from the same list the editor branches on.
-import type { BlockFormat, HeadingLevel, InlineFormat } from '@shared/editorMenu'
-export type { BlockFormat, HeadingLevel, InlineFormat }
 
 /** A line carries a plain-quote prefix the quote toggle should strip — true for a real blockquote, but NOT a
  *  callout head (whose `>` is box chrome, stripping it orphans the `[!type]`). */

@@ -38,7 +38,6 @@ export interface PropertyRowsPage {
 export interface PropertyRows {
   schema: PropertyDefinition[]
   ctx: ResolveContext | null
-  ctxRegistry: ContextsRegistry | null
   contextRows: { id: string; label: string; icon: string }[]
   contextValues: Record<string, string[]> | undefined
   row: ViewRow | null
@@ -159,7 +158,6 @@ export function usePropertyRows(
   return {
     schema,
     ctx,
-    ctxRegistry,
     contextRows,
     contextValues,
     row,

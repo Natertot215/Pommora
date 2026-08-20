@@ -2,9 +2,9 @@
 // renderer resolves the grip to its block and sends what that block offers (main has no document); main
 // maps it to the native menu; the pick comes back as the ask's resolution.
 
-/** The four list markers, named once for every layer that reads or writes one. */
 import type { HeadingLevel } from './editorMenu'
 
+/** The four list markers, named once for every layer that reads or writes one. */
 export type ListKind = 'ordered' | 'bullet' | 'checkbox' | 'arrow'
 
 /** One node of the Collections → Sets → Pages pick tree — a `title`-bearing node is a page leaf,
@@ -31,7 +31,7 @@ export type GripMenuAction =
   | { action: 'editLink' }
   | { action: 'listKind'; kind: ListKind }
   | { action: 'rename' }
-  | { action: 'size'; level: number }
+  | { action: 'size'; level: HeadingLevel }
   | { action: 'delete' }
 
 /** The heading ladder a block can be set to, named once for every menu that offers it — the editor's
