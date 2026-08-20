@@ -10,7 +10,7 @@ The operational layer's calendar-anchored side: two peer entity kinds, **Tasks**
 
 Agenda currently carries no on-disk format, no CRUD, and no read surface — the item format, field vocabulary, ordering, and surfaces are the Agenda rethink's to answer. What holds regardless of the form it takes:
 
-- **Sidecar-declared kind.** A folder's kind comes from the JSON filename it carries (`_taskconfig.json` / `_eventconfig.json`). A folder the nexus registers is that singleton; one it does not is inert, and neither is ever adopted as a Collection. A registered singleton stamps its own direct members and is flat — nothing below it is walked or stamped.
+- **Sidecar-declared kind.** A folder's kind is determined by the JSON filename it carries (`_taskconfig.json` / `_eventconfig.json`). A folder the nexus registers is that singleton; one it does not is inert, and neither is ever adopted as a Collection. A registered singleton stamps its own direct members and is flat — nothing below it is walked or stamped.
 - **Identity refs.** `NavRef` admits `task` and `event` as bare `{kind, id}` refs, and `navigation.json` persists them. The tab resolver, the pin target, and the favorite add each refuse an agenda kind while nothing routes one, so a stored ref resolves to nothing rather than to a broken destination.
 - **The sidebar mode.** Agenda is one of the ribbon's modes, holding its place with an empty state (→ [[SidebarPM]]).
 - **Labels.** The `agendaTask` / `agendaEvent` singular-plural pairs are parsed from settings and defaulted; no surface reads them.
