@@ -29,6 +29,8 @@ describe('computeStats — masked constructs add no characters', () => {
   })
 })
 
+// Tables are the known exception — their pipes and delimiter row still count as source. See the
+// note in subfieldStats.ts.
 describe('computeStats — the counter agrees with what the editor draws', () => {
   it('a lone page embed is a tile, not prose', () => {
     expect(computeStats('![[Page]]')).toEqual({ lines: 1, words: 0, characters: 0 })
@@ -66,6 +68,29 @@ describe('computeStats — the counter agrees with what the editor draws', () =>
   it('an ordered item and a bullet count only their content', () => {
     expect(computeStats('1. one').words).toBe(1)
     expect(computeStats('- two').words).toBe(1)
+  })
+})
+
+describe('computeStats — a line is read from the base the renderer reads it from', () => {
+  it("a callout head's tag is chrome, not prose", () => {
+    expect(computeStats('> [!note] Remember the deadline\n> It is on Friday.').words).toBe(7)
+  })
+
+  it('a rule inside a quote is still a rule', () => {
+    expect(computeStats('> ---')).toEqual({ lines: 1, words: 0, characters: 0 })
+  })
+
+  it('a bare `>` with no space is prose the renderer never quotes', () => {
+    expect(computeStats('>abc').characters).toBe(4)
+    expect(computeStats('>>>>abc').characters).toBe(7)
+  })
+
+  it('a heading inside a quote loses its hashes, not its words', () => {
+    expect(computeStats('> ## Title').words).toBe(1)
+  })
+
+  it('a list item inside a quote counts only its content', () => {
+    expect(computeStats('> - [ ] task').words).toBe(1)
   })
 })
 
