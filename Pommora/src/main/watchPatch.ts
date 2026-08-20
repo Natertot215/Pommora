@@ -379,6 +379,7 @@ function applySettingsLeaves(root: string, leaves: SettingsLeaves): 'ok' | 'refr
     accent: leaves.accent,
     personalization: leaves.personalization,
     commands: leaves.commands,
+    excluded: leaves.excluded,
     nexus: {
       ...t.nexus,
       profileImage: leaves.profileImage,

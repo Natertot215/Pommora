@@ -5,17 +5,16 @@
 import { relative, sep } from 'node:path'
 import chokidar, { type FSWatcher } from 'chokidar'
 import type { BrowserWindow } from 'electron'
-import { asStringArray } from './coerce'
 import { excludedMatcher, sameExclusions } from './exclusion'
-import { readJsonObject } from './io/atomicWrite'
 import { readNavigationFile } from './io/navigationFile'
 import { isRecentWrite } from './io/writeEcho'
 import { isMarkdownFile } from './io/walk'
-import { HOMEPAGE_HOST_DIRNAME, nexusConfig, NEXUS_CONFIG_FILES } from './paths'
+import { HOMEPAGE_HOST_DIRNAME, NEXUS_CONFIG_FILES } from './paths'
 import { push as pushToWindow } from './ipc'
 import { seedContentIndex } from './indexSeed'
 import { getLiveTree, refreshAfterWrite } from './liveTree'
 import { sessionRoot } from './session'
+import { readExcludedFolders } from './settings'
 import { applyWatchEvents, type WatchEvent, type WatchEventName } from './watchPatch'
 
 const SETTLE_MS = 200
@@ -72,8 +71,7 @@ export function ignoredUnder(root: string, excluded: string[] = []): (path: stri
 /** Start (or restart) watching `root`, pushing fresh trees to `win`. */
 export async function startWatcher(root: string, win: BrowserWindow): Promise<void> {
   stopWatcher()
-  const settings = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings))) ?? {}
-  const excluded = asStringArray(settings.excluded_folders) ?? []
+  const excluded = await readExcludedFolders(root)
   if (sessionRoot() !== root) return // session switched during the settings read
   watcher = chokidar.watch(root, {
     ignored: ignoredUnder(root, excluded),
@@ -156,8 +154,7 @@ async function settle(root: string, win: BrowserWindow, excluded: string[]): Pro
     // edit classifies `refresh` above, but the classifier and chokidar's own ignore filter
     // would keep reading the stale capture — and a note under a newly-excluded folder would
     // ride `index-only` back into the queryable rows. A changed list re-arms the watcher.
-    const settings = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings))) ?? {}
-    const current = asStringArray(settings.excluded_folders) ?? []
+    const current = await readExcludedFolders(root)
     if (!sameExclusions(current, excluded)) void startWatcher(root, win)
   } catch {
     // Transient FS state mid-write — the next settle re-reads (Reload is the fallback).

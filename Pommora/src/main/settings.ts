@@ -4,13 +4,16 @@
 
 import {
   coerceViewScale,
-  coerceWebZoom,
   type NavViewMode,
   type NavViewModes,
+  type NexusLabels,
+  type Personalization,
   type SubfieldConfig,
 } from '@shared/types'
 import { readJsonObject, rmwJsonStrict } from './io/atomicWrite'
+import { getLiveTree } from './liveTree'
 import { nexusConfig, NEXUS_CONFIG_FILES } from './paths'
+import { readSettingsLeaves, type SettingsLeaves } from './readNexus'
 
 /** Serialized read-modify-write of settings.json — the one primitive every settings writer funnels
  *  through, so concurrent writes to different keys can't clobber each other. A missing file
@@ -25,32 +28,44 @@ export async function updateSettings(
   if (!written.ok) throw new Error(written.error.message)
 }
 
-/** One personalization key straight off disk — a direct settings.json read, never a full readNexus
- *  walk, for the handful of main-side consumers that need one value and nothing else. */
-async function readPersonalizationKey(root: string, key: string): Promise<unknown> {
-  const existing = await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings))
-  const p = existing?.personalization
-  return p && typeof p === 'object' && !Array.isArray(p)
-    ? (p as Record<string, unknown>)[key]
-    : undefined
+/** The leaves `settings.json` feeds, for the main-side consumers that want one of them and not a
+ *  whole tree. Served from the tree main already holds — the walk decoded this exact file through
+ *  these exact coercions and the watcher's settings patch keeps it current — so the daily callers
+ *  (every mutate, every context-menu pop, every cascade scan) cost nothing. The disk read covers
+ *  the moments before a walk has installed a tree for this root: launch-restore and adoption. */
+async function liveLeaves(
+  root: string,
+): Promise<Pick<SettingsLeaves, 'personalization' | 'labels' | 'excluded'>> {
+  const tree = getLiveTree()
+  if (tree?.nexus.rootPath === root) return tree
+  const settings = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings))) ?? {}
+  return readSettingsLeaves(settings)
 }
+
+/** The nexus-wide interface personalization — the source the named readers below narrow. */
+export const readLivePersonalization = async (root: string): Promise<Personalization> =>
+  (await liveLeaves(root)).personalization
+
+/** The nexus's labels — for the callers outside the tree walk that need to name an entity (a
+ *  native menu building its "New …" items). */
+export const readNexusLabels = async (root: string): Promise<NexusLabels> =>
+  (await liveLeaves(root)).labels
+
+/** The user's `excluded_folders` — a missing or unreadable settings file excludes nothing. */
+export const readExcludedFolders = async (root: string): Promise<string[]> =>
+  (await liveLeaves(root)).excluded
 
 /** The nexus's default window zoom from `personalization.defaultViewScale` — the factor the window
  *  opens at and ⌘0 resets to, clamped to a usable range; absent/malformed → 1.0. */
 export async function readDefaultViewScale(root: string): Promise<number> {
-  return coerceViewScale(await readPersonalizationKey(root, 'defaultViewScale'))
-}
-
-/** The web-guest scale from `personalization.webZoomFactor`, clamped; absent/malformed → 1.0. */
-export async function readWebZoomFactor(root: string): Promise<number> {
-  return coerceWebZoom(await readPersonalizationKey(root, 'webZoomFactor'))
+  return coerceViewScale((await readLivePersonalization(root)).defaultViewScale)
 }
 
 /** Whether emptying the trash erases outright rather than handing the artifact to the operating
  *  system. Anything that is not literally `true` reads as off: the destructive direction is never
  *  reached by a truthy coercion. */
 export async function readPermanentDelete(root: string): Promise<boolean> {
-  return (await readPersonalizationKey(root, 'permanentDelete')) === true
+  return (await readLivePersonalization(root)).permanentDelete === true
 }
 
 /** Read the React-owned `subfield` foreign key from settings.json (null when absent/malformed). */

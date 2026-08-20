@@ -351,6 +351,9 @@ export interface NexusTree {
   /** Nexus-wide keyboard commands (`settings.json` `commands`) — DEFAULT_COMMANDS overlaid with
    *  the user's on-disk overrides, so every id always resolves to a spec. */
   commands: Record<string, string>
+  /** The user's `excluded_folders` (`settings.json`) — nexus-relative folder paths the walk,
+   *  the watcher, and the content index all step around. */
+  excluded: string[]
   /** Every registry definition, in the nexus-wide cosmetic order (order-listed first,
    *  unlisted appended) — reserved ids included; consumers filter. */
   registry: PropertyDefinition[]

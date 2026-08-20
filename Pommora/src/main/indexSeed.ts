@@ -7,7 +7,6 @@ import { readFile, stat } from 'node:fs/promises'
 import { isAbsolute, join, relative, sep } from 'node:path'
 import { isGovernedKey } from '@shared/governedKeys'
 import { errText } from '@shared/result'
-import { asStringArray } from './coerce'
 import { extractMentions } from './connections/scan'
 import { sweepAdmitsBody } from './crud/util'
 import {
@@ -22,11 +21,10 @@ import {
   type IndexedStat,
   type PageIndexEntry,
 } from './db/contentIndex'
-import { readJsonObject } from './io/atomicWrite'
 import { splitEnvelope } from './io/pageFile'
 import { corpusFiles, corpusFilesUnder, isMarkdownFile, NON_CORPUS_TOP } from './io/walk'
-import { nexusConfig, NEXUS_CONFIG_FILES } from './paths'
 import { splitFrontmatter } from './readNexus'
+import { readExcludedFolders } from './settings'
 import { sessionDb } from './sessionDb'
 
 /** A page's index rows, from its raw content. Null = the sweeps would skip it (Unknown
@@ -41,17 +39,10 @@ export function extractPageIndex(content: string): PageIndexEntry | null {
   return { mentions: [...extractMentions(splitEnvelope(content).body)], values }
 }
 
-/** The user's `excluded_folders`, read the way the walk reads them — a missing or unreadable
- *  settings file excludes nothing. */
-async function excludedFolders(root: string): Promise<string[]> {
-  const settings = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings))) ?? {}
-  return asStringArray(settings.excluded_folders) ?? []
-}
-
 /** Every corpus file of the nexus at `root`, honoring the user's `excluded_folders` — the one
  *  enumeration behind the seed and behind every cascade's fallback scan. */
 export async function nexusCorpus(root: string): Promise<string[]> {
-  return corpusFiles(root, await excludedFolders(root))
+  return corpusFiles(root, await readExcludedFolders(root))
 }
 
 /** Corpus rels as absolute paths, kept to those inside one of `folders` — the separator is part
@@ -68,7 +59,7 @@ export function corpusUnder(root: string, rels: string[], folders: string[]): st
  *  enumerate through here so a folder nested inside a Collection but named by
  *  `excluded_folders` stays exactly as unreachable as the walk says. */
 export async function folderCorpus(root: string, absFolder: string): Promise<string[]> {
-  const rels = await corpusFilesUnder(root, absFolder, await excludedFolders(root))
+  const rels = await corpusFilesUnder(root, absFolder, await readExcludedFolders(root))
   return rels.map((rel) => join(root, rel))
 }
 

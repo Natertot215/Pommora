@@ -23,7 +23,7 @@ import {
 } from '@shared/pageMenu'
 import { rowTemplate } from './rowMenu'
 import type { ContextTarget, Creator, MutableKind, MutateRequest } from '@shared/mutate'
-import { readNexusLabels } from './readNexus'
+import { readNexusLabels } from './settings'
 
 /** The "New …" creators a container offers; pages + Spaces + the legacy area/topic/project
  *  kinds offer none. Collections and Sets route through the shared rule, so this menu and the

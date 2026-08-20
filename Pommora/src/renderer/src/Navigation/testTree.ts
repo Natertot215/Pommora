@@ -58,6 +58,7 @@ export function makeTree(): NexusTree {
     accent: 'lavender',
     personalization: {},
     commands: {},
+    excluded: [],
     registry: [],
   }
 }
