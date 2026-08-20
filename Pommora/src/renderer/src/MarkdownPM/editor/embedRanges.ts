@@ -6,6 +6,8 @@ import {
   blockEmbedLines,
   blockMathRanges,
   blockWebpageLines,
+  citationScan,
+  type CitationScan,
   type DocLines,
   type EmbedLine,
   type WebpageLine,
@@ -17,6 +19,7 @@ interface DocLineScan {
   maths: [number, number][]
   embeds: EmbedLine[]
   webpages: WebpageLine[]
+  citations: CitationScan
 }
 
 /** All three construct kinds from the fence/table base the caller already holds — the exclusion set
@@ -36,6 +39,7 @@ export function docLineScan(
     maths,
     embeds: blockEmbedLines(d, excluded),
     webpages: blockWebpageLines(d, excluded),
+    citations: citationScan(d, excluded),
   }
 }
 
