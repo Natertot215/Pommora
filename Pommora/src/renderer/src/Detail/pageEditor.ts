@@ -17,7 +17,8 @@ function headerZone(view: EditorView): number {
   const zone = Number.parseFloat(getComputedStyle(shell).getPropertyValue('--header-zone'))
   return Number.isFinite(zone) ? zone : REVEAL_MARGIN
 }
-// The reveal's own beat plus a frame, so the scroll measures the section at its opened height.
+// The reveal's own beat, plus slack for the frame that draws its final height — the scroll has to
+// measure the section opened, not opening.
 const SETTLE_MS = Number.parseInt(duration.disclosure, 10) + 30
 
 // The open page's live editor — registered by the page surface at mount, so an embedded tile's
@@ -30,29 +31,29 @@ export function registerPageEditor(view: EditorView | null): void {
   pageView = view
 }
 
-function pageEditorView(): EditorView | null {
-  return pageView
-}
-
 /** Travel the open page to `pos`, opening whatever was hiding it. The document and the caret are
  *  untouched — going somewhere never edits it or moves where the next keystroke lands — but a
  *  collapsed section IS opened, because arriving at a heading whose body is still folded is
  *  indistinguishable from having gone nowhere. */
 export function revealPageOffset(pos: number): void {
-  const view = pageEditorView()
+  const view = pageView
   if (!view) return
   // The outline is derived from the store's body, which can trail the editor's own doc by a beat.
   const target = Math.max(0, Math.min(pos, view.state.doc.length))
   const travel = (): void => {
     const scroller = view.scrollDOM
-    // Re-measured every frame, not resolved once. The editor only estimates the height of blocks it
-    // hasn't drawn, so the destination sharpens as the travel reveals it — read live, the glide eases
-    // into the true position; read once, it lands on the estimate and has to jump the difference.
-    // `documentTop` is where the document currently begins on screen, which the scroll itself moves.
+    // Resolved once: the header's band is set from its own height, which a scroll doesn't change,
+    // and the glide asks for its destination on every frame.
+    const zone = headerZone(view)
+    // The line's own position IS re-measured every frame. The editor only estimates the height of
+    // blocks it hasn't drawn, so the destination sharpens as the travel reveals it — read live, the
+    // glide eases into the true position; read once, it lands on the estimate and has to jump the
+    // difference. `documentTop` is where the document currently begins on screen, which the scroll
+    // itself moves.
     const seat = (): number =>
       scroller.scrollTop +
       (view.documentTop + view.lineBlockAt(target).top - scroller.getBoundingClientRect().top) -
-      headerZone(view)
+      zone
     scrollGlide(scroller, seat, SEEK_GLIDE)
   }
   // A folded section has no height, so travelling before it opens measures the collapsed document and
@@ -67,7 +68,7 @@ export function revealPageOffset(pos: number): void {
  *  re-checked as a heading, so a stale `from` from a body that trailed the editor is a no-op, not a
  *  wrong write. */
 export function renameHeadingAtOffset(from: number, next: string): void {
-  const view = pageEditorView()
+  const view = pageView
   if (!view) return
   const line = view.state.doc.lineAt(Math.max(0, Math.min(from, view.state.doc.length)))
   const parts = headingParts(line.text)
@@ -83,7 +84,7 @@ export function renameHeadingAtOffset(from: number, next: string): void {
  *  trail the editor by a beat), and `blockMoveChanges` carries the blank-line fencing, so the section
  *  never lands jammed against a neighbor. */
 export function moveHeadingSection(dragKey: string, beforeKey: string | null): void {
-  const view = pageEditorView()
+  const view = pageView
   if (!view) return
   const doc = view.state.doc.toString()
   const heads = headingOutline(doc)
