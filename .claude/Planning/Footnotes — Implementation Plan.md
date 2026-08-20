@@ -625,17 +625,20 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 
 **Why:** The gesture factory already owns the hover intent, the press latch, the right-button claim and the caret-seat clamp; a marker is a third spec rather than a third copy of any of it. Click-through is defined once — the citation's whole content being exactly one link or one Connection — so no other entry needs to restate the condition, and a trailing character means it is not that and the click jumps like any other.
 
+**The jump itself is not new work.** "Go to an offset in this page, opening whatever hides it" is already one solved act: the page-travel function clamps the target, opens every collapsed region concealing it, waits out the disclosure before measuring, and glides to the seat the page header's own band defines — re-reading the destination each frame, because the editor only estimates the height of blocks it has not drawn. **The outline dropdown's row click is a single call to it.** A marker click is that same act with a different target, so this task supplies the target and not a second traveller.
+
 **Files:**
-- Create: `Pommora/src/renderer/src/MarkdownPM/editor/citationPointer.ts`
+- Create: `Pommora/src/renderer/src/MarkdownPM/editor/citationPointer.ts` — the gesture spec only.
 - Modify: `Pommora/src/renderer/src/MarkdownPM/index.tsx` — register the spec.
+- Modify: `Pommora/src/renderer/src/Detail/pageEditor.ts` — the travel function takes an optional view, defaulting to the registered page editor. It reads a module-level handle today, so a marker clicked inside a hover card or a floating preview would otherwise travel the **main pane's** editor rather than the one under the pointer. One parameter; the outline dropdown's call is unchanged and gains the same reach.
 - Test: `Pommora/src/renderer/src/MarkdownPM/editor/citationPointer.test.ts`
 
-**Failure half:** a click on a marker whose citation is hidden → the section opens first, since a folded region has no height to scroll to, then the caret lands. A citation holding a link plus a trailing period → jumps, does not navigate. An unmatched marker → not a target at all; the click seats a caret like ordinary text.
+**Failure half:** a click on a marker whose citation is hidden → the section opens first, since a folded region has no height to travel to, then the target lands; the travel function already sequences this. A marker clicked inside a floating preview or a hover card → travels *that* editor, not the main pane's. A citation holding a link plus a trailing period → jumps, does not navigate. An unmatched marker → not a target at all; the click seats a caret like ordinary text.
 
 **Steps:**
 - [ ] Write the failing tests: jump to the row; jump opening a hidden section; navigate on a lone link; navigate on a lone Connection; jump on a link with trailing text.
 - [ ] Implement the spec's `hitAt`, `follow`, `dwell` (null — hover preview is a Prospect) and `menu`.
-- [ ] Reuse the editor's existing reveal-and-scroll seam rather than writing one: it already opens every collapsed region hiding an offset, waits out the disclosure, and seats the target — including the settle constant. Called directly with the view, so a marker clicked inside a hover card or a preview reveals in *that* editor rather than the module-held main one.
+- [ ] Call the existing page-travel function with the citation's offset and the clicked view. No expand call, no settle timer, no scroll math in this task — all four already live there, and a second copy is exactly what C1 exists to catch.
 - [ ] **Write the override when the revealed region is the citations section.** That seam dispatches the expand effect directly, so on its own it would leave the section visibly open while the stored override still reads hidden — a second writer against C-3, and the Subfield would then read "Show Footnotes" over an open section and take two presses to hide it.
 - [ ] Run the gate — expect green.
 - [ ] Commit: `feat(editor): a marker click jumps to its citation, or follows it`
