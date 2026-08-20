@@ -124,7 +124,9 @@ export function useStatusReorder(
     const fromIndex = fromGroup?.values.indexOf(value) ?? -1
     const sameGroup = fromGroup?.id === groupId
     const to = sameGroup && index > fromIndex ? index - 1 : index
-    return { to, moves: !(sameGroup && to === fromIndex) }
+    // A value the live order no longer holds has no move to make — a delete landing mid-drag
+    // leaves the gesture aimed at a row that is gone, and the drop declines rather than guessing.
+    return { to, moves: fromGroup !== undefined && !(sameGroup && to === fromIndex) }
   }
 
   const resolveAt = (clientY: number): void => {
