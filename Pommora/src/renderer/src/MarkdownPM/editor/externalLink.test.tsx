@@ -74,6 +74,38 @@ describe('an external link opens from its label and nowhere else', () => {
   })
 })
 
+// A target that names neither a page nor a web address has nothing to follow, so the press is not
+// claimed and falls through to CM, which seats a caret in the text you came to repair. (The seat
+// itself is a geometry fact jsdom cannot answer; what is pinned here is that nothing opens and
+// nothing is offered.)
+describe('a link whose target names nothing is text, not a link', () => {
+  const BROKEN = 'a [Home](not a url) b'
+  const brokenLabel = (view: EditorView): HTMLElement =>
+    view.dom.querySelector('.md-link-invalid') as HTMLElement
+
+  it('a click on its label opens nothing', async () => {
+    const view = await mountEditor({ initialBody: BROKEN })
+    await act(async () => view.focus())
+    view.dispatch({ selection: { anchor: 0 } })
+    press(view, 5, brokenLabel(view))
+    expect(openExternal).not.toHaveBeenCalled()
+  })
+
+  it('a right press over it offers no link menu', async () => {
+    const view = await mountEditor({ initialBody: BROKEN })
+    await act(async () => view.focus())
+    view.dispatch({ selection: { anchor: 0 } })
+    vi.spyOn(view, 'posAtCoords').mockReturnValue(5)
+    await act(async () => {
+      brokenLabel(view).dispatchEvent(
+        new MouseEvent('contextmenu', { bubbles: true, cancelable: true }),
+      )
+      await Promise.resolve()
+    })
+    expect(connMenu).not.toHaveBeenCalled()
+  })
+})
+
 // What a `( )` target turns out to name is the resolver's answer, not the syntax's: `[Alpha](Alpha)`
 // reaches a page and carries everything a connection does, while a web address has only itself.
 describe('a markdown link’s menu follows what its target names', () => {

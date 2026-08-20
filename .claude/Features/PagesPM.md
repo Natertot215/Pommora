@@ -18,7 +18,7 @@ values, then a Markdown body. Membership is by location — a file inside a Coll
 
 ### On-Disk Shape
 
-Frontmatter carries `PageID` — the key naming the kind, holding a bare ULID — an optional `icon`, `created_at` / `modified_at`, and `cover` — a Nexus-relative page-banner path — plus the wrapped keys: `(Context)` keys naming Spaces, and one `<Property>` key per value the page holds. The wrap separates a property from a modeled root field; `cover` is a root field and never appears in a properties surface. [[PropertiesPM|Property]] values conform to the owning Collection's schema. Foreign frontmatter keys — and YAML comments — are preserved by value on every write; the writer re-serializes only the modeled keys.
+Frontmatter carries `PageID` — the key naming the kind, holding a bare ULID — an optional `icon`, `created_at` / `modified_at`, and `cover` — a Nexus-relative page-banner path — plus the wrapped keys: `(Context)` keys naming Spaces, and one `<Property>` key per value the page holds. The wrap separates a property from a modeled root field; `cover` is a root field and never appears in a properties surface. [[PropertiesPM|PropertyiesPM|Property]] values conform to the owning Collection's schema. Foreign frontmatter keys — and YAML comments — are preserved by value on every write; the writer re-serializes only the modeled keys.
 
 `modified_at` answers to a property value change, a text change, a location change, and a rename. A schema-level edit is not one of them — renaming a property rewrites the key on every page holding it without moving a stamp, since a derived rewrite is not a user modification, and the `[[link]]` rename cascade runs under the same rule.
 

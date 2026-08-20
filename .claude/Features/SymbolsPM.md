@@ -5,9 +5,7 @@ SymbolsPM
 ├── The Registry
 │   ├── View Settings Panes
 │   ├── Property Types
-│   └── View Types
-├── Sizes
-│   └── Roles
+│  
 ├── Additional Assignments
 ├── The Picker
 ├── Known Issues
@@ -21,6 +19,8 @@ Pommora's standard semantic icons — the canonical glyph for each pane, propert
 - **Only a registered glyph ships.** The registry is an explicit import list, so adding an icon means registering it; nothing arrives by wildcard, and the bundle carries exactly what's named.
 - **Keys are Pommora's vocabulary, not the library's.** Most match the lucide.dev name because that's the least surprising choice, but a key is renamed only when its glyph changes identity — never to chase library spelling — keeping stored ids valid across a library bump.
 - **Lucide is the default; Tabler is a per-icon opt-in** through the same seam, and both default to the same stroke weight, so they sit together with no override. Custom glyphs are registry-conforming SVG components drawn at that same weight.
+
+**Scale Resolution:** Every glyph draws at a size taken from one ladder, so a symbol's scale is a named step rather than a per-surface number. A step sets the icon's `font-size` and the glyph renders at `1em`, which keeps stroke weight proportional and lets a symbol inherit its surrounding type when no step is named.
 
 #### View Settings Panes
 
@@ -62,11 +62,7 @@ Pommora's standard semantic icons — the canonical glyph for each pane, propert
 | Calendar | `calendar-days`         |
 | Timeline | `chart-gantt`           |
 
-### Sizes
-
-Every glyph draws at a size taken from one ladder, so a symbol's scale is a named step rather than a per-surface number. A step sets the icon's `font-size` and the glyph renders at `1em`, which keeps stroke weight proportional and lets a symbol inherit its surrounding type when no step is named.
-
-The ladder's names mirror the type ramp one for one, so a glyph and the text beside it name the same step. Eleven names carry eight values, repeating wherever the type ramp itself repeats.
+#### Sizes
 
 | Step         | Size |
 | ------------ | ---- |
@@ -82,21 +78,19 @@ The ladder's names mirror the type ramp one for one, so a glyph and the text bes
 | `footnote`   | 10px |
 | `subline`    | 10px |
 
-**SOURCE:** `design-system/tokens/size.css.ts` — the ladder, bridged to CSS variables in `theme-vars.css.ts`. The same file exports the ladder as bare numbers for the few consumers that size an element rather than a font, such as a profile photo's width and height.
-
 #### Roles
 
 A handful of glyph roles recur across the app, each carrying a consistent meaning wherever it appears. A role's scale is a property of the role, not of the surface hosting it.
 
-| Role | What it marks | Scale |
-| ---- | ------------- | ----- |
-| Chip remove | The × dismissing a value inside a chip | Smallest — it sits within a chip's own box |
-| Action button | A standalone add, remove, or close affordance — a tab's ×, a filter row's remove, a pane's + | One step above the chip remove |
-| Disclosure | The double-chevron toggle opening a picker or a value control | Matched to the control's label |
-| Footing symbol | The leading glyph on a pane footer row | Matched to the control's label |
-| Entity glyph | A page, Set, Context, or property's own assigned icon | Matched to the surrounding row's text |
-| Confirmation | A checkmark inside a checkbox or a picker row | Matched to the box containing it |
-| Lock | The state marker on a locked pane footer | Matched to the surrounding row's text |
+| Role           | What it marks                                                                                | Scale                                      |
+| -------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| Chip remove    | The × dismissing a value inside a chip                                                       | Smallest — it sits within a chip's own box |
+| Action button  | A standalone add, remove, or close affordance — a tab's ×, a filter row's remove, a pane's + | One step above the chip remove             |
+| Disclosure     | The double-chevron toggle opening a picker or a value control                                | Matched to the control's label             |
+| Footing symbol | The leading glyph on a pane footer row                                                       | Matched to the control's label             |
+| Entity glyph   | A page, Set, Context, or property's own assigned icon                                        | Matched to the surrounding row's text      |
+| Confirmation   | A checkmark inside a checkbox or a picker row                                                | Matched to the box containing it           |
+| Lock           | The state marker on a locked pane footer                                                     | Matched to the surrounding row's text      |
 
 ### Additional Assignments
 

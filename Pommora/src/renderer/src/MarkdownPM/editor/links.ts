@@ -1,27 +1,19 @@
-import { EditorView } from '@codemirror/view'
+import type { Extension } from '@codemirror/state'
+import type { EditorView } from '@codemirror/view'
+import { hasWebScheme, normalizeLinkUrl } from '@shared/links'
 import { linkTarget, tokenize } from '../tokens'
 import { resolveMdTarget, type ConnectionsApi, type MdTarget } from '../connections'
-import { seatAtNearerEdge } from './input'
-import { caretInside, hoverIntent } from './connections'
-import { applyUrlLinkAction } from './linkFormat'
-import { hasWebScheme, normalizeLinkUrl } from '@shared/links'
-import { MD_LINK_CLASS } from './decorations'
 import { openWebLink } from '../../openWebLink'
-import { closeActiveHoverCard } from '@renderer/Embeds/ConnectionHoverCard'
+import { MD_LINK_CLASS } from './decorations'
+import { applyUrlLinkAction } from './linkFormat'
+import { pointerHandlers, type PointerTarget } from './pointerPath'
 
 type GetApi = () => ConnectionsApi | undefined
 
-interface LinkHit {
+interface LinkHit extends PointerTarget {
   url: string
   /** What the target names — a page to navigate to, a URL to hand the system, or neither. */
   target: MdTarget
-  /** The whole token, markers included. */
-  range: [number, number]
-  /** Whether the gesture landed on the label — at rest, the only part of a link that has width. */
-  onText: boolean
-  /** Whether the link is drawn with its syntax hidden, and so has space beside it to clamp from. */
-  hidesSyntax: boolean
-  pos: number
 }
 
 // The external markdown link under a pointer gesture. Works even when the markers are hidden
@@ -58,128 +50,72 @@ function linkUnder(view: EditorView, getApi: GetApi, event: MouseEvent): LinkHit
   }
 }
 
-// Follow a markdown link on a plain single-click (mirrors connectionClicks). Where it leads is the
-// shared resolver's answer, so a link can't be colored as a page and then opened as a website.
-export function markdownLinkClicks(getApi: GetApi): ReturnType<typeof EditorView.domEventHandlers> {
-  // The same mousedown record connections keeps, and for the same reason: CM seats the caret before
-  // `click` runs, so reading it live can never tell "I was editing this" from "I just clicked it" —
-  // it reads true for every press and no link opens at all.
-  let editingOnPress = false
-  // A markdown link naming a page is drawn as a connection and behaves as one, so it raises the same
-  // hover preview. The connection handler can't do it: its hit-test reads wikiLink tokens, and this
-  // is a `link`. Without this the same link previews in a table cell and not in the body.
-  const intent = hoverIntent()
-  // A link that has just been acted on stops arming until the pointer leaves it. Cancelling once
-  // isn't enough: a native menu takes the pointer away and hands it back over the same link, and
-  // that re-entry is a fresh mouseover that would bloom a preview behind the menu you just used.
-  let actedOnLink = false
-  return EditorView.domEventHandlers({
-    mouseover(event, view) {
-      const api = getApi()
-      intent.cancel()
-      if (!api?.hover && !api?.hoverSite) return false
-      // Cheap class gate FIRST (the every-mouseover hard rule) — only a drawn internal link or a
-      // valid external one warrants the layout read and the tokenize below. Both gates are
-      // required: external links wear the link class, not the connection one.
-      const el = (event.target as HTMLElement).closest?.(
-        `.md-connection-resolved, .${MD_LINK_CLASS}`,
-      )
-      if (!el || actedOnLink) return false
-      const hit = linkUnder(view, getApi, event)
-      if (!hit?.onText || hit.target.kind === 'invalid') return false
-      // A link the caret is already inside is open for editing, and no dwell should carry you away
-      // from what you're typing.
-      if (caretInside(view, hit.range)) return false
-      // Same dwell, two destinations: a page raises the page card, a website the live site card.
-      if (hit.target.kind === 'page') {
-        const page = hit.target.page
-        intent.arm(() => api.hover?.(page, el))
-      } else {
-        // Normalized to what a guest can actually load — the attach gate refuses anything but
-        // http(s), so a mailto: or other scheme arms nothing rather than a blank card.
-        const url = normalizeLinkUrl(hit.url)
-        if (!hasWebScheme(url)) return false
-        intent.arm(() => api.hoverSite?.(url, el))
-      }
-      return false
-    },
-    mouseout() {
-      intent.cancel()
-      actedOnLink = false
-      return false
-    },
-    mousedown(event, view) {
-      const hit = linkUnder(view, getApi, event)
-      editingOnPress = !!hit && caretInside(view, hit.range)
-      if (!hit) return false
-      // A right press must not seat a caret in the link: `contextmenu` reads the live caret to decide
-      // it's inside the syntax and should stand down, so a seated caret would suppress the menu
-      // everywhere. Claiming the press preventDefaults it, which Chromium generates `contextmenu`
-      // independently of.
-      if (event.button === 2) return hit.onText && hit.target.kind !== 'invalid'
-      // Extending a selection, double- and triple-click, and the other buttons keep CM's own
-      // semantics over a link like anywhere else.
-      if (event.button !== 0 || event.shiftKey || event.detail > 1) return false
-      // Clamped in from beside the link rather than landing on it: seat where the pointer actually
-      // was. Open for editing, the syntax is real text and the press is aiming at it.
-      if (!hit.onText && hit.hidesSyntax && !editingOnPress)
-        return seatAtNearerEdge(view, hit.pos, hit.range)
-      if (!hit.onText || editingOnPress) return false
-      // A press that will follow the link doesn't seat a caret in it on the way out.
-      event.preventDefault()
-      return true
-    },
-    click(event, view) {
-      // A click consumes the link — an intent armed during the dwell must not bloom over
-      // whatever the click opened.
-      intent.cancel()
-      actedOnLink = true
-      if (event.button !== 0 || event.detail !== 1 || !view.state.selection.main.empty) return false
-      if (editingOnPress) return false
-      const hit = linkUnder(view, getApi, event)
-      if (!hit?.onText) return false
-      event.preventDefault()
-      // A target that names a page navigates there; a web address goes through the one
-      // open-link adjudicator, a page through the connections host's own router.
-      if (hit.target.kind === 'page') {
-        const api = getApi()
-        // The one modifier branch: ⌘ takes the host's other route when it offers one — the same
-        // gesture the same link answers to in a resting table cell.
-        if (event.metaKey && api?.bypass) api.bypass(hit.target.page)
-        else api?.open(hit.target.page)
-      } else openWebLink(hit.url)
-      return true
-    },
-    // Right-click hands off to the host's menu hook, told what the target turned out to be — the same
-    // resolver the click path reads. A link naming a page is menued as the connection it is drawn as;
-    // an invalid target names nothing to act on at all.
-    contextmenu(event, view) {
-      // The pair every gesture that replaces the pointer's meaning owes it: cancel what is armed,
-      // and dismiss what is already open.
-      intent.cancel()
-      closeActiveHoverCard()
-      actedOnLink = true
-      const api = getApi()
-      if (!api?.menu) return false
-      const hit = linkUnder(view, getApi, event)
-      if (!hit?.onText || hit.target.kind === 'invalid') return false
-      // Inside its syntax you're editing prose, and prose has its own menu.
-      if (caretInside(view, hit.range)) return false
-      event.preventDefault()
-      api.menu(
-        hit.target.kind === 'page'
-          ? { kind: 'page', page: hit.target.page, editable: false, hasAlias: false }
-          : {
-              kind: 'url',
-              url: hit.url,
-              // The way back into this editor, closed over the span the menu was popped on. Its
-              // absence is what a read-only surface offers instead of a refusal.
-              apply: view.state.readOnly
-                ? undefined
-                : (action) => applyUrlLinkAction(view, action, hit.range),
-            },
-      )
-      return true
+/** Where a markdown link's target leads, for a caller with no editor to hit-test against — a
+ *  resting table cell reads the same answer the body's own click path does, so a link can't be
+ *  colored as a page and then opened as a website. Null when it names nothing to follow. */
+export function followTarget(
+  target: MdTarget,
+  url: string,
+  api: ConnectionsApi | undefined,
+  bypass: boolean,
+): (() => void) | null {
+  if (target.kind === 'invalid') return null
+  if (target.kind === 'page') {
+    if (!api) return null
+    const page = target.page
+    // The one modifier branch: ⌘ takes the host's other route when it offers one.
+    return () => (bypass && api.bypass ? api.bypass(page) : api.open(page))
+  }
+  return () => openWebLink(url)
+}
+
+/** What a dwell over a markdown link blooms — the page card for a target naming a page, the live
+ *  site card for a web address. Normalized to what a guest can actually load: the attach gate
+ *  refuses anything but http(s), so a mailto: arms nothing rather than a blank card. */
+export function dwellTarget(
+  target: MdTarget,
+  url: string,
+  api: ConnectionsApi | undefined,
+  el: Element,
+): (() => void) | null {
+  if (!api || target.kind === 'invalid') return null
+  if (target.kind === 'page') {
+    const page = target.page
+    return api.hover ? () => api.hover?.(page, el) : null
+  }
+  const web = normalizeLinkUrl(url)
+  return api.hoverSite && hasWebScheme(web) ? () => api.hoverSite?.(web, el) : null
+}
+
+// Follow a markdown link on a plain single-click, on the shared pointer path. A link naming a page
+// is drawn as a connection and raises the same hover preview — the connection handler can't do it,
+// because its hit-test reads wikiLink tokens and this is a `link`.
+export function markdownLinkClicks(getApi: GetApi): Extension {
+  return pointerHandlers<LinkHit>({
+    // Both gates are required: external links wear the link class, not the connection one.
+    hoverGate: `.md-connection-resolved, .${MD_LINK_CLASS}`,
+    hitAt: (view, event) => linkUnder(view, getApi, event),
+    follow: (hit, _view, event) =>
+      hit.onText ? followTarget(hit.target, hit.url, getApi(), event.metaKey) : null,
+    dwell: (hit, el) => (hit.onText ? dwellTarget(hit.target, hit.url, getApi(), el) : null),
+    menu: (hit, view) => {
+      const menu = getApi()?.menu
+      if (!menu || !hit.onText || hit.target.kind === 'invalid') return null
+      const target = hit.target
+      return () =>
+        menu(
+          target.kind === 'page'
+            ? { kind: 'page', page: target.page, editable: false, hasAlias: false }
+            : {
+                kind: 'url',
+                url: hit.url,
+                // The way back into this editor, closed over the span the menu was popped on. Its
+                // absence is what a read-only surface offers instead of a refusal.
+                apply: view.state.readOnly
+                  ? undefined
+                  : (action) => applyUrlLinkAction(view, action, hit.range),
+              },
+        )
     },
   })
 }
