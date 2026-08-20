@@ -3,9 +3,10 @@ import { type CellMenuContext, cellMenuContextFor, cellMenuModel } from './cellM
 import type { ResolvedColumn } from './types'
 
 describe('cellMenuModel', () => {
-  it('title: stateful Open lead + Rename + Change Icon + New Page pair + the send block + separator-gated Delete', () => {
+  it('title: Open Preview + stateful Open lead + Rename + Change Icon + New Page pair + the send block + separator-gated Delete', () => {
     const m = cellMenuModel({ kind: 'title' })
     expect(m.items.map((i) => [i.label, i.action])).toEqual([
+      ['Open Preview', 'title:preview'],
       ['Open New Tab', 'title:newtab'],
       ['Rename', 'title:rename'],
       ['Change Icon', 'title:icon'],
@@ -16,7 +17,7 @@ describe('cellMenuModel', () => {
       ['Delete', 'title:delete'],
     ])
     // An already-open page reads "Open" (focus, I-1) — same action either way.
-    expect(cellMenuModel({ kind: 'title', alreadyOpen: true }).items[0].label).toBe('Open')
+    expect(cellMenuModel({ kind: 'title', alreadyOpen: true }).items[1].label).toBe('Open')
     expect(m.items.find((i) => i.action === 'title:rename')?.separatorBefore).toBe(true)
     expect(m.items.find((i) => i.action === 'title:delete')?.separatorBefore).toBe(true)
     expect(m.style).toBeUndefined()
