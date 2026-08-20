@@ -1,43 +1,72 @@
+import { isValidLink } from '@shared/links'
+import { markdownLinkRegex } from '@shared/links'
 import { fencedLineMask } from '@shared/markdownCode'
+import { loneWebpageEmbed } from '@shared/webpageEmbed'
+import {
+  blockquotePrefixRe,
+  headingParts,
+  inlineCodeRegex,
+  isThematicBreakLine,
+  loneEmbedTitle,
+  parseListMarker,
+} from '@renderer/MarkdownPM/detect'
 
 /** Page document stats for the Subfield. `lines` counts raw source lines; `words`/`characters`
- *  count Markdown-stripped prose (so `## **Bold**` is one word, "Bold"). */
+ *  count the prose the editor actually draws (so `## **Bold**` is one word, "Bold"). */
 export interface PageStats {
   lines: number
   words: number
   characters: number
 }
 
-/** Fenced blocks blanked line-by-line through the shared pairing pass, so a long fence holding shorter
- *  ones drops as ONE block rather than leaving its inner fences' text counted as prose. */
-function stripFences(md: string): string {
-  const lines = md.split('\n')
-  const fenced = fencedLineMask(lines)
-  return lines.map((line, i) => (fenced[i] ? ' ' : line)).join('\n')
+/** Everything the editor draws as chrome or as a widget is replaced by a NEWLINE rather than a
+ *  space. Newlines are already stripped before characters are counted and already separate words,
+ *  so a mask can only ever remove source characters — a space placeholder was itself being counted,
+ *  which is what made a long fence add a character per line. */
+const GONE = '\n'
+
+/** Line-level chrome, read through the editor's own detectors rather than a private regex — the
+ *  list-marker parser in particular is the single source every layer reads. A line that IS an
+ *  embed is a tile: it draws no prose at all. Resolution isn't checked here, so an unresolved lone
+ *  embed is counted as the tile it is trying to be. */
+function stripLineChrome(line: string): string {
+  if (loneEmbedTitle(line) !== null) return ''
+  const web = loneWebpageEmbed(line)
+  if (web && isValidLink(web.url)) return ''
+  if (isThematicBreakLine(line)) return ''
+
+  // The whole quote run, not one level: `>> text` is prose at depth two, never a `>` and a word.
+  const unquoted = line.replace(blockquotePrefixRe, '')
+  const heading = headingParts(unquoted)
+  if (heading) return heading.content
+  const marker = parseListMarker(unquoted)
+  return marker ? unquoted.slice(marker.contentStart) : unquoted
 }
 
-/** Light Markdown → prose strip, built for counting only — not a general-purpose stripper. */
-function stripMarkdown(md: string): string {
-  return stripFences(md)
-    .replace(/`[^`]*`/g, ' ') // inline code
-    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ') // images
-    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1') // links → text
-    .replace(/\[\[([^\]|]*)(?:\|([^\]]*))?\]\]/g, (_m, a, b) => b || a) // wikilinks → display text
-    .replace(/^\s{0,3}(?:#{1,6}|>|[-+])\s+/gm, '') // heading / quote / bullet markers
-    .replace(/^\s{0,3}\d+\.\s+/gm, '') // ordered-list markers
-    .replace(/^\s*[-=*_]{3,}\s*$/gm, ' ') // hr / setext rule
-    .replace(/[*_~]/g, '') // emphasis markers
+/** Inline syntax → what the reader sees. An inline `![[Title]]` is the editor's inert embed token,
+ *  whose title stays visible; an inline `![label](url)` keeps its bang, because the editor has no
+ *  image renderer and draws it as prose beside an ordinary link. */
+function stripInline(text: string): string {
+  return text
+    .replace(inlineCodeRegex(), GONE)
+    .replace(/!?\[\[([^\]|\r\n]*)(?:\|([^\]\r\n]*))?\]\]/g, (_m, title, alias) => alias || title)
+    .replace(markdownLinkRegex(), (_m, label) => label)
+    .replace(/[*_~]/g, '')
 }
 
 export function computeStats(body: string): PageStats {
   if (!body) return { lines: 0, words: 0, characters: 0 }
   // Raw source lines: a single trailing newline is the terminator, not a phantom empty line.
   const trimmed = body.endsWith('\n') ? body.slice(0, -1) : body
-  const lines = trimmed.split('\n').length
+  const lines = trimmed.split('\n')
 
-  const prose = stripMarkdown(body)
-  // Strictly-visible characters: drop the structural newlines, keep everything else.
+  const fenced = fencedLineMask(lines)
+  const prose = stripInline(
+    lines.map((line, i) => (fenced[i] ? GONE : stripLineChrome(line))).join('\n'),
+  )
+
+  // Strictly-visible characters: the structural newlines and every mask go, the rest stays.
   const characters = prose.replace(/\n/g, '').length
   const words = (prose.match(/\S+/g) ?? []).length
-  return { lines, words, characters }
+  return { lines: lines.length, words, characters }
 }
