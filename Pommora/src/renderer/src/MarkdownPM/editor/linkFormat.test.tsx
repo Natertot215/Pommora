@@ -7,7 +7,7 @@ import { EDITOR_ACTION_PREFIX, INSERT_LINK_ACTION } from '@shared/editorMenu'
 import { linkMarkdown } from '@shared/PasteLink'
 import { buildPageIndex, type ConnectionsApi } from '@renderer/MarkdownPM/connections'
 import { showConnectionMenu } from '@renderer/Embeds/connectionMenu'
-import { applyEditorAction } from './menu'
+import { applyEditorAction, claimEditorMenu } from './menu'
 import { useSession } from '@renderer/store'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '@renderer/testing/editorHarness'
 
@@ -170,6 +170,8 @@ describe('the three that act on the link itself', () => {
 describe('Insert Link over a selected address', () => {
   const insert = async (body: string, from: number, to: number): Promise<EditorView> => {
     const view = await mountEditor({ initialBody: body })
+    // The menu is raised over the editor you clicked into, which is the claim focus makes.
+    claimEditorMenu(view)
     view.dispatch({ selection: { anchor: from, head: to } })
     await act(async () => {
       applyEditorAction(view, EDITOR_ACTION_PREFIX + INSERT_LINK_ACTION)

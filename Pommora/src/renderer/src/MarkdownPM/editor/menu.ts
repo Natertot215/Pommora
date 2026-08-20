@@ -23,13 +23,30 @@ export interface EditorMenuApi {
   onAction: (cb: (action: string) => void) => () => void
 }
 
-/** The seam over the real bridge. Every surface that mounts an editor passes this one — a menu built
- *  from the last-pushed state can only be right for whichever editor pushed last, so an editor that
- *  doesn't push gets no Pommora items at all. */
+/** The seam over the real bridge. Every surface that mounts an editor passes this one, and the
+ *  bridge's listener is per-caller — so every mounted editor hears every action, and the menu is
+ *  built from whatever state was pushed last. Both directions answer to `subject` below. */
 export const nativeEditorMenu: EditorMenuApi = {
   pushState: (s) => window.nexus.setEditorFormatState(s),
   onAction: (cb) => window.nexus.onMenuAction(cb),
 }
+
+/** The editor the native menu is about. Latched when focus lands rather than read live: a native
+ *  menu can hold the document's focus while it is open, so `hasFocus` is false at exactly the
+ *  moment the chosen action comes back. Parked tabs and resting embeds keep their editors mounted,
+ *  and an action applied to one of those writes a document nobody opened. */
+let subject: EditorView | null = null
+
+export const claimEditorMenu = (view: EditorView): void => {
+  subject = view
+}
+
+/** Released on unmount only — never on blur, which is the state a native menu puts the editor in. */
+export const releaseEditorMenu = (view: EditorView): void => {
+  if (subject === view) subject = null
+}
+
+export const ownsEditorMenu = (view: EditorView): boolean => subject === view
 
 function editFor(action: string, doc: string, from: number, to: number): FormatEdit | null {
   const [group, value] = action.split(':')
@@ -67,6 +84,7 @@ function insertLinkOverSelection(view: EditorView): boolean {
 /** Apply a `mdpm:*` menu action to the editor; ignores actions from other `menu:action` senders. */
 export function applyEditorAction(view: EditorView, raw: string): boolean {
   if (!raw.startsWith(EDITOR_ACTION_PREFIX)) return false
+  if (!ownsEditorMenu(view)) return false
   const action = raw.slice(EDITOR_ACTION_PREFIX.length)
   // Page embeds type the opener and hand off to the autocomplete, not a plain format edit.
   if (action === 'block:page') return embedInsertAtCaret(view)

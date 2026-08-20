@@ -36,7 +36,13 @@ import { pendingTitle } from './editor/PendingTitle'
 import { aliasOnLeave } from './editor/linkEdit'
 import { linkRest, linkTyping } from './editor/linkGestures'
 import { markdownFolding, applySavedFolds, type FoldsApi } from './editor/folding'
-import { applyEditorAction, type EditorMenuApi } from './editor/menu'
+import {
+  applyEditorAction,
+  claimEditorMenu,
+  ownsEditorMenu,
+  releaseEditorMenu,
+  type EditorMenuApi,
+} from './editor/menu'
 import { formatKeymap } from './editor/formatKeymap'
 import { readFormatState } from './editor/formatState'
 import type { FormatState } from '@shared/editorMenu'
@@ -273,19 +279,24 @@ export function MarkdownEditor({
       markdownFolding((keys) => foldsRef.current?.save(keys)),
       EditorView.updateListener.of((u) => {
         if (!(u.docChanged || u.selectionSet || u.focusChanged)) return // skip scroll/geometry-only updates
+        // Focus landing here makes this editor the menu's subject, for the state it pushes and the
+        // action it gets back. Parked tabs and resting embeds stay mounted and hear both.
+        if (u.focusChanged && u.view.hasFocus) claimEditorMenu(u.view)
         const doc = docString(u.state.doc)
-        const sel = u.state.selection.main
         if (u.docChanged) onChangeRef.current(doc)
 
-        // FormatState is flat primitives — a field compare beats allocating a JSON string per
-        // caret move just to diff it.
-        const fs = readFormatState(doc, sel.from, sel.to, u.view.hasFocus)
-        const last = lastFormatRef.current
-        const changed =
-          !last || (Object.keys(fs) as (keyof typeof fs)[]).some((k) => fs[k] !== last[k])
-        if (changed) {
-          lastFormatRef.current = fs
-          menuRef.current?.pushState(fs)
+        if (ownsEditorMenu(u.view)) {
+          const sel = u.state.selection.main
+          // FormatState is flat primitives — a field compare beats allocating a JSON string per
+          // caret move just to diff it.
+          const fs = readFormatState(doc, sel.from, sel.to, u.view.hasFocus)
+          const last = lastFormatRef.current
+          const changed =
+            !last || (Object.keys(fs) as (keyof typeof fs)[]).some((k) => fs[k] !== last[k])
+          if (changed) {
+            lastFormatRef.current = fs
+            menuRef.current?.pushState(fs)
+          }
         }
 
         // Read-only mounts never autocomplete: a click seating the caret inside a rendered
@@ -371,6 +382,7 @@ export function MarkdownEditor({
     const unsubMenu = menuRef.current?.onAction((action) => applyEditorAction(view, action))
     return () => {
       unsubMenu?.()
+      releaseEditorMenu(view)
       if (warm) {
         unregisterHeal?.()
         view.scrollDOM.removeEventListener('scroll', onWarmScroll)

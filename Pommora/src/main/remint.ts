@@ -136,7 +136,7 @@ async function remintSidecar(
   return viewIds
 }
 
-const COPY_SCOPES = ['folds', 'headingCols', 'embedHeights', 'aliases'] as const
+const COPY_SCOPES = ['folds', 'headingCols', 'headingIcon', 'embedHeights', 'aliases'] as const
 
 function copyDeviceRows(target: RemintTarget, fresh: string, viewIds: Map<string, string>): void {
   try {
@@ -144,9 +144,14 @@ function copyDeviceRows(target: RemintTarget, fresh: string, viewIds: Map<string
       const value = readKey(scope, target.id)
       if (value !== null) writeKey(scope, fresh, value)
     }
-    // The selection is a view id, not opaque chrome: it travels through the same map that
-    // re-minted the views, so it names the copy's own. A selection with no counterpart — a
-    // stale row naming a view the container no longer has — does not travel at all.
+    // A row that NAMES a view is not opaque chrome: it travels through the same map that
+    // re-minted the views, so it names the copy's own. One with no counterpart — a stale row
+    // naming a view the container no longer has — does not travel at all. The manual order keys
+    // ON the view; the selection keys on the container and holds a view in its value.
+    for (const [old, minted] of viewIds) {
+      const order = readKey<string[]>('viewOrder', old)
+      if (order !== null) writeKey('viewOrder', minted, order)
+    }
     const active = readKey<string>('activeView', target.id)
     const moved = active === null ? undefined : viewIds.get(active)
     if (moved) writeKey('activeView', fresh, moved)
