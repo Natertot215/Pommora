@@ -13,14 +13,14 @@ import {
 } from '@shared/optionModel'
 import type { StatusGroup } from '@shared/properties'
 import { cx } from '@renderer/design-system/cx'
-import { Chip, chipShapeForType } from '../Chip'
+import { chipShapeForType } from '../Chip'
 import {
   GhostOptionChip,
   OptionNameCaret,
   ghostAnchorProps,
   useGhostOptionAnchor,
 } from './GhostOptionChip'
-import { ColorPicker } from './ColorPicker'
+import { OptionRow } from './OptionRow'
 import { useStatusReorder } from './useStatusReorder'
 import * as s from './settingsPane.css'
 
@@ -168,41 +168,19 @@ export function StatusEditor({
                       void openMenu(o.value, o.label)
                     }}
                   >
-                    {renaming === o.value ? (
-                      <OptionNameCaret
-                        className={cx(chipPill, chipColor[chipColorFor(o.color ?? g.color)])}
-                        value={o.label}
-                        onCommit={(raw) => commitRename(o.value, raw, g.label)}
-                        onCancel={() => setRenaming(null)}
-                      />
-                    ) : (
-                      <>
-                        <Chip
-                          shape={chipShapeForType('status')}
-                          color={chipColorFor(o.color ?? g.color)}
-                          label={o.label}
-                        />
-                        <span className={s.paletteAnchor}>
-                          <button
-                            ref={isColoring ? paletteBtnRef : undefined}
-                            type="button"
-                            className={s.paletteButton}
-                            style={isColoring ? { opacity: 1 } : undefined}
-                            aria-label="Recolor"
-                            onClick={() => setColoring((v) => (v === o.value ? null : o.value))}
-                          >
-                            <Icon name="palette" size={s.ICON.palette} />
-                          </button>
-                          <ColorPicker
-                            open={isColoring}
-                            selected={chipColorFor(o.color ?? g.color)}
-                            onPick={(color) => pickColor(o.value, color)}
-                            onDismiss={() => setColoring(null)}
-                            triggerRef={paletteBtnRef}
-                          />
-                        </span>
-                      </>
-                    )}
+                    <OptionRow
+                      label={o.label}
+                      shape={chipShapeForType('status')}
+                      color={chipColorFor(o.color ?? g.color)}
+                      renaming={renaming === o.value}
+                      coloring={isColoring}
+                      paletteRef={paletteBtnRef}
+                      onCommitRename={(raw) => commitRename(o.value, raw, g.label)}
+                      onCancelRename={() => setRenaming(null)}
+                      onToggleColoring={() => setColoring((v) => (v === o.value ? null : o.value))}
+                      onCloseColoring={() => setColoring(null)}
+                      onPickColor={(color) => pickColor(o.value, color)}
+                    />
                   </div>
                   {slotAt(g, i + 1, o.value)}
                 </Fragment>
