@@ -1,13 +1,15 @@
 ## Cohesion Pass — Codemap Changelog
 
-Everything that moved in Session One of the pass specified in [[Cohesion-Audit]], grouped by step.
-Deltas are code-only: comment lines, blank lines, and test files are excluded, and each folder row
-carries the count of changed files beneath it with their summed delta.
+Everything that moved in the pass specified in [[Cohesion-Audit]], grouped by step. Deltas are
+code-only: comment lines, blank lines, and test files are excluded, and each folder row carries the
+count of changed files beneath it with their summed delta.
+
+### Session One — The Dusting
 
 Seven commits, `d9765a55` through `a3cd989e`. Gates green at each: typecheck clean, Biome at zero
 diagnostics across 851 files, 2,974 Vitest tests passing.
 
-### Per Step
+#### Per Step
 
 | Step                | Added | Removed | Net  |
 | ------------------- | ----- | ------- | ---- |
@@ -25,7 +27,7 @@ consolidation paid; Steps 1 and 4 spent lines buying the ladder and the drag's h
 Alongside it: **+138 / −3** across four test files (three new shared-model suites and one fragment
 case), and **+91 / −64** across twenty documents.
 
-### The Tree
+#### The Tree
 
 ```
 // Project Pommora                            | • 118 changed files · +756 −717
@@ -91,3 +93,43 @@ case), and **+91 / −64** across twenty documents.
 
 Forty more renderer files changed by a line or two apiece — the icon call sites naming a step
 instead of a number. They are the bulk of the file count and almost none of the delta.
+
+### Session Two — Main-Process Cost
+
+Five commits, `c8c8cf3d` through `30c4fdc7`. Gates green at each: typecheck clean, Biome at zero
+diagnostics across 851 files, 2,983 Vitest tests passing.
+
+#### Per Item
+
+| Item                        | Added | Removed | Net  |
+| --------------------------- | ----- | ------- | ---- |
+| 1 · The registry write      | +31   | −16     | +15  |
+| 2 · The settings leaves     | +37   | −40     | −3   |
+| 3+5 · The corpus and matcher| +19   | −17     | +2   |
+| 4 · The settle window       | +17   | −4      | +13  |
+| The property channels       | +101  | −156    | −55  |
+
+**Net difference:** +205 / −233 → **−28 code lines** across 13 files, all but two of them in
+`main/`. Alongside it: **+132 / −6** across seven test files. The property channels are where the
+lines came off; the four cost items spent a few buying the transforms that replaced the reads.
+
+#### The Tree
+
+```
+// Pommora // src
+├── // shared                              | • 2 files · +17 −0
+│   ├── treePatch.ts                       | • The registry re-point, one transform            +16
+│   └── types.ts                           | • `excluded` joins the leaves it was decoded with  +1
+└── // main                                | • 11 files · +188 −233
+    ├── index.ts                           | • Three combinators; one lookup for both zooms +115 −169
+    ├── settings.ts                        | • The leaves, served from the tree               +19 −12
+    ├── watchPatch.ts                      | • What a batch touched, asked once                +15 −2
+    ├── exclusion.ts                       | • The matcher is held against its list            +11 −5
+    ├── io // walk.ts                      | • The corpus prunes what it will not read         +8 −12
+    ├── mutatePatch.ts                     | • A def edit opens no sidecar                      +7 −9
+    ├── watcher.ts                         | • node_modules ignored; the sweep is conditional   +7 −9
+    ├── indexSeed.ts                       | • Reads the tree's own list                        +3 −9
+    ├── readNexus.ts                       | • `excluded` lands; the labels reader moves        +1 −4
+    ├── contextMenu.ts                     | • Reads the labels from their new home             +1 −1
+    └── contextsRegistry.ts                | • The same                                         +1 −1
+```

@@ -21,10 +21,11 @@
 - [ ] **Retention's two bounds.** A tile scrolled far enough loses its widget to the editor's viewport recycling regardless of the cap, and a retained guest keeps playing audio by design — whether scroll-out should mute is a product call.
 - [ ] **A re-aimed tile takes the default height.** Edit Link edits in the line now, so a tile pointed at a new address no longer carries its remembered height across; a migration at formation is the fix if it reads wrong in use.
 
-#### II. The Cohesion Pass's Next Two Sessions
+#### II. What Comes Off The Cohesion Pass
 
-Session One of the cohesion pass is closed (→ PM-110); its catalog and standing are in
-[[Cohesion-Audit]]. Two scoped sessions come off it, in this order.
+The cohesion pass's dusting and its main-process costs are closed (→ PM-110); the catalog and
+where every finding stands are in [[Cohesion-Audit]]. Three scoped sessions come off it, in this
+order.
 
 - [ ] **MarkdownPM cleanup.** The remaining editor costs and divergences the first pass left alone
       because they need the editor's full attention. The headline is the line-decoration rebuild,
@@ -44,6 +45,17 @@ Session One of the cohesion pass is closed (→ PM-110); its catalog and standin
       `Views/pipeline/`, which is zero behavior change and unblocks the rest. Splitting `Table.css`
       needs screenshot verification of the nav gallery, both settings leaves, the preview inspector,
       and the properties panes — a typecheck proves nothing there.
+- [ ] **The `main/index.ts` split.** Roughly a hundred and ten channel implementations share a file
+      with window creation, protocol registration, and application lifecycle, which makes it the one
+      file every parallel session collides on. The bridge seam itself is excellent and is not what
+      moves: `serveBridge` already takes a plain object, so the channels become per-domain partial
+      maps spread into one. The first step is carving out the context they all close over — the
+      shared refusals, the path resolvers, the confirm-and-push helpers, and the window reference
+      itself — since every domain map needs it and none of them can own it.
+- [ ] **§II's helper deduplication.** `parentOf`, `clamp`, `persistViewOrder`, and move-an-item-in-
+      an-array each exist in several spellings. Half of them live in `TableView.tsx` and
+      `CardsView.tsx`, so this lands immediately before the Table session rather than on its own —
+      otherwise those two files get opened twice.
 
 #### II. The Boring Work
 

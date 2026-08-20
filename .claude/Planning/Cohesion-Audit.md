@@ -6,19 +6,24 @@ Every finding cited here was re-opened and confirmed against the file before it 
 
 ### Reconciliation
 
-Session One landed across six commits (`d9765a55` … `a3cd989e`). What follows records where every
-finding stands; the sections below are left as they were written, so this is the one place to read
-for status.
+Session One landed across six commits (`d9765a55` … `a3cd989e`) and Session Two's first half across
+five (`c8c8cf3d` … `30c4fdc7`). What follows records where every finding stands; the sections below
+are left as they were written, so this is the one place to read for status.
 
 **Done.** §I in full, except as noted below. §III's eight scoped MarkdownPM fixes. §IV's deletions,
-token swaps, shared-shape extractions, and named constants. The documentation set: broken markup,
-build-status text, the four implementation-note sections, and the batch pass.
+token swaps, shared-shape extractions, and named constants. §V's main-process costs, except the one
+corrected below. The documentation set: broken markup, build-status text, the four
+implementation-note sections, and the batch pass.
 
 **Done, and larger than the finding described.** The icon ladder now mirrors the type ramp one for
 one, and every call site names a step — the finding asked only that the ladder hold a step for each
 scale in use. The native-menu arc under *Beyond a Session* is partly done: the model-to-native
 conversion has one implementation rather than three, and the table, view embed, and view button
-menus keep their labels in `shared/`.
+menus keep their labels in `shared/`. A registry write costs no sidecar read at all rather than the
+narrowed set the finding asked for: the def edits move no assignment list, so re-pointing the tree's
+embedded defs is a pure transform, and only the four ops that touch one container's sidecar name it.
+The watcher's settle window also stopped stat-sweeping the corpus after walks nothing in the corpus
+caused, and `node_modules` joined its ignore list, where the walk's own rule had always put it.
 
 **Corrected by the implementation.** Four claims did not survive contact with the code, and the
 prose above has been left in place rather than rewritten, since the reasoning is still worth reading:
@@ -31,6 +36,14 @@ prose above has been left in place rather than rewritten, since the reasoning is
 - Neither comment about `.open-btn`'s hover was wrong. The tokens read exactly as documented — hover
   is the lighter of the two — and only the button consumed them backwards.
 - `Carets.css`'s "only two literal easings" are `ease-in-out` keywords, not literals.
+- `trash:list` costs what the trash holds and no more. It walks to each bundle and stops there,
+  reading one small record per deletion, and the pane asks for it on open and after each action —
+  every one of which changed `.trash`. A memo would need invalidating from every trash write, which
+  is a second writer for the same fact, and would hit on almost nothing.
+- The fifteen property and schema handlers are ten, not fifteen. Four clearing or removing an
+  option, two retitling one, and four narrowing a payload onto a def edit share a shape and now
+  state it once; the rest differ in payload and arity, and a combinator over them would cost more
+  than it saves.
 
 **Deliberately not done, with reason.**
 
@@ -54,8 +67,11 @@ handle's Style and Scale lists had lost their left alignment.
 
 **Deferred to a named session.** §III's line-decoration viewport scoping and the
 `connections.ts`/`links.ts` factory unification, plus `Styles.css`, go to the MarkdownPM session.
-§VI's import cycle and the pieces leaking out of `Table/` go to the Table session. §II, §V, the rest
-of §VI, and the arcs under *Beyond a Session* are unstarted; `ContextPM` carries their ordering.
+§VI's import cycle and the pieces leaking out of `Table/` go to the Table session. §II, the rest of
+§VI, and the arcs under *Beyond a Session* are unstarted; `ContextPM` carries their ordering. The
+`main/index.ts` split is one of them and wants its own session: the file's shared refusals,
+resolvers, and confirm helpers all close over the window it also creates, so the per-domain maps
+want that context carved out first.
 
 ### Session One — The Dusting
 

@@ -117,7 +117,7 @@
 #### PM-110 || The Cohesion Pass
 **DATE:** 08-19-2026
 
-An eight-agent read-only sweep produced a catalog of cohesion debt, and the first session against it closed six of its sections. Nothing here is a feature; it is the same app with fewer places to state the same thing twice.
+An eight-agent read-only sweep produced a catalog of cohesion debt, and two sessions against it closed seven of its sections. Nothing here is a feature; it is the same app with fewer places to state the same thing twice, doing less work to say it.
 
 **The Icon Ladder:** glyph sizes stopped being numbers. The ladder now mirrors the type ramp name for name — eleven names over eight values, `largeTitle` down to `subline` — so a glyph and the text beside it name the same step, and every call site in the app names one. The escape hatch survives where a size is genuinely arbitrary, and the few consumers that size an element rather than a font read the same ladder as bare numbers through one export, so the two shapes cannot drift. Three variables in the tab bar turned out to be declared and never read, and two files reaching past the curated registry into the icon package directly were routed back through it.
 
@@ -131,8 +131,12 @@ An eight-agent read-only sweep produced a catalog of cohesion debt, and the firs
 
 **The Verification:** a simplification pass and an adversarial pass ran over the finished work. Consolidating four shapes had swept three host-specific values into the shared rules with them, which collapsed the navigation window's resize rail to nothing to grab and cost the preview footer's chevron the offset that clears its resize corner; each is back where it belongs, and the shared rules keep only what every host actually shares. A menu fragment spliced beneath rows a menu already holds keeps the divider separating it from them, since telling that case from a divider leading the whole menu is only possible for a builder holding the finished menu.
 
-- **Commits:** `d9765a55` · `b13af3de` · `9e47c1e5` · `3128133f` · `8a71f0d3` · `8b77d551` · `a3cd989e`
-- **Diff:** Net +39 | +756 / −717
+**Main's Costs:** the file-owning process was doing whole-nexus work for single-field edits. Recoloring a checkbox, renaming an option, or setting a property's glyph re-read and rebuilt every Collection in the Nexus; those edits move no assignment list, so the definition is re-pointed in place now and the tree keeps the identity of every Collection that does not carry it, while the four operations that genuinely move one container's assignments name that container and read only its sidecar. Eight readers opened `settings.json` themselves while the walk's decoded copy already sat on the live tree — one of them on every mutation and every context-menu pop — and they read the tree now, the disk read surviving as the fallback for the moments before a walk has installed one. The user's excluded folders land on that tree beside the leaves they were decoded with. Every enumeration of the corpus walked `.trash` in full before discarding it, because the operating system's recursive listing has no filter hook; the descent is explicit and prunes what it will not emit. The exclusion matcher is held against the list it compiled from rather than rebuilt per directory entry and per watch event, which is what its own comment had always promised. A folder appearing under a name the walk hides costs nothing, `node_modules` joined the watcher's ignore list where the walk's rule had always put it, and a walk owes the content index a stat sweep only when the batch that forced it could have moved the corpus.
+
+**The Property Channels:** ten of them differed only by the writer they called — four clearing or removing an option, two retitling one, four narrowing a payload onto a definition edit — each carrying its own session refusal, payload guard, and confirmation. Three combinators hold that shape now and each channel names only what it does differently, with its key left literal so the bridge's compile-time check is untouched.
+
+- **Commits:** `d9765a55` · `b13af3de` · `9e47c1e5` · `3128133f` · `8a71f0d3` · `8b77d551` · `a3cd989e` · `c8c8cf3d` · `4532fc8e` · `f0c94fe0` · `8e5b2e7c` · `30c4fdc7`
+- **Diff:** Net +11 | +961 / −950
 
 #### PM-109 || The Color Ramp
 **DATE:** 08-18-2026

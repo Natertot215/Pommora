@@ -1,109 +1,93 @@
-## MarkdownPM Footnotes — Decision Log
+## Footnotes — Decision Log
 
 ### Frame
-- **Purpose:** Bring footnotes to MarkdownPM — inline references rendered as positional numbers, a definitions section at the bottom of the page, and the insertion, editing, and statistics plumbing around them — in portable Markdown that reads correctly in Obsidian.
-- **Core Value:** Google-Docs-grade footnote ergonomics (insert anywhere, numbering resolves itself) without corrupting the doc's portability or paying re-scan costs on every keystroke.
-- **Success Criteria:** Insert ▸ Footnote produces a correctly-numbered footnote; adding/removing one resolves the others' numbers; the bottom section renders below the heading-seam hairline, folds, and stays out of the page statistics by default; the file round-trips through Obsidian legibly.
+- **Purpose:** Bring GFM reference footnotes to MarkdownPM — `[^1]` markers in the body, `[^1]: text` definitions gathered in a hidden-by-default section at the document's end — canonical GFM on disk, everything drawn being presentation.
+- **Core Value:** A page can carry footnotes that read as clean numbered markers in the body, stay portable GFM outside Pommora, and never corrupt the document through any gesture.
+- **Success Criteria:** Creating, reading, clicking, editing, and deleting footnotes all work through the paths the spec names; an unmatched marker or a mid-doc definition degrades to literal text exactly as specified; the disk stays plain GFM throughout.
 
 ### Sources
-- [[MarkdownPM]] — architecture (micromark/mdast behind `parser/`, behavior layer pure logic), dynamic-syntax reveal model, context menu + Paste As, embed/tile precedents, editor design tokens (em-scaled off `--mdpm-scale`, no type-ramp consumption).
-- [[Editor-Internals]] — hot-path rule: one per-doc-version derivation for whole-doc scans; widgets need explicit `ignoreEvent → false`; block widgets must report height; box constructs use outer gaps not margins.
-- [[SubfieldPM]] — Pages stats are `lines · words · characters` off the live body (body-only, frontmatter stripped on load); app-level collapse chevron precedent; Subline/Emphasized type.
-- [[ConfigurationPM]] — Pages & Editor settings table (`codeblockLineCount`, `outlinerLines` are the boolean-toggle precedents); personalization schema drops unknown keys to defaults.
-- [[DesignSystemPM]] — `--border-heading` (`1.75px solid var(--separator-border)`) is "the 1.75 hairline"; tint ladder `--tint-primary` = 60%; accent derivations.
-- [[InteractionPM]] — `Reveal` (grid-rows 0fr↔1fr on `disclosure`/`easing.standard`) is the canonical disclose; `--ease-standard`; editor fold chevron rides the disclosure beat.
-- [[TypographyPM]] — Subline = 10px/12px vs Body 13px/16px; the editor scales in em off its zoom root, not the ramp.
-- `Pommora/src/main/editorMenu.ts` — the OS-native editor context menu: Insert submenu rows dispatch `mdpm:block:*` action strings over `menu:action`; Paste As built from main's own clipboard read; live state via the pushed single-slot `FormatState` cache.
-- `Pommora/src/shared/PasteAsMenu.ts` — clipboard classification (`url` / `page`) + the per-kind form-row lists (`PAGE_ROWS`: Connection · Markdown Link; `URL_ROWS`: three link forms + Plain Text) + `pasteAsWrite`.
-- `Pommora/src/renderer/src/MarkdownPM/editor/menu.ts` — `applyEditorAction`: where an Insert ▸ Footnote action branches (the `block:page` / `link:insert` special-case pattern).
-- `Pommora/src/main/connMenu.ts` + `returningMenu.ts` + `renderer/src/MarkdownPM/editor/linkEdit.ts` / `linkFormat.ts` — the token right-click menu template: pure span-resolver + applier split, stale-span guard, re-find token by span, seat via `focusRange`. The pattern a footnote's Edit/Delete follows.
-- `Pommora/src/renderer/src/MarkdownPM/tokens/index.ts` — `TokenKind` union (no footnote member yet); `FormatState` gains booleans per the `link`/`connection` precedent.
-- `Pommora/src/renderer/src/Detail/Subfield/subfieldStats.ts` — `computeStats(body)` + `stripMarkdown`; the single place statistics change, one caller (`subfieldItems.tsx`). Recompute is 120ms-debounced off the live body, never per-keystroke.
-- `Pommora/src/renderer/src/design-system/reveal-bar.css` — the shared hover-revealed collapse-bar pattern (Subfield + preview footer); a "Show Footnotes" bar is a third consumer: host supplies height, click width, and the open/near classes.
-- `Pommora/src/shared/types.ts` `Personalization` + `src/main/readNexus.ts` coercer + `Settings/NexusSettings.tsx` `pages` leaf rows — the exact 4-step recipe for a new boolean toggle (personalization is TS-interface + hand coercer, not zod). Editor toggles reach CM6 as a root CSS class + `requestMeasure()`, never a facet/compartment; a decoration-changing knob needs a Compartment or StateEffect nudge instead.
-- `Pommora/src/main/io/pageFile.ts` `splitEnvelope` + `Detail/PageView.tsx` — frontmatter is stripped before the editor and before stats; counts are body-only today, so "Include metadata" is a new inclusion path, not an exclusion flip.
-- `Pommora/src/renderer/src/MarkdownPM/parser/index.ts` — the parse seam already wires `micromark-extension-gfm` + `mdast-util-gfm`, which bundle the footnote extensions: `[^1]` / `[^1]: text` parse to `footnoteReference` / `footnoteDefinition` today with zero new dependencies.
-- `Pommora/src/renderer/src/MarkdownPM/tokens/index.ts` + `detect/index.ts` + `decorations/intent.ts` — a footnote ref is a new `TokenKind` (regex house style, bracket-construct); a definition line is a `detect/` line scanner with the required `excluded` (fence/table/math) contract; the ref renders as the editor's FIRST inline replacing widget (whole `[^1]` span in ONE replace — abutting replaces get dropped by CM), atomic-ranged, no `activeTokenIndices` consultation, `ignoreEvent → false`.
-- `Pommora/src/renderer/src/MarkdownPM/editor/docCache.ts` + `editor/embedRanges.ts` `docLineScan` — the one per-doc-version derivation the footnote order scan must ride (`refs`/`defs`/`numberOf` by first-reference position); inline tokens are viewport-scoped so numbering CANNOT derive from token order.
-- `Pommora/src/renderer/src/MarkdownPM/editor/folding.ts` — the in-house fold machinery (StateField + RevealWidget animating grid-rows, chevron as a line-class `::before`, NOT a CM gutter); persisted per page-id via `FoldsApi` → `local_state` in nexus.db (a new scope = union string + channel pair + `remint.ts` `COPY_SCOPES`). A synthetic section key (e.g. `"\0footnotes"`) slots into the existing string-keyed fold set.
-- `Pommora/src/renderer/src/MarkdownPM/Styles.css` — `.md-hr` (1.5px `--separator-border`) is the existing full-width rule; `.md-cb { --cb-size: 0.85em }` line-class is the small-text precedent a footnote section copies (`--fn-size` knob, inset `::after`, no line margins); inline-block glyphs must zero `text-indent` inside list lines.
-- `Pommora/src/renderer/src/MarkdownPM/editor/embedInsert.ts` + `input/format.ts` — the two insertion patterns; Insert ▸ Footnote wants the view-aware one: one dispatch carrying both the `[^N]` at caret and the doc-end definition append, single undo step, caret seated in the definition.
-- `Pommora/src/renderer/src/MarkdownPM/input/format.ts` `setListKind` — the renumber discipline: emit no edit where a marker already reads correctly, or every keystroke invalidates the doc caches.
-- External (researched 08-19-2026): CommonMark 0.31.2 has no footnotes; GFM footnotes are cmark-gfm convention (never formally spec'd), positional render numbering confirmed by the micromark-extension-gfm-footnote readme + GitHub docs; Obsidian supports both syntaxes but live preview shows typed labels and skips inline notes entirely; deprecated `remark-footnotes@4` was the last inline-note support; Zettlr is the reference CM6 implementation (footnote InlineParser registered `before: 'Link'`, insert command renumbers subsequent numeric labels only); Google Docs numbering is read-only positional (`footnoteNumber` vs `footnoteId`).
+- [[MarkdownPM]] — the editor's architecture: behavior layer over CM6, disk == doc string, display-only UI state in `nexus.db`, dynamic-syntax reveal rules, typing transforms, the native context menu with Insert/Paste As.
+- [[Editor-Internals]] — hard invariants: per-doc-version derivations, fragment parses, atomic-transaction transforms, widget height answering, one-owner claim sets.
+- [[ConnectionsPM]] — the inline-link precedent: click routing, right-click menus per construct, autocomplete; footnote markers borrow interaction shapes from here.
+- [[ConfigurationPM]] — `.nexus/settings.json` personalization, the Pages & Editor toggle table the stats toggle joins, per-machine state in `nexus.db`.
+- `Pommora/src/renderer/src/design-system/tokens/theme-vars.css.ts` — `--border-heading` (the shared heading seam, a full border shorthand); `--tint-primary` (an opacity step, `60%` — consumed only inside `color-mix`, e.g. `--accent-stroke-hot`); `--label-secondary`; `--disclosure` (180ms) + `--ease-standard`.
+- `Pommora/src/renderer/src/MarkdownPM/Styles.css` — `.mdpm-divider` is the heading seam worn as an inset rounded rule (the treatment a footnotes divider copies); `.mdpm-fold-reveal` is the editor's hand-rolled twin of the sidebar `Reveal` motion; the fold chevron mask.
+- `Pommora/src/renderer/src/design-system/components/Reveal.tsx` — the body open/close primitive (`grid-template-rows 0fr ↔ 1fr` on `--disclosure`); a section disclosure is a `Reveal`-style unfold, not a Bloom.
+- `Pommora/src/renderer/src/Components/Detail/pageProperties.css.ts` (`add`, consumed by `PagePropertiesPane.tsx` "Add Property") — the left-aligned quiet end-of-list text control precedent for Show Footnotes: `text.footnote.standard`, `alignSelf: flex-start`, label-secondary, hover fill.
+- `Pommora/src/renderer/src/design-system/edge-fade.css` — the house mask-fade; note InteractionPM's Bloom is explicitly "no blur," so a divider blur-fade is a new motion, not a reuse.
+- **Naming collision:** `footnote` already names a typography scale step (`--text-footnote-size`, `text.footnote.*`) — new footnote-feature tokens/classes must not reuse that bare name.
+- `Pommora/src/main/db/localState.ts` + `src/main/index.ts` + `src/shared/bridge.ts` — the per-machine `local_state (scope, key, value)` mechanism in `nexus.db`; heading folds (`'folds'` scope, page id → key array) and the per-page boolean template `'headingIcon'` (scopeGet/scopeSet with a `typeof boolean` guard, plain React state in `PageView.tsx`). The footnote-section disclosure flag is a new scope on this exact template.
+- `Pommora/src/main/remint.ts` (`COPY_SCOPES`) — device rows carried to a re-minted id on file copy: `['folds','headingCols','embedHeights','aliases']`. `headingIcon` is missing (existing hole — a copied page loses the flag); a footnote disclosure scope must join this list or inherit the same hole.
+- `Pommora/src/renderer/src/MarkdownPM/editor/folding.ts` — `FoldsApi` (Electron-free load/save seam), `applySavedFolds` with the `initialFoldAnnotation` mount guard, `markdownFolding`'s updateListener persist; the pattern a folded footnote section follows.
+- `Pommora/src/renderer/src/Detail/Subfield/subfieldStats.ts` — `computeStats(body)`: `lines` from the raw body, `words`/`characters` from `stripMarkdown(body)` — **two pipelines**, so footnote exclusion needs both a line mask (mirroring `stripFences`) and a strip step, or the three numbers disagree. Footnote syntax is currently unhandled: definition lines count as lines, `[^1]` counts as a word.
+- `Pommora/src/renderer/src/Detail/Subfield/subfieldItems.tsx` (`PageStatsItem`) — the counter reads `pageDetail` + `liveBody` from the store, no settings today; the toggle is a third `useSession` selector + a flag on `computeStats`. The floating preview reuses the same component, so it follows for free. Frontmatter never reaches the renderer (`splitEnvelope` in main), so no frontmatter logic is needed.
+- `Pommora/src/renderer/src/Settings/NexusSettings.tsx` (`LEAVES`, the `pages` leaf) + `src/shared/types.ts` (`Personalization`) + `src/main/readNexus.ts` (per-key sanitizer) — a new boolean toggle is exactly three touches: the `Personalization` field, the `bool()` sanitizer row (a key absent there is silently dropped on reload), and the row object in the leaf. No apply-map row — this toggle is store-read chrome, never a root class.
+- **Stale comment found:** `MarkdownPM/Tables/widget.tsx:45` claims heading columns persist to `.nexus/` via a nonexistent `main/io/tableHeadingColumns` — they're `local_state` rows. Fix in passing.
+- `Pommora/src/renderer/src/MarkdownPM/parser/index.ts` — `fromMarkdown` with `gfm()` already parses footnotes transitively (`footnoteReference` / `footnoteDefinition` nodes verified against the live install); the extensions are not direct `package.json` deps. The tokenizer (`tokens/index.ts`) emits nothing for `[^…]` — it renders as plain prose today, and zero footnote code exists in `src/`.
+- `Pommora/src/renderer/src/MarkdownPM/editor/decorations.ts` + `decorations/intent.ts` — the decoration pass: `hideMarker` replaces are zero-width and non-atomic; all three `atomicRanges` providers (callout prefix, list-marker slots, table block) are line-leading or block-scope — **no inline atomic precedent exists; the footnote marker establishes it**. Reveal rides `activeTokenIndices` (caret-inside ⇒ show syntax); a never-revealing marker opts out of that mechanism entirely.
+- `Pommora/src/renderer/src/MarkdownPM/editor/calloutGuard.ts` — the `transactionFilter` repair pattern (clamp/extend/cancel any eroding change, `userEvent` carried forward for history grouping); the strongest model for a marker no delete gesture can half-remove.
+- `Pommora/src/renderer/src/MarkdownPM/editor/embedRanges.ts` (`docLineScan`) + `decorations/intent.ts` (`scanDoc`) + `editor/docCache.ts` — the per-doc-version derivation the footnote-section scan joins (so it agrees with fences/tables about the exclusion base); `editor/blockModel.ts` (`blockAt`/`blockContext`) needs a footnote-section `BlockKind` or grip-drag treats definitions as loose paragraphs.
+- `Pommora/src/renderer/src/MarkdownPM/input/index.ts` + `editor/input.ts` — transforms are a flat `??` chain of pure `(doc, sel, inserted) → Edit | null` functions, one dispatch with `userEvent: 'input'`; no registry, no named categories (the spec's "typing-transform category" means joining this chain). `dashArrow`/`canonicalizeCheckbox` are the seed-transform models: fire on the completing char, bail inside code/wikilink/link-target.
+- `Pommora/src/main/editorMenu.ts` + `src/shared/PasteAsMenu.ts` + `src/main/returningMenu.ts` — Insert ▸ is a hardcoded array + one `BlockFormat` case; Paste As shape detection is `pasteAsTarget(clipboard)` in shared (main reads the clipboard itself for timing); the construct-specific menu pattern is `markdownLinkClicks` → `api.menu` → `popConnMenu` on `popReturningMenu`, with the load-bearing right-button `mousedown` suppression before CM seats the caret.
+- `Pommora/src/renderer/src/MarkdownPM/Tables/cellStatic.tsx` — resting cells are a hand-written span renderer over `tokenize()`, not the CM decoration pass: a footnote marker needs its own branch there (its `[`-prefilter already passes `[^1]`), or markers draw raw at rest and morph on cell entry. The focused `CellEditor` reuses `markdownDecorations`, so it renders markers for free; it omits `markdownInput`, so the auto-seed transform won't fire in cells (consistent with cell-creation being a Prospect). The cell codec means a definition can never live in a cell — only markers.
+- `Pommora/src/renderer/src/MarkdownPM/editor/connections.ts` + `editor/links.ts` — the click skeleton markers inherit: mousedown claims the press and records `caretInside` before CM seats the caret, click (button 0, single, empty selection) navigates, hit test is offsets ∩ drawn DOM, hover uses the cheap-class-gate-first `hoverIntent`. `expandFoldsAt` (`editor/folding.ts`) is load-bearing for jumping into a hidden section — a folded region has no height to scroll to.
+- Undo grouping is default `history()` + strict one-dispatch discipline (`diffAsSingleReplace` flattens multi-part work); no `isolateHistory`/`addToHistory` anywhere. "One transaction, one undo" for pair-writes and pair-deletes follows the list-drag model.
 
 ### Decisions
-#### A — Syntax & Numbering Model
-- **A-1:** [confirmed] Reference style `[^N]` + `[^N]: text`, not inline `^[text]` — Nathan opened the door to the flip and ratified it through the decisions that followed. Grounds: inline notes are self-contained (no bottom section exists to render, fold, or exclude), their only micromark support is a deprecated package, and Obsidian's live preview doesn't render them at all; reference style parses today via the installed GFM extensions and is the GitHub/Obsidian-portable form.
-- **A-2:** [confirmed] GFM renderers number reference footnotes positionally at render, ignoring label text (`[^a], [^5], [^b]` → 1, 2, 3 on GitHub; Obsidian reading view identical). Pommora's displayed number is therefore always positional — that's rendering the format truthfully, riding the per-doc-version scan.
-- **A-3:** [assumed] Disk labels: gesture-scoped renumbering. Footnote gestures (Insert, Delete, future drag) rewrite labels to match position inside their own transaction — single undo step, no-op spans skipped (`setListKind` discipline). Hand-typed edits never trigger rewrites (the editor never auto-tidies). Strengthened by research: Obsidian's *live preview* shows the typed label, not the positional number, so cohesive disk labels are what keep a Nexus legible there.
-- **A-4:** [confirmed] The "Automatically resolve footnote order" setting is dropped — positional display isn't optional and gesture renumbering has no sane OFF.
-- **A-5:** [confirmed] Duplicate labels are a feature, not an error: multiple `[^1]` refs share one definition and one number (GFM semantics, numbering by first use).
-- **A-6:** [confirmed] Mid-doc definitions never render (Nathan's call — "that's that"). A `[^N]:` line outside the trailing section (foreign/hand-authored files only) hides entirely, the way callout heads and folded bodies already render bytes as nothing — caret-proof and delete-guarded per those precedents — while still resolving its markers and participating in numbering. Display-relocation stays forbidden; hiding is not relocation. Right-click ▸ Edit on a marker whose definition sits mid-doc relocates that definition to the trailing section in the same gesture before seating the caret (consistent with "the Edit flow never shows a mid-doc location"); Resolve Footnote Order consolidates all strays.
-- **A-8:** [confirmed] No "resolve on visibility toggle" setting — a view gesture must not mutate the document (every display action is write-free by design). Instead an explicit **Resolve Footnote Order** action on the footnote section's right-click renumbers mismatched labels. [assumed] It also consolidates stray mid-doc definitions to the bottom section (Tidy-Footnotes-style) — endorsed as part of the proposal, awaiting a direct yes.
-- **A-9:** [confirmed] The editor understands a `[^N]:` line wherever it sits, but no Pommora gesture creates or places one outside the bottom section — Insert always appends there, and the Edit flow never offers or shows mid-doc placement.
-- **A-7:** [confirmed] Parser trap: footnote refs must be claimed before/apart from the link grammar (Zettlr registers its footnote parser `before: 'Link'`). House regex for `[^1]` without a following `(` likely never matches `markdownLinkRegex`, but it gets pinned by test. cmark-gfm's seven documented label-matching bugs are catalogued in the micromark readme — read before writing the ref regex.
 
-#### B — Editor Rendering
-- **B-1:** [assumed] Reference marker renders as an accent-at-tint-primary number widget; no live-syntax reveal on caret entry — editing only via right-click ▸ Edit, which seats the caret in the revealed syntax (syntax keeps footnote sizing while revealed).
-- **B-2:** [confirmed] Footnote text sizes at **0.75em** (Nathan's call) as a `--fn-size` knob following the code block's `--cb-size` line-class pattern, since the editor doesn't consume the type ramp. Worn by the definition-section lines and by revealed syntax while editing there.
-- **B-6:** [confirmed] Color split: the *marker* wears accent at `--tint-primary`; *definition* text reads `--label-secondary` at the footnote size (Nathan, this round).
-- **B-3:** [confirmed] The definitions-section divider is the shared heading seam (`--border-heading`) — the same token the Subfield's top divider consumes.
-- **B-4:** [assumed] Divider click folds the section; hidden state shows a left-aligned "Show Footnotes" disclosure (Subfield-toggle-like); disclose on the disclosure/`Reveal` primitive, bar entering on `--ease-standard`, divider blur-fading in/out.
-- **B-5:** [open] Where fold state persists — per-machine `nexus.db` like heading folds, presumably.
+#### A — The Model
+- **A-1:** [confirmed] GFM reference footnotes only: `[^label]` markers in the body, `[^label]: text` definitions. No inline `^[text]` syntax anywhere. Disk is plain GFM.
+- **A-2:** [confirmed] The footnotes section is the **last contiguous run of definition lines** in the document. Definition syntax anywhere else is literally plain text — not parsed. Accepted divergence from GitHub, which honors mid-doc definitions; Resolve repairs (see A-6 open).
+- **A-3:** [confirmed] A marker renders as a footnote iff its definition exists in the section; an unmatched `[^1]` stays literal text (GitHub-identical).
+- **A-4:** [confirmed] Duplicate labels legally share one definition and one number.
+- **A-5:** [open] Exact boundary grammar of "last contiguous run": do blank lines between definitions and GFM multi-line continuation lines (indented) count as part of the run? Trailing blank lines after the last definition?
+- **A-6:** [open] "Resolve repairs" — what gesture is "Resolve," and what does the repair do (move mid-doc definitions into the section)?
 
-#### C — Insertion & Menus
-- **C-1:** [confirmed] Insert ▸ Footnote joins the existing Insert submenu of the OS-native editor context menu.
-- **C-2:** [confirmed] Right-click on a footnote marker: Edit / Delete. Edit jumps the caret into the definition's text at the bottom (scroll-glide travel); Delete removes the reference.
-- **C-6:** [confirmed] Plain click on a marker jumps to its definition; a marker whose definition is a markdown link navigates to the link instead (C-5).
-- **C-3:** [confirmed] Paste As ▸ gains Footnote: external addresses add it; internal targets offer Footnote · Connection · Markdown Link.
-- **C-4:** [confirmed] Paste As ▸ Footnote creates a footnote whose definition body is the pasted content — a URL writes `[^N]: <link>`, an internal target `[^N]: [[Title]]` — with the numbered marker at the caret. The URL case makes the marker click-navigate per C-5.
-- **C-5:** [confirmed] A footnote marker whose definition is a markdown link navigates on click.
+#### B — Markers
+- **B-1:** [confirmed] A marker renders as its **positional number** (first-use order, GitHub/Google Docs style), accent at tint-primary, permanently opaque — no live-syntax reveal at any caret position; atomic and caret-proof, backspace removes it whole.
+- **B-2:** [confirmed] Click jumps to the definition; if the definition is a markdown link, click navigates to the link instead.
+- **B-3:** [confirmed] Right-click: **Edit** (jump caret into the definition) and **Delete**. Deleting a marker (backspace or menu) also deletes its definition when it was the last reference — one transaction, one undo.
+- **B-4:** [confirmed] Selection sweeps/cuts remove only the swept range, so a cut-paste move reconnects to the surviving definition.
+- **B-5:** [confirmed] Markers render and work inside table cells; *creating* one from inside a cell is a Prospect.
+- **B-6:** [open] "The definition is a markdown link" — does that mean the definition's entire content is a single link? Does a `[[Connection]]` definition get the same click-through treatment?
+- **B-7:** [open] Does a `[^1]` occurring *inside* a definition line render as a marker there too, or stay literal within the section?
 
-#### D — Statistics & Settings
-- **D-1:** [confirmed] Pages & Editor gains "Include footnotes in page statistics" — default OFF (footnotes excluded from lines/words/chars).
-- **D-2:** [confirmed] "Include metadata in page statistics" is dropped — frontmatter is already excluded (stats compute off the body-only string), so OFF is current behavior and ON would build a new inclusion path nobody needs.
-- **D-3:** [assumed] No footnote-order setting ships in Pages & Editor — display numbering is inherently positional (A-2), gestures renumber (A-3), and explicit repair is the Resolve Footnote Order action (A-8).
+#### C — The Section
+- **C-1:** [confirmed] Hidden by default; the body shows numbered markers only. Divider is the shared heading seam token; clicking the divider folds the section.
+- **C-2:** [confirmed] A left-aligned **Show Footnotes** control sits at the document's end in flow, never higher than the pane bottom. Discloses with the disclosure animation — bar on ease-standard, divider blur-fading in/out.
+- **C-3:** [confirmed] Disclosure state is remembered per page per machine, like heading folds.
+- **C-4:** [confirmed] Definition text renders at label-secondary, 0.75em (the editor is em-scaled — the type ramp is not consumed). Connections and markdown links render normally inside definitions.
+- **C-5:** [confirmed] Multi-line definitions per GFM; Enter does not auto-continue one.
+- **C-6:** [open] When no footnotes exist, is the Show Footnotes control absent entirely?
 
-#### E — Performance
-- **E-1:** [confirmed] Footnote scanning/numbering must ride the existing one-per-doc-version derivation — no per-keystroke whole-doc re-walk beyond what already runs.
+#### D — Creating
+- **D-1:** [confirmed] Every creation path writes the complete marker + definition pair in one undoable transaction and auto-discloses the section.
+- **D-2:** [confirmed] **Insert ▸ Footnote** (context-menu Insert submenu) — caret seated in the new empty definition.
+- **D-3:** [confirmed] **Paste As ▸ Footnote** — pasted content becomes the definition; internal targets offer Footnote · Connection · Markdown Link.
+- **D-4:** [confirmed] Typing `[^1]` by hand auto-seeds its empty definition (typing-transform category). Empty definitions are valid.
 
-#### F — Sweep Findings (deletion, orphans, edges)
-- **F-1:** [confirmed] Deleting a marker deletes its definition with it (when it was the last reference; shared definitions survive) — Backspace/forward-delete on the atomic marker and right-click ▸ Delete both cascade, one transaction, one undo. The cascade is uniform regardless of how the definition was authored (gesture, hand-typed, foreign/mid-doc) — the delete resolves the definition by label at gesture time, wherever the line sits. [assumed] A *selection sweep or cut* containing a marker removes only the swept range — the definition survives in the section (an orphan until re-referenced), so a cut-paste *move* reconnects on paste; cascading there would destroy the definition, since the clipboard is plain text and can't carry it.
-- **F-2:** [confirmed] A marker renders as a footnote whether or not a definition exists — the body never distinguishes the two (Nathan: "no way for MarkdownPM's body to tell"), and a definition-less marker still numbers positionally. This deviates from GFM's render-as-literal-text for unmatched refs, deliberately. A definition with no references still renders in the section when disclosed. [assumed] On a definition-less marker: plain click is inert beyond disclosure (a click must not mutate), right-click ▸ Edit *creates* the definition — appends `[^N]: ` to the section and seats the caret — and Delete removes just the marker.
-- **F-3:** [confirmed] Non-numeric labels (`[^note]`, foreign files): renumbering (gestures and Resolve) touches numeric labels only — a named label is an authored choice and keeps its name while taking its positional display number (Zettlr's discipline).
-- **F-4:** [assumed] Table cells split by tier: markers *render* in cells in core (number, click-jump, right-click — the walked links-in-resting-cells path; the whole-doc scan already sees table source), while *insertion from inside a cell* stays a Prospect (one gesture writing the cell diff plus a page-doc append is new two-writer coordination). Recommended twice, not yet ruled on by Nathan.
-- **F-5:** [confirmed] A jump to a definition hidden by a fold (the section's own fold included) routes through the editor's existing reveal seam — scroll to an offset, opening every collapsed section hiding it.
-- **F-6:** [confirmed] Connections and markdown links inside definition lines tokenize and render normally (definition lines are prose lines wearing a line class, not code) — required for C-4/C-5; the rename cascade sweeps them for free since definitions are body text.
-- **F-7:** [confirmed] Stats exclusion semantics (default): definition lines drop from the `lines` count and their prose from words/characters; markers drop from words/characters. The Pages & Editor toggle ON counts both.
-- **F-8:** [confirmed] "Show Footnotes" sits at the document's end in flow but never higher than the pane's bottom edge — a short doc shows it resting at the pane bottom, a long doc after the content.
-- **F-9:** [confirmed] The footnotes section is hidden by default — the body carries markers only; "Show Footnotes" / the divider disclose it. Insert, Edit, and marker clicks auto-disclose via the reveal seam. [assumed] Disclosure state is remembered per page per machine like heading folds, defaulting to hidden on first open.
+#### E — Numbering
+- **E-1:** [confirmed] Display is always positional (first-use order).
+- **E-2:** [confirmed] Footnote **gestures** also renumber the numeric disk labels to match position; **hand edits never trigger rewrites**. Non-numeric labels like `[^note]` keep their names on disk (display still positional).
+- **E-3:** [open] The exact gesture set that renumbers: Insert ▸ Footnote, Paste As ▸ Footnote, menu Delete — does atomic marker backspace count as a gesture too?
+
+#### F — Stats & Settings
+- **F-1:** [confirmed] One new Pages & Editor toggle: **Include Footnotes In Page Statistics**, default Off — definitions and markers excluded from lines/words/chars. No metadata toggle; frontmatter is already excluded.
 
 ### Core (must-have)
-- The `footnoteRef` token + `footnoteDefinition` line scan (regex house style; `excluded`-contract respected), numbered positionally off the per-doc-version scan.
-- The marker: an inline replacing widget over the whole `[^N]` span — accent at `--tint-primary`, atomic, caret-proof, no reveal, `ignoreEvent → false`; click jumps to the definition (or navigates when the definition is a link).
-- The definition section: hidden by default, line-class styling at `--fn-size: 0.75em` with `--label-secondary` text, the heading-seam divider above the trailing run, divider-click fold + the "Show Footnotes" bar (doc-end in flow, floored at the pane bottom) on the existing fold/Reveal machinery, state per-machine (new `local_state` scope + remint copy). Mid-doc definition lines never render — hidden with the callout-head/fold guards — while still resolving.
-- Insert ▸ Footnote (view-aware insertion: marker at caret + definition appended, one transaction, caret seated in the definition) with gesture renumbering.
-- Right-click on marker: Edit (jump to definition) / Delete (marker + last-ref definition).
-- Resolve Footnote Order on the section's right-click: renumber numeric labels + consolidate stray definitions.
-- Paste As ▸ Footnote (URL and internal-target forms).
-- Pages & Editor: "Include footnotes in page statistics", default OFF; `subfieldStats` footnote stripping.
+- The section model (last-contiguous-run parse, GitHub-identical unmatched-marker fallback), atomic positional markers with click/right-click behavior, the hidden-by-default section with per-page-per-machine disclosure, all three creation doors, gesture-scoped renumbering, and the stats toggle.
 
 #### Prospects (allowed later, not now)
-- **Hover preview of the definition on a marker** — Nathan-flagged prospect; don't-foreclose: the marker widget should be a component a hover card can attach to (connections' hover preview is the pattern).
-- **Drag-to-reposition a footnote marker** — Nathan-flagged prospect; don't-foreclose: gesture renumbering already makes reposition-then-renumber a single-transaction shape.
-- **Footnote refs rendering fully inside table cells** — needs the resting-cell renderer + a cell→page insertion route (F-4).
+- Hover preview of a definition on its marker — spec-deferred.
+- Drag-to-reposition markers — spec-deferred.
+- Footnote creation from inside table cells — spec-deferred; markers still render and work in cells now.
 
-#### Out of Scope
-- **"Include metadata in page statistics" toggle** — frontmatter never reaches the stats path today; counting it would be a new inclusion path with no user. Dropped by Nathan.
-- **Inline `^[text]` authoring** — not this feature's job at any point; the reference form is the format.
+#### Out of Scope (won't do)
+- Inline `^[text]` footnote syntax — the pair syntax is the model.
+- Honoring mid-doc definitions — accepted divergence from GitHub.
 
 #### Considered & Rejected
-- **Inline `^[text]` syntax** — self-contained, so the bottom section/fold/stats design has nothing to act on; only deprecated micromark support; Obsidian live preview doesn't render it. (The original spec's rationale — "doesn't have to re-order real syntax" — is answered by positional display numbering instead.)
-- **Full auto-renumber on every edit** — violates the editor's never-auto-tidies contract, fights the undo stack, churns the per-doc-version caches.
-- **Never renumber (stable IDs, display-only)** — cheapest, but the raw file reads out of order, which Obsidian's live preview exposes verbatim; Nathan explicitly wants disk cohesion.
-- **"Resolve order on visibility toggle" setting** — Nathan floated it; rejected because a fold/reveal gesture mutating the document crosses the write-free-display line every other view action holds (and dirties the file, undo stack, and watcher from a read gesture). The explicit Resolve Footnote Order action replaces it.
-- **Display-relocating mid-doc definitions to the section** — rendering bytes somewhere other than where they sit is a reconstruction layer, the one thing the editor's architecture forbids. Hiding them in place (chosen, A-6) is a different move with existing precedent.
-- **Rendering mid-doc definitions in place (styled or as raw prose)** — weighed as the visible-bytes option; Nathan ruled definitions belong to the section view alone, and the hiding precedents (callout head, folds) carry the caret/delete guards that make it safe.
+- (pending — approach round not yet run)
 
 #### Lessons
-- (none logged yet)
+- (pending)
