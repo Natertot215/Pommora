@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import { stabilize } from '@shared/treeStabilize'
 import { dropLiveTree, getLiveTree, refreshTree } from './liveTree'
 import { readNexus } from './readNexus'
-import { applyWatchEvents, classifyEvent, type WatchEvent } from './watchPatch'
+import { applyWatchEvents, classifyEvent, touchesCorpus, type WatchEvent } from './watchPatch'
 
 const ULID_A = '01ARZ3NDEKTSV4RRFFQ69G5FAV'
 const ULID_B = '01BX5ZZKBKACTAV9WEVGEMMVRZ'
@@ -215,5 +215,34 @@ describe('classifyEvent', () => {
     expect(tree.unreadable?.map((u) => u.path)).toContain('Notes')
     const cls = classifyEvent(tree, root, ev('change', 'Notes', '_pagecollection.json'), [])
     expect(cls.kind).toBe('full-refresh')
+  })
+})
+
+describe('directory events', () => {
+  it('a folder named the way the walk hides one never costs a walk', async () => {
+    const tree = await refreshTree(root)
+    expect(classifyEvent(tree, root, ev('addDir', '_drafts'), []).kind).toBe('ignored')
+    expect(classifyEvent(tree, root, ev('addDir', 'Notes', '_scratch'), []).kind).toBe('ignored')
+    expect(classifyEvent(tree, root, ev('addDir', 'Ideas'), []).kind).toBe('full-refresh')
+    // A disappearing one still walks — the index owes a prune for whatever it held.
+    expect(classifyEvent(tree, root, ev('unlinkDir', '_drafts'), []).kind).toBe('full-refresh')
+  })
+})
+
+describe('touchesCorpus — what owes the index a stat sweep', () => {
+  it('names the events that could have moved it, and only those', async () => {
+    await refreshTree(root)
+    const asks = (e: WatchEvent, excluded: string[] = []): boolean =>
+      touchesCorpus(root, [e], excluded)
+    expect(asks(ev('addDir', 'Ideas'))).toBe(true)
+    expect(asks(ev('unlinkDir', 'Notes'))).toBe(true)
+    expect(asks(ev('add', 'Notes', 'B.md'))).toBe(true)
+    expect(asks(ev('change', '.nexus', 'properties.json'))).toBe(false)
+    expect(asks(ev('change', 'Notes', '_pagecollection.json'))).toBe(false)
+    expect(asks(ev('addDir', 'Archive', 'deep'), ['Archive'])).toBe(false)
+    // One qualifying event in a batch is enough.
+    expect(
+      touchesCorpus(root, [ev('change', '.nexus', 'properties.json'), ev('add', 'C.md')], []),
+    ).toBe(true)
   })
 })

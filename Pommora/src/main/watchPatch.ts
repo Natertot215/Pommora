@@ -8,7 +8,7 @@
 import { join, relative, sep } from 'node:path'
 import type { CollectionNode, NexusTree, PageNode, SetNode, SpaceNode } from '@shared/types'
 import { asString, asStringArray } from './coerce'
-import { excludedMatcher, sameExclusions } from './exclusion'
+import { excludedMatcher, hiddenName, sameExclusions } from './exclusion'
 import { adoptedId, isAdoptedId } from './ids'
 import { pathExists, readJsonObject } from './io/atomicWrite'
 import { isMarkdownFile } from './io/walk'
@@ -133,7 +133,12 @@ export function classifyEvent(
     }
     return { kind: 'full-refresh' }
   }
-  if (ev.event === 'addDir' || ev.event === 'unlinkDir') return { kind: 'full-refresh' }
+  // A folder appearing under a name the walk hides cannot enter the tree, so nothing needs
+  // deriving; its notes still reach the index through their own events. A DISAPPEARING one is
+  // not the same question — the index owes a prune for whatever it held.
+  if (ev.event === 'addDir')
+    return hiddenName(name) ? { kind: 'ignored' } : { kind: 'full-refresh' }
+  if (ev.event === 'unlinkDir') return { kind: 'full-refresh' }
   if (isContentName(name)) {
     if (dirRel !== '' && findContainer(tree, dirRel)) {
       return ev.event === 'unlink' ? { kind: 'page-remove', rel } : { kind: 'page-upsert', rel }
@@ -156,6 +161,21 @@ export function classifyEvent(
     }
   }
   return { kind: 'full-refresh' }
+}
+
+/** Whether a batch could have moved the corpus the content index mirrors — a directory event or
+ *  a Markdown file, outside `.nexus` and outside the user's exclusions. A walk forced by anything
+ *  else (a registry edit, a path on the unreadable list) leaves the corpus exactly as the index
+ *  already has it, and owes no stat sweep on top of the walk. */
+export function touchesCorpus(root: string, events: WatchEvent[], excluded: string[]): boolean {
+  const isExcluded = excludedMatcher(excluded)
+  return events.some((ev) => {
+    const rel = toPosixRel(root, ev.absPath)
+    if (rel === null) return true
+    const segs = rel.split('/')
+    if (segs[0] === '.nexus' || isExcluded(segs)) return false
+    return ev.event === 'addDir' || ev.event === 'unlinkDir' || isMarkdownFile(rel)
+  })
 }
 
 /** Batch-apply a settle window's events. `refresh` means the caller walks; `patched` means the

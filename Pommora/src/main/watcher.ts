@@ -15,7 +15,7 @@ import { seedContentIndex } from './indexSeed'
 import { getLiveTree, refreshAfterWrite } from './liveTree'
 import { sessionRoot } from './session'
 import { readExcludedFolders } from './settings'
-import { applyWatchEvents, type WatchEvent, type WatchEventName } from './watchPatch'
+import { applyWatchEvents, touchesCorpus, type WatchEvent, type WatchEventName } from './watchPatch'
 
 const SETTLE_MS = 200
 
@@ -49,6 +49,9 @@ export function ignoredUnder(root: string, excluded: string[] = []): (path: stri
       segs.some(
         (seg) =>
           seg === '.trash' ||
+          // The walk skips it, so the tree can never hold it — and one install would otherwise
+          // storm the settle window with thousands of directory events.
+          seg === 'node_modules' ||
           seg.startsWith('nexus.db') || // our store + its WAL/SHM
           (seg.startsWith('.') && seg !== '.nexus'), // dotfile cruft, but .nexus holds contexts + settings
       ) ||
@@ -147,8 +150,9 @@ async function settle(root: string, win: BrowserWindow, excluded: string[]): Pro
     if (tree && tree !== before) pushToWindow(win, 'nexus:changed', tree)
     if (outcome !== 'refresh') return
     // A refresh means the corpus may have moved in ways no arm named — the stat-gated seed
-    // reconciles the index for the same cost as the walk's own stats.
-    await seedContentIndex(root)
+    // reconciles the index for the same cost as the walk's own stats. Only a batch that could
+    // have moved the corpus owes it: a walk forced by a registry edit leaves the index exact.
+    if (touchesCorpus(root, events, excluded)) await seedContentIndex(root)
     if (sessionRoot() !== root || win.isDestroyed()) return
     // The compiled exclusion list this watcher was armed with is spent state: an exclusions
     // edit classifies `refresh` above, but the classifier and chokidar's own ignore filter
