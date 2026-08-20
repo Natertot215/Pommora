@@ -11,7 +11,7 @@ import {
   type WebpageLine,
 } from '../detect'
 import type { TableRegion } from '../Tables/regions'
-import { normalizeTitle, type LinkStatus } from '@shared/connections'
+import { embeddableTitle, normalizeTitle, type LinkStatus } from '@shared/connections'
 
 interface DocLineScan {
   maths: [number, number][]
@@ -39,12 +39,12 @@ export function docLineScan(
   }
 }
 
-/** Whether a page title can be embedded here: the `![[…]]` syntax cannot express a `]`, and a title
- *  already held by a tile in this document — or by a host above it — would only ever land the inert
+/** Whether a page title can be embedded here: a title the syntax can spell, and one not already held
+ *  by a tile in this document — or by a host above it — which would only ever land the inert
  *  duplicate token or the cycle. The grip menu's pick tree and the `![[` autocomplete pool both read
  *  this one rule, so they can never offer different pages. */
 export function embeddable(title: string, exclude: ReadonlySet<string>): boolean {
-  return !title.includes(']') && !exclude.has(normalizeTitle(title))
+  return embeddableTitle(title) && !exclude.has(normalizeTitle(title))
 }
 
 /** The tile-ownership claim: an embed line is claimed when its title resolves to exactly one page AND

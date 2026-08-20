@@ -44,6 +44,7 @@ import {
   type EditorMenuApi,
 } from './editor/menu'
 import { formatKeymap } from './editor/formatKeymap'
+import { embedSeatAt } from './editor/embedInsert'
 import { readFormatState } from './editor/formatState'
 import type { FormatState } from '@shared/editorMenu'
 import { AC_MAX, aliasRows, pageRow } from './autocomplete'
@@ -285,7 +286,7 @@ export function MarkdownEditor({
           const sel = u.state.selection.main
           // FormatState is flat primitives — a field compare beats allocating a JSON string per
           // caret move just to diff it.
-          const fs = readFormatState(doc, sel.from, sel.to, u.view.hasFocus)
+          const fs = readFormatState(doc, sel.from, sel.to, u.view.hasFocus, embedSeatAt(u.state))
           const last = lastFormatRef.current
           const changed =
             !last || (Object.keys(fs) as (keyof typeof fs)[]).some((k) => fs[k] !== last[k])

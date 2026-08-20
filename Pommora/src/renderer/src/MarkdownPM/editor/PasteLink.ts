@@ -7,6 +7,7 @@ import { linkDestinationAt } from '@shared/webpageEmbed'
 import { matchesCommand } from '../../Commands'
 import { useSession } from '../../store'
 import { docString } from './docCache'
+import { embedSeatAt } from './embedInsert'
 import { awaitTitle } from './PendingTitle'
 
 // Turns a pasted address into a markdown link, in the form the nexus is set to, and carries the
@@ -87,6 +88,19 @@ function writeLink(view: EditorView, link: LinkPaste): void {
   if (link.wantsTitle) useSession.getState().resolveLinkTitle(link.target)
 }
 
+/** Put a lone-line construct in as the caret's whole line. The seat is re-read here rather than
+ *  trusted from the menu: the offer was decided when the menu popped, and the document may have
+ *  moved while it stood open. */
+function writeLine(view: EditorView, text: string): void {
+  if (!embedSeatAt(view.state)) return
+  const line = view.state.doc.lineAt(view.state.selection.main.from)
+  view.dispatch({
+    changes: { from: line.from, to: line.to, insert: text },
+    selection: { anchor: line.from + text.length },
+    userEvent: 'input.paste',
+  })
+}
+
 /** Paste As: put the clipboard in as the form the menu picked, rather than as whatever the settings
  *  would have made of it. The forms are decided and written by the shared model, so this menu can
  *  never offer something the writer can't produce. */
@@ -108,6 +122,7 @@ export async function pasteAs(view: EditorView, form: PasteAsForm): Promise<void
   const write = pasteAsWrite(target, form, cached)
   if (!write) return
   if (write.kind === 'link') writeLink(view, write)
+  else if (write.kind === 'line') writeLine(view, write.text)
   else view.dispatch(view.state.replaceSelection(write.text))
   view.focus()
 }

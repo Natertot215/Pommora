@@ -1,5 +1,6 @@
 // Typing a page embed into the document — the Embed ▸ Internal Page path. The token lands fenced on its own
 // line below the caret's block, and the caret between the brackets so the embed autocomplete takes over.
+import type { EditorState } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
 import { blockAt } from './blockModel'
 import { docScan, docString } from './docCache'
@@ -31,6 +32,20 @@ export function embedInsertAfter(
     insert: `${lead}${token}${trail}`,
     caret: from + lead.length + token.length,
   }
+}
+
+/** Whether the caret already sits where a lone-line embed may be written: a blank line, outside the
+ *  regions that would make the token content rather than a construct. Both embed grammars are line
+ *  constructs, so this is the placement Paste As offers its embed forms on — and the one it writes
+ *  under, since a native menu can hang open while the document moves beneath it. Read off the
+ *  per-version scan, because it answers on every caret move. */
+export function embedSeatAt(state: EditorState): boolean {
+  const line = state.doc.lineAt(state.selection.main.from)
+  if (line.text.trim() !== '') return false
+  const scan = docScan(state.doc)
+  if (scan.fences[line.number - 1]) return false
+  const holds = (from: number, to: number): boolean => line.from >= from && line.from <= to
+  return !scan.maths.some(([f, t]) => holds(f, t)) && !scan.tables.some((r) => holds(r.from, r.to))
 }
 
 function insertEmbedToken(view: EditorView, token: string, caretBack: number): boolean {

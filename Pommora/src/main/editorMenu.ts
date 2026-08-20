@@ -201,7 +201,7 @@ function pommoraItems(
 // text alone, and the renderer cannot read it in time — main's `context-menu` event fires in the same
 // turn as the right-click that triggers it.
 function pasteAsItems(wc: WebContents): MenuItemConstructorOptions[] {
-  const rows = pasteAsRows(clipboard.readText())
+  const rows = pasteAsRows(clipboard.readText(), lastState?.embedSeat === true)
   if (rows.length === 0) return []
   return [
     {

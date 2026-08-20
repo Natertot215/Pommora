@@ -263,7 +263,7 @@ Nothing draws in this phase. The boundary derivation lands first and is exercise
 - [ ] Add `.md-cite-num` to the existing shared numeric-glyph selector list.
 - [ ] **Parameterize the hanging indent rather than copying it a fourth time.** The ordered marker, the checkbox line and the codeblock line-count row are three identically-shaped `padding-left` / negative `text-indent` pairs differing only in their zone variable; one rule taking the zone as a variable retires all four and leaves one place to tune. The wrap restore joins the list content span's existing selector for the same reason.
 - [ ] Add the continuation-line rule reusing that same indent pair without a glyph zone.
-- [ ] Add the text treatment — label-secondary, 0.75em — and the dimmed variant as `opacity: var(--state-inactive)` on the row. **The token exists and is exactly this case**: the States table's inactive step is the one still-here-but-not-active dim, worn as opacity over an element's standard chrome, and the editor already dims a whole line that way for a block in flight. Nothing is minted. (The design system's Pending entry names a different thing — an empty-state text *tone* between secondary and tertiary — which an orphaned citation does not need, because it dims as a whole row rather than recoloring its text.) The token carries a `KNOB` marker; leave it.
+- [ ] Add the text treatment — label-secondary, 0.75em — and the dimmed variant as `opacity: var(--state-inactive)` on the row. **The token exists and is exactly this case**: the States table's inactive step is the one still-here-but-not-active dim, worn as opacity over an element's standard chrome, and the editor already dims a whole line that way for a block in flight. Nothing is minted. The token carries a `KNOB` marker; leave it.
 - [ ] Run the gate — expect green; no selector matches anything yet.
 - [ ] Commit: `style(editor): citation rows join the shared numeric-glyph rule`
 
@@ -608,7 +608,7 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 - Test: `Pommora/src/renderer/src/MarkdownPM/editor/citationGuard.test.ts`
 
 **Interfaces**
-- Produces: `citationTailVerdict(doc, fromA, toA, inserted, scan)` → the shared verdict shape **plus a fifth arm carrying replacement text**. The existing four only move range endpoints, and A-5b requires the inserted text be *rewritten* into continuation form. The change spec the loop builds already has an `insert` field the callout guard fills verbatim, so the new arm is a value swapped into a field that exists — not machinery. `inserted` joins the signature for the same reason. Exported pure for tests.
+- Produces: `citationTailVerdict(doc, fromA, toA, inserted, scan)` → the shared verdict shape **plus a fifth arm carrying replacement text**. The existing four only move range endpoints, and A-5b requires the inserted text be *rewritten* into continuation form. The change spec the loop builds already has an `insert` field that the callout guard fills verbatim, so the new arm is a value swapped into an existing field — not machinery. `inserted` joins the signature for the same reason. Exported pure for tests.
 
 **Negative control:** a test proving a paste below the section is shaped into continuation form *and* a test proving that with the guard unregistered it strands prose after the section and literalizes the whole thing.
 
@@ -851,11 +851,12 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 **Why:** A document still false at closeout is a defect in the commit that should have carried it. The per-task edits landed with their tasks; this task writes the feature's own documentation, which has no earlier commit to ride, and closes the project-level record.
 
 **Files:**
-- Create: `.claude/Features/FootnotesPM.md`
-- Modify: `.claude/Features/MarkdownPM.md`, `.claude/ContextPM.md`, `.claude/HistoryPM.md`, `.claude/CLAUDE.md` codebase map.
+
+- Modify: `.claude/Features/MarkdownPM.md`' + ### Footnotes ← 1 pargarpah simple explanation, following Studio.md and Claude.md documentation standards. 
+- `.claude/ContextPM.md`, `.claude/HistoryPM.md`, `.claude/CLAUDE.md` codebase map.
 
 **Steps:**
-- [ ] Write the feature document as an encyclopedic guide to what footnotes do and what exists — never implementation notes, never a reference to planning documents.
+- [ ] Write the feature document as an encyclopedic guide to what footnotes do and what exists — never implementation notes, never a reference to planning documents. Don't over-explain what wouldn't be necessary for a user to know. 
 - [ ] Update the editor's feature document, the codebase map, and the context document's focus and candidates.
 - [ ] Add the History entry as one milestone arc.
 - [ ] Run the closing sweep over Dead Vocabulary against its control.
@@ -911,7 +912,7 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 
 ### Rulings
 
-- **08-20-2026, Nathan:** No statistics toggle. The citations section never counts; a marker counts its own source characters and zero words (`[^1]` four, `[^10]` five). Supersedes the decision log's earlier three-setting group.
+- **08-20-2026, Nathan:** No statistics toggle. The citations section never counts; a marker counts its own source characters and zero words (`[^1]` four, `[^10]` five). 
 - **08-20-2026, Nathan:** The citation row's glyph comes from the codeblock line-count chrome, sharing the ordered marker's CSS. The ordered branch draws its own source and cannot show a positional number.
 - **08-20-2026, Nathan:** There is no chevron. The Subfield control is literal text — Show Footnotes / Hide Footnotes — and the divider is the other half.
 - **08-20-2026, Nathan:** C-3's clear-on-default confirmed — a toggle landing on the current default deletes the row.

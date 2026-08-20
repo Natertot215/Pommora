@@ -11,6 +11,7 @@ export function readFormatState(
   from: number,
   to: number,
   focused: boolean,
+  embedSeat: boolean,
 ): FormatState {
   // Inline marks are line-local, so tokenize only the caret's line (not the whole doc) and test
   // membership in line-relative coords. A cross-line selection can't sit inside one inline token anyway.
@@ -41,5 +42,6 @@ export function readFormatState(
     heading: hm ? hm.hashes.length : 0,
     list: lm?.kind ?? null,
     block: isQuoteToggleable(line) ? 'quote' : null,
+    embedSeat,
   }
 }

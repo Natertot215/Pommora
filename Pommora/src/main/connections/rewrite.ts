@@ -6,6 +6,7 @@ import {
   connectionText,
   normalizeTitle,
   pageEmbedPattern,
+  pageEmbedText,
   pageLinkPattern,
   titleOf,
 } from '@shared/connections'
@@ -40,7 +41,7 @@ export function rewriteConnections(body: string, oldTitle: string, newTitle: str
   const afterEmbeds = afterLinks.replace(
     pageEmbedPattern(),
     (match, title: string, offset: number) =>
-      !inCodeAfter(offset) && normalizeTitle(title) === oldKey ? `![[${newTitle}]]` : match,
+      !inCodeAfter(offset) && normalizeTitle(title) === oldKey ? pageEmbedText(newTitle) : match,
   )
   // The markdown form last, over a mask rebuilt for the same reason. Only a target that NAMES a page
   // moves, so a URL whose last segment happens to match the renamed title is left exactly as written.

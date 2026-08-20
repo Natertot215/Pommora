@@ -1,4 +1,4 @@
-import { linkAt, normalizeTitle } from '@shared/connections'
+import { linkAt, normalizeTitle, pageEmbedText } from '@shared/connections'
 import { decodeLinkTarget, encodeLinkTarget, escapeAlias } from '@shared/links'
 import { codeMask } from '@shared/markdownCode'
 import { lineStartAt, lineEndAt } from './input'
@@ -153,7 +153,7 @@ function formSyntax(value: string, form: ConnectionForm, alias?: string): string
     case 'target':
       return encodeLinkTarget(value)
     case 'embed':
-      return `![[${value}]]`
+      return pageEmbedText(value)
     case 'link':
       return alias ? `[[${value}|${alias}]]` : `[[${value}]]`
   }
