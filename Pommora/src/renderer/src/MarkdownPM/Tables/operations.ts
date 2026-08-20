@@ -1,9 +1,8 @@
+import { clamp } from '@renderer/design-system/clamp'
 import type { Align, Column, TableModel } from './model'
 
 type RowWhere = 'above' | 'below'
 type ColWhere = 'left' | 'right'
-
-export const clamp = (v: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, v))
 
 function spliceAt<T>(arr: T[], pos: number, del: number, ...ins: T[]): T[] {
   const a = [...arr]

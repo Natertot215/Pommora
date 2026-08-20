@@ -57,6 +57,28 @@ describe('cellCommitChange — minimal-diff cell edit (replace just the cell spa
   })
 })
 
+// A row short of the columns its delimiter declares is read through a padded model, so a cell being
+// typed in has a position in the model and no span in the source. The edit used to be dropped and
+// the typing vanished on demote.
+describe('a ragged row keeps what is typed into the columns it is short of', () => {
+  const doc = '| a | b |\n| --- | --- |\n| 1 |'
+
+  it('writes the new cell by rewriting the row with its padding made real', () => {
+    const c = cellCommitChange(doc, 0, 1, 1, 'X')!
+    const out = doc.slice(0, c.from) + c.insert + doc.slice(c.to)
+    expect(out).toBe('| a | b |\n| --- | --- |\n| 1 | X |')
+  })
+
+  it('and the cells the row did have are carried across untouched', () => {
+    const c = cellCommitChange(doc, 0, 1, 1, 'X')!
+    expect(c.insert).toContain('| 1 |')
+  })
+
+  it('a column the delimiter never declared is still refused', () => {
+    expect(cellCommitChange(doc, 0, 1, 5, 'X')).toBeNull()
+  })
+})
+
 describe('structuralEditChange — whole-table op re-serialized into the source region', () => {
   const doc = 'before\n\n| a | b |\n| --- | --- |\n| 1 | 2 |\n\nafter'
 

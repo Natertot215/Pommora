@@ -1,5 +1,6 @@
 import { useLayoutEffect, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { GlassSurface } from '@renderer/design-system/materials'
+import { clamp } from '@renderer/design-system/clamp'
 import { cx } from '@renderer/design-system/cx'
 import './sidePane.css'
 
@@ -18,8 +19,6 @@ const widths = new Map<string, number>()
 /** Hosts seed their CSS-var state from this so the first frame already carries the restored
  *  width — the mirror effect runs post-mount. */
 export const sidePaneWidth = (windowId: string, def: number): number => widths.get(windowId) ?? def
-
-const clamp = (v: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, v))
 
 export function SidePane({
   windowId,
