@@ -20,15 +20,10 @@ export interface FormatEdit {
   selection?: number
 }
 
-export type InlineFormat =
-  | 'bold'
-  | 'italic'
-  | 'strikethrough'
-  | 'inlineCode'
-  | 'link'
-  | 'connection'
-export type HeadingLevel = 0 | 1 | 2 | 3 | 4 | 5 | 6
-export type BlockFormat = 'quote' | 'code' | 'hr' | 'callout' | 'table'
+// The menu's vocabulary and this module's argument types are one fact — declared in shared so
+// main names rows from the same list the editor branches on.
+import type { BlockFormat, HeadingLevel, InlineFormat } from '@shared/editorMenu'
+export type { BlockFormat, HeadingLevel, InlineFormat }
 
 /** A line carries a plain-quote prefix the quote toggle should strip — true for a real blockquote, but NOT a
  *  callout head (whose `>` is box chrome, stripping it orphans the `[!type]`). */
