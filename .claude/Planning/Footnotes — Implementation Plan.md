@@ -165,7 +165,7 @@ Nothing draws in this phase. The boundary derivation lands first and is exercise
   - `firstLine` on a document with no section is `lines.length`. `scanDoc` splits an empty document to `['']`, so an empty document answers `1`, not `0`.
   - `markerRegex(): RegExp` — a factory returning a fresh `/(?<!\\)\[\^([^\]\s]+)\]/g` per call, matching the `inlineCodeRegex()` idiom so no `lastIndex` leaks between callers. The lookbehind honors the `\[^1]` escape, which suppresses the reference at the parser too (verified) — one pattern, so the counter and the decoration pass cannot disagree about an escape.
   - `foldLabel(label: string): string` — the case-fold used for every binding comparison. **It is deliberately not the shared title normalization**, which already has two byte-identical copies for page titles and context values: GFM defines its own case-folding for footnote labels, and coupling the two would mean a future change to title matching silently moved footnote binding. C1 gets that answer rather than a third copy appearing unexplained.
-- Assumed by: Tasks 2, 3, 5, 6, 7, 8, 11, 13, 14, 15, 16, 18, 19.
+- Assumed by: Tasks 2, 3, 5, 6, 7, 8, 11, 13, 14, 15, 17, 19, 20.
 
 **Must agree:** the boundary this returns and the parser's own `footnoteDefinition` spans must name the same lines **for unindented, top-level citations** — the shape this feature admits. One test parses a corpus with `parse()` from `MarkdownPM/parser`, collects every top-level `footnoteDefinition` node's line range, and asserts the scan's `mask` covers exactly those lines for the trailing run. The corpus deliberately excludes the three shapes R1 does not admit, which the Failure half names.
 
@@ -191,7 +191,7 @@ Nothing draws in this phase. The boundary derivation lands first and is exercise
 
 **Interfaces**
 - Produces: `DocScan.citations: CitationScan`, computed as `citationScan(lines, fencedLineMask(lines))` — reusing the `fences` pass already computed two lines above rather than running a second one.
-- Assumed by: Tasks 5, 6, 7, 8, 11, 14, 15, 16, 18, 19.
+- Assumed by: Tasks 5, 6, 7, 8, 11, 14, 15, 17, 19, 20.
 
 **Steps:**
 - [ ] Add the `citations` field to `DocScan` and one line to `scanDoc`'s return, deriving its fence mask from the existing `fences` result.
@@ -277,7 +277,7 @@ Nothing draws in this phase. The boundary derivation lands first and is exercise
 **Interfaces**
 - Consumes: `DocScan.citations`.
 - Produces: per citation line — a `line` intent carrying the row class, a `lineWidget` carrying the ordinal's text, a `hide` over the `[^label]:` prefix through to the content start, an `atomic` over that same span, and a `class` over the content. Per continuation line — a `line` intent carrying the continuation class.
-- Assumed by: Tasks 7, 12, 16.
+- Assumed by: Tasks 12, 14, 17.
 
 **Must agree:** the ordinal a citation row draws and the number its body markers draw must be the same integer. One test asserts, for a document whose disk labels are `1, 7, 3` in body order `7, 1, 3`, that both the marker decorations and the row widgets read `1, 2, 3` against the same first-use ordering.
 
@@ -306,7 +306,7 @@ Nothing draws in this phase. The boundary derivation lands first and is exercise
 
 **Interfaces**
 - Produces: `docMarkers(doc)` → the absolute-offset ranges of `docScan.citations.markers`, cached per document version. **It performs no sweep of its own** — the walk lives in Task 1, and a second one here is the C1 violation this task exists to avoid. Its only work is mapping line-relative offsets to document offsets.
-- Assumed by: Tasks 8, 12, 16, 17, 19.
+- Assumed by: Tasks 7, 17, 18, 19.
 
 **Must agree:** every marker the decoration pass draws is one the counter scores as zero words — containment, not equality, because the counter also zero-words an unmatched marker that draws nothing (the 08-20 ruling). One test runs both over a document holding a bound marker, an unbound one and an escaped one, and asserts the drawn set is a strict subset of the zero-worded set, with the escaped marker in neither.
 
@@ -435,7 +435,7 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 
 **Interfaces**
 - Produces: `Personalization.citationsShown` (factory default hidden) and `Personalization.jumpToCitation` (factory default on).
-- Assumed by: Tasks 13, 20, 21.
+- Assumed by: Tasks 13, 21, 22.
 
 **Failure half:** a key absent from the settings file → the built-in default, never `undefined` leaking to a consumer. A non-boolean in the file → dropped by the sanitizer, the default stands.
 
@@ -466,7 +466,7 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 
 **Interfaces**
 - Produces: `FoldKind` gains `'citations'`; `FoldRegion` gains `persists: boolean`, false for the new kind.
-- Assumed by: Tasks 12, 13, 14, 16.
+- Assumed by: Tasks 12, 13, 14, 17.
 
 **Survivors:** heading folds keep persisting exactly as they do. `expandFoldsAt` and `FoldsApi` are unchanged.
 
@@ -619,31 +619,63 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 - [ ] Run the gate — expect green.
 - [ ] Commit: `feat(editor): the citations section's tail is guarded at the transaction layer`
 
-#### Task 16: Marker click — jump, or follow
+#### Task 16: One page-travel mechanism, named for what it does
+
+**Requirement:** 3
+
+**Why:** "Go somewhere in this page, opening whatever hides it" was written once for the outline dropdown and lives under a name and a shape that assume that one caller: it reads a module-level handle registered by the page surface at mount, so it can only ever travel the main pane's editor. Task 17 makes it a second consumer, and the floating Page Preview mounts its own editor, so a marker clicked there would travel the main pane instead of the preview under the pointer. Generalizing it is its own task rather than a clause inside the marker's, because the outline is an existing shipped caller and this is a change to *its* mechanism — it earns its own diff, its own review, and its own gate.
+
+**Files:**
+- Create: `Pommora/src/renderer/src/MarkdownPM/editor/travel.ts` — the view-taking function. **This is where it belongs:** it is an editor capability, not a page-surface one, and it already composes only the editor's own reveal seam, the editor shell's header-zone variable, and the design system's glide. The page module keeps the registration handle and a thin page-scoped call.
+- Modify: `Pommora/src/renderer/src/Detail/pageEditor.ts` — the page-scoped wrapper over the moved core; `registerPageEditor` and the heading-rename and heading-move functions stay, since those genuinely are the page surface's.
+- Modify: `Pommora/src/renderer/src/Toolbar/OutlineDropdown.tsx` — the call follows the rename.
+- Test: `Pommora/src/renderer/src/MarkdownPM/editor/travel.test.ts`
+
+**Derivation**
+- `rg -F "revealPageOffset" Pommora/src` → re-derive before editing; every hit converts or is the definition.
+- Control: `rg -F "pageEditor" Pommora/src` → re-derive. Zero here means the search never ran.
+
+**Interfaces**
+- Produces: the travel function, taking the view and the offset, defaulting to the registered page editor when no view is given. **Name it for the act rather than the caller** — it neither reveals a fold nor scrolls a page; it travels an editor to an offset and opens what conceals it. The current name says "page" about a thing that is no longer page-only.
+- Assumed by: Task 17.
+
+**Survivors:** the sequencing is untouched — the clamp, the fold-open-before-measure, the settle beat, the header-band seat, and the per-frame re-measure all move as they are. This task changes who can call it and what it is called, and nothing about what it does.
+
+**Failure half:** no view given and no page editor registered → a no-op, as today. An offset past the document's end → clamped, as today. A view whose editor has no shell → the fallback inset, as today.
+
+**Must agree:** the outline dropdown's behavior is byte-identical before and after. One test drives an outline jump through the renamed function and asserts the same resulting scroll target as the pre-change call.
+
+**Steps:**
+- [ ] Move the core to the editor module, taking the view as its first argument.
+- [ ] Leave the page-scoped wrapper behind, resolving the registered handle.
+- [ ] Rename to the act, and convert every call site from the derivation.
+- [ ] Run the gate — expect green, and the outline dropdown unchanged in behavior.
+- [ ] Commit: `refactor(editor): one travel-to-offset, named for the act`
+
+#### Task 17: Marker click — jump, or follow
 
 **Requirement:** 3
 
 **Why:** The gesture factory already owns the hover intent, the press latch, the right-button claim and the caret-seat clamp; a marker is a third spec rather than a third copy of any of it. Click-through is defined once — the citation's whole content being exactly one link or one Connection — so no other entry needs to restate the condition, and a trailing character means it is not that and the click jumps like any other.
 
-**The jump itself is not new work.** "Go to an offset in this page, opening whatever hides it" is already one solved act: the page-travel function clamps the target, opens every collapsed region concealing it, waits out the disclosure before measuring, and glides to the seat the page header's own band defines — re-reading the destination each frame, because the editor only estimates the height of blocks it has not drawn. **The outline dropdown's row click is a single call to it.** A marker click is that same act with a different target, so this task supplies the target and not a second traveller.
+**The jump itself is not new work.** Travelling an editor to an offset and opening what conceals it is one function, generalized in Task 16 — it clamps the target, opens every collapsed region hiding it, waits out the disclosure before measuring, and glides to the seat the editor shell's header band defines, re-reading the destination each frame because the editor only estimates the height of blocks it has not drawn. The outline dropdown is its other caller. This task supplies a target, not a second traveller.
 
 **Files:**
 - Create: `Pommora/src/renderer/src/MarkdownPM/editor/citationPointer.ts` — the gesture spec only.
 - Modify: `Pommora/src/renderer/src/MarkdownPM/index.tsx` — register the spec.
-- Modify: `Pommora/src/renderer/src/Detail/pageEditor.ts` — the travel function takes an optional view, defaulting to the registered page editor. It reads a module-level handle today, so a marker clicked inside a hover card or a floating preview would otherwise travel the **main pane's** editor rather than the one under the pointer. One parameter; the outline dropdown's call is unchanged and gains the same reach.
 - Test: `Pommora/src/renderer/src/MarkdownPM/editor/citationPointer.test.ts`
 
-**Failure half:** a click on a marker whose citation is hidden → the section opens first, since a folded region has no height to travel to, then the target lands; the travel function already sequences this. A marker clicked inside a floating preview or a hover card → travels *that* editor, not the main pane's. A citation holding a link plus a trailing period → jumps, does not navigate. An unmatched marker → not a target at all; the click seats a caret like ordinary text.
+**Failure half:** a click on a marker whose citation is hidden → the section opens first, since a folded region has no height to travel to, then the target lands; the travel function already sequences this. A marker clicked inside a **floating Page Preview** → travels the preview's own editor, not the main pane's. Hover cards are not a case: they take no clicks, so nothing there needs answering. A citation holding a link plus a trailing period → jumps, does not navigate. An unmatched marker → not a target at all; the click seats a caret like ordinary text.
 
 **Steps:**
 - [ ] Write the failing tests: jump to the row; jump opening a hidden section; navigate on a lone link; navigate on a lone Connection; jump on a link with trailing text.
 - [ ] Implement the spec's `hitAt`, `follow`, `dwell` (null — hover preview is a Prospect) and `menu`.
-- [ ] Call the existing page-travel function with the citation's offset and the clicked view. No expand call, no settle timer, no scroll math in this task — all four already live there, and a second copy is exactly what C1 exists to catch.
+- [ ] Call Task 16's travel function with the citation's offset and this editor's view. No expand call, no settle timer, no scroll math here — a second copy is exactly what C1 exists to catch.
 - [ ] **Write the override when the revealed region is the citations section.** That seam dispatches the expand effect directly, so on its own it would leave the section visibly open while the stored override still reads hidden — a second writer against C-3, and the Subfield would then read "Show Footnotes" over an open section and take two presses to hide it.
 - [ ] Run the gate — expect green.
 - [ ] Commit: `feat(editor): a marker click jumps to its citation, or follows it`
 
-#### Task 17: The two construct menus
+#### Task 18: The two construct menus
 
 **Requirement:** 3
 
@@ -664,7 +696,7 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 - [ ] Run the gate — expect green.
 - [ ] Commit: `feat(editor): right-click menus for markers and citations`
 
-#### Task 18: Range-keyed cascades
+#### Task 19: Range-keyed cascades
 
 **Requirement:** 3, 9
 
@@ -710,7 +742,7 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 
 ### Phase 5 — Creation and numbering
 
-#### Task 19: The renumbering engine
+#### Task 20: The renumbering engine
 
 **Requirement:** 7
 
@@ -722,7 +754,7 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 
 **Interfaces**
 - Produces: `normalize(doc, scan)` → the edits that renumber numeric labels to first-use order and reorder the section's rows to match, with orphans collected below the resolved rows.
-- Assumed by: Tasks 20, 21.
+- Assumed by: Tasks 21, 22.
 
 **Must agree:** after `normalize` runs, every numeric disk label equals the ordinal Task 1's walk assigns it. One test applies the edits, re-scans, and asserts the two agree for every entry — the two named exceptions aside (an orphan holding a number, and a word label holding a position).
 
@@ -734,7 +766,7 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 - [ ] Run the gate — expect green.
 - [ ] Commit: `feat(shared): one normalization for footnote order`
 
-#### Task 20: Insert ▸ Footnote and Paste As ▸ Footnote
+#### Task 21: Insert ▸ Footnote and Paste As ▸ Footnote
 
 **Requirement:** 6
 
@@ -756,7 +788,7 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 - [ ] Run the gate — expect green.
 - [ ] Commit: `feat(editor): Insert and Paste As write a footnote pair`
 
-#### Task 21: The typed auto-seed
+#### Task 22: The typed auto-seed
 
 **Requirement:** 6
 
@@ -800,7 +832,7 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 
 ### Phase 6 — The record
 
-#### Task 22: Documentation and closeout
+#### Task 23: Documentation and closeout
 
 **Requirement:** 11
 
@@ -854,15 +886,16 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
   - [ ] Task 14 — The divider draws and folds · `<commit>`
 - [ ] **Phase 4** — Guards and gestures
   - [ ] Task 15 — The tail guard · `<commit>`
-  - [ ] Task 16 — Marker click — jump, or follow · `<commit>`
-  - [ ] Task 17 — The two construct menus · `<commit>`
-  - [ ] Task 18 — Range-keyed cascades · `<commit>`
+  - [ ] Task 16 — One page-travel mechanism, named for what it does · `<commit>`
+  - [ ] Task 17 — Marker click — jump, or follow · `<commit>`
+  - [ ] Task 18 — The two construct menus · `<commit>`
+  - [ ] Task 19 — Range-keyed cascades · `<commit>`
 - [ ] **Phase 5** — Creation and numbering
-  - [ ] Task 19 — The renumbering engine · `<commit>`
-  - [ ] Task 20 — Insert ▸ Footnote and Paste As ▸ Footnote · `<commit>`
-  - [ ] Task 21 — The typed auto-seed · `<commit>`
+  - [ ] Task 20 — The renumbering engine · `<commit>`
+  - [ ] Task 21 — Insert ▸ Footnote and Paste As ▸ Footnote · `<commit>`
+  - [ ] Task 22 — The typed auto-seed · `<commit>`
 - [ ] **Phase 6** — The record
-  - [ ] Task 22 — Documentation and closeout · `<commit>`
+  - [ ] Task 23 — Documentation and closeout · `<commit>`
 
 ### Rulings
 
