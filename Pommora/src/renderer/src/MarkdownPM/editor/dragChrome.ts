@@ -68,3 +68,30 @@ export class Overlay {
     this.line = null
   }
 }
+
+/** One drop boundary, in viewport coords: where a drop there would insert, the y the pointer is
+ *  measured against, and whatever the caller needs to draw and commit it. */
+export interface Boundary<T> {
+  at: number
+  y: number
+  slot: T
+}
+
+/** Snap to whichever boundary is vertically CLOSEST to the pointer, so the gap between two
+ *  candidates splits at its midpoint instead of one of them owning the whole of it. Runs per
+ *  pointermove over cached coords, so it reads no layout. */
+export function nearestBoundary<T>(
+  bs: readonly Boundary<T>[],
+  clientY: number,
+): Boundary<T> | null {
+  let best: Boundary<T> | null = null
+  let bd = Number.POSITIVE_INFINITY
+  for (const b of bs) {
+    const d = Math.abs(clientY - b.y)
+    if (d < bd) {
+      bd = d
+      best = b
+    }
+  }
+  return best
+}

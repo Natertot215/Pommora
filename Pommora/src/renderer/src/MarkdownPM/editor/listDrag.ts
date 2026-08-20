@@ -4,8 +4,8 @@
 import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { parseListMarkerPrefixed as parseListMarker } from '../detect'
-import { docScan } from './docCache'
-import { forEachLine, shadeField } from './dragChrome'
+import { docScan, docString } from './docCache'
+import { forEachLine, nearestBoundary, shadeField, type Boundary } from './dragChrome'
 import { beginRelocateDrag, editorGestureCleanup } from './EditorGesture'
 import { focusAt } from './input'
 import { lineElementAt } from './lineDom'
@@ -86,44 +86,35 @@ function collectCands(view: EditorView, block: SubBlock): Cand[] {
 }
 
 // Cheap per-move hit-test against the cached candidates — all viewport coords (matching the pointer's
-// clientY and the position:fixed line). Picks the row under the pointer, before/after by its vertical half.
+// clientY and the position:fixed line). Each candidate offers two insertion boundaries, before it and
+// after it, so a paragraph between two bullets splits to the nearer bullet's edge instead of one
+// bullet owning the whole gap.
 function slotFrom(
   cands: Cand[],
   clientY: number,
   block: SubBlock,
   docLen: number,
 ): ResolvedSlot | null {
-  // Each candidate offers two insertion boundaries — before it (its top edge) and after it (its bottom
-  // edge). Snap to whichever boundary is vertically CLOSEST to the pointer, so a paragraph between two
-  // bullets splits to the nearer bullet's edge instead of one bullet owning the whole gap.
-  let best: { at: number; y: number; c: Cand } | null = null
-  let bestDist = Infinity
+  const bs: Boundary<Cand>[] = []
   for (const c of cands) {
-    for (const b of [
-      { at: c.from, y: c.top, c },
-      { at: c.to < docLen ? c.to + 1 : docLen, y: c.bottom, c },
-    ]) {
-      const d = Math.abs(clientY - b.y)
-      if (d < bestDist) {
-        bestDist = d
-        best = b
-      }
-    }
+    bs.push({ at: c.from, y: c.top, slot: c })
+    bs.push({ at: c.to < docLen ? c.to + 1 : docLen, y: c.bottom, slot: c })
   }
+  const best = nearestBoundary(bs, clientY)
   if (best === null) return null
   if (best.at >= block.from && best.at <= block.to + 1) return null // landing inside the dragged block → no slot
   return {
     at: best.at,
-    lineLeft: best.c.left,
+    lineLeft: best.slot.left,
     lineTop: best.y,
-    lineWidth: best.c.right - best.c.left,
-    indent: best.c.indent,
+    lineWidth: best.slot.right - best.slot.left,
+    indent: best.slot.indent,
   }
 }
 
 // A glyph CLICK (press released without crossing ACTIVATION): checkbox → toggle; bullet / number → caret.
 function clickAction(view: EditorView, pos: number): void {
-  const toggle = checkboxToggleChange(view.state.doc.toString(), pos)
+  const toggle = checkboxToggleChange(docString(view.state.doc), pos)
   if (toggle) {
     view.dispatch({ changes: toggle, userEvent: 'input' })
     return
@@ -149,7 +140,7 @@ export const listDragExtension: Extension = [
       const glyph = (e.target as HTMLElement).closest?.('.md-li-glyph')
       if (!glyph) return false
       const pos = view.posAtDOM(glyph)
-      const doc = view.state.doc.toString()
+      const doc = docString(view.state.doc)
       const block = subBlockAt(doc, pos)
       if (!block) return false
 
@@ -159,7 +150,7 @@ export const listDragExtension: Extension = [
         measure: () => collectCands(view, block),
         pick: (cands, clientY) => slotFrom(cands, clientY, block, view.state.doc.length),
         lineFor: (slot) => ({ left: slot.lineLeft, top: slot.lineTop, width: slot.lineWidth }),
-        commit: (slot) => dropChanges(view.state.doc.toString(), block, slot),
+        commit: (slot) => dropChanges(docString(view.state.doc), block, slot),
         onTap: () => clickAction(view, pos),
       })
       return true
