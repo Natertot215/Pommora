@@ -3,9 +3,10 @@
 ```
 SymbolsPM
 ├── The Registry
+│   ├── Sizes
 │   ├── View Settings Panes
 │   ├── Property Types
-│  
+│   └── Roles
 ├── Additional Assignments
 ├── The Picker
 ├── Known Issues
@@ -21,6 +22,23 @@ Pommora's standard semantic icons — the canonical glyph for each pane, propert
 - **Lucide is the default; Tabler is a per-icon opt-in** through the same seam, and both default to the same stroke weight, so they sit together with no override. Custom glyphs are registry-conforming SVG components drawn at that same weight.
 
 **Scale Resolution:** Every glyph draws at a size taken from one ladder, so a symbol's scale is a named step rather than a per-surface number. A step sets the icon's `font-size` and the glyph renders at `1em`, which keeps stroke weight proportional and lets a symbol inherit its surrounding type when no step is named.
+
+#### Sizes
+
+| Step         | Size |
+| ------------ | ---- |
+| `largeTitle` | 26px |
+| `title1`     | 22px |
+| `title2`     | 17px |
+| `title3`     | 15px |
+| `headline`   | 13px |
+| `body`       | 13px |
+| `callout`    | 12px |
+| `control`    | 12px |
+| `caption`    | 11px |
+| `footnote`   | 10px |
+| `subline`    | 10px |
+
 
 #### View Settings Panes
 
@@ -62,21 +80,6 @@ Pommora's standard semantic icons — the canonical glyph for each pane, propert
 | Calendar | `calendar-days`         |
 | Timeline | `chart-gantt`           |
 
-#### Sizes
-
-| Step         | Size |
-| ------------ | ---- |
-| `largeTitle` | 26px |
-| `title1`     | 22px |
-| `title2`     | 17px |
-| `title3`     | 15px |
-| `headline`   | 13px |
-| `body`       | 13px |
-| `callout`    | 12px |
-| `control`    | 12px |
-| `caption`    | 11px |
-| `footnote`   | 10px |
-| `subline`    | 10px |
 
 #### Roles
 
