@@ -5,13 +5,21 @@ import { AddBannerButton } from '../Detail/Banner/AddBannerButton'
 import { DetailTitleHeader } from '../Detail/DetailTitleHeader'
 import { assetUrl } from '../assetUrl'
 
-interface Props {
+/** What the header draws. Passed as one object rather than five props, so the surfaces that host an
+ *  editor — the page view, the floating preview, an embedded tile — hand over the page they are
+ *  showing instead of spreading its fields. The header never reads the store for these: a preview
+ *  window draws a page that is not the active one. */
+export interface HeaderPage {
   path: string
   title: string
   cover?: string
   /** The page's own glyph. Absent draws no icon at all — the header stays as it was. */
   icon?: string
   iconHidden?: boolean
+}
+
+interface Props {
+  page: HeaderPage
   onToggleIcon?: () => void
   // biome-ignore lint/suspicious/noConfusingVoidType: the union is deliberate: a caller may hand back nothing or a promise, and `undefined` in place of `void` breaks assignability for the sync handlers.
   onRename: (newName: string) => void | Promise<boolean | void>
@@ -25,9 +33,10 @@ interface Props {
  * right-click → Change / Remove. Both menus are native + separate, never overlapping.
  */
 export const PageHeader = forwardRef<HTMLDivElement, Props>(function PageHeader(
-  { path, title, cover, icon, iconHidden, onToggleIcon, onRename, onEditIcon },
+  { page, onToggleIcon, onRename, onEditIcon },
   ref,
 ) {
+  const { path, title, cover, icon, iconHidden } = page
   const reloadPage = useSession((s) => s.reloadPage)
   const { openMenu: bannerMenu, addOrChange } = useBannerMenu(path, 'page', () => void reloadPage())
 

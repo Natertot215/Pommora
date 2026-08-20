@@ -15,7 +15,7 @@ import { type Block, blockAt } from './blockModel'
 import { docScan, docString } from './docCache'
 import { embeddable } from './embedRanges'
 import { embedExclusions, setWebLinkSeat } from './embedWidget'
-import { focusRange } from './input'
+import { focusRange } from './caretSeat'
 import { webpageEmbedUrlSpan } from '@shared/webpageEmbed'
 
 /** The line classes carrying a grip that has a menu. The hit-test below and the host's hot-grip flag

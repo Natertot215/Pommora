@@ -374,8 +374,8 @@
 .mdpm-embed-tile {
   display: block;
   position: relative;
-  /* KNOB — the tile's resting height; content past it rest-scrolls inside. */
-  height: 320px;
+  /* The height the widget also answers with; content past it rest-scrolls inside. */
+  height: var(--tile-default-height);
   margin: 4px 0;
   cursor: default;
   user-select: none;

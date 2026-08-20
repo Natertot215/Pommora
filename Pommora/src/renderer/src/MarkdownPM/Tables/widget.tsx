@@ -1,6 +1,6 @@
 import { Decoration, type DecorationSet, EditorView, WidgetType } from '@codemirror/view'
 import { docScan } from '../editor/docCache'
-import { focusAt } from '../editor/input'
+import { focusAt } from '../editor/caretSeat'
 import {
   Facet,
   StateField,
