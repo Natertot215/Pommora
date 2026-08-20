@@ -8,7 +8,7 @@
 **Dates:** 08-19-2026 → 08-20
 **Model:** Opus 5
 
-**Two coordinated lines, and this document is the shared record for both.** Line one is the Cohesion arc's MarkdownPM leg — **finished this session**. Line two is Footnotes, whose decision log the prior session completed and which was waiting on that leg. Nathan's order held: the MarkdownPM cohesion work finishes first with nothing left behind, and the removal of its ContextPM bullet is the Footnotes greenlight. **That bullet is gone.**
+**Two coordinated lines, and this document is the shared record for both.** Line one is the Cohesion arc's MarkdownPM leg — **finished this session**, and its easy wins with it. Line two is Footnotes, whose decision log the prior session completed and which was waiting on that leg. Nathan's order held: the MarkdownPM cohesion work finishes first with nothing left behind, and the removal of its ContextPM bullet is the Footnotes greenlight. **That bullet is gone.**
 
 **All eight phases landed**, commits `9fd6da98` … `a8988710`, gates green at each: typecheck clean, Biome zero across 854 files, 3,006 Vitest tests. KNOB went 115 → 117 (two added, none stripped); the nine decision markers survive. Six live defects closed, four of them as symptoms of the duplication they sat inside rather than as separate fixes. Every phase also carried its own doc corrections — a statement the code caught up to was left alone, a statement that stayed false was rewritten as the truth rather than as a revision of one.
 
@@ -20,6 +20,12 @@
 
 **Two plan items were not done, and saying so is the point.** The block drag's outer bottom and the list drag's inner right edge read different edges under different conditions — not one function. And the autocomplete row would have to take the menu primitive's metrics to adopt it, which changes how the panel looks rather than what it says; that needs Nathan, not a refactor.
 
+**The cohesion arc's easy wins closed after it**, commits `1b3fa132` · `640ac1af` · `498d6a2a`, gates green at each and at the end: typecheck clean, Biome zero across 862 files, 3,010 Vitest tests, KNOB 117 and the nine markers intact. Three ContextPM bullets and one Known Issue left the document rather than being marked done: the helper deduplication, the main-side menus' label logic, and the `.MD`-extensioned page whose sidebar kept its extension — that last one was a symptom of the duplication, since the sidebar's own `base()` was a case-sensitive re-spelling of the shared `titleFromPath`. Five new modules hold what was spelled many times: the nexus-relative on-disk names, the two-state label wordings, a parent path's lift-and-place sibling `moveItem`, `pad`, and the view-order cache both renderers kept their own copy of. **+72 code lines**, and the same honesty the arc's own number needed: naming a fact costs an import line at every site that stops spelling it, so a deduplication whose duplicates were one-liners reads as growth. What it buys is that the fact now has one place to change.
+
+**Two of the three items were smaller than the backlog said, and one was larger.** `.trash` and `.nexus/` are 9 and roughly 30 code sites, not 71 and 94 — the difference is doc comments naming the folder. No shared tested function computes a Pin/Unpin label, so the menus entry's named example did not hold; what it should have named is Open / Open New Tab, spelled in the tested model and re-spelled inline in two Electron menus. And the toggle-label class runs past `src/main` entirely — the lock and the footer are spelled in the renderer, four times each. All three are recorded in [[Cohesion-Rulings]].
+
+**The scroll timer stays, by Nathan's call**, and the code around it was simplified rather than replaced. The obvious failure it was hiding: the glide asks for its destination every frame, and the seat it asked for walked the DOM and resolved a computed style each time to re-read a header height a scroll cannot change. Read once now. The debt entry is unchanged and still true.
+
 #### Completion Criteria
 
 - [x] **The MarkdownPM cohesion leg is finished with nothing left behind** — all eight phases landed, phase 7's fold widening included, gates green, docs reconciled.
@@ -29,7 +35,8 @@
 - [x] **The cohesion arc's transient records are drained and retired** — rulings to [[Cohesion-Rulings]], open decisions to ContextPM §Open Calls, live defects to §Known Issues, arcs to §Pending Focuses. `.claude/Planning` holds only the Footnotes contract and the webpage log.
 - [ ] **Footnotes' last `[assumed]` entry carries Nathan's word** — C-3's clear-on-default, blessed or amended before the plan is written.
 - [ ] **Footnotes is planned, ratified, built, and closed out** — the decision log handed to the planning skill, the plan approved before any code, the build through `/closeout` clean.
-- [ ] **The remaining Cohesion efforts complete** — §One Definition Per Thing's easy wins, Table hoisting, the `main/index.ts` split, the view host, virtualization, the parked design-splits.
+- [x] **The cohesion arc's easy wins fold** — the helper deduplication and the main-side menus' label logic, both gone from ContextPM.
+- [ ] **The remaining Cohesion efforts complete** — Table hoisting, the `main/index.ts` split, the view host, virtualization, the parked design-splits.
 
 #### Next Session
 
@@ -43,7 +50,7 @@ Read these five seams before planning the marker or the section — each was bui
 - `Tables/cellStatic.tsx` `cellLinkTarget` + `editor/links.ts` `followTarget` / `dwellTarget` — how a resting cell reads the same answers the body does, which is where a marker's rest branch hangs (B-5).
 - `main/remint.ts` `COPY_SCOPES` — a page-keyed scope joins the list directly; one keyed by anything else travels through the re-mint map, as `viewOrder` does.
 
-**In parallel, whenever it suits** — none of it touches MarkdownPM: §One Definition Per Thing's easy wins, then Table hoisting, then the `main/index.ts` split. ContextPM §The Remaining Cohesion Efforts carries all of them, and §Open Calls carries the ten decisions that need Nathan rather than an implementer.
+**In parallel, whenever it suits** — none of it touches MarkdownPM: Table hoisting first, since its first step (moving `pickView` and `resolveContainerSchema` out of `TableView` into `Views/pipeline/`) is zero behavior change and unblocks the rest, then the `main/index.ts` split. ContextPM §The Remaining Cohesion Efforts carries all of them, and §Open Calls carries the ten decisions that need Nathan rather than an implementer. `TableView.tsx` and `CardsView.tsx` were opened for the easy wins and are clean for it: both now read one `useViewOrders`, which is the third partial extraction of the view host the same section asks for.
 
 **Standing rules for any of it:** `npm run typecheck`, `npm run lint` at zero diagnostics, and `npm run test` green before anything is called done, with `set -o pipefail` on anything piped. Stage explicit paths. Never strip a `KNOB` or a `(Nathan's call)` / `(spec)` marker — counts are 117 and 9. Report code-only deltas. Disclose any look-or-behavior decision as you make it. If an item turns out to be smaller, larger, or not a duplication at all, say so rather than forcing it.
 
@@ -57,6 +64,7 @@ Read these five seams before planning the marker or the section — each was bui
 - "the 'Not in this Plan' become the drafted handoff prompt to complete the MarkdownPM cleanup arc."
 - "review solidifies the mandate rather than the method" — reviews against a decision log attack cohesion and coverage, and leave implementation discovery to planning.
 - "Definitions across docs and codebase need to be called Citations to make room for a future Definitions feature that may exist independently from Footnotes."
+- "don't amend fixtures — add them to the per-session changelog and remove rather than tagging as fixed from context" — a resolved backlog item leaves ContextPM outright; what it was and what closed it belongs here.
 
 #### Session Pointers
 
@@ -83,8 +91,13 @@ Read these five seams before planning the marker or the section — each was bui
 **FILES ADDED**
 
 - `Pommora/src/renderer/src/MarkdownPM/editor/pointerPath.ts` — the shared link-gesture factory and its primitives.
-- `Pommora/src/renderer/src/design-system/clamp.ts` — one definition, five readers.
+- `Pommora/src/renderer/src/design-system/clamp.ts` — one definition, seven readers.
 - `Pommora/src/renderer/src/MarkdownPM/editor/menuSubject.test.ts` · `editor/foldState.test.tsx` — pins for the two subsystems that had none.
+- `Pommora/src/shared/nexusPaths.ts` — the nexus-relative on-disk names, read by both processes; `main/paths.ts` keeps every absolute-path builder.
+- `Pommora/src/shared/toggleLabels.ts` — the wording a two-state control wears, one per control.
+- `Pommora/src/renderer/src/design-system/moveItem.ts` — lift an item, set it down; five callers own only their lookup.
+- `Pommora/src/renderer/src/design-system/pad.ts` — zero-pad to a width, three readers.
+- `Pommora/src/renderer/src/Detail/Views/useViewOrders.ts` — the per-view manual order cache both renderers held their own copy of.
 
 **FILES REMOVED**
 
@@ -95,12 +108,16 @@ Read these five seams before planning the marker or the section — each was bui
 - The editor: `decorations/intent.ts`, `detect/index.ts`, `editor/docCache.ts`, `blockModel.ts`, `blockDrag.ts`, `blockHandles.ts`, `listDrag.ts`, `listDragModel.ts`, `dragChrome.ts`, `EditorGesture.ts`, `gripMenu.ts`, `embedRanges.ts`, `embedInsert.ts`, `input.ts`, `folding.ts`, `connections.ts`, `links.ts`, `menu.ts`, `index.tsx`, `Styles.css`.
 - Tables: `regions.ts`, `sync.ts`, `guard.ts`, `codec.ts`, `widget.tsx`, `cellStatic.tsx`, `CellEditor.tsx`, `TableView.tsx`, `operations.ts`.
 - Main + design system: `main/remint.ts`, `design-system/tokens/typography.css.ts`, `theme-vars.css.ts`, `resize-strip.css`, `interactions/FloatingWindow.tsx`, `components/SidePane/SidePane.tsx`, `Components/PhotoCropModal.tsx`, `SurfacePM/core/ops.ts`.
+- The easy wins, main: `paths.ts`, `readNexus.ts`, `record.ts`, `provenance.ts`, `mutate.ts`, `mutatePatch.ts`, `watcher.ts`, `watchPatch.ts`, `session.ts`, `indexSeed.ts`, `index.ts`, `io/walk.ts`, `io/atomicWrite.ts`, `io/thumbnails.ts`, `io/navigationFile.ts`, `crud/contextWrite.ts`, `crud/trashRows.ts`, `crud/optionOps.ts`, `crud/registryProperty.ts`, `properties/schema.ts`, `navRowMenu.ts`, `tabMenu.ts`, `contextMenu.ts`.
+- The easy wins, shared + renderer: `shared/properties.ts`, `pageMenu.ts`, `viewMenus.ts`, `tileMenu.ts`; `store.ts`, `pageMenuActions.ts`, `destinationTree.ts`, `Detail/pageEditor.ts`, `Detail/DetailPane.tsx`, `Views/Table/TableView.tsx`, `Views/Cards/CardsView.tsx`, `Views/Cards/cardsOrder.ts`, `Views/useViewCreation.ts`, `Views/pipeline/group.ts`, `Views/PropertyEditing/formatValue.ts`, `Sidebar/Sidebar.tsx`, `sidebarDnd.tsx`, `sidebarDndModel.ts`, `Tabs/tabsModel.ts`, `Navigation/navRecents.ts`, `NavList.tsx`, `Blocks/BlockHandleMenu.tsx`, `Components/Detail/PropertiesPane.tsx`, `SettingsPane.tsx`, `SettingsScaffold.tsx`, `Detail/Settings/SpaceSettings.tsx`, `design-system/interactions/drag.tsx`, `engine.tsx`, `components/CalendarPicker/CalendarPicker.tsx`, `components/PreviewPane/PreviewPane.tsx`.
 - Docs: this document, `ContextPM.md`, `HistoryPM.md` (PM-110 extended, not reopened), `Guidelines/Editor-Internals.md`, `Features/MarkdownPM.md`, `Features/WebviewPM.md`, `Features/DesignSystemPM.md`, `Features/InteractionPM.md`, `Planning/Footnotes — Decision Log.md`.
 - Added: `Guidelines/Cohesion-Rulings.md`. Retired: the audit, the changelog, and the two MarkdownPM planning documents.
 
 **COMMITS**
 
 `9fd6da98` · `ab6ac262` · `9c1ecf3d` · `6d047973` · `aea208e7` · `22c912e0` · `f796fc65` · `6af1ab4d` · `a8988710`
+· `69356153` · `9cb1f23b` · `3e2e2e67` · `a9d412e6` · `ac385b34` · `d1d0a4d5` — the cleanup arc and its closer pass.
+· `1b3fa132` · `640ac1af` · `498d6a2a` — the easy wins.
 
 #### Handoff Guidelines
 

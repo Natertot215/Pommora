@@ -10,8 +10,9 @@ export const NEXUS_DIR = '.nexus'
 /** The deletion record's folder, mirroring the nexus. */
 export const TRASH_DIR = '.trash'
 
-/** The top-level folders that are not content. The walk skips them, the watcher ignores them, and
- *  a mutation refuses to target them. */
+/** The top-level folders that are not content: the walk skips them, the index refuses to key
+ *  anything under them, and a mutation refuses to target them. The watcher is not among the
+ *  readers — it watches `.nexus` on purpose, since Contexts and settings live there. */
 export const NON_CORPUS_TOP: ReadonlySet<string> = new Set([NEXUS_DIR, TRASH_DIR])
 
 /** The Contexts registry — the one identity source for every Context (id, title, singular, icon). */
