@@ -4,6 +4,7 @@
 
 import { NEW_PAGE_SLOT, type MutateRequest, type StateOrderKey } from '@shared/mutate'
 import { titleFromPath } from '@shared/connections'
+import { stabilize } from '@shared/treeStabilize'
 import type {
   CollectionNode,
   ContextGroup,
@@ -325,6 +326,27 @@ export function insertCreatedInTree(
     return { ...tree, collections: placed.containers as CollectionNode[] }
   }
   return null
+}
+
+/** Install a re-read registry and re-point every Collection's embedded defs at it, so the one
+ *  fact stays reference-identical in both of its homes the way the walk leaves them. `stabilize`
+ *  recycles the defs that did not move, so only the edited property's assigners get a new node.
+ *  Assignment order is the sidecar's and is untouched; an id the registry no longer carries drops
+ *  out, exactly how the walk resolves a dangling ref. */
+export function repointRegistryInTree(tree: NexusTree, registry: PropertyDefinition[]): NexusTree {
+  const defs = stabilize(registry, tree.registry)
+  const byId = new Map(defs.map((d) => [d.id, d]))
+  let moved = false
+  const collections = tree.collections.map((c) => {
+    const held = c.properties
+    if (!held) return c
+    const next = held.flatMap((d) => byId.get(d.id) ?? [])
+    if (next.length === held.length && next.every((d, i) => d === held[i])) return c
+    moved = true
+    return { ...c, properties: next.length ? next : undefined }
+  })
+  if (!moved && defs === tree.registry) return tree
+  return { ...tree, registry: defs, collections: moved ? collections : tree.collections }
 }
 
 /** Context-layer patches. A Context's folder and a Space's folder are both named by title, so a
