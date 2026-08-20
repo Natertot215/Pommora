@@ -102,6 +102,21 @@ On a page authored outside Pommora holding body markers, a trailing citations ru
 - Stage explicit paths, never a directory. Bundle each task's documentation edits into that task's commit.
 - Out of scope everywhere: the Subfield's table, indented-code and math counting inaccuracies; the decoration pass's whole-document emission; the fold system's timer-based scroll wait; any keyboard shortcut (none may be baked in without separate per-shortcut sign-off).
 
+**Cohesion Criteria**
+
+*Run once against this document before approval, against each phase's diff at its gate, and against the whole range at closeout. Each is answered with the evidence that produced the answer — a search and its hits, a named alternative, a measured number. "Checked" is not an answer, and neither is "no" without the thing that was considered.*
+
+- **C1 — One definition per thing.** For every symbol this introduces, the tree was searched for a second construct answering the same question. A near-twin is a finding, not a coincidence. Two writers for one piece of state, two derivations of one boundary, two spellings of one predicate: each is a defect regardless of how little code it costs.
+- **C2 — Reuse was proven before invention.** Every new file, function, and CSS rule names the existing mechanism it was checked against and why that one could not carry it. "Nothing existed" is a claim that requires the search that produced it.
+- **C3 — No token, motion, or palette hand-rolled.** `git diff <base>..HEAD -- '*.css' '*.css.ts' | rg '^\+' | rg '#[0-9a-fA-F]{3,8}|[0-9]+ms|cubic-bezier|rgba?\('` → every hit is a token read or a finding. The token modules themselves are the only exception.
+- **C4 — Nothing added that nothing calls.** Every new export has a call site: for each, `rg -F "<name>" Pommora/src` returns at least two hits. Pre-scaffolding is admitted only with an explicit keep-ruling recorded in the Log.
+- **C5 — No residue.** Nothing survives from an approach that was tried and replaced — no superseded branch, no parallel path kept "just in case", no commented-out attempt. The correct method having been verified, the wrong one is gone rather than demoted.
+- **C6 — Every comment earns its line.** A comment states a *why* the code cannot show. One naming a value its own declaration holds, restating what the next line does, or claiming a feature's current state is a finding. Test: change that value tomorrow — is the comment now wrong?
+- **C7 — Nothing expensive on a frequent trigger.** Any work this adds to a pointermove, scroll, keystroke, per-caret, or per-render path is named and justified, or it is not there. No full-document read where a cached or incremental one works.
+- **C8 — The smallest change that satisfies the requirement.** For each task, the smaller version that was considered and rejected is named. Robustness that buys nothing the requirement asked for is bloat wearing a safety costume.
+- **C9 — Nothing guarded that cannot happen.** Every guard names the sequence that reaches the state it guards. Absent that sequence the guard comes out — unless it sits on a trust boundary (disk, IPC, user input), where validation needs no mechanism.
+- **C10 — Naming and labels conform.** New source files are PascalCase. UI action labels are Title Case; prose and hints are sentence case. The `footnote` and `definition` identifier bans hold — `rg -w "footnote|definition" Pommora/src` returns only the typography and icon scale steps that predate this work.
+
 **Made False**
 
 | Doc | The specific claim | What makes it false | Task |
@@ -142,7 +157,8 @@ Nothing draws in this phase. The boundary derivation lands first and is exercise
 **Interfaces**
 - Produces:
   - `interface CitationEntry { line: number; lastLine: number; label: string; contentStart: number }` — `line` is the `[^label]:` line's index, `lastLine` its final continuation line, `contentStart` the line-relative offset where the citation's text begins.
-  - `interface CitationScan { entries: CitationEntry[]; mask: Uint8Array; firstLine: number }` — `mask[i] === 1` for every line belonging to the section, blanks between citations included; `firstLine` is the section's first line index, or `lines.length` when there is no section.
+  - `interface MarkerRef { line: number; from: number; to: number; label: string; ordinal: number | null }` — one body marker, `ordinal` null when nothing binds it.
+  - `interface CitationScan { entries: CitationEntry[]; markers: MarkerRef[]; mask: Uint8Array; firstLine: number }` — `mask[i] === 1` for every line belonging to the section, blanks between citations included; `firstLine` is the section's first line index, or `lines.length` when there is no section. **The body sweep runs here and only here:** first-use order is what numbers both a marker and its citation row, so deriving it twice is two things that can disagree about one answer. `entries[].ordinal` and `markers[].ordinal` come out of the same walk.
   - `citationScan(lines: string[], fenced: Uint8Array): CitationScan`
   - `MARKER_RE: RegExp` — a fresh `/\[\^([^\]\s]+)\]/g` per call via a factory, matching the `inlineCodeRegex()` idiom, so no `lastIndex` leaks between callers.
   - `foldLabel(label: string): string` — the case-fold used for every binding comparison.
@@ -214,7 +230,11 @@ Nothing draws in this phase. The boundary derivation lands first and is exercise
 - [ ] Derivations re-run against their controls; counts matched, or the divergence rewrote the plan.
 - [ ] All 22 pre-existing stats assertions are byte-identical to their pre-plan text — verified by `git diff` on the test file showing additions only.
 - [ ] The scan's boundary and the parser's own spans agree on the cross-check corpus.
-- [ ] Simplification and review dispatched against `<base>..HEAD`; the reports cite files inside it.
+- [ ] **Simplification runs alone, and runs first** — `code-simplifier` dispatched against `<base>..HEAD` with no reviewer beside it and no reviewer's findings in its brief, then `comment-killer-agent` over what it returns. A build reviewed for correctness before it has settled its own relationships gets defended rather than reduced, which is why the order is fixed.
+- [ ] Its reductions applied, or refused in the Log with a reason. The phase re-gates after they land.
+- [ ] Only then, correctness review dispatched against the same range; the reports cite files inside it.
+- [ ] **Cohesion Criteria C1–C10 answered against this phase's diff**, each carrying its evidence rather than its assertion.
+- [ ] Net line delta reported — code only, comments and blanks and tests excluded.
 - [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
 - [ ] No user-visible surface shipped this phase; no running-thing pass owed.
 
@@ -247,7 +267,7 @@ Nothing draws in this phase. The boundary derivation lands first and is exercise
 
 **Files:**
 - Modify: `Pommora/src/renderer/src/MarkdownPM/decorations/intent.ts` — a citation branch in `lineIntentsInto`, before the `pushConstruct` call; the positional ordinal computed in `scanDoc`'s citation pass.
-- Modify: `Pommora/src/shared/citations.ts` — `CitationEntry` gains `ordinal: number | null`, null for a row nothing binds to.
+- Modify: `Pommora/src/shared/citations.ts` — nothing structural; the ordinals already come off Task 1's single walk. Touch this file only if that walk proves wrong.
 - Test: `Pommora/src/renderer/src/MarkdownPM/decorations/intent.test.ts`
 
 **Interfaces**
@@ -260,7 +280,6 @@ Nothing draws in this phase. The boundary derivation lands first and is exercise
 **Failure half:** a citation with empty text → still draws a visible glyph and an empty content span. An orphaned citation → draws its seat with the dim class and no number. A duplicate-labelled citation → the first binds and numbers, the later one dims and goes numberless. A citation whose content is a single long unbroken word at narrow width → wraps under the content span, never under the glyph.
 
 **Steps:**
-- [ ] Compute each entry's `ordinal` in the scan from first-use order of the body's markers, skipping labels nothing binds to.
 - [ ] Add the citation branch to `lineIntentsInto`, positioned before `pushConstruct` and returning `null` so the list and rail machinery never sees the line.
 - [ ] Emit the intents above; gate the `atomic` intent on the caret not being on the line, matching how the checkbox and bullet slots gate theirs.
 - [ ] Set `ignoreEvent` false on the glyph widget.
@@ -281,7 +300,7 @@ Nothing draws in this phase. The boundary derivation lands first and is exercise
 - Test: `Pommora/src/renderer/src/MarkdownPM/editor/markerSeats.test.tsx`
 
 **Interfaces**
-- Produces: `docMarkers(doc)` → resolved marker ranges in document order with their ordinals, derived from `docScan`'s citations plus a body sweep, excluding fenced lines, inline code, and every line the citation mask covers.
+- Produces: `docMarkers(doc)` → the absolute-offset ranges of `docScan.citations.markers`, cached per document version. **It performs no sweep of its own** — the walk lives in Task 1, and a second one here is the C1 violation this task exists to avoid. Its only work is mapping line-relative offsets to document offsets.
 - Assumed by: Tasks 8, 12, 16, 17, 19.
 
 **Must agree:** a marker is drawn if and only if the stats path counts it as zero words. One test runs both over the same document and asserts the two sets of marker positions are identical — the decoration layer and the counter reaching the same answer about the same bytes.
@@ -293,7 +312,7 @@ Nothing draws in this phase. The boundary derivation lands first and is exercise
 **Steps:**
 - [ ] Write the failing tests: the atomic pair above; a resolved marker draws its ordinal; an unmatched marker draws nothing; markers in fences, inline code and citation rows stay literal; backspace at a marker's right edge removes it whole.
 - [ ] Run — expect red.
-- [ ] Add the cached whole-document marker derivation.
+- [ ] Add the cached offset mapping over `docScan.citations.markers` — no re-scan.
 - [ ] Emit the replace-with-widget decoration and push the same ranges into `Built.atomic`.
 - [ ] Style the marker: accent at tint-primary through a `color-mix`, permanently opaque, `user-select` inherited so a sweep still selects it.
 - [ ] Set `ignoreEvent` false on the marker widget.
@@ -345,7 +364,11 @@ Nothing draws in this phase. The boundary derivation lands first and is exercise
 - [ ] Gate commands green, exit codes read directly.
 - [ ] Every negative control's disabled half was observed red before the guard went in.
 - [ ] The ordinal agreement test and the marker/counter agreement test both pass.
-- [ ] Simplification and review dispatched against `<base>..HEAD`.
+- [ ] **Simplification runs alone, and runs first** — `code-simplifier` dispatched against `<base>..HEAD` with no reviewer beside it and no reviewer's findings in its brief, then `comment-killer-agent` over what it returns. A build reviewed for correctness before it has settled its own relationships gets defended rather than reduced, which is why the order is fixed.
+- [ ] Its reductions applied, or refused in the Log with a reason. The phase re-gates after they land.
+- [ ] Only then, correctness review dispatched against the same range; the reports cite files inside it.
+- [ ] **Cohesion Criteria C1–C10 answered against this phase's diff**, each carrying its evidence rather than its assertion.
+- [ ] Net line delta reported — code only, comments and blanks and tests excluded.
 - [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
 - [ ] The drawn section and markers seen in the running app — a page authored with out-of-order labels, an orphan, and a duplicate — and shown.
 - [ ] Progress hashes filled in.
@@ -453,7 +476,7 @@ Tasks 10 and 11 open and close the fold hazard window. Nothing in this phase may
 **Files:**
 - Modify: `Pommora/src/renderer/src/MarkdownPM/decorations/intent.ts` — the divider's line intent on the section's first line.
 - Modify: `Pommora/src/renderer/src/MarkdownPM/Styles.css` — the divider treatment and its blur-fade.
-- Modify: `Pommora/src/renderer/src/MarkdownPM/editor/pointerPath.ts` consumers — the divider's click, or a plain handler if the gesture factory's hit-test shape does not fit a line-level target.
+- Modify: `Pommora/src/renderer/src/MarkdownPM/editor/folding.ts` — the divider's click joins the existing fold click path rather than the pointer-gesture factory. That factory's contract is an inline token hit-test returning a range within a line; a divider is the line, so it fits the fold chevron's click path and not that one.
 
 **Failure half:** a document with no citations → no divider. The divider clicked while the section is already hidden → cannot occur, since a hidden section draws no divider; the Subfield control is the only way back.
 
@@ -523,7 +546,11 @@ Tasks 10 and 11 open and close the fold hazard window. Nothing in this phase may
 - [ ] Both derivations re-run against their controls.
 - [ ] The hazard window is closed — Task 11 landed.
 - [ ] A single write path proven: toggling from the divider and from the Subfield produce the same row, and toggling to the default value deletes it.
-- [ ] Simplification and review dispatched against `<base>..HEAD`.
+- [ ] **Simplification runs alone, and runs first** — `code-simplifier` dispatched against `<base>..HEAD` with no reviewer beside it and no reviewer's findings in its brief, then `comment-killer-agent` over what it returns. A build reviewed for correctness before it has settled its own relationships gets defended rather than reduced, which is why the order is fixed.
+- [ ] Its reductions applied, or refused in the Log with a reason. The phase re-gates after they land.
+- [ ] Only then, correctness review dispatched against the same range; the reports cite files inside it.
+- [ ] **Cohesion Criteria C1–C10 answered against this phase's diff**, each carrying its evidence rather than its assertion.
+- [ ] Net line delta reported — code only, comments and blanks and tests excluded.
 - [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
 - [ ] Seen running: hidden on open, shown from the Subfield, hidden from the divider, the label flipping, the section surviving a collapsed heading above it, and the whole thing inside a floating Page Preview. Shown.
 
@@ -626,7 +653,11 @@ Tasks 10 and 11 open and close the fold hazard window. Nothing in this phase may
 - [ ] Gate commands green, exit codes read directly.
 - [ ] Every negative control's disabled half was observed red.
 - [ ] The guard and the decoration pass agree on the boundary across an edit sequence.
-- [ ] Simplification and review dispatched against `<base>..HEAD`.
+- [ ] **Simplification runs alone, and runs first** — `code-simplifier` dispatched against `<base>..HEAD` with no reviewer beside it and no reviewer's findings in its brief, then `comment-killer-agent` over what it returns. A build reviewed for correctness before it has settled its own relationships gets defended rather than reduced, which is why the order is fixed.
+- [ ] Its reductions applied, or refused in the Log with a reason. The phase re-gates after they land.
+- [ ] Only then, correctness review dispatched against the same range; the reports cite files inside it.
+- [ ] **Cohesion Criteria C1–C10 answered against this phase's diff**, each carrying its evidence rather than its assertion.
+- [ ] Net line delta reported — code only, comments and blanks and tests excluded.
 - [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
 - [ ] Seen running: click-jump into a hidden section, click-through on a lone link, both menus, and a wide sweep leaving citations alone. Shown.
 
@@ -647,6 +678,8 @@ Tasks 10 and 11 open and close the fold hazard window. Nothing in this phase may
 **Interfaces**
 - Produces: `normalize(doc, scan)` → the edits that renumber numeric labels to first-use order and reorder the section's rows to match, with orphans collected below the resolved rows.
 - Assumed by: Tasks 20, 21.
+
+**Must agree:** after `normalize` runs, every numeric disk label equals the ordinal Task 1's walk assigns it. One test applies the edits, re-scans, and asserts the two agree for every entry — the two named exceptions aside (an orphan holding a number, and a word label holding a position).
 
 **Failure half:** a document with only word labels → no label rewrites, rows still sorted positionally. An orphan squatting on a number → minting routes around it. A hand-typed numeric label out of sequence → left alone until the next gesture normalizes it.
 
@@ -702,7 +735,11 @@ Tasks 10 and 11 open and close the fold hazard window. Nothing in this phase may
 #### Gate 5 — creation is complete and reversible
 - [ ] Gate commands green, exit codes read directly.
 - [ ] Every creation path reverts whole on one undo — observed, not assumed.
-- [ ] Simplification and review dispatched against `<base>..HEAD`.
+- [ ] **Simplification runs alone, and runs first** — `code-simplifier` dispatched against `<base>..HEAD` with no reviewer beside it and no reviewer's findings in its brief, then `comment-killer-agent` over what it returns. A build reviewed for correctness before it has settled its own relationships gets defended rather than reduced, which is why the order is fixed.
+- [ ] Its reductions applied, or refused in the Log with a reason. The phase re-gates after they land.
+- [ ] Only then, correctness review dispatched against the same range; the reports cite files inside it.
+- [ ] **Cohesion Criteria C1–C10 answered against this phase's diff**, each carrying its evidence rather than its assertion.
+- [ ] Net line delta reported — code only, comments and blanks and tests excluded.
 - [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
 - [ ] Seen running: all three creation paths, with the setting on and off, and the renumbering that follows each. Shown.
 
@@ -730,6 +767,9 @@ Tasks 10 and 11 open and close the fold hazard window. Nothing in this phase may
 - [ ] Commit: `docs(footnotes): the feature's record`
 
 #### Gate 6 — closeout
+- [ ] **A final simplification pass over the whole range**, dispatched alone before anything else in this gate — the per-phase passes each saw one slice, and a duplication that formed across two phases is invisible to both.
+- [ ] **Cohesion Criteria C1–C10 answered against the full range**, not against the phase diffs that already passed. C1 and C5 are the ones a per-phase pass structurally cannot answer.
+- [ ] Total net line delta reported — code only, comments and blanks and tests excluded — beside what the feature bought for it.
 - [ ] The Delivery Claim written.
 - [ ] Neutral verifier dispatched against the claim, the decision log, and the full range — answered yes.
 - [ ] Attack pass dispatched only after that yes.
