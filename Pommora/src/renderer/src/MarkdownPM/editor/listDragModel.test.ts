@@ -19,7 +19,10 @@ describe('subBlockAt × block math', () => {
     expect(doc.slice(b!.from, b!.to)).toBe('- one')
   })
 })
-import { blockAt } from './blockModel'
+import { scanDoc } from '../decorations/intent'
+import { blockAt as blockAtIn } from './blockModel'
+
+const blockAt = (doc: string, pos: number) => blockAtIn(scanDoc(doc), pos)
 import {
   subBlockAt,
   dropChanges,

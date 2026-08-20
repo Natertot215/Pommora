@@ -2,8 +2,8 @@
 // owns the gesture + overlay and calls these to turn a grab + drop into a single `changes` array.
 // Everything operates on the doc string + offsets so it's unit-testable without an editor.
 import { parseListMarkerPrefixed as parseListMarker, quoteDepth, lineOffsets } from '../detect'
+import { scanDoc } from '../decorations/intent'
 import { lineStartAt, lineEndAt } from '../input'
-import { docMathRanges } from './mathRanges'
 
 export interface ChangeSpec {
   from: number
@@ -41,14 +41,14 @@ export function subBlockAt(doc: string, pos: number): SubBlock | null {
   if (head === null) return null
   const headDepth = quoteDepth(doc.slice(from, headEnd))
 
-  const maths = docMathRanges(doc)
+  const maths = scanDoc(doc).maths
   let to = headEnd
   for (let p = headEnd; p < doc.length; ) {
     const fs = p + 1 // skip the '\n'
     const fe = lineEndAt(doc, fs)
     const fline = doc.slice(fs, fe)
     // A line inside a math range whose opener already rides this sub-block is formula content — blanks
-    // and marker-lookalikes included — mirroring blockModel's absorb rule, through the same docMathRanges.
+    // and marker-lookalikes included — mirroring blockModel's absorb rule, through the same math ranges.
     const inJoinedMath = (): boolean => {
       const r = maths.find(([f, t]) => fs >= f && fs <= t)
       return r !== undefined && r[0] >= from && r[0] <= to

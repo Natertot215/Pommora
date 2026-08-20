@@ -21,8 +21,9 @@ export function docString(doc: Text): string {
   return s
 }
 
-// The decoration pass's whole-doc scans (split + fences + callouts + fence ranges), one per doc
-// VERSION — a caret move must never pay an O(doc) re-scan for line chrome that only the text defines.
+// The one whole-document derivation — split, fences, callouts, tables, block constructs, and the
+// per-line block predicates — computed once per doc VERSION. A caret move must never pay an O(doc)
+// re-scan for line chrome that only the text defines.
 const scans = new WeakMap<Text, DocScan>()
 export function docScan(doc: Text): DocScan {
   let s = scans.get(doc)
@@ -34,8 +35,9 @@ export function docScan(doc: Text): DocScan {
 }
 
 // The caret-free per-line decoration intents + rails, one per doc VERSION — a caret move re-derives
-// only its own affected lines (the caret's line + its fence's edge lines) and reads the rest from here,
-// so the per-caret cost stops scaling with document length.
+// only the one line the caret sits on and reads the rest from here, so the per-caret cost stops
+// scaling with document length. Every caret-sensitive output is line-local by construction: a
+// derivation that reached across lines would be dropped here without a trace.
 const lineIntents = new WeakMap<Text, CachedLineIntents>()
 export function docLineIntentsOf(doc: Text): CachedLineIntents {
   let v = lineIntents.get(doc)
@@ -48,16 +50,18 @@ export function docLineIntentsOf(doc: Text): CachedLineIntents {
 
 // The inline tokenize over the visible spans, one per doc VERSION + span set. It is the dominant cost
 // of a decoration build and answers to nothing but the text under those spans, so a caret move, a focus
-// flip, and a resolution nudge read it back rather than re-parsing. One slot per version is enough: a
-// scroll moves the span set forward and never returns to the one it left.
-const spanTokens = new WeakMap<Text, { key: string; tokens: Token[] }>()
+// flip, and a resolution nudge read it back rather than re-parsing. Two slots, most-recent first: a
+// span set is returned to as readily as it is left — scrolling back up, and folding, which moves the
+// set within one version.
+type Slot = { key: string; tokens: Token[] }
+const spanTokens = new WeakMap<Text, [Slot] | [Slot, Slot]>()
 export function docSpanTokens(doc: Text, key: string, derive: () => Token[]): Token[] {
-  let v = spanTokens.get(doc)
-  if (v?.key !== key) {
-    v = { key, tokens: derive() }
-    spanTokens.set(doc, v)
-  }
-  return v.tokens
+  const held = spanTokens.get(doc)
+  const hit = held?.find((s) => s.key === key)
+  if (hit) return hit.tokens
+  const fresh: Slot = { key, tokens: derive() }
+  spanTokens.set(doc, held ? [fresh, held[0]] : [fresh])
+  return fresh.tokens
 }
 
 // Every ↔ in the document, one scan per doc VERSION. Only the text says where they are, so a caret

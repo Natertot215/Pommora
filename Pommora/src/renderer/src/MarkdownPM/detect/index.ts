@@ -44,64 +44,56 @@ export interface FenceInfo {
   ordinal?: number
 }
 
-interface FenceBlock {
-  from: number
-  to: number
-  open: number
-  close: number
-  closed: boolean
-  depth: number
-  lang?: string
-  markerEnd: number
+/** The document's line table, computed once and passed down rather than re-derived per scanner.
+ *  `lineStarts` carries one entry past the last line, holding the document's end — a walk that runs
+ *  off the bottom of `lines` still lands on a real position, and the empty slice it names is the
+ *  correct answer for "everything from here on is already accounted for". */
+export interface DocLines {
+  text: string
+  lines: string[]
+  lineStarts: number[]
 }
 
-export function splitWithOffsets(text: string): { lines: string[]; lineStarts: number[] } {
+export function splitWithOffsets(text: string): DocLines {
   const lines = text.split('\n')
-  return { lines, lineStarts: lineOffsets(lines) }
+  const lineStarts = lineOffsets(lines)
+  lineStarts.push(text.length)
+  return { text, lines, lineStarts }
 }
 
-// Block extents in this module's offset-bearing shape. The pairing itself is `fenceSpans` in the shared
-// code module — the one pass both processes read, so the renderer and the rename mask can never disagree
-// about where a code block ends.
-function fenceBlocks(lines: string[], lineStarts: number[]): FenceBlock[] {
-  return fenceSpans(lines).map((span) => ({
-    from: lineStarts[span.open],
-    to: lineStarts[span.close] + lines[span.close].length,
-    open: span.open,
-    close: span.close,
-    closed: span.closed,
-    depth: span.fence.depth,
-    lang: fenceLang(span.fence) || undefined,
-    markerEnd: span.fence.markerEnd,
-  }))
-}
-
+/** Every line's role inside its fenced block, in this module's offset-bearing shape. The pairing
+ *  itself is `fenceSpans` in the shared code module — the one pass both processes read, so the
+ *  renderer and the rename mask can never disagree about where a code block ends. */
 export function scanFencedCode(lines: string[], lineStarts: number[]): (FenceInfo | undefined)[] {
   const out: (FenceInfo | undefined)[] = new Array(lines.length)
-  for (const blk of fenceBlocks(lines, lineStarts)) {
+  for (const span of fenceSpans(lines)) {
+    const { open, close, closed } = span
     const base = {
-      from: blk.from,
-      to: blk.to,
-      depth: blk.depth,
-      closed: blk.closed,
-      lang: blk.lang,
-      markerEnd: blk.markerEnd,
+      from: lineStarts[open],
+      to: lineStarts[close] + lines[close].length,
+      depth: span.fence.depth,
+      closed,
+      lang: fenceLang(span.fence) || undefined,
+      markerEnd: span.fence.markerEnd,
     }
-    out[blk.open] = { role: 'open', ...base }
-    const contentEnd = blk.closed ? blk.close : blk.close + 1 // unclosed → the last line is content too
-    for (let k = blk.open + 1; k < contentEnd; k++)
-      out[k] = { role: 'content', ...base, ordinal: k - blk.open }
-    if (blk.closed) out[blk.close] = { role: 'close', ...base }
+    out[open] = { role: 'open', ...base }
+    const contentEnd = closed ? close : close + 1 // unclosed → the last line is content too
+    for (let k = open + 1; k < contentEnd; k++)
+      out[k] = { role: 'content', ...base, ordinal: k - open }
+    if (closed) out[close] = { role: 'close', ...base }
   }
   return out
 }
 
-// Absolute [from, to) ranges of fenced code blocks across the whole doc. The decoration builder drops
-// inline tokens that land inside a fence opened above the viewport — which a viewport-only tokenize
-// can't see. `to` reaches the end of the closing fence line (or EOF for an unclosed fence).
-export function fencedCodeRanges(text: string): [number, number][] {
-  const { lines, lineStarts } = splitWithOffsets(text)
-  return fenceBlocks(lines, lineStarts).map((b) => [b.from, b.to])
+/** The fence blocks' absolute ranges, read back off the per-line scan — an open line carries its
+ *  whole block's extent, so the ranges are already in hand wherever the scan is. The decoration
+ *  builder drops inline tokens landing inside a fence opened above the viewport, which a
+ *  viewport-only tokenize cannot see. `to` reaches the closing fence line's end, or EOF when the
+ *  fence is unclosed. */
+export function fenceRangesOf(fences: readonly (FenceInfo | undefined)[]): [number, number][] {
+  const out: [number, number][] = []
+  for (const f of fences) if (f?.role === 'open') out.push([f.from, f.to])
+  return out
 }
 
 /** Whether a line start falls inside one of the excluded regions — the one shared reading of the
@@ -117,8 +109,10 @@ const inExcluded = (at: number, excluded: [number, number][]): boolean =>
  *  delimiters (`$$ x=1` … `y $$`) and single-line `$$x$$` stay ordinary lines. `to` is the closing
  *  line's end, exclusive of the trailing newline. `excluded` is required — every caller must state
  *  which regions own their `$$` bytes, or two callers would silently disagree on the math model. */
-export function blockMathRanges(text: string, excluded: [number, number][]): [number, number][] {
-  const { lines, lineStarts } = splitWithOffsets(text)
+export function blockMathRanges(
+  { lines, lineStarts }: DocLines,
+  excluded: [number, number][],
+): [number, number][] {
   const out: [number, number][] = []
   let open = -1
   for (let i = 0; i < lines.length; i++) {
@@ -130,6 +124,22 @@ export function blockMathRanges(text: string, excluded: [number, number][]): [nu
       out.push([lineStarts[open], lineStarts[i] + lines[i].length])
       open = -1
     }
+  }
+  return out
+}
+
+/** The walk both lone-line constructs take: a line the reader answers for, outside every excluded
+ *  region, carried out as its own whole-line span. */
+function loneLines<T>(
+  { lines, lineStarts }: DocLines,
+  excluded: [number, number][],
+  read: (line: string) => T | null,
+): (T & { from: number; to: number })[] {
+  const out: (T & { from: number; to: number })[] = []
+  for (let i = 0; i < lines.length; i++) {
+    const v = read(lines[i])
+    if (v === null || inExcluded(lineStarts[i], excluded)) continue
+    out.push({ ...v, from: lineStarts[i], to: lineStarts[i] + lines[i].length })
   }
   return out
 }
@@ -155,16 +165,11 @@ export function loneEmbedTitle(line: string): string | null {
  *  stays an ordinary line and its `![[…]]` renders as the inert token, exactly like a quoted one.
  *  Same exclusion contract as blockMathRanges: an embed line inside a fence, table, or math region
  *  is content there, and `excluded` is required so two callers can't silently disagree. */
-export function blockEmbedLines(text: string, excluded: [number, number][]): EmbedLine[] {
-  const { lines, lineStarts } = splitWithOffsets(text)
-  const out: EmbedLine[] = []
-  for (let i = 0; i < lines.length; i++) {
-    const title = loneEmbedTitle(lines[i])
-    if (title === null) continue
-    if (inExcluded(lineStarts[i], excluded)) continue
-    out.push({ from: lineStarts[i], to: lineStarts[i] + lines[i].length, title })
-  }
-  return out
+export function blockEmbedLines(d: DocLines, excluded: [number, number][]): EmbedLine[] {
+  return loneLines(d, excluded, (line) => {
+    const title = loneEmbedTitle(line)
+    return title === null ? null : { title }
+  })
 }
 
 export interface WebpageLine {
@@ -178,21 +183,8 @@ export interface WebpageLine {
 /** Lone-line webpage embeds — the `![label](url)` sibling of blockEmbedLines, same lone-line and
  *  exclusion contract: an indented line is list continuation, and one inside a fence, table, or
  *  math region is content there. */
-export function blockWebpageLines(text: string, excluded: [number, number][]): WebpageLine[] {
-  const { lines, lineStarts } = splitWithOffsets(text)
-  const out: WebpageLine[] = []
-  for (let i = 0; i < lines.length; i++) {
-    const w = loneWebpageEmbed(lines[i])
-    if (w === null) continue
-    if (inExcluded(lineStarts[i], excluded)) continue
-    out.push({
-      from: lineStarts[i],
-      to: lineStarts[i] + lines[i].length,
-      label: w.label,
-      url: w.url,
-    })
-  }
-  return out
+export function blockWebpageLines(d: DocLines, excluded: [number, number][]): WebpageLine[] {
+  return loneLines(d, excluded, loneWebpageEmbed)
 }
 
 // A callout HEAD tags a type: `> [!callout] …`. The tag is the discriminator vs a plain quote and is invisible
@@ -399,14 +391,14 @@ export function isHeadingLine(line: string): boolean {
   return parse(line).children.some((n) => n.type === 'heading')
 }
 
-const headingPartsRe = /^(\s{0,3})(#{1,6})([ \t]+)(.*)$/
+const headingPartsRe = /^([ ]{0,3})(#{1,6})(?:([ \t]+)(.*))?$/
 /** Decomposes a heading line into its pieces (null if not a syntactic ATX heading). The one heading-shape
  *  regex — level is `hashes.length`, the content start is `indent+hashes+space`. */
 export function headingParts(
   line: string,
 ): { indent: string; hashes: string; space: string; content: string } | null {
   const m = headingPartsRe.exec(line)
-  return m ? { indent: m[1], hashes: m[2], space: m[3], content: m[4] } : null
+  return m ? { indent: m[1], hashes: m[2], space: m[3] ?? '', content: m[4] ?? '' } : null
 }
 
 /** Needs whitespace or the line's end after the last `>`: `> a`, `>> a` and a bare `>` activate — the bare

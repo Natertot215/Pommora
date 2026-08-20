@@ -4,8 +4,7 @@
 import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { parseListMarkerPrefixed as parseListMarker } from '../detect'
-import { docString } from './docCache'
-import { docMathRanges } from './mathRanges'
+import { docScan } from './docCache'
 import { forEachLine, shadeField } from './dragChrome'
 import { beginRelocateDrag, editorGestureCleanup } from './EditorGesture'
 import { focusAt } from './input'
@@ -58,7 +57,7 @@ function collectCands(view: EditorView, block: SubBlock): Cand[] {
   const padRight = parseFloat(getComputedStyle(view.contentDOM).paddingRight) || 0
   const gutterRight = contentRect.right - padRight // the wrap boundary — the line spans out to here
   // A marker-lookalike inside display math is formula source, never a drop target.
-  const maths = docMathRanges(docString(doc))
+  const maths = docScan(doc).maths
   const out: Cand[] = []
   for (const { from, to } of view.visibleRanges) {
     forEachLine(doc, from, to, (line) => {

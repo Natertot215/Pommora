@@ -1,5 +1,15 @@
 import { describe, it, expect } from 'vitest'
-import { cellCommitChange, structuralEditChange } from './sync'
+import { scanDoc } from '../decorations/intent'
+import { cellCommitChange as cellCommitIn, structuralEditChange as structuralEditIn } from './sync'
+
+const cellCommitChange = (
+  doc: string,
+  ...rest: [number, number, number, string]
+): ReturnType<typeof cellCommitIn> => cellCommitIn(scanDoc(doc), ...rest)
+const structuralEditChange = (
+  doc: string,
+  ...rest: [number, Parameters<typeof structuralEditIn>[2]]
+): ReturnType<typeof structuralEditIn> => structuralEditIn(scanDoc(doc), ...rest)
 import { insertColumn, moveColumn } from './operations'
 import { parseTable, unescapeCell, serialize } from './codec'
 import { emptyTable } from './model'

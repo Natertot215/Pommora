@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { blockAt, blockStarts, type Block } from './blockModel'
+import { scanDoc } from '../decorations/intent'
+import { blockAt as blockAtIn, blockStarts as blockStartsIn, type Block } from './blockModel'
+
+const blockAt = (doc: string, pos: number): Block | null => blockAtIn(scanDoc(doc), pos)
+const blockStarts = (doc: string): ReturnType<typeof blockStartsIn> => blockStartsIn(scanDoc(doc))
 
 const slice = (doc: string, b: Block | null): string | null => (b ? doc.slice(b.from, b.to) : null)
 

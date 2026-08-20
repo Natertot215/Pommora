@@ -16,7 +16,7 @@ import { setHeading, setList } from './input/format'
 import { subBlockAt, renumberOrderedRun } from './editor/listDragModel'
 import { calloutDeleteVerdict } from './editor/calloutGuard'
 import { headingSections } from './editor/folding'
-import { fencedCodeRanges } from './detect'
+import { fenceRangesOf } from './detect'
 import { scanDoc } from './decorations/intent'
 import { sliceStartLine } from './editor/decorations'
 
@@ -226,7 +226,7 @@ describe('calloutDeleteVerdict — repair, not cancel', () => {
 describe('renderer fence engine agrees with isInsideCode on ~~~ (no cross-layer split)', () => {
   it('fencedCodeRanges recognizes a ~~~ block', () => {
     const doc = '~~~\n[[LivePage]]\n~~~'
-    const ranges = fencedCodeRanges(doc)
+    const ranges = fenceRangesOf(scanDoc(doc).fences)
     expect(ranges.length).toBe(1)
     // the connection sits inside the code range → renderer won't make it live
     expect(ranges[0][0]).toBeLessThanOrEqual(4)
@@ -234,7 +234,7 @@ describe('renderer fence engine agrees with isInsideCode on ~~~ (no cross-layer 
   })
   it('pairs by marker char — a ~~~ line inside ``` is content, not a close', () => {
     const doc = '```\n~~~\ncode\n```\nprose'
-    const ranges = fencedCodeRanges(doc)
+    const ranges = fenceRangesOf(scanDoc(doc).fences)
     expect(ranges.length).toBe(1) // one block, not split at the ~~~ line
     expect(isInsideCode(9, doc)).toBe(true) // input layer agrees
   })
@@ -243,7 +243,7 @@ describe('renderer fence engine agrees with isInsideCode on ~~~ (no cross-layer 
 describe('a longer fence holds shorter ones — both layers, one block', () => {
   const doc = '`````\nintro\n```js\nsee [[LivePage]]\n```\noutro\n`````\nprose [[LivePage]]'
   it('the whole span is one block, not three carved around the inner fences', () => {
-    const ranges = fencedCodeRanges(doc)
+    const ranges = fenceRangesOf(scanDoc(doc).fences)
     expect(ranges.length).toBe(1)
     expect(ranges[0][0]).toBe(0)
     expect(ranges[0][1]).toBe(doc.indexOf('\nprose'))
@@ -310,6 +310,20 @@ describe('the viewport slice opens where the block context is self-evident', () 
     expect(sliceStartLine(scan, 14)).toBe(12)
     expect(sliceStartLine(scan, 13)).toBe(12)
     expect(sliceStartLine(scan, 12)).toBe(12)
+  })
+
+  // A fence still being typed claims every line to EOF, so a viewport inside it has no line above
+  // where a slice could safely resume. The answer is the document's end — an empty slice, which is
+  // exactly right: everything from there down is code, and code carries no inline tokens.
+  it('an unclosed fence resolves to the end of the document, not past the end of the line table', () => {
+    const open = scanDoc('intro **bold**\n```js\ncode **not bold**\nmore')
+    expect(sliceStartLine(open, 0)).toBe(0)
+    expect(sliceStartLine(open, 1)).toBe(1)
+    for (const line of [2, 3]) {
+      const at = sliceStartLine(open, line)
+      expect(at).toBe(open.lines.length)
+      expect(open.lineStarts[at]).toBe(open.text.length)
+    }
   })
 
   it('every viewport start yields the whole-document tokens (fence parity never inverts)', () => {

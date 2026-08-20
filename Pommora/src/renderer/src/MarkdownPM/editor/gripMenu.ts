@@ -12,7 +12,7 @@ import { useSession } from '../../store'
 import { listKindOf, setHeading, setListKind, type HeadingLevel } from '../input/format'
 import { headingParts } from '../detect'
 import { type Block, blockAt } from './blockModel'
-import { docString } from './docCache'
+import { docScan, docString } from './docCache'
 import { embeddable } from './embedRanges'
 import { embedExclusions, setWebLinkSeat } from './embedWidget'
 import { focusRange } from './input'
@@ -146,7 +146,7 @@ export const gripMenu = EditorView.domEventHandlers({
     const line = gripLineAt(e)
     if (!line) return false
     const doc = docString(view.state.doc)
-    const block = blockAt(doc, view.posAtDOM(line))
+    const block = blockAt(docScan(view.state.doc), view.posAtDOM(line))
     if (!block) return false
     e.preventDefault()
     void window.nexus?.gripMenu?.(contextFor(view, doc, block)).then((action) => {

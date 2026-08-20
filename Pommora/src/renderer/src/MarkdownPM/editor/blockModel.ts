@@ -3,18 +3,8 @@
 //
 // `to` is EXCLUSIVE of the trailing newline — matching SubBlock.to / headingSections.to / TableRegion.to,
 // which the drag's self-drop guard relies on. Do not return an inclusive `to`.
-import {
-  calloutLines,
-  isBlockquoteLine,
-  isHeadingLine,
-  isThematicBreakLine,
-  lineOffsets,
-  parseListMarkerPrefixed,
-  type CalloutLine,
-} from '../detect'
-import { fencedCodeRanges, scanFencedCode } from '../detect'
-import { docLineScan } from './embedRanges'
-import { tableRegions } from '../Tables/regions'
+import { fenceRangesOf, parseListMarkerPrefixed, type CalloutLine } from '../detect'
+import type { DocScan } from '../decorations/intent'
 import { headingSections } from './folding'
 
 export type BlockKind =
@@ -53,16 +43,12 @@ interface BlockContext {
   kindAt: (i: number) => BlockKind | null
 }
 
-function blockContext(doc: string): BlockContext {
-  const lines = doc.split('\n')
+function blockContext(scan: DocScan): BlockContext {
+  const { lines, lineStarts: starts, fences: fenceAt, maths, embeds, webpages, tables } = scan
   const n = lines.length
-  const starts = lineOffsets(lines)
-  const ends = starts.map((s, i) => s + lines[i].length)
+  const ends = lines.map((l, i) => starts[i] + l.length)
 
-  const rawCallout = calloutLines(lines)
-  const fences = fencedCodeRanges(doc)
-  const tables = tableRegions(doc)
-  const { maths, embeds, webpages } = docLineScan(doc)
+  const fences = fenceRangesOf(fenceAt)
   const inFence = (i: number): boolean =>
     i >= 0 && i < n && fences.some(([f, t]) => starts[i] >= f && starts[i] <= t)
   const spanned =
@@ -114,17 +100,15 @@ function blockContext(doc: string): BlockContext {
   // A closed top-level fence owns its bytes outright, so a `>` inside one is code text rather than a
   // quote — the same rule the decoration pass draws by, kept in agreement here so a grip can never
   // offer to drag two lines out of a code block. A QUOTED fence keeps its box: the `>` is real there.
-  const fenceAt = scanFencedCode(lines, starts)
   const literalCode = (i: number): boolean => {
     const f = fenceAt[i]
     return f?.closed === true && f.depth === 0
   }
 
-  const callout = rawCallout.map((c, i) => (literalCode(i) ? undefined : c))
-
-  const heading = lines.map(isHeadingLine)
-  const hr = lines.map(isThematicBreakLine)
-  const bq = lines.map((l, i) => !literalCode(i) && isBlockquoteLine(l))
+  const callout = scan.callouts.map((c, i) => (literalCode(i) ? undefined : c))
+  const heading = scan.headings
+  const hr = scan.breaks
+  const bq = scan.quotes.map((q, i) => q && !literalCode(i))
   const claimed = (i: number): boolean =>
     i < 0 ||
     i >= n ||
@@ -165,8 +149,8 @@ function blockContext(doc: string): BlockContext {
 }
 
 /** The top-level block owning the line at `pos`, or null on a blank/unowned line (nothing to grab). */
-export function blockAt(doc: string, pos: number): Block | null {
-  const ctx = blockContext(doc)
+export function blockAt(scan: DocScan, pos: number): Block | null {
+  const ctx = blockContext(scan)
   const { n, starts, ends, callout, listMember } = ctx
 
   // The line holding pos: the first whose end (pre-newline) is at/after pos.
@@ -195,16 +179,20 @@ export function blockAt(doc: string, pos: number): Block | null {
       while (b < n - 1 && !callout[b + 1] && ctx.kindAt(b + 1) === 'blockquote') b++
       return { from: starts[a], to: ends[b], kind: 'blockquote' }
     }
-    case 'code':
-      return fenceBlockAt(doc, starts[li])
-    case 'table':
-      return tableBlockAt(doc, starts[li])
+    case 'code': {
+      const f = ctx.fences.find(([ff, tt]) => starts[li] >= ff && starts[li] <= tt)!
+      return { from: f[0], to: f[1], kind: 'code' }
+    }
+    case 'table': {
+      const r = ctx.tables.find((rr) => starts[li] >= rr.from && starts[li] <= rr.to)!
+      return { from: r.from, to: r.to, kind: 'table' }
+    }
     case 'math': {
       const r = ctx.maths.find(([f, t]) => starts[li] >= f && starts[li] <= t)!
       return { from: r[0], to: r[1], kind: 'math' }
     }
     case 'heading': {
-      const sec = headingSections(doc).find((s) => s.from === starts[li])
+      const sec = headingSections(scan.text).find((s) => s.from === starts[li])
       // The section's `to` reaches the blank line before the next heading — the fold wants that
       // span, a block doesn't: the drag's mover re-fences with one blank, so a range carrying the
       // trailing blank would compound an extra blank on every reorder (the outline's mover
@@ -212,7 +200,7 @@ export function blockAt(doc: string, pos: number): Block | null {
       return sec
         ? {
             from: sec.from,
-            to: sec.from + doc.slice(sec.from, sec.to).trimEnd().length,
+            to: sec.from + scan.text.slice(sec.from, sec.to).trimEnd().length,
             kind: 'heading',
           }
         : { from: starts[li], to: ends[li], kind: 'heading' }
@@ -238,16 +226,6 @@ export function blockAt(doc: string, pos: number): Block | null {
   }
 }
 
-function fenceBlockAt(doc: string, lineStart: number): Block {
-  const f = fencedCodeRanges(doc).find(([ff, tt]) => lineStart >= ff && lineStart <= tt)!
-  return { from: f[0], to: f[1], kind: 'code' }
-}
-
-function tableBlockAt(doc: string, lineStart: number): Block {
-  const r = tableRegions(doc).find((rr) => lineStart >= rr.from && lineStart <= rr.to)!
-  return { from: r.from, to: r.to, kind: 'table' }
-}
-
 export interface BlockStart {
   from: number
   kind: BlockKind
@@ -256,8 +234,8 @@ export interface BlockStart {
 /** Every draggable block's first-line offset + kind, in document order — a heading line and each block inside
  *  its section both qualify; continuation/blank lines don't. The shared basis for where handles render and
  *  where a drag can drop. Single pass over the shared block context — a per-line `blockAt` call would be O(n²). */
-export function blockStarts(doc: string): BlockStart[] {
-  const ctx = blockContext(doc)
+export function blockStarts(scan: DocScan): BlockStart[] {
+  const ctx = blockContext(scan)
   const { n, starts, callout, listMember } = ctx
   const out: BlockStart[] = []
   for (let i = 0; i < n; i++) {

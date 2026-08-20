@@ -3,7 +3,7 @@
 // callouts keep their own grip, and the table widget supplies its own — the rail grip covers every other
 // draggable kind (GRIP_KINDS; a list is grabbed at item 1, its block's first line).
 import { Decoration, EditorView, WidgetType } from '@codemirror/view'
-import { docString } from './docCache'
+import { docScan } from './docCache'
 import type { Extension, Range } from '@codemirror/state'
 import { blockAt, blockStarts } from './blockModel'
 import { lineElementAt } from './lineDom'
@@ -36,7 +36,7 @@ const gripWidget = new GripWidget()
 
 export const blockHandles = EditorView.decorations.compute(['doc'], (state) => {
   const ranges: Range<Decoration>[] = []
-  for (const b of blockStarts(docString(state.doc))) {
+  for (const b of blockStarts(docScan(state.doc))) {
     if (GRIP_KINDS.has(b.kind))
       ranges.push(Decoration.line({ class: 'md-block-handle' }).range(b.from))
     else if (b.kind === 'blockquote')
@@ -101,7 +101,7 @@ export function blockGripHover(onHotChange?: (line: HTMLElement | null) => void)
         }
         if (lineFrom !== cachedFrom) {
           cachedFrom = lineFrom
-          const block = blockAt(docString(view.state.doc), pos)
+          const block = blockAt(docScan(view.state.doc), pos)
           cachedFirstFrom =
             block && GRIP_BLOCKS.has(block.kind) ? view.state.doc.lineAt(block.from).from : -1
         }

@@ -2,7 +2,13 @@ import { describe, it, expect } from 'vitest'
 import { EditorState } from '@codemirror/state'
 import { type DecorationSet, EditorView } from '@codemirror/view'
 import { buildWidgetDecorations, refreshTableEffect, tableWidgetExtension } from './widget'
-import { cellCommitChange, tableSelfEdit } from './sync'
+import { scanDoc } from '../decorations/intent'
+import { cellCommitChange as cellCommitIn, tableSelfEdit } from './sync'
+
+const cellCommitChange = (
+  doc: string,
+  ...rest: [number, number, number, string]
+): ReturnType<typeof cellCommitIn> => cellCommitIn(scanDoc(doc), ...rest)
 import type { TableModel } from './model'
 
 const make = (doc: string): number => buildWidgetDecorations(EditorState.create({ doc })).size

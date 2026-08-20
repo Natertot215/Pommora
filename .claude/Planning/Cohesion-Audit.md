@@ -7,7 +7,7 @@ correction a later reader would otherwise re-derive wrongly.
 ### What Landed
 
 **Session One — the dusting** (`d9765a55` … `a3cd989e`, seven commits). Every deletion and one-liner.
-The icon ladder, rebuilt to mirror the type ramp name for name, with every call site naming a step.
+The icon ladder, rebuilt to mirror the type ramp name-for-name, with every call site naming a step.
 The CSS shape duplication: the card chassis, the reveal bar, the edge-drag resize strip, the sidebar's
 icon button, and the named constants behind them. The menu model: one native template, and the six
 editor formatting chords spelled once for both processes. Eight scoped MarkdownPM fixes. The
