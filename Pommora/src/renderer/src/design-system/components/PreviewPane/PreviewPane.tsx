@@ -174,7 +174,7 @@ export function PreviewPane({
       bounds={side.bounds}
       open={side.open !== false}
       className={cx(`ppane-side ppane-side-${which}-${side.mode}`, side.className)}
-      resizeClassName={`ppane-side-resize ppane-side-${which}-${side.mode}-resize`}
+      resizeClassName={`ppane-side-${which}-${side.mode}-resize`}
       onWidthChange={which === 'left' ? setLeftW : setRightW}
       onResizingChange={setResizing}
     >

@@ -10,7 +10,7 @@
 
 **Two coordinated lines, and this document is the shared record for both.** Line one is the Cohesion arc's MarkdownPM leg — **finished this session**. Line two is Footnotes, whose decision log the prior session completed and which was waiting on that leg. Nathan's order held: the MarkdownPM cohesion work finishes first with nothing left behind, and the removal of its ContextPM bullet is the Footnotes greenlight. **That bullet is gone.**
 
-**All eight phases of [[MarkdownPM-Plan]] landed**, commits `9fd6da98` … `a8988710`, gates green at each: typecheck clean, Biome zero across 854 files, 3,006 Vitest tests. KNOB went 115 → 117 (two added, none stripped); the nine decision markers survive. Six live defects closed, four of them as symptoms of the duplication they sat inside rather than as separate fixes. Every phase also carried its own doc corrections — a statement the code caught up to was left alone, a statement that stayed false was rewritten as the truth rather than as a revision of one.
+**All eight phases landed**, commits `9fd6da98` … `a8988710`, gates green at each: typecheck clean, Biome zero across 854 files, 3,006 Vitest tests. KNOB went 115 → 117 (two added, none stripped); the nine decision markers survive. Six live defects closed, four of them as symptoms of the duplication they sat inside rather than as separate fixes. Every phase also carried its own doc corrections — a statement the code caught up to was left alone, a statement that stayed false was rewritten as the truth rather than as a revision of one.
 
 **What the leg actually delivered to Footnotes.** The decision log's Sources section named its prerequisites by file; each is now in place. `folding.ts` takes a **kind** — a fold is a region, and a second kind of foldable region is a registration rather than a fork, with a `collapsedByDefault` path for a section hidden on first open (C-3, C-11). `scanDoc` is **one** whole-document derivation the footnote-section scan joins, so it cannot disagree with fences and tables about the exclusion base; `blockModel`'s `blockContext` reads it, so a footnote-section `BlockKind` is one registration (C-12). The click skeleton markers inherit is now **one factory** with a `follow`/`dwell`/`menu` surface — a marker is a third spec, not a third copy — and its two editor-free target readers are what let `cellStatic.tsx` follow and preview a link at rest, which is where the marker's own resting branch will hang (B-5). `COPY_SCOPES` gained `headingIcon`, so the footnote-visibility scope no longer inherits that hole. `Tables/widget.tsx`'s stale `main/io/tableHeadingColumns` pointer is corrected.
 
@@ -22,32 +22,30 @@
 
 #### Completion Criteria
 
-- [x] **The MarkdownPM cohesion leg is finished with nothing left behind** — every phase of [[MarkdownPM-Plan]] landed, phase 7's fold widening included, gates green, docs reconciled.
+- [x] **The MarkdownPM cohesion leg is finished with nothing left behind** — all eight phases landed, phase 7's fold widening included, gates green, docs reconciled.
+- [x] **The MarkdownPM cleanup arc closes** — the four deferred items settled: one list vocabulary, `embedWidget.tsx` cleaned rather than split (Nathan's call), three of four import cycles broken, `PageHeader` on one `page` object.
 - [x] **The MarkdownPM cleanup bullet is eliminated from ContextPM** — the Footnotes greenlight.
-- [x] **The design-splits are parked, not built** — recorded under ContextPM §The Remaining Cohesion Efforts with nothing half-started.
-- [ ] **The MarkdownPM cleanup arc closes** — the four items the plan deferred because Footnotes is what makes them worth doing. Drafted prompt below.
-- [ ] **The easy-win definition duplications are folded** — Cohesion-Audit §One Definition Per Thing. `clamp` is already done.
+- [x] **The design-splits are parked, not built** — recorded in full under ContextPM §The Remaining Cohesion Efforts, nothing half-started.
+- [x] **The cohesion arc's transient records are drained and retired** — rulings to [[Cohesion-Rulings]], open decisions to ContextPM §Open Calls, live defects to §Known Issues, arcs to §Pending Focuses. `.claude/Planning` holds only the Footnotes contract and the webpage log.
 - [ ] **Footnotes' last `[assumed]` entry carries Nathan's word** — C-3's clear-on-default, blessed or amended before the plan is written.
 - [ ] **Footnotes is planned, ratified, built, and closed out** — the decision log handed to the planning skill, the plan approved before any code, the build through `/closeout` clean.
-- [ ] **The remaining Cohesion efforts complete** — Table hoisting, the `main/index.ts` split, and the parked design-splits.
+- [ ] **The remaining Cohesion efforts complete** — §One Definition Per Thing's easy wins, Table hoisting, the `main/index.ts` split, the view host, virtualization, the parked design-splits.
 
 #### Next Session
 
-**The drafted prompt — finish the MarkdownPM cleanup arc.**
+**Footnotes is the work.** Nothing blocks it. Get C-3's clear-on-default `[assumed]` blessed, hand [[Footnotes — Decision Log]] to the planning skill, and check the reviewer's two live-layout unknowns during planning: whether the Subfield's hover rail admits a second control beside the collapse chevron, and whether disclosing the section flickers the toggle's at-bottom visibility condition.
 
-> Close the four items [[MarkdownPM-Plan]] deferred under §What This Plan Deferred, And Why. They were held back because the footnotes work is what makes them worth doing, and that work is now unblocked — so these land first, in this order, each through implement → simplify → implement → full-diff closeout.
->
-> 1. **`setList` / `setListKind`.** One rule for what a list marker becomes, written twice — `input/format.ts` and the grip menu's kind switch. Collapse to one, with the grip menu's whole-block sweep and the caret line's single-line case as parameters rather than as two implementations. Pinned by `gripMenuFlow.test.tsx`'s Type-switch suite and `input/format.test.ts`.
-> 2. **`embedWidget.tsx`'s four responsibilities.** The tile chassis, the page fetch, the resize strip, and the claim wiring. Split so the generic half is reusable — the footnotes section is the second construct that will want it, so the seam is drawn against that need rather than for tidiness alone.
-> 3. **The three `Embeds/` import cycles.** Latent today. The shape to follow is the one closed during the reduction pass: the shared primitives move to the seam that reads them, not beside one of its callers.
-> 4. **`PageHeader`'s seven threaded props.** A restructure with a design question inside it — **ask Nathan before writing code here**, and skip it rather than guess.
->
-> Standing rules for the arc: `npm run typecheck`, `npm run lint` at zero diagnostics, and `npm run test` green before any item is called done, with `set -o pipefail` on anything piped. Stage explicit paths, never directories. Never strip a `KNOB` comment or a `(Nathan's call)` / `(spec)` marker — grep-verify both counts survive (117 / 9). Report code-only deltas, comments and tests excluded. Disclose any look-or-behavior decision in the response as you make it. If an item turns out to be smaller, larger, or simply not a duplication, say so rather than forcing it — two plan items were refused on exactly that basis last session.
+Read these five seams before planning the marker or the section — each was built for this and each is one registration rather than a fork:
 
-**Then, in either order — they don't cross over except where noted.**
+- `editor/folding.ts` — `FoldKind` / `FoldRegion` / `KINDS`. A fold is a region of some kind, with a `collapsedByDefault` path for a section hidden on first open (C-3, C-11).
+- `decorations/intent.ts` `scanDoc`, cached in `editor/docCache.ts` — the one whole-document derivation the footnote-section scan joins, so it cannot disagree with fences and tables about the exclusion base. `editor/blockModel.ts` reads it, so a footnote-section `BlockKind` is one registration (C-12).
+- `editor/pointerPath.ts` — the click skeleton, taking `follow` / `dwell` / `menu`. The claim on a press is derived from `follow`, so a construct that leads nowhere seats a caret like any other text.
+- `Tables/cellStatic.tsx` `cellLinkTarget` + `editor/links.ts` `followTarget` / `dwellTarget` — how a resting cell reads the same answers the body does, which is where a marker's rest branch hangs (B-5).
+- `main/remint.ts` `COPY_SCOPES` — a page-keyed scope joins the list directly; one keyed by anything else travels through the re-mint map, as `viewOrder` does.
 
-- **Footnotes.** Get C-3's clear-on-default `[assumed]` blessed, hand the decision log to the planning skill, and check the reviewer's two live-layout unknowns during planning: whether the Subfield's hover rail admits a second control beside the collapse chevron, and whether disclosing the section flickers the toggle's at-bottom visibility condition. **It crosses the cleanup arc only at `embedWidget.tsx`** — item 2 above draws a seam Footnotes consumes, so run that item before Footnotes' build, or serialize the two.
-- **The remaining Cohesion efforts** — §One Definition Per Thing's easy wins, then Table hoisting, then the `main/index.ts` split. None of these touch MarkdownPM, so they run in parallel with Footnotes freely.
+**In parallel, whenever it suits** — none of it touches MarkdownPM: §One Definition Per Thing's easy wins, then Table hoisting, then the `main/index.ts` split. ContextPM §The Remaining Cohesion Efforts carries all of them, and §Open Calls carries the ten decisions that need Nathan rather than an implementer.
+
+**Standing rules for any of it:** `npm run typecheck`, `npm run lint` at zero diagnostics, and `npm run test` green before anything is called done, with `set -o pipefail` on anything piped. Stage explicit paths. Never strip a `KNOB` or a `(Nathan's call)` / `(spec)` marker — counts are 117 and 9. Report code-only deltas. Disclose any look-or-behavior decision as you make it. If an item turns out to be smaller, larger, or not a duplication at all, say so rather than forcing it.
 
 **Leftover from the retired web-layer session:** Nathan's own pass over its five changes (settings placement, typed zoom, hover scroll, a live tab flip, inline Edit Link) — unverified unless he's since done it.
 
@@ -62,12 +60,12 @@
 
 #### Session Pointers
 
-- [[MarkdownPM-Plan]] — every phase ticked, estimates against actuals, and §What This Plan Deferred, And Why: the four items the next session closes.
-- [[MarkdownPM-Scoping]] — the evidence behind the plan. Its numbers have moved; open the cited line before acting on any of them.
-- `.claude/Planning/Footnotes — Decision Log.md` — the planner's contract. Frame (with the Citations vocabulary rule), Sources, every decision tagged, Core vs Prospects split. One `[assumed]` left: C-3's clear-on-default.
-- [[Cohesion-Audit]] — what is left of the catalog: §One Definition Per Thing is the easy-win list, §Beyond a Session is what parks, §Open Calls need Nathan. Its Standing Rulings and Corrections govern and should not be re-litigated.
-- [[Cohesion-Changelog]] §Session Three — the per-phase record.
-- `.claude/ContextPM.md` §Immediate Work — carries the same ordering this document details.
+- `.claude/Planning/Footnotes — Decision Log.md` — the planner's contract, and the only live plan left. Frame (with the Citations vocabulary rule), Sources, every decision tagged, Core vs Prospects split. One `[assumed]`: C-3's clear-on-default.
+- `.claude/ContextPM.md` — the durable backlog. §Immediate Work, §The Remaining Cohesion Efforts (what the sweep found and did not spend), §Open Calls (the ten needing Nathan), §Known Issues, §Debt & Ride-Alongs.
+- `.claude/Guidelines/Cohesion-Rulings.md` — what a sweep re-derives wrongly, and what it should stop re-proposing. Read before opening any cohesion finding.
+- `.claude/Guidelines/Editor-Internals.md` — the editor's hard invariants, including the box line's spent pseudo-elements and the `:is()` weight rule.
+- `.claude/HistoryPM.md` PM-110 — what the whole cohesion arc shipped, commits included.
+- **Retired this session:** `Cohesion-Audit.md`, `Cohesion-Changelog.md`, `MarkdownPM-Plan.md`, `MarkdownPM-Scoping.md`. Everything durable in them moved to the homes above; the rest was per-phase narration git already holds. They are in the history if a number is ever wanted.
 
 #### Working Notes
 
@@ -97,7 +95,8 @@
 - The editor: `decorations/intent.ts`, `detect/index.ts`, `editor/docCache.ts`, `blockModel.ts`, `blockDrag.ts`, `blockHandles.ts`, `listDrag.ts`, `listDragModel.ts`, `dragChrome.ts`, `EditorGesture.ts`, `gripMenu.ts`, `embedRanges.ts`, `embedInsert.ts`, `input.ts`, `folding.ts`, `connections.ts`, `links.ts`, `menu.ts`, `index.tsx`, `Styles.css`.
 - Tables: `regions.ts`, `sync.ts`, `guard.ts`, `codec.ts`, `widget.tsx`, `cellStatic.tsx`, `CellEditor.tsx`, `TableView.tsx`, `operations.ts`.
 - Main + design system: `main/remint.ts`, `design-system/tokens/typography.css.ts`, `theme-vars.css.ts`, `resize-strip.css`, `interactions/FloatingWindow.tsx`, `components/SidePane/SidePane.tsx`, `Components/PhotoCropModal.tsx`, `SurfacePM/core/ops.ts`.
-- Docs: this document, `ContextPM.md`, `HistoryPM.md` (PM-110 extended, not reopened), `Guidelines/Editor-Internals.md`, `Planning/MarkdownPM-Plan.md`, `Planning/Cohesion-Audit.md`, `Planning/Cohesion-Changelog.md`.
+- Docs: this document, `ContextPM.md`, `HistoryPM.md` (PM-110 extended, not reopened), `Guidelines/Editor-Internals.md`, `Features/MarkdownPM.md`, `Features/WebviewPM.md`, `Features/DesignSystemPM.md`, `Features/InteractionPM.md`, `Planning/Footnotes — Decision Log.md`.
+- Added: `Guidelines/Cohesion-Rulings.md`. Retired: the audit, the changelog, and the two MarkdownPM planning documents.
 
 **COMMITS**
 

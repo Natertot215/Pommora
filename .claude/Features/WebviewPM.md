@@ -46,7 +46,6 @@ Dwelling on a website link raises the shared hover card as a live render of the 
 ### Pending
 
 - The browser chrome's Safari-style treatment — the bar area above a page whose color reads as the page's own — isn't settled; the resting shape is the transparent band.
-- Website links in resting table cells don't arm the hover preview yet; the same link previews in the body.
 - A guest's scripted popups ride the open-link chain without a user-gesture gate — acceptable for trusted embeds, ungated by decision pending.
 - Retention is bounded by the editor's viewport recycling: a tile scrolled far enough loses its widget and its guest regardless of the cap.
 - A retained guest keeps playing audio by design; whether scroll-out should mute is an open product call.

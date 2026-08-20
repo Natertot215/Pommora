@@ -109,7 +109,7 @@ Right-click pops the OS-native menu, built in the main process off the `context-
 
 ### Module Shape
 
-`MarkdownPM/` — one folder per concern: `parser/` · `detect/` · `tokens/` · `decorations/` · `input/` · `connections/` · `Tables/` · `editor/` (CM6 wiring). Appearance is `Styles.css` plus the table widget's stylesheet, every value resolving from the design-system tokens via the `--var` bridge. The pure-logic layer imports neither React nor CodeMirror and is unit-tested against a dedicated corpus. Internal invariants for working in this module live in [[Editor-Internals]].
+`MarkdownPM/` — one folder per concern: `parser/` · `detect/` · `tokens/` · `decorations/` · `input/` · `connections/` · `Tables/` · `editor/` (CM6 wiring). Appearance is `Styles.css` plus the table widget's stylesheet, reading the design-system tokens through the `--var` bridge for color, type and motion; each construct's own measures are literals it states beside the rule that spends them. The pure-logic layer imports neither React nor CodeMirror and is unit-tested against a dedicated corpus. Internal invariants for working in this module live in [[Editor-Internals]].
 
 ### Design System
 
@@ -156,18 +156,18 @@ List geometry scopes to `.cm-line.md-li`; the outliner rail aliases the shared `
 | Title | Token | Value · Scope |
 | --- | --- | --- |
 | Quote Bar | `--bar-width` / `--bar-color` / `--bar-radius` | `4px` / → label-tertiary / `2px` · `.md-bq` |
-| Quote Box | `--bg-color` / `--bg-radius` | → fill-tertiary / `6px` |
+| Quote Box | `--box-fill` / `--box-radius-r` | → fill-tertiary / `6px` |
 | Quote Gap | `--bq-gap` | `6px` |
 | Callout Frame | `--callout-border` / `--callout-bw` / `--callout-radius` | → label-tertiary / `1.5px` / `6px` · `.md-callout` |
 | Callout Padding | `--callout-pad` / `--callout-gap` / `--callout-inner-pad` | `15px` / `6px` / `8px` |
 | Callout Grip | `--grip-x` / `--grip-y` | `-18px` / `4px` |
-| Nested Quote | `--nq-bar` / `--nq-bar-radius` / `--nq-radius` / `--nq-gap` / `--nq-inset` | `3px` / `2px` / `5px` / `9px` / `2px` · `.md-callout.md-bq-in` |
-| Code Block | `--cb-bg` / `--cb-radius` / `--cb-size` / `--cb-gap` / `--cb-pad` | → fill-secondary / `6px` / `0.85em` / `6px` / `10px` · `.md-cb` |
+| Nested Quote | `--nq-bar` / `--nq-bar-radius` / `--box-radius-r` / `--nq-gap` / `--nq-inset` | `3px` / `2px` / `5px` / `9px` / `2px` · `.md-callout.md-bq-in` |
+| Code Block | `--cb-bg` / `--cb-radius` / `--cb-size` / `--cb-gap` / `--cb-pad` | → fill-secondary / `6px` / `0.85em` / `6px` / `12px` · `.md-cb` |
 | Line-Number Zone | `--cb-ln-zone` | `calc(3ch + var(--list-gap))` |
 
 #### II. Syntax Colors
 
-One pastel recipe: `color-mix(in srgb, var(--tok-solid) var(--tok-tint), var(--system-white))`, the tint step shared with the chip ladder. Comments skip the recipe and read label-tertiary directly.
+One pastel recipe: `color-mix(in srgb, var(--tok-solid) var(--tok-tint), var(--label-primary))`, the tint step shared with the chip ladder. Comments skip the recipe and read label-tertiary directly.
 
 | Title | Token | Value |
 | --- | --- | --- |
@@ -181,7 +181,7 @@ One pastel recipe: `color-mix(in srgb, var(--tok-solid) var(--tok-tint), var(--s
 | --- | --- | --- |
 | Editing / Resizing Tile Ring | `--tile-border-color` | → accent-stroke / accent-stroke-hot · `.mdpm-embed-tile` states |
 | Embed Grip Top | `--grip-top` | `28px` · `.mdpm-embed-line` |
-| Autocomplete | `--ac-radius` / `--ac-rows` | `12px` / `4` · `.mdpm-ac` |
+| Autocomplete | `--ac-rows` | `4` · `.mdpm-ac` — the pane is a PickerMenu, which owns its radius |
 
 ### Known Issues
 

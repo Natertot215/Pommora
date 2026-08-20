@@ -252,20 +252,19 @@ export function ConnectionHoverCard(): React.JSX.Element {
   // goes through `present` so a queued retarget beat can never re-open over the closure.
   useEffect(() => {
     if (hovered?.kind !== 'site' || !siteEl) return
-    const close = (): void => present?.(null)
     const onLoad = (): void => setSiteReady(true)
     const onFail = (e: Event): void => {
       // Subframe failures are the site's own business; -3 is the abort every redirect fires.
       const d = e as Event & { isMainFrame?: boolean; errorCode?: number }
-      if (d.isMainFrame !== false && d.errorCode !== -3) close()
+      if (d.isMainFrame !== false && d.errorCode !== -3) closeActiveHoverCard()
     }
     siteEl.addEventListener('did-finish-load', onLoad)
     siteEl.addEventListener('did-fail-load', onFail)
-    siteEl.addEventListener('render-process-gone', close)
+    siteEl.addEventListener('render-process-gone', closeActiveHoverCard)
     return () => {
       siteEl.removeEventListener('did-finish-load', onLoad)
       siteEl.removeEventListener('did-fail-load', onFail)
-      siteEl.removeEventListener('render-process-gone', close)
+      siteEl.removeEventListener('render-process-gone', closeActiveHoverCard)
     }
   }, [hovered, siteEl])
 
