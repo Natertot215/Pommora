@@ -11,6 +11,7 @@ import {
   scanFencedCode,
   splitWithOffsets,
   type CalloutLine,
+  type CitationScan,
   type DocLines,
   type EmbedLine,
   type FenceInfo,
@@ -59,6 +60,7 @@ export interface DocScan extends DocLines {
   maths: [number, number][]
   embeds: EmbedLine[]
   webpages: WebpageLine[]
+  citations: CitationScan
   /** Per line, in line order — the three block shapes whose test is a micromark parse. Answered
    *  once per line rather than on demand, which is what a blockquote line inside a rebuild would
    *  otherwise pay several times over. */
