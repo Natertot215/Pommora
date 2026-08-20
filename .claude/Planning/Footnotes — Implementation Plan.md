@@ -683,12 +683,15 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 
 **Requirement:** 3
 
-**Why:** A native menu stays open as long as the user likes, and an undo or an outside write can move the document under it — so both menus re-find their target and match it against what the menu was built from before committing, which is the discipline the connection and heading menus already keep. Copy puts the raw reference on the clipboard rather than the citation's text, because the reference is the shareable thing: pasting it elsewhere in the page is the second reference, and that is the whole sharing mechanism.
+**Why:** A native menu stays open as long as the user likes, and an undo or an outside write can move the document under it — so both menus re-find their target and match it against what the menu was built from before committing, which is the discipline the connection and heading menus already keep. The whole main-side half is already generic: one shared module states the row shape every menu model emits, and one popper takes any model and returns its chosen action, so a menu describes what it *offers* and never how it is drawn. Copy puts the raw reference on the clipboard rather than the citation's text, because the reference is the shareable thing: pasting it elsewhere in the page is the second reference, and that is the whole sharing mechanism.
 
-**Files:** ⚠️ **Re-derive this list before starting.** The construct-menu path was being reorganized in a parallel session while this plan was written — the main-side menu, the shared menu vocabulary, the bridge and the renderer's menu caller were all in flight, and a new shared menu module appeared. Cite nothing here from memory; open the path from the bridge entry outward and write the real list into this task before the first edit.
-- Modify: the main-side construct menu and its bridge entry — two context variants and their action unions.
-- Modify: the renderer-side menu caller, and the marker and citation gesture specs — the execution half.
-- Test: menu action round-trip tests beside the existing ones.
+**Files:**
+- Create: `Pommora/src/shared/citationMenu.ts` — the model and its action union, built on the shared row shape. A footnote menu is **its own model, not an extension of the link menu**: that module states what a reader may do with a *link*, and its surface union is the editor and a property cell. A marker's Edit · Copy · Delete and a citation's Copy · Delete are a different vocabulary that happens to wear the same row.
+- Create: `Pommora/src/main/citationMenu.ts` — the popper. The main side is a handful of lines: the generic model-popper already takes any model and resolves its chosen action, with a dismissal resolving null.
+- Modify: `Pommora/src/shared/bridge.ts` — one channel entry, both ends derived from it.
+- Modify: `Pommora/src/main/index.ts` and `Pommora/src/preload/index.ts` — the handler and its passthrough.
+- Modify: the marker and citation gesture specs — the execution half, performed in the renderer.
+- Test: `Pommora/src/shared/citationMenu.test.ts`, beside the link menu's own model test.
 
 **Failure half:** the document changes while the menu is open → the action is refused, not misapplied. Delete on a marker that is not the last reference → the marker goes, the citation stays. Delete on a marker that is the last → both go in one transaction and revert on one undo.
 
