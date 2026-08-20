@@ -115,6 +115,43 @@ describe('a connection in a resting cell behaves like one in the body', () => {
   })
 })
 
+// A resting cell draws external links too, and read one way for too long: they colored as links but
+// followed nothing, previewed nothing, and left an armed dwell behind a menu. They answer to the same
+// two readers the body's pointer path does now.
+describe('an external link in a resting cell behaves like one in the body', () => {
+  const opener = vi.fn()
+  const web: TableModel = {
+    columns: [{ align: null, dashes: 3 }],
+    header: ['A'],
+    rows: [['[Home](https://x.test)']],
+  }
+
+  async function mountWeb(): Promise<void> {
+    ;(window as unknown as { nexus: unknown }).nexus = { openExternal: opener }
+    container = document.createElement('div')
+    document.body.appendChild(container)
+    root = createRoot(container)
+    await act(async () => root.render(createElement(TableView, { ...props, model: web })))
+  }
+
+  it('follows to the system browser on a click', async () => {
+    opener.mockReset()
+    await mountWeb()
+    const link = container.querySelector('.md-link') as HTMLElement
+    await act(async () => {
+      link.dispatchEvent(
+        new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0 }),
+      )
+      link.dispatchEvent(
+        new MouseEvent('click', { bubbles: true, cancelable: true, button: 0, detail: 1 }),
+      )
+    })
+    expect(opener).toHaveBeenCalledWith('https://x.test')
+    // And the cell never swapped into its editor on the way.
+    expect(container.querySelectorAll('.cm-editor')).toHaveLength(0)
+  })
+})
+
 // The autocomplete panel is a body-level portal — outside the table by DOM, inside it by intent.
 // Demoting the active cell on a pointerdown there tears the editor down before the press that picked
 // a suggestion can reach it, and the typed characters are left dangling.

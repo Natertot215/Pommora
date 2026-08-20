@@ -13,7 +13,7 @@ import { StaticCell } from './cellStatic'
 import { cellToDisplay } from './codec'
 import { clamp } from './operations'
 import { nextCell, type NavDir } from './navigate'
-import type { ConnectionsApi, ConnPage } from '../connections'
+import type { ConnectionsApi } from '../connections'
 import { hoverIntent } from '../editor/connections'
 
 function alignClass(align: Align): string {
@@ -103,65 +103,17 @@ export function TableView({
   const wrapRef = useRef<HTMLDivElement>(null)
   const tableRef = useRef<HTMLTableElement>(null)
 
-  // Resting cells raise the hover card — the same intent delay as the editor's own links, armed
-  // by delegation off the wrap (the class gate first, per the every-mouseover hard rule). Only
-  // static cells, which have no editor to carry them.
+  // One hover intent for the whole table, handed to every resting cell — the same delay the
+  // editor's own links use, and one arming at a time across the grid. A cell that has become an
+  // editor carries its own.
   const intent = useMemo(hoverIntent, [])
   useEffect(() => intent.cancel, [intent])
-  const onLinkOver = (e: React.MouseEvent): void => {
-    const api = connections?.()
-    if (!api?.hover) return
-    intent.cancel()
-    const el = (e.target as HTMLElement).closest?.('.md-connection-resolved')
-    if (!el?.closest('.mdpm-tbl-cell-static')) return
-    // The rendered text is the alias when there is one, so the key comes off the span's own
-    // stamp rather than from what it displays.
-    const title = (el as HTMLElement).dataset.connTitle
-    if (!title) return
-    const res = api.resolve(title)
-    if (res.status !== 'resolved' || !res.page) return
-    const page = res.page
-    intent.arm(() => api.hover?.(page, el))
-  }
-  // The page a resting cell's connection leads to, or null. The rendered text is the alias when
-  // there is one, so the key comes off the span's own stamp rather than from what it displays.
-  const linkPageAt = (target: EventTarget | null): ConnPage | null => {
-    const api = connections?.()
-    const el = (target as HTMLElement | null)?.closest?.('.md-connection-resolved')
-    if (!api || !el?.closest('.mdpm-tbl-cell-static')) return null
-    const title = (el as HTMLElement).dataset.connTitle
-    const res = title ? api.resolve(title) : null
-    return res?.status === 'resolved' && res.page ? res.page : null
-  }
-
+  const armHover = (bloom: () => void): void => intent.arm(bloom)
   /** Whatever the hover was about to show, or is showing, goes away — the pair every gesture that
    *  replaces the pointer's meaning owes it. */
   const dismissHoverCard = (): void => {
     intent.cancel()
     closeActiveHoverCard()
-  }
-
-  // A resting cell's connection navigates, as it does in the body. The static cell has no editor to
-  // claim the press, so the wrap claims it — and it claims it on MOUSEDOWN, because that is when the
-  // cell swaps itself into an editor. Claiming the click instead arrives after the swap, which is
-  // the "clicking a link drops you into its syntax" symptom.
-  const onLinkDown = (e: React.MouseEvent): void => {
-    if (e.button !== 0 || !linkPageAt(e.target)) return
-    e.preventDefault()
-    e.stopPropagation()
-  }
-
-  // Opening waits for the click, so a drag that starts on a link selects rather than navigating.
-  const onLinkClick = (e: React.MouseEvent): void => {
-    if (e.button !== 0 || e.detail !== 1) return
-    const page = linkPageAt(e.target)
-    const api = connections?.()
-    if (!page || !api) return
-    e.preventDefault()
-    e.stopPropagation()
-    intent.cancel()
-    if (e.metaKey && api.bypass) api.bypass(page)
-    else api.open(page)
   }
 
   const [geom, setGeom] = useState<Geom>({ cols: [], rows: [] })
@@ -422,6 +374,8 @@ export function TableView({
           initialSelect.current = range
           setActive({ row, col })
         }}
+        onHoverArm={armHover}
+        onHoverEnd={dismissHoverCard}
       />
     )
   }
@@ -450,15 +404,9 @@ export function TableView({
   const tableHeight = lastRow ? lastRow.top + lastRow.height - tableTop : 0
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: hover-intent delegation on a container — the cells carry their own semantics
-    // biome-ignore lint/a11y/useKeyWithMouseEvents: a pointer-only hover affordance; keyboard focus never reaches a resting cell
     <div
       className={`mdpm-tbl-wrap${drag ? ' mdpm-tbl-dragging' : ''}${resize ? ' mdpm-tbl-resizing' : ''}`}
       ref={wrapRef}
-      onMouseOver={onLinkOver}
-      onMouseOut={intent.cancel}
-      onMouseDownCapture={onLinkDown}
-      onClickCapture={onLinkClick}
       // A menu is opening, so whatever the pointer was about to raise must not arrive behind it.
       // Captured, because a cell's own menu handler claims the event before it could bubble here.
       onContextMenuCapture={dismissHoverCard}
