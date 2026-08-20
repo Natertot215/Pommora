@@ -134,7 +134,7 @@ On a page authored outside Pommora holding body markers, a trailing citations ru
 **Dead Vocabulary** *(what the closing sweep searches for)*
 
 - `rg -F "collapsedByDefault" Pommora/src` → expect 0. Legitimate hits: none; the flag is retired in Task 11.
-- `rg -F "footnoteDefinition" Pommora/src` → expect 0. Legitimate hits: none — the parser's node name never enters our code.
+- `rg -F "footnoteDefinition" Pommora/src` → expect 1. Legitimate hits: the boundary cross-check test, which reads the parser's own spans and is the one place the Global Constraints admit the node name.
 - Control: `rg -F "docScan" Pommora/src` → 43. Zero here means the sweep never ran.
 
 **Hazard Window:** Task 11 retires `collapsedByDefault` and Task 12 separates `md-foldable` into a chevron class and a heading-gesture class. Between them the fold system is mid-repair: **no task may add a fold kind, a fold-adjacent gesture, or a `md-foldable` consumer while the window is open**, and Phase 3's interaction pass waits for Task 12 rather than running mid-repair. Task 12 closes it.
@@ -912,6 +912,7 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 
 ### Rulings
 
+- **08-20-2026, Nathan:** Task 6's marker draws from the scan, not from the token pass — one `WidgetSpec` variant carrying the ordinal, emitted as the existing `widget` intent over the whole `[^label]`. The token spec stays for the resting cell and for code-mask exclusion. The token pass can only class content and hide markers, so it would have drawn the label's own text: `[^7]` reading 7 where R2 and Task 5's Must-agree require 2. **Revisit and flag this to the correctness review at Gate 2** rather than treating it as settled.
 - **08-20-2026, Nathan:** The `^`-leading link-label refusal lands in `shared/links.ts`'s `LINK_LABEL`, not in a counter-local copy. GFM reads `[^1](url)` as a reference plus prose in every consumer, so the counter, the editor's token layer and main's rename cascade all take the same narrowing; a private pattern would have been the hand-rolled parallel C1 exists to catch.
 
 - **08-20-2026, Nathan:** No statistics toggle. The citations section never counts; a marker counts its own source characters and zero words (`[^1]` four, `[^10]` five). 
@@ -932,6 +933,7 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 ### Deviations
 
 - **Task 1 — `contentStart` is absolute, not line-relative.** The Interfaces block described it as line-relative while the same block requires every offset to come out absolute, as the sibling readers do. Absolute is what the consumers want (the hide range, the guard's clamp), so the one clause loses to the rule.
+- **Gate 1 — the Dead Vocabulary line for `footnoteDefinition` expected zero and Task 1 mandates the test that produces one.** The cross-check asserts the scan's boundary against the parser's own spans, which is exactly the citing-the-parser case the Global Constraints admit; the sweep's expectation is corrected to one, named.
 - **Task 3 — five whole-object assertions gained `citations: 0`.** `PageStats` grew the field Task 13 consumes, so the suite's five `toEqual` object literals had to name it; every other pre-existing assertion is byte-identical and no expectation was weakened. Gate 1's additions-only check reads against that.
 - **Task 3 — the ContextPM `[assumed]` row was cleared here, not in Task 1.** The Made False table gives it to Task 1; it landed one commit late, inside the commit that carried the other statistics documentation.
 - **Task 1 — a table below a citation ends the run.** The parser absorbs `| a | b |` rows as lazy continuation; the house exclusion set owns those bytes, so the scan breaks the run there instead. The cross-check corpus excludes the shape, and the divergence is stated at `citationScan`.
