@@ -26,6 +26,15 @@ plausible from the outside. Reopen any of them with a reason, not with a fresh r
 - The two relocate drags' edge readers are not one function. The block drag reads a block's outer
   bottom above a gap; the list drag reads a line's inner right edge inside a box. Different edges,
   different conditions.
+- `.trash` and `.nexus/` are spelled at **9** and roughly **30** code sites, not 71 and 94. The
+  larger counts include every doc comment naming the folder, which is prose about the layout rather
+  than a second spelling of it.
+- No shared tested function computes a Pin/Unpin label — `shared/navRowMenu.ts` is types only. The
+  toggle wording that *did* have a shared home and a hand-rolled twin was Open / Open New Tab, and
+  the icon toggle's two spellings ran over opposite predicates.
+- `parentOf` has one definition and had five callers written by hand; the bare
+  `slice(0, lastIndexOf('/'))` those used eats a root-level name's last character, which no live
+  path reaches only because pages always sit inside a Collection.
 
 ### Decisions Taken
 
@@ -49,6 +58,12 @@ plausible from the outside. Reopen any of them with a reason, not with a fresh r
   changes how the panel looks, which is a design decision rather than a consolidation.
 - `PageHeader` stays driven rather than store-reading. A floating preview draws a page that is not
   the active one, so a header reading the active page would draw the wrong title.
+- The insert-an-id-at-an-index idiom stays written out. Its four sites differ in whether the id was
+  already removed and in whether the list is being built or replaced, so a shared helper would take
+  a flag for each — where `moveItem`'s five callers differ only in the lookup that produces their
+  indices, which is why that one earned a definition.
+- `Tables/operations.ts`'s `splice` helper is not `moveItem`. It is a mutable insert-and-delete over
+  a table's cells, arity included; the shared one lifts a single item immutably.
 - `embedWidget.tsx` is not split. The split is a move rather than a reduction, and the construct that
   would have reused its generic half — a document's footnotes section — is a fold region rather than
   a block widget.
