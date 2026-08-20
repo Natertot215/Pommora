@@ -2,7 +2,8 @@ import { useMemo } from 'react'
 import type { CollectionNode, SetNode } from '@shared/types'
 import { useSession } from '../../store'
 import { useActiveView } from './useActiveView'
-import { resolveContainerSchema, TableView } from './Table/TableView'
+import { TableView } from './Table/TableView'
+import { resolveContainerSchema } from './pipeline/pickView'
 import { CardsView } from './Cards/CardsView'
 
 export function ViewRenderer({ source }: { source: CollectionNode | SetNode }): React.JSX.Element {

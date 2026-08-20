@@ -3,7 +3,7 @@ import type { PropertyDefinition } from '@shared/properties'
 import type { SavedView } from '@shared/views'
 import { useSession } from '../../store'
 import { useViewEmbedScope } from '@renderer/Embeds/ViewEmbedScope'
-import { pickView } from './Table/TableView'
+import { pickView } from './pipeline/pickView'
 
 export function useActiveView(
   source: CollectionNode | SetNode,
