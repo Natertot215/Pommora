@@ -83,3 +83,24 @@
      clip past them without touching the horizontal truncation fade. */
   padding-block: 1px;
 }
+
+/* Title and location differ from each other by role, not by family — the same two tones and the
+   same glyph seat in both. */
+.page-card-title,
+.nav-gallery-title {
+  gap: 5px;
+  color: var(--label-primary);
+}
+
+/* The location line is NavCrumbs — the house breadcrumb formula (caption type, per-crumb icons,
+   › separators). */
+.page-card-loc,
+.nav-gallery-loc {
+  color: var(--label-secondary);
+}
+
+.page-card-title-icon,
+.nav-gallery-title-icon {
+  flex: 0 0 auto;
+  color: var(--label-secondary);
+}

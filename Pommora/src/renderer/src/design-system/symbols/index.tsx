@@ -223,7 +223,7 @@ const isIconSize = (v: unknown): v is IconSize => typeof v === 'string' && v in 
  * - **Named step** (`size="title3"`) routes to the icon-size token — set as the glyph's
  *   `font-size` while lucide stays at `1em`, so one source (`size.icon.*`) drives it.
  * - **Default** (`1em`) follows the context font-size (the type scale).
- * - **Number / CSS length** (`size="title2"`) passes straight through as an escape hatch.
+ * - **Number / CSS length** (`size={18}`) passes straight through as an escape hatch.
  * Color follows `currentColor` in every case.
  */
 export const Icon = forwardRef<

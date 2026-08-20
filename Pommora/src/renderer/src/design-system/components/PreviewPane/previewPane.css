@@ -204,11 +204,12 @@
   padding: 0;
   opacity: 0;
 }
+/* The in-flow strip is a column in the body row rather than an overlay, so it keeps its own
+   geometry: the row's stretch gives it its height, and the pane's inset is its width. */
 .ppane-side-left-inflow-resize,
 .ppane-side-right-inflow-resize {
   width: var(--ppane-side-inset);
   flex-shrink: 0;
-  cursor: ew-resize;
 }
 
 /* Edge-drag resize tracks the cursor 1:1 — nothing under the pane may lag behind it, the window

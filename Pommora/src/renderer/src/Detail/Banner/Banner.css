@@ -24,7 +24,7 @@
    (same Banner) stay identical. */
 .banner-title,
 .banner-empty-title {
-  font-size: var(--text-title1-size);
+  font-size: var(--container-title-size);
   font-weight: var(--weight-semibold);
   color: var(--label-primary);
   overflow: hidden;
@@ -65,6 +65,9 @@
    hits, so a right-click on empty overlay width still reaches the banner's Change/Remove menu.
    Size/weight/color re-skin the header to the banner-title look via its own surface knob. */
 .banner-title .detail-title {
+  /* Stated on the element, not inherited: DetailTitleHeader sets its own default on this same
+     class, and a property set on the element beats one coming down from the banner. */
+  --detail-title-size: var(--container-title-size);
   min-width: 0;
 }
 .banner-title .detail-title-icon,

@@ -16,7 +16,30 @@ export type EmbedAreaMenuAction = 'show-title' | 'new-view' | ViewStyleAction
 
 /** The heading levels an embed's title can be set to — the full six, unlike the block grip's
  *  picker, since an embed title is chrome rather than document structure. */
-export const EMBED_TITLE_SIZES = [1, 2, 3, 4, 5, 6] as const
+const EMBED_TITLE_SIZES = [1, 2, 3, 4, 5, 6] as const
+
+/** Which surface a container's views are picked from, and what each reads as. Checkboxes rather
+ *  than radios: the pair reads as two states of one setting. */
+const VIEW_STYLE_ROWS: readonly { label: string; style: ViewStyle }[] = [
+  { label: 'Dropdown', style: 'dropdown' },
+  { label: 'Toolbar', style: 'toolbar' },
+]
+
+/** The Style branch, identical wherever it is offered — the embed's area menu and the view button's
+ *  own menu set the same container config from it. A branch row never resolves its own action, so it
+ *  carries the leading leaf's: the leaf a person lands on is what comes back. */
+function styleRow<A extends ViewStyleAction>(current: ViewStyle): ActionItem<A> {
+  return {
+    label: 'Style',
+    action: 'style-dropdown' as A,
+    separatorBefore: true,
+    submenu: VIEW_STYLE_ROWS.map(({ label, style }) => ({
+      label,
+      action: `style-${style}` as A,
+      checked: current === style,
+    })),
+  }
+}
 
 /** The embed title row's chrome menu. Change Icon appears only while an icon is shown, since it
  *  has nothing to change otherwise. */
@@ -29,7 +52,9 @@ export function embedTitleMenuItems(
     ...(iconShown ? [{ label: 'Change Icon', action: 'change-icon' as const }] : []),
     {
       label: 'Title Size',
-      action: 'toggle-icon',
+      // A branch takes no action of its own; it carries the leading leaf's, so a host that ever
+      // resolves one lands on the row a person would have reached through it.
+      action: 'size-1',
       submenu: EMBED_TITLE_SIZES.map((n) => ({
         label: `Heading ${n}`,
         action: `size-${n}` as EmbedTitleMenuAction,
@@ -51,25 +76,9 @@ export function embedAreaMenuItems(current: {
   return [
     ...(current.titleShown ? [] : [{ label: 'Show Title', action: 'show-title' as const }]),
     { label: 'New View', action: 'new-view' },
-    {
-      label: 'Style',
-      action: 'new-view',
-      separatorBefore: true,
-      submenu: VIEW_STYLE_ROWS.map(({ label, style }) => ({
-        label,
-        action: `style-${style}` as ViewStyleAction,
-        checked: current.viewStyle === style,
-      })),
-    },
+    styleRow(current.viewStyle),
   ]
 }
-
-/** Which surface a container's views are picked from, and what each reads as. Checkboxes rather
- *  than radios: the pair reads as two states of one setting. */
-export const VIEW_STYLE_ROWS: readonly { label: string; style: ViewStyle }[] = [
-  { label: 'Dropdown', style: 'dropdown' },
-  { label: 'Toolbar', style: 'toolbar' },
-]
 
 /** The view button's own right-click menu — whether the button carries its view's title, over the
  *  same Style choice the embed offers. */
@@ -82,15 +91,6 @@ export function viewButtonMenuItems(current: {
       label: current.viewButton === 'labeled' ? 'Hide Title' : 'Show Title',
       action: 'toggle-title',
     },
-    {
-      label: 'Style',
-      action: 'toggle-title',
-      separatorBefore: true,
-      submenu: VIEW_STYLE_ROWS.map(({ label, style }) => ({
-        label,
-        action: `style-${style}` as ViewStyleAction,
-        checked: current.viewStyle === style,
-      })),
-    },
+    styleRow(current.viewStyle),
   ]
 }
