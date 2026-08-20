@@ -57,14 +57,10 @@ import { useSession } from '../store'
 import type { ConnectionsApi } from './connections'
 import { PageHeader } from './PageHeader'
 import { ZOOM_DEFAULT, zoomFontSize } from './zoom'
+import type { WarmSeam } from './warmSeam'
 import './Styles.css'
 
-/** The host binds `restore`/`capture` to a (tab, entity) identity at mount time — the mount-once
- *  effect freezes that binding, so a capture can never land under the NEXT tab's identity mid-switch. */
-export interface WarmSeam {
-  restore: () => { editorState?: unknown; scrollTop?: number } | undefined
-  capture: (state: { editorState: unknown; scrollTop: number }) => void
-}
+export type { WarmSeam } from './warmSeam'
 
 interface Props {
   initialBody: string
@@ -441,12 +437,8 @@ export function MarkdownEditor({
       {title !== undefined && path !== undefined && (
         <PageHeader
           ref={titleRef}
-          path={path}
-          title={title}
-          cover={cover}
+          page={{ path, title, cover, icon, iconHidden }}
           onRename={onRename ?? ((): void => {})}
-          icon={icon}
-          iconHidden={iconHidden}
           onToggleIcon={onToggleIcon}
           onEditIcon={onEditIcon ?? ((): void => {})}
         />

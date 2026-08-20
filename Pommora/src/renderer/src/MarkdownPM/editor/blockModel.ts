@@ -5,7 +5,7 @@
 // which the drag's self-drop guard relies on. Do not return an inclusive `to`.
 import { fenceRangesOf, parseListMarkerPrefixed, type CalloutLine } from '../detect'
 import type { DocScan } from '../decorations/intent'
-import { headingSections } from './folding'
+import { headingSections } from './headingScan'
 
 export type BlockKind =
   | 'heading'

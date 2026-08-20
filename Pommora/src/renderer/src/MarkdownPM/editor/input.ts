@@ -1,5 +1,5 @@
 import { EditorView, keymap } from '@codemirror/view'
-import { EditorSelection, Prec } from '@codemirror/state'
+import { Prec } from '@codemirror/state'
 import {
   continueListOnEnter,
   continueBlockquoteOnEnter,
@@ -109,37 +109,6 @@ export function refusedInAlias(doc: string, at: number, text: string): boolean {
   if (text !== ']') return false
   const ls = lineStartAt(doc, at)
   return aliasSpanAt(doc.slice(ls, lineEndAt(doc, at)), at - ls) !== null
-}
-
-/** Place the caret at `pos` and give the editor focus — the shared landing for chrome that hands
- *  the user back to typing (table exits, the list-glyph click). */
-export function focusAt(view: EditorView, pos: number): void {
-  view.dispatch({ selection: { anchor: pos } })
-  view.focus()
-}
-
-/** Seat the caret inside a span, selecting it when `to` differs. `assoc` is explicit for the bare
- *  caret: a position on the boundary of a replaced range draws no caret without it, and every span
- *  worth seating into here abuts hidden marker text. */
-export function focusRange(view: EditorView, from: number, to = from): void {
-  view.dispatch({
-    selection: from === to ? EditorSelection.cursor(from, 1) : EditorSelection.range(from, to),
-  })
-  view.focus()
-}
-
-/** Seat the caret at whichever end of `range` the pointer was nearer, for a press that clamped into
- *  a token it never visually touched. A hidden marker is zero width, so `posAtCoords` maps the space
- *  beside such a token onto offsets inside it; without this the caret lands mid-word somewhere the
- *  pointer never was. Reports whether it acted, so the handler knows to claim the press. */
-export function seatAtNearerEdge(
-  view: EditorView,
-  pos: number,
-  [from, to]: [number, number],
-): boolean {
-  if (pos <= from || pos >= to) return false
-  focusAt(view, pos - from < to - pos ? from : to)
-  return true
 }
 
 // Shift+Enter exits a construct (plain newline) — except inside a callout, where it stays in the box. If the

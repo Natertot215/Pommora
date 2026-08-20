@@ -4,7 +4,7 @@
 // embed. The claim (resolved + first-per-normalized-title) is claimedEmbeds — the same predicate
 // the token suppression reads, so the tile and the dim token can never disagree about a line.
 import { createRoot, type Root } from 'react-dom/client'
-import { createElement, Fragment, lazy, Suspense } from 'react'
+import { createElement, Fragment, lazy, Suspense, type ReactNode } from 'react'
 import {
   EditorSelection,
   EditorState,
@@ -26,7 +26,8 @@ import {
 } from '@codemirror/view'
 import { cx } from '@renderer/design-system/cx'
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
-import { TILE_MIN_PX } from '@renderer/design-system/tokens/size.css'
+import { clamp } from '@renderer/design-system/clamp'
+import { TILE_DEFAULT_PX, TILE_MIN_PX } from '@renderer/design-system/tokens/size.css'
 import { normalizeTitle, titleFromPath } from '@shared/connections'
 import '@renderer/design-system/tile-chassis.css'
 import { loneWebpageEmbed } from '@shared/webpageEmbed'
@@ -98,8 +99,29 @@ interface TileDom extends HTMLElement {
   _root?: Root
 }
 
-/** The height a tile reports and occupies before a persisted one exists. */
-const TILE_DEFAULT_PX = 320
+/** Mount a tile's tree into its own React root, created on first render. Both tiles lazy-load their
+ *  surface, so the body sits under a Suspense boundary — and the resize handle deliberately sits
+ *  OUTSIDE it: the handle depends on nothing that suspends and must exist through the loading frame
+ *  too. */
+function mountTile(dom: TileDom, body: ReactNode, handle: ReactNode): void {
+  let root = dom._root
+  if (!root) {
+    root = createRoot(dom)
+    dom._root = root
+  }
+  root.render(
+    createElement(
+      Fragment,
+      null,
+      createElement(
+        Suspense,
+        { fallback: null },
+        createElement('div', { className: 'tile-chassis-body' }, body),
+      ),
+      handle,
+    ),
+  )
+}
 
 // CM hands a tile's DOM to its successor widget on rebuilds and relocations, and calls destroy
 // BEFORE detaching on a real delete — so connectivity is only decidable after the update settles:
@@ -206,43 +228,24 @@ class EmbedTileWidget extends WidgetType {
     )
     if (this.height !== undefined) dom.style.height = `${this.height}px`
     else dom.style.removeProperty('height')
-    let root = dom._root
-    if (!root) {
-      root = createRoot(dom)
-      dom._root = root
-    }
     const host = view.state.facet(embedHost)
-    const conn = host.getConn()
-    root.render(
-      createElement(
-        Fragment,
-        null,
-        createElement(
-          Suspense,
-          { fallback: null },
-          createElement(
-            'div',
-            { className: 'tile-chassis-body' },
-            createElement(LazyPageEmbed, {
-              path: this.path,
-              editing: this.editing,
-              onBeginEdit: () => {
-                if (this.interactive) view.dispatch({ effects: setEmbedEditing.of(this.path) })
-              },
-              connections: conn,
-              locked: !this.interactive,
-              ancestors: this.ancestors,
-              chrome: 'page',
-              warm: tileWarmSeam([...this.ancestors, this.path]),
-            }),
-          ),
-        ),
-        // Outside the Suspense boundary — the handle depends on nothing that suspends and must
-        // exist through the loading frame too.
-        this.interactive && host.saveHeights
-          ? createElement(EmbedResizeHandle, { view, targetId: this.targetId })
-          : null,
-      ),
+    mountTile(
+      dom,
+      createElement(LazyPageEmbed, {
+        path: this.path,
+        editing: this.editing,
+        onBeginEdit: () => {
+          if (this.interactive) view.dispatch({ effects: setEmbedEditing.of(this.path) })
+        },
+        connections: host.getConn(),
+        locked: !this.interactive,
+        ancestors: this.ancestors,
+        chrome: 'page',
+        warm: tileWarmSeam([...this.ancestors, this.path]),
+      }),
+      this.interactive && host.saveHeights
+        ? createElement(EmbedResizeHandle, { view, targetId: this.targetId })
+        : null,
     )
   }
 
@@ -371,39 +374,22 @@ class WebpageTileWidget extends WidgetType {
       document.documentElement.clientHeight,
     )
     const wanted = this.height ?? TILE_DEFAULT_PX
-    const capped =
-      port > 0 ? Math.max(TILE_MIN_PX, Math.min(wanted, port - WEB_FIT_MARGIN)) : wanted
+    const capped = port > 0 ? clamp(port - WEB_FIT_MARGIN, TILE_MIN_PX, wanted) : wanted
     dom.style.height = `${capped}px`
-    let root = dom._root
-    if (!root) {
-      root = createRoot(dom)
-      dom._root = root
-    }
     const host = view.state.facet(embedHost)
-    root.render(
-      createElement(
-        Fragment,
-        null,
-        createElement(
-          Suspense,
-          { fallback: null },
-          createElement(
-            'div',
-            { className: 'tile-chassis-body' },
-            createElement(LazyWebpageEmbed, {
-              url: this.url,
-              label: this.label,
-              visible: this.pageSurface && dom._visible === true,
-              refocusHost: () => view.focus(),
-            }),
-          ),
-        ),
-        // Heights ride the same persisted blob as page tiles, URL-keyed — the blob's keys are
-        // free by design. Outside the Suspense boundary, as on the page tile.
-        this.pageSurface && host.saveHeights
-          ? createElement(EmbedResizeHandle, { view, targetId: this.url })
-          : null,
-      ),
+    mountTile(
+      dom,
+      createElement(LazyWebpageEmbed, {
+        url: this.url,
+        label: this.label,
+        visible: this.pageSurface && dom._visible === true,
+        refocusHost: () => view.focus(),
+      }),
+      // Heights ride the same persisted blob as page tiles, URL-keyed — the blob's keys are free
+      // by design.
+      this.pageSurface && host.saveHeights
+        ? createElement(EmbedResizeHandle, { view, targetId: this.url })
+        : null,
     )
   }
 

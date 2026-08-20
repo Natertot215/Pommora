@@ -1,7 +1,7 @@
 import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { closeActiveHoverCard } from '@renderer/Embeds/ConnectionHoverCard'
-import { seatAtNearerEdge } from './input'
+import { seatAtNearerEdge } from './caretSeat'
 
 /** KNOB — the dwell before a connection's preview blooms. Exported so tests wait on the real value
  *  rather than restating it: a test that hard-codes the number goes red the moment it's tuned. */

@@ -7,7 +7,7 @@ import { parseListMarkerPrefixed as parseListMarker } from '../detect'
 import { docScan, docString } from './docCache'
 import { forEachLine, nearestBoundary, shadeField, type Boundary } from './dragChrome'
 import { beginRelocateDrag, editorGestureCleanup } from './EditorGesture'
-import { focusAt } from './input'
+import { focusAt } from './caretSeat'
 import { lineElementAt } from './lineDom'
 import {
   subBlockAt,
