@@ -18,6 +18,11 @@ import { cx } from '@renderer/design-system/cx'
 const SHAPE = { pill: chipPill, label: chipLabel } as const
 export type ChipShape = keyof typeof SHAPE
 
+/** The class a shape wears, for the surfaces that dress something to READ as a chip without being
+ *  one — the naming caret standing in a chip's seat. Reading it here is what keeps the caret and
+ *  the chip it becomes from wearing different shapes. */
+export const chipShapeClass = (shape: ChipShape): string => SHAPE[shape]
+
 /** One source, so no surface renders a status as a label by accident. */
 export function chipShapeForType(type: string): ChipShape {
   return type === 'status' ? 'pill' : 'label'
