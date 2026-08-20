@@ -379,10 +379,13 @@ export function parseListMarkerPrefixed(line: string): ListMarker | null {
 
 const headingPrefilter = /^[ ]{0,3}#{1,6}([ \t]|$)/
 const blockquotePrefilter = /^[ \t]*>+([ \t]|$)/
+// Three or more of ONE marker, optionally spaced. A first-character test admits every `- item` in
+// the document and pays a full parse for each, which is what made a bulleted page the expensive
+// case on a per-keystroke scan; the parser stays the authority for whatever this admits.
+const thematicBreakPrefilter = /^[ ]{0,3}([-*_])[ \t]*(?:\1[ \t]*){2,}$/
 
 export function isThematicBreakLine(line: string): boolean {
-  const t = line.trim()
-  if (t.length < 3 || (t[0] !== '-' && t[0] !== '*' && t[0] !== '_')) return false
+  if (!thematicBreakPrefilter.test(line)) return false
   return parse(line).children.some((n) => n.type === 'thematicBreak')
 }
 
