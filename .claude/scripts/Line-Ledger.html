@@ -1,0 +1,589 @@
+<title>Pommora Line Ledger</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+
+<style>
+  /* Pommora is a dark-only app. Its own tokens are the palette; the page commits to that
+     world rather than inventing a light counterpart the design system has no values for. */
+  :root {
+    --bg-window: #1A1A1C;
+    --surface-primary: #202022;
+    --surface-secondary: #2A2A2E;
+    --surface-tertiary: #3A3A3E;
+
+    --ink-primary: #FFFFFF;
+    --ink-control: rgba(255, 255, 255, 0.80);
+    --ink-secondary: rgba(255, 255, 255, 0.65);
+    --ink-tertiary: rgba(255, 255, 255, 0.35);
+
+    --hairline: rgba(255, 255, 255, 0.09);
+
+    --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+    /* Pommora's type scale, verbatim. */
+    --large-title: 26px/32px;
+    --title-1: 22px/26px;
+    --title-2: 17px/22px;
+    --body: 13px/16px;
+    --caption: 11px/14px;
+    --footnote: 10px/13px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg-window);
+    color: var(--ink-control);
+    font-family: var(--font);
+    font: var(--body) var(--font);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 56px 24px 88px;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+  }
+
+  /* ---- masthead ---- */
+
+  .masthead { display: flex; flex-direction: column; gap: 20px; }
+
+  .eyebrow {
+    font: var(--footnote) var(--font);
+    font-weight: 500;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--ink-tertiary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .eyebrow .sha { font-family: var(--mono); letter-spacing: 0; text-transform: none; }
+  .eyebrow .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; }
+
+  h1 {
+    margin: 0;
+    font: var(--large-title) var(--font);
+    font-weight: 600;
+    color: var(--ink-primary);
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+
+  .standfirst {
+    margin: 0;
+    max-width: 62ch;
+    font: var(--body) var(--font);
+    color: var(--ink-secondary);
+  }
+
+  .figures {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 40px;
+    padding-top: 8px;
+  }
+  .figure { display: flex; flex-direction: column; gap: 3px; }
+  .figure .n {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 30px;
+    line-height: 34px;
+    font-weight: 500;
+    color: var(--ink-primary);
+    letter-spacing: -0.02em;
+  }
+  .figure .n.sub { color: var(--ink-control); font-size: 22px; line-height: 34px; }
+  .figure .k {
+    font: var(--footnote) var(--font);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-tertiary);
+  }
+
+  /* ---- chart ---- */
+
+  .plot {
+    background: var(--surface-primary);
+    border: 1px solid var(--hairline);
+    border-radius: 12px;
+    padding: 20px 20px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .plot-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .plot-head h2 {
+    margin: 0;
+    font: var(--title-2) var(--font);
+    font-weight: 600;
+    color: var(--ink-primary);
+  }
+  .plot-head .hint { font: var(--caption) var(--font); color: var(--ink-tertiary); }
+
+  .chart-wrap { position: relative; overflow-x: auto; }
+  svg.chart { display: block; width: 100%; height: auto; min-width: 620px; }
+
+  .grid line { stroke: rgba(255, 255, 255, 0.06); stroke-width: 1; }
+  .axis text {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    fill: var(--ink-tertiary);
+    font-variant-numeric: tabular-nums;
+  }
+  .band { stroke: var(--surface-primary); stroke-width: 2; stroke-linejoin: round; }
+  .lbl {
+    font-family: var(--font);
+    font-size: 10px;
+    font-weight: 500;
+    fill: var(--ink-control);
+  }
+  .crosshair { stroke: rgba(255, 255, 255, 0.30); stroke-width: 1; }
+
+  .tip {
+    position: absolute;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 120ms ease;
+    background: var(--surface-secondary);
+    border: 1px solid var(--surface-tertiary);
+    border-radius: 10px;
+    padding: 10px 12px;
+    min-width: 190px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
+    z-index: 4;
+  }
+  .tip.on { opacity: 1; }
+  .tip .when {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-tertiary);
+    display: block;
+    margin-bottom: 7px;
+  }
+  .tip .r {
+    display: grid;
+    grid-template-columns: 8px 1fr auto;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    line-height: 17px;
+  }
+  .tip .sw { width: 8px; height: 8px; border-radius: 2px; }
+  .tip .r span:nth-child(2) { color: var(--ink-secondary); }
+  .tip .r span:last-child {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-primary);
+  }
+  .tip .tot {
+    margin-top: 7px;
+    padding-top: 7px;
+    border-top: 1px solid var(--hairline);
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+  }
+  .tip .tot b { font-family: var(--mono); font-weight: 500; color: var(--ink-primary); }
+  .tip .tot span { color: var(--ink-tertiary); }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    padding-top: 2px;
+  }
+  .legend .item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font: var(--caption) var(--font);
+    color: var(--ink-secondary);
+  }
+  .legend .sw { width: 9px; height: 9px; border-radius: 2px; flex: none; }
+
+  /* ---- ledger ---- */
+
+  section.ledger { display: flex; flex-direction: column; gap: 16px; }
+  section.ledger > h2 {
+    margin: 0;
+    font: var(--title-2) var(--font);
+    font-weight: 600;
+    color: var(--ink-primary);
+  }
+  section.ledger > p {
+    margin: 0;
+    max-width: 62ch;
+    font: var(--body) var(--font);
+    color: var(--ink-secondary);
+  }
+
+  .table-wrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; min-width: 660px; }
+
+  thead th {
+    font: var(--footnote) var(--font);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-tertiary);
+    text-align: right;
+    padding: 0 0 9px 22px;
+    border-bottom: 1px solid var(--hairline);
+    white-space: nowrap;
+  }
+  thead th:first-child { text-align: left; padding-left: 0; }
+
+  tbody td {
+    padding: 13px 0;
+    border-bottom: 1px solid var(--hairline);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    vertical-align: top;
+  }
+  tbody td:first-child { text-align: left; padding-right: 20px; width: 100%; }
+
+  .area-name {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink-primary);
+  }
+  .area-name .sw { width: 9px; height: 9px; border-radius: 2px; flex: none; }
+  .area-note {
+    margin: 5px 0 0 18px;
+    max-width: 58ch;
+    font: var(--caption) var(--font);
+    color: var(--ink-tertiary);
+  }
+
+  .bar {
+    margin: 9px 0 0 18px;
+    height: 3px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.06);
+    max-width: 320px;
+    overflow: hidden;
+  }
+  .bar i { display: block; height: 100%; border-radius: 2px; }
+
+  td.num { font-family: var(--mono); font-size: 13px; color: var(--ink-primary); padding-left: 22px; }
+  td.num small {
+    display: block;
+    font-family: var(--font);
+    font-size: 10px;
+    color: var(--ink-tertiary);
+    margin-top: 3px;
+    font-variant-numeric: normal;
+  }
+  td.dim { color: var(--ink-secondary); }
+  td.quiet { color: var(--ink-tertiary); }
+
+  tfoot td {
+    padding: 14px 0 0;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--ink-primary);
+    padding-left: 22px;
+  }
+  tfoot td:first-child {
+    text-align: left;
+    font-family: var(--font);
+    font-weight: 600;
+    padding-left: 0;
+  }
+
+  /* ---- footer ---- */
+
+  footer {
+    border-top: 1px solid var(--hairline);
+    padding-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  footer p { margin: 0; max-width: 66ch; font: var(--caption) var(--font); color: var(--ink-tertiary); }
+  footer code {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--ink-secondary);
+    background: var(--surface-primary);
+    border: 1px solid var(--hairline);
+    border-radius: 4px;
+    padding: 1px 5px;
+  }
+
+  @media (max-width: 640px) {
+    .page { padding: 36px 16px 64px; gap: 32px; }
+    .figure .n { font-size: 26px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+
+<div class="page">
+  <header class="masthead">
+    <div class="eyebrow">
+      <span>Pommora</span><span class="dot"></span>
+      <span>main</span><span class="dot"></span>
+      <span class="sha" id="sha"></span>
+    </div>
+    <h1>Where Pommora's code actually lives</h1>
+    <p class="standfirst">
+      Every line of TypeScript, TSX and CSS in the app, counted with comments, blanks, tests and the
+      component showcase left out. Seven areas, from the React pivot on July 5th to today. The
+      numbers are what the cleanup queue moves against.
+    </p>
+    <div class="figures">
+      <div class="figure"><span class="n" id="fTotal"></span><span class="k">Real code lines</span></div>
+      <div class="figure"><span class="n sub" id="fGrowth"></span><span class="k">Since the pivot</span></div>
+      <div class="figure"><span class="n sub" id="fDays"></span><span class="k">Days of build</span></div>
+      <div class="figure"><span class="n sub" id="fQueued"></span><span class="k">Queued for removal</span></div>
+    </div>
+  </header>
+
+  <div class="plot">
+    <div class="plot-head">
+      <h2>The stack, day by day</h2>
+      <span class="hint">Hover for a day's breakdown</span>
+    </div>
+    <div class="chart-wrap" id="wrap">
+      <svg class="chart" id="chart" viewBox="0 0 940 380" role="img"
+           aria-label="Stacked area chart of Pommora's code lines by area from July 5 to August 20, 2026, growing from about 25,800 to 62,500 lines."></svg>
+      <div class="tip" id="tip"></div>
+    </div>
+    <div class="legend" id="legend"></div>
+  </div>
+
+  <section class="ledger">
+    <h2>The seven areas</h2>
+    <p>
+      Share of the codebase, how much each has grown, and what the cohesion queue would take off it.
+      The queue's job is that each fact is stated once — the lines it removes are the by-product, not
+      the target, which is why the removal column is small next to the totals beside it.
+    </p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Area</th>
+            <th>Lines</th>
+            <th>Share</th>
+            <th>Growth</th>
+            <th>Removed</th>
+            <th>Queued</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+        <tfoot id="foot"></tfoot>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    <p>
+      Counted by <code>.claude/scripts/loc.py</code> against the working tree. Re-run it and republish
+      this page to move the numbers; the Removed column measures each area against the baseline frozen
+      at the commit named above, so a cleanup session shows up there.
+    </p>
+    <p>
+      Excluded: <code>*.test.ts</code>, <code>*.d.ts</code>, the deployed component showcase, test
+      fixtures, <code>node_modules</code>, build output, and every comment and blank line. Included:
+      the Electron main process, the preload bridge, the shared contract, and the whole renderer.
+    </p>
+  </footer>
+</div>
+
+<script id="data" type="application/json">{"areas":["Views & Detail Pane","Main Process","Editor \u2014 MarkdownPM","Design System","App Chrome","Surfaces & Embeds","Shared Contract"],"series":[{"d":"2026-07-05","v":[7085,5117,5574,4540,2234,0,1295]},{"d":"2026-07-06","v":[7645,5334,5574,4801,2523,0,1369]},{"d":"2026-07-07","v":[8031,5372,5574,4880,2523,0,1394]},{"d":"2026-07-08","v":[8330,5524,5574,5006,2694,0,1417]},{"d":"2026-07-09","v":[9510,5535,5573,5010,2814,0,1461]},{"d":"2026-07-10","v":[9612,5535,5573,5010,2814,0,1465]},{"d":"2026-07-13","v":[10000,6049,5609,5206,2855,3062,1674]},{"d":"2026-07-14","v":[10056,6180,5596,5205,3596,3058,1692]},{"d":"2026-07-16","v":[11682,7815,5891,5912,6509,3683,1955]},{"d":"2026-07-17","v":[11779,7973,5920,6017,7014,4714,2002]},{"d":"2026-07-18","v":[11779,7973,5920,6017,7034,4714,2002]},{"d":"2026-07-21","v":[13974,8030,5970,6563,7440,4697,2122]},{"d":"2026-07-22","v":[14151,9219,5970,6544,7453,4712,2343]},{"d":"2026-07-23","v":[14190,9084,5970,6662,7565,4719,2291]},{"d":"2026-07-24","v":[14190,9084,5970,6662,7565,4719,2291]},{"d":"2026-07-25","v":[14409,9083,5967,7038,7407,4506,2290]},{"d":"2026-07-26","v":[15611,9012,5967,7155,7411,4508,2272]},{"d":"2026-07-27","v":[15567,8364,5898,7192,7343,4564,2217]},{"d":"2026-07-28","v":[15573,7269,5898,7190,7277,4488,2215]},{"d":"2026-07-29","v":[15605,7187,5898,7182,7262,4488,2192]},{"d":"2026-07-30","v":[15669,7309,5911,7190,7414,4513,2236]},{"d":"2026-07-31","v":[15670,7029,5911,7190,7304,4513,2188]},{"d":"2026-08-01","v":[15670,8296,5911,7190,7302,4513,2224]},{"d":"2026-08-02","v":[15852,8296,5911,7193,7302,4513,2228]},{"d":"2026-08-03","v":[15850,8296,6188,7198,7302,4512,2228]},{"d":"2026-08-04","v":[15882,8381,7193,7221,7335,4674,2251]},{"d":"2026-08-05","v":[15931,8404,7228,7226,7332,4950,2266]},{"d":"2026-08-06","v":[16476,8341,7260,7253,7382,5007,2263]},{"d":"2026-08-07","v":[16469,8341,7216,7272,7369,4987,2337]},{"d":"2026-08-08","v":[16488,8321,7271,7430,7420,4987,2325]},{"d":"2026-08-09","v":[16510,8321,7279,7430,7421,4987,2325]},{"d":"2026-08-10","v":[16905,8405,7348,7692,7402,4975,2368]},{"d":"2026-08-11","v":[17499,8409,7348,7699,7611,4975,2373]},{"d":"2026-08-12","v":[17505,8444,7952,7702,7646,4981,2444]},{"d":"2026-08-13","v":[17716,8669,8004,7750,7707,4988,2543]},{"d":"2026-08-14","v":[18387,8686,7961,7847,7991,4967,2656]},{"d":"2026-08-15","v":[18396,8797,8359,7847,8012,4973,2895]},{"d":"2026-08-16","v":[18407,8878,8407,7860,8078,4978,3018]},{"d":"2026-08-17","v":[18377,10059,8407,7860,7713,4974,3515]},{"d":"2026-08-18","v":[18659,10377,8745,7916,7746,5438,3621]},{"d":"2026-08-19","v":[18619,10146,8786,8026,7690,5501,3773]},{"d":"2026-08-20","v":[18590,10163,8766,8069,7679,5429,3831]}],"colors":["#1C7629","#075CB2","#8C7606","#DC519F","#B26F07","#A24CCE","#D93B31"],"queued":[350,0,0,0,0,0,0],"notes":["The two view hosts remain \u2014 roughly 150 lines of identical setup between Table and Cards.","One file holds about a hundred and ten channel implementations; the split moves lines rather than removing them.","Reads one cached scan per document. Footnotes lands here next.","Tokens, glass, symbols, and the drag engine. Shared by everything above it.","Tabs, sidebar, breadcrumbs, search, and the store the whole renderer reads.","The dashboard tiles, the floating preview, and the web embed framework.","The contract both processes import. Small on purpose."],"baseline":[18579,10163,8768,8069,7674,5490,3800],"head":"17548b78"}</script>
+<script>
+  const D = JSON.parse(document.getElementById('data').textContent);
+  const { areas, series, colors, queued, notes, baseline, head } = D;
+  const N = areas.length;
+  const last = series[series.length - 1].v;
+  const first = series[0].v;
+  const sum = a => a.reduce((x, y) => x + y, 0);
+  const fmt = n => n.toLocaleString('en-US');
+
+  document.getElementById('sha').textContent = head;
+  document.getElementById('fTotal').textContent = fmt(sum(last));
+  document.getElementById('fGrowth').textContent = '+' + fmt(sum(last) - sum(first));
+  document.getElementById('fDays').textContent = String(
+    Math.round((new Date(series[series.length - 1].d) - new Date(series[0].d)) / 864e5)
+  );
+  document.getElementById('fQueued').textContent = '−' + fmt(sum(queued));
+
+  /* ---------- chart ---------- */
+
+  const W = 940, H = 380;
+  const M = { t: 12, r: 172, b: 26, l: 46 };
+  const iw = W - M.l - M.r, ih = H - M.t - M.b;
+
+  const totals = series.map(s => sum(s.v));
+  const yMax = Math.ceil(Math.max(...totals) / 10000) * 10000;
+  const x = i => M.l + (i / (series.length - 1)) * iw;
+  const y = v => M.t + ih - (v / yMax) * ih;
+
+  // Cumulative upper edge of each band, bottom of the stack first.
+  const edges = [];
+  for (let k = 0; k < N; k++) {
+    edges.push(series.map((s, i) => {
+      let acc = 0;
+      for (let j = 0; j <= k; j++) acc += s.v[j];
+      return acc;
+    }));
+  }
+
+  const svg = document.getElementById('chart');
+  const ns = 'http://www.w3.org/2000/svg';
+  const el = (t, a) => { const e = document.createElementNS(ns, t); for (const k in a) e.setAttribute(k, a[k]); return e; };
+
+  // grid + y axis
+  const g = el('g', { class: 'grid' });
+  const ax = el('g', { class: 'axis' });
+  for (let v = 0; v <= yMax; v += 10000) {
+    g.appendChild(el('line', { x1: M.l, x2: M.l + iw, y1: y(v), y2: y(v) }));
+    const t = el('text', { x: M.l - 9, y: y(v) + 3, 'text-anchor': 'end' });
+    t.textContent = v === 0 ? '0' : (v / 1000) + 'k';
+    ax.appendChild(t);
+  }
+  svg.appendChild(g);
+
+  // bands, top of the stack painted first so lower ones sit over their own edges
+  for (let k = N - 1; k >= 0; k--) {
+    const lower = k === 0 ? series.map(() => 0) : edges[k - 1];
+    let dd = 'M' + x(0) + ',' + y(edges[k][0]);
+    for (let i = 1; i < series.length; i++) dd += 'L' + x(i) + ',' + y(edges[k][i]);
+    for (let i = series.length - 1; i >= 0; i--) dd += 'L' + x(i) + ',' + y(lower[i]);
+    svg.appendChild(el('path', { d: dd + 'Z', fill: colors[k], class: 'band' }));
+  }
+
+  // x axis — first, a few interior ticks, last
+  const marks = [0, Math.round(series.length * 0.25), Math.round(series.length * 0.5), Math.round(series.length * 0.75), series.length - 1];
+  for (const i of marks) {
+    const t = el('text', { x: x(i), y: H - 8, 'text-anchor': i === 0 ? 'start' : i === series.length - 1 ? 'end' : 'middle' });
+    const [, mo, da] = series[i].d.split('-');
+    t.textContent = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][+mo] + ' ' + (+da);
+    ax.appendChild(t);
+  }
+  svg.appendChild(ax);
+
+  // direct labels at the right edge, nudged apart so none collide
+  const seats = [];
+  for (let k = 0; k < N; k++) {
+    const lower = k === 0 ? 0 : edges[k - 1][series.length - 1];
+    seats.push({ k, y: (y(edges[k][series.length - 1]) + y(lower)) / 2 });
+  }
+  seats.sort((a, b) => a.y - b.y);
+  const MINGAP = 15;
+  for (let i = 1; i < seats.length; i++) if (seats[i].y - seats[i - 1].y < MINGAP) seats[i].y = seats[i - 1].y + MINGAP;
+  for (const s of seats) {
+    const gx = M.l + iw + 12;
+    svg.appendChild(el('rect', { x: gx, y: s.y - 4.5, width: 9, height: 9, rx: 2, fill: colors[s.k] }));
+    const t = el('text', { x: gx + 14, y: s.y + 3.5, class: 'lbl' });
+    t.textContent = areas[s.k];
+    svg.appendChild(t);
+  }
+
+  const cross = el('line', { class: 'crosshair', y1: M.t, y2: M.t + ih, opacity: 0 });
+  svg.appendChild(cross);
+
+  /* ---------- hover ---------- */
+
+  const tip = document.getElementById('tip');
+  const wrap = document.getElementById('wrap');
+
+  function show(i, clientX) {
+    const s = series[i];
+    let html = '<span class="when">' + s.d + '</span>';
+    for (let k = N - 1; k >= 0; k--) {
+      html += '<div class="r"><span class="sw" style="background:' + colors[k] + '"></span>'
+        + '<span>' + areas[k] + '</span><span>' + fmt(s.v[k]) + '</span></div>';
+    }
+    html += '<div class="tot"><span>Total</span><b>' + fmt(sum(s.v)) + '</b></div>';
+    tip.innerHTML = html;
+    tip.classList.add('on');
+
+    cross.setAttribute('opacity', 1);
+    cross.setAttribute('x1', x(i));
+    cross.setAttribute('x2', x(i));
+
+    const wr = wrap.getBoundingClientRect();
+    const px = clientX - wr.left + wrap.scrollLeft;
+    const tw = tip.offsetWidth;
+    tip.style.left = Math.max(4, Math.min(px + 16, wrap.scrollWidth - tw - 4)) + 'px';
+    tip.style.top = '10px';
+  }
+
+  function hide() { tip.classList.remove('on'); cross.setAttribute('opacity', 0); }
+
+  svg.addEventListener('pointermove', e => {
+    const r = svg.getBoundingClientRect();
+    const vx = ((e.clientX - r.left) / r.width) * W;
+    if (vx < M.l - 8 || vx > M.l + iw + 8) return hide();
+    const i = Math.max(0, Math.min(series.length - 1, Math.round(((vx - M.l) / iw) * (series.length - 1))));
+    show(i, e.clientX);
+  });
+  svg.addEventListener('pointerleave', hide);
+
+  /* ---------- legend ---------- */
+
+  const legend = document.getElementById('legend');
+  for (let k = N - 1; k >= 0; k--) {
+    const d = document.createElement('div');
+    d.className = 'item';
+    d.innerHTML = '<span class="sw" style="background:' + colors[k] + '"></span>' + areas[k];
+    legend.appendChild(d);
+  }
+
+  /* ---------- ledger ---------- */
+
+  const rows = document.getElementById('rows');
+  const total = sum(last);
+  const order = last.map((v, k) => k).sort((a, b) => last[b] - last[a]);
+
+  for (const k of order) {
+    const share = (last[k] / total) * 100;
+    const grown = last[k] - first[k];
+    const removed = baseline[k] - last[k];
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td>' +
+        '<div class="area-name"><span class="sw" style="background:' + colors[k] + '"></span>' + areas[k] + '</div>' +
+        '<p class="area-note">' + notes[k] + '</p>' +
+        '<div class="bar"><i style="width:' + share.toFixed(1) + '%;background:' + colors[k] + '"></i></div>' +
+      '</td>' +
+      '<td class="num">' + fmt(last[k]) + '</td>' +
+      '<td class="num dim">' + share.toFixed(1) + '%</td>' +
+      '<td class="num dim">' + (grown >= 0 ? '+' : '−') + fmt(Math.abs(grown)) + '</td>' +
+      '<td class="num ' + (removed > 0 ? '' : 'quiet') + '">' + (removed > 0 ? '−' + fmt(removed) : '—') + '</td>' +
+      '<td class="num ' + (queued[k] ? '' : 'quiet') + '">' + (queued[k] ? '−' + fmt(queued[k]) : '—') + '</td>';
+    rows.appendChild(tr);
+  }
+
+  const removedTotal = sum(baseline) - total;
+  document.getElementById('foot').innerHTML =
+    '<tr><td>Whole app</td>' +
+    '<td>' + fmt(total) + '</td><td>100%</td>' +
+    '<td>+' + fmt(total - sum(first)) + '</td>' +
+    '<td>' + (removedTotal > 0 ? '−' + fmt(removedTotal) : '—') + '</td>' +
+    '<td>−' + fmt(sum(queued)) + '</td></tr>';
+</script>

@@ -9,7 +9,7 @@ The one construct the Subfield still counts as source is a Markdown table, and t
 ### Immediate Work
 
 - [ ] MarkdownPM Footnotes → Plan & Execution. The decision log at [[Footnotes — Decision Log]] is the settled contract, one `[assumed]` entry (C-3's clear-on-default) pending Nathan's word. Every seam it named is in place and the editor's cleanup is closed, so nothing blocks it.
-- [ ] What is left of the cohesion queue at [[Cohesive-Cleanup]] — the view host under Table and Cards, the drag adapters' remaining frame, Table's column readers, and the derived state held as state. Ten of its items closed (→ PM-111); these four did not, and none of them touches MarkdownPM's core. What is structural rather than session-sized sits in §The Boring Work.
+- [ ] What is left of the cohesion queue at [[Cohesive-Cleanup]] — the view host under Table and Cards, the drag adapters' remaining frame, Table's column readers, and the derived state held as state. Ten of its items closed; these four did not, and none of them touches MarkdownPM's core. What is structural rather than session-sized sits in §The Boring Work.
 
 ### Pending Focuses
 
@@ -80,14 +80,6 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 
 ### Recent Work
 
-#### PM-111 || The Cohesion Queue's Session-Sized Half
-
-Four constructs that existed twice became one apiece: the two option-reorder hooks, where the flat list turned out to be the grouped one's single-group case; the option row both editors drew; the engine under the Settings properties pane and the preview inspector, which now sits beside the value primitives it always used; and the two container resolvers that had been living inside a 1,943-line view component, whose move closed the last import cycle in the renderer. The panes keep their eight behavioral differences, and the one that reads as an accident — whether an unfilled Context row pre-shows — is commented on both sides as the decision it is.
-
-Three action vocabularies now reach the code that spends them. The editor's menu had no type at all, so main could name a row the editor had no branch for and it would compile, pop, be clicked, and do nothing; the vocabulary is const arrays in shared driving both the types and the runtime membership tests, and adding an unhandled row fails the build. One dispatch could write a setting nobody picked, which was the only place in the app where a missed action did something rather than nothing.
-
-Seven defects closed, five of them found by reading. Clear and Remove were one act in the properties pane, against the contract stated three lines above the branch. Assigning a Space closed the picker built to stay open for it. And the Subfield's counter — which hand-rolled nine markdown regexes that all existed canonically — miscounted a checkbox item, an arrow item, a nested quote, a page embed, a callout tag and every masked construct, while a stray backtick pair swallowed the lines between them. It reads the editor's own detectors now, and the parse it was paying for every bulleted line is gone, which took a 500-line outline from 31ms per edit to under one and halved the editor's own per-keystroke scan on the way.
-
 #### PM-110 || The Cohesion Pass
 
 An eight-agent read-only sweep produced a catalog of cohesion debt, and the sessions against it closed seven of its sections — the same app with fewer places to state the same thing twice, doing less work to say it. Glyph sizes stopped being numbers and became a ladder mirroring the type ramp name for name; four shapes that existed twice became one apiece; the page menu's template and the row menu's merged, and the six editor chords stopped living in two spellings that nothing tied together. Main's costs came down where whole-nexus work was being paid for single-field edits — a recolored checkbox no longer rebuilds every Collection, eight settings readers moved onto the tree the walk already decoded, and every corpus enumeration prunes `.trash` rather than walking it in full to discard it.
@@ -107,6 +99,10 @@ Retention spans tab switches: the detail pane holds page surfaces per tab and pa
 #### PM-107 || Settings' Scaffolding
 
 The Settings window gained the foundation settings accumulate into: one roster replacing the rail list and body map that were keyed by the same name, where a leaf declares its label, glyph, foot placement, and either named sections of rows or a surface of its own — never both, enforced at compile time. The rail seats General, Interface, Navigation, Appearance, Files & Links, Properties, Pages & Editor, Automations and Shortcuts, with Trash anchored below its separator; Appearance, Properties and Automations are seated and empty. Two settings joined the personalization block — `dateFormat`, the live fallback every date renders through unless its column names one, entering at `defaultStyleFor` where the `url` arm already reads a setting rather than a constant; and `timeFormat`, relocated out of the settings file's top level, which retired the tree's own copy once its readers moved to the store slice. Underneath, the shared floating window learned to carry a pane on either edge at once and to move its own edge outward by that pane's width when one opens, so a second pane never squeezes what the first left.
+
+#### PM-106 || The Property-Cascade Journal
+
+The schema cascades gained a crash record — the final piece of the abstract-plumbing arc. Every op that writes to both the registry and pages (property rename, global delete, option rename, option removal) states its intent in `.nexus/property-cascade.json` before the work and deletes it after; a record surviving a crash replays at the next open, forward-completing the interrupted sweep against current disk through the content index's key-holder query. The replay's one law: act only on the state the record exactly maps, identity-checked by id, and clear on every other — so a stale record can never merge two properties' values or strip a value the user re-set. Skips hold the record: a cascade that cannot read one holder keeps its journal and the next open finishes the job; a stranded record is never displaced or cleared by a later op. Clearing an option's values and the per-Collection Remove stay unjournaled on the same razor — their residue disagrees with nothing. 
 
 ### Guidelines
 

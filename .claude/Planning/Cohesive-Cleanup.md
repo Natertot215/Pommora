@@ -28,7 +28,7 @@ place to be wrong instead of two. The four that remain are worth about two hundr
 
 ### I. The Queue
 
-**Ten of these landed on 08-20-2026 (→ PM-111), and their entries are struck from below.** What
+**Ten of these landed on 08-20-2026, and their entries are struck from below.** What
 remains is the four that did not: the view host, the drag adapters' frame, Table's column readers,
 and the derived state held as state. Each still wants the app open rather than a typecheck.
 
