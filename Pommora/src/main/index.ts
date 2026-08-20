@@ -521,6 +521,112 @@ const NEEDS_PROPERTY_ID = fail('operation-failed', 'A property id is required.')
 const NEEDS_ID_AND_VALUE = fail('operation-failed', 'A property id and value are required.')
 const NEEDS_CONFIG_PATCH = fail('operation-failed', 'A config patch is required.')
 
+// The three shapes the no-container property channels share. Each states the ceremony once —
+// refuse without a session, refuse a malformed payload, write, confirm the registry when it
+// landed — so the channels below name only what they actually do differently.
+
+/** `(propertyId, value)`: clear or remove one option, on either the select or the status family. */
+const optionValueOp = (
+  write: (root: string, propertyId: string, value: string) => Promise<Result<null>>,
+) => ({
+  kind: 'envelope' as const,
+  fn: async (propertyId: unknown, value: unknown) => {
+    const root = sessionRoot()
+    if (root === null) return NO_NEXUS
+    if (typeof propertyId !== 'string' || typeof value !== 'string') return NEEDS_ID_AND_VALUE
+    const r = await write(root, propertyId, value)
+    if (r.ok) await confirmRegistryWrite()
+    return r
+  },
+})
+
+/** `(propertyId, oldValue, newTitle)`: retitle one option, on either family. */
+const optionRenameOp = (
+  write: (
+    root: string,
+    propertyId: string,
+    oldValue: string,
+    newTitle: string,
+  ) => Promise<Result<null>>,
+) => ({
+  kind: 'envelope' as const,
+  fn: async (propertyId: unknown, oldValue: unknown, newTitle: unknown) => {
+    const root = sessionRoot()
+    if (root === null) return NO_NEXUS
+    if (
+      typeof propertyId !== 'string' ||
+      typeof oldValue !== 'string' ||
+      typeof newTitle !== 'string'
+    ) {
+      return fail('operation-failed', 'propertyId, oldValue, and newTitle are required.')
+    }
+    const r = await write(root, propertyId, oldValue, newTitle)
+    if (r.ok) await confirmRegistryWrite()
+    return r
+  },
+})
+
+/** Exactly what the registry's own editor accepts — never re-derived here. */
+type DefChanges = Parameters<typeof editProperty>[2]
+
+/** A registry-only def edit. The narrower is what keeps a display-config write from patching
+ *  arbitrary def fields (type, options, id) through this door; `null` from it refuses the
+ *  payload. Registry-only by construction: none of these touch page values. */
+const defEditOp = (narrow: (payload: unknown) => DefChanges | null) => ({
+  kind: 'envelope' as const,
+  fn: async (propertyId: unknown, payload: unknown) => {
+    const root = sessionRoot()
+    if (root === null) return NO_NEXUS
+    if (typeof propertyId !== 'string') return NEEDS_PROPERTY_ID
+    const changes = narrow(payload)
+    if (changes === null) return NEEDS_CONFIG_PATCH
+    const r = await editProperty(root, propertyId, changes)
+    if (r.ok) await confirmRegistryWrite()
+    return r
+  },
+})
+
+/** An `in` check rather than a truthiness one, so a caller can clear a field by passing
+ *  undefined — absent means "leave it", present-and-undefined means "back to the default". */
+const asPatch = (payload: unknown): Record<string, unknown> | null =>
+  payload !== null && typeof payload === 'object' ? (payload as Record<string, unknown>) : null
+
+const narrowLinkConfig = (payload: unknown): LinkConfig | null => {
+  const p = asPatch(payload)
+  if (!p) return null
+  const changes: LinkConfig = {}
+  if (typeof p.link_underline === 'boolean') changes.link_underline = p.link_underline
+  const display = LINK_DISPLAYS.find((d) => d === p.link_display)
+  if (display) changes.link_display = display
+  if ('link_color' in p)
+    changes.link_color = typeof p.link_color === 'string' ? p.link_color : undefined
+  return changes
+}
+
+const narrowNumberFormat = (payload: unknown): NumberConfig | null => {
+  const p = asPatch(payload)
+  if (!p) return null
+  const changes: NumberConfig = {}
+  if ('number_family' in p)
+    changes.number_family = NUMBER_FAMILIES.find((f) => f === p.number_family)
+  if ('number_currency' in p)
+    changes.number_currency = typeof p.number_currency === 'string' ? p.number_currency : undefined
+  if ('number_separators' in p)
+    changes.number_separators =
+      typeof p.number_separators === 'boolean' ? p.number_separators : undefined
+  if ('number_decimals' in p)
+    changes.number_decimals =
+      p.number_decimals === 'hidden' || typeof p.number_decimals === 'number'
+        ? p.number_decimals
+        : undefined
+  if ('number_fraction' in p)
+    changes.number_fraction = typeof p.number_fraction === 'boolean' ? p.number_fraction : undefined
+  if ('number_denominator' in p)
+    changes.number_denominator =
+      typeof p.number_denominator === 'number' ? p.number_denominator : undefined
+  return changes
+}
+
 // Registry-level option edits, cascading to pages. No-container-scope siblings of
 // property:delete; the confirm dialog for remove/clear lives in the option menu, not here.
 function isOptionArray(v: unknown): v is Option[] {
@@ -1083,179 +1189,32 @@ serveBridge(
       },
     },
 
-    'property:setLinkConfig': {
-      kind: 'envelope',
-      fn: async (propertyId: unknown, patch: unknown) => {
-        const root = sessionRoot()
-        if (root === null) return NO_NEXUS
-        if (typeof propertyId !== 'string') return NEEDS_PROPERTY_ID
-        if (patch === null || typeof patch !== 'object') return NEEDS_CONFIG_PATCH
-        // Whitelist only the link display fields — a config write must not patch arbitrary def fields
-        // (type, options, id) through here. Registry-only: display config doesn't touch page values.
-        const p = patch as Record<string, unknown>
-        const changes: LinkConfig = {}
-        if (typeof p.link_underline === 'boolean') changes.link_underline = p.link_underline
-        const display = LINK_DISPLAYS.find((d) => d === p.link_display)
-        if (display) changes.link_display = display
-        if ('link_color' in p)
-          changes.link_color = typeof p.link_color === 'string' ? p.link_color : undefined
-        const r = await editProperty(root, propertyId, changes)
-        if (r.ok) await confirmRegistryWrite()
-        return r.ok ? ok(null) : r
-      },
-    },
+    'property:setLinkConfig': defEditOp(narrowLinkConfig),
 
-    'property:setCheckboxColor': {
-      kind: 'envelope',
-      fn: async (propertyId: unknown, color: unknown) => {
-        const root = sessionRoot()
-        if (root === null) return NO_NEXUS
-        if (typeof propertyId !== 'string') return NEEDS_PROPERTY_ID
-        // The def-level color is the ONLY field this writes — a non-string clears it to Default (the
-        // system accent). Registry-only: display config never touches page values.
-        const r = await editProperty(root, propertyId, {
-          checkbox_color: typeof color === 'string' ? color : undefined,
-        })
-        if (r.ok) await confirmRegistryWrite()
-        return r.ok ? ok(null) : r
-      },
-    },
+    // The def-level color, and nothing else — a non-string clears it to Default (the system
+    // accent). The look itself (checkbox versus switch) is per-VIEW, in column_styles.
+    'property:setCheckboxColor': defEditOp((color) => ({
+      checkbox_color: typeof color === 'string' ? color : undefined,
+    })),
 
-    'property:setIcon': {
-      kind: 'envelope',
-      fn: async (propertyId: unknown, icon: unknown) => {
-        const root = sessionRoot()
-        if (root === null) return NO_NEXUS
-        if (typeof propertyId !== 'string') return NEEDS_PROPERTY_ID
-        // Registry-only: the def's symbol id (a non-string clears it to the type's default glyph).
-        const r = await editProperty(root, propertyId, {
-          icon: typeof icon === 'string' ? icon : undefined,
-        })
-        if (r.ok) await confirmRegistryWrite()
-        return r.ok ? ok(null) : r
-      },
-    },
+    // The def's symbol id; a non-string clears it to the type's default glyph.
+    'property:setIcon': defEditOp((icon) => ({
+      icon: typeof icon === 'string' ? icon : undefined,
+    })),
 
-    'property:setNumberFormat': {
-      kind: 'envelope',
-      fn: async (propertyId: unknown, patch: unknown) => {
-        const root = sessionRoot()
-        if (root === null) return NO_NEXUS
-        if (typeof propertyId !== 'string') return NEEDS_PROPERTY_ID
-        if (patch === null || typeof patch !== 'object') return NEEDS_CONFIG_PATCH
-        // Whitelist ONLY the number format fields — a config write must not patch arbitrary def fields
-        // (type, options, id). Registry-only: display config never touches page values. An `in p` check
-        // lets a caller clear a field by passing undefined.
-        const p = patch as Record<string, unknown>
-        const changes: NumberConfig = {}
-        if ('number_family' in p)
-          changes.number_family = NUMBER_FAMILIES.find((f) => f === p.number_family)
-        if ('number_currency' in p)
-          changes.number_currency =
-            typeof p.number_currency === 'string' ? p.number_currency : undefined
-        if ('number_separators' in p)
-          changes.number_separators =
-            typeof p.number_separators === 'boolean' ? p.number_separators : undefined
-        if ('number_decimals' in p)
-          changes.number_decimals =
-            p.number_decimals === 'hidden' || typeof p.number_decimals === 'number'
-              ? p.number_decimals
-              : undefined
-        if ('number_fraction' in p)
-          changes.number_fraction =
-            typeof p.number_fraction === 'boolean' ? p.number_fraction : undefined
-        if ('number_denominator' in p)
-          changes.number_denominator =
-            typeof p.number_denominator === 'number' ? p.number_denominator : undefined
-        const r = await editProperty(root, propertyId, changes)
-        if (r.ok) await confirmRegistryWrite()
-        return r.ok ? ok(null) : r
-      },
-    },
+    'property:setNumberFormat': defEditOp(narrowNumberFormat),
 
-    'property:renameOption': {
-      kind: 'envelope',
-      fn: async (propertyId: unknown, oldValue: unknown, newTitle: unknown) => {
-        const root = sessionRoot()
-        if (root === null) return NO_NEXUS
-        if (
-          typeof propertyId !== 'string' ||
-          typeof oldValue !== 'string' ||
-          typeof newTitle !== 'string'
-        ) {
-          return fail('operation-failed', 'propertyId, oldValue, and newTitle are required.')
-        }
-        const r = await renameOption(root, propertyId, oldValue, newTitle)
-        if (r.ok) await confirmRegistryWrite()
-        return r.ok ? ok(null) : r
-      },
-    },
+    'property:renameOption': optionRenameOp(renameOption),
 
-    'property:removeOption': {
-      kind: 'envelope',
-      fn: async (propertyId: unknown, value: unknown) => {
-        const root = sessionRoot()
-        if (root === null) return NO_NEXUS
-        if (typeof propertyId !== 'string' || typeof value !== 'string') return NEEDS_ID_AND_VALUE
-        const r = await removeOption(root, propertyId, value)
-        if (r.ok) await confirmRegistryWrite()
-        return r.ok ? ok(null) : r
-      },
-    },
+    'property:removeOption': optionValueOp(removeOption),
 
-    'property:clearOption': {
-      kind: 'envelope',
-      fn: async (propertyId: unknown, value: unknown) => {
-        const root = sessionRoot()
-        if (root === null) return NO_NEXUS
-        if (typeof propertyId !== 'string' || typeof value !== 'string') return NEEDS_ID_AND_VALUE
-        const r = await clearOption(root, propertyId, value)
-        if (r.ok) await confirmRegistryWrite()
-        return r.ok ? ok(null) : r
-      },
-    },
+    'property:clearOption': optionValueOp(clearOption),
 
-    'property:renameStatusOption': {
-      kind: 'envelope',
-      fn: async (propertyId: unknown, oldValue: unknown, newTitle: unknown) => {
-        const root = sessionRoot()
-        if (root === null) return NO_NEXUS
-        if (
-          typeof propertyId !== 'string' ||
-          typeof oldValue !== 'string' ||
-          typeof newTitle !== 'string'
-        ) {
-          return fail('operation-failed', 'propertyId, oldValue, and newTitle are required.')
-        }
-        const r = await renameStatusOption(root, propertyId, oldValue, newTitle)
-        if (r.ok) await confirmRegistryWrite()
-        return r.ok ? ok(null) : r
-      },
-    },
+    'property:renameStatusOption': optionRenameOp(renameStatusOption),
 
-    'property:removeStatusOption': {
-      kind: 'envelope',
-      fn: async (propertyId: unknown, value: unknown) => {
-        const root = sessionRoot()
-        if (root === null) return NO_NEXUS
-        if (typeof propertyId !== 'string' || typeof value !== 'string') return NEEDS_ID_AND_VALUE
-        const r = await removeStatusOption(root, propertyId, value)
-        if (r.ok) await confirmRegistryWrite()
-        return r.ok ? ok(null) : r
-      },
-    },
+    'property:removeStatusOption': optionValueOp(removeStatusOption),
 
-    'property:clearStatusOption': {
-      kind: 'envelope',
-      fn: async (propertyId: unknown, value: unknown) => {
-        const root = sessionRoot()
-        if (root === null) return NO_NEXUS
-        if (typeof propertyId !== 'string' || typeof value !== 'string') return NEEDS_ID_AND_VALUE
-        const r = await clearStatusOption(root, propertyId, value)
-        if (r.ok) await confirmRegistryWrite()
-        return r.ok ? ok(null) : r
-      },
-    },
+    'property:clearStatusOption': optionValueOp(clearStatusOption),
 
     // Subfield (footer) config — a React-owned `subfield` foreign key in `.nexus/settings.json`.
     'subfield:get': {
