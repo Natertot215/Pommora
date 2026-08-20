@@ -8,7 +8,7 @@ The one construct the Subfield still counts as source is a Markdown table, and t
 
 ### Immediate Work
 
-- [ ] MarkdownPM Footnotes → Plan & Execution. The decision log at [[Footnotes — Decision Log]] is the settled contract, one `[assumed]` entry (C-3's clear-on-default) pending Nathan's word. Every seam it named is in place and the editor's cleanup is closed, so nothing blocks it.
+- [ ] MarkdownPM Footnotes → Plan & Execution. The decision log at [[Footnotes — Decision Log]] is the settled contract, one `[assumed]` entry (C-3's clear-on-default) pending Nathan's word. Every seam it named is in place, and the editor's cleanup is closed, so nothing blocks it.
 - [ ] What is left of the cohesion queue at [[Cohesive-Cleanup]] — the view host under Table and Cards, the drag adapters' remaining frame, Table's column readers, and the derived state held as state. Ten of its items closed; these four did not, and none of them touches MarkdownPM's core. What is structural rather than session-sized sits in §The Boring Work.
 
 ### Pending Focuses
@@ -25,7 +25,6 @@ Findings where the correct answer isn't established in the codebase — design a
 
 - [ ] **`cursor: default` versus `cursor: pointer` has no rule** — roughly twenty sites each, design-system components consistently on `default` and feature surfaces mixed. Pick one convention for clickable non-link controls and the sweep is mechanical.
 - [ ] **Cards has no loading or empty state**, where Table returns both; a blank grid is indistinguishable from broken. Loading versus empty versus error is a real distinction and wants one decision in `ViewRenderer` rather than one per renderer.
-- [ ] **A title cell's menu offers no Open Preview and the row grip's does.** The same page, two menus, one of them missing a row — a divergence rather than a decision. Cheap either way once it is one.
 - [ ] **A card drag and a row drag write different files.** The same gesture in the same unsorted structural view writes the canonical `page_order` from Table and a per-machine `viewOrders` tiebreaker from Cards. One is right; which one is a call about whether card ordering is meant to be portable.
 - [ ] **Card column-style changes wait for the round trip** while Table applies an optimistic override — the same menu feels instant in one and laggy in the other. Six lines, if it should feel the same.
 - [ ] **Persisted-write failures are silent.** Surface them through the existing `showError` path, add a quieter subfield indicator, or accept silence for this class deliberately and write that down. The current state is the third option without the writing-down, and it is the shape every future persisted preference copies.
