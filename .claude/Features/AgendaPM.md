@@ -34,3 +34,5 @@ A slot whose folder name is already taken goes unregistered — seeding refuses 
 **Built-in Status** — a non-deletable **Status** property on both kinds, tracking the user's engagement rather than the clock; for an Event it stays decoupled from the date math. Its group seed → [[PropertiesPM]].
 
 **EventKit Sync** — the opt-in bidirectional mirror to the system Reminders and Calendar apps. The calendar database is API-only — it consumes constructed objects with typed properties — so sync is a code-level translation layer for whatever Pommora stores on disk, constraining none of the decisions above.
+
+![](https://www.youtube.com)
