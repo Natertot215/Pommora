@@ -9,11 +9,8 @@
 //
 // This module is shared (renderer-importable: autocomplete + inline styling later) — no
 // fs, no React. normalizeTitle is the SINGLE normalization the scanner, the phantom key,
-// resolution, and uniqueness all share, so they can never disagree.
-
-import type { ActionItem } from './menuModel'
-
-import type { PageClipboardAction, PageMetaAction } from './pageMenu'
+// resolution, and uniqueness all share, so they can never disagree. The right-click menu a link
+// carries is `connMenu.ts`'s: the grammar here says what a link IS, never what can be done to one.
 
 /** A page's display title from its Nexus-relative path — the basename, extension dropped. */
 export const titleFromPath = (path: string): string =>
@@ -115,59 +112,26 @@ export function emptyAliasPipeAt(line: string, rel: number): number | null {
   return s?.alias && s.alias[0] === s.alias[1] ? s.title[1] : null
 }
 
-/** What the link menu needs in order to render itself. The two authoring actions are built into
- *  the menu rather than filtered after it, so a surface that can't take an edit never offers them. */
-export interface ConnMenuContext {
-  editable: boolean
-  /** Whether the link already wears an alias — the authoring item names creating one or changing it. */
-  hasAlias: boolean
-  /** A link whose target is a web address rather than a page: it has an address to copy, and none of
-   *  the actions that need a page behind them. */
-  external?: boolean
-  /** Whether the page this link reaches already holds a tab — the open item names focusing it. */
-  alreadyOpen?: boolean
+/** The `[[ ]]` grammar anchored to a whole string. Built once — every Link cell reads its value
+ *  through it on render, and the pattern is a constant. Non-global, so it holds no `lastIndex`. */
+const WHOLE_LINK = new RegExp(`^(?:${pageLinkPattern().source})$`)
+
+/** The connection a string holds when the WHOLE string is one — the shape a Link property stores,
+ *  as against a connection sitting in a run of prose. Null when the text is anything else, which is
+ *  how a Link value decides whether it names a page or an address. */
+export function parseConnectionText(raw: string): { title: string; alias?: string } | null {
+  const m = WHOLE_LINK.exec(raw.trim())
+  if (!m) return null
+  const title = titleOf(m[1]).trim()
+  return title ? { title, alias: m[2]?.trim() || undefined } : null
 }
 
-/** The two that edit the link rather than open it. */
-export type ConnEditAction = 'rename' | 'editLink'
-
-/** The two ways a link reaches its page — the same pair, in the same order, every other page menu
- *  opens with. */
-export type ConnOpenAction = Extract<PageMetaAction, 'title:preview' | 'title:newtab'>
-
-export const CONN_OPEN_ACTIONS = [
-  'title:preview',
-  'title:newtab',
-] as const satisfies readonly ConnOpenAction[]
-
-/** Everything a link pointing at a web address can be told to do. The three `format:` ids rewrite the
- *  label alone — no per-link state is stored anywhere, so nothing can come to disagree with the file
- *  — and the last two are the two readings of taking a link off the words it wears: `link:remove`
- *  keeps the label as prose, `link:delete` keeps nothing.
- *
- *  A list rather than a bare union because the menu resolves the wider `ConnMenuAction`, and narrowing
- *  back to what this branch can act on is a membership test. `rename` and `editLink` are shared with
- *  `ConnEditAction`: both name the same halves of a link, whichever syntax wrote it. */
-export const CONN_URL_ACTIONS = [
-  'rename',
-  'editLink',
-  'format:link-full',
-  'format:link-short',
-  'format:link-title',
-  'link:remove',
-  'link:delete',
-] as const
-export type ConnUrlAction = (typeof CONN_URL_ACTIONS)[number]
-
-/** The pair that ends the menu, below a separator: they act on the link's existence rather than on
- *  how it reads, which is what sets them apart from the three above. */
-export const CONN_UNLINK_ROWS: readonly ActionItem<ConnUrlAction>[] = [
-  { label: 'Remove Link', action: 'link:remove', separatorBefore: true },
-  { label: 'Delete', action: 'link:delete' },
-]
-
-/** The link native context menu's actions (conn-menu IPC). */
-export type ConnMenuAction = ConnOpenAction | ConnEditAction | PageClipboardAction | ConnUrlAction
-
-export const isConnUrlAction = (action: ConnMenuAction): action is ConnUrlAction =>
-  (CONN_URL_ACTIONS as readonly string[]).includes(action)
+/** Write a connection. The alias is dropped when it can't survive the grammar (a `]` closes the
+ *  link early) or when it merely repeats the title it stands for. */
+export function connectionText(title: string, alias?: string): string {
+  const named =
+    alias && !/[\]\r\n]/.test(alias) && normalizeTitle(alias) !== normalizeTitle(title)
+      ? alias
+      : undefined
+  return named ? `[[${title}|${named}]]` : `[[${title}]]`
+}

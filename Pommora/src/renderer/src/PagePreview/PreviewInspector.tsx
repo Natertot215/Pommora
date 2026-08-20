@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { PropertyDefinition } from '@shared/properties'
-import { isBlankValue, propertyKey } from '@shared/propertyValue'
+import { isBlankValue, propertyKey, type PropertyValue } from '@shared/propertyValue'
 import type { PageFrontmatter } from '@shared/schemas'
 import type { ResolvedColumn } from '@shared/types'
 import { cx } from '@renderer/design-system/cx'
@@ -11,11 +11,14 @@ import { Cell } from '../Detail/Views/Table/Cell'
 import { contextOptionsFor } from '../Detail/Views/pipeline/contextOptions'
 import { PropertyEditor } from '../Detail/Views/PropertyEditing/PropertyEditor'
 import { parseEditorValue } from '../Detail/Views/Cards/cardValueInput'
-import { parseLink, urlValueFromEdit } from '@shared/linkValue'
+import { linkAlias, linkEditText, urlValueFromEdit, urlValueFromRename } from '@shared/linkValue'
+import { resolveTitle, validateLink } from '@renderer/linkResolve'
+import { linkValueMenuTarget, showConnectionMenu } from '@renderer/Embeds/connectionMenu'
+import { TextPicker } from '@renderer/design-system/components/TextPicker'
+import { solidColorCss } from '@renderer/Detail/Views/Table/solidColor'
 import { PropertyPicker, syntheticContextDef } from '../Detail/Views/PropertyEditing/PropertyPicker'
 import { DatetimeValuePicker } from '../Detail/Views/PropertyEditing/DatetimeValuePicker'
 import { resolveFieldValue } from '../Detail/Views/pipeline/value'
-import { isValidLink } from '@shared/links'
 import { fetchPageDetail, readPageDetail } from '../Tabs/warmCache'
 import {
   propertyIcon,
@@ -127,13 +130,40 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
 
   // The same native menu the page's own properties pane pops: Clear empties the value and leaves
   // the row to be refilled, Remove empties it and takes the row away, back into Add Property.
-  const rowMenu = async (id: string, name: string, filled: boolean): Promise<void> => {
-    const action = await window.nexus.propertyMenu({ kind: 'page-value', name, filled })
-    if (action !== 'value:clear' && action !== 'value:remove') return
+  const emptyRow = (id: string, keep: boolean): void => {
     if (isContextRow(id)) commitContext(id, [])
     else commitValue(id, null)
-    if (action === 'value:clear') setRevealed((prev) => new Set([...prev, id]))
+    if (keep) setRevealed((prev) => new Set([...prev, id]))
     else setRevealed((prev) => new Set([...prev].filter((r) => r !== id)))
+  }
+  // The VALUE's own menu: a live link pops the link menu — the same one every other surface pops on
+  // the same link — closing on Clear alone. Remove belongs to the property rather than to the value
+  // it holds, so it stays on the row's menu and is reached by right-clicking the property itself.
+  const valueMenu = (id: string, value: PropertyValue): boolean => {
+    const link =
+      value.kind === 'url'
+        ? linkValueMenuTarget(value.value, (action) => {
+            if (action === 'link:clear') return emptyRow(id, true)
+            if (action === 'rename' || action === 'editLink')
+              setEditing({ id, mode: action === 'editLink' ? 'editor' : 'rename' })
+          })
+        : null
+    if (!link) return false
+    showConnectionMenu(link)
+    return true
+  }
+  const rowMenu = async (id: string, name: string, value: PropertyValue): Promise<void> => {
+    const action = await window.nexus.propertyMenu({
+      kind: 'page-value',
+      name,
+      filled: !isBlankValue(value),
+    })
+    if (action === 'value:clear' || action === 'value:remove')
+      emptyRow(id, action === 'value:clear')
+  }
+  const rawLinkOf = (id: string): string => {
+    const v = resolveFieldValue(row, id, schema)
+    return v.kind === 'url' ? v.value : ''
   }
   const editingDef =
     editing &&
@@ -162,7 +192,7 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
                     data-insp-id={id}
                     onContextMenu={(e) => {
                       e.preventDefault()
-                      void rowMenu(id, label, !isBlankValue(resolveFieldValue(row, id, schema)))
+                      void rowMenu(id, label, resolveFieldValue(row, id, schema))
                     }}
                   >
                     <span className={cx('pgpreview-insp-label', text.caption.standard)}>
@@ -172,6 +202,11 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
                     {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix */}
                     <span
                       className="pgpreview-insp-value"
+                      onContextMenu={(e) => {
+                        if (!valueMenu(id, resolveFieldValue(row, id, schema))) return
+                        e.preventDefault()
+                        e.stopPropagation()
+                      }}
                       onClick={(e) => {
                         if (def) return editRow(def, e.currentTarget)
                         triggerRef.current = e.currentTarget
@@ -183,11 +218,11 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
                           initial={(() => {
                             const v = resolveFieldValue(row, id, schema)
                             if (v.kind === 'number') return String(v.value)
-                            if (v.kind === 'url') return parseLink(v.value).url
+                            if (v.kind === 'url') return linkEditText(v.value)
                             return ''
                           })()}
                           numeric={def.type === 'number'}
-                          validate={def.type === 'url' ? isValidLink : undefined}
+                          validate={def.type === 'url' ? validateLink : undefined}
                           onCommit={(raw) => {
                             // url validates/normalizes and rides the existing alias along —
                             // identical to the cell surfaces.
@@ -197,6 +232,7 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
                                 ? urlValueFromEdit(
                                     raw.trim(),
                                     cur.kind === 'url' ? cur.value : undefined,
+                                    resolveTitle,
                                   )
                                 : parseEditorValue(def.type, raw)
                             if (next !== undefined) commitValue(id, next)
@@ -262,6 +298,19 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
             </PickerOption>
           ))}
       </PickerMenu>
+      {editing?.mode === 'rename' && (
+        <TextPicker
+          open
+          triggerRef={triggerRef}
+          value={linkAlias(rawLinkOf(editing.id)) ?? ''}
+          accent={solidColorCss(schema.find((d) => d.id === editing.id)?.link_color)}
+          onCommit={(alias) => {
+            commitValue(editing.id, urlValueFromRename(alias, rawLinkOf(editing.id)))
+            setEditing(null)
+          }}
+          onDismiss={() => setEditing(null)}
+        />
+      )}
       {editingDef && editing?.mode === 'picker' && (
         <PropertyPicker
           def={editingDef}

@@ -1,7 +1,6 @@
 import { useContext, useRef, useState } from 'react'
 import type { ResolvedColumn, ViewRow } from '@shared/types'
 import { isBlankValue, type PropertyValue } from '@shared/propertyValue'
-import { isValidLink } from '@shared/links'
 import type { ColumnStyle } from '@shared/columnStyles'
 import { cellMenuContextFor } from '@shared/cellMenu'
 import { parseStyleAction } from '@shared/columnMenu'
@@ -10,7 +9,9 @@ import { text } from '@renderer/design-system/tokens/typography.css'
 import { declaredType, resolveFieldValue } from '../pipeline/value'
 import { GhostSuppress } from '../useGhostAnchor'
 import { Cell } from '../Table/Cell'
-import { parseLink, urlValueFromEdit, urlValueFromRename } from '@shared/linkValue'
+import { linkAlias, linkEditText, urlValueFromEdit, urlValueFromRename } from '@shared/linkValue'
+import { resolveTitle, validateLink } from '@renderer/linkResolve'
+import { linkValueMenuTarget, showConnectionMenu } from '@renderer/Embeds/connectionMenu'
 import { parseEditorValue } from './cardValueInput'
 import type { ResolveContext } from '../Table/resolveContext'
 import { PropertyEditor } from '../PropertyEditing/PropertyEditor'
@@ -107,6 +108,25 @@ export function CardValue({
     // Portal events bubble the component tree: a right-click inside an open picker (backdrop/layer)
     // arrives here too — swallow it, never pop a mis-targeted menu (the onClick guard's twin).
     if (!e.currentTarget.contains(e.target as Node)) return
+    // A value holding a live link pops the LINK menu — the same one the editor pops on the same
+    // link, plus the Remove every card value ends with. Only a value with no link in it falls
+    // through to the cell menu.
+    if (t === 'url') {
+      const target = linkValueMenuTarget(
+        v.kind === 'url' ? v.value : '',
+        (action) => {
+          if (action === 'link:clear') return commit(null)
+          if (action === 'link:hide') return onHide(column.id)
+          if (action === 'rename') return setMode('rename')
+          if (anchorRef.current) onOpenPicker(column, 'link', anchorRef.current)
+        },
+        true,
+      )
+      if (target) {
+        await holdGhost(async () => showConnectionMenu(target))
+        return
+      }
+    }
     const barCapable = dt === 'number' && numberDivisor(schemaDef) !== undefined
     const menuCtx = cellMenuContextFor(column, dt, style, !isBlankValue(v), true, barCapable)
     if (!menuCtx) return
@@ -126,9 +146,9 @@ export function CardValue({
   }
 
   const editorInitial = (): string => {
-    if (mode === 'rename') return v.kind === 'url' ? (parseLink(v.value).alias ?? '') : ''
+    if (mode === 'rename') return v.kind === 'url' ? (linkAlias(v.value) ?? '') : ''
     if (v.kind === 'number') return String(v.value)
-    if (v.kind === 'url') return parseLink(v.value).url
+    if (v.kind === 'url') return linkEditText(v.value)
     return ''
   }
   const commitEditor = (raw: string): void => {
@@ -139,7 +159,7 @@ export function CardValue({
       mode === 'rename'
         ? urlValueFromRename(raw, v.kind === 'url' ? v.value : '')
         : t === 'url'
-          ? urlValueFromEdit(raw, v.kind === 'url' ? v.value : undefined)
+          ? urlValueFromEdit(raw, v.kind === 'url' ? v.value : undefined, resolveTitle)
           : parseEditorValue(t, raw)
     if (parsed !== undefined) commit(parsed)
   }
@@ -160,7 +180,7 @@ export function CardValue({
         <PropertyEditor
           initial={editorInitial()}
           numeric={mode === 'editor' && t === 'number'}
-          validate={mode === 'editor' && t === 'url' ? isValidLink : undefined}
+          validate={mode === 'editor' && t === 'url' ? validateLink : undefined}
           onCommit={commitEditor}
           onCancel={dismiss}
         />

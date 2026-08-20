@@ -1,9 +1,5 @@
-import {
-  normalizeTitle,
-  type ConnEditAction,
-  type ConnUrlAction,
-  type LinkStatus,
-} from '@shared/connections'
+import { normalizeTitle, type LinkStatus } from '@shared/connections'
+import type { ConnCellApply, ConnEditAction, ConnSurface, ConnUrlAction } from '@shared/connMenu'
 import { isValidLink, targetTitle } from '@shared/links'
 
 /** What was right-clicked, and how to act on it. The menu is popped asynchronously by a free
@@ -13,7 +9,13 @@ import { isValidLink, targetTitle } from '@shared/links'
  *
  *  A link reaching a page and a link reaching a web address are different menus, not one menu with
  *  absences: the address has no page to preview, to name, or to give a location. */
-export type ConnMenuTarget =
+export type ConnMenuTarget = {
+  surface?: ConnSurface
+  hideable?: boolean
+  /** The two that act on a property cell's VALUE, kept apart from `apply` because the menu offers
+   *  them only on a cell — an editor host that never sets this never has to refuse them either. */
+  onCell?: ConnCellApply
+} & (
   | {
       kind: 'page'
       page: ConnPage
@@ -21,7 +23,14 @@ export type ConnMenuTarget =
       hasAlias: boolean
       apply?: (action: ConnEditAction) => void
     }
-  | { kind: 'url'; url: string; apply?: (action: ConnUrlAction) => void }
+  | {
+      kind: 'url'
+      url: string
+      editable?: boolean
+      hasAlias?: boolean
+      apply?: (action: ConnUrlAction) => void
+    }
+)
 
 export interface ConnPage {
   id: string

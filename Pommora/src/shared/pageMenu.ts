@@ -7,12 +7,13 @@
 // doesn't serve.
 
 import type { ActionItem } from './menuModel'
+import { connectionText } from './connections'
 import { openLabel } from './toggleLabels'
 
 /** What Copy Link puts on the clipboard: the connection syntax that reaches this page from any
  *  MarkdownPM surface, so a copied page pastes as a working link rather than as its name. */
 export function pageLinkText(title: string): string {
-  return `[[${title}]]`
+  return connectionText(title)
 }
 
 /** What Copy Path puts on the clipboard: the page's location read from the nexus root, with the

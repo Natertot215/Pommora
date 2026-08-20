@@ -5,6 +5,7 @@
 
 import { normalizeTitle, pageEmbedPattern, pageLinkPattern, titleOf } from '@shared/connections'
 import { markdownLinkRegex, targetTitle } from '@shared/links'
+import { readLink } from '@shared/linkValue'
 import { codeMask } from '@shared/markdownCode'
 
 /** Every normalized title this body names in any of the three syntaxes — the one parse the
@@ -40,4 +41,18 @@ export function extractMentions(body: string): Set<string> {
 /** The cascade's prefilter: does this body name `title` in any of the three syntaxes? */
 export function mentionsTitle(body: string, normalizedKey: string): boolean {
   return normalizedKey !== '' && extractMentions(body).has(normalizedKey)
+}
+
+/** Every normalized title a page's FRONTMATTER names. A Link property holds a connection as its
+ *  whole value, so the page it names is a reference like any in the body — and a rename reaching
+ *  only bodies would leave it pointing at a name nothing answers to. Values are read as written,
+ *  without the schema: only the connection syntax names a page, and no declared type changes that. */
+export function frontmatterMentions(values: Record<string, unknown>): Set<string> {
+  const out = new Set<string>()
+  for (const value of Object.values(values)) {
+    if (typeof value !== 'string') continue
+    const target = readLink(value)
+    if (target.kind === 'page') out.add(normalizeTitle(target.title))
+  }
+  return out
 }

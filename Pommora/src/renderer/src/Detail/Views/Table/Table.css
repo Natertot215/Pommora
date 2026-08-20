@@ -316,6 +316,12 @@
 .cell-link-underline {
   text-decoration: underline;
 }
+/* A Link value naming a page reads as the connection it is, in the same color the editor draws one. */
+.cell-connection {
+  color: var(--connection);
+  text-decoration: none;
+  cursor: pointer;
+}
 .cell-control {
   color: var(--label-control);
 }
