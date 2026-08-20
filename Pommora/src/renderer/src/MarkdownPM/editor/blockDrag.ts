@@ -56,9 +56,11 @@ function collectCands(
   const right = rect.right - (parseFloat(getComputedStyle(view.contentDOM).paddingRight) || 0)
   const { starts, docLength } = shape
   const out: Cand[] = []
-  // Only what is rendered: a block outside the viewport has no coords to measure, and the
-  // auto-scroll re-measures as it brings one in.
-  const [top, bottom] = [view.visibleRanges[0]?.from ?? 0, view.visibleRanges.at(-1)?.to ?? 0]
+  // Only what is rendered: a block outside it has no coords to measure, and the auto-scroll
+  // re-measures as it brings one in. The VIEWPORT, never `visibleRanges` — a block widget replacing
+  // its content puts a gap in the visible ranges, so a document opening on a table would lose the
+  // boundary above it. The viewport is contiguous and already carries a thousand-pixel margin.
+  const { from: top, to: bottom } = view.viewport
   for (let i = 0; i < starts.length; i++) {
     const from = starts[i]
     if (from < top || from > bottom) continue

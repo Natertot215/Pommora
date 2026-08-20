@@ -88,6 +88,7 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 
 ### Known Issues
 
+- [ ] A right-click inside a hover card's preview appears to dismiss the card it was popped in. The pointer path's `contextmenu` dismisses an open card before it hit-tests, and a hover card mounts a real editor carrying that same path — so the gesture that should raise a link's menu inside the preview closes the preview instead. Needs one gesture in the running app to confirm: hover a connection, wait out the dwell, then right-click a link in the card's own text.
 - [ ] A fenced code block inflates the Subfield's character count. `stripFences` replaces each masked line with a single space and `computeStats` counts those spaces, so a hundred-line fence adds a hundred characters. The line count is taken from the raw body and is unaffected, so the three numbers disagree with each other.
 - [ ] A page embed counts as prose in the same counter. The image strip matches `![alt](url)` only, so an `![[Page]]` embed loses its brackets to the wikilink rule and leaves its `!` behind, which counts as a word.
 - [ ] A `.MD`-extensioned page keeps its extension in the sidebar. The walk admits it case-insensitively and `titleFromPath` strips case-insensitively, but `Sidebar/sidebarDnd.tsx`'s own `base()` tests `endsWith('.md')` case-sensitively.
