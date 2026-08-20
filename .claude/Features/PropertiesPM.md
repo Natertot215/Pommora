@@ -48,7 +48,7 @@ A Page's values are wrapped title keys at its frontmatter root; a Task's or Even
 | **Select**            | `<Stage>: Active`                                                       | Bare string; one colored chip.                                                       |
 | **Multi-select**      | `<Tags>:` over a block sequence                                         | Bare array; tag-style multi-pick.                                                    |
 | **Status**            | `<Status>: Complete`                                                    | Bare label — the option's own value; grouped by workflow phase.                      |
-| **URL**               | `<Link>: https://…`                                                     | A string with a scheme.                                                              |
+| **URL**               | `<Link>: https://…` or `<Link>: [[Page]]`                               | A string — an address with a scheme, or a connection naming a page.                  |
 | **Context**           | `(Context):` at the root, over a block sequence of bare Space titles    | One column per registry Context, synthesized at runtime — never a schema definition. |
 | **Last Edited Time**  | *(derived from `modified_at`)*                                          | Virtual — never persisted.                                                           |
 | **File / Attachment** | `[{ "path", "original_name", "added_at", "mime_type" }, ...]`           | Array; files copy into the Nexus.                                                    |
@@ -128,6 +128,8 @@ A URL property renders each value as a clickable link, opened through the sancti
 - **Color** — the link color, a palette key chosen from the chip beside it (Default = the app accent), which also themes the editor pane's own controls.
 
 A per-value **alias** (right-click → Rename, stored markdown-native as `[alias](url)`) overrides the format for a single link. Page Title is the only format that reaches the network: the page `<title>` is fetched once per URL and cached per-machine in `nexus.db`, showing the bare domain while it loads or if it never arrives. Sorting and filtering read the raw address regardless of the chosen format, so a column's order never moves when its look does.
+
+A URL property also holds a **connection**. Pasting `[[Title]]` — what Copy Link puts on the clipboard — or a markdown link whose target names a page stores the value as the same `[[Title]]` connection every other surface writes, under the page's own capitalization, with any alias carried through as `[[Title|alias]]`. The cell then reads as a connection: the connection color, and a click that opens the page (⌘-click in a new tab) rather than a browser. The three link formats are address concepts and don't apply to it — a connection shows the page it names, or its alias. A title no page answers to is not a link: the field ghosts it and the commit is refused, exactly as a malformed address is. Renaming a page rewrites the connections held in frontmatter alongside those in page bodies, so a Link property never comes to name a page that has moved on.
 
 #### II. Context Links
 

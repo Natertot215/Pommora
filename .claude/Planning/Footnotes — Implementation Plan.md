@@ -22,14 +22,14 @@ Deliberately not solved here: mid-document citations (they stay live prose), inl
 5. **The section hides and shows.** Hidden by default. The divider is the shared heading seam and is itself the fold click-target. Show/Hide is one Subfield text control reading **Show Footnotes** / **Hide Footnotes**; the divider and that control write one per-page per-machine override, which falls back to a nexus-wide Default Visibility and clears when it lands on the default. The control appears only when at least one citation line exists, and rides into the Page Preview. Disclosure uses the editor's fold-reveal motion; the divider blur-fades. (C-1, C-2, C-3, C-3b, C-3c, C-6, F-3, F-4, G-2)
 6. **Creation.** Insert ▸ Footnote, Paste As ▸ Footnote with normalization, and a hand-typed auto-seed each write a complete pair in one undoable transaction, honoring Jump To Citation On Creation. (D-1 … D-4, F-2)
 7. **Numbering.** Display is positional. Creation and deletion gestures renumber numeric labels and reorder the section; word labels hold their position without being rewritten; non-creating hand edits never rewrite anything. (C-8, E-1, E-2, E-2b, E-3)
-8. **Statistics.** The citations section never contributes to lines, words, or characters. A marker contributes its four source characters and zero words. No setting governs this. No non-footnote count moves. (F-1, F-1b)
+8. **Statistics.** The citations section never contributes to lines, words, or characters. A marker contributes its own source characters and zero words — `[^1]` is four and `[^10]` is five; the rule is the syntax's length, not a constant. No setting governs this. No non-footnote count moves. (F-1, F-1b)
 9. **Guards and edges.** No in-app change may strand non-citation content at or after the section. Backspace at a citation's content start removes the whole footnote. Menu actions re-verify their target at commit. (A-5b, C-5, C-9, G-3, G-4)
 10. **Settings.** Default Visibility and Jump To Citation On Creation group under a Footnotes heading in the Pages & Editor leaf. (F-4, F-5)
 11. **Documentation.** Every document this makes false is rewritten in the commit that falsifies it.
 
 **Acceptance — the whole thing working**
 
-On a page authored outside Pommora holding body markers, a trailing citations run, one orphaned citation and one duplicate-labelled citation: the markers draw as 1, 2, 3 in first-use order regardless of their disk labels; the section is hidden on open with a Show Footnotes control on the Subfield; showing it reveals the divider and the numbered rows with the orphan and the duplicate-loser dimmed and numberless; the Subfield's three counts exclude every section line and score each marker four characters and no word; clicking a marker jumps to its row and clicking the divider hides the section again; Insert ▸ Footnote writes a pair that renumbers the rest and reverts whole on one ⌘Z; and the file on disk, opened in another editor, is unchanged plain GFM apart from that one added pair.
+On a page authored outside Pommora holding body markers, a trailing citations run, one orphaned citation and one duplicate-labelled citation: the markers draw as 1, 2, 3 in first-use order regardless of their disk labels; the section is hidden on open with a Show Footnotes control on the Subfield; showing it reveals the divider and the numbered rows with the orphan and the duplicate-loser dimmed and numberless; the Subfield's three counts exclude every section line and score each marker its own characters and no word; clicking a marker jumps to its row and clicking the divider hides the section again; Insert ▸ Footnote writes a pair that renumbers the rest and reverts whole on one ⌘Z; and the file on disk, opened in another editor, is unchanged plain GFM apart from that one added pair.
 
 **Forced By**
 
@@ -125,18 +125,18 @@ On a page authored outside Pommora holding body markers, a trailing citations ru
 | `Features/SubfieldPM.md:17` | "a fenced block, a lone embed tile, a list marker, a quote prefix and a heading's hashes all contribute nothing" | The citations section contributes nothing either, and a marker contributes characters but no word. | 3 |
 | `subfieldStats.ts:18-21` | "One construct is still counted as its source: a Markdown table" | Still true of tables; the sentence must stop implying it is the only handled-or-not case. | 3 |
 | `Features/MarkdownPM.md` | The feature list and Pending section, which describe an editor with no footnote handling | Footnotes exist. | 22 |
-| `Features/ConfigurationPM.md:103-108` | The Pages & Editor toggle table | Two rows and a Footnotes section join it. | 14 |
+| `Features/ConfigurationPM.md:103-108` | The Pages & Editor toggle table | Two rows and a Footnotes section join it. | 10 |
 | `Features/SubfieldPM.md` §Pending | The item registry's described membership | A citations item joins it, and is deliberately gated to pages that have footnotes. | 13 |
 | `ContextPM.md` §Immediate Work, §Next-Feature Candidates | Footnotes as pending next work | It shipped. | 22 |
 | `Features/PagePreviewPM.md` | The scoped Subfield's described contents | It carries the citations control. | 13 |
 
 **Dead Vocabulary** *(what the closing sweep searches for)*
 
-- `rg -F "collapsedByDefault" Pommora/src` → expect 0. Legitimate hits: none; the flag is retired in Task 10.
+- `rg -F "collapsedByDefault" Pommora/src` → expect 0. Legitimate hits: none; the flag is retired in Task 11.
 - `rg -F "footnoteDefinition" Pommora/src` → expect 0. Legitimate hits: none — the parser's node name never enters our code.
 - Control: `rg -F "docScan" Pommora/src` → 20 at planning time. Zero here means the sweep never ran.
 
-**Hazard Window:** Task 10 retires `collapsedByDefault` and Task 11 separates `md-foldable` into a chevron class and a heading-gesture class. Between them the fold system is mid-repair: **no task may add a fold kind, a fold-adjacent gesture, or a `md-foldable` consumer while the window is open**, and the running-thing pass for Phase 3 defers to Task 11's completion. Task 11 closes it.
+**Hazard Window:** Task 11 retires `collapsedByDefault` and Task 12 separates `md-foldable` into a chevron class and a heading-gesture class. Between them the fold system is mid-repair: **no task may add a fold kind, a fold-adjacent gesture, or a `md-foldable` consumer while the window is open**, and the running-thing pass for Phase 3 defers to Task 11's completion. Task 12 closes it.
 
 ---
 
@@ -148,7 +148,7 @@ Nothing draws in this phase. The boundary derivation lands first and is exercise
 
 **Requirement:** 1
 
-**Why:** Six layers need to know where the citations section begins, and a boundary each of them derives is a boundary they will disagree about — the failure the fence pass exists to prevent and that Editor-Internals names first among its rules. Putting it in `src/shared` rather than inside the editor is what lets the Subfield counter read the same answer without importing the renderer's decoration layer, and is what keeps this from becoming the second derivation a standing Known Issue is already scheduled to remove. It takes the fence mask as a required parameter, following `blockMathRanges` and `blockEmbedLines`, so no caller can forget to state its exclusion contract.
+**Why:** Six layers need to know where the citations section begins, and a boundary each of them derives is a boundary they will disagree about — the failure the fence pass exists to prevent and that Editor-Internals names first among its rules. Putting it in `src/shared` rather than inside the editor is what lets the Subfield counter read the same answer without importing the renderer's decoration layer, The counter still *runs* the scan itself — sharing a module is not sharing a derivation — one more pass on a path that already pays one, and the accepted cost the Sequenced After item retires. It takes the fence mask as a required parameter, following `blockMathRanges` and `blockEmbedLines`, so no caller can forget to state its exclusion contract.
 
 **Files:**
 - Create: `Pommora/src/shared/citations.ts` — the scan, the marker pattern, the types.
@@ -160,13 +160,16 @@ Nothing draws in this phase. The boundary derivation lands first and is exercise
   - `interface MarkerRef { line: number; from: number; to: number; label: string; ordinal: number | null }` — one body marker, `ordinal` null when nothing binds it.
   - `interface CitationScan { entries: CitationEntry[]; markers: MarkerRef[]; mask: Uint8Array; firstLine: number }` — `mask[i] === 1` for every line belonging to the section, blanks between citations included; `firstLine` is the section's first line index, or `lines.length` when there is no section. **The body sweep runs here and only here:** first-use order is what numbers both a marker and its citation row, so deriving it twice is two things that can disagree about one answer. `entries[].ordinal` and `markers[].ordinal` come out of the same walk.
   - `citationScan(lines: string[], fenced: Uint8Array): CitationScan`
-  - `MARKER_RE: RegExp` — a fresh `/\[\^([^\]\s]+)\]/g` per call via a factory, matching the `inlineCodeRegex()` idiom, so no `lastIndex` leaks between callers.
+  - `firstLine` is the first **citation** line. `anchorLine = firstLine - 1`, or `-1` when the section starts at line 0 — the fold model needs a line it can leave visible, and it cannot be a citation (→ Task 11). A citation binds with or without a blank line above it (verified against the installed parser), so the anchor is whatever line precedes the run, blank or prose.
+  - **Trailing blank lines after the last citation are in `mask`** and inside the section: they belong to no other block, and leaving them out would put the fold's end and the counter's exclusion on different lines.
+  - `firstLine` on a document with no section is `lines.length`. `scanDoc` splits an empty document to `['']`, so an empty document answers `1`, not `0`.
+  - `markerRegex(): RegExp` — a factory returning a fresh `/(?<!\\)\[\^([^\]\s]+)\]/g` per call, matching the `inlineCodeRegex()` idiom so no `lastIndex` leaks between callers. The lookbehind honors the `\[^1]` escape, which suppresses the reference at the parser too (verified) — one pattern, so the counter and the decoration pass cannot disagree about an escape.
   - `foldLabel(label: string): string` — the case-fold used for every binding comparison.
 - Assumed by: Tasks 2, 3, 5, 6, 10, 12, 16, 18.
 
-**Must agree:** the boundary this returns and the parser's own `footnoteDefinition` spans must name the same lines. One test parses a corpus document with `parse()` from `MarkdownPM/parser`, collects every `footnoteDefinition` node's line range, and asserts the scan's `mask` covers exactly those lines for the trailing run — the two mechanisms crossing where they meet.
+**Must agree:** the boundary this returns and the parser's own `footnoteDefinition` spans must name the same lines **for unindented, top-level citations** — the shape this feature admits. One test parses a corpus with `parse()` from `MarkdownPM/parser`, collects every top-level `footnoteDefinition` node's line range, and asserts the scan's `mask` covers exactly those lines for the trailing run. The corpus deliberately excludes the three shapes R1 does not admit, which the Failure half names.
 
-**Failure half:** empty document → `firstLine === 0`, no entries, empty mask. A document that is nothing but citations → the whole document is the section. A citation line inside a fence → not a citation, `fenced` wins. A `[^my note]:` line (a space in the label) → a CommonMark link definition, not a citation, and it ends the run. A trailing run followed by a blank line and one prose word → no section at all. Trailing blank lines after the last citation → still the section. A citation whose text is empty → a valid entry.
+**Failure half:** empty document → `firstLine === 1` (the split yields one empty line), no entries, empty mask. A citation head indented 1–3 spaces → still a citation, per CommonMark; indented 4 → indented code and not a citation, which `fenced` does not cover, so the scan tests the indent itself. A citation inside a blockquote or a list item → **parses as a real `footnoteDefinition` at the parser** (verified) but is not admitted here: it stays live prose like any mid-document citation, the same accepted divergence A-2 already takes, and the cross-check corpus excludes it. A document that is nothing but citations → the whole document is the section. A citation line inside a fence → not a citation, `fenced` wins. A `[^my note]:` line (a space in the label) → a CommonMark link definition, not a citation, and it ends the run. A trailing run followed by a blank line and one prose word → no section at all. Trailing blank lines after the last citation → still the section. A citation whose text is empty → a valid entry.
 
 **Steps:**
 - [ ] Write the failing tests first, covering: the plain trailing run; indented continuation; **lazy continuation** (an unindented next line joining the citation above); interleaved blank lines; a run broken by trailing prose; a fenced pseudo-citation; a spaced label; duplicate labels; case-folded labels; the empty document; the citations-only document.
@@ -200,7 +203,7 @@ Nothing draws in this phase. The boundary derivation lands first and is exercise
 
 **Requirement:** 8
 
-**Why:** R8 is the requirement most exposed to silent regression, because `lines` has never once depended on a mask — it is the raw split, and every other count is derived from a separately masked string. Routing the exclusion through one array read by both is the only structure in which the three numbers cannot drift apart. The marker's four-characters-zero-words split is the single point where the two prose pipelines legitimately diverge, and it is expressed as one extra removal on the word path rather than as a second stripped string, so the character count needs no new code at all.
+**Why:** R8 is the requirement most exposed to silent regression, because `lines` has never once depended on a mask — it is the raw split, and every other count is derived from a separately masked string. Routing the exclusion through one array read by both is the only structure in which the three numbers cannot drift apart. The marker's characters-but-no-word split is the single point where the two prose pipelines legitimately diverge, and it is expressed as one extra removal on the word path rather than as a second stripped string, so the character count needs no new code at all.
 
 **Files:**
 - Modify: `Pommora/src/renderer/src/Detail/Subfield/subfieldStats.ts` — `computeStats`, and the module doc comment.
@@ -211,15 +214,15 @@ Nothing draws in this phase. The boundary derivation lands first and is exercise
 - `rg -F "computeStats" Pommora/src` → 4 at planning time (the definition, the one call site, and two test references). Legitimate hits: all four.
 - Control: `rg -F "subfieldStats" Pommora/src` → 3. Zero here means the search never ran.
 
-**Failure half:** a page with no footnotes → all three counts identical to today, which the 22 unchanged tests prove. A page that is nothing but a citations section → `lines: 0, words: 0, characters: 0`. A marker inside a fence → already blanked by the fence mask, unchanged. A marker inside inline code → already blanked, unchanged. A marker adjacent to punctuation → one word, not two.
+**Failure half:** a page with no footnotes → all three counts identical to today, which the 22 unchanged tests prove. An escaped `\[^1]` → not a marker; it counts as the prose the parser reads it as, and the shared pattern's lookbehind is what makes both layers agree. `[^1](url)` → the marker goes, `(url)` counts. A page that is nothing but a citations section → `lines: 0, words: 0, characters: 0`. A marker inside a fence → already blanked by the fence mask, unchanged. A marker inside inline code → already blanked, unchanged. A marker adjacent to punctuation → one word, not two.
 
 **Must agree:** `lines.length` after exclusion and the number of `GONE`-blanked lines in the prose pass must describe the same set. One test asserts that for a document mixing a fence, a table, prose and a citations section, `lines` equals the raw line count minus exactly the section's line count.
 
 **Steps:**
-- [ ] Write the failing tests: section excluded from all three counts; `sentence[^1].` is one word and thirteen characters; `word [^1] word` is two words with the marker's four characters counted; a fenced pseudo-citation still counts as the fence it is; a marker inside inline code stays blanked; the citations-only document.
+- [ ] Write the failing tests: section excluded from all three counts; `sentence[^1].` is one word and thirteen characters; `word [^1] word` is two words with the marker's four characters counted; `a[^10] b` is two words and eight characters, pinning that the count is the syntax's length rather than a constant; a fenced pseudo-citation still counts as the fence it is; a marker inside inline code stays blanked; the citations-only document.
 - [ ] Run — expect the new cases red and all 22 existing cases green.
 - [ ] Compute the scan once, after `fencedLineMask` and from it. Feed `mask[i]` into the existing per-line map beside the `fenced[i]` test, and subtract its population count from `lines.length`.
-- [ ] Add the marker removal to the word path only, with `''`, positioned after the markdown-link replace so `[^1](url)` cannot leave a bare destination behind, and using a callback over one scanning regex so no pattern is ever built from a user-supplied label.
+- [ ] Add the marker removal to the word path only, with `''`, positioned **before** the markdown-link replace and using `markerRegex()` — a callback over one scanning pattern, so nothing is ever built from a user-supplied label. Before, not after: the link pattern's label class admits `^`, so `see[^1](url) here` currently reduces to `see^1 here` and loses seven characters the parser reads as prose. Removing the marker first leaves `(url)` standing, which is what the editor draws.
 - [ ] Rewrite the module doc comment to state what is excluded and why the two pipelines diverge on a marker.
 - [ ] Update the Subfield feature document's counter paragraph.
 - [ ] Run the gate — expect green, all 22 originals untouched.
@@ -277,11 +280,11 @@ Nothing draws in this phase. The boundary derivation lands first and is exercise
 
 **Must agree:** the ordinal a citation row draws and the number its body markers draw must be the same integer. One test asserts, for a document whose disk labels are `1, 7, 3` in body order `7, 1, 3`, that both the marker decorations and the row widgets read `1, 2, 3` against the same first-use ordering.
 
-**Failure half:** a citation with empty text → still draws a visible glyph and an empty content span. An orphaned citation → draws its seat with the dim class and no number. A duplicate-labelled citation → the first binds and numbers, the later one dims and goes numberless. A citation whose content is a single long unbroken word at narrow width → wraps under the content span, never under the glyph.
+**Failure half:** a citation with empty text → still draws a visible glyph and an empty content span. Home, or Left from the content start → lands at the content start or the line above, never inside the hidden prefix. An orphaned citation → draws its seat with the dim class and no number. A duplicate-labelled citation → the first binds and numbers, the later one dims and goes numberless. A citation whose content is a single long unbroken word at narrow width → wraps under the content span, never under the glyph.
 
 **Steps:**
 - [ ] Add the citation branch to `lineIntentsInto`, positioned before `pushConstruct` and returning `null` so the list and rail machinery never sees the line.
-- [ ] Emit the intents above; gate the `atomic` intent on the caret not being on the line, matching how the checkbox and bullet slots gate theirs.
+- [ ] Emit the intents above with the **`atomic` ungated**, and the `hide` with it. The checkbox and bullet slots wrap their `hide`, widget and `atomic` in one caret-off-marker gate, so revealing the source and admitting the caret happen as one act. A citation prefix can never reveal — C-7 and E-2b make the label invisible plumbing, and showing `[^7]:` beneath a glyph reading `3` is the contradiction they forbid. Since the characters never appear, the caret must never reach them: an ungated atomic is the only pairing that holds, and gating the atomic alone would seat a caret in five hidden characters whose next keystroke breaks the label and literalizes every marker bound to it.
 - [ ] Set `ignoreEvent` false on the glyph widget.
 - [ ] Add tests: ordinal correctness under out-of-order labels; the dim predicate for orphans and duplicate-losers; the empty-text seat; the narrow-width single-word wrap.
 - [ ] Run the gate — expect green.
@@ -303,7 +306,7 @@ Nothing draws in this phase. The boundary derivation lands first and is exercise
 - Produces: `docMarkers(doc)` → the absolute-offset ranges of `docScan.citations.markers`, cached per document version. **It performs no sweep of its own** — the walk lives in Task 1, and a second one here is the C1 violation this task exists to avoid. Its only work is mapping line-relative offsets to document offsets.
 - Assumed by: Tasks 8, 12, 16, 17, 19.
 
-**Must agree:** a marker is drawn if and only if the stats path counts it as zero words. One test runs both over the same document and asserts the two sets of marker positions are identical — the decoration layer and the counter reaching the same answer about the same bytes.
+**Must agree:** every marker the decoration pass draws is one the counter scores as zero words — containment, not equality, because the counter also zero-words an unmatched marker that draws nothing (the 08-20 ruling). One test runs both over a document holding a bound marker, an unbound one and an escaped one, and asserts the drawn set is a strict subset of the zero-worded set, with the escaped marker in neither.
 
 **Negative control:** the atomic behavior gets both halves — a test proving arrow-left across a marker lands on its far side in one step *and* a test proving that with the atomic range removed the caret seats inside it. A test that passes either way proves nothing.
 
@@ -335,7 +338,8 @@ Nothing draws in this phase. The boundary derivation lands first and is exercise
 
 **Steps:**
 - [ ] Add the marker branch, reusing the existing `[`-prefilter which already admits `[^1]`.
-- [ ] Resolve the ordinal against the document's scan, passed in the way the cell renderer already receives its link resolution context.
+- [ ] Pass the ordinal as a prop and **add it to `StaticCell`'s memo comparator**, which today compares the cell's text alone. A positional ordinal is a whole-document fact: a numeric label renumbers on disk so its text changes and the memo busts, but a word label never does, so `[^note]` drawing `1` would keep drawing `1` after an insert above the table moved it to 2. The comparator exists to stop a scrolling table building R×C editors in one frame; one extra scalar compare does not threaten that.
+- [ ] Handle the marker-only cell: the renderer returns raw text when `tokenize()` yields nothing, and the tokenizer emits nothing for `[^…]`, so a cell whose only markdown is a marker returns before any branch can draw it.
 - [ ] Test: a resting cell draws the ordinal; entering the cell keeps the same glyph; an unmatched marker stays literal in both states.
 - [ ] Run the gate — expect green.
 - [ ] Commit: `feat(editor): markers render in resting table cells`
@@ -377,7 +381,7 @@ Nothing draws in this phase. The boundary derivation lands first and is exercise
 
 ### Phase 3 — Hiding and showing
 
-Tasks 10 and 11 open and close the fold hazard window. Nothing in this phase may add a second fold kind or a `md-foldable` consumer between them.
+Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may add a second fold kind or a `md-foldable` consumer between them.
 
 #### Task 9: The visibility override's storage
 
@@ -394,7 +398,7 @@ Tasks 10 and 11 open and close the fold hazard window. Nothing in this phase may
 
 **Interfaces**
 - Produces: `window.nexus.citations.get(): Record<string, boolean>` and `.set(pageId, shown | null)`.
-- Assumed by: Tasks 10, 13.
+- Assumed by: Tasks 11, 13.
 
 **Failure half:** a page with no row → absent, meaning follow the default. A non-boolean value arriving over IPC → refused by the validator with a structured error, never written. A copied page → its row travels, which is what `COPY_SCOPES` is for and what is silently lost if forgotten.
 
@@ -405,116 +409,7 @@ Tasks 10 and 11 open and close the fold hazard window. Nothing in this phase may
 - [ ] Run the gate — expect green.
 - [ ] Commit: `feat(main): a per-page store for the citations section's visibility`
 
-#### Task 10: The section is a fold region, seeded rather than persisted — **opens the hazard window**
-
-**Requirement:** 5
-
-**Why:** The section's disclosure is the editor's fold motion, and the fold registry was built for a second kind. But the fold system persists every kind's regions into one shared per-page row, so a section that persisted there would be written twice — once by the fold listener and once by its own override — which is precisely the two writers the spec forbids. Seeding the fold from the override and excluding it from persistence gives one writer and the motion both. That also retires `collapsedByDefault` rather than repairing it: the flag only ever applied to a page holding no saved fold of any kind, so a single collapsed heading anywhere would have opened the section visible, and no kind has ever used it.
-
-**Files:**
-- Modify: `Pommora/src/renderer/src/MarkdownPM/editor/folding.ts` — `FoldKind`, the `KINDS` registry, the persist listener's filter, `applySavedFolds`, and the removal of `collapsedByDefault` from `FoldRegion`.
-- Modify: `Pommora/src/renderer/src/MarkdownPM/editor/headingScan.ts` — `headingSections` clamps its last section at the citations boundary.
-- Test: `Pommora/src/renderer/src/MarkdownPM/editor/foldState.test.tsx`
-
-**Derivation**
-- `rg -F "collapsedByDefault" Pommora/src` → 3 at planning time (the field, its one read, one doc comment). Legitimate hits: none survive.
-- Control: `rg -F "FoldRegion" Pommora/src` → 6. Zero here means the search never ran.
-
-**Interfaces**
-- Produces: `FoldKind` gains `'citations'`; `FoldRegion` gains `persists: boolean`, false for the new kind.
-- Assumed by: Tasks 11, 13.
-
-**Survivors:** heading folds keep persisting exactly as they do. `expandFoldsAt` and `FoldsApi` are unchanged.
-
-**Must agree:** the fold region's start line and the citation scan's `firstLine` must be the same line, and the heading scan's clamped end must be the line before it. One test asserts all three against one document.
-
-**Negative control:** a test proving a collapsed heading above the section no longer swallows it *and* a test proving that with the heading clamp removed, it does.
-
-**Failure half:** a document with no citations → no region, and the heading scan's last section runs to the document's end as it does today. A document that is entirely a citations section → a region anchored at line 0 with no heading above it. A heading whose text would collide with the section's fold key → impossible, since the section's key is a sentinel no heading scan produces; assert it.
-
-**Steps:**
-- [ ] Write the failing tests: the section folds and unfolds; its state does not appear in the persisted key set; a collapsed heading stops at its start; the three-way boundary agreement; the negative control's disabled half.
-- [ ] Add the `'citations'` kind to `KINDS`, anchored on the divider line, with `persists: false`.
-- [ ] Filter the persist listener to regions that persist, and skip non-persisting kinds in `applySavedFolds`.
-- [ ] Delete `collapsedByDefault` and its read.
-- [ ] Clamp `headingSections`' last section at the citations boundary.
-- [ ] Run the gate — expect green.
-- [ ] Commit: `feat(editor): the citations section folds without joining the fold store`
-
-#### Task 11: The chevron class and the heading-gesture class separate — **closes the hazard window**
-
-**Requirement:** 5
-
-**Why:** `md-foldable` currently does three jobs at once — it draws the chevron, it gates the heading drag gesture, and it is gripMenu's heading hit-test. A non-heading fold anchor wearing it inherits all three, and the third one fails silently: the right-press is defaulted away and the hover flag tells main to stand its own menu down, then the heading menu bails because the line has no heading parts, leaving a press that opens nothing at all. Splitting the classes is the fix, and it is a repair to live behavior rather than new construction, so it carries a sibling sweep.
-
-**Files:**
-- Modify: `Pommora/src/renderer/src/MarkdownPM/editor/folding.ts` — `chevronDeco` stamps a chevron class on every kind and the heading-gesture class on heading anchors only.
-- Modify: `Pommora/src/renderer/src/MarkdownPM/editor/gripMenu.ts` — `HEADING_LINE` reads the heading-gesture class.
-- Modify: `Pommora/src/renderer/src/MarkdownPM/Styles.css` — the chevron rules follow the chevron class.
-
-**Derivation**
-- `rg -F "md-foldable" Pommora/src` → 5 at planning time. Legitimate hits: the ones that genuinely mean "draws a chevron" survive under the chevron class; the drag gate and the grip-menu hit-test move to the heading class.
-- Control: `rg -F "chevronDeco" Pommora/src` → 2. Zero here means the search never ran.
-
-**Negative control:** a test proving a right-press on the section's divider reaches the ordinary editor menu *and* a test proving that with the class split reverted, it reaches neither menu.
-
-**Failure half:** a heading anchor → keeps all three behaviors unchanged. The section's anchor → chevron only, no drag gate, no heading hit-test.
-
-**Steps:**
-- [ ] Write the failing tests: the divider's right-press opens the ordinary editor menu; a heading's right-press still opens the heading menu; a heading is still drag-relocatable; the negative control's reverted half.
-- [ ] Split the class in `chevronDeco`, point `HEADING_LINE` at the heading-gesture class, and follow the CSS.
-- [ ] Re-run the derivation and confirm every surviving hit is deliberate.
-- [ ] Run the gate — expect green.
-- [ ] Commit: `fix(editor): a fold chevron and a heading gesture stop sharing one class`
-
-#### Task 12: The divider draws and folds
-
-**Requirement:** 5
-
-**Why:** The divider is the section's visible boundary and its fold control at once — there is no chevron in this design. It wears the shared heading seam so the two reads as one treatment, and it blur-fades rather than cutting, which is the one new motion this feature introduces and the reason it is stated here rather than inherited.
-
-**Files:**
-- Modify: `Pommora/src/renderer/src/MarkdownPM/decorations/intent.ts` — the divider's line intent on the section's first line.
-- Modify: `Pommora/src/renderer/src/MarkdownPM/Styles.css` — the divider treatment and its blur-fade.
-- Modify: `Pommora/src/renderer/src/MarkdownPM/editor/folding.ts` — the divider's click joins the existing fold click path rather than the pointer-gesture factory. That factory's contract is an inline token hit-test returning a range within a line; a divider is the line, so it fits the fold chevron's click path and not that one.
-
-**Failure half:** a document with no citations → no divider. The divider clicked while the section is already hidden → cannot occur, since a hidden section draws no divider; the Subfield control is the only way back.
-
-**Steps:**
-- [ ] Emit the divider as a line intent on the section's first line, reusing the heading seam's border treatment.
-- [ ] Add the blur-fade on the disclosure duration and the standard easing, both read from the motion tokens.
-- [ ] Wire the click to the same write the Subfield control uses — the override, never the fold directly, so there is one state and one writer.
-- [ ] Use the keyboard activation primitive so Enter and Space reach it, and take no interactive role it cannot honor.
-- [ ] Run the gate — expect green.
-- [ ] Commit: `feat(editor): the citations divider draws and folds the section`
-
-#### Task 13: The Subfield's Show / Hide control
-
-**Requirement:** 5
-
-**Why:** Placing it in the item registry rather than beside the pane's collapse chevron is what carries it into the Page Preview for free — the preview mounts the Subfield component but has none of the pane's chevron chrome or its proximity tracking. It also removes the need for any scroll-position condition: that clause existed to guarantee the control was always reachable, and an item in an open bar already is. The label states what the click will do and reflects the current state at once.
-
-**Files:**
-- Modify: `Pommora/src/renderer/src/Detail/Subfield/subfieldItems.tsx` — the item id union, the id array, the per-kind defaults, the component, the switch case.
-- Modify: `Pommora/src/renderer/src/Detail/Subfield/subfield.css` — the text control's treatment.
-- Modify: `.claude/Features/SubfieldPM.md` and `.claude/Features/PagePreviewPM.md`.
-
-**Interfaces**
-- Consumes: `DocScan.citations` via the store's live body, the override from Task 9, the default from Task 14.
-- Produces: nothing downstream.
-
-**Failure half:** a page with no citation lines → the item renders nothing at all, per R5. A page with only orphaned citations → the item renders, because a citation line exists and the section must stay reachable. A non-page selection → the item is not in that kind's defaults and never mounts. The preview's scope → reads its own body, never the shared live-body slot, which has a single owner.
-
-**Steps:**
-- [ ] Add the item to the union, the id array, and the `page` default order.
-- [ ] Build the control as a text button following the existing List / Gallery item's shape, labelled from the shared two-state label module rather than at the call site.
-- [ ] Return null when the scan reports no citation lines.
-- [ ] Resolve the shown state as override, then default; write through the override, clearing the row when the value matches the default.
-- [ ] Update both feature documents.
-- [ ] Run the gate — expect green.
-- [ ] Commit: `feat(subfield): a Show / Hide Footnotes control`
-
-#### Task 14: The two settings
+#### Task 10: The two settings
 
 **Requirement:** 10
 
@@ -529,7 +424,7 @@ Tasks 10 and 11 open and close the fold hazard window. Nothing in this phase may
 
 **Interfaces**
 - Produces: `Personalization.citationsShown` (factory default hidden) and `Personalization.jumpToCitation` (factory default on).
-- Assumed by: Tasks 13, 19.
+- Assumed by: Tasks 13, 20, 21.
 
 **Failure half:** a key absent from the settings file → the built-in default, never `undefined` leaking to a consumer. A non-boolean in the file → dropped by the sanitizer, the default stands.
 
@@ -541,10 +436,122 @@ Tasks 10 and 11 open and close the fold hazard window. Nothing in this phase may
 - [ ] Run the gate — expect green.
 - [ ] Commit: `feat(settings): Default Visibility and Jump To Citation On Creation`
 
+#### Task 11: The section is a fold region, seeded rather than persisted — **opens the hazard window**
+
+**Requirement:** 5
+
+**Why:** The section's disclosure is the editor's fold motion, and the fold registry was built for a second kind. But the fold system persists every kind's regions into one shared per-page row, so a section that persisted there would be written twice — once by the fold listener and once by its own override — which is precisely the two writers the spec forbids. Seeding the fold from the override and excluding it from persistence gives one writer and the motion both. That also retires `collapsedByDefault` rather than repairing it: the flag only ever applied to a page holding no saved fold of any kind, so a single collapsed heading anywhere would have opened the section visible, and no kind has ever used it.
+
+**Files:**
+- Modify: `Pommora/src/renderer/src/MarkdownPM/editor/folding.ts` — `FoldKind`, the `KINDS` registry, the persist listener's filter, `applySavedFolds`, and the removal of `collapsedByDefault` from `FoldRegion`.
+- Modify: `Pommora/src/renderer/src/MarkdownPM/editor/headingScan.ts` — `headingSections` clamps its last section at the citations boundary.
+- Test: `Pommora/src/renderer/src/MarkdownPM/editor/foldState.test.tsx`
+
+**Derivation**
+- `rg -F "collapsedByDefault" Pommora/src` → 2 (the field's declaration and its one read). Legitimate hits: none survive.
+- Control: `rg -F "FoldRegion" Pommora/src` → 4. Zero here means the search never ran.
+
+**Interfaces**
+- Produces: `FoldKind` gains `'citations'`; `FoldRegion` gains `persists: boolean`, false for the new kind.
+- Assumed by: Tasks 12, 13.
+
+**Survivors:** heading folds keep persisting exactly as they do. `expandFoldsAt` and `FoldsApi` are unchanged.
+
+**Must agree:** the fold region's start line and the citation scan's `firstLine` must be the same line, and the heading scan's clamped end must be the line before it. One test asserts all three against one document.
+
+**Negative control:** a test proving a collapsed heading above the section no longer swallows it *and* a test proving that with the heading clamp removed, it does.
+
+**Failure half:** a document with no citations → no region, and the heading scan's last section runs to the document's end as it does today. A document that is entirely a citations section → `anchorLine` is `-1`, no region, the section stays visible and the control reports it shown. A section of exactly one citation → folds, because its anchor is above it. A heading whose text would collide with the section's fold key → impossible, since the section's key is a sentinel no heading scan produces; assert it.
+
+**Steps:**
+- [ ] Write the failing tests: the section folds and unfolds; its state does not appear in the persisted key set; a collapsed heading stops at its start; the three-way boundary agreement; the negative control's disabled half.
+- [ ] Add the `'citations'` kind to `KINDS`, **anchored on the line above the run** (`anchorLine`), with `persists: false`. A fold hides `anchor.lineEnd + 1 .. to` and never its anchor line, so anchoring on the first citation would leave that row on screen — and on a one-citation section `bodyStart > to`, which makes both `toggleFold` and `applySavedFolds` bail and the section unhideable. Anchoring above fixes both. When `anchorLine` is `-1` the section starts at line 0, no region exists, and the section cannot hide — the right answer, since hiding it would render a blank page.
+- [ ] **Seed the fold from the override.** A state field reads the resolved visibility on mount and dispatches the fold effect, then follows later changes to that value. This is the only reader of the stored boolean and the only direction that turns it into visible behavior; writing it here rather than improvising it at Task 14 is what keeps a second writer from appearing at exactly the seam C-3 protects.
+- [ ] Filter the persist listener to regions that persist, and skip non-persisting kinds in `applySavedFolds`.
+- [ ] Delete `collapsedByDefault` and its read.
+- [ ] Clamp `headingSections`' last section at the citations boundary.
+- [ ] Run the gate — expect green.
+- [ ] Commit: `feat(editor): the citations section folds without joining the fold store`
+
+#### Task 12: The chevron class and the heading-gesture class separate — **closes the hazard window**
+
+**Requirement:** 5
+
+**Why:** `md-foldable` currently does three jobs at once — it draws the chevron, it gates the heading drag gesture, and it is gripMenu's heading hit-test. A non-heading fold anchor wearing it inherits all three, and the third one fails silently: the right-press is defaulted away and the hover flag tells main to stand its own menu down, then the heading menu bails because the line has no heading parts, leaving a press that opens nothing at all. Splitting the classes is the fix, and it is a repair to live behavior rather than new construction, so it carries a sibling sweep.
+
+**Files:**
+- Modify: `Pommora/src/renderer/src/MarkdownPM/editor/folding.ts` — `chevronDeco` stamps the heading-gesture class on heading anchors only, and the chevron class **per kind**: headings take it, `'citations'` does not, because C-1 puts no chevron on the divider.
+- Modify: `Pommora/src/renderer/src/MarkdownPM/editor/gripMenu.ts` — `HEADING_LINE` reads the heading-gesture class.
+- Modify: `Pommora/src/renderer/src/MarkdownPM/Styles.css` — the chevron rules follow the chevron class.
+- Modify: `Pommora/src/renderer/src/Embeds/ConnectionHoverCard.tsx` — its `closest('.cm-line.md-foldable')` fold click follows the **heading-gesture** class, or a hover card's whole-line click starts folding the citations divider directly, which is the second writer C-3 forbids.
+- Modify: `Pommora/src/renderer/src/Embeds/embeds.css` — its chevron suppression and pointer cursor follow whichever class the chevron kept, or every heading in every connection hover card grows a chevron.
+
+**Derivation**
+- `rg -F "md-foldable" Pommora/src` → **8 lines across 5 files** — `folding.ts`, `gripMenu.ts`, `Styles.css`, `Embeds/ConnectionHoverCard.tsx`, `Embeds/embeds.css`. The class serves four jobs, not three; the hover card's fold click is the one the first count missed. Legitimate hits: those that genuinely mean "draws a chevron" survive under the chevron class; the drag gate, the grip-menu hit-test and the hover-card click move to the heading class.
+- Control: `rg -F "chevronDeco" Pommora/src` → 2. Zero here means the search never ran.
+
+**Negative control:** a test proving a right-press on the section's divider reaches the ordinary editor menu *and* a test proving that with the class split reverted, it reaches neither menu.
+
+**Failure half:** a heading anchor → keeps all four behaviors unchanged, inside a hover card as well as in the main editor. The section's anchor → **no chevron**, no drag gate, no heading hit-test, no hover-card fold click.
+
+**Steps:**
+- [ ] Write the failing tests: the divider's right-press opens the ordinary editor menu; a heading's right-press still opens the heading menu; a heading is still drag-relocatable; the divider draws no chevron; a hover card's heading still draws none; the negative control's reverted half.
+- [ ] Split the class in `chevronDeco`, point `HEADING_LINE` at the heading-gesture class, and follow the CSS.
+- [ ] Re-run the derivation and confirm every surviving hit is deliberate.
+- [ ] Run the gate — expect green.
+- [ ] Commit: `fix(editor): a fold chevron and a heading gesture stop sharing one class`
+
+#### Task 13: The Subfield's Show / Hide control
+
+**Requirement:** 5
+
+**Why:** Placing it in the item registry rather than beside the pane's collapse chevron is what carries it into the Page Preview for free — the preview mounts the Subfield component but has none of the pane's chevron chrome or its proximity tracking. It also removes the need for any scroll-position condition: that clause existed to guarantee the control was always reachable, and an item in an open bar already is. The label states what the click will do and reflects the current state at once.
+
+**Files:**
+- Modify: `Pommora/src/renderer/src/Detail/Subfield/subfieldItems.tsx` — the item id union, the id array, the per-kind defaults, the component, the switch case.
+- Modify: `Pommora/src/renderer/src/Detail/Subfield/subfield.css` — the text control's treatment.
+- Modify: `.claude/Features/SubfieldPM.md` and `.claude/Features/PagePreviewPM.md`.
+
+**Interfaces**
+- Consumes: `DocScan.citations` via the store's live body, the override from Task 9, the default from Task 10.
+- Produces: nothing downstream.
+
+**Failure half:** a page with no citation lines → the item renders nothing at all, per R5. A page with only orphaned citations → the item renders, because a citation line exists and the section must stay reachable. A non-page selection → the item is not in that kind's defaults and never mounts. The preview's scope → reads its own body, never the shared live-body slot, which has a single owner.
+
+**Steps:**
+- [ ] Add the item to the union, the id array, and the `page` default order.
+- [ ] Build the control as a text button following the existing List / Gallery item's shape, labelled from the shared two-state label module rather than at the call site.
+- [ ] Return null when the scan reports no citation lines.
+- [ ] Resolve the shown state as override, then default; write through the override, clearing the row when the value matches the default.
+- [ ] Update both feature documents.
+- [ ] Run the gate — expect green.
+- [ ] Commit: `feat(subfield): a Show / Hide Footnotes control`
+
+#### Task 14: The divider draws and folds
+
+**Requirement:** 5
+
+**Why:** The divider is the section's visible boundary and its fold control at once — there is no chevron in this design. It wears the shared heading seam so the two reads as one treatment, and it blur-fades rather than cutting, which is the one new motion this feature introduces and the reason it is stated here rather than inherited.
+
+**Files:**
+- Modify: `Pommora/src/renderer/src/MarkdownPM/decorations/intent.ts` — the divider's line intent on the section's first line.
+- Modify: `Pommora/src/renderer/src/MarkdownPM/Styles.css` — the divider treatment and its blur-fade.
+- Modify: `Pommora/src/renderer/src/MarkdownPM/editor/folding.ts` — the divider's click joins the existing fold click path rather than the pointer-gesture factory. That factory's contract is an inline token hit-test returning a range within a line; a divider is the line, so it fits the fold chevron's click path and not that one.
+
+**Failure half:** a document with no citations → no divider. The divider clicked while the section is already hidden → cannot occur, since a hidden section draws no divider; the Subfield control is the only way back.
+
+**Steps:**
+- [ ] Emit the divider as a line intent on the **anchor line** — the line above the run, the one the fold leaves visible — reusing the heading seam's border treatment as its bottom edge. Drawn only while the section is open, so a hidden section shows nothing at all.
+- [ ] Add the blur-fade on the disclosure duration and the standard easing, both read from the motion tokens.
+- [ ] Wire the click to the same write the Subfield control uses — the override, never the fold directly, so there is one state and one writer.
+- [ ] Use the keyboard activation primitive so Enter and Space reach it, and take no interactive role it cannot honor.
+- [ ] Run the gate — expect green.
+- [ ] Commit: `feat(editor): the citations divider draws and folds the section`
+
 #### Gate 3 — one state, two controls, one writer
 - [ ] Gate commands green, exit codes read directly.
 - [ ] Both derivations re-run against their controls.
-- [ ] The hazard window is closed — Task 11 landed.
+- [ ] The hazard window is closed — Task 12 landed.
 - [ ] A single write path proven: toggling from the divider and from the Subfield produce the same row, and toggling to the default value deletes it.
 - [ ] **Simplification runs alone, and runs first** — `code-simplifier` dispatched against `<base>..HEAD` with no reviewer beside it and no reviewer's findings in its brief, then `comment-killer-agent` over what it returns. A build reviewed for correctness before it has settled its own relationships gets defended rather than reduced, which is why the order is fixed.
 - [ ] Its reductions applied, or refused in the Log with a reason. The phase re-gates after they land.
@@ -570,7 +577,7 @@ Tasks 10 and 11 open and close the fold hazard window. Nothing in this phase may
 - Test: `Pommora/src/renderer/src/MarkdownPM/editor/citationGuard.test.ts`
 
 **Interfaces**
-- Produces: `citationTailVerdict(doc, fromA, toA, scan)` → the same four-verdict shape the callout guard uses, exported pure for tests.
+- Produces: `citationTailVerdict(doc, fromA, toA, inserted, scan)` → the callout guard's verdict shape **plus a fifth arm carrying replacement text**. The existing four only move range endpoints — the callout guard pushes its `inserted` through verbatim on every branch — and A-5b requires the inserted text be *rewritten* into continuation form, which no endpoint move can express. `inserted` joins the signature for the same reason. Exported pure for tests.
 
 **Negative control:** a test proving a paste below the section is shaped into continuation form *and* a test proving that with the guard unregistered it strands prose after the section and literalizes the whole thing.
 
@@ -634,7 +641,7 @@ Tasks 10 and 11 open and close the fold hazard window. Nothing in this phase may
 **Why:** A cascade keyed to a gesture fires when the gesture happens; a cascade keyed to a range fires only when the deleted range is exactly the construct. That distinction is what stops a wide selection sweep from silently deleting citations the user never saw, and it is why backspace at a citation's content start and a menu Delete produce the same result while a mixed body-and-section sweep produces neither.
 
 **Files:**
-- Modify: `Pommora/src/renderer/src/MarkdownPM/input/index.ts` — the citation-start backspace, and `lineMarkerRe`.
+- Modify: `Pommora/src/renderer/src/MarkdownPM/input/index.ts` — the citation-start backspace only. **`lineMarkerRe` is deliberately left alone:** its one consumer fires at content start and deletes the prefix, the same caret and the same key C-9 gives to the whole-footnote delete. Two transforms claiming one keystroke means one silently wins, and if the shared regex won it would strip `[^1]: ` and leave bare prose inside the section — ending the trailing run and literalizing everything below it.
 - Modify: `Pommora/src/renderer/src/MarkdownPM/editor/input.ts` — the chain link.
 - Test: `Pommora/src/renderer/src/MarkdownPM/input/citationCascade.test.ts`
 
@@ -644,7 +651,6 @@ Tasks 10 and 11 open and close the fold hazard window. Nothing in this phase may
 
 **Steps:**
 - [ ] Write the failing tests including both halves of the negative control.
-- [ ] Add `[^n]:` to `lineMarkerRe` so one backspace eats the whole prefix.
 - [ ] Implement the citation-start transform and the marker cascade, each as one pure function returning one edit, dispatched once.
 - [ ] Run the gate — expect green.
 - [ ] Commit: `feat(editor): footnote deletions cascade by range, not by gesture`
@@ -685,7 +691,7 @@ Tasks 10 and 11 open and close the fold hazard window. Nothing in this phase may
 
 **Steps:**
 - [ ] Write the failing tests: mixed numeric and word labels; the orphan skip; the reorder; the no-op case producing no edits at all.
-- [ ] Implement `normalize` as a pure function over the scan.
+- [ ] Implement `normalize` as a pure function over the scan, returning **per-line edits rather than one whole-section replace**. The fold entry over the section remaps its ends through the change, and a single replace spanning the section collapses both onto the insertion point, dropping the fold and popping a hidden section open mid-gesture.
 - [ ] Run the gate — expect green.
 - [ ] Commit: `feat(shared): one normalization for footnote order`
 
@@ -697,9 +703,9 @@ Tasks 10 and 11 open and close the fold hazard window. Nothing in this phase may
 
 **Files:**
 - Modify: `Pommora/src/main/editorMenu.ts` — the Insert submenu row.
-- Modify: `Pommora/src/shared/PasteAsMenu.ts` — the new form and its row.
+- Modify: `Pommora/src/shared/PasteAsMenu.ts` — the new form and its row, offered on a **separate predicate** (a non-empty clipboard) rather than through `pasteAsTarget`. That function refuses any clipboard holding a newline because every existing form writes one line, so routing Footnote through it would make the multi-paragraph normalization D-3 exists for unreachable. Leaving it untouched keeps the three existing forms and their tests exactly as they are.
 - Modify: `Pommora/src/renderer/src/MarkdownPM/editor/menu.ts` — both action branches.
-- Test: beside the existing menu tests.
+- Test: `Pommora/src/shared/PasteAsMenu.test.ts` — the Footnote row appears for a multi-paragraph clipboard, and the three existing forms still do not.
 
 **Failure half:** Insert with the caret inside a citation → refused; markers live in the body and cells only. Paste As with a multi-paragraph clipboard → blank lines collapsed, following lines shaped into continuations. Paste As with an empty clipboard → the row is not offered.
 
@@ -794,11 +800,11 @@ Tasks 10 and 11 open and close the fold hazard window. Nothing in this phase may
   - [ ] Task 8 — The section is inert to the block layer · `<commit>`
 - [ ] **Phase 3** — Hiding and showing
   - [ ] Task 9 — The visibility override's storage · `<commit>`
-  - [ ] Task 10 — The section is a fold region, seeded rather than persisted · `<commit>`
-  - [ ] Task 11 — The chevron class and the heading-gesture class separate · `<commit>`
-  - [ ] Task 12 — The divider draws and folds · `<commit>`
+  - [ ] Task 10 — The two settings · `<commit>`
+  - [ ] Task 11 — The section is a fold region, seeded rather than persisted · `<commit>`
+  - [ ] Task 12 — The chevron class and the heading-gesture class separate · `<commit>`
   - [ ] Task 13 — The Subfield's Show / Hide control · `<commit>`
-  - [ ] Task 14 — The two settings · `<commit>`
+  - [ ] Task 14 — The divider draws and folds · `<commit>`
 - [ ] **Phase 4** — Guards and gestures
   - [ ] Task 15 — The tail guard · `<commit>`
   - [ ] Task 16 — Marker click — jump, or follow · `<commit>`
@@ -813,13 +819,16 @@ Tasks 10 and 11 open and close the fold hazard window. Nothing in this phase may
 
 ### Rulings
 
-- **08-20-2026, Nathan:** No statistics toggle. The citations section never counts; a marker counts four characters and zero words. Supersedes the decision log's earlier three-setting group.
+- **08-20-2026, Nathan:** No statistics toggle. The citations section never counts; a marker counts its own source characters and zero words (`[^1]` four, `[^10]` five). Supersedes the decision log's earlier three-setting group.
 - **08-20-2026, Nathan:** The citation row's glyph comes from the codeblock line-count chrome, sharing the ordered marker's CSS. The ordered branch draws its own source and cannot show a positional number.
 - **08-20-2026, Nathan:** There is no chevron. The Subfield control is literal text — Show Footnotes / Hide Footnotes — and the divider is the other half.
 - **08-20-2026, Nathan:** C-3's clear-on-default confirmed — a toggle landing on the current default deletes the row.
-- **08-20-2026, Claude (disclosed, unvetoed):** "Footnote syntax counts four characters and zero words" applies to every marker-shaped run, bound or not, so the counter needs no resolution data. An unmatched marker therefore scores zero words where A-3 calls it prose.
+- **08-20-2026, Claude (disclosed, unvetoed):** the characters-but-no-word rule applies to every marker-shaped run, bound or not, so the counter needs no resolution data. An unmatched marker therefore scores zero words where A-3 calls it prose. An **escaped** `\[^1]` is not marker-shaped and counts as ordinary prose, matching the parser.
 
 ### Open Against Later Tasks
+
+- **Against Task 15 — filter composition.** Four `transactionFilter`s will be registered, and the citations guard is the only one that *inserts* text; the table guard cancels outright on a multi-line insert that fuses tables. Check at Task 15: on a page ending in a table then a citations section, paste two paragraphs at the document's end and see what lands.
+- **Against Task 8 — a drop immediately above the section.** Inertness removes the section from the block starts, but a drop landing at the last block start above it, with no separating blank, could make the first citation a lazy continuation of the dropped paragraph. The tail guard covers content at or after the section, not immediately before. Check whether the block drag's insertion emits a fencing blank before deciding whether the guard's range widens.
 
 ### Deviations
 
