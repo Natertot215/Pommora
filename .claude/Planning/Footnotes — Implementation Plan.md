@@ -883,7 +883,7 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 - [x] **Phase 1** — One boundary, and the counter that proves it · base `e4c5c04a`
   - [x] Task 1 — The shared citation scan · `<commit>`
   - [x] Task 2 — The scan joins the editor's document derivation · `<commit>`
-  - [ ] Task 3 — Statistics stop counting the section · `<commit>`
+  - [x] Task 3 — Statistics stop counting the section · `<commit>`
 - [ ] **Phase 2** — The section and its markers draw
   - [ ] Task 4 — The citation row's styling · `<commit>`
   - [ ] Task 5 — Citation lines emit as numbered rows · `<commit>`
@@ -912,6 +912,8 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 
 ### Rulings
 
+- **08-20-2026, Nathan:** The `^`-leading link-label refusal lands in `shared/links.ts`'s `LINK_LABEL`, not in a counter-local copy. GFM reads `[^1](url)` as a reference plus prose in every consumer, so the counter, the editor's token layer and main's rename cascade all take the same narrowing; a private pattern would have been the hand-rolled parallel C1 exists to catch.
+
 - **08-20-2026, Nathan:** No statistics toggle. The citations section never counts; a marker counts its own source characters and zero words (`[^1]` four, `[^10]` five). 
 - **08-20-2026, Nathan:** The citation row's glyph comes from the codeblock line-count chrome, sharing the ordered marker's CSS. The ordered branch draws its own source and cannot show a positional number.
 - **08-20-2026, Nathan:** There is no chevron. The Subfield control is literal text — Show Footnotes / Hide Footnotes — and the divider is the other half.
@@ -930,6 +932,8 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 ### Deviations
 
 - **Task 1 — `contentStart` is absolute, not line-relative.** The Interfaces block described it as line-relative while the same block requires every offset to come out absolute, as the sibling readers do. Absolute is what the consumers want (the hide range, the guard's clamp), so the one clause loses to the rule.
+- **Task 3 — five whole-object assertions gained `citations: 0`.** `PageStats` grew the field Task 13 consumes, so the suite's five `toEqual` object literals had to name it; every other pre-existing assertion is byte-identical and no expectation was weakened. Gate 1's additions-only check reads against that.
+- **Task 3 — the ContextPM `[assumed]` row was cleared here, not in Task 1.** The Made False table gives it to Task 1; it landed one commit late, inside the commit that carried the other statistics documentation.
 - **Task 1 — a table below a citation ends the run.** The parser absorbs `| a | b |` rows as lazy continuation; the house exclusion set owns those bytes, so the scan breaks the run there instead. The cross-check corpus excludes the shape, and the divergence is stated at `citationScan`.
 
 ### Lessons

@@ -5,7 +5,12 @@ import { computeStats } from './subfieldStats'
  *  placeholder that survives into the character count is the bug this suite pins. */
 describe('computeStats — masked constructs add no characters', () => {
   it('a fenced block contributes nothing but still counts its raw lines', () => {
-    expect(computeStats('```\na\nb\n```')).toEqual({ lines: 4, words: 0, characters: 0 })
+    expect(computeStats('```\na\nb\n```')).toEqual({
+      lines: 4,
+      words: 0,
+      characters: 0,
+      citations: 0,
+    })
   })
 
   it('a fence holding a shorter fence drops as one block', () => {
@@ -33,7 +38,7 @@ describe('computeStats — masked constructs add no characters', () => {
 // note in subfieldStats.ts.
 describe('computeStats — the counter agrees with what the editor draws', () => {
   it('a lone page embed is a tile, not prose', () => {
-    expect(computeStats('![[Page]]')).toEqual({ lines: 1, words: 0, characters: 0 })
+    expect(computeStats('![[Page]]')).toEqual({ lines: 1, words: 0, characters: 0, citations: 0 })
   })
 
   it('a lone webpage embed is a tile, not prose', () => {
@@ -41,6 +46,7 @@ describe('computeStats — the counter agrees with what the editor draws', () =>
       lines: 1,
       words: 0,
       characters: 0,
+      citations: 0,
     })
   })
 
@@ -77,7 +83,7 @@ describe('computeStats — a line is read from the base the renderer reads it fr
   })
 
   it('a rule inside a quote is still a rule', () => {
-    expect(computeStats('> ---')).toEqual({ lines: 1, words: 0, characters: 0 })
+    expect(computeStats('> ---')).toEqual({ lines: 1, words: 0, characters: 0, citations: 0 })
   })
 
   it('a bare `>` with no space is prose the renderer never quotes', () => {
@@ -96,7 +102,7 @@ describe('computeStats — a line is read from the base the renderer reads it fr
 
 describe('computeStats — the contracts the source already stated', () => {
   it('an empty body is all zeros', () => {
-    expect(computeStats('')).toEqual({ lines: 0, words: 0, characters: 0 })
+    expect(computeStats('')).toEqual({ lines: 0, words: 0, characters: 0, citations: 0 })
   })
 
   it('a single trailing newline terminates rather than adding a line', () => {
@@ -110,5 +116,56 @@ describe('computeStats — the contracts the source already stated', () => {
 
   it('a markdown link reads as its label', () => {
     expect(computeStats('[the label](https://example.com)').words).toBe(2)
+  })
+})
+
+describe('computeStats — footnotes', () => {
+  const doc = 'body [^1] here\n\n[^1]: the citation\ncontinued'
+
+  it('the citations section leaves all three counts', () => {
+    expect(computeStats(doc)).toEqual({ lines: 2, words: 2, characters: 14, citations: 1 })
+  })
+
+  it('a marker counts its own characters and no word', () => {
+    expect(computeStats('sentence[^1].')).toMatchObject({ words: 1, characters: 13 })
+    expect(computeStats('word [^1] word')).toMatchObject({ words: 2, characters: 14 })
+  })
+
+  it('the marker count is the syntax length, not a constant', () => {
+    expect(computeStats('a[^10] b')).toMatchObject({ words: 2, characters: 8 })
+  })
+
+  it('a marker followed by a parenthetical is not a link', () => {
+    expect(computeStats('see[^1](url) here').characters).toBe(17)
+  })
+
+  it('a fenced pseudo-citation counts as the fence it is', () => {
+    expect(computeStats('```\n[^1]: one\n```')).toEqual({
+      lines: 3,
+      words: 0,
+      characters: 0,
+      citations: 0,
+    })
+  })
+
+  it('a marker inside inline code stays blanked', () => {
+    expect(computeStats('a `[^1]` b').characters).toBe(4)
+  })
+
+  it('a document that is only citations counts nothing', () => {
+    expect(computeStats('[^1]: one\n[^2]: two')).toEqual({
+      lines: 0,
+      words: 0,
+      characters: 0,
+      citations: 2,
+    })
+  })
+
+  it('subtracts exactly the citation lines, and no fence line', () => {
+    const body =
+      '# Head\n\n```\ncode\n```\n\n| a | b |\n| - | - |\n\ntext [^1]\n\n[^1]: one\n\n[^2]: two'
+    const raw = body.split('\n').length
+    const cited = ['[^1]: one', '', '[^2]: two'].length
+    expect(computeStats(body).lines).toBe(raw - cited)
   })
 })

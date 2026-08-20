@@ -47,10 +47,14 @@ export const MD_LINK = /^\[((?:[^\]\\]|\\.)*)\]\((.*)\)$/
  *  alternations avoid adding a second such run because each level's branches are disjoint on their
  *  first character (`(` against not-`(`), leaving nothing for the quantifiers to backtrack between.
  *
+ *  A label may not open with `^`: GFM reads `[^1](url)` as a footnote reference followed by the
+ *  prose `(url)`, never as a link, so admitting it here would have the counter swallow seven
+ *  characters the file holds and the editor draw a link over a footnote marker.
+ *
  *  Both halves are assembled from one fragment each, shared with the empty-tolerant variant below —
  *  the escape class, the paren nesting, and the caps are stated once, so the two grammars can only
  *  differ by the floors that define them. */
-const LINK_LABEL = (min: 0 | 1): string => `((?:[^\\]\\\\\\r\\n]|\\\\.){${min},255})`
+const LINK_LABEL = (min: 0 | 1): string => `((?!\\^)(?:[^\\]\\\\\\r\\n]|\\\\.){${min},255})`
 const LINK_DEST = (min: 0 | 1): string =>
   `((?:[^()\\r\\n]|\\((?:[^()\\r\\n]|\\([^()\\r\\n]*\\))*\\)){${min},2048})`
 
