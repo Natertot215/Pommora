@@ -583,12 +583,12 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 
 **Must agree:** the guard's notion of the section and the decoration pass's must be the same. One test drives a document through both and asserts they agree on the boundary after each of a sequence of edits.
 
-**Failure half:** a click below the section → the caret seats at the body's end. A plain paste below a trailing blank → shaped into continuation. An edit that touches both body and section in one change → only the swept text goes, no cascade, per the range-keyed rule. A change the guard re-issues → carries its user event forward, or history grouping splits.
+**Failure half:** a click below the section → the caret seats at the body's end. A plain paste below a trailing blank → shaped into continuation. **A block dragged to the document's end** → lands after the section, which is the same strand a paste makes and takes the same reshape; the block move's own seam guard fences the case above the section, so this is the only drag the tail guard owes. An edit that touches both body and section in one change → only the swept text goes, no cascade, per the range-keyed rule. A change the guard re-issues → carries its user event forward, or history grouping splits.
 
 **Steps:**
 - [ ] Write the failing tests, including the negative control's unregistered half and the boundary agreement.
 - [ ] Implement the verdict function and the filter, reading the start state's cached scan and never re-splitting.
-- [ ] Re-carry the user event on re-issue, and skip transactions carrying a self-edit annotation.
+- [ ] Re-carry the user event on re-issue **and every annotation the guard does not own** — a re-issued spec is rebuilt from the start state, and a dropped self-edit annotation makes a downstream filter treat a construct's own write as a user edit. Skip transactions carrying a self-edit annotation of this guard's own.
 - [ ] Register it alongside the existing guards.
 - [ ] Run the gate — expect green.
 - [ ] Commit: `feat(editor): the citations section's tail is guarded at the transaction layer`
@@ -827,8 +827,10 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 
 ### Open Against Later Tasks
 
-- **Against Task 15 — filter composition.** Four `transactionFilter`s will be registered, and the citations guard is the only one that *inserts* text; the table guard cancels outright on a multi-line insert that fuses tables. Check at Task 15: on a page ending in a table then a citations section, paste two paragraphs at the document's end and see what lands.
-- **Against Task 8 — a drop immediately above the section.** Inertness removes the section from the block starts, but a drop landing at the last block start above it, with no separating blank, could make the first citation a lazy continuation of the dropped paragraph. The tail guard covers content at or after the section, not immediately before. Check whether the block drag's insertion emits a fencing blank before deciding whether the guard's range widens.
+*Both unknowns the attack round raised were closed against the code rather than carried. They are recorded here as resolved, so a later session does not re-open them.*
+
+- **Filter composition — closed, not an issue.** The table guard cancels only when `fusedTableCount` actually rises between the start and new documents; it does not refuse multi-line inserts generally. The citations guard reshapes text at the document's tail inside a section that cannot contain a table and that sits after every table, so no reshape it performs can fuse two. The scenario needs one edit that both touches the citations tail and merges two tables, and no such edit exists. **One real property survives and is folded into Task 15:** a re-issued transaction currently carries `userEvent` and drops every other annotation, so a reshape could strip a downstream guard's self-edit annotation and cost it a document scan it would otherwise skip. Task 15 re-carries the annotations it does not own.
+- **A drop above the section — closed, not an issue.** `blockMoveChanges` already fences both seams: it emits a blank after every inserted block and heals the hole the cut leaves, with its own comment naming this exact hazard — a glue-adjacent block would otherwise lazily continue a list or merge two paragraphs. A paragraph dropped above the section always lands with a blank after it, so the first citation cannot become its continuation. **The adjacent case the round did not raise is real and already covered:** a block dropped at the document's end lands *after* the section, which is the strand A-5b forbids, and Task 15's rule is "at or after". Task 15 names it as a test case rather than leaving it implied.
 
 ### Deviations
 
