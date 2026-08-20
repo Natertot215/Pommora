@@ -4,6 +4,7 @@ import { Icon, type IconName } from '../../symbols'
 import * as s from './menu.css'
 import { cx } from '../../cx'
 import { onActivateClick } from '../../interactions/activate'
+import { lockLabel } from '@shared/toggleLabels'
 
 type MenuItemProps = {
   leading?: ReactNode
@@ -236,6 +237,31 @@ export function MenuPaneTopRow({
  * slot, so a footing can never lose its divider or ride up mid-pane. Placement only: no imposed
  * typography, so each menu keeps its own action sizing.
  */
+/** The lock a surface's bottom row carries — the same control on a board, a Space and a tile, so
+ *  the three cannot come to disagree about its glyph, its wording, or what it announces. `noun`
+ *  names what is being locked for a screen reader; the visible label is the verb alone. */
+export function FooterLockButton({
+  locked,
+  noun,
+  onToggle,
+}: {
+  locked: boolean
+  noun: string
+  onToggle: () => void
+}): React.JSX.Element {
+  return (
+    <button
+      type="button"
+      aria-label={lockLabel(locked, noun)}
+      className={s.footerLockAction}
+      onClick={onToggle}
+    >
+      <Icon name="lock" size="control" className={s.lockIcon} />
+      {lockLabel(locked)}
+    </button>
+  )
+}
+
 export function MenuBottomRow({
   leading,
   trailing,

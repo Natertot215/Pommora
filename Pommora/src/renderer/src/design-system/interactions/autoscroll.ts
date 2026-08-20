@@ -183,6 +183,22 @@ export type { StartCfg }
  *  since replaced it) — so a bystander's unmount teardown can't sabotage a live drag. Prefer this
  *  over the global `stopAutoScroll` wherever a stop might fire after ownership may have changed
  *  (e.g. unmount cleanup). */
+/** Arm the vertical edge-scroll for a drag that has just been picked up, and hand back the stopper
+ *  its teardown calls — or null when the dragged element sits in nothing that scrolls. Every drag
+ *  adapter wants the same four arguments and only ever varies the element and whether a held-still
+ *  drag needs re-resolving as the rows move, so those are all this takes. The scroller is resolved
+ *  here rather than left to `startAutoScroll`: a drag in an unscrollable container must not reach
+ *  the loop at all, since entering it also takes the scroller from any travel in flight. */
+export function armAutoScroll(
+  dragEl: HTMLElement | null,
+  getPoint: () => { x: number; y: number },
+  onScrolled?: () => void,
+): (() => void) | null {
+  const scroller = findScroller(dragEl, 'y')
+  if (!scroller) return null
+  return startAutoScroll({ getPoint, scroller, dragEl, axis: 'y', onScrolled })
+}
+
 export function startAutoScroll(cfg: StartCfg): () => void {
   stopAutoScroll()
   stopGlide() // a drag takes the scroller from any travel in flight

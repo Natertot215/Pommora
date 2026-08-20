@@ -12,7 +12,7 @@ import { useDragSnapshot } from '@renderer/design-system/interactions/snapshot'
 import { EDITABLE_TARGETS } from '@renderer/design-system/interactions/shared'
 import { DragGhost } from '@renderer/design-system/interactions/DragGhost'
 import { DropLine } from '@renderer/design-system/interactions/DropLine'
-import { findScroller, startAutoScroll } from '@renderer/design-system/interactions/autoscroll'
+import { armAutoScroll } from '@renderer/design-system/interactions/autoscroll'
 import { sectionEnd, type OutlineHeading } from '@renderer/MarkdownPM/editor/folding'
 import { moveHeadingSection } from '../Detail/pageEditor'
 
@@ -155,15 +155,7 @@ export function OutlineDnd({
       onActivate: (ev) => {
         dragged.current = { key, grabX, section: sectionKeys(flatRef.current, key) }
         lastPoint.current = { x: ev.clientX, y: ev.clientY }
-        const sc = findScroller(el, 'y')
-        if (sc)
-          stopScroll.current = startAutoScroll({
-            getPoint: () => lastPoint.current,
-            scroller: sc,
-            dragEl: el,
-            axis: 'y',
-            onScrolled: resolveSlot,
-          })
+        stopScroll.current = armAutoScroll(el, () => lastPoint.current, resolveSlot)
         resolveSlot()
         return true
       },

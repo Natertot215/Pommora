@@ -14,7 +14,7 @@ import { announce } from '@renderer/design-system/interactions/a11y'
 import { EDITABLE_TARGETS, GHOST_OFFSET } from '@renderer/design-system/interactions/shared'
 import { DragGhost } from '@renderer/design-system/interactions/DragGhost'
 import { DropLine } from '@renderer/design-system/interactions/DropLine'
-import { findScroller, startAutoScroll } from '@renderer/design-system/interactions/autoscroll'
+import { armAutoScroll } from '@renderer/design-system/interactions/autoscroll'
 import type { MeasuredRow } from '@renderer/Sidebar/sidebarDndModel'
 import { type Band, type BandIndex, type BandSlot, bandSlot, buildBandIndex } from './bandDndModel'
 
@@ -154,16 +154,7 @@ export function BandDnd({
         announce(`Picked up ${ghostLabel.current}.`)
         // Auto-scroll the vertical scroller. findScroller('y') skips the x-only '.table-view' to
         // reach '.detail-scroll'; onScrolled re-resolves a held-still drag as the bands scroll.
-        const sc = findScroller(el, 'y')
-        if (sc) {
-          stopScroll.current = startAutoScroll({
-            getPoint: () => lastPoint.current,
-            scroller: sc,
-            dragEl: el,
-            axis: 'y',
-            onScrolled: resolveSlot,
-          })
-        }
+        stopScroll.current = armAutoScroll(el, () => lastPoint.current, resolveSlot)
         return true
       },
       onDragMove: (ev) => {
