@@ -160,10 +160,6 @@
   border-top: none;
 }
 
-.page-card-title {
-  gap: 5px;
-  color: var(--label-primary);
-}
 /* The naming session's title row — a plain flex row (never the truncating scroll box, whose clip
    would hide the field's caret travel); the glyph keeps its seat beside the field. */
 .page-card-title:has(.card-title-input) {
@@ -180,10 +176,6 @@
 .page-card-title.is-wrap .page-card-title-icon {
   vertical-align: -2px;
   margin-right: 5px;
-}
-.page-card-title-icon {
-  flex: 0 0 auto;
-  color: var(--label-secondary);
 }
 /* ── Properties: the card body between title and footing — rendered ONLY when the card
    has values (an empty card shows no gap; its add trigger scopes to the breadcrumb). Empty
@@ -257,11 +249,6 @@
   color: var(--label-secondary);
 }
 
-/* The location footing: NavCrumbs — the house breadcrumb formula (caption type, per-crumb
-   icons, › separators). */
-.page-card-loc {
-  color: var(--label-secondary);
-}
 /* The breadcrumb is ALWAYS the card's footing — pinned to the bottom (margin-top:auto) with a divider
    above it, unconditionally — independent of whether properties sit above it. */
 .page-card-loc-zone {

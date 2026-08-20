@@ -41,11 +41,14 @@ export function nativeRow<A extends string>(
   }
 }
 
-/** A model's rows as a native template. `separatorBefore` expands into real separator rows, and a
- *  leading one is dropped since it separates nothing. The one row that isn't an act — Move To ▸ —
- *  opens the destination tree, where the leaf a person lands on is what resolves back as the move;
- *  a menu carrying that row passes the context it moves within. Every native menu built from a
- *  model comes through here, so the send block can't drift between the surfaces that carry it. */
+/** A model's rows as a native template — a FRAGMENT, which is why `separatorBefore` expands
+ *  verbatim here: a run spliced beneath rows a menu already holds needs the divider that separates
+ *  it from them. Dropping one that leads the whole menu is `menuTemplate`'s job, since only a
+ *  builder holding the finished menu can tell the two cases apart. The one row that isn't an act —
+ *  Move To ▸ — opens the destination tree, where the leaf a person lands on is what resolves back
+ *  as the move; a menu carrying that row passes the context it moves within. Every native menu
+ *  built from a model comes through here, so the send block can't drift between the surfaces that
+ *  carry it. */
 export function rowTemplate<A extends string>(
   items: readonly ActionItem<A>[],
   pick: (action: A) => () => void,
@@ -53,7 +56,7 @@ export function rowTemplate<A extends string>(
 ): MenuItemConstructorOptions[] {
   const template: MenuItemConstructorOptions[] = []
   for (const item of items) {
-    if (item.separatorBefore && template.length > 0) template.push({ type: 'separator' })
+    if (item.separatorBefore) template.push({ type: 'separator' })
     if (item.action === PAGE_MOVE_ROW)
       template.push({
         label: item.label,
@@ -68,18 +71,28 @@ export function rowTemplate<A extends string>(
   return template
 }
 
+/** A whole menu's rows — the fragment above, minus a divider that would lead the menu, since one
+ *  there separates nothing. */
+export function menuTemplate<A extends string>(
+  items: readonly ActionItem<A>[],
+  pick: (action: A) => () => void,
+): MenuItemConstructorOptions[] {
+  const template = rowTemplate(items, pick)
+  return template[0]?.type === 'separator' ? template.slice(1) : template
+}
+
 /** A menu that is nothing but its model's rows: pop them, resolve the pick. */
 export function popModelMenu<A extends string>(
   win: BrowserWindow,
   items: readonly ActionItem<A>[],
 ): Promise<A | null> {
-  return popReturningMenu<A>(win, (pick) => rowTemplate(items, pick))
+  return popReturningMenu<A>(win, (pick) => menuTemplate(items, pick))
 }
 
 export function popRowMenu(win: BrowserWindow, req: RowMenuRequest): Promise<string | null> {
   return popReturningMenu<string>(
     win,
-    (pick) => rowTemplate(req.items, pick),
+    (pick) => menuTemplate(req.items, pick),
     anchorPoint(win, req.anchor),
   )
 }

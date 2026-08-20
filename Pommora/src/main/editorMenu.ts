@@ -92,31 +92,33 @@ function speechShareItems(params: ContextMenuParams): MenuItemConstructorOptions
   ]
 }
 
+/** The FormatState fields a checkbox row can wear a checkmark from — the boolean ones, since a row
+ *  is a checkbox. */
+type FormatFlag = {
+  [K in keyof FormatState]: FormatState[K] extends boolean ? K : never
+}[keyof FormatState]
+
+/** The Format submenu's rows, in the order they read. Each names the chord it displays and the
+ *  FormatState flag whose checkmark it wears. */
+const FORMAT_ROWS: readonly {
+  label: string
+  action: FormatChordAction
+  state: FormatFlag
+}[] = [
+  { label: 'Italic', action: 'format:italic', state: 'italic' },
+  { label: 'Inline Code', action: 'format:inlineCode', state: 'inlineCode' },
+  { label: 'Bold', action: 'format:bold', state: 'bold' },
+  { label: 'Strikethrough', action: 'format:strikethrough', state: 'strikethrough' },
+  { label: 'Connection', action: 'format:connection', state: 'connection' },
+  { label: 'Link', action: 'format:link', state: 'link' },
+]
+
 function pommoraItems(
   wc: WebContents,
   s: FormatState,
   selection: string,
 ): MenuItemConstructorOptions[] {
   const act = (a: string): (() => void) => dispatch(wc, a)
-  /** The Format submenu's rows, in the order they read. Each names the chord it displays and the
-   *  FormatState flag whose checkmark it wears — only the boolean fields, since a row is a checkbox. */
-  type FormatFlag = {
-    [K in keyof FormatState]: FormatState[K] extends boolean ? K : never
-  }[keyof FormatState]
-
-  const FORMAT_ROWS: readonly {
-    label: string
-    action: FormatChordAction
-    state: FormatFlag
-  }[] = [
-    { label: 'Italic', action: 'format:italic', state: 'italic' },
-    { label: 'Inline Code', action: 'format:inlineCode', state: 'inlineCode' },
-    { label: 'Bold', action: 'format:bold', state: 'bold' },
-    { label: 'Strikethrough', action: 'format:strikethrough', state: 'strikethrough' },
-    { label: 'Connection', action: 'format:connection', state: 'connection' },
-    { label: 'Link', action: 'format:link', state: 'link' },
-  ]
-
   const heading = (label: string, level: number): MenuItemConstructorOptions => ({
     label,
     type: 'radio',

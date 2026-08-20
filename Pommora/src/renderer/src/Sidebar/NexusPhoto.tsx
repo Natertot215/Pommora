@@ -1,7 +1,6 @@
 import { useRef } from 'react'
 import { DEFAULT_NEXUS_ICON, Icon } from '@renderer/design-system/symbols'
-import { ICON_PX } from '@renderer/design-system/tokens/size.css'
-import type { IconSize } from '@renderer/design-system/tokens/size.css'
+import { ICON_PX, type IconSize } from '@renderer/design-system/tokens/size.css'
 import { IconPicker } from '../Components/IconPicker'
 import { PhotoCropModal } from '../Components/PhotoCropModal'
 import { useNexusIcon } from '../Components/useNexusIcon'

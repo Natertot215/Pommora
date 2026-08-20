@@ -94,17 +94,6 @@
 .nav-gallery-text {
   min-height: 0;
 }
-.nav-gallery-title {
-  gap: 5px;
-  color: var(--label-primary);
-}
-.nav-gallery-title-icon {
-  flex: 0 0 auto;
-  color: var(--label-secondary);
-}
-.nav-gallery-loc {
-  color: var(--label-secondary);
-}
 /* Typography scales with the card: cqi = 1% of the card's width (the card is the query container), so
    a bigger card reads bigger text. Clamped so tiny/huge cards stay legible. Card-prefixed to outrank
    the text-ramp class's font-size. */

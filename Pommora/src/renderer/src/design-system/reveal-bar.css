@@ -8,21 +8,20 @@
    invisible button swallowing clicks to the content beneath, on direct hover,
    and on keyboard focus.
 
-   A host supplies its own bar height, its click-target width and padding, its
-   z-index, and the class that marks the open and near states.
+   A host supplies its own bar height, the edge its toggle sits in from, that
+   toggle's width and padding, its z-index, the class that marks the open and
+   near states, and anything the bar animates beyond its own height.
    ============================================================================ */
 .ppane-footer,
 .subfield-reveal {
   flex: none;
   height: 0;
   overflow: hidden;
-  transition: height var(--duration-base) var(--ease-standard);
 }
 
 .ppane-footer-toggle,
 .subfield-toggle {
   position: absolute;
-  right: 0;
   bottom: 0;
   display: inline-flex;
   align-items: center;

@@ -1,10 +1,17 @@
 /* ============================================================================
-   THE EDGE-DRAG RESIZE STRIP — an invisible band straddling a pane's edge, with
-   no visible handle. The shell's sidebar and inspector, the preview pane's
-   overlay seams, and any SidePane host all wear it. A host supplies only what is
-   its own: which edge it hangs from, its inset, and its z-index.
+   THE EDGE-DRAG RESIZE STRIP — an invisible band along a pane's edge, with no
+   visible handle. Every strip reads as the same affordance under the cursor and
+   never drags the window with it; how it is laid out is the host's own, because
+   an overlaid pane hangs its strip off an edge while an in-flow one seats it as
+   a column in the row.
    ============================================================================ */
-.sidepane-resize,
+.sidepane-resize {
+  cursor: col-resize;
+  -webkit-app-region: no-drag;
+}
+
+/* The overlaid strips — absolutely placed against the edge they straddle. Each host supplies only
+   which edge it hangs from, its inset, and its z-index. */
 .sidebar-resize,
 .inspector-resize,
 .ppane-side-right-overlay-resize,
