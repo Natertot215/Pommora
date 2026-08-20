@@ -9,6 +9,9 @@ import { createGlobalTheme, style } from '@vanilla-extract/css'
 export const font = createGlobalTheme(':root', {
   family:
     "'Inter Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
+  /** Code and anything else that has to hold a column — the editor's fences, its inline code, and
+   *  the showcase's specimens all read this one stack. */
+  mono: 'ui-monospace, SFMono-Regular, Menlo, monospace',
 
   weight: {
     standard: '400',
