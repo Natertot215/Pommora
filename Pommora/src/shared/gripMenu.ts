@@ -2,8 +2,6 @@
 // renderer resolves the grip to its block and sends what that block offers (main has no document); main
 // maps it to the native menu; the pick comes back as the ask's resolution.
 
-import type { HeadingLevel } from './editorMenu'
-
 /** The four list markers, named once for every layer that reads or writes one. */
 export type ListKind = 'ordered' | 'bullet' | 'checkbox' | 'arrow'
 
@@ -31,13 +29,13 @@ export type GripMenuAction =
   | { action: 'editLink' }
   | { action: 'listKind'; kind: ListKind }
   | { action: 'rename' }
-  | { action: 'size'; level: HeadingLevel }
+  | { action: 'size'; level: number }
   | { action: 'delete' }
 
 /** The heading ladder a block can be set to, named once for every menu that offers it — the editor's
  *  Format ▸ Heading submenu and the heading grip's own Size submenu. H6 exists in the document but
  *  stays off the picker. */
-export const HEADING_LEVELS: readonly { level: HeadingLevel; label: string }[] = [
+export const HEADING_LEVELS: readonly { level: number; label: string }[] = [
   { level: 0, label: 'Paragraph' },
   { level: 1, label: 'Heading 1' },
   { level: 2, label: 'Heading 2' },
