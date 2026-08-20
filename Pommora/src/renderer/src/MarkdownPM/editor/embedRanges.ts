@@ -15,14 +15,16 @@ import {
 import type { TableRegion } from '../Tables/regions'
 import { embeddableTitle, normalizeTitle, type LinkStatus } from '@shared/connections'
 
-interface DocLineScan {
+/** The construct kinds this pass answers for, as one contract — `DocScan` extends it rather than
+ *  restating the members, so a fifth kind is one edit instead of two that can disagree. */
+export interface DocLineScan {
   maths: [number, number][]
   embeds: EmbedLine[]
   webpages: WebpageLine[]
   citations: CitationScan
 }
 
-/** All three construct kinds from the fence/table base the caller already holds — the exclusion set
+/** Every construct kind from the fence/table base the caller already holds — the exclusion set
  *  is assembled once here, so a caller needing several kinds never re-scans the doc per kind. */
 export function docLineScan(
   d: DocLines,

@@ -217,19 +217,13 @@ export function citationScan(d: DocLines, excluded: [number, number][]): Citatio
     let lastLine = i
     let k = i + 1
     while (k < lines.length) {
-      if (blank(k)) {
-        // Past a blank, only an indented line still belongs to the citation above.
-        let m = k
-        while (m < lines.length && blank(m)) m++
-        if (m >= lines.length || citationHeadRe.test(lines[m]) || breaks(m)) break
-        if (!/^(?: {4}|\t)/.test(lines[m])) break
-        lastLine = m
-        k = m + 1
-        continue
-      }
-      if (citationHeadRe.test(lines[k]) || breaks(k)) break
-      lastLine = k
-      k++
+      let m = k
+      while (m < lines.length && blank(m)) m++
+      if (m >= lines.length || citationHeadRe.test(lines[m]) || breaks(m)) break
+      // Past a blank, only an indented line still belongs to the citation above.
+      if (m > k && !/^(?: {4}|\t)/.test(lines[m])) break
+      lastLine = m
+      k = m + 1
     }
     spans.push({
       line: i,
@@ -259,15 +253,15 @@ export function citationScan(d: DocLines, excluded: [number, number][]): Citatio
   // First-use order numbers a marker and its citation together: deriving it twice is two answers to
   // one question. A marker inside code binds nothing and takes no number — the drawn set drops those
   // from the shared code mask, so counting them here would print numbers that skip.
-  const firstFor = new Map<string, number>()
-  entries.forEach((e, idx) => {
+  const firstFor = new Map<string, CitationEntry>()
+  for (const e of entries) {
     const key = foldLabel(e.label)
-    if (!firstFor.has(key)) firstFor.set(key, idx)
-  })
+    if (!firstFor.has(key)) firstFor.set(key, e)
+  }
   const inCode = codeMask(text)
   const markers: MarkerRef[] = []
   let next = 1
-  for (let i = 0; i < firstLine && i < lines.length; i++) {
+  for (let i = 0; i < firstLine; i++) {
     const headEnd = citationHeadRe.exec(lines[i])?.[0].length
     const re = markerRegex()
     let m = re.exec(lines[i])
@@ -276,14 +270,14 @@ export function citationScan(d: DocLines, excluded: [number, number][]): Citatio
       // A mid-document citation line is live prose (A-6), so its own head never draws as a marker.
       if (headEnd !== undefined && m.index + m[0].length <= headEnd) continue
       if (inCode(from)) continue
-      const idx = firstFor.get(foldLabel(m[1]))
-      if (idx !== undefined && entries[idx].ordinal === null) entries[idx].ordinal = next++
+      const entry = firstFor.get(foldLabel(m[1]))
+      if (entry && entry.ordinal === null) entry.ordinal = next++
       markers.push({
         line: i,
         from,
         to: from + m[0].length,
         label: m[1],
-        ordinal: idx === undefined ? null : entries[idx].ordinal,
+        ordinal: entry?.ordinal ?? null,
       })
     }
   }

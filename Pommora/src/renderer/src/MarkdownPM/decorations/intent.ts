@@ -11,14 +11,11 @@ import {
   scanFencedCode,
   splitWithOffsets,
   type CalloutLine,
-  type CitationScan,
   type DocLines,
-  type EmbedLine,
   type FenceInfo,
   type ListMarker,
-  type WebpageLine,
 } from '../detect'
-import { docLineScan } from '../editor/embedRanges'
+import { docLineScan, type DocLineScan } from '../editor/embedRanges'
 import { tableRegions, type TableRegion } from '../Tables/regions'
 
 // A line is a nested quote INSIDE a callout when it's a callout line whose content (after the callout's own
@@ -53,14 +50,10 @@ export const GLYPH_CLASS = 'md-li-glyph'
  *  and the per-line block predicates answered once each. Pure on `text`, so a caller that runs per
  *  keystroke/caret-move caches one per doc VERSION (docCache.docScan) instead of re-splitting and
  *  re-scanning the entire document on every rebuild. */
-export interface DocScan extends DocLines {
+export interface DocScan extends DocLines, DocLineScan {
   fences: (FenceInfo | undefined)[]
   callouts: (CalloutLine | undefined)[]
   tables: TableRegion[]
-  maths: [number, number][]
-  embeds: EmbedLine[]
-  webpages: WebpageLine[]
-  citations: CitationScan
   /** Per line, in line order — the three block shapes whose test is a micromark parse. Answered
    *  once per line rather than on demand, which is what a blockquote line inside a rebuild would
    *  otherwise pay several times over. */

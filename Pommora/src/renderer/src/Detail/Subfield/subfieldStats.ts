@@ -20,8 +20,8 @@ import {
  *  `words`/`characters` count the prose the editor actually draws (so `## **Bold**` is one word,
  *  "Bold").
  *
- *  The footnotes section is outside all three counts, through the one mask its scan returns — the
- *  same array the line count subtracts and the prose pass blanks, so the three numbers keep
+ *  The footnotes section is outside all three counts, through the one boundary its scan derives —
+ *  the same scan the line count stops at and the prose pass blanks, so the three numbers keep
  *  describing one document. A body marker is where the two prose pipelines legitimately diverge:
  *  the character pass sees its source, the word pass has it removed, so `sentence[^1].` reads as
  *  the one word the reader sees while the file's own characters are still reported.
@@ -96,10 +96,8 @@ export function computeStats(body: string): PageStats {
   // The one line the character count never sees — and an empty string rather than GONE, so a marker
   // glued to its word (`sentence[^1].`) stays one word instead of splitting into two.
   const words = (prose.replace(markerRegex(), '').match(/\S+/g) ?? []).length
-  let sectionLines = 0
-  for (const v of cited.mask) sectionLines += v
   return {
-    lines: lines.length - sectionLines,
+    lines: cited.firstLine,
     words,
     characters,
     citations: cited.entries.length,
