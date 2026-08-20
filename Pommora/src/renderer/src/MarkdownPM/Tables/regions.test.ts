@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { tableRegions, modelFromRegion } from './regions'
+import { splitWithOffsets } from '../detect'
+import { tableRegions as regionsIn, modelFromRegion } from './regions'
+
+const tableRegions = (doc: string): ReturnType<typeof regionsIn> => regionsIn(splitWithOffsets(doc))
 import { parseTable } from './codec'
 
 describe('regions', () => {

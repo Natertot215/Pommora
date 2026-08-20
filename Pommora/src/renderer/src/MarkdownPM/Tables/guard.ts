@@ -1,16 +1,16 @@
 import { EditorState } from '@codemirror/state'
-import { docString } from '../editor/docCache'
-import { tableRegions } from './regions'
+import type { DocScan } from '../decorations/intent'
+import { docScan } from '../editor/docCache'
 import { parseDelimiter } from './codec'
 
 // A GFM table is its own block only while a blank line fences it; with the separator gone, two tables fuse
 // into one — the second table's header + delimiter become body rows, so the region carries a SECOND
 // delimiter row. Count the tables that carry more than one (the fused ones). This reads the RESULT doc
 // only, so it's immune to the offset shift a deletion causes (the bug a cross-before/after comparison hits).
-export function fusedTableCount(doc: string): number {
+export function fusedTableCount(scan: DocScan): number {
   let n = 0
-  for (const r of tableRegions(doc)) {
-    const delims = doc
+  for (const r of scan.tables) {
+    const delims = scan.text
       .slice(r.from, r.to)
       .split('\n')
       .filter((l) => parseDelimiter(l) !== null).length
@@ -28,11 +28,9 @@ export const tableMergeGuard = EditorState.transactionFilter.of((tr) => {
   tr.changes.iterChanges((fromA, toA, _fromB, _toB, inserted) => {
     if (toA > fromA || inserted.toString().includes('\n')) guarded = true
   })
-  // Count the start doc FIRST so tableRegions' single-entry memo ends primed with newDoc — the decoration
-  // build that follows a passing edit reparses newDoc and reuses it.
   if (
     guarded &&
-    fusedTableCount(docString(tr.startState.doc)) < fusedTableCount(docString(tr.newDoc))
+    fusedTableCount(docScan(tr.startState.doc)) < fusedTableCount(docScan(tr.newDoc))
   ) {
     return [] // cancel — this edit would merge two tables into one
   }

@@ -6,11 +6,11 @@ import {
   blockEmbedLines,
   blockMathRanges,
   blockWebpageLines,
+  type DocLines,
   type EmbedLine,
   type WebpageLine,
-  fencedCodeRanges,
 } from '../detect'
-import { tableRegions } from '../Tables/regions'
+import type { TableRegion } from '../Tables/regions'
 import { normalizeTitle, type LinkStatus } from '@shared/connections'
 
 export interface DocLineScan {
@@ -19,24 +19,24 @@ export interface DocLineScan {
   webpages: WebpageLine[]
 }
 
-/** All three construct kinds from one fence/table base — the base and the math ranges each compute
- *  once per call, so a caller needing several kinds never re-scans the doc per kind. */
-export function docLineScan(doc: string): DocLineScan {
+/** All three construct kinds from the fence/table base the caller already holds — the exclusion set
+ *  is assembled once here, so a caller needing several kinds never re-scans the doc per kind. */
+export function docLineScan(
+  d: DocLines,
+  fences: [number, number][],
+  tables: readonly TableRegion[],
+): DocLineScan {
   const base: [number, number][] = [
-    ...fencedCodeRanges(doc),
-    ...tableRegions(doc).map((r): [number, number] => [r.from, r.to]),
+    ...fences,
+    ...tables.map((r): [number, number] => [r.from, r.to]),
   ]
-  const maths = blockMathRanges(doc, base)
+  const maths = blockMathRanges(d, base)
   const excluded = [...base, ...maths]
   return {
     maths,
-    embeds: blockEmbedLines(doc, excluded),
-    webpages: blockWebpageLines(doc, excluded),
+    embeds: blockEmbedLines(d, excluded),
+    webpages: blockWebpageLines(d, excluded),
   }
-}
-
-export function docEmbedLines(doc: string): EmbedLine[] {
-  return docLineScan(doc).embeds
 }
 
 /** Whether a page title can be embedded here: the `![[…]]` syntax cannot express a `]`, and a title

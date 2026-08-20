@@ -2,7 +2,7 @@
 // line below the caret's block, and the caret between the brackets so the embed autocomplete takes over.
 import type { EditorView } from '@codemirror/view'
 import { blockAt } from './blockModel'
-import { docString } from './docCache'
+import { docScan, docString } from './docCache'
 
 /** The fenced insert below a block: blank-separated above and below wherever content adjoins,
  *  reusing the blank lines already standing — a caret on a blank line supplies one fence newline
@@ -37,7 +37,7 @@ function insertEmbedToken(view: EditorView, token: string, caretBack: number): b
   if (view.state.readOnly) return false
   const doc = docString(view.state.doc)
   const head = view.state.selection.main.head
-  const block = blockAt(doc, head)
+  const block = blockAt(docScan(view.state.doc), head)
   const after = block ? block.to : view.state.doc.lineAt(head).to
   const c = embedInsertAfter(doc, after, token)
   view.dispatch({

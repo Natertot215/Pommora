@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { blockEmbedLines } from '../detect'
-import { claimedEmbeds, docEmbedLines } from './embedRanges'
+import { blockEmbedLines, splitWithOffsets } from '../detect'
+import { scanDoc } from '../decorations/intent'
+import { claimedEmbeds } from './embedRanges'
+
+const lines = splitWithOffsets
+const docEmbedLines = (doc: string): ReturnType<typeof blockEmbedLines> => scanDoc(doc).embeds
 import type { LinkStatus } from '@shared/connections'
 
 const status =
@@ -10,25 +14,27 @@ const status =
 
 describe('blockEmbedLines', () => {
   it('claims a lone-line embed, trailing whitespace tolerated', () => {
-    expect(blockEmbedLines('a\n![[Foo]]  \nb', [])).toEqual([{ from: 2, to: 12, title: 'Foo' }])
+    expect(blockEmbedLines(lines('a\n![[Foo]]  \nb'), [])).toEqual([
+      { from: 2, to: 12, title: 'Foo' },
+    ])
   })
 
   it('a leading indent is continuation context, never an embed', () => {
-    expect(blockEmbedLines('- item\n  ![[Foo]]', [])).toEqual([])
-    expect(blockEmbedLines('  ![[Foo]]', [])).toEqual([])
+    expect(blockEmbedLines(lines('- item\n  ![[Foo]]'), [])).toEqual([])
+    expect(blockEmbedLines(lines('  ![[Foo]]'), [])).toEqual([])
   })
 
   it('rejects any line carrying more than the embed', () => {
-    expect(blockEmbedLines('x ![[Foo]]\n![[Foo]] y\n![[A]] ![[B]]', [])).toEqual([])
+    expect(blockEmbedLines(lines('x ![[Foo]]\n![[Foo]] y\n![[A]] ![[B]]'), [])).toEqual([])
   })
 
   it('captures an empty title without claiming resolution', () => {
-    expect(blockEmbedLines('![[]]', [])).toEqual([{ from: 0, to: 5, title: '' }])
+    expect(blockEmbedLines(lines('![[]]'), [])).toEqual([{ from: 0, to: 5, title: '' }])
   })
 
   it('excluded regions own their lines', () => {
     const doc = '![[A]]\n![[B]]'
-    expect(blockEmbedLines(doc, [[0, 6]])).toEqual([{ from: 7, to: 13, title: 'B' }])
+    expect(blockEmbedLines(lines(doc), [[0, 6]])).toEqual([{ from: 7, to: 13, title: 'B' }])
   })
 })
 

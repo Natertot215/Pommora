@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import { EditorState } from '@codemirror/state'
-import { fusedTableCount, tableMergeGuard } from './guard'
+import { scanDoc } from '../decorations/intent'
+import { fusedTableCount as fusedIn, tableMergeGuard } from './guard'
+
+const fusedTableCount = (doc: string): number => fusedIn(scanDoc(doc))
 
 const t1 = '| A | B |\n| --- | --- |\n| 1 | 2 |'
 const t2 = '| C | D |\n| --- | --- |\n| 3 | 4 |'

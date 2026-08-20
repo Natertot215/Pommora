@@ -5,7 +5,7 @@
 import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { blockAt, blockStarts } from './blockModel'
-import { docString } from './docCache'
+import { docScan, docString } from './docCache'
 import { shadeField } from './dragChrome'
 import { beginRelocateDrag, editorGestureCleanup } from './EditorGesture'
 import { lineElementAt } from './lineDom'
@@ -41,12 +41,13 @@ interface BlockShape {
 }
 
 function blockShape(view: EditorView, block: { from: number; to: number }): BlockShape {
-  const doc = docString(view.state.doc)
-  const starts = blockStarts(doc).map((b) => b.from)
+  const scan = docScan(view.state.doc)
+  const starts = blockStarts(scan).map((b) => b.from)
+  const docLength = scan.text.length
   return {
     starts,
-    docLength: doc.length,
-    afterBlock: starts.find((s) => s > block.to) ?? doc.length,
+    docLength,
+    afterBlock: starts.find((s) => s > block.to) ?? docLength,
   }
 }
 
@@ -142,7 +143,7 @@ export function createBlockDragGesture({ gate, onClick, onDragStart }: DragConfi
         if (e.button !== 0) return false
         const line = (e.target as HTMLElement).closest?.(sel) as HTMLElement | null
         if (!line || e.clientX >= line.getBoundingClientRect().left) return false // not the handle zone
-        const block = blockAt(docString(view.state.doc), view.posAtDOM(line))
+        const block = blockAt(docScan(view.state.doc), view.posAtDOM(line))
         if (!block) return false
         startBlockDrag(view, e, block, { onClick, onDragStart, line })
         return true

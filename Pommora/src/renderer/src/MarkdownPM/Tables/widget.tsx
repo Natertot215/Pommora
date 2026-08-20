@@ -1,5 +1,5 @@
 import { Decoration, type DecorationSet, EditorView, WidgetType } from '@codemirror/view'
-import { docString } from '../editor/docCache'
+import { docScan } from '../editor/docCache'
 import { focusAt } from '../editor/input'
 import {
   Facet,
@@ -12,7 +12,7 @@ import {
 } from '@codemirror/state'
 import { undo, redo } from '@codemirror/commands'
 import { createRoot, type Root } from 'react-dom/client'
-import { tableRegions, modelFromRegion } from './regions'
+import { modelFromRegion } from './regions'
 import { parseDelimiter } from './codec'
 import { cellCommitChange, structuralEditChange, tableSelfEdit } from './sync'
 import { startBlockDrag } from '../editor/blockDrag'
@@ -156,16 +156,16 @@ class TableWidget extends WidgetType {
     const TV = TableViewComp
     if (!TV) return
     const commit = (row: number, col: number, text: string): void => {
-      const change = cellCommitChange(docString(view.state.doc), this.tableIndex, row, col, text)
+      const change = cellCommitChange(docScan(view.state.doc), this.tableIndex, row, col, text)
       if (change) view.dispatch({ changes: change, annotations: tableSelfEdit.of(true) })
     }
     const exit = (dir: 'before' | 'after'): void => {
-      const region = tableRegions(docString(view.state.doc))[this.tableIndex]
+      const region = docScan(view.state.doc).tables[this.tableIndex]
       if (!region) return
       focusAt(view, dir === 'before' ? region.from : region.to)
     }
     const reorder = (axis: 'col' | 'row', from: number, to: number): boolean => {
-      const change = structuralEditChange(docString(view.state.doc), this.tableIndex, (m) =>
+      const change = structuralEditChange(docScan(view.state.doc), this.tableIndex, (m) =>
         axis === 'col' ? moveColumn(m, from, to) : moveRow(m, from - 1, to - 1),
       )
       if (!change) return false // no-op (identical/empty columns) — nothing dispatched
@@ -175,7 +175,7 @@ class TableWidget extends WidgetType {
     // End-append only: new indices land past every existing cell, so a mounted cell editor keeps its
     // {row, col} and the main caret maps cleanly past the grown region.
     const append = (axis: 'col' | 'row'): void => {
-      const change = structuralEditChange(docString(view.state.doc), this.tableIndex, (m) =>
+      const change = structuralEditChange(docScan(view.state.doc), this.tableIndex, (m) =>
         axis === 'col'
           ? insertColumn(m, m.columns.length - 1, 'right')
           : insertRow(m, m.rows.length - 1, 'below'),
@@ -183,7 +183,7 @@ class TableWidget extends WidgetType {
       if (change) view.dispatch({ changes: change })
     }
     const resize = (boundaryIndex: number, dashDelta: number): boolean => {
-      const change = structuralEditChange(docString(view.state.doc), this.tableIndex, (m) =>
+      const change = structuralEditChange(docScan(view.state.doc), this.tableIndex, (m) =>
         resizeColumn(m, boundaryIndex, dashDelta),
       )
       if (!change) return false // dashDelta clamped to a no-op — nothing dispatched
@@ -192,7 +192,7 @@ class TableWidget extends WidgetType {
     }
     // The heading-row action grip drags the whole table block (left-press → block drag; right-click → menu).
     const tableDrag = (e: PointerEvent): void => {
-      const region = tableRegions(docString(view.state.doc))[this.tableIndex]
+      const region = docScan(view.state.doc).tables[this.tableIndex]
       if (region) startBlockDrag(view, e, { from: region.from, to: region.to })
     }
     const onMenu = (ctx: TableMenuContext): void => {
@@ -204,8 +204,8 @@ class TableWidget extends WidgetType {
           view.dispatch({ effects: toggleHeadingColEffect.of(this.tableIndex) })
           return
         }
-        const docText = docString(view.state.doc)
-        const region = tableRegions(docText)[this.tableIndex]
+        const scan = docScan(view.state.doc)
+        const region = scan.tables[this.tableIndex]
         if (!region) return
         // Delete Table, or deleting the LAST column (deleting it would leave a 0-column table that no longer
         // parses) → remove the whole region. Every other action is a model transform over the region.
@@ -218,7 +218,7 @@ class TableWidget extends WidgetType {
         }
         const transform = transformFor(action, ctx.index)
         if (!transform) return
-        const change = structuralEditChange(docText, this.tableIndex, transform)
+        const change = structuralEditChange(scan, this.tableIndex, transform)
         if (change) view.dispatch({ changes: change })
       })
     }
@@ -314,7 +314,7 @@ export function buildWidgetDecorations(state: EditorState, prev?: DecorationSet)
   const headingCols = state.field(headingColField, false) ?? new Set<number>()
   const boxes = prev ? heightBoxes(prev) : []
   const ranges: Range<Decoration>[] = []
-  tableRegions(docString(doc)).forEach((region, i) => {
+  docScan(doc).tables.forEach((region, i) => {
     const text = doc.sliceString(region.from, region.to)
     const model = modelFromRegion(region)
     ranges.push(
@@ -378,7 +378,7 @@ function swapTableWidget(
 
 /** One table's widget rebuilt from the current doc — the model the static cells draw from. */
 function rebuiltTable(deco: DecorationSet, state: EditorState, index: number): DecorationSet {
-  const region = tableRegions(docString(state.doc))[index]
+  const region = docScan(state.doc).tables[index]
   if (!region) return deco
   const text = state.doc.sliceString(region.from, region.to)
   return swapTableWidget(deco, index, (w) =>
@@ -402,7 +402,7 @@ const widgetField = StateField.define<DecorationSet>({
       const idx = eff.value
       const on = tr.state.field(headingColField).has(idx)
       toggledSet = swapTableWidget(toggledSet, idx, (w) => {
-        const region = tableRegions(docString(tr.state.doc))[idx]
+        const region = docScan(tr.state.doc).tables[idx]
         const text = region ? tr.state.doc.sliceString(region.from, region.to) : w.text
         const model = region ? modelFromRegion(region) : w.model
         return new TableWidget(text, model, idx, on, w.height)

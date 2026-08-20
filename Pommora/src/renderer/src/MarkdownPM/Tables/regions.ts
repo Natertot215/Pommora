@@ -1,7 +1,8 @@
 import { parse } from '../parser'
 import { codeMask } from '@shared/markdownCode'
+import type { DocLines } from '../detect'
 import { normalize, type Column, type TableModel } from './model'
-import { splitRow, parseDelimiter, docLines, type CellSpan } from './codec'
+import { splitRow, parseDelimiter, type CellSpan } from './codec'
 
 export interface RowGeom {
   cells: CellSpan[]
@@ -15,36 +16,29 @@ export interface TableRegion {
   delimiter: { columns: Column[] }
 }
 
-const lineTo = (l: { text: string; from: number }): number => l.from + l.text.length
-
 function isTable(block: string): boolean {
   const tree = parse(block)
   return tree.children.length === 1 && tree.children[0].type === 'table'
 }
 
-function rowGeom(l: { text: string; from: number }): RowGeom {
-  return splitRow(l.text, l.from)
-}
-
-// Single-entry memo: a keystroke calls this several times on the same doc string (guard, decorations,
-// atomicRanges) and each call re-parses with micromark — cache the last result.
-let cacheDoc: string | null = null
-let cacheRegions: TableRegion[] = []
-export function tableRegions(doc: string): TableRegion[] {
-  if (doc === cacheDoc) return cacheRegions
-  const lines = docLines(doc)
-  const inCode = codeMask(doc)
+/** Every table's source geometry. Pure on the document's line table, and read per keystroke by the
+ *  guard, the decoration build and `atomicRanges` — the caller holds the one derivation per doc
+ *  version (`docCache.docScan`), so the micromark confirmations here are paid once. */
+export function tableRegions({ text, lines, lineStarts }: DocLines): TableRegion[] {
+  const lineTo = (i: number): number => lineStarts[i] + lines[i].length
+  const geom = (i: number): RowGeom => splitRow(lines[i], lineStarts[i])
+  const inCode = codeMask(text)
   const regions: TableRegion[] = []
   let i = 1
   while (i < lines.length) {
-    const columns = parseDelimiter(lines[i].text)
+    const columns = parseDelimiter(lines[i])
     const header = lines[i - 1]
     if (
       !columns ||
-      header.text.trim() === '' ||
-      header.text.trimStart()[0] === '>' ||
-      inCode(header.from) ||
-      !isTable(doc.slice(header.from, lineTo(lines[i])))
+      header.trim() === '' ||
+      header.trimStart()[0] === '>' ||
+      inCode(lineStarts[i - 1]) ||
+      !isTable(text.slice(lineStarts[i - 1], lineTo(i)))
     ) {
       i++
       continue
@@ -53,19 +47,18 @@ export function tableRegions(doc: string): TableRegion[] {
     // if a non-table line is glued on without a blank separator (rare). Keeps the common case to one
     // micromark parse per table instead of a per-line re-check.
     let last = i
-    while (last + 1 < lines.length && lines[last + 1].text.trim() !== '') last++
-    while (last > i && !isTable(doc.slice(header.from, lineTo(lines[last])))) last--
-    const body = lines.slice(i + 1, last + 1)
+    while (last + 1 < lines.length && lines[last + 1].trim() !== '') last++
+    while (last > i && !isTable(text.slice(lineStarts[i - 1], lineTo(last)))) last--
+    const rows: RowGeom[] = [geom(i - 1)]
+    for (let k = i + 1; k <= last; k++) rows.push(geom(k))
     regions.push({
-      from: header.from,
-      to: lineTo(lines[last]),
-      rows: [rowGeom(header), ...body.map(rowGeom)],
+      from: lineStarts[i - 1],
+      to: lineTo(last),
+      rows,
       delimiter: { columns },
     })
     i = last + 1
   }
-  cacheDoc = doc
-  cacheRegions = regions
   return regions
 }
 
