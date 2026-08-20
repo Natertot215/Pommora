@@ -10,6 +10,7 @@ import { isPlainObject } from '@shared/propertyValue'
 import { fail, ok, type Result } from '@shared/result'
 import { recordWrite } from './writeEcho'
 import { serializeOnFile } from './fileLock'
+import { TRASH_DIR } from '@shared/nexusPaths'
 
 /** Atomically write a UTF-8 string to `filePath`. Recorded for watcher echo
  *  suppression — the app's own writes never trigger its own re-walk. */
@@ -166,7 +167,7 @@ export const BUNDLE_SUFFIX = '.deleted'
 async function trashChainDir(nexusRoot: string, absPath: string): Promise<string> {
   const rel = relative(nexusRoot, absPath)
   const chain = rel && !rel.startsWith('..') && !isAbsolute(rel) ? dirname(rel) : '.'
-  const dir = join(nexusRoot, '.trash', chain)
+  const dir = join(nexusRoot, TRASH_DIR, chain)
   await mkdir(dir, { recursive: true })
   return dir
 }

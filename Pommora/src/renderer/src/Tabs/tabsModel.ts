@@ -3,6 +3,7 @@
 
 import type { NavRef, NewTabSentinel, SelectTarget, StoredTab, Tab, TabTarget } from '@shared/types'
 import type { MutableKind } from '@shared/mutate'
+import { moveItem } from '@renderer/design-system/moveItem'
 import { navKey } from '../Navigation/navRecents'
 import { reconcileWith, type ReconcileIndex } from '../selection'
 
@@ -235,10 +236,7 @@ export function reorderWithinZone(tabs: Tab[], fromId: string, toIndex: number):
   if (from === -1) return tabs
   const to = Math.max(0, Math.min(toIndex, tabs.length - 1))
   if (from === to) return tabs
-  const next = tabs.slice()
-  const [moved] = next.splice(from, 1)
-  next.splice(to, 0, moved)
-  return next
+  return moveItem(tabs, from, to)
 }
 
 /** Enters at the front, or just behind the active tab when the active tab is itself the front

@@ -1,7 +1,7 @@
 // Pure validation over a PropertyDefinition[] — the typed gate a definition passes before it
 // enters the registry. No I/O.
 
-import { isReservedPropertyId, type PropertyDefinition } from '@shared/properties'
+import { hasSelectOptions, isReservedPropertyId, type PropertyDefinition } from '@shared/properties'
 import { fail, ok, type Result } from '@shared/result'
 import { KEY_REFUSAL } from '@shared/governedKeys'
 
@@ -32,7 +32,7 @@ export function validateDefinition(
   if (existing.some((d) => d.id === def.id)) {
     return fail('invalid-property', 'That property id already exists.')
   }
-  if (def.type === 'select' || def.type === 'multi_select') {
+  if (hasSelectOptions(def.type)) {
     const check = validateOptionValues(def.select_options ?? [])
     if (!check.ok) return check
   }

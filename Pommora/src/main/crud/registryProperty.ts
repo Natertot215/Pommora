@@ -1,7 +1,12 @@
 import { mutateRegistry, readRegistry } from '../io/propertiesRegistry'
 import { validateDefinition, validateName } from '../properties/schema'
 import { mintPropertyId } from '../ids'
-import { defaultStatusSeed, defaultSelectSeed, type PropertyDefinition } from '@shared/properties'
+import {
+  defaultStatusSeed,
+  defaultSelectSeed,
+  hasSelectOptions,
+  type PropertyDefinition,
+} from '@shared/properties'
 import { ok, fail, type Result } from '@shared/result'
 import { renameFrontmatterKey, type KeyCollision } from '../io/pageFile'
 import {
@@ -26,7 +31,7 @@ function seeded(def: PropertyDefinition): PropertyDefinition {
   let d = def
   if (d.type === 'status' && d.status_groups === undefined)
     d = { ...d, status_groups: defaultStatusSeed() }
-  if ((d.type === 'select' || d.type === 'multi_select') && d.select_options === undefined) {
+  if (hasSelectOptions(d.type) && d.select_options === undefined) {
     d = { ...d, select_options: defaultSelectSeed() }
   }
   return d

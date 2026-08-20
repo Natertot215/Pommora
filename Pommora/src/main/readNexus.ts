@@ -55,7 +55,6 @@ import { shouldSkipDir } from './exclusion'
 import { resolveOrder } from './order'
 import { beginWalk, cachedParse, endWalk } from './walkCache'
 import {
-  CONTEXTS_REGISTRY_REL,
   contextsDir,
   contextsRegistryFile,
   NEXUS_CONFIG_FILES,
@@ -63,6 +62,7 @@ import {
   SIDECAR_FILENAME,
   SPACE_SIDECAR,
 } from './paths'
+import { CONTEXTS_REGISTRY_REL, spaceDirRel } from '@shared/nexusPaths'
 
 type Json = Record<string, unknown>
 type Fallback = 'id' | 'title'
@@ -535,7 +535,7 @@ async function readContextGroups(
       const dir = join(contextsDir(root), def.title)
       const entries = (await listEntries(dir))
         .filter((e) => e.isDirectory())
-        .map((e) => ({ name: e.name, rel: `.nexus/contexts/${def.title}/${e.name}` }))
+        .map((e) => ({ name: e.name, rel: spaceDirRel(def.title, e.name) }))
         .filter(({ name, rel }) => !shouldSkipDir(name, rel, excluded))
       const read = await Promise.all(
         entries.map(({ name, rel }) => readSpace(join(dir, name), rel, name, def.id, unreadable)),

@@ -4,6 +4,7 @@
 
 import { toNavRef } from '@shared/types'
 import type { NavRef, SelectTarget } from '@shared/types'
+import { moveItem } from '@renderer/design-system/moveItem'
 
 /** Generous default history depth (deep history + a tunable cap, not a tight ~50). */
 export const RECENTS_CAP = 100
@@ -44,9 +45,7 @@ export function moveByKey<T>(
   const from = list.findIndex((i) => keyOf(i) === activeKey)
   const to = list.findIndex((i) => keyOf(i) === overKey)
   if (from === -1 || to === -1 || from === to) return null
-  const next = [...list]
-  next.splice(to, 0, next.splice(from, 1)[0])
-  return next
+  return moveItem(list, from, to)
 }
 
 /** Drop the entry whose navKey matches `key` — the NavList row's Remove action. Returns the same list

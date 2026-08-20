@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Zone, useZoneItem } from './engine'
 import { DragGroup, GroupZone, useGroupedDragItem, type DragGroupProps } from './group'
 import type { DragItem, DragNotify, Modifier } from './shared'
+import { moveItem } from '../moveItem'
 
 // The drag seam. Surfaces import ONLY from here — the engine lives behind it.
 
@@ -19,9 +20,7 @@ export function reorder<T extends { id: string }>(
   const from = items.findIndex((i) => i.id === activeId)
   const to = items.findIndex((i) => i.id === overId)
   if (from === -1 || to === -1 || from === to) return items
-  const next = items.slice()
-  next.splice(to, 0, next.splice(from, 1)[0])
-  return next
+  return moveItem(items, from, to)
 }
 
 /** Exchange two items — for `swap`-mode zones. */

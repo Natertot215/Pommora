@@ -4,16 +4,16 @@
 import { titleFromPath } from '@shared/connections'
 import { pageLinkText, pagePathText, type PageMoveContext } from '@shared/pageMenu'
 import type { NexusTree } from '@shared/types'
+import { parentOf } from '@shared/treePatch'
 import { containerTargets } from './destinationTree'
 import { useSession } from './store'
 
 /** Where this page may be sent: every container in the nexus, with the one it already sits in
  *  named so the menu can show that destination disabled. */
 export function pageMoveContext(tree: NexusTree | null, path: string): PageMoveContext {
-  const cut = path.lastIndexOf('/')
   return {
     moveTargets: tree ? containerTargets(tree.collections) : [],
-    currentParentPath: cut < 0 ? '' : path.slice(0, cut),
+    currentParentPath: parentOf(path),
   }
 }
 

@@ -4,9 +4,6 @@
 
 **MarkdownPM's cleanup is finished, and Footnotes is unblocked.** The editor derived the same document seven times over, both link syntaxes spelled one gesture grammar twice, four box constructs stated one geometry four times, a list marker had two vocabularies, and a fold was a heading offset rather than a region. Each of those collapsed, and six live defects closed with them — four as symptoms of the duplication they sat inside rather than as separate fixes. Every seam the [[Footnotes — Decision Log]] named as a prerequisite is in place: the fold model takes a kind and a default-collapsed path, the document scan is one derivation a footnotes scan can join, the pointer path is a factory a marker registers with, the block resolver reads that scan, a resting cell has the target readers a marker's rest branch hangs off, and the two device-row holes footnotes would have inherited are closed. Three of the editor's four import cycles closed with it; the fourth runs through `TableView` and belongs to the parked table work.
 
-
-**Populating Settings continues underneath it.** The rail is seated in the order it will keep, and Appearance now holds working color controls. Properties and Automations are seated against features that do not exist yet — Automations especially, since settings cannot be designed before the thing they configure — and Shortcuts has three bindings in code and no way to rebind them. The open question in front of the next piece is which of these earns a control next, and what the empty categories are actually for.
-
 ### Immediate Work
 
 - [ ] MarkdownPM Footnotes → Plan & Execution. The decision log at [[Footnotes — Decision Log]] is the settled contract, one `[assumed]` entry (C-3's clear-on-default) pending Nathan's word. Every seam it named is in place and the editor's cleanup is closed, so nothing blocks it.

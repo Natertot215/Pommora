@@ -18,15 +18,19 @@ import {
   renameStatusOption as renameStatusInArray,
   type Option,
 } from '@shared/optionModel'
-import type { PropertyDefinition, PropertyType, StatusGroup } from '@shared/properties'
+import {
+  hasSelectOptions,
+  type PropertyDefinition,
+  type PropertyType,
+  type StatusGroup,
+} from '@shared/properties'
 import { propertyKey } from '@shared/propertyValue'
 import { clearSchemaJournal, writeSchemaJournal, type SchemaJournal } from './propertyJournal'
 
-/** These ops edit `select_options`, so they apply to Select / Multi-Select only. A Status property's
- *  options live in `status_groups` (its own per-group ops below); other types have none. Reject anything
- *  else up front — writing select_options onto a status def corrupts it and orphans its page values. */
+/** These ops edit `select_options`, so they apply to Select / Multi-Select only — rejected up front
+ *  rather than left to the write. */
 function requireOptionType(type: PropertyType): Result<null> {
-  return type === 'select' || type === 'multi_select'
+  return hasSelectOptions(type)
     ? ok(null)
     : fail('invalid-property', 'Options can only be edited on Select or Multi-Select properties.')
 }

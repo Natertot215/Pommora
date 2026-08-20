@@ -10,6 +10,7 @@ import { applyValueAtRoot, isBlankValue, type PropertyValue } from '@shared/prop
 import type { PropertyDefinition } from '@shared/properties'
 import type { SavedView } from '@shared/views'
 import { DEFAULT_NEW_NAME } from '@shared/mutate'
+import { parentOf } from '@shared/treePatch'
 import {
   findScroller,
   SEEK_GLIDE,
@@ -193,7 +194,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
   // values tie it there, and the order write breaks the tie at the gesture slot.
   const createAdjacent = (row: ViewRow, where: 'above' | 'below'): Promise<boolean> => {
     const c = cfg()
-    const parentPath = row.path.slice(0, row.path.lastIndexOf('/'))
+    const parentPath = parentOf(row.path)
     const seeds = impliedSeeds()
     const gestureViewId = c.view.id
     const gKey = c.rowBand.get(row.id)

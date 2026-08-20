@@ -4,6 +4,7 @@
 
 import { realpath, stat } from 'node:fs/promises'
 import type { AppConfig } from './appConfig'
+import { TRASH_DIR } from '@shared/nexusPaths'
 
 let currentRoot: string | null = null
 
@@ -54,7 +55,7 @@ export async function resolveRestorePath(config: AppConfig): Promise<string | nu
 export function isTrashedPath(p: string): boolean {
   return p.split('/').some((seg) => {
     const s = seg.toLowerCase()
-    return s === '.trash' || s === '.trashes'
+    return s === TRASH_DIR || s === '.trashes'
   })
 }
 

@@ -3,6 +3,7 @@
 // menus can never disagree about what the nexus will hold.
 
 import type { MoveTarget } from '@shared/pageMenu'
+import { contextDirRel } from '@shared/nexusPaths'
 import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
 
 /** Every Collection and the Sets nested under it, in tree order. The matrix is the write path's:
@@ -24,6 +25,6 @@ export function contextTargets(tree: NexusTree | null): MoveTarget[] {
   return (tree?.contexts ?? []).map((g) => ({
     id: g.def.id,
     label: g.def.title,
-    path: `.nexus/contexts/${g.def.title}`,
+    path: contextDirRel(g.def.title),
   }))
 }

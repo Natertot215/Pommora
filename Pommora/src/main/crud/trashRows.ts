@@ -5,7 +5,7 @@
 
 import { basename, dirname } from 'node:path'
 import type { NexusTree, TrashCrumb, TrashRow } from '@shared/types'
-import { CONTEXTS_DIR_REL } from '../paths'
+import { CONTEXTS_DIR_REL, TRASH_DIR } from '@shared/nexusPaths'
 import {
   type ArtifactRecord,
   containerChain,
@@ -34,7 +34,7 @@ function deletedAtOf(bundlePath: string): number | null {
 function frozenCrumbs(bundlePath: string): TrashCrumb[] {
   const segments = dirname(bundlePath)
     .split('/')
-    .filter((seg) => seg && seg !== '.' && seg !== '.trash')
+    .filter((seg) => seg && seg !== '.' && seg !== TRASH_DIR)
   const contexts = CONTEXTS_DIR_REL.split('/')
   const inContexts = contexts.every((seg, i) => segments[i] === seg)
   return (inContexts ? segments.slice(contexts.length) : segments).map((title) => ({ title }))

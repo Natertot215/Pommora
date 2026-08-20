@@ -7,6 +7,7 @@ import { readdir } from 'node:fs/promises'
 import type { Dirent } from 'node:fs'
 import { join, relative } from 'node:path'
 import { excludedMatcher } from '../exclusion'
+import { NON_CORPUS_TOP } from '@shared/nexusPaths'
 
 /** Whether a name (or a path ending in one) is Markdown. Case-INSENSITIVE, and stated once: a
  *  `.MD` written by another editor is the same file to the person who wrote it, and a walk that
@@ -53,9 +54,6 @@ export async function listMarkdownFiles(
     .filter((r) => !skip.has(r.split(/[/\\]/)[0]))
     .map((r) => join(dir, r))
 }
-
-/** Top-level names the corpus never reaches into, whichever direction a path is resolved from. */
-export const NON_CORPUS_TOP: ReadonlySet<string> = new Set(['.nexus', '.trash'])
 
 /** What the pens can reach — THE corpus, stated once: every `.md` under the nexus outside its
  *  own `.nexus`/`.trash` and outside the user's `excluded_folders`, as nexus-relative POSIX

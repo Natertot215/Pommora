@@ -34,7 +34,7 @@ import {
 import { cx } from '@renderer/design-system/cx'
 import { assetUrl } from '../../../assetUrl'
 import { useSession } from '../../../store'
-import { byOrder } from '@shared/treePatch'
+import { byOrder, parentOf } from '@shared/treePatch'
 import { findCollectionForSet } from '@renderer/Detail/Scope'
 import { useSaveView } from '@renderer/Embeds/ViewEmbedScope'
 import { spliceBeside, tieOrderWith } from '../creationOrder'
@@ -58,6 +58,7 @@ import { declaredType } from '../pipeline/value'
 import { resolveView } from '../pipeline/resolveView'
 import { useValuesEpoch } from '../useValuesEpoch'
 import { useActiveView } from '../useActiveView'
+import { useViewOrders } from '../useViewOrders'
 import { columnLabel } from '../Table/columnLabel'
 import { contextIdsOf } from '../pipeline/contextIdentity'
 import { resolveContainerSchema } from '../Table/TableView'
@@ -215,22 +216,13 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   // Manual card order — the per-machine viewOrders tiebreaker the table's sorter reads; the
   // override gives instant feedback on a drop. Two+ effective sort criteria retire the drag, the
   // table's law.
-  const [viewOrders, setViewOrders] = useState<Record<string, string[]>>({})
+  const { viewOrders, persistViewOrder } = useViewOrders(source.path, view.id)
   const [manualOverride, setManualOverride] = useState<string[] | null>(null)
   // The set-cards row's twin of manualOverride — a confirmed tree carries the canonical
   // set_order, so a fresh `source` identity drops it.
   const [setOrderOverride, setSetOrderOverride] = useState<string[] | null>(null)
   useEffect(() => setSetOrderOverride(null), [source])
-  useEffect(() => {
-    let canceled = false
-    setManualOverride(null)
-    void window.nexus.viewOrders.get().then((m) => {
-      if (!canceled) setViewOrders(m)
-    })
-    return () => {
-      canceled = true
-    }
-  }, [source.path])
+  useEffect(() => setManualOverride(null), [source.path])
   const sortKeys = useMemo(() => resolvedSortCount(view.sort, schema), [view.sort, schema])
   const sortedOrGrouped = sortKeys > 0 || view.group != null
   // Sort By: Location on its Location order is a computed filesystem order (drag off); Custom falls to
@@ -636,12 +628,6 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     setManualOverride(full)
     persistViewOrder(full)
   }
-  // The wire write lands in the local copy too — nothing re-reads viewOrders mid-session, so
-  // a stale local array outlives the override that masks it (the table's law, same name).
-  const persistViewOrder = (ids: string[]): void => {
-    setViewOrders((m) => ({ ...m, [view.id]: ids }))
-    void window.nexus.viewOrders.set(view.id, ids)
-  }
   const onCardDrop = (activeId: string, toZone: string, toIndex: number): void => {
     const from = groups.find((g) => flattenGroups([g]).some((r) => r.id === activeId))?.key
     if (from == null) return
@@ -655,11 +641,11 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
       // keep their rank) with the drop spliced before the visible card it landed on.
       const row = rowById.get(activeId)
       const destPath = toZone === UNGROUPED ? source.path : setPaths.get(toZone)
-      if (row && destPath && destPath !== row.path.slice(0, row.path.lastIndexOf('/'))) {
+      if (row && destPath && destPath !== parentOf(row.path)) {
         // A row page_order can actually rank against: a direct child of the destination that
         // isn't the card being moved.
         const isDestSibling = (r: ViewRow): boolean =>
-          r.path.slice(0, r.path.lastIndexOf('/')) === destPath && r.id !== activeId
+          parentOf(r.path) === destPath && r.id !== activeId
         const all = flattenContainer(source, effectiveValues).rows
         const destIds = all.filter(isDestSibling).map((r) => r.id)
         const bandRows = flattenGroups(groups.filter((g) => g.key === toZone))

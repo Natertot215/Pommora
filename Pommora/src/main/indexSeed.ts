@@ -22,7 +22,8 @@ import {
   type PageIndexEntry,
 } from './db/contentIndex'
 import { splitEnvelope } from './io/pageFile'
-import { corpusFiles, corpusFilesUnder, isMarkdownFile, NON_CORPUS_TOP } from './io/walk'
+import { corpusFiles, corpusFilesUnder, isMarkdownFile } from './io/walk'
+import { NON_CORPUS_TOP } from '@shared/nexusPaths'
 import { splitFrontmatter } from './readNexus'
 import { readExcludedFolders } from './settings'
 import { sessionDb } from './sessionDb'

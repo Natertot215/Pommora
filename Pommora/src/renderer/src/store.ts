@@ -25,6 +25,7 @@ import {
   type RenameHost,
 } from '@shared/mutate'
 import { orderWithSlot } from './Detail/Views/creationOrder'
+import { contextDirRel } from '@shared/nexusPaths'
 import { caught, errText, fail, type PommoraError, type Result } from '@shared/result'
 import { reconcileSelection, reconcileWith } from './selection'
 import { navKeysOf, reconcileIndexOf } from './treeIndex'
@@ -1673,7 +1674,7 @@ export const useSession = create<SessionState>((set, get) => {
           const sp = groups.flatMap((g) => g.spaces).find((s) => s.path === path)
           return sp ? get().mutate({ op: 'renameSpace', spaceId: sp.id, newName }) : false
         }
-        const group = groups.find((g) => `.nexus/contexts/${g.def.title}` === path)
+        const group = groups.find((g) => contextDirRel(g.def.title) === path)
         return group
           ? get().mutate({ op: 'renameContext', contextId: group.def.id, newName })
           : false
