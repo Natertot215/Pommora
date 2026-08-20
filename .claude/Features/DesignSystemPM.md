@@ -272,11 +272,11 @@ The atlas continues in the specs that own each family: the editor's token pocket
 ### Known Issues
 
 - **Voiding Liquid Glass can't be done in place** — its `backdrop-filter` displacement is a dynamically generated SVG filter ID CSS can neither reconstruct nor interpolate, so the inspector "swallow" renders the pill as a two-layer control: a fading glass layer behind a solid bare-button layer.
-- **Scrollbars are hidden app-wide** — Chromium's default bar reads heavy and the native auto-hiding overlay isn't reliably available, so scrolling is trackpad and wheel only.
+- **Scrollbars are hidden app-wide** — Chromium's default bar reads heavy, and the native auto-hiding overlay isn't reliably available, so scrolling is trackpad and wheel only.
 
 ### Pending
 
-- **Spacing and radius** — `--radius-full` is the scale's first member, minted from the pill radius nine surfaces had been spelling by hand. The rest of the corners and the spacing steps stay ad-hoc literals until they're lifted from Figma.
+- **Spacing and radius** — `--radius-full` is the scale's first member, minted from the pill radius nine surfaces had been spelling by hand. The rest of the corners and spacing steps remain ad-hoc literals until they're lifted from Figma.
 - **Light/dark theming** — a future seam; the system is dark-only.
 - **Accent editing UI** — deferred; the control surface is the config file.
 - **The inactive state token** — the empty-state text tone between secondary and tertiary; its interim consumers read tertiary, each marked `Awaiting proper inactive state token`.
