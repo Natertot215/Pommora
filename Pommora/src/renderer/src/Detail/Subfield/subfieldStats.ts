@@ -1,5 +1,4 @@
-import { isValidLink } from '@shared/links'
-import { markdownLinkRegex } from '@shared/links'
+import { isValidLink, markdownLinkRegex } from '@shared/links'
 import { fencedLineMask } from '@shared/markdownCode'
 import { loneWebpageEmbed } from '@shared/webpageEmbed'
 import {
