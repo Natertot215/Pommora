@@ -15,6 +15,7 @@ import type {
   ViewPickerItem,
 } from './blocks'
 import type { ActionItem } from './menuModel'
+import { lockLabel } from './toggleLabels'
 
 export type TileAction =
   | 'tile:open'
@@ -133,7 +134,7 @@ export function tileMenuModel(ctx: TileMenuContext): TileMenuModel {
   items.push({ label: 'Delete', action: 'tile:delete', disabled: locked })
 
   items.push({
-    label: containerLocked ? 'Locked' : locked ? 'Unlock' : 'Lock',
+    label: containerLocked ? 'Locked' : lockLabel(locked),
     action: 'tile:lock',
     separatorBefore: true,
     disabled: containerLocked,

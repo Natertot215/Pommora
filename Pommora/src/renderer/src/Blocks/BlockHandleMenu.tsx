@@ -27,6 +27,7 @@ import { PaneSlider } from '@renderer/Components/Detail/PaneSlider'
 import { cx } from '@renderer/design-system/cx'
 import { ZOOM_STEPS, zoomStep } from './blockZoom'
 import * as s from './handleMenu.css'
+import { lockLabel } from '@shared/toggleLabels'
 
 // Matches the SettingsPane ladder's control-size rows.
 const GLYPH = 12
@@ -214,11 +215,11 @@ export function BlockHandleMenu({
                 <button
                   type="button"
                   className={footerLockAction}
-                  aria-label={locked ? 'Unlock tile' : 'Lock tile'}
+                  aria-label={lockLabel(locked, 'tile')}
                   onClick={() => onToggleLock()}
                 >
                   <Icon name="lock" size={GLYPH} className={lockIcon} />
-                  {locked ? 'Unlock' : 'Lock'}
+                  {lockLabel(locked)}
                 </button>
               )
             }

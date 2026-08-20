@@ -24,6 +24,7 @@ import {
 import { rowTemplate } from './rowMenu'
 import type { ContextTarget, Creator, MutableKind, MutateRequest } from '@shared/mutate'
 import { readNexusLabels } from './settings'
+import { openLabel } from '@shared/toggleLabels'
 
 /** The "New …" creators a container offers; pages + Spaces + the legacy area/topic/project
  *  kinds offer none. Collections and Sets route through the shared rule, so this menu and the
@@ -170,7 +171,7 @@ export async function showContextMenu(
   // already-open entity reads "Open" and the push-back focuses its tab.
   if (target.id) {
     items.push({
-      label: target.alreadyOpen ? 'Open' : 'Open New Tab',
+      label: openLabel(target.alreadyOpen),
       click: () => push(win, 'open-in-new-tab', target),
     })
     items.push({ type: 'separator' })

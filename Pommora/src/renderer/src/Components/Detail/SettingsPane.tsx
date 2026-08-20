@@ -33,6 +33,7 @@ import {
 import { IconPicker } from '../IconPicker'
 import { InlineEditHeader } from './InlineEditHeader'
 import { useViewEmbedScope } from '@renderer/Embeds/ViewEmbedScope'
+import { lockLabel } from '@shared/toggleLabels'
 
 type PaneId = 'configuration' | 'properties' | 'visibility' | 'layout' | 'filter' | 'group' | 'sort'
 interface MenuEntry {
@@ -209,7 +210,7 @@ export function SettingsPane(): React.JSX.Element | null {
               icon="lock"
               size="control"
               box={20}
-              ariaLabel={scope.locked ? 'Unlock view configuration' : 'Lock view configuration'}
+              ariaLabel={lockLabel(scope.locked, 'view configuration')}
               className={scope.locked ? `${footerLock} ${footerLockActive}` : footerLock}
               onClick={() => scope.setLocked(!scope.locked)}
             />

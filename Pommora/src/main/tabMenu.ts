@@ -3,6 +3,7 @@ import type { TabMenuAction, TabMenuContext } from '@shared/tabMenu'
 import { pageMetaMenuSubset, pageSendActions } from '@shared/pageMenu'
 import { rowTemplate } from './rowMenu'
 import { popReturningMenu } from './returningMenu'
+import { pinLabel } from '@shared/toggleLabels'
 
 // The tab right-click menu: Open Preview · the send block · Pin/Unpin · Close, gated by the tab's
 // state. The send items come from the shared page-menu model, so a tab holding a page names them
@@ -20,7 +21,7 @@ export function popTabMenu(win: BrowserWindow, ctx: TabMenuContext): Promise<Tab
         { type: 'separator' },
       )
     if (!ctx.isNewTab)
-      items.push({ label: ctx.pinned ? 'Unpin' : 'Pin', click: pick(ctx.pinned ? 'unpin' : 'pin') })
+      items.push({ label: pinLabel(ctx.pinned), click: pick(ctx.pinned ? 'unpin' : 'pin') })
     if (!ctx.pinned) {
       if (items.length > 0) items.push({ type: 'separator' })
       items.push({ label: 'Close', click: pick('close') })

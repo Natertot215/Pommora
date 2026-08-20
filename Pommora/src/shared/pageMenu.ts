@@ -7,6 +7,7 @@
 // doesn't serve.
 
 import type { ActionItem } from './menuModel'
+import { openLabel } from './toggleLabels'
 
 /** What Copy Link puts on the clipboard: the connection syntax that reaches this page from any
  *  MarkdownPM surface, so a copied page pastes as a working link rather than as its name. */
@@ -103,7 +104,7 @@ export function pageMetaMenuItems(
 ): ActionItem<PageMetaAction>[] {
   return [
     ...(opts.preview ? [{ label: 'Open Preview', action: 'title:preview' as const }] : []),
-    { label: alreadyOpen ? 'Open' : 'Open New Tab', action: 'title:newtab' },
+    { label: openLabel(alreadyOpen), action: 'title:newtab' },
     { label: 'Rename', action: 'title:rename', separatorBefore: true },
     { label: 'Change Icon', action: 'title:icon' },
     ...(opts.newPages === 'pair'

@@ -3,6 +3,7 @@ import type { NavRowMenuAction, NavRowMenuContext } from '@shared/navRowMenu'
 import { pageMetaMenuSubset, pageSendActions } from '@shared/pageMenu'
 import { rowTemplate } from './rowMenu'
 import { popReturningMenu } from './returningMenu'
+import { favoriteLabel, openLabel, pinLabel } from '@shared/toggleLabels'
 
 // The NavWindow row/card menu: Open · Open Preview · the send block a page carries · Pin/Unpin ·
 // Favorite/Unfavorite · Remove, gated by the row's live state.
@@ -14,7 +15,7 @@ export function popNavRowMenu(
     const items: MenuItemConstructorOptions[] = []
     if (ctx.canOpenNewTab)
       items.push({
-        label: ctx.alreadyOpen ? 'Open' : 'Open New Tab',
+        label: openLabel(ctx.alreadyOpen),
         click: pick('open-new-tab'),
       })
     if (ctx.isPage) items.push({ label: 'Open Preview', click: pick('open-preview') })
@@ -26,11 +27,11 @@ export function popNavRowMenu(
       items.push({ type: 'separator' })
     }
     items.push({
-      label: ctx.isPinned ? 'Unpin' : 'Pin',
+      label: pinLabel(ctx.isPinned),
       click: pick(ctx.isPinned ? 'unpin' : 'pin'),
     })
     items.push({
-      label: ctx.isFavorite ? 'Unfavorite' : 'Favorite',
+      label: favoriteLabel(ctx.isFavorite),
       click: pick(ctx.isFavorite ? 'unfavorite' : 'favorite'),
     })
     items.push({ type: 'separator' })
