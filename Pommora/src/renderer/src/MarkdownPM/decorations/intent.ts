@@ -6,16 +6,19 @@ import {
   parseListMarker,
   blockquotePrefixRe,
   calloutLines,
+  fenceRangesOf,
   headingParts,
   scanFencedCode,
   splitWithOffsets,
   type CalloutLine,
+  type DocLines,
   type EmbedLine,
   type FenceInfo,
   type ListMarker,
   type WebpageLine,
 } from '../detect'
 import { docLineScan } from '../editor/embedRanges'
+import { tableRegions, type TableRegion } from '../Tables/regions'
 
 // A line is a nested quote INSIDE a callout when it's a callout line whose content (after the callout's own
 // `>` level) is itself a blockquote. Drives the md-bq-in run's first/last across a contiguous nested-quote run.
@@ -45,28 +48,39 @@ function quotePrefixWidth(line: string, levels: number): number {
 // so any future list syntax that adopts it inherits both the cursor and drag-to-reorder for free.
 export const GLYPH_CLASS = 'md-li-glyph'
 
-/** Every whole-doc scan the decoration pass reads — pure on `text`, so a caller that runs per
+/** Every whole-document derivation the editor reads — one split, one fence pass, one table pass,
+ *  and the per-line block predicates answered once each. Pure on `text`, so a caller that runs per
  *  keystroke/caret-move caches one per doc VERSION (docCache.docScan) instead of re-splitting and
  *  re-scanning the entire document on every rebuild. */
-export interface DocScan {
-  lines: string[]
-  lineStarts: number[]
+export interface DocScan extends DocLines {
   fences: (FenceInfo | undefined)[]
   callouts: (CalloutLine | undefined)[]
+  tables: TableRegion[]
   maths: [number, number][]
   embeds: EmbedLine[]
   webpages: WebpageLine[]
+  /** Per line, in line order — the three block shapes whose test is a micromark parse. Answered
+   *  once per line rather than on demand, which is what a blockquote line inside a rebuild would
+   *  otherwise pay several times over. */
+  headings: boolean[]
+  quotes: boolean[]
+  breaks: boolean[]
 }
 
 export function scanDoc(text: string): DocScan {
-  const { lines, lineStarts } = splitWithOffsets(text)
+  const d = splitWithOffsets(text)
+  const { lines, lineStarts } = d
   const fences = scanFencedCode(lines, lineStarts)
+  const tables = tableRegions(d)
   return {
-    lines,
-    lineStarts,
+    ...d,
     fences,
     callouts: calloutLines(lines, fences),
-    ...docLineScan(text),
+    tables,
+    ...docLineScan(d, fenceRangesOf(fences), tables),
+    headings: lines.map(isHeadingLine),
+    quotes: lines.map(isBlockquoteLine),
+    breaks: lines.map(isThematicBreakLine),
   }
 }
 

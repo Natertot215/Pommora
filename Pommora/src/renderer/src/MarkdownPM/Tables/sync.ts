@@ -1,5 +1,6 @@
 import { Annotation } from '@codemirror/state'
-import { tableRegions, modelFromRegion } from './regions'
+import type { DocScan } from '../decorations/intent'
+import { modelFromRegion } from './regions'
 import { cellToSource, serialize } from './codec'
 import type { TableModel } from './model'
 
@@ -9,29 +10,29 @@ import type { TableModel } from './model'
 export const tableSelfEdit = Annotation.define<boolean>()
 
 export function cellCommitChange(
-  docText: string,
+  scan: DocScan,
   tableIndex: number,
   row: number,
   col: number,
   newText: string,
 ): { from: number; to: number; insert: string } | null {
-  const seg = tableRegions(docText)[tableIndex]?.rows[row]?.segments[col]
+  const seg = scan.tables[tableIndex]?.rows[row]?.segments[col]
   if (!seg) return null
   const insert = ` ${cellToSource(newText)} `
   return { from: seg[0], to: seg[1], insert }
 }
 
 export function structuralEditChange(
-  docText: string,
+  scan: DocScan,
   tableIndex: number,
   transform: (m: TableModel) => TableModel,
 ): { from: number; to: number; insert: string } | null {
-  const region = tableRegions(docText)[tableIndex]
+  const region = scan.tables[tableIndex]
   if (!region) return null
   const insert = serialize(transform(modelFromRegion(region)))
   // A transform that serializes to the same text (reordering identical/empty columns, aligning to the
   // current alignment) is a no-op. Skip it: dispatching it would rebuild an eq-equal widget, CM would skip
   // the re-render, and a live drag — which relies on that re-render to clear — would freeze.
-  if (insert === docText.slice(region.from, region.to)) return null
+  if (insert === scan.text.slice(region.from, region.to)) return null
   return { from: region.from, to: region.to, insert }
 }

@@ -20,9 +20,9 @@ import {
 } from '../input'
 import { aliasSpanAt } from '@shared/connections'
 import { commitAliasOnEnter } from './linkEdit'
-import { tableRegions } from '../Tables/regions'
 import { embedTileRanges } from './embedWidget'
-import { docString } from './docCache'
+import type { DocScan } from '../decorations/intent'
+import { docScan, docString } from './docCache'
 
 function apply(view: EditorView, edit: Edit | null): boolean {
   if (!edit) return false
@@ -38,9 +38,9 @@ function apply(view: EditorView, edit: Edit | null): boolean {
 // Enter at a table's bottom boundary lays a blank-line fence: a bare `\n` would put the caret on a line
 // touching the table, and GFM lazy continuation absorbs any non-blank line there as a table row — typed
 // prose would join the table character by character.
-const tableBoundaryEnter = (doc: string, s: { from: number; to: number }): Edit | null => {
+const tableBoundaryEnter = (scan: DocScan, s: { from: number; to: number }): Edit | null => {
   if (s.from !== s.to) return null
-  const r = tableRegions(doc).find((r) => r.to === s.from)
+  const r = scan.tables.find((r) => r.to === s.from)
   return r ? { from: s.from, to: s.from, insert: '\n\n', selection: s.from + 2 } : null
 }
 
@@ -51,7 +51,7 @@ const onEnter = (view: EditorView): boolean => {
   return apply(
     view,
     closeConstructOnEnter(doc, s.from, s.to) ??
-      tableBoundaryEnter(doc, s) ??
+      tableBoundaryEnter(docScan(view.state.doc), s) ??
       continueListOnEnter(doc, s.from, s.to) ??
       continueBlockquoteOnEnter(doc, s.from, s.to),
   )
@@ -70,7 +70,7 @@ const onForwardDelete = (view: EditorView): boolean => {
     return true
   const doc = docString(view.state.doc)
   if (doc[s.from] !== '\n') return false
-  const r = tableRegions(doc).find((r) => r.from === s.from + 1)
+  const r = docScan(view.state.doc).tables.find((r) => r.from === s.from + 1)
   if (!r) return false
   view.dispatch({ changes: { from: s.from, to: r.to }, userEvent: 'delete' })
   return true
