@@ -1,54 +1,36 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { PropertyDefinition } from '@shared/properties'
-import type { PropertyValue } from '@shared/propertyValue'
-import { applyValueAtRoot, isBlankValue, propertyKey } from '@shared/propertyValue'
+import { isBlankValue, propertyKey } from '@shared/propertyValue'
 import type { PageFrontmatter } from '@shared/schemas'
-import type { NexusTree, ResolvedColumn, ViewRow } from '@shared/types'
+import type { ResolvedColumn } from '@shared/types'
 import { cx } from '@renderer/design-system/cx'
-import { asRenderableIcon, Icon } from '@renderer/design-system/symbols'
-import { propertyTypeIconName } from '../Components/Detail/PropertyTypes'
+import { Icon } from '@renderer/design-system/symbols'
 import { text } from '@renderer/design-system/tokens'
 import { PickerMenu, PickerOption } from '@renderer/design-system/components/PickerMenu'
 import { Cell } from '../Detail/Views/Table/Cell'
-import { buildResolveContext, type ResolveContext } from '../Detail/Views/Table/resolveContext'
 import { contextOptionsFor } from '../Detail/Views/pipeline/contextOptions'
-import {
-  contextIdentityOf,
-  contextIdsOf,
-  spaceIdentityOf,
-} from '../Detail/Views/pipeline/contextIdentity'
 import { PropertyEditor } from '../Detail/Views/PropertyEditing/PropertyEditor'
-import { sharedValueClickAction } from '../Detail/Views/PropertyEditing/valueClick'
 import { parseEditorValue } from '../Detail/Views/Cards/cardValueInput'
 import { parseLink, urlValueFromEdit } from '@shared/linkValue'
 import { PropertyPicker, syntheticContextDef } from '../Detail/Views/PropertyEditing/PropertyPicker'
 import { DatetimeValuePicker } from '../Detail/Views/PropertyEditing/DatetimeValuePicker'
 import { resolveFieldValue } from '../Detail/Views/pipeline/value'
 import { isValidLink } from '@shared/links'
-import { contextKey, type ContextsRegistry } from '@shared/contexts'
-import { resolveContextKeys } from '@shared/contextResolve'
 import { fetchPageDetail, readPageDetail } from '../Tabs/warmCache'
+import {
+  propertyIcon,
+  usePropertyRows,
+  type Editing,
+} from '../Detail/Views/PropertyEditing/usePropertyRows'
 import { useSession, type PreviewTarget } from '../store'
 
 // Editable through the SAME primitives the table views use (Cell render, PropertyPicker/
 // CalendarPicker, PropertyEditor). Writes ride the table's optimistic-patch pattern; the reconcile
 // re-paths the open tab on rename.
 
-/** The page's owning Collection by path prefix — schema lives only on Collections. */
-const schemaForPage = (tree: NexusTree | null, path: string): PropertyDefinition[] => {
-  if (!tree) return []
-  const all = tree.collections
-  return all.find((c) => path.startsWith(`${c.path}/`))?.properties ?? []
-}
-
-const propertyIcon = (def: PropertyDefinition): string =>
-  asRenderableIcon(def.icon) ?? propertyTypeIconName(def.type) ?? 'tag'
-
-type Editing = { id: string; mode: 'picker' | 'editor' | 'date' } | null
-
 export function PreviewInspector({ target }: { target: PreviewTarget }): React.JSX.Element {
   const tree = useSession((s) => s.tree)
-  const mutate = useSession((s) => s.mutate)
+  const _mutate = useSession((s) => s.mutate)
   const [fm, setFm] = useState<PageFrontmatter | null>(null)
   const [title, setTitle] = useState('')
   const [editing, setEditing] = useState<Editing>(null)
@@ -81,39 +63,28 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
     }
   }, [target.path])
 
-  const schema = useMemo(() => schemaForPage(tree, target.path), [tree, target.path])
-  const ctx = useMemo<ResolveContext | null>(
-    () => (tree ? buildResolveContext(tree, schema) : null),
-    [tree, schema],
+  const page = useMemo(
+    () => ({ id: target.id, title, path: target.path }),
+    [target.id, title, target.path],
   )
-  const contextRows = useMemo(
-    () =>
-      contextIdsOf(tree).flatMap((id) => {
-        const identity = contextIdentityOf(tree, id)
-        return identity ? [{ id, label: identity.title, icon: identity.icon }] : []
-      }),
-    [tree],
-  )
-  const ctxRegistry = useMemo<ContextsRegistry | null>(
-    () => (tree?.contexts ? { contexts: tree.contexts.map((g) => g.def) } : null),
-    [tree],
-  )
-  const contextValues = useMemo(() => {
-    if (!fm || !ctxRegistry || !tree?.contexts) return undefined
-    const spacesByContext = new Map(tree.contexts.map((g) => [g.def.id, g.spaces]))
-    const links = resolveContextKeys(fm as Record<string, unknown>, ctxRegistry, spacesByContext)
-    return links.size ? Object.fromEntries(links) : undefined
-  }, [fm, ctxRegistry, tree])
-  const row = useMemo<ViewRow | null>(
-    () =>
-      fm
-        ? { id: target.id, title, icon: fm.icon, path: target.path, frontmatter: fm, contextValues }
-        : null,
-    [fm, title, target, contextValues],
-  )
+  const {
+    schema,
+    ctx,
+    contextRows,
+    contextValues,
+    row,
+    isContextRow,
+    commitValue,
+    commitContext,
+    editRow: editRowShared,
+  } = usePropertyRows(page, fm, setFm)
 
   // A row shows when it holds a real value OR was assigned this session (session-only — disk
-  // never carries an empty key).
+  // never carries an empty key). Contexts included — nothing pre-shows here.
+  //
+  // A standing design decision, not drift: the Settings pane's Properties leaf deliberately keeps
+  // every Context slot open until one is set aside. That surface is where a Page gets filed; this
+  // one reads a page you are looking past, so it shows only what the page actually holds.
   const isAssigned = (id: string): boolean => {
     if (revealed.has(id)) return true
     if (contextRows.some((c) => c.id === id)) return (contextValues?.[id]?.length ?? 0) > 0
@@ -125,49 +96,14 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
 
   const closeEditing = (): void => setEditing(null)
 
-  const commitValue = (propertyId: string, value: PropertyValue | null): void => {
-    const def = schema.find((d) => d.id === propertyId)
-    if (!def) return
-    setFm((prev) =>
-      prev ? (applyValueAtRoot(prev as Record<string, unknown>, def, value) as typeof prev) : prev,
-    )
-    void mutate({ op: 'setProperty', path: target.path, propertyId, value })
-  }
-  const commitContext = (contextId: string, ids: string[]): void => {
-    // Optimistic — main re-resolves authoritatively at the write boundary.
-    const ctxTitle = contextIdentityOf(tree, contextId)?.title
-    if (ctxTitle === undefined) return
-    const titles = ids
-      .map((sid) => spaceIdentityOf(tree, sid)?.title)
-      .filter((t): t is string => t !== undefined)
-    setFm((prev) => {
-      if (!prev) return prev
-      const next = { ...prev } as Record<string, unknown>
-      if (titles.length) next[contextKey(ctxTitle)] = titles
-      else delete next[contextKey(ctxTitle)]
-      return next as PageFrontmatter
+  const editRow = (def: PropertyDefinition, el: HTMLElement): void =>
+    editRowShared(def, el, {
+      setTrigger: (t) => {
+        triggerRef.current = t
+      },
+      setEditing,
+      onReveal: (id) => setRevealed((prev) => new Set([...prev, id])),
     })
-    void mutate({ op: 'setContext', path: target.path, contextId, spaceIds: ids })
-  }
-
-  const editRow = (def: PropertyDefinition, el: HTMLElement): void => {
-    triggerRef.current = el
-    // checkbox is true-or-absent on disk, never a stored false — the shared click-semantics
-    // router handles it; number/url stay inline here.
-    const v = row ? resolveFieldValue(row, def.id, schema) : ({ kind: 'null' } as const)
-    const shared = sharedValueClickAction(def.type, undefined, v, def)
-    if (shared) {
-      if (shared.kind === 'commit') {
-        commitValue(def.id, shared.value)
-        // Un-checking clears the key, which would also un-assign the row — keep it revealed
-        // this session so the box can be re-checked.
-        if (def.type === 'checkbox' && shared.value === null)
-          setRevealed((prev) => new Set([...prev, def.id]))
-      } else setEditing({ id: def.id, mode: shared.kind === 'datetime' ? 'date' : 'picker' })
-      return
-    }
-    if (def.type === 'number' || def.type === 'url') setEditing({ id: def.id, mode: 'editor' })
-  }
 
   // Opens the editor anchored to the value field on the right — the row mounts next frame
   // (requestAnimationFrame).
@@ -191,8 +127,6 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
   }
 
   if (!ctx || !row || !fm) return <div className="pgpreview-insp" />
-
-  const isContextRow = (id: string): boolean => contextRows.some((c) => c.id === id)
 
   // The same native menu the page's own properties pane pops: Clear empties the value and leaves
   // the row to be refilled, Remove empties it and takes the row away, back into Add Property.
