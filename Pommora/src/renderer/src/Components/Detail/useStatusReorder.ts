@@ -5,9 +5,10 @@ import { EDITABLE_TARGETS, GHOST_OFFSET } from '@renderer/design-system/interact
 import { announce } from '@renderer/design-system/interactions/a11y'
 import { armAutoScroll } from '@renderer/design-system/interactions/autoscroll'
 
-// The multi-region cousin of useOptionReorder. A drag can reorder within a group OR cross into
-// another group (including an empty one); on drop it calls onMove(value, toGroupId, toIndex) —
-// toIndex in the target group's without-the-dragged space, matching optionModel.moveStatusOption.
+// The one reorder implementation under both option editors — `useOptionReorder` adapts it to a flat
+// list. A drag can reorder within a group OR cross into another group (including an empty one); on
+// drop it calls onMove(value, toGroupId, toIndex) — toIndex in the target group's
+// without-the-dragged space, matching optionModel.moveStatusOption.
 // Row geometry is snapshotted at drag-start (no rect-read per move — the hard rule); an
 // invalidating scroll re-resolves from the last point.
 

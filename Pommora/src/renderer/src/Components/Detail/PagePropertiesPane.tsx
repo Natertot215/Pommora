@@ -38,13 +38,11 @@ type Field = { id: string; label: string; icon: string; def: PropertyDefinition 
 export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JSX.Element {
   const pageDetail = useSession((st) => st.pageDetail)
   const tree = useSession((st) => st.tree)
-  const _mutate = useSession((st) => st.mutate)
   const [editing, setEditing] = useState<Editing>(null)
   const [addOpen, setAddOpen] = useState(false)
   const triggerRef = useRef<HTMLElement | null>(null)
   const addRef = useRef<HTMLButtonElement | null>(null)
 
-  const _path = pageDetail?.path ?? ''
   const stored = pageDetail?.frontmatter
   // The optimistic overlay: a write patches here for the frame, and the reloaded page overwrites it
   // the moment main answers — so the surface is never the authority on what's on disk.
@@ -106,7 +104,7 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
     if (action === 'value:clear') {
       // Emptying a value deletes its key, so a property row would stop being shown by the value it
       // no longer holds. Revealing it is what keeps Clear a different act from Remove.
-      if (!context) setRevealed((prev) => new Set([...prev, id]))
+      if (!context) reveal(id)
       return
     }
     if (context) setSetAside((prev) => new Set([...prev, id]))
@@ -116,7 +114,7 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
   const revealAndEdit = (def: PropertyDefinition): void => {
     const id = def.id
     setAddOpen(false)
-    setRevealed((prev) => new Set([...prev, id]))
+    reveal(id)
     if (def.type === 'checkbox') {
       commitValue(id, { kind: 'checkbox', value: true })
       return

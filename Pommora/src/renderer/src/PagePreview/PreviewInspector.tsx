@@ -30,7 +30,6 @@ import { useSession, type PreviewTarget } from '../store'
 
 export function PreviewInspector({ target }: { target: PreviewTarget }): React.JSX.Element {
   const tree = useSession((s) => s.tree)
-  const _mutate = useSession((s) => s.mutate)
   const [fm, setFm] = useState<PageFrontmatter | null>(null)
   const [title, setTitle] = useState('')
   const [editing, setEditing] = useState<Editing>(null)
@@ -87,14 +86,12 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
   // one reads a page you are looking past, so it shows only what the page actually holds.
   const isAssigned = (id: string): boolean => {
     if (revealed.has(id)) return true
-    if (contextRows.some((c) => c.id === id)) return (contextValues?.[id]?.length ?? 0) > 0
+    if (isContextRow(id)) return (contextValues?.[id]?.length ?? 0) > 0
     const def = schema.find((d) => d.id === id)
     return def
       ? (fm as Record<string, unknown> | undefined)?.[propertyKey(def)] !== undefined
       : false
   }
-
-  const closeEditing = (): void => setEditing(null)
 
   const editRow = (def: PropertyDefinition, el: HTMLElement): void =>
     editRowShared(def, el, {
@@ -279,13 +276,13 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
               commitContext(editing.id, v?.kind === 'context' ? v.value : [])
             else commitValue(editing.id, v)
           }}
-          onDismiss={closeEditing}
+          onDismiss={() => setEditing(null)}
         />
       )}
       <PickerMenu
         solid
         open={editing?.mode === 'date'}
-        onDismiss={closeEditing}
+        onDismiss={() => setEditing(null)}
         triggerRef={triggerRef}
       >
         {editing?.mode === 'date' && (

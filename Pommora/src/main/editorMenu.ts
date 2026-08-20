@@ -15,7 +15,6 @@ import {
   EDITOR_ACTION_PREFIX,
   type EditorMenuAction,
   type FormatChordAction,
-  type HeadingLevel,
   type FormatState,
   INSERT_LINK_ACTION,
 } from '@shared/editorMenu'
@@ -121,12 +120,6 @@ function pommoraItems(
   selection: string,
 ): MenuItemConstructorOptions[] {
   const act = (a: EditorMenuAction): (() => void) => dispatch(wc, a)
-  const heading = (label: string, level: HeadingLevel): MenuItemConstructorOptions => ({
-    label,
-    type: 'radio',
-    checked: s.heading === level,
-    click: act(`heading:${level}`),
-  })
   return [
     { type: 'separator' },
     // An address sitting in the prose as ordinary text, selected: the one gesture that turns it into
@@ -171,7 +164,12 @@ function pommoraItems(
     },
     {
       label: 'Heading',
-      submenu: HEADING_LEVELS.map(({ level, label }) => heading(label, level)),
+      submenu: HEADING_LEVELS.map(({ level, label }) => ({
+        label,
+        type: 'radio' as const,
+        checked: s.heading === level,
+        click: act(`heading:${level}`),
+      })),
     },
     {
       label: 'Lists',
