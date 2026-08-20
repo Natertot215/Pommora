@@ -81,11 +81,16 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
   // until Add Property offers it back. Both sets are session-only — an empty row holds nothing on
   // disk, which is what keeps an untouched Page untouched.
   const [setAside, setSetAside] = useState<ReadonlySet<string>>(new Set())
+  // Keyed on the NEXUS, not the tree: both sets are about this session's reading of this nexus, and
+  // a tree push means only that something on disk moved. Assigning a Space writes contextValues,
+  // which IS tree data — so keying on tree identity tore down the multi-toggle Context picker on
+  // the very pick that opened it.
+  const nexusId = tree?.nexus.id
   useEffect(() => {
     setEditing(null)
     setRevealed(new Set())
     setSetAside(new Set())
-  }, [tree])
+  }, [nexusId])
 
   const schema = useMemo(() => schemaForPage(tree, path), [tree, path])
   const ctx = useMemo<ResolveContext | null>(
