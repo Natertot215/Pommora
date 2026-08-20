@@ -11,8 +11,7 @@ import { WINDOW_BG } from '@shared/theme'
 import type { ThumbRect } from '@shared/types'
 import { ensureIdentity } from '../identity'
 import { atomicWriteBinary } from './atomicWrite'
-import { ASSETS_DIR_REL } from '@shared/nexusPaths'
-import { assetsDir } from '../paths'
+import { thumbKey, thumbRel, thumbsRel } from '@shared/nexusPaths'
 
 const THUMB_WIDTH = 480
 
@@ -54,17 +53,7 @@ function maskTopBand(
 }
 
 /** navKey → filesystem-safe thumbnail key (the colon is illegal on Windows). */
-export function thumbKey(navKey: string): string {
-  return navKey.replace(':', '-')
-}
-
-/** Nexus-relative POSIX path of a thumbnail (served by `nexus-asset://nexus/<rel>`). */
-export function thumbRel(nexusId: string, key: string): string {
-  return `${ASSETS_DIR_REL}/${nexusId}/thumbnails/${key}.jpg`
-}
-
-const thumbsDir = (root: string, nexusId: string): string =>
-  join(assetsDir(root), nexusId, 'thumbnails')
+const thumbsDir = (root: string, nexusId: string): string => join(root, thumbsRel(nexusId))
 
 /** Capture the content-only rect as a downscaled JPEG, overwrite its keyed file, return its asset URL —
  *  or null on a bad/blank capture (the card falls back to a placeholder). `capturePage(rect)` returns an
