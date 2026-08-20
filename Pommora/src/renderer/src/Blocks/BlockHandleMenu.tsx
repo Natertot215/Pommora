@@ -11,6 +11,7 @@ import { Icon } from '@renderer/design-system/symbols'
 import { PickerMenu, PickerOption } from '@renderer/design-system/components/PickerMenu'
 import { PICKER_MAX_HEIGHT } from '@renderer/design-system/components/PickerMenu/pickerMenu.css'
 import {
+  FooterLockButton,
   MenuBottomRow,
   MenuItem,
   MenuPaneTopRow,
@@ -27,7 +28,6 @@ import { PaneSlider } from '@renderer/Components/Detail/PaneSlider'
 import { cx } from '@renderer/design-system/cx'
 import { ZOOM_STEPS, zoomStep } from './blockZoom'
 import * as s from './handleMenu.css'
-import { lockLabel } from '@shared/toggleLabels'
 
 // Matches the SettingsPane ladder's control-size rows.
 const GLYPH = 12
@@ -212,15 +212,7 @@ export function BlockHandleMenu({
                   Locked
                 </span>
               ) : (
-                <button
-                  type="button"
-                  className={footerLockAction}
-                  aria-label={lockLabel(locked, 'tile')}
-                  onClick={() => onToggleLock()}
-                >
-                  <Icon name="lock" size={GLYPH} className={lockIcon} />
-                  {lockLabel(locked)}
-                </button>
+                <FooterLockButton locked={locked} noun="tile" onToggle={onToggleLock} />
               )
             }
           />

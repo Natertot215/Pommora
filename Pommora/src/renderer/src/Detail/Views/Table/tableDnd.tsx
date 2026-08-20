@@ -13,7 +13,7 @@ import { useDragSnapshot } from '@renderer/design-system/interactions/snapshot'
 import { announce } from '@renderer/design-system/interactions/a11y'
 import { DROP_LINE_INSET } from '@renderer/design-system/interactions/shared'
 import { DropLine } from '@renderer/design-system/interactions/DropLine'
-import { findScroller, startAutoScroll } from '@renderer/design-system/interactions/autoscroll'
+import { armAutoScroll } from '@renderer/design-system/interactions/autoscroll'
 
 // Table row drag — the sidebar drop-line gesture: an accent insertion LINE marks the exact slot,
 // the picked-up row mutes in place (--state-ghost), and NO row displaces. Where you drop disambiguates:
@@ -239,15 +239,7 @@ export function TableRowDnd({
         // Auto-scroll the vertical scroller. findScroller('y') is load-bearing: it SKIPS the x-only
         // '.table-view' to reach '.detail-scroll'. No onScrolled — the window scroll hook below
         // already re-resolves off the module's scrollBy.
-        const sc = findScroller(el, 'y')
-        if (sc) {
-          stopScroll.current = startAutoScroll({
-            getPoint: () => lastPoint.current,
-            scroller: sc,
-            dragEl: el,
-            axis: 'y',
-          })
-        }
+        stopScroll.current = armAutoScroll(el, () => lastPoint.current)
         return true
       },
       scrollTarget: () => content.current,
