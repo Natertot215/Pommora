@@ -69,6 +69,7 @@ function connHitAt(
 export function connectionClicks(getApi: GetApi): Extension {
   return pointerHandlers<ConnHit>({
     hoverGate: '.md-connection-resolved',
+    armable: () => getApi()?.hover !== undefined,
     hitAt: (view, event) => connHitAt(getApi(), view, event),
     follow: ({ page }, _view, event) => {
       const api = getApi()

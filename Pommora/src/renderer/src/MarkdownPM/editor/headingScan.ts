@@ -88,7 +88,10 @@ export function headingSections(doc: string): HeadingSection[] {
     const from = starts[idx]
     const lineEnd = from + lines[idx].length
     const to = starts[endLine] + lines[endLine].length
-    if (to > lineEnd) out.push({ from, lineEnd, level, key, to })
+    // Strictly MORE than one line past the heading: a body of exactly one empty line has nothing to
+    // collapse, and admitting it hands out a chevron over a fold whose widget never renders — so the
+    // transition that ends the animation never fires and the entry strands mid-phase.
+    if (to > lineEnd + 1) out.push({ from, lineEnd, level, key, to })
   }
   return out
 }
