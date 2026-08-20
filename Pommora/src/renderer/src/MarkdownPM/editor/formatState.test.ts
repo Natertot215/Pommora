@@ -14,7 +14,7 @@ describe('readFormatState', () => {
   })
 
   it('reads list kind and blockquote', () => {
-    expect(readFormatState('- [ ] task', 7, 7, true).list).toBe('task')
+    expect(readFormatState('- [ ] task', 7, 7, true).list).toBe('checkbox')
     expect(readFormatState('1. item', 4, 4, true).list).toBe('ordered')
     expect(readFormatState('> quote', 3, 3, true).block).toBe('quote')
   })

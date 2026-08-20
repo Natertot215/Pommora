@@ -5,6 +5,7 @@ import { serializeLink } from '@shared/linkValue'
 import { PASTE_AS_PREFIX, type PasteAsForm } from '@shared/PasteAsMenu'
 import { embedInsertAtCaret, webpageInsertAtCaret } from './embedInsert'
 import { pasteAs } from './PasteLink'
+import type { ListKind } from '@shared/gripMenu'
 import {
   toggleInline,
   setHeading,
@@ -13,7 +14,6 @@ import {
   type FormatEdit,
   type InlineFormat,
   type HeadingLevel,
-  type ListFormat,
   type BlockFormat,
 } from '../input/format'
 
@@ -56,7 +56,7 @@ function editFor(action: string, doc: string, from: number, to: number): FormatE
     case 'heading':
       return setHeading(doc, from, Number(value) as HeadingLevel)
     case 'list':
-      return setList(doc, from, value as ListFormat)
+      return setList(doc, from, value as ListKind)
     case 'block':
       return setBlock(doc, from, value as BlockFormat)
     default:

@@ -189,8 +189,8 @@ function pommoraItems(
         {
           label: 'Task List',
           type: 'checkbox',
-          checked: s.list === 'task',
-          click: act('list:task'),
+          checked: s.list === 'checkbox',
+          click: act('list:checkbox'),
         },
       ],
     },

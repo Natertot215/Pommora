@@ -61,7 +61,7 @@ describe('setList', () => {
     expect(apply('- item', setList('- item', 2, 'bullet'))).toBe('item')
   })
   it('switches ordered → task', () => {
-    expect(apply('1. item', setList('1. item', 3, 'task'))).toBe('- [ ] item')
+    expect(apply('1. item', setList('1. item', 3, 'checkbox'))).toBe('- [ ] item')
   })
 })
 
