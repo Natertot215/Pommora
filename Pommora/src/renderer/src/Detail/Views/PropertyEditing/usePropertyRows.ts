@@ -25,7 +25,7 @@ import { sharedValueClickAction } from './valueClick'
 // a shape over them rather than a second way to write.
 
 /** Which value editor a row has open. */
-export type Editing = { id: string; mode: 'picker' | 'editor' | 'date' } | null
+export type Editing = { id: string; mode: 'picker' | 'editor' | 'date' | 'rename' } | null
 
 /** The page this surface is about. The two hosts find it differently — one reads the open page, the
  *  other resolves a preview target — so it arrives already found. */

@@ -3,10 +3,11 @@ import { mkdtemp, rm, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { PAGE_ID_KEY } from '@shared/identity'
+import { wrapKey } from '@shared/governedKeys'
 import { renameCascade } from './cascade'
 import { createPage } from './page'
 import { splitFrontmatter } from '../readNexus'
-import { splitEnvelope } from '../io/pageFile'
+import { mergeFrontmatter, splitEnvelope } from '../io/pageFile'
 import { rewritePageSerialized } from '../io/atomicWrite'
 import { openSessionDb, closeSessionDb } from '../sessionDb'
 import { seedContentIndex } from '../indexSeed'
@@ -121,5 +122,48 @@ describe('the cascade queries the index', () => {
     expect(openSpy).toHaveBeenCalledTimes(40)
     expect(openSpy.mock.calls.some(([file]) => (file as string).includes('Hidden'))).toBe(false)
     expect(await readFile(hidden(), 'utf8')).toBe('excluded [[Target]]\n')
+  })
+})
+
+describe('renameCascade over frontmatter', () => {
+  const SOURCE = wrapKey('property', 'Source')
+  const SITE = wrapKey('property', 'Site')
+  const setValue = (path: string, key: string, value: string) =>
+    rewritePageSerialized(path, (content) =>
+      mergeFrontmatter(content, { [key]: value }, [key], splitEnvelope(content).body),
+    )
+
+  it('moves a Link property naming the page, and the body’s links with it', async () => {
+    const a = await createPage(dir, 'Cites', { body: 'see [[Target]]' })
+    if (!a.ok) throw new Error('setup failed')
+    await setValue(a.value.path, SOURCE, '[[Target|the brief]]')
+
+    expect((await renameCascade(root, 'Target', 'New Target')).ok).toBe(true)
+    expect(await bodyOf(a.value.path)).toContain('[[New Target]]')
+    expect((await fmOf(a.value.path))[SOURCE]).toBe('[[New Target|the brief]]')
+  })
+
+  it('reaches a page whose ONLY reference is its frontmatter, through the index', async () => {
+    const a = await createPage(dir, 'Only Frontmatter', { body: 'no links here' })
+    if (!a.ok) throw new Error('setup failed')
+    await setValue(a.value.path, SOURCE, '[[Target]]')
+    openSessionDb(root)
+    await seedContentIndex(root)
+
+    const r = await renameCascade(root, 'Target', 'New Target')
+    closeSessionDb()
+    expect(r.ok).toBe(true)
+    if (!r.ok) return
+    expect(r.value.touched).toEqual([a.value.path])
+    expect((await fmOf(a.value.path))[SOURCE]).toBe('[[New Target]]')
+  })
+
+  it('leaves an address alone when its last segment happens to match', async () => {
+    const a = await createPage(dir, 'Address', { body: 'no links here' })
+    if (!a.ok) throw new Error('setup failed')
+    await setValue(a.value.path, SITE, 'https://example.com/Target')
+
+    await renameCascade(root, 'Target', 'New Target')
+    expect((await fmOf(a.value.path))[SITE]).toBe('https://example.com/Target')
   })
 })

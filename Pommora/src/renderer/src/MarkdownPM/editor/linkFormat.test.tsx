@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
-import type { ConnMenuAction } from '@shared/connections'
+import type { ConnMenuAction } from '@shared/connMenu'
 import { EDITOR_ACTION_PREFIX, INSERT_LINK_ACTION } from '@shared/editorMenu'
 import { linkMarkdown } from '@shared/PasteLink'
 import { buildPageIndex, type ConnectionsApi } from '@renderer/MarkdownPM/connections'
@@ -67,13 +67,23 @@ describe('the menu a link pointing at an address carries', () => {
   it('offers the editing items on a surface that can take them', async () => {
     const view = await mountEditor({ initialBody: BODY, connections: conn })
     await rightClick(view)
-    expect(connMenu).toHaveBeenCalledWith({ editable: true, hasAlias: false, external: true })
+    expect(connMenu).toHaveBeenCalledWith({
+      surface: 'editor',
+      editable: true,
+      hasAlias: false,
+      external: true,
+    })
   })
 
   it('offers none of them on a read-only surface', async () => {
     const view = await mountEditor({ initialBody: BODY, connections: conn, readOnly: true })
     await rightClick(view)
-    expect(connMenu).toHaveBeenCalledWith({ editable: false, hasAlias: false, external: true })
+    expect(connMenu).toHaveBeenCalledWith({
+      surface: 'editor',
+      editable: false,
+      hasAlias: false,
+      external: true,
+    })
   })
 
   it('still copies the address', async () => {

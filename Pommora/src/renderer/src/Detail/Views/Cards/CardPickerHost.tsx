@@ -7,7 +7,8 @@ import { TextPicker } from '@renderer/design-system/components/TextPicker'
 import type { ContextOption } from '../pipeline/contextOptions'
 import { declaredType, resolveFieldValue } from '../pipeline/value'
 import { useStyleFor } from '../Table/columnStyles'
-import { parseLink, urlValueFromEdit } from '@shared/linkValue'
+import { linkEditText, urlValueFromEdit } from '@shared/linkValue'
+import { resolveTitle } from '@renderer/linkResolve'
 import { solidColorCss } from '../Table/solidColor'
 import type { ResolveContext } from '../Table/resolveContext'
 import { PropertyPicker, syntheticContextDef } from '../PropertyEditing/PropertyPicker'
@@ -162,12 +163,12 @@ export function CardPickerHost({
         open={value?.kind === 'link'}
         onDismiss={onDismissValue}
         triggerRef={valueAnchorRef}
-        value={vRaw ? parseLink(vRaw).url : ''}
+        value={vRaw ? linkEditText(vRaw) : ''}
         accent={solidColorCss(vDef.link_color)}
         onCommit={(raw) => {
           // urlValueFromEdit rides an existing alias along; undefined = invalid (no write), null =
           // cleared — a clear only applies to an EXISTING value (an untouched add stays never-mind).
-          const nv = urlValueFromEdit(raw, vRaw)
+          const nv = urlValueFromEdit(raw, vRaw, resolveTitle)
           if (nv !== undefined && (nv !== null || (!vReq?.revealOnCommit && vRaw))) commitPicked(nv)
           onDismissValue()
         }}

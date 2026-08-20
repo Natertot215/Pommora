@@ -257,3 +257,12 @@ export function navKeysOf(tree: NexusTree): string[] {
   if (!ix.navKeys) ix.navKeys = ix.nodes.map((r) => r.key)
   return ix.navKeys
 }
+
+/** The page a raw connection title names, or null when none does (or more than one does). The
+ *  resolution behind a Link property's paste gate and behind the connection a Link cell draws, so a
+ *  cell can never show a link the index wouldn't reach. */
+export function resolveConnection(tree: NexusTree | null, rawTitle: string): ConnPage | null {
+  if (!tree) return null
+  const res = pageIndexOf(tree).resolve(rawTitle)
+  return res.status === 'resolved' && res.page ? res.page : null
+}

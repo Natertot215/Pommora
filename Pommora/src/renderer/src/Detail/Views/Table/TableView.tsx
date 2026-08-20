@@ -8,7 +8,6 @@ import { type CellMenuContext, cellMenuContextFor } from '@shared/cellMenu'
 import { parseStyleAction } from '@shared/columnMenu'
 import type { ColumnAlign, SavedView } from '@shared/views'
 import { applyValueAtRoot, isBlankValue, type PropertyValue } from '@shared/propertyValue'
-import { isValidLink } from '@shared/links'
 import { parentOf } from '@shared/treePatch'
 import { resolveContainerSchema } from '../pipeline/pickView'
 import { flattenContainer, groupsStructurally, subtreeIds } from '../pipeline/group'
@@ -65,7 +64,15 @@ import { useViewCreation } from '../useViewCreation'
 import { TableRowDnd, useTableRowDrag } from './tableDnd'
 import { solidColorCss } from './solidColor'
 import { openWebLink } from '@renderer/openWebLink'
-import { parseLink, urlClickTarget, urlValueFromEdit, urlValueFromRename } from '@shared/linkValue'
+import {
+  linkAlias,
+  linkEditText,
+  urlClickTarget,
+  urlValueFromEdit,
+  urlValueFromRename,
+} from '@shared/linkValue'
+import { resolveTitle, validateLink } from '@renderer/linkResolve'
+import { linkValueMenuTarget, showConnectionMenu } from '@renderer/Embeds/connectionMenu'
 
 // ── TUNABLE ── how far past a column's edge the dragged column's center must travel before the slot
 // flips (the sticky zone around the current slot). Larger = more deliberate / harder to leave a slot;
@@ -700,18 +707,21 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       }
     } else if (t === 'url') {
       e.stopPropagation()
-      // Filled → open the link (matching the rendered <a>); empty → the inline field to type one in.
+      // Filled → open the address (matching the rendered <a>); empty → the inline field to type one
+      // in. A value naming a page is opened by that anchor alone — it navigates rather than browses,
+      // and the cell around it must not fall through to the editor and lose the click.
       const v = resolveFieldValue(row, col.id, schema)
-      const url = urlClickTarget(v.kind === 'url' ? v.value : undefined)
+      const raw = v.kind === 'url' ? v.value : undefined
+      const url = urlClickTarget(raw)
       if (url) openWebLink(url)
-      else setEditing({ rowId: row.id, colId: col.id, mode: 'editor' })
+      else if (!raw) setEditing({ rowId: row.id, colId: col.id, mode: 'editor' })
     }
   }
   const editorInitial = (row: ViewRow, col: ResolvedColumn): string => {
     if (col.kind === 'title') return editing?.fromCreate ? '' : row.title
     const v = resolveFieldValue(row, col.id, schema)
     if (v.kind === 'number') return String(v.value)
-    if (v.kind === 'url') return parseLink(v.value).url
+    if (v.kind === 'url') return linkEditText(v.value)
     if (v.kind === 'file') return v.value[0]?.path ?? ''
     return ''
   }
@@ -744,7 +754,11 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     } else if (t === 'url') {
       // Edit rewrites the URL but rides the current alias along (urlValueFromEdit); empty clears.
       const cur = resolveFieldValue(row, col.id, schema)
-      const next = urlValueFromEdit(trimmed, cur.kind === 'url' ? cur.value : undefined)
+      const next = urlValueFromEdit(
+        trimmed,
+        cur.kind === 'url' ? cur.value : undefined,
+        resolveTitle,
+      )
       if (next !== undefined) commitCellValue(row, col.id, next)
     } else if (t === 'file') {
       const v = resolveFieldValue(row, col.id, schema)
@@ -776,7 +790,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       <PropertyEditor
         initial={editorInitial(row, col)}
         numeric={t === 'number'}
-        validate={t === 'url' ? isValidLink : undefined}
+        validate={t === 'url' ? validateLink : undefined}
         color={
           t === 'url' ? solidColorCss(schema.find((d) => d.id === col.id)?.link_color) : undefined
         }
@@ -901,7 +915,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
         key={key}
         open={open}
         triggerRef={triggerElRef}
-        value={parseLink(raw).alias ?? ''}
+        value={linkAlias(raw) ?? ''}
         accent={solidColorCss(linkDef?.link_color)}
         onCommit={(alias) => {
           commitCellValue(row, col.id, urlValueFromRename(alias, raw))
@@ -927,6 +941,25 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     const cellEl = el.closest<HTMLElement>('.data-cell') ?? el
     const filled = !isBlankValue(resolveFieldValue(row, col.id, schema))
     const dt = declaredType(col.id, schema)
+    // A cell holding a live link pops the LINK menu — the same one the editor pops on the same
+    // link. Only a cell with no link in it (empty, or a title no page answers to) falls through to
+    // the cell menu, which is all a value with nothing to open can offer.
+    if (dt === 'url') {
+      const v = resolveFieldValue(row, col.id, schema)
+      const target = linkValueMenuTarget(v.kind === 'url' ? v.value : '', (action) => {
+        if (action === 'link:clear') return commitCellValue(row, col.id, null)
+        if (action === 'editLink')
+          return setEditing({ rowId: row.id, colId: col.id, mode: 'editor' })
+        if (action !== 'rename') return
+        triggerElRef.current = cellEl
+        renameNonce.current += 1
+        setEditing({ rowId: row.id, colId: col.id, mode: 'rename', nonce: renameNonce.current })
+      })
+      if (target) {
+        await holdGhost(async () => showConnectionMenu(target))
+        return
+      }
+    }
     const barCapable = numberBarCapable(col.id, dt)
     const base = cellMenuContextFor(col, dt, colStyle(col.id), filled, false, barCapable)
     if (!base) return

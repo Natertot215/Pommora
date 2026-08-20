@@ -13,16 +13,17 @@ import { splitEnvelope, mergeFrontmatter } from '../io/pageFile'
 import { rewritePageSerialized } from '../io/atomicWrite'
 import { sweepAdmitsBody } from './util'
 import { mentionsTitle } from '../connections/scan'
-import { rewriteConnections } from '../connections/rewrite'
+import { rewriteConnections, rewriteFrontmatterConnections } from '../connections/rewrite'
 import { normalizeTitle } from '@shared/connections'
 import { ok, type Result } from '@shared/result'
 import { queryMentions } from '../db/contentIndex'
-import { indexWrittenPage, nexusCorpus } from '../indexSeed'
+import { governedValues, indexWrittenPage, nexusCorpus } from '../indexSeed'
 
-/** Rewrite every page body that links `oldTitle` to link `newTitle`, atomically.
- *  Body-only rewrite — frontmatter (incl. `modified_at`) is preserved untouched
- *  (a derived link edit isn't a user modification). Only files the tree admits are touched. Returns the touched page paths. The caller renames the target's
- *  own file and reverts that rename if this throws. */
+/** Rewrite every reference to `oldTitle` — the body's own links, and any frontmatter Link property
+ *  naming the page — to name `newTitle`, atomically. `modified_at` is preserved untouched either
+ *  way (a derived link edit isn't a user modification). Only files the tree admits are touched.
+ *  Returns the touched page paths. The caller renames the target's own file and reverts that
+ *  rename if this throws. */
 export async function renameCascade(
   nexusRoot: string,
   oldTitle: string,
@@ -34,12 +35,15 @@ export async function renameCascade(
   for (const rel of rels) {
     const file = join(nexusRoot, rel)
     const wrote = await rewritePageSerialized(file, (content) => {
-      const { body } = splitEnvelope(content)
-      if (!mentionsTitle(body, oldKey)) return null
       if (!sweepAdmitsBody(content)) return null // connections live only on files the tree admits
-      const newBody = rewriteConnections(body, oldTitle, newTitle)
-      if (newBody === body) return null
-      return mergeFrontmatter(content, {}, [], newBody)
+      const { body } = splitEnvelope(content)
+      const patch = rewriteFrontmatterConnections(governedValues(content), oldKey, newTitle)
+      const keys = Object.keys(patch)
+      const newBody = mentionsTitle(body, oldKey)
+        ? rewriteConnections(body, oldTitle, newTitle)
+        : body
+      if (newBody === body && keys.length === 0) return null
+      return mergeFrontmatter(content, patch, keys, newBody)
     })
     if (wrote) {
       touched.push(file)
