@@ -6,7 +6,7 @@ import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { blockAt, blockStarts } from './blockModel'
 import { docScan, docString } from './docCache'
-import { shadeField } from './dragChrome'
+import { nearestBoundary, shadeField, type Boundary } from './dragChrome'
 import { beginRelocateDrag, editorGestureCleanup } from './EditorGesture'
 import { lineElementAt } from './lineDom'
 import { blockMoveChanges } from './listDragModel'
@@ -20,16 +20,12 @@ function bottomAbove(view: EditorView, at: number): number | null {
   return lineElementAt(view, line.from)?.getBoundingClientRect().bottom ?? null
 }
 
-// Drop candidates, list-drag-style: each block outside the dragged one offers TWO boundaries — above it (its
-// top) and below it (its content bottom, see `bottomAbove`) — so the insertion line snaps to the nearer block
-// edge and flips at the block's midpoint. Measured in viewport coords; folded/off-screen blocks are skipped.
-interface Cand {
-  at: number
-  y: number
-  left: number
-  right: number
-  noop: boolean // the "stay put" slot (a drop here moves nothing) — hittable so release-in-place cancels, but draws no line
-}
+// Drop candidates: each block outside the dragged one offers TWO boundaries — above it (its top) and
+// below it (its content bottom, see `bottomAbove`) — so the insertion line snaps to the nearer block
+// edge and flips at the block's midpoint. Measured in viewport coords; folded/off-screen blocks are
+// skipped. The block's own two edges stay in the set: they are hittable, so a release there cancels
+// in place, and they simply draw no line.
+type Cand = Boundary<{ left: number; right: number }>
 /** What the document says about where blocks begin — read once at activation. The gesture holds the
  *  document still, so only the geometry below it moves. */
 interface BlockShape {
@@ -58,35 +54,24 @@ function collectCands(
 ): Cand[] {
   const rect = view.contentDOM.getBoundingClientRect()
   const right = rect.right - (parseFloat(getComputedStyle(view.contentDOM).paddingRight) || 0)
-  const { starts, docLength, afterBlock } = shape
-  const isNoop = (at: number): boolean => at === block.from || at === afterBlock
+  const { starts, docLength } = shape
   const out: Cand[] = []
+  // Only what is rendered: a block outside the viewport has no coords to measure, and the
+  // auto-scroll re-measures as it brings one in.
+  const [top, bottom] = [view.visibleRanges[0]?.from ?? 0, view.visibleRanges.at(-1)?.to ?? 0]
   for (let i = 0; i < starts.length; i++) {
     const from = starts[i]
+    if (from < top || from > bottom) continue
     if (from >= block.from && from <= block.to) continue // inside the dragged block
     const c = view.coordsAtPos(from)
-    if (!c) continue // folded away or off-screen → auto-scroll brings scrollable ones in
+    if (!c) continue // folded away → auto-scroll brings scrollable ones in
     const topY = lineElementAt(view, from)?.getBoundingClientRect().top ?? c.top // OUTER top (above a box's border)
-    out.push({ at: from, y: topY, left: c.left, right, noop: isNoop(from) }) // ABOVE this block
+    out.push({ at: from, y: topY, slot: { left: c.left, right } }) // ABOVE this block
     const nextFrom = i + 1 < starts.length ? starts[i + 1] : docLength
     const botY = bottomAbove(view, nextFrom) // this block's OUTER bottom (below a box's border)
-    if (botY !== null)
-      out.push({ at: nextFrom, y: botY, left: c.left, right, noop: isNoop(nextFrom) }) // BELOW this block
+    if (botY !== null) out.push({ at: nextFrom, y: botY, slot: { left: c.left, right } }) // BELOW this block
   }
   return out.sort((a, b) => a.y - b.y)
-}
-
-function nearest(cands: Cand[], clientY: number): Cand | null {
-  let best: Cand | null = null
-  let bd = Infinity
-  for (const c of cands) {
-    const d = Math.abs(clientY - c.y)
-    if (d < bd) {
-      bd = d
-      best = c
-    }
-  }
-  return best
 }
 
 // Exported so a non-CM-line handle — the table widget's action grip — can start a block drag from a block it
@@ -107,10 +92,14 @@ export function startBlockDrag(
   const shape = blockShape(view, block)
   beginRelocateDrag(view, e, block, {
     measure: () => collectCands(view, block, shape),
-    pick: nearest,
-    lineFor: (slot) =>
-      slot.noop ? null : { left: slot.left, top: slot.y, width: slot.right - slot.left },
-    commit: (slot) => blockMoveChanges(docString(view.state.doc), block, { at: slot.at }),
+    pick: nearestBoundary<Cand['slot']>,
+    // The block's own two edges move nothing, so they draw nothing — the release still lands on
+    // them, and cancels in place.
+    lineFor: ({ at, y, slot }) =>
+      at === block.from || at === shape.afterBlock
+        ? null
+        : { left: slot.left, top: y, width: slot.right - slot.left },
+    commit: ({ at }) => blockMoveChanges(docString(view.state.doc), block, { at }),
     onDragStart: () => onDragStart?.(view, block),
     onTap: line ? () => onClick?.(view, line) : undefined,
   })

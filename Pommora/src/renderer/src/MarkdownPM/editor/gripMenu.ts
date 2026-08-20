@@ -145,13 +145,22 @@ export const gripMenu = EditorView.domEventHandlers({
     }
     const line = gripLineAt(e)
     if (!line) return false
-    const doc = docString(view.state.doc)
     const block = blockAt(docScan(view.state.doc), view.posAtDOM(line))
     if (!block) return false
+    const doc = docString(view.state.doc)
+    const opened = doc.slice(block.from, block.to)
     e.preventDefault()
     void window.nexus?.gripMenu?.(contextFor(view, doc, block)).then((action) => {
-      // The menu is modal, so the document under it is the one the span was resolved against.
-      switch (action?.action) {
+      if (!action) return
+      // A native menu can be held open for as long as the user likes, and an undo or an outside
+      // write can move the document underneath it. The block is re-found where the grip was and
+      // matched against what the menu was built from; a document that no longer holds it declines
+      // the action, exactly as a resting cell's link menu does. Spending the captured span instead
+      // reaches past the end of a shortened document, inside a promise, unhandled.
+      const doc = docString(view.state.doc)
+      const block = blockAt(docScan(view.state.doc), view.posAtDOM(line))
+      if (!block || doc.slice(block.from, block.to) !== opened) return
+      switch (action.action) {
         case 'source':
           // The block span IS the embed line (claimed or not) — an unresolved or duplicate token
           // re-aims exactly like a live tile; acting through the claimed set would dead-end the menu
