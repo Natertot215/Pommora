@@ -119,6 +119,16 @@ const RENAME_CLEARED = {
   renamingHost: null,
   renameWinner: null,
 } satisfies Partial<SessionState>
+
+// No page is open. `select` clears pageFrozen itself before it routes, so its own branches take
+// this trio; every clearer outside select has to unfreeze too, and takes the pair below.
+const PAGE_CLEARED = {
+  pageStatus: 'idle',
+  pageDetail: null,
+  pageError: undefined,
+} satisfies Partial<SessionState>
+const PAGE_CLEARED_UNFROZEN = { ...PAGE_CLEARED, pageFrozen: false } satisfies Partial<SessionState>
+
 function resolveRenameWinner(claims: RenameClaim[], fence: RenameFence): number | null {
   const live = claims.filter((c) => c.path === fence.renamingPath)
   if (live.length === 0) return null
@@ -421,10 +431,7 @@ export const useSession = create<SessionState>((set, get) => {
     devicePrefsLoaded = false
     set({
       selection: { kind: 'none' },
-      pageStatus: 'idle',
-      pageDetail: null,
-      pageError: undefined,
-      pageFrozen: false,
+      ...PAGE_CLEARED_UNFROZEN,
       liveBody: null,
       tabs: [],
       activeTabId: '',
@@ -589,10 +596,7 @@ export const useSession = create<SessionState>((set, get) => {
       pageFetchSeq++
       set({
         selection: { kind: 'none' },
-        pageStatus: 'idle',
-        pageDetail: null,
-        pageError: undefined,
-        pageFrozen: false,
+        ...PAGE_CLEARED_UNFROZEN,
       })
       return
     }
@@ -865,10 +869,7 @@ export const useSession = create<SessionState>((set, get) => {
           pageFetchSeq++
           set({
             selection: next,
-            pageStatus: 'idle',
-            pageDetail: null,
-            pageError: undefined,
-            pageFrozen: false,
+            ...PAGE_CLEARED_UNFROZEN,
           })
         } else if (next.kind === 'page') {
           void get().select(next, { record: false })
@@ -1080,10 +1081,7 @@ export const useSession = create<SessionState>((set, get) => {
     },
 
     selection: { kind: 'none' },
-    pageStatus: 'idle',
-    pageFrozen: false,
-    pageDetail: null,
-    pageError: undefined,
+    ...PAGE_CLEARED_UNFROZEN,
     liveBody: null,
     setLiveBody: (path, body) => set({ liveBody: { path, body } }),
     tabs: [],
@@ -1444,33 +1442,25 @@ export const useSession = create<SessionState>((set, get) => {
         case 'homepage':
           set({
             selection: { kind: 'homepage' },
-            pageStatus: 'idle',
-            pageDetail: null,
-            pageError: undefined,
+            ...PAGE_CLEARED,
           })
           return
         case 'context':
           set({
             selection: { kind: 'context', id: target.id },
-            pageStatus: 'idle',
-            pageDetail: null,
-            pageError: undefined,
+            ...PAGE_CLEARED,
           })
           return
         case 'space':
           set({
             selection: { kind: 'space', id: target.id },
-            pageStatus: 'idle',
-            pageDetail: null,
-            pageError: undefined,
+            ...PAGE_CLEARED,
           })
           return
         case 'collection': {
           set({
             selection: { kind: 'collection', id: target.id },
-            pageStatus: 'idle',
-            pageDetail: null,
-            pageError: undefined,
+            ...PAGE_CLEARED,
           })
           const col = findCollection(get().tree, target.id)
           if (col) ensureContainerView(col, col.properties ?? [])
@@ -1479,9 +1469,7 @@ export const useSession = create<SessionState>((set, get) => {
         case 'set': {
           set({
             selection: { kind: 'set', id: target.id, path: target.path },
-            pageStatus: 'idle',
-            pageDetail: null,
-            pageError: undefined,
+            ...PAGE_CLEARED,
           })
           const setNode = findSet(get().tree, target.id)
           if (setNode && isDepth1Set(get().tree, target.id))
