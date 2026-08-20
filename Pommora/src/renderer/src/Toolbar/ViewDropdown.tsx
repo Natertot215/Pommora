@@ -39,8 +39,7 @@ function ViewDropdownInner({ node }: { node: CollectionNode | SetNode }): React.
       viewStyle: node.viewStyle ?? 'dropdown',
     })
     if (!action) return
-    // Each arm names the action it answers — an unhandled one writes nothing, where a terminal
-    // `else` wrote whichever value it happened to hold.
+    // Each arm names the action it answers, so an unhandled one writes nothing at all.
     const patch =
       action === 'toggle-title'
         ? { view_button: labeled ? ('icon' as const) : ('labeled' as const) }
