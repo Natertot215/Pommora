@@ -59,9 +59,8 @@ import { stampAdopted } from './adopt'
 import { ensureIdentity } from './identity'
 import { ensureContextsRegistry } from './contextsRegistry'
 import {
-  readDefaultViewScale,
   readNavViewModes,
-  readWebZoomFactor,
+  readLivePersonalization,
   readPermanentDelete,
   readSubfield,
   writeNavViewModes,
@@ -155,7 +154,7 @@ import type {
   TitleMenuAction,
 } from '@shared/identityMenus'
 import type { ViewButton, ViewStyle } from '@shared/types'
-import { VIEW_SCALE_DEFAULT, viewScaleZoom, WEB_ZOOM_DEFAULT, coerceWebZoom } from '@shared/types'
+import { coerceViewScale, coerceWebZoom, viewScaleZoom } from '@shared/types'
 import { installEditorContextMenu, setFormatState, setGripHot } from './editorMenu'
 import type { FormatState } from '@shared/editorMenu'
 import { isValidLink, normalizeLinkUrl } from '@shared/links'
@@ -258,10 +257,12 @@ async function applyDefaultZoom(win: BrowserWindow): Promise<void> {
   // Empty state (no nexus) normalizes to 1.0 — the same value ⌘0 asserts there — so the welcome
   // screen never inherits a prior nexus's host zoom (Electron zoom is per-render-host, shared).
   const root = sessionRoot()
-  const scale = root ? await readDefaultViewScale(root) : VIEW_SCALE_DEFAULT
-  // The guests' own scale rides the same read points — launch, reload, and nexus switch.
-  setWebZoomFactor(root ? await readWebZoomFactor(root) : WEB_ZOOM_DEFAULT)
-  if (!win.isDestroyed()) setHostZoom(win.webContents, viewScaleZoom(scale))
+  // Both factors off one read — the guests' own scale rides the same points the window's does:
+  // launch, reload, and nexus switch.
+  const p = root ? await readLivePersonalization(root) : null
+  setWebZoomFactor(coerceWebZoom(p?.webZoomFactor))
+  if (!win.isDestroyed())
+    setHostZoom(win.webContents, viewScaleZoom(coerceViewScale(p?.defaultViewScale)))
 }
 
 function createWindow(): void {

@@ -157,13 +157,6 @@ export function readCommands(raw: unknown): Record<string, string> {
   return commands
 }
 
-/** The nexus's labels, read straight from settings — for callers outside the tree walk that need
- *  to name an entity (a native menu building its "New …" items). */
-export async function readNexusLabels(root: string): Promise<NexusLabels> {
-  const settings = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings))) ?? {}
-  return readLabels(settings.labels)
-}
-
 // Parse the on-disk `settings.labels` blob into the structured camelCase NexusLabels,
 // defaulting per-field so a partial/absent blob still yields full labels.
 export function readLabels(raw: unknown): NexusLabels {
@@ -673,6 +666,7 @@ async function walkNexus(root: string): Promise<NexusTree> {
     accent: leaves.accent,
     personalization: leaves.personalization,
     commands: leaves.commands,
+    excluded,
     registry: orderedDefs(registry),
     ...(unreadable.length ? { unreadable: unreadable.map((path) => ({ path })) } : {}),
   }

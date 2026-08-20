@@ -8,7 +8,7 @@ import { fail, ok, type Result } from '@shared/result'
 import type { NexusLabels } from '@shared/types'
 import { readJsonStrict, rmwJsonStrict, writeJson } from './io/atomicWrite'
 import { newId } from './ids'
-import { readNexusLabels } from './readNexus'
+import { readNexusLabels } from './settings'
 import { contextsRegistryFile } from './paths'
 
 /** Parse a raw registry object leniently — zod loose keeps unknown fields at both the
