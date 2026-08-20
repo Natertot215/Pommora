@@ -1,9 +1,11 @@
-import { isValidLink, markdownLinkRegex } from '@shared/links'
+import { markdownLinkRegex } from '@shared/links'
 import { fencedLineMask } from '@shared/markdownCode'
 import { loneWebpageEmbed } from '@shared/webpageEmbed'
 import {
   blockquotePrefixRe,
+  calloutHeadPrefixLen,
   headingParts,
+  isBlockquoteLine,
   inlineCodeRegex,
   isThematicBreakLine,
   loneEmbedTitle,
@@ -11,7 +13,12 @@ import {
 } from '@renderer/MarkdownPM/detect'
 
 /** Page document stats for the Subfield. `lines` counts raw source lines; `words`/`characters`
- *  count the prose the editor actually draws (so `## **Bold**` is one word, "Bold"). */
+ *  count the prose the editor actually draws (so `## **Bold**` is one word, "Bold").
+ *
+ *  One construct is still counted as its source: a Markdown table, whose pipes and delimiter row
+ *  the editor replaces with a widget. Reading a table's regions needs a parse per candidate, and
+ *  this runs on every edit — so it waits for the day the Subfield can read the editor's own cached
+ *  document scan rather than paying for its own. */
 export interface PageStats {
   lines: number
   words: number
@@ -30,16 +37,21 @@ const GONE = '\n'
  *  embed is counted as the tile it is trying to be. */
 function stripLineChrome(line: string): string {
   if (loneEmbedTitle(line) !== null) return ''
-  const web = loneWebpageEmbed(line)
-  if (web && isValidLink(web.url)) return ''
-  if (isThematicBreakLine(line)) return ''
+  if (loneWebpageEmbed(line)) return ''
 
-  // The whole quote run, not one level: `>> text` is prose at depth two, never a `>` and a word.
-  const unquoted = line.replace(blockquotePrefixRe, '')
-  const heading = headingParts(unquoted)
+  // The same base the editor's own line pass takes: a callout head's prefix INCLUDING its `[!type]`
+  // tag, else the quote run — gated, because `>abc` with no space is prose the renderer never
+  // quotes. Every construct below reads the line from that base, exactly as the renderer does.
+  const base =
+    calloutHeadPrefixLen(line) ??
+    (isBlockquoteLine(line) ? (blockquotePrefixRe.exec(line)?.[0].length ?? 0) : 0)
+  const inner = line.slice(base)
+
+  if (isThematicBreakLine(inner)) return ''
+  const heading = headingParts(inner)
   if (heading) return heading.content
-  const marker = parseListMarker(unquoted)
-  return marker ? unquoted.slice(marker.contentStart) : unquoted
+  const marker = parseListMarker(inner)
+  return marker ? inner.slice(marker.contentStart) : inner
 }
 
 /** Inline syntax → what the reader sees. An inline `![[Title]]` is the editor's inert embed token,
