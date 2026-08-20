@@ -26,7 +26,9 @@ export function beginEditorGesture(view: EditorView, spec: PointerGestureSpec): 
 
 export const editorGestureCleanup = ViewPlugin.define((view) => ({
   destroy: () => {
-    if (live?.view === view) live.handle.abort()
+    if (live?.view !== view) return
+    live.handle.abort()
+    live = null // else the destroyed view is held by the module for the life of the process
   },
 }))
 

@@ -123,6 +123,28 @@ describe("a list grip's Type switch", () => {
   })
 })
 
+// A native menu is held open for as long as the user likes, and an undo or an outside write can move
+// the document underneath it. Spending a span captured before it reaches past the end of a shortened
+// document — inside a promise, where the throw is unhandled.
+describe('a document that moves while the menu is open', () => {
+  it('declines rather than acting on whatever now sits at the span', async () => {
+    const view = await mount('- alpha\n- beta\n\ntail paragraph')
+    nextPick = { action: 'delete' }
+    const line = [...view.dom.querySelectorAll('.cm-line')].find((l) =>
+      (l.textContent ?? '').includes('tail'),
+    )!
+    await act(async () => {
+      line.dispatchEvent(
+        new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: -1 }),
+      )
+      // The document shrinks past the captured span before the menu's promise settles.
+      view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: '- a' } })
+      await Promise.resolve()
+    })
+    expect(view.state.doc.toString()).toBe('- a')
+  })
+})
+
 describe('the embed tile grip', () => {
   it('offers tile mode, and Page Source re-aims the line', async () => {
     const view = await mount('intro\n\n![[Alpha]]\n\nbelow')
