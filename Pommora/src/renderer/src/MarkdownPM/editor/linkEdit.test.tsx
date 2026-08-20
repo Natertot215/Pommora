@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
-import type { ConnMenuAction } from '@shared/connections'
+import type { ConnMenuAction } from '@shared/connMenu'
 import { buildPageIndex, type ConnectionsApi } from '@renderer/MarkdownPM/connections'
 import { showConnectionMenu } from '@renderer/Embeds/connectionMenu'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '@renderer/testing/editorHarness'
@@ -47,20 +47,38 @@ describe('the connection menu knows its span and its surface', () => {
   it('offers the authoring pair on an editable surface', async () => {
     const view = await mountEditor({ initialBody: 'a [[Alpha]] b', connections: conn })
     await rightClick(view, 6)
-    expect(connMenu).toHaveBeenCalledWith({ editable: true, hasAlias: false, alreadyOpen: false })
+    expect(connMenu).toHaveBeenCalledWith({
+      surface: 'editor',
+      editable: true,
+      hasAlias: false,
+      open: 'closed',
+      previewing: false,
+    })
   })
 
   // The item names the act: on a bare link there is no title yet to rename.
   it('reports an existing alias, so the item can name renaming instead of adding', async () => {
     const view = await mountEditor({ initialBody: 'a [[Alpha|the one]] b', connections: conn })
     await rightClick(view, 12)
-    expect(connMenu).toHaveBeenCalledWith({ editable: true, hasAlias: true, alreadyOpen: false })
+    expect(connMenu).toHaveBeenCalledWith({
+      surface: 'editor',
+      editable: true,
+      hasAlias: true,
+      open: 'closed',
+      previewing: false,
+    })
   })
 
   it('an opened-but-empty alias still reports none — there is nothing to rename', async () => {
     const view = await mountEditor({ initialBody: 'a [[Alpha|]] b', connections: conn })
     await rightClick(view, 6)
-    expect(connMenu).toHaveBeenCalledWith({ editable: true, hasAlias: false, alreadyOpen: false })
+    expect(connMenu).toHaveBeenCalledWith({
+      surface: 'editor',
+      editable: true,
+      hasAlias: false,
+      open: 'closed',
+      previewing: false,
+    })
   })
 
   // PreviewWindow starts read-only and silently drops doc changes, so Rename there would seat a
@@ -84,7 +102,13 @@ describe('the connection menu knows its span and its surface', () => {
       readOnly: true,
     })
     await rightClick(view, 6)
-    expect(connMenu).toHaveBeenCalledWith({ editable: false, hasAlias: false, alreadyOpen: false })
+    expect(connMenu).toHaveBeenCalledWith({
+      surface: 'editor',
+      editable: false,
+      hasAlias: false,
+      open: 'closed',
+      previewing: false,
+    })
   })
 })
 

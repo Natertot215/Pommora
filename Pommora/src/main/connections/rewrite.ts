@@ -1,8 +1,16 @@
-// Pure title rewrite over a body: replace every reference to `oldTitle` — in any of the three
-// syntaxes that can name a page — with `newTitle`. The rename-cascade primitive.
+// Pure title rewrite: replace every reference to `oldTitle` — in any of the three body syntaxes
+// that can name a page, and in the frontmatter values that name one — with `newTitle`. The
+// rename-cascade primitive.
 
-import { normalizeTitle, pageEmbedPattern, pageLinkPattern, titleOf } from '@shared/connections'
+import {
+  connectionText,
+  normalizeTitle,
+  pageEmbedPattern,
+  pageLinkPattern,
+  titleOf,
+} from '@shared/connections'
 import { encodeLinkTarget, markdownLinkRegex, targetNamesTitle } from '@shared/links'
+import { linkNamesTitle, readLink } from '@shared/linkValue'
 import { codeMask } from '@shared/markdownCode'
 
 /** Rewrite every connection, embed AND markdown link naming `oldTitle` (normalized) to `newTitle` —
@@ -44,4 +52,21 @@ export function rewriteConnections(body: string, oldTitle: string, newTitle: str
         ? `[${label}](${encodeLinkTarget(newTitle)})`
         : match,
   )
+}
+
+/** The frontmatter patch a rename needs: every property value naming `oldTitle` rewritten to name
+ *  `newTitle`, keyed as the file holds them. Empty when the page's frontmatter names nothing — the
+ *  cascade reads that as "no field write", so a page whose links are all in its body is written
+ *  exactly as it was before. An alias rides through, as it does everywhere else. */
+export function rewriteFrontmatterConnections(
+  values: Record<string, unknown>,
+  oldKey: string,
+  newTitle: string,
+): Record<string, string> {
+  const patch: Record<string, string> = {}
+  for (const [key, value] of Object.entries(values)) {
+    if (typeof value === 'string' && linkNamesTitle(value, oldKey))
+      patch[key] = connectionText(newTitle, readLink(value).alias)
+  }
+  return patch
 }

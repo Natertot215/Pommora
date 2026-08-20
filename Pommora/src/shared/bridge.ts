@@ -42,7 +42,7 @@ import type { GripMenuAction, GripMenuContext } from './gripMenu'
 import type { CellMenuAction, CellMenuContext } from './cellMenu'
 import type { PageMetaAction } from './pageMenu'
 import type { CardMenuAction, CardMenuContext } from './cardMenu'
-import type { ConnMenuAction, ConnMenuContext } from './connections'
+import type { ConnMenuAction, ConnMenuContext } from './connMenu'
 import type { TabMenuAction, TabMenuContext } from './tabMenu'
 import type {
   TrashColumnAction,

@@ -5,7 +5,8 @@ import { isHttpLink } from '@shared/links'
 import { useSession } from '../../../store'
 import { cx } from '@renderer/design-system/cx'
 import { OverflowScroll } from '@renderer/design-system/components/OverflowScroll'
-import { parseLink, linkDisplayText } from '@shared/linkValue'
+import { linkDisplayText, readLink, type LinkTarget } from '@shared/linkValue'
+import { resolveConnection } from '@renderer/treeIndex'
 import { solidColorCss } from './solidColor'
 import { openWebLink } from '@renderer/openWebLink'
 
@@ -29,15 +30,18 @@ export function LinkCell({
   /** While this cell's Rename popover is open, show the full URL instead of the alias/title (see Cell). */
   showFullLink?: boolean
 }): React.JSX.Element | null {
-  const { url, alias } = parseLink(raw)
+  const target = readLink(raw)
+  const url = target.kind === 'url' ? target.url : ''
   const display = isLinkDisplay(look) ? look : (def?.link_display ?? DEFAULT_LINK_DISPLAY)
-  const wantsTitle = display === 'link-title' && !alias && isHttpLink(url)
+  const wantsTitle = display === 'link-title' && !target.alias && isHttpLink(url)
   const title = useSession((s) => (wantsTitle ? s.linkTitles[url] : undefined))
   const resolveLinkTitle = useSession((s) => s.resolveLinkTitle)
   useEffect(() => {
     if (wantsTitle && !title) resolveLinkTitle(url)
   }, [wantsTitle, title, url, resolveLinkTitle])
 
+  if (target.kind === 'page')
+    return <ConnectionCell target={target} showTitle={showFullLink === true} />
   if (!url) return null
   return (
     <OverflowScroll className="cell-text-scroll">
@@ -56,6 +60,41 @@ export function LinkCell({
         }}
       >
         {showFullLink ? url : linkDisplayText(raw, display, title)}
+      </a>
+    </OverflowScroll>
+  )
+}
+
+/** A Link value naming a page reads as the connection it is — the connection color, and a click that
+ *  opens the page rather than an address. The property's own link Format, Color and Underline are
+ *  address concepts and don't apply: there is one way a connection reads, and it is the one the
+ *  editor already draws. */
+function ConnectionCell({
+  target,
+  showTitle,
+}: {
+  target: Extract<LinkTarget, { kind: 'page' }>
+  /** While this cell's Rename popover is open, show the page it names rather than the alias being
+   *  written over it — the same reading the address branch gives its own full URL. */
+  showTitle: boolean
+}): React.JSX.Element {
+  const tree = useSession((s) => s.tree)
+  const select = useSession((s) => s.select)
+  const page = resolveConnection(tree, target.title)
+  return (
+    <OverflowScroll className="cell-text-scroll">
+      <a
+        className="cell-connection"
+        href={page?.path}
+        draggable={false}
+        onClick={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          if (e.ctrlKey || !page) return // Ctrl+Click = macOS secondary-click; let the menu win
+          void select({ kind: 'page', id: page.id, path: page.path }, { newTab: e.metaKey })
+        }}
+      >
+        {showTitle ? target.title : (target.alias ?? target.title)}
       </a>
     </OverflowScroll>
   )

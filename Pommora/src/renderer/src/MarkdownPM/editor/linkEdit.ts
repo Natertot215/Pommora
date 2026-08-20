@@ -1,6 +1,7 @@
 import { EditorView } from '@codemirror/view'
 import { EditorSelection, type EditorState, type Extension, type Line } from '@codemirror/state'
-import { aliasSpanAt, emptyAliasPipeAt, linkAt, type ConnEditAction } from '@shared/connections'
+import { aliasSpanAt, emptyAliasPipeAt, linkAt } from '@shared/connections'
+import type { ConnEditAction } from '@shared/connMenu'
 import { useSession } from '../../store'
 import type { ConnectionsApi } from '../connections'
 import { tokenize, type Token } from '../tokens'

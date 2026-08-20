@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
-import type { ConnMenuAction } from '@shared/connections'
+import type { ConnMenuAction } from '@shared/connMenu'
 import { buildPageIndex, type ConnectionsApi } from '@renderer/MarkdownPM/connections'
 import { showConnectionMenu } from '@renderer/Embeds/connectionMenu'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '@renderer/testing/editorHarness'
@@ -128,7 +128,12 @@ describe('a markdown link’s menu follows what its target names', () => {
     connMenu.mockResolvedValue('title:copylink')
     const view = await mountEditor({ initialBody: BODY, connections: conn })
     await rightClick(view, 5, '.md-link')
-    expect(connMenu).toHaveBeenCalledWith({ editable: true, hasAlias: false, external: true })
+    expect(connMenu).toHaveBeenCalledWith({
+      surface: 'editor',
+      editable: true,
+      hasAlias: false,
+      external: true,
+    })
     expect(writeClipboard).toHaveBeenCalledWith('https://x.test')
   })
 
@@ -137,9 +142,11 @@ describe('a markdown link’s menu follows what its target names', () => {
     const view = await mountEditor({ initialBody: 'a [Alpha](Alpha) b', connections: conn })
     await rightClick(view, 5, '.md-connection-resolved')
     expect(connMenu).toHaveBeenCalledWith({
+      surface: 'editor',
       editable: false,
       hasAlias: false,
-      alreadyOpen: false,
+      open: 'closed',
+      previewing: false,
     })
     expect(writeClipboard).toHaveBeenCalledWith('Notes/Alpha')
   })

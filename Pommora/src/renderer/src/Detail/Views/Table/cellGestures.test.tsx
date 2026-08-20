@@ -141,6 +141,7 @@ beforeEach(() => {
     viewOrders: { get: async () => ({}) },
     views: { save: vi.fn(async () => ({ ok: true, value: { id: 'v1' } })) },
     cellMenu: vi.fn(async () => null),
+    connMenu: vi.fn(async () => null),
     columnMenu: vi.fn(async () => null),
     openFile: openFileSpy,
     openExternal: openExternalSpy,
@@ -444,7 +445,7 @@ describe('number cell inline editing', () => {
 describe('menu-entered editing', () => {
   it('url Edit normalizes a schemeless link on commit', async () => {
     await mountTable(sourceWith())
-    ;(window.nexus as { cellMenu: unknown }).cellMenu = vi.fn(async () => 'cell:edit')
+    ;(window.nexus as { connMenu: unknown }).connMenu = vi.fn(async () => 'editLink')
     const urlCell = host.querySelectorAll<HTMLElement>('.data-cell')[4]
     await act(async () => {
       urlCell.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))

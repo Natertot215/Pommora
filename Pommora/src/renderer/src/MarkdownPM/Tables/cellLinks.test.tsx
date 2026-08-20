@@ -5,7 +5,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { TableView } from './TableView'
 import type { TableModel } from './model'
 import { EditorView } from '@codemirror/view'
-import type { ConnUrlAction } from '@shared/connections'
+import type { ConnUrlAction } from '@shared/connMenu'
 import {
   buildPageIndex,
   type ConnectionsApi,

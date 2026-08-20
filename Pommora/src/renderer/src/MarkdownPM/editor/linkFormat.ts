@@ -1,5 +1,5 @@
 import type { EditorView } from '@codemirror/view'
-import type { ConnUrlAction } from '@shared/connections'
+import type { ConnUrlAction } from '@shared/connMenu'
 import { unescapeAlias } from '@shared/links'
 import { linkPaste } from '@shared/PasteLink'
 import type { LinkDisplay } from '@shared/properties'

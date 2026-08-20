@@ -1,4 +1,3 @@
-import { isValidLink, normalizeLinkUrl } from '@shared/links'
 import type { PropertyDefinition, PropertyType } from '@shared/properties'
 import { isBlankValue, type PropertyValue } from '@shared/propertyValue'
 import type { NexusTree, ResolvedColumn, ViewRow } from '@shared/types'
@@ -8,7 +7,8 @@ import { contextIdsOf, contextsByIdOf } from '../pipeline/contextIdentity'
 import { resolveFieldValue } from '../pipeline/value'
 import { columnLabel } from '../Table/columnLabel'
 import type { ResolveContext } from '../Table/resolveContext'
-import { serializeLink } from '@shared/linkValue'
+import { urlValueFromEdit } from '@shared/linkValue'
+import { resolveTitle } from '@renderer/linkResolve'
 
 /** The kinds whose BLANK entries drill into a value pane. Checkbox is deliberately excluded from the
  *  pane split (its box on the card is the toggle — an add-list pick just reveals it); Context columns
@@ -109,11 +109,6 @@ export function parseEditorValue(
     const n = Number.parseFloat(trimmed)
     return Number.isNaN(n) ? undefined : { kind: 'number', value: n }
   }
-  if (type === 'url') {
-    if (trimmed === '') return null
-    return isValidLink(trimmed)
-      ? { kind: 'url', value: serializeLink({ url: normalizeLinkUrl(trimmed) }) }
-      : undefined
-  }
+  if (type === 'url') return urlValueFromEdit(trimmed, undefined, resolveTitle)
   return undefined
 }
