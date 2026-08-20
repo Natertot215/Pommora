@@ -246,10 +246,6 @@ enforcing agreement. Inferring the type from the schema is the fix and matches w
 move onto the zod fields. Worth confirming that trade before doing it; the alternative is a `satisfies`
 assertion that catches drift at compile time while leaving both in place.
 
-**The feature docs are split on their own heading convention.** Five documents use bare
-`#### Section`; three use the `#### II. Section` prefix the convention calls for. Five-to-three against
-the stated rule. Either the three shed the prefix or the five gain it, but it should not stay split.
-
 **`QuickCapturePM.md` opens with a build-status banner** — the only document in the set that does, and
 precisely the shape the placeholder rule pushes against. Defensible for a wholly unbuilt feature, which
 is why it is a call rather than a finding. It is otherwise the cleanest-written document of the set.

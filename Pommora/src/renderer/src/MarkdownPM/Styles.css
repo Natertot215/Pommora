@@ -659,31 +659,66 @@
   border-radius: var(--radius-full);
 }
 
-/* CM6 GOTCHA: no line margins — they break caret/arrow mapping (only padding is measured). The fill is an
-   inset ::after (not a line background) so the first/last line can carry an OUTER vertical gap above/below
-   the card — the box floats off its neighbors, the same trick the callout border uses.
-   KNOBS: --bar-width / --bar-color / --bar-radius (left bar) · --bg-color / --bg-radius (fill) · --bq-gap
-   (outer vertical breathing room above the first line + below the last) */
+/* BOX BASE — every box construct (quote, callout, code block, nested quote) is the same shape: a line
+   run that floats off its neighbors and rounds its ends. CM6 GOTCHA: no line margins — they break
+   caret/arrow mapping (only padding is measured) — so the float is an OUTER gap held by the first and
+   last lines' padding, and the paint is an inset pseudo rather than a line background.
+   Each construct keeps its own named measures and projects them onto these to inherit the geometry:
+   --box-gap (outer float) · --box-pad (inner head/foot padding past the gap) · --box-fill /
+   --box-inset (the paint) · --box-radius-l / --box-radius-r (its end caps). A construct nested in
+   another states these for itself on the lines they share, so anything the OUTER box still draws on
+   such a line reads the outer box's OWN name — which is why each construct keeps one.
+   The paint pseudo is `::after` for the three fill-bearing boxes; the callout's border keeps `::before`,
+   because a quote nested inside a callout already spends that line's `::after` on its own fill.
+   Every `:is()` argument here is ONE class: the selector takes its most specific argument's weight,
+   and a two-class argument would lift the whole rule over the first/last rules that refine it. */
+.mdpm-editor .cm-line:is(.md-bq, .md-callout, .md-cb) {
+  position: relative;
+  isolation: isolate;
+}
+.mdpm-editor .cm-line:is(.md-bq, .md-cb, .md-bq-in)::after {
+  content: "";
+  position: absolute;
+  inset: 0 var(--box-inset);
+  background: var(--box-fill);
+  z-index: var(--box-z);
+  pointer-events: none;
+}
+.mdpm-editor .cm-line:is(.md-bq-first, .md-callout-first, .md-cb-first) {
+  padding-top: calc(var(--box-gap) + var(--box-pad));
+}
+.mdpm-editor .cm-line:is(.md-bq-last, .md-callout-last, .md-cb-last) {
+  padding-bottom: calc(var(--box-gap) + var(--box-pad));
+}
+.mdpm-editor .cm-line:is(.md-bq-first, .md-cb-first, .md-bq-in-first)::after {
+  top: var(--box-gap);
+  border-top-left-radius: var(--box-radius-l);
+  border-top-right-radius: var(--box-radius-r);
+}
+.mdpm-editor .cm-line:is(.md-bq-last, .md-cb-last, .md-bq-in-last)::after {
+  bottom: var(--box-gap);
+  border-bottom-left-radius: var(--box-radius-l);
+  border-bottom-right-radius: var(--box-radius-r);
+}
+
+/* BLOCKQUOTE — a tinted fill with a left bar. The bar covers the fill's left edge, so the fill rounds
+   only its right corners. KNOBS: --bar-width / --bar-color / --bar-radius (left bar) · --box-fill /
+   --box-radius-r (fill) · --box-gap (outer breathing room above the first line + below the last) */
 .mdpm-editor .cm-line.md-bq {
   --bar-width: 4px;
   --bar-color: var(--label-tertiary);
   --bar-radius: 2px;
-  --bg-color: var(--fill-tertiary);
-  --bg-radius: 6px;
+  --box-fill: var(--fill-tertiary);
+  --box-inset: 0px;
+  --box-z: -2;
+  --box-radius-l: 0px;
+  --box-radius-r: 6px;
   --bq-gap: 6px;
+  --box-gap: var(--bq-gap);
+  --box-pad: 4px;
   --li-origin: 16px; /* the quote's inner gutter — lists / code inside indent from it (matches padding-left) */
-  position: relative;
-  isolation: isolate;
   padding-right: 14px;
   color: var(--label-control);
-}
-.mdpm-editor .cm-line.md-bq::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: var(--bg-color);
-  z-index: -2;
-  pointer-events: none;
 }
 /* Plain (non-list) quote lines take the gutter directly; a list inside a quote supplies its own via --li-origin
    (else this padding-left would override the list indent and the bullet wouldn't indent). */
@@ -700,24 +735,10 @@
   background: var(--bar-color);
   z-index: -1;
 }
-.mdpm-editor .cm-line.md-bq-first {
-  padding-top: calc(var(--bq-gap) + 4px);
-}
-.mdpm-editor .cm-line.md-bq-first::after {
-  top: var(--bq-gap);
-  border-top-right-radius: var(--bg-radius);
-}
 .mdpm-editor .cm-line.md-bq-first::before {
   top: var(--bq-gap);
   border-top-left-radius: var(--bar-radius);
   border-top-right-radius: var(--bar-radius);
-}
-.mdpm-editor .cm-line.md-bq-last {
-  padding-bottom: calc(var(--bq-gap) + 4px);
-}
-.mdpm-editor .cm-line.md-bq-last::after {
-  bottom: var(--bq-gap);
-  border-bottom-right-radius: var(--bg-radius);
 }
 .mdpm-editor .cm-line.md-bq-last::before {
   bottom: var(--bq-gap);
@@ -734,8 +755,8 @@
    The border is a `::before` (NOT line borders) so it can inset top/bottom by --callout-gap — two stacked
    callouts then sit apart, the way lists/headings space, without a caret-breaking margin.
    --li-origin is the box's inner gutter; every inner construct (lists, code, plain text) indents from it. DRY.
-   KNOBS: --callout-border / --callout-bw / --callout-radius / --callout-pad (gutter) / --callout-gap (separation)
-   / --callout-inner-pad (head/foot inner padding past the gap). */
+   KNOBS: --callout-border / --callout-bw / --callout-radius / --callout-pad (gutter) / --callout-gap
+   (separation) / --callout-inner-pad (head/foot inner padding past the gap). */
 .mdpm-editor .cm-line.md-callout {
   --callout-border: var(--label-tertiary);
   --callout-bw: 1.5px;
@@ -744,9 +765,9 @@
   --callout-pad: 15px;
   --callout-gap: 6px;
   --callout-inner-pad: 8px;
+  --box-gap: var(--callout-gap);
+  --box-pad: var(--callout-inner-pad);
   --li-origin: var(--callout-pad);
-  position: relative;
-  isolation: isolate;
   padding-right: var(--callout-pad);
 }
 .mdpm-editor .cm-line.md-callout::before {
@@ -762,9 +783,6 @@
 .mdpm-editor .cm-line.md-callout:not(.md-li) {
   padding-left: var(--li-origin);
 }
-.mdpm-editor .cm-line.md-callout-first {
-  padding-top: calc(var(--callout-gap) + var(--callout-inner-pad));
-}
 .mdpm-editor .cm-line.md-callout-first::before {
   top: var(--callout-gap);
   border-top: var(--callout-bw) solid var(--callout-border);
@@ -772,7 +790,6 @@
   border-top-right-radius: var(--callout-radius);
 }
 .mdpm-editor .cm-line.md-callout-last {
-  padding-bottom: calc(var(--callout-gap) + var(--callout-inner-pad));
   margin-bottom: var(--callout-gap);
 }
 .mdpm-editor .cm-line.md-callout-last::before {
@@ -780,6 +797,11 @@
   border-bottom: var(--callout-bw) solid var(--callout-border);
   border-bottom-left-radius: var(--callout-radius);
   border-bottom-right-radius: var(--callout-radius);
+}
+/* The block's own closing gap would otherwise win over the box's — a code block ending a callout would
+   seat its last line flush against the closing border, with no inner padding at all. */
+.mdpm-editor .cm-line.md-callout-last.md-cb {
+  padding-bottom: calc(var(--callout-gap) + var(--callout-inner-pad));
 }
 /* First line of the page: drop the top separation — the title-bar header gap above already provides it
    (mirrors the first-line heading rule above). */
@@ -795,7 +817,7 @@
    --cb-inset, so the fill, the text, and the language chrome all move together. */
 .mdpm-editor .cm-line.md-callout.md-cb,
 .mdpm-editor .cm-line.md-bq.md-cb {
-  --cb-gap: 0; /* a code block nested in a box floats off nothing — the box already owns the outer spacing */
+  --cb-gap: 0px; /* a code block nested in a box floats off nothing — the box already owns the outer spacing */
   --cb-inset: var(--li-origin);
   --cb-pad: 10px;
   /* Restated, not inherited: the box's own gutter rule matches these lines just as specifically, so the
@@ -811,18 +833,16 @@
 .mdpm-editor .cm-line.md-callout.md-bq-in {
   --nq-bar: 3px;
   --nq-bar-radius: 2px;
-  --nq-radius: 5px;
   --nq-gap: 9px;
+  --box-fill: var(--fill-tertiary);
+  --box-inset: var(--callout-pad);
+  --box-z: -1;
+  --box-radius-l: 0px;
+  --box-radius-r: 5px;
+  /* Its own float off the callout's edges; the callout's own --callout-gap is untouched. */
   --nq-inset: 2px;
+  --box-gap: var(--nq-inset);
   padding-left: calc(var(--callout-pad) + var(--nq-bar) + var(--nq-gap));
-}
-.mdpm-editor .cm-line.md-callout.md-bq-in::after {
-  content: "";
-  position: absolute;
-  inset: 0 var(--callout-pad);
-  background: var(--fill-tertiary);
-  z-index: -1;
-  pointer-events: none;
 }
 .mdpm-editor .cm-line.md-bq-in .md-bq-in-bar {
   position: absolute;
@@ -833,20 +853,12 @@
   background: var(--label-tertiary);
   pointer-events: none;
 }
-/* First/last lines float the block off the callout edge by --nq-inset; the fill rounds its right corners, the bar
-   rounds its own cap. The block is never on the callout's first line (that's the atomic head). */
-.mdpm-editor .cm-line.md-bq-in-first.md-callout::after {
-  top: var(--nq-inset);
-  border-top-right-radius: var(--nq-radius);
-}
+/* The bar rounds its own cap on the same float the base gives the fill. The block is never on the
+   callout's first line (that's the atomic head). */
 .mdpm-editor .cm-line.md-bq-in-first .md-bq-in-bar {
   top: var(--nq-inset);
   border-top-left-radius: var(--nq-bar-radius);
   border-top-right-radius: var(--nq-bar-radius);
-}
-.mdpm-editor .cm-line.md-bq-in-last.md-callout::after {
-  bottom: var(--nq-inset);
-  border-bottom-right-radius: var(--nq-radius);
 }
 .mdpm-editor .cm-line.md-bq-in-last .md-bq-in-bar {
   bottom: var(--nq-inset);
@@ -863,12 +875,6 @@
 .mdpm-editor .cm-line.md-callout-last.md-bq-in-last .md-bq-in-bar {
   bottom: calc(var(--callout-gap) + var(--callout-inner-pad));
 }
-/* The block's own closing gap would otherwise win over the box's — a code block ending a callout would seat
-   its last line flush against the closing border, with no inner padding at all. */
-.mdpm-editor .cm-line.md-callout-last.md-cb {
-  padding-bottom: calc(var(--callout-gap) + var(--callout-inner-pad));
-}
-
 /* DRAG HANDLE — a grip in the callout's top-left gutter that drags the whole box (shares the block-drag
    gesture, gated on the head line). Revealed on GUTTER hover via `md-grip-hot` (the delegated mousemove in
    blockHandles.ts), matching the rail grips. KNOBS: --grip-x (gutter offset) / --grip-y (top offset past the gap). */
@@ -898,14 +904,19 @@
    KNOBS: --cb-bg / --cb-radius / --cb-size (font scale) · --cb-gap (outer vertical breathing room)
    · --cb-inset / --cb-pad (horizontal placement) */
 .mdpm-editor .cm-line.md-cb {
-  --cb-bg: var(--fill-secondary);
   --cb-radius: 6px;
   --cb-size: 0.85em;
-  --cb-gap: 6px;
   --cb-inset: 0px;
   --cb-pad: 12px;
-  position: relative;
-  isolation: isolate;
+  --cb-bg: var(--fill-secondary);
+  --box-fill: var(--cb-bg);
+  --box-inset: var(--cb-inset);
+  --box-z: -1;
+  --box-radius-l: var(--cb-radius);
+  --box-radius-r: var(--cb-radius);
+  --cb-gap: 6px;
+  --box-gap: var(--cb-gap);
+  --box-pad: 6px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: var(--cb-size);
   padding-left: calc(var(--cb-inset) + var(--cb-pad));
@@ -914,30 +925,6 @@
      any two characters — a long token is never relocated whole to the next row. The line-count
      numbers are what distinguish a fresh line from a wrap. */
   word-break: break-all;
-}
-.mdpm-editor .cm-line.md-cb::after {
-  content: "";
-  position: absolute;
-  inset: 0 var(--cb-inset);
-  background: var(--cb-bg);
-  z-index: -1;
-  pointer-events: none;
-}
-.mdpm-editor .cm-line.md-cb-first {
-  padding-top: calc(var(--cb-gap) + 6px);
-}
-.mdpm-editor .cm-line.md-cb-first::after {
-  top: var(--cb-gap);
-  border-top-left-radius: var(--cb-radius);
-  border-top-right-radius: var(--cb-radius);
-}
-.mdpm-editor .cm-line.md-cb-last {
-  padding-bottom: calc(var(--cb-gap) + 6px);
-}
-.mdpm-editor .cm-line.md-cb-last::after {
-  bottom: var(--cb-gap);
-  border-bottom-left-radius: var(--cb-radius);
-  border-bottom-right-radius: var(--cb-radius);
 }
 
 /* CODE TOKENS — a typed fence's nested parse, colored as spectrum-solid pastels (each solid mixed
@@ -1017,7 +1004,7 @@
 }
 :root.cb-line-count .mdpm-editor .cm-line.md-cb {
   --cb-ln-zone: calc(3ch + var(--list-gap));
-  padding-left: calc(12px + var(--cb-ln-zone));
+  padding-left: calc(var(--cb-inset) + var(--cb-pad) + var(--cb-ln-zone));
   text-indent: calc(-1 * var(--cb-ln-zone));
 }
 :root.cb-line-count .md-cb-ln {
