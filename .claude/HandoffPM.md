@@ -4,96 +4,73 @@
 
 #### Current Focus
 
-**Session ID:** 371a6d22-5682-491c-ab8e-75a30b833e22
-**Dates:** 08-18-2026 → 08-19-2026
-**Model:** Opus 5
+**Session ID:** fdc9f63a-48b6-48d3-a4fe-7196177e67bd
+**Dates:** 08-19-2026
+**Model:** Fable 5
 
-**The web layer's follow-ons, and the tab surfaces that made one of them possible.** PM-108 shipped, closed, and was reviewed at its floor; this stretch is the round of direction that followed it — five changes, each asked for live, each verified in the running app rather than asserted.
+**Two coordinated lines of work, and this document is the shared record for both.** Line one is the Cohesion pass's MarkdownPM leg, running in a parallel session; line two is Footnotes, whose brainstorm this session completed. Nathan set the order explicitly: the MarkdownPM cohesion work finishes first with nothing left behind, the easy-win definition duplications fold next (the Cohesion-Audit's §One Definition Per Thing, its first bullet — `parentOf` — included), the design-splits across Tables, Cards, and their kin park as a pending focus in the cohesion pass rather than being built, then Footnotes gets planned and built, and only then does the rest of the cohesion arc complete.
 
-**Settings consolidated, then consolidated again.** The webpage preferences moved out of Pages & Editor into Files & Links, and then — on the next reading — into **Interface ▸ Webpages**, where the open-in knob and the webpage scale now sit together. The scale itself stopped being nine fixed steps: a second press on the control opens it for a typed percent, coerced through the existing clamp, and an off-step value takes its own place among the choices so the control reads the real scale rather than the nearest step. The `Number.isFinite` guard on that commit is load-bearing — typed nonsense leaves the stored scale alone rather than silently resetting it to 100%.
+**This session produced the Footnotes decision log, from a blank slate.** The prior decision log had been deleted, so the brainstorm ran fresh off Nathan's spec message: three read-only explorers grounded the editor internals, the persistence/stats/settings plumbing, and the design tokens; parser behavior was verified by executing probes against the installed `micromark-extension-gfm` rather than recalled. The log then converged through several decision rounds and two adversarial review rounds — seventeen findings in round one, six in round two, every one resolved or explicitly accepted, the round-one High root being that the section boundary was defined twice in prose and never against the parser.
 
-**Hover previews scroll.** The card's shield owns every pointer event so the leave lifecycle keeps running; it now passes the wheel down to the guest through a main-process replay (`web:wheel`), which keeps the card inert to clicks while letting a site read past its first screen. Measured inside the guest: `scrollY` 0 → 504 down, back to 48 up, with the host's own scroller unmoved.
+**The design that settled:** GFM reference footnotes — atomic, never-revealing markers displaying positional numbers; label-binding (case-folded, GitHub-identical) with gesture-owned numeric labels and user-owned word labels; a hidden-by-default citations section whose boundary is the parser-defined trailing run, guarded at the transaction layer; visibility as a Default Visibility setting plus a per-page `nexus.db` override written by both the divider and the Subfield footnotes toggle; three creation doors (Insert ▸, Paste As ▸, the typed auto-seed, all normalizing); copy-paste as the sharing mechanism; and a Pages & Editor ▸ Footnotes settings trio. Mid-review, Nathan renamed the entity: every footnote "definition" is a **Citation**, in docs, code identifiers, and UI labels — "Definition" is reserved for a future, independent feature.
 
-**Tab switches stopped reloading pages.** The detail pane used to render exactly one view for one selection, so a switch destroyed the editor and every guest with it. It now hosts page surfaces **per tab**, keyed by tab id, with the unshown ones parked off screen — `translateX`, deliberately not `visibility: hidden` (a hidden subtree keeps guests painting) and never `display: none` (that tears them down). Parked surfaces read as out of view, so their sites pause under the retention that already existed and resume on return. The one non-obvious trap, found live: hosts must render in a **fixed id order**, never active-first, because reordering keyed children moves their DOM and a moved `<webview>` is re-attached — which destroyed the very guest the mechanism exists to keep. Proven by marking a guest in-page and watching the marker survive park → resume; flips also got ~4× faster (~50ms against ~210ms), since the editor no longer rebuilds.
+**The log is fully tagged and converged, two `[assumed]` entries short of sign-off:** A-5b's two tail-guard repairs (Enter-on-empty-trailing-line exits the section; a plain ⌘V inside a citation lands as continuation lines) and C-3's clear-on-default (toggling a page to the value the default already gives clears the override row). Both were presented and await Nathan's word; everything else in the log carries his explicit confirmation.
 
-**Edit Link went inline.** The tile's grip menu used to open a picker anchored on the tile, and because the picker's open state was part of the tile widget's identity, merely opening it rebuilt the widget and reloaded the site before anything was typed. It now works like every other Edit Link: the seat un-forms the tile back to its raw address with that address selected, typing replaces it, and leaving the line re-forms the tile — so the site loads once, on submission. A `setWebLinkSeat` effect distinguishes a deliberate seat from a caret that merely happens to be there, which the formation gate alone can't. The height migration the old picker carried is gone with it: a re-aimed tile takes the default height, since a remembered height belongs to an address.
-
-Everything is committed and gated — typecheck 0, **2957 tests / 255 files**, lint clean with zero warnings. One thing worth flagging for the next session: the app died once mid-session with `GUEST_VIEW_MANAGER_CALL: UnknownVizError` in the log. It came back clean and the cause was a second Electron instance fighting for the debug port after a double launch, not the parking work — but that error class is worth recognizing rather than re-diagnosing from scratch.
+**The parallel line stands mid-flight.** The cohesion pass's first two sessions are closed and recorded in the audit (the dusting; the main-process costs); the MarkdownPM leg was actively committing while this session ran (`9fd6da98`, `ab6ac262` among today's). Its plan and evidence live in [[MarkdownPM-Plan]] and [[MarkdownPM-Scoping]] — phase 7, the fold model's key widening, is the specific thing Footnotes blocks on.
 
 #### Completion Criteria
 
-- [x] **Webpage preferences under one heading** — the open-in knob and the scale together in Interface ▸ Webpages, with ConfigurationPM and every pointer following them.
-- [x] **A typed webpage scale** — a second press opens the control for any percent within the clamp, and the control displays the real value.
-- [x] **Hover previews scroll** — the wheel reaches the guest while the card stays inert to clicks, verified inside the guest itself.
-- [x] **A tab flip resumes rather than reloads** — a recent page tab's surface is parked, its guests paused, its session and scroll intact on return.
-- [x] **Edit Link edits in the line** — the address is selected in place and the site loads only once the line re-forms.
-- [x] **The docs say what shipped** — WebviewPM (renamed from WeblinkPM), NavigationPM's new §State Persistence, and the siblings trimmed to pointers rather than restating the tiers.
-- [ ] **Nathan's own pass over the five** — the settings placement, the typed-zoom field, the scroll feel, a real tab flip on a page with a live site, and Edit Link from the grip menu.
+- [ ] **The MarkdownPM cohesion leg is finished with nothing left behind** — every phase of [[MarkdownPM-Plan]] landed, including phase 7's fold-key widening, gates green, docs reconciled.
+- [ ] **The easy-win definition duplications are folded** — Cohesion-Audit §One Definition Per Thing, `parentOf` (the first bullet) through the smaller twins, each collapse verified by the gates.
+- [ ] **The design-splits are parked, not built** — the renderer-lifting and view-host arcs across Tables, Cards, and siblings recorded as a pending focus in the cohesion pass with nothing half-started.
+- [ ] **Footnotes' two `[assumed]` entries carry Nathan's word** — A-5b's repairs and C-3's clear-on-default blessed or amended before the plan is written.
+- [ ] **Footnotes is planned, ratified, built, and closed out** — the decision log handed to the planning skill, the plan approved by Nathan before any code, the build through `/closeout` clean.
+- [ ] **The remaining cohesion arcs complete after Footnotes** — Table hoisting, the `main/index.ts` split, and the parked design-splits, per the audit.
 
 #### Next Session
 
-- **Watch for `UnknownVizError` on guest teardown.** It appeared during HMR churn with parked guests and again around the instance collision. Benign so far, but if it recurs without a second instance in play, the parking teardown is the first place to look.
-- **The height a re-aimed tile loses.** Edit Link inline means a tile pointed at a new address takes the default height. If that reads wrong in use, the fix is a migration at formation rather than a return to the picker.
-- **Static table cells still don't arm site hovers** — the same link previews in the body; a parity fixlet with its own small design.
-- **`md-connection-resolved` is a literal at six read sites** — the `MD_LINK_CLASS` treatment fits it the day any of them changes.
+- **Finish the MarkdownPM cohesion leg first.** If the parallel session is still writing, do not open a second tree-touching writer — confirm its tree has settled before taking the leg over.
+- **Fold the §One Definition Per Thing easy wins**, first bullet included, right behind it.
+- **Park the design-splits** (Cohesion-Audit §Renderer Lifting and the view-host arc) as a pending focus — a recording task, not a build.
+- **Then Footnotes:** get the two `[assumed]` entries blessed, hand the decision log to the planning skill, and check the reviewer's two live-layout unknowns during planning — whether the Subfield's hover rail admits a second control beside the collapse chevron, and whether disclosing the section flickers the toggle's at-bottom visibility condition.
+- **Leftover from the retired web-layer session:** Nathan's own pass over its five changes (settings placement, typed zoom, hover scroll, a live tab flip, inline Edit Link) — unverified unless he's since done it.
 
 #### Feedback
 
-- "Actually do the simpler thing and make right-click drag handle edit link just edit the link in line like all other edit link actions" — the second design was the right one; the first answered the letter of the ask and carried a whole singleton with it.
-- "no closing lines. Just restate to be true" — a record is amended by making its existing prose true, never by appending what changed since.
-- "no new history entry, just my final thoughts on the Webview original entry"
-- "also, the drag-handle edit loink should pop from tjhe menu itself, and only re-load the page on submission."
-- "make sure all trial and error adjustments and css hand-rolling is cleaned up during the final phase"
+- "Finish the MarkdownPM part of the Cohesion pass, leave nothing behind -> then fold the easy-win definition duplications -> park the design-splits across the Tables, Cards Ect... as pending focus in the cohesion pass. Eliminate the first bullet of the cohesion pass alongside the remaining easy wins. Then build Footnotes. Then complete the rest."
+- "review solidifies the mandate rather than the method" — reviews against a decision log attack cohesion and coverage, and leave implementation discovery to planning.
+- "Definitions across docs and codebase need to be called Citations to make room for a future Definitions feature that may exist independently from Footnotes."
 
 #### Session Pointers
 
-- `.claude/Features/NavigationPM.md` §State Persistence — the four-tier map of what Pommora remembers and for how long; the mechanisms stay ArchitecturePM's.
-- `.claude/Guidelines/Web-Guests.md` — the guest traps. Read before touching any web surface.
-- `Pommora/src/renderer/src/Detail/DetailPane.tsx` — `useHosts` and `WARM_TABS`; the fixed sort order is load-bearing, not style.
-- `Pommora/src/renderer/src/Detail/Detail.css` — `.detail-page.is-parked`, the off-screen seat.
-- `Pommora/src/renderer/src/MarkdownPM/editor/embedWidget.tsx` — `setWebLinkSeat` and the formation gate that reads it.
-- `Pommora/src/renderer/src/MarkdownPM/gripMenuFlow.test.tsx` — the Edit Link seat test, and the harness that stubs the native grip menu.
-- `Pommora/src/main/webGuests.ts` — `wheelGuest`, the guest-side wheel replay.
-- The CDP driver is this session's scratchpad `cdp.mjs`; `guest.mjs` beside it evaluates inside a guest by URL fragment, which is how guest survival was proven.
+- `.claude/Planning/Footnotes — Decision Log.md` — the brainstorm's sole artifact and the planner's contract: Frame (with the Citations vocabulary rule), Sources (the re-grounding list, parser probes included), every decision tagged, Core vs Prospects split. The two `[assumed]` entries are A-5b and inside C-3.
+- `.claude/Planning/Cohesion-Audit.md` — the cohesion catalog: §One Definition Per Thing is the easy-win list; §Renderer Lifting and §Beyond a Session are what parks; §Open Calls need Nathan.
+- [[MarkdownPM-Plan]] + [[MarkdownPM-Scoping]] — the in-flight leg's plan and evidence; phase 7 (fold-key widening) is Footnotes' prerequisite.
+- `.claude/ContextPM.md` §Immediate Work — carries the same ordering this document details.
 
 #### Working Notes
 
-- **Moving a `<webview>` in the DOM re-attaches it, ending its guest.** Any list that renders guests must keep a stable order; React moves keyed children when their order changes.
-- **A hidden subtree keeps guests painting; an off-screen one doesn't.** That difference is why parking translates rather than hides, and it's what makes a parked tab cheap.
-- **Lint exits 0 with warnings.** Read the text — a dead const and two unused imports sat behind an exit code of 0 this session.
-- **A python edit script that asserts mid-way writes nothing**, which is the desired failure, but the earlier substitutions are lost too — re-run the whole script rather than assuming a partial apply.
-- **Two dev launches race for the debug port** and the loser leaves an Electron process holding the app with nothing listening. Kill every `Project Pommora/Pommora/node_modules/electron` process before relaunching.
-- **The grip menu is native, so CDP can't click it** — its flows are testable only through the editor harness's `stubEditorBridge`.
+- **Footnotes' parse is already free** — the installed `micromark-extension-gfm` emits `footnoteReference`/`footnoteDefinition` today; the extensions are transitive, not direct deps. GFM's lazy continuation (an unindented next line joins the citation above) is the trap the whole boundary design answers — re-verify it before trusting any scan.
+- **The footnote marker will be the editor's first mid-line atomic range** — every existing `atomicRanges` provider is line-prefix or block-scope; the callout guard's transaction-repair pattern is the delete-protection model.
+- **A new `local_state` scope must join `COPY_SCOPES` in `main/remint.ts`** or a copied page silently loses the flag — `headingIcon` already sits in that hole.
+- **`footnote` and `definition` are both banned identifier names for the feature** — the first collides with the typography scale step, the second is reserved by the vocabulary rule.
+- **The cohesion session and this one shared the tree politely** — explicit-path staging only; the staged `ContextPM.md`/`Cohesion-Audit.md` in status are the parallel session's, riding Nathan's auto-stage hook into its commits.
 
 #### Changes
 
 **FILES ADDED**
 
-- None. *(The arc's task list was written, worked through, and retired with the Planning sweep below.)*
+- None.
 
 **FILES MODIFIED**
 
-- `.claude/CLAUDE.md` · `.claude/HistoryPM.md` · `.claude/Planning/PM-108 Webpage Integration — Implementation Plan.md`
-- `.claude/Features/WebviewPM.md` *(renamed from `WeblinkPM.md`)* · `NavigationPM.md` · `ConfigurationPM.md` · `PagePreviewPM.md` · `ViewsPM.md` · `ConnectionsPM.md` · `MarkdownPM.md` · `.claude/Guidelines/Web-Guests.md`
-- `Pommora/src/shared/bridge.ts` · `webpageEmbed.ts`
-- `Pommora/src/main/index.ts` · `webGuests.ts` · `Pommora/src/preload/index.ts`
-- `Pommora/src/renderer/src/Detail/DetailPane.tsx` · `PageView.tsx` · `Detail.css`
-- `Pommora/src/renderer/src/MarkdownPM/editor/embedWidget.tsx` · `gripMenu.ts` · `gripMenuFlow.test.tsx`
-- `Pommora/src/renderer/src/Embeds/ConnectionHoverCard.tsx` · `WebpageEmbed.tsx`
-- `Pommora/src/renderer/src/Settings/NexusSettings.tsx` · `Components/Detail/PickerControl.tsx`
-
-**FILES REMOVED**
-
-- `.claude/Planning/` — the four finished plans: `PM-110 Web Layer Follow-Ons — Task List.md` · `Live-Tree-And-Index — Implementation Plan.md` · `NexusSettings Leaf Framework — Decision Log.md` · `Property-Cascade-Journal — Implementation Plan.md`
+- `.claude/Planning/Footnotes — Decision Log.md` — rewritten whole from this session's brainstorm (the prior log was deleted before the session opened).
+- `.claude/HandoffPM.md` · `.claude/ContextPM.md` — this document and the Context sweep.
+- *(Not this session's: `.claude/Planning/Cohesion-Audit.md`, `Pommora/src/renderer/src/MarkdownPM/Styles.css`, and ContextPM's staged edits belong to the parallel cohesion session.)*
 
 **COMMITS**
 
-- `347b90ce` — refactor(settings): the open-in preference sits with the other link settings
-- `2f837cb5` — feat(settings): the webpage preferences group under Interface, and the zoom takes a typed scale
-- `521f547c` — feat(embeds): a hovered site reads past its first screen
-- `03f3fc49` — feat(detail): a recent tab's page surface parks instead of tearing down
-- `13de245b` — feat(editor): a tile's Edit Link re-aims the address in the line
-- `923956fa` — fix(detail): a parked surface is kept by its own tab's page, not the shown one
+- None by this session. The parallel cohesion line landed today's `f0c94fe0` · `8e5b2e7c` · `30c4fdc7` · `454180ba` · `9fd6da98` · `ab6ac262`.
 
 #### Handoff Guidelines
 

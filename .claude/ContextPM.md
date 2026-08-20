@@ -4,12 +4,13 @@
 
 **The web layer is delivered, its follow-ons are in, and it awaits a walkthrough.** PM-108 shipped websites embedded in Page bodies, an in-app browser, one remembered session, and live hover previews, all under one main-process guest governor and one renderer open-link adjudicator; a round of live direction then landed on top of it — the webpage preferences gathered under Interface, a typeable webpage scale, scrollable hover previews, tab surfaces that park instead of reloading, and an Edit Link that edits in the line. Every gate has run, including a closing fresh-context review that found the arc at its floor. What stands between it and finished is what only Nathan can do: see it running, prove a sign-in survives a relaunch, and settle the browser chrome's resting band. The plan's own §Known Issues records the one thing that shipped short of its reference, and why it can't be reproduced literally over a webview.
 
-**Populating Settings continues underneath it.** The rail is seated in the order it will keep and Appearance now holds working color controls. Properties and Automations are seated against features that do not exist yet — Automations especially, since settings cannot be designed before the thing they configure — and Shortcuts has three bindings in code and no way to rebind them. The open question in front of the next piece is which of these earns a control next, and what the empty categories are actually for.
+**Populating Settings continues underneath it.** The rail is seated in the order it will keep, and Appearance now holds working color controls. Properties and Automations are seated against features that do not exist yet — Automations especially, since settings cannot be designed before the thing they configure — and Shortcuts has three bindings in code and no way to rebind them. The open question in front of the next piece is which of these earns a control next, and what the empty categories are actually for.
 
 ### Immediate Work
 
-- [ ] **Walk the web layer.** The tile lifecycle, the grip's Edit Link, the browser, hover previews and their scroll, a tab flip on a page holding a live site, and the settings placement; plus ⌘± zoom stamping and trackpad feel, neither of which is drivable headlessly, and a sign-in that survives a relaunch. Everything else is verified.
-- [ ] **Finish Appearance.** The three color controls are built; default icons still need the Icon Picker per kind, and the default view scale a slider. Both write through the existing `setPersonalization` — no new plumbing.
+- [ ] Finish the [[Cohesion-Audit]]'s MarkdownPM leg — nothing left behind — then fold its §One Definition Per Thing easy wins, first bullet included, and park the design-splits (Tables, Cards, the renderer lifting) as a pending focus.
+- [ ] MarkdownPM Footnotes → Plan & Execution, immediately after those; the decision log at [[Footnotes — Decision Log]] is the settled contract, two `[assumed]` entries pending Nathan's word.
+- [ ] The remaining Cohesion arcs — Table hoisting, the `main/index.ts` split, the parked design-splits — complete after Footnotes.
 
 ### Pending Focuses
 
@@ -23,7 +24,7 @@
 
 #### II. What Comes Off The Cohesion Pass
 
-The cohesion pass's dusting and its main-process costs are closed (→ PM-110); the catalog and where every finding stands are in [[Cohesion-Audit]]. Four scoped sessions come off it, in this order.
+The cohesion pass's dusting and its main-process costs are closed (→ PM-110); the catalog and where every finding stands are in [[Cohesion-Audit]]. Four scoped sessions come off it. The order: MarkdownPM cleanup, then §II's helper deduplication; Footnotes builds between them and the rest; Table hoisting and the `main/index.ts` split follow.
 
 - [ ] **MarkdownPM cleanup.** Six live defects and the duplication they sit inside — four of them are symptoms of a rule written twice, so each collapse carries its own repair. The order, the estimates, and the statements that must stop being false are in [[MarkdownPM-Plan]]; the evidence behind them is in [[MarkdownPM-Scoping]]. Phase 7 is the fold model's key widening, which is what footnotes actually blocks on.
 - [ ] **Table hoisting.** Eighteen modules outside `Detail/Views/Table/` import from it — the navigation list uses the table's drag module — and `Table.css` loads globally from `main.tsx`, so a table-scoped refactor reaches the nav gallery and the settings panes. A shared `design-system/tables` is the wrong destination: the two table implementations share nothing, correctly so, and what leaks out is a color token, a property-value renderer, property display helpers, a checkbox glyph, and a drag module — four homes, not one. The first step is the import cycle: `pickView` and `resolveContainerSchema` move out of `TableView` into `Views/pipeline/`, which is zero behavior change and unblocks the rest. Splitting `Table.css` needs screenshot verification of the nav gallery, both settings leaves, the preview inspector, and the properties panes — a typecheck proves nothing there.
@@ -40,7 +41,6 @@ The cohesion pass's dusting and its main-process costs are closed (→ PM-110); 
 - [ ] **View QuickFilter:** A dropdown or toggle that holds single-property filtering options; the recently added ActionBand would be its natural placement for SurfacePM embeds, and the Subfield is an initial idea for where this could be placed in full-detail views.
 - [ ] **Auto-Linter:** A MarkdownPM, nexus-level-configurable auto-linter that could place its action button in the subfield, or an approved command combination.
 - [ ] **Per-tab Subfield `crumbDepth`**, if cross-tab tail memory is ever wanted. It resets on tab switch today (correct, no leak); a per-tab field would let each tab remember its own dimmed tail across switches — a feature, not a fix.
-- [ ] **MarkdownPM Footnotes:** Auto-ordered footnotes. 
 
 ### Important Information
 
