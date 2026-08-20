@@ -2,10 +2,16 @@ import { memo, useRef } from 'react'
 import { linkTarget, tokenize, type Token } from '../tokens'
 import { MD_LINK_CLASS } from '../editor/decorations'
 import { CONTENT_CLASS } from '../decorations/intent'
-import { resolveMdTarget, type ConnectionsApi, type ConnMenuTarget } from '../connections'
+import {
+  resolveMdTarget,
+  type ConnectionsApi,
+  type ConnMenuTarget,
+  type MdTarget,
+} from '../connections'
 import { titleOf } from '@shared/connections'
 import { linkActionText, linkHalves } from '../editor/linkFormat'
 import { wikiAuthorTarget } from '../editor/linkEdit'
+import { dwellTarget, followTarget } from '../editor/links'
 import { useSession } from '../../store'
 
 // A cell's resting render WITHOUT a CodeMirror instance: inline marks styled + markers hidden +
@@ -111,6 +117,8 @@ function StaticCellImpl({
   onActivate,
   onCommit,
   onSelect,
+  onHoverArm,
+  onHoverEnd,
 }: {
   text: string
   connections?: () => ConnectionsApi | undefined
@@ -119,6 +127,10 @@ function StaticCellImpl({
   onCommit: (text: string) => void
   /** Enter the cell with `range` selected, for the actions that put you in position to retype. */
   onSelect: (range: [number, number]) => void
+  /** The table's one hover intent — a delay shared across every cell, so two cells can never have
+   *  one armed at once. */
+  onHoverArm: (bloom: () => void) => void
+  onHoverEnd: () => void
 }): React.JSX.Element {
   // What the cell reads NOW, not when its menu was popped. A native menu can be held open for as long
   // as the user likes, and an undo or an outside write can move the cell underneath it — the editor's
@@ -132,6 +144,20 @@ function StaticCellImpl({
   // rewrites text is performed as a commit, since entering the cell to change how a link reads would
   // be a side effect nobody asked for, while the authoring gestures enter it because putting you in
   // position to retype is the whole of what they do.
+  // A resting cell's link follows and previews as it does in the body, through the same two
+  // readers — the cell has no editor to carry the pointer path, but it has the text the path asks
+  // about. Following waits for the click so a drag that starts on a link selects instead.
+  const linkAt = (e: React.MouseEvent): ReturnType<typeof cellLinkTarget> =>
+    cellLinkTarget(text, e.target, connections?.())
+  const claimLink = (e: React.MouseEvent): boolean => {
+    const found = linkAt(e)
+    const go = found && followTarget(found.target, found.url, connections?.(), e.metaKey)
+    if (!go) return false
+    e.preventDefault()
+    e.stopPropagation()
+    return true
+  }
+
   const openMenu = (e: React.MouseEvent): void => {
     const span = linkSpanAt(e.target)
     const api = connections?.()
@@ -161,9 +187,32 @@ function StaticCellImpl({
 
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only drag affordance; keyboard reordering is not implemented
+    // biome-ignore lint/a11y/useKeyWithClickEvents: the cell's own keyboard route is its editor, entered by Enter from the grid
+    // biome-ignore lint/a11y/useKeyWithMouseEvents: a pointer-only hover affordance; keyboard focus never reaches a resting cell
     <div
       className="mdpm-tbl-cell-static"
-      onContextMenu={openMenu}
+      onContextMenu={(e) => {
+        // The pair every gesture that replaces the pointer's meaning owes it.
+        onHoverEnd()
+        openMenu(e)
+      }}
+      onMouseOver={(e) => {
+        onHoverEnd()
+        const found = linkAt(e)
+        const bloom = found && dwellTarget(found.target, found.url, connections?.(), found.el)
+        if (bloom) onHoverArm(bloom)
+      }}
+      onMouseOut={onHoverEnd}
+      onClick={(e) => {
+        if (e.button !== 0 || e.detail !== 1) return
+        onHoverEnd()
+        const found = linkAt(e)
+        const go = found && followTarget(found.target, found.url, connections?.(), e.metaKey)
+        if (!go) return
+        e.preventDefault()
+        e.stopPropagation()
+        go()
+      }}
       onMouseDown={(e) => {
         // A right press on a link belongs to that link's menu, and claiming it here is what stops the
         // browser selecting the word under the pointer before the menu opens.
@@ -172,6 +221,10 @@ function StaticCellImpl({
           return
         }
         if (e.button !== 0) return
+        // The cell swaps itself into an editor on mousedown, so a press bound for a link has to be
+        // claimed HERE — claiming the click instead arrives after the swap, which is the "clicking a
+        // link drops you into its syntax" symptom.
+        if (claimLink(e)) return
         // Stop the browser's native mousedown focus/selection: the cell swaps to an editor that we focus
         // ourselves, and the native focus-shift otherwise races ours — the "needs two clicks" bug.
         e.preventDefault()
@@ -181,6 +234,33 @@ function StaticCellImpl({
       {renderCellContent(text, connections)}
     </div>
   )
+}
+
+/** Where the link under the pointer leads, in the terms the body's own pointer path uses — a
+ *  wikilink resolving to a page names that page, one that resolves to nothing names nothing, and a
+ *  markdown link asks the shared resolver. A resting cell has no editor to hit-test against, so the
+ *  token comes off the span the renderer stamped. */
+export function cellLinkTarget(
+  text: string,
+  eventTarget: EventTarget | null,
+  api: ConnectionsApi | undefined,
+): { el: Element; target: MdTarget; url: string } | null {
+  const el = (eventTarget as HTMLElement | null)?.closest?.(LINK_SELECTOR)
+  if (!el || !api || !el.closest('.mdpm-tbl-cell-static')) return null
+  const span = linkSpanAt(eventTarget)
+  const tk = span && linkTokenAt(text, span[0])
+  if (!tk) return null
+  if (tk.kind === 'wikiLink') {
+    const [rs, re] = tk.resolveRange ?? tk.contentRange
+    const res = api.resolve(text.slice(rs, re))
+    const url = text.slice(...tk.range)
+    return res.status === 'resolved' && res.page
+      ? { el, target: { kind: 'page', page: res.page }, url }
+      : null
+  }
+  const url = linkTarget(text, tk)
+  if (!url) return null
+  return { el, target: resolveMdTarget(api, url), url }
 }
 
 /** The link token starting at `at`, whichever syntax wrote it. */
