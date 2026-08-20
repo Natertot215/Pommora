@@ -312,6 +312,7 @@ function treeWith(pages: { id: string; path: string }[]): NexusTree {
     accent: 'lavender',
     personalization: {},
     commands: {},
+    excluded: [],
     registry: [],
   }
 }

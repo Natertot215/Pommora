@@ -4,10 +4,13 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
   readDefaultViewScale,
+  readExcludedFolders,
+  readNexusLabels,
   readPermanentDelete,
   updateSettings,
   writePersonalization,
 } from './settings'
+import { dropLiveTree, refreshTree } from './liveTree'
 import { nexusDir, nexusConfig, NEXUS_CONFIG_FILES } from './paths'
 
 let root: string
@@ -102,5 +105,31 @@ describe('readPermanentDelete — what emptying the trash means', () => {
     expect(await readPermanentDelete(root)).toBe(true)
     await writePersonalization(root, 'permanentDelete', undefined)
     expect(await readPermanentDelete(root)).toBe(false)
+  })
+})
+
+describe('the live-tree fast path', () => {
+  afterEach(() => dropLiveTree())
+
+  it('serves the tree main already holds, without opening the file', async () => {
+    await writeFile(nexusConfig(root, NEXUS_CONFIG_FILES.identity), JSON.stringify({ id: 'nx1' }))
+    await write({
+      personalization: { permanentDelete: true, defaultViewScale: 1.5 },
+      excluded_folders: ['Archive'],
+      labels: { page_collection: { singular: 'Shelf' } },
+    })
+    await refreshTree(root)
+    // The file is gone; every answer below can only come from the tree.
+    await rm(path(), { force: true })
+    expect(await readPermanentDelete(root)).toBe(true)
+    expect(await readDefaultViewScale(root)).toBe(1.5)
+    expect(await readExcludedFolders(root)).toEqual(['Archive'])
+    expect((await readNexusLabels(root)).pageCollection.singular).toBe('Shelf')
+  })
+
+  it('falls back to disk for a root no tree is held for', async () => {
+    await write({ personalization: { permanentDelete: true }, excluded_folders: ['Archive'] })
+    expect(await readPermanentDelete(root)).toBe(true)
+    expect(await readExcludedFolders(root)).toEqual(['Archive'])
   })
 })
