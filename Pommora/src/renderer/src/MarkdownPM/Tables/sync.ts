@@ -16,10 +16,22 @@ export function cellCommitChange(
   col: number,
   newText: string,
 ): { from: number; to: number; insert: string } | null {
-  const seg = scan.tables[tableIndex]?.rows[row]?.segments[col]
-  if (!seg) return null
-  const insert = ` ${cellToSource(newText)} `
-  return { from: seg[0], to: seg[1], insert }
+  const region = scan.tables[tableIndex]
+  const geom = region?.rows[row]
+  if (!region || !geom) return null
+  const source = cellToSource(newText)
+  const seg = geom.segments[col]
+  // The common case: replace exactly the cell's own pipe-to-pipe span, so the caret and every other
+  // cell's offsets survive the edit untouched.
+  if (seg) return { from: seg[0], to: seg[1], insert: ` ${source} ` }
+  // A RAGGED row is short of the columns the delimiter declares, and the model it is read through
+  // pads it — so the cell being typed in has a position in the model and no span in the source. The
+  // row is rewritten with the padding made real, rather than the edit being dropped.
+  if (col >= region.delimiter.columns.length) return null
+  const cells = region.delimiter.columns.map((_, i) =>
+    i === col ? source : (geom.cells[i]?.text ?? ''),
+  )
+  return { from: geom.from, to: geom.to, insert: `| ${cells.join(' | ')} |` }
 }
 
 export function structuralEditChange(

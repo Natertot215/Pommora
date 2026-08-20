@@ -4,6 +4,7 @@
 
 import type { Band, DividerRef, Edge, LayoutNode, SurfaceLayout, TileLeaf } from './model'
 import { cloneLayout, findTile, getTile } from './model'
+import { clamp } from '@renderer/design-system/clamp'
 
 function renormalize(ratios: number[]): number[] {
   const sum = ratios.reduce((a, r) => a + r, 0)
@@ -286,8 +287,4 @@ export function resizeBandPair(
   above.h += delta
   below.h -= delta
   return next
-}
-
-function clamp(n: number, lo: number, hi: number): number {
-  return Math.max(lo, Math.min(hi, n))
 }

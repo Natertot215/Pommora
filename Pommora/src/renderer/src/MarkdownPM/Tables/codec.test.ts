@@ -54,6 +54,15 @@ describe('codec', () => {
     expect(escapeCell('a\\|b')).toBe('a\\\\\\|b') // a literal backslash AND pipe both escape
   })
 
+  // The other direction: a cell written by hand, read in, and committed back must come out as it
+  // went in. A backslash escaping anything but a pipe is ordinary markdown passing through, and
+  // doubling it rewrites the file for every other reader.
+  it('a hand-authored cell survives a round trip through the editor', () => {
+    for (const source of ['a \\* b', 'C:\\path', 'a \\_x_ b', 'a \\| b', 'plain']) {
+      expect(escapeCell(unescapeCell(source))).toBe(source)
+    }
+  })
+
   it('cellToSource / cellToDisplay round-trip in-cell newlines as <br> (and still escape pipes)', () => {
     expect(cellToSource('a\nb')).toBe('a<br>b') // newline → <br> so the row never splits
     expect(cellToSource('a|b\nc')).toBe('a\\|b<br>c') // pipe escaped AND newline serialized
