@@ -3,9 +3,9 @@ import { EDITOR_ACTION_PREFIX, INSERT_LINK_ACTION, type FormatState } from '@sha
 import { isValidLink, normalizeLinkUrl } from '@shared/links'
 import { serializeLink } from '@shared/linkValue'
 import { PASTE_AS_PREFIX, type PasteAsForm } from '@shared/PasteAsMenu'
+import type { ListKind } from '@shared/gripMenu'
 import { embedInsertAtCaret, webpageInsertAtCaret } from './embedInsert'
 import { pasteAs } from './PasteLink'
-import type { ListKind } from '@shared/gripMenu'
 import {
   toggleInline,
   setHeading,

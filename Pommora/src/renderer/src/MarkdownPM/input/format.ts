@@ -10,18 +10,13 @@ import {
   type ListMarker,
 } from '../detect'
 import type { ListKind } from '@shared/gripMenu'
-export type InlineFormat =
-  | 'bold'
-  | 'italic'
-  | 'strikethrough'
-  | 'inlineCode'
-  | 'link'
-  | 'connection'
-export type HeadingLevel = 0 | 1 | 2 | 3 | 4 | 5 | 6
-export type BlockFormat = 'quote' | 'code' | 'hr' | 'callout' | 'table'
 import { lineStartAt, lineEndAt } from './index'
 import { emptyTable } from '../Tables/model'
 import { serialize } from '../Tables/codec'
+
+export type InlineFormat = keyof typeof WRAP | 'link' | 'connection'
+export type HeadingLevel = 0 | 1 | 2 | 3 | 4 | 5 | 6
+export type BlockFormat = 'quote' | 'code' | 'hr' | 'callout' | 'table'
 
 /** A set of source edits + an optional resulting caret, applied as one CM transaction. */
 export interface FormatEdit {
@@ -35,18 +30,18 @@ export function isQuoteToggleable(line: string): boolean {
   return isBlockquoteLine(line) && !isCalloutHead(line)
 }
 
-const WRAP: Record<Exclude<InlineFormat, 'link' | 'connection'>, string> = {
+const WRAP = {
   bold: '**',
   italic: '*',
   strikethrough: '~~',
   inlineCode: '`',
-}
+} as const
 
 /** Toggle an inline mark over the selection (caret sits inside the wrap when empty). */
 export function toggleInline(doc: string, from: number, to: number, fmt: InlineFormat): FormatEdit {
   if (fmt === 'link') return toggleLink(doc, from, to)
   if (fmt === 'connection') return toggleConnection(doc, from, to)
-  const kind = fmt as Exclude<InlineFormat, 'link' | 'connection'> & TokenKind
+  const kind = fmt as keyof typeof WRAP & TokenKind
   const existing = tokenize(doc).find(
     (tk) => tk.kind === kind && tk.contentRange[0] <= from && to <= tk.contentRange[1],
   )
