@@ -183,6 +183,58 @@ describe('confirmRegistry', () => {
     expect(live?.collections[0]?.properties?.[0]).toBe(live?.registry[0])
     expect(stabilize(await readNexus(root), live)).toBe(live)
   })
+
+  it('leaves a Collection that does not assign the edited def reference-identical', async () => {
+    await mkdir(abs('Refs'), { recursive: true })
+    await writeFile(abs('Refs', '_pagecollection.json'), JSON.stringify({ id: 'c2' }))
+    await refreshTree(root)
+    const before = getLiveTree()
+    await writeFile(
+      abs('.nexus', 'properties.json'),
+      JSON.stringify({
+        order: ['prop_a'],
+        defs: { prop_a: { id: 'prop_a', name: 'Stage', type: 'select' } },
+      }),
+    )
+    await confirmRegistry(root)
+    const live = getLiveTree()
+    const held = (p: string): unknown => before?.collections.find((c) => c.path === p)
+    const now = (p: string): unknown => live?.collections.find((c) => c.path === p)
+    expect(now('Refs')).toBe(held('Refs'))
+    expect(now('Notes')).not.toBe(held('Notes'))
+    expect(stabilize(await readNexus(root), live)).toBe(live)
+  })
+
+  it('reads the one named sidecar when the write moved an assignment list', async () => {
+    await writeFile(
+      abs('.nexus', 'properties.json'),
+      JSON.stringify({
+        order: ['prop_a', 'prop_b'],
+        defs: {
+          prop_a: { id: 'prop_a', name: 'Status', type: 'select' },
+          prop_b: { id: 'prop_b', name: 'Due', type: 'datetime' },
+        },
+      }),
+    )
+    await writeFile(
+      abs('Notes', '_pagecollection.json'),
+      JSON.stringify({ id: 'c1', properties: ['prop_a', 'prop_b'] }),
+    )
+    const pushed = await confirmRegistry(root, 'Notes')
+    expect(pushed).not.toBeNull()
+    expect(walkSpy).not.toHaveBeenCalled()
+    const live = getLiveTree()
+    expect(live?.collections[0]?.properties?.map((d) => d.id)).toEqual(['prop_a', 'prop_b'])
+    expect(stabilize(await readNexus(root), live)).toBe(live)
+  })
+
+  it('drops an assignment the registry no longer carries, without opening its sidecar', async () => {
+    await writeFile(abs('.nexus', 'properties.json'), JSON.stringify({ order: [], defs: {} }))
+    await confirmRegistry(root)
+    const live = getLiveTree()
+    expect(live?.registry).toEqual([])
+    expect(live?.collections[0]?.properties).toBeUndefined()
+  })
 })
 
 describe('confirmBy over the container patcher', () => {

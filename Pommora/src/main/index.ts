@@ -474,7 +474,10 @@ async function confirmContainerWrite(containerPath: unknown): Promise<void> {
   await confirmWrite((root) => confirmBy(root, () => patchContainerFromDisk(root, containerPath)))
 }
 
-const confirmRegistryWrite = (): Promise<void> => confirmWrite(confirmRegistry)
+/** `containerPath` names the one Collection whose assignment list the write also moved; a bare
+ *  call is a registry-only def edit, which the confirmer patches without opening a sidecar. */
+const confirmRegistryWrite = (containerPath?: string): Promise<void> =>
+  confirmWrite((root) => confirmRegistry(root, containerPath))
 
 const confirmSettingsWrite = (): Promise<void> =>
   confirmWrite((root) => confirmBy(root, () => patchSettingsFromDisk(root)))
@@ -502,13 +505,13 @@ async function resolveViewContainer(
 // Collection's folder — a Set inherits the schema, so the renderer passes the ancestor's path.
 async function resolveSchemaFolder(
   containerPath: unknown,
-): Promise<Result<{ root: string; folder: string }>> {
+): Promise<Result<{ root: string; folder: string; rel: string }>> {
   const root = sessionRoot()
   if (root === null) return NO_NEXUS
   if (typeof containerPath !== 'string')
     return fail('operation-failed', 'A container path is required.')
   const resolved = await resolveUnderRoot(root, containerPath)
-  return resolved.ok ? ok({ root, folder: resolved.value }) : resolved
+  return resolved.ok ? ok({ root, folder: resolved.value, rel: containerPath }) : resolved
 }
 
 // The bad-payload refusals more than one handler speaks — one spelling each, alongside the
@@ -943,7 +946,7 @@ serveBridge(
           await removeFromRegistry(c.value.root, created.value.id)
           return assigned
         }
-        await confirmRegistryWrite()
+        await confirmRegistryWrite(c.value.rel)
         return ok({ id: created.value.id })
       },
     },
@@ -971,7 +974,7 @@ serveBridge(
           return fail('operation-failed', 'propertyId (string) and toIndex (number) are required.')
         }
         const r = await reorderAssignment(c.value.folder, propertyId, toIndex)
-        if (r.ok) await confirmRegistryWrite()
+        if (r.ok) await confirmRegistryWrite(c.value.rel)
         return r.ok ? ok(null) : r
       },
     },
@@ -983,7 +986,7 @@ serveBridge(
         if (!c.ok) return c
         if (typeof propertyId !== 'string') return NEEDS_PROPERTY_ID
         const r = await removeProperty(c.value.root, c.value.folder, propertyId)
-        if (r.ok) await confirmRegistryWrite()
+        if (r.ok) await confirmRegistryWrite(c.value.rel)
         return r.ok ? ok(null) : r
       },
     },
@@ -1001,7 +1004,7 @@ serveBridge(
           propertyId,
           typeof toIndex === 'number' ? toIndex : undefined,
         )
-        if (r.ok) await confirmRegistryWrite()
+        if (r.ok) await confirmRegistryWrite(c.value.rel)
         return r.ok ? ok(null) : r
       },
     },

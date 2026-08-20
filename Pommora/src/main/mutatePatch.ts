@@ -13,6 +13,7 @@ import {
   relocateNodeInTree,
   removeNodeInTree,
   renameNodeInTree,
+  repointRegistryInTree,
   reorderChildrenInTree,
   reorderPagesInTree,
   reorderTopInTree,
@@ -208,26 +209,24 @@ export const confirmMutation = (
   reply: MutateOutcome,
 ): Promise<NexusTree | null> => confirmBy(root, () => routeMutation(root, req, reply))
 
-/** The registry family's confirmation: re-read `properties.json`, then re-resolve every
- *  collection's embedded defs from its own sidecar — never from request values, which the
- *  writers normalize and stamp before writing. One re-read patches the one fact in both its
- *  homes (`tree.registry` and each `CollectionNode.properties`), keeping them
- *  reference-identical the way the walk does. */
-export const confirmRegistry = (root: string): Promise<NexusTree | null> =>
-  confirmBy(root, () => routeRegistry(root))
+/** The registry family's confirmation: re-read `properties.json` — never request values, which
+ *  the writers normalize and stamp before writing — and patch the one fact into both of its homes
+ *  (`tree.registry` and each `CollectionNode.properties`). The def edits are the whole family bar
+ *  four, and they move no assignment list, so the re-point is a pure transform. `containerPath`
+ *  names the one Collection whose sidecar the write also touched — assign, unassign, reorder, and
+ *  the create that assigns — and only that sidecar is re-read. */
+export const confirmRegistry = (root: string, containerPath?: string): Promise<NexusTree | null> =>
+  confirmBy(root, () => routeRegistry(root, containerPath))
 
-async function routeRegistry(root: string): Promise<'ok' | 'refresh'> {
+async function routeRegistry(root: string, containerPath?: string): Promise<'ok' | 'refresh'> {
   const registry = await readRegistry(root)
-  if (applyPatch(root, (t) => ({ ...t, registry: orderedDefs(registry) })) === 'refresh')
+  if (applyPatch(root, (t) => repointRegistryInTree(t, orderedDefs(registry))) === 'refresh')
     return 'refresh'
   const tree = getLiveTree()
-  // A raw nexus's walk never opens container sidecars, so there are no embedded defs to
-  // re-point — the same gate the watcher's classifier applies.
-  if (!tree || isAdoptedId(tree.nexus.id)) return 'ok'
-  for (const c of tree.collections) {
-    if ((await patchContainerFromDisk(root, c.path)) === 'refresh') return 'refresh'
-  }
-  return 'ok'
+  // A raw nexus's walk never opens container sidecars, so there is no assignment list to
+  // re-read — the same gate the watcher's classifier applies.
+  if (!tree || isAdoptedId(tree.nexus.id) || containerPath === undefined) return 'ok'
+  return patchContainerFromDisk(root, containerPath)
 }
 
 /** One shared shape for the remaining write channels: run the targeted confirmer, degrade to
