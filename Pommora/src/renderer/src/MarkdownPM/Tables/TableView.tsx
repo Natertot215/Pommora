@@ -14,7 +14,7 @@ import { cellToDisplay } from './codec'
 import { clamp } from '@renderer/design-system/clamp'
 import { nextCell, type NavDir } from './navigate'
 import type { ConnectionsApi } from '../connections'
-import { hoverIntent } from '../editor/connections'
+import { hoverIntent } from '../editor/pointerPath'
 
 function alignClass(align: Align): string {
   return `mdpm-tbl-align-${align ?? 'left'}`

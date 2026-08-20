@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
 import { buildPageIndex, type ConnectionsApi } from '@renderer/MarkdownPM/connections'
-import { CONN_HOVER_INTENT_MS } from '@renderer/MarkdownPM/editor/connections'
+import { CONN_HOVER_INTENT_MS } from '@renderer/MarkdownPM/editor/pointerPath'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '@renderer/testing/editorHarness'
 
 // Derived from the dwell rather than restated: these tests are about arm/cancel ordering, and

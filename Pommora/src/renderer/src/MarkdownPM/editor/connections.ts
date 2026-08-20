@@ -7,29 +7,6 @@ import { pointerHandlers, type PointerTarget } from './pointerPath'
 
 type GetApi = () => ConnectionsApi | undefined
 
-/** KNOB — the dwell before a connection's preview blooms. Exported so tests wait on the real value
- *  rather than restating it: a test that hard-codes the number goes red the moment it's tuned. */
-export const CONN_HOVER_INTENT_MS = 1000
-
-/** One pending hover intent — re-arming replaces it, cancel is idempotent. Shared by the editor's
- *  own handlers and the table's resting-cell trigger, so the delay stays one fact. */
-export function hoverIntent(): { arm: (fire: () => void) => void; cancel: () => void } {
-  let timer: ReturnType<typeof setTimeout> | null = null
-  const cancel = (): void => {
-    if (timer) {
-      clearTimeout(timer)
-      timer = null
-    }
-  }
-  return {
-    arm: (fire) => {
-      cancel()
-      timer = setTimeout(fire, CONN_HOVER_INTENT_MS)
-    },
-    cancel,
-  }
-}
-
 interface WikiHit {
   title: string
   /** The whole token, markers included. */
@@ -58,20 +35,6 @@ function wikiLinkAt(view: EditorView, pos: number): WikiHit | null {
   }
 }
 
-/** Whether the caret currently sits inside the token — a link being edited. Read at mousedown for a
- *  click, since CM seats the caret before `click` fires and it would otherwise always read true. */
-export function caretInside(view: EditorView, range: [number, number]): boolean {
-  const head = view.state.selection.main.head
-  return view.hasFocus && head >= range[0] && head <= range[1]
-}
-
-/** The wikiLink under a pointer gesture, where the gesture landed on it, and the page it leads to.
- *
- *  Offsets alone can't answer where the pointer was: `posAtCoords` clamps to the nearest RENDERED
- *  position, and a hidden marker is replaced to zero width — so a click in the empty space past a
- *  short alias resolves back onto its last character. The drawn text is asked for directly instead.
- *  A resolved link and an ambiguous one each carry a class; a phantom carries none, because it is
- *  drawn as its own raw bracketed text with nothing hidden and nothing to clamp against. */
 interface ConnHit extends PointerTarget {
   hit: WikiHit
   /** The page to follow — only ever set for a gesture that touched a resolved link's text. */

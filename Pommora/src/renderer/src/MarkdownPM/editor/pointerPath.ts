@@ -1,8 +1,37 @@
 import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { closeActiveHoverCard } from '@renderer/Embeds/ConnectionHoverCard'
-import { caretInside, hoverIntent } from './connections'
 import { seatAtNearerEdge } from './input'
+
+/** KNOB — the dwell before a connection's preview blooms. Exported so tests wait on the real value
+ *  rather than restating it: a test that hard-codes the number goes red the moment it's tuned. */
+export const CONN_HOVER_INTENT_MS = 1000
+
+/** One pending hover intent — re-arming replaces it, cancel is idempotent. Shared by the editor's
+ *  own handlers and the table's resting-cell trigger, so the delay stays one fact. */
+export function hoverIntent(): { arm: (fire: () => void) => void; cancel: () => void } {
+  let timer: ReturnType<typeof setTimeout> | null = null
+  const cancel = (): void => {
+    if (timer) {
+      clearTimeout(timer)
+      timer = null
+    }
+  }
+  return {
+    arm: (fire) => {
+      cancel()
+      timer = setTimeout(fire, CONN_HOVER_INTENT_MS)
+    },
+    cancel,
+  }
+}
+
+/** Whether the caret currently sits inside the token — a link being edited. Read at mousedown for a
+ *  click, since CM seats the caret before `click` fires and it would otherwise always read true. */
+export function caretInside(view: EditorView, range: [number, number]): boolean {
+  const head = view.state.selection.main.head
+  return view.hasFocus && head >= range[0] && head <= range[1]
+}
 
 /** What a pointer gesture found under itself, in the terms every pointer path shares. */
 export interface PointerTarget {
