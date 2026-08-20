@@ -6,6 +6,7 @@ import type { Personalization } from '@shared/types'
 import { useSession } from '@renderer/store'
 import { stubEditorBridge, mountEditor, cleanupEditor } from '@renderer/testing/editorHarness'
 import { pendingTitles } from './PendingTitle'
+import { pasteAs } from './PasteLink'
 
 const URL = 'https://www.example.com/a/b'
 
@@ -229,5 +230,51 @@ describe('the inverse chord', () => {
     const view = await mountEditor({ initialBody: 'body', readOnly: true })
     await act(async () => chord(view))
     expect(view.state.doc.toString()).toBe('body')
+  })
+})
+
+// Paste As names the form outright. The two embeds are the only forms whose placement is a question:
+// each takes a line to itself, so each is written onto the blank line the caret already sits on and
+// nowhere else — the menu that offered it can hang open while the document moves.
+describe('pasting as an embed', () => {
+  const seated = async (body: string, anchor: number): Promise<EditorView> => {
+    const view = await mountEditor({ initialBody: body })
+    view.dispatch({ selection: { anchor } })
+    return view
+  }
+
+  it('writes a page embed onto the blank line the caret is on', async () => {
+    clipboard = '[[Alpha]]'
+    const view = await seated('intro\n\ntail', 6)
+    await act(async () => await pasteAs(view, 'embedPage'))
+    expect(view.state.doc.toString()).toBe('intro\n![[Alpha]]\ntail')
+  })
+
+  it('writes a webpage embed onto the blank line the caret is on', async () => {
+    const view = await seated('intro\n\ntail', 6)
+    await act(async () => await pasteAs(view, 'embedLink'))
+    expect(view.state.doc.toString()).toBe(`intro\n![](${URL})\ntail`)
+  })
+
+  // An indented token is list continuation to both grammars, so the whole line goes — a caret parked
+  // after stray spaces must not leave the tile un-formed.
+  it('takes the whole line, not the caret', async () => {
+    const view = await seated('intro\n   \ntail', 9)
+    await act(async () => await pasteAs(view, 'embedLink'))
+    expect(view.state.doc.toString()).toBe(`intro\n![](${URL})\ntail`)
+  })
+
+  it("writes nothing where the line is not the embed's to take", async () => {
+    const view = await seated('intro tail', 6)
+    await act(async () => await pasteAs(view, 'embedLink'))
+    expect(view.state.doc.toString()).toBe('intro tail')
+  })
+
+  // A blank line inside a fence is code, and a tile line written there is corrupted code.
+  it('writes nothing on a blank line inside a fence', async () => {
+    const body = '```\n\n```'
+    const view = await seated(body, 4)
+    await act(async () => await pasteAs(view, 'embedLink'))
+    expect(view.state.doc.toString()).toBe(body)
   })
 })

@@ -4,8 +4,12 @@ import { pasteAsRows, pasteAsTarget, pasteAsWrite, type PasteAsForm } from './Pa
 
 const URL = 'https://www.example.com/a/b'
 
-const labels = (clipboard: string): string[] => pasteAsRows(clipboard).map((r) => r.label)
-const forms = (clipboard: string): PasteAsForm[] => pasteAsRows(clipboard).map((r) => r.form)
+// Off an embed seat unless a test says otherwise: the caret is on a blank line far less often than
+// it isn't, and the rows every other case offers are the ones that don't depend on where it is.
+const labels = (clipboard: string, seat = false): string[] =>
+  pasteAsRows(clipboard, seat).map((r) => r.label)
+const forms = (clipboard: string, seat = false): PasteAsForm[] =>
+  pasteAsRows(clipboard, seat).map((r) => r.form)
 
 /** What `form` writes for whatever `clipboard` holds. */
 const written = (clipboard: string, form: PasteAsForm, title?: string): string | undefined =>
@@ -29,15 +33,35 @@ describe('what the clipboard offers to become', () => {
   })
 
   it('offers nothing for a clipboard holding neither', () => {
-    expect(pasteAsRows('some ordinary prose')).toEqual([])
-    expect(pasteAsRows('')).toEqual([])
-    expect(pasteAsRows('   ')).toEqual([])
+    expect(pasteAsRows('some ordinary prose', true)).toEqual([])
+    expect(pasteAsRows('', true)).toEqual([])
+    expect(pasteAsRows('   ', true)).toEqual([])
   })
 
   // Every form writes one line; a clipboard carrying more than one is prose, whatever the first
   // line looks like.
   it('offers nothing for more than one line', () => {
-    expect(pasteAsRows(`${URL}\nand more`)).toEqual([])
+    expect(pasteAsRows(`${URL}\nand more`, true)).toEqual([])
+  })
+
+  // Both embeds take a line to themselves, so the offer follows the placement: on a blank line each
+  // list gains its embed, and everywhere else the lists read as they always have.
+  it('offers each embed only where one can be written', () => {
+    expect(labels(URL, true)).toEqual([
+      'Full Link',
+      'Short Link',
+      'Page Title',
+      'Plain Text',
+      'Embedded Link',
+    ])
+    expect(labels('[[Alpha]]', true)).toEqual(['Connection', 'Markdown Link', 'Embedded Page'])
+  })
+
+  // A tile only forms over an explicit http(s) address, and `![[…]]` has no way to carry a `]` —
+  // an offer either grammar would refuse is never made in the first place.
+  it('withholds an embed the syntax could not spell', () => {
+    expect(labels('mailto:someone@example.com', true)).not.toContain('Embedded Link')
+    expect(labels('[[Notes [WIP] final]]', true)).not.toContain('Embedded Page')
   })
 })
 
@@ -84,7 +108,18 @@ describe('what each form writes', () => {
     expect(markdownLinkRegex().exec(text ?? '')?.[0]).toBe(text)
   })
 
+  it('writes each embed as the line its grammar reads', () => {
+    expect(written('[[Alpha]]', 'embedPage')).toBe('![[Alpha]]')
+    // No label: a pasted address brings no words of its own, and an empty one leaves the tile's
+    // title to the nexus's link format at render.
+    expect(written(URL, 'embedLink')).toBe(`![](${URL})`)
+    expect(pasteAsWrite(pasteAsTarget('[[Alpha]]'), 'embedPage')?.kind).toBe('line')
+  })
+
   it('writes nothing for a form the clipboard cannot take', () => {
+    expect(pasteAsWrite(pasteAsTarget(URL), 'embedPage')).toBeNull()
+    expect(pasteAsWrite(pasteAsTarget('[[Alpha]]'), 'embedLink')).toBeNull()
+    expect(pasteAsWrite(pasteAsTarget('[[Notes [WIP] final]]'), 'embedPage')).toBeNull()
     expect(pasteAsWrite(pasteAsTarget(URL), 'connection')).toBeNull()
     expect(pasteAsWrite(pasteAsTarget('[[Alpha]]'), 'link-short')).toBeNull()
     expect(pasteAsWrite(null, 'plain')).toBeNull()

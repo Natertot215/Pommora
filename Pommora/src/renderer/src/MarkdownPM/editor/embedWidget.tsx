@@ -28,7 +28,7 @@ import { cx } from '@renderer/design-system/cx'
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { clamp } from '@renderer/design-system/clamp'
 import { TILE_DEFAULT_PX, TILE_MIN_PX } from '@renderer/design-system/tokens/size.css'
-import { normalizeTitle, titleFromPath } from '@shared/connections'
+import { normalizeTitle, pageEmbedText, titleFromPath } from '@shared/connections'
 import '@renderer/design-system/tile-chassis.css'
 import { loneWebpageEmbed } from '@shared/webpageEmbed'
 import { docScan } from './docCache'
@@ -762,7 +762,9 @@ const embedGuard = EditorState.transactionFilter.of((tr) => {
     // The presence probe reads the URL verbatim rather than recomposing the line — a label whose
     // on-disk escapes are non-canonical wouldn't round-trip through compose byte-identically.
     const present =
-      r.kind === 'page' ? line.text.includes(`![[${r.title}]]`) : line.text.includes(`](${r.url})`)
+      r.kind === 'page'
+        ? line.text.includes(pageEmbedText(r.title))
+        : line.text.includes(`](${r.url})`)
     if (!present) continue // syntax gone whole → a legal removal
     const lone =
       r.kind === 'page' ? loneEmbedTitle(line.text) !== null : loneWebpageEmbed(line.text) !== null
