@@ -1,19 +1,21 @@
 import type { EditorView } from '@codemirror/view'
-import {
-  BLOCK_FORMATS,
-  EDITOR_ACTION_PREFIX,
-  EDITOR_LIST_KINDS,
-  DOC_HEADING_LEVELS,
-  INLINE_FORMATS,
-  INSERT_LINK_ACTION,
-  type FormatState,
-} from '@shared/editorMenu'
+import { EDITOR_ACTION_PREFIX, INSERT_LINK_ACTION, type FormatState } from '@shared/editorMenu'
 import { isValidLink, normalizeLinkUrl } from '@shared/links'
 import { serializeLink } from '@shared/linkValue'
 import { PASTE_AS_PREFIX, type PasteAsForm } from '@shared/PasteAsMenu'
 import { embedInsertAtCaret, webpageInsertAtCaret } from './embedInsert'
 import { pasteAs } from './PasteLink'
-import { toggleInline, setHeading, setList, setBlock, type FormatEdit } from '../input/format'
+import type { ListKind } from '@shared/gripMenu'
+import {
+  toggleInline,
+  setHeading,
+  setList,
+  setBlock,
+  type FormatEdit,
+  type InlineFormat,
+  type HeadingLevel,
+  type BlockFormat,
+} from '../input/format'
 
 /** Native context-menu seam — pushes editor state to main, receives chosen actions back. */
 export interface EditorMenuApi {
@@ -46,29 +48,17 @@ export const releaseEditorMenu = (view: EditorView): void => {
 
 export const ownsEditorMenu = (view: EditorView): boolean => subject === view
 
-/** Resolve the action's tail back through the set that offered it rather than casting it. The reply
- *  is a bare string by the time it crosses the bridge, so only a value the menu actually names may
- *  reach an edit — a row main grows without a branch here resolves to nothing instead of arriving
- *  as a lie and falling off an exhaustive switch. */
 function editFor(action: string, doc: string, from: number, to: number): FormatEdit | null {
   const [group, value] = action.split(':')
   switch (group) {
-    case 'format': {
-      const fmt = INLINE_FORMATS.find((f) => f === value)
-      return fmt ? toggleInline(doc, from, to, fmt) : null
-    }
-    case 'heading': {
-      const level = DOC_HEADING_LEVELS.find((l) => String(l) === value)
-      return level === undefined ? null : setHeading(doc, from, level)
-    }
-    case 'list': {
-      const kind = EDITOR_LIST_KINDS.find((k) => k === value)
-      return kind ? setList(doc, from, kind) : null
-    }
-    case 'block': {
-      const fmt = BLOCK_FORMATS.find((f) => f === value)
-      return fmt ? setBlock(doc, from, fmt) : null
-    }
+    case 'format':
+      return toggleInline(doc, from, to, value as InlineFormat)
+    case 'heading':
+      return setHeading(doc, from, Number(value) as HeadingLevel)
+    case 'list':
+      return setList(doc, from, value as ListKind)
+    case 'block':
+      return setBlock(doc, from, value as BlockFormat)
     default:
       return null
   }

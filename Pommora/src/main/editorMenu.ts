@@ -13,7 +13,6 @@ import type {
 import {
   acceleratorFor,
   EDITOR_ACTION_PREFIX,
-  type EditorMenuAction,
   type FormatChordAction,
   type FormatState,
   INSERT_LINK_ACTION,
@@ -37,7 +36,7 @@ export function setGripHot(on: boolean): void {
 
 // raw send: the context-menu event hands over a bare WebContents, not a BrowserWindow,
 // so the typed push (which takes a window) can't be used here.
-const dispatch = (wc: WebContents, action: EditorMenuAction) => () =>
+const dispatch = (wc: WebContents, action: string) => () =>
   wc.send('menu:action', EDITOR_ACTION_PREFIX + action)
 
 function systemItems(
@@ -119,7 +118,7 @@ function pommoraItems(
   s: FormatState,
   selection: string,
 ): MenuItemConstructorOptions[] {
-  const act = (a: EditorMenuAction): (() => void) => dispatch(wc, a)
+  const act = (a: string): (() => void) => dispatch(wc, a)
   return [
     { type: 'separator' },
     // An address sitting in the prose as ordinary text, selected: the one gesture that turns it into
@@ -209,7 +208,7 @@ function pasteAsItems(wc: WebContents): MenuItemConstructorOptions[] {
       label: 'Paste As',
       submenu: rows.map((r) => ({
         label: r.label,
-        click: dispatch(wc, `${PASTE_AS_PREFIX}${r.form}`),
+        click: dispatch(wc, PASTE_AS_PREFIX + r.form),
       })),
     },
   ]

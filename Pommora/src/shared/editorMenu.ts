@@ -1,4 +1,3 @@
-import type { PasteAsForm, PASTE_AS_PREFIX } from './PasteAsMenu'
 import type { ListKind } from './gripMenu'
 
 // The editor context-menu contract. The renderer computes the editor's active formatting state
@@ -29,55 +28,6 @@ export const EDITOR_ACTION_PREFIX = 'mdpm:'
  *  whether to offer it and the renderer decides what it writes. */
 export const INSERT_LINK_ACTION = 'link:insert'
 
-// The editor menu's own vocabulary. Each `as const` array drives both the TS type and the runtime
-// membership test the renderer resolves an incoming action through — the idiom the view enums
-// already follow, and the reason main can no longer name a row the editor has no branch for.
-
-/** Every heading level a document may hold. `gripMenu`'s HEADING_LEVELS is the ladder a menu
- *  OFFERS, which stops at H5 — this is what the format functions accept, and it types that ladder
- *  so the two can't drift apart. */
-export const DOC_HEADING_LEVELS = [0, 1, 2, 3, 4, 5, 6] as const
-export type HeadingLevel = (typeof DOC_HEADING_LEVELS)[number]
-
-export const BLOCK_FORMATS = ['quote', 'code', 'hr', 'callout', 'table'] as const
-export type BlockFormat = (typeof BLOCK_FORMATS)[number]
-
-/** The list kinds the menu offers. A subset of `ListKind` on purpose: an arrow item is reachable by
- *  typing and by the grip, and the menu has never carried it. */
-export const EDITOR_LIST_KINDS = [
-  'bullet',
-  'ordered',
-  'checkbox',
-] as const satisfies readonly ListKind[]
-export type EditorListKind = (typeof EDITOR_LIST_KINDS)[number]
-
-/** The two openers that type a syntax and hand off rather than making a format edit — they share
- *  the `block:` group with the formats above but are not among them, which is why the renderer
- *  intercepts them before it resolves an edit. */
-export const EDITOR_EMBED_ACTIONS = ['block:page', 'block:webpage'] as const
-export type EditorEmbedAction = (typeof EDITOR_EMBED_ACTIONS)[number]
-
-/** Everything main may dispatch to the editor, after the `mdpm:` prefix. */
-export type EditorMenuAction =
-  | FormatChordAction
-  | `heading:${HeadingLevel}`
-  | `block:${BlockFormat}`
-  | EditorEmbedAction
-  | `list:${EditorListKind}`
-  | typeof INSERT_LINK_ACTION
-  | `${typeof PASTE_AS_PREFIX}${PasteAsForm}`
-
-/** The inline formats, which are also exactly the actions that carry a chord. */
-export const INLINE_FORMATS = [
-  'bold',
-  'italic',
-  'strikethrough',
-  'inlineCode',
-  'link',
-  'connection',
-] as const
-export type InlineFormat = (typeof INLINE_FORMATS)[number]
-
 /** The formatting chords, declared once. A chord is one fact with two spellings: Electron wants
  *  `CmdOrCtrl+Shift+X`, CodeMirror wants `Mod-Shift-x`. Each side formats this map rather than
  *  restating the keys, so the menu can never display a shortcut the editor doesn't bind — the
@@ -91,9 +41,7 @@ export const FORMAT_CHORDS = {
   'format:inlineCode': { shift: false, key: 'e' },
   'format:link': { shift: false, key: 'k' },
   'format:connection': { shift: true, key: 'k' },
-  // Keyed by the inline formats above, so a format without a chord — or a chord naming a format
-  // that doesn't exist — is a compile error rather than a menu row bound to nothing.
-} as const satisfies Record<`format:${InlineFormat}`, { shift: boolean; key: string }>
+} as const satisfies Record<string, { shift: boolean; key: string }>
 
 export type FormatChordAction = keyof typeof FORMAT_CHORDS
 

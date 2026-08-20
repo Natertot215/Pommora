@@ -10,9 +10,15 @@ import {
   type ListMarker,
 } from '../detect'
 import type { ListKind } from '@shared/gripMenu'
-// The menu's vocabulary and this module's argument types are one fact — declared in shared so
-// main names rows from the same list the editor branches on.
-import type { BlockFormat, HeadingLevel, InlineFormat } from '@shared/editorMenu'
+export type InlineFormat =
+  | 'bold'
+  | 'italic'
+  | 'strikethrough'
+  | 'inlineCode'
+  | 'link'
+  | 'connection'
+export type HeadingLevel = 0 | 1 | 2 | 3 | 4 | 5 | 6
+export type BlockFormat = 'quote' | 'code' | 'hr' | 'callout' | 'table'
 import { lineStartAt, lineEndAt } from './index'
 import { emptyTable } from '../Tables/model'
 import { serialize } from '../Tables/codec'
