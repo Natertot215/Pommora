@@ -118,13 +118,14 @@ Small, found during the picker work.
 
 ### Phase 2 — Verification and Close
 
-- [ ] `code-simplifier` over the working diff, serialized
-- [ ] `build-breaking-agent` over the finished diff, briefed with [[Cohesion-Audit]]
-- [ ] Every cited `file:line` opened and confirmed before any finding is folded
-- [ ] Gates re-run after the last fold
-- [ ] [[Cohesion-Audit]] reconciled — every finding marked done, deferred to a named session, or not
-      applicable
-- [ ] Codemap changelog of everything that moved, with per-step line deltas
-- [ ] `HistoryPM` gains one milestone entry
-- [ ] `ContextPM` names MarkdownPM cleanup and Table hoisting as the next two focuses
-- [ ] The remaining audit findings explained, and ordered as prerequisites for those two sessions
+- [x] `code-simplifier` over the working diff, serialized
+- [x] `build-breaking-agent` over the finished diff, briefed with [[Cohesion-Audit]]
+- [x] Every cited `file:line` opened and confirmed before any finding was folded — four of five
+      findings were real and are fixed; the fifth was a documentation claim, corrected
+- [x] Gates re-run after the last fold
+- [x] [[Cohesion-Audit]] reconciled — every finding marked done, deferred to a named session, or
+      corrected where the implementation proved it wrong
+- [x] [[Cohesion-Changelog]] — the codemap of everything that moved, with per-step line deltas
+- [x] `HistoryPM` gains one milestone entry — PM-110
+- [x] `ContextPM` names MarkdownPM cleanup and Table hoisting as the next two focuses
+- [x] The remaining audit findings explained, and ordered as prerequisites for those two sessions

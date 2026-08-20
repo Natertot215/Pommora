@@ -22,7 +22,7 @@ Pommora is organized as **two layers** with PARA-aligned naming. The organizatio
 
 ### The Organization Layer
 
-A **[[ContextPM|Context]]** is a user-defined, free-standing group of **Spaces**, owned by a registry at `.nexus/contexts.json`, with Areas, Topics, and Projects seeded as ordinary entries. No Context contains, parents, or is restricted to another; operational entities tag whichever Spaces fit, independently. Contexts carry no pages and no schema — Spaces are the categorical anchors things point at, each with its own block surface.
+A **[[ContextsPM|Context]]** is a user-defined, free-standing group of **Spaces**, owned by a registry at `.nexus/contexts.json`, with Areas, Topics, and Projects seeded as ordinary entries. No Context contains, parents, or is restricted to another; operational entities tag whichever Spaces fit, independently. Contexts carry no pages and no schema — Spaces are the categorical anchors things point at, each with its own block surface.
 
 ### The Operational Layer
 

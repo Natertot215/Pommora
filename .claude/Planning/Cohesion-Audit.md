@@ -4,6 +4,59 @@ An eight-agent read-only sweep of `Pommora/src` (121k lines, 829 files) and `.cl
 
 Every finding cited here was re-opened and confirmed against the file before it was written down.
 
+### Reconciliation
+
+Session One landed across six commits (`d9765a55` … `a3cd989e`). What follows records where every
+finding stands; the sections below are left as they were written, so this is the one place to read
+for status.
+
+**Done.** §I in full, except as noted below. §III's eight scoped MarkdownPM fixes. §IV's deletions,
+token swaps, shared-shape extractions, and named constants. The documentation set: broken markup,
+build-status text, the four implementation-note sections, and the batch pass.
+
+**Done, and larger than the finding described.** The icon ladder now mirrors the type ramp one for
+one, and every call site names a step — the finding asked only that the ladder hold a step for each
+scale in use. The native-menu arc under *Beyond a Session* is partly done: the model-to-native
+conversion has one implementation rather than three, and the table, view embed, and view button
+menus keep their labels in `shared/`.
+
+**Corrected by the implementation.** Four claims did not survive contact with the code, and the
+prose above has been left in place rather than rewritten, since the reasoning is still worth reading:
+
+- The two card families share **two** declaration-identical rule pairs, not six. Four more shared
+  most of a rule while differing meaningfully; the shared chassis was drawn from what genuinely
+  matched.
+- The 1px pane divider has **one** shipped consumer. The other seven are the Interaction Lab, a
+  dev-facing surface with its own visual language. A token for one caller is ceremony.
+- Neither comment about `.open-btn`'s hover was wrong. The tokens read exactly as documented — hover
+  is the lighter of the two — and only the button consumed them backwards.
+- `Carets.css`'s "only two literal easings" are `ease-in-out` keywords, not literals.
+
+**Deliberately not done, with reason.**
+
+- `shared/pageMenu.ts`'s leading-separator drop stays. A test asserts the *model* drops it, which is
+  a contract on the model rather than an artifact of how a menu happens to be drawn.
+- Cross-document restatement stays. `ViewsPM` already owns the shared mechanisms, and the
+  per-surface documents defer to it explicitly while describing what their own surface dresses it
+  in — that is behavior a reader of `CardViewPM` needs.
+- `gripMenu`, `trashMenu`, and `contextMenu` keep their main-side shape. The first resolves object
+  actions through an arbitrary-depth pick tree that `ActionItem` cannot express; the second already
+  keeps its labels in `shared/` and pops through the nesting primitive; the third runs its writes
+  inline rather than resolving an action, so it is a different chassis rather than a model.
+- The heading-convention split and `QuickCapturePM`'s status banner are open calls.
+
+**Found by the pass, not by the audit.** Three CSS vars in `tabBar.css` were declared and never
+consumed. The editor's six formatting chords were declared in two spellings with nothing tying them
+together, so the menu could advertise a shortcut the editor never bound — the same shape §II
+describes, now fixed. The heading ladder and the list-marker names were each written twice. The
+CalendarPicker drew a second checkmark over the one its picker rows already draw, and the block
+handle's Style and Scale lists had lost their left alignment.
+
+**Deferred to a named session.** §III's line-decoration viewport scoping and the
+`connections.ts`/`links.ts` factory unification, plus `Styles.css`, go to the MarkdownPM session.
+§VI's import cycle and the pieces leaking out of `Table/` go to the Table session. §II, §V, the rest
+of §VI, and the arcs under *Beyond a Session* are unstarted; `ContextPM` carries their ordering.
+
 ### Session One — The Dusting
 
 #### I. Deletions and One-Liners

@@ -21,6 +21,30 @@
 - [ ] **Retention's two bounds.** A tile scrolled far enough loses its widget to the editor's viewport recycling regardless of the cap, and a retained guest keeps playing audio by design — whether scroll-out should mute is a product call.
 - [ ] **A re-aimed tile takes the default height.** Edit Link edits in the line now, so a tile pointed at a new address no longer carries its remembered height across; a migration at formation is the fix if it reads wrong in use.
 
+#### II. The Cohesion Pass's Next Two Sessions
+
+Session One of the cohesion pass is closed (→ PM-110); its catalog and standing are in
+[[Cohesion-Audit]]. Two scoped sessions come off it, in this order.
+
+- [ ] **MarkdownPM cleanup.** The remaining editor costs and divergences the first pass left alone
+      because they need the editor's full attention. The headline is the line-decoration rebuild,
+      which is not viewport-scoped — the largest cost left in the editor, and the one that touches
+      atomic ranges and caret motion, so pinned tests come before any change to it. With it:
+      unifying `connections.ts` and `links.ts` behind one parameterized factory taking a hit-tester,
+      since the first pass closed the three behaviors that had diverged but left the two
+      implementations standing and free to diverge again; the resize hit-strip token; the drop-line
+      DOM factory; and an internal pass over `Styles.css`, 1,084 lines the audit never opened.
+- [ ] **Table hoisting.** Eighteen modules outside `Detail/Views/Table/` import from it — the
+      navigation list uses the table's drag module — and `Table.css` loads globally from `main.tsx`,
+      so a table-scoped refactor reaches the nav gallery and the settings panes. A shared
+      `design-system/tables` is the wrong destination: the two table implementations share nothing,
+      correctly so, and what leaks out is a color token, a property-value renderer, property display
+      helpers, a checkbox glyph, and a drag module — four homes, not one. The first step is the
+      import cycle: `pickView` and `resolveContainerSchema` move out of `TableView` into
+      `Views/pipeline/`, which is zero behavior change and unblocks the rest. Splitting `Table.css`
+      needs screenshot verification of the nav gallery, both settings leaves, the preview inspector,
+      and the properties panes — a typecheck proves nothing there.
+
 #### II. The Boring Work
 
 - [ ] **The store split.** Renderer state — active tab, selection, pins, the open preview, the page being edited — composes into domain slice files that build the same single store. The shared room is what lets features react to each other and what killed a whole class of two-copies bugs, so the shape stays and only the file boundary moves. Best taken immediately before the next store-heavy feature, rather than as a standalone ceremony.

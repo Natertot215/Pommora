@@ -2,6 +2,7 @@
 
 | Date | ID | Entry |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 08-19-2026 | PM-110 | The Cohesion Pass |
 | 08-18-2026 | PM-109 | The Color Ramp |
 | 08-18-2026 → 08-19 | PM-108 | Webpage Integration |
 | 08-18-2026 | PM-107 | Settings' Scaffolding |
@@ -112,6 +113,26 @@
 | 06-14-2026 → 06-15 | PM-002 | The Headless Data Layer |
 | 06-14-2026 | PM-001 | Genesis — The Walking Skeleton |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot |
+
+#### PM-110 || The Cohesion Pass
+**DATE:** 08-19-2026
+
+An eight-agent read-only sweep produced a catalog of cohesion debt, and the first session against it closed six of its sections. Nothing here is a feature; it is the same app with fewer places to state the same thing twice.
+
+**The Icon Ladder:** glyph sizes stopped being numbers. The ladder now mirrors the type ramp name for name — eleven names over eight values, `largeTitle` down to `subline` — so a glyph and the text beside it name the same step, and every call site in the app names one. The escape hatch survives where a size is genuinely arbitrary, and the few consumers that size an element rather than a font read the same ladder as bare numbers through one export, so the two shapes cannot drift. Three variables in the tab bar turned out to be declared and never read, and two files reaching past the curated registry into the icon package directly were routed back through it.
+
+**One Shape, One Statement:** plain CSS gained the whole type ramp and the control heights, which is what let thirteen hardcoded font sizes and five restated button heights name what they are instead. Four shapes that existed twice became one apiece — the card chassis behind the Cards renderer and the nav gallery, the reveal bar under the preview footer and the subfield, the edge-drag resize strip, and the sidebar's icon button — each family keeping only what is genuinely its own. Two fixes travelled with them: the title descender stopped clipping in the gallery, where the fix had only ever been applied on the Cards side, and the subfield's toggle reveals on keyboard focus rather than staying invisible under it. The Open Folder button rests transparent and brightens on hover, having previously rested lit and dimmed.
+
+**The Menu Model:** the page menu's template was the row menu's plus one case, so the two merged and every native menu built from a model comes through one place. The six editor formatting chords had lived in two spellings — Electron's accelerator and CodeMirror's binding — with nothing tying them together, which meant the menu could advertise a shortcut the editor never bound; they are one map now, formatted by each side and pinned by a test. The heading ladder and the list-marker names were each written twice and are each named once. The table, view embed, and view button menus keep their labels in the shared layer with the models the rest already follow, leaving the main side to pop what the model describes.
+
+**The Editor's Costs:** the block drag re-read and re-parsed the whole document on every autoscroll frame — a rope join plus a full parse of fences, tables, maths, callouts, and list membership, sixty times a second, against a document the gesture holds still by construction. The parse happens once at activation now, and only geometry moves. The bidirectional-arrow scan is cached per document version the same way. A markdown link naming a page is drawn as a connection and now behaves as one under every gesture: ⌘-click takes the host's other route, a right-press stops blooming a preview behind the menu it just opened, and both body paths dismiss an open hover card rather than only cancelling what was armed.
+
+**The Documentation:** four passages were broken outright, and four sections that read as implementation notes now say what the feature does with their file pointers moved to a source line — the bridge between the two processes, the database that travels with a Nexus, the gesture layer every drag goes through, and the preview window's own dimensions. Every table of contents matches the headings beneath it.
+
+**The Verification:** a simplification pass and an adversarial pass ran over the finished work. Consolidating four shapes had swept three host-specific values into the shared rules with them, which collapsed the navigation window's resize rail to nothing to grab and cost the preview footer's chevron the offset that clears its resize corner; each is back where it belongs, and the shared rules keep only what every host actually shares. A menu fragment spliced beneath rows a menu already holds keeps the divider separating it from them, since telling that case from a divider leading the whole menu is only possible for a builder holding the finished menu.
+
+- **Commits:** `d9765a55` · `b13af3de` · `9e47c1e5` · `3128133f` · `8a71f0d3` · `8b77d551` · `a3cd989e`
+- **Diff:** Net +39 | +756 / −717
 
 #### PM-109 || The Color Ramp
 **DATE:** 08-18-2026
