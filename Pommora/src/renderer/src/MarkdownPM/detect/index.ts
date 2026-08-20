@@ -391,14 +391,21 @@ export function isHeadingLine(line: string): boolean {
   return parse(line).children.some((n) => n.type === 'heading')
 }
 
-const headingPartsRe = /^([ ]{0,3})(#{1,6})(?:([ \t]+)(.*))?$/
-/** Decomposes a heading line into its pieces (null if not a syntactic ATX heading). The one heading-shape
- *  regex — level is `hashes.length`, the content start is `indent+hashes+space`. */
+const headingPartsRe = /^([ ]{0,3})(#{1,6})([ \t]+)(.*)$/
+/** Decomposes a heading line into its pieces — level is `hashes.length`, the content start is
+ *  `indent+hashes+space`. The one heading-shape regex, and the editor's own answer to "is this a
+ *  heading worth treating as one", which is narrower than `isHeadingLine`'s on purpose: a bare `#`
+ *  is a valid empty ATX heading to the parser, and this returns null for it. That null is the gate
+ *  the heading scan and the render both read, and it is what stops the `#` you have just typed —
+ *  before its space — from hiding itself, taking a chevron, opening an empty outline row under an
+ *  empty persisted fold key, and swallowing the paragraphs below it into a draggable section. The
+ *  indent stays space-only so both agree that a tab-indented `#` is indented code rather than a
+ *  heading. */
 export function headingParts(
   line: string,
 ): { indent: string; hashes: string; space: string; content: string } | null {
   const m = headingPartsRe.exec(line)
-  return m ? { indent: m[1], hashes: m[2], space: m[3] ?? '', content: m[4] ?? '' } : null
+  return m ? { indent: m[1], hashes: m[2], space: m[3], content: m[4] } : null
 }
 
 /** Needs whitespace or the line's end after the last `>`: `> a`, `>> a` and a bare `>` activate — the bare

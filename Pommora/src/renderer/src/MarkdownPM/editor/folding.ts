@@ -94,8 +94,9 @@ interface FoldEntry {
   phase: Phase
   /** The folded body's line DOM, captured when it was still on screen. It rides the ENTRY rather
    *  than a map beside it: the entry is what remaps when the document moves, and a clone kept under
-   *  the old offset is both an empty reveal and an orphan nothing frees. A region that has never
-   *  been rendered — one collapsed the moment the document opens — has none, and draws none. */
+   *  the old offset is both an empty reveal and an orphan nothing frees. Optional because a region
+   *  collapsed before its lines were ever rendered has nothing to capture — the reveal opens on the
+   *  real lines instead, which is what an unanimated collapse wants anyway. */
   clone?: HTMLElement
 }
 

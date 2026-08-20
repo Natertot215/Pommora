@@ -784,9 +784,14 @@
   border-bottom-left-radius: var(--callout-radius);
   border-bottom-right-radius: var(--callout-radius);
 }
-/* The block's own closing gap would otherwise win over the box's — a code block ending a callout would
-   seat its last line flush against the closing border, with no inner padding at all. */
-.mdpm-editor .cm-line.md-callout-last.md-cb {
+/* A line the callout SHARES with a construct nested inside it still opens and closes the callout, and
+   the nested construct has already claimed the shared --box-* names on that line — so the callout's
+   own head and foot read its own measures, at a weight the inner override can't take. Without this a
+   block ending a callout seats its last line flush against the closing border. */
+.mdpm-editor .cm-line.md-callout.md-callout-first {
+  padding-top: calc(var(--callout-gap) + var(--callout-inner-pad));
+}
+.mdpm-editor .cm-line.md-callout.md-callout-last {
   padding-bottom: calc(var(--callout-gap) + var(--callout-inner-pad));
 }
 /* First line of the page: drop the top separation — the title-bar header gap above already provides it
@@ -797,21 +802,6 @@
 .mdpm-editor .cm-content > .cm-line:first-child.md-callout-first::before {
   top: 0;
 }
-/* A code block inside a box sits inside the box gutter instead of bleeding edge-to-edge under the border:
-   its fill aligns with the gutter (--li-origin) and the mono text pads a further --cb-pad inside that, so it
-   reads like a normal code block nested in the box. The block's own rules carry both measures through
-   --cb-inset, so the fill, the text, and the language chrome all move together. */
-.mdpm-editor .cm-line.md-callout.md-cb,
-.mdpm-editor .cm-line.md-bq.md-cb {
-  --cb-gap: 0px; /* a code block nested in a box floats off nothing — the box already owns the outer spacing */
-  --cb-inset: var(--li-origin);
-  --cb-pad: 10px;
-  /* Restated, not inherited: the box's own gutter rule matches these lines just as specifically, so the
-     block's padding has to be declared at the box's weight to win it. */
-  padding-left: calc(var(--cb-inset) + var(--cb-pad));
-  padding-right: calc(var(--cb-inset) + var(--cb-pad));
-}
-
 /* A blockquote nested inside a callout — a real `::after` tint fill (rounds its right corners like the nested code
    block) with the bar as a SEPARATE element (`.md-bq-in-bar`, a side widget emitted per nested line) layered OVER
    the fill, so the bar carries its own rounded caps and the fill's corner radius can never clip it — the third
@@ -861,6 +851,30 @@
 .mdpm-editor .cm-line.md-callout-last.md-bq-in-last .md-bq-in-bar {
   bottom: calc(var(--callout-gap) + var(--callout-inner-pad));
 }
+/* Declared AFTER the nested quote above it, and that order is load-bearing: both rules weigh the same,
+   and a code block sitting inside a nested quote is the innermost box on its line, so its measures have
+   to be the ones that land. Box rules run outermost-first for exactly this reason.
+   A code block inside a box sits inside the box gutter instead of bleeding edge-to-edge under the border:
+   its fill aligns with the gutter (--li-origin) and the mono text pads a further --cb-pad inside that, so it
+   reads like a normal code block nested in the box. The block's own rules carry both measures through
+   --cb-inset, so the fill, the text, and the language chrome all move together. */
+.mdpm-editor .cm-line.md-callout.md-cb,
+.mdpm-editor .cm-line.md-bq-in.md-cb,
+.mdpm-editor .cm-line.md-bq.md-cb {
+  --cb-gap: 0px; /* a code block nested in a box floats off nothing — the box already owns the outer spacing */
+  --cb-inset: var(--li-origin);
+  --cb-pad: 10px;
+  /* Innermost wins the paint on the line it sits on: stated here rather than left to the block's own
+     rule, which an enclosing box outranks on a line the two share. */
+  --box-gap: var(--cb-gap);
+  --box-radius-l: var(--cb-radius);
+  --box-radius-r: var(--cb-radius);
+  /* Restated, not inherited: the box's own gutter rule matches these lines just as specifically, so the
+     block's padding has to be declared at the box's weight to win it. */
+  padding-left: calc(var(--cb-inset) + var(--cb-pad));
+  padding-right: calc(var(--cb-inset) + var(--cb-pad));
+}
+
 /* DRAG HANDLE — a grip in the callout's top-left gutter that drags the whole box (shares the block-drag
    gesture, gated on the head line). Revealed on GUTTER hover via `md-grip-hot` (the delegated mousemove in
    blockHandles.ts), matching the rail grips. KNOBS: --grip-x (gutter offset) / --grip-y (top offset past the gap). */

@@ -93,6 +93,10 @@ export function markdownLinkClicks(getApi: GetApi): Extension {
   return pointerHandlers<LinkHit>({
     // Both gates are required: external links wear the link class, not the connection one.
     hoverGate: `.md-connection-resolved, .${MD_LINK_CLASS}`,
+    armable: () => {
+      const api = getApi()
+      return api?.hover !== undefined || api?.hoverSite !== undefined
+    },
     hitAt: (view, event) => linkUnder(view, getApi, event),
     follow: (hit, _view, event) =>
       hit.onText ? followTarget(hit.target, hit.url, getApi(), event.metaKey) : null,

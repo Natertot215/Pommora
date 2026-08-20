@@ -118,6 +118,7 @@ function StaticCellImpl({
   onCommit,
   onSelect,
   onHoverArm,
+  onHoverLeave,
   onHoverEnd,
 }: {
   text: string
@@ -130,6 +131,10 @@ function StaticCellImpl({
   /** The table's one hover intent — a delay shared across every cell, so two cells can never have
    *  one armed at once. */
   onHoverArm: (bloom: () => void) => void
+  /** The pointer left the link: cancel what is armed, but leave an open card alone — it sits in the
+   *  gap beside the link, so reaching it means leaving the link first. */
+  onHoverLeave: () => void
+  /** A gesture replaced the pointer's meaning: cancel what is armed AND dismiss what is open. */
   onHoverEnd: () => void
 }): React.JSX.Element {
   // What the cell reads NOW, not when its menu was popped. A native menu can be held open for as long
@@ -199,12 +204,12 @@ function StaticCellImpl({
         openMenu(e)
       }}
       onMouseOver={(e) => {
-        onHoverEnd()
+        onHoverLeave()
         const found = linkAt(e)
         const bloom = found && dwellTarget(found.target, found.url, connections?.(), found.el)
         if (bloom) onHoverArm(bloom)
       }}
-      onMouseOut={onHoverEnd}
+      onMouseOut={onHoverLeave}
       onClick={(e) => {
         if (e.button !== 0 || e.detail !== 1) return
         onHoverEnd()

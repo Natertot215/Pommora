@@ -51,6 +51,10 @@ interface PointerSpec<H extends PointerTarget> {
   /** The cheap class gate a mouseover passes before any layout read or tokenize (the every-mouseover
    *  hard rule). */
   hoverGate: string
+  /** Whether a dwell could bloom anything at all on this surface — asked before the class gate, so a
+   *  host that offers no preview (a read-only embed, the hover card's own editor) pays neither the
+   *  layout read nor the tokenize. */
+  armable: () => boolean
   hitAt: (view: EditorView, event: MouseEvent) => H | null
   /** What a click does, or null when there is nothing to follow. This IS the claim: a press is
    *  claimed exactly when there is something to follow, so a token that leads nowhere seats a caret
@@ -116,7 +120,8 @@ export function pointerHandlers<H extends PointerTarget>(spec: PointerSpec<H>): 
     },
     mouseover(event, view) {
       intent.cancel()
-      // Cheap class gate FIRST: only a drawn link warrants the layout read + tokenize below.
+      if (!spec.armable()) return false
+      // Cheap class gate next: only a drawn link warrants the layout read + tokenize below.
       const el = (event.target as HTMLElement).closest?.(spec.hoverGate)
       if (!el || actedOnLink) return false
       const hit = spec.hitAt(view, event)
