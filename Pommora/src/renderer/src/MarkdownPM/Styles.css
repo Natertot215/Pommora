@@ -221,7 +221,12 @@
 .mdpm-editor .cm-line.md-block-handle {
   position: relative;
 }
-.mdpm-editor .cm-line.md-block-handle::before {
+/* Blockquote's gutter grip is a real element (the GripWidget — its line pseudos are taken by the bar
+   + fill) and the block handle's is a pseudo, but both hang in the same gutter slot on the same
+   first-visual-row centering, so a wrapped first line never drifts either one off its content.
+   --grip-top is the knob; box blocks raise it. */
+.mdpm-editor .cm-line.md-block-handle::before,
+.mdpm-editor .cm-line.md-bq-first .md-bq-grip {
   content: "";
   position: absolute;
   left: calc(
@@ -230,27 +235,11 @@
     (var(--fold-gutter) - var(--icon-body) * var(--glyph-scale)) /
     2
   );
-  /* Center on the FIRST visual row's text, so it lines up with the content even when the block's
-     first line wraps. --grip-top is the knob; box blocks raise it. */
   top: var(--grip-top, calc(0.8em - var(--icon-body) / 2 * var(--glyph-scale)));
   transition: opacity var(--duration-fast) var(--ease-standard);
 }
 .mdpm-editor .cm-line.md-block-handle.md-grip-hot::before {
   opacity: 1;
-}
-
-/* Blockquote's gutter grip is a real element (the GripWidget — its line pseudos are taken by the bar + fill),
-   but positioned + hover-revealed exactly like the rail grips. The drag rides md-bq-first. */
-.mdpm-editor .cm-line.md-bq-first .md-bq-grip {
-  position: absolute;
-  left: calc(
-    -1 *
-    var(--fold-gutter) +
-    (var(--fold-gutter) - var(--icon-body) * var(--glyph-scale)) /
-    2
-  );
-  top: var(--grip-top, calc(0.8em - var(--icon-body) / 2 * var(--glyph-scale)));
-  transition: opacity var(--duration-fast) var(--ease-standard);
 }
 .mdpm-editor .cm-line.md-bq-first.md-grip-hot .md-bq-grip {
   opacity: 1;
@@ -306,7 +295,7 @@
   text-decoration: line-through;
 }
 .md-code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   color: var(--code);
   background: color-mix(in srgb, var(--code) var(--tint-quaternary), transparent);
   padding: 0.05em 0.3em;
@@ -369,9 +358,7 @@
 .md-connection-typing {
   color: var(--connection);
 }
-.md-bracket {
-  color: var(--label-secondary);
-}
+.md-bracket,
 .md-latex,
 .md-embed {
   color: var(--label-secondary);
@@ -402,16 +389,6 @@
 /* Nested tiles are display-only — no edit, no menus, no click-through. */
 .mdpm-embed-tile.is-inert {
   pointer-events: none;
-}
-/* The bottom-edge resize strip — SurfacePM's south-edge geometry, straddling the border. */
-.mdpm-embed-resize {
-  position: absolute;
-  left: 12px;
-  right: 12px;
-  bottom: -3px;
-  height: 8px;
-  cursor: ns-resize;
-  z-index: 2;
 }
 /* Mid-drag the border wears the stronger resize accent, matching SurfacePM's own. */
 .mdpm-embed-tile.is-resizing-tile {
@@ -600,13 +577,19 @@
   padding-left: calc(var(--li-origin) + var(--li-col) + var(--number-zone));
   text-indent: calc(-1 * var(--number-zone));
 }
-.md-ol-marker {
+/* The hanging numeric zone: a fixed-width column the number sits in, so its continuation rows land
+   under the content rather than under the digits. The ordered marker and the code block's line count
+   are the same figure in two zones. */
+.md-ol-marker,
+.md-cb-ln {
   display: inline-block;
   box-sizing: border-box;
-  min-width: var(--number-zone);
   padding-right: var(--list-gap);
-  text-align: right;
   font-variant-numeric: tabular-nums;
+}
+.md-ol-marker {
+  min-width: var(--number-zone);
+  text-align: right;
 }
 
 .mdpm-editor .cm-line.md-li-task {
@@ -621,29 +604,32 @@
   white-space: nowrap;
 }
 
+/* Every level is bold; only the size steps. KNOB: the six sizes. */
+.md-h1,
+.md-h2,
+.md-h3,
+.md-h4,
+.md-h5,
+.md-h6 {
+  font-weight: var(--weight-bold);
+}
 .md-h1 {
   font-size: 1.8em;
-  font-weight: var(--weight-bold);
 }
 .md-h2 {
   font-size: 1.6em;
-  font-weight: var(--weight-bold);
 }
 .md-h3 {
   font-size: 1.4em;
-  font-weight: var(--weight-bold);
 }
 .md-h4 {
   font-size: 1.2em;
-  font-weight: var(--weight-bold);
 }
 .md-h5 {
   font-size: 1.075em;
-  font-weight: var(--weight-bold);
 }
 .md-h6 {
   font-size: 1em;
-  font-weight: var(--weight-bold);
 }
 .md-hmarker {
   color: var(--label-secondary);
@@ -917,7 +903,8 @@
   --cb-gap: 6px;
   --box-gap: var(--cb-gap);
   --box-pad: 6px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --tok-tint: var(--tint-primary);
+  font-family: var(--font-mono);
   font-size: var(--cb-size);
   padding-left: calc(var(--cb-inset) + var(--cb-pad));
   padding-right: calc(var(--cb-inset) + var(--cb-pad));
@@ -930,11 +917,8 @@
 /* CODE TOKENS — a typed fence's nested parse, colored as spectrum-solid pastels (each solid mixed
    toward system-white). Scoped under .md-cb so a tag outside a fence colors nothing; a bare fence
    has no nested parse and keeps the plain mono look.
-   KNOBS: --tok-tint (the solid's share of the mix, routed to the tint scale — a lower step reads
-   more pastel) + the per-token solid routing */
-.mdpm-editor .cm-line.md-cb {
-  --tok-tint: var(--tint-primary);
-}
+   KNOBS: --tok-tint (declared with the block's other measures above — the solid's share of the mix,
+   routed to the tint scale, where a lower step reads more pastel) + the per-token solid routing */
 .mdpm-editor .md-cb :is(.tok-kw, .tok-str, .tok-num, .tok-prop, .tok-fn, .tok-type) {
   color: color-mix(in srgb, var(--tok-solid) var(--tok-tint), var(--label-primary));
 }
@@ -965,7 +949,7 @@
    place, the raw info word hides beneath the glyph, and the caret on the line trades it back.
    Icon rides currentColor a notch over text height; the whole glyph wears the code color. */
 .mdpm-editor .md-cb .md-cb-lang {
-  --code-bracket-y: 0em;
+  --code-bracket-y: 0em; /* KNOB — nudge the chevron off the cap box's own baseline */
   position: absolute;
   /* Rides the block's own inner edge, so a block nested in a box follows its fill in rather than
      staying pinned to the line box and landing on the box's border. */
@@ -1010,9 +994,7 @@
 :root.cb-line-count .md-cb-ln {
   display: inline-block;
   min-width: var(--cb-ln-zone);
-  padding-right: var(--list-gap);
   text-indent: 0;
-  font-variant-numeric: tabular-nums;
   color: var(--label-tertiary);
   user-select: none;
 }

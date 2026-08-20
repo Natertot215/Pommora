@@ -116,6 +116,7 @@ globalStyle(':root', {
     // Refusal / failure text, wherever a surface reports one.
     '--error': colorVars.color.solid.red,
     '--font-family': font.family,
+    '--font-mono': font.mono,
     // Weight ladder — so plain CSS single-sources the same numbers as the text styles.
     '--weight-standard': font.weight.standard,
     '--weight-emphasized': font.weight.emphasized,
