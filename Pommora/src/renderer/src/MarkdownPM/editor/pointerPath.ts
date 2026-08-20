@@ -155,7 +155,6 @@ export function pointerHandlers<H extends PointerTarget>(spec: PointerSpec<H>): 
     },
     contextmenu(event, view) {
       consume()
-      closeActiveHoverCard()
       const hit = spec.hitAt(view, event)
       if (!hit) return false
       // Inside its syntax you're editing prose, and prose has its own menu — spelling, autocorrect,
@@ -164,6 +163,10 @@ export function pointerHandlers<H extends PointerTarget>(spec: PointerSpec<H>): 
       const pop = spec.menu(hit, view)
       if (!pop) return false
       event.preventDefault()
+      // Only a press that actually pops a menu dismisses the card — a hover card mounts a real
+      // editor carrying this same path, and its links arm no menu, so an unconditional close there
+      // would shut the preview the gesture was aimed inside.
+      closeActiveHoverCard()
       pop()
       return true
     },
