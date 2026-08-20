@@ -169,7 +169,12 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
     const context = isContextRow(id)
     if (context) commitContext(id, [])
     else commitValue(id, null)
-    if (action !== 'value:remove') return
+    if (action === 'value:clear') {
+      // Emptying a value deletes its key, so a property row would stop being shown by the value it
+      // no longer holds. Revealing it is what keeps Clear a different act from Remove.
+      if (!context) setRevealed((prev) => new Set([...prev, id]))
+      return
+    }
     if (context) setSetAside((prev) => new Set([...prev, id]))
     else setRevealed((prev) => new Set([...prev].filter((r) => r !== id)))
   }
