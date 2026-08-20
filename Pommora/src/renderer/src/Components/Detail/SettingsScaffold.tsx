@@ -3,14 +3,13 @@ import { useSession } from '../../store'
 import { DEFAULT_NEXUS_ICON, Icon } from '../../design-system/symbols'
 import { InteractionField } from '../../design-system/components/InteractionField'
 import { MenuBottomRow, MenuScrollFrame } from '../../design-system/components/menu'
-import { footerLockAction, lockIcon } from '@renderer/design-system/components/menu/menu.css'
+import { FooterLockButton } from '@renderer/design-system/components/menu'
 import { IconPicker } from '../IconPicker'
 import { PhotoCropModal } from '../PhotoCropModal'
 import { useNexusIcon } from '../useNexusIcon'
 import { blockHostKey, type BlockHostRef } from '@shared/blocks'
 import { assetUrl } from '../../assetUrl'
 import * as s from './settingsPane.css'
-import { lockLabel } from '@shared/toggleLabels'
 
 const HOMEPAGE_HOST: BlockHostRef = { kind: 'homepage' }
 
@@ -43,15 +42,11 @@ export function SettingsScaffold(): React.JSX.Element | null {
         footer={
           <MenuBottomRow
             leading={
-              <button
-                type="button"
-                aria-label={lockLabel(locked, 'board')}
-                className={footerLockAction}
-                onClick={() => void setLocked(!locked)}
-              >
-                <Icon name="lock" size="control" className={lockIcon} />
-                {lockLabel(locked)}
-              </button>
+              <FooterLockButton
+                locked={locked}
+                noun="board"
+                onToggle={() => void setLocked(!locked)}
+              />
             }
           />
         }

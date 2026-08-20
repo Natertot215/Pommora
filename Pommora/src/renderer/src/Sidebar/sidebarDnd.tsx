@@ -16,7 +16,7 @@ import { titleFromPath } from '@shared/connections'
 import { DragGhost } from '@renderer/design-system/interactions/DragGhost'
 import { DropLine } from '@renderer/design-system/interactions/DropLine'
 import { announce } from '@renderer/design-system/interactions/a11y'
-import { findScroller, startAutoScroll } from '@renderer/design-system/interactions/autoscroll'
+import { armAutoScroll } from '@renderer/design-system/interactions/autoscroll'
 import type { FolderPlacement } from '@shared/types'
 import type { MutateRequest } from '@shared/mutate'
 import {
@@ -316,16 +316,7 @@ export function SidebarDnd({
         dragged.current = { id, grabX }
         lastPoint.current = { x: ev.clientX, y: ev.clientY }
         // onScrolled re-resolves a held-still drag as the auto-scroll moves the rows.
-        const sc = findScroller(el, 'y')
-        if (sc) {
-          stopScroll.current = startAutoScroll({
-            getPoint: () => lastPoint.current,
-            scroller: sc,
-            dragEl: el,
-            axis: 'y',
-            onScrolled: resolveSlot,
-          })
-        }
+        stopScroll.current = armAutoScroll(el, () => lastPoint.current, resolveSlot)
         announce(`Picked up ${labelOf(id)}.`)
         return true
       },

@@ -6,7 +6,7 @@ import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { useDragSnapshot } from '@renderer/design-system/interactions/snapshot'
 import { GHOST_OFFSET } from '@renderer/design-system/interactions/shared'
 import { announce } from '@renderer/design-system/interactions/a11y'
-import { findScroller, startAutoScroll } from '@renderer/design-system/interactions/autoscroll'
+import { armAutoScroll } from '@renderer/design-system/interactions/autoscroll'
 import type { Band, BandIndex, BandSlot } from '../../Detail/Views/bandDndModel'
 import { bandSlot, buildBandIndex, canNest } from '../../Detail/Views/bandDndModel'
 
@@ -124,15 +124,7 @@ export function useGroupingListDrag({
             resolveRef.current = () => resolveAt(lastPoint.current.y)
             setDraggingId(id)
             // The pane's order region is scroll-capped — the edge loop reaches past its fold.
-            const sc = findScroller(container.current, 'y')
-            if (sc) {
-              stopScroll.current = startAutoScroll({
-                getPoint: () => lastPoint.current,
-                scroller: sc,
-                dragEl: container.current,
-                axis: 'y',
-              })
-            }
+            stopScroll.current = armAutoScroll(container.current, () => lastPoint.current)
             announce('Picked up group.')
             return true
           },

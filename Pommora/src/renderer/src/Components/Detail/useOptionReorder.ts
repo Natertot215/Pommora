@@ -3,7 +3,7 @@ import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { useDragSnapshot } from '@renderer/design-system/interactions/snapshot'
 import { EDITABLE_TARGETS, GHOST_OFFSET } from '@renderer/design-system/interactions/shared'
 import { announce } from '@renderer/design-system/interactions/a11y'
-import { findScroller, startAutoScroll } from '@renderer/design-system/interactions/autoscroll'
+import { armAutoScroll } from '@renderer/design-system/interactions/autoscroll'
 
 // The flat cousin of the two-region paneDnd. The drop calls onReorder(value, toIndex) where
 // toIndex is in the without-the-dragged coordinate space (matching optionModel.reorderOption).
@@ -134,15 +134,7 @@ export function useOptionReorder(
         setDragging(value)
         // The options list lives in a height-capped menu frame — the edge loop reaches past its
         // fold, and the window scroll hook re-aims off the loop's own scrollBy.
-        const sc = findScroller(container.current, 'y')
-        if (sc) {
-          stopScroll.current = startAutoScroll({
-            getPoint: () => lastPoint.current,
-            scroller: sc,
-            dragEl: container.current,
-            axis: 'y',
-          })
-        }
+        stopScroll.current = armAutoScroll(container.current, () => lastPoint.current)
         announce(`Picked up ${value}.`)
         return true
       },

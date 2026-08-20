@@ -1,18 +1,22 @@
 import { blockHostKey } from '@shared/blocks'
 import { useRef, useState } from 'react'
 import { Icon, entityIcon } from '@renderer/design-system/symbols'
-import { MenuBottomRow, MenuItem, MenuScrollFrame } from '@renderer/design-system/components/menu'
+import {
+  FooterLockButton,
+  MenuBottomRow,
+  MenuItem,
+  MenuScrollFrame,
+} from '@renderer/design-system/components/menu'
+import { footerLockAction } from '@renderer/design-system/components/menu/menu.css'
 import { PointMenu } from '@renderer/design-system/components/PickerMenu'
 import { TINT_STEPS, tintAt } from '@renderer/design-system/tokens/tint'
 import { cellColor } from '@renderer/design-system/tokens/ramp'
 import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
-import { footerLockAction, lockIcon } from '@renderer/design-system/components/menu/menu.css'
 import { useSession } from '../../store'
 import { findSpace } from '../Scope'
 import { IconPicker } from '../../Components/IconPicker'
 import { ColorPicker } from '../../Components/Detail/ColorPicker'
 import { InlineEditHeader } from '../../Components/Detail/InlineEditHeader'
-import { lockLabel } from '@shared/toggleLabels'
 
 export function SpaceSettingsContent({ id }: { id: string }): React.JSX.Element | null {
   const tree = useSession((s) => s.tree)
@@ -38,15 +42,11 @@ export function SpaceSettingsContent({ id }: { id: string }): React.JSX.Element 
         footer={
           <MenuBottomRow
             leading={
-              <button
-                type="button"
-                aria-label={lockLabel(locked, 'board')}
-                className={footerLockAction}
-                onClick={() => void setHostLocked({ kind: 'space', id }, !locked)}
-              >
-                <Icon name="lock" size="control" className={lockIcon} />
-                {lockLabel(locked)}
-              </button>
+              <FooterLockButton
+                locked={locked}
+                noun="board"
+                onToggle={() => void setHostLocked({ kind: 'space', id }, !locked)}
+              />
             }
             trailing={
               // Stub — its menu is a later arrival.

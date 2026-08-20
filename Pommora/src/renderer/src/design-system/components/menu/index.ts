@@ -7,6 +7,7 @@ export {
   Menu,
   AccessoryButton,
   MenuPaneTopRow,
+  FooterLockButton,
   MenuBottomRow,
   MenuScrollFrame,
 } from './Menu'

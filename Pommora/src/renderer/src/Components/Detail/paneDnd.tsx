@@ -14,7 +14,7 @@ import { useDragSnapshot } from '@renderer/design-system/interactions/snapshot'
 import { EDITABLE_TARGETS, GHOST_OFFSET } from '@renderer/design-system/interactions/shared'
 import { DragGhost } from '@renderer/design-system/interactions/DragGhost'
 import { DropLine } from '@renderer/design-system/interactions/DropLine'
-import { findScroller, startAutoScroll } from '@renderer/design-system/interactions/autoscroll'
+import { armAutoScroll } from '@renderer/design-system/interactions/autoscroll'
 import { announce } from '@renderer/design-system/interactions/a11y'
 import type { MeasuredRow } from '@renderer/Sidebar/sidebarDndModel'
 import { type PaneDrop, type PaneRow, type PaneSlot, type Region, paneSlot } from './paneDndModel'
@@ -174,16 +174,11 @@ export function PaneDnd({
         lastPoint.current = { x: ev.clientX, y: ev.clientY }
         ghostLabel.current = labelForRef.current(id)
         announce(`Picked up ${ghostLabel.current}.`)
-        const sc = findScroller(box.current, 'y')
-        if (sc) {
-          stopScroll.current = startAutoScroll({
-            getPoint: () => lastPoint.current,
-            scroller: sc,
-            dragEl: box.current,
-            axis: 'y',
-            onScrolled: () => resolveSlot(id, lastPoint.current.y),
-          })
-        }
+        stopScroll.current = armAutoScroll(
+          box.current,
+          () => lastPoint.current,
+          () => resolveSlot(id, lastPoint.current.y),
+        )
         return true
       },
       scrollTarget: () => box.current,
