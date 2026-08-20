@@ -23,6 +23,7 @@ describe('cached assembly ≡ pure derivation', () => {
     '→ arrow\n+ plus\n  - nested\n    - deeper\nplain **bold** text',
     '',
     '- ',
+    'body [^2] and [^1]\n\n[^1]: one\n[^2]: two\ncontinued',
   ]
   // Sequence compare, not a sorted multiset — order decides stacked line-class order at a shared offset.
   const seq = (xs: DecoIntent[]): string[] => xs.map((x) => JSON.stringify(x))

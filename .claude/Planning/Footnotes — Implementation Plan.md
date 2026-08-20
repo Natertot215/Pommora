@@ -882,7 +882,7 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 ### Progress
 - [x] **Phase 1** — One boundary, and the counter that proves it · base `e4c5c04a`
   - [x] Task 1 — The shared citation scan · `<commit>`
-  - [ ] Task 2 — The scan joins the editor's document derivation · `<commit>`
+  - [x] Task 2 — The scan joins the editor's document derivation · `<commit>`
   - [ ] Task 3 — Statistics stop counting the section · `<commit>`
 - [ ] **Phase 2** — The section and its markers draw
   - [ ] Task 4 — The citation row's styling · `<commit>`
