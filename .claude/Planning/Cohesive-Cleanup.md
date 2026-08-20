@@ -21,7 +21,7 @@ session: re-run `loc.py --history`, replace the JSON blob in the page's trailing
 id="data">` tag, and republish to that same URL. The page's `baseline` field is frozen at
 `d5c4413d`, so its Removed column is what the queue below has actually taken off.
 
-The queue's realistic total is about 450 lines — under one percent. That is the honest number and
+The queue's realistic total is about 480 lines — under one percent. That is the honest number and
 the reason to read the queue as a cohesion exercise rather than a size one: the value is that each
 fact has one home, and the line count is what falls out of that.
 
@@ -36,25 +36,53 @@ typecheck; the rest want the app open.
 lines) share 170 identical statements — the same context-registry derivation, the same value-commit
 path, the same editing state machine, the same row rendering. They draw one surface in two windows.
 
-Three things genuinely differ, and all three stay:
+**Eight things differ, and all eight stay.** An early reading of this entry claimed one; a sweep
+against the code found the rest, two of them live bugs.
 
-- **Where the page comes from.** The pane reads the active selection; the inspector takes a
-  `PreviewTarget` and fetches its own detail through the warm cache.
-- **The frame.** The pane sits in a `MenuScrollFrame` with a header and vanilla-extract styles; the
-  inspector is a plain `pgpreview-insp` block with an edge fade.
-- **Whether an unfilled Context row pre-shows.** Property rows follow one rule in both — visible once
-  they hold a value or were added this session. Context rows do not: the pane shows every Context
-  until it is explicitly set aside, so a Page states what it could be filed under before it is; the
-  inspector shows a Context only once it holds a value. That is the whole of the behavioral
-  difference, and `setAside` exists only in the pane because only the pane can hold an empty
-  Context row worth dismissing.
+- **Where the page comes from.** The pane reads the active selection and can only show the open page;
+  the inspector takes a `PreviewTarget` and resolves any path through the warm cache.
+- **The frame.** `MenuScrollFrame` with a header and vanilla-extract styles, versus a plain
+  `pgpreview-insp` block with an edge fade.
+- **Whether an unfilled Context row pre-shows.** Property rows follow one rule in both. Context rows
+  do not: the pane shows every Context until explicitly set aside, so a Page states what it could be
+  filed under before it is; the inspector shows one only once it holds a value.
+- **Chip hover-×.** The pane passes `remove` to `Cell`, so multi-select and Context chips are
+  individually removable. The inspector does not.
+- **The add-picker's Context remainder.** On a fresh page the pane offers zero Contexts (only ones set
+  aside this session); the inspector offers all of them.
+- **The add-picker's click gesture.** The inspector reveals the row *and* opens its value picker; the
+  pane only un-sets-aside it, leaving the user to click.
+- **The Add button's visibility.** On a page whose Collection has no schema and where nothing was set
+  aside, the pane's button never appears at all; the inspector's always does.
+- **Value chrome.** The inspector gives values a hover fill, a pointer cursor and a 65% width cap, and
+  fixes its label column at 40%; the pane sizes both to content and has no value hover.
 
-The shape is a shared row component plus a `usePropertyRows` hook taking the page and one flag for
-the Context pre-show rule; each host keeps its own frame and its own page source. Roughly 150 lines
-leave — less than a full merge would take, and it costs no behavior change.
+Five of those are visible product decisions, so one shared component would force a choice per
+difference. Only the non-visual engine moves — four memos, both commit paths, `editRow`,
+`revealAndEdit`, `editingDef`, and (once the `Clear` bug below is fixed) `rowMenu`, several of them
+byte-identical across the two files. Rendering, visibility and chrome stay per-pane, and the Context
+rule is parameterised with a comment naming it a standing design decision. Roughly 100 lines leave.
 
-**Verification:** both surfaces side by side — every property type, an edit committed in each, a
-rename reconciled, and an unfilled Context row present in the pane and absent in the inspector.
+**Two live bugs sit inside this domain**, each fixed on its own rather than folded into the
+extraction. `Clear` in `PagePropertiesPane` returns early without re-revealing the row, so the row
+vanishes and Clear becomes indistinguishable from Remove — contradicting the comment three lines
+above it and the contract in `shared/propertyMenu.ts`. And the pane resets its session state on any
+tree identity change, so committing a Space — which writes tree data — closes the Context picker that
+is meant to stay open for multi-toggle.
+
+**Verification:** both surfaces side by side, with each of the eight differences checked
+individually.
+
+#### II. One Option-Reorder Hook
+
+`Components/Detail/useOptionReorder.ts` (172 lines) and `useStatusReorder.ts` (208) share 102
+identical lines, including a 47-line `onRowPointerDown` near-verbatim down to its comments.
+`useOptionReorder` is the single-group case of `useStatusReorder`; the only real difference is that
+`locate` partitions on a group axis first. No visual surface at all, and the pure model functions
+underneath already cover the behavior — the highest line-count-per-risk item in the queue.
+
+**Verification:** reorder in both editors, including across groups in Status and to both ends in
+Select.
 
 #### II. One Reorderable Option List
 
@@ -116,21 +144,39 @@ conflict with that, and makes it smaller.
 
 **Verification:** typecheck and the store suite.
 
-#### II. Two Counting Bugs In The Subfield
+#### II. The Subfield Counts What The Editor Renders
 
-Both live in `Detail/Subfield/subfieldStats.ts` and both are one-line fixes.
+`Detail/Subfield/subfieldStats.ts` hand-rolls nine markdown regexes that all exist canonically
+elsewhere, and is wrong in five ways as a result. `MarkdownPM/detect/index.ts` says of one of them:
+*"The single list-marker parser. Every layer reads markers through this — never its own regex."*
+This file never inherited any of them.
 
-**The fence inflates the character count.** `stripFences` replaces each masked line with a single
-space, and `computeStats` strips only newlines before counting — so a hundred-line fenced block adds
-a hundred characters. The line count is taken from the raw body and is unaffected, which is why the
-three numbers disagree. Replacing the masked line with an empty string is the fix; the join's
-newline already supplies the word boundary the space was there for.
+Measured against the current code:
 
-**A page embed counts as prose.** The image rule matches `![alt](url)` only, so an `![[Page]]` embed
-loses its brackets to the wikilink rule and leaves its `!` behind as a word. Letting the wikilink
-rule see an optional leading `!` and blanking the whole match when it is present fixes it in place.
+| Input | Today | Correct |
+| --- | --- | --- |
+| a three-line fence | `chars=4` | `chars=0` |
+| `x \`code\` y` | `chars=5` | `chars=3` |
+| `a ![alt](u) b` | `chars=5` | `chars=3`, and the `!` counts |
+| `a\n---\nb` | `chars=3` | `chars=2` |
+| `![[Page]]` | `words=1` | `words=0` |
+| `- [ ] task` | `words=3` | `words=1` |
+| `→ item` | `words=2` | `words=1` |
+| `>> text` | `words=2` | `words=1` |
 
-**Verification:** a page holding a long fence and a page embed; all three numbers agree.
+Two causes. **The placeholders:** four substitution sites replace something with a single space
+meaning "nothing", and the character count strips only newlines — so every one inflates it. The
+spaces are load-bearing for the word count, so the two measurements have to run against differently
+substituted strings. **The regexes:** the private copies miss the `(?<!!)` guard that
+`pageLinkPattern` carries, miss checkbox and arrow list markers, miss nested quote runs, and let
+inline code span newlines — a stray backtick pair forty lines apart silently deletes the prose
+between them.
+
+One further divergence runs the other way: there is no image token anywhere in the editor, so an
+inline `![alt](url)` shows its `!` as literal prose while the counter strips the whole thing.
+
+**Verification:** a page holding a fence, a page embed, a task item, an arrow list and a nested
+quote; all three numbers agree with each other and with what is on screen.
 
 #### II. One View Host Under Table And Cards
 
@@ -173,6 +219,40 @@ render against their actual inputs is a contained change with a measurable resul
 `pinnedTabs` and `previewTarget` are held in the store beside the inputs they are pure functions of
 (`derivePinnedTabs`, `deriveTarget`), which gives each a second writer to keep in step. Both become
 selectors. Contained, but it touches tab restore and preview open, so it wants the app.
+
+### II. The Exhaustiveness Sweep
+
+A read-only sweep found twenty-two dispatch sites where a shared action union survives to the
+consumer but nothing enforces that the consumer handles it. None is a live defect: every one covers
+its union today. They are recorded rather than opened, because retrofitting working handlers is
+churn, and because the codebase's dominant style is deliberately to rely on a non-nullable return
+type instead of a `default` arm.
+
+The rule that separates them: TypeScript enforces exhaustiveness on a `switch` only when the
+enclosing function returns a real, non-nullable value. Menu dispatch almost always sits in a `void`
+promise callback, which is why the shape is so widespread.
+
+Take these first if the sweep is ever opened:
+
+- **`Detail/Views/ViewPane.tsx:129` and `Blocks/ViewEmbedBlock.tsx:437`** — two chains over one
+  union, each carrying an explicit `default: return` that silences the compiler *and* the bug. The
+  suppression is the finding.
+- **`MarkdownPM/editor/gripMenu.ts:107` and `:170`** — two switches over one union, each
+  intentionally partial, neither saying so.
+- **`Components/Detail/PropertiesPane.tsx:365` and `:374`, `PagePropertiesPane.tsx:167`,
+  `PagePreview/PreviewInspector.tsx:199`** — four un-linked partial chains over `PropertyMenuAction`,
+  each handling two of its five members.
+- **`Detail/Views/Cards/CardValue.tsx:115`** — handles only the `cell:*` half of `CellMenuAction`. A
+  title column reaching it would pop the full nine-row page-meta menu with none of it handled; the
+  only thing preventing that is a `kind !== 'title'` filter in `cardValueInput.ts:37`.
+- **`Detail/Views/Table/TableView.tsx:975`** — the cell-menu chain omits `cell:hide`, dead only
+  because `hideable` is passed `false` at `:961`.
+
+Two things this sweep must not produce. There is no `assertNever` helper and one should not be
+added: the house idiom is an inline `const _exhaustive: never = x` in a braced `default:`, and it
+exists at exactly two sites, both main-process. And where a partial dispatch is deliberate — the
+connection menu's `format:*` members, which its page branch cannot produce — the answer is a narrowed
+type, not a `never` arm.
 
 ### II. Blocked On A Decision
 
