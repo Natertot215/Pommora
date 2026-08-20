@@ -156,7 +156,9 @@
 .ppane-side-right-overlay {
   right: var(--ppane-side-inset);
   width: var(--ppane-side-r-w);
-  transform: translateX(calc((1 - var(--io)) * (100% + var(--ppane-side-inset) + 14px)));
+  transform: translateX(
+    calc((1 - var(--io)) * (100% + var(--ppane-side-inset) + var(--park-clearance)))
+  );
 }
 .ppane.is-side-right-open .ppane-side-right-overlay {
   pointer-events: auto;
@@ -164,7 +166,9 @@
 .ppane-side-left-overlay {
   left: var(--ppane-side-inset);
   width: var(--ppane-side-l-w);
-  transform: translateX(calc((1 - var(--io-l)) * -1 * (100% + var(--ppane-side-inset) + 14px)));
+  transform: translateX(
+    calc((1 - var(--io-l)) * -1 * (100% + var(--ppane-side-inset) + var(--park-clearance)))
+  );
 }
 .ppane.is-side-left-open .ppane-side-left-overlay {
   pointer-events: auto;

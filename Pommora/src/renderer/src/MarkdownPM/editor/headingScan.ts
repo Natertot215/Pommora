@@ -2,7 +2,7 @@
 // the same walk. Kept apart from the fold state machine because both the folds and the block
 // resolver read it, and neither of those should have to import the other to ask what a heading is.
 import { fencedLineMask } from '@shared/markdownCode'
-import { headingParts, isHeadingLine, lineOffsets, splitWithOffsets } from '../detect'
+import { headingParts, isHeadingLine, splitWithOffsets } from '../detect'
 
 export interface HeadingSection {
   from: number
@@ -77,20 +77,14 @@ export function sectionEnd(headings: readonly { level: number }[], start: number
 /** Every heading's foldable section. A section reaching no body lines is dropped (nothing to fold),
  *  but still consumes its ordinal so duplicate-text keys stay stable. */
 export function headingSections(doc: string): HeadingSection[] {
-  const lines = doc.split('\n')
-  const starts = lineOffsets(lines)
+  const { lines, lineStarts: starts } = splitWithOffsets(doc)
   const heads = scanHeadings(lines)
 
   const out: HeadingSection[] = []
   for (let h = 0; h < heads.length; h++) {
     const { idx, level, key } = heads[h]
-    let endLine = lines.length - 1
-    for (let n = h + 1; n < heads.length; n++) {
-      if (heads[n].level <= level) {
-        endLine = heads[n].idx - 1
-        break
-      }
-    }
+    const next = sectionEnd(heads, h)
+    const endLine = next < heads.length ? heads[next].idx - 1 : lines.length - 1
     const from = starts[idx]
     const lineEnd = from + lines[idx].length
     const to = starts[endLine] + lines[endLine].length

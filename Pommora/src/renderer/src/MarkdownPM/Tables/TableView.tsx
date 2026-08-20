@@ -108,7 +108,6 @@ export function TableView({
   // editor carries its own.
   const intent = useMemo(hoverIntent, [])
   useEffect(() => intent.cancel, [intent])
-  const armHover = (bloom: () => void): void => intent.arm(bloom)
   /** Whatever the hover was about to show, or is showing, goes away — the pair every gesture that
    *  replaces the pointer's meaning owes it. */
   const dismissHoverCard = (): void => {
@@ -374,7 +373,7 @@ export function TableView({
           initialSelect.current = range
           setActive({ row, col })
         }}
-        onHoverArm={armHover}
+        onHoverArm={intent.arm}
         onHoverEnd={dismissHoverCard}
       />
     )

@@ -149,13 +149,15 @@ function StaticCellImpl({
   // about. Following waits for the click so a drag that starts on a link selects instead.
   const linkAt = (e: React.MouseEvent): ReturnType<typeof cellLinkTarget> =>
     cellLinkTarget(text, e.target, connections?.())
-  const claimLink = (e: React.MouseEvent): boolean => {
+  /** The link under the press, claimed — the press is the cell's to spend rather than the swap's.
+   *  Returns what following it does, so the click can spend the same claim it made. */
+  const claimLink = (e: React.MouseEvent): (() => void) | null => {
     const found = linkAt(e)
     const go = found && followTarget(found.target, found.url, connections?.(), e.metaKey)
-    if (!go) return false
+    if (!go) return null
     e.preventDefault()
     e.stopPropagation()
-    return true
+    return go
   }
 
   const openMenu = (e: React.MouseEvent): void => {
@@ -206,12 +208,7 @@ function StaticCellImpl({
       onClick={(e) => {
         if (e.button !== 0 || e.detail !== 1) return
         onHoverEnd()
-        const found = linkAt(e)
-        const go = found && followTarget(found.target, found.url, connections?.(), e.metaKey)
-        if (!go) return
-        e.preventDefault()
-        e.stopPropagation()
-        go()
+        claimLink(e)?.()
       }}
       onMouseDown={(e) => {
         // A right press on a link belongs to that link's menu, and claiming it here is what stops the

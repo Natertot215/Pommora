@@ -13,7 +13,7 @@ import {
 import type { TableRegion } from '../Tables/regions'
 import { normalizeTitle, type LinkStatus } from '@shared/connections'
 
-export interface DocLineScan {
+interface DocLineScan {
   maths: [number, number][]
   embeds: EmbedLine[]
   webpages: WebpageLine[]

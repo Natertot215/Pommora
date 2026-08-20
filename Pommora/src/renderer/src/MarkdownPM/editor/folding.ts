@@ -371,8 +371,7 @@ export function markdownFolding(onFoldsChange: (keys: string[]) => void): Extens
   const headingDrag = createBlockDragGesture({
     gate: 'md-foldable',
     onClick: (view, line) => {
-      const r = regionsOf(view.state.doc).find((x) => x.anchor === view.posAtDOM(line))
-      if (r) toggleFold(view, r)
+      toggleFoldAt(view, view.posAtDOM(line))
     },
     onDragStart: (view, block) => {
       if (view.state.field(foldField).some((en) => en.anchor === block.from))

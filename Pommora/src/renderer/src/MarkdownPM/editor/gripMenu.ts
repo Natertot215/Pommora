@@ -91,13 +91,20 @@ function contextFor(view: EditorView, doc: string, block: Block): GripMenuContex
 /** Rename / Size / Delete for the heading whose chevron was pressed. Delete drops the heading LINE
  *  only (its body survives), unlike a grip's whole-block Delete. */
 function popHeadingMenu(view: EditorView, headingEl: HTMLElement): void {
-  const doc = docString(view.state.doc)
-  const line = view.state.doc.lineAt(view.posAtDOM(headingEl))
-  const parts = headingParts(line.text)
-  if (!parts) return
-  const contentStart = line.from + parts.indent.length + parts.hashes.length + parts.space.length
-  void window.nexus?.gripMenu?.({ kind: 'heading', level: parts.hashes.length }).then((action) => {
-    switch (action?.action) {
+  const opened = view.state.doc.lineAt(view.posAtDOM(headingEl))
+  const level = headingParts(opened.text)?.hashes.length
+  if (level === undefined) return
+  void window.nexus?.gripMenu?.({ kind: 'heading', level }).then((action) => {
+    if (!action) return
+    // Re-found where the chevron was and matched against what the menu was built from, the same
+    // discipline the grip menu below keeps: a native menu is open for as long as the user likes, and
+    // an undo or an outside write can move the document under it.
+    const doc = docString(view.state.doc)
+    const line = view.state.doc.lineAt(view.posAtDOM(headingEl))
+    const parts = headingParts(line.text)
+    if (!parts || line.text !== opened.text) return
+    const contentStart = line.from + parts.indent.length + parts.hashes.length + parts.space.length
+    switch (action.action) {
       case 'rename':
         // Select the heading's text so a keystroke replaces it — the editor's own inline rename.
         focusRange(view, contentStart, line.to)
