@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, rm, mkdir, writeFile, readFile } from 'node:fs/promises'
+import { mkdtemp, rm, mkdir, symlink, writeFile, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { renameContextOp, renameSpaceOp, replayPendingRename } from './contextCascade'
@@ -164,10 +164,10 @@ describe('renameSpaceOp', () => {
 
 describe('skip-aware journal (D-7b)', () => {
   it('an unreadable file is skipped, the registry still commits, the journal survives; the next replay heals it', async () => {
-    // A DIRECTORY wearing the `.md` suffix: the sweep enumerates it by name, then fails to read
-    // it as a file — the skip path, without needing a permission trick.
+    // A dangling symlink wearing the `.md` suffix: the sweep enumerates it by name, then fails to
+    // read it — the skip path, without needing a permission trick.
     const broken = join(root, 'Notes', 'Broken.md')
-    await mkdir(broken)
+    await symlink(join(root, 'Notes', 'Nowhere.md'), broken)
     const r = await renameContextOp(root, 'ctx_projects', 'Ventures')
     expect(r.ok).toBe(true)
     expect(await regTitle('ctx_projects')).toBe('Ventures')
@@ -175,7 +175,7 @@ describe('skip-aware journal (D-7b)', () => {
     expect(j?.skipped).toEqual([broken])
 
     // Replace it with a real file still carrying the OLD key — replay retries and completes.
-    await rm(broken, { recursive: true })
+    await rm(broken)
     await writeFile(broken, '---\nid: pb\n(Projects):\n  - Pommora\n---\nbody')
     await replayPendingRename(root)
     expect((await fmOf(broken))['(Ventures)']).toEqual(['Pommora'])

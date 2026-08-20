@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { shouldSkipDir } from './exclusion'
+import { excludedMatcher, shouldSkipDir } from './exclusion'
 
 describe('shouldSkipDir', () => {
   it('skips convention dirs', () => {
@@ -18,5 +18,14 @@ describe('shouldSkipDir', () => {
     expect(shouldSkipDir('Sub', 'Vault A/Sub', ['Vault A'])).toBe(true)
     expect(shouldSkipDir('Other', 'Other', ['Vault A'])).toBe(false)
     expect(shouldSkipDir('Vault A', 'Vault A', ['Vault A/Sub'])).toBe(false) // prefix is deeper, not a match
+  })
+})
+
+describe('excludedMatcher', () => {
+  it('compiles a list once — the per-entry and per-event callers reuse it', () => {
+    const list = ['Archive']
+    expect(excludedMatcher(list)).toBe(excludedMatcher(list))
+    // A settings edit hands over a new list, which compiles fresh.
+    expect(excludedMatcher(['Archive'])).not.toBe(excludedMatcher(list))
   })
 })

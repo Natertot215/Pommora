@@ -75,20 +75,20 @@ export async function corpusFilesUnder(
   excluded: string[],
 ): Promise<string[]> {
   const isExcluded = excludedMatcher(excluded)
-  const base = relative(root, absDir).split(/[/\\]/).filter(Boolean)
-  let rels: string[]
-  try {
-    rels = await readdir(absDir, { recursive: true })
-  } catch {
-    return []
-  }
   const out: string[] = []
-  for (const rel of rels) {
-    if (!isMarkdownFile(rel)) continue
-    const segs = [...base, ...rel.split(/[/\\]/)]
-    if (NON_CORPUS_TOP.has(segs[0]) || isExcluded(segs)) continue
-    out.push(segs.join('/'))
+  // Descended by hand so an out-of-corpus subtree is never entered. Node's recursive readdir has
+  // no filter hook, so it would enumerate all of `.trash` — which is emptied only on request, and
+  // otherwise only grows — on the way to discarding it. The prefix match makes pruning a
+  // directory identical to filtering its files: an excluded folder excludes everything below it.
+  const walk = async (dir: string, segs: string[]): Promise<void> => {
+    for (const entry of await listEntries(dir)) {
+      const next = [...segs, entry.name]
+      if (NON_CORPUS_TOP.has(next[0]) || isExcluded(next)) continue
+      if (entry.isDirectory()) await walk(join(dir, entry.name), next)
+      else if (isMarkdownFile(entry.name)) out.push(next.join('/'))
+    }
   }
+  await walk(absDir, relative(root, absDir).split(/[/\\]/).filter(Boolean))
   return out
 }
 
