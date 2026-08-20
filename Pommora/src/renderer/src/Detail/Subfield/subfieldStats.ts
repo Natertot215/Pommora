@@ -1,28 +1,41 @@
 import { markdownLinkRegex } from '@shared/links'
-import { fencedLineMask } from '@shared/markdownCode'
 import { loneWebpageEmbed } from '@shared/webpageEmbed'
 import {
   blockquotePrefixRe,
   calloutHeadPrefixLen,
+  citationScan,
+  fenceRangesOf,
   headingParts,
   isBlockquoteLine,
   inlineCodeRegex,
   isThematicBreakLine,
   loneEmbedTitle,
+  markerRegex,
   parseListMarker,
+  scanFencedCode,
+  splitWithOffsets,
 } from '@renderer/MarkdownPM/detect'
 
-/** Page document stats for the Subfield. `lines` counts raw source lines; `words`/`characters`
- *  count the prose the editor actually draws (so `## **Bold**` is one word, "Bold").
+/** Page document stats for the Subfield. `lines` counts source lines the document actually holds;
+ *  `words`/`characters` count the prose the editor actually draws (so `## **Bold**` is one word,
+ *  "Bold").
  *
- *  One construct is still counted as its source: a Markdown table, whose pipes and delimiter row
- *  the editor replaces with a widget. Reading a table's regions needs a parse per candidate, and
- *  this runs on every edit — so it waits for the day the Subfield can read the editor's own cached
- *  document scan rather than paying for its own. */
+ *  The footnotes section is outside all three counts, through the one mask its scan returns — the
+ *  same array the line count subtracts and the prose pass blanks, so the three numbers keep
+ *  describing one document. A body marker is where the two prose pipelines legitimately diverge:
+ *  the character pass sees its source, the word pass has it removed, so `sentence[^1].` reads as
+ *  the one word the reader sees while the file's own characters are still reported.
+ *
+ *  Some constructs are still counted as their source: a Markdown table, whose pipes and delimiter
+ *  row the editor replaces with a widget, and indented code and math alongside it. Reading a
+ *  table's regions needs a parse per candidate, and this runs on every edit — so it waits for the
+ *  day the Subfield can read the editor's own cached document scan rather than paying for its own. */
 export interface PageStats {
   lines: number
   words: number
   characters: number
+  /** Citations in the trailing section — what decides whether the Subfield offers its control. */
+  citations: number
 }
 
 /** Everything the editor draws as chrome or as a widget is replaced by a NEWLINE rather than a
@@ -66,18 +79,29 @@ function stripInline(text: string): string {
 }
 
 export function computeStats(body: string): PageStats {
-  if (!body) return { lines: 0, words: 0, characters: 0 }
-  // Raw source lines: a single trailing newline is the terminator, not a phantom empty line.
+  if (!body) return { lines: 0, words: 0, characters: 0, citations: 0 }
+  // A single trailing newline is the terminator, not a phantom empty line.
   const trimmed = body.endsWith('\n') ? body.slice(0, -1) : body
-  const lines = trimmed.split('\n')
+  const d = splitWithOffsets(trimmed)
+  const { lines } = d
 
-  const fenced = fencedLineMask(lines)
+  const fences = scanFencedCode(lines, d.lineStarts)
+  const cited = citationScan(d, fenceRangesOf(fences))
   const prose = stripInline(
-    lines.map((line, i) => (fenced[i] ? GONE : stripLineChrome(line))).join('\n'),
+    lines.map((line, i) => (fences[i] || cited.mask[i] ? GONE : stripLineChrome(line))).join('\n'),
   )
 
   // Strictly-visible characters: the structural newlines and every mask go, the rest stays.
   const characters = prose.replace(/\n/g, '').length
-  const words = (prose.match(/\S+/g) ?? []).length
-  return { lines: lines.length, words, characters }
+  // The one line the character count never sees — and an empty string rather than GONE, so a marker
+  // glued to its word (`sentence[^1].`) stays one word instead of splitting into two.
+  const words = (prose.replace(markerRegex(), '').match(/\S+/g) ?? []).length
+  let sectionLines = 0
+  for (const v of cited.mask) sectionLines += v
+  return {
+    lines: lines.length - sectionLines,
+    words,
+    characters,
+    citations: cited.entries.length,
+  }
 }
