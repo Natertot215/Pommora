@@ -1,27 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { PropertyDefinition } from '@shared/properties'
-import type { PropertyValue } from '@shared/propertyValue'
-import { applyValueAtRoot, isBlankValue, propertyKey } from '@shared/propertyValue'
+import { isBlankValue, propertyKey } from '@shared/propertyValue'
 import type { PageFrontmatter } from '@shared/schemas'
-import type { NexusTree, ResolvedColumn, ViewRow } from '@shared/types'
-import { contextKey, type ContextsRegistry } from '@shared/contexts'
-import { resolveContextKeys } from '@shared/contextResolve'
+import type { ResolvedColumn } from '@shared/types'
 import { isValidLink } from '@shared/links'
-import { asRenderableIcon, Icon } from '@renderer/design-system/symbols'
+import { Icon } from '@renderer/design-system/symbols'
 import { PickerMenu, PickerOption } from '@renderer/design-system/components/PickerMenu'
 import { MenuPaneTopRow, MenuScrollFrame } from '../../design-system/components/menu'
 import { Cell } from '../../Detail/Views/Table/Cell'
-import { buildResolveContext, type ResolveContext } from '../../Detail/Views/Table/resolveContext'
 import { parseLink, urlValueFromEdit } from '@shared/linkValue'
 import { contextOptionsFor } from '../../Detail/Views/pipeline/contextOptions'
-import {
-  contextIdentityOf,
-  contextIdsOf,
-  spaceIdentityOf,
-} from '../../Detail/Views/pipeline/contextIdentity'
 import { resolveFieldValue } from '../../Detail/Views/pipeline/value'
 import { PropertyEditor } from '../../Detail/Views/PropertyEditing/PropertyEditor'
-import { sharedValueClickAction } from '../../Detail/Views/PropertyEditing/valueClick'
 import {
   PropertyPicker,
   syntheticContextDef,
@@ -29,21 +19,16 @@ import {
 import { DatetimeValuePicker } from '../../Detail/Views/PropertyEditing/DatetimeValuePicker'
 import { parseEditorValue } from '../../Detail/Views/Cards/cardValueInput'
 import { side } from '../../design-system/components/menu/menu.css'
-import { propertyTypeIconName } from './PropertyTypes'
+import {
+  propertyIcon,
+  usePropertyRows,
+  type Editing,
+} from '../../Detail/Views/PropertyEditing/usePropertyRows'
 import { useSession } from '../../store'
 import * as s from './pageProperties.css'
 
-/** Schema lives only on Collections, and a Page's owner is the Collection its path sits under. */
-const schemaForPage = (tree: NexusTree | null, path: string): PropertyDefinition[] =>
-  tree?.collections.find((col) => path.startsWith(`${col.path}/`))?.properties ?? []
-
-type Editing = { id: string; mode: 'picker' | 'editor' | 'date' } | null
-
 /** A row in either field block, its glyph already resolved — a Context carries no `def`. */
 type Field = { id: string; label: string; icon: string; def: PropertyDefinition | null }
-
-const propertyIcon = (def: PropertyDefinition): string =>
-  asRenderableIcon(def.icon) ?? propertyTypeIconName(def.type) ?? 'tag'
 
 /**
  * The Page's values, as the Settings dropdown's Properties leaf: Contexts in one field block,
@@ -53,27 +38,19 @@ const propertyIcon = (def: PropertyDefinition): string =>
 export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JSX.Element {
   const pageDetail = useSession((st) => st.pageDetail)
   const tree = useSession((st) => st.tree)
-  const mutate = useSession((st) => st.mutate)
+  const _mutate = useSession((st) => st.mutate)
   const [editing, setEditing] = useState<Editing>(null)
   const [addOpen, setAddOpen] = useState(false)
   const triggerRef = useRef<HTMLElement | null>(null)
   const addRef = useRef<HTMLButtonElement | null>(null)
 
-  const path = pageDetail?.path ?? ''
+  const _path = pageDetail?.path ?? ''
   const stored = pageDetail?.frontmatter
   // The optimistic overlay: a write patches here for the frame, and the reloaded page overwrites it
   // the moment main answers — so the surface is never the authority on what's on disk.
   const [fm, setFm] = useState<PageFrontmatter | null>(null)
   useEffect(() => setFm((stored ?? null) as PageFrontmatter | null), [stored])
 
-  const contextRows = useMemo(
-    () =>
-      contextIdsOf(tree).flatMap((id) => {
-        const identity = contextIdentityOf(tree, id)
-        return identity ? [{ id, label: identity.title, icon: identity.icon }] : []
-      }),
-    [tree],
-  )
   // A property with no key still shows once it's been added this session — session-only, because
   // an empty row holds nothing on disk and that is what keeps an untouched Page untouched.
   const [revealed, setRevealed] = useState<ReadonlySet<string>>(new Set())
@@ -92,78 +69,30 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
     setSetAside(new Set())
   }, [nexusId])
 
-  const schema = useMemo(() => schemaForPage(tree, path), [tree, path])
-  const ctx = useMemo<ResolveContext | null>(
-    () => (tree ? buildResolveContext(tree, schema) : null),
-    [tree, schema],
-  )
-  const ctxRegistry = useMemo<ContextsRegistry | null>(
-    () => (tree?.contexts ? { contexts: tree.contexts.map((g) => g.def) } : null),
-    [tree],
-  )
-  const contextValues = useMemo(() => {
-    if (!fm || !ctxRegistry || !tree?.contexts) return undefined
-    const spacesByContext = new Map(tree.contexts.map((g) => [g.def.id, g.spaces]))
-    const links = resolveContextKeys(fm as Record<string, unknown>, ctxRegistry, spacesByContext)
-    return links.size ? Object.fromEntries(links) : undefined
-  }, [fm, ctxRegistry, tree])
-  const row = useMemo<ViewRow | null>(
+  const page = useMemo(
     () =>
-      fm && pageDetail
-        ? {
-            id: pageDetail.id,
-            title: pageDetail.title,
-            icon: fm.icon,
-            path: pageDetail.path,
-            frontmatter: fm,
-            contextValues,
-          }
-        : null,
-    [fm, pageDetail, contextValues],
+      pageDetail ? { id: pageDetail.id, title: pageDetail.title, path: pageDetail.path } : null,
+    [pageDetail],
   )
-
-  const isContextRow = (id: string): boolean => contextRows.some((t) => t.id === id)
-
-  const commitValue = (propertyId: string, next: PropertyValue | null): void => {
-    const def = schema.find((d) => d.id === propertyId)
-    if (!def) return
-    setFm((prev) =>
-      prev ? (applyValueAtRoot(prev as Record<string, unknown>, def, next) as typeof prev) : prev,
-    )
-    void mutate({ op: 'setProperty', path, propertyId, value: next })
-  }
-  const commitContext = (contextId: string, ids: string[]): void => {
-    const title = contextIdentityOf(tree, contextId)?.title
-    if (title === undefined) return
-    const titles = ids
-      .map((sid) => spaceIdentityOf(tree, sid)?.title)
-      .filter((t): t is string => t !== undefined)
-    setFm((prev) => {
-      if (!prev) return prev
-      const next = { ...prev } as Record<string, unknown>
-      if (titles.length) next[contextKey(title)] = titles
-      else delete next[contextKey(title)]
-      return next as PageFrontmatter
+  const {
+    schema,
+    ctx,
+    row,
+    isContextRow,
+    commitValue,
+    commitContext,
+    editRow: editRowShared,
+    contextRows,
+  } = usePropertyRows(page, fm, setFm)
+  const reveal = (id: string): void => setRevealed((prev) => new Set([...prev, id]))
+  const editRow = (def: PropertyDefinition, el: HTMLElement): void =>
+    editRowShared(def, el, {
+      setTrigger: (t) => {
+        triggerRef.current = t
+      },
+      setEditing,
+      onReveal: reveal,
     })
-    void mutate({ op: 'setContext', path, contextId, spaceIds: ids })
-  }
-
-  const editRow = (def: PropertyDefinition, el: HTMLElement): void => {
-    triggerRef.current = el
-    const current = row ? resolveFieldValue(row, def.id, schema) : ({ kind: 'null' } as const)
-    const shared = sharedValueClickAction(def.type, undefined, current, def)
-    if (shared) {
-      if (shared.kind === 'commit') {
-        commitValue(def.id, shared.value)
-        // Un-checking clears the key, which would drop the row out from under the cursor — hold it
-        // shown so the box can be re-checked without a trip back through Add Property.
-        if (def.type === 'checkbox' && shared.value === null)
-          setRevealed((prev) => new Set([...prev, def.id]))
-      } else setEditing({ id: def.id, mode: shared.kind === 'datetime' ? 'date' : 'picker' })
-      return
-    }
-    if (def.type === 'number' || def.type === 'url') setEditing({ id: def.id, mode: 'editor' })
-  }
 
   // Clear empties the value and leaves the row to be refilled; Remove empties it and takes the row
   // away, back into Add Property. Whether a row counts as filled is the house predicate's call — an
@@ -219,6 +148,10 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
 
   // A property shows once it holds a key or was added this session; a Context shows unless it was
   // set aside, so a Page states what it could be filed under before it is.
+  //
+  // That Context rule is a standing design decision, not drift: the preview inspector deliberately
+  // shows a Context only once it holds a value. This surface is where a Page gets filed, so its
+  // slots stand open; the inspector reads a page you are looking past, so it stays quiet.
   const isShown = (def: PropertyDefinition): boolean =>
     revealed.has(def.id) || (fm as Record<string, unknown>)[propertyKey(def)] !== undefined
   const hiddenProps = schema.filter((d) => !isShown(d))
