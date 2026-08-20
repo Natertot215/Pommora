@@ -27,15 +27,24 @@ export function sameExclusions(a: string[], b: string[]): boolean {
   return a.length === b.length && a.every((v, i) => v === b[i])
 }
 
+const compiled = new WeakMap<readonly string[], (segs: string[]) => boolean>()
+
 /** Precompiled `excluded_folders` matcher: root-anchored, whole-segment prefix match over
- *  normalized segments. Curried so per-event callers (the watcher) compile the list once. */
+ *  normalized segments. Held against the list it was compiled from, so the callers that ask per
+ *  directory entry and per watch event pay the compile once — the session holds one such list,
+ *  and a settings edit produces a new one, which compiles fresh. */
 export function excludedMatcher(excluded: string[]): (segs: string[]) => boolean {
+  const held = compiled.get(excluded)
+  if (held) return held
   const prefixes = excluded
     .map((ex) => ex.split('/').filter(Boolean).map(normalizeSeg))
     .filter((p) => p.length > 0)
-  if (prefixes.length === 0) return () => false
-  return (segs) => {
-    const norm = segs.filter(Boolean).map(normalizeSeg)
-    return prefixes.some((p) => p.every((seg, i) => norm[i] === seg))
-  }
+  const match: (segs: string[]) => boolean = prefixes.length
+    ? (segs) => {
+        const norm = segs.filter(Boolean).map(normalizeSeg)
+        return prefixes.some((p) => p.every((seg, i) => norm[i] === seg))
+      }
+    : () => false
+  compiled.set(excluded, match)
+  return match
 }

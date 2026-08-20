@@ -1,8 +1,14 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { mkdtemp, rm, mkdir, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, relative } from 'node:path'
 import { corpusFiles, listMarkdownFiles } from './walk'
+
+vi.mock('node:fs/promises', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('node:fs/promises')>()
+  return { ...mod, readdir: vi.fn(mod.readdir) }
+})
+const readSpy = vi.mocked((await import('node:fs/promises')).readdir)
 
 let root: string
 beforeEach(async () => {
@@ -15,6 +21,7 @@ beforeEach(async () => {
   await writeFile(join(root, 'e.txt'), 'x', 'utf8')
   await writeFile(join(root, '.nexus', 'c.md'), 'x', 'utf8')
   await writeFile(join(root, '.trash', 'd.md'), 'x', 'utf8')
+  readSpy.mockClear()
 })
 afterEach(async () => {
   await rm(root, { recursive: true, force: true })
@@ -67,5 +74,16 @@ describe('corpusFiles', () => {
 
   it('returns [] for a missing root', async () => {
     expect(await corpusFiles(join(root, 'nope'), [])).toEqual([])
+  })
+
+  it('never reads inside `.trash`, `.nexus`, or an excluded folder', async () => {
+    await mkdir(join(root, '.trash', 'deep'), { recursive: true })
+    await mkdir(join(root, 'Hidden', 'deep'), { recursive: true })
+    await writeFile(join(root, '.trash', 'deep', 'gone.md'), 'x', 'utf8')
+    expect((await corpusFiles(root, ['Hidden'])).sort()).toEqual(['a.md', 'sub/b.md'])
+    const opened = readSpy.mock.calls.map((c) =>
+      relative(root, String(c[0])).split(/[/\\]/).join('/'),
+    )
+    expect(opened).toEqual(['', 'sub'])
   })
 })
