@@ -136,7 +136,7 @@ On a page authored outside Pommora holding body markers, a trailing citations ru
 - `rg -F "footnoteDefinition" Pommora/src` → expect 0. Legitimate hits: none — the parser's node name never enters our code.
 - Control: `rg -F "docScan" Pommora/src` → 43. Zero here means the sweep never ran.
 
-**Hazard Window:** Task 11 retires `collapsedByDefault` and Task 12 separates `md-foldable` into a chevron class and a heading-gesture class. Between them the fold system is mid-repair: **no task may add a fold kind, a fold-adjacent gesture, or a `md-foldable` consumer while the window is open**, and the running-thing pass for Phase 3 defers to Task 11's completion. Task 12 closes it.
+**Hazard Window:** Task 11 retires `collapsedByDefault` and Task 12 separates `md-foldable` into a chevron class and a heading-gesture class. Between them the fold system is mid-repair: **no task may add a fold kind, a fold-adjacent gesture, or a `md-foldable` consumer while the window is open**, and Phase 3's interaction pass waits for Task 12 rather than running mid-repair. Task 12 closes it.
 
 ---
 
@@ -240,7 +240,7 @@ Nothing draws in this phase. The boundary derivation lands first and is exercise
 - [ ] **Cohesion Criteria C1–C10 answered against this phase's diff**, each carrying its evidence rather than its assertion.
 - [ ] Net line delta reported — code only, comments and blanks and tests excluded.
 - [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
-- [ ] No user-visible surface shipped this phase; no running-thing pass owed.
+- [ ] Nothing draws this phase, so no interaction pass is owed — the counters are the only visible change and their tests are the proof.
 
 ---
 
@@ -259,7 +259,7 @@ Nothing draws in this phase. The boundary derivation lands first and is exercise
 - [ ] Add `.md-cite-num` to the existing shared numeric-glyph selector list.
 - [ ] Add the citation line rule: the hanging indent pair (`padding-left` plus negative `text-indent`) over its own numeric zone, `white-space: pre` on the line. **The wrap restore joins the list content span's existing selector rather than being copied** — the indent pair already has three copies in this file, and a fourth wrap rule would be the one C2 has to answer for.
 - [ ] Add the continuation-line rule reusing that same indent pair without a glyph zone.
-- [ ] Add the text treatment — label-secondary, 0.75em — and the dimmed variant reading the tertiary label. There is **no** shared inactive-state token and no reusable dim class: the design system holds an inactive *opacity* and a handful of one-off tertiary rules, and the marker comment the feature documentation describes has zero consumers in the source. This mints the first one deliberately; the documentation's claim is corrected in Task 22.
+- [ ] Add the text treatment — label-secondary, 0.75em — and the dimmed variant as `opacity: var(--state-inactive)` on the row. **The token exists and is exactly this case**: the States table's inactive step is the one still-here-but-not-active dim, worn as opacity over an element's standard chrome, and the editor already dims a whole line that way for a block in flight. Nothing is minted. (The design system's Pending entry names a different thing — an empty-state text *tone* between secondary and tertiary — which an orphaned citation does not need, because it dims as a whole row rather than recoloring its text.) The token carries a `KNOB` marker; leave it.
 - [ ] Run the gate — expect green; no selector matches anything yet.
 - [ ] Commit: `style(editor): citation rows join the shared numeric-glyph rule`
 
@@ -376,7 +376,14 @@ Nothing draws in this phase. The boundary derivation lands first and is exercise
 - [ ] **Cohesion Criteria C1–C10 answered against this phase's diff**, each carrying its evidence rather than its assertion.
 - [ ] Net line delta reported — code only, comments and blanks and tests excluded.
 - [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
-- [ ] The drawn section and markers seen in the running app — a page authored with out-of-order labels, an orphan, and a duplicate — and shown.
+- [ ] **Interaction pass handed to Nathan.** Set up one page whose disk labels are out of first-use order, holding an orphaned citation and a duplicate-labelled one, plus a table cell containing a marker. Then:
+  1. The body's markers read 1, 2, 3 in the order they appear, whatever the labels say.
+  2. The section's rows read 1, 2, 3 top to bottom and match the markers.
+  3. The orphan and the duplicate-loser are dimmed and carry no number, and both still have something to click.
+  4. A citation long enough to wrap continues under its own text, never under its number.
+  5. Narrow the window until a citation holding one unbroken long word has to wrap — it stays inside its text column.
+  6. The marker in the table cell reads the same number at rest and after clicking into the cell.
+  7. No citation row shows a drag grip, and dragging a body block over the section offers no drop.
 - [ ] Progress hashes filled in.
 
 ---
@@ -570,7 +577,15 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 - [ ] **Cohesion Criteria C1–C10 answered against this phase's diff**, each carrying its evidence rather than its assertion.
 - [ ] Net line delta reported — code only, comments and blanks and tests excluded.
 - [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
-- [ ] Seen running: hidden on open, shown from the Subfield, hidden from the divider, the label flipping, the section surviving a collapsed heading above it, and the whole thing inside a floating Page Preview. Shown.
+- [ ] **Interaction pass handed to Nathan.** On a page with footnotes and at least one heading above them:
+  1. Open it — the section is hidden and the body shows only numbered markers.
+  2. The Subfield reads **Show Footnotes**. Click it — the section opens and the label becomes **Hide Footnotes**.
+  3. Click the divider — the section hides and the label flips back.
+  4. Collapse a heading above the section, then reload the page — **the heading is still collapsed.** This is the regression the seeding annotation prevents; if that fold is gone, stop here.
+  5. Collapse the outermost heading on a page with nested headings — the footnotes section does not disappear with it.
+  6. Open the same page in a floating Page Preview — the control is there and works.
+  7. Change Default Visibility in Settings — a page never toggled follows it; a page you have toggled keeps its own answer until you toggle it back to the default.
+  8. With the section hidden, keep typing at the end of the body — Enter and Backspace on the last line do not pop it open.
 
 ---
 
@@ -677,7 +692,16 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 - [ ] **Cohesion Criteria C1–C10 answered against this phase's diff**, each carrying its evidence rather than its assertion.
 - [ ] Net line delta reported — code only, comments and blanks and tests excluded.
 - [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
-- [ ] Seen running: click-jump into a hidden section, click-through on a lone link, both menus, and a wide sweep leaving citations alone. Shown.
+- [ ] **Interaction pass handed to Nathan.**
+  1. Click a marker with the section open — the caret lands in its citation.
+  2. Click a marker with the section hidden — it opens, the caret lands, and the Subfield label agrees it is open.
+  3. Click a marker whose citation is exactly one link, or exactly one Connection — it navigates instead of jumping.
+  4. Add a trailing period to that citation and click again — it jumps now rather than navigating.
+  5. Right-click a marker — Edit, Copy, Delete. Right-click a citation — Copy, Delete.
+  6. Copy a marker, paste it elsewhere on the page — it binds to the same citation and both markers share one number.
+  7. Select across body text *and* part of the section, then delete — only what you swept goes; no citation disappears on its own.
+  8. Put the caret at a citation's text start, press Left once, and type — the citation must not break. Then Backspace at that spot — the whole footnote goes, marker included.
+  9. Drag a body block to the very bottom of the page — nothing ends up stranded below the section.
 
 ---
 
@@ -759,7 +783,15 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 - [ ] **Cohesion Criteria C1–C10 answered against this phase's diff**, each carrying its evidence rather than its assertion.
 - [ ] Net line delta reported — code only, comments and blanks and tests excluded.
 - [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
-- [ ] Seen running: all three creation paths, with the setting on and off, and the renumbering that follows each. Shown.
+- [ ] **Interaction pass handed to Nathan.**
+  1. Insert ▸ Footnote with Jump To Citation on — the section opens and the caret lands in the new citation.
+  2. Turn the setting off and insert again — the pair is written silently and the caret stays put.
+  3. ⌘Z after each — the whole pair reverts in one step, never half of it.
+  4. Copy two paragraphs, right-click, Paste As ▸ Footnote — the row is offered, and one citation lands rather than a split section.
+  5. Type `[^1]` by hand in the body — its citation seeds itself and the numbering re-sorts.
+  6. Type a label that already has a citation — it adopts that one; no duplicate appears.
+  7. Type an escaped `\[^1]` — nothing seeds; it stays as written.
+  8. Insert a footnote *above* existing ones — every number after it re-sorts, body and section together.
 
 ---
 
@@ -791,7 +823,7 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 - [ ] The Delivery Claim written.
 - [ ] Neutral verifier dispatched against the claim, the decision log, and the full range — answered yes.
 - [ ] Attack pass dispatched only after that yes.
-- [ ] The full acceptance criterion observed end to end on a real page, and shown.
+- [ ] **Final interaction pass handed to Nathan** — the acceptance criterion end to end on a page authored outside Pommora, every earlier gate's pass re-run once against the finished build, and the file opened in another editor afterwards to confirm it is unchanged plain GFM apart from what was added.
 - [ ] Dead Vocabulary sweep returns zero against a non-zero control.
 - [ ] Lessons routed; Log's Closeout written.
 
