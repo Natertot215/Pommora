@@ -6,6 +6,7 @@
 // The span is resolved before the ask and the pick applied on the promise; the hot flag is cleared by
 // hand after a delete, since no mousemove fires under a modal native menu.
 import { EditorView } from '@codemirror/view'
+import { pageEmbedText } from '@shared/connections'
 import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
 import type { GripMenuContext, PickNode } from '@shared/gripMenu'
 import { useSession } from '../../store'
@@ -173,7 +174,7 @@ export const gripMenu = EditorView.domEventHandlers({
           // re-aims exactly like a live tile; acting through the claimed set would dead-end the menu
           // precisely when a stale embed needs re-aiming.
           view.dispatch({
-            changes: { from: block.from, to: block.to, insert: `![[${action.title}]]` },
+            changes: { from: block.from, to: block.to, insert: pageEmbedText(action.title) },
             userEvent: 'input',
           })
           break

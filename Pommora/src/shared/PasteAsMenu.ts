@@ -5,15 +5,23 @@
 // shape that has anything to offer says what it is: an address is an address, and a page arrives as
 // the `[[Title]]` its own Copy Link puts there.
 
-import { pageLinkPattern } from './connections'
-import { MD_LINK, encodeLinkTarget, isValidLink, targetTitle } from './links'
+import { embeddableTitle, pageEmbedText, pageLinkPattern } from './connections'
+import { MD_LINK, encodeLinkTarget, hasWebScheme, isValidLink, targetTitle } from './links'
 import { serializeLink } from './linkValue'
 import { pageLinkText } from './pageMenu'
 import { linkPaste, type LinkPaste } from './PasteLink'
 import { LINK_DISPLAY_LABELS, LINK_DISPLAYS, type LinkDisplay } from './properties'
+import { composeWebpageEmbedLine } from './webpageEmbed'
 
-/** The three link forms, plus the address bare and the two syntaxes that reach a page. */
-export type PasteAsForm = LinkDisplay | 'plain' | 'connection' | 'markdown'
+/** The three link forms, plus the address bare, the two syntaxes that reach a page, and the two
+ *  lone-line embeds — the only forms whose placement is a question. */
+export type PasteAsForm =
+  | LinkDisplay
+  | 'plain'
+  | 'connection'
+  | 'markdown'
+  | 'embedPage'
+  | 'embedLink'
 
 /** What a chosen form's action id is spelled with, so main names it and the renderer reads it back
  *  from the one place. */
@@ -63,17 +71,38 @@ const URL_ROWS: readonly PasteAsRow[] = [
   { label: 'Plain Text', form: 'plain' },
 ]
 
+const PAGE_EMBED_ROW: PasteAsRow = { label: 'Embedded Page', form: 'embedPage' }
+const URL_EMBED_ROW: PasteAsRow = { label: 'Embedded Link', form: 'embedLink' }
+
+/** Whether the clipboard can be spelled as an embed at all, placement aside: `![[…]]` has no way to
+ *  carry a `]`, and a tile forms only over an explicit http(s) address. */
+function embeddableTarget(target: NonNullable<PasteAsTarget>): boolean {
+  return target.kind === 'page' ? embeddableTitle(target.title) : hasWebScheme(target.url)
+}
+
 /** The forms this clipboard can take, in the order they are offered. Empty means no submenu at all,
- *  rather than one shown with nothing in it. */
-export function pasteAsRows(clipboard: string): readonly PasteAsRow[] {
+ *  rather than one shown with nothing in it. Both embeds are line constructs, so they are offered
+ *  only where one may be written — `embedSeat`, the caret already on a blank line the token can have
+ *  to itself. Off a seat the lists read exactly as they did before there were embed forms. */
+export function pasteAsRows(clipboard: string, embedSeat: boolean): readonly PasteAsRow[] {
   const target = pasteAsTarget(clipboard)
   if (!target) return []
-  return target.kind === 'page' ? PAGE_ROWS : URL_ROWS
+  const embed = embedSeat && embeddableTarget(target)
+  if (target.kind === 'page') return embed ? [...PAGE_ROWS, PAGE_EMBED_ROW] : PAGE_ROWS
+  return embed ? [...URL_ROWS, URL_EMBED_ROW] : URL_ROWS
 }
 
 /** Text to insert as-is, where no title can be pending. */
 export interface TextPaste {
   kind: 'text'
+  text: string
+}
+
+/** A construct that takes the caret's whole line — the writer replaces the line rather than the
+ *  selection, so a caret sitting after stray whitespace can't leave the token indented, which the
+ *  two embed grammars read as prose. */
+export interface LinePaste {
+  kind: 'line'
   text: string
 }
 
@@ -84,10 +113,12 @@ export function pasteAsWrite(
   target: PasteAsTarget,
   form: PasteAsForm,
   title?: string,
-): LinkPaste | TextPaste | null {
+): LinkPaste | TextPaste | LinePaste | null {
   if (!target) return null
+  if ((form === 'embedPage' || form === 'embedLink') && !embeddableTarget(target)) return null
   if (target.kind === 'page') {
     if (form === 'connection') return { kind: 'text', text: pageLinkText(target.title) }
+    if (form === 'embedPage') return { kind: 'line', text: pageEmbedText(target.title) }
     // Through the serializer, so a title carrying `]` is escaped by the one writer that knows how —
     // spelled inline, `Notes [WIP]` would compose a link that tokenizes as nothing at all.
     if (form === 'markdown')
@@ -98,6 +129,9 @@ export function pasteAsWrite(
     return null
   }
   if (form === 'plain') return { kind: 'text', text: target.url }
-  if (form === 'connection' || form === 'markdown') return null
+  // The tile's own label is left empty: a pasted address has no words of its own, and an empty label
+  // is what defers the display to the nexus's link format at render.
+  if (form === 'embedLink') return { kind: 'line', text: composeWebpageEmbedLine('', target.url) }
+  if (form === 'connection' || form === 'markdown' || form === 'embedPage') return null
   return linkPaste(target.url, form, title)
 }

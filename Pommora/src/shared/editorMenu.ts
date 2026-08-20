@@ -19,6 +19,10 @@ export interface FormatState {
   heading: number // 0 = paragraph, 1–6
   list: ListKind | null
   block: 'quote' | null
+  /** The caret sits on a blank line a lone-line embed may be written on — the placement clause the
+   *  Paste As embed forms are offered under. Main builds that menu and cannot see the caret, so the
+   *  renderer answers it here alongside the rest. */
+  embedSeat: boolean
 }
 
 /** Menu-action strings (sent main→renderer), namespaced so other `menu:action` listeners ignore them. */
