@@ -32,6 +32,7 @@ Per-nexus, in `.nexus/settings.json` under an app-specific **`subfield`** key ho
 
 ### Pending
 
+- **The counter reads the editor's cached document scan** — it derives its own today, which is why a table's pipes still count as prose and why the scan is paid for again on every edit. Settle this before any other Subfield work: every item below sits on the surface this one corrects.
 - **Reorder** the items via PommoraDND (horizontal) — the persisted `order` is wired; the drag UI is the next piece.
 - **User-defined items**, possibly scoped — the registry plus per-view `order` is the extensibility seam.
 - **Per-view configuration UI** — choosing which items each view kind shows.
