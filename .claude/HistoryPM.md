@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 08-20-2026 → 08-21      | PM-111 | Footnotes                                            |
 | 08-20-2026              | PM-110 | A Link Property Reaches A Page                       |
 | 08-18-2026              | PM-109 | The Color Ramp                                       |
 | 08-18-2026 → 08-19      | PM-108 | Webpage Integration                                  |
@@ -114,6 +115,26 @@
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
 
+
+#### PM-111 || Footnotes
+**DATE:** 08-20-2026 → 08-21
+
+MarkdownPM gained GFM reference footnotes: `[^label]` markers in a page's body and a trailing run of `[^label]: text` citations at the document's end, drawn as positional numbers over a section that hides by default, with the bytes on disk left as plain GFM.
+
+**The boundary:** `citationScan(d, excluded)` in `MarkdownPM/detect/index.ts` derives where the section begins and every layer reads that one answer through the editor's per-document-version cache — the decoration pass, the block resolver, the heading-fold scan, the transaction guard, the Subfield counter and the fold region. The section is the trailing run reaching the document's end, so a `[^1]: text` line above live content stays prose; markers bind by GFM's own case fold and are numbered in first-use order by the same walk. `computeStats` excludes every section line through that one mask, and a marker scores its own characters and no word. `docLineScan` carries the scan beside its three sibling line-construct readers, and `constructExclusions` became the one assembly of the fences, tables and math that all of them exclude.
+
+**The drawing:** citation rows emit as the `lineWidget` intent the codeblock line count already uses, so their glyph is a computed ordinal over a hidden, permanently atomic `[^label]:` prefix, sharing `.md-ol-marker`'s own CSS and its hanging indent. A body marker draws from the scan rather than the token pass, which can only show the label its own text holds; an orphan or a duplicate that lost draws a dimmed en dash where its number would be. Resting and entered table cells take the same number through a serialized numbering key the widget's equality compares, so a marker added elsewhere in the document redraws a cell the edit never came near.
+
+**Hiding and showing:** the section is a `'citations'` fold kind seeded from a per-page per-machine row in `nexus.db`, excluded from the persisted fold store, and following a nexus-wide default that a toggle landing on clears. `md-foldable` split into a chevron class and `md-heading-fold`, since it had been simultaneously the chevron, the heading-drag gate and the grip menu's hit-test; `collapsedByDefault` was retired rather than repaired, having been gated on the page's whole saved fold set. A **Show Footnotes** / **Hide Footnotes** control rides the reveal band above the Subfield with its own pointer zone, and the divider above the section blur-fades, ghosts back under the pointer, and reports its press.
+
+**Guards and gestures:** `verdictFilter` was lifted out of the callout guard, which became its first caller, and the citations guard relocates any change that would stop the section reading as a trailing run — carrying the range it moves text out of, so a replacement is moved whole. `citationDeleteIntent` states once what deleting a given range means, and the marker menu, the citation menu, Backspace and forward-Delete all ask it, so the two deletion keys give one answer over one range. A marker click travels to its citation, or follows it where the citation's whole content is exactly one link or Connection; `travelTo` moved into the editor as a capability every surface that mounts one can want.
+
+**Creation and numbering:** `normalizeCitations` renumbers numeric labels to first-use order in the body and the section together, sorts the rows to match and collects orphans below them, refusing any rename onto a number a row that keeps its own still holds. `citationGesture` composes a gesture's own edit with the normalization derived from the document that edit leaves behind, and `commitCitation` is the one dispatch all six gestures end on — Insert ▸ Footnote, Paste As ▸ Footnote, a hand-typed label, the two marker deletions and the citation deletion — so each is one transaction one undo takes back whole. A citation is seated at or after the marker it belongs to; seated at the body's last line holding content, the first footnote written from the empty last line of a document ending in a newline had landed above its own marker.
+
+**Alongside:** `Embeds/ConnectionHoverCard`'s imperative presenter moved to its own leaf, `Embeds/HoverCardPresenter.ts`. The component reaches into MarkdownPM for the fold and the connections model while the editor's pointer path and the table's cells both close a card, and the cycle resolved at runtime by leaving one side's bindings uninitialized — the first mount to render a table threw inside `TableView`.
+
+- **Commits:** `71fe5be2^..85bfd6f6`
+- **Diff:** Net +1277 | +1433 / −156
 
 #### PM-110 || A Link Property Reaches A Page
 **DATE:** 08-20-2026
