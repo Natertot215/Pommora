@@ -10,6 +10,7 @@ import {
 import { GlassWindow } from '@renderer/design-system/materials'
 import { Icon } from '@renderer/design-system/symbols'
 import { cx } from '@renderer/design-system/cx'
+import { REVEAL_NEAR_H, REVEAL_NEAR_W } from '@renderer/design-system/revealBar'
 import {
   FloatingResizeCorners,
   useFloatingWindow,
@@ -75,12 +76,10 @@ export interface PreviewPaneProps {
   left?: PreviewPaneSide
   right?: PreviewPaneSide
   footer?: ReactNode
+  /** A control riding the footer's reveal band, facing its collapse chevron across the bar. */
+  footerLead?: ReactNode
   children: ReactNode
 }
-
-// Footer-chevron reveal hit-zone, from the pane's own corner.
-const NEAR_W = 260
-const NEAR_H = 120
 
 const sideDelta = (open: boolean, was: boolean, width: number): number =>
   open === was ? 0 : open ? width : -width
@@ -108,6 +107,7 @@ export function PreviewPane({
   left,
   right,
   footer,
+  footerLead,
   children,
 }: PreviewPaneProps): React.JSX.Element {
   const surfaces = dragSurfaces ? `${DRAG_SURFACES}, ${dragSurfaces}` : DRAG_SURFACES
@@ -147,6 +147,7 @@ export function PreviewPane({
   // Footer collapse is session-only — a floating surface never persists it.
   const [footerOpen, setFooterOpen] = useState(true)
   const [footerNear, setFooterNear] = useState(false)
+  const [footerNearLead, setFooterNearLead] = useState(false)
   // Measured lazily and cached: getBoundingClientRect per mousemove forces a layout every pointer
   // move. Anything that can move/resize the pane drops the cache so the next move re-measures.
   const paneRect = useRef<DOMRect | null>(null)
@@ -206,6 +207,7 @@ export function PreviewPane({
         resizing && 'is-resizing',
         hasFooter && footerOpen && 'is-footer-open',
         hasFooter && footerNear && 'is-footer-near',
+        hasFooter && footerNearLead && 'is-footer-near-lead',
         closing && 'closing',
       )}
       style={
@@ -224,7 +226,9 @@ export function PreviewPane({
           ? (e) => {
               paneRect.current ??= e.currentTarget.getBoundingClientRect()
               const r = paneRect.current
-              setFooterNear(e.clientX > r.right - NEAR_W && e.clientY > r.bottom - NEAR_H)
+              const low = e.clientY > r.bottom - REVEAL_NEAR_H
+              setFooterNear(low && e.clientX > r.right - REVEAL_NEAR_W)
+              setFooterNearLead(low && e.clientX < r.left + REVEAL_NEAR_W)
             }
           : undefined
       }
@@ -233,6 +237,7 @@ export function PreviewPane({
           ? () => {
               paneRect.current = null
               setFooterNear(false)
+              setFooterNearLead(false)
             }
           : undefined
       }
@@ -268,6 +273,7 @@ export function PreviewPane({
           >
             <Icon name={footerOpen ? 'chevron-down' : 'chevron-up'} size="title3" />
           </button>
+          {footerLead}
           <div className="ppane-footer">{footer}</div>
         </>
       )}

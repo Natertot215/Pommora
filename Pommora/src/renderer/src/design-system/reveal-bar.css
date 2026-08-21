@@ -8,9 +8,11 @@
    invisible button swallowing clicks to the content beneath, on direct hover,
    and on keyboard focus.
 
-   A host supplies its own bar height, the edge its toggle sits in from, that
-   toggle's width and padding, its z-index, the class that marks the open and
-   near states, and anything the bar animates beyond its own height.
+   A host supplies its own bar height, the edge each of its controls sits in
+   from, their widths and padding, their z-index, the classes that mark the open
+   and near states, and anything the bar animates beyond its own height. A band
+   can carry a control at either end, each revealed by its own near-region, so
+   approaching one never lights up the other.
    ============================================================================ */
 .ppane-footer,
 .subfield-reveal {
@@ -20,7 +22,8 @@
 }
 
 .ppane-footer-toggle,
-.subfield-toggle {
+.subfield-toggle,
+.footnotes-toggle {
   position: absolute;
   bottom: 0;
   display: inline-flex;
@@ -43,11 +46,14 @@
 .ppane-footer-toggle:hover,
 .ppane-footer-toggle:focus-visible,
 .subfield-toggle:hover,
-.subfield-toggle:focus-visible {
+.subfield-toggle:focus-visible,
+.footnotes-toggle:hover,
+.footnotes-toggle:focus-visible {
   opacity: 1;
 }
 
 .ppane-footer-toggle:hover,
-.subfield-toggle:hover {
+.subfield-toggle:hover,
+.footnotes-toggle:hover {
   background: var(--state-hover);
 }
