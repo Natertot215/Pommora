@@ -5,6 +5,9 @@
 
 import { NEW_PAGE_SLOT } from '@shared/mutate'
 
+export const sameIds = (a: string[], b: string[]): boolean =>
+  a.length === b.length && a.every((x, i) => x === b[i])
+
 /** `item` placed on the named side of `anchorId`, or appended when there's no anchor (null) or
  *  the anchor isn't present. */
 export function spliceBeside(

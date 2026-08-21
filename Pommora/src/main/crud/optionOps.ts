@@ -134,12 +134,16 @@ export function dropOptionFromDef(
  *  and the type the rewrite must speak. Resolved from the authoritative def, never re-read. */
 type CascadeTarget = { type: PropertyType; key: string }
 
+/** The gate that admits a def to an op — the one place Select and Status diverge outside a
+ *  rename's def edit. */
+type RequireType = (type: PropertyType) => Result<null>
+
 /** The opening move every page-touching option op makes: resolve the property, refuse a type the
  *  op doesn't apply to, and hand back the frontmatter key its values live under. */
 async function resolveForCascade(
   root: string,
   propertyId: string,
-  requireType: (type: PropertyType) => Result<null>,
+  requireType: RequireType,
 ): Promise<Result<CascadeTarget>> {
   const def = (await readRegistry(root)).defs[propertyId]
   if (!def) return fail('not-found', 'Property not found.')
@@ -179,76 +183,92 @@ function requireStatusType(type: PropertyType): Result<null> {
     : fail('invalid-property', 'Status options can only be edited on a Status property.')
 }
 
-/** Rename a status option (value=title, like Select's renameOption) and cascade the new value onto every
- *  assigning page's stored label. Validates unique values property-wide before any page is touched. */
-export function renameStatusOption(
-  root: string,
-  propertyId: string,
+/** What a rename does to the def it edits, per option shape: the edited def plus the option
+ *  list uniqueness validates over. */
+type OptionEdit = (
+  def: PropertyDefinition,
   oldValue: string,
   newTitle: string,
-): Promise<Result<null>> {
-  return serializeSchemaOp(async () => {
-    const record = await stageOptionRename(root, propertyId, oldValue, newTitle)
-    const edit = await mutateRegistry<Result<string>>(root, (registry) => {
-      const def = registry.defs[propertyId]
-      if (!def) return { result: fail('not-found', 'Property not found.') }
-      const typeCheck = requireStatusType(def.type)
-      if (!typeCheck.ok) return { result: typeCheck }
-      const nextGroups = renameStatusInArray(def.status_groups ?? [], oldValue, newTitle)
-      const check = validateOptionValues(nextGroups.flatMap((g) => g.options))
-      if (!check.ok) return { result: check }
-      const next = { ...def, status_groups: nextGroups }
-      return {
-        next: { ...registry, defs: { ...registry.defs, [propertyId]: next } },
-        result: ok(propertyKey(def)),
+) => { next: PropertyDefinition; values: Option[] }
+
+const editSelectOptions: OptionEdit = (def, oldValue, newTitle) => {
+  const options = renameInArray(def.select_options ?? [], oldValue, newTitle)
+  return { next: { ...def, select_options: options }, values: options }
+}
+
+const editStatusGroups: OptionEdit = (def, oldValue, newTitle) => {
+  const groups = renameStatusInArray(def.status_groups ?? [], oldValue, newTitle)
+  return { next: { ...def, status_groups: groups }, values: groups.flatMap((g) => g.options) }
+}
+
+/** Rename an option value and cascade the new value onto every page that held the old one. The
+ *  registry edit rides mutateRegistry and validates unique values — a collision fails before any
+ *  page is touched; the page cascade rides serializeSchemaOp. */
+function renameOp(requireType: RequireType, editDef: OptionEdit) {
+  return (
+    root: string,
+    propertyId: string,
+    oldValue: string,
+    newTitle: string,
+  ): Promise<Result<null>> =>
+    serializeSchemaOp(async () => {
+      const record = await stageOptionRename(root, propertyId, oldValue, newTitle)
+      const edit = await mutateRegistry<Result<CascadeTarget>>(root, (registry) => {
+        const def = registry.defs[propertyId]
+        if (!def) return { result: fail('not-found', 'Property not found.') }
+        const typeCheck = requireType(def.type)
+        if (!typeCheck.ok) return { result: typeCheck }
+        const edited = editDef(def, oldValue, newTitle)
+        const check = validateOptionValues(edited.values)
+        if (!check.ok) return { result: check }
+        return {
+          next: { ...registry, defs: { ...registry.defs, [propertyId]: edited.next } },
+          result: ok({ type: def.type, key: propertyKey(def) }),
+        }
+      })
+      if (!edit.ok) {
+        await clearSchemaJournal(root, record)
+        return edit
       }
+      const skipped = await cascadePages(root, edit.value.key, (content) =>
+        replacePageValue(content, edit.value.key, oldValue, newTitle, edit.value.type),
+      )
+      if (!skipped) await clearSchemaJournal(root, record)
+      return ok(null)
     })
-    if (!edit.ok) {
+}
+
+/** Clear an option's value from every page, keeping the option in the def. Page-only fan-out on
+ *  the serializeSchemaOp chain; the registry is untouched — which is why it is also unjournaled:
+ *  its crash residue disagrees with nothing (every remaining value is still a legal option), the
+ *  same razor that keeps removeProperty outside the journal. */
+function clearOp(requireType: RequireType) {
+  return (root: string, propertyId: string, value: string): Promise<Result<null>> =>
+    serializeSchemaOp(async () => {
+      const r = await resolveForCascade(root, propertyId, requireType)
+      if (!r.ok) return r
+      await stripCascade(root, r.value, value)
+      return ok(null)
+    })
+}
+
+/** Remove an option: strip its value from every page, then drop it from the def. Pages first (as
+ *  deleteProperty does) so a def-edit failure never leaves the option gone with its values
+ *  orphaned. A strip that could not read every holder defers the registry drop with it — the
+ *  record stays, and the next open's replay re-runs both once the pages read. */
+function removeOp(requireType: RequireType) {
+  return (root: string, propertyId: string, value: string): Promise<Result<null>> =>
+    serializeSchemaOp(async () => {
+      const r = await resolveForCascade(root, propertyId, requireType)
+      if (!r.ok) return r
+      const record: SchemaJournal = { op: 'option-remove', id: propertyId, value }
+      await writeSchemaJournal(root, record)
+      const skipped = await stripCascade(root, r.value, value)
+      if (skipped) return ok(null)
+      const dropped = await dropOptionFromDef(root, propertyId, value)
       await clearSchemaJournal(root, record)
-      return edit
-    }
-    const skipped = await cascadePages(root, edit.value, (content) =>
-      replacePageValue(content, edit.value, oldValue, newTitle, 'status'),
-    )
-    if (!skipped) await clearSchemaJournal(root, record)
-    return ok(null)
-  })
-}
-
-/** Clear a status option's value from every page, keeping the option in its group. Registry
- *  untouched, and unjournaled for it — see clearOption. */
-export function clearStatusOption(
-  root: string,
-  propertyId: string,
-  value: string,
-): Promise<Result<null>> {
-  return serializeSchemaOp(async () => {
-    const r = await resolveForCascade(root, propertyId, requireStatusType)
-    if (!r.ok) return r
-    await stripCascade(root, r.value, value)
-    return ok(null)
-  })
-}
-
-/** Remove a status option: strip its value from every page, then drop it from its group. Pages first,
- *  so a def-edit failure never leaves the option gone with its page values orphaned; a skipped
- *  holder defers the drop with the record, as removeOption does. */
-export function removeStatusOption(
-  root: string,
-  propertyId: string,
-  value: string,
-): Promise<Result<null>> {
-  return serializeSchemaOp(async () => {
-    const r = await resolveForCascade(root, propertyId, requireStatusType)
-    if (!r.ok) return r
-    const record: SchemaJournal = { op: 'option-remove', id: propertyId, value }
-    await writeSchemaJournal(root, record)
-    const skipped = await stripCascade(root, r.value, value)
-    if (skipped) return ok(null)
-    const dropped = await dropOptionFromDef(root, propertyId, value)
-    await clearSchemaJournal(root, record)
-    return dropped
-  })
+      return dropped
+    })
 }
 
 /** Rewrite the pages holding `key` through `rewrite` (null = the page doesn't hold it, skip) —
@@ -279,78 +299,10 @@ export async function cascadePages(
   return unreadable
 }
 
-/** Rename an option (value=label → newTitle) and cascade the new value onto every page that held the
- *  old one. The registry edit rides mutateRegistry and validates unique titles — a collision fails
- *  before any page is touched; the page cascade rides this serializeSchemaOp. */
-export function renameOption(
-  root: string,
-  propertyId: string,
-  oldValue: string,
-  newTitle: string,
-): Promise<Result<null>> {
-  return serializeSchemaOp(async () => {
-    const record = await stageOptionRename(root, propertyId, oldValue, newTitle)
-    const edit = await mutateRegistry<Result<CascadeTarget>>(root, (registry) => {
-      const def = registry.defs[propertyId]
-      if (!def) return { result: fail('not-found', 'Property not found.') }
-      const typeCheck = requireOptionType(def.type)
-      if (!typeCheck.ok) return { result: typeCheck }
-      const nextOptions = renameInArray(def.select_options ?? [], oldValue, newTitle)
-      const check = validateOptionValues(nextOptions)
-      if (!check.ok) return { result: check }
-      const next = { ...def, select_options: nextOptions }
-      return {
-        next: { ...registry, defs: { ...registry.defs, [propertyId]: next } },
-        result: ok({ type: def.type, key: propertyKey(def) }),
-      }
-    })
-    if (!edit.ok) {
-      await clearSchemaJournal(root, record)
-      return edit
-    }
-    const skipped = await cascadePages(root, edit.value.key, (content) =>
-      replacePageValue(content, edit.value.key, oldValue, newTitle, edit.value.type),
-    )
-    if (!skipped) await clearSchemaJournal(root, record)
-    return ok(null)
-  })
-}
+export const renameOption = renameOp(requireOptionType, editSelectOptions)
+export const clearOption = clearOp(requireOptionType)
+export const removeOption = removeOp(requireOptionType)
 
-/** Clear an option's value from every page, keeping the option in the def. Page-only fan-out on the
- *  serializeSchemaOp chain; the registry is untouched — which is why it is also unjournaled: its
- *  crash residue disagrees with nothing (every remaining value is still a legal option), the same
- *  razor that keeps removeProperty outside the journal. */
-export function clearOption(
-  root: string,
-  propertyId: string,
-  value: string,
-): Promise<Result<null>> {
-  return serializeSchemaOp(async () => {
-    const r = await resolveForCascade(root, propertyId, requireOptionType)
-    if (!r.ok) return r
-    await stripCascade(root, r.value, value)
-    return ok(null)
-  })
-}
-
-/** Remove an option: strip its value from every page, then drop it from the def. Pages first (as
- *  deleteProperty does) so a def edit failure never leaves the option gone with its values orphaned.
- *  A strip that could not read every holder defers the registry drop with it — the record stays,
- *  and the next open's replay re-runs both once the pages read. */
-export function removeOption(
-  root: string,
-  propertyId: string,
-  value: string,
-): Promise<Result<null>> {
-  return serializeSchemaOp(async () => {
-    const r = await resolveForCascade(root, propertyId, requireOptionType)
-    if (!r.ok) return r
-    const record: SchemaJournal = { op: 'option-remove', id: propertyId, value }
-    await writeSchemaJournal(root, record)
-    const skipped = await stripCascade(root, r.value, value)
-    if (skipped) return ok(null)
-    const dropped = await dropOptionFromDef(root, propertyId, value)
-    await clearSchemaJournal(root, record)
-    return dropped
-  })
-}
+export const renameStatusOption = renameOp(requireStatusType, editStatusGroups)
+export const clearStatusOption = clearOp(requireStatusType)
+export const removeStatusOption = removeOp(requireStatusType)

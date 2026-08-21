@@ -25,12 +25,25 @@ import { newId } from './ids'
 import { atomicWriteFile, pathExists, trashFileFlat } from './io/atomicWrite'
 import { serializeOnFile } from './io/fileLock'
 import { loadContextWorld } from './crud/contextWrite'
+import { getLiveTree } from './liveTree'
 import { blockHostDir } from './paths'
 
-/** A Space host's folder, resolved through the write-side world load (registry + sidecars —
- *  the same strictness every context write rides). Unknown or unresolvable ids throw; the IPC
- *  envelope catches. */
+/** A Space host's folder, answered by the live tree; the world load covers the pre-walk moment
+ *  and an unconfirmed Space. Unknown or unresolvable ids throw; the IPC envelope catches. */
 async function spaceHostDir(root: string, id: string): Promise<string> {
+  const held = getLiveTree()
+  if (held?.nexus.rootPath === root) {
+    for (const g of held.contexts) {
+      const space = g.spaces.find((s) => s.id === id)
+      if (space) {
+        // Mid-cascade the tree still spells the folder a rename just moved — a stale entry
+        // falls through to the fresh world load.
+        const dir = join(root, space.path)
+        if (await pathExists(dir)) return dir
+        break
+      }
+    }
+  }
   const world = await loadContextWorld(root)
   if (!world.ok) throw new Error(world.error.message)
   const ref = world.value.spaceById.get(id)
