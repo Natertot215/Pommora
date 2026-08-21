@@ -38,10 +38,26 @@ export function popGripMenu(
 
     const own = (): MenuItemConstructorOptions[] => {
       switch (ctx.kind) {
-        case 'embed':
-          return ctx.tree.length > 0
-            ? [{ label: 'Page Source', submenu: ctx.tree.map(source) }]
-            : [{ label: 'Page Source', enabled: false }]
+        case 'embed': {
+          const sourceItem: MenuItemConstructorOptions =
+            ctx.tree.length > 0
+              ? { label: 'Page Source', submenu: ctx.tree.map(source) }
+              : { label: 'Page Source', enabled: false }
+          // An unresolved token has no tile to scale — the arm waits for the claim.
+          const scaleItem: MenuItemConstructorOptions =
+            ctx.zoom === null
+              ? { label: 'Scale', enabled: false }
+              : {
+                  label: 'Scale',
+                  submenu: ctx.zoomSteps.map(({ label, factor }) => ({
+                    label,
+                    type: 'radio' as const,
+                    checked: factor === ctx.zoom,
+                    click: pick({ action: 'zoom', factor }),
+                  })),
+                }
+          return [sourceItem, scaleItem]
+        }
         case 'webpage':
           return [{ label: 'Edit Link', click: pick({ action: 'editLink' }) }]
         case 'list':

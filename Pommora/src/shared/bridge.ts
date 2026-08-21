@@ -97,6 +97,11 @@ export interface Asks {
     args: [pageId: string, heights: Record<string, number>]
     reply: Result<null>
   }
+  'embedZooms:get': { args: []; reply: Record<string, Record<string, number>> }
+  'embedZooms:set': {
+    args: [pageId: string, zooms: Record<string, number>]
+    reply: Result<null>
+  }
   'tableHeadingCols:get': { args: []; reply: Record<string, number[]> }
   'tableHeadingCols:set': { args: [pageId: string, indices: number[]]; reply: Result<null> }
   'headingIcon:get': { args: []; reply: Record<string, boolean> }

@@ -17,8 +17,14 @@ export interface PickNode {
  *  tile re-aims through Edit Link, a list switches its markers, and every other kind offers Delete
  *  alone. A heading chevron is its own surface — Rename, Size (its level), and a Delete that drops
  *  the heading line but keeps its body. */
+/** One Scale step as a menu offers it — the label the row shows and the factor it applies. */
+export interface ZoomOption {
+  label: string
+  factor: number
+}
+
 export type GripMenuContext =
-  | { kind: 'embed'; tree: PickNode[] }
+  | { kind: 'embed'; tree: PickNode[]; zoomSteps: readonly ZoomOption[]; zoom: number | null }
   | { kind: 'webpage' }
   | { kind: 'list'; current: ListKind | null }
   | { kind: 'heading'; level: number }
@@ -27,6 +33,7 @@ export type GripMenuContext =
 export type GripMenuAction =
   | { action: 'source'; title: string }
   | { action: 'editLink' }
+  | { action: 'zoom'; factor: number }
   | { action: 'listKind'; kind: ListKind }
   | { action: 'rename' }
   | { action: 'size'; level: number }

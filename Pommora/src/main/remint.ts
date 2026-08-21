@@ -136,7 +136,14 @@ async function remintSidecar(
   return viewIds
 }
 
-const COPY_SCOPES = ['folds', 'headingCols', 'headingIcon', 'embedHeights', 'aliases'] as const
+const COPY_SCOPES = [
+  'folds',
+  'headingCols',
+  'headingIcon',
+  'embedHeights',
+  'embedZooms',
+  'aliases',
+] as const
 
 function copyDeviceRows(target: RemintTarget, fresh: string, viewIds: Map<string, string>): void {
   try {

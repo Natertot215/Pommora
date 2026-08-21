@@ -22,6 +22,7 @@ import {
   embedTiles,
   resolutionNudge,
   setEmbedHeights,
+  setEmbedZooms,
 } from './editor/embedWidget'
 import { embeddable } from './editor/embedRanges'
 import { customCaret } from './editor/caret'
@@ -80,6 +81,7 @@ interface Props {
   embedAncestors?: readonly string[]
   /** Per-machine tile heights for this page; absent (preview, blocks) hides the resize handle. */
   embedHeights?: EmbedHeightsApi
+  embedZooms?: EmbedHeightsApi
   folds?: FoldsApi
   tableHeadingColumns?: TableHeadingColsApi
   menu?: EditorMenuApi
@@ -108,6 +110,7 @@ export function MarkdownEditor({
   connections,
   embedAncestors,
   embedHeights,
+  embedZooms,
   folds,
   tableHeadingColumns,
   menu,
@@ -133,6 +136,8 @@ export function MarkdownEditor({
   embedAncestorsRef.current = embedAncestors ?? []
   const embedHeightsRef = useRef(embedHeights)
   embedHeightsRef.current = embedHeights
+  const embedZoomsRef = useRef(embedZooms)
+  embedZoomsRef.current = embedZooms
   const foldsRef = useRef(folds)
   foldsRef.current = folds
   const tableHeadingColsRef = useRef(tableHeadingColumns)
@@ -231,6 +236,7 @@ export function MarkdownEditor({
         getConn: () => connectionsRef.current,
         ancestors: embedAncestorsRef.current,
         saveHeights: embedHeightsRef.current ? (h) => embedHeightsRef.current?.save(h) : undefined,
+        saveZooms: embedZoomsRef.current ? (z) => embedZoomsRef.current?.save(z) : undefined,
       }),
       // Grab a list glyph (•, number, or checkbox) to drag-reorder the item; click toggles/places caret.
       listDragExtension,
@@ -362,14 +368,19 @@ export function MarkdownEditor({
     // already dragged while the load was in flight wins over the loaded value.
     const foldsLoad = foldsRef.current?.load()
     const heightsLoad = embedHeightsRef.current?.load()
-    if (foldsLoad || heightsLoad)
-      // allSettled, never all — one load failing must not drop the other's result, and the scroll
+    const zoomsLoad = embedZoomsRef.current?.load()
+    if (foldsLoad || heightsLoad || zoomsLoad)
+      // allSettled, never all — one load failing must not drop the others' results, and the scroll
       // restore runs regardless (a preference that can't be read degrades to defaults, not a hang).
-      void Promise.allSettled([foldsLoad, heightsLoad]).then(([keys, h]) => {
+      void Promise.allSettled([foldsLoad, heightsLoad, zoomsLoad]).then(([keys, h, z]) => {
         if (keys.status === 'fulfilled' && keys.value) applySavedFolds(view, keys.value)
         if (h.status === 'fulfilled' && h.value && Object.keys(h.value).length > 0)
           view.dispatch({
             effects: setEmbedHeights.of({ ...h.value, ...view.state.field(embedField).heights }),
+          })
+        if (z.status === 'fulfilled' && z.value && Object.keys(z.value).length > 0)
+          view.dispatch({
+            effects: setEmbedZooms.of({ ...z.value, ...view.state.field(embedField).zooms }),
           })
         restoreScroll()
       })

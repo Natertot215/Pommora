@@ -40,7 +40,7 @@ The behavior layer is pure logic over `(doc string, selection, tokens, decoratio
 - **Disk == `EditorState.doc` string, always** — no reconstruction layer.
 - **Display ≠ source** — the same bytes render differently, and the editor never auto-tidies; mutations are user-initiated only.
 - **The editor binds to the body only** — frontmatter is stripped on load, held on the model, and re-serialized from the typed object on save (foreign keys and comments preserved). YAML is never visible or destroyable in the editor.
-- **Display-only UI state lives in `nexus.db`, never frontmatter** — heading folds, embed tile heights, and their kin are per-machine.
+- **Display-only UI state lives in `nexus.db`, never frontmatter** — heading folds, embed tile heights and Scale factors, and their kin are per-machine.
 
 ### Dynamic Syntax
 
@@ -82,6 +82,8 @@ The line must hold exactly one`![[Title]]`, and resolution is the discriminator:
 
 **Creation has four doors:** the`![[` autocomplete (offering only pages the syntax can express — already-embedded pages, the host chain, and bracket-bearing titles omitted; an empty query browses the whole index), the context menu's **Embed ▸ Internal Page** (types the fenced empty pair with the autocomplete open), **Paste As ▸ Embedded Page** on a copied connection (written onto the blank line the caret is already on, offered nowhere else), and the tile grip's **Page Source ▸** (a native Collections → Sets → Pages tree re-aiming the line in place).
 
+**Scale rides the grip.** Every tile offers the shared Scale ramp through its grip menu's **Scale ▸** — the same steps, factor var, and standard-beat animation as a SurfacePM tile, compounding the nexus-wide Embed Scale default. The factor persists per target in `nexus.db` beside the tile heights (1.0 stores no key); an unresolved token's Scale arm waits disabled until a tile claims the line.
+
 **Nothing stays hot.** Tiles live with their host view, rehydrate from the warm path-keyed detail slot, and die with the tab; a tile's reading state (scroll, caret, undo) survives teardown in a session-scoped cache keyed by the host chain, invalidated when the page's body changes elsewhere. The rename cascade sweeps`![[` targets in the same pass as connections; an embed is never a link-graph edge. Nested embeds render display-only one level down; sub-targets (`#heading`, `^block`, `|alias`) and prefix-hosted embeds are deferred, degrading to the inert token.
 
 ### Webpage Embeds
@@ -90,7 +92,7 @@ The editor's second embedding type: `![Label](url)` alone on a line, with an exp
 
 ### Block Drag & The Grip Menu
 
-Every block carries a gutter drag handle that relocates the whole block to the nearest block boundary and doubles as its menu anchor. Blocks with their own chrome — the heading chevron, the quote and callout grips, the table's heading-row grip — double that chrome as the handle; one shared gesture serves them all. The drop is one source-line move, blank-separated at both new seams so a relocation never fuses adjacent blocks; the accent insertion line marks the slot, with edge auto-scroll and Escape/blur abort (→ [[PommoraDND]]). A folded heading auto-unfolds at drag start, since a fold can't survive the relocating edit. **One grip menu serves every kind**, keyed by the resolved block: **Delete** on all of them, with the kind's own arm above it — **Type ▸** on a list, **Page Source ▸** on an embed tile.
+Every block carries a gutter drag handle that relocates the whole block to the nearest block boundary and doubles as its menu anchor. Blocks with their own chrome — the heading chevron, the quote and callout grips, the table's heading-row grip — double that chrome as the handle; one shared gesture serves them all. The drop is one source-line move, blank-separated at both new seams so a relocation never fuses adjacent blocks; the accent insertion line marks the slot, with edge auto-scroll and Escape/blur abort (→ [[PommoraDND]]). A folded heading auto-unfolds at drag start, since a fold can't survive the relocating edit. **One grip menu serves every kind**, keyed by the resolved block: **Delete** on all of them, with the kind's own arm above it — **Type ▸** on a list, **Page Source ▸** and **Scale ▸** on an embed tile.
 
 ### Typing Transforms
 

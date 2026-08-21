@@ -1,3 +1,4 @@
+import type { ZoomOption } from './gripMenu'
 // The surface tile's menu as a model — the same offering the in-app pane draws, in the shape an OS
 // menu can be built from. Which one a person sees is a preference; what the menu OFFERS is stated
 // once, here.
@@ -37,7 +38,7 @@ export interface TileMenuContext {
   pageInfo?: { title: string }
   pageItems: PagePickerItem[]
   viewItems: ViewPickerItem[]
-  zoomSteps: readonly { label: string; factor: number }[]
+  zoomSteps: readonly ZoomOption[]
   currentFactor: number
   /** The tile's own lock, or the board's — every act is refused either way, and the menu still
    *  opens: what it offers is worth reading even when none of it can be taken. */
