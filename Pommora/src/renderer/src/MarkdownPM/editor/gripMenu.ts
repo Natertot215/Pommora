@@ -12,10 +12,11 @@ import type { GripMenuContext, PickNode } from '@shared/gripMenu'
 import { useSession } from '../../store'
 import { listKindOf, setHeading, setListKind, type HeadingLevel } from '../input/format'
 import { headingParts } from '../detect'
+import { ZOOM_STEPS } from '@renderer/Blocks/blockZoom'
 import { type Block, blockAt } from './blockModel'
 import { docScan, docString } from './docCache'
 import { embeddable } from './embedRanges'
-import { embedExclusions, setWebLinkSeat } from './embedWidget'
+import { applyEmbedZoom, embedExclusions, embedZoomAt, setWebLinkSeat } from './embedWidget'
 import { focusRange } from './caretSeat'
 import { webpageEmbedUrlSpan } from '@shared/webpageEmbed'
 
@@ -78,7 +79,12 @@ function contextFor(view: EditorView, doc: string, block: Block): GripMenuContex
   switch (block.kind) {
     case 'embed': {
       const tree = useSession.getState().tree
-      return { kind: 'embed', tree: tree ? embedPickTree(tree, embedExclusions(view.state)) : [] }
+      return {
+        kind: 'embed',
+        tree: tree ? embedPickTree(tree, embedExclusions(view.state)) : [],
+        zoomSteps: ZOOM_STEPS.map(({ label, factor }) => ({ label, factor })),
+        zoom: embedZoomAt(view.state, block.from),
+      }
     }
     case 'webpage':
       return { kind: 'webpage' }
@@ -190,6 +196,9 @@ export const gripMenu = EditorView.domEventHandlers({
           }
           break
         }
+        case 'zoom':
+          applyEmbedZoom(view, block.from, action.factor)
+          break
         case 'listKind': {
           const { changes } = setListKind(doc, block.from, block.to, action.kind)
           if (changes.length > 0) view.dispatch({ changes, userEvent: 'input' })

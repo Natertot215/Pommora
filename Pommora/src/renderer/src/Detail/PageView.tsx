@@ -158,6 +158,10 @@ export function PageView({
               load: async () => (await window.nexus.embedHeights.get())[pageDetail.id] ?? {},
               save: (heights) => void window.nexus.embedHeights.set(pageDetail.id, heights),
             }}
+            embedZooms={{
+              load: async () => (await window.nexus.embedZooms.get())[pageDetail.id] ?? {},
+              save: (zooms) => void window.nexus.embedZooms.set(pageDetail.id, zooms),
+            }}
             tableHeadingColumns={{
               load: async () => (await window.nexus.tableHeadingColumns.get())[pageDetail.id] ?? [],
               save: (indices) => void window.nexus.tableHeadingColumns.set(pageDetail.id, indices),

@@ -15,6 +15,7 @@ export type Scope =
   | 'headingCols'
   | 'headingIcon'
   | 'embedHeights'
+  | 'embedZooms'
   | 'aliases'
   | 'linkTitle'
   | 'blockDoc'
