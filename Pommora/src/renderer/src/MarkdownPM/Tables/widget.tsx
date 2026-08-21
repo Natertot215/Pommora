@@ -260,7 +260,7 @@ class TableWidget extends WidgetType {
         onAppend={append}
         onMenu={onMenu}
         onTableDrag={tableDrag}
-        onCite={(label) => void travelToCitation(view, label)}
+        onCite={(label) => travelToCitation(view, label)}
         onUndo={() => undo(view)}
         onRedo={() => redo(view)}
         connections={view.state.facet(tableConnections)}

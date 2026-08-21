@@ -3,11 +3,13 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
 import {
+  HARNESS_PAGE_ID,
   cleanupEditor,
   mountEditor,
   rerenderEditor,
   stubEditorBridge,
 } from '@renderer/testing/editorHarness'
+import { citationsVisible, useSession } from '@renderer/store'
 import {
   applySavedFolds,
   foldedRegions,
@@ -373,22 +375,36 @@ describe('the citations divider draws where it can and folds nothing itself', ()
     expect(divider(view)?.classList.contains('md-cite-divider-off')).toBe(true)
   })
 
-  it('a press reports the toggle and folds nothing on its own', async () => {
-    let pressed = 0
-    const view = await mountEditor({
-      initialBody: CITED,
-      citationsShown: true,
-      onCitationsToggle: () => {
-        pressed++
-      },
-    })
+  // The press writes the page's state and the section follows it back down; it never folds itself.
+  // The resolved answer, not the raw row — landing back on the nexus-wide default clears the row
+  // rather than restating it, which is the rule both controls share.
+  const shownFor = (): boolean => citationsVisible(useSession.getState(), HARNESS_PAGE_ID)
+
+  it('a press writes the page’s visibility, and the section follows it', async () => {
+    const view = await mountEditor({ initialBody: CITED, citationsShown: true })
+    expect(shownFor()).toBe(true)
+    expect(kinds(view)).toEqual([])
     await act(async () => {
       divider(view)?.dispatchEvent(
         new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0 }),
       )
     })
-    expect(pressed).toBe(1)
-    // The press writes the page's visibility; nothing folds until that value comes back down.
+    expect(shownFor()).toBe(false)
+    expect(kinds(view)).toEqual(['citations'])
+  })
+
+  // The other direction, and the reason the press has no fold of its own: a write that never
+  // touched this editor moves its section anyway — which is what carries the footer's control, the
+  // floating preview and a hover card.
+  it('a write from anywhere else moves the section too', async () => {
+    const view = await mountEditor({ initialBody: CITED, citationsShown: true })
+    await act(async () => {
+      useSession.getState().setCitationsVisible(HARNESS_PAGE_ID, false)
+    })
+    expect(kinds(view)).toEqual(['citations'])
+    await act(async () => {
+      useSession.getState().setCitationsVisible(HARNESS_PAGE_ID, true)
+    })
     expect(kinds(view)).toEqual([])
   })
 })

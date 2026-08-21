@@ -194,12 +194,15 @@ export function openPageBody(
 export const useEmbedScale = (): number =>
   useSession((s) => coerceScale(s.personalization.embedScale, EMBED_SCALE_DEFAULT))
 
-/** The nexus-wide footnote-visibility default. THE reading of it: an absent key means hidden, and
- *  the four surfaces that resolve a page's state all fall back HERE rather than restating it. */
-export const citationsDefault = (s: { personalization: Personalization }): boolean =>
+/** The nexus-wide footnote-visibility default: an absent key means hidden. Local, because a page's
+ *  own answer is the only one a surface asks for — `citationsVisible` is where the fallback happens
+ *  and the toggle's own write is what compares against it. */
+const citationsDefault = (s: { personalization: Personalization }): boolean =>
   s.personalization.citationsShown ?? false
 
-/** A page's resolved footnote visibility — its own override, else the nexus-wide default. */
+/** A page's resolved footnote visibility — its own override, else the nexus-wide default. THE
+ *  reading of it: every surface that draws a page resolves it HERE rather than restating the
+ *  fallback, so a preview, a hover card and the main pane cannot disagree about one page. */
 export const citationsVisible = (
   s: { personalization: Personalization; citationsShown: Record<string, boolean> },
   pageId: string | undefined,

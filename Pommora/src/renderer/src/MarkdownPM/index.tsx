@@ -64,7 +64,7 @@ import {
   whenAcOpen,
 } from './useConnectionAutocomplete'
 import { AutocompletePanel } from './AutocompletePanel'
-import { citationsDefault, useSession } from '../store'
+import { citationsVisible, useSession } from '../store'
 import type { ConnectionsApi } from './connections'
 import { PageHeader } from './PageHeader'
 import { ZOOM_DEFAULT, zoomFontSize } from './zoom'
@@ -92,15 +92,11 @@ interface Props {
   embedHeights?: EmbedHeightsApi
   embedZooms?: EmbedHeightsApi
   folds?: FoldsApi
-  /** Whether this page shows its footnotes section. Absent takes the nexus-wide default, which is
-   *  what an embed, a preview and a hover card all read — the per-page override is the main pane's. */
-  citationsShown?: boolean
-  /** The divider's press. Absent leaves the section's disclosure to its host's own control. */
-  onCitationsToggle?: () => void
-  /** A jump arriving at a hidden section. The host writes the page's visibility rather than the
-   *  editor folding behind its back, so the footer's control still reads the section's true state.
-   *  Absent leaves the travel's own reveal to carry it, which is right for an embed or a preview. */
-  onCitationsReveal?: () => void
+  /** Which page this editor draws, where it draws one. The footnotes section's disclosure is that
+   *  page's own state wherever it is shown, so every surface resolves and writes it through the
+   *  store's one row rather than each host re-deciding what its copy of the page shows. Absent —
+   *  a Markdown block, a webpage tile — takes the nexus-wide default and toggles nothing. */
+  pageId?: string
   tableHeadingColumns?: TableHeadingColsApi
   menu?: EditorMenuApi
   autoFocus?: boolean
@@ -130,9 +126,7 @@ export function MarkdownEditor({
   embedHeights,
   embedZooms,
   folds,
-  citationsShown,
-  onCitationsToggle,
-  onCitationsReveal,
+  pageId,
   tableHeadingColumns,
   menu,
   autoFocus = false,
@@ -184,15 +178,14 @@ export function MarkdownEditor({
     viewRef.current?.requestMeasure()
   }, [cbLineCount])
 
-  // The nexus-wide default, overridden per page where a caller resolved one. Read from the live
-  // slice, so flipping the setting reaches an open page rather than waiting for the tree to echo.
-  const citesShown = useSession((s) => citationsShown ?? citationsDefault(s))
+  // This page's answer, or the nexus-wide default where nobody has given one. Read from the live
+  // slice, so flipping the setting reaches an open page rather than waiting for the tree to echo —
+  // and so a preview, a hover card and the main pane all draw the same page the same way.
+  const citesShown = useSession((s) => citationsVisible(s, pageId))
   const citesShownRef = useRef(citesShown)
   citesShownRef.current = citesShown
-  const citationsToggleRef = useRef(onCitationsToggle)
-  citationsToggleRef.current = onCitationsToggle
-  const citationsRevealRef = useRef(onCitationsReveal)
-  citationsRevealRef.current = onCitationsReveal
+  const pageIdRef = useRef(pageId)
+  pageIdRef.current = pageId
   // Mount seeds inside the view-creation effect (this one runs first, before the view exists); this
   // carries every later change to the value.
   //
@@ -313,7 +306,10 @@ export function MarkdownEditor({
       connectionClicks(() => connectionsRef.current),
       citationHost.of({
         shown: () => citesShownRef.current,
-        reveal: () => citationsRevealRef.current?.(),
+        reveal: () => {
+          const id = pageIdRef.current
+          if (id) useSession.getState().setCitationsVisible(id, true)
+        },
       }),
       citationPointer(() => connectionsRef.current),
       citationRowMenu(),
@@ -333,7 +329,10 @@ export function MarkdownEditor({
       }),
       markdownFolding(
         (keys) => foldsRef.current?.save(keys),
-        () => citationsToggleRef.current?.(),
+        () => {
+          const id = pageIdRef.current
+          if (id) useSession.getState().toggleCitations(id)
+        },
       ),
       EditorView.updateListener.of((u) => {
         if (!(u.docChanged || u.selectionSet || u.focusChanged)) return // skip scroll/geometry-only updates
