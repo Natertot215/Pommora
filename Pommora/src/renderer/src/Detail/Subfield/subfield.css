@@ -103,7 +103,8 @@ button.subfield-crumb.ghost:hover {
 }
 
 /* NavView's List/Gallery toggle — an icon-leading label, matching the other footing glyphs. */
-.subfield-viewtype {
+.subfield-viewtype,
+.subfield-citations {
   appearance: none;
   border: 0;
   background: none;
@@ -116,7 +117,8 @@ button.subfield-crumb.ghost:hover {
   cursor: default;
   -webkit-app-region: no-drag;
 }
-.subfield-viewtype:hover {
+.subfield-viewtype:hover,
+.subfield-citations:hover {
   background: var(--state-hover);
 }
 
