@@ -105,4 +105,4 @@ The schema cascades gained a crash record — the final piece of the abstract-pl
 - Recent Work holds five entries under their History headings, and a sixth drops the oldest rather than accumulating.
 - Sections that aren't described in `Context-Format.md` shouldn't be removed — they're intentional and will resolve themselves when appropriate. 
 - Nathan also writes into §Pending Focuses, §Important Information, and §Known Issues directly; leave what's clearly written by him and consider his own writing style as something to lean towards rather than fight against. 
-- A section with nothing to say stays empty.
+- A section with nothing to say stays empty.[^1]

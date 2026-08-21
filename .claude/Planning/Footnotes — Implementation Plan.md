@@ -749,16 +749,16 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 - [x] Commit: `feat(editor): footnote deletions cascade by range, not by gesture`
 
 #### Gate 4 — nothing corrupts, everything reaches
-- [ ] Gate commands green, exit codes read directly.
-- [ ] Every negative control's disabled half was observed red.
-- [ ] The guard and the decoration pass agree on the boundary across an edit sequence.
-- [ ] **Simplification runs alone, and runs first** — `code-simplifier` dispatched against `<base>..HEAD` with no reviewer beside it and no reviewer's findings in its brief, then `comment-killer-agent` over what it returns. A build reviewed for correctness before it has settled its own relationships gets defended rather than reduced, which is why the order is fixed.
-- [ ] Its reductions applied, or refused in the Log with a reason. The phase re-gates after they land.
-- [ ] Only then, correctness review dispatched against the same range; the reports cite files inside it.
-- [ ] **Cohesion Criteria C1–C10 answered against this phase's diff**, each carrying its evidence rather than its assertion.
-- [ ] Net line delta reported — code only, comments and blanks and tests excluded.
-- [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
-- [ ] **Interaction pass handed to Nathan.**
+- [x] Gate commands green, exit codes read directly.
+- [x] Every negative control's disabled half was observed red.
+- [x] The guard and the decoration pass agree on the boundary across an edit sequence.
+- [x] **Simplification runs alone, and runs first** — `code-simplifier` dispatched against `<base>..HEAD` with no reviewer beside it and no reviewer's findings in its brief, then `comment-killer-agent` over what it returns. A build reviewed for correctness before it has settled its own relationships gets defended rather than reduced, which is why the order is fixed.
+- [x] Its reductions applied, or refused in the Log with a reason. The phase re-gates after they land.
+- [x] Only then, correctness review dispatched against the same range; the reports cite files inside it.
+- [x] **Cohesion Criteria C1–C10 answered against this phase's diff**, each carrying its evidence rather than its assertion.
+- [x] Net line delta reported — code only, comments and blanks and tests excluded.
+- [x] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
+- [x] **Interaction pass handed to Nathan.**
   1. Click a marker with the section open — the caret lands in its citation.
   2. Click a marker with the section hidden — it opens, the caret lands, and the Subfield label agrees it is open.
   3. Click a marker whose citation is exactly one link, or exactly one Connection — it navigates instead of jumping.
@@ -768,6 +768,31 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
   7. Select across body text *and* part of the section, then delete — only what you swept goes; no citation disappears on its own.
   8. Put the caret at a citation's text start, press Left once, and type — the citation must not break. Then Backspace at that spot — the whole footnote goes, marker included.
   9. Drag a body block to the very bottom of the page — nothing ends up stranded below the section.
+
+---
+
+### Gate 4 — closed
+
+**Cohesion Criteria, against this phase's diff.**
+
+- **C1.** One derivation each, and one new consolidation. The transaction-filter body is now `verdictFilter` with two callers — the callout guard was rewritten to be its first, so the codebase has one re-issue path rather than a copy that would have kept the annotation bug this phase fixes. `citationFor` (7 hits), `markersFor` (8) and `lineEndOf` (7) moved into `detect/` beside `citationScan`: they are scan queries, and four modules had been spelling `foldLabel(x.label) === key` out beside their own `find`. `citationDeleteIntent` is the one place that decides whether a range is exactly a construct, called by the caret, the sweep and both menus. `travelTo` has 11 references and one definition; `revealPageOffset` has none.
+- **C2.** Reuse before invention: the marker's gestures joined `pointerHandlers` rather than adding handlers (the factory owns the hover intent, the press latch, the right-button claim and the caret clamp); the menus joined `menuModel`'s row shape and `popModelMenu` rather than a bespoke popper; the click-through reuses `resolveMdTarget` and `followTarget` so a citation's lone link opens exactly as that link would in the body; the tail guard reuses the callout guard's own filter. Six new files, each because two callers needed the same thing.
+- **C3.** `git diff ac311bb8..HEAD -- '*.css' '*.css.ts'` → empty. This phase draws nothing.
+- **C4.** Every export has callers: `verdictFilter` 4, `citationDeleteIntent` 5, `deleteMarkerChanges` 9, `deleteCitationChanges` 8, `loneTarget` 16, `applyCitationAction` 4, `citationMenuModel` 7, `setCitationsVisible` 5. `leadOrigin` and `perDoc` are the two whose visibility changed, both because a second reader appeared.
+- **C5.** No residue: `revealPageOffset`, `entryFor` and `boundTo` return 0 hits — each was replaced rather than left beside its replacement. The callout guard's own copy of the filter body is gone, not demoted.
+- **C6.** The comment pass found nothing to cut in this range either; every comment states a why. No `KNOB` marker exists in this phase's code.
+- **C7.** Measured, not asserted. `citationTailVerdict` on a 442-line page holding 400 markers and 40 citations: **0.0003 ms** for a keystroke in the body, **0.0104 ms** for one inside the section. The body case never slices or re-scans — it returns on the two early checks. The pointer path's targets are derived once per document version rather than per mousemove, which is what the every-mouseover rule asks for.
+- **C8.** The smaller version of each task, named: Task 15 could have written its own filter — refused, that is the second re-issue path C1 exists to catch. Task 17 could have expanded the fold directly on arrival — refused, that splits the section's state in two. Task 18 could have re-found its target by offset — refused, an offset names whatever moved into that seat while the menu stood open. Task 19 could have keyed its cascades to the gesture — refused, that is what silently takes citations a reader never saw.
+- **C9.** Every guard carries both halves, each observed. The tail guard: a paste below the section lands in the body, and unguarded the same paste literalizes the section. The head-start repair: the keystroke lands in the citation's text, and unguarded it writes ahead of the head and drops that citation from the run. The class split from Phase 3 was re-verified red four ways. The range-keyed rule has five negative controls, each asserting that a range which is the construct *plus something else* cascades nothing.
+- **C10.** No identifier in this phase says `footnote`; the code says `citation` and `marker` throughout, and the interface says Footnote — `Delete Footnote`, `Edit Footnote`, `Copy Reference`.
+
+**Correctness review — one finding, confirmed red before it was fixed.** The head-start repair returned *before* the tail-validity check, so it relocated whatever was inserted into the citation's content without asking whether the result still held. A paste is the same shape as a keystroke — a zero-width insertion at a seated caret — so pasting two paragraphs at a citation row's very start put a blank line inside the section, ended the trailing run, and literalized every citation on the page. The repair now moves the seat past the head and then answers for the text, falling through to the relocate repair when moving it does not save the run. Three tests pin it; the first was observed red.
+
+**Known limit, recorded rather than fixed.** `citationTailVerdict` judges each change in a transaction on its own, so two simultaneous carets whose edits break the run only *in combination* pass individually. It is the factory's per-change contract, shared with the callout guard, and reaching it needs multi-cursor editing at the section's boundary.
+
+**Net line delta:** +373 code lines (comments, blanks and tests excluded) across 19 files — 437 added against 64 removed.
+
+**Interaction pass:** deferred to the closeout by Nathan's instruction, and written up as the Verification Checklist above so the walkthrough is one document rather than a per-gate list.
 
 ---
 
@@ -943,7 +968,7 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
   - [x] Task 12 — The chevron class and the heading-gesture class separate · `c1b3415f`
   - [x] Task 13 — The Subfield's Show / Hide control · `f00e15d2`
   - [x] Task 14 — The divider draws and folds · `3257be4c` · gate: `5d965102` `4425dfdb`
-- [ ] **Phase 4** — Guards and gestures · base `ac311bb8`
+- [x] **Phase 4** — Guards and gestures · base `ac311bb8`
   - [x] Task 15 — The tail guard · `a7f250d5`
   - [x] Task 16 — One page-travel mechanism, named for what it does · `e9304060`
   - [x] Task 17 — Marker click — jump, or follow · `678ef515`
