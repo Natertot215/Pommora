@@ -183,7 +183,7 @@ const citationHeadRe = /^ {0,3}\[\^([^\]\s]+)\]:[ \t]*/
 /** The body-marker grammar, fresh per call so no caller shares `lastIndex`. The lookbehind honors
  *  the `\[^1]` escape, which suppresses the reference at the parser too — one pattern, so the
  *  counter and the decoration pass can never disagree about what an escape means. */
-export const markerRegex = (): RegExp => /(?<!\\)\[\^([^\]\s]+)\]/g
+export const markerRegex = (): RegExp => /(?<!\\)\[\^([^\]\s]+)\]/dg
 
 /** The case-fold every marker↔citation comparison runs through. Deliberately not the shared title
  *  normalization: GFM defines its own folding for footnote labels, so coupling the two would let a

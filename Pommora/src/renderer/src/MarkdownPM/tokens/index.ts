@@ -9,6 +9,7 @@ import {
   inlineCodeRegex,
   blockLatexRegex,
   inlineLatexRegex,
+  markerRegex,
 } from '../detect'
 import { linkSpans, pageLinkPattern } from '@shared/connections'
 
@@ -22,6 +23,7 @@ export type TokenKind =
   | 'embed'
   | 'wikiLink'
   | 'link'
+  | 'citationRef'
 
 export interface Token {
   kind: TokenKind
@@ -196,6 +198,12 @@ export function tokenize(text: string): Token[] {
     open: 1,
     close: 1,
   }).filter(notOverlapping([...embeds, ...wikis, ...code]))
+  // A footnote marker tokenizes so the resting table cell — which has no EditorView and reads the
+  // tokenizer directly — draws the same construct the body does. What it draws is the ordinal, which
+  // is a whole-document fact no token carries; the editor takes it from the scan instead.
+  const cites = scan({ kind: 'citationRef', re: markerRegex(), open: 2, close: 1 }).filter(
+    notOverlapping([...embeds, ...wikis, ...code]),
+  )
   const blockTex = scan({
     kind: 'blockLatex',
     re: blockLatexRegex(),
@@ -210,7 +218,7 @@ export function tokenize(text: string): Token[] {
     accept: isInlineMathContent,
   }).filter(notOverlapping([...code, ...blockTex]))
 
-  tokens.push(...embeds, ...wikis, ...links, ...code, ...blockTex, ...inlineTex)
+  tokens.push(...embeds, ...wikis, ...links, ...code, ...cites, ...blockTex, ...inlineTex)
   tokens.sort((a, b) => a.range[0] - b.range[0])
   return tokens
 }
@@ -226,6 +234,10 @@ export function activeTokenIndices(
 ): Set<number> {
   const active = new Set<number>()
   tokens.forEach((tk, i) => {
+    // A marker never reveals its syntax at any caret position — its label is invisible plumbing, and
+    // showing `[^7]` under a glyph reading 2 is the contradiction positional display exists to
+    // prevent. It opts out here rather than being suppressed per position.
+    if (tk.kind === 'citationRef') return
     const [s, e] = tk.range
     if (selStart !== selEnd) {
       if (selStart < e && s < selEnd) active.add(i)
