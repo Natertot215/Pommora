@@ -20,7 +20,7 @@
 - [x] **Checklist written** — bundles, cycle, rulings (location-scoped canonical card drag; accepted write-silence), open questions quarantined.
 - [x] **Bundle 1 landed** — gates green (3,358 tests), simplify + attack cycles run, findings folded.
 - [x] **Live interaction pass** — three drag behaviors driven and file-verified on the real nexus.
-- [ ] **Nathan eyeballs the card-drag feel and the style optimism** in his dev session — the masked-order arm is gate- and probe-verified but was not CDP-driven (his dev session took the app over mid-run, correctly left alone).
+- [x] **Nathan confirmed the flat-mode boundary live** — his first try exposed the legacy-mask hole (a held viewOrder row interleaving the paint), the mask-suppression fix landed at `5e424c28`, and his retry confirmed the refusal works. Style optimism remains his to eyeball in passing; the main-process half of Bundle 1 loads on his next dev restart.
 
 #### Next Session — Two Parallel Tracks
 
