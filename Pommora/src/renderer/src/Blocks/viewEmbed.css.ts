@@ -3,7 +3,7 @@ import { titleReveal } from '../design-system/animations.css'
 import { vars as colorVars } from '../design-system/tokens/color.css'
 import { duration } from '../design-system/tokens/motion'
 import { SEGMENT_H, segmentRow, settingsBtn } from '../Detail/ActionBand.css'
-import { EMBED_ZOOM, VIEW_EMBED_ZOOM } from '../Embeds/embedScale'
+import { EMBED_SCALE_DEFAULT, embedZoom, viewEmbedZoom } from '@shared/types'
 
 const c = colorVars.color
 
@@ -161,18 +161,19 @@ export const body = style({
   vars: { '--edge-fade': FADE_RISE },
 })
 
-/** The fixed embed zoom lands on the table's own token scope — the var is declared ON
- *  .table-view (table-tokens.css), so only a descendant-scoped redeclaration outranks it. */
+/** The embed zoom lands on the table's own token scope — the var is declared ON .table-view
+ *  (table-tokens.css), so only a descendant-scoped redeclaration outranks it. The root var carries
+ *  the Embed Scale setting; its fallback is the default the setting stores no key for. */
 globalStyle(`${body} .table-view, ${body} .table-empty`, {
-  vars: { '--zoom': String(VIEW_EMBED_ZOOM) },
+  vars: { '--zoom': `var(--view-embed-zoom, ${viewEmbedZoom(EMBED_SCALE_DEFAULT)})` },
 })
 
 /** Cards ride the SAME embed-zoom seam (.cards-view reads `zoom: --zoom * --block-zoom`), but take the
- *  BASE EMBED_ZOOM — not the table's VIEW_EMBED_ZOOM, whose 15/13 factor normalizes the table's 13px
+ *  BASE page-embed zoom — not the table's, whose 15/13 factor normalizes the table's 13px
  *  body. Cards have no single body-font base, so they scale like a page embed instead of inheriting the
  *  table's text-normalization; without this the card grid rendered at full detail-pane size in a tile. */
 globalStyle(`${body} .cards-view`, {
-  vars: { '--zoom': String(EMBED_ZOOM) },
+  vars: { '--zoom': `var(--embed-zoom, ${embedZoom(EMBED_SCALE_DEFAULT)})` },
   // The tail seam — the last card row clears the tile's bottom edge by the seam law's shoulder,
   // matching the view's top seam. Embed-owned: a full-page pane's inset already clears the bottom.
   paddingBottom: 'var(--band-clearance)',

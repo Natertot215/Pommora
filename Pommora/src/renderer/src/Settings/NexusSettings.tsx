@@ -21,9 +21,10 @@ import {
   HOVER_LINGER_MAX,
   TIME_FORMAT_LABELS,
   TIME_FORMAT_SETTINGS,
+  EMBED_SCALE_DEFAULT,
+  SCALE_STEPS,
   WEB_ZOOM_DEFAULT,
-  WEB_ZOOM_STEPS,
-  coerceWebZoom,
+  coerceScale,
   type ColorSetting,
   type Personalization,
   type PickerSelection,
@@ -99,9 +100,11 @@ type Row =
   | PickerRow<TimeFormatSetting>
   | PickerRow<PickerSelection>
   | (RowText & {
-      /** The web-guest scale — a numeric factor offered through the percent vocabulary. */
-      kind: 'webzoom'
+      /** A scale factor offered through the percent vocabulary, stepping the shared ramp. */
+      kind: 'zoom'
       key: KeyOf<number>
+      /** The factor the control clears back to — stored as no key at all. */
+      fallback: number
     })
 
 type RowOf<K extends Row['kind']> = Extract<Row, { kind: K }>
@@ -208,6 +211,13 @@ const LEAVES = roster([
             fallback: 'outlined',
             options: pickerSelectionOptions,
           },
+          {
+            kind: 'zoom',
+            key: 'embedScale',
+            label: 'Embed Scale',
+            hint: "The scale embedded pages and views start at; a block's own Scale compounds it.",
+            fallback: EMBED_SCALE_DEFAULT,
+          },
         ],
       },
       {
@@ -220,10 +230,11 @@ const LEAVES = roster([
             hint: 'External links open the floating browser instead of the system one.',
           },
           {
-            kind: 'webzoom',
+            kind: 'zoom',
             key: 'webZoomFactor',
             label: 'Webpage Zoom',
             hint: 'How embedded webpages scale, relative to the window.',
+            fallback: WEB_ZOOM_DEFAULT,
           },
         ],
       },
@@ -522,8 +533,8 @@ function RowControl({ row }: { row: Row }): React.JSX.Element {
       return <SliderRow row={row} />
     case 'picker':
       return <PickerRow row={row} />
-    case 'webzoom':
-      return <WebZoomRow row={row} />
+    case 'zoom':
+      return <ZoomRow row={row} />
     case 'device':
       return <DeviceRow row={row} />
     case 'color':
@@ -593,18 +604,18 @@ const zoomChoice = (f: number): PickerChoice<string> => ({
   value: String(f),
   label: zoomPercent(f),
 })
-const webZoomChoices = WEB_ZOOM_STEPS.map(zoomChoice)
-function WebZoomRow({ row }: { row: RowOf<'webzoom'> }): React.JSX.Element {
-  const stored = useSession((s) => s.personalization[row.key]) ?? WEB_ZOOM_DEFAULT
+const scaleChoices = SCALE_STEPS.map(zoomChoice)
+function ZoomRow({ row }: { row: RowOf<'zoom'> }): React.JSX.Element {
+  const stored = useSession((s) => s.personalization[row.key]) ?? row.fallback
   const setPersonalization = useSession((s) => s.setPersonalization)
   const [editing, setEditing] = useState(false)
   const commit = (factor: number): void =>
-    setPersonalization(row.key, factor === WEB_ZOOM_DEFAULT ? undefined : factor)
+    setPersonalization(row.key, factor === row.fallback ? undefined : factor)
   // A typed scale keeps its own place among the steps, so the control reads the real value rather
   // than the step nearest it.
-  const choices = WEB_ZOOM_STEPS.some((f) => f === stored)
-    ? webZoomChoices
-    : [...WEB_ZOOM_STEPS, stored].sort((a, b) => a - b).map(zoomChoice)
+  const choices = SCALE_STEPS.some((f) => f === stored)
+    ? scaleChoices
+    : [...SCALE_STEPS, stored].sort((a, b) => a - b).map(zoomChoice)
   return (
     <SettingsRow label={row.label} hint={row.hint}>
       {editing ? (
@@ -615,7 +626,7 @@ function WebZoomRow({ row }: { row: RowOf<'webzoom'> }): React.JSX.Element {
           autoSize
           onCommit={(typed) => {
             const percent = Number.parseFloat(typed.replace('%', '').trim())
-            if (Number.isFinite(percent)) commit(coerceWebZoom(percent / 100))
+            if (Number.isFinite(percent)) commit(coerceScale(percent / 100, row.fallback))
             setEditing(false)
           }}
           onCancel={() => setEditing(false)}

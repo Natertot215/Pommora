@@ -7,7 +7,7 @@ import {
 } from '@renderer/design-system/components/PreviewPane/PreviewPane'
 import { useExitPresence } from '../design-system/useExitPresence'
 import { PageEmbed } from '../Embeds/PageEmbed'
-import { EMBED_SCALE } from '../Embeds/embedScale'
+import { EMBED_SCALE_DEFAULT, coerceScale } from '@shared/types'
 import { Subfield } from '../Detail/Subfield/Subfield'
 import type { SubfieldScope } from '../Detail/Subfield/subfieldItems'
 import type { ConnectionsApi } from '../MarkdownPM/connections'
@@ -60,6 +60,9 @@ function PreviewWindowBody({
   closing: boolean
 }): React.JSX.Element {
   const closePreview = useSession((s) => s.closePreview)
+  const embedScale = useSession((s) =>
+    coerceScale(s.personalization.embedScale, EMBED_SCALE_DEFAULT),
+  )
   const select = useSession((s) => s.select)
   const tree = useSession((s) => s.tree)
   // The window root — the engulf FLIP and the tab-slide's pane push both measure from here.
@@ -193,7 +196,7 @@ function PreviewWindowBody({
       dragSurfaces={DRAG_SURFACES}
       ariaLabel="Page Preview"
       // --mdpm-scale mirrors the embed's so the footer aligns to its text column.
-      style={{ '--mdpm-scale': EMBED_SCALE } as React.CSSProperties}
+      style={{ '--mdpm-scale': embedScale } as React.CSSProperties}
       onScan={promote}
       title={
         <PreviewTabStrip

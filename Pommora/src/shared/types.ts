@@ -158,23 +158,36 @@ export interface Personalization {
   /** How web guests scale relative to the window's own zoom — every guest renders at the host
    *  factor times this. Absent = 1.0, the window's scale as-is. */
   webZoomFactor?: number
+  /** The scale embedded pages and views start at, before a block's own Scale multiplies it.
+   *  Absent = 0.9. */
+  embedScale?: number
 }
 
 /** The one session every guest webview lives on — a sign-in anywhere authenticates every embed
  *  surface, per machine, surviving restarts. Surfaces take it as a prop defaulting to this. */
 export const WEB_PARTITION = 'persist:pommora-web'
 
-/** The web-guest scale steps the settings picker offers, and the clamp a hand-typed
- *  `personalization.webZoomFactor` reads through; absent/invalid → 1.0. */
-export const WEB_ZOOM_STEPS = [0.5, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2] as const
-export const WEB_ZOOM_DEFAULT = 1
+/** The one scale ramp every zoom control steps through — the Webpage Zoom and Embed Scale pickers
+ *  and the per-block Scale menus all offer these factors, and a hand-typed value clamps to the
+ *  ramp's own ends. */
+export const SCALE_STEPS = [0.5, 0.65, 0.75, 0.9, 1, 1.1, 1.25, 1.5] as const
 // The clamp is the offered range itself, derived rather than restated.
-export const WEB_ZOOM_MIN = WEB_ZOOM_STEPS[0]
-export const WEB_ZOOM_MAX = WEB_ZOOM_STEPS[WEB_ZOOM_STEPS.length - 1]
-export function coerceWebZoom(v: unknown): number {
-  if (typeof v !== 'number' || !Number.isFinite(v)) return WEB_ZOOM_DEFAULT
-  return Math.min(WEB_ZOOM_MAX, Math.max(WEB_ZOOM_MIN, v))
+export const SCALE_MIN = SCALE_STEPS[0]
+export const SCALE_MAX = SCALE_STEPS[SCALE_STEPS.length - 1]
+export const WEB_ZOOM_DEFAULT = 1
+export function coerceScale(v: unknown, fallback: number): number {
+  if (typeof v !== 'number' || !Number.isFinite(v)) return fallback
+  return Math.min(SCALE_MAX, Math.max(SCALE_MIN, v))
 }
+
+/** The scale embedded pages and views render at before a block's own Scale multiplies it
+ *  (`personalization.embedScale`). Resize is a viewport, never a scale — the factor sets the
+ *  content's text level: page embeds apply it as a log-curved editor zoom; view embeds first
+ *  normalize the table's body text to the editor's, then apply the same zoom, so both read at one
+ *  text level. */
+export const EMBED_SCALE_DEFAULT = 0.9
+export const embedZoom = (scale: number): number => 1 + Math.log2(scale)
+export const viewEmbedZoom = (scale: number): number => (15 / 13) * embedZoom(scale)
 
 /** The per-nexus default window zoom (`personalization.defaultViewScale`), stated as the multiplier
  *  a user reads: 1.0 is the interface at its own intended size. Clamped so a hand-typed settings.json

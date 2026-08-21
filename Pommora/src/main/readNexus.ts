@@ -36,10 +36,12 @@ import {
   DEFAULT_ACCENT,
   DEFAULT_COMMANDS,
   DEFAULT_LABELS,
+  EMBED_SCALE_DEFAULT,
   ENTITY_ICON_KINDS,
+  WEB_ZOOM_DEFAULT,
   coerceHoverLinger,
+  coerceScale,
   coerceViewScale,
-  coerceWebZoom,
 } from '@shared/types'
 import { isColorKey } from '@shared/theme'
 import { savedView, type SavedView } from '@shared/views'
@@ -139,7 +141,12 @@ export function readPersonalization(raw: unknown): Personalization {
     pasteLinkIntoText: bool(p.pasteLinkIntoText),
     defaultLinkFormat: LINK_DISPLAYS.find((d) => d === p.defaultLinkFormat),
     openLinksInApp: bool(p.openLinksInApp),
-    webZoomFactor: typeof p.webZoomFactor === 'number' ? coerceWebZoom(p.webZoomFactor) : undefined,
+    webZoomFactor:
+      typeof p.webZoomFactor === 'number'
+        ? coerceScale(p.webZoomFactor, WEB_ZOOM_DEFAULT)
+        : undefined,
+    embedScale:
+      typeof p.embedScale === 'number' ? coerceScale(p.embedScale, EMBED_SCALE_DEFAULT) : undefined,
   }
 }
 
