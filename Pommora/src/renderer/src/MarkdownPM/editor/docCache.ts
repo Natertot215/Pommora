@@ -23,10 +23,36 @@ export function perDoc<T>(derive: (doc: Text) => T): (doc: Text) => T {
 
 export const docString = perDoc((doc) => doc.toString())
 
+/** One derivation per TEXT, for a caller that holds the string rather than the version — the
+ *  Subfield's counter beside the editor. Exported for the same reason `perDoc` is: a derivation off
+ *  the body belongs beside its own rule and should still be held once.
+ *
+ *  It holds a few texts rather than one because more than one page can be on screen: the main pane
+ *  and a floating preview describe different bodies, and a single slot would let their renders evict
+ *  each other into recomputing on every call — which is the whole reason to hold anything. */
+const TEXT_SLOTS = 4
+export function perText<T>(derive: (text: string) => T): (text: string) => T {
+  const held = new Map<string, T>()
+  return (text) => {
+    const hit = held.get(text)
+    if (hit !== undefined) return hit
+    const v = derive(text)
+    held.set(text, v)
+    // Insertion-ordered, so the first key is the least recently added.
+    if (held.size > TEXT_SLOTS) held.delete(held.keys().next().value as string)
+    return v
+  }
+}
+
+/** The whole-document scan for a caller holding only the text, whose body is the very string the
+ *  editor's own scan was taken from — keyed on the text rather than the version, so the two meet in
+ *  one slot instead of scanning one document twice. */
+export const scanOf = perText(scanDoc)
+
 // The one whole-document derivation — split, fences, callouts, tables, block constructs, and the
 // per-line block predicates — computed once per doc VERSION. A caret move must never pay an O(doc)
 // re-scan for line chrome that only the text defines.
-export const docScan = perDoc((doc) => scanDoc(docString(doc)))
+export const docScan = perDoc((doc) => scanOf(docString(doc)))
 
 // The caret-free per-line decoration intents + rails, one per doc VERSION — a caret move re-derives
 // only the one line the caret sits on and reads the rest from here, so the per-caret cost stops

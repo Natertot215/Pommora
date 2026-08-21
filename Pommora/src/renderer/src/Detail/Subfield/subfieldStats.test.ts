@@ -187,3 +187,48 @@ describe('computeStats — the counter reads the boundary the editor reads', () 
     expect(computeStats(body).citations).toBe(0)
   })
 })
+
+describe('computeStats — a table counts as the prose its widget draws', () => {
+  it('counts the cells and neither the pipes nor the delimiter row', () => {
+    const body = '| Name | Status |\n| --- | --- |\n| A | Done |'
+    // Four cells of visible text; the delimiter row and every pipe draw as grid, not as prose.
+    expect(computeStats(body)).toEqual({ lines: 3, words: 4, characters: 15, citations: 0 })
+  })
+
+  it('drops the cell padding the source carries', () => {
+    expect(computeStats('|a|b|\n|-|-|').characters).toBe(
+      computeStats('|  a  |  b  |\n|-|-|').characters,
+    )
+  })
+
+  it('keeps a short row’s cells and adds nothing for the ones it lacks', () => {
+    expect(computeStats('| a | b |\n| --- | --- |\n| c |')).toMatchObject({
+      words: 3,
+      characters: 3,
+    })
+  })
+
+  it('leaves a fenced table as the code it is', () => {
+    expect(computeStats('```\n| a | b |\n| --- | --- |\n```')).toMatchObject({
+      words: 0,
+      characters: 0,
+    })
+  })
+
+  it('counts a quoted table as prose, which is how the editor draws it', () => {
+    expect(computeStats('> | a | b |\n> | --- | --- |').words).toBe(10)
+  })
+
+  it('counts a lone pipe as the prose it is', () => {
+    expect(computeStats('a | b').words).toBe(3)
+  })
+
+  it('excludes a footnote section standing under a table', () => {
+    expect(computeStats('| a | b |\n| --- | --- |\n\n[^1]: note')).toEqual({
+      lines: 3,
+      words: 2,
+      characters: 2,
+      citations: 1,
+    })
+  })
+})
