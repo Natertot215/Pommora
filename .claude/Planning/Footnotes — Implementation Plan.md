@@ -886,7 +886,7 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
   - [x] Task 3 — Statistics stop counting the section · `8a5aeabd` · gate: `99b5d55e` `b9c95934` `8f6965ee` `645668cb`
 - [ ] **Phase 2** — The section and its markers draw
   - [x] Task 4 — The citation row's styling · `<commit>`
-  - [ ] Task 5 — Citation lines emit as numbered rows · `<commit>`
+  - [x] Task 5 — Citation lines emit as numbered rows · `<commit>`
   - [ ] Task 6 — The marker draws atomic and positional · `<commit>`
   - [ ] Task 7 — Markers render in resting table cells · `<commit>`
   - [ ] Task 8 — The section is inert to the block layer · `<commit>`
@@ -931,6 +931,7 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 
 ### Rulings
 
+- **08-20-2026, Nathan:** A citation nothing binds to draws an en dash in its number column — dimmed with the rest of the row. It keeps the seat visible and clickable on an orphan whose text is also empty, which is what G-1b's visible seat is for.
 - **08-20-2026, Nathan:** The four hanging-indent rules stay as four. The citation row is written as the fifth copy rather than collapsing them into one parameterized rule — the collapse is not to be re-proposed by a later sweep.
 
 - **08-20-2026, Nathan:** Task 6's marker draws from the scan, not from the token pass — one `WidgetSpec` variant carrying the ordinal, emitted as the existing `widget` intent over the whole `[^label]`. The token spec stays for the resting cell and for code-mask exclusion. The token pass can only class content and hide markers, so it would have drawn the label's own text: `[^7]` reading 7 where R2 and Task 5's Must-agree require 2. **Revisit and flag this to the correctness review at Gate 2** rather than treating it as settled.
@@ -963,6 +964,8 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 - **Task 1 — a table below a citation ends the run.** The parser absorbs `| a | b |` rows as lazy continuation; the house exclusion set owns those bytes, so the scan breaks the run there instead. The cross-check corpus excludes the shape, and the divergence is stated at `citationScan`.
 
 ### Lessons
+
+- `MarkdownPM/embedAbsorb.test.tsx` flakes under parallel scheduling — two of its seat cases fail on one run and pass on the next with no code change between them, on documents holding no citations. Unrelated to this work; worth a fix of its own.
 
 ### Sequenced After
 

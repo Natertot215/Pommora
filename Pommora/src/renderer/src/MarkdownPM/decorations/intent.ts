@@ -11,6 +11,7 @@ import {
   scanFencedCode,
   splitWithOffsets,
   type CalloutLine,
+  type CitationEntry,
   type DocLines,
   type FenceInfo,
   type ListMarker,
@@ -45,6 +46,11 @@ function quotePrefixWidth(line: string, levels: number): number {
 // extension targets this one class, and `.md-li-glyph { cursor: pointer }` paints the pointer cursor —
 // so any future list syntax that adopts it inherits both the cursor and drag-to-reorder for free.
 export const GLYPH_CLASS = 'md-li-glyph'
+
+/** A citation's glyph: its positional number, or the dash a row nothing binds to wears instead —
+ *  an orphan, or a duplicate that lost. The dash keeps the seat visible and clickable on a citation
+ *  whose text is empty, which is the whole reason the seat is drawn at all. */
+const glyphOf = (e: CitationEntry): string => (e.ordinal === null ? '–' : String(e.ordinal))
 
 /** Every whole-document derivation the editor reads — one split, one fence pass, one table pass,
  *  and the per-line block predicates answered once each. Pure on `text`, so a caller that runs per
@@ -265,6 +271,40 @@ function lineIntentsInto(
 
   if (inMathLine(i)) {
     if (base > 0) intents.push({ kind: 'hide', from: ls, to: ls + base })
+    return null
+  }
+
+  // A citation row handles itself and returns, the way a fence line does — so the section never
+  // enters the list vocabulary and cannot inherit list indentation, Enter-continuation or the grip
+  // menu's type conversion. Its number is the ordinal the scan computed, not the label beneath it,
+  // and the label can never be revealed: showing `[^7]:` under a glyph reading 3 is the
+  // contradiction the positional display exists to prevent. The prefix is therefore hidden and
+  // atomic at every caret position — a caret seated in five hidden characters would break the
+  // label on its next keystroke and literalize every marker bound to it.
+  if (scan.citations.mask[i]) {
+    const entry = scan.citations.entries.find((e) => i >= e.line && i <= e.lastLine)
+    if (entry) {
+      const dim = entry.ordinal === null ? ' md-cite-dim' : ''
+      const head = i === entry.line
+      intents.push({
+        kind: 'line',
+        from: ls,
+        className: `${head ? 'md-cite' : 'md-cite-cont'}${dim}`,
+      })
+      const contentStart = head ? entry.contentStart : ls
+      if (head) {
+        intents.push({
+          kind: 'lineWidget',
+          from: ls,
+          className: 'md-cite-num',
+          text: glyphOf(entry),
+        })
+        intents.push({ kind: 'hide', from: ls, to: contentStart })
+        intents.push({ kind: 'atomic', from: ls, to: contentStart })
+      }
+      if (contentStart < le)
+        intents.push({ kind: 'class', from: contentStart, to: le, className: 'md-cite-text' })
+    }
     return null
   }
 

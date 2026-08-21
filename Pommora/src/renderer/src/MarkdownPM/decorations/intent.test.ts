@@ -4,6 +4,7 @@ import {
   assembleLineIntents,
   decorationsFor,
   docLineIntents,
+  NO_CARET,
   scanDoc,
   tokenIntents,
   type DecoIntent,
@@ -325,6 +326,68 @@ describe('decoration intents', () => {
       .filter((d): d is Extract<typeof d, { kind: 'lineWidget' }> => d.kind === 'lineWidget')
       .filter((d) => d.className === 'md-cb-ln')
     expect(nums.map((n) => n.text)).toEqual(['1', '2'])
+  })
+})
+
+describe('citation rows', () => {
+  const rows = (t: string) => decorationsFor(t, tokenize(t), new Set(), NO_CARET)
+  const nums = (t: string): (string | undefined)[] =>
+    rows(t)
+      .filter((d) => d.kind === 'lineWidget' && d.className === 'md-cite-num')
+      .map((d) => (d.kind === 'lineWidget' ? d.text : undefined))
+
+  it('draws a positional glyph over hidden source, whatever the label says', () => {
+    const t = 'x[^7] y[^1] z[^3]\n\n[^1]: one\n[^7]: seven\n[^3]: three'
+    expect(nums(t)).toEqual(['2', '1', '3'])
+    const line = rows(t).filter((d) => d.kind === 'line' && d.className.startsWith('md-cite'))
+    expect(line).toHaveLength(3)
+  })
+
+  it('hides the prefix and makes it atomic, ungated by the caret', () => {
+    const t = 'a[^1]\n\n[^1]: one'
+    const at = t.indexOf('[^1]: one')
+    const contentStart = at + '[^1]: '.length
+    for (const sel of [NO_CARET, contentStart, at]) {
+      const ds = decorationsFor(t, tokenize(t), new Set(), sel)
+      expect(ds.some((d) => d.kind === 'hide' && d.from === at && d.to === contentStart)).toBe(true)
+      expect(ds.some((d) => d.kind === 'atomic' && d.from === at && d.to === contentStart)).toBe(
+        true,
+      )
+    }
+  })
+
+  it('classes the content so it wraps inside its own column', () => {
+    const t = 'a[^1]\n\n[^1]: one'
+    const at = t.indexOf('[^1]: one') + '[^1]: '.length
+    expect(
+      rows(t).some((d) => d.kind === 'class' && d.className === 'md-cite-text' && d.from === at),
+    ).toBe(true)
+  })
+
+  it('dims an orphan and a duplicate-loser, and draws them a numberless seat', () => {
+    const t = 'a[^1]\n\n[^1]: one\n[^1]: dup\n[^9]: orphan'
+    expect(nums(t)).toEqual(['1', '–', '–'])
+    const dim = rows(t).filter((d) => d.kind === 'line' && d.className.includes('md-cite-dim'))
+    expect(dim).toHaveLength(2)
+  })
+
+  it('draws a seat for a citation whose text is empty', () => {
+    const t = 'a[^1]\n\n[^1]:'
+    expect(nums(t)).toEqual(['1'])
+    expect(rows(t).some((d) => d.kind === 'class' && d.className === 'md-cite-text')).toBe(false)
+  })
+
+  it('carries a continuation line into the row it belongs to', () => {
+    const t = 'a[^1]\n\n[^1]: one\ncontinued'
+    const cont = rows(t).filter((d) => d.kind === 'line' && d.className.includes('md-cite-cont'))
+    expect(cont).toHaveLength(1)
+    expect(nums(t)).toEqual(['1'])
+  })
+
+  it('leaves the section out of the list and rail machinery', () => {
+    const t = 'a[^1]\n\n[^1]: one'
+    expect(rows(t).some((d) => d.kind === 'rail')).toBe(false)
+    expect(rows(t).some((d) => d.kind === 'line' && d.className.includes('md-li'))).toBe(false)
   })
 })
 
