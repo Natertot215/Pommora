@@ -2,7 +2,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { createElement, act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { SubfieldItem } from './subfieldItems'
+import { CitationsToggle } from './CitationsToggle'
 import { useSession } from '../../store'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -22,11 +22,11 @@ async function mount(body: string): Promise<void> {
   document.body.appendChild(container)
   root = createRoot(container)
   await act(async () => {
-    root.render(createElement(SubfieldItem, { id: 'citations', scope: { target, body } }))
+    root.render(createElement(CitationsToggle, { scope: { target, body } }))
   })
 }
 
-const button = (): HTMLButtonElement | null => container.querySelector('.subfield-citations')
+const button = (): HTMLButtonElement | null => container.querySelector('.footnotes-toggle')
 const click = async (): Promise<void> => {
   await act(async () => {
     button()?.click()

@@ -9,6 +9,7 @@ import { useExitPresence } from '../design-system/useExitPresence'
 import { PageEmbed } from '../Embeds/PageEmbed'
 import { EMBED_SCALE_DEFAULT, coerceScale } from '@shared/types'
 import { Subfield } from '../Detail/Subfield/Subfield'
+import { CitationsToggle } from '../Detail/Subfield/CitationsToggle'
 import type { SubfieldScope } from '../Detail/Subfield/subfieldItems'
 import type { ConnectionsApi } from '../MarkdownPM/connections'
 import { showConnectionMenu } from '../Embeds/connectionMenu'
@@ -230,6 +231,7 @@ function PreviewWindowBody({
       }}
       // Scoped to THIS page and counting the window's own body — never the app-wide live count.
       footer={<Subfield scope={scope} />}
+      footerLead={<CitationsToggle scope={scope} />}
     >
       <div className="pgpreview-body edge-fade pgembed-grows" ref={bodyRef}>
         <PageEmbed

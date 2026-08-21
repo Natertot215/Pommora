@@ -895,7 +895,7 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
   - [x] Task 10 — The two settings · `aefc0277`
   - [x] Task 11 — The section is a fold region, seeded rather than persisted · `a7059714`
   - [x] Task 12 — The chevron class and the heading-gesture class separate · `c1b3415f`
-  - [x] Task 13 — The Subfield's Show / Hide control · `<T13>`
+  - [x] Task 13 — The Subfield's Show / Hide control · `f00e15d2`
   - [ ] Task 14 — The divider draws and folds · `<commit>`
 - [ ] **Phase 4** — Guards and gestures
   - [ ] Task 15 — The tail guard · `<commit>`
@@ -970,6 +970,8 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 - **A drop above the section — closed, not an issue.** `blockMoveChanges` already fences both seams: it emits a blank after every inserted block and heals the hole the cut leaves, with its own comment naming this exact hazard — a glue-adjacent block would otherwise lazily continue a list or merge two paragraphs. A paragraph dropped above the section always lands with a blank after it, so the first citation cannot become its continuation. **The adjacent case the round did not raise is real and already covered:** a block dropped at the document's end lands *after* the section, which is the strand A-5b forbids, and Task 15's rule is "at or after". Task 15 names it as a test case rather than leaving it implied.
 
 ### Deviations
+
+- **Task 13 — the control rides the reveal band, not the item registry (Nathan's call).** The task placed it among the bar's items so it would reach the Page Preview for free. On seeing it, Nathan moved it into the band above the bar, leading from the breadcrumb's inset and facing the bar's collapse chevron across it. The band's reveal region split in two to carry it: each end has its own, so approaching one control never lights the other, and the zone's dimensions moved to `design-system/revealBar.ts` where both hosts read one definition. The preview keeps it through a `footerLead` slot on `PreviewPane` beside its own chevron — the coverage the registry was chosen for, paid for explicitly.
 
 - **Task 13 — the label reads the override, and the override is what every opener writes.** The task asked the label to read the fold state so a section opened by something else reports itself open. A fold lives in editor state, which the footer cannot subscribe to without a new push channel — and Task 14 and this phase's own title both require the override to be the single writer. So the store slice is the state: everything that shows or hides the section writes it, the fold follows it through `applyCitationsVisibility`, and the label reads it. **Task 17's marker jump inherits the obligation**: opening a hidden section on arrival writes the override rather than reaching for the fold.
 
