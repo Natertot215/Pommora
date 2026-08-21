@@ -35,16 +35,18 @@ export const citationHost = Facet.define<CitationHost, CitationHost>({
   combine: (v) => v[0] ?? { shown: () => false },
 })
 
-/** Whether the caret sits where a marker may be written: outside the section, whose own `[^1]` stays
- *  literal, and outside code, where the syntax is characters rather than a reference. Both creation
- *  menus are offered under it and both write under it — a native menu can hang open while the
- *  document moves beneath it.
+/** Whether a marker may be written where the selection ENDS — a footnote annotates the words it
+ *  follows, so that offset is where every creation puts it, and asking about the selection's start
+ *  would read a sweep out of the body and into the section as a body seat. The seat is outside the
+ *  section, whose own `[^1]` stays literal, and outside code, where the syntax is characters rather
+ *  than a reference. Both creation menus are offered under it and both write under it — a native
+ *  menu can hang open while the document moves beneath it.
  *
  *  It answers on every caret move, so both halves come off the cached scan or the caret's own line;
  *  the whole-document form would split the text and pair every fence from the top each time. */
 export function citationSeatAt(state: EditorState): boolean {
   const scan = docScan(state.doc)
-  const at = state.selection.main.from
+  const at = state.selection.main.to
   const line = state.doc.lineAt(at)
   const i = line.number - 1
   if (scan.citations.mask[i] || scan.fences[i]) return false

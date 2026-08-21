@@ -221,3 +221,28 @@ describe('a replacement that cannot survive is moved whole, not half', () => {
     expect(out).toContain('the citation')
   })
 })
+
+// A file authored anywhere else puts its citations straight under the last line of prose. That line
+// IS the body's end, and text relocated to the start of it lands above the paragraph it was written
+// below — at the top of the document, where the section starts on line 1.
+describe('the relocated text lands at the end of the body with no blank line above the section', () => {
+  const TIGHT = '# Notes\nbody[^a] here\n[^a]: the citation'
+
+  it('a heading typed below the section lands under the body, not above it', () => {
+    const out = type(TIGHT, TIGHT.length, '\n## Sources')
+    expect(sectionOf(out)).toBe(1)
+    expect(out).toBe('# Notes\nbody[^a] here\n## Sources\n[^a]: the citation')
+  })
+
+  it('a paste below the section lands under the body too', () => {
+    const out = type(TIGHT, TIGHT.length, '\n\n- item')
+    expect(sectionOf(out)).toBe(1)
+    expect(out.startsWith('# Notes\nbody[^a] here\n- item')).toBe(true)
+  })
+
+  it('and the blank-anchored document still keeps its blank', () => {
+    expect(type(DOC, DOC.length, '\n## Sources')).toBe(
+      DOC.replace('\n\n[^a]:', '\n## Sources\n\n[^a]:'),
+    )
+  })
+})
