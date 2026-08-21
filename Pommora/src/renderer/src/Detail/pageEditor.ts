@@ -1,26 +1,9 @@
 import type { EditorView } from '@codemirror/view'
-import { SEEK_GLIDE, scrollGlide } from '@renderer/design-system/interactions/autoscroll'
-import {
-  FOLD_SETTLE_MS,
-  expandFoldsAt,
-  headingOutline,
-  sectionEnd,
-} from '@renderer/MarkdownPM/editor/folding'
+import { headingOutline, sectionEnd } from '@renderer/MarkdownPM/editor/folding'
+import { travelTo } from '@renderer/MarkdownPM/editor/travel'
 import { blockMoveChanges } from '@renderer/MarkdownPM/editor/listDragModel'
 import { headingParts } from '@renderer/MarkdownPM/detect'
 
-// Fallback inset, used only where the page header hasn't published its height yet.
-const REVEAL_MARGIN = 12
-
-/** Where a jumped-to heading settles: the band the page header occupies, which the body already pads
- *  itself by and which is exactly where a page's own inline title reads. Landing there rather than at
- *  the viewport's edge stops an arriving heading from being jammed against the top. */
-function headerZone(view: EditorView): number {
-  const shell = view.dom.closest('.mdpm-shell')
-  if (!shell) return REVEAL_MARGIN
-  const zone = Number.parseFloat(getComputedStyle(shell).getPropertyValue('--header-zone'))
-  return Number.isFinite(zone) ? zone : REVEAL_MARGIN
-}
 // The open page's live editor — registered by the page surface at mount, so an embedded tile's
 // editor or the floating preview's can never be picked up instead.
 let pageView: EditorView | null = null
@@ -31,35 +14,10 @@ export function registerPageEditor(view: EditorView | null): void {
   pageView = view
 }
 
-/** Travel the open page to `pos`, opening whatever was hiding it. The document and the caret are
- *  untouched — going somewhere never edits it or moves where the next keystroke lands — but a
- *  collapsed section IS opened, because arriving at a heading whose body is still folded is
- *  indistinguishable from having gone nowhere. */
-export function revealPageOffset(pos: number): void {
-  const view = pageView
-  if (!view) return
-  // The outline is derived from the store's body, which can trail the editor's own doc by a beat.
-  const target = Math.max(0, Math.min(pos, view.state.doc.length))
-  const travel = (): void => {
-    const scroller = view.scrollDOM
-    // Resolved once: the header's band is set from its own height, which a scroll doesn't change,
-    // and the glide asks for its destination on every frame.
-    const zone = headerZone(view)
-    // The line's own position IS re-measured every frame. The editor only estimates the height of
-    // blocks it hasn't drawn, so the destination sharpens as the travel reveals it — read live, the
-    // glide eases into the true position; read once, it lands on the estimate and has to jump the
-    // difference. `documentTop` is where the document currently begins on screen, which the scroll
-    // itself moves.
-    const seat = (): number =>
-      scroller.scrollTop +
-      (view.documentTop + view.lineBlockAt(target).top - scroller.getBoundingClientRect().top) -
-      zone
-    scrollGlide(scroller, seat, SEEK_GLIDE)
-  }
-  // A folded section has no height, so travelling before it opens measures the collapsed document and
-  // stops short of the heading.
-  if (expandFoldsAt(view, target)) setTimeout(travel, FOLD_SETTLE_MS)
-  else travel()
+/** Travel the OPEN PAGE to `pos` — the page-scoped call over the editor's own travel, resolving the
+ *  registered handle so a caller that only knows an offset does not have to hold a view. */
+export function travelPageTo(pos: number): void {
+  if (pageView) travelTo(pageView, pos)
 }
 
 /** Rewrite the text of the heading whose line begins at `from`, leaving its markers (`#`s, indent,

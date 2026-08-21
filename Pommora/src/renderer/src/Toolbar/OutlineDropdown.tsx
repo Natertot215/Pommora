@@ -11,7 +11,7 @@ import {
 import { RenamableLabel } from '@renderer/Components/RenamableLabel'
 import { openPageBody, useSession } from '../store'
 import { viewSettingsScope } from '../Detail/ViewSettingsScope'
-import { renameHeadingAtOffset, revealPageOffset } from '../Detail/pageEditor'
+import { renameHeadingAtOffset, travelPageTo } from '../Detail/pageEditor'
 import { headingOutline } from '../MarkdownPM/editor/folding'
 import { outlineTree, type OutlineNode } from './outlineTree'
 import { OutlineDnd, useOutlineDrag } from './OutlineDnd'
@@ -124,7 +124,7 @@ function OutlineRow({
       twisty={nested ? 'chevron' : 'spacer'}
       open={disclosure.has(node.key)}
       onToggle={() => disclosure.toggle(node.key)}
-      onClick={editing ? undefined : () => revealPageOffset(node.from)}
+      onClick={editing ? undefined : () => travelPageTo(node.from)}
       onContextMenu={(e) => {
         e.preventDefault()
         setRenaming(node.key)

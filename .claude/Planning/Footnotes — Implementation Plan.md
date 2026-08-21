@@ -675,11 +675,11 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 **Must agree:** the outline dropdown's behavior is byte-identical before and after. One test drives an outline jump through the renamed function and asserts the same resulting scroll target as the pre-change call.
 
 **Steps:**
-- [ ] Move the core to the editor module, taking the view as its first argument.
-- [ ] Leave the page-scoped wrapper behind, resolving the registered handle.
-- [ ] Rename to the act, and convert every call site from the derivation.
-- [ ] Run the gate — expect green, and the outline dropdown unchanged in behavior.
-- [ ] Commit: `refactor(editor): one travel-to-offset, named for the act`
+- [x] Move the core to the editor module, taking the view as its first argument.
+- [x] Leave the page-scoped wrapper behind, resolving the registered handle.
+- [x] Rename to the act, and convert every call site from the derivation.
+- [x] Run the gate — expect green, and the outline dropdown unchanged in behavior.
+- [x] Commit: `refactor(editor): one travel-to-offset, named for the act`
 
 #### Task 17: Marker click — jump, or follow
 
@@ -921,8 +921,8 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
   - [x] Task 13 — The Subfield's Show / Hide control · `f00e15d2`
   - [x] Task 14 — The divider draws and folds · `3257be4c` · gate: `5d965102` `4425dfdb`
 - [ ] **Phase 4** — Guards and gestures · base `ac311bb8`
-  - [x] Task 15 — The tail guard · `<T15>`
-  - [ ] Task 16 — One page-travel mechanism, named for what it does · `<commit>`
+  - [x] Task 15 — The tail guard · `a7f250d5`
+  - [x] Task 16 — One page-travel mechanism, named for what it does · `<T16>`
   - [ ] Task 17 — Marker click — jump, or follow · `<commit>`
   - [ ] Task 18 — The two construct menus · `<commit>`
   - [ ] Task 19 — Range-keyed cascades · `<commit>`
