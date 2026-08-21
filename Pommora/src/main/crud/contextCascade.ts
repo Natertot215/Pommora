@@ -195,7 +195,7 @@ export async function unlinkSpaceValue(
  *  retry) or clear the journal when the sweep completed clean. */
 async function settleJournal(root: string, j: RenameJournal, skipped: string[]): Promise<void> {
   if (skipped.length) await writeJournal(root, { ...j, skipped })
-  else await clearJournal(root)
+  else await clearJournal(root, j)
 }
 
 /** Rename a Context: journal → folder rename → KEY cascade → registry title
@@ -233,7 +233,7 @@ export async function renameContextOp(
       await rename(oldDir, newDir)
     }
   } catch (e) {
-    await clearJournal(root)
+    await clearJournal(root, j)
     return fail('operation-failed', errText(e))
   }
 
@@ -250,7 +250,7 @@ export async function renameContextOp(
     } catch {
       /* best-effort */
     }
-    await clearJournal(root)
+    await clearJournal(root, j)
     return committed
   }
 
@@ -290,7 +290,7 @@ export async function renameSpaceOp(
     recordWrite(target)
     await rename(ref.dir, target)
   } catch (e) {
-    await clearJournal(root)
+    await clearJournal(root, j)
     return fail('operation-failed', errText(e))
   }
 
@@ -308,12 +308,12 @@ export async function replayPendingRename(root: string): Promise<void> {
   if (!j) return
   const reg = await readRegistryStrict(root)
   if (!reg.ok) {
-    await clearJournal(root)
+    await clearJournal(root, j)
     return
   }
   const entry = reg.value.contexts.find((c) => c.id === j.contextId)
   if (!entry) {
-    await clearJournal(root)
+    await clearJournal(root, j)
     return
   }
 
@@ -322,7 +322,7 @@ export async function replayPendingRename(root: string): Promise<void> {
       (c) => c.id !== j.contextId && c.title === j.oldTitle,
     )
     if ((entry.title !== j.oldTitle && entry.title !== j.newTitle) || othersOwnOld) {
-      await clearJournal(root)
+      await clearJournal(root, j)
       return
     }
     const oldDir = join(contextsDir(root), j.oldTitle)
@@ -348,18 +348,18 @@ export async function replayPendingRename(root: string): Promise<void> {
   const atOld = await findTitle(j.oldTitle)
   const atNew = await findTitle(j.newTitle)
   if (!atOld && !atNew) {
-    await clearJournal(root)
+    await clearJournal(root, j)
     return
   }
   if (atNew && (await pathExists(join(ctxDir, j.oldTitle)))) {
     // The freed old title was re-minted by another Space — discard, never hijack.
-    await clearJournal(root)
+    await clearJournal(root, j)
     return
   }
   if (atOld) {
     const target = join(ctxDir, j.newTitle)
     if (await pathExists(target)) {
-      await clearJournal(root)
+      await clearJournal(root, j)
       return
     }
     await rename(join(ctxDir, j.oldTitle), target)

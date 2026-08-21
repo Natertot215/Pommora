@@ -73,6 +73,7 @@ import {
 } from '@shared/linkValue'
 import { resolveTitle, validateLink } from '@renderer/linkResolve'
 import { linkValueMenuTarget, showConnectionMenu } from '@renderer/Embeds/connectionMenu'
+import { sameIds } from '../creationOrder'
 
 // ── TUNABLE ── how far past a column's edge the dragged column's center must travel before the slot
 // flips (the sticky zone around the current slot). Larger = more deliberate / harder to leave a slot;
@@ -104,9 +105,6 @@ function DatetimeCellPicker({
     </PickerMenu>
   )
 }
-
-const sameIds = (a: string[], b: string[]): boolean =>
-  a.length === b.length && a.every((x, i) => x === b[i])
 
 export function TableView({ source }: { source: CollectionNode | SetNode }): React.JSX.Element {
   const styleFor = useStyleFor()
@@ -540,8 +538,24 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     setHiddenOverride(hidden)
     persistView({ hidden_properties: hidden })
   }
-  const colAlign = (id: string): ColumnAlign =>
+  // Per-column align/style resolved ONCE per change, not per call site per render (styleFor
+  // allocates) — the id-keyed maps serve the header, track, reflow, and menu readers; the
+  // positional arrays below serve the row path. Each reader's resolver fallback covers a column a
+  // watcher push removed mid-gesture.
+  const resolveAlign = (id: string): ColumnAlign =>
     alignOverride[id] ?? alignFor(id, schema, liveView, contextIds)
+  const resolveStyle = (id: string): ColumnStyle => ({
+    ...styleFor(id, schema, liveView),
+    ...styleOverride[id],
+  })
+  const { alignById, styleById } = useMemo(
+    () => ({
+      alignById: new Map<string, ColumnAlign>(columns.map((c) => [c.id, resolveAlign(c.id)])),
+      styleById: new Map<string, ColumnStyle>(columns.map((c) => [c.id, resolveStyle(c.id)])),
+    }),
+    [columns, schema, liveView, alignOverride, styleOverride, contextIds],
+  )
+  const colAlign = (id: string): ColumnAlign => alignById.get(id) ?? resolveAlign(id)
   // A column header's glyph, gated by the per-view Column Icons toggle (`hide_column_icons`), which
   // defaults ON (icons hidden). A Context column wears the Context's OWN icon — a shared type glyph
   // would render every Context identically — and a schema-less column (unknown type) gets none.
@@ -572,10 +586,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       </span>
     )
   }
-  const colStyle = (id: string): ColumnStyle => ({
-    ...styleFor(id, schema, liveView),
-    ...styleOverride[id],
-  })
+  const colStyle = (id: string): ColumnStyle => styleById.get(id) ?? resolveStyle(id)
   // Set one style key: applies live via the override, persists per-key into column_styles — the align
   // pattern; the patch carries the not-yet-committed value so a state-batch can't drop it.
   const setColumnStyle = (id: string, key: keyof ColumnStyle & string, value: string): void => {
@@ -1005,35 +1016,31 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
 
   // Saved widths are clamped to the type's [min, max] — a stale/out-of-range saved value can't
   // squash a column below legibility or stretch it past its cap.
+  const resolveWidth = (id: string): number =>
+    clampWidth(
+      widthOverride[id] ?? liveView.column_widths?.[id] ?? widthFor(id, schema, contextIds).default,
+      id,
+      schema,
+      colStyle(id).look,
+      contextIds,
+    )
+  const widthById = useMemo(
+    () => new Map<string, number>(columns.map((c) => [c.id, resolveWidth(c.id)])),
+    [columns, schema, liveView, widthOverride, contextIds, styleById],
+  )
   const colWidth = (id: string): number =>
-    collapsing === id
-      ? 0
-      : clampWidth(
-          widthOverride[id] ??
-            liveView.column_widths?.[id] ??
-            widthFor(id, schema, contextIds).default,
-          id,
-          schema,
-          colStyle(id).look,
-          contextIds,
-        )
+    collapsing === id ? 0 : (widthById.get(id) ?? resolveWidth(id))
 
   // Every prop a DataRow receives must hold identity across unrelated re-renders (a tree push, an
   // editing toggle, a drag frame), so React.memo can bail per row.
 
-  // Per-column look/alignment resolved ONCE per change, not per CELL per render (styleFor
-  // allocates) — the measured bulk of a full-table re-render's JS floor.
+  // The row path's positional arrays, derived from the same id-keyed resolution.
   const { alignByCol, styleByCol } = useMemo(
     () => ({
-      alignByCol: columns.map(
-        (c) => alignOverride[c.id] ?? alignFor(c.id, schema, liveView, contextIds),
-      ),
-      styleByCol: columns.map((c) => ({
-        ...styleFor(c.id, schema, liveView),
-        ...styleOverride[c.id],
-      })),
+      alignByCol: columns.map((c) => colAlign(c.id)),
+      styleByCol: columns.map((c) => colStyle(c.id)),
     }),
-    [columns, schema, liveView, alignOverride, styleOverride, contextIds],
+    [columns, alignById, styleById],
   )
   // Slide detection: mark any column whose look just changed to one whose rendered width grows,
   // so its track eases to the new per-style min. Render-phase + a prev-look ref, so it catches EVERY
@@ -1414,6 +1421,9 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   const reorderTo = (orderIds: string[], groupKey: string): void => {
     setManualOverride(orderIds)
     if (structuralOrder) {
+      // A held viewOrder mask is what the pipeline paints — the drag maintains it beside the
+      // canonical write, or a reload re-ranks the rows under the stale mask.
+      if (viewOrders[view.id]) persistViewOrder(orderIds)
       const groupPages = orderIds.filter((id) => rowGroup.get(id) === groupKey)
       const firstPath = groupPages.length ? rowPath.get(groupPages[0]) : undefined
       if (firstPath) {

@@ -163,6 +163,10 @@ export type DragGroupProps = {
   renderOverlay?: (activeId: string) => ReactNode
   /** False pins the drag to its source zone — for a band that can't receive foreign cards. */
   crossZone?: boolean
+  /** Maps a geometric landing index to the slot the host accepts; null refuses the landing —
+   *  the preview shows the origin slot (nothing displaces) and a drop flies home. Must be
+   *  idempotent: an index it returned maps to itself. */
+  resolveIndex?: (zoneId: string, index: number, activeId: string) => number | null
   children: ReactNode
 }
 
@@ -170,6 +174,7 @@ export function DragGroup({
   onCommit,
   renderOverlay,
   crossZone = true,
+  resolveIndex,
   children,
 }: DragGroupProps): React.JSX.Element {
   const feel = DEFAULT_FEEL
@@ -177,6 +182,8 @@ export function DragGroup({
   onCommitRef.current = onCommit
   const crossZoneRef = useRef(crossZone)
   crossZoneRef.current = crossZone
+  const resolveIndexRef = useRef(resolveIndex)
+  resolveIndexRef.current = resolveIndex
 
   const zones = useRef(new Map<string, ZoneReg>())
   const frozen = useRef(new Map<string, Box[]>()) // per-zone rects, measured once on first entry
@@ -344,7 +351,7 @@ export function DragGroup({
     const d = drag.current
     const dx = cx - d.startX
     const dy = cy - d.startY
-    const zid = crossZoneRef.current ? (zoneAt(cx, cy) ?? d.overZone) : d.zone
+    let zid = crossZoneRef.current ? (zoneAt(cx, cy) ?? d.overZone) : d.zone
     if (zid !== d.overZone) {
       // Band-entry: reserve the wrap row on a foreign destination and refresh bounds together,
       // synchronously.
@@ -353,6 +360,13 @@ export function DragGroup({
     }
     if (zid && !frozen.current.has(zid)) frozen.current.set(zid, measure(zid))
     let idx = zid ? indexAt(zid, cx, cy) : d.overIndex
+    if (zid && resolveIndexRef.current) {
+      const mapped = resolveIndexRef.current(zid, idx, d.id)
+      if (mapped === null) {
+        zid = d.zone
+        idx = d.srcIdx
+      } else idx = mapped
+    }
     // Hysteresis: hold the current index until the pointer travels HYSTERESIS from where the index
     // last changed. A boundary wobble (near a card's center) can't flip it back and forth per frame.
     if (zid === d.overZone && idx !== d.overIndex) {
@@ -517,7 +531,16 @@ export function DragGroup({
     // Honors the hysteresis-smoothed index when the drop lands in the tracked over-zone, so the
     // card commits to the slot the preview showed — a raw recompute would ignore the dead-band and
     // land one slot off. Only a drop into a DIFFERENT zone than tracked recomputes.
-    const toIndex = dropZone === d.overZone ? d.overIndex : indexAt(dropZone, d.lastX, d.lastY)
+    const rawIndex = dropZone === d.overZone ? d.overIndex : indexAt(dropZone, d.lastX, d.lastY)
+    const toIndex = resolveIndexRef.current
+      ? resolveIndexRef.current(dropZone, rawIndex, d.id)
+      : rawIndex
+    if (toIndex === null) {
+      setDropState('dropping')
+      setDropTarget({ x: 0, y: 0 })
+      arm(reset)
+      return
+    }
     const tgt = targetXY(dropZone, toIndex)
     setDropState('dropping')
     setDropTarget({ x: tgt.x - rect.left, y: tgt.y - rect.top }) // fly the overlay to the landing slot

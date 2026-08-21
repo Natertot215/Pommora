@@ -1,25 +1,16 @@
-// The schema-cascade journal — `.nexus/property-cascade.json`, one record max, the property
-// side's sibling of contextJournal. A cascade writes its intent FIRST, sweeps, then clears; a
-// crash at any point leaves an id-keyed record the open-time replay either forward-completes or
-// discards. Intent only, never a snapshot: the replay re-derives its targets from current disk.
-// The slot protects what it holds — a write never displaces a stranded record, and a clear only
-// lands for the record its caller staged, so an owed heal survives every later op untouched.
+// The schema-cascade journal — `.nexus/property-cascade.json`, one record max on the shared
+// journal slot, the property side's sibling of contextJournal. A cascade writes its intent
+// FIRST, sweeps, then clears; a crash at any point leaves an id-keyed record the open-time
+// replay either forward-completes or discards. Intent only, never a snapshot: the replay
+// re-derives its targets from current disk.
 
-import { rm } from 'node:fs/promises'
-import { readJsonObject, writeJson } from '../io/atomicWrite'
-import { recordWrite } from '../io/writeEcho'
-import { nexusConfig } from '../paths'
-import { sessionRoot } from '../session'
-
-const JOURNAL_FILE = 'property-cascade.json'
+import { journalSlot } from './journalSlot'
 
 export type SchemaJournal =
   | { op: 'rename'; id: string; from: string; to: string }
   | { op: 'delete'; id: string; name: string }
   | { op: 'option-rename'; id: string; from: string; to: string }
   | { op: 'option-remove'; id: string; value: string }
-
-const journalPath = (root: string): string => nexusConfig(root, JOURNAL_FILE)
 
 function sameRecord(a: SchemaJournal, b: SchemaJournal): boolean {
   if (a.op !== b.op || a.id !== b.id) return false
@@ -34,18 +25,8 @@ function sameRecord(a: SchemaJournal, b: SchemaJournal): boolean {
   }
 }
 
-/** Stage `j` unless a different record already holds the slot — a stranded record's owed heal
- *  outranks protecting the op now starting, which runs unjournaled in that already-faulted
- *  state and leaves the record for the next open's replay. */
-export async function writeSchemaJournal(root: string, j: SchemaJournal): Promise<void> {
-  const held = await readSchemaJournal(root)
-  if (held && !sameRecord(held, j)) return
-  await writeJson(journalPath(root), j)
-}
-
-export async function readSchemaJournal(root: string): Promise<SchemaJournal | null> {
-  const raw = await readJsonObject(journalPath(root))
-  if (!raw || typeof raw.id !== 'string') return null
+function decode(raw: Record<string, unknown>): SchemaJournal | null {
+  if (typeof raw.id !== 'string') return null
   switch (raw.op) {
     case 'rename':
     case 'option-rename':
@@ -62,14 +43,8 @@ export async function readSchemaJournal(root: string): Promise<SchemaJournal | n
   }
 }
 
-/** A clear lands only for the record its caller staged, and only for the live session's root —
- *  a mid-op nexus switch or a slot another record holds leaves the file for that record's own
- *  settle or the next open, where the replay disposes of it against real state. */
-export async function clearSchemaJournal(root: string, own: SchemaJournal): Promise<void> {
-  if (sessionRoot() !== root) return
-  const held = await readSchemaJournal(root)
-  if (!held || !sameRecord(held, own)) return
-  // The unlink is a `.nexus` event the watcher classifies full-refresh; echo it away.
-  recordWrite(journalPath(root))
-  await rm(journalPath(root), { force: true })
-}
+const slot = journalSlot<SchemaJournal>('property-cascade.json', decode, sameRecord)
+
+export const writeSchemaJournal = slot.write
+export const readSchemaJournal = slot.read
+export const clearSchemaJournal = slot.clear
