@@ -41,20 +41,26 @@ Stamped 08-21-2026; the tasks below assume them.
 
 **Landed with:** gates green (3,358 tests), two simplifier passes, two build-breaking passes whose five findings were all folded and test-pinned.
 
-#### II. Bundle 2a — Editor Keystroke Plumbing · one session · net ≈ −15
+#### II. ~~Bundle 2a — Editor Keystroke Plumbing~~ · landed 08-21-2026
 
-- [ ] **Input transforms take cached facts.** `dashArrow`, `autoPair`, `autoDelete`, `closerEndAt`, `smartBackspace`, `shiftEnterEdit`, `continueBlockquoteOnEnter` receive the line-local answers of the cached scan from their `editor/input.ts` callers — the same seam `tableBoundaryEnter` already uses (`editor/input.ts:56`) — retiring `isInsideCode(offset, text)` and `lineInCallout` document re-scans on the keystroke path. The transforms stay pure; the caller supplies the facts.
-- [ ] **The heading scan joins the facade.** `headingScan.ts` derives from `scanDoc`'s `headings`/`fences` instead of re-splitting and re-pairing; `folding.ts`'s separate `sectionCache` and `blockModel.ts:201`'s uncached string call retire. Net ≈ −25.
-- [ ] **Fence pairing runs once per scan.** `codeMask` gains a pre-paired-spans overload; `tableRegions` (`Tables/regions.ts:38`) and `citationScan` (`detect/index.ts:278`) thread `scanDoc`'s own spans.
+- [x] **Input transforms take the cached scan.** `dashArrow`, `autoPair`, `autoDelete`, `closerEndAt`, `smartBackspace`, `shiftEnterEdit`, `continueBlockquoteOnEnter`, and both `closeConstruct` arms take `DocScan` where they took a bare string — the seam `tableBoundaryEnter` already used. Two new line-local readers, `inCodeAt` and `inCalloutAt`, answer off the cached fences and callouts; `lineInCallout` retired with its test, and `isInsideCode` survives only on the paste path, which pays once per paste.
+- [x] **The heading scan joins the facade.** `HeadingSrc` names what a heading scan reads — line table, per-line heading flags, per-line fences — and `DocScan` satisfies it structurally, so the editor asks without re-splitting or re-pairing. `headingSrc(text)` serves the outline's string callers at the old cost. `folding.ts`'s separate `sectionCache` retired into one cache held at the rule; `blockModel.ts`'s uncached call now passes the scan it already held.
+- [x] **Fence pairing runs once per scan.** `codeMaskOf` builds the mask from an already-split, already-paired document; `codeMask(text)` is a thin wrapper on it. `scanDoc` builds one mask off its own pairing and threads it to `tableRegions` and `citationScan`, each of which used to re-split and re-pair the whole document to build its own.
 
-**Verification:** gates (the input corpus tests pin every transform); app open — type dashes, pairs, and Backspace through a large page inside and outside fences and callouts; heading grip drag; fold and unfold.
+**Landed with:** gates green (3,368 tests); two new pins — the scan-built mask and `inCodeAt` each agree with the string-built mask offset for offset, over the fence corpus.
 **Retires:** nothing listed — these were unlisted findings.
 
-#### II. Bundle 2b — Viewport-Scoped Decorations · one session · net ≈ +15
+#### II. ~~Bundle 2b — Viewport-Scoped Decorations~~ · landed 08-21-2026
 
-- [ ] **Line-chrome assembly scopes to `view.viewport`** (±1 line for box first/last flags); atomic ranges stay whole-document. The parity pin (`decorations/intent.ts:430`) is reformulated for scoped assembly.
+Chrome is produced in two stages, and only the second was scoped. The **derivation** (`docLineIntents`) walks the whole document with the full scan in hand and is cached per document version, so it runs once per edit. The **assembly** (`assembleLineIntents`) copied those cached intents into a fresh array on *every* rebuild — caret move, focus flip, scroll — which was the frequent cost.
 
-**Verification:** gates; app open — a 10k+ line page: typing latency before/after, box constructs at the viewport edges while scrolling, caret motion across atomics off-screen.
+- [x] **The assembly scopes to `view.viewport`**; the derivation stays whole-document and cached. No margin is owed: every `first`/`last` flag was decided by the whole-document walk before the viewport was consulted, so a windowed selection of already-correct intents cannot produce a wrong edge. Rails moved from one flat array into per-line buckets, so the window reaches them without walking the document's rails; they are still emitted after every line intent, since at a shared line start emission order is what stacks the line classes.
+- [x] **Atomic ranges stay whole-document.** They govern where a caret or selection endpoint may land, which is not a question the viewport gets to answer. The set is built once per document version and the caret's own line — which reveals its raw source — is removed with a range-bounded filter, so a caret move never walks the document's slots.
+- [x] **The parity pin** gained its windowed case: for every corpus document, every line pair, the windowed assembly equals the whole-document assembly filtered to those lines.
+
+**Out of scope, deliberately:** the derivation's own whole-document walk, which still runs once per keystroke. Scoping it needs a rail model that doesn't depend on a running walk of list nesting from the document's top — a real design problem, and its own item if it ever earns one. The document already pays one walk of this order per edit in `scanDoc` regardless.
+
+**Owed:** the live pass — a long page's typing latency, callout boxes and list rails at the viewport edges while scrolling, and caret motion across atomics off-screen.
 **Retires:** ContextPM Debt "The decoration build emits the whole document."
 
 #### II. Bundle 3 — Subfield Reads the Editor's Scan · one session · net ≈ −20
