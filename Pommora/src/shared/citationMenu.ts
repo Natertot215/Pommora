@@ -34,12 +34,9 @@ export function citationMenuModel(ctx: CitationMenuContext): ActionItem<Citation
   rows.push({ label: 'Copy Reference', action: 'cite:copy', separatorBefore: rows.length > 0 })
   if (ctx.editable)
     rows.push({
+      // A citation IS the footnote, and a marker that is the last reference takes it with it.
       label:
-        ctx.subject === 'citation'
-          ? 'Delete Footnote'
-          : ctx.lastReference
-            ? 'Delete Footnote'
-            : 'Delete Reference',
+        ctx.subject === 'citation' || ctx.lastReference ? 'Delete Footnote' : 'Delete Reference',
       action: 'cite:delete',
       separatorBefore: true,
     })

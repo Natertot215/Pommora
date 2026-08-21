@@ -4,7 +4,7 @@
 import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { openPage, resolveMdTarget, type ConnectionsApi } from '../connections'
-import { type CitationEntry, type MarkerRef, foldLabel } from '../detect'
+import { type CitationEntry, type MarkerRef, citationFor, lineEndOf, markersFor } from '../detect'
 import { linkTarget, tokenize } from '../tokens'
 import { docScan, docString, perDoc } from './docCache'
 import { followTarget } from './links'
@@ -31,6 +31,19 @@ export function loneTarget(
   return url ? { kind: 'link', url } : null
 }
 
+/** One marker a click can lead somewhere from, with the citation it binds to. */
+interface CiteSpot {
+  from: number
+  to: number
+  entry: CitationEntry
+  marker: MarkerRef
+  /** Whether this is the only marker bound to the citation — the row says what the click will do. */
+  lastReference: boolean
+  lone: ReturnType<typeof loneTarget>
+}
+
+interface CiteHit extends CiteSpot, PointerTarget {}
+
 /** Every marker a click can lead somewhere from, with the citation it binds to and the one thing
  *  that citation's whole content is — derived once per document version, because a pointer path that
  *  re-derived it would tokenize a citation on every mousemove over a marker. An unmatched marker is
@@ -38,32 +51,23 @@ export function loneTarget(
 const citationTargets = perDoc((doc) => {
   const scan = docScan(doc)
   const text = docString(doc)
-  const out: (Omit<CiteHit, keyof PointerTarget> & { from: number; to: number })[] = []
+  const out: CiteSpot[] = []
   for (const m of scan.citations.markers) {
     if (m.ordinal === null) continue
-    const key = foldLabel(m.label)
-    const entry = scan.citations.entries.find((e) => foldLabel(e.label) === key)
+    const entry = citationFor(scan.citations, m.label)
     if (!entry) continue
-    const end = scan.lineStarts[entry.lastLine] + scan.lines[entry.lastLine].length
+    const end = lineEndOf(scan, entry.lastLine)
     out.push({
       from: m.from,
       to: m.to,
       entry,
       marker: m,
-      lastReference: scan.citations.markers.filter((x) => foldLabel(x.label) === key).length === 1,
+      lastReference: markersFor(scan.citations, m.label).length === 1,
       lone: loneTarget(text.slice(entry.contentStart, end)),
     })
   }
   return out
 })
-
-interface CiteHit extends PointerTarget {
-  entry: CitationEntry
-  marker: MarkerRef
-  /** Whether this is the only marker bound to the citation — the row says what the click will do. */
-  lastReference: boolean
-  lone: ReturnType<typeof loneTarget>
-}
 
 function citeHitAt(view: EditorView, event: MouseEvent): CiteHit | null {
   const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
