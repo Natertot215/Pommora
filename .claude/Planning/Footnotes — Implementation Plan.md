@@ -640,13 +640,13 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 **Failure half:** **an insertion at a citation line's start** → clamped to its content start. CM's atomic skipping relocates only strictly-interior positions, so the range's first offset stays reachable: one Left from a citation's content start lands there, drawing at the same screen position because the prefix is zero-width, and the next keystroke writes ahead of `[^1]:` — which stops that line being a citation, ends the trailing run and literalizes every citation below it. List markers and callout prefixes leave the same edge open and the house accepts it, because there the damage is one line; here it is the whole section, and the guard is already iterating every change against the scan. A click below the section → the caret seats at the body's end. A plain paste below a trailing blank → shaped into continuation. **A block dragged to the document's end** → lands after the section, which is the same strand a paste makes and takes the same reshape; the block move's own seam guard fences the case above the section, so this is the only drag the tail guard owes. An edit that touches both body and section in one change → only the swept text goes, no cascade, per the range-keyed rule. A change the guard re-issues → carries its user event forward, or history grouping splits.
 
 **Steps:**
-- [ ] Write the failing tests, including the negative control's unregistered half and the boundary agreement.
-- [ ] Implement the verdict function and the filter, reading the start state's cached scan and never re-splitting.
-- [ ] **Clamp any insertion landing at a citation line's first offset to its content start.** Atomic skipping relocates only strictly-interior positions, so that one seat stays reachable and is invisible — the prefix is zero-width there. This is the branch that makes Task 5's ungated atomic actually hold.
-- [ ] **In the shared factory**, re-carry the user event on re-issue **and every annotation the filter does not own** — a re-issued spec is rebuilt from the start state, and a dropped self-edit annotation makes a downstream filter treat a construct's own write as a user edit. Both guards get the fix; a copy would have repaired one.
-- [ ] Register it alongside the existing guards.
-- [ ] Run the gate — expect green.
-- [ ] Commit: `feat(editor): the citations section's tail is guarded at the transaction layer`
+- [x] Write the failing tests, including the negative control's unregistered half and the boundary agreement.
+- [x] Implement the verdict function and the filter, reading the start state's cached scan and never re-splitting.
+- [x] **Clamp any insertion landing at a citation line's first offset to its content start.** Atomic skipping relocates only strictly-interior positions, so that one seat stays reachable and is invisible — the prefix is zero-width there. This is the branch that makes Task 5's ungated atomic actually hold.
+- [x] **In the shared factory**, re-carry the user event on re-issue **and every annotation the filter does not own** — a re-issued spec is rebuilt from the start state, and a dropped self-edit annotation makes a downstream filter treat a construct's own write as a user edit. Both guards get the fix; a copy would have repaired one.
+- [x] Register it alongside the existing guards.
+- [x] Run the gate — expect green.
+- [x] Commit: `feat(editor): the citations section's tail is guarded at the transaction layer`
 
 #### Task 16: One page-travel mechanism, named for what it does
 
@@ -920,8 +920,8 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
   - [x] Task 12 — The chevron class and the heading-gesture class separate · `c1b3415f`
   - [x] Task 13 — The Subfield's Show / Hide control · `f00e15d2`
   - [x] Task 14 — The divider draws and folds · `3257be4c` · gate: `5d965102` `4425dfdb`
-- [ ] **Phase 4** — Guards and gestures
-  - [ ] Task 15 — The tail guard · `<commit>`
+- [ ] **Phase 4** — Guards and gestures · base `ac311bb8`
+  - [x] Task 15 — The tail guard · `<T15>`
   - [ ] Task 16 — One page-travel mechanism, named for what it does · `<commit>`
   - [ ] Task 17 — Marker click — jump, or follow · `<commit>`
   - [ ] Task 18 — The two construct menus · `<commit>`
@@ -993,6 +993,12 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 - **A drop above the section — closed, not an issue.** `blockMoveChanges` already fences both seams: it emits a blank after every inserted block and heals the hole the cut leaves, with its own comment naming this exact hazard — a glue-adjacent block would otherwise lazily continue a list or merge two paragraphs. A paragraph dropped above the section always lands with a blank after it, so the first citation cannot become its continuation. **The adjacent case the round did not raise is real and already covered:** a block dropped at the document's end lands *after* the section, which is the strand A-5b forbids, and Task 15's rule is "at or after". Task 15 names it as a test case rather than leaving it implied.
 
 ### Deviations
+
+- **Task 15 — a change that cannot survive is RELOCATED to the body, not reshaped into continuation.** A-5b and the task both call for shaping stray text into continuation form. That shaping cannot hold: `citationScan`'s continuation walk refuses any line a block construct starts, and `parseListMarker` accepts a marker at any indent — so a pasted `- item` breaks the run whether it is indented or not, and the only shaping that would absorb it is escaping the user's own characters. The guard now asks the question directly instead of enumerating cases: apply the change, re-read the tail, and if it no longer reads as a citation run reaching the end, seat the inserted text at the end of the body above the section. It is lossless, it never rewrites what was pasted, and a stray ⌘V at the foot of a page lands where that text was going to belong anyway. **Task 21's Paste As ▸ Footnote keeps D-3's shaping** — the deliberate gesture shapes, the guard protects, and the two stop being the same mechanism. *Nathan should confirm this one; reversing it means accepting escaped characters in pasted text.*
+
+- **Task 15 — the head-offset repair is a `rewrite`, not a `clamp`.** `clamp` moves a range's start and leaves its end, which is right for the deletion the callout guard uses it for. An insertion has both endpoints on one offset, so clamping only the start inverts the range. The fifth arm the task added already carries a whole replacement, so the repair uses it.
+
+- **Task 15 — the re-issue carries `tableSelfEdit` alongside the user event.** The task asks for "every annotation the filter does not own", and CodeMirror exposes no way to enumerate a transaction's annotations. The carried set is therefore a named list, commented as the enumeration it stands in for. `tableSelfEdit` is the one that mattered: `Tables/guard.ts` reads it to let a table's own write through, and a re-issue that dropped it made the table guard treat that write as a user edit.
 
 - **Gate 3's interaction pass — five findings folded, and one in-flight decision inside them.** The seam's ends wrapped (a full radius on a box with real height curves the border up its own sides, which the title divider escapes by being zero-height) so it draws as a zero-height rule sharing the same border declaration, with the title divider's own gap above and below. A footnoted document now ends at its footnotes — the editor's 90px tail is typing room for a body still being written, not for a page whose foot is already written. A hidden seam ghosts under the pointer, so someone scrolled to the foot of a page finds the footnotes without knowing about the footer control. A caret inside a section being hidden is unplaced, the rule heading folds already kept. And revealing a section at the foot of a long page scrolls it into view once the reveal has its height. **The decision inside that last one:** the scroll targets the section's END at `y: 'nearest'`, which is the minimum movement and none at all when the section already fits — right for the handful of citations a page normally carries, and it lands on the last row rather than the first for a section long enough to exceed the viewport. `SETTLE_MS` moved to `folding.ts` as `FOLD_SETTLE_MS` in the same edit, since the travel path and the fold now both wait out the same beat and a second copy would be two answers to one question.
 

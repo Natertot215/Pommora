@@ -31,6 +31,7 @@ import { codeHighlight, codeLanguages } from './editor/codeHighlight'
 import { registerScrollHeal } from '../Embeds/tileWarm'
 import { calloutAtomic } from './editor/calloutAtomic'
 import { calloutGuard } from './editor/calloutGuard'
+import { citationGuard } from './editor/citationGuard'
 import { connectionClicks } from './editor/connections'
 import { markdownLinkClicks } from './editor/links'
 import { pasteLink } from './editor/PasteLink'
@@ -300,6 +301,7 @@ export function MarkdownEditor({
       calloutAtomic,
       // Reject any delete that would erode a callout body line's `>` prefix in place (drop it out of the box).
       calloutGuard,
+      citationGuard,
       connectionClicks(() => connectionsRef.current),
       markdownLinkClicks(() => connectionsRef.current),
       pasteLink,
