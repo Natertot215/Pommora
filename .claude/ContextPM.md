@@ -10,7 +10,7 @@ The one construct the Subfield still counts as source is a Markdown table, and t
 
 ### Immediate Work
 
--
+
 - [ ] What is left of the cohesion queue at [[Cohesive-Cleanup]] — the view host under Table and Cards, the drag adapters' remaining frame, Table's column readers, and the derived state held as state. Ten of its items closed; these four did not, and none of them touches MarkdownPM's core. What is structural rather than session-sized sits in §The Boring Work.
 
 ### Pending Focuses
@@ -32,7 +32,6 @@ Findings where the correct answer isn't established in the codebase — design a
 - [ ] **Persisted-write failures are silent.** Surface them through the existing `showError` path, add a quieter subfield indicator, or accept silence for this class deliberately and write that down. The current state is the third option without the writing-down, and it is the shape every future persisted preference copies.
 - [ ] **Two retention budgets act on the same guests and neither knows it.** Parked page surfaces cap at 2 tabs, hidden web guests at 5, and parking routes every tile inside a parked surface through the hidden-guest path — two parked tabs holding four web tiles each already exceeds the guest cap, so the LRU tears down the live sessions parking exists to preserve. One budget with tiers, or the numbers chosen together.
 - [ ] **`QuickCapturePM.md` opens with a build-status banner** — the only document that does, and the shape the placeholder rule pushes against. Defensible for a wholly unbuilt feature, which is why it's a call.
-- [ ] **Two zoom ceilings exist and neither comment names the other** — `webGuests.ts` allows 0.25–5 for host zoom, `shared/types.ts` caps guest zoom at 2. Almost certainly deliberate, but confirm before someone "fixes" the mismatch, and add a line to each comment either way.
 
 #### II. The Boring Work
 

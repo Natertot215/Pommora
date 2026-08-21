@@ -307,3 +307,64 @@ describe('the last reference takes its footnote in every shape the document can 
     expect(out).toContain('> [!note] see')
   })
 })
+
+const stranded = (doc: string): string[] => {
+  const d = splitWithOffsets(doc)
+  const owned = new Set(citationScan(d, []).entries.map((e) => e.line))
+  return d.lines.filter((l, i) => /^ {0,3}\[\^[^\]\s]+\]:/.test(l) && !owned.has(i))
+}
+
+const bodies = ['x[^a] y[^b] z[^c]', 'x[^a] y[^b]', 'x[^a]']
+const orders = [
+  ['a', 'b', 'a', 'c'],
+  ['a', 'a', 'b', 'c'],
+  ['a', 'b', 'c', 'a'],
+  ['b', 'a', 'a', 'b'],
+  ['a', 'b', 'b', 'a'],
+  ['c', 'a', 'b', 'a'],
+  ['a', 'a'],
+  ['a', 'b', 'a'],
+  ['b', 'a', 'b'],
+]
+
+// A label two rows claim can be interleaved with another label's rows, so the set a cascade cuts is
+// not a contiguous block. Every document shape below, put through every gesture and every whole-line
+// range: nothing throws on an overlapping span, and no `[^x]:` line is ever left outside a live
+// section — the one state the whole feature exists to prevent.
+describe('an interleaved duplicate survives every gesture at every range', () => {
+  it('never throws and never strands a head', () => {
+    const failures: string[] = []
+    for (const body of bodies)
+      for (const order of orders) {
+        const doc = `${body}\n\n${order.map((l, i) => `[^${l}]: row ${i}`).join('\n')}`
+        const s = scanOf(doc)
+        const run = (
+          name: string,
+          changes: ReturnType<typeof deleteCitationChanges> | null,
+        ): void => {
+          if (!changes) return
+          try {
+            const out = citationGesture(s, changes)
+              .apply(Text.of(doc.split('\n')))
+              .toString()
+            const bad = stranded(out)
+            if (bad.length)
+              failures.push(`${name} | ${JSON.stringify(doc)} -> stranded ${JSON.stringify(bad)}`)
+          } catch (e) {
+            failures.push(`${name} | ${JSON.stringify(doc)} -> THREW ${(e as Error).message}`)
+          }
+        }
+        for (const e of s.citations.entries)
+          run(`citation ${e.label}@${e.line}`, deleteCitationChanges(s, e))
+        for (const m of s.citations.markers)
+          run(`marker ${m.label}@${m.from}`, deleteMarkerChanges(s, m))
+        for (let i = 0; i < s.lines.length; i++)
+          for (let j = i; j < s.lines.length; j++) {
+            const from = s.lineStarts[i]
+            const to = s.lineStarts[j] + s.lines[j].length
+            run(`sweep ${i}..${j}`, citationDeleteIntent(s, from, to))
+          }
+      }
+    expect(failures.slice(0, 12)).toEqual([])
+  })
+})

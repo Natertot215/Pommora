@@ -211,7 +211,7 @@ describe('a replacement that cannot survive is moved whole, not half', () => {
     const from = DOC.indexOf('body')
     const to = DOC.indexOf('the citation')
     const out = replace(DOC, from, to, 'Z')
-    expect(out).toBe(DOC.slice(0, from) + 'Z' + DOC.slice(to))
+    expect(out).toBe(`${DOC.slice(0, from)}Z${DOC.slice(to)}`)
   })
 
   it('and a pure insertion still relocates without deleting anything', () => {
