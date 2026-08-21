@@ -8,7 +8,7 @@ import { type CitationEntry, type MarkerRef, citationFor, lineEndOf, markersFor 
 import { linkTarget, tokenize } from '../tokens'
 import { docScan, docString, perDoc } from './docCache'
 import { followTarget } from './links'
-import { applyCitationAction } from './citationActions'
+import { applyCitationAction, citationHost } from './citationActions'
 import { pointerHandlers, type PointerTarget } from './pointerPath'
 import { travelTo } from './travel'
 
@@ -78,14 +78,10 @@ function citeHitAt(view: EditorView, event: MouseEvent): CiteHit | null {
   return { range: [hit.from, hit.to], onText: true, hidesSyntax: true, pos, ...hit }
 }
 
-/** The marker's gestures. `reveal` is how a hidden section opens on arrival — the page's own
- *  visibility, written by its host, so the fold and the stored value never disagree and the footer's
- *  control still reads the section's true state after a jump. A surface with no host to write it (an
- *  embed, a preview) leaves it out and the travel's own reveal carries the jump. */
-export function citationPointer(
-  getApi: () => ConnectionsApi | undefined,
-  reveal?: () => void,
-): Extension {
+/** The marker's gestures. Opening a hidden section on arrival is the host's `reveal` — read off the
+ *  facet, the same one a creation reads, so a jump and an insert can never disagree about what
+ *  showing the section means. */
+export function citationPointer(getApi: () => ConnectionsApi | undefined): Extension {
   return pointerHandlers<CiteHit>({
     hoverGate: '.md-cite-ref',
     // A hover preview over a marker is a Prospect, so nothing here ever arms a dwell.
@@ -106,7 +102,7 @@ export function citationPointer(
         )
         if (go) return go()
       }
-      reveal?.()
+      view.state.facet(citationHost).reveal?.()
       travelTo(view, hit.entry.contentStart)
     },
     dwell: () => null,

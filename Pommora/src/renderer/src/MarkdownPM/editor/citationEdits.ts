@@ -167,3 +167,42 @@ export function citationGesture(scan: CitationSlice, changes: ChangeSpec[]): Cha
   const after = first.apply(Text.of(scan.text.split('\n'))).toString()
   return first.compose(ChangeSet.of(normalizeCitations(scanDoc(after)), after.length))
 }
+
+/** The smallest number no label in the document already spells. A word label can never collide with
+ *  one, and an orphan's number is taken like any other; the normalization that follows settles the
+ *  order, so the mint only has to be free. */
+function mintLabel(c: CitationScan): string {
+  const taken = new Set([...c.entries, ...c.markers].map((x) => foldLabel(x.label)))
+  let n = 1
+  while (taken.has(String(n))) n++
+  return String(n)
+}
+
+/** Where a new citation is written: after the section's last row, or after the body's last line
+ *  where there is no section yet, with the blank line that separates the two. */
+function citationSeat(scan: CitationSlice): { at: number; lead: string } {
+  const { lines, citations: c } = scan
+  const last = c.entries[c.entries.length - 1]
+  if (last) return { at: lineEndOf(scan, last.lastLine), lead: '\n' }
+  for (let i = lines.length - 1; i >= 0; i--)
+    if (lines[i].trim() !== '') return { at: lineEndOf(scan, i), lead: '\n\n' }
+  return { at: 0, lead: '\n\n' }
+}
+
+/** A fresh pair: the marker at `at`, and its citation at the document's end. The label is minted
+ *  free rather than final — every creation path composes this with the normalization, which is what
+ *  puts the number in first-use order. */
+export function insertCitationChanges(scan: CitationSlice, at: number, text: string): ChangeSpec[] {
+  const label = mintLabel(scan.citations)
+  const seat = citationSeat(scan)
+  return [
+    { from: at, to: at, insert: `[^${label}]` },
+    { from: seat.at, to: seat.at, insert: `${seat.lead}[^${label}]: ${text}` },
+  ]
+}
+
+/** A clipboard shaped into one citation's text: every run of whitespace, blank lines included,
+ *  becomes a single space. A citation is one paragraph — a following line continues it only while
+ *  nothing on it starts a block, and a list marker parses at any indent, so a paste kept across
+ *  several lines is a paste that can end the run it was written into. */
+export const citationText = (clipboard: string): string => clipboard.trim().replace(/\s+/g, ' ')

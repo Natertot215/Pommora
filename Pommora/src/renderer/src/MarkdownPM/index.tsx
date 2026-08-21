@@ -32,6 +32,7 @@ import { registerScrollHeal } from '../Embeds/tileWarm'
 import { calloutAtomic } from './editor/calloutAtomic'
 import { calloutGuard } from './editor/calloutGuard'
 import { citationGuard } from './editor/citationGuard'
+import { citationHost, citationSeatAt } from './editor/citationActions'
 import { citationPointer, citationRowMenu } from './editor/citationPointer'
 import { connectionClicks } from './editor/connections'
 import { markdownLinkClicks } from './editor/links'
@@ -311,10 +312,11 @@ export function MarkdownEditor({
       calloutGuard,
       citationGuard,
       connectionClicks(() => connectionsRef.current),
-      citationPointer(
-        () => connectionsRef.current,
-        () => citationsRevealRef.current?.(),
-      ),
+      citationHost.of({
+        shown: () => citesShownRef.current,
+        reveal: () => citationsRevealRef.current?.(),
+      }),
+      citationPointer(() => connectionsRef.current),
       citationRowMenu(),
       markdownLinkClicks(() => connectionsRef.current),
       pasteLink,
@@ -346,7 +348,14 @@ export function MarkdownEditor({
           const sel = u.state.selection.main
           // FormatState is flat primitives — a field compare beats allocating a JSON string per
           // caret move just to diff it.
-          const fs = readFormatState(doc, sel.from, sel.to, u.view.hasFocus, embedSeatAt(u.state))
+          const fs = readFormatState(
+            doc,
+            sel.from,
+            sel.to,
+            u.view.hasFocus,
+            embedSeatAt(u.state),
+            citationSeatAt(u.state),
+          )
           const last = lastFormatRef.current
           const changed =
             !last || (Object.keys(fs) as (keyof typeof fs)[]).some((k) => fs[k] !== last[k])

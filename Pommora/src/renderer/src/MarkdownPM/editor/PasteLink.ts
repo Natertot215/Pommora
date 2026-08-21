@@ -7,6 +7,8 @@ import { linkDestinationAt } from '@shared/webpageEmbed'
 import { matchesCommand } from '../../Commands'
 import { useSession } from '../../store'
 import { docString } from './docCache'
+import { insertCitation } from './citationActions'
+import { citationText } from './citationEdits'
 import { embedSeatAt } from './embedInsert'
 import { awaitTitle } from './PendingTitle'
 
@@ -115,6 +117,12 @@ export async function pasteAs(view: EditorView, form: PasteAsForm): Promise<void
   if (destinationGuard(view, view.state.selection.main.from)) {
     view.dispatch(view.state.replaceSelection(text))
     view.focus()
+    return
+  }
+  // A footnote forks ahead of the single-range writer the other forms share: it is two disjoint
+  // sites, and its own action answers for the seat, the caret and the disclosure.
+  if (form === 'footnote') {
+    insertCitation(view, citationText(text))
     return
   }
   const target = pasteAsTarget(text)

@@ -4,6 +4,7 @@ import { isValidLink, normalizeLinkUrl } from '@shared/links'
 import { serializeLink } from '@shared/linkValue'
 import { PASTE_AS_PREFIX, type PasteAsForm } from '@shared/PasteAsMenu'
 import type { ListKind } from '@shared/gripMenu'
+import { insertCitation } from './citationActions'
 import { embedInsertAtCaret, webpageInsertAtCaret } from './embedInsert'
 import { pasteAs } from './PasteLink'
 import {
@@ -90,6 +91,9 @@ export function applyEditorAction(view: EditorView, raw: string): boolean {
   if (action === 'block:page') return embedInsertAtCaret(view)
   if (action === 'block:webpage') return webpageInsertAtCaret(view)
   if (action === INSERT_LINK_ACTION) return insertLinkOverSelection(view)
+  // A footnote is a pair at two disjoint sites, not a block whose format changes — so it sits here
+  // with the other two escape hatches rather than inside the format union's exhaustive switch.
+  if (action === 'block:citation') return insertCitation(view)
   // Paste As reads the clipboard back over the bridge, so it finishes a turn later than the rest.
   if (action.startsWith(PASTE_AS_PREFIX)) {
     void pasteAs(view, action.slice(PASTE_AS_PREFIX.length) as PasteAsForm)
