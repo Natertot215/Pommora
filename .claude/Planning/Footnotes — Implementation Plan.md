@@ -971,6 +971,8 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 
 ### Deviations
 
+- **Gate 2's interaction pass — the citation row had no hanging indent at all.** `--number-zone` was declared on `.cm-line.md-li`, and a citation row is not a list line, so both its `padding-left` and its `text-indent` resolved to an invalid `var()` and collapsed to zero: a wrapped line started under the number rather than under the text. The zone moved to `.cm-content`, where the ordered marker and the citation row read one declaration — they are meant to sit on the same column. The row's glyph also zeroes its own `text-indent`, as `.md-li-marker` and `.md-cb-ln` already do; the ordered marker is deliberately left alone, its geometry being settled literal source.
+
 - **Gate 2 — a table kept a stale footnote number after an edit it never came near.** The correctness review found `editAffectsTables` gating a rebuild on the edit touching a table's own range or a delimiter row beside it, so a marker added elsewhere renumbered the body while the resting cell kept drawing its old number until someone typed in that table. The gate now also compares the document's numbering key across the transaction, paid only when a table exists. Three tests pin it.
 
 - **Gate 2 — the per-line marker pass was O(lines × markers).** Task 6 filtered the flat marker list for every line of the document, on a per-doc-version trigger. The scan now returns two line indexes over the arrays it already holds — `entryAt` and `markersAt` — and the pass reads its own line. Measured on 600 marker-bearing lines over 60 citations: `docLineIntents` 0.10ms, the whole `scanDoc` 0.88ms.
