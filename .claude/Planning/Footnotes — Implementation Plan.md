@@ -514,11 +514,11 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 **Failure half:** a heading anchor → keeps all four behaviors unchanged, inside a hover card as well as in the main editor. The section's anchor → **no chevron**, no drag gate, no heading hit-test, no hover-card fold click.
 
 **Steps:**
-- [ ] Write the failing tests: the divider's right-press opens the ordinary editor menu; a heading's right-press still opens the heading menu; a heading is still drag-relocatable; the divider draws no chevron; a hover card's heading still draws none; the negative control's reverted half.
-- [ ] Split the class in `chevronDeco`, point `HEADING_LINE` at the heading-gesture class, and follow the CSS.
-- [ ] Re-run the derivation and confirm every surviving hit is deliberate.
-- [ ] Run the gate — expect green.
-- [ ] Commit: `fix(editor): a fold chevron and a heading gesture stop sharing one class`
+- [x] Write the failing tests: the divider's right-press opens the ordinary editor menu; a heading's right-press still opens the heading menu; a heading is still drag-relocatable; the divider draws no chevron; a hover card's heading still draws none; the negative control's reverted half.
+- [x] Split the class in `chevronDeco`, point `HEADING_LINE` at the heading-gesture class, and follow the CSS.
+- [x] Re-run the derivation and confirm every surviving hit is deliberate.
+- [x] Run the gate — expect green.
+- [x] Commit: `fix(editor): a fold chevron and a heading gesture stop sharing one class`
 
 #### Task 13: The Subfield's Show / Hide control
 
@@ -893,8 +893,8 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 - [ ] **Phase 3** — Hiding and showing · base `d124cf6a`
   - [x] Task 9 — The visibility override's storage · `4c03b056`
   - [x] Task 10 — The two settings · `aefc0277`
-  - [x] Task 11 — The section is a fold region, seeded rather than persisted · `<T11>`
-  - [ ] Task 12 — The chevron class and the heading-gesture class separate · `<commit>`
+  - [x] Task 11 — The section is a fold region, seeded rather than persisted · `a7059714`
+  - [x] Task 12 — The chevron class and the heading-gesture class separate · `<T12>`
   - [ ] Task 13 — The Subfield's Show / Hide control · `<commit>`
   - [ ] Task 14 — The divider draws and folds · `<commit>`
 - [ ] **Phase 4** — Guards and gestures
@@ -970,6 +970,8 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 - **A drop above the section — closed, not an issue.** `blockMoveChanges` already fences both seams: it emits a blank after every inserted block and heals the hole the cut leaves, with its own comment naming this exact hazard — a glue-adjacent block would otherwise lazily continue a list or merge two paragraphs. A paragraph dropped above the section always lands with a blank after it, so the first citation cannot become its continuation. **The adjacent case the round did not raise is real and already covered:** a block dropped at the document's end lands *after* the section, which is the strand A-5b forbids, and Task 15's rule is "at or after". Task 15 names it as a test case rather than leaving it implied.
 
 ### Deviations
+
+- **Task 12 — the chevron kept the name, so two of the five listed files needed no edit.** The task leaves open which of the two classes keeps `md-foldable` and says the CSS follows "whichever class the chevron kept". The chevron kept it, and the heading's gesture became `md-heading-fold` — so `Styles.css`'s two chevron rules and `embeds.css`'s suppression and pointer cursor are already pointed at the right class. The re-run derivation reads 5 hits across 3 files, every one of them meaning "draws a chevron".
 
 - **Task 11 — the kind carries no `persists` field, per the task's own Interfaces block.** The Steps line asked for `KINDS` to register `'citations'` with `persists: false`, which is the per-region flag the same task retires `collapsedByDefault` for being. One `persisted(kind)` predicate holds the fact instead, and the persist listener and the saved-fold pass both filter through it.
 
