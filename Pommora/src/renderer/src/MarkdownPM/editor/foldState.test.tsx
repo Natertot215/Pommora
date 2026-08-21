@@ -16,6 +16,10 @@ import {
   HEADING_FOLD_LINE,
   type FoldKind,
 } from './folding'
+import { commitCitation } from './citationActions'
+import type { ChangeSet } from '@codemirror/state'
+import { citationGesture, deleteMarkerChanges } from './citationEdits'
+import { docScan } from './docCache'
 import { HOT_MENU_LINES } from './gripMenu'
 import { headingSections } from './headingScan'
 import { citationScan, splitWithOffsets } from '../detect'
@@ -413,5 +417,81 @@ describe('a value arriving after mount is still a seed', () => {
     await rerenderEditor({ initialBody: CITED, citationsShown: false })
     expect(kinds(view)).toEqual(['citations'])
     expect(revealRows(view)).toBe('1fr')
+  })
+})
+
+// A fold entry maps its start forward and its end backward, so an edit that grows the section
+// leaves the new rows standing OUTSIDE the collapsed widget — visible on a page whose footnotes are
+// meant to be hidden. Every footnote gesture therefore drops the fold and puts it back, which also
+// re-takes the clone the reveal animates from.
+describe('a gesture leaves the section in the visible state it found it', () => {
+  const ONE = 'x[^1] y\n\n[^1]: one'
+  const PAIR = 'x[^1] y[^2]\n\n[^1]: one\n[^2]: two'
+  // A row still standing in the content layer rather than inside the fold's captured clone.
+  const showing = (view: EditorView): number =>
+    [...view.contentDOM.querySelectorAll('.cm-line.md-cite')].filter(
+      (el) => el.closest('.mdpm-fold-clone') === null,
+    ).length
+
+  const addSecond = (view: EditorView): ChangeSet => {
+    const scan = docScan(view.state.doc)
+    return citationGesture(scan, [
+      { from: 7, to: 7, insert: '[^2]' },
+      { from: scan.text.length, to: scan.text.length, insert: '\n[^2]: two' },
+    ])
+  }
+
+  it('a section that grows under a hidden fold stays hidden, whole', async () => {
+    const view = await mountEditor({ initialBody: ONE })
+    await act(async () => {
+      commitCitation(
+        view,
+        [
+          { from: 7, to: 7, insert: '[^2]' },
+          { from: ONE.length, to: ONE.length, insert: '\n[^2]: two' },
+        ],
+        'input',
+      )
+    })
+    expect(view.state.doc.toString()).toBe(PAIR)
+    expect(kinds(view)).toEqual(['citations'])
+    expect(showing(view)).toBe(0)
+  })
+
+  // The other half: dispatched without the teardown, the row it added draws in plain sight.
+  it('and without the teardown the new row draws outside the fold', async () => {
+    const view = await mountEditor({ initialBody: ONE })
+    await act(async () => {
+      view.dispatch({ changes: addSecond(view) })
+    })
+    expect(kinds(view)).toEqual(['citations'])
+    expect(showing(view)).toBe(1)
+  })
+
+  it('and a shown section is still shown afterwards', async () => {
+    const view = await mountEditor({ initialBody: ONE, citationsShown: true })
+    await act(async () => {
+      commitCitation(
+        view,
+        [
+          { from: 7, to: 7, insert: '[^2]' },
+          { from: ONE.length, to: ONE.length, insert: '\n[^2]: two' },
+        ],
+        'input',
+      )
+    })
+    expect(kinds(view)).toEqual([])
+    expect(showing(view)).toBe(2)
+  })
+
+  it('a deletion under a hidden fold renumbers what is left and leaves it hidden', async () => {
+    const view = await mountEditor({ initialBody: PAIR })
+    await act(async () => {
+      const scan = docScan(view.state.doc)
+      commitCitation(view, deleteMarkerChanges(scan, scan.citations.markers[0]), 'delete')
+    })
+    expect(view.state.doc.toString()).toBe('x y[^1]\n\n[^1]: two')
+    expect(kinds(view)).toEqual(['citations'])
+    expect(showing(view)).toBe(0)
   })
 })

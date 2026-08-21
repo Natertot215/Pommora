@@ -225,7 +225,10 @@ export function applyChanges(doc: string, changes: ChangeSpec[]): string {
   return out + doc.slice(cursor)
 }
 
-function diffAsSingleReplace(a: string, b: string): ChangeSpec[] {
+/** `b` as one replacement over `a`, trimmed to the span that actually differs. The idiom every
+ *  rebuild-then-diff act in the editor ends on: build the desired result, apply it to a scratch
+ *  copy, and let the trim decide what the edit really was. */
+export function diffAsSingleReplace(a: string, b: string): ChangeSpec[] {
   if (a === b) return []
   let pre = 0
   const max = Math.min(a.length, b.length)
