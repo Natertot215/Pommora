@@ -49,16 +49,27 @@ export function citationTailVerdict(
   if (to < tailStart) return { kind: 'ok' }
   const after = doc.slice(0, from) + inserted + doc.slice(to)
   if (tailHolds(after, tailStart))
-    return entry ? { kind: 'rewrite', from, to, insert: inserted } : { kind: 'ok' }
+    return entry ? { kind: 'rewrite', edits: [{ from, to, insert: inserted }] } : { kind: 'ok' }
 
   // The section could not survive this text where it landed, and moving it past the head does not
   // save it either. Its text goes to the end of the body instead — the line the divider draws on,
   // which keeps the blank the section anchors to.
   const seat = c.anchorLine >= 0 ? lineStarts[c.anchorLine] : 0
   const body = inserted.replace(/^\n+|\n+$/g, '')
-  return body === ''
-    ? { kind: 'rewrite', from: fromA, to: toA, insert: '' }
-    : { kind: 'rewrite', from: seat, to: seat, insert: `${body}\n` }
+  if (body === '') return { kind: 'rewrite', edits: [{ from: fromA, to: toA, insert: '' }] }
+  // A sweep that began at or above the seat already owns a place in the body for what replaces it,
+  // and relocating past its own start would be two edits claiming one range. It goes through as the
+  // plain replacement it is: the guard stops text being STRANDED after the section, not removed.
+  if (fromA <= seat) return { kind: 'ok' }
+  // The swept range goes where it stood, and its text goes to the end of the body — the line the
+  // divider draws on, which keeps the blank the section anchors to.
+  return {
+    kind: 'rewrite',
+    edits: [
+      ...(fromA < toA ? [{ from: fromA, to: toA, insert: '' }] : []),
+      { from: seat, to: seat, insert: `${body}\n` },
+    ],
+  }
 }
 
 export const citationGuard = verdictFilter((doc, fromA, toA, inserted, state: EditorState) => {

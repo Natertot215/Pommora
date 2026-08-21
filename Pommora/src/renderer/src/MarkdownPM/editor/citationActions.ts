@@ -99,7 +99,7 @@ export function insertCitation(view: EditorView, text = ''): boolean {
   const label = mintLabel(scan.citations)
   return writeCitation(view, at, [
     { from: at, to: at, insert: `[^${label}]` },
-    citationRowChanges(scan, label, text),
+    citationRowChanges(scan, label, text, at),
   ])
 }
 
@@ -120,7 +120,7 @@ export function seedTypedCitation(view: EditorView, at: number): boolean {
   if (label === null || citationFor(scan.citations, label)) return false
   return writeCitation(view, at - label.length - 2, [
     ...(scan.text[at] === ']' ? [] : [{ from: at, to: at, insert: ']' }]),
-    citationRowChanges(scan, label, ''),
+    citationRowChanges(scan, label, '', at),
   ])
 }
 

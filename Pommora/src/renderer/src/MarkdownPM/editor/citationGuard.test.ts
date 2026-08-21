@@ -182,3 +182,42 @@ describe('the guard passes a renormalization through untouched', () => {
     ).toBe('x[^1] y[^2]\n\n[^1]: one\n[^2]: two')
   })
 })
+
+// The relocate arm MOVES text: the swept range has to go where it stood, or the replacement half of
+// the edit is silently dropped and the reader's selection survives an edit that replaced it.
+describe('a replacement that cannot survive is moved whole, not half', () => {
+  const replace = (doc: string, from: number, to: number, text: string): string =>
+    EditorState.create({ doc, extensions: [citationGuard] as Extension })
+      .update({ changes: { from, to, insert: text } })
+      .state.doc.toString()
+
+  it('a multi-paragraph paste over a citation\u2019s text removes what it replaced', () => {
+    const at = DOC.indexOf('another')
+    const out = replace(DOC, at, at + 'another'.length, 'para one\n\npara two')
+    expect(out).not.toContain('another')
+    expect(out).toContain('para one')
+    expect(sectionOf(out)).toBe(2)
+  })
+
+  it('typing over a citation\u2019s text removes it and relocates the character', () => {
+    const at = DOC.indexOf('the citation')
+    const out = replace(DOC, at, at + 'the citation'.length, '- x')
+    expect(out).not.toContain('the citation')
+    expect(out).toContain('- x')
+    expect(sectionOf(out)).toBe(2)
+  })
+
+  it('a sweep that began in the body goes through as the plain replacement it is', () => {
+    const from = DOC.indexOf('body')
+    const to = DOC.indexOf('the citation')
+    const out = replace(DOC, from, to, 'Z')
+    expect(out).toBe(DOC.slice(0, from) + 'Z' + DOC.slice(to))
+  })
+
+  it('and a pure insertion still relocates without deleting anything', () => {
+    const out = type(DOC, DOC.length, '\n\npasted prose')
+    expect(out).toContain('pasted prose')
+    expect(sectionOf(out)).toBe(2)
+    expect(out).toContain('the citation')
+  })
+})

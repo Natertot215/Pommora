@@ -7,6 +7,7 @@ import type { Personalization } from '@shared/types'
 import { useSession } from '@renderer/store'
 import { stubEditorBridge, mountEditor, cleanupEditor } from '@renderer/testing/editorHarness'
 import { citationSeatAt, insertCitation } from './citationActions'
+import { citationScan, splitWithOffsets } from '../detect'
 import { citationText } from './citationEdits'
 import { foldedRegions } from './folding'
 import { pasteAs } from './PasteLink'
@@ -89,6 +90,39 @@ describe('Insert ▸ Footnote writes a complete pair', () => {
       undo(view)
     })
     expect(doc(view)).toBe('one two')
+  })
+})
+
+// A file ending in a newline has an empty last line, and the caret sits there after any Enter and
+// after a click in the blank area under the text. A citation seated at the last line holding content
+// would land ABOVE the marker — the section standing before the thing that points at it.
+describe('the first footnote is never written above its own marker', () => {
+  const bodies = ['text\n', 'text\n\n', 'a\nb\n\n', '```\ncode\n```\n', 'text\n \n']
+  for (const body of bodies) {
+    it(`with the caret at the end of ${JSON.stringify(body)}`, async () => {
+      const view = await mountEditor({ initialBody: body })
+      await at(view, body.length)
+      expect(await insert(view)).toBe(true)
+      const out = doc(view)
+      const scan = citationScan(splitWithOffsets(out), [])
+      expect(scan.entries, out).toHaveLength(1)
+      expect(scan.markers, out).toHaveLength(1)
+      expect(scan.markers[0].ordinal, out).toBe(1)
+      expect(out.indexOf('[^1]'), out).toBeLessThan(out.indexOf('[^1]:'))
+      await cleanupEditor()
+    })
+  }
+
+  it('and Paste As lands the same way', async () => {
+    clipboard = 'pasted text'
+    const view = await mountEditor({ initialBody: 'text\n\n' })
+    await at(view, 6)
+    await act(async () => {
+      await pasteAs(view, 'footnote')
+    })
+    const out = doc(view)
+    expect(citationScan(splitWithOffsets(out), []).entries, out).toHaveLength(1)
+    expect(out.indexOf('[^1]'), out).toBeLessThan(out.indexOf('[^1]:'))
   })
 })
 
