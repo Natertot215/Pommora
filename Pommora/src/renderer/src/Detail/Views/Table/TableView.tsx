@@ -256,7 +256,6 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   // retire row drag or flip the manual-order gates.
   const sortKeys = useMemo(() => resolvedSortCount(liveView.sort, schema), [liveView.sort, schema])
   const sortedOrGrouped = sortKeys > 0 || liveView.group != null
-  const manualOrder = resolveManualOrder(sortedOrGrouped, manualOverride, viewOrders[view.id])
   // The grouped property + whether a cross-group drop can reassign it: status/select/checkbox map
   // a group key straight to a value; a date bucket doesn't, so date grouping isn't reassignable.
   // The property lives in TWO homes: top-level property grouping, or the view-level sub-group
@@ -283,6 +282,13 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   // page into that Set. The sub-grouped case already moves on a set-dimension change (reassignRow).
   const canRelocate = structuralGrouping && !subGrouped
   const structuralOrder = groupPropId === undefined && sortKeys === 0
+  // A held viewOrder mask never feeds a structural paint — the rows draw in tree order, and the
+  // mask stays the sorted/grouped tiebreaker.
+  const manualOrder = resolveManualOrder(
+    sortedOrGrouped,
+    manualOverride,
+    structuralOrder ? undefined : viewOrders[view.id],
+  )
   const dragDisabled = !(canReorderWithin || canReassign || canRelocate)
   // Optimistic property patches feed the pipeline so a reassigned row re-groups before the watcher round-trips.
   const effectiveValues = useMemo(
@@ -1421,9 +1427,6 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   const reorderTo = (orderIds: string[], groupKey: string): void => {
     setManualOverride(orderIds)
     if (structuralOrder) {
-      // A held viewOrder mask is what the pipeline paints — the drag maintains it beside the
-      // canonical write, or a reload re-ranks the rows under the stale mask.
-      if (viewOrders[view.id]) persistViewOrder(orderIds)
       const groupPages = orderIds.filter((id) => rowGroup.get(id) === groupKey)
       const firstPath = groupPages.length ? rowPath.get(groupPages[0]) : undefined
       if (firstPath) {
