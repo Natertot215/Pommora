@@ -1,8 +1,10 @@
 // Rides ONE CSS var --block-zoom; font + glyphs + handle all derive from it. Applied linearly in
 // CSS — never touches the editor's own clamped zoom curve.
 
+import { SCALE_STEPS } from '@shared/types'
+
 export const DEFAULT_ZOOM = 1
-export const ZOOM_FACTORS: readonly number[] = [1.25, 1, 0.85, 0.65, 0.5]
+export const ZOOM_FACTORS: readonly number[] = [...SCALE_STEPS].reverse()
 
 export interface ZoomStep {
   factor: number

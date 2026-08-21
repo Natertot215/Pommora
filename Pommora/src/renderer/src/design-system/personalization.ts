@@ -1,4 +1,10 @@
-import type { Personalization } from '@shared/types'
+import {
+  EMBED_SCALE_DEFAULT,
+  type Personalization,
+  coerceScale,
+  embedZoom,
+  viewEmbedZoom,
+} from '@shared/types'
 import { chipColorFor } from './tokens/colorMap'
 import { cellColor } from './tokens/ramp'
 
@@ -35,6 +41,12 @@ export function applyPersonalizationKey<K extends keyof Personalization>(
 ): void {
   if (typeof document === 'undefined') return
   const el = document.documentElement
+  if (key === 'embedScale') {
+    const scale = coerceScale(value, EMBED_SCALE_DEFAULT)
+    el.style.setProperty('--embed-zoom', String(embedZoom(scale)))
+    el.style.setProperty('--view-embed-zoom', String(viewEmbedZoom(scale)))
+    return
+  }
   const link = LINK_VARS[key as keyof typeof LINK_VARS]
   if (link) {
     el.style.setProperty(link.cssVar, linkColorCss(value as string | undefined, link.inherit))
@@ -49,6 +61,7 @@ export function applyPersonalizationKey<K extends keyof Personalization>(
 }
 
 export function applyPersonalization(p: Personalization): void {
+  applyPersonalizationKey('embedScale', p.embedScale)
   for (const table of [LINK_VARS, ROOT_CLASSES, ROOT_VALUE_CLASSES])
     for (const key of Object.keys(table) as (keyof Personalization)[])
       applyPersonalizationKey(key, p[key])
