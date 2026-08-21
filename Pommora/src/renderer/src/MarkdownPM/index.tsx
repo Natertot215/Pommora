@@ -20,6 +20,7 @@ import {
   embedExclusions,
   embedField,
   embedTiles,
+  refreshTileZooms,
   resolutionNudge,
   setEmbedHeights,
   setEmbedZooms,
@@ -378,10 +379,12 @@ export function MarkdownEditor({
           view.dispatch({
             effects: setEmbedHeights.of({ ...h.value, ...view.state.field(embedField).heights }),
           })
-        if (z.status === 'fulfilled' && z.value && Object.keys(z.value).length > 0)
+        if (z.status === 'fulfilled' && z.value && Object.keys(z.value).length > 0) {
           view.dispatch({
             effects: setEmbedZooms.of({ ...z.value, ...view.state.field(embedField).zooms }),
           })
+          refreshTileZooms(view, false)
+        }
         restoreScroll()
       })
     else requestAnimationFrame(restoreScroll)

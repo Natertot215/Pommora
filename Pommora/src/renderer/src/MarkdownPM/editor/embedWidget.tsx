@@ -207,19 +207,19 @@ class EmbedTileWidget extends WidgetType {
     readonly ancestors: readonly string[],
     readonly targetId: string,
     readonly height: number | undefined,
-    readonly zoom: number | undefined,
   ) {
     super()
   }
 
+  // Scale is deliberately NOT identity: an eq change makes CM re-seat the span (detach + insert),
+  // which cancels the var's CSS transition — refreshTileZooms updates the rendered DOM instead.
   eq(o: EmbedTileWidget): boolean {
     return (
       o.path === this.path &&
       o.editing === this.editing &&
       o.interactive === this.interactive &&
       o.cyclic === this.cyclic &&
-      o.height === this.height &&
-      o.zoom === this.zoom
+      o.height === this.height
     )
   }
 
@@ -238,7 +238,8 @@ class EmbedTileWidget extends WidgetType {
     )
     if (this.height !== undefined) dom.style.height = `${this.height}px`
     else dom.style.removeProperty('height')
-    applyTileZoom(dom, this.zoom)
+    dom.dataset.embedTarget = this.targetId
+    applyTileZoom(dom, view.state.field(embedField).zooms[this.targetId])
     const host = view.state.facet(embedHost)
     mountTile(
       dom,
@@ -357,18 +358,18 @@ class WebpageTileWidget extends WidgetType {
      *  card) render the face unconditionally. NOT an ancestors-length read — the page surface
      *  carries its own path in the chain as the cycle guard, so length can't tell it apart. */
     readonly pageSurface: boolean,
-    readonly zoom: number | undefined,
   ) {
     super()
   }
 
+  // Scale is deliberately NOT identity: an eq change re-seats the span, and a detached webview
+  // destroys its guest — the site would reload on every Scale pick.
   eq(o: WebpageTileWidget): boolean {
     return (
       o.url === this.url &&
       o.label === this.label &&
       o.height === this.height &&
-      o.pageSurface === this.pageSurface &&
-      o.zoom === this.zoom
+      o.pageSurface === this.pageSurface
     )
   }
 
@@ -396,7 +397,7 @@ class WebpageTileWidget extends WidgetType {
         url: this.url,
         label: this.label,
         visible: this.pageSurface && dom._visible === true,
-        zoom: zoomStep(this.zoom).factor,
+        zoom: zoomStep(view.state.field(embedField).zooms[this.url]).factor,
         refocusHost: () => view.focus(),
       }),
       // Heights ride the same persisted blob as page tiles, URL-keyed — the blob's keys are free
@@ -409,6 +410,7 @@ class WebpageTileWidget extends WidgetType {
 
   toDOM(view: EditorView): HTMLElement {
     const dom = document.createElement('span') as WebTileDom
+    dom.dataset.embedTarget = this.url
     dom._renderW = () => this.renderInto(dom, view)
     if (this.pageSurface) {
       const o = observersFor(view)
@@ -490,7 +492,6 @@ function buildTiles(
             host.ancestors,
             r.page.id,
             heights[r.page.id],
-            zooms[r.page.id],
           ),
         }),
         // The cycle token joins too: exclusions already cover it via the ancestors chain, and
@@ -524,7 +525,6 @@ function buildTiles(
           w.label,
           heights[w.url],
           host.saveHeights !== undefined,
-          zooms[w.url],
         ),
       }),
       range: { kind: 'webpage', from: w.from, to: w.to, url: w.url, label: w.label },
@@ -632,14 +632,15 @@ export const embedField = StateField.define<EmbedTiles>({
     }
     const restored = tr.isUserEvent('undo') || tr.isUserEvent('redo')
     if (!tr.docChanged) {
-      return nudged ||
+      if (
+        nudged ||
         editing !== value.editing ||
         heights !== value.heights ||
-        zooms !== value.zooms ||
         seat !== value.seat ||
         formationDue
-        ? buildTiles(tr.state, editing, heights, zooms, value.ranges, seat)
-        : value
+      )
+        return buildTiles(tr.state, editing, heights, zooms, value.ranges, seat)
+      return zooms !== value.zooms ? { ...value, zooms } : value
     }
     if (editAffectsEmbeds(value, tr) || formationDue || restored || seat !== value.seat)
       return buildTiles(
@@ -833,8 +834,28 @@ export function embedZoomAt(state: EditorState, pos: number): number | null {
   return key === null ? null : zoomStep(state.field(embedField).zooms[key]).factor
 }
 
+/** Pushes the live Scale factors onto the rendered tiles without a widget rebuild — page tiles
+ *  take the var (transitioned on a pick, instant on the persistence load), webpage tiles re-render
+ *  their React root, which re-sends the guest factor. Only this view's own tiles, never a nested
+ *  editor's. */
+export function refreshTileZooms(view: EditorView, animate: boolean): void {
+  const zooms = view.state.field(embedField).zooms
+  for (const el of view.dom.querySelectorAll<HTMLElement>('[data-embed-target]')) {
+    if (el.closest('.cm-content') !== view.contentDOM) continue
+    const span = el as WebTileDom
+    if (span._renderW) {
+      span._renderW()
+      continue
+    }
+    if (!animate) span.style.transition = 'none'
+    applyTileZoom(span, zooms[span.dataset.embedTarget ?? ''])
+    if (!animate) requestAnimationFrame(() => span.style.removeProperty('transition'))
+  }
+}
+
 /** The grip menu's pick: restate the whole record with this tile's factor (1.0 drops the key,
- *  the clean-record discipline the settings rows keep), then persist through the host. */
+ *  the clean-record discipline the settings rows keep), persist through the host, and animate the
+ *  rendered tile to it. */
 export function applyEmbedZoom(view: EditorView, pos: number, factor: number): void {
   const key = embedPrefKey(view.state, pos)
   if (key === null) return
@@ -843,6 +864,7 @@ export function applyEmbedZoom(view: EditorView, pos: number, factor: number): v
   else zooms[key] = factor
   view.dispatch({ effects: setEmbedZooms.of(zooms) })
   view.state.facet(embedHost).saveZooms?.(zooms)
+  refreshTileZooms(view, true)
 }
 
 export function embedTileRanges(state: EditorState): readonly TileRange[] {
