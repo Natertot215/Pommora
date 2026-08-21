@@ -15,11 +15,19 @@ const make = (doc: string): number => buildWidgetDecorations(EditorState.create(
 
 // Reach the widget field's live decoration set (via the decorations facet) and return the first table
 // widget's stored text + model — what TableView renders its static cells from.
-function firstTableWidget(state: EditorState): { text: string; model: TableModel } {
+function firstTableWidget(state: EditorState): {
+  text: string
+  model: TableModel
+  cites: string
+} {
   for (const provider of state.facet(EditorView.decorations)) {
     if (typeof provider === 'function') continue
     for (const it = (provider as DecorationSet).iter(); it.value; it.next()) {
-      const w = it.value.spec.widget as unknown as { text: string; model: TableModel } | null
+      const w = it.value.spec.widget as unknown as {
+        text: string
+        model: TableModel
+        cites: string
+      } | null
       if (w && 'model' in w) return w
     }
   }
@@ -110,5 +118,37 @@ describe('table widget decorations', () => {
       annotations: tableSelfEdit.of(true),
     }).state
     expect(edited.doc.sliceString(...widgetSpan(edited))).toBe(edited.doc.toString())
+  })
+})
+
+// A cell draws a footnote number its own text never holds, so a renumber anywhere in the document
+// changes what the table must draw — even when the edit is nowhere near it.
+describe("a table follows the document's footnote numbering", () => {
+  const doc = 'first [^a]\n\nmiddle line\n\n| h |\n| - |\n| [^b] |\n\n[^a]: one\n[^b]: two'
+
+  it('carries the numbering the document gives it', () => {
+    const start = EditorState.create({ doc, extensions: [tableWidgetExtension()] })
+    expect(firstTableWidget(start).cites).toBe('A=1;B=2')
+  })
+
+  it('re-reads it after an edit far from the table renumbers a marker inside it', () => {
+    const start = EditorState.create({ doc, extensions: [tableWidgetExtension()] })
+    const at = doc.indexOf('middle line')
+    const next = start.update({
+      changes: [
+        { from: at, insert: '[^new] ' },
+        { from: doc.length, insert: '\n[^new]: three' },
+      ],
+    }).state
+    expect(next.doc.toString()).toContain('[^new] middle line')
+    // Disk order, carrying each label's positional number — the new marker takes 2 and pushes b to 3.
+    expect(firstTableWidget(next).cites).toBe('A=1;B=3;NEW=2')
+  })
+
+  it('leaves the table alone when the edit moves no number', () => {
+    const start = EditorState.create({ doc, extensions: [tableWidgetExtension()] })
+    const before = firstTableWidget(start)
+    const next = start.update({ changes: { from: doc.indexOf('middle'), insert: 'plain ' } }).state
+    expect(firstTableWidget(next)).toBe(before)
   })
 })
