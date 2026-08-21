@@ -133,7 +133,7 @@ MarkdownPM gained GFM reference footnotes: `[^label]` markers in a page's body a
 
 **Alongside:** `Embeds/ConnectionHoverCard`'s imperative presenter moved to `Embeds/HoverCardPresenter.ts`. The component reaches into MarkdownPM while the editor's pointer path and the table's cells both close a card, and the cycle resolved at runtime by leaving one side's bindings uninitialized.
 
-- **Commits:** `71fe5be2^..85bfd6f6`
+- **Commits:** `71fe5be2^..85b2f860`
 - **Diff:** Net +1277 | +1433 / −156
 
 #### PM-110 || A Link Property Reaches A Page
