@@ -339,7 +339,7 @@ describe('citation rows', () => {
 
   it('draws a positional glyph over hidden source, whatever the label says', () => {
     const t = 'x[^7] y[^1] z[^3]\n\n[^1]: one\n[^7]: seven\n[^3]: three'
-    expect(nums(t)).toEqual(['2', '1', '3'])
+    expect(nums(t)).toEqual(['2.', '1.', '3.'])
     const line = rows(t).filter((d) => d.kind === 'line' && d.className.startsWith('md-cite'))
     expect(line).toHaveLength(3)
   })
@@ -367,14 +367,14 @@ describe('citation rows', () => {
 
   it('dims an orphan and a duplicate-loser, and draws them a numberless seat', () => {
     const t = 'a[^1]\n\n[^1]: one\n[^1]: dup\n[^9]: orphan'
-    expect(nums(t)).toEqual(['1', '–', '–'])
+    expect(nums(t)).toEqual(['1.', '–', '–'])
     const dim = rows(t).filter((d) => d.kind === 'line' && d.className.includes('md-cite-dim'))
     expect(dim).toHaveLength(2)
   })
 
   it('draws a seat for a citation whose text is empty', () => {
     const t = 'a[^1]\n\n[^1]:'
-    expect(nums(t)).toEqual(['1'])
+    expect(nums(t)).toEqual(['1.'])
     expect(rows(t).some((d) => d.kind === 'class' && d.className === 'md-cite-text')).toBe(false)
   })
 
@@ -382,7 +382,7 @@ describe('citation rows', () => {
     const t = 'a[^1]\n\n[^1]: one\ncontinued'
     const cont = rows(t).filter((d) => d.kind === 'line' && d.className.includes('md-cite-cont'))
     expect(cont).toHaveLength(1)
-    expect(nums(t)).toEqual(['1'])
+    expect(nums(t)).toEqual(['1.'])
   })
 
   // Containment, not equality: the counter zero-words every marker-shaped run, bound or not, while
