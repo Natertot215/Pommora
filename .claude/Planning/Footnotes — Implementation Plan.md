@@ -954,6 +954,8 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 
 ### Deviations
 
+- **Gate 2 — the per-line marker pass was O(lines × markers).** Task 6 filtered the flat marker list for every line of the document, on a per-doc-version trigger. The scan now returns two line indexes over the arrays it already holds — `entryAt` and `markersAt` — and the pass reads its own line. Measured on 600 marker-bearing lines over 60 citations: `docLineIntents` 0.10ms, the whole `scanDoc` 0.88ms.
+
 - **Task 7 — the numbering rides the widget as a serialized key, not a scalar ordinal.** A cell can hold several markers, so one number cannot describe it. The key is the document's `LABEL=n` pairs; the widget's equality and the cell memo both compare that one string, and the cell resolves each marker's own label against it. The plan's "one extra scalar compare" holds — it is one string comparison per gate.
 
 - **Task 6 — the marker draws from the scan, not from the token pass** (Nathan's ruling, flagged for the Gate 2 correctness review). The token layer can only class content and hide markers, so the label's own text would have shown: `[^7]` reading 7 where a positional display owes 2. The token spec stays — the resting table cell reads the tokenizer directly and Task 7 needs it — and the number comes from a `citeRef` widget spec carrying the ordinal off Task 1's walk. Atomicity, the caret-reveal opt-out and everything else in the task are as written.
