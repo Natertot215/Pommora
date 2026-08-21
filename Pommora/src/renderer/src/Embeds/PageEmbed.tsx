@@ -14,7 +14,7 @@ import { resolveWith } from '../Navigation/navResolve'
 import { resolveIndexOf } from '../treeIndex'
 import { assetUrl } from '../assetUrl'
 import './embeds.css'
-import { EMBED_SCALE, EMBED_ZOOM } from './embedScale'
+import { EMBED_SCALE_DEFAULT, coerceScale, embedZoom } from '@shared/types'
 
 // Entering edit reconfigures the SAME CM6 view's editability — no remount, no jitter.
 
@@ -84,6 +84,9 @@ export function PageEmbed({
   const body = entry?.body ?? null
   const failed = entry !== null && entry.body === null
 
+  const embedScale = useSession((s) =>
+    coerceScale(s.personalization.embedScale, EMBED_SCALE_DEFAULT),
+  )
   const onBodyRef = useRef(onBody)
   onBodyRef.current = onBody
   useEffect(() => {
@@ -134,7 +137,7 @@ export function PageEmbed({
     // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a click-to-edit surface over a contenteditable that is already keyboard-reachable
     <div
       className={`pgembed${editing ? ' is-editing' : ''}${chrome === 'page' && entry?.cover ? ' has-banner' : ''}`}
-      style={{ '--mdpm-scale': EMBED_SCALE } as React.CSSProperties}
+      style={{ '--mdpm-scale': embedScale } as React.CSSProperties}
       onClick={(e) => {
         if (editing || locked) return // locked: no edit entry; selection still works
         // The banner band is chrome with its own menu — a stray click on it must not put the
@@ -156,7 +159,7 @@ export function PageEmbed({
         menu={nativeEditorMenu}
         readOnly={!editing}
         autoFocus
-        zoom={EMBED_ZOOM}
+        zoom={embedZoom(embedScale)}
         edgeFade
         warm={warm}
         embedAncestors={[...(ancestors ?? []), path]}

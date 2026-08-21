@@ -155,7 +155,7 @@ import type {
   TitleMenuAction,
 } from '@shared/identityMenus'
 import type { ViewButton, ViewStyle } from '@shared/types'
-import { coerceViewScale, coerceWebZoom, viewScaleZoom } from '@shared/types'
+import { WEB_ZOOM_DEFAULT, coerceScale, coerceViewScale, viewScaleZoom } from '@shared/types'
 import { installEditorContextMenu, setFormatState, setGripHot } from './editorMenu'
 import type { FormatState } from '@shared/editorMenu'
 import { isValidLink, normalizeLinkUrl } from '@shared/links'
@@ -261,7 +261,7 @@ async function applyDefaultZoom(win: BrowserWindow): Promise<void> {
   // Both factors off one read — the guests' own scale rides the same points the window's does:
   // launch, reload, and nexus switch.
   const p = root ? await readLivePersonalization(root) : null
-  setWebZoomFactor(coerceWebZoom(p?.webZoomFactor))
+  setWebZoomFactor(coerceScale(p?.webZoomFactor, WEB_ZOOM_DEFAULT))
   if (!win.isDestroyed())
     setHostZoom(win.webContents, viewScaleZoom(coerceViewScale(p?.defaultViewScale)))
 }
@@ -1381,7 +1381,7 @@ serveBridge(
           return fail('operation-failed', 'Invalid personalization key.')
         await writePersonalization(root, key, value)
         // The one personalization key with a main-side effect: guests re-stamp in place.
-        if (key === 'webZoomFactor') setWebZoomFactor(coerceWebZoom(value))
+        if (key === 'webZoomFactor') setWebZoomFactor(coerceScale(value, WEB_ZOOM_DEFAULT))
         // No renderer confirm exists for this channel (the slice patches optimistically), yet
         // it writes a field the walk reads — the push set's membership predicate.
         await confirmSettingsWrite()

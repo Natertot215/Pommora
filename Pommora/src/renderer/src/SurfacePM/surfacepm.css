@@ -31,14 +31,23 @@
 /* Per-block Scale: one discrete var on the tile. Markdown/page tiles read it for the font (via
    .cm-content) + the editor glyphs (via --glyph-scale); a view tile's table reads it in its own grid
    `zoom` (base density × --block-zoom). The handle, resize edges, gutter, and padding do NOT read it —
-   chrome + structure stay fixed. Five steps; 1.0 needs no class (--block-zoom falls back to 1). Every
+   chrome + structure stay fixed. The shared ramp's steps; 1.0 needs no class (--block-zoom falls back to 1). Every
    tile animates the factor on the standard beat: a view tile's grid `zoom` is a layout property, so its
    table relayouts each frame OF THE TRANSITION only — a bounded one-shot, not a per-frame trigger. */
+.spm-tile.blk-zoom-150 {
+  --block-zoom: 1.5;
+}
 .spm-tile.blk-zoom-125 {
   --block-zoom: 1.25;
 }
-.spm-tile.blk-zoom-085 {
-  --block-zoom: 0.85;
+.spm-tile.blk-zoom-110 {
+  --block-zoom: 1.1;
+}
+.spm-tile.blk-zoom-090 {
+  --block-zoom: 0.9;
+}
+.spm-tile.blk-zoom-075 {
+  --block-zoom: 0.75;
 }
 .spm-tile.blk-zoom-065 {
   --block-zoom: 0.65;
