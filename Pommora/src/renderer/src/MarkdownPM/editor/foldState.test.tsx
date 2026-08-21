@@ -3,7 +3,10 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '@renderer/testing/editorHarness'
-import { applySavedFolds, foldedRegions, toggleFoldAt } from './folding'
+import { applySavedFolds, foldedRegions, regionsOf, toggleFoldAt, type FoldKind } from './folding'
+import { headingSections } from './headingScan'
+import { citationScan } from '../detect'
+import { splitWithOffsets } from '../detect'
 
 class ResizeObserverStub {
   observe(): void {}
@@ -116,5 +119,142 @@ describe('the fold state machine', () => {
     // And the heading that does have a body still folds.
     await fold(view, '# One\n\n'.length)
     expect(foldedRegions(view.state).map((r) => r.key)).toEqual(['Two'])
+  })
+})
+
+// ── The citations section as a fold region ─────────────────────────────────────
+// Its disclosure is the editor's fold motion, but its state is a per-page override rather than a
+// row in the shared fold store — so it takes the registry and skips persistence entirely.
+
+const CITED = '# Notes\nbody[^a] here\n\n[^a]: the citation\n[^b]: another'
+const NESTED = '# Title\nintro\n\n## Sources\nmid\n\n[^a]: one'
+
+const startOf = (doc: string, line: number): number => splitWithOffsets(doc).lineStarts[line]
+const kinds = (view: EditorView): FoldKind[] => foldedRegions(view.state).map((r) => r.kind)
+const citeRegion = (view: EditorView): ReturnType<typeof regionsOf>[number] | undefined =>
+  regionsOf(view.state.doc).find((r) => r.kind === 'citations')
+
+describe('the citations section folds', () => {
+  it('a page opens with its section already hidden, which is the factory default', async () => {
+    const view = await mountEditor({ initialBody: CITED })
+    expect(kinds(view)).toEqual(['citations'])
+  })
+
+  it('and shown where the page says so', async () => {
+    const view = await mountEditor({ initialBody: CITED, citationsShown: true })
+    expect(kinds(view)).toEqual([])
+  })
+
+  it('the divider folds the section, and folds it back open', async () => {
+    const view = await mountEditor({ initialBody: CITED, citationsShown: true })
+    await fold(view, startOf(CITED, 2))
+    expect(kinds(view)).toEqual(['citations'])
+    await fold(view, startOf(CITED, 2))
+    expect(kinds(view)).toEqual([])
+  })
+
+  it('a section of exactly one citation still folds, because its anchor sits above it', async () => {
+    const one = 'body\n\n[^a]: one'
+    const view = await mountEditor({ initialBody: one, citationsShown: true })
+    await fold(view, startOf(one, 1))
+    expect(kinds(view)).toEqual(['citations'])
+  })
+
+  it('a document that begins with a citation has no region, so it can never hide itself', async () => {
+    const view = await mountEditor({ initialBody: '[^a]: one\n[^b]: two' })
+    expect(citeRegion(view)).toBeUndefined()
+  })
+
+  // Fold entries are identified by anchor alone. Anchoring the section on the line it renders
+  // against — prose the user owns — would let one Enter there move the live anchor, orphan the
+  // entry, and pop a hidden section open with the override still reading hidden.
+  it('an edit on the rendered anchor line leaves the fold intact', async () => {
+    for (const edit of ['enter', 'backspace'] as const) {
+      const view = await mountEditor({ initialBody: CITED, citationsShown: true })
+      await fold(view, startOf(CITED, 2))
+      const at = startOf(CITED, 2)
+      await act(async () => {
+        view.dispatch(
+          edit === 'enter'
+            ? { changes: { from: at, to: at, insert: '\n' } }
+            : { changes: { from: at - 1, to: at, insert: '' } },
+        )
+      })
+      expect(kinds(view), edit).toEqual(['citations'])
+      await cleanupEditor()
+    }
+  })
+})
+
+describe('the section never joins the fold store', () => {
+  it('a folded section leaves the saved key set to the headings alone', async () => {
+    const saved: string[][] = []
+    const view = await mountEditor({
+      initialBody: CITED,
+      citationsShown: true,
+      folds: { load: async () => [], save: (keys) => saved.push(keys) },
+    })
+    await fold(view, 0)
+    await fold(view, startOf(CITED, 2))
+    expect(kinds(view).sort()).toEqual(['citations', 'heading'])
+    expect(saved[saved.length - 1]).toEqual(['Notes'])
+  })
+
+  // The seed runs before applySavedFolds has restored the heading folds. Un-annotated, it would
+  // write the surviving key set — an empty one — and erase them on every open of a footnoted page.
+  it('seeding the section at mount writes nothing at all', async () => {
+    const saved: string[][] = []
+    await mountEditor({
+      initialBody: CITED,
+      citationsShown: false,
+      folds: { load: async () => ['Notes'], save: (keys) => saved.push(keys) },
+    })
+    expect(saved).toEqual([])
+  })
+
+  it('its key is a sentinel no heading scan can spell', async () => {
+    const view = await mountEditor({ initialBody: CITED })
+    expect(citeRegion(view)?.key.charCodeAt(0)).toBe(0)
+    expect(headingSections(CITED).map((h) => h.key)).toEqual(['Notes'])
+  })
+})
+
+describe('a heading stops where the citations section starts', () => {
+  // A single-heading document has exactly one section reaching the end, so it greenlights the bug
+  // the clamp is for. Both of the nested document's sections run to the end unclamped.
+  it('every section reaching the boundary clamps, not just the last', async () => {
+    const view = await mountEditor({ initialBody: NESTED })
+    const cut = startOf(NESTED, 5)
+    const heads = regionsOf(view.state.doc).filter((r) => r.kind === 'heading')
+    expect(heads.map((h) => h.key)).toEqual(['Title', 'Sources'])
+    for (const h of heads) expect(h.to, h.key).toBe(cut)
+  })
+
+  it('and without the clamp both of them swallow it', () => {
+    const end = NESTED.length
+    expect(headingSections(NESTED).map((h) => h.to)).toEqual([end, end])
+  })
+
+  // Three answers to one question, asserted against one document: where the section starts, where
+  // the fold's body starts, and where the heading above it stops.
+  it('the region, the scan and the clamped heading agree on the boundary', async () => {
+    const view = await mountEditor({ initialBody: NESTED })
+    const scan = citationScan(splitWithOffsets(NESTED), [])
+    const r = citeRegion(view)
+    expect(scan.firstLine).toBe(6)
+    expect(r?.anchor).toBe(startOf(NESTED, scan.firstLine))
+    expect(r?.lineEnd).toBe(r!.anchor - 1)
+    const heads = regionsOf(view.state.doc).filter((h) => h.kind === 'heading')
+    for (const h of heads) expect(h.to, h.key).toBe(startOf(NESTED, scan.anchorLine))
+  })
+
+  // When a run starts immediately under a heading, that heading's clamped span is its own line —
+  // and a body of one line or less is dropped, so there is no heading region to collide with.
+  it('a heading immediately above a run yields one region, anchored on the heading', async () => {
+    const tight = '## Refs\n[^a]: one'
+    const view = await mountEditor({ initialBody: tight })
+    const all = regionsOf(view.state.doc)
+    expect(all.map((r) => r.kind)).toEqual(['citations'])
+    expect(all[0].anchorLine).toBe(0)
   })
 })

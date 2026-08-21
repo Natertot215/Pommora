@@ -8,7 +8,7 @@ import {
   type Text,
   type Range,
 } from '@codemirror/state'
-import { docString } from './docCache'
+import { docScan, docString } from './docCache'
 import { headingSections, type HeadingSection } from './headingScan'
 import { createBlockDragGesture } from './blockDrag'
 import { lineElementAt } from './lineDom'
@@ -47,36 +47,89 @@ function sectionsOf(doc: Text): HeadingSection[] {
 // regions are, what key persists one, and whether it starts collapsed. Everything below reads the
 // registry rather than assuming a heading, so a second kind is a registration and not a fork.
 
-export type FoldKind = 'heading'
+export type FoldKind = 'heading' | 'citations'
+
+/** The citations section's fold key. A sentinel no heading scan can produce, so the section can
+ *  never collide with a heading's saved key — and it is never saved in the first place. */
+const CITATIONS_KEY = '\u0000citations'
+
+/** Which kinds survive a session. The section's disclosure is its own per-page override, so letting
+ *  it into the shared fold row would make two writers of one fact. */
+const persisted = (kind: FoldKind): boolean => kind === 'heading'
 
 /** One foldable region of some kind, in document order. */
 export interface FoldRegion {
   kind: FoldKind
-  /** The line the chevron sits on, and the region's identity within the document. */
+  /** The region's identity within the document — the first offset it hides. Deliberately not the
+   *  line it renders against: that line is prose the user edits, and one Enter there would move the
+   *  live anchor, orphan the entry and pop a hidden region open with nothing to resync it. */
   anchor: number
+  /** The line the chevron sits on. The same offset as `anchor` for a heading, which hides its own
+   *  body; the line above the run for the section, which is entirely body. */
+  anchorLine: number
   /** End of the anchor line — the body begins after it. */
   lineEnd: number
   /** End of the last body line. */
   to: number
   /** What persists this fold across sessions, stable across renders. */
   key: string
-  /** Whether a region of this kind is collapsed the first time it is ever seen. */
-  collapsedByDefault?: boolean
+}
+
+/** The offset a collapsed section leaves visible above it — the end of the line the divider renders
+ *  on, or -1 where the document has no section. A heading section reaching past this swallows the
+ *  footnotes whole when it collapses, so the heading generator clamps against it. The clamp lives
+ *  here rather than in the heading scan because the scan takes a raw string and would have to derive
+ *  the boundary a second time; this holds the `Text` the cached scan is keyed on. */
+function citationsCut(doc: Text): number {
+  const { citations, lineStarts, lines } = docScan(doc)
+  const a = citations.anchorLine
+  return a < 0 ? -1 : lineStarts[a] + lines[a].length
 }
 
 const KINDS: Record<FoldKind, (doc: Text) => FoldRegion[]> = {
-  heading: (doc) =>
-    sectionsOf(doc).map((s) => ({
-      kind: 'heading',
-      anchor: s.from,
-      lineEnd: s.lineEnd,
-      to: s.to,
-      key: s.key,
-    })),
+  // EVERY section whose end reaches the boundary clamps, not just the last: a page shaped
+  // `# Title` … `## Sources` … the run has two sections running to the document's end, and
+  // clamping one leaves the other spanning the footnotes.
+  heading: (doc) => {
+    const cut = citationsCut(doc)
+    return sectionsOf(doc).flatMap((s) => {
+      const to = cut < 0 ? s.to : Math.min(s.to, cut)
+      return to > s.lineEnd + 1
+        ? [
+            {
+              kind: 'heading' as const,
+              anchor: s.from,
+              anchorLine: s.from,
+              lineEnd: s.lineEnd,
+              to,
+              key: s.key,
+            },
+          ]
+        : []
+    })
+  },
+  // A section starting at line 0 has nothing above it to anchor against, and hiding it would leave
+  // a blank page — so it offers no region and stays visible, which is the right answer.
+  citations: (doc) => {
+    const { citations, lineStarts, lines } = docScan(doc)
+    const a = citations.anchorLine
+    if (a < 0) return []
+    const last = lines.length - 1
+    return [
+      {
+        kind: 'citations',
+        anchor: lineStarts[citations.firstLine],
+        anchorLine: lineStarts[a],
+        lineEnd: lineStarts[a] + lines[a].length,
+        to: lineStarts[last] + lines[last].length,
+        key: CITATIONS_KEY,
+      },
+    ]
+  },
 }
 
 /** Every foldable region in the document, of every kind. */
-function regionsOf(doc: Text): FoldRegion[] {
+export function regionsOf(doc: Text): FoldRegion[] {
   return Object.values(KINDS).flatMap((of) => of(doc))
 }
 
@@ -289,7 +342,7 @@ export function expandFoldsAt(view: EditorView, pos: number): boolean {
 /** Toggle the fold of the heading whose line starts at `pos`. The chevron's own gesture and the
  *  hover card's click-a-heading affordance both land here, so fold behavior stays one fact. */
 export function toggleFoldAt(view: EditorView, pos: number): boolean {
-  const r = regionsOf(view.state.doc).find((x) => x.anchor === pos)
+  const r = regionsOf(view.state.doc).find((x) => x.anchorLine === pos)
   if (!r) return false
   toggleFold(view, r)
   return true
@@ -325,19 +378,48 @@ const chevronDeco = EditorView.decorations.compute(['doc', foldField], (state) =
     ranges.push(
       Decoration.line({
         class: closed ? 'md-foldable md-fold-closed' : 'md-foldable md-fold-open',
-      }).range(r.anchor),
+      }).range(r.anchorLine),
     )
   }
   return Decoration.set(ranges, true)
 })
+
+/** Put the citations section where the resolved visibility says it belongs — the seed at mount and
+ *  every later change to that value land here, so the stored boolean has exactly one reader.
+ *
+ *  The mount annotation is not optional: the persist listener writes the whole surviving key set to
+ *  disk on any un-annotated fold effect, and this runs before `applySavedFolds` has restored the
+ *  page's heading folds — an un-annotated seed would erase them on every open of a footnoted page. */
+export function applyCitationsVisibility(view: EditorView, shown: boolean): void {
+  const r = regionsOf(view.state.doc).find((x) => x.kind === 'citations')
+  if (!r) return
+  const folded = view.state
+    .field(foldField)
+    .some((e) => e.anchor === r.anchor && e.phase !== 'expanding')
+  if (folded === !shown) return
+  const bodyStart = r.lineEnd + 1
+  if (bodyStart > r.to) return
+  view.dispatch({
+    effects: shown
+      ? expandEffect.of(r.anchor)
+      : foldEffect.of({
+          kind: r.kind,
+          anchor: r.anchor,
+          from: bodyStart,
+          to: r.to,
+          animate: false,
+          clone: cloneBody(view, bodyStart, r.to),
+        }),
+    annotations: initialFoldAnnotation.of(true),
+  })
+}
 
 /** Re-apply a page's saved folds at mount (no animation), capturing clones from the freshly-rendered lines. */
 export function applySavedFolds(view: EditorView, keys: string[]): void {
   const wanted = new Set(keys)
   const effects: StateEffect<unknown>[] = []
   for (const r of regionsOf(view.state.doc)) {
-    // A region nobody has an opinion about yet starts the way its kind says it does.
-    if (!(wanted.has(r.key) || (r.collapsedByDefault && !wanted.size))) continue
+    if (!persisted(r.kind) || !wanted.has(r.key)) continue
     const bodyStart = r.lineEnd + 1
     if (bodyStart > r.to) continue
     effects.push(
@@ -363,7 +445,11 @@ export function markdownFolding(onFoldsChange: (keys: string[]) => void): Extens
         tr.effects.some((e) => e.is(foldEffect) || e.is(expandEffect) || e.is(dropEffect)),
     )
     if (!changed) return
-    onFoldsChange(foldedRegions(u.state).map((r) => r.key))
+    onFoldsChange(
+      foldedRegions(u.state)
+        .filter((r) => persisted(r.kind))
+        .map((r) => r.key),
+    )
   })
   // The chevron strip doubles as a drag handle (shares the block-drag gesture): a sub-threshold release toggles
   // the fold; a press-drag relocates the whole heading section. A folded section unfolds at drag-start — a fold

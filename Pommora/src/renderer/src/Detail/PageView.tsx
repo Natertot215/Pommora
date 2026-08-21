@@ -52,6 +52,9 @@ export function PageView({
   // Whether this page's header draws its glyph. The glyph itself is on-page in frontmatter; only
   // whether it shows is chrome, so it rides the keyed local store beside folds and heading columns.
   const [iconHidden, setIconHidden] = useState(true)
+  // This page's own footnotes visibility, where someone set one. Undefined means nobody has, and the
+  // editor falls back to the nexus-wide default.
+  const [citationsShown, setCitationsShown] = useState<boolean | undefined>(undefined)
   const pageId = pageDetail?.id
   useEffect(() => {
     if (!pageId) return
@@ -60,6 +63,9 @@ export function PageView({
     // where a Collection or a Space wears one by default.
     void window.nexus.headingIcon.get().then((all) => {
       if (live) setIconHidden(all[pageId] ?? true)
+    })
+    void window.nexus.citations.get().then((all) => {
+      if (live) setCitationsShown(all[pageId])
     })
     return () => {
       live = false
@@ -154,6 +160,7 @@ export function PageView({
               load: async () => (await window.nexus.folds.get())[pageDetail.id] ?? [],
               save: (keys) => void window.nexus.folds.set(pageDetail.id, keys),
             }}
+            citationsShown={citationsShown}
             embedHeights={{
               load: async () => (await window.nexus.embedHeights.get())[pageDetail.id] ?? {},
               save: (heights) => void window.nexus.embedHeights.set(pageDetail.id, heights),
