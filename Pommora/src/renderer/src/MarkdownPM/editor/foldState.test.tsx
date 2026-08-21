@@ -3,10 +3,17 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '@renderer/testing/editorHarness'
-import { applySavedFolds, foldedRegions, regionsOf, toggleFoldAt, type FoldKind } from './folding'
+import {
+  applySavedFolds,
+  foldedRegions,
+  regionsOf,
+  toggleFoldAt,
+  HEADING_FOLD_LINE,
+  type FoldKind,
+} from './folding'
+import { HOT_MENU_LINES } from './gripMenu'
 import { headingSections } from './headingScan'
-import { citationScan } from '../detect'
-import { splitWithOffsets } from '../detect'
+import { citationScan, splitWithOffsets } from '../detect'
 
 class ResizeObserverStub {
   observe(): void {}
@@ -256,5 +263,67 @@ describe('a heading stops where the citations section starts', () => {
     const all = regionsOf(view.state.doc)
     expect(all.map((r) => r.kind)).toEqual(['citations'])
     expect(all[0].anchorLine).toBe(0)
+  })
+})
+
+// ── The chevron class and the heading gesture separate ─────────────────────────
+// `md-foldable` meant four things at once: draw a chevron, gate the heading drag, answer the grip
+// menu's hit-test, and be the hover card's click-to-fold target. A non-heading anchor wearing it
+// inherits all four, and the third fails silently — the press is defaulted away and main stands its
+// own menu down, then the heading menu bails on a line holding no heading, opening nothing at all.
+
+const lineEls = (view: EditorView): HTMLElement[] => [
+  ...view.dom.querySelectorAll<HTMLElement>('.cm-line'),
+]
+
+const rightPress = (el: HTMLElement): boolean => {
+  const e = new MouseEvent('contextmenu', {
+    bubbles: true,
+    cancelable: true,
+    clientX: -1,
+    button: 2,
+  })
+  el.dispatchEvent(e)
+  return e.defaultPrevented
+}
+
+describe('a fold chevron and a heading gesture stop sharing one class', () => {
+  it('a heading anchor keeps every one of them', async () => {
+    const view = await mountEditor({ initialBody: CITED, citationsShown: true })
+    const head = lineEls(view)[0]
+    expect(head.classList.contains('md-foldable')).toBe(true)
+    expect(head.classList.contains('md-fold-open')).toBe(true)
+    expect(head.classList.contains(HEADING_FOLD_LINE)).toBe(true)
+    expect(HOT_MENU_LINES).toContain(HEADING_FOLD_LINE)
+  })
+
+  it('the section anchor draws no chevron and answers no heading gesture', async () => {
+    const view = await mountEditor({ initialBody: CITED, citationsShown: true })
+    const divider = lineEls(view)[2]
+    for (const c of ['md-foldable', 'md-fold-open', 'md-fold-closed', HEADING_FOLD_LINE])
+      expect(divider.classList.contains(c), c).toBe(false)
+    expect(HOT_MENU_LINES.some((c) => divider.classList.contains(c))).toBe(false)
+  })
+
+  it('a heading right-press still reaches the heading menu', async () => {
+    const view = await mountEditor({ initialBody: CITED, citationsShown: true })
+    expect(rightPress(lineEls(view)[0])).toBe(true)
+  })
+
+  it('the section right-press falls through to the ordinary editor menu', async () => {
+    const view = await mountEditor({ initialBody: CITED, citationsShown: true })
+    expect(rightPress(lineEls(view)[2])).toBe(false)
+  })
+
+  // The disabled half: before the split these were one string, so the section's anchor wore the
+  // chevron class and was swallowed by the hit-test. The chevron class alone no longer does that,
+  // and the gesture class alone still does — which is the whole of what the split moved.
+  it('the chevron class alone no longer confers the gesture, and the gesture class alone still does', async () => {
+    const view = await mountEditor({ initialBody: CITED, citationsShown: true })
+    const divider = lineEls(view)[2]
+    divider.classList.add('md-foldable')
+    expect(rightPress(divider)).toBe(false)
+    divider.classList.add(HEADING_FOLD_LINE)
+    expect(rightPress(divider)).toBe(true)
   })
 })

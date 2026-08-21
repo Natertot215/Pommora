@@ -6,7 +6,7 @@ import {
   type PickerDirection,
 } from '@renderer/design-system/components/PickerMenu/PickerMenu'
 import { EditorView } from '@codemirror/view'
-import { toggleFoldAt } from '@renderer/MarkdownPM/editor/folding'
+import { HEADING_FOLD_LINE, toggleFoldAt } from '@renderer/MarkdownPM/editor/folding'
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { WEB_PARTITION, type HoverCardSize } from '@shared/types'
 import { pageIndexOf } from '../treeIndex'
@@ -390,7 +390,7 @@ export function ConnectionHoverCard(): React.JSX.Element {
         // With no caret to conflict, a heading click IS the fold toggle — the chevron stays
         // hidden here and the whole line becomes the affordance, through the same fold logic.
         onClick={(e) => {
-          const line = (e.target as HTMLElement).closest?.('.cm-line.md-foldable')
+          const line = (e.target as HTMLElement).closest?.(`.cm-line.${HEADING_FOLD_LINE}`)
           const editor = line?.closest('.cm-editor')
           const view = editor && EditorView.findFromDOM(editor as HTMLElement)
           if (line && view) toggleFoldAt(view, view.posAtDOM(line))
