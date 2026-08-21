@@ -307,6 +307,23 @@ export function citationScan(d: DocLines, excluded: [number, number][]): Citatio
   }
 }
 
+/** The citation a label binds to, and every marker bound to it. Case-folded, which is the only
+ *  comparison GFM defines between a marker and its citation — so every layer that pairs the two
+ *  asks HERE rather than spelling the fold out beside its own `find`. */
+export const citationFor = (c: CitationScan, label: string): CitationEntry | undefined => {
+  const key = foldLabel(label)
+  return c.entries.find((e) => foldLabel(e.label) === key)
+}
+
+export const markersFor = (c: CitationScan, label: string): MarkerRef[] => {
+  const key = foldLabel(label)
+  return c.markers.filter((m) => foldLabel(m.label) === key)
+}
+
+/** Where a line's text ends, its own newline excluded. */
+export const lineEndOf = (d: { lines: string[]; lineStarts: number[] }, line: number): number =>
+  d.lineStarts[line] + d.lines[line].length
+
 export interface EmbedLine {
   /** Whole-line span, `to` exclusive of the trailing newline. */
   from: number

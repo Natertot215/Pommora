@@ -4,7 +4,7 @@
 // from before it writes — the discipline the connection and heading menus already keep.
 import type { EditorView } from '@codemirror/view'
 import type { CitationMenuAction } from '@shared/citationMenu'
-import { foldLabel } from '../detect'
+import { citationFor, markersFor } from '../detect'
 import { focusRange } from './caretSeat'
 import { deleteCitationChanges, deleteMarkerChanges } from './citationEdits'
 import { docScan } from './docCache'
@@ -21,15 +21,12 @@ export function applyCitationAction(
   subject: CitationSubject,
 ): void {
   const scan = docScan(view.state.doc)
-  const key = foldLabel(subject.kind === 'marker' ? subject.marker.label : subject.label)
-  const entry = scan.citations.entries.find((e) => foldLabel(e.label) === key)
+  const label = subject.kind === 'marker' ? subject.marker.label : subject.label
+  const entry = citationFor(scan.citations, label)
   const marker =
     subject.kind === 'marker'
-      ? scan.citations.markers.find(
-          (m) =>
-            m.from === subject.marker.from &&
-            m.to === subject.marker.to &&
-            foldLabel(m.label) === key,
+      ? markersFor(scan.citations, label).find(
+          (m) => m.from === subject.marker.from && m.to === subject.marker.to,
         )
       : undefined
   // The document no longer holds what the menu was built from.
@@ -46,12 +43,11 @@ export function applyCitationAction(
       void window.nexus?.writeClipboard?.(`[^${(marker ?? entry)?.label ?? ''}]`)
       return
     case 'cite:delete': {
-      const changes =
-        subject.kind === 'marker' && marker
-          ? deleteMarkerChanges(scan, marker, view.state.doc.length)
-          : entry
-            ? deleteCitationChanges(scan, entry, view.state.doc.length)
-            : []
+      const changes = marker
+        ? deleteMarkerChanges(scan, marker, view.state.doc.length)
+        : entry
+          ? deleteCitationChanges(scan, entry, view.state.doc.length)
+          : []
       if (changes.length) view.dispatch({ changes, userEvent: 'delete' })
       return
     }
