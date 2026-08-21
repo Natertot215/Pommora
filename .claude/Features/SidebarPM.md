@@ -20,7 +20,7 @@ A **surface launcher** — each icon points at a surface, and surfaces live in d
 - **Homepage** — pinned at the top, drawn as the Nexus's identity icon. Selecting it opens the Homepage in the main pane without changing what the content column shows.
 - **Navigation · Agenda · Contexts · Collections · Settings** — below Homepage in that default order, drag-to-reorder. **Collections · Contexts · Agenda** switch the content column's mode; **[[NavigationPM|Navigation]]** toggles the NavWindow and **[[ConfigurationPM|Settings]]** the floating Nexus Settings window — the icon that summoned a window dismisses it, the same toggle its keyboard command drives. The Collections and Contexts tabs draw an entity default, so a personalization override moves them; the rest carry fixed glyphs.
 
-The ribbon collapses and expands with the sidebar, and toggles on its own inside the open sidebar: the `toggle-ribbon` command (⌘T by default → [[ConfigurationPM]] §Shortcuts) slides the strip off the panel's left edge on the sidebar's collapse motion while the content column reclaims the width. Ribbon visibility is transient window state, like the sidebar's collapse; the active mode and ribbon order persist per-Nexus.
+The ribbon collapses and expands with the sidebar, and toggles on its own inside the open sidebar: the `toggle-ribbon` command (⌘T by default)[^1] slides the strip off the panel's left edge on the sidebar's collapse motion while the content column reclaims the width. Ribbon visibility is transient window state, like the sidebar's collapse; the active mode and ribbon order persist per-Nexus.
 
 ### Content Modes
 
@@ -57,5 +57,8 @@ The inline rename field is the menu system's flush `titleInput` — dimensionall
 ### Pending
 
 - **User Sections** — unbuilt. The surface wants an **"Add Heading"** entry in the Collections create menu plus rename and drag-a-Collection-into-a-section, with the sections themselves in the database beside the rest of the sidebar's arrangement.
-- **Space-Create Label** — the create item's stored singular leaves a renamed seeded Context wearing its old label; the ruled behavior keys off the title instead (→ [[ContextsPM]] §Pending).
+- **Space-Create Label** — the create item's stored singular leaves a renamed seeded Context wearing its old label; the ruled behavior keys off the title instead.[^2]
 - **Always-On Ribbon** — a ribbon that survives the sidebar collapsing, toggled independently rather than folding away with it.
+
+[^1]: [[ConfigurationPM]] §Shortcuts
+[^2]: [[ContextsPM]] §Pending

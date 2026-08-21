@@ -747,7 +747,7 @@ serveBridge(
     },
 
     'tabs:save': {
-      kind: 'raw',
+      kind: 'envelope',
       fn: (set: unknown) => {
         if (adopting()) return BUSY
         const clean = sanitizeTabSet(set)
@@ -767,7 +767,7 @@ serveBridge(
     },
 
     'previews:save': {
-      kind: 'raw',
+      kind: 'envelope',
       fn: (file: unknown) => {
         if (adopting()) return BUSY
         const clean = sanitizePreviews(file)
@@ -787,7 +787,7 @@ serveBridge(
     },
 
     'hoverCard:save': {
-      kind: 'raw',
+      kind: 'envelope',
       fn: (size: unknown) => {
         if (adopting()) return BUSY
         if (!isCardSize(size)) return fail('operation-failed', 'A card size needs finite w and h.')
@@ -806,7 +806,7 @@ serveBridge(
     },
 
     'devicePrefs:save': {
-      kind: 'raw',
+      kind: 'envelope',
       fn: (prefs: unknown) => {
         if (adopting()) return BUSY
         if (!writeValue('devicePrefs', packDevicePrefs(prefs))) return NO_NEXUS

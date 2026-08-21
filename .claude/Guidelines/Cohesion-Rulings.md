@@ -80,3 +80,49 @@ plausible from the outside. Reopen any of them with a reason, not with a fresh r
 - `embedWidget.tsx` is not split. The split is a move rather than a reduction, and the construct that
   would have reused its generic half — a document's footnotes section — is a fold region rather than
   a block widget.
+
+### The Exhaustiveness Sweep
+
+A read-only sweep found twenty-two dispatch sites where a shared action union survives to the
+consumer but nothing enforces that the consumer handles it. None is a live defect: every one covers
+its union today. They are recorded rather than opened, because retrofitting working handlers is
+churn, and because the codebase's dominant style is deliberately to rely on a non-nullable return
+type instead of a `default` arm — TypeScript enforces exhaustiveness on a `switch` only when the
+enclosing function returns a real, non-nullable value, and menu dispatch almost always sits in a
+`void` promise callback.
+
+Take these first if the sweep is ever opened:
+
+- **`Toolbar/ViewPane.tsx:128` and `Blocks/ViewEmbedBlock.tsx:437`** — two chains over one
+  union, each carrying an explicit `default: return` that silences the compiler *and* the bug. The
+  suppression is the finding.
+- **`MarkdownPM/editor/gripMenu.ts:107` and `:170`** — two switches over one union, each
+  intentionally partial, neither saying so.
+- **`Components/Detail/PropertiesPane.tsx:365` and `:374`, `PagePropertiesPane.tsx:167`,
+  `PagePreview/PreviewInspector.tsx:199`** — four un-linked partial chains over `PropertyMenuAction`,
+  each handling two of its five members.
+- **`Detail/Views/Cards/CardValue.tsx:115`** — handles only the `cell:*` half of `CellMenuAction`. A
+  title column reaching it would pop the full nine-row page-meta menu with none of it handled; the
+  only thing preventing that is a `kind !== 'title'` filter in `cardValueInput.ts:37`.
+- **`Detail/Views/Table/TableView.tsx:975`** — the cell-menu chain omits `cell:hide`, dead only
+  because `hideable` is passed `false` at `:961`.
+
+Two things the sweep must not produce. There is no `assertNever` helper and one should not be
+added: the house idiom is an inline `const _exhaustive: never = x` in a braced `default:`, and it
+exists at exactly two sites, both main-process. And where a partial dispatch is deliberate — the
+connection menu's `format:*` members, which its page branch cannot produce — the answer is a
+narrowed type, not a `never` arm.
+
+### Closed By The Cohesion Audit
+
+Each of these was claimed open and is closed in the code as of `d5c4413d` — a later sweep
+re-deriving any of them is reading stale claims:
+
+- Cards keys its optimistic patches on `row.id` throughout and commits through one path,
+  `applyValueAtRoot`.
+- `PageCard` no longer exists; no card subscribes to `s.tree`.
+- The system accent is cached per Nexus and read once, not carried on every reconcile.
+- `armAutoScroll` is one call; no drag adapter arms its own edge-scroll.
+- One `FooterLockButton` serves the board, the Space, and the tile.
+- "A duplicated container-session state whose reset rules have drifted" names no construct in the
+  codebase under that vocabulary or any near it.

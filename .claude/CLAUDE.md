@@ -63,7 +63,7 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 ├── // .claude                           | • Project documentation and Claude configuration
 │   ├── // Features                      | • Per-feature documentation, updated with every relevant commit
 │   │   ├── [AgendaPM.md]                | • Tasks and Events — de-scaffolded; the plumbing that survives
-│   │   ├── [ArchitecturePM.md]          | • The data layer — on-disk Nexus, reads, nexus.db, atomic writes, watcher
+│   │   ├── [ArchitecturePM.md]          | • The whole-app architecture guide — processes, data layer, boundary, renderer
 │   │   ├── [CardViewPM.md]              | • The Cards renderer — a resizable card grid on the view pipeline
 │   │   ├── [CollectionsPM.md]           | • The schema-bearing tier and its sidecars
 │   │   ├── [ConfigurationPM.md]         | • Per-Nexus personalization, settings, and profile

@@ -126,11 +126,11 @@ Keyboard shortcuts are data, not code: the `commands` object in `.nexus/settings
 | -------------------------------------- | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
 | Toggle Ribbon | `toggle-ribbon` | Slides the sidebar's ribbon strip away and back. | ⌘T |
 | Toggle Navigation | `toggle-nav` | Summons the Navigation window. | ⌘O |
-| Inverse Paste | `paste-inverse` | Pastes the opposite way a plain paste behaves (→ [[MarkdownPM]] §Pasted links). It takes the chord Paste and Match Style holds by default, so that item keeps its act under the name **Paste Without Formatting** but gives up its accelerator. | ⌘⇧V |
+| Inverse Paste | `paste-inverse` | Pastes the opposite way a plain paste behaves.[^1] It takes the chord Paste and Match Style holds by default, so that item keeps its act under the name **Paste Without Formatting** but gives up its accelerator. | ⌘⇧V |
 
 #### Trash
 
-The one surface leaf, anchored below the rail's separator. Its body is the deletion record's browser (→ [[NexusRecordPM]] §Trash & Deletion) rather than a list of rows, and the column's own heading menu carries its two display knobs.
+The one surface leaf, anchored below the rail's separator. Its body is the deletion record's browser[^2] rather than a list of rows, and the column's own heading menu carries its two display knobs.
 
 | Setting | Key | Description | Options |
 | --- | --- | --- | --- |
@@ -147,7 +147,7 @@ A Collection's own configuration, stored in its `_pagecollection.json` sidecar a
 | Show Title | `view_button` | Whether the view dropdown button displays the view's name alongside its glyph. | **Icon** · Labeled |
 | View Style | `view_style` | How the view switcher presents itself | **Dropdown** · Toolbar |
 
-The sidecar's remaining fields are structure rather than configuration: the entity's ID and icon, its banner, its page and set ordering, its property assignment list, and its saved views (→ [[ViewsPM]]).
+The sidecar's remaining fields are structure rather than configuration: the entity's ID and icon, its banner, its page and set ordering, its property assignment list, and its saved views.[^3]
 
 ### Pages
 
@@ -192,3 +192,7 @@ A second class of machine-local state resides in the Nexus's own database rather
 - **Command rebinding** — data-ready and unbuilt; shortcuts don't ship without per-shortcut sign-off. The Shortcuts leaf lists its bindings and offers no control over them until they do.
 - **Two names for one date form** — the Trash column's own menu calls `monthDayYear` "Short Date", where every other surface calls it "MM/DD/YYYY" and reserves "Short Date" for the `short` form. The two vocabularies need reconciling.
 - **Page configuration** — §Pages is scaffolded and unwritten.
+
+[^1]: [[MarkdownPM]] §Pasted links
+[^2]: [[NexusRecordPM]] §Trash & Deletion
+[^3]: [[ViewsPM]]

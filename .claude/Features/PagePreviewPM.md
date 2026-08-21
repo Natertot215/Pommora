@@ -32,7 +32,7 @@ The strip compacts off an open side pane, stopping at the pane's leading edge ra
 
 ### Persistence & Warmth
 
-The window's tab sets are kept per machine (→ [[NavigationPM]] §State Persistence) — the NavWindow flavor's set, the per-origin page sets, re-keyed to the new origin on re-parent and retiring when emptied, and the open pointer, recorded but never auto-summoned at launch. Two machines with different previews open have no correct merge, so each keeps its own. Stored sets hold bare refs; restores hydrate against the live tree before showing — a dead ref drops, a resolving one gets its path minted fresh, an emptied set falls back to the bare origin. A foreign-root tree push wipes the per-nexus session state before any reconcile can leak one nexus's sets into another's.
+The window's tab sets are kept per machine[^1] — the NavWindow flavor's set, the per-origin page sets, re-keyed to the new origin on re-parent and retiring when emptied, and the open pointer, recorded but never auto-summoned at launch. Two machines with different previews open have no correct merge, so each keeps its own. Stored sets hold bare refs; restores hydrate against the live tree before showing — a dead ref drops, a resolving one gets its path minted fresh, an emptied set falls back to the bare origin. A foreign-root tree push wipes the per-nexus session state before any reconcile can leak one nexus's sets into another's.
 
 Warmth is per-tab: serialized editor state, undo included, plus the body's scroll, restored on switch-back with the fetch skipped entirely so the doc mounts synchronously.
 
@@ -40,20 +40,20 @@ Warmth is per-tab: serialized editor state, undo included, plus the body's scrol
 
 - **Container views** — a `page-preview` Collection's title clicks open the preview; ⌘-click is always the explicit full-page bypass to a new tab.
 - **Sidebar rows** — the same owner-resolution branch, resolved by tree position.
-- **Connections** — the nexus-wide `connectionsOpenInPreview` knob routes wiki-link clicks to the preview (→ [[ConfigurationPM]]); from inside a preview a ⌘-click is additive — a new app tab opens behind, the preview stays.
+- **Connections** — the nexus-wide `connectionsOpenInPreview` knob routes wiki-link clicks to the preview[^2]; from inside a preview a ⌘-click is additive — a new app tab opens behind, the preview stays.
 - **⌘N while the floating preview is open** promotes the active tab to a new app tab and closes it (the window when it was the last) — routed through the native menu's new-tab message, since a renderer keydown can't beat a native accelerator.
 
 ### The Browser Flavor
 
-The in-app browser is a flavor of the same floating window (→ [[WebviewPM]]): back and forward glyphs lead the toolbar where the page flavor carries its promote scan, the centered two-tone title tracks the guest's current page and escalates it to the system browser on click, and one webview on the shared web partition owns the whole body. The toolbar strip holds its own band above the page and paints nothing — the window glass shows through it. The window is a singleton like the page preview: a summon while open retakes it in place, re-aiming the standing guest even at an address it has navigated away from. Geometry persists on its own window id through the shared floating-window mechanics.
+The in-app browser is a flavor of the same floating window[^3]: back and forward glyphs lead the toolbar where the page flavor carries its promote scan, the centered two-tone title tracks the guest's current page and escalates it to the system browser on click, and one webview on the shared web partition owns the whole body. The toolbar strip holds its own band above the page and paints nothing — the window glass shows through it. The window is a singleton like the page preview: a summon while open retakes it in place, re-aiming the standing guest even at an address it has navigated away from. Geometry persists on its own window id through the shared floating-window mechanics.
 
 ### The Hover Card
 
 Resting on a resolved connection past a short intent delay raises the hover preview card — a compact, read-only view of the target page rendered through the shared embed framework without its banner or inline title, on the PickerMenu chassis rather than a PreviewPane, mounted once at app level so one card exists app-wide. The card resolves its content before it opens (a page that can't load opens nothing), everything inside it renders inert, and it centers on the live link, tracking it as the line reflows.
 
-The card has a second flavor: a markdown link naming a website raises the same card as a live, non-interactive render of the site itself (→ [[WebviewPM]]). The site card opens on the dwell wearing a quiet cover that fades once the page has painted; a page that fails or never paints closes the card whole. The guest fills the card edge-to-edge, a shield above it keeps every pointer event on the card's own lifecycle — passing down the wheel alone, so the site scrolls without becoming clickable — and the same anchor, leave, linger, and resize behavior carries over unchanged.
+The card has a second flavor: a markdown link naming a website raises the same card as a live, non-interactive render of the site itself.[^3] The site card opens on the dwell wearing a quiet cover that fades once the page has painted; a page that fails or never paints closes the card whole. The guest fills the card edge-to-edge, a shield above it keeps every pointer event on the card's own lifecycle — passing down the wheel alone, so the site scrolls without becoming clickable — and the same anchor, leave, linger, and resize behavior carries over unchanged.
 
-Content scrolls within the card, headings fold on click, and the caret never enters. It anchors to the link through scroll and closes on hover-off, Escape, navigation, or the link leaving view; the Settings ▸ Pages linger slider extends the stay (→ [[ConfigurationPM]]). It resizes from its right and bottom edges to one per-machine remembered size.
+Content scrolls within the card, headings fold on click, and the caret never enters. It anchors to the link through scroll and closes on hover-off, Escape, navigation, or the link leaving view; the Settings ▸ Pages linger slider extends the stay.[^2] It resizes from its right and bottom edges to one per-machine remembered size.
 
 ### The NavWindow Model
 
@@ -63,7 +63,7 @@ The NavWindow is tab 1 of its own in-app pane: a perma-pinned, icon-only, non-or
 
 The right-hand pane is a PreviewPane **side slot** in its overlay mode — it rides the window's inset ring and is carried by the window's own openness driver, declared per-window so the main pane's inspector state can't leak into a floating one. The NavWindow hosts the same inspector on its page tabs only, dying on the map return, and the two share one remembered width. The favorites rail is the same slot mechanism in its in-flow mode, taking a column in the body row rather than sliding over it.
 
-Its body is the front-matter inspector, properties only — no title or banner rows. Two group fields, contexts then properties, sit in rounded quaternary fills below the toolbar strip, each rendering only once something is assigned into it; on an empty page the Add affordance sits alone. Each row is an icon-leading label with its value hugging the right edge, and pickers anchor to that right-side value field. Properties are assigned: a row shows once its key exists in front-matter or was revealed this session, assigned-but-empty is valid, "+ Add Property" reveals one, and right-click pops the page-value property menu the main pane's own properties pane uses — Clear on a filled row, then Remove. A value holding a live link carries its own menu on top of that: right-clicking the value opens the shared link menu, which clears the link, while Remove stays on the property and is reached by right-clicking the row (→ [[PropertiesPM]]). Editing runs through the table views' own primitives on the optimistic-patch write path.
+Its body is the front-matter inspector, properties only — no title or banner rows. Two group fields, contexts then properties, sit in rounded quaternary fills below the toolbar strip, each rendering only once something is assigned into it; on an empty page the Add affordance sits alone. Each row is an icon-leading label with its value hugging the right edge, and pickers anchor to that right-side value field. Properties are assigned: a row shows once its key exists in front-matter or was revealed this session, assigned-but-empty is valid, "+ Add Property" reveals one, and right-click pops the page-value property menu the main pane's own properties pane uses — Clear on a filled row, then Remove. A value holding a live link carries its own menu on top of that: right-clicking the value opens the shared link menu, which clears the link, while Remove stays on the property and is reached by right-clicking the row.[^4] Editing runs through the table views' own primitives on the optimistic-patch write path.
 
 **The window has a real Subfield footer.** It fills PreviewPane's footer slot — the surface owns the bar's collapse, its squeeze away from an open side pane, and the chevron's reveal; the preview supplies the content, mounting the shared Subfield scoped to its active tab. Every item in that registry travels with it, and each reads the scoped tab's own body rather than the main pane's. The window's footer band takes a lead slot facing its collapse chevron, which the preview fills with the footnotes disclosure for the tab it is showing; each end of the band has its own reveal region. The footer content aligns to the embed's text column.
 
@@ -80,3 +80,8 @@ A floating window is sealed off from the main shell's own pane geometry, so open
 - The engulf's landing when the promoted page's main-pane fetch outlasts the FLIP; the pane can show the prior view for a beat, usually masked by warmth.
 - The nav flavor's last-tab close motion is clipped by the strip row's height collapse (cosmetic).
 - Multi-preview (A-B testing two windows) — the geometry store and slice shapes are ready; the singleton rule is product, not architecture.
+
+[^1]: [[NavigationPM]] §State Persistence
+[^2]: [[ConfigurationPM]]
+[^3]: [[WebviewPM]]
+[^4]: [[PropertiesPM]]

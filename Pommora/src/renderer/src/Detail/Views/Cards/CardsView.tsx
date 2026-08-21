@@ -39,7 +39,8 @@ import { thumbKey, thumbRel } from '@shared/nexusPaths'
 import { navKey } from '@renderer/Navigation/navRecents'
 import { findCollectionForSet } from '@renderer/Detail/Scope'
 import { useSaveView } from '@renderer/Embeds/ViewEmbedScope'
-import { spliceBeside, tieOrderWith } from '../creationOrder'
+import { sameIds, spliceBeside, tieOrderWith } from '../creationOrder'
+import { mergeStyleRecords } from '../Table/viewMerge'
 import { resolveColumns } from '../pipeline/columns'
 import {
   contextOptionsFor as contextOptionsForSpaces,
@@ -137,7 +138,16 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     (patch) => persistView(patch),
     groupingKeyOf(view),
   )
-  const liveView = useMemo(() => (bandPatch ? { ...view, ...bandPatch } : view), [view, bandPatch])
+  // The Style menu's optimistic layer (the table's pattern): the patch shows the moment it is
+  // chosen, and the confirming push lands the same values underneath it.
+  const [stylePatch, setStylePatch] = useState<Record<string, ColumnStyle> | null>(null)
+  useEffect(() => setStylePatch(null), [source.path, view.id])
+  const liveView = useMemo(() => {
+    const banded = bandPatch ? { ...view, ...bandPatch } : view
+    return stylePatch
+      ? { ...banded, column_styles: mergeStyleRecords(view.column_styles, stylePatch) }
+      : banded
+  }, [view, bandPatch, stylePatch])
   const saveView = useSaveView(source)
   const mutate = useSession((s) => s.mutate)
 
@@ -185,14 +195,13 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   const persistView = (patch: Partial<SavedView>, opts?: { viewState?: boolean }): void => {
     void saveView({ ...liveView, ...patch }, opts)
   }
-  // One card-value Style key — persists per-key into the view's column_styles (the table's writer
-  // minus its live override, so a style change shows when the confirming push lands: v1-acceptable).
+  // One card-value Style key — applies live via the patch, persists per-key into column_styles;
+  // the explicit patch carries the not-yet-committed value so a state-batch can't drop it.
   const setColumnStyle = (colId: string, key: keyof ColumnStyle & string, value: string): void => {
+    const merged = { ...stylePatch?.[colId], [key]: value } as ColumnStyle
+    setStylePatch((prev) => ({ ...prev, [colId]: merged }))
     persistView({
-      column_styles: {
-        ...view.column_styles,
-        [colId]: { ...view.column_styles?.[colId], [key]: value },
-      },
+      column_styles: mergeStyleRecords(view.column_styles, { ...stylePatch, [colId]: merged }),
     })
   }
   // Adding a property from a card reveals it (place in order + clear the hidden flag), else the allowlist
@@ -281,6 +290,8 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     // buildResolveContext reads only contexts + labels — keying on those slices keeps ctx identity across unrelated tree pushes, so memoized cards hold.
     [tree?.contexts, tree?.labels, schema],
   )
+  // Raw `view`: resolveColumns never reads column_styles, and liveView identity would break the
+  // per-card memo on every band drop.
   const columns = useMemo(
     () => resolveColumns(view, schema, contextIds),
     [view, schema, contextIds],
@@ -398,9 +409,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     travelHold: { inZone: ghostRowmate, holdMs: GHOST_TRAVEL_HOLD_MS },
   })
   // The shared creation engine. The config getter runs only at gesture time, so it may close
-  // over consts declared further down. Structural is the table's law: with no property
-  // grouping and no sort the pipeline paints tree order, so a create must write its
-  // page_order slot — viewOrders is only ever the grouped/sorted tiebreaker.
+  // over consts declared further down.
   const beginRename = useSession((s) => s.beginRename)
   const { bandAdd, createAfter } = useViewCreation(() => ({
     source,
@@ -409,7 +418,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     values,
     setValueOverride,
     effectiveValues,
-    structuralOrder: groupPropId === undefined && sortKeys === 0,
+    structuralOrder,
     viewOrders,
     persistViewOrder,
     setManualOverride,
@@ -570,6 +579,9 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   const canRelocate = structural
   const setPaths = useMemo(() => buildSetPaths(source), [source])
   const canReorderWithin = sortKeys < 2 && !locationFsOrder
+  // Structural is the table's law: with no property grouping and no sort the pipeline paints tree
+  // order, so a reorder must write its page_order slot — viewOrders is only the sorted tiebreaker.
+  const structuralOrder = groupPropId === undefined && sortKeys === 0
 
   // The band list Cards hit-tests: one flat level, since a top set's whole subtree rolls into a
   // single band here. Flat mode's one headless band has no header to grab, so it offers none.
@@ -612,6 +624,29 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     if (patch) commitBand(patch)
   }
   const cardDragEnabled = canReorderWithin || canReassign || canRelocate
+  // The band as the drag sees it — the landing index the resolver ranges over and the one the
+  // reorder splices against are both indices into THIS list.
+  const bandRowsWithout = (bandKey: string, activeId: string): ViewRow[] =>
+    flattenGroups(groups.filter((g) => g.key === bandKey)).filter((r) => r.id !== activeId)
+  // A band rolls whole subtrees flat, so structurally a card ranks only among its own folder's direct
+  // children — a landing among another location's cards is refused. Cross-band stays a relocate.
+  const structuralSlotFor = (zoneId: string, index: number, activeId: string): number | null => {
+    if (!structuralOrder) return index
+    if (rowBand.get(activeId) !== zoneId) return index
+    const row = rowById.get(activeId)
+    if (!row) return null
+    const parent = parentOf(row.path)
+    const without = bandRowsWithout(zoneId, activeId)
+    let first = -1
+    let count = 0
+    without.forEach((r, i) => {
+      if (parentOf(r.path) !== parent) return
+      if (first < 0) first = i
+      count++
+    })
+    if (first < 0) return null
+    return index >= first && index <= first + count ? index : null
+  }
   // Move the dragged card to `toIndex` within its band — the group engine reports a landing index,
   // not an over-id. Writes the full flattened order so the manual order stays one coherent global list.
   const reorderInBandByIndex = (bandKey: string, activeId: string, toIndex: number): void => {
@@ -625,6 +660,27 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
       const without = ids.filter((id) => id !== activeId)
       const at = Math.max(0, Math.min(toIndex, without.length))
       full.push(...without.slice(0, at), activeId, ...without.slice(at))
+    }
+    if (structuralOrder) {
+      // The canonical write ranks over FULL membership — hidden rows keep their page_order rank. A
+      // held viewOrder mask is what paints, so the drag maintains it too or the file re-ranks unseen.
+      const painted = flattenGroups(groups).map((r) => r.id)
+      if (sameIds(full, painted)) return
+      const row = rowById.get(activeId)
+      if (!row) return
+      const parent = parentOf(row.path)
+      const sibAfter = bandRowsWithout(bandKey, activeId)
+        .slice(toIndex)
+        .find((r) => parentOf(r.path) === parent)
+      const all = flattenContainer(source, effectiveValues).rows
+      const current = all.filter((r) => parentOf(r.path) === parent).map((r) => r.id)
+      const sibIds = current.filter((id) => id !== activeId)
+      const order = spliceBeside(sibIds, sibAfter?.id ?? null, activeId, 'above')
+      setManualOverride(full)
+      if (viewOrders[view.id]) persistViewOrder(full)
+      if (!sameIds(order, current))
+        void mutate({ op: 'movePage', path: row.path, newParentPath: parent, order })
+      return
     }
     setManualOverride(full)
     persistViewOrder(full)
@@ -720,6 +776,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
         <DragGroup
           onCommit={onCardDrop}
           crossZone={canReassign || canRelocate}
+          resolveIndex={structuralSlotFor}
           // The lifted card IS the whole card (the nav-gallery drag look), not a partial glyph — the same
           // CardFace the live card renders, at is-dragging opacity, floating under the pointer while its
           // slot reflows to show the landing. The `.cards-view` carrier re-declares the knob vars +
@@ -755,7 +812,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
                   <div className="page-card-body">
                     <CardFace
                       row={r}
-                      view={view}
+                      view={liveView}
                       banner={banner}
                       ctx={ctx}
                       labels={labels}
@@ -810,7 +867,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
                         <PageCard
                           key={row.id}
                           row={row}
-                          view={view}
+                          view={liveView}
                           banner={banner}
                           nexusId={nexusId}
                           columns={columns}
@@ -838,7 +895,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
                         <GhostCard
                           key={`ghost-${row.id}`}
                           banner={banner}
-                          view={view}
+                          view={liveView}
                           columns={columns}
                           ctx={ctx}
                           iconName={entityIcon('page', undefined, defaultIcons)}
@@ -859,7 +916,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
             value={valuePicker}
             add={addPicker}
             rowById={rowById}
-            view={view}
+            view={liveView}
             ctx={ctx}
             labels={labels}
             columns={columns}

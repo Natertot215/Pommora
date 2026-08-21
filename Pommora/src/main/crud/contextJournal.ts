@@ -1,15 +1,10 @@
-// The pending-rename journal — `.nexus/context-rename.json`, one record max. A title rename
-// commits this record FIRST, cascades, commits the registry, then clears it; a crash at any
-// point leaves an exact old→new record that replays idempotently on the next open (the one heal
-// the no-fuzzy-match rule permits: it's a record, not a guess).
+// The pending-rename journal — `.nexus/context-rename.json`, one record max on the shared
+// journal slot. A title rename commits this record FIRST, cascades, commits the registry, then
+// clears it; a crash at any point leaves an exact old→new record that replays idempotently on
+// the next open. A record's identity is its rename — the skip list is settle state, so
+// persisting it updates the held record rather than displacing it.
 
-import { rm } from 'node:fs/promises'
-import { ok, type Result } from '@shared/result'
-import { readJsonObject, writeJson } from '../io/atomicWrite'
-import { recordWrite } from '../io/writeEcho'
-import { nexusConfig } from '../paths'
-
-const JOURNAL_FILE = 'context-rename.json'
+import { journalSlot } from './journalSlot'
 
 export interface RenameJournal {
   contextId: string
@@ -21,16 +16,7 @@ export interface RenameJournal {
   skipped: string[]
 }
 
-const journalPath = (root: string): string => nexusConfig(root, JOURNAL_FILE)
-
-export async function writeJournal(root: string, j: RenameJournal): Promise<Result<null>> {
-  await writeJson(journalPath(root), j)
-  return ok(null)
-}
-
-export async function readJournal(root: string): Promise<RenameJournal | null> {
-  const raw = await readJsonObject(journalPath(root))
-  if (!raw) return null
+function decode(raw: Record<string, unknown>): RenameJournal | null {
   if (
     typeof raw.contextId !== 'string' ||
     typeof raw.oldTitle !== 'string' ||
@@ -48,8 +34,17 @@ export async function readJournal(root: string): Promise<RenameJournal | null> {
   }
 }
 
-export async function clearJournal(root: string): Promise<void> {
-  // The unlink is a `.nexus` event the watcher classifies full-refresh; echo it away.
-  recordWrite(journalPath(root))
-  await rm(journalPath(root), { force: true })
-}
+const same = (a: RenameJournal, b: RenameJournal): boolean =>
+  a.contextId === b.contextId &&
+  a.spaceId === b.spaceId &&
+  a.oldTitle === b.oldTitle &&
+  a.newTitle === b.newTitle
+
+const sameEntity = (a: RenameJournal, b: RenameJournal): boolean =>
+  a.contextId === b.contextId && a.spaceId === b.spaceId
+
+const slot = journalSlot<RenameJournal>('context-rename.json', decode, same, sameEntity)
+
+export const writeJournal = slot.write
+export const readJournal = slot.read
+export const clearJournal = slot.clear

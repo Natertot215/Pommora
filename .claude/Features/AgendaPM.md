@@ -6,15 +6,15 @@ Agenda
 └── Pending
 ```
 
-The operational layer's calendar-anchored side: two peer entity kinds, **Tasks** (reminder-shaped) and **Events** (calendar-shaped), each a `.md` carrying its kind's id key. Each kind lives in its own singleton folder at the nexus root, discovered by a config sidecar and never by folder name — the folders stay renameable, and a folder carrying an agenda config is not a Collection (→ [[ArchitecturePM]]).
+The operational layer's calendar-anchored side: two peer entity kinds, **Tasks** (reminder-shaped) and **Events** (calendar-shaped), each a `.md` carrying its kind's id key. Each kind lives in its own singleton folder at the nexus root, discovered by a config sidecar and never by folder name — the folders stay renameable, and a folder carrying an agenda config is not a Collection.[^1]
 
 Agenda currently carries no on-disk format, no CRUD, and no read surface — the item format, field vocabulary, ordering, and surfaces are the Agenda rethink's to answer. What holds regardless of the form it takes:
 
 - **Sidecar-declared kind.** A folder's kind is determined by the JSON filename it carries (`_taskconfig.json` / `_eventconfig.json`). A folder the nexus registers is that singleton; one it does not is inert, and neither is ever adopted as a Collection. A registered singleton stamps its own direct members and is flat — nothing below it is walked or stamped.
 - **Identity refs.** `NavRef` admits `task` and `event` as bare `{kind, id}` refs, and `navigation.json` persists them. The tab resolver, the pin target, and the favorite add each refuse an agenda kind while nothing routes one, so a stored ref resolves to nothing rather than to a broken destination.
-- **The sidebar mode.** Agenda is one of the ribbon's modes, holding its place with an empty state (→ [[SidebarPM]]).
+- **The sidebar mode.** Agenda is one of the ribbon's modes[^2], holding its place with an empty state.
 - **Labels.** The `agendaTask` / `agendaEvent` singular-plural pairs are parsed from settings and defaulted; no surface reads them.
-- **Inert search rows.** Nav search renders unresolvable hits as non-clickable rows (→ [[NavigationPM]]).
+- **Inert search rows.** Nav search[^3] renders unresolvable hits as non-clickable rows.
 
 ### Registration
 
@@ -29,8 +29,14 @@ A slot whose folder name is already taken goes unregistered — seeding refuses 
 - **Tasks and Events are Markdown.** One `.md` grammar covers all operational content — the body is the description — so agenda items inherit the page writers, the link cascade, and the editor rather than carrying a second serializer. JSON stays for sidecars, configs, and registries.
 - **Agenda joins the tree walk.** Its kinds enter as their own top-level branch, giving every Task and Event a record, a navKey, and a search entry. Collection-scoped consumers — connections, embeds, breadcrumbs — stay page-only by kind partition.
 
-**Surfaces** — no selection kind opens a Task or Event, so there is no detail surface, no calendar or date-grouped layout, and no create path. Quick Capture's named blocker is exactly this (→ [[QuickCapturePM]]).
+**Surfaces** — no selection kind opens a Task or Event, so there is no detail surface, no calendar or date-grouped layout, and no create path. Quick Capture's named blocker[^4] is exactly this.
 
-**Built-in Status** — a non-deletable **Status** property on both kinds, tracking the user's engagement rather than the clock; for an Event it stays decoupled from the date math. Its group seed → [[PropertiesPM]].
+**Built-in Status** — a non-deletable **Status** property on both kinds[^5], tracking the user's engagement rather than the clock; for an Event it stays decoupled from the date math.
 
 **EventKit Sync** — the opt-in bidirectional mirror to the system Reminders and Calendar apps. The calendar database is API-only — it consumes constructed objects with typed properties — so sync is a code-level translation layer for whatever Pommora stores on disk, constraining none of the decisions above.
+
+[^1]: [[ArchitecturePM]]
+[^2]: [[SidebarPM]]
+[^3]: [[NavigationPM]]
+[^4]: [[QuickCapturePM]]
+[^5]: [[PropertiesPM]]

@@ -26,7 +26,7 @@ A view is a saved presentation of a [[CollectionsPM|Collection's]] (or a depth-1
 
 Each container's sidecar holds an ordered `views[]`. A saved view records its `id` (a ULID), `name`, `icon`, an optional `color` (an open ramp-cell key validated through the chip map at render, worn as the view's segment stroke at a tint — absent = the neutral hairline), and its renderer `type`. Its column layout carries `property_order`, `hidden_properties`, per-column widths, alignments, and `column_styles` — the per-type look plus the date, weekday, and time format choices, which live per-view here rather than on the definition. Its query config carries the `sort` (a multi-key list), the `filter` (a nested group), the `group` config with the view-level band-order keys, and the display options — card scale, collapsed-band state, and the cards toggles.
 
-The **active view is tracked per-machine**, kept out of the synced sidecar (→ [[NavigationPM]] §State Persistence). The per-container **ViewDropdown** (a toolbar button left of the trio, its glyph the active view's icon) opens the **ViewPane** to switch it; view CRUD — create (title-only "Untitled"), rename, duplicate, delete, reorder — persists to the sidecar. Two per-container presentation settings ride the sidecar and sync: `view_button` (the button's title) and `view_style` (→ [[ConfigurationPM]] §Collections). A container never presents an empty `views[]` — an app-created container is seeded with its default view on disk, and an empty view-bearing container mints its default on first entry.
+The **active view is tracked per-machine**, kept out of the synced sidecar.[^1] The per-container **ViewDropdown** (a toolbar button left of the trio, its glyph the active view's icon) opens the **ViewPane** to switch it; view CRUD — create (title-only "Untitled"), rename, duplicate, delete, reorder — persists to the sidecar. Two per-container presentation settings ride the sidecar and sync: `view_button` (the button's title) and `view_style`.[^2] A container never presents an empty `views[]` — an app-created container is seeded with its default view on disk, and an empty view-bearing container mints its default on first entry.
 
 ### The Pipeline
 
@@ -106,8 +106,12 @@ Drags carry the shared drag language. A drop into the shown zone is positional �
 - **Table Flatten + Location Subtitle** — the table's no-grouping mode: bands flatten away and a page's location renders as a subtitle in its title cell, governed by its own Flatten and Hide Location toggles. Cards already carry both halves.
 - **The property-bucket "+"** — the renderers' structural bands create; property and ungrouped bands offer no affordance, since a bucket can't infer a create location. One waits on a location ruling.
 - **Grouping for the other view types** — calendar, gallery, timeline, and list group mechanically differently; each gets its own surface with its renderer.
-- **ViewBar** — the `view_style` Toolbar option, an inline view-switcher bar as an alternative to the dropdown. The setting persists; Toolbar mode reuses the dropdown button until the surface builds. View embeds mirror the same duality in their header switcher (→ [[SurfacePM]]).
+- **ViewBar** — the `view_style` Toolbar option, an inline view-switcher bar as an alternative to the dropdown. The setting persists; Toolbar mode reuses the dropdown button until the surface builds. View embeds mirror the same duality in their header switcher.[^3]
 
 ### Prospects
 
 - [ ] In-line View Embeddings
+
+[^1]: [[NavigationPM]] §State Persistence
+[^2]: [[ConfigurationPM]] §Collections
+[^3]: [[SurfacePM]]

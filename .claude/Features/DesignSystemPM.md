@@ -267,7 +267,7 @@ A data-driven design-system site (`npm run showcase`) with a live accent picker,
 
 ### Where the Rest Lives
 
-The atlas continues in the specs that own each family: the editor's token pockets in [[MarkdownPM]] §Design System, the type ramp in [[TypographyPM]], motion and the caret, edge-fade, and autoscroll tables in [[InteractionPM]], chips in [[PropertiesPM]], the card families in [[CardViewPM]], the table sheet in [[TableViewPM]], and the preview window's `--ppane-*` contract described in [[PagePreviewPM]]. Icons resolve through one `Icon` component against the curated `design-system/symbols` registry (→ [[SymbolsPM]]). The stack ladders, shell insets, and per-surface knob bundles stay in code — tunables, not vocabulary.
+The atlas continues in the specs that own each family: the editor's token pockets in [[MarkdownPM]] §Design System, the type ramp in [[TypographyPM]], motion and the caret, edge-fade, and autoscroll tables in [[InteractionPM]], chips in [[PropertiesPM]], the card families in [[CardViewPM]], the table sheet in [[TableViewPM]], and the preview window's `--ppane-*` contract described in [[PagePreviewPM]]. Icons resolve through one `Icon` component against the curated `design-system/symbols` registry.[^1] The stack ladders, shell insets, and per-surface knob bundles stay in code — tunables, not vocabulary.
 
 ### Known Issues
 
@@ -280,3 +280,5 @@ The atlas continues in the specs that own each family: the editor's token pocket
 - **Light/dark theming** — a future seam; the system is dark-only.
 - **Accent editing UI** — deferred; the control surface is the config file.
 - **The inactive state token** — the empty-state text tone between secondary and tertiary; its interim consumers read tertiary, each marked `Awaiting proper inactive state token`.
+
+[^1]: [[SymbolsPM]]

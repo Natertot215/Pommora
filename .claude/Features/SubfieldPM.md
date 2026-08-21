@@ -37,4 +37,6 @@ Per-nexus, in `.nexus/settings.json` under an app-specific **`subfield`** key ho
 - **Reorder** the items via PommoraDND (horizontal) — the persisted `order` is wired; the drag UI is the next piece.
 - **User-defined items**, possibly scoped — the registry plus per-view `order` is the extensibility seam.
 - **Per-view configuration UI** — choosing which items each view kind shows.
-- **The Homepage** — bring the Subfield there once it has content worth surfacing (→ [[SurfacePM]] §Pending, the Homepage's standing).
+- **The Homepage** — bring the Subfield there once it has content worth surfacing.[^1]
+
+[^1]: [[SurfacePM]] §Pending, the Homepage's standing

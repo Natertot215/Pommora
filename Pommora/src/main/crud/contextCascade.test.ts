@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, rm, mkdir, symlink, writeFile, readFile } from 'node:fs/promises'
+import { mkdtemp, realpath, rm, mkdir, symlink, writeFile, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { renameContextOp, renameSpaceOp, replayPendingRename } from './contextCascade'
@@ -7,6 +7,7 @@ import { clearJournal, readJournal, writeJournal } from './contextJournal'
 import { contextsRegistryFile, contextsDir, nexusDir } from '../paths'
 import { splitFrontmatter } from '../readNexus'
 import { pathExists } from '../io/atomicWrite'
+import { closeSession, openSession } from '../session'
 
 let root: string
 const page = () => join(root, 'Notes', 'A.md')
@@ -14,7 +15,9 @@ const other = () => join(root, 'Notes', 'B.md')
 const csSidecar = () => join(contextsDir(root), 'Classes', 'CS 161', '_space.json')
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'pom-cascade-'))
+  // The journal slot's clear only lands for the live session's root, as production's does.
+  root = await realpath(await mkdtemp(join(tmpdir(), 'pom-cascade-')))
+  await openSession(root)
   await mkdir(nexusDir(root), { recursive: true })
   await writeFile(
     contextsRegistryFile(root),
@@ -37,6 +40,7 @@ beforeEach(async () => {
 })
 afterEach(async () => {
   await rm(root, { recursive: true, force: true })
+  closeSession()
 })
 
 const regTitle = async (id: string): Promise<string | undefined> => {
@@ -369,7 +373,65 @@ describe('replayPendingRename (D-7a crash windows)', () => {
 })
 
 afterEach(async () => {
-  await clearJournal(root).catch(() => {})
+  const held = await readJournal(root)
+  if (held) await clearJournal(root, held).catch(() => {})
+})
+
+describe('the journal slot law', () => {
+  it('a stranded record survives a later write and a stranger clear; its own clear lands', async () => {
+    const owed = {
+      contextId: 'ctx_projects',
+      oldTitle: 'Projects',
+      newTitle: 'Projects 2',
+      skipped: ['Notes/A.md'],
+    }
+    await writeJournal(root, owed)
+    const stranger = { contextId: 'ctxC', oldTitle: 'Classes', newTitle: 'Classes 2', skipped: [] }
+    await writeJournal(root, stranger)
+    expect((await readJournal(root))?.contextId).toBe('ctx_projects')
+    await clearJournal(root, stranger)
+    expect(await readJournal(root)).not.toBeNull()
+    // The settle's re-write of the SAME rename with a new skip list updates the held record.
+    await writeJournal(root, { ...owed, skipped: [] })
+    expect((await readJournal(root))?.skipped).toEqual([])
+    await clearJournal(root, owed)
+    expect(await readJournal(root)).toBeNull()
+  })
+
+  it('a newer rename of the same entity supersedes the stranded record', async () => {
+    await writeJournal(root, {
+      contextId: 'ctx_projects',
+      oldTitle: 'Projects',
+      newTitle: 'Work',
+      skipped: ['Notes/A.md'],
+    })
+    // The user renames back — the newer intent must displace the abandoned one, or the next
+    // open's replay re-applies "Projects → Work" over their choice.
+    await writeJournal(root, {
+      contextId: 'ctx_projects',
+      oldTitle: 'Work',
+      newTitle: 'Projects',
+      skipped: [],
+    })
+    expect((await readJournal(root))?.newTitle).toBe('Projects')
+  })
+
+  it('a rename-back after a skip leaves nothing for the replay to revert', async () => {
+    // Strand a record by hand (the shape a skipped sweep leaves), then run the counter-rename
+    // end to end: its journal supersedes, its cascade lands, and the replay is inert.
+    await renameContextOp(root, 'ctx_projects', 'Work')
+    await writeJournal(root, {
+      contextId: 'ctx_projects',
+      oldTitle: 'Projects',
+      newTitle: 'Work',
+      skipped: ['Notes/A.md'],
+    })
+    expect((await renameContextOp(root, 'ctx_projects', 'Projects')).ok).toBe(true)
+    expect(await readJournal(root)).toBeNull()
+    await replayPendingRename(root)
+    expect(await regTitle('ctx_projects')).toBe('Projects')
+    expect((await fmOf(page()))['(Projects)']).toBeDefined()
+  })
 })
 
 describe('clearing a value re-dates the page; renaming a key does not', () => {

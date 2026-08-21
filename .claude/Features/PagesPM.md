@@ -56,7 +56,9 @@ Opening a folder adopts it: every `.md` carrying no kind key is stamped with a f
 
 ### Prospects
 
-- **Page Property Panel** — a property panel on the entity itself, Pages and Agenda items alike. The Page Preview's front-matter inspector is the one shipped value surface (→ [[PagePreviewPM]]); the in-content panel isn't built.
+- **Page Property Panel** — a property panel on the entity itself, Pages and Agenda items alike. The Page Preview's front-matter inspector is the one shipped value surface[^1]; the in-content panel isn't built.
 - **Sub-Pages** — a nested Page hierarchy beyond the current flat Page-in-container model.
 - **Independent UI titles** — a display title distinct from the filename, so a rename needn't move the file.
 - **Ad-hoc properties** — Page-local frontmatter fields outside the Collection schema.
+
+[^1]: [[PagePreviewPM]]

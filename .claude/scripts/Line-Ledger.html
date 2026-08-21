@@ -23,7 +23,6 @@
 
     /* Pommora's type scale, verbatim. */
     --large-title: 26px/32px;
-    --title-1: 22px/26px;
     --title-2: 17px/22px;
     --body: 13px/16px;
     --caption: 11px/14px;
@@ -52,7 +51,7 @@
 
   /* ---- masthead ---- */
 
-  .masthead { display: flex; flex-direction: column; gap: 20px; }
+  .masthead { display: flex; flex-direction: column; gap: 18px; }
 
   .eyebrow {
     font: var(--footnote) var(--font);
@@ -73,33 +72,18 @@
     font-weight: 600;
     color: var(--ink-primary);
     letter-spacing: -0.015em;
-    text-wrap: balance;
   }
 
-  .standfirst {
-    margin: 0;
-    max-width: 62ch;
-    font: var(--body) var(--font);
-    color: var(--ink-secondary);
-  }
-
-  .figures {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px 40px;
-    padding-top: 8px;
-  }
-  .figure { display: flex; flex-direction: column; gap: 3px; }
+  .figure { display: flex; flex-direction: column; gap: 3px; padding-top: 4px; }
   .figure .n {
     font-family: var(--mono);
     font-variant-numeric: tabular-nums;
-    font-size: 30px;
-    line-height: 34px;
+    font-size: 34px;
+    line-height: 38px;
     font-weight: 500;
     color: var(--ink-primary);
     letter-spacing: -0.02em;
   }
-  .figure .n.sub { color: var(--ink-control); font-size: 22px; line-height: 34px; }
   .figure .k {
     font: var(--footnote) var(--font);
     font-weight: 500;
@@ -114,16 +98,16 @@
     background: var(--surface-primary);
     border: 1px solid var(--hairline);
     border-radius: 12px;
-    padding: 20px 20px 14px;
+    padding: 16px 20px 14px;
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 12px;
   }
 
   .plot-head {
     display: flex;
     justify-content: space-between;
-    align-items: baseline;
+    align-items: center;
     gap: 16px;
     flex-wrap: wrap;
   }
@@ -133,10 +117,46 @@
     font-weight: 600;
     color: var(--ink-primary);
   }
-  .plot-head .hint { font: var(--caption) var(--font); color: var(--ink-tertiary); }
+  .plot-head .hint {
+    font: var(--caption) var(--font);
+    color: var(--ink-tertiary);
+    margin-right: auto;
+  }
 
-  .chart-wrap { position: relative; overflow-x: auto; }
-  svg.chart { display: block; width: 100%; height: auto; min-width: 620px; }
+  .zoom { display: flex; align-items: center; gap: 6px; }
+  .zoom button {
+    font-family: var(--font);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink-control);
+    background: var(--surface-secondary);
+    border: 1px solid var(--hairline);
+    border-radius: 7px;
+    height: 26px;
+    min-width: 26px;
+    padding: 0 8px;
+    cursor: pointer;
+    transition: background 120ms ease, color 120ms ease;
+  }
+  .zoom button:hover { background: var(--surface-tertiary); color: var(--ink-primary); }
+  .zoom button:disabled { opacity: 0.35; cursor: default; background: var(--surface-secondary); }
+  .zoom .span {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-tertiary);
+    font-variant-numeric: tabular-nums;
+    margin-left: 4px;
+  }
+
+  .chart-wrap { position: relative; }
+  svg.chart {
+    display: block;
+    width: 100%;
+    height: auto;
+    touch-action: none;
+    cursor: grab;
+  }
+  svg.chart.dragging { cursor: grabbing; }
 
   .grid line { stroke: rgba(255, 255, 255, 0.06); stroke-width: 1; }
   .axis text {
@@ -201,39 +221,18 @@
   .tip .tot b { font-family: var(--mono); font-weight: 500; color: var(--ink-primary); }
   .tip .tot span { color: var(--ink-tertiary); }
 
-  .legend {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px 18px;
-    padding-top: 2px;
-  }
-  .legend .item {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    font: var(--caption) var(--font);
-    color: var(--ink-secondary);
-  }
-  .legend .sw { width: 9px; height: 9px; border-radius: 2px; flex: none; }
-
   /* ---- ledger ---- */
 
-  section.ledger { display: flex; flex-direction: column; gap: 16px; }
+  section.ledger { display: flex; flex-direction: column; gap: 14px; }
   section.ledger > h2 {
     margin: 0;
     font: var(--title-2) var(--font);
     font-weight: 600;
     color: var(--ink-primary);
   }
-  section.ledger > p {
-    margin: 0;
-    max-width: 62ch;
-    font: var(--body) var(--font);
-    color: var(--ink-secondary);
-  }
 
   .table-wrap { overflow-x: auto; }
-  table { border-collapse: collapse; width: 100%; min-width: 660px; }
+  table { border-collapse: collapse; width: 100%; min-width: 420px; }
 
   thead th {
     font: var(--footnote) var(--font);
@@ -266,12 +265,6 @@
     color: var(--ink-primary);
   }
   .area-name .sw { width: 9px; height: 9px; border-radius: 2px; flex: none; }
-  .area-note {
-    margin: 5px 0 0 18px;
-    max-width: 58ch;
-    font: var(--caption) var(--font);
-    color: var(--ink-tertiary);
-  }
 
   .bar {
     margin: 9px 0 0 18px;
@@ -284,16 +277,7 @@
   .bar i { display: block; height: 100%; border-radius: 2px; }
 
   td.num { font-family: var(--mono); font-size: 13px; color: var(--ink-primary); padding-left: 22px; }
-  td.num small {
-    display: block;
-    font-family: var(--font);
-    font-size: 10px;
-    color: var(--ink-tertiary);
-    margin-top: 3px;
-    font-variant-numeric: normal;
-  }
   td.dim { color: var(--ink-secondary); }
-  td.quiet { color: var(--ink-tertiary); }
 
   tfoot td {
     padding: 14px 0 0;
@@ -316,9 +300,6 @@
   footer {
     border-top: 1px solid var(--hairline);
     padding-top: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
   }
   footer p { margin: 0; max-width: 66ch; font: var(--caption) var(--font); color: var(--ink-tertiary); }
   footer code {
@@ -333,7 +314,7 @@
 
   @media (max-width: 640px) {
     .page { padding: 36px 16px 64px; gap: 32px; }
-    .figure .n { font-size: 26px; }
+    .figure .n { font-size: 28px; line-height: 32px; }
   }
   @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; }
@@ -347,50 +328,37 @@
       <span>main</span><span class="dot"></span>
       <span class="sha" id="sha"></span>
     </div>
-    <h1>Where Pommora's code actually lives</h1>
-    <p class="standfirst">
-      Every line of TypeScript, TSX and CSS in the app, counted with comments, blanks, tests and the
-      component showcase left out. Seven areas, from the React pivot on July 5th to today. The
-      numbers are what the cleanup queue moves against.
-    </p>
-    <div class="figures">
-      <div class="figure"><span class="n" id="fTotal"></span><span class="k">Real code lines</span></div>
-      <div class="figure"><span class="n sub" id="fGrowth"></span><span class="k">Since the pivot</span></div>
-      <div class="figure"><span class="n sub" id="fDays"></span><span class="k">Days of build</span></div>
-      <div class="figure"><span class="n sub" id="fQueued"></span><span class="k">Queued for removal</span></div>
-    </div>
+    <h1>Pommora Line Ledger</h1>
+    <div class="figure"><span class="n" id="fTotal"></span><span class="k">Real code lines</span></div>
   </header>
 
   <div class="plot">
     <div class="plot-head">
-      <h2>The stack, day by day</h2>
-      <span class="hint">Hover for a day's breakdown</span>
+      <h2>Lines by system</h2>
+      <span class="hint">Hover a day for its breakdown · pinch or ⌘-scroll to zoom · drag to pan</span>
+      <div class="zoom">
+        <button id="zOut" title="Zoom out">−</button>
+        <button id="zIn" title="Zoom in">+</button>
+        <button id="zReset">Reset</button>
+        <span class="span" id="zSpan"></span>
+      </div>
     </div>
     <div class="chart-wrap" id="wrap">
       <svg class="chart" id="chart" viewBox="0 0 940 380" role="img"
-           aria-label="Stacked area chart of Pommora's code lines by area from July 5 to August 20, 2026, growing from about 25,800 to 62,500 lines."></svg>
+           aria-label="Stacked area chart of Pommora's code lines by system over time."></svg>
       <div class="tip" id="tip"></div>
     </div>
-    <div class="legend" id="legend"></div>
   </div>
 
   <section class="ledger">
-    <h2>The seven areas</h2>
-    <p>
-      Share of the codebase, how much each has grown, and what the cohesion queue would take off it.
-      The queue's job is that each fact is stated once — the lines it removes are the by-product, not
-      the target, which is why the removal column is small next to the totals beside it.
-    </p>
+    <h2>Per system</h2>
     <div class="table-wrap">
       <table>
         <thead>
           <tr>
-            <th>Area</th>
+            <th>System</th>
             <th>Lines</th>
             <th>Share</th>
-            <th>Growth</th>
-            <th>Removed</th>
-            <th>Queued</th>
           </tr>
         </thead>
         <tbody id="rows"></tbody>
@@ -401,110 +369,183 @@
 
   <footer>
     <p>
-      Counted by <code>.claude/scripts/loc.py</code> against the working tree. Re-run it and republish
-      this page to move the numbers; the Removed column measures each area against the baseline frozen
-      at the commit named above, so a cleanup session shows up there.
-    </p>
-    <p>
-      Excluded: <code>*.test.ts</code>, <code>*.d.ts</code>, the deployed component showcase, test
-      fixtures, <code>node_modules</code>, build output, and every comment and blank line. Included:
-      the Electron main process, the preload bridge, the shared contract, and the whole renderer.
+      Counted by <code>.claude/scripts/loc.py</code>. Included: the Electron main process, the preload
+      bridge, the shared contract, and the whole renderer. Excluded: <code>*.test.ts</code>,
+      <code>*.d.ts</code>, the deployed component showcase, test fixtures, <code>node_modules</code>,
+      build output, and every comment and blank line.
     </p>
   </footer>
 </div>
 
-<script id="data" type="application/json">{"areas":["Views & Detail Pane","Main Process","Editor \u2014 MarkdownPM","Design System","App Chrome","Surfaces & Embeds","Shared Contract"],"series":[{"d":"2026-07-05","v":[7085,5117,5574,4540,2234,0,1295]},{"d":"2026-07-06","v":[7645,5334,5574,4801,2523,0,1369]},{"d":"2026-07-07","v":[8031,5372,5574,4880,2523,0,1394]},{"d":"2026-07-08","v":[8330,5524,5574,5006,2694,0,1417]},{"d":"2026-07-09","v":[9510,5535,5573,5010,2814,0,1461]},{"d":"2026-07-10","v":[9612,5535,5573,5010,2814,0,1465]},{"d":"2026-07-13","v":[10000,6049,5609,5206,2855,3062,1674]},{"d":"2026-07-14","v":[10056,6180,5596,5205,3596,3058,1692]},{"d":"2026-07-16","v":[11682,7815,5891,5912,6509,3683,1955]},{"d":"2026-07-17","v":[11779,7973,5920,6017,7014,4714,2002]},{"d":"2026-07-18","v":[11779,7973,5920,6017,7034,4714,2002]},{"d":"2026-07-21","v":[13974,8030,5970,6563,7440,4697,2122]},{"d":"2026-07-22","v":[14151,9219,5970,6544,7453,4712,2343]},{"d":"2026-07-23","v":[14190,9084,5970,6662,7565,4719,2291]},{"d":"2026-07-24","v":[14190,9084,5970,6662,7565,4719,2291]},{"d":"2026-07-25","v":[14409,9083,5967,7038,7407,4506,2290]},{"d":"2026-07-26","v":[15611,9012,5967,7155,7411,4508,2272]},{"d":"2026-07-27","v":[15567,8364,5898,7192,7343,4564,2217]},{"d":"2026-07-28","v":[15573,7269,5898,7190,7277,4488,2215]},{"d":"2026-07-29","v":[15605,7187,5898,7182,7262,4488,2192]},{"d":"2026-07-30","v":[15669,7309,5911,7190,7414,4513,2236]},{"d":"2026-07-31","v":[15670,7029,5911,7190,7304,4513,2188]},{"d":"2026-08-01","v":[15670,8296,5911,7190,7302,4513,2224]},{"d":"2026-08-02","v":[15852,8296,5911,7193,7302,4513,2228]},{"d":"2026-08-03","v":[15850,8296,6188,7198,7302,4512,2228]},{"d":"2026-08-04","v":[15882,8381,7193,7221,7335,4674,2251]},{"d":"2026-08-05","v":[15931,8404,7228,7226,7332,4950,2266]},{"d":"2026-08-06","v":[16476,8341,7260,7253,7382,5007,2263]},{"d":"2026-08-07","v":[16469,8341,7216,7272,7369,4987,2337]},{"d":"2026-08-08","v":[16488,8321,7271,7430,7420,4987,2325]},{"d":"2026-08-09","v":[16510,8321,7279,7430,7421,4987,2325]},{"d":"2026-08-10","v":[16905,8405,7348,7692,7402,4975,2368]},{"d":"2026-08-11","v":[17499,8409,7348,7699,7611,4975,2373]},{"d":"2026-08-12","v":[17505,8444,7952,7702,7646,4981,2444]},{"d":"2026-08-13","v":[17716,8669,8004,7750,7707,4988,2543]},{"d":"2026-08-14","v":[18387,8686,7961,7847,7991,4967,2656]},{"d":"2026-08-15","v":[18396,8797,8359,7847,8012,4973,2895]},{"d":"2026-08-16","v":[18407,8878,8407,7860,8078,4978,3018]},{"d":"2026-08-17","v":[18377,10059,8407,7860,7713,4974,3515]},{"d":"2026-08-18","v":[18659,10377,8745,7916,7746,5438,3621]},{"d":"2026-08-19","v":[18619,10146,8786,8026,7690,5501,3773]},{"d":"2026-08-20","v":[18590,10163,8766,8069,7679,5429,3831]}],"colors":["#1C7629","#075CB2","#8C7606","#DC519F","#B26F07","#A24CCE","#D93B31"],"queued":[350,0,0,0,0,0,0],"notes":["The two view hosts remain \u2014 roughly 150 lines of identical setup between Table and Cards.","One file holds about a hundred and ten channel implementations; the split moves lines rather than removing them.","Reads one cached scan per document. Footnotes lands here next.","Tokens, glass, symbols, and the drag engine. Shared by everything above it.","Tabs, sidebar, breadcrumbs, search, and the store the whole renderer reads.","The dashboard tiles, the floating preview, and the web embed framework.","The contract both processes import. Small on purpose."],"baseline":[18579,10163,8768,8069,7674,5490,3800],"head":"17548b78"}</script>
+<script id="data" type="application/json">{"areas": ["Views & Detail Pane", "Main Process", "Editor \u2014 MarkdownPM", "Design System", "App Chrome", "Surfaces & Embeds", "Shared Contract"], "colors": ["#1C7629", "#075CB2", "#8C7606", "#DC519F", "#B26F07", "#A24CCE", "#D93B31"], "series": [{"d": "2026-07-05", "v": [7085, 5117, 5574, 4540, 2234, 0, 1295]}, {"d": "2026-07-06", "v": [7645, 5334, 5574, 4801, 2523, 0, 1369]}, {"d": "2026-07-07", "v": [8031, 5372, 5574, 4880, 2523, 0, 1394]}, {"d": "2026-07-08", "v": [8330, 5524, 5574, 5006, 2694, 0, 1417]}, {"d": "2026-07-09", "v": [9510, 5535, 5573, 5010, 2814, 0, 1461]}, {"d": "2026-07-10", "v": [9612, 5535, 5573, 5010, 2814, 0, 1465]}, {"d": "2026-07-13", "v": [10000, 6049, 5609, 5206, 2855, 3062, 1674]}, {"d": "2026-07-14", "v": [10056, 6180, 5596, 5205, 3596, 3058, 1692]}, {"d": "2026-07-16", "v": [11682, 7815, 5891, 5912, 6509, 3683, 1955]}, {"d": "2026-07-17", "v": [11779, 7973, 5920, 6017, 7014, 4714, 2002]}, {"d": "2026-07-18", "v": [11779, 7973, 5920, 6017, 7034, 4714, 2002]}, {"d": "2026-07-21", "v": [13974, 8030, 5970, 6563, 7440, 4697, 2122]}, {"d": "2026-07-22", "v": [14151, 9219, 5970, 6544, 7453, 4712, 2343]}, {"d": "2026-07-23", "v": [14190, 9084, 5970, 6662, 7565, 4719, 2291]}, {"d": "2026-07-24", "v": [14190, 9084, 5970, 6662, 7565, 4719, 2291]}, {"d": "2026-07-25", "v": [14200, 9083, 5967, 7038, 7616, 4506, 2290]}, {"d": "2026-07-26", "v": [15402, 9012, 5967, 7155, 7620, 4508, 2272]}, {"d": "2026-07-27", "v": [15358, 8364, 5898, 7192, 7552, 4564, 2217]}, {"d": "2026-07-28", "v": [15364, 7269, 5898, 7190, 7486, 4488, 2215]}, {"d": "2026-07-29", "v": [15396, 7187, 5898, 7182, 7471, 4488, 2192]}, {"d": "2026-07-30", "v": [15460, 7309, 5911, 7190, 7623, 4513, 2236]}, {"d": "2026-07-31", "v": [15461, 7029, 5911, 7190, 7513, 4513, 2188]}, {"d": "2026-08-01", "v": [15461, 8296, 5911, 7190, 7511, 4513, 2224]}, {"d": "2026-08-02", "v": [15643, 8296, 5911, 7193, 7511, 4513, 2228]}, {"d": "2026-08-03", "v": [15641, 8296, 6188, 7198, 7511, 4512, 2228]}, {"d": "2026-08-04", "v": [15661, 8381, 7193, 7221, 7556, 4674, 2251]}, {"d": "2026-08-05", "v": [15685, 8404, 7228, 7226, 7578, 4950, 2266]}, {"d": "2026-08-06", "v": [16230, 8341, 7260, 7253, 7628, 5007, 2263]}, {"d": "2026-08-07", "v": [16223, 8341, 7216, 7272, 7615, 4987, 2337]}, {"d": "2026-08-08", "v": [16242, 8321, 7271, 7430, 7666, 4987, 2325]}, {"d": "2026-08-09", "v": [16264, 8321, 7279, 7430, 7667, 4987, 2325]}, {"d": "2026-08-10", "v": [16659, 8405, 7348, 7692, 7648, 4975, 2368]}, {"d": "2026-08-11", "v": [17253, 8409, 7348, 7699, 7857, 4975, 2373]}, {"d": "2026-08-12", "v": [17253, 8444, 7952, 7702, 7898, 4981, 2444]}, {"d": "2026-08-13", "v": [17464, 8669, 8004, 7750, 7959, 4988, 2543]}, {"d": "2026-08-14", "v": [17650, 8686, 7961, 7847, 8728, 4967, 2656]}, {"d": "2026-08-15", "v": [17556, 8797, 8359, 7847, 8852, 4973, 2895]}, {"d": "2026-08-16", "v": [17539, 8878, 8407, 7860, 8946, 4978, 3018]}, {"d": "2026-08-17", "v": [17509, 10059, 8407, 7860, 8581, 4974, 3515]}, {"d": "2026-08-18", "v": [17531, 10377, 8745, 7916, 8874, 5438, 3621]}, {"d": "2026-08-19", "v": [17453, 10146, 8786, 8026, 8856, 5501, 3773]}, {"d": "2026-08-20", "v": [17588, 10223, 9671, 8130, 8894, 5564, 4000]}, {"d": "2026-08-21", "v": [17579, 10228, 9902, 8139, 8902, 5565, 4002]}], "head": "00a9f751"}</script>
 <script>
   const D = JSON.parse(document.getElementById('data').textContent);
-  const { areas, series, colors, queued, notes, baseline, head } = D;
+  const { areas, series, colors, head } = D;
   const N = areas.length;
   const last = series[series.length - 1].v;
-  const first = series[0].v;
   const sum = a => a.reduce((x, y) => x + y, 0);
   const fmt = n => n.toLocaleString('en-US');
+  const MONTHS = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const dayLabel = d => { const [, mo, da] = d.split('-'); return MONTHS[+mo] + ' ' + (+da); };
 
   document.getElementById('sha').textContent = head;
   document.getElementById('fTotal').textContent = fmt(sum(last));
-  document.getElementById('fGrowth').textContent = '+' + fmt(sum(last) - sum(first));
-  document.getElementById('fDays').textContent = String(
-    Math.round((new Date(series[series.length - 1].d) - new Date(series[0].d)) / 864e5)
-  );
-  document.getElementById('fQueued').textContent = '−' + fmt(sum(queued));
 
-  /* ---------- chart ---------- */
+  /* ---------- geometry ---------- */
 
   const W = 940, H = 380;
   const M = { t: 12, r: 172, b: 26, l: 46 };
   const iw = W - M.l - M.r, ih = H - M.t - M.b;
-
-  const totals = series.map(s => sum(s.v));
-  const yMax = Math.ceil(Math.max(...totals) / 10000) * 10000;
-  const x = i => M.l + (i / (series.length - 1)) * iw;
-  const y = v => M.t + ih - (v / yMax) * ih;
+  const LASTI = series.length - 1;
 
   // Cumulative upper edge of each band, bottom of the stack first.
   const edges = [];
   for (let k = 0; k < N; k++) {
-    edges.push(series.map((s, i) => {
+    edges.push(series.map(s => {
       let acc = 0;
       for (let j = 0; j <= k; j++) acc += s.v[j];
       return acc;
     }));
   }
+  const totals = series.map(s => sum(s.v));
 
   const svg = document.getElementById('chart');
   const ns = 'http://www.w3.org/2000/svg';
   const el = (t, a) => { const e = document.createElementNS(ns, t); for (const k in a) e.setAttribute(k, a[k]); return e; };
 
-  // grid + y axis
-  const g = el('g', { class: 'grid' });
-  const ax = el('g', { class: 'axis' });
-  for (let v = 0; v <= yMax; v += 10000) {
-    g.appendChild(el('line', { x1: M.l, x2: M.l + iw, y1: y(v), y2: y(v) }));
-    const t = el('text', { x: M.l - 9, y: y(v) + 3, 'text-anchor': 'end' });
-    t.textContent = v === 0 ? '0' : (v / 1000) + 'k';
-    ax.appendChild(t);
-  }
-  svg.appendChild(g);
+  /* ---------- the visible window over the series ---------- */
 
-  // bands, top of the stack painted first so lower ones sit over their own edges
-  for (let k = N - 1; k >= 0; k--) {
-    const lower = k === 0 ? series.map(() => 0) : edges[k - 1];
-    let dd = 'M' + x(0) + ',' + y(edges[k][0]);
-    for (let i = 1; i < series.length; i++) dd += 'L' + x(i) + ',' + y(edges[k][i]);
-    for (let i = series.length - 1; i >= 0; i--) dd += 'L' + x(i) + ',' + y(lower[i]);
-    svg.appendChild(el('path', { d: dd + 'Z', fill: colors[k], class: 'band' }));
+  const MIN_SPAN = 3;                // never zoom past three days on screen
+  let lo = 0, hi = LASTI;
+
+  const clampWindow = () => {
+    let span = Math.min(Math.max(hi - lo, MIN_SPAN), LASTI);
+    if (lo < 0) lo = 0;
+    if (lo + span > LASTI) lo = LASTI - span;
+    hi = lo + span;
+  };
+
+  const x = i => M.l + ((i - lo) / (hi - lo)) * iw;
+  const iAt = px => lo + ((px - M.l) / iw) * (hi - lo);
+
+  function render() {
+    clampWindow();
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+    const i0 = Math.max(0, Math.floor(lo)), i1 = Math.min(LASTI, Math.ceil(hi));
+    const visMax = Math.max(...totals.slice(i0, i1 + 1));
+    const step = visMax > 30000 ? 10000 : visMax > 12000 ? 5000 : 2000;
+    const yMax = Math.ceil(visMax / step) * step;
+    const y = v => M.t + ih - (v / yMax) * ih;
+
+    const defs = el('defs', {});
+    const clip = el('clipPath', { id: 'plotClip' });
+    clip.appendChild(el('rect', { x: M.l, y: M.t, width: iw, height: ih }));
+    defs.appendChild(clip);
+    svg.appendChild(defs);
+
+    const grid = el('g', { class: 'grid' });
+    const ax = el('g', { class: 'axis' });
+    for (let v = 0; v <= yMax; v += step) {
+      grid.appendChild(el('line', { x1: M.l, x2: M.l + iw, y1: y(v), y2: y(v) }));
+      const t = el('text', { x: M.l - 9, y: y(v) + 3, 'text-anchor': 'end' });
+      t.textContent = v === 0 ? '0' : v >= 1000 ? (v / 1000) + 'k' : String(v);
+      ax.appendChild(t);
+    }
+    svg.appendChild(grid);
+
+    // Bands, top of the stack painted first so lower ones sit over their own edges.
+    const plot = el('g', { 'clip-path': 'url(#plotClip)' });
+    for (let k = N - 1; k >= 0; k--) {
+      const lower = k === 0 ? series.map(() => 0) : edges[k - 1];
+      let d = 'M' + x(i0) + ',' + y(edges[k][i0]);
+      for (let i = i0 + 1; i <= i1; i++) d += 'L' + x(i) + ',' + y(edges[k][i]);
+      for (let i = i1; i >= i0; i--) d += 'L' + x(i) + ',' + y(lower[i]);
+      plot.appendChild(el('path', { d: d + 'Z', fill: colors[k], class: 'band' }));
+    }
+    svg.appendChild(plot);
+
+    // x axis — evenly spaced dates across the visible window.
+    const ticks = new Set();
+    for (let n = 0; n <= 4; n++) ticks.add(Math.round(lo + ((hi - lo) * n) / 4));
+    for (const i of [...ticks].sort((a, b) => a - b)) {
+      const anchor = i <= lo + 0.01 ? 'start' : i >= hi - 0.01 ? 'end' : 'middle';
+      const t = el('text', { x: x(i), y: H - 8, 'text-anchor': anchor });
+      t.textContent = dayLabel(series[i].d);
+      ax.appendChild(t);
+    }
+    svg.appendChild(ax);
+
+    // Direct labels at the right edge, nudged apart so none collide.
+    const rightI = Math.round(hi);
+    const seats = [];
+    for (let k = 0; k < N; k++) {
+      const lower = k === 0 ? 0 : edges[k - 1][rightI];
+      seats.push({ k, y: (y(edges[k][rightI]) + y(lower)) / 2 });
+    }
+    seats.sort((a, b) => a.y - b.y);
+    const MINGAP = 15;
+    for (let i = 1; i < seats.length; i++) {
+      if (seats[i].y - seats[i - 1].y < MINGAP) seats[i].y = seats[i - 1].y + MINGAP;
+    }
+    for (const s of seats) {
+      const gx = M.l + iw + 12;
+      svg.appendChild(el('rect', { x: gx, y: s.y - 4.5, width: 9, height: 9, rx: 2, fill: colors[s.k] }));
+      const t = el('text', { x: gx + 14, y: s.y + 3.5, class: 'lbl' });
+      t.textContent = areas[s.k] + '  ' + fmt(series[rightI].v[s.k]);
+      svg.appendChild(t);
+    }
+
+    cross = el('line', { class: 'crosshair', y1: M.t, y2: M.t + ih, opacity: 0 });
+    svg.appendChild(cross);
+
+    document.getElementById('zSpan').textContent =
+      dayLabel(series[i0].d) + ' – ' + dayLabel(series[i1].d);
+    document.getElementById('zOut').disabled = hi - lo >= LASTI;
+    document.getElementById('zIn').disabled = hi - lo <= MIN_SPAN;
   }
 
-  // x axis — first, a few interior ticks, last
-  const marks = [0, Math.round(series.length * 0.25), Math.round(series.length * 0.5), Math.round(series.length * 0.75), series.length - 1];
-  for (const i of marks) {
-    const t = el('text', { x: x(i), y: H - 8, 'text-anchor': i === 0 ? 'start' : i === series.length - 1 ? 'end' : 'middle' });
-    const [, mo, da] = series[i].d.split('-');
-    t.textContent = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][+mo] + ' ' + (+da);
-    ax.appendChild(t);
-  }
-  svg.appendChild(ax);
+  let cross;
 
-  // direct labels at the right edge, nudged apart so none collide
-  const seats = [];
-  for (let k = 0; k < N; k++) {
-    const lower = k === 0 ? 0 : edges[k - 1][series.length - 1];
-    seats.push({ k, y: (y(edges[k][series.length - 1]) + y(lower)) / 2 });
-  }
-  seats.sort((a, b) => a.y - b.y);
-  const MINGAP = 15;
-  for (let i = 1; i < seats.length; i++) if (seats[i].y - seats[i - 1].y < MINGAP) seats[i].y = seats[i - 1].y + MINGAP;
-  for (const s of seats) {
-    const gx = M.l + iw + 12;
-    svg.appendChild(el('rect', { x: gx, y: s.y - 4.5, width: 9, height: 9, rx: 2, fill: colors[s.k] }));
-    const t = el('text', { x: gx + 14, y: s.y + 3.5, class: 'lbl' });
-    t.textContent = areas[s.k];
-    svg.appendChild(t);
+  /* ---------- zoom + pan ---------- */
+
+  function zoomBy(factor, focus) {
+    const span = hi - lo;
+    const next = Math.min(Math.max(span * factor, MIN_SPAN), LASTI);
+    const f = focus === undefined ? (lo + hi) / 2 : Math.min(Math.max(focus, lo), hi);
+    const t = span === 0 ? 0.5 : (f - lo) / span;
+    lo = f - t * next;
+    hi = lo + next;
+    render();
   }
 
-  const cross = el('line', { class: 'crosshair', y1: M.t, y2: M.t + ih, opacity: 0 });
-  svg.appendChild(cross);
+  document.getElementById('zIn').addEventListener('click', () => zoomBy(1 / 1.6));
+  document.getElementById('zOut').addEventListener('click', () => zoomBy(1.6));
+  document.getElementById('zReset').addEventListener('click', () => { lo = 0; hi = LASTI; render(); });
+
+  const svgX = clientX => {
+    const r = svg.getBoundingClientRect();
+    return ((clientX - r.left) / r.width) * W;
+  };
+
+  // A trackpad pinch arrives as a ctrlKey wheel; a plain wheel is left to scroll the page.
+  svg.addEventListener('wheel', e => {
+    if (!e.ctrlKey && !e.metaKey) return;
+    e.preventDefault();
+    zoomBy(e.deltaY > 0 ? 1.15 : 1 / 1.15, iAt(svgX(e.clientX)));
+  }, { passive: false });
+
+  let drag = null;
+  svg.addEventListener('pointerdown', e => {
+    drag = { px: e.clientX, lo, hi };
+    svg.setPointerCapture(e.pointerId);
+    svg.classList.add('dragging');
+  });
+  svg.addEventListener('pointerup', e => {
+    drag = null;
+    svg.releasePointerCapture(e.pointerId);
+    svg.classList.remove('dragging');
+  });
 
   /* ---------- hover ---------- */
 
@@ -527,32 +568,30 @@
     cross.setAttribute('x2', x(i));
 
     const wr = wrap.getBoundingClientRect();
-    const px = clientX - wr.left + wrap.scrollLeft;
+    const px = clientX - wr.left;
     const tw = tip.offsetWidth;
-    tip.style.left = Math.max(4, Math.min(px + 16, wrap.scrollWidth - tw - 4)) + 'px';
+    tip.style.left = Math.max(4, Math.min(px + 16, wr.width - tw - 4)) + 'px';
     tip.style.top = '10px';
   }
 
-  function hide() { tip.classList.remove('on'); cross.setAttribute('opacity', 0); }
+  function hide() { tip.classList.remove('on'); if (cross) cross.setAttribute('opacity', 0); }
 
   svg.addEventListener('pointermove', e => {
-    const r = svg.getBoundingClientRect();
-    const vx = ((e.clientX - r.left) / r.width) * W;
+    if (drag) {
+      const r = svg.getBoundingClientRect();
+      const shift = ((e.clientX - drag.px) / r.width) * W / iw * (drag.hi - drag.lo);
+      lo = drag.lo - shift;
+      hi = drag.hi - shift;
+      hide();
+      render();
+      return;
+    }
+    const vx = svgX(e.clientX);
     if (vx < M.l - 8 || vx > M.l + iw + 8) return hide();
-    const i = Math.max(0, Math.min(series.length - 1, Math.round(((vx - M.l) / iw) * (series.length - 1))));
+    const i = Math.max(0, Math.min(LASTI, Math.round(iAt(vx))));
     show(i, e.clientX);
   });
   svg.addEventListener('pointerleave', hide);
-
-  /* ---------- legend ---------- */
-
-  const legend = document.getElementById('legend');
-  for (let k = N - 1; k >= 0; k--) {
-    const d = document.createElement('div');
-    d.className = 'item';
-    d.innerHTML = '<span class="sw" style="background:' + colors[k] + '"></span>' + areas[k];
-    legend.appendChild(d);
-  }
 
   /* ---------- ledger ---------- */
 
@@ -562,28 +601,19 @@
 
   for (const k of order) {
     const share = (last[k] / total) * 100;
-    const grown = last[k] - first[k];
-    const removed = baseline[k] - last[k];
     const tr = document.createElement('tr');
     tr.innerHTML =
       '<td>' +
         '<div class="area-name"><span class="sw" style="background:' + colors[k] + '"></span>' + areas[k] + '</div>' +
-        '<p class="area-note">' + notes[k] + '</p>' +
         '<div class="bar"><i style="width:' + share.toFixed(1) + '%;background:' + colors[k] + '"></i></div>' +
       '</td>' +
       '<td class="num">' + fmt(last[k]) + '</td>' +
-      '<td class="num dim">' + share.toFixed(1) + '%</td>' +
-      '<td class="num dim">' + (grown >= 0 ? '+' : '−') + fmt(Math.abs(grown)) + '</td>' +
-      '<td class="num ' + (removed > 0 ? '' : 'quiet') + '">' + (removed > 0 ? '−' + fmt(removed) : '—') + '</td>' +
-      '<td class="num ' + (queued[k] ? '' : 'quiet') + '">' + (queued[k] ? '−' + fmt(queued[k]) : '—') + '</td>';
+      '<td class="num dim">' + share.toFixed(1) + '%</td>';
     rows.appendChild(tr);
   }
 
-  const removedTotal = sum(baseline) - total;
   document.getElementById('foot').innerHTML =
-    '<tr><td>Whole app</td>' +
-    '<td>' + fmt(total) + '</td><td>100%</td>' +
-    '<td>+' + fmt(total - sum(first)) + '</td>' +
-    '<td>' + (removedTotal > 0 ? '−' + fmt(removedTotal) : '—') + '</td>' +
-    '<td>−' + fmt(sum(queued)) + '</td></tr>';
+    '<tr><td>Whole app</td><td>' + fmt(total) + '</td><td>100%</td></tr>';
+
+  render();
 </script>
