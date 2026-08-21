@@ -191,12 +191,15 @@ export function isInsideCode(offset: number, text: string): boolean {
   const fenced = fencedLineMask(lines)
   for (let i = 0, start = 0; i < lines.length; i++) {
     const next = start + lines[i].length + 1
-    if (offset < next) {
-      if (fenced[i]) return true
-      const rel = offset - start
-      return inlineSpans(lines[i]).some(([a, b]) => rel >= a && rel < b)
-    }
+    if (offset < next) return fenced[i] === 1 || isInsideInlineCode(lines[i], offset - start)
     start = next
   }
   return false
+}
+
+/** The inline half of `isInsideCode`, line-local. A caller already holding a cached fence answer for
+ *  the line takes this instead: the whole-document form has to split the text and pair every fence
+ *  from the top, which is a per-document cost no per-caret reader should pay. */
+export function isInsideInlineCode(line: string, offset: number): boolean {
+  return inlineSpans(line).some(([a, b]) => offset >= a && offset < b)
 }
