@@ -9,8 +9,8 @@ import {
   type Range,
 } from '@codemirror/state'
 import { duration } from '@renderer/design-system/tokens/motion'
-import { docScan, docString } from './docCache'
-import { headingSections, type HeadingSection } from './headingScan'
+import { docScan } from './docCache'
+import { headingSections } from './headingScan'
 import { createBlockDragGesture } from './blockDrag'
 import { lineElementAt } from './lineDom'
 
@@ -36,16 +36,6 @@ export const FOLD_SETTLE_MS = Number.parseInt(duration.disclosure, 10) + 30
 
 /** Marks the mount-time re-apply of saved folds so the persist listener doesn't echo it straight back to disk. */
 const initialFoldAnnotation = Annotation.define<boolean>()
-
-const sectionCache = new WeakMap<Text, HeadingSection[]>()
-function sectionsOf(doc: Text): HeadingSection[] {
-  let s = sectionCache.get(doc)
-  if (!s) {
-    s = headingSections(docString(doc))
-    sectionCache.set(doc, s)
-  }
-  return s
-}
 
 // ── What a fold can be about ───────────────────────────────────────────────────
 // A heading section is one kind of foldable region; it is not the only possible one. A region is
@@ -125,7 +115,7 @@ const KINDS: Record<FoldKind, (doc: Text) => FoldRegion[]> = {
   // clamping one leaves the other spanning the footnotes.
   heading: (doc) => {
     const cut = citationsRegion(doc)?.lineEnd ?? -1
-    return sectionsOf(doc).flatMap((s) => {
+    return headingSections(docScan(doc)).flatMap((s) => {
       const to = cut < 0 ? s.to : Math.min(s.to, cut)
       return to > s.lineEnd + 1
         ? [

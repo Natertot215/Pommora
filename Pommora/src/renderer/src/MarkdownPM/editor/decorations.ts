@@ -7,10 +7,17 @@ import {
   type ViewUpdate,
   WidgetType,
 } from '@codemirror/view'
-import type { Extension, Range } from '@codemirror/state'
+import type { Extension, Range, Text } from '@codemirror/state'
 import { chipBoxGeometry } from '../../design-system/tokens'
 import { tokenize, activeTokenIndices, linkTarget, shiftToken, type Token } from '../tokens'
-import { docBidirMarks, docLineIntentsOf, docScan, docSpanTokens, docString } from './docCache'
+import {
+  docBidirMarks,
+  docLineIntentsOf,
+  docScan,
+  docSpanTokens,
+  docString,
+  perDoc,
+} from './docCache'
 import { claimedEmbeds } from './embedRanges'
 import { resolutionNudge } from './embedWidget'
 import { linkRest, linkTyping } from './linkGestures'
@@ -18,6 +25,7 @@ import {
   assembleLineIntents,
   type DocScan,
   GLYPH_CLASS,
+  lineIndexAt,
   NO_CARET,
   tokenIntents,
   type WidgetSpec,
@@ -261,6 +269,32 @@ interface Built {
   atomic: DecorationSet
 }
 
+// Every atomic slot in the document, one derivation per doc VERSION. Unlike the drawn chrome this
+// is NOT viewport-scoped: `atomicRanges` decides where a caret or a selection endpoint may land,
+// and a motion resolved against a slot the viewport hasn't reached would seat the caret inside a
+// marker nothing on screen stands for.
+const docAtomics = perDoc((doc) => {
+  const ranges: Range<Decoration>[] = []
+  for (const line of docLineIntentsOf(doc).perLine)
+    for (const it of line)
+      if (it.kind === 'atomic' && it.to > it.from) ranges.push(atomicSpan.range(it.from, it.to))
+  return Decoration.set(ranges, true)
+})
+
+/** The atomic set for a caret position: the whole document's slots, minus the caret's own line —
+ *  which reveals its raw source, so its marker is ordinary editable text while the caret is there.
+ *  The filter is bounded to that one line, so a caret move never walks the document's slots. */
+function atomicFor(doc: Text, scan: DocScan, head: number): DecorationSet {
+  const all = docAtomics(doc)
+  if (head < 0) return all
+  const i = lineIndexAt(scan, head)
+  return all.update({
+    filter: () => false,
+    filterFrom: scan.lineStarts[i],
+    filterTo: scan.lineStarts[i] + scan.lines[i].length,
+  })
+}
+
 function build(view: EditorView, conn: ConnectionsApi | undefined): Built {
   const text = docString(view.state.doc)
   // The whole-doc scan, the caret-free line intents, AND the viewport tokenize are each one derivation
@@ -292,13 +326,10 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): Built {
   const intents = tokenIntents(tokens, active)
   // Loop, never spread — spreading into push throws past V8's argument ceiling on a huge outline,
   // and CM answers a crashed plugin by deactivating it for good (the page falls back to raw source).
-  for (const it of assembleLineIntents(scan, docLineIntentsOf(view.state.doc), head))
+  for (const it of assembleLineIntents(scan, docLineIntentsOf(view.state.doc), head, view.viewport))
     intents.push(it)
   const ranges: Range<Decoration>[] = []
-  // The marker slots the caret must step over. The intent pass names them, and names them only where
-  // a widget stands in the marker's place — the caret's own line reveals its raw source and emits
-  // none, so a revealed marker stays ordinary editable text.
-  const atomic: Range<Decoration>[] = []
+  const atomic = atomicFor(view.state.doc, scan, head)
   for (const it of intents) {
     if (it.kind === 'line') {
       const spec =
@@ -326,10 +357,7 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): Built {
       continue
     }
     if (it.to <= it.from) continue
-    if (it.kind === 'atomic') {
-      atomic.push(atomicSpan.range(it.from, it.to))
-      continue
-    }
+    if (it.kind === 'atomic') continue // whole-document, built by atomicFor
     if (it.kind === 'class')
       ranges.push(Decoration.mark({ class: it.className }).range(it.from, it.to))
     else if (it.kind === 'hide') ranges.push(hideMarker.range(it.from, it.to))
@@ -435,7 +463,7 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): Built {
   for (const p of docBidirMarks(view.state.doc))
     if (view.visibleRanges.some(({ from, to }) => p >= from && p < to))
       ranges.push(Decoration.mark({ class: 'md-sym-bidir' }).range(p, p + 1))
-  return { deco: Decoration.set(ranges, true), atomic: Decoration.set(atomic, true) }
+  return { deco: Decoration.set(ranges, true), atomic }
 }
 
 export function markdownDecorations(getConn: () => ConnectionsApi | undefined): Extension {

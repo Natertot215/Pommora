@@ -1,5 +1,5 @@
 import { parse } from '../parser'
-import { codeMask } from '@shared/markdownCode'
+import { codeMask, type CodeMask } from '@shared/markdownCode'
 import type { DocLines } from '../detect'
 import { normalize, type Column, type TableModel } from './model'
 import { splitRow, parseDelimiter, type CellSpan } from './codec'
@@ -28,14 +28,16 @@ function isTable(block: string): boolean {
 /** Every table's source geometry. Pure on the document's line table, and read per keystroke by the
  *  guard, the decoration build and `atomicRanges` — the caller holds the one derivation per doc
  *  version (`docCache.docScan`), so the micromark confirmations here are paid once. */
-export function tableRegions({ text, lines, lineStarts }: DocLines): TableRegion[] {
+export function tableRegions(
+  { text, lines, lineStarts }: DocLines,
+  inCode: CodeMask = codeMask(text),
+): TableRegion[] {
   const lineTo = (i: number): number => lineStarts[i] + lines[i].length
   const geom = (i: number): RowGeom => ({
     ...splitRow(lines[i], lineStarts[i]),
     from: lineStarts[i],
     to: lineTo(i),
   })
-  const inCode = codeMask(text)
   const regions: TableRegion[] = []
   let i = 1
   while (i < lines.length) {

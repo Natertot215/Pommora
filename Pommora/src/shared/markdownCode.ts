@@ -165,18 +165,36 @@ function inlineSpans(line: string): [number, number][] {
  *  An offset on a fence line counts as inside (the fence is part of the construct). Pairing is
  *  `fenceSpans`' — the same pass the editor renders from, so the two can never disagree about which
  *  bytes a rename is allowed to touch. */
-export function codeMask(text: string): (offset: number) => boolean {
+export type CodeMask = (offset: number) => boolean
+
+export function codeMask(text: string): CodeMask {
   const lines = text.split('\n')
-  const starts = lineOffsetsOf(lines)
+  const fenced = fencedLineMask(lines)
+  return codeMaskOf(lines, lineOffsetsOf(lines), (i) => fenced[i] === 1)
+}
+
+/** The same mask over a document already split and already paired. A caller holding the whole-document
+ *  scan takes this: pairing every fence a second time to answer the same question is the cost that
+ *  makes a per-keystroke reader scale with document length. */
+export function codeMaskOf(
+  lines: string[],
+  starts: number[],
+  fencedLine: (i: number) => boolean,
+): CodeMask {
   const ranges: [number, number][] = []
-  const fenced = new Uint8Array(lines.length)
-  for (const span of fenceSpans(lines)) {
-    for (let k = span.open; k <= span.close; k++) fenced[k] = 1
-    ranges.push([starts[span.open], starts[span.close] + lines[span.close].length + 1])
-  }
-  for (let i = 0; i < lines.length; i++) {
-    if (fenced[i]) continue
-    for (const [a, b] of inlineSpans(lines[i])) ranges.push([starts[i] + a, starts[i] + b])
+  let i = 0
+  while (i < lines.length) {
+    if (!fencedLine(i)) {
+      for (const [a, b] of inlineSpans(lines[i])) ranges.push([starts[i] + a, starts[i] + b])
+      i++
+      continue
+    }
+    // A run of fenced lines is one range. Adjacent blocks merging is harmless — membership is the
+    // only question a mask answers, and both sides of the seam are code either way.
+    const open = i
+    while (i < lines.length && fencedLine(i)) i++
+    const close = i - 1
+    ranges.push([starts[open], starts[close] + lines[close].length + 1])
   }
   return (offset) => ranges.some(([a, b]) => offset >= a && offset < b)
 }

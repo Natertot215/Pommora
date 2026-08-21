@@ -23,7 +23,7 @@ import type { ChangeSet } from '@codemirror/state'
 import { citationGesture, deleteMarkerChanges } from './citationEdits'
 import { docScan } from './docCache'
 import { HOT_MENU_LINES } from './gripMenu'
-import { headingSections } from './headingScan'
+import { headingSections, headingSrc } from './headingScan'
 import { citationScan, splitWithOffsets } from '../detect'
 
 class ResizeObserverStub {
@@ -233,7 +233,7 @@ describe('the section never joins the fold store', () => {
   it('its key is a sentinel no heading scan can spell', async () => {
     const view = await mountEditor({ initialBody: CITED })
     expect(citeRegion(view)?.key.charCodeAt(0)).toBe(0)
-    expect(headingSections(CITED).map((h) => h.key)).toEqual(['Notes'])
+    expect(headingSections(headingSrc(CITED)).map((h) => h.key)).toEqual(['Notes'])
   })
 })
 
@@ -250,7 +250,7 @@ describe('a heading stops where the citations section starts', () => {
 
   it('and without the clamp both of them swallow it', () => {
     const end = NESTED.length
-    expect(headingSections(NESTED).map((h) => h.to)).toEqual([end, end])
+    expect(headingSections(headingSrc(NESTED)).map((h) => h.to)).toEqual([end, end])
   })
 
   // Three answers to one question, asserted against one document: where the section starts, where

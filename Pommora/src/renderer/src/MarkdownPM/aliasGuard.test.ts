@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { scanDoc } from './decorations/intent'
 import { autoPair } from './input'
 import { refusedInAlias } from './editor/input'
 
@@ -26,10 +27,10 @@ describe('a bracket typed inside an alias never lands', () => {
   // to decline in the same place or the guard is one keystroke from being routed around.
   it('auto-pairing declines to insert one there too', () => {
     const opening = 'a [[Notes|My ]] b'
-    expect(autoPair(opening, 13, 13, '[')).toBeNull()
+    expect(autoPair(scanDoc(opening), 13, 13, '[')).toBeNull()
   })
 
   it('but still pairs a bracket in ordinary prose', () => {
-    expect(autoPair('a wrote ', 8, 8, '[')).not.toBeNull()
+    expect(autoPair(scanDoc('a wrote '), 8, 8, '[')).not.toBeNull()
   })
 })

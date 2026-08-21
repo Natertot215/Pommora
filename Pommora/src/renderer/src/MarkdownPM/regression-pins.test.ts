@@ -1,7 +1,7 @@
 // Pins for specific parser/editor bugs found during review — each case is a fixed break, kept
 // here so it can't quietly return. Grouped by the seam it guards.
 import { describe, it, expect } from 'vitest'
-import { codeMask, isInsideCode } from '@shared/markdownCode'
+import { codeMask, codeMaskOf, isInsideCode } from '@shared/markdownCode'
 import { splitRow } from './Tables/codec'
 import { tokenize } from './tokens'
 import {
@@ -16,8 +16,9 @@ import { setHeading, setList } from './input/format'
 import { subBlockAt, renumberOrderedRun } from './editor/listDragModel'
 import { calloutDeleteVerdict } from './editor/calloutGuard'
 import { headingSections } from './editor/folding'
+import { headingSrc } from './editor/headingScan'
 import { fenceRangesOf } from './detect'
-import { scanDoc } from './decorations/intent'
+import { inCodeAt, scanDoc } from './decorations/intent'
 import { sliceStartLine } from './editor/decorations'
 
 describe('isInsideCode — tilde fences + inline spans', () => {
@@ -58,14 +59,19 @@ describe('tokenize — connections/links inside inline code are literal', () => 
 
 describe('autoPair — doubled-marker branch', () => {
   it('does not stack when completing an existing bold', () => {
-    expect(autoPair('**word*', 7, 7, '*')).toBeNull() // typed closer completes **word**
+    expect(autoPair(scanDoc('**word*'), 7, 7, '*')).toBeNull() // typed closer completes **word**
   })
   it('does not pair a doubled marker glued to a word', () => {
-    expect(autoPair('snake_', 6, 6, '_')).toBeNull()
+    expect(autoPair(scanDoc('snake_'), 6, 6, '_')).toBeNull()
   })
   it('still promotes a fresh pair to the doubled form', () => {
     // `*|*` + `*` → `**|**` (consume the auto-inserted closer)
-    expect(autoPair('**', 1, 1, '*')).toEqual({ from: 1, to: 1, insert: '**', selection: 2 })
+    expect(autoPair(scanDoc('**'), 1, 1, '*')).toEqual({
+      from: 1,
+      to: 1,
+      insert: '**',
+      selection: 2,
+    })
   })
 })
 
@@ -75,52 +81,72 @@ describe('autoPair — never closes hard against a word', () => {
   const OPENERS = ['(', '[', '`', '"', "'", '*', '_']
   it('stays literal with a word immediately after the caret', () => {
     for (const ch of OPENERS) {
-      expect(autoPair('word', 0, 0, ch)).toBeNull() // at the word's head
-      expect(autoPair('a word', 2, 2, ch)).toBeNull() // after a space, still against it
-      expect(autoPair('word', 2, 2, ch)).toBeNull() // mid-word
+      expect(autoPair(scanDoc('word'), 0, 0, ch)).toBeNull() // at the word's head
+      expect(autoPair(scanDoc('a word'), 2, 2, ch)).toBeNull() // after a space, still against it
+      expect(autoPair(scanDoc('word'), 2, 2, ch)).toBeNull() // mid-word
     }
   })
   it('still pairs where nothing follows the caret', () => {
-    for (const ch of OPENERS) expect(autoPair('word ', 5, 5, ch)).not.toBeNull()
+    for (const ch of OPENERS) expect(autoPair(scanDoc('word '), 5, 5, ch)).not.toBeNull()
   })
   it('a closer ahead of the caret still type-overs', () => {
-    expect(autoPair("'hello'", 6, 6, "'")).toEqual({ from: 6, to: 6, insert: '', selection: 7 })
-    expect(autoPair('[]', 1, 1, '[')).toEqual({ from: 1, to: 1, insert: '[]', selection: 2 })
+    expect(autoPair(scanDoc("'hello'"), 6, 6, "'")).toEqual({
+      from: 6,
+      to: 6,
+      insert: '',
+      selection: 7,
+    })
+    expect(autoPair(scanDoc('[]'), 1, 1, '[')).toEqual({
+      from: 1,
+      to: 1,
+      insert: '[]',
+      selection: 2,
+    })
   })
   it('`_` is itself a word char, so its own closer has to be exempt from the guard', () => {
     // The naive forward guard swallowed both underscore paths: `_word|_` lost its type-over and the
     // doubled form could never promote.
-    expect(autoPair('_word_', 5, 5, '_')).toEqual({ from: 5, to: 5, insert: '', selection: 6 })
-    expect(autoPair('__', 1, 1, '_')).toEqual({ from: 1, to: 1, insert: '__', selection: 2 })
+    expect(autoPair(scanDoc('_word_'), 5, 5, '_')).toEqual({
+      from: 5,
+      to: 5,
+      insert: '',
+      selection: 6,
+    })
+    expect(autoPair(scanDoc('__'), 1, 1, '_')).toEqual({
+      from: 1,
+      to: 1,
+      insert: '__',
+      selection: 2,
+    })
   })
 })
 
 describe('dashArrow — content guards', () => {
   it('keeps -- literal inside URLs', () => {
     const doc = 'see https://ex--'
-    expect(dashArrow(doc, doc.length, doc.length, 'a')).toBeNull()
+    expect(dashArrow(scanDoc(doc), doc.length, doc.length, 'a')).toBeNull()
   })
   it('keeps -- literal inside [[titles]] (em-dash would retarget the connection)', () => {
     const doc = '[[pages 5--'
-    expect(dashArrow(doc, doc.length, doc.length, '7')).toBeNull()
+    expect(dashArrow(scanDoc(doc), doc.length, doc.length, '7')).toBeNull()
   })
   it('keeps -- literal inside inline code', () => {
     const doc = 'run `npm install --'
-    expect(dashArrow(doc, doc.length, doc.length, 's')).toBeNull()
+    expect(dashArrow(scanDoc(doc), doc.length, doc.length, 's')).toBeNull()
   })
   it('still converts in plain prose', () => {
-    expect(dashArrow('word--', 6, 6, 'x')).not.toBeNull()
+    expect(dashArrow(scanDoc('word--'), 6, 6, 'x')).not.toBeNull()
   })
 })
 
 describe("closeConstructOnEnter — contractions don't poison quote parity", () => {
   it('does not teleport the caret past a prose apostrophe', () => {
     const doc = "it's fine, don't"
-    expect(closeConstructOnEnter(doc, 14, 14)).toBeNull() // caret before don|'t
+    expect(closeConstructOnEnter(scanDoc(doc), 14, 14)).toBeNull() // caret before don|'t
   })
   it('still closes a real open quote', () => {
     const doc = "'hello'"
-    expect(closeConstructOnEnter(doc, 6, 6)).not.toBeNull() // caret before the closer
+    expect(closeConstructOnEnter(scanDoc(doc), 6, 6)).not.toBeNull() // caret before the closer
   })
 })
 
@@ -145,12 +171,12 @@ describe('continueListOnEnter — nested runs + empty-item continuation', () => 
 
 describe('continueBlockquoteOnEnter — empty quote line exits', () => {
   it('strips an empty `> ` line instead of continuing forever', () => {
-    const edit = continueBlockquoteOnEnter('> ', 2, 2)
+    const edit = continueBlockquoteOnEnter(scanDoc('> '), 2, 2)
     expect(edit).toEqual({ from: 0, to: 2, insert: '', selection: 0 })
   })
   it('keeps continuing inside a callout (its exit is caret placement)', () => {
     const doc = '> [!callout] head\n> '
-    const edit = continueBlockquoteOnEnter(doc, 20, 20)
+    const edit = continueBlockquoteOnEnter(scanDoc(doc), 20, 20)
     expect(edit?.insert).toBe('\n> ')
   })
 })
@@ -258,18 +284,18 @@ describe('a longer fence holds shorter ones — both layers, one block', () => {
 describe('dashArrow — link-target guard (relative paths, anchors)', () => {
   it('keeps -- literal inside a relative link target', () => {
     const doc = '[text](../foo--'
-    expect(dashArrow(doc, doc.length, doc.length, 'x')).toBeNull()
+    expect(dashArrow(scanDoc(doc), doc.length, doc.length, 'x')).toBeNull()
   })
   it('still converts once the link target is closed', () => {
     const doc = '[text](../foo) then a--'
-    expect(dashArrow(doc, doc.length, doc.length, 'x')).not.toBeNull()
+    expect(dashArrow(scanDoc(doc), doc.length, doc.length, 'x')).not.toBeNull()
   })
 })
 
 describe('headingSections — fence-blind no more', () => {
   it('ignores # lines inside code fences', () => {
     const doc = '## Real\nprose\n```bash\n# comment\necho hi\n```\ntail'
-    const sections = headingSections(doc)
+    const sections = headingSections(headingSrc(doc))
     expect(sections).toHaveLength(1)
     expect(sections[0].key).toBe('Real')
     expect(sections[0].to).toBe(doc.length) // section runs past the fence, not cut at the comment
@@ -375,6 +401,27 @@ describe('isInsideCode answers exactly what codeMask answers, at every offset', 
     const disagreements: number[] = []
     for (let o = 0; o <= crlf.length; o++)
       if (isInsideCode(o, crlf) !== mask(o)) disagreements.push(o)
+    expect(disagreements).toEqual([])
+  })
+
+  // The scan builds its mask off the pairing it already did, and the table and citation scans read
+  // that one. If it ever answered differently from the string form, a fence would hold code for one
+  // layer and prose for another.
+  it('the scan-built mask agrees with the string-built one, offset for offset', () => {
+    const s = scanDoc(doc)
+    const fromScan = codeMaskOf(s.lines, s.lineStarts, (i) => s.fences[i] !== undefined)
+    const mask = codeMask(doc)
+    const disagreements: number[] = []
+    for (let o = 0; o <= doc.length; o++) if (fromScan(o) !== mask(o)) disagreements.push(o)
+    expect(disagreements).toEqual([])
+  })
+
+  // `inCodeAt` is the per-caret reader the input transforms take; it must answer what the mask does.
+  it('inCodeAt agrees with the mask at every caret position', () => {
+    const s = scanDoc(doc)
+    const mask = codeMask(doc)
+    const disagreements: number[] = []
+    for (let o = 0; o <= doc.length; o++) if (inCodeAt(s, o) !== mask(o)) disagreements.push(o)
     expect(disagreements).toEqual([])
   })
 })
