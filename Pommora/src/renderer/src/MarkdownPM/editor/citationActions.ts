@@ -7,13 +7,14 @@ import type { EditorView } from '@codemirror/view'
 import type { CitationMenuAction } from '@shared/citationMenu'
 import { isInsideCode } from '@shared/markdownCode'
 import { useSession } from '../../store'
-import { citationFor, markersFor } from '../detect'
+import { citationFor, markerEndingAt, markersFor } from '../detect'
 import { focusRange } from './caretSeat'
 import {
   citationGesture,
+  citationRowChanges,
   deleteCitationChanges,
   deleteMarkerChanges,
-  insertCitationChanges,
+  mintLabel,
 } from './citationEdits'
 import { docScan } from './docCache'
 import { editAcrossCitations } from './folding'
@@ -61,32 +62,58 @@ export function commitCitation(
   return set
 }
 
-/** Insert ▸ Footnote and Paste As ▸ Footnote: a complete pair written in one transaction, with the
- *  caret's own answer to Jump To Citation On Creation. The marker goes after whatever is selected —
- *  a footnote annotates the words it follows — and the citation lands at the document's end.
+/** Write a creation gesture and answer for where it leaves the reader. Jump To Citation On Creation
+ *  decides between the new citation and the marker just written; the disclosure is the page's own
+ *  visibility, so the footer's control still reads the section's true state afterwards.
  *
- *  The pair is found again in the finished document rather than assumed: the minted label is free,
- *  not final, and the normalization riding in the same transaction may well have renumbered it. */
-export function insertCitation(view: EditorView, text = ''): boolean {
-  if (view.state.readOnly || !citationSeatAt(view.state)) return false
-  const at = view.state.selection.main.to
-  const set = commitCitation(
-    view,
-    insertCitationChanges(docScan(view.state.doc), at, text),
-    'input',
-  )
+ *  The pair is found again in the finished document rather than assumed: a minted label is free, not
+ *  final, and the normalization riding in the same transaction may well have renumbered it. */
+function writeCitation(view: EditorView, markerFrom: number, changes: ChangeSpec[]): boolean {
+  const set = commitCitation(view, changes, 'input')
   if (!set) return false
   const scan = docScan(view.state.doc)
-  const marker = scan.citations.markers.find((m) => m.from === set.mapPos(at, -1))
+  const marker = scan.citations.markers.find((m) => m.from === set.mapPos(markerFrom, -1))
   const entry = marker && citationFor(scan.citations, marker.label)
   if (!entry || useSession.getState().personalization.jumpToCitation === false) {
-    focusRange(view, marker?.to ?? at)
+    focusRange(view, marker?.to ?? markerFrom)
     return true
   }
   view.state.facet(citationHost).reveal?.()
   focusRange(view, entry.contentStart)
   travelTo(view, entry.contentStart)
   return true
+}
+
+/** Insert ▸ Footnote and Paste As ▸ Footnote: a complete pair in one transaction. The marker goes
+ *  after whatever is selected — a footnote annotates the words it follows — and the citation lands at
+ *  the document's end. */
+export function insertCitation(view: EditorView, text = ''): boolean {
+  if (view.state.readOnly || !citationSeatAt(view.state)) return false
+  const scan = docScan(view.state.doc)
+  const at = view.state.selection.main.to
+  const label = mintLabel(scan.citations)
+  return writeCitation(view, at, [
+    { from: at, to: at, insert: `[^${label}]` },
+    citationRowChanges(scan, label, text),
+  ])
+}
+
+/** A label finished by typing `]`. Typing a fresh one is a creation gesture like any other and seeds
+ *  its citation; typing one that already has a citation adopts it and rewrites nothing, which is the
+ *  whole of how a footnote comes to be shared by hand.
+ *
+ *  It cannot be a link in the typing chain: every transform there returns one range, and this writes
+ *  at two disjoint sites. The closing bracket is typed OVER the one `[` auto-paired rather than
+ *  doubled beside it. */
+export function seedTypedCitation(view: EditorView, at: number): boolean {
+  if (view.state.readOnly || !citationSeatAt(view.state)) return false
+  const scan = docScan(view.state.doc)
+  const label = markerEndingAt(`${scan.text.slice(view.state.doc.lineAt(at).from, at)}]`)
+  if (label === null || citationFor(scan.citations, label)) return false
+  return writeCitation(view, at - label.length - 2, [
+    ...(scan.text[at] === ']' ? [] : [{ from: at, to: at, insert: ']' }]),
+    citationRowChanges(scan, label, ''),
+  ])
 }
 
 /** Which construct the menu was popped on, identified by the label it carried — an offset alone

@@ -2,7 +2,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { act } from 'react'
 import { undo } from '@codemirror/commands'
-import type { EditorView } from '@codemirror/view'
+import { EditorView } from '@codemirror/view'
 import type { Personalization } from '@shared/types'
 import { useSession } from '@renderer/store'
 import { stubEditorBridge, mountEditor, cleanupEditor } from '@renderer/testing/editorHarness'
@@ -188,5 +188,111 @@ describe('Paste As ▸ Footnote', () => {
   it('collapses to one paragraph, whatever the whitespace was', () => {
     expect(citationText('  a\n\n\n  b\tc  ')).toBe('a b c')
     expect(citationText('   ')).toBe('')
+  })
+})
+
+// Typing a label is a creation gesture like any other. It fires from the input handler and
+// dispatches on its own — the transform chain beside it carries one range, and this writes two.
+describe('typing a label seeds its citation', () => {
+  const key = async (view: EditorView, ch: string): Promise<void> => {
+    await act(async () => {
+      const { from, to } = view.state.selection.main
+      if (!view.dispatch || !type(view, from, to, ch))
+        view.dispatch({
+          changes: { from, to, insert: ch },
+          selection: { anchor: from + ch.length },
+        })
+    })
+  }
+  // The input handler is what a keystroke reaches; jsdom cannot produce a real beforeinput, so the
+  // handler is driven the way CodeMirror drives it.
+  const type = (view: EditorView, from: number, to: number, ch: string): boolean =>
+    view.state
+      .facet(EditorView.inputHandler)
+      .some((h) => h(view, from, to, ch, () => null as never))
+
+  const write = async (view: EditorView, text: string): Promise<void> => {
+    for (const ch of text) await key(view, ch)
+  }
+
+  beforeEach(() => settings({ jumpToCitation: false }))
+
+  it('a fresh label writes its own empty citation', async () => {
+    const view = await mountEditor({ initialBody: 'see' })
+    await at(view, 3)
+    await write(view, '[^a]')
+    expect(doc(view)).toBe('see[^a]\n\n[^a]: ')
+  })
+
+  it('and takes the bracket the opener auto-paired rather than doubling it', async () => {
+    const view = await mountEditor({ initialBody: 'see ' })
+    await at(view, 4)
+    await write(view, '[^a]')
+    expect(doc(view)).toBe('see [^a]\n\n[^a]: ')
+  })
+
+  it('a label that already has a citation is adopted, and rewrites nothing', async () => {
+    const body = 'one[^a] two'
+    const view = await mountEditor({ initialBody: `${body}\n\n[^a]: shared` })
+    await at(view, body.length)
+    await write(view, '[^a]')
+    expect(doc(view)).toBe('one[^a] two[^a]\n\n[^a]: shared')
+  })
+
+  it('an escaped marker seeds nothing and stays as written', async () => {
+    const view = await mountEditor({ initialBody: 'see' })
+    await at(view, 3)
+    await write(view, '\\[^a]')
+    expect(doc(view)).toBe('see\\[^a]')
+  })
+
+  it('a shape GFM will not read as a label seeds nothing', async () => {
+    const view = await mountEditor({ initialBody: 'see' })
+    await at(view, 3)
+    await write(view, '[^my note]')
+    expect(doc(view)).toBe('see[^my note]')
+  })
+
+  it('an ordinary bracket seeds nothing', async () => {
+    const view = await mountEditor({ initialBody: 'see' })
+    await at(view, 3)
+    await write(view, '[label]')
+    expect(doc(view)).toBe('see[label]')
+  })
+
+  it('a seed reverts whole on one undo', async () => {
+    const view = await mountEditor({ initialBody: 'see' })
+    await at(view, 3)
+    await write(view, '[^a]')
+    await act(async () => {
+      undo(view)
+    })
+    expect(doc(view)).toBe('see[^a')
+  })
+
+  it('renumbers the section when the seed lands above an existing marker', async () => {
+    const body = 'tail[^1]'
+    const view = await mountEditor({ initialBody: `${body}\n\n[^1]: one` })
+    await at(view, 0)
+    await write(view, '[^b]')
+    expect(doc(view)).toBe('[^b]tail[^2]\n\n[^b]: \n[^2]: one')
+  })
+
+  it('with the jump on, the caret lands in the citation it just seeded', async () => {
+    settings({})
+    const view = await mountEditor({ initialBody: 'see' })
+    await at(view, 3)
+    await write(view, '[^a]')
+    expect(doc(view)).toBe('see[^a]\n\n[^a]: ')
+    expect(view.state.selection.main.from).toBe(doc(view).length)
+    expect(hidden(view)).toBe(false)
+  })
+
+  it('seeds nothing inside the citations section', async () => {
+    const body = 'x[^1]\n\n[^1]: one'
+    const view = await mountEditor({ initialBody: body, citationsShown: true })
+    await at(view, body.length)
+    await write(view, '[^b]')
+    expect(doc(view)).toBe('x[^1]\n\n[^1]: one[^b]')
   })
 })

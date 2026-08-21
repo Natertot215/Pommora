@@ -191,6 +191,16 @@ const citationHeadRe = /^ {0,3}\[\^([^\]\s]+)\]:[ \t]*/
  *  counter and the decoration pass can never disagree about what an escape means. */
 export const markerRegex = (): RegExp => /(?<!\\)\[\^([^\]\s]+)\]/dg
 
+/** The label of the `[^label]` that ends at this text's end, or null — the question "has the caret
+ *  just completed a marker". Asked through `markerRegex`, so the escape and the label grammar stay
+ *  the one fact the scan reads rather than a second spelling of it. */
+export function markerEndingAt(text: string): string | null {
+  const re = markerRegex()
+  let last: RegExpExecArray | null = null
+  for (let m = re.exec(text); m !== null; m = re.exec(text)) last = m
+  return last !== null && last.index + last[0].length === text.length ? last[1] : null
+}
+
 /** The case-fold every marker↔citation comparison runs through. Deliberately not the shared title
  *  normalization: GFM defines its own folding for footnote labels, so coupling the two would let a
  *  change to title matching silently move footnote binding. The double case swap is micromark's own,

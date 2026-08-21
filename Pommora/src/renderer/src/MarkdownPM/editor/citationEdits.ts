@@ -171,7 +171,7 @@ export function citationGesture(scan: CitationSlice, changes: ChangeSpec[]): Cha
 /** The smallest number no label in the document already spells. A word label can never collide with
  *  one, and an orphan's number is taken like any other; the normalization that follows settles the
  *  order, so the mint only has to be free. */
-function mintLabel(c: CitationScan): string {
+export function mintLabel(c: CitationScan): string {
   const taken = new Set([...c.entries, ...c.markers].map((x) => foldLabel(x.label)))
   let n = 1
   while (taken.has(String(n))) n++
@@ -189,16 +189,12 @@ function citationSeat(scan: CitationSlice): { at: number; lead: string } {
   return { at: 0, lead: '\n\n' }
 }
 
-/** A fresh pair: the marker at `at`, and its citation at the document's end. The label is minted
- *  free rather than final — every creation path composes this with the normalization, which is what
- *  puts the number in first-use order. */
-export function insertCitationChanges(scan: CitationSlice, at: number, text: string): ChangeSpec[] {
-  const label = mintLabel(scan.citations)
+/** A new citation row at the document's end. Its half of every creation gesture — what lands in the
+ *  body is the gesture's own, a whole marker for a menu and the closing bracket alone for a label
+ *  being typed. */
+export function citationRowChanges(scan: CitationSlice, label: string, text: string): ChangeSpec {
   const seat = citationSeat(scan)
-  return [
-    { from: at, to: at, insert: `[^${label}]` },
-    { from: seat.at, to: seat.at, insert: `${seat.lead}[^${label}]: ${text}` },
-  ]
+  return { from: seat.at, to: seat.at, insert: `${seat.lead}[^${label}]: ${text}` }
 }
 
 /** A clipboard shaped into one citation's text: every run of whitespace, blank lines included,
