@@ -44,6 +44,16 @@ export async function mountEditor(
   return view
 }
 
+/** Re-render the mounted editor with new props, for the behavior a prop CHANGE carries — a value
+ *  that arrives after mount reads differently from the same value passed at mount. */
+export async function rerenderEditor(
+  props: Partial<EditorProps> & { initialBody: string },
+): Promise<void> {
+  await act(async () => {
+    root?.render(createElement(MarkdownEditor, { onChange: () => {}, ...props }))
+  })
+}
+
 /** The mounted editor's host element — for assertions that read the rendered DOM directly. */
 export function editorContainer(): HTMLDivElement {
   if (!container) throw new Error('no mounted editor')

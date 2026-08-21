@@ -2,7 +2,12 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
-import { cleanupEditor, mountEditor, stubEditorBridge } from '@renderer/testing/editorHarness'
+import {
+  cleanupEditor,
+  mountEditor,
+  rerenderEditor,
+  stubEditorBridge,
+} from '@renderer/testing/editorHarness'
 import {
   applySavedFolds,
   foldedRegions,
@@ -381,5 +386,32 @@ describe('the citations divider draws where it can and folds nothing itself', ()
     expect(pressed).toBe(1)
     // The press writes the page's visibility; nothing folds until that value comes back down.
     expect(kinds(view)).toEqual([])
+  })
+})
+
+// The per-page overrides are fetched after the tree is applied and the surface is already on screen,
+// so a page whose own answer differs from the nexus-wide default mounts on the default and hears the
+// truth a beat later. That catch-up is a seed, not a toggle — animating it plays a collapse on a
+// page nobody has touched. A seeded collapse renders at its closed height outright; an animated one
+// renders open and transitions shut.
+const revealRows = (view: EditorView): string | undefined =>
+  view.dom.querySelector<HTMLElement>('.mdpm-fold-reveal')?.style.gridTemplateRows
+
+describe('a value arriving after mount is still a seed', () => {
+  it('the first change to reach a live view lands without animating', async () => {
+    const view = await mountEditor({ initialBody: CITED, citationsShown: true })
+    expect(kinds(view)).toEqual([])
+    await rerenderEditor({ initialBody: CITED, citationsShown: false })
+    expect(kinds(view)).toEqual(['citations'])
+    expect(revealRows(view)).toBe('0fr')
+  })
+
+  it('and every change after it animates', async () => {
+    const view = await mountEditor({ initialBody: CITED, citationsShown: true })
+    await rerenderEditor({ initialBody: CITED, citationsShown: false })
+    await rerenderEditor({ initialBody: CITED, citationsShown: true })
+    await rerenderEditor({ initialBody: CITED, citationsShown: false })
+    expect(kinds(view)).toEqual(['citations'])
+    expect(revealRows(view)).toBe('1fr')
   })
 })
