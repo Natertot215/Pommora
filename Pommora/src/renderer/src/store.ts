@@ -242,6 +242,9 @@ interface SessionState {
    *  the fold follows it, never the other way around. */
   citationsShown: Record<string, boolean>
   setCitationsShown: (pageId: string, shown: boolean | null) => void
+  /** THE flip, so the two controls that offer it cannot disagree about what it means — including
+   *  that landing back on the nexus-wide default clears the row rather than restating it. */
+  toggleCitations: (pageId: string) => void
   personalization: Personalization
   setPersonalization: <K extends keyof Personalization>(key: K, value: Personalization[K]) => void
   /** Machine-local, not the Nexus's — loaded alongside it, saved to nexus.db. */
@@ -1025,6 +1028,12 @@ export const useSession = create<SessionState>((set, get) => {
         .catch(() => undefined)
     },
     citationsShown: {},
+    toggleCitations: (pageId) => {
+      const s = get()
+      const fallback = s.personalization.citationsShown ?? false
+      const next = !(s.citationsShown[pageId] ?? fallback)
+      s.setCitationsShown(pageId, next === fallback ? null : next)
+    },
     setCitationsShown: (pageId, shown) => {
       set((s) => {
         const next = { ...s.citationsShown }

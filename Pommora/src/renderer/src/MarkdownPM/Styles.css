@@ -77,6 +77,7 @@
      one value, since the two are meant to sit on the same column. `em` resolves where it is used,
      so each construct's own type size scales it. */
   --number-zone: 1.3em;
+  --cite-divider-blur: 4px; /* KNOB: how softly the section's seam fades out as it closes */
   /* The drawn caret + I-beam cursor are app-wide — see Carets.css. */
   /* Top reserves the header zone — set live from the header's measured height (index.tsx ResizeObserver).
      Left re-adds the --fold-gutter the editor reclaimed, so text lands on --content-inset and the chevron
@@ -130,12 +131,29 @@
 .mdpm-header:not(.has-banner) .detail-title {
   padding: 6px 0 14px var(--content-inset);
 }
-.mdpm-divider {
+.mdpm-divider,
+.mdpm-editor .cm-line.md-cite-divider {
   /* The shared heading↔body seam, worn as an inset rounded rule rather than a full-bleed border. */
-  height: 0;
   border-bottom: var(--border-heading);
-  margin: 0 var(--gutter) 0 var(--content-inset);
   border-radius: var(--radius-full);
+}
+.mdpm-divider {
+  height: 0;
+  margin: 0 var(--gutter) 0 var(--content-inset);
+}
+/* The section's own seam. It takes the editor's text column rather than the header's insets, and it
+   blur-fades on the disclosure's beat instead of cutting — the rule reads as the boundary opening
+   and closing, not as a line appearing between two frames. Stamped while hidden as well, since a
+   removed class has nothing left to transition from. */
+.mdpm-editor .cm-line.md-cite-divider {
+  cursor: pointer;
+  transition:
+    opacity var(--disclosure) var(--ease-standard),
+    filter var(--disclosure) var(--ease-standard);
+}
+.mdpm-editor .cm-line.md-cite-divider-off {
+  opacity: 0;
+  filter: blur(var(--cite-divider-blur));
 }
 
 .mdpm-banner {
