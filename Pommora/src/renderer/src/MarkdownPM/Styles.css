@@ -380,7 +380,10 @@
   cursor: default;
   user-select: none;
   -webkit-user-select: none;
-  transition: border-color var(--duration-base) var(--ease-standard);
+  /* Scale animates on the standard beat — the registered --block-zoom interpolates. */
+  transition:
+    border-color var(--duration-base) var(--ease-standard),
+    --block-zoom var(--duration-base) var(--ease-standard);
 }
 .mdpm-embed-tile:hover,
 .mdpm-embed-tile.is-editing-tile {

@@ -103,6 +103,7 @@ const api = {
   loadValues: ask('view:loadValues'),
   // Per-machine embed-tile heights, keyed host page id → target page id.
   embedHeights: { get: ask('embedHeights:get'), set: ask('embedHeights:set') },
+  embedZooms: { get: ask('embedZooms:get'), set: ask('embedZooms:set') },
   // Which tables' first column renders as a heading (a Pommora-only visual, not in the .md).
   tableHeadingColumns: { get: ask('tableHeadingCols:get'), set: ask('tableHeadingCols:set') },
   headingIcon: { get: ask('headingIcon:get'), set: ask('headingIcon:set') },

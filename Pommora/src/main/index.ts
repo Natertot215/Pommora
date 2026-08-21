@@ -933,6 +933,11 @@ serveBridge(
       kind: 'envelope',
       fn: scopeSet('embedHeights', isHeightMap, 'Embed heights must map ids to positive numbers.'),
     },
+    'embedZooms:get': { kind: 'raw', fn: scopeGet<Record<string, number>>('embedZooms') },
+    'embedZooms:set': {
+      kind: 'envelope',
+      fn: scopeSet('embedZooms', isHeightMap, 'Embed scales must map ids to positive numbers.'),
+    },
     'activeViews:get': { kind: 'raw', fn: scopeGet<string>('activeView') },
     'activeViews:set': {
       kind: 'envelope',

@@ -31,6 +31,7 @@ import { TILE_DEFAULT_PX, TILE_MIN_PX } from '@renderer/design-system/tokens/siz
 import { normalizeTitle, pageEmbedText, titleFromPath } from '@shared/connections'
 import '@renderer/design-system/tile-chassis.css'
 import { loneWebpageEmbed } from '@shared/webpageEmbed'
+import { DEFAULT_ZOOM, zoomStep } from '@renderer/Blocks/blockZoom'
 import { docScan } from './docCache'
 import { loneEmbedTitle } from '../detect'
 import { claimedEmbeds } from './embedRanges'
@@ -44,6 +45,8 @@ export interface EmbedHost {
   ancestors: readonly string[]
   /** Present only where heights can persist (the page surface) — the handle hides otherwise. */
   saveHeights?: (heights: Record<string, number>) => void
+  /** Present alongside saveHeights — the page surface persisting each tile's Scale factor. */
+  saveZooms?: (zooms: Record<string, number>) => void
 }
 
 const embedHost = Facet.define<EmbedHost, EmbedHost>({
@@ -65,6 +68,9 @@ export const resolutionNudge = StateEffect.define<null>()
  *  updated whole on each resize commit. */
 export const setEmbedHeights = StateEffect.define<Record<string, number>>()
 
+/** Replaces the persisted tile Scale factors (target page id / url → factor), the heights' twin. */
+export const setEmbedZooms = StateEffect.define<Record<string, number>>()
+
 /** Persistence callbacks the host page supplies; absent (preview, blocks) hides the resize handle. */
 export interface EmbedHeightsApi {
   load: () => Promise<Record<string, number>>
@@ -83,6 +89,8 @@ interface EmbedTiles {
   seat: number | null
   /** Persisted tile heights, target page id → px; {} until the host's load lands. */
   heights: Record<string, number>
+  /** Persisted tile Scale factors, target page id / url → factor; {} until the host's load lands. */
+  zooms: Record<string, number>
   /** Webpage candidates the formation gate declined (the selection sat on their line) — a
    *  selection move re-evaluates only while this is non-zero. */
   unformed: number
@@ -199,6 +207,7 @@ class EmbedTileWidget extends WidgetType {
     readonly ancestors: readonly string[],
     readonly targetId: string,
     readonly height: number | undefined,
+    readonly zoom: number | undefined,
   ) {
     super()
   }
@@ -209,7 +218,8 @@ class EmbedTileWidget extends WidgetType {
       o.editing === this.editing &&
       o.interactive === this.interactive &&
       o.cyclic === this.cyclic &&
-      o.height === this.height
+      o.height === this.height &&
+      o.zoom === this.zoom
     )
   }
 
@@ -228,6 +238,7 @@ class EmbedTileWidget extends WidgetType {
     )
     if (this.height !== undefined) dom.style.height = `${this.height}px`
     else dom.style.removeProperty('height')
+    applyTileZoom(dom, this.zoom)
     const host = view.state.facet(embedHost)
     mountTile(
       dom,
@@ -435,10 +446,18 @@ const embedLine = Decoration.line({ class: 'mdpm-embed-line' })
 const selectionOn = (state: EditorState, from: number, to: number): boolean =>
   state.selection.ranges.some((s) => s.from <= to && s.to >= from)
 
+/** An off-grid persisted factor still renders by snapping to the ramp; 1.0 wears no var at all. */
+function applyTileZoom(dom: HTMLElement, zoom: number | undefined): void {
+  const factor = zoomStep(zoom).factor
+  if (factor === DEFAULT_ZOOM) dom.style.removeProperty('--block-zoom')
+  else dom.style.setProperty('--block-zoom', String(factor))
+}
+
 function buildTiles(
   state: EditorState,
   editing: string | null,
   heights: Record<string, number>,
+  zooms: Record<string, number>,
   prev: readonly TileRange[] | 'mount',
   seat: number | null,
 ): EmbedTiles {
@@ -468,6 +487,7 @@ function buildTiles(
             host.ancestors,
             r.page.id,
             heights[r.page.id],
+            zooms[r.page.id],
           ),
         }),
         // The cycle token joins too: exclusions already cover it via the ancestors chain, and
@@ -532,7 +552,7 @@ function buildTiles(
     }
     ranges.push(en.range)
   }
-  return { deco: builder.finish(), ranges, editing, heights, unformed, seat }
+  return { deco: builder.finish(), ranges, editing, heights, zooms, unformed, seat }
 }
 
 // Rebuild when the doc's embed set itself moved — read from the SAME cached scan every keystroke
@@ -578,10 +598,11 @@ const mapRanges = (ranges: readonly TileRange[], tr: Transaction): TileRange[] =
   }))
 
 export const embedField = StateField.define<EmbedTiles>({
-  create: (state) => buildTiles(state, null, {}, 'mount', null),
+  create: (state) => buildTiles(state, null, {}, {}, 'mount', null),
   update(value, tr) {
     let editing = value.editing
     let heights = value.heights
+    let zooms = value.zooms
     let seat = value.seat === null ? null : tr.changes.mapPos(value.seat, 1)
     let nudged = false
     for (const e of tr.effects) {
@@ -589,6 +610,7 @@ export const embedField = StateField.define<EmbedTiles>({
       else if (e.is(setEmbedEditing)) editing = e.value
       else if (e.is(resolutionNudge)) nudged = true
       else if (e.is(setEmbedHeights)) heights = e.value
+      else if (e.is(setEmbedZooms)) zooms = e.value
     }
     // Selection changes are transactions, so the selection-departure trigger needs no dispatcher:
     // while unformed candidates exist, any selection move re-runs the formation check. Undo/redo
@@ -609,9 +631,10 @@ export const embedField = StateField.define<EmbedTiles>({
       return nudged ||
         editing !== value.editing ||
         heights !== value.heights ||
+        zooms !== value.zooms ||
         seat !== value.seat ||
         formationDue
-        ? buildTiles(tr.state, editing, heights, value.ranges, seat)
+        ? buildTiles(tr.state, editing, heights, zooms, value.ranges, seat)
         : value
     }
     if (editAffectsEmbeds(value, tr) || formationDue || restored || seat !== value.seat)
@@ -619,6 +642,7 @@ export const embedField = StateField.define<EmbedTiles>({
         tr.state,
         editing,
         heights,
+        zooms,
         restored ? 'mount' : mapRanges(value.ranges, tr),
         seat,
       )
@@ -627,6 +651,7 @@ export const embedField = StateField.define<EmbedTiles>({
       ranges: mapRanges(value.ranges, tr),
       editing,
       heights,
+      zooms,
       unformed: value.unformed,
       seat,
     }
@@ -788,6 +813,34 @@ const embedGuard = EditorState.transactionFilter.of((tr) => {
 })
 
 /** The claimed-tile spans — the boundary-delete refusals and the grip menu both read them. */
+/** The persistence key of the tile on this position's line — the target page's id, a webpage's
+ *  url, or null where no tile has claimed the line. */
+function embedPrefKey(state: EditorState, pos: number): string | null {
+  const r = state.field(embedField).ranges.find((t) => t.from <= pos && pos <= t.to)
+  if (!r) return null
+  if (r.kind === 'webpage') return r.url
+  const resolved = state.facet(embedHost).getConn()?.resolve(r.title)
+  return resolved?.status === 'resolved' ? (resolved.page?.id ?? null) : null
+}
+
+/** The Scale the grip menu shows for the tile at pos — snapped to the ramp; null with no tile. */
+export function embedZoomAt(state: EditorState, pos: number): number | null {
+  const key = embedPrefKey(state, pos)
+  return key === null ? null : zoomStep(state.field(embedField).zooms[key]).factor
+}
+
+/** The grip menu's pick: restate the whole record with this tile's factor (1.0 drops the key,
+ *  the clean-record discipline the settings rows keep), then persist through the host. */
+export function applyEmbedZoom(view: EditorView, pos: number, factor: number): void {
+  const key = embedPrefKey(view.state, pos)
+  if (key === null) return
+  const zooms = { ...view.state.field(embedField).zooms }
+  if (factor === DEFAULT_ZOOM) delete zooms[key]
+  else zooms[key] = factor
+  view.dispatch({ effects: setEmbedZooms.of(zooms) })
+  view.state.facet(embedHost).saveZooms?.(zooms)
+}
+
 export function embedTileRanges(state: EditorState): readonly TileRange[] {
   return state.field(embedField, false)?.ranges ?? []
 }
