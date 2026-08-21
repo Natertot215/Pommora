@@ -1,86 +1,66 @@
 ## Handoff — Pommora
 
-> **User Prompt:** *"You do NOT guess — you LOOK, and you ASK. Open the file and read the code before you assert anything; ask me when you're unsure. A plan built on an unverified claim is a liability, not progress — treat every doc, every `file:line`, every 'it works like X' as a hypothesis until you've read the code that proves it. Honesty over confidence; confidence is earned through evidence."*
+> **User Prompt:** *"Run it end-to-end. Each phase follows the same cycle of simplification → fold → update in-chat. Every deviation needs to be logged in the plan, I won't be able to re-direct or give you my live verification. Test every single combination of breakage that you can find with keyboard input and any other edge-case handling. A future review of this whole arc should find no issues, consolidations, or errors to correct; the only things that can be left are things that require me to actually make a decision."*
 
 #### Current Focus
 
-**Session ID:** 7a123066-35e8-46cf-acb9-4d607bae4fb6
-**Dates:** 08-20-2026
+**Session ID:** c4f4da52-41c4-44a8-8d74-c3d59695d897
+**Dates:** 08-20-2026 → 08-21-2026
 **Model:** Opus 5 (1M context)
 
-**The focus was the Link property reaching a page, and it is finished.** It opened as one narrow ask — a pasted internal link should resolve in frontmatter — and grew twice on Nathan's word: first into widening the rename cascade, then into consolidating the link right-click menu across every surface that pops one. All three landed, `/closeout` ran clean over the range, and the record is PM-110.
+**Footnotes were executed end to end, and the code is closed. What is open is your walkthrough.** All 23 tasks of `.claude/Planning/Footnotes — Implementation Plan.md` landed across six phases, each gate running its simplification alone and first, then the comment pass, then a correctness review; the closeout added a whole-range simplification, a neutral verification of the Delivery Claim and an attack pass. The record is PM-111. Every deviation and every in-flight decision is in the plan's Implementation Log, which is the authority on what actually happened.
 
-**The value seam came first.** `linkValue.ts` gained a `LinkTarget` union — `page` or `url` — behind one `readLink()`, and every surface branches on that rather than re-parsing the string. A pasted `[[Title]]` (Copy Link's own output) or a markdown link whose target names a page commits as the canonical `[[Title]]`, alias carried through; a title nothing answers to is refused exactly as a malformed address is, which was Nathan's explicit call over the alternative of storing phantoms. No schema change was needed — a url value is a bare string on disk, so `[[Title]]` stores as-is.
+**Three rounds of review found real defects, and all three are fixed and pinned.** The Gate 5 correctness review found `normalizeCitations` renaming two independent footnotes onto one label — an orphan blocking one row's rename left that row's own number standing, and the next row was renamed straight onto it, fusing two footnotes into a winner and a shadow. The neutral verification found forward-Delete bailing on any non-empty selection, so sweeping exactly one citation row and pressing Delete removed it with no marker cascade where Backspace over the identical range cascaded both. The attack pass found the one that mattered most: a citation seated at the body's last line holding content, which sits *above* the caret on any document ending in a newline — so the first footnote written from the empty last line landed its section before its own marker, and with two trailing newlines left `[^1]: ` standing as literal prose. Each was confirmed red before the fix.
 
-**Nathan flagged the cascade before I did.** He asked whether a renamed page would drag its frontmatter links along, and it would not: `cascade.ts` rewrote `splitEnvelope(content).body` only, and `indexSeed.ts` seeded `mentions` from the body only — so a page whose *sole* inbound reference was a property value never even entered the candidate set. Both widened, and that exact case is pinned in `cascade.test.ts`.
+**A breakage sweep drives every key and twelve construct characters across every seat in and around the section** — roughly fourteen hundred keystroke-and-seat pairs, plus selection sweeps and seven degenerate documents — asserting the corrupted state itself: a `[^label]:` line the scan does not read as a live citation. It never appears. Building it turned up a pre-existing import cycle between `Embeds/ConnectionHoverCard` and MarkdownPM that made the first mount to render a table throw; the presenter moved to its own leaf and the cycle is gone.
 
-**The menu work was the largest share and the cleanest reuse.** `ActionItem.submenu` and `popModelMenu` already existed and `main/connMenu.ts` was hand-building Electron templates anyway; extracting `shared/connMenu.ts` deleted 60 lines from main and made four menu variants testable. `showConnectionMenu` turned out to already route Preview / New Tab / Copy Link / Copy Path against the store rather than the editor — only `apply` was editor-shaped, and it exists to be supplied by another surface — so cells, cards and both inspector panes became callers with no new plumbing. `cellMenuModel`'s link branch survives, narrowed to the empty and phantom cases that have no link to open.
-
-**Two things went wrong and both are worth carrying.** A reported "no Clear on a link cell" was a false positive from Nathan's dev session running stale main — `src/main` doesn't HMR and isn't reached by ⌘R, and the old builder rendered against the new context. `Build-Gotchas` now names that signature. And I over-read "Clear-only for the link itself, Remove on the property" as *both* items on the link menu; corrected to a split — the value's menu clears, the property's menu removes.
-
-**Verified:** typecheck clean across both projects, Biome zero over 853 files, 3,059 Vitest tests. The four menu variants and every open-item suppression are pinned in `connMenu.test.ts`; the cascade's frontmatter reach in `cascade.test.ts`. **Not verified, and wanting your eyes:** every menu in the running app. Native context menus aren't DOM, so CDP cannot render or click one — the models are pinned, the pixels are not. Restart the dev process rather than ⌘R.
+**Verified:** typecheck clean across both projects, Biome clean, 3,316 Vitest tests, run repeatedly. **Not verified, and wanting your eyes:** the interaction passes for Phases 4 through 6. Your dev session was up with the fixture page open and Phase 5 changes the main process, which needs a full restart rather than ⌘R — taking it down to screenshot was not worth it. **Restart the dev process rather than ⌘R.**
 
 #### Completion Criteria
 
-- [x] **A pasted internal link commits and resolves** — `[[Title]]` and `[Alias](Title)` both, under the page's own capitalization, alias carried, unresolvable titles refused.
-- [x] **The value reads and acts as a connection** — connection color, click opens the page, ⌘-click a new tab, the three link formats standing down.
-- [x] **The rename cascade reaches frontmatter** — both the rewrite and the index that decides which files are opened, with the frontmatter-only case pinned.
-- [x] **One menu model serves every surface** — editor, table cell, card value, both inspector panes, with the editor's own external menu gaining Open Preview · Open Browser.
-- [x] **Remove sits on the property, not on the value it holds** — the inspector's value menu clears; the row's menu removes.
-- [x] **`/closeout` ran clean over the range** — simplifier and comment pass both, gates green after each.
-- [ ] **Nathan has driven the menus in the running app** — the one criterion the harness cannot supply.
+- [x] **The section's boundary is derived once** and every layer reads it — the decoration pass, the block resolver, the heading-fold scan, the transaction guard, the Subfield counter, the fold region.
+- [x] **Markers draw positional and act** — the number their position earns, a click that travels or follows, right-click menus, cascades keyed to the range and answering the same over both deletion keys.
+- [x] **The section hides and shows** through one per-page override that the Subfield control, the divider and a marker jump all write.
+- [x] **Creation is complete and reversible** — Insert ▸ Footnote, Paste As ▸ Footnote and a hand-typed label, each one transaction one undo takes back whole, each renormalizing the order.
+- [x] **Nothing strands the section** — the tail guard, proven against a fourteen-hundred-combination sweep and an attack pass.
+- [x] **The record is written** — the feature's section in `Features/MarkdownPM.md`, PM-111 in History, Context restated.
+- [ ] **Nathan has walked the Verification Checklist** — the eighteen lines in the plan document, and the one thing the harness cannot supply.
+- [ ] **Nathan has ruled on the two flagged decisions** — the relocate rule and the pasted footnote's shaping, which are one ruling; and the setting shipping as **Show Footnotes By Default** where the decision log named it Default Visibility.
 
 #### Next Session
 
-- **Footnotes remains the standing next focus** and this work touched none of its seams. `.claude/Planning/Footnotes — Decision Log.md` is the contract; its one `[assumed]` entry (C-3's clear-on-default) still wants your word.
+- **Walk the Verification Checklist** (`.claude/Planning/Footnotes — Implementation Plan.md`, §Verification Checklist). Eighteen lines, each one thing to do and the one thing that must happen. A line that fails is a defect, not a preference.
+- **The two flagged decisions want a word**, both recorded in the plan's Deviations. Reversing either is a small change; neither is painted into a corner.
+- **Three items are sequenced after this arc, not part of it:** `revealBar.ts` names `.footnotes-toggle` directly and wants a host-named selector once a second lead control exists; two exported `CitationSubject` types share a name and want one renamed; and the Subfield reading the editor's cached document scan closes the standing table-miscount Known Issue and lets the counter drop its own boundary read.
 
 #### Feedback
 
-- "Your job is one task and one task only. don't over-do scope, reusie what already exists."
-- "Before getting started, you must scope out how you'd do this as cleanly and cohesively as possible without introducing anything new, rather re-using what you can that's already provided, the only additions should be to the right-click actions to register the cells/cards as variations of the shared right-click actions."
-- "Replace incorrect information — don't add amendments, supersedes, or additional notes to fix framing; either remove it entirely or correctly restate it if it genuinely remains relevant — specificity shouldn't come at the risk of future accuracy."
-- "take away 'Remove' from the option part of a proprty field. So that you clear the value, but remove is on the actual property."
-- "Rename cascade must also ensure frontmatter isnt barred. Please check."
+- "Jump To Citation applies to typing too — please change; only clicking the resolved glyph should." Then, on reflection: "typing jump honors the setting." Built, reverted, and the ruling recorded — the setting is the one place that decision belongs.
+- "Would it be simpler to just remove transformation / rendering below the line?" It is already the behavior: a line starting a block construct can never sit inside the section, so nothing draws one there. Changing the *scan* to absorb them would diverge from GFM and would not remove the guard.
+- "The 0.5 zoom needs to go to the citation glyph on the page; the 0.75 is for the citation list." · "Make footnote use 0.65 and accent color bright / align at the top." · "It goes ABOVE the subfield, to the left." · "The subfield toggle has space given so that hovering near it displays it without needing to hover EXACTLY on it — I want it the same way." · "Footnotes should also literally be at the end of the document." · "The divider should still show while hovering near it as --state-ghost."
 
 #### Session Pointers
 
-- `src/shared/linkValue.ts` — the one seam a Link value is read and written through. `readLink()` returns the `page`/`url` union everything else branches on.
-- `src/shared/connMenu.ts` — the link menu as rows, four variants. `src/main/connMenu.ts` is one line over it; `connMenu.test.ts` pins every row and every suppression.
-- `src/renderer/src/Embeds/connectionMenu.ts` — the router. It builds the context (including where the page is already showing) and holds `linkValueMenuTarget`, which is how a property surface becomes a caller.
-- `src/renderer/src/linkResolve.ts` — the live resolver and the field validator bound to it. Reads the tree through the store rather than a memoized render context, deliberately.
-- `src/main/crud/cascade.ts` + `connections/scan.ts` + `indexSeed.ts` — the three files a rename's reach is decided by. `frontmatterMentions` is what puts a property-only reference in the candidate set.
-- `.claude/Guidelines/Build-Gotchas.md` — read line 10 before diagnosing anything that "did nothing."
+- `src/renderer/src/MarkdownPM/detect/index.ts` — `citationScan` is THE boundary derivation, beside its three sibling line-construct readers. `foldLabel`, `citationFor`, `markersFor`, `isLastReference`, `markerEndingAt` are its queries.
+- `src/renderer/src/MarkdownPM/editor/citationEdits.ts` — what a gesture writes. `citationDeleteIntent` is the one range→intent rule; `normalizeCitations` the one renumber; `citationGesture` composes the two halves of any gesture into one change set.
+- `src/renderer/src/MarkdownPM/editor/citationActions.ts` — where every gesture lands. `commitCitation` is the one dispatch; `citationHost` is the facet a surface states what it answers for through.
+- `src/renderer/src/MarkdownPM/editor/citationGuard.ts` — the tail guard, on `calloutGuard.ts`'s shared `verdictFilter`. Read `citationTailVerdict`'s two repairs before touching either.
+- `src/renderer/src/MarkdownPM/editor/folding.ts` — the section as a fold kind, `editAcrossCitations`, and why a fold cannot survive an edit that grows its region.
+- `src/renderer/src/MarkdownPM/editor/citationBreakage.test.tsx` — the sweep. Add a corpus here before trusting any change to the guard or the gestures.
+- `.claude/Guidelines/Editor-Internals.md` — five new entries at the end, each one this arc earned.
 
 #### Working Notes
 
-- **A stale main process presents as a wrong feature, not an absent one.** Today it rendered the old menu builder against the new context and read as a fresh regression. Restart the dev process before trusting any main-side observation.
-- **A Link value is a bare string on disk**, which is why a connection in a property needed no schema, decoder, or migration work at all.
-- **`pageDetail.path` and the preview's active tab are independent reads**, which is what lets "both open items dropped when the page shows in both" be two flags rather than a three-state union.
-- **Contravariance bites the `apply` seam.** Widening one shared callback's action union forces a guard into every existing handler; a sibling field (`onCell`) keeps four editor files at a zero-line diff. The simplifier caught this and it was the right call.
-- **A validator and its commit path must share a resolver.** `isCommittableLink` was passed bare at four sites while the commit passed `resolveTitle`, so a valid connection ghosted as invalid and then committed fine. `validateLink` binds them.
+- **A fold entry maps its start forward and its end backward.** An edit that grows a folded region leaves the new lines standing outside the collapsed widget — visible on a page whose section is meant to be hidden. Measured, not theorised: a pure reorder never changes the section's length and survives intact, so the leak is specifically growth.
+- **`isInsideCode` splits the whole document.** Asked on every caret move it cost 26× what the cached fences plus the caret's own line cost. `isInsideInlineCode` is the line-local half.
+- **A predicate that answers "where does the body end" is not the same as "where does the body end at or after the caret."** That one word is the whole of the attack pass's High finding.
+- **The guard is blind to a document with no section yet.** `citationTailVerdict` returns `ok` on its first line when the start document holds none — which is always true of the first footnote on a page. Anything about creating the first section has to be correct on its own.
+- **Nathan's own KNOB edits ride into commits through the staging hook.** The marker's ink is `--label-control`, not the accent, because he retuned it on 08-20; the feature document said accent for a day. Check the declaration, not the prose.
 
 #### Changes
 
-**FILES ADDED**
-
-- `Pommora/src/shared/connMenu.ts` — the link menu model, moved out of `connections.ts` and widened to four variants.
-- `Pommora/src/shared/connMenu.test.ts` — every variant and every open-item suppression.
-- `Pommora/src/renderer/src/linkResolve.ts` — the live title resolver and the field validator bound to it.
-
-**FILES MODIFIED**
-
-- Shared: `linkValue.ts`, `linkValue.test.ts`, `connections.ts`, `pageMenu.ts`, `bridge.ts`.
-- Main: `crud/cascade.ts`, `crud/cascade.test.ts`, `connections/scan.ts`, `connections/rewrite.ts`, `indexSeed.ts`, `connMenu.ts`.
-- Renderer: `Embeds/connectionMenu.ts`, `treeIndex.ts`, `Components/Detail/PagePropertiesPane.tsx`, `PagePreview/PreviewInspector.tsx`, `Detail/Views/Table/TableView.tsx`, `LinkCell.tsx`, `Table.css`, `cellGestures.test.tsx`, `Detail/Views/Cards/CardValue.tsx`, `CardPickerHost.tsx`, `cardValueInput.ts`, `Detail/Views/PropertyEditing/usePropertyRows.ts`, `MarkdownPM/connections/index.ts`, `MarkdownPM/editor/linkEdit.ts`, `linkFormat.ts`, and four editor menu tests.
-- Docs: this document, `ContextPM.md`, `HistoryPM.md` (PM-110), `Guidelines/Build-Gotchas.md`, `Features/PropertiesPM.md`, `ConnectionsPM.md`, `MarkdownPM.md`, `TableViewPM.md`, `CardViewPM.md`, `PagePreviewPM.md`.
-
-**FILES REMOVED**
-
-- None.
-
-**COMMITS**
-
-- None of this session's own. The Feature-doc edits were swept into the parallel footnotes session's commits (`b84677ce`..`980884f1`); everything else is uncommitted in the working tree. **Stage explicit paths** — a directory-level `git add` will take that session's in-flight Planning documents with it.
+- 65 commits, `71fe5be2^..HEAD`. Net +1,277 code lines across 48 files (comments, blanks and tests excluded), from +1,433 and −156.
+- The plan document carries the full Progress table with a hash per task, and Gates 1 through 6 each closed with their C1–C10 evidence.
 
 #### Handoff Guidelines
 

@@ -2,13 +2,15 @@
 
 ### Current Focus
 
-**The cohesion queue's session-sized half is closed, and Footnotes is unblocked.** Four surfaces stopped being written twice — the two option-reorder hooks, the two option rows, the two properties panes' engine, and the two view resolvers that had been living inside a 1,943-line component — and seven live defects closed with them, five found by reading rather than reported. Three action vocabularies now reach the code that spends them, so a menu row that nothing handles fails the build instead of popping and doing nothing. Every seam the [[Footnotes — Decision Log]] named as a prerequisite remains in place, and the editor's last import cycle is gone with the resolvers.
+**Footnotes are built and await a walkthrough.** MarkdownPM reads and writes GFM reference footnotes end to end — the boundary derivation, the drawing, the hide-and-show, the guards, the gestures, and the numbering — and the code is closed: every gate green, the whole-range simplification folded, a correctness review, a neutral verification and an attack pass each answered. What has not happened is Nathan seeing it. The interaction passes for Phases 4 through 6 were never run against the live application, and the Verification Checklist in [[Footnotes — Implementation Plan]] is the walkthrough that closes them.
+
+Two decisions made in flight want a word rather than a fix. A change that would strand text after the citations section is **relocated** to the end of the body rather than shaped into continuation form, because the scan refuses any line a block construct starts and a list marker parses at any indent — so the only shaping that would hold is escaping characters the reader wrote; a pasted footnote collapses to one paragraph for the same reason. And the setting ships as **Show Footnotes By Default** where the decision log named it Default Visibility.
 
 The one construct the Subfield still counts as source is a Markdown table, and the reason is worth remembering: the counter computes its own document scan because it only ever receives a string. The editor already keeps one cached per document version, and the day those meet, the gap closes for free.
 
 ### Immediate Work
 
-- [ ] MarkdownPM Footnotes → Plan & Execution. The decision log at [[Footnotes — Decision Log]] is the settled contract, every entry confirmed. Every seam it named is in place, and the editor's cleanup is closed, so nothing blocks it.
+- [ ] Walk the Verification Checklist in [[Footnotes — Implementation Plan]] against a footnoted page and say whether the two flagged decisions stand — the relocate rule and the pasted footnote's shaping are one ruling, and the setting's name is the other.
 - [ ] What is left of the cohesion queue at [[Cohesive-Cleanup]] — the view host under Table and Cards, the drag adapters' remaining frame, Table's column readers, and the derived state held as state. Ten of its items closed; these four did not, and none of them touches MarkdownPM's core. What is structural rather than session-sized sits in §The Boring Work.
 
 ### Pending Focuses
@@ -79,6 +81,10 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 
 ### Recent Work
 
+#### PM-111 || Footnotes
+
+MarkdownPM reads and writes GFM reference footnotes: `[^label]` markers in the body, a trailing run of `[^label]: text` citations at the document's end, and plain GFM left on disk. The section's boundary is derived once and read by every layer that needs it — the decoration pass, the block resolver, the heading-fold scan, the transaction guard, the Subfield counter and the fold region — which is what lets a marker draw the number its position earns rather than the label it carries, and lets the counter exclude a section the editor is drawing. The section hides behind a per-page per-machine override that the Subfield's control and the divider both write, and every creation and deletion ends on one dispatch that renumbers the labels, reorders the rows and reverts whole on one undo. A transaction-layer guard relocates any change that would leave text standing after the section, which is the one edit that would turn every citation on the page back into literal text.
+
 #### PM-110 || A Link Property Reaches A Page
 
 A Link property can now name a page, not just a web address. Pasting `[[Title]]` — what Copy Link puts on the clipboard — or a markdown link whose target resolves to a page commits as that connection under the page's own capitalization, aliases carried through, while a title no page answers to is refused as a malformed address is; the value then reads in the connection color and clicks through to the page rather than a browser, the three link formats standing down. The rename cascade was widened to match: it rewrites connections held in frontmatter alongside those in bodies, and the content index records what frontmatter names, so a page whose only inbound reference is a property value is reachable at all. Travelling with it, the link right-click menu left main's inline template-building for one shared model that the editor, table cells, card values and both inspector panes now pop — an address gaining Open Preview and Open Browser, an open item dropping where its own surface already shows that page, and a property surface closing on Clear while Remove stays on the property rather than the value it holds.
@@ -94,10 +100,6 @@ The editor embeds live websites the way it embeds Pages. A markdown link on its 
 #### PM-107 || Settings' Scaffolding
 
 The Settings window gained the foundation settings that accumulate into: one roster replacing the rail list and body map that were keyed by the same name, where a leaf declares its label, glyph, foot placement, and either named sections of rows or a surface of its own — never both, enforced at compile time. The rail seats General, Interface, Navigation, Appearance, Files & Links, Properties, Pages & Editor, Automations and Shortcuts, with Trash anchored below its separator; Appearance, Properties and Automations are seated and empty. Two settings joined the personalization block — `dateFormat`, the live fallback every date renders through unless its column names one, entering at `defaultStyleFor` where the `url` arm already reads a setting rather than a constant; and `timeFormat`, relocated out of the settings file's top level, which retired the tree's own copy once its readers moved to the store slice. Underneath, the shared floating window learned to carry a pane on either edge at once and to move its own edge outward by that pane's width when one opens, so a second pane never squeezes what the first left.
-
-#### PM-106 || The Property-Cascade Journal
-
-The schema cascades gained a crash record — the final piece of the abstract-plumbing arc. Every op that writes to both the registry and pages (property rename, global delete, option rename, option removal) states its intent in `.nexus/property-cascade.json` before the work and deletes it after; a record surviving a crash replays at the next open, forward-completing the interrupted sweep against current disk through the content index's key-holder query. The replay's one law: act only on the state the record exactly maps, identity-checked by id, and clear on every other — so a stale record can never merge two properties' values or strip a value the user re-set. Skips hold the record: a cascade that cannot read one holder keeps its journal and the next open finishes the job; a stranded record is never displaced or cleared by a later op. Clearing an option's values and the per-Collection Remove stay unjournaled on the same razor — their residue disagrees with nothing. 
 
 ### Guidelines
 
