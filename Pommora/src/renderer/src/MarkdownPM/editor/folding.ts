@@ -8,6 +8,7 @@ import {
   type Text,
   type Range,
 } from '@codemirror/state'
+import { duration } from '@renderer/design-system/tokens/motion'
 import { docScan, docString } from './docCache'
 import { headingSections, type HeadingSection } from './headingScan'
 import { createBlockDragGesture } from './blockDrag'
@@ -27,6 +28,11 @@ export interface FoldsApi {
   load: () => Promise<string[]>
   save: (keys: string[]) => void
 }
+
+/** The reveal's own beat, plus slack for the frame that draws its final height. Anything measuring a
+ *  section that just opened has to wait it out: a folded region has no height to scroll to, so a
+ *  travel timed any earlier lands on the collapsed document. */
+export const FOLD_SETTLE_MS = Number.parseInt(duration.disclosure, 10) + 30
 
 /** Marks the mount-time re-apply of saved folds so the persist listener doesn't echo it straight back to disk. */
 const initialFoldAnnotation = Annotation.define<boolean>()
@@ -443,6 +449,14 @@ export function applyCitationsVisibility(view: EditorView, shown: boolean, anima
   if (!effect) return
   if (!shown) blurCaretInBody(view, r)
   view.dispatch({ effects: effect, annotations: initialFoldAnnotation.of(true) })
+  // A section revealed at the foot of a long page opens below the viewport, so the act reads as
+  // nothing happening. Once the reveal has its height, bring its end into view — the minimum scroll,
+  // which is none at all when the section already fits.
+  if (shown && animate)
+    setTimeout(
+      () => view.dispatch({ effects: EditorView.scrollIntoView(r.to, { y: 'nearest' }) }),
+      FOLD_SETTLE_MS,
+    )
 }
 
 /** A footnoted document ends AT its footnotes. The editor's generous tail is typing room for a body
