@@ -195,10 +195,8 @@ export const markerRegex = (): RegExp => /(?<!\\)\[\^([^\]\s]+)\]/dg
  *  just completed a marker". Asked through `markerRegex`, so the escape and the label grammar stay
  *  the one fact the scan reads rather than a second spelling of it. */
 export function markerEndingAt(text: string): string | null {
-  const re = markerRegex()
-  let last: RegExpExecArray | null = null
-  for (let m = re.exec(text); m !== null; m = re.exec(text)) last = m
-  return last !== null && last.index + last[0].length === text.length ? last[1] : null
+  const last = [...text.matchAll(markerRegex())].at(-1)
+  return last && last.index + last[0].length === text.length ? last[1] : null
 }
 
 /** The case-fold every marker↔citation comparison runs through. Deliberately not the shared title
