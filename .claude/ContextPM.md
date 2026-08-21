@@ -2,15 +2,15 @@
 
 ### Current Focus
 
-**Footnotes are built and await a walkthrough.** MarkdownPM reads and writes GFM reference footnotes end to end, and the code is closed: every gate green, a correctness review, a neutral verification and an attack pass each answered, three real defects found and pinned. What has not happened is seeing it run — the interaction passes for Phases 4 through 6 were never taken against the live application, and the Verification Checklist in [[Footnotes — Implementation Plan]] is what closes them.
+**Footnotes are built and await a walkthrough.** MarkdownPM reads and writes GFM reference footnotes end to end, and the code is closed: every gate green, a correctness review, a neutral verification, an attack pass and a closing duplication-and-bloat review each answered, five real defects found and pinned, and both flagged decisions ruled on. What has not happened is seeing it run — the interaction passes for Phases 4 through 6 were never taken against the live application, and the Verification Checklist in [[Footnotes — Implementation Plan]] is what closes them.
 
-Two decisions want a word rather than a fix. A change that would strand text after the citations section is **relocated** to the end of the body rather than shaped into continuation form, because the scan refuses any line a block construct starts and a list marker parses at any indent — the only shaping that holds is escaping characters the reader wrote, and a pasted footnote collapses to one paragraph for the same reason. And the setting ships as **Show Footnotes By Default** where the decision log named it Default Visibility.
+Two rulings settled it on 08-21. A change that would strand text after the citations section is **relocated** to the end of the body rather than shaped into continuation form, because the scan refuses any line a block construct starts and a list marker parses at any indent — the only shaping that holds is escaping characters the reader wrote, and a pasted footnote collapses to one paragraph for the same reason. And the setting keeps the name it shipped with, **Show Footnotes By Default**.
 
 The one construct the Subfield still counts as source is a Markdown table, and the reason is worth remembering: the counter computes its own document scan because it only ever receives a string. The editor already keeps one cached per document version, and the day those meet, the gap closes for free.
 
 ### Immediate Work
 
-- [ ] Walk the Verification Checklist in [[Footnotes — Implementation Plan]] against a footnoted page and say whether the two flagged decisions stand — the relocate rule and the pasted footnote's shaping are one ruling, and the setting's name is the other.
+- [ ] Walk the Verification Checklist in [[Footnotes — Implementation Plan]] against a footnoted page.
 - [ ] What is left of the cohesion queue at [[Cohesive-Cleanup]] — the view host under Table and Cards, the drag adapters' remaining frame, Table's column readers, and the derived state held as state. Ten of its items closed; these four did not, and none of them touches MarkdownPM's core. What is structural rather than session-sized sits in §The Boring Work.
 
 ### Pending Focuses
