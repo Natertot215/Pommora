@@ -1049,20 +1049,20 @@ MarkdownPM reads and writes GFM reference footnotes. A page authored anywhere ca
 **What is built, against the eleven requirements.**
 
 1. **The model.** `citationScan` in `MarkdownPM/detect/index.ts` is the one derivation of where the section begins, and six layers read it through the editor's cached per-document scan. The section is the trailing run reaching the document's end; a citation anywhere above live content is prose. Markers bind by GFM's own case fold.
-2. **Markers draw** as their positional ordinal in the accent at 0.65em, cap-aligned, permanently opaque, atomic to the caret, in the body and in table cells — resting and while a cell is edited.
-3. **Markers act.** A click travels to the citation, or follows it when its whole content is exactly one link or Connection. Right-click gives Edit · Copy · Delete. Cascades key to the range, never the gesture.
+2. **Markers draw** as their positional ordinal in the control label's ink at 0.65em, cap-aligned, permanently opaque, atomic to the caret, in the body and in table cells — resting and while a cell is edited.
+3. **Markers act.** A click travels to the citation, or follows it when its whole content is exactly one link or Connection. Right-click gives Edit · Copy · Delete. Cascades key to the range: Backspace, forward-Delete and the menu all ask one rule what the range is, and give the same answer over it. A replacement — typing over a swept citation, or ⌘X — removes what was swept and cascades nothing.
 4. **The section draws** as numbered rows on the ordered marker's own glyph column with a hanging indent, orphans and duplicate-losers dimmed behind an en dash, inert to grip-drag both ways, and a collapsed heading stops where it starts.
 5. **The section hides and shows** through one per-page per-machine override that both the Subfield control and the divider write, falling back to a nexus-wide default and clearing when it lands on it. The control rides into the Page Preview.
 6. **Creation** is Insert ▸ Footnote, Paste As ▸ Footnote, and a hand-typed label, each writing a complete pair in one transaction that one undo reverts whole, each honoring Jump To Citation On Creation.
 7. **Numbering** is positional in display and normalized on disk by every creation and deletion: numeric labels renumber to first-use order, rows sort to match, word labels hold their position unrewritten, and hand edits that create nothing rewrite nothing.
 8. **Statistics** exclude every section line; a marker scores its own characters and no word. No other count moved.
 9. **Guards.** The transaction-layer tail guard relocates any change that would strand content at or after the section, and repairs a write aimed ahead of a citation's hidden prefix. Backspace at a citation's content start removes the whole footnote. Menu actions re-find their target by label at commit.
-10. **Settings.** Default Visibility and Jump To Citation On Creation sit under Footnotes in Pages & Editor.
+10. **Settings.** **Show Footnotes By Default** and **Jump To Citation On Creation** sit under Footnotes in Pages & Editor.
 11. **Documentation.** Every document the work falsified was rewritten in the commit that falsified it; the feature's own section is in `Features/MarkdownPM.md`.
 
 **What is deliberately not built:** mid-document citations as anything but prose, inline `^[text]` syntax, hover previews on a marker, drag-to-reposition markers, and creating a footnote from inside a table cell. The Subfield's three standing counting inaccuracies — tables, indented code, math — are untouched.
 
-**What is not verified:** the interaction passes for Phases 3 through 6 have not been run against the live application. Everything below the interaction layer is covered by 3,316 tests including a sweep of roughly fourteen hundred keystroke-and-seat combinations against the section.
+**What is not verified:** the interaction passes for Phases 4 through 6 have not been run against the live application. Phase 2's and Phase 3's were run, and the nine findings they returned are folded and recorded. Everything below the interaction layer is covered by 3,316 tests including a sweep of roughly fourteen hundred keystroke-and-seat combinations against the section.
 
 ### Rulings
 

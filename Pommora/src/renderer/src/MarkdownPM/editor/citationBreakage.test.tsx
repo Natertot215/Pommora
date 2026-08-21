@@ -178,6 +178,52 @@ describe('the section refuses to seat a marker inside itself, in every shape', (
   })
 })
 
+// The rule is keyed to the RANGE, so the two deletion keys have to give the same answer over it.
+describe('Backspace and forward-Delete agree over the same range', () => {
+  const rowFrom = DOC.indexOf('[^two]: the second')
+  const rowTo = rowFrom + '[^two]: the second'.length
+  const markerFrom = DOC.indexOf('[^two]')
+  const markerTo = markerFrom + '[^two]'.length
+
+  const removed = async (key: string, a: number, b: number): Promise<string> => {
+    const view = await mountEditor({ initialBody: DOC, citationsShown: true })
+    await seat(view, a, b)
+    await press(view, key)
+    const out = view.state.doc.toString()
+    await cleanupEditor()
+    return out
+  }
+
+  it('sweeping exactly one citation row cascades either way', async () => {
+    const back = await removed('Backspace', rowFrom, rowTo)
+    const fwd = await removed('Delete', rowFrom, rowTo)
+    expect(fwd).toBe(back)
+    expect(fwd).not.toContain('[^two]')
+  })
+
+  it('sweeping exactly one marker cascades either way', async () => {
+    const back = await removed('Backspace', markerFrom, markerTo)
+    const fwd = await removed('Delete', markerFrom, markerTo)
+    expect(fwd).toBe(back)
+    expect(fwd).not.toContain('the second')
+  })
+
+  it('forward-Delete against a marker’s leading edge takes the whole marker', async () => {
+    const out = await removed('Delete', markerFrom, markerFrom)
+    expect(out).not.toContain('[^two]')
+    expect(out).not.toContain('the second')
+  })
+
+  it('and a wider sweep still cascades neither way', async () => {
+    const a = DOC.indexOf('prose')
+    const b = DOC.indexOf('here') + 4
+    const back = await removed('Backspace', a, b)
+    const fwd = await removed('Delete', a, b)
+    expect(fwd).toBe(back)
+    expect(fwd).toContain('the first citation')
+  })
+})
+
 describe('the degenerate documents', () => {
   const docs: [string, string][] = [
     ['nothing but citations', '[^1]: one\n[^2]: two'],
