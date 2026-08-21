@@ -134,24 +134,24 @@ export function TableView({
   // Edit Link, which enter it only to put the caret over what you came to replace.
   const initialSelect = useRef<[number, number] | null>(null)
 
-  // The measure sweep reads a rect per column and per row, so it runs on the table's SHAPE, never on the
-  // model's identity: a cell keystroke rebuilds the model every character, and re-measuring there is an
-  // O(rows) forced layout on the highest-frequency trigger there is. Text that reflows a row still lands —
-  // it changes the table's own box, which the observer below catches.
   // The numbering, read back into a lookup once per change rather than per cell.
   const ordinalOf = useMemo(() => {
     const map = new Map(
       (cites ?? '')
         .split(';')
         .filter(Boolean)
-        .map((pair) => pair.split('=') as [string, string]),
+        .map((pair) => {
+          const [label, ordinal] = pair.split('=')
+          return [label, Number(ordinal)] as const
+        }),
     )
-    return (label: string): number | null => {
-      const n = map.get(foldLabel(label))
-      return n === undefined ? null : Number(n)
-    }
+    return (label: string): number | null => map.get(foldLabel(label)) ?? null
   }, [cites])
 
+  // The measure sweep reads a rect per column and per row, so it runs on the table's SHAPE, never on the
+  // model's identity: a cell keystroke rebuilds the model every character, and re-measuring there is an
+  // O(rows) forced layout on the highest-frequency trigger there is. Text that reflows a row still lands —
+  // it changes the table's own box, which the observer below catches.
   const shape = `${model.rows.length}x${model.columns.map((c) => `${c.align}:${c.dashes}`).join('|')}`
   const measure = useCallback((): void => {
     const table = tableRef.current

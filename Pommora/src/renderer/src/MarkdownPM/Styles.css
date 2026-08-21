@@ -558,8 +558,7 @@
 
 /* The one region of a list line that wraps (see the `pre` on .md-li). */
 .mdpm-editor .cm-line.md-li .md-li-text,
-.mdpm-editor .cm-line.md-cite .md-cite-text,
-.mdpm-editor .cm-line.md-cite-cont .md-cite-text {
+.mdpm-editor .cm-line:is(.md-cite, .md-cite-cont) .md-cite-text {
   white-space: break-spaces;
   overflow-wrap: anywhere;
   word-break: normal;
@@ -614,8 +613,7 @@
    `pre` and the content span are the list line's arrangement and are load-bearing for the same
    reason: the marker zone is full of wrap opportunities that would drop a long word under the
    number. A dimmed row is a citation nothing binds to — an orphan, or a duplicate that lost. */
-.mdpm-editor .cm-line.md-cite,
-.mdpm-editor .cm-line.md-cite-cont {
+.mdpm-editor .cm-line:is(.md-cite, .md-cite-cont) {
   white-space: pre;
   color: var(--label-secondary);
   font-size: 0.75em;
