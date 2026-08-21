@@ -900,6 +900,29 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 
 ---
 
+## Verification Checklist
+
+*What the feature has to survive, in the reader's own terms. Each line is one thing to do and the one thing that must happen — walk them on a page holding footnotes, at least one heading above them, a table, and a code block. A line that fails is a defect, not a preference.*
+
+- [ ] **The list can't be broken from below.** With the footnotes showing, put the caret at the very end of the last citation and type Enter then `- `, or `> `, or `# `, or `---`. The text lands at the end of the body above the section; every footnote keeps its number and none of them turns back into raw `[^1]:` text.
+- [ ] **A paste at the foot of the page does the same.** Copy a paragraph, click below the last citation, ⌘V. It lands in the body, not glued to a footnote, and the section is untouched.
+- [ ] **The head can't be written over.** Put the caret at the very start of a citation row — press Left from the start of its text — and type. The character lands in the citation's text, never ahead of its hidden `[^label]:`.
+- [ ] **Raw syntax never auto-formats on its own.** Type `[^1]:` in the middle of a page, with prose under it. It stays literal text: no number, no row, no section. Only a run that reaches the end of the document is the footnotes section.
+- [ ] **An unmatched marker stays literal.** Type `[^nothing]` in the body with no citation to match it. It reads as the characters you typed, not as a number, and clicking it does nothing but seat a caret.
+- [ ] **A marker resolves the moment its citation exists**, and stops resolving the moment it doesn't — delete the citation's row and the marker in the body goes back to raw text with no other footnote's number changing.
+- [ ] **Numbers are positional, not what's on disk.** Reorder the citations by hand and the body's numbers stay in first-use order — 1 is the first marker you meet reading down the page, whatever its label says.
+- [ ] **A marker click lands on its citation**, opening the section first if it was hidden, and the footer control then reads **Hide Footnotes**.
+- [ ] **A citation that is exactly one link or one Connection navigates instead**; add a trailing period to it and the same click jumps to the row again.
+- [ ] **Deleting a marker deletes its footnote only when it was the last one pointing at it.** Two markers sharing a label: remove one, the citation stays and the other keeps its number. Remove the second, the citation goes with it. One ⌘Z brings back whichever half you just removed.
+- [ ] **Deleting a citation takes its markers.** Right-click a row → Delete Footnote: the body's numbers for it disappear rather than reverting to raw `[^label]` text.
+- [ ] **A wide sweep never cascades.** Select a marker plus the words on either side and delete: only what you selected goes, and the citation survives.
+- [ ] **A collapsed heading never swallows the footnotes.** Collapse the outermost heading on a page with nested headings — the section stays on screen and stays togglable.
+- [ ] **Saved heading folds survive a footnoted page opening.** Collapse a heading, reload the page: it is still collapsed. This is the one the seeding annotation exists for.
+- [ ] **The section is inert to drag.** No grip appears on a citation row, and a block dragged from the body cannot drop into or below the section.
+- [ ] **Markers work inside a table cell** — resting and while the cell is being edited — and show the same number the body does.
+- [ ] **A citation inside a code fence is code.** Put `[^x]: text` inside a fenced block at the end of the page: no section, no numbers, nothing drawn.
+- [ ] **The counter never counts the footnotes.** Watch the Subfield's lines · words · characters while showing and hiding the section: the three numbers do not move.
+
 ## Implementation Log
 
 ### Progress
@@ -925,7 +948,7 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
   - [x] Task 16 — One page-travel mechanism, named for what it does · `e9304060`
   - [x] Task 17 — Marker click — jump, or follow · `678ef515`
   - [x] Task 18 — The two construct menus · `18c7cf5f`
-  - [x] Task 19 — Range-keyed cascades · `<T19>`
+  - [x] Task 19 — Range-keyed cascades · `26fbfcb2`
 - [ ] **Phase 5** — Creation and numbering
   - [ ] Task 20 — The renumbering engine · `<commit>`
   - [ ] Task 21 — Insert ▸ Footnote and Paste As ▸ Footnote · `<commit>`
