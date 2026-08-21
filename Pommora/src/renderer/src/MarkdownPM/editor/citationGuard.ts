@@ -60,7 +60,10 @@ export function citationTailVerdict(
   const prose = c.anchorLine >= 0 && lines[c.anchorLine].trim() !== ''
   const seat =
     c.anchorLine < 0 ? 0 : prose ? lineEndOf(scan, c.anchorLine) : lineStarts[c.anchorLine]
-  const body = inserted.replace(/^\n+|\n+$/g, '')
+  // Whitespace alone is not text to rescue. The space that turns a typed `-` into a list marker is
+  // what ends the run, and relocating it writes a line holding one space into the body — debris the
+  // reader never asked for from a keystroke that was never going to land here. It is refused instead.
+  const body = inserted.trim() === '' ? '' : inserted.replace(/^\n+|\n+$/g, '')
   if (body === '') return { kind: 'rewrite', edits: [{ from: fromA, to: toA, insert: '' }] }
   // A sweep that began at or above the seat already owns a place in the body for what replaces it,
   // and relocating past its own start would be two edits claiming one range. It goes through as the

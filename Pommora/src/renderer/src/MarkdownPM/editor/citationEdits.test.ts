@@ -244,3 +244,66 @@ describe('a gesture carries its own renormalization', () => {
     expect(out).toBe('x[^1] y[^2]\n\n```\n[^9]: code\n```\n\n[^1]: two\n[^2]: one')
   })
 })
+
+// The cascade against the cases the corpus above does not carry: a label two rows claim, a label
+// spelled in a different case, and the constructs a marker can sit inside.
+describe('the last reference takes its footnote in every shape the document can hold', () => {
+  const gesture = (doc: string, pick: (s: CitationSlice) => ChangeSpec[]): string => {
+    const s = scanOf(doc)
+    return citationGesture(s, pick(s))
+      .apply(Text.of(doc.split('\n')))
+      .toString()
+  }
+  const heads = (doc: string): string[] =>
+    doc.split('\n').filter((l) => /^ {0,3}\[\^[^\]\s]+\]:/.test(l))
+  const live = (doc: string): number => citationScan(splitWithOffsets(doc), []).entries.length
+
+  // Two rows claim one label: the first binds, the second is a duplicate that lost. Removing the
+  // only marker orphans BOTH, so the gesture that made them orphans takes both.
+  it('a duplicate row travels with the row it duplicates', () => {
+    const doc = 'body[^a] here\n\n[^a]: the winner\n[^a]: the loser'
+    const out = gesture(doc, (s) => deleteMarkerChanges(s, s.citations.markers[0]))
+    expect(heads(out)).toEqual([])
+    expect(out.trimEnd()).toBe('body here')
+  })
+
+  it('and while another marker still points at the label, neither row moves', () => {
+    const doc = 'one[^a] two[^a]\n\n[^a]: the winner\n[^a]: the loser'
+    const out = gesture(doc, (s) => deleteMarkerChanges(s, s.citations.markers[0]))
+    expect(heads(out)).toEqual(['[^a]: the winner', '[^a]: the loser'])
+    expect(live(out)).toBe(2)
+  })
+
+  // GFM folds a footnote label's case, so `[^ABC]` and `[^abc]:` are one footnote.
+  it('a label spelled in another case is still the last reference', () => {
+    const doc = 'body[^ABC] here\n\n[^abc]: the citation'
+    const out = gesture(doc, (s) => deleteMarkerChanges(s, s.citations.markers[0]))
+    expect(heads(out)).toEqual([])
+  })
+
+  it('deleting the citation takes its marker wherever the marker sits', () => {
+    const doc =
+      '> [!note] a callout[^a]\n\n> a quote[^a]\n\n| h |\n| --- |\n| cell[^a] |\n\n[^a]: shared'
+    const out = gesture(doc, (s) => deleteCitationChanges(s, s.citations.entries[0]))
+    expect(out).not.toContain('[^a]')
+    expect(out).toContain('a callout')
+    expect(out).toContain('a quote')
+    expect(out).toContain('cell')
+  })
+
+  // A marker inside code is characters, not a reference — the cascade must not reach into it.
+  it('but never into a code span or a fence', () => {
+    const doc = 'live[^a]\n\n`[^a]` and\n\n```\n[^a]\n```\n\n[^a]: shared'
+    const out = gesture(doc, (s) => deleteCitationChanges(s, s.citations.entries[0]))
+    expect(out).toContain('`[^a]`')
+    expect(out).toContain('```\n[^a]\n```')
+    expect(out).toContain('live\n')
+  })
+
+  it('a marker inside a callout is the last reference like any other', () => {
+    const doc = '> [!note] see[^a]\n\n[^a]: the citation'
+    const out = gesture(doc, (s) => deleteMarkerChanges(s, s.citations.markers[0]))
+    expect(heads(out)).toEqual([])
+    expect(out).toContain('> [!note] see')
+  })
+})

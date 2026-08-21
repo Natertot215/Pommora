@@ -6,9 +6,9 @@ import { EditorView } from '@codemirror/view'
 import type { Personalization } from '@shared/types'
 import { useSession } from '@renderer/store'
 import { stubEditorBridge, mountEditor, cleanupEditor } from '@renderer/testing/editorHarness'
-import { citationSeatAt, insertCitation } from './citationActions'
+import { citationSeatAt, commitCitation, insertCitation } from './citationActions'
 import { citationScan, splitWithOffsets } from '../detect'
-import { citationText } from './citationEdits'
+import { citationText, deleteCitationChanges } from './citationEdits'
 import { foldedRegions } from './folding'
 import { pasteAs } from './PasteLink'
 
@@ -353,5 +353,61 @@ describe('typing a label seeds its citation', () => {
     await at(view, body.length)
     await write(view, '[^b]')
     expect(doc(view)).toBe('x[^1]\n\n[^1]: one[^b]')
+  })
+})
+
+// A marker binds by label, not by where it sits — so the whole cycle has to close inside the box
+// constructs a page is actually written in.
+describe('the cycle closes inside a callout, a blockquote and a table', () => {
+  const ordinalsOf = (view: EditorView): (number | null)[] =>
+    citationScan(splitWithOffsets(doc(view)), []).markers.map((m) => m.ordinal)
+
+  it('a caret inside a callout is a seat, and the pair lands whole', async () => {
+    const body = '> [!note] the callout body'
+    const view = await mountEditor({ initialBody: body })
+    await at(view, body.length)
+    expect(citationSeatAt(view.state)).toBe(true)
+    expect(await insert(view)).toBe(true)
+    expect(doc(view)).toBe('> [!note] the callout body[^1]\n\n[^1]: ')
+  })
+
+  it('a caret inside a blockquote is a seat too', async () => {
+    const body = '> a quoted line'
+    const view = await mountEditor({ initialBody: body })
+    await at(view, body.length)
+    expect(await insert(view)).toBe(true)
+    expect(doc(view)).toBe('> a quoted line[^1]\n\n[^1]: ')
+  })
+
+  it('a caret inside a table row is a seat, and the citation still lands at the end', async () => {
+    const body = '| h |\n| --- |\n| cell |'
+    const view = await mountEditor({ initialBody: body })
+    await at(view, body.indexOf('cell') + 4)
+    expect(await insert(view)).toBe(true)
+    expect(doc(view)).toBe('| h |\n| --- |\n| cell[^1] |\n\n[^1]: ')
+  })
+
+  // Numbering is first-use order reading down the page, and a box construct is not a detour.
+  it('markers in all three number in reading order alongside the body', async () => {
+    const body =
+      'plain[^p]\n\n> [!note] callout[^c]\n\n> quote[^q]\n\n| h |\n| --- |\n| cell[^t] |\n\n[^p]: one\n[^c]: two\n[^q]: three\n[^t]: four'
+    const view = await mountEditor({ initialBody: body })
+    expect(ordinalsOf(view)).toEqual([1, 2, 3, 4])
+  })
+
+  it('and a citation deleted from any of them takes every marker with it', async () => {
+    const body = '> [!note] a[^x]\n\n> b[^x]\n\n| h |\n| --- |\n| c[^x] |\n\n[^x]: shared'
+    const view = await mountEditor({ initialBody: body })
+    const scan = citationScan(splitWithOffsets(doc(view)), [])
+    await act(async () => {
+      commitCitation(
+        view,
+        deleteCitationChanges({ ...splitWithOffsets(doc(view)), citations: scan }, scan.entries[0]),
+        'delete',
+      )
+    })
+    expect(doc(view)).not.toContain('[^x]')
+    expect(doc(view)).toContain('> [!note] a')
+    expect(doc(view)).toContain('| c |')
   })
 })

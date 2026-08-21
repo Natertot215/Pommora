@@ -38,32 +38,55 @@ function lineSpan(scan: CitationSlice, from: number, to: number): { from: number
     : { from: Math.max(0, start - 1), to: end }
 }
 
-/** A consecutive run of citations, every marker bound to any of them included. One span for the
- *  whole run, not one per citation: consecutive per-entry spans overlap on the newline between them,
- *  and each would claim it. */
-function cutCitations(scan: CitationSlice, run: CitationEntry[]): ChangeSpec[] {
+/** Every row a label claims — the one that binds and any duplicate that lost. A duplicate is an
+ *  orphan the moment its winner goes, so the two travel together here exactly as they do through a
+ *  renumber. */
+const rowsFor = (c: CitationScan, label: string): CitationEntry[] => {
+  const key = foldLabel(label)
+  return c.entries.filter((e) => foldLabel(e.label) === key)
+}
+
+/** Whole citation rows removed. Consecutive rows are cut as ONE span, because per-row spans overlap
+ *  on the newline between them and each would claim it; rows with something between them cannot
+ *  overlap and are cut separately. */
+function cutRows(scan: CitationSlice, rows: CitationEntry[]): ChangeSpec[] {
+  const runs: CitationEntry[][] = []
+  for (const e of rows) {
+    const run = runs[runs.length - 1]
+    if (run && run[run.length - 1].lastLine + 1 === e.line) run.push(e)
+    else runs.push([e])
+  }
+  return runs.map((run) => erase(lineSpan(scan, run[0].line, run[run.length - 1].lastLine)))
+}
+
+/** A whole footnote: every row its label claims, and every marker bound to it. THE definition of
+ *  what "the footnote" is, so the marker's cascade, the citation's cascade and a swept run of rows
+ *  cannot come to disagree about how much of it goes. */
+function cutFootnotes(scan: CitationSlice, entries: CitationEntry[]): ChangeSpec[] {
+  const labels = [...new Set(entries.map((e) => foldLabel(e.label)))]
   return [
-    ...run.flatMap((e) => markersFor(scan.citations, e.label)).map(erase),
-    erase(lineSpan(scan, run[0].line, run[run.length - 1].lastLine)),
+    ...labels.flatMap((l) => markersFor(scan.citations, l)).map(erase),
+    ...cutRows(
+      scan,
+      labels.flatMap((l) => rowsFor(scan.citations, l)),
+    ),
   ]
 }
 
-/** Deleting exactly one marker. It takes its citation with it when it was the last reference — a
+/** Deleting exactly one marker. It takes its footnote with it when it was the last reference — a
  *  footnote nothing points at is an orphan, and the gesture that made it one is the one that should
  *  answer for it. */
 export function deleteMarkerChanges(scan: CitationSlice, marker: MarkerRef): ChangeSpec[] {
   const entry = citationFor(scan.citations, marker.label)
-  const changes: ChangeSpec[] = [erase(marker)]
-  if (entry && isLastReference(scan.citations, marker))
-    changes.push(erase(lineSpan(scan, entry.line, entry.lastLine)))
-  return changes
+  if (!entry || !isLastReference(scan.citations, marker)) return [erase(marker)]
+  return cutRows(scan, rowsFor(scan.citations, marker.label)).concat(erase(marker))
 }
 
 /** Deleting exactly one citation. Every marker bound to it goes in the same transaction — the
  *  inverse of the body-side cascade, and the alternative is leaving raw `[^label]` scattered through
  *  prose that used to read as a number. */
 export function deleteCitationChanges(scan: CitationSlice, entry: CitationEntry): ChangeSpec[] {
-  return cutCitations(scan, [entry])
+  return cutFootnotes(scan, [entry])
 }
 
 /** What deleting exactly `[from, to)` means for the footnotes, or null where that range is not
@@ -97,7 +120,7 @@ export function citationDeleteIntent(
   const last = covered[covered.length - 1]
   if (scan.lineStarts[first.line] !== from) return null
   if (lineEndOf(scan, last.lastLine) !== to) return null
-  return cutCitations(scan, covered)
+  return cutFootnotes(scan, covered)
 }
 
 const numericLabel = (label: string): boolean => /^\d+$/.test(label)
