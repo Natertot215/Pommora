@@ -932,6 +932,7 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 
 ### Deviations
 
+- **Gate 1 — that fix then cost 145× on a keystroke path, and is gated.** Handing the counter the editor's full exclusion set meant a table scan per keystroke: 0.19ms → 27.9ms on a 482-line page. Widening an exclusion can only break a run and never create one, so a fence-only scan finding no section is already final — the table and math scan now runs only on a page that has footnotes. Measured after: 0.30ms with no footnotes, 0.59ms on a footnoted page holding a table, against the editor's own 0.40ms scan of the same body.
 - **Gate 1 — the counter's exclusion set was narrower than the editor's.** The correctness review found `computeStats` passing fences alone to the scan, so a table or `$$` block glued under a citation was read as that citation's continuation: the counter invented a section where the editor drew none and dropped the table's lines from all three counts. The counter now takes `docLineScan`'s own assembly — fences, tables, math — so one boundary serves both. Three tests pin it.
 
 - **Task 1 — `contentStart` is absolute, not line-relative.** The Interfaces block described it as line-relative while the same block requires every offset to come out absolute, as the sibling readers do. Absolute is what the consumers want (the hide range, the guard's clamp), so the one clause loses to the rule.
