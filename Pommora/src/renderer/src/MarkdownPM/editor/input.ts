@@ -22,7 +22,7 @@ import { aliasSpanAt } from '@shared/connections'
 import { commitAliasOnEnter } from './linkEdit'
 import { embedTileRanges } from './embedWidget'
 import type { DocScan } from '../decorations/intent'
-import { commitCitation } from './citationActions'
+import { commitCitation, seedTypedCitation } from './citationActions'
 import { citationDeleteIntent } from './citationEdits'
 import { docScan, docString } from './docCache'
 
@@ -154,6 +154,9 @@ export const markdownInput = [
     if (text.length !== 1 || from !== to) return false // single-char inserts only; paste passes through
     const doc = docString(view.state.doc)
     if (refusedInAlias(doc, from, text)) return true
+    // Ahead of the chain, and dispatched on its own: a seed writes a marker and a citation at two
+    // disjoint sites, and every transform in that chain carries one range.
+    if (text === ']' && seedTypedCitation(view, from)) return true
     return apply(
       view,
       calloutShorthand(doc, from, from, text) ??
