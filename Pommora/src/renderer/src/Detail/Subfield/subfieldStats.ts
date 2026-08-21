@@ -99,6 +99,20 @@ function citationBoundary(d: DocLines, fences: [number, number][]): CitationScan
   return citationScan(d, [...base, ...blockMathRanges(d, base)])
 }
 
+/** One answer per body string. The footer mounts two items on a page — the counts and the footnotes
+ *  control — and both need the same figures on the same keystroke; deriving them twice would answer
+ *  the citations boundary twice on a per-keystroke path. One entry is the whole cache the footer
+ *  needs, since both items read the same string within one render. */
+let memoBody: string | null = null
+let memoStats: PageStats | null = null
+export function pageStats(body: string): PageStats {
+  if (body !== memoBody || memoStats === null) {
+    memoBody = body
+    memoStats = computeStats(body)
+  }
+  return memoStats
+}
+
 export function computeStats(body: string): PageStats {
   if (!body) return { lines: 0, words: 0, characters: 0, citations: 0 }
   // A single trailing newline is the terminator, not a phantom empty line.

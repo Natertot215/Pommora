@@ -52,10 +52,10 @@ export function PageView({
   // Whether this page's header draws its glyph. The glyph itself is on-page in frontmatter; only
   // whether it shows is chrome, so it rides the keyed local store beside folds and heading columns.
   const [iconHidden, setIconHidden] = useState(true)
-  // This page's own footnotes visibility, where someone set one. Undefined means nobody has, and the
-  // editor falls back to the nexus-wide default.
-  const [citationsShown, setCitationsShown] = useState<boolean | undefined>(undefined)
   const pageId = pageDetail?.id
+  // This page's own footnotes visibility, where someone set one. Undefined means nobody has, and the
+  // editor falls back to the nexus-wide default. THE state, read from the slice both controls write.
+  const citationsShown = useSession((s) => (pageId ? s.citationsShown[pageId] : undefined))
   useEffect(() => {
     if (!pageId) return
     let live = true
@@ -63,9 +63,6 @@ export function PageView({
     // where a Collection or a Space wears one by default.
     void window.nexus.headingIcon.get().then((all) => {
       if (live) setIconHidden(all[pageId] ?? true)
-    })
-    void window.nexus.citations.get().then((all) => {
-      if (live) setCitationsShown(all[pageId])
     })
     return () => {
       live = false
