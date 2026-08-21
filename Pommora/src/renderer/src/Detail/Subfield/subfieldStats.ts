@@ -1,9 +1,10 @@
 import { markdownLinkRegex } from '@shared/links'
 import { loneWebpageEmbed } from '@shared/webpageEmbed'
+import { docLineScan } from '@renderer/MarkdownPM/editor/embedRanges'
+import { tableRegions } from '@renderer/MarkdownPM/Tables/regions'
 import {
   blockquotePrefixRe,
   calloutHeadPrefixLen,
-  citationScan,
   fenceRangesOf,
   headingParts,
   isBlockquoteLine,
@@ -86,7 +87,10 @@ export function computeStats(body: string): PageStats {
   const { lines } = d
 
   const fences = scanFencedCode(lines, d.lineStarts)
-  const cited = citationScan(d, fenceRangesOf(fences))
+  // The section's boundary comes from the same assembly the editor's own scan takes — fences, then
+  // tables, then math — so the counter and the editor can never disagree about where it starts. A
+  // narrower exclusion here would read a table glued under a citation as that citation's own text.
+  const { citations: cited } = docLineScan(d, fenceRangesOf(fences), tableRegions(d))
   const prose = stripInline(
     lines.map((line, i) => (fences[i] || cited.mask[i] ? GONE : stripLineChrome(line))).join('\n'),
   )

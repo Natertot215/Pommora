@@ -169,3 +169,21 @@ describe('computeStats — footnotes', () => {
     expect(computeStats(body).lines).toBe(raw - cited)
   })
 })
+
+describe('computeStats — the counter reads the boundary the editor reads', () => {
+  it('a table glued under a citation ends the run rather than joining it', () => {
+    const body = 'text [^1]\n\n[^1]: one\n| a | b |\n| - | - |'
+    expect(computeStats(body).lines).toBe(5)
+    expect(computeStats(body).citations).toBe(0)
+  })
+
+  it('a math block glued under a citation ends the run rather than joining it', () => {
+    const body = 'text [^1]\n\n[^1]: one\n$$\nx=1\n$$'
+    expect(computeStats(body).lines).toBe(6)
+  })
+
+  it('a citation head inside a table cell is content there', () => {
+    const body = '| a | b |\n| - | - |\n| [^1]: one | x |'
+    expect(computeStats(body).citations).toBe(0)
+  })
+})

@@ -932,6 +932,8 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 
 ### Deviations
 
+- **Gate 1 — the counter's exclusion set was narrower than the editor's.** The correctness review found `computeStats` passing fences alone to the scan, so a table or `$$` block glued under a citation was read as that citation's continuation: the counter invented a section where the editor drew none and dropped the table's lines from all three counts. The counter now takes `docLineScan`'s own assembly — fences, tables, math — so one boundary serves both. Three tests pin it.
+
 - **Task 1 — `contentStart` is absolute, not line-relative.** The Interfaces block described it as line-relative while the same block requires every offset to come out absolute, as the sibling readers do. Absolute is what the consumers want (the hide range, the guard's clamp), so the one clause loses to the rule.
 - **Gate 1 — the Dead Vocabulary line for `footnoteDefinition` expected zero and Task 1 mandates the test that produces one.** The cross-check asserts the scan's boundary against the parser's own spans, which is exactly the citing-the-parser case the Global Constraints admit; the sweep's expectation is corrected to one, named.
 - **Task 3 — five whole-object assertions gained `citations: 0`.** `PageStats` grew the field Task 13 consumes, so the suite's five `toEqual` object literals had to name it; every other pre-existing assertion is byte-identical and no expectation was weakened. Gate 1's additions-only check reads against that.
