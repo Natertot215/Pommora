@@ -8,7 +8,7 @@
 import { EditorView } from '@codemirror/view'
 import { pageEmbedText } from '@shared/connections'
 import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
-import type { GripMenuContext, PickNode } from '@shared/gripMenu'
+import type { GripMenuContext, PickNode, ZoomOption } from '@shared/gripMenu'
 import { useSession } from '../../store'
 import { listKindOf, setHeading, setListKind, type HeadingLevel } from '../input/format'
 import { headingParts } from '../detect'
@@ -75,6 +75,12 @@ export function blockDeleteSpan(
   return { from: r.from, to: r.to + 1 }
 }
 
+/** The ramp as the wire carries it — the menu needs only the label and the factor. */
+const ZOOM_MENU_STEPS: readonly ZoomOption[] = ZOOM_STEPS.map(({ label, factor }) => ({
+  label,
+  factor,
+}))
+
 function contextFor(view: EditorView, doc: string, block: Block): GripMenuContext {
   switch (block.kind) {
     case 'embed': {
@@ -82,14 +88,14 @@ function contextFor(view: EditorView, doc: string, block: Block): GripMenuContex
       return {
         kind: 'embed',
         tree: tree ? embedPickTree(tree, embedExclusions(view.state)) : [],
-        zoomSteps: ZOOM_STEPS.map(({ label, factor }) => ({ label, factor })),
+        zoomSteps: ZOOM_MENU_STEPS,
         zoom: embedZoomAt(view.state, block.from),
       }
     }
     case 'webpage':
       return {
         kind: 'webpage',
-        zoomSteps: ZOOM_STEPS.map(({ label, factor }) => ({ label, factor })),
+        zoomSteps: ZOOM_MENU_STEPS,
         zoom: embedZoomAt(view.state, block.from),
       }
     case 'list':
