@@ -20,17 +20,14 @@ export function CitationsToggle({ scope }: { scope?: SubfieldScope }): React.JSX
   const stats = pageStats(body)
   const fallback = useSession((s) => s.personalization.citationsShown ?? false)
   const override = useSession((s) => (target ? s.citationsShown[target.id] : undefined))
-  const setShown = useSession((s) => s.setCitationsShown)
+  const toggle = useSession((s) => s.toggleCitations)
   if (stats.citations === 0 || !target) return null
   const shown = override ?? fallback
-  // Clearing on a match with the default is what lets a later change to that default reach a page
-  // someone once toggled — a row written to the value it already follows would pin it forever.
-  const toggle = (): void => setShown(target.id, !shown === fallback ? null : !shown)
   return (
     <button
       type="button"
       className={`footnotes-toggle ${text.subline.emphasized}`}
-      onClick={toggle}
+      onClick={() => toggle(target.id)}
       onKeyDown={onActivateClick}
       title={citationsLabel(shown)}
     >

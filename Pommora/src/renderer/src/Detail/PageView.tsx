@@ -56,6 +56,7 @@ export function PageView({
   // This page's own footnotes visibility, where someone set one. Undefined means nobody has, and the
   // editor falls back to the nexus-wide default. THE state, read from the slice both controls write.
   const citationsShown = useSession((s) => (pageId ? s.citationsShown[pageId] : undefined))
+  const toggleCitations = useSession((s) => s.toggleCitations)
   useEffect(() => {
     if (!pageId) return
     let live = true
@@ -158,6 +159,7 @@ export function PageView({
               save: (keys) => void window.nexus.folds.set(pageDetail.id, keys),
             }}
             citationsShown={citationsShown}
+            onCitationsToggle={() => pageId && toggleCitations(pageId)}
             embedHeights={{
               load: async () => (await window.nexus.embedHeights.get())[pageDetail.id] ?? {},
               save: (heights) => void window.nexus.embedHeights.set(pageDetail.id, heights),

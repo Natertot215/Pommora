@@ -60,6 +60,13 @@ const CITATIONS_KEY = '\u0000citations'
  *  the heading menu bailing on a line with no heading parts, leaving a press that opens nothing. */
 export const HEADING_FOLD_LINE = 'md-heading-fold'
 
+/** The citations divider — the section's visible boundary and its disclosure at once. It rides the
+ *  rendered anchor line only when that line is blank: a table's last row is replaced by a block
+ *  widget so a line decoration there never draws, a fence's closing line would put the rule inside
+ *  the code, and a paragraph would read as if it headed the footnotes. With no blank line to take
+ *  it the section falls back to its own top edge, and the footer's control remains the way in. */
+const CITE_DIVIDER_LINE = 'md-cite-divider'
+
 /** Which kinds survive a session. The section's disclosure is its own per-page override, so letting
  *  it into the shared fold row would make two writers of one fact. */
 const persisted = (kind: FoldKind): boolean => kind === 'heading'
@@ -381,11 +388,20 @@ const chevronDeco = EditorView.decorations.compute(['doc', foldField], (state) =
   const entries = state.field(foldField)
   const ranges: Range<Decoration>[] = []
   for (const r of regionsOf(state.doc)) {
-    // The chevron is the heading's affordance. The section discloses from the Subfield and its own
-    // divider, so its anchor takes neither the chevron nor the open/closed classes — the closed one
-    // carries a color rule that would tint ordinary prose to the folded-heading control color.
-    if (r.kind !== 'heading') continue
     const closed = entries.some((e) => e.anchor === r.anchor && e.phase !== 'expanding')
+    // The chevron is the heading's affordance. The section discloses from the footer's control and
+    // its own divider, so its anchor takes neither the chevron nor the open/closed classes — the
+    // closed one carries a color rule that would tint ordinary prose to the fold control's color.
+    // The divider stays stamped while hidden so it can fade out rather than vanish between frames.
+    if (r.kind !== 'heading') {
+      if (state.doc.lineAt(r.anchorLine).text.trim() !== '') continue
+      ranges.push(
+        Decoration.line({
+          class: closed ? `${CITE_DIVIDER_LINE} md-cite-divider-off` : CITE_DIVIDER_LINE,
+        }).range(r.anchorLine),
+      )
+      continue
+    }
     ranges.push(
       Decoration.line({
         class: `${HEADING_FOLD_LINE} ${closed ? 'md-foldable md-fold-closed' : 'md-foldable md-fold-open'}`,
@@ -449,8 +465,13 @@ export function applySavedFolds(view: EditorView, keys: string[]): void {
   if (effects.length) view.dispatch({ effects, annotations: initialFoldAnnotation.of(true) })
 }
 
-/** Heading folding with the sidebar's Reveal motion; folded sections persist via `onFoldsChange`. */
-export function markdownFolding(onFoldsChange: (keys: string[]) => void): Extension {
+/** Heading folding with the sidebar's Reveal motion; folded sections persist via `onFoldsChange`.
+ *  The citations divider reports its press through `onCitationsToggle` rather than folding itself:
+ *  the section's state is the page's own visibility, and the fold follows that one writer. */
+export function markdownFolding(
+  onFoldsChange: (keys: string[]) => void,
+  onCitationsToggle: () => void,
+): Extension {
   const persist = EditorView.updateListener.of((u: ViewUpdate) => {
     const changed = u.transactions.some(
       (tr) =>
@@ -478,5 +499,16 @@ export function markdownFolding(onFoldsChange: (keys: string[]) => void): Extens
         view.dispatch({ effects: dropEffect.of(block.from) })
     },
   })
-  return [foldField, chevronDeco, headingDrag, persist]
+  // A press, not a click: the divider sits on a text line, and letting the caret seat there first
+  // would put a blinking cursor on the row the press is meant to act on.
+  const dividerPress = EditorView.domEventHandlers({
+    mousedown(e) {
+      if (e.button !== 0) return false
+      if (!(e.target as HTMLElement).closest?.(`.cm-line.${CITE_DIVIDER_LINE}`)) return false
+      e.preventDefault()
+      onCitationsToggle()
+      return true
+    },
+  })
+  return [foldField, chevronDeco, headingDrag, dividerPress, persist]
 }

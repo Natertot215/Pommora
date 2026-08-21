@@ -563,12 +563,12 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 **Failure half:** a document with no citations → no divider. A non-blank anchor line — a table's last row, a fence's close, a heading, a paragraph — → the fallback edge, never a rule drawn onto the user's content. The divider clicked while the section is already hidden → cannot occur, since a hidden section draws no divider; the Subfield control is the only way back.
 
 **Steps:**
-- [ ] Emit the divider as a line intent on the **rendered anchor line**, joining the existing inset-rounded-rule seam's selector rather than restating its border — that rule already *is* the shared heading↔body seam as a drawn line. Its margins assume header chrome rather than a `cm-line`, so the geometry is the part that differs. Drawn only while the section is open. **Only when that line is blank** — the ordinary shape, and the one the feature can safely decorate. A table's last row is replaced by a block widget so a line decoration there never renders at all; a fence's closing line would draw the rule inside the code block; a paragraph would read as if it headed the footnotes. When the anchor is not blank the divider falls back to the section's own top edge, and the Subfield control remains the way to hide it either way.
-- [ ] Add the blur-fade on the disclosure duration and the standard easing, both read from the motion tokens.
-- [ ] Wire the click to the same write the Subfield control uses — the override, never the fold directly, so there is one state and one writer.
-- [ ] Use the keyboard activation primitive so Enter and Space reach it, and take no interactive role it cannot honor.
-- [ ] Run the gate — expect green.
-- [ ] Commit: `feat(editor): the citations divider draws and folds the section`
+- [x] Emit the divider as a line intent on the **rendered anchor line**, joining the existing inset-rounded-rule seam's selector rather than restating its border — that rule already *is* the shared heading↔body seam as a drawn line. Its margins assume header chrome rather than a `cm-line`, so the geometry is the part that differs. Drawn only while the section is open. **Only when that line is blank** — the ordinary shape, and the one the feature can safely decorate. A table's last row is replaced by a block widget so a line decoration there never renders at all; a fence's closing line would draw the rule inside the code block; a paragraph would read as if it headed the footnotes. When the anchor is not blank the divider falls back to the section's own top edge, and the Subfield control remains the way to hide it either way.
+- [x] Add the blur-fade on the disclosure duration and the standard easing, both read from the motion tokens.
+- [x] Wire the click to the same write the Subfield control uses — the override, never the fold directly, so there is one state and one writer.
+- [x] Use the keyboard activation primitive so Enter and Space reach it, and take no interactive role it cannot honor.
+- [x] Run the gate — expect green.
+- [x] Commit: `feat(editor): the citations divider draws and folds the section`
 
 #### Gate 3 — one state, two controls, one writer
 - [ ] Gate commands green, exit codes read directly.
@@ -896,7 +896,7 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
   - [x] Task 11 — The section is a fold region, seeded rather than persisted · `a7059714`
   - [x] Task 12 — The chevron class and the heading-gesture class separate · `c1b3415f`
   - [x] Task 13 — The Subfield's Show / Hide control · `f00e15d2`
-  - [ ] Task 14 — The divider draws and folds · `<commit>`
+  - [x] Task 14 — The divider draws and folds · `<T14>`
 - [ ] **Phase 4** — Guards and gestures
   - [ ] Task 15 — The tail guard · `<commit>`
   - [ ] Task 16 — One page-travel mechanism, named for what it does · `<commit>`
@@ -970,6 +970,8 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 - **A drop above the section — closed, not an issue.** `blockMoveChanges` already fences both seams: it emits a blank after every inserted block and heals the hole the cut leaves, with its own comment naming this exact hazard — a glue-adjacent block would otherwise lazily continue a list or merge two paragraphs. A paragraph dropped above the section always lands with a blank after it, so the first citation cannot become its continuation. **The adjacent case the round did not raise is real and already covered:** a block dropped at the document's end lands *after* the section, which is the strand A-5b forbids, and Task 15's rule is "at or after". Task 15 names it as a test case rather than leaving it implied.
 
 ### Deviations
+
+- **Task 14 — the divider is a fold-aware decoration, and takes no keyboard role.** The task placed it as a line intent in `intent.ts`, but an intent is derived from the document scan and cannot know whether the section is folded — and "drawn only while the section is open" requires exactly that. It joins the fold's own line-class pass in `folding.ts` instead, which already holds both the region and the fold state. It also stays stamped while the section is hidden, wearing a faded state class: a removed class has nothing left to transition from, and the blur-fade is the point. The keyboard-activation step does not carry over — the divider decorates a text line inside a contenteditable, so claiming Enter and Space there would take them from typing on that row; the footer's control is the keyboard path.
 
 - **Task 13 — the control rides the reveal band, not the item registry (Nathan's call).** The task placed it among the bar's items so it would reach the Page Preview for free. On seeing it, Nathan moved it into the band above the bar, leading from the breadcrumb's inset and facing the bar's collapse chevron across it. The band's reveal region split in two to carry it: each end has its own, so approaching one control never lights the other, and the zone's dimensions moved to `design-system/revealBar.ts` where both hosts read one definition. The preview keeps it through a `footerLead` slot on `PreviewPane` beside its own chevron — the coverage the registry was chosen for, paid for explicitly.
 
