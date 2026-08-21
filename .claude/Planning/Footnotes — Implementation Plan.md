@@ -975,7 +975,7 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
   - [x] Task 18 — The two construct menus · `18c7cf5f`
   - [x] Task 19 — Range-keyed cascades · `26fbfcb2`
 - [ ] **Phase 5** — Creation and numbering
-  - [ ] Task 20 — The renumbering engine · `<commit>`
+  - [x] Task 20 — The renumbering engine · `6d52c45f`
   - [ ] Task 21 — Insert ▸ Footnote and Paste As ▸ Footnote · `<commit>`
   - [ ] Task 22 — The typed auto-seed · `<commit>`
 - [ ] **Phase 6** — The record
@@ -1041,6 +1041,20 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 - **A drop above the section — closed, not an issue.** `blockMoveChanges` already fences both seams: it emits a blank after every inserted block and heals the hole the cut leaves, with its own comment naming this exact hazard — a glue-adjacent block would otherwise lazily continue a list or merge two paragraphs. A paragraph dropped above the section always lands with a blank after it, so the first citation cannot become its continuation. **The adjacent case the round did not raise is real and already covered:** a block dropped at the document's end lands *after* the section, which is the strand A-5b forbids, and Task 15's rule is "at or after". Task 15 names it as a test case rather than leaving it implied.
 
 ### Deviations
+
+- **Task 20 — the normalization lives in `MarkdownPM/editor/citationEdits.ts`, not `shared/citations.ts`.** The task's Files block names a module that never existed: Task 1's scan landed in `MarkdownPM/detect/index.ts` and Phase 4 put every change-producing citation rule in `citationEdits.ts`, whose own header already reads "what a footnote gesture writes". Nothing about the normalization crosses the process boundary, so `shared/` would have been a third home for one subject.
+
+- **Task 20 — `docLength` is gone from every citation rule; `CitationSlice` carries the text.** The slice and a separately-passed document length are two sources for one fact, and a caller could hand over a length that disagrees with the scan beside it. `CitationSlice` now extends `DocLines`, which every caller already held — `docScan` returns one — and the four rules that took the parameter read `scan.text.length` instead.
+
+- **Task 20 — deletions renumber too, through one composed change set.** The task names Tasks 21 and 22 as `normalize`'s consumers, but R7 and E-3 put marker-menu Delete, atomic marker backspace and citation deletion in the renumbering set as well, and Task 19 built those before the normalization existed. `citationGesture(scan, changes)` composes any gesture's own edit with the renormalization derived from the document that edit leaves behind, and `commitCitation(view, changes, userEvent)` is the one dispatch all six gestures end on. One transaction, so one undo takes the whole act.
+
+- **Task 20 — a duplicate that lost is renumbered alongside the winner it shadows.** Renaming only the winner would silently convert a duplicate the reader wrote into an orphan, which is a change to the document's meaning rather than to its numbering. Both rows move together, the loser stays a loser, and the number it holds is therefore NOT treated as occupied when the renumber looks for a free one — an orphan's is, because an orphan keeps it.
+
+- **Task 20 — the rebuild drops blank lines standing between citation rows.** A blank between two citations belongs to neither of them (the scan's continuation walk gives it to no entry), so a reorder cannot carry it anywhere truthful. The section rebuilds as its rows in order, and the document's own trailing newline is preserved.
+
+- **Task 20 — the fold teardown is justified by an append, not by a reorder.** The task predicts a whole-section replace collapsing the fold entry. Measured against a mounted editor, that is not what happens: a reorder never changes the section's length, so the entry's end maps back to the same offset and the fold survives intact. What does break is a gesture that GROWS the section — the entry's end maps backward and the newly added row renders outside the collapsed widget, in plain sight on a page whose footnotes are meant to be hidden. `withCitationsUnfolded` is kept for that, with the leak pinned as its negative control; it also re-takes the clone the reveal animates from, which a gesture under a hidden section would otherwise leave stale.
+
+- **Task 20 — the tail guard passes a renormalization through untouched, verified rather than assumed.** The guard sits between every dispatch and the document, and a section rewrite reaches the tail by definition. Three cases were driven through a real guarded state — a full reorder, a deletion with its renumber, and a fresh pair appended — and all three land exactly as composed: the head-seat repair only fires on a pure insertion seated on a citation line's first offset, which the differ's trimmed prefix never produces. No self-edit annotation was needed.
 
 - **Task 19 — the branch sits in `onBackspace`, not inside `smartBackspace`.** The task named the callout head's branch as the analogue and put the citation's beside it, then noted in its own steps that the cascade cannot ride the single range that chain returns. Both are true, and only one of them can be built: a branch inside `smartBackspace` could delete the `[^label]:` prefix and nothing else, which is not what C-9 asks for and would leave bare prose inside the section — ending the trailing run and literalizing everything below it. The citation step therefore runs ahead of the marker chain in `onBackspace` and dispatches the whole cascade itself. `lineMarkerRe` was checked and genuinely does not match a citation head, so the task's warning about two transforms claiming one keystroke does not arise.
 
