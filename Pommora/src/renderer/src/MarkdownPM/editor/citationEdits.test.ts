@@ -157,6 +157,16 @@ describe('normalizing the section', () => {
     expect(normalized(doc)).toBe('x[^1]\n\n[^1]: nine\n[^2]: orphan')
   })
 
+  // Two rows renamed onto one label would fuse two independent footnotes into a winner and a
+  // shadow, losing one binding for good — so a number a blocked rename leaves standing blocks the
+  // next row too.
+  it('never renames two rows onto one label', () => {
+    const doc = 'x[^2] y[^3]\n\n[^1]: orphan\n[^2]: two\n[^3]: three'
+    expect(normalized(doc)).toBe('x[^2] y[^3]\n\n[^2]: two\n[^3]: three\n[^1]: orphan')
+    const c = citationScan(splitWithOffsets(normalized(doc)), [])
+    expect(c.entries.map((e) => e.label)).toEqual(['2', '3', '1'])
+  })
+
   it('routes around an orphan squatting on the number it wanted', () => {
     const doc = 'x[^5]\n\n[^1]: orphan\n[^5]: five'
     expect(normalized(doc)).toBe('x[^5]\n\n[^5]: five\n[^1]: orphan')

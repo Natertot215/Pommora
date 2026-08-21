@@ -278,6 +278,8 @@ describe('typing a label seeds its citation', () => {
     expect(doc(view)).toBe('[^b]tail[^2]\n\n[^b]: \n[^2]: one')
   })
 
+  // A typed label is a creation like any other, so the setting governs it too — off, which every
+  // other test here runs under, leaves the caret in the sentence being typed.
   it('with the jump on, the caret lands in the citation it just seeded', async () => {
     settings({})
     const view = await mountEditor({ initialBody: 'see' })

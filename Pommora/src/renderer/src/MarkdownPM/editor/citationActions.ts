@@ -102,6 +102,9 @@ export function insertCitation(view: EditorView, text = ''): boolean {
  *  its citation; typing one that already has a citation adopts it and rewrites nothing, which is the
  *  whole of how a footnote comes to be shared by hand.
  *
+ *  A typed label is a creation like any other, so Jump To Citation On Creation governs it too — the
+ *  setting is the one place a reader decides whether creating a footnote takes them to it.
+ *
  *  It cannot be a link in the typing chain: every transform there returns one range, and this writes
  *  at two disjoint sites. The closing bracket is typed OVER the one `[` auto-paired rather than
  *  doubled beside it. */
