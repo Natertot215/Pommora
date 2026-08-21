@@ -27,7 +27,13 @@ import { BUSY, NO_NEXUS, push, scopeGet, scopeSet, serveBridge } from './ipc'
 import type { Creator, MutateRequest, ContextTarget } from '@shared/mutate'
 import { WINDOW_BG } from '@shared/theme'
 import { dropLiveTree, getLiveTree, refreshTree } from './liveTree'
-import { installWebGuests, setHostZoom, setWebZoomFactor, wheelGuest } from './webGuests'
+import {
+  installWebGuests,
+  setGuestTileZoom,
+  setHostZoom,
+  setWebZoomFactor,
+  wheelGuest,
+} from './webGuests'
 import { confirmBy, confirmMutation, confirmRegistry } from './mutatePatch'
 import { patchContainerFromDisk, patchSettingsFromDisk } from './watchPatch'
 import { runOpenRecord } from './record'
@@ -937,6 +943,13 @@ serveBridge(
     'embedZooms:set': {
       kind: 'envelope',
       fn: scopeSet('embedZooms', isHeightMap, 'Embed scales must map ids to positive numbers.'),
+    },
+    'webGuestZoom:set': {
+      kind: 'envelope',
+      fn: (guestId: number, factor: number) => {
+        setGuestTileZoom(guestId, factor)
+        return ok(null)
+      },
     },
     'activeViews:get': { kind: 'raw', fn: scopeGet<string>('activeView') },
     'activeViews:set': {

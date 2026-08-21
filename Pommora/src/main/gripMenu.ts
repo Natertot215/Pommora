@@ -7,6 +7,7 @@ import {
   HEADING_LEVELS,
   LIST_KIND_LABELS,
   type PickNode,
+  type ZoomOption,
 } from '@shared/gripMenu'
 import { popReturningMenu } from './returningMenu'
 
@@ -36,30 +37,34 @@ export function popGripMenu(
         ? { label: n.label, submenu: n.children.map(source) }
         : { label: n.label, click: pick({ action: 'source', title: n.title ?? n.label }) }
 
+    // An unresolved token has no tile to scale — the arm waits for the claim.
+    const scaleItem = (ctx: {
+      zoomSteps: readonly ZoomOption[]
+      zoom: number | null
+    }): MenuItemConstructorOptions =>
+      ctx.zoom === null
+        ? { label: 'Scale', enabled: false }
+        : {
+            label: 'Scale',
+            submenu: ctx.zoomSteps.map(({ label, factor }) => ({
+              label,
+              type: 'radio' as const,
+              checked: factor === ctx.zoom,
+              click: pick({ action: 'zoom', factor }),
+            })),
+          }
+
     const own = (): MenuItemConstructorOptions[] => {
       switch (ctx.kind) {
-        case 'embed': {
-          const sourceItem: MenuItemConstructorOptions =
+        case 'embed':
+          return [
             ctx.tree.length > 0
               ? { label: 'Page Source', submenu: ctx.tree.map(source) }
-              : { label: 'Page Source', enabled: false }
-          // An unresolved token has no tile to scale — the arm waits for the claim.
-          const scaleItem: MenuItemConstructorOptions =
-            ctx.zoom === null
-              ? { label: 'Scale', enabled: false }
-              : {
-                  label: 'Scale',
-                  submenu: ctx.zoomSteps.map(({ label, factor }) => ({
-                    label,
-                    type: 'radio' as const,
-                    checked: factor === ctx.zoom,
-                    click: pick({ action: 'zoom', factor }),
-                  })),
-                }
-          return [sourceItem, scaleItem]
-        }
+              : { label: 'Page Source', enabled: false },
+            scaleItem(ctx),
+          ]
         case 'webpage':
-          return [{ label: 'Edit Link', click: pick({ action: 'editLink' }) }]
+          return [{ label: 'Edit Link', click: pick({ action: 'editLink' }) }, scaleItem(ctx)]
         case 'list':
           return [
             {

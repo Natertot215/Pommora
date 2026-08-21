@@ -87,7 +87,11 @@ function contextFor(view: EditorView, doc: string, block: Block): GripMenuContex
       }
     }
     case 'webpage':
-      return { kind: 'webpage' }
+      return {
+        kind: 'webpage',
+        zoomSteps: ZOOM_STEPS.map(({ label, factor }) => ({ label, factor })),
+        zoom: embedZoomAt(view.state, block.from),
+      }
     case 'list':
       return { kind: 'list', current: listKindOf(doc, block.from, block.to) }
     default:

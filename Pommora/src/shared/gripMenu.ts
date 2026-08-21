@@ -25,7 +25,7 @@ export interface ZoomOption {
 
 export type GripMenuContext =
   | { kind: 'embed'; tree: PickNode[]; zoomSteps: readonly ZoomOption[]; zoom: number | null }
-  | { kind: 'webpage' }
+  | { kind: 'webpage'; zoomSteps: readonly ZoomOption[]; zoom: number | null }
   | { kind: 'list'; current: ListKind | null }
   | { kind: 'heading'; level: number }
   | { kind: 'plain' }
