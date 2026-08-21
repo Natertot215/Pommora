@@ -4,13 +4,7 @@
 import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { openPage, resolveMdTarget, type ConnectionsApi } from '../connections'
-import {
-  type CitationEntry,
-  type MarkerRef,
-  citationFor,
-  isLastReference,
-  lineEndOf,
-} from '../detect'
+import { type MarkerRef, citationFor, lineEndOf } from '../detect'
 import { linkTarget, tokenize } from '../tokens'
 import { docScan, docString, perDoc } from './docCache'
 import { followTarget } from './links'
@@ -40,14 +34,12 @@ export function loneTarget(
   return url ? { kind: 'link', url } : null
 }
 
-/** One marker a click can lead somewhere from, with the citation it binds to. */
+/** One marker a click can lead somewhere from. What it binds to is read back by LABEL on arrival,
+ *  so nothing here has to hold a citation the document may have moved since. */
 interface CiteSpot {
   from: number
   to: number
-  entry: CitationEntry
   marker: MarkerRef
-  /** Whether this is the only marker bound to the citation — the row says what the click will do. */
-  lastReference: boolean
   lone: ReturnType<typeof loneTarget>
 }
 
@@ -69,9 +61,7 @@ const citationTargets = perDoc((doc) => {
     out.push({
       from: m.from,
       to: m.to,
-      entry,
       marker: m,
-      lastReference: isLastReference(scan.citations, m),
       lone: loneTarget(text.slice(entry.contentStart, end)),
     })
   }
@@ -121,11 +111,7 @@ export function citationPointer(getApi: () => ConnectionsApi | undefined): Exten
     dwell: () => null,
     menu: (hit, view) => () =>
       void window.nexus
-        ?.citationMenu?.({
-          subject: 'marker',
-          editable: !view.state.readOnly,
-          lastReference: hit.lastReference,
-        })
+        ?.citationMenu?.({ subject: 'marker', editable: !view.state.readOnly })
         .then((action) => {
           if (action) applyCitationAction(view, action, { kind: 'marker', marker: hit.marker })
         }),

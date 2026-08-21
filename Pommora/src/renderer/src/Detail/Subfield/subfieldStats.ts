@@ -95,18 +95,23 @@ function citationBoundary(d: DocLines, fences: [number, number][]): CitationScan
   return citationScan(d, constructExclusions(d, fences, tableRegions(d)).excluded)
 }
 
-/** One answer per body string. The footer mounts two items on a page — the counts and the footnotes
+/** One answer per body string. A footer mounts two items on a page — the counts and the footnotes
  *  control — and both need the same figures on the same keystroke; deriving them twice would answer
- *  the citations boundary twice on a per-keystroke path. One entry is the whole cache the footer
- *  needs, since both items read the same string within one render. */
-let memoBody: string | null = null
-let memoStats: PageStats | null = null
+ *  the citations boundary twice on a per-keystroke path.
+ *
+ *  It holds a few bodies rather than one because more than one footer can be on screen: the main
+ *  pane's and a floating preview's show different pages, and a single slot would let their renders
+ *  evict each other into recomputing on every call — which is this whole memo's reason for being. */
+const MEMO_MAX = 4
+const memo = new Map<string, PageStats>()
 export function pageStats(body: string): PageStats {
-  if (body !== memoBody || memoStats === null) {
-    memoBody = body
-    memoStats = computeStats(body)
-  }
-  return memoStats
+  const hit = memo.get(body)
+  if (hit) return hit
+  const stats = computeStats(body)
+  memo.set(body, stats)
+  // Insertion-ordered, so the first key is the least recently added.
+  if (memo.size > MEMO_MAX) memo.delete(memo.keys().next().value as string)
+  return stats
 }
 
 export function computeStats(body: string): PageStats {
