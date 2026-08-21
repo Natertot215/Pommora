@@ -557,7 +557,9 @@
 }
 
 /* The one region of a list line that wraps (see the `pre` on .md-li). */
-.mdpm-editor .cm-line.md-li .md-li-text {
+.mdpm-editor .cm-line.md-li .md-li-text,
+.mdpm-editor .cm-line.md-cite .md-cite-text,
+.mdpm-editor .cm-line.md-cite-cont .md-cite-text {
   white-space: break-spaces;
   overflow-wrap: anywhere;
   word-break: normal;
@@ -584,15 +586,37 @@
    under the content rather than under the digits. The ordered marker and the code block's line count
    are the same figure in two zones. */
 .md-ol-marker,
-.md-cb-ln {
+.md-cb-ln,
+.md-cite-num {
   display: inline-block;
   box-sizing: border-box;
   padding-right: var(--list-gap);
   font-variant-numeric: tabular-nums;
 }
-.md-ol-marker {
+.md-ol-marker,
+.md-cite-num {
   min-width: var(--number-zone);
   text-align: right;
+}
+
+/* CITATIONS — the rows of the footnotes section. A row's number is a positional ordinal computed
+   over hidden source, so its glyph shares the numeric-glyph rule with the ordered marker and the
+   code block's line count; it takes the ordered list's own zone so the two columns line up. The
+   `pre` and the content span are the list line's arrangement and are load-bearing for the same
+   reason: the marker zone is full of wrap opportunities that would drop a long word under the
+   number. A dimmed row is a citation nothing binds to — an orphan, or a duplicate that lost. */
+.mdpm-editor .cm-line.md-cite,
+.mdpm-editor .cm-line.md-cite-cont {
+  white-space: pre;
+  color: var(--label-secondary);
+  font-size: 0.75em;
+  padding-left: var(--number-zone);
+}
+.mdpm-editor .cm-line.md-cite {
+  text-indent: calc(-1 * var(--number-zone));
+}
+.mdpm-editor .cm-line.md-cite-dim {
+  opacity: var(--state-inactive);
 }
 
 .mdpm-editor .cm-line.md-li-task {

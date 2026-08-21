@@ -885,7 +885,7 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
   - [x] Task 2 — The scan joins the editor's document derivation · `4bb09d45`
   - [x] Task 3 — Statistics stop counting the section · `8a5aeabd` · gate: `99b5d55e` `b9c95934` `8f6965ee` `645668cb`
 - [ ] **Phase 2** — The section and its markers draw
-  - [ ] Task 4 — The citation row's styling · `<commit>`
+  - [x] Task 4 — The citation row's styling · `<commit>`
   - [ ] Task 5 — Citation lines emit as numbered rows · `<commit>`
   - [ ] Task 6 — The marker draws atomic and positional · `<commit>`
   - [ ] Task 7 — Markers render in resting table cells · `<commit>`
@@ -930,6 +930,8 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 **Interaction pass:** none owed — nothing draws this phase.
 
 ### Rulings
+
+- **08-20-2026, Nathan:** The four hanging-indent rules stay as four. The citation row is written as the fifth copy rather than collapsing them into one parameterized rule — the collapse is not to be re-proposed by a later sweep.
 
 - **08-20-2026, Nathan:** Task 6's marker draws from the scan, not from the token pass — one `WidgetSpec` variant carrying the ordinal, emitted as the existing `widget` intent over the whole `[^label]`. The token spec stays for the resting cell and for code-mask exclusion. The token pass can only class content and hide markers, so it would have drawn the label's own text: `[^7]` reading 7 where R2 and Task 5's Must-agree require 2. **Revisit and flag this to the correctness review at Gate 2** rather than treating it as settled.
 - **08-20-2026, Nathan:** The `^`-leading link-label refusal lands in `shared/links.ts`'s `LINK_LABEL`, not in a counter-local copy. GFM reads `[^1](url)` as a reference plus prose in every consumer, so the counter, the editor's token layer and main's rename cascade all take the same narrowing; a private pattern would have been the hand-rolled parallel C1 exists to catch.
