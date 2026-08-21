@@ -21,6 +21,7 @@ import { useSession } from '../../store'
 export function renderCellContent(
   text: string,
   getConn?: () => ConnectionsApi | undefined,
+  ordinalOf?: (label: string) => number | null,
 ): React.ReactNode {
   // Fast path: no markdown-significant char → no token possible, so skip the mdast parse. Most cells are
   // plain text, and this is the per-cell cost paid when a table scrolls into view.
@@ -82,6 +83,20 @@ export function renderCellContent(
           </span>
         ),
       )
+    } else if (tk.kind === 'citationRef') {
+      // The number is a whole-document fact, so it arrives from the table's own scan read rather
+      // than from the token. Nothing binding the label leaves the syntax exactly as written, which
+      // is what the body does with an unmatched marker too.
+      const n = ordinalOf?.(content) ?? null
+      out.push(
+        n === null ? (
+          text.slice(s, e)
+        ) : (
+          <span key={key++} className="md-cite-ref">
+            {n}
+          </span>
+        ),
+      )
     } else {
       const cls = CONTENT_CLASS[tk.kind]
       out.push(
@@ -113,6 +128,7 @@ const LINK_SELECTOR = `.${MD_LINK_CLASS}, .md-connection-resolved, [data-link-sp
 
 function StaticCellImpl({
   text,
+  ordinalOf,
   connections,
   onActivate,
   onCommit,
@@ -122,6 +138,11 @@ function StaticCellImpl({
   onHoverEnd,
 }: {
   text: string
+  /** The document's footnote numbering, serialized — read by the memo below rather than by the
+   *  render. A word label never changes its text when the numbering moves, so comparing the cell's
+   *  text alone would keep a stale number on screen after an insert above the table renumbered it. */
+  cites?: string
+  ordinalOf?: (label: string) => number | null
   connections?: () => ConnectionsApi | undefined
   onActivate: (coords: { x: number; y: number }) => void
   /** Replace the cell's whole text — how a resting cell performs a link action without becoming an editor. */
@@ -233,7 +254,7 @@ function StaticCellImpl({
         onActivate({ x: e.clientX, y: e.clientY })
       }}
     >
-      {renderCellContent(text, connections)}
+      {renderCellContent(text, connections, ordinalOf)}
     </div>
   )
 }
@@ -331,7 +352,8 @@ function menuTarget(
   }
 }
 
-/** Text is the only prop that changes what a resting cell draws: its handlers close over a fixed grid
- *  position, and the connections getter is read at render time rather than captured. Comparing text alone
- *  is what keeps one cell's keystroke from re-rendering every other cell in a long table. */
-export const StaticCell = memo(StaticCellImpl, (a, b) => a.text === b.text)
+/** Two props change what a resting cell draws: its text, and the document's footnote numbering. Its
+ *  handlers close over a fixed grid position, and the connections getter is read at render time
+ *  rather than captured. Comparing that pair rather than every prop is what keeps one cell's
+ *  keystroke from re-rendering every other cell in a long table. */
+export const StaticCell = memo(StaticCellImpl, (a, b) => a.text === b.text && a.cites === b.cites)

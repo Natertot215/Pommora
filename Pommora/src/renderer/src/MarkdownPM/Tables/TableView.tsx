@@ -11,6 +11,7 @@ import type { TableMenuContext } from '@shared/tableMenu'
 import { CellEditor } from './CellEditor'
 import { StaticCell } from './cellStatic'
 import { cellToDisplay } from './codec'
+import { foldLabel } from '../detect'
 import { clamp } from '@renderer/design-system/clamp'
 import { nextCell, type NavDir } from './navigate'
 import type { ConnectionsApi } from '../connections'
@@ -67,6 +68,7 @@ function slotAt(axis: Axis, geom: Geom, rel: number): number {
 
 export function TableView({
   model,
+  cites,
   headingColumn = false,
   onCellCommit,
   onSettled,
@@ -81,6 +83,9 @@ export function TableView({
   connections,
 }: {
   model: TableModel
+  /** The document's footnote numbering, serialized as `LABEL=n` pairs. A resting cell's marker is
+   *  drawn from this rather than from its own text, which never holds the number. */
+  cites?: string
   headingColumn?: boolean
   onCellCommit: (row: number, col: number, text: string) => void
   /** Fired when the cell editor demotes — the moment the static cells have to draw what was typed. */
@@ -133,6 +138,20 @@ export function TableView({
   // model's identity: a cell keystroke rebuilds the model every character, and re-measuring there is an
   // O(rows) forced layout on the highest-frequency trigger there is. Text that reflows a row still lands —
   // it changes the table's own box, which the observer below catches.
+  // The numbering, read back into a lookup once per change rather than per cell.
+  const ordinalOf = useMemo(() => {
+    const map = new Map(
+      (cites ?? '')
+        .split(';')
+        .filter(Boolean)
+        .map((pair) => pair.split('=') as [string, string]),
+    )
+    return (label: string): number | null => {
+      const n = map.get(foldLabel(label))
+      return n === undefined ? null : Number(n)
+    }
+  }, [cites])
+
   const shape = `${model.rows.length}x${model.columns.map((c) => `${c.align}:${c.dashes}`).join('|')}`
   const measure = useCallback((): void => {
     const table = tableRef.current
@@ -350,6 +369,8 @@ export function TableView({
     return (
       <StaticCell
         text={display}
+        cites={cites}
+        ordinalOf={ordinalOf}
         connections={connections}
         onActivate={(coords) => {
           // Activation swaps the cell into its editor — a pending or open hover card over the

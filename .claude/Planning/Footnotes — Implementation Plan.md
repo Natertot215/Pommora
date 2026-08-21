@@ -888,7 +888,7 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
   - [x] Task 4 — The citation row's styling · `<commit>`
   - [x] Task 5 — Citation lines emit as numbered rows · `<commit>`
   - [x] Task 6 — The marker draws atomic and positional · `<commit>`
-  - [ ] Task 7 — Markers render in resting table cells · `<commit>`
+  - [x] Task 7 — Markers render in resting table cells · `<commit>`
   - [ ] Task 8 — The section is inert to the block layer · `<commit>`
 - [ ] **Phase 3** — Hiding and showing
   - [ ] Task 9 — The visibility override's storage · `<commit>`
@@ -953,6 +953,8 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 - **A drop above the section — closed, not an issue.** `blockMoveChanges` already fences both seams: it emits a blank after every inserted block and heals the hole the cut leaves, with its own comment naming this exact hazard — a glue-adjacent block would otherwise lazily continue a list or merge two paragraphs. A paragraph dropped above the section always lands with a blank after it, so the first citation cannot become its continuation. **The adjacent case the round did not raise is real and already covered:** a block dropped at the document's end lands *after* the section, which is the strand A-5b forbids, and Task 15's rule is "at or after". Task 15 names it as a test case rather than leaving it implied.
 
 ### Deviations
+
+- **Task 7 — the numbering rides the widget as a serialized key, not a scalar ordinal.** A cell can hold several markers, so one number cannot describe it. The key is the document's `LABEL=n` pairs; the widget's equality and the cell memo both compare that one string, and the cell resolves each marker's own label against it. The plan's "one extra scalar compare" holds — it is one string comparison per gate.
 
 - **Task 6 — the marker draws from the scan, not from the token pass** (Nathan's ruling, flagged for the Gate 2 correctness review). The token layer can only class content and hide markers, so the label's own text would have shown: `[^7]` reading 7 where a positional display owes 2. The token spec stays — the resting table cell reads the tokenizer directly and Task 7 needs it — and the number comes from a `citeRef` widget spec carrying the ordinal off Task 1's walk. Atomicity, the caret-reveal opt-out and everything else in the task are as written.
 
