@@ -47,11 +47,12 @@
   `personalization` key — it sits with `excluded_folders` and `profile_image`, which are also
   top-level paths. Consequence: the new Settings row cannot use `writePersonalization`; it needs
   its own read/write path, the way `device` rows go to nexus.db instead.
-- **A-2:** [open] Surfaced at Settings > Files & Links > Default Asset Directory. No
+- **A-2:** [confirmed] Surfaced at Settings > Files & Links > Default Asset Directory. No
   field-with-trailing-affordance component exists. The one working precedent is welded inside
   `TextPicker` (`TextPicker.tsx:52` + `textPicker.css.ts:16`): field chrome on a flex wrapper,
   `focusRing('within')`, a bare `EditableInput` with `boxed={false}`, and a `flex:0 0 auto`
-  trailing node. Hand-rolling a second copy or extracting it to the design system is undecided.
+  trailing node. `--input-field` is a token and `field` an exported style, so composing it is
+  consumption rather than duplication — no design-system extraction is owed.
 - **A-6:** [confirmed] The row's write template is `writeSubfield` / `writeNavViewModes`
   (`settings.ts:84`, `:99`) — top-level keys through `updateSettings`. NOT the `device` row, which
   persists to `nexus.db`. `device` is the precedent for the ROW SHAPE alone (the one arm not keyed
@@ -131,8 +132,9 @@
 
 - **F-1:** [confirmed] Every existing stored image path migrates into the configured directory:
   the file is copied out of `.nexus/assets/<id>/` under a real name, and its reference is rewritten
-  to `[[Name.ext]]`. Thumbnails do NOT migrate — they stay pinned to `.nexus/assets`.
-- **F-2:** [open] The current filenames are `banner-<token>.png` and `profile-<token>.png`, which
+  to `[[Name.ext]]`. Thumbnails are not MIGRATED — they are pinned to `.nexus/assets` and belong to no
+  store — but they are swept with everything else when the folder is emptied, and regenerate on use.
+- **F-2:** [confirmed] The current filenames are `banner-<token>.png` and `profile-<token>.png`, which
   are not names anyone would choose. The migration has to decide what each file is CALLED once it
   lands in a folder the user reads.
 - **F-4:** [confirmed] SIX stores, not five. The census adds `file`-type property values —
