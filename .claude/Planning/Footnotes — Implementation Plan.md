@@ -974,7 +974,7 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
   - [x] Task 17 — Marker click — jump, or follow · `678ef515`
   - [x] Task 18 — The two construct menus · `18c7cf5f`
   - [x] Task 19 — Range-keyed cascades · `26fbfcb2`
-- [x] **Phase 5** — Creation and numbering · base `b4629983` · gate: `5f6fda20` `925547dc` `bc0eb6f3`
+- [x] **Phase 5** — Creation and numbering · base `b4629983` · gate: `5f6fda20` `925547dc` `bc0eb6f3` `60c50894`
   - [x] Task 20 — The renumbering engine · `6d52c45f`
   - [x] Task 21 — Insert ▸ Footnote and Paste As ▸ Footnote · `fe4bdc67`
   - [x] Task 22 — The typed auto-seed · `24493ac4`
@@ -1033,6 +1033,12 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 - **C10.** New identifiers are `normalizeCitations`, `citationGesture`, `commitCitation`, `citationRowChanges`, `citationText`, `mintLabel`, `citationSeatAt`, `citationHost`, `seedTypedCitation`, `editAcrossCitations`, `markerEndingAt`, `isInsideInlineCode`, `citeSeat`, and the `'footnote'` paste form. The bans hold: `rg -w "footnote|definition" src` over this phase's added lines returns only the user-facing label **Footnote**, the paste form's own string, and prose inside comments — no identifier.
 
 **Net line delta:** +176 code lines (comments, blanks and tests excluded) across sixteen files, from +239 and −63.
+
+**Breakage sweep.** `citationBreakage.test.tsx` drives the corpus — a heading, two markers, a table holding a third, a wrapping citation, an orphan — through every seat from the line above the section to the document's last offset: Enter, Backspace, Delete and Tab at each, and each of `-`, `>`, `#`, `*`, `1`, `|`, a backtick, `~`, `+`, space, tab and an ordinary letter at each. Roughly fourteen hundred keystroke-and-seat pairs, plus six selection sweeps deleted and typed over, plus seven degenerate documents. The invariant is the corrupted state itself: a `[^label]:` line the scan does not read as a live citation. It never appears.
+
+**A cycle found and cut.** The sweep would not run: the first mount to render a table threw `Cannot access '__vite_ssr_import_13__' before initialization` inside `TableView`. `Tables/TableView` and `editor/pointerPath` both imported `closeActiveHoverCard` from `Embeds/ConnectionHoverCard`, which reaches back into MarkdownPM for the editor's fold and its connections model — a genuine cycle, predating this arc (`6d047973`), which the runtime resolved by leaving one side's bindings uninitialized at first render. The presenter slot moved to `Embeds/HoverCardPresenter.ts`, a leaf that imports one type and nothing at runtime; the card claims it at mount and the two MarkdownPM callers take it from there. Out of this phase's scope and fixed anyway, because it blocked the phase's own verification.
+
+**Interaction pass:** not run against the live app. Nathan's own dev session was up with the fixture page open, and Phase 5 changes the main process (the Insert row), which needs a full restart rather than ⌘R — so confirming it would have meant taking down the session he left running. The eight steps are his to walk; the DOM-level assertions in `citationCreate.test.tsx` and `foldState.test.tsx` stand in for what a screenshot would have shown.
 
 **Correctness review:** one CRITICAL, confirmed red before the fix and pinned after. `normalizeCitations` built its occupied-number set from orphans alone, so a rename blocked by an orphan left its own number standing and the NEXT row was renamed straight onto it — `x[^2] y[^3]` over `[^1]: orphan / [^2]: two / [^3]: three` fused two independent footnotes into `[^2]` and a shadow, losing one binding for good. The set is now grown to a fixed point: a refused rename holds its own number against every later row.
 
