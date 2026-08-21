@@ -11,7 +11,6 @@ import {
   inlineCodeRegex,
   markdownLinkRegex,
   calloutLines,
-  lineInCallout,
   calloutHeadPrefixLen,
   parseListMarkerPrefixed,
   scanFencedCode,
@@ -163,13 +162,6 @@ describe('callout detection', () => {
     expect(info[0]).toBeUndefined()
     expect(info[1]?.first).toBe(true)
     expect(info[2]).toEqual({ first: false, last: true, prefixEnd: '> '.length })
-  })
-  it('lineInCallout reports membership by caret offset', () => {
-    const doc = 'top\n> [!callout] hi\n> more\nplain'
-    expect(lineInCallout(doc, 0)).toBe(false) // "top"
-    expect(lineInCallout(doc, doc.indexOf('hi'))).toBe(true)
-    expect(lineInCallout(doc, doc.indexOf('more'))).toBe(true)
-    expect(lineInCallout(doc, doc.indexOf('plain'))).toBe(false)
   })
   it('calloutHeadPrefixLen measures the full `> [!type] ` head, null on a body/quote line', () => {
     expect(calloutHeadPrefixLen('> [!callout] hi')).toBe('> [!callout] '.length)

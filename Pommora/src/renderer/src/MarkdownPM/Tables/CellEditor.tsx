@@ -6,6 +6,7 @@ import { customCaret } from '../editor/caret'
 import { markdownDecorations } from '../editor/decorations'
 import { cellCitations, citesChanged } from './cellCitations'
 import { autoPair, autoDelete, type Edit } from '../input'
+import { docScan } from '../editor/docCache'
 import { AC_MAX, aliasRows, pageRow } from '../autocomplete'
 import { aliasOnLeave } from '../editor/linkEdit'
 import { linkRest, linkTyping } from '../editor/linkGestures'
@@ -163,7 +164,7 @@ export function CellEditor({
                   const s = view.state.selection.main
                   return applyEdit(
                     view,
-                    autoDelete(view.state.doc.toString(), s.from, s.to),
+                    autoDelete(docScan(view.state.doc), s.from, s.to),
                     'delete',
                   )
                 },
@@ -181,7 +182,7 @@ export function CellEditor({
           // query closes and autocomplete can fire.
           EditorView.inputHandler.of((view, from, to, text) => {
             if (text.length !== 1 || from !== to) return false
-            return applyEdit(view, autoPair(view.state.doc.toString(), from, from, text), 'input')
+            return applyEdit(view, autoPair(docScan(view.state.doc), from, from, text), 'input')
           }),
           EditorView.domEventHandlers({
             blur: () => {

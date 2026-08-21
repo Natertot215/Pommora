@@ -38,6 +38,26 @@ describe('cached assembly ≡ pure derivation', () => {
       expect(seq(assembled), `caret ${sel}`).toEqual(seq(pure))
     }
   })
+
+  // The live build assembles only the viewport's lines. A window must yield exactly what the whole
+  // document yields for the lines it covers — the flags a construct's edge depends on were decided by
+  // the whole-document derivation, so no window may change one.
+  it.each(corpus.map((doc, i) => [i, doc] as const))('windowed, doc %#', (_i, doc) => {
+    const scan = scanDoc(doc)
+    const cached = docLineIntents(scan)
+    const inWindow = (from: number, to: number) => (x: DecoIntent) => {
+      const at = 'from' in x ? x.from : -1
+      return at >= scan.lineStarts[from] && at <= scan.lineStarts[to] + scan.lines[to].length
+    }
+    for (let a = 0; a < scan.lines.length; a++) {
+      for (let b = a; b < scan.lines.length; b++) {
+        const window = { from: scan.lineStarts[a], to: scan.lineStarts[b] }
+        const windowed = assembleLineIntents(scan, cached, NO_CARET, window)
+        const whole = assembleLineIntents(scan, cached, NO_CARET).filter(inWindow(a, b))
+        expect(seq(windowed), `lines ${a}..${b}`).toEqual(seq(whole))
+      }
+    }
+  })
 })
 
 describe('decoration intents', () => {

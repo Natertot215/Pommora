@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { scanDoc } from '../decorations/intent'
 import {
   continueListOnEnter,
   smartBackspace,
@@ -58,7 +59,7 @@ describe('list continuation (Enter)', () => {
 describe('smart backspace (whole marker, all markers)', () => {
   const atContentStart = (doc: string, marker: string): Edit | null => {
     const cs = doc.indexOf(marker) + marker.length
-    return smartBackspace(doc, cs, cs)
+    return smartBackspace(scanDoc(doc), cs, cs)
   }
   it('deletes a checkbox marker, caret to line start', () => {
     const doc = '- [ ] task'
@@ -73,7 +74,7 @@ describe('smart backspace (whole marker, all markers)', () => {
     expect(apply('## x', atContentStart('## x', '## ')!)).toBe('x')
   })
   it('only fires at content-start, not mid-content', () => {
-    expect(smartBackspace('- abc', 4, 4)).toBeNull()
+    expect(smartBackspace(scanDoc('- abc'), 4, 4)).toBeNull()
   })
 })
 
@@ -92,132 +93,134 @@ describe('checkbox canonicalization', () => {
 
 describe('auto-pair + auto-delete', () => {
   it('** completes to **|** (caret between the pairs)', () => {
-    const e = autoPair('*', 1, 1, '*')! // existing *, typing the 2nd *
+    const e = autoPair(scanDoc('*'), 1, 1, '*')! // existing *, typing the 2nd *
     expect(apply('*', e)).toBe('****') // ** open + ** close
     expect(e.selection).toBe(2) // caret between → **|**
   })
   it('single [ pairs at line start, not after a word char', () => {
-    expect(autoPair('', 0, 0, '[')).not.toBeNull()
-    expect(autoPair('-', 1, 1, '[')).toBeNull() // -[ flows for checkbox shorthand
+    expect(autoPair(scanDoc(''), 0, 0, '[')).not.toBeNull()
+    expect(autoPair(scanDoc('-'), 1, 1, '[')).toBeNull() // -[ flows for checkbox shorthand
   })
   it('backspace inside an empty pair deletes both halves', () => {
-    const e = autoDelete('[]', 1, 1)!
+    const e = autoDelete(scanDoc('[]'), 1, 1)!
     expect(apply('[]', e)).toBe('')
   })
   it('{ is removed from the auto-pair system — no pairing, no paired-delete', () => {
-    expect(autoPair('', 0, 0, '{')).toBeNull()
-    expect(autoDelete('{}', 1, 1)).toBeNull()
+    expect(autoPair(scanDoc(''), 0, 0, '{')).toBeNull()
+    expect(autoDelete(scanDoc('{}'), 1, 1)).toBeNull()
   })
   it('[[ collapses the existing closer instead of stacking a stray ]', () => {
     // doc is "[]" with caret after the first "[" (the first [ already auto-paired)
-    const e = autoPair('[]', 1, 1, '[')!
+    const e = autoPair(scanDoc('[]'), 1, 1, '[')!
     expect(apply('[]', e)).toBe('[[]]') // not "[[]]]"
     expect(e.selection).toBe(2)
   })
   it('(( collapses the existing closer', () => {
-    const e = autoPair('()', 1, 1, '(')!
+    const e = autoPair(scanDoc('()'), 1, 1, '(')!
     expect(apply('()', e)).toBe('(())')
     expect(e.selection).toBe(2)
   })
   it('quotes pair at line start / after whitespace', () => {
-    expect(autoPair('', 0, 0, '"')).not.toBeNull()
-    expect(autoPair('say ', 4, 4, "'")).not.toBeNull()
+    expect(autoPair(scanDoc(''), 0, 0, '"')).not.toBeNull()
+    expect(autoPair(scanDoc('say '), 4, 4, "'")).not.toBeNull()
   })
   it('a quote right after a word char stays literal (apostrophes / units)', () => {
-    expect(autoPair('don', 3, 3, "'")).toBeNull() // don|'t
-    expect(autoPair('5', 1, 1, '"')).toBeNull() // 5"
+    expect(autoPair(scanDoc('don'), 3, 3, "'")).toBeNull() // don|'t
+    expect(autoPair(scanDoc('5'), 1, 1, '"')).toBeNull() // 5"
   })
   it('typing a quote over its own closer steps past it (no stray)', () => {
-    const e = autoPair("''", 1, 1, "'")! // '|' , type ' to close
+    const e = autoPair(scanDoc("''"), 1, 1, "'")! // '|' , type ' to close
     expect(e.insert).toBe('')
     expect(e.selection).toBe(2)
   })
   it('backspace inside an empty quote pair deletes both halves', () => {
-    expect(apply('""', autoDelete('""', 1, 1)!)).toBe('')
-    expect(apply("''", autoDelete("''", 1, 1)!)).toBe('')
+    expect(apply('""', autoDelete(scanDoc('""'), 1, 1)!)).toBe('')
+    expect(apply("''", autoDelete(scanDoc("''"), 1, 1)!)).toBe('')
   })
   it('single emphasis * / _ / ` pair when not after a word char', () => {
-    expect(apply('', autoPair('', 0, 0, '*')!)).toBe('**') // *|*
-    expect(autoPair('say ', 4, 4, '_')).not.toBeNull()
-    expect(autoPair('', 0, 0, '`')).not.toBeNull()
+    expect(apply('', autoPair(scanDoc(''), 0, 0, '*')!)).toBe('**') // *|*
+    expect(autoPair(scanDoc('say '), 4, 4, '_')).not.toBeNull()
+    expect(autoPair(scanDoc(''), 0, 0, '`')).not.toBeNull()
   })
   it('emphasis stays literal after a word char (2 * 3, snake_case)', () => {
-    expect(autoPair('2 ', 2, 2, '*')).not.toBeNull() // after space → pairs
-    expect(autoPair('x', 1, 1, '*')).toBeNull() // x* → literal
-    expect(autoPair('foo', 3, 3, '_')).toBeNull() // foo_bar → literal
+    expect(autoPair(scanDoc('2 '), 2, 2, '*')).not.toBeNull() // after space → pairs
+    expect(autoPair(scanDoc('x'), 1, 1, '*')).toBeNull() // x* → literal
+    expect(autoPair(scanDoc('foo'), 3, 3, '_')).toBeNull() // foo_bar → literal
   })
   it('the second * still promotes the pair to bold (**|**)', () => {
-    const e = autoPair('**', 1, 1, '*')! // caret in *|* , type 2nd *
+    const e = autoPair(scanDoc('**'), 1, 1, '*')! // caret in *|* , type 2nd *
     expect(apply('**', e)).toBe('****')
     expect(e.selection).toBe(2)
   })
   it('backspace inside an empty emphasis pair deletes both halves', () => {
-    expect(apply('**', autoDelete('**', 1, 1)!)).toBe('')
-    expect(apply('``', autoDelete('``', 1, 1)!)).toBe('')
+    expect(apply('**', autoDelete(scanDoc('**'), 1, 1)!)).toBe('')
+    expect(apply('``', autoDelete(scanDoc('``'), 1, 1)!)).toBe('')
   })
 })
 
 describe('close construct on Enter', () => {
   it('jumps past a single empty closer', () => {
-    const e = closeConstructOnEnter('[]', 1, 1)!
+    const e = closeConstructOnEnter(scanDoc('[]'), 1, 1)!
     expect(e.selection).toBe(2)
     expect(e.insert).toBe('')
   })
   it('double-jumps an empty [[ | ]]', () => {
-    expect(closeConstructOnEnter('[[]]', 2, 2)!.selection).toBe(4)
+    expect(closeConstructOnEnter(scanDoc('[[]]'), 2, 2)!.selection).toBe(4)
   })
   it('closes a connection with content: [[word|]] → past ]]', () => {
-    expect(closeConstructOnEnter('[[word]]', 6, 6)!.selection).toBe(8)
+    expect(closeConstructOnEnter(scanDoc('[[word]]'), 6, 6)!.selection).toBe(8)
   })
   it('closes a quote / emphasis with content (caret before the closer)', () => {
-    expect(closeConstructOnEnter('"hi"', 3, 3)!.selection).toBe(4) // "hi|" → past "
-    expect(closeConstructOnEnter('*hi*', 3, 3)!.selection).toBe(4) // *hi|* → past *
-    expect(closeConstructOnEnter('**hi**', 4, 4)!.selection).toBe(6) // **hi|** → past **
+    expect(closeConstructOnEnter(scanDoc('"hi"'), 3, 3)!.selection).toBe(4) // "hi|" → past "
+    expect(closeConstructOnEnter(scanDoc('*hi*'), 3, 3)!.selection).toBe(4) // *hi|* → past *
+    expect(closeConstructOnEnter(scanDoc('**hi**'), 4, 4)!.selection).toBe(6) // **hi|** → past **
   })
   it('does nothing when the char ahead is not a matching closer', () => {
-    expect(closeConstructOnEnter('hello)', 5, 5)).toBeNull() // a stray ) with no ( before
-    expect(closeConstructOnEnter('plain', 5, 5)).toBeNull()
+    expect(closeConstructOnEnter(scanDoc('hello)'), 5, 5)).toBeNull() // a stray ) with no ( before
+    expect(closeConstructOnEnter(scanDoc('plain'), 5, 5)).toBeNull()
   })
   it('does NOT close a new pair following an already-closed one (parity, not presence)', () => {
-    expect(closeConstructOnEnter('**a****b**', 5, 5)).toBeNull() // caret between two complete **…** pairs
-    expect(closeConstructOnEnter('"a""b"', 3, 3)).toBeNull() // caret between two complete "…" pairs
+    expect(closeConstructOnEnter(scanDoc('**a****b**'), 5, 5)).toBeNull() // caret between two complete **…** pairs
+    expect(closeConstructOnEnter(scanDoc('"a""b"'), 3, 3)).toBeNull() // caret between two complete "…" pairs
   })
 })
 
 describe('Shift+Enter closes the construct first, then breaks the line', () => {
   it('closes then newlines: "hi|" → "hi"\\n|', () => {
-    const e = closeConstructOnShiftEnter('"hi"', 3, 3)!
+    const e = closeConstructOnShiftEnter(scanDoc('"hi"'), 3, 3)!
     expect(apply('"hi"', e)).toBe('"hi"\n') // closer preserved, newline after it
   })
   it('connection: [[word|]] → [[word]]\\n|', () => {
-    expect(apply('[[word]]', closeConstructOnShiftEnter('[[word]]', 6, 6)!)).toBe('[[word]]\n')
+    expect(apply('[[word]]', closeConstructOnShiftEnter(scanDoc('[[word]]'), 6, 6)!)).toBe(
+      '[[word]]\n',
+    )
   })
   it('is null outside any construct (falls back to a plain break)', () => {
-    expect(closeConstructOnShiftEnter('plain', 5, 5)).toBeNull()
+    expect(closeConstructOnShiftEnter(scanDoc('plain'), 5, 5)).toBeNull()
   })
 })
 
 describe('dash + arrow auto-format', () => {
   it('-- then a letter → em-dash', () => {
     const doc = '--'
-    const e = dashArrow(`${doc}`, 2, 2, 'a')!
+    const e = dashArrow(scanDoc(doc), 2, 2, 'a')!
     expect(apply('--', e)).toBe('—a')
   })
   it('preserves --- (HR)', () => {
-    expect(dashArrow('--', 2, 2, '-')).toBeNull() // typing the 3rd dash
+    expect(dashArrow(scanDoc('--'), 2, 2, '-')).toBeNull() // typing the 3rd dash
   })
   it('-> → → and <- → ←', () => {
-    expect(apply('-', dashArrow('-', 1, 1, '>')!)).toBe('→')
-    expect(apply('<', dashArrow('<', 1, 1, '-')!)).toBe('←')
+    expect(apply('-', dashArrow(scanDoc('-'), 1, 1, '>')!)).toBe('→')
+    expect(apply('<', dashArrow(scanDoc('<'), 1, 1, '-')!)).toBe('←')
   })
   it('<-> → ↔ (two-step chain)', () => {
-    const afterBackArrow = apply('<', dashArrow('<', 1, 1, '-')!)
+    const afterBackArrow = apply('<', dashArrow(scanDoc('<'), 1, 1, '-')!)
     expect(afterBackArrow).toBe('←')
-    expect(apply(afterBackArrow, dashArrow(afterBackArrow, 1, 1, '>')!)).toBe('↔')
+    expect(apply(afterBackArrow, dashArrow(scanDoc(afterBackArrow), 1, 1, '>')!)).toBe('↔')
   })
   it('spaced " - " second space → en-dash', () => {
     const doc = 'a -'
-    expect(apply(doc, dashArrow(doc, 3, 3, ' ')!)).toBe('a – ')
+    expect(apply(doc, dashArrow(scanDoc(doc), 3, 3, ' ')!)).toBe('a – ')
   })
 })
 
@@ -244,15 +247,19 @@ describe('tab indent (list nesting)', () => {
 describe('blockquote continuation (Enter)', () => {
   it('continues a quote with the same prefix', () => {
     const doc = '> quote'
-    expect(apply(doc, continueBlockquoteOnEnter(doc, doc.length, doc.length)!)).toBe('> quote\n> ')
+    expect(apply(doc, continueBlockquoteOnEnter(scanDoc(doc), doc.length, doc.length)!)).toBe(
+      '> quote\n> ',
+    )
   })
   it('preserves nesting depth', () => {
     const doc = '>> deep'
-    expect(apply(doc, continueBlockquoteOnEnter(doc, doc.length, doc.length)!)).toBe('>> deep\n>> ')
+    expect(apply(doc, continueBlockquoteOnEnter(scanDoc(doc), doc.length, doc.length)!)).toBe(
+      '>> deep\n>> ',
+    )
   })
   it('falls through when the caret is in the marker, or on a non-quote line', () => {
-    expect(continueBlockquoteOnEnter('> q', 1, 1)).toBeNull()
-    expect(continueBlockquoteOnEnter('plain', 5, 5)).toBeNull()
+    expect(continueBlockquoteOnEnter(scanDoc('> q'), 1, 1)).toBeNull()
+    expect(continueBlockquoteOnEnter(scanDoc('plain'), 5, 5)).toBeNull()
   })
 })
 
@@ -285,33 +292,35 @@ describe('callout shorthand (||)', () => {
 describe('dash auto-format is prefix-aware', () => {
   it('does NOT convert a `- ` bullet into an en-dash inside a quote/callout', () => {
     const doc = '> -' // about to type the space after the bullet dash
-    expect(dashArrow(doc, 3, 3, ' ')).toBeNull()
+    expect(dashArrow(scanDoc(doc), 3, 3, ' ')).toBeNull()
   })
   it('still converts a real ` - ` range inside a callout (prose before the dash)', () => {
     const doc = '> [!callout] Mon -'
-    expect(apply(doc, dashArrow(doc, doc.length, doc.length, ' ')!)).toBe('> [!callout] Mon – ')
+    expect(apply(doc, dashArrow(scanDoc(doc), doc.length, doc.length, ' ')!)).toBe(
+      '> [!callout] Mon – ',
+    )
   })
 })
 
 describe('shift+enter', () => {
   it('exits with a plain newline outside a callout', () => {
-    expect(shiftEnterEdit('hello', 5, 5).insert).toBe('\n')
+    expect(shiftEnterEdit(scanDoc('hello'), 5, 5).insert).toBe('\n')
   })
   it('stays in the box (continues the `>` prefix) inside a callout', () => {
     const doc = '> [!callout] hi'
-    expect(shiftEnterEdit(doc, doc.length, doc.length).insert).toBe('\n> ')
+    expect(shiftEnterEdit(scanDoc(doc), doc.length, doc.length).insert).toBe('\n> ')
   })
   it('with a selection inside a callout still keeps the box prefix (no run-splitting plain newline)', () => {
     const doc = '> [!callout] head\n> abcXYZdef'
     const a = doc.indexOf('XYZ')
     const e = a + 3
-    expect(apply(doc, shiftEnterEdit(doc, a, e))).toBe('> [!callout] head\n> abc\n> def')
+    expect(apply(doc, shiftEnterEdit(scanDoc(doc), a, e))).toBe('> [!callout] head\n> abc\n> def')
   })
   it('a selection STRADDLING the box edge falls back to plain newline (no outside text pulled in)', () => {
     const doc = '> [!callout] body here\nplain below line'
     const a = doc.indexOf('body here')
     const e = doc.indexOf('below') // head is in the plain line, outside the callout
-    expect(apply(doc, shiftEnterEdit(doc, a, e))).toBe('> [!callout] \nbelow line') // no `>` on "below line"
+    expect(apply(doc, shiftEnterEdit(scanDoc(doc), a, e))).toBe('> [!callout] \nbelow line') // no `>` on "below line"
   })
 })
 
@@ -336,23 +345,25 @@ describe('nested list behavior inside a callout', () => {
   it('backspace deletes the inner marker (de-lists) but keeps the box', () => {
     const doc = callout('> - x')
     const contentStart = doc.length - 1 // before "x"
-    expect(apply(doc, smartBackspace(doc, contentStart, contentStart)!)).toBe(callout('> x'))
+    expect(apply(doc, smartBackspace(scanDoc(doc), contentStart, contentStart)!)).toBe(
+      callout('> x'),
+    )
   })
   it('backspace at a plain body line-start joins up rather than stripping the `>`', () => {
     const doc = '> [!callout] head\n> body'
     const contentStart = doc.indexOf('body')
-    expect(apply(doc, smartBackspace(doc, contentStart, contentStart)!)).toBe(
+    expect(apply(doc, smartBackspace(scanDoc(doc), contentStart, contentStart)!)).toBe(
       '> [!callout] headbody',
     )
   })
   it('backspace at the head content-start removes the whole callout marker', () => {
     const doc = '> [!callout] head'
     const cs = '> [!callout] '.length
-    expect(apply(doc, smartBackspace(doc, cs, cs)!)).toBe('head')
+    expect(apply(doc, smartBackspace(scanDoc(doc), cs, cs)!)).toBe('head')
   })
   it('backspace from INSIDE the hidden tag also removes the whole callout (no char-by-char corruption)', () => {
     const doc = '> [!callout] head'
-    expect(apply(doc, smartBackspace(doc, 5, 5)!)).toBe('head') // caret mid-tag (after `> [!`)
+    expect(apply(doc, smartBackspace(scanDoc(doc), 5, 5)!)).toBe('head') // caret mid-tag (after `> [!`)
   })
   it('-[]+space canonicalizes to GFM behind the prefix', () => {
     const doc = '> [!callout] head\n> -[]'

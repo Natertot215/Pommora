@@ -1,14 +1,17 @@
 import { isInsideWikilink } from '../parser'
-import { isInsideCode } from '@shared/markdownCode'
 import { aliasSpanAt } from '@shared/connections'
+import { inCalloutAt, inCodeAt, type DocScan } from '../decorations/intent'
 import {
   parseListMarker,
   MAX_NESTING_LEVEL,
   blockquotePrefixRe,
-  lineInCallout,
   calloutHeadPrefixLen,
   isBlockquoteLine,
 } from '../detect'
+
+// A transform reading more than its own line takes the whole-document scan its caller already holds
+// (one per doc version) rather than the document as a string: the string-form code and callout tests
+// re-split and re-pair every fence per call, and a single Enter runs a chain of these.
 
 export interface Edit {
   from: number
@@ -95,11 +98,12 @@ export function continueListOnEnter(doc: string, selStart: number, selEnd: numbe
 }
 
 export function continueBlockquoteOnEnter(
-  doc: string,
+  scan: DocScan,
   selStart: number,
   selEnd: number,
 ): Edit | null {
   if (selStart !== selEnd) return null
+  const doc = scan.text
   const ls = lineStartAt(doc, selStart)
   // Ungated on purpose: continues a `>x` (no-space) line too, which blockPrefix's isBlockquoteLine gate would drop.
   const m = blockquotePrefixRe.exec(doc.slice(ls, lineEndAt(doc, selStart)))
@@ -107,7 +111,7 @@ export function continueBlockquoteOnEnter(
   const lineEnd = lineEndAt(doc, selStart)
   // Enter on an EMPTY quote line exits the quote (the universal convention). Callouts keep continuing —
   // their documented exit is caret placement below the box, and stripping a body `> ` would split it.
-  if (doc.slice(ls + m[0].length, lineEnd).trim() === '' && !lineInCallout(doc, selStart)) {
+  if (doc.slice(ls + m[0].length, lineEnd).trim() === '' && !inCalloutAt(scan, selStart)) {
     return { from: ls, to: lineEnd, insert: '', selection: ls }
   }
   const insert = `\n${m[0].replace(/[ \t]+$/, '')} `
@@ -145,10 +149,11 @@ export function calloutShorthand(
 // Shift+Enter normally exits a construct (plain newline). Inside a callout it instead stays in the box —
 // continuing the `> ` prefix — so multi-line content and lists can be built without escaping; exit is by
 // caret placement on the empty line below.
-export function shiftEnterEdit(doc: string, selStart: number, selEnd: number): Edit {
+export function shiftEnterEdit(scan: DocScan, selStart: number, selEnd: number): Edit {
+  const doc = scan.text
   // A plain `\n` here would drop an un-prefixed line into the run and split the callout. Requires BOTH ends
   // in the callout — a selection straddling the box edge falls back to plain `\n` so outside text isn't pulled in.
-  if (lineInCallout(doc, selStart) && lineInCallout(doc, selEnd)) {
+  if (inCalloutAt(scan, selStart) && inCalloutAt(scan, selEnd)) {
     const ls = lineStartAt(doc, selStart)
     const pfx = (
       blockquotePrefixRe.exec(doc.slice(ls, lineEndAt(doc, selStart)))?.[0] ?? '> '
@@ -190,14 +195,15 @@ export function outdentListOnShiftTab(doc: string, selStart: number, selEnd: num
 // Backspace at a marker's content-start deletes the whole marker in one step (no nibbling `- [ ] ` into broken
 // syntax). Prefix-aware: inside a quote/callout it deletes the INNER marker (stay in the box), joins to the
 // previous box line when there's no inner marker, and removes the whole `> [!type] ` head cleanly.
-export function smartBackspace(doc: string, selStart: number, selEnd: number): Edit | null {
+export function smartBackspace(scan: DocScan, selStart: number, selEnd: number): Edit | null {
   if (selStart !== selEnd) return null
+  const doc = scan.text
   const ls = lineStartAt(doc, selStart)
   const line = doc.slice(ls, lineEndAt(doc, selStart))
 
   // Inside a callout, never strip a lone `>` — that would drop the line out of the box, splitting the
   // callout into a stray quote.
-  if (lineInCallout(doc, selStart)) {
+  if (inCalloutAt(scan, selStart)) {
     const pfx = blockPrefix(line)
     const headLen = calloutHeadPrefixLen(line)
     if (headLen !== null) {
@@ -274,12 +280,13 @@ const GATED_PAIRS = new Set(['"', "'", '*', '_', '`'])
 
 // Single `[` only pairs at line start / after whitespace (so `-[` flows).
 export function autoPair(
-  doc: string,
+  scan: DocScan,
   selStart: number,
   selEnd: number,
   inserted: string,
 ): Edit | null {
   if (selStart !== selEnd) return null
+  const doc = scan.text
   const c = selStart
   const pair = PAIRS[inserted]
   if (!pair) return null
@@ -289,9 +296,7 @@ export function autoPair(
   // exempt because `_` is itself a word char, so without that the type-over paths below would never be
   // reached for `_` and its doubled form could never promote.
   if (doc[c] !== pair.close && isWordCh(doc[c])) return null
-  // Last, not first: this scans the whole document, while everything above is a character lookup. Every
-  // ordinary letter typed in prose leaves through a guard above and never pays for it.
-  if (isInsideCode(c, doc)) return null
+  if (inCodeAt(scan, c)) return null
   const prev = doc[c - 1]
 
   if (pair.multi && prev === inserted) {
@@ -331,8 +336,9 @@ export function autoPair(
   return null
 }
 
-export function autoDelete(doc: string, selStart: number, selEnd: number): Edit | null {
-  if (selStart !== selEnd || selStart === 0 || isInsideCode(selStart, doc)) return null
+export function autoDelete(scan: DocScan, selStart: number, selEnd: number): Edit | null {
+  if (selStart !== selEnd || selStart === 0 || inCodeAt(scan, selStart)) return null
+  const doc = scan.text
   const close = PAIRS[doc[selStart - 1]]?.close
   if (close === undefined || doc[selStart] !== close) return null
   return { from: selStart - 1, to: selStart + 1, insert: '', selection: selStart - 1 }
@@ -358,8 +364,9 @@ const CLOSERS: readonly { close: string; open: string }[] = [
 // returns the offset just past that closer; else null. The shared core of close-on-Enter / -Shift+Enter.
 const isWordCh = (ch: string | undefined): boolean => ch !== undefined && /\w/.test(ch)
 
-function closerEndAt(doc: string, c: number): number | null {
-  if (isInsideCode(c, doc)) return null
+function closerEndAt(scan: DocScan, c: number): number | null {
+  if (inCodeAt(scan, c)) return null
+  const doc = scan.text
   const before = doc.slice(lineStartAt(doc, c), c)
   // A single-char symmetric marker flanked by word chars is prose, not a delimiter — contractions
   // (`don't`) and possessives would otherwise poison the parity and make Enter teleport the caret.
@@ -387,22 +394,26 @@ function closerEndAt(doc: string, c: number): number | null {
 
 // Enter inside an open pair / quote / emphasis / connection closes it — the caret steps past the closer (no
 // newline), including constructs with content (`[[word|]]` → `[[word]]|`).
-export function closeConstructOnEnter(doc: string, selStart: number, selEnd: number): Edit | null {
+export function closeConstructOnEnter(
+  scan: DocScan,
+  selStart: number,
+  selEnd: number,
+): Edit | null {
   if (selStart !== selEnd) return null
-  const end = closerEndAt(doc, selStart)
+  const end = closerEndAt(scan, selStart)
   return end === null ? null : { from: selStart, to: selStart, insert: '', selection: end }
 }
 
 // Shift+Enter inside an open construct closes it FIRST, then breaks the line — so the newline never lands
 // inside the pair. The break reuses shiftEnterEdit (callout-aware) from just past the closer.
 export function closeConstructOnShiftEnter(
-  doc: string,
+  scan: DocScan,
   selStart: number,
   selEnd: number,
 ): Edit | null {
   if (selStart !== selEnd) return null
-  const end = closerEndAt(doc, selStart)
-  return end === null ? null : shiftEnterEdit(doc, end, end)
+  const end = closerEndAt(scan, selStart)
+  return end === null ? null : shiftEnterEdit(scan, end, end)
 }
 
 // The dashes at `c` are link content, not prose — leave them literal. Covers a URL-shaped run (scheme://…)
@@ -419,14 +430,15 @@ const inUrlRun = (doc: string, c: number): boolean =>
 
 // Fires on the NEXT char so collisions resolve first.
 export function dashArrow(
-  doc: string,
+  scan: DocScan,
   selStart: number,
   selEnd: number,
   inserted: string,
 ): Edit | null {
   if (selStart !== selEnd || inserted.length !== 1) return null
+  const doc = scan.text
   const c = selStart
-  if (isInsideCode(c, doc)) return null
+  if (inCodeAt(scan, c)) return null
 
   // em-dash: "--" then a non-dash char (the 3-back check preserves --- HR). Guarded like the en-dash
   // branch below: a `--` inside a [[title]] or a URL is content — converting it silently retargets the

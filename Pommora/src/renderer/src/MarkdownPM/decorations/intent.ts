@@ -1,4 +1,5 @@
 import type { Token, TokenKind } from '../tokens'
+import { codeMaskOf, isInsideInlineCode } from '@shared/markdownCode'
 import {
   isThematicBreakLine,
   isHeadingLine,
@@ -73,13 +74,16 @@ export function scanDoc(text: string): DocScan {
   const d = splitWithOffsets(text)
   const { lines, lineStarts } = d
   const fences = scanFencedCode(lines, lineStarts)
-  const tables = tableRegions(d)
+  // One mask off the pairing already done above — the table and citation scans below both need it,
+  // and each used to re-split and re-pair the whole document to build its own.
+  const inCode = codeMaskOf(lines, lineStarts, (i) => fences[i] !== undefined)
+  const tables = tableRegions(d, inCode)
   return {
     ...d,
     fences,
     callouts: calloutLines(lines, fences),
     tables,
-    ...docLineScan(d, fenceRangesOf(fences), tables),
+    ...docLineScan(d, fenceRangesOf(fences), tables, inCode),
     headings: lines.map(isHeadingLine),
     quotes: lines.map(isBlockquoteLine),
     breaks: lines.map(isThematicBreakLine),
@@ -338,12 +342,12 @@ function lineIntentsInto(
 // run per level with rounded caps only at the run's two ends (mirrors the blockquote bar's first/last). A
 // level-K rail breaks wherever a neighbor's level ≤ K (or the neighbor isn't a list line). railKind tracks
 // the current ancestor's marker type at each level so the rail lands on THAT glyph's center.
-function railIntentsInto(
+function railIntents(
   lineStarts: number[],
   listLevels: number[],
   listKinds: string[],
-  intents: DecoIntent[],
-): void {
+): DecoIntent[][] {
+  const rails: DecoIntent[][] = new Array(listLevels.length)
   const railKind: string[] = []
   for (let i = 0; i < listLevels.length; i++) {
     const level = listLevels[i]
@@ -353,7 +357,8 @@ function railIntentsInto(
     for (let k = 0; k < level; k++) {
       const typeClass = railKind[k]
       if (!typeClass) continue // ancestor isn't a railed type (ordered / arrow / + — deferred)
-      intents.push({
+      rails[i] ??= []
+      rails[i].push({
         kind: 'rail',
         from: lineStarts[i],
         level: k,
@@ -363,13 +368,16 @@ function railIntentsInto(
       })
     }
   }
+  return rails
 }
 
 /** The caret-free per-line intents + rails, cached per doc VERSION (docCache.docLineIntentsOf) — the
  *  caret contributes nothing here, so a caret move re-derives only its own affected lines. */
 export interface CachedLineIntents {
   perLine: DecoIntent[][]
-  rails: DecoIntent[]
+  /** Rails bucketed by the line they anchor to, sparse. Held apart from `perLine` because the caret's
+   *  own line re-derives its intents and a rail folded in there would be dropped with them. */
+  rails: DecoIntent[][]
 }
 
 export const NO_CARET = -1
@@ -387,41 +395,72 @@ export function docLineIntents(scan: DocScan): CachedLineIntents {
       listKinds[i] = railTypeClass(li) ?? '' // "" = a rendered list line, but not a railed type
     }
   }
-  const rails: DecoIntent[] = []
-  railIntentsInto(scan.lineStarts, listLevels, listKinds, rails)
-  return { perLine, rails }
+  return { perLine, rails: railIntents(scan.lineStarts, listLevels, listKinds) }
 }
 
-/** The one line whose intents actually read the caret: the caret's own — every reveal (marker,
- *  heading, hr, and the fence lines' syntax-vs-glyph trade) is line-local. NO_CARET = none. */
-function caretLine(scan: DocScan, selStart: number): number {
-  if (selStart < 0) return NO_CARET
+/** The index of the line holding `pos`. A position on a line's terminating newline belongs to that
+ *  line, which is what puts a caret at end-of-line on the line it appears to sit on. */
+export function lineIndexAt(scan: DocScan, pos: number): number {
   const { lines, lineStarts } = scan
   let lo = 0
   let hi = lines.length - 1
   while (lo < hi) {
     const mid = (lo + hi + 1) >> 1
-    if (lineStarts[mid] <= selStart) lo = mid
+    if (lineStarts[mid] <= pos) lo = mid
     else hi = mid - 1
   }
   return lo
 }
 
-/** The full line+rail intent list for a caret position, assembled from the cached caret-free lines
- *  with only the caret-affected lines re-derived. Rails never read the caret, so the cached set rides
- *  as-is (reveal never changes a line's list level). */
+/** Whether `pos` sits in code — a fenced block, or an inline span on its own line. The scan already
+ *  paired every fence, so only the one line's spans are read; the string form re-splits the document
+ *  and re-pairs from the top, which is what no per-keystroke reader should pay. */
+export function inCodeAt(scan: DocScan, pos: number): boolean {
+  // NO_CARET reaches here as a position; `lineIndexAt` would answer line 0 and read a negative
+  // offset into it, where the string form these replaced returned false.
+  if (pos < 0) return false
+  const i = lineIndexAt(scan, pos)
+  return scan.fences[i] !== undefined || isInsideInlineCode(scan.lines[i], pos - scan.lineStarts[i])
+}
+
+export function inCalloutAt(scan: DocScan, pos: number): boolean {
+  if (pos < 0) return false
+  return scan.callouts[lineIndexAt(scan, pos)] !== undefined
+}
+
+/** The one line whose intents actually read the caret: the caret's own — every reveal (marker,
+ *  heading, hr, and the fence lines' syntax-vs-glyph trade) is line-local. NO_CARET = none. */
+function caretLine(scan: DocScan, selStart: number): number {
+  return selStart < 0 ? NO_CARET : lineIndexAt(scan, selStart)
+}
+
+/** The line+rail intent list for a caret position, assembled from the cached caret-free lines with
+ *  only the caret-affected lines re-derived. Rails never read the caret, so the cached buckets ride
+ *  as-is (reveal never changes a line's list level).
+ *
+ *  `window` limits the assembly to the lines holding those offsets — the viewport, in the live build.
+ *  Only the copy is scoped: every intent was derived against the whole document, so a line's box and
+ *  rail first/last flags are the same answers a full assembly would give, and no margin is owed. */
 export function assembleLineIntents(
   scan: DocScan,
   cached: CachedLineIntents,
   selStart: number,
+  window?: { from: number; to: number },
 ): DecoIntent[] {
   const caret = caretLine(scan, selStart)
+  const first = window ? lineIndexAt(scan, window.from) : 0
+  const last = window ? lineIndexAt(scan, window.to) : scan.lines.length - 1
   const intents: DecoIntent[] = []
-  for (let i = 0; i < scan.lines.length; i++) {
+  for (let i = first; i <= last; i++) {
     if (i === caret) lineIntentsInto(scan, i, selStart, intents)
     else for (const it of cached.perLine[i]) intents.push(it)
   }
-  for (const it of cached.rails) intents.push(it)
+  // Rails follow every line intent, never interleaved: at a shared line start the emission order is
+  // what stacks the line classes, and the whole-document reference emits them in this order.
+  for (let i = first; i <= last; i++) {
+    const rails = cached.rails[i]
+    if (rails) for (const it of rails) intents.push(it)
+  }
   return intents
 }
 
@@ -446,7 +485,8 @@ export function decorationsFor(
       listKinds[i] = railTypeClass(li) ?? ''
     }
   }
-  railIntentsInto(s.lineStarts, listLevels, listKinds, intents)
+  for (const rails of railIntents(s.lineStarts, listLevels, listKinds))
+    if (rails) for (const it of rails) intents.push(it)
   return intents
 }
 
