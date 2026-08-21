@@ -17,7 +17,6 @@ The working checklist for the architecture-audit cleanup — every task verified
 
 - Bundle 6a (the rehome) lands before 6b and 6c — both would otherwise add imports at the address being vacated. 6b is high priority and follows 6a immediately: its wrong-address imports deepen with every session that touches their consumers.
 - Bundle 6c (the view host) lands before any third view renderer is attempted.
-- Bundle 2a lands before 2b — they touch the same scan files, and 2b's risk wants 2a's simplifications already in place.
 - Bundle 5 is best taken immediately before the next store-heavy feature.
 
 ### Decided Rulings
@@ -48,6 +47,7 @@ Stamped 08-21-2026; the tasks below assume them.
 - [x] **Fence pairing runs once per scan.** `codeMaskOf` builds the mask from an already-split, already-paired document; `codeMask(text)` is a thin wrapper on it. `scanDoc` builds one mask off its own pairing and threads it to `tableRegions` and `citationScan`, each of which used to re-split and re-pair the whole document to build its own.
 
 **Landed with:** gates green (3,368 tests); two new pins — the scan-built mask and `inCodeAt` each agree with the string-built mask offset for offset, over the fence corpus.
+**Cost, against the estimate:** Bundles 2a and 2b landed together at `425ac6bd`, **net +79 code lines** where the estimates read −15 and ≈0. Naming a seam costs lines to remove work: `codeMaskOf`, `inCodeAt`, `inCalloutAt`, and `HeadingSrc` are new code whose purpose is deleting repeated passes. Read it as a correction to how this checklist estimates threading work — a bundle that removes duplicated *computation* rather than duplicated *text* will usually grow the files it touches.
 **Retires:** nothing listed — these were unlisted findings.
 
 #### II. ~~Bundle 2b — Viewport-Scoped Decorations~~ · landed 08-21-2026

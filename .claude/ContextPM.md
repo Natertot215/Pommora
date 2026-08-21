@@ -14,7 +14,7 @@ The one construct the Subfield still counts as source is a Markdown table, and t
 Two tracks run in parallel:
 
 - [ ] **The next feature focus** — chosen from §Next-Feature Candidates, or wherever the day points; the footnotes Verification Checklist walk (plan document, eighteen lines) is still owed an eyeball.
-- [ ] The architecture-audit cleanup at [[Codebase-Cleanup-Checklist]] — session bundles carrying the audit's verified findings, the Boring Work items, and the cohesion queue's remainder, each with its own verification and the documentation entries it retires. Bundle 1 landed 08-21; Bundle 2a is next unblocked. The evidence sits in [[Architecture Audit — Full-Codebase Report]].
+- [ ] The architecture-audit cleanup at [[Codebase-Cleanup-Checklist]] — session bundles carrying the audit's verified findings, the Boring Work items, and the cohesion queue's remainder, each with its own verification and the documentation entries it retires. Bundles 1 and 2 landed 08-21; Bundle 3 is next unblocked, with 6a → 6b the high-priority pair after. The evidence sits in [[Architecture Audit — Full-Codebase Report]].
 
 ### Pending Focuses
 
