@@ -215,7 +215,7 @@ const LEAVES = roster([
             kind: 'zoom',
             key: 'embedScale',
             label: 'Embed Scale',
-            hint: "The scale embedded pages and views start at; a block's own Scale compounds it.",
+            hint: "The scale embedded pages and views start at; a block's own toggle compounds it.",
             fallback: EMBED_SCALE_DEFAULT,
           },
         ],
