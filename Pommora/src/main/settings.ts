@@ -35,7 +35,7 @@ export async function updateSettings(
  *  the moments before a walk has installed a tree for this root: launch-restore and adoption. */
 async function liveLeaves(
   root: string,
-): Promise<Pick<SettingsLeaves, 'personalization' | 'labels' | 'excluded'>> {
+): Promise<Pick<SettingsLeaves, 'personalization' | 'labels' | 'excluded' | 'assetDirectory'>> {
   const tree = getLiveTree()
   if (tree?.nexus.rootPath === root) return tree
   const settings = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings))) ?? {}
@@ -54,6 +54,10 @@ export const readNexusLabels = async (root: string): Promise<NexusLabels> =>
 /** The user's `excluded_folders` — a missing or unreadable settings file excludes nothing. */
 export const readExcludedFolders = async (root: string): Promise<string[]> =>
   (await liveLeaves(root)).excluded
+
+/** The nexus's asset root — a missing or unreadable settings file takes the default. */
+export const readAssetDirectory = async (root: string): Promise<string> =>
+  (await liveLeaves(root)).assetDirectory
 
 /** The nexus's default window zoom from `personalization.defaultViewScale` — the factor the window
  *  opens at and ⌘0 resets to, clamped to a usable range; absent/malformed → 1.0. */

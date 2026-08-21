@@ -373,6 +373,10 @@ export interface NexusTree {
   /** The user's `excluded_folders` (`settings.json`) — nexus-relative folder paths the walk,
    *  the watcher, and the content index all step around. */
   excluded: string[]
+  /** The folder holding banners and the profile image (`asset_directory`, `settings.json`) —
+   *  nexus-relative POSIX, defaulting to `.nexus/assets`. Outside the content corpus and the
+   *  tree, and watched regardless of `excluded`. */
+  assetDirectory: string
   /** Every registry definition, in the nexus-wide cosmetic order (order-listed first,
    *  unlisted appended) — reserved ids included; consumers filter. */
   registry: PropertyDefinition[]

@@ -2,7 +2,14 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs'
 import { tmpdir, homedir } from 'node:os'
 import { join } from 'node:path'
-import { readCommands, readNexus, readPersonalization, splitFrontmatter } from './readNexus'
+import {
+  readCommands,
+  readNexus,
+  readPersonalization,
+  readSettingsLeaves,
+  splitFrontmatter,
+} from './readNexus'
+import { ASSETS_DIR_REL } from '@shared/nexusPaths'
 import { DEFAULT_ACCENT, DEFAULT_COMMANDS } from '@shared/types'
 
 const PAGE_A = '01KVGMT8BFG350FZZXAMG1QDRP'
@@ -24,6 +31,40 @@ describe('readCommands', () => {
     const c = readCommands({ 'toggle-ribbon': 42, other: '' })
     expect(c['toggle-ribbon']).toBe(DEFAULT_COMMANDS['toggle-ribbon'])
     expect(c.other).toBeUndefined()
+  })
+})
+
+describe('readSettingsLeaves: asset_directory', () => {
+  const dir = (asset_directory: unknown): string =>
+    readSettingsLeaves({ asset_directory } as never).assetDirectory
+
+  it('reads a well-formed nexus-relative folder, trailing slash normalized off', () => {
+    expect(dir('file-assets')).toBe('file-assets')
+    expect(dir('Media/Attachments')).toBe('Media/Attachments')
+    expect(dir('file-assets/')).toBe('file-assets')
+  })
+  it('falls back to the default when absent, non-string, or emptied', () => {
+    expect(readSettingsLeaves({} as never).assetDirectory).toBe(ASSETS_DIR_REL)
+    expect(dir(42)).toBe(ASSETS_DIR_REL)
+    expect(dir(['file-assets'])).toBe(ASSETS_DIR_REL)
+    expect(dir('')).toBe(ASSETS_DIR_REL)
+    expect(dir('   ')).toBe(ASSETS_DIR_REL)
+  })
+  it('refuses an escaping or absolute path', () => {
+    expect(dir('/file-assets')).toBe(ASSETS_DIR_REL)
+    expect(dir('../file-assets')).toBe(ASSETS_DIR_REL)
+    expect(dir('Media/../../out')).toBe(ASSETS_DIR_REL)
+    expect(dir('Media\\Attachments')).toBe(ASSETS_DIR_REL)
+  })
+  it('refuses a root-wide directory', () => {
+    expect(dir('.')).toBe(ASSETS_DIR_REL)
+    expect(dir('./')).toBe(ASSETS_DIR_REL)
+  })
+  it('refuses the two folders the app owns whole, but not a folder beneath one', () => {
+    expect(dir('.nexus')).toBe(ASSETS_DIR_REL)
+    expect(dir('.trash')).toBe(ASSETS_DIR_REL)
+    expect(dir(ASSETS_DIR_REL)).toBe(ASSETS_DIR_REL)
+    expect(dir('.nexus/attachments')).toBe('.nexus/attachments')
   })
 })
 

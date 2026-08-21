@@ -24,7 +24,7 @@ export const CONTEXTS_REGISTRY_REL = `${NEXUS_DIR}/contexts.json`
 export const CONTEXTS_DIRNAME = 'contexts'
 export const CONTEXTS_DIR_REL = `${NEXUS_DIR}/${CONTEXTS_DIRNAME}`
 
-/** Attachment storage, keyed per asset below it. */
+/** The thumbnail root, and the default value of the user-configurable `asset_directory`. */
 export const ASSETS_DIR_REL = `${NEXUS_DIR}/assets`
 
 /** A nav key names a thumbnail's file, with its colon flipped to a dash — a colon is legal in a key
@@ -32,7 +32,9 @@ export const ASSETS_DIR_REL = `${NEXUS_DIR}/assets`
 export const thumbKey = (navKey: string): string => navKey.replace(':', '-')
 
 /** A nexus's synced thumbnail folder, and one thumbnail inside it. Served to the renderer through
- *  the `nexus-asset://` scheme, so the same string addresses the file and the request for it. */
+ *  the `nexus-asset://` scheme, so the same string addresses the file and the request for it.
+ *  Pinned to `ASSETS_DIR_REL` deliberately: these are Pommora's own derived files, so they stay
+ *  where the app owns them rather than following `asset_directory` into a shared folder. */
 export const thumbsRel = (nexusId: string): string => `${ASSETS_DIR_REL}/${nexusId}/thumbnails`
 export const thumbRel = (nexusId: string, key: string): string => `${thumbsRel(nexusId)}/${key}.jpg`
 

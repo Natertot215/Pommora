@@ -401,6 +401,7 @@ function applySettingsLeaves(root: string, leaves: SettingsLeaves): 'ok' | 'refr
     personalization: leaves.personalization,
     commands: leaves.commands,
     excluded: leaves.excluded,
+    assetDirectory: leaves.assetDirectory,
     nexus: {
       ...t.nexus,
       profileImage: leaves.profileImage,
