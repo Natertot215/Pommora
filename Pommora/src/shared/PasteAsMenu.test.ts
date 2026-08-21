@@ -4,16 +4,42 @@ import { pasteAsRows, pasteAsTarget, pasteAsWrite, type PasteAsForm } from './Pa
 
 const URL = 'https://www.example.com/a/b'
 
-// Off an embed seat unless a test says otherwise: the caret is on a blank line far less often than
-// it isn't, and the rows every other case offers are the ones that don't depend on where it is.
-const labels = (clipboard: string, seat = false): string[] =>
-  pasteAsRows(clipboard, seat).map((r) => r.label)
-const forms = (clipboard: string, seat = false): PasteAsForm[] =>
-  pasteAsRows(clipboard, seat).map((r) => r.form)
+// Off both seats unless a test says otherwise: the rows every other case offers are the ones that
+// don't depend on where the caret is, and holding the seats off keeps them readable on their own.
+const labels = (clipboard: string, seat = false, cite = false): string[] =>
+  pasteAsRows(clipboard, seat, cite).map((r) => r.label)
+const forms = (clipboard: string, seat = false, cite = false): PasteAsForm[] =>
+  pasteAsRows(clipboard, seat, cite).map((r) => r.form)
 
 /** What `form` writes for whatever `clipboard` holds. */
 const written = (clipboard: string, form: PasteAsForm, title?: string): string | undefined =>
   pasteAsWrite(pasteAsTarget(clipboard), form, title)?.text
+
+describe('the footnote form answers to the clipboard alone', () => {
+  it('is offered for a multi-paragraph clipboard, where no other form is', () => {
+    expect(labels('one para\n\ntwo para', true, true)).toEqual(['Footnote'])
+  })
+
+  it('leads the list where the clipboard also names something', () => {
+    expect(labels('[[Alpha]]', false, true)).toEqual(['Footnote', 'Connection', 'Markdown Link'])
+    expect(forms(URL, false, true)[0]).toBe('footnote')
+  })
+
+  it('is not offered off a seat a marker cannot bind from', () => {
+    expect(labels('one para\n\ntwo para', true, false)).toEqual([])
+    expect(labels('[[Alpha]]', false, false)).toEqual(['Connection', 'Markdown Link'])
+  })
+
+  it('is not offered for an empty clipboard', () => {
+    expect(labels('   ', true, true)).toEqual([])
+  })
+
+  // The pair is two disjoint sites, so the single-range writer has nothing to say about it.
+  it('writes nothing through the shared writer', () => {
+    expect(pasteAsWrite(pasteAsTarget(URL), 'footnote')).toBeNull()
+    expect(pasteAsWrite(pasteAsTarget('[[Alpha]]'), 'footnote')).toBeNull()
+  })
+})
 
 describe('what the clipboard offers to become', () => {
   it('offers a bare address every link form, and the address itself', () => {
@@ -33,15 +59,15 @@ describe('what the clipboard offers to become', () => {
   })
 
   it('offers nothing for a clipboard holding neither', () => {
-    expect(pasteAsRows('some ordinary prose', true)).toEqual([])
-    expect(pasteAsRows('', true)).toEqual([])
-    expect(pasteAsRows('   ', true)).toEqual([])
+    expect(pasteAsRows('some ordinary prose', true, false)).toEqual([])
+    expect(pasteAsRows('', true, false)).toEqual([])
+    expect(pasteAsRows('   ', true, false)).toEqual([])
   })
 
   // Every form writes one line; a clipboard carrying more than one is prose, whatever the first
   // line looks like.
   it('offers nothing for more than one line', () => {
-    expect(pasteAsRows(`${URL}\nand more`, true)).toEqual([])
+    expect(pasteAsRows(`${URL}\nand more`, true, false)).toEqual([])
   })
 
   // Both embeds take a line to themselves, so the offer follows the placement: on a blank line each

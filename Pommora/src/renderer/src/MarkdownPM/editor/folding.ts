@@ -459,19 +459,18 @@ export function applyCitationsVisibility(view: EditorView, shown: boolean, anima
     )
 }
 
-/** Run a footnote gesture's dispatch with the section unfolded, and put the fold back after it.
- *  A normalization rewrites the section from its first offset, and a fold entry maps its start
- *  forward and its end backward — so an edit reaching that offset leaves the entry spanning a range
- *  that no longer lines up, and a whole-section replace collapses it entirely. No offset discipline
- *  avoids it, because the edit legitimately owns that offset. The heading drag drops its fold for
- *  the same reason and re-collapses after; this is the same teardown. */
-export function withCitationsUnfolded(view: EditorView, dispatch: () => void): void {
+/** Run a footnote gesture's dispatch with the section unfolded, and settle it back to `shown`
+ *  afterwards. A fold entry maps its start forward and its end backward, so an edit that grows the
+ *  section leaves the new rows standing outside the collapsed widget — the heading drag drops its
+ *  fold for the same reason and re-collapses after. Settling on the page's visibility rather than on
+ *  whatever was folded a moment ago is what also answers for a section that did not exist yet: the
+ *  first footnote written on a page whose footnotes are hidden arrives hidden. */
+export function editAcrossCitations(view: EditorView, shown: boolean, dispatch: () => void): void {
   const r = citationsRegion(view.state.doc)
-  const folded = r !== null && closedAt(view.state.field(foldField), r.anchor)
-  if (r && folded)
+  if (r && closedAt(view.state.field(foldField), r.anchor))
     view.dispatch({ effects: dropEffect.of(r.anchor), annotations: initialFoldAnnotation.of(true) })
   dispatch()
-  if (folded) applyCitationsVisibility(view, false, false)
+  applyCitationsVisibility(view, shown, false)
 }
 
 /** A footnoted document ends AT its footnotes. The editor's generous tail is typing room for a body
