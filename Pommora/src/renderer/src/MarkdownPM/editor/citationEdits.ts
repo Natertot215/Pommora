@@ -119,21 +119,32 @@ export function normalizeCitations(scan: CitationSlice): ChangeSpec[] {
 
   const placed = c.entries.filter((e) => e.ordinal !== null)
   const loose = c.entries.filter((e) => e.ordinal === null)
-  // A number is genuinely occupied only by a row that keeps it. An orphan does; a duplicate that
-  // lost travels with the winner it shares a label with, so its number is being vacated.
-  const seated = new Set(placed.map((e) => foldLabel(e.label)))
+  // A number is genuinely occupied only by a row that KEEPS it. An orphan keeps its own; a duplicate
+  // that lost travels with the winner it shares a label with, so its number is being vacated. And a
+  // rename this pass refuses leaves that row's own number standing, which can occupy the number the
+  // next row wanted — so the set is grown until it stops growing, and no two rows can be renamed
+  // onto one label and silently fused.
+  const shadowed = new Set(placed.map((e) => foldLabel(e.label)))
   const held = new Set(
     loose
-      .filter((e) => !seated.has(foldLabel(e.label)))
+      .filter((e) => !shadowed.has(foldLabel(e.label)))
       .map((e) => e.label)
       .filter(numericLabel),
   )
-
   const renamed = new Map<string, string>()
-  for (const e of placed) {
-    const want = String(e.ordinal)
-    if (!numericLabel(e.label) || e.label === want || held.has(want)) continue
-    renamed.set(foldLabel(e.label), want)
+  for (let settled = false; !settled; ) {
+    settled = true
+    renamed.clear()
+    for (const e of placed) {
+      const want = String(e.ordinal)
+      if (!numericLabel(e.label) || e.label === want) continue
+      if (!held.has(want)) {
+        renamed.set(foldLabel(e.label), want)
+      } else if (!held.has(e.label)) {
+        held.add(e.label)
+        settled = false
+      }
+    }
   }
 
   const row = (e: CitationEntry): string => {
