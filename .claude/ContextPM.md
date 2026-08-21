@@ -2,7 +2,7 @@
 
 ### Current Focus
 
-**Footnotes are built and await a walkthrough.** MarkdownPM reads and writes GFM reference footnotes end to end, and the code is closed: every gate green, a correctness review, a neutral verification, an attack pass and a closing duplication-and-bloat review each answered, five real defects found and pinned, and both flagged decisions ruled on. What has not happened is seeing it run — the interaction passes for Phases 4 through 6 were never taken against the live application, and the Verification Checklist in [[Footnotes — Implementation Plan]] is what closes them.
+**Footnotes are built and have been verified against the running application.** MarkdownPM reads and writes GFM reference footnotes end to end: every gate green, a correctness review, a neutral verification, an attack pass, a closing duplication-and-bloat review and an interaction pass driven against the live nexus each answered, and both flagged decisions ruled on. Every claim the feature makes is stated in [[Footnotes — Implementation Plan]] §Interaction Pass with the one observation that would falsify it, and the result observed. The Verification Checklist in that document is the reader's own walkthrough, and the native right-click menu's pop is the one behavior a driven pass cannot reach. 
 
 Two rulings settled it on 08-21. A change that would strand text after the citations section is **relocated** to the end of the body rather than shaped into continuation form, because the scan refuses any line a block construct starts and a list marker parses at any indent — the only shaping that holds is escaping characters the reader wrote, and a pasted footnote collapses to one paragraph for the same reason. And the setting keeps the name it shipped with, **Show Footnotes By Default**.
 
@@ -10,7 +10,7 @@ The one construct the Subfield still counts as source is a Markdown table, and t
 
 ### Immediate Work
 
-- [ ] Walk the Verification Checklist in [[Footnotes — Implementation Plan]] against a footnoted page.
+-
 - [ ] What is left of the cohesion queue at [[Cohesive-Cleanup]] — the view host under Table and Cards, the drag adapters' remaining frame, Table's column readers, and the derived state held as state. Ten of its items closed; these four did not, and none of them touches MarkdownPM's core. What is structural rather than session-sized sits in §The Boring Work.
 
 ### Pending Focuses
@@ -75,6 +75,7 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 
 ### Known Issues
 
+- [ ] Connection suggestions omit the page the connection is being written into. The `[[` autocomplete drops the host page's own title from its candidates, so a page cannot be pointed at itself from its own body.
 - [ ] A Markdown table's pipes and delimiter row count as prose in the Subfield. The editor replaces a table's source with a widget, so a four-column table over-counts its words by well over half. Every other construct the editor draws differently now reads through the editor's own detectors; a table is the exception, because reading its regions needs a parse per candidate on a path that runs at every edit. It closes for free the day the Subfield can read the editor's cached document scan instead of computing its own.
 - [ ] On menu rows where property values are expected to be positioned horizontally rather than stacked vertically, there isn't currently a constraint on how far indented relative to its properties label itself; this makes multi-value property rows have its values land its left-side padding tight against the property label; its right-side overflow scroll is properly done, however the lack of left-side padding against the value itself makes the menus cramped. Multiple CSS tries have been applied and reverted; a pane-width-relative max-width that these values can take on the left side of its field needs to be determined. 
 - [ ] How MarkdownPMs headings are given their top-bottom padding is still unclear; what's standard paragraph → heading spacing on Obsidian collapses on Pommora where the block above the heading doesn't seem to have any additional padding, or it's at least extremely minimal compared to the padding that headings have below them. 
@@ -83,7 +84,7 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 
 #### PM-111 || Footnotes
 
-MarkdownPM reads and writes GFM reference footnotes: markers in the body, a trailing run of citations at the document's end, plain GFM left on disk. The section's boundary is derived once and read by every layer that needs it, which is what lets a marker draw the number its position earns rather than the label it carries, and lets the counter exclude a section the editor is drawing. The section hides behind a per-page override that the Subfield's control and the divider both write, and every creation and deletion ends on one dispatch that renumbers the labels, reorders the rows and reverts whole on one undo. A transaction-layer guard relocates any change that would leave text standing after the section, that being the one edit which turns every citation on the page back into literal text.
+MarkdownPM reads and writes GFM reference footnotes: markers in the body, a trailing run of citations at the document's end, plain GFM left on disk. The section's boundary is derived once and read by every layer that needs it, which is what lets a marker draw the number its position earns rather than the label it carries, and lets the counter exclude a section the editor is drawing. The section hides behind a per-page override that the Subfield's control and the divider both write, and every creation and deletion ends on one dispatch that renumbers the labels, reorders the rows and reverts whole on one undo. A transaction-layer guard relocates any change that would leave text standing after the section, that being the one edit which turns every citation on the page back into literal text; whitespace alone is refused rather than relocated. The section's disclosure is one page-keyed state that the Subfield's control, the divider, a marker jump, the floating preview and a hover card all resolve and write, so a page draws the same way wherever it is shown.
 
 #### PM-110 || A Link Property Reaches A Page
 

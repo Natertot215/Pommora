@@ -53,11 +53,6 @@ export function PageView({
   // whether it shows is chrome, so it rides the keyed local store beside folds and heading columns.
   const [iconHidden, setIconHidden] = useState(true)
   const pageId = pageDetail?.id
-  // This page's own footnotes visibility, where someone set one. Undefined means nobody has, and the
-  // editor falls back to the nexus-wide default. THE state, read from the slice both controls write.
-  const citationsShown = useSession((s) => (pageId ? s.citationsShown[pageId] : undefined))
-  const toggleCitations = useSession((s) => s.toggleCitations)
-  const setCitationsVisible = useSession((s) => s.setCitationsVisible)
   useEffect(() => {
     if (!pageId) return
     let live = true
@@ -159,9 +154,7 @@ export function PageView({
               load: async () => (await window.nexus.folds.get())[pageDetail.id] ?? [],
               save: (keys) => void window.nexus.folds.set(pageDetail.id, keys),
             }}
-            citationsShown={citationsShown}
-            onCitationsToggle={() => pageId && toggleCitations(pageId)}
-            onCitationsReveal={() => pageId && setCitationsVisible(pageId, true)}
+            pageId={pageId}
             embedHeights={{
               load: async () => (await window.nexus.embedHeights.get())[pageDetail.id] ?? {},
               save: (heights) => void window.nexus.embedHeights.set(pageDetail.id, heights),

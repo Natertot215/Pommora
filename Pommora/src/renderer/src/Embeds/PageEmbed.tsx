@@ -160,6 +160,7 @@ export function PageEmbed({
         zoom={embedZoom(embedScale)}
         edgeFade
         warm={warm}
+        pageId={entry?.id}
         embedAncestors={[...(ancestors ?? []), path]}
       />
     </div>
