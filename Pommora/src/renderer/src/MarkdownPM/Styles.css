@@ -598,11 +598,11 @@
   text-align: right;
 }
 
-/* A body marker: the accent at tint-primary, the same recipe the accent stroke reads. It never
-   reveals its source and never dims with a reveal state, so its color carries no caret-dependent
-   step. `user-select` is inherited rather than set, so a sweep across the line still takes it. */
+/* A body marker wears the accent itself. It never reveals its source and never dims with a reveal
+   state, so its color carries no caret-dependent step. `user-select` is inherited rather than set,
+   so a sweep across the line still takes it. */
 .md-cite-ref {
-  color: color-mix(in srgb, var(--accent) var(--tint-primary), transparent);
+  color: var(--accent);
   font-variant-numeric: tabular-nums;
   cursor: pointer;
 }

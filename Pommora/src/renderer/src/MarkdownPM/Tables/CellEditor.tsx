@@ -4,6 +4,7 @@ import { Annotation, EditorState, Prec } from '@codemirror/state'
 import { defaultKeymap } from '@codemirror/commands'
 import { customCaret } from '../editor/caret'
 import { markdownDecorations } from '../editor/decorations'
+import { cellCitations } from './cellCitations'
 import { autoPair, autoDelete, type Edit } from '../input'
 import { AC_MAX, aliasRows, pageRow } from '../autocomplete'
 import { aliasOnLeave } from '../editor/linkEdit'
@@ -57,6 +58,7 @@ export function CellEditor({
   caretCoords,
   initialSelect,
   connections,
+  ordinalOf,
 }: {
   initial: string
   onCommit: (text: string) => void
@@ -69,6 +71,8 @@ export function CellEditor({
   /** A span to enter the cell with already selected — the link menu's Rename and Edit Link. */
   initialSelect?: [number, number] | null
   connections?: () => ConnectionsApi | undefined
+  /** The document's footnote numbering, which this editor's own one-cell document cannot hold. */
+  ordinalOf?: (label: string) => number | null
 }): React.JSX.Element {
   const host = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
@@ -100,6 +104,8 @@ export function CellEditor({
         doc: initial,
         extensions: [
           markdownDecorations(connections ?? noConn),
+          // A marker's number is a whole-document fact, and this editor's document is one cell.
+          cellCitations(() => ordinalOf),
           // A cell authors aliases like the body does, so it owes the memory the same writes — without
           // this the mode it offers is one it can never contribute to, and an abandoned pipe reaches disk.
           aliasOnLeave(() => connections?.()),
