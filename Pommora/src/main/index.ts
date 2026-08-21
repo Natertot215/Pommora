@@ -946,8 +946,8 @@ serveBridge(
     },
     'webGuestZoom:set': {
       kind: 'envelope',
-      fn: (guestId: number, factor: number) => {
-        setGuestTileZoom(guestId, factor)
+      fn: (guestId: number, factor: number, animate: boolean) => {
+        setGuestTileZoom(guestId, factor, animate)
         return ok(null)
       },
     },
