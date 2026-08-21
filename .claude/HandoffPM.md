@@ -10,7 +10,7 @@
 
 **Footnotes were executed end to end, and the code is closed. What is open is the walkthrough.** All 23 tasks of `.claude/Planning/Footnotes — Implementation Plan.md` landed across six phases, each gate running its simplification alone and first, then the comment pass, then a correctness review; the closeout added a whole-range simplification, a neutral verification of the Delivery Claim and an attack pass. The record is PM-111, and the plan's Implementation Log is the authority on every deviation and in-flight decision.
 
-**Three review rounds found real defects, each confirmed red before its fix.** `normalizeCitations` was renaming two independent footnotes onto one label — an orphan blocking one row's rename left that row's number standing, and the next row was renamed onto it. `onForwardDelete` bailed on any non-empty selection, so sweeping one citation row and pressing Delete removed it with no marker cascade where Backspace over the same range cascaded both. And a citation was seated at the body's last line holding content, which sits *above* the caret on any document ending in a newline — so the first footnote written from the empty last line landed its section before its own marker.
+**Four review rounds found real defects, each confirmed red before its fix.** `normalizeCitations` was renaming two independent footnotes onto one label — an orphan blocking one row's rename left that row's number standing, and the next row was renamed onto it. `onForwardDelete` bailed on any non-empty selection, so sweeping one citation row and pressing Delete removed it with no marker cascade where Backspace over the same range cascaded both. And a citation was seated at the body's last line holding content, which sits *above* the caret on any document ending in a newline — so the first footnote written from the empty last line landed its section before its own marker. The closing review added two more: the tail guard seated the text it rescues at the anchor line's start, which is the end of the body only while that line is blank, so a paste below the section of an externally-authored page landed above the first paragraph; and the seat rule answered for a selection's start where every creation writes the marker at its end, so a sweep out of the body and into the section wrote a marker inside a citation's text.
 
 **A breakage sweep drives every key and twelve construct characters across every seat in and around the section** — roughly fourteen hundred pairs, plus selection sweeps and seven degenerate documents — asserting the corrupted state itself: a `[^label]:` line the scan does not read as a live citation. Building it turned up a pre-existing import cycle between `Embeds/ConnectionHoverCard` and MarkdownPM that made the first mount to render a table throw; the presenter moved to its own leaf.
 
@@ -25,7 +25,7 @@
 - [x] **Nothing strands the section** — the tail guard, proven against the sweep and an attack pass.
 - [x] **The record is written** — the feature's section, PM-111, Context restated, five entries routed to `Editor-Internals.md`.
 - [ ] **Nathan has walked the Verification Checklist** — eighteen lines in the plan document.
-- [ ] **Nathan has ruled on the two flagged decisions** — the relocate rule with the pasted footnote's shaping, which are one ruling; and the setting's name.
+- [x] **Nathan has ruled on the two flagged decisions** — the relocate rule with the pasted footnote's shaping stands as built, and the setting keeps the name it shipped with (08-21).
 
 #### Next Session
 
