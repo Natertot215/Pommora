@@ -37,7 +37,7 @@ One renderer adjudicator decides where every external link opens — editor clic
 
 ### Web Sessions
 
-Every web surface — tiles, the browser, hover cards — shares one session: sign into a site in any of them and every other one is signed in, per machine, surviving restarts (→ [[NavigationPM]] §State Persistence). There is nothing to manage and no settings surface; the session simply remembers. The session wears a cleaned user agent, with a further surgical variant for Google's sign-in host, best-effort by design. Embedded pages scale with the window's zoom times the **Webpage Zoom** preference times the tile's own **Scale** where one is set, stamped from the main process on every navigation; a Scale pick walks the guest's factor along the standard beat from the main process, so a webpage tile scales on the same curve the other tiles do; a load restore lands whole.
+Every web surface — tiles, the browser, hover cards — shares one session: sign into a site in any of them and every other one is signed in, per machine, surviving restarts (→ [[NavigationPM]] §State Persistence). There is nothing to manage and no settings surface; the session simply remembers. The session wears a cleaned user agent, with a further surgical variant for Google's sign-in host, best-effort by design. Embedded pages scale with the window's zoom times the **Webpage Zoom** preference times the tile's own **Scale** where one is set, stamped from the main process on every navigation; a tile's Scale applies in one step rather than animating, since a guest re-zooms whole.
 
 ### Website Hover Previews
 
