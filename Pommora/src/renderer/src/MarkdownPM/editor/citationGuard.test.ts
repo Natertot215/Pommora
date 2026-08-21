@@ -246,3 +246,30 @@ describe('the relocated text lands at the end of the body with no blank line abo
     )
   })
 })
+
+// Starting a list at the foot of the section is a keystroke the run cannot hold. What it must not do
+// is manufacture a line in the body out of the whitespace that broke it.
+describe('whitespace alone is refused rather than rescued', () => {
+  const listStart = `${DOC}\n-`
+
+  it('the space that turns a dash into a list marker leaves the body untouched', () => {
+    const out = type(listStart, listStart.length, ' ')
+    expect(out).toBe(listStart)
+    expect(out.split('\n').some((l) => l !== '' && l.trim() === '')).toBe(false)
+  })
+
+  // Blank lines never end the run, so a whitespace-only paste below the section reaches no repair at
+  // all — it is trailing blanks, which the section already owns.
+  it('and a whitespace-only paste below the section needs no repair', () => {
+    const out = type(DOC, DOC.length, '\n   \n  ')
+    expect(out.startsWith(DOC)).toBe(true)
+    expect(sectionOf(out)).toBe(2)
+  })
+
+  // The control: text that breaks the run still reaches the body, which is the whole rule.
+  it('while text that breaks the run still lands in the body', () => {
+    const out = type(listStart, listStart.length, ' item')
+    expect(out).toContain('item')
+    expect(sectionOf(out)).toBe(2)
+  })
+})
