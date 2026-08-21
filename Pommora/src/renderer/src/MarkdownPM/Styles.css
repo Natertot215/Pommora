@@ -419,7 +419,7 @@
   position: relative;
   /* The height the widget also answers with; content past it rest-scrolls inside. */
   height: var(--tile-default-height);
-  margin: 4px 0;
+  margin: var(--tile-gap) 0;
   cursor: default;
   user-select: none;
   -webkit-user-select: none;

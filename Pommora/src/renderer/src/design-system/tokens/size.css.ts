@@ -101,6 +101,12 @@ export const TILE_MIN_PX = 64
  *  cannot disagree about how tall an unsized tile is. */
 export const TILE_DEFAULT_PX = 320
 
+/** KNOB — the gap a resizable tile floats in, above and below. A margin sits outside the box a block
+ *  widget measures, so the value the widget answers CM6 with has to add it back or the height model
+ *  runs short by the gap for every tile on the page. Read by the CSS that spends it and by the
+ *  widget that answers for it. */
+export const TILE_GAP_PX = 4
+
 /** One token object: `size.icon.control`, `size.control['button-large'].height`, … */
 export const size = {
   icon: iconScale.icon,
