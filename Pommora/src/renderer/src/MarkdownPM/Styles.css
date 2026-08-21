@@ -78,6 +78,7 @@
      so each construct's own type size scales it. */
   --number-zone: 1.3em;
   --cite-divider-blur: 4px; /* KNOB: how softly the section's seam fades out as it closes */
+  --cite-divider-gap: 14px; /* KNOB: the seam's breathing room, the title divider's own */
   /* The drawn caret + I-beam cursor are app-wide — see Carets.css. */
   /* Top reserves the header zone — set live from the header's measured height (index.tsx ResizeObserver).
      Left re-adds the --fold-gutter the editor reclaimed, so text lands on --content-inset and the chevron
@@ -132,7 +133,7 @@
   padding: 6px 0 14px var(--content-inset);
 }
 .mdpm-divider,
-.mdpm-editor .cm-line.md-cite-divider {
+.mdpm-editor .cm-line.md-cite-divider::after {
   /* The shared heading↔body seam, worn as an inset rounded rule rather than a full-bleed border. */
   border-bottom: var(--border-heading);
   border-radius: var(--radius-full);
@@ -146,10 +147,30 @@
    and closing, not as a line appearing between two frames. Stamped while hidden as well, since a
    removed class has nothing left to transition from. */
 .mdpm-editor .cm-line.md-cite-divider {
+  position: relative;
+  padding: var(--cite-divider-gap) 0;
   cursor: pointer;
   transition:
     opacity var(--disclosure) var(--ease-standard),
     filter var(--disclosure) var(--ease-standard);
+}
+.mdpm-editor .cm-content.mdpm-cite-tail {
+  padding-bottom: var(--cite-divider-gap);
+}
+/* Hidden, the seam still answers the pointer: a ghost of itself under the cursor is how someone
+   scrolled to the foot of a page finds the footnotes without knowing to look in the footer. */
+.mdpm-editor .cm-line.md-cite-divider-off:hover {
+  opacity: var(--state-ghost);
+  filter: none;
+}
+/* Drawn as a zero-height rule rather than the line's own border: a full radius on a box with real
+   height curves that border up its sides instead of capping its ends. */
+.mdpm-editor .cm-line.md-cite-divider::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
 }
 .mdpm-editor .cm-line.md-cite-divider-off {
   opacity: 0;

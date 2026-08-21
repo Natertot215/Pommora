@@ -10,7 +10,7 @@ import {
 import { GlassWindow } from '@renderer/design-system/materials'
 import { Icon } from '@renderer/design-system/symbols'
 import { cx } from '@renderer/design-system/cx'
-import { REVEAL_NEAR_H, REVEAL_NEAR_W, leadOrigin } from '@renderer/design-system/revealBar'
+import { useRevealNear } from '@renderer/design-system/revealBar'
 import {
   FloatingResizeCorners,
   useFloatingWindow,
@@ -146,15 +146,12 @@ export function PreviewPane({
   const hasFooter = footer !== undefined && footer !== null && footer !== false
   // Footer collapse is session-only — a floating surface never persists it.
   const [footerOpen, setFooterOpen] = useState(true)
-  const [footerNear, setFooterNear] = useState(false)
-  const [footerNearLead, setFooterNearLead] = useState(false)
-  // Measured lazily and cached: getBoundingClientRect per mousemove forces a layout every pointer
-  // move. Anything that can move/resize the pane drops the cache so the next move re-measures.
-  const paneRect = useRef<DOMRect | null>(null)
-  const leadEdge = useRef(0)
+  const reveal = useRevealNear()
+  // Anything that can move or resize the pane drops the cached geometry so the next move re-measures.
+  const remeasure = reveal.remeasure
   useEffect(() => {
-    paneRect.current = null
-  }, [winStyle, leftOpen, rightOpen, leftW, rightW])
+    remeasure()
+  }, [remeasure, winStyle, leftOpen, rightOpen, leftW, rightW])
 
   // Escape dismisses the LIVE window only — while the exit animation runs, or when a focused
   // surface already handled the press, this stays out of the way.
@@ -207,8 +204,8 @@ export function PreviewPane({
         rightOpen && 'is-side-right-open',
         resizing && 'is-resizing',
         hasFooter && footerOpen && 'is-footer-open',
-        hasFooter && footerNear && 'is-footer-near',
-        hasFooter && footerNearLead && 'is-footer-near-lead',
+        hasFooter && reveal.near && 'is-footer-near',
+        hasFooter && reveal.nearLead && 'is-footer-near-lead',
         closing && 'closing',
       )}
       style={
@@ -222,32 +219,8 @@ export function PreviewPane({
       role="dialog"
       aria-label={ariaLabel}
       onPointerDown={onWindowDown}
-      onMouseMove={
-        hasFooter
-          ? (e) => {
-              if (!paneRect.current) {
-                paneRect.current = e.currentTarget.getBoundingClientRect()
-                leadEdge.current = leadOrigin(
-                  e.currentTarget.querySelector('.footnotes-toggle'),
-                  paneRect.current.left,
-                )
-              }
-              const r = paneRect.current
-              const low = e.clientY > r.bottom - REVEAL_NEAR_H
-              setFooterNear(low && e.clientX > r.right - REVEAL_NEAR_W)
-              setFooterNearLead(low && e.clientX < leadEdge.current + REVEAL_NEAR_W)
-            }
-          : undefined
-      }
-      onMouseLeave={
-        hasFooter
-          ? () => {
-              paneRect.current = null
-              setFooterNear(false)
-              setFooterNearLead(false)
-            }
-          : undefined
-      }
+      onMouseMove={hasFooter ? reveal.onMouseMove : undefined}
+      onMouseLeave={hasFooter ? reveal.onMouseLeave : undefined}
     >
       <div className="ppane-toolbar">
         <div className="ppane-actions ppane-actions-lead">

@@ -22,16 +22,16 @@ export function CitationsToggle({ scope }: { scope?: SubfieldScope }): React.JSX
   const override = useSession((s) => (target ? s.citationsShown[target.id] : undefined))
   const toggle = useSession((s) => s.toggleCitations)
   if (stats.citations === 0 || !target) return null
-  const shown = override ?? fallback
+  const label = citationsLabel(override ?? fallback)
   return (
     <button
       type="button"
       className={`footnotes-toggle ${text.subline.emphasized}`}
       onClick={() => toggle(target.id)}
       onKeyDown={onActivateClick}
-      title={citationsLabel(shown)}
+      title={label}
     >
-      {citationsLabel(shown)}
+      {label}
     </button>
   )
 }
