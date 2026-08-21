@@ -3,7 +3,7 @@
 // stops CM's own motion and deletion but never a programmatic dispatch, which is why this sits at
 // the transaction layer beside the callout guard rather than in a decoration.
 import type { EditorState } from '@codemirror/state'
-import { citationScan, splitWithOffsets } from '../detect'
+import { citationScan, lineEndOf, splitWithOffsets } from '../detect'
 import type { CitationSlice } from './citationEdits'
 import { docScan } from './docCache'
 import type { GuardVerdict } from './calloutGuard'
@@ -52,9 +52,14 @@ export function citationTailVerdict(
     return entry ? { kind: 'rewrite', edits: [{ from, to, insert: inserted }] } : { kind: 'ok' }
 
   // The section could not survive this text where it landed, and moving it past the head does not
-  // save it either. Its text goes to the end of the body instead — the line the divider draws on,
-  // which keeps the blank the section anchors to.
-  const seat = c.anchorLine >= 0 ? lineStarts[c.anchorLine] : 0
+  // save it either. Its text goes to the end of the body instead. Where the anchor line is the blank
+  // the section floats on, that means above the blank, so the gap survives; where the anchor holds
+  // prose — a file authored anywhere that puts its citations straight under the last paragraph — the
+  // body ends at that line's end, and seating text at its start would land it above the paragraph it
+  // was written below.
+  const prose = c.anchorLine >= 0 && lines[c.anchorLine].trim() !== ''
+  const seat =
+    c.anchorLine < 0 ? 0 : prose ? lineEndOf(scan, c.anchorLine) : lineStarts[c.anchorLine]
   const body = inserted.replace(/^\n+|\n+$/g, '')
   if (body === '') return { kind: 'rewrite', edits: [{ from: fromA, to: toA, insert: '' }] }
   // A sweep that began at or above the seat already owns a place in the body for what replaces it,
@@ -67,7 +72,7 @@ export function citationTailVerdict(
     kind: 'rewrite',
     edits: [
       ...(fromA < toA ? [{ from: fromA, to: toA, insert: '' }] : []),
-      { from: seat, to: seat, insert: `${body}\n` },
+      { from: seat, to: seat, insert: prose ? `\n${body}` : `${body}\n` },
     ],
   }
 }

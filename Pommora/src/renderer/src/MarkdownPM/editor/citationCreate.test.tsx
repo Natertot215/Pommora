@@ -191,6 +191,29 @@ describe('a marker is refused where it could not bind', () => {
     expect(citationSeatAt(view.state)).toBe(false)
   })
 
+  // The marker goes after whatever is selected, so the seat rule has to answer for the selection's
+  // END. Asked of its start, a sweep out of the body and into the section reads as a body seat and
+  // writes the marker inside a citation's text — where the scan never looks, so it can never bind.
+  it('under a selection that runs out of the body and into the section', async () => {
+    const body = 'a[^1] b\n\n[^1]: one'
+    const view = await mountEditor({ initialBody: body, citationsShown: true })
+    await act(async () => {
+      view.dispatch({ selection: { anchor: 6, head: body.length - 1 } })
+    })
+    expect(citationSeatAt(view.state)).toBe(false)
+    expect(await insert(view)).toBe(false)
+    expect(doc(view)).toBe(body)
+  })
+
+  it('but a selection lying wholly in the body still is a seat', async () => {
+    const body = 'a[^1] b\n\n[^1]: one'
+    const view = await mountEditor({ initialBody: body, citationsShown: true })
+    await act(async () => {
+      view.dispatch({ selection: { anchor: 0, head: 7 } })
+    })
+    expect(citationSeatAt(view.state)).toBe(true)
+  })
+
   it('but ordinary prose is a seat', async () => {
     const view = await mountEditor({ initialBody: 'ordinary prose' })
     await at(view, 4)
