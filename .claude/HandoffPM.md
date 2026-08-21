@@ -57,7 +57,7 @@
 
 #### Changes
 
-- 65 commits, `71fe5be2^..HEAD`. Net +1,277 code lines across 48 files, comments/blanks/tests excluded, from +1,433 and −156. The plan carries a hash per task and Gates 1–6 each closed with their evidence.
+- 68 commits, `71fe5be2^..HEAD`, six of them the unrelated embed-Scale arc. Net +1,277 code lines across 48 files, comments/blanks/tests excluded, from +1,433 and −156. The plan carries a hash per task and Gates 1–6 each closed with their evidence.
 
 #### Handoff Guidelines
 
