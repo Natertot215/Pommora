@@ -10,7 +10,6 @@ The one construct the Subfield still counts as source is a Markdown table, and t
 
 - [ ] MarkdownPM Footnotes → Plan & Execution. The decision log at [[Footnotes — Decision Log]] is the settled contract, every entry confirmed. Every seam it named is in place, and the editor's cleanup is closed, so nothing blocks it.
 - [ ] What is left of the cohesion queue at [[Cohesive-Cleanup]] — the view host under Table and Cards, the drag adapters' remaining frame, Table's column readers, and the derived state held as state. Ten of its items closed; these four did not, and none of them touches MarkdownPM's core. What is structural rather than session-sized sits in §The Boring Work.
-
 ### Pending Focuses
 
 #### II. Open Against The Web Layer

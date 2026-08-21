@@ -89,6 +89,9 @@ export function readPersonalization(raw: unknown): Personalization {
     v === 'top' || v === 'bottom' ? v : undefined
   const mode = (v: unknown): SidebarMode | undefined =>
     v === 'collections' || v === 'contexts' || v === 'agenda' ? v : undefined
+  // An unwritten key stays unwritten — only a stored number clamps to the ramp.
+  const scale = (v: unknown, fallback: number): number | undefined =>
+    typeof v === 'number' ? coerceScale(v, fallback) : undefined
   const ribbonOrder = Array.isArray(p.ribbonOrder)
     ? p.ribbonOrder.filter((v): v is string => typeof v === 'string' && v.length > 0)
     : []
@@ -141,12 +144,8 @@ export function readPersonalization(raw: unknown): Personalization {
     pasteLinkIntoText: bool(p.pasteLinkIntoText),
     defaultLinkFormat: LINK_DISPLAYS.find((d) => d === p.defaultLinkFormat),
     openLinksInApp: bool(p.openLinksInApp),
-    webZoomFactor:
-      typeof p.webZoomFactor === 'number'
-        ? coerceScale(p.webZoomFactor, WEB_ZOOM_DEFAULT)
-        : undefined,
-    embedScale:
-      typeof p.embedScale === 'number' ? coerceScale(p.embedScale, EMBED_SCALE_DEFAULT) : undefined,
+    webZoomFactor: scale(p.webZoomFactor, WEB_ZOOM_DEFAULT),
+    embedScale: scale(p.embedScale, EMBED_SCALE_DEFAULT),
   }
 }
 

@@ -13,16 +13,15 @@ export interface PickNode {
   children?: PickNode[]
 }
 
-/** What a grip's block offers above Delete: an embed tile re-aims through the pick tree, a webpage
- *  tile re-aims through Edit Link, a list switches its markers, and every other kind offers Delete
- *  alone. A heading chevron is its own surface — Rename, Size (its level), and a Delete that drops
- *  the heading line but keeps its body. */
-/** One Scale step as a menu offers it — the label the row shows and the factor it applies. */
 export interface ZoomOption {
   label: string
   factor: number
 }
 
+/** What a grip's block offers above Delete: an embed tile re-aims through the pick tree, a webpage
+ *  tile re-aims through Edit Link, a list switches its markers, and every other kind offers Delete
+ *  alone. A heading chevron is its own surface — Rename, Size (its level), and a Delete that drops
+ *  the heading line but keeps its body. */
 export type GripMenuContext =
   | { kind: 'embed'; tree: PickNode[]; zoomSteps: readonly ZoomOption[]; zoom: number | null }
   | { kind: 'webpage'; zoomSteps: readonly ZoomOption[]; zoom: number | null }
