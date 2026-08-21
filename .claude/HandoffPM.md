@@ -43,7 +43,7 @@
 
 #### Working Notes
 
-- **`sortedOrGrouped` is true for every view** — `mintNewView` stamps `group: {kind:'structural'}` — so a held `viewOrder` row is the painted order even in "unsorted" structural views. Any structural reorder must maintain that mask beside the canonical write or the file re-ranks under an unchanged screen. Nathan's live DB holds six such rows.
+- **`sortedOrGrouped` is true for every view** — `mintNewView` stamps `group: {kind:'structural'}` — which is why both views suppress a held `viewOrder` mask at the order source when `structuralOrder` holds: structural paints are filesystem order, and a mask interleaving locations dissolves the drag boundary (found live in the Studio flat view, whose 3KB legacy mask let a drag cross locations). The mask stays the sorted/grouped tiebreaker.
 - **The engine's refused-landing preview is the origin slot** — `resolveIndex` returning null re-aims `zid/idx` at the source; on release the origin commit is caught by the painted-order no-op guard, not by the engine.
 - **A journal whose replay trusts the record's before-state needs the `supersedes` arm; one that verifies against current state does not** — that's the whole context/property asymmetry.
 - **`styleFor` is read from the `view` prop by `CardFace`/`CardProperties`, never through `resolveColumns`** — an optimistic style layer must ride the view prop to the card faces; routing it through `columns` paints nothing.
