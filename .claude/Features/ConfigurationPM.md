@@ -43,13 +43,14 @@ The Nexus' primary settings are placed on a floating window summoned from the si
 | Reveal Tab Bar On Hover | `revealTabBarOnHover` | Keeps the tab bar hidden until the pointer nears it. | On · **Off** |
 | Use Native Menus | `nativeMenus` | Draws plain-list menus as system menus. Belongs to the computer rather than the Nexus, so it lives in the device database. | On · **Off** |
 | Show Selection In Pickers As | `pickerSelection` | How every picker marks the row you are on — a filled, outlined row or a trailing checkmark. | **Outlined** · Checked |
+| Embed Scale | `embedScale` | The scale embedded pages and views start at; a block's own Scale compounds it. A second press on the control types any scale within the range. | 50%–150% (**90%**) |
 
 **Webpages**
 
 | Setting | Key | Description | Options |
 | --------------------- | ---------------- | ------------------------------------------------------------------- | ------------------- |
 | Open Links In Pommora | `openLinksInApp` | External links open the floating browser instead of the system one. | On · **Off** |
-| Webpage Zoom | `webZoomFactor` | How embedded webpages scale, relative to the window. A second press on the control types any scale within the range. | 50%–200% (**100%**) |
+| Webpage Zoom | `webZoomFactor` | How embedded webpages scale, relative to the window. A second press on the control types any scale within the range. | 50%–150% (**100%**) |
 
 #### Navigation
 
