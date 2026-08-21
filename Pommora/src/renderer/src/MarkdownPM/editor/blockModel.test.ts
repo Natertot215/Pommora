@@ -328,3 +328,37 @@ describe('embed blocks', () => {
     expect(blockAt(doc, 6)?.kind).toBe('paragraph')
   })
 })
+
+// The citations section owns no block, the way a blank line owns none — no grip on its rows, no drop
+// target inside it, and no absorption into the paragraph above.
+describe('the citations section is inert to the block layer', () => {
+  const doc = 'intro line\n\nbody [^1] text\n\n[^1]: one\ncontinued\n[^2]: two'
+
+  it('resolves no block anywhere inside the section', () => {
+    for (const at of [doc.indexOf('[^1]: one'), doc.indexOf('continued'), doc.indexOf('[^2]: two')])
+      expect(blockAt(doc, at)).toBeNull()
+  })
+
+  it('starts no block on any of its lines', () => {
+    const starts = blockStarts(doc)
+    const firstCitation = doc.indexOf('[^1]: one')
+    expect(starts.every((s) => s.from < firstCitation)).toBe(true)
+  })
+
+  it('leaves the paragraph above it whole, and stops it at the section', () => {
+    const b = blockAt(doc, doc.indexOf('body'))
+    expect(b?.kind).toBe('paragraph')
+    expect(slice(doc, b)).toBe('body [^1] text')
+  })
+
+  it('claims the section even with no blank line between it and the paragraph', () => {
+    const glued = 'body [^1] text\n[^1]: one'
+    const b = blockAt(glued, 0)
+    expect(slice(glued, b)).toBe('body [^1] text')
+  })
+
+  it('resolves nothing at all in a document that is only citations', () => {
+    expect(blockAt('[^1]: one\n[^2]: two', 0)).toBeNull()
+    expect(blockStarts('[^1]: one\n[^2]: two')).toEqual([])
+  })
+})
