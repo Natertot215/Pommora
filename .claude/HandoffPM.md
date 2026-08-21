@@ -1,6 +1,6 @@
 ## Handoff — Pommora
 
-> **User Prompt:** *"I want you to create a framework or prompt to take a look at Pommora's architecture as a whole across all lines of code… I'm really asking for a complete audit."* — then *"Kick off bundle 1… run the cycle… commit final tree before the prompt is given,"* and *"Look at Bundle 2… explain it back to me simply what it is and why,"* closing on *"sure. Then run it with clear verification steps."*
+> **User Prompt:** *"I want you to create a framework or prompt to take a look at Pommora's architecture as a whole across all lines of code… I'm really asking for a complete audit."* — then *"Kick off bundle 1… run the cycle… commit final tree before the prompt is given,"* and *"Look at Bundle 2… explain it back to me simply what it is and why,"* then *"sure. Then run it with clear verification steps,"* closing on *"take a look at bundle 3 and explore what's actually the issue with it… propose the most minimal code-negative fix."*
 
 #### Current Focus
 
@@ -16,6 +16,8 @@
 
 **Bundle 2 landed the same day, at `425ac6bd`.** MarkdownPM's remaining duplicate document reads are gone: the keystroke transforms take the cached scan and answer through the new line-local `inCodeAt` / `inCalloutAt` (`lineInCallout` deleted; `isInsideCode` survives only on the paste path), the heading scan reads that same scan through a structural `HeadingSrc` that `DocScan` satisfies, and `codeMaskOf` lets one scan thread a single code mask to the table and citation scans that each used to re-pair the whole document. Line chrome now assembles only the viewport's lines. **The specification changed before it was built:** the checklist's original 2b called for a ±1-line margin, which the code showed to be unnecessary — every `first`/`last` flag is decided by the whole-document derivation before the viewport is consulted, so a window only ever selects among already-correct answers. Atomic ranges are the deliberate exception and stay whole-document. Net **+79 code lines** against estimates of −15 and ≈0, recorded on the bundle as a correction to how the checklist sizes threading work.
 
+**Bundle 3 landed the same day, at `fd976267`.** The Subfield's page counter built its own scan of the body string, and that scan had no notion of tables — a four-column table inflated its own word count by more than half. **The specification changed before it was built, for the second bundle running:** it called for the live `EditorView` handle, on the premise that the counter needed the editor object to reach a table-aware scan, and it planned to keep the string path as a no-editor fallback. The code disproved both halves. `scanDoc` is a pure function of a string with no CodeMirror dependency, `docScan` is only a `Text`-keyed cache over it, and the editor's change listener already hands the counter that exact text — so the handle bought nothing, and the fallback would have shipped two implementations of one answer. `computeStats` now reads `scanOf(body)`, masks each table line with the cell text the scan already parsed and trimmed, and has lost its private two-pass citation boundary and eight imports. The four-slot policy both caches wanted is stated once in `perText`, beside the `perDoc` it mirrors — a duplicate the simplification pass caught, since the mechanism already lived one screen above where it was written. Net **+7 code lines** against an estimate of −20.
+
 #### Completion Criteria
 
 - [x] **Audit complete** — six domains, verdicts evidenced, findings verified at cited lines.
@@ -24,6 +26,8 @@
 - [x] **Live interaction pass** — three drag behaviors driven and file-verified on the real nexus.
 - [x] **Nathan confirmed the flat-mode boundary live** — his first try exposed the legacy-mask hole (a held viewOrder row interleaving the paint), the mask-suppression fix landed at `5e424c28`, and his retry confirmed the refusal works. Style optimism remains his to eyeball in passing; the main-process half of Bundle 1 loads on his next dev restart.
 - [x] **Bundle 2 landed** — gates green (3,368 tests), simplifier and comment passes run and their changes independently verified at the cited lines, the windowed parity pin exhaustive over every line pair of every corpus document.
+- [x] **Bundle 3 landed** — gates green (3,377 tests), simplifier and comment passes run and their changes independently verified at the cited lines, the memo sharing pinned by object identity rather than inferred.
+- [ ] **Bundle 3's live pass is owed** — a four-column table's word count, and the floating preview's subfield agreeing with the main pane's.
 - [ ] **Bundle 2's live pass is owed** — a long page's typing latency, callout boxes and list rails at the viewport edges while scrolling, and arrow-key motion across a bulleted list's markers. Not driven this session: a `electron-vite dev` session was running, and CM6 extension changes need a full ⌘R to load, so the running instance was stale regardless.
 
 #### Next Session — Two Parallel Tracks
@@ -47,6 +51,8 @@
 - `editor/decorations.ts` — `docAtomics` / `atomicFor` hold the whole-document atomic set and drop the caret's line by bounded filter.
 - `editor/headingScan.ts` — `HeadingSrc` is the structural contract `DocScan` satisfies; `headingSrc(text)` serves string callers; the one section cache lives here.
 - `shared/markdownCode.ts` — `codeMaskOf` is the mask over an already-paired document; `codeMask(text)` is a wrapper on it.
+- `editor/docCache.ts` — `perText` states the four-slot text-keyed policy once; `scanOf` and the Subfield's `pageStats` are derivations on it, and `docScan` wraps `scanOf`.
+- `Detail/Subfield/subfieldStats.ts` — `computeStats` reads the shared scan; `tableProse` is the per-line table mask built from the region's own cells.
 - The audit report's §Redundancy Ledger maps every remaining bundle to the documentation entries it deletes on landing.
 
 #### Working Notes
@@ -58,4 +64,7 @@
 - **The single-instance lock yields to a running dev session** — an agent relaunch with a debug port dies quietly if `electron-vite dev` holds the app; check `ps` before diagnosing a dead CDP port.
 - **Windowing the drawn chrome is safe without a margin; windowing `atomicRanges` is not.** Every `first`/`last` flag is decided by the whole-document derivation before the viewport is consulted, so a window only selects among correct answers — but atomic ranges decide where a caret or selection endpoint may land, and a motion resolved against a slot the viewport hasn't reached seats the caret inside a marker nothing on screen stands for. A constraint written as a one-clause caveat in a bundle spec can hide a whole second implementation.
 - **Rails are emitted after every line intent, never interleaved** — they anchor at the same offset as their line's own classes, and emission order stacks them. The parity pin compares sequences rather than sets, which is what caught the interleaved first draft.
+- **`scanDoc` is a pure function of a string; `docScan` is only a cache over it.** Nothing in the whole-document scan touches CodeMirror, so any caller holding the text can have the editor's own answer — which is what dissolved Bundle 3's plumbing. Two bundles in a row now have had a spec call for machinery the code already made unnecessary; read the mechanism before costing the plan.
+- **Insertion-order eviction in `perText` is behavior, not an implementation detail.** The identity pin observes object references, so refreshing recency on a hit — the obvious LRU "upgrade" — changes which references survive and breaks it.
+- **The Subfield's body is debounced 120ms** on both the main pane and the preview, so the counter was never on the keystroke path. Its scan sharing buys correctness at no cost rather than rescuing a hot path.
 - **`DocScan` extends `DocLines`**, so it already carries `text`, `lines`, and `lineStarts` — which is why the transforms could take the scan with zero body churn (`const doc = scan.text` at the top, everything below byte-identical). No wrapper type is needed to thread document facts.
