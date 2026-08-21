@@ -37,21 +37,23 @@ export function citationTailVerdict(
   if (c.firstLine >= lines.length) return { kind: 'ok' }
   const tailStart = lineStarts[c.firstLine]
 
-  // The head's first offset, for every citation the section holds.
-  if (fromA === toA && inserted.length > 0) {
-    // Rewritten rather than clamped: `clamp` moves a range's start and leaves its end, which for an
-    // insertion — where the two are the same offset — would invert it.
-    const entry = c.entries.find((e) => lineStarts[e.line] === fromA)
-    if (entry)
-      return { kind: 'rewrite', from: entry.contentStart, to: entry.contentStart, insert: inserted }
-  }
+  // The head's own first offset. Atomic skipping relocates only strictly-interior positions, so that
+  // one seat stays reachable and is invisible — the prefix is zero-width there — and what lands on
+  // it would otherwise write ahead of `[^label]:` and end the run. The seat moves past the head; the
+  // check below then answers for the text itself, since a paste arrives in exactly this shape.
+  const head = fromA === toA && inserted.length > 0
+  const entry = head ? c.entries.find((e) => lineStarts[e.line] === fromA) : undefined
+  const from = entry ? entry.contentStart : fromA
+  const to = entry ? entry.contentStart : toA
 
-  if (toA < tailStart) return { kind: 'ok' }
-  const after = doc.slice(0, fromA) + inserted + doc.slice(toA)
-  if (tailHolds(after, tailStart)) return { kind: 'ok' }
+  if (to < tailStart) return { kind: 'ok' }
+  const after = doc.slice(0, from) + inserted + doc.slice(to)
+  if (tailHolds(after, tailStart))
+    return entry ? { kind: 'rewrite', from, to, insert: inserted } : { kind: 'ok' }
 
-  // The section could not survive this change where it landed. Its text goes to the end of the body
-  // instead — the line the divider draws on, which keeps the blank the section anchors to.
+  // The section could not survive this text where it landed, and moving it past the head does not
+  // save it either. Its text goes to the end of the body instead — the line the divider draws on,
+  // which keeps the blank the section anchors to.
   const seat = c.anchorLine >= 0 ? lineStarts[c.anchorLine] : 0
   const body = inserted.replace(/^\n+|\n+$/g, '')
   return body === ''

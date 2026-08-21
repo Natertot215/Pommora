@@ -116,3 +116,29 @@ describe('the verdict and the decoration pass agree on the boundary', () => {
     }
   })
 })
+
+// The head-start repair moves a keystroke past the hidden `[^label]:`. A paste is the same shape —
+// a zero-width insertion at a seated caret — so the repair has to answer for what it relocates, not
+// just where. Text carrying a blank line ends the citation's continuation, which ends the trailing
+// run, which literalizes every citation in the section.
+describe('the head-start repair answers for what it moves, not only where', () => {
+  const PASTE = 'New paragraph one.\n\nNew paragraph two.'
+
+  it('a multi-paragraph paste at a citation head goes to the body, not into the citation', () => {
+    const out = type(DOC, DOC.indexOf('[^b]:'), PASTE)
+    expect(sectionOf(out)).toBe(2)
+    expect(out).toContain('New paragraph one.')
+    expect(out).toContain('New paragraph two.')
+    expect(out.trimEnd().endsWith('[^b]: another')).toBe(true)
+  })
+
+  it('and without the guard the same paste literalizes the whole section', () => {
+    expect(sectionOf(type(DOC, DOC.indexOf('[^b]:'), PASTE, false))).toBe(0)
+  })
+
+  it('a paste with no blank line still lands in the citation it was aimed at', () => {
+    const out = type(DOC, DOC.indexOf('[^b]:'), 'one line only ')
+    expect(out).toContain('[^b]: one line only another')
+    expect(sectionOf(out)).toBe(2)
+  })
+})
