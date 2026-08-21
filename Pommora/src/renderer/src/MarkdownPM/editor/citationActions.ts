@@ -5,7 +5,7 @@
 import { type ChangeSet, type ChangeSpec, type EditorState, Facet } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
 import type { CitationMenuAction } from '@shared/citationMenu'
-import { isInsideCode } from '@shared/markdownCode'
+import { isInsideInlineCode } from '@shared/markdownCode'
 import { useSession } from '../../store'
 import { citationFor, markerEndingAt, markersFor } from '../detect'
 import { focusRange } from './caretSeat'
@@ -38,12 +38,17 @@ export const citationHost = Facet.define<CitationHost, CitationHost>({
 /** Whether the caret sits where a marker may be written: outside the section, whose own `[^1]` stays
  *  literal, and outside code, where the syntax is characters rather than a reference. Both creation
  *  menus are offered under it and both write under it — a native menu can hang open while the
- *  document moves beneath it. */
+ *  document moves beneath it.
+ *
+ *  It answers on every caret move, so both halves come off the cached scan or the caret's own line;
+ *  the whole-document form would split the text and pair every fence from the top each time. */
 export function citationSeatAt(state: EditorState): boolean {
   const scan = docScan(state.doc)
   const at = state.selection.main.from
-  if (scan.citations.mask[state.doc.lineAt(at).number - 1]) return false
-  return !isInsideCode(at, scan.text)
+  const line = state.doc.lineAt(at)
+  const i = line.number - 1
+  if (scan.citations.mask[i] || scan.fences[i]) return false
+  return !isInsideInlineCode(line.text, at - line.from)
 }
 
 /** Every footnote gesture's dispatch: the edit it asked for, the renormalization that follows it,
