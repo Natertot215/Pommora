@@ -23,8 +23,10 @@ const model: TableModel = {
 
 let container: HTMLDivElement
 let root: Root
+let cited: string[] = []
 
 async function mount(cites: string): Promise<void> {
+  cited = []
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
@@ -42,6 +44,7 @@ async function mount(cites: string): Promise<void> {
         onUndo: noop,
         onRedo: noop,
         onAppend: noop,
+        onCite: (label: string) => cited.push(label),
       }),
     ),
   )
@@ -109,5 +112,43 @@ describe('an entered cell draws what the resting cell drew', () => {
     const editor = container.querySelector('.cm-editor')
     expect(editor).not.toBeNull()
     expect([...editor!.querySelectorAll('.md-cite-ref')].map((el) => el.textContent)).toEqual(['2'])
+  })
+})
+
+// The citation lives in the page around the table, so the cell has no editor that could carry the
+// jump — the marker acts on the press the way a link in a resting cell does, and the cell it sits in
+// never enters.
+describe('a marker in a resting cell leads to its citation', () => {
+  const pressGlyph = async (): Promise<void> => {
+    const glyph = container.querySelector('.md-cite-ref') as HTMLElement
+    await act(async () => {
+      glyph.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }))
+      glyph.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0, detail: 1 }))
+    })
+  }
+
+  it('travels by the label the marker carries, not the number it draws', async () => {
+    await mount('NOTE=2')
+    await pressGlyph()
+    expect(cited).toEqual(['note'])
+  })
+
+  it('and the press never enters the cell', async () => {
+    await mount('NOTE=2')
+    await pressGlyph()
+    expect(container.querySelector('.cm-editor')).toBeNull()
+  })
+
+  // The negative control: pressing the cell anywhere else is an ordinary entry.
+  it('while a press beside it enters the cell as always', async () => {
+    await mount('NOTE=2')
+    const cell = [...container.querySelectorAll('.mdpm-tbl-cell-static')].find((el) =>
+      el.textContent?.includes('see'),
+    ) as HTMLElement
+    await act(async () => {
+      cell.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }))
+    })
+    expect(cited).toEqual([])
+    expect(container.querySelector('.cm-editor')).not.toBeNull()
   })
 })

@@ -39,6 +39,19 @@ describe('what a citation offers', () => {
 })
 
 describe('the rows group themselves', () => {
+  // Edit and Copy read the footnote; Delete removes it. One divider, and it stands above Delete.
+  it('the only divider stands above Delete', () => {
+    const dividers = (ctx: Parameters<typeof citationMenuModel>[0]): string[] =>
+      citationMenuModel(ctx)
+        .filter((r) => r.separatorBefore)
+        .map((r) => r.label)
+    expect(dividers({ subject: 'marker', editable: true, lastReference: false })).toEqual([
+      'Delete Reference',
+    ])
+    expect(dividers({ subject: 'citation', editable: true })).toEqual(['Delete Footnote'])
+    expect(dividers({ subject: 'marker', editable: false })).toEqual([])
+  })
+
   it('no menu opens on a separator — a divider at the top separates nothing', () => {
     for (const ctx of [
       { subject: 'marker', editable: true },

@@ -3,6 +3,7 @@ import { docScan } from '../editor/docCache'
 import { foldLabel } from '../detect'
 import type { DocScan } from '../decorations/intent'
 import { focusAt } from '../editor/caretSeat'
+import { travelToCitation } from '../editor/citationActions'
 import {
   Facet,
   StateField,
@@ -259,6 +260,7 @@ class TableWidget extends WidgetType {
         onAppend={append}
         onMenu={onMenu}
         onTableDrag={tableDrag}
+        onCite={(label) => void travelToCitation(view, label)}
         onUndo={() => undo(view)}
         onRedo={() => redo(view)}
         connections={view.state.facet(tableConnections)}
