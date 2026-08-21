@@ -391,6 +391,24 @@ const LEAVES = roster([
           },
         ],
       },
+      {
+        title: 'Footnotes',
+        rows: [
+          {
+            kind: 'toggle',
+            key: 'citationsShown',
+            label: 'Show Footnotes By Default',
+            hint: 'Open a page with its footnotes section showing. Each page can be set on its own.',
+          },
+          {
+            kind: 'toggle',
+            key: 'jumpToCitation',
+            label: 'Jump To Citation On Creation',
+            hint: 'Writing a footnote carries the caret down to the citation it just made.',
+            defaultOn: true,
+          },
+        ],
+      },
     ],
   },
   {

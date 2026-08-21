@@ -107,6 +107,8 @@ Seated and empty.
 | ------------------------------ | -------------------- | ------------------------------------------------------- | ------------ |
 | Show Line Count In Code Blocks | `codeblockLineCount` | Numbers a codeblock's content lines as rendered glyphs. | On · **Off** |
 | Outliner Lines                 | `outlinerLines`      | Draws indent rails on nested lists in the editor.       | On · **Off** |
+| Show Footnotes By Default      | `citationsShown`     | Opens a page with its footnotes section showing. A page's own setting outranks this. | On · **Off** |
+| Jump To Citation On Creation   | `jumpToCitation`     | Carries the caret down to the citation a new footnote just made. | **On** · Off |
 
 #### Automations
 

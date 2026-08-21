@@ -444,12 +444,12 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 **Failure half:** a key absent from the settings file → the built-in default, never `undefined` leaking to a consumer. A non-boolean in the file → dropped by the sanitizer, the default stands.
 
 **Steps:**
-- [ ] Add both fields, both sanitizer rows, and both entries in the round-trip test's key list.
-- [ ] Add the titled Footnotes section with both toggle rows to the Pages & Editor leaf, using the existing `Section { title, rows }` shape.
-- [ ] Read the values from the store slice at their consumers, never from the tree's copy.
-- [ ] Update the Configuration feature document's table.
-- [ ] Run the gate — expect green.
-- [ ] Commit: `feat(settings): Default Visibility and Jump To Citation On Creation`
+- [x] Add both fields, both sanitizer rows, and both entries in the round-trip test's key list.
+- [x] Add the titled Footnotes section with both toggle rows to the Pages & Editor leaf, using the existing `Section { title, rows }` shape.
+- [x] Read the values from the store slice at their consumers, never from the tree's copy.
+- [x] Update the Configuration feature document's table.
+- [x] Run the gate — expect green.
+- [x] Commit: `feat(settings): Default Visibility and Jump To Citation On Creation`
 
 #### Task 11: The section is a fold region, seeded rather than persisted — **opens the hazard window**
 
@@ -891,8 +891,8 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
   - [x] Task 7 — Markers render in resting table cells · `69b9781c`
   - [x] Task 8 — The section is inert to the block layer · `ed1aded1` · gate: `a6b28f4a` `9cf8e548`
 - [ ] **Phase 3** — Hiding and showing · base `d124cf6a`
-  - [x] Task 9 — The visibility override's storage · `75cbfcbf`
-  - [ ] Task 10 — The two settings · `<commit>`
+  - [x] Task 9 — The visibility override's storage · `4c03b056`
+  - [x] Task 10 — The two settings · `<T10>`
   - [ ] Task 11 — The section is a fold region, seeded rather than persisted · `<commit>`
   - [ ] Task 12 — The chevron class and the heading-gesture class separate · `<commit>`
   - [ ] Task 13 — The Subfield's Show / Hide control · `<commit>`

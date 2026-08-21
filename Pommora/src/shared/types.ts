@@ -161,6 +161,12 @@ export interface Personalization {
   /** The scale embedded pages and views start at, before a block's own Scale multiplies it.
    *  Absent = 0.9. */
   embedScale?: number
+  /** Whether a page opens with its footnotes section shown. Absent = hidden. A page can override
+   *  this for itself, per machine, and that override outranks this. */
+  citationsShown?: boolean
+  /** Whether creating a footnote carries the caret down to the citation it just wrote.
+   *  Absent = it does. */
+  jumpToCitation?: boolean
 }
 
 /** The one session every guest webview lives on — a sign-in anywhere authenticates every embed
