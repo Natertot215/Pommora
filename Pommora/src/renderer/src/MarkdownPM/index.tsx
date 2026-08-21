@@ -37,7 +37,12 @@ import { pasteLink } from './editor/PasteLink'
 import { pendingTitle } from './editor/PendingTitle'
 import { aliasOnLeave } from './editor/linkEdit'
 import { linkRest, linkTyping } from './editor/linkGestures'
-import { markdownFolding, applySavedFolds, type FoldsApi } from './editor/folding'
+import {
+  markdownFolding,
+  applySavedFolds,
+  applyCitationsVisibility,
+  type FoldsApi,
+} from './editor/folding'
 import {
   applyEditorAction,
   claimEditorMenu,
@@ -84,6 +89,9 @@ interface Props {
   embedHeights?: EmbedHeightsApi
   embedZooms?: EmbedHeightsApi
   folds?: FoldsApi
+  /** Whether this page shows its footnotes section. Absent takes the nexus-wide default, which is
+   *  what an embed, a preview and a hover card all read — the per-page override is the main pane's. */
+  citationsShown?: boolean
   tableHeadingColumns?: TableHeadingColsApi
   menu?: EditorMenuApi
   autoFocus?: boolean
@@ -113,6 +121,7 @@ export function MarkdownEditor({
   embedHeights,
   embedZooms,
   folds,
+  citationsShown,
   tableHeadingColumns,
   menu,
   autoFocus = false,
@@ -163,6 +172,19 @@ export function MarkdownEditor({
   useEffect(() => {
     viewRef.current?.requestMeasure()
   }, [cbLineCount])
+
+  // The nexus-wide default, overridden per page where a caller resolved one. Read from the live
+  // slice, so flipping the setting reaches an open page rather than waiting for the tree to echo.
+  const citationsDefault = useSession((s) => s.personalization.citationsShown ?? false)
+  const citesShown = citationsShown ?? citationsDefault
+  const citesShownRef = useRef(citesShown)
+  citesShownRef.current = citesShown
+  // Mount seeds inside the view-creation effect (this one runs first, before the view exists); this
+  // carries every later change to the value.
+  useEffect(() => {
+    const view = viewRef.current
+    if (view) applyCitationsVisibility(view, citesShown)
+  }, [citesShown])
 
   // CM6 extensions are built once at mount, so they read live state + actions through refs. The `[[…]]`
   // autocomplete state machine is shared with table cells; this editor's seams are the candidate source
@@ -357,6 +379,7 @@ export function MarkdownEditor({
     // Click-to-edit surfaces (block tiles) mount THIS editor in response to a click
     // that landed on the at-rest render — without a focus the caret goes nowhere.
     if (autoFocus && !lastReadOnly.current) view.focus()
+    applyCitationsVisibility(view, citesShownRef.current)
     // Restore this page's saved folds once the view's lines exist (the widget clones them). The warm
     // scroll restores AFTER folds settle — folding changes content height, so restoring first would
     // land on a pre-fold offset.
