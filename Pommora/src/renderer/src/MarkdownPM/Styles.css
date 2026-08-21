@@ -627,7 +627,7 @@
 .mdpm-editor .cm-line:is(.md-cite, .md-cite-cont) {
   white-space: pre;
   color: var(--label-secondary);
-  font-size: 0.75em;
+  font-size: 0.5em; /* KNOB: how much smaller a citation reads than the body it cites */
   padding-left: var(--number-zone);
 }
 .mdpm-editor .cm-line.md-cite {
