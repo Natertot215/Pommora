@@ -22,8 +22,9 @@ import { travelTo } from './travel'
 
 /** What the surface around this editor answers for on its own page. `reveal` opens a hidden section
  *  by writing the page's visibility rather than folding behind the host's back, so the footer's
- *  control still reads the section's true state after a jump or a creation. A surface with no page to
- *  write — an embed, a preview, a hover card — provides none, and the travel's own reveal carries it. */
+ *  control still reads the section's true state after a jump or a creation — and every surface showing
+ *  that page reads the same row. A surface with no page at all — a Markdown block, a webpage tile —
+ *  writes nothing, and the section stays where the nexus-wide default put it. */
 export interface CitationHost {
   /** Whether this surface's page shows its footnotes — the state the fold follows after any gesture
    *  that rewrites the section, a first footnote on a page with none included. */
@@ -37,13 +38,12 @@ export const citationHost = Facet.define<CitationHost, CitationHost>({
 
 /** Go to the citation a label binds to, opening a hidden section on the way. THE arrival: the body's
  *  own marker click ends here, and so does one in a resting table cell, which has no editor of its
- *  own to carry a pointer path. False where nothing binds the label — an unmatched marker is prose. */
-export function travelToCitation(view: EditorView, label: string): boolean {
+ *  own to carry a pointer path. An unmatched marker binds nothing and goes nowhere. */
+export function travelToCitation(view: EditorView, label: string): void {
   const entry = citationFor(docScan(view.state.doc).citations, label)
-  if (!entry) return false
+  if (!entry) return
   view.state.facet(citationHost).reveal?.()
   travelTo(view, entry.contentStart)
-  return true
 }
 
 /** Whether a marker may be written where the selection ENDS — a footnote annotates the words it
