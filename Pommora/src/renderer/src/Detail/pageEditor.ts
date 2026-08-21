@@ -1,7 +1,11 @@
 import type { EditorView } from '@codemirror/view'
-import { duration } from '@renderer/design-system/tokens/motion'
 import { SEEK_GLIDE, scrollGlide } from '@renderer/design-system/interactions/autoscroll'
-import { expandFoldsAt, headingOutline, sectionEnd } from '@renderer/MarkdownPM/editor/folding'
+import {
+  FOLD_SETTLE_MS,
+  expandFoldsAt,
+  headingOutline,
+  sectionEnd,
+} from '@renderer/MarkdownPM/editor/folding'
 import { blockMoveChanges } from '@renderer/MarkdownPM/editor/listDragModel'
 import { headingParts } from '@renderer/MarkdownPM/detect'
 
@@ -17,10 +21,6 @@ function headerZone(view: EditorView): number {
   const zone = Number.parseFloat(getComputedStyle(shell).getPropertyValue('--header-zone'))
   return Number.isFinite(zone) ? zone : REVEAL_MARGIN
 }
-// The reveal's own beat, plus slack for the frame that draws its final height — the scroll has to
-// measure the section opened, not opening.
-const SETTLE_MS = Number.parseInt(duration.disclosure, 10) + 30
-
 // The open page's live editor — registered by the page surface at mount, so an embedded tile's
 // editor or the floating preview's can never be picked up instead.
 let pageView: EditorView | null = null
@@ -58,7 +58,7 @@ export function revealPageOffset(pos: number): void {
   }
   // A folded section has no height, so travelling before it opens measures the collapsed document and
   // stops short of the heading.
-  if (expandFoldsAt(view, target)) setTimeout(travel, SETTLE_MS)
+  if (expandFoldsAt(view, target)) setTimeout(travel, FOLD_SETTLE_MS)
   else travel()
 }
 
