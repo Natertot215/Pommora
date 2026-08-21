@@ -22,6 +22,7 @@ import { aliasSpanAt } from '@shared/connections'
 import { commitAliasOnEnter } from './linkEdit'
 import { embedTileRanges } from './embedWidget'
 import type { DocScan } from '../decorations/intent'
+import { citationDeleteIntent } from './citationEdits'
 import { docScan, docString } from './docCache'
 
 function apply(view: EditorView, edit: Edit | null): boolean {
@@ -80,6 +81,14 @@ const onBackspace = (view: EditorView): boolean => {
   const s = view.state.selection.main
   if (s.empty && embedTileRanges(view.state).some((r) => s.from === r.to + 1 || s.from === r.to))
     return true
+  // Ahead of the marker chain, and dispatched here rather than returned into it: removing a footnote
+  // is two disjoint sites — its citation and every marker pointing at it — and the edit that chain
+  // carries is a single range.
+  const cascade = citationDeleteIntent(docScan(view.state.doc), s.from, s.to, view.state.doc.length)
+  if (cascade) {
+    view.dispatch({ changes: cascade, userEvent: 'delete' })
+    return true
+  }
   const doc = docString(view.state.doc)
   return apply(view, smartBackspace(doc, s.from, s.to) ?? autoDelete(doc, s.from, s.to))
 }

@@ -743,10 +743,10 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 **Failure half:** backspace at a citation's content start with empty content → the whole footnote goes. A sweep covering two citations exactly → both cascade. A sweep covering one citation and one prose line → neither cascades.
 
 **Steps:**
-- [ ] Write the failing tests including both halves of the negative control.
-- [ ] Implement the citation-start branch inside `smartBackspace`. **The cascade dispatches separately:** the edit shape that chain returns is a single range, and removing a citation plus its markers is two disjoint sites, so the cascade cannot ride it.
-- [ ] Run the gate — expect green.
-- [ ] Commit: `feat(editor): footnote deletions cascade by range, not by gesture`
+- [x] Write the failing tests including both halves of the negative control.
+- [x] Implement the citation-start branch inside `smartBackspace`. **The cascade dispatches separately:** the edit shape that chain returns is a single range, and removing a citation plus its markers is two disjoint sites, so the cascade cannot ride it.
+- [x] Run the gate — expect green.
+- [x] Commit: `feat(editor): footnote deletions cascade by range, not by gesture`
 
 #### Gate 4 — nothing corrupts, everything reaches
 - [ ] Gate commands green, exit codes read directly.
@@ -924,8 +924,8 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
   - [x] Task 15 — The tail guard · `a7f250d5`
   - [x] Task 16 — One page-travel mechanism, named for what it does · `e9304060`
   - [x] Task 17 — Marker click — jump, or follow · `678ef515`
-  - [x] Task 18 — The two construct menus · `<T18>`
-  - [ ] Task 19 — Range-keyed cascades · `<commit>`
+  - [x] Task 18 — The two construct menus · `18c7cf5f`
+  - [x] Task 19 — Range-keyed cascades · `<T19>`
 - [ ] **Phase 5** — Creation and numbering
   - [ ] Task 20 — The renumbering engine · `<commit>`
   - [ ] Task 21 — Insert ▸ Footnote and Paste As ▸ Footnote · `<commit>`
@@ -993,6 +993,10 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 - **A drop above the section — closed, not an issue.** `blockMoveChanges` already fences both seams: it emits a blank after every inserted block and heals the hole the cut leaves, with its own comment naming this exact hazard — a glue-adjacent block would otherwise lazily continue a list or merge two paragraphs. A paragraph dropped above the section always lands with a blank after it, so the first citation cannot become its continuation. **The adjacent case the round did not raise is real and already covered:** a block dropped at the document's end lands *after* the section, which is the strand A-5b forbids, and Task 15's rule is "at or after". Task 15 names it as a test case rather than leaving it implied.
 
 ### Deviations
+
+- **Task 19 — the branch sits in `onBackspace`, not inside `smartBackspace`.** The task named the callout head's branch as the analogue and put the citation's beside it, then noted in its own steps that the cascade cannot ride the single range that chain returns. Both are true, and only one of them can be built: a branch inside `smartBackspace` could delete the `[^label]:` prefix and nothing else, which is not what C-9 asks for and would leave bare prose inside the section — ending the trailing run and literalizing everything below it. The citation step therefore runs ahead of the marker chain in `onBackspace` and dispatches the whole cascade itself. `lineMarkerRe` was checked and genuinely does not match a citation head, so the task's warning about two transforms claiming one keystroke does not arise.
+
+- **Task 19 — the range→intent rule is one pure function, and the gestures only dispatch it.** `citationDeleteIntent(scan, from, to)` answers "is this range exactly one construct, and what does removing it mean" for the caret, the sweep and the menu alike, so the range-keyed rule has one definition rather than one per entry point. A sweep covering several whole citations emits ONE line span for the run rather than one per citation — consecutive per-citation spans overlap on the newline between them and each would claim it, leaving a stray blank behind.
 
 - **Task 18 — the cascades landed here, as one definition both this task and Task 19 call.** The task's Delete rows and Task 19's backspace branch are the same two acts — exactly a marker cascades its last-reference citation, exactly a citation cascades its markers — so `citationEdits.ts` states each once and both gestures dispatch it. Building the menu's copy first and the keystroke's copy second is how the two would have come to disagree about what "exactly the construct" means.
 
