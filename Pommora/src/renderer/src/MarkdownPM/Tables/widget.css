@@ -1,5 +1,9 @@
+/* The table's outer gap is PADDING, never a margin. A block widget answers CodeMirror with the box
+   it measures, and a margin is outside that box — so the height model runs short by the gap for
+   every table on the page, and a click below one lands on the wrong line by the accumulated amount.
+   The wrapper carries no border or fill, so the two spell the same space. */
 .mdpm-tbl-widget {
-  margin: 0.4em 0;
+  padding: 0.4em 0;
 }
 
 .mdpm-tbl-wrap {
