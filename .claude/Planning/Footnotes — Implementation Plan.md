@@ -889,7 +889,7 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
   - [x] Task 5 — Citation lines emit as numbered rows · `<commit>`
   - [x] Task 6 — The marker draws atomic and positional · `<commit>`
   - [x] Task 7 — Markers render in resting table cells · `<commit>`
-  - [ ] Task 8 — The section is inert to the block layer · `<commit>`
+  - [x] Task 8 — The section is inert to the block layer · `<commit>`
 - [ ] **Phase 3** — Hiding and showing
   - [ ] Task 9 — The visibility override's storage · `<commit>`
   - [ ] Task 10 — The two settings · `<commit>`
