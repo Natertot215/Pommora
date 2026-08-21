@@ -571,17 +571,17 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 - [x] Commit: `feat(editor): the citations divider draws and folds the section`
 
 #### Gate 3 — one state, two controls, one writer
-- [ ] Gate commands green, exit codes read directly.
-- [ ] Both derivations re-run against their controls.
-- [ ] The hazard window is closed — Task 12 landed.
-- [ ] A single write path proven: toggling from the divider and from the Subfield produce the same row, and toggling to the default value deletes it.
-- [ ] **Simplification runs alone, and runs first** — `code-simplifier` dispatched against `<base>..HEAD` with no reviewer beside it and no reviewer's findings in its brief, then `comment-killer-agent` over what it returns. A build reviewed for correctness before it has settled its own relationships gets defended rather than reduced, which is why the order is fixed.
-- [ ] Its reductions applied, or refused in the Log with a reason. The phase re-gates after they land.
-- [ ] Only then, correctness review dispatched against the same range; the reports cite files inside it.
-- [ ] **Cohesion Criteria C1–C10 answered against this phase's diff**, each carrying its evidence rather than its assertion.
-- [ ] Net line delta reported — code only, comments and blanks and tests excluded.
-- [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
-- [ ] **Interaction pass handed to Nathan.** On a page with footnotes and at least one heading above them:
+- [x] Gate commands green, exit codes read directly.
+- [x] Both derivations re-run against their controls.
+- [x] The hazard window is closed — Task 12 landed.
+- [x] A single write path proven: toggling from the divider and from the Subfield produce the same row, and toggling to the default value deletes it.
+- [x] **Simplification runs alone, and runs first** — `code-simplifier` dispatched against `<base>..HEAD` with no reviewer beside it and no reviewer's findings in its brief, then `comment-killer-agent` over what it returns. A build reviewed for correctness before it has settled its own relationships gets defended rather than reduced, which is why the order is fixed.
+- [x] Its reductions applied, or refused in the Log with a reason. The phase re-gates after they land.
+- [x] Only then, correctness review dispatched against the same range; the reports cite files inside it.
+- [x] **Cohesion Criteria C1–C10 answered against this phase's diff**, each carrying its evidence rather than its assertion.
+- [x] Net line delta reported — code only, comments and blanks and tests excluded.
+- [x] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
+- [x] **Interaction pass handed to Nathan.** On a page with footnotes and at least one heading above them:
   1. Open it — the section is hidden and the body shows only numbered markers.
   2. The Subfield reads **Show Footnotes**. Click it — the section opens and the label becomes **Hide Footnotes**.
   3. Click the divider — the section hides and the label flips back.
@@ -590,6 +590,29 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
   6. Open the same page in a floating Page Preview — the control is there and works.
   7. Change Default Visibility in Settings — a page never toggled follows it; a page you have toggled keeps its own answer until you toggle it back to the default.
   8. With the section hidden, keep typing at the end of the body — Enter and Backspace on the last line do not pop it open.
+
+---
+
+### Gate 3 — closed
+
+**Cohesion Criteria, against this phase's diff.**
+
+- **C1.** One derivation each. `citationsRegion` has one definition and five references — the two `KINDS` generators, the visibility applier and the content-tail attribute — after the simplification pass collapsed a `citationsCut` that was returning the same region's `lineEnd`. `persisted(kind)` has one definition and two readers, deliberately not a per-region field: that is the shape `collapsedByDefault` was retired for in the same phase. `toggleCitations` has one definition and three call sites (the footer control, the divider's press, and its test), so the two controls cannot disagree about what a toggle means. `FOLD_SETTLE_MS` replaced a second copy of the reveal's beat in `pageEditor.ts` rather than adding a third.
+- **C2.** Reuse before invention, each with what it was checked against: the visibility rode `scopeGet`/`scopeSet` and the `headingIcon` channel pair rather than a bespoke handler; the settings rode the `Section { title, rows }` shape and the `defaultOn` flag the toggle model already had; the label joined `toggleLabels.ts` rather than a local ternary; the control took the List/Gallery item's text treatment and the design system's `onActivateClick`; the divider joined `.mdpm-divider`'s own border declaration; the reveal band's pointer tracking became one hook two hosts mount rather than the twenty lines each had. Two new files: `revealBar.ts` and `CitationsToggle.tsx`, both because two hosts needed the same thing.
+- **C3.** No hand-rolled tokens. Every color, motion and opacity in the phase's CSS resolves through `var(--…)` — `--border-heading`, `--radius-full`, `--state-hover`, `--state-ghost`, `--disclosure`, `--ease-standard`, `--subline-h`. The three bare numbers are geometry: two declared `KNOB`s (`--cite-divider-blur`, `--cite-divider-gap`) and the `top: 50%` centring a rule in its own line.
+- **C4.** Every export has callers: `HEADING_FOLD_LINE` 12 hits, `regionsOf` 12, `applyCitationsVisibility` 4, `FOLD_SETTLE_MS` 4, `useRevealNear` 5, `citationsLabel` 3, `pageStats` 10, `toggleCitations` 6. `leadOrigin` lost its export when the hook absorbed its only outside caller. Nothing is scaffolded ahead of a consumer; `jumpToCitation` is the one field with no reader, and Task 22 is its named consumer.
+- **C5.** No residue. `collapsedByDefault` and its read are gone rather than demoted (2 hits at the phase's base, 0 now, control `FoldRegion` steady at 4). `citationsCut`, the three hand-built fold-effect literals, the duplicated pointer tracking in both hosts, and PageView's own copy of the override are all deleted rather than left beside their replacements.
+- **C6.** The comment pass ran and cut nothing — every comment in the diff carries a why the code cannot show. KNOB count 28 before and after.
+- **C7.** No new per-keystroke work. `citationsRegion` reads the editor's own cached document scan. `pageStats` memoizes on the body string because the footer now mounts two items over it, which is the one place this phase could have answered the boundary twice on a keystroke. The reveal band's rect and lead origin are measured lazily and cached — a rect per `mousemove` is a layout per pointer move.
+- **C8.** The smaller version of each task, named: Task 11 could have persisted the section's fold like every other kind — refused, that is two writers of one fact. Task 13 could have read the label from editor fold state — refused, it needs a push channel the footer does not have, and the override is already the single writer. Task 14 could have kept the divider as a plain line intent — refused, an intent cannot know whether the section is folded, and "drawn only while open" needs exactly that.
+- **C9.** One guard added, with both halves proven: the class split's negative control was observed red four ways with the split reverted, and green with it. The seed-versus-toggle distinction was likewise observed red with the animation flag forced on.
+- **C10.** `rg -w "footnote" Pommora/src` outside tests returns the typography scale step, the icon size step, and this feature's own user-facing wording — a settings hint, a `Personalization` doc comment, and the link-label rule naming what it refuses. No identifier in this phase's code is called `footnote`; the code says `citations` throughout, and the interface says Footnotes.
+
+**Correctness review — one finding, confirmed at its cited lines and fixed.** The per-page overrides are fetched *after* `applyTree` sets `status: 'ready'` (`store.ts:871`), so a page whose own answer differs from the nexus-wide default mounts on the default and hears the truth a beat later — and the value-following effect could not tell that catch-up from a user toggle, so it played a full collapse on a page nobody had touched. The first change to reach a live view is now treated as a seed. Two tests pin it, and the first was observed red with the animation flag forced on.
+
+**Net line delta:** +365 code lines (comments, blanks and tests excluded) across 22 files — 480 added against 115 removed, the removals being `collapsedByDefault`, the duplicated pointer tracking, and the three fold-effect literals the simplification pass collapsed.
+
+**Interaction pass:** run and folded. Five findings came back: the seam's ends wrapped, the document did not end at its footnotes, a hidden seam gave the pointer nothing, a caret stranded on the divider when the section closed under it, and a section revealed at the foot of a long page opened out of sight. All five are fixed and recorded in Deviations.
 
 ---
 
@@ -890,13 +913,13 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
   - [x] Task 6 — The marker draws atomic and positional · `a7cc6a24`
   - [x] Task 7 — Markers render in resting table cells · `69b9781c`
   - [x] Task 8 — The section is inert to the block layer · `ed1aded1` · gate: `a6b28f4a` `9cf8e548`
-- [ ] **Phase 3** — Hiding and showing · base `d124cf6a`
+- [x] **Phase 3** — Hiding and showing · base `d124cf6a`
   - [x] Task 9 — The visibility override's storage · `4c03b056`
   - [x] Task 10 — The two settings · `aefc0277`
   - [x] Task 11 — The section is a fold region, seeded rather than persisted · `a7059714`
   - [x] Task 12 — The chevron class and the heading-gesture class separate · `c1b3415f`
   - [x] Task 13 — The Subfield's Show / Hide control · `f00e15d2`
-  - [x] Task 14 — The divider draws and folds · `3257be4c`
+  - [x] Task 14 — The divider draws and folds · `3257be4c` · gate: `5d965102` `4425dfdb`
 - [ ] **Phase 4** — Guards and gestures
   - [ ] Task 15 — The tail guard · `<commit>`
   - [ ] Task 16 — One page-travel mechanism, named for what it does · `<commit>`

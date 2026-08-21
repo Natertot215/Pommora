@@ -186,9 +186,17 @@ export function MarkdownEditor({
   citationsToggleRef.current = onCitationsToggle
   // Mount seeds inside the view-creation effect (this one runs first, before the view exists); this
   // carries every later change to the value.
+  //
+  // The first change to reach a live view is still a seed, not a toggle: the per-page overrides are
+  // fetched after the tree is applied and the surface is already on screen, so a page whose own
+  // answer differs from the nexus-wide default mounts on the default and hears the truth a beat
+  // later. Animating that would play a collapse on a page nobody has touched.
+  const followed = useRef(false)
   useEffect(() => {
     const view = viewRef.current
-    if (view) applyCitationsVisibility(view, citesShown)
+    if (!view) return
+    applyCitationsVisibility(view, citesShown, followed.current)
+    followed.current = true
   }, [citesShown])
 
   // CM6 extensions are built once at mount, so they read live state + actions through refs. The `[[…]]`
