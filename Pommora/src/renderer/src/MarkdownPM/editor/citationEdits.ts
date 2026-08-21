@@ -7,41 +7,57 @@
 // citations the reader never saw, and it is why backspace at a citation's start and the menu's
 // Delete land the same result while a mixed body-and-section sweep lands neither.
 import type { ChangeSpec } from '@codemirror/state'
-import { type CitationEntry, type CitationScan, type MarkerRef, foldLabel } from '../detect'
+import {
+  type CitationEntry,
+  type CitationScan,
+  type MarkerRef,
+  citationFor,
+  lineEndOf,
+  markersFor,
+} from '../detect'
+
+/** The line table plus the citation scan — the slice of a document scan every citation rule reads,
+ *  which a caller can also answer from a bare split. */
+export type CitationSlice = { lines: string[]; lineStarts: number[]; citations: CitationScan }
+
+const erase = ({ from, to }: { from: number; to: number }): ChangeSpec => ({ from, to, insert: '' })
 
 /** Whole lines, plus the newline that ends them — or the one that precedes them at the document's
  *  end, so removing the last citation leaves no orphaned blank behind it. */
 function lineSpan(
-  scan: { lines: string[]; lineStarts: number[] },
+  scan: CitationSlice,
   from: number,
   to: number,
   docLength: number,
 ): { from: number; to: number } {
   const start = scan.lineStarts[from]
-  const end = scan.lineStarts[to] + scan.lines[to].length
+  const end = lineEndOf(scan, to)
   return end < docLength ? { from: start, to: end + 1 } : { from: Math.max(0, start - 1), to: end }
 }
 
-const boundTo = (c: CitationScan, entry: CitationEntry): MarkerRef[] => {
-  const key = foldLabel(entry.label)
-  return c.markers.filter((m) => foldLabel(m.label) === key)
+/** A consecutive run of citations, every marker bound to any of them included. One span for the
+ *  whole run, not one per citation: consecutive per-entry spans overlap on the newline between them,
+ *  and each would claim it. */
+function cutCitations(scan: CitationSlice, run: CitationEntry[], docLength: number): ChangeSpec[] {
+  return [
+    ...run.flatMap((e) => markersFor(scan.citations, e.label)).map(erase),
+    erase(lineSpan(scan, run[0].line, run[run.length - 1].lastLine, docLength)),
+  ]
 }
 
 /** Deleting exactly one marker. It takes its citation with it when it was the last reference — a
  *  footnote nothing points at is an orphan, and the gesture that made it one is the one that should
  *  answer for it. */
 export function deleteMarkerChanges(
-  scan: { lines: string[]; lineStarts: number[]; citations: CitationScan },
+  scan: CitationSlice,
   marker: MarkerRef,
   docLength: number,
 ): ChangeSpec[] {
-  const c = scan.citations
-  const key = foldLabel(marker.label)
-  const entry = c.entries.find((e) => foldLabel(e.label) === key)
-  const others = c.markers.filter((m) => m !== marker && foldLabel(m.label) === key)
-  const changes: ChangeSpec[] = [{ from: marker.from, to: marker.to, insert: '' }]
+  const entry = citationFor(scan.citations, marker.label)
+  const others = markersFor(scan.citations, marker.label).filter((m) => m !== marker)
+  const changes: ChangeSpec[] = [erase(marker)]
   if (entry && others.length === 0)
-    changes.push({ ...lineSpan(scan, entry.line, entry.lastLine, docLength), insert: '' })
+    changes.push(erase(lineSpan(scan, entry.line, entry.lastLine, docLength)))
   return changes
 }
 
@@ -49,17 +65,12 @@ export function deleteMarkerChanges(
  *  inverse of the body-side cascade, and the alternative is leaving raw `[^label]` scattered through
  *  prose that used to read as a number. */
 export function deleteCitationChanges(
-  scan: { lines: string[]; lineStarts: number[]; citations: CitationScan },
+  scan: CitationSlice,
   entry: CitationEntry,
   docLength: number,
 ): ChangeSpec[] {
-  return [
-    ...boundTo(scan.citations, entry).map((m) => ({ from: m.from, to: m.to, insert: '' })),
-    { ...lineSpan(scan, entry.line, entry.lastLine, docLength), insert: '' },
-  ]
+  return cutCitations(scan, [entry], docLength)
 }
-
-type Scan = { lines: string[]; lineStarts: number[]; citations: CitationScan }
 
 /** What deleting exactly `[from, to)` means for the footnotes, or null where that range is not
  *  exactly one construct — which is the whole of the range-keyed rule. A caret counts: backspace at
@@ -69,7 +80,7 @@ type Scan = { lines: string[]; lineStarts: number[]; citations: CitationScan }
  *  Anything wider — a marker plus the words beside it, a sweep across body and section — returns
  *  null and the deletion goes through as the plain removal of what was swept. */
 export function citationDeleteIntent(
-  scan: Scan,
+  scan: CitationSlice,
   from: number,
   to: number,
   docLength: number,
@@ -86,19 +97,12 @@ export function citationDeleteIntent(
   // Whole citation lines, and nothing else: every line the range covers has to be one this section
   // owns, and the range has to start and end on those lines' own edges.
   const covered = c.entries.filter(
-    (e) =>
-      scan.lineStarts[e.line] >= from &&
-      scan.lineStarts[e.lastLine] + scan.lines[e.lastLine].length <= to,
+    (e) => scan.lineStarts[e.line] >= from && lineEndOf(scan, e.lastLine) <= to,
   )
   if (covered.length === 0) return null
   const first = covered[0]
   const last = covered[covered.length - 1]
   if (scan.lineStarts[first.line] !== from) return null
-  if (scan.lineStarts[last.lastLine] + scan.lines[last.lastLine].length !== to) return null
-  // One span for the whole run, not one per citation: consecutive per-entry spans overlap on the
-  // newline between them, and each would claim it.
-  return [
-    ...covered.flatMap((e) => boundTo(c, e)).map((m) => ({ from: m.from, to: m.to, insert: '' })),
-    { ...lineSpan(scan, first.line, last.lastLine, docLength), insert: '' },
-  ]
+  if (lineEndOf(scan, last.lastLine) !== to) return null
+  return cutCitations(scan, covered, docLength)
 }

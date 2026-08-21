@@ -4,6 +4,7 @@
 // the transaction layer beside the callout guard rather than in a decoration.
 import type { EditorState } from '@codemirror/state'
 import { citationScan, splitWithOffsets } from '../detect'
+import type { CitationSlice } from './citationEdits'
 import { docScan } from './docCache'
 import type { GuardVerdict } from './calloutGuard'
 import { verdictFilter } from './calloutGuard'
@@ -30,7 +31,7 @@ export function citationTailVerdict(
   fromA: number,
   toA: number,
   inserted: string,
-  scan: { lines: string[]; lineStarts: number[]; citations: ReturnType<typeof citationScan> },
+  scan: CitationSlice,
 ): GuardVerdict {
   const { citations: c, lines, lineStarts } = scan
   if (c.firstLine >= lines.length) return { kind: 'ok' }

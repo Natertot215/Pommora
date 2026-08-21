@@ -15,14 +15,12 @@ export type GuardVerdict =
   | { kind: 'extend'; to: number }
   | { kind: 'rewrite'; from: number; to: number; insert: string }
 
-type Verdict = GuardVerdict
-
 export function calloutDeleteVerdict(
   doc: string,
   from: number,
   to: number,
   scan?: { lines: string[]; info: ReturnType<typeof calloutLines> },
-): Verdict {
+): GuardVerdict {
   if (to <= from) return { kind: 'ok' }
   const { lines, info } =
     scan ??
@@ -108,7 +106,7 @@ export function verdictFilter(
     toA: number,
     inserted: string,
     state: EditorState,
-  ) => Verdict,
+  ) => GuardVerdict,
 ): Extension {
   return EditorState.transactionFilter.of((tr) => {
     if (!tr.docChanged) return tr
