@@ -156,15 +156,15 @@ export function normalizeCitations(scan: CitationSlice): ChangeSpec[] {
 }
 
 /** A footnote gesture's whole edit: what it writes or removes, composed with the renormalization
- *  that follows it. Every gesture in E-3's set ends here — the three creations and the three
- *  deletions — so "renumber and reorder afterwards" is one fact rather than six, and both halves
- *  land in one transaction that one undo takes back whole.
+ *  that follows it. The three creations and the three deletions all end here, so "renumber and
+ *  reorder afterwards" is one fact rather than six, and both halves land in one transaction that
+ *  one undo takes back whole.
  *
  *  The second half is derived from the document the first half leaves behind, which is the only
  *  coordinate space its offsets are true in; composing the two is what maps them back. */
 export function citationGesture(scan: CitationSlice, changes: ChangeSpec[]): ChangeSet {
   const first = ChangeSet.of(changes, scan.text.length)
-  const after = first.apply(Text.of(scan.text.split('\n'))).toString()
+  const after = first.apply(Text.of(scan.lines)).toString()
   return first.compose(ChangeSet.of(normalizeCitations(scanDoc(after)), after.length))
 }
 

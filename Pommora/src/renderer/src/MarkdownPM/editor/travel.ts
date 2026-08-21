@@ -26,6 +26,9 @@ export function travelTo(view: EditorView, pos: number): void {
   // A caller's offset can come from a body that trails the editor's own doc by a beat.
   const target = Math.max(0, Math.min(pos, view.state.doc.length))
   const travel = (): void => {
+    // A reveal defers this past its own animation, and a tab closed or a page swapped in between
+    // takes the editor with it — the same round-trip staleness the paste path answers for.
+    if (!view.dom.isConnected) return
     const scroller = view.scrollDOM
     // Resolved once: the header's band is set from its own height, which a scroll doesn't change,
     // and the glide asks for its destination on every frame.

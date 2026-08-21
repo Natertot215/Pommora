@@ -453,10 +453,10 @@ export function applyCitationsVisibility(view: EditorView, shown: boolean, anima
   // nothing happening. Once the reveal has its height, bring its end into view — the minimum scroll,
   // which is none at all when the section already fits.
   if (shown && animate)
-    setTimeout(
-      () => view.dispatch({ effects: EditorView.scrollIntoView(r.to, { y: 'nearest' }) }),
-      FOLD_SETTLE_MS,
-    )
+    setTimeout(() => {
+      if (view.dom.isConnected)
+        view.dispatch({ effects: EditorView.scrollIntoView(r.to, { y: 'nearest' }) })
+    }, FOLD_SETTLE_MS)
 }
 
 /** Run a footnote gesture's dispatch with the section unfolded, and settle it back to `shown`
