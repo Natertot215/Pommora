@@ -379,7 +379,7 @@ export function MarkdownEditor({
     // Click-to-edit surfaces (block tiles) mount THIS editor in response to a click
     // that landed on the at-rest render — without a focus the caret goes nowhere.
     if (autoFocus && !lastReadOnly.current) view.focus()
-    applyCitationsVisibility(view, citesShownRef.current)
+    applyCitationsVisibility(view, citesShownRef.current, false)
     // Restore this page's saved folds once the view's lines exist (the widget clones them). The warm
     // scroll restores AFTER folds settle — folding changes content height, so restoring first would
     // land on a pre-fold offset.

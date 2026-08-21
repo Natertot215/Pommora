@@ -396,12 +396,14 @@ const chevronDeco = EditorView.decorations.compute(['doc', foldField], (state) =
 })
 
 /** Put the citations section where the resolved visibility says it belongs — the seed at mount and
- *  every later change to that value land here, so the stored boolean has exactly one reader.
+ *  every later change to that value land here, so the stored boolean has exactly one reader. A page
+ *  opening seeds without animation; a toggle after it discloses on the reveal's own beat, closing
+ *  the way it opens.
  *
  *  The mount annotation is not optional: the persist listener writes the whole surviving key set to
  *  disk on any un-annotated fold effect, and this runs before `applySavedFolds` has restored the
  *  page's heading folds — an un-annotated seed would erase them on every open of a footnoted page. */
-export function applyCitationsVisibility(view: EditorView, shown: boolean): void {
+export function applyCitationsVisibility(view: EditorView, shown: boolean, animate = true): void {
   const r = regionsOf(view.state.doc).find((x) => x.kind === 'citations')
   if (!r) return
   const folded = view.state
@@ -418,7 +420,7 @@ export function applyCitationsVisibility(view: EditorView, shown: boolean): void
           anchor: r.anchor,
           from: bodyStart,
           to: r.to,
-          animate: false,
+          animate,
           clone: cloneBody(view, bodyStart, r.to),
         }),
     annotations: initialFoldAnnotation.of(true),
