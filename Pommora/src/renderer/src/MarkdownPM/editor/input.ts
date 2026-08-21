@@ -64,6 +64,20 @@ const onEnter = (view: EditorView): boolean => {
 // the table as one undoable unit.
 const onForwardDelete = (view: EditorView): boolean => {
   const s = view.state.selection.main
+  // The range this key actually removes: whatever is swept, or the whole marker sitting under the
+  // caret, which is atomic and has no interior to delete into. Asked of the same rule Backspace
+  // asks — a cascade keyed to the range cannot depend on which key removed it.
+  const scan = docScan(view.state.doc)
+  const marker = s.empty ? scan.citations.markers.find((m) => m.from === s.from) : undefined
+  const from = marker?.from ?? s.from
+  const to = marker?.to ?? s.to
+  if (from !== to) {
+    const cascade = citationDeleteIntent(scan, from, to)
+    if (cascade) {
+      commitCitation(view, cascade, 'delete')
+      return true
+    }
+  }
   if (!s.empty) return false
   // A claimed embed tile refuses its boundary deletes in BOTH directions — the atomic default
   // would otherwise expand the delete over the whole absorbed range and remove the tile from a
@@ -72,7 +86,7 @@ const onForwardDelete = (view: EditorView): boolean => {
     return true
   const doc = docString(view.state.doc)
   if (doc[s.from] !== '\n') return false
-  const r = docScan(view.state.doc).tables.find((r) => r.from === s.from + 1)
+  const r = scan.tables.find((r) => r.from === s.from + 1)
   if (!r) return false
   view.dispatch({ changes: { from: s.from, to: r.to }, userEvent: 'delete' })
   return true
