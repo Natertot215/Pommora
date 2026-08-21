@@ -63,11 +63,18 @@ Chrome is produced in two stages, and only the second was scoped. The **derivati
 **Owed:** the live pass — a long page's typing latency, callout boxes and list rails at the viewport edges while scrolling, and caret motion across atomics off-screen.
 **Retires:** ContextPM Debt "The decoration build emits the whole document."
 
-#### II. Bundle 3 — Subfield Reads the Editor's Scan · one session · net ≈ −20
+#### II. ~~Bundle 3 — Subfield Reads the Editor's Scan~~ · landed 08-21-2026
 
-- [ ] **The stats item reads `docScan(view.state.doc)`** through the existing `register(view)` handle (`MarkdownPM/index.tsx:109`) whenever a live editor exists — cached and table-aware — with `computeStats`' string path kept as the no-editor fallback and its private fence/citation masking reduced to that fallback.
+**The specification changed before it was built.** It called for the live `EditorView` handle, on the premise that the counter needed the editor object to reach a table-aware scan. The code says otherwise: `scanDoc` is a pure function of a string with no CodeMirror dependency, `docScan` is only a `Text`-keyed cache over it, and the editor's change listener already hands the counter that exact string. So the handle bought nothing, and the spec's "string path kept as the no-editor fallback" would have shipped two implementations of one answer — a page counting differently depending on whether an editor happened to be mounted.
 
-**Verification:** gates; app open — a page with a four-column table: word count excludes pipes and the delimiter row; the floating preview's subfield agrees; a page with no live editor still counts.
+- [x] **`computeStats` reads `scanOf(body)`** — the editor's own scan of the very text it holds. Its private `citationBoundary` and eight imports are gone; the boundary now arrives on the scan, already computed against the full fence → table → math exclusion set that function used to rebuild by hand.
+- [x] **A table counts as the prose its widget draws** — the cell text the scan already parsed and trimmed, joined so cells stay separate words. The delimiter row is absent from a region's rows, so it blanks with the rest of the span. Pipe-stripping was rejected: it glues `|a|b|` into one word and counts the padding.
+- [x] **One scan per text, shared.** `perText` states the four-slot policy once, beside the `perDoc` it mirrors; `scanOf` and the Subfield's own `pageStats` are both derivations on it, and `docScan` became a one-line wrapper over `scanOf`. Four slots, because the main pane's footer and a floating preview's describe different bodies at once. Pinned by identity, not inference: `scanOf(body)` **is** the object `docScan(Text)` returns.
+
+**Landed with:** gates green (3,377 tests); the existing counter pins passed unmodified, including the cross-check that ties the counter to the editor's own draw.
+**Cost, against the estimate:** net **+7 code lines** (+37 / −30) where the estimate read −20. The same correction Bundle 2 recorded — the deletions are real, but a shared seam is new code whose purpose is removing work.
+**Nothing plumbed:** no view handle, no store slot, no fallback path.
+**Owed:** the live pass — a four-column table's word count, and the floating preview's subfield agreeing with the main pane's. The spec's third check, that a page with no live editor still counts, is vacuous now: the string path is the only path.
 **Retires:** ContextPM Known Issue "A Markdown table's pipes… count as prose"; ContextPM's Current Focus paragraph on the Subfield's own scan; the matching SubfieldPM entry.
 
 #### II. Bundle 4 — `persist()` Under Accepted Silence · one session · net ≈ 0

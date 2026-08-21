@@ -1,12 +1,10 @@
 import { markdownLinkRegex } from '@shared/links'
 import { loneWebpageEmbed } from '@shared/webpageEmbed'
-import { tableRegions } from '@renderer/MarkdownPM/Tables/regions'
-import { constructExclusions } from '@renderer/MarkdownPM/editor/embedRanges'
+import { lineIndexAt, type DocScan } from '@renderer/MarkdownPM/decorations/intent'
+import { perText, scanOf } from '@renderer/MarkdownPM/editor/docCache'
 import {
   blockquotePrefixRe,
   calloutHeadPrefixLen,
-  citationScan,
-  fenceRangesOf,
   headingParts,
   isBlockquoteLine,
   inlineCodeRegex,
@@ -14,10 +12,6 @@ import {
   loneEmbedTitle,
   markerRegex,
   parseListMarker,
-  scanFencedCode,
-  splitWithOffsets,
-  type CitationScan,
-  type DocLines,
 } from '@renderer/MarkdownPM/detect'
 
 /** Page document stats for the Subfield. `lines` counts source lines the document actually holds;
@@ -30,10 +24,8 @@ import {
  *  the character pass sees its source, the word pass has it removed, so `sentence[^1].` reads as
  *  the one word the reader sees while the file's own characters are still reported.
  *
- *  Some constructs are still counted as their source: a Markdown table, whose pipes and delimiter
- *  row the editor replaces with a widget, and indented code and math alongside it. Reading a
- *  table's regions needs a parse per candidate, and this runs on every edit — so it waits for the
- *  day the Subfield can read the editor's own cached document scan rather than paying for its own. */
+ *  A table counts as the prose its widget draws — the cell text the scan already parsed, never the
+ *  pipes or the delimiter row. Indented code and math are still counted as their source. */
 export interface PageStats {
   lines: number
   words: number
@@ -82,49 +74,38 @@ function stripInline(text: string): string {
     .replace(/[*_~]/g, '')
 }
 
-/** The section's boundary, read against the same exclusions the editor's own scan uses — fences,
- *  then tables, then math — so the two can never disagree about where the section starts.
- *
- *  Widening the exclusion can only ever BREAK a run, never create one, so a fence-only scan finding
- *  no section is already the final answer. That is what keeps a table scan — a micromark parse per
- *  candidate, two orders of magnitude dearer than everything else here — off the keystroke path of
- *  every page that has no footnotes at all. */
-function citationBoundary(d: DocLines, fences: [number, number][]): CitationScan {
-  const cheap = citationScan(d, fences)
-  if (cheap.firstLine >= d.lines.length) return cheap
-  return citationScan(d, constructExclusions(d, fences, tableRegions(d)).excluded)
+/** The widget shows cell text, so the pipes and the padding go, and the delimiter row — which is
+ *  not among a region's rows — blanks with the rest of the span. */
+function tableProse(scan: DocScan): Map<number, string> {
+  const drawn = new Map<number, string>()
+  for (const region of scan.tables) {
+    const last = lineIndexAt(scan, region.to)
+    for (let i = lineIndexAt(scan, region.from); i <= last; i++) drawn.set(i, '')
+    for (const row of region.rows) {
+      drawn.set(lineIndexAt(scan, row.from), row.cells.map((c) => c.text).join(GONE))
+    }
+  }
+  return drawn
 }
 
 /** One answer per body string. A footer mounts two items on a page — the counts and the footnotes
- *  control — and both need the same figures on the same keystroke; deriving them twice would answer
- *  the citations boundary twice on a per-keystroke path.
- *
- *  It holds a few bodies rather than one because more than one footer can be on screen: the main
- *  pane's and a floating preview's show different pages, and a single slot would let their renders
- *  evict each other into recomputing on every call — which is this whole memo's reason for being. */
-const MEMO_MAX = 4
-const memo = new Map<string, PageStats>()
-export function pageStats(body: string): PageStats {
-  const hit = memo.get(body)
-  if (hit) return hit
-  const stats = computeStats(body)
-  memo.set(body, stats)
-  // Insertion-ordered, so the first key is the least recently added.
-  if (memo.size > MEMO_MAX) memo.delete(memo.keys().next().value as string)
-  return stats
-}
+ *  control — and both need the same figures on the same render; the prose pass below walks the whole
+ *  document, and running it twice for one body is the cost this exists to remove. */
+export const pageStats = perText(computeStats)
 
 export function computeStats(body: string): PageStats {
   if (!body) return { lines: 0, words: 0, characters: 0, citations: 0 }
-  // A single trailing newline is the terminator, not a phantom empty line.
-  const trimmed = body.endsWith('\n') ? body.slice(0, -1) : body
-  const d = splitWithOffsets(trimmed)
-  const { lines } = d
-
-  const fences = scanFencedCode(lines, d.lineStarts)
-  const cited = citationBoundary(d, fenceRangesOf(fences))
+  // THE editor's own scan of this very text — one derivation shared with the editor drawing it,
+  // rather than a second, narrower one that could answer a construct differently.
+  const scan = scanOf(body)
+  const { lines, fences, citations: cited } = scan
+  const drawn = tableProse(scan)
   const prose = stripInline(
-    lines.map((line, i) => (fences[i] || cited.mask[i] ? GONE : stripLineChrome(line))).join('\n'),
+    lines
+      .map((line, i) =>
+        fences[i] || cited.mask[i] ? GONE : (drawn.get(i) ?? stripLineChrome(line)),
+      )
+      .join('\n'),
   )
 
   // Strictly-visible characters: the structural newlines and every mask go, the rest stays.
@@ -132,8 +113,11 @@ export function computeStats(body: string): PageStats {
   // The one line the character count never sees — and an empty string rather than GONE, so a marker
   // glued to its word (`sentence[^1].`) stays one word instead of splitting into two.
   const words = (prose.replace(markerRegex(), '').match(/\S+/g) ?? []).length
+  // A single trailing newline is the terminator, not a phantom empty line — dropped from the count
+  // rather than from the text, so the scan stays keyed on the body the editor itself holds.
+  const trailing = body.endsWith('\n') ? 1 : 0
   return {
-    lines: cited.firstLine,
+    lines: Math.min(cited.firstLine, lines.length - trailing),
     words,
     characters,
     citations: cited.entries.length,
