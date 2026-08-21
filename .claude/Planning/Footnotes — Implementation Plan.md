@@ -887,7 +887,7 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 - [ ] **Phase 2** — The section and its markers draw
   - [x] Task 4 — The citation row's styling · `<commit>`
   - [x] Task 5 — Citation lines emit as numbered rows · `<commit>`
-  - [ ] Task 6 — The marker draws atomic and positional · `<commit>`
+  - [x] Task 6 — The marker draws atomic and positional · `<commit>`
   - [ ] Task 7 — Markers render in resting table cells · `<commit>`
   - [ ] Task 8 — The section is inert to the block layer · `<commit>`
 - [ ] **Phase 3** — Hiding and showing
@@ -953,6 +953,8 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 - **A drop above the section — closed, not an issue.** `blockMoveChanges` already fences both seams: it emits a blank after every inserted block and heals the hole the cut leaves, with its own comment naming this exact hazard — a glue-adjacent block would otherwise lazily continue a list or merge two paragraphs. A paragraph dropped above the section always lands with a blank after it, so the first citation cannot become its continuation. **The adjacent case the round did not raise is real and already covered:** a block dropped at the document's end lands *after* the section, which is the strand A-5b forbids, and Task 15's rule is "at or after". Task 15 names it as a test case rather than leaving it implied.
 
 ### Deviations
+
+- **Task 6 — the marker draws from the scan, not from the token pass** (Nathan's ruling, flagged for the Gate 2 correctness review). The token layer can only class content and hide markers, so the label's own text would have shown: `[^7]` reading 7 where a positional display owes 2. The token spec stays — the resting table cell reads the tokenizer directly and Task 7 needs it — and the number comes from a `citeRef` widget spec carrying the ordinal off Task 1's walk. Atomicity, the caret-reveal opt-out and everything else in the task are as written.
 
 - **Gate 1 — that fix then cost 145× on a keystroke path, and is gated.** Handing the counter the editor's full exclusion set meant a table scan per keystroke: 0.19ms → 27.9ms on a 482-line page. Widening an exclusion can only break a run and never create one, so a fence-only scan finding no section is already final — the table and math scan now runs only on a page that has footnotes. Measured after: 0.30ms with no footnotes, 0.59ms on a footnoted page holding a table, against the editor's own 0.40ms scan of the same body.
 - **Gate 1 — the counter's exclusion set was narrower than the editor's.** The correctness review found `computeStats` passing fences alone to the scan, so a table or `$$` block glued under a citation was read as that citation's continuation: the counter invented a section where the editor drew none and dropped the table's lines from all three counts. The counter now takes `docLineScan`'s own assembly — fences, tables, math — so one boundary serves both. Three tests pin it.

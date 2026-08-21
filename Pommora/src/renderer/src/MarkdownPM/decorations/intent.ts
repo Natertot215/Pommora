@@ -89,6 +89,9 @@ export type WidgetSpec =
   | { type: 'hr' }
   | { type: 'bullet' }
   | { type: 'checkbox'; bracketFrom: number; checked: boolean }
+  /** A body marker, drawn as the number its position earns rather than the label it holds — which
+   *  is why it is a widget over hidden source and not a class on the source itself. */
+  | { type: 'citeRef'; ordinal: number }
 
 export type DecoIntent =
   | { kind: 'class'; from: number; to: number; className: string }
@@ -136,6 +139,7 @@ export function tokenIntents(tokens: Token[], active: Set<number>): DecoIntent[]
   tokens.forEach((tk, i) => {
     if (tk.kind === 'wikiLink') return // resolution-dependent; rendered in decorations.ts by status
     if (tk.kind === 'link') return // validity-dependent; rendered in decorations.ts (valid vs invalid)
+    if (tk.kind === 'citationRef') return // positional; the widget comes from the document scan
     const cls = CONTENT_CLASS[tk.kind]
     if (cls)
       intents.push({
@@ -306,6 +310,18 @@ function lineIntentsInto(
         intents.push({ kind: 'class', from: contentStart, to: le, className: 'md-cite-text' })
     }
     return null
+  }
+
+  // A resolved marker is replaced by its number wherever it sits — body line, heading, list item or
+  // table cell. An unmatched one is prose the parser reads as prose, so nothing is drawn over it.
+  for (const mk of scan.citations.markers) {
+    if (mk.line !== i || mk.ordinal === null) continue
+    intents.push({
+      kind: 'widget',
+      from: mk.from,
+      to: mk.to,
+      spec: { type: 'citeRef', ordinal: mk.ordinal },
+    })
   }
 
   // pushConstruct hides the prefix [ls, innerStart] itself, so a leading bullet/HR widget can ABSORB it into

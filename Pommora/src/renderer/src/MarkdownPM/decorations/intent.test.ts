@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { tokenize, activeTokenIndices } from '../tokens'
+import { computeStats } from '@renderer/Detail/Subfield/subfieldStats'
 import {
   assembleLineIntents,
   decorationsFor,
@@ -382,6 +383,17 @@ describe('citation rows', () => {
     const cont = rows(t).filter((d) => d.kind === 'line' && d.className.includes('md-cite-cont'))
     expect(cont).toHaveLength(1)
     expect(nums(t)).toEqual(['1'])
+  })
+
+  // Containment, not equality: the counter zero-words every marker-shaped run, bound or not, while
+  // only a bound one is ever drawn. An escaped run is in neither set — it is the prose the parser
+  // reads it as, and both layers read that from the one pattern.
+  it('every marker it draws is one the counter scores as zero words', () => {
+    const t = 'a [^1] b [^9] c \\[^1] d\n\n[^1]: one'
+    const drawn = rows(t).filter((d) => d.kind === 'widget' && d.spec.type === 'citeRef')
+    expect(drawn).toHaveLength(1)
+    // a · b · c · \[^1] · d — the two live markers score nothing, the escaped run scores as prose.
+    expect(computeStats(t).words).toBe(5)
   })
 
   it('leaves the section out of the list and rail machinery', () => {
