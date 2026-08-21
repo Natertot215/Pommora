@@ -11,7 +11,7 @@ The shape is set by one measurement: **34 of the 46 page covers in the live nexu
 
 Nothing about an asset is persisted but its filename — no inode, no birth time, no size, no hash. That is what makes a sync eviction and re-download a non-event, and it is why an external rename phantoms the reference instead of being chased: the page cascade is app-initiated only, and assets inherit that rule unchanged rather than acquiring a detection mechanism of their own.
 
-**Constraints.** No asset rename op ships — Pommora selects files, it does not rename them. No reverse index of which store references which file. No new dependency. Thumbnails stay pinned to `.nexus/assets` regardless of the setting. This does not solve the `file` property's `FileRef`, web-paste image landing, or an asset-management surface.
+**Constraints.** No asset rename op ships — Pommora selects files, it does not rename them. No reverse index of which store references which file. No new dependency. Thumbnails stay pinned to `.nexus/assets` regardless of the setting — "pinned" naming where they are WRITTEN, which is not in tension with Task 11 sweeping the folder once: they regenerate on use, into the same pinned place. This does not solve the `file` property's `FileRef`, web-paste image landing, or an asset-management surface.
 
 **Requirements**
 
@@ -21,7 +21,7 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 4. No asset filesystem event causes a tree walk.
 5. `[[Name.ext]]` resolves renderer-side by filename against a map main owns; a raw path and a web URL pass through untouched.
 6. Duplicate filenames resolve to the first by sorted path for display, and refuse resolution where a delete depends on them.
-7. No picker offers an asset whose filename is duplicated under the asset roots.
+7. Adopting an asset never AUTHORS an ambiguous reference. The native file dialog cannot be filtered — it shows the filesystem — so the rule is enforced at adoption, not at offer: a picked file colliding with a different existing file is disambiguated on copy, and a file already inside the asset root whose basename is already duplicated there is REFUSED rather than referenced in place.
 8. Picking a banner copies the file in under its own basename, or references it in place when it already sits under an asset root.
 9. All six stores' `.nexus/assets` references migrate to wikilink form; byte-identical files collapse to one; `.nexus/assets` ends holding nothing at all — thumbnails included.
 10. Every write Pommora itself makes — an adopted asset, a changed `asset_directory`, a migrated file — updates what depends on it directly. The watcher cannot serve this path: its own echo suppression drops the event.
@@ -34,7 +34,6 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 - `classifyEvent`'s terminal arm is `full-refresh` ([watchPatch.ts:164](../../Pommora/src/main/watchPatch.ts#L164)), and its `.nexus` branch refuses everything but settings/homepage/space-meta → every externally-written image forces a whole-nexus walk without a dedicated arm. `.nexus/assets` is dormant today only because `atomicWriteBinary` calls `recordWrite` and `isRecentWrite` eats the echo.
 - `atomicWriteBinary` calls `recordWrite` ([atomicWrite.ts:23](../../Pommora/src/main/io/atomicWrite.ts#L23)) and `settle` is never reached for a path `isRecentWrite` claims ([watcher.ts:102](../../Pommora/src/main/watcher.ts#L102)) → **no write Pommora makes is visible to its own watcher.** The asset map, the watcher's re-arm and the delete guard must each be updated by the writer, exactly as `confirmSettingsWrite` already does for settings. The codebase states the law at `watcher.ts:99` — "every tree-relevant in-app write confirms through its own channel."
 - `stabilize` recycles sub-objects ([treeStabilize.ts:8](../../Pommora/src/shared/treeStabilize.ts#L8)); a flat `Record<string,string>` has none → it buys the echo-push no-op and nothing more. Any real add or unlink produces a new object and re-renders every mounted consumer, which is acceptable at this scale and must not be described as prevention.
-- IPC strips object identity ([treeStabilize.ts:1](../../Pommora/src/shared/treeStabilize.ts#L1)) → an unstabilized pushed map re-renders every banner consumer on every file a sync delivers.
 - `readNexus.ts:192` states the decoder, the walk's tree literal and `watchPatch`'s `applySettingsLeaves` must never disagree → a new tree leaf is threaded through exactly three places, and a write calls `confirmSettingsWrite()`.
 - `thumbsRel` derives from `ASSETS_DIR_REL` ([nexusPaths.ts:36](../../Pommora/src/shared/nexusPaths.ts#L36)) and the protocol containment check hard-codes the same constant ([index.ts:239](../../Pommora/src/main/index.ts#L239)) → the first stays pinned, the second must learn the configured root, or every migrated image 403s.
 - `navigation.json` gates its banner with `isAssetPath` on **read** as well as write ([navigationFile.ts:71](../../Pommora/src/main/io/navigationFile.ts#L71), `:114`) → a wikilink that fails that gate makes the NavView banner vanish silently on the next read.
@@ -97,47 +96,27 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 
 | Doc | The specific claim | What makes it false | Task |
 | --- | --- | --- | --- |
-| `.claude/Features/CollectionsPM.md:54` | "Banner bytes live under `.nexus/assets/<id>/`, served over the read-only `nexus-asset://` scheme." | Banners live under the configured asset directory and are named by wikilink. | 14 |
-| `.claude/Features/ContextsPM.md:16` | "Banner bytes live under `.nexus/assets/<id>/`, served over the read-only asset scheme." | Same. | 14 |
-| `.claude/Features/ConfigurationPM.md` | The `settings.json` key inventory omits `asset_directory`; §Pending lists no asset directory. | The key ships with a Settings row. | 14 |
-| `.claude/Features/PagesPM.md` | Any claim that `cover` holds a nexus-relative path. | `cover` holds a wikilink, a raw path, or a web URL. | 14 |
+| `.claude/Features/CollectionsPM.md:54` | "Banner bytes live under `.nexus/assets/<id>/`, served over the read-only `nexus-asset://` scheme." | Banners live under the configured asset directory and are named by wikilink. | 13 |
+| `.claude/Features/ContextsPM.md:16` | "Banner bytes live under `.nexus/assets/<id>/`, served over the read-only asset scheme." | Same. | 13 |
+| `.claude/Features/ConfigurationPM.md` | The `settings.json` key inventory omits `asset_directory`; §Pending lists no asset directory. | The key ships with a Settings row. | 13 |
+| `.claude/Features/PagesPM.md` | Any claim that `cover` holds a nexus-relative path. | `cover` holds a wikilink, a raw path, or a web URL. | 13 |
 | `src/shared/nexusPaths.ts:28` doc comment | "Attachment storage, keyed per asset below it." | It is the thumbnail root and the default asset root; user assets are not keyed below it. | 1 |
 
 **Dead Vocabulary** *(the closing sweep)*
 
 - `rg -F "'banner-'" src` and `rg -F '`banner-${' src` → expect 0. A bare `banner-` returns 103 legitimate CSS hits (`banner-img`, `mdpm-banner-img`, `--surface-banner-inset`) and can never go to zero; the minting shape is what retires.
-- `rg -F "profile-" src` → expect 0 outside comments Task 11 rewrites.
-- `rg -F "sameExclusions" src` → expect 0. Legitimate hits: none — superseded by `sameScope` in Task 3.
-- `rg -F "pickImageDataUrl" src` → expect 0. Legitimate hits: none — superseded by the path-returning picker in Task 10.
+- `rg -F "profile-" src` → expect 0 outside comments Task 10 rewrites.
+- `rg -F "sameExclusions" src` → expect 0. Legitimate hits: none — superseded by `sameScope` in Task 2.
+- `rg -F "pickImageDataUrl" src` → expect 0. Legitimate hits: none — superseded by the path-returning picker in Task 9.
 - Control: `rg -F "ASSETS_DIR_REL" src` → expect ≥ 4. Zero here means the sweep never ran.
 
-**Hazard Window:** Task 12 empties `.nexus/assets` in live data. Opened by Task 12, closed by Task 13. While open, no gate may be declared green on a rendering banner alone — but the risk is the inverse of a stale cache: the protocol handler already sends `Cache-Control: no-store` ([index.ts:246](../../Pommora/src/main/index.ts#L246)), so a moved file cannot render from cache. The real hazard is a banner that renders because its `<img>` was never re-requested at all — React does not re-render when nothing it selected changed. Task 13 therefore verifies after a full renderer reload with the network panel confirming live `nexus-asset://` hits resolving under the configured root, never on the strength of what is already on screen.
+**Hazard Window:** Task 11 empties `.nexus/assets` in live data. Opened by Task 11, closed by Task 12. While open, no gate may be declared green on a rendering banner alone — but the risk is the inverse of a stale cache: the protocol handler already sends `Cache-Control: no-store` ([index.ts:246](../../Pommora/src/main/index.ts#L246)), so a moved file cannot render from cache. The real hazard is a banner that renders because its `<img>` was never re-requested at all — React does not re-render when nothing it selected changed. Task 12 therefore verifies after a full renderer reload with the network panel confirming live `nexus-asset://` hits resolving under the configured root, never on the strength of what is already on screen.
 
 ---
 
 ### Phase 1 — The asset root becomes a fact the walk and the watcher share
 
-#### Task 1: Name the two asset roots, and pin the thumbnail root to one of them
-
-**Requirement:** 3
-
-**Why:** `ASSETS_DIR_REL` is currently one constant serving two unrelated jobs — the thumbnail home and the banner home — and the plan splits them. Naming both here, before any consumer changes, is what lets every later task cite one spelling instead of re-deciding per call site; `nexusPaths.ts` exists precisely so a path a lock, a watcher rule and a menu row all speak stays one string.
-
-**Files:**
-- Modify: `src/shared/nexusPaths.ts` — `ASSETS_DIR_REL` doc comment; add `DEFAULT_ASSET_DIR_REL` and `THUMBNAILS_SEGMENT`.
-- Modify: `src/shared/nexusPaths.ts` — `thumbsRel` keeps deriving from `ASSETS_DIR_REL` and gains a comment stating the pin is deliberate.
-
-**Interfaces**
-- Produces: `DEFAULT_ASSET_DIR_REL: string` (= `ASSETS_DIR_REL`) — what `asset_directory` means when absent.
-- Produces: `THUMBNAILS_SEGMENT = 'thumbnails'` — the segment the asset map skips.
-- Assumed by: Tasks 2, 4, 5, 6, 7.
-
-**Steps:**
-- [ ] Add both constants with why-comments; correct `ASSETS_DIR_REL`'s comment per Made False.
-- [ ] `npm run typecheck` — expect green.
-- [ ] Commit: `refactor(paths): name the default asset root and the thumbnail segment`
-
-#### Task 2: Read `asset_directory` as a tree leaf
+#### Task 1: Read `asset_directory` as a tree leaf
 
 **Requirement:** 1
 
@@ -148,10 +127,11 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 - Modify: `src/main/watchPatch.ts` — `applySettingsLeaves`.
 - Modify: `src/shared/types.ts` — `NexusTree`, beside `excluded`.
 - Modify: `src/main/settings.ts` — `liveLeaves`' `Pick<>`; add `readAssetDirectory`.
+- Modify: `src/shared/nexusPaths.ts` — correct `ASSETS_DIR_REL`'s doc comment per Made False, and state on `thumbsRel` that its derivation from that constant is a deliberate pin rather than an accident of sharing. No second constant: an alias equal to `ASSETS_DIR_REL` would be two names for one string, and `ASSETS_DIR_REL` already reads as the default.
 - Test: `src/main/readNexus.test.ts`, `src/main/watchPatch.test.ts`.
 
 **Interfaces**
-- Produces: `SettingsLeaves.assetDirectory: string` — nexus-relative POSIX, `DEFAULT_ASSET_DIR_REL` when absent, malformed or not a string.
+- Produces: `SettingsLeaves.assetDirectory: string` — nexus-relative POSIX, `ASSETS_DIR_REL` when absent, malformed or not a string.
 - Produces: `readAssetDirectory(root: string): Promise<string>`.
 - Assumed by: Tasks 3, 5, 6, 9, 11, 12.
 
@@ -166,11 +146,11 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 - [ ] `npm run typecheck && npm run test` — expect green.
 - [ ] Commit: `feat(settings): asset_directory reads as a tree leaf`
 
-#### Task 3: One scope object replaces the threaded exclusion list
+#### Task 2: One scope object replaces the threaded exclusion list
 
 **Requirement:** 3
 
-**Why:** `excluded: string[]` is arm-time captured state threaded through six functions, with `sameExclusions` as the re-arm check. The asset root is captured identically and for the same reason, so it widens that one parameter rather than travelling beside it — two values threaded in parallel with two comparisons to keep in agreement is exactly the drift the codebase's one-spelling rule exists to prevent. `assetMatcher` is `excludedMatcher`'s twin so the compile-once-per-list behavior is shared rather than re-derived.
+**Why:** `excluded: string[]` is arm-time captured state threaded through six functions, with `sameExclusions` as the re-arm check. The asset root is captured identically and for the same reason, so it widens that one parameter rather than travelling beside it — two values threaded in parallel with two comparisons to keep in agreement is exactly the drift the codebase's one-spelling rule exists to prevent. `assetMatcher` mirrors `excludedMatcher`'s matching rule — root-anchored, whole-segment, normalized — but not its memoization, which keys on an array and cannot key on a string.
 
 **Files:**
 - Modify: `src/main/exclusion.ts` — add `assetMatcher`; add `WatchScope` + `sameScope`; retire `sameExclusions`; widen `shouldSkipDir`.
@@ -194,7 +174,7 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 - Produces: `shouldSkipDir(name: string, relPath: string, scope: WatchScope): boolean`.
 - Assumed by: Tasks 4, 5.
 
-**Failure half:** an empty `assetDir` matches nothing (never everything). An `assetDir` equal to the nexus root (`''` or `'.'`) matches nothing — a root-wide asset dir would hide the entire nexus, so the degenerate case refuses rather than obeys. A one-segment dir must not match a sibling whose name merely extends it (`file-assets` vs `file-assets-old`).
+**Failure half:** an empty `assetDir` matches nothing rather than everything — the one degenerate case this function owns, since it can be constructed directly in a test. The root-wide value (`.`, `./`) is Task 1's to refuse and is guarded at the reader; do NOT restate it here. A one-segment dir must not match a sibling whose name merely extends it (`file-assets` vs `file-assets-old`).
 
 **Must agree:** `shouldSkipDir` and `corpusFilesUnder` are two independent skip tests over the same tree. One test walks a fixture holding an asset dir, an excluded dir and a hidden dir, and asserts the tree-visible set and the corpus set agree about all three.
 
@@ -208,7 +188,7 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 - [ ] `npm run typecheck && npm run test && npm run lint` — expect green.
 - [ ] Commit: `refactor(exclusion): one watch scope carries the asset root beside the exclusions`
 
-#### Task 4: The asset root outranks every other skip in the watcher
+#### Task 3: The asset root outranks every other skip in the watcher
 
 **Requirement:** 3, 4
 
@@ -222,7 +202,7 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 
 **Interfaces**
 - Produces: `WatchClass` gains `{ kind: 'asset'; rel: string }`.
-- Assumed by: Task 6 (which gives the arm its effect).
+- Assumed by: Task 5 (which gives the arm its effect).
 
 **Failure half:** an asset event arriving with no live tree → the arm still classifies (it does not depend on the tree). A directory event inside the asset root → classified `asset`, never `full-refresh`. An asset root that *is* `.nexus/assets` → still classified `asset`, not swallowed by the `NEXUS_DIR` branch. A thumbnail write → classified `asset` and ignored downstream, never a walk.
 
@@ -235,7 +215,7 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 - [ ] Run — expect failures.
 - [ ] Implement the ordering and the arm; make `touchesCorpus` exclude asset paths.
 - [ ] Assert no arm returns `full-refresh` for any path under the asset root — parameterized over `.nexus/assets`, `file-assets`, and `.attachments`.
-- [ ] Confirm the `tree.unreadable` check at `watchPatch.ts:121` cannot fire for an asset path. Every producer of that list sits inside `readContainerMeta` / `readDirectPages` / `readChildSets`, which run only on directories the walk descended into — and Task 3 prunes the asset root at `shouldSkipDir` before descent. This holds ONLY because Task 3 landed; if the prune is ever removed, the arm must move above `:121`.
+- [ ] Confirm the `tree.unreadable` check at `watchPatch.ts:121` cannot fire for an asset path. Every producer of that list sits inside `readContainerMeta` / `readDirectPages` / `readChildSets`, which run only on directories the walk descended into — and Task 2 prunes the asset root at `shouldSkipDir` before descent. This holds ONLY because Task 2 landed; if the prune is ever removed, the arm must move above `:121`.
 - [ ] `npm run typecheck && npm run test` — expect green.
 - [ ] Commit: `fix(watcher): the asset root is watched ahead of every other skip`
 
@@ -254,7 +234,7 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 
 ### Phase 2 — Resolution
 
-#### Task 5: The asset map, built in main
+#### Task 4: The asset map, built in main
 
 **Requirement:** 5, 6
 
@@ -262,21 +242,22 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 
 **Files:**
 - Create: `src/main/assetMap.ts`.
+- Modify: `src/shared/nexusPaths.ts` — add `THUMBNAILS_SEGMENT = 'thumbnails'`, the one segment the map skips. It lands here rather than in its own task because this is its only consumer.
 - Modify: `src/main/io/walk.ts` — `listFilesRecursive` requires a suffix list and returns absolute native paths (`:95-103`). The map needs EVERY file regardless of extension, keyed nexus-relative POSIX. Widen it (suffixes optional) rather than hard-coding an extension list — an extension list silently drops `.svg` / `.heic` / `.avif` and forecloses Part 2's any-file property.
 - Test: `src/main/assetMap.test.ts`.
 
 **Interfaces**
 - Produces: `files` — normalized filename → nexus-relative POSIX path, the first by sorted path where several answer.
 - Produces: `buildAssetMap(root: string, assetDir: string): Promise<AssetMap>`.
-- Produces: `assetDuplicates(root, assetDir): Promise<Set<string>>` — normalized names two or more files answer to.
+- Produces: `buildAssetMap` returns the duplicate set ALONGSIDE the map — `{ files, duplicates, version }` — from the one listing. A second function re-walking the directory for names the first walk already saw is a second walk for information already in hand.
 - Produces: `patchAssetMap(map, rel, event): AssetMap` — an add/unlink applied without a re-listing. A `change` on an existing path leaves the name→path mapping untouched and bumps `version` instead (see below).
-- Produces: `resolveAssetName(map: AssetMap, name: string): string | null | 'ambiguous'` — **the main-side resolver.** Task 8's delete guard needs it and cannot import the renderer's `resolveAssetValue`; without it, spec E-3's "resolve-to-delete refuses on ambiguity" describes work no code performs.
-- Produces: `AssetMap = { files: Record<string, string>; version: number }` — the version exists so an externally re-saved file under an UNCHANGED name still repaints. Without it the map is deep-equal, `stabilize` returns the prior object, zustand no-ops, and no `<img>` is ever re-requested — so `Cache-Control: no-store` never gets the chance to matter.
+- Produces: `resolveAssetName(map: AssetMap, name: string): string | null | 'ambiguous'` — **the main-side resolver.** Task 7's delete guard needs it and cannot import the renderer's `resolveAssetValue`; without it, spec E-3's "resolve-to-delete refuses on ambiguity" describes work no code performs.
+- Produces: `AssetMap = { files: Record<string, string>; duplicates: string[]; version: number }` — the version exists so an externally re-saved file under an UNCHANGED name still repaints. Without it the map is deep-equal, `stabilize` returns the prior object, zustand no-ops, and no `<img>` is ever re-requested — so `Cache-Control: no-store` never gets the chance to matter.
 - Assumed by: Tasks 6, 7, 8, 9.
 
 **Failure half:** a missing or unreadable asset directory → an empty map, never a throw (`listEntries` already swallows per-directory failures). Zero files → empty map. A file directly at the asset root and one nested → both indexed. A `thumbnails` segment at any depth → skipped. A name differing only by case or Unicode form → one entry, since resolution normalizes.
 
-**Must agree:** the map's ambiguity set and the picker's refusal set (Task 8) must name the same files. One test asserts `assetDuplicates` and the picker's filter agree over a fixture holding a duplicate.
+**Must agree:** `files` and `duplicates` are derived from one listing and must never disagree — a name in `duplicates` must be one `files` resolved by sorted-first, never one it dropped. One test asserts both over a fixture holding a triplicate.
 
 **Steps:**
 - [ ] Write the failing tests, including the degenerate cases above.
@@ -285,11 +266,11 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 - [ ] `npm run typecheck && npm run test` — expect green.
 - [ ] Commit: `feat(assets): the filename map main resolves against`
 
-#### Task 6: Push the map, and keep it current without a walk
+#### Task 5: Push the map, and keep it current without a walk
 
 **Requirement:** 4, 5
 
-**Why:** Task 4's `asset` arm classifies the event; this gives it its effect. The push is what makes a phantom that becomes real repaint itself — the property that ruled out main-side resolution. It runs through `stabilize` because IPC strips object identity, so an unstabilized push would re-render every banner on every file a sync delivers, which is the same lag the arm exists to prevent, moved one layer out.
+**Why:** Task 3's `asset` arm classifies the event; this gives it its effect. The push is what makes a phantom that becomes real repaint itself — the property that ruled out main-side resolution. It runs through `stabilize` for the echo case and only that: a flat `Record<string,string>` carries no sub-objects to recycle, so stabilize buys the unchanged-push no-op and nothing else. A real add or unlink produces a new object and re-renders every mounted consumer — acceptable here (CardsView is virtualized; ~11 consumers mount), and not to be written up as prevention it does not provide.
 
 **Files:**
 - Modify: `src/shared/bridge.ts` — `Pushes` gains `'assets:changed': AssetMap`; `Asks` gains `'assets:map': { args: []; reply: AssetMap }`.
@@ -302,7 +283,7 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 
 **Interfaces**
 - Produces: `useSession(s => s.assetMap)`.
-- Assumed by: Task 7.
+- Assumed by: Task 6.
 
 **Failure half:** no nexus open → an empty map, not an error. A push arriving during a nexus switch → guarded by `sessionRoot()` the way `settle` already guards its tree push. A batch of 50 adds → one push after the settle, never 50. A `change` on an existing file → the name→path map is byte-identical, so the push must carry a bumped `version` or nothing repaints at all.
 
@@ -316,7 +297,7 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 - [ ] `npm run typecheck && npm run test && npm run lint` — expect green.
 - [ ] Commit: `feat(assets): main pushes the asset map; no asset event walks the tree`
 
-#### Task 7: `assetUrl` resolves the three spellings
+#### Task 6: `assetUrl` resolves the three spellings
 
 **Requirement:** 5, 6
 
@@ -350,7 +331,7 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 - [ ] `npm run typecheck && npm run test && npm run lint` — expect green.
 - [ ] Commit: `feat(assets): assetUrl resolves wikilinks, paths and web addresses`
 
-#### Task 8: Both security predicates learn the configured root
+#### Task 7: Both security predicates learn the configured root
 
 **Requirement:** 5, 6
 
@@ -363,7 +344,7 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 - Modify: `src/main/mutate.ts` — **the four delete-on-replace sites**: `:391` (profile image), `:443` (page cover), `:502` (sidecar + homepage), and the navview arm at `:462-473` which reads `readNavigationFile().banner` through the same gate. Each resolves through `resolveAssetName` before its `rm`.
 - Test: `src/main/assetRoots.test.ts`, `src/main/io/navigationFile.test.ts`, `src/main/mutate.test.ts`.
 
-**Why the four sites are this task's and not Task 11's:** widening `isAssetPath` is what lets a wikilink reach `prev`, and the existing code then runs `rm(join(root, '[[Name.png]]'))` — a silent no-op that orphans the replaced file into the user's Obsidian folder forever. The gate and the delete it feeds move together or the widening is a defect. `navigationFile.ts:37` states the invariant in words: the pointer feeds a real file delete, so what it names must always be resolvable to a real path.
+**Why the four sites are this task's and not Task 10's:** widening `isAssetPath` is what lets a wikilink reach `prev`, and the existing code then runs `rm(join(root, '[[Name.png]]'))` — a silent no-op that orphans the replaced file into the user's Obsidian folder forever. The gate and the delete it feeds move together or the widening is a defect. `navigationFile.ts:37` states the invariant in words: the pointer feeds a real file delete, so what it names must always be resolvable to a real path.
 
 **Derivation**
 - `rg -F "isAssetPath" src` → 8 non-test at planning time.
@@ -399,7 +380,7 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 
 ### Phase 3 — The setting's surface
 
-#### Task 9: The folder chooser channel
+#### Task 8: The folder chooser channel
 
 **Requirement:** 2
 
@@ -414,7 +395,7 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 
 **Interfaces**
 - Produces: `validateAssetDir` — returns the nexus-relative POSIX path, or a typed refusal.
-- Assumed by: Task 10.
+- Assumed by: Task 9.
 
 **Failure half:** cancelled dialog → `ok(null)`, not an error. A folder outside the nexus → refused (`resolveUnderRoot`). A folder holding any `.md` → refused. A folder holding any `_*.json` sidecar → refused. The nexus root itself → refused. A folder that vanished between pick and validate → `not-found`. No nexus open → `NO_NEXUS`. A `kind: 'window'` handler has no envelope net — it must hand-catch, as `nexus:choose` does.
 
@@ -427,9 +408,9 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 - [ ] `npm run typecheck && npm run test` — expect green.
 - [ ] Commit: `feat(settings): a validated in-nexus folder chooser for the asset directory`
 
-#### Task 10: The Settings row
+#### Task 9: The Settings row
 
-**Requirement:** 1, 2
+**Requirement:** 1, 2, 10
 
 **Why:** Every existing row but `device` writes a `personalization` key, and `device` writes to `nexus.db` — neither is the shape for a top-level `settings.json` key, so the row kind is new and its writer follows `writeSubfield`. The field composes the exported `field` style rather than restating its chrome; `--input-field` is already a token, so this is consumption, not a second copy.
 
@@ -453,7 +434,7 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 - [ ] Disclose the row's exact appearance and behavior to Nathan; get the go.
 - [ ] Add the `path` arm, the case, the component, the channel, the writer.
 - [ ] The write calls `confirmSettingsWrite()` — the key is a tree leaf, unlike `subfield`.
-- [ ] **The handler then calls `startWatcher(root, win)`.** `confirmSettingsWrite` reaches `applySettingsLeaves` only, and the re-arm at `watcher.ts:162` sits behind `if (outcome !== 'refresh') return` inside `settle` — which the write's own echo never reaches (`recordWrite` → `isRecentWrite` → dropped at `watcher.ts:102`). Without this line the new asset root is unwatched for the rest of the session, or its events classify against the stale scope and take `full-refresh` — one whole-nexus walk per file Obsidian drops. Task 4's `sameScope` re-arm covers only an EXTERNAL hand-edit of `settings.json`.
+- [ ] **The handler then calls `startWatcher(root, win)`.** `confirmSettingsWrite` reaches `applySettingsLeaves` only, and the re-arm at `watcher.ts:162` sits behind `if (outcome !== 'refresh') return` inside `settle` — which the write's own echo never reaches (`recordWrite` → `isRecentWrite` → dropped at `watcher.ts:102`). Without this line the new asset root is unwatched for the rest of the session, or its events classify against the stale scope and take `full-refresh` — one whole-nexus walk per file Obsidian drops. Task 3's `sameScope` re-arm covers only an EXTERNAL hand-edit of `settings.json`.
 - [ ] `npm run typecheck && npm run test && npm run lint` — expect green.
 - [ ] Screenshot the row and show it.
 - [ ] Commit: `feat(settings): Default Asset Directory`
@@ -473,11 +454,11 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 
 ### Phase 4 — Writing assets under their own names
 
-#### Task 11: The picker returns a path; the writer copies under the file's own name
+#### Task 10: The picker returns a path; the writer copies under the file's own name
 
-**Requirement:** 8
+**Requirement:** 7, 8, 10
 
-**Why:** `pickImageDataUrl` reads the chosen file into a data URL and `writeImageAsset` invents `banner-<token>.png` from it — both halves contradict "an asset keeps whatever name it has on disk." The invented name was introduced to defeat browser caching (`mutate.ts:105`'s own comment), but the protocol handler has since sent `Cache-Control: no-store` ([index.ts:246](../../Pommora/src/main/index.ts#L246)), so the reason is spent; Task 7's `?v=` covers the residual same-name re-save. A file already sitting under an asset root is referenced in place, because copying it would create the duplicate name Requirement 7 refuses.
+**Why:** `pickImageDataUrl` reads the chosen file into a data URL and `writeImageAsset` invents `banner-<token>.png` from it — both halves contradict "an asset keeps whatever name it has on disk." The invented name was introduced to defeat browser caching (`mutate.ts:105`'s own comment), but the protocol handler has since sent `Cache-Control: no-store` ([index.ts:246](../../Pommora/src/main/index.ts#L246)), so the reason is spent; Task 6's `?v=` covers the residual same-name re-save. A file already sitting under an asset root is referenced in place, because copying it would create the duplicate name Requirement 7 refuses.
 
 **Files:**
 - Modify: `src/main/index.ts` — `pickImageDataUrl` → `pickImagePath`, returning an absolute path.
@@ -494,7 +475,7 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 **Interfaces**
 - Produces: `adoptImageAsset(root, assetDir, absSource): Promise<Result<string>>` — returns the wikilink text `[[Name.ext]]`.
 
-**Failure half:** the source already under an asset root → referenced in place, not copied. A basename colliding with a *different* file → disambiguated via `createDisambiguated` (caller splits the extension: base `Sunset`, attempt writes `Sunset 2.png`). A basename colliding with a byte-identical file → referenced in place, no copy. An unreadable source → `Result` failure, and the store is left untouched. A source outside the nexus → copied in (that is the normal case). A name a wikilink cannot spell — one containing `]` — → refused, since `embeddableTitle` already states that constraint.
+**Failure half:** the source already under an asset root **whose basename is in the map's `duplicates`** → REFUSED with a message naming the collision; referencing it would author exactly the ambiguity Requirement 7 forbids, and no disambiguation is possible without renaming a file the user did not ask to rename. The source already under an asset root and unambiguous → referenced in place, not copied. A basename colliding with a *different* file → disambiguated via `createDisambiguated` (caller splits the extension: base `Sunset`, attempt writes `Sunset 2.png`). A basename colliding with a byte-identical file → referenced in place, no copy. An unreadable source → `Result` failure, and the store is left untouched. A source outside the nexus → copied in (that is the normal case). A name a wikilink cannot spell — one containing `]` — → refused, since `embeddableTitle` already states that constraint.
 
 **Must agree:** `adoptImageAsset`'s output must resolve against **the map the app is actually holding**, not a fresh one. A test that rebuilds the map from the directory passes while the app fails — that is precisely how the echo-suppression defect hides. The test drives the real path: adopt an asset, then assert main's held map contains it and that a push was emitted, THEN resolve the stored value against that pushed map.
 
@@ -504,7 +485,7 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 - [ ] Write the failing tests, including all six failure-half cases and the round-trip agreement.
 - [ ] Run — expect failures.
 - [ ] Convert the picker, the writer and the five store arms. Copy via `readFile` + `atomicWriteBinary`, which records the write.
-- [ ] **`adoptImageAsset` patches main's held map and pushes `assets:changed` before it returns.** `atomicWriteBinary` calls `recordWrite`, so `watcher.ts:102` drops the event and `settle` never runs — Task 6's entire mechanism is unreachable for anything Pommora writes. Without this line every banner picked is blank until the app restarts, and the app is green the whole time.
+- [ ] **`adoptImageAsset` patches main's held map and pushes `assets:changed` before it returns.** `atomicWriteBinary` calls `recordWrite`, so `watcher.ts:102` drops the event and `settle` never runs — Task 5's entire mechanism is unreachable for anything Pommora writes. Without this line every banner picked is blank until the app restarts, and the app is green the whole time.
 - [ ] `pickImagePath` must NOT bake `IMAGE_EXTS` in as a hard filter — it is the channel Part 2's any-file picker inherits. Offer images by default; do not make the filter the channel's contract.
 - [ ] Re-derive both counts; a divergence rewrites this task.
 - [ ] `npm run typecheck && npm run test && npm run lint` — expect green.
@@ -524,9 +505,9 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 
 ### Phase 5 — Migration
 
-#### Task 12: Migrate the stores, collapse duplicates, empty `.nexus/assets`
+#### Task 11: Migrate the stores, collapse duplicates, empty `.nexus/assets`
 
-**Requirement:** 9
+**Requirement:** 9, 10
 
 **Why:** Six stores hold `.nexus/assets` paths minted by the retired writer, and 21 files hold only ~12 unique images. Walking the *stores* rather than the directory is forced: nothing cleans up `.nexus/assets/<id>/` on delete, so a directory walk would carry orphans from long-deleted entities into the user's Obsidian folder as garbage. Collapsing by content hash is what makes a flat destination possible at all — seven files named `IMG_0073.jpeg` cannot coexist. Idempotence is per reference rather than per pass: a reference still holding a `.nexus/assets` path migrates, one already rewritten is skipped — so a run after a partial failure completes the job instead of wedging on counts that have legitimately moved.
 
@@ -559,7 +540,7 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 - **Assert SHAPE, not counts, before the first write.** An absolute-count gate is a shape check wearing the wrong instrument: Nathan adds pages daily, so a cover written between deriving the numbers and running the pass would abort on data that is entirely correct. The pre-write assertion is that every `.nexus/assets` reference belongs to one of the six known store kinds, every referenced file exists and hashes, and no reference falls outside them. The counts in the Derivation are a **prediction to report against**, not a gate.
 - **Idempotent per reference, not per directory.** A partial pass must be resumable: gate each reference on whether it still holds a `.nexus/assets` path, so a run after a partial failure migrates exactly the stragglers. A directory-level gate plus a count-level abort would wedge permanently — the gate says run, the census says abort, and the skipped references never migrate on any future open.
 - **Invariants after:** every migrated reference resolves through `resolveAssetName` against the map main now holds; the destination file count equals the unique-hash count; `.nexus/assets` is empty.
-- **The pass patches main's held map and pushes `assets:changed` before it returns.** Its copies use `atomicWriteBinary`, so the watcher never sees them — without the push all 14 migrated references render blank and Task 13 reads as "the migration destroyed the banners."
+- **The pass patches main's held map and pushes `assets:changed` before it returns.** Its copies use `atomicWriteBinary`, so the watcher never sees them — without the push all 14 migrated references render blank and Task 12 reads as "the migration destroyed the banners."
 - **Report what was skipped.** A reference left behind, a file that would not hash, a store that refused its write: each named in the result, never silently claimed.
 
 **Negative control:** the orphan exclusion fires — seed an orphaned `.nexus/assets/<dead-id>/x.png` that no store references, run the migration, and assert `x.png` does **not** appear in the destination and **does** appear in `.trash`. Then assert a *referenced* file with the same shape *does* migrate. Both halves.
@@ -574,11 +555,11 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 - [ ] `npm run typecheck && npm run test && npm run lint` — expect green.
 - [ ] Commit: `feat(assets): migrate every stored image into the configured directory`
 
-#### Task 13: Verify against the live nexus *(closes the hazard window)*
+#### Task 12: Verify against the live nexus *(closes the hazard window)*
 
 **Requirement:** 9
 
-**Why:** Task 12 empties `.nexus/assets` in Nathan's real nexus. A rendering banner is not proof — a stale browser cache renders an image whose file has moved. The window opened by Task 12 closes only on a verification that cannot be satisfied by cache.
+**Why:** Task 11 empties `.nexus/assets` in Nathan's real nexus. A rendering banner is not proof — a stale browser cache renders an image whose file has moved. The window opened by Task 11 closes only on a verification that cannot be satisfied by cache.
 
 **Steps:**
 - [ ] Back up `~/NexusOS/.nexus` and `~/NexusOS/file-assets` before the first run. Present the census counts to Nathan and get an explicit go — this is live data.
@@ -589,7 +570,7 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 - [ ] Confirm the originals are recoverable from the trash browser.
 - [ ] Record the observed counts in the Log against the predicted ones.
 
-#### Task 14: Reconcile the documentation
+#### Task 13: Reconcile the documentation
 
 **Requirement:** 1, 9
 
@@ -610,7 +591,7 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 - [ ] Simplification findings applied, and the gates re-run green after them.
 - [ ] **Then** review — `/code-review` against the same `<base>..HEAD`; the report cites files inside it.
 - [ ] The acceptance criterion observed end to end, after a full reload.
-- [ ] The hazard window closed by Task 13.
+- [ ] The hazard window closed by Task 12.
 - [ ] Dead Vocabulary sweep returns zero against a non-zero control.
 - [ ] Every document in Made False rewritten in the commit that falsified it.
 - [ ] Progress hashes filled in; lessons written into `.claude/Guidelines/`.
@@ -619,26 +600,25 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 
 ## Implementation Log
 
-### Progress
+### Progress   *(seeded unchecked — this tree is what a fresh agent reads first)*
 - [ ] **Phase 1** — The asset root becomes a shared fact · base `<commit>`
-  - [ ] Task 1 — Name the two asset roots · `<commit>`
-  - [ ] Task 2 — `asset_directory` as a tree leaf · `<commit>`
-  - [ ] Task 3 — One scope object · `<commit>`
-  - [ ] Task 4 — The asset root outranks every skip · `<commit>`
+  - [ ] Task 1 — `asset_directory` as a tree leaf · `<commit>`
+  - [ ] Task 2 — One scope object carries it · `<commit>`
+  - [ ] Task 3 — The asset root outranks every skip · `<commit>`
 - [ ] **Phase 2** — Resolution
-  - [ ] Task 5 — The asset map · `<commit>`
-  - [ ] Task 6 — Push it, keep it current · `<commit>`
-  - [ ] Task 7 — `assetUrl` resolves three spellings · `<commit>`
-  - [ ] Task 8 — Both containment predicates · `<commit>`
+  - [ ] Task 4 — The asset map · `<commit>`
+  - [ ] Task 5 — Push it, keep it current · `<commit>`
+  - [ ] Task 6 — `assetUrl` resolves three spellings · `<commit>`
+  - [ ] Task 7 — Both containment predicates · `<commit>`
 - [ ] **Phase 3** — The setting's surface
-  - [ ] Task 9 — The folder chooser channel · `<commit>`
-  - [ ] Task 10 — The Settings row · `<commit>`
+  - [ ] Task 8 — The folder chooser channel · `<commit>`
+  - [ ] Task 9 — The Settings row · `<commit>`
 - [ ] **Phase 4** — Writing assets under their own names
-  - [ ] Task 11 — Picker returns a path; writer keeps the name · `<commit>`
+  - [ ] Task 10 — Picker returns a path; writer keeps the name · `<commit>`
 - [ ] **Phase 5** — Migration
-  - [ ] Task 12 — Migrate, collapse, empty · `<commit>`
-  - [ ] Task 13 — Verify against the live nexus · `<commit>`
-  - [ ] Task 14 — Reconcile the documentation · `<commit>`
+  - [ ] Task 11 — Migrate, collapse, empty · `<commit>`
+  - [ ] Task 12 — Verify against the live nexus · `<commit>`
+  - [ ] Task 13 — Reconcile the documentation · `<commit>`
 
 ### Rulings
 - **Migration naming** — Nathan: "collapse identical, rename to whatever you want." Real names kept, invented names owner-derived, the two singletons `nexus-banner` / `nexus-icon`.
@@ -647,12 +627,12 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 - **Resolution is renderer-side** — Nathan, after the main-side alternative was put and the full-walk consequence explained.
 
 ### Open Against Later Tasks
-- **Windows path handling** — `listFilesRecursive` returns native separators; Task 5 normalizes to POSIX for the map. Not exercised by any current gate. Raised by the attack review, verified as unchecked rather than broken.
+- **Windows path handling** — `listFilesRecursive` returns native separators; Task 4 normalizes to POSIX for the map. Not exercised by any current gate. Raised by the attack review, verified as unchecked rather than broken.
 
 ### Reviews
 - **Round 1 — `build-breaking-agent`, pre-code.** 13 findings (3 High, 5 Medium, 5 Low), 1 latent, 1 unknown, 10 candidates killed. Every finding verified against the code before folding; all 13 folded. Independently confirmed by me: `excludedMatcher(` is **5**, not the 6 the plan claimed; `banner-` returns **103** legitimate CSS hits so that sweep could never pass; `new WeakMap().set('string', …)` **throws**; `applySettingsLeaf` (singular, `watchPatch.ts:379`) holds a fifth `sameExclusions` the plan never named; six citations had drifted 1–2 lines.
   - The review's central finding stands: the plan built the external-change machinery and never asked what happens **when Pommora is the writer**. `atomicWriteBinary` → `recordWrite` → `isRecentWrite` means no in-app write reaches `settle`, so the asset copy starved the map (F1), the settings write starved the re-arm (F2), and the widened gate starved the delete (F3). Three defects, one root cause, all shipping silently green. Requirement 10 now names the path.
-  - **Unknown resolved:** the `tree.unreadable` check at `watchPatch.ts:121` runs before Task 4's arm, but every producer of that list sits inside `readContainerMeta` / `readDirectPages` / `readChildSets`, which run only on descended directories — and Task 3 prunes the asset root at `shouldSkipDir`. Safe, and conditional on Task 3, which Task 4 now records.
+  - **Unknown resolved:** the `tree.unreadable` check at `watchPatch.ts:121` runs before Task 3's arm, but every producer of that list sits inside `readContainerMeta` / `readDirectPages` / `readChildSets`, which run only on descended directories — and Task 2 prunes the asset root at `shouldSkipDir`. Safe, and conditional on Task 2, which Task 3 now records.
 ### Deviations
 ### Lessons
 ### Sequenced After
