@@ -89,15 +89,28 @@ export interface FoldRegion {
   key: string
 }
 
-/** The offset a collapsed section leaves visible above it — the end of the line the divider renders
- *  on, or -1 where the document has no section. A heading section reaching past this swallows the
- *  footnotes whole when it collapses, so the heading generator clamps against it. The clamp lives
- *  here rather than in the heading scan because the scan takes a raw string and would have to derive
- *  the boundary a second time; this holds the `Text` the cached scan is keyed on. */
-function citationsCut(doc: Text): number {
+/** The document's citations section as a foldable region, or null where it has none. The section's
+ *  geometry is derived here alone: its `lineEnd` is also the offset a collapsed section leaves
+ *  visible above it, which the heading generator clamps against — a heading reaching past it
+ *  swallows the footnotes whole when it collapses. The clamp lives here rather than in the heading
+ *  scan because the scan takes a raw string and would have to derive the boundary a second time;
+ *  this holds the `Text` the cached scan is keyed on.
+ *
+ *  A section starting at line 0 has nothing above it to anchor against, and hiding it would leave a
+ *  blank page — so it offers no region and stays visible, which is the right answer. */
+function citationsRegion(doc: Text): FoldRegion | null {
   const { citations, lineStarts, lines } = docScan(doc)
   const a = citations.anchorLine
-  return a < 0 ? -1 : lineStarts[a] + lines[a].length
+  if (a < 0) return null
+  const last = lines.length - 1
+  return {
+    kind: 'citations',
+    anchor: lineStarts[citations.firstLine],
+    anchorLine: lineStarts[a],
+    lineEnd: lineStarts[a] + lines[a].length,
+    to: lineStarts[last] + lines[last].length,
+    key: CITATIONS_KEY,
+  }
 }
 
 const KINDS: Record<FoldKind, (doc: Text) => FoldRegion[]> = {
@@ -105,7 +118,7 @@ const KINDS: Record<FoldKind, (doc: Text) => FoldRegion[]> = {
   // `# Title` … `## Sources` … the run has two sections running to the document's end, and
   // clamping one leaves the other spanning the footnotes.
   heading: (doc) => {
-    const cut = citationsCut(doc)
+    const cut = citationsRegion(doc)?.lineEnd ?? -1
     return sectionsOf(doc).flatMap((s) => {
       const to = cut < 0 ? s.to : Math.min(s.to, cut)
       return to > s.lineEnd + 1
@@ -122,23 +135,9 @@ const KINDS: Record<FoldKind, (doc: Text) => FoldRegion[]> = {
         : []
     })
   },
-  // A section starting at line 0 has nothing above it to anchor against, and hiding it would leave
-  // a blank page — so it offers no region and stays visible, which is the right answer.
   citations: (doc) => {
-    const { citations, lineStarts, lines } = docScan(doc)
-    const a = citations.anchorLine
-    if (a < 0) return []
-    const last = lines.length - 1
-    return [
-      {
-        kind: 'citations',
-        anchor: lineStarts[citations.firstLine],
-        anchorLine: lineStarts[a],
-        lineEnd: lineStarts[a] + lines[a].length,
-        to: lineStarts[last] + lines[last].length,
-        key: CITATIONS_KEY,
-      },
-    ]
+    const r = citationsRegion(doc)
+    return r ? [r] : []
   },
 }
 
@@ -194,6 +193,36 @@ function cloneBody(view: EditorView, from: number, to: number): HTMLElement {
     pos = line.to + 1
   }
   return wrap
+}
+
+/** A caret inside a body about to be hidden becomes unplaced rather than jumping to the next
+ *  visible line — which would strand it on the divider, a blank line the section no longer owns. */
+function blurCaretInBody(view: EditorView, r: FoldRegion): void {
+  const sel = view.state.selection.main
+  if (sel.to > r.lineEnd && sel.from <= r.to) view.contentDOM.blur()
+}
+
+/** Whether a region's fold is standing — collapsed, or on its way there. */
+const closedAt = (entries: readonly FoldEntry[], anchor: number): boolean =>
+  entries.some((e) => e.anchor === anchor && e.phase !== 'expanding')
+
+/** The effect that collapses a region, or null where it has no body to hide. Every collapse in the
+ *  file goes through here, so what a fold captures is one fact rather than three copies. */
+function collapseEffect(
+  view: EditorView,
+  r: FoldRegion,
+  animate: boolean,
+): StateEffect<unknown> | null {
+  const from = r.lineEnd + 1
+  if (from > r.to) return null
+  return foldEffect.of({
+    kind: r.kind,
+    anchor: r.anchor,
+    from,
+    to: r.to,
+    animate,
+    clone: cloneBody(view, from, r.to),
+  })
 }
 
 class RevealWidget extends WidgetType {
@@ -321,22 +350,10 @@ function toggleFold(view: EditorView, r: FoldRegion): void {
     view.dispatch({ effects: expandEffect.of(r.anchor) })
     return
   }
-  const bodyStart = r.lineEnd + 1
-  if (bodyStart > r.to) return
-  // A caret inside the body being folded becomes unplaced (blur) rather than jumping to the next visible line.
-  const sel = view.state.selection.main
-  const caretInBody = sel.to > r.lineEnd && sel.from <= r.to
-  view.dispatch({
-    effects: foldEffect.of({
-      kind: r.kind,
-      anchor: r.anchor,
-      from: bodyStart,
-      to: r.to,
-      animate: true,
-      clone: cloneBody(view, bodyStart, r.to),
-    }),
-  })
-  if (caretInBody) view.contentDOM.blur()
+  const collapse = collapseEffect(view, r, true)
+  if (!collapse) return
+  blurCaretInBody(view, r)
+  view.dispatch({ effects: collapse })
 }
 
 /** Open every fold hiding `pos` — the innermost and each ancestor above it, since a heading can sit
@@ -388,25 +405,24 @@ const chevronDeco = EditorView.decorations.compute(['doc', foldField], (state) =
   const entries = state.field(foldField)
   const ranges: Range<Decoration>[] = []
   for (const r of regionsOf(state.doc)) {
-    const closed = entries.some((e) => e.anchor === r.anchor && e.phase !== 'expanding')
+    const closed = closedAt(entries, r.anchor)
     // The chevron is the heading's affordance. The section discloses from the footer's control and
     // its own divider, so its anchor takes neither the chevron nor the open/closed classes — the
     // closed one carries a color rule that would tint ordinary prose to the fold control's color.
     // The divider stays stamped while hidden so it can fade out rather than vanish between frames.
-    if (r.kind !== 'heading') {
-      if (state.doc.lineAt(r.anchorLine).text.trim() !== '') continue
+    if (r.kind === 'heading') {
+      ranges.push(
+        Decoration.line({
+          class: `${HEADING_FOLD_LINE} md-foldable ${closed ? 'md-fold-closed' : 'md-fold-open'}`,
+        }).range(r.anchorLine),
+      )
+    } else if (state.doc.lineAt(r.anchorLine).text.trim() === '') {
       ranges.push(
         Decoration.line({
           class: closed ? `${CITE_DIVIDER_LINE} md-cite-divider-off` : CITE_DIVIDER_LINE,
         }).range(r.anchorLine),
       )
-      continue
     }
-    ranges.push(
-      Decoration.line({
-        class: `${HEADING_FOLD_LINE} ${closed ? 'md-foldable md-fold-closed' : 'md-foldable md-fold-open'}`,
-      }).range(r.anchorLine),
-    )
   }
   return Decoration.set(ranges, true)
 })
@@ -420,28 +436,21 @@ const chevronDeco = EditorView.decorations.compute(['doc', foldField], (state) =
  *  disk on any un-annotated fold effect, and this runs before `applySavedFolds` has restored the
  *  page's heading folds — an un-annotated seed would erase them on every open of a footnoted page. */
 export function applyCitationsVisibility(view: EditorView, shown: boolean, animate = true): void {
-  const r = regionsOf(view.state.doc).find((x) => x.kind === 'citations')
+  const r = citationsRegion(view.state.doc)
   if (!r) return
-  const folded = view.state
-    .field(foldField)
-    .some((e) => e.anchor === r.anchor && e.phase !== 'expanding')
-  if (folded === !shown) return
-  const bodyStart = r.lineEnd + 1
-  if (bodyStart > r.to) return
-  view.dispatch({
-    effects: shown
-      ? expandEffect.of(r.anchor)
-      : foldEffect.of({
-          kind: r.kind,
-          anchor: r.anchor,
-          from: bodyStart,
-          to: r.to,
-          animate,
-          clone: cloneBody(view, bodyStart, r.to),
-        }),
-    annotations: initialFoldAnnotation.of(true),
-  })
+  if (closedAt(view.state.field(foldField), r.anchor) === !shown) return
+  const effect = shown ? expandEffect.of(r.anchor) : collapseEffect(view, r, animate)
+  if (!effect) return
+  if (!shown) blurCaretInBody(view, r)
+  view.dispatch({ effects: effect, annotations: initialFoldAnnotation.of(true) })
 }
+
+/** A footnoted document ends AT its footnotes. The editor's generous tail is typing room for a body
+ *  still being written; a citations section is the document's foot, so it closes on the seam's own
+ *  gap instead of floating above a field of empty scroller. */
+const citationsTail = EditorView.contentAttributes.compute(['doc'], (state) => ({
+  class: citationsRegion(state.doc) ? 'mdpm-cite-tail' : '',
+}))
 
 /** Re-apply a page's saved folds at mount (no animation), capturing clones from the freshly-rendered lines. */
 export function applySavedFolds(view: EditorView, keys: string[]): void {
@@ -449,18 +458,8 @@ export function applySavedFolds(view: EditorView, keys: string[]): void {
   const effects: StateEffect<unknown>[] = []
   for (const r of regionsOf(view.state.doc)) {
     if (!persisted(r.kind) || !wanted.has(r.key)) continue
-    const bodyStart = r.lineEnd + 1
-    if (bodyStart > r.to) continue
-    effects.push(
-      foldEffect.of({
-        kind: r.kind,
-        anchor: r.anchor,
-        from: bodyStart,
-        to: r.to,
-        animate: false,
-        clone: cloneBody(view, bodyStart, r.to),
-      }),
-    )
+    const collapse = collapseEffect(view, r, false)
+    if (collapse) effects.push(collapse)
   }
   if (effects.length) view.dispatch({ effects, annotations: initialFoldAnnotation.of(true) })
 }
@@ -510,5 +509,5 @@ export function markdownFolding(
       return true
     },
   })
-  return [foldField, chevronDeco, headingDrag, dividerPress, persist]
+  return [foldField, chevronDeco, citationsTail, headingDrag, dividerPress, persist]
 }
