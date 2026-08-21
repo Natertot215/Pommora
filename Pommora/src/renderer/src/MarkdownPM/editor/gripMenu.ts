@@ -1,6 +1,6 @@
 // Every block grip's right-click menu. A press in the gutter strip resolves to the whole block through
 // `blockAt`, and that block's kind decides what it offers — Delete on all of them, "Type ▸" on a list,
-// "Page Source ▸" on an embed tile. The generic editor menu stands down over a grip because the rail
+// "Source ▸" on an embed tile. The generic editor menu stands down over a grip because the rail
 // hover flags it hot to main (blockGripHover → setGripHot), so this is the only menu there.
 //
 // The span is resolved before the ask and the pick applied on the promise; the hot flag is cleared by

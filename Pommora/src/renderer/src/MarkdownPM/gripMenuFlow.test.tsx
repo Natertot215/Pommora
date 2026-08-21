@@ -146,7 +146,7 @@ describe('a document that moves while the menu is open', () => {
 })
 
 describe('the embed tile grip', () => {
-  it('offers tile mode, and Page Source re-aims the line', async () => {
+  it('offers tile mode, and Source re-aims the line', async () => {
     const view = await mount('intro\n\n![[Alpha]]\n\nbelow')
     nextPick = { action: 'source', title: 'Beta' }
     await gripMenu(view, 'tile')
@@ -162,7 +162,7 @@ describe('the embed tile grip', () => {
     expect(view.state.doc.toString()).toBe('intro\n\nbelow')
   })
 
-  it('Page Source re-aims an UNRESOLVED embed line — the stale token is exactly what needs re-aiming', async () => {
+  it('Source re-aims an UNRESOLVED embed line — the stale token is exactly what needs re-aiming', async () => {
     const view = await mount('intro\n\n![[Ghost]]\n\nbelow')
     nextPick = { action: 'source', title: 'Beta' }
     await gripMenu(view, 'Ghost')

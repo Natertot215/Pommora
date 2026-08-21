@@ -59,8 +59,8 @@ export function popGripMenu(
         case 'embed':
           return [
             ctx.tree.length > 0
-              ? { label: 'Page Source', submenu: ctx.tree.map(source) }
-              : { label: 'Page Source', enabled: false },
+              ? { label: 'Source', submenu: ctx.tree.map(source) }
+              : { label: 'Source', enabled: false },
             scaleItem(ctx),
           ]
         case 'webpage':
