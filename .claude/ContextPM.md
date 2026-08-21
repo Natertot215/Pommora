@@ -5,7 +5,7 @@
 **The cohesion queue's session-sized half is closed, and Footnotes is unblocked.** Four surfaces stopped being written twice — the two option-reorder hooks, the two option rows, the two properties panes' engine, and the two view resolvers that had been living inside a 1,943-line component — and seven live defects closed with them, five found by reading rather than reported. Three action vocabularies now reach the code that spends them, so a menu row that nothing handles fails the build instead of popping and doing nothing. Every seam the [[Footnotes — Decision Log]] named as a prerequisite remains in place, and the editor's last import cycle is gone with the resolvers.
 
 The one construct the Subfield still counts as source is a Markdown table, and the reason is worth remembering: the counter computes its own document scan because it only ever receives a string. The editor already keeps one cached per document version, and the day those meet, the gap closes for free.
-![[Footnotes — Decision Log]]
+
 ### Immediate Work
 
 - [ ] MarkdownPM Footnotes → Plan & Execution. The decision log at [[Footnotes — Decision Log]] is the settled contract, every entry confirmed. Every seam it named is in place, and the editor's cleanup is closed, so nothing blocks it.

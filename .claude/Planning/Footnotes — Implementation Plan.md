@@ -954,6 +954,8 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 
 ### Deviations
 
+- **Gate 2 — a table kept a stale footnote number after an edit it never came near.** The correctness review found `editAffectsTables` gating a rebuild on the edit touching a table's own range or a delimiter row beside it, so a marker added elsewhere renumbered the body while the resting cell kept drawing its old number until someone typed in that table. The gate now also compares the document's numbering key across the transaction, paid only when a table exists. Three tests pin it.
+
 - **Gate 2 — the per-line marker pass was O(lines × markers).** Task 6 filtered the flat marker list for every line of the document, on a per-doc-version trigger. The scan now returns two line indexes over the arrays it already holds — `entryAt` and `markersAt` — and the pass reads its own line. Measured on 600 marker-bearing lines over 60 citations: `docLineIntents` 0.10ms, the whole `scanDoc` 0.88ms.
 
 - **Task 7 — the numbering rides the widget as a serialized key, not a scalar ordinal.** A cell can hold several markers, so one number cannot describe it. The key is the document's `LABEL=n` pairs; the widget's equality and the cell memo both compare that one string, and the cell resolves each marker's own label against it. The plan's "one extra scalar compare" holds — it is one string comparison per gate.
@@ -971,7 +973,7 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 
 ### Lessons
 
-- `MarkdownPM/embedAbsorb.test.tsx` flakes under parallel scheduling — two of its seat cases fail on one run and pass on the next with no code change between them, on documents holding no citations. Unrelated to this work; worth a fix of its own.
+- `MarkdownPM/embedAbsorb.test.tsx` fails intermittently when run with its siblings — two of its seat cases, on documents holding no citations. It survived a bisect: every Phase 2 commit ran the suite clean, and both this branch and its pre-Phase-2 parent pass repeatedly, including under deliberate CPU load. It is not reproducible on demand, so it is recorded rather than attributed. The suite drives every bound command from every seat of a mounted editor, which is the heaviest and most timing-exposed suite in the tree.
 
 ### Sequenced After
 
