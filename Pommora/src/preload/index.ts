@@ -211,6 +211,7 @@ const api = {
   navRowMenu: ask('nav-row-menu'),
   // A wikilink's right-click menu (Open Preview).
   connMenu: ask('conn-menu'),
+  citationMenu: ask('citation-menu'),
   // A property's native menu (editor ⋮ / row right-click); Delete confirms in main first.
   propertyMenu: ask('property-menu'),
   // An option chip's native menu (Rename / Remove / Clear); Remove + Clear confirm in main first.

@@ -42,6 +42,7 @@ import type { GripMenuAction, GripMenuContext } from './gripMenu'
 import type { CellMenuAction, CellMenuContext } from './cellMenu'
 import type { PageMetaAction } from './pageMenu'
 import type { CardMenuAction, CardMenuContext } from './cardMenu'
+import type { CitationMenuAction, CitationMenuContext } from './citationMenu'
 import type { ConnMenuAction, ConnMenuContext } from './connMenu'
 import type { TabMenuAction, TabMenuContext } from './tabMenu'
 import type {
@@ -322,6 +323,7 @@ export interface Asks {
   'tab-menu': { args: [ctx: TabMenuContext]; reply: TabMenuAction | null }
   'nav-row-menu': { args: [ctx: NavRowMenuContext]; reply: NavRowMenuAction | null }
   'conn-menu': { args: [ctx: ConnMenuContext]; reply: ConnMenuAction | null }
+  'citation-menu': { args: [ctx: CitationMenuContext]; reply: CitationMenuAction | null }
   'property-menu': { args: [ctx: PropertyMenuContext]; reply: PropertyMenuAction | null }
   'option-menu': { args: [ctx: OptionMenuContext]; reply: OptionMenuAction | null }
   /** The generic list menu — any surface whose menu is plain rows. Replies with the chosen row's
