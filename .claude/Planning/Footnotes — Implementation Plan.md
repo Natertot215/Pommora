@@ -1098,6 +1098,8 @@ MarkdownPM reads and writes GFM reference footnotes. A page authored anywhere ca
 
 ### Rulings
 
+- **08-21-2026, Nathan:** The footnote menus read as bare verbs — **Edit · Copy · ─── · Delete** on a marker, **Copy · Delete** on a citation row. A row no longer names the construct it acts on, so the menu no longer says whether deleting a reference takes its footnote with it; the shorter reading is worth that. The divider stands above Delete only where a group stands above it to be divided from, which is why the citation's two rows carry none.
+
 - **08-21-2026, Nathan:** The tail guard's relocate rule stands as built, and a pasted footnote collapses to one paragraph rather than to indented continuations — one ruling, because both follow from one fact: `citationScan` refuses any line a block construct starts and `parseListMarker` accepts a marker at any indent, so an indented line ends the run exactly as an unindented one does. Text that cannot survive where it landed is moved to the end of the body rather than escaped, and every run of whitespace in a pasted citation becomes one space.
 
 - **08-21-2026, Nathan:** The setting keeps the name it shipped with — **Show Footnotes By Default**. F-4's *Default Visibility* was the spec's wording and is the half that changed; the requirement, Task 10's Why and the Verification Checklist now read the shipped label.
@@ -1246,5 +1248,39 @@ A last pass over `e4c5c04a..4c08a4f3`, holding the Log's adjudicated keeps and S
 - **MEDIUM — a marker could be written inside a citation.** `citationSeatAt` answered for `selection.main.from` while every creation writes the marker at `selection.main.to`, a footnote annotating the words it follows. A sweep running out of the body and into the section therefore read as a body seat: Insert ▸ Footnote offered itself, and `[^2]` landed in the middle of a citation's text, where the scan never looks for a marker, leaving a reference that can never bind and an orphan row behind it. The predicate now asks about the end. Two tests, one red before, one the control that a selection lying wholly in the body is still a seat.
 
 **Verified after:** typecheck 0, Biome 0, 3,335 tests.
+
+### Interaction Pass — the claims, and what falsifies each
+
+The first pass against the running application. Seven reports, each stated as a claim with the one
+observation that would prove it false; every criterion below was driven against `Footnote-Testing`
+in the live nexus over CDP unless the row says otherwise.
+
+| # | Claim | Falsified by | Result |
+| - | ----- | ------------ | ------ |
+| A | The marker's menu reads Edit · Copy · ─── · Delete, one divider and it above Delete. | A second divider, or a divider anywhere but above Delete. | Model pinned by test. The native pop is the one line still wanting an eye. |
+| B | A press beside a marker seats a caret and does not travel; a press on the glyph travels. | The scroll position moving on a press beside the glyph, or holding still on a press on it. | Beside: scroll 0 → 0, caret seated, Backspace edits normally. On: scroll 0 → 396. |
+| C | A marker in a resting table cell travels to its citation and the cell does not open. | The cell mounting an editor, or the scroll holding still. | Scroll 0 → 396, no `.cm-editor` in the cell. |
+| D | A press anywhere in a citation row seats the caret in that row. | The caret landing in any other row. | Every row aimed at, hit. Per-line drift 24px → 0. |
+| E | Deleting the last reference takes the whole footnote, every row its label claims included. | A `[^label]:` row left standing with nothing pointing at it. | Was false — a duplicate row was left orphaned. Fixed and pinned. |
+| F | Starting a list at the foot of the section writes nothing into the body. | Any line holding only whitespace appearing in the body. | Whitespace-only lines in the body: 1 before, 1 after. |
+| G | A marker binds, numbers, travels and cascades identically inside a callout, a blockquote and a table. | A marker in any of them numbering out of reading order, or surviving its citation's deletion. | Ordinals 1·2·3·4 in reading order; the cascade reaches all three and none of the code. |
+| H | A citation row's number glyph claims a right-press the way the row's text does. | The press reaching nothing — `defaultPrevented` false on the glyph while true on the text beside it. | Was false: `WidgetType.ignoreEvent` defaults to true, so the glyph swallowed it. Fixed; glyph, row text and body marker all claim it. |
+| I | The floating preview draws a page's own footnote state and its control moves it. | The preview showing the nexus-wide default while the page's own row says otherwise. | The preview and the hover card are one component; see J. |
+| J | A hover preview does the same. | The card drawing no section on a page whose own row says shown. | Card mounted with 8 citation rows and its divider on a page whose row is shown, where the nexus-wide default is hidden. |
+
+**What D turned out to be.** Not a footnotes defect. A widget's vertical margin is height the browser
+spends and the height model never hears about — a block widget is measured by its own element's box,
+which excludes it, and an inline tile's `estimatedHeight` simply omits it. CodeMirror's model ran
+short by that gap for every table on the page — 12px each, 24px by the citations, more than a 21px row, so
+the hit-test resolved one row low. Measured per line: drift 0 above the first table, 12 between
+them, 24 through the whole section. The table's gap is padding now and the embed tile adds its own
+to what it reports. Everything below a table on any page was affected; the footnotes are only where
+it was noticed, because they are the one thing on that page anyone clicks into below a table.
+
+**What I and J turned out to be.** Not a preview defect either. The editor took the page's visibility as a prop and only the main pane passed one, so every other surface fell back to the nexus-wide default while the control beside it wrote the page's own row — the prop was a second spelling of the resolution the store already owns. The editor now takes the page id and resolves `citationsVisible` itself, which collapses three props to one and makes the preview, the hover card and an embed tile all draw a page the way that page is set.
+
+**Still not driven:** the native menu's own pop (A), and the tile half of D — reasoned from the same
+measured cause and typechecked, not watched. Creation from inside a table cell remains deliberately
+unbuilt; a marker already written in a cell draws, numbers, travels and cascades.
 
 **Routed:** five entries to `.claude/Guidelines/Editor-Internals.md`, the feature's section to `Features/MarkdownPM.md`, PM-111 to History, and Context restated to the present.
