@@ -245,6 +245,9 @@ interface SessionState {
   /** THE flip, so the two controls that offer it cannot disagree about what it means — including
    *  that landing back on the nexus-wide default clears the row rather than restating it. */
   toggleCitations: (pageId: string) => void
+  /** Put a page's footnotes at `shown`, clearing the row when that IS the nexus-wide default. THE
+   *  rule, so nothing that discloses the section can write a row that pins it forever. */
+  setCitationsVisible: (pageId: string, shown: boolean) => void
   personalization: Personalization
   setPersonalization: <K extends keyof Personalization>(key: K, value: Personalization[K]) => void
   /** Machine-local, not the Nexus's — loaded alongside it, saved to nexus.db. */
@@ -1031,8 +1034,12 @@ export const useSession = create<SessionState>((set, get) => {
     toggleCitations: (pageId) => {
       const s = get()
       const fallback = s.personalization.citationsShown ?? false
-      const next = !(s.citationsShown[pageId] ?? fallback)
-      s.setCitationsShown(pageId, next === fallback ? null : next)
+      s.setCitationsVisible(pageId, !(s.citationsShown[pageId] ?? fallback))
+    },
+    setCitationsVisible: (pageId, shown) => {
+      const s = get()
+      const fallback = s.personalization.citationsShown ?? false
+      s.setCitationsShown(pageId, shown === fallback ? null : shown)
     },
     setCitationsShown: (pageId, shown) => {
       set((s) => {

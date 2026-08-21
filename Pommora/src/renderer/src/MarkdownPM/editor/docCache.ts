@@ -7,8 +7,9 @@ import { docLineIntents, scanDoc } from '../decorations/intent'
 import type { Token } from '../tokens'
 
 /** One derivation per doc VERSION, keyed on the immutable `Text` — so an old version's entry
- *  collects with the history rather than being invalidated by hand. */
-function perDoc<T>(derive: (doc: Text) => T): (doc: Text) => T {
+ *  collects with the history rather than being invalidated by hand. Exported so a derivation that
+ *  belongs with its own rule can live beside that rule and still be cached once. */
+export function perDoc<T>(derive: (doc: Text) => T): (doc: Text) => T {
   const held = new WeakMap<Text, T>()
   return (doc) => {
     let v = held.get(doc)
