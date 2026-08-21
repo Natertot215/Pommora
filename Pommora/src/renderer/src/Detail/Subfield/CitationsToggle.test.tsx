@@ -89,3 +89,29 @@ describe('the control writes one row, and clears it on the default', () => {
     expect(useSession.getState().citationsShown).toEqual({})
   })
 })
+
+// One state, two controls, one writer. The divider does not fold the section — it reports its press
+// to the same flip the footer's control calls, so the two can never disagree about what a toggle
+// means, including that landing back on the default clears the row rather than restating it.
+describe('the divider and the footer control write the same row', () => {
+  const flip = (): void => useSession.getState().toggleCitations('page-1')
+
+  it('a press from either one produces the identical write', async () => {
+    await mount(CITED)
+    await click()
+    const fromControl = { ...useSession.getState().citationsShown }
+    useSession.setState({ citationsShown: {} })
+    written.length = 0
+    flip()
+    expect(useSession.getState().citationsShown).toEqual(fromControl)
+    expect(written).toEqual([['page-1', true]])
+  })
+
+  it('and either one lands back on the default by deleting the row', async () => {
+    await mount(CITED)
+    await click()
+    flip()
+    expect(useSession.getState().citationsShown).toEqual({})
+    expect(written[written.length - 1]).toEqual(['page-1', null])
+  })
+})

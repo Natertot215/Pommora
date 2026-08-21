@@ -92,6 +92,8 @@ interface Props {
   /** Whether this page shows its footnotes section. Absent takes the nexus-wide default, which is
    *  what an embed, a preview and a hover card all read — the per-page override is the main pane's. */
   citationsShown?: boolean
+  /** The divider's press. Absent leaves the section's disclosure to its host's own control. */
+  onCitationsToggle?: () => void
   tableHeadingColumns?: TableHeadingColsApi
   menu?: EditorMenuApi
   autoFocus?: boolean
@@ -122,6 +124,7 @@ export function MarkdownEditor({
   embedZooms,
   folds,
   citationsShown,
+  onCitationsToggle,
   tableHeadingColumns,
   menu,
   autoFocus = false,
@@ -179,6 +182,8 @@ export function MarkdownEditor({
   const citesShown = citationsShown ?? citationsDefault
   const citesShownRef = useRef(citesShown)
   citesShownRef.current = citesShown
+  const citationsToggleRef = useRef(onCitationsToggle)
+  citationsToggleRef.current = onCitationsToggle
   // Mount seeds inside the view-creation effect (this one runs first, before the view exists); this
   // carries every later change to the value.
   useEffect(() => {
@@ -302,7 +307,10 @@ export function MarkdownEditor({
           return false
         },
       }),
-      markdownFolding((keys) => foldsRef.current?.save(keys)),
+      markdownFolding(
+        (keys) => foldsRef.current?.save(keys),
+        () => citationsToggleRef.current?.(),
+      ),
       EditorView.updateListener.of((u) => {
         if (!(u.docChanged || u.selectionSet || u.focusChanged)) return // skip scroll/geometry-only updates
         // Focus landing here makes this editor the menu's subject, for the state it pushes and the

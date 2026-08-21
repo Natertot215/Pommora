@@ -327,3 +327,59 @@ describe('a fold chevron and a heading gesture stop sharing one class', () => {
     expect(rightPress(divider)).toBe(true)
   })
 })
+
+// ── The divider ───────────────────────────────────────────────────────────────
+// The section's visible boundary and its disclosure at once. It reports its press rather than
+// folding itself: the state is the page's own visibility, and the fold follows that one writer.
+
+const divider = (view: EditorView): HTMLElement | null =>
+  view.dom.querySelector<HTMLElement>('.cm-line.md-cite-divider')
+
+describe('the citations divider draws where it can and folds nothing itself', () => {
+  it('draws on the blank line above the section', async () => {
+    const view = await mountEditor({ initialBody: CITED, citationsShown: true })
+    expect(divider(view)).not.toBeNull()
+    expect(divider(view)?.classList.contains('md-cite-divider-off')).toBe(false)
+  })
+
+  // A rule drawn onto a paragraph would read as if it headed the footnotes; a fence's closing line
+  // would put it inside the code. With nothing blank to take it the section keeps its own top edge.
+  it('draws nothing when the line above the section is prose', async () => {
+    const view = await mountEditor({
+      initialBody: 'body[^a] here\n[^a]: the citation',
+      citationsShown: true,
+    })
+    expect(divider(view)).toBeNull()
+  })
+
+  it('draws nothing on a document with no citations at all', async () => {
+    const view = await mountEditor({ initialBody: '# Notes\n\njust a body' })
+    expect(divider(view)).toBeNull()
+  })
+
+  // Stamped while hidden as well: a removed class has nothing left to fade from, and the seam is
+  // meant to read as the boundary closing rather than as a line vanishing between two frames.
+  it('stays stamped while the section is hidden, carrying the faded state', async () => {
+    const view = await mountEditor({ initialBody: CITED })
+    expect(divider(view)?.classList.contains('md-cite-divider-off')).toBe(true)
+  })
+
+  it('a press reports the toggle and folds nothing on its own', async () => {
+    let pressed = 0
+    const view = await mountEditor({
+      initialBody: CITED,
+      citationsShown: true,
+      onCitationsToggle: () => {
+        pressed++
+      },
+    })
+    await act(async () => {
+      divider(view)?.dispatchEvent(
+        new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0 }),
+      )
+    })
+    expect(pressed).toBe(1)
+    // The press writes the page's visibility; nothing folds until that value comes back down.
+    expect(kinds(view)).toEqual([])
+  })
+})
