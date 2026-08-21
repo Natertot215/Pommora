@@ -976,8 +976,8 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
   - [x] Task 19 — Range-keyed cascades · `26fbfcb2`
 - [ ] **Phase 5** — Creation and numbering
   - [x] Task 20 — The renumbering engine · `6d52c45f`
-  - [ ] Task 21 — Insert ▸ Footnote and Paste As ▸ Footnote · `<commit>`
-  - [ ] Task 22 — The typed auto-seed · `<commit>`
+  - [x] Task 21 — Insert ▸ Footnote and Paste As ▸ Footnote · `fe4bdc67`
+  - [x] Task 22 — The typed auto-seed · `24493ac4`
 - [ ] **Phase 6** — The record
   - [ ] Task 23 — Documentation and closeout · `<commit>`
 
@@ -1041,6 +1041,24 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 - **A drop above the section — closed, not an issue.** `blockMoveChanges` already fences both seams: it emits a blank after every inserted block and heals the hole the cut leaves, with its own comment naming this exact hazard — a glue-adjacent block would otherwise lazily continue a list or merge two paragraphs. A paragraph dropped above the section always lands with a blank after it, so the first citation cannot become its continuation. **The adjacent case the round did not raise is real and already covered:** a block dropped at the document's end lands *after* the section, which is the strand A-5b forbids, and Task 15's rule is "at or after". Task 15 names it as a test case rather than leaving it implied.
 
 ### Deviations
+
+- **Task 22 — the recognizer lives beside `markerRegex` in `detect/`, not in `input/index.ts`.** The task places it among the typing transforms, but "has a marker just been completed" is a question about the marker grammar, and that grammar — the label's characters and the `\[^1]` escape's lookbehind — already has exactly one spelling. A second regex in the input file would have been the near-twin C1 exists to catch. `markerEndingAt(text)` reads through `markerRegex()` and sits next to it; its tests ride with the other creation paths rather than in `input.test.ts`, which covers the transforms this deliberately is not one of.
+
+- **Task 22 — the seed types OVER the bracket the opener auto-paired.** `[` auto-closes at a line start or after whitespace, so a hand-typed `[^1]` there would otherwise land as `[^1]]` — the stray the pair rule leaves behind for every bracket, made conspicuous by a construct people type deliberately. The seed consumes the closer already sitting under the caret instead, which is the same "type over the closer on the way out" the gated pairs already do.
+
+- **Task 22 — a typed seed honors Jump To Citation like every other creation.** D-4 calls the typed label a creation gesture and D-1 gives the setting to all of them, so the seed shares one tail with the two menu paths: `writeCitation` finds the pair in the finished document, and the setting chooses between the new citation and the marker just typed.
+
+- **Task 21 — `citeSeat` joins `FormatState`, the third flag of its kind.** Main builds both menus and cannot see the caret, which is exactly why `embedSeat` exists; a footnote marker has its own placement rule — outside the section, outside code — so Insert ▸ Footnote and Paste As ▸ Footnote are both offered under one seat the renderer answers. Without it, a row would have been offered where pressing it did nothing.
+
+- **Task 21 — Footnote leads the Paste As list, and answers to the clipboard alone.** D-3 enumerates internal targets as "Footnote · Connection · Markdown Link", which is the existing page order with Footnote prepended; it leads for a URL clipboard too, so the row sits in the same place whatever the clipboard holds. `pasteAsTarget` is untouched — it refuses any clipboard holding a newline, which is the shape the footnote's normalization exists for — and `pasteAsWrite` answers null for the form, because a pair is two disjoint sites and that writer carries one range.
+
+- **Task 21 — a pasted footnote collapses to one paragraph rather than to indented continuations.** D-3 asks for blank lines collapsed and following lines indented, and the second half cannot hold for the same reason Task 15's could not: `citationScan` refuses any line a block construct starts and `parseListMarker` accepts a marker at any indent, so an indented `- item` ends the run exactly as an unindented one does. The only shaping that would survive is escaping the reader's own characters, which is what the tail guard already declined to do. Every run of whitespace becomes one space instead — one rule, no line that can end the run, and nothing written the reader did not paste. *Nathan should confirm this one alongside Task 15's; they are the same ruling.*
+
+- **Task 21 — the host's `reveal` moved onto a facet, and the marker jump reads it there.** Task 17 threaded it through `citationPointer`'s constructor, which a creation path cannot reach — it runs from the menu and the input handler, holding only a view. `citationHost` follows `embedHost`'s shape: the surface states what it answers for, and the jump and the creation read the same one, so they can never disagree about what showing the section means.
+
+- **Task 21 — a gesture settles the section on the PAGE's visibility, not on whatever was folded a moment ago.** The teardown as Task 20 left it restored the prior fold, which has no answer for a section that did not exist yet: the first footnote written on a page whose footnotes are hidden would have arrived open. `editAcrossCitations(view, shown, dispatch)` takes the visibility from the same facet, which is the Task 13 rule — the store slice is the state and the fold follows it — applied to the one path that creates the region rather than toggling it.
+
+- **Task 21 — Insert seats the marker AFTER a selection.** A footnote annotates the words it follows, so a selection keeps its text and gains a marker at its end rather than having one written into its middle.
 
 - **Task 20 — the normalization lives in `MarkdownPM/editor/citationEdits.ts`, not `shared/citations.ts`.** The task's Files block names a module that never existed: Task 1's scan landed in `MarkdownPM/detect/index.ts` and Phase 4 put every change-producing citation rule in `citationEdits.ts`, whose own header already reads "what a footnote gesture writes". Nothing about the normalization crosses the process boundary, so `shared/` would have been a third home for one subject.
 
