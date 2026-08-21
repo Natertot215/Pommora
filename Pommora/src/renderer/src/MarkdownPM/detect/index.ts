@@ -328,6 +328,12 @@ export const markersFor = (c: CitationScan, label: string): MarkerRef[] => {
   return c.markers.filter((m) => foldLabel(m.label) === key)
 }
 
+/** Whether this is the only marker bound to its citation — so removing it orphans the footnote.
+ *  Asked HERE by both the gesture that cascades on it and the menu row that names it, which is what
+ *  keeps the menu from promising something other than what the click does. */
+export const isLastReference = (c: CitationScan, marker: MarkerRef): boolean =>
+  markersFor(c, marker.label).every((m) => m === marker)
+
 /** Where a line's text ends, its own newline excluded. */
 export const lineEndOf = (d: { lines: string[]; lineStarts: number[] }, line: number): number =>
   d.lineStarts[line] + d.lines[line].length

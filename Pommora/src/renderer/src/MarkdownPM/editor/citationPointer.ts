@@ -4,7 +4,13 @@
 import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { openPage, resolveMdTarget, type ConnectionsApi } from '../connections'
-import { type CitationEntry, type MarkerRef, citationFor, lineEndOf, markersFor } from '../detect'
+import {
+  type CitationEntry,
+  type MarkerRef,
+  citationFor,
+  isLastReference,
+  lineEndOf,
+} from '../detect'
 import { linkTarget, tokenize } from '../tokens'
 import { docScan, docString, perDoc } from './docCache'
 import { followTarget } from './links'
@@ -62,7 +68,7 @@ const citationTargets = perDoc((doc) => {
       to: m.to,
       entry,
       marker: m,
-      lastReference: markersFor(scan.citations, m.label).length === 1,
+      lastReference: isLastReference(scan.citations, m),
       lone: loneTarget(text.slice(entry.contentStart, end)),
     })
   }
