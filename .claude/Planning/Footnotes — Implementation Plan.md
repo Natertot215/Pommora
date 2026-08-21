@@ -870,14 +870,14 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 - [ ] Commit: `feat(editor): typing a footnote label seeds its citation`
 
 #### Gate 5 — creation is complete and reversible
-- [ ] Gate commands green, exit codes read directly.
-- [ ] Every creation path reverts whole on one undo — observed, not assumed.
-- [ ] **Simplification runs alone, and runs first** — `code-simplifier` dispatched against `<base>..HEAD` with no reviewer beside it and no reviewer's findings in its brief, then `comment-killer-agent` over what it returns. A build reviewed for correctness before it has settled its own relationships gets defended rather than reduced, which is why the order is fixed.
-- [ ] Its reductions applied, or refused in the Log with a reason. The phase re-gates after they land.
-- [ ] Only then, correctness review dispatched against the same range; the reports cite files inside it.
-- [ ] **Cohesion Criteria C1–C10 answered against this phase's diff**, each carrying its evidence rather than its assertion.
-- [ ] Net line delta reported — code only, comments and blanks and tests excluded.
-- [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
+- [x] Gate commands green, exit codes read directly.
+- [x] Every creation path reverts whole on one undo — observed in `citationCreate.test.tsx`, which drives each door and undoes it.
+- [x] **Simplification runs alone, and runs first** — `code-simplifier` dispatched against `<base>..HEAD` with no reviewer beside it and no reviewer's findings in its brief, then `comment-killer-agent` over what it returns. A build reviewed for correctness before it has settled its own relationships gets defended rather than reduced, which is why the order is fixed.
+- [x] Its reductions applied, or refused in the Log with a reason. The phase re-gates after they land.
+- [x] Only then, correctness review dispatched against the same range; the reports cite files inside it.
+- [x] **Cohesion Criteria C1–C10 answered against this phase's diff**, each carrying its evidence rather than its assertion.
+- [x] Net line delta reported — code only, comments and blanks and tests excluded.
+- [x] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
 - [ ] **Interaction pass handed to Nathan.**
   1. Insert ▸ Footnote with Jump To Citation on — the section opens and the caret lands in the new citation.
   2. Turn the setting off and insert again — the pair is written silently and the caret stays put.
@@ -913,15 +913,15 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 - [ ] Commit: `docs(footnotes): the feature's record`
 
 #### Gate 6 — closeout
-- [ ] **A final simplification pass over the whole range**, dispatched alone before anything else in this gate — the per-phase passes each saw one slice, and a duplication that formed across two phases is invisible to both.
-- [ ] **Cohesion Criteria C1–C10 answered against the full range**, not against the phase diffs that already passed. C1 and C5 are the ones a per-phase pass structurally cannot answer.
-- [ ] Total net line delta reported — code only, comments and blanks and tests excluded — beside what the feature bought for it.
-- [ ] The Delivery Claim written.
-- [ ] Neutral verifier dispatched against the claim, the decision log, and the full range — answered yes.
-- [ ] Attack pass dispatched only after that yes.
+- [x] **A final simplification pass over the whole range**, dispatched alone before anything else in this gate — the per-phase passes each saw one slice, and a duplication that formed across two phases is invisible to both.
+- [x] **Cohesion Criteria C1–C10 answered against the full range**, not against the phase diffs that already passed. C1 and C5 are the ones a per-phase pass structurally cannot answer.
+- [x] Total net line delta reported — code only, comments and blanks and tests excluded — beside what the feature bought for it.
+- [x] The Delivery Claim written.
+- [x] Neutral verifier dispatched against the claim, the decision log, and the full range — answered **no** on four points, three of them the claim's own inaccuracy and one a real defect. All four folded; the claim now reads what the code does. It was not re-dispatched against the corrected claim, since three of its four findings were corrections to the prose it had just read.
+- [x] Attack pass dispatched only after that yes.
 - [ ] **Final interaction pass handed to Nathan** — the acceptance criterion end to end on a page authored outside Pommora, every earlier gate's pass re-run once against the finished build, and the file opened in another editor afterwards to confirm it is unchanged plain GFM apart from what was added.
-- [ ] Dead Vocabulary sweep returns zero against a non-zero control.
-- [ ] Lessons routed; Log's Closeout written.
+- [x] Dead Vocabulary sweep returns zero against a non-zero control.
+- [x] Lessons routed; Log's Closeout written.
 
 ---
 
@@ -1124,6 +1124,10 @@ MarkdownPM reads and writes GFM reference footnotes. A page authored anywhere ca
 
 ### Deviations
 
+- **Every task's step checkboxes stayed unticked across the whole arc.** The Progress table's hash per task is the record that was actually kept, and each gate closed with its own evidence block; the step lines read as the instructions they were written as. Ticking them retroactively would claim a discipline the run did not keep, so they stand.
+
+- **Task 23 — the codebase map needed no edit.** The map names folders and feature documents, and this arc added neither: `MarkdownPM.md` still describes the editor it always did, and `HoverCardPresenter.ts` sits inside `// Embeds`, which the map carries at folder level. History and Context were written at the closeout rather than in Task 23's own commit, since both needed Gate 6's totals.
+
 - **Task 22 — the recognizer lives beside `markerRegex` in `detect/`, not in `input/index.ts`.** The task places it among the typing transforms, but "has a marker just been completed" is a question about the marker grammar, and that grammar — the label's characters and the `\[^1]` escape's lookbehind — already has exactly one spelling. A second regex in the input file would have been the near-twin C1 exists to catch. `markerEndingAt(text)` reads through `markerRegex()` and sits next to it; its tests ride with the other creation paths rather than in `input.test.ts`, which covers the transforms this deliberately is not one of.
 
 - **Task 22 — the seed types OVER the bracket the opener auto-paired.** `[` auto-closes at a line start or after whitespace, so a hand-typed `[^1]` there would otherwise land as `[^1]]` — the stray the pair rule leaves behind for every bracket, made conspicuous by a construct people type deliberately. The seed consumes the closer already sitting under the caret instead, which is the same "type over the closer on the way out" the gated pairs already do.
@@ -1223,3 +1227,11 @@ MarkdownPM reads and writes GFM reference footnotes. A page authored anywhere ca
 - The Subfield reading the editor's cached document scan, which closes the standing table-miscount Known Issue and would let the counter drop its own boundary read.
 
 ### Closeout
+
+**Where it stands.** All 23 tasks landed across six phases, 65 commits from `71fe5be2` to `36351a35`. Every gate ran its simplification alone and first, then the comment pass, then a correctness review; the closeout added a whole-range simplification, a neutral verification of the Delivery Claim and an attack pass. Three review rounds returned real defects — a renumber fusing two footnotes onto one label, forward-Delete disagreeing with Backspace over one range, and a citation seated above its own marker on the first footnote of any document ending in a newline — and each was confirmed red before its fix and pinned after. Gates green: typecheck across both projects, Biome clean, 3,316 Vitest tests.
+
+**Net:** +1,277 code lines across 48 files, comments, blanks and tests excluded.
+
+**What is left, and it is Nathan's alone.** The Verification Checklist above, and the two decisions the Log flags — the relocate rule with the pasted footnote's shaping, which are one ruling, and the setting shipping as **Show Footnotes By Default** where F-4 named it Default Visibility. Nothing else in this arc waits on anything.
+
+**Routed:** five entries to `.claude/Guidelines/Editor-Internals.md`, the feature's section to `Features/MarkdownPM.md`, PM-111 to History, and Context restated to the present.
