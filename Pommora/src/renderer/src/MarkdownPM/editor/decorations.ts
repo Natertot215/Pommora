@@ -167,7 +167,7 @@ class OutlinerRailWidget extends WidgetType {
 /** A body marker's number, standing over the `[^label]` the reader never sees. It takes clicks —
  *  jump to the citation, or the construct menu — so it states `ignoreEvent` rather than taking the
  *  default, which would swallow every event before a handler saw it. */
-class CiteRefWidget extends WidgetType {
+export class CiteRefWidget extends WidgetType {
   constructor(readonly ordinal: number) {
     super()
   }

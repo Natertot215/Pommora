@@ -47,10 +47,11 @@ function quotePrefixWidth(line: string, levels: number): number {
 // so any future list syntax that adopts it inherits both the cursor and drag-to-reorder for free.
 export const GLYPH_CLASS = 'md-li-glyph'
 
-/** A citation's glyph: its positional number, or the dash a row nothing binds to wears instead —
- *  an orphan, or a duplicate that lost. The dash keeps the seat visible and clickable on a citation
- *  whose text is empty, which is the whole reason the seat is drawn at all. */
-const glyphOf = (e: CitationEntry): string => (e.ordinal === null ? '–' : String(e.ordinal))
+/** A citation's glyph: its positional number written the way an ordered list writes one, or the
+ *  dash a row nothing binds to wears instead — an orphan, or a duplicate that lost. The dash keeps
+ *  the seat visible and clickable on a citation whose text is empty, which is the whole reason the
+ *  seat is drawn at all, and it carries no period: there is no number for one to follow. */
+const glyphOf = (e: CitationEntry): string => (e.ordinal === null ? '–' : `${e.ordinal}.`)
 
 /** Every whole-document derivation the editor reads — one split, one fence pass, one table pass,
  *  and the per-line block predicates answered once each. Pure on `text`, so a caller that runs per

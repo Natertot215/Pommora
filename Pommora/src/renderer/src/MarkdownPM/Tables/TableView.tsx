@@ -357,6 +357,7 @@ export function TableView({
         <CellEditor
           initial={display}
           connections={connections}
+          ordinalOf={ordinalOf}
           caretCoords={caretCoords.current}
           initialSelect={initialSelect.current}
           onCommit={(t) => onCellCommit(row, col, t)}

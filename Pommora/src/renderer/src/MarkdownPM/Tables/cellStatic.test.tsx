@@ -95,3 +95,19 @@ describe('a resting cell draws a marker as the number the document gives it', ()
     expect(container.textContent).toContain('[^note]')
   })
 })
+
+describe('an entered cell draws what the resting cell drew', () => {
+  it('replaces the marker in the cell editor too, so the glyph does not change on entry', async () => {
+    await mount('NOTE=2')
+    // The body row's cell, not the header's — the header is the first static cell in the table.
+    const cell = [...container.querySelectorAll('.mdpm-tbl-cell-static')].find((el) =>
+      el.textContent?.includes('see'),
+    ) as HTMLElement
+    await act(async () => {
+      cell.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }))
+    })
+    const editor = container.querySelector('.cm-editor')
+    expect(editor).not.toBeNull()
+    expect([...editor!.querySelectorAll('.md-cite-ref')].map((el) => el.textContent)).toEqual(['2'])
+  })
+})
