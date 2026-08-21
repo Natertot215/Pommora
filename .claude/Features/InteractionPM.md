@@ -32,7 +32,7 @@ The single source is `design-system/tokens/motion.ts`, surfaced as CSS vars thro
 - **Easings:** `standard` (the everyday ease) · `inOut` (a symmetric fade) · `out` (emphatic moves, also the drag "out" curve). All three publish as `--ease-*` vars.
 - **Bloom curve** — the open and close curve for both dropdown motions, which share one set of keyframes. It's the one special-cased named curve, living in `animations.css.ts` rather than the everyday token set.
 
-**z-index** rides the named stacking ladders, and **shadow** the two-token family every frost surface ends its stack in — both live with the geometry and shadow tokens (→ [[DesignSystemPM]]).
+**z-index** rides the named stacking ladders, and **shadow** the two-token family every frost surface ends its stack in — both live with the geometry and shadow tokens.[^1]
 
 ### Named Animations
 
@@ -62,7 +62,7 @@ The page banner/title zone slides up under the toolbar on scroll — a **scroll-
 
 A single registered `@property --io` (`<number>`, 0 = closed → 1 = open, `styles.css`) transitions once on `--duration-base`/`--ease-standard` and drives the inspector's moving parts in lockstep: the inspector slide (`InspectorPanel` reads `--io` and carries no transition of its own), the toolbar trio "swallow" (the pill rides the pane edge via a gated `max()`, holding home until the inspector reaches it — the tab bar's right-edge condense shares that one swallow magnitude), and the trio's glass void (the pill's glass fades over the first fraction of the ramp while the bare icons stay solid). `.shell.is-resizing` sets `transition: none` for 1:1 cursor tracking during an edge-drag. The sidebar collapse is a sibling `transform` slide on the same base token, and a floating window parks a leading pane on the mirrored `--io-l`.
 
-The content-inset reflow does not ride the progress — `--content-inset-right` is a plain custom property that flips between two values, and each surface reading it runs its own padding transition on the shared base token. The glass void renders as a two-layer pill because liquid glass can't be CSS-faded in place (→ [[DesignSystemPM]] §Known Issues).
+The content-inset reflow does not ride the progress — `--content-inset-right` is a plain custom property that flips between two values, and each surface reading it runs its own padding transition on the shared base token. The glass void renders as a two-layer pill because liquid glass can't be CSS-faded in place.[^2]
 
 ### Reveal
 
@@ -82,11 +82,11 @@ Both slots stay mounted, each measured by a `ResizeObserver`, so the target size
 
 ### Drag Motion
 
-Owned by the in-house engine (→ [[PommoraDND]]). In brief: one fixed "feel" (duration + easing) — `DEFAULT_FEEL` in `interactions/feel.tsx`, its named presets kept for the surfaces that pass one explicitly — read as a constant by every drag surface; decide-then-animate commits on `transitionend`; and the app-wide auto-scroll primitive every drag feeds. Every insertion-line surface draws its chrome from the shared owners in `design-system/interactions` — the `DragGhost` component (its glass the `GHOST_FROST` recipe) and the `drop-line`/`drop-dot`/`drop-line-host` classes on the drag-line tokens; the editor block-drag keeps its own lifecycle while its overlay wears the same classes (`editor/dragChrome.ts`) — all positioned 1:1 with the pointer, not timed.
+Owned by the in-house engine.[^3] In brief: one fixed "feel" (duration + easing) — `DEFAULT_FEEL` in `interactions/feel.tsx`, its named presets kept for the surfaces that pass one explicitly — read as a constant by every drag surface; decide-then-animate commits on `transitionend`; and the app-wide auto-scroll primitive every drag feeds. Every insertion-line surface draws its chrome from the shared owners in `design-system/interactions` — the `DragGhost` component (its glass the `GHOST_FROST` recipe) and the `drop-line`/`drop-dot`/`drop-line-host` classes on the drag-line tokens; the editor block-drag keeps its own lifecycle while its overlay wears the same classes (`editor/dragChrome.ts`) — all positioned 1:1 with the pointer, not timed.
 
 ### Scroll Glide
 
-Travel to a known destination, for a surface sending the reader somewhere in a document they're already in — the page Outline's jump is its first caller (→ [[PagesPM]]). It shares its module with the drag auto-scroll and reuses that primitive's scroller resolution and one-owner-at-a-time rule, but not its motion — a drag beginning mid-travel claims the scroller and the glide stands down.
+Travel to a known destination, for a surface sending the reader somewhere in a document they're already in — the page Outline's jump is its first caller.[^4] It shares its module with the drag auto-scroll and reuses that primitive's scroller resolution and one-owner-at-a-time rule, but not its motion — a drag beginning mid-travel claims the scroller and the glide stands down.
 
 The destination is re-read every frame rather than resolved once: a host that renders lazily only estimates the height of what it hasn't drawn, and easing toward a live measurement absorbs that drift into the motion. The beat is fixed from the opening distance, proportional to it and clamped at both ends, so near and far jumps move the document at one apparent speed. The curve is the `out` easing token, mirrored as a function because a CSS cubic-bezier cannot drive a `scrollTop`. Any real scroll input cancels the travel, and reduced-motion arrives immediately.
 
@@ -165,5 +165,10 @@ The edge-proximity loop's knobs — declared at `:root`, overridable on any ance
 
 ### Pending
 
-- **Spacing and radius** stay partly ad-hoc pending a Figma lift (→ [[DesignSystemPM]]).
+- **Spacing and radius** stay partly ad-hoc pending a Figma lift.[^1]
 - **Whether the content insets derive from `--io`** or stay independent per-surface transitions is open.
+
+[^1]: [[DesignSystemPM]]
+[^2]: [[DesignSystemPM]] §Known Issues
+[^3]: [[PommoraDND]]
+[^4]: [[PagesPM]]

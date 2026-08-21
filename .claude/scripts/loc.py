@@ -25,25 +25,43 @@ SRC = "Pommora/src"
 AREAS = [
     ("Editor — MarkdownPM", ["renderer/src/MarkdownPM"]),
     ("Design System", ["renderer/src/design-system"]),
-    ("Views — Table & Cards", ["renderer/src/Detail/Views"]),
-    ("Detail Pane", ["renderer/src/Detail", "renderer/src/Components"]),
-    ("Dashboard — Surface", ["renderer/src/SurfacePM", "renderer/src/Blocks"]),
     (
-        "Navigation & Chrome",
+        "Surfaces & Embeds",
+        [
+            "renderer/src/SurfacePM",
+            "renderer/src/Blocks",
+            "renderer/src/PagePreview",
+            "renderer/src/Embeds",
+        ],
+    ),
+    ("Views & Detail Pane", ["renderer/src/Detail", "renderer/src/Components"]),
+    (
+        "App Chrome",
         [
             "renderer/src/Navigation",
             "renderer/src/Sidebar",
             "renderer/src/Tabs",
             "renderer/src/Toolbar",
             "renderer/src/NavWindow",
+            "renderer/src/Settings",
+            "renderer",
         ],
     ),
-    ("Settings", ["renderer/src/Settings"]),
-    ("Preview & Embeds", ["renderer/src/PagePreview", "renderer/src/Embeds"]),
     ("Main Process", ["main"]),
     ("Shared Contract", ["shared", "preload"]),
-    ("Shell & Store", ["renderer"]),
 ]
+
+# Stack order and swatch, bottom of the chart first.
+ORDER = [
+    "Views & Detail Pane",
+    "Main Process",
+    "Editor — MarkdownPM",
+    "Design System",
+    "App Chrome",
+    "Surfaces & Embeds",
+    "Shared Contract",
+]
+COLORS = ["#1C7629", "#075CB2", "#8C7606", "#DC519F", "#B26F07", "#A24CCE", "#D93B31"]
 
 SKIP_DIR = {"node_modules", "dist", "out", ".git", "showcase", "testing"}
 EXT = (".ts", ".tsx", ".css")
@@ -148,7 +166,7 @@ def history() -> list[dict]:
             totals = measure_tree(tmp)
         if sum(totals.values()) == 0:
             continue
-        out.append({"date": date, "sha": sha[:8], "areas": totals})
+        out.append({"d": date, "v": [totals[a] for a in ORDER]})
         print(f"  {date}  {sum(totals.values()):>7}", file=sys.stderr)
     return out
 
@@ -156,15 +174,17 @@ def history() -> list[dict]:
 if __name__ == "__main__":
     if "--history" in sys.argv:
         payload = {
-            "areas": [name for name, _ in AREAS],
+            "areas": ORDER,
+            "colors": COLORS,
             "series": history(),
+            "head": git("rev-parse", "--short", "HEAD").strip(),
         }
     else:
         totals = measure_tree(ROOT)
         payload = {
-            "areas": [name for name, _ in AREAS],
+            "areas": ORDER,
             "head": git("rev-parse", "--short", "HEAD").strip(),
-            "totals": totals,
+            "totals": [totals[a] for a in ORDER],
             "total": sum(totals.values()),
         }
-    print(json.dumps(payload, indent=2))
+    print(json.dumps(payload))

@@ -31,22 +31,22 @@ Everything the layer persists is a bare identity ref — `{kind, id}` — pins a
 
 ### NavWindow
 
-The summoned wayfinding overlay — a non-modal, movable, resizable floating glass panel on the shared **PreviewPane** surface (→ [[PagePreviewPM]]) that always opens centered; its size persists across opens, its position doesn't. It takes the toolbar's floating form — corner-pinned glyph clusters rather than a band — so its tab row can reach the window's top edge. A glass rail holding the Favorites list runs beside a main frame: a search field over a gallery of Recents cards, pins on top, each card resolving location, icon, and title live from the tree. It resizes from its corners and a rail split, blocks nothing behind it, and hands the caret to the search field on open. The sidebar ribbon's Navigation icon summons it, `⌘O` toggles it, and Escape or the window's × dismisses. Row and card actions live in a context menu.
+The summoned wayfinding overlay — a non-modal, movable, resizable floating glass panel on the shared **PreviewPane** surface[^1] that always opens centered; its size persists across opens, its position doesn't. It takes the toolbar's floating form — corner-pinned glyph clusters rather than a band — so its tab row can reach the window's top edge. A glass rail holding the Favorites list runs beside a main frame: a search field over a gallery of Recents cards, pins on top, each card resolving location, icon, and title live from the tree. It resizes from its corners and a rail split, blocks nothing behind it, and hands the caret to the search field on open. The sidebar ribbon's Navigation icon summons it, `⌘O` toggles it, and Escape or the window's × dismisses. Row and card actions live in a context menu.
 
 Reorder drag differs by view mode: the **gallery** displaces, cards reflowing to open a slot — pins among pins, recents among recents, never across — while the **list** uses the sidebar's insertion-line drag. Only recents reorder in search — a result set has no stored order to drag against — and the rail's Style toggle governs its search results too: searching changes what is listed, never how it's drawn. Inert hits, whose kind has no click destination, have no card form and surface in List only. A row's own right-click menu opens it, pins it, favorites it or drops it from the list, and where the row resolves to a live page it carries the same send block every other page menu does — Move To ▸ · Copy Link · Copy Path.
 
-The NavWindow is also tab 1 of the Page Preview's window — a perma-pinned map tab whose page tabs open beside it, tab-neutral to the app's own tabs (→ [[PagePreviewPM]]).
+The NavWindow is also tab 1 of the Page Preview's window — a perma-pinned map tab whose page tabs open beside it, tab-neutral to the app's own tabs.[^1]
 
 ### Toolbar Tabs
 
 A tab bar in the toolbar holding the open working set, each tab **warm** — it keeps its own scroll and editor undo, so flipping back lands where you left off.
 
-The most recently visited page tabs go further: their surface is **parked** rather than torn down, held off screen with its editor intact, so returning to one resumes it instead of rebuilding it. A parked surface's embedded webpages read as out of view and pause under their own retention, which is what lets a site survive a tab flip with its session, scroll, and playing media rather than reloading cold (→ [[WebviewPM]]). Older tabs fall back to the serialized warm state and rebuild on return. How many surfaces stay parked is a single tunable in the detail pane.
+The most recently visited page tabs go further: their surface is **parked** rather than torn down, held off screen with its editor intact, so returning to one resumes it instead of rebuilding it. A parked surface's embedded webpages read as out of view and pause under their own retention, which is what lets a site survive a tab flip with its session, scroll, and playing media rather than reloading cold.[^2] Older tabs fall back to the serialized warm state and rebuild on return. How many surfaces stay parked is a single tunable in the detail pane.
 
 - **Pinned tabs** dock left as compact, label-less entity icons, the full name revealing on hover; they are the pin set, persist, and are protected — navigating while a pinned tab is active opens a new tab rather than replacing it. **Unpinned tabs** sit to the right as scratch tabs, where navigating replaces the active one in place unless "Open New Tab" is used.
 - **Full Set Persistence** — closing Pommora never resets the tabs; they reopen cold on relaunch, each machine keeping its own set. Warm view-state is session-only; heading folds re-fold from their durable per-page store.
 - **Lifecycle** — closing the active tab focuses the most-recently-used tab; the close `×` shows only on unpinned tabs; a deleted entity's unpinned tab closes while its pinned tab render-hides, the pin staying stored. The last tab closing drops to NavView, and opening an entity already in a tab focuses that tab rather than duplicating it.
-- **Interaction** — within-zone drag reorders, pinned among pinned and unpinned among unpinned; `Ctrl`+`Tab` cycles all tabs; a tab's right-click menu offers Pin/Unpin · Close, with Open Preview and the page send block — Move To ▸ · Copy Link · Copy Path — above them where the tab holds a page. The `revealTabBarOnHover` knob can hide the bar when idle (→ [[ConfigurationPM]]).
+- **Interaction** — within-zone drag reorders, pinned among pinned and unpinned among unpinned; `Ctrl`+`Tab` cycles all tabs; a tab's right-click menu offers Pin/Unpin · Close, with Open Preview and the page send block — Move To ▸ · Copy Link · Copy Path — above them where the tab holds a page. The `revealTabBarOnHover` knob can hide the bar when idle.[^3]
 - **Iconography** — tab icons resolve live like every nav surface: the Homepage tab wears the nexus photo, the home glyph only when none is set, and a NavView tab reads "New Tab" under the copy glyph.
 
 ### Back and Forward
@@ -55,13 +55,13 @@ Back and Forward walk per-tab history — each tab owns its own stack, and the t
 
 ### NavView
 
-The new-tab page — a full-window Recents **gallery or list** over a search bar. It is the empty state: a `+` opens it, a nexus with no open tabs defaults to it, and closing the last tab lands on it. NavView shares the gallery and list components with NavWindow but stays its own surface. It carries its own banner, falling back to the Homepage's when it has none and to a bare header when neither exists; the search field sits in the banner's title slot, so the search bar is the inline title. As a detail-pane resident, its List / Gallery toggle lives in the detail-pane Subfield footer (→ [[SubfieldPM]]). Search always renders as gallery cards here — the toggle switches only the recents/empty view. The list is reorderable and shows the pinned group above recents, recents dragging on the shared drop-line. The NavWindow's shared-toolbar scan promotes its map flavor into NavView, deduped and carrying the view mode once (→ [[PagePreviewPM]]).
+The new-tab page — a full-window Recents **gallery or list** over a search bar. It is the empty state: a `+` opens it, a nexus with no open tabs defaults to it, and closing the last tab lands on it. NavView shares the gallery and list components with NavWindow but stays its own surface. It carries its own banner, falling back to the Homepage's when it has none and to a bare header when neither exists; the search field sits in the banner's title slot, so the search bar is the inline title. As a detail-pane resident, its List / Gallery toggle lives in the detail-pane Subfield footer.[^4] Search always renders as gallery cards here — the toggle switches only the recents/empty view. The list is reorderable and shows the pinned group above recents, recents dragging on the shared drop-line. The NavWindow's shared-toolbar scan promotes its map flavor into NavView, deduped and carrying the view mode once.[^1]
 
 **View mode persists per surface.** NavWindow's List / Gallery choice and NavView's are separate, each stored per-Nexus — flipping one never moves the other, and both survive relaunch.
 
 ### Breadcrumb
 
-The footer carries a breadcrumb of the active tab's path, extended with a dimmed tail down to the deepest node visited on it — the segments last backed out of, clickable to re-descend — so walking back up the path keeps the deeper trail in view rather than collapsing it (→ [[SubfieldPM]]).
+The footer carries a breadcrumb of the active tab's path, extended with a dimmed tail down to the deepest node visited on it — the segments last backed out of, clickable to re-descend — so walking back up the path keeps the deeper trail in view rather than collapsing it.[^4]
 
 ### State Persistence
 
@@ -105,7 +105,7 @@ What Pommora remembers, and for how long. Four tiers, told by where a thing is w
 
 | State                                | What it remembers                                                                                             | What ends it                                                                                    |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| Parked page surfaces                 | The two most recent page tabs stay built, held off screen, so a flip resumes them (→ §Toolbar Tabs)           | A third tab taking the slot; closing the tab                                                    |
+| Parked page surfaces                 | The two most recent page tabs stay built, held off screen, so a flip resumes them[^5]                                    | A third tab taking the slot; closing the tab                                                    |
 | Warm tab state                       | Serialized editor state — text, caret, undo history — plus scroll, for every tab beyond the parked ones       | Twenty entries per tab, then the oldest goes; closing the tab; an outside edit to that page     |
 | Retained web guests                  | A scrolled-out or parked site stays alive, paused, keeping its scroll, its typed input, and its playing media | Five hidden guests, then the least recent is torn down; the tile then reloads on its next entry |
 | Embed tile and preview-window warmth | The same editor state for tiles inside a page and for preview tabs                                            | The page's body changing since capture; closing the preview window                              |
@@ -122,3 +122,9 @@ What Pommora remembers, and for how long. Four tiers, told by where a thing is w
 ### Prospects
 
 - Drag-to-pin across the tab divider, and dragging a tab out into its own window.
+
+[^1]: [[PagePreviewPM]]
+[^2]: [[WebviewPM]]
+[^3]: [[ConfigurationPM]]
+[^4]: [[SubfieldPM]]
+[^5]: §Toolbar Tabs

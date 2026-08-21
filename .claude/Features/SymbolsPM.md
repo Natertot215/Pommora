@@ -97,7 +97,7 @@ A handful of glyph roles recur across the app, each carrying a consistent meanin
 
 ### Additional Assignments
 
-`list-tree` is the page outline's glyph — the toolbar button that opens a page's heading tree (→ [[PagesPM]]). It reads as nested structure rather than a flat list, distinct from `list-rounded`'s view type and `list-filter`'s predicate. The Context property type draws the Context entity kind's own glyph rather than naming one, so a column and the Context it points at can never wear different marks.
+`list-tree` is the page outline's glyph — the toolbar button that opens a page's heading tree.[^1] It reads as nested structure rather than a flat list, distinct from `list-rounded`'s view type and `list-filter`'s predicate. The Context property type draws the Context entity kind's own glyph rather than naming one, so a column and the Context it points at can never wear different marks.
 
 ### The Picker
 
@@ -110,3 +110,5 @@ The curated registry above is the app's own semantic vocabulary — the fixed gl
 ### Pending
 
 - **`link-2`** — registered and reserved as the Connections glyph; the `[[Title]]` connections surface doesn't render it.
+
+[^1]: [[PagesPM]]

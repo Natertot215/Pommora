@@ -38,8 +38,8 @@ A [[CollectionsPM|Collection]] assigns which registry properties its [[PagesPM|P
 
 ### Singletons
 
-- **Homepage** — one per Nexus, always reachable and never user-deletable, with the file location as its identity. The ribbon's identity icon opens it in the main pane, where its title doubles as the nexus rename affordance, and it hosts a live block surface under its banner (→ [[SurfacePM]]).
-- **Settings** — per-Nexus config at `.nexus/settings.json`: UI labels, the profile, and personalization (→ [[ConfigurationPM]]).
+- **Homepage** — one per Nexus, always reachable and never user-deletable, with the file location as its identity. The ribbon's identity icon opens it in the main pane, where its title doubles as the nexus rename affordance, and it hosts a live block surface under its banner.[^1]
+- **Settings** — per-Nexus config at `.nexus/settings.json`: UI labels, the profile, and personalization.[^2]
 
 ### Identity & Linking
 
@@ -57,3 +57,6 @@ Every link form is stored as a title and resolved at read time, and property val
 ### Pending
 
 - **Homepage's final shape** — a developer surface standing in for a settled one; its final form is its own design pass, with a graph-view host carrying custom widgets as the leading direction.
+
+[^1]: [[SurfacePM]]
+[^2]: [[ConfigurationPM]]

@@ -1,6 +1,6 @@
 ## Web Guest Gotchas
 
-Hard-won traps around Electron `<webview>` guests and the React surfaces that host them. Read before touching any web surface (→ [[WebviewPM]]).
+Hard-won traps around Electron `<webview>` guests and the React surfaces that host them. Read before touching any web surface.[^1]
 
 ### Mounting & Attributes
 
@@ -18,3 +18,5 @@ Hard-won traps around Electron `<webview>` guests and the React surfaces that ho
 
 - **PickerMenu's portal lands a render after `open` flips.** A same-commit effect reading a ref to portal content sees null and never re-runs — content loads unobserved. Track portal-mounted elements as *state* (a callback ref into `useState`) so dependent effects re-run when the element actually exists.
 - **Guests scroll internally.** Host chrome never sees page content pass beneath it, backdrop filters can't sample guest pixels, and a pane's clip-path doesn't reach the composited guest surface — a guest clips its own corners (`border-radius` + `overflow: hidden` on its own box works; the tile and hover card both do this).
+
+[^1]: [[WebviewPM]]

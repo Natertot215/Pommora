@@ -15,7 +15,7 @@ The operational layer's schema-bearing tier. A Page Collection is a folder at th
 | Entity              | Role                                                               | On-Disk                                           |
 | ------------------- | ------------------------------------------------------------------ | ------------------------------------------------- |
 | **Page Collection** | Assigns the properties every Page inside shares                    | Folder + `_pagecollection.json` at the Nexus root |
-| **Page Set**        | Organizing sub-folder at any depth; inherits the schema, adds none | Folder + `_pageset.json` → [[PageSetsPM]]         |
+| **Page Set**        | Organizing sub-folder at any depth; inherits the schema, adds none | Folder + `_pageset.json`[^1]                      |
 | **Content**         | Pages only (`.md`)                                                 | Files at any level                                |
 
 Property definitions live in the nexus-wide registry (`.nexus/properties.json`); the assignment lives on the Collection, and Sets inherit it whole. Nesting is unbounded. The default UI label is "Collection," renameable per Nexus. Each Collection carries its own saved views — the view model, pipeline, and renderers live in [[ViewsPM]]; the page document in [[PagesPM]].
@@ -26,7 +26,7 @@ Property definitions live in the nexus-wide registry (`.nexus/properties.json`);
 
 ### Collection Settings
 
-The schema editor — create properties, rename, reorder, change a type, and seed per-type options; renames, type changes, and option edits change the global definition for every assigned Collection. Removing a property lifts each member's value into a restore cache on the Collection's sidecar, then clears the key from every member's frontmatter, and re-assigning replays the cached values that still validate; the nexus-wide delete is a separate, `.trash`-backed operation (→ [[PropertiesPM]] §Schema Mutations). The pane is the Properties leaf of the toolbar's Settings dropdown.
+The schema editor — create properties, rename, reorder, change a type, and seed per-type options; renames, type changes, and option edits change the global definition for every assigned Collection. Removing a property lifts each member's value into a restore cache on the Collection's sidecar, then clears the key from every member's frontmatter, and re-assigning replays the cached values that still validate; the nexus-wide delete is a separate, `.trash`-backed operation.[^2] The pane is the Properties leaf of the toolbar's Settings dropdown.
 
 ### Open-In Mode
 
@@ -55,4 +55,8 @@ Collections live as siblings at the Nexus root — there's no `Pages/` wrapper. 
 
 ### CRUD
 
-One generic folder-entity CRUD. Create writes the folder plus its sidecar; a name already taken disambiguates on a numeric suffix so a new entity always appears, while a rename onto a taken name fails outright, and both reject a name the walk could never surface again. Delete moves the folder, and everything under it, to the configured delete target (→ [[ConfigurationPM]]). Top-level Collections persist their order in `.nexus/state.json`; a Collection holds its children's order in its own sidecar.
+One generic folder-entity CRUD. Create writes the folder plus its sidecar; a name already taken disambiguates on a numeric suffix so a new entity always appears, while a rename onto a taken name fails outright, and both reject a name the walk could never surface again. Delete moves the folder, and everything under it, to the configured delete target.[^3] Top-level Collections persist their order in `.nexus/state.json`; a Collection holds its children's order in its own sidecar.
+
+[^1]: [[PageSetsPM]]
+[^2]: [[PropertiesPM]] §Schema Mutations
+[^3]: [[ConfigurationPM]]
