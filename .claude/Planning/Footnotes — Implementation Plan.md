@@ -881,9 +881,9 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 
 ### Progress
 - [x] **Phase 1** — One boundary, and the counter that proves it · base `e4c5c04a`
-  - [x] Task 1 — The shared citation scan · `<commit>`
-  - [x] Task 2 — The scan joins the editor's document derivation · `<commit>`
-  - [x] Task 3 — Statistics stop counting the section · `<commit>`
+  - [x] Task 1 — The shared citation scan · `71fe5be2`
+  - [x] Task 2 — The scan joins the editor's document derivation · `4bb09d45`
+  - [x] Task 3 — Statistics stop counting the section · `8a5aeabd` · gate: `99b5d55e` `b9c95934` `8f6965ee` `645668cb`
 - [ ] **Phase 2** — The section and its markers draw
   - [ ] Task 4 — The citation row's styling · `<commit>`
   - [ ] Task 5 — Citation lines emit as numbered rows · `<commit>`
@@ -909,6 +909,25 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
   - [ ] Task 22 — The typed auto-seed · `<commit>`
 - [ ] **Phase 6** — The record
   - [ ] Task 23 — Documentation and closeout · `<commit>`
+
+### Gate 1 — closed
+
+**Cohesion Criteria, against this phase's diff.**
+
+- **C1.** `git grep -il citation e4c5c04a -- Pommora/src` → no files; the 16 `[^` hits at base are all negated character classes. Nothing answered "where does the section start" before. One derivation now: `citationScan` has one definition and two callers — `docLineScan` and the counter's `citationBoundary` — and the counter's second call is the same function under a wider exclusion, not a second answer. `foldLabel` was checked against `normalizeTitle`, which has two byte-identical copies for titles and context values; coupling was refused with the reason stated in the source.
+- **C2.** Reuse before invention, each with what it was checked against: the reader joined `detect/`'s `(DocLines, excluded)` family rather than inventing a signature; marker code-exclusion took `codeMask` rather than a private inline-span walk; the exclusion set came from `docLineScan`'s own assembly rather than a restatement; `DocScan` now extends `DocLineScan` rather than listing the same five members twice; the `^`-label refusal went into the shared `LINK_LABEL` rather than a counter-local copy. One new file: the test.
+- **C3.** `git diff e4c5c04a..HEAD -- '*.css' '*.css.ts'` over this phase's files → empty. No token, motion or palette exists to hand-roll yet.
+- **C4.** Every export has callers: `citationScan` 6 hits, `markerRegex` 8, `foldLabel` 7, `CitationScan` 9, `CitationEntry` 4, `MarkerRef` 3. Nothing was scaffolded ahead of a consumer.
+- **C5.** No residue: the mask-summing accumulator, the private exclusion assembly and the two-branch continuation walk are gone rather than demoted; nothing from a replaced approach survives.
+- **C6.** The comment pass ran and cut one dangling plan reference. Every surviving comment states a why the code cannot show.
+- **C7.** Measured, not asserted. `computeStats` on a 480-line page with no footnotes: 0.19ms before this phase, 0.30ms after. On a 407-line footnoted page holding a table: 0.59ms, against the editor's own `scanDoc` at 0.40ms over the same body. The table scan is gated behind a fence-only pass because widening an exclusion can only break a run, never create one.
+- **C8.** The smaller version of each task, named: Task 1 could have masked fences alone privately — refused, because the family's exclusion set answers tables and math for free. Task 2 could have added a field literal to `scanDoc` — refused, the spread already carries it. Task 3 could have removed markers inside `stripInline` — refused, that strips them from the character count too.
+- **C9.** No guard was added. The scan validates nothing it was not asked to answer, and the section's boundary is derived rather than defended.
+- **C10.** `rg -w "footnote|definition" Pommora/src` returns the typography scale step, the icon step and the property domain's own use of "definition" — all predating this work. This phase's code adds neither identifier; the parser's node name appears once, in the cross-check test, which is the citing-the-parser case the constraints admit.
+
+**Net line delta:** +131 code lines (comments, blanks and tests excluded) across five files.
+
+**Interaction pass:** none owed — nothing draws this phase.
 
 ### Rulings
 
