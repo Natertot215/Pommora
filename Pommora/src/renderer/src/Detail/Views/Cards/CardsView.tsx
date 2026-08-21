@@ -235,13 +235,23 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   useEffect(() => setManualOverride(null), [source.path])
   const sortKeys = useMemo(() => resolvedSortCount(view.sort, schema), [view.sort, schema])
   const sortedOrGrouped = sortKeys > 0 || view.group != null
+  const groupPropId = view.group?.kind === 'property' ? view.group.property_id : undefined
+  // Structural is the table's law: with no property grouping and no sort the pipeline paints tree
+  // order, so a reorder must write its page_order slot — viewOrders is only the sorted tiebreaker.
+  const structuralOrder = groupPropId === undefined && sortKeys === 0
   // Sort By: Location on its Location order is a computed filesystem order (drag off); Custom falls to
   // the manual order (drag on). In Location order the per-machine manual order must NOT feed the sorter,
-  // or a prior Custom drag persists as the shown order and filesystem order never appears.
+  // or a prior Custom drag persists as the shown order and filesystem order never appears. A held
+  // viewOrder mask never feeds a structural paint either — it interleaves locations, and the drag
+  // boundary only exists over contiguous runs.
   const locationFsOrder = isLocationFsOrder(view)
   const manualOrder = locationFsOrder
     ? undefined
-    : resolveManualOrder(sortedOrGrouped, manualOverride, viewOrders[view.id])
+    : resolveManualOrder(
+        sortedOrGrouped,
+        manualOverride,
+        structuralOrder ? undefined : viewOrders[view.id],
+      )
 
   const contextIds = contextIdsOf(tree)
   const { groups, setTree } = useMemo(() => {
@@ -573,15 +583,11 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   // maps a band key back to a settable value; a cross-band drop there reassigns the property. Under
   // LOCATION grouping the bands are folders, so a cross-band drop MOVES the page into that Set.
   // Within-band reorder holds whenever the order is manually meaningful.
-  const groupPropId = view.group?.kind === 'property' ? view.group.property_id : undefined
   const groupPropType = groupPropId ? declaredType(groupPropId, schema) : undefined
   const canReassign = groupPropType !== undefined && REASSIGNABLE_GROUP_TYPES.has(groupPropType)
   const canRelocate = structural
   const setPaths = useMemo(() => buildSetPaths(source), [source])
   const canReorderWithin = sortKeys < 2 && !locationFsOrder
-  // Structural is the table's law: with no property grouping and no sort the pipeline paints tree
-  // order, so a reorder must write its page_order slot — viewOrders is only the sorted tiebreaker.
-  const structuralOrder = groupPropId === undefined && sortKeys === 0
 
   // The band list Cards hit-tests: one flat level, since a top set's whole subtree rolls into a
   // single band here. Flat mode's one headless band has no header to grab, so it offers none.
@@ -677,7 +683,6 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
       const sibIds = current.filter((id) => id !== activeId)
       const order = spliceBeside(sibIds, sibAfter?.id ?? null, activeId, 'above')
       setManualOverride(full)
-      if (viewOrders[view.id]) persistViewOrder(full)
       if (!sameIds(order, current))
         void mutate({ op: 'movePage', path: row.path, newParentPath: parent, order })
       return
