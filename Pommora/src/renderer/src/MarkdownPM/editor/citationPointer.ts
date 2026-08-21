@@ -14,9 +14,12 @@ import {
 import { linkTarget, tokenize } from '../tokens'
 import { docScan, docString, perDoc } from './docCache'
 import { followTarget } from './links'
-import { applyCitationAction, citationHost } from './citationActions'
+import { applyCitationAction, travelToCitation } from './citationActions'
 import { pointerHandlers, type PointerTarget } from './pointerPath'
-import { travelTo } from './travel'
+
+/** The drawn marker. THE selector for it — the hover gate, the click's hit-test and the resting
+ *  table cell's own handler all ask for the same element. */
+export const CITE_GLYPH = '.md-cite-ref'
 
 /** What a citation's whole content is, when that content is exactly ONE link or ONE Connection.
  *  Defined once — trailing text or a stray period means it is not that, and the click jumps to the
@@ -75,7 +78,12 @@ const citationTargets = perDoc((doc) => {
   return out
 })
 
+/** The marker under the pointer, and only where the pointer is on the GLYPH. A marker's offsets are
+ *  the two seats either side of it, so an offset test claims a press aimed at the space beside it —
+ *  which is where a caret goes to delete the thing. The drawn element is the exact question, and
+ *  asking it first also keeps the layout read off every mousedown in the editor. */
 function citeHitAt(view: EditorView, event: MouseEvent): CiteHit | null {
+  if (!(event.target as HTMLElement).closest?.(CITE_GLYPH)) return null
   const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
   if (pos == null) return null
   const targets = citationTargets(view.state.doc)
@@ -89,7 +97,7 @@ function citeHitAt(view: EditorView, event: MouseEvent): CiteHit | null {
  *  showing the section means. */
 export function citationPointer(getApi: () => ConnectionsApi | undefined): Extension {
   return pointerHandlers<CiteHit>({
-    hoverGate: '.md-cite-ref',
+    hoverGate: CITE_GLYPH,
     // A hover preview over a marker is a Prospect, so nothing here ever arms a dwell.
     armable: () => false,
     hitAt: citeHitAt,
@@ -108,8 +116,7 @@ export function citationPointer(getApi: () => ConnectionsApi | undefined): Exten
         )
         if (go) return go()
       }
-      view.state.facet(citationHost).reveal?.()
-      travelTo(view, hit.entry.contentStart)
+      travelToCitation(view, hit.marker.label)
     },
     dwell: () => null,
     menu: (hit, view) => () =>
