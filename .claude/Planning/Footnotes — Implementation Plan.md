@@ -417,12 +417,12 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 **Failure half:** a page with no row → absent, meaning follow the default. A non-boolean value arriving over IPC → refused by the validator with a structured error, never written. A copied page → its row travels, which is what `COPY_SCOPES` is for and what is silently lost if forgotten.
 
 **Steps:**
-- [ ] Add the scope member, the handler pair, the bridge declarations and the preload line, following the `headingIcon` pair exactly.
-- [ ] Add `'citations'` to `COPY_SCOPES`.
-- [ ] Widen this scope's validator to admit `boolean | null`. Nothing downstream changes — the write already deletes on null.
-- [ ] Test both directions at the boundary: a `true`/`false` write stores a row, a `null` write deletes it, and a non-boolean is still refused.
-- [ ] Run the gate — expect green.
-- [ ] Commit: `feat(main): a per-page store for the citations section's visibility`
+- [x] Add the scope member, the handler pair, the bridge declarations and the preload line, following the `headingIcon` pair exactly.
+- [x] Add `'citations'` to `COPY_SCOPES`.
+- [x] Widen this scope's validator to admit `boolean | null`. Nothing downstream changes — the write already deletes on null.
+- [x] Test both directions at the boundary: a `true`/`false` write stores a row, a `null` write deletes it, and a non-boolean is still refused.
+- [x] Run the gate — expect green.
+- [x] Commit: `feat(main): a per-page store for the citations section's visibility`
 
 #### Task 10: The two settings
 
@@ -890,8 +890,8 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
   - [x] Task 6 — The marker draws atomic and positional · `a7cc6a24`
   - [x] Task 7 — Markers render in resting table cells · `69b9781c`
   - [x] Task 8 — The section is inert to the block layer · `ed1aded1` · gate: `a6b28f4a` `9cf8e548`
-- [ ] **Phase 3** — Hiding and showing
-  - [ ] Task 9 — The visibility override's storage · `<commit>`
+- [ ] **Phase 3** — Hiding and showing · base `d124cf6a`
+  - [x] Task 9 — The visibility override's storage · `75cbfcbf`
   - [ ] Task 10 — The two settings · `<commit>`
   - [ ] Task 11 — The section is a fold region, seeded rather than persisted · `<commit>`
   - [ ] Task 12 — The chevron class and the heading-gesture class separate · `<commit>`

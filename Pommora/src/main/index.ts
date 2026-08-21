@@ -982,6 +982,17 @@ serveBridge(
         'Hidden must be a boolean.',
       ),
     },
+    // Whether a page shows its footnotes section. A row exists only where someone overrode the
+    // nexus-wide default, so a null clears it and the default reaches the page again.
+    'citations:get': { kind: 'raw', fn: scopeGet<boolean>('citations') },
+    'citations:set': {
+      kind: 'envelope',
+      fn: scopeSet(
+        'citations',
+        (v: unknown): v is boolean | null => typeof v === 'boolean' || v === null,
+        'Shown must be a boolean.',
+      ),
+    },
     // The aliases a page has been given. The alias itself lives on-page in universal syntax; this
     // is an accelerator for offering one back, so losing it costs a suggestion and never a link.
     'aliases:get': { kind: 'raw', fn: scopeGet<string[]>('aliases') },

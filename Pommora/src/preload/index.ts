@@ -108,6 +108,8 @@ const api = {
   // Which tables' first column renders as a heading (a Pommora-only visual, not in the .md).
   tableHeadingColumns: { get: ask('tableHeadingCols:get'), set: ask('tableHeadingCols:set') },
   headingIcon: { get: ask('headingIcon:get'), set: ask('headingIcon:set') },
+  // Whether a page shows its footnotes section, against the nexus-wide default.
+  citations: { get: ask('citations:get'), set: ask('citations:set') },
   // The aliases each page has been given, keyed page id, for offering back while typing one.
   aliases: { get: ask('aliases:get'), set: ask('aliases:set') },
   // The block document behind the BlockHost seam — targeted per-host load + locked

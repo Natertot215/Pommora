@@ -140,6 +140,7 @@ const COPY_SCOPES = [
   'folds',
   'headingCols',
   'headingIcon',
+  'citations',
   'embedHeights',
   'embedZooms',
   'aliases',

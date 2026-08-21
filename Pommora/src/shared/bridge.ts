@@ -106,6 +106,8 @@ export interface Asks {
   'tableHeadingCols:set': { args: [pageId: string, indices: number[]]; reply: Result<null> }
   'headingIcon:get': { args: []; reply: Record<string, boolean> }
   'headingIcon:set': { args: [pageId: string, hidden: boolean]; reply: Result<null> }
+  'citations:get': { args: []; reply: Record<string, boolean> }
+  'citations:set': { args: [pageId: string, shown: boolean | null]; reply: Result<null> }
   'aliases:get': { args: []; reply: Record<string, string[]> }
   'aliases:set': { args: [pageId: string, aliases: string[]]; reply: Result<null> }
 
