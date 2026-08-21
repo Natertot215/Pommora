@@ -139,6 +139,7 @@ function pommoraItems(
         { label: 'Code Block', click: act('block:code') },
         { label: 'Callout', click: act('block:callout') },
         { label: 'Table', click: act('block:table') },
+        ...(s.citeSeat ? [{ label: 'Footnote', click: act('block:citation') }] : []),
       ],
     },
     {
@@ -201,7 +202,11 @@ function pommoraItems(
 // text alone, and the renderer cannot read it in time — main's `context-menu` event fires in the same
 // turn as the right-click that triggers it.
 function pasteAsItems(wc: WebContents): MenuItemConstructorOptions[] {
-  const rows = pasteAsRows(clipboard.readText(), lastState?.embedSeat === true)
+  const rows = pasteAsRows(
+    clipboard.readText(),
+    lastState?.embedSeat === true,
+    lastState?.citeSeat === true,
+  )
   if (rows.length === 0) return []
   return [
     {

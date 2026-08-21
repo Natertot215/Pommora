@@ -23,6 +23,10 @@ export interface FormatState {
    *  Paste As embed forms are offered under. Main builds that menu and cannot see the caret, so the
    *  renderer answers it here alongside the rest. */
   embedSeat: boolean
+  /** The caret sits where a footnote marker may be written — outside the citations section and
+   *  outside code. Insert ▸ Footnote and Paste As ▸ Footnote are both offered under it, for the same
+   *  reason the embed forms need `embedSeat`: main builds the menu and cannot see the caret. */
+  citeSeat: boolean
 }
 
 /** Menu-action strings (sent main→renderer), namespaced so other `menu:action` listeners ignore them. */

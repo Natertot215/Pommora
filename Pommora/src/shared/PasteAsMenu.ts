@@ -13,8 +13,8 @@ import { linkPaste, type LinkPaste } from './PasteLink'
 import { LINK_DISPLAY_LABELS, LINK_DISPLAYS, type LinkDisplay } from './properties'
 import { composeWebpageEmbedLine } from './webpageEmbed'
 
-/** The three link forms, plus the address bare, the two syntaxes that reach a page, and the two
- *  lone-line embeds — the only forms whose placement is a question. */
+/** The three link forms, plus the address bare, the two syntaxes that reach a page, the two
+ *  lone-line embeds, and the footnote — every form whose placement is a question. */
 export type PasteAsForm =
   | LinkDisplay
   | 'plain'
@@ -22,6 +22,7 @@ export type PasteAsForm =
   | 'markdown'
   | 'embedPage'
   | 'embedLink'
+  | 'footnote'
 
 /** What a chosen form's action id is spelled with, so main names it and the renderer reads it back
  *  from the one place. */
@@ -71,6 +72,7 @@ const URL_ROWS: readonly PasteAsRow[] = [
   { label: 'Plain Text', form: 'plain' },
 ]
 
+const FOOTNOTE_ROW: PasteAsRow = { label: 'Footnote', form: 'footnote' }
 const PAGE_EMBED_ROW: PasteAsRow = { label: 'Embedded Page', form: 'embedPage' }
 const URL_EMBED_ROW: PasteAsRow = { label: 'Embedded Link', form: 'embedLink' }
 
@@ -81,15 +83,24 @@ function embeddableTarget(target: NonNullable<PasteAsTarget>): boolean {
 }
 
 /** The forms this clipboard can take, in the order they are offered. Empty means no submenu at all,
- *  rather than one shown with nothing in it. Both embeds are line constructs, so they are offered
- *  only where one may be written — `embedSeat`, the caret already on a blank line the token can have
- *  to itself. Off a seat the lists read exactly as they did before there were embed forms. */
-export function pasteAsRows(clipboard: string, embedSeat: boolean): readonly PasteAsRow[] {
+ *  rather than one shown with nothing in it. Each placement-bound form is gated on its own seat —
+ *  the embeds on a blank line the token can have to itself, the footnote on a spot a marker can bind
+ *  from. Off a seat the lists read exactly as they did before those forms existed. */
+export function pasteAsRows(
+  clipboard: string,
+  embedSeat: boolean,
+  citeSeat: boolean,
+): readonly PasteAsRow[] {
+  // Footnote answers to the clipboard alone, not to `pasteAsTarget`: every other form writes one
+  // line, so that reader refuses a clipboard holding a newline — and a multi-paragraph clipboard is
+  // exactly what the footnote's normalization exists for.
+  const footnote = citeSeat && clipboard.trim() !== '' ? [FOOTNOTE_ROW] : []
   const target = pasteAsTarget(clipboard)
-  if (!target) return []
+  if (!target) return footnote
   const embed = embedSeat && embeddableTarget(target)
-  if (target.kind === 'page') return embed ? [...PAGE_ROWS, PAGE_EMBED_ROW] : PAGE_ROWS
-  return embed ? [...URL_ROWS, URL_EMBED_ROW] : URL_ROWS
+  const rows = target.kind === 'page' ? PAGE_ROWS : URL_ROWS
+  const embedRow = target.kind === 'page' ? PAGE_EMBED_ROW : URL_EMBED_ROW
+  return [...footnote, ...rows, ...(embed ? [embedRow] : [])]
 }
 
 /** Text to insert as-is, where no title can be pending. */
@@ -114,7 +125,9 @@ export function pasteAsWrite(
   form: PasteAsForm,
   title?: string,
 ): LinkPaste | TextPaste | LinePaste | null {
-  if (!target) return null
+  // A footnote is two disjoint sites — a marker and a citation — so the caller forks ahead of this
+  // single-range writer rather than asking it for text it has no way to spell.
+  if (!target || form === 'footnote') return null
   if ((form === 'embedPage' || form === 'embedLink') && !embeddableTarget(target)) return null
   if (target.kind === 'page') {
     if (form === 'connection') return { kind: 'text', text: pageLinkText(target.title) }
