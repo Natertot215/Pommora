@@ -2,13 +2,14 @@ import { describe, expect, it } from 'vitest'
 import { EditorState, type Extension } from '@codemirror/state'
 import { citationGuard, citationTailVerdict } from './citationGuard'
 import { citationScan, splitWithOffsets } from '../detect'
+import { citationGesture, deleteMarkerChanges } from './citationEdits'
 import { docScan } from './docCache'
 
 const DOC = '# Notes\nbody[^a] here\n\n[^a]: the citation\n[^b]: another'
 
 const scanOf = (doc: string): Parameters<typeof citationTailVerdict>[4] => {
   const d = splitWithOffsets(doc)
-  return { lines: d.lines, lineStarts: d.lineStarts, citations: citationScan(d, []) }
+  return { ...d, citations: citationScan(d, []) }
 }
 
 /** Drive a document through a real state — with the guard, or pointedly without it. */
@@ -140,5 +141,44 @@ describe('the head-start repair answers for what it moves, not only where', () =
     const out = type(DOC, DOC.indexOf('[^b]:'), 'one line only ')
     expect(out).toContain('[^b]: one line only another')
     expect(sectionOf(out)).toBe(2)
+  })
+})
+
+// The guard sits between every dispatch and the document, the renormalization included. A rewrite
+// that reorders the whole section reaches the tail by definition, so this is the one pairing where a
+// repair meant for stray prose could land on the feature's own writes.
+describe('the guard passes a renormalization through untouched', () => {
+  const through = (doc: string, changes: ReturnType<typeof citationGesture>): string =>
+    EditorState.create({ doc, extensions: [citationGuard] as Extension })
+      .update({ changes })
+      .state.doc.toString()
+
+  it('a reorder of every row lands exactly as composed', () => {
+    const doc = 'a[^2] b[^1]\n\n[^1]: one\n[^2]: two'
+    expect(through(doc, citationGesture(scanOf(doc), []))).toBe(
+      'a[^1] b[^2]\n\n[^1]: two\n[^2]: one',
+    )
+  })
+
+  it('a deletion and the renumber that follows it land as one change', () => {
+    const doc = 'x[^1] y[^2]\n\n[^1]: one\n[^2]: two'
+    const s = scanOf(doc)
+    expect(through(doc, citationGesture(s, deleteMarkerChanges(s, s.citations.markers[0])))).toBe(
+      'x y[^1]\n\n[^1]: two',
+    )
+  })
+
+  it('a fresh pair appended to the section survives the head-seat repair', () => {
+    const doc = 'x[^1] y\n\n[^1]: one'
+    const s = scanOf(doc)
+    expect(
+      through(
+        doc,
+        citationGesture(s, [
+          { from: 7, to: 7, insert: '[^2]' },
+          { from: doc.length, to: doc.length, insert: '\n[^2]: two' },
+        ]),
+      ),
+    ).toBe('x[^1] y[^2]\n\n[^1]: one\n[^2]: two')
   })
 })

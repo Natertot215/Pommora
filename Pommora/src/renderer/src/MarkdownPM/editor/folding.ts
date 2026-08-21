@@ -459,6 +459,21 @@ export function applyCitationsVisibility(view: EditorView, shown: boolean, anima
     )
 }
 
+/** Run a footnote gesture's dispatch with the section unfolded, and put the fold back after it.
+ *  A normalization rewrites the section from its first offset, and a fold entry maps its start
+ *  forward and its end backward — so an edit reaching that offset leaves the entry spanning a range
+ *  that no longer lines up, and a whole-section replace collapses it entirely. No offset discipline
+ *  avoids it, because the edit legitimately owns that offset. The heading drag drops its fold for
+ *  the same reason and re-collapses after; this is the same teardown. */
+export function withCitationsUnfolded(view: EditorView, dispatch: () => void): void {
+  const r = citationsRegion(view.state.doc)
+  const folded = r !== null && closedAt(view.state.field(foldField), r.anchor)
+  if (r && folded)
+    view.dispatch({ effects: dropEffect.of(r.anchor), annotations: initialFoldAnnotation.of(true) })
+  dispatch()
+  if (folded) applyCitationsVisibility(view, false, false)
+}
+
 /** A footnoted document ends AT its footnotes. The editor's generous tail is typing room for a body
  *  still being written; a citations section is the document's foot, so it closes on the seam's own
  *  gap instead of floating above a field of empty scroller. */

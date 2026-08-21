@@ -1,13 +1,24 @@
-// What a footnote menu's chosen action does, for both constructs. A native menu stays open as long
+// What a footnote gesture writes, and where every one of them lands. A native menu stays open as long
 // as the reader likes and an undo or an outside write can move the document under it, so every
 // action re-finds its target in the LIVE document and matches it against what the menu was built
 // from before it writes — the discipline the connection and heading menus already keep.
+import type { ChangeSpec } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
 import type { CitationMenuAction } from '@shared/citationMenu'
 import { citationFor, markersFor } from '../detect'
 import { focusRange } from './caretSeat'
-import { deleteCitationChanges, deleteMarkerChanges } from './citationEdits'
+import { citationGesture, deleteCitationChanges, deleteMarkerChanges } from './citationEdits'
 import { docScan } from './docCache'
+import { withCitationsUnfolded } from './folding'
+
+/** Every footnote gesture's dispatch: the edit it asked for, the renormalization that follows it,
+ *  and the fold teardown the section's rewrite needs — one transaction, so one undo takes the whole
+ *  act rather than half of it. */
+export function commitCitation(view: EditorView, changes: ChangeSpec[], userEvent: string): void {
+  const set = citationGesture(docScan(view.state.doc), changes)
+  if (set.empty) return
+  withCitationsUnfolded(view, () => view.dispatch({ changes: set, userEvent }))
+}
 
 /** Which construct the menu was popped on, identified by the label it carried — an offset alone
  *  would name whatever moved into that seat while the menu stood open. */
@@ -44,11 +55,11 @@ export function applyCitationAction(
       return
     case 'cite:delete': {
       const changes = marker
-        ? deleteMarkerChanges(scan, marker, view.state.doc.length)
+        ? deleteMarkerChanges(scan, marker)
         : entry
-          ? deleteCitationChanges(scan, entry, view.state.doc.length)
+          ? deleteCitationChanges(scan, entry)
           : []
-      if (changes.length) view.dispatch({ changes, userEvent: 'delete' })
+      commitCitation(view, changes, 'delete')
       return
     }
   }
