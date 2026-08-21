@@ -14,6 +14,7 @@ import {
   type MarkerRef,
   citationFor,
   foldLabel,
+  isLastReference,
   lineEndOf,
   markersFor,
 } from '../detect'
@@ -52,9 +53,9 @@ function cutCitations(scan: CitationSlice, run: CitationEntry[]): ChangeSpec[] {
  *  answer for it. */
 export function deleteMarkerChanges(scan: CitationSlice, marker: MarkerRef): ChangeSpec[] {
   const entry = citationFor(scan.citations, marker.label)
-  const others = markersFor(scan.citations, marker.label).filter((m) => m !== marker)
   const changes: ChangeSpec[] = [erase(marker)]
-  if (entry && others.length === 0) changes.push(erase(lineSpan(scan, entry.line, entry.lastLine)))
+  if (entry && isLastReference(scan.citations, marker))
+    changes.push(erase(lineSpan(scan, entry.line, entry.lastLine)))
   return changes
 }
 

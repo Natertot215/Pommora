@@ -26,13 +26,10 @@ import { webpageEmbedUrlSpan } from '@shared/webpageEmbed'
 export const GRIP_MENU_LINES = ['md-block-handle', 'md-callout-first', 'md-bq-first']
 const GRIP_SELECTOR = GRIP_MENU_LINES.map((c) => `.cm-line.${c}`).join(', ')
 
-/** A foldable heading carries its own gutter menu on its chevron. */
-const HEADING_LINE = HEADING_FOLD_LINE
-
 /** Every gutter line whose right-press pops a custom menu — grips plus the heading chevron. The host's
  *  hot flag reads this so the generic editor menu stands down over exactly the lines the two hit-tests
  *  below claim, never one more or fewer. */
-export const HOT_MENU_LINES = [...GRIP_MENU_LINES, HEADING_LINE]
+export const HOT_MENU_LINES = [...GRIP_MENU_LINES, HEADING_FOLD_LINE]
 
 /** The gutter-strip line a right-press landed on for a given class, or null on the line's own text — a
  *  press past the content column's left edge is never a gutter press. */
@@ -43,7 +40,7 @@ function gutterLineAt(e: MouseEvent, selector: string): HTMLElement | null {
 
 const gripLineAt = (e: MouseEvent): HTMLElement | null => gutterLineAt(e, GRIP_SELECTOR)
 const headingLineAt = (e: MouseEvent): HTMLElement | null =>
-  gutterLineAt(e, `.cm-line.${HEADING_LINE}`)
+  gutterLineAt(e, `.cm-line.${HEADING_FOLD_LINE}`)
 
 /** The Collections → Sets → Pages pick tree, minus everything `embeddable` rules out; a container with
  *  nothing pickable beneath it drops out entirely. */

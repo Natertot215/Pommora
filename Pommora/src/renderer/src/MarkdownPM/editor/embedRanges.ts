@@ -24,6 +24,23 @@ export interface DocLineScan {
   citations: CitationScan
 }
 
+/** THE exclusion set every construct scan reads: the fences and tables the caller already holds,
+ *  plus the block math those in turn exclude. Assembled here alone — a caller spelling the order
+ *  out beside its own scan is how two layers come to disagree about what a `$$` or a `[^1]:` inside
+ *  a table is. */
+export function constructExclusions(
+  d: DocLines,
+  fences: [number, number][],
+  tables: readonly TableRegion[],
+): { maths: [number, number][]; excluded: [number, number][] } {
+  const base: [number, number][] = [
+    ...fences,
+    ...tables.map((r): [number, number] => [r.from, r.to]),
+  ]
+  const maths = blockMathRanges(d, base)
+  return { maths, excluded: [...base, ...maths] }
+}
+
 /** Every construct kind from the fence/table base the caller already holds — the exclusion set
  *  is assembled once here, so a caller needing several kinds never re-scans the doc per kind. */
 export function docLineScan(
@@ -31,12 +48,7 @@ export function docLineScan(
   fences: [number, number][],
   tables: readonly TableRegion[],
 ): DocLineScan {
-  const base: [number, number][] = [
-    ...fences,
-    ...tables.map((r): [number, number] => [r.from, r.to]),
-  ]
-  const maths = blockMathRanges(d, base)
-  const excluded = [...base, ...maths]
+  const { maths, excluded } = constructExclusions(d, fences, tables)
   return {
     maths,
     embeds: blockEmbedLines(d, excluded),

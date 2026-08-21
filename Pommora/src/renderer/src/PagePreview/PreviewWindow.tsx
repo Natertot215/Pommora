@@ -7,7 +7,6 @@ import {
 } from '@renderer/design-system/components/PreviewPane/PreviewPane'
 import { useExitPresence } from '../design-system/useExitPresence'
 import { PageEmbed } from '../Embeds/PageEmbed'
-import { EMBED_SCALE_DEFAULT, coerceScale } from '@shared/types'
 import { Subfield } from '../Detail/Subfield/Subfield'
 import { CitationsToggle } from '../Detail/Subfield/CitationsToggle'
 import type { SubfieldScope } from '../Detail/Subfield/subfieldItems'
@@ -18,7 +17,7 @@ import { getDetailPaneRect } from '../Detail/DetailPane'
 import { NavCrumbs } from '../Navigation/NavList'
 import { resolveWith } from '../Navigation/navResolve'
 import { pageIndexOf, resolveIndexOf } from '../treeIndex'
-import { useSession, type PreviewTarget } from '../store'
+import { useEmbedScale, useSession, type PreviewTarget } from '../store'
 import { PreviewActions } from './PreviewActions'
 import { PreviewInspector } from './PreviewInspector'
 import { PreviewTabStrip } from './PreviewTabStrip'
@@ -61,9 +60,7 @@ function PreviewWindowBody({
   closing: boolean
 }): React.JSX.Element {
   const closePreview = useSession((s) => s.closePreview)
-  const embedScale = useSession((s) =>
-    coerceScale(s.personalization.embedScale, EMBED_SCALE_DEFAULT),
-  )
+  const embedScale = useEmbedScale()
   const select = useSession((s) => s.select)
   const tree = useSession((s) => s.tree)
   // The window root — the engulf FLIP and the tab-slide's pane push both measure from here.

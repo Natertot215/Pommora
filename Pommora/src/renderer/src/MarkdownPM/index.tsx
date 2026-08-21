@@ -64,7 +64,7 @@ import {
   whenAcOpen,
 } from './useConnectionAutocomplete'
 import { AutocompletePanel } from './AutocompletePanel'
-import { useSession } from '../store'
+import { citationsDefault, useSession } from '../store'
 import type { ConnectionsApi } from './connections'
 import { PageHeader } from './PageHeader'
 import { ZOOM_DEFAULT, zoomFontSize } from './zoom'
@@ -186,8 +186,7 @@ export function MarkdownEditor({
 
   // The nexus-wide default, overridden per page where a caller resolved one. Read from the live
   // slice, so flipping the setting reaches an open page rather than waiting for the tree to echo.
-  const citationsDefault = useSession((s) => s.personalization.citationsShown ?? false)
-  const citesShown = citationsShown ?? citationsDefault
+  const citesShown = useSession((s) => citationsShown ?? citationsDefault(s))
   const citesShownRef = useRef(citesShown)
   citesShownRef.current = citesShown
   const citationsToggleRef = useRef(onCitationsToggle)

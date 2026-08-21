@@ -1,8 +1,10 @@
 import { create } from 'zustand'
 import { blockHostKey, type BlockHostRef } from '@shared/blocks'
 import {
+  EMBED_SCALE_DEFAULT,
   EMPTY_PREVIEWS,
   DEFAULT_COMMANDS,
+  coerceScale,
   type CollectionNode,
   type NavigationState,
   type NavRef,
@@ -186,6 +188,22 @@ export function openPageBody(
   if (!pageDetail) return ''
   return liveBody?.path === pageDetail.path ? liveBody.body : pageDetail.body
 }
+
+/** The nexus-wide embed scale, coerced. Every surface that mounts an embed reads it HERE, so what
+ *  an absent or out-of-range value means is settled once. */
+export const useEmbedScale = (): number =>
+  useSession((s) => coerceScale(s.personalization.embedScale, EMBED_SCALE_DEFAULT))
+
+/** The nexus-wide footnote-visibility default. THE reading of it: an absent key means hidden, and
+ *  the four surfaces that resolve a page's state all fall back HERE rather than restating it. */
+export const citationsDefault = (s: { personalization: Personalization }): boolean =>
+  s.personalization.citationsShown ?? false
+
+/** A page's resolved footnote visibility — its own override, else the nexus-wide default. */
+export const citationsVisible = (
+  s: { personalization: Personalization; citationsShown: Record<string, boolean> },
+  pageId: string | undefined,
+): boolean => (pageId === undefined ? undefined : s.citationsShown[pageId]) ?? citationsDefault(s)
 
 /** Page paths are POSIX, so a page's container is its path minus the last segment. */
 const parentPathOf = (path: string): string => path.split('/').slice(0, -1).join('/')
@@ -1033,13 +1051,11 @@ export const useSession = create<SessionState>((set, get) => {
     citationsShown: {},
     toggleCitations: (pageId) => {
       const s = get()
-      const fallback = s.personalization.citationsShown ?? false
-      s.setCitationsVisible(pageId, !(s.citationsShown[pageId] ?? fallback))
+      s.setCitationsVisible(pageId, !citationsVisible(s, pageId))
     },
     setCitationsVisible: (pageId, shown) => {
       const s = get()
-      const fallback = s.personalization.citationsShown ?? false
-      s.setCitationsShown(pageId, shown === fallback ? null : shown)
+      s.setCitationsShown(pageId, shown === citationsDefault(s) ? null : shown)
     },
     setCitationsShown: (pageId, shown) => {
       set((s) => {
