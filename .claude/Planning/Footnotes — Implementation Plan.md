@@ -978,8 +978,8 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
   - [x] Task 20 — The renumbering engine · `6d52c45f`
   - [x] Task 21 — Insert ▸ Footnote and Paste As ▸ Footnote · `fe4bdc67`
   - [x] Task 22 — The typed auto-seed · `24493ac4`
-- [ ] **Phase 6** — The record
-  - [ ] Task 23 — Documentation and closeout · `<commit>`
+- [x] **Phase 6** — The record · base `bc0eb6f3`
+  - [x] Task 23 — Documentation and closeout · `20b0a940` · gate: `77a4a8f1`
 
 ### Gate 1 — closed
 
@@ -1041,6 +1041,28 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 **Interaction pass:** not run against the live app. Nathan's own dev session was up with the fixture page open, and Phase 5 changes the main process (the Insert row), which needs a full restart rather than ⌘R — so confirming it would have meant taking down the session he left running. The eight steps are his to walk; the DOM-level assertions in `citationCreate.test.tsx` and `foldState.test.tsx` stand in for what a screenshot would have shown.
 
 **Correctness review:** one CRITICAL, confirmed red before the fix and pinned after. `normalizeCitations` built its occupied-number set from orphans alone, so a rename blocked by an orphan left its own number standing and the NEXT row was renamed straight onto it — `x[^2] y[^3]` over `[^1]: orphan / [^2]: two / [^3]: three` fused two independent footnotes into `[^2]` and a shadow, losing one binding for good. The set is now grown to a fixed point: a refused rename holds its own number against every later row.
+
+### Delivery Claim
+
+MarkdownPM reads and writes GFM reference footnotes. A page authored anywhere carries `[^label]` markers in its body and a trailing run of `[^label]: text` citations at the document's end; Pommora draws the markers as positional numbers in first-use order, gathers the citations into a section that hides by default, and leaves the bytes on disk as plain GFM that GitHub and Obsidian read identically.
+
+**What is built, against the eleven requirements.**
+
+1. **The model.** `citationScan` in `MarkdownPM/detect/index.ts` is the one derivation of where the section begins, and six layers read it through the editor's cached per-document scan. The section is the trailing run reaching the document's end; a citation anywhere above live content is prose. Markers bind by GFM's own case fold.
+2. **Markers draw** as their positional ordinal in the accent at 0.65em, cap-aligned, permanently opaque, atomic to the caret, in the body and in table cells — resting and while a cell is edited.
+3. **Markers act.** A click travels to the citation, or follows it when its whole content is exactly one link or Connection. Right-click gives Edit · Copy · Delete. Cascades key to the range, never the gesture.
+4. **The section draws** as numbered rows on the ordered marker's own glyph column with a hanging indent, orphans and duplicate-losers dimmed behind an en dash, inert to grip-drag both ways, and a collapsed heading stops where it starts.
+5. **The section hides and shows** through one per-page per-machine override that both the Subfield control and the divider write, falling back to a nexus-wide default and clearing when it lands on it. The control rides into the Page Preview.
+6. **Creation** is Insert ▸ Footnote, Paste As ▸ Footnote, and a hand-typed label, each writing a complete pair in one transaction that one undo reverts whole, each honoring Jump To Citation On Creation.
+7. **Numbering** is positional in display and normalized on disk by every creation and deletion: numeric labels renumber to first-use order, rows sort to match, word labels hold their position unrewritten, and hand edits that create nothing rewrite nothing.
+8. **Statistics** exclude every section line; a marker scores its own characters and no word. No other count moved.
+9. **Guards.** The transaction-layer tail guard relocates any change that would strand content at or after the section, and repairs a write aimed ahead of a citation's hidden prefix. Backspace at a citation's content start removes the whole footnote. Menu actions re-find their target by label at commit.
+10. **Settings.** Default Visibility and Jump To Citation On Creation sit under Footnotes in Pages & Editor.
+11. **Documentation.** Every document the work falsified was rewritten in the commit that falsified it; the feature's own section is in `Features/MarkdownPM.md`.
+
+**What is deliberately not built:** mid-document citations as anything but prose, inline `^[text]` syntax, hover previews on a marker, drag-to-reposition markers, and creating a footnote from inside a table cell. The Subfield's three standing counting inaccuracies — tables, indented code, math — are untouched.
+
+**What is not verified:** the interaction passes for Phases 3 through 6 have not been run against the live application. Everything below the interaction layer is covered by 3,316 tests including a sweep of roughly fourteen hundred keystroke-and-seat combinations against the section.
 
 ### Rulings
 
