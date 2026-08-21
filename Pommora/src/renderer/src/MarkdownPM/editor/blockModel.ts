@@ -109,10 +109,16 @@ function blockContext(scan: DocScan): BlockContext {
   const heading = scan.headings
   const hr = scan.breaks
   const bq = scan.quotes.map((q, i) => q && !literalCode(i))
+  // The citations section owns no block, which is the answer a blank line already gives: no grip on
+  // its rows, no drop target inside it, and no paragraph reaching into it. Taking the existing
+  // unowned-line state costs two lines here, where a BlockKind of its own would span five sites the
+  // compiler does not all check.
+  const cited = (i: number): boolean => scan.citations.mask[i] === 1
   const claimed = (i: number): boolean =>
     i < 0 ||
     i >= n ||
     lines[i].trim() === '' ||
+    cited(i) ||
     !!callout[i] ||
     bq[i] ||
     inFence(i) ||
@@ -131,7 +137,7 @@ function blockContext(scan: DocScan): BlockContext {
   // still resolves as one block from any of its content lines instead of splitting into two paragraphs.
   const kindAt = (i: number): BlockKind | null => {
     if (i < 0 || i >= n) return null // a neighbor-lookup off either doc edge owns no block
-    if (lines[i].trim() === '') return null
+    if (lines[i].trim() === '' || cited(i)) return null
     if (callout[i]) return 'callout'
     if (bq[i]) return 'blockquote'
     if (inFence(i)) return 'code'
