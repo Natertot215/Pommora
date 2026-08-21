@@ -48,7 +48,7 @@ The structural moves — each a session of its own, each verified by something a
 - [ ] **View QuickFilter:** A dropdown or toggle that holds single-property filtering options; the recently added ActionBand would be its natural placement for SurfacePM embeds, and the Subfield is an initial idea for where this could be placed in full-detail views.
 - [ ] **Auto-Linter:** A MarkdownPM, nexus-level-configurable auto-linter that could place its action button in the subfield, or an approved command combination.
 - [ ] **Per-tab Subfield `crumbDepth`**, if cross-tab tail memory is ever wanted. It resets on tab switch today (correct, no leak); a per-tab field would let each tab remember its own dimmed tail across switches — a feature, not a fix.
-- [ ] **Files & Assets:** Rework the `assets` directory to become user-definable, and allow its content to be stored as cross-compatible `[[connection]]` formatting; asset-designated folders would be used for banners and be the default for immediate file-embedding location from an external source; file as a property type would then be given a per-property directory option for where those would be stored. Any asset-designated directory would need exclusion outside the primary exclusions lsit. 
+- [ ] **Files & Assets:** Rework the `assets` directory to become user-definable, and allow its content to be stored as cross-compatible `[[connection]]` formatting; asset-designated folders would be used for banners and be the default for immediate file-embedding location from an external source; file as a property type would then be given a per-property directory option for where those would be stored. Any asset-designated directory would need exclusion *outside* the primary exclusions list. 
 
 ### Important Information
 
