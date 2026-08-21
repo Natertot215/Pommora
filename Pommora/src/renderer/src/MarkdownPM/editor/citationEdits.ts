@@ -190,22 +190,33 @@ export function mintLabel(c: CitationScan): string {
   return String(n)
 }
 
-/** Where a new citation is written: after the section's last row, or after the body's last line
- *  where there is no section yet, with the blank line that separates the two. */
-function citationSeat(scan: CitationSlice): { at: number; lead: string } {
+/** Where a new citation is written: after the section's last row, or after the body where there is
+ *  no section yet. Never above `at` — a caret on the empty last line of a document sits past the
+ *  body's last content, and a citation seated behind it would leave the marker below the section it
+ *  just created, which is the state the whole feature is built to prevent. */
+function citationSeat(scan: CitationSlice, at: number): { at: number; lead: string } {
   const { lines, citations: c } = scan
   const last = c.entries[c.entries.length - 1]
   if (last) return { at: lineEndOf(scan, last.lastLine), lead: '\n' }
+  let body = 0
   for (let i = lines.length - 1; i >= 0; i--)
-    if (lines[i].trim() !== '') return { at: lineEndOf(scan, i), lead: '\n\n' }
-  return { at: 0, lead: '\n\n' }
+    if (lines[i].trim() !== '') {
+      body = lineEndOf(scan, i)
+      break
+    }
+  return { at: Math.max(body, at), lead: '\n\n' }
 }
 
 /** A new citation row at the document's end. Its half of every creation gesture — what lands in the
  *  body is the gesture's own, a whole marker for a menu and the closing bracket alone for a label
- *  being typed. */
-export function citationRowChanges(scan: CitationSlice, label: string, text: string): ChangeSpec {
-  const seat = citationSeat(scan)
+ *  being typed, and `at` is where that lands. */
+export function citationRowChanges(
+  scan: CitationSlice,
+  label: string,
+  text: string,
+  at: number,
+): ChangeSpec {
+  const seat = citationSeat(scan, at)
   return { from: seat.at, to: seat.at, insert: `${seat.lead}[^${label}]: ${text}` }
 }
 
