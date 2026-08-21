@@ -267,7 +267,7 @@ export function citationScan(d: DocLines, excluded: [number, number][]): Citatio
     let m = re.exec(lines[i])
     for (; m !== null; m = re.exec(lines[i])) {
       const from = lineStarts[i] + m.index
-      // A mid-document citation line is live prose (A-6), so its own head never draws as a marker.
+      // A mid-document citation line is live prose, so its own head never draws as a marker.
       if (headEnd !== undefined && m.index + m[0].length <= headEnd) continue
       if (inCode(from)) continue
       const entry = firstFor.get(foldLabel(m[1]))
