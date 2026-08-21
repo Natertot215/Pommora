@@ -32,7 +32,7 @@ import { registerScrollHeal } from '../Embeds/tileWarm'
 import { calloutAtomic } from './editor/calloutAtomic'
 import { calloutGuard } from './editor/calloutGuard'
 import { citationGuard } from './editor/citationGuard'
-import { citationPointer } from './editor/citationPointer'
+import { citationPointer, citationRowMenu } from './editor/citationPointer'
 import { connectionClicks } from './editor/connections'
 import { markdownLinkClicks } from './editor/links'
 import { pasteLink } from './editor/PasteLink'
@@ -315,6 +315,7 @@ export function MarkdownEditor({
         () => connectionsRef.current,
         () => citationsRevealRef.current?.(),
       ),
+      citationRowMenu(),
       markdownLinkClicks(() => connectionsRef.current),
       pasteLink,
       pendingTitle,

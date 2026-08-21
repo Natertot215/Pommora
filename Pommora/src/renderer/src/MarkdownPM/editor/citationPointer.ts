@@ -2,12 +2,13 @@
 // claim and the caret-seat clamp; a marker is a third spec over it rather than a third copy of any
 // of that. The jump itself is `travelTo` — this supplies a target, never a second traveller.
 import type { Extension } from '@codemirror/state'
-import type { EditorView } from '@codemirror/view'
+import { EditorView } from '@codemirror/view'
 import { openPage, resolveMdTarget, type ConnectionsApi } from '../connections'
-import { type CitationEntry, foldLabel } from '../detect'
+import { type CitationEntry, type MarkerRef, foldLabel } from '../detect'
 import { linkTarget, tokenize } from '../tokens'
 import { docScan, docString, perDoc } from './docCache'
 import { followTarget } from './links'
+import { applyCitationAction } from './citationActions'
 import { pointerHandlers, type PointerTarget } from './pointerPath'
 import { travelTo } from './travel'
 
@@ -37,12 +38,7 @@ export function loneTarget(
 const citationTargets = perDoc((doc) => {
   const scan = docScan(doc)
   const text = docString(doc)
-  const out: {
-    from: number
-    to: number
-    entry: CitationEntry
-    lone: ReturnType<typeof loneTarget>
-  }[] = []
+  const out: (Omit<CiteHit, keyof PointerTarget> & { from: number; to: number })[] = []
   for (const m of scan.citations.markers) {
     if (m.ordinal === null) continue
     const key = foldLabel(m.label)
@@ -53,6 +49,8 @@ const citationTargets = perDoc((doc) => {
       from: m.from,
       to: m.to,
       entry,
+      marker: m,
+      lastReference: scan.citations.markers.filter((x) => foldLabel(x.label) === key).length === 1,
       lone: loneTarget(text.slice(entry.contentStart, end)),
     })
   }
@@ -61,6 +59,9 @@ const citationTargets = perDoc((doc) => {
 
 interface CiteHit extends PointerTarget {
   entry: CitationEntry
+  marker: MarkerRef
+  /** Whether this is the only marker bound to the citation — the row says what the click will do. */
+  lastReference: boolean
   lone: ReturnType<typeof loneTarget>
 }
 
@@ -105,6 +106,39 @@ export function citationPointer(
       travelTo(view, hit.entry.contentStart)
     },
     dwell: () => null,
-    menu: () => null,
+    menu: (hit, view) => () =>
+      void window.nexus
+        ?.citationMenu?.({
+          subject: 'marker',
+          editable: !view.state.readOnly,
+          lastReference: hit.lastReference,
+        })
+        .then((action) => {
+          if (action) applyCitationAction(view, action, { kind: 'marker', marker: hit.marker })
+        }),
+  })
+}
+
+/** The citation row's own right-press. It is a whole line rather than an inline token, so it takes
+ *  a plain handler instead of the inline pointer path — the same division the grip menu keeps. */
+export function citationRowMenu(): Extension {
+  return EditorView.domEventHandlers({
+    contextmenu(event, view) {
+      if (view.state.readOnly) return false
+      const line = (event.target as HTMLElement).closest?.(
+        '.cm-line.md-cite, .cm-line.md-cite-cont',
+      )
+      if (!line) return false
+      const scan = docScan(view.state.doc)
+      const entry = scan.citations.entryAt.get(
+        view.state.doc.lineAt(view.posAtDOM(line)).number - 1,
+      )
+      if (!entry) return false
+      event.preventDefault()
+      void window.nexus?.citationMenu?.({ subject: 'citation', editable: true }).then((action) => {
+        if (action) applyCitationAction(view, action, { kind: 'citation', label: entry.label })
+      })
+      return true
+    },
   })
 }

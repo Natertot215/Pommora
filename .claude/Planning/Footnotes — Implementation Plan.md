@@ -721,12 +721,12 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 **Failure half:** the document changes while the menu is open → the action is refused, not misapplied. Delete on a marker that is not the last reference → the marker goes, the citation stays. Delete on a marker that is the last → both go in one transaction and revert on one undo.
 
 **Steps:**
-- [ ] Add the two context variants and their action unions to the bridge and the main-side menu.
-- [ ] Implement the marker menu — Edit, Copy, Delete — and the citation menu — Copy, Delete.
-- [ ] Re-verify each target against the live document at commit.
-- [ ] Perform every write in the renderer, following the existing pattern.
-- [ ] Run the gate — expect green.
-- [ ] Commit: `feat(editor): right-click menus for markers and citations`
+- [x] Add the two context variants and their action unions to the bridge and the main-side menu.
+- [x] Implement the marker menu — Edit, Copy, Delete — and the citation menu — Copy, Delete.
+- [x] Re-verify each target against the live document at commit.
+- [x] Perform every write in the renderer, following the existing pattern.
+- [x] Run the gate — expect green.
+- [x] Commit: `feat(editor): right-click menus for markers and citations`
 
 #### Task 19: Range-keyed cascades
 
@@ -923,8 +923,8 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 - [ ] **Phase 4** — Guards and gestures · base `ac311bb8`
   - [x] Task 15 — The tail guard · `a7f250d5`
   - [x] Task 16 — One page-travel mechanism, named for what it does · `e9304060`
-  - [x] Task 17 — Marker click — jump, or follow · `<T17>`
-  - [ ] Task 18 — The two construct menus · `<commit>`
+  - [x] Task 17 — Marker click — jump, or follow · `678ef515`
+  - [x] Task 18 — The two construct menus · `<T18>`
   - [ ] Task 19 — Range-keyed cascades · `<commit>`
 - [ ] **Phase 5** — Creation and numbering
   - [ ] Task 20 — The renumbering engine · `<commit>`
@@ -993,6 +993,10 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 - **A drop above the section — closed, not an issue.** `blockMoveChanges` already fences both seams: it emits a blank after every inserted block and heals the hole the cut leaves, with its own comment naming this exact hazard — a glue-adjacent block would otherwise lazily continue a list or merge two paragraphs. A paragraph dropped above the section always lands with a blank after it, so the first citation cannot become its continuation. **The adjacent case the round did not raise is real and already covered:** a block dropped at the document's end lands *after* the section, which is the strand A-5b forbids, and Task 15's rule is "at or after". Task 15 names it as a test case rather than leaving it implied.
 
 ### Deviations
+
+- **Task 18 — the cascades landed here, as one definition both this task and Task 19 call.** The task's Delete rows and Task 19's backspace branch are the same two acts — exactly a marker cascades its last-reference citation, exactly a citation cascades its markers — so `citationEdits.ts` states each once and both gestures dispatch it. Building the menu's copy first and the keystroke's copy second is how the two would have come to disagree about what "exactly the construct" means.
+
+- **Task 18 — a menu's target is re-found by LABEL, not by offset.** The task asks that each action re-verify its target against the live document. An offset alone would name whatever moved into that seat while the menu stood open; the label is what the menu was actually built from, so it is what the commit matches on.
 
 - **Task 17 — a jump DOES write the page's visibility, which Task 13's deviation made its obligation.** The task says not to: a jump's reveal is meant to be transient, and the label reads the fold so the control still reads *Hide Footnotes* over a section a jump opened. With the label reading the override instead, that transient state has no reader — the control would say *Show Footnotes* over an open section and pressing it would write a value the section already has. So the jump writes the page's visibility through the host, a section opened by arriving stays open, and closing it is one press. `setCitationsVisible(pageId, shown)` now holds the clear-on-default rule and `toggleCitations` calls it, so there is still exactly one place that decides what a row means. A surface with no host to write it — an embed, a hover card's editor, a preview — passes nothing and the travel's own reveal carries the jump.
 

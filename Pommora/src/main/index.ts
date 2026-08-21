@@ -132,6 +132,7 @@ import { popColumnMenu } from './columnMenu'
 import { popCellMenu } from './cellMenu'
 import { popPageActionsMenu } from './pageActionsMenu'
 import { popCardMenu } from './cardMenu'
+import { popCitationMenu } from './citationMenu'
 import { popConnMenu } from './connMenu'
 import { popTabMenu } from './tabMenu'
 import type { TabMenuContext } from '@shared/tabMenu'
@@ -1736,6 +1737,7 @@ serveBridge(
 
     // A wikilink's right-click menu (Open Preview).
     'conn-menu': { kind: 'menu', fn: popConnMenu },
+    'citation-menu': { kind: 'menu', fn: popCitationMenu },
 
     'property-menu': { kind: 'menu', fn: popPropertyMenu },
 
