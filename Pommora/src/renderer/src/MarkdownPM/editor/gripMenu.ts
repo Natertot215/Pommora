@@ -16,6 +16,7 @@ import { ZOOM_STEPS } from '@renderer/Blocks/blockZoom'
 import { type Block, blockAt } from './blockModel'
 import { docScan, docString } from './docCache'
 import { embeddable } from './embedRanges'
+import { HEADING_FOLD_LINE } from './folding'
 import { applyEmbedZoom, embedExclusions, embedZoomAt, setWebLinkSeat } from './embedWidget'
 import { focusRange } from './caretSeat'
 import { webpageEmbedUrlSpan } from '@shared/webpageEmbed'
@@ -26,7 +27,7 @@ export const GRIP_MENU_LINES = ['md-block-handle', 'md-callout-first', 'md-bq-fi
 const GRIP_SELECTOR = GRIP_MENU_LINES.map((c) => `.cm-line.${c}`).join(', ')
 
 /** A foldable heading carries its own gutter menu on its chevron. */
-const HEADING_LINE = 'md-foldable'
+const HEADING_LINE = HEADING_FOLD_LINE
 
 /** Every gutter line whose right-press pops a custom menu — grips plus the heading chevron. The host's
  *  hot flag reads this so the generic editor menu stands down over exactly the lines the two hit-tests

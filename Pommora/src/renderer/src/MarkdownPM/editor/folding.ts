@@ -53,6 +53,13 @@ export type FoldKind = 'heading' | 'citations'
  *  never collide with a heading's saved key — and it is never saved in the first place. */
 const CITATIONS_KEY = '\u0000citations'
 
+/** The heading's own gesture class — the drag gate, the grip menu's hit-test and the hover card's
+ *  click-to-fold all read it. Kept apart from `md-foldable`, which means "draws a chevron" and
+ *  nothing else: a non-heading anchor wearing one class would inherit all four behaviors, and the
+ *  hit-test's would fail silently — the press defaulted away and main stood its own menu down, then
+ *  the heading menu bailing on a line with no heading parts, leaving a press that opens nothing. */
+export const HEADING_FOLD_LINE = 'md-heading-fold'
+
 /** Which kinds survive a session. The section's disclosure is its own per-page override, so letting
  *  it into the shared fold row would make two writers of one fact. */
 const persisted = (kind: FoldKind): boolean => kind === 'heading'
@@ -374,10 +381,14 @@ const chevronDeco = EditorView.decorations.compute(['doc', foldField], (state) =
   const entries = state.field(foldField)
   const ranges: Range<Decoration>[] = []
   for (const r of regionsOf(state.doc)) {
+    // The chevron is the heading's affordance. The section discloses from the Subfield and its own
+    // divider, so its anchor takes neither the chevron nor the open/closed classes — the closed one
+    // carries a color rule that would tint ordinary prose to the folded-heading control color.
+    if (r.kind !== 'heading') continue
     const closed = entries.some((e) => e.anchor === r.anchor && e.phase !== 'expanding')
     ranges.push(
       Decoration.line({
-        class: closed ? 'md-foldable md-fold-closed' : 'md-foldable md-fold-open',
+        class: `${HEADING_FOLD_LINE} ${closed ? 'md-foldable md-fold-closed' : 'md-foldable md-fold-open'}`,
       }).range(r.anchorLine),
     )
   }
@@ -456,7 +467,7 @@ export function markdownFolding(onFoldsChange: (keys: string[]) => void): Extens
   // can't survive the relocating edit (its body offsets remap to the single-replace span's ends), so it moves
   // as plain text and re-collapses with one click.
   const headingDrag = createBlockDragGesture({
-    gate: 'md-foldable',
+    gate: HEADING_FOLD_LINE,
     onClick: (view, line) => {
       toggleFoldAt(view, view.posAtDOM(line))
     },
