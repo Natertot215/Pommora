@@ -13,7 +13,9 @@ export type GuardVerdict =
   | { kind: 'cancel' }
   | { kind: 'clamp'; from: number }
   | { kind: 'extend'; to: number }
-  | { kind: 'rewrite'; from: number; to: number; insert: string }
+  /** The change replaced by these edits outright. A list, because a repair that MOVES text is two
+   *  disjoint edits — the swept range removed where it was, and the text written where it can live. */
+  | { kind: 'rewrite'; edits: readonly { from: number; to: number; insert: string }[] }
 
 export function calloutDeleteVerdict(
   doc: string,
@@ -118,15 +120,13 @@ export function verdictFilter(
       const v = verdict(doc, fromA, toA, inserted.toString(), tr.startState)
       if (v.kind === 'cancel') cancel = true
       if (v.kind !== 'ok') repaired = true
-      changes.push(
-        v.kind === 'rewrite'
-          ? { from: v.from, to: v.to, insert: v.insert }
-          : {
-              from: v.kind === 'clamp' ? v.from : fromA,
-              to: v.kind === 'extend' ? v.to : toA,
-              insert: inserted.toString(),
-            },
-      )
+      if (v.kind === 'rewrite') changes.push(...v.edits)
+      else
+        changes.push({
+          from: v.kind === 'clamp' ? v.from : fromA,
+          to: v.kind === 'extend' ? v.to : toA,
+          insert: inserted.toString(),
+        })
     })
     if (cancel) return [] // nothing sane to repair it into
     if (!repaired) return tr
