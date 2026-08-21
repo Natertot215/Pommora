@@ -1,6 +1,6 @@
 import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import { closeActiveHoverCard } from '@renderer/Embeds/ConnectionHoverCard'
+import { closeActiveHoverCard } from '@renderer/Embeds/HoverCardPresenter'
 import { seatAtNearerEdge } from './caretSeat'
 
 /** KNOB — the dwell before a connection's preview blooms. Exported so tests wait on the real value
