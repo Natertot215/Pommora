@@ -237,6 +237,11 @@ interface SessionState {
   setNavWindowMode: (mode: NavViewMode) => void
   navViewMode: NavViewMode
   setNavViewMode: (mode: NavViewMode) => void
+  /** Per-page footnote-section visibility, for the pages someone has given an answer. A page with no
+   *  entry follows the nexus-wide default. THE state the section's disclosure reads and writes —
+   *  the fold follows it, never the other way around. */
+  citationsShown: Record<string, boolean>
+  setCitationsShown: (pageId: string, shown: boolean | null) => void
   personalization: Personalization
   setPersonalization: <K extends keyof Personalization>(key: K, value: Personalization[K]) => void
   /** Machine-local, not the Nexus's — loaded alongside it, saved to nexus.db. */
@@ -773,6 +778,10 @@ export const useSession = create<SessionState>((set, get) => {
               window.nexus.navViewModes.get().then((modes) => {
                 if (modes) set({ navWindowMode: modes.window, navViewMode: modes.view })
               }),
+              window.nexus.citations
+                .get()
+                .then((all) => set({ citationsShown: all }))
+                .catch(() => undefined), // every page falls back to the nexus-wide default
               window.nexus.linkTitles
                 .get()
                 .then((titles) => set({ linkTitles: titles }))
@@ -1014,6 +1023,16 @@ export const useSession = create<SessionState>((set, get) => {
       void window.nexus.navViewModes
         .set({ window: s.navWindowMode, view: s.navViewMode })
         .catch(() => undefined)
+    },
+    citationsShown: {},
+    setCitationsShown: (pageId, shown) => {
+      set((s) => {
+        const next = { ...s.citationsShown }
+        if (shown === null) delete next[pageId]
+        else next[pageId] = shown
+        return { citationsShown: next }
+      })
+      void window.nexus.citations.set(pageId, shown)
     },
     devicePrefs: {},
     setDevicePref: (key, value) => {

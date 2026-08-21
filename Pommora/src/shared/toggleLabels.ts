@@ -28,3 +28,6 @@ export const lockLabel = (locked: boolean, noun?: string): string => {
 }
 
 export const footerLabel = (shown: boolean): string => (shown ? 'Hide footer' : 'Show footer')
+
+export const citationsLabel = (shown: boolean): string =>
+  shown ? 'Hide Footnotes' : 'Show Footnotes'
