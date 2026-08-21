@@ -1,6 +1,13 @@
 // Inline matchers return a fresh /g regex per call so callers never share lastIndex.
 import { parse } from '../parser'
-import { codeMask, fenceLang, fenceSpans, lineOffsetsOf, quoteDepthOf } from '@shared/markdownCode'
+import {
+  codeMask,
+  fenceLang,
+  fenceSpans,
+  lineOffsetsOf,
+  quoteDepthOf,
+  type CodeMask,
+} from '@shared/markdownCode'
 import { loneWebpageEmbed } from '@shared/webpageEmbed'
 import type { ListKind } from '@shared/gripMenu'
 export { markdownLinkRegex } from '@shared/links'
@@ -214,8 +221,12 @@ export function foldLabel(label: string): string {
  *  fence, table or math region is content there, and `excluded` is required so two callers cannot
  *  silently disagree. A table immediately below a citation ends the run rather than continuing it —
  *  the exclusion set owns those bytes. */
-export function citationScan(d: DocLines, excluded: [number, number][]): CitationScan {
-  const { text, lines, lineStarts } = d
+export function citationScan(
+  d: DocLines,
+  excluded: [number, number][],
+  inCode: CodeMask = codeMask(d.text),
+): CitationScan {
+  const { lines, lineStarts } = d
   const blank = (k: number): boolean => lines[k].trim() === ''
   const breaks = (k: number): boolean =>
     inExcluded(lineStarts[k], excluded) ||
@@ -275,7 +286,6 @@ export function citationScan(d: DocLines, excluded: [number, number][]): Citatio
   const entryAt = new Map<number, CitationEntry>()
   for (const e of entries) for (let k = e.line; k <= e.lastLine; k++) entryAt.set(k, e)
 
-  const inCode = codeMask(text)
   const markers: MarkerRef[] = []
   const markersAt = new Map<number, MarkerRef[]>()
   let next = 1
@@ -455,19 +465,6 @@ export function calloutHeadPrefixLen(line: string): number | null {
   if (!pfx || !isBlockquoteLine(line)) return null
   const tag = calloutTagRe.exec(line.slice(pfx.length))
   return tag ? pfx.length + tag[0].length : null
-}
-
-/** True when the line holding `pos` is part of a callout. Used by input handlers (Shift+Enter stay-in-box). */
-export function lineInCallout(doc: string, pos: number): boolean {
-  const lines = doc.split('\n')
-  let off = 0
-  let idx = 0
-  for (; idx < lines.length; idx++) {
-    const end = off + lines[idx].length
-    if (pos <= end) break
-    off = end + 1
-  }
-  return calloutLines(lines)[idx] !== undefined
 }
 
 export const MAX_NESTING_LEVEL = 3

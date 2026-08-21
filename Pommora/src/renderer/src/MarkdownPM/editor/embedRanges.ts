@@ -14,6 +14,7 @@ import {
 } from '../detect'
 import type { TableRegion } from '../Tables/regions'
 import { embeddableTitle, normalizeTitle, type LinkStatus } from '@shared/connections'
+import type { CodeMask } from '@shared/markdownCode'
 
 /** The construct kinds this pass answers for, as one contract — `DocScan` extends it rather than
  *  restating the members, so a fifth kind is one edit instead of two that can disagree. */
@@ -47,13 +48,14 @@ export function docLineScan(
   d: DocLines,
   fences: [number, number][],
   tables: readonly TableRegion[],
+  inCode?: CodeMask,
 ): DocLineScan {
   const { maths, excluded } = constructExclusions(d, fences, tables)
   return {
     maths,
     embeds: blockEmbedLines(d, excluded),
     webpages: blockWebpageLines(d, excluded),
-    citations: citationScan(d, excluded),
+    citations: citationScan(d, excluded, inCode),
   }
 }
 

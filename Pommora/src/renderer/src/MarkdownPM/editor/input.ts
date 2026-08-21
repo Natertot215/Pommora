@@ -48,14 +48,14 @@ const tableBoundaryEnter = (scan: DocScan, s: { from: number; to: number }): Edi
 
 const onEnter = (view: EditorView): boolean => {
   const s = view.state.selection.main
-  const doc = docString(view.state.doc)
+  const scan = docScan(view.state.doc)
   // Close an open construct before list/blockquote continuation, so a caret inside a pair jumps past its closer.
   return apply(
     view,
-    closeConstructOnEnter(doc, s.from, s.to) ??
-      tableBoundaryEnter(docScan(view.state.doc), s) ??
-      continueListOnEnter(doc, s.from, s.to) ??
-      continueBlockquoteOnEnter(doc, s.from, s.to),
+    closeConstructOnEnter(scan, s.from, s.to) ??
+      tableBoundaryEnter(scan, s) ??
+      continueListOnEnter(scan.text, s.from, s.to) ??
+      continueBlockquoteOnEnter(scan, s.from, s.to),
   )
 }
 
@@ -89,8 +89,7 @@ const onForwardDelete = (view: EditorView): boolean => {
   // keystroke; removal is the menu's or a spanning selection's, never a stray boundary key.
   if (embedTileRanges(view.state).some((r) => s.from === r.from - 1 || s.from === r.from))
     return true
-  const doc = docString(view.state.doc)
-  if (doc[s.from] !== '\n') return false
+  if (scan.text[s.from] !== '\n') return false
   const r = scan.tables.find((r) => r.from === s.from + 1)
   if (!r) return false
   view.dispatch({ changes: { from: s.from, to: r.to }, userEvent: 'delete' })
@@ -103,8 +102,8 @@ const onBackspace = (view: EditorView): boolean => {
     return true
   // Ahead of the marker chain — a caret against a construct's edge IS that construct.
   if (citationCascade(view, s.from, s.to)) return true
-  const doc = docString(view.state.doc)
-  return apply(view, smartBackspace(doc, s.from, s.to) ?? autoDelete(doc, s.from, s.to))
+  const scan = docScan(view.state.doc)
+  return apply(view, smartBackspace(scan, s.from, s.to) ?? autoDelete(scan, s.from, s.to))
 }
 
 // Always returns true so Tab never escapes the editor to focus the sidebar.
@@ -138,10 +137,10 @@ export function refusedInAlias(doc: string, at: number, text: string): boolean {
 // caret sits inside an unclosed pair, it closes that first so the break never lands inside the pair.
 const onShiftEnter = (view: EditorView): boolean => {
   const s = view.state.selection.main
-  const doc = docString(view.state.doc)
+  const scan = docScan(view.state.doc)
   return apply(
     view,
-    closeConstructOnShiftEnter(doc, s.from, s.to) ?? shiftEnterEdit(doc, s.from, s.to),
+    closeConstructOnShiftEnter(scan, s.from, s.to) ?? shiftEnterEdit(scan, s.from, s.to),
   )
 }
 
@@ -165,17 +164,17 @@ export const markdownInput = [
     // transaction there aborts or garbles the session (CM's own closeBrackets bails the same way).
     if (view.composing || view.compositionStarted) return false
     if (text.length !== 1 || from !== to) return false // single-char inserts only; paste passes through
-    const doc = docString(view.state.doc)
-    if (refusedInAlias(doc, from, text)) return true
+    const scan = docScan(view.state.doc)
+    if (refusedInAlias(scan.text, from, text)) return true
     // Ahead of the chain, and dispatched on its own: a seed writes a marker and a citation at two
     // disjoint sites, and every transform in that chain carries one range.
     if (text === ']' && seedTypedCitation(view, from)) return true
     return apply(
       view,
-      calloutShorthand(doc, from, from, text) ??
-        canonicalizeCheckbox(doc, from, from, text) ??
-        autoPair(doc, from, from, text) ??
-        dashArrow(doc, from, from, text),
+      calloutShorthand(scan.text, from, from, text) ??
+        canonicalizeCheckbox(scan.text, from, from, text) ??
+        autoPair(scan, from, from, text) ??
+        dashArrow(scan, from, from, text),
     )
   }),
 ]

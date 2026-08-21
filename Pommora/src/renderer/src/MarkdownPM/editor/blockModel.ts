@@ -198,7 +198,7 @@ export function blockAt(scan: DocScan, pos: number): Block | null {
       return { from: r[0], to: r[1], kind: 'math' }
     }
     case 'heading': {
-      const sec = headingSections(scan.text).find((s) => s.from === starts[li])
+      const sec = headingSections(scan).find((s) => s.from === starts[li])
       // The section's `to` reaches the blank line before the next heading — the fold wants that
       // span, a block doesn't: the drag's mover re-fences with one blank, so a range carrying the
       // trailing blank would compound an extra blank on every reorder (the outline's mover
