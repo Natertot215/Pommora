@@ -1,5 +1,7 @@
 import { Decoration, type DecorationSet, EditorView, WidgetType } from '@codemirror/view'
 import { docScan } from '../editor/docCache'
+import { foldLabel } from '../detect'
+import type { DocScan } from '../decorations/intent'
 import { focusAt } from '../editor/caretSeat'
 import {
   Facet,
@@ -136,6 +138,10 @@ class TableWidget extends WidgetType {
     readonly model: TableModel,
     readonly tableIndex: number,
     readonly headingColumn: boolean,
+    /** The document's footnote numbering. It rides the widget because a cell's marker draws a
+     *  number its own text never holds, and this equality gates above the cell memo — fixing only
+     *  the inner one would never fire. */
+    readonly cites: string,
     readonly height: HeightBox = { px: -1 },
   ) {
     super()
@@ -149,7 +155,8 @@ class TableWidget extends WidgetType {
     return (
       other.text === this.text &&
       other.tableIndex === this.tableIndex &&
-      other.headingColumn === this.headingColumn
+      other.headingColumn === this.headingColumn &&
+      other.cites === this.cites
     )
   }
 
@@ -242,6 +249,7 @@ class TableWidget extends WidgetType {
     root.render(
       <TV
         model={this.model}
+        cites={this.cites}
         headingColumn={this.headingColumn}
         onCellCommit={commit}
         onSettled={() => view.dispatch({ effects: refreshTableEffect.of(this.tableIndex) })}
@@ -315,12 +323,13 @@ export function buildWidgetDecorations(state: EditorState, prev?: DecorationSet)
   const headingCols = state.field(headingColField, false) ?? new Set<number>()
   const boxes = prev ? heightBoxes(prev) : []
   const ranges: Range<Decoration>[] = []
+  const cites = citeKey(docScan(doc))
   docScan(doc).tables.forEach((region, i) => {
     const text = doc.sliceString(region.from, region.to)
     const model = modelFromRegion(region)
     ranges.push(
       Decoration.replace({
-        widget: new TableWidget(text, model, i, headingCols.has(i), boxes[i]),
+        widget: new TableWidget(text, model, i, headingCols.has(i), cites, boxes[i]),
         block: true,
       }).range(region.from, region.to),
     )
@@ -379,14 +388,26 @@ function swapTableWidget(
 
 /** One table's widget rebuilt from the current doc — the model the static cells draw from. */
 function rebuiltTable(deco: DecorationSet, state: EditorState, index: number): DecorationSet {
-  const region = docScan(state.doc).tables[index]
+  const scan = docScan(state.doc)
+  const region = scan.tables[index]
   if (!region) return deco
   const text = state.doc.sliceString(region.from, region.to)
+  const cites = citeKey(scan)
   return swapTableWidget(deco, index, (w) =>
-    w.text === text
+    w.text === text && w.cites === cites
       ? null
-      : new TableWidget(text, modelFromRegion(region), index, w.headingColumn, w.height),
+      : new TableWidget(text, modelFromRegion(region), index, w.headingColumn, cites, w.height),
   )
+}
+
+/** The document's footnote numbering as one comparable string. A resting cell draws a marker's
+ *  number, which its own text never holds — so this is what tells a table that a renumber above it
+ *  changed what it must draw. */
+function citeKey(scan: DocScan): string {
+  return scan.citations.entries
+    .filter((e) => e.ordinal !== null)
+    .map((e) => `${foldLabel(e.label)}=${e.ordinal}`)
+    .join(';')
 }
 
 const widgetField = StateField.define<DecorationSet>({
@@ -406,7 +427,7 @@ const widgetField = StateField.define<DecorationSet>({
         const region = docScan(tr.state.doc).tables[idx]
         const text = region ? tr.state.doc.sliceString(region.from, region.to) : w.text
         const model = region ? modelFromRegion(region) : w.model
-        return new TableWidget(text, model, idx, on, w.height)
+        return new TableWidget(text, model, idx, on, w.cites, w.height)
       })
     }
     if (toggled) return toggledSet
