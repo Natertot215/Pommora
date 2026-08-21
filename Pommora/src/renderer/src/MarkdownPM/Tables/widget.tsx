@@ -339,12 +339,16 @@ export function buildWidgetDecorations(state: EditorState, prev?: DecorationSet)
 }
 
 // A full rebuild re-decodes every table in the doc; skip it for edits that can't change any table —
-// map the existing widgets forward instead. A table only changes when an edit touches its source, or
-// when a delimiter row appears beside a changed range (the line that turns prose into a table).
+// map the existing widgets forward instead. A table changes when an edit touches its source, when a
+// delimiter row appears beside a changed range (the line that turns prose into a table), or when the
+// document's footnote numbering moves: a cell draws a number its own text never holds, so a marker
+// added anywhere above can renumber a cell the edit never came near.
 function editAffectsTables(deco: DecorationSet, tr: Transaction): boolean {
   for (const it = deco.iter(); it.value; it.next()) {
     if (tr.changes.touchesRange(it.from, it.to) !== false) return true
   }
+  if (deco.size > 0 && citeKey(docScan(tr.state.doc)) !== citeKey(docScan(tr.startState.doc)))
+    return true
   const doc = tr.state.doc
   let delimiterNearby = false
   tr.changes.iterChangedRanges((_fromA, _toA, fromB, toB) => {
