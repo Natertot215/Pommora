@@ -146,6 +146,8 @@ export function readPersonalization(raw: unknown): Personalization {
     openLinksInApp: bool(p.openLinksInApp),
     webZoomFactor: scale(p.webZoomFactor, WEB_ZOOM_DEFAULT),
     embedScale: scale(p.embedScale, EMBED_SCALE_DEFAULT),
+    citationsShown: bool(p.citationsShown),
+    jumpToCitation: bool(p.jumpToCitation),
   }
 }
 

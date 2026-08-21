@@ -477,6 +477,8 @@ describe('readNexus — personalization', () => {
       'connectionsOpenInPreview',
       'permanentDelete',
       'pasteLinkIntoText',
+      'citationsShown',
+      'jumpToCitation',
     ] as const
     const t = await readNexus(
       mk({ personalization: Object.fromEntries(keys.map((k) => [k, true])) }),
