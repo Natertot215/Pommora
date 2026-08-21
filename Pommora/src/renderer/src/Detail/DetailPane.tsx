@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { PageDetail } from '@shared/types'
 import { useSession } from '../store'
-import { REVEAL_NEAR_H, REVEAL_NEAR_W } from '@renderer/design-system/revealBar'
+import { REVEAL_NEAR_H, REVEAL_NEAR_W, leadOrigin } from '@renderer/design-system/revealBar'
 import { navKey } from '../Navigation/navRecents'
 import { readWarm } from '../Tabs/warmCache'
 import { duration, easing } from '@renderer/design-system/tokens'
@@ -164,6 +164,7 @@ export function DetailPane(): React.JSX.Element {
   // Measured lazily and cached: a rect per mousemove forces a layout on every pointer move. The pane
   // only moves when the surrounding panes do, and the pointer leaving is a free moment to re-measure.
   const paneRect = useRef<DOMRect | null>(null)
+  const leadEdge = useRef(0)
 
   const showSubfield =
     selectionKind === 'collection' ||
@@ -187,11 +188,17 @@ export function DetailPane(): React.JSX.Element {
       }}
       onMouseMove={(e) => {
         if (!showSubfield) return
-        paneRect.current ??= e.currentTarget.getBoundingClientRect()
+        if (!paneRect.current) {
+          paneRect.current = e.currentTarget.getBoundingClientRect()
+          leadEdge.current = leadOrigin(
+            e.currentTarget.querySelector('.footnotes-toggle'),
+            paneRect.current.left,
+          )
+        }
         const r = paneRect.current
         const low = e.clientY > r.bottom - REVEAL_NEAR_H
         setNear(low && e.clientX > r.right - REVEAL_NEAR_W)
-        setNearLead(low && e.clientX < r.left + REVEAL_NEAR_W)
+        setNearLead(low && e.clientX < leadEdge.current + REVEAL_NEAR_W)
       }}
       onMouseLeave={() => {
         paneRect.current = null

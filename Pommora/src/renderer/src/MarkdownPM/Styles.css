@@ -613,7 +613,7 @@
    state, so its color carries no caret-dependent step. `user-select` is inherited rather than set,
    so a sweep across the line still takes it. */
 .md-cite-ref {
-  color: var(--accent); /* KNOB: the marker's ink */
+  color: var(--label-control); /* KNOB: the marker's ink */
   font-variant-numeric: tabular-nums;
   font-size: 0.65em; /* KNOB: how much smaller a marker reads than the line carrying it */
   vertical-align: top;

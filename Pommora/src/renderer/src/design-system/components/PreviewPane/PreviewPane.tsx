@@ -10,7 +10,7 @@ import {
 import { GlassWindow } from '@renderer/design-system/materials'
 import { Icon } from '@renderer/design-system/symbols'
 import { cx } from '@renderer/design-system/cx'
-import { REVEAL_NEAR_H, REVEAL_NEAR_W } from '@renderer/design-system/revealBar'
+import { REVEAL_NEAR_H, REVEAL_NEAR_W, leadOrigin } from '@renderer/design-system/revealBar'
 import {
   FloatingResizeCorners,
   useFloatingWindow,
@@ -151,6 +151,7 @@ export function PreviewPane({
   // Measured lazily and cached: getBoundingClientRect per mousemove forces a layout every pointer
   // move. Anything that can move/resize the pane drops the cache so the next move re-measures.
   const paneRect = useRef<DOMRect | null>(null)
+  const leadEdge = useRef(0)
   useEffect(() => {
     paneRect.current = null
   }, [winStyle, leftOpen, rightOpen, leftW, rightW])
@@ -224,11 +225,17 @@ export function PreviewPane({
       onMouseMove={
         hasFooter
           ? (e) => {
-              paneRect.current ??= e.currentTarget.getBoundingClientRect()
+              if (!paneRect.current) {
+                paneRect.current = e.currentTarget.getBoundingClientRect()
+                leadEdge.current = leadOrigin(
+                  e.currentTarget.querySelector('.footnotes-toggle'),
+                  paneRect.current.left,
+                )
+              }
               const r = paneRect.current
               const low = e.clientY > r.bottom - REVEAL_NEAR_H
               setFooterNear(low && e.clientX > r.right - REVEAL_NEAR_W)
-              setFooterNearLead(low && e.clientX < r.left + REVEAL_NEAR_W)
+              setFooterNearLead(low && e.clientX < leadEdge.current + REVEAL_NEAR_W)
             }
           : undefined
       }
