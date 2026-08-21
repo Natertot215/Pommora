@@ -57,6 +57,7 @@ export function PageView({
   // editor falls back to the nexus-wide default. THE state, read from the slice both controls write.
   const citationsShown = useSession((s) => (pageId ? s.citationsShown[pageId] : undefined))
   const toggleCitations = useSession((s) => s.toggleCitations)
+  const setCitationsVisible = useSession((s) => s.setCitationsVisible)
   useEffect(() => {
     if (!pageId) return
     let live = true
@@ -160,6 +161,7 @@ export function PageView({
             }}
             citationsShown={citationsShown}
             onCitationsToggle={() => pageId && toggleCitations(pageId)}
+            onCitationsReveal={() => pageId && setCitationsVisible(pageId, true)}
             embedHeights={{
               load: async () => (await window.nexus.embedHeights.get())[pageDetail.id] ?? {},
               save: (heights) => void window.nexus.embedHeights.set(pageDetail.id, heights),

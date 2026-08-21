@@ -697,12 +697,12 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 **Failure half:** a click on a marker whose citation is hidden → the section opens first, since a folded region has no height to travel to, then the target lands; the travel function already sequences this. A marker clicked inside a **floating Page Preview** → travels the preview's own editor, not the main pane's. Hover cards are not a case: they take no clicks, so nothing there needs answering. A citation holding a link plus a trailing period → jumps, does not navigate. An unmatched marker → not a target at all; the click seats a caret like ordinary text.
 
 **Steps:**
-- [ ] Write the failing tests: jump to the row; jump opening a hidden section; navigate on a lone link; navigate on a lone Connection; jump on a link with trailing text.
-- [ ] Implement the spec's `hitAt`, `follow`, `dwell` (null — hover preview is a Prospect) and `menu`.
-- [ ] Call Task 16's travel function with the citation's offset and this editor's view. No expand call, no settle timer, no scroll math here — a second copy is exactly what C1 exists to catch.
-- [ ] **Do not write the override.** A jump's reveal is transient in exactly the way C-3 makes creation's auto-disclose transient: it opens the section to show you something, and the page follows its override or the default again next time it opens. The fold and the stored value legitimately disagree meanwhile, which is why Task 13's label reads the fold rather than the override — so the control still says *Hide Footnotes* over an open section and one press closes it.
-- [ ] Run the gate — expect green.
-- [ ] Commit: `feat(editor): a marker click jumps to its citation, or follows it`
+- [x] Write the failing tests: jump to the row; jump opening a hidden section; navigate on a lone link; navigate on a lone Connection; jump on a link with trailing text.
+- [x] Implement the spec's `hitAt`, `follow`, `dwell` (null — hover preview is a Prospect) and `menu`.
+- [x] Call Task 16's travel function with the citation's offset and this editor's view. No expand call, no settle timer, no scroll math here — a second copy is exactly what C1 exists to catch.
+- [x] **Do not write the override.** A jump's reveal is transient in exactly the way C-3 makes creation's auto-disclose transient: it opens the section to show you something, and the page follows its override or the default again next time it opens. The fold and the stored value legitimately disagree meanwhile, which is why Task 13's label reads the fold rather than the override — so the control still says *Hide Footnotes* over an open section and one press closes it.
+- [x] Run the gate — expect green.
+- [x] Commit: `feat(editor): a marker click jumps to its citation, or follows it`
 
 #### Task 18: The two construct menus
 
@@ -922,8 +922,8 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
   - [x] Task 14 — The divider draws and folds · `3257be4c` · gate: `5d965102` `4425dfdb`
 - [ ] **Phase 4** — Guards and gestures · base `ac311bb8`
   - [x] Task 15 — The tail guard · `a7f250d5`
-  - [x] Task 16 — One page-travel mechanism, named for what it does · `<T16>`
-  - [ ] Task 17 — Marker click — jump, or follow · `<commit>`
+  - [x] Task 16 — One page-travel mechanism, named for what it does · `e9304060`
+  - [x] Task 17 — Marker click — jump, or follow · `<T17>`
   - [ ] Task 18 — The two construct menus · `<commit>`
   - [ ] Task 19 — Range-keyed cascades · `<commit>`
 - [ ] **Phase 5** — Creation and numbering
@@ -993,6 +993,10 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 - **A drop above the section — closed, not an issue.** `blockMoveChanges` already fences both seams: it emits a blank after every inserted block and heals the hole the cut leaves, with its own comment naming this exact hazard — a glue-adjacent block would otherwise lazily continue a list or merge two paragraphs. A paragraph dropped above the section always lands with a blank after it, so the first citation cannot become its continuation. **The adjacent case the round did not raise is real and already covered:** a block dropped at the document's end lands *after* the section, which is the strand A-5b forbids, and Task 15's rule is "at or after". Task 15 names it as a test case rather than leaving it implied.
 
 ### Deviations
+
+- **Task 17 — a jump DOES write the page's visibility, which Task 13's deviation made its obligation.** The task says not to: a jump's reveal is meant to be transient, and the label reads the fold so the control still reads *Hide Footnotes* over a section a jump opened. With the label reading the override instead, that transient state has no reader — the control would say *Show Footnotes* over an open section and pressing it would write a value the section already has. So the jump writes the page's visibility through the host, a section opened by arriving stays open, and closing it is one press. `setCitationsVisible(pageId, shown)` now holds the clear-on-default rule and `toggleCitations` calls it, so there is still exactly one place that decides what a row means. A surface with no host to write it — an embed, a hover card's editor, a preview — passes nothing and the travel's own reveal carries the jump.
+
+- **Task 17 — the click targets are derived once per document version rather than per mousemove.** A pointer path that re-derived them would tokenize a citation's whole content on every pointer move over a marker, which is the every-mouseover rule the factory's own class gate exists for. `perDoc` is now exported from `docCache` so a derivation can be cached once and still live beside the rule it belongs to.
 
 - **Task 15 — a change that cannot survive is RELOCATED to the body, not reshaped into continuation.** A-5b and the task both call for shaping stray text into continuation form. That shaping cannot hold: `citationScan`'s continuation walk refuses any line a block construct starts, and `parseListMarker` accepts a marker at any indent — so a pasted `- item` breaks the run whether it is indented or not, and the only shaping that would absorb it is escaping the user's own characters. The guard now asks the question directly instead of enumerating cases: apply the change, re-read the tail, and if it no longer reads as a citation run reaching the end, seat the inserted text at the end of the body above the section. It is lossless, it never rewrites what was pasted, and a stray ⌘V at the foot of a page lands where that text was going to belong anyway. **Task 21's Paste As ▸ Footnote keeps D-3's shaping** — the deliberate gesture shapes, the guard protects, and the two stop being the same mechanism. *Nathan should confirm this one; reversing it means accepting escaped characters in pasted text.*
 

@@ -32,6 +32,7 @@ import { registerScrollHeal } from '../Embeds/tileWarm'
 import { calloutAtomic } from './editor/calloutAtomic'
 import { calloutGuard } from './editor/calloutGuard'
 import { citationGuard } from './editor/citationGuard'
+import { citationPointer } from './editor/citationPointer'
 import { connectionClicks } from './editor/connections'
 import { markdownLinkClicks } from './editor/links'
 import { pasteLink } from './editor/PasteLink'
@@ -95,6 +96,10 @@ interface Props {
   citationsShown?: boolean
   /** The divider's press. Absent leaves the section's disclosure to its host's own control. */
   onCitationsToggle?: () => void
+  /** A jump arriving at a hidden section. The host writes the page's visibility rather than the
+   *  editor folding behind its back, so the footer's control still reads the section's true state.
+   *  Absent leaves the travel's own reveal to carry it, which is right for an embed or a preview. */
+  onCitationsReveal?: () => void
   tableHeadingColumns?: TableHeadingColsApi
   menu?: EditorMenuApi
   autoFocus?: boolean
@@ -126,6 +131,7 @@ export function MarkdownEditor({
   folds,
   citationsShown,
   onCitationsToggle,
+  onCitationsReveal,
   tableHeadingColumns,
   menu,
   autoFocus = false,
@@ -185,6 +191,8 @@ export function MarkdownEditor({
   citesShownRef.current = citesShown
   const citationsToggleRef = useRef(onCitationsToggle)
   citationsToggleRef.current = onCitationsToggle
+  const citationsRevealRef = useRef(onCitationsReveal)
+  citationsRevealRef.current = onCitationsReveal
   // Mount seeds inside the view-creation effect (this one runs first, before the view exists); this
   // carries every later change to the value.
   //
@@ -303,6 +311,10 @@ export function MarkdownEditor({
       calloutGuard,
       citationGuard,
       connectionClicks(() => connectionsRef.current),
+      citationPointer(
+        () => connectionsRef.current,
+        () => citationsRevealRef.current?.(),
+      ),
       markdownLinkClicks(() => connectionsRef.current),
       pasteLink,
       pendingTitle,
