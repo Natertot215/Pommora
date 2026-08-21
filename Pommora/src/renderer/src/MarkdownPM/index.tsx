@@ -33,7 +33,7 @@ import { calloutAtomic } from './editor/calloutAtomic'
 import { calloutGuard } from './editor/calloutGuard'
 import { citationGuard } from './editor/citationGuard'
 import { citationHost, citationSeatAt } from './editor/citationActions'
-import { citationPointer, citationRowMenu } from './editor/citationPointer'
+import { citationPointer, citationRowMenu, citationRowPointer } from './editor/citationPointer'
 import { connectionClicks } from './editor/connections'
 import { markdownLinkClicks } from './editor/links'
 import { pasteLink } from './editor/PasteLink'
@@ -312,6 +312,7 @@ export function MarkdownEditor({
         },
       }),
       citationPointer(() => connectionsRef.current),
+      citationRowPointer(),
       citationRowMenu(),
       markdownLinkClicks(() => connectionsRef.current),
       pasteLink,
