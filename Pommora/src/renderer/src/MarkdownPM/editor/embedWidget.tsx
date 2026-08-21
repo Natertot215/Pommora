@@ -357,6 +357,7 @@ class WebpageTileWidget extends WidgetType {
      *  card) render the face unconditionally. NOT an ancestors-length read — the page surface
      *  carries its own path in the chain as the cycle guard, so length can't tell it apart. */
     readonly pageSurface: boolean,
+    readonly zoom: number | undefined,
   ) {
     super()
   }
@@ -366,7 +367,8 @@ class WebpageTileWidget extends WidgetType {
       o.url === this.url &&
       o.label === this.label &&
       o.height === this.height &&
-      o.pageSurface === this.pageSurface
+      o.pageSurface === this.pageSurface &&
+      o.zoom === this.zoom
     )
   }
 
@@ -394,6 +396,7 @@ class WebpageTileWidget extends WidgetType {
         url: this.url,
         label: this.label,
         visible: this.pageSurface && dom._visible === true,
+        zoom: zoomStep(this.zoom).factor,
         refocusHost: () => view.focus(),
       }),
       // Heights ride the same persisted blob as page tiles, URL-keyed — the blob's keys are free
@@ -521,6 +524,7 @@ function buildTiles(
           w.label,
           heights[w.url],
           host.saveHeights !== undefined,
+          zooms[w.url],
         ),
       }),
       range: { kind: 'webpage', from: w.from, to: w.to, url: w.url, label: w.label },

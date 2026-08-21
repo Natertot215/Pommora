@@ -41,6 +41,7 @@ export function WebpageEmbed({
   url,
   label = '',
   visible,
+  zoom = 1,
   refocusHost,
 }: {
   url: string
@@ -49,6 +50,8 @@ export function WebpageEmbed({
   /** Fully visible in the owning scrollport — the host's observer decides; the guest is live
    *  only while this holds, and retained hidden (under the cap) while it doesn't. */
   visible: boolean
+  /** The tile's Scale factor, joining the host-zoom × Webpage Zoom derivation main stamps. */
+  zoom?: number
   /** Where focus returns when a clip transition disengages a guest that held it. */
   refocusHost?: () => void
 }): React.JSX.Element {
@@ -150,6 +153,19 @@ export function WebpageEmbed({
   }, [visible, id])
 
   useEffect(() => () => webGuestRetention.drop(id), [id])
+
+  // The factor rides main's per-guest map so the per-navigation re-stamp keeps it; sent once the
+  // guest is attached (the id read throws before that) and re-sent whenever the Scale changes or
+  // a fresh guest mounts. 1.0 must still be sent — it clears a previous factor's map entry.
+  useEffect(() => {
+    const wv = ref.current as (HTMLElement & { getWebContentsId?: () => number }) | null
+    if (!wv?.getWebContentsId || !loaded) return
+    try {
+      void window.nexus.webGuestZoom.set(wv.getWebContentsId(), zoom)
+    } catch {
+      // A guest torn down between render and effect has no id to stamp — the next mount re-sends.
+    }
+  }, [zoom, loaded])
 
   // Click-out (and Escape) end engagement; the shared hook also shields the open Edit Link
   // picker, whose portal renders outside this tree. Guest-internal clicks never reach the host

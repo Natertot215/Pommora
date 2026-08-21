@@ -51,10 +51,21 @@ export function setWebZoomFactor(factor: number): void {
   syncGuestZoom()
 }
 
-// One derivation of a guest's factor — its own host's zoom scaled by the preference.
+/** A webpage tile's own Scale, keyed by its guest's WebContents — it survives the per-navigation
+ *  re-stamp and dies with the guest. 1.0 holds no entry. */
+const tileZooms = new Map<number, number>()
+
+export function setGuestTileZoom(guestId: number, factor: number): void {
+  if (factor === 1) tileZooms.delete(guestId)
+  else tileZooms.set(guestId, factor)
+  for (const g of webviewGuests()) if (g.id === guestId && !g.isDestroyed()) stampGuestZoom(g)
+}
+
+// One derivation of a guest's factor — its own host's zoom scaled by the preference and the
+// tile's own Scale.
 function stampGuestZoom(g: WebContents): void {
   const factor = g.hostWebContents?.getZoomFactor()
-  if (factor) g.setZoomFactor(factor * webZoom)
+  if (factor) g.setZoomFactor(factor * webZoom * (tileZooms.get(g.id) ?? 1))
 }
 
 // App-level wiring registers exactly once — createWindow re-runs on macOS activate, and a
@@ -97,6 +108,7 @@ function wireAppLevel(): void {
     // is per-origin in their session — every commit re-stamps from the embedder's live factor,
     // so a slow page never renders unscaled while it loads.
     contents.on('did-navigate', () => stampGuestZoom(contents))
+    contents.once('destroyed', () => tileZooms.delete(contents.id))
   })
 }
 
