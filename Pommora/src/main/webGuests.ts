@@ -54,18 +54,63 @@ export function setWebZoomFactor(factor: number): void {
 /** A webpage tile's own Scale, keyed by its guest's WebContents — it survives the per-navigation
  *  re-stamp and dies with the guest. 1.0 holds no entry. */
 const tileZooms = new Map<number, number>()
+const tileZoomTweens = new Map<number, NodeJS.Timeout>()
 
-export function setGuestTileZoom(guestId: number, factor: number): void {
+// The renderer's standard beat, mirrored — main can't read the design tokens, so a change to
+// --duration-base / --ease-standard changes these too.
+const TWEEN_MS = 280
+const bezAxis =
+  (a: number, b: number) =>
+  (u: number): number =>
+    3 * a * u * (1 - u) ** 2 + 3 * b * u * u * (1 - u) + u ** 3
+const easeX = bezAxis(0.25, 0.25)
+const easeY = bezAxis(0.1, 1)
+/** CSS `ease`, solved by bisection so the guest walks the same curve the tiles transition on. */
+function easeCurve(t: number): number {
+  let lo = 0
+  let hi = 1
+  for (let i = 0; i < 20; i++) {
+    const mid = (lo + hi) / 2
+    if (easeX(mid) < t) lo = mid
+    else hi = mid
+  }
+  return easeY((lo + hi) / 2)
+}
+
+/** A pick walks the standard beat by stepping the guest's factor — a bounded one-shot, and each
+ *  step is a whole-guest relayout, which is why nothing else may call this per-frame. A load
+ *  restore passes animate=false and lands whole. */
+export function setGuestTileZoom(guestId: number, factor: number, animate: boolean): void {
+  clearInterval(tileZoomTweens.get(guestId))
+  tileZoomTweens.delete(guestId)
+  const from = tileZooms.get(guestId) ?? 1
   if (factor === 1) tileZooms.delete(guestId)
   else tileZooms.set(guestId, factor)
-  for (const g of webviewGuests()) if (g.id === guestId && !g.isDestroyed()) stampGuestZoom(g)
+  const guest = webviewGuests().find((g) => g.id === guestId && !g.isDestroyed())
+  if (!guest) return
+  if (!animate || from === factor) {
+    stampGuestZoom(guest)
+    return
+  }
+  const start = Date.now()
+  const timer = setInterval(() => {
+    const t = Math.min(1, (Date.now() - start) / TWEEN_MS)
+    if (guest.isDestroyed() || t >= 1) {
+      clearInterval(timer)
+      tileZoomTweens.delete(guestId)
+      if (!guest.isDestroyed()) stampGuestZoom(guest)
+      return
+    }
+    stampGuestZoom(guest, from + (factor - from) * easeCurve(t))
+  }, 16)
+  tileZoomTweens.set(guestId, timer)
 }
 
 // One derivation of a guest's factor — its own host's zoom scaled by the preference and the
-// tile's own Scale.
-function stampGuestZoom(g: WebContents): void {
+// tile's own Scale (or the tween's in-flight value).
+function stampGuestZoom(g: WebContents, tileFactor = tileZooms.get(g.id) ?? 1): void {
   const factor = g.hostWebContents?.getZoomFactor()
-  if (factor) g.setZoomFactor(factor * webZoom * (tileZooms.get(g.id) ?? 1))
+  if (factor) g.setZoomFactor(factor * webZoom * tileFactor)
 }
 
 // App-level wiring registers exactly once — createWindow re-runs on macOS activate, and a
@@ -108,7 +153,11 @@ function wireAppLevel(): void {
     // is per-origin in their session — every commit re-stamps from the embedder's live factor,
     // so a slow page never renders unscaled while it loads.
     contents.on('did-navigate', () => stampGuestZoom(contents))
-    contents.once('destroyed', () => tileZooms.delete(contents.id))
+    contents.once('destroyed', () => {
+      tileZooms.delete(contents.id)
+      clearInterval(tileZoomTweens.get(contents.id))
+      tileZoomTweens.delete(contents.id)
+    })
   })
 }
 

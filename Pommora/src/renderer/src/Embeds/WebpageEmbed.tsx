@@ -156,12 +156,19 @@ export function WebpageEmbed({
 
   // The factor rides main's per-guest map so the per-navigation re-stamp keeps it; sent once the
   // guest is attached (the id read throws before that) and re-sent whenever the Scale changes or
-  // a fresh guest mounts. 1.0 must still be sent — it clears a previous factor's map entry.
+  // a fresh guest mounts. 1.0 must still be sent — it clears a previous factor's map entry. Only
+  // a change to an already-stamped guest animates; a mount or a restored factor lands whole.
+  const sentZoomRef = useRef<number | null>(null)
+  useEffect(() => {
+    if (!loaded) sentZoomRef.current = null
+  }, [loaded])
   useEffect(() => {
     const wv = ref.current as (HTMLElement & { getWebContentsId?: () => number }) | null
     if (!wv?.getWebContentsId || !loaded) return
+    const animate = sentZoomRef.current !== null && sentZoomRef.current !== zoom
     try {
-      void window.nexus.webGuestZoom.set(wv.getWebContentsId(), zoom)
+      void window.nexus.webGuestZoom.set(wv.getWebContentsId(), zoom, animate)
+      sentZoomRef.current = zoom
     } catch {
       // A guest torn down between render and effect has no id to stamp — the next mount re-sends.
     }
