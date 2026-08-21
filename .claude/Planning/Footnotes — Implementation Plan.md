@@ -884,12 +884,12 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
   - [x] Task 1 — The shared citation scan · `71fe5be2`
   - [x] Task 2 — The scan joins the editor's document derivation · `4bb09d45`
   - [x] Task 3 — Statistics stop counting the section · `8a5aeabd` · gate: `99b5d55e` `b9c95934` `8f6965ee` `645668cb`
-- [ ] **Phase 2** — The section and its markers draw
-  - [x] Task 4 — The citation row's styling · `<commit>`
-  - [x] Task 5 — Citation lines emit as numbered rows · `<commit>`
-  - [x] Task 6 — The marker draws atomic and positional · `<commit>`
-  - [x] Task 7 — Markers render in resting table cells · `<commit>`
-  - [x] Task 8 — The section is inert to the block layer · `<commit>`
+- [x] **Phase 2** — The section and its markers draw · base `b9c95934`
+  - [x] Task 4 — The citation row's styling · `b006e3d2`
+  - [x] Task 5 — Citation lines emit as numbered rows · `22a78c13`
+  - [x] Task 6 — The marker draws atomic and positional · `a7cc6a24`
+  - [x] Task 7 — Markers render in resting table cells · `69b9781c`
+  - [x] Task 8 — The section is inert to the block layer · `ed1aded1` · gate: `a6b28f4a` `9cf8e548`
 - [ ] **Phase 3** — Hiding and showing
   - [ ] Task 9 — The visibility override's storage · `<commit>`
   - [ ] Task 10 — The two settings · `<commit>`
@@ -928,6 +928,23 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 **Net line delta:** +131 code lines (comments, blanks and tests excluded) across five files.
 
 **Interaction pass:** none owed — nothing draws this phase.
+
+### Gate 2 — code half closed; the interaction pass is Nathan's
+
+**Cohesion Criteria, against this phase's diff.**
+
+- **C1.** One ordinal derivation: `rg -F "ordinal" Pommora/src --glob '!*.test.*'` reaches Task 1's walk and its readers only — the row glyph, the marker widget, and the table's key all take the number from `CitationScan`, none computes one. One atomic provider: the marker's ranges joined `calloutAtomic`'s existing walk rather than registering a second `atomicRanges` source. One drawer per marker: `tokenIntents` and `activeTokenIndices` both early-return on the token, so the widget is the only thing that draws it.
+- **C2.** Reuse proven, each against the mechanism it was checked against: the row's glyph is the existing `lineWidget` intent and its renderer (the codeblock line count's own path); its styling joined `.md-ol-marker, .md-cb-ln` rather than restating it; its wrap restore joined the list content span's selector; the marker's drawing is the existing `widget` intent with one `WidgetSpec` arm; its atomicity joined the callout walk; its tokenization is the existing `{kind, re, open, close}` spec machinery; block-inertness took the unowned-line state a blank line already returns. One new file this phase: a test.
+- **C3.** `git diff <base>..HEAD -- Styles.css | rg '^\+' | rg '#[0-9a-fA-F]{3,8}|[0-9]+ms|cubic-bezier|rgba?\('` → no hits. The one color is `color-mix(in srgb, var(--accent) var(--tint-primary), transparent)`, the accent-at-tint recipe the theme's own stroke token reads.
+- **C4.** Every new name has consumers: `citeRef` 4, `md-cite-ref` 6, `md-cite-num` 4, `citationRef` 5, `entryAt` 5, `markersAt` 6, `citeKey` 4, `ordinalOf` 7.
+- **C5.** No residue: the token→class map entry that would have drawn the label was never written, the two-branch citation emission collapsed rather than being left beside its replacement, and the historical restatement in the atomic walk's header is gone.
+- **C6.** The comment pass ran and found nothing to remove; it flagged two lines as marginal and kept them with reasons.
+- **C7.** Measured. The per-line pass was O(lines × markers) as first written and is now two line indexes off the same arrays: on 600 marker-bearing lines over 60 citations, `docLineIntents` 0.10ms and the whole `scanDoc` 0.88ms. The table's rebuild gate pays one numbering-key comparison per doc-changing transaction, and only where a table exists.
+- **C8.** The smaller version of each task, named: Task 5 could have emitted through `pushConstruct` — refused, it would hand citations list indentation and the grip menu's type conversion; Task 6 could have drawn from the token layer — refused, it draws the label rather than the position; Task 7 could have compared the cell's text alone — refused, a word label's text never changes when its number does; Task 8 could have taken a new `BlockKind` — refused, five registration sites against two lines.
+- **C9.** No guard was added. The one gate this phase widened — the table rebuild — is a correctness condition with a named mechanism, not a defensive one.
+- **C10.** New classes are `md-cite`, `md-cite-cont`, `md-cite-dim`, `md-cite-num`, `md-cite-ref`; the token kind is `citationRef`; the widget arm is `citeRef`. `rg -w "footnote|definition" Pommora/src` still returns only the typography step, the icon step and the property domain's own word.
+
+**Net line delta:** +155 code lines (comments, blanks and tests excluded) across ten files.
 
 ### Rulings
 
