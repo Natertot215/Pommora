@@ -1,7 +1,7 @@
 import { citationsLabel } from '@shared/toggleLabels'
 import { text } from '@renderer/design-system/tokens/typography.css'
 import { onActivateClick } from '@renderer/design-system/interactions/activate'
-import { openPageBody, useSession } from '../../store'
+import { citationsVisible, openPageBody, useSession } from '../../store'
 import { pageStats } from './subfieldStats'
 import type { SubfieldScope } from './subfieldItems'
 
@@ -18,11 +18,10 @@ export function CitationsToggle({ scope }: { scope?: SubfieldScope }): React.JSX
   const target = scope ? scope.target : pageDetail
   const body = scope ? scope.body : openPageBody(pageDetail, liveBody)
   const stats = pageStats(body)
-  const fallback = useSession((s) => s.personalization.citationsShown ?? false)
-  const override = useSession((s) => (target ? s.citationsShown[target.id] : undefined))
+  const shown = useSession((s) => citationsVisible(s, target?.id))
   const toggle = useSession((s) => s.toggleCitations)
   if (stats.citations === 0 || !target) return null
-  const label = citationsLabel(override ?? fallback)
+  const label = citationsLabel(shown)
   return (
     <button
       type="button"

@@ -1,8 +1,8 @@
 import { markdownLinkRegex } from '@shared/links'
 import { loneWebpageEmbed } from '@shared/webpageEmbed'
 import { tableRegions } from '@renderer/MarkdownPM/Tables/regions'
+import { constructExclusions } from '@renderer/MarkdownPM/editor/embedRanges'
 import {
-  blockMathRanges,
   blockquotePrefixRe,
   calloutHeadPrefixLen,
   citationScan,
@@ -92,11 +92,7 @@ function stripInline(text: string): string {
 function citationBoundary(d: DocLines, fences: [number, number][]): CitationScan {
   const cheap = citationScan(d, fences)
   if (cheap.firstLine >= d.lines.length) return cheap
-  const base: [number, number][] = [
-    ...fences,
-    ...tableRegions(d).map((r): [number, number] => [r.from, r.to]),
-  ]
-  return citationScan(d, [...base, ...blockMathRanges(d, base)])
+  return citationScan(d, constructExclusions(d, fences, tableRegions(d)).excluded)
 }
 
 /** One answer per body string. The footer mounts two items on a page — the counts and the footnotes

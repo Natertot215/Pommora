@@ -7,14 +7,14 @@ import type { ConnectionsApi } from '@renderer/MarkdownPM/connections'
 import { nativeEditorMenu } from '@renderer/MarkdownPM/editor/menu'
 import { flushPageSave, schedulePageSave } from '@renderer/Detail/pageFlush'
 import { fetchPageDetail, readPageDetail } from '@renderer/Tabs/warmCache'
-import { useSession } from '../store'
+import { useEmbedScale, useSession } from '../store'
 import { useBannerMenu } from '../Detail/Banner/useBannerMenu'
 import { NavCrumbs } from '../Navigation/NavList'
 import { resolveWith } from '../Navigation/navResolve'
 import { resolveIndexOf } from '../treeIndex'
 import { assetUrl } from '../assetUrl'
 import './embeds.css'
-import { EMBED_SCALE_DEFAULT, coerceScale, embedZoom } from '@shared/types'
+import { embedZoom } from '@shared/types'
 
 // Entering edit reconfigures the SAME CM6 view's editability — no remount, no jitter.
 
@@ -84,9 +84,7 @@ export function PageEmbed({
   const body = entry?.body ?? null
   const failed = entry !== null && entry.body === null
 
-  const embedScale = useSession((s) =>
-    coerceScale(s.personalization.embedScale, EMBED_SCALE_DEFAULT),
-  )
+  const embedScale = useEmbedScale()
   const onBodyRef = useRef(onBody)
   onBodyRef.current = onBody
   useEffect(() => {
