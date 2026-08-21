@@ -192,7 +192,7 @@ const api = {
   titleMenu: ask('nexus:titleMenu'),
   // The table grip's right-click menu.
   tableMenu: ask('table-menu'),
-  // A block grip's menu — Delete on every kind, Type ▸ on a list, Page Source ▸ on an embed tile.
+  // A block grip's menu — Delete on every kind, Type ▸ on a list, Source ▸ on an embed tile.
   gripMenu: ask('grip-menu'),
   // The table-view column header's right-click menu.
   columnMenu: ask('column-menu'),
