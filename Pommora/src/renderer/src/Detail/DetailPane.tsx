@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { PageDetail } from '@shared/types'
 import { useSession } from '../store'
+import { REVEAL_NEAR_H, REVEAL_NEAR_W } from '@renderer/design-system/revealBar'
 import { navKey } from '../Navigation/navRecents'
 import { readWarm } from '../Tabs/warmCache'
 import { duration, easing } from '@renderer/design-system/tokens'
@@ -13,6 +14,7 @@ import { PageView } from './PageView'
 import { NavView } from '../Tabs/NavView'
 import { Subfield } from './Subfield/Subfield'
 import { footerLabel } from '@shared/toggleLabels'
+import { CitationsToggle } from './Subfield/CitationsToggle'
 
 function DetailView(): React.JSX.Element | null {
   const selection = useSession((s) => s.selection)
@@ -154,9 +156,11 @@ export function DetailPane(): React.JSX.Element {
       { duration: Number.parseInt(duration.fast, 10), easing: easing.standard },
     )
   }, [selection, navSlide])
-  // Cursor in the chevron's general area (a large bottom-right region) → reveal the toggle. Tracked
-  // here rather than with a giant invisible button so the reveal zone never blocks clicks beneath it.
+  // Cursor in a band control's general area — one region per end of the bar, so approaching the
+  // chevron never lights the footnotes disclosure and the other way around. Tracked here rather than
+  // with giant invisible buttons so the reveal zones never block clicks beneath them.
   const [near, setNear] = useState(false)
+  const [nearLead, setNearLead] = useState(false)
   // Measured lazily and cached: a rect per mousemove forces a layout on every pointer move. The pane
   // only moves when the surrounding panes do, and the pointer leaving is a free moment to re-measure.
   const paneRect = useRef<DOMRect | null>(null)
@@ -171,7 +175,8 @@ export function DetailPane(): React.JSX.Element {
   const paneClass =
     'detail-pane' +
     (showSubfield && expanded ? ' subfield-open' : '') +
-    (showSubfield && near ? ' subfield-near' : '')
+    (showSubfield && near ? ' subfield-near' : '') +
+    (showSubfield && nearLead ? ' subfield-near-lead' : '')
 
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
@@ -184,11 +189,14 @@ export function DetailPane(): React.JSX.Element {
         if (!showSubfield) return
         paneRect.current ??= e.currentTarget.getBoundingClientRect()
         const r = paneRect.current
-        setNear(e.clientX > r.right - 260 && e.clientY > r.bottom - 120)
+        const low = e.clientY > r.bottom - REVEAL_NEAR_H
+        setNear(low && e.clientX > r.right - REVEAL_NEAR_W)
+        setNearLead(low && e.clientX < r.left + REVEAL_NEAR_W)
       }}
       onMouseLeave={() => {
         paneRect.current = null
         setNear(false)
+        setNearLead(false)
       }}
     >
       <div ref={viewRef} className={frozen ? 'detail-pane-view is-frozen' : 'detail-pane-view'}>
@@ -217,6 +225,7 @@ export function DetailPane(): React.JSX.Element {
           >
             <Icon name={expanded ? 'chevron-down' : 'chevron-up'} size="title3" />
           </button>
+          <CitationsToggle />
           <div className="subfield-reveal">
             <Subfield />
           </div>

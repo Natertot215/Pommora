@@ -1,18 +1,16 @@
 import type { SelectionState } from '@shared/types'
 import { DEFAULT_LABELS } from '@shared/types'
 import { containerCreators } from '@shared/mutate'
-import { citationsLabel } from '@shared/toggleLabels'
 import { Icon } from '@renderer/design-system/symbols'
-import { onActivateClick } from '@renderer/design-system/interactions/activate'
 import { openPageBody, useSession } from '../../store'
 import { findCollection } from '../Scope'
 import { pageStats } from './subfieldStats'
 
 /** New item ids slot in here, and in the per-view default order below — the seam for future
  *  user-defined (scoped) items. */
-export type SubfieldItemId = 'pageStats' | 'addMenu' | 'viewType' | 'citations'
+export type SubfieldItemId = 'pageStats' | 'addMenu' | 'viewType'
 
-const ALL_ITEM_IDS: SubfieldItemId[] = ['pageStats', 'addMenu', 'viewType', 'citations']
+const ALL_ITEM_IDS: SubfieldItemId[] = ['pageStats', 'addMenu', 'viewType']
 /** Narrow a persisted (untrusted) id string to a known item id — drops stale/unknown entries. */
 export function isSubfieldItemId(id: string): id is SubfieldItemId {
   return (ALL_ITEM_IDS as string[]).includes(id)
@@ -37,7 +35,7 @@ export const DEFAULT_ITEMS: Record<SelectionState['kind'], SubfieldItemId[]> = {
   space: [],
   collection: ['addMenu'],
   set: ['addMenu'],
-  page: ['pageStats', 'citations'],
+  page: ['pageStats'],
 }
 
 /** Lines · Words · Characters for the open page — live as you type. Scoped (the preview), it counts
@@ -56,36 +54,6 @@ function PageStatsItem({ scope }: SubfieldItemProps): React.JSX.Element {
       <span className="subfield-sep">·</span>
       {stats.characters.toLocaleString()}
     </span>
-  )
-}
-
-/** Show / Hide Footnotes for the open page. Absent from a page with no citation lines — there is
- *  nothing to disclose — and present the moment one exists, orphans included, so a section can never
- *  become unreachable. The label states what the click will do and reads the current state at once. */
-function CitationsItem({ scope }: SubfieldItemProps): React.JSX.Element | null {
-  const pageDetail = useSession((s) => s.pageDetail)
-  const liveBody = useSession((s) => s.liveBody)
-  const target = scope ? scope.target : pageDetail
-  const body = scope ? scope.body : openPageBody(pageDetail, liveBody)
-  const stats = pageStats(body)
-  const fallback = useSession((s) => s.personalization.citationsShown ?? false)
-  const override = useSession((s) => (target ? s.citationsShown[target.id] : undefined))
-  const setShown = useSession((s) => s.setCitationsShown)
-  if (stats.citations === 0 || !target) return null
-  const shown = override ?? fallback
-  // Clearing on a match with the default is what lets a later change to that default reach a page
-  // someone once toggled — a row written to the value it already follows would pin it forever.
-  const toggle = (): void => setShown(target.id, !shown === fallback ? null : !shown)
-  return (
-    <button
-      type="button"
-      className="subfield-citations"
-      onClick={toggle}
-      onKeyDown={onActivateClick}
-      title={citationsLabel(shown)}
-    >
-      {citationsLabel(shown)}
-    </button>
   )
 }
 
@@ -140,7 +108,5 @@ export function SubfieldItem({
       return <AddMenuItem />
     case 'viewType':
       return <ViewTypeItem />
-    case 'citations':
-      return <CitationsItem scope={scope} />
   }
 }

@@ -251,6 +251,17 @@
 .ppane.is-footer-open .ppane-footer-toggle {
   bottom: var(--ppane-footer-h);
 }
+.ppane .footnotes-toggle {
+  left: 0;
+  z-index: 2;
+  height: var(--ppane-footer-h);
+  padding: 0 12px 0 var(--ppane-footer-lead, 14px);
+  justify-content: flex-start;
+}
+.ppane.is-footer-open .footnotes-toggle {
+  bottom: var(--ppane-footer-h);
+}
+.ppane.is-footer-near-lead .footnotes-toggle,
 .ppane.is-footer-near .ppane-footer-toggle {
   opacity: 1;
 }
