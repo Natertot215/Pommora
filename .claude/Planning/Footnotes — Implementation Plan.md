@@ -974,7 +974,7 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
   - [x] Task 17 — Marker click — jump, or follow · `678ef515`
   - [x] Task 18 — The two construct menus · `18c7cf5f`
   - [x] Task 19 — Range-keyed cascades · `26fbfcb2`
-- [ ] **Phase 5** — Creation and numbering
+- [x] **Phase 5** — Creation and numbering · base `b4629983` · gate: `5f6fda20` `925547dc` `bc0eb6f3`
   - [x] Task 20 — The renumbering engine · `6d52c45f`
   - [x] Task 21 — Insert ▸ Footnote and Paste As ▸ Footnote · `fe4bdc67`
   - [x] Task 22 — The typed auto-seed · `24493ac4`
@@ -1017,7 +1017,29 @@ Tasks 11 and 12 open and close the fold hazard window. Nothing in this phase may
 
 **Net line delta:** +155 code lines (comments, blanks and tests excluded) across ten files.
 
+### Gate 5 — closed
+
+**Cohesion Criteria, against this phase's diff.**
+
+- **C1.** One normalization: `rg -c "ordinal" src --glob '!*.test.*'` reaches the scan that assigns them and the readers that draw them; `citationEdits.ts` is the only file that WRITES a label, and `normalizeCitations` has one definition with one caller, `citationGesture`. One dispatch: every gesture in the renumbering set — the three creations and the three deletions — ends on `commitCitation`, and `grep -rn "view.dispatch({ changes" ` over the citation modules returns only the one inside it. One differ: `grep -rn "a\[pre\]" src` still returns a single hit, `diffAsSingleReplace`, now exported rather than copied. One marker grammar: `markerEndingAt` reads through `markerRegex()` rather than restating the label characters and the escape's lookbehind. The one near-twin found and kept is the bare `/\[\^[^\]\s]+\]/` inside `normalizeCitations`'s row rebuild — `markerRegex` carries `/g`, so a `.replace` through it would rewrite every marker on the head line rather than the label; the two are not interchangeable and the difference is stated where it sits.
+- **C2.** Reuse proven, each against the mechanism it was checked against: the reorder is the list drag's own rebuild-then-diff idiom and takes its differ rather than a second one; the fold teardown is the heading drag's `dropEffect`, for the same reason and with the same annotation; the host seam is `embedHost`'s facet shape; the Insert row joined the two existing escape hatches rather than the format union's exhaustive switch; `citeSeat` joined `FormatState` beside `embedSeat`, the flag that exists because main cannot see the caret; the paste form forks ahead of the single-range writer the three existing forms share, leaving them and their tests untouched. One new file: a test.
+- **C3.** `git diff b4629983..HEAD -- '*.css' '*.css.ts'` → empty. Nothing this phase adds draws.
+- **C4.** Every new export has callers: `citationGesture` 14, `citationSeatAt` 10, `commitCitation` 9, `insertCitation` 7, `citationHost` 7, `normalizeCitations` 6, `citationText` 6, `diffAsSingleReplace` 5, `isInsideInlineCode` 4, `citationRowChanges` 4, `mintLabel` 3, `seedTypedCitation` 3, `editAcrossCitations` 3, `markerEndingAt` 3.
+- **C5.** No residue: `insertCitationChanges` was folded into `citationRowChanges` rather than left beside it, `withCitationsUnfolded` became `editAcrossCitations` rather than gaining a second form, `citationPointer`'s threaded `reveal` parameter is gone rather than kept alongside the facet, and the `jump` parameter added while the typed seed was briefly exempt came back out with the ruling — `grep -rn "insertCitationChanges\|withCitationsUnfolded\|citationHostOf" src` returns nothing.
+- **C6.** The comment pass ran and cut three lines: a planning-document reference, a decision-log label, and one narrating the DOM query below it. Everything it kept states a why — which mechanism was chosen over which alternative, and what breaks without it.
+- **C7.** Measured, not asserted, and one violation found and fixed. `citationSeatAt` answers on every caret move and every focus change, and as first written it called `isInsideCode`, which splits the whole document and pairs every fence from the top: **0.0105 ms** per caret move on a 482-line page. Both halves now come off the cached scan and the caret's own line — **0.0004 ms**, and O(line) rather than O(document). The inline half was named `isInsideInlineCode` beside the whole-document form rather than restated. `citationGesture` runs one full scan of the post-edit document, on a gesture rather than a keystroke.
+- **C8.** The smaller version of each task, named: Task 20 could have emitted per-citation edits rather than rebuilding and diffing — refused, a reorder's edits do not commute and the fold's start needs the differ's trimmed prefix; Task 21 could have routed Footnote through `pasteAsTarget` — refused, that reader declines any clipboard holding a newline, which is the shape the normalization exists for; Task 22 could have joined the transform chain — refused, that chain carries one range and a seed writes two.
+- **C9.** Two guards, each with its sequence named. `citationSeatAt` sits on user input — a right-click inside a fence or inside the section is one press away — and refusing there is what stops a row being offered that does nothing. The `isConnected` test on the two deferred travels names its sequence too: a tab closed or a page swapped inside the reveal's own settle window, which is the round-trip staleness the paste path already answers for. The renumber's `held` set is not a guard but the rule itself — a number a blocked rename leaves standing is occupied, which is what the correctness review found and what the fix pins.
+- **C10.** New identifiers are `normalizeCitations`, `citationGesture`, `commitCitation`, `citationRowChanges`, `citationText`, `mintLabel`, `citationSeatAt`, `citationHost`, `seedTypedCitation`, `editAcrossCitations`, `markerEndingAt`, `isInsideInlineCode`, `citeSeat`, and the `'footnote'` paste form. The bans hold: `rg -w "footnote|definition" src` over this phase's added lines returns only the user-facing label **Footnote**, the paste form's own string, and prose inside comments — no identifier.
+
+**Net line delta:** +176 code lines (comments, blanks and tests excluded) across sixteen files, from +239 and −63.
+
+**Correctness review:** one CRITICAL, confirmed red before the fix and pinned after. `normalizeCitations` built its occupied-number set from orphans alone, so a rename blocked by an orphan left its own number standing and the NEXT row was renamed straight onto it — `x[^2] y[^3]` over `[^1]: orphan / [^2]: two / [^3]: three` fused two independent footnotes into `[^2]` and a shadow, losing one binding for good. The set is now grown to a fixed point: a refused rename holds its own number against every later row.
+
 ### Rulings
+
+- **08-21-2026, Nathan:** A typed footnote label honors **Jump To Citation On Creation** like every other creation gesture. Raised as an objection — a caret leaving the sentence being typed — and then settled the other way: the setting is the one place that decision belongs, and turning it off is how a reader who does not want it says so.
+
 
 - **08-20-2026, Nathan:** A citation nothing binds to draws an en dash in its number column — dimmed with the rest of the row. It keeps the seat visible and clickable on an orphan whose text is also empty, which is what G-1b's visible seat is for.
 - **08-20-2026, Nathan:** The four hanging-indent rules stay as four. The citation row is written as the fifth copy rather than collapsing them into one parameterized rule — the collapse is not to be re-proposed by a later sweep.
