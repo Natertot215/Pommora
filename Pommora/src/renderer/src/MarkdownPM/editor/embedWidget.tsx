@@ -27,7 +27,7 @@ import {
 import { cx } from '@renderer/design-system/cx'
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { clamp } from '@renderer/design-system/clamp'
-import { TILE_DEFAULT_PX, TILE_MIN_PX } from '@renderer/design-system/tokens/size.css'
+import { TILE_DEFAULT_PX, TILE_GAP_PX, TILE_MIN_PX } from '@renderer/design-system/tokens/size.css'
 import { normalizeTitle, pageEmbedText, titleFromPath } from '@shared/connections'
 import '@renderer/design-system/tile-chassis.css'
 import { loneWebpageEmbed } from '@shared/webpageEmbed'
@@ -225,9 +225,10 @@ class EmbedTileWidget extends WidgetType {
 
   // A real estimate (not the don't-estimate sentinel) so off-screen tiles hold scrollbar-true
   // height before their first measure; CM corrects on render. Tracks the persisted height so a
-  // resized tile reports true even before it scrolls in.
+  // resized tile reports true even before it scrolls in — and answers for the MARGIN box, since the
+  // gap the tile floats in is layout the height model would otherwise never hear about.
   get estimatedHeight(): number {
-    return this.height ?? TILE_DEFAULT_PX
+    return (this.height ?? TILE_DEFAULT_PX) + TILE_GAP_PX * 2
   }
 
   private renderInto(dom: TileDom, view: EditorView): void {
@@ -374,7 +375,7 @@ class WebpageTileWidget extends WidgetType {
   }
 
   get estimatedHeight(): number {
-    return this.height ?? TILE_DEFAULT_PX
+    return (this.height ?? TILE_DEFAULT_PX) + TILE_GAP_PX * 2
   }
 
   private renderInto(dom: WebTileDom, view: EditorView): void {
