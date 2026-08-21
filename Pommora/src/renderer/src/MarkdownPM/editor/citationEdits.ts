@@ -58,3 +58,47 @@ export function deleteCitationChanges(
     { ...lineSpan(scan, entry.line, entry.lastLine, docLength), insert: '' },
   ]
 }
+
+type Scan = { lines: string[]; lineStarts: number[]; citations: CitationScan }
+
+/** What deleting exactly `[from, to)` means for the footnotes, or null where that range is not
+ *  exactly one construct — which is the whole of the range-keyed rule. A caret counts: backspace at
+ *  a citation's content start IS that citation, and backspace against a marker's trailing edge IS
+ *  that marker, because the marker is atomic and has no interior to land in.
+ *
+ *  Anything wider — a marker plus the words beside it, a sweep across body and section — returns
+ *  null and the deletion goes through as the plain removal of what was swept. */
+export function citationDeleteIntent(
+  scan: Scan,
+  from: number,
+  to: number,
+  docLength: number,
+): ChangeSpec[] | null {
+  const c = scan.citations
+  if (from === to) {
+    const entry = c.entries.find((e) => e.contentStart === from)
+    if (entry) return deleteCitationChanges(scan, entry, docLength)
+    const marker = c.markers.find((m) => m.to === from)
+    return marker ? deleteMarkerChanges(scan, marker, docLength) : null
+  }
+  const marker = c.markers.find((m) => m.from === from && m.to === to)
+  if (marker) return deleteMarkerChanges(scan, marker, docLength)
+  // Whole citation lines, and nothing else: every line the range covers has to be one this section
+  // owns, and the range has to start and end on those lines' own edges.
+  const covered = c.entries.filter(
+    (e) =>
+      scan.lineStarts[e.line] >= from &&
+      scan.lineStarts[e.lastLine] + scan.lines[e.lastLine].length <= to,
+  )
+  if (covered.length === 0) return null
+  const first = covered[0]
+  const last = covered[covered.length - 1]
+  if (scan.lineStarts[first.line] !== from) return null
+  if (scan.lineStarts[last.lastLine] + scan.lines[last.lastLine].length !== to) return null
+  // One span for the whole run, not one per citation: consecutive per-entry spans overlap on the
+  // newline between them, and each would claim it.
+  return [
+    ...covered.flatMap((e) => boundTo(c, e)).map((m) => ({ from: m.from, to: m.to, insert: '' })),
+    { ...lineSpan(scan, first.line, last.lastLine, docLength), insert: '' },
+  ]
+}
