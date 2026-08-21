@@ -286,36 +286,30 @@ function lineIntentsInto(
   // atomic at every caret position — a caret seated in five hidden characters would break the
   // label on its next keystroke and literalize every marker bound to it.
   if (scan.citations.mask[i]) {
-    const entry = scan.citations.entries.find((e) => i >= e.line && i <= e.lastLine)
-    if (entry) {
-      const dim = entry.ordinal === null ? ' md-cite-dim' : ''
-      const head = i === entry.line
-      intents.push({
-        kind: 'line',
-        from: ls,
-        className: `${head ? 'md-cite' : 'md-cite-cont'}${dim}`,
-      })
-      const contentStart = head ? entry.contentStart : ls
-      if (head) {
-        intents.push({
-          kind: 'lineWidget',
-          from: ls,
-          className: 'md-cite-num',
-          text: glyphOf(entry),
-        })
-        intents.push({ kind: 'hide', from: ls, to: contentStart })
-        intents.push({ kind: 'atomic', from: ls, to: contentStart })
-      }
-      if (contentStart < le)
-        intents.push({ kind: 'class', from: contentStart, to: le, className: 'md-cite-text' })
+    const entry = scan.citations.entryAt.get(i)
+    if (!entry) return null
+    const dim = entry.ordinal === null ? ' md-cite-dim' : ''
+    const head = i === entry.line
+    const contentStart = head ? entry.contentStart : ls
+    intents.push({
+      kind: 'line',
+      from: ls,
+      className: `${head ? 'md-cite' : 'md-cite-cont'}${dim}`,
+    })
+    if (head) {
+      intents.push({ kind: 'lineWidget', from: ls, className: 'md-cite-num', text: glyphOf(entry) })
+      intents.push({ kind: 'hide', from: ls, to: contentStart })
+      intents.push({ kind: 'atomic', from: ls, to: contentStart })
     }
+    if (contentStart < le)
+      intents.push({ kind: 'class', from: contentStart, to: le, className: 'md-cite-text' })
     return null
   }
 
   // A resolved marker is replaced by its number wherever it sits — body line, heading, list item or
   // table cell. An unmatched one is prose the parser reads as prose, so nothing is drawn over it.
-  for (const mk of scan.citations.markers) {
-    if (mk.line !== i || mk.ordinal === null) continue
+  for (const mk of scan.citations.markersAt.get(i) ?? []) {
+    if (mk.ordinal === null) continue
     intents.push({
       kind: 'widget',
       from: mk.from,

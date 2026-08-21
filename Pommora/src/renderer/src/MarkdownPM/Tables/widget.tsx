@@ -323,8 +323,9 @@ export function buildWidgetDecorations(state: EditorState, prev?: DecorationSet)
   const headingCols = state.field(headingColField, false) ?? new Set<number>()
   const boxes = prev ? heightBoxes(prev) : []
   const ranges: Range<Decoration>[] = []
-  const cites = citeKey(docScan(doc))
-  docScan(doc).tables.forEach((region, i) => {
+  const scan = docScan(doc)
+  const cites = citeKey(scan)
+  scan.tables.forEach((region, i) => {
     const text = doc.sliceString(region.from, region.to)
     const model = modelFromRegion(region)
     ranges.push(

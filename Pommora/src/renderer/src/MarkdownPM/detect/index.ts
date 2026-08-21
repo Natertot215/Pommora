@@ -169,6 +169,12 @@ export interface CitationScan {
   markers: MarkerRef[]
   /** 1 for every line of the section, the blanks between and after its citations included. */
   mask: Uint8Array
+  /** Line → the citation that owns it, its continuation lines included; and line → the markers on
+   *  it. Indexes over the two arrays above rather than second copies of them, because the per-line
+   *  decoration pass asks about one line at a time and filtering the flat lists for every line of
+   *  the document is the per-version cost the one-scan discipline exists to avoid. */
+  entryAt: Map<number, CitationEntry>
+  markersAt: Map<number, MarkerRef[]>
   /** The section's first citation line, or `lines.length` when there is no section. */
   firstLine: number
   /** The line a fold leaves visible — the one above the run, and -1 when nothing sits above it or
@@ -258,8 +264,12 @@ export function citationScan(d: DocLines, excluded: [number, number][]): Citatio
     const key = foldLabel(e.label)
     if (!firstFor.has(key)) firstFor.set(key, e)
   }
+  const entryAt = new Map<number, CitationEntry>()
+  for (const e of entries) for (let k = e.line; k <= e.lastLine; k++) entryAt.set(k, e)
+
   const inCode = codeMask(text)
   const markers: MarkerRef[] = []
+  const markersAt = new Map<number, MarkerRef[]>()
   let next = 1
   for (let i = 0; i < firstLine; i++) {
     const headEnd = citationHeadRe.exec(lines[i])?.[0].length
@@ -272,19 +282,25 @@ export function citationScan(d: DocLines, excluded: [number, number][]): Citatio
       if (inCode(from)) continue
       const entry = firstFor.get(foldLabel(m[1]))
       if (entry && entry.ordinal === null) entry.ordinal = next++
-      markers.push({
+      const ref: MarkerRef = {
         line: i,
         from,
         to: from + m[0].length,
         label: m[1],
         ordinal: entry?.ordinal ?? null,
-      })
+      }
+      markers.push(ref)
+      const onLine = markersAt.get(i)
+      if (onLine) onLine.push(ref)
+      else markersAt.set(i, [ref])
     }
   }
 
   return {
     entries,
     markers,
+    entryAt,
+    markersAt,
     mask,
     firstLine,
     anchorLine: entries.length > 0 && firstLine > 0 ? firstLine - 1 : -1,
