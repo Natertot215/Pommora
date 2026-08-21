@@ -13,6 +13,7 @@ import {
   type DocLines,
   type MarkerRef,
   citationFor,
+  citationsFor,
   foldLabel,
   isLastReference,
   lineEndOf,
@@ -38,14 +39,6 @@ function lineSpan(scan: CitationSlice, from: number, to: number): { from: number
     : { from: Math.max(0, start - 1), to: end }
 }
 
-/** Every row a label claims — the one that binds and any duplicate that lost. A duplicate is an
- *  orphan the moment its winner goes, so the two travel together here exactly as they do through a
- *  renumber. */
-const rowsFor = (c: CitationScan, label: string): CitationEntry[] => {
-  const key = foldLabel(label)
-  return c.entries.filter((e) => foldLabel(e.label) === key)
-}
-
 /** Whole citation rows removed. Consecutive rows are cut as ONE span, because per-row spans overlap
  *  on the newline between them and each would claim it; rows with something between them cannot
  *  overlap and are cut separately. */
@@ -64,22 +57,23 @@ function cutRows(scan: CitationSlice, rows: CitationEntry[]): ChangeSpec[] {
  *  cannot come to disagree about how much of it goes. */
 function cutFootnotes(scan: CitationSlice, entries: CitationEntry[]): ChangeSpec[] {
   const labels = [...new Set(entries.map((e) => foldLabel(e.label)))]
-  return [
-    ...labels.flatMap((l) => markersFor(scan.citations, l)).map(erase),
-    ...cutRows(
-      scan,
-      labels.flatMap((l) => rowsFor(scan.citations, l)),
-    ),
-  ]
+  // Line order, because `cutRows` merges neighbours by comparing their line numbers and a
+  // label-grouped list interleaves them.
+  const rows = labels
+    .flatMap((l) => citationsFor(scan.citations, l))
+    .sort((a, b) => a.line - b.line)
+  const markers = labels.flatMap((l) => markersFor(scan.citations, l))
+  return [...markers.map(erase), ...cutRows(scan, rows)]
 }
 
 /** Deleting exactly one marker. It takes its footnote with it when it was the last reference — a
  *  footnote nothing points at is an orphan, and the gesture that made it one is the one that should
- *  answer for it. */
+ *  answer for it. The whole footnote goes through the shared cut, which erases the marker along with
+ *  it: being the last reference is exactly the statement that this marker is the only one it has. */
 export function deleteMarkerChanges(scan: CitationSlice, marker: MarkerRef): ChangeSpec[] {
   const entry = citationFor(scan.citations, marker.label)
   if (!entry || !isLastReference(scan.citations, marker)) return [erase(marker)]
-  return cutRows(scan, rowsFor(scan.citations, marker.label)).concat(erase(marker))
+  return cutFootnotes(scan, [entry])
 }
 
 /** Deleting exactly one citation. Every marker bound to it goes in the same transaction — the

@@ -197,9 +197,10 @@ function StaticCellImpl({
    *  gives it, so it acts on the click here exactly as it does in the body — the same claim a link
    *  makes, spent on the same beat, so a press bound for a footnote never enters the cell. */
   const claimCite = (e: React.MouseEvent): (() => void) | null => {
-    const el = (e.target as HTMLElement).closest?.(CITE_GLYPH)
-    const label = (el as HTMLElement | undefined)?.dataset.citeLabel
-    if (!label || !onCite) return null
+    if (!onCite) return null
+    const el = (e.target as HTMLElement | null)?.closest?.(CITE_GLYPH) as HTMLElement | null
+    const label = el?.dataset.citeLabel
+    if (!label) return null
     e.preventDefault()
     e.stopPropagation()
     return () => onCite(label)

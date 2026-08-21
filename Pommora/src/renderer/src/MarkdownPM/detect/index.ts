@@ -315,22 +315,30 @@ export function citationScan(d: DocLines, excluded: [number, number][]): Citatio
   }
 }
 
-/** The citation a label binds to, and every marker bound to it. Case-folded, which is the only
- *  comparison GFM defines between a marker and its citation — so every layer that pairs the two
- *  asks HERE rather than spelling the fold out beside its own `find`. */
-export const citationFor = (c: CitationScan, label: string): CitationEntry | undefined => {
+/** Bound to this label — the one comparison GFM defines between a marker and its citation, folded
+ *  once per lookup rather than once per candidate. The three queries below share it, so no layer
+ *  that pairs a marker with a citation spells the fold out beside its own `find`. */
+const boundTo = (label: string): ((x: { label: string }) => boolean) => {
   const key = foldLabel(label)
-  return c.entries.find((e) => foldLabel(e.label) === key)
+  return (x) => foldLabel(x.label) === key
 }
 
-export const markersFor = (c: CitationScan, label: string): MarkerRef[] => {
-  const key = foldLabel(label)
-  return c.markers.filter((m) => foldLabel(m.label) === key)
-}
+/** Every row a label claims — the one that binds and any duplicate that lost, which is an orphan the
+ *  moment its winner goes. A deletion takes the whole set, so it asks HERE rather than deciding on
+ *  its own what "the footnote" is. */
+export const citationsFor = (c: CitationScan, label: string): CitationEntry[] =>
+  c.entries.filter(boundTo(label))
 
-/** Whether this is the only marker bound to its citation — so removing it orphans the footnote.
- *  Asked HERE by both the gesture that cascades on it and the menu row that names it, which is what
- *  keeps the menu from promising something other than what the click does. */
+/** The citation a label binds to: the row that claims it first, any duplicate behind it having lost. */
+export const citationFor = (c: CitationScan, label: string): CitationEntry | undefined =>
+  c.entries.find(boundTo(label))
+
+export const markersFor = (c: CitationScan, label: string): MarkerRef[] =>
+  c.markers.filter(boundTo(label))
+
+/** Whether this is the only marker bound to its citation — so removing it orphans the footnote, and
+ *  the gesture that made it one answers for it by taking the whole footnote. Named rather than spelled
+ *  inline, because "the last reference" is the condition the cascade is written around. */
 export const isLastReference = (c: CitationScan, marker: MarkerRef): boolean =>
   markersFor(c, marker.label).every((m) => m === marker)
 

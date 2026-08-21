@@ -19,9 +19,6 @@ export interface CitationMenuContext {
   /** A read-only surface — an embed tile at rest, a hover card — offers what it can still do and
    *  nothing that would write. */
   editable: boolean
-  /** Whether deleting this marker takes its citation with it: true when it is the last reference.
-   *  Named on the row, so the menu says what the click will actually do. */
-  lastReference?: boolean
 }
 
 export type CitationMenuAction = 'cite:edit' | 'cite:copy' | 'cite:delete'
@@ -29,18 +26,11 @@ export type CitationMenuAction = 'cite:edit' | 'cite:copy' | 'cite:delete'
 export function citationMenuModel(ctx: CitationMenuContext): ActionItem<CitationMenuAction>[] {
   const rows: ActionItem<CitationMenuAction>[] = []
   // Only a marker has somewhere else to put the caret; a citation's own row already holds it.
-  if (ctx.subject === 'marker' && ctx.editable)
-    rows.push({ label: 'Edit Footnote', action: 'cite:edit' })
-  // Edit and Copy are one group — both leave the document as they found it. The only divider stands
-  // above Delete, which does not.
-  rows.push({ label: 'Copy Reference', action: 'cite:copy' })
+  if (ctx.subject === 'marker' && ctx.editable) rows.push({ label: 'Edit', action: 'cite:edit' })
+  // Edit and Copy are one group — both leave the document as they found it. Delete does not, so it
+  // takes the divider, and only where more than one row stands above it: two rows need no dividing.
+  rows.push({ label: 'Copy', action: 'cite:copy' })
   if (ctx.editable)
-    rows.push({
-      // A citation IS the footnote, and a marker that is the last reference takes it with it.
-      label:
-        ctx.subject === 'citation' || ctx.lastReference ? 'Delete Footnote' : 'Delete Reference',
-      action: 'cite:delete',
-      separatorBefore: true,
-    })
+    rows.push({ label: 'Delete', action: 'cite:delete', separatorBefore: rows.length > 1 })
   return rows
 }

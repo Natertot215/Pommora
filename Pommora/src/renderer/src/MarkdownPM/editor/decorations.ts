@@ -133,6 +133,12 @@ class LineWidget extends WidgetType {
     if (this.text !== undefined) el.textContent = this.text
     return el
   }
+  /** Every glyph of this kind is decoration over a line that is still text, so a press on one
+   *  belongs to that line rather than to the widget. Left at CM's default the widget swallows it,
+   *  and the line's own menu is unreachable from the one part of it drawn rather than written. */
+  ignoreEvent(): boolean {
+    return false
+  }
 }
 
 // One outliner rail: an ancestor-level vertical guide, pinned at the line start (side -1) and positioned +
