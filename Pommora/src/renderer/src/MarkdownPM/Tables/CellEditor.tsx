@@ -4,7 +4,7 @@ import { Annotation, EditorState, Prec } from '@codemirror/state'
 import { defaultKeymap } from '@codemirror/commands'
 import { customCaret } from '../editor/caret'
 import { markdownDecorations } from '../editor/decorations'
-import { cellCitations } from './cellCitations'
+import { cellCitations, citesChanged } from './cellCitations'
 import { autoPair, autoDelete, type Edit } from '../input'
 import { AC_MAX, aliasRows, pageRow } from '../autocomplete'
 import { aliasOnLeave } from '../editor/linkEdit'
@@ -84,6 +84,10 @@ export function CellEditor({
   onUndoRef.current = onUndo
   const onRedoRef = useRef(onRedo)
   onRedoRef.current = onRedo
+  // The numbering is a whole-document fact and the extensions bake at mount, so it is read live like
+  // every other value this editor takes from its host.
+  const ordinalOfRef = useRef(ordinalOf)
+  ordinalOfRef.current = ordinalOf
 
   const { ac, setAc, candidates, acIndex, commit, acCtl } = useConnectionAutocomplete(
     viewRef,
@@ -105,7 +109,7 @@ export function CellEditor({
         extensions: [
           markdownDecorations(connections ?? noConn),
           // A marker's number is a whole-document fact, and this editor's document is one cell.
-          cellCitations(() => ordinalOf),
+          cellCitations(() => ordinalOfRef.current),
           // A cell authors aliases like the body does, so it owes the memory the same writes — without
           // this the mode it offers is one it can never contribute to, and an abandoned pipe reaches disk.
           aliasOnLeave(() => connections?.()),
@@ -218,6 +222,12 @@ export function CellEditor({
     }
     // Mount once — the cell IS the live editor.
   }, [])
+
+  // A renumber above the table never touches this cell's document, so nothing in it announces the
+  // move. The host does — the same beat on which it hands the resting cells a fresh key.
+  useEffect(() => {
+    viewRef.current?.dispatch({ effects: citesChanged.of(null) })
+  }, [ordinalOf])
 
   // The model can re-render this positional cell with different text — a reorder moves content between
   // cells, a page undo reverts it, a cell edit rebuilds its own table. Sync the live editor to it. Safe
