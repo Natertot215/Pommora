@@ -97,9 +97,10 @@ export function pasteAsRows(
   const footnote = citeSeat && clipboard.trim() !== '' ? [FOOTNOTE_ROW] : []
   const target = pasteAsTarget(clipboard)
   if (!target) return footnote
+  const page = target.kind === 'page'
   const embed = embedSeat && embeddableTarget(target)
-  const rows = target.kind === 'page' ? PAGE_ROWS : URL_ROWS
-  const embedRow = target.kind === 'page' ? PAGE_EMBED_ROW : URL_EMBED_ROW
+  const rows = page ? PAGE_ROWS : URL_ROWS
+  const embedRow = page ? PAGE_EMBED_ROW : URL_EMBED_ROW
   return [...footnote, ...rows, ...(embed ? [embedRow] : [])]
 }
 

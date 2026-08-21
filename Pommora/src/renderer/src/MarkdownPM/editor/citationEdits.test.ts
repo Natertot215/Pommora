@@ -188,7 +188,7 @@ describe('normalizing the section', () => {
     expect(normalizeCitations(scanOf('just prose, and a stray [^1] marker'))).toEqual([])
   })
 
-  // The Must-agree: after normalizing, a numeric disk label IS the number the walk draws over it.
+  // After normalizing, a numeric disk label IS the number the walk draws over it.
   it('leaves every numeric label equal to the ordinal the scan gives it', () => {
     const out = normalized('p[^zed] q[^8] r[^one] s[^3]\n\n[^3]: c\n[^8]: b\n[^one]: d\n[^zed]: a')
     const c = citationScan(splitWithOffsets(out), [])

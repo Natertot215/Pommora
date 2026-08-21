@@ -427,7 +427,6 @@ describe('a value arriving after mount is still a seed', () => {
 describe('a gesture leaves the section in the visible state it found it', () => {
   const ONE = 'x[^1] y\n\n[^1]: one'
   const PAIR = 'x[^1] y[^2]\n\n[^1]: one\n[^2]: two'
-  // A row still standing in the content layer rather than inside the fold's captured clone.
   const showing = (view: EditorView): number =>
     [...view.contentDOM.querySelectorAll('.cm-line.md-cite')].filter(
       (el) => el.closest('.mdpm-fold-clone') === null,

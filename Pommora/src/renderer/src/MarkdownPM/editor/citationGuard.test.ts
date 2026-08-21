@@ -64,12 +64,12 @@ describe('the tail guard keeps the section the document’s tail', () => {
 
   it('typing inside a citation’s text is untouched', () => {
     const at = DOC.indexOf('the citation')
-    expect(type(DOC, at, 'X')).toBe(DOC.slice(0, at) + 'X' + DOC.slice(at))
+    expect(type(DOC, at, 'X')).toBe(`${DOC.slice(0, at)}X${DOC.slice(at)}`)
   })
 
   it('an edit entirely in the body is untouched', () => {
     const at = DOC.indexOf('body')
-    expect(type(DOC, at, 'X')).toBe(DOC.slice(0, at) + 'X' + DOC.slice(at))
+    expect(type(DOC, at, 'X')).toBe(`${DOC.slice(0, at)}X${DOC.slice(at)}`)
   })
 
   it('deleting the whole section is allowed — the guard stops stranding, not removing', () => {
