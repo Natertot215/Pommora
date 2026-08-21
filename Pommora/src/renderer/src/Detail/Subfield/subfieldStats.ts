@@ -1,10 +1,11 @@
 import { markdownLinkRegex } from '@shared/links'
 import { loneWebpageEmbed } from '@shared/webpageEmbed'
-import { docLineScan } from '@renderer/MarkdownPM/editor/embedRanges'
 import { tableRegions } from '@renderer/MarkdownPM/Tables/regions'
 import {
+  blockMathRanges,
   blockquotePrefixRe,
   calloutHeadPrefixLen,
+  citationScan,
   fenceRangesOf,
   headingParts,
   isBlockquoteLine,
@@ -15,6 +16,8 @@ import {
   parseListMarker,
   scanFencedCode,
   splitWithOffsets,
+  type CitationScan,
+  type DocLines,
 } from '@renderer/MarkdownPM/detect'
 
 /** Page document stats for the Subfield. `lines` counts source lines the document actually holds;
@@ -79,6 +82,23 @@ function stripInline(text: string): string {
     .replace(/[*_~]/g, '')
 }
 
+/** The section's boundary, read against the same exclusions the editor's own scan uses — fences,
+ *  then tables, then math — so the two can never disagree about where the section starts.
+ *
+ *  Widening the exclusion can only ever BREAK a run, never create one, so a fence-only scan finding
+ *  no section is already the final answer. That is what keeps a table scan — a micromark parse per
+ *  candidate, two orders of magnitude dearer than everything else here — off the keystroke path of
+ *  every page that has no footnotes at all. */
+function citationBoundary(d: DocLines, fences: [number, number][]): CitationScan {
+  const cheap = citationScan(d, fences)
+  if (cheap.firstLine >= d.lines.length) return cheap
+  const base: [number, number][] = [
+    ...fences,
+    ...tableRegions(d).map((r): [number, number] => [r.from, r.to]),
+  ]
+  return citationScan(d, [...base, ...blockMathRanges(d, base)])
+}
+
 export function computeStats(body: string): PageStats {
   if (!body) return { lines: 0, words: 0, characters: 0, citations: 0 }
   // A single trailing newline is the terminator, not a phantom empty line.
@@ -87,10 +107,7 @@ export function computeStats(body: string): PageStats {
   const { lines } = d
 
   const fences = scanFencedCode(lines, d.lineStarts)
-  // The section's boundary comes from the same assembly the editor's own scan takes — fences, then
-  // tables, then math — so the counter and the editor can never disagree about where it starts. A
-  // narrower exclusion here would read a table glued under a citation as that citation's own text.
-  const { citations: cited } = docLineScan(d, fenceRangesOf(fences), tableRegions(d))
+  const cited = citationBoundary(d, fenceRangesOf(fences))
   const prose = stripInline(
     lines.map((line, i) => (fences[i] || cited.mask[i] ? GONE : stripLineChrome(line))).join('\n'),
   )
