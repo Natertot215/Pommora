@@ -78,6 +78,7 @@ export function TableView({
   onAppend,
   onMenu,
   onTableDrag,
+  onCite,
   onUndo,
   onRedo,
   connections,
@@ -96,6 +97,8 @@ export function TableView({
   onAppend: (axis: Axis) => void
   onMenu: (ctx: TableMenuContext) => void
   onTableDrag: (e: PointerEvent) => void
+  /** Go to the citation a marker in a cell binds to — the page around the table owns it. */
+  onCite?: (label: string) => void
   onUndo: () => void
   onRedo: () => void
   connections?: () => ConnectionsApi | undefined
@@ -373,6 +376,7 @@ export function TableView({
         cites={cites}
         ordinalOf={ordinalOf}
         connections={connections}
+        onCite={onCite}
         onActivate={(coords) => {
           // Activation swaps the cell into its editor — a pending or open hover card over the
           // cell must not hang above the editing seat.

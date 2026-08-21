@@ -35,6 +35,17 @@ export const citationHost = Facet.define<CitationHost, CitationHost>({
   combine: (v) => v[0] ?? { shown: () => false },
 })
 
+/** Go to the citation a label binds to, opening a hidden section on the way. THE arrival: the body's
+ *  own marker click ends here, and so does one in a resting table cell, which has no editor of its
+ *  own to carry a pointer path. False where nothing binds the label — an unmatched marker is prose. */
+export function travelToCitation(view: EditorView, label: string): boolean {
+  const entry = citationFor(docScan(view.state.doc).citations, label)
+  if (!entry) return false
+  view.state.facet(citationHost).reveal?.()
+  travelTo(view, entry.contentStart)
+  return true
+}
+
 /** Whether a marker may be written where the selection ENDS — a footnote annotates the words it
  *  follows, so that offset is where every creation puts it, and asking about the selection's start
  *  would read a sweep out of the body and into the section as a body seat. The seat is outside the

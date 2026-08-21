@@ -13,6 +13,7 @@ import { linkActionText, linkHalves } from '../editor/linkFormat'
 import { wikiAuthorTarget } from '../editor/linkEdit'
 import { dwellTarget, followTarget } from '../editor/links'
 import { useSession } from '../../store'
+import { CITE_GLYPH } from '../editor/citationPointer'
 
 // A cell's resting render WITHOUT a CodeMirror instance: inline marks styled + markers hidden +
 // connections colored by status, matching the nested editor's look. Only the focused cell mounts a
@@ -92,7 +93,9 @@ export function renderCellContent(
         n === null ? (
           text.slice(s, e)
         ) : (
-          <span key={key++} className="md-cite-ref">
+          // The label rides the span: a resting cell has no editor to hit-test against, and the
+          // number drawn here is not what the citation is found by.
+          <span key={key++} className="md-cite-ref" data-cite-label={content}>
             {n}
           </span>
         ),
@@ -136,6 +139,7 @@ function StaticCellImpl({
   onHoverArm,
   onHoverLeave,
   onHoverEnd,
+  onCite,
 }: {
   text: string
   /** The document's footnote numbering, serialized — read by the memo below rather than by the
@@ -157,6 +161,9 @@ function StaticCellImpl({
   onHoverLeave: () => void
   /** A gesture replaced the pointer's meaning: cancel what is armed AND dismiss what is open. */
   onHoverEnd: () => void
+  /** Go to the citation a marker binds to. The table's, because the citation lives in the page
+   *  around the cell rather than in the cell's own text. */
+  onCite?: (label: string) => void
 }): React.JSX.Element {
   // What the cell reads NOW, not when its menu was popped. A native menu can be held open for as long
   // as the user likes, and an undo or an outside write can move the cell underneath it — the editor's
@@ -184,6 +191,18 @@ function StaticCellImpl({
     e.preventDefault()
     e.stopPropagation()
     return go
+  }
+
+  /** The marker under the press, claimed. A resting cell draws a marker as the number the document
+   *  gives it, so it acts on the click here exactly as it does in the body — the same claim a link
+   *  makes, spent on the same beat, so a press bound for a footnote never enters the cell. */
+  const claimCite = (e: React.MouseEvent): (() => void) | null => {
+    const el = (e.target as HTMLElement).closest?.(CITE_GLYPH)
+    const label = (el as HTMLElement | undefined)?.dataset.citeLabel
+    if (!label || !onCite) return null
+    e.preventDefault()
+    e.stopPropagation()
+    return () => onCite(label)
   }
 
   const openMenu = (e: React.MouseEvent): void => {
@@ -234,7 +253,7 @@ function StaticCellImpl({
       onClick={(e) => {
         if (e.button !== 0 || e.detail !== 1) return
         onHoverEnd()
-        claimLink(e)?.()
+        ;(claimCite(e) ?? claimLink(e))?.()
       }}
       onMouseDown={(e) => {
         // A right press on a link belongs to that link's menu, and claiming it here is what stops the
@@ -244,10 +263,10 @@ function StaticCellImpl({
           return
         }
         if (e.button !== 0) return
-        // The cell swaps itself into an editor on mousedown, so a press bound for a link has to be
-        // claimed HERE — claiming the click instead arrives after the swap, which is the "clicking a
-        // link drops you into its syntax" symptom.
-        if (claimLink(e)) return
+        // The cell swaps itself into an editor on mousedown, so a press bound for a link or a
+        // footnote has to be claimed HERE — claiming the click instead arrives after the swap, which
+        // is the "clicking a link drops you into its syntax" symptom.
+        if (claimCite(e) || claimLink(e)) return
         // Stop the browser's native mousedown focus/selection: the cell swaps to an editor that we focus
         // ourselves, and the native focus-shift otherwise races ours — the "needs two clicks" bug.
         e.preventDefault()

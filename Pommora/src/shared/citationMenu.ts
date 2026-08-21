@@ -31,7 +31,9 @@ export function citationMenuModel(ctx: CitationMenuContext): ActionItem<Citation
   // Only a marker has somewhere else to put the caret; a citation's own row already holds it.
   if (ctx.subject === 'marker' && ctx.editable)
     rows.push({ label: 'Edit Footnote', action: 'cite:edit' })
-  rows.push({ label: 'Copy Reference', action: 'cite:copy', separatorBefore: rows.length > 0 })
+  // Edit and Copy are one group — both leave the document as they found it. The only divider stands
+  // above Delete, which does not.
+  rows.push({ label: 'Copy Reference', action: 'cite:copy' })
   if (ctx.editable)
     rows.push({
       // A citation IS the footnote, and a marker that is the last reference takes it with it.
