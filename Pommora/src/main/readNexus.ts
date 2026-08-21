@@ -64,7 +64,12 @@ import {
   SIDECAR_FILENAME,
   SPACE_SIDECAR,
 } from './paths'
-import { CONTEXTS_REGISTRY_REL, spaceDirRel } from '@shared/nexusPaths'
+import {
+  ASSETS_DIR_REL,
+  CONTEXTS_REGISTRY_REL,
+  NON_CORPUS_TOP,
+  spaceDirRel,
+} from '@shared/nexusPaths'
 
 type Json = Record<string, unknown>
 type Fallback = 'id' | 'title'
@@ -193,6 +198,7 @@ export function readLabels(raw: unknown): NexusLabels {
  *  settings patch read the same file through the same coercions, so they cannot disagree. */
 export interface SettingsLeaves {
   excluded: string[]
+  assetDirectory: string
   labels: NexusLabels
   accent: AccentSetting
   personalization: Personalization
@@ -202,6 +208,21 @@ export interface SettingsLeaves {
   profileImage: string | null
   profileIcon: string | undefined
   profileSubtitle: string
+}
+
+/** The asset root, nexus-relative POSIX. A malformed value takes the default rather than
+ *  narrowing the walk or widening the protocol handler's containment check on bad input: an
+ *  escaping or absolute path, a root-wide one (which would classify the whole nexus as asset),
+ *  and the two folders the app owns whole — `.nexus` swallows the settings and Contexts events
+ *  the classifier needs, and nothing under `.trash` is watched at all. A folder BENEATH one of
+ *  those stays legal; the default is itself one. */
+function readAssetDirectoryLeaf(v: unknown): string {
+  const raw = asString(v)?.trim()
+  if (!raw || raw.startsWith('/') || raw.includes('\\')) return ASSETS_DIR_REL
+  const segs = raw.split('/').filter(Boolean)
+  if (!segs.length || segs.some((s) => s === '.' || s === '..')) return ASSETS_DIR_REL
+  const rel = segs.join('/')
+  return NON_CORPUS_TOP.has(rel) ? ASSETS_DIR_REL : rel
 }
 
 export function readSettingsLeaves(settings: Json): SettingsLeaves {
@@ -214,6 +235,7 @@ export function readSettingsLeaves(settings: Json): SettingsLeaves {
   const personalization = readPersonalization(rawPersonalization)
   return {
     excluded: asStringArray(settings.excluded_folders) ?? [],
+    assetDirectory: readAssetDirectoryLeaf(settings.asset_directory),
     labels: readLabels(settings.labels),
     accent: personalization.accent ?? DEFAULT_ACCENT,
     personalization,
@@ -675,6 +697,7 @@ async function walkNexus(root: string): Promise<NexusTree> {
     personalization: leaves.personalization,
     commands: leaves.commands,
     excluded,
+    assetDirectory: leaves.assetDirectory,
     registry: orderedDefs(registry),
     ...(unreadable.length ? { unreadable: unreadable.map((path) => ({ path })) } : {}),
   }

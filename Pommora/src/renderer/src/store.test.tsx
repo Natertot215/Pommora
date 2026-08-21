@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { ASSETS_DIR_REL } from '@shared/nexusPaths'
 import type { NexusTree, PageDetail, SelectTarget, Tab } from '@shared/types'
 import { DEFAULT_LABELS } from '@shared/types'
 import { useSession } from './store'
@@ -312,6 +313,7 @@ function treeWith(pages: { id: string; path: string }[]): NexusTree {
     accent: 'lavender',
     personalization: {},
     commands: {},
+    assetDirectory: ASSETS_DIR_REL,
     excluded: [],
     registry: [],
   }

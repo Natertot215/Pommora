@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { stabilize } from '@shared/treeStabilize'
 import { dropLiveTree, getLiveTree, refreshTree } from './liveTree'
+import { ASSETS_DIR_REL } from '@shared/nexusPaths'
 import { readNexus } from './readNexus'
 import { applyWatchEvents, classifyEvent, touchesCorpus, type WatchEvent } from './watchPatch'
 
@@ -151,6 +152,27 @@ describe('applyWatchEvents — must agree with the walk', () => {
     )
     expect(result).toBe('refresh')
     expect(getLiveTree()).toBe(before)
+  })
+})
+
+describe('settings leaves — the walk and the settings patch must never disagree', () => {
+  // readNexus.ts states the decoder, the walk's tree literal and applySettingsLeaves must never
+  // disagree; a per-function test cannot see that, so this drives both over the same bytes.
+  it('an asset_directory appearing on disk reaches the live tree exactly as a fresh walk reads it', async () => {
+    await writeFile(abs('.nexus', 'settings.json'), JSON.stringify({}))
+    await refreshTree(root)
+    expect(getLiveTree()?.assetDirectory).toBe(ASSETS_DIR_REL)
+
+    await writeFile(abs('.nexus', 'settings.json'), JSON.stringify({ asset_directory: 'Media/' }))
+    // settle re-walks on a structural outcome; the patch alone must otherwise carry the leaf.
+    if ((await applyWatchEvents(root, [ev('change', '.nexus', 'settings.json')], [])) === 'refresh')
+      await refreshTree(root)
+
+    const patched = getLiveTree()?.assetDirectory
+    dropLiveTree()
+    const walked = await readNexus(root)
+    expect(patched).toBe('Media')
+    expect(patched).toBe(walked.assetDirectory)
   })
 })
 

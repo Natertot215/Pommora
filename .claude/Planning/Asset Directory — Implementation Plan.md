@@ -1,6 +1,6 @@
 ## Asset Directory — Implementation Plan
 
-> **Status:** written, pending review · Spec: [[Asset Directory — Decision Log]] · Execute tasks in order.
+> **Status:** ratified, executing · Spec: [[Asset Directory — Decision Log]] · Execute tasks in order.
 > Citations name files and symbols; re-derive before editing.
 
 **Goal**
@@ -140,11 +140,11 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 **Must agree:** `readSettingsLeaves` and `applySettingsLeaves` must produce the same value for the same file. One test writes a `settings.json`, walks it, then drives the watcher's settings patch over the same bytes and asserts the two leaves are equal — the disagreement `readNexus.ts:192` warns about is invisible to per-function tests.
 
 **Steps:**
-- [ ] Write the failing tests: the five malformed inputs above, plus the walk-vs-patch agreement test.
-- [ ] Run — expect failures.
-- [ ] Thread the leaf through all three places plus `types.ts`; add `readAssetDirectory`.
-- [ ] `npm run typecheck && npm run test` — expect green.
-- [ ] Commit: `feat(settings): asset_directory reads as a tree leaf`
+- [x] Write the failing tests: the five malformed inputs above, plus the walk-vs-patch agreement test.
+- [x] Run — expect failures. *(6 failed)*
+- [x] Thread the leaf through all three places plus `types.ts`; add `readAssetDirectory`.
+- [x] `npm run typecheck && npm run test` — expect green. *(0 · 273 files / 3383 tests · lint 0/888)*
+- [x] Commit: `feat(settings): asset_directory reads as a tree leaf`
 
 #### Task 2: One scope object replaces the threaded exclusion list
 
@@ -601,7 +601,7 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 ## Implementation Log
 
 ### Progress   *(seeded unchecked — this tree is what a fresh agent reads first)*
-- [ ] **Phase 1** — The asset root becomes a shared fact · base `<commit>`
+- [ ] **Phase 1** — The asset root becomes a shared fact · base `51762bfd`
   - [ ] Task 1 — `asset_directory` as a tree leaf · `<commit>`
   - [ ] Task 2 — One scope object carries it · `<commit>`
   - [ ] Task 3 — The asset root outranks every skip · `<commit>`
@@ -634,6 +634,7 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
   - The review's central finding stands: the plan built the external-change machinery and never asked what happens **when Pommora is the writer**. `atomicWriteBinary` → `recordWrite` → `isRecentWrite` means no in-app write reaches `settle`, so the asset copy starved the map (F1), the settings write starved the re-arm (F2), and the widened gate starved the delete (F3). Three defects, one root cause, all shipping silently green. Requirement 10 now names the path.
   - **Unknown resolved:** the `tree.unreadable` check at `watchPatch.ts:121` runs before Task 3's arm, but every producer of that list sits inside `readContainerMeta` / `readDirectPages` / `readChildSets`, which run only on descended directories — and Task 2 prunes the asset root at `shouldSkipDir`. Safe, and conditional on Task 2, which Task 3 now records.
 ### Deviations
+- **Task 1 — a sixth rejected value.** The plan's failure half names `.` / `./` as the degenerate root but not `.nexus` or `.trash`. Both are holes: Task 3 orders the asset arm ahead of `classifyEvent`'s `NEXUS_DIR` branch, so an asset root of `.nexus` would classify `settings.json` and the Contexts registry as asset events and blind settings patching entirely; and `ignoredUnder` drops every path holding a `.trash` segment ([watcher.ts:51](../../Pommora/src/main/watcher.ts#L51)), so a root there delivers no events at all. The reader refuses a value equal to a `NON_CORPUS_TOP` member. Prefixes below one stay legal — the default is `.nexus/assets`, which Task 3's failure half requires to keep classifying `asset`.
 ### Lessons
 ### Sequenced After
 - **Part 2 — the `file` property's `FileRef`.** Three things this plan hands it, stated honestly rather than as "unchanged": (a) the asset map indexes the **asset root only**, and a `FileRef` is a user-typed path anywhere in the nexus — Part 2 needs a path arm, not just a name arm; (b) `underAssetRoot` is narrower than `file:open`'s current reach, which `resolveUnderRoot` grants across the whole nexus — routing `FileRef` through the asset predicate would lose that; (c) `pickImagePath` must not bake `IMAGE_EXTS` into the channel's contract, or the any-file picker starts as a rewrite. No `FileRef` values exist in the live nexus today, so nothing is damaged — but "consumes it unchanged" was wrong.
