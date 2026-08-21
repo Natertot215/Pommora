@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import type { PageDetail } from '@shared/types'
 import { useSession } from '../store'
-import { REVEAL_NEAR_H, REVEAL_NEAR_W, leadOrigin } from '@renderer/design-system/revealBar'
+import { useRevealNear } from '@renderer/design-system/revealBar'
 import { navKey } from '../Navigation/navRecents'
 import { readWarm } from '../Tabs/warmCache'
 import { duration, easing } from '@renderer/design-system/tokens'
@@ -159,12 +159,7 @@ export function DetailPane(): React.JSX.Element {
   // Cursor in a band control's general area — one region per end of the bar, so approaching the
   // chevron never lights the footnotes disclosure and the other way around. Tracked here rather than
   // with giant invisible buttons so the reveal zones never block clicks beneath them.
-  const [near, setNear] = useState(false)
-  const [nearLead, setNearLead] = useState(false)
-  // Measured lazily and cached: a rect per mousemove forces a layout on every pointer move. The pane
-  // only moves when the surrounding panes do, and the pointer leaving is a free moment to re-measure.
-  const paneRect = useRef<DOMRect | null>(null)
-  const leadEdge = useRef(0)
+  const reveal = useRevealNear()
 
   const showSubfield =
     selectionKind === 'collection' ||
@@ -176,8 +171,8 @@ export function DetailPane(): React.JSX.Element {
   const paneClass =
     'detail-pane' +
     (showSubfield && expanded ? ' subfield-open' : '') +
-    (showSubfield && near ? ' subfield-near' : '') +
-    (showSubfield && nearLead ? ' subfield-near-lead' : '')
+    (showSubfield && reveal.near ? ' subfield-near' : '') +
+    (showSubfield && reveal.nearLead ? ' subfield-near-lead' : '')
 
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
@@ -187,24 +182,9 @@ export function DetailPane(): React.JSX.Element {
         paneEl = el
       }}
       onMouseMove={(e) => {
-        if (!showSubfield) return
-        if (!paneRect.current) {
-          paneRect.current = e.currentTarget.getBoundingClientRect()
-          leadEdge.current = leadOrigin(
-            e.currentTarget.querySelector('.footnotes-toggle'),
-            paneRect.current.left,
-          )
-        }
-        const r = paneRect.current
-        const low = e.clientY > r.bottom - REVEAL_NEAR_H
-        setNear(low && e.clientX > r.right - REVEAL_NEAR_W)
-        setNearLead(low && e.clientX < leadEdge.current + REVEAL_NEAR_W)
+        if (showSubfield) reveal.onMouseMove(e)
       }}
-      onMouseLeave={() => {
-        paneRect.current = null
-        setNear(false)
-        setNearLead(false)
-      }}
+      onMouseLeave={reveal.onMouseLeave}
     >
       <div ref={viewRef} className={frozen ? 'detail-pane-view is-frozen' : 'detail-pane-view'}>
         {hosts.map((h) => {
