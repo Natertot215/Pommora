@@ -14,6 +14,9 @@ import { fetchPageDetail, readPageDetail } from '../Tabs/warmCache'
 import { useSession } from '../store'
 import { PageEmbed } from './PageEmbed'
 import { CARD_MIN, hoverCardSize, seedHoverCardSize, setHoverCardSize } from './hoverCardSize'
+import { closeActiveHoverCard, presentHoverCard, setHoverCardPresenter } from './HoverCardPresenter'
+
+export { closeActiveHoverCard }
 
 // Contract: no dismiss backdrop and `manageFocus={false}` — a hover affordance must never eat
 // the next click or pull focus out of the editor. Mounted ONCE at app level; every host reaches
@@ -37,7 +40,7 @@ const inRect = (r: DOMRect, x: number, y: number): boolean =>
   y >= r.top - RECT_SLOP &&
   y <= r.bottom + RECT_SLOP
 
-type Hovered =
+export type Hovered =
   | { kind: 'page'; page: ConnPage; el: Element }
   | { kind: 'site'; url: string; el: Element }
 
@@ -64,8 +67,6 @@ function scrollGuest(
   }
 }
 
-let present: ((next: Hovered | null) => void) | null = null
-
 // Supersession token for the cold-page fetch: only the newest hover's resolve may open.
 let pendingFetch = 0
 
@@ -80,13 +81,13 @@ let pendingFetch = 0
 export function hoverConnection(page: ConnPage, el: Element): void {
   if (!el.isConnected) return
   if (readPageDetail(page.path)) {
-    present?.({ kind: 'page', page, el })
+    presentHoverCard({ kind: 'page', page, el })
     return
   }
   const token = ++pendingFetch
   void fetchPageDetail(page.path).then((detail) => {
     if (token !== pendingFetch || !detail) return
-    if (el.matches(':hover')) present?.({ kind: 'page', page, el })
+    if (el.matches(':hover')) presentHoverCard({ kind: 'page', page, el })
   })
 }
 
@@ -95,11 +96,7 @@ export function hoverWebsite(url: string, el: Element): void {
   if (!el.isConnected) return
   // Superseding any in-flight cold-page fetch — its late resolve must not steal this card.
   ++pendingFetch
-  present?.({ kind: 'site', url, el })
-}
-
-export function closeActiveHoverCard(): void {
-  present?.(null)
+  presentHoverCard({ kind: 'site', url, el })
 }
 
 export function ConnectionHoverCard(): React.JSX.Element {
@@ -202,7 +199,7 @@ export function ConnectionHoverCard(): React.JSX.Element {
 
   const retargetRaf = useRef(0)
   useEffect(() => {
-    present = (next) => {
+    setHoverCardPresenter((next) => {
       // A close or a newer target always beats a queued retarget — an uncanceled beat would
       // re-open the card right after the navigation that closed it.
       if (retargetRaf.current) {
@@ -234,9 +231,9 @@ export function ConnectionHoverCard(): React.JSX.Element {
         setSize(hoverCardSize()) // every open adopts the current universal size
       }
       setHovered(next)
-    }
+    })
     return () => {
-      present = null
+      setHoverCardPresenter(null)
       if (retargetRaf.current) cancelAnimationFrame(retargetRaf.current)
     }
   }, [])
@@ -271,7 +268,7 @@ export function ConnectionHoverCard(): React.JSX.Element {
   // The resolve deadline, measured from the open — a site that hasn't painted by then closes.
   useEffect(() => {
     if (hovered?.kind !== 'site' || siteReady) return
-    const deadline = setTimeout(() => present?.(null), LINK_RESOLVE_TIMEOUT_MS)
+    const deadline = setTimeout(() => presentHoverCard(null), LINK_RESOLVE_TIMEOUT_MS)
     return () => clearTimeout(deadline)
   }, [hovered, siteReady])
 
