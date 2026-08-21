@@ -29,7 +29,7 @@
 #### Next Session — Two Parallel Tracks
 
 1. **Finding the next thing to work on** — §Next-Feature Candidates in ContextPM, or wherever the day points. The footnotes Verification Checklist walk (plan document, eighteen lines) is still owed an eyeball, and the native right-click menu check with it.
-2. **The continuous codebase cleanup** — [[Codebase-Cleanup-Checklist]], Bundle 3 (the Subfield reads the editor's scan) next unblocked; 6a → 6b (the rehome, then Table hoisting) are the high-priority pair after. Any session starts it with "Run the next bundle from Codebase-Cleanup-Checklist."
+2. **The continuous codebase cleanup** — [[Codebase-Cleanup-Checklist]], 6a → 6b (the rehome, then Table hoisting) next and the high-priority pair; Bundle 4 and the store split follow. Any session starts it with "Run the next bundle from Codebase-Cleanup-Checklist."
 
 #### Feedback
 

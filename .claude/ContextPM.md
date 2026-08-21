@@ -6,7 +6,7 @@
 
 Two rulings settled it on 08-21. A change that would strand text after the citations section is **relocated** to the end of the body rather than shaped into continuation form, because the scan refuses any line a block construct starts and a list marker parses at any indent — the only shaping that holds is escaping characters the reader wrote, and a pasted footnote collapses to one paragraph for the same reason. And the setting keeps the name it shipped with, **Show Footnotes By Default**.
 
-The one construct the Subfield still counts as source is a Markdown table, and the reason is worth remembering: the counter computes its own document scan because it only ever receives a string. The editor already keeps one cached per document version, and the day those meet, the gap closes for free.
+The Subfield's counter reads the editor's own scan of the very text it holds, so a table counts as the prose its widget draws rather than as its pipes, and one document is scanned once no matter how many surfaces describe it.
 
 ### Immediate Work
 
@@ -14,7 +14,7 @@ The one construct the Subfield still counts as source is a Markdown table, and t
 Two tracks run in parallel:
 
 - [ ] **The next feature focus** — chosen from §Next-Feature Candidates, or wherever the day points; the footnotes Verification Checklist walk (plan document, eighteen lines) is still owed an eyeball.
-- [ ] The architecture-audit cleanup at [[Codebase-Cleanup-Checklist]] — session bundles carrying the audit's verified findings, the Boring Work items, and the cohesion queue's remainder, each with its own verification and the documentation entries it retires. Bundles 1 and 2 landed 08-21; Bundle 3 is next unblocked, with 6a → 6b the high-priority pair after. The evidence sits in [[Architecture Audit — Full-Codebase Report]].
+- [ ] The architecture-audit cleanup at [[Codebase-Cleanup-Checklist]] — session bundles carrying the audit's verified findings, the Boring Work items, and the cohesion queue's remainder, each with its own verification and the documentation entries it retires. Bundles 1, 2, and 3 landed 08-21; 6a → 6b are the high-priority pair next. The evidence sits in [[Architecture Audit — Full-Codebase Report]].
 
 ### Pending Focuses
 
@@ -74,7 +74,6 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 ### Known Issues
 
 - [ ] Connection suggestions omit the page the connection is being written into. The `[[` autocomplete drops the host page's own title from its candidates, so a page cannot be pointed at itself from its own body.
-- [ ] A Markdown table's pipes and delimiter row count as prose in the Subfield. The editor replaces a table's source with a widget, so a four-column table over-counts its words by well over half. Every other construct the editor draws differently now reads through the editor's own detectors; a table is the exception, because reading its regions needs a parse per candidate on a path that runs at every edit. It closes for free the day the Subfield can read the editor's cached document scan instead of computing its own.
 - [ ] On menu rows where property values are expected to be positioned horizontally rather than stacked vertically, there isn't currently a constraint on how far indented relative to its properties label itself; this makes multi-value property rows have its values land its left-side padding tight against the property label; its right-side overflow scroll is properly done, however the lack of left-side padding against the value itself makes the menus cramped. Multiple CSS tries have been applied and reverted; a pane-width-relative max-width that these values can take on the left side of its field needs to be determined. 
 - [ ] How MarkdownPMs headings are given their top-bottom padding is still unclear; what's standard paragraph → heading spacing on Obsidian collapses on Pommora where the block above the heading doesn't seem to have any additional padding, or it's at least extremely minimal compared to the padding that headings have below them. 
 
