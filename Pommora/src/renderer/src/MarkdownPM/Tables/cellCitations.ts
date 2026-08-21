@@ -10,11 +10,16 @@ import {
   type DecorationSet,
   type ViewUpdate,
 } from '@codemirror/view'
-import { RangeSetBuilder, type Extension } from '@codemirror/state'
+import { RangeSetBuilder, StateEffect, type Extension } from '@codemirror/state'
 import { tokenize } from '../tokens'
 import { CiteRefWidget } from '../editor/decorations'
 
 type OrdinalOf = (label: string) => number | null
+
+/** The document's numbering moved. A cell's own document is one cell, so no transaction this editor
+ *  can see ever says so — the host holding the whole-document answer says it instead, exactly as it
+ *  hands the resting cell a fresh key to compare. */
+export const citesChanged = StateEffect.define<null>()
 
 function marks(view: EditorView, ordinalOf?: OrdinalOf): DecorationSet {
   const text = view.state.doc.toString()
@@ -36,7 +41,8 @@ export function cellCitations(getOrdinalOf: () => OrdinalOf | undefined): Extens
         this.deco = marks(view, getOrdinalOf())
       }
       update(u: ViewUpdate): void {
-        if (u.docChanged) this.deco = marks(u.view, getOrdinalOf())
+        if (u.docChanged || u.transactions.some((tr) => tr.effects.some((e) => e.is(citesChanged))))
+          this.deco = marks(u.view, getOrdinalOf())
       }
     },
     { decorations: (v) => v.deco },

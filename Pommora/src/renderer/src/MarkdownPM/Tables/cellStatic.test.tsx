@@ -152,3 +152,39 @@ describe('a marker in a resting cell leads to its citation', () => {
     expect(container.querySelector('.cm-editor')).not.toBeNull()
   })
 })
+
+// The numbering is a whole-document fact and the cell's own document is one cell, so an OPEN cell has
+// no way to notice a renumber on its own. It has to be told, exactly as the resting cell is.
+describe('an entered cell follows the numbering too', () => {
+  it('redraws when the numbering moves while the cell is open', async () => {
+    await mount('NOTE=2')
+    const cell = [...container.querySelectorAll('.mdpm-tbl-cell-static')].find((el) =>
+      el.textContent?.includes('see'),
+    ) as HTMLElement
+    await act(async () => {
+      cell.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }))
+    })
+    const inEditor = (): (string | null)[] =>
+      [...container.querySelectorAll('.cm-editor .md-cite-ref')].map((el) => el.textContent)
+    expect(inEditor()).toEqual(['2'])
+    await act(async () =>
+      root.render(
+        createElement(TableView, {
+          model,
+          cites: 'NOTE=3',
+          onCellCommit: noop,
+          onExit: noop,
+          onReorder: () => false,
+          onResize: () => false,
+          onMenu: noop,
+          onTableDrag: noop,
+          onUndo: noop,
+          onRedo: noop,
+          onAppend: noop,
+          onCite: (label: string) => cited.push(label),
+        }),
+      ),
+    )
+    expect(inEditor()).toEqual(['3'])
+  })
+})
