@@ -4,16 +4,21 @@
 import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { openPage, resolveMdTarget, type ConnectionsApi } from '../connections'
-import { type MarkerRef, citationFor, lineEndOf } from '../detect'
+import { type MarkerRef, citationFor, lineEndOf, markersFor } from '../detect'
 import { linkTarget, tokenize } from '../tokens'
 import { docScan, docString, perDoc } from './docCache'
 import { followTarget } from './links'
 import { applyCitationAction, travelToCitation } from './citationActions'
+import { travelTo } from './travel'
 import { pointerHandlers, type PointerTarget } from './pointerPath'
 
 /** The drawn marker. THE selector for it — the hover gate, the click's hit-test and the resting
  *  table cell's own handler all ask for the same element. */
 export const CITE_GLYPH = '.md-cite-ref'
+
+/** The citation row's own number. Drawn over hidden source rather than written, so it is the one
+ *  element a press on the row can be aimed at. */
+export const CITE_ROW_GLYPH = '.md-cite-num'
 
 /** What a citation's whole content is, when that content is exactly ONE link or ONE Connection.
  *  Defined once — trailing text or a stray period means it is not that, and the click jumps to the
@@ -115,6 +120,45 @@ export function citationPointer(getApi: () => ConnectionsApi | undefined): Exten
         .then((action) => {
           if (action) applyCitationAction(view, action, { kind: 'marker', marker: hit.marker })
         }),
+  })
+}
+
+/** One citation row's number, and the label it answers for — read back on arrival like a marker's,
+ *  so nothing here holds a position the document may have moved since. */
+interface RowHit extends PointerTarget {
+  label: string
+}
+
+/** The row number under the pointer. The row's prefix is hidden and atomic, so a coordinate read
+ *  would land at the line's start whether the press hit the glyph or the text beside it; the drawn
+ *  element is the exact question, and the line it sits on names the citation. A dimmed row binds no
+ *  marker and leads nowhere, so its glyph is not a target. */
+function rowHitAt(view: EditorView, event: MouseEvent): RowHit | null {
+  const glyph = (event.target as HTMLElement).closest?.(CITE_ROW_GLYPH)
+  const line = glyph?.closest('.cm-line')
+  if (!line) return null
+  const from = view.posAtDOM(line)
+  const entry = docScan(view.state.doc).citations.entryAt.get(
+    view.state.doc.lineAt(from).number - 1,
+  )
+  if (!entry || entry.ordinal === null) return null
+  return { range: [from, from], onText: true, hidesSyntax: true, pos: from, label: entry.label }
+}
+
+/** The row number's gestures — the marker's, inverted: a body glyph leads to its citation, so a
+ *  citation's glyph leads back to the first marker bound to it. The row's whole-line right-press
+ *  stays `citationRowMenu`'s, so this arms no menu of its own. */
+export function citationRowPointer(): Extension {
+  return pointerHandlers<RowHit>({
+    hoverGate: CITE_ROW_GLYPH,
+    armable: () => false,
+    hitAt: rowHitAt,
+    follow: (hit, view) => {
+      const marker = markersFor(docScan(view.state.doc).citations, hit.label)[0]
+      return marker ? () => travelTo(view, marker.from) : null
+    },
+    dwell: () => null,
+    menu: () => null,
   })
 }
 
