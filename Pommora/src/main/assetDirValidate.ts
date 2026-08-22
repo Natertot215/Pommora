@@ -6,10 +6,9 @@ import { stat } from 'node:fs/promises'
 import type { Stats } from 'node:fs'
 import { join } from 'node:path'
 import { fail, ok, type Result } from '@shared/result'
-import { NON_CORPUS_TOP } from '@shared/nexusPaths'
-import { normalizeSeg } from './exclusion'
 import { isMarkdownFile, listEntries } from './io/walk'
 import { resolveUnderRoot } from './pathSafety'
+import { assetDirRefusal } from './readNexus'
 import { SIDECARS, relPosix } from './paths'
 
 /** The nexus-relative POSIX path of a folder fit to hold assets, or the reason it is not. Selection
@@ -20,8 +19,10 @@ export async function validateAssetDir(root: string, abs: string): Promise<Resul
   if (!rel) return fail('invalid-path', 'The nexus root itself cannot hold assets.')
   const resolved = await resolveUnderRoot(root, rel)
   if (!resolved.ok) return resolved
-  if (NON_CORPUS_TOP.has(normalizeSeg(rel.split('/')[0])))
-    return fail('invalid-path', 'That folder belongs to the app.')
+  // Asked of the reader that owns the rule, not restated: a folder the reader would coerce back
+  // to the default is one the setting cannot name, however the dialog spelled it.
+  const refusal = assetDirRefusal(rel)
+  if (refusal) return fail('invalid-path', refusal)
   let stats: Stats
   try {
     stats = await stat(resolved.value)

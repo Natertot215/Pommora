@@ -26,7 +26,7 @@ import { readNavigationFile, writeNavigationState } from './io/navigationFile'
 import { AMBIGUOUS, buildAssetMap, refreshAssetMap, resolveAssetName } from './assetMap'
 import { writeAssetFile } from './assetWrite'
 import { corpusFiles, listEntries, listFilesRecursive } from './io/walk'
-import { NEXUS_CONFIG_FILES, SIDECARS, nexusConfig } from './paths'
+import { NEXUS_CONFIG_FILES, SIDECARS, assetsDir, nexusConfig } from './paths'
 import { readWatchScope, updateSettings } from './settings'
 import { basenameNoMd } from './coerce'
 
@@ -215,7 +215,7 @@ export async function migrateAssets(root: string): Promise<AssetMigration | null
 
 /** Empty `.nexus/assets` through the trash, so nothing this pass moved is unrecoverable. */
 async function sweepLegacyRoot(root: string): Promise<number> {
-  const dir = join(root, ...ASSETS_DIR_REL.split('/'))
+  const dir = assetsDir(root, ASSETS_DIR_REL)
   const files = await listFilesRecursive(dir)
   for (const abs of files) await trashFileFlat(root, abs)
   for (const entry of await listEntries(dir)) {

@@ -4,6 +4,7 @@
 
 import { join, relative, sep } from 'node:path'
 import { CONTEXTS_DIR_REL, CONTEXTS_REGISTRY_REL, NEXUS_DIR } from '@shared/nexusPaths'
+import { rootSegs } from './exclusion'
 
 /** A path under `root`, spelled the way every key in the app spells one: nexus-relative and
  *  POSIX, whatever separator the platform handed back. */
@@ -46,7 +47,7 @@ export function contextsRegistryFile(root: string): string {
 /** The configured asset root, absolute. The value is nexus-relative POSIX, validated at the
  *  reader, so it joins the same way every other relative path here does. */
 export function assetsDir(root: string, assetDir: string): string {
-  return join(root, ...assetDir.split('/'))
+  return join(root, ...rootSegs(assetDir))
 }
 
 export function contextsDir(root: string): string {
