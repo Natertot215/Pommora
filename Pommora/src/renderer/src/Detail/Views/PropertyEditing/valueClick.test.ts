@@ -59,8 +59,19 @@ describe('sharedValueClickAction', () => {
     })
   })
 
-  it('number/url/file/title fall through to the surface tail', () => {
-    for (const t of ['number', 'url', 'file', 'last_edited_time', undefined])
+  it('number/url/title fall through to the surface tail', () => {
+    for (const t of ['number', 'url', 'last_edited_time', undefined])
       expect(sharedValueClickAction(t, undefined, { kind: 'null' }, undefined)).toBeNull()
+  })
+
+  it('a file value names the dialog — one arm for the table, the cards and both panes', () => {
+    // Which label was clicked is a hit-test fact the surface supplies; a pure router can only say
+    // that this click opens the dialog.
+    expect(sharedValueClickAction('file', undefined, { kind: 'null' }, undefined)).toEqual({
+      kind: 'file',
+    })
+    expect(
+      sharedValueClickAction('file', undefined, { kind: 'file', value: ['[[a.pdf]]'] }, undefined),
+    ).toEqual({ kind: 'file' })
   })
 })

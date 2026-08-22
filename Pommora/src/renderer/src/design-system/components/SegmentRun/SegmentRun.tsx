@@ -12,6 +12,8 @@ export interface SegmentEntry {
   icon?: React.ReactNode | false
   /** Opts this entry into the hover-×. It removes THIS entry, so the handler owns what that means. */
   onRemove?: () => void
+  /** Opts this entry into a click of its own — a file label opens the dialog at its own folder. */
+  onClick?: () => void
   /** The entry names something that isn't there. It still renders, reading as naming nothing. */
   unresolved?: boolean
 }
@@ -40,7 +42,9 @@ export function SegmentRun({
             ) : (
               <span className={sr.segmentDivider} />
             ))}
-          <span className={sr.segment}>
+          {/* Its position, so a surface can hit-test which entry a click or a right-click landed
+              on without the run growing a callback per gesture. */}
+          <span className={sr.segment} data-segment-index={i}>
             <FileLabel
               name={e.label}
               // A nested run is a PATH: its segments are folders, not file types, and it carries
@@ -48,6 +52,7 @@ export function SegmentRun({
               // deriving one per segment.
               icon={e.icon ?? (nested ? false : undefined)}
               {...(e.onRemove ? { onRemove: e.onRemove } : {})}
+              {...(e.onClick ? { onClick: e.onClick } : {})}
               {...(e.unresolved ? { unresolved: true } : {})}
             />
           </span>

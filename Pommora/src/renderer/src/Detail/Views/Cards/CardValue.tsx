@@ -17,6 +17,7 @@ import type { ResolveContext } from '../Table/resolveContext'
 import { PropertyEditor } from '../PropertyEditing/PropertyEditor'
 import { numberDivisor } from '../PropertyEditing/formatValue'
 import { sharedValueClickAction } from '../PropertyEditing/valueClick'
+import { fileChipIndex, runFilePick } from '../PropertyEditing/filePick'
 
 export function CardValue({
   row,
@@ -60,8 +61,8 @@ export function CardValue({
   const t = column.kind === 'context' ? 'context' : dt
   const v = resolveFieldValue(row, column.id, ctx.schema)
   const schemaDef = ctx.schema.find((d) => d.id === column.id)
-  // Kinds a click on a blank value fills in place (picker / calendar / editor). A checkbox draws its own
-  // box; file/last-edited have no fill path — no "Empty" affordance for them (it would be a dead click).
+  // Kinds a click on a blank value fills in place (picker / calendar / editor / dialog). A checkbox
+  // draws its own box; last-edited has no fill path — no "Empty" affordance for it (a dead click).
   const canFillBlank =
     t === 'status' ||
     t === 'select' ||
@@ -69,7 +70,8 @@ export function CardValue({
     t === 'context' ||
     t === 'datetime' ||
     t === 'number' ||
-    t === 'url'
+    t === 'url' ||
+    t === 'file'
 
   const onClick = (e: React.MouseEvent): void => {
     if (e.ctrlKey) return // macOS secondary-click — let the context menu win
@@ -86,7 +88,13 @@ export function CardValue({
     const shared = sharedValueClickAction(t, style.look, v, schemaDef)
     if (shared) {
       if (shared.kind === 'commit') commit(shared.value)
-      else openPicker(shared.kind)
+      // A file value is filled through the OS dialog, not a picker anchored to this card.
+      else if (shared.kind === 'file') {
+        if (schemaDef)
+          void runFilePick(schemaDef, v, fileChipIndex(e.target)).then((next) => {
+            if (next !== undefined) commit(next)
+          })
+      } else openPicker(shared.kind)
     } else if (t === 'number') {
       setMode('editor')
     } else if (t === 'url') {
@@ -94,7 +102,6 @@ export function CardValue({
       // the rendered anchor inside LinkCell, which stops propagation before this handler.
       openPicker('link')
     }
-    // file: each chip opens its own file (Cell's file branch stops propagation) — no dispatch here.
   }
 
   // The view's ghost stands down while this value's native menu owns the pointer.

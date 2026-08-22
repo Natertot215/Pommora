@@ -29,12 +29,14 @@ Configuration reads at three scopes. A **[[ArchitecturePM|Nexus]]** is configure
 The Nexus' primary settings are placed on a floating window summoned from the sidebar ribbon's settings glyph, mounted on the shared **PreviewPane** surface — inheriting its glass shell, geometry, and dismissal behavior.
 
 #### General
+
 | Setting | Key | Description | Options |
 | -- | -- | ----- | --- |
 | Date Format | `dateFormat` | The date format that every interface without one of its own takes. | MM/DD/YYYY · DD/MM/YYYY · Short Date · **Full Date** · Relative |
 | Time Format | `timeFormat` | The Nexus's clock, wherever a time renders. | **12 Hours** · 24 Hours |
 
 #### Interface
+
 | Setting | Key | Description | Options |
 | ------------------------------------ | ---------------------------------- | ------------------------------------------------------------------------------------------------- | ------------ |
 | Hide Disclosure Chevrons | `hideChevrons` | Collapses the sidebar's chevron gutter. | On · **Off** |
@@ -44,12 +46,14 @@ The Nexus' primary settings are placed on a floating window summoned from the si
 | Embed Scale | `embedScale` | The scale embedded pages and views start at; a block's own toggle compounds it. A second press on the control types any scale within the range. | 50%–150% (**90%**) |
 
 **Webpages**
+
 | Setting | Key | Description | Options |
 | --------------------- | ---------------- | ------------------------------------------------------------------- | ------------------- |
 | Open Links In Pommora | `openLinksInApp` | External links open the floating browser instead of the system one. | On · **Off** |
 | Webpage Zoom | `webZoomFactor` | How embedded webpages scale, relative to the window. A second press on the control types any scale within the range. | 50%–150% (**100%**) |
 
 #### Navigation
+
 | Setting | Key | Description | Options |
 | --------------------------- | ----------------------------------------- | ----------------------------------------------------------------------------------------- | ----------------------- |
 | Close Navigation On Select | `navCloseOnSelect` | Picking an entity dismisses the Navigation window. | **On** · Off |
@@ -70,23 +74,27 @@ The three colors the interface derives from. Each opens the ramp grid without it
 #### Files & Links
 
 **Pasted Links**
+
 | Setting | Key | Description | Options |
 | --------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------- | --------------------------------------- |
 | Default Format | `defaultLinkFormat` | Which form a pasted address is written in. | **Full Link** · Short Link · Page Title |
 | Paste Link Into Text | `pasteLinkIntoText` | Pasting an address over selected text turns that text into the link instead of replacing it. | On · **Off** |
 
 **Connections**
+
 | Setting | Key | Description | Options |
 | --- | --- | --- | --- |
 | Remove Title On Link Change | `removeTitleOnLinkChange` | Pointing a connection at another page drops the alias it was wearing. | **On** · Off |
 | Automatically Suggest Existing Aliases When Linking A Page | `aliasPickerOnCommit` | Accepting a page from the connection picker offers the names it already carries. | **On** · Off |
 
 **Assets**
+
 | Setting | Key | Description | Options |
 | --- | --- | --- | --- |
 | Default Asset Directory | `asset_directory` | Where inherited assets, images, and other file types will be stored. | Any folder in the Nexus · **`.nexus/assets`** |
 
 **Deletion**
+
 | Setting | Key | Description | Options |
 | --- | --- | --- | --- |
 | Permanently Delete Files | `permanentDelete` | Erases an emptied item from the computer rather than handing it to the system trash. | On · **Off** |
@@ -94,11 +102,13 @@ The three colors the interface derives from. Each opens the ramp grid without it
 #### Properties
 
 Seated and empty.
+
 | Setting | Key | Description | Options |
 | ------- | --- | ----------- | ------- |
 |         |     |             |         |
 
 #### Pages & Editor
+
 | Setting                        | Key                  | Description                                             | Options      |
 | ------------------------------ | -------------------- | ------------------------------------------------------- | ------------ |
 | Editor Scale                   | `editorScale`        | How large a page reads — its text, its title, and the chrome around them. An embedded page keeps its own scale. | 50%–150% · **100%** |
@@ -114,6 +124,7 @@ Seated and empty.
 #### Automations
 
 Seated and empty.
+
 | Setting | Key | Description | Options |
 | ------- | --- | ----------- | ------- |
 |         |     |             |         |
@@ -131,6 +142,7 @@ Keyboard shortcuts are data, not code: the `commands` object in `.nexus/settings
 #### Trash
 
 The one surface leaf, anchored below the rail's separator. Its body is the deletion record's browser[^2] rather than a list of rows, and the column's own heading menu carries its two display knobs.
+
 | Setting | Key | Description | Options |
 | --- | --- | --- | --- |
 | Date Format | `trashDateFormat` | How the browser writes a deletion's date. Unset, it follows the Nexus's own date form. | Short Date · Full Date |
@@ -139,6 +151,7 @@ The one surface leaf, anchored below the rail's separator. Its body is the delet
 ### Collections
 
 A Collection's own configuration, stored in its `_pagecollection.json` sidecar and set from the collection's Configuration pane. A Set carries the same keys in `_pageset.json` at any depth, except `open_in`, which is Collection-owned and proxied by its Sets.
+
 | Setting | Key | Description | Options |
 | --------------- | ---------------- | -------------------------------------------------------------------- | ---------------------------- |
 | Open In | `open_in` | How a page opens from its container. | **Full Page** · Page Preview |
@@ -150,6 +163,7 @@ The sidecar's remaining fields are structure rather than configuration: the enti
 ### Pages
 
 A page's frontmatter carries its identity and property values; its configuration is not yet documented here.
+
 | Setting | Key | Description | Options |
 | ------- | --- | ----------- | ------- |
 |         |     |             |         |
