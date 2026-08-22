@@ -1,9 +1,8 @@
 import { forwardRef } from 'react'
-import { useSession } from '../store'
+import { useAssetUrl, useSession } from '../store'
 import { useBannerMenu } from '../Detail/Banner/useBannerMenu'
 import { AddBannerButton } from '../Detail/Banner/AddBannerButton'
 import { DetailTitleHeader } from '../Detail/DetailTitleHeader'
-import { assetUrl } from '../assetUrl'
 
 /** What the header draws. Passed as one object rather than five props, so the surfaces that host an
  *  editor — the page view, the floating preview, an embedded tile — hand over the page they are
@@ -37,6 +36,7 @@ export const PageHeader = forwardRef<HTMLDivElement, Props>(function PageHeader(
   ref,
 ) {
   const { path, title, cover, icon, iconHidden } = page
+  const coverSrc = useAssetUrl()(cover)
   const reloadPage = useSession((s) => s.reloadPage)
   const { openMenu: bannerMenu, addOrChange } = useBannerMenu(path, 'page', () => void reloadPage())
 
@@ -53,8 +53,8 @@ export const PageHeader = forwardRef<HTMLDivElement, Props>(function PageHeader(
   )
 
   return (
-    <div className={`mdpm-header${cover ? ' has-banner' : ''}`} ref={ref}>
-      {cover ? (
+    <div className={`mdpm-header${coverSrc ? ' has-banner' : ''}`} ref={ref}>
+      {coverSrc ? (
         // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
         <div
           className="mdpm-banner"
@@ -63,7 +63,7 @@ export const PageHeader = forwardRef<HTMLDivElement, Props>(function PageHeader(
             void bannerMenu()
           }}
         >
-          <img className="mdpm-banner-img" src={assetUrl(cover)} alt="" />
+          <img className="mdpm-banner-img" src={coverSrc} alt="" />
           <div className="mdpm-banner-overlay">{titleHeader}</div>
         </div>
       ) : (

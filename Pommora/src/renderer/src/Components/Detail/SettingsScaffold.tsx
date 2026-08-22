@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { useSession } from '../../store'
+import { useAssetUrl, useSession } from '../../store'
 import { DEFAULT_NEXUS_ICON, Icon } from '../../design-system/symbols'
 import { InteractionField } from '../../design-system/components/InteractionField'
 import { MenuBottomRow, MenuScrollFrame } from '../../design-system/components/menu'
@@ -8,7 +8,7 @@ import { IconPicker } from '../IconPicker'
 import { PhotoCropModal } from '../PhotoCropModal'
 import { useNexusIcon } from '../useNexusIcon'
 import { blockHostKey, type BlockHostRef } from '@shared/blocks'
-import { assetUrl } from '../../assetUrl'
+
 import * as s from './settingsPane.css'
 
 const HOMEPAGE_HOST: BlockHostRef = { kind: 'homepage' }
@@ -33,9 +33,9 @@ export function SettingsScaffold(): React.JSX.Element | null {
     selectGlyph,
   } = useNexusIcon()
   const iconRef = useRef<HTMLButtonElement>(null)
+  const photoUrl = useAssetUrl()(profileImage)
   if (!tree || selection.kind !== 'homepage') return null
 
-  const photoUrl = profileImage ? assetUrl(profileImage) : null
   return (
     <>
       <MenuScrollFrame

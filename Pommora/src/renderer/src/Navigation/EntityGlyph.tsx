@@ -1,8 +1,8 @@
 import { Icon } from '@renderer/design-system/symbols'
 import { ICON_PX, type IconSize } from '@renderer/design-system/tokens/size.css'
 import { cx } from '@renderer/design-system/cx'
-import { assetUrl } from '../assetUrl'
-import { useSession } from '../store'
+
+import { useAssetUrl, useSession } from '../store'
 import type { ResolvedNav } from './navResolve'
 import './entityGlyph.css'
 
@@ -18,15 +18,15 @@ export function EntityGlyph({
   size: IconSize
   className?: string
 }): React.JSX.Element {
-  const profileImage = useSession((s) => s.tree?.nexus.profileImage ?? null)
+  const photoSrc = useAssetUrl()(useSession((s) => s.tree?.nexus.profileImage ?? null))
   // The photo branch sizes an element rather than a font, so it needs the step's pixel value.
   const px = ICON_PX[size]
-  if (item.kind === 'homepage' && profileImage) {
+  if (item.kind === 'homepage' && photoSrc) {
     return (
       <img
         className={cx('entity-glyph-photo', className)}
         style={{ width: px, height: px }}
-        src={assetUrl(profileImage)}
+        src={photoSrc}
         alt=""
       />
     )

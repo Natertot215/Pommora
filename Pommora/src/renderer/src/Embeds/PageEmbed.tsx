@@ -7,12 +7,12 @@ import type { ConnectionsApi } from '@renderer/MarkdownPM/connections'
 import { nativeEditorMenu } from '@renderer/MarkdownPM/editor/menu'
 import { flushPageSave, schedulePageSave } from '@renderer/Detail/pageFlush'
 import { fetchPageDetail, readPageDetail } from '@renderer/Tabs/warmCache'
-import { useEmbedScale, useSession } from '../store'
+import { useAssetUrl, useEmbedScale, useSession } from '../store'
 import { useBannerMenu } from '../Detail/Banner/useBannerMenu'
 import { NavCrumbs } from '../Navigation/NavList'
 import { resolveWith } from '../Navigation/navResolve'
 import { resolveIndexOf } from '../treeIndex'
-import { assetUrl } from '../assetUrl'
+
 import './embeds.css'
 import { embedZoom } from '@shared/types'
 
@@ -179,8 +179,10 @@ function EmbedBanner({
   title: string
   cover: string
   onChanged: () => void
-}): React.JSX.Element {
+}): React.JSX.Element | null {
   const { openMenu: bannerMenu } = useBannerMenu(path, 'page', onChanged)
+  const coverSrc = useAssetUrl()(cover)
+  if (!coverSrc) return null
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control
     <div
@@ -190,7 +192,7 @@ function EmbedBanner({
         void bannerMenu()
       }}
     >
-      <img className="mdpm-banner-img" src={assetUrl(cover)} alt="" />
+      <img className="mdpm-banner-img" src={coverSrc} alt="" />
       <div className="mdpm-banner-overlay">
         <span className="detail-title-text">{title}</span>
       </div>
