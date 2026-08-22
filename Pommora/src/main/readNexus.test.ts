@@ -7,6 +7,7 @@ import {
   readNexus,
   readPersonalization,
   readSettingsLeaves,
+  scopeOf,
   splitFrontmatter,
 } from './readNexus'
 import { ASSETS_DIR_REL } from '@shared/nexusPaths'
@@ -448,7 +449,7 @@ describe('readNexus — the asset root leaves the tree and the corpus together',
     const root = build('file-assets')
     try {
       const tree = await readNexus(root)
-      const scope = { excluded: tree.excluded, assetDir: tree.assetDirectory }
+      const scope = scopeOf(tree)
       const corpus = await corpusFiles(root, scope)
       const visible = tree.collections.map((c) => c.path)
       for (const gone of ['file-assets', 'Archive']) {
@@ -470,10 +471,7 @@ describe('readNexus — the asset root leaves the tree and the corpus together',
     const root = build('Media')
     try {
       const tree = await readNexus(root)
-      const corpus = await corpusFiles(root, {
-        excluded: tree.excluded,
-        assetDir: tree.assetDirectory,
-      })
+      const corpus = await corpusFiles(root, scopeOf(tree))
       expect(tree.collections.map((c) => c.path)).toContain('file-assets')
       expect(corpus).toContain('file-assets/note.md')
     } finally {
