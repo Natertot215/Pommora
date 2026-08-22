@@ -78,6 +78,7 @@ import {
 import { forwardRef } from 'react'
 import type { EntityIconKind } from '@shared/types'
 import { CardsGrid, ListRounded, LockSolid, ProgressCheck } from './customGlyphs'
+import { fileTypeGlyphs } from './fileTypes'
 import { lucideGlyph } from './AllSymbols'
 import { size as sizeTokens, type IconSize } from '../tokens/size.css'
 
@@ -163,6 +164,8 @@ export const icons = {
   'progress-check': ProgressCheck,
   'columns-3-cog': Columns3Cog,
   lock: LockSolid,
+  // The per-extension file glyphs, spread from one roster rather than listed here — see fileTypes.ts.
+  ...fileTypeGlyphs,
 } satisfies Record<string, LucideIcon>
 
 export type IconName = keyof typeof icons

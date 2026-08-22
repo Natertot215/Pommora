@@ -46,12 +46,16 @@ export const CardsGrid = forwardRef<SVGSVGElement, LucideProps>(
 ) as unknown as LucideIcon
 
 /** Tabler's progress-check (the Status type glyph), scaled up to sit at Lucide's visual size. */
-const TablerProgressCheck = IconProgressCheck as unknown as LucideIcon
-export const ProgressCheck = forwardRef<SVGSVGElement, LucideProps>(
-  ({ size = 24, ...rest }, ref) => (
-    <TablerProgressCheck ref={ref} size={scaleTabler(size)} {...rest} />
-  ),
-) as unknown as LucideIcon
+/** Wrap a Tabler glyph so it renders at the curated set's visual size. Every Tabler adoption goes
+ *  through here — the scale is one fact, not one per glyph. */
+export const asTablerGlyph = (glyph: LucideIcon): LucideIcon => {
+  const Tabler = glyph as unknown as LucideIcon
+  return forwardRef<SVGSVGElement, LucideProps>(({ size = 24, ...rest }, ref) => (
+    <Tabler ref={ref} size={scaleTabler(size)} {...rest} />
+  )) as unknown as LucideIcon
+}
+
+export const ProgressCheck = asTablerGlyph(IconProgressCheck as unknown as LucideIcon)
 
 // The lock (a supplied glyph) — solid rounded body + thick shackle, drawn to the
 // reference image's proportions (body ~15/24 wide, shackle stroke ~2.6). Fill-based.
