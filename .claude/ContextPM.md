@@ -2,19 +2,14 @@
 
 ### Current Focus
 
-**Footnotes are built and have been verified against the running application.** MarkdownPM reads and writes GFM reference footnotes end to end: every gate green, a correctness review, a neutral verification, an attack pass, a closing duplication-and-bloat review and an interaction pass driven against the live nexus each answered, and both flagged decisions ruled on. Every claim the feature makes is stated in [[Footnotes — Implementation Plan]] §Interaction Pass with the one observation that would falsify it, and the result observed. The Verification Checklist in that document is the reader's own walkthrough, and the native right-click menu's pop is the one behavior a driven pass cannot reach. 
+**Part 1 of the file-based arc shipped: the asset directory is the user's to choose.** `asset_directory` sits beside `excluded_folders` as a top-level settings key and travels with it as one `WatchScope`, so the walk, the corpus, the watcher's ignore and the classifier all learn the root from a single value — and the asset test runs ahead of every other skip, which is what lets a folder already listed in `excluded_folders` deliver events at all. A stored image is named the way Obsidian names one: `[[Banner.png]]`, resolved renderer-side against a filename map main holds and pushes, with a raw path and a web address passing through untouched. The live nexus points at `file-assets/`, `.nexus/assets` holds nothing but regenerated thumbnails, and all 45 page covers resolve where 44 of them rendered nothing before.
 
-Two rulings settled it on 08-21. A change that would strand text after the citations section is **relocated** to the end of the body rather than shaped into continuation form, because the scan refuses any line a block construct starts and a list marker parses at any indent — the only shaping that holds is escaping characters the reader wrote, and a pasted footnote collapses to one paragraph for the same reason. And the setting keeps the name it shipped with, **Show Footnotes By Default**.
-
-The Subfield's counter reads the editor's own scan of the very text it holds, so a table counts as the prose its widget draws rather than as its pipes, and one document is scanned once no matter how many surfaces describe it.
+**The architecture-audit cleanup continues.** Bundles 1, 2 and 3 landed 08-21; 6a → 6b are the high-priority pair next, and the evidence sits in [[Architecture Audit — Full-Codebase Report]] with the session-sized work at [[Codebase-Cleanup-Checklist]].
 
 ### Immediate Work
 
-
-Two tracks run in parallel:
-
-- [ ] **The next feature focus** — chosen from §Next-Feature Candidates, or wherever the day points; the footnotes Verification Checklist walk (plan document, eighteen lines) is still owed an eyeball.
-- [ ] The architecture-audit cleanup at [[Codebase-Cleanup-Checklist]] — session bundles carrying the audit's verified findings, the Boring Work items, and the cohesion queue's remainder, each with its own verification and the documentation entries it retires. Bundles 1, 2, and 3 landed 08-21; 6a → 6b are the high-priority pair next. The evidence sits in [[Architecture Audit — Full-Codebase Report]].
+- [ ] The architecture-audit cleanup at [[Codebase-Cleanup-Checklist]] — bundles 6a → 6b, each carrying its own verification and the documentation entries it retires.
+- [ ] **Part 2 and Part 3 of the file-based arc** — `PhotoCropModal` widened past the nexus icon so banners, cards and other media can be cropped through it, and the `file` property type given real values. Either can lead; Part 3's `FileRef` is what the asset map was shaped around.
 
 ### Pending Focuses
 
@@ -49,7 +44,7 @@ The structural moves — each a session of its own, each verified by something a
 - [ ] **View QuickFilter:** A dropdown or toggle that holds single-property filtering options; the recently added ActionBand would be its natural placement for SurfacePM embeds, and the Subfield is an initial idea for where this could be placed in full-detail views.
 - [ ] **Auto-Linter:** A MarkdownPM, nexus-level-configurable auto-linter that could place its action button in the subfield, or an approved command combination.
 - [ ] **Per-tab Subfield `crumbDepth`**, if cross-tab tail memory is ever wanted. It resets on tab switch today (correct, no leak); a per-tab field would let each tab remember its own dimmed tail across switches — a feature, not a fix.
-- [ ] **Files & Assets:** Rework the `assets` directory to become user-definable, and allow its content to be stored as cross-compatible `[[connection]]` formatting; asset-designated folders would be used for banners and be the default for immediate file-embedding location from an external source; file as a property type would then be given a per-property directory option for where those would be stored. Any asset-designated directory would need exclusion *outside* the primary exclusions list. 
+- [ ] **Files & Assets, Parts 2 and 3:** the crop surface widened past the nexus icon, and `file` as a property type — where a `FileRef` is a user-typed path anywhere in the nexus rather than a basename under the asset root, so it needs a path arm the name arm does not supply, and a per-property directory option for where its values are stored.
 
 ### Important Information
 
@@ -78,6 +73,10 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 
 ### Recent Work
 
+#### PM-112 || Variable Asset Directories
+
+The nexus asset directory became a folder the user picks, and a stored image became an ordinary named file in it. A banner keeps whatever name it had on disk and is named from Pommora by `[[That File.png]]`, which is the same reference Obsidian writes — so one folder serves both applications and neither owns it. Resolution is renderer-side against a map main patches from watch events and pushes, which is what makes a file arriving in a synced folder repaint what names it without a walk; nothing is persisted about an asset but its filename, so a sync eviction and re-download is a non-event and an external rename phantoms rather than being chased. The live nexus migrated: every reference the old writer minted moved out of `.nexus/assets`, byte-identical copies collapsed to one, invented `banner-<token>` names were replaced by their owners', and the folder was emptied through the trash. A replace now deletes only what Pommora minted under its own root — the configured folder is the user's, and a file there may be referenced from a note this app cannot see.
+
 #### PM-111 || Footnotes
 
 MarkdownPM reads and writes GFM reference footnotes: markers in the body, a trailing run of citations at the document's end, plain GFM left on disk. The section's boundary is derived once and read by every layer that needs it, which is what lets a marker draw the number its position earns rather than the label it carries, and lets the counter exclude a section the editor is drawing. The section hides behind a per-page override that the Subfield's control and the divider both write, and every creation and deletion ends with a single dispatch that renumbers the labels, reorders the rows, and reverts the whole on one undo. A transaction-layer guard relocates any change that would leave text standing after the section, that being the one edit which turns every citation on the page back into literal text; whitespace alone is refused rather than relocated. The section's disclosure is one-page-keyed: the Subfield's control, the divider, a marker jump, the floating preview, and a hover card all resolve and write, so a page draws the same way wherever it is shown.
@@ -93,10 +92,6 @@ The chip palette became a grid: `tokens/ramp.ts` owns what a color is — eight 
 #### PM-108 || Webpage Integration
 
 The editor embeds live websites the way it embeds Pages. A markdown link on its own line, with an explicit scheme, renders as a live tile in the shared embed framework — the bytes remain plain CommonMark, and formatting waits until the selection leaves the line. One main-process module governs every guest (the attach validator, the popup router that opens no OS window, the navigation scheme gate, and the zoom sync), and one renderer adjudicator decides where every external link opens, guest popups included. A guest is live only while its tile is fully visible, because a partially clipped webview paints outside its own box; a clipped tile keeps its last captured frame, and scrolled-out guests hide under a capped retention rather than unmounting. The in-app browser is a flavor of the floating preview window, and a dwell on a website link raises the shared hover card as a live render of the site that takes no clicks but scrolls, its wheel replayed into the guest from the main process. All surfaces share one persistent partition, so a sign-in anywhere authenticates everywhere per machine — there is no management surface by decision; the session simply remembers.
-
-#### PM-107 || Settings' Scaffolding
-
-The Settings window gained the foundation settings that accumulate into: one roster replacing the rail list and body map that were keyed by the same name, where a leaf declares its label, glyph, foot placement, and either named sections of rows or a surface of its own — never both, enforced at compile time. The rail seats General, Interface, Navigation, Appearance, Files & Links, Properties, Pages & Editor, Automations and Shortcuts, with Trash anchored below its separator; Appearance, Properties and Automations are seated and empty. Two settings joined the personalization block — `dateFormat`, the live fallback every date renders through unless its column names one, entering at `defaultStyleFor` where the `url` arm already reads a setting rather than a constant; and `timeFormat`, relocated out of the settings file's top level, which retired the tree's own copy once its readers moved to the store slice. Underneath, the shared floating window learned to carry a pane on either edge at once and to move its own edge outward by that pane's width when one opens, so a second pane never squeezes what the first left.
 
 ### Guidelines
 

@@ -1,68 +1,62 @@
 ## Handoff — Pommora
 
-> **User Prompt:** *"You do NOT guess — you LOOK, and you ASK. Open the file and read the code before you assert anything; ask me when you're unsure. A plan built on an unverified claim is a liability, not progress — treat every doc, every `file:line`, every 'it works like X' as a hypothesis until you've read the code that proves it. Honesty over confidence; confidence is earned through evidence."*
+> **User Prompt:** *"This plan must end-to-end go through this entire cycle once the post-compact prompt is given back to you as I'm going to bed and will not be able to provide any input. I'm connected via remote control so I will be able to see the screenshot confirmation of banner behavior which is REQUIRED for you to confirm. If you need to restart my process, do it. Nothing should hold you back from doing what you need to do."*
 
 #### Current Focus
 
-**Session ID:** 3e3b1d3a-51d4-4651-905c-daa38b8c0e63
-**Date:** 08-21-2026
-**Model:** Fable 5
+**Session ID:** 8febb642-49c6-4227-8a0b-60e3419392a7
+**Date:** 08-21-2026 → 08-22
+**Model:** Opus 5
 
-**The whole-codebase architecture audit ran, and its verdict is no rebuild — of anything.** Six parallel domain audits (data core, process boundary, MarkdownPM, view layer, design system, shell) each independently landed on healthy, every load-bearing claim re-verified at its cited lines before acceptance. The finding record is [[Architecture Audit — Full-Codebase Report]]; the work it produced is [[Codebase-Cleanup-Checklist]] — eight session bundles, each with verification and the documentation entries it retires, run under a fixed cycle: block → execution → full review → checklist + scrub → report → continuation prompt. `ArchitecturePM.md` was rewritten as the whole-app architecture guide, and `Cohesive-Cleanup.md` retired (queue absorbed into the bundles, sweep records moved to [[Cohesion-Rulings]]).
+**Part 1 of the file-based arc shipped whole, across five phases, and the migration ran against the live nexus.** `asset_directory` is a top-level settings key the user picks from Settings › Files & Links, validated rather than restricted — any folder inside the nexus that holds no page and no sidecar anywhere in its subtree. It is `excluded_folders`' twin, so the two travel as one `WatchScope` through the walk, the corpus, chokidar's ignore and the classifier, and the asset test runs ahead of every other skip; without that ordering a folder already named in `excluded_folders` — which Nathan's `file-assets` was — delivers no events at all. A dedicated `asset` classifier arm is what keeps 50 images landing in a synced folder from forcing 50 whole-nexus walks.
 
-**Bundle 1 landed the same day, full cycle.** Seven fixes: the four `raw`-registered write channels enveloped; a shared journal-slot primitive with the slot law both crash journals now share — plus a `supersedes` arm the attack pass demanded, or a rename-back would replay the abandoned rename at every open; the select/status option twins parameterized; block tiles resolving their Space host from the live tree with a stale-folder guard; Cards' structural drag writing canonical `page_order` location-scoped, with a `resolveIndex` seam on `DragGroup` so a cross-location landing displaces nothing and flies home; card column-styles applying optimistically; Table's column readers fully memoized. 
+A stored image is now named the way Obsidian names one. `assetMap.ts` holds a filename→paths listing main builds once, patches from watch events and pushes; `resolveAssetValue` reads the three spellings a value can wear — an `[[Name.png]]` wikilink, a raw path, a web address — and the picker hands back a path so `adoptImageAsset` copies a chosen file in under its own basename, or references it where it already sits. The profile photo is the one exception and stays bytes: it is a crop, not a chosen file, so it writes the singleton `nexus-icon.png` and rewrites that same file on every later crop.
 
-**Bundle 2 landed the same day, at `425ac6bd`.** MarkdownPM's remaining duplicate document reads are gone: the keystroke transforms take the cached scan and answer through the new line-local `inCodeAt` / `inCalloutAt` (`lineInCallout` deleted; `isInsideCode` survives only on the paste path), the heading scan reads that same scan through a structural `HeadingSrc` that `DocScan` satisfies, and `codeMaskOf` lets one scan thread a single code mask to the table and citation scans that each used to re-pair the whole document. Line chrome now assembles only the viewport's lines. 
+**The migration is done and verified.** `assetMigrate.ts` walked the six stores rather than the directory — nothing cleans up `.nexus/assets/<id>/` when an entity is deleted, so a directory-driven copy would have carried long-dead entities' leftovers into a folder shared with Obsidian. 10 files moved into `file-assets`, 15 references rewritten, 22 originals swept to `.trash`. All 45 page covers resolve where 44 of them rendered nothing before this arc: 35 wikilinks that had always 404'd and 10 web addresses that had 403'd against the protocol's containment check. `.nexus/assets` holds nothing but regenerated thumbnails.
 
-**Bundle 3 landed the same day, at `fd976267`.** The Subfield's page counter built its own scan of the body string, and that scan had no notion of tables — a four-column table inflated its own word count by more than half. **The specification changed before it was built, for the second bundle running:** it called for the live `EditorView` handle, on the premise that the counter needed the editor object to reach a table-aware scan, and it planned to keep the string path as a no-editor fallback. The code disproved both halves. `scanDoc` is a pure function of a string with no CodeMirror dependency, `docScan` is only a `Text`-keyed cache over it, and the editor's change listener already hands the counter that exact text — so the handle bought nothing, and the fallback would have shipped two implementations of one answer. `computeStats` now reads `scanOf(body)`, masks each table line with the cell text the scan already parsed and trimmed, and has lost its private two-pass citation boundary and eight imports. The four-slot policy both caches wanted is stated once in `perText`, beside the `perDoc` it mirrors — a duplicate the simplification pass caught, since the mechanism already lived one screen above where it was written. 
+**The codebase-cleanup arc is where it was.** Bundles 1, 2 and 3 landed 08-21; 6a → 6b are the high-priority pair next, and nothing this session touched them.
 
 #### Completion Criteria
 
-- [x] **Audit complete** — six domains, verdicts evidenced, findings verified at cited lines.
-- [x] **Checklist written** — bundles, cycle, rulings (location-scoped canonical card drag; accepted write-silence), open questions quarantined.
-- [x] **Bundle 1 landed** — gates green (3,358 tests), simplify + attack cycles run, findings folded.
-- [x] **Live interaction pass** — three drag behaviors driven and file-verified on the real nexus.
-- [x] **Nathan confirmed the flat-mode boundary live** — his first try exposed the legacy-mask hole (a held viewOrder row interleaving the paint), the mask-suppression fix landed at `5e424c28`, and his retry confirmed the refusal works. Style optimism remains his to eyeball in passing; the main-process half of Bundle 1 loads on his next dev restart.
-- [x] **Bundle 2 landed** — gates green (3,368 tests), simplifier and comment passes run and their changes independently verified at the cited lines, the windowed parity pin exhaustive over every line pair of every corpus document.
-- [x] **Bundle 3 landed** — gates green (3,377 tests), simplifier and comment passes run and their changes independently verified at the cited lines, the memo sharing pinned by object identity rather than inferred.
-- [x] **Bundle 3's live pass is owed** — a four-column table's word count, and the floating preview's subfield agreeing with the main pane's.
-- [x] **Bundle 2's live pass is owed** — a long page's typing latency, callout boxes and list rails at the viewport edges while scrolling, and arrow-key motion across a bulleted list's markers. Not driven this session: a `electron-vite dev` session was running, and CM6 extension changes need a full ⌘R to load, so the running instance was stale regardless.
+- [x] **Phase 4** — the picker returns a path, the writer keeps the name; verified against the real filesystem through the running app, screenshotted.
+- [x] **Phase 5** — migrate, collapse, empty; backed up first, run live, and confirmed after a full renderer reload on the homepage, a Collection, the pinned Fitness page, and a banner added afterward.
+- [x] **Every phase simplified before it was reviewed**, then reviewed: 7 findings in Phase 4, 6 in Phase 5, 4 in a final whole-arc pass — each verified against the code before folding, none deferred.
+- [x] **Two live checks the plan could only get by hand** — 12 files dropped into the newly configured root produced exactly one `assets:changed` and zero `nexus:changed`, and a file already inside the root was referenced without a copy.
+- [x] **Dead Vocabulary sweep returns zero** against non-zero controls; the plan's Made False table is fully rewritten.
+- [x] **Gates green** — typecheck 0, 278 files / 3480 tests, `biome check` clean over 904 files.
+- [x] **Nothing left in the live nexus** — the scratch pages and their adopted files were removed; the backup at `~/NexusOS-backup-20260821-231448` remains.
 
 #### Next Session — Two Parallel Tracks
 
-1. **Finding the next thing to work on** — §Next-Feature Candidates in ContextPM, or wherever the day points. The footnotes Verification Checklist walk (plan document, eighteen lines) is still owed an eyeball, and the native right-click menu check with it.
-2. **The continuous codebase cleanup** — [[Codebase-Cleanup-Checklist]], 6a → 6b (the rehome, then Table hoisting) next and the high-priority pair; Bundle 4 and the store split follow. Any session starts it with "Run the next bundle from Codebase-Cleanup-Checklist."
+1. **The continuous codebase cleanup** — [[Codebase-Cleanup-Checklist]], 6a → 6b next (the rehome, then Table hoisting); Bundle 4 and the store split follow. Any session starts it with "Run the next bundle from Codebase-Cleanup-Checklist."
+2. **Parts 2 and 3 of the file-based arc.** Part 2 is `PhotoCropModal` widened past the nexus icon so banners, cards and other media crop through it — today it is the profile photo's alone, and it is why `setProfileImage` still carries bytes while every banner carries a path. Part 3 is the `file` property type: its `FileRef` is a user-typed path anywhere in the nexus rather than a basename under the asset root, so it needs a path arm the name arm does not supply, and `pickImagePath` was deliberately left without a baked-in extension contract so the any-file picker widens it rather than replacing it.
 
 #### Feedback
 
-- "Keep comments minimal" — mid-implementation; the diff's comments were trimmed to 1–2-line whys and the simplifier briefed the same.
-- The flat-mode drag ruling came with its reason stated: location-scoped so ordering "remains file-system but doesn't confuse with cross-location drag when no visible boundaries exist" — and cross-location drops should *literally look non-valid, not displacing*. Built exactly so, verified visually.
-- Bundle 1 ran as "everything besides the cards first, run the cycle, then the cards" — Cards carrying a double-check for cohesion plus full live-interaction testing with file-tree and screenshot confirmation.
+- "The input field goes to the right of the setting label, not below" — and the hairline that separates multi-value inputs stays with FilterPane; a sub-directory path shows with the `›` glyph at `--label-tertiary`. `SegmentRun` carries both under a `nested` flag.
+- "I can confirm visuals myself, you confirm behavior."
+- "Don't update any feature docs, those you did before were too bloated of entries" — the Made False reconciliation had already landed at `6425544d` and nothing was added on top.
+- "Commit any doc edits that have been made in the working tree alongside your work" — `ArchitecturePM.md` and the audit report rode the commits they belonged beside.
+
+#### Touched Files
+
+- **Created:** `main/assetMap.ts`, `main/assetRoots.ts`, `main/assetWrite.ts`, `main/assetMigrate.ts`, `main/assetDirValidate.ts`, `main/disambiguate.ts`, `shared/assetMime.ts`, `renderer/Settings/AssetDirectoryRow.tsx` + `pathRow.css.ts`, `renderer/design-system/components/SegmentRun/`.
+- **The seam:** `shared/bridge.ts`, `shared/types.ts`, `shared/mutate.ts`, `preload/index.ts` — `assets:map`, `assets:changed`, `assets:chooseDir`, `assets:setDir`, `nexus:imageData`; `setBanner` takes `source` where it took `dataUrl`.
+- **Main:** `readNexus.ts`, `exclusion.ts`, `watcher.ts`, `watchPatch.ts`, `settings.ts`, `mutate.ts`, `index.ts`, `paths.ts`, `io/walk.ts`, `io/navigationFile.ts`, `crud/loadValues.ts`.
+- **Renderer:** `assetUrl.ts`, `store.ts`, `App.tsx`, `Settings/NexusSettings.tsx`, `Detail/Banner/`, `Tabs/NavView.tsx`, `Detail/Views/Cards/CardsView.tsx`, `Components/useNexusIcon.ts`, `design-system/components/interactionField.css.ts`.
 
 #### Session Pointers
 
-- `main/crud/journalSlot.ts` — the slot law + `supersedes`, stated once; both journals are codecs on it.
-- `design-system/interactions/group.tsx` — `resolveIndex` is the landing-resolver seam; null = refused landing, origin preview, fly-home no-op.
-- `Detail/Views/Cards/CardsView.tsx` — `structuralSlotFor` (the location scope), the structural arm in `reorderInBandByIndex` (canonical write + mask maintenance + painted-order no-op guard), `stylePatch` → `liveView` → card faces.
-- `Detail/Views/creationOrder.ts` — `sameIds` joined `spliceBeside`/`tieOrderWith` as the shared order helpers.
-- `decorations/intent.ts` — `inCodeAt` / `inCalloutAt` / `lineIndexAt` are the line-local readers; `assembleLineIntents` takes the window; `railIntents` returns per-line buckets.
-- `editor/decorations.ts` — `docAtomics` / `atomicFor` hold the whole-document atomic set and drop the caret's line by bounded filter.
-- `editor/headingScan.ts` — `HeadingSrc` is the structural contract `DocScan` satisfies; `headingSrc(text)` serves string callers; the one section cache lives here.
-- `shared/markdownCode.ts` — `codeMaskOf` is the mask over an already-paired document; `codeMask(text)` is a wrapper on it.
-- `editor/docCache.ts` — `perText` states the four-slot text-keyed policy once; `scanOf` and the Subfield's `pageStats` are derivations on it, and `docScan` wraps `scanOf`.
-- `Detail/Subfield/subfieldStats.ts` — `computeStats` reads the shared scan; `tableProse` is the per-line table mask built from the region's own cells.
-- The audit report's §Redundancy Ledger maps every remaining bundle to the documentation entries it deletes on landing.
+- `main/assetMap.ts` — `buildAssetMap` / `patchAssetMap` / `resolveAssetName`; `AMBIGUOUS` is a `unique symbol`, because `string | 'ambiguous'` collapses to `string` and a caller testing `typeof === 'string'` would delete by the refusal.
+- `main/assetRoots.ts` — `underAssetRoot` is the one containment test the protocol and the delete guard cross; `assetFilePath` names the file a value means, `assetFileToDelete` narrows it to what Pommora minted.
+- `main/assetWrite.ts` — `writeAssetFile` is the one landing site; a name held anywhere under the root steps aside, since a basename answers nexus-wide.
+- `main/assetMigrate.ts` — `collectRefs` models each store as read/write plumbing so the pass is uniform; the singletons lead so a shared file takes the nexus's own name.
+- `main/exclusion.ts` — `WatchScope` / `sameScope` / `assetMatcher` / `neverWatched` / `rootSegs`.
+- `renderer/assetUrl.ts` — `assetUrl(rel)` stays the raw scheme builder the two thumbnail sites use; `resolveAssetUrl(value, map)` is the resolving entry, and `useAssetUrl()` binds the map once per component.
 
 #### Working Notes
 
-- **`sortedOrGrouped` is true for every view** — `mintNewView` stamps `group: {kind:'structural'}` — which is why both views suppress a held `viewOrder` mask at the order source when `structuralOrder` holds: structural paints are filesystem order, and a mask interleaving locations dissolves the drag boundary (found live in the Studio flat view, whose 3KB legacy mask let a drag cross locations). The mask stays the sorted/grouped tiebreaker.
-- **The engine's refused-landing preview is the origin slot** — `resolveIndex` returning null re-aims `zid/idx` at the source; on release the origin commit is caught by the painted-order no-op guard, not by the engine.
-- **A journal whose replay trusts the record's before-state needs the `supersedes` arm; one that verifies against current state does not** — that's the whole context/property asymmetry.
-- **`styleFor` is read from the `view` prop by `CardFace`/`CardProperties`, never through `resolveColumns`** — an optimistic style layer must ride the view prop to the card faces; routing it through `columns` paints nothing.
-- **The single-instance lock yields to a running dev session** — an agent relaunch with a debug port dies quietly if `electron-vite dev` holds the app; check `ps` before diagnosing a dead CDP port.
-- **Windowing the drawn chrome is safe without a margin; windowing `atomicRanges` is not.** Every `first`/`last` flag is decided by the whole-document derivation before the viewport is consulted, so a window only selects among correct answers — but atomic ranges decide where a caret or selection endpoint may land, and a motion resolved against a slot the viewport hasn't reached seats the caret inside a marker nothing on screen stands for. A constraint written as a one-clause caveat in a bundle spec can hide a whole second implementation.
-- **Rails are emitted after every line intent, never interleaved** — they anchor at the same offset as their line's own classes, and emission order stacks them. The parity pin compares sequences rather than sets, which is what caught the interleaved first draft.
-- **`scanDoc` is a pure function of a string; `docScan` is only a cache over it.** Nothing in the whole-document scan touches CodeMirror, so any caller holding the text can have the editor's own answer — which is what dissolved Bundle 3's plumbing. Two bundles in a row now have had a spec call for machinery the code already made unnecessary; read the mechanism before costing the plan.
-- **Insertion-order eviction in `perText` is behavior, not an implementation detail.** The identity pin observes object references, so refreshing recency on a hit — the obvious LRU "upgrade" — changes which references survive and breaks it.
-- **The Subfield's body is debounced 120ms** on both the main pane and the preview, so the counter was never on the keystroke path. Its scan sharing buys correctness at no cost rather than rescuing a hot path.
-- **`DocScan` extends `DocLines`**, so it already carries `text`, `lines`, and `lineStarts` — which is why the transforms could take the scan with zero body churn (`const doc = scan.text` at the top, everything below byte-identical). No wrapper type is needed to thread document facts.
+- **No write Pommora makes is visible to its own watcher.** `atomicWriteBinary` calls `recordWrite` and `isRecentWrite` drops the echo before `settle` runs, so every asset write patches the held map and pushes on its own channel, and `assets:setDir` re-walks, reseeds, re-lists and re-arms itself. A feature that builds only the external-change machinery ships green with three silent defects.
+- **A basename is a nexus-wide key.** Deduplicating against the destination folder alone lands a second file that makes both permanently ambiguous — the map answers, not the folder.
+- **`thumbsRel` stays pinned to `.nexus/assets`** deliberately: thumbnails are Pommora's own derived files and do not follow the setting into a shared folder. That is why `.nexus/assets` is not empty for long after the migration, and why it is not a regression.
+- **A replaced banner deletes nothing in the user's folder.** After the migration that means replacing a banner deletes nothing at all — which is how Obsidian treats attachments, and is deliberate.
