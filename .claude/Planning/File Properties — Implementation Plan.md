@@ -288,10 +288,10 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
 **Failure half:** an unresolved value → the chip still renders, visibly unresolved — the value is in frontmatter and the user must be able to see and remove it · duplicate identical entries → keyed on index, not on the value string, or the hover-× addresses the wrong one.
 
 **Steps:**
-- [ ] Swap the label source to the parsed title; key on index; route through `resolveFileValue`.
-- [ ] **Delete the comment at `:186`** ("Each chip opens its own file") — Phase 5 makes it false and it describes this block.
-- [ ] Leave the `openFile` call in place; Task 6 removes it with the channel.
-- [ ] Full gate green. Commit: `refactor(table): the file cell reads the new value shape`
+- [x] Swap the label source to the parsed title; key on index; route through `resolveFileValue`.
+- [x] **Delete the comment at `:186`** ("Each chip opens its own file") — Phase 5 makes it false and it describes this block.
+- [x] Leave the `openFile` call in place; Task 6 removes it with the channel.
+- [x] Full gate green. Commit: `refactor(table): the file cell reads the new value shape`
 
 #### Task 6: Retire the `file:open` channel
 
@@ -670,6 +670,7 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
 - **Task 3 · the failing test is the parse, not the render.** With file out of the style system the cell no longer reads `style.look` at all (Task 1), so "a stored `look: 'path'` renders the filename" has no render path left to assert. It lands where the compatibility actually happens — `columnStyle.parse` catching both retired members to `undefined`, beside the two the link vocabulary already retired, plus `defaultStyleFor('file')` returning `{}`.
 - **Task 3 · `cellMenu.test.ts`'s `style-edit` fixture was narrowed here.** It named `look: 'filename'`, which the enum no longer holds. Its expectation now reads the empty row set Task 3 leaves behind; Task 4 deletes the test with the kind.
 - **Task 4 · a file cell's interim menu is the bare one.** With the `style-edit` dispatch gone, `baseCellMenu` falls to `null` for file — no menu in the table, `remove-only` on a card. That is exactly what the `remove-only` comment has always claimed ("an empty picker, a file"), so the deletion makes a stale comment true rather than needing one. Task 17 replaces it with the Add · Replace · Remove kind.
+- **Task 5 · what was left of it is the asset-map seam.** Task 1 already swapped the label, the key and the comment, and the *unresolved look* belongs to FileLabel's own `unresolved` prop (spec C-2c — FileLabel owns the whole unit), so building an interim class for it would have landed CSS that Task 11 deletes. Task 5 therefore ships the seam the resolution needs: `AssetMap` joins `ResolveContext`, built once per view rather than subscribed per cell, and reaches the table, the cards and both panes together. **Task 11 consumes it** when the cell becomes a run of FileLabels.
 - **Naming.** The spec settled on **FileLabel** (C-2c); several plan headings still read FileChip. FileLabel is the name that ships — component, chip shape and prose alike.
 ### Lessons
 ### Sequenced After

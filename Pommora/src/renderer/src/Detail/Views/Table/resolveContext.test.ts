@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { buildResolveContext } from './resolveContext'
-import { DEFAULT_LABELS, type NexusTree } from '@shared/types'
+import { DEFAULT_LABELS, EMPTY_ASSET_MAP, type NexusTree } from '@shared/types'
 
 const tree = {
   contexts: [
@@ -28,7 +28,7 @@ const tree = {
 
 describe('buildResolveContext', () => {
   it('bundles schema + the identity seam Space map + labels', () => {
-    const ctx = buildResolveContext(tree, [])
+    const ctx = buildResolveContext(tree, [], EMPTY_ASSET_MAP)
     expect(ctx.schema).toEqual([])
     expect(ctx.labels).toBe(DEFAULT_LABELS)
     expect(ctx.contextsById.get('a1')?.title).toBe('Personal')
@@ -36,6 +36,6 @@ describe('buildResolveContext', () => {
   })
 
   it('returns undefined for an unknown id', () => {
-    expect(buildResolveContext(tree, []).contextsById.get('nope')).toBeUndefined()
+    expect(buildResolveContext(tree, [], EMPTY_ASSET_MAP).contextsById.get('nope')).toBeUndefined()
   })
 })
