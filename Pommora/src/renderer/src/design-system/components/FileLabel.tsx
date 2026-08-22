@@ -9,8 +9,9 @@ import { fileLabelClickable, fileLabelUnresolved } from './fileLabel.css'
  *  the `file` chip shape so the hover-× and its melt come from the chip system rather than a second
  *  copy of that machinery. Usable anywhere — a `SegmentRun` entry, a table cell, a settings row.
  *
- *  `icon` is an explicit override for the callers whose glyph isn't read off an extension: a folder
- *  name has none, and a path's segments carry one lead icon rather than a glyph each. */
+ *  `icon` is an explicit override for the callers whose glyph isn't read off an extension — a Set
+ *  title naming its own entity glyph. Passing `false` means no glyph at all, which is what a path's
+ *  segments want: they carry one lead icon on the run rather than a glyph each. */
 export function FileLabel({
   name,
   icon,
@@ -19,15 +20,14 @@ export function FileLabel({
   unresolved,
 }: {
   name: string
-  icon?: ReactNode
+  icon?: ReactNode | false
   onRemove?: () => void
   onClick?: () => void
   /** The name answers to no file. It still renders — the value is on disk and has to be
    *  removable — but reads as naming nothing. */
   unresolved?: boolean
 }): React.JSX.Element {
-  const derived = fileTypeIcon(name)
-  const glyph = icon ?? (derived ? <Icon name={derived} size="control" /> : undefined)
+  const glyph = icon ?? <Icon name={fileTypeIcon(name)} size="control" />
   const chip = (
     <Chip
       shape="file"
