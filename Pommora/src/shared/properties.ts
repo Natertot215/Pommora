@@ -126,12 +126,20 @@ export const propertyDefinition = z.looseObject({
     .catch(undefined),
   number_fraction: z.boolean().optional().catch(undefined),
   number_denominator: z.number().optional().catch(undefined),
+  // Where a file property's uploads land: a subfolder BENEATH the configured asset directory, or
+  // absent for the directory itself. Relative to the asset root rather than to the nexus, so
+  // re-pointing the root moves every property's folder with it. It governs new writes only — a
+  // value names a basename, not a folder, so files already on disk keep resolving where they sit.
+  file_directory: z.string().optional().catch(undefined),
 })
 export type PropertyDefinition = z.infer<typeof propertyDefinition>
 
 /** The def-level link display config, narrowed for the editor, the bridge's patch argument, and the
  *  whitelist main writes through — one shape, so a new link field is declared once. */
 export type LinkConfig = Pick<PropertyDefinition, 'link_underline' | 'link_display' | 'link_color'>
+
+/** The def-level file config — where this property's uploads land. */
+export type FileConfig = Pick<PropertyDefinition, 'file_directory'>
 
 /** The def-level number format config, narrowed for the pure formatter + the editor. */
 export type NumberConfig = Pick<

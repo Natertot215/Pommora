@@ -5,7 +5,8 @@
 import { parseConnectionText } from '@shared/connections'
 import { ASSETS_DIR_REL } from '@shared/nexusPaths'
 import { normalizeSeg, rootSegs } from './exclusion'
-import { liveAssetMap, resolveAssetName } from './assetMap'
+import { indexable, liveAssetMap, resolveAssetName } from './assetMap'
+import { assetSubRoot } from './paths'
 import { readWatchScope } from './settings'
 
 const startsUnder = (segs: string[], root: string): boolean => {
@@ -49,4 +50,32 @@ export async function assetFilePath(root: string, value: unknown): Promise<strin
 export async function assetFileToDelete(root: string, value: unknown): Promise<string | null> {
   const rel = await assetFilePath(root, value)
   return rel?.startsWith(`${ASSETS_DIR_REL}/`) ? rel : null
+}
+
+/** Whether a file property's Directory names a folder its files can actually be found in.
+ *
+ *  TWO predicates, because containment alone is not enough: `.private` is contained, mkdirs, writes,
+ *  and returns a valid-looking `[[Name.ext]]` — while `indexable` drops it from the map forever,
+ *  leaving an unresolved label and no error anywhere. Both run at set time against the real asset
+ *  root, so the rule is stated once rather than split across a set-side check and a write-side one.
+ *
+ *  A symlinked segment is the one hole a lexical check can't see; adoption closes it where the
+ *  write happens. */
+export function validPropertyDir(subfolder: string, assetDir: string): boolean {
+  // No subfolder IS the asset root, which is always where files may land. `underAssetRoot` reads
+  // strictly below its root, so the root itself would otherwise refuse.
+  if (!subfolder) return true
+  const rel = assetSubRoot(assetDir, subfolder)
+  return underAssetRoot(rel, assetDir) && indexable(rel, assetDir)
+}
+
+/** The part of a nexus-relative path sitting BELOW the asset root — `''` for the root itself,
+ *  null for anything outside it. This is what a property's Directory stores: a position under
+ *  whatever root is configured, so re-pointing the root carries every property's folder with it. */
+export function assetSubfolder(rel: string, assetDir: string): string | null {
+  const prefix = rootSegs(assetDir)
+  const segs = rootSegs(rel)
+  if (segs.length < prefix.length) return null
+  if (!prefix.every((seg, i) => normalizeSeg(segs[i]) === normalizeSeg(seg))) return null
+  return segs.slice(prefix.length).join('/')
 }
