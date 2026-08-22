@@ -109,6 +109,7 @@ const FORMAT_ROWS: readonly {
   { label: 'Inline Code', action: 'format:inlineCode', state: 'inlineCode' },
   { label: 'Bold', action: 'format:bold', state: 'bold' },
   { label: 'Strikethrough', action: 'format:strikethrough', state: 'strikethrough' },
+  { label: 'Highlight', action: 'format:highlight', state: 'highlight' },
   { label: 'Connection', action: 'format:connection', state: 'connection' },
   { label: 'Link', action: 'format:link', state: 'link' },
 ]

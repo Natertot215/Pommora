@@ -57,7 +57,7 @@ function editFor(action: string, doc: string, from: number, to: number): FormatE
     case 'heading':
       return setHeading(doc, from, Number(value) as HeadingLevel)
     case 'list':
-      return setList(doc, from, value as ListKind)
+      return setList(doc, from, to, value as ListKind)
     case 'block':
       return setBlock(doc, from, value as BlockFormat)
     default:

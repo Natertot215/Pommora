@@ -19,6 +19,9 @@
      Global default so a host's value inherits INTO the shell. */
   --editor-scale: 1;
   --mdpm-scale: var(--editor-scale);
+  /* The corner every boxed construct rounds to. Each still names its own knob below and can be
+     retuned alone; this is what they agree on when nobody has. */
+  --md-box-radius: 6px;
 }
 
 .mdpm-shell {
@@ -347,6 +350,21 @@
 }
 .md-strike {
   text-decoration: line-through;
+}
+/* `==highlight==` — a wash behind the words rather than a change to them, so the text keeps whatever
+   tone its construct gives it and stays readable at any color. The fill is the Highlight Color at
+   the tint the inline fills share; cleared, the var is unset and the accent answers. It rounds to
+   the same corner the boxed constructs do, since it is the smallest one of them. */
+.md-highlight {
+  --highlight-bleed: 0.1em; /* KNOB — how far the wash carries past the words, half a character */
+  background: color-mix(
+    in srgb,
+    var(--highlight, var(--accent)) var(--tint-secondary),
+    transparent
+  );
+  border-radius: var(--md-box-radius);
+  padding: 0.1em var(--highlight-bleed);
+  margin-inline: calc(-1 * var(--highlight-bleed));
 }
 .md-code {
   font-family: var(--font-mono);
@@ -824,7 +842,7 @@
   --box-inset: 0px;
   --box-z: -2;
   --box-radius-l: 0px;
-  --box-radius-r: 6px;
+  --box-radius-r: var(--md-box-radius);
   --bq-gap: 6px;
   --box-gap: var(--bq-gap);
   --box-pad: 4px;
@@ -872,7 +890,7 @@
 .mdpm-editor .cm-line.md-callout {
   --callout-border: var(--label-tertiary);
   --callout-bw: 1.5px;
-  --callout-radius: 6px;
+  --callout-radius: var(--md-box-radius);
   /* Slightly roomier inner gutter + head/foot so a fold chevron has space to live inside the box. */
   --callout-pad: 15px;
   --callout-gap: 6px;
@@ -1030,7 +1048,7 @@
    KNOBS: --cb-bg / --cb-radius / --cb-size (font scale) · --cb-gap (outer vertical breathing room)
    · --cb-inset / --cb-pad (horizontal placement) */
 .mdpm-editor .cm-line.md-cb {
-  --cb-radius: 6px;
+  --cb-radius: var(--md-box-radius);
   --cb-size: 0.85em;
   --cb-inset: 0px;
   --cb-pad: 12px;
@@ -1089,35 +1107,34 @@
    place, the raw info word hides beneath the glyph, and the caret on the line trades it back.
    Icon rides currentColor a notch over text height; the whole glyph wears the code color. */
 .mdpm-editor .md-cb .md-cb-lang {
-  --code-bracket-y: 0em; /* KNOB — nudge the chevron off the cap box's own baseline */
   position: absolute;
   /* Rides the block's own inner edge, so a block nested in a box follows its fill in rather than
      staying pinned to the line box and landing on the box's border. */
   right: calc(var(--cb-inset) + var(--cb-pad));
-  color: var(--code);
-  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  /* The name's own box hugs its text, so centering the two puts the mark on the words rather than
+     on the line box the editor's leading gives them. */
+  line-height: 1;
+  gap: 0.3em;
+  /* The name reads as the control text it is; the mark beside it sits a step up, so the pair reads
+     as one label with a glyph rather than as two things of equal weight. */
+  color: var(--label-control);
   /* The line-count hanging indent inherits — reset it or the chrome slides left by the zone. */
   text-indent: 0;
   pointer-events: none;
   user-select: none;
 }
-.mdpm-editor .md-cb .md-cb-lang::before,
-.mdpm-editor .md-cb .md-cb-lang::after {
-  content: "";
-  display: inline-block;
-  width: 1cap;
-  height: 1cap;
-  background: currentColor;
-  /* The chevron stroke spans half its SVG viewBox — 200% makes the DRAWN glyph fill the cap box. */
-  -webkit-mask: var(--code-chevron-mask) center / 200% no-repeat;
-  mask: var(--code-chevron-mask) center / 200% no-repeat;
-  position: relative;
-  top: var(--code-bracket-y);
+.mdpm-editor .md-cb .md-cb-lang svg {
+  /* Block, so the glyph brings no inline baseline strut of its own — as an inline box it sits on
+     the text baseline and rides a few pixels low of the words it labels, which centering the flex
+     items cannot correct. */
+  display: block;
+  flex: none;
+  width: 1.15em; /* KNOB — the mark's size against its name */
+  height: 1.15em;
+  color: var(--label-secondary);
 }
-.mdpm-editor .md-cb .md-cb-lang::before {
-  transform: scaleX(-1);
-}
-
 /* LINE COUNT — the "Show Line Count In Code Blocks" setting. Numbers are widget chrome sitting at
    the line's own first-character position — the block's padding is the only left inset — in the
    block's own mono at label-tertiary; fence lines carry no number. The zone is ch-based (three

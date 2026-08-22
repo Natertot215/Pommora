@@ -37,6 +37,7 @@ export function readFormatState(
     bold: wraps('bold'),
     italic: wraps('italic'),
     strikethrough: wraps('strikethrough'),
+    highlight: wraps('highlight'),
     inlineCode: wraps('inlineCode'),
     link: tokens.some((tk) => tk.kind === 'link' && tk.range[0] <= f && t <= tk.range[1]),
     connection: tokens.some((tk) => tk.kind === 'wikiLink' && tk.range[0] <= f && t <= tk.range[1]),

@@ -265,6 +265,11 @@ interface PairSpec {
 }
 const PAIRS: Record<string, PairSpec> = {
   '*': { close: '*', multi: '**' },
+  // `~` and `=` carry no single-character meaning to protect — a lone one is arithmetic or a tilde,
+  // and only the doubled form is a marker. Absent from GATED_PAIRS, so nothing pairs on the first
+  // press and the multi branch is the only door: `~|` + `~` → `~~|~~`.
+  '~': { close: '~', multi: '~~' },
+  '=': { close: '=', multi: '==' },
   _: { close: '_', multi: '__' },
   '`': { close: '`', multi: '``' },
   '(': { close: ')', multi: '))' },
@@ -351,6 +356,8 @@ const CLOSERS: readonly { close: string; open: string }[] = [
   { close: '**', open: '**' },
   { close: '__', open: '__' },
   { close: '``', open: '``' },
+  { close: '~~', open: '~~' },
+  { close: '==', open: '==' },
   { close: ']', open: '[' },
   { close: ')', open: '(' },
   { close: '"', open: '"' },

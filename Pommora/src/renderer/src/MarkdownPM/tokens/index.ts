@@ -7,6 +7,7 @@ import {
   embedRegex,
   markdownLinkRegex,
   inlineCodeRegex,
+  highlightRegex,
   blockLatexRegex,
   inlineLatexRegex,
   markerRegex,
@@ -18,6 +19,7 @@ export type TokenKind =
   | 'bold'
   | 'strikethrough'
   | 'inlineCode'
+  | 'highlight'
   | 'blockLatex'
   | 'inlineLatex'
   | 'embed'
@@ -204,6 +206,12 @@ export function tokenize(text: string): Token[] {
   const cites = scan({ kind: 'citationRef', re: markerRegex(), open: 2, close: 1 }).filter(
     notOverlapping([...embeds, ...wikis, ...code]),
   )
+  const highlights = scan({
+    kind: 'highlight',
+    re: highlightRegex(),
+    open: 2,
+    close: 2,
+  }).filter(notOverlapping([...code, ...embeds, ...wikis, ...links]))
   const blockTex = scan({
     kind: 'blockLatex',
     re: blockLatexRegex(),
@@ -218,7 +226,16 @@ export function tokenize(text: string): Token[] {
     accept: isInlineMathContent,
   }).filter(notOverlapping([...code, ...blockTex]))
 
-  tokens.push(...embeds, ...wikis, ...links, ...code, ...cites, ...blockTex, ...inlineTex)
+  tokens.push(
+    ...embeds,
+    ...wikis,
+    ...links,
+    ...code,
+    ...cites,
+    ...highlights,
+    ...blockTex,
+    ...inlineTex,
+  )
   tokens.sort((a, b) => a.range[0] - b.range[0])
   return tokens
 }

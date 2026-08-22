@@ -17,6 +17,7 @@ import {
   type FenceInfo,
   type ListMarker,
 } from '../detect'
+import { codeLanguageName } from '../detect/codeLangs'
 import { docLineScan, type DocLineScan } from '../editor/embedRanges'
 import { tableRegions, type TableRegion } from '../Tables/regions'
 
@@ -132,6 +133,7 @@ export const CONTENT_CLASS: Partial<Record<TokenKind, string>> = {
   italic: 'md-italic',
   strikethrough: 'md-strike',
   inlineCode: 'md-code',
+  highlight: 'md-highlight',
   embed: 'md-embed',
   inlineLatex: 'md-latex',
   blockLatex: 'md-latex',
@@ -257,12 +259,16 @@ function lineIntentsInto(
     // text. The offset comes from the fence grammar itself (markerEnd), so an indented or quoted
     // fence never hides its own marker.
     const infoStart = ls + fence.markerEnd
-    if (fence.role === 'open' && fence.lang && !caretOnLine && infoStart < le) {
+    // The tag reads the language's own name rather than the word that was typed: `ts` and `tsx` are
+    // both TypeScript, and the block says which language it is, not which spelling opened it. A word
+    // no language answers to selects no parse, so it keeps its raw text and takes no tag.
+    const named = fence.lang ? codeLanguageName(fence.lang) : null
+    if (fence.role === 'open' && named && !caretOnLine && infoStart < le) {
       intents.push({
         kind: 'lineWidget',
         from: infoStart,
         className: 'md-cb-lang',
-        text: fence.lang,
+        text: named,
       })
       intents.push({ kind: 'hide', from: infoStart, to: le })
     }

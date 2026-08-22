@@ -34,6 +34,7 @@ const WRAP = {
   bold: '**',
   italic: '*',
   strikethrough: '~~',
+  highlight: '==',
   inlineCode: '`',
 } as const
 
@@ -160,17 +161,69 @@ export function setHeading(doc: string, pos: number, level: HeadingLevel): Forma
 
 /** Toggle the caret line into/out of a list kind (re-applying the same kind clears it). Prefix-aware like
  *  setHeading — the list marker lands inside the quote/callout, not in place of its chrome. */
-export function setList(doc: string, pos: number, kind: ListKind): FormatEdit {
-  const ls = lineStartAt(doc, pos)
-  const le = lineEndAt(doc, pos)
-  const { prefix, body } = splitPrefix(doc.slice(ls, le))
-  const current = parseListMarker(body)?.kind ?? null
-  const inner = stripInnerMarkers(body)
-  const next = current === kind ? inner : `${listMarkerText(kind)}${inner}`
-  return {
-    changes: [{ from: ls + prefix.length, to: le, insert: next }],
-    selection: ls + prefix.length + next.length,
+/** One selected line, split into the parts a marker swap needs: the quote prefix it keeps, the
+ *  indentation that decides its level, and the words themselves. */
+interface ListLine {
+  ls: number
+  le: number
+  prefix: string
+  indent: string
+  inner: string
+  kind: ListKind | null
+  level: number
+}
+
+function listLinesIn(doc: string, from: number, to: number): ListLine[] {
+  const out: ListLine[] = []
+  for (let p = lineStartAt(doc, from); p <= to; p = lineEndAt(doc, p) + 1) {
+    const ls = p
+    const le = lineEndAt(doc, p)
+    const { prefix, body } = splitPrefix(doc.slice(ls, le))
+    // A blank line is the gap between paragraphs, not an item — an empty bullet is never what
+    // selecting across one asked for. It keeps its seat and takes no marker.
+    if (body.trim() !== '') {
+      const lm = parseListMarker(body)
+      const stripped = stripInnerMarkers(body)
+      // An item's indent sits before its marker; a paragraph's is whatever leads its words. Held
+      // apart from the content either way, so converting a nested item keeps its level instead of
+      // flattening it against the margin.
+      const indent = lm ? body.slice(0, lm.markerStart) : stripped.slice(0, stripped.search(/\S|$/))
+      out.push({
+        ls,
+        le,
+        prefix,
+        indent,
+        inner: lm ? stripped : stripped.trimStart(),
+        kind: lm?.kind ?? null,
+        level: lm?.level ?? 0,
+      })
+    }
+    if (le >= doc.length) break
   }
+  return out
+}
+
+/** Make every selected line an item of `kind`, or take the marker off all of them where all of them
+ *  already read that way — a mixed block becomes one list rather than half a list. Ordered runs count
+ *  per indent level, so a nested run restarts while its parent keeps counting. */
+export function setList(doc: string, from: number, to: number, kind: ListKind): FormatEdit {
+  const lines = listLinesIn(doc, from, to)
+  if (lines.length === 0) return { changes: [] }
+  const strip = lines.every((l) => l.kind === kind)
+  const counters: number[] = []
+  const changes: FormatEdit['changes'] = []
+  let lastEnd = 0
+  for (const l of lines) {
+    counters.length = l.level + 1
+    counters[l.level] = (counters[l.level] ?? 0) + 1
+    const marker = strip ? '' : listMarkerText(kind, counters[l.level])
+    const next = `${l.indent}${marker}${l.inner}`
+    changes.push({ from: l.ls + l.prefix.length, to: l.le, insert: next })
+    lastEnd = l.ls + l.prefix.length + next.length
+  }
+  // One line keeps the caret at its end, the way every other line transform leaves it. Across
+  // several, the selection is left to map through the edits so it still covers what it covered.
+  return lines.length === 1 ? { changes, selection: lastEnd } : { changes }
 }
 
 /** Every marker-bearing line in `[from, to]`, paired with its start offset — a wrapped item's

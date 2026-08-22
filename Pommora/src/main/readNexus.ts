@@ -21,6 +21,7 @@ import type {
   ConnectionColorSetting,
   ExternalLinkColorSetting,
   CheckboxColorSetting,
+  HighlightColorSetting,
   EntityIconKind,
   FolderPlacement,
   Personalization,
@@ -105,6 +106,7 @@ export function readPersonalization(raw: unknown): Personalization {
   const conn = asString(p.connectionColor)
   const ext = asString(p.externalLinkColor)
   const chk = asString(p.checkboxColor)
+  const hil = asString(p.highlightColor)
   const rawIcons =
     p.defaultIcons != null && typeof p.defaultIcons === 'object' && !Array.isArray(p.defaultIcons)
       ? (p.defaultIcons as Record<string, unknown>)
@@ -130,6 +132,10 @@ export function readPersonalization(raw: unknown): Personalization {
     checkboxColor:
       chk === 'accent' || (chk != null && isColorKey(chk))
         ? (chk as CheckboxColorSetting)
+        : undefined,
+    highlightColor:
+      hil === 'accent' || (hil != null && isColorKey(hil))
+        ? (hil as HighlightColorSetting)
         : undefined,
     muteCheckedItems: bool(p.muteCheckedItems),
     hideChevrons: bool(p.hideChevrons),
