@@ -306,7 +306,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   }, [source, effectiveValues, liveView, schema, manualOrder, contextIds])
   const ctx = useMemo(
     () => (tree ? buildResolveContext(tree, schema, assetMap) : null),
-    // buildResolveContext reads only contexts + labels — keying on those slices keeps ctx identity across unrelated tree pushes, so memoized rows hold.
+    // buildResolveContext reads only contexts, labels and the asset map — keying on those slices keeps ctx identity across unrelated tree pushes, so memoized rows hold.
     [tree?.contexts, tree?.labels, schema, assetMap],
   )
   // One mounted observer, two targets, one job (the overflowing flag): the view (pane resizes) and

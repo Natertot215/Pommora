@@ -14,8 +14,8 @@ import type { ActionItem } from './menuModel'
 /** The table-cell right-click menu (right-click always opens a menu, never acts).
  *  Title cells get the page meta menu; style-bearing cells get their COLUMN's Style radios;
  *  a `link` (url) cell gets Edit · Rename · Clear (its look is per-property, set in its pane, not a
- *  per-view Style); picker-based cells add Clear (`clearable` on a
- *  styleable type, `clear-only` for select/multi/context, which carry no Style). `hideable` (cards
+ *  per-view Style); picker-based cells add Clear (`clearable` on a styleable type, `clear-only`
+ *  for select/multi/context, which carry no Style). `hideable` (cards
  *  only) appends a trailing "Remove" that drops the property from the view — `remove-only` is the
  *  bare case for a cell that would otherwise have no menu (an empty picker, a file). */
 type CellMenuKind =
@@ -49,7 +49,7 @@ export interface CellMenuModel {
 }
 
 /** The right-click menu context for a value cell: title = page meta; url = Edit (+ Rename/Clear
- *  once filled); file = the column's Style radios + Edit; status/datetime (picker-based) = Style +
+ *  once filled); status/datetime (picker-based) = Style +
  *  Clear; the inline-clearable style types (checkbox/number/last_edited_time) = Style alone;
  *  context and select/multi = Clear alone. Clear is offered ONLY on a `filled` cell — a clear-only
  *  cell with no value has no menu at all, and a styleable one drops just its Clear. Anything else

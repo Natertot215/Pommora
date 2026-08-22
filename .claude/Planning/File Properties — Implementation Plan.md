@@ -316,8 +316,8 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
 - [x] Derivations re-run against their controls; counts matched, or the divergence rewrote the plan.
 - [x] Net line delta reported, code only. Expect ≈ −64; a positive number here means something was re-authored.
 - [x] `rg -F "FileRef" src` and `rg -F "fileLabel" src` → 0, control non-zero.
-- [ ] Simplification and code review dispatched against `<base>..HEAD` — **ask Nathan before dispatching.**
-- [ ] Every concern fixed, or carrying an explicit ruling in the Log.
+- [x] Simplification and code review dispatched against `<base>..HEAD` — **ask Nathan before dispatching.**
+- [x] Every concern fixed, or carrying an explicit ruling in the Log.
 - [x] No user-visible surface shipped this phase beyond the interim cell; defer its pass to Gate 2.
 
 ---
@@ -668,6 +668,17 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
 - **Dead vocabulary:** `FileRef` 0 · `fileLabel` 0 · `style-edit` 0 · `file:open` 0, against a control of **863**.
 - **Derivations:** control `@shared/` 863 against 862 at planning time — the one added hit is Task 1's own `parseConnectionText` import. `'filename'` re-derived at 4 non-test rather than 5; the missing hit is `Cell.tsx`'s, which Task 1 removed ahead of Task 3.
 - **Delta:** code-only, comments and tests excluded, summed over this feature's six commits alone: **+46 −84, net −38** against an expected −64. Not an overrun — the shortfall is addition the phase's breakdown never costed: `resolveFileValue` with its shared `namedAsset` (≈+10) and Task 5's asset-map seam (≈+15), which the plan had priced as a render swap. Every deletion the breakdown named landed.
+#### Gate 1 — the review, and what it turned up
+
+Both reviewers independently found the same defect, and I confirmed it by opening the file before folding it.
+
+- **Fixed · `usePropertyRows.ts:79` read `assetMap` inside its memo and omitted it from the dependency array.** Its two siblings carried it; this one didn't, and `useExhaustiveDependencies` is off by design, so no gate could see it. Inert only until Task 11 consumes `ctx.assets` — after which a file row in either inspector pane would resolve against a frozen basename index and read unresolved for a file that exists. Cause: a scripted edit rewrote the call first, which left the dependency-array replacement matching nothing and passing a too-weak assertion. **The lesson is the assertion, not the array** — a text substitution whose guard checks a fragment rather than the whole match can no-op silently.
+- **Fixed · three stale comments.** `TableView.tsx` and `CardsView.tsx` both still claimed `buildResolveContext` "reads only contexts + labels" with `assetMap` sitting in the dep array one line below; `cellMenu.ts:52` still described a file cell as the column's Style radios plus Edit.
+- **Fixed · `FileValue` restated two of `AssetValue`'s three arms twelve lines from the original.** It is now `Exclude<AssetValue, { kind: 'external' }>`, so a future arm flows into both.
+- **Ruled, not fixed · a single-bracket `- [Report.pdf]` coerces to a wikilink.** YAML reads it as a one-element flow sequence, which is byte-identical after parsing to the inline spelling of a real wikilink — there is no post-parse fact that separates them. The choice is between coercing it and nulling the page's whole attachment list, and coercion is the better failure: `[Report.pdf]` under a file key has no other meaning to preserve. Accepted deliberately; not a defect to re-open.
+- **Ruled, not fixed · `TableView` and `CardsView` build their `ResolveContext` identically.** The only sane home for a shared hook is `resolveContext.ts`, which is a pure module two test files import; putting a Zustand read there trades five duplicated lines for a purity break in tested code. `usePropertyRows` couldn't join it regardless — it keys on the whole tree on purpose. The duplication predates this feature and Phase 1 widened it by one argument.
+- **Confirmed, already planned · `sort.ts` has no `file` arm**, so a file column sorts by a constant. That is Task 18, not a Phase 1 miss.
+
 ### Open Against Later Tasks
 ### Deviations
 
