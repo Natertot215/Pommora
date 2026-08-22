@@ -220,7 +220,7 @@ function readAssetDirectoryLeaf(v: unknown): string {
   const raw = asString(v)?.trim()
   if (!raw || raw.startsWith('/') || raw.includes('\\')) return ASSETS_DIR_REL
   const segs = raw.split('/').filter(Boolean)
-  if (!segs.length || segs.some((s) => s === '.' || s === '..')) return ASSETS_DIR_REL
+  if (segs.some((s) => s === '.' || s === '..')) return ASSETS_DIR_REL
   const rel = segs.join('/')
   return NON_CORPUS_TOP.has(rel) ? ASSETS_DIR_REL : rel
 }
@@ -244,6 +244,12 @@ export function readSettingsLeaves(settings: Json): SettingsLeaves {
     profileIcon: asString(settings.profile_icon),
     profileSubtitle: asString(settings.profile_subtitle) ?? '',
   }
+}
+
+/** The two leaves the walk and the watcher arm with, as the unit they are threaded as — read
+ *  from whatever already holds them, the freshly-decoded leaves or a live tree. */
+export function scopeOf(leaves: Pick<SettingsLeaves, 'excluded' | 'assetDirectory'>): WatchScope {
+  return { excluded: leaves.excluded, assetDir: leaves.assetDirectory }
 }
 
 /** The tree leaves `homepage.json` feeds — same decoding for the walk and the watcher's
@@ -603,7 +609,7 @@ async function walkNexus(root: string): Promise<NexusTree> {
   const kindCtx = await agendaContext(root, identity, sidecarMode)
 
   const leaves = readSettingsLeaves(settings)
-  const scope: WatchScope = { excluded: leaves.excluded, assetDir: leaves.assetDirectory }
+  const scope = scopeOf(leaves)
   // Contexts. Registry-backed when `.nexus/contexts.json` parses (the walk never writes —
   // seeding/migration are open-path mutations). No registry (raw/unmigrated) → `contexts`
   // is [] — the open path migrates + seeds BEFORE anything renders, so the walk never

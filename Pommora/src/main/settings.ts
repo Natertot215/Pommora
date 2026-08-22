@@ -14,7 +14,7 @@ import type { WatchScope } from './exclusion'
 import { readJsonObject, rmwJsonStrict } from './io/atomicWrite'
 import { getLiveTree } from './liveTree'
 import { nexusConfig, NEXUS_CONFIG_FILES } from './paths'
-import { readSettingsLeaves, type SettingsLeaves } from './readNexus'
+import { readSettingsLeaves, scopeOf, type SettingsLeaves } from './readNexus'
 
 /** Serialized read-modify-write of settings.json — the one primitive every settings writer funnels
  *  through, so concurrent writes to different keys can't clobber each other. A missing file
@@ -54,10 +54,8 @@ export const readNexusLabels = async (root: string): Promise<NexusLabels> =>
 
 /** The scope the walk and the watcher arm with — the user's `excluded_folders` and the asset
  *  root. A missing or unreadable settings file excludes nothing and takes the default root. */
-export async function readWatchScope(root: string): Promise<WatchScope> {
-  const leaves = await liveLeaves(root)
-  return { excluded: leaves.excluded, assetDir: leaves.assetDirectory }
-}
+export const readWatchScope = async (root: string): Promise<WatchScope> =>
+  scopeOf(await liveLeaves(root))
 
 /** The nexus's default window zoom from `personalization.defaultViewScale` — the factor the window
  *  opens at and ⌘0 resets to, clamped to a usable range; absent/malformed → 1.0. */

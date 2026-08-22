@@ -25,6 +25,7 @@ import {
   readSpaceOrders,
   resolveAssignedSchema,
   resolveEntityContexts,
+  scopeOf,
   type SettingsLeaves,
 } from './readNexus'
 import { coerceOpenIn, coerceViewButton, coerceViewStyle } from '@shared/schemas'
@@ -387,9 +388,7 @@ const readSettings = async (root: string): Promise<SettingsLeaves> =>
 async function applySettingsLeaf(root: string, watched: WatchScope): Promise<'ok' | 'refresh'> {
   const leaves = await readSettings(root)
   // A scope change moves what the walk and watcher can even see — structural, not a leaf.
-  return sameScope({ excluded: leaves.excluded, assetDir: leaves.assetDirectory }, watched)
-    ? applySettingsLeaves(root, leaves)
-    : 'refresh'
+  return sameScope(scopeOf(leaves), watched) ? applySettingsLeaves(root, leaves) : 'refresh'
 }
 
 /** Re-read `settings.json` and patch every leaf it feeds — the shared confirmer for the

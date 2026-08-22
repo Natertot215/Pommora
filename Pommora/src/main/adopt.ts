@@ -13,7 +13,7 @@ import { asString } from './coerce'
 import { baseSidecar } from '@shared/schemas'
 import { recordWrite } from './io/writeEcho'
 import { shouldSkipDir, type WatchScope } from './exclusion'
-import { readSettingsLeaves } from './readNexus'
+import { readSettingsLeaves, scopeOf } from './readNexus'
 import {
   AGENDA_SLOTS,
   agendaContext,
@@ -193,8 +193,7 @@ export async function ensureFolderId(root: string, absDir: string): Promise<void
  */
 export async function stampAdopted(root: string): Promise<{ stamped: number }> {
   const settings = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings))) ?? {}
-  const leaves = readSettingsLeaves(settings)
-  const scope: WatchScope = { excluded: leaves.excluded, assetDir: leaves.assetDirectory }
+  const scope = scopeOf(readSettingsLeaves(settings))
   const identity = await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.identity))
   // `sidecarMode: false` is the honest reading for adoption specifically: a container sidecar's
   // ABSENCE is what this pass exists to fix, so it must not be taken as a reason to skip. Agenda
