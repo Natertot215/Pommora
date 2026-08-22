@@ -532,7 +532,12 @@ function pushConstruct(
     }
   } else if (lm?.kind === 'checkbox' && lm.box) {
     // Raw `- [ ] ` shows only when the caret is on the marker; else a checkbox widget takes its slot.
-    intents.push({ kind: 'line', from: ls, className: 'md-li md-li-task', level: lm.level })
+    intents.push({
+      kind: 'line',
+      from: ls,
+      className: `md-li md-li-task${lm.checked ? ' md-li-done' : ''}`,
+      level: lm.level,
+    })
     if (lm.markerStart > 0)
       intents.push({ kind: 'hide', from: innerStart, to: innerStart + lm.markerStart })
     if (!onMarker) {

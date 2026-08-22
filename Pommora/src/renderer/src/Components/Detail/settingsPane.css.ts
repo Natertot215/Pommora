@@ -430,7 +430,12 @@ export const colorChip = style({
  *  carry no display names, and the swatch says more than a family name could. */
 export const colorSwatch = style([
   switchTrack,
-  { selectors: { '&&': { background: 'var(--sw)' } } },
+  {
+    // The outline a greyscale cell brings with it; every other cell passes `transparent` and the
+    // swatch reads as the bare fill it always did.
+    border: '1px solid var(--sw-outline, transparent)',
+    selectors: { '&&': { background: 'var(--sw)' } },
+  },
 ])
 
 /** The scoped-pane footer breadcrumb — the embed's source path, `(icon) Collection › (icon) Set`;

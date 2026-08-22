@@ -7,21 +7,42 @@ import {
   viewEmbedZoom,
 } from '@shared/types'
 import { chipColorFor } from './tokens/colorMap'
-import { cellColor } from './tokens/ramp'
+import { cellColor, checkboxTint } from './tokens/ramp'
 
-/** A link color resolves to its own cell, or defers to whatever it inherits — the sentinel and the
- *  absent key mean the same thing, so one helper serves both link settings. */
-function linkColorCss(setting: string | undefined, inherit: string): string {
+/** A color setting resolves to its own cell, or defers to whatever it inherits — the sentinel and
+ *  the absent key mean the same thing, so one helper serves every one of them. */
+function settingColorCss(setting: string | undefined, inherit: string): string {
   if (!setting || setting === 'accent' || setting === 'system') return inherit
   const key = chipColorFor(setting)
   return key === 'default' ? inherit : cellColor(key)
 }
 
-/** The two link vars each setting writes, and what each falls back to. */
-const LINK_VARS = {
+/** The var each color setting writes, and what it falls back to when nothing is chosen. A setting
+ *  resolving to ONE color belongs here; the checkbox resolves to three and is applied below. */
+const COLOR_VARS = {
   connectionColor: { cssVar: '--connection', inherit: 'var(--accent)' },
   externalLinkColor: { cssVar: '--link', inherit: 'var(--system-accent)' },
 } as const
+
+/** The three vars a chosen checkbox cell writes. Cleared, all three are REMOVED rather than set to
+ *  an accent copy — the stylesheet's own fallbacks are the accent recipe, so an unset var is what
+ *  keeps the box following the accent as it changes. */
+const CHECKBOX_VARS = ['--checkbox-fill', '--checkbox-border', '--checkbox-mark'] as const
+
+function applyCheckboxColor(el: HTMLElement, value: unknown): void {
+  const setting = value as string | undefined
+  const key = setting && setting !== 'accent' ? chipColorFor(setting) : 'default'
+  if (key === 'default') {
+    for (const v of CHECKBOX_VARS) el.style.removeProperty(v)
+    return
+  }
+  // The chip's own resolution, greyscale row included — a grey cell has no chroma to outline itself
+  // with, and painting its raw color would leave the dark end invisible against the page.
+  const { background, borderColor, color } = checkboxTint(key)
+  el.style.setProperty('--checkbox-fill', background)
+  el.style.setProperty('--checkbox-border', borderColor)
+  el.style.setProperty('--checkbox-mark', color)
+}
 
 /** The knobs that render as a root class toggled by a boolean — a new one is an entry here. */
 const ROOT_CLASSES: Partial<Record<keyof Personalization, string>> = {
@@ -29,6 +50,7 @@ const ROOT_CLASSES: Partial<Record<keyof Personalization, string>> = {
   outlinerLines: 'outliner-lines',
   codeblockLineCount: 'cb-line-count',
   plainUnresolvedLinks: 'plain-unresolved',
+  muteCheckedItems: 'mute-checked',
 }
 
 /** The knobs that render as a root class when the key holds one particular value — the
@@ -53,9 +75,13 @@ export function applyPersonalizationKey<K extends keyof Personalization>(
     el.style.setProperty('--editor-scale', String(coerceScale(value, EDITOR_SCALE_DEFAULT)))
     return
   }
-  const link = LINK_VARS[key as keyof typeof LINK_VARS]
-  if (link) {
-    el.style.setProperty(link.cssVar, linkColorCss(value as string | undefined, link.inherit))
+  if (key === 'checkboxColor') {
+    applyCheckboxColor(el, value)
+    return
+  }
+  const color = COLOR_VARS[key as keyof typeof COLOR_VARS]
+  if (color) {
+    el.style.setProperty(color.cssVar, settingColorCss(value as string | undefined, color.inherit))
     return
   }
   // Anything with no class here has no DOM effect at this seam: accent → applyAccent;
@@ -69,7 +95,8 @@ export function applyPersonalizationKey<K extends keyof Personalization>(
 export function applyPersonalization(p: Personalization): void {
   applyPersonalizationKey('embedScale', p.embedScale)
   applyPersonalizationKey('editorScale', p.editorScale)
-  for (const table of [LINK_VARS, ROOT_CLASSES, ROOT_VALUE_CLASSES])
+  applyPersonalizationKey('checkboxColor', p.checkboxColor)
+  for (const table of [COLOR_VARS, ROOT_CLASSES, ROOT_VALUE_CLASSES])
     for (const key of Object.keys(table) as (keyof Personalization)[])
       applyPersonalizationKey(key, p[key])
 }
