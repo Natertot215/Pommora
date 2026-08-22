@@ -26,7 +26,8 @@ export function FileLabel({
    *  removable — but reads as naming nothing. */
   unresolved?: boolean
 }): React.JSX.Element {
-  const glyph = icon ?? <Icon name={fileTypeIcon(name)} size="control" />
+  const derived = fileTypeIcon(name)
+  const glyph = icon ?? (derived ? <Icon name={derived} size="control" /> : undefined)
   const chip = (
     <Chip
       shape="file"
