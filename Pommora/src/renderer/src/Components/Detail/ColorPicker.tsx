@@ -108,7 +108,7 @@ export function ColorSwatchField({
           style={
             {
               '--sw': grey?.background ?? tintAt(css, TINT_STEPS.primary),
-              '--sw-outline': grey?.borderColor ?? 'transparent',
+              '--sw-outline': grey?.borderColor,
             } as React.CSSProperties
           }
         />

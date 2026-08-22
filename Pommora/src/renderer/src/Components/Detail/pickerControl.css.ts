@@ -26,5 +26,7 @@ export const value = style([
   { selectors: { '&&': { color: c.label.secondary } } },
 ])
 
-/** The value, written rather than read — the same metrics and tone, with the UA's box stripped. */
-export const valueCaret = style([value, bare, { width: 'auto', minWidth: '12px' }])
+/** What the value wears while it is being written rather than read — the UA's box stripped, sized to
+ *  its text. Worn ALONGSIDE whichever value tone the trigger is already showing, so a footing picker
+ *  keeps its own while editing rather than reverting to the standard one. */
+export const caretShape = style([bare, { width: 'auto', minWidth: '12px' }])
