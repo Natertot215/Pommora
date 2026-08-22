@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 08-21-2026 → 08-22      | PM-112 | Variable Asset Directories                           |
 | 08-20-2026 → 08-21      | PM-111 | Footnotes                                            |
 | 08-20-2026              | PM-110 | A Link Property Reaches A Page                       |
 | 08-18-2026              | PM-109 | The Color Ramp                                       |
@@ -115,6 +116,17 @@
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
 
+
+#### PM-112 || Variable Asset Directories
+
+**DATE:** 08-21-2026 → 08-22
+
+The nexus asset directory became a configured folder rather than a fixed one: `asset_directory` reads as a tree leaf beside `excluded_folders` and both travel as one `WatchScope`, so the walk, the corpus, chokidar's ignore and `classifyEvent` all learn the root from the same value — and the asset test runs ahead of every other skip, which is what lets a folder already named in `excluded_folders` deliver events at all. `assetMap.ts` holds a filename→paths listing main patches from those events and pushes, and `resolveAssetValue` reads the three spellings a stored image can wear: an Obsidian `[[Name.png]]` wikilink, a raw path, and a web address. `pickImageDataUrl` and `writeImageAsset`'s invented `banner-<token>` name retired together — `adoptImageAsset` copies a picked file in under its own basename, or references it where it already sits — and `assetMigrate.ts` walked the six stores holding `.nexus/assets` paths, collapsed byte-identical files, and emptied that folder through the trash. `underAssetRoot` answers containment for the protocol handler and the delete guard alike, and a replace deletes only what Pommora minted, since the configured folder is the user's own and shared with whatever else reads it.
+
+**What the writes owe:** `atomicWriteBinary` records its own write and `isRecentWrite` drops the echo, so nothing Pommora writes reaches `settle`. Every asset write therefore patches the held map and pushes it on its own channel, `assets:setDir` re-walks and re-arms the watcher itself, and the migration refreshes the map before it returns.
+
+- **Commits:** `51762bfd^..7e71a12a`
+- **Diff:** Net +797 | +1369 / −572
 
 #### PM-111 || Footnotes
 **DATE:** 08-20-2026 → 08-21
