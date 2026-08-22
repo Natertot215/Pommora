@@ -26,7 +26,7 @@ export function NavView(): React.JSX.Element {
   }
   const ownBanner = useSession((s) => s.navBanner)
   const homeBanner = useSession((s) => s.tree?.homepage.banner)
-  const banner = useAssetUrl()(ownBanner ?? homeBanner)
+  const bannerSrc = useAssetUrl(ownBanner ?? homeBanner)
   const mutate = useSession((s) => s.mutate)
   const [query, setQuery] = useState('')
   const results = useMemo(() => (query.trim() ? splitSearch(search(query)) : null), [query, search])
@@ -58,10 +58,10 @@ export function NavView(): React.JSX.Element {
 
   return (
     <div className="nav-view">
-      {banner ? (
+      {bannerSrc ? (
         // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
         <div className="banner nav-view-banner" onContextMenu={(e) => void onBannerMenu(e)}>
-          <img className="banner-img" src={banner} alt="" />
+          <img className="banner-img" src={bannerSrc} alt="" />
           <div className="banner-title">{searchInput}</div>
         </div>
       ) : (

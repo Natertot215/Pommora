@@ -181,7 +181,7 @@ function EmbedBanner({
   onChanged: () => void
 }): React.JSX.Element | null {
   const { openMenu: bannerMenu } = useBannerMenu(path, 'page', onChanged)
-  const coverSrc = useAssetUrl()(cover)
+  const coverSrc = useAssetUrl(cover)
   if (!coverSrc) return null
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control

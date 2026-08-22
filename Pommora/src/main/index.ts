@@ -59,7 +59,7 @@ import {
 } from '@shared/blocks'
 import { pathExists } from './io/atomicWrite'
 import { readAppConfig, updateAppConfig, addRecent, DEFAULT_TRASH_MODE } from './appConfig'
-import { emptyAssetMap, liveAssetMap } from './assetMap'
+import { liveAssetMap } from './assetMap'
 import { underAssetRoot } from './assetRoots'
 import { sessionRoot, openSession, resolveRestorePath, isExistingDir } from './session'
 import { openSessionDb, closeSessionDb, sessionDb } from './sessionDb'
@@ -127,7 +127,6 @@ import {
 import type { PageFrontmatter } from '@shared/schemas'
 import { handleMutate, type MutateDeps } from './mutate'
 import { showContextMenu } from './contextMenu'
-import { ASSETS_DIR_REL } from '@shared/nexusPaths'
 import { installAppMenu } from './menu'
 import { popTableMenu } from './tableMenu'
 import { popGripMenu } from './gripMenu'
@@ -165,7 +164,13 @@ import type {
   TitleMenuAction,
 } from '@shared/identityMenus'
 import type { AssetMap, ViewButton, ViewStyle } from '@shared/types'
-import { WEB_ZOOM_DEFAULT, coerceScale, coerceViewScale, viewScaleZoom } from '@shared/types'
+import {
+  EMPTY_ASSET_MAP,
+  WEB_ZOOM_DEFAULT,
+  coerceScale,
+  coerceViewScale,
+  viewScaleZoom,
+} from '@shared/types'
 import { installEditorContextMenu, setFormatState, setGripHot } from './editorMenu'
 import type { FormatState } from '@shared/editorMenu'
 import { isValidLink, normalizeLinkUrl } from '@shared/links'
@@ -722,7 +727,7 @@ serveBridge(
       kind: 'raw',
       fn: async (): Promise<AssetMap> => {
         const root = sessionRoot()
-        return root === null ? emptyAssetMap() : liveAssetMap(root)
+        return root === null ? EMPTY_ASSET_MAP : liveAssetMap(root)
       },
     },
 
