@@ -1,5 +1,20 @@
 // One pure predicate unifying convention skips + user folder exclusions.
 
+import { NEXUS_DIR, TRASH_DIR } from '@shared/nexusPaths'
+
+/** A path segment the watcher never delivers: the trash, an install's churn, the store and its
+ *  WAL, and OS/editor dotfile cruft. `.nexus` is the exception it makes on purpose — Contexts and
+ *  settings live there. Shared, because anything listing a directory the watcher also watches
+ *  must skip exactly what the watcher drops, or it holds entries no event will ever update. */
+export function neverWatched(seg: string): boolean {
+  return (
+    seg === TRASH_DIR ||
+    seg === 'node_modules' ||
+    seg.startsWith('nexus.db') ||
+    (seg.startsWith('.') && seg !== NEXUS_DIR)
+  )
+}
+
 /** NFC-normalize + case-fold a single path segment for comparison. */
 export function normalizeSeg(s: string): string {
   return s.normalize('NFC').toLocaleLowerCase()

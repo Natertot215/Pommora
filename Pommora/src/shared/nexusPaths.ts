@@ -35,7 +35,9 @@ export const thumbKey = (navKey: string): string => navKey.replace(':', '-')
  *  the `nexus-asset://` scheme, so the same string addresses the file and the request for it.
  *  Pinned to `ASSETS_DIR_REL` deliberately: these are Pommora's own derived files, so they stay
  *  where the app owns them rather than following `asset_directory` into a shared folder. */
-export const thumbsRel = (nexusId: string): string => `${ASSETS_DIR_REL}/${nexusId}/thumbnails`
+export const THUMBNAILS_SEGMENT = 'thumbnails'
+export const thumbsRel = (nexusId: string): string =>
+  `${ASSETS_DIR_REL}/${nexusId}/${THUMBNAILS_SEGMENT}`
 export const thumbRel = (nexusId: string, key: string): string => `${thumbsRel(nexusId)}/${key}.jpg`
 
 /** A Context's own folder — its title names it, which is why a retitle is a folder rename. */

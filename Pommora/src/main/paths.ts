@@ -35,6 +35,12 @@ export function contextsRegistryFile(root: string): string {
   return join(root, CONTEXTS_REGISTRY_REL)
 }
 
+/** The configured asset root, absolute. The value is nexus-relative POSIX, validated at the
+ *  reader, so it joins the same way every other relative path here does. */
+export function assetsDir(root: string, assetDir: string): string {
+  return join(root, ...assetDir.split('/'))
+}
+
 export function contextsDir(root: string): string {
   return join(root, CONTEXTS_DIR_REL)
 }
