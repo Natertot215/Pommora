@@ -91,14 +91,18 @@ export async function corpusFilesUnder(
   return out
 }
 
-/** Every file under `dir` (recursive) matching one of `suffixes`, as absolute paths —
- *  the JSON-scope sibling of listMarkdownFiles (`_space.json` sidecars). */
-export async function listFilesRecursive(dir: string, suffixes: string[]): Promise<string[]> {
-  let rels: string[]
+/** Every file under `dir` (recursive), as absolute paths — the JSON-scope sibling of
+ *  listMarkdownFiles (`_space.json` sidecars). Omitting `suffixes` takes every file, which is
+ *  what an asset listing needs: an extension list there would silently drop `.svg` / `.heic` /
+ *  `.avif` and foreclose the any-file property. */
+export async function listFilesRecursive(dir: string, suffixes?: string[]): Promise<string[]> {
+  let entries: Dirent[]
   try {
-    rels = await readdir(dir, { recursive: true })
+    entries = await readdir(dir, { recursive: true, withFileTypes: true })
   } catch {
     return []
   }
-  return rels.filter((r) => suffixes.some((s) => r.endsWith(s))).map((r) => join(dir, r))
+  return entries
+    .filter((e) => e.isFile() && (!suffixes || suffixes.some((s) => e.name.endsWith(s))))
+    .map((e) => join(e.parentPath, e.name))
 }

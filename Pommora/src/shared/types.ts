@@ -341,6 +341,16 @@ export interface NexusLabels {
   agendaEvent: LabelPair
 }
 
+/** The asset root's files, keyed by normalized basename — what a `[[Name.png]]` reference
+ *  resolves against. Every path answering to a name is held, sorted, so display can take the
+ *  first while a delete refuses to choose; holding only the winner would leave an unlink with
+ *  nothing to promote. `version` moves on every change, so a file re-saved under an unchanged
+ *  name is re-requested rather than left as a deep-equal map nothing repaints for. */
+export interface AssetMap {
+  files: Record<string, string[]>
+  version: number
+}
+
 export interface NexusTree {
   /** `name` is the root folder's basename (filename = title). `profileImage` is a
    *  nexus-relative path into `.nexus/assets/<id>/` (or null) and `profileSubtitle` a
