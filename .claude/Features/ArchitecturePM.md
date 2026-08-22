@@ -111,7 +111,7 @@ A deleted entity moves to `.trash/` under the folder chain it came from, where a
 
 #### The Asset Directory
 
-One directory holds the assets entities point at — used for banners, nexus icon, embedded files, ect... — configurable to any folder in the Nexus and defaulting to `.nexus/assets`. The configured directory is excluded from content-adoption but is otherwise managed by the watcher the same way. A file landing there patches an in-memory filename list that the renderer resolves [[File.png]] against; nothing about it is stored except its name, which is what makes a sync eviction and re-download a non-event.
+One directory holds the assets entities point at — used for banners, nexus icon, embedded files, ect... — configurable to any folder in the Nexus and defaulting to `.nexus/assets`. The configured directory is excluded from content-adoption but is otherwise managed by the watcher the same way. A file landing there patches an in-memory filename list that the renderer resolves `[[File.png]]` against; nothing about it is stored except its name, which is what makes a sync eviction and re-download a non-event.
 
 ### The Data Layer
 
