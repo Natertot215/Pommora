@@ -306,10 +306,10 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
 - Control: `rg -F "@shared/" src` → 862.
 
 **Steps:**
-- [ ] Delete the chip's `openFile` call, then the channel, the binding and the handler.
-- [ ] Delete the test's `openFileSpy` and its assertion.
-- [ ] `rg -F "file:open" src` → expect 0, control non-zero.
-- [ ] Full gate green. Commit: `refactor(ipc): the file-open channel goes with its last caller`
+- [x] Delete the chip's `openFile` call, then the channel, the binding and the handler.
+- [x] Delete the test's `openFileSpy` and its assertion.
+- [x] `rg -F "file:open" src` → expect 0, control non-zero.
+- [x] Full gate green. Commit: `refactor(ipc): the file-open channel goes with its last caller`
 
 #### Gate 1 — the shape lands, and the tree is smaller
 - [ ] Gate commands green, exit codes read directly.
