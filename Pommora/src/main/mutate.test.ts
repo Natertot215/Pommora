@@ -628,14 +628,16 @@ describe('handleMutate — setBanner', () => {
     return assets
   }
 
-  it('a replaced banner named by wikilink is deleted when exactly one file answers', async () => {
+  it("a replaced banner in the user's own asset folder is never deleted", async () => {
+    // The folder is shared — a file there may be referenced from an Obsidian note this app cannot
+    // see, and nothing on this path is trashed. Replacing a banner is not consent to destroy it.
     const assets = await withAssets('[[Solo.png]]', [['Solo.png']])
     const r = await handleMutate(
       { op: 'setBanner', path: 'Notes', kind: 'collection', dataUrl: PNG },
       nexusDeps,
     )
     expect(r.ok).toBe(true)
-    expect(await pathExists(join(assets, 'Solo.png'))).toBe(false)
+    expect(await pathExists(join(assets, 'Solo.png'))).toBe(true)
   })
 
   it('a replaced banner several files answer to deletes none of them', async () => {
@@ -651,6 +653,20 @@ describe('handleMutate — setBanner', () => {
     expect(r.ok).toBe(true)
     expect(await pathExists(join(assets, 'a', 'Twin.png'))).toBe(true)
     expect(await pathExists(join(assets, 'b', 'Twin.png'))).toBe(true)
+  })
+
+  it('a replaced banner Pommora minted under .nexus/assets is still cleaned up', async () => {
+    await handleMutate(
+      { op: 'setBanner', path: 'Notes', kind: 'collection', dataUrl: PNG },
+      nexusDeps,
+    )
+    const first = JSON.parse(await read('Notes/_pagecollection.json')).banner as string
+    expect(await pathExists(join(root, first))).toBe(true)
+    await handleMutate(
+      { op: 'setBanner', path: 'Notes', kind: 'collection', dataUrl: PNG },
+      nexusDeps,
+    )
+    expect(await pathExists(join(root, first))).toBe(false)
   })
 
   it('sets a banner on a set sidecar, keyed by the set id', async () => {

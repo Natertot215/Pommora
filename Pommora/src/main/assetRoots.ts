@@ -4,12 +4,17 @@
 
 import { parseConnectionText } from '@shared/connections'
 import { ASSETS_DIR_REL } from '@shared/nexusPaths'
+import { normalizeSeg } from './exclusion'
 import { liveAssetMap, resolveAssetName } from './assetMap'
 import { readWatchScope } from './settings'
 
 const startsUnder = (segs: string[], root: string): boolean => {
-  const prefix = root.split('/').filter(Boolean)
-  return segs.length > prefix.length && prefix.every((seg, i) => segs[i] === seg)
+  const prefix = root.split('/').filter(Boolean).map(normalizeSeg)
+  // Case-folded like every other root test in the app: a stored path whose casing differs from
+  // the configured root is inside it for the walk and the watcher, and serving it 403 while they
+  // agree it exists is the divergence this module exists to prevent. `resolveUnderRoot` still
+  // realpaths afterward, which is what actually holds the boundary.
+  return segs.length > prefix.length && prefix.every((seg, i) => normalizeSeg(segs[i]) === seg)
 }
 
 /** Whether a nexus-relative POSIX path names a file inside an asset root. Both roots answer:
@@ -23,16 +28,21 @@ export function underAssetRoot(rel: string, assetDir: string): boolean {
   return startsUnder(segs, ASSETS_DIR_REL) || startsUnder(segs, assetDir)
 }
 
-/** The real file one stored banner value names, or null where nothing may be deleted. A wikilink
- *  is constrained by the map rather than by its own spelling — every entry is under the asset
- *  root by construction — and a name several files answer to deletes nothing at all: rendering
- *  the wrong image is recoverable, deleting one is not. */
+/** The real file a replaced banner value may delete — which is only ever one Pommora minted
+ *  itself, under `.nexus/assets`. The configured asset root is the user's own folder, shared with
+ *  whatever else reads it: a file there may be referenced from an Obsidian note this app cannot
+ *  see, and replacing a banner is not consent to destroy it. Nothing is trashed on this path, so
+ *  the deletion would be unrecoverable.
+ *
+ *  A name several files answer to resolves to nothing at all — rendering the wrong image is
+ *  recoverable, deleting one is not. */
 export async function assetFileToDelete(root: string, value: unknown): Promise<string | null> {
   if (typeof value !== 'string' || !value.trim()) return null
   const link = parseConnectionText(value)
-  if (link) {
-    const hit = resolveAssetName(await liveAssetMap(root), link.title)
-    return typeof hit === 'string' ? hit : null
-  }
-  return underAssetRoot(value, (await readWatchScope(root)).assetDir) ? value : null
+  const rel = link
+    ? resolveAssetName(await liveAssetMap(root), link.title)
+    : underAssetRoot(value, (await readWatchScope(root)).assetDir)
+      ? value
+      : null
+  return typeof rel === 'string' && rel.startsWith(`${ASSETS_DIR_REL}/`) ? rel : null
 }

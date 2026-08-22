@@ -8,7 +8,8 @@
 
 import { relative, sep } from 'node:path'
 import { normalizeTitle } from '@shared/connections'
-import { THUMBNAILS_SEGMENT } from '@shared/nexusPaths'
+import { stabilize } from '@shared/treeStabilize'
+import { ASSETS_DIR_REL, THUMBNAILS_SEGMENT } from '@shared/nexusPaths'
 import type { AssetMap } from '@shared/types'
 import { neverWatched } from './exclusion'
 import { assetsDir } from './paths'
@@ -16,10 +17,16 @@ import { listFilesRecursive } from './io/walk'
 import { readWatchScope } from './settings'
 import type { WatchEventName } from './watchPatch'
 
-/** Whether this path is one the map may hold. Thumbnails are Pommora's own derived files, and
- *  the cruft rule matches the watcher's, so the map never holds what no event can update. */
-function indexable(rel: string): boolean {
-  return !rel.split('/').some((seg) => seg === THUMBNAILS_SEGMENT || neverWatched(seg))
+/** Whether this path is one the map may hold. The root's OWN segments are exempt, exactly as
+ *  they are in the watcher's ignore — a root named `.attachments` is the case that exemption
+ *  exists for, and applying the cruft rule to it would yield a permanently empty map. Below the
+ *  root the rule matches the watcher's, so the map never holds what no event can update.
+ *  Thumbnails are Pommora's own derived files and are skipped under the default root alone; a
+ *  user's folder that happens to be called `thumbnails` is theirs. */
+function indexable(rel: string, assetDir: string): boolean {
+  const below = rel.split('/').slice(assetDir.split('/').filter(Boolean).length)
+  if (below.some(neverWatched)) return false
+  return !(rel.startsWith(`${ASSETS_DIR_REL}/`) && below.includes(THUMBNAILS_SEGMENT))
 }
 
 const nameOf = (rel: string): string => normalizeTitle(rel.split('/').pop() ?? '')
@@ -29,7 +36,9 @@ const nameOf = (rel: string): string => normalizeTitle(rel.split('/').pop() ?? '
 export async function buildAssetMap(root: string, assetDir: string): Promise<AssetMap> {
   const abs = await listFilesRecursive(assetsDir(root, assetDir))
   const files: Record<string, string[]> = {}
-  for (const rel of abs.map((p) => relative(root, p).split(sep).join('/')).filter(indexable)) {
+  for (const rel of abs
+    .map((p) => relative(root, p).split(sep).join('/'))
+    .filter((rel) => indexable(rel, assetDir))) {
     const name = nameOf(rel)
     if (!name) continue
     const held = files[name]
@@ -47,18 +56,21 @@ export function patchAssetMap(
   map: AssetMap,
   rel: string,
   event: 'add' | 'change' | 'unlink',
+  assetDir: string,
 ): AssetMap {
-  if (!indexable(rel)) return map
+  if (!indexable(rel, assetDir)) return map
   const name = nameOf(rel)
   if (!name) return map
-  const version = map.version + 1
-  if (event === 'change') return { ...map, version }
+  // Only a re-save under an unchanged name needs the version: an add or an unlink already gives
+  // every affected consumer a different path, and bumping here would re-request every mounted
+  // image in the nexus for one file a sync delivered.
+  if (event === 'change') return { ...map, version: map.version + 1 }
   const held = map.files[name] ?? []
   const paths =
     event === 'add' ? [...held.filter((p) => p !== rel), rel].sort() : held.filter((p) => p !== rel)
   const files = { ...map.files, [name]: paths }
   if (!paths.length) delete files[name]
-  return { files, version }
+  return { files, version: map.version }
 }
 
 /** A name several files answer to. A symbol rather than a sentinel string: `string | 'ambiguous'`
@@ -77,18 +89,33 @@ export function resolveAssetName(map: AssetMap, name: string): string | null | t
 // The map as last built or patched — main's one holder, pinned to the root it was built for. A
 // session switch needs no teardown: the pin makes the previous nexus's map unreadable, and the
 // first ask for the new root rebuilds over it.
-let held: { root: string; map: AssetMap } | null = null
+let held: { root: string; assetDir: string; map: AssetMap } | null = null
 
 export function getHeldAssetMap(root: string): AssetMap | null {
   return held?.root === root ? held.map : null
 }
 
-/** The map for `root`, built on first ask and held after. */
+/** The map for `root`, built on first ask and held after. A changed `asset_directory` rebuilds:
+ *  the held listing describes the folder it was taken from, so patching a new root's events into
+ *  it would answer with paths that moved away. */
 export async function liveAssetMap(root: string): Promise<AssetMap> {
-  const already = getHeldAssetMap(root)
-  if (already) return already
-  const map = await buildAssetMap(root, (await readWatchScope(root)).assetDir)
-  held = { root, map }
+  const { assetDir } = await readWatchScope(root)
+  if (held?.root === root && held.assetDir === assetDir) return held.map
+  const map = await buildAssetMap(root, assetDir)
+  held = { root, assetDir, map }
+  return map
+}
+
+/** Rebuild from disk. The map is otherwise patch-only, so the walk the watcher falls back to —
+ *  which is where an unclassifiable batch lands, its asset events applied by nothing — is also
+ *  where the listing must be taken again. */
+export async function refreshAssetMap(root: string): Promise<AssetMap> {
+  const prior = held?.root === root ? held.map : null
+  const { assetDir } = await readWatchScope(root)
+  // Stabilized against what was held, so a walk that moved nothing leaves the map's identity
+  // alone and settle has nothing to push.
+  const map = stabilize(await buildAssetMap(root, assetDir), prior)
+  held = { root, assetDir, map }
   return map
 }
 
@@ -99,11 +126,10 @@ export function patchHeldAssetMap(
   rel: string,
   event: WatchEventName,
 ): AssetMap | null {
-  const current = getHeldAssetMap(root)
-  if (!current) return null
+  if (held?.root !== root) return null
   if (event !== 'add' && event !== 'change' && event !== 'unlink') return null
-  const next = patchAssetMap(current, rel, event)
-  if (next === current) return null
-  held = { root, map: next }
+  const next = patchAssetMap(held.map, rel, event, held.assetDir)
+  if (next === held.map) return null
+  held = { ...held, map: next }
   return next
 }
