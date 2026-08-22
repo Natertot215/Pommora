@@ -132,16 +132,6 @@
   padding: calc(16px * var(--mdpm-scale)) calc(14px * var(--mdpm-scale))
     calc(16px * var(--mdpm-scale)) var(--fold-gutter);
 }
-/* The task checkbox rides the shared fixed chip-box geometry, which the scale vars don't reach —
-   so in a scaled block it reads oversized against the text. Zoom the whole widget (box + stroke +
-   checkmark) to --glyph-scale so it tracks both the embed's base scale AND the per-block Scale in
-   lockstep with the glyphs. Scoped to the two block contexts: the chipBoxGeometry token and every chip
-   using it stay untouched in the full-page editor (an atomic widget, so zoom doesn't disturb caret
-   mapping). Absent scale ⇒ zoom:1, a no-op. */
-:is(.pgembed, .blk-md) .pm-checkbox {
-  zoom: var(--glyph-scale);
-}
-
 /* A host that owns the scroll itself: the editor chain GROWS to its content (height:auto down to
    the CM6 editor) so the HOST is the one scroller and content can ride under floating chrome. In a
    tile the host caps the embed and CM6 scrolls internally; here nothing caps it. */

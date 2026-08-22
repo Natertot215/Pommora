@@ -42,6 +42,7 @@ import {
   coerceHoverLinger,
   coerceScale,
   coerceViewScale,
+  EDITOR_SCALE_DEFAULT,
 } from '@shared/types'
 import { isColorKey } from '@shared/theme'
 import { savedView, type SavedView } from '@shared/views'
@@ -138,6 +139,7 @@ export function readPersonalization(raw: unknown): Personalization {
     revealTabBarOnHover: bool(p.revealTabBarOnHover),
     pickerSelection: p.pickerSelection === 'checked' ? 'checked' : undefined,
     connectionsOpenInPreview: bool(p.connectionsOpenInPreview),
+    plainUnresolvedLinks: bool(p.plainUnresolvedLinks),
     ribbonOrder: ribbonOrder.length ? ribbonOrder : undefined,
     defaultViewScale: coerceViewScale(p.defaultViewScale),
     hoverPreviewLinger: coerceHoverLinger(p.hoverPreviewLinger),
@@ -151,6 +153,7 @@ export function readPersonalization(raw: unknown): Personalization {
     openLinksInApp: bool(p.openLinksInApp),
     webZoomFactor: scale(p.webZoomFactor, WEB_ZOOM_DEFAULT),
     embedScale: scale(p.embedScale, EMBED_SCALE_DEFAULT),
+    editorScale: scale(p.editorScale, EDITOR_SCALE_DEFAULT),
     citationsShown: bool(p.citationsShown),
     jumpToCitation: bool(p.jumpToCitation),
   }

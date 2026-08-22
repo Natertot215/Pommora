@@ -9,11 +9,16 @@
 }
 
 :root {
-  /* --mdpm-scale: the editor's SINGLE size factor — every px-fixed dimension
+  /* --editor-scale: the nexus-wide Editor Scale, the one factor the reader sets. It moves the two
+     halves of a page's size together — the structural factor below and the body font — so the whole
+     surface grows as a piece rather than text drifting away from the chrome around it.
+     --mdpm-scale: the editor's SINGLE size factor — every px-fixed dimension
      (glyphs, gutter, chrome) derives from it; a host scales the whole editor by
-     setting it on any ancestor (embeds pair it with the matching font zoom).
+     setting it on any ancestor (embeds pair it with the matching font zoom, and that
+     local value replaces this one rather than compounding with it).
      Global default so a host's value inherits INTO the shell. */
-  --mdpm-scale: 1;
+  --editor-scale: 1;
+  --mdpm-scale: var(--editor-scale);
 }
 
 .mdpm-shell {
@@ -87,7 +92,7 @@
   /* The base is --editor-font-size (the editor `zoom` prop). --block-zoom applies the per-block Scale
      LINEARLY here — NOT through the clamped zoom curve — so it stays locked to --glyph-scale (both are
      × --block-zoom) and never floors. Absent --block-zoom ⇒ unchanged. em children ride this root. */
-  font-size: calc(var(--editor-font-size, 15px) * var(--block-zoom, 1));
+  font-size: calc(var(--editor-font-size, 15px) * var(--block-zoom, 1) * var(--editor-scale, 1));
 }
 
 /* Page header — scroll-tracks: translates up over its own height as you scroll (banner scrolls away). */
@@ -114,9 +119,10 @@
     transform: translateY(calc(-1 * var(--header-zone, 90px)));
   }
 }
-/* One title size in both states — a banner must not shrink the title. */
+/* One title size in both states — a banner must not shrink the title. The title reads as the page's
+   first line rather than as chrome around it, so it takes the Editor Scale with the body. */
 .mdpm-header .detail-title {
-  --detail-title-size: 28px;
+  --detail-title-size: calc(28px * var(--editor-scale, 1));
 }
 
 /* No-banner state: canonical .add-banner-strip / .add-banner-btn live in Banner.css. Top padding
@@ -354,19 +360,42 @@
   text-decoration: underline;
   cursor: pointer;
 }
-/* Invalid external link — dimmed title (URL stays hidden at rest so it doesn't pollute the line).
-   No pointer cursor: invalid links don't navigate, so they read as plain text, not something clickable. */
+/* A link that leads nowhere — a malformed address, or a `[[Title]]` no page answers to. Both wear
+   the inactive state over ordinary label text: still here, not active. Their syntax stays visible
+   and reads as syntax. No pointer cursor: neither navigates, so neither advertises that it will.
+   The invalid link's `(url)` stays hidden at rest so it doesn't pollute the line. */
+.md-link-invalid,
+.md-connection-phantom {
+  color: var(--label-primary);
+  opacity: var(--state-inactive);
+}
 .md-link-invalid {
-  color: var(--label-control);
   text-decoration: underline;
+}
+.md-unresolved-syntax,
+.md-phantom-syntax {
+  color: var(--label-control);
+}
+/* Plain-syntax mode: an unresolved link stops announcing itself and reads as the prose it is
+   written as. A markdown link's brackets are structure the document always shows, so they stay
+   syntax; a connection's are its own raw text and go with it.
+   The setting governs page prose alone. A table cell and the fields outside a page body are read
+   rather than written, so a link that leads nowhere there stays legible as one — those wear
+   `md-unresolved-fixed` and sit out the flip. */
+:root.plain-unresolved .md-link-invalid:not(.md-unresolved-fixed),
+:root.plain-unresolved .md-connection-phantom:not(.md-unresolved-fixed) {
+  color: inherit;
+  opacity: 1;
+}
+:root.plain-unresolved .md-phantom-syntax:not(.md-unresolved-fixed) {
+  color: inherit;
 }
 /* A valid link's revealed (url) — italic + underline signals validity; no link color. */
 .md-link-url {
   font-style: italic;
   text-decoration: underline;
 }
-/* Resolved connections wear the connection color; unresolved (phantom) get no class — they render
-   raw `[[Foo]]` as plain prose (handled in decorations.ts). Ambiguous reads muted. */
+/* Resolved connections wear the connection color; ambiguous reads muted. */
 .md-connection-resolved {
   color: var(--connection);
   cursor: pointer;
@@ -576,7 +605,7 @@
   --outliner-gap-bottom: -2px;
 }
 .outliner-lines .md-outliner-task {
-  --rail-x: 8.5px; /* checkbox box center, from chipBoxGeometry */
+  --rail-x: calc(8.5px * var(--glyph-scale)); /* checkbox box center, from chipBoxGeometry */
   /* The box rides low in its line (vertical-align), so its bottom cap reads longer — raise it to even the rail. */
   --outliner-gap-bottom: 8px;
 }
@@ -692,6 +721,16 @@
   padding-left: calc(var(--li-origin) + var(--li-col) + var(--task-zone));
   text-indent: calc(-1 * var(--task-zone));
 }
+/* The task checkbox rides the shared fixed chip-box geometry, which the scale vars don't reach — so
+   at any scale but 1 it reads wrong against the text beside it. Zoom the whole widget (box + stroke
+   + checkmark) to --glyph-scale so it tracks the Editor Scale, an embed's base scale, and the
+   per-block Scale in lockstep with the glyphs. Safe because the widget is atomic: zoom can't disturb
+   caret mapping through it. The chipBoxGeometry token and every chip wearing it stay untouched.
+   Absent scale ⇒ zoom:1, a no-op. */
+.mdpm-editor .pm-checkbox {
+  zoom: var(--glyph-scale);
+}
+
 .md-li-marker {
   display: inline-block;
   box-sizing: border-box;
