@@ -688,6 +688,19 @@ Both reviewers independently found the same defect, and I confirmed it by openin
 
 `onClick` has no consumer until Task 16. It stays because the spec's C-2c interface names it and its consumer is the next phase's first task; cutting and re-adding it across one phase boundary is churn, not restraint.
 
+#### Gate 2 — the simplification pass
+
+Each finding opened and reproduced before folding.
+
+- **Fixed · the chip painted a border.** `chipBase` sets border-*style* and every other shape names a width; the chrome-less one didn't, so the UA's `medium` drew a 3px rule in the text color. Caught by Nathan on sight. `border: 'none'` states the intent the shape is named for.
+- **Fixed · `fileTypeIcon` carried a guard arm that did nothing.** `dot === name.length - 1` was load-bearing only while the function could answer `undefined`; once it always falls back, `trailing.` reaches the same answer by falling through. Reproduced both ways before cutting. The `dot <= 0` half stays and is now said out loud: without it a bare `ts` slices to its own name and glyphs as TypeScript.
+- **Fixed · the roster check asserted what it was about to test.** `(ALIASES[raw] ?? raw) as FileTypeExt` claimed membership on the line before `includes` checked for it. `.find` — the house whitelist idiom — narrows honestly and drops the cast.
+- **Fixed · `SegmentEntry.onClick` was a passthrough with no caller.** `FileLabel` owns the prop and its interface is specified (C-2c); the entry-level forwarding was a second layer nobody asked for. Task 16 adds it in the same commit as the caller that needs it — one line then.
+- **Fixed · `chipFile`'s `padding: 0` zeroed nothing.** Neither `chipBase` nor `text.control.semibold` contributes one. The sibling shapes state their padding because they have one.
+- **Ruled, not fixed · `segmentIcon` may now be inert.** Its `flexShrink: 0` probably never fires, since `sr.segment` holds natural width. "Probably" is the reason it stays: it is one defensive declaration, the cost of being wrong is a squeezed glyph in a narrow field, and CSS alone can't settle it.
+- **Ruled, not fixed · the conditional prop spreads.** `exactOptionalPropertyTypes` isn't set, so `onRemove={e.onRemove}` would be identical and shorter — but the pattern is at ~34 sites across the renderer. Changing it here alone trades repo consistency for four lines. A repo-wide call, not a Phase 2 cleanup.
+- **Ruled, not fixed · `Cell.tsx` parses each wikilink twice** — once for the label, once inside `resolveFileValue`. A regex and a map hit per visible row; collapsing it means changing `resolveFileValue`'s return shape, which serves the image callers too.
+
 ### Open Against Later Tasks
 ### Deviations
 
