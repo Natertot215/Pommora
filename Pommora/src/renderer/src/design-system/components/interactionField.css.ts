@@ -24,6 +24,27 @@ export const field = style([
   },
 ])
 
+/** The hairline cell variant — a left-aligned, tighter-padded field that holds its own width in a
+ *  flex run and eclipses its overflow rather than growing. Seeds the resting stroke through the house
+ *  ring CHANNEL, not a hand-rolled shadow: `field` already paints `inset 0 0 0 1px var(--field-ring)`,
+ *  so a variant only sets the color. Overriding boxShadow instead would also stomp the channel for any
+ *  ancestor that sets it. Width and cursor stay with the consumer — they are what actually differ. */
+export const hairlineField = style([
+  field,
+  {
+    flex: '0 0 auto',
+    minWidth: 0,
+    padding: '3px 6px',
+    border: 'none',
+    justifyContent: 'flex-start',
+    textAlign: 'left',
+    color: c.label.control,
+    overflow: 'hidden',
+    whiteSpace: 'nowrap',
+    vars: { '--field-ring': c.separator.border },
+  },
+])
+
 /** The bare <input> variant — identical chrome, no native border/outline, no focus ring (no
  *  focus animation, by rule). Focus keeps the SEMANTIC ring (`--field-ring` is color, not focus state)
  *  while still killing the native outline. */
