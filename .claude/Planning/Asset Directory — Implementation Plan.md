@@ -247,12 +247,12 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 - Test: `src/main/assetMap.test.ts`.
 
 **Interfaces**
-- Produces: `files` — normalized filename → nexus-relative POSIX path, the first by sorted path where several answer.
+- Produces: `files` — normalized filename → every nexus-relative POSIX path answering to it, sorted.
 - Produces: `buildAssetMap(root: string, assetDir: string): Promise<AssetMap>`.
-- Produces: `buildAssetMap` returns the duplicate set ALONGSIDE the map — `{ files, duplicates, version }` — from the one listing. A second function re-walking the directory for names the first walk already saw is a second walk for information already in hand.
+- Produces: `AssetMap.files` holds every path answering to a name, sorted, from the one listing. Ambiguity is the shape of the entry rather than a second list to keep in agreement with it.
 - Produces: `patchAssetMap(map, rel, event): AssetMap` — an add/unlink applied without a re-listing. A `change` on an existing path leaves the name→path mapping untouched and bumps `version` instead (see below).
 - Produces: `resolveAssetName(map: AssetMap, name: string): string | null | 'ambiguous'` — **the main-side resolver.** Task 7's delete guard needs it and cannot import the renderer's `resolveAssetValue`; without it, spec E-3's "resolve-to-delete refuses on ambiguity" describes work no code performs.
-- Produces: `AssetMap = { files: Record<string, string>; duplicates: string[]; version: number }` — the version exists so an externally re-saved file under an UNCHANGED name still repaints. Without it the map is deep-equal, `stabilize` returns the prior object, zustand no-ops, and no `<img>` is ever re-requested — so `Cache-Control: no-store` never gets the chance to matter.
+- Produces: `AssetMap = { files: Record<string, string[]>; version: number }` — the version exists so an externally re-saved file under an UNCHANGED name still repaints. Without it the map is deep-equal, `stabilize` returns the prior object, zustand no-ops, and no `<img>` is ever re-requested — so `Cache-Control: no-store` never gets the chance to matter.
 - Assumed by: Tasks 6, 7, 8, 9.
 
 **Failure half:** a missing or unreadable asset directory → an empty map, never a throw (`listEntries` already swallows per-directory failures). Zero files → empty map. A file directly at the asset root and one nested → both indexed. A `thumbnails` segment at any depth → skipped. A name differing only by case or Unicode form → one entry, since resolution normalizes.
@@ -260,11 +260,11 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 **Must agree:** `files` and `duplicates` are derived from one listing and must never disagree — a name in `duplicates` must be one `files` resolved by sorted-first, never one it dropped. One test asserts both over a fixture holding a triplicate.
 
 **Steps:**
-- [ ] Write the failing tests, including the degenerate cases above.
-- [ ] Run — expect failures.
-- [ ] Implement over `listFilesRecursive`, normalizing with the same `normalizeSeg`/NFC discipline the connection index uses.
-- [ ] `npm run typecheck && npm run test` — expect green.
-- [ ] Commit: `feat(assets): the filename map main resolves against`
+- [x] Write the failing tests, including the degenerate cases above.
+- [x] Run — expect failures.
+- [x] Implement over `listFilesRecursive`, normalizing through `normalizeTitle` — the one normalization the connection index itself uses, so a `[[Name]]` keys the same way whether it names a page or a file.
+- [x] `npm run typecheck && npm run test` — expect green. *(0 · 274 files / 3416 tests · lint 0/890)*
+- [x] Commit: `feat(assets): the filename map main resolves against`
 
 #### Task 5: Push the map, and keep it current without a walk
 
@@ -637,6 +637,8 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
   - The review's central finding stands: the plan built the external-change machinery and never asked what happens **when Pommora is the writer**. `atomicWriteBinary` → `recordWrite` → `isRecentWrite` means no in-app write reaches `settle`, so the asset copy starved the map (F1), the settings write starved the re-arm (F2), and the widened gate starved the delete (F3). Three defects, one root cause, all shipping silently green. Requirement 10 now names the path.
   - **Unknown resolved:** the `tree.unreadable` check at `watchPatch.ts:121` runs before Task 3's arm, but every producer of that list sits inside `readContainerMeta` / `readDirectPages` / `readChildSets`, which run only on descended directories — and Task 2 prunes the asset root at `shouldSkipDir`. Safe, and conditional on Task 2, which Task 3 now records.
 ### Deviations
+- **Task 4 — the map holds every path per name, and `duplicates` disappears.** The specified `{ files: Record<string, string>; duplicates: string[] }` cannot support a correct incremental unlink: holding only the winning path leaves an unlink with nothing to promote, so removing one of three same-named files would drop the name entirely. `files: Record<string, string[]>`, sorted, makes display take the first and a delete refuse anything longer than one — and the "files and duplicates cannot disagree" invariant becomes impossible to violate rather than merely tested. The IPC payload shrinks with it.
+- **Task 4 — the watcher's cruft predicate moved to `exclusion.ts` as `neverWatched`.** The map lists a directory the watcher also watches, so it must skip exactly what the watcher drops or it holds entries no event will ever update. One predicate, two consumers.
 - **Task 2 — `readWatchScope` replaces both named readers.** All five `readExcludedFolders` call sites take the scope as a unit, so the reader does too; Task 1's `readAssetDirectory` folded into it rather than standing unused until Task 5. One reader produces the exact object every consumer threads. `adopt.ts` was also decoding `excluded_folders` by hand — a second decoder for a key `readSettingsLeaves` already owns — and now reads through it.
 - **Task 2 — the tree and the corpus disagree about hidden names on purpose.** The plan's Must-agree test asked them to agree about a hidden dir alongside the asset and excluded ones. They do not, and should not: `corpusFilesUnder` never applied `hiddenName`, so an `_underscore` folder leaves the tree while its notes stay swept and rewritable by the cascade. The test pins that contract rather than asserting a false one.
 - **Task 1 — the app-owned folders are refused outright.** The plan's failure half names `.` / `./` as the degenerate root but nothing about `.nexus` and `.trash`. Both are holes: Task 3 orders the asset arm ahead of `classifyEvent`'s `NEXUS_DIR` branch, so a root anywhere inside `.nexus` classifies `settings.json` and the Contexts registry as asset events — blinding settings patching, the corrective edit included — while `ignoredUnder` drops every path holding a `.trash` segment ([watcher.ts](../../Pommora/src/main/watcher.ts)), so a root there delivers nothing at all. The reader refuses any value whose first segment is a `NON_CORPUS_TOP` member, compared case-folded because every downstream matcher is; `ASSETS_DIR_REL` is the one place inside them that is an asset root by definition, and it answers in its canonical spelling since what compares it downstream is string equality.

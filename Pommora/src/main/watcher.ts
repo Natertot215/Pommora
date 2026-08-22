@@ -5,7 +5,13 @@
 import { relative, sep } from 'node:path'
 import chokidar, { type FSWatcher } from 'chokidar'
 import type { BrowserWindow } from 'electron'
-import { assetMatcher, excludedMatcher, sameScope, type WatchScope } from './exclusion'
+import {
+  assetMatcher,
+  excludedMatcher,
+  neverWatched,
+  sameScope,
+  type WatchScope,
+} from './exclusion'
 import { readNavigationFile } from './io/navigationFile'
 import { isRecentWrite } from './io/writeEcho'
 import { isMarkdownFile } from './io/walk'
@@ -16,7 +22,7 @@ import { getLiveTree, refreshAfterWrite } from './liveTree'
 import { sessionRoot } from './session'
 import { readWatchScope } from './settings'
 import { applyWatchEvents, touchesCorpus, type WatchEvent, type WatchEventName } from './watchPatch'
-import { CONTEXTS_DIRNAME, NEXUS_DIR, TRASH_DIR } from '@shared/nexusPaths'
+import { CONTEXTS_DIRNAME, NEXUS_DIR } from '@shared/nexusPaths'
 
 const SETTLE_MS = 200
 
@@ -44,13 +50,6 @@ export function ignoredUnder(root: string, scope: WatchScope): (path: string) =>
   const isExcluded = excludedMatcher(scope.excluded)
   const isAsset = assetMatcher(scope.assetDir)
   const assetDepth = scope.assetDir.split('/').filter(Boolean).length
-  const junkSeg = (seg: string): boolean =>
-    seg === TRASH_DIR ||
-    // The walk skips it, so the tree can never hold it — and one install would otherwise
-    // storm the settle window with thousands of directory events.
-    seg === 'node_modules' ||
-    seg.startsWith('nexus.db') || // our store + its WAL/SHM
-    (seg.startsWith('.') && seg !== NEXUS_DIR) // dotfile cruft, but .nexus holds contexts + settings
   return (path) => {
     const rel = relative(root, path)
     if (!rel || rel.startsWith('..')) return false
@@ -59,9 +58,9 @@ export function ignoredUnder(root: string, scope: WatchScope): (path: string) =>
     // blind a root named `.attachments`, and an exclusion entry would blind any of them. What
     // sits below the root is ordinary cruft and still filtered: a synced folder's `.DS_Store`
     // is not an asset.
-    if (isAsset(segs)) return segs.slice(assetDepth).some(junkSeg)
+    if (isAsset(segs)) return segs.slice(assetDepth).some(neverWatched)
     return (
-      segs.some(junkSeg) ||
+      segs.some(neverWatched) ||
       // Block-host content loads through blocks:get, never the tree walk —
       // a debounced block-body write must not cost a full re-walk. The
       // homepage.json config FILE stays watched (the tree reads its banner).
