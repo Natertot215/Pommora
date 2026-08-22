@@ -414,8 +414,8 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
 **Failure half:** two identical entries — a hand-edit, a sync merge, a paste — must not collide as React keys, or the hover-× addresses the wrong one. The entry `key` is the **index**, per F-8a. Task 5 installs this rule and this task replaces that block, so it has to carry it across.
 
 **Steps:**
-- [ ] Replace the interim `Chip` run with a flat `SegmentRun` of FileChips, keyed on index.
-- [ ] Full gate green. Commit: `feat(table): a file cell reads as its files`
+- [x] Replace the interim `Chip` run with a flat `SegmentRun` of FileChips, keyed on index.
+- [x] Full gate green. Commit: `feat(table): a file cell reads as its files`
 
 #### Gate 2 — the chip exists and nothing moved
 - [ ] Gate commands green.
@@ -642,7 +642,7 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
   - [x] Task 8 — Map extensions to their glyphs · `<commit>`
   - [x] Task 9 — Build the FileLabel component · `<commit>`
   - [x] Task 10 — Hoist the segment composition into SegmentRun · `<commit>`
-  - [ ] Task 11 — Render the file cell as a run of FileChips
+  - [x] Task 11 — Render the file cell as a run of FileLabels · `<commit>`
 - [ ] **Phase 3** — Adoption
   - [ ] Task 12 — Widen adoption past images
   - [ ] Task 13 — Give the picker its options
