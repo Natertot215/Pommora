@@ -20,6 +20,7 @@ import { useSaveView } from '@renderer/Embeds/ViewEmbedScope'
 import { useStyleFor } from '../../Detail/Views/Table/columnStyles'
 import { DateTimeEditor } from './DateTimeEditor'
 import { CheckboxEditor } from './CheckboxEditor'
+import { FileEditor } from './FileEditor'
 import { NumberEditor } from './NumberEditor'
 import {
   MenuItem,
@@ -293,6 +294,12 @@ export function PropertiesPane({
   const saveNumberFormat = async (id: string, patch: Partial<NumberConfig>): Promise<void> => {
     await commit(await window.nexus.property.setNumberFormat(id, patch))
   }
+  // Where a file property's uploads land is def-level (property-wide) — its own IPC. Main refuses
+  // a folder that escapes the asset root or that the map could never index; the field simply
+  // reverts, since the folder is not one this property accepts.
+  const saveFileDirectory = async (id: string, dir: string): Promise<void> => {
+    await commit(await window.nexus.property.setFileDirectory(id, { file_directory: dir }))
+  }
   // A property's icon is def-level (registry) — its own IPC, like the color/format config above.
   const savePropertyIcon = async (id: string, icon: string): Promise<void> => {
     await commit(await window.nexus.property.setIcon(id, icon))
@@ -476,6 +483,16 @@ export function PropertiesPane({
             look={styleFor(def.id, schema, activeView).look === 'bar' ? 'bar' : 'number'}
             onSetConfig={(patch) => void saveNumberFormat(def.id, patch)}
             onSetStyle={(look) => void saveColumnStyle(def.id, { look })}
+          />
+        ) : def.type === 'file' ? (
+          <FileEditor
+            directory={def.file_directory}
+            onSetDirectory={(dir) => void saveFileDirectory(def.id, dir)}
+            onBrowse={() => {
+              void window.nexus.chooseAssetDir('property').then((picked) => {
+                if (picked.ok && picked.value !== null) void saveFileDirectory(def.id, picked.value)
+              })
+            }}
           />
         ) : (
           // Blank body until this type's options UI ships (Guidelines/UI-Copy.md).
