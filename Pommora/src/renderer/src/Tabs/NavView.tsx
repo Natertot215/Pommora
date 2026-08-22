@@ -35,7 +35,7 @@ export function NavView(): React.JSX.Element {
   // Remove clears only NavView's own override (falls back to the homepage banner) — offered only
   // while an override exists.
   const changeBanner = async (): Promise<void> => {
-    const picked = await window.nexus.pickImage()
+    const picked = await window.nexus.pickFile()
     if (picked) await mutate({ op: 'setBanner', path: '', kind: 'navview', source: picked })
   }
   const onBannerMenu = async (e: React.MouseEvent): Promise<void> => {

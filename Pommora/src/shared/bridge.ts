@@ -16,6 +16,7 @@ import type {
   OpenIn,
   PageDetail,
   Personalization,
+  PickFileOptions,
   HoverCardSize,
   PreviewsFile,
   SubfieldConfig,
@@ -309,7 +310,11 @@ export interface Asks {
     args: [opts: { hasPhoto: boolean; hasGlyph: boolean }]
     reply: NexusIconAction | null
   }
-  'nexus:pickImage': { args: []; reply: string | null }
+  'nexus:pickFile': { args: [opts?: PickFileOptions]; reply: string | null }
+  /** Land a picked file under the asset root and answer the `[[Name.ext]]` naming it. Its own
+   *  channel rather than a field on a write: fusing them would make one IPC perform two writes
+   *  with partial-failure semantics, and forecloses naming a file already in the nexus. */
+  'assets:adopt': { args: [source: string, subfolder?: string]; reply: Result<string> }
   'nexus:imageData': { args: [absPath: string]; reply: string | null }
   'nexus:bannerMenu': {
     args: [opts?: { noRemove?: boolean; noun?: string; add?: boolean }]

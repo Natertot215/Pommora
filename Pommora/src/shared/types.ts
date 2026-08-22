@@ -38,6 +38,8 @@ export type ConnectionColorSetting = ColorSetting<'accent'>
 export type ExternalLinkColorSetting = ColorSetting<'system'>
 /** The task checkbox's own color. Cleared follows the accent, as a connection's does. */
 export type CheckboxColorSetting = ColorSetting<'accent'>
+/** The wash a `==highlight==` wears. Cleared follows the accent. */
+export type HighlightColorSetting = ColorSetting<'accent'>
 
 /** The nexus-wide clock for the datetime picker (twelveHour = AM/PM segments, the default;
  *  twentyFourHour = flat HH:MM). Lives at `personalization.timeFormat`. */
@@ -98,6 +100,7 @@ export interface Personalization {
   connectionColor?: ConnectionColorSetting
   externalLinkColor?: ExternalLinkColorSetting
   checkboxColor?: CheckboxColorSetting
+  highlightColor?: HighlightColorSetting
   /** Whether a checked task reads as done — its text dimmed and struck through. Display only: the
    *  strike is drawn, never written, so the file stays the plain `- [x]` it was. Absent = off. */
   muteCheckedItems?: boolean
@@ -369,6 +372,15 @@ export interface AssetMap {
 /** What both processes stand in for a map with no listing behind it — main before a nexus is
  *  open, the renderer before the first push lands. */
 export const EMPTY_ASSET_MAP: AssetMap = { files: {}, version: 0 }
+
+/** What a caller asks of the file dialog. `dir` is nexus-relative like every path the renderer
+ *  holds — main joins it, and a folder that has gone missing opens at the root rather than
+ *  refusing. `any` widens the filter past images; the dialog is the same one either way, so a
+ *  banner and a file property can't drift into two pickers. */
+export interface PickFileOptions {
+  dir?: string
+  any?: boolean
+}
 
 export interface NexusTree {
   /** `name` is the root folder's basename (filename = title). `profileImage` names an image in
