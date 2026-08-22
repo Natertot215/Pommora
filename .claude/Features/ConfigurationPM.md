@@ -87,6 +87,12 @@ The three colors the interface derives from. Each opens the ramp grid without it
 | Remove Title On Link Change | `removeTitleOnLinkChange` | Pointing a connection at another page drops the alias it was wearing. | **On** · Off |
 | Automatically Suggest Existing Aliases When Linking A Page | `aliasPickerOnCommit` | Accepting a page from the connection picker offers the names it already carries. | **On** · Off |
 
+**Assets**
+
+| Setting | Key | Description | Options |
+| --- | --- | --- | --- |
+| Default Asset Directory | `asset_directory` | Where inherited assets, images, and other file types will be stored. | Any folder in the Nexus · **`.nexus/assets`** |
+
 **Deletion**
 
 | Setting | Key | Description | Options |
@@ -174,6 +180,12 @@ Nexus-wide interface config, stored as the `personalization` object in `.nexus/s
 ### Labels
 
 Every entity kind carries a **renameable display label** in `settings.json` — the code identity is fixed, the shown name is the user's. Each is a **LabelPair** of singular and plural; the deeper-Set label derives from the Set singular and is never stored. Seeding a fresh Nexus's Context registry takes its Context titles from the matching label plurals; from then on live Context names read from the registry itself. A partial or absent `labels` blob falls back per field, so an unset name still resolves to its default.
+
+### The Asset Directory
+
+Banners, page covers and the profile image are ordinary files in one folder, named from a Nexus by the file's own name rather than by a path the app invented: `[[Banner.png]]` resolves against a listing of that folder, so the same image is addressable from another application reading the same directory. A stored value may also be a Nexus-relative path or a web address, and each is served or fetched as what it is.
+
+`asset_directory` is a top-level key beside `excluded_folders`, and the two are read as one scope: the folder leaves the content corpus and the tree, and is watched regardless of what `excluded_folders` says, so a file arriving there updates the listing without costing a walk. Any folder inside the Nexus qualifies, refused only when it already holds pages or is a container — the same refusal a hand-edited value meets. `.nexus/assets` is the default, and stays the home of Pommora's own derived files: thumbnails are written there whatever the setting says, and a replaced banner is deleted only from there, since a shared folder's files are the user's own.
 
 ### Write Discipline
 
