@@ -11,37 +11,45 @@ import { cellColor, checkboxTint } from './tokens/ramp'
 
 /** A color setting resolves to its own cell, or defers to whatever it inherits — the sentinel and
  *  the absent key mean the same thing, so one helper serves every one of them. */
-function settingColorCss(setting: string | undefined, inherit: string): string {
-  if (!setting || setting === 'accent' || setting === 'system') return inherit
+function settingColorCss(setting: unknown, inherit: string): string {
+  if (typeof setting !== 'string' || setting === 'accent' || setting === 'system') return inherit
   const key = chipColorFor(setting)
   return key === 'default' ? inherit : cellColor(key)
 }
 
-/** The var each color setting writes, and what it falls back to when nothing is chosen. A setting
- *  resolving to ONE color belongs here; the checkbox resolves to three and is applied below. */
-const COLOR_VARS = {
-  connectionColor: { cssVar: '--connection', inherit: 'var(--accent)' },
-  externalLinkColor: { cssVar: '--link', inherit: 'var(--system-accent)' },
-} as const
+/** What one key writes to the root element. A `null` REMOVES the var rather than setting it, for a
+ *  cleared value whose stylesheet fallback is the live answer — writing a copy of that answer would
+ *  freeze it where it stood. */
+type VarWriter = (value: unknown) => Record<string, string | null>
 
-/** The three vars a chosen checkbox cell writes. Cleared, all three are REMOVED rather than set to
- *  an accent copy — the stylesheet's own fallbacks are the accent recipe, so an unset var is what
- *  keeps the box following the accent as it changes. */
-const CHECKBOX_VARS = ['--checkbox-fill', '--checkbox-border', '--checkbox-mark'] as const
-
-function applyCheckboxColor(el: HTMLElement, value: unknown): void {
-  const setting = value as string | undefined
-  const key = setting && setting !== 'accent' ? chipColorFor(setting) : 'default'
-  if (key === 'default') {
-    for (const v of CHECKBOX_VARS) el.style.removeProperty(v)
-    return
-  }
-  // The chip's own resolution, greyscale row included — a grey cell has no chroma to outline itself
-  // with, and painting its raw color would leave the dark end invisible against the page.
+/** The task checkbox's three parts, resolved through the chip's own recipe so the greyscale row
+ *  arrives with the darkness offset that keeps it dark enough and the outline it borrows — a grey
+ *  cell has no chroma to draw one from, and painted raw its dark end is the page it sits on. */
+const checkboxVars: VarWriter = (value) => {
+  const key = typeof value === 'string' && value !== 'accent' ? chipColorFor(value) : 'default'
+  if (key === 'default')
+    return { '--checkbox-fill': null, '--checkbox-border': null, '--checkbox-mark': null }
   const { background, borderColor, color } = checkboxTint(key)
-  el.style.setProperty('--checkbox-fill', background)
-  el.style.setProperty('--checkbox-border', borderColor)
-  el.style.setProperty('--checkbox-mark', color)
+  return {
+    '--checkbox-fill': background,
+    '--checkbox-border': borderColor,
+    '--checkbox-mark': color,
+  }
+}
+
+/** The knobs that render as root vars — a scale, a color, or a family of either. */
+const ROOT_VARS: Partial<Record<keyof Personalization, VarWriter>> = {
+  embedScale: (v) => {
+    const scale = coerceScale(v, EMBED_SCALE_DEFAULT)
+    return {
+      '--embed-zoom': String(embedZoom(scale)),
+      '--view-embed-zoom': String(viewEmbedZoom(scale)),
+    }
+  },
+  editorScale: (v) => ({ '--editor-scale': String(coerceScale(v, EDITOR_SCALE_DEFAULT)) }),
+  connectionColor: (v) => ({ '--connection': settingColorCss(v, 'var(--accent)') }),
+  externalLinkColor: (v) => ({ '--link': settingColorCss(v, 'var(--system-accent)') }),
+  checkboxColor: checkboxVars,
 }
 
 /** The knobs that render as a root class toggled by a boolean — a new one is an entry here. */
@@ -59,32 +67,25 @@ const ROOT_VALUE_CLASSES: Partial<Record<keyof Personalization, { value: string;
   pickerSelection: { value: 'checked', cls: 'picker-checked' },
 }
 
+/** The three tables are the whole roster: a key with a DOM effect belongs to exactly one, and the
+ *  sweep below reads them rather than a second list naming the same keys — which is what lets a new
+ *  setting be an entry rather than an entry and a line someone has to remember. */
+const TABLES = [ROOT_VARS, ROOT_CLASSES, ROOT_VALUE_CLASSES] as const
+
 export function applyPersonalizationKey<K extends keyof Personalization>(
   key: K,
   value: Personalization[K],
 ): void {
   if (typeof document === 'undefined') return
   const el = document.documentElement
-  if (key === 'embedScale') {
-    const scale = coerceScale(value, EMBED_SCALE_DEFAULT)
-    el.style.setProperty('--embed-zoom', String(embedZoom(scale)))
-    el.style.setProperty('--view-embed-zoom', String(viewEmbedZoom(scale)))
+  const vars = ROOT_VARS[key]?.(value)
+  if (vars) {
+    for (const [name, v] of Object.entries(vars))
+      if (v === null) el.style.removeProperty(name)
+      else el.style.setProperty(name, v)
     return
   }
-  if (key === 'editorScale') {
-    el.style.setProperty('--editor-scale', String(coerceScale(value, EDITOR_SCALE_DEFAULT)))
-    return
-  }
-  if (key === 'checkboxColor') {
-    applyCheckboxColor(el, value)
-    return
-  }
-  const color = COLOR_VARS[key as keyof typeof COLOR_VARS]
-  if (color) {
-    el.style.setProperty(color.cssVar, settingColorCss(value as string | undefined, color.inherit))
-    return
-  }
-  // Anything with no class here has no DOM effect at this seam: accent → applyAccent;
+  // Anything in no table has no DOM effect at this seam: accent → applyAccent;
   // defaultIcons → resolved per-render.
   const cls = ROOT_CLASSES[key]
   if (cls) el.classList.toggle(cls, value === true)
@@ -93,10 +94,7 @@ export function applyPersonalizationKey<K extends keyof Personalization>(
 }
 
 export function applyPersonalization(p: Personalization): void {
-  applyPersonalizationKey('embedScale', p.embedScale)
-  applyPersonalizationKey('editorScale', p.editorScale)
-  applyPersonalizationKey('checkboxColor', p.checkboxColor)
-  for (const table of [COLOR_VARS, ROOT_CLASSES, ROOT_VALUE_CLASSES])
+  for (const table of TABLES)
     for (const key of Object.keys(table) as (keyof Personalization)[])
       applyPersonalizationKey(key, p[key])
 }
