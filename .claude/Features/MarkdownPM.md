@@ -165,15 +165,16 @@ List geometry scopes to `.cm-line.md-li`; the outliner rail aliases the shared `
 | --- | --- | --- |
 | Quote Bar | `--bar-width` / `--bar-color` / `--bar-radius` | `4px` / → label-tertiary / `2px` · `.md-bq` |
 | Quote Box | `--box-fill` / `--box-radius-r` | → fill-tertiary / `6px` |
-| Quote Gap | `--bq-gap` | `6px` |
+| Quote Gap | `--bq-gap` | → box gap |
 | Callout Frame | `--callout-border` / `--callout-bw` / `--callout-radius` | → label-tertiary / `1.5px` / `6px` · `.md-callout` |
 | Callout Padding | `--callout-pad` / `--callout-gap` / `--callout-inner-pad` | `15px` / `6px` / `8px` |
 | Callout Grip | `--grip-x` / `--grip-y` | `-18px` / `4px` |
 | Nested Quote | `--nq-bar` / `--nq-bar-radius` / `--box-radius-r` / `--nq-gap` / `--nq-inset` | `3px` / `2px` / `5px` / `9px` / `2px` · `.md-callout.md-bq-in` |
 | Code Block | `--cb-bg` / `--cb-radius` / `--cb-size` / `--cb-gap` / `--cb-pad` | → fill-secondary / → box corner / `0.85em` / `6px` / `12px` · `.md-cb` |
 | Box Corner | `--md-box-radius` | `6px` · `:root` — what quote, callout, code and highlight round to; each still names its own knob and can be retuned alone |
+| Box Gap | `--md-box-gap` | `6px` · `:root` — what quote, callout, code and the table float off their neighbours by, on the same terms |
 | Highlight | `--highlight` / `--highlight-bleed` | → the Highlight Color, else the accent, worn at tint-secondary / `0.1em` · `.md-highlight` |
-| Language Tag | `.md-cb-lang` | name at → label-control, its mark at → label-secondary, `1.15em` |
+| Language Tag | `.md-cb-lang` | name at → label-control, its mark at → label-secondary, `1.15em` — fifteen languages carry one |
 | Line-Number Zone | `--cb-ln-zone` | `calc(3ch + var(--list-gap))` |
 
 #### II. Syntax Colors

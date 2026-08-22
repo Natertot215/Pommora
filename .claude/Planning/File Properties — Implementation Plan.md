@@ -512,16 +512,16 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
 **Negative control:** with the `indexable` half disabled, a `.private` Directory test goes red — it would otherwise write successfully and vanish from the map with no error anywhere.
 
 **Steps:**
-- [ ] Write the failing tests, including the `indexable` negative control in both directions.
-- [ ] Add the def field and the narrower — **no new channel.**
-- [ ] Add the adoption-time backstop in `mutate.ts` for the symlinked segment a lexical check can't catch — **resolving the asset ROOT (which always exists) and joining the segment-checked subfolder onto the canonical result.** `resolveUnderRoot` calls `realpath`, which throws `ENOENT` on a missing path: pointed at the subfolder itself it would refuse the first write into a newly-named folder, and since `mkdir` lives past the refusal inside `writeAssetFile`, the folder would never be created and every later attempt would refuse identically. Do **not** `mkdir` first and validate after — that creates a directory before the symlink check.
-- [ ] Build the pane branch **on `pathRow.css.ts`'s existing recipe** — `pathField`, `leadIcon`, `input`, `browse`, the `folder-closed` lead and the `folder-open` browse glyph. Import them; do not restate them. If the recipe needs a knob to serve both rows, add the knob rather than a second copy.
-- [ ] **Give `assets:chooseDir` a scope discriminant** rather than growing it a twin — the three differences are `defaultPath`, `message` and validator, ~6 lines against a sibling's bridge entry, preload binding and duplicated dialog shape. B-3 already chose an argument over a twin for the picker; the same reasoning applies here. `createDirectory` is already passed at `:968`, so C-6b needs nothing new.
-- [ ] Anything visual the spec doesn't specify: stop and ask.
-- [ ] Full gate green. Commit: `feat(properties): a file property names where its files land`
+- [x] Write the failing tests, including the `indexable` negative control in both directions.
+- [x] Add the def field and the narrower — **no new channel.**
+- [x] Add the adoption-time backstop in `mutate.ts` for the symlinked segment a lexical check can't catch — **resolving the asset ROOT (which always exists) and joining the segment-checked subfolder onto the canonical result.** `resolveUnderRoot` calls `realpath`, which throws `ENOENT` on a missing path: pointed at the subfolder itself it would refuse the first write into a newly-named folder, and since `mkdir` lives past the refusal inside `writeAssetFile`, the folder would never be created and every later attempt would refuse identically. Do **not** `mkdir` first and validate after — that creates a directory before the symlink check.
+- [x] Build the pane branch **on `pathRow.css.ts`'s existing recipe** — `pathField`, `leadIcon`, `input`, `browse`, the `folder-closed` lead and the `folder-open` browse glyph. Import them; do not restate them. If the recipe needs a knob to serve both rows, add the knob rather than a second copy.
+- [x] **Give `assets:chooseDir` a scope discriminant** rather than growing it a twin — the three differences are `defaultPath`, `message` and validator, ~6 lines against a sibling's bridge entry, preload binding and duplicated dialog shape. B-3 already chose an argument over a twin for the picker; the same reasoning applies here. `createDirectory` is already passed at `:968`, so C-6b needs nothing new.
+- [x] Anything visual the spec doesn't specify: stop and ask.
+- [x] Full gate green. Commit: `feat(properties): a file property names where its files land`
 
 #### Gate 4 — the destination exists
-- [ ] Gate commands green. Negative control verified both ways.
+- [x] Gate commands green. Negative control verified both ways.
 - [ ] **Fixture first**, as Gate 2 — still nothing in-app fills a file value at this phase.
 - [ ] **Seen running:** the File editor pane, the Directory field, a refused folder.
 - [ ] Simplification and review dispatched — ask first.
@@ -646,9 +646,9 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
 - [ ] **Phase 3** — Adoption · base `907a7dab`
   - [x] Task 12 — Export the adoption mechanism · `55497111`
   - [x] Task 13 — The adopt channel, and the picker's options · `44b57737`
-  - [x] Task 14 — Prove a replaced file survives · `<commit>`
-- [ ] **Phase 4** — The Directory field
-  - [ ] Task 15 — The Directory, its validation, and its pane
+  - [x] Task 14 — Prove a replaced file survives · `1c6a176b`
+- [x] **Phase 4** — The Directory field · base `1c6a176b`
+  - [x] Task 15 — The Directory, its validation, and its pane · `0e8a9aee`
 - [ ] **Phase 5** — Interaction
   - [ ] Task 16 — One arm on the shared click router
   - [ ] Task 17 — The value menu
@@ -713,6 +713,35 @@ Each finding opened and reproduced before folding.
 **+55 −18, net +37** against an expected +10, code only. The export itself was the ≈+10 the plan priced — `adoptFile` gained two parameters and one line moved. The rest is Task 13, which the phase estimate never separated out: a bridge entry, a preload binding, an options-taking picker that joins its `defaultPath` in main, a second pick set, and the `assets:adopt` handler with its own asset-push drain. That is the channel B-2d called for; it was costed as if it were free.
 
 Task 14 shipped no mechanism at all, as specified — three assertions against the filesystem. A spy on `dropReplacedAsset` would have passed with zero implementation and protected nothing; these go red the moment anyone wires a delete.
+
+#### Gate 3 — the review, and a live hole it found
+
+- **Fixed · `assets:adopt` was an arbitrary-file-write primitive.** The channel took a renderer-supplied `subfolder` straight to the write. `rootSegs` drops empty segments but **not `..`**, and `join` collapses them past the root: reproduced at `'../..'` → the nexus root, `'../../..'` → outside the nexus, with `mkdir -p` making whatever it needed. One ordinary pick anywhere in the session was the entire precondition. The refusal went **at the seam** (`adoptFile`) rather than at the channel, so every caller inherits it; the guard removed sends both new tests red, and restored, green. The comment in `paths.ts` that credited `rootSegs` for the empty-segment case is what made the `..` gap invisible, and it is rewritten to say where the refusal actually lives.
+- **Fixed · `adoptFile` said "image" in a failure it can now reach with any file.**
+- **Fixed · a nested ternary produced one optional key** in the picker's `defaultPath`.
+- **Fixed · the adopt rationale was stated in two homes.** `bridge.ts` is the contract's; `index.ts` keeps only the `pushAssetWrites` note, which is index-only.
+- **Ruled · `assetSubRoot` has one caller.** Rule of Two isn't met; held because `paths.ts` is the path-vocabulary home and the validator reads it too.
+- **Verified clean:** the pick bound holds (`pickedPaths` is main's own record), `nexus:imageData` did not widen, `pushAssetWrites` fires on success only and re-reads the root at call time, the three banner arms and `dropReplacedAsset` are unchanged, and `envelope` cannot double-wrap a `Result`.
+
+#### Two commits crossed with a parallel session
+
+Both directions of the same mistake, on a tree with another session live in it.
+
+- **Their work rode into mine.** `types.ts` was already dirty with `HighlightColorSetting` and `Personalization.highlightColor` when it was staged by path for Task 13, so those two declarations sit under `44b57737`. Left in place — that session's commit brings the consumers, and reverting would break it.
+- **Mine rode into theirs.** `git mv`ing `pathRow.css.ts` stages immediately, and it sat in the shared index long enough for `8f4b9b00` to sweep it. The rename is in history under their message.
+
+**Staging by path is not enough on a shared tree** — a path can be dirty with someone else's work, and anything staged is exposed to the next `git add -A` from any session. Read `git diff --cached` before every commit, and never leave a staged change sitting.
+
+#### Phase 4 — the delta, and the overrun
+
+Code-only, comments and tests excluded: **+204 −86, net +118** against an expected +30. Four times the estimate, and the plan says a phase overrunning means something existing was re-authored — so, per file:
+
+- **`PathField` +83, `AssetDirectoryRow` +11 −71.** A **+23 hoist**, not a wash and not a re-authoring: the control moved out of the settings row into the design system, and the row became a wrapper. The +23 is the placeholder branch an unset property Directory needs, plus the props that make the control take its scope from a caller instead of reaching into the store. This is the reuse the plan asked for — Task 15 said to build the pane *on* the existing recipe — but the plan priced it as an import, and importing a component that reads `useSession` directly was never possible.
+- **`main/index.ts` +58 −11.** The `chooseDir` scope rewrite (~20), the `setFileDirectory` channel with its async check (~11), `narrowFileConfig` (~8), `defEditOp`'s check parameter (~8), imports. All named by Task 15's own steps.
+- **`assetRoots.ts` +30** — `validPropertyDir` and `assetSubfolder`, both of which the task specifies.
+- **`FileEditor` +33, `PropertiesPane` +17, `properties.ts` +8, `bridge.ts` +6** — the pane, its branch, the def field, the channel.
+
+Nothing here is a second copy of something that exists; the estimate simply priced a pane branch and missed that the field it reuses had to become reusable first. Recorded rather than absorbed.
 
 ### Open Against Later Tasks
 ### Deviations
