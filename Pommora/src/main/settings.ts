@@ -10,6 +10,7 @@ import {
   type Personalization,
   type SubfieldConfig,
 } from '@shared/types'
+import type { WatchScope } from './exclusion'
 import { readJsonObject, rmwJsonStrict } from './io/atomicWrite'
 import { getLiveTree } from './liveTree'
 import { nexusConfig, NEXUS_CONFIG_FILES } from './paths'
@@ -51,13 +52,12 @@ export const readLivePersonalization = async (root: string): Promise<Personaliza
 export const readNexusLabels = async (root: string): Promise<NexusLabels> =>
   (await liveLeaves(root)).labels
 
-/** The user's `excluded_folders` — a missing or unreadable settings file excludes nothing. */
-export const readExcludedFolders = async (root: string): Promise<string[]> =>
-  (await liveLeaves(root)).excluded
-
-/** The nexus's asset root — a missing or unreadable settings file takes the default. */
-export const readAssetDirectory = async (root: string): Promise<string> =>
-  (await liveLeaves(root)).assetDirectory
+/** The scope the walk and the watcher arm with — the user's `excluded_folders` and the asset
+ *  root. A missing or unreadable settings file excludes nothing and takes the default root. */
+export async function readWatchScope(root: string): Promise<WatchScope> {
+  const leaves = await liveLeaves(root)
+  return { excluded: leaves.excluded, assetDir: leaves.assetDirectory }
+}
 
 /** The nexus's default window zoom from `personalization.defaultViewScale` — the factor the window
  *  opens at and ⌘0 resets to, clamped to a usable range; absent/malformed → 1.0. */

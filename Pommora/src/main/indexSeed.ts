@@ -25,7 +25,7 @@ import { splitEnvelope } from './io/pageFile'
 import { corpusFiles, corpusFilesUnder, isMarkdownFile } from './io/walk'
 import { NON_CORPUS_TOP } from '@shared/nexusPaths'
 import { splitFrontmatter } from './readNexus'
-import { readExcludedFolders } from './settings'
+import { readWatchScope } from './settings'
 import { sessionDb } from './sessionDb'
 
 /** A page's index rows, from its raw content. Null = the sweeps would skip it (Unknown
@@ -52,7 +52,7 @@ export function governedValues(content: string): Record<string, unknown> {
 /** Every corpus file of the nexus at `root`, honoring the user's `excluded_folders` — the one
  *  enumeration behind the seed and behind every cascade's fallback scan. */
 export async function nexusCorpus(root: string): Promise<string[]> {
-  return corpusFiles(root, await readExcludedFolders(root))
+  return corpusFiles(root, await readWatchScope(root))
 }
 
 /** Corpus rels as absolute paths, kept to those inside one of `folders` — the separator is part
@@ -69,7 +69,7 @@ export function corpusUnder(root: string, rels: string[], folders: string[]): st
  *  enumerate through here so a folder nested inside a Collection but named by
  *  `excluded_folders` stays exactly as unreachable as the walk says. */
 export async function folderCorpus(root: string, absFolder: string): Promise<string[]> {
-  const rels = await corpusFilesUnder(root, absFolder, await readExcludedFolders(root))
+  const rels = await corpusFilesUnder(root, absFolder, await readWatchScope(root))
   return rels.map((rel) => join(root, rel))
 }
 

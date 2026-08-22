@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
   readDefaultViewScale,
-  readExcludedFolders,
+  readWatchScope,
   readNexusLabels,
   readPermanentDelete,
   updateSettings,
@@ -123,13 +123,13 @@ describe('the live-tree fast path', () => {
     await rm(path(), { force: true })
     expect(await readPermanentDelete(root)).toBe(true)
     expect(await readDefaultViewScale(root)).toBe(1.5)
-    expect(await readExcludedFolders(root)).toEqual(['Archive'])
+    expect((await readWatchScope(root)).excluded).toEqual(['Archive'])
     expect((await readNexusLabels(root)).pageCollection.singular).toBe('Shelf')
   })
 
   it('falls back to disk for a root no tree is held for', async () => {
     await write({ personalization: { permanentDelete: true }, excluded_folders: ['Archive'] })
     expect(await readPermanentDelete(root)).toBe(true)
-    expect(await readExcludedFolders(root)).toEqual(['Archive'])
+    expect((await readWatchScope(root)).excluded).toEqual(['Archive'])
   })
 })

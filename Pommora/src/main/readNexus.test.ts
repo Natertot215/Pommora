@@ -10,6 +10,7 @@ import {
   splitFrontmatter,
 } from './readNexus'
 import { ASSETS_DIR_REL } from '@shared/nexusPaths'
+import { corpusFiles } from './io/walk'
 import { DEFAULT_ACCENT, DEFAULT_COMMANDS } from '@shared/types'
 
 const PAGE_A = '01KVGMT8BFG350FZZXAMG1QDRP'
@@ -419,6 +420,64 @@ describe('readNexus — the walk names what it cannot read', () => {
       expect(t.unreadable?.map((u) => u.path)).toEqual(['.nexus/contexts.json'])
     } finally {
       rmSync(r, { recursive: true, force: true })
+    }
+  })
+})
+
+describe('readNexus — the asset root leaves the tree and the corpus together', () => {
+  // shouldSkipDir and corpusFilesUnder are two independent skip tests over the same tree; a
+  // folder either leaves both or the index and the tree disagree about what exists.
+  const build = (asset_directory?: string): string => {
+    const root = mkdtempSync(join(tmpdir(), 'pom-asset-'))
+    mkdirSync(join(root, '.nexus'), { recursive: true })
+    writeFileSync(
+      join(root, '.nexus', 'settings.json'),
+      JSON.stringify({
+        excluded_folders: ['Archive'],
+        ...(asset_directory && { asset_directory }),
+      }),
+    )
+    for (const d of ['file-assets', 'Archive', '_drafts', 'Notes'])
+      mkdirSync(join(root, d), { recursive: true })
+    for (const d of ['file-assets', 'Archive', '_drafts', 'Notes'])
+      writeFileSync(join(root, d, 'note.md'), 'text\n')
+    return root
+  }
+
+  it('a note inside the asset root reaches neither the tree nor the corpus', async () => {
+    const root = build('file-assets')
+    try {
+      const tree = await readNexus(root)
+      const scope = { excluded: tree.excluded, assetDir: tree.assetDirectory }
+      const corpus = await corpusFiles(root, scope)
+      const visible = tree.collections.map((c) => c.path)
+      for (const gone of ['file-assets', 'Archive']) {
+        expect(visible).not.toContain(gone)
+        expect(corpus).not.toContain(`${gone}/note.md`)
+      }
+      expect(visible).toContain('Notes')
+      expect(corpus).toContain('Notes/note.md')
+      // A hidden name is the one folder the two disagree about on purpose: the tree hides it,
+      // while the cascade still sweeps and rewrites what it holds.
+      expect(visible).not.toContain('_drafts')
+      expect(corpus).toContain('_drafts/note.md')
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
+  })
+
+  it('the same folder under a different asset root is ordinary content', async () => {
+    const root = build('Media')
+    try {
+      const tree = await readNexus(root)
+      const corpus = await corpusFiles(root, {
+        excluded: tree.excluded,
+        assetDir: tree.assetDirectory,
+      })
+      expect(tree.collections.map((c) => c.path)).toContain('file-assets')
+      expect(corpus).toContain('file-assets/note.md')
+    } finally {
+      rmSync(root, { recursive: true, force: true })
     }
   })
 })

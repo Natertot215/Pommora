@@ -9,10 +9,11 @@ import { newId } from './ids'
 import { atomicWriteFile, readJsonObject, readJsonStrict, pathExists } from './io/atomicWrite'
 import { readSidecar, writeSidecar } from './sidecarIO'
 import { splitEnvelope, mergeFrontmatter, readFrontmatterFields } from './io/pageFile'
-import { asString, asStringArray } from './coerce'
+import { asString } from './coerce'
 import { baseSidecar } from '@shared/schemas'
 import { recordWrite } from './io/writeEcho'
-import { shouldSkipDir } from './exclusion'
+import { shouldSkipDir, type WatchScope } from './exclusion'
+import { readSettingsLeaves } from './readNexus'
 import {
   AGENDA_SLOTS,
   agendaContext,
@@ -136,7 +137,7 @@ async function stampTree(
   absDir: string,
   relDir: string,
   kind: AdoptableKind,
-  excluded: string[],
+  scope: WatchScope,
   kindCtx: FolderKindContext,
   root: string,
 ): Promise<number> {
@@ -154,7 +155,7 @@ async function stampTree(
       if (await stampPage(join(absDir, e.name), memberKind).catch(() => false)) count++
     } else if (e.isDirectory() && !singleton) {
       const childRel = `${relDir}/${e.name}`
-      if (shouldSkipDir(e.name, childRel, excluded)) continue
+      if (shouldSkipDir(e.name, childRel, scope)) continue
       const abs = join(absDir, e.name)
       // A folder whose own sidecar is unreadable still adopts its subtree — the children are
       // independent entities, not dependents of their parent's id.
@@ -164,7 +165,7 @@ async function stampTree(
       }
       const childKind = await resolveFolderKind(abs, 'nested', kindCtx)
       if (childKind === 'unknown') continue
-      count += await stampTree(abs, childRel, childKind, excluded, kindCtx, root).catch(() => 0)
+      count += await stampTree(abs, childRel, childKind, scope, kindCtx, root).catch(() => 0)
     }
   }
   return count
@@ -192,7 +193,8 @@ export async function ensureFolderId(root: string, absDir: string): Promise<void
  */
 export async function stampAdopted(root: string): Promise<{ stamped: number }> {
   const settings = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings))) ?? {}
-  const excluded = asStringArray(settings.excluded_folders) ?? []
+  const leaves = readSettingsLeaves(settings)
+  const scope: WatchScope = { excluded: leaves.excluded, assetDir: leaves.assetDirectory }
   const identity = await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.identity))
   // `sidecarMode: false` is the honest reading for adoption specifically: a container sidecar's
   // ABSENCE is what this pass exists to fix, so it must not be taken as a reason to skip. Agenda
@@ -202,25 +204,25 @@ export async function stampAdopted(root: string): Promise<{ stamped: number }> {
   let stamped = 0
   for (const e of await listEntries(root)) {
     if (!e.isDirectory()) continue
-    if (shouldSkipDir(e.name, e.name, excluded)) continue
+    if (shouldSkipDir(e.name, e.name, scope)) continue
     const abs = join(root, e.name)
     const kind = await resolveFolderKind(abs, 'root', kindCtx)
     // Unknown is left entirely alone; a registered singleton adopts its own members under the
     // agenda kind rather than the page one.
     if (kind === 'unknown') continue
     if (kind !== 'collection') {
-      stamped += await stampTree(abs, e.name, kind, excluded, kindCtx, root).catch(() => 0)
+      stamped += await stampTree(abs, e.name, kind, scope, kindCtx, root).catch(() => 0)
       continue
     }
     // Don't fabricate a Collection from an empty, sidecar-less folder (stray junk). One that
     // already has a sidecar, or holds pages/subfolders, is real content and gets adopted.
     if (
       !(await pathExists(join(abs, SIDECAR_FILENAME.collection))) &&
-      (await isEmptyOfContent(abs, e.name, excluded))
+      (await isEmptyOfContent(abs, e.name, scope))
     ) {
       continue
     }
-    stamped += await stampTree(abs, e.name, 'collection', excluded, kindCtx, root).catch(() => 0)
+    stamped += await stampTree(abs, e.name, 'collection', scope, kindCtx, root).catch(() => 0)
   }
   return { stamped }
 }
@@ -229,11 +231,11 @@ export async function stampAdopted(root: string): Promise<{ stamped: number }> {
 async function isEmptyOfContent(
   absDir: string,
   relDir: string,
-  excluded: string[],
+  scope: WatchScope,
 ): Promise<boolean> {
   for (const e of await listEntries(absDir)) {
     if (isContentFile(e)) return false
-    if (e.isDirectory() && !shouldSkipDir(e.name, `${relDir}/${e.name}`, excluded)) return false
+    if (e.isDirectory() && !shouldSkipDir(e.name, `${relDir}/${e.name}`, scope)) return false
   }
   return true
 }

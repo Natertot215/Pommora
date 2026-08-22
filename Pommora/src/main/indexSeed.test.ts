@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { ASSETS_DIR_REL } from '@shared/nexusPaths'
 import { mkdir, mkdtemp, rm, unlink, utimes, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -37,7 +38,7 @@ afterEach(async () => {
 describe('seedContentIndex', () => {
   it('MUST AGREE with the corpus: every admitted corpusFiles path is indexed; excluded paths are in neither', async () => {
     await seedContentIndex(root)
-    const corpus = await corpusFiles(root, ['Hidden'])
+    const corpus = await corpusFiles(root, { excluded: ['Hidden'], assetDir: ASSETS_DIR_REL })
     expect(corpus.sort()).toEqual(['Loose/Note.md', 'Notes/A.md'])
     const stats = readIndexedStats()
     for (const rel of corpus) expect(stats?.has(rel)).toBe(true)

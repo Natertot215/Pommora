@@ -6,7 +6,7 @@
 import { readdir } from 'node:fs/promises'
 import type { Dirent } from 'node:fs'
 import { join, relative } from 'node:path'
-import { excludedMatcher } from '../exclusion'
+import { assetMatcher, excludedMatcher, type WatchScope } from '../exclusion'
 import { NON_CORPUS_TOP } from '@shared/nexusPaths'
 
 /** Whether a name (or a path ending in one) is Markdown. Case-INSENSITIVE, and stated once: a
@@ -60,8 +60,8 @@ export async function listMarkdownFiles(
  *  paths (the tree's and the index's shared key convention). The index seed, its reconciler,
  *  and every cascade fallback scan enumerate through here, so "indexed", "swept", and
  *  "rewritable" can never mean three different sets of files. */
-export async function corpusFiles(root: string, excluded: string[]): Promise<string[]> {
-  return corpusFilesUnder(root, root, excluded)
+export async function corpusFiles(root: string, scope: WatchScope): Promise<string[]> {
+  return corpusFilesUnder(root, root, scope)
 }
 
 /** The same corpus law scoped to one subtree: only `absDir` is walked, so a per-container
@@ -70,9 +70,10 @@ export async function corpusFiles(root: string, excluded: string[]): Promise<str
 export async function corpusFilesUnder(
   root: string,
   absDir: string,
-  excluded: string[],
+  scope: WatchScope,
 ): Promise<string[]> {
-  const isExcluded = excludedMatcher(excluded)
+  const isExcluded = excludedMatcher(scope.excluded)
+  const isAsset = assetMatcher(scope.assetDir)
   const out: string[] = []
   // Descended by hand so an out-of-corpus subtree is never entered. Node's recursive readdir has
   // no filter hook, so it would enumerate all of `.trash` — which is emptied only on request, and
@@ -81,7 +82,7 @@ export async function corpusFilesUnder(
   const walk = async (dir: string, segs: string[]): Promise<void> => {
     for (const entry of await listEntries(dir)) {
       const next = [...segs, entry.name]
-      if (NON_CORPUS_TOP.has(next[0]) || isExcluded(next)) continue
+      if (NON_CORPUS_TOP.has(next[0]) || isAsset(next) || isExcluded(next)) continue
       if (entry.isDirectory()) await walk(join(dir, entry.name), next)
       else if (isMarkdownFile(entry.name)) out.push(next.join('/'))
     }
