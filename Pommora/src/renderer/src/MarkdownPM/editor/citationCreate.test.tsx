@@ -6,7 +6,12 @@ import { EditorView } from '@codemirror/view'
 import type { Personalization } from '@shared/types'
 import { useSession } from '@renderer/store'
 import { stubEditorBridge, mountEditor, cleanupEditor } from '@renderer/testing/editorHarness'
-import { citationSeatAt, commitCitation, insertCitation } from './citationActions'
+import {
+  applyCitationAction,
+  citationSeatAt,
+  commitCitation,
+  insertCitation,
+} from './citationActions'
 import { citationScan, splitWithOffsets } from '../detect'
 import { citationText, deleteCitationChanges } from './citationEdits'
 import { foldedRegions } from './folding'
@@ -409,5 +414,42 @@ describe('the cycle closes inside a callout, a blockquote and a table', () => {
     expect(doc(view)).not.toContain('[^x]')
     expect(doc(view)).toContain('> [!note] a')
     expect(doc(view)).toContain('| c |')
+  })
+})
+
+// An orphan is the one row with nowhere to lead: what it hands back is the reference, which is
+// exactly what seeds it into the body again.
+describe('copying an unbound citation', () => {
+  it('puts its raw reference on the clipboard', async () => {
+    const written: string[] = []
+    stubEditorBridge({ writeClipboard: async (t: string) => void written.push(t) })
+    const view = await mountEditor({ initialBody: 'body\n\n[^lost]: nothing points here' })
+    await act(async () => {
+      applyCitationAction(view, 'cite:copy', { kind: 'citation', label: 'lost' })
+    })
+    expect(written).toEqual(['[^lost]'])
+  })
+})
+
+// Normalization used to ride only the gestures, so an edit that BOUND a row left the section in
+// whatever order it was already in. Binding is what the order answers to, whoever wrote it.
+describe('an edit that binds a row reorders the section', () => {
+  it('a hand-written marker adopting an orphan lifts its row into first-use order', async () => {
+    const body = 'one[^a] two\n\n[^lost]: orphan\n[^a]: first'
+    const view = await mountEditor({ initialBody: body })
+    await act(async () => {
+      view.dispatch({ changes: { from: 11, to: 11, insert: '[^lost]' }, userEvent: 'input' })
+    })
+    expect(doc(view)).toBe('one[^a] two[^lost]\n\n[^a]: first\n[^lost]: orphan')
+  })
+
+  // The orphan keeps the number it already spells, so the row that stays bound keeps its own too.
+  it('and a marker deleted by hand drops its row below the ones still bound', async () => {
+    const body = 'one[^1] two[^2]\n\n[^1]: first\n[^2]: second'
+    const view = await mountEditor({ initialBody: body })
+    await act(async () => {
+      view.dispatch({ changes: { from: 3, to: 7, insert: '' }, userEvent: 'delete' })
+    })
+    expect(doc(view)).toBe('one two[^2]\n\n[^2]: second\n[^1]: first')
   })
 })

@@ -32,7 +32,7 @@ import { registerScrollHeal } from '../Embeds/tileWarm'
 import { calloutAtomic } from './editor/calloutAtomic'
 import { calloutGuard } from './editor/calloutGuard'
 import { citationGuard } from './editor/citationGuard'
-import { citationHost, citationSeatAt } from './editor/citationActions'
+import { citationHost, citationOrder, citationSeatAt } from './editor/citationActions'
 import { citationPointer, citationRowMenu, citationRowPointer } from './editor/citationPointer'
 import { connectionClicks } from './editor/connections'
 import { markdownLinkClicks } from './editor/links'
@@ -316,6 +316,7 @@ export function MarkdownEditor({
           if (id) useSession.getState().setCitationsVisible(id, true)
         },
       }),
+      citationOrder,
       citationPointer(() => connectionsRef.current),
       citationRowPointer(),
       citationRowMenu(),
