@@ -6,6 +6,7 @@ import { stabilize } from '@shared/treeStabilize'
 import { dropLiveTree, getLiveTree, refreshTree } from './liveTree'
 import { ASSETS_DIR_REL } from '@shared/nexusPaths'
 import { readNexus } from './readNexus'
+import type { WatchScope } from './exclusion'
 import { applyWatchEvents, classifyEvent, touchesCorpus, type WatchEvent } from './watchPatch'
 
 const ULID_A = '01ARZ3NDEKTSV4RRFFQ69G5FAV'
@@ -14,6 +15,10 @@ const ULID_B = '01BX5ZZKBKACTAV9WEVGEMMVRZ'
 let root: string
 
 const abs = (...segs: string[]): string => join(root, ...segs)
+const scope = (excluded: string[] = [], assetDir = ASSETS_DIR_REL): WatchScope => ({
+  excluded,
+  assetDir,
+})
 const ev = (event: WatchEvent['event'], ...segs: string[]): WatchEvent => ({
   event,
   absPath: abs(...segs),
@@ -78,7 +83,7 @@ describe('applyWatchEvents — must agree with the walk', () => {
         ev('change', '.nexus', 'settings.json'),
         ev('change', '.nexus', 'homepage.json'),
       ],
-      [],
+      scope(),
     )
     expect(result).toBe('patched')
 
@@ -99,7 +104,7 @@ describe('applyWatchEvents — must agree with the walk', () => {
   it('a page deleted between event and read applies as a remove, walk-identically', async () => {
     await refreshTree(root)
     await unlink(abs('Notes', 'A.md'))
-    const result = await applyWatchEvents(root, [ev('change', 'Notes', 'A.md')], [])
+    const result = await applyWatchEvents(root, [ev('change', 'Notes', 'A.md')], scope())
     expect(result).toBe('patched')
     const live = getLiveTree()
     expect(live?.collections[0]?.pages).toHaveLength(0)
@@ -109,7 +114,7 @@ describe('applyWatchEvents — must agree with the walk', () => {
   it('a file with Unknown admission never enters the tree — the walk owns that bookkeeping', async () => {
     await refreshTree(root)
     await writeFile(abs('Notes', 'bad.md'), `---\nTaskID: ${ULID_B}\n---\n\nnope\n`)
-    const result = await applyWatchEvents(root, [ev('add', 'Notes', 'bad.md')], [])
+    const result = await applyWatchEvents(root, [ev('add', 'Notes', 'bad.md')], scope())
     expect(result).toBe('refresh')
     expect(getLiveTree()?.collections[0]?.pages.map((p) => p.title)).toEqual(['A'])
   })
@@ -120,7 +125,7 @@ describe('applyWatchEvents — must agree with the walk', () => {
     expect(getLiveTree()?.collections[0]?.pages.map((p) => p.id)).toEqual([ULID_A, ULID_B])
     const ULID_C = '01CX5ZZKBKACTAV9WEVGEMMVRC'
     await writeFile(abs('Notes', 'A.md'), `---\nPageID: ${ULID_C}\n---\n\nalpha\n`)
-    expect(await applyWatchEvents(root, [ev('change', 'Notes', 'A.md')], [])).toBe('patched')
+    expect(await applyWatchEvents(root, [ev('change', 'Notes', 'A.md')], scope())).toBe('patched')
     const live = getLiveTree()
     expect(live?.collections[0]?.pages.map((p) => p.id)).toEqual([ULID_B, ULID_C])
     expect(stabilize(await readNexus(root), live)).toBe(live)
@@ -129,14 +134,14 @@ describe('applyWatchEvents — must agree with the walk', () => {
   it('an empty batch is a no-op that preserves tree identity', async () => {
     await refreshTree(root)
     const before = getLiveTree()
-    expect(await applyWatchEvents(root, [], [])).toBe('patched')
+    expect(await applyWatchEvents(root, [], scope())).toBe('patched')
     expect(getLiveTree()).toBe(before)
   })
 
   it('an exclusion change in settings is structural — refresh, never a leaf patch', async () => {
     await refreshTree(root)
     await writeFile(abs('.nexus', 'settings.json'), JSON.stringify({ excluded_folders: ['Loose'] }))
-    expect(await applyWatchEvents(root, [ev('change', '.nexus', 'settings.json')], [])).toBe(
+    expect(await applyWatchEvents(root, [ev('change', '.nexus', 'settings.json')], scope())).toBe(
       'refresh',
     )
   })
@@ -148,7 +153,7 @@ describe('applyWatchEvents — must agree with the walk', () => {
     const result = await applyWatchEvents(
       root,
       [ev('add', 'Notes', 'B.md'), ev('change', '.nexus', 'contexts.json')],
-      [],
+      scope(),
     )
     expect(result).toBe('refresh')
     expect(getLiveTree()).toBe(before)
@@ -165,7 +170,10 @@ describe('settings leaves — the walk and the settings patch must never disagre
 
     await writeFile(abs('.nexus', 'settings.json'), JSON.stringify({ asset_directory: 'Media/' }))
     // settle re-walks on a structural outcome; the patch alone must otherwise carry the leaf.
-    if ((await applyWatchEvents(root, [ev('change', '.nexus', 'settings.json')], [])) === 'refresh')
+    if (
+      (await applyWatchEvents(root, [ev('change', '.nexus', 'settings.json')], scope())) ===
+      'refresh'
+    )
       await refreshTree(root)
 
     const patched = getLiveTree()?.assetDirectory
@@ -182,7 +190,7 @@ describe('classifyEvent', () => {
     const tree = getLiveTree()
     if (tree === null) throw new Error('no tree')
     const kind = (e: WatchEvent, excluded: string[] = []): string =>
-      classifyEvent(tree, root, e, excluded).kind
+      classifyEvent(tree, root, e, scope(excluded)).kind
 
     expect(kind(ev('add', 'Notes', 'B.md'))).toBe('page-upsert')
     expect(kind(ev('unlink', 'Notes', 'A.md'))).toBe('page-remove')
@@ -220,7 +228,7 @@ describe('classifyEvent', () => {
         tree,
         raw,
         { event: 'change', absPath: join(raw, 'Things', '_pagecollection.json') },
-        [],
+        scope(),
       )
       expect(cls.kind).toBe('full-refresh')
     } finally {
@@ -235,7 +243,7 @@ describe('classifyEvent', () => {
     const tree = getLiveTree()
     if (tree === null) throw new Error('no tree')
     expect(tree.unreadable?.map((u) => u.path)).toContain('Notes')
-    const cls = classifyEvent(tree, root, ev('change', 'Notes', '_pagecollection.json'), [])
+    const cls = classifyEvent(tree, root, ev('change', 'Notes', '_pagecollection.json'), scope())
     expect(cls.kind).toBe('full-refresh')
   })
 })
@@ -243,11 +251,13 @@ describe('classifyEvent', () => {
 describe('directory events', () => {
   it('a folder named the way the walk hides one never costs a walk', async () => {
     const tree = await refreshTree(root)
-    expect(classifyEvent(tree, root, ev('addDir', '_drafts'), []).kind).toBe('ignored')
-    expect(classifyEvent(tree, root, ev('addDir', 'Notes', '_scratch'), []).kind).toBe('ignored')
-    expect(classifyEvent(tree, root, ev('addDir', 'Ideas'), []).kind).toBe('full-refresh')
+    expect(classifyEvent(tree, root, ev('addDir', '_drafts'), scope()).kind).toBe('ignored')
+    expect(classifyEvent(tree, root, ev('addDir', 'Notes', '_scratch'), scope()).kind).toBe(
+      'ignored',
+    )
+    expect(classifyEvent(tree, root, ev('addDir', 'Ideas'), scope()).kind).toBe('full-refresh')
     // A disappearing one still walks — the index owes a prune for whatever it held.
-    expect(classifyEvent(tree, root, ev('unlinkDir', '_drafts'), []).kind).toBe('full-refresh')
+    expect(classifyEvent(tree, root, ev('unlinkDir', '_drafts'), scope()).kind).toBe('full-refresh')
   })
 })
 
@@ -255,7 +265,7 @@ describe('touchesCorpus — what owes the index a stat sweep', () => {
   it('names the events that could have moved it, and only those', async () => {
     await refreshTree(root)
     const asks = (e: WatchEvent, excluded: string[] = []): boolean =>
-      touchesCorpus(root, [e], excluded)
+      touchesCorpus(root, [e], scope(excluded))
     expect(asks(ev('addDir', 'Ideas'))).toBe(true)
     expect(asks(ev('unlinkDir', 'Notes'))).toBe(true)
     expect(asks(ev('add', 'Notes', 'B.md'))).toBe(true)
@@ -264,7 +274,7 @@ describe('touchesCorpus — what owes the index a stat sweep', () => {
     expect(asks(ev('addDir', 'Archive', 'deep'), ['Archive'])).toBe(false)
     // One qualifying event in a batch is enough.
     expect(
-      touchesCorpus(root, [ev('change', '.nexus', 'properties.json'), ev('add', 'C.md')], []),
+      touchesCorpus(root, [ev('change', '.nexus', 'properties.json'), ev('add', 'C.md')], scope()),
     ).toBe(true)
   })
 })

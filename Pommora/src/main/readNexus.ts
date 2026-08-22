@@ -53,7 +53,7 @@ import { pathExists, readJsonObject, readJsonStrict } from './io/atomicWrite'
 import { isContentFile, listEntries } from './io/walk'
 import { orderedDefs, readRegistry, type PropertyRegistry } from './io/propertiesRegistry'
 import { asString, asStringArray, basenameNoMd } from './coerce'
-import { shouldSkipDir } from './exclusion'
+import { shouldSkipDir, type WatchScope } from './exclusion'
 import { resolveOrder } from './order'
 import { beginWalk, cachedParse, endWalk } from './walkCache'
 import {
@@ -420,12 +420,12 @@ async function readChildSets(
   absDir: string,
   relDir: string,
   kindCtx: FolderKindContext,
-  excluded: string[],
+  scope: WatchScope,
   fb: Fallback,
   unreadable: string[],
 ): Promise<SetNode[]> {
   const dirs = (await listEntries(absDir)).filter(
-    (e) => e.isDirectory() && !shouldSkipDir(e.name, `${relDir}/${e.name}`, excluded),
+    (e) => e.isDirectory() && !shouldSkipDir(e.name, `${relDir}/${e.name}`, scope),
   )
   // A nested folder is a Set only if the resolver says so — one carrying an agenda config
   // renders as nothing rather than as an ordinary Set.
@@ -435,15 +435,7 @@ async function readChildSets(
   const sets = dirs.filter((_, i) => kinds[i] === 'set')
   return Promise.all(
     sets.map((e) =>
-      readSet(
-        join(absDir, e.name),
-        `${relDir}/${e.name}`,
-        e.name,
-        kindCtx,
-        excluded,
-        fb,
-        unreadable,
-      ),
+      readSet(join(absDir, e.name), `${relDir}/${e.name}`, e.name, kindCtx, scope, fb, unreadable),
     ),
   )
 }
@@ -453,13 +445,13 @@ async function readSet(
   relDir: string,
   name: string,
   kindCtx: FolderKindContext,
-  excluded: string[],
+  scope: WatchScope,
   fb: Fallback,
   unreadable: string[],
 ): Promise<SetNode> {
   const [meta, sets, pages] = await Promise.all([
     readContainerMeta(absDir, relDir, SIDECAR_FILENAME.set, kindCtx, unreadable),
-    readChildSets(absDir, relDir, kindCtx, excluded, fb, unreadable),
+    readChildSets(absDir, relDir, kindCtx, scope, fb, unreadable),
     readDirectPages(absDir, relDir, unreadable),
   ])
   return makeSetNode({
@@ -496,14 +488,14 @@ async function readPageCollection(
   relDir: string,
   name: string,
   kindCtx: FolderKindContext,
-  excluded: string[],
+  scope: WatchScope,
   fb: Fallback,
   registry: PropertyRegistry,
   unreadable: string[],
 ): Promise<CollectionNode> {
   const [meta, sets, pages] = await Promise.all([
     readContainerMeta(absDir, relDir, SIDECAR_FILENAME.collection, kindCtx, unreadable),
-    readChildSets(absDir, relDir, kindCtx, excluded, fb, unreadable),
+    readChildSets(absDir, relDir, kindCtx, scope, fb, unreadable),
     readDirectPages(absDir, relDir, unreadable),
   ])
   return makeCollectionNode({
@@ -556,7 +548,7 @@ async function readContextGroups(
   root: string,
   registry: ContextsRegistry,
   spaceOrders: Json,
-  excluded: string[],
+  scope: WatchScope,
   fb: Fallback,
   unreadable: string[],
 ): Promise<ContextGroup[]> {
@@ -566,7 +558,7 @@ async function readContextGroups(
       const entries = (await listEntries(dir))
         .filter((e) => e.isDirectory())
         .map((e) => ({ name: e.name, rel: spaceDirRel(def.title, e.name) }))
-        .filter(({ name, rel }) => !shouldSkipDir(name, rel, excluded))
+        .filter(({ name, rel }) => !shouldSkipDir(name, rel, scope))
       const read = await Promise.all(
         entries.map(({ name, rel }) => readSpace(join(dir, name), rel, name, def.id, unreadable)),
       )
@@ -611,7 +603,7 @@ async function walkNexus(root: string): Promise<NexusTree> {
   const kindCtx = await agendaContext(root, identity, sidecarMode)
 
   const leaves = readSettingsLeaves(settings)
-  const excluded = leaves.excluded
+  const scope: WatchScope = { excluded: leaves.excluded, assetDir: leaves.assetDirectory }
   // Contexts. Registry-backed when `.nexus/contexts.json` parses (the walk never writes —
   // seeding/migration are open-path mutations). No registry (raw/unmigrated) → `contexts`
   // is [] — the open path migrates + seeds BEFORE anything renders, so the walk never
@@ -626,29 +618,20 @@ async function walkNexus(root: string): Promise<NexusTree> {
   if (!ctxRegistry && (await pathExists(contextsRegistryFile(root))))
     unreadable.push(CONTEXTS_REGISTRY_REL)
   const contexts = ctxRegistry
-    ? await readContextGroups(root, ctxRegistry, spaceOrders, excluded, fb, unreadable)
+    ? await readContextGroups(root, ctxRegistry, spaceOrders, scope, fb, unreadable)
     : undefined
 
   // Top-level Collections (gated by `_pagecollection.json`; raw mode treats every root folder
   // as a Collection). Agenda singletons are identified ONLY by their config sidecar
   // (`_taskconfig`/`_eventconfig`) — never by folder name — and are not surfaced as Collections.
   const rootDirs = (await listEntries(root)).filter(
-    (e) => e.isDirectory() && !shouldSkipDir(e.name, e.name, excluded),
+    (e) => e.isDirectory() && !shouldSkipDir(e.name, e.name, scope),
   )
   const maybeCollections = await Promise.all(
     rootDirs.map(async (e) => {
       const abs = join(root, e.name)
       if ((await resolveFolderKind(abs, 'root', kindCtx)) !== 'collection') return null
-      return readPageCollection(
-        abs,
-        e.name,
-        e.name,
-        kindCtx,
-        excluded,
-        fb,
-        registry.defs,
-        unreadable,
-      )
+      return readPageCollection(abs, e.name, e.name, kindCtx, scope, fb, registry.defs, unreadable)
     }),
   )
   const allCollections = maybeCollections.filter((c): c is CollectionNode => c !== null)
@@ -696,7 +679,7 @@ async function walkNexus(root: string): Promise<NexusTree> {
     accent: leaves.accent,
     personalization: leaves.personalization,
     commands: leaves.commands,
-    excluded,
+    excluded: leaves.excluded,
     assetDirectory: leaves.assetDirectory,
     registry: orderedDefs(registry),
     ...(unreadable.length ? { unreadable: unreadable.map((path) => ({ path })) } : {}),

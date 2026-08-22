@@ -2,6 +2,7 @@
 // byte-identical to a from-scratch reconcile of the same disk.
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { ASSETS_DIR_REL } from '@shared/nexusPaths'
 import { mkdtemp, rm, mkdir, writeFile, unlink } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -141,7 +142,7 @@ describe('the watcher maintains the rows', () => {
     const added = await applyWatchEvents(
       root,
       [{ event: 'add', absPath: join(root, 'Loose', 'Note.md') }],
-      [],
+      { excluded: [], assetDir: ASSETS_DIR_REL },
     )
     // An un-adopted folder's note updates rows without touching the tree.
     expect(added).toBe('patched')
@@ -155,17 +156,16 @@ describe('the watcher maintains the rows', () => {
       await applyWatchEvents(
         root,
         [{ event: 'change', absPath: join(root, 'Notes', 'Daily', 'Beta.md') }],
-        [],
+        { excluded: [], assetDir: ASSETS_DIR_REL },
       ),
     ).toBe('patched')
     expect(queryMentions('alpha')?.sort()).toEqual(['Loose/Note.md', 'Notes/Daily/Beta.md'])
     await unlink(join(root, 'Loose', 'Note.md'))
     expect(
-      await applyWatchEvents(
-        root,
-        [{ event: 'unlink', absPath: join(root, 'Loose', 'Note.md') }],
-        [],
-      ),
+      await applyWatchEvents(root, [{ event: 'unlink', absPath: join(root, 'Loose', 'Note.md') }], {
+        excluded: [],
+        assetDir: ASSETS_DIR_REL,
+      }),
     ).toBe('patched')
     await expectMaintained()
   })

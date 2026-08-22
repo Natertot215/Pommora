@@ -165,7 +165,7 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 - `rg -F "shouldSkipDir(" src` → 6 non-definition, non-test at planning time. Legitimate hits: none — all six convert.
 - `rg -F "excludedMatcher(" src` → **5** non-definition, non-test at planning time: `watcher.ts:44`, `exclusion.ts:20`, `watchPatch.ts:116`, `watchPatch.ts:172`, `walk.ts:75`.
 - `rg -F "sameExclusions" src` → expect 0 after; all convert to `sameScope`.
-- Control: `rg -F "excluded" src` → 152. Zero here means the search never ran.
+- Control: `rg -F "excluded" src` → 152 at planning time, **159 at execution** — the growth is Task 1's own commit adding the key beside it, not drift. Zero here means the search never ran.
 
 **Interfaces**
 - Produces: `WatchScope = { excluded: string[]; assetDir: string }`.
@@ -181,12 +181,12 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 **Negative control:** the asset dir is skipped by the walk — assert a `.md` placed inside it is absent from both the tree and the corpus, and assert that with `assetDir` set to a non-matching value the same file *is* present. A test that passes either way proves nothing.
 
 **Steps:**
-- [ ] Write the failing tests, including both halves of the negative control.
-- [ ] Run — expect failures.
-- [ ] Add `assetMatcher`, `WatchScope`, `sameScope`; widen `shouldSkipDir`; retire `sameExclusions`.
-- [ ] Re-derive the three counts; convert every site. A diverged count rewrites this task.
-- [ ] `npm run typecheck && npm run test && npm run lint` — expect green.
-- [ ] Commit: `refactor(exclusion): one watch scope carries the asset root beside the exclusions`
+- [x] Write the failing tests, including both halves of the negative control.
+- [x] Run — expect failures.
+- [x] Add `assetMatcher`, `WatchScope`, `sameScope`; widen `shouldSkipDir`; retire `sameExclusions`.
+- [x] Re-derive the three counts; convert every site. *(6 / 5 / 0 — all matched)*
+- [x] `npm run typecheck && npm run test && npm run lint` — expect green. *(0 · 273 files / 3391 tests · 0/888)*
+- [x] Commit: `refactor(exclusion): one watch scope carries the asset root beside the exclusions`
 
 #### Task 3: The asset root outranks every other skip in the watcher
 
@@ -634,6 +634,8 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
   - The review's central finding stands: the plan built the external-change machinery and never asked what happens **when Pommora is the writer**. `atomicWriteBinary` → `recordWrite` → `isRecentWrite` means no in-app write reaches `settle`, so the asset copy starved the map (F1), the settings write starved the re-arm (F2), and the widened gate starved the delete (F3). Three defects, one root cause, all shipping silently green. Requirement 10 now names the path.
   - **Unknown resolved:** the `tree.unreadable` check at `watchPatch.ts:121` runs before Task 3's arm, but every producer of that list sits inside `readContainerMeta` / `readDirectPages` / `readChildSets`, which run only on descended directories — and Task 2 prunes the asset root at `shouldSkipDir`. Safe, and conditional on Task 2, which Task 3 now records.
 ### Deviations
+- **Task 2 — `readWatchScope` replaces both named readers.** All five `readExcludedFolders` call sites take the scope as a unit, so the reader does too; Task 1's `readAssetDirectory` folded into it rather than standing unused until Task 5. One reader produces the exact object every consumer threads. `adopt.ts` was also decoding `excluded_folders` by hand — a second decoder for a key `readSettingsLeaves` already owns — and now reads through it.
+- **Task 2 — the tree and the corpus disagree about hidden names on purpose.** The plan's Must-agree test asked them to agree about a hidden dir alongside the asset and excluded ones. They do not, and should not: `corpusFilesUnder` never applied `hiddenName`, so an `_underscore` folder leaves the tree while its notes stay swept and rewritable by the cascade. The test pins that contract rather than asserting a false one.
 - **Task 1 — a sixth rejected value.** The plan's failure half names `.` / `./` as the degenerate root but not `.nexus` or `.trash`. Both are holes: Task 3 orders the asset arm ahead of `classifyEvent`'s `NEXUS_DIR` branch, so an asset root of `.nexus` would classify `settings.json` and the Contexts registry as asset events and blind settings patching entirely; and `ignoredUnder` drops every path holding a `.trash` segment ([watcher.ts:51](../../Pommora/src/main/watcher.ts#L51)), so a root there delivers no events at all. The reader refuses a value equal to a `NON_CORPUS_TOP` member. Prefixes below one stay legal — the default is `.nexus/assets`, which Task 3's failure half requires to keep classifying `asset`.
 ### Lessons
 ### Sequenced After

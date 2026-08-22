@@ -1,4 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { ASSETS_DIR_REL } from '@shared/nexusPaths'
+import type { WatchScope } from '../exclusion'
+
+const scope = (excluded: string[] = []): WatchScope => ({ excluded, assetDir: ASSETS_DIR_REL })
 import { mkdtemp, rm, mkdir, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, relative } from 'node:path'
@@ -58,14 +62,14 @@ describe('corpusFiles', () => {
     await writeFile(join(root, 'Hidden', 'h.md'), 'x', 'utf8')
     await writeFile(join(root, 'Hidden', 'deep', 'hh.md'), 'x', 'utf8')
     await writeFile(join(root, 'sub', 'CAPS.MD'), 'x', 'utf8')
-    expect((await corpusFiles(root, [])).sort()).toEqual([
+    expect((await corpusFiles(root, scope())).sort()).toEqual([
       'Hidden/deep/hh.md',
       'Hidden/h.md',
       'a.md',
       'sub/CAPS.MD',
       'sub/b.md',
     ])
-    expect((await corpusFiles(root, ['Hidden'])).sort()).toEqual([
+    expect((await corpusFiles(root, scope(['Hidden']))).sort()).toEqual([
       'a.md',
       'sub/CAPS.MD',
       'sub/b.md',
@@ -73,14 +77,14 @@ describe('corpusFiles', () => {
   })
 
   it('returns [] for a missing root', async () => {
-    expect(await corpusFiles(join(root, 'nope'), [])).toEqual([])
+    expect(await corpusFiles(join(root, 'nope'), scope())).toEqual([])
   })
 
   it('never reads inside `.trash`, `.nexus`, or an excluded folder', async () => {
     await mkdir(join(root, '.trash', 'deep'), { recursive: true })
     await mkdir(join(root, 'Hidden', 'deep'), { recursive: true })
     await writeFile(join(root, '.trash', 'deep', 'gone.md'), 'x', 'utf8')
-    expect((await corpusFiles(root, ['Hidden'])).sort()).toEqual(['a.md', 'sub/b.md'])
+    expect((await corpusFiles(root, scope(['Hidden']))).sort()).toEqual(['a.md', 'sub/b.md'])
     const opened = readSpy.mock.calls.map((c) =>
       relative(root, String(c[0])).split(/[/\\]/).join('/'),
     )

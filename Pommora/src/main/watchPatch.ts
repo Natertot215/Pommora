@@ -8,7 +8,7 @@
 import { join, relative, sep } from 'node:path'
 import type { CollectionNode, NexusTree, PageNode, SetNode, SpaceNode } from '@shared/types'
 import { asString, asStringArray } from './coerce'
-import { excludedMatcher, hiddenName, sameExclusions } from './exclusion'
+import { excludedMatcher, hiddenName, sameScope, type WatchScope } from './exclusion'
 import { adoptedId, isAdoptedId } from './ids'
 import { pathExists, readJsonObject } from './io/atomicWrite'
 import { isMarkdownFile } from './io/walk'
@@ -105,7 +105,7 @@ export function classifyEvent(
   tree: NexusTree,
   root: string,
   ev: WatchEvent,
-  excluded: string[],
+  scope: WatchScope,
 ): WatchClass {
   const rel = toPosixRel(root, ev.absPath)
   if (rel === null) return { kind: 'full-refresh' }
@@ -113,7 +113,7 @@ export function classifyEvent(
   const name = segs[segs.length - 1]
   // Nothing under an excluded folder is read, patched, or indexed — the same one predicate
   // the walk, the corpus, and every cascade honor.
-  if (excludedMatcher(excluded)(segs)) return { kind: 'ignored' }
+  if (excludedMatcher(scope.excluded)(segs)) return { kind: 'ignored' }
   // A path on the unreadable list carries walk-owned bookkeeping (the entry must drop or
   // transition) — only the walk may adjudicate it. Container and Space sidecars record their
   // OWNER directory there, so the parent is checked too.
@@ -168,8 +168,8 @@ export function classifyEvent(
  *  a Markdown file, outside `.nexus` and outside the user's exclusions. A walk forced by anything
  *  else (a registry edit, a path on the unreadable list) leaves the corpus exactly as the index
  *  already has it, and owes no stat sweep on top of the walk. */
-export function touchesCorpus(root: string, events: WatchEvent[], excluded: string[]): boolean {
-  const isExcluded = excludedMatcher(excluded)
+export function touchesCorpus(root: string, events: WatchEvent[], scope: WatchScope): boolean {
+  const isExcluded = excludedMatcher(scope.excluded)
   return events.some((ev) => {
     const rel = toPosixRel(root, ev.absPath)
     if (rel === null) return true
@@ -184,14 +184,14 @@ export function touchesCorpus(root: string, events: WatchEvent[], excluded: stri
 export async function applyWatchEvents(
   root: string,
   events: WatchEvent[],
-  excluded: string[],
+  scope: WatchScope,
 ): Promise<'patched' | 'refresh'> {
   const tree = getLiveTree()
   if (!tree) return 'refresh'
-  const classes = events.map((ev) => classifyEvent(tree, root, ev, excluded))
+  const classes = events.map((ev) => classifyEvent(tree, root, ev, scope))
   if (classes.some((c) => c.kind === 'full-refresh')) return 'refresh'
   for (const c of classes) {
-    if ((await applyOne(root, c, excluded)) === 'refresh') return 'refresh'
+    if ((await applyOne(root, c, scope)) === 'refresh') return 'refresh'
   }
   return 'patched'
 }
@@ -218,7 +218,7 @@ const removePage = (root: string, rel: string): 'ok' | 'refresh' =>
 async function applyOne(
   root: string,
   c: WatchClass,
-  watchedExcluded: string[],
+  watched: WatchScope,
 ): Promise<'ok' | 'refresh'> {
   switch (c.kind) {
     case 'ignored':
@@ -238,7 +238,7 @@ async function applyOne(
     case 'space-meta':
       return patchSpaceFromDisk(root, c.dirRel)
     case 'settings-leaf':
-      return applySettingsLeaf(root, watchedExcluded)
+      return applySettingsLeaf(root, watched)
     case 'homepage-leaf':
       return patchHomepageFromDisk(root)
     case 'full-refresh':
@@ -376,13 +376,10 @@ export async function patchSpaceFromDisk(root: string, dirRel: string): Promise<
 const readSettings = async (root: string): Promise<SettingsLeaves> =>
   readSettingsLeaves((await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings))) ?? {})
 
-async function applySettingsLeaf(
-  root: string,
-  watchedExcluded: string[],
-): Promise<'ok' | 'refresh'> {
+async function applySettingsLeaf(root: string, watched: WatchScope): Promise<'ok' | 'refresh'> {
   const leaves = await readSettings(root)
-  // An exclusion change moves what the walk and watcher can even see — structural, not a leaf.
-  return sameExclusions(leaves.excluded, watchedExcluded)
+  // A scope change moves what the walk and watcher can even see — structural, not a leaf.
+  return sameScope({ excluded: leaves.excluded, assetDir: leaves.assetDirectory }, watched)
     ? applySettingsLeaves(root, leaves)
     : 'refresh'
 }
