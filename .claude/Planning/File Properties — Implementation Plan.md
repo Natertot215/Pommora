@@ -312,13 +312,13 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
 - [x] Full gate green. Commit: `refactor(ipc): the file-open channel goes with its last caller`
 
 #### Gate 1 — the shape lands, and the tree is smaller
-- [ ] Gate commands green, exit codes read directly.
-- [ ] Derivations re-run against their controls; counts matched, or the divergence rewrote the plan.
-- [ ] Net line delta reported, code only. Expect ≈ −64; a positive number here means something was re-authored.
-- [ ] `rg -F "FileRef" src` and `rg -F "fileLabel" src` → 0, control non-zero.
+- [x] Gate commands green, exit codes read directly.
+- [x] Derivations re-run against their controls; counts matched, or the divergence rewrote the plan.
+- [x] Net line delta reported, code only. Expect ≈ −64; a positive number here means something was re-authored.
+- [x] `rg -F "FileRef" src` and `rg -F "fileLabel" src` → 0, control non-zero.
 - [ ] Simplification and code review dispatched against `<base>..HEAD` — **ask Nathan before dispatching.**
 - [ ] Every concern fixed, or carrying an explicit ruling in the Log.
-- [ ] No user-visible surface shipped this phase beyond the interim cell; defer its pass to Gate 2.
+- [x] No user-visible surface shipped this phase beyond the interim cell; defer its pass to Gate 2.
 
 ---
 
@@ -630,13 +630,13 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
 ## Implementation Log
 
 ### Progress
-- [ ] **Phase 1** — The value shape, and the deletions it forces · base `<commit>`
-  - [ ] Task 1 — Turn the file value into a list of wikilink strings · `<commit>`
-  - [ ] Task 2 — Resolve a file value in the basename domain alone · `<commit>`
-  - [ ] Task 3 — Take file out of the column-style system · `<commit>`
-  - [ ] Task 4 — Retire the file cell's Style menu kind · `<commit>`
-  - [ ] Task 5 — Render the file cell from the new shape · `<commit>`
-  - [ ] Task 6 — Retire the `file:open` channel · `<commit>`
+- [x] **Phase 1** — The value shape, and the deletions it forces · base `ea05d139`
+  - [x] Task 1 — Turn the file value into a list of wikilink strings · `377b2322`
+  - [x] Task 2 — Resolve a file value in the basename domain alone · `eb146cac`
+  - [x] Task 3 — Take file out of the column-style system · `4c6003fe`
+  - [x] Task 4 — Retire the file cell's Style menu kind · `0423296e`
+  - [x] Task 5 — Render the file cell from the new shape · `0934967f`
+  - [x] Task 6 — Retire the `file:open` channel · `23106180`
 - [ ] **Phase 2** — FileChip, and the run that hosts it
   - [ ] Task 7 — Add the FileChip shape to the chip system
   - [ ] Task 8 — Map extensions to their glyphs
@@ -659,6 +659,15 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
   - [ ] Task 21 — Reconcile the documentation
 
 ### Rulings
+
+- **A parallel session is live in this tree.** It committed `b1cbf8ff` mid-Phase-1 and holds its own uncommitted files (`PickerControl.tsx`, `pickerControl.css.ts`, an untracked `pickerControl.typeable.test.tsx`, `FrameworkPM.md`, `NexusSettings.tsx`). Every commit here stages explicit paths and none of those files are among them. Two consequences for the gates: `ea05d139..HEAD` is **not** this feature's range — it carries their commit, which is why the naive delta read `+50` against a real `−32` — and a red `npm run test` has to be attributed before it is believed, since their in-flight file was transiently red twice through Phase 1.
+
+### Phase 1 — the gate
+
+- **Gates:** typecheck, test (3492) and lint all green, exit codes read directly.
+- **Dead vocabulary:** `FileRef` 0 · `fileLabel` 0 · `style-edit` 0 · `file:open` 0, against a control of **863**.
+- **Derivations:** control `@shared/` 863 against 862 at planning time — the one added hit is Task 1's own `parseConnectionText` import. `'filename'` re-derived at 4 non-test rather than 5; the missing hit is `Cell.tsx`'s, which Task 1 removed ahead of Task 3.
+- **Delta:** code-only, comments and tests excluded, summed over this feature's six commits alone: **+46 −84, net −38** against an expected −64. Not an overrun — the shortfall is addition the phase's breakdown never costed: `resolveFileValue` with its shared `namedAsset` (≈+10) and Task 5's asset-map seam (≈+15), which the plan had priced as a render swap. Every deletion the breakdown named landed.
 ### Open Against Later Tasks
 ### Deviations
 
