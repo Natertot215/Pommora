@@ -467,10 +467,10 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
 **Failure half:** the handler **must drain `pushAssetWrites()` itself.** Adoption riding the `mutate` channel got that for free (`main/index.ts:1572`); a standalone channel doesn't, and without it the just-landed file is absent from the renderer's asset map and the chip renders *unresolved* until the next unrelated mutation.
 
 **Steps:**
-- [ ] Add the channel; drain the push in its handler.
-- [ ] Add the picker's options: `defaultPath` (joined **in main**), extension filter.
-- [ ] Keep `pickedImagePaths.add` (`:730`) image-gated, or `nexus:imageData` opens to arbitrary picked files.
-- [ ] Full gate green. Commit: `feat(assets): adopting a file is its own step`
+- [x] Add the channel; drain the push in its handler.
+- [x] Add the picker's options: `defaultPath` (joined **in main**), extension filter.
+- [x] Keep `pickedImagePaths.add` (`:730`) image-gated, or `nexus:imageData` opens to arbitrary picked files.
+- [x] Full gate green. Commit: `feat(assets): adopting a file is its own step`
 
 #### Task 14: Prove a replaced file survives
 
@@ -645,7 +645,7 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
   - [x] Task 11 — Render the file cell as a run of FileLabels · `1c7d8d5b`
 - [ ] **Phase 3** — Adoption · base `907a7dab`
   - [x] Task 12 — Export the adoption mechanism · `<commit>`
-  - [ ] Task 13 — Give the picker its options
+  - [x] Task 13 — The adopt channel, and the picker's options · `<commit>`
   - [ ] Task 14 — Wire the value write
 - [ ] **Phase 4** — The Directory field
   - [ ] Task 15 — The Directory, its validation, and its pane
@@ -729,6 +729,8 @@ Each finding opened and reproduced before folding.
 - **Task 10 · `--chip-max` is lifted on the run, not raised on Location.** A chip's 80px cap would ellipsize each title separately, stacking a second truncation on the run's one honest signal — its trailing edge fade. `none` on `segmentRun` is the whole fix, and it serves the asset row's path segments for the same reason.
 - **Task 12 · the banner baseline was already written.** `mutate.test.ts`'s `setBanner` block already pins all five guards — adoption under its own name, reference-in-place, the AMBIGUOUS refusal, the collision step-aside and the byte-identical dedup. It passes unchanged across the export, which is the baseline the task asked for; writing a second one would have pinned the same code twice.
 - **Task 12 · the subfolder joins through `assetSubRoot`.** `writeAssetFile` already takes the asset root as a nexus-relative string and `rootSegs` drops empty segments, so a root-plus-subfolder is one composition rather than a branch — and an absent or slash-padded subfolder resolves to the root itself with nothing downstream special-casing it. Task 15's validator reads the same function.
+- **Task 13 · the picker channel is renamed, not just widened.** B-3 settled that it takes an options argument rather than growing a twin; the name `pickImage` then reads wrong at every call site that picks a PDF. `nexus:pickFile` / `window.nexus.pickFile` — the type gate named all five call sites, none of which pass options, so the rename is mechanical and the behavior for banners is unchanged.
+- **Task 13 · the pick is bounded by TWO sets, not one.** `pickedPaths` records every file the dialog hands out and is what `assets:adopt` checks — the renderer never names a path main did not choose. `pickedImagePaths` stays the narrower set, added to only by an image pick, because B-3a's point is that widening the FILTER must not widen what `nexus:imageData` will read back.
 - **Naming.** The spec settled on **FileLabel** (C-2c); several plan headings still read FileChip. FileLabel is the name that ships — component, chip shape and prose alike.
 ### Lessons
 ### Sequenced After

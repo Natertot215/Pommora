@@ -16,7 +16,7 @@ export function useNexusIcon() {
     })
     if (action === 'changeIcon') setPickerOpen(true)
     else if (action === 'addPhoto') {
-      const picked = await window.nexus.pickImage()
+      const picked = await window.nexus.pickFile()
       const bytes = picked && (await window.nexus.imageData(picked))
       if (bytes) setCropImage(bytes)
     } else if (action === 'removePhoto') await mutate({ op: 'setProfileImage', dataUrl: null })
