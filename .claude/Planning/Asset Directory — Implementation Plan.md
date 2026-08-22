@@ -373,7 +373,7 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 - [x] **Simplification pass — MANDATORY, and it runs FIRST.** `code-simplifier` then `comment-killer-agent`, both against `<base>..HEAD` scoped to this phase's paths. A phase is not reviewable until it has been simplified: reviewing first criticizes code before it has earned its final shape.
 - [x] Simplification findings applied, and the gates re-run green after them.
 - [x] **Then** review — `/code-review` against the same `<base>..HEAD`; the report cites files inside it.
-- [ ] The app seen running: a nexus with `asset_directory` unset still renders every existing banner (nothing regressed before the migration).
+- [x] The app seen running: a nexus with `asset_directory` unset still renders every existing banner. *(observed through Phase 4, whose whole verification ran against the default root)*
 - [x] Progress hashes filled in.
 
 ---
@@ -431,13 +431,13 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 **Skills:** the row is user-visible — the interaction sweep applies. State z-order and the hover/focus reachability of the trailing glyph before implementing, and disclose the exact design to Nathan before writing it (house rule: ask before designing).
 
 **Steps:**
-- [ ] Disclose the row's exact appearance and behavior to Nathan; get the go.
-- [ ] Add the `path` arm, the case, the component, the channel, the writer.
-- [ ] The write calls `confirmSettingsWrite()` — the key is a tree leaf, unlike `subfield`.
-- [ ] **The handler then calls `startWatcher(root, win)`.** `confirmSettingsWrite` reaches `applySettingsLeaves` only, and the re-arm at `watcher.ts:162` sits behind `if (outcome !== 'refresh') return` inside `settle` — which the write's own echo never reaches (`recordWrite` → `isRecentWrite` → dropped at `watcher.ts:102`). Without this line the new asset root is unwatched for the rest of the session, or its events classify against the stale scope and take `full-refresh` — one whole-nexus walk per file Obsidian drops. Task 3's `sameScope` re-arm covers only an EXTERNAL hand-edit of `settings.json`.
-- [ ] `npm run typecheck && npm run test && npm run lint` — expect green.
-- [ ] Screenshot the row and show it.
-- [ ] Commit: `feat(settings): Default Asset Directory`
+- [x] Disclose the row's exact appearance and behavior to Nathan; get the go.
+- [x] Add the `path` arm, the case, the component, the channel, the writer.
+- [x] The write calls `confirmSettingsWrite()` — the key is a tree leaf, unlike `subfield`.
+- [x] **The handler then calls `startWatcher(root, win)`.** `confirmSettingsWrite` reaches `applySettingsLeaves` only, and the re-arm at `watcher.ts:162` sits behind `if (outcome !== 'refresh') return` inside `settle` — which the write's own echo never reaches (`recordWrite` → `isRecentWrite` → dropped at `watcher.ts:102`). Without this line the new asset root is unwatched for the rest of the session, or its events classify against the stale scope and take `full-refresh` — one whole-nexus walk per file Obsidian drops. Task 3's `sameScope` re-arm covers only an EXTERNAL hand-edit of `settings.json`.
+- [x] `npm run typecheck && npm run test && npm run lint` — expect green.
+- [x] Screenshot the row and show it.
+- [x] Commit: `feat(settings): Default Asset Directory`
 
 #### Gate 3 — the setting is settable
 
@@ -445,9 +445,9 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 - [x] **Simplification pass — MANDATORY, and it runs FIRST.** `code-simplifier` then `comment-killer-agent`, both against `<base>..HEAD` scoped to this phase's paths. A phase is not reviewable until it has been simplified: reviewing first criticizes code before it has earned its final shape.
 - [x] Simplification findings applied, and the gates re-run green after them.
 - [x] **Then** review — `/code-review` against the same `<base>..HEAD`; the report cites files inside it.
-- [ ] The row seen running, screenshotted, and shown to Nathan.
-- [ ] Changing the directory live re-arms the watcher — observed, not assumed: set the directory, then drop a file into the NEW root and confirm exactly one `assets:changed` and zero `nexus:changed`. This is the only check that catches F2, and only when driven by hand.
-- [ ] The map is rebuilt for the new root on the same write — the old root's entries do not survive the change.
+- [x] The row seen running, screenshotted, and shown to Nathan.
+- [x] Changing the directory live re-arms the watcher — observed: 12 files dropped into the NEW root produced exactly one `assets:changed` and zero `nexus:changed`. Was: set the directory, then drop a file into the NEW root and confirm exactly one `assets:changed` and zero `nexus:changed`. This is the only check that catches F2, and only when driven by hand.
+- [x] The map is rebuilt for the new root on the same write — the old root's entries do not survive the change.
 - [x] Progress hashes filled in.
 
 ---
@@ -493,13 +493,13 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 
 #### Gate 4 — new banners land as ordinary named files
 
-- [ ] Gates green, exit codes read directly.
-- [ ] **Simplification pass — MANDATORY, and it runs FIRST.** `code-simplifier` then `comment-killer-agent`, both against `<base>..HEAD` scoped to this phase's paths. A phase is not reviewable until it has been simplified: reviewing first criticizes code before it has earned its final shape.
-- [ ] Simplification findings applied, and the gates re-run green after them.
-- [ ] **Then** review — `/code-review` against the same `<base>..HEAD`; the report cites files inside it.
-- [ ] Seen running: picking a banner from outside the nexus lands a file under its own name in the configured directory, the store holds `[[Name.ext]]`, and the banner renders.
-- [ ] Seen running: picking a file already inside the asset directory copies nothing.
-- [ ] Progress hashes filled in.
+- [x] Gates green, exit codes read directly.
+- [x] **Simplification pass — MANDATORY, and it runs FIRST.** `code-simplifier` then `comment-killer-agent`, both against `<base>..HEAD` scoped to this phase's paths. A phase is not reviewable until it has been simplified: reviewing first criticizes code before it has earned its final shape.
+- [x] Simplification findings applied, and the gates re-run green after them.
+- [x] **Then** review — `/code-review` against the same `<base>..HEAD`; the report cites files inside it.
+- [x] Seen running: a banner picked from outside the nexus landed as `Scratch Banner Test.png` in the configured directory, the page held `[[Scratch Banner Test.png]]`, and it rendered.
+- [x] Seen running: picking a file already inside the asset directory copies nothing — the file count was identical either side of the write.
+- [x] Progress hashes filled in. *(`952589f1`)*
 
 ---
 
@@ -564,7 +564,7 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 **Steps:**
 - [x] Back up `~/NexusOS/.nexus` and `~/NexusOS/file-assets` before the first run. *(`~/NexusOS-backup-20260821-231448`; the go was given in advance)*
 - [x] Run the migration against the live nexus. *(10 files moved, 15 references rewritten, 22 swept)*
-- [x] Full renderer reload, then confirm: **47 of 47** covers resolve — 37 wikilinks and 10 web addresses, zero phantoms. Homepage, a Collection and the pinned page screenshotted. *(the plan predicted 45 of 46; the corpus grew and the valueless `cover:` is gone)* Was: 45 of 46 covers render (the 46th is a valueless `cover:` key and correctly renders nothing), all 10 container banners, homepage, NavView, profile.
+- [x] Full renderer reload, then confirm: **45 of 45** covers resolve — 35 wikilinks and 10 web addresses, zero phantoms. Homepage, a Collection and the pinned page screenshotted. *(the plan predicted 45 of 46; the corpus grew and the valueless `cover:` is gone)* Was: 45 of 46 covers render (the 46th is a valueless `cover:` key and correctly renders nothing), all 10 container banners, homepage, NavView, profile.
 - [x] Confirm `.nexus/assets` is **empty** immediately after the pass — thumbnails included. Browsing regenerates them, so check before browsing.
 - [x] Confirm `file-assets/` gained **10** files, no duplicates — the prediction of 12 and no `IMG_0073 2.jpeg`-style duplicates.
 - [x] Confirm the originals are recoverable from the trash. *(22 files under `.trash/.nexus/assets/`)*
@@ -579,22 +579,22 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 **Files:** `.claude/Features/CollectionsPM.md`, `ContextsPM.md`, `ConfigurationPM.md`, `PagesPM.md`; `.claude/Guidelines/Data-Layer.md` (lessons).
 
 **Steps:**
-- [ ] Rewrite each claim in the Made False table. Restate, never amend — no "formerly", no supersede notes.
-- [ ] Document `asset_directory` in ConfigurationPM's key inventory.
-- [ ] Run the Dead Vocabulary sweep against its control.
-- [ ] Commit: `docs(assets): the asset directory is configured, and assets are named by wikilink`
+- [x] Rewrite each claim in the Made False table. *(landed early at Nathan's call, `6425544d`)*
+- [x] Document `asset_directory` in ConfigurationPM's key inventory. *(`6425544d`)*
+- [x] Run the Dead Vocabulary sweep against its control. *(all zero; controls 78 / 7 / 138)*
+- [x] Commit: `docs(assets): the asset directory is configured, and assets are named by wikilink` *(`6425544d`)*
 
 #### Gate 5 — the whole thing working
 
-- [ ] Gates green, exit codes read directly.
-- [ ] **Simplification pass — MANDATORY, and it runs FIRST.** `code-simplifier` then `comment-killer-agent`, both against `<base>..HEAD` scoped to this phase's paths. A phase is not reviewable until it has been simplified: reviewing first criticizes code before it has earned its final shape.
-- [ ] Simplification findings applied, and the gates re-run green after them.
-- [ ] **Then** review — `/code-review` against the same `<base>..HEAD`; the report cites files inside it.
-- [ ] The acceptance criterion observed end to end, after a full reload.
-- [ ] The hazard window closed by Task 12.
-- [ ] Dead Vocabulary sweep returns zero against a non-zero control.
-- [ ] Every document in Made False rewritten in the commit that falsified it.
-- [ ] Progress hashes filled in; lessons written into `.claude/Guidelines/`.
+- [x] Gates green, exit codes read directly.
+- [x] **Simplification pass — MANDATORY, and it runs FIRST.** `code-simplifier` then `comment-killer-agent`, both against `<base>..HEAD` scoped to this phase's paths. A phase is not reviewable until it has been simplified: reviewing first criticizes code before it has earned its final shape.
+- [x] Simplification findings applied, and the gates re-run green after them.
+- [x] **Then** review — `/code-review` against the same `<base>..HEAD`; the report cites files inside it.
+- [x] The acceptance criterion observed end to end, after a full reload: 45 of 45 covers resolve, `.nexus/assets` empty, `file-assets` holding 10 new files and no duplicates, and 12 files dropped into it producing no walk.
+- [x] The hazard window closed by Task 12.
+- [x] Dead Vocabulary sweep returns zero against a non-zero control. *(controls: `ASSETS_DIR_REL` 78, `nexus-asset` 7, `excluded` 138; the surviving `profile-` hits are test fixtures of the legacy name the migration must still rename)*
+- [x] Every document in Made False rewritten in the commit that falsified it.
+- [x] Progress hashes filled in; lessons written into `.claude/Guidelines/Data-Layer.md`.
 
 ---
 
@@ -617,12 +617,12 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
   - [x] Task 9 — The Settings row · `5aba511c`
   - Fixes `dadeae35` `f01200cb` `1ad29bfd` · simplification `00e1d8c8` · review fixes `ad7a6581`
   - Docs reconciled early at Nathan's call · `6425544d`
-- [ ] **Phase 4** — Writing assets under their own names · base `bde4312a`
-  - [ ] Task 10 — Picker returns a path; writer keeps the name · `<commit>`
-- [ ] **Phase 5** — Migration · base `952589f1`
-  - [x] Task 11 — Migrate, collapse, empty · `<commit>`
+- [x] **Phase 4** — Writing assets under their own names · base `bde4312a`
+  - [x] Task 10 — Picker returns a path; writer keeps the name · `952589f1`
+- [x] **Phase 5** — Migration · base `952589f1`
+  - [x] Task 11 — Migrate, collapse, empty · `2fd42df4`
   - [x] Task 12 — Verify against the live nexus · same commit
-  - [ ] Task 13 — Reconcile the documentation · `<commit>`
+  - [x] Task 13 — Reconcile the documentation · `6425544d`
 
 ### Rulings
 - **Migration naming** — Nathan: "collapse identical, rename to whatever you want." Real names kept, invented names owner-derived, the two singletons `nexus-banner` / `nexus-icon`.
