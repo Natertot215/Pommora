@@ -20,6 +20,7 @@ import type {
   SpaceNode,
   ConnectionColorSetting,
   ExternalLinkColorSetting,
+  CheckboxColorSetting,
   EntityIconKind,
   FolderPlacement,
   Personalization,
@@ -103,6 +104,7 @@ export function readPersonalization(raw: unknown): Personalization {
     : []
   const conn = asString(p.connectionColor)
   const ext = asString(p.externalLinkColor)
+  const chk = asString(p.checkboxColor)
   const rawIcons =
     p.defaultIcons != null && typeof p.defaultIcons === 'object' && !Array.isArray(p.defaultIcons)
       ? (p.defaultIcons as Record<string, unknown>)
@@ -125,6 +127,11 @@ export function readPersonalization(raw: unknown): Personalization {
       ext === 'system' || (ext != null && isColorKey(ext))
         ? (ext as ExternalLinkColorSetting)
         : undefined,
+    checkboxColor:
+      chk === 'accent' || (chk != null && isColorKey(chk))
+        ? (chk as CheckboxColorSetting)
+        : undefined,
+    muteCheckedItems: bool(p.muteCheckedItems),
     hideChevrons: bool(p.hideChevrons),
     outlinerLines: bool(p.outlinerLines),
     codeblockLineCount: bool(p.codeblockLineCount),

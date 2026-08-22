@@ -1,7 +1,7 @@
 import { useRef, useState, type RefObject } from 'react'
 import { PickerMenu } from '@renderer/design-system/components/PickerMenu/PickerMenu'
 import type { ChipColorName } from '@renderer/design-system/tokens/chip.css'
-import { cellColor, cellRing } from '@renderer/design-system/tokens/ramp'
+import { cellColor, cellRing, cellTint } from '@renderer/design-system/tokens/ramp'
 import { RAMP_FAMILIES, RAMP_STEPS, type CellKey } from '@shared/theme'
 import { cx } from '@renderer/design-system/cx'
 import { TINT_STEPS, tintAt } from '@renderer/design-system/tokens/tint'
@@ -12,10 +12,12 @@ import * as pane from './settingsPane.css'
  * The 8×8 ramp grid — one row per family, dark → light, every spectrum solid on an exact cell.
  * Clicking the selected cell clears, so there is no separate clear affordance.
  *
- * `greyscale` is withheld by the two surfaces that paint the RAW cell color: the row's dark end is
- * the window substrate itself, so a link or checkbox in it would be invisible against the page. A
- * value already stored there still shows its row, because clearing is bound to clicking the ringed
- * cell — hide the row it lives in and the value becomes unclearable.
+ * `greyscale` is withheld by the surfaces that paint the RAW cell color: the row's dark end is the
+ * window substrate itself, so a link wearing it would be invisible against the page. A surface that
+ * resolves a cell through the chip recipe instead — the darkness offset and the borrowed outline —
+ * can take the row, and asks for it. A value already stored there still shows its row either way,
+ * because clearing is bound to clicking the ringed cell: hide the row it lives in and the value
+ * becomes unclearable.
  */
 export function ColorPicker({
   open,
@@ -68,19 +70,27 @@ export function ColorPicker({
 /**
  * The swatch-and-picker pair: a chip wearing the resolved color, and the grid it opens. Its open
  * state is its own — no surface that shows a color field has ever needed to drive it from outside.
- * Greyscale is withheld for the same reason the picker documents above.
+ * Greyscale is offered on request, resolved as a chip rather than painted raw — see the picker.
  */
 export function ColorSwatchField({
   label,
   selected,
   css,
+  greyscale = false,
   onPick,
 }: {
   label: string
   selected: ChipColorName
   css: string
+  /** Offer the grey row. Withheld by default for the reason the picker documents; a surface that
+   *  resolves a cell through the chip recipe rather than painting it raw can take it. */
+  greyscale?: boolean
   onPick: (color: string | undefined) => void
 }): React.JSX.Element {
+  // A grey cell reads through the chip recipe — the wash the row's darkness offset produces, and the
+  // borrowed outline that stands in for the chroma it hasn't got. Painted raw it would sink into the
+  // pane at the dark end, which is exactly why the row is withheld from the surfaces that do that.
+  const grey = selected.startsWith('grey-') ? cellTint(selected as CellKey) : null
   const [open, setOpen] = useState(false)
   const chipRef = useRef<HTMLButtonElement>(null)
 
@@ -95,11 +105,16 @@ export function ColorSwatchField({
       >
         <span
           className={pane.colorSwatch}
-          style={{ '--sw': tintAt(css, TINT_STEPS.primary) } as React.CSSProperties}
+          style={
+            {
+              '--sw': grey?.background ?? tintAt(css, TINT_STEPS.primary),
+              '--sw-outline': grey?.borderColor ?? 'transparent',
+            } as React.CSSProperties
+          }
         />
       </button>
       <ColorPicker
-        greyscale={false}
+        greyscale={greyscale}
         open={open}
         selected={selected}
         onPick={(next) => {

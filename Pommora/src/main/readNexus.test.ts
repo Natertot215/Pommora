@@ -583,6 +583,7 @@ describe('readNexus — personalization', () => {
       'revealTabBarOnHover',
       'connectionsOpenInPreview',
       'plainUnresolvedLinks',
+      'muteCheckedItems',
       'permanentDelete',
       'pasteLinkIntoText',
       'citationsShown',

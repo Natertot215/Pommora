@@ -99,6 +99,8 @@ type Row =
       inherits: InheritSentinel
       /** The CSS var the cleared state resolves to, so the swatch shows what it is actually wearing. */
       inheritsVar: string
+      /** Offer the grey row — for a color resolved through the chip recipe rather than painted raw. */
+      greyscale?: boolean
     })
   | PickerRow<LinkDisplay>
   | PickerRow<DateFormat>
@@ -414,6 +416,26 @@ const LEAVES = roster([
         ],
       },
       {
+        title: 'Checkboxes',
+        rows: [
+          {
+            kind: 'color',
+            key: 'checkboxColor',
+            label: 'Checkbox Color',
+            hint: 'The color a task checkbox fills and checks with. Cleared follows the accent.',
+            inherits: 'accent',
+            inheritsVar: 'var(--accent)',
+            greyscale: true,
+          },
+          {
+            kind: 'toggle',
+            key: 'muteCheckedItems',
+            label: 'Mute Checked Items',
+            hint: 'A checked task reads as done — its words dimmed and struck through.',
+          },
+        ],
+      },
+      {
         title: 'Links',
         rows: [
           {
@@ -612,6 +634,7 @@ function ColorRow({ row }: { row: RowOf<'color'> }): React.JSX.Element {
         label={row.label}
         selected={inheriting ? 'default' : chipColorFor(value)}
         css={inheriting ? row.inheritsVar : solidColorCss(value)}
+        greyscale={row.greyscale}
         onPick={(next) => setPersonalization(row.key, (next ?? row.inherits) as never)}
       />
     </SettingsRow>

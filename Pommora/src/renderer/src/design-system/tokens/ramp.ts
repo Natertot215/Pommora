@@ -124,6 +124,16 @@ export const cellTint = (key: CellKey): ReturnType<typeof tint> => {
   return { ...tint(base), borderColor: GREY_OUTLINES[step] }
 }
 
+/** A cell as the task checkbox wears it. The box is a chip at a smaller size, so it takes the chip's
+ *  recipe whole — including the greyscale row's darkness offset and its borrowed outline, which is
+ *  what lets a grey checkbox read at all — and softens the border by one tint step, the one thing a
+ *  box the size of a glyph wants differently from a chip. */
+export const checkboxTint = (key: CellKey): ReturnType<typeof tint> => {
+  const chip = cellTint(key)
+  if (parse(key).family === 'grey') return chip
+  return { ...chip, borderColor: tintAt(cellColor(key), TINT_STEPS.tertiary) }
+}
+
 /** The picker's selection ring. On the grey row the ring and the chip's border are one thing by
  *  construction, so it reads the recipe; every other row rings with the solid at tint-primary. */
 export const cellRing = (key: CellKey): string =>
