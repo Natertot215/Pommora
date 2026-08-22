@@ -105,24 +105,21 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
       onReveal: (id) => setRevealed((prev) => new Set([...prev, id])),
     })
 
-  // Opens the editor anchored to the value field on the right — the row mounts next frame
-  // (requestAnimationFrame).
+  // Revealing a row and then editing it is the ORDINARY click one frame later — the row mounts
+  // next frame, so its value field can only be anchored to after paint. Routing it through the
+  // same `editRow` every other click takes is what keeps a new type from having to be taught to
+  // two places; this used to restate the routing inline, and its catch-all already disagreed with
+  // `editRow`'s explicit list. A Context row carries no def and opens its own picker.
   const revealAndEdit = (id: string, def?: PropertyDefinition): void => {
     setAddOpen(false)
     setRevealed((prev) => new Set([...prev, id]))
-    if (def?.type === 'checkbox') {
-      commitValue(id, { kind: 'checkbox', value: true })
-      return
-    }
-    if (def && (def.type === 'file' || def.type === 'last_edited_time')) return
     requestAnimationFrame(() => {
-      triggerRef.current =
+      const el =
         document.querySelector<HTMLElement>(`[data-insp-id="${id}"] .pgpreview-insp-value`) ??
         addRef.current
-      if (def?.type === 'datetime') setEditing({ id, mode: 'date' })
-      else if (def && (def.type === 'number' || def.type === 'url'))
-        setEditing({ id, mode: 'editor' })
-      else setEditing({ id, mode: 'picker' })
+      if (def && el) return editRow(def, el)
+      triggerRef.current = el
+      setEditing({ id, mode: 'picker' })
     })
   }
 

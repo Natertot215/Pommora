@@ -12,6 +12,9 @@ export type ValueClickAction =
   | { kind: 'commit'; value: PropertyValue | null }
   | { kind: 'picker' }
   | { kind: 'datetime' }
+  /** The dialog — which label was clicked is a hit-test fact the surface supplies, not something
+   *  a pure router can read off the value. `runFilePick` is the effect it names. */
+  | { kind: 'file' }
   | null
 
 /** Null = the click isn't covered by the shared rules — the surface's own tail routes it. */
@@ -34,5 +37,6 @@ export function sharedValueClickAction(
   if (type === 'status' || type === 'select' || type === 'multi_select' || type === 'context')
     return { kind: 'picker' }
   if (type === 'datetime') return { kind: 'datetime' }
+  if (type === 'file') return { kind: 'file' }
   return null
 }

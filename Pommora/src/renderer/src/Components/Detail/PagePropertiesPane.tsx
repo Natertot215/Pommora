@@ -137,23 +137,19 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
       emptyRow(id, action === 'value:clear')
   }
 
+  // Revealing a row and then editing it is the ORDINARY click one frame later — the row mounts
+  // next frame, so its value field can only be anchored to after paint. Routing it through the
+  // same `editRow` every other click takes is what keeps a new type from having to be taught to
+  // two places; this used to restate the routing inline, and its catch-all already disagreed with
+  // `editRow`'s explicit list.
   const revealAndEdit = (def: PropertyDefinition): void => {
-    const id = def.id
     setAddOpen(false)
-    reveal(id)
-    if (def.type === 'checkbox') {
-      commitValue(id, { kind: 'checkbox', value: true })
-      return
-    }
-    if (def.type === 'file' || def.type === 'last_edited_time') return
-    // The row mounts next frame, so the picker can only anchor to its value field after paint.
+    reveal(def.id)
     requestAnimationFrame(() => {
-      triggerRef.current =
-        document.querySelector<HTMLElement>(`[data-page-prop="${id}"] .${s.value}`) ??
+      const el =
+        document.querySelector<HTMLElement>(`[data-page-prop="${def.id}"] .${s.value}`) ??
         addRef.current
-      if (def.type === 'datetime') setEditing({ id, mode: 'date' })
-      else if (def.type === 'number' || def.type === 'url') setEditing({ id, mode: 'editor' })
-      else setEditing({ id, mode: 'picker' })
+      if (el) editRow(def, el)
     })
   }
 

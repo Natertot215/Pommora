@@ -21,6 +21,7 @@ import { PropertyEditor } from '../PropertyEditing/PropertyEditor'
 import { PropertyPicker, syntheticContextDef } from '../PropertyEditing/PropertyPicker'
 import { DatetimeValuePicker } from '../PropertyEditing/DatetimeValuePicker'
 import { sharedValueClickAction } from '../PropertyEditing/valueClick'
+import { fileChipIndex, runFilePick } from '../PropertyEditing/filePick'
 import { useSession } from '../../../store'
 import { pageMoveContext, runPageSendAction } from '../../../pageMenuActions'
 import { findCollectionForSet } from '../../Scope'
@@ -711,8 +712,20 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     )
     if (shared) {
       e.stopPropagation()
+      const def = schema.find((d) => d.id === col.id)
       if (shared.kind === 'commit') commitCellValue(row, col.id, shared.value)
-      else setEditing({ rowId: row.id, colId: col.id, mode: 'picker' })
+      // A file value is filled through the OS dialog: a label replaces the file it names and opens
+      // at that file's own folder, the value's own area adds and opens at the property's Directory.
+      else if (shared.kind === 'file') {
+        if (def)
+          void runFilePick(
+            def,
+            resolveFieldValue(row, col.id, schema),
+            fileChipIndex(e.target),
+          ).then((next) => {
+            if (next !== undefined) commitCellValue(row, col.id, next)
+          })
+      } else setEditing({ rowId: row.id, colId: col.id, mode: 'picker' })
     } else if (t === 'number') {
       e.stopPropagation()
       // A Bar-look cell has no text to replace in place, so it edits through the TextPicker dropdown (the
