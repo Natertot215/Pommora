@@ -63,7 +63,6 @@ The existing ledger survived six adversarial reads nearly intact. Where an audit
 
 Recommendations only — the rulings stay open until stamped.
 
-- **Card drag file:** Table's behavior (canonical `page_order` in unsorted structural views). Cards' own creation comment states this law and its creation path already follows it.
 - **Retention budgets:** decide the structure (context-aware tiers), not the numbers.
 - **Cursor convention:** settle it in the primitives — `MenuItem`, `AccessoryButton`, the picker row — and the ~20-site sweep collapses into a handful of declarations plus exceptions.
 - **Cards loading/empty:** the seat becomes the view host, decided once; the empty state's wording remains a design call.

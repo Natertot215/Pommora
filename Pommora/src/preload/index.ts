@@ -186,8 +186,11 @@ const api = {
   systemAccent: ask('theme:systemAccent'),
   // Pop the native nexus-identity icon menu (Change Icon / Add·Change Photo / removes) → the chosen action.
   iconMenu: ask('nexus:iconMenu'),
-  // Open the native image picker directly → data URL (null if canceled). Banner Add / Change.
+  // Open the native image picker directly → the chosen file's path (null if canceled).
   pickImage: ask('nexus:pickImage'),
+  // The bytes behind one picked image path, for a surface that must SHOW it before it is
+  // adopted — the crop modal, whose output is a new image rather than the file itself.
+  imageData: ask('nexus:imageData'),
   // `noRemove` drops the Remove item (an inherited banner has nothing of its own to remove).
   bannerMenu: ask('nexus:bannerMenu'),
   // The Rename / Edit Icon menu for a detail title.

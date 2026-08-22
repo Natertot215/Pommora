@@ -59,8 +59,9 @@ import {
 } from '@shared/blocks'
 import { pathExists } from './io/atomicWrite'
 import { readAppConfig, updateAppConfig, addRecent, DEFAULT_TRASH_MODE } from './appConfig'
-import { liveAssetMap, refreshAssetMap } from './assetMap'
+import { liveAssetMap, refreshAssetMap, takeAssetMapPush } from './assetMap'
 import { underAssetRoot } from './assetRoots'
+import { ASSET_MIME, IMAGE_EXTS } from '@shared/assetMime'
 import { validateAssetDir } from './assetDirValidate'
 import { sessionRoot, openSession, resolveRestorePath, isExistingDir } from './session'
 import { openSessionDb, closeSessionDb, sessionDb } from './sessionDb'
@@ -234,13 +235,6 @@ function registerRendererProtocol(): void {
 
 // Read-only and confined to the open nexus's .nexus/assets/ (resolveUnderRoot realpaths +
 // contains; the prefix check pins it to that dir).
-const ASSET_MIME: Record<string, string> = {
-  '.png': 'image/png',
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.gif': 'image/gif',
-  '.webp': 'image/webp',
-}
 function registerAssetProtocol(): void {
   protocol.handle(ASSET_SCHEME, async (request) => {
     const root = sessionRoot()
@@ -688,22 +682,43 @@ async function mutateDeps(): Promise<MutateDeps> {
   }
 }
 
-// The one owner of "pick an image file"; reuses ASSET_MIME for the ext→mime mapping.
-const IMAGE_EXTS = Object.keys(ASSET_MIME).map((e) => e.slice(1))
-async function pickImageDataUrl(win: BrowserWindow): Promise<string | null> {
+// What the dialog has handed the renderer this session. A picked file sits outside the nexus, so
+// the read-back channel below cannot be bounded by the root — it is bounded by the pick instead,
+// and the renderer never names a path main did not choose. The filter is what the channel OFFERS;
+// an any-file picker widens it rather than replacing the channel.
+const pickedImagePaths = new Set<string>()
+async function pickImagePath(win: BrowserWindow): Promise<string | null> {
   const result = await dialog.showOpenDialog(win, {
     properties: ['openFile'],
     filters: [{ name: 'Images', extensions: IMAGE_EXTS }],
   })
-  if (result.canceled || !result.filePaths[0]) return null
+  const picked = result.canceled ? null : (result.filePaths[0] ?? null)
+  if (picked) pickedImagePaths.add(picked)
+  return picked
+}
+
+// Reading one picked image into a data URL is what lets a surface show a file BEFORE it is
+// adopted — the crop modal, whose output is a new image rather than the file itself.
+const IMAGE_DATA_MAX = 64 * 1024 * 1024
+async function readImageData(absPath: unknown): Promise<string | null> {
+  if (typeof absPath !== 'string' || !pickedImagePaths.has(absPath)) return null
+  const mime = ASSET_MIME[extname(absPath).toLowerCase()]
+  if (!mime) return null
   try {
-    const p = result.filePaths[0]
-    const buf = await readFile(p)
-    const mime = ASSET_MIME[extname(p).toLowerCase()] ?? 'application/octet-stream'
-    return `data:${mime};base64,${buf.toString('base64')}`
+    const buf = await readFile(absPath)
+    return buf.byteLength > IMAGE_DATA_MAX ? null : `data:${mime};base64,${buf.toString('base64')}`
   } catch {
     return null
   }
+}
+
+/** An asset a mutation adopted never reaches the watcher — `atomicWriteBinary` records its own
+ *  write and the echo is dropped — so the write's own channel is what tells the renderer. */
+function pushAssetWrites(): void {
+  const root = sessionRoot()
+  if (root === null || !mainWindow || mainWindow.isDestroyed()) return
+  const moved = takeAssetMapPush(root)
+  if (moved) push(mainWindow, 'assets:changed', moved)
 }
 
 serveBridge(
@@ -1515,7 +1530,10 @@ serveBridge(
       kind: 'raw',
       fn: async (req: MutateRequest) => {
         const reply = await handleMutate(req, await mutateDeps())
-        if (reply.ok) await confirmWrite((root) => confirmMutation(root, req, reply.value))
+        if (reply.ok) {
+          await confirmWrite((root) => confirmMutation(root, req, reply.value))
+          pushAssetWrites()
+        }
         return reply
       },
     },
@@ -1530,6 +1548,7 @@ serveBridge(
           // The menu outlives its IPC handler, so this confirm fires after the mutation
           // finished — the same patch-and-push every renderer-driven mutation gets.
           await confirmWrite((root) => confirmMutation(root, req, reply))
+          pushAssetWrites()
           push(win, 'menu:action', 'reload-state')
         })
       },
@@ -1681,7 +1700,8 @@ serveBridge(
 
     // The banner's Add/Change affordances use this directly (the photo's "Add Photo" menu wraps
     // the same picker).
-    'nexus:pickImage': { kind: 'menu', fn: pickImageDataUrl },
+    'nexus:pickImage': { kind: 'menu', fn: pickImagePath },
+    'nexus:imageData': { kind: 'raw', fn: readImageData },
 
     // Change/Remove for an existing image, a single Add item when `add`. The noun follows the
     // surface's vocabulary (Banner by default; the cards' Cover-mode thumb passes "Cover").

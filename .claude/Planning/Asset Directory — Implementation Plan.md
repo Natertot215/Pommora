@@ -482,14 +482,14 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 **Survivors:** the two thumbnail writers keep `atomicWriteBinary` into `.nexus/assets`; `captureThumbnail` and `evictThumbnails` are untouched.
 
 **Steps:**
-- [ ] Write the failing tests, including all six failure-half cases and the round-trip agreement.
-- [ ] Run — expect failures.
-- [ ] Convert the picker, the writer and the five store arms. Copy via `readFile` + `atomicWriteBinary`, which records the write.
-- [ ] **`adoptImageAsset` patches main's held map and pushes `assets:changed` before it returns.** `atomicWriteBinary` calls `recordWrite`, so `watcher.ts:102` drops the event and `settle` never runs — Task 5's entire mechanism is unreachable for anything Pommora writes. Without this line every banner picked is blank until the app restarts, and the app is green the whole time.
-- [ ] `pickImagePath` must NOT bake `IMAGE_EXTS` in as a hard filter — it is the channel Part 2's any-file picker inherits. Offer images by default; do not make the filter the channel's contract.
-- [ ] Re-derive both counts; a divergence rewrites this task.
-- [ ] `npm run typecheck && npm run test && npm run lint` — expect green.
-- [ ] Commit: `feat(assets): a picked image keeps its own name`
+- [x] Write the failing tests, including all six failure-half cases and the round-trip agreement.
+- [x] Run — expect failures. *(3 failed; two were real defects, not test drift)*
+- [x] Convert the picker, the writer and the five store arms. Copy via `readFile` + `atomicWriteBinary`, which records the write.
+- [x] **`adoptImageAsset` patches main's held map and pushes `assets:changed` before it returns.** `atomicWriteBinary` calls `recordWrite`, so `watcher.ts:102` drops the event and `settle` never runs — Task 5's entire mechanism is unreachable for anything Pommora writes. Without this line every banner picked is blank until the app restarts, and the app is green the whole time.
+- [x] `pickImagePath` must NOT bake `IMAGE_EXTS` in as a hard filter — it is the channel Part 2's any-file picker inherits. Offer images by default; do not make the filter the channel's contract.
+- [x] Re-derive both counts; a divergence rewrites this task. *(`writeImageAsset` 5 — 1 definition + 4 sites; every `dataUrl` asset-write path converted but the crop's own)*
+- [x] `npm run typecheck && npm run test && npm run lint` — expect green. *(0 · 277 files / 3467 tests · 0/900)*
+- [x] Commit: `feat(assets): a picked image keeps its own name`
 
 #### Gate 4 — new banners land as ordinary named files
 
@@ -617,7 +617,7 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
   - [x] Task 9 — The Settings row · `5aba511c`
   - Fixes `dadeae35` `f01200cb` `1ad29bfd` · simplification `00e1d8c8` · review fixes `ad7a6581`
   - Docs reconciled early at Nathan's call · `6425544d`
-- [ ] **Phase 4** — Writing assets under their own names
+- [ ] **Phase 4** — Writing assets under their own names · base `bde4312a`
   - [ ] Task 10 — Picker returns a path; writer keeps the name · `<commit>`
 - [ ] **Phase 5** — Migration
   - [ ] Task 11 — Migrate, collapse, empty · `<commit>`
@@ -649,6 +649,9 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
   - The review's central finding stands: the plan built the external-change machinery and never asked what happens **when Pommora is the writer**. `atomicWriteBinary` → `recordWrite` → `isRecentWrite` means no in-app write reaches `settle`, so the asset copy starved the map (F1), the settings write starved the re-arm (F2), and the widened gate starved the delete (F3). Three defects, one root cause, all shipping silently green. Requirement 10 now names the path.
   - **Unknown resolved:** the `tree.unreadable` check at `watchPatch.ts:121` runs before Task 3's arm, but every producer of that list sits inside `readContainerMeta` / `readDirectPages` / `readChildSets`, which run only on descended directories — and Task 2 prunes the asset root at `shouldSkipDir`. Safe, and conditional on Task 2, which Task 3 now records.
 ### Deviations
+- **Task 10 — the profile image keeps a data URL, and it is not the retired shape.** `useNexusIcon` routes a picked photo through `PhotoCropModal`, so what `setProfileImage` stores is a CROP — synthesized bytes with no source file on disk to name. Task 10 as written would have made every profile photo un-croppable, which is Part 2's subject rather than this plan's. `setBanner` takes a `source` path; `setProfileImage` keeps its bytes and gains a name instead of an invented one: `nexus-icon.<ext>`, the singleton Task 11's own naming rule already calls it. A replacement overwrites whatever `profile_image` currently resolves to — its own file — and mints a disambiguated name when the value resolves to nothing or to several.
+- **Task 10 — the crop surface reads its input through its own ask.** With the picker returning a path, the modal has nothing to display: the file sits anywhere on disk, so neither `nexus-asset://` nor the renderer can reach it. `nexus:imageData` answers a data URL for one image path, gated on the extensions `ASSET_MIME` knows and capped in size. Keeping a second data-URL picker beside the path one would have retired the vocabulary and left the mechanism.
+- **Task 10 — the per-entity asset key retires with the folder scheme.** `assetKeyOk`, the page-id read and `ensureIdentity`'s use in `setProfileImage` existed to name `.nexus/assets/<id>/`. Assets land flat under the configured root, so nothing keys by entity and the faults that refused an unkeyable id go with it.
 - **Task 8 — the validator refuses ANY Markdown, not only what the tree shows.** An `_`-prefixed page is hidden from the tree but still swept and rewritten by the cascade, so a folder holding one is corpus either way. `isContentFile` would have admitted it.
 - **Task 8 — and the folders the app owns whole.** The reader already refuses them for a hand-edited value; the dialog would otherwise offer a route the file itself denies.
 - **Task 7 — ambiguity is a symbol, not the string `'ambiguous'`.** The specified `string | null | 'ambiguous'` collapses to `string | null` in TypeScript, so `typeof hit === 'string'` takes the refusal for a path and deletes by it. The first delete-guard test caught exactly that; a `unique symbol` makes the mistake a compile error instead of a lost file.

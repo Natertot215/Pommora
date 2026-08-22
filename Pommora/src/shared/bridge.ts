@@ -311,6 +311,7 @@ export interface Asks {
     reply: NexusIconAction | null
   }
   'nexus:pickImage': { args: []; reply: string | null }
+  'nexus:imageData': { args: [absPath: string]; reply: string | null }
   'nexus:bannerMenu': {
     args: [opts?: { noRemove?: boolean; noun?: string; add?: boolean }]
     reply: BannerMenuAction | null
