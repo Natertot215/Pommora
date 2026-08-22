@@ -29,14 +29,20 @@ describe('buildAssetMap', () => {
     expect(map.files['notes.md']).toEqual(['file-assets/notes.md'])
   })
 
-  it('skips the thumbnail folder at any depth, and OS cruft the watcher never delivers', async () => {
-    await put('file-assets', THUMBNAILS_SEGMENT, 'nx-home.jpg')
-    await put('file-assets', 'nested', THUMBNAILS_SEGMENT, 'nx-work.jpg')
+  it('skips OS cruft the watcher never delivers', async () => {
     await put('file-assets', '.DS_Store')
     await put('file-assets', 'node_modules', 'pkg.png')
     await put('file-assets', 'Keep.png')
     const map = await buildAssetMap(root, 'file-assets')
     expect(Object.keys(map.files)).toEqual(['keep.png'])
+  })
+
+  it("skips Pommora's own thumbnails under the default root, at any depth", async () => {
+    const A = ASSETS_DIR_REL.split('/')
+    await put(...A, THUMBNAILS_SEGMENT, 'nx-home.jpg')
+    await put(...A, 'nx', THUMBNAILS_SEGMENT, 'nx-work.jpg')
+    await put(...A, 'Keep.png')
+    expect(Object.keys((await buildAssetMap(root, ASSETS_DIR_REL)).files)).toEqual(['keep.png'])
   })
 
   it('a missing or empty directory is an empty map, never a throw', async () => {
@@ -95,17 +101,24 @@ describe('patchAssetMap', () => {
   it('an add and an unlink land without re-listing', async () => {
     await put('file-assets', 'a.png')
     const built = await buildAssetMap(root, 'file-assets')
-    const added = patchAssetMap(built, 'file-assets/b.png', 'add')
+    const added = patchAssetMap(built, 'file-assets/b.png', 'add', 'file-assets')
     expect(added.files['b.png']).toEqual(['file-assets/b.png'])
-    expect(patchAssetMap(added, 'file-assets/b.png', 'unlink').files['b.png']).toBeUndefined()
+    expect(
+      patchAssetMap(added, 'file-assets/b.png', 'unlink', 'file-assets').files['b.png'],
+    ).toBeUndefined()
   })
 
   it('a re-save under an unchanged name bumps the version so the image is re-requested', async () => {
     await put('file-assets', 'a.png')
     const built = await buildAssetMap(root, 'file-assets')
-    const changed = patchAssetMap(built, 'file-assets/a.png', 'change')
+    const changed = patchAssetMap(built, 'file-assets/a.png', 'change', 'file-assets')
     expect(changed.files).toEqual(built.files)
     expect(changed.version).toBeGreaterThan(built.version)
+    // An add gives its own consumer a new path already; bumping here would re-request every
+    // mounted image in the nexus for one file a sync delivered.
+    expect(patchAssetMap(built, 'file-assets/b.png', 'add', 'file-assets').version).toBe(
+      built.version,
+    )
   })
 
   it('an unlink of one duplicate promotes the next, and clears the name once alone', async () => {
@@ -113,7 +126,7 @@ describe('patchAssetMap', () => {
     await put('file-assets', 'b', 'IMG.png')
     const built = await buildAssetMap(root, 'file-assets')
     expect(resolveAssetName(built, 'IMG.png')).toBe(AMBIGUOUS)
-    const gone = patchAssetMap(built, 'file-assets/a/IMG.png', 'unlink')
+    const gone = patchAssetMap(built, 'file-assets/a/IMG.png', 'unlink', 'file-assets')
     expect(gone.files['img.png']).toEqual(['file-assets/b/IMG.png'])
     expect(resolveAssetName(gone, 'IMG.png')).toBe('file-assets/b/IMG.png')
   })
@@ -122,14 +135,34 @@ describe('patchAssetMap', () => {
     await put('file-assets', 'b', 'IMG.png')
     const built = await buildAssetMap(root, 'file-assets')
     expect(resolveAssetName(built, 'IMG.png')).toBe('file-assets/b/IMG.png')
-    const dup = patchAssetMap(built, 'file-assets/a/IMG.png', 'add')
+    const dup = patchAssetMap(built, 'file-assets/a/IMG.png', 'add', 'file-assets')
     expect(dup.files['img.png']).toEqual(['file-assets/a/IMG.png', 'file-assets/b/IMG.png'])
     expect(resolveAssetName(dup, 'IMG.png')).toBe(AMBIGUOUS)
   })
 
+  it("the root's own segments are exempt from the cruft rule", async () => {
+    // A root named `.attachments` is the case the exemption exists for; applying the rule to the
+    // root itself yields a permanently empty map.
+    await put('.attachments', 'Keep.png')
+    const map = await buildAssetMap(root, '.attachments')
+    expect(map.files['keep.png']).toEqual(['.attachments/Keep.png'])
+    expect(
+      patchAssetMap(map, '.attachments/New.png', 'add', '.attachments').files['new.png'],
+    ).toEqual(['.attachments/New.png'])
+    // Below the root the rule still governs.
+    expect(patchAssetMap(map, '.attachments/.DS_Store', 'add', '.attachments')).toBe(map)
+  })
+
+  it("a folder named thumbnails is skipped under the default root, kept under the user's", async () => {
+    await put('file-assets', THUMBNAILS_SEGMENT, 'mine.png')
+    expect((await buildAssetMap(root, 'file-assets')).files['mine.png']).toEqual([
+      `file-assets/${THUMBNAILS_SEGMENT}/mine.png`,
+    ])
+  })
+
   it('a thumbnail or a cruft path patches nothing', async () => {
     const built = await buildAssetMap(root, 'file-assets')
-    for (const rel of [`file-assets/${THUMBNAILS_SEGMENT}/x.jpg`, 'file-assets/.DS_Store'])
-      expect(patchAssetMap(built, rel, 'add')).toBe(built)
+    for (const rel of [`${ASSETS_DIR_REL}/${THUMBNAILS_SEGMENT}/x.jpg`, 'file-assets/.DS_Store'])
+      expect(patchAssetMap(built, rel, 'add', 'file-assets')).toBe(built)
   })
 })

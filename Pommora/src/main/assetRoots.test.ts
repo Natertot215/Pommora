@@ -66,26 +66,37 @@ describe('assetFileToDelete', () => {
     await rm(root, { recursive: true, force: true })
   })
 
-  it('a wikilink naming exactly one file resolves to it', async () => {
-    await put('file-assets', 'Banner.png')
-    expect(await assetFileToDelete(root, '[[Banner.png]]')).toBe('file-assets/Banner.png')
-  })
-
-  it('a wikilink several files answer to deletes nothing', async () => {
-    await put('file-assets', 'a', 'IMG.png')
-    await put('file-assets', 'b', 'IMG.png')
-    expect(await assetFileToDelete(root, '[[IMG.png]]')).toBeNull()
-  })
-
-  it('a wikilink naming nothing deletes nothing', async () => {
-    expect(await assetFileToDelete(root, '[[Gone.png]]')).toBeNull()
-  })
-
-  it('a raw path deletes as it does today, and one outside the roots does not', async () => {
-    expect(await assetFileToDelete(root, 'file-assets/a.png')).toBe('file-assets/a.png')
+  it('deletes what Pommora minted, by raw path', async () => {
     expect(await assetFileToDelete(root, `${ASSETS_DIR_REL}/nx/b.jpg`)).toBe(
       `${ASSETS_DIR_REL}/nx/b.jpg`,
     )
+  })
+
+  it('deletes a wikilink resolving inside the default root, before one is configured', async () => {
+    // The wikilink arm is live exactly while the asset root IS `.nexus/assets` — the migration
+    // window. Once it points at the user's folder, every name resolves to a file that is theirs.
+    await writeFile(join(root, '.nexus', 'settings.json'), JSON.stringify({}))
+    await put(...ASSETS_DIR_REL.split('/'), 'Minted.png')
+    expect(await assetFileToDelete(root, '[[Minted.png]]')).toBe(`${ASSETS_DIR_REL}/Minted.png`)
+  })
+
+  it("never deletes a file in the user's own asset folder", async () => {
+    // The folder is shared: a file there may be referenced from an Obsidian note this app cannot
+    // see, and replacing a banner is not consent to destroy it. Nothing is trashed on this path.
+    await put('file-assets', 'Theirs.png')
+    expect(await assetFileToDelete(root, '[[Theirs.png]]')).toBeNull()
+    expect(await assetFileToDelete(root, 'file-assets/Theirs.png')).toBeNull()
+  })
+
+  it('a wikilink several files answer to deletes nothing', async () => {
+    await writeFile(join(root, '.nexus', 'settings.json'), JSON.stringify({}))
+    await put(...ASSETS_DIR_REL.split('/'), 'a', 'IMG.png')
+    await put(...ASSETS_DIR_REL.split('/'), 'b', 'IMG.png')
+    expect(await assetFileToDelete(root, '[[IMG.png]]')).toBeNull()
+  })
+
+  it('a wikilink naming nothing, or a path outside every root, deletes nothing', async () => {
+    expect(await assetFileToDelete(root, '[[Gone.png]]')).toBeNull()
     expect(await assetFileToDelete(root, 'Notes/a.png')).toBeNull()
     expect(await assetFileToDelete(root, 'file-assets/../out.png')).toBeNull()
   })
