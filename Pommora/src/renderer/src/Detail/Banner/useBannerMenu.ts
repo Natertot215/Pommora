@@ -13,7 +13,7 @@ export function useBannerMenu(
     if (await mutate({ op: 'setBanner', path, kind, source })) onDone?.()
   }
   const addOrChange = async (): Promise<void> => {
-    const picked = await window.nexus.pickImage()
+    const picked = await window.nexus.pickFile()
     if (picked) await setBanner(picked)
   }
   const openMenu = async (): Promise<void> => {

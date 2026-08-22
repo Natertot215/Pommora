@@ -129,7 +129,7 @@ import {
   propertyType,
 } from '@shared/properties'
 import type { PageFrontmatter } from '@shared/schemas'
-import { handleMutate, type MutateDeps } from './mutate'
+import { adoptFile, handleMutate, type MutateDeps } from './mutate'
 import { showContextMenu } from './contextMenu'
 import { installAppMenu } from './menu'
 import { popTableMenu } from './tableMenu'
@@ -167,7 +167,7 @@ import type {
   NexusIconAction,
   TitleMenuAction,
 } from '@shared/identityMenus'
-import type { AssetMap, ViewButton, ViewStyle } from '@shared/types'
+import type { AssetMap, PickFileOptions, ViewButton, ViewStyle } from '@shared/types'
 import {
   EMPTY_ASSET_MAP,
   WEB_ZOOM_DEFAULT,
@@ -717,17 +717,26 @@ async function mutateDeps(): Promise<MutateDeps> {
 }
 
 // What the dialog has handed the renderer this session. A picked file sits outside the nexus, so
-// the read-back channel below cannot be bounded by the root — it is bounded by the pick instead,
-// and the renderer never names a path main did not choose. The filter is what the channel OFFERS;
-// an any-file picker widens it rather than replacing the channel.
+// the channels that read one back cannot be bounded by the root — they are bounded by the pick
+// instead, and the renderer never names a path main did not choose. `pickedImagePaths` stays the
+// narrower set on purpose: widening the FILTER must not widen what `nexus:imageData` will read.
+const pickedPaths = new Set<string>()
 const pickedImagePaths = new Set<string>()
-async function pickImagePath(win: BrowserWindow): Promise<string | null> {
+async function pickFilePath(win: BrowserWindow, opts?: PickFileOptions): Promise<string | null> {
+  const root = sessionRoot()
+  // The renderer holds nexus-relative paths only, so the folder to open at is joined here. It
+  // merely steers the dialog — a folder that has gone missing opens at the root instead.
+  const at = root && opts?.dir ? await resolveUnderRoot(root, opts.dir) : null
   const result = await dialog.showOpenDialog(win, {
     properties: ['openFile'],
-    filters: [{ name: 'Images', extensions: IMAGE_EXTS }],
+    ...(at?.ok ? { defaultPath: at.value } : root ? { defaultPath: root } : {}),
+    ...(opts?.any ? {} : { filters: [{ name: 'Images', extensions: IMAGE_EXTS }] }),
   })
   const picked = result.canceled ? null : (result.filePaths[0] ?? null)
-  if (picked) pickedImagePaths.add(picked)
+  if (picked) {
+    pickedPaths.add(picked)
+    if (!opts?.any) pickedImagePaths.add(picked)
+  }
   return picked
 }
 
@@ -1737,7 +1746,27 @@ serveBridge(
 
     // The banner's Add/Change affordances use this directly (the photo's "Add Photo" menu wraps
     // the same picker).
-    'nexus:pickImage': { kind: 'menu', fn: pickImagePath },
+    'nexus:pickFile': { kind: 'menu', fn: pickFilePath },
+
+    // Landing a picked file is its OWN step, never a field on a write: one IPC performing two
+    // writes has partial-failure semantics, and the reference must be written only after the
+    // bytes land. Bounded by the pick, like every other read-back of an outside path.
+    'assets:adopt': {
+      kind: 'envelope',
+      fn: async (source: string, subfolder?: string) => {
+        const root = sessionRoot()
+        if (root === null) return NO_NEXUS
+        if (!pickedPaths.has(source)) return fail('invalid-path', 'That file was not picked here.')
+        const adopted = await adoptFile(root, source, {
+          allow: 'any',
+          ...(subfolder ? { subfolder } : {}),
+        })
+        // Riding `mutate` gave this for free; a standalone channel has to say it, or the file that
+        // just landed is absent from the renderer's map and its label renders unresolved.
+        if (adopted.ok) pushAssetWrites()
+        return adopted
+      },
+    },
     'nexus:imageData': { kind: 'raw', fn: readImageData },
 
     // Change/Remove for an existing image, a single Add item when `add`. The noun follows the
