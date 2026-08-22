@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 08-22-2026              | PM-113 | MarkdownPM Improvements                              |
 | 08-21-2026 → 08-22      | PM-112 | Variable Asset Directories                           |
 | 08-20-2026 → 08-21      | PM-111 | Footnotes                                            |
 | 08-20-2026              | PM-110 | A Link Property Reaches A Page                       |
@@ -116,6 +117,17 @@
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
 
+
+#### PM-113 || MarkdownPM Improvements
+
+**DATE:** 08-22-2026
+
+The editor gained a highlight mark and three settings, and lost a piece of chrome that was shouting. `==text==` is the one inline mark with no CommonMark node behind it, so a scan finds it the way latex and inline code are found: a run of three or more `=` is a rule rather than a marker and both ends refuse a third, while a lone `=` inside the content stays ordinary text. It draws as a wash at the Highlight Color, rounding to a corner `--md-box-radius` now holds for the quote, callout and code blocks rather than three literals that happened to agree, and `~` and `=` learned to pair on their second press alone. Alongside it: an unresolved link — a `[[Title]]` no page answers to, or a malformed address — reads as the inactive link it is with its syntax showing, and a Pages & Editor toggle returns page prose to plain while cells and non-page fields stay legible; `editorScale` moves a page's body, chrome and inline title on one factor, stopping at a tile's edge since a tile states its own size through the Embed Scale; and a task checkbox takes any ramp cell including greyscale, resolved through the chip's own recipe rather than a copy of it mixed in CSS, with `muteCheckedItems` dimming and striking a checked line without writing a byte.
+
+The codeblock tag stopped reading `<YAML>` and started reading the language's own name beside its mark, and the set behind it went from seven languages to thirty-eight. `@codemirror/legacy-modes` was already a dependency carrying a hundred modes, so thirty cost a roster row and a loader row each, every parser its own chunk fetched when a fence first names it — the specifier written out per row because only a literal one is a chunk the bundler can split. The roster moved to `detect/codeLangs.ts` as plain data so the pure decoration layer can resolve a word to a name without pulling an editor into itself, and fourteen languages carry a mark, one whose glyph draws its own wordmark showing the mark alone. Last, the menu dispatcher was handing every line formatter the selection's start rather than its range, so Lists, Heading and Blockquote each marked only the first line of a multi-line selection; all three take both ends now, blank lines keep their seats, and a marker comes off only where every selected line already carries it.
+
+- **Commits:** `b1cbf8ff` · `4d6898ee` · `0f31f068` · `ace06db4` · `f396ec00` · `b133e583` (interleaved with PM-112's tail)
+- **Diff:** Net +427 | +726 / −299
 
 #### PM-112 || Variable Asset Directories
 
