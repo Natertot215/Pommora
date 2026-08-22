@@ -106,6 +106,7 @@ Seated and empty.
 | Outliner Lines                 | `outlinerLines`      | Draws indent rails on nested lists in the editor.       | On · **Off** |
 | Show Footnotes By Default      | `citationsShown`     | Opens a page with its footnotes section showing. A page's own setting outranks this. | On · **Off** |
 | Jump To Citation On Creation   | `jumpToCitation`     | Carries the caret down to the citation a new footnote just made. | **On** · Off |
+| Highlight Color                | `highlightColor`     | The wash behind highlighted text. Cleared follows the accent. | Any ramp cell · **the accent** |
 | Checkbox Color                 | `checkboxColor`      | The color a task checkbox fills and checks with, the greyscale row included — a cell resolves through the chip recipe rather than being painted raw. Cleared follows the accent. | Any ramp cell · **the accent** |
 | Mute Checked Items             | `muteCheckedItems`   | A checked task reads as done — its words dimmed and struck through. Drawn, never written. | On · **Off** |
 | Display Unresolved Links As Plain Syntax | `plainUnresolvedLinks` | A link leading nowhere reads as the prose it is written as, rather than muted with its syntax showing. Page prose only — cells and other fields stay muted. | On · **Off** |

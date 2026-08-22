@@ -418,9 +418,9 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
 - [x] Full gate green. Commit: `feat(table): a file cell reads as its files`
 
 #### Gate 2 — the chip exists and nothing moved
-- [ ] Gate commands green.
+- [x] Gate commands green.
 - [ ] Refactor baseline held: the FilterPane Location field's rendered labels and remove behavior unchanged.
-- [ ] Net delta reported. Expect ≈ +45, glyph-dominated.
+- [x] Net delta reported. Expect ≈ +45, glyph-dominated.
 - [ ] **Fixture first** — a file property is inert until Task 16, so nothing in-app can fill one. Hand-write `<Attachments>:` over a **quoted** `- "[[Name.ext]]"` into a scratch page and drop that file in the asset root. Without it these checks are unfalsifiable.
 - [ ] **Seen running:** the file cell, the FilterPane Location field, the Asset Directory row — the hover-× on each, and a click that ends the hover still removing.
 - [ ] Simplification and review dispatched against `<base>..HEAD` — ask before dispatching.
@@ -637,12 +637,12 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
   - [x] Task 4 — Retire the file cell's Style menu kind · `0423296e`
   - [x] Task 5 — Render the file cell from the new shape · `0934967f`
   - [x] Task 6 — Retire the `file:open` channel · `23106180`
-- [ ] **Phase 2** — FileChip, and the run that hosts it
-  - [x] Task 7 — Add the FileLabel shape to the chip system · `<commit>`
-  - [x] Task 8 — Map extensions to their glyphs · `<commit>`
-  - [x] Task 9 — Build the FileLabel component · `<commit>`
-  - [x] Task 10 — Hoist the segment composition into SegmentRun · `<commit>`
-  - [x] Task 11 — Render the file cell as a run of FileLabels · `<commit>`
+- [ ] **Phase 2** — FileLabel, and the run that hosts it · base `65b580d4`
+  - [x] Task 7 — Add the FileLabel shape to the chip system · `04bd754e`
+  - [x] Task 8 — Map extensions to their glyphs · `4fb35f8e`
+  - [x] Task 9 — Build the FileLabel component · `04bd754e`
+  - [x] Task 10 — Hoist the segment composition into SegmentRun · `1fdee072`
+  - [x] Task 11 — Render the file cell as a run of FileLabels · `1c7d8d5b`
 - [ ] **Phase 3** — Adoption
   - [ ] Task 12 — Widen adoption past images
   - [ ] Task 13 — Give the picker its options
@@ -678,6 +678,15 @@ Both reviewers independently found the same defect, and I confirmed it by openin
 - **Ruled, not fixed · a single-bracket `- [Report.pdf]` coerces to a wikilink.** YAML reads it as a one-element flow sequence, which is byte-identical after parsing to the inline spelling of a real wikilink — there is no post-parse fact that separates them. The choice is between coercing it and nulling the page's whole attachment list, and coercion is the better failure: `[Report.pdf]` under a file key has no other meaning to preserve. Accepted deliberately; not a defect to re-open.
 - **Ruled, not fixed · `TableView` and `CardsView` build their `ResolveContext` identically.** The only sane home for a shared hook is `resolveContext.ts`, which is a pure module two test files import; putting a Zustand read there trades five duplicated lines for a purity break in tested code. `usePropertyRows` couldn't join it regardless — it keys on the whole tree on purpose. The duplication predates this feature and Phase 1 widened it by one argument.
 - **Confirmed, already planned · `sort.ts` has no `file` arm**, so a file column sorts by a constant. That is Task 18, not a Phase 1 miss.
+
+#### Phase 2 — the delta, and where it went
+
+**+148 −68, net +80** against an expected +45, code only. Read per commit: glyphs **+56** · shape and component **+53** · the hoist **−33** · the cell **+4**. Nothing existing was re-authored — the hoist's −33 is the parallel composition and its reveal recipe actually leaving — so the overrun is two things the estimate under-priced:
+
+- **The glyph roster is a line per extension.** The plan costed 23 registrations at ≈35 lines; under Biome's formatting a 23-item array is 23 lines before the alias map, the factory and `fileTypeIcon` are counted at all. ≈+27 over.
+- **FileLabel is 47 lines, not "~6 over `Chip`".** The estimate imagined a bare wrapper. What shipped carries the four things the spec asks of it — the icon override, the hover-×, the unresolved state and the click — plus the two-rule stylesheet for the last two. Nothing in it duplicates `Chip`: the chip renders itself, and FileLabel names which shape and which glyph.
+
+`onClick` has no consumer until Task 16. It stays because the spec's C-2c interface names it and its consumer is the next phase's first task; cutting and re-adding it across one phase boundary is churn, not restraint.
 
 ### Open Against Later Tasks
 ### Deviations

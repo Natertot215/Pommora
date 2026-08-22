@@ -49,7 +49,7 @@ A construct's markers are **revealed** (literal editable text) when the caret is
 
 ### Constructs
 
-- **Inline marks** — bold / italic / bold-italic, strikethrough, inline code, links, Connections; caret-aware reveal, heading-aware sizing, suppressed inside code and literal targets.
+- **Inline marks** — bold / italic / bold-italic, strikethrough, highlight, inline code, links, Connections; caret-aware reveal, heading-aware sizing, suppressed inside code and literal targets. **Highlight** (`==text==`, ⌘L) is the one mark with no CommonMark node behind it, so a scan finds it as latex and inline code are found: a run of three or more `=` is a rule rather than a marker and both ends refuse a third, while a lone `=` inside the content stays ordinary text. It draws as a wash behind the words rather than a change to them — the Highlight Color at the tint the inline fills share, rounding to the corner the boxed constructs agree on.
 - **Headings** — H1–H6 on the em scale; the context menu offers Paragraph plus H1–H5. Foldable via a chevron in the fold gutter wearing the sidebar's disclosure language; a heading with nothing beneath it carries no chevron, while the outline still lists it. Fold state is per-machine.
 - **Lists** — bullet (`-` → `•`), `+`, arrow `→` (typed `->`), ordered, and GFM task checkboxes, all sharing one indent zone and the full behavior set. **Drag-to-reorder by the glyph** moves an item with its nested sub-block in one transaction, re-nesting and renumbering as it lands. **The grip menu's Type ▸** switches a whole block between the four kinds at every nesting level. A checked task can be set to read as done — its words dimmed and struck through — through the per-nexus **Mute Checked Items** setting[^2]; the treatment is drawn, so the line on disk stays the plain `- [x]` it was, and the box beside it keeps the color that setting's neighbor gives it.
 - **Outliner rails** — an optional hairline guide down each list's nested run (personalization `outlinerLines`)[^2]: one rail per ancestor level, run-based with rounded caps, centered on the ancestor's glyph, painted on the segment-separator token. Scoped to dash-bullets and checkboxes.
@@ -105,7 +105,7 @@ Input-time only; each fires as one atomic transaction with a re-entry guard, all
 
 - **List continuation / indent** — Enter continues, Tab indents (capped), Shift+Tab outdents; checkbox canonicalizes (`-[]` → `- [ ]`).
 - **Callout shorthand** — `||` → `> [!callout] `.
-- **Auto-pair + paired-delete** — brackets plus the single emphasis / code / quote markers, gated on both sides of the caret so ordinary prose stays literal; markers type over their own closer on the way out, doubled emphasis promotes rather than pairs, and Backspace inside an empty pair removes both halves. All of it runs in table cells.
+- **Auto-pair + paired-delete** — brackets plus the single emphasis / code / quote markers, gated on both sides of the caret so ordinary prose stays literal; markers type over their own closer on the way out, doubled emphasis promotes rather than pairs, and Backspace inside an empty pair removes both halves. `~` and `=` pair on the SECOND press alone — a lone one is a tilde or arithmetic and only the doubled form is a marker, so the first press leaves the character where it landed. All of it runs in table cells.
 - **Enter / Shift+Enter close an open construct** — Enter steps past the closer; Shift+Enter closes first, then breaks, so a newline never lands inside a pair.
 - **Dash / arrow auto-format** — `--` → `—`, `->` → `→`.
 - **Smart whole-marker backspace** — deletes the whole marker on a marker line; callout-aware.
@@ -170,7 +170,9 @@ List geometry scopes to `.cm-line.md-li`; the outliner rail aliases the shared `
 | Callout Padding | `--callout-pad` / `--callout-gap` / `--callout-inner-pad` | `15px` / `6px` / `8px` |
 | Callout Grip | `--grip-x` / `--grip-y` | `-18px` / `4px` |
 | Nested Quote | `--nq-bar` / `--nq-bar-radius` / `--box-radius-r` / `--nq-gap` / `--nq-inset` | `3px` / `2px` / `5px` / `9px` / `2px` · `.md-callout.md-bq-in` |
-| Code Block | `--cb-bg` / `--cb-radius` / `--cb-size` / `--cb-gap` / `--cb-pad` | → fill-secondary / `6px` / `0.85em` / `6px` / `12px` · `.md-cb` |
+| Code Block | `--cb-bg` / `--cb-radius` / `--cb-size` / `--cb-gap` / `--cb-pad` | → fill-secondary / → box corner / `0.85em` / `6px` / `12px` · `.md-cb` |
+| Box Corner | `--md-box-radius` | `6px` · `:root` — what quote, callout, code and highlight round to; each still names its own knob and can be retuned alone |
+| Highlight | `--highlight` | → the Highlight Color, else the accent · `.md-highlight`, worn at tint-tertiary |
 | Line-Number Zone | `--cb-ln-zone` | `calc(3ch + var(--list-gap))` |
 
 #### II. Syntax Colors
