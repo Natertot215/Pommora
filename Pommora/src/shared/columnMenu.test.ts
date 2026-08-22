@@ -36,10 +36,7 @@ describe('styleMenuItems', () => {
       'Short Link',
       'Page Title',
     ])
-    expect(items('file', { look: 'filename' }).map((r) => r.label)).toEqual([
-      'Filename',
-      'Full Path',
-    ])
+    expect(items('file', {})).toEqual([])
   })
 
   it('number offers Bar only when bar-capable; plain numbers get Number alone', () => {

@@ -71,10 +71,10 @@ describe('cellMenuModel', () => {
     expect(m.style).toBeUndefined()
   })
 
-  it('style-edit: Style radios plus the Edit entry', () => {
-    const m = cellMenuModel({ kind: 'style-edit', type: 'file', current: { look: 'filename' } })
+  it('style-edit: the Edit entry, and no rows left for a file to show', () => {
+    const m = cellMenuModel({ kind: 'style-edit', type: 'file', current: {} })
     expect(m.items.map((i) => [i.label, i.action])).toEqual([['Edit', 'cell:edit']])
-    expect(m.style?.rows.map((r) => r.label)).toEqual(['Filename', 'Full Path'])
+    expect(m.style?.rows).toEqual([])
   })
 
   it('link (a filled url cell): Edit + Rename + Clear, no Style (its look is per-property)', () => {

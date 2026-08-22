@@ -14,8 +14,6 @@ export const COLUMN_LOOKS = [
   'checkbox',
   'switch',
   ...LINK_DISPLAYS,
-  'filename',
-  'path',
   'number',
   'bar',
 ] as const
@@ -69,8 +67,6 @@ export function defaultStyleFor(
     // property's Format is the default here rather than a constant that would silently override it.
     case 'url':
       return { look: def?.link_display ?? DEFAULT_LINK_DISPLAY }
-    case 'file':
-      return { look: 'filename' }
     case 'datetime':
     case 'last_edited_time':
       return { date_format: nexusDateFormat ?? 'full', time_format: 'none', weekday: 'none' }

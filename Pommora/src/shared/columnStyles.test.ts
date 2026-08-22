@@ -22,7 +22,6 @@ describe('defaultStyleFor', () => {
     expect(defaultStyleFor('status')).toEqual({ look: 'pill' })
     expect(defaultStyleFor('checkbox')).toEqual({ look: 'checkbox' })
     expect(defaultStyleFor('url')).toEqual({ look: 'link-full' })
-    expect(defaultStyleFor('file')).toEqual({ look: 'filename' })
   })
 
   // A url column reads the way its property says to unless its view says otherwise, so the property's
@@ -36,6 +35,14 @@ describe('defaultStyleFor', () => {
   it('drops a look saved under the vocabulary this replaced', () => {
     expect(columnStyle.parse({ look: 'full' }).look).toBeUndefined()
     expect(columnStyle.parse({ look: 'title' }).look).toBeUndefined()
+  })
+
+  // A file column has no look to choose, so a view saved while it did keeps none — the same
+  // mechanism, and the whole of the compatibility story for the two that went.
+  it('drops the looks a file column used to carry, and offers it no default', () => {
+    expect(columnStyle.parse({ look: 'filename' }).look).toBeUndefined()
+    expect(columnStyle.parse({ look: 'path' }).look).toBeUndefined()
+    expect(defaultStyleFor('file')).toEqual({})
   })
 
   it('gives the date-shaped types the full-date, no-time, no-weekday format defaults', () => {
