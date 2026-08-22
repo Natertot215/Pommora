@@ -18,7 +18,8 @@ export function EntityGlyph({
   size: IconSize
   className?: string
 }): React.JSX.Element {
-  const photoSrc = useAssetUrl()(useSession((s) => s.tree?.nexus.profileImage ?? null))
+  const profileImage = useSession((s) => s.tree?.nexus.profileImage ?? null)
+  const photoSrc = useAssetUrl(profileImage)
   // The photo branch sizes an element rather than a font, so it needs the step's pixel value.
   const px = ICON_PX[size]
   if (item.kind === 'homepage' && photoSrc) {

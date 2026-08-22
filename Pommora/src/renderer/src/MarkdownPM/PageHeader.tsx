@@ -36,7 +36,7 @@ export const PageHeader = forwardRef<HTMLDivElement, Props>(function PageHeader(
   ref,
 ) {
   const { path, title, cover, icon, iconHidden } = page
-  const coverSrc = useAssetUrl()(cover)
+  const coverSrc = useAssetUrl(cover)
   const reloadPage = useSession((s) => s.reloadPage)
   const { openMenu: bannerMenu, addOrChange } = useBannerMenu(path, 'page', () => void reloadPage())
 

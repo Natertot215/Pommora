@@ -16,8 +16,6 @@ import { listFilesRecursive } from './io/walk'
 import { readWatchScope } from './settings'
 import type { WatchEventName } from './watchPatch'
 
-const EMPTY: AssetMap = { files: {}, version: 0 }
-
 /** Whether this path is one the map may hold. Thumbnails are Pommora's own derived files, and
  *  the cruft rule matches the watcher's, so the map never holds what no event can update. */
 function indexable(rel: string): boolean {
@@ -80,8 +78,6 @@ export function resolveAssetName(map: AssetMap, name: string): string | null | t
 // session switch needs no teardown: the pin makes the previous nexus's map unreadable, and the
 // first ask for the new root rebuilds over it.
 let held: { root: string; map: AssetMap } | null = null
-
-export const emptyAssetMap = (): AssetMap => EMPTY
 
 export function getHeldAssetMap(root: string): AssetMap | null {
   return held?.root === root ? held.map : null

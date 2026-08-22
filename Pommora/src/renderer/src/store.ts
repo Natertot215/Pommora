@@ -51,10 +51,8 @@ import {
   type PreviewState,
   type PreviewTab,
 } from './PagePreview/previewTabs'
-import { toNavRef } from '@shared/types'
+import { EMPTY_ASSET_MAP, toNavRef } from '@shared/types'
 import { resolveAssetUrl } from './assetUrl'
-
-const EMPTY_ASSET_MAP: AssetMap = { files: {}, version: 0 }
 import {
   moveByKey,
   navKey,
@@ -201,7 +199,12 @@ export const useEmbedScale = (): number =>
 /** Resolve a stored asset value — a wikilink, a raw path, or a web address — to what an `<img>`
  *  renders, or null where nothing does. Held here beside the store because every consumer needs
  *  the same map, and `assetUrl.ts` stays free of React so a non-Electron host can reuse it. */
-export const useAssetUrl = (): ((value: string | null | undefined) => string | null) => {
+export const useAssetUrl = (value: string | null | undefined): string | null =>
+  useAssetResolver()(value)
+
+/** The same resolution as a function, for the surfaces that resolve per row — a hook cannot be
+ *  called inside a map, and one subscription serves the whole list. */
+export const useAssetResolver = (): ((value: string | null | undefined) => string | null) => {
   const map = useSession((s) => s.assetMap)
   return (value) => resolveAssetUrl(value, map)
 }
@@ -1276,14 +1279,14 @@ export const useSession = create<SessionState>((set, get) => {
       const pinned = moveByKey(get().pinned, navKey, activeKey, overKey)
       if (pinned) commitPinned(pinned)
     },
-    // The push carries the FILE's keys (an external edit): pinned, favorites, banner. Recents
-    // aren't in the file — the in-memory stream always leads.
     // Stabilize buys the echo case: an unchanged push returns the held map and zustand no-ops.
     // A real add or unlink is a new object and re-renders every mounted banner, which is what a
     // phantom becoming real is for.
     applyAssetMap: (map) => {
       set({ assetMap: stabilize(map, get().assetMap) })
     },
+    // The push carries the FILE's keys (an external edit): pinned, favorites, banner. Recents
+    // aren't in the file — the in-memory stream always leads.
     applyNavChanged: (nav) => {
       const pinned = nav.pinned ?? []
       const tree = get().tree
