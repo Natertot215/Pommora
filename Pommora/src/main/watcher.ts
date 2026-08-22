@@ -12,7 +12,7 @@ import {
   sameScope,
   type WatchScope,
 } from './exclusion'
-import { getHeldAssetMap } from './assetMap'
+import { getHeldAssetMap, refreshAssetMap } from './assetMap'
 import { readNavigationFile } from './io/navigationFile'
 import { isRecentWrite } from './io/writeEcho'
 import { isMarkdownFile } from './io/walk'
@@ -151,14 +151,21 @@ async function settle(root: string, win: BrowserWindow, scope: WatchScope): Prom
     const assetsBefore = getHeldAssetMap(root)
     const outcome = await applyWatchEvents(root, events, scope)
     let tree = getLiveTree()
-    if (outcome === 'refresh') tree = await refreshAfterWrite(root)
+    // The map is patch-only, and a batch holding one unclassifiable event applies none of its
+    // asset classes — the walk the watcher falls back to is where the listing is taken again.
+    if (outcome === 'refresh') {
+      await refreshAssetMap(root)
+      tree = await refreshAfterWrite(root)
+    }
     // Re-checked after the awaits: a session that switched mid-settle must not receive the
     // OLD root's walked tree (a superseded walk still returns it to its awaiters).
     if (sessionRoot() !== root || win.isDestroyed()) return
     if (tree && tree !== before) pushToWindow(win, 'nexus:changed', tree)
-    // One push for the whole batch, however many files the sync delivered.
+    // One push for the whole batch, however many files the sync delivered. Nothing held before
+    // means nothing has asked for the map yet — the first ask serves it fresh.
     const assets = getHeldAssetMap(root)
-    if (assets && assets !== assetsBefore) pushToWindow(win, 'assets:changed', assets)
+    if (assetsBefore && assets && assets !== assetsBefore)
+      pushToWindow(win, 'assets:changed', assets)
     if (outcome !== 'refresh') return
     // A refresh means the corpus may have moved in ways no arm named — the stat-gated seed
     // reconciles the index for the same cost as the walk's own stats. Only a batch that could
