@@ -3,6 +3,7 @@ import { font, text } from './typography.css'
 import {
   chipPill,
   chipLabel,
+  chipFile,
   chipContext,
   chipCapsule,
   chipBox,
@@ -41,6 +42,7 @@ export { text }
 export {
   chipPill,
   chipLabel,
+  chipFile,
   chipContext,
   chipCapsule,
   chipBox,

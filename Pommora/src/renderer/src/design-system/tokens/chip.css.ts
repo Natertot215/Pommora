@@ -87,6 +87,26 @@ export const chipCapsule = style([
   },
 ])
 
+/** chip-file — the named-file / named-folder shape: a leading glyph and a title, and no chrome at
+ *  all. It wears `chipBase` for the gap, the `--chip-zoom` knob and the control type, so it sits
+ *  beside every other chip, but paints no fill and no border — a file value reads as a value, not
+ *  as a field. Being a shape rather than a lookalike is what gives it `chipRemovable` /
+ *  `chipRemove` and the melt reveal structurally, instead of a second copy of that machinery.
+ *
+ *  `--chip-fill` is the melt twin's paint (`chipLabelBlur`), so a chrome-less shape has to name the
+ *  ground it sits ON rather than a fill of its own — otherwise the var is undefined, the
+ *  declaration drops, and the twin inherits the label color, stacking a crisp duplicate on the text
+ *  instead of smearing. A host on a different ground overrides `--chip-fill` on its own scope. */
+export const chipFile = style([
+  chipBase,
+  {
+    height: '20px',
+    padding: 0,
+    justifyContent: 'flex-start',
+    vars: { '--chip-fill': colorVars.color.surface.primary },
+  },
+])
+
 /** The box shape's bare frame — geometry only, no chip base. Exported for non-chip
  *  consumers that style themselves (the editor's task checkbox rides it under pm-checkbox). */
 export const chipBoxGeometry = style({
