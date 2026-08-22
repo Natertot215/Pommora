@@ -678,8 +678,8 @@
   opacity: var(--state-inactive);
 }
 /* The row's number is the marker's counterpart and takes the same press, so it wears the same
-   pointer. A dimmed row binds nothing and leads nowhere, so its glyph stays plain. */
-.mdpm-editor .cm-line.md-cite:not(.md-cite-dim) .md-cite-num {
+   pointer — an unbound row's dash included, since that press copies the reference. */
+.mdpm-editor .cm-line.md-cite .md-cite-num {
   cursor: pointer;
 }
 

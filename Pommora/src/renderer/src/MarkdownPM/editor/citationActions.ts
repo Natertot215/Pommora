@@ -2,19 +2,27 @@
 // as the reader likes and an undo or an outside write can move the document under it, so every
 // action re-finds its target in the LIVE document and matches it against what the menu was built
 // from before it writes — the discipline the connection and heading menus already keep.
-import { type ChangeSet, type ChangeSpec, type EditorState, Facet } from '@codemirror/state'
+import {
+  type ChangeSet,
+  type ChangeSpec,
+  EditorState,
+  type Extension,
+  Facet,
+} from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
 import type { CitationMenuAction } from '@shared/citationMenu'
 import { isInsideInlineCode } from '@shared/markdownCode'
 import { useSession } from '../../store'
 import { citationFor, markerEndingAt, markersFor } from '../detect'
 import { focusRange } from './caretSeat'
+import type { CitationScan } from '../detect'
 import {
   citationGesture,
   citationRowChanges,
   deleteCitationChanges,
   deleteMarkerChanges,
   mintLabel,
+  normalizeCitations,
 } from './citationEdits'
 import { docScan } from './docCache'
 import { editAcrossCitations } from './folding'
@@ -136,6 +144,32 @@ export function seedTypedCitation(view: EditorView, at: number): boolean {
     citationRowChanges(scan, label, '', at),
   ])
 }
+
+/** Whether the document's binding picture moved — which row holds which position, and which holds
+ *  none. Every reordering the section can owe is downstream of this one comparison, and nothing else
+ *  in an edit warrants rewriting rows the reader is not looking at. */
+function bindingMoved(before: CitationScan, after: CitationScan): boolean {
+  if (before.entries.length !== after.entries.length) return true
+  return after.entries.some((e, i) => {
+    const was = before.entries[i]
+    return was.label !== e.label || was.ordinal !== e.ordinal
+  })
+}
+
+/** The section's order, kept by an edit that was never a footnote gesture. Pasting a reference, or
+ *  typing one that adopts a citation already written, binds a row that held no position a moment
+ *  ago — and the section a reader sees is first-use order or it is nothing. The rewrite rides the
+ *  same transaction, so one undo takes the paste and the reorder together.
+ *
+ *  It reads the scan both states already owe their decorations, and asks for the rewrite only where
+ *  the binding picture actually moved: an ordinary keystroke pays one comparison over the rows. */
+export const citationOrder: Extension = EditorState.transactionFilter.of((tr) => {
+  if (!tr.docChanged) return tr
+  const after = docScan(tr.newDoc)
+  if (!bindingMoved(docScan(tr.startState.doc).citations, after.citations)) return tr
+  const changes = normalizeCitations(after)
+  return changes.length === 0 ? tr : [tr, { changes, sequential: true }]
+})
 
 /** Which construct the menu was popped on, identified by the label it carried — an offset alone
  *  would name whatever moved into that seat while the menu stood open. */
