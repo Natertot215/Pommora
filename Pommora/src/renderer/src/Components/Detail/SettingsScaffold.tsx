@@ -33,7 +33,7 @@ export function SettingsScaffold(): React.JSX.Element | null {
     selectGlyph,
   } = useNexusIcon()
   const iconRef = useRef<HTMLButtonElement>(null)
-  const photoUrl = useAssetUrl()(profileImage)
+  const photoUrl = useAssetUrl(profileImage)
   if (!tree || selection.kind !== 'homepage') return null
 
   return (

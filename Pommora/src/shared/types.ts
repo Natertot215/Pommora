@@ -351,6 +351,10 @@ export interface AssetMap {
   version: number
 }
 
+/** What both processes stand in for a map with no listing behind it — main before a nexus is
+ *  open, the renderer before the first push lands. */
+export const EMPTY_ASSET_MAP: AssetMap = { files: {}, version: 0 }
+
 export interface NexusTree {
   /** `name` is the root folder's basename (filename = title). `profileImage` is a
    *  nexus-relative path into `.nexus/assets/<id>/` (or null) and `profileSubtitle` a
