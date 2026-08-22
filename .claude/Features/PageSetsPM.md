@@ -34,5 +34,4 @@ Within one Collection, moving a Page or a whole Set at any depth is a pure files
 
 ### Pending
 
-- **Sub-Set openability** — whether a Sub-Set should be openable outside the sidebar is unresolved: close the hole in the nav and resolve indexes, resolve a Sub-Set hit to its depth-1 ancestor, or keep it openable as the shipped behavior does. A reparent plus a Back-nav replay can surface a Sub-Set as a selection today.
 - **Delete Set only (re-home Pages)** — the current delete removes the folder and everything in it; a second mode would dissolve a Set while re-homing its Pages into the immediate parent.

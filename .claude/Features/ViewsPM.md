@@ -105,7 +105,6 @@ Drags carry the shared drag language. A drop into the shown zone is positional �
 - **List, Gallery, Calendar, and Timeline renderers** — modeled in the type registry and present as picker tiles, with no renderer behind them; a view of any other type falls through to the table.
 - **Table Flatten + Location Subtitle** — the table's no-grouping mode: bands flatten away and a page's location renders as a subtitle in its title cell, governed by its own Flatten and Hide Location toggles. Cards already carry both halves.
 - **The property-bucket "+"** — the renderers' structural bands create; property and ungrouped bands offer no affordance, since a bucket can't infer a create location. One waits on a location ruling.
-- **Grouping for the other view types** — calendar, gallery, timeline, and list group mechanically differently; each gets its own surface with its renderer.
 - **ViewBar** — the `view_style` Toolbar option, an inline view-switcher bar as an alternative to the dropdown. The setting persists; Toolbar mode reuses the dropdown button until the surface builds. View embeds mirror the same duality in their header switcher.[^3]
 
 [^1]: [[NavigationPM]] §State Persistence

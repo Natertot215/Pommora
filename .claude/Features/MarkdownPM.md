@@ -116,7 +116,7 @@ Right-click pops the OS-native menu, built in the main process off the `context-
 
 ### Module Shape
 
-`MarkdownPM/` — one folder per concern: `parser/` · `detect/` · `tokens/` · `decorations/` · `input/` · `connections/` · `Tables/` · `editor/` (CM6 wiring). Appearance is `Styles.css` plus the table widget's stylesheet, reading the design-system tokens through the `--var` bridge for color, type and motion; each construct's own measures are literals it states beside the rule that spends them. The pure-logic layer imports neither React nor CodeMirror and is unit-tested against a dedicated corpus. Internal invariants for working in this module live in [[Editor-Internals]].
+`MarkdownPM/` — one folder per concern: `parser/` · `detect/` · `tokens/` · `decorations/` · `input/` · `connections/` · `Tables/` · `editor/` (CM6 wiring). Appearance is `Styles.css` plus the table widget's stylesheet, reading the design-system tokens through the `--var` bridge for color, type and motion; each construct's own measures are literals it states beside the rule that spends them. The pure-logic layer imports neither React nor CodeMirror and is unit-tested against a dedicated corpus.
 
 ### Design System
 
@@ -136,7 +136,6 @@ The root of everything: one size factor for structure, one derived factor for gl
 | Fold Chevron Size | `--fold-chevron-size` | `calc(var(--text-title3-size) * var(--glyph-scale))` · `.mdpm-shell` |
 
 #### II. Header, Banner & Title
-
 | Title | Token | Value · Scope |
 | --- | --- | --- |
 | Page Title Size | `--detail-title-size` | `28px` · `.mdpm-header .detail-title` |
@@ -146,7 +145,6 @@ The root of everything: one size factor for structure, one derived factor for gl
 #### II. Lists & Outliner
 
 List geometry scopes to `.cm-line.md-li`; the outliner rail aliases the shared `--list-outline-*` primitives and adds its caps and x-position.
-
 | Title | Token | Value |
 | --- | --- | --- |
 | Marker Gap | `--list-gap` | `4px` (on `.cm-editor`) |
@@ -159,7 +157,6 @@ List geometry scopes to `.cm-line.md-li`; the outliner rail aliases the shared `
 | Rail Level | `--rail-level` | JS-set per rail element |
 
 #### II. Quotes, Callouts & Code
-
 | Title | Token | Value · Scope |
 | --- | --- | --- |
 | Quote Bar | `--bar-width` / `--bar-color` / `--bar-radius` | `4px` / → label-tertiary / `2px` · `.md-bq` |
@@ -175,7 +172,6 @@ List geometry scopes to `.cm-line.md-li`; the outliner rail aliases the shared `
 #### II. Syntax Colors
 
 One pastel recipe: `color-mix(in srgb, var(--tok-solid) var(--tok-tint), var(--label-primary))`, the tint step shared with the chip ladder. Comments skip the recipe and read label-tertiary directly.
-
 | Title | Token | Value |
 | --- | --- | --- |
 | Pastel Mix Step | `--tok-tint` | → `var(--tint-primary)` (60%) |
@@ -183,7 +179,6 @@ One pastel recipe: `color-mix(in srgb, var(--tok-solid) var(--tok-tint), var(--l
 | Property / Function / Type | `.tok-prop` / `.tok-fn` / `.tok-type` | cobalt / yellow / cyan solids |
 
 #### II. Embeds & Autocomplete
-
 | Title | Token | Value · Scope |
 | --- | --- | --- |
 | Editing / Resizing Tile Ring | `--tile-border-color` | → accent-stroke / accent-stroke-hot · `.mdpm-embed-tile` states |

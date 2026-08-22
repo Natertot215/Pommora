@@ -69,6 +69,7 @@ A card's **right-click** opens a native menu: the **Add Property ▸** submenu o
 Creating a page never leaves the grid; on the table's own creation act[^3]: the page is created immediately — Untitled on disk, stamped with what its birth context implies — and the card's title swaps for an inline naming field, empty with the glyph staying put, outside the title's scroll clip. Confirming names the page (a colliding name uses the create rule's numeric suffix); leaving it any other way keeps it Untitled. The band "+" creates at its Set's end — the tiebreaker order settles with the newborn ranked last in its band — and the menu's New Page inherits its anchor's group value and seedable sort values, landing beside it.
 
 Hovering on a card also triggers its "ghost" creation effect: a card grows a ghost card at the next flow slot: the card's own skeleton at the inactive dim — the unloaded-cover placeholder, the image-to-text divider, an icon-and-label "New Page" title row, and the Standard layout's ghosted property label rows. Neighboring cards make room on the cards' own move motion — the displacement measured before the ghost enters or leaves and released on the drag shift's feel — and clicking it creates the page itself. 
+
 ### Surfaces & Insets
 
 Cards live in the ViewSettings type grid and carry their options in the Layout leaf, with Style, Card Banner and Scale pinned in the footing; the grouping and sorting leaves reuse the shared panes. A view switched to a type inherits the new type's default glyph only when it still wore the old default. Cards ride the block-surface inset regime: in a full-page pane, a pane-body rule supplies the surface inset so the view itself never pads, while an embedded cards view runs the tight inter-tile lane directly on its grid. An embedded view also keeps its own tail seam — the last card row sits off the tile's bottom edge on the card rhythm, matching the view's top seam.
@@ -99,7 +100,6 @@ The card grid's design vocabulary. The geometry the two card families agreed on 
 - **Set-Card view previews** — a Set Card opening a preview of the Set's view; v1 navigates.
 - **File-property covers** — any File property declaring itself the card's image; the Card Banner mode set is extensible for a fourth "Property" mode.
 - **Fit Image / Reposition** — contain-vs-fill and hover-reposition on covers; v1 is fill-crop.
-- **Fuller band chrome** — a native band-header menu and inline band rename, both of which the shared band adapter already carries for the table.
 
 [^1]: §Creating in the Grid
 [^2]: [[ViewsPM]] §II. The Sorting Pane

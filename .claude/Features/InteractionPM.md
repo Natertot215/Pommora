@@ -99,7 +99,6 @@ Every in-app window mounts the shared `PreviewPane` surface on a `GlassWindow` f
 Motion timing has one canonical home — the duration scale and easings in the motion tokens, read through their `--duration-*` / `--ease-*` vars; the shared dropdown keyframes and the Bloom curve live in the animations layer and take their durations from those same tokens.
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/motion.ts` · `Pommora/src/renderer/src/design-system/animations.css.ts`
-
 | Title | Token | Value |
 | --- | --- | --- |
 | Fast | `duration.fast` · `--duration-fast` | `180ms` |
@@ -121,7 +120,6 @@ One text-insertion identity for the whole app — every CodeMirror surface mount
 The drawn caret fades on a symmetric on/off cycle via twin keyframes in `Carets.css`; `editor/caret.ts` swaps the keyframe name on selection change to restart the cycle without reflow. On a fresh focus the overlay settles by convergence — re-measuring each frame until the bar holds still, deadline-capped — since a pane may still be animating open with moves no resize or input event reports. The overlay stands down once the caret has genuinely scrolled out of its field, an intersection test rather than a containment one — a tight line-height lets a resting bar overhang the field's box without having gone anywhere.
 
 **SOURCE:** `Pommora/src/renderer/src/Carets.css`
-
 | Title | Token | Value |
 | --- | --- | --- |
 | Bar Thickness | `--caret-width` | `2px` |
@@ -135,7 +133,6 @@ The drawn caret fades on a symmetric on/off cycle via twin keyframes in `Carets.
 The overflow-fade mechanism: three registered properties plus the four fade classes. `--edge-fade` is non-inheriting — the knob must sit on the element carrying the fade class, or it does nothing.
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/edge-fade.css`
-
 | Title | Token | Value |
 | --- | --- | --- |
 | Lead / Trail Progress | `@property --edge-a` / `--edge-b` | `<number>`, non-inheriting, initial `0` |
@@ -148,7 +145,6 @@ The overflow-fade mechanism: three registered properties plus the four fade clas
 The edge-proximity loop's knobs — declared at `:root`, overridable on any ancestor, read once at drag start via `getComputedStyle`. Because nothing consumes them through `var()`, each default is stated once as a map beside the loop, feeding both the `:root` declaration and the loop's own fallback; a token audit that finds no consumer is reading the mechanism correctly. The loop itself is [[PommoraDND]]'s.
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/interactions/autoscroll.ts`
-
 | Title | Token | Value |
 | --- | --- | --- |
 | Edge Band | `--autoscroll-edge` | `48px` |
