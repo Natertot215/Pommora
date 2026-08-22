@@ -61,7 +61,9 @@ import { pathExists } from './io/atomicWrite'
 import { readAppConfig, updateAppConfig, addRecent, DEFAULT_TRASH_MODE } from './appConfig'
 import { liveAssetMap, refreshAssetMap, takeAssetMapPush } from './assetMap'
 import { migrateAssets } from './assetMigrate'
-import { underAssetRoot } from './assetRoots'
+import { assetSubfolder, underAssetRoot, validPropertyDir } from './assetRoots'
+import { assetsDir, relPosix } from './paths'
+import { rootSegs } from './exclusion'
 import { ASSET_MIME, IMAGE_EXTS } from '@shared/assetMime'
 import { validateAssetDir } from './assetDirValidate'
 import { sessionRoot, openSession, resolveRestorePath, isExistingDir } from './session'
@@ -119,7 +121,7 @@ import {
   removeStatusOption,
   clearStatusOption,
 } from './crud/optionOps'
-import type { LinkConfig, NumberConfig, StatusGroup } from '@shared/properties'
+import type { FileConfig, LinkConfig, NumberConfig, StatusGroup } from '@shared/properties'
 import type { Option } from '@shared/optionModel'
 import { savedView } from '@shared/views'
 import {
@@ -619,7 +621,12 @@ type DefChanges = Parameters<typeof editProperty>[2]
 /** A registry-only def edit. The narrower is what keeps a display-config write from patching
  *  arbitrary def fields (type, options, id) through this door; `null` from it refuses the
  *  payload. Registry-only by construction: none of these touch page values. */
-const defEditOp = (narrow: (payload: unknown) => DefChanges | null) => ({
+const defEditOp = (
+  narrow: (payload: unknown) => DefChanges | null,
+  // A refusal the narrower can't reach, because it needs the nexus: the narrower is sync by
+  // convention, while `fn` is already async and already holds `root`.
+  check?: (root: string, changes: DefChanges) => Promise<Result<null>>,
+) => ({
   kind: 'envelope' as const,
   fn: async (propertyId: unknown, payload: unknown) => {
     const root = sessionRoot()
@@ -627,6 +634,10 @@ const defEditOp = (narrow: (payload: unknown) => DefChanges | null) => ({
     if (typeof propertyId !== 'string') return NEEDS_PROPERTY_ID
     const changes = narrow(payload)
     if (changes === null) return NEEDS_CONFIG_PATCH
+    if (check) {
+      const verdict = await check(root, changes)
+      if (!verdict.ok) return verdict
+    }
     const r = await editProperty(root, propertyId, changes)
     if (r.ok) await confirmRegistryWrite()
     return r
@@ -648,6 +659,17 @@ const narrowLinkConfig = (payload: unknown): LinkConfig | null => {
   if ('link_color' in p)
     changes.link_color = typeof p.link_color === 'string' ? p.link_color : undefined
   return changes
+}
+
+/** Where a file property's uploads land. Stored relative to the asset ROOT, so the spelling is
+ *  normalized here — trimmed, slash-padding dropped — and an empty result means the root itself,
+ *  which is the absence of the field rather than a stored empty string. */
+const narrowFileConfig = (payload: unknown): FileConfig | null => {
+  const p = asPatch(payload)
+  if (!p || !('file_directory' in p)) return null
+  const raw = typeof p.file_directory === 'string' ? p.file_directory : ''
+  const dir = rootSegs(raw.trim()).join('/')
+  return { file_directory: dir || undefined }
 }
 
 const narrowNumberFormat = (payload: unknown): NumberConfig | null => {
@@ -727,9 +749,10 @@ async function pickFilePath(win: BrowserWindow, opts?: PickFileOptions): Promise
   // The renderer holds nexus-relative paths only, so the folder to open at is joined here. It
   // merely steers the dialog — a folder that has gone missing opens at the root instead.
   const at = root && opts?.dir ? await resolveUnderRoot(root, opts.dir) : null
+  const defaultPath = at?.ok ? at.value : (root ?? undefined)
   const result = await dialog.showOpenDialog(win, {
     properties: ['openFile'],
-    ...(at?.ok ? { defaultPath: at.value } : root ? { defaultPath: root } : {}),
+    ...(defaultPath ? { defaultPath } : {}),
     ...(opts?.any ? {} : { filters: [{ name: 'Images', extensions: IMAGE_EXTS }] }),
   })
   const picked = result.canceled ? null : (result.filePaths[0] ?? null)
@@ -972,15 +995,22 @@ serveBridge(
 
     // A sheet on the calling window. Unlike `nexus:choose` this adopts nothing — it answers the
     // folder's nexus-relative path and leaves the write to the row that asked.
+    // `scope` rather than a sibling channel: the two differ by a starting folder, a message and a
+    // validator, which is an argument's worth against a twin's bridge entry, binding and dialog.
+    // A property's answer is relative to the ASSET root; the nexus's is relative to the nexus.
     'assets:chooseDir': {
       kind: 'window',
-      fn: async (win: BrowserWindow | null) => {
+      fn: async (win: BrowserWindow | null, scope?: 'nexus' | 'property') => {
         const root = sessionRoot()
         if (root === null) return NO_NEXUS
+        const forProperty = scope === 'property'
+        const { assetDir } = await readWatchScope(root)
         const opts = {
           properties: ['openDirectory', 'createDirectory'],
-          defaultPath: root,
-          message: 'Choose a folder for assets',
+          defaultPath: forProperty ? assetsDir(root, assetDir) : root,
+          message: forProperty
+            ? 'Choose a folder for this property’s files'
+            : 'Choose a folder for assets',
         } satisfies OpenDialogOptions
         // A `window` handler has no envelope net of its own.
         try {
@@ -989,7 +1019,13 @@ serveBridge(
             : await dialog.showOpenDialog(opts)
           const [chosen] = result.filePaths
           if (result.canceled || !chosen) return ok(null)
-          return validateAssetDir(root, chosen)
+          if (!forProperty) return validateAssetDir(root, chosen)
+          // Containment BEFORE the subtraction: a folder outside the asset root would otherwise
+          // have its leading segments sliced off and be re-read as a plausible subfolder of it.
+          const below = assetSubfolder(relPosix(root, chosen), assetDir)
+          return below !== null && validPropertyDir(below, assetDir)
+            ? ok(below)
+            : fail('invalid-path', 'That folder can’t hold this property’s files.')
         } catch (e) {
           return fail('operation-failed', errText(e))
         }
@@ -1377,6 +1413,18 @@ serveBridge(
 
     'property:setNumberFormat': defEditOp(narrowNumberFormat),
 
+    // Two predicates, not one: containment alone admits a `.private` folder that mkdirs, writes,
+    // and returns a valid-looking reference while the map drops it forever. Both run here against
+    // the real asset root, so the rule is stated once rather than split across two sites.
+    'property:setFileDirectory': defEditOp(narrowFileConfig, async (root, changes) => {
+      const dir = (changes as FileConfig).file_directory
+      if (dir === undefined) return ok(null)
+      const { assetDir } = await readWatchScope(root)
+      return validPropertyDir(dir, assetDir)
+        ? ok(null)
+        : fail('invalid-path', 'That folder can’t hold this property’s files.')
+    }),
+
     'property:renameOption': optionRenameOp(renameOption),
 
     'property:removeOption': optionValueOp(removeOption),
@@ -1748,9 +1796,8 @@ serveBridge(
     // the same picker).
     'nexus:pickFile': { kind: 'menu', fn: pickFilePath },
 
-    // Landing a picked file is its OWN step, never a field on a write: one IPC performing two
-    // writes has partial-failure semantics, and the reference must be written only after the
-    // bytes land. Bounded by the pick, like every other read-back of an outside path.
+    // Bounded by the pick, like every other read-back of an outside path; the DESTINATION is
+    // refused inside `adoptFile`, at the write.
     'assets:adopt': {
       kind: 'envelope',
       fn: async (source: string, subfolder?: string) => {

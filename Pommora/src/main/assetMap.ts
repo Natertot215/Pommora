@@ -22,7 +22,7 @@ import type { WatchEventName } from './watchPatch'
  *  root the rule matches the watcher's, so the map never holds what no event can update.
  *  Thumbnails are Pommora's own derived files and are skipped under the default root alone; a
  *  user's folder that happens to be called `thumbnails` is theirs. */
-function indexable(rel: string, assetDir: string): boolean {
+export function indexable(rel: string, assetDir: string): boolean {
   const below = rel.split('/').slice(rootSegs(assetDir).length)
   if (below.some(neverWatched)) return false
   return !(rel.startsWith(`${ASSETS_DIR_REL}/`) && below.includes(THUMBNAILS_SEGMENT))

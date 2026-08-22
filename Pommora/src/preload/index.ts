@@ -88,6 +88,7 @@ const api = {
     setIcon: ask('property:setIcon'),
     // Registry-only display config for a Number property: its property-wide format fields.
     setNumberFormat: ask('property:setNumberFormat'),
+    setFileDirectory: ask('property:setFileDirectory'),
     renameOption: ask('property:renameOption'),
     removeOption: ask('property:removeOption'),
     clearOption: ask('property:clearOption'),

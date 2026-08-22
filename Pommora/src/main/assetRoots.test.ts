@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { ASSETS_DIR_REL } from '@shared/nexusPaths'
-import { assetFileToDelete, underAssetRoot } from './assetRoots'
+import { assetFileToDelete, assetSubfolder, underAssetRoot, validPropertyDir } from './assetRoots'
 import { isAssetPath } from './io/navigationFile'
 
 describe('underAssetRoot', () => {
@@ -104,5 +104,57 @@ describe('assetFileToDelete', () => {
   it('a non-string or empty value deletes nothing', async () => {
     for (const v of [null, undefined, 42, '', '   '])
       expect(await assetFileToDelete(root, v)).toBeNull()
+  })
+})
+
+describe('validPropertyDir — a file property names where its files land', () => {
+  const DIR = 'file-assets'
+
+  it('accepts a subfolder under the asset root, and the root itself', () => {
+    expect(validPropertyDir('Attachments', DIR)).toBe(true)
+    expect(validPropertyDir('Attachments/Specs', DIR)).toBe(true)
+    // No subfolder IS the root — always somewhere files may land.
+    expect(validPropertyDir('', DIR)).toBe(true)
+  })
+
+  it('refuses a climb, an absolute path, and a Windows separator', () => {
+    for (const bad of ['..', '../..', 'a/../..', '/etc', 'a\\b'])
+      expect(validPropertyDir(bad, DIR)).toBe(false)
+  })
+
+  it('refuses a folder the map could never index — containment alone would admit it', () => {
+    // The negative control for the second predicate: `.private` passes containment, mkdirs,
+    // writes, and answers a valid-looking reference, while `indexable` drops it from the map
+    // forever — an unresolved label and no error anywhere.
+    expect(underAssetRoot(`${DIR}/.private`, DIR)).toBe(true)
+    expect(validPropertyDir('.private', DIR)).toBe(false)
+    expect(validPropertyDir('Specs/.private', DIR)).toBe(false)
+    expect(validPropertyDir('node_modules', DIR)).toBe(false)
+  })
+
+  it("a dot in the ROOT's own name is the root's business, not a subfolder's", () => {
+    // A nexus whose asset root is `.attachments` is exactly the case indexable's root exemption
+    // exists for; a subfolder under it still answers on its own segments.
+    expect(validPropertyDir('Specs', '.attachments')).toBe(true)
+    expect(validPropertyDir('.hidden', '.attachments')).toBe(false)
+  })
+})
+
+describe('assetSubfolder — the part below the asset root', () => {
+  it('answers the position under the root, and empty for the root itself', () => {
+    expect(assetSubfolder('file-assets/Attachments', 'file-assets')).toBe('Attachments')
+    expect(assetSubfolder('file-assets/a/b', 'file-assets')).toBe('a/b')
+    expect(assetSubfolder('file-assets', 'file-assets')).toBe('')
+  })
+
+  it('refuses a path outside the root rather than slicing it into a plausible one', () => {
+    // Without the prefix check, `Notes/Daily` under a one-segment root would slice to `Daily` and
+    // read back as a subfolder of the asset root the user never picked.
+    expect(assetSubfolder('Notes/Daily', 'file-assets')).toBeNull()
+    expect(assetSubfolder('', 'file-assets')).toBeNull()
+  })
+
+  it('matches the root case-insensitively, like every other root test', () => {
+    expect(assetSubfolder('File-Assets/Specs', 'file-assets')).toBe('Specs')
   })
 })

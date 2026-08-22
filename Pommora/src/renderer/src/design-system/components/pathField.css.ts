@@ -1,11 +1,12 @@
-// The Default Asset Directory field. It composes the house field chrome rather than restating it,
-// and holds its own width at the row's trailing edge like every other control — a deep path is
-// eclipsed by the run's own fade rather than pushing the row wider.
+// The house folder-path field — a lead glyph, the stored path as a run of segments, and a browse
+// affordance. It composes the house field chrome rather than restating it, and holds its own width
+// at its trailing edge like every other control: a deep path is eclipsed by the run's own fade
+// rather than pushing its row wider.
 import { style } from '@vanilla-extract/css'
-import { hairlineField } from '../design-system/components/interactionField.css'
-import { focusRing } from '../design-system/components/fieldRing'
-import { vars as colorVars } from '../design-system/tokens/color.css'
-import { text } from '../design-system/tokens/typography.css'
+import { hairlineField } from './interactionField.css'
+import { focusRing } from './fieldRing'
+import { vars as colorVars } from '../tokens/color.css'
+import { text } from '../tokens/typography.css'
 
 const c = colorVars.color
 
@@ -60,3 +61,6 @@ export const input = style([
     color: c.label.control,
   },
 ])
+
+/** What an unset path reads as — the default it falls back to, stated rather than left blank. */
+export const placeholder = style([text.body.standard, { color: c.label.tertiary }])
