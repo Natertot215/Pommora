@@ -358,6 +358,7 @@ interface SessionState {
   applyNavChanged: (nav: Omit<NavigationState, 'recents'>) => void
   assetMap: AssetMap
   applyAssetMap: (map: AssetMap) => void
+  setAssetDirectory: (dir: string) => Promise<void>
   thumbVersions: Record<string, number>
   bumpThumb: (key: string) => void
   evictThumbs: () => void
@@ -1284,6 +1285,11 @@ export const useSession = create<SessionState>((set, get) => {
     // phantom becoming real is for.
     applyAssetMap: (map) => {
       set({ assetMap: stabilize(map, get().assetMap) })
+    },
+    // The tree leaf is what the field reads, and main patches it on the write's own confirm —
+    // so a refusal needs no local rollback: nothing moved.
+    setAssetDirectory: async (dir) => {
+      await window.nexus.setAssetDir(dir)
     },
     // The push carries the FILE's keys (an external edit): pinned, favorites, banner. Recents
     // aren't in the file — the in-memory stream always leads.

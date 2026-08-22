@@ -9,7 +9,7 @@ import {
   systemPreferences,
 } from 'electron'
 import type { OpenDialogOptions } from 'electron'
-import { basename, dirname, extname, join, sep } from 'node:path'
+import { basename, dirname, extname, join, resolve, sep } from 'node:path'
 import { readFile, rename } from 'node:fs/promises'
 import type {
   HoverCardSize,
@@ -73,6 +73,7 @@ import {
   readPermanentDelete,
   readSubfield,
   readWatchScope,
+  writeAssetDirectory,
   writeNavViewModes,
   writePersonalization,
   writeSubfield,
@@ -857,6 +858,32 @@ serveBridge(
         } catch (err) {
           return fail('operation-failed', errText(err))
         }
+      },
+    },
+
+    // The typed half of the Default Asset Directory row. It crosses the same validator the dialog's
+    // pick does, so a hand-typed path and a chosen one are refused for identical reasons.
+    'assets:setDir': {
+      kind: 'envelope',
+      fn: async (dir: unknown) => {
+        const root = sessionRoot()
+        if (root === null) return NO_NEXUS
+        if (typeof dir !== 'string') return fail('operation-failed', 'A folder path is required.')
+        const trimmed = dir.trim()
+        let next = ''
+        if (trimmed) {
+          const valid = await validateAssetDir(root, resolve(root, trimmed))
+          if (!valid.ok) return valid
+          next = valid.value
+        }
+        await writeAssetDirectory(root, next)
+        await confirmSettingsWrite()
+        // The write's own echo never reaches `settle` — `recordWrite` suppresses it — so the
+        // re-arm behind the scope comparison there can only ever see an EXTERNAL edit of
+        // settings.json. Without this the new root is unwatched for the session, or its events
+        // classify against the stale scope and take one whole-nexus walk per file that lands.
+        if (mainWindow) await startWatcher(root, mainWindow)
+        return ok(next)
       },
     },
 

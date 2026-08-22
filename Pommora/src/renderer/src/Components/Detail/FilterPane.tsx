@@ -1,11 +1,13 @@
 // How the rules combine (All / Any) and whether the filter runs at all are two independent axes,
 // neither of which touches the rules. A hand-authored tree the pane can't represent renders locked
 // behind an explicit Reset (never silently flattened).
-import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
 import type { FilterRule, SavedView } from '@shared/views'
 import { Icon } from '@renderer/design-system/symbols'
+import { SegmentRun } from '@renderer/design-system/components/SegmentRun/SegmentRun'
+import * as sr from '@renderer/design-system/components/SegmentRun/segmentRun.css'
 import { Chip, ChipRemoveButton, chipShapeForType } from '@renderer/Components/Chip'
 import { EntityIcon } from '@renderer/Components/EntityIcon'
 import { ContextChip } from '@renderer/Components/ContextChip'
@@ -321,36 +323,32 @@ function LocationField({
         {shown.length === 0 ? (
           <span className={fp.placeholder}>Value</span>
         ) : (
-          <OverflowScroll className={fp.segmentRun}>
-            {shown.map((v, i) => {
+          <SegmentRun
+            entries={shown.map((v) => {
               const set = byId.get(v)
-              return (
-                <Fragment key={v}>
-                  {i > 0 && <span className={fp.segmentDivider} />}
-                  <span className={fp.segment}>
-                    <EntityIcon
-                      kind="set"
-                      icon={set?.icon}
-                      size="body"
-                      className={fp.segmentIcon}
+              return {
+                key: v,
+                label: set?.title ?? v,
+                icon: (
+                  <EntityIcon kind="set" icon={set?.icon} size="body" className={sr.segmentIcon} />
+                ),
+                // The chip's own remove, at its defaults: the melt machinery is what blurs the
+                // title tail under the ×, and it only ever needed a `chipRemovable` host — never a
+                // chip's fill. The reveal slot stays here; a run of path segments has nothing to
+                // remove.
+                trailing: (
+                  <span className={fp.segmentRemoveSlot}>
+                    <ChipRemoveButton
+                      className={fp.segmentRemove}
+                      label="Remove location"
+                      size="footnote"
+                      onRemove={() => toggle(v)}
                     />
-                    {/* The chip's own label + remove, at their defaults: the melt machinery is what
-                        blurs the title tail under the ×, and it only ever needed a `chipRemovable`
-                        host and this label — never a chip's fill. */}
-                    <span className={fp.segmentLabel}>{set?.title ?? v}</span>
-                    <span className={fp.segmentRemoveSlot}>
-                      <ChipRemoveButton
-                        className={fp.segmentRemove}
-                        label="Remove location"
-                        size="footnote"
-                        onRemove={() => toggle(v)}
-                      />
-                    </span>
                   </span>
-                </Fragment>
-              )
+                ),
+              }
             })}
-          </OverflowScroll>
+          />
         )}
       </ValueFieldShell>
       {/* Left-anchored: disclosing a Set widens the pane, and a right-anchored pane would walk every
