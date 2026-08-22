@@ -103,15 +103,15 @@ A copy is the case the record can't settle alone. Every ordinary duplication —
 
 #### The Trash
 
-A deleted entity moves to `.trash/` under the folder chain it came from, as a bundle holding the artifact and a record of what departed in the trash is pruned. The record and restore model are the [[NexusRecordPM|Nexus Records]].
+A deleted entity moves to `.trash/` under the folder chain it came from, where a bundle holding the artifact and a record of what departed is pruned. The record and restore model are the [[NexusRecordPM|Nexus Records]].
 
 #### Folder Exclusion
 
-`excluded_folders` on `settings.json` takes anchored nexus-relative paths, and exclusion is total: one predicate is honored by the read walk, the adoption pass, the watcher, the content index's corpus, and every cascade — query path and fallback scan alike. Nothing under an excluded folder is read, shown, indexed, swept, or rewritten, so a rename leaves an excluded note's `[[link]]`s as they were — and no enumeration descends into one, so the cost of excluding a folder is nothing rather than the price of listing it and discarding the result. Un-adopted folders are not excluded folders: they stay outside the tree but fully indexed and cascade-reachable.
+`excluded_folders` on `settings.json` takes anchored nexus-relative paths, and exclusion is total: one predicate is honored by the read walk, the adoption pass, the watcher, the content index's corpus, and every cascade — query path and fallback scan alike. Nothing under an excluded folder is read, shown, indexed, swept, or rewritten, so a rename leaves an excluded note's `[[link]]`s as they were — and no enumeration descends into one, so the cost of excluding a folder is nothing rather than the price of listing it and discarding the result. Un-adopted folders are not excluded folders; they remain outside the tree but are fully indexed and cascade-reachable.
 
 #### The Asset Directory
 
-One folder holds the images entities point at, configurable to any folder in the Nexus and defaulting to `.nexus/assets` — so a Nexus sharing a directory with another application reads the same files under the same names. It is a third classification beside content and exclusion: outside the corpus and the tree like an excluded folder, but watched whatever `excluded_folders` says, and captured alongside it as one scope so the two can never disagree about what the walk can see. A file landing there patches an in-memory filename listing the renderer resolves `[[File.png]]` against; nothing about it is stored but its name, which is what makes a sync eviction and re-download a non-event. → [[ConfigurationPM]]
+One directory holds the assets entities point at — used for banners, nexus icon, embedded files, ect... — configurable to any folder in the Nexus and defaulting to `.nexus/assets`. The configured directory is excluded from content-adoption but is otherwise managed by the watcher the same way. A file landing there patches an in-memory filename list that the renderer resolves [[File.png]] against; nothing about it is stored except its name, which is what makes a sync eviction and re-download a non-event.
 
 ### The Data Layer
 

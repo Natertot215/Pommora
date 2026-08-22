@@ -41,7 +41,6 @@ The design system lives in `src/renderer/src/design-system/`.
 The three raw system tones every derived grey, white, and black is an opacity of, plus the window substrate. Derivations use `greyA(pct)` / `whiteA(pct)` / `blackA(pct)` — `color-mix` of the primitive toward transparent.
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/color.css.ts` · `Pommora/src/shared/theme.ts`
-
 | Title             | Token                               | Value     |
 | ----------------- | ----------------------------------- | --------- |
 | System White      | `system.white` · `--system-white`   | `#E8E8E8` |
@@ -54,7 +53,6 @@ The three raw system tones every derived grey, white, and black is an opacity of
 The opaque content planes layered on the window substrate — addressed by role, and their own literals rather than derivations.
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/color.css.ts`
-
 | Title             | Token                                       | Value             |
 | ----------------- | ------------------------------------------- | ----------------- |
 | Surface Primary   | `surface.primary` · `--surface-primary`     | `#202022`         |
@@ -67,7 +65,6 @@ The opaque content planes layered on the window substrate — addressed by role,
 The text ladder — system-white at descending presence. Primary is the raw primitive passed through; the rest are opacity steps. Labels ride the near-white so the lightest label still reads over the heaviest fill.
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/color.css.ts`
-
 | Title | Token | Value |
 | --- | --- | --- |
 | Label Primary | `label.primary` · `--label-primary` | system-white @ 100% |
@@ -80,7 +77,6 @@ The text ladder — system-white at descending presence. Primary is the raw prim
 The interaction states — two grey washes, one black veil, and three opacity dims. Hover and selected are fills painted behind content; muted is painted over it; drag, ghost, and inactive are consumed as `opacity:` on the element itself.
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/color.css.ts` · `tokens/theme-vars.css.ts`
-
 | Title    | Token                                 | Value              |
 | -------- | ------------------------------------- | ------------------ |
 | Hover    | `state.hover` · `--state-hover`       | system-grey @ 2.5% |
@@ -95,7 +91,6 @@ The interaction states — two grey washes, one black veil, and three opacity di
 The five-step system-grey overlay ramp for cards, chips, and fields sitting on a surface — most to least present. Strokes sit above fills: a separator reads harder than the surface it divides.
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/color.css.ts`
-
 | Title           | Token                                   | Value             |
 | --------------- | --------------------------------------- | ----------------- |
 | Fill Primary    | `fill.primary` · `--fill-primary`       | system-grey @ 20% |
@@ -109,7 +104,6 @@ The five-step system-grey overlay ramp for cards, chips, and fields sitting on a
 The one opacity ladder any base color is mixed at. `mixAt(base, pct, into)` is the underlying primitive — a `color-mix` of the base toward anything, in sRGB or oklch, short-circuiting to the raw base at 100; `tintAt(base, step)` is that mix toward transparent. The chip recipe, the ramp, and the accent strokes all read these steps.
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/tint.ts`
-
 | Title           | Token                                         | Value |
 | --------------- | --------------------------------------------- | ----- |
 | Tint Solid      | `TINT_STEPS.solid` · `--tint-solid`           | 100%  |
@@ -123,7 +117,6 @@ The one opacity ladder any base color is mixed at. `mixAt(base, pct, into)` is t
 The color grid behind every chip and the picker that assigns one: eight families, eight steps each, running dark on the left to light on the right, with each spectrum solid seated on an exact cell so a color stored before the ramp resolves into it unchanged. Five families shade from a single anchor by one knob; blue crosses between two anchors in oklch so the passage keeps its chroma; purple seats three; the greyscale row is the app's own surface tokens rather than a computed ramp, and carries the only rendering exceptions — its brightest cells tint from a darkened base, and all eight outline against the label ramp.
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/ramp.ts`
-
 | Title           | Token           | Value                                    |
 | --------------- | --------------- | ---------------------------------------- |
 | Shading Step    | `RAMP_STEP`     | `15`                                     |
@@ -135,7 +128,6 @@ The color grid behind every chip and the picker that assigns one: eight families
 Hairlines and the composed border shorthands built on them, plus the banner's legibility scrim.
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/color.css.ts` · `tokens/theme-vars.css.ts`
-
 | Title             | Token                                       | Value                                  |
 | ----------------- | ------------------------------------------- | -------------------------------------- |
 | Separator Border  | `separator.border` · `--separator-border`   | system-grey @ 25%                      |
@@ -149,7 +141,6 @@ Hairlines and the composed border shorthands built on them, plus the banner's le
 The two drop shadows — resting glass and lifted or dragged chrome. Every frost surface ends its box-shadow stack in one of these.
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/color.css.ts`
-
 | Title | Token | Value |
 | --- | --- | --- |
 | Standard | `shadowStandardVar` · `--shadow-standard` | `0 8px 25px #00000040` |
@@ -160,7 +151,6 @@ The two drop shadows — resting glass and lifted or dragged chrome. Every frost
 The ten selectable solids plus the neutral chip default and the ramp's pink seat — authored once in `@shared/theme`, validated by main and renderer alike. The ten are what an accent may be set to; the ramp widens what a chip may be colored, not what the accent may be. The accent is a single user value resolved from this palette (or `system`, the OS accent, read at load); accented surfaces derive from `--accent` through the tint steps, so changing the accent recolors everything at once.
 
 **SOURCE:** `Pommora/src/shared/theme.ts` · `tokens/theme-vars.css.ts`
-
 | Title             | Token                                       | Value                                      |
 | ----------------- | ------------------------------------------- | ------------------------------------------ |
 | Red               | `SPECTRUM.red` · `--solid-red`              | `#FF453A`                                  |
@@ -188,7 +178,6 @@ The ten selectable solids plus the neutral chip default and the ramp's pink seat
 The glyph ladder, the per-size control bundles, and the bare layout constants JS math consumes as numbers.
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/size.css.ts` · `tokens/theme-vars.css.ts`
-
 | Title                       | Token                                       | Value                                                                            |
 | --------------------------- | ------------------------------------------- | -------------------------------------------------------------------------------- |
 | Icon Ladder                 | `size.icon.*` · `--icon-*` · `ICON_PX`      | Eleven steps named for the type ramp — `largeTitle` `26px` through `subline` `10px` |
@@ -212,7 +201,6 @@ Two distinct glass systems. **Frost** is a CSS `backdrop-filter` recipe — a di
 Frost comes in three tiers, and the ladder is what says how far a surface sits from the app. The **surface** is the fixed chrome the app is built on and stays brightest and clear; the **pane** floats over it a step dimmer; the **window** is that same pane carrying a body, because a window has to hold its own content legible over whatever it floats above where a menu is gone before that matters. A pane opening over another pane asks for `solid` and gets the window's fill and nothing else — the chrome it already has isn't restated.
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/materials/glass-pane.tsx` · `materials/glass-material.ts` · `materials/glass-controls.tsx`
-
 | Title | Token | PANE_FROST | WINDOW_FROST | GHOST_FROST |
 | --- | --- | --- | --- | --- |
 | Blur | `.blur` | `6` | `6` | `6` |
@@ -231,7 +219,6 @@ Frost comes in three tiers, and the ladder is what says how far a surface sits f
 Which tier each surface wears, and the two menu shells built on the pane.
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/materials/glass-pane.tsx` · `materials/glass-material.ts` · `materials/glass-window.tsx` · `materials/glass-surface.tsx` · `components/PickerMenu/pickerMenu.css.ts` · `components/notchedPane.css.ts`
-
 | Title | Token | Value | Used By |
 | --- | --- | --- | --- |
 | Surfaces | `GlassSurface` · `frostMaterial` | brightness `95`, clear | sidebar · inspector · side rail |
@@ -242,7 +229,6 @@ Which tier each surface wears, and the two menu shells built on the pane.
 | Acted-on edge | `--glass-outline` | unset | any tier being resized or driven |
 | Rectangular menu | `PANE_RADIUS` | `12` | `PickerMenu` — every menu and picker |
 | Beaked menu | `BEAK_RADIUS` | `12` | `MenuSurface` — the large toolbar dropdown, alone |
-
 
 ### Component Chrome
 
