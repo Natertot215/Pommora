@@ -209,7 +209,7 @@ describe('format transforms — prefix-aware', () => {
   })
   it('setList on a quoted line lands the marker inside the quote', () => {
     const doc = '> item'
-    const { changes } = setList(doc, 4, 'bullet')
+    const { changes } = setList(doc, 4, 4, 'bullet')
     expect(changes).toEqual([{ from: 2, to: 6, insert: '- item' }])
   })
 })

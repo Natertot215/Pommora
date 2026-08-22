@@ -12,6 +12,7 @@ describe('the formatting chords', () => {
       ['format:bold', 'CmdOrCtrl+B', 'Mod-b'],
       ['format:italic', 'CmdOrCtrl+I', 'Mod-i'],
       ['format:strikethrough', 'CmdOrCtrl+Shift+X', 'Mod-Shift-x'],
+      ['format:highlight', 'CmdOrCtrl+L', 'Mod-l'],
       ['format:inlineCode', 'CmdOrCtrl+E', 'Mod-e'],
       ['format:link', 'CmdOrCtrl+K', 'Mod-k'],
       ['format:connection', 'CmdOrCtrl+Shift+K', 'Mod-Shift-k'],

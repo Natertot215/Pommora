@@ -55,13 +55,41 @@ describe('setHeading', () => {
 
 describe('setList', () => {
   it('adds a bullet', () => {
-    expect(apply('item', setList('item', 0, 'bullet'))).toBe('- item')
+    expect(apply('item', setList('item', 0, 0, 'bullet'))).toBe('- item')
   })
   it('re-applying the same kind clears it', () => {
-    expect(apply('- item', setList('- item', 2, 'bullet'))).toBe('item')
+    expect(apply('- item', setList('- item', 2, 2, 'bullet'))).toBe('item')
   })
   it('switches ordered → task', () => {
-    expect(apply('1. item', setList('1. item', 3, 'checkbox'))).toBe('- [ ] item')
+    expect(apply('1. item', setList('1. item', 3, 3, 'checkbox'))).toBe('- [ ] item')
+  })
+
+  // The reported bug: a selection spanning several lines marked only the first of them.
+  const three = 'one\ntwo\nthree'
+  it('makes every selected line its own item', () => {
+    expect(apply(three, setList(three, 0, three.length, 'bullet'))).toBe('- one\n- two\n- three')
+  })
+  it('numbers an ordered run down the selection', () => {
+    expect(apply(three, setList(three, 0, three.length, 'ordered'))).toBe(
+      '1. one\n2. two\n3. three',
+    )
+  })
+  it('clears only where every line already reads that way', () => {
+    const all = '- one\n- two'
+    expect(apply(all, setList(all, 0, all.length, 'bullet'))).toBe('one\ntwo')
+    const mixed = '- one\ntwo'
+    expect(apply(mixed, setList(mixed, 0, mixed.length, 'bullet'))).toBe('- one\n- two')
+  })
+  // A blank line is the gap between paragraphs; an empty bullet is not what selecting across it asked for.
+  it('leaves a blank line unmarked', () => {
+    const gapped = 'one\n\ntwo'
+    expect(apply(gapped, setList(gapped, 0, gapped.length, 'bullet'))).toBe('- one\n\n- two')
+  })
+  it('keeps a nested item at its level, and restarts its numbering', () => {
+    const nested = '- one\n  - two\n- three'
+    expect(apply(nested, setList(nested, 0, nested.length, 'ordered'))).toBe(
+      '1. one\n  1. two\n2. three',
+    )
   })
 })
 

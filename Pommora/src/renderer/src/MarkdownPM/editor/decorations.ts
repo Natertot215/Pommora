@@ -31,6 +31,7 @@ import {
   type WidgetSpec,
 } from '../decorations/intent'
 import { resolveMdTarget, type ConnectionsApi } from '../connections'
+import { CODE_GLYPHS } from './codeGlyphs'
 import type { LinkStatus } from '@shared/connections'
 
 /** The class a valid external link wears — the hover gate reads the same constant, so the
@@ -138,7 +139,26 @@ class LineWidget extends WidgetType {
     const el = document.createElement('span')
     el.className = this.className
     el.setAttribute('aria-hidden', 'true')
-    if (this.text !== undefined) el.textContent = this.text
+    if (this.text !== undefined) {
+      // A language with a mark wears it in front of its name; one without draws the name alone. The
+      // glyph is built here rather than styled in, because a widget is raw DOM with no React under
+      // it — and an <svg> carries `currentColor`, so the two halves take their own tones.
+      const glyph = CODE_GLYPHS[this.text]
+      if (glyph) {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+        svg.setAttribute('viewBox', '0 0 24 24')
+        svg.setAttribute('fill', 'none')
+        svg.setAttribute('stroke', 'currentColor')
+        svg.setAttribute('stroke-width', '2')
+        svg.setAttribute('stroke-linecap', 'round')
+        svg.setAttribute('stroke-linejoin', 'round')
+        svg.innerHTML = glyph
+        el.appendChild(svg)
+      }
+      const label = document.createElement('span')
+      label.textContent = this.text
+      el.appendChild(label)
+    }
     return el
   }
   /** Every glyph of this kind is decoration over a line that is still text, so a press on one

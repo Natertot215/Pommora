@@ -594,6 +594,20 @@ describe('readNexus — personalization', () => {
     )
     for (const k of keys) expect(t.personalization[k], k).toBe(true)
   })
+  // A color setting the reader never parses is dropped on the way back in, which reads in the app as
+  // a picked color that reverts on relaunch.
+  it('every ramp-cell color survives the round-trip', async () => {
+    const keys = [
+      'connectionColor',
+      'externalLinkColor',
+      'checkboxColor',
+      'highlightColor',
+    ] as const
+    const t = await readNexus(
+      mk({ personalization: Object.fromEntries(keys.map((k) => [k, 'grey-4'])) }),
+    )
+    for (const k of keys) expect(t.personalization[k], k).toBe('grey-4')
+  })
   it('the linger survives the round-trip, clamped; zero and junk read as None', async () => {
     const at = async (v: unknown): Promise<number | undefined> =>
       (await readNexus(mk({ personalization: { hoverPreviewLinger: v } }))).personalization

@@ -50,6 +50,7 @@ const ROOT_VARS: Partial<Record<keyof Personalization, VarWriter>> = {
   connectionColor: (v) => ({ '--connection': settingColorCss(v, 'var(--accent)') }),
   externalLinkColor: (v) => ({ '--link': settingColorCss(v, 'var(--system-accent)') }),
   checkboxColor: checkboxVars,
+  highlightColor: (v) => ({ '--highlight': settingColorCss(v, 'var(--accent)') }),
 }
 
 /** The knobs that render as a root class toggled by a boolean — a new one is an entry here. */

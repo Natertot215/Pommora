@@ -332,7 +332,8 @@ describe('decoration intents', () => {
       (d): d is Extract<typeof d, { kind: 'lineWidget' }> => d.kind === 'lineWidget',
     )
     const lang = glyphs.find((g) => g.className === 'md-cb-lang')
-    expect(lang?.text).toBe('yaml')
+    // The language's own name, not the word that opened it — `yml` and `yaml` are both YAML.
+    expect(lang?.text).toBe('YAML')
     expect(lang?.from).toBe(t.indexOf('yaml')) // in-line, right where the info word sits
     const bare = 'p\n```\nx\n```'
     const none = decorationsFor(bare, tokenize(bare), new Set(), 0).filter(
