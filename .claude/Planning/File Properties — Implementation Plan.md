@@ -273,9 +273,9 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
 **Files:** Modify `src/shared/cellMenu.ts` (`:33`, `:87`, `:147-154`) · Test: `src/shared/cellMenu.test.ts`
 
 **Steps:**
-- [ ] Invert the existing `style-edit` tests to the new expectation.
-- [ ] Delete the kind, its dispatch and its model case; delete the two stale comments.
-- [ ] Full gate green. Commit: `refactor(menus): the file cell stops offering a look`
+- [x] Invert the existing `style-edit` tests to the new expectation.
+- [x] Delete the kind, its dispatch and its model case; delete the two stale comments.
+- [x] Full gate green. Commit: `refactor(menus): the file cell stops offering a look`
 
 #### Task 5: Render the file cell from the new shape
 
@@ -669,6 +669,7 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
 - **Plan header vs Phase 3's own estimate.** The header row reads `+20` for Phase 3 where the phase body reads `+10`; the body governs, so the expected net is ≈ **+46**, not +56.
 - **Task 3 · the failing test is the parse, not the render.** With file out of the style system the cell no longer reads `style.look` at all (Task 1), so "a stored `look: 'path'` renders the filename" has no render path left to assert. It lands where the compatibility actually happens — `columnStyle.parse` catching both retired members to `undefined`, beside the two the link vocabulary already retired, plus `defaultStyleFor('file')` returning `{}`.
 - **Task 3 · `cellMenu.test.ts`'s `style-edit` fixture was narrowed here.** It named `look: 'filename'`, which the enum no longer holds. Its expectation now reads the empty row set Task 3 leaves behind; Task 4 deletes the test with the kind.
+- **Task 4 · a file cell's interim menu is the bare one.** With the `style-edit` dispatch gone, `baseCellMenu` falls to `null` for file — no menu in the table, `remove-only` on a card. That is exactly what the `remove-only` comment has always claimed ("an empty picker, a file"), so the deletion makes a stale comment true rather than needing one. Task 17 replaces it with the Add · Replace · Remove kind.
 - **Naming.** The spec settled on **FileLabel** (C-2c); several plan headings still read FileChip. FileLabel is the name that ships — component, chip shape and prose alike.
 ### Lessons
 ### Sequenced After
