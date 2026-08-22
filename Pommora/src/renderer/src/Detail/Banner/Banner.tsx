@@ -7,7 +7,6 @@ import { isSurfaceKind, type BannerOwner } from '../Scope'
 import { DetailTitleHeader } from '../DetailTitleHeader'
 import { RenamableLabel } from '../../Components/RenamableLabel'
 import { AddBannerButton } from './AddBannerButton'
-
 import { useBannerMenu } from './useBannerMenu'
 
 export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {

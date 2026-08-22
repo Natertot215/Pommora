@@ -9,6 +9,7 @@ import {
   assetMatcher,
   excludedMatcher,
   neverWatched,
+  rootSegs,
   sameScope,
   type WatchScope,
 } from './exclusion'
@@ -50,7 +51,7 @@ export function ignoredUnder(root: string, scope: WatchScope): (path: string) =>
   // (un-excluding a folder mid-session takes effect on the next nexus open / watcher restart).
   const isExcluded = excludedMatcher(scope.excluded)
   const isAsset = assetMatcher(scope.assetDir)
-  const assetDepth = scope.assetDir.split('/').filter(Boolean).length
+  const assetDepth = rootSegs(scope.assetDir).length
   return (path) => {
     const rel = relative(root, path)
     if (!rel || rel.startsWith('..')) return false

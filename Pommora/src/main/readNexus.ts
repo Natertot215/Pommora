@@ -53,7 +53,7 @@ import { pathExists, readJsonObject, readJsonStrict } from './io/atomicWrite'
 import { isContentFile, listEntries } from './io/walk'
 import { orderedDefs, readRegistry, type PropertyRegistry } from './io/propertiesRegistry'
 import { asString, asStringArray, basenameNoMd } from './coerce'
-import { normalizeSeg, shouldSkipDir, type WatchScope } from './exclusion'
+import { normalizeSeg, rootSegs, shouldSkipDir, type WatchScope } from './exclusion'
 import { resolveOrder } from './order'
 import { beginWalk, cachedParse, endWalk } from './walkCache'
 import {
@@ -216,17 +216,30 @@ export interface SettingsLeaves {
  *  and anything inside the two folders the app owns whole — `.nexus/contexts` would drop every
  *  Space from the walk, `.nexus/settings.json` events would be swallowed as assets, and nothing
  *  under `.trash` is watched at all. The default is the one place inside them that is an asset
- *  root by definition. Compared case-folded, because every downstream matcher is. */
-function readAssetDirectoryLeaf(v: unknown): string {
-  const raw = asString(v)?.trim()
-  if (!raw || raw.startsWith('/') || raw.includes('\\')) return ASSETS_DIR_REL
-  const segs = raw.split('/').filter(Boolean)
-  if (segs.some((s) => s === '.' || s === '..')) return ASSETS_DIR_REL
+ *  root by definition. Compared case-folded, because every downstream matcher is.
+ *
+ *  Stated as a refusal so the folder chooser can report the same rule the reader enforces: a
+ *  value one of them would coerce to the default and the other would store is the disagreement
+ *  `readNexus.ts` exists to prevent. */
+export function assetDirRefusal(raw: string): string | null {
+  const segs = rootSegs(raw)
+  if (
+    !raw ||
+    raw.startsWith('/') ||
+    raw.includes('\\') ||
+    segs.some((s) => s === '.' || s === '..')
+  )
+    return 'That folder’s name can’t be written as a nexus path.'
   // Inside an app-owned folder every value resolves to the default: either it already IS the
   // default, in which case the canonical spelling replaces whatever casing was written, or it
-  // is refused. Case-folded, because every downstream matcher is.
-  if (NON_CORPUS_TOP.has(normalizeSeg(segs[0]))) return ASSETS_DIR_REL
-  return segs.join('/')
+  // is refused.
+  if (NON_CORPUS_TOP.has(normalizeSeg(segs[0]))) return 'That folder belongs to the app.'
+  return null
+}
+
+function readAssetDirectoryLeaf(v: unknown): string {
+  const raw = asString(v)?.trim() ?? ''
+  return assetDirRefusal(raw) ? ASSETS_DIR_REL : rootSegs(raw).join('/')
 }
 
 export function readSettingsLeaves(settings: Json): SettingsLeaves {

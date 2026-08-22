@@ -356,9 +356,10 @@ export interface AssetMap {
 export const EMPTY_ASSET_MAP: AssetMap = { files: {}, version: 0 }
 
 export interface NexusTree {
-  /** `name` is the root folder's basename (filename = title). `profileImage` is a
-   *  nexus-relative path into `.nexus/assets/<id>/` (or null) and `profileSubtitle` a
-   *  ≤30-char blurb — both from `.nexus/settings.json`. */
+  /** `name` is the root folder's basename (filename = title). `profileImage` names an image in
+   *  the asset directory as a `[[Name.ext]]` wikilink — or, in a nexus the migration has not
+   *  run against, a nexus-relative path — and `profileSubtitle` is a ≤30-char blurb. Both come
+   *  from `.nexus/settings.json`. */
   nexus: {
     id: string
     rootPath: string

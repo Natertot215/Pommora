@@ -234,8 +234,9 @@ function registerRendererProtocol(): void {
   })
 }
 
-// Read-only and confined to the open nexus's .nexus/assets/ (resolveUnderRoot realpaths +
-// contains; the prefix check pins it to that dir).
+// Read-only and confined to the open nexus's asset roots — the configured directory and
+// `.nexus/assets`, which still holds the thumbnails (resolveUnderRoot realpaths + contains;
+// `underAssetRoot` pins the request to one of the two).
 function registerAssetProtocol(): void {
   protocol.handle(ASSET_SCHEME, async (request) => {
     const root = sessionRoot()

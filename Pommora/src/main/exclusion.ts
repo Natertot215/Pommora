@@ -20,6 +20,14 @@ export function normalizeSeg(s: string): string {
   return s.normalize('NFC').toLocaleLowerCase()
 }
 
+/** The segments of a nexus-relative root, empties dropped — so `'a'`, `'/a/'` and `'a//'` all
+ *  count the same. Shared because that count is also the depth a path's own segments start at,
+ *  and a root counted two ways is a root its readers disagree about. What an empty result means
+ *  is each caller's to decide. */
+export function rootSegs(dir: string): string[] {
+  return dir.split('/').filter(Boolean)
+}
+
 /** The two settings the walk and the watcher capture at arm time. They move together — a change
  *  to either one moves what can be seen at all — so they are compared and threaded as a unit
  *  rather than as two values with two comparisons to keep in agreement. */
@@ -60,9 +68,7 @@ export function sameScope(a: WatchScope, b: WatchScope): boolean {
 /** Root-anchored, whole-segment prefix match over normalized segments — the one matching rule
  *  the exclusion list and the asset root both wear. */
 function prefixMatcher(paths: string[]): (segs: string[]) => boolean {
-  const prefixes = paths
-    .map((p) => p.split('/').filter(Boolean).map(normalizeSeg))
-    .filter((p) => p.length > 0)
+  const prefixes = paths.map((p) => rootSegs(p).map(normalizeSeg)).filter((p) => p.length > 0)
   if (!prefixes.length) return () => false
   return (segs) => {
     const norm = segs.filter(Boolean).map(normalizeSeg)

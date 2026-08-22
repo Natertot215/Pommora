@@ -433,12 +433,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
     case 'setProfileIcon': {
       // Glyph identity fallback → `settings.profile_icon` (read-merge-write, other keys preserved);
       // null clears it. No asset write — it's a symbol name, not an image.
-      await updateSettings(root, (cur) => {
-        const next = { ...cur }
-        if (req.icon) next.profile_icon = req.icon
-        else delete next.profile_icon
-        return next
-      })
+      await updateSettings(root, (cur) => setOrDrop(cur, 'profile_icon', req.icon))
       return ok({})
     }
 
@@ -478,8 +473,8 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         })
       }
       // The NavView's banner rides navigation.json — the pointer is the only linkage, so the
-      // image sits in shared assets with no per-owner folder, and the one serialized patch-writer
-      // is what keeps the arrays and the banner from dropping each other.
+      // one serialized patch-writer is what keeps the arrays and the banner from dropping
+      // each other.
       if (req.kind === 'navview') {
         // Resolved rather than trusted: the read gate now admits a wikilink, which names a
         // file rather than a path, and one several files answer to deletes nothing at all.
@@ -511,8 +506,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       const prev = await assetFileToDelete(root, existing?.banner)
       const adopted = await adopt()
       if (!adopted.ok) return adopted
-      // Set the field first; only THEN delete a replaced file, so a failed write never
-      // leaves `banner` pointing at a deleted file (mirrors the cover/photo ordering).
+      // Same ordering as the page arm above: field first, then delete.
       const written = await rmwJsonStrict(
         cfgPath,
         (cur) => setOrDrop(cur, 'banner', adopted.value),
