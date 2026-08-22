@@ -9,10 +9,11 @@ import { NEW_PAGE_SLOT } from '@shared/mutate'
 const A_ID = '01KVGMT8BFG350FZZXAMG1QDRA'
 const B_ID = '01KVGMT8BFG350FZZXAMG1QDRB'
 const G_ID = '01KVGMT8BFG350FZZXAMG1QDRG'
-import { openSession, closeSession } from './session'
+import { openSession, closeSession, sessionRoot } from './session'
 import { splitFrontmatter, readNexus } from './readNexus'
 import { pathExists } from './io/atomicWrite'
 import { createProperty } from './crud/registryProperty'
+import { liveAssetMap, resolveAssetName, takeAssetMapPush } from './assetMap'
 
 let root: string
 const nexusDeps: MutateDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
@@ -501,15 +502,44 @@ describe('handleMutate — review-round hardening', () => {
     expect(JSON.parse(await read('.nexus/settings.json')).profile_subtitle.length).toBe(30)
   })
 
-  it('setProfileImage copies the image under .nexus/assets/<nexusID>/ and records the path', async () => {
+  it('setProfileImage writes the nexus icon under its own name and links it', async () => {
     const r = await handleMutate(
       { op: 'setProfileImage', dataUrl: 'data:image/png;base64,iVBORw0KGgo=' },
       nexusDeps,
     )
     expect(r.ok).toBe(true)
     const cfg = JSON.parse(await read('.nexus/settings.json'))
-    expect(cfg.profile_image).toMatch(/^\.nexus\/assets\/nx\/profile-.+\.png$/)
-    expect(await pathExists(join(root, cfg.profile_image))).toBe(true)
+    expect(cfg.profile_image).toBe('[[nexus-icon.png]]')
+    expect(await pathExists(join(root, '.nexus/assets/nexus-icon.png'))).toBe(true)
+  })
+
+  it('a second crop rewrites the same icon rather than minting one beside it', async () => {
+    const png = (b: string): string => `data:image/png;base64,${b}`
+    await handleMutate({ op: 'setProfileImage', dataUrl: png('iVBORw0KGgo=') }, nexusDeps)
+    await handleMutate({ op: 'setProfileImage', dataUrl: png('iVBORw0KGgoBBB=') }, nexusDeps)
+    expect(JSON.parse(await read('.nexus/settings.json')).profile_image).toBe('[[nexus-icon.png]]')
+    expect(await readdir(join(root, '.nexus/assets'))).toEqual(['nexus-icon.png'])
+  })
+
+  it("a stranger's file wearing the icon's name is minted beside, never over", async () => {
+    // The setting names the file Pommora last wrote. One it does not name is someone else's,
+    // and nothing on the shared path is trashed.
+    await writeFile(
+      join(root, '.nexus', 'settings.json'),
+      JSON.stringify({ asset_directory: 'file-assets' }),
+    )
+    const assets = join(root, 'file-assets')
+    await mkdir(assets, { recursive: true })
+    await writeFile(join(assets, 'nexus-icon.png'), 'theirs')
+    const r = await handleMutate(
+      { op: 'setProfileImage', dataUrl: 'data:image/png;base64,iVBORw0KGgo=' },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(true)
+    expect(JSON.parse(await read('.nexus/settings.json')).profile_image).toBe(
+      '[[nexus-icon 2.png]]',
+    )
+    expect(await readFile(join(assets, 'nexus-icon.png'), 'utf8')).toBe('theirs')
   })
 
   it('setProfileImage null clears the field + deletes the file', async () => {
@@ -517,11 +547,10 @@ describe('handleMutate — review-round hardening', () => {
       { op: 'setProfileImage', dataUrl: 'data:image/png;base64,iVBORw0KGgo=' },
       nexusDeps,
     )
-    const prevPath = JSON.parse(await read('.nexus/settings.json')).profile_image
     const r = await handleMutate({ op: 'setProfileImage', dataUrl: null }, nexusDeps)
     expect(r.ok).toBe(true)
     expect(JSON.parse(await read('.nexus/settings.json')).profile_image).toBeUndefined()
-    expect(await pathExists(join(root, prevPath))).toBe(false)
+    expect(await pathExists(join(root, '.nexus/assets/nexus-icon.png'))).toBe(false)
   })
 
   it('homepage setBanner preserves blocks/icon/foreign keys (read-merge-write)', async () => {
@@ -529,33 +558,31 @@ describe('handleMutate — review-round hardening', () => {
       join(root, '.nexus', 'homepage.json'),
       JSON.stringify({ outside_field: 2, icon: 'house', blocks: [{ t: 'x' }] }),
     )
+    const src = join(root, 'Pick.png')
+    await writeFile(src, 'bytes')
     const r = await handleMutate(
-      {
-        op: 'setBanner',
-        kind: 'homepage',
-        path: '',
-        dataUrl: 'data:image/png;base64,iVBORw0KGgo=',
-      },
+      { op: 'setBanner', kind: 'homepage', path: '', source: src },
       nexusDeps,
     )
     expect(r.ok).toBe(true)
     const cfg = JSON.parse(await read('.nexus/homepage.json'))
-    expect(cfg.banner).toMatch(/^\.nexus\/assets\/homepage\/banner-.+\.png$/)
+    expect(cfg.banner).toBe('[[Pick.png]]')
     expect(cfg.blocks).toEqual([{ t: 'x' }]) // foreign blocks round-trip untouched
     expect(cfg.icon).toBe('house')
     expect(cfg.outside_field).toBe(2)
   })
 
   it('navview setBanner writes + clears the navigation.json banner, never homepage.json', async () => {
+    const src = join(root, 'Nav.png')
+    await writeFile(src, 'bytes')
     const r = await handleMutate(
-      { op: 'setBanner', kind: 'navview', path: '', dataUrl: 'data:image/png;base64,iVBORw0KGgo=' },
+      { op: 'setBanner', kind: 'navview', path: '', source: src },
       nexusDeps,
     )
     expect(r.ok).toBe(true)
-    const cfg = JSON.parse(await read('.nexus/navigation.json'))
-    expect(cfg.banner).toMatch(/^\.nexus\/assets\/banner-.+\.png$/)
+    expect(JSON.parse(await read('.nexus/navigation.json')).banner).toBe('[[Nav.png]]')
     const clear = await handleMutate(
-      { op: 'setBanner', kind: 'navview', path: '', dataUrl: null },
+      { op: 'setBanner', kind: 'navview', path: '', source: null },
       nexusDeps,
     )
     expect(clear.ok).toBe(true)
@@ -594,142 +621,211 @@ describe('handleMutate — review-round hardening', () => {
 })
 
 describe('handleMutate — setBanner', () => {
-  const PNG =
-    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
-
-  it('writes a fresh-named asset under .nexus/assets/<id>/ + records it on the collection sidecar (foreign keys kept)', async () => {
-    const r = await handleMutate(
-      { op: 'setBanner', path: 'Notes', kind: 'collection', dataUrl: PNG },
-      nexusDeps,
-    )
-    expect(r.ok).toBe(true)
-    const sc = JSON.parse(await read('Notes/_pagecollection.json'))
-    expect(sc.banner).toMatch(/^\.nexus\/assets\/pt\/banner-[a-z0-9]+\.png$/)
-    expect(await pathExists(join(root, sc.banner))).toBe(true)
-    expect(sc.id).toBe('pt') // existing keys untouched
+  let outside: string
+  beforeEach(async () => {
+    outside = await mkdtemp(join(tmpdir(), 'pom-pick-'))
+  })
+  afterEach(async () => {
+    await rm(outside, { recursive: true, force: true })
   })
 
-  // Each half gets its own nexus: the asset map is built once per root and kept, exactly as it
-  // is in the app, where a file arriving reaches it as a watch event rather than a re-listing.
-  const withAssets = async (banner: string, files: string[][]): Promise<string> => {
-    const assets = join(root, 'file-assets')
+  const pick = async (name: string, body = 'image-bytes'): Promise<string> => {
+    const p = join(outside, name)
+    await writeFile(p, body)
+    return p
+  }
+  /** Point the nexus at a shared asset folder and seed it, the way an Obsidian vault arrives. */
+  const withAssetDir = async (files: string[][] = []): Promise<string> => {
     await writeFile(
       join(root, '.nexus', 'settings.json'),
       JSON.stringify({ asset_directory: 'file-assets' }),
     )
+    const assets = join(root, 'file-assets')
+    await mkdir(assets, { recursive: true })
     for (const segs of files) {
       await mkdir(join(assets, ...segs.slice(0, -1)), { recursive: true })
-      await writeFile(join(assets, ...segs), 'bytes')
+      await writeFile(join(assets, ...segs), 'held-bytes')
     }
-    await writeFile(
-      join(root, 'Notes', '_pagecollection.json'),
-      JSON.stringify({ id: 'pt', banner }),
-    )
     return assets
   }
+  const bannerOf = async (): Promise<string> =>
+    JSON.parse(await read('Notes/_pagecollection.json')).banner
+  const setBanner = (source: string | null) =>
+    handleMutate({ op: 'setBanner', path: 'Notes', kind: 'collection', source }, nexusDeps)
+
+  it('adopts a picked file under its own name and names it by wikilink', async () => {
+    const assets = await withAssetDir()
+    const r = await setBanner(await pick('Sunset.png'))
+    expect(r.ok).toBe(true)
+    expect(await bannerOf()).toBe('[[Sunset.png]]')
+    expect(await pathExists(join(assets, 'Sunset.png'))).toBe(true)
+    expect(JSON.parse(await read('Notes/_pagecollection.json')).id).toBe('pt') // keys untouched
+  })
+
+  it('a file already inside the asset root is referenced, never copied', async () => {
+    const assets = await withAssetDir([['Held.png']])
+    const r = await setBanner(join(assets, 'Held.png'))
+    expect(r.ok).toBe(true)
+    expect(await bannerOf()).toBe('[[Held.png]]')
+    expect(await readdir(assets)).toEqual(['Held.png'])
+  })
+
+  it('a name several files inside the asset root answer to is refused, writing nothing', async () => {
+    // Referencing it would spell exactly what the resolver refuses to answer.
+    const assets = await withAssetDir([
+      ['a', 'Twin.png'],
+      ['b', 'Twin.png'],
+    ])
+    const r = await setBanner(join(assets, 'a', 'Twin.png'))
+    expect(r.ok).toBe(false)
+    expect(await bannerOf()).toBeUndefined()
+  })
+
+  it('a basename colliding with a DIFFERENT file steps aside rather than overwriting it', async () => {
+    const assets = await withAssetDir([['Sunset.png']])
+    const r = await setBanner(await pick('Sunset.png', 'picked-bytes'))
+    expect(r.ok).toBe(true)
+    expect(await bannerOf()).toBe('[[Sunset 2.png]]')
+    expect(await readFile(join(assets, 'Sunset.png'), 'utf8')).toBe('held-bytes')
+    expect(await readFile(join(assets, 'Sunset 2.png'), 'utf8')).toBe('picked-bytes')
+  })
+
+  it('a basename colliding with BYTE-IDENTICAL content is referenced, not copied twice', async () => {
+    const assets = await withAssetDir([['Same.png']])
+    const r = await setBanner(await pick('Same.png', 'held-bytes'))
+    expect(r.ok).toBe(true)
+    expect(await bannerOf()).toBe('[[Same.png]]')
+    expect(await readdir(assets)).toEqual(['Same.png'])
+  })
+
+  it('a name no wikilink can spell is refused', async () => {
+    // `[[…]]` carries no escape for a `]`, so the reference has no spelling at all.
+    await withAssetDir()
+    const r = await setBanner(await pick('Bad]Name.png'))
+    expect(r.ok).toBe(false)
+    expect(await bannerOf()).toBeUndefined()
+  })
+
+  it('a name held ANYWHERE under the root steps aside, not just one in the same folder', async () => {
+    // A basename answers nexus-wide, so landing a second `Sunset.png` at the root would make the
+    // stored link ambiguous — the very reference adoption refuses to author.
+    const assets = await withAssetDir([['sub', 'Sunset.png']])
+    const r = await setBanner(await pick('Sunset.png', 'picked-bytes'))
+    expect(r.ok).toBe(true)
+    expect(await bannerOf()).toBe('[[Sunset 2.png]]')
+    expect(await pathExists(join(assets, 'Sunset 2.png'))).toBe(true)
+  })
+
+  it('a file that is not an image Pommora can show is refused', async () => {
+    await withAssetDir()
+    const r = await setBanner(await pick('Notes.txt'))
+    expect(r.ok).toBe(false)
+    expect(await bannerOf()).toBeUndefined()
+  })
+
+  it('a name carrying an alias separator is refused', async () => {
+    // `[[Sun|set.png]]` reads as title `Sun` with alias `set.png` — a link that means nothing.
+    await withAssetDir()
+    const r = await setBanner(await pick('Sun|set.png'))
+    expect(r.ok).toBe(false)
+    expect(await bannerOf()).toBeUndefined()
+  })
+
+  it('a dot-prefixed name the map would never hold is refused', async () => {
+    await withAssetDir()
+    const r = await setBanner(await pick('.hidden.png'))
+    expect(r.ok).toBe(false)
+    expect(await bannerOf()).toBeUndefined()
+  })
+
+  it('an unreadable source fails and leaves the store untouched', async () => {
+    await withAssetDir()
+    const r = await setBanner(join(outside, 'Missing.png'))
+    expect(r.ok).toBe(false)
+    expect(await bannerOf()).toBeUndefined()
+  })
+
+  // The defect this shape exists to catch: `atomicWriteBinary` records its own write and the
+  // watcher drops the echo, so a test that rebuilds the map from the directory passes while the
+  // app renders blank. The adopted value must resolve against the map main is HOLDING.
+  it('the adopted value resolves against the map main holds, and that map is owed a push', async () => {
+    await withAssetDir()
+    await liveAssetMap(root) // the map as the running app holds it, before the write
+    const r = await setBanner(await pick('Live.png'))
+    expect(r.ok).toBe(true)
+    const pushed = takeAssetMapPush(sessionRoot()!)
+    expect(pushed).not.toBeNull()
+    expect(resolveAssetName(pushed!, 'Live.png')).toBe('file-assets/Live.png')
+  })
 
   it("a replaced banner in the user's own asset folder is never deleted", async () => {
     // The folder is shared — a file there may be referenced from an Obsidian note this app cannot
     // see, and nothing on this path is trashed. Replacing a banner is not consent to destroy it.
-    const assets = await withAssets('[[Solo.png]]', [['Solo.png']])
-    const r = await handleMutate(
-      { op: 'setBanner', path: 'Notes', kind: 'collection', dataUrl: PNG },
-      nexusDeps,
+    const assets = await withAssetDir([['Solo.png']])
+    await writeFile(
+      join(root, 'Notes', '_pagecollection.json'),
+      JSON.stringify({ id: 'pt', banner: '[[Solo.png]]' }),
     )
-    expect(r.ok).toBe(true)
+    expect((await setBanner(await pick('Next.png'))).ok).toBe(true)
     expect(await pathExists(join(assets, 'Solo.png'))).toBe(true)
   })
 
   it('a replaced banner several files answer to deletes none of them', async () => {
     // Rendering the wrong image is recoverable; deleting one is not.
-    const assets = await withAssets('[[Twin.png]]', [
+    const assets = await withAssetDir([
       ['a', 'Twin.png'],
       ['b', 'Twin.png'],
     ])
-    const r = await handleMutate(
-      { op: 'setBanner', path: 'Notes', kind: 'collection', dataUrl: PNG },
-      nexusDeps,
+    await writeFile(
+      join(root, 'Notes', '_pagecollection.json'),
+      JSON.stringify({ id: 'pt', banner: '[[Twin.png]]' }),
     )
-    expect(r.ok).toBe(true)
+    expect((await setBanner(await pick('Next.png'))).ok).toBe(true)
     expect(await pathExists(join(assets, 'a', 'Twin.png'))).toBe(true)
     expect(await pathExists(join(assets, 'b', 'Twin.png'))).toBe(true)
   })
 
   it('a replaced banner Pommora minted under .nexus/assets is still cleaned up', async () => {
-    await handleMutate(
-      { op: 'setBanner', path: 'Notes', kind: 'collection', dataUrl: PNG },
-      nexusDeps,
-    )
-    const first = JSON.parse(await read('Notes/_pagecollection.json')).banner as string
-    expect(await pathExists(join(root, first))).toBe(true)
-    await handleMutate(
-      { op: 'setBanner', path: 'Notes', kind: 'collection', dataUrl: PNG },
-      nexusDeps,
-    )
-    expect(await pathExists(join(root, first))).toBe(false)
+    // No asset_directory: the default root is Pommora's own, and what it minted there is its own.
+    expect((await setBanner(await pick('First.png'))).ok).toBe(true)
+    expect(await pathExists(join(root, '.nexus/assets/First.png'))).toBe(true)
+    expect((await setBanner(await pick('Second.png'))).ok).toBe(true)
+    expect(await pathExists(join(root, '.nexus/assets/First.png'))).toBe(false)
   })
 
-  it('sets a banner on a set sidecar, keyed by the set id', async () => {
+  it('sets a banner on a set sidecar', async () => {
+    await withAssetDir()
     const r = await handleMutate(
-      { op: 'setBanner', path: 'Notes/Daily', kind: 'set', dataUrl: PNG },
+      { op: 'setBanner', path: 'Notes/Daily', kind: 'set', source: await pick('Set.png') },
       nexusDeps,
     )
     expect(r.ok).toBe(true)
-    const sc = JSON.parse(await read('Notes/Daily/_pageset.json'))
-    expect(sc.banner).toMatch(/^\.nexus\/assets\/col\/banner-[a-z0-9]+\.png$/)
-    expect(await pathExists(join(root, sc.banner))).toBe(true)
+    expect(JSON.parse(await read('Notes/Daily/_pageset.json')).banner).toBe('[[Set.png]]')
   })
 
-  it('readNexus surfaces the banner path on collection + context + set nodes', async () => {
+  it('readNexus surfaces the banner value on collection + set nodes', async () => {
+    await withAssetDir()
+    await setBanner(await pick('Coll.png'))
     await handleMutate(
-      { op: 'setBanner', path: 'Notes', kind: 'collection', dataUrl: PNG },
-      nexusDeps,
-    )
-    await handleMutate(
-      { op: 'setBanner', path: 'Notes/Daily', kind: 'set', dataUrl: PNG },
+      { op: 'setBanner', path: 'Notes/Daily', kind: 'set', source: await pick('Sub.png') },
       nexusDeps,
     )
     const tree = await readNexus(root)
-    expect(tree.collections.find((c) => c.id === 'pt')?.banner).toMatch(
-      /^\.nexus\/assets\/pt\/banner-/,
-    )
-    expect(
-      tree.collections.find((c) => c.id === 'pt')?.sets.find((s) => s.id === 'col')?.banner,
-    ).toMatch(/^\.nexus\/assets\/col\/banner-/)
+    const coll = tree.collections.find((c) => c.id === 'pt')
+    expect(coll?.banner).toBe('[[Coll.png]]')
+    expect(coll?.sets.find((s) => s.id === 'col')?.banner).toBe('[[Sub.png]]')
   })
 
-  it('clearing (dataUrl null) removes the field and deletes the file', async () => {
-    await handleMutate(
-      { op: 'setBanner', path: 'Notes', kind: 'collection', dataUrl: PNG },
-      nexusDeps,
-    )
-    const file = JSON.parse(await read('Notes/_pagecollection.json')).banner
-    const r = await handleMutate(
-      { op: 'setBanner', path: 'Notes', kind: 'collection', dataUrl: null },
-      nexusDeps,
-    )
+  it('clearing removes the field and deletes what Pommora minted', async () => {
+    expect((await setBanner(await pick('Gone.png'))).ok).toBe(true)
+    const r = await setBanner(null)
     expect(r.ok).toBe(true)
-    expect(await pathExists(join(root, file))).toBe(false)
-    expect(JSON.parse(await read('Notes/_pagecollection.json')).banner).toBeUndefined()
+    expect(await bannerOf()).toBeUndefined()
+    expect(await pathExists(join(root, '.nexus/assets/Gone.png'))).toBe(false)
   })
 
-  it('replacing yields a NEW filename (cache-bust) and deletes the prior file', async () => {
-    await handleMutate(
-      { op: 'setBanner', path: 'Notes', kind: 'collection', dataUrl: PNG },
-      nexusDeps,
-    )
-    const first = JSON.parse(await read('Notes/_pagecollection.json')).banner
-    await handleMutate(
-      { op: 'setBanner', path: 'Notes', kind: 'collection', dataUrl: PNG },
-      nexusDeps,
-    )
-    const second = JSON.parse(await read('Notes/_pagecollection.json')).banner
-    expect(second).not.toBe(first) // distinct URL so the renderer refetches the new image
-    expect(await pathExists(join(root, first))).toBe(false) // prior deleted
-    expect(await pathExists(join(root, second))).toBe(true)
-  })
-
-  it('sets a page banner as the `cover` frontmatter key, asset keyed by page id; clearing reverts', async () => {
+  it('sets a page banner as the `cover` frontmatter key; clearing reverts', async () => {
+    const assets = await withAssetDir()
     const created = await handleMutate(
       { op: 'createPage', parentPath: 'Notes/Daily', name: 'Cover' },
       nexusDeps,
@@ -738,61 +834,29 @@ describe('handleMutate — setBanner', () => {
     if (!created.ok) return
     const pagePath = created.value.created!.path
     const r = await handleMutate(
-      { op: 'setBanner', path: pagePath, kind: 'page', dataUrl: PNG },
+      { op: 'setBanner', path: pagePath, kind: 'page', source: await pick('Page.png') },
       nexusDeps,
     )
     expect(r.ok).toBe(true)
-    const after = await read(pagePath)
-    const id = new RegExp(`${PAGE_ID_KEY}:\\s*(\\S+)`).exec(after)?.[1]
-    const cover = /cover:\s*(\S+)/.exec(after)?.[1]
-    expect(cover).toBe(`.nexus/assets/${id}/${cover?.split('/').pop()}`)
-    expect(cover).toMatch(/banner-[a-z0-9]+\.png$/)
-    expect(await pathExists(join(root, cover!))).toBe(true)
-    // clearing removes the cover key + deletes the asset
+    expect(await read(pagePath)).toMatch(/cover: ["']\[\[Page\.png\]\]["']/)
+    expect(await pathExists(join(assets, 'Page.png'))).toBe(true)
     const cleared = await handleMutate(
-      { op: 'setBanner', path: pagePath, kind: 'page', dataUrl: null },
+      { op: 'setBanner', path: pagePath, kind: 'page', source: null },
       nexusDeps,
     )
     expect(cleared.ok).toBe(true)
     expect(await read(pagePath)).not.toMatch(/cover:/)
-    expect(await pathExists(join(root, cover!))).toBe(false)
   })
 
-  // An id read off disk is hand-editable, and it becomes a directory name under `.nexus/assets/`.
-  // A page carrying path syntax in its id must refuse rather than let `join` write outside the
-  // nexus — and the refusal must leave the page itself untouched.
-  it('refuses a page id that would escape the assets folder, writing nothing', async () => {
-    const created = await handleMutate(
-      { op: 'createPage', parentPath: 'Notes/Daily', name: 'Escape' },
-      nexusDeps,
-    )
-    expect(created.ok).toBe(true)
-    if (!created.ok) return
-    const pagePath = created.value.created!.path
-    const abs = join(root, pagePath)
-    await writeFile(abs, '---\nPageID: ../../../../escaped\n---\nbody')
-    const before = await read(pagePath)
-
+  it('sets a homepage banner in .nexus/homepage.json', async () => {
+    await withAssetDir()
     const r = await handleMutate(
-      { op: 'setBanner', path: pagePath, kind: 'page', dataUrl: PNG },
-      nexusDeps,
-    )
-    expect(r.ok).toBe(false)
-    expect(await read(pagePath)).toBe(before)
-    expect(await pathExists(join(root, '..', 'escaped'))).toBe(false)
-  })
-
-  it('sets a homepage banner in .nexus/homepage.json keyed by "homepage"', async () => {
-    const r = await handleMutate(
-      { op: 'setBanner', path: '', kind: 'homepage', dataUrl: PNG },
+      { op: 'setBanner', path: '', kind: 'homepage', source: await pick('Home.png') },
       nexusDeps,
     )
     expect(r.ok).toBe(true)
-    const sc = JSON.parse(await read('.nexus/homepage.json'))
-    expect(sc.banner).toMatch(/^\.nexus\/assets\/homepage\/banner-[a-z0-9]+\.png$/)
-    expect(await pathExists(join(root, sc.banner))).toBe(true)
-    const tree = await readNexus(root)
-    expect(tree.homepage.banner).toBe(sc.banner)
+    expect(JSON.parse(await read('.nexus/homepage.json')).banner).toBe('[[Home.png]]')
+    expect((await readNexus(root)).homepage.banner).toBe('[[Home.png]]')
   })
 })
 

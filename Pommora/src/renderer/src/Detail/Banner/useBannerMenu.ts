@@ -9,12 +9,12 @@ export function useBannerMenu(
   onDone?: () => void,
 ): { openMenu: () => Promise<void>; addOrChange: () => Promise<void> } {
   const mutate = useSession((s) => s.mutate)
-  const setBanner = async (dataUrl: string | null): Promise<void> => {
-    if (await mutate({ op: 'setBanner', path, kind, dataUrl })) onDone?.()
+  const setBanner = async (source: string | null): Promise<void> => {
+    if (await mutate({ op: 'setBanner', path, kind, source })) onDone?.()
   }
   const addOrChange = async (): Promise<void> => {
-    const dataUrl = await window.nexus.pickImage()
-    if (dataUrl) await setBanner(dataUrl)
+    const picked = await window.nexus.pickImage()
+    if (picked) await setBanner(picked)
   }
   const openMenu = async (): Promise<void> => {
     const action = await window.nexus.bannerMenu()
