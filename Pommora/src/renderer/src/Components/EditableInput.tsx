@@ -80,6 +80,10 @@ export function EditableInput({
           e.preventDefault()
           e.currentTarget.blur()
         } else if (e.key === 'Escape') {
+          // Escape abandons THIS edit and nothing above it. Marked handled on the house contract —
+          // window-level closers stand down on a prevented press — so cancelling a field never also
+          // takes down the surface holding it.
+          e.preventDefault()
           settled.current = true
           // Hand focus back before the host tears the field down: a focused field removed from the
           // DOM fires no blur, which would strand the drawn caret blinking where it stood.

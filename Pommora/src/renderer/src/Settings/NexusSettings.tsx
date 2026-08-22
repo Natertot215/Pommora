@@ -9,8 +9,6 @@ import type { FloatingBounds } from '@renderer/design-system/interactions/Floati
 import type { SidePaneBounds } from '@renderer/design-system/components/SidePane/SidePane'
 import type { DevicePrefs } from '@shared/devicePrefs'
 import { PickerControl, type PickerChoice } from '@renderer/Components/Detail/PickerControl'
-import { value as pickerValue } from '@renderer/Components/Detail/pickerControl.css'
-import { EditableInput } from '@renderer/Components/EditableInput'
 import { ColorSwatchField } from '@renderer/Components/Detail/ColorPicker'
 import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
 import { solidColorCss } from '@renderer/Detail/Views/Table/solidColor'
@@ -665,7 +663,6 @@ const scaleChoices = SCALE_STEPS.map(zoomChoice)
 function ZoomRow({ row }: { row: RowOf<'zoom'> }): React.JSX.Element {
   const stored = useSession((s) => s.personalization[row.key]) ?? row.fallback
   const setPersonalization = useSession((s) => s.setPersonalization)
-  const [editing, setEditing] = useState(false)
   const commit = (factor: number): void =>
     setPersonalization(row.key, factor === row.fallback ? undefined : factor)
   // A typed scale keeps its own place among the steps, so the control reads the real value rather
@@ -675,28 +672,21 @@ function ZoomRow({ row }: { row: RowOf<'zoom'> }): React.JSX.Element {
     : [...SCALE_STEPS, stored].sort((a, b) => a - b).map(zoomChoice)
   return (
     <SettingsRow label={row.label} hint={row.hint}>
-      {editing ? (
-        <EditableInput
-          value={zoomPercent(stored)}
-          className={pickerValue}
-          caretAtEnd
-          autoSize
-          onCommit={(typed) => {
-            const percent = Number.parseFloat(typed.replace('%', '').trim())
+      <PickerControl
+        ariaLabel={row.label}
+        value={String(stored)}
+        options={choices}
+        onPick={(v) => commit(Number(v))}
+        // The bare number, so a second press lands on the digits themselves rather than behind a
+        // percent sign. Anything unreadable as one leaves the scale where it stood.
+        typeable={{
+          text: String(Math.round(stored * 100)),
+          onCommit: (written) => {
+            const percent = Number.parseFloat(written.replace('%', '').trim())
             if (Number.isFinite(percent)) commit(coerceScale(percent / 100, row.fallback))
-            setEditing(false)
-          }}
-          onCancel={() => setEditing(false)}
-        />
-      ) : (
-        <PickerControl
-          ariaLabel={row.label}
-          value={String(stored)}
-          options={choices}
-          onPick={(v) => commit(Number(v))}
-          onDoubleClick={() => setEditing(true)}
-        />
-      )}
+          },
+        }}
+      />
     </SettingsRow>
   )
 }

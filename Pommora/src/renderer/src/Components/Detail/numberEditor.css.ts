@@ -1,6 +1,7 @@
 import { style } from '@vanilla-extract/css'
 import { vars as colorVars } from '../../design-system/tokens/color.css'
 import { text } from '../../design-system/tokens/typography.css'
+import { bare } from '../EditableInput.css'
 
 /** The editor body — no flex `gap` (a collapsed Reveal would otherwise consume a phantom gap on each
  *  side, so hidden rows double the spacing around them); each Row carries its own top margin, which
@@ -27,14 +28,11 @@ export const valueControl = style({
  *  the UA default), reading in the same tone as the resting value. */
 export const valueCaret = style([
   text.control.standard,
+  bare,
   {
     minWidth: '12px',
     width: 'auto',
     fieldSizing: 'content',
-    border: 'none',
-    outline: 'none',
-    padding: 0,
-    background: 'transparent',
     color: colorVars.color.label.secondary,
   },
 ])
