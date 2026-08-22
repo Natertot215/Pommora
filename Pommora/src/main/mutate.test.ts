@@ -1060,6 +1060,32 @@ describe('adoptFile — the shared adoption seam', () => {
     expect(second).toEqual({ ok: true, value: '[[Doc 2.pdf]]' })
   })
 
+  it('refuses a subfolder that climbs out of the asset root, writing nothing', async () => {
+    // `rootSegs` drops empty segments but NOT `..`, and `join` then collapses them straight past
+    // the root — so an unrefused destination is an arbitrary-file-write primitive: `'../..'` lands
+    // in the nexus root, `'../../..'` outside the nexus entirely.
+    for (const subfolder of ['..', '../..', '../../..', 'a/../..', '/etc', '.\\..'])
+      expect(
+        await adoptFile(root, await pick('Evil.pdf'), { allow: 'any', subfolder }),
+      ).toMatchObject({
+        ok: false,
+      })
+    expect(await readdir(join(root, 'file-assets'))).toEqual([])
+    expect(await pathExists(join(root, 'Evil.pdf'))).toBe(false)
+    expect(await pathExists(join(root, '.nexus', 'Evil.pdf'))).toBe(false)
+  })
+
+  it('refuses a subfolder the map could never index', async () => {
+    // `.private` is contained, mkdirs, writes, and answers a valid-looking reference — while the
+    // map drops it forever, leaving an unresolved label and no error anywhere.
+    const r = await adoptFile(root, await pick('Hidden.pdf'), {
+      allow: 'any',
+      subfolder: '.private',
+    })
+    expect(r.ok).toBe(false)
+    expect(await readdir(join(root, 'file-assets'))).toEqual([])
+  })
+
   it('never deletes: adopting a replacement leaves the file the old reference named', async () => {
     const first = await adoptFile(root, await pick('Old.pdf'), { allow: 'any' })
     expect(first.ok).toBe(true)
