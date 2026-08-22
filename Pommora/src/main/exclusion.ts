@@ -43,7 +43,7 @@ export function sameScope(a: WatchScope, b: WatchScope): boolean {
 }
 
 /** Root-anchored, whole-segment prefix match over normalized segments — the one matching rule
- *  the exclusion list and the asset root both wear. An empty prefix set matches nothing. */
+ *  the exclusion list and the asset root both wear. */
 function prefixMatcher(paths: string[]): (segs: string[]) => boolean {
   const prefixes = paths
     .map((p) => p.split('/').filter(Boolean).map(normalizeSeg))
