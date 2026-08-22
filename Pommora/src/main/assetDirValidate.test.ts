@@ -1,0 +1,75 @@
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { mkdir, mkdtemp, rm, writeFile, symlink } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { ASSETS_DIR_REL } from '@shared/nexusPaths'
+import { validateAssetDir } from './assetDirValidate'
+
+let root: string
+let outside: string
+const dir = async (...segs: string[]): Promise<string> => {
+  const abs = join(root, ...segs)
+  await mkdir(abs, { recursive: true })
+  return abs
+}
+
+beforeEach(async () => {
+  root = await mkdtemp(join(tmpdir(), 'pom-assetdir-'))
+  outside = await mkdtemp(join(tmpdir(), 'pom-outside-'))
+})
+afterEach(async () => {
+  await rm(root, { recursive: true, force: true })
+  await rm(outside, { recursive: true, force: true })
+})
+
+describe('validateAssetDir', () => {
+  it('accepts an ordinary in-nexus folder, answering its nexus-relative POSIX path', async () => {
+    const abs = await dir('file-assets', 'photos')
+    expect(await validateAssetDir(root, abs)).toEqual({ ok: true, value: 'file-assets/photos' })
+  })
+
+  it('the negative control: a folder is refused for one .md and accepted without it', async () => {
+    const abs = await dir('Media')
+    await writeFile(join(abs, 'note.md'), 'text')
+    expect((await validateAssetDir(root, abs)).ok).toBe(false)
+    await rm(join(abs, 'note.md'))
+    expect(await validateAssetDir(root, abs)).toEqual({ ok: true, value: 'Media' })
+  })
+
+  it('refuses a hidden page too — the cascade still sweeps one', async () => {
+    const abs = await dir('Media')
+    await writeFile(join(abs, '_draft.md'), 'text')
+    expect((await validateAssetDir(root, abs)).ok).toBe(false)
+  })
+
+  it('refuses a folder carrying a sidecar', async () => {
+    for (const sidecar of ['_pagecollection.json', '_pageset.json', '_space.json']) {
+      const abs = await dir(`C-${sidecar}`)
+      await writeFile(join(abs, sidecar), '{}')
+      expect((await validateAssetDir(root, abs)).ok).toBe(false)
+    }
+  })
+
+  it('refuses the nexus root itself', async () => {
+    expect((await validateAssetDir(root, root)).ok).toBe(false)
+  })
+
+  it('refuses a folder outside the nexus, symlinked or not', async () => {
+    expect((await validateAssetDir(root, outside)).ok).toBe(false)
+    await symlink(outside, join(root, 'link'))
+    expect((await validateAssetDir(root, join(root, 'link'))).ok).toBe(false)
+  })
+
+  it('refuses the folders the app owns whole', async () => {
+    for (const seg of [ASSETS_DIR_REL, '.nexus', '.trash/keep']) {
+      const abs = await dir(...seg.split('/'))
+      expect((await validateAssetDir(root, abs)).ok).toBe(false)
+    }
+  })
+
+  it('a folder that vanished between pick and validate is not found', async () => {
+    const r = await validateAssetDir(root, join(root, 'gone'))
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.error.code).toBe('not-found')
+  })
+})

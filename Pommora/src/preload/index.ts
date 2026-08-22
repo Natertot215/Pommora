@@ -204,6 +204,7 @@ const api = {
   readClipboard: ask('clipboard:read'),
   revealPath: ask('path:reveal'),
   assetMap: ask('assets:map'),
+  chooseAssetDir: ask('assets:chooseDir'),
   pageActionsMenu: ask('page-actions-menu'),
   // A card's right-click menu (page meta + Add Property ▸).
   cardMenu: ask('card-menu'),

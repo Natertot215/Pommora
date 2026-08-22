@@ -84,6 +84,9 @@ export interface Asks {
   'path:reveal': { args: [nexusRelativePath: string]; reply: undefined }
   // The renderer resolves `[[Name.png]]` against this; main owns the listing behind it.
   'assets:map': { args: []; reply: AssetMap }
+  // A folder picked from the native dialog, validated in main — the same refusal a hand-edited
+  // `settings.json` meets. `null` is a cancelled dialog, not a failure.
+  'assets:chooseDir': { args: []; reply: Result<string | null> }
 
   // Pages
   'page:open': { args: [relPath: string]; reply: Result<PageDetail> }
