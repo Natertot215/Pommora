@@ -60,6 +60,7 @@ import {
 import { pathExists } from './io/atomicWrite'
 import { readAppConfig, updateAppConfig, addRecent, DEFAULT_TRASH_MODE } from './appConfig'
 import { liveAssetMap, refreshAssetMap, takeAssetMapPush } from './assetMap'
+import { migrateAssets } from './assetMigrate'
 import { underAssetRoot } from './assetRoots'
 import { ASSET_MIME, IMAGE_EXTS } from '@shared/assetMime'
 import { validateAssetDir } from './assetDirValidate'
@@ -418,8 +419,40 @@ async function openNexusSequence(path: string, latchRecord: boolean): Promise<st
     // way contexts are); a same-root re-adopt correctly skips it, since a live session's record
     // belongs to an op still on the schema chain, which the replay would only queue behind.
     await replaySchemaCascade(root)
+    // A reference still naming `.nexus/assets` under a CONFIGURED directory is one the user has
+    // already asked to move. The gate is one readdir of a folder that ends empty, so the ordinary
+    // open pays a listing and nothing else — and a pass that moved something re-walks, or the
+    // session serves banner values naming files it just trashed.
+    if (await runAssetMigration(root)) {
+      try {
+        await refreshTree(root)
+      } catch (e) {
+        console.error('adopt: the post-migration walk failed; reads will retry:', errText(e))
+      }
+    }
   }
   return root
+}
+
+/** The one caller shape the migration has, wherever it is asked from. Its own writes are echo-
+ *  suppressed, so what it moved reaches the renderer through the map it refreshed, not the
+ *  watcher. A failure is reported and never blocks the open — the references it did not move
+ *  still name real files under `.nexus/assets`, which the protocol still serves. */
+async function runAssetMigration(root: string): Promise<boolean> {
+  try {
+    const report = await migrateAssets(root)
+    if (!report) return false
+    const skipped = report.skipped.map((s) => `${s.store} (${s.why})`).join(', ')
+    console.log(
+      `assets: migrated ${report.moved.length} file(s) into the configured directory, ` +
+        `${report.rewritten} reference(s) rewritten, ${report.trashed} swept to the trash` +
+        (skipped ? `; skipped ${skipped}, so .nexus/assets is left alone` : ''),
+    )
+    return report.rewritten > 0
+  } catch (e) {
+    console.error('assets: the migration failed; references are unchanged:', errText(e))
+  }
+  return false
 }
 
 async function adoptNexusInner(path: string, latchRecord: boolean): Promise<void> {
@@ -898,6 +931,9 @@ serveBridge(
         // The folder just left the tree and the corpus, so the walk and the index owe a pass,
         // the map owes a fresh listing, and the watcher owes a re-arm against the new scope.
         await confirmSettingsWrite()
+        // Setting the directory is the moment the migration becomes applicable, and it runs
+        // BEFORE the walk: the banner values it rewrites are what the pushed tree carries.
+        await runAssetMigration(root)
         const tree = await refreshAfterWrite(root)
         await seedContentIndex(root)
         const assets = await refreshAssetMap(root)

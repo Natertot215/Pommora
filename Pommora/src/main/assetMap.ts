@@ -6,13 +6,12 @@
 // Held in memory and never persisted. Nothing derived from an asset needs to survive a restart,
 // which is what keeps `nexus.db`'s stat gate, seed and prune out of this feature entirely.
 
-import { relative, sep } from 'node:path'
 import { normalizeTitle } from '@shared/connections'
 import { stabilize } from '@shared/treeStabilize'
 import { ASSETS_DIR_REL, THUMBNAILS_SEGMENT } from '@shared/nexusPaths'
 import type { AssetMap } from '@shared/types'
 import { neverWatched } from './exclusion'
-import { assetsDir } from './paths'
+import { assetsDir, relPosix } from './paths'
 import { listFilesRecursive } from './io/walk'
 import { readWatchScope } from './settings'
 import type { WatchEventName } from './watchPatch'
@@ -36,9 +35,7 @@ const nameOf = (rel: string): string => normalizeTitle(rel.split('/').pop() ?? '
 export async function buildAssetMap(root: string, assetDir: string): Promise<AssetMap> {
   const abs = await listFilesRecursive(assetsDir(root, assetDir))
   const files: Record<string, string[]> = {}
-  for (const rel of abs
-    .map((p) => relative(root, p).split(sep).join('/'))
-    .filter((rel) => indexable(rel, assetDir))) {
+  for (const rel of abs.map((p) => relPosix(root, p)).filter((rel) => indexable(rel, assetDir))) {
     const name = nameOf(rel)
     if (!name) continue
     const held = files[name]

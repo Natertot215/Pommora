@@ -8,7 +8,7 @@
 // dangling reference. System-trash is injected (deps.trashToSystem) so this stays testable.
 
 import { basename, dirname, extname, join, relative, sep } from 'node:path'
-import { mkdir, readFile, realpath, rm } from 'node:fs/promises'
+import { readFile, realpath, rm } from 'node:fs/promises'
 import { sessionRoot } from './session'
 import { resolveUnderRoot } from './pathSafety'
 import { createPage, renamePage, movePage, updatePageProperty } from './crud/page'
@@ -53,10 +53,12 @@ import {
 import { recordWrite } from './io/writeEcho'
 import { readNavigationFile, writeNavigationState } from './io/navigationFile'
 import { assetFilePath, assetFileToDelete, underAssetRoot } from './assetRoots'
+import { createDisambiguated } from './disambiguate'
+import { writeAssetFile } from './assetWrite'
 import { serializeOnFile } from './io/fileLock'
 import { splitEnvelope, mergeFrontmatter, readFrontmatterFields } from './io/pageFile'
 import { basenameNoMd } from './coerce'
-import { assetsDir, nexusConfig, sidecarPath, NEXUS_CONFIG_FILES } from './paths'
+import { nexusConfig, relPosix, sidecarPath, NEXUS_CONFIG_FILES } from './paths'
 import { resolveFolderKind } from './folderKind'
 import { readWatchScope, updateSettings } from './settings'
 import { newId } from './ids'
@@ -100,8 +102,6 @@ function decodeImageDataUrl(dataUrl: string): { ext: string; buffer: Buffer } | 
  *  file instead of minting one beside it. */
 const NEXUS_ICON = 'nexus-icon.png'
 
-const toRel = (root: string, abs: string): string => relative(root, abs).split(sep).join('/')
-
 /** Delete the file a replaced image value named, unless the new value names it too. The stored
  *  spellings are not comparable: a wikilink and a path can mean one file, and a singleton
  *  rewritten in place is stored under the very name it replaced. */
@@ -112,34 +112,6 @@ async function dropReplacedAsset(
 ): Promise<void> {
   if (!prev || prev === (await assetFileToDelete(root, next))) return
   await rm(join(root, prev), { force: true }).catch(() => {})
-}
-
-/** Land bytes in the asset root under `base`, stepping the name aside when a different file
- *  already answers to it — the disambiguation entity creation already does, so a picked
- *  `Sunset.png` beside another becomes `Sunset 2.png` rather than overwriting it. */
-async function writeAssetFile(
-  root: string,
-  assetDir: string,
-  base: string,
-  bytes: Buffer,
-): Promise<Result<string>> {
-  const dir = assetsDir(root, assetDir)
-  await mkdir(dir, { recursive: true })
-  const ext = extname(base)
-  const map = await liveAssetMap(root)
-  return createDisambiguated(basename(base, ext), async (stem) => {
-    const file = `${stem}${ext}`
-    const abs = join(dir, file)
-    // A basename answers nexus-wide, so a name already held ANYWHERE under the root must step
-    // aside: landing a second file beside it would author the ambiguity adoption refuses.
-    if (resolveAssetName(map, file) !== null || (await pathExists(abs)))
-      return fail('exists', `${file} already exists.`)
-    await atomicWriteBinary(abs, bytes)
-    // The watcher never sees this: `atomicWriteBinary` records the write and the echo is
-    // dropped, so the map is the writer's to keep current or the banner renders blank.
-    patchHeldAssetMap(root, toRel(root, abs), 'add')
-    return ok(connectionText(file))
-  })
 }
 
 /** Adopt the file behind an absolute path and answer the `[[Name.ext]]` that names it. A file
@@ -159,7 +131,7 @@ async function adoptImageAsset(root: string, absSource: string): Promise<Result<
   // spell exactly what the resolver refuses to answer.
   if (hit === AMBIGUOUS) return fault(`More than one file is named ${base}.`)
 
-  if (underAssetRoot(toRel(await realpath(root), await realpath(absSource)), assetDir))
+  if (underAssetRoot(relPosix(await realpath(root), await realpath(absSource)), assetDir))
     return ok(connectionText(base))
 
   let bytes: Buffer
@@ -240,23 +212,6 @@ function setOrDrop(
   if (value) next[key] = value
   else delete next[key]
   return next
-}
-
-/**
- * Create with a base name, disambiguating on collision: base, "base 2", "base 3", … The
- * "New …" UX — a fresh entity should always appear, never silently fail on a name clash.
- * Creation disambiguates (including a just-created page's first commit, which is part of the
- * creation); an ordinary rename stays strict — renaming onto an existing name is an error.
- */
-async function createDisambiguated<T>(
-  baseName: string,
-  attempt: (name: string) => Promise<Result<T>>,
-): Promise<Result<T>> {
-  let last = await attempt(baseName)
-  for (let n = 2; n <= 50 && !last.ok && last.error.code === 'exists'; n++) {
-    last = await attempt(`${baseName} ${n}`)
-  }
-  return last
 }
 
 export async function handleMutate(req: MutateRequest, deps: MutateDeps): Promise<MutateReply> {
