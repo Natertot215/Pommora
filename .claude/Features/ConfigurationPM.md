@@ -58,7 +58,7 @@ The Nexus' primary settings are placed on a floating window summoned from the si
 
 #### Appearance
 
-The three colors the interface derives from. Each opens the ramp grid without its greyscale families — those cells run into the window substrate, so a link or an accent wearing one would be invisible against the page it sits on — and each clears to whatever it inherits rather than to nothing. Default icons and the default view scale land here once they have controls.
+The three colors the interface derives from. Each opens the ramp grid without its greyscale families — those cells run into the window substrate, so a link or an accent wearing one would be invisible against the page it sits on — and each clears to whatever it inherits rather than to nothing. A color resolved through the chip recipe instead of painted raw can take the grey row and asks for it; the [[#Pages & Editor|checkbox]] is the one that does. Default icons and the default view scale land here once they have controls.
 
 | Setting | Key | Description | Options |
 | ------- | --- | ----------- | ------- |
@@ -101,10 +101,13 @@ Seated and empty.
 #### Pages & Editor
 | Setting                        | Key                  | Description                                             | Options      |
 | ------------------------------ | -------------------- | ------------------------------------------------------- | ------------ |
+| Editor Scale                   | `editorScale`        | How large a page reads — its text, its title, and the chrome around them. An embedded page keeps its own scale. | 50%–150% · **100%** |
 | Show Line Count In Code Blocks | `codeblockLineCount` | Numbers a codeblock's content lines as rendered glyphs. | On · **Off** |
 | Outliner Lines                 | `outlinerLines`      | Draws indent rails on nested lists in the editor.       | On · **Off** |
 | Show Footnotes By Default      | `citationsShown`     | Opens a page with its footnotes section showing. A page's own setting outranks this. | On · **Off** |
 | Jump To Citation On Creation   | `jumpToCitation`     | Carries the caret down to the citation a new footnote just made. | **On** · Off |
+| Checkbox Color                 | `checkboxColor`      | The color a task checkbox fills and checks with, the greyscale row included — a cell resolves through the chip recipe rather than being painted raw. Cleared follows the accent. | Any ramp cell · **the accent** |
+| Mute Checked Items             | `muteCheckedItems`   | A checked task reads as done — its words dimmed and struck through. Drawn, never written. | On · **Off** |
 | Display Unresolved Links As Plain Syntax | `plainUnresolvedLinks` | A link leading nowhere reads as the prose it is written as, rather than muted with its syntax showing. Page prose only — cells and other fields stay muted. | On · **Off** |
 
 #### Automations

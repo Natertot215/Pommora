@@ -36,6 +36,8 @@ export type ConnectionColorSetting = ColorSetting<'accent'>
 /** External link color — the `[text](url)` color. `'system'` (the default) tracks the OS accent live
  *  via `--link: var(--system-accent)`; a ramp cell pins it to that color. */
 export type ExternalLinkColorSetting = ColorSetting<'system'>
+/** The task checkbox's own color. Cleared follows the accent, as a connection's does. */
+export type CheckboxColorSetting = ColorSetting<'accent'>
 
 /** The nexus-wide clock for the datetime picker (twelveHour = AM/PM segments, the default;
  *  twentyFourHour = flat HH:MM). Lives at `personalization.timeFormat`. */
@@ -95,6 +97,10 @@ export interface Personalization {
   accent?: AccentSetting
   connectionColor?: ConnectionColorSetting
   externalLinkColor?: ExternalLinkColorSetting
+  checkboxColor?: CheckboxColorSetting
+  /** Whether a checked task reads as done — its text dimmed and struck through. Display only: the
+   *  strike is drawn, never written, so the file stays the plain `- [x]` it was. Absent = off. */
+  muteCheckedItems?: boolean
   hideChevrons?: boolean
   outlinerLines?: boolean
   /** Line numbers on codeblock content lines (rendered chrome, never editable text). */

@@ -12,7 +12,13 @@
   border-style: solid;
   border-color: var(--label-tertiary);
   background: transparent;
-  color: color-mix(in srgb, var(--accent) var(--tint-quaternary), var(--label-primary));
+  /* The three parts a chosen cell resolves through the ramp — its fill, its outline and its mark.
+     Unset is not a missing value but the whole point of clearing: each falls back to the accent
+     recipe, so a cleared checkbox keeps following the accent live rather than freezing a copy. */
+  color: var(
+    --checkbox-mark,
+    color-mix(in srgb, var(--accent) var(--tint-quaternary), var(--label-primary))
+  );
   cursor: pointer;
 }
 .pm-checkbox svg {
@@ -22,8 +28,14 @@
   transform: translate(-50%, -50%);
 }
 .pm-checkbox-checked {
-  background: color-mix(in srgb, var(--accent) var(--tint-primary), transparent);
-  border-color: color-mix(in srgb, var(--accent) var(--tint-tertiary), transparent);
+  background: var(
+    --checkbox-fill,
+    color-mix(in srgb, var(--accent) var(--tint-primary), transparent)
+  );
+  border-color: var(
+    --checkbox-border,
+    color-mix(in srgb, var(--accent) var(--tint-tertiary), transparent)
+  );
 }
 
 /* The gutter variant — for a row that seats its control in the same narrow inset a pin or a grip
