@@ -8,7 +8,7 @@
 import { join, relative, sep } from 'node:path'
 import type { CollectionNode, NexusTree, PageNode, SetNode, SpaceNode } from '@shared/types'
 import { asString, asStringArray } from './coerce'
-import { excludedMatcher, hiddenName, sameScope, type WatchScope } from './exclusion'
+import { assetMatcher, excludedMatcher, hiddenName, sameScope, type WatchScope } from './exclusion'
 import { adoptedId, isAdoptedId } from './ids'
 import { pathExists, readJsonObject } from './io/atomicWrite'
 import { isMarkdownFile } from './io/walk'
@@ -53,6 +53,7 @@ export type WatchClass =
   | { kind: 'space-meta'; dirRel: string }
   | { kind: 'settings-leaf' }
   | { kind: 'homepage-leaf' }
+  | { kind: 'asset'; rel: string }
   | { kind: 'index-only'; rel: string }
   | { kind: 'ignored' }
   | { kind: 'full-refresh' }
@@ -111,6 +112,10 @@ export function classifyEvent(
   if (rel === null) return { kind: 'full-refresh' }
   const segs = rel.split('/')
   const name = segs[segs.length - 1]
+  // First of every arm, so `excluded_folders` means the content corpus and nothing more: a
+  // shared attachments folder is usually named there already, and every other arm below —
+  // the exclusion match, the unreadable list, the `.nexus` branch — would otherwise claim it.
+  if (assetMatcher(scope.assetDir)(segs)) return { kind: 'asset', rel }
   // Nothing under an excluded folder is read, patched, or indexed — the same one predicate
   // the walk, the corpus, and every cascade honor.
   if (excludedMatcher(scope.excluded)(segs)) return { kind: 'ignored' }
@@ -170,11 +175,12 @@ export function classifyEvent(
  *  already has it, and owes no stat sweep on top of the walk. */
 export function touchesCorpus(root: string, events: WatchEvent[], scope: WatchScope): boolean {
   const isExcluded = excludedMatcher(scope.excluded)
+  const isAsset = assetMatcher(scope.assetDir)
   return events.some((ev) => {
     const rel = toPosixRel(root, ev.absPath)
     if (rel === null) return true
     const segs = rel.split('/')
-    if (segs[0] === NEXUS_DIR || isExcluded(segs)) return false
+    if (segs[0] === NEXUS_DIR || isAsset(segs) || isExcluded(segs)) return false
     return ev.event === 'addDir' || ev.event === 'unlinkDir' || isMarkdownFile(rel)
   })
 }
@@ -222,6 +228,8 @@ async function applyOne(
 ): Promise<'ok' | 'refresh'> {
   switch (c.kind) {
     case 'ignored':
+      return 'ok'
+    case 'asset':
       return 'ok'
     case 'index-only':
       // Rows update; nothing else moves — an un-adopted folder's note stays queryable.
