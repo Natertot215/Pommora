@@ -181,8 +181,6 @@ const api = {
   openExternal: ask('link:open'),
   // `get` returns the whole cached map; `fetch` resolves one URL (cache hit or live fetch).
   linkTitles: { get: ask('linkTitles:get'), fetch: ask('linkTitles:fetch') },
-  // Open a page-attached file (nexus-relative path) in its OS default app.
-  openFile: ask('file:open'),
   systemAccent: ask('theme:systemAccent'),
   // Pop the native nexus-identity icon menu (Change Icon / Add·Change Photo / removes) → the chosen action.
   iconMenu: ask('nexus:iconMenu'),

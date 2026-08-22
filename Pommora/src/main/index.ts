@@ -1882,20 +1882,6 @@ serveBridge(
     'option-menu': { kind: 'menu', fn: popOptionMenu },
     'row-menu': { kind: 'menu', fn: popRowMenu },
 
-    // Open a page-attached file in its OS default app. The renderer-supplied path validates under the
-    // session root (resolveUnderRoot) — a `..` climb or symlink smuggle never reaches shell.openPath.
-    'file:open': {
-      kind: 'raw',
-      fn: async (relPath: unknown) => {
-        const root = sessionRoot()
-        if (!root) return NO_NEXUS
-        const r = await resolveUnderRoot(root, relPath)
-        if (!r.ok) return r
-        const err = await shell.openPath(r.value)
-        return err ? fail('operation-failed', err) : ok(null)
-      },
-    },
-
     // Rename the OPEN nexus's ROOT folder within its parent dir, then RE-POINT the live session
     // to the new path. A dedicated IPC (not a mutate op) because it re-targets the whole session:
     // after the fs.rename, adoptNexus re-opens the session, database, watcher, and recents at the new
