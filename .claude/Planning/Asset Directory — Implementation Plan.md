@@ -221,14 +221,14 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 
 #### Gate 1 — the asset root is a shared fact, and no asset event walks
 
-- [ ] Gates green, exit codes read directly.
-- [ ] Derivations re-run against their controls; counts matched, or the divergence rewrote the plan.
-- [ ] Both halves of every negative control present and observed failing with the guard disabled.
-- [ ] **Simplification pass — MANDATORY, and it runs FIRST.** `code-simplifier` then `comment-killer-agent`, both against `<base>..HEAD` scoped to this phase's paths. A phase is not reviewable until it has been simplified: reviewing first criticizes code before it has earned its final shape.
-- [ ] Simplification findings applied, and the gates re-run green after them.
-- [ ] **Then** review — `/code-review` against the same `<base>..HEAD`; the report cites files inside it.
-- [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
-- [ ] Progress hashes filled in.
+- [x] Gates green, exit codes read directly. *(0 · 273 files / 3404 tests · 0/888)*
+- [x] Derivations re-run against their controls; counts matched, or the divergence rewrote the plan.
+- [x] Both halves of every negative control present and observed failing with the guard disabled.
+- [x] **Simplification pass — MANDATORY, and it runs FIRST.** `code-simplifier` then `comment-killer-agent`, both against `<base>..HEAD` scoped to this phase's paths. A phase is not reviewable until it has been simplified: reviewing first criticizes code before it has earned its final shape.
+- [x] Simplification findings applied, and the gates re-run green after them.
+- [x] **Then** review — `/code-review` against the same `<base>..HEAD`; the report cites files inside it.
+- [x] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
+- [x] Progress hashes filled in.
 
 ---
 
@@ -601,10 +601,11 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 ## Implementation Log
 
 ### Progress   *(seeded unchecked — this tree is what a fresh agent reads first)*
-- [ ] **Phase 1** — The asset root becomes a shared fact · base `51762bfd`
-  - [ ] Task 1 — `asset_directory` as a tree leaf · `<commit>`
-  - [ ] Task 2 — One scope object carries it · `<commit>`
-  - [ ] Task 3 — The asset root outranks every skip · `<commit>`
+- [x] **Phase 1** — The asset root becomes a shared fact · base `51762bfd`
+  - [x] Task 1 — `asset_directory` as a tree leaf · `edeed29e`
+  - [x] Task 2 — One scope object carries it · `a10dd93a`
+  - [x] Task 3 — The asset root outranks every skip · `2d355958`
+  - Simplification `89181eec` + `7820f8cb` · review fixes `34745ee0`
 - [ ] **Phase 2** — Resolution
   - [ ] Task 4 — The asset map · `<commit>`
   - [ ] Task 5 — Push it, keep it current · `<commit>`
@@ -631,7 +632,7 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 - **Windows path handling** — `listFilesRecursive` returns native separators; Task 4 normalizes to POSIX for the map. Not exercised by any current gate. Raised by the attack review, verified as unchecked rather than broken.
 
 ### Reviews
-- **Gate 1 — `/code-review`, post-simplification.** Four findings, every one verified against the code before folding, all four fixed in `<fix-commit>`. Two were one rule: `NON_CORPUS_TOP.has(rel)` compared case-sensitively while every downstream matcher case-folds, so `.Nexus` passed the guard and then matched `.nexus`; and the rule admitted sub-paths, so `.nexus/contexts` would have dropped every Space from the walk. The third: `ignoredUnder`'s asset exemption un-blinded the whole asset subtree rather than its root, so a synced folder's `.DS_Store` and `node_modules` woke the settle window — the exemption now covers the root's own segments and the cruft filter still governs everything below. The fourth, pre-existing for `excluded_folders` and extended here: a scope change re-armed the watcher without reseeding the content index, leaving a newly-claimed folder queryable until the next nexus open. The reseed now runs beside the re-arm. Exercised at nexus-open parity only — `watcher.ts`'s settle has no test harness, and none was built for this.
+- **Gate 1 — `/code-review`, post-simplification.** Four findings, every one verified against the code before folding, all four fixed in `34745ee0`. Two were one rule: `NON_CORPUS_TOP.has(rel)` compared case-sensitively while every downstream matcher case-folds, so `.Nexus` passed the guard and then matched `.nexus`; and the rule admitted sub-paths, so `.nexus/contexts` would have dropped every Space from the walk. The third: `ignoredUnder`'s asset exemption un-blinded the whole asset subtree rather than its root, so a synced folder's `.DS_Store` and `node_modules` woke the settle window — the exemption now covers the root's own segments and the cruft filter still governs everything below. The fourth, pre-existing for `excluded_folders` and extended here: a scope change re-armed the watcher without reseeding the content index, leaving a newly-claimed folder queryable until the next nexus open. The reseed now runs beside the re-arm. Exercised at nexus-open parity only — `watcher.ts`'s settle has no test harness, and none was built for this.
 - **Round 1 — `build-breaking-agent`, pre-code.** 13 findings (3 High, 5 Medium, 5 Low), 1 latent, 1 unknown, 10 candidates killed. Every finding verified against the code before folding; all 13 folded. Independently confirmed by me: `excludedMatcher(` is **5**, not the 6 the plan claimed; `banner-` returns **103** legitimate CSS hits so that sweep could never pass; `new WeakMap().set('string', …)` **throws**; `applySettingsLeaf` (singular, `watchPatch.ts:379`) holds a fifth `sameExclusions` the plan never named; six citations had drifted 1–2 lines.
   - The review's central finding stands: the plan built the external-change machinery and never asked what happens **when Pommora is the writer**. `atomicWriteBinary` → `recordWrite` → `isRecentWrite` means no in-app write reaches `settle`, so the asset copy starved the map (F1), the settings write starved the re-arm (F2), and the widened gate starved the delete (F3). Three defects, one root cause, all shipping silently green. Requirement 10 now names the path.
   - **Unknown resolved:** the `tree.unreadable` check at `watchPatch.ts:121` runs before Task 3's arm, but every producer of that list sits inside `readContainerMeta` / `readDirectPages` / `readChildSets`, which run only on descended directories — and Task 2 prunes the asset root at `shouldSkipDir`. Safe, and conditional on Task 2, which Task 3 now records.
