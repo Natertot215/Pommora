@@ -100,7 +100,7 @@ const VALUES = {
         prop_done: false,
         prop_n: 42,
         prop_link: 'https://old.com',
-        prop_files: [{ path: 'Assets/trip.png' }],
+        prop_files: ['[[trip.png]]'],
       },
       allDefs,
     ),
@@ -510,18 +510,6 @@ describe('open actions + row-click narrowing', () => {
       link?.click()
     })
     expect(openExternalSpy).toHaveBeenCalledWith('https://old.com')
-    expect(selectSpy).not.toHaveBeenCalled()
-  })
-
-  it('file chip click opens the file under the nexus root', async () => {
-    await mountTable(sourceWith())
-    const chip = [...host.querySelectorAll<HTMLElement>('.data-cell')[5].querySelectorAll('span')]
-      .filter((s) => s.textContent?.includes('trip.png'))
-      .at(-1)
-    await act(async () => {
-      chip?.click()
-    })
-    expect(openFileSpy).toHaveBeenCalledWith('Assets/trip.png')
     expect(selectSpy).not.toHaveBeenCalled()
   })
 })

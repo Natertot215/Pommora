@@ -104,6 +104,53 @@ describe('decodeValue — lenient on read, strict on restore', () => {
   })
 })
 
+describe('decodeValue — a file value names files', () => {
+  const fileDef = def({ type: 'file' })
+
+  it('reads a list of wikilink strings', () => {
+    expect(decodeValue(fileDef, ['[[a.pdf]]', '[[b.png]]'])).toEqual({
+      kind: 'file',
+      value: ['[[a.pdf]]', '[[b.png]]'],
+    })
+  })
+
+  it('the legacy object shape reads as null, never as a partial list', () => {
+    expect(decodeValue(fileDef, [{ path: 'x/y.png' }])).toEqual({ kind: 'null' })
+    expect(decodeValue(fileDef, ['[[a.pdf]]', { path: 'b.png' }])).toEqual({ kind: 'null' })
+  })
+
+  it('coerces the unquoted hand-edit YAML reads as a nested sequence', () => {
+    // `- [[Report.pdf]]` parses to [[['Report.pdf']]]; `Att: [[Report.pdf]]` to [['Report.pdf']].
+    expect(decodeValue(fileDef, [[['Report.pdf']]])).toEqual({
+      kind: 'file',
+      value: ['[[Report.pdf]]'],
+    })
+    expect(decodeValue(fileDef, [['Report.pdf']])).toEqual({
+      kind: 'file',
+      value: ['[[Report.pdf]]'],
+    })
+    expect(decodeValue(fileDef, [[['One.pdf']]], { strict: true })).toEqual({
+      kind: 'file',
+      value: ['[[One.pdf]]'],
+    })
+  })
+
+  it('a nested sequence holding more than one entry is not a wikilink and reads as null', () => {
+    expect(decodeValue(fileDef, [['a.pdf', 'b.pdf']])).toEqual({ kind: 'null' })
+  })
+
+  it('strict refuses emptiness and non-strings, never option membership', () => {
+    expect(decodeValue(fileDef, [])).toEqual({ kind: 'file', value: [] })
+    expect(decodeValue(fileDef, [], { strict: true })).toEqual({ kind: 'null' })
+    // A file def has no options; strict must keep every value it holds.
+    expect(decodeValue(fileDef, ['[[a.pdf]]'], { strict: true })).toEqual({
+      kind: 'file',
+      value: ['[[a.pdf]]'],
+    })
+    expect(isBlankValue(decodeValue(fileDef, []))).toBe(true)
+  })
+})
+
 describe('encodeValue — bare on disk', () => {
   it('writes the value itself, with no tag wrapping it', () => {
     expect(encodeValue({ kind: 'select', value: 'Done' })).toBe('Done')
@@ -122,14 +169,14 @@ describe('encodeValue — bare on disk', () => {
       [selectDef, 'A'],
       [def({ type: 'multi_select' }), ['a', 'b']],
       [statusDef, 'Done'],
-      [def({ type: 'file' }), [{ path: 'x/y.png', original_name: 'y.png' }]],
+      [def({ type: 'file' }), ['[[y.png]]']],
     ]
     for (const [d, raw] of pairs) expect(encodeValue(decodeValue(d, raw))).toEqual(raw)
   })
 
-  it('a file object keeps keys the codec does not model', () => {
-    const raw = [{ path: 'x.png', future_field: 1 }]
-    expect(encodeValue(decodeValue(def({ type: 'file' }), raw))).toEqual(raw)
+  it('a hand-edited unquoted wikilink encodes back as the string it meant', () => {
+    const raw = [[['Report.pdf']]]
+    expect(encodeValue(decodeValue(def({ type: 'file' }), raw))).toEqual(['[[Report.pdf]]'])
   })
 
   it('encoding lastEditedTime throws — it is virtual and must never persist', () => {
