@@ -8,7 +8,7 @@ import type { FilterRule, SavedView } from '@shared/views'
 import { Icon } from '@renderer/design-system/symbols'
 import { SegmentRun } from '@renderer/design-system/components/SegmentRun/SegmentRun'
 import * as sr from '@renderer/design-system/components/SegmentRun/segmentRun.css'
-import { Chip, ChipRemoveButton, chipShapeForType } from '@renderer/Components/Chip'
+import { Chip, type ChipShape, ChipRemoveButton, chipShapeForType } from '@renderer/Components/Chip'
 import { EntityIcon } from '@renderer/Components/EntityIcon'
 import { ContextChip } from '@renderer/Components/ContextChip'
 import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
@@ -385,7 +385,7 @@ function ChipsField({
   values: string[]
   options: ContextOption[]
   isContext: boolean
-  chipShape: 'pill' | 'label'
+  chipShape: ChipShape
   onCommit: (next: string[]) => void
 }): React.JSX.Element {
   const [open, setOpen] = useState(false)

@@ -337,11 +337,11 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
 **Why this shape:** chrome-less — it wears `chipBase` for gap, `--chip-zoom` and control type, but paints no fill and no border, so it reads as C-1's bare icon + title while still being a chip everywhere the remove chrome is concerned.
 
 **Steps:**
-- [ ] Add the shape token; add it to `SHAPE`.
-- [ ] **Set `--chip-fill`.** `chipLabelMelt` paints `color: var(--chip-fill)` (`chip.css.ts:227`), and that var is only ever set by the `chipColor` recipes (`:254`) and `chipContext` (`:70`). A chrome-less shape sets neither, so the var is undefined, the declaration drops, and the melt twin inherits the label color — rendering a crisp duplicate stacked on the text instead of a smear. It must resolve to the surface *behind* the label, which differs per host (table cell, card, pane), so it is a var the host sets rather than a constant.
-- [ ] Verify the hover-× reveals and removes, **and that the melt actually smears** — this passes typecheck either way and only fails on screen.
-- [ ] If FileLabel ends up standalone rather than wrapping `Chip`, it follows `chipBox`'s precedent (`chip.css.ts:101` — a shape style deliberately *not* in `SHAPE`) and stays out of the map, since neither `chipShapeClass` nor `chipShapeForType` will ever return it.
-- [ ] Full gate green. Commit: `feat(design-system): a chip shape for a named file`
+- [x] Add the shape token; add it to `SHAPE`.
+- [x] **Set `--chip-fill`.** `chipLabelMelt` paints `color: var(--chip-fill)` (`chip.css.ts:227`), and that var is only ever set by the `chipColor` recipes (`:254`) and `chipContext` (`:70`). A chrome-less shape sets neither, so the var is undefined, the declaration drops, and the melt twin inherits the label color — rendering a crisp duplicate stacked on the text instead of a smear. It must resolve to the surface *behind* the label, which differs per host (table cell, card, pane), so it is a var the host sets rather than a constant.
+- [x] Verify the hover-× reveals and removes, **and that the melt actually smears** — this passes typecheck either way and only fails on screen.
+- [x] If FileLabel ends up standalone rather than wrapping `Chip`, it follows `chipBox`'s precedent (`chip.css.ts:101` — a shape style deliberately *not* in `SHAPE`) and stays out of the map, since neither `chipShapeClass` nor `chipShapeForType` will ever return it.
+- [x] Full gate green. Commit: `feat(design-system): a chip shape for a named file`
 
 #### Task 8: Map extensions to their glyphs
 
@@ -374,8 +374,8 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
 - Assumed by: Tasks 10, 11, 16, 17.
 
 **Steps:**
-- [ ] **Wrap `Chip`, don't compose beside it.** `Chip` (`Components/Chip.tsx:33-57`) already renders `ChipRemoveButton` + `icon` + `ChipLabel` with the melt twins — the exact composition C-2a forbids re-authoring. Make `Chip`'s `color` optional (`color?: ChipColorName`, `cx(SHAPE[shape], color && chipColor[color], …)`) and FileLabel is ~6 lines over it.
-- [ ] Full gate green. Commit: `feat(design-system): FileChip`
+- [x] **Wrap `Chip`, don't compose beside it.** `Chip` (`Components/Chip.tsx:33-57`) already renders `ChipRemoveButton` + `icon` + `ChipLabel` with the melt twins — the exact composition C-2a forbids re-authoring. Make `Chip`'s `color` optional (`color?: ChipColorName`, `cx(SHAPE[shape], color && chipColor[color], …)`) and FileLabel is ~6 lines over it.
+- [x] Full gate green. Commit: `feat(design-system): FileChip`
 
 #### Task 10: Hoist the segment composition into SegmentRun
 
@@ -638,9 +638,9 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
   - [x] Task 5 — Render the file cell from the new shape · `0934967f`
   - [x] Task 6 — Retire the `file:open` channel · `23106180`
 - [ ] **Phase 2** — FileChip, and the run that hosts it
-  - [ ] Task 7 — Add the FileChip shape to the chip system
+  - [x] Task 7 — Add the FileLabel shape to the chip system · `<commit>`
   - [x] Task 8 — Map extensions to their glyphs · `<commit>`
-  - [ ] Task 9 — Build the FileChip component
+  - [x] Task 9 — Build the FileLabel component · `<commit>`
   - [ ] Task 10 — Hoist the segment composition into SegmentRun
   - [ ] Task 11 — Render the file cell as a run of FileChips
 - [ ] **Phase 3** — Adoption
@@ -692,6 +692,9 @@ Both reviewers independently found the same defect, and I confirmed it by openin
 - **Task 4 · a file cell's interim menu is the bare one.** With the `style-edit` dispatch gone, `baseCellMenu` falls to `null` for file — no menu in the table, `remove-only` on a card. That is exactly what the `remove-only` comment has always claimed ("an empty picker, a file"), so the deletion makes a stale comment true rather than needing one. Task 17 replaces it with the Add · Replace · Remove kind.
 - **Task 5 · what was left of it is the asset-map seam.** Task 1 already swapped the label, the key and the comment, and the *unresolved look* belongs to FileLabel's own `unresolved` prop (spec C-2c — FileLabel owns the whole unit), so building an interim class for it would have landed CSS that Task 11 deletes. Task 5 therefore ships the seam the resolution needs: `AssetMap` joins `ResolveContext`, built once per view rather than subscribed per cell, and reaches the table, the cards and both panes together. **Task 11 consumes it** when the cell becomes a run of FileLabels.
 - **Task 8 · the Tabler scale wrapper is now one definition.** `customGlyphs.tsx` had the `TABLER_SCALE` bump inlined in its single Tabler adoption; the 23 new glyphs would have been a second copy of it. It became `asTablerGlyph`, which `ProgressCheck` now rides too, and the roster lives in its own `symbols/fileTypes.ts` beside the registry that spreads it.
+- **Tasks 7 and 9 shipped together.** The shape's only consumer is the component, and `Chip`'s `color` had to become optional for either to work; splitting them would have landed an orphan shape for one commit. Task 8 ran first so the component had its glyph map to default to.
+- **Two visual decisions taken from what already exists, not designed.** `chipFile`'s `--chip-fill` defaults to `surface.primary` — the content-surface ground, the thing a chrome-less label sits on — and a host on a different ground overrides it the way `chipContext` already does. `unresolved` wears `opacity: var(--state-inactive)`, which is the dim the editor already gives a link that leads nowhere, so a reference naming nothing reads the one way across the app.
+- **`ChipsField`'s `chipShape` restated the shape union.** It was typed `'pill' | 'label'` — a second definition of `ChipShape` that the new member broke. It now reads `ChipShape`.
 - **Naming.** The spec settled on **FileLabel** (C-2c); several plan headings still read FileChip. FileLabel is the name that ships — component, chip shape and prose alike.
 ### Lessons
 ### Sequenced After
