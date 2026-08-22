@@ -13,6 +13,8 @@ import { Chip, chipShapeForType } from '@renderer/Components/Chip'
 import { ContextChip } from '@renderer/Components/ContextChip'
 import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
 import { OverflowScroll } from '@renderer/design-system/components/OverflowScroll'
+import { SegmentRun } from '@renderer/design-system/components/SegmentRun/SegmentRun'
+import { resolveFileValue } from '@renderer/assetUrl'
 import { declaredType, resolveFieldValue } from '../pipeline/value'
 import { formatDate, formatNumber, numberDivisor } from '../PropertyEditing/formatValue'
 import { statusGroupGlyph, statusGroupOf } from '../PropertyEditing/statusCycle'
@@ -186,13 +188,20 @@ export function Cell({
       )
     }
     case 'file':
+      // The run is FLAT: a path descends, so its segments nest; a file list stands beside itself,
+      // so its entries take the hairline.
       return (
-        <OverflowScroll className="cell-chips">
-          {v.value.map((f, i) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: a file value is positional and its entries carry no state — two identical wikilinks (a hand-edit, a sync merge) would collide on the value and send the hover-× to the wrong one
-            <Chip key={i} color="default" label={parseConnectionText(f)?.title ?? f} />
-          ))}
-        </OverflowScroll>
+        <SegmentRun
+          entries={v.value.map((f, i) => ({
+            // Positional, never the value: two identical wikilinks — a hand-edit, a sync merge —
+            // would collide as keys and send the hover-× to the wrong one.
+            key: String(i),
+            label: parseConnectionText(f)?.title ?? f,
+            // A name nothing answers to still renders. The value is in frontmatter and the user
+            // has to be able to see it to remove it.
+            unresolved: resolveFileValue(f, ctx.assets).kind === 'unresolved',
+          }))}
+        />
       )
     default:
       return null
