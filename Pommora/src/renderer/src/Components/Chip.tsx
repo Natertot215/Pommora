@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import {
   chipPill,
+  chipFile,
   chipLabel,
   chipColor,
   chipLabelWrap,
@@ -15,7 +16,7 @@ import { Icon } from '@renderer/design-system/symbols'
 import { cx } from '@renderer/design-system/cx'
 
 /** Context chips use their own shape (ContextChip's chip-context) — not part of this map. */
-const SHAPE = { pill: chipPill, label: chipLabel } as const
+const SHAPE = { pill: chipPill, label: chipLabel, file: chipFile } as const
 export type ChipShape = keyof typeof SHAPE
 
 /** The class a shape wears, for the surfaces that dress something to READ as a chip without being
@@ -38,7 +39,8 @@ export function Chip({
   onRemove,
   className,
 }: {
-  color: ChipColorName
+  /** Absent paints no tint — the chrome-less shapes carry their own ground. */
+  color?: ChipColorName
   label: string
   shape?: ChipShape
   icon?: ReactNode
@@ -48,7 +50,9 @@ export function Chip({
   className?: string
 }): React.JSX.Element {
   return (
-    <span className={cx(SHAPE[shape], chipColor[color], onRemove && chipRemovable, className)}>
+    <span
+      className={cx(SHAPE[shape], color && chipColor[color], onRemove && chipRemovable, className)}
+    >
       {onRemove ? <ChipRemoveButton onRemove={onRemove} /> : null}
       {icon}
       <ChipLabel label={label} removable={!!onRemove} />
