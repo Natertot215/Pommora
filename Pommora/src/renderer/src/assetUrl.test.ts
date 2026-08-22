@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { parseConnectionText } from '@shared/connections'
 import type { AssetMap } from '@shared/types'
-import { assetUrl, resolveAssetUrl, resolveAssetValue } from './assetUrl'
+import { assetUrl, resolveAssetUrl, resolveAssetValue, resolveFileValue } from './assetUrl'
 
 const map: AssetMap = {
   files: {
@@ -100,5 +100,41 @@ describe('resolveAssetUrl', () => {
   })
   it('leaves a web address unversioned — it is not ours to bust', () => {
     expect(resolveAssetUrl('https://example.com/a.png', map)).toBe('https://example.com/a.png')
+  })
+})
+
+describe('resolveFileValue', () => {
+  it('agrees with resolveAssetValue on a wikilink naming one file', () => {
+    expect(resolveFileValue('[[Banner.png]]', map)).toEqual(
+      resolveAssetValue('[[Banner.png]]', map),
+    )
+  })
+
+  it('takes the first by sorted path where several answer to one name', () => {
+    expect(resolveFileValue('[[IMG.png]]', map)).toEqual({
+      kind: 'asset',
+      rel: 'file-assets/a/IMG.png',
+    })
+  })
+
+  it('a bare filename is unresolved, never read as a path', () => {
+    // resolveAssetValue's third branch would call this a nexus-relative asset. A hand-edit or an
+    // agent writing `- Report.pdf` under the key is an ordinary producer here, and reading it as a
+    // path would render it as resolved while naming a file that is not there.
+    expect(resolveFileValue('file-assets/Banner.png', map)).toEqual({ kind: 'unresolved' })
+    expect(resolveAssetValue('file-assets/Banner.png', map)).toEqual({
+      kind: 'asset',
+      rel: 'file-assets/Banner.png',
+    })
+  })
+
+  it('an empty value and a name nothing answers to are both unresolved', () => {
+    expect(resolveFileValue('', map)).toEqual({ kind: 'unresolved' })
+    expect(resolveFileValue('   ', map)).toEqual({ kind: 'unresolved' })
+    expect(resolveFileValue('[[Missing.pdf]]', map)).toEqual({ kind: 'unresolved' })
+  })
+
+  it('a web address is unresolved — a file value names a file, not a site', () => {
+    expect(resolveFileValue('https://acme.io/report.pdf', map)).toEqual({ kind: 'unresolved' })
   })
 })

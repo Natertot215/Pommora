@@ -235,9 +235,9 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
 **Must agree:** `resolveFileValue` and `resolveAssetValue` must agree on a well-formed wikilink naming one file. One test crosses both.
 
 **Steps:**
-- [ ] Write the failing tests, including the bare-name case explicitly.
-- [ ] Implement as a variant running the wikilink branch alone — **not** an option parameter threaded through the image callers.
-- [ ] Full gate green. Commit: `feat(assets): a file value resolves as a name, never as a path`
+- [x] Write the failing tests, including the bare-name case explicitly.
+- [x] Implement as a variant running the wikilink branch alone — **not** an option parameter threaded through the image callers.
+- [x] Full gate green. Commit: `feat(assets): a file value resolves as a name, never as a path`
 
 #### Task 3: Take file out of the column-style system
 
