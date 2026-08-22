@@ -43,13 +43,25 @@ describe('toggleInline', () => {
 
 describe('setHeading', () => {
   it('sets a level', () => {
-    expect(apply('hello', setHeading('hello', 0, 2))).toBe('## hello')
+    expect(apply('hello', setHeading('hello', 0, 5, 2))).toBe('## hello')
   })
   it('level 0 clears an existing heading', () => {
-    expect(apply('## hello', setHeading('## hello', 0, 0))).toBe('hello')
+    expect(apply('## hello', setHeading('## hello', 0, 8, 0))).toBe('hello')
   })
   it('replaces a list marker rather than stacking', () => {
-    expect(apply('- item', setHeading('- item', 0, 1))).toBe('# item')
+    expect(apply('- item', setHeading('- item', 0, 6, 1))).toBe('# item')
+  })
+  it('heads every selected line', () => {
+    const three = 'one\ntwo\nthree'
+    expect(apply(three, setHeading(three, 0, three.length, 2))).toBe('## one\n## two\n## three')
+  })
+  it('leaves a blank line unheaded', () => {
+    const gapped = 'one\n\ntwo'
+    expect(apply(gapped, setHeading(gapped, 0, gapped.length, 1))).toBe('# one\n\n# two')
+  })
+  it('returns every selected line to plain body at 0', () => {
+    const heads = '# one\n## two'
+    expect(apply(heads, setHeading(heads, 0, heads.length, 0))).toBe('one\ntwo')
   })
 })
 
@@ -147,34 +159,55 @@ describe('setListKind', () => {
 
 describe('setBlock', () => {
   it('toggles a blockquote on and off', () => {
-    expect(apply('text', setBlock('text', 0, 'quote'))).toBe('> text')
-    expect(apply('> text', setBlock('> text', 2, 'quote'))).toBe('text')
+    expect(apply('text', setBlock('text', 0, 4, 'quote'))).toBe('> text')
+    expect(apply('> text', setBlock('> text', 2, 6, 'quote'))).toBe('text')
   })
   it('quote toggle does NOT strip a callout (its `>` is box chrome) — wraps instead', () => {
     const c = '> [!callout] hi'
-    expect(apply(c, setBlock(c, 4, 'quote'))).toBe(`> ${c}`)
+    expect(apply(c, setBlock(c, 4, 4, 'quote'))).toBe(`> ${c}`)
   })
   it('callout insert uses the `[!callout]` default (matches the `||` shorthand)', () => {
-    expect(apply('hi', setBlock('hi', 0, 'callout'))).toBe('> [!callout] hi')
+    expect(apply('hi', setBlock('hi', 0, 2, 'callout'))).toBe('> [!callout] hi')
   })
+  // The dispatcher hands a line formatter the whole selection now, so these read the way the gesture
+  // does: quoting a block of prose makes one blockquote, not a quoted first line.
+  const three = 'one\ntwo\nthree'
+  it('quotes every selected line', () => {
+    expect(apply(three, setBlock(three, 0, three.length, 'quote'))).toBe('> one\n> two\n> three')
+  })
+  it('clears the quote only where every selected line already is one', () => {
+    const all = '> one\n> two'
+    expect(apply(all, setBlock(all, 0, all.length, 'quote'))).toBe('one\ntwo')
+    const mixed = '> one\ntwo'
+    expect(apply(mixed, setBlock(mixed, 0, mixed.length, 'quote'))).toBe('> > one\n> two')
+  })
+  // A bare `>` is the quote's own blank line — skipping it would split one quote into two.
+  it("carries a blank line through as the quote's own", () => {
+    const gapped = 'one\n\ntwo'
+    expect(apply(gapped, setBlock(gapped, 0, gapped.length, 'quote'))).toBe('> one\n>\n> two')
+  })
+  it('fences the whole selection as one block', () => {
+    expect(apply(three, setBlock(three, 0, three.length, 'code'))).toBe('```\none\ntwo\nthree\n```')
+  })
+
   it('fences a line as code', () => {
-    expect(apply('x = 1', setBlock('x = 1', 0, 'code'))).toBe('```\nx = 1\n```')
+    expect(apply('x = 1', setBlock('x = 1', 0, 5, 'code'))).toBe('```\nx = 1\n```')
   })
   it('inserts a 3×3 GFM table, blank-line separated as its own block', () => {
     const t = '|  |  |  |\n| ------ | ------ | ------ |\n|  |  |  |\n|  |  |  |'
-    expect(apply('', setBlock('', 0, 'table'))).toBe(t) // empty doc → table at the top
-    expect(apply('hi', setBlock('hi', 2, 'table'))).toBe(`hi\n\n${t}`) // keep the line, blank, then table
+    expect(apply('', setBlock('', 0, 0, 'table'))).toBe(t) // empty doc → table at the top
+    expect(apply('hi', setBlock('hi', 2, 2, 'table'))).toBe(`hi\n\n${t}`) // keep the line, blank, then table
   })
 
   it('blank-line-fences the inserted table below too, so it never merges with an adjacent table', () => {
     const t = '|  |  |  |\n| ------ | ------ | ------ |\n|  |  |  |\n|  |  |  |'
     const below = '| A | B |\n| --- | --- |\n| 1 | 2 |'
     // caret on the blank line directly above a table → table fenced by a blank line on each side
-    expect(apply(`text\n\n${below}`, setBlock(`text\n\n${below}`, 5, 'table'))).toBe(
+    expect(apply(`text\n\n${below}`, setBlock(`text\n\n${below}`, 5, 5, 'table'))).toBe(
       `text\n\n${t}\n\n${below}`,
     )
     // a blank line already follows → not doubled
-    expect(apply(`text\n\n\n${below}`, setBlock(`text\n\n\n${below}`, 5, 'table'))).toBe(
+    expect(apply(`text\n\n\n${below}`, setBlock(`text\n\n\n${below}`, 5, 5, 'table'))).toBe(
       `text\n\n${t}\n\n${below}`,
     )
   })

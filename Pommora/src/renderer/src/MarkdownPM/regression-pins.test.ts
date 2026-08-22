@@ -198,12 +198,12 @@ describe('outdentListOnShiftTab', () => {
 describe('format transforms — prefix-aware', () => {
   it('setHeading on a quoted list line stays inside the quote', () => {
     const doc = '> - item'
-    const { changes } = setHeading(doc, 5, 2)
+    const { changes } = setHeading(doc, 5, 5, 2)
     expect(changes).toEqual([{ from: 2, to: 8, insert: '## item' }])
   })
   it('setHeading on a callout head edits after the tag — never exposes it', () => {
     const doc = '> [!callout] Title'
-    const { changes } = setHeading(doc, 15, 1)
+    const { changes } = setHeading(doc, 15, 15, 1)
     expect(changes[0].from).toBe(13) // after `> [!callout] `
     expect(changes[0].insert).toBe('# Title')
   })

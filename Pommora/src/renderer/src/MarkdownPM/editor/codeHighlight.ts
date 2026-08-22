@@ -31,6 +31,7 @@ const LOADERS: Record<string, () => Promise<LanguageSupport>> = {
   YAML: () => import('@codemirror/lang-yaml').then((m) => m.yaml()),
   CSS: () => import('@codemirror/lang-css').then((m) => m.css()),
   HTML: () => import('@codemirror/lang-html').then((m) => m.html()),
+  Markdown: () => import('@codemirror/lang-markdown').then((m) => m.markdown()),
   Swift: () => stream(import('@codemirror/legacy-modes/mode/swift').then((m) => m.swift)),
   Python: () => stream(import('@codemirror/legacy-modes/mode/python').then((m) => m.python)),
   Go: () => stream(import('@codemirror/legacy-modes/mode/go').then((m) => m.go)),

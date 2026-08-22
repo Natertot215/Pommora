@@ -125,7 +125,9 @@ function popHeadingMenu(view: EditorView, headingEl: HTMLElement): void {
         focusRange(view, contentStart, line.to)
         break
       case 'size': {
-        const edit = setHeading(doc, line.from, action.level as HeadingLevel)
+        // The grip addresses one block, so the range is that heading's own line — the selection
+        // belongs to the caret, and a grip pressed elsewhere must not carry it along.
+        const edit = setHeading(doc, line.from, line.from, action.level as HeadingLevel)
         view.dispatch({
           changes: edit.changes,
           selection: edit.selection !== undefined ? { anchor: edit.selection } : undefined,

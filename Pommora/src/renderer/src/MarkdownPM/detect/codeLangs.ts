@@ -18,6 +18,7 @@ export const CODE_LANGS: readonly CodeLang[] = [
   { name: 'YAML', alias: ['yaml', 'yml'] },
   { name: 'CSS', alias: ['css'] },
   { name: 'HTML', alias: ['html'] },
+  { name: 'Markdown', alias: ['markdown', 'md'] },
   { name: 'Swift', alias: ['swift'] },
   { name: 'Python', alias: ['python', 'py'] },
   { name: 'Go', alias: ['go', 'golang'] },

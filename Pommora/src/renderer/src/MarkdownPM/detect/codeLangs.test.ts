@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { CODE_LANGS, codeLanguageName } from './codeLangs'
 import { CODE_LOADER_NAMES } from '../editor/codeHighlight'
-import { CODE_GLYPHS } from '../editor/codeGlyphs'
+import { CODE_TAGS } from '../editor/codeGlyphs'
 
 describe('the code-language roster', () => {
   // A name the loaders don't know is a language the fence recognizes and then fails to parse.
@@ -10,10 +10,20 @@ describe('the code-language roster', () => {
     expect(missing).toEqual([])
   })
   // A glyph keyed to a name no language carries draws nothing and reads as a typo forever.
-  it('keys every glyph to a language that exists', () => {
+  it('keys every tag to a language that exists', () => {
     const names = CODE_LANGS.map((l) => l.name)
-    expect(Object.keys(CODE_GLYPHS).filter((n) => !names.includes(n))).toEqual([])
+    expect(Object.keys(CODE_TAGS).filter((n) => !names.includes(n))).toEqual([])
   })
+  // A mark that already draws its own wordmark shows alone; a name the fence spells differently
+  // from what it should read gets one override rather than a second roster.
+  it('labels the tags that override their name', () => {
+    expect(CODE_TAGS.Shell?.label).toBe('Command')
+    expect(CODE_TAGS['C#']?.label).toBeNull()
+    expect(CODE_TAGS.SQL?.label).toBeNull()
+    expect(CODE_TAGS.TOML?.label).toBeNull()
+    expect(CODE_TAGS.Python?.label).toBeUndefined()
+  })
+
   // A word two languages both claim resolves to whichever sits earlier, so the other becomes a
   // language the roster offers and no fence can reach.
   it('lets no word name two languages', () => {
