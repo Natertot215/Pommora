@@ -203,6 +203,7 @@ const api = {
   writeClipboard: ask('clipboard:write'),
   readClipboard: ask('clipboard:read'),
   revealPath: ask('path:reveal'),
+  assetMap: ask('assets:map'),
   pageActionsMenu: ask('page-actions-menu'),
   // A card's right-click menu (page meta + Add Property ▸).
   cardMenu: ask('card-menu'),
@@ -238,6 +239,8 @@ const api = {
   onOpenInPreview: on('open-in-preview'),
   // The live watcher pushed fresh nav state (external/synced sidecar or pin change) — no tree walk.
   onNavChanged: on('nav:changed'),
+  // The asset root's listing changed — a file landed in the shared folder, no tree walk.
+  onAssetsChanged: on('assets:changed'),
   // The live watcher pushed a fresh tree (external FS change) — swap it in place.
   onNexusChanged: on('nexus:changed'),
   // A guest webview's window.open — the renderer's open-link adjudicator answers it.

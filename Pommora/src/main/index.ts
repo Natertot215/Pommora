@@ -59,6 +59,7 @@ import {
 } from '@shared/blocks'
 import { pathExists } from './io/atomicWrite'
 import { readAppConfig, updateAppConfig, addRecent, DEFAULT_TRASH_MODE } from './appConfig'
+import { emptyAssetMap, liveAssetMap } from './assetMap'
 import { sessionRoot, openSession, resolveRestorePath, isExistingDir } from './session'
 import { openSessionDb, closeSessionDb, sessionDb } from './sessionDb'
 import { stampAdopted } from './adopt'
@@ -161,7 +162,7 @@ import type {
   NexusIconAction,
   TitleMenuAction,
 } from '@shared/identityMenus'
-import type { ViewButton, ViewStyle } from '@shared/types'
+import type { AssetMap, ViewButton, ViewStyle } from '@shared/types'
 import { WEB_ZOOM_DEFAULT, coerceScale, coerceViewScale, viewScaleZoom } from '@shared/types'
 import { installEditorContextMenu, setFormatState, setGripHot } from './editorMenu'
 import type { FormatState } from '@shared/editorMenu'
@@ -709,6 +710,16 @@ serveBridge(
         } catch (e) {
           return { status: 'error', error: caught(e) }
         }
+      },
+    },
+
+    // The asset root's listing. Built on first ask and held; the watcher patches it in place,
+    // so an image a sync delivers costs a listing exactly once.
+    'assets:map': {
+      kind: 'raw',
+      fn: async (): Promise<AssetMap> => {
+        const root = sessionRoot()
+        return root === null ? emptyAssetMap() : liveAssetMap(root)
       },
     },
 

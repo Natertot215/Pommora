@@ -7,6 +7,7 @@ import { dropLiveTree, getLiveTree, refreshTree } from './liveTree'
 import { ASSETS_DIR_REL } from '@shared/nexusPaths'
 import { readNexus } from './readNexus'
 import type { WatchScope } from './exclusion'
+import { getHeldAssetMap, liveAssetMap } from './assetMap'
 import { ignoredUnder } from './watcher'
 import { applyWatchEvents, classifyEvent, touchesCorpus, type WatchEvent } from './watchPatch'
 
@@ -308,6 +309,25 @@ describe('the asset root outranks every other skip', () => {
     expect(ignoredUnder(root, scope([], 'file-assets'))(abs('file-assets', 'x.png'))).toBe(false)
     for (const junk of ['.DS_Store', 'node_modules', '.git'])
       expect(ignoredUnder(root, scope([], 'file-assets'))(abs('file-assets', junk, 'x'))).toBe(true)
+  })
+
+  it('fifty files landing in the asset root patch the map once and never walk', async () => {
+    await refreshTree(root)
+    const s = scope([], 'file-assets')
+    await mkdir(abs('file-assets'), { recursive: true })
+    const names = Array.from({ length: 50 }, (_, i) => `img-${i}.png`)
+    for (const n of names) await writeFile(abs('file-assets', n), 'bytes')
+    await liveAssetMap(root)
+    const before = getHeldAssetMap(root)
+    const events = names.map((n) => ev('add', 'file-assets', n))
+
+    expect(await applyWatchEvents(root, events, s)).toBe('patched')
+    const after = getHeldAssetMap(root)
+    expect(after).not.toBe(before)
+    expect(Object.keys(after?.files ?? {})).toHaveLength(50)
+    // The same batch with the arm pointed elsewhere is a walk — both halves, or this proves
+    // nothing about the arm.
+    expect(await applyWatchEvents(root, events, scope([], 'Media'))).toBe('refresh')
   })
 
   it('ignoredUnder and classifyEvent agree about what an asset path is', async () => {
