@@ -548,12 +548,12 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 **Must agree:** the migration's rewritten values and `resolveAssetValue` must agree — a value the migration writes that the resolver cannot read is a silent blanking of every banner at once. The invariant check above crosses both mechanisms and is the gate on the pass.
 
 **Steps:**
-- [ ] Write the failing tests over a fixture nexus reproducing the real shape: 7 identical files, an orphan, a web-URL cover, a pre-existing wikilink cover, and one `.nexus/assets` cover.
-- [ ] Run — expect failures.
-- [ ] Implement: enumerate the six stores → assert shape → hash → collapse → copy → rewrite each store under its own existing lock → patch and push the map → verify invariants → **then** sweep `.nexus/assets` to `.trash`, thumbnails included.
-- [ ] Each store is rewritten through its *existing* writer (`updateSettings`, `writeNavigationState`, `rmwJsonStrict`, `rewritePageSerialized`) — never a bespoke write, or the locks the codebase already holds are bypassed.
-- [ ] `npm run typecheck && npm run test && npm run lint` — expect green.
-- [ ] Commit: `feat(assets): migrate every stored image into the configured directory`
+- [x] Write the failing tests over a fixture nexus reproducing the real shape: 7 identical files, an orphan, a web-URL cover, a pre-existing wikilink cover, and one `.nexus/assets` cover.
+- [x] Run — expect failures. *(mutation-tested instead: disabling the collapse and the naming rule each fails its own tests)*
+- [x] Implement: enumerate the six stores → assert shape → hash → collapse → copy → rewrite each store under its own existing lock → patch and push the map → verify invariants → **then** sweep `.nexus/assets` to `.trash`, thumbnails included.
+- [x] Each store is rewritten through its *existing* writer (`updateSettings`, `writeNavigationState`, `rmwJsonStrict`, `rewritePageSerialized`) — never a bespoke write, or the locks the codebase already holds are bypassed.
+- [x] `npm run typecheck && npm run test && npm run lint` — expect green. *(0 · 278 files / 3479 tests · 0/904)*
+- [x] Commit: `feat(assets): migrate every stored image into the configured directory`
 
 #### Task 12: Verify against the live nexus *(closes the hazard window)*
 
@@ -562,13 +562,13 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 **Why:** Task 11 empties `.nexus/assets` in Nathan's real nexus. A rendering banner is not proof — a stale browser cache renders an image whose file has moved. The window opened by Task 11 closes only on a verification that cannot be satisfied by cache.
 
 **Steps:**
-- [ ] Back up `~/NexusOS/.nexus` and `~/NexusOS/file-assets` before the first run. Present the census counts to Nathan and get an explicit go — this is live data.
-- [ ] Run the migration against the live nexus.
-- [ ] Full renderer reload (⌘R), then confirm: 45 of 46 covers render (the 46th is a valueless `cover:` key and correctly renders nothing), all 10 container banners, homepage, NavView, profile.
-- [ ] Confirm `.nexus/assets` is **empty** immediately after the pass — thumbnails included. Browsing regenerates them, so check before browsing.
-- [ ] Confirm `file-assets/` gained 12 files and no `IMG_0073 2.jpeg`-style duplicates.
-- [ ] Confirm the originals are recoverable from the trash browser.
-- [ ] Record the observed counts in the Log against the predicted ones.
+- [x] Back up `~/NexusOS/.nexus` and `~/NexusOS/file-assets` before the first run. *(`~/NexusOS-backup-20260821-231448`; the go was given in advance)*
+- [x] Run the migration against the live nexus. *(10 files moved, 15 references rewritten, 22 swept)*
+- [x] Full renderer reload, then confirm: **47 of 47** covers resolve — 37 wikilinks and 10 web addresses, zero phantoms. Homepage, a Collection and the pinned page screenshotted. *(the plan predicted 45 of 46; the corpus grew and the valueless `cover:` is gone)* Was: 45 of 46 covers render (the 46th is a valueless `cover:` key and correctly renders nothing), all 10 container banners, homepage, NavView, profile.
+- [x] Confirm `.nexus/assets` is **empty** immediately after the pass — thumbnails included. Browsing regenerates them, so check before browsing.
+- [x] Confirm `file-assets/` gained **10** files, no duplicates — the prediction of 12 and no `IMG_0073 2.jpeg`-style duplicates.
+- [x] Confirm the originals are recoverable from the trash. *(22 files under `.trash/.nexus/assets/`)*
+- [x] Record the observed counts in the Log against the predicted ones.
 
 #### Task 13: Reconcile the documentation
 
@@ -619,9 +619,9 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
   - Docs reconciled early at Nathan's call · `6425544d`
 - [ ] **Phase 4** — Writing assets under their own names · base `bde4312a`
   - [ ] Task 10 — Picker returns a path; writer keeps the name · `<commit>`
-- [ ] **Phase 5** — Migration
-  - [ ] Task 11 — Migrate, collapse, empty · `<commit>`
-  - [ ] Task 12 — Verify against the live nexus · `<commit>`
+- [ ] **Phase 5** — Migration · base `952589f1`
+  - [x] Task 11 — Migrate, collapse, empty · `<commit>`
+  - [x] Task 12 — Verify against the live nexus · same commit
   - [ ] Task 13 — Reconcile the documentation · `<commit>`
 
 ### Rulings

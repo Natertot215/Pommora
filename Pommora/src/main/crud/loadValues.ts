@@ -5,7 +5,8 @@
 // open, not woven into the tree walk). Reads through the walk's own per-page record — the cache
 // stats before serving, so a changed file re-parses and an untouched one costs no read at all.
 
-import { join, relative, sep } from 'node:path'
+import { join } from 'node:path'
+import { relPosix } from '../paths'
 import { PAGE_ID_KEY } from '@shared/identity'
 import { pageFrontmatter, type PageFrontmatter } from '@shared/schemas'
 import { readPageRecord } from '../readNexus'
@@ -19,7 +20,7 @@ export async function loadValues(
   const files = await folderCorpus(rootPath, absFolder)
   const records = await Promise.all(
     files.map((absFile) => {
-      const relFile = relative(rootPath, absFile).split(sep).join('/')
+      const relFile = relPosix(rootPath, absFile)
       // Unreadable page → skip (its row falls back to a minimal frontmatter).
       return readPageRecord(absFile, relFile).catch(() => null)
     }),

@@ -5,7 +5,7 @@
 // structural walk INPUTS (the registries, state orderings, folder-kind sidecars appearing or
 // vanishing, directories) don't, because they shape the tree rather than sit in it.
 
-import { join, relative, sep } from 'node:path'
+import { join } from 'node:path'
 import type { CollectionNode, NexusTree, PageNode, SetNode, SpaceNode } from '@shared/types'
 import { asString, asStringArray } from './coerce'
 import { patchHeldAssetMap } from './assetMap'
@@ -17,7 +17,7 @@ import { removePathIndex } from './db/contentIndex'
 import { indexWrittenPage } from './indexSeed'
 import { getLiveTree, patchLiveTree } from './liveTree'
 import { resolveOrder } from './order'
-import { NEXUS_CONFIG_FILES, SIDECAR_FILENAME, SPACE_SIDECAR, nexusConfig } from './paths'
+import { NEXUS_CONFIG_FILES, SIDECAR_FILENAME, SPACE_SIDECAR, nexusConfig, relPosix } from './paths'
 import {
   parseViews,
   readHomepageLeaves,
@@ -60,10 +60,11 @@ export type WatchClass =
   | { kind: 'ignored' }
   | { kind: 'full-refresh' }
 
+/** The same nexus-relative POSIX spelling, refusing a path that is not under the root at all —
+ *  a watch event can name one, and everything downstream keys on the relative path. */
 const toPosixRel = (root: string, absPath: string): string | null => {
-  const rel = relative(root, absPath)
-  if (!rel || rel.startsWith('..')) return null
-  return rel.split(sep).join('/')
+  const rel = relPosix(root, absPath)
+  return !rel || rel.startsWith('..') ? null : rel
 }
 
 function findContainer(tree: NexusTree, dirRel: string): CollectionNode | SetNode | null {
