@@ -7,6 +7,7 @@ import { dropLiveTree, getLiveTree, refreshTree } from './liveTree'
 import { ASSETS_DIR_REL } from '@shared/nexusPaths'
 import { readNexus } from './readNexus'
 import type { WatchScope } from './exclusion'
+import { ignoredUnder } from './watcher'
 import { applyWatchEvents, classifyEvent, touchesCorpus, type WatchEvent } from './watchPatch'
 
 const ULID_A = '01ARZ3NDEKTSV4RRFFQ69G5FAV'
@@ -245,6 +246,81 @@ describe('classifyEvent', () => {
     expect(tree.unreadable?.map((u) => u.path)).toContain('Notes')
     const cls = classifyEvent(tree, root, ev('change', 'Notes', '_pagecollection.json'), scope())
     expect(cls.kind).toBe('full-refresh')
+  })
+})
+
+describe('the asset root outranks every other skip', () => {
+  const ASSET_ROOTS = [ASSETS_DIR_REL, 'file-assets', '.attachments']
+
+  it('every path under the asset root classifies asset, whatever the root is named', async () => {
+    const tree = await refreshTree(root)
+    for (const dir of ASSET_ROOTS) {
+      const s = scope([], dir)
+      const at = (...segs: string[]): string =>
+        classifyEvent(tree, root, ev('change', ...dir.split('/'), ...segs), s).kind
+      expect(at('x.png')).toBe('asset')
+      expect(at('nested', 'deep', 'x.heic')).toBe('asset')
+      // A dropped-in Markdown file is an asset too, or it rides index-only into the mentions rows.
+      expect(at('notes.md')).toBe('asset')
+      expect(classifyEvent(tree, root, ev('addDir', ...dir.split('/'), 'sub'), s).kind).toBe(
+        'asset',
+      )
+      expect(classifyEvent(tree, root, ev('unlink', ...dir.split('/'), 'x.png'), s).kind).toBe(
+        'asset',
+      )
+      expect(touchesCorpus(root, [ev('add', ...dir.split('/'), 'notes.md')], s)).toBe(false)
+    }
+  })
+
+  it('outranks the exclusion match — an asset root named in excluded_folders still delivers', async () => {
+    const tree = await refreshTree(root)
+    expect(
+      classifyEvent(
+        tree,
+        root,
+        ev('change', 'file-assets', 'x.png'),
+        scope(['file-assets'], 'file-assets'),
+      ).kind,
+    ).toBe('asset')
+  })
+
+  it('the negative control: the same event elsewhere is not an asset', async () => {
+    const tree = await refreshTree(root)
+    expect(
+      classifyEvent(tree, root, ev('change', 'file-assets', 'x.png'), scope([], 'Media')).kind,
+    ).toBe('full-refresh')
+    expect(touchesCorpus(root, [ev('add', 'file-assets', 'notes.md')], scope([], 'Media'))).toBe(
+      true,
+    )
+  })
+
+  it('a batch of asset events patches without a walk', async () => {
+    await refreshTree(root)
+    const s = scope([], 'file-assets')
+    const events = ['a.png', 'b.jpg', 'c.md'].map((n) => ev('add', 'file-assets', n))
+    expect(await applyWatchEvents(root, events, s)).toBe('patched')
+  })
+
+  it('ignoredUnder and classifyEvent agree about what an asset path is', async () => {
+    const tree = await refreshTree(root)
+    for (const dir of ASSET_ROOTS) {
+      const s = scope([], dir)
+      const path = abs(...dir.split('/'), 'x.png')
+      // A path the watcher drops but the classifier would have handled is silently lost.
+      expect(ignoredUnder(root, s)(path)).toBe(false)
+      expect(classifyEvent(tree, root, { event: 'change', absPath: path }, s).kind).toBe('asset')
+    }
+  })
+
+  it('the unreadable list cannot claim an asset path — the arm sits above the check', async () => {
+    await writeFile(abs('Notes', '_pagecollection.json'), '{corrupt')
+    await refreshTree(root)
+    const tree = getLiveTree()
+    if (tree === null) throw new Error('no tree')
+    expect(tree.unreadable?.map((u) => u.path)).toContain('Notes')
+    expect(classifyEvent(tree, root, ev('change', 'Notes', 'x.png'), scope([], 'Notes')).kind).toBe(
+      'asset',
+    )
   })
 })
 

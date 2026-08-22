@@ -126,13 +126,13 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 - Modify: `src/main/readNexus.ts` — `SettingsLeaves` interface; `readSettingsLeaves`; the tree literal's flat-leaf block.
 - Modify: `src/main/watchPatch.ts` — `applySettingsLeaves`.
 - Modify: `src/shared/types.ts` — `NexusTree`, beside `excluded`.
-- Modify: `src/main/settings.ts` — `liveLeaves`' `Pick<>`; add `readAssetDirectory`.
+- Modify: `src/main/settings.ts` — `liveLeaves`' `Pick<>`; the scope reader.
 - Modify: `src/shared/nexusPaths.ts` — correct `ASSETS_DIR_REL`'s doc comment per Made False, and state on `thumbsRel` that its derivation from that constant is a deliberate pin rather than an accident of sharing. No second constant: an alias equal to `ASSETS_DIR_REL` would be two names for one string, and `ASSETS_DIR_REL` already reads as the default.
 - Test: `src/main/readNexus.test.ts`, `src/main/watchPatch.test.ts`.
 
 **Interfaces**
 - Produces: `SettingsLeaves.assetDirectory: string` — nexus-relative POSIX, `ASSETS_DIR_REL` when absent, malformed or not a string.
-- Produces: `readAssetDirectory(root: string): Promise<string>`.
+- Produces: `readWatchScope(root: string): Promise<WatchScope>` — the one reader of both captured settings, landed with Task 2's scope object.
 - Assumed by: Tasks 3, 5, 6, 9, 11, 12.
 
 **Failure half:** absent key → the default. Non-string → the default. Empty string → the default (an emptied value is not a valid root). A leading `/` or a `..` segment → the default. **`.` or `./` → the default** — a root-wide asset directory would classify every event in the nexus as an asset, stop the tree updating entirely, recursively list the whole nexus at open, and turn the `nexus-asset://` containment check into a tautology serving `nexus.db`. Trailing slash → normalized off. The guard lives HERE, at the reader, not in one consumer: `readNexus.ts:192` names exactly this three-way disagreement as the failure mode, and a degenerate value guarded in `assetMatcher` alone leaves `buildAssetMap` and `underAssetRoot` obeying it.
@@ -142,7 +142,7 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 **Steps:**
 - [x] Write the failing tests: the five malformed inputs above, plus the walk-vs-patch agreement test.
 - [x] Run — expect failures. *(6 failed)*
-- [x] Thread the leaf through all three places plus `types.ts`; add `readAssetDirectory`.
+- [x] Thread the leaf through all three places plus `types.ts`; give it a reader.
 - [x] `npm run typecheck && npm run test` — expect green. *(0 · 273 files / 3383 tests · lint 0/888)*
 - [x] Commit: `feat(settings): asset_directory reads as a tree leaf`
 
@@ -197,7 +197,7 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 **Files:**
 - Modify: `src/main/watcher.ts` — `ignoredUnder`: asset test as the first statement of the returned predicate.
 - Modify: `src/main/watchPatch.ts` — `classifyEvent`: an `asset` arm before the exclusion match and before the `NEXUS_DIR` branch; `touchesCorpus`: an asset path is not corpus movement.
-- Modify: `src/main/watcher.ts` — `settle`: re-arm on `!sameScope(current, scope)`.
+- Modify: `src/main/watcher.ts` — `settle`: re-arm on `!sameScope(current, scope)`. *(landed with Task 2's scope conversion, `a10dd93a`)*
 - Test: `src/main/watchPatch.test.ts`, `src/main/watcher` fixtures.
 
 **Interfaces**
@@ -211,13 +211,13 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 **Must agree:** `ignoredUnder` and `classifyEvent` must agree about what an asset path is — a path the watcher delivers but the classifier calls excluded would be silently dropped. One test drives the same path through both.
 
 **Steps:**
-- [ ] Write the failing tests, both halves of the negative control, and the agreement test.
-- [ ] Run — expect failures.
-- [ ] Implement the ordering and the arm; make `touchesCorpus` exclude asset paths.
-- [ ] Assert no arm returns `full-refresh` for any path under the asset root — parameterized over `.nexus/assets`, `file-assets`, and `.attachments`.
-- [ ] Confirm the `tree.unreadable` check at `watchPatch.ts:121` cannot fire for an asset path. Every producer of that list sits inside `readContainerMeta` / `readDirectPages` / `readChildSets`, which run only on directories the walk descended into — and Task 2 prunes the asset root at `shouldSkipDir` before descent. This holds ONLY because Task 2 landed; if the prune is ever removed, the arm must move above `:121`.
-- [ ] `npm run typecheck && npm run test` — expect green.
-- [ ] Commit: `fix(watcher): the asset root is watched ahead of every other skip`
+- [x] Write the failing tests, both halves of the negative control, and the agreement test. *(5 of 6 failed; the negative half passes either way, which is why the positive half carries the proof)*
+- [x] Run — expect failures.
+- [x] Implement the ordering and the arm; make `touchesCorpus` exclude asset paths.
+- [x] Assert no arm returns `full-refresh` for any path under the asset root — parameterized over `.nexus/assets`, `file-assets`, and `.attachments`.
+- [x] Confirm the `tree.unreadable` check at `watchPatch.ts:121` cannot fire for an asset path. The arm sits first in `classifyEvent`, above the check, so this holds by construction rather than by argument — and a test pins it directly, with an asset root pointed at a container the walk has listed as unreadable.
+- [x] `npm run typecheck && npm run test` — expect green. *(0 · 273 files / 3397 tests · lint 0/888)*
+- [x] Commit: `fix(watcher): the asset root is watched ahead of every other skip`
 
 #### Gate 1 — the asset root is a shared fact, and no asset event walks
 
@@ -627,6 +627,7 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 - **Resolution is renderer-side** — Nathan, after the main-side alternative was put and the full-walk consequence explained.
 
 ### Open Against Later Tasks
+- **The settings confirm path skips the structural check** — `patchSettingsFromDisk` calls `applySettingsLeaves` directly, bypassing `applySettingsLeaf`'s `sameScope` comparison. Task 9's row therefore gets no watcher re-arm from either direction: the echo is suppressed (Requirement 10) and the confirmer never asks the question. The writer triggers the re-arm itself.
 - **Windows path handling** — `listFilesRecursive` returns native separators; Task 4 normalizes to POSIX for the map. Not exercised by any current gate. Raised by the attack review, verified as unchecked rather than broken.
 
 ### Reviews
