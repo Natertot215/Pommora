@@ -77,7 +77,7 @@ export function usePropertyRows(
   const schema = useMemo(() => schemaForPage(tree, path), [tree, path])
   const ctx = useMemo<ResolveContext | null>(
     () => (tree ? buildResolveContext(tree, schema, assetMap) : null),
-    [tree, schema],
+    [tree, schema, assetMap],
   )
   const contextRows = useMemo(
     () =>

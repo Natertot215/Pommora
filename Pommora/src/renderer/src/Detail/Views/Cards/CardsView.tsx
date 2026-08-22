@@ -299,7 +299,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   const setIcons = useMemo(() => buildSetIcons(source), [source])
   const ctx = useMemo(
     () => (tree ? buildResolveContext(tree, schema, assetMap) : null),
-    // buildResolveContext reads only contexts + labels — keying on those slices keeps ctx identity across unrelated tree pushes, so memoized cards hold.
+    // buildResolveContext reads only contexts, labels and the asset map — keying on those slices keeps ctx identity across unrelated tree pushes, so memoized cards hold.
     [tree?.contexts, tree?.labels, schema, assetMap],
   )
   // Raw `view`: resolveColumns never reads column_styles, and liveView identity would break the

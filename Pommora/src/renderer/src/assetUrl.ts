@@ -42,7 +42,7 @@ function namedAsset(raw: string, map: AssetMap): FileValue | null {
   return rel ? { kind: 'asset', rel } : { kind: 'unresolved' }
 }
 
-export type FileValue = { kind: 'asset'; rel: string } | { kind: 'unresolved' }
+export type FileValue = Exclude<AssetValue, { kind: 'external' }>
 
 /** What one stored FILE-property value names. The wikilink branch alone: a file value resolves in
  *  the asset map's basename domain or not at all. `resolveAssetValue`'s bare-string branch reads
