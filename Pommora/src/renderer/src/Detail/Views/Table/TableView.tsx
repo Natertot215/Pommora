@@ -739,12 +739,10 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     const v = resolveFieldValue(row, col.id, schema)
     if (v.kind === 'number') return String(v.value)
     if (v.kind === 'url') return linkEditText(v.value)
-    if (v.kind === 'file') return v.value[0]?.path ?? ''
     return ''
   }
   // Map the editor's raw text to its typed write: number parses (a lone '-'/'.' reverts),
-  // url validates + normalizes, file edits the FIRST ref's path (multi-file editing is the picker
-  // Prospect), title renames. Empty input clears the value.
+  // url validates + normalizes, title renames. Empty input clears the value.
   const commitEditorText = (row: ViewRow, col: ResolvedColumn, raw: string): void => {
     const fromCreate = editing?.fromCreate
     setEditing(null)
@@ -777,23 +775,6 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
         resolveTitle,
       )
       if (next !== undefined) commitCellValue(row, col.id, next)
-    } else if (t === 'file') {
-      const v = resolveFieldValue(row, col.id, schema)
-      const refs = v.kind === 'file' ? v.value : []
-      if (trimmed === '') {
-        commitCellValue(
-          row,
-          col.id,
-          refs.length > 1 ? { kind: 'file', value: refs.slice(1) } : null,
-        )
-        return
-      }
-      commitCellValue(row, col.id, {
-        kind: 'file',
-        value: refs.length
-          ? [{ ...refs[0], path: trimmed }, ...refs.slice(1)]
-          : [{ path: trimmed }],
-      })
     }
   }
   // The inline text/number editor, mounted in the editing cell and REPLACING its content. The value

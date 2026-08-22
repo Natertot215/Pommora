@@ -178,18 +178,11 @@ describe('formats', () => {
   })
 })
 
-describe('file looks', () => {
-  const row = rowWith({ prop_files: [{ path: 'Assets/Photos/trip.png' }, { path: 'doc.pdf' }] })
-
-  it('filename renders one chip per file, directory stripped', () => {
-    mount(row, 'prop_files', { look: 'filename' })
+describe('a file value', () => {
+  it('renders one chip per file, named by the wikilink it holds', () => {
+    mount(rowWith({ prop_files: ['[[trip.png]]', '[[doc.pdf]]'] }), 'prop_files', {})
     expect(host.textContent).toContain('trip.png')
     expect(host.textContent).toContain('doc.pdf')
-    expect(host.textContent).not.toContain('Assets/Photos')
-  })
-
-  it('path renders the full path per chip', () => {
-    mount(row, 'prop_files', { look: 'path' })
-    expect(host.textContent).toContain('Assets/Photos/trip.png')
+    expect(host.textContent).not.toContain('[[')
   })
 })

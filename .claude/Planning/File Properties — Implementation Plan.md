@@ -1,6 +1,6 @@
 ## File Properties — Implementation Plan
 
-> **Status:** reviewed — pending Nathan's approval · Spec: [[File Properties — Decision Log]] · Execute tasks in order.
+> **Status:** ratified — in execution · Spec: [[File Properties — Decision Log]] · Execute tasks in order.
 > Citations name files and symbols; re-derive before editing.
 
 **Goal**
@@ -207,14 +207,14 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
 **Must agree:** `isBlankValue` and `decodeValue`'s strict gate must reach the same answer on `[]`. One test crosses both.
 
 **Steps:**
-- [ ] Write the failing tests: legacy object → null; mixed array → null; `['[[a.pdf]]']` → the list; `[]` strict → null; `[]` → blank; **and the unquoted hand-edit** — an element of `[["Report.pdf"]]` → `'[[Report.pdf]]'`.
-- [ ] Coerce that form. **The element is nested twice** — `- [[Report.pdf]]` parses to a value of `[[["Report.pdf"]]]`, whose single element is `[["Report.pdf"]]`: array → array → string. A predicate written for one level never fires on the real hand-edit and the value still nulls silently. Unquoted brackets are the natural hand-edit and NexusOS is a live Obsidian vault, so this arrives through the front door — and without the coercion the whole value nulls silently and the next in-app add overwrites the references on disk.
-- [ ] Run — expect failures.
-- [ ] Change the `file` case to require every element be a string. **Leave it as its own `case`, physically separate from `multi_select`, and comment why** — the two are now shape-identical, and merging them routes file through the option gate, where `optionValues` returns `[]` and `strict` discards every value through the restore path.
-- [ ] Delete `FileRef` and `isFileRef`. Run `npm run typecheck` — expect it to enumerate the remaining callers.
-- [ ] Fix what the gate names — **except `TableView.tsx:742` and `:780-793`, which are DELETED, not adapted.** The gate will name both (`editorInitial` reads `v.value[0]?.path`; `commitEditorText` rebuilds `[{...refs[0], path: trimmed}]`), and the mechanical fix compiles into a second authoring path that lets a user type any string into a file value — the unresolvable bare name Task 2 exists to refuse. Delete the branches; the dialog is the only authoring surface.
-- [ ] Full gate green.
-- [ ] Commit: `refactor(properties): a file value names files the way everything else does`
+- [x] Write the failing tests: legacy object → null; mixed array → null; `['[[a.pdf]]']` → the list; `[]` strict → null; `[]` → blank; **and the unquoted hand-edit** — an element of `[["Report.pdf"]]` → `'[[Report.pdf]]'`.
+- [x] Coerce that form. **The element is nested twice** — `- [[Report.pdf]]` parses to a value of `[[["Report.pdf"]]]`, whose single element is `[["Report.pdf"]]`: array → array → string. A predicate written for one level never fires on the real hand-edit and the value still nulls silently. Unquoted brackets are the natural hand-edit and NexusOS is a live Obsidian vault, so this arrives through the front door — and without the coercion the whole value nulls silently and the next in-app add overwrites the references on disk.
+- [x] Run — expect failures.
+- [x] Change the `file` case to require every element be a string. **Leave it as its own `case`, physically separate from `multi_select`, and comment why** — the two are now shape-identical, and merging them routes file through the option gate, where `optionValues` returns `[]` and `strict` discards every value through the restore path.
+- [x] Delete `FileRef` and `isFileRef`. Run `npm run typecheck` — expect it to enumerate the remaining callers.
+- [x] Fix what the gate names — **except `TableView.tsx:742` and `:780-793`, which are DELETED, not adapted.** The gate will name both (`editorInitial` reads `v.value[0]?.path`; `commitEditorText` rebuilds `[{...refs[0], path: trimmed}]`), and the mechanical fix compiles into a second authoring path that lets a user type any string into a file value — the unresolvable bare name Task 2 exists to refuse. Delete the branches; the dialog is the only authoring surface.
+- [x] Full gate green.
+- [x] Commit: `refactor(properties): a file value names files the way everything else does`
 
 #### Task 2: Resolve a file value in the basename domain alone
 
@@ -661,6 +661,13 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
 ### Rulings
 ### Open Against Later Tasks
 ### Deviations
+
+- **Task 1 · the coercion covers both YAML spellings, not one.** The plan named the block-sequence form alone (`- [[Report.pdf]]` → an element of `[["Report.pdf"]]`). Verified against `eemeli/yaml`: the inline form (`Attachments: [[Report.pdf]]`) nests one level shallower, giving an element of `["Report.pdf"]`. One helper unwraps single-element arrays to their string and re-spells the wikilink, so both hand-edits survive and a multi-entry nested sequence still reads as null.
+- **Task 1 · `Cell.tsx`'s file block was adapted here, not in Task 5.** The type gate named it, and the new shape carries no path for `window.nexus.openFile` to take — so the label moved to the parsed wikilink title, the key moved to the index, the `:186` comment went, and the `openFile` call went with them. **Task 5 is now only** the routing through `resolveFileValue` and the unresolved look; **Task 6 still owns** the channel, its preload binding, its handler and the spy.
+- **Task 1 · two test blocks were rewritten here.** `Cell.test.tsx`'s `file looks` describe and `cellGestures.test.tsx`'s file-chip-open test both held legacy-shaped fixtures, so Task 1's shape change is what falsified them. The first became one test on the new shape; the second was deleted with the behavior it covered.
+- **Task 1 · the index key carries a `biome-ignore`.** `noArrayIndexKey` fires on F-8a's mandated key. Suppressed with the true reason — the entries are positional, carry no state, and keying on the value would collide on two identical wikilinks.
+- **Plan header vs Phase 3's own estimate.** The header row reads `+20` for Phase 3 where the phase body reads `+10`; the body governs, so the expected net is ≈ **+46**, not +56.
+- **Naming.** The spec settled on **FileLabel** (C-2c); several plan headings still read FileChip. FileLabel is the name that ships — component, chip shape and prose alike.
 ### Lessons
 ### Sequenced After
 - **Filename `Contains` filter** — `evaluateText` already exists; `FILE_OPS` just stops being `slot: 'none'`.
