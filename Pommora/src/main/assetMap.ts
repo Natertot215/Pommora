@@ -63,12 +63,17 @@ export function patchAssetMap(
   return { files, version }
 }
 
+/** A name several files answer to. A symbol rather than a sentinel string: `string | 'ambiguous'`
+ *  collapses to `string`, so a caller testing `typeof hit === 'string'` would take the refusal
+ *  for a path and delete by it. */
+export const AMBIGUOUS: unique symbol = Symbol('ambiguous')
+
 /** The main-side resolver — a path, nothing, or a refusal to choose. A delete that depends on
  *  which file a name means must never guess. */
-export function resolveAssetName(map: AssetMap, name: string): string | null | 'ambiguous' {
+export function resolveAssetName(map: AssetMap, name: string): string | null | typeof AMBIGUOUS {
   const paths = map.files[normalizeTitle(name)]
   if (!paths?.length) return null
-  return paths.length > 1 ? 'ambiguous' : paths[0]
+  return paths.length > 1 ? AMBIGUOUS : paths[0]
 }
 
 // The map as last built or patched — main's one holder, pinned to the root it was built for. A

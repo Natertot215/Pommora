@@ -52,7 +52,8 @@ import {
   atomicWriteFile,
 } from './io/atomicWrite'
 import { recordWrite } from './io/writeEcho'
-import { isAssetPath, readNavigationFile, writeNavigationState } from './io/navigationFile'
+import { readNavigationFile, writeNavigationState } from './io/navigationFile'
+import { assetFileToDelete } from './assetRoots'
 import { serializeOnFile } from './io/fileLock'
 import { splitEnvelope, mergeFrontmatter, readFrontmatterFields } from './io/pageFile'
 import { basenameNoMd } from './coerce'
@@ -388,7 +389,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       // in settings.profile_image (read-merge-write, other keys preserved).
       const settingsPath = nexusConfig(root, NEXUS_CONFIG_FILES.settings)
       const existing = await readJsonObject(settingsPath)
-      const prev = isAssetPath(existing?.profile_image) ? existing.profile_image : null
+      const prev = await assetFileToDelete(root, existing?.profile_image)
       if (req.dataUrl) {
         const { id: nexusId } = await ensureIdentity(root)
         const rel = await writeImageAsset(root, nexusId, req.dataUrl, 'profile')
@@ -440,7 +441,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
           const id = contentId(fields)
           if (!id) return fault('That page has no id to key its banner.')
           if (!assetKeyOk(id)) return fault('That page’s id can’t name a folder.')
-          const prev = isAssetPath(fields.cover) ? fields.cover : null
+          const prev = await assetFileToDelete(root, fields.cover)
           if (req.dataUrl) {
             const rel = await writeImageAsset(root, id, req.dataUrl, 'banner')
             if (!rel) return fault('Unsupported image data.')
@@ -460,9 +461,9 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       // image sits in shared assets with no per-owner folder, and the one serialized patch-writer
       // is what keeps the arrays and the banner from dropping each other.
       if (req.kind === 'navview') {
-        // The read gate (isAssetPath) already vetted this pointer — the rm below can only
-        // ever aim inside shared assets.
-        const prevNav = (await readNavigationFile(root)).banner ?? null
+        // Resolved rather than trusted: the read gate now admits a wikilink, which names a
+        // file rather than a path, and one several files answer to deletes nothing at all.
+        const prevNav = await assetFileToDelete(root, (await readNavigationFile(root)).banner)
         let next: string | undefined
         if (req.dataUrl) {
           const rel = await writeImageAsset(root, '', req.dataUrl, 'banner')
@@ -499,7 +500,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         if (!assetKeyOk(id)) return fault('That item’s id can’t name a folder.')
         assetKey = id
       }
-      const prev = isAssetPath(existing?.banner) ? existing.banner : null
+      const prev = await assetFileToDelete(root, existing?.banner)
       let rel: string | null = null
       if (req.dataUrl) {
         rel = await writeImageAsset(root, assetKey, req.dataUrl, 'banner')

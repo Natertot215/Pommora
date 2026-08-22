@@ -347,7 +347,7 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 **Why the four sites are this task's and not Task 10's:** widening `isAssetPath` is what lets a wikilink reach `prev`, and the existing code then runs `rm(join(root, '[[Name.png]]'))` — a silent no-op that orphans the replaced file into the user's Obsidian folder forever. The gate and the delete it feeds move together or the widening is a defect. `navigationFile.ts:37` states the invariant in words: the pointer feeds a real file delete, so what it names must always be resolvable to a real path.
 
 **Derivation**
-- `rg -F "isAssetPath" src` → 8 non-test at planning time.
+- `rg -F "isAssetPath" src` → 8 non-test at planning time, **3 after**: the three `mutate.ts` sites resolve through `assetFileToDelete` instead of testing the pointer themselves, which is what this task moved them to. Definition plus the two `navigationFile` gates remain.
 - Control: `rg -F "ASSETS_DIR_REL" src` → ≥ 4.
 
 **Failure half:** a `..` segment → refused at every root. A backslash → refused. An absolute path → refused. A path under a *sibling* of the asset root whose name extends it → refused. A wikilink → accepted by `isAssetPath`, then resolved through `resolveAssetName`: a single match deletes, `null` deletes nothing, `'ambiguous'` deletes nothing. A raw path → deletes as it does today.
@@ -357,12 +357,12 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 **Must agree:** the protocol handler and `isAssetPath` must answer identically for the same string. One test crosses both over the same fixture set, including a path under the configured root, one under `.nexus/assets`, and one under neither.
 
 **Steps:**
-- [ ] Write the failing tests, both halves of the negative control, and the cross-predicate agreement.
-- [ ] Run — expect failures.
-- [ ] Implement `underAssetRoot`; route both consumers through it.
-- [ ] Confirm `resolveUnderRoot` still runs after the prefix check — the containment realpath is not replaced by it.
-- [ ] `npm run typecheck && npm run test && npm run lint` — expect green.
-- [ ] Commit: `fix(assets): one containment predicate serves the protocol and the delete guard`
+- [x] Write the failing tests, both halves of the negative control, and the cross-predicate agreement.
+- [x] Run — expect failures.
+- [x] Implement `underAssetRoot`; route both consumers through it.
+- [x] Confirm `resolveUnderRoot` still runs after the prefix check — the containment realpath is not replaced by it.
+- [x] `npm run typecheck && npm run test && npm run lint` — expect green. *(0 · 276 files / 3439 tests · 0/890)*
+- [x] Commit: `fix(assets): one containment predicate serves the protocol and the delete guard`
 
 #### Gate 2 — every spelling resolves, nothing escapes the roots
 
@@ -637,6 +637,8 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
   - The review's central finding stands: the plan built the external-change machinery and never asked what happens **when Pommora is the writer**. `atomicWriteBinary` → `recordWrite` → `isRecentWrite` means no in-app write reaches `settle`, so the asset copy starved the map (F1), the settings write starved the re-arm (F2), and the widened gate starved the delete (F3). Three defects, one root cause, all shipping silently green. Requirement 10 now names the path.
   - **Unknown resolved:** the `tree.unreadable` check at `watchPatch.ts:121` runs before Task 3's arm, but every producer of that list sits inside `readContainerMeta` / `readDirectPages` / `readChildSets`, which run only on descended directories — and Task 2 prunes the asset root at `shouldSkipDir`. Safe, and conditional on Task 2, which Task 3 now records.
 ### Deviations
+- **Task 7 — ambiguity is a symbol, not the string `'ambiguous'`.** The specified `string | null | 'ambiguous'` collapses to `string | null` in TypeScript, so `typeof hit === 'string'` takes the refusal for a path and deletes by it. The first delete-guard test caught exactly that; a `unique symbol` makes the mistake a compile error instead of a lost file.
+- **Task 7 — one resolver serves all four delete sites.** Rather than each site widening its own gate and then resolving, `assetFileToDelete` answers the only question they ask: what real file may this stored value delete. A wikilink is constrained by the map it resolves through, a raw path by `underAssetRoot`, and everything else deletes nothing.
 - **Task 6 — the raw builder keeps its name; resolution gets its own.** `assetUrl(rel)` stays the pure scheme builder the two thumbnail sites pass raw paths to, and `resolveAssetUrl(value, map)` is the resolving entry point. Overloading one name would have made the survivors' call shape a special case of the resolver rather than the plainly different thing it is. A `useAssetUrl()` hook binds the map once per component, so the eleven sites select it the same way rather than each threading a map argument.
 - **Task 6 — external is decided by scheme, not by `isValidLink`.** That helper accepts any dotted host, so `Banner.png` would read as a website and every bare-filename asset would stop rendering. A leading `scheme:` is what separates a web address from a filename.
 - **Task 5 — the held map needs no teardown.** It is pinned to the root it was built for, so a session switch makes the previous nexus's map unreadable and the first ask for the new root rebuilds over it. A `dropAssetMap` would have meant a call beside all three `dropLiveTree` sites, and a fourth appearing later would drift.
