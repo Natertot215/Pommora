@@ -26,15 +26,31 @@ const SCHEMED = /^[a-z][a-z0-9+.-]*:/i
 export function resolveAssetValue(value: string, map: AssetMap): AssetValue {
   const raw = value.trim()
   if (!raw) return { kind: 'unresolved' }
-  const link = parseConnectionText(raw)
-  if (link) {
-    // Several files may answer to one name; display takes the first by sorted path, while a
-    // delete refuses to choose. Rendering the wrong image is recoverable — deleting one is not.
-    const rel = map.files[normalizeTitle(link.title)]?.[0]
-    return rel ? { kind: 'asset', rel } : { kind: 'unresolved' }
-  }
+  const named = namedAsset(raw, map)
+  if (named) return named
   if (SCHEMED.test(raw)) return { kind: 'external', url: raw }
   return { kind: 'asset', rel: raw }
+}
+
+/** What a whole-string `[[…]]` names in the asset map, or null where it isn't one. Several files
+ *  may answer to one name; display takes the first by sorted path, while a delete refuses to
+ *  choose. Rendering the wrong image is recoverable — deleting one is not. */
+function namedAsset(raw: string, map: AssetMap): FileValue | null {
+  const link = parseConnectionText(raw)
+  if (!link) return null
+  const rel = map.files[normalizeTitle(link.title)]?.[0]
+  return rel ? { kind: 'asset', rel } : { kind: 'unresolved' }
+}
+
+export type FileValue = { kind: 'asset'; rel: string } | { kind: 'unresolved' }
+
+/** What one stored FILE-property value names. The wikilink branch alone: a file value resolves in
+ *  the asset map's basename domain or not at all. `resolveAssetValue`'s bare-string branch reads
+ *  an unschemed value as a nexus-relative path, and inheriting it would render a hand-written
+ *  `- Report.pdf` as resolved while naming a file that isn't there — and aim Replace's
+ *  `defaultPath` at a folder that doesn't exist. */
+export function resolveFileValue(value: string, map: AssetMap): FileValue {
+  return namedAsset(value.trim(), map) ?? { kind: 'unresolved' }
 }
 
 /** The `src` one stored asset value renders at, or null where nothing renders. A resolved asset
