@@ -1,6 +1,5 @@
 import type { CSSProperties } from 'react'
 import type { ColumnStyle } from '@shared/columnStyles'
-import { parseConnectionText } from '@shared/connections'
 import type { PropertyValue } from '@shared/propertyValue'
 import type { ResolvedColumn, ViewRow } from '@shared/types'
 import { chipBox, chipColor } from '@renderer/design-system/tokens'
@@ -15,6 +14,7 @@ import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
 import { OverflowScroll } from '@renderer/design-system/components/OverflowScroll'
 import { SegmentRun } from '@renderer/design-system/components/SegmentRun/SegmentRun'
 import { resolveFileValue } from '@renderer/assetUrl'
+import { fileLabelText, fileValueWithout } from '../PropertyEditing/filePick'
 import { declaredType, resolveFieldValue } from '../pipeline/value'
 import { formatDate, formatNumber, numberDivisor } from '../PropertyEditing/formatValue'
 import { statusGroupGlyph, statusGroupOf } from '../PropertyEditing/statusCycle'
@@ -196,10 +196,11 @@ export function Cell({
             // Positional, never the value: two identical wikilinks — a hand-edit, a sync merge —
             // would collide as keys and send the hover-× to the wrong one.
             key: String(i),
-            label: parseConnectionText(f)?.title ?? f,
+            label: fileLabelText(f),
             // A name nothing answers to still renders. The value is in frontmatter and the user
             // has to be able to see it to remove it.
             unresolved: resolveFileValue(f, ctx.assets).kind === 'unresolved',
+            ...(remove ? { onRemove: () => remove(fileValueWithout(v, i)) } : {}),
           }))}
         />
       )

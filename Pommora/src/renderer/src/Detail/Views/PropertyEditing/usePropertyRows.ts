@@ -17,6 +17,7 @@ import {
 import { resolveFieldValue } from '../pipeline/value'
 import { buildResolveContext, type ResolveContext } from '../Table/resolveContext'
 import { sharedValueClickAction } from './valueClick'
+import { fileChipIndex, runFilePick } from './filePick'
 
 // One home for both page-property surfaces — the Settings pane's Properties leaf and the floating
 // preview's inspector. What they share is everything about resolving a page into rows and writing a
@@ -150,6 +151,12 @@ export function usePropertyRows(
       if (shared.kind === 'commit') {
         commitValue(def.id, shared.value)
         if (def.type === 'checkbox' && shared.value === null) onReveal(def.id)
+      } else if (shared.kind === 'file') {
+        // The dialog, not a picker anchored to the row — and the label clicked decides whether it
+        // replaces or adds. `editRow` becomes fire-and-forget; the commit lands when it resolves.
+        void runFilePick(def, current, fileChipIndex(el)).then((next) => {
+          if (next !== undefined) commitValue(def.id, next)
+        })
       } else setEditing({ id: def.id, mode: shared.kind === 'datetime' ? 'date' : 'picker' })
       return
     }
