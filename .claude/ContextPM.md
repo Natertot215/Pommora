@@ -73,7 +73,6 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 
 ### Known Issues
 
-- [ ] Connection suggestions omit the page the connection is being written into. The `[[` autocomplete drops the host page's own title from its candidates, so a page cannot be pointed at itself from its own body.
 - [ ] On menu rows where property values are expected to be positioned horizontally rather than stacked vertically, there isn't currently a constraint on how far indented relative to its properties label itself; this makes multi-value property rows have its values land its left-side padding tight against the property label; its right-side overflow scroll is properly done, however the lack of left-side padding against the value itself makes the menus cramped. Multiple CSS tries have been applied and reverted; a pane-width-relative max-width that these values can take on the left side of its field needs to be determined. 
 - [ ] How MarkdownPMs headings are given their top-bottom padding is still unclear; what's standard paragraph → heading spacing on Obsidian collapses on Pommora where the block above the heading doesn't seem to have any additional padding, or it's at least extremely minimal compared to the padding that headings have below them. 
 
@@ -105,4 +104,4 @@ The Settings window gained the foundation settings that accumulate into: one ros
 - Recent Work holds five entries under their History headings, and a sixth drops the oldest rather than accumulating.
 - Sections that aren't described in `Context-Format.md` shouldn't be removed — they're intentional and will resolve themselves when appropriate. 
 - Nathan also writes into §Pending Focuses, §Important Information, and §Known Issues directly; leave what's clearly written by him and consider his own writing style as something to lean towards rather than fight against. 
-- A section with nothing to say stays empty.[^1]
+- A section with nothing to say stays empty.
