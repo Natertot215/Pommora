@@ -386,7 +386,7 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): Built {
             : 'md-link-invalid',
       }).range(tk.contentRange[0], tk.contentRange[1]),
     )
-    const dim = Decoration.mark({ class: 'md-control' })
+    const dim = Decoration.mark({ class: valid ? 'md-control' : 'md-unresolved-syntax' })
     if (!valid || isActive) {
       ranges.push(dim.range(open[0], open[1])) // [
       ranges.push(dim.range(close[0], bracketEnd)) // ]
@@ -399,7 +399,7 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): Built {
       // destination and is introduced by the same glyph a connection wears, since it is one.
       ranges.push(
         Decoration.mark({
-          class: internal ? 'md-conn-target' : valid ? 'md-link-url' : 'md-control',
+          class: internal ? 'md-conn-target' : valid ? 'md-link-url' : 'md-unresolved-syntax',
         }).range(bracketEnd, close[1]),
       ) // (url)
       if (internal) ranges.push(connGlyph('resolved', bracketEnd + 1))
@@ -431,24 +431,24 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): Built {
         if (pipe) ranges.push(Decoration.mark({ class: 'md-conn-target' }).range(pipe[0], pipe[1]))
       }
       if (status === 'phantom') {
-        // A connection that names no page stays raw `[[Foo]]` — brackets visible and inert — and
-        // clicking into one is inspecting an unresolved link, which should look unresolved.
+        // A connection that names no page keeps its brackets, and reads as the unresolved link it
+        // is — clicking into one is inspecting an unresolved link, which should look unresolved.
         //
-        // One being TYPED takes the connection color from its first character instead of reading as
-        // plain prose until a title happens to match: the author is writing a link and the text
-        // should say so. It is not resolved, and doesn't claim to be. Typing is what earns that, not
-        // the caret's position, so the field tracks the gesture.
-        if (!open || (typing !== tk.range[0] && !pipe)) return
-        if (typing === tk.range[0])
-          ranges.push(
-            Decoration.mark({ class: 'md-connection-typing' }).range(
-              tk.contentRange[0],
-              tk.contentRange[1],
-            ),
-          )
-        for (const [ms, me] of tk.markerRanges) {
-          ranges.push(Decoration.mark({ class: 'md-bracket' }).range(ms, me))
-        }
+        // One being TYPED takes the connection color from its first character instead: the author is
+        // writing a link and the text should say so. It is not resolved, and doesn't claim to be.
+        // Typing is what earns that, not the caret's position, so the field tracks the gesture.
+        const writing = typing === tk.range[0]
+        ranges.push(
+          Decoration.mark({
+            class: writing ? 'md-connection-typing' : 'md-connection-phantom',
+          }).range(tk.contentRange[0], tk.contentRange[1]),
+        )
+        // Syntax being authored is syntax either way; the rest is the unresolved link's own, and
+        // follows it wherever the setting takes it.
+        const bracket = Decoration.mark({
+          class: open && (writing || pipe) ? 'md-bracket' : 'md-phantom-syntax',
+        })
+        for (const [ms, me] of tk.markerRanges) ranges.push(bracket.range(ms, me))
         return
       }
       ranges.push(

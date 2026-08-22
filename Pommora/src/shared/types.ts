@@ -127,6 +127,9 @@ export interface Personalization {
   /** Wiki-link clicks open the Page Preview window instead of navigating. ⌘-click takes
    *  the other route. Absent = navigate. */
   connectionsOpenInPreview?: boolean
+  /** How a link that leads nowhere reads — a `[[Title]]` naming no page, or a malformed address.
+   *  Absent = dimmed, its syntax showing; true renders it as the plain prose it is written as. */
+  plainUnresolvedLinks?: boolean
   /** Ribbon icon order below the pinned Homepage — bare icon keys, in display order. */
   ribbonOrder?: string[]
   /** The window zoom the nexus opens at (and ⌘0 resets to). Absent = 1.0; ⌘ +/− nudge live from
@@ -161,6 +164,10 @@ export interface Personalization {
   /** The scale embedded pages and views start at, before a block's own Scale multiplies it.
    *  Absent = 0.9. */
   embedScale?: number
+  /** How large a page reads — its body text, the chrome scaled off it, and the inline title, as one
+   *  factor. Absent = 1.0. A tile states its own size outright through the Embed Scale, so this
+   *  governs the page surface and stops at a tile's edge rather than multiplying through it. */
+  editorScale?: number
   /** Whether a page opens with its footnotes section shown. Absent = hidden. A page can override
    *  this for itself, per machine, and that override outranks this. */
   citationsShown?: boolean
@@ -181,6 +188,8 @@ export const SCALE_STEPS = [0.5, 0.65, 0.75, 0.9, 1, 1.1, 1.25, 1.5] as const
 export const SCALE_MIN = SCALE_STEPS[0]
 export const SCALE_MAX = SCALE_STEPS[SCALE_STEPS.length - 1]
 export const WEB_ZOOM_DEFAULT = 1
+/** The scale a page reads at with nothing asked for — the ramp's own middle. */
+export const EDITOR_SCALE_DEFAULT = 1
 export function coerceScale(v: unknown, fallback: number): number {
   if (typeof v !== 'number' || !Number.isFinite(v)) return fallback
   return Math.min(SCALE_MAX, Math.max(SCALE_MIN, v))

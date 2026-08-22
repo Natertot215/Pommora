@@ -194,7 +194,7 @@ function PreviewWindowBody({
       dragSurfaces={DRAG_SURFACES}
       ariaLabel="Page Preview"
       // --mdpm-scale mirrors the embed's so the footer aligns to its text column.
-      style={{ '--mdpm-scale': embedScale } as React.CSSProperties}
+      style={{ '--mdpm-scale': embedScale, '--editor-scale': 1 } as React.CSSProperties}
       onScan={promote}
       title={
         <PreviewTabStrip
