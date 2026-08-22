@@ -8,7 +8,6 @@
 // A field's glyphs space THEMSELVES: a leading icon and a trailing chevron want different gaps, and
 // one container `gap` can only state one — so each role carries its own margin and the field sets none.
 import { style } from '@vanilla-extract/css'
-import { titleReveal } from '../../design-system/animations.css'
 import { vars as colorVars } from '../../design-system/tokens/color.css'
 import { text } from '../../design-system/tokens/typography.css'
 import {
@@ -17,7 +16,6 @@ import {
 } from '../../design-system/components/interactionField.css'
 import { focusRing } from '../../design-system/components/fieldRing'
 import { growToContent } from '../../design-system/components/menu/paneGrowth'
-import { segment } from '../../design-system/components/SegmentRun/segmentRun.css'
 
 const c = colorVars.color
 
@@ -201,46 +199,6 @@ export const chipRun = style({
   alignItems: 'center',
   gap: '3px',
   flex: '1 1 auto',
-})
-
-/** The ×'s SLOT — collapsed to nothing at rest, opening to the glyph's width when its segment is
- *  hovered, so the segment elongates to make room instead of the × landing on the title. The house
- *  `0fr ↔ 1fr` morph (the segmented control's label slot; `Reveal` is its vertical twin), which
- *  collapses the leading gap along with the width — a resting segment is pixel-identical to one that
- *  never had a ×. */
-export const segmentRemoveSlot = style({
-  display: 'inline-grid',
-  gridTemplateColumns: '0fr',
-  marginLeft: 0,
-  minWidth: 0,
-  overflow: 'hidden',
-  transition: `grid-template-columns ${titleReveal}, margin-left ${titleReveal}`,
-  selectors: {
-    [`${segment}:hover &`]: { gridTemplateColumns: '1fr', marginLeft: TRAILING_GAP },
-  },
-})
-
-/** The × itself. The opacity lives HERE, not on the slot: the shared remove gates its click on its
- *  own computed opacity, so a transparent button inside an open slot would still remove. */
-export const segmentRemove = style({
-  // The grid ITEM has to zero its own floor or the slot can't close: `0fr` resolves to
-  // `minmax(auto, 0fr)`, and that `auto` is the item's min-content width. Reveal and the segmented
-  // control's label slot each do the same on their inner box.
-  minWidth: 0,
-  overflow: 'hidden',
-  border: 'none',
-  background: 'none',
-  padding: 0,
-  display: 'inline-flex',
-  alignItems: 'center',
-  color: c.label.secondary,
-  cursor: 'pointer',
-  opacity: 0,
-  transition: `opacity ${titleReveal}`,
-  selectors: {
-    [`${segment}:hover &`]: { opacity: 1 },
-    '&:hover': { color: c.label.primary },
-  },
 })
 
 /** The Operator cell when its operator takes NO operand (Is Empty, Is Checked, Has File). With no
