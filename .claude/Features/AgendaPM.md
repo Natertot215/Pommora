@@ -28,12 +28,9 @@ A slot whose folder name is already taken goes unregistered — seeding refuses 
 
 - **Tasks and Events are Markdown.** One `.md` grammar covers all operational content — the body is the description — so agenda items inherit the page writers, the link cascade, and the editor rather than carrying a second serializer. JSON stays for sidecars, configs, and registries.
 - **Agenda joins the tree walk.** Its kinds enter as their own top-level branch, giving every Task and Event a record, a navKey, and a search entry. Collection-scoped consumers — connections, embeds, breadcrumbs — stay page-only by kind partition.
-
-**Surfaces** — no selection kind opens a Task or Event, so there is no detail surface, no calendar or date-grouped layout, and no create path. Quick Capture's named blocker[^4] is exactly this.
-
-**Built-in Status** — a non-deletable **Status** property on both kinds[^5], tracking the user's engagement rather than the clock; for an Event it stays decoupled from the date math.
-
-**EventKit Sync** — the opt-in bidirectional mirror to the system Reminders and Calendar apps. The calendar database is API-only — it consumes constructed objects with typed properties — so sync is a code-level translation layer for whatever Pommora stores on disk, constraining none of the decisions above.
+- **Surfaces** — no selection kind opens a Task or Event, so there is no detail surface, no calendar or date-grouped layout, and no create path. Quick Capture's named blocker[^4] is exactly this.
+- **Built-in Status** — a non-deletable **Status** property on both kinds[^5], tracking the user's engagement rather than the clock; for an Event it stays decoupled from the date math.
+- **EventKit Sync** — the opt-in bidirectional mirror to the system Reminders and Calendar apps. The calendar database is API-only — it consumes constructed objects with typed properties — so sync is a code-level translation layer for whatever Pommora stores on disk, constraining none of the decisions above.
 
 [^1]: [[ArchitecturePM]]
 [^2]: [[SidebarPM]]

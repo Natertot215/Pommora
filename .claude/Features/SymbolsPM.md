@@ -24,7 +24,6 @@ Pommora's standard semantic icons — the canonical glyph for each pane, propert
 **Scale Resolution:** Every glyph draws at a size taken from one ladder, so a symbol's scale is a named step rather than a per-surface number. A step sets the icon's `font-size` and the glyph renders at `1em`, which keeps stroke weight proportional and lets a symbol inherit its surrounding type when no step is named.
 
 #### Sizes
-
 | Step         | Size |
 | ------------ | ---- |
 | `largeTitle` | 26px |
@@ -41,7 +40,6 @@ Pommora's standard semantic icons — the canonical glyph for each pane, propert
 
 
 #### View Settings Panes
-
 | Pane          | Icon                 |
 | ------------- | -------------------- |
 | Configuration | `sliders-horizontal` |
@@ -53,7 +51,6 @@ Pommora's standard semantic icons — the canonical glyph for each pane, propert
 | Sort          | `arrow-up-down`      |
 
 #### Property Types
-
 | Type         | Icon                 |
 | ------------ | -------------------- |
 | Number       | `hash`               |
@@ -70,7 +67,6 @@ Pommora's standard semantic icons — the canonical glyph for each pane, propert
 | Created      | `clock-plus`         |
 
 #### View Types
-
 | Type     | Icon                    |
 | -------- | ----------------------- |
 | Table    | `table`                 |
@@ -106,9 +102,5 @@ The curated registry above is the app's own semantic vocabulary — the fixed gl
 ### Known Issues
 
 - **Two curated keys shadow real Lucide ids.** `table` and `lock` name Pommora's own glyphs in the registry and are also the ids of different Lucide glyphs the picker offers from the full set. Registry-first resolution renders Pommora's glyph instead of the one the picker cell showed. The resolution is open.
-
-### Pending
-
-- **`link-2`** — registered and reserved as the Connections glyph; the `[[Title]]` connections surface doesn't render it.
 
 [^1]: [[PagesPM]]
