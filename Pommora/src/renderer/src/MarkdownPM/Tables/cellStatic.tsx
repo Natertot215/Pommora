@@ -1,4 +1,4 @@
-import { memo, useRef } from 'react'
+import { Fragment, memo, useRef } from 'react'
 import { linkTarget, tokenize, type Token } from '../tokens'
 import { MD_LINK_CLASS } from '../editor/decorations'
 import { CONTENT_CLASS } from '../decorations/intent'
@@ -41,8 +41,21 @@ export function renderCellContent(
     if (tk.kind === 'wikiLink') {
       const [rs, re] = tk.resolveRange ?? tk.contentRange
       const status = conn?.resolve(text.slice(rs, re)).status
-      // Phantom (or no index) → raw `[[…]]` inert, exactly as the editor leaves it.
-      if (!status || status === 'phantom') out.push(text.slice(s, e))
+      // Until an index answers, a link's standing is unknown and the text stays exactly as written.
+      if (!status) out.push(text.slice(s, e))
+      else if (status === 'phantom')
+        // Inert, and dressed as the unresolved link it is — exactly as the editor leaves one.
+        out.push(
+          <Fragment key={key++}>
+            <span className="md-phantom-syntax md-unresolved-fixed">
+              {text.slice(s, tk.contentRange[0])}
+            </span>
+            <span className="md-connection-phantom md-unresolved-fixed">{content}</span>
+            <span className="md-phantom-syntax md-unresolved-fixed">
+              {text.slice(tk.contentRange[1], e)}
+            </span>
+          </Fragment>,
+        )
       else
         out.push(
           // The resolve key rides the span: an aliased link's text is no longer what it resolves,
@@ -77,7 +90,9 @@ export function renderCellContent(
           // own right-click menu has to know which link it was popped on.
           <span
             key={key++}
-            className={target.kind === 'external' ? MD_LINK_CLASS : 'md-link-invalid'}
+            className={
+              target.kind === 'external' ? MD_LINK_CLASS : 'md-link-invalid md-unresolved-fixed'
+            }
             data-link-span={`${s},${e}`}
           >
             {content}

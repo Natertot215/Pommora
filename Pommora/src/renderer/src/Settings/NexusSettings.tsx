@@ -21,6 +21,7 @@ import {
   HOVER_LINGER_MAX,
   TIME_FORMAT_LABELS,
   TIME_FORMAT_SETTINGS,
+  EDITOR_SCALE_DEFAULT,
   EMBED_SCALE_DEFAULT,
   SCALE_STEPS,
   WEB_ZOOM_DEFAULT,
@@ -394,6 +395,13 @@ const LEAVES = roster([
       {
         rows: [
           {
+            kind: 'zoom',
+            key: 'editorScale',
+            label: 'Editor Scale',
+            hint: 'How large a page reads — its text, its title, and the chrome around them. An embedded page keeps its own scale.',
+            fallback: EDITOR_SCALE_DEFAULT,
+          },
+          {
             kind: 'toggle',
             key: 'codeblockLineCount',
             label: 'Show Line Count In Code Blocks',
@@ -404,6 +412,17 @@ const LEAVES = roster([
             key: 'outlinerLines',
             label: 'Outliner Lines',
             hint: 'Show indent rails on nested lists in the editor.',
+          },
+        ],
+      },
+      {
+        title: 'Links',
+        rows: [
+          {
+            kind: 'toggle',
+            key: 'plainUnresolvedLinks',
+            label: 'Display Unresolved Links As Plain Syntax',
+            hint: 'A link leading nowhere reads as the prose it is written as, instead of dimmed with its syntax showing.',
           },
         ],
       },

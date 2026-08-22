@@ -582,6 +582,7 @@ describe('readNexus — personalization', () => {
       'navCloseOnSelect',
       'revealTabBarOnHover',
       'connectionsOpenInPreview',
+      'plainUnresolvedLinks',
       'permanentDelete',
       'pasteLinkIntoText',
       'citationsShown',

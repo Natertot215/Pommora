@@ -135,7 +135,7 @@ export function PageEmbed({
     // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a click-to-edit surface over a contenteditable that is already keyboard-reachable
     <div
       className={`pgembed${editing ? ' is-editing' : ''}${chrome === 'page' && entry?.cover ? ' has-banner' : ''}`}
-      style={{ '--mdpm-scale': embedScale } as React.CSSProperties}
+      style={{ '--mdpm-scale': embedScale, '--editor-scale': 1 } as React.CSSProperties}
       onClick={(e) => {
         if (editing || locked) return // locked: no edit entry; selection still works
         // The banner band is chrome with its own menu — a stray click on it must not put the

@@ -1,4 +1,5 @@
 import {
+  EDITOR_SCALE_DEFAULT,
   EMBED_SCALE_DEFAULT,
   type Personalization,
   coerceScale,
@@ -27,6 +28,7 @@ const ROOT_CLASSES: Partial<Record<keyof Personalization, string>> = {
   hideChevrons: 'hide-chevrons',
   outlinerLines: 'outliner-lines',
   codeblockLineCount: 'cb-line-count',
+  plainUnresolvedLinks: 'plain-unresolved',
 }
 
 /** The knobs that render as a root class when the key holds one particular value — the
@@ -47,6 +49,10 @@ export function applyPersonalizationKey<K extends keyof Personalization>(
     el.style.setProperty('--view-embed-zoom', String(viewEmbedZoom(scale)))
     return
   }
+  if (key === 'editorScale') {
+    el.style.setProperty('--editor-scale', String(coerceScale(value, EDITOR_SCALE_DEFAULT)))
+    return
+  }
   const link = LINK_VARS[key as keyof typeof LINK_VARS]
   if (link) {
     el.style.setProperty(link.cssVar, linkColorCss(value as string | undefined, link.inherit))
@@ -62,6 +68,7 @@ export function applyPersonalizationKey<K extends keyof Personalization>(
 
 export function applyPersonalization(p: Personalization): void {
   applyPersonalizationKey('embedScale', p.embedScale)
+  applyPersonalizationKey('editorScale', p.editorScale)
   for (const table of [LINK_VARS, ROOT_CLASSES, ROOT_VALUE_CLASSES])
     for (const key of Object.keys(table) as (keyof Personalization)[])
       applyPersonalizationKey(key, p[key])
