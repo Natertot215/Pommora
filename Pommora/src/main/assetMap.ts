@@ -10,7 +10,7 @@ import { normalizeTitle } from '@shared/connections'
 import { stabilize } from '@shared/treeStabilize'
 import { ASSETS_DIR_REL, THUMBNAILS_SEGMENT } from '@shared/nexusPaths'
 import type { AssetMap } from '@shared/types'
-import { neverWatched } from './exclusion'
+import { neverWatched, rootSegs } from './exclusion'
 import { assetsDir, relPosix } from './paths'
 import { listFilesRecursive } from './io/walk'
 import { readWatchScope } from './settings'
@@ -23,7 +23,7 @@ import type { WatchEventName } from './watchPatch'
  *  Thumbnails are Pommora's own derived files and are skipped under the default root alone; a
  *  user's folder that happens to be called `thumbnails` is theirs. */
 function indexable(rel: string, assetDir: string): boolean {
-  const below = rel.split('/').slice(assetDir.split('/').filter(Boolean).length)
+  const below = rel.split('/').slice(rootSegs(assetDir).length)
   if (below.some(neverWatched)) return false
   return !(rel.startsWith(`${ASSETS_DIR_REL}/`) && below.includes(THUMBNAILS_SEGMENT))
 }

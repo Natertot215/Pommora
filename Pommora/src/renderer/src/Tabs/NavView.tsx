@@ -4,7 +4,6 @@ import { text } from '@renderer/design-system/tokens'
 import { SearchField } from '@renderer/design-system/components/SearchField'
 import type { NavRef } from '@shared/types'
 import { useAssetUrl, useSession } from '../store'
-
 import { moveByKey } from '../Navigation/navRecents'
 import { splitSearch, useNavData } from '../Navigation/useNavData'
 import { NavGallery } from '../NavWindow/NavGallery'

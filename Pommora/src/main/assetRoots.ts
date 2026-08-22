@@ -4,12 +4,12 @@
 
 import { parseConnectionText } from '@shared/connections'
 import { ASSETS_DIR_REL } from '@shared/nexusPaths'
-import { normalizeSeg } from './exclusion'
+import { normalizeSeg, rootSegs } from './exclusion'
 import { liveAssetMap, resolveAssetName } from './assetMap'
 import { readWatchScope } from './settings'
 
 const startsUnder = (segs: string[], root: string): boolean => {
-  const prefix = root.split('/').filter(Boolean).map(normalizeSeg)
+  const prefix = rootSegs(root).map(normalizeSeg)
   // Case-folded like every other root test in the app: a stored path whose casing differs from
   // the configured root is inside it for the walk and the watcher, and serving it 403 while they
   // agree it exists is the divergence this module exists to prevent. `resolveUnderRoot` still

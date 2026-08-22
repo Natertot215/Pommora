@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { ASSETS_DIR_REL } from '@shared/nexusPaths'
 import { validateAssetDir } from './assetDirValidate'
+import { readSettingsLeaves } from './readNexus'
 
 let root: string
 let outside: string
@@ -26,6 +27,22 @@ describe('validateAssetDir', () => {
   it('accepts an ordinary in-nexus folder, answering its nexus-relative POSIX path', async () => {
     const abs = await dir('file-assets', 'photos')
     expect(await validateAssetDir(root, abs)).toEqual({ ok: true, value: 'file-assets/photos' })
+  })
+
+  // A folder the chooser accepts and the reader coerces back to the default is a setting that
+  // silently does nothing: the pick succeeds, the key is stored, and every asset resolves against
+  // `.nexus/assets` anyway. One rule, asked of one owner.
+  it('refuses exactly what the settings reader refuses, and accepts exactly what it keeps', async () => {
+    for (const name of ['a\\b', '.nexus', '.trash']) {
+      const abs = await dir(name)
+      const r = await validateAssetDir(root, abs)
+      expect(r.ok, `${name} should be refused`).toBe(false)
+      expect(readSettingsLeaves({ asset_directory: name }).assetDirectory).toBe(ASSETS_DIR_REL)
+    }
+    const abs = await dir('shared-assets')
+    const r = await validateAssetDir(root, abs)
+    expect(r.ok).toBe(true)
+    if (r.ok) expect(readSettingsLeaves({ asset_directory: r.value }).assetDirectory).toBe(r.value)
   })
 
   it('the negative control: a folder is refused for one .md and accepted without it', async () => {
