@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { ASSETS_DIR_REL, THUMBNAILS_SEGMENT } from '@shared/nexusPaths'
-import { buildAssetMap, patchAssetMap, resolveAssetName } from './assetMap'
+import { AMBIGUOUS, buildAssetMap, patchAssetMap, resolveAssetName } from './assetMap'
 
 let root: string
 const put = async (...segs: string[]): Promise<void> => {
@@ -86,7 +86,7 @@ describe('resolveAssetName', () => {
   it('answers a path, nothing, or a refusal to choose', () => {
     expect(resolveAssetName(map, 'A.png')).toBe('file-assets/a.png')
     expect(resolveAssetName(map, 'missing.png')).toBeNull()
-    expect(resolveAssetName(map, 'dup.png')).toBe('ambiguous')
+    expect(resolveAssetName(map, 'dup.png')).toBe(AMBIGUOUS)
     expect(resolveAssetName(map, '')).toBeNull()
   })
 })
@@ -112,7 +112,7 @@ describe('patchAssetMap', () => {
     await put('file-assets', 'a', 'IMG.png')
     await put('file-assets', 'b', 'IMG.png')
     const built = await buildAssetMap(root, 'file-assets')
-    expect(resolveAssetName(built, 'IMG.png')).toBe('ambiguous')
+    expect(resolveAssetName(built, 'IMG.png')).toBe(AMBIGUOUS)
     const gone = patchAssetMap(built, 'file-assets/a/IMG.png', 'unlink')
     expect(gone.files['img.png']).toEqual(['file-assets/b/IMG.png'])
     expect(resolveAssetName(gone, 'IMG.png')).toBe('file-assets/b/IMG.png')
@@ -124,7 +124,7 @@ describe('patchAssetMap', () => {
     expect(resolveAssetName(built, 'IMG.png')).toBe('file-assets/b/IMG.png')
     const dup = patchAssetMap(built, 'file-assets/a/IMG.png', 'add')
     expect(dup.files['img.png']).toEqual(['file-assets/a/IMG.png', 'file-assets/b/IMG.png'])
-    expect(resolveAssetName(dup, 'IMG.png')).toBe('ambiguous')
+    expect(resolveAssetName(dup, 'IMG.png')).toBe(AMBIGUOUS)
   })
 
   it('a thumbnail or a cruft path patches nothing', async () => {

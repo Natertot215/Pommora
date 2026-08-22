@@ -60,6 +60,7 @@ import {
 import { pathExists } from './io/atomicWrite'
 import { readAppConfig, updateAppConfig, addRecent, DEFAULT_TRASH_MODE } from './appConfig'
 import { emptyAssetMap, liveAssetMap } from './assetMap'
+import { underAssetRoot } from './assetRoots'
 import { sessionRoot, openSession, resolveRestorePath, isExistingDir } from './session'
 import { openSessionDb, closeSessionDb, sessionDb } from './sessionDb'
 import { stampAdopted } from './adopt'
@@ -70,6 +71,7 @@ import {
   readLivePersonalization,
   readPermanentDelete,
   readSubfield,
+  readWatchScope,
   writeNavViewModes,
   writePersonalization,
   writeSubfield,
@@ -237,7 +239,8 @@ function registerAssetProtocol(): void {
     const root = sessionRoot()
     if (!root) return new Response('No nexus open', { status: 404 })
     const rel = decodeURIComponent(new URL(request.url).pathname).replace(/^\/+/, '')
-    if (!rel.startsWith(`${ASSETS_DIR_REL}/`)) return new Response('Forbidden', { status: 403 })
+    if (!underAssetRoot(rel, (await readWatchScope(root)).assetDir))
+      return new Response('Forbidden', { status: 403 })
     const resolved = await resolveUnderRoot(root, rel)
     if (!resolved.ok) return new Response('Not found', { status: 404 })
     try {

@@ -609,6 +609,50 @@ describe('handleMutate — setBanner', () => {
     expect(sc.id).toBe('pt') // existing keys untouched
   })
 
+  // Each half gets its own nexus: the asset map is built once per root and kept, exactly as it
+  // is in the app, where a file arriving reaches it as a watch event rather than a re-listing.
+  const withAssets = async (banner: string, files: string[][]): Promise<string> => {
+    const assets = join(root, 'file-assets')
+    await writeFile(
+      join(root, '.nexus', 'settings.json'),
+      JSON.stringify({ asset_directory: 'file-assets' }),
+    )
+    for (const segs of files) {
+      await mkdir(join(assets, ...segs.slice(0, -1)), { recursive: true })
+      await writeFile(join(assets, ...segs), 'bytes')
+    }
+    await writeFile(
+      join(root, 'Notes', '_pagecollection.json'),
+      JSON.stringify({ id: 'pt', banner }),
+    )
+    return assets
+  }
+
+  it('a replaced banner named by wikilink is deleted when exactly one file answers', async () => {
+    const assets = await withAssets('[[Solo.png]]', [['Solo.png']])
+    const r = await handleMutate(
+      { op: 'setBanner', path: 'Notes', kind: 'collection', dataUrl: PNG },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(true)
+    expect(await pathExists(join(assets, 'Solo.png'))).toBe(false)
+  })
+
+  it('a replaced banner several files answer to deletes none of them', async () => {
+    // Rendering the wrong image is recoverable; deleting one is not.
+    const assets = await withAssets('[[Twin.png]]', [
+      ['a', 'Twin.png'],
+      ['b', 'Twin.png'],
+    ])
+    const r = await handleMutate(
+      { op: 'setBanner', path: 'Notes', kind: 'collection', dataUrl: PNG },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(true)
+    expect(await pathExists(join(assets, 'a', 'Twin.png'))).toBe(true)
+    expect(await pathExists(join(assets, 'b', 'Twin.png'))).toBe(true)
+  })
+
   it('sets a banner on a set sidecar, keyed by the set id', async () => {
     const r = await handleMutate(
       { op: 'setBanner', path: 'Notes/Daily', kind: 'set', dataUrl: PNG },
