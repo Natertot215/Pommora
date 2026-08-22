@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { EditableInput } from '../EditableInput'
+import { cx } from '../../design-system/cx'
 import { Icon } from '@renderer/design-system/symbols'
 import { PickerMenu, PickerOption } from '../../design-system/components/PickerMenu'
 import { detail } from '../../design-system/components/menu/menu.css'
@@ -77,7 +78,7 @@ export function PickerControl<T extends string>({
         <span className={s.trigger}>
           <EditableInput
             value={typeable.text}
-            className={s.valueCaret}
+            className={cx(valueClass, s.caretShape)}
             autoSize
             onCommit={(written) => {
               setTyping(false)
