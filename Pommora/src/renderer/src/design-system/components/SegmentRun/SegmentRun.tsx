@@ -15,20 +15,16 @@ export interface SegmentEntry {
 /** The divided run. `nested` says what the entries are to each other, which is what the separator
  *  reports: the hairline separates VALUES standing beside one another, while a nested run's
  *  entries each sit INSIDE the one before — a descent through a path — and take the breadcrumb's
- *  own `›`.
- *  A consumer's `className` replaces the run's own layout when its field wants different spacing
- *  or a different eclipse width. */
+ *  own `›`. */
 export function SegmentRun({
   entries,
   nested = false,
-  className,
 }: {
   entries: SegmentEntry[]
   nested?: boolean
-  className?: string
 }): React.JSX.Element {
   return (
-    <OverflowScroll className={className ?? sr.segmentRun}>
+    <OverflowScroll className={sr.segmentRun}>
       {entries.map((e, i) => (
         <Fragment key={e.key}>
           {i > 0 &&
