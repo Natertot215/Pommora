@@ -55,11 +55,11 @@ function editFor(action: string, doc: string, from: number, to: number): FormatE
     case 'format':
       return toggleInline(doc, from, to, value as InlineFormat)
     case 'heading':
-      return setHeading(doc, from, Number(value) as HeadingLevel)
+      return setHeading(doc, from, to, Number(value) as HeadingLevel)
     case 'list':
       return setList(doc, from, to, value as ListKind)
     case 'block':
-      return setBlock(doc, from, value as BlockFormat)
+      return setBlock(doc, from, to, value as BlockFormat)
     default:
       return null
   }
