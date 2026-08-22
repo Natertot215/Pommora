@@ -61,6 +61,7 @@ import { pathExists } from './io/atomicWrite'
 import { readAppConfig, updateAppConfig, addRecent, DEFAULT_TRASH_MODE } from './appConfig'
 import { liveAssetMap } from './assetMap'
 import { underAssetRoot } from './assetRoots'
+import { validateAssetDir } from './assetDirValidate'
 import { sessionRoot, openSession, resolveRestorePath, isExistingDir } from './session'
 import { openSessionDb, closeSessionDb, sessionDb } from './sessionDb'
 import { stampAdopted } from './adopt'
@@ -870,6 +871,32 @@ serveBridge(
           liveKeys.filter((k): k is string => typeof k === 'string'),
         )
         return ok(null)
+      },
+    },
+
+    // A sheet on the calling window. Unlike `nexus:choose` this adopts nothing — it answers the
+    // folder's nexus-relative path and leaves the write to the row that asked.
+    'assets:chooseDir': {
+      kind: 'window',
+      fn: async (win: BrowserWindow | null) => {
+        const root = sessionRoot()
+        if (root === null) return NO_NEXUS
+        const opts = {
+          properties: ['openDirectory', 'createDirectory'],
+          defaultPath: root,
+          message: 'Choose a folder for assets',
+        } satisfies OpenDialogOptions
+        // A `window` handler has no envelope net of its own.
+        try {
+          const result = win
+            ? await dialog.showOpenDialog(win, opts)
+            : await dialog.showOpenDialog(opts)
+          const [chosen] = result.filePaths
+          if (result.canceled || !chosen) return ok(null)
+          return validateAssetDir(root, chosen)
+        } catch (e) {
+          return fail('operation-failed', errText(e))
+        }
       },
     },
 

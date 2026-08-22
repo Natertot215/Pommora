@@ -402,11 +402,11 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 **Negative control:** the refusal fires — a folder seeded with one `.md` is refused, and the same folder with the `.md` removed is accepted. Both halves.
 
 **Steps:**
-- [ ] Write the failing tests for all seven failure-half cases and both halves of the control.
-- [ ] Run — expect failures.
-- [ ] Implement the validator and the handler; `properties: ['openDirectory', 'createDirectory']`, `defaultPath` the nexus root.
-- [ ] `npm run typecheck && npm run test` — expect green.
-- [ ] Commit: `feat(settings): a validated in-nexus folder chooser for the asset directory`
+- [x] Write the failing tests for all seven failure-half cases and both halves of the control.
+- [x] Run — expect failures.
+- [x] Implement the validator and the handler; `properties: ['openDirectory', 'createDirectory']`, `defaultPath` the nexus root.
+- [x] `npm run typecheck && npm run test` — expect green. *(0 · 277 files / 3452 tests · lint 0)*
+- [x] Commit: `feat(settings): a validated in-nexus folder chooser for the asset directory`
 
 #### Task 9: The Settings row
 
@@ -645,6 +645,8 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
   - The review's central finding stands: the plan built the external-change machinery and never asked what happens **when Pommora is the writer**. `atomicWriteBinary` → `recordWrite` → `isRecentWrite` means no in-app write reaches `settle`, so the asset copy starved the map (F1), the settings write starved the re-arm (F2), and the widened gate starved the delete (F3). Three defects, one root cause, all shipping silently green. Requirement 10 now names the path.
   - **Unknown resolved:** the `tree.unreadable` check at `watchPatch.ts:121` runs before Task 3's arm, but every producer of that list sits inside `readContainerMeta` / `readDirectPages` / `readChildSets`, which run only on descended directories — and Task 2 prunes the asset root at `shouldSkipDir`. Safe, and conditional on Task 2, which Task 3 now records.
 ### Deviations
+- **Task 8 — the validator refuses ANY Markdown, not only what the tree shows.** An `_`-prefixed page is hidden from the tree but still swept and rewritten by the cascade, so a folder holding one is corpus either way. `isContentFile` would have admitted it.
+- **Task 8 — and the folders the app owns whole.** The reader already refuses them for a hand-edited value; the dialog would otherwise offer a route the file itself denies.
 - **Task 7 — ambiguity is a symbol, not the string `'ambiguous'`.** The specified `string | null | 'ambiguous'` collapses to `string | null` in TypeScript, so `typeof hit === 'string'` takes the refusal for a path and deletes by it. The first delete-guard test caught exactly that; a `unique symbol` makes the mistake a compile error instead of a lost file.
 - **Task 7 — one resolver serves all four delete sites.** Rather than each site widening its own gate and then resolving, `assetFileToDelete` answers the only question they ask: what real file may this stored value delete. A wikilink is constrained by the map it resolves through, a raw path by `underAssetRoot`, and everything else deletes nothing.
 - **Task 6 — the raw builder keeps its name; resolution gets its own.** `assetUrl(rel)` stays the pure scheme builder the two thumbnail sites pass raw paths to, and `resolveAssetUrl(value, map)` is the resolving entry point. Overloading one name would have made the survivors' call shape a special case of the resolver rather than the plainly different thing it is. A `useAssetUrl()` hook binds the map once per component, so the eleven sites select it the same way rather than each threading a map argument.
