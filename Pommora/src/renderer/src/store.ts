@@ -18,7 +18,7 @@ import {
   type SelectTarget,
   type SetNode,
   type Tab,
-  AssetMap,
+  type AssetMap,
 } from '@shared/types'
 import {
   type Creator,
@@ -52,6 +52,7 @@ import {
   type PreviewTab,
 } from './PagePreview/previewTabs'
 import { toNavRef } from '@shared/types'
+import { resolveAssetUrl } from './assetUrl'
 
 const EMPTY_ASSET_MAP: AssetMap = { files: {}, version: 0 }
 import {
@@ -196,6 +197,14 @@ export function openPageBody(
  *  an absent or out-of-range value means is settled once. */
 export const useEmbedScale = (): number =>
   useSession((s) => coerceScale(s.personalization.embedScale, EMBED_SCALE_DEFAULT))
+
+/** Resolve a stored asset value — a wikilink, a raw path, or a web address — to what an `<img>`
+ *  renders, or null where nothing does. Held here beside the store because every consumer needs
+ *  the same map, and `assetUrl.ts` stays free of React so a non-Electron host can reuse it. */
+export const useAssetUrl = (): ((value: string | null | undefined) => string | null) => {
+  const map = useSession((s) => s.assetMap)
+  return (value) => resolveAssetUrl(value, map)
+}
 
 /** The nexus-wide footnote-visibility default: an absent key means hidden. Local, because a page's
  *  own answer is the only one a surface asks for — `citationsVisible` is where the fallback happens
