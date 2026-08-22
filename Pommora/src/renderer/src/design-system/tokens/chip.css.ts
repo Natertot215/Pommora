@@ -93,10 +93,12 @@ export const chipCapsule = style([
  *  as a field. Being a shape rather than a lookalike is what gives it `chipRemovable` /
  *  `chipRemove` and the melt reveal structurally, instead of a second copy of that machinery.
  *
- *  `--chip-fill` is the melt twin's paint (`chipLabelBlur`), so a chrome-less shape has to name the
- *  ground it sits ON rather than a fill of its own — otherwise the var is undefined, the
- *  declaration drops, and the twin inherits the label color, stacking a crisp duplicate on the text
- *  instead of smearing. A host on a different ground overrides `--chip-fill` on its own scope. */
+ *  `--chip-fill` FOLLOWS the background, and this shape's is transparent — so the melt twin paints
+ *  nothing and the tail dissolves through `chipLabelMelt`'s ramp alone. Naming a color here would
+ *  be a guess: a label with no fill sits directly on whatever is behind it, which is a translucent
+ *  field wash in the Filter pane and a table row that changes to its hover tone on the very hover
+ *  that reveals the ×. Leaving the var UNSET is the one thing that can't be done — the declaration
+ *  would drop and the twin would inherit the label color, stacking a crisp duplicate on the text. */
 export const chipFile = style([
   chipBase,
   {
@@ -105,7 +107,7 @@ export const chipFile = style([
     // `chipBase` sets border-STYLE and every other shape names its width; a chrome-less one has to
     // say none, or the UA's `medium` paints a 3px rule in the text color.
     border: 'none',
-    vars: { '--chip-fill': colorVars.color.surface.primary },
+    vars: { '--chip-fill': 'transparent' },
   },
 ])
 

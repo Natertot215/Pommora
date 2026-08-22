@@ -701,6 +701,13 @@ Each finding opened and reproduced before folding.
 - **Ruled, not fixed · the conditional prop spreads.** `exactOptionalPropertyTypes` isn't set, so `onRemove={e.onRemove}` would be identical and shorter — but the pattern is at ~34 sites across the renderer. Changing it here alone trades repo consistency for four lines. A repo-wide call, not a Phase 2 cleanup.
 - **Ruled, not fixed · `Cell.tsx` parses each wikilink twice** — once for the label, once inside `resolveFileValue`. A regex and a map hit per visible row; collapsing it means changing `resolveFileValue`'s return shape, which serves the image callers too.
 
+#### Gate 2 — the correctness review
+
+- **Fixed · `chipFile` guessed at a ground it doesn't have.** It set `--chip-fill` to `surface.primary`, and neither host is that color: the Filter pane's field is a translucent `--input-field` wash, and a table cell has no background at all — it sits on the view surface and changes to its hover tone on the very hover that reveals the ×. The codebase's rule is that the fill var FOLLOWS the background (`settingsPane.css.ts:352` sets both to `transparent` together), and a chrome-less shape's background is transparent. So the melt twin paints nothing and the tail dissolves through `chipLabelMelt`'s ramp alone. **The var still has to be SET** — unset drops the declaration and the twin inherits the label color, which is the crisp-duplicate defect Task 7 named.
+- **Already fixed · a dotted folder segment would have grown a glyph.** `assets.v2` reads `v2` as an extension and takes the fallback, which C-1a forbids mid-path. The `nested → icon={false}` rule shipped in `cd40fe1f` closes it before `fileTypeIcon` is ever reached; the reviewer read a mid-state. No flat run has a non-file entry without an explicit icon, so there is no remaining case.
+- **Verified clean:** every `SegmentRun` caller migrated off `trailing` (zero hits renderer-wide for it, `segmentLabel`, `segmentRemoveSlot`, `segmentRemove`, `SEGMENT_ICON_GAP`) · optional `Chip.color` emits no bogus class and `FileLabel` is its only omitting caller · all 23 registry ids are new and collide with nothing · `asTablerGlyph` runs at module scope only · `--chip-max: none` has no nested chip to leak onto · `resolveFileValue` is a regex plus one map hit per entry.
+- **Noted for later, outside this feature:** `AllSymbols.test.ts`'s displayName rule skips on the negation of its own assertion, so it is structurally unable to fail. Pre-existing and untouched here.
+
 ### Open Against Later Tasks
 ### Deviations
 
