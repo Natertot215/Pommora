@@ -14,7 +14,7 @@ import { text } from '../../design-system/tokens/typography.css'
 import { field as fieldBase } from '../../design-system/components/interactionField.css'
 import { focusRing } from '../../design-system/components/fieldRing'
 import { growToContent } from '../../design-system/components/menu/paneGrowth'
-import { divider as segmentHairline } from '../../design-system/components/Segmented-Controls/segmented.css'
+import { segment } from '../../design-system/components/SegmentRun/segmentRun.css'
 
 const c = colorVars.color
 
@@ -216,56 +216,6 @@ export const chipRun = style({
   flex: '1 1 auto',
 })
 
-/** KNOB — the segment hairline's height inside a field (the control type's cap band), and its
- *  breathing room either side, and how far the hairline insets from the field's inner edges. */
-const SEGMENT_GAP = '5px'
-const SEGMENT_DIVIDER_INSET = '3px'
-
-/** KNOB — the field-edge fade on an overflowing Location run. Wider than the house default because
- *  it dissolves a whole run rather than one word, and the × it clears sits inside that ramp. */
-const SEGMENT_FADE = '30px'
-
-/** A Location run — the picked Sets divided by the house segment hairline. A Set carries no color
- *  of its own, so a chip would render as a colorless box pretending to be a value; a divided run
- *  is the honest treatment for a list of plain titles.
- *  Spacing is the run's GAP, never margins on the pieces — the tab strip's recipe. A divider spaced
- *  by its own margins sits evenly only while its neighbors are symmetric, and a segment's trailing
- *  × breaks exactly that. It STRETCHES so the hairline can measure itself against the field. */
-export const segmentRun = style({
-  display: 'inline-flex',
-  alignItems: 'stretch',
-  alignSelf: 'stretch',
-  flex: '1 1 auto',
-  gap: SEGMENT_GAP,
-  // The FIELD is what runs out of room, so the eclipse belongs here — one fade at the field's
-  // trailing edge saying "there is more". Per-segment fades would put a gradient mid-field on every
-  // title, which reads as four broken labels rather than one truncated list.
-  vars: { '--edge-fade': SEGMENT_FADE },
-})
-
-/** KNOB — a segment's glyph gap. Tighter than the field's LEAD_GAP on purpose: a segment is a
- *  compact unit INSIDE a field, so it reads as one token rather than a second field. */
-const SEGMENT_ICON_GAP = '4px'
-
-/** A segment's label — plain and unclipped. The truncation signal is the RUN's, one field-edge fade
- *  for the whole list; a label that masked itself too would stack a second gradient on the same text. */
-export const segmentLabel = style({ whiteSpace: 'nowrap' })
-
-/** A segment's leading glyph — the Set's own icon, or the entity default when it has none, so a
- *  segment and its picker row always read as the same thing. */
-export const segmentIcon = style({ marginRight: SEGMENT_ICON_GAP, flexShrink: 0 })
-
-/** One Set in that run — its glyph, its title, and the slot its × opens into. The × never overlays
- *  the label, so a segment carries none of the chip melt machinery. */
-export const segment = style({
-  display: 'inline-flex',
-  alignItems: 'center',
-  // Segments hold their natural width so the RUN is what overflows and fades; letting each one
-  // squeeze instead would truncate every title a little rather than the list as a whole.
-  flexShrink: 0,
-  whiteSpace: 'nowrap',
-})
-
 /** The ×'s SLOT — collapsed to nothing at rest, opening to the glyph's width when its segment is
  *  hovered, so the segment elongates to make room instead of the × landing on the title. The house
  *  `0fr ↔ 1fr` morph (the segmented control's label slot; `Reveal` is its vertical twin), which
@@ -305,15 +255,6 @@ export const segmentRemove = style({
     '&:hover': { color: c.label.primary },
   },
 })
-
-/** The house segment separator (Segmented-Controls), measured against the FIELD rather than given a
- *  fixed height: it stretches with the run and insets a few px, so it stays proportional if the
- *  field's type or padding ever moves. The control in Segmented-Controls sets its height per
- *  instance for the same reason — a toolbar pill and a field line are different bars. */
-export const segmentDivider = style([
-  segmentHairline,
-  { alignSelf: 'stretch', marginBlock: SEGMENT_DIVIDER_INSET },
-])
 
 /** The Operator cell when its operator takes NO operand (Is Empty, Is Checked, Has File). With no
  *  value cell to absorb it, the operator takes the row's leftover width itself — the last field
