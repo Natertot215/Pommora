@@ -398,10 +398,10 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
 **Refactor baseline:** the FilterPane's Location field renders the same set of labels, **untruncated**, before and after. The remove *chrome* deliberately changes; the labels and the set of them do not.
 
 **Steps:**
-- [ ] Add the chip entry option; move FilterPane's Location field onto it; delete the two orphaned styles.
-- [ ] Set `--chip-max` on the Location run; verify no current Set title truncates.
-- [ ] Verify the × reveals on its own hover zone, and that moving the pointer toward it never dismisses it.
-- [ ] Full gate green. Commit: `refactor(design-system): the run composes chips instead of parts`
+- [x] Add the chip entry option; move FilterPane's Location field onto it; delete the two orphaned styles.
+- [x] Set `--chip-max` on the Location run; verify no current Set title truncates.
+- [x] Verify the × reveals on its own hover zone, and that moving the pointer toward it never dismisses it.
+- [x] Full gate green. Commit: `refactor(design-system): the run composes chips instead of parts`
 
 #### Task 11: Render the file cell as a run of FileChips
 
@@ -641,7 +641,7 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
   - [x] Task 7 — Add the FileLabel shape to the chip system · `<commit>`
   - [x] Task 8 — Map extensions to their glyphs · `<commit>`
   - [x] Task 9 — Build the FileLabel component · `<commit>`
-  - [ ] Task 10 — Hoist the segment composition into SegmentRun
+  - [x] Task 10 — Hoist the segment composition into SegmentRun · `<commit>`
   - [ ] Task 11 — Render the file cell as a run of FileChips
 - [ ] **Phase 3** — Adoption
   - [ ] Task 12 — Widen adoption past images
@@ -695,6 +695,9 @@ Both reviewers independently found the same defect, and I confirmed it by openin
 - **Tasks 7 and 9 shipped together.** The shape's only consumer is the component, and `Chip`'s `color` had to become optional for either to work; splitting them would have landed an orphan shape for one commit. Task 8 ran first so the component had its glyph map to default to.
 - **Two visual decisions taken from what already exists, not designed.** `chipFile`'s `--chip-fill` defaults to `surface.primary` — the content-surface ground, the thing a chrome-less label sits on — and a host on a different ground overrides it the way `chipContext` already does. `unresolved` wears `opacity: var(--state-inactive)`, which is the dim the editor already gives a link that leads nowhere, so a reference naming nothing reads the one way across the app.
 - **`ChipsField`'s `chipShape` restated the shape union.** It was typed `'pill' | 'label'` — a second definition of `ChipShape` that the new member broke. It now reads `ChipShape`.
+- **Task 10 · the hoist is unconditional, not an opt-in entry kind.** Spec C-1a and C-2d both read that *every* run's segments become FileLabels, so `SegmentRun` composes one per entry rather than growing a chip-shaped variant beside the hand-assembled one — a variant would have left the two compositions alive side by side, which is the drift the hoist exists to end. `trailing` became `onRemove`, and `segmentLabel` went with the composition FileLabel now owns.
+- **Task 10 · `fileTypeIcon` distinguishes "no extension" from "an extension Tabler can't draw".** The hoist made this load-bearing: a path segment (`Attachments`) and a Set title (`Reading`) have no extension, and the original fallback would have stamped a chart-file glyph on each — exactly the per-segment glyphs C-1a says the asset row must not grow. No extension now returns undefined and shows no glyph; an unmapped extension still names a file and still takes C-4's fallback.
+- **Task 10 · `--chip-max` is lifted on the run, not raised on Location.** A chip's 80px cap would ellipsize each title separately, stacking a second truncation on the run's one honest signal — its trailing edge fade. `none` on `segmentRun` is the whole fix, and it serves the asset row's path segments for the same reason.
 - **Naming.** The spec settled on **FileLabel** (C-2c); several plan headings still read FileChip. FileLabel is the name that ships — component, chip shape and prose alike.
 ### Lessons
 ### Sequenced After

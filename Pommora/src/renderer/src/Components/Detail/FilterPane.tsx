@@ -8,7 +8,7 @@ import type { FilterRule, SavedView } from '@shared/views'
 import { Icon } from '@renderer/design-system/symbols'
 import { SegmentRun } from '@renderer/design-system/components/SegmentRun/SegmentRun'
 import * as sr from '@renderer/design-system/components/SegmentRun/segmentRun.css'
-import { Chip, type ChipShape, ChipRemoveButton, chipShapeForType } from '@renderer/Components/Chip'
+import { Chip, type ChipShape, chipShapeForType } from '@renderer/Components/Chip'
 import { EntityIcon } from '@renderer/Components/EntityIcon'
 import { ContextChip } from '@renderer/Components/ContextChip'
 import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
@@ -329,23 +329,11 @@ function LocationField({
               return {
                 key: v,
                 label: set?.title ?? v,
+                // A Set is not a file type, so it names its own glyph rather than deriving one.
                 icon: (
                   <EntityIcon kind="set" icon={set?.icon} size="body" className={sr.segmentIcon} />
                 ),
-                // The chip's own remove, at its defaults: the melt machinery is what blurs the
-                // title tail under the ×, and it only ever needed a `chipRemovable` host — never a
-                // chip's fill. The reveal slot stays here; a run of path segments has nothing to
-                // remove.
-                trailing: (
-                  <span className={fp.segmentRemoveSlot}>
-                    <ChipRemoveButton
-                      className={fp.segmentRemove}
-                      label="Remove location"
-                      size="footnote"
-                      onRemove={() => toggle(v)}
-                    />
-                  </span>
-                ),
+                onRemove: () => toggle(v),
               }
             })}
           />
