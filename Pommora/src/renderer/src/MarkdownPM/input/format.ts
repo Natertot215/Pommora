@@ -147,23 +147,27 @@ export function splitPrefix(line: string): { prefix: string; body: string } {
 
 /** Set the caret line's heading level (0 = paragraph); replaces any existing heading or list marker.
  *  Prefix-aware: `> - item` becomes `> ## item`, never `## - item` popped out of its quote. */
-export function setHeading(doc: string, pos: number, level: HeadingLevel): FormatEdit {
-  const ls = lineStartAt(doc, pos)
-  const le = lineEndAt(doc, pos)
-  const { prefix, body } = splitPrefix(doc.slice(ls, le))
-  const inner = stripInnerMarkers(body)
-  const next = level === 0 ? inner : `${'#'.repeat(level)} ${inner}`
-  return {
-    changes: [{ from: ls + prefix.length, to: le, insert: next }],
-    selection: ls + prefix.length + next.length,
+/** Set every selected line to `level`, or back to plain body at 0. Blank lines keep their seats —
+ *  an empty heading is never what selecting across a paragraph gap asked for. */
+export function setHeading(doc: string, from: number, to: number, level: HeadingLevel): FormatEdit {
+  const lines = selectedLines(doc, from, to)
+  if (lines.length === 0) return { changes: [] }
+  const changes: FormatEdit['changes'] = []
+  let lastEnd = 0
+  for (const l of lines) {
+    const next = level === 0 ? l.inner : `${'#'.repeat(level)} ${l.inner}`
+    changes.push({ from: l.ls + l.prefix.length, to: l.le, insert: next })
+    lastEnd = l.ls + l.prefix.length + next.length
   }
+  return lines.length === 1 ? { changes, selection: lastEnd } : { changes }
 }
 
 /** Toggle the caret line into/out of a list kind (re-applying the same kind clears it). Prefix-aware like
  *  setHeading — the list marker lands inside the quote/callout, not in place of its chrome. */
 /** One selected line, split into the parts a marker swap needs: the quote prefix it keeps, the
- *  indentation that decides its level, and the words themselves. */
-interface ListLine {
+ *  indentation that decides its level, and the words themselves. Read by every formatter that
+ *  rewrites a line's marker — list, heading — so all of them agree on what a line is. */
+interface SelectedLine {
   ls: number
   le: number
   prefix: string
@@ -173,14 +177,15 @@ interface ListLine {
   level: number
 }
 
-function listLinesIn(doc: string, from: number, to: number): ListLine[] {
-  const out: ListLine[] = []
+/** The selected lines a marker can be put on. A blank line is the gap between paragraphs, not an
+ *  item or a heading — an empty marker is never what selecting across one asked for — so it keeps
+ *  its seat and takes none. */
+function selectedLines(doc: string, from: number, to: number): SelectedLine[] {
+  const out: SelectedLine[] = []
   for (let p = lineStartAt(doc, from); p <= to; p = lineEndAt(doc, p) + 1) {
     const ls = p
     const le = lineEndAt(doc, p)
     const { prefix, body } = splitPrefix(doc.slice(ls, le))
-    // A blank line is the gap between paragraphs, not an item — an empty bullet is never what
-    // selecting across one asked for. It keeps its seat and takes no marker.
     if (body.trim() !== '') {
       const lm = parseListMarker(body)
       const stripped = stripInnerMarkers(body)
@@ -207,7 +212,7 @@ function listLinesIn(doc: string, from: number, to: number): ListLine[] {
  *  already read that way — a mixed block becomes one list rather than half a list. Ordered runs count
  *  per indent level, so a nested run restarts while its parent keeps counting. */
 export function setList(doc: string, from: number, to: number, kind: ListKind): FormatEdit {
-  const lines = listLinesIn(doc, from, to)
+  const lines = selectedLines(doc, from, to)
   if (lines.length === 0) return { changes: [] }
   const strip = lines.every((l) => l.kind === kind)
   const counters: number[] = []
@@ -271,15 +276,41 @@ export function setListKind(doc: string, from: number, to: number, kind: ListKin
   return { changes }
 }
 
-export function setBlock(doc: string, pos: number, fmt: BlockFormat): FormatEdit {
-  const ls = lineStartAt(doc, pos)
-  const le = lineEndAt(doc, pos)
+/** Every line the selection touches, blanks included, as `[start, end]` pairs. Quoting is the one
+ *  line transform a blank line belongs in: a bare `>` is the quote's own empty line, and skipping it
+ *  would split one blockquote into two. */
+function spannedLines(doc: string, from: number, to: number): { ls: number; le: number }[] {
+  const out: { ls: number; le: number }[] = []
+  for (let p = lineStartAt(doc, from); p <= to; p = lineEndAt(doc, p) + 1) {
+    const le = lineEndAt(doc, p)
+    out.push({ ls: p, le })
+    if (le >= doc.length) break
+  }
+  return out
+}
+
+export function setBlock(doc: string, from: number, to: number, fmt: BlockFormat): FormatEdit {
+  const ls = lineStartAt(doc, from)
+  const le = lineEndAt(doc, from)
   const line = doc.slice(ls, le)
   switch (fmt) {
     case 'quote': {
-      // Toggling a callout head wraps (never demotes it — stripping would orphan the `[!type]`).
-      const next = isQuoteToggleable(line) ? stripQuotePrefix(line) : `> ${line}`
-      return { changes: [{ from: ls, to: le, insert: next }], selection: ls + next.length }
+      // Off only where every selected line is already a quote — a mixed block becomes one quote
+      // rather than half of one. Toggling a callout head wraps (never demotes it — stripping would
+      // orphan the `[!type]`).
+      const lines = spannedLines(doc, from, to)
+      const strip = lines.every(({ ls: s, le: e }) => isQuoteToggleable(doc.slice(s, e)))
+      const changes: FormatEdit['changes'] = []
+      let lastEnd = 0
+      for (const { ls: s, le: e } of lines) {
+        const text = doc.slice(s, e)
+        // A blank line inside the run takes the bare `>` that keeps the quote one block; trailing
+        // whitespace on it would be the only thing that marker carried.
+        const next = strip ? stripQuotePrefix(text) : text === '' ? '>' : `> ${text}`
+        changes.push({ from: s, to: e, insert: next })
+        lastEnd = s + next.length
+      }
+      return lines.length === 1 ? { changes, selection: lastEnd } : { changes }
     }
     case 'callout': {
       if (isCalloutHead(line)) return { changes: [] } // already a callout — nothing to convert
@@ -287,8 +318,12 @@ export function setBlock(doc: string, pos: number, fmt: BlockFormat): FormatEdit
       return { changes: [{ from: ls, to: le, insert: next }], selection: ls + next.length }
     }
     case 'code': {
-      const next = `\`\`\`\n${line}\n\`\`\``
-      return { changes: [{ from: ls, to: le, insert: next }], selection: ls + 4 + line.length }
+      // One fence around the whole selection rather than around its first line — a block of code
+      // pasted in and then fenced is the gesture this exists for.
+      const end = lineEndAt(doc, to)
+      const body = doc.slice(ls, end)
+      const next = `\`\`\`\n${body}\n\`\`\``
+      return { changes: [{ from: ls, to: end, insert: next }], selection: ls + 4 + body.length }
     }
     case 'hr': {
       const insert = line.length === 0 ? '---' : `${line}\n\n---\n`
