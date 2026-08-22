@@ -5,7 +5,7 @@
 import { relative, sep } from 'node:path'
 import chokidar, { type FSWatcher } from 'chokidar'
 import type { BrowserWindow } from 'electron'
-import { excludedMatcher, sameExclusions } from './exclusion'
+import { excludedMatcher, sameScope, type WatchScope } from './exclusion'
 import { readNavigationFile } from './io/navigationFile'
 import { isRecentWrite } from './io/writeEcho'
 import { isMarkdownFile } from './io/walk'
@@ -14,7 +14,7 @@ import { push as pushToWindow } from './ipc'
 import { seedContentIndex } from './indexSeed'
 import { getLiveTree, refreshAfterWrite } from './liveTree'
 import { sessionRoot } from './session'
-import { readExcludedFolders } from './settings'
+import { readWatchScope } from './settings'
 import { applyWatchEvents, touchesCorpus, type WatchEvent, type WatchEventName } from './watchPatch'
 import { CONTEXTS_DIRNAME, NEXUS_DIR, TRASH_DIR } from '@shared/nexusPaths'
 
@@ -38,10 +38,10 @@ export function isNavPath(root: string, path: string): boolean {
 // labels, ordering) live there, so external edits to them must auto-refresh. Checks only
 // the path BELOW the root, so a dot-segment in the root's own absolute path (e.g. a nexus
 // under ~/.something) can't blank the whole watch.
-export function ignoredUnder(root: string, excluded: string[] = []): (path: string) => boolean {
+export function ignoredUnder(root: string, scope: WatchScope): (path: string) => boolean {
   // User-excluded folders never reach the tree, so their churn must not cost a reconcile
   // (un-excluding a folder mid-session takes effect on the next nexus open / watcher restart).
-  const isExcluded = excludedMatcher(excluded)
+  const isExcluded = excludedMatcher(scope.excluded)
   return (path) => {
     const rel = relative(root, path)
     if (!rel || rel.startsWith('..')) return false
@@ -75,10 +75,10 @@ export function ignoredUnder(root: string, excluded: string[] = []): (path: stri
 /** Start (or restart) watching `root`, pushing fresh trees to `win`. */
 export async function startWatcher(root: string, win: BrowserWindow): Promise<void> {
   stopWatcher()
-  const excluded = await readExcludedFolders(root)
+  const scope = await readWatchScope(root)
   if (sessionRoot() !== root) return // session switched during the settings read
   watcher = chokidar.watch(root, {
-    ignored: ignoredUnder(root, excluded),
+    ignored: ignoredUnder(root, scope),
     ignoreInitial: true, // existing files aren't "changes"
     persistent: true,
     awaitWriteFinish: { stabilityThreshold: SETTLE_MS, pollInterval: 50 },
@@ -102,7 +102,7 @@ export async function startWatcher(root: string, win: BrowserWindow): Promise<vo
       if (isRecentWrite(path)) return
       batch.push({ event, absPath: path })
       if (debounce) clearTimeout(debounce)
-      debounce = setTimeout(() => void settle(root, win, excluded), SETTLE_MS)
+      debounce = setTimeout(() => void settle(root, win, scope), SETTLE_MS)
     }
   watcher
     .on('add', onEvent('add'))
@@ -136,13 +136,13 @@ export function stopWatcher(): void {
 /** Spend the settle window's batch: patch what classifies, walk for the rest — through the
  *  seam either way, so what the renderer receives is exactly what main now holds. Push only
  *  when the tree object moved (an all-index-only batch changes nothing anyone renders). */
-async function settle(root: string, win: BrowserWindow, excluded: string[]): Promise<void> {
+async function settle(root: string, win: BrowserWindow, scope: WatchScope): Promise<void> {
   if (sessionRoot() !== root || win.isDestroyed()) return
   const events = batch
   batch = []
   try {
     const before = getLiveTree()
-    const outcome = await applyWatchEvents(root, events, excluded)
+    const outcome = await applyWatchEvents(root, events, scope)
     let tree = getLiveTree()
     if (outcome === 'refresh') tree = await refreshAfterWrite(root)
     // Re-checked after the awaits: a session that switched mid-settle must not receive the
@@ -153,14 +153,13 @@ async function settle(root: string, win: BrowserWindow, excluded: string[]): Pro
     // A refresh means the corpus may have moved in ways no arm named — the stat-gated seed
     // reconciles the index for the same cost as the walk's own stats. Only a batch that could
     // have moved the corpus owes it: a walk forced by a registry edit leaves the index exact.
-    if (touchesCorpus(root, events, excluded)) await seedContentIndex(root)
+    if (touchesCorpus(root, events, scope)) await seedContentIndex(root)
     if (sessionRoot() !== root || win.isDestroyed()) return
-    // The compiled exclusion list this watcher was armed with is spent state: an exclusions
-    // edit classifies `refresh` above, but the classifier and chokidar's own ignore filter
-    // would keep reading the stale capture — and a note under a newly-excluded folder would
-    // ride `index-only` back into the queryable rows. A changed list re-arms the watcher.
-    const current = await readExcludedFolders(root)
-    if (!sameExclusions(current, excluded)) void startWatcher(root, win)
+    // The scope this watcher was armed with is spent state: an edit to either half classifies
+    // `refresh` above, but the classifier and chokidar's own ignore filter would keep reading
+    // the stale capture — and a note under a newly-excluded folder would ride `index-only` back
+    // into the queryable rows. A changed scope re-arms the watcher.
+    if (!sameScope(await readWatchScope(root), scope)) void startWatcher(root, win)
   } catch {
     // Transient FS state mid-write — the next settle re-reads (Reload is the fallback).
   }
