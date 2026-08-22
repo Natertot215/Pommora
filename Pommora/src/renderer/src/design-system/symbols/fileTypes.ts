@@ -60,14 +60,16 @@ export const fileTypeGlyphs = Object.fromEntries(
   ]),
 ) as Record<`file-type-${FileTypeExt}`, LucideIcon>
 
-/** The registry id a filename's glyph comes from. Case-insensitive, and always a glyph: an
- *  extension Tabler doesn't draw, and a name carrying none to read at all, both take the
- *  `file-chart-column` fallback. A caller that wants no glyph says so rather than being handed
- *  nothing here. */
+/** The registry id a filename's glyph comes from. Case-insensitive, and always a glyph — anything
+ *  the roster has no answer for takes the `file-chart-column` fallback. A caller that wants no
+ *  glyph says so rather than being handed nothing here.
+ *
+ *  The leading-dot guard is load-bearing: without it a bare `ts` slices to its own name and glyphs
+ *  as TypeScript. */
 export function fileTypeIcon(name: string): string {
   const dot = name.lastIndexOf('.')
-  if (dot <= 0 || dot === name.length - 1) return FILE_TYPE_FALLBACK
+  if (dot <= 0) return FILE_TYPE_FALLBACK
   const raw = name.slice(dot + 1).toLowerCase()
-  const ext = (ALIASES[raw] ?? raw) as FileTypeExt
-  return FILE_TYPE_EXTS.includes(ext) ? `file-type-${ext}` : FILE_TYPE_FALLBACK
+  const ext = FILE_TYPE_EXTS.find((x) => x === (ALIASES[raw] ?? raw))
+  return ext ? `file-type-${ext}` : FILE_TYPE_FALLBACK
 }

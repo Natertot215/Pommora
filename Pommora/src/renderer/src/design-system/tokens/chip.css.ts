@@ -101,8 +101,10 @@ export const chipFile = style([
   chipBase,
   {
     height: '20px',
-    padding: 0,
     justifyContent: 'flex-start',
+    // `chipBase` sets border-STYLE and every other shape names its width; a chrome-less one has to
+    // say none, or the UA's `medium` paints a 3px rule in the text color.
+    border: 'none',
     vars: { '--chip-fill': colorVars.color.surface.primary },
   },
 ])
