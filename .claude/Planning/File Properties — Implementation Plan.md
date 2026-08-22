@@ -481,13 +481,13 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
 **Negative control:** after a file-property Replace, assert the previously-referenced file **still exists on disk**. Not "assert `dropReplacedAsset` wasn't called" — it is module-private (nothing to spy) and unreachable from `setProperty`, so that test passes with zero implementation and protects nothing. The fs assertion goes red the moment anyone wires a delete.
 
 **Steps:**
-- [ ] Write the fs assertion. No mechanism ships with it.
-- [ ] Full gate green. Commit: `test(assets): a replaced file reference leaves its file alone`
+- [x] Write the fs assertion. No mechanism ships with it.
+- [x] Full gate green. Commit: `test(assets): a replaced file reference leaves its file alone`
 
 #### Gate 3 — adoption is reachable, nothing is destroyed
-- [ ] Gate commands green. Negative controls verified in both directions.
-- [ ] Banner baseline held.
-- [ ] Net delta reported — expect ≈ +10. A larger number means a caller was converted that didn't need converting.
+- [x] Gate commands green. Negative controls verified in both directions.
+- [x] Banner baseline held.
+- [x] Net delta reported — expect ≈ +10. A larger number means a caller was converted that didn't need converting.
 - [ ] **Seen running:** a banner set and replaced, proving the export moved nothing.
 - [ ] Simplification and review dispatched — ask first.
 
@@ -644,9 +644,9 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
   - [x] Task 10 — Hoist the segment composition into SegmentRun · `1fdee072`
   - [x] Task 11 — Render the file cell as a run of FileLabels · `1c7d8d5b`
 - [ ] **Phase 3** — Adoption · base `907a7dab`
-  - [x] Task 12 — Export the adoption mechanism · `<commit>`
-  - [x] Task 13 — The adopt channel, and the picker's options · `<commit>`
-  - [ ] Task 14 — Wire the value write
+  - [x] Task 12 — Export the adoption mechanism · `55497111`
+  - [x] Task 13 — The adopt channel, and the picker's options · `44b57737`
+  - [x] Task 14 — Prove a replaced file survives · `<commit>`
 - [ ] **Phase 4** — The Directory field
   - [ ] Task 15 — The Directory, its validation, and its pane
 - [ ] **Phase 5** — Interaction
@@ -707,6 +707,12 @@ Each finding opened and reproduced before folding.
 - **Already fixed · a dotted folder segment would have grown a glyph.** `assets.v2` reads `v2` as an extension and takes the fallback, which C-1a forbids mid-path. The `nested → icon={false}` rule shipped in `cd40fe1f` closes it before `fileTypeIcon` is ever reached; the reviewer read a mid-state. No flat run has a non-file entry without an explicit icon, so there is no remaining case.
 - **Verified clean:** every `SegmentRun` caller migrated off `trailing` (zero hits renderer-wide for it, `segmentLabel`, `segmentRemoveSlot`, `segmentRemove`, `SEGMENT_ICON_GAP`) · optional `Chip.color` emits no bogus class and `FileLabel` is its only omitting caller · all 23 registry ids are new and collide with nothing · `asTablerGlyph` runs at module scope only · `--chip-max: none` has no nested chip to leak onto · `resolveFileValue` is a regex plus one map hit per entry.
 - **Noted for later, outside this feature:** `AllSymbols.test.ts`'s displayName rule skips on the negation of its own assertion, so it is structurally unable to fail. Pre-existing and untouched here.
+
+#### Phase 3 — the delta
+
+**+55 −18, net +37** against an expected +10, code only. The export itself was the ≈+10 the plan priced — `adoptFile` gained two parameters and one line moved. The rest is Task 13, which the phase estimate never separated out: a bridge entry, a preload binding, an options-taking picker that joins its `defaultPath` in main, a second pick set, and the `assets:adopt` handler with its own asset-push drain. That is the channel B-2d called for; it was costed as if it were free.
+
+Task 14 shipped no mechanism at all, as specified — three assertions against the filesystem. A spy on `dropReplacedAsset` would have passed with zero implementation and protected nothing; these go red the moment anyone wires a delete.
 
 ### Open Against Later Tasks
 ### Deviations

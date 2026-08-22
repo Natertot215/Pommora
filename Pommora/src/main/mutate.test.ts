@@ -1068,3 +1068,52 @@ describe('adoptFile — the shared adoption seam', () => {
     expect(await pathExists(join(root, 'file-assets', 'Old.pdf'))).toBe(true)
   })
 })
+
+describe('a file value never destroys what it stops naming', () => {
+  // The seam dedups, so two pages picking the same source share ONE file on disk. A Replace that
+  // ever learned to delete would destroy what another page's reference names, unrecoverably — and
+  // the deleting path (`dropReplacedAsset`) is safe for banners only because they are singletons.
+  // This asserts the FILE, not the absence of a call: a call-spy passes with zero implementation.
+  beforeEach(async () => {
+    await createProperty(root, { id: 'prop_f', name: 'Attachments', type: 'file' })
+    await writeFile(
+      join(root, '.nexus', 'settings.json'),
+      JSON.stringify({ asset_directory: 'file-assets' }),
+    )
+    await mkdir(join(root, 'file-assets'), { recursive: true })
+    for (const name of ['Old.pdf', 'New.pdf'])
+      await writeFile(join(root, 'file-assets', name), `${name}-bytes`)
+  })
+
+  const setFiles = (path: string, value: string[]) =>
+    handleMutate(
+      { op: 'setProperty', path, propertyId: 'prop_f', value: { kind: 'file', value } },
+      nexusDeps,
+    )
+
+  it('replacing a reference leaves the file it named on disk', async () => {
+    expect((await setFiles('Notes/Daily/Beta.md', ['[[Old.pdf]]'])).ok).toBe(true)
+    expect((await setFiles('Notes/Daily/Beta.md', ['[[New.pdf]]'])).ok).toBe(true)
+    expect(splitFrontmatter(await read('Notes/Daily/Beta.md'))['<Attachments>']).toEqual([
+      '[[New.pdf]]',
+    ])
+    expect(await pathExists(join(root, 'file-assets', 'Old.pdf'))).toBe(true)
+  })
+
+  it('clearing the last reference leaves the file, and takes the key', async () => {
+    expect((await setFiles('Notes/Daily/Beta.md', ['[[Old.pdf]]'])).ok).toBe(true)
+    expect((await setFiles('Notes/Daily/Beta.md', [])).ok).toBe(true)
+    expect(splitFrontmatter(await read('Notes/Daily/Beta.md'))['<Attachments>']).toBeUndefined()
+    expect(await pathExists(join(root, 'file-assets', 'Old.pdf'))).toBe(true)
+  })
+
+  it('a file another page still names survives the first page dropping it', async () => {
+    expect((await setFiles('Notes/Daily/Alpha.md', ['[[Old.pdf]]'])).ok).toBe(true)
+    expect((await setFiles('Notes/Daily/Beta.md', ['[[Old.pdf]]'])).ok).toBe(true)
+    expect((await setFiles('Notes/Daily/Alpha.md', ['[[New.pdf]]'])).ok).toBe(true)
+    expect(splitFrontmatter(await read('Notes/Daily/Beta.md'))['<Attachments>']).toEqual([
+      '[[Old.pdf]]',
+    ])
+    expect(await pathExists(join(root, 'file-assets', 'Old.pdf'))).toBe(true)
+  })
+})
