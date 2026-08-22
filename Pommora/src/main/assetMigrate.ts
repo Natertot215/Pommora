@@ -9,7 +9,7 @@
 // migrates and one already elsewhere is skipped, so a run after a partial failure finishes the
 // job rather than wedging on counts that have legitimately moved.
 
-import { basename, dirname, extname, join, relative } from 'node:path'
+import { basename, dirname, extname, join } from 'node:path'
 import { readFile, rm } from 'node:fs/promises'
 import { createHash } from 'node:crypto'
 import { parseConnectionText } from '@shared/connections'
@@ -26,7 +26,7 @@ import { readNavigationFile, writeNavigationState } from './io/navigationFile'
 import { AMBIGUOUS, buildAssetMap, refreshAssetMap, resolveAssetName } from './assetMap'
 import { writeAssetFile } from './assetWrite'
 import { corpusFiles, listEntries, listFilesRecursive } from './io/walk'
-import { NEXUS_CONFIG_FILES, SIDECARS, assetsDir, nexusConfig } from './paths'
+import { NEXUS_CONFIG_FILES, SIDECARS, assetsDir, nexusConfig, relPosix } from './paths'
 import { readWatchScope, updateSettings } from './settings'
 import { basenameNoMd } from './coerce'
 
@@ -97,7 +97,7 @@ async function collectRefs(root: string): Promise<StoreRef[]> {
   })
   for (const file of await sidecarsUnder(root)) {
     refs.push({
-      store: relative(root, file),
+      store: relPosix(root, file),
       owner: `${basename(dirname(file))} Banner`,
       read: async () => (await readJsonObject(file))?.banner,
       write: async (link) => (await rmwJsonStrict(file, (cur) => ({ ...cur, banner: link }))).ok,
