@@ -136,10 +136,11 @@ export function connectionText(title: string, alias?: string): string {
   return named ? `[[${title}|${named}]]` : `[[${title}]]`
 }
 
-/** What `![[…]]` can name: the syntax carries no escape for a `]`, so a title holding one has no
- *  embed spelling at all. Every surface that offers an embed reads this rather than restating it. */
+/** What `[[…]]` can name: the syntax carries no escape, so a `]` ends the link early and a `|`
+ *  splits off an alias — a title holding either has no spelling that means it. Every surface
+ *  that offers a link or an embed reads this rather than restating it. */
 export function embeddableTitle(title: string): boolean {
-  return !title.includes(']')
+  return !title.includes(']') && !title.includes('|')
 }
 
 /** Write a page embed — the lone-line token, assembled in one place the way a connection is. */

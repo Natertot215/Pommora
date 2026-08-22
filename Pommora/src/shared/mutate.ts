@@ -82,8 +82,9 @@ export type MutateRequest =
   // or is erased outright when `personalization.permanentDelete` is on, and the record goes with
   // it. Destructive and unrecoverable from inside Pommora either way.
   | { op: 'emptyBundle'; bundlePath: string }
-  // dataUrl set ⇒ decode + copy into `.nexus/assets/<nexusID>/profile-<token>.<ext>` + record
-  // the rel path in `settings.profile_image`; null ⇒ clear the field + delete the file.
+  // A CROP rather than a chosen file, so it carries bytes: they land in the asset directory
+  // under the nexus icon's own name and `settings.profile_image` names it by wikilink; null ⇒
+  // clear the field.
   | { op: 'setProfileImage'; dataUrl: string | null }
   // The identity fallback when no photo is set, in `settings.profile_icon`; null ⇒ clear it.
   | { op: 'setProfileIcon'; icon: string | null }
@@ -91,9 +92,10 @@ export type MutateRequest =
   // sidebar NexusHeader that edited it is gone (ribbon rework); the field + op are retained for the
   // eventual homepage/settings surface — NOT dead code.
   | { op: 'setProfileSubtitle'; subtitle: string }
-  // dataUrl set ⇒ decode + copy into `.nexus/assets/<key>/banner.<ext>` + record that path in
-  // the owner's config (folder sidecar, homepage.json, or — for a page — frontmatter `cover`).
-  | { op: 'setBanner'; path: string; kind: BannerOwnerKind; dataUrl: string | null }
+  // `source` is the absolute path of a picked file: it is adopted into the asset directory under
+  // its own name — or referenced where it is, when it already sits there — and the owner's config
+  // (folder sidecar, homepage.json, or a page's frontmatter `cover`) names it by wikilink.
+  | { op: 'setBanner'; path: string; kind: BannerOwnerKind; source: string | null }
   // Hide or show an entity's banner-heading icon — a `heading_icon_hidden` boolean in the
   // owner's config (folder sidecar or homepage.json; absent = shown). `true` hides, `false` clears it.
   | { op: 'setHeadingIconHidden'; path: string; kind: BannerOwnerKind; hidden: boolean }

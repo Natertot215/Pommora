@@ -1033,9 +1033,9 @@ function SetCard({ set, drag }: { set: SetNode; drag?: DragItem }): React.JSX.El
     e.stopPropagation()
     const action = await holdGhost(() => window.nexus.bannerMenu(set.banner ? {} : { add: true }))
     if (!action) return
-    const dataUrl = action === 'remove' ? null : await window.nexus.pickImage()
-    if (action === 'remove' || dataUrl) {
-      await mutate({ op: 'setBanner', path: set.path, kind: 'set', dataUrl })
+    const source = action === 'remove' ? null : await window.nexus.pickImage()
+    if (action === 'remove' || source) {
+      await mutate({ op: 'setBanner', path: set.path, kind: 'set', source })
     }
   }
   return (
@@ -1438,12 +1438,15 @@ const PageCard = memo(function PageCard({
       )
       if (!action) return
       if (action === 'remove') {
-        if (await mutate({ op: 'setBanner', path: row.path, kind: 'page', dataUrl: null }))
+        if (await mutate({ op: 'setBanner', path: row.path, kind: 'page', source: null }))
           onRefreshValues()
         return
       }
-      const dataUrl = await window.nexus.pickImage()
-      if (dataUrl && (await mutate({ op: 'setBanner', path: row.path, kind: 'page', dataUrl })))
+      const picked = await window.nexus.pickImage()
+      if (
+        picked &&
+        (await mutate({ op: 'setBanner', path: row.path, kind: 'page', source: picked }))
+      )
         onRefreshValues()
     },
     [banner, cover, mutate, row.path, onRefreshValues],

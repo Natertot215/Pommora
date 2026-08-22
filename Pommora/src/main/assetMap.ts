@@ -91,8 +91,20 @@ export function resolveAssetName(map: AssetMap, name: string): string | null | t
 // first ask for the new root rebuilds over it.
 let held: { root: string; assetDir: string; map: AssetMap } | null = null
 
+// Set whenever the map moves under a write of Pommora's own. `atomicWriteBinary` records its own
+// write and the watcher drops the echo, so the writer is the only thing that knows the renderer
+// is owed a push — and the channel that ran the write is the only thing holding a window.
+let owedPush = false
+
 export function getHeldAssetMap(root: string): AssetMap | null {
   return held?.root === root ? held.map : null
+}
+
+/** The map a write moved and nobody has been told about, once. */
+export function takeAssetMapPush(root: string): AssetMap | null {
+  if (!owedPush || held?.root !== root) return null
+  owedPush = false
+  return held.map
 }
 
 /** The map for `root`, built on first ask and held after. A changed `asset_directory` rebuilds:
@@ -131,5 +143,6 @@ export function patchHeldAssetMap(
   const next = patchAssetMap(held.map, rel, event, held.assetDir)
   if (next === held.map) return null
   held = { ...held, map: next }
+  owedPush = true
   return next
 }

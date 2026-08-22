@@ -28,15 +28,9 @@ export function underAssetRoot(rel: string, assetDir: string): boolean {
   return startsUnder(segs, ASSETS_DIR_REL) || startsUnder(segs, assetDir)
 }
 
-/** The real file a replaced banner value may delete — which is only ever one Pommora minted
- *  itself, under `.nexus/assets`. The configured asset root is the user's own folder, shared with
- *  whatever else reads it: a file there may be referenced from an Obsidian note this app cannot
- *  see, and replacing a banner is not consent to destroy it. Nothing is trashed on this path, so
- *  the deletion would be unrecoverable.
- *
- *  A name several files answer to resolves to nothing at all — rendering the wrong image is
- *  recoverable, deleting one is not. */
-export async function assetFileToDelete(root: string, value: unknown): Promise<string | null> {
+/** The one real file a stored image value names, wherever it sits. A name several files answer
+ *  to names none of them — rendering the wrong image is recoverable, acting on one is not. */
+export async function assetFilePath(root: string, value: unknown): Promise<string | null> {
   if (typeof value !== 'string' || !value.trim()) return null
   const link = parseConnectionText(value)
   const rel = link
@@ -44,5 +38,15 @@ export async function assetFileToDelete(root: string, value: unknown): Promise<s
     : underAssetRoot(value, (await readWatchScope(root)).assetDir)
       ? value
       : null
-  return typeof rel === 'string' && rel.startsWith(`${ASSETS_DIR_REL}/`) ? rel : null
+  return typeof rel === 'string' ? rel : null
+}
+
+/** The real file a replaced banner value may delete — which is only ever one Pommora minted
+ *  itself, under `.nexus/assets`. The configured asset root is the user's own folder, shared with
+ *  whatever else reads it: a file there may be referenced from an Obsidian note this app cannot
+ *  see, and replacing a banner is not consent to destroy it. Nothing is trashed on this path, so
+ *  the deletion would be unrecoverable. */
+export async function assetFileToDelete(root: string, value: unknown): Promise<string | null> {
+  const rel = await assetFilePath(root, value)
+  return rel?.startsWith(`${ASSETS_DIR_REL}/`) ? rel : null
 }

@@ -7,9 +7,8 @@
 // parenthesized key/value everywhere BEFORE the folder is removed, so no member file keeps a
 // dangling reference. System-trash is injected (deps.trashToSystem) so this stays testable.
 
-import { basename, dirname, join, relative, sep } from 'node:path'
+import { basename, dirname, extname, join, relative, sep } from 'node:path'
 import { mkdir, readFile, realpath, rm } from 'node:fs/promises'
-import { contentId } from '@shared/identity'
 import { sessionRoot } from './session'
 import { resolveUnderRoot } from './pathSafety'
 import { createPage, renamePage, movePage, updatePageProperty } from './crud/page'
@@ -53,14 +52,13 @@ import {
 } from './io/atomicWrite'
 import { recordWrite } from './io/writeEcho'
 import { readNavigationFile, writeNavigationState } from './io/navigationFile'
-import { assetFileToDelete } from './assetRoots'
+import { assetFilePath, assetFileToDelete, underAssetRoot } from './assetRoots'
 import { serializeOnFile } from './io/fileLock'
 import { splitEnvelope, mergeFrontmatter, readFrontmatterFields } from './io/pageFile'
 import { basenameNoMd } from './coerce'
-import { nexusConfig, sidecarPath, NEXUS_CONFIG_FILES } from './paths'
-import { ensureIdentity } from './identity'
+import { assetsDir, nexusConfig, sidecarPath, NEXUS_CONFIG_FILES } from './paths'
 import { resolveFolderKind } from './folderKind'
-import { updateSettings } from './settings'
+import { readWatchScope, updateSettings } from './settings'
 import { newId } from './ids'
 import { mintDefaultView, VIEW_ID_PREFIX } from '@shared/views'
 import { ok, fail, errText, type Result } from '@shared/result'
@@ -71,7 +69,11 @@ import { NO_NEXUS } from './ipc'
 import type { TrashMode } from './appConfig'
 import { readRegistry } from './io/propertiesRegistry'
 import { deindexPath, indexWrittenPage, moveIndexPaths, seedContentIndex } from './indexSeed'
-import { ASSETS_DIR_REL, NON_CORPUS_TOP, TRASH_DIR } from '@shared/nexusPaths'
+import { NON_CORPUS_TOP, TRASH_DIR } from '@shared/nexusPaths'
+import { connectionText, embeddableTitle } from '@shared/connections'
+import { ASSET_MIME } from '@shared/assetMime'
+import { neverWatched } from './exclusion'
+import { AMBIGUOUS, liveAssetMap, patchHeldAssetMap, resolveAssetName } from './assetMap'
 
 /** What the orchestration needs from the Electron layer (injected to keep this testable). */
 export interface MutateDeps {
@@ -93,33 +95,103 @@ function decodeImageDataUrl(dataUrl: string): { ext: string; buffer: Buffer } | 
   return { ext: subtype === 'jpeg' ? 'jpg' : subtype, buffer: Buffer.from(m[2], 'base64') }
 }
 
-/** An asset key becomes a DIRECTORY NAME under `.nexus/assets/`, so it must be ONE path segment:
- *  a separator or a dot-dir would let `join` walk out of the nexus, and the relative path it
- *  returns is later stored on the entity and `rm`'d. Keys arrive from disk (a page's frontmatter
- *  id, a container sidecar's id) and are hand-editable, so this is decided at the sink rather than
- *  per call site. Shape beyond that is deliberately not policed — a hand-authored id is a legal
- *  identity, and refusing it here would take a cover image away from a page that reads fine. */
-function assetKeyOk(key: string): boolean {
-  return !key.includes('/') && !key.includes('\\') && key !== '.' && key !== '..'
+/** The profile photo is a crop rather than a chosen file — bytes with no source name to keep —
+ *  so it wears the name the nexus gives its own singleton, and a later crop rewrites that same
+ *  file instead of minting one beside it. */
+const NEXUS_ICON = 'nexus-icon.png'
+
+const toRel = (root: string, abs: string): string => relative(root, abs).split(sep).join('/')
+
+/** Delete the file a replaced image value named, unless the new value names it too. The stored
+ *  spellings are not comparable: a wikilink and a path can mean one file, and a singleton
+ *  rewritten in place is stored under the very name it replaced. */
+async function dropReplacedAsset(
+  root: string,
+  prev: string | null,
+  next: string | null,
+): Promise<void> {
+  if (!prev || prev === (await assetFileToDelete(root, next))) return
+  await rm(join(root, prev), { force: true }).catch(() => {})
 }
 
-/** A FRESH filename per write is deliberate: a stable name gave every image the same URL, so the
- *  renderer's <img> served the browser-cached previous image on Change/replace. */
-async function writeImageAsset(
+/** Land bytes in the asset root under `base`, stepping the name aside when a different file
+ *  already answers to it — the disambiguation entity creation already does, so a picked
+ *  `Sunset.png` beside another becomes `Sunset 2.png` rather than overwriting it. */
+async function writeAssetFile(
   root: string,
-  assetKey: string,
+  assetDir: string,
+  base: string,
+  bytes: Buffer,
+): Promise<Result<string>> {
+  const dir = assetsDir(root, assetDir)
+  await mkdir(dir, { recursive: true })
+  const ext = extname(base)
+  const map = await liveAssetMap(root)
+  return createDisambiguated(basename(base, ext), async (stem) => {
+    const file = `${stem}${ext}`
+    const abs = join(dir, file)
+    // A basename answers nexus-wide, so a name already held ANYWHERE under the root must step
+    // aside: landing a second file beside it would author the ambiguity adoption refuses.
+    if (resolveAssetName(map, file) !== null || (await pathExists(abs)))
+      return fail('exists', `${file} already exists.`)
+    await atomicWriteBinary(abs, bytes)
+    // The watcher never sees this: `atomicWriteBinary` records the write and the echo is
+    // dropped, so the map is the writer's to keep current or the banner renders blank.
+    patchHeldAssetMap(root, toRel(root, abs), 'add')
+    return ok(connectionText(file))
+  })
+}
+
+/** Adopt the file behind an absolute path and answer the `[[Name.ext]]` that names it. A file
+ *  already sitting under an asset root is referenced where it is; one whose bytes already sit
+ *  there under the same name is referenced rather than copied a second time. */
+async function adoptImageAsset(root: string, absSource: string): Promise<Result<string>> {
+  const base = basename(absSource)
+  // A name the map would never hold is a banner that resolves to nothing — refused at adoption
+  // rather than copied in and left blank.
+  if (!base || !embeddableTitle(base) || neverWatched(base))
+    return fault('That file’s name can’t be written as a link.')
+  if (!(extname(base).toLowerCase() in ASSET_MIME))
+    return fault('That file isn’t an image Pommora can show.')
+  const { assetDir } = await readWatchScope(root)
+  const hit = resolveAssetName(await liveAssetMap(root), base)
+  // A name several files answer to has no reference that means one of them — authoring it would
+  // spell exactly what the resolver refuses to answer.
+  if (hit === AMBIGUOUS) return fault(`More than one file is named ${base}.`)
+
+  if (underAssetRoot(toRel(await realpath(root), await realpath(absSource)), assetDir))
+    return ok(connectionText(base))
+
+  let bytes: Buffer
+  try {
+    bytes = await readFile(absSource)
+  } catch {
+    return fault('That image could not be read.')
+  }
+  if (hit && bytes.equals(await readFile(join(root, hit)).catch(() => Buffer.alloc(0))))
+    return ok(connectionText(base))
+  return writeAssetFile(root, assetDir, base, bytes)
+}
+
+/** The nexus icon. It rewrites the file the setting ALREADY names — the one Pommora last wrote
+ *  there — so cropping twice leaves one icon rather than a trail of them. A file the setting does
+ *  not name is someone else's, even under this name, so the first crop mints beside it. */
+async function writeNexusIcon(
+  root: string,
   dataUrl: string,
-  prefix: string,
-): Promise<string | null> {
-  if (!assetKeyOk(assetKey)) return null
+  current: unknown,
+): Promise<Result<string>> {
   const decoded = decodeImageDataUrl(dataUrl)
-  if (!decoded) return null
-  const file = `${prefix}-${Math.random().toString(36).slice(2, 10)}.${decoded.ext}`
-  const rel = assetKey ? `${ASSETS_DIR_REL}/${assetKey}/${file}` : `${ASSETS_DIR_REL}/${file}`
-  const absAsset = join(root, rel)
-  await mkdir(dirname(absAsset), { recursive: true })
-  await atomicWriteBinary(absAsset, decoded.buffer)
-  return rel
+  if (!decoded) return fault('Unsupported image data.')
+  const { assetDir } = await readWatchScope(root)
+  const mine = await assetFilePath(root, current)
+  if (mine && underAssetRoot(mine, assetDir)) {
+    await atomicWriteBinary(join(root, mine), decoded.buffer)
+    // Same name, same paths: only the version tells the renderer to re-request the image.
+    patchHeldAssetMap(root, mine, 'change')
+    return ok(connectionText(basename(mine)))
+  }
+  return writeAssetFile(root, assetDir, NEXUS_ICON, decoded.buffer)
 }
 
 /** The nexus's own machinery — never a renderer-mutable entity. The read side skips these,
@@ -385,27 +457,21 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
     }
 
     case 'setProfileImage': {
-      // Profile avatar → `.nexus/assets/<nexusID>/profile-<token>.<ext>`; the path is recorded
-      // in settings.profile_image (read-merge-write, other keys preserved).
+      // Profile avatar → the nexus icon in the asset directory, named by wikilink in
+      // settings.profile_image (read-merge-write, other keys preserved).
       const settingsPath = nexusConfig(root, NEXUS_CONFIG_FILES.settings)
       const existing = await readJsonObject(settingsPath)
       const prev = await assetFileToDelete(root, existing?.profile_image)
+      let rel: string | null = null
       if (req.dataUrl) {
-        const { id: nexusId } = await ensureIdentity(root)
-        const rel = await writeImageAsset(root, nexusId, req.dataUrl, 'profile')
-        if (!rel) return fault('Unsupported image data.')
-        // Set the field first, then delete a replaced file — a failed write never leaves
-        // profile_image pointing at a deleted file (mirrors the banner/cover ordering).
-        await updateSettings(root, (cur) => ({ ...cur, profile_image: rel }))
-        if (prev && prev !== rel) await rm(join(root, prev), { force: true }).catch(() => {})
-      } else {
-        await updateSettings(root, (cur) => {
-          const next = { ...cur }
-          delete next.profile_image
-          return next
-        })
-        if (prev) await rm(join(root, prev), { force: true }).catch(() => {})
+        const written = await writeNexusIcon(root, req.dataUrl, existing?.profile_image)
+        if (!written.ok) return written
+        rel = written.value
       }
+      // Set the field first, then delete a replaced file — a failed write never leaves
+      // profile_image pointing at a deleted file (mirrors the banner/cover ordering).
+      await updateSettings(root, (cur) => setOrDrop(cur, 'profile_image', rel))
+      await dropReplacedAsset(root, prev, rel)
       return ok({})
     }
 
@@ -422,8 +488,12 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
     }
 
     case 'setBanner': {
-      // A page's banner is the `cover` key in its `.md` frontmatter (not a JSON
-      // sidecar); the asset folder is keyed by the page id. Foreign frontmatter + body survive.
+      // Adoption stays inside each owner arm, AFTER that owner has been validated — a picked file
+      // must not land in the asset directory for a banner the write is about to refuse.
+      const adopt = async (): Promise<Result<string | null>> =>
+        req.source ? adoptImageAsset(root, req.source) : ok(null)
+      // A page's banner is the `cover` key in its `.md` frontmatter, not a JSON sidecar.
+      // Foreign frontmatter + body survive.
       if (req.kind === 'page') {
         const resolved = await resolveUnderRoot(root, req.path)
         if (!resolved.ok) return resolved
@@ -438,22 +508,17 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
           }
           const { body } = splitEnvelope(existing)
           const fields = readFrontmatterFields(existing)
-          const id = contentId(fields)
-          if (!id) return fault('That page has no id to key its banner.')
-          if (!assetKeyOk(id)) return fault('That page’s id can’t name a folder.')
           const prev = await assetFileToDelete(root, fields.cover)
-          if (req.dataUrl) {
-            const rel = await writeImageAsset(root, id, req.dataUrl, 'banner')
-            if (!rel) return fault('Unsupported image data.')
-            await atomicWriteFile(
-              resolved.value,
-              mergeFrontmatter(existing, { cover: rel }, ['cover'], body),
-            )
-            if (prev && prev !== rel) await rm(join(root, prev), { force: true }).catch(() => {})
-          } else {
-            await atomicWriteFile(resolved.value, mergeFrontmatter(existing, {}, ['cover'], body))
-            if (prev) await rm(join(root, prev), { force: true }).catch(() => {})
-          }
+          const adopted = await adopt()
+          if (!adopted.ok) return adopted
+          const rel = adopted.value
+          // Set the field first; only THEN delete a replaced file, so a failed write never
+          // leaves `cover` pointing at a deleted file.
+          await atomicWriteFile(
+            resolved.value,
+            mergeFrontmatter(existing, rel ? { cover: rel } : {}, ['cover'], body),
+          )
+          await dropReplacedAsset(root, prev, rel)
           return ok({})
         })
       }
@@ -464,29 +529,21 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         // Resolved rather than trusted: the read gate now admits a wikilink, which names a
         // file rather than a path, and one several files answer to deletes nothing at all.
         const prevNav = await assetFileToDelete(root, (await readNavigationFile(root)).banner)
-        let next: string | undefined
-        if (req.dataUrl) {
-          const rel = await writeImageAsset(root, '', req.dataUrl, 'banner')
-          if (!rel) return fault('Unsupported image data.')
-          next = rel
-        }
-        await writeNavigationState(root, { banner: next })
-        if (prevNav && prevNav !== next)
-          await rm(join(root, prevNav), { force: true }).catch(() => {})
+        const adopted = await adopt()
+        if (!adopted.ok) return adopted
+        await writeNavigationState(root, { banner: adopted.value ?? undefined })
+        await dropReplacedAsset(root, prevNav, adopted.value)
         return ok({})
       }
-      // Resolve the config holding the banner field + the asset-folder key, per owner kind. The
-      // homepage is a singleton (.nexus/homepage.json); the rest are folder sidecars keyed by
-      // their entity id (assets/<id>/).
+      // Resolve the config holding the banner field, per owner kind: the homepage is a singleton
+      // (.nexus/homepage.json); the rest are folder sidecars.
       let cfgPath: string
-      let assetKey: string
       // The singleton legitimately seeds from nothing; a folder sidecar never does — one that
       // vanishes mid-op fails not-found rather than being re-minted around a banner.
       let seed: (() => Record<string, unknown>) | undefined
       let existing: Record<string, unknown> | null
       if (req.kind === 'homepage') {
         cfgPath = nexusConfig(root, NEXUS_CONFIG_FILES.homepage)
-        assetKey = req.kind
         seed = () => ({})
         existing = await readJsonObject(cfgPath)
       } else {
@@ -495,22 +552,19 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         if (await isReserved(root, resolved.value)) return fault('That item can’t take a banner.')
         cfgPath = sidecarPath(resolved.value, req.kind)
         existing = await readJsonObject(cfgPath)
-        const id = typeof existing?.id === 'string' ? existing.id : null
-        if (!id) return fault('That item has no id to key its banner.')
-        if (!assetKeyOk(id)) return fault('That item’s id can’t name a folder.')
-        assetKey = id
       }
       const prev = await assetFileToDelete(root, existing?.banner)
-      let rel: string | null = null
-      if (req.dataUrl) {
-        rel = await writeImageAsset(root, assetKey, req.dataUrl, 'banner')
-        if (!rel) return fault('Unsupported image data.')
-      }
+      const adopted = await adopt()
+      if (!adopted.ok) return adopted
       // Set the field first; only THEN delete a replaced file, so a failed write never
       // leaves `banner` pointing at a deleted file (mirrors the cover/photo ordering).
-      const written = await rmwJsonStrict(cfgPath, (cur) => setOrDrop(cur, 'banner', rel), seed)
+      const written = await rmwJsonStrict(
+        cfgPath,
+        (cur) => setOrDrop(cur, 'banner', adopted.value),
+        seed,
+      )
       if (!written.ok) return written
-      if (prev && prev !== rel) await rm(join(root, prev), { force: true }).catch(() => {})
+      await dropReplacedAsset(root, prev, adopted.value)
       return ok({})
     }
 
