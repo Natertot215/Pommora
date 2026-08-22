@@ -2,8 +2,13 @@
 // main ever reads — sidecars, config filenames, the block host's folder. Names the renderer also
 // speaks are the cross-process contract and live in `@shared/nexusPaths`. node:path only; no fs.
 
-import { join } from 'node:path'
+import { join, relative, sep } from 'node:path'
 import { CONTEXTS_DIR_REL, CONTEXTS_REGISTRY_REL, NEXUS_DIR } from '@shared/nexusPaths'
+
+/** A path under `root`, spelled the way every key in the app spells one: nexus-relative and
+ *  POSIX, whatever separator the platform handed back. */
+export const relPosix = (root: string, abs: string): string =>
+  relative(root, abs).split(sep).join('/')
 
 export type SidecarKind = 'space' | 'collection' | 'set' | 'taskConfig' | 'eventConfig'
 
@@ -21,6 +26,9 @@ export const SIDECAR_FILENAME: Record<SidecarKind, string> = {
 export function sidecarPath(absFolder: string, kind: SidecarKind): string {
   return join(absFolder, SIDECAR_FILENAME[kind])
 }
+
+/** Every sidecar filename, for the walks that ask whether a file IS one. */
+export const SIDECARS = new Set<string>(Object.values(SIDECAR_FILENAME))
 
 export function nexusDir(root: string): string {
   return join(root, NEXUS_DIR)
