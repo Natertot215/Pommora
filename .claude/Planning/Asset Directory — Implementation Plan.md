@@ -324,12 +324,12 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 **Survivors:** the two thumbnail call sites keep passing raw paths and keep their `?v=` cache-busting; `thumbsRel` stays pinned to `ASSETS_DIR_REL`.
 
 **Steps:**
-- [ ] Write the failing tests for all six failure-half cases plus the cross-mechanism agreement.
-- [ ] Run — expect failures.
-- [ ] Implement; re-derive the count and convert the 11 sites.
-- [ ] Assert the two thumbnail sites are unchanged (`git diff` names neither).
-- [ ] `npm run typecheck && npm run test && npm run lint` — expect green.
-- [ ] Commit: `feat(assets): assetUrl resolves wikilinks, paths and web addresses`
+- [x] Write the failing tests for all six failure-half cases plus the cross-mechanism agreement.
+- [x] Run — expect failures.
+- [x] Implement; re-derive the count and convert the 11 sites. *(13 total, 2 thumbnail survivors — matched)*
+- [x] Assert the two thumbnail sites are unchanged (`git diff` names neither).
+- [x] `npm run typecheck && npm run test && npm run lint` — expect green. *(0 · 275 files / 3427 tests · 0/890)*
+- [x] Commit: `feat(assets): assetUrl resolves wikilinks, paths and web addresses`
 
 #### Task 7: Both security predicates learn the configured root
 
@@ -637,6 +637,8 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
   - The review's central finding stands: the plan built the external-change machinery and never asked what happens **when Pommora is the writer**. `atomicWriteBinary` → `recordWrite` → `isRecentWrite` means no in-app write reaches `settle`, so the asset copy starved the map (F1), the settings write starved the re-arm (F2), and the widened gate starved the delete (F3). Three defects, one root cause, all shipping silently green. Requirement 10 now names the path.
   - **Unknown resolved:** the `tree.unreadable` check at `watchPatch.ts:121` runs before Task 3's arm, but every producer of that list sits inside `readContainerMeta` / `readDirectPages` / `readChildSets`, which run only on descended directories — and Task 2 prunes the asset root at `shouldSkipDir`. Safe, and conditional on Task 2, which Task 3 now records.
 ### Deviations
+- **Task 6 — the raw builder keeps its name; resolution gets its own.** `assetUrl(rel)` stays the pure scheme builder the two thumbnail sites pass raw paths to, and `resolveAssetUrl(value, map)` is the resolving entry point. Overloading one name would have made the survivors' call shape a special case of the resolver rather than the plainly different thing it is. A `useAssetUrl()` hook binds the map once per component, so the eleven sites select it the same way rather than each threading a map argument.
+- **Task 6 — external is decided by scheme, not by `isValidLink`.** That helper accepts any dotted host, so `Banner.png` would read as a website and every bare-filename asset would stop rendering. A leading `scheme:` is what separates a web address from a filename.
 - **Task 5 — the held map needs no teardown.** It is pinned to the root it was built for, so a session switch makes the previous nexus's map unreadable and the first ask for the new root rebuilds over it. A `dropAssetMap` would have meant a call beside all three `dropLiveTree` sites, and a fourth appearing later would drift.
 - **Task 4 — the map holds every path per name, and `duplicates` disappears.** The specified `{ files: Record<string, string>; duplicates: string[] }` cannot support a correct incremental unlink: holding only the winning path leaves an unlink with nothing to promote, so removing one of three same-named files would drop the name entirely. `files: Record<string, string[]>`, sorted, makes display take the first and a delete refuse anything longer than one — and the "files and duplicates cannot disagree" invariant becomes impossible to violate rather than merely tested. The IPC payload shrinks with it.
 - **Task 4 — the watcher's cruft predicate moved to `exclusion.ts` as `neverWatched`.** The map lists a directory the watcher also watches, so it must skip exactly what the watcher drops or it holds entries no event will ever update. One predicate, two consumers.

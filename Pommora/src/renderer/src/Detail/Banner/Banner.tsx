@@ -2,12 +2,12 @@ import { useRef, useState } from 'react'
 import type { MutableKind } from '@shared/mutate'
 import { DEFAULT_NEXUS_ICON, Icon, entityIcon } from '@renderer/design-system/symbols'
 import { IconPicker } from '@renderer/Components/IconPicker'
-import { useSession } from '../../store'
+import { useAssetUrl, useSession } from '../../store'
 import { isSurfaceKind, type BannerOwner } from '../Scope'
 import { DetailTitleHeader } from '../DetailTitleHeader'
 import { RenamableLabel } from '../../Components/RenamableLabel'
 import { AddBannerButton } from './AddBannerButton'
-import { assetUrl } from '../../assetUrl'
+
 import { useBannerMenu } from './useBannerMenu'
 
 export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {
@@ -15,6 +15,9 @@ export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {
   const submitRename = useSession((s) => s.submitRename)
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
   const nexus = useSession((s) => s.tree?.nexus)
+  const toAssetUrl = useAssetUrl()
+  const bannerSrc = toAssetUrl(owner.banner)
+  const homePhotoSrc = toAssetUrl(nexus?.profileImage)
   const [iconPickerOpen, setIconPickerOpen] = useState(false)
   const [editingHome, setEditingHome] = useState(false)
   const iconRef = useRef<SVGSVGElement>(null)
@@ -25,8 +28,7 @@ export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {
   // Always rendered (never conditionally removed) so hide/show slides it in/out rather than popping.
   const homeIcon = (): React.ReactNode => {
     const cls = iconHidden ? 'banner-home-icon is-hidden' : 'banner-home-icon'
-    if (nexus?.profileImage)
-      return <img className={cls} src={assetUrl(nexus.profileImage)} alt="" />
+    if (homePhotoSrc) return <img className={cls} src={homePhotoSrc} alt="" />
     return <Icon name={nexus?.profileIcon ?? DEFAULT_NEXUS_ICON} className={cls} />
   }
   const openHomeTitleMenu = async (e: React.MouseEvent): Promise<void> => {
@@ -97,7 +99,7 @@ export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {
       }
     />
   )
-  if (!owner.banner) {
+  if (!bannerSrc) {
     return (
       <div className={`banner-empty${homeClass}${surfaceClass}`}>
         <AddBannerButton onClick={() => void addOrChange()} />
@@ -119,7 +121,7 @@ export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {
         void openMenu()
       }}
     >
-      <img className="banner-img" src={assetUrl(owner.banner)} alt="" />
+      <img className="banner-img" src={bannerSrc} alt="" />
       {owner.kind === 'homepage' ? (
         // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
         <span className="banner-title" onContextMenu={(e) => void openHomeTitleMenu(e)}>

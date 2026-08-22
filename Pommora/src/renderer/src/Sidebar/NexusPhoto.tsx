@@ -4,7 +4,7 @@ import { ICON_PX, type IconSize } from '@renderer/design-system/tokens/size.css'
 import { IconPicker } from '../Components/IconPicker'
 import { PhotoCropModal } from '../Components/PhotoCropModal'
 import { useNexusIcon } from '../Components/useNexusIcon'
-import { assetUrl } from '../assetUrl'
+import { useAssetUrl } from '../store'
 import * as s from './nexusHeader.css'
 
 /** Click (homepage select) is owned by the wrapping ribbon button, not here. Rename-nexus lives
@@ -22,7 +22,7 @@ export function NexusPhoto({ size }: { size: IconSize }): React.JSX.Element {
     selectGlyph,
   } = useNexusIcon()
   const ref = useRef<HTMLSpanElement>(null)
-  const photoUrl = profileImage ? assetUrl(profileImage) : null
+  const photoUrl = useAssetUrl()(profileImage)
   // The photo is an element, not a glyph — it needs the step's pixel value, and the fallback
   // glyph is drawn inset within it.
   const px = ICON_PX[size]

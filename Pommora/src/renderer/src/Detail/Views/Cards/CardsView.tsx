@@ -33,6 +33,7 @@ import {
 } from '@renderer/design-system/interactions/drag'
 import { cx } from '@renderer/design-system/cx'
 import { assetUrl } from '../../../assetUrl'
+import { useAssetUrl } from '../../../store'
 import { useSession } from '../../../store'
 import { byOrder, parentOf } from '@shared/treePatch'
 import { thumbKey, thumbRel } from '@shared/nexusPaths'
@@ -113,6 +114,7 @@ const CARDS_GHOST_GRACE_MS = 200 // KNOB
  *  table reads. Cards never indent — descendants roll up under their top-level band; ungrouped
  *  pages band under the container's own heading. */
 export function CardsView({ source }: { source: CollectionNode | SetNode }): React.JSX.Element {
+  const toAssetUrl = useAssetUrl()
   const tree = useSession((s) => s.tree)
   const select = useSession((s) => s.select)
   const openPreview = useSession((s) => s.openPreview)
@@ -793,7 +795,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
             const oSrc =
               banner === 'cover'
                 ? oCover
-                  ? assetUrl(oCover)
+                  ? (toAssetUrl(oCover) ?? undefined)
                   : undefined
                 : banner === 'preview'
                   ? thumbSrc(nexusId, r.id, 0)
@@ -1023,7 +1025,7 @@ function SetCard({ set, drag }: { set: SetNode; drag?: DragItem }): React.JSX.El
   const select = useSession((s) => s.select)
   const mutate = useSession((s) => s.mutate)
   const [failed, setFailed] = useState(false)
-  const src = set.banner ? assetUrl(set.banner) : undefined
+  const src = useAssetUrl()(set.banner) ?? undefined
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
   const iconName = entityIcon('set', set.icon, defaultIcons)
   const holdGhost = useContext(GhostSuppress)
@@ -1424,6 +1426,7 @@ const PageCard = memo(function PageCard({
   const crumbs = loc ?? NO_CRUMBS
 
   const cover = typeof row.frontmatter.cover === 'string' ? row.frontmatter.cover : undefined
+  const toAssetUrl = useAssetUrl()
   const onImgError = useCallback(() => setFailed(true), [])
   // Right-click the image band → the page-banner menu (the PageHeader flow), worded for the view's
   // display config: Cover mode says Cover, Preview says Banner (it edits the page banner either way —
@@ -1450,7 +1453,7 @@ const PageCard = memo(function PageCard({
   )
   const src =
     banner === 'cover'
-      ? cover && assetUrl(cover)
+      ? (toAssetUrl(cover) ?? undefined)
       : banner === 'preview'
         ? thumbSrc(nexusId, row.id, version)
         : undefined
