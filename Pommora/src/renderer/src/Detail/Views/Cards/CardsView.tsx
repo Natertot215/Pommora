@@ -115,6 +115,7 @@ const CARDS_GHOST_GRACE_MS = 200 // KNOB
 export function CardsView({ source }: { source: CollectionNode | SetNode }): React.JSX.Element {
   const toAssetUrl = useAssetResolver()
   const tree = useSession((s) => s.tree)
+  const assetMap = useSession((s) => s.assetMap)
   const select = useSession((s) => s.select)
   const openPreview = useSession((s) => s.openPreview)
   const nexusId = useSession((s) => s.tree?.nexus.id ?? '')
@@ -297,9 +298,9 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   const setNames = useMemo(() => buildSetNames(source), [source])
   const setIcons = useMemo(() => buildSetIcons(source), [source])
   const ctx = useMemo(
-    () => (tree ? buildResolveContext(tree, schema) : null),
+    () => (tree ? buildResolveContext(tree, schema, assetMap) : null),
     // buildResolveContext reads only contexts + labels — keying on those slices keeps ctx identity across unrelated tree pushes, so memoized cards hold.
-    [tree?.contexts, tree?.labels, schema],
+    [tree?.contexts, tree?.labels, schema, assetMap],
   )
   // Raw `view`: resolveColumns never reads column_styles, and liveView identity would break the
   // per-card memo on every band drop.
