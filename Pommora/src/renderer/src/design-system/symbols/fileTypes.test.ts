@@ -41,13 +41,11 @@ describe('fileTypeIcon', () => {
     expect(fileTypeIcon('clip.mp4')).toBe(FILE_TYPE_FALLBACK)
   })
 
-  it('a name with no extension to read shows no glyph at all', () => {
-    // A folder, a page title, a dotfile whose whole name is its name — none of them is a file
-    // type, and a chart-file glyph over a path segment would claim otherwise.
-    expect(fileTypeIcon('Attachments')).toBeUndefined()
-    expect(fileTypeIcon('README')).toBeUndefined()
-    expect(fileTypeIcon('.gitignore')).toBeUndefined()
-    expect(fileTypeIcon('')).toBeUndefined()
-    expect(fileTypeIcon('trailing.')).toBeUndefined()
+  it('a name with no extension to read takes the fallback too — there is always a glyph', () => {
+    expect(fileTypeIcon('README')).toBe(FILE_TYPE_FALLBACK)
+    // A dotfile's whole name is its name, not an extension.
+    expect(fileTypeIcon('.gitignore')).toBe(FILE_TYPE_FALLBACK)
+    expect(fileTypeIcon('')).toBe(FILE_TYPE_FALLBACK)
+    expect(fileTypeIcon('trailing.')).toBe(FILE_TYPE_FALLBACK)
   })
 })

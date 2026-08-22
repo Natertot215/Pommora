@@ -9,7 +9,7 @@ export interface SegmentEntry {
   /** Rendered before the label, overriding whatever the label's own name would derive. A run whose
    *  entries are all the same kind of thing usually wants one leading glyph on the run instead —
    *  repeating an identical icon reads as noise. */
-  icon?: React.ReactNode
+  icon?: React.ReactNode | false
   /** Opts this entry into the hover-×. It removes THIS entry, so the handler owns what that means. */
   onRemove?: () => void
   /** Opts this entry into a click of its own. */
@@ -45,7 +45,10 @@ export function SegmentRun({
           <span className={sr.segment}>
             <FileLabel
               name={e.label}
-              {...(e.icon ? { icon: e.icon } : {})}
+              // A nested run is a PATH: its segments are folders, not file types, and it carries
+              // one lead icon of its own — so an entry that names no glyph gets none rather than
+              // deriving one per segment.
+              icon={e.icon ?? (nested ? false : undefined)}
               {...(e.onRemove ? { onRemove: e.onRemove } : {})}
               {...(e.onClick ? { onClick: e.onClick } : {})}
               {...(e.unresolved ? { unresolved: true } : {})}
