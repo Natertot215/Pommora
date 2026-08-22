@@ -2,15 +2,12 @@
 // and holds its own width at the row's trailing edge like every other control — a deep path is
 // eclipsed by the run's own fade rather than pushing the row wider.
 import { style } from '@vanilla-extract/css'
-import { field as fieldBase } from '../design-system/components/interactionField.css'
+import { hairlineField } from '../design-system/components/interactionField.css'
 import { focusRing } from '../design-system/components/fieldRing'
 import { vars as colorVars } from '../design-system/tokens/color.css'
 import { text } from '../design-system/tokens/typography.css'
 
 const c = colorVars.color
-
-/** The field's resting hairline — the same var the filter cells set. */
-const restRing = { vars: { '--field-ring': c.separator.border } }
 
 /** KNOB — the field's resting width. Wide enough for a two-segment path at the default type;
  *  anything longer eclipses rather than growing the row. */
@@ -19,20 +16,10 @@ const FIELD_WIDTH = '220px'
 const LEAD_GAP = '6px'
 
 export const pathField = style([
-  fieldBase,
+  hairlineField,
   {
     width: FIELD_WIDTH,
-    flex: '0 0 auto',
-    minWidth: 0,
-    padding: '3px 6px',
-    border: 'none',
     cursor: 'text',
-    justifyContent: 'flex-start',
-    textAlign: 'left',
-    color: c.label.control,
-    overflow: 'hidden',
-    whiteSpace: 'nowrap',
-    ...restRing,
     ...focusRing('within'),
   },
 ])

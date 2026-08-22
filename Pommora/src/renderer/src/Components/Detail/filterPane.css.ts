@@ -11,7 +11,10 @@ import { style } from '@vanilla-extract/css'
 import { titleReveal } from '../../design-system/animations.css'
 import { vars as colorVars } from '../../design-system/tokens/color.css'
 import { text } from '../../design-system/tokens/typography.css'
-import { field as fieldBase } from '../../design-system/components/interactionField.css'
+import {
+  field as fieldBase,
+  hairlineField,
+} from '../../design-system/components/interactionField.css'
 import { focusRing } from '../../design-system/components/fieldRing'
 import { growToContent } from '../../design-system/components/menu/paneGrowth'
 import { segment } from '../../design-system/components/SegmentRun/segmentRun.css'
@@ -78,29 +81,13 @@ export const whatCell = style({
  *  instead would also stomp the channel for any ancestor that sets it. */
 const restRing = { vars: { '--field-ring': c.separator.border } }
 
-/** The shared input-field recipe in its column: flush to the gutters, STANDARD field height
+/** The shared hairline-field recipe in its column: flush to the gutters, STANDARD field height
  *  (the interactionField floor), separator-hairline stroke, and the house field's own BODY
  *  type — a filter row is content the user reads, not chrome, so it holds the reading size rather
- *  than the compact control scale (which shrank the chips inside it to match). */
-export const cellField = style([
-  fieldBase,
-  {
-    width: 'auto',
-    // Rigid by default: a cell naming the rule (What, Operator) must stay whole at any pane
-    // width. Only the value cell opts back into shrinking, so it alone absorbs the overflow.
-    flex: '0 0 auto',
-    minWidth: 0,
-    padding: '3px 6px',
-    border: 'none',
-    cursor: 'default',
-    justifyContent: 'flex-start',
-    textAlign: 'left',
-    color: c.label.control,
-    overflow: 'hidden',
-    whiteSpace: 'nowrap',
-    ...restRing,
-  },
-])
+ *  than the compact control scale (which shrank the chips inside it to match). The variant is
+ *  already rigid; a cell naming the rule (What, Operator) must stay whole at any pane width, and
+ *  only the value cell opts back into shrinking so it alone absorbs the overflow. */
+export const cellField = style([hairlineField, { width: 'auto', cursor: 'default' }])
 
 /** A field's label — grows to fill, so a trailing chevron pins to the field's right edge. Carried
  *  by the label ITSELF rather than a `> span` descendant rule: a field's other spans are glyphs (the

@@ -108,10 +108,6 @@ Drags carry the shared drag language. A drop into the shown zone is positional �
 - **Grouping for the other view types** — calendar, gallery, timeline, and list group mechanically differently; each gets its own surface with its renderer.
 - **ViewBar** — the `view_style` Toolbar option, an inline view-switcher bar as an alternative to the dropdown. The setting persists; Toolbar mode reuses the dropdown button until the surface builds. View embeds mirror the same duality in their header switcher.[^3]
 
-### Prospects
-
-- [ ] In-line View Embeddings
-
 [^1]: [[NavigationPM]] §State Persistence
 [^2]: [[ConfigurationPM]] §Collections
 [^3]: [[SurfacePM]]
