@@ -51,7 +51,7 @@ Moving a Page **within** a Collection is a pure filesystem move with no property
     <Page>.md                   ← Page directly in the Collection root
 ```
 
-Collections live as siblings at the Nexus root — there's no `Pages/` wrapper. Discovery is position-driven: any root folder carrying `_pagecollection.json` is a Collection, and its sub-folders are Sets at any depth. Banner bytes live under `.nexus/assets/<id>/`, served over the read-only `nexus-asset://` scheme.
+Collections live as siblings at the Nexus root — there's no `Pages/` wrapper. Discovery is position-driven: any root folder carrying `_pagecollection.json` is a Collection, and its sub-folders are Sets at any depth. A banner names its image the way a page's cover does — see [[ConfigurationPM|the asset directory]] — served over the read-only `nexus-asset://` scheme.
 
 ### CRUD
 
