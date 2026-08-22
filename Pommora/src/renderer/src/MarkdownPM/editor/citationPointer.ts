@@ -131,8 +131,7 @@ interface RowHit extends PointerTarget {
 
 /** The row number under the pointer. The row's prefix is hidden and atomic, so a coordinate read
  *  would land at the line's start whether the press hit the glyph or the text beside it; the drawn
- *  element is the exact question, and the line it sits on names the citation. A dimmed row binds no
- *  marker and leads nowhere, so its glyph is not a target. */
+ *  element is the exact question, and the line it sits on names the citation. */
 function rowHitAt(view: EditorView, event: MouseEvent): RowHit | null {
   const glyph = (event.target as HTMLElement).closest?.(CITE_ROW_GLYPH)
   const line = glyph?.closest('.cm-line')
@@ -141,21 +140,24 @@ function rowHitAt(view: EditorView, event: MouseEvent): RowHit | null {
   const entry = docScan(view.state.doc).citations.entryAt.get(
     view.state.doc.lineAt(from).number - 1,
   )
-  if (!entry || entry.ordinal === null) return null
+  if (!entry) return null
   return { range: [from, from], onText: true, hidesSyntax: true, pos: from, label: entry.label }
 }
 
 /** The row number's gestures — the marker's, inverted: a body glyph leads to its citation, so a
- *  citation's glyph leads back to the first marker bound to it. The row's whole-line right-press
- *  stays `citationRowMenu`'s, so this arms no menu of its own. */
+ *  citation's glyph leads back to the first marker bound to it. A row bound to nothing has the
+ *  reference itself to give instead: the same Copy its menu offers, and what seeds the footnote back
+ *  into the body. Every row's glyph acts, so the section holds no glyph that answers to nothing. The
+ *  whole-line right-press stays `citationRowMenu`'s, so this arms no menu of its own. */
 export function citationRowPointer(): Extension {
   return pointerHandlers<RowHit>({
     hoverGate: CITE_ROW_GLYPH,
     armable: () => false,
     hitAt: rowHitAt,
-    follow: (hit, view) => {
+    follow: (hit, view) => () => {
       const marker = markersFor(docScan(view.state.doc).citations, hit.label)[0]
-      return marker ? () => travelTo(view, marker.from) : null
+      if (marker) travelTo(view, marker.from)
+      else applyCitationAction(view, 'cite:copy', { kind: 'citation', label: hit.label })
     },
     dwell: () => null,
     menu: () => null,
