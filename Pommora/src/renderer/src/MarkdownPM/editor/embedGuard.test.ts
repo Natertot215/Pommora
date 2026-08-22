@@ -221,6 +221,22 @@ describe('webpage labels never enter the page exclusions', () => {
   })
 })
 
+describe('a page is excluded from embedding itself', () => {
+  const self = (doc: string, title?: string): EditorState =>
+    EditorState.create({
+      doc,
+      extensions: [embedTiles({ getConn: () => conn, ancestors: [], self: () => title })],
+    })
+
+  it('the host title is excluded with no chain above it', () => {
+    expect(embedExclusions(self('text', 'Alpha')).has('alpha')).toBe(true)
+  })
+
+  it('a surface naming no page excludes nothing of its own', () => {
+    expect(embedExclusions(self('text')).size).toBe(0)
+  })
+})
+
 describe('per-tile fence accounting', () => {
   it('removing one tile whole cannot legalize gluing another', () => {
     // Hand-glued first tile + fenced second; spanning-delete of the first must not be paid for

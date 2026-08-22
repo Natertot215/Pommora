@@ -149,6 +149,8 @@ export function MarkdownEditor({
   connectionsRef.current = connections
   const embedAncestorsRef = useRef<readonly string[]>(embedAncestors ?? [])
   embedAncestorsRef.current = embedAncestors ?? []
+  const pageTitleRef = useRef(title)
+  pageTitleRef.current = title
   const embedHeightsRef = useRef(embedHeights)
   embedHeightsRef.current = embedHeights
   const embedZoomsRef = useRef(embedZooms)
@@ -203,15 +205,17 @@ export function MarkdownEditor({
 
   // CM6 extensions are built once at mount, so they read live state + actions through refs. The `[[…]]`
   // autocomplete state machine is shared with table cells; this editor's seams are the candidate source
-  // (over-fetch one to drop the page's own title) and the inline panel placement (rendered below).
+  // (the embed form's own pool, over-fetched to survive its filter) and the inline panel placement
+  // (rendered below).
   const { ac, setAc, candidates, acIndex, commit, acCtl } = useConnectionAutocomplete(
     viewRef,
     (q) => {
       const conn = connectionsRef.current
       if (!conn) return []
       if (q.form === 'alias') return aliasRows(conn, q.title, q.query)
-      let pool = conn.candidates(q.query, AC_MAX * 2).filter((p) => p.title !== title)
-      if (q.form === 'embed') {
+      const embed = q.form === 'embed'
+      let pool = conn.candidates(q.query, embed ? AC_MAX * 2 : AC_MAX)
+      if (embed) {
         const state = viewRef.current?.state
         const taken = state ? embedExclusions(state) : new Set<string>()
         pool = pool.filter((p) => embeddable(p.title, taken))
@@ -273,6 +277,7 @@ export function MarkdownEditor({
       embedTiles({
         getConn: () => connectionsRef.current,
         ancestors: embedAncestorsRef.current,
+        self: () => pageTitleRef.current,
         saveHeights: embedHeightsRef.current ? (h) => embedHeightsRef.current?.save(h) : undefined,
         saveZooms: embedZoomsRef.current ? (z) => embedZoomsRef.current?.save(z) : undefined,
       }),

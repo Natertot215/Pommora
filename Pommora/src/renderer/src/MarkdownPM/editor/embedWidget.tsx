@@ -43,6 +43,9 @@ export interface EmbedHost {
   /** The embed-host chain above this editor — cycle guard + nesting depth. A tile is interactive
    *  only while the chain is at most one deep; a target already in the chain renders inert. */
   ancestors: readonly string[]
+  /** The title of the page this editor draws, read live because a rename never remounts it. A page
+   *  is the one target no chain above it can name, so it answers for excluding itself. */
+  self?: () => string | undefined
   /** Present only where heights can persist (the page surface) — the handle hides otherwise. */
   saveHeights?: (heights: Record<string, number>) => void
   /** Present alongside saveHeights — the page surface persisting each tile's Scale factor. */
@@ -876,15 +879,19 @@ export function embedTileRanges(state: EditorState): readonly TileRange[] {
   return state.field(embedField, false)?.ranges ?? []
 }
 
-/** The titles this document may not embed — every tile it already holds, plus its whole host chain.
- *  The grip menu's pick tree and the `![[` autocomplete pool both filter on this one set. */
+/** The titles this document may not embed — every tile it already holds, its whole host chain, and
+ *  the page it is itself, each of which would only land the inert duplicate or the cycle. The grip
+ *  menu's pick tree and the `![[` autocomplete pool both filter on this one set. */
 export function embedExclusions(state: EditorState): Set<string> {
   const out = new Set<string>()
+  const host = state.facet(embedHost)
   // Page ranges only — a webpage label collides with real page titles by construction (Short
   // Link, Page Title), and admitting one here would delete that page from the autocomplete pool
   // and the grip's pick tree.
   for (const t of embedTileRanges(state)) if (t.kind === 'page') out.add(normalizeTitle(t.title))
-  for (const a of state.facet(embedHost).ancestors) out.add(normalizeTitle(titleFromPath(a)))
+  for (const a of host.ancestors) out.add(normalizeTitle(titleFromPath(a)))
+  const self = host.self?.()
+  if (self) out.add(normalizeTitle(self))
   return out
 }
 

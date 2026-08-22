@@ -20,10 +20,6 @@ The parser matches on the title alone, so `[[Title|alias]]` resolves to the same
 
 A **markdown link** names a page through its target, percent-encoded so a title's spaces and parentheses survive a grammar whose target ends at the first `)`. Page resolution is tried before the URL gate, which accepts any dotted host: without that ordering a page called `Node.js` would be read as a website and become unreachable through this form. A target carrying a scheme or a path separator addresses something outside the Nexus and never names a page, so a URL can't reach one by its last segment. The label is the author's own text, free where a connection's title is its target. `[[Title]](target)` stays a connection followed by literal parentheses, which is what a shared vault means by it — CommonMark would read the outer brackets as a link's label, but doing so here would create a link the rename cascade's own grammar cannot match. A `!`-prefixed markdown link standing alone on its line is not a connection or a link at all: it is the webpage-embed form, rendered as a live tile.[^1]
 
-`![[ ]]` isn't a connection — it's the page-embed syntax[^2], never a link-graph edge — and `{{ }}` renders as written. The rename cascade still reaches it: one sweep rewrites `[[` and `![[` together. Nothing offers a Page its own title and a self-link is dropped, though a hand-typed one navigates normally.
-
-**Code is never a connection.** A `[[Title]]` inside a fence or an inline span is a sample — it doesn't tokenize, doesn't index an edge, and no rename touches it.
-
 ### Resolution
 
 A scanned title, matched through one shared normalization, lands in one of three states:
