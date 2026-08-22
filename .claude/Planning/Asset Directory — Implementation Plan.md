@@ -366,15 +366,15 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 
 #### Gate 2 — every spelling resolves, nothing escapes the roots
 
-- [ ] Gates green, exit codes read directly.
-- [ ] Derivations re-run against controls; counts matched or the plan was rewritten.
-- [ ] Both halves of every negative control observed.
-- [ ] The 50-file no-walk control observed in both directions.
-- [ ] **Simplification pass — MANDATORY, and it runs FIRST.** `code-simplifier` then `comment-killer-agent`, both against `<base>..HEAD` scoped to this phase's paths. A phase is not reviewable until it has been simplified: reviewing first criticizes code before it has earned its final shape.
-- [ ] Simplification findings applied, and the gates re-run green after them.
-- [ ] **Then** review — `/code-review` against the same `<base>..HEAD`; the report cites files inside it.
+- [x] Gates green, exit codes read directly. *(0 · 276 files / 3444 tests · 0/893)*
+- [x] Derivations re-run against controls; counts matched or the plan was rewritten.
+- [x] Both halves of every negative control observed.
+- [x] The 50-file no-walk control observed in both directions.
+- [x] **Simplification pass — MANDATORY, and it runs FIRST.** `code-simplifier` then `comment-killer-agent`, both against `<base>..HEAD` scoped to this phase's paths. A phase is not reviewable until it has been simplified: reviewing first criticizes code before it has earned its final shape.
+- [x] Simplification findings applied, and the gates re-run green after them.
+- [x] **Then** review — `/code-review` against the same `<base>..HEAD`; the report cites files inside it.
 - [ ] The app seen running: a nexus with `asset_directory` unset still renders every existing banner (nothing regressed before the migration).
-- [ ] Progress hashes filled in.
+- [x] Progress hashes filled in.
 
 ---
 
@@ -606,11 +606,12 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
   - [x] Task 2 — One scope object carries it · `a10dd93a`
   - [x] Task 3 — The asset root outranks every skip · `2d355958`
   - Simplification `89181eec` + `7820f8cb` · review fixes `34745ee0`
-- [ ] **Phase 2** — Resolution
-  - [ ] Task 4 — The asset map · `<commit>`
-  - [ ] Task 5 — Push it, keep it current · `<commit>`
-  - [ ] Task 6 — `assetUrl` resolves three spellings · `<commit>`
-  - [ ] Task 7 — Both containment predicates · `<commit>`
+- [x] **Phase 2** — Resolution · base `34745ee0`
+  - [x] Task 4 — The asset map · `6c46d582`
+  - [x] Task 5 — Push it, keep it current · `9f79bebe`
+  - [x] Task 6 — `assetUrl` resolves three spellings · `c5c9a0d8`
+  - [x] Task 7 — Both containment predicates · `ae75b9e4`
+  - Simplification `3ef61c01` · review fixes `7b7baefb`
 - [ ] **Phase 3** — The setting's surface
   - [ ] Task 8 — The folder chooser channel · `<commit>`
   - [ ] Task 9 — The Settings row · `<commit>`
@@ -632,6 +633,13 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 - **Windows path handling** — `listFilesRecursive` returns native separators; Task 4 normalizes to POSIX for the map. Not exercised by any current gate. Raised by the attack review, verified as unchecked rather than broken.
 
 ### Reviews
+- **Gate 2 — `/code-review`, post-simplification.** Seven findings, every one verified against the code before folding, all seven fixed in `7b7baefb`. The first is a rule change, not a repair: `assetFileToDelete` had widened the banner delete-guard to anything under the configured root, so replacing a banner would `rm` the user's own file in a folder shared with Obsidian — unrecoverably, since nothing on that path is trashed. A replace now deletes only what Pommora minted, under `.nexus/assets`; the user's folder is theirs, and a file there may be referenced from a note this app cannot see. After the migration `.nexus/assets` is empty, so replacing a banner stops deleting anything at all — which is how Obsidian treats attachments.
+  - Two were mirrors of Phase 1's own asset-root bug, in code written after it: `indexable` applied the cruft rule to the root's OWN segments, so a root named `.attachments` yielded a permanently empty map; and `thumbnails` was skipped at any depth, taking a user's folder of that name with it. The root's segments are exempt exactly as they are in the watcher's ignore, and thumbnails are skipped under the default root alone.
+  - The held map ignored `asset_directory`, so changing it mid-session patched the new root's events into the old root's listing. The held record carries the directory it was taken from, and a change rebuilds.
+  - The map was patch-only with no reconcile: a batch holding one unclassifiable event applies none of its asset classes, leaving the map stale until restart. The walk the watcher falls back to now re-lists, stabilized against what was held so a walk that moved nothing pushes nothing.
+  - The renderer never refilled the map after a nexus switch — the mount effect did not re-run and main's held listing was pinned to the old root, so wikilink banners in the new nexus rendered the empty state for the rest of the session. The ask is keyed on the open root.
+  - `underAssetRoot` compared case-sensitively while every other root test in the app case-folds, so a path differing only in casing was inside the root for the walk and 403 at the protocol. Folded; `resolveUnderRoot` still realpaths, which is what holds the boundary.
+  - `?v=` carried a nexus-wide counter bumped on every event, so one file landing in a synced folder re-requested every mounted image. Only a re-save under an unchanged name needs it — an add or an unlink already hands its own consumers a different path.
 - **Gate 1 — `/code-review`, post-simplification.** Four findings, every one verified against the code before folding, all four fixed in `34745ee0`. Two were one rule: `NON_CORPUS_TOP.has(rel)` compared case-sensitively while every downstream matcher case-folds, so `.Nexus` passed the guard and then matched `.nexus`; and the rule admitted sub-paths, so `.nexus/contexts` would have dropped every Space from the walk. The third: `ignoredUnder`'s asset exemption un-blinded the whole asset subtree rather than its root, so a synced folder's `.DS_Store` and `node_modules` woke the settle window — the exemption now covers the root's own segments and the cruft filter still governs everything below. The fourth, pre-existing for `excluded_folders` and extended here: a scope change re-armed the watcher without reseeding the content index, leaving a newly-claimed folder queryable until the next nexus open. The reseed now runs beside the re-arm. Exercised at nexus-open parity only — `watcher.ts`'s settle has no test harness, and none was built for this.
 - **Round 1 — `build-breaking-agent`, pre-code.** 13 findings (3 High, 5 Medium, 5 Low), 1 latent, 1 unknown, 10 candidates killed. Every finding verified against the code before folding; all 13 folded. Independently confirmed by me: `excludedMatcher(` is **5**, not the 6 the plan claimed; `banner-` returns **103** legitimate CSS hits so that sweep could never pass; `new WeakMap().set('string', …)` **throws**; `applySettingsLeaf` (singular, `watchPatch.ts:379`) holds a fifth `sameExclusions` the plan never named; six citations had drifted 1–2 lines.
   - The review's central finding stands: the plan built the external-change machinery and never asked what happens **when Pommora is the writer**. `atomicWriteBinary` → `recordWrite` → `isRecentWrite` means no in-app write reaches `settle`, so the asset copy starved the map (F1), the settings write starved the re-arm (F2), and the widened gate starved the delete (F3). Three defects, one root cause, all shipping silently green. Requirement 10 now names the path.
