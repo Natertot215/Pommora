@@ -52,7 +52,7 @@ import {
 } from './io/atomicWrite'
 import { recordWrite } from './io/writeEcho'
 import { readNavigationFile, writeNavigationState } from './io/navigationFile'
-import { assetFilePath, assetFileToDelete, underAssetRoot } from './assetRoots'
+import { assetFilePath, assetFileToDelete, underAssetRoot, validPropertyDir } from './assetRoots'
 import { createDisambiguated } from './disambiguate'
 import { writeAssetFile } from './assetWrite'
 import { serializeOnFile } from './io/fileLock'
@@ -136,6 +136,19 @@ export async function adoptFile(
   if (opts.allow === 'image' && !(extname(base).toLowerCase() in ASSET_MIME))
     return fault('That file isn’t an image Pommora can show.')
   const { assetDir } = await readWatchScope(root)
+  // The destination is renderer-supplied and reaches `mkdir` + a write, so it is refused HERE
+  // rather than at a caller: `rootSegs` drops empty segments but not `..`, and `join` then
+  // collapses them straight past the root. The check also refuses a folder the map could never
+  // index, so a write can't land somewhere its own reference will never resolve from.
+  const dir = assetSubRoot(assetDir, opts.subfolder)
+  if (opts.subfolder !== undefined && !validPropertyDir(opts.subfolder, assetDir))
+    return fault('That folder can’t hold this property’s files.')
+  // The one hole a lexical check can't see is a segment inside the root that is a symlink out.
+  // A folder that already exists settles it by realpath; one that doesn't has no link to follow,
+  // and `writeAssetFile`'s mkdir creates real directories. Resolving the SUBFOLDER rather than
+  // the root is what makes the existing-symlink case reachable at all.
+  const canonical = await resolveUnderRoot(root, dir)
+  if (!canonical.ok && canonical.error.code !== 'not-found') return canonical
   const hit = resolveAssetName(await liveAssetMap(root), base)
   // A name several files answer to has no reference that means one of them — authoring it would
   // spell exactly what the resolver refuses to answer.
@@ -148,11 +161,11 @@ export async function adoptFile(
   try {
     bytes = await readFile(absSource)
   } catch {
-    return fault('That image could not be read.')
+    return fault('That file could not be read.')
   }
   if (hit && bytes.equals(await readFile(join(root, hit)).catch(() => Buffer.alloc(0))))
     return ok(connectionText(base))
-  return writeAssetFile(root, assetSubRoot(assetDir, opts.subfolder), base, bytes)
+  return writeAssetFile(root, dir, base, bytes)
 }
 
 /** The nexus icon. It rewrites the file the setting ALREADY names — the one Pommora last wrote
