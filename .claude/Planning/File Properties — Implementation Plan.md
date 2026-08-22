@@ -356,10 +356,10 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
 **Failure half:** no extension at all (`README`) → fallback · an unknown extension → fallback · uppercase (`.PDF`) → matched case-insensitively · a dotfile (`.gitignore`) → fallback, not treated as extension `gitignore`.
 
 **Steps:**
-- [ ] Write the failing tests including all four failure cases.
-- [ ] Add the glyphs through **one factory**, not 23 hand-written wrappers.
-- [ ] Verify the registry stays `satisfies Record<string, LucideIcon>` — Tabler glyphs must conform.
-- [ ] Full gate green. Commit: `feat(symbols): a glyph per file type`
+- [x] Write the failing tests including all four failure cases.
+- [x] Add the glyphs through **one factory**, not 23 hand-written wrappers.
+- [x] Verify the registry stays `satisfies Record<string, LucideIcon>` — Tabler glyphs must conform.
+- [x] Full gate green. Commit: `feat(symbols): a glyph per file type`
 
 #### Task 9: Build the FileChip component
 
@@ -639,7 +639,7 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
   - [x] Task 6 — Retire the `file:open` channel · `23106180`
 - [ ] **Phase 2** — FileChip, and the run that hosts it
   - [ ] Task 7 — Add the FileChip shape to the chip system
-  - [ ] Task 8 — Map extensions to their glyphs
+  - [x] Task 8 — Map extensions to their glyphs · `<commit>`
   - [ ] Task 9 — Build the FileChip component
   - [ ] Task 10 — Hoist the segment composition into SegmentRun
   - [ ] Task 11 — Render the file cell as a run of FileChips
@@ -691,6 +691,7 @@ Both reviewers independently found the same defect, and I confirmed it by openin
 - **Task 3 · `cellMenu.test.ts`'s `style-edit` fixture was narrowed here.** It named `look: 'filename'`, which the enum no longer holds. Its expectation now reads the empty row set Task 3 leaves behind; Task 4 deletes the test with the kind.
 - **Task 4 · a file cell's interim menu is the bare one.** With the `style-edit` dispatch gone, `baseCellMenu` falls to `null` for file — no menu in the table, `remove-only` on a card. That is exactly what the `remove-only` comment has always claimed ("an empty picker, a file"), so the deletion makes a stale comment true rather than needing one. Task 17 replaces it with the Add · Replace · Remove kind.
 - **Task 5 · what was left of it is the asset-map seam.** Task 1 already swapped the label, the key and the comment, and the *unresolved look* belongs to FileLabel's own `unresolved` prop (spec C-2c — FileLabel owns the whole unit), so building an interim class for it would have landed CSS that Task 11 deletes. Task 5 therefore ships the seam the resolution needs: `AssetMap` joins `ResolveContext`, built once per view rather than subscribed per cell, and reaches the table, the cards and both panes together. **Task 11 consumes it** when the cell becomes a run of FileLabels.
+- **Task 8 · the Tabler scale wrapper is now one definition.** `customGlyphs.tsx` had the `TABLER_SCALE` bump inlined in its single Tabler adoption; the 23 new glyphs would have been a second copy of it. It became `asTablerGlyph`, which `ProgressCheck` now rides too, and the roster lives in its own `symbols/fileTypes.ts` beside the registry that spreads it.
 - **Naming.** The spec settled on **FileLabel** (C-2c); several plan headings still read FileChip. FileLabel is the name that ships — component, chip shape and prose alike.
 ### Lessons
 ### Sequenced After
