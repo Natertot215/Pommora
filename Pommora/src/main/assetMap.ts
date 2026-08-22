@@ -13,6 +13,8 @@ import type { AssetMap } from '@shared/types'
 import { neverWatched } from './exclusion'
 import { assetsDir } from './paths'
 import { listFilesRecursive } from './io/walk'
+import { readWatchScope } from './settings'
+import type { WatchEventName } from './watchPatch'
 
 const EMPTY: AssetMap = { files: {}, version: 0 }
 
@@ -69,4 +71,38 @@ export function resolveAssetName(map: AssetMap, name: string): string | null | '
   return paths.length > 1 ? 'ambiguous' : paths[0]
 }
 
+// The map as last built or patched — main's one holder, pinned to the root it was built for. A
+// session switch needs no teardown: the pin makes the previous nexus's map unreadable, and the
+// first ask for the new root rebuilds over it.
+let held: { root: string; map: AssetMap } | null = null
+
 export const emptyAssetMap = (): AssetMap => EMPTY
+
+export function getHeldAssetMap(root: string): AssetMap | null {
+  return held?.root === root ? held.map : null
+}
+
+/** The map for `root`, built on first ask and held after. */
+export async function liveAssetMap(root: string): Promise<AssetMap> {
+  const already = getHeldAssetMap(root)
+  if (already) return already
+  const map = await buildAssetMap(root, (await readWatchScope(root)).assetDir)
+  held = { root, map }
+  return map
+}
+
+/** Apply one asset event to the held map, answering the new map when it moved and null when it
+ *  did not — a directory event, a thumbnail, cruft, or a map this root does not own. */
+export function patchHeldAssetMap(
+  root: string,
+  rel: string,
+  event: WatchEventName,
+): AssetMap | null {
+  const current = getHeldAssetMap(root)
+  if (!current) return null
+  if (event !== 'add' && event !== 'change' && event !== 'unlink') return null
+  const next = patchAssetMap(current, rel, event)
+  if (next === current) return null
+  held = { root, map: next }
+  return next
+}

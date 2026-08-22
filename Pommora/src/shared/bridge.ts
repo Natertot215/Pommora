@@ -8,6 +8,7 @@
 // bundle may require only 'electron') consumes it freely from both tsconfig projects.
 
 import type {
+  AssetMap,
   NavigationState,
   NavViewModes,
   NexusState,
@@ -81,6 +82,8 @@ export interface Asks {
   // has no `clipboardData` of its own.
   'clipboard:read': { args: []; reply: string }
   'path:reveal': { args: [nexusRelativePath: string]; reply: undefined }
+  // The renderer resolves `[[Name.png]]` against this; main owns the listing behind it.
+  'assets:map': { args: []; reply: AssetMap }
 
   // Pages
   'page:open': { args: [relPath: string]; reply: Result<PageDetail> }
@@ -356,6 +359,8 @@ export interface Pushes {
   'open-in-new-tab': ContextTarget
   'open-in-preview': ContextTarget
   'nav:changed': Omit<NavigationState, 'recents'>
+  // The asset root's listing, re-pushed on every file that lands in it — never a tree walk.
+  'assets:changed': AssetMap
   'nexus:changed': NexusTree
   // A guest webview's window.open, denied main-side and handed to the renderer's one open-link
   // adjudicator — popups and link clicks can never route differently.
