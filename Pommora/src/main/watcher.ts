@@ -5,7 +5,7 @@
 import { relative, sep } from 'node:path'
 import chokidar, { type FSWatcher } from 'chokidar'
 import type { BrowserWindow } from 'electron'
-import { excludedMatcher, sameScope, type WatchScope } from './exclusion'
+import { assetMatcher, excludedMatcher, sameScope, type WatchScope } from './exclusion'
 import { readNavigationFile } from './io/navigationFile'
 import { isRecentWrite } from './io/writeEcho'
 import { isMarkdownFile } from './io/walk'
@@ -42,10 +42,14 @@ export function ignoredUnder(root: string, scope: WatchScope): (path: string) =>
   // User-excluded folders never reach the tree, so their churn must not cost a reconcile
   // (un-excluding a folder mid-session takes effect on the next nexus open / watcher restart).
   const isExcluded = excludedMatcher(scope.excluded)
+  const isAsset = assetMatcher(scope.assetDir)
   return (path) => {
     const rel = relative(root, path)
     if (!rel || rel.startsWith('..')) return false
     const segs = rel.split(sep)
+    // The asset root is watched whatever else would hide it — the dot-prefix rule below
+    // would blind a root named `.attachments`, and an exclusion entry would blind any of them.
+    if (isAsset(segs)) return false
     return (
       segs.some(
         (seg) =>
