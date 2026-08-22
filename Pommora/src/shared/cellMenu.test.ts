@@ -71,12 +71,6 @@ describe('cellMenuModel', () => {
     expect(m.style).toBeUndefined()
   })
 
-  it('style-edit: the Edit entry, and no rows left for a file to show', () => {
-    const m = cellMenuModel({ kind: 'style-edit', type: 'file', current: {} })
-    expect(m.items.map((i) => [i.label, i.action])).toEqual([['Edit', 'cell:edit']])
-    expect(m.style?.rows).toEqual([])
-  })
-
   it('link (a filled url cell): Edit + Rename + Clear, no Style (its look is per-property)', () => {
     const m = cellMenuModel({ kind: 'link', filled: true })
     expect(m.items.map((i) => [i.label, i.action])).toEqual([
@@ -137,12 +131,12 @@ describe('cellMenuContextFor', () => {
     expect(cellMenuContextFor(context, 'context', {}, false)).toBeNull()
   })
 
-  it('url → link (carrying filled); file → style-edit with the column style', () => {
+  it('url → link (carrying filled); a file cell has no look left to offer', () => {
     expect(cellMenuContextFor(prop(), 'url', {}, true)).toEqual({ kind: 'link', filled: true })
-    expect(cellMenuContextFor(prop(), 'file', {}, false)).toEqual({
-      kind: 'style-edit',
-      type: 'file',
-      current: {},
+    expect(cellMenuContextFor(prop(), 'file', {}, false)).toBeNull()
+    expect(cellMenuContextFor(prop(), 'file', {}, false, true)).toEqual({
+      kind: 'remove-only',
+      hideable: true,
     })
   })
 
