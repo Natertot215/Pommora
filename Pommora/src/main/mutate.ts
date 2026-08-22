@@ -58,7 +58,7 @@ import { writeAssetFile } from './assetWrite'
 import { serializeOnFile } from './io/fileLock'
 import { splitEnvelope, mergeFrontmatter, readFrontmatterFields } from './io/pageFile'
 import { basenameNoMd } from './coerce'
-import { nexusConfig, relPosix, sidecarPath, NEXUS_CONFIG_FILES } from './paths'
+import { assetSubRoot, nexusConfig, relPosix, sidecarPath, NEXUS_CONFIG_FILES } from './paths'
 import { resolveFolderKind } from './folderKind'
 import { readWatchScope, updateSettings } from './settings'
 import { newId } from './ids'
@@ -116,14 +116,24 @@ async function dropReplacedAsset(
 
 /** Adopt the file behind an absolute path and answer the `[[Name.ext]]` that names it. A file
  *  already sitting under an asset root is referenced where it is; one whose bytes already sit
- *  there under the same name is referenced rather than copied a second time. */
-async function adoptImageAsset(root: string, absSource: string): Promise<Result<string>> {
+ *  there under the same name is referenced rather than copied a second time.
+ *
+ *  THE adoption seam — every guard that makes an adoption safe lives here rather than in
+ *  `writeAssetFile`, which is the inner byte-lander. `allow` is what separates a banner (which
+ *  must be an image the app can render) from a file property (which takes whatever the user
+ *  picked); `subfolder` is where that property says its files land. Deleting the file a
+ *  replacement leaves behind is the CALLER's policy — this never removes anything. */
+export async function adoptFile(
+  root: string,
+  absSource: string,
+  opts: { allow: 'image' | 'any'; subfolder?: string },
+): Promise<Result<string>> {
   const base = basename(absSource)
-  // A name the map would never hold is a banner that resolves to nothing — refused at adoption
-  // rather than copied in and left blank.
+  // A name the map would never hold resolves to nothing — refused at adoption rather than copied
+  // in and left blank.
   if (!base || !embeddableTitle(base) || neverWatched(base))
     return fault('That file’s name can’t be written as a link.')
-  if (!(extname(base).toLowerCase() in ASSET_MIME))
+  if (opts.allow === 'image' && !(extname(base).toLowerCase() in ASSET_MIME))
     return fault('That file isn’t an image Pommora can show.')
   const { assetDir } = await readWatchScope(root)
   const hit = resolveAssetName(await liveAssetMap(root), base)
@@ -142,7 +152,7 @@ async function adoptImageAsset(root: string, absSource: string): Promise<Result<
   }
   if (hit && bytes.equals(await readFile(join(root, hit)).catch(() => Buffer.alloc(0))))
     return ok(connectionText(base))
-  return writeAssetFile(root, assetDir, base, bytes)
+  return writeAssetFile(root, assetSubRoot(assetDir, opts.subfolder), base, bytes)
 }
 
 /** The nexus icon. It rewrites the file the setting ALREADY names — the one Pommora last wrote
@@ -441,7 +451,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       // Adoption stays inside each owner arm, AFTER that owner has been validated — a picked file
       // must not land in the asset directory for a banner the write is about to refuse.
       const adopt = async (): Promise<Result<string | null>> =>
-        req.source ? adoptImageAsset(root, req.source) : ok(null)
+        req.source ? adoptFile(root, req.source, { allow: 'image' }) : ok(null)
       // A page's banner is the `cover` key in its `.md` frontmatter, not a JSON sidecar.
       // Foreign frontmatter + body survive.
       if (req.kind === 'page') {
