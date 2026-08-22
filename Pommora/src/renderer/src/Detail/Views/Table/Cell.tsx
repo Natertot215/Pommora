@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react'
 import type { ColumnStyle } from '@shared/columnStyles'
+import { parseConnectionText } from '@shared/connections'
 import type { PropertyValue } from '@shared/propertyValue'
 import type { ResolvedColumn, ViewRow } from '@shared/types'
 import { chipBox, chipColor } from '@renderer/design-system/tokens'
@@ -13,7 +14,7 @@ import { ContextChip } from '@renderer/Components/ContextChip'
 import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
 import { OverflowScroll } from '@renderer/design-system/components/OverflowScroll'
 import { declaredType, resolveFieldValue } from '../pipeline/value'
-import { fileLabel, formatDate, formatNumber, numberDivisor } from '../PropertyEditing/formatValue'
+import { formatDate, formatNumber, numberDivisor } from '../PropertyEditing/formatValue'
 import { statusGroupGlyph, statusGroupOf } from '../PropertyEditing/statusCycle'
 import { StatusCapsule } from '../PropertyEditing/StatusCapsule'
 import { findOption } from './cellResolve'
@@ -185,23 +186,11 @@ export function Cell({
       )
     }
     case 'file':
-      // Each chip opens its own file — the click stays on the chip, not the cell/row.
       return (
         <OverflowScroll className="cell-chips">
-          {v.value.map((f) => (
-            // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a control inside a grid cell — per-chip tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
-            <span
-              key={f.path}
-              onClick={(e) => {
-                e.stopPropagation()
-                void window.nexus.openFile(f.path)
-              }}
-            >
-              <Chip
-                color="default"
-                label={fileLabel(f, style.look === 'path' ? 'path' : 'filename')}
-              />
-            </span>
+          {v.value.map((f, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: a file value is positional and its entries carry no state — two identical wikilinks (a hand-edit, a sync merge) would collide on the value and send the hover-× to the wrong one
+            <Chip key={i} color="default" label={parseConnectionText(f)?.title ?? f} />
           ))}
         </OverflowScroll>
       )

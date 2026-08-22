@@ -15,12 +15,6 @@
 import { wrapKey } from './governedKeys'
 import { optionValues, type PropertyDefinition } from './properties'
 
-/** On-disk file-attachment shape (snake_case = the on-disk DTO). Round-trips as-is;
- *  unknown keys on a file object are preserved (the decoder passes the object through). */
-export interface FileRef {
-  path: string
-}
-
 export type PropertyValue =
   | { kind: 'number'; value: number }
   | { kind: 'checkbox'; value: boolean }
@@ -31,7 +25,7 @@ export type PropertyValue =
    *  the schema on the value path — the type resolver runs there without the Context id list. */
   | { kind: 'context'; value: string[] }
   | { kind: 'url'; value: string }
-  | { kind: 'file'; value: FileRef[] }
+  | { kind: 'file'; value: string[] } // `[[Name.ext]]` wikilinks, resolved in the asset basename domain
   | { kind: 'lastEditedTime' } // virtual — never persisted (encode throws)
   | { kind: 'null' }
 
@@ -41,8 +35,15 @@ export function isPlainObject(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v)
 }
 
-function isFileRef(v: unknown): v is FileRef {
-  return isPlainObject(v) && typeof v.path === 'string'
+/** YAML reads an unquoted `[[Name.ext]]` as a nested flow sequence rather than a string — one
+ *  level deep under a block sequence, two under an inline one. Unwrapping single-element arrays
+ *  back to their spelling keeps a hand-edit from nulling the whole value, which would take the
+ *  page's other attachments with it and let the next in-app add overwrite them on disk. */
+function fileEntry(v: unknown): string | null {
+  if (typeof v === 'string') return v
+  let inner: unknown = v
+  while (Array.isArray(inner) && inner.length === 1) inner = inner[0]
+  return typeof inner === 'string' ? `[[${inner}]]` : null
 }
 
 const NULL: PropertyValue = { kind: 'null' }
@@ -84,9 +85,19 @@ export function decodeValue(
       const kept = strict ? raw.filter((v) => optionValues(def).includes(v)) : raw
       return strict && kept.length === 0 ? NULL : { kind: 'multiSelect', value: kept }
     }
+    // Shape-identical to multi_select and deliberately NOT merged with it: multi_select is
+    // option-gated under strict, and optionValues on a file def returns [] — a merged case would
+    // discard every attachment through the restore path. For file, strict refuses emptiness and
+    // non-strings and nothing else.
     case 'file': {
-      if (!Array.isArray(raw) || !raw.every(isFileRef)) return NULL
-      return strict && raw.length === 0 ? NULL : { kind: 'file', value: raw }
+      if (!Array.isArray(raw)) return NULL
+      const entries: string[] = []
+      for (const x of raw) {
+        const entry = fileEntry(x)
+        if (entry === null) return NULL
+        entries.push(entry)
+      }
+      return strict && entries.length === 0 ? NULL : { kind: 'file', value: entries }
     }
     default:
       // A Context column resolves at walk assembly and never routes here.
