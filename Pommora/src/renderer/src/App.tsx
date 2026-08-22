@@ -37,6 +37,7 @@ export function App(): React.JSX.Element {
   const load = useSession((s) => s.load)
   const applyTree = useSession((s) => s.applyTree)
   const applyNavChanged = useSession((s) => s.applyNavChanged)
+  const applyAssetMap = useSession((s) => s.applyAssetMap)
   const choose = useSession((s) => s.choose)
   const openDropped = useSession((s) => s.openDropped)
   const toggleSidebar = useSession((s) => s.toggleSidebar)
@@ -135,6 +136,13 @@ export function App(): React.JSX.Element {
   useEffect(() => {
     return window.nexus.onNavChanged((nav) => applyNavChanged(nav))
   }, [applyNavChanged])
+
+  // The asset root's listing: read once at mount, then kept current by the watcher's push. No
+  // tree walk on either path — a banner whose file arrives late repaints itself.
+  useEffect(() => {
+    void window.nexus.assetMap().then(applyAssetMap)
+    return window.nexus.onAssetsChanged((map) => applyAssetMap(map))
+  }, [applyAssetMap])
 
   // A guest's window.open lands here — the same adjudicator link clicks use, so popups and
   // clicks can never open in different places.

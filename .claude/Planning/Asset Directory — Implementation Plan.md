@@ -290,12 +290,12 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 **Negative control:** dropping 50 files into the asset root produces **zero** `nexus:changed` pushes and exactly one `assets:changed`. Disable the arm and the same batch produces a walk — assert both.
 
 **Steps:**
-- [ ] Write the failing tests, including the 50-file negative control in both directions.
-- [ ] Run — expect failures.
-- [ ] Add the channels, the handler, the store slot, the subscription.
-- [ ] Verify `stabilize` returns the previous object for an UNCHANGED map — an echo no-op, which is the whole of what it buys here.
-- [ ] `npm run typecheck && npm run test && npm run lint` — expect green.
-- [ ] Commit: `feat(assets): main pushes the asset map; no asset event walks the tree`
+- [x] Write the failing tests, including the 50-file negative control in both directions.
+- [x] Run — expect failures.
+- [x] Add the channels, the handler, the store slot, the subscription.
+- [x] Verify `stabilize` returns the previous object for an UNCHANGED map — an echo no-op, which is the whole of what it buys here.
+- [x] `npm run typecheck && npm run test && npm run lint` — expect green.
+- [x] Commit: `feat(assets): main pushes the asset map; no asset event walks the tree`
 
 #### Task 6: `assetUrl` resolves the three spellings
 
@@ -637,6 +637,7 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
   - The review's central finding stands: the plan built the external-change machinery and never asked what happens **when Pommora is the writer**. `atomicWriteBinary` → `recordWrite` → `isRecentWrite` means no in-app write reaches `settle`, so the asset copy starved the map (F1), the settings write starved the re-arm (F2), and the widened gate starved the delete (F3). Three defects, one root cause, all shipping silently green. Requirement 10 now names the path.
   - **Unknown resolved:** the `tree.unreadable` check at `watchPatch.ts:121` runs before Task 3's arm, but every producer of that list sits inside `readContainerMeta` / `readDirectPages` / `readChildSets`, which run only on descended directories — and Task 2 prunes the asset root at `shouldSkipDir`. Safe, and conditional on Task 2, which Task 3 now records.
 ### Deviations
+- **Task 5 — the held map needs no teardown.** It is pinned to the root it was built for, so a session switch makes the previous nexus's map unreadable and the first ask for the new root rebuilds over it. A `dropAssetMap` would have meant a call beside all three `dropLiveTree` sites, and a fourth appearing later would drift.
 - **Task 4 — the map holds every path per name, and `duplicates` disappears.** The specified `{ files: Record<string, string>; duplicates: string[] }` cannot support a correct incremental unlink: holding only the winning path leaves an unlink with nothing to promote, so removing one of three same-named files would drop the name entirely. `files: Record<string, string[]>`, sorted, makes display take the first and a delete refuse anything longer than one — and the "files and duplicates cannot disagree" invariant becomes impossible to violate rather than merely tested. The IPC payload shrinks with it.
 - **Task 4 — the watcher's cruft predicate moved to `exclusion.ts` as `neverWatched`.** The map lists a directory the watcher also watches, so it must skip exactly what the watcher drops or it holds entries no event will ever update. One predicate, two consumers.
 - **Task 2 — `readWatchScope` replaces both named readers.** All five `readExcludedFolders` call sites take the scope as a unit, so the reader does too; Task 1's `readAssetDirectory` folded into it rather than standing unused until Task 5. One reader produces the exact object every consumer threads. `adopt.ts` was also decoding `excluded_folders` by hand — a second decoder for a key `readSettingsLeaves` already owns — and now reads through it.

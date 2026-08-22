@@ -18,6 +18,7 @@ import {
   type SelectTarget,
   type SetNode,
   type Tab,
+  AssetMap,
 } from '@shared/types'
 import {
   type Creator,
@@ -51,6 +52,8 @@ import {
   type PreviewTab,
 } from './PagePreview/previewTabs'
 import { toNavRef } from '@shared/types'
+
+const EMPTY_ASSET_MAP: AssetMap = { files: {}, version: 0 }
 import {
   moveByKey,
   navKey,
@@ -341,6 +344,8 @@ interface SessionState {
   unpinTarget: (key: string) => void
   reorderPin: (activeKey: string, overKey: string) => void
   applyNavChanged: (nav: Omit<NavigationState, 'recents'>) => void
+  assetMap: AssetMap
+  applyAssetMap: (map: AssetMap) => void
   thumbVersions: Record<string, number>
   bumpThumb: (key: string) => void
   evictThumbs: () => void
@@ -478,6 +483,7 @@ export const useSession = create<SessionState>((set, get) => {
       favorites: [],
       recents: [],
       navBanner: undefined,
+      assetMap: EMPTY_ASSET_MAP,
       // Defaults here so a nexus without the setting can't inherit the previous one's.
       subfieldExpanded: true,
       subfieldOrder: {},
@@ -1241,6 +1247,7 @@ export const useSession = create<SessionState>((set, get) => {
     pinned: [],
     pinnedTabs: [],
     navBanner: undefined,
+    assetMap: EMPTY_ASSET_MAP,
     pinTarget: (target) => {
       // A pin must resolve for as long as it is stored: agenda kinds resolve against nothing,
       // and an adopted id is re-minted on the next walk.
@@ -1262,6 +1269,12 @@ export const useSession = create<SessionState>((set, get) => {
     },
     // The push carries the FILE's keys (an external edit): pinned, favorites, banner. Recents
     // aren't in the file — the in-memory stream always leads.
+    // Stabilize buys the echo case: an unchanged push returns the held map and zustand no-ops.
+    // A real add or unlink is a new object and re-renders every mounted banner, which is what a
+    // phantom becoming real is for.
+    applyAssetMap: (map) => {
+      set({ assetMap: stabilize(map, get().assetMap) })
+    },
     applyNavChanged: (nav) => {
       const pinned = nav.pinned ?? []
       const tree = get().tree
