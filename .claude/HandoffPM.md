@@ -1,6 +1,6 @@
 ## Handoff — Pommora
 
-> **User Prompt:** *"This plan must end-to-end go through this entire cycle once the post-compact prompt is given back to you as I'm going to bed and will not be able to provide any input. I'm connected via remote control so I will be able to see the screenshot confirmation of banner behavior which is REQUIRED for you to confirm. If you need to restart my process, do it. Nothing should hold you back from doing what you need to do."*
+> **User Prompt:** *"You do NOT guess — you LOOK, and you ASK. Open the file and read the code before you assert anything; ask me when you're unsure. A plan built on an unverified claim is a liability, not progress — treat every doc, every `file:line`, every 'it works like X' as a hypothesis until you've read the code that proves it. Honesty over confidence; confidence is earned through evidence."*
 
 #### Current Focus
 
