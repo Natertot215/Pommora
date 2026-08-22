@@ -259,10 +259,10 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
 **Failure half:** a SavedView holding `look: 'path'` → catches to `undefined`, falls to `defaultStyleFor`, renders the filename. Assert this with a fixture rather than reasoning about it.
 
 **Steps:**
-- [ ] Write the failing test: a stored `look: 'path'` on a file column renders the filename.
-- [ ] Delete the two enum members, the `defaultStyleFor` case, the `columnMenu` case, and `fileLabel` with its test.
-- [ ] Run `npm run typecheck` — expect it to name every remaining reader.
-- [ ] Full gate green. Commit: `refactor(views): a file column has no look to choose`
+- [x] Write the failing test: a stored `look: 'path'` on a file column renders the filename.
+- [x] Delete the two enum members, the `defaultStyleFor` case, the `columnMenu` case, and `fileLabel` with its test.
+- [x] Run `npm run typecheck` — expect it to name every remaining reader.
+- [x] Full gate green. Commit: `refactor(views): a file column has no look to choose`
 
 #### Task 4: Retire the file cell's Style menu kind
 
@@ -667,6 +667,8 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
 - **Task 1 · two test blocks were rewritten here.** `Cell.test.tsx`'s `file looks` describe and `cellGestures.test.tsx`'s file-chip-open test both held legacy-shaped fixtures, so Task 1's shape change is what falsified them. The first became one test on the new shape; the second was deleted with the behavior it covered.
 - **Task 1 · the index key carries a `biome-ignore`.** `noArrayIndexKey` fires on F-8a's mandated key. Suppressed with the true reason — the entries are positional, carry no state, and keying on the value would collide on two identical wikilinks.
 - **Plan header vs Phase 3's own estimate.** The header row reads `+20` for Phase 3 where the phase body reads `+10`; the body governs, so the expected net is ≈ **+46**, not +56.
+- **Task 3 · the failing test is the parse, not the render.** With file out of the style system the cell no longer reads `style.look` at all (Task 1), so "a stored `look: 'path'` renders the filename" has no render path left to assert. It lands where the compatibility actually happens — `columnStyle.parse` catching both retired members to `undefined`, beside the two the link vocabulary already retired, plus `defaultStyleFor('file')` returning `{}`.
+- **Task 3 · `cellMenu.test.ts`'s `style-edit` fixture was narrowed here.** It named `look: 'filename'`, which the enum no longer holds. Its expectation now reads the empty row set Task 3 leaves behind; Task 4 deletes the test with the kind.
 - **Naming.** The spec settled on **FileLabel** (C-2c); several plan headings still read FileChip. FileLabel is the name that ships — component, chip shape and prose alike.
 ### Lessons
 ### Sequenced After

@@ -80,8 +80,6 @@ export function styleMenuItems(ctx: StyleMenuContext): StyleMenuItem[] {
       return [look('Checkbox', 'checkbox'), look('Switch', 'switch')]
     case 'url':
       return LINK_DISPLAYS.map((d) => look(LINK_DISPLAY_LABELS[d], d))
-    case 'file':
-      return [look('Filename', 'filename'), look('Full Path', 'path')]
     case 'number':
       return ctx.barCapable
         ? [look('Number', 'number'), look('Bar', 'bar')]

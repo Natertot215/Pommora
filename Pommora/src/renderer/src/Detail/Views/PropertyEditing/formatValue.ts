@@ -181,10 +181,6 @@ export function condensedDate(iso: string, dateFormat: DateFormat, withYear: boo
   }
 }
 
-export function fileLabel(ref: { path: string }, look: 'filename' | 'path'): string {
-  return look === 'path' ? ref.path : (ref.path.split('/').pop() ?? ref.path)
-}
-
 /** Fraction-option digit settings for `Intl` — 'hidden' shows no places, a fixed count pins min=max,
  *  absent shows the number's natural decimals (Intl default). */
 function fractionDigits(decimals: NumberConfig['number_decimals']): Intl.NumberFormatOptions {

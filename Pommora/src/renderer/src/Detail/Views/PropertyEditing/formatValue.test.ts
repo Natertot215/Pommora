@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { condensedDate, fileLabel, formatDate, formatNumber, numberDivisor } from './formatValue'
+import { condensedDate, formatDate, formatNumber, numberDivisor } from './formatValue'
 
 describe('formatDate', () => {
   it('renders the four date formats', () => {
@@ -133,13 +133,5 @@ describe('numberDivisor', () => {
       numberDivisor({ number_family: 'number', number_fraction: true, number_denominator: 0 }),
     ).toBeUndefined()
     expect(numberDivisor({ number_family: 'number', number_fraction: true })).toBeUndefined()
-  })
-})
-
-describe('fileLabel', () => {
-  it('the filename look strips the directory; the path look keeps it', () => {
-    expect(fileLabel({ path: 'Assets/Photos/trip.png' }, 'filename')).toBe('trip.png')
-    expect(fileLabel({ path: 'Assets/Photos/trip.png' }, 'path')).toBe('Assets/Photos/trip.png')
-    expect(fileLabel({ path: 'root.pdf' }, 'filename')).toBe('root.pdf')
   })
 })
