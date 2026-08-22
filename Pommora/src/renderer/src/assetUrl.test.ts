@@ -77,6 +77,23 @@ describe('resolveAssetValue', () => {
   })
 })
 
+describe('assetUrl', () => {
+  it('survives the round-trip the protocol handler makes, whatever the user named the file', () => {
+    // The handler reads `new URL(url).pathname` and decodes it; `#` and `?` would otherwise end
+    // the path early and 404 a file that is sitting right there.
+    for (const rel of [
+      '.nexus/assets/nx/banner-a.png',
+      'file-assets/Draft #2.png',
+      'file-assets/What? Now.png',
+      'file-assets/Café shot.png',
+      'file-assets/a b.png',
+    ]) {
+      const back = decodeURIComponent(new URL(`${assetUrl(rel)}?v=3`).pathname).replace(/^\/+/, '')
+      expect(back).toBe(rel)
+    }
+  })
+})
+
 describe('resolveAssetUrl', () => {
   it('carries the map version so a re-saved file is re-requested', () => {
     expect(resolveAssetUrl('[[Banner.png]]', map)).toBe(`${assetUrl('file-assets/Banner.png')}?v=7`)

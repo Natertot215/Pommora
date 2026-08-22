@@ -4,7 +4,11 @@
 import { normalizeTitle, parseConnectionText } from '@shared/connections'
 import type { AssetMap } from '@shared/types'
 
-export const assetUrl = (rel: string): string => `nexus-asset://nexus/${encodeURI(rel)}`
+// Per SEGMENT, not `encodeURI` over the whole path: that helper leaves `#` and `?` alone, so a
+// file the user named `Draft #2.png` would truncate at the fragment and 404. App-minted tokens
+// never carried either character; names from a shared folder do.
+export const assetUrl = (rel: string): string =>
+  `nexus-asset://nexus/${rel.split('/').map(encodeURIComponent).join('/')}`
 
 export type AssetValue =
   | { kind: 'asset'; rel: string }
