@@ -109,6 +109,7 @@ function DatetimeCellPicker({
 export function TableView({ source }: { source: CollectionNode | SetNode }): React.JSX.Element {
   const styleFor = useStyleFor()
   const tree = useSession((s) => s.tree)
+  const assetMap = useSession((s) => s.assetMap)
   const selection = useSession((s) => s.selection)
   const select = useSession((s) => s.select)
   // The store's one write path — main confirms it by patching its live tree and pushing, so a
@@ -304,9 +305,9 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     }
   }, [source, effectiveValues, liveView, schema, manualOrder, contextIds])
   const ctx = useMemo(
-    () => (tree ? buildResolveContext(tree, schema) : null),
+    () => (tree ? buildResolveContext(tree, schema, assetMap) : null),
     // buildResolveContext reads only contexts + labels — keying on those slices keeps ctx identity across unrelated tree pushes, so memoized rows hold.
-    [tree?.contexts, tree?.labels, schema],
+    [tree?.contexts, tree?.labels, schema, assetMap],
   )
   // One mounted observer, two targets, one job (the overflowing flag): the view (pane resizes) and
   // the grid (min-width sizes its box only while the columns overflow the pane — in the fit regime

@@ -70,12 +70,13 @@ export function usePropertyRows(
   setFm: React.Dispatch<React.SetStateAction<PageFrontmatter | null>>,
 ): PropertyRows {
   const tree = useSession((s) => s.tree)
+  const assetMap = useSession((s) => s.assetMap)
   const mutate = useSession((s) => s.mutate)
   const path = page?.path ?? ''
 
   const schema = useMemo(() => schemaForPage(tree, path), [tree, path])
   const ctx = useMemo<ResolveContext | null>(
-    () => (tree ? buildResolveContext(tree, schema) : null),
+    () => (tree ? buildResolveContext(tree, schema, assetMap) : null),
     [tree, schema],
   )
   const contextRows = useMemo(
