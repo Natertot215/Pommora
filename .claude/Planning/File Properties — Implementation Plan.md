@@ -450,9 +450,9 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
 **Negative control:** both halves. A `.pdf` adopts under `allow: 'any'` and is refused under `allow: 'image'`; with the gate disabled, a `Q3|draft.pdf` test goes red — `embeddableTitle` must still refuse it, or the reference silently retargets at basename `Q3` with alias `draft.pdf`.
 
 **Steps:**
-- [ ] Write the banner baseline test first.
-- [ ] Export, rename, add the two parameters; the banner closure passes `allow: 'image'`.
-- [ ] Full gate green, baseline unmoved. Commit: `refactor(assets): adoption is reachable by more than banners`
+- [x] Write the banner baseline test first.
+- [x] Export, rename, add the two parameters; the banner closure passes `allow: 'image'`.
+- [x] Full gate green, baseline unmoved. Commit: `refactor(assets): adoption is reachable by more than banners`
 
 #### Task 13: The adopt channel, and the picker's options
 
@@ -643,8 +643,8 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
   - [x] Task 9 — Build the FileLabel component · `04bd754e`
   - [x] Task 10 — Hoist the segment composition into SegmentRun · `1fdee072`
   - [x] Task 11 — Render the file cell as a run of FileLabels · `1c7d8d5b`
-- [ ] **Phase 3** — Adoption
-  - [ ] Task 12 — Widen adoption past images
+- [ ] **Phase 3** — Adoption · base `907a7dab`
+  - [x] Task 12 — Export the adoption mechanism · `<commit>`
   - [ ] Task 13 — Give the picker its options
   - [ ] Task 14 — Wire the value write
 - [ ] **Phase 4** — The Directory field
@@ -727,6 +727,8 @@ Each finding opened and reproduced before folding.
 - **Task 10 · the hoist is unconditional, not an opt-in entry kind.** Spec C-1a and C-2d both read that *every* run's segments become FileLabels, so `SegmentRun` composes one per entry rather than growing a chip-shaped variant beside the hand-assembled one — a variant would have left the two compositions alive side by side, which is the drift the hoist exists to end. `trailing` became `onRemove`, and `segmentLabel` went with the composition FileLabel now owns.
 - **Task 10 · the no-glyph case belongs to the caller, not to the glyph map.** The hoist put path segments through FileLabel, and a folder name has no extension — so the first attempt made `fileTypeIcon` return undefined for a name with none, which showed no glyph. **Nathan's ruling: the fallback fires for every name.** C-4 says so, and a map that sometimes answers nothing is not a fallback. `fileTypeIcon` always returns a glyph id; a caller that wants none passes `icon={false}`, and `SegmentRun` passes it for a `nested` run — a path's segments are folders carrying one lead icon on the run, which is the run's own fact rather than the map's.
 - **Task 10 · `--chip-max` is lifted on the run, not raised on Location.** A chip's 80px cap would ellipsize each title separately, stacking a second truncation on the run's one honest signal — its trailing edge fade. `none` on `segmentRun` is the whole fix, and it serves the asset row's path segments for the same reason.
+- **Task 12 · the banner baseline was already written.** `mutate.test.ts`'s `setBanner` block already pins all five guards — adoption under its own name, reference-in-place, the AMBIGUOUS refusal, the collision step-aside and the byte-identical dedup. It passes unchanged across the export, which is the baseline the task asked for; writing a second one would have pinned the same code twice.
+- **Task 12 · the subfolder joins through `assetSubRoot`.** `writeAssetFile` already takes the asset root as a nexus-relative string and `rootSegs` drops empty segments, so a root-plus-subfolder is one composition rather than a branch — and an absent or slash-padded subfolder resolves to the root itself with nothing downstream special-casing it. Task 15's validator reads the same function.
 - **Naming.** The spec settled on **FileLabel** (C-2c); several plan headings still read FileChip. FileLabel is the name that ships — component, chip shape and prose alike.
 ### Lessons
 ### Sequenced After

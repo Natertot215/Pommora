@@ -3,7 +3,7 @@ import { PAGE_ID_KEY } from '@shared/identity'
 import { mkdtemp, rm, mkdir, writeFile, readFile, readdir, chmod } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { handleMutate, type MutateDeps } from './mutate'
+import { adoptFile, handleMutate, type MutateDeps } from './mutate'
 import { NEW_PAGE_SLOT } from '@shared/mutate'
 
 const A_ID = '01KVGMT8BFG350FZZXAMG1QDRA'
@@ -998,5 +998,73 @@ describe('handleMutate — setIcon and setHeadingIconHidden on a container sidec
     const sc = JSON.parse(await read('Notes/_pagecollection.json'))
     expect('heading_icon_hidden' in sc).toBe(false)
     expect(sc.id).toBe('pt')
+  })
+})
+
+describe('adoptFile — the shared adoption seam', () => {
+  let outside: string
+  beforeEach(async () => {
+    outside = await mkdtemp(join(tmpdir(), 'pom-adopt-'))
+    await writeFile(
+      join(root, '.nexus', 'settings.json'),
+      JSON.stringify({ asset_directory: 'file-assets' }),
+    )
+    await mkdir(join(root, 'file-assets'), { recursive: true })
+  })
+  afterEach(async () => {
+    await rm(outside, { recursive: true, force: true })
+  })
+  const pick = async (name: string, body = 'bytes'): Promise<string> => {
+    const p = join(outside, name)
+    await writeFile(p, body)
+    return p
+  }
+
+  it('the extension gate is per caller: a banner takes images, a file property takes anything', async () => {
+    const pdf = await pick('Report.pdf')
+    expect(await adoptFile(root, pdf, { allow: 'image' })).toMatchObject({ ok: false })
+    const any = await adoptFile(root, pdf, { allow: 'any' })
+    expect(any).toEqual({ ok: true, value: '[[Report.pdf]]' })
+    expect(await pathExists(join(root, 'file-assets', 'Report.pdf'))).toBe(true)
+  })
+
+  it('a name the link grammar cannot spell is refused whatever the caller allows', async () => {
+    // `|` splits off an alias and `]` closes the link early, so either one silently retargets the
+    // reference at something that is not the file. Widening the extension gate must not reach this.
+    for (const name of ['Q3|draft.pdf', 'Summary]].pdf'])
+      expect(await adoptFile(root, await pick(name), { allow: 'any' })).toMatchObject({ ok: false })
+    expect(await readdir(join(root, 'file-assets'))).toEqual([])
+  })
+
+  it('lands the file in the subfolder its property names, still answering by basename', async () => {
+    const r = await adoptFile(root, await pick('Spec.pdf'), {
+      allow: 'any',
+      subfolder: 'Attachments',
+    })
+    expect(r).toEqual({ ok: true, value: '[[Spec.pdf]]' })
+    expect(await pathExists(join(root, 'file-assets', 'Attachments', 'Spec.pdf'))).toBe(true)
+  })
+
+  it('an absent subfolder lands in the asset root itself', async () => {
+    const r = await adoptFile(root, await pick('Loose.pdf'), { allow: 'any', subfolder: '' })
+    expect(r).toEqual({ ok: true, value: '[[Loose.pdf]]' })
+    expect(await pathExists(join(root, 'file-assets', 'Loose.pdf'))).toBe(true)
+  })
+
+  it('a basename held in ANOTHER subfolder steps aside — one namespace, wherever the files sit', async () => {
+    await adoptFile(root, await pick('Doc.pdf', 'first'), { allow: 'any', subfolder: 'A' })
+    const second = await adoptFile(root, await pick('Doc.pdf', 'second'), {
+      allow: 'any',
+      subfolder: 'B',
+    })
+    expect(second).toEqual({ ok: true, value: '[[Doc 2.pdf]]' })
+  })
+
+  it('never deletes: adopting a replacement leaves the file the old reference named', async () => {
+    const first = await adoptFile(root, await pick('Old.pdf'), { allow: 'any' })
+    expect(first.ok).toBe(true)
+    const second = await adoptFile(root, await pick('New.pdf'), { allow: 'any' })
+    expect(second.ok).toBe(true)
+    expect(await pathExists(join(root, 'file-assets', 'Old.pdf'))).toBe(true)
   })
 })

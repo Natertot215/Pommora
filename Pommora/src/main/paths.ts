@@ -50,6 +50,13 @@ export function assetsDir(root: string, assetDir: string): string {
   return join(root, ...rootSegs(assetDir))
 }
 
+/** The asset root a property's files land under — the configured root, or a subfolder named
+ *  beneath it. `rootSegs` drops empty segments, so an absent or slash-padded subfolder resolves to
+ *  the root itself and nothing downstream has to special-case it. */
+export function assetSubRoot(assetDir: string, subfolder: string | undefined): string {
+  return subfolder ? `${assetDir}/${subfolder}` : assetDir
+}
+
 export function contextsDir(root: string): string {
   return join(root, CONTEXTS_DIR_REL)
 }
