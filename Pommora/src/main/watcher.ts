@@ -43,23 +43,25 @@ export function ignoredUnder(root: string, scope: WatchScope): (path: string) =>
   // (un-excluding a folder mid-session takes effect on the next nexus open / watcher restart).
   const isExcluded = excludedMatcher(scope.excluded)
   const isAsset = assetMatcher(scope.assetDir)
+  const assetDepth = scope.assetDir.split('/').filter(Boolean).length
+  const junkSeg = (seg: string): boolean =>
+    seg === TRASH_DIR ||
+    // The walk skips it, so the tree can never hold it — and one install would otherwise
+    // storm the settle window with thousands of directory events.
+    seg === 'node_modules' ||
+    seg.startsWith('nexus.db') || // our store + its WAL/SHM
+    (seg.startsWith('.') && seg !== NEXUS_DIR) // dotfile cruft, but .nexus holds contexts + settings
   return (path) => {
     const rel = relative(root, path)
     if (!rel || rel.startsWith('..')) return false
     const segs = rel.split(sep)
-    // The asset root is watched whatever else would hide it — the dot-prefix rule below
-    // would blind a root named `.attachments`, and an exclusion entry would blind any of them.
-    if (isAsset(segs)) return false
+    // The asset root's OWN segments are exempt from the rules below — the dot-prefix one would
+    // blind a root named `.attachments`, and an exclusion entry would blind any of them. What
+    // sits below the root is ordinary cruft and still filtered: a synced folder's `.DS_Store`
+    // is not an asset.
+    if (isAsset(segs)) return segs.slice(assetDepth).some(junkSeg)
     return (
-      segs.some(
-        (seg) =>
-          seg === TRASH_DIR ||
-          // The walk skips it, so the tree can never hold it — and one install would otherwise
-          // storm the settle window with thousands of directory events.
-          seg === 'node_modules' ||
-          seg.startsWith('nexus.db') || // our store + its WAL/SHM
-          (seg.startsWith('.') && seg !== NEXUS_DIR), // dotfile cruft, but .nexus holds contexts + settings
-      ) ||
+      segs.some(junkSeg) ||
       // Block-host content loads through blocks:get, never the tree walk —
       // a debounced block-body write must not cost a full re-walk. The
       // homepage.json config FILE stays watched (the tree reads its banner).
@@ -162,8 +164,13 @@ async function settle(root: string, win: BrowserWindow, scope: WatchScope): Prom
     // The scope this watcher was armed with is spent state: an edit to either half classifies
     // `refresh` above, but the classifier and chokidar's own ignore filter would keep reading
     // the stale capture — and a note under a newly-excluded folder would ride `index-only` back
-    // into the queryable rows. A changed scope re-arms the watcher.
-    if (!sameScope(await readWatchScope(root), scope)) void startWatcher(root, win)
+    // into the queryable rows. A changed scope moves the corpus by definition, so the rows it
+    // now disowns are reconciled before the fresh watcher arms.
+    if (!sameScope(await readWatchScope(root), scope)) {
+      await seedContentIndex(root)
+      if (sessionRoot() !== root || win.isDestroyed()) return
+      void startWatcher(root, win)
+    }
   } catch {
     // Transient FS state mid-write — the next settle re-reads (Reload is the fallback).
   }

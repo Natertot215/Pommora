@@ -301,6 +301,15 @@ describe('the asset root outranks every other skip', () => {
     expect(await applyWatchEvents(root, events, s)).toBe('patched')
   })
 
+  it('the root escapes the cruft rules; what sits below it does not', async () => {
+    // A root named `.attachments` is what the exemption exists for — a `.DS_Store` synced into
+    // one is not.
+    expect(ignoredUnder(root, scope([], '.attachments'))(abs('.attachments', 'x.png'))).toBe(false)
+    expect(ignoredUnder(root, scope([], 'file-assets'))(abs('file-assets', 'x.png'))).toBe(false)
+    for (const junk of ['.DS_Store', 'node_modules', '.git'])
+      expect(ignoredUnder(root, scope([], 'file-assets'))(abs('file-assets', junk, 'x'))).toBe(true)
+  })
+
   it('ignoredUnder and classifyEvent agree about what an asset path is', async () => {
     const tree = await refreshTree(root)
     for (const dir of ASSET_ROOTS) {

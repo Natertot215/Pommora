@@ -62,11 +62,20 @@ describe('readSettingsLeaves: asset_directory', () => {
     expect(dir('.')).toBe(ASSETS_DIR_REL)
     expect(dir('./')).toBe(ASSETS_DIR_REL)
   })
-  it('refuses the two folders the app owns whole, but not a folder beneath one', () => {
+  it('refuses anything inside a folder the app owns whole, save the default itself', () => {
     expect(dir('.nexus')).toBe(ASSETS_DIR_REL)
     expect(dir('.trash')).toBe(ASSETS_DIR_REL)
+    expect(dir('.nexus/contexts')).toBe(ASSETS_DIR_REL)
+    expect(dir('.nexus/attachments')).toBe(ASSETS_DIR_REL)
+    expect(dir('.trash/keep')).toBe(ASSETS_DIR_REL)
     expect(dir(ASSETS_DIR_REL)).toBe(ASSETS_DIR_REL)
-    expect(dir('.nexus/attachments')).toBe('.nexus/attachments')
+  })
+
+  it('compares case-folded, and answers in the canonical spelling', () => {
+    // Every downstream matcher case-folds; what compares the answer is string equality.
+    expect(dir('.Nexus')).toBe(ASSETS_DIR_REL)
+    expect(dir('.NEXUS/Contexts')).toBe(ASSETS_DIR_REL)
+    expect(dir('.Nexus/Assets')).toBe(ASSETS_DIR_REL)
   })
 })
 

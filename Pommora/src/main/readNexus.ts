@@ -53,7 +53,7 @@ import { pathExists, readJsonObject, readJsonStrict } from './io/atomicWrite'
 import { isContentFile, listEntries } from './io/walk'
 import { orderedDefs, readRegistry, type PropertyRegistry } from './io/propertiesRegistry'
 import { asString, asStringArray, basenameNoMd } from './coerce'
-import { shouldSkipDir, type WatchScope } from './exclusion'
+import { normalizeSeg, shouldSkipDir, type WatchScope } from './exclusion'
 import { resolveOrder } from './order'
 import { beginWalk, cachedParse, endWalk } from './walkCache'
 import {
@@ -213,16 +213,20 @@ export interface SettingsLeaves {
 /** The asset root, nexus-relative POSIX. A malformed value takes the default rather than
  *  narrowing the walk or widening the protocol handler's containment check on bad input: an
  *  escaping or absolute path, a root-wide one (which would classify the whole nexus as asset),
- *  and the two folders the app owns whole — `.nexus` swallows the settings and Contexts events
- *  the classifier needs, and nothing under `.trash` is watched at all. A folder BENEATH one of
- *  those stays legal; the default is itself one. */
+ *  and anything inside the two folders the app owns whole — `.nexus/contexts` would drop every
+ *  Space from the walk, `.nexus/settings.json` events would be swallowed as assets, and nothing
+ *  under `.trash` is watched at all. The default is the one place inside them that is an asset
+ *  root by definition. Compared case-folded, because every downstream matcher is. */
 function readAssetDirectoryLeaf(v: unknown): string {
   const raw = asString(v)?.trim()
   if (!raw || raw.startsWith('/') || raw.includes('\\')) return ASSETS_DIR_REL
   const segs = raw.split('/').filter(Boolean)
   if (segs.some((s) => s === '.' || s === '..')) return ASSETS_DIR_REL
-  const rel = segs.join('/')
-  return NON_CORPUS_TOP.has(rel) ? ASSETS_DIR_REL : rel
+  // Inside an app-owned folder every value resolves to the default: either it already IS the
+  // default, in which case the canonical spelling replaces whatever casing was written, or it
+  // is refused. Case-folded, because every downstream matcher is.
+  if (NON_CORPUS_TOP.has(normalizeSeg(segs[0]))) return ASSETS_DIR_REL
+  return segs.join('/')
 }
 
 export function readSettingsLeaves(settings: Json): SettingsLeaves {
