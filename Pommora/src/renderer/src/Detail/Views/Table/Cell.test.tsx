@@ -6,6 +6,7 @@ import type { ColumnStyle } from '@shared/columnStyles'
 import type { PropertyDefinition } from '@shared/properties'
 import type { ResolvedColumn, ViewRow } from '@shared/types'
 import { chipColor } from '@renderer/design-system/tokens'
+import { EMPTY_ASSET_MAP } from '@shared/types'
 import { Cell } from './Cell'
 import type { ResolveContext } from './resolveContext'
 import { propsAtRoot } from '@renderer/testing/propsAtRoot'
@@ -52,7 +53,11 @@ const schema: PropertyDefinition[] = [
   { id: 'prop_n', name: 'Count', type: 'number' },
   { id: 'prop_files', name: 'Files', type: 'file' },
 ]
-const ctx = { schema, contextsById: new Map() } as unknown as ResolveContext
+const ctx = {
+  schema,
+  contextsById: new Map(),
+  assets: EMPTY_ASSET_MAP,
+} as unknown as ResolveContext
 
 const col = (id: string): ResolvedColumn => ({ id, kind: 'property' })
 const rowWith = (properties: Record<string, unknown>): ViewRow =>
