@@ -50,6 +50,31 @@ describe('validateAssetDir', () => {
     }
   })
 
+  it('refuses content NESTED under the folder, not only its own entries', async () => {
+    // The asset root is pruned by segment prefix, so a Collection three levels down would vanish
+    // from the tree and the index alongside it.
+    const abs = await dir('Media')
+    await dir('Media', 'a', 'b')
+    await writeFile(join(root, 'Media', 'a', 'b', 'note.md'), 'text')
+    expect((await validateAssetDir(root, abs)).ok).toBe(false)
+    await rm(join(root, 'Media', 'a', 'b', 'note.md'))
+    expect(await validateAssetDir(root, abs)).toEqual({ ok: true, value: 'Media' })
+  })
+
+  it('refuses a nested container too', async () => {
+    const abs = await dir('Media')
+    await dir('Media', 'deep')
+    await writeFile(join(root, 'Media', 'deep', '_pagecollection.json'), '{}')
+    expect((await validateAssetDir(root, abs)).ok).toBe(false)
+  })
+
+  it('refuses a file — a listing of one reads as an empty folder', async () => {
+    await dir('Media')
+    const file = join(root, 'Media', 'cover.png')
+    await writeFile(file, 'bytes')
+    expect((await validateAssetDir(root, file)).ok).toBe(false)
+  })
+
   it('refuses the nexus root itself', async () => {
     expect((await validateAssetDir(root, root)).ok).toBe(false)
   })

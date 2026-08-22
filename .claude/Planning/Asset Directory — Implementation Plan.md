@@ -441,14 +441,14 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 
 #### Gate 3 — the setting is settable
 
-- [ ] Gates green, exit codes read directly.
-- [ ] **Simplification pass — MANDATORY, and it runs FIRST.** `code-simplifier` then `comment-killer-agent`, both against `<base>..HEAD` scoped to this phase's paths. A phase is not reviewable until it has been simplified: reviewing first criticizes code before it has earned its final shape.
-- [ ] Simplification findings applied, and the gates re-run green after them.
-- [ ] **Then** review — `/code-review` against the same `<base>..HEAD`; the report cites files inside it.
+- [x] Gates green, exit codes read directly.
+- [x] **Simplification pass — MANDATORY, and it runs FIRST.** `code-simplifier` then `comment-killer-agent`, both against `<base>..HEAD` scoped to this phase's paths. A phase is not reviewable until it has been simplified: reviewing first criticizes code before it has earned its final shape.
+- [x] Simplification findings applied, and the gates re-run green after them.
+- [x] **Then** review — `/code-review` against the same `<base>..HEAD`; the report cites files inside it.
 - [ ] The row seen running, screenshotted, and shown to Nathan.
 - [ ] Changing the directory live re-arms the watcher — observed, not assumed: set the directory, then drop a file into the NEW root and confirm exactly one `assets:changed` and zero `nexus:changed`. This is the only check that catches F2, and only when driven by hand.
 - [ ] The map is rebuilt for the new root on the same write — the old root's entries do not survive the change.
-- [ ] Progress hashes filled in.
+- [x] Progress hashes filled in.
 
 ---
 
@@ -612,9 +612,11 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
   - [x] Task 6 — `assetUrl` resolves three spellings · `c5c9a0d8`
   - [x] Task 7 — Both containment predicates · `ae75b9e4`
   - Simplification `3ef61c01` · review fixes `7b7baefb`
-- [ ] **Phase 3** — The setting's surface
-  - [ ] Task 8 — The folder chooser channel · `<commit>`
-  - [ ] Task 9 — The Settings row · `<commit>`
+- [x] **Phase 3** — The setting's surface · base `7b7baefb`
+  - [x] Task 8 — The folder chooser channel · `8e8cefe3`
+  - [x] Task 9 — The Settings row · `5aba511c`
+  - Fixes `dadeae35` `f01200cb` `1ad29bfd` · simplification `00e1d8c8` · review fixes `<gate3-fix>`
+  - Docs reconciled early at Nathan's call · `6425544d`
 - [ ] **Phase 4** — Writing assets under their own names
   - [ ] Task 10 — Picker returns a path; writer keeps the name · `<commit>`
 - [ ] **Phase 5** — Migration
@@ -633,6 +635,8 @@ Nothing about an asset is persisted but its filename — no inode, no birth time
 - **Windows path handling** — `listFilesRecursive` returns native separators; Task 4 normalizes to POSIX for the map. Not exercised by any current gate. Raised by the attack review, verified as unchecked rather than broken.
 
 ### Reviews
+- **Gate 3 — `/code-review`, post-simplification.** Four findings, all verified and fixed in `<gate3-fix>`; two were one omission. The validator inspected only the chosen folder's DIRECT entries while the prune is by segment prefix, so a folder whose Collection sat three levels down passed and took its whole subtree out of the tree and the index — the same blind-the-app class the reader's own `.nexus` guard exists for. It also never asserted the target was a directory: `realpath` succeeds on a file and a listing of one reads as empty, so a typed `Notes/cover.png` was stored and every asset quietly stopped resolving.
+  - The other two are the same missing step. `assets:setDir` re-armed the watcher and nothing else, so the map was never rebuilt or pushed (a wikilink stayed blank until restart, and the held listing kept the OLD directory's prefix depth), and the tree and index were never reconciled — `confirmSettingsWrite` reaches `applySettingsLeaves` alone, which is exactly the arm that skips the `sameScope` refresh. The write now does everything settle does for an external edit, which it cannot reach: re-walk, reseed, re-list, push both, re-arm. Gate 3's own step named the re-arm and stopped there.
 - **Gate 2 — `/code-review`, post-simplification.** Seven findings, every one verified against the code before folding, all seven fixed in `7b7baefb`. The first is a rule change, not a repair: `assetFileToDelete` had widened the banner delete-guard to anything under the configured root, so replacing a banner would `rm` the user's own file in a folder shared with Obsidian — unrecoverably, since nothing on that path is trashed. A replace now deletes only what Pommora minted, under `.nexus/assets`; the user's folder is theirs, and a file there may be referenced from a note this app cannot see. After the migration `.nexus/assets` is empty, so replacing a banner stops deleting anything at all — which is how Obsidian treats attachments.
   - Two were mirrors of Phase 1's own asset-root bug, in code written after it: `indexable` applied the cruft rule to the root's OWN segments, so a root named `.attachments` yielded a permanently empty map; and `thumbnails` was skipped at any depth, taking a user's folder of that name with it. The root's segments are exempt exactly as they are in the watcher's ignore, and thumbnails are skipped under the default root alone.
   - The held map ignored `asset_directory`, so changing it mid-session patched the new root's events into the old root's listing. The held record carries the directory it was taken from, and a change rebuilds.
