@@ -124,7 +124,6 @@ let host: HTMLDivElement
 let root: Root
 let mutateSpy: ReturnType<typeof vi.fn>
 let selectSpy: ReturnType<typeof vi.fn>
-let openFileSpy: ReturnType<typeof vi.fn>
 let openExternalSpy: ReturnType<typeof vi.fn>
 
 beforeEach(() => {
@@ -133,7 +132,6 @@ beforeEach(() => {
   root = createRoot(host)
   mutateSpy = vi.fn(async () => {})
   selectSpy = vi.fn(async () => {})
-  openFileSpy = vi.fn(async () => ({ ok: true, value: null }))
   openExternalSpy = vi.fn(async () => {})
   ;(window as unknown as { nexus: unknown }).nexus = {
     loadValues: async () => VALUES,
@@ -143,7 +141,6 @@ beforeEach(() => {
     cellMenu: vi.fn(async () => null),
     connMenu: vi.fn(async () => null),
     columnMenu: vi.fn(async () => null),
-    openFile: openFileSpy,
     openExternal: openExternalSpy,
   }
   const pair = (singular: string, plural: string): { singular: string; plural: string } => ({
