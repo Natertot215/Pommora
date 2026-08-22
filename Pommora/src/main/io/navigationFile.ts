@@ -11,7 +11,9 @@ import { NEXUS_CONFIG_FILES, nexusConfig, nexusDir } from '../paths'
 import { readValue, writeValue } from '../db/localState'
 import { readJsonObject, readJsonStrict, writeJson } from './atomicWrite'
 import { serializeOnFile } from './fileLock'
-import { ASSETS_DIR_REL } from '@shared/nexusPaths'
+import { parseConnectionText } from '@shared/connections'
+import { underAssetRoot } from '../assetRoots'
+import { readWatchScope } from '../settings'
 
 const NAV_KINDS = new Set([
   'homepage',
@@ -34,16 +36,13 @@ function isNavRef(v: unknown): v is NavRef {
   return v.kind === 'homepage' ? !('id' in v) : typeof v.id === 'string' && v.id.length > 0
 }
 
-/** The banner pointer's own gate: a nexus-relative path INSIDE the shared assets folder, nothing
- *  else — the pointer feeds a real file delete on replace, so a hand-edited or synced-in string
- *  must never be able to name a file outside `.nexus/assets/`. */
-export function isAssetPath(v: unknown): v is string {
-  return (
-    typeof v === 'string' &&
-    v.startsWith(`${ASSETS_DIR_REL}/`) &&
-    !v.split('/').includes('..') &&
-    !v.includes('\\')
-  )
+/** The banner pointer's own gate: a `[[Name.png]]` wikilink, or a nexus-relative path inside an
+ *  asset root. The pointer feeds a real file delete on replace, so a hand-edited or synced-in
+ *  string must never name a file outside one — a wikilink is held to that by the map it resolves
+ *  through, a raw path by `underAssetRoot`. */
+export function isAssetPath(v: unknown, assetDir: string): v is string {
+  if (typeof v !== 'string') return false
+  return parseConnectionText(v) !== null || underAssetRoot(v, assetDir)
 }
 
 /** THE gate every ref crosses in either direction — junk drops, survivors are bare identity
@@ -63,12 +62,13 @@ const asList = (v: unknown): unknown[] => (Array.isArray(v) ? v : [])
 /** The file's keys, element-filtered — hand-edited junk drops, never crashes. */
 export async function readNavigationFile(root: string): Promise<Omit<NavigationState, 'recents'>> {
   const obj = (await readJsonObject(navigationPath(root))) ?? {}
+  const { assetDir } = await readWatchScope(root)
   const file: Omit<NavigationState, 'recents'> = {}
   for (const key of FILE_KEYS) {
     const refs = refList(obj[key])
     if (refs) file[key] = refs
   }
-  if (isAssetPath(obj.banner)) file.banner = obj.banner
+  if (isAssetPath(obj.banner, assetDir)) file.banner = obj.banner
   return file
 }
 
@@ -111,7 +111,7 @@ export async function writeNavigationState(
       else delete out[key]
     }
     const banner = 'banner' in patch ? patch.banner : base.banner
-    if (isAssetPath(banner)) out.banner = banner
+    if (isAssetPath(banner, (await readWatchScope(root)).assetDir)) out.banner = banner
     else delete out.banner
     await mkdir(nexusDir(root), { recursive: true })
     await writeJson(path, out)
