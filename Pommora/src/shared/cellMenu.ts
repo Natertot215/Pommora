@@ -14,7 +14,7 @@ import type { ActionItem } from './menuModel'
 /** The table-cell right-click menu (right-click always opens a menu, never acts).
  *  Title cells get the page meta menu; style-bearing cells get their COLUMN's Style radios;
  *  a `link` (url) cell gets Edit · Rename · Clear (its look is per-property, set in its pane, not a
- *  per-view Style); a file cell adds Edit to Style; picker-based cells add Clear (`clearable` on a
+ *  per-view Style); picker-based cells add Clear (`clearable` on a
  *  styleable type, `clear-only` for select/multi/context, which carry no Style). `hideable` (cards
  *  only) appends a trailing "Remove" that drops the property from the view — `remove-only` is the
  *  bare case for a cell that would otherwise have no menu (an empty picker, a file). */
@@ -27,10 +27,6 @@ type CellMenuKind =
       clearable?: boolean
       barCapable?: boolean
     }
-  // Files alone: a url cell's Format is its column's or its property's, never the cell's own
-  // (Nathan's call) — a link that carries its own Format menu is a link in a markdown table, which
-  // is a different surface with a different menu.
-  | { kind: 'style-edit'; type: 'file'; current: ColumnStyle }
   | { kind: 'link'; filled: boolean }
   | { kind: 'clear-only' }
   | { kind: 'remove-only' }
@@ -84,7 +80,6 @@ function baseCellMenu(
   if (col.kind === 'title') return { kind: 'title' }
   if (col.kind === 'context') return filled ? { kind: 'clear-only' } : null
   if (type === 'url') return { kind: 'link', filled }
-  if (type === 'file') return { kind: 'style-edit', type: 'file', current: style }
   if (type === 'status' || type === 'datetime')
     return { kind: 'style-only', type, current: style, clearable: filled }
   if (type === 'checkbox' || type === 'number' || type === 'last_edited_time') {
@@ -142,14 +137,6 @@ function baseCellMenuModel(ctx: CellMenuContext): CellMenuModel {
             current: ctx.current,
             barCapable: ctx.barCapable,
           }),
-        },
-      }
-    case 'style-edit':
-      return {
-        items: [{ label: 'Edit', action: 'cell:edit' }],
-        style: {
-          label: styleMenuLabel(ctx.type),
-          rows: styleMenuItems({ type: ctx.type, current: ctx.current }),
         },
       }
     case 'link':
