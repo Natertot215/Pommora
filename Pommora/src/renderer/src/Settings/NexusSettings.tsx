@@ -320,16 +320,6 @@ const LEAVES = roster([
     icon: 'folder-tree',
     sections: [
       {
-        title: 'Assets',
-        rows: [
-          {
-            kind: 'path',
-            label: 'Default Asset Directory',
-            hint: 'The default folder that stores banners, embedded files, and inherited assets; creating sub-folders within this directory is recommended for managing specific file types.',
-          },
-        ],
-      },
-      {
         title: 'Pasted Links',
         rows: [
           {
@@ -364,6 +354,16 @@ const LEAVES = roster([
             label: 'Automatically Suggest Existing Aliases When Linking A Page',
             hint: 'Accepting a page from the connection picker offers the names it already carries.',
             defaultOn: true,
+          },
+        ],
+      },
+      {
+        title: 'Assets',
+        rows: [
+          {
+            kind: 'path',
+            label: 'Default Asset Directory',
+            hint: 'Where inherited assets, images, and other file types will be stored.',
           },
         ],
       },
