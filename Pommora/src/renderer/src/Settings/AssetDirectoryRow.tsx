@@ -14,10 +14,24 @@ export function AssetDirectoryRow({ label, hint }: RowText): React.JSX.Element {
   const setAssetDirectory = useSession((s) => s.setAssetDirectory)
   const [draft, setDraft] = useState<string | null>(null)
   const input = useRef<HTMLInputElement>(null)
+  const storedRef = useRef(stored)
+  storedRef.current = stored
 
   useEffect(() => {
     if (draft !== null) input.current?.select()
   }, [draft])
+
+  // A pane that closes while the field is open never fires a blur, so the edit would be lost on
+  // the way out. The ref carries what to commit — the cleanup runs after the state is gone.
+  const pending = useRef<string | null>(null)
+  pending.current = draft
+  useEffect(
+    () => () => {
+      const last = pending.current
+      if (last !== null && last.trim() !== storedRef.current) void window.nexus.setAssetDir(last)
+    },
+    [],
+  )
 
   // A refusal reverts: the field drops its draft and the stored value paints again. No message —
   // the folder is simply not one this setting accepts.

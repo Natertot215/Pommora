@@ -5,6 +5,7 @@ import { style } from '@vanilla-extract/css'
 import { field as fieldBase } from '../design-system/components/interactionField.css'
 import { focusRing } from '../design-system/components/fieldRing'
 import { vars as colorVars } from '../design-system/tokens/color.css'
+import { text } from '../design-system/tokens/typography.css'
 
 const c = colorVars.color
 
@@ -55,16 +56,20 @@ export const browse = style({
   selectors: { '&:hover': { color: c.label.primary } },
 })
 
-/** The editing half — a bare input wearing the field's own type, since the chrome belongs to the
- *  host it sits in. */
-export const input = style({
-  flex: '1 1 auto',
-  minWidth: 0,
-  border: 'none',
-  outline: 'none',
-  background: 'none',
-  padding: 0,
-  fontFamily: 'inherit',
-  fontSize: 'inherit',
-  color: c.label.control,
-})
+/** The editing half — a bare input inside the field's chrome. It restates the field's own type
+ *  rather than inheriting it: an input takes its line-height from the browser, not its parent, and
+ *  the caret is drawn to THAT — so inheriting the size alone leaves a caret taller than the text
+ *  it sits in. */
+export const input = style([
+  text.body.standard,
+  {
+    flex: '1 1 auto',
+    minWidth: 0,
+    border: 'none',
+    outline: 'none',
+    background: 'none',
+    padding: 0,
+    fontFamily: 'inherit',
+    color: c.label.control,
+  },
+])
