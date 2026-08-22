@@ -13,6 +13,7 @@ export interface FormatState {
   bold: boolean
   italic: boolean
   strikethrough: boolean
+  highlight: boolean
   inlineCode: boolean
   link: boolean
   connection: boolean
@@ -46,6 +47,7 @@ export const FORMAT_CHORDS = {
   'format:bold': { shift: false, key: 'b' },
   'format:italic': { shift: false, key: 'i' },
   'format:strikethrough': { shift: true, key: 'x' },
+  'format:highlight': { shift: false, key: 'l' },
   'format:inlineCode': { shift: false, key: 'e' },
   'format:link': { shift: false, key: 'k' },
   'format:connection': { shift: true, key: 'k' },

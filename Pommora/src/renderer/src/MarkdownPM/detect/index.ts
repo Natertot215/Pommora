@@ -16,6 +16,11 @@ export type { ListKind }
 
 export const embedRegex = (): RegExp => /!\[\[([^\]\r\n]*)\]\]/dg
 export const inlineCodeRegex = (): RegExp => /`([^`\n]+)`/dg
+/** `==highlight==`. Not CommonMark, so no parser node stands behind it — a scan finds it, the way
+ *  latex and inline code are found. A run of three or more `=` is a setext rule or a divider
+ *  somebody drew, never a mark, so both ends refuse a third; a lone `=` inside the content is
+ *  ordinary text and stays. */
+export const highlightRegex = (): RegExp => /(?<!=)==(?!=)((?:[^=\n]|=(?!=))+)==(?!=)/dg
 export const blockLatexRegex = (): RegExp => /(?<!\$)\$\$([\s\S]+?)\$\$/dg
 export const inlineLatexRegex = (): RegExp => /(?<!\$)\$(?!\$)([^$\n]+?)\$(?!\$)/dg
 

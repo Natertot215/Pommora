@@ -416,6 +416,19 @@ const LEAVES = roster([
         ],
       },
       {
+        title: 'Highlights',
+        rows: [
+          {
+            kind: 'color',
+            key: 'highlightColor',
+            label: 'Highlight Color',
+            hint: 'The wash behind highlighted text. Cleared follows the accent.',
+            inherits: 'accent',
+            inheritsVar: 'var(--accent)',
+          },
+        ],
+      },
+      {
         title: 'Checkboxes',
         rows: [
           {

@@ -97,6 +97,16 @@ describe('auto-pair + auto-delete', () => {
     expect(apply('*', e)).toBe('****') // ** open + ** close
     expect(e.selection).toBe(2) // caret between → **|**
   })
+  // Only the doubled form is a marker, so the first press must leave the character alone — a lone
+  // `~` or `=` is prose or arithmetic, and pairing it would put a closer in the middle of both.
+  for (const ch of ['~', '=']) {
+    it(`${ch} does nothing alone and completes to ${ch}${ch}|${ch}${ch} on the second`, () => {
+      expect(autoPair(scanDoc(''), 0, 0, ch)).toBeNull()
+      const e = autoPair(scanDoc(ch), 1, 1, ch)!
+      expect(apply(ch, e)).toBe(ch.repeat(4))
+      expect(e.selection).toBe(2)
+    })
+  }
   it('single [ pairs at line start, not after a word char', () => {
     expect(autoPair(scanDoc(''), 0, 0, '[')).not.toBeNull()
     expect(autoPair(scanDoc('-'), 1, 1, '[')).toBeNull() // -[ flows for checkbox shorthand
