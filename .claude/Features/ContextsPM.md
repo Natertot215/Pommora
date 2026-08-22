@@ -23,7 +23,6 @@ The organization layer. A **Context** is a user-defined group — a fresh nexus 
 (Projects):
   - Pommora
 ```
-
 ### Writes
 
 - **Membership** — one membership write per entity kind (content file / Space), under per-file locks, reconciling the whole root it rewrites. Space-to-Space links use the same shape: a Space tags Spaces through its own sidecar keys, in its own Context or another.
