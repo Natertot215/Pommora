@@ -87,6 +87,8 @@ export interface Asks {
   // A folder picked from the native dialog, validated in main — the same refusal a hand-edited
   // `settings.json` meets. `null` is a cancelled dialog, not a failure.
   'assets:chooseDir': { args: []; reply: Result<string | null> }
+  // A typed path crosses the SAME validator the dialog's pick does; an empty string clears the key.
+  'assets:setDir': { args: [dir: string]; reply: Result<string> }
 
   // Pages
   'page:open': { args: [relPath: string]; reply: Result<PageDetail> }

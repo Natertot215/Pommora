@@ -87,6 +87,14 @@ export function writeSubfield(root: string, config: SubfieldConfig): Promise<voi
   return updateSettings(root, (cur) => ({ ...cur, subfield: config }))
 }
 
+/** The asset root. An emptied value deletes the key rather than storing a blank — absent is what
+ *  the default means, and the reader answers it either way. */
+export function writeAssetDirectory(root: string, dir: string): Promise<void> {
+  return updateSettings(root, ({ asset_directory: _drop, ...rest }) =>
+    dir ? { ...rest, asset_directory: dir } : rest,
+  )
+}
+
 /** Read the React-owned `navViewModes` foreign key from settings.json (null when absent/malformed). */
 export async function readNavViewModes(root: string): Promise<NavViewModes | null> {
   const existing = await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings))

@@ -35,6 +35,7 @@ import { useExitPresence } from '../design-system/useExitPresence'
 import { useSession } from '../store'
 import { TrashLeaf } from './TrashLeaf'
 import { SettingsRow, type RowText } from './SettingsRow'
+import { AssetDirectoryRow } from './AssetDirectoryRow'
 import './nexusSettings.css'
 
 // KNOB — the window's opening size and its resize floor. The floor is what a leaf carrying a
@@ -86,6 +87,11 @@ type Row =
   | (RowText & {
       kind: 'device'
       key: keyof DevicePrefs
+    })
+  | (RowText & {
+      /** The one row writing a TOP-LEVEL `settings.json` key rather than a personalization one —
+       *  `asset_directory` sits beside `excluded_folders`, and the walk reads it as a tree leaf. */
+      kind: 'path'
     })
   | (RowText & {
       kind: 'color'
@@ -314,6 +320,16 @@ const LEAVES = roster([
     icon: 'folder-tree',
     sections: [
       {
+        title: 'Assets',
+        rows: [
+          {
+            kind: 'path',
+            label: 'Default Asset Directory',
+            hint: 'The default folder that stores banners, embedded files, and inherited assets; creating sub-folders within this directory is recommended for managing specific file types.',
+          },
+        ],
+      },
+      {
         title: 'Pasted Links',
         rows: [
           {
@@ -534,7 +550,9 @@ function LeafBodyView({ category }: { category: CategoryKey }): React.JSX.Elemen
               </h3>
             )}
             {section.rows.map((row) => (
-              <RowControl key={row.key} row={row} />
+              // Keyed on the label: the one row writing a top-level settings key has no
+              // personalization key to be identified by, and a label is unique within a section.
+              <RowControl key={row.label} row={row} />
             ))}
           </div>
         ))
@@ -555,6 +573,8 @@ function RowControl({ row }: { row: Row }): React.JSX.Element {
       return <ZoomRow row={row} />
     case 'device':
       return <DeviceRow row={row} />
+    case 'path':
+      return <AssetDirectoryRow label={row.label} hint={row.hint} />
     case 'color':
       return <ColorRow row={row} />
   }

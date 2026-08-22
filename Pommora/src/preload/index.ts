@@ -205,6 +205,7 @@ const api = {
   revealPath: ask('path:reveal'),
   assetMap: ask('assets:map'),
   chooseAssetDir: ask('assets:chooseDir'),
+  setAssetDir: ask('assets:setDir'),
   pageActionsMenu: ask('page-actions-menu'),
   // A card's right-click menu (page meta + Add Property ▸).
   cardMenu: ask('card-menu'),
