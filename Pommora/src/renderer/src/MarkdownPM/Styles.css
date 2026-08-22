@@ -267,7 +267,9 @@
 /* Blockquote's gutter grip is a real element (the GripWidget — its line pseudos are taken by the bar
    + fill) and the block handle's is a pseudo, but both hang in the same gutter slot on the same
    first-visual-row centering, so a wrapped first line never drifts either one off its content.
-   --grip-top is the knob; box blocks raise it. */
+   A box's head padding is part of that seat — its first row starts below the gap and the inner pad,
+   which is the same figure the padding itself reads, so the grip lands on the fence rather than in
+   the air above it. --grip-top is the knob, and stating it replaces the whole seat. */
 .mdpm-editor .cm-line.md-block-handle::before,
 .mdpm-editor .cm-line.md-bq-first .md-bq-grip {
   content: "";
@@ -278,7 +280,10 @@
     (var(--fold-gutter) - var(--icon-body) * var(--glyph-scale)) /
     2
   );
-  top: var(--grip-top, calc(0.8em - var(--icon-body) / 2 * var(--glyph-scale)));
+  top: var(
+    --grip-top,
+    calc(var(--box-head-pad, 0px) + 0.8em - var(--icon-body) / 2 * var(--glyph-scale))
+  );
   transition: opacity var(--duration-fast) var(--ease-standard);
 }
 .mdpm-editor .cm-line.md-block-handle.md-grip-hot::before {
@@ -762,7 +767,8 @@
   pointer-events: none;
 }
 .mdpm-editor .cm-line:is(.md-bq-first, .md-callout-first, .md-cb-first) {
-  padding-top: calc(var(--box-gap) + var(--box-pad));
+  --box-head-pad: calc(var(--box-gap) + var(--box-pad));
+  padding-top: var(--box-head-pad);
 }
 .mdpm-editor .cm-line:is(.md-bq-last, .md-callout-last, .md-cb-last) {
   padding-bottom: calc(var(--box-gap) + var(--box-pad));
