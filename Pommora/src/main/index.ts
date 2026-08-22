@@ -26,7 +26,7 @@ import { caught, errText, fail, ok, type Result } from '@shared/result'
 import { BUSY, NO_NEXUS, push, scopeGet, scopeSet, serveBridge } from './ipc'
 import type { Creator, MutateRequest, ContextTarget } from '@shared/mutate'
 import { WINDOW_BG } from '@shared/theme'
-import { dropLiveTree, getLiveTree, refreshTree } from './liveTree'
+import { dropLiveTree, getLiveTree, refreshAfterWrite, refreshTree } from './liveTree'
 import {
   installWebGuests,
   setGuestTileZoom,
@@ -59,7 +59,7 @@ import {
 } from '@shared/blocks'
 import { pathExists } from './io/atomicWrite'
 import { readAppConfig, updateAppConfig, addRecent, DEFAULT_TRASH_MODE } from './appConfig'
-import { liveAssetMap } from './assetMap'
+import { liveAssetMap, refreshAssetMap } from './assetMap'
 import { underAssetRoot } from './assetRoots'
 import { validateAssetDir } from './assetDirValidate'
 import { sessionRoot, openSession, resolveRestorePath, isExistingDir } from './session'
@@ -877,12 +877,20 @@ serveBridge(
           next = valid.value
         }
         await writeAssetDirectory(root, next)
+        // Everything an EXTERNAL edit of this key gets from settle, which this write cannot
+        // reach: `recordWrite` suppresses its own echo, and the settings confirmer patches
+        // leaves without ever asking the scope comparison that would call this structural.
+        // The folder just left the tree and the corpus, so the walk and the index owe a pass,
+        // the map owes a fresh listing, and the watcher owes a re-arm against the new scope.
         await confirmSettingsWrite()
-        // The write's own echo never reaches `settle` — `recordWrite` suppresses it — so the
-        // re-arm behind the scope comparison there can only ever see an EXTERNAL edit of
-        // settings.json. Without this the new root is unwatched for the session, or its events
-        // classify against the stale scope and take one whole-nexus walk per file that lands.
-        if (mainWindow) await startWatcher(root, mainWindow)
+        const tree = await refreshAfterWrite(root)
+        await seedContentIndex(root)
+        const assets = await refreshAssetMap(root)
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          push(mainWindow, 'nexus:changed', tree)
+          push(mainWindow, 'assets:changed', assets)
+          await startWatcher(root, mainWindow)
+        }
         return ok(next)
       },
     },

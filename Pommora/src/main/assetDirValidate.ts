@@ -2,7 +2,9 @@
 // filesystem, and because a renderer-side check would only be advisory: this must be the same
 // refusal a hand-edited `settings.json` meets, not a second opinion about it.
 
-import { relative, sep } from 'node:path'
+import { stat } from 'node:fs/promises'
+import type { Stats } from 'node:fs'
+import { join, relative, sep } from 'node:path'
 import { fail, ok, type Result } from '@shared/result'
 import { NON_CORPUS_TOP } from '@shared/nexusPaths'
 import { normalizeSeg } from './exclusion'
@@ -22,12 +24,32 @@ export async function validateAssetDir(root: string, abs: string): Promise<Resul
   if (!resolved.ok) return resolved
   if (NON_CORPUS_TOP.has(normalizeSeg(rel.split('/')[0])))
     return fail('invalid-path', 'That folder belongs to the app.')
-  const entries = await listEntries(resolved.value)
-  // ANY Markdown, not only what the tree shows: an `_`-prefixed page is hidden from the tree but
-  // still swept and rewritten by the cascade, so a folder holding one is corpus either way.
-  if (entries.some((e) => e.isFile() && isMarkdownFile(e.name)))
-    return fail('invalid-path', 'That folder holds pages.')
-  if (entries.some((e) => e.isFile() && SIDECARS.has(e.name)))
-    return fail('invalid-path', 'That folder is a collection.')
-  return ok(rel)
+  let stats: Stats
+  try {
+    stats = await stat(resolved.value)
+  } catch {
+    return fail('not-found', 'Path not found.')
+  }
+  // `realpath` succeeds on a file and a directory listing of one reads as empty, so without this
+  // a picked image would be accepted and every asset would quietly stop resolving.
+  if (!stats.isDirectory()) return fail('invalid-path', 'That is a file, not a folder.')
+  // The WHOLE subtree, not the folder's own entries: the asset root is pruned by segment prefix,
+  // so a Collection nested three levels down would vanish from the tree and the index alongside
+  // it. Short-circuits on the first page or sidecar it meets.
+  return (await holdsContent(resolved.value))
+    ? fail('invalid-path', 'That folder holds pages.')
+    : ok(rel)
+}
+
+/** Whether anything under `abs` is content: a Markdown file at any depth — including an
+ *  `_`-prefixed one, hidden from the tree but still swept and rewritten by the cascade — or a
+ *  container's sidecar. */
+async function holdsContent(abs: string): Promise<boolean> {
+  const entries = await listEntries(abs)
+  if (entries.some((e) => e.isFile() && (isMarkdownFile(e.name) || SIDECARS.has(e.name))))
+    return true
+  for (const e of entries) {
+    if (e.isDirectory() && (await holdsContent(join(abs, e.name)))) return true
+  }
+  return false
 }
