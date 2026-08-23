@@ -67,7 +67,7 @@ import {
   underAssetRoot,
   validPropertyDir,
 } from './assetRoots'
-import { assetsDir, relPosix } from './paths'
+import { assetsDir, assetSubRoot, relPosix } from './paths'
 import { rootSegs } from './exclusion'
 import { ASSET_MIME, IMAGE_EXTS } from '@shared/assetMime'
 import { validateAssetDir } from './assetDirValidate'
@@ -1006,14 +1006,21 @@ serveBridge(
     // A property's answer is relative to the ASSET root; the nexus's is relative to the nexus.
     'assets:chooseDir': {
       kind: 'window',
-      fn: async (win: BrowserWindow | null, scope?: 'nexus' | 'property') => {
+      fn: async (win: BrowserWindow | null, scope?: 'nexus' | 'property', at?: unknown) => {
         const root = sessionRoot()
         if (root === null) return NO_NEXUS
         const forProperty = scope === 'property'
         const { assetDir } = await readWatchScope(root)
+        // Open where the property already points, so re-choosing starts from what it is rather
+        // than from the root every time. `at` is asset-root-relative, like the field that stores
+        // it; a folder that has gone missing steers nowhere and the root answers instead.
+        const from =
+          forProperty && typeof at === 'string' && validPropertyDir(at, assetDir)
+            ? await resolveUnderRoot(root, assetSubRoot(assetDir, at))
+            : null
         const opts = {
           properties: ['openDirectory', 'createDirectory'],
-          defaultPath: forProperty ? assetsDir(root, assetDir) : root,
+          defaultPath: forProperty ? (from?.ok ? from.value : assetsDir(root, assetDir)) : root,
           message: forProperty
             ? 'Choose a folder for this property’s files'
             : 'Choose a folder for assets',
