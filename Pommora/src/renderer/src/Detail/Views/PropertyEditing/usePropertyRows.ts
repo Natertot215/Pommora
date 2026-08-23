@@ -17,7 +17,7 @@ import {
 import { resolveFieldValue } from '../pipeline/value'
 import { buildResolveContext, type ResolveContext } from '../Table/resolveContext'
 import { sharedValueClickAction } from './valueClick'
-import { fileChipIndex, runFilePick } from './filePick'
+import { fileChipIndex, pickFileInto } from './filePick'
 
 // One home for both page-property surfaces — the Settings pane's Properties leaf and the floating
 // preview's inspector. What they share is everything about resolving a page into rows and writing a
@@ -46,7 +46,10 @@ export interface PropertyRows {
   commitValue: (propertyId: string, next: PropertyValue | null) => void
   commitContext: (contextId: string, ids: string[]) => void
   /** The click semantics every value surface shares. `onReveal` is the host's — a cleared checkbox
-   *  would otherwise drop its own row out from under the cursor. */
+   *  would otherwise drop its own row out from under the cursor. `el` anchors what opens; `from` is
+   *  the node actually clicked, which is what says WHICH file label a file click landed on. They
+   *  differ because a row's handler carries `currentTarget` for the anchor and `target` for the
+   *  hit — passing the anchor for both reads every click as the value's own area. */
   editRow: (
     def: PropertyDefinition,
     el: HTMLElement,
@@ -55,6 +58,7 @@ export interface PropertyRows {
       setEditing: (e: Editing) => void
       onReveal: (id: string) => void
     },
+    from?: EventTarget | null,
   ) => void
 }
 
@@ -141,7 +145,12 @@ export function usePropertyRows(
     void mutate({ op: 'setContext', path, contextId, spaceIds: ids })
   }
 
-  const editRow: PropertyRows['editRow'] = (def, el, { setTrigger, setEditing, onReveal }) => {
+  const editRow: PropertyRows['editRow'] = (
+    def,
+    el,
+    { setTrigger, setEditing, onReveal },
+    from = el,
+  ) => {
     setTrigger(el)
     // checkbox is true-or-absent on disk, never a stored false — the shared click-semantics router
     // handles it; number/url stay inline in the host.
@@ -154,9 +163,7 @@ export function usePropertyRows(
       } else if (shared.kind === 'file') {
         // The dialog, not a picker anchored to the row — and the label clicked decides whether it
         // replaces or adds. `editRow` becomes fire-and-forget; the commit lands when it resolves.
-        void runFilePick(def, current, fileChipIndex(el)).then((next) => {
-          if (next !== undefined) commitValue(def.id, next)
-        })
+        pickFileInto(def, current, fileChipIndex(from), (next) => commitValue(def.id, next))
       } else setEditing({ id: def.id, mode: shared.kind === 'datetime' ? 'date' : 'picker' })
       return
     }

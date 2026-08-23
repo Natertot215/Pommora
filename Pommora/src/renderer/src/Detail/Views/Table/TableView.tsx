@@ -21,7 +21,7 @@ import { PropertyEditor } from '../PropertyEditing/PropertyEditor'
 import { PropertyPicker, syntheticContextDef } from '../PropertyEditing/PropertyPicker'
 import { DatetimeValuePicker } from '../PropertyEditing/DatetimeValuePicker'
 import { sharedValueClickAction } from '../PropertyEditing/valueClick'
-import { fileChipIndex, fileValueWithout, runFilePick } from '../PropertyEditing/filePick'
+import { fileChipIndex, fileValueWithout, pickFileInto } from '../PropertyEditing/filePick'
 import { useSession } from '../../../store'
 import { pageMoveContext, runPageSendAction } from '../../../pageMenuActions'
 import { findCollectionForSet } from '../../Scope'
@@ -712,19 +712,15 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     )
     if (shared) {
       e.stopPropagation()
-      const def = schema.find((d) => d.id === col.id)
       if (shared.kind === 'commit') commitCellValue(row, col.id, shared.value)
       // A file value is filled through the OS dialog: a label replaces the file it names and opens
       // at that file's own folder, the value's own area adds and opens at the property's Directory.
       else if (shared.kind === 'file') {
+        const def = schema.find((d) => d.id === col.id)
         if (def)
-          void runFilePick(
-            def,
-            resolveFieldValue(row, col.id, schema),
-            fileChipIndex(e.target),
-          ).then((next) => {
-            if (next !== undefined) commitCellValue(row, col.id, next)
-          })
+          pickFileInto(def, resolveFieldValue(row, col.id, schema), fileChipIndex(e.target), (n) =>
+            commitCellValue(row, col.id, n),
+          )
       } else setEditing({ rowId: row.id, colId: col.id, mode: 'picker' })
     } else if (t === 'number') {
       e.stopPropagation()
@@ -974,15 +970,10 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     }
     const barCapable = numberBarCapable(col.id, dt)
     const chip = fileChipIndex(e.target)
-    const base = cellMenuContextFor(
-      col,
-      dt,
-      colStyle(col.id),
-      filled,
-      false,
+    const base = cellMenuContextFor(col, dt, colStyle(col.id), filled, {
       barCapable,
-      chip !== null,
-    )
+      onChip: chip !== null,
+    })
     if (!base) return
     const { tabs, pinned, tree } = useSession.getState()
     const ctx: CellMenuContext =
@@ -1024,13 +1015,12 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     } else if (action === 'file:add' || action === 'file:replace') {
       const def = schema.find((d) => d.id === col.id)
       if (def)
-        void runFilePick(
+        pickFileInto(
           def,
           resolveFieldValue(row, col.id, schema),
           action === 'file:replace' ? chip : null,
-        ).then((next) => {
-          if (next !== undefined) commitCellValue(row, col.id, next)
-        })
+          (n) => commitCellValue(row, col.id, n),
+        )
     } else if (action.startsWith('style:')) {
       const parsed = parseStyleAction(action)
       if (parsed) setColumnStyle(col.id, parsed.key, parsed.value)

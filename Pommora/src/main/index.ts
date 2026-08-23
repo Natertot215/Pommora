@@ -568,6 +568,7 @@ async function resolveSchemaFolder(
 // session refusals (NO_NEXUS / BUSY) the ipc module owns.
 const NEEDS_PROPERTY_ID = fail('operation-failed', 'A property id is required.')
 const NEEDS_ID_AND_VALUE = fail('operation-failed', 'A property id and value are required.')
+const NOT_A_PROPERTY_DIR = fail('invalid-path', 'That folder can’t hold this property’s files.')
 const NEEDS_CONFIG_PATCH = fail('operation-failed', 'A config patch is required.')
 
 // The three shapes the no-container property channels share. Each states the ceremony once —
@@ -1025,7 +1026,7 @@ serveBridge(
           const below = assetSubfolder(relPosix(root, chosen), assetDir)
           return below !== null && validPropertyDir(below, assetDir)
             ? ok(below)
-            : fail('invalid-path', 'That folder can’t hold this property’s files.')
+            : NOT_A_PROPERTY_DIR
         } catch (e) {
           return fail('operation-failed', errText(e))
         }
@@ -1420,9 +1421,7 @@ serveBridge(
       const dir = (changes as FileConfig).file_directory
       if (dir === undefined) return ok(null)
       const { assetDir } = await readWatchScope(root)
-      return validPropertyDir(dir, assetDir)
-        ? ok(null)
-        : fail('invalid-path', 'That folder can’t hold this property’s files.')
+      return validPropertyDir(dir, assetDir) ? ok(null) : NOT_A_PROPERTY_DIR
     }),
 
     'property:renameOption': optionRenameOp(renameOption),

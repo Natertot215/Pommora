@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PropertyDefinition } from '@shared/properties'
 import { useSession } from '@renderer/store'
-import { fileChipIndex, fileValueWithout, runFilePick } from './filePick'
+import { fileChipIndex, fileValueWithout, pickFileInto, runFilePick } from './filePick'
 
 const def = (over: Partial<PropertyDefinition> = {}): PropertyDefinition =>
   ({ id: 'p', name: 'Attachments', type: 'file', ...over }) as PropertyDefinition
@@ -52,6 +52,14 @@ describe('fileChipIndex', () => {
     expect(fileChipIndex(null)).toBeNull()
     expect(fileChipIndex(at('<span class="cell"><i class="x"/></span>', '.x'))).toBeNull()
   })
+
+  it('reads DOWN from nothing — a row wrapping its labels is the value’s area, not a label', () => {
+    // `closest` walks up, so the row a handler's `currentTarget` names can only ever answer null.
+    // This is why the clicked node travels separately from the element an editor anchors to.
+    const row = '<div class="row"><span data-segment-index="0"><b class="a">A.pdf</b></span></div>'
+    expect(fileChipIndex(at(row, '.row'))).toBeNull()
+    expect(fileChipIndex(at(row, '.a'))).toBe(0)
+  })
 })
 
 describe('runFilePick', () => {
@@ -91,5 +99,19 @@ describe('runFilePick', () => {
   it('a refused adoption leaves the value alone — the reference follows the bytes', async () => {
     adoptFile.mockResolvedValueOnce({ ok: false, error: { code: 'invalid-path', message: 'no' } })
     expect(await runFilePick(def(), held(['[[Old.pdf]]']), 0)).toBeUndefined()
+  })
+})
+
+describe('pickFileInto', () => {
+  it('writes a picked value, and writes NOTHING where the pick answered undefined', async () => {
+    const commit = vi.fn()
+    pickFileInto(def(), held([]), null, commit)
+    await vi.waitFor(() => expect(commit).toHaveBeenCalledWith(held(['[[New.pdf]]'])))
+
+    commit.mockClear()
+    pickFile.mockResolvedValueOnce(null)
+    pickFileInto(def(), held(['[[Old.pdf]]']), null, commit)
+    await new Promise((r) => setTimeout(r, 0))
+    expect(commit).not.toHaveBeenCalled()
   })
 })
