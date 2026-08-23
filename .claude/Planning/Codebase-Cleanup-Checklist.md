@@ -1,6 +1,6 @@
 ## Codebase-Cleanup Checklist
 
-The working checklist for the architecture-audit cleanup — every task verified in the code before it was written here, sized into session bundles, and carrying its own verification and documentation retirements. The evidence and reasoning behind each task is [[Architecture Audit — Full-Codebase Report]]; the line-count figures are code-only (comments, blanks, and tests excluded).
+The working checklist for the architecture-audit cleanup — every task verified in the code before it was written here, sized into session bundles, and carrying its own verification and documentation retirements. The evidence and reasoning behind each task is [[Architecture Audit — Full-Codebase Report]]; the line-count figures are code-only (comments, blanks, and tests excluded). The design system's own findings are held separately in [[Design-Coherence-Report]] and are not scheduled here.
 
 **How to use this document:** a bundle is one session unless marked otherwise. Tasks inside a bundle are independent unless ordered; check each off as it lands. Every bundle runs the same cycle:
 
@@ -15,7 +15,7 @@ The working checklist for the architecture-audit cleanup — every task verified
 
 **Ordering constraints (the only hard ones):**
 
-- Bundle 6a (the rehome) lands before 6b and 6c — both would otherwise add imports at the address being vacated. 6b is high priority and follows 6a immediately: its wrong-address imports deepen with every session that touches their consumers.
+- Bundle 6a runs its extraction task before its rehome task — the rehome would otherwise carry `ColorPicker`, which two files inside `design-system/` now import, into a feature domain. Bundle 6a lands before 6b and 6c — both would otherwise add imports at the address being vacated. 6b is high priority and follows 6a immediately: its wrong-address imports deepen with every session that touches their consumers.
 - Bundle 6c (the view host) lands before any third view renderer is attempted.
 - Bundle 5 is best taken immediately before the next store-heavy feature.
 
@@ -95,6 +95,7 @@ Chrome is produced in two stages, and only the second was scoped. The **derivati
 
 #### II. Bundle 6a — `Components/Detail` Rehome · one session, quiet tree · net ≈ 0
 
+- [ ] **`Chip`, `EditableInput` and `ColorPicker` move into `design-system/components/` first.** All three already have consumers inside the design system; `ColorPicker`'s two are why this precedes the rehome rather than following it. `tokens/chip.css.ts` splits on the way — the recipe stays, the melt/remove chrome travels with `Chip`.
 - [ ] **The view-settings/property-editing subsystem moves out of `Components/`** to its own domain folder beside `Detail/`; `PaneSlider` is promoted into `design-system/` where its imports already live; the CLAUDE.md codebase map updates. `git mv` plus import churn; typecheck catches every miss.
 
 **Verification:** gates; nothing behavioral moves.
@@ -133,6 +134,26 @@ Take this immediately after 6a: the debt compounds passively — every session t
 
 **Verification:** every gesture driven live — sidebar reorder and reparent, table row and column, band, outline, pane rows, option and status reorder — with edge-autoscroll and announcement checked on each.
 **Retires:** nothing listed.
+
+### I. The Design Arm — Not Yet Scheduled
+
+The design system, the styling layer and the reference document carry their own findings, gathered in
+[[Design-Coherence-Report]]. **They are deliberately not bundled here.** The structural bundles above run
+first; how the design findings become work is decided in its own planning session, taken against that
+report once this queue is clear.
+
+The reason for the separation is that the design findings are not the same *kind* of task. Several are
+decisions rather than edits — whether a middle layer exists between the design system and the features,
+whether a built-and-unreachable date-range picker is claimed or retired, whether the button geometry
+bundles are a system ladder or one component's table — and each of those changes what the surrounding work
+is. Bundling them as tasks would force those answers by default, which is how the drift the report
+documents accumulated in the first place.
+
+**The one constraint this queue inherits:** three modules the design system already imports — `Chip`,
+`EditableInput` and `ColorPicker` — must move into it before Bundle 6a. The rehome carries
+`Components/Detail` into a feature domain, and `ColorPicker` now has two importers inside
+`design-system/`, so running 6a first would deepen the inversion rather than close it. That extraction is
+small and mechanical; it is listed in 6a's own task below rather than waiting on the design session.
 
 ### I. Open Questions — Not Scheduled
 

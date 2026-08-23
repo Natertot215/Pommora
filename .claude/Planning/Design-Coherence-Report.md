@@ -1,61 +1,53 @@
 ## Design Coherence Report
 
-A survey of the styling layer, the component layer, and the reference document that governs both. Four
-read-only sweeps produced the findings; every claim reproduced below was re-checked against the code
-before being written down, and the ones that survived verification are marked as such.
+An audit of the design system, the styling layer, the component layer, and the reference document that
+governs all three. Five read-only sweeps produced the findings; every claim below was re-checked against
+the code before being written here, and where verification contradicted a sweep the correction is recorded
+in §X rather than quietly applied.
 
-The motivating problem is stated plainly: this codebase has prioritized visuals since day one, and the
-design system has grown faster than the document describing it. An agent arriving with limited context
-cannot currently tell what already exists, so it hand-rolls. The largest finding in this report is not a
-CSS defect — it is that the reference document answers "what is this system like" when the question being
-asked is "does `X` already exist, and where."
+**This document schedules nothing.** It is the evidence and the reasoning, gathered so the design work can
+be planned deliberately rather than absorbed into a queue built for a different problem. The codebase
+cleanup runs its structural bundles first; how this report's findings become work is its own planning
+session, taken against this document once the structural arm is clear.
 
-#### Method
+**Scope of the sweeps**
 
-| Sweep | Scope |
+| Sweep | Covered |
 | --- | --- |
 | Design-system membership | Every component under `renderer/src/`, tested for data-model coupling and consumer count |
 | Styling health | 44 plain `.css` + 43 `.css.ts`, 11,673 lines, against `design-system/tokens/` |
 | Component health | The renderer's component tree, for repeated behavior and re-implemented primitives |
 | Reference audit | `DesignSystemPM.md` (312 lines) against `design-system/` (~140 files) |
+| Drift archaeology | The whole system, for what was minted speculatively and what was superseded in place |
 
-Findings that sit in files belonging to a concurrent work stream are marked **(concurrent)**. They are
-real, but they are not safe to act on until that work lands.
+Findings sitting in files owned by a concurrent work stream are marked **(concurrent)** — real, but not
+safe to act on until that work lands.
 
-### I. What This Session Changed
+### I. Verdict
 
-The styling edits that prompted the survey, as a tree.
+The system is healthy where it was designed carefully and drifted where it was designed early. Nothing here
+is an architectural error. Every finding is a module in the wrong folder, a value stated twice, an option
+nobody took, or a document that fell behind the thing it describes.
 
-```yaml
-// Pommora/src/renderer/src
-├── // MarkdownPM
-│   ├── [Styles.css]                     | M  +92 / −4   the code tag's states, the reach arc, the z-lift
-│   └── // Tables
-│       └── [widget.css]                 | M  +32 / −8   the table's gap joins the shared box measure
-├── // design-system/components
-│   ├── // Switches
-│   │   ├── [dualSwitch.css.ts]          | A  +87        renamed from switch.css.ts; zoom baked to px
-│   │   └── [colorSwatch.css.ts]         | A  +25        moved out of settingsPane.css.ts
-│   └── [switch.css.ts]                  | D  −87        → dualSwitch.css.ts
-├── // Components/Detail
-│   ├── [colorPicker.css.ts]             | M  +21 / −14  swatchFill hoisted; both swatches compose it
-│   └── [settingsPane.css.ts]            | M  +0 / −31   three swatch styles moved out
-└── // Detail/Views/Cards
-    └── [CardsView.css]                  | M  +0 / −1    the --switch-zoom override retired
+The largest finding is not a defect in the code at all: **the reference document has become unusable as a
+reference.** It documents 4 of ~22 components and 0 of ~20 shared helpers, so an agent following it
+faithfully would hand-roll six things that already exist. In a codebase that has prioritized visuals since
+day one and now arrives at each session with limited context, that is the finding that compounds fastest.
 
-CSS files touched: 7 | +2 / −1
-Style Difference: Net +137 | +257 / −120
-```
+| Layer | State |
+| --- | --- |
+| Color | **Healthy.** Zero raw hex or rgba in shipping code; every derived tone routes through `tint`/`ramp`; the one legacy seam is documented |
+| Motion | **Healthy with one defect.** 116 of 122 transitions read tokens; one wrong fallback curve, one duration off the ladder |
+| Geometry | **Drifted.** A ladder declared, bridged and bypassed; one concept wearing three sizes; a de facto radius scale with no home |
+| Props | **Drifted.** Options minted for callers who then all made the same choice |
+| Component boundaries | **Misfiled.** Seven files inside the design system import from app code |
+| Reference document | **Behind.** 18 components and 20 helpers undocumented; six factual errors, three now corrected |
 
-Two of these are the report's own thesis in miniature. The swatch's styles had been living in a settings
-pane's stylesheet while the component lived in `Components/Detail` — neither was where the thing was. And
-`switch.css.ts` moved to `dualSwitch.css.ts` at 87 lines unchanged in substance: the file was already
-coherent, it was named for a category rather than for the component it holds.
+The through-line for the drift: this system was built partly before its consumers existed. What was minted
+speculatively either found no taker, or was superseded once a consumer solved the problem its own way and
+that local answer became the real convention.
 
 ### II. The Reference Document
-
-`DesignSystemPM.md` is the highest-leverage finding. As a narrative about the token system it reads well.
-As the lookup table an agent consults before building, it fails on coverage and on shape.
 
 #### Coverage
 
@@ -69,158 +61,45 @@ As the lookup table an agent consults before building, it fails on coverage and 
 | Root-level CSS files | 0 by name | 7 | 7 |
 | Stacking steps | 0 | 16 | 16 |
 
-An agent following the document faithfully would hand-roll `clamp`, `moveItem`, `focusRing`,
-`useExitPresence`, `dropdownAnchor`, and `cellColor` — all of which exist and are the one definition of
-their thing.
+An agent following the document would hand-roll `clamp`, `moveItem`, `focusRing`, `useExitPresence`,
+`dropdownAnchor` and `cellColor` — each the single definition of its thing.
 
-The Ramp section is the sharpest illustration. It is the document's deepest section, and it tables
+The Ramp section shows the failure mode exactly. It is the document's deepest section, and it tables
 `RAMP_STEP`, `DARKNESS_STEP` and `GREY_OUTLINES` — all three module-private — while omitting `cellColor`,
-`cellTint`, `checkboxTint`, `cellRing`, `ANCHOR_CELLS`, and `chipColorFor`, which are the six an agent
-would call. It documents the machine's internals and hides its controls.
+`cellTint`, `checkboxTint`, `cellRing`, `ANCHOR_CELLS` and `chipColorFor`, which are the six a caller
+would reach for. It documents the machine's internals and hides its controls.
 
-#### Corrections applied
+#### What is missing is a column, not only rows
 
-Three statements the code contradicted, each verified and then replaced rather than annotated.
+Every roster row should answer four things in one order: **Name · Source · What it is · Reach for it
+when.** The fourth is the one the document has never had, and its absence explains the coverage gap better
+than the missing entries do. `Slider` reads today as "Sliding number selection" — true, and no reason to
+prefer it over an `<input type=range>`. The row that prevents a hand-roll reads: *reach for it when a
+number has a bounded range and the write should land on release rather than per tick.*
 
-| Was                                                                                  | Now                                                                                           | Evidence                                                                             |
-| ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| `--codeColor`                                                                        | `--code`                                                                                      | `--codeColor` appears nowhere in `src/`; `codeColor` is the settings key             |
+#### Errors
+
+Three were verified against the code and replaced outright:
+
+| Was | Now | Evidence |
+| --- | --- | --- |
+| `--codeColor` | `--code` | `--codeColor` appears nowhere in `src/`; `codeColor` is the settings key |
 | "These are what an accent may be set to; the ramp widens what a chip may be colored" | "These are the anchor names still on disk; an accent and a chip alike resolve to a ramp cell" | `accent.ts` — "There is no separate 'accent' color — it's always a cell of the ramp" |
-| Cobalt                                                                               | Light Blue                                                                                    | "Cobalt" appears nowhere in `src/`; the seat is `SPECTRUM.lightBlue`                 |
+| Cobalt | Light Blue | "Cobalt" appears nowhere in `src/`; the seat is `SPECTRUM.lightBlue` |
 
-#### Corrections outstanding
-
-Three more errors, left because repairing them means adding rather than replacing.
+Three remain, because repairing them means adding rather than replacing:
 
 - **`chipBase` is advertised as a token and is not one.** `tokens/chip.css.ts` declares it `const`, not
-  `export`, and it is absent from the token barrel. No caller can import it. `PropertiesPM.md` repeats the
-  same claim.
-- **The Ramp table documents private constants.** Described above; the repair is a rewritten section.
+  `export`, and it is absent from the barrel. No caller can import it. `PropertiesPM.md` repeats the claim.
+- **The Ramp table documents private constants** while omitting the exported API.
 - **The Components table is framed as the roster of `design-system/components/` and lists 4 of ~22.** The
-  framing is the defect — it tells an agent the list is exhaustive.
+  framing is the defect: it tells a reader the list is exhaustive.
 
-#### Proposed structure
-
-Two moves buy most of the improvement: pull Components out from under The Token Atlas, where a component
-is currently filed as a token 200 lines deep, and put an alphabetical index at the top. "Does
-`--park-clearance` exist?" is presently answerable only by reading all 312 lines.
-
-```yaml
-Design System
-├── Tooling
-├── Quick Index                    | • NEW — alphabetical var/export → section
-├── The Token Atlas
-│   ├── Primitives · Surfaces · Labels · Fills · States
-│   ├── Separators · Shadows
-│   ├── Tints                      | • + mixAt, the primitive tintAt is built on
-│   ├── Spectrum & Accent          | • merged; accent resolution corrected
-│   ├── Ramp                       | • rewritten around the exported API
-│   ├── Geometry                   | • + tile, segment and divider fields
-│   ├── Stacking                   | • promoted from prose to a table of 16 named steps
-│   └── Bridged Vars               | • NEW — every --* not covered above
-├── Materials
-│   ├── Frost · Liquid · Which Tier a Surface Wears
-├── Components                     | • promoted top-level; full roster, grouped by kind
-├── Helpers                        | • NEW — the ~20 shared functions and hooks
-├── Chrome Patterns                | • the old Component Chrome, tabled
-├── Where the Rest Lives           | • prose → pointer table naming the files each doc governs
-├── Showcase · Known Issues · Pending
-```
-
-Four additions a lookup-first document needs and this one has no form for:
-
-- **A Quick Index.** Name, kind, section. The question is almost always "does `X` exist and where."
-- **A "reach for this, not that" table.** The system has near-identical pairs whose choice the code
-  documents and the document does not: `FileChip` vs `FileLabel`, `GlassSurface` vs `GlassPane`,
-  `GlassSegment` vs `GlassControls`, `PickerMenu` vs `MenuSurface`, `Reveal` vs a height transition,
-  `chipColorFor()` vs indexing `SPECTRUM` directly.
-- **A token → consumer index for the shared knobs.** About a dozen vars are shared across module
-  boundaries and their value *is* the agreement — `--disclosure-indent`, `--fold-gutter-base`,
-  `--list-outline-*`, `--radius-full`, `--tile-border`, `--card-min-base`, `--chip-zoom`. The source
-  comments carry this; the document drops it, which is exactly the information that prevents a duplicate.
-- **A stated freshness contract.** Each roster's SOURCE line is the file of record and the document is a
-  mirror, so an agent finding a discrepancy trusts the code and treats the row as stale rather than
-  assuming the token was removed.
-
-### III. Styling Health
-
-The color and motion layers are in good shape: **zero** raw hex or rgba in any shipping stylesheet outside
-the development showcase, and 116 of 122 transition declarations read `var(--duration-*) var(--ease-*)`.
-The incoherence is concentrated in geometry and in one specificity root cause.
-
-#### One selector drives seventeen escapes
-
-`Toolbar/toolbar.css` sets `color` on a bare `.app-toolbar button` at specificity (0,1,1). A
-vanilla-extract class is (0,1,0), so every component rendering a `<button>` anywhere inside the toolbar —
-which contains the ViewPane, SettingsPane, GroupingPane, PickerControl, NumberEditor and the whole menu
-system — loses its own color to it.
-
-**Verified: 17 doubled selectors and 2 escalations.** Roughly eleven of the doubles cite this rule by name
-in their own comments. The ladder has grown past doubling: `menu.css.ts` uses `&&&`, `settingsPane.css.ts`
-uses `&&&&` ("quadrupled to outrank the BottomRow's own icon-tone bump"), and `groupingPane.css.ts` now
-triples to outrank *another component's* escape hatch.
-
-Every one is load-bearing as written — removing them breaks the tones. All are symptoms of one over-broad
-selector. Retargeting it to an explicit class collapses about eleven of them and stops the ladder.
-
-#### The size ladder is declared, bridged, and bypassed
-
-`size.css.ts` defines control heights 24/28/32px; `theme-vars.css.ts` bridges all three.
-
-**Verified: `--button-small-height` and `--button-medium-height` have zero reads.** Only
-`--button-large-height` is consumed, at three sites. Meanwhile the raw values are restated at ten sites
-across the settings pane, the menu system, the calendar picker, the date-time editor, the interaction
-field, the nexus header, and the editor.
-
-A related finding is framed carefully because it is not the same thing: radii 8/10/12px appear at 17
-non-showcase sites, but their only named home is *inside* the button geometry bundles. That is not a token
-being ignored — it is a de facto radius scale with no token home, and it wants a decision before it wants
-an edit.
-
-`size.control` has exactly one TypeScript consumer. The ladder is currently one component's private table
-wearing a system name.
-
-#### Motion has three homes and one wrong default
-
-The app's real interaction duration is 230ms, and it is not in `motion.ts` — whose ladder is
-180/180/225/280/350 and which states that every transition shares that vocabulary. `DEFAULT_FEEL` holds
-230 in `feel.tsx`, and `interactions.css` restates it as a literal fallback on two lines.
-
-**Verified: the fallback easing is wrong.** `DEFAULT_FEEL.easing` is `easing.out`
-(`cubic-bezier(0.22, 1, 0.36, 1)`), but the CSS reads `var(--ix-ease, ease)`, which falls back to
-`easing.standard`. Any `.ix-*` element rendered outside an `<Interactions>` provider animates on the wrong
-curve. A fourth curve, `BLOOM`, lives in `animations.css.ts` — and `motion.ts` documents its `dropdown`
-step as "the Bloom keyframes," referencing a curve it does not own.
-
-Closing the loop: `--ease-out` is bridged and never read, while the showcase restates its exact
-cubic-bezier literally twice.
-
-#### Dead and orphaned
-
-Six confirmed, distinguished carefully from three categories that look dead and are not.
-
-| Genuine | Where |
-| --- | --- |
-| `--safe-top` / `-right` / `-bottom` / `-left` | `styles.css` — speculative; names a mobile shell that does not exist |
-| `--code-chevron-mask` | `theme-vars.css.ts` — a full inline SVG asset, **verified zero reads** |
-| `export const anchor` | `Toolbar/toolbarDropdown.css.ts` — all five importers use `anchorRight` |
-
-Not defects, and listed so a future sweep does not "fix" them: about 24 bridge-completeness vars (the full
-icon and type ramps, declared so plain CSS can name a step — the file states this intent); eight
-fallback-only tuning hooks read with a default and never set, which is the codebase's tuning idiom; and
-the specular whites in `materials/`, which are pure white on purpose and distinct from system-white.
-
-One structural correction worth recording: `theme-vars.css.ts` describes its bridge as existing "so plain
-CSS (the showcase chrome) can reference them." In fact all 44 plain stylesheets depend on it. It is the
-primary token interface, not a showcase convenience, and anyone trimming "unused" bridge vars on the
-strength of that comment would break the app.
-
-### IV. Component Health
+### III. The Boundary
 
 #### The design system already depends on app code
 
-The strongest signal in the survey is a dependency inversion, and it is proof rather than prediction:
-**seven files inside `design-system/` import from app layers.**
+Proof rather than prediction — **seven files inside `design-system/` import from app layers:**
 
 ```
 FileLabel.tsx          → @renderer/Components/Chip
@@ -232,35 +111,188 @@ menu/Menu.tsx          → @shared/toggleLabels
 PreviewPane.tsx        → @shared/toggleLabels
 ```
 
-The design system cannot build without `Chip`, `EditableInput`, and `ColorPicker`. Those three are design
-system components today in everything but location. The last two entries are a milder case — a component
-that belongs where it is, pulling one string from app code; the repair is a prop, not a move.
+The system cannot build without `Chip`, `EditableInput` and `ColorPicker`. Those three are design-system
+components today in everything but location. The last two entries are the milder case — a component that
+belongs where it is, pulling one string from app code; the repair there is a prop, not a move.
 
-Ranked by confidence, the components that should move:
+#### What belongs inside
 
-| Component              | Consumers                                | Destination                      |
-| ---------------------- | ---------------------------------------- | -------------------------------- |
-| `Chip` + `ContextChip` | 12, two of them inside the design system | `components/Chip/`               |
-| `EditableInput`        | 5, one inside the design system          | `components/EditableInput/`      |
-| `ColorPicker`          | 6, one inside the design system          | `components/ColorPicker/`        |
-| `RenamableLabel`       | 8                                        | `components/EditableInput/`      |
-| `PaneSlider`           | 7                                        | `components/PaneSlider/`         |
-| `solidColor.ts`        | 11, six outside its own view folder      | `tokens/`                        |
-| `checkboxLook.tsx`     | 3                                        | beside `components/Checkbox.tsx` |
-| `PhotoCropModal`       | 2                                        | `components/PhotoCrop/`          |
+| Component | Consumers | Destination |
+| --- | --- | --- |
+| `Chip` + `ContextChip` | 12, two inside the design system | `components/Chip/` |
+| `EditableInput` | 5, one inside the design system | `components/EditableInput/` |
+| `ColorPicker` | 6, one inside the design system | `components/ColorPicker/` |
+| `RenamableLabel` | 8 | `components/EditableInput/` |
+| `PaneSlider` | 7 | `components/PaneSlider/` |
+| `solidColor.ts` | 11, six outside its own view folder | `tokens/` |
+| `checkboxLook.tsx` | 3 | contested — see §VIII |
+| `PhotoCropModal` | 2 | `components/PhotoCrop/` |
 
-`solidColor.ts` deserves its own note: it is pure token math over `colorMap` and `ramp`, it has no table
-knowledge, and it lives in `Detail/Views/Table/`. Six of its eleven consumers are elsewhere. It is the
-missing half of the color token API filed under a view.
+`solidColor.ts` is the cleanest case: pure token math over `colorMap` and `ramp`, no table knowledge, filed
+under a view whose folder six of its eleven consumers sit outside of.
 
-The one genuine data-model leak *inside* the design system is `symbols/index.tsx`, which imports
-`EntityIconKind` and exports a glyph registry keyed by Pommora entity kinds. Icon rendering is generic; the
-kind → glyph mapping is not.
+#### The leak in the other direction
 
-#### Repeated behavior
+`symbols/index.tsx` imports `EntityIconKind` and exports a glyph registry keyed by Pommora entity kinds.
+Icon *rendering* is generic; the kind-to-glyph *mapping* is not. This is the design system's one genuine
+data-model dependency, and it needs either a split or a named exception — an unstated exception is how
+rules stop being followed.
 
-A latent bug travels with the largest duplication. **Verified:** the `{...view, ...patch}` save closure
-appears at five sites, and four of them discard the `Result` envelope:
+#### Membership needs a test, not a convention
+
+Membership is currently decided per-move by whoever is moving something, which is how five inversions
+accumulated while everyone involved believed the rule was obvious. A stated test — *knows no entity type,
+touches no store, touches no IPC* — is nearly right, with `symbols/` as the known exception.
+
+More durable than any stated rule: **make the boundary a lint error.** Biome's configuration supports
+restricting imports by path. One rule forbidding `@renderer/*` inside `design-system/**` would refuse the
+next inversion at the gate. Everything else depends on remembering.
+
+### IV. Drift
+
+The system was built partly before its consumers existed. This is the archaeology of what that left behind.
+**The drift is not in color** — it is concentrated in geometry and in props.
+
+#### Options that were never options
+
+| Finding | Evidence | Do |
+| --- | --- | --- |
+| **`layout` is discarded by the engine and passed at 21 sites** | `drag.tsx:40` declares it; `:39`'s comment says "Informational only — the engine is geometry-driven"; `:74` destructures it as `layout: _layout` | Retire |
+| **`CalendarPicker`'s range mode defaults on and is never used** | `:89` `range = true`; both production callers pass `range={false}`. Behind it: `end`/`endOn`/`endMin` state, an endpoint-drag with role swapping, seven style exports | Decide — the largest speculative build in the system |
+| **`Segmented`'s `size` prop is never passed** | Zero of four call sites; the `'button-large'` default is the only bundle ever resolved, so 14 of `size.control`'s 21 fields are unreachable | Retire two bundles, or adopt them |
+| **`PreviewPane.scanLabel`** | Defaulted, never passed at four sites | Inline the string |
+| **`'table'` in the `Layout` union** | One use: the demo harness | Retires with `layout` |
+
+#### The ladders each lost three names
+
+`size.css.ts` admits the shape — "Eleven names over eight values, matching the ramp's own repeats." Three
+steps carry two spellings, and the same spelling won on the glyph ladder and the type ladder independently:
+
+| Value | Minority spelling | Winning spelling | `<Icon size=>` |
+| --- | --- | --- | --- |
+| 13px | `headline` | `body` | **0** vs **64** |
+| 12px | `callout` | `control` | **0** vs **35** |
+| 10px | `subline` | `footnote` | **0** vs 1 |
+
+The ladder's premise is that a glyph and the text beside it name the same step. At these three the app
+names two things and only ever types one.
+
+The type ramp's three largest steps — `text.largeTitle`, `text.title1`, `text.title2` — have zero consumers,
+and so do their bridged twins. That is not bridge-completeness: the composed classes are the primary
+interface and they are empty too. Where the headings went is the next finding.
+
+#### One concept, three sizes
+
+`--container-title-size: 20px` was minted with a stated rationale — the heading sits deliberately between
+the ramp's title steps — and reads at exactly one surface, the Banner. The same heading elsewhere:
+
+```
+Detail/DetailTitleHeader.css   --detail-title-size: 24px
+MarkdownPM/Styles.css          calc(28px * var(--editor-scale, 1))
+Embeds/embeds.css              calc(28px * var(--mdpm-scale))
+```
+
+The token covers one of three surfaces wearing the concept it names, which is also why the ramp's title
+steps are empty.
+
+#### The system reads tokens it does not own
+
+| Token | Declared in | Read by |
+| --- | --- | --- |
+| `--glass-inset` | `renderer/src/styles.css` (app root) | 30 sites across eight features, **including `design-system/`** |
+| `--glass-radius` | `renderer/src/styles.css` | design-system, Detail, Embeds, Sidebar |
+| `--twisty-beat` | `Components/Detail/settingsPane.css.ts` | **design-system** and Detail |
+
+`materials/` is the glass home and owns neither glass knob; a settings *pane* owns a motion token the
+design system reads. `Detail/Views/Table/table-tokens.css` is a second token file by the same test —
+Settings, Blocks and Detail all read from it, and `Settings/trashLeaf.css` borrowing a table view's
+`--cell-padding-x` is the tell.
+
+#### Converged on their own
+
+Values several surfaces arrived at independently and now agree on, which is what a token is for:
+`--subline-h` is 24px in both homes; `--chips-gap` is 4px in all three. `--scroll-fade` declares a 0px
+opt-in default while consumers set 16px at three sites; `--edge-fade` states a 22px house width that 16px
+overrides at four. The first two want absorbing; the fades want a ruling.
+
+#### Leftovers
+
+- **`OverflowScroll.tsx` cites `OverflowScroll.css`**, deleted at `71a25900` when the behavior moved to the
+  shared `edge-fade.css`. Verified: the file does not exist.
+- **`TINT_STEPS.solid`** has one production reference — the bridge — and `--tint-solid` has zero reads.
+- **The `swap` drag mode** (`Zone.swap`, `arraySwap`, and the engine branch behind them) is exercised only
+  by the Interaction Lab.
+- **`shared/properties.ts` still mints the legacy color vocabulary** — the default Status property seeds
+  `'grey'`, `'blue'`, `'green'`: six bare-name writes against three stepped-key writes elsewhere.
+  `ANCHOR_CELLS` is documented as a seam that absorbs history, not one that produces it.
+- **Barrel exports with no importers**: `MenuTopRow` (used only inside its own module), `MenuHeading`,
+  `accentValue`, `readCssAccentColor` (all showcase-only), and `FrostParams` — which the showcase
+  redeclares rather than imports.
+
+### V. Styling Health
+
+#### One selector drives an arms race
+
+`Toolbar/toolbar.css` sets `color` on a bare `.app-toolbar button` at specificity (0,1,1). A
+vanilla-extract class is (0,1,0), so every component rendering a `<button>` inside the toolbar — which
+contains the ViewPane, SettingsPane, GroupingPane, PickerControl, NumberEditor and the menu system — loses
+its own color to it.
+
+**Verified: 17 doubled selectors and 2 escalations.** About eleven of the doubles name this rule in their
+own comments. The ladder has grown past doubling: `menu.css.ts` uses `&&&`, `settingsPane.css.ts` uses
+`&&&&`, and `groupingPane.css.ts` triples to outrank *another component's* escape hatch. Every one is
+load-bearing as written; all are symptoms of one over-broad selector.
+
+#### The button bundles are bridged and unread
+
+`size.css.ts` defines control heights 24/28/32px and `theme-vars.css.ts` bridges all three. **Verified:
+`--button-small-height` and `--button-medium-height` have zero reads**; only `--button-large-height` is
+consumed, at three sites, while the raw values are restated at ten.
+
+This is *not* the glyph ladder. `size.css.ts` carries two families, and the glyph half — `ICON_PX` /
+`size.icon`, which `<Icon size="control" />` resolves through — is routed and settled. Only the button
+bundles are open, and the question is narrow: were they ever meant to be a system ladder, or are they one
+component's private table that got bridged by symmetry with the glyph ladder beside it.
+
+#### Motion has three homes and one wrong default
+
+230ms is the app's real interaction duration and it is not on `motion.ts`'s ladder (180/180/225/280/350),
+whose own comment claims that vocabulary is total. `DEFAULT_FEEL` holds 230 in `feel.tsx`, and
+`interactions.css` restates it as a literal fallback twice.
+
+**Verified: the fallback easing is wrong.** `DEFAULT_FEEL.easing` is `easing.out`
+(`cubic-bezier(0.22, 1, 0.36, 1)`), while the CSS reads `var(--ix-ease, ease)` — which is
+`easing.standard`. Anything rendered outside an `<Interactions>` provider animates on the wrong curve. A
+fourth curve, `BLOOM`, lives in `animations.css.ts`, and `motion.ts` documents its `dropdown` step as "the
+Bloom keyframes" — referencing a curve it does not own.
+
+#### Dead, and what only looks dead
+
+Three confirmed orphans:
+
+| Orphan | Where | Evidence |
+| --- | --- | --- |
+| `--safe-top` / `-right` / `-bottom` / `-left` | `styles.css` | Names a mobile shell that does not exist; zero reads |
+| `--code-chevron-mask` | `theme-vars.css.ts` | A full inline SVG asset, **verified zero reads** |
+| `export const anchor` | `Toolbar/toolbarDropdown.css.ts` | All five importers use `anchorRight` |
+
+Three categories that look identical and are not, listed so a future sweep does not "fix" them: ~24
+bridge-completeness vars (the full icon and type ramps, declared so plain CSS can name a step — the file
+states this intent); eight fallback-only tuning hooks read with a default and never set, which is this
+codebase's tuning idiom; and the specular whites in `materials/`, pure white on purpose and distinct from
+system-white.
+
+One correction worth recording: `theme-vars.css.ts` describes its bridge as existing "so plain CSS (the
+showcase chrome) can reference them." In fact **all 44 plain stylesheets depend on it.** It is the primary
+token interface, and anyone trimming "unused" bridge vars on the strength of that comment would break the
+app.
+
+### VI. Repeated Behavior
+
+#### A latent bug travels with the largest duplication
+
+**Verified:** the `{...view, ...patch}` save closure appears at five sites, and four discard the `Result`
+envelope:
 
 ```
 LayoutToggles    void saveView({ ...view, ...patch })     ← discarded
@@ -272,224 +304,290 @@ HiddenPane       const res = await saveView(...)
 ```
 
 IPC returns the envelope so a refusal is visible. Four surfaces void it away, so a refused view save is
-silent and the control flips anyway. One shared writer that returns HiddenPane's error-surfacing behavior
-fixes five copies and the silence together.
+silent and the control flips anyway. One shared writer returning HiddenPane's behavior fixes five copies
+and the silence together.
 
-The rest, ranked:
+#### The rest
 
-| Finding                                                          | Sites | Owner it wants                              | Effort |
-| ---------------------------------------------------------------- | ----- | ------------------------------------------- | ------ |
-| The settings toggle row, restated verbatim **(concurrent)**      | 7     | `ToggleRow`, beside the existing `ValueRow` | Small  |
-| The property-editor config row **(concurrent)**                  | 7     | Promote `NumberEditor`'s private `Row`      | Small  |
-| The url-vs-type commit derivation                                | 4     | `editorValue.ts`                            | Small  |
-| The link-accent derivation                                       | 5     | One helper beside `solidColorCss`           | Small  |
-| The twisty glyph, hand-rolled beside its own helper              | 3     | Export `Twisty` from `DisclosureRow`        | Small  |
-| `CollectionNode \| SetNode`, an unnamed type                     | 30+   | `type ViewSource` in the contract           | Small  |
-| The `.ppane-action` icon button                                  | 6     | `PaneAction`, exported from `PreviewPane`   | Small  |
-| Raw `<webview>` mounts with a documented-by-cross-reference cast | 3     | A `WebGuest` owning the incantation         | Medium |
-| Four independent hosts for the same picker triple                | 4     | Generalize `CardPickerHost`                 | Medium |
+| Finding | Sites | Owner it wants | Effort |
+| --- | --- | --- | --- |
+| The settings toggle row, verbatim **(concurrent)** | 7 | `ToggleRow`, beside the existing `ValueRow` | Small |
+| The property-editor config row **(concurrent)** | 7 | Promote `NumberEditor`'s private `Row` | Small |
+| The url-vs-type commit derivation | 4 | `editorValue.ts` | Small |
+| The link-accent derivation | 5 | One helper beside `solidColorCss` | Small |
+| The twisty glyph, hand-rolled beside its own helper | 3 | Export `Twisty` from `DisclosureRow` | Small |
+| `CollectionNode \| SetNode`, an unnamed type | 30+ | `type ViewSource` in the contract | Small |
+| The `.ppane-action` icon button | 6 | `PaneAction`, exported from `PreviewPane` | Small |
+| Raw `<webview>` mounts with a cast documented by cross-reference | 3 | A `WebGuest` owning the incantation | Medium |
+| Four independent hosts for one picker triple | 4 | Generalize `CardPickerHost` | Medium |
 
-#### The two structural twins
+#### The structural twin
 
 **`PagePropertiesPane` and `PreviewInspector` are one component wearing two stylesheets.** Verified: 730
 lines across the two, 260 differing whitespace-insensitively — roughly **470 identical lines**, including
 both `biome-ignore` comments verbatim. `usePropertyRows.ts` states the two "keep their own frame, their own
 row chrome, and their own rule for which rows show." Frame and visibility rule genuinely still differ; row
 chrome does not. Two extractions — the value span with its editor branch, and the three editing portals —
-leave the genuinely different parts alone.
-
-**`OptionEditor` is the one-group case of `StatusEditor`.** The hook layer already took this step:
-`useOptionReorder` is a 37-line adapter over `useStatusReorder` whose own comment says "the flat list is
-the one-group case of the grouped one." The component layer never followed. Same state, same commit
-handlers, same ghost logic, same row render; the difference is flat-list versus group-keyed identity and
-one heading row.
+leave the genuinely different parts alone. This is the largest single line-count payoff available.
 
 #### Verified healthy
 
 Recorded so a future sweep does not re-litigate them. `Toolbar/`'s dropdowns all compose the menu shells.
-`RenamableTitle → RenamableLabel → EditableInput` is a clean three-layer chain, each layer earning its
-keep. `useOptionReorder → useStatusReorder` is a correct, documented adapter. `fieldRing` has eight
+`RenamableTitle → RenamableLabel → EditableInput` is a clean three-layer chain, each layer earning its keep.
+`useOptionReorder → useStatusReorder` is a correct, documented one-group adapter. `fieldRing` has eight
 importers with no hand-rolled ring outside it; `OverflowScroll` has thirteen. No `backdrop-filter` outside
 `materials/` except one masked circle that is a genuinely different effect. The `.css` versus `.css.ts`
-split tracks module type rather than accident: surfaces whose class names are emitted by CodeMirror
-decorations or imperative DOM use plain CSS, where hashed names would be unusable.
+split tracks module type: surfaces whose class names are emitted by CodeMirror decorations or imperative
+DOM use plain CSS, where hashed names would be unusable.
 
-### V. Ranked Work
+### VII. The Target Shape
 
-Ordered by payoff against effort. Nothing here has been done.
+#### The root is the disorder
 
-**Tier 1 — small, and each fixes a class rather than an instance**
-
-1. **Retarget `.app-toolbar button` to an explicit class.** Collapses ~11 doubled selectors, stops the
-   `&&&&` ladder, and removes the reason the next component will reach for one.
-2. **One `useViewPatch` writer that surfaces its error.** Five copies to one, and four silent failure
-   paths closed.
-3. **Move `Chip`, `EditableInput`, and `ColorPicker` into the design system.** Retires five of the seven
-   inversions. The other two are a prop each.
-4. **Move `solidColor.ts` to `tokens/`.** It is token math filed under a view.
-5. **Consume the two unread control-height vars at their ten restated sites, or delete them.** Either
-   answer is coherent; the current state is neither.
-6. **Move `230` into `motion.ts` and correct the `--ix-ease` fallback to `easing.out`.**
-7. **Delete the three genuine orphans** — the four `--safe-*` vars, `--code-chevron-mask`, and the unused
-   `anchor` export.
-
-**Tier 2 — the reference document**
-
-8. **Promote Components out of the token atlas and complete the roster** — 4 of ~22 today.
-9. **Add the Helpers section** — ~20 shared functions and hooks with no home in the document at all.
-10. **Add the Quick Index and the "reach for this, not that" table.**
-11. **Rewrite the Ramp section around its exported API**, and correct the `chipBase` row.
-
-**Tier 3 — structural, worth scheduling rather than squeezing in**
-
-12. **Extract the shared halves of `PagePropertiesPane` / `PreviewInspector`** — the largest single
-    line-count payoff available.
-13. **Generalize `CardPickerHost` into a `ValuePickerHost`.** Pays twice: three copies retired, and
-    CardPickerHost's correct anchor-survival and exit-presence behavior propagates to the surfaces that
-    currently re-derive it by hand.
-14. **Make `OptionEditor` the one-group adapter over `StatusEditor`**, mirroring what the hook layer
-    already did.
-
-**Decisions wanted before any edit**
-
-- **The radius scale.** 8/10/12px appear 17 times with no token home. Promote a named scale, or accept
-  them as per-component and say so. Either settles it; the ambiguity is what keeps producing them.
-- **Whether `size.control` is a system ladder or one component's table.** It has one consumer. If it is
-  meant to be the system's, the ten restated sites should read it; if not, it should stop being bridged.
-- **Where `chip.css.ts` belongs.** 331 lines of component styling inside `tokens/`, and the token barrel
-  is also the chip barrel.
-
-### VI. Relation To The Architecture Audit
-
-The audit reached the same finding from the opposite direction, and did so first. It asked *who imports
-out of a folder*; this survey asked *what a folder imports in*. Both describe the same edges.
-
-| The audit saw | This survey saw | Same edge |
-| --- | --- | --- |
-| `Components/Detail` is a feature subsystem wearing a shared-components address — 13 external importers | `ColorPicker`, `PaneSlider`, `PickerControl` are design-system components filed under a feature | yes |
-| `Table/` exports to eight external files at twelve sites — "four homes, not one" | `solidColor.ts` is token math with eleven consumers, six outside its own view folder | yes |
-| `PaneSlider` is stranded inside `Components/Detail` and imports exclusively from the design system | `PaneSlider`, seven consumers, belongs in `design-system/` | yes |
-
-The audit's framing is the more useful one and should be adopted: **this is a filing error, not an
-architecture error.** Nothing underneath is rotten — the dependency graph is acyclic, the layers are real,
-and the modules are individually well-built. What is wrong is the addresses. That is why the audit's
-estimate for both bundles is `net ≈ 0`: it is `git mv` plus import churn, and the typecheck catches every
-miss.
-
-#### A collision this session created
-
-Bundle 6a moves the view-settings/property-editing subsystem out of `Components/` into its own domain
-folder, and explicitly carves `PaneSlider` out into `design-system/` on the way. When that was written,
-`PaneSlider` was the only design-system-bound module in the folder.
-
-It no longer is. `ColorPicker` now has two importers inside `design-system/components/Switches/`, created
-in this session when `ColorSwatch` moved there. **Run 6a as written and `ColorPicker` rides into a feature
-domain while the design system imports it** — the inversion gets deeper, not shallower, and the new import
-path is longer than the one it replaces.
-
-The repair is small and belongs *before* 6a rather than after: extract the design-system-bound modules
-first, then move what remains. The audit's own ordering rule — 6a precedes 6b and 6c because both would
-otherwise add imports at the address being vacated — applies one level up. There is now a 6-zero.
-
-#### A disagreement worth settling
-
-The two analyses name different destinations for one module. The audit sends `checkboxLook` to "a
-property-display home" alongside `Cell`, `columnStyles` and `columnLabel`. This survey sends it to
-`design-system/components/` beside `Checkbox.tsx`, on the grounds that the two draw the same box and
-keeping them apart is the drift both their docblocks warn about.
-
-Both readings are defensible and they cannot both be right. The disagreement is not really about
-`checkboxLook` — it is about whether a layer exists between the design system and the features. That
-question is the subject of the next section.
-
-### VII. What A Refactor Would Actually Require
-
-Everything below is a decision, not a task. None of it should be started before the questions are
-answered, because each answer changes what the work is.
-
-#### The missing layer
-
-`Components/Detail` holds **49 modules. Thirteen touch the store or IPC. Of the remaining thirty-six, seven
-import a data-model type.** So roughly twenty-nine modules are neither feature code nor generic
-primitives — they are presentation that knows what a property is without knowing where one comes from.
-
-This is the layer the codebase keeps inventing and never naming. The audit invented it as "a
-property-display home" for `Cell` and `checkboxLook`. This survey invented it independently by proposing
-`OptionChip`. The chip system already lives it: `chip.css.ts` sits in `tokens/` because a chip is a token
-by construction, while `PropertiesPM` owns the words because a chip is what a *value* looks like.
-
-Two layers force every module into a bad fit. Three would file them honestly:
+`design-system/` has five named folders and **fifteen loose files at its root**, plus three helpers filed
+inside `components/` that are not components.
 
 ```yaml
-design-system/     | • Knows nothing. No store, no IPC, no entity type. Chip, EditableInput,
-                   |   ColorPicker, PaneSlider, PickerControl, solidColor, the tokens.
-<the middle>/      | • Knows the model, not the app. checkboxLook, columnStyles, OptionChip,
-                   |   PropertyTypes, filterModel, the value editors, the chip-for-a-value rules.
-features/          | • Knows everything. The panes, the views, the surfaces that read the store.
+design-system/
+├── tokens/ · materials/ · symbols/ · interactions/ · components/
+├── clamp.ts · cx.ts · moveItem.ts · pad.ts              | • pure helpers, uncategorized
+├── useExitPresence.ts · useHeld.ts · revealBar.ts       | • hooks, uncategorized
+├── accent.ts · personalization.ts                       | • settings → the DOM
+├── animations.css.ts · card-tokens.css · edge-fade.css  | • stylesheets with no owner
+│   · resize-strip.css · reveal-bar.css · tile-chassis.css
+└── components/dropdownAnchor.ts · fieldRing.ts · useDismiss.ts   | • helpers filed as components
 ```
 
-The middle layer's name is a real decision and it is not cosmetic: it is what an agent pattern-matches
-against six months from now. `presentation/`, `property-ui/`, `model-ui/`, `display/` all read differently
-and each will attract different things.
+This is the same gap the reference document has. **The document has no Helpers section because the disk has
+no helpers folder** — twenty shared functions exist as a pile, so there was never a category to write a
+section about. The document's shape mirrors the disk's, and both are missing the same thing.
 
-**The alternative is to decide the middle layer should not exist** — that model-aware presentation lives
-with its feature and the duplication is the price. That is a legitimate answer for a solo project, and it
-is cheaper today. It should be chosen deliberately rather than by default, because the current state is
-the default.
+#### The proposed tree
 
-#### The boundary needs a test, not a convention
+`←` marks something arriving from app code, `▸` a regroup, `✂` a deletion.
 
-Design-system membership is currently decided per-move by whoever is moving something. That is precisely
-how five inversions accumulated while everyone involved believed the rule was obvious.
+```yaml
+// design-system                        | • The system — values, materials, components, and the helpers under them
+├── // tokens                           | • The values and the math over them — unchanged
+│   ├── [color.css.ts]                  | • Primitives, surfaces, labels, fills, states, separators, shadows
+│   ├── [theme-vars.css.ts]             | • The :root bridge — the primary interface for all 44 plain stylesheets
+│   ├── [typography.css.ts]             | • The type ramp and the capped-label classes
+│   ├── [size.css.ts]                   | • The glyph ladder (settled) and the button bundles (open)
+│   ├── [motion.ts]                     | • Durations and easings; gains 230ms, the interaction engine's own
+│   ├── [tint.ts]                       | • mixAt and tintAt — the opacity ladder every color is mixed at
+│   ├── [ramp.ts]                       | • The 8×8 grid and its four resolvers
+│   ├── [colorMap.ts]                   | • Stored string → render key; absorbs the legacy vocabulary
+│   ├── [stack.ts]                      | • The three z-index ladders, named rather than numbered
+│   ├── [chip.css.ts]                   | ▸ Keeps the RECIPE; its component chrome leaves with Chip
+│   ├── [solidColor.ts]                 | ← from Detail/Views/Table — token math filed under a view
+│   └── [index.ts]                      | • The barrel; stops re-exporting chip chrome
+├── // materials                        | • Glass — unchanged
+│   ├── [glass-material.ts]             | • The shared optics and the outline contract
+│   ├── [glass-pane.tsx]                | • frostStyle and the three frost tiers
+│   ├── [glass-surface.tsx]             | • Fixed app chrome — brighter, clear
+│   ├── [glass-window.tsx]              | • A pane carrying a body
+│   ├── [glass-controls.tsx]            | • The 21-field control optics
+│   ├── [glass-segment.tsx]             | • The small-control tune
+│   └── [index.ts]
+├── // symbols                          | • The icon registry — unchanged
+│   ├── [index.tsx]                     | • Icon, the resolvers, the entity mapping
+│   ├── [AllSymbols.ts]                 | • The curated set
+│   ├── [customGlyphs.tsx]              | • The house-drawn marks
+│   └── [fileTypes.ts]                  | • Extension → glyph
+├── // interactions                     | • PommoraDND and the floating-window driver — unchanged
+│   ├── [engine.tsx] · [drag.tsx]       | • The engine and its React surface
+│   ├── [gesture.ts] · [snapshot.ts]    | • One pointer lifecycle; measure-once geometry
+│   ├── [Board.tsx] · [group.tsx]       | • The two drag families
+│   ├── [DragGhost.tsx] · [DropLine.tsx]| • The drag chrome
+│   ├── [FloatingWindow.tsx]            | • Move and resize for every floating window
+│   ├── [Interactions.tsx]              | • The provider publishing --ix-dur / --ix-ease
+│   ├── [feel.tsx]                      | • DEFAULT_FEEL and GLIDE_FEEL
+│   ├── [autoscroll.ts] · [keyboard.ts] | • Edge scroll; keyboard reordering
+│   ├── [a11y.ts] · [activate.ts]       | • The live region; Enter/Space → click
+│   └── [main.tsx]                      | • The Interaction Lab's own Vite entry
+├── // components                       | ▸ Every component a folder; no loose helpers, no loose sheets
+│   ├── // CalendarPicker               | • Date, time and range — the largest undocumented component
+│   ├── // Checkbox                     | ▸ was Checkbox.tsx + checkbox.css at the folder root
+│   ├── // Chip                         | ← from Components/ — Chip + ContextChip, and the melt/remove
+│   │                                   |   chrome out of tokens/chip.css.ts
+│   ├── // ColorPicker                  | ← from Components/Detail — the system already imports it
+│   ├── // EditableInput                | ← from Components/ — EditableInput + RenamableLabel
+│   ├── // FileChip                     | ▸ was FileChip.tsx + fileChip.css.ts at the root
+│   ├── // FileLabel                    | ▸ was FileLabel.tsx + its orphaned test at the root
+│   ├── // InteractionField             | ▸ was InteractionField.tsx + interactionField.css.ts
+│   ├── // Menu                         | ▸ was menu/ — the system's only lowercase folder
+│   │   ├── [Menu.tsx]                  | • The eleven row and frame pieces
+│   │   ├── [MenuSurface.tsx]           | • The beaked toolbar pane
+│   │   ├── [MenuDropdown.tsx]          | • Trigger + pane with state
+│   │   ├── [DisclosureRow.tsx]         | • The disclosure row and its open-set hook
+│   │   └── [paneGrowth.ts]             | • growToContent — serves this folder alone
+│   ├── // NotchedPane                  | ▸ was NotchedPane.tsx + notchedPane.css.ts
+│   ├── // PaneSlider                   | ← from Components/Detail
+│   ├── // PathField                    | ▸ was PathField.tsx + pathField.css.ts
+│   ├── // PickerMenu                   | • The rectangle every menu and picker mounts
+│   ├── // PreviewPane                  | • The floating-window shell; gains PaneAction
+│   ├── // ProgressBar                  | • Trackless fill bar
+│   ├── // SearchField                  | ▸ was SearchField.tsx + css + its orphaned test
+│   ├── // SegmentRun                   | • The divided run — hairlines or breadcrumbs
+│   ├── // Segmented                    | ▸ was Segmented-Controls/ — the only hyphenated folder
+│   ├── // SidePane                     | • The resizable edge rail
+│   ├── // Slider                       | • A bounded number, committed on release
+│   ├── // Switches                     | • DualSwitch and ColorSwatch
+│   ├── // TextPicker                   | • The inline text-entry pane
+│   ├── [OverflowScroll.tsx]            | • One file, no stylesheet — stays flat
+│   └── [Reveal.tsx]                    | • One file, no stylesheet — stays flat
+├── // helpers                          | ▸ NEW — the fifteen-file root pile, given a name
+│   ├── [cx.ts]                         | • The class joiner
+│   ├── [clamp.ts]                      | • The one definition every surface reads
+│   ├── [moveItem.ts]                   | • The immutable reorder — 6 consumers
+│   ├── [pad.ts]                        | • Zero-pad; the date surfaces' one definition
+│   ├── [dropdownAnchor.ts]             | ▸ out of components/ — 4 consumers, no component of its own
+│   ├── [fieldRing.ts]                  | ▸ out of components/ — 8 consumers
+│   ├── [useDismiss.ts]                 | ▸ out of components/ — 6 consumers
+│   ├── [useExitPresence.ts]            | • Keeps a surface mounted through its retract — 11 consumers
+│   └── [useHeld.ts]                    | • Keeps what a closing surface draws
+├── // chrome                           | ▸ NEW — the shared stylesheets belonging to no component
+│   ├── [animations.css.ts]             | • Bloom and the title reveal (InteractionPM owns the words)
+│   ├── [card-tokens.css]               | • --card-min, the gaps, the shared page-card chassis
+│   ├── [tile-chassis.css]              | • The tile border, radius and body
+│   ├── [resize-strip.css]              | • The invisible edge-drag band
+│   ├── [reveal-bar.css] + [revealBar.ts]| • The sliding bar and its hit-zone math, kept together
+│   └── [edge-fade.css]                 | • The scroll fade (InteractionPM owns the words)
+└── // theme                            | ▸ NEW — the one place the system reads app types, named so
+    ├── [accent.ts]                     | • Accent resolution and runtime application
+    └── [personalization.ts]            | • The three tables turning settings into root vars and classes
+```
 
-A stated test — *knows no entity type, touches no store, touches no IPC* — is nearly right and has one
-known exception already in the tree: `symbols/index.tsx` imports `EntityIconKind` and exports a glyph
-registry keyed by Pommora entity kinds. Icon *rendering* is generic; the kind-to-glyph *mapping* is not.
-Either the mapping moves out, or the rule carries a named exception. An unstated exception is how rules
-stop being followed.
+Three choices worth stating. **One `helpers/`, not `helpers/` and `hooks/`** — splitting by whether
+something calls a React hook sorts by implementation detail; a caller asking "is there already a clamp"
+does not first ask whether clamping is stateful. **`theme/` earns a folder despite holding two files**
+because it is the one place the system legitimately reads app types, and naming it is what lets the
+boundary rule elsewhere be absolute. **`components/` becomes uniformly foldered** on the rule *more than
+one file gets a folder*, which also collects the two tests not living beside their component.
 
-More durable than any stated rule: **make the boundary a lint error.** Biome's configuration is already in
-place and its rule set supports restricting imports by path. One rule forbidding `@renderer/*` inside
-`design-system/**` would have refused this session's `ColorSwatch` import at the gate, which is the only
-mechanism that stops the inversion being re-earned every session. Everything else depends on remembering.
+`chip.css.ts` splits rather than moves: the recipe is a token by construction and stays; the melt family,
+remove button and label wrap travel with `Chip`. The token barrel stops being the chip barrel as a side
+effect of a move happening anyway.
 
-#### Sequence
+#### The ledger
 
-The order is forced by the audit's own compounding argument, not by preference.
+**Cut — three confirmed orphans:** the four `--safe-*` vars, `--code-chevron-mask`, and
+`toolbarDropdown.css.ts`'s `anchor`. A fourth pends a ruling: `--button-small-height` and
+`--button-medium-height` are unread, but whether they are cut or *adopted* depends on §VIII.
 
-1. **6-zero — extract before rehoming.** `Chip`, `EditableInput`, `ColorPicker` into `design-system/`;
-   `PaneSlider` as 6a already plans. Small, mechanical, and it makes 6a correct rather than harmful.
-2. **The boundary lint rule**, landed with 6-zero. It costs one config entry and permanently retires the
-   class of defect. Without it, step 1 is a snapshot rather than a fix.
-3. **6a and 6b as already scheduled.** `solidColor` reaches `tokens/` here, which retires this survey's
-   Tier 1 item 4 — the same move, already sequenced.
-4. **The middle-layer decision**, made before 6b rather than after, because 6b has to send `checkboxLook`
-   and `columnStyles` somewhere and that somewhere is the answer.
-5. **The reference document**, any time — it blocks nothing and unblocks everything. It is the only item
-   here that pays back on the very next session regardless of what else happens.
+**What does not change:** nothing in `tokens/`, `materials/`, `symbols/` or `interactions/` moves. Each
+holds one kind of thing, each is named for what it holds, and no finding sits inside them. The proposal
+touches the root pile, the components folder, and five arrivals.
 
-The styling findings — the toolbar selector, the unread height vars, the motion homes — are independent of
-all of this and can be taken whenever. They touch different files and answer to no decision.
+#### The document should mirror the tree
 
-#### Costs, stated plainly
+One principle does most of the work: **the table of contents is the folder tree.** Where something lives
+and where it is documented become the same answer, a new folder forces a new section, and a section with no
+folder is proof the document has drifted — which is how the missing Helpers section would have been caught
+two months ago.
 
-- **A quiet tree.** 6a and 6b are import churn across roughly seventy files. They cannot be run against a
-  working tree that a second session is editing. Today's tree is not quiet.
-- **Blame.** A rehome of this size rewrites `git blame` for the moved files. `git log --follow` still
-  reaches through, but casual archaeology gets harder for a while.
-- **No visible payoff.** Every item in steps 1 through 4 is `net ≈ 0` and changes nothing a user sees. The
-  return is entirely in what the *next* feature costs, which is real but deferred and unmeasurable at the
-  moment it is paid for.
-- **The middle layer is a one-way door in practice.** Naming it will attract modules for years. Renaming
-  it later costs another churn of the same size.
+```yaml
+DesignSystemPM
+├── Tooling
+├── Quick Index                | • NEW — every --var, export, class → its section
+├── Reach For This, Not That   | • NEW — the near-identical pairs, and which to pick
+├── Tokens                     | • ← tokens/          (reordered; Ramp rewritten around its exports)
+├── Materials                  | • ← materials/       (+ frostStyle, the optics rosters)
+├── Symbols                    | • ← symbols/         (roster + pointer to SymbolsPM)
+├── Interactions               | • ← interactions/    (roster + pointer to PommoraDND)
+├── Components                 | • ← components/      (full roster, grouped by kind)
+├── Helpers                    | • ← helpers/         (NEW)
+├── Chrome                     | • ← chrome/          (NEW)
+├── Theme                      | • ← theme/           (NEW)
+├── Where the Rest Lives       | • prose → a table naming which files each sibling doc governs
+└── Showcase · Known Issues · Pending
+```
 
-#### What should not be done
+Four things a lookup-first document needs and this one has no form for: the **Quick Index**; a **reach for
+this, not that** table for the near-identical pairs the code documents and the document does not
+(`FileChip` vs `FileLabel`, `GlassSurface` vs `GlassPane`, `GlassSegment` vs `GlassControls`, `PickerMenu`
+vs `MenuSurface`, `Reveal` vs a height transition, `chipColorFor()` vs indexing `SPECTRUM`); a **token →
+consumer index** for the dozen knobs whose value *is* an agreement across module boundaries; and a stated
+**freshness contract** — each roster's SOURCE line is the file of record and the document is a mirror, so
+a reader finding a discrepancy trusts the code rather than concluding the token was removed.
 
-- **Not a separate "design-system cleanup."** Its Tier 1 items 3 and 4 *are* bundles 6a and 6b. Running
-  them as their own effort would either duplicate the scheduled work or move the same files in a different
-  direction than the audit intends.
-- **Not a rewrite.** Nothing here found a wrong architecture. Every finding is a module in the wrong folder
-  or a value stated twice. The correct instrument is `git mv` and a lint rule, not a redesign.
-- **Not all at once.** The single most valuable item — the reference document — has no dependency on any of
-  the moves and pays back immediately. Taking it first buys correct instincts for every session that
-  follows, including the sessions that do the moves.
+### VIII. Decisions Wanted
+
+The planning session's agenda. Each is cheap once decided and wrong to guess at.
+
+- **Does a middle layer exist?** `Components/Detail` holds 49 modules; 13 touch the store or IPC, and of
+  the remaining 36 only 7 import a data-model type. So ~29 are neither feature code nor generic primitives
+  — presentation that knows what a property is without knowing where one comes from. This is the layer the
+  codebase keeps inventing and never naming. **Recommendation: leave it unbuilt for now.** The proven pain
+  is seven inversions, all fixed by the design system's own boundary. A third layer asks for 29 filing
+  decisions on speculation when exactly one module has a contested address, and it is a one-way door that
+  will attract modules for years.
+- **Where does `checkboxLook` go?** The one contested address, and the sharp end of the question above. It
+  is the visual twin of `components/Checkbox.tsx`, and it is also property-display code. Whichever answer
+  is taken defines whether the middle layer is real.
+- **The container title.** `--container-title-size` (20px) covers one of three surfaces wearing that
+  concept; the others are 24px and 28px. Either the token is the banner's variant and renames, or it is the
+  container title and the other two are drift.
+- **CalendarPicker's range mode.** Built, styled, and unreachable. Claim it or retire it.
+- **Are the button bundles a system ladder or one component's table?** One consumer, two unread bridged
+  heights. If they are the system's, the ten restated sites should read them; if not, they stop being
+  bridged.
+- **One house fade width or two?** `--edge-fade` states 22px; 16px overrides it at four sites and is
+  `--scroll-fade`'s de facto default at three.
+- **The two tab strips.** 90/180/240/12/6 against 70/150/200/10/5, with no comment saying the smaller
+  window scales deliberately and no single ratio generating one from the other.
+- **`--gutter` is one name for two lanes** (`--content-gutter` and `--fold-gutter`). One renames.
+
+#### Constraints the planning session inherits
+
+- **The extraction precedes the rehome.** The cleanup's `Components/Detail` rehome moves that folder to a
+  feature domain and already carves out `PaneSlider`. `ColorPicker` now has two importers inside
+  `design-system/` — so the rehome as written would carry it into a feature domain while the system imports
+  it, deepening the inversion. Whatever the design plan turns out to be, the three arrivals have to land
+  before that rehome runs.
+- **A quiet tree.** The moves are import churn across roughly seventy files and cannot run against a
+  working tree a second session is editing.
+- **No visible payoff.** Nearly all of it is `net ≈ 0` and changes nothing a user sees. The return is in
+  what the next feature costs.
+- **Not a rewrite.** Nothing here found a wrong architecture. The instrument is `git mv` and a lint rule.
+- **The document depends on none of it** and pays back on the very next session, including the sessions
+  that do the moves.
+
+### IX. Standing Calls
+
+Answered questions, recorded so a later sweep reads the ruling instead of re-raising the finding.
+
+- **Radius literals stay literal.** 8/10/12px appear at seventeen non-showcase sites with no token home,
+  and that is acceptable so long as it stays disciplined: a surface picks from those three, and a *fourth*
+  value is what needs justifying rather than the three that exist. No `--radius-*` scale is minted. A
+  future sweep counting the seventeen has found the convention working — the reportable defect would be a
+  stray radius outside the set.
+- **The glyph ladder is settled.** `ICON_PX` / `size.icon` absorbs every icon size the app uses, 13px
+  included, and its consumers are routed. Only the button bundles beside it remain open.
+- **The option editors' shells stay two components.** `84f44fbe` and `c1fe6afa` consolidated their reorder
+  implementation and their chip row; each keeping its own container — flat and grouped — is a stated keep.
+  Merging them would invert the hook adapter, which earns its keep by hiding grouping from the flat case
+  rather than imposing it. The row *wrapper* above `OptionRow` was a separate seam and has been closed as
+  `OptionSlot`.
+- **`PickerMenu.closing` stays.** Twenty-eight of thirty consumers drive `open` and let the menu
+  self-manage its exit, but two callers inside `CalendarPicker` feed it a `useExitPresence` value. A
+  minority spelling, not an abandoned door.
+- **Bridge completeness is deliberate.** `theme-vars.css.ts` bridges whole ramps on purpose so plain CSS
+  can name a step, and says so. Unread members of a fully-bridged ramp are not orphans.
+
+### X. Corrections Log
+
+What this audit got wrong and fixed. A finding that was withdrawn is as useful to know as one that stood.
+
+| Claim | Correction |
+| --- | --- |
+| `OptionEditor` should become an adapter over `StatusEditor` | Wrong at that level. The hook adapter works by *hiding* grouping from the flat case; a merged component would impose it instead, and the heading is a renameable control rather than a suppressible label. Withdrawn — but the withdrawal was also wrong: a 26-line row wrapper above the seam `c1fe6afa` drew was genuinely undone, and has since been extracted as `OptionSlot` |
+| "The size ladder is declared, bridged, and bypassed" | Blurred two token families in one file. The glyph ladder is routed and settled; only the button bundles are open |
+| `PickerMenu.closing` is passed at zero of thirty sites | Passed at two, both inside `CalendarPicker`. Live API with two internal callers |
+| All twelve bridged `--z-*` vars are unread | All twelve are read. Withdrawn before reporting |
+| `--subline-h` and `--chips-gap` have diverged | Both convergent — the same value in every home. Recategorized as tokens the system should absorb |
+
+Two process notes the log makes visible. A survey that measures two files against each other without
+accounting for what was already extracted beneath them will overstate the duplication — which is what
+happened with the option editors. And deferring to a prior ruling without checking what the ruling actually
+covered is the opposite error: a decision bounds what it decided, not everything near it.
