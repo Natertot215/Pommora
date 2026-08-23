@@ -28,6 +28,9 @@ type CellMenuKind =
       barCapable?: boolean
     }
   | { kind: 'link'; filled: boolean }
+  /** `onChip` is a hit-test fact: a right-click on a LABEL can replace or remove the file it names;
+   *  one on the value's own area has no file for either to act on, so it offers Add alone. */
+  | { kind: 'file'; onChip: boolean }
   | { kind: 'clear-only' }
   | { kind: 'remove-only' }
 export type CellMenuContext = CellMenuKind & { hideable?: boolean }
@@ -39,6 +42,9 @@ export type CellMenuAction =
   | 'cell:rename'
   | 'cell:clear'
   | 'cell:hide'
+  | 'file:add'
+  | 'file:replace'
+  | 'file:remove'
   | `style:${string}:${string}`
 
 export interface CellMenuModel {
@@ -61,8 +67,9 @@ export function cellMenuContextFor(
   filled: boolean,
   hideable = false,
   barCapable = false,
+  onChip = false,
 ): CellMenuContext | null {
-  const base = baseCellMenu(col, type, style, filled, barCapable)
+  const base = baseCellMenu(col, type, style, filled, barCapable, onChip)
   // Cards let any non-title cell drop its property (hideable): a cell that would otherwise have no menu
   // (an empty picker, a file) still gets a bare Remove; every other cell gets Remove appended below.
   // remove-only must CARRY the hideable flag — the model appends Remove only when it sees it.
@@ -76,10 +83,12 @@ function baseCellMenu(
   style: ColumnStyle,
   filled: boolean,
   barCapable: boolean,
+  onChip: boolean,
 ): CellMenuKind | null {
   if (col.kind === 'title') return { kind: 'title' }
   if (col.kind === 'context') return filled ? { kind: 'clear-only' } : null
   if (type === 'url') return { kind: 'link', filled }
+  if (type === 'file') return { kind: 'file', onChip }
   if (type === 'status' || type === 'datetime')
     return { kind: 'style-only', type, current: style, clearable: filled }
   if (type === 'checkbox' || type === 'number' || type === 'last_edited_time') {
@@ -107,7 +116,9 @@ export function cellMenuModel(ctx: CellMenuContext): CellMenuModel {
         // Only self-separate from SIBLING items — main/cellMenu already inserts the Style▸↔items
         // divider once Remove lands in items, so keying on `model.style` too would double the separator
         // for a style-only cell with no base item (checkbox/number/last_edited).
-        label: 'Remove',
+        // A file cell carries its OWN Remove, and two items spelled the same — one destructive to
+        // a value, one to the view's configuration — are told apart by position alone.
+        label: ctx.kind === 'file' ? 'Remove from View' : 'Remove',
         action: 'cell:hide',
         separatorBefore: model.items.length > 0,
       },
@@ -151,6 +162,17 @@ function baseCellMenuModel(ctx: CellMenuContext): CellMenuModel {
               { label: 'Clear', action: 'cell:clear' },
             ]
           : [{ label: 'Edit', action: 'cell:edit' }],
+      }
+    case 'file':
+      // Replace and Remove address the label that was right-clicked; Add addresses the value.
+      return {
+        items: ctx.onChip
+          ? [
+              { label: 'Add File', action: 'file:add' },
+              { label: 'Replace File', action: 'file:replace' },
+              { label: 'Remove File', action: 'file:remove', separatorBefore: true },
+            ]
+          : [{ label: 'Add File', action: 'file:add' }],
       }
     case 'clear-only':
       return { items: [{ label: 'Clear', action: 'cell:clear' }] }

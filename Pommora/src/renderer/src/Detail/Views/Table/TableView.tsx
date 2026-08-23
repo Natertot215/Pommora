@@ -21,7 +21,7 @@ import { PropertyEditor } from '../PropertyEditing/PropertyEditor'
 import { PropertyPicker, syntheticContextDef } from '../PropertyEditing/PropertyPicker'
 import { DatetimeValuePicker } from '../PropertyEditing/DatetimeValuePicker'
 import { sharedValueClickAction } from '../PropertyEditing/valueClick'
-import { fileChipIndex, runFilePick } from '../PropertyEditing/filePick'
+import { fileChipIndex, fileValueWithout, runFilePick } from '../PropertyEditing/filePick'
 import { useSession } from '../../../store'
 import { pageMoveContext, runPageSendAction } from '../../../pageMenuActions'
 import { findCollectionForSet } from '../../Scope'
@@ -973,7 +973,16 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       }
     }
     const barCapable = numberBarCapable(col.id, dt)
-    const base = cellMenuContextFor(col, dt, colStyle(col.id), filled, false, barCapable)
+    const chip = fileChipIndex(e.target)
+    const base = cellMenuContextFor(
+      col,
+      dt,
+      colStyle(col.id),
+      filled,
+      false,
+      barCapable,
+      chip !== null,
+    )
     if (!base) return
     const { tabs, pinned, tree } = useSession.getState()
     const ctx: CellMenuContext =
@@ -1009,6 +1018,19 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     } else if (action === 'cell:clear') {
       if (col.kind === 'context') commitContextValue(row, col.id, [])
       else commitCellValue(row, col.id, null)
+    } else if (action === 'file:remove') {
+      if (chip !== null)
+        commitCellValue(row, col.id, fileValueWithout(resolveFieldValue(row, col.id, schema), chip))
+    } else if (action === 'file:add' || action === 'file:replace') {
+      const def = schema.find((d) => d.id === col.id)
+      if (def)
+        void runFilePick(
+          def,
+          resolveFieldValue(row, col.id, schema),
+          action === 'file:replace' ? chip : null,
+        ).then((next) => {
+          if (next !== undefined) commitCellValue(row, col.id, next)
+        })
     } else if (action.startsWith('style:')) {
       const parsed = parseStyleAction(action)
       if (parsed) setColumnStyle(col.id, parsed.key, parsed.value)
