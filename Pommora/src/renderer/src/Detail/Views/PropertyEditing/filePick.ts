@@ -99,3 +99,23 @@ export function runFileMenuAction(
     pickFileInto(def, current, action === 'file:replace' ? chip : null, commit)
   }
 }
+
+/**
+ * The file value's right-click, for the surfaces whose menu is the VALUE's rather than a column's.
+ * Answers false when the value isn't a file, so a caller falls through to whatever it pops
+ * otherwise. The table and the cards reach the same three actions through their own column menu;
+ * this is the same triad without the column items an inspector row has no business offering.
+ */
+export async function fileValueMenu(
+  def: PropertyDefinition,
+  current: PropertyValue,
+  target: EventTarget | null,
+  commit: (next: PropertyValue | null) => void,
+): Promise<boolean> {
+  if (def.type !== 'file') return false
+  const chip = fileChipIndex(target)
+  const action = await window.nexus.cellMenu({ kind: 'file', onChip: chip !== null })
+  if (action === 'file:add' || action === 'file:replace' || action === 'file:remove')
+    runFileMenuAction(action, def, current, chip, commit)
+  return true
+}
