@@ -4,6 +4,7 @@
 // in place; the singleton the page preview also is.
 import { useEffect, useRef, useState } from 'react'
 import { cx } from '@renderer/design-system/cx'
+import { overScrollEllipsis } from '@renderer/design-system/interactions/OverScroll'
 import { text } from '@renderer/design-system/tokens'
 import { Icon } from '@renderer/design-system/symbols'
 import { PreviewPane } from '@renderer/design-system/components/PreviewPane/PreviewPane'
@@ -130,7 +131,9 @@ function BrowserWindowBody({
           onClick={() => void window.nexus.openExternal(current)}
         >
           <span className="wbrowser-title-domain">{linkDomain(current)}</span>
-          {title ? <span className="wbrowser-title-page">{title}</span> : null}
+          {title ? (
+            <span className={cx('wbrowser-title-page', overScrollEllipsis)}>{title}</span>
+          ) : null}
         </button>
       }
     >

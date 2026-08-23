@@ -50,9 +50,6 @@
   font: inherit;
   color: inherit;
   cursor: default;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   max-width: 220px;
 }
 button.subfield-crumb:hover {

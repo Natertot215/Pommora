@@ -43,7 +43,7 @@ const SIZE = {
 const OPTION = {
   gapAroundLabel: 6, // "Options" → first chip (the gap ABOVE "Options" is the header's own bottom pad)
   gapBetweenChips: 6,
-  chipPadX: 6, // option chip horizontal padding — retunes the shared chip-label default, this pane only
+  chipPadX: 6, // option chip horizontal padding — retunes the shared label default, this pane only
   addBox: 20, // the "Options" + hit target (its glyph is ICON.optionsAdd)
   groupGap: 12, // status only: gap between one group's block (heading + chips) and the next
 }

@@ -4,6 +4,7 @@ import { Icon } from '@renderer/design-system/symbols'
 import { PickerMenu } from '@renderer/design-system/components/PickerMenu'
 import { HoverRemove, hoverRemoveHost } from '@renderer/design-system/interactions/HoverRemove'
 import { cx } from '@renderer/design-system/cx'
+import { overScrollEllipsis } from '@renderer/design-system/interactions/OverScroll'
 import type { AcRow } from './autocomplete'
 
 interface Props {
@@ -75,7 +76,7 @@ export function AutocompletePanel({
           ) : (
             <Icon name="square-split-horizontal" size="body" className="mdpm-ac-icon" />
           )}
-          <span className="mdpm-ac-title">
+          <span className={cx('mdpm-ac-title', overScrollEllipsis)}>
             <span className="mdpm-ac-match">{row.label.slice(0, matchLen)}</span>
             {row.label.slice(matchLen)}
           </span>

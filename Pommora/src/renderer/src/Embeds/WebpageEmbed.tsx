@@ -6,6 +6,7 @@
 // here imports CodeMirror, so a future dashboard host mounts it unchanged.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { cx } from '@renderer/design-system/cx'
+import { overScrollEllipsis } from '@renderer/design-system/interactions/OverScroll'
 import { text } from '@renderer/design-system/tokens'
 import { linkDomain } from '@shared/links'
 import { DEFAULT_LINK_DISPLAY } from '@shared/properties'
@@ -246,7 +247,7 @@ export function WebpageEmbed({
       ) : null}
       <button
         type="button"
-        className={cx('wpembed-title', text.footnote.standard)}
+        className={cx('wpembed-title', text.footnote.standard, overScrollEllipsis)}
         onClick={() => openWebLink(url)}
       >
         {title}

@@ -92,10 +92,6 @@
   align-items: center;
   gap: 4px;
   flex: 0 0 40%;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   color: var(--label-control);
 }
 .pgpreview-insp-value {

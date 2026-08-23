@@ -617,7 +617,7 @@
   --outliner-gap-bottom: -2px;
 }
 .outliner-lines .md-outliner-task {
-  --rail-x: calc(8.5px * var(--glyph-scale)); /* checkbox box center, from chipBoxGeometry */
+  --rail-x: calc(8.5px * var(--glyph-scale)); /* checkbox box center, from boxGeometry */
   /* The box rides low in its line (vertical-align), so its bottom cap reads longer — raise it to even the rail. */
   --outliner-gap-bottom: 8px;
 }
@@ -1249,8 +1249,6 @@
 }
 .mdpm-ac-title {
   color: var(--label-secondary);
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 .mdpm-ac-match {
   color: var(--label-primary);
