@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 08-22-2026              | PM-114 | File Properties                                      |
 | 08-22-2026              | PM-113 | MarkdownPM Improvements                              |
 | 08-21-2026 → 08-22      | PM-112 | Variable Asset Directories                           |
 | 08-20-2026 → 08-21      | PM-111 | Footnotes                                            |
@@ -117,6 +118,17 @@
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
 
+
+#### PM-114 || File Properties
+
+**DATE:** 08-21-2026 → 08-22
+
+`file` is complete — the tenth and last property type, and the second part of the file-based arc. A value is a bare array of `[[Basename.ext]]` wikilinks under its own wrapped key, which is multi-select's shape, so the decoder's `file` case stays physically separate from `multi_select`'s: merging them would route file through the option gate, where `optionValues` answers `[]` and `strict` would discard every attachment through the restore path. Resolution runs in the asset map's basename domain through `resolveFileValue`, never the page-title domain a URL property's wikilink uses, which is what keeps file values structurally outside the rename cascade — `frontmatterMentions` and `rewriteFrontmatterConnections` both read string values and skip arrays, so neither knows what a file property is and neither needs to. The legacy `[{ path }]` object reads null, and an entry nothing can spell is dropped from its list rather than nulling the page's other attachments.
+
+`adoptImageAsset` became `adoptFile`, exported as the one adoption seam with its five guards intact and its extension gate per caller; each file property carries a def-level **Directory** validated for containment *and* indexability at both the set and the write, since a `.private` folder is contained, mkdirs, writes, and is dropped from the map forever. `assetSubRoot` composes that destination in `shared/nexusPaths.ts`, so main's write and the renderer's dialog aim at one folder. The value's own area adds and a chip replaces, both through the OS dialog at a `defaultPath` — which makes "reveal where this lives" and "swap it" one gesture and retired `file:open` at all three layers — with `sharedValueClickAction` gaining one arm and `filePick.ts` the async effect behind it, serving the table, the cards and both inspector panes. `FileChip` and `FileLabel` are chip *shapes*, so the hover-× and its melt come from the chip system structurally; a removable chip's label is pointer-inert by that machinery's own guard, so the scrolled state `truncateHoverScroll` gives every other capped label is entered from the chip's hover instead. File left the column-style system entirely, sorts on the parsed filename through `pipeline/value.ts`'s `fileName`, and filters on the shared Is Empty / Isn't Empty pair.
+
+- **Commits:** `377b2322^..69ca5127` (42 commits, interleaved with a parallel session's)
+- **Diff:** Net +435 | +1072 / −637
 
 #### PM-113 || MarkdownPM Improvements
 

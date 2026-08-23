@@ -887,7 +887,17 @@ What is claimed, requirement by requirement:
 | 13 | TableView's raw-path text editor is removed, not adapted | the dialog is the only authoring surface |
 | 14 | The rename-cascade immunity is recorded as an invariant | `ConnectionsPM.md` §The Rename Cascade |
 
-**What is not claimed.** The end-to-end acceptance criterion has not been observed running — it needs a Collection with a file property whose Directory names a subfolder and real files on disk, and Nathan verifies that himself. Every claim above is grounded in code read or a test watched pass; none rests on the feature having been used.
+**The verification round, and what it found after a clean gate.** Four lenses ran against the shipped feature — an end-to-end chain, a gesture × surface matrix, an interfaces-and-adjacencies attack, and a line-by-line scrutiny pass. The acceptance criterion is now a test rather than an open item: `mutate.test.ts` reads the page's raw bytes after every step of pick → add → replace → remove → clear. Five findings landed, all verified against the code before folding and each new guard negative-controlled:
+
+- **A pick from a hidden folder UNDER the asset root minted a reference nothing could resolve.** `underAssetRoot` admits a dot-prefixed segment `indexable` drops forever, so the file was referenced in place and read unresolved with no error anywhere. **Containment and reachability are separate predicates** — two prior passes verified the boundary and were right; the question was the wrong one. Such a pick falls through to the copy now.
+- **Three dead interfaces, all the same shape as the Lessons' third defect.** `fileValueMenu`'s boolean was structurally unconsumable (both callers decide the type first, since a context-menu handler answers `preventDefault` synchronously) and a test pinned the dead arm, which kept it reading as live. `FileLabel.unresolved` and its stylesheet were the un-censused twin of the `onClick` prop deleted a phase earlier.
+- **The showcase and the atlas never learned `chipFile` or `chipPlain`** — the roster a developer checks before hand-rolling a parallel.
+- **A removable chip's capped label had no reveal at all.** The melt guard makes it pointer-inert, so `truncateHoverScroll`'s hover half was unreachable on every removable chip in the app. The same declarations are entered from the chip's hover instead. Measured under a dispatched hover against the built CSS: the cap holds, the label scrolls its full hidden text, and the box does not move.
+- **File's filter operators became the shared Is Empty / Isn't Empty pair**, which made `FILE_OPS` byte-identical to `EMPTIES` and deleted it.
+
+The simplification pass then consolidated four seams: the panes' byte-identical `valueMenu` onto the hook they share, `runFileMenuAction` onto `runPageSendAction`'s took-it-or-not shape, the segment stamp into a named constant, and `assetSubRoot` into `shared/` so both processes compose a property's folder one way.
+
+**What is still not claimed.** Two checks need the running app and are Nathan's: picking a file from inside `.nexus/assets` while the configured root is elsewhere, and whether the ×'s reveal survives moving the cursor toward it — computed styles lie for that class, and only a live hover is truth.
 
 **What the gates say.** `npm run typecheck`, `npm run test` (3570) and `npm run lint` all exit 0, read directly. Every red seen during execution was attributed to the parallel session's in-flight work before it was dismissed.
 

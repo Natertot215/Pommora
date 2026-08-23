@@ -1,62 +1,69 @@
 ## Handoff — Pommora
 
-> **User Prompt:** *"You do NOT guess — you LOOK, and you ASK. Open the file and read the code before you assert anything; ask me when you're unsure. A plan built on an unverified claim is a liability, not progress — treat every doc, every `file:line`, every 'it works like X' as a hypothesis until you've read the code that proves it. Honesty over confidence; confidence is earned through evidence."*
+> **User Prompt:** *"Verify the File Properties implementation to a standard where a future reviewer finds nothing. There is one criterion: the files are implemented completely, precisely, surgically, and cohesively with the rest of the codebase — no errors, no simplification opportunities, no isolated code that could have been inherited from what already exists, and no sense that `file` was not part of the original property types."*
 
 #### Current Focus
 
-**Session ID:** 8febb642-49c6-4227-8a0b-60e3419392a7
-**Date:** 08-21-2026 → 08-22
-**Model:** Opus 5
+**Session ID:** 80a10e7b-1f2a-4d86-a973-10f5f6ea1333
+**Date:** 08-22-2026
+**Model:** Fable 5 → Opus 5
 
-**Part 1 of the file-based arc shipped whole, across five phases, and the migration ran against the live nexus.** `asset_directory` is a top-level settings key the user picks from Settings › Files & Links, validated rather than restricted — any folder inside the nexus that holds no page and no sidecar anywhere in its subtree. It is `excluded_folders`' twin, so the two travel as one `WatchScope` through the walk, the corpus, chokidar's ignore and the classifier, and the asset test runs ahead of every other skip; without that ordering a folder already named in `excluded_folders` — which Nathan's `file-assets` was — delivers no events at all. A dedicated `asset` classifier arm is what keeps 50 images landing in a synced folder from forcing 50 whole-nexus walks.
+**Part 2 of the file-based arc is done: `file` is complete, the tenth and last property type.** A value is a bare array of `[[Basename.ext]]` wikilinks resolved in the asset map's basename domain; each property names a **Directory** its files land in; the value's own area adds and a chip replaces, both through the OS dialog opened at a folder, so revealing where a file lives and swapping it are the same gesture. Adoption is one exported seam, `adoptFile`, carrying every guard that makes it safe, and no reference removal ever deletes bytes — the seam dedups, so two pages can share one file.
 
-A stored image is now named the way Obsidian names one. `assetMap.ts` holds a filename→paths listing main builds once, patches from watch events and pushes; `resolveAssetValue` reads the three spellings a value can wear — an `[[Name.png]]` wikilink, a raw path, a web address — and the picker hands back a path so `adoptImageAsset` copies a chosen file in under its own basename, or references it where it already sits. The profile photo is the one exception and stays bytes: it is a crop, not a chosen file, so it writes the singleton `nexus-icon.png` and rewrites that same file on every later crop.
+**This session was the verification round, and it found real defects after a clean gate.** Four lenses were run against the shipped feature rather than a checklist: an end-to-end chain read raw off the disk, a gesture × surface matrix over all four value surfaces, an interfaces-and-adjacencies attack, and a line-by-line scrutiny pass. Every finding was verified against the code before folding, and each new guard was negative-controlled in both directions.
 
-**The migration is done and verified.** `assetMigrate.ts` walked the six stores rather than the directory — nothing cleans up `.nexus/assets/<id>/` when an entity is deleted, so a directory-driven copy would have carried long-dead entities' leftovers into a folder shared with Obsidian. 10 files moved into `file-assets`, 15 references rewritten, 22 originals swept to `.trash`. All 45 page covers resolve where 44 of them rendered nothing before this arc: 35 wikilinks that had always 404'd and 10 web addresses that had 403'd against the protocol's containment check. `.nexus/assets` holds nothing but regenerated thumbnails.
+- **A pick from a hidden folder under the asset root minted a reference nothing could ever resolve.** `underAssetRoot` admits a dot-prefixed segment that `indexable` drops forever, so the bytes were referenced in place and the chip read unresolved with no error at any layer. Containment and reachability are separate predicates; adoption now asks both, and such a pick falls through to the copy.
+- **Three dead interfaces came out.** `fileValueMenu`'s boolean was structurally unconsumable — both callers decide the type first, because a context-menu handler must answer `preventDefault` synchronously — and a test pinned the dead arm, which is what kept it reading as live. `FileLabel`'s `unresolved` prop and its whole stylesheet were the twin of the `onClick` prop deleted a phase earlier and never re-censused.
+- **The showcase and the atlas never learned the two new chip shapes**, which is where a developer looks before hand-rolling a parallel.
 
-**The codebase-cleanup arc is where it was.** Bundles 1, 2 and 3 landed 08-21; 6a → 6b are the high-priority pair next, and nothing this session touched them.
+**The simplification pass consolidated four seams.** The two inspector panes' `valueMenu` was byte-identical in both files and joined `editRow` on the hook they already share; `runFileMenuAction` now answers whether it took the action — `runPageSendAction`'s shape, four lines above one of its call sites — so neither surface tests the prefix or casts the action back; the segment stamp is a named constant rather than a string in three files; and `assetSubRoot` moved to `shared/nexusPaths.ts`, so main's write and the renderer's dialog compose a property's folder the one way.
 
 #### Completion Criteria
 
-- [x] **Phase 4** — the picker returns a path, the writer keeps the name; verified against the real filesystem through the running app, screenshotted.
-- [x] **Phase 5** — migrate, collapse, empty; backed up first, run live, and confirmed after a full renderer reload on the homepage, a Collection, the pinned Fitness page, and a banner added afterward.
-- [x] **Every phase simplified before it was reviewed**, then reviewed: 7 findings in Phase 4, 6 in Phase 5, 4 in a final whole-arc pass — each verified against the code before folding, none deferred.
-- [x] **Two live checks the plan could only get by hand** — 12 files dropped into the newly configured root produced exactly one `assets:changed` and zero `nexus:changed`, and a file already inside the root was referenced without a copy.
-- [x] **Dead Vocabulary sweep returns zero** against non-zero controls; the plan's Made False table is fully rewritten.
-- [x] **Gates green** — typecheck 0, 278 files / 3480 tests, `biome check` clean over 904 files.
-- [x] **Nothing left in the live nexus** — the scratch pages and their adopted files were removed; the backup at `~/NexusOS-backup-20260821-231448` remains.
+- [x] **Gates green** — typecheck 0, 3585 tests over 284 files, `biome check` clean over 921 files, `npm run build` 0. Read directly, never through a pipe.
+- [x] **The end-to-end acceptance criterion is now a test** — `mutate.test.ts` reads the page's raw bytes after every step: pick into the subfolder, the quoted `- "[[Name.ext]]"`, add, replace, remove, clear taking the key. Every file's bytes survive; a re-pick answers the existing reference rather than a copy.
+- [x] **Every new guard negative-controlled** — the `indexable` check removed sends its test red and restored sends it green; breaking the `data-segment-index` stamp turns the replace gesture into an add, which is the defect the DOM test exists to catch.
+- [x] **The gesture × surface matrix has no empty cell** — every gesture on the table cell, the card, the page pane and the preview inspector reaches the same `filePick.ts` primitives. The keyboard path is parity: no property type has one on any of the four surfaces, and the ×'s `:focus-visible` reveal is shared by every chip type.
+- [x] **The chip's hover-scroll measured, not reasoned** — driven by a dispatched `Input.dispatchMouseEvent` in headless Chrome against the built CSS. The cap holds at 65px, the label scrolls its full 122px of hidden text, and the chip measures 81px before, during and after.
+- [x] **Dead vocabulary 0** against a control of 873; no instrumentation, no orphaned exports.
 
 #### Next Session — Two Parallel Tracks
 
-1. **The continuous codebase cleanup** — [[Codebase-Cleanup-Checklist]], 6a → 6b next (the rehome, then Table hoisting); Bundle 4 and the store split follow. Any session starts it with "Run the next bundle from Codebase-Cleanup-Checklist."
-2. **Parts 2 and 3 of the file-based arc.** Part 2 is `PhotoCropModal` widened past the nexus icon so banners, cards and other media crop through it — today it is the profile photo's alone, and it is why `setProfileImage` still carries bytes while every banner carries a path. Part 3 is the `file` property type: its `FileRef` is a user-typed path anywhere in the nexus rather than a basename under the asset root, so it needs a path arm the name arm does not supply, and `pickImagePath` was deliberately left without a baked-in extension contract so the any-file picker widens it rather than replacing it.
+1. **The continuous codebase cleanup** — [[Codebase-Cleanup-Checklist]], 6a → 6b next (the rehome, then Table hoisting). Any session starts it with "Run the next bundle from Codebase-Cleanup-Checklist."
+2. **Part 3 of the file-based arc** — `PhotoCropModal` widened past the nexus icon so banners, cards and other media crop through it. It is the profile photo's alone today, which is why `setProfileImage` still carries bytes while every banner carries a path.
+
+#### Open Against File Properties
+
+- **A second Add started while the first adoption is still copying loses one reference.** Every surface reads the value at click time and the adoption after the dialog is a plain await, so two picks straddling a large copy both tail the pre-commit list. Recorded rather than fixed: closing it means threading a getter through four call sites, and the damage is fully recoverable — the lost file is already under the asset root, so re-picking it takes the reference-in-place branch.
+- **Two live checks are Nathan's**, both ten seconds: picking a file from inside `.nexus/assets` while the configured root is elsewhere (⌘⇧. shows hidden folders — a dim chip means the copy-out did not fire), and whether the ×'s reveal survives moving the cursor toward it. Computed styles lie for that second one; only a live hover is truth.
+- **The settings pane's `minHeight={245}`** floors both PaneSlider slots, so the File editor's short body leaves dead space beneath it. A shared knob, not this feature's.
 
 #### Feedback
 
-- "The input field goes to the right of the setting label, not below" — and the hairline that separates multi-value inputs stays with FilterPane; a sub-directory path shows with the `›` glyph at `--label-tertiary`. `SegmentRun` carries both under a `nested` flag.
-- "I can confirm visuals myself, you confirm behavior."
-- "Don't update any feature docs, those you did before were too bloated of entries" — the Made False reconciliation had already landed at `6425544d` and nothing was added on top.
-- "Commit any doc edits that have been made in the working tree alongside your work" — `ArchitecturePM.md` and the audit report rode the commits they belonged beside.
+- "If it's unreachable it's dead — that's the discipline." A prop the spec names but nothing consumes comes out; a ruling that defers a deletion on a prediction expires when the prediction resolves.
+- "Stop and analyze the pattern other chips use, implement the fix, and actually verify it's the correct and simplest actual method." A JS tween was authored where `truncateHoverScroll` already existed — the mechanism was there and only the melt guard's `pointer-events: none` blocked it.
+- "The chip max stays, and the chip never re-sizes." The cap is the design; the label scrolls inside it.
+- "You're not blocked by any method of verification — live nexus, computer use, don't let anything seem off the table."
 
 #### Touched Files
 
-- **Created:** `main/assetMap.ts`, `main/assetRoots.ts`, `main/assetWrite.ts`, `main/assetMigrate.ts`, `main/assetDirValidate.ts`, `main/disambiguate.ts`, `shared/assetMime.ts`, `renderer/Settings/AssetDirectoryRow.tsx` + `pathRow.css.ts`, `renderer/design-system/components/SegmentRun/`.
-- **The seam:** `shared/bridge.ts`, `shared/types.ts`, `shared/mutate.ts`, `preload/index.ts` — `assets:map`, `assets:changed`, `assets:chooseDir`, `assets:setDir`, `nexus:imageData`; `setBanner` takes `source` where it took `dataUrl`.
-- **Main:** `readNexus.ts`, `exclusion.ts`, `watcher.ts`, `watchPatch.ts`, `settings.ts`, `mutate.ts`, `index.ts`, `paths.ts`, `io/walk.ts`, `io/navigationFile.ts`, `crud/loadValues.ts`.
-- **Renderer:** `assetUrl.ts`, `store.ts`, `App.tsx`, `Settings/NexusSettings.tsx`, `Detail/Banner/`, `Tabs/NavView.tsx`, `Detail/Views/Cards/CardsView.tsx`, `Components/useNexusIcon.ts`, `design-system/components/interactionField.css.ts`.
+- **Main:** `mutate.ts` (the `indexable` gate at the reference-in-place branch), `assetRoots.ts`, `paths.ts`, `index.ts`.
+- **Shared:** `nexusPaths.ts` (`assetSubRoot` moved here), `cellMenu.ts`.
+- **Renderer:** `PropertyEditing/filePick.ts` + `usePropertyRows.ts` (the hoisted `valueMenu`), `Table/TableView.tsx` + `Cell.tsx`, `Cards/CardValue.tsx`, `PagePropertiesPane.tsx`, `PreviewInspector.tsx`, `filterModel.ts`, `FilterPane.tsx`.
+- **Design system:** `tokens/chip.css.ts` + `typography.css.ts` (`scrollRevealed`), `FileChip.tsx`/`fileChip.css.ts`, `FileLabel.tsx` (`fileLabel.css.ts` deleted), `PathField.tsx` + `pathField.css.ts`, `SegmentRun.tsx`, `showcase/leaves/ChipsLeaf.tsx`.
+- **Tests:** `mutate.test.ts` (the acceptance chain + the hidden-folder control), `cellGestures.test.tsx` (the stamp × hit-test crossing), `filePick.test.ts`.
 
 #### Session Pointers
 
-- `main/assetMap.ts` — `buildAssetMap` / `patchAssetMap` / `resolveAssetName`; `AMBIGUOUS` is a `unique symbol`, because `string | 'ambiguous'` collapses to `string` and a caller testing `typeof === 'string'` would delete by the refusal.
-- `main/assetRoots.ts` — `underAssetRoot` is the one containment test the protocol and the delete guard cross; `assetFilePath` names the file a value means, `assetFileToDelete` narrows it to what Pommora minted.
-- `main/assetWrite.ts` — `writeAssetFile` is the one landing site; a name held anywhere under the root steps aside, since a basename answers nexus-wide.
-- `main/assetMigrate.ts` — `collectRefs` models each store as read/write plumbing so the pass is uniform; the singletons lead so a shared file takes the nexus's own name.
-- `main/exclusion.ts` — `WatchScope` / `sameScope` / `assetMatcher` / `neverWatched` / `rootSegs`.
-- `renderer/assetUrl.ts` — `assetUrl(rel)` stays the raw scheme builder the two thumbnail sites use; `resolveAssetUrl(value, map)` is the resolving entry, and `useAssetUrl()` binds the map once per component.
+- `main/mutate.ts` — `adoptFile` is THE adoption seam; its guard stack is four checks that each cover a hole the others don't (lexical `..`, realpath-against-the-asset-root for a symlink, `indexable` for reachability, `embeddableTitle`/`neverWatched` for the name). Nothing in it collapses.
+- `shared/propertyValue.ts` — the `file` case stays physically separate from `multi_select`'s and says why at the site. Merging them routes file through the option gate, where `optionValues` answers `[]` and `strict` discards every attachment through the restore path.
+- `renderer/Detail/Views/PropertyEditing/filePick.ts` — the one file effect. `runFilePick` answers `undefined` for "write nothing", which a bare `!= null` would read as a clear; `pickFileInto` states that rule once.
+- `design-system/tokens/chip.css.ts` — the melt machinery's header is load-bearing. A removable chip's label is pointer-inert, so anything keyed on the label's own `:hover` is unreachable; enter that state from `${chipRemovable}:hover` instead, which is outside the frame the ×-reveal flips.
 
 #### Working Notes
 
-- **No write Pommora makes is visible to its own watcher.** `atomicWriteBinary` calls `recordWrite` and `isRecentWrite` drops the echo before `settle` runs, so every asset write patches the held map and pushes on its own channel, and `assets:setDir` re-walks, reseeds, re-lists and re-arms itself. A feature that builds only the external-change machinery ships green with three silent defects.
-- **A basename is a nexus-wide key.** Deduplicating against the destination folder alone lands a second file that makes both permanently ambiguous — the map answers, not the folder.
-- **`thumbsRel` stays pinned to `.nexus/assets`** deliberately: thumbnails are Pommora's own derived files and do not follow the setting into a shared folder. That is why `.nexus/assets` is not empty for long after the migration, and why it is not a regression.
-- **A replaced banner deletes nothing in the user's folder.** After the migration that means replacing a banner deletes nothing at all — which is how Obsidian treats attachments, and is deliberate.
+- **Containment is not reachability.** A path can sit provably inside a root and still be somewhere the index will never hold. The boundary check answers the question it was asked, and the wrong question fails silently — a write there, or a reference to a file already there, resolves to nothing forever with no error at any layer.
+- **A capped label that cannot hover itself has no reveal.** `truncateHoverScroll` is the app's one ellipsis-at-rest / scroll-on-hover mechanism, and the melt guard's `pointer-events: none` makes its hover half unreachable on every removable chip. The fix is the same declarations one selector up, never a second mechanism.
+- **The showcase is a consumer.** A design-system shape that never lands on the deployed roster is a shape nobody can find, which is the drift the design system exists to prevent — arriving through the one surface a feature's Made False table never lists.
+- **A test can pin a dead arm.** `fileValueMenu`'s unreachable guard read as live precisely because a test asserted it. When a dead interface is removed, census the rest of that component's interface in the same pass; the reason one prop went dead is rarely unique to it.
+- **A parallel session is live in this tree** and holds MarkdownPM, NexusSettings, personalization and the ledger scripts. Stage explicit paths, never a directory, and read `git diff --cached --name-only` before every commit.
