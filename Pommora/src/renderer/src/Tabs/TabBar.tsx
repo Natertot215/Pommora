@@ -2,6 +2,7 @@ import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { Icon } from '@renderer/design-system/symbols'
 import { cx } from '@renderer/design-system/cx'
 import { OverScroll } from '@renderer/design-system/interactions/OverScroll'
+import { HoverRemove, hoverRemoveHost } from '@renderer/design-system/interactions/HoverRemove'
 import { duration, text } from '@renderer/design-system/tokens'
 import { SortableZone, useDragItem, type DragItem } from '@renderer/design-system/interactions/drag'
 import { onActivateKey } from '@renderer/design-system/interactions/activate'
@@ -356,6 +357,7 @@ function UnpinnedTab({
       data-tab-id={entry.tab.id}
       className={cx(
         'tab',
+        hoverRemoveHost,
         text.control.standard,
         active && 'is-active',
         closing && 'is-closing',
@@ -383,19 +385,7 @@ function UnpinnedTab({
         )}
         <OverScroll className={cx('tab-label', slideClass)}>{title}</OverScroll>
       </Fragment>
-      {/* Plain hover-fade, never the chip melt — glass has no solid fill for it. */}
-      <button
-        type="button"
-        className="tab-x"
-        aria-label="Close Tab"
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={(e) => {
-          e.stopPropagation()
-          onClose()
-        }}
-      >
-        <Icon name="x" size="caption" strokeWidth={3} />
-      </button>
+      <HoverRemove reveal="host" className="tab-x" label="Close Tab" onRemove={onClose} />
     </div>
   )
 }

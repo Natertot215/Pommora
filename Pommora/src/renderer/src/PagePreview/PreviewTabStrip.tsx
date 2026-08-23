@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { cx } from '@renderer/design-system/cx'
 import { OverScroll } from '@renderer/design-system/interactions/OverScroll'
+import { HoverRemove, hoverRemoveHost } from '@renderer/design-system/interactions/HoverRemove'
 import { SortableZone, useDragItem } from '@renderer/design-system/interactions/drag'
 import { DEFAULT_ENTITY_ICONS, Icon } from '@renderer/design-system/symbols'
 import { duration, text } from '@renderer/design-system/tokens'
@@ -173,6 +174,7 @@ function PreviewTabItem({
       data-tab-id={entry.tab.id}
       className={cx(
         'tab',
+        hoverRemoveHost,
         text.caption.standard,
         active && 'is-active',
         closing && 'is-closing',
@@ -197,18 +199,7 @@ function PreviewTabItem({
       {!isMap && <OverScroll className="tab-label">{label}</OverScroll>}
       {/* The map tab is perma-pinned — no ×; the model refuses the close anyway. */}
       {!isMap && (
-        <button
-          type="button"
-          className="tab-x"
-          aria-label="Close Tab"
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => {
-            e.stopPropagation()
-            onClose()
-          }}
-        >
-          <Icon name="x" size="caption" strokeWidth={3} />
-        </button>
+        <HoverRemove reveal="host" className="tab-x" label="Close Tab" onRemove={onClose} />
       )}
     </div>
   )

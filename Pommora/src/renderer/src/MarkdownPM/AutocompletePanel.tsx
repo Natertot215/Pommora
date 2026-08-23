@@ -2,7 +2,8 @@ import { useRef } from 'react'
 import { EntityIcon } from '@renderer/Components/EntityIcon'
 import { Icon } from '@renderer/design-system/symbols'
 import { PickerMenu } from '@renderer/design-system/components/PickerMenu'
-import { ChipRemoveButton } from '@renderer/Components/Chip'
+import { HoverRemove, hoverRemoveHost } from '@renderer/design-system/interactions/HoverRemove'
+import { cx } from '@renderer/design-system/cx'
 import type { AcRow } from './autocomplete'
 
 interface Props {
@@ -57,7 +58,7 @@ export function AutocompletePanel({
         // biome-ignore lint/a11y/noStaticElementInteractions: a pointer shortcut for a panel the editor keymap already drives — arrows move the selection, Enter picks
         <div
           key={row.value}
-          className={`mdpm-ac-row${i === v.index ? ' mdpm-ac-selected' : ''}`}
+          className={cx('mdpm-ac-row', hoverRemoveHost, i === v.index && 'mdpm-ac-selected')}
           onMouseDown={(e) => {
             // preventDefault regardless: the press must not move focus out of the editor, or the
             // caret leaves the alias and the panel closes before a click can land anywhere.
@@ -79,7 +80,8 @@ export function AutocompletePanel({
             {row.label.slice(matchLen)}
           </span>
           {row.forget && (
-            <ChipRemoveButton
+            <HoverRemove
+              reveal="host"
               className="mdpm-ac-forget"
               label={`Forget ${row.label}`}
               onRemove={row.forget}

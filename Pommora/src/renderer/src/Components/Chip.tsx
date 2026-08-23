@@ -5,17 +5,12 @@ import {
   chipLabel,
   chipPlain,
   chipColor,
-  chipLabelWrap,
-  chipLabelBlur,
-  chipLabelMelt,
-  chipLabelText,
-  chipRemovable,
-  chipRemove,
+  chipLabelCap,
 } from '@renderer/design-system/tokens'
 import type { ChipColorName } from '@renderer/design-system/tokens/chip.css'
-import { Icon } from '@renderer/design-system/symbols'
 import { cx } from '@renderer/design-system/cx'
-import { overScrollHost, overScrollUnmasked } from '@renderer/design-system/interactions/OverScroll'
+import { HoverRemove, hoverRemoveHost } from '@renderer/design-system/interactions/HoverRemove'
+import { overScrollUnmasked } from '@renderer/design-system/interactions/OverScroll'
 
 /** Context chips use their own shape (ContextChip's chip-context) — not part of this map. */
 const SHAPE = { pill: chipPill, label: chipLabel, file: chipFile, plain: chipPlain } as const
@@ -56,75 +51,31 @@ export function Chip({
       className={cx(
         SHAPE[shape],
         color && chipColor[color],
-        onRemove && cx(chipRemovable, overScrollHost),
+        onRemove && hoverRemoveHost,
         className,
       )}
     >
-      {onRemove ? <ChipRemoveButton onRemove={onRemove} /> : null}
       {icon}
-      <ChipLabel label={label} removable={!!onRemove} />
+      <ChipLabel label={label} onRemove={onRemove} />
     </span>
   )
 }
 
-/** The chip label, shared by every chip surface. A removable chip renders the text THREE times —
- *  the crisp copy plus its pre-masked melt and blur twins — so hovering the × zone smears the tail
- *  beneath it through opacity swaps alone (see the reveal note in chip.css.ts). */
+/** The chip label, shared by every chip surface. A removable one hands its text to the shared
+ *  `HoverRemove`, which melts the tail beneath the ×. */
 export function ChipLabel({
   label,
-  removable,
+  onRemove,
 }: {
   label: string
-  removable: boolean
+  onRemove?: () => void
 }): React.JSX.Element {
-  return (
-    <span className={cx(chipLabelWrap, overScrollUnmasked)}>
-      <span className={chipLabelText}>{label}</span>
-      {removable ? (
-        <>
-          <span className={chipLabelMelt} aria-hidden>
-            {label}
-          </span>
-          <span className={chipLabelBlur} aria-hidden>
-            {label}
-          </span>
-        </>
-      ) : null}
-    </span>
-  )
-}
-
-/** INERT until revealed: the zone is always hoverable (that's what reveals it), but a click only
- *  removes once the × is actually visible — a fast un-hovered click falls through to the host
- *  instead of silently deleting a value. Reveal is read off computed opacity, so a skin may
- *  reveal on its OWN hover or its host's. */
-const revealed = (el: Element): boolean => Number.parseFloat(getComputedStyle(el).opacity) > 0.5
-export function ChipRemoveButton({
-  onRemove,
-  className = chipRemove,
-  label = 'Remove',
-  size = 'caption',
-}: {
-  onRemove: () => void
-  className?: string
-  label?: string
-  size?: React.ComponentProps<typeof Icon>['size']
-}): React.JSX.Element {
-  return (
-    <button
-      type="button"
-      className={className}
-      aria-label={label}
-      onPointerDown={(e) => {
-        if (revealed(e.currentTarget)) e.stopPropagation()
-      }}
-      onClick={(e) => {
-        if (!revealed(e.currentTarget)) return
-        e.stopPropagation()
-        onRemove()
-      }}
-    >
-      <Icon name="x" size={size} strokeWidth={3} />
-    </button>
-  )
+  if (onRemove) {
+    return (
+      <HoverRemove onRemove={onRemove} blur labelClassName={chipLabelCap}>
+        {label}
+      </HoverRemove>
+    )
+  }
+  return <span className={cx(chipLabelCap, overScrollUnmasked)}>{label}</span>
 }
