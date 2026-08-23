@@ -50,10 +50,9 @@ const blurRamp =
   'linear-gradient(to right, transparent calc(100% - 18px), #000000 calc(100% - 8px))'
 
 /**
- * A twin sits inside the scroller, so its box has to be moved to the WINDOW the label is currently
- * showing while its text stays put — `left` walks the box along, the matching negative indent walks
- * the string back. That keeps every ramp stop inside the box, which is the only place a mask reads:
- * a stop past `100%` falls outside the mask tile and the default repeat then paints nothing.
+ * A twin sits inside the scroller, so its box rides the WINDOW the label is currently showing while
+ * its text stays put — `left` walks the box along, the matching negative indent walks the string
+ * back. The ramp then reads in the box it was written for, whatever the label is scrolled to.
  */
 const overWindow = {
   left: 'var(--os-scroll, 0px)',
