@@ -1,17 +1,11 @@
 import { style } from '@vanilla-extract/css'
 
-// ═══════════════════════════════════════════════════════════════════════════
-// § HOVER-REVEALED REMOVE — the × and, optionally, the label tail that melts
-// beneath it. LOAD-BEARING: masks STATIC from mount, reveals flip OPACITIES
-// only, the wrapped label is pointer-inert. Any change here runs the reveal
-// matrix — computed styles lie for this bug class; only live hovers are truth.
-// ═══════════════════════════════════════════════════════════════════════════
+// LOAD-BEARING: masks STATIC from mount, reveals flip OPACITIES only, the label pointer-inert.
+// Any change here runs the reveal matrix — [[Build-Gotchas]] §Label Melt.
 
-/** The element the × is positioned against, and the alternate hover source. */
 export const host = style({ position: 'relative' })
 
-/** The ×. `--hover-remove-ink` lets a host paint it in its own color — a neutral-filled label
- *  whose inherited text mix would read colorless. */
+/** `--hover-remove-ink` lets a neutral-filled host paint the × in its own color. */
 export const removeButton = style({
   display: 'inline-flex',
   alignItems: 'center',
@@ -23,20 +17,17 @@ export const removeButton = style({
   opacity: 0,
   transition: 'opacity var(--duration-fast) var(--ease-standard)',
   selectors: {
-    // Keyboard parity: the click gate reads computed opacity, so without this a focused × is a
-    // tab stop whose Enter can never remove — it falls through to the host.
+    // The click gate reads computed opacity, so a focused × has to be opaque to be pressable.
     '&:focus-visible': { opacity: 1 },
   },
 })
 
-/** Revealed by the host's hover — the whole tab surfaces its close. */
+/** The whole host surfaces the ×. */
 export const revealFromHost = style({
   selectors: { [`${host}:hover &`]: { opacity: 1 } },
 })
 
-/** The self-revealing seat: the host's right third, so the zone that reveals the × is always easy
- *  to hit. Geometry and reveal source are one decision — a × only its own hover reveals has to be
- *  big enough to find, and the rest of the host stays untouched by the pointer. */
+/** The host's right third: a × only its own hover reveals has to be big enough to find. */
 export const removeZone = style({
   position: 'absolute',
   top: 0,
@@ -52,17 +43,14 @@ export const removeZone = style({
   },
 })
 
-/** Two perfectly-stacked copies of the text crossfade over one ramp ending at the ×'s left edge,
- *  so the letters smear into the clear zone it floats in. */
+/** Two stacked copies crossfade over one ramp ending at the ×'s left edge. */
 const crispRamp =
   'linear-gradient(to right, transparent 0, #000000 var(--over-scroll-fade, 0px), #000000 calc(100% - 18px), transparent calc(100% - 8px))'
 const blurRamp =
   'linear-gradient(to right, transparent calc(100% - 18px), #000000 calc(100% - 8px))'
 
-/** The label box. Wears `overScrollUnmasked` beside this: a mask here would erase every
- *  descendant, the twins included. Pointer-inert under a host, so hovering the label body does
- *  nothing — and if it ever LEFT :hover in the frame that flips the reveal, Chromium would drop
- *  the reveal's repaint beneath it. */
+/** Wears `overScrollUnmasked`: a mask here erases every descendant, the twins included. Pointer-
+ *  inert, or leaving :hover in the reveal's frame drops its repaint. */
 export const labelBox = style({
   position: 'relative',
   selectors: {
@@ -70,24 +58,18 @@ export const labelBox = style({
   },
 })
 
-// The reveal is keyed on the ×'s own :hover through a SIBLING combinator (the × precedes the
-// label in the DOM), and it may only ever flip OPACITIES. Chromium drops the repaint of any
-// mask-image change on this inline text (none→gradient AND stop-swap alike) unless the restyle
-// rides an ancestor :hover — `:has()`, sibling selectors, class toggles, and inline styles all
-// compute the mask without painting it. Static masks + opacity flips paint everywhere.
+// A SIBLING combinator — the × precedes the label in the DOM — flipping OPACITIES only. Any
+// mask-image change on this text computes without painting; static masks + opacity flips don't.
 const reveal = `${removeButton}:hover ~ ${labelBox} &`
 
-/** The real text — swapped out for the pre-masked twins the instant the × zone is hovered (no
- *  transition: the melt twin is pixel-identical where its mask is opaque, so a crossfade would
- *  only dim the stack mid-flight). `position: relative` is load-bearing — it gives the span its
- *  own paint layer, without which the sibling-keyed opacity flip computes but never repaints. */
+/** `position: relative` is load-bearing — its own paint layer, or the flip never repaints. No
+ *  transition: a crossfade would only dim the stack mid-flight. */
 export const labelText = style({
   position: 'relative',
   selectors: { [reveal]: { opacity: 0 } },
 })
 
-/** The crisp melt twin, clamped to the label box so a truncated label melts at its clip edge
- *  instead of ending in a bare cut. */
+/** Clamped to the label box, so a truncated label melts at its clip edge. */
 export const labelMelt = style({
   position: 'absolute',
   top: 0,
@@ -102,10 +84,8 @@ export const labelMelt = style({
   selectors: { [reveal]: { opacity: 1 } },
 })
 
-/** The blurred twin — same string and font, overlaid at the text origin so the metrics line up
- *  glyph-for-glyph, but painted in the GROUND so the tail melts into the host rather than hazing
- *  in the text color. Deliberately NOT transitioned: a fade on a masked element can strand its
- *  final un-hover frame, leaving a smear on the resting host. */
+/** Painted in the GROUND, so the tail melts into the host rather than hazing in the text color.
+ *  NOT transitioned: a fade on a masked element can strand its final frame as a smear. */
 export const labelBlur = style({
   position: 'absolute',
   top: 0,

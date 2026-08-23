@@ -92,7 +92,7 @@ The card grid's design vocabulary. The geometry the two card families agreed on 
 | Body Minimum | `--card-body-min` | `calc(var(--thumb-h) * 0.54)`; compact recomputes from its row stack |
 | Band Clearance | `--band-clearance` | → `var(--card-gap-v)` (the seam law's input) |
 | Compact Rows | `--card-row-h` / `--card-foot-h` | `17px` / composed |
-| Chip Retunes | `--chip-zoom` / `--chip-pad-x` | `0.85` / `4px` |
+| Label Retunes | `--label-zoom` / `--label-pad-x` | `0.85` / `4px` |
 
 ### Prospects
 

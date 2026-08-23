@@ -99,11 +99,9 @@ Three remain, because repairing them means adding rather than replacing:
 
 #### The design system already depends on app code
 
-Proof rather than prediction — **seven files inside `design-system/` import from app layers:**
+Proof rather than prediction — **five files inside `design-system/` import from app layers:**
 
 ```
-FileLabel.tsx          → @renderer/Components/Chip
-FileChip.tsx           → @renderer/Components/Chip
 TextPicker.tsx         → @renderer/Components/EditableInput
 ColorSwatch.tsx        → @renderer/Components/Detail/ColorPicker
 colorSwatch.css.ts     → @renderer/Components/Detail/colorPicker.css
@@ -111,15 +109,14 @@ menu/Menu.tsx          → @shared/toggleLabels
 PreviewPane.tsx        → @shared/toggleLabels
 ```
 
-The system cannot build without `Chip`, `EditableInput` and `ColorPicker`. Those three are design-system
-components today in everything but location. The last two entries are the milder case — a component that
+The system cannot build without `EditableInput` or `ColorPicker`. Both are design-system components
+today in everything but location. The last two entries are the milder case — a component that
 belongs where it is, pulling one string from app code; the repair there is a prop, not a move.
 
 #### What belongs inside
 
 | Component              | Consumers                           | Destination                 |
 | ---------------------- | ----------------------------------- | --------------------------- |
-| `Chip` + `ContextChip` | 12, two inside the design system    | `components/Chip/`          |
 | `EditableInput`        | 5, one inside the design system     | `components/EditableInput/` |
 | `ColorPicker`          | 6, one inside the design system     | `components/ColorPicker/`   |
 | `RenamableLabel`       | 8                                   | `components/EditableInput/` |
@@ -211,14 +208,10 @@ Settings, Blocks and Detail all read from it, and `Settings/trashLeaf.css` borro
 #### Converged on their own
 
 Values several surfaces arrived at independently and now agree on, which is what a token is for:
-`--subline-h` is 24px in both homes; `--chips-gap` is 4px in all three. `--scroll-fade` declares a 0px
-opt-in default while consumers set 16px at three sites; `--edge-fade` states a 22px house width that 16px
-overrides at four. The first two want absorbing; the fades want a ruling.
+`--subline-h` is 24px in both homes; `--labels-gap` is 4px in all three. Both want absorbing.
 
 #### Leftovers
 
-- **`OverflowScroll.tsx` cites `OverflowScroll.css`**, deleted at `71a25900` when the behavior moved to the
-  shared `edge-fade.css`. Verified: the file does not exist.
 - **`TINT_STEPS.solid`** has one production reference — the bridge — and `--tint-solid` has zero reads.
 - **The `swap` drag mode** (`Zone.swap`, `arraySwap`, and the engine branch behind them) is exercised only
   by the Interaction Lab.
@@ -321,6 +314,16 @@ and the silence together.
 | Raw `<webview>` mounts with a cast documented by cross-reference | 3 | A `WebGuest` owning the incantation | Medium |
 | Four independent hosts for one picker triple | 4 | Generalize `CardPickerHost` | Medium |
 
+#### Interaction behaviors still spread thin
+
+Surfaced while consolidating the fade and the remove ×; none was in scope for that work.
+
+| Finding | Sites | What it wants |
+| --- | --- | --- |
+| Hover-reveal by `opacity: 0` → `1`, hand-rolled | 45 rules across 18 stylesheets | A shared primitive, the way Bloom is the one pane-open source |
+| Effective zoom re-derived through `getComputedStyle` | 3, in Cards and Table | One reader; each parses the same property to answer the same question |
+| A control gating its own click on its computed opacity | 1, inside `HoverRemove` | Works, but it is a hidden contract: a skin revealing by any other means silently breaks the click |
+
 #### The structural twin
 
 **`PagePropertiesPane` and `PreviewInspector` are one component wearing two stylesheets.** Verified: 730
@@ -335,7 +338,7 @@ leave the genuinely different parts alone. This is the largest single line-count
 Recorded so a future sweep does not re-litigate them. `Toolbar/`'s dropdowns all compose the menu shells.
 `RenamableTitle → RenamableLabel → EditableInput` is a clean three-layer chain, each layer earning its keep.
 `useOptionReorder → useStatusReorder` is a correct, documented one-group adapter. `fieldRing` has eight
-importers with no hand-rolled ring outside it; `OverflowScroll` has thirteen. No `backdrop-filter` outside
+importers with no hand-rolled ring outside it; `OverScroll` has thirteen. No `backdrop-filter` outside
 `materials/` except one masked circle that is a genuinely different effect. The `.css` versus `.css.ts`
 split tracks module type: surfaces whose class names are emitted by CodeMirror decorations or imperative
 DOM use plain CSS, where hashed names would be unusable.
@@ -353,7 +356,7 @@ design-system/
 ├── clamp.ts · cx.ts · moveItem.ts · pad.ts              | • pure helpers, uncategorized
 ├── useExitPresence.ts · useHeld.ts · revealBar.ts       | • hooks, uncategorized
 ├── accent.ts · personalization.ts                       | • settings → the DOM
-├── animations.css.ts · card-tokens.css · edge-fade.css  | • stylesheets with no owner
+├── animations.css.ts · card-tokens.css              | • stylesheets with no owner
 │   · resize-strip.css · reveal-bar.css · tile-chassis.css
 └── components/dropdownAnchor.ts · fieldRing.ts · useDismiss.ts   | • helpers filed as components
 ```
@@ -378,9 +381,8 @@ section about. The document's shape mirrors the disk's, and both are missing the
 │   ├── [ramp.ts]                       | • The 8×8 grid and its four resolvers
 │   ├── [colorMap.ts]                   | • Stored string → render key; absorbs the legacy vocabulary
 │   ├── [stack.ts]                      | • The three z-index ladders, named rather than numbered
-│   ├── [chip.css.ts]                   | ▸ Keeps the RECIPE; its component chrome leaves with Chip
 │   ├── [solidColor.ts]                 | ← from Detail/Views/Table — token math filed under a view
-│   └── [index.ts]                      | • The barrel; stops re-exporting chip chrome
+│   └── [index.ts]                      | • The barrel; no longer re-exports label chrome
 ├── // materials                        | • Glass — unchanged
 │   ├── [glass-material.ts]             | • The shared optics and the outline contract
 │   ├── [glass-pane.tsx]                | • frostStyle and the three frost tiers
@@ -394,7 +396,9 @@ section about. The document's shape mirrors the disk's, and both are missing the
 │   ├── [AllSymbols.ts]                 | • The curated set
 │   ├── [customGlyphs.tsx]              | • The house-drawn marks
 │   └── [fileTypes.ts]                  | • Extension → glyph
-├── // interactions                     | • PommoraDND and the floating-window driver
+├── // interactions                     | • PommoraDND, the floating-window driver, and the two shared behaviors
+│   ├── // OverScroll                   | ✓ LANDED — the one edge-fade engine and its capped label
+│   ├── // HoverRemove                  | ✓ LANDED — the hover-revealed ×, with the melt as an option
 │   ├── [engine.tsx] · [drag.tsx]       | • The engine and its React surface
 │   ├── [group.tsx]                     | • The grouped-drag family over the same engine
 │   ├── [gesture.ts] · [snapshot.ts]    | • One pointer lifecycle; measure-once geometry
@@ -409,15 +413,12 @@ section about. The document's shape mirrors the disk's, and both are missing the
 │   └── [floatingWindow.css]            | • The floating-window sheet
 │   ✂ [Board.tsx] · [Interactions.tsx] · [Surfaces.tsx] · [main.tsx] · [interactions.css]
 │                                       | • The Interaction Lab — moved to showcase/lab/
+├── // labels                           | ✓ LANDED — four shapes, the treatment axes, the tint recipe, the recipes
 ├── // components                       | ▸ Every component a folder; no loose helpers, no loose sheets
 │   ├── // CalendarPicker               | • Date, time and range — the largest undocumented component
 │   ├── // Checkbox                     | ▸ was Checkbox.tsx + checkbox.css at the folder root
-│   ├── // Chip                         | ← from Components/ — Chip + ContextChip, and the melt/remove
-│   │                                   |   chrome out of tokens/chip.css.ts
 │   ├── // ColorPicker                  | ← from Components/Detail — the system already imports it
 │   ├── // EditableInput                | ← from Components/ — EditableInput + RenamableLabel
-│   ├── // FileChip                     | ▸ was FileChip.tsx + fileChip.css.ts at the root
-│   ├── // FileLabel                    | ▸ was FileLabel.tsx + its orphaned test at the root
 │   ├── // InteractionField             | ▸ was InteractionField.tsx + interactionField.css.ts
 │   ├── // Menu                         | ▸ was menu/ — the system's only lowercase folder
 │   │   ├── [Menu.tsx]                  | • The eleven row and frame pieces
@@ -438,7 +439,6 @@ section about. The document's shape mirrors the disk's, and both are missing the
 │   ├── // Slider                       | • A bounded number, committed on release
 │   ├── // Switches                     | • DualSwitch and ColorSwatch
 │   ├── // TextPicker                   | • The inline text-entry pane
-│   ├── [OverflowScroll.tsx]            | • One file, no stylesheet — stays flat
 │   └── [Reveal.tsx]                    | • One file, no stylesheet — stays flat
 ├── // helpers                          | ▸ NEW — the fifteen-file root pile, given a name
 │   ├── [cx.ts]                         | • The class joiner
@@ -456,7 +456,6 @@ section about. The document's shape mirrors the disk's, and both are missing the
 │   ├── [tile-chassis.css]              | • The tile border, radius and body
 │   ├── [resize-strip.css]              | • The invisible edge-drag band
 │   ├── [reveal-bar.css] + [revealBar.ts]| • The sliding bar and its hit-zone math, kept together
-│   └── [edge-fade.css]                 | • The scroll fade (InteractionPM owns the words)
 └── // theme                            | ▸ NEW — the one place the system reads app types, named so
     ├── [accent.ts]                     | • Accent resolution and runtime application
     └── [personalization.ts]            | • The three tables turning settings into root vars and classes
@@ -469,9 +468,9 @@ because it is the one place the system legitimately reads app types, and naming 
 boundary rule elsewhere be absolute. **`components/` becomes uniformly foldered** on the rule *more than
 one file gets a folder*, which also collects the two tests not living beside their component.
 
-`chip.css.ts` splits rather than moves: the recipe is a token by construction and stays; the melt family,
-remove button and label wrap travel with `Chip`. The token barrel stops being the chip barrel as a side
-effect of a move happening anyway.
+The chip family has since landed as `design-system/labels/`, and the fade and the remove × as
+`interactions/OverScroll/` and `interactions/HoverRemove/` — so `components/` no longer expects a `Chip`
+folder, the root pile is two stylesheets lighter, and the token barrel has stopped being the chip barrel.
 
 #### The ledger
 
@@ -536,8 +535,6 @@ The planning session's agenda. Each is cheap once decided and wrong to guess at.
 - **Are the button bundles a system ladder or one component's table?** One consumer, two unread bridged
   heights. If they are the system's, the ten restated sites should read them; if not, they stop being
   bridged.
-- **One house fade width or two?** `--edge-fade` states 22px; 16px overrides it at four sites and is
-  `--scroll-fade`'s de facto default at three.
 - **The two tab strips.** 90/180/240/12/6 against 70/150/200/10/5, with no comment saying the smaller
   window scales deliberately and no single ratio generating one from the other.
 - **`--gutter` is one name for two lanes** (`--content-gutter` and `--fold-gutter`). One renames.

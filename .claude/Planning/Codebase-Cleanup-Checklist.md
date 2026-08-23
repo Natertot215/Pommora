@@ -95,7 +95,7 @@ Chrome is produced in two stages, and only the second was scoped. The **derivati
 
 #### II. Bundle 6a — `Components/Detail` Rehome · one session, quiet tree · net ≈ 0
 
-- [ ] **`Chip`, `EditableInput` and `ColorPicker` move into `design-system/components/` first.** All three already have consumers inside the design system; `ColorPicker`'s two are why this precedes the rehome rather than following it. `tokens/chip.css.ts` splits on the way — the recipe stays, the melt/remove chrome travels with `Chip`.
+- [ ] **`EditableInput` and `ColorPicker` move into `design-system/components/` first.** Both already have consumers inside the design system; `ColorPicker`'s two are why this precedes the rehome rather than following it. The chip family has already moved, as `design-system/labels/`.
 - [ ] **The view-settings/property-editing subsystem moves out of `Components/`** to its own domain folder beside `Detail/`; `PaneSlider` is promoted into `design-system/` where its imports already live; the CLAUDE.md codebase map updates. `git mv` plus import churn; typecheck catches every miss.
 
 **Verification:** gates; nothing behavioral moves.
@@ -149,7 +149,7 @@ bundles are a system ladder or one component's table — and each of those chang
 is. Bundling them as tasks would force those answers by default, which is how the drift the report
 documents accumulated in the first place.
 
-**The one constraint this queue inherits:** three modules the design system already imports — `Chip`,
+**The one constraint this queue inherits:** two modules the design system already imports —
 `EditableInput` and `ColorPicker` — must move into it before Bundle 6a. The rehome carries
 `Components/Detail` into a feature domain, and `ColorPicker` now has two importers inside
 `design-system/`, so running 6a first would deepen the inversion rather than close it. That extraction is

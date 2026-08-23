@@ -87,10 +87,10 @@ plausible from the outside. Reopen any of them with a reason, not with a fresh r
   ahead of `resolveUnderRoot`; `assetSubfolder` answers a display question. Sharing a helper puts
   the boundary check behind an abstraction serving a position lookup, which is the same reason the
   earlier ruling kept it apart from `exclusion.ts`'s `prefixMatcher`.
-- `FileLabel` and `FileChip` are two components on purpose, and `chipPlain` and `chipFile` are two
-  shapes for the same reason. A name inside a FIELD is that field's content and takes no chrome — a
-  box around it is a box in a box; a file property's VALUE stands beside other values in a cell and
-  takes a box the way they do. They render the same string and mean different things.
+- `FileLabel` and `FileChip` are two recipes on purpose. A name inside a FIELD is that field's
+  content and takes no chrome — a box around it is a box in a box; a file property's VALUE stands
+  beside other values in a cell and takes a box the way they do. They render the same string and
+  mean different things, which is why they differ in TREATMENT over one shape rather than in shape.
 
 ### The Exhaustiveness Sweep
 

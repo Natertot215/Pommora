@@ -37,10 +37,7 @@ export function renameHeadingAtOffset(from: number, next: string): void {
 
 /** Move the heading identified by `dragKey` — and its whole section (body + sub-headings, everything
  *  down to the next heading of equal-or-higher level) — to sit before the heading `beforeKey`, or to
- *  the document end when it's null. Levels are untouched; the outline re-nests the moved section by
- *  level on its own. Offsets are recomputed from the LIVE doc by heading key (the outline body can
- *  trail the editor by a beat), and `blockMoveChanges` carries the blank-line fencing, so the section
- *  never lands jammed against a neighbor. */
+ *  the document end when it's null. */
 export function moveHeadingSection(dragKey: string, beforeKey: string | null): void {
   const view = pageView
   if (!view) return

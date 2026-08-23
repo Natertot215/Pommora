@@ -19,7 +19,7 @@ Properties
 ├── Schema Mutations
 ├── Validation
 ├── The Index
-├── Chip Tokens
+├── Label Tokens
 │   ├── II. Shapes
 │   ├── II. The Recipe & Variants
 │   └── II. Knobs
@@ -145,7 +145,7 @@ A File property holds an ordered list of files that live in the Nexus, each name
 
 The name is the whole reference — no path is stored. It resolves against an in-memory basename index the file watcher keeps current, which is what lets the asset directory be re-pointed, a file be moved within it, or a sync eviction and re-download happen without any value going stale. A name that answers to no file still renders, dimmed: the value is on disk and has to be visible to be removable. Where several files share a basename the first by path order answers, matching the precedent every other asset reference follows.
 
-Each value renders as a **file chip** — the file's own type glyph and its name, wearing the `chipFile` shape, so a list of attachments reads as a run of named files rather than paths. A chip is its whole filename; the cell it sits in is what clips and scrolls when the run outgrows the column. The glyph comes from the extension: 23 of them draw their own mark and anything else takes the generic file glyph.[^4]
+Each value renders as a **file chip** — the file's own type glyph and its name, wearing a tag with a tertiary outline and no fill, so a list of attachments reads as a run of named files rather than paths. A chip is its whole filename; the cell it sits in is what clips and scrolls when the run outgrows the column. The glyph comes from the extension: 23 of them draw their own mark and anything else takes the generic file glyph.[^4]
 
 - **Directory** — the property-wide folder its files land in, set in the File editor pane and stored relative to the asset root, so re-pointing the root carries every property's folder with it. Unset means the root itself, which is what the field reads when nothing is chosen. A folder outside the root, or one the index could never reach, is refused at both the setting and the write.
 - **Filling a value** opens the operating system's file dialog. Clicking a chip **replaces** the file it names and opens at that file's own folder, which makes "see where this lives" and "swap it" the same gesture; clicking the value's own area **adds**, opening at the property's Directory. A right-click offers **Add File · Replace File · Remove File**, or Add alone on an area holding nothing to act on. Removing a value drops the reference and leaves the bytes where they are.
@@ -215,43 +215,73 @@ At every write, a created property's `name` is non-empty and its `id` is unique 
 
 **The sigil governs; the registry registers.** A wrapped key is Pommora's — sweepable, and distinguishable from foreign frontmatter. A key registers as a live value only when its name matches a definition, so resolution runs definition-first: the schema supplies the key, and the frontmatter is read at it. Context keys resolve at walk assembly; property values load when a container opens, each container building one id→definition index.
 
-### Chip Tokens
+### Label Tokens
 
-The chip is the property value's rendered form, so its design vocabulary lives here. One tint recipe drives every color — the picked cell at fixed tint steps (a heavier fill, a lighter stroke, a near-white text wash carrying a faint tint of the base) — and it composes with any shape. The color itself comes from the ramp, whose rows run a family from dark to light; the greyscale row is the one exception, tinting its brightest cells from a darkened base and outlining all eight against the label ramp so they read on any surface.
+The label is the property value's rendered form, so its design vocabulary lives here. A SHAPE says
+how big and how round and nothing else; fill, outline, alignment and tint are independent axes, so
+any combination is reachable without minting a class. One tint recipe drives every color — the
+picked cell at fixed tint steps (a heavier fill, a lighter stroke, a near-white text wash carrying a
+faint tint of the base) — and it composes with any shape. The color itself comes from the ramp, whose
+rows run a family from dark to light; the greyscale row is the one exception, tinting its brightest
+cells from a darkened base and outlining all eight against the label ramp so they read on any surface.
 
-**SOURCE:** `Pommora/src/renderer/src/design-system/tokens/chip.css.ts` · `tokens/tint.ts` · `tokens/colorMap.ts` · `tokens/ramp.ts`
+**SOURCE:** `Pommora/src/renderer/src/design-system/labels/` · `tokens/tint.ts` · `tokens/colorMap.ts` · `tokens/ramp.ts`
 
 #### II. Shapes
+
 | Title | Token | Value |
 | --- | --- | --- |
-| Base | `chipBase` | zoom `var(--chip-zoom, 1.0)` · gap `4px` · type `text.control.semibold` |
-| Pill | `chipPill` | h `20px` · pad `0 var(--chip-pad-x, 6px)` · radius `10px` · border `2px` |
-| Label | `chipLabel` | h `20px` · same pad · radius `6px` · border `2px` |
-| Context | `chipContext` | h `22px` · `--chip-pad-x: 8px` · neutral fill, color on border and text |
-| Capsule | `chipCapsule` | h `20px` · pad `0 var(--chip-capsule-pad-x, 6px)` · radius `10px` · gap `0` |
-| Box | `chipBox` | `17px × 17px` · radius `5.5px` · border `1.5px` (the checkbox look) |
-| File | `chipFile` | chip-label's box · `label-quaternary` border · no fill · `--chip-fill: transparent` |
-| Plain | `chipPlain` | h `20px` · no fill, no border · left-aligned · `--chip-fill: transparent` |
+| Base | `labelBase` | zoom `var(--label-zoom, 1.0)` · gap `4px` · type `text.control.semibold` |
+| Pill | `shape.pill` | h `20px` · pad `0 var(--label-pad-x, 6px)` · radius `10px` · border `2px` |
+| Tag | `shape.tag` | h `20px` · same pad · radius `6px` · border `2px` |
+| Chip | `shape.chip` | h `20px` · pad `0 var(--label-chip-pad-x, 6px)` · radius `10px` · gap `0` |
+| Box | `shape.box` | `17px × 17px` · radius `5.5px` · border `1.5px` (the checkbox look) |
+
+#### II. Treatments
+
+Named only where the label differs from its tint.
+
+| Title | Token | Value |
+| --- | --- | --- |
+| Neutral Fill | `fill.neutral` | `fill-quaternary` ground, color left on border and text |
+| No Fill | `fill.none` | transparent ground; `--melt-ground` stated, never unset |
+| Tertiary Outline | `outline.tertiary` | `label-quaternary` border |
+| No Outline | `outline.none` | `border: none` |
+| Start-Aligned | `alignStart` | a name inside a field reads from its start |
+| Roomy | `roomy` | h `22px` · `--label-pad-x: 8px` |
+
+#### II. Recipes
+
+| Title | Composition |
+| --- | --- |
+| Option Value | `shape` from `optionShapeFor(type)` — `pill` for status, `tag` otherwise |
+| `ContextChip` | `tag` · `fill.neutral` · `roomy` · icon + title |
+| `FileChip` | `tag` · `fill.none` · `outline.tertiary` · type glyph + name |
+| `FileLabel` | `tag` · `fill.none` · `outline.none` · `alignStart` · glyph + name |
 
 #### II. The Recipe & Variants
+
 | Title | Token | Value |
 | --- | --- | --- |
 | Background | `tint(base).background` | base @ tint-primary (60%) |
 | Border | `tint(base).borderColor` | base @ tint-secondary (40%) |
 | Text | `tint(base).color` | base @ 15% mixed toward label-primary |
-| Variants | `chipColor.*` | the 64 ramp cells + `default` (`grey-4`'s value) + `accent` (`--system-accent`) |
-| Palette Accessor | `chipColorFor(color)` | the cell when it's one, a legacy solid name normalized to its anchor cell, else `default` |
+| Variants | `labelColor.*` | the 64 ramp cells + `default` (`grey-4`'s value) + `accent` (`--system-accent`) |
+| Palette Accessor | `labelColorFor(color)` | the cell when it's one, a legacy solid name normalized to its anchor cell, else `default` |
 
 #### II. Knobs
+
 | Title | Token | Value |
 | --- | --- | --- |
-| Zoom | `--chip-zoom` | fallback `1.0`; Cards retunes `0.85` |
-| Pad X | `--chip-pad-x` | fallback `6px`; Cards `4px`, the option editor its own |
-| Capsule Pad X | `--chip-capsule-pad-x` | fallback `6px` |
-| Label Cap | `--chip-max` | fallback `80px` |
-| Fill / Accent Channels | `--chip-fill` / `--chip-accent` | set by the variant — base @ 60% / the raw base |
+| Zoom | `--label-zoom` | fallback `1.0`; Cards retunes `0.85` |
+| Pad X | `--label-pad-x` | fallback `6px`; Cards `4px`, the option editor its own |
+| Chip Pad X | `--label-chip-pad-x` | fallback `6px` |
+| Text Cap | `--label-max` | fallback `80px` |
+| Ground / Accent Channels | `--melt-ground` / `--label-accent` | set by the variant — base @ 60% / the raw base |
 
-The remove-× melt (the hover-revealed remove zone, the crisp and blurred label twins, the mask ramps) is chip machinery in the same file; its guards — static masks, opacity-only transitions, a pointer-inert label — protect against a Chromium repaint defect and stay as written.
+The hover-revealed remove × and its label-tail melt are the shared `HoverRemove`'s, described in
+[[InteractionPM]]; its guards — static masks, opacity-only transitions, a pointer-inert label —
+protect against a Chromium repaint defect and stay as written.
 
 ### Known Issues
 
