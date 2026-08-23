@@ -81,7 +81,7 @@ import { NON_CORPUS_TOP, TRASH_DIR } from '@shared/nexusPaths'
 import { connectionText, embeddableTitle } from '@shared/connections'
 import { ASSET_MIME } from '@shared/assetMime'
 import { neverWatched } from './exclusion'
-import { AMBIGUOUS, liveAssetMap, patchHeldAssetMap, resolveAssetName } from './assetMap'
+import { AMBIGUOUS, indexable, liveAssetMap, patchHeldAssetMap, resolveAssetName } from './assetMap'
 
 /** What the orchestration needs from the Electron layer (injected to keep this testable). */
 export interface MutateDeps {
@@ -172,7 +172,12 @@ export async function adoptFile(
   // spell exactly what the resolver refuses to answer.
   if (hit === AMBIGUOUS) return fault(`More than one file is named ${base}.`)
 
-  if (underAssetRoot(relPosix(await realpath(root), await realpath(absSource)), assetDir))
+  // In place only where the map can answer for it: `underAssetRoot` admits a dot-prefixed segment
+  // that `indexable` drops forever, so a pick from a hidden folder under the root would mint a
+  // reference that renders permanently unresolved with no error anywhere. Such a pick falls
+  // through to the copy instead, which lands the bytes where they resolve.
+  const srcRel = relPosix(await realpath(root), await realpath(absSource))
+  if (underAssetRoot(srcRel, assetDir) && indexable(srcRel, assetDir))
     return ok(connectionText(base))
 
   let bytes: Buffer

@@ -688,3 +688,76 @@ describe('chip hover × — the per-chip remove (pill looks only)', () => {
     expect(removesIn(cell(1)).length).toBe(0)
   })
 })
+
+// The stamp and the hit-test are the two halves of "which file did I click," and they live in
+// different files — `Cell.tsx` writes `data-segment-index`, `filePick.ts` reads it back off the
+// clicked node. Only a DOM gesture crosses them; a unit test on either half passes while they drift.
+describe('file cell gestures — the stamp and the hit-test, crossed', () => {
+  const twoFiles = (): CollectionNode => {
+    const s = sourceWith()
+    ;(window.nexus as { loadValues: unknown }).loadValues = async () => ({
+      p1: {
+        id: 'p1',
+        ...propsAtRoot({ prop_files: ['[[a.pdf]]', '[[b.pdf]]'] }, allDefs),
+      },
+    })
+    return s
+  }
+  const fileCell = (): HTMLElement => host.querySelectorAll<HTMLElement>('.data-cell')[5]
+
+  beforeEach(() => {
+    ;(window.nexus as { pickFile: unknown }).pickFile = vi.fn(async () => '/outside/New.pdf')
+    ;(window.nexus as { adoptFile: unknown }).adoptFile = vi.fn(async () => ({
+      ok: true,
+      value: '[[New.pdf]]',
+    }))
+  })
+
+  it('clicking the SECOND chip replaces that one — the click lands on the label, not the stamp', async () => {
+    await mountTable(twoFiles())
+    const label = fileCell().querySelectorAll('[data-segment-index]')[1]?.querySelector('span')
+    expect(label).toBeTruthy()
+    await act(async () => {
+      label?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    })
+    await act(async () => {})
+    expect(mutateSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        op: 'setProperty',
+        propertyId: 'prop_files',
+        value: { kind: 'file', value: ['[[a.pdf]]', '[[New.pdf]]'] },
+      }),
+    )
+  })
+
+  it('clicking the cell around the chips ADDS — nothing stamped is under the cursor', async () => {
+    await mountTable(twoFiles())
+    await act(async () => {
+      fileCell().click()
+    })
+    await act(async () => {})
+    expect(mutateSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        op: 'setProperty',
+        propertyId: 'prop_files',
+        value: { kind: 'file', value: ['[[a.pdf]]', '[[b.pdf]]', '[[New.pdf]]'] },
+      }),
+    )
+  })
+
+  it('the SECOND chip’s × removes that one', async () => {
+    await mountTable(twoFiles())
+    const x = fileCell().querySelectorAll<HTMLElement>('[aria-label="Remove"]')[1]
+    expect(x).toBeTruthy()
+    await act(async () => {
+      x.click()
+    })
+    expect(mutateSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        op: 'setProperty',
+        propertyId: 'prop_files',
+        value: { kind: 'file', value: ['[[a.pdf]]'] },
+      }),
+    )
+  })
+})

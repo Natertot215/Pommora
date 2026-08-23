@@ -1107,6 +1107,24 @@ describe('adoptFile — the shared adoption seam', () => {
     expect(await readdir(join(root, 'Projects', 'Secret'))).toEqual([])
   })
 
+  it('a pick from a hidden folder UNDER the root is copied out, never referenced in place', async () => {
+    // `underAssetRoot` admits the dot-prefixed segment `indexable` drops, so an in-place reference
+    // here would name a file the map can never hold — resolvable by nothing, with no error anywhere.
+    await mkdir(join(root, 'file-assets', '.archive'), { recursive: true })
+    await writeFile(join(root, 'file-assets', '.archive', 'Buried.pdf'), 'buried-bytes')
+
+    const r = await adoptFile(root, join(root, 'file-assets', '.archive', 'Buried.pdf'), {
+      allow: 'any',
+      subfolder: 'Docs',
+    })
+
+    expect(r).toEqual({ ok: true, value: '[[Buried.pdf]]' })
+    expect(await pathExists(join(root, 'file-assets', 'Docs', 'Buried.pdf'))).toBe(true)
+    expect(resolveAssetName(await liveAssetMap(root), 'Buried.pdf')).toBe(
+      'file-assets/Docs/Buried.pdf',
+    )
+  })
+
   it('never deletes: adopting a replacement leaves the file the old reference named', async () => {
     const first = await adoptFile(root, await pick('Old.pdf'), { allow: 'any' })
     expect(first.ok).toBe(true)

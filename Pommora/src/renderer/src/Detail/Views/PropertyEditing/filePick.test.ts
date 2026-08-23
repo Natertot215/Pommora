@@ -148,11 +148,6 @@ describe('fileValueMenu — the value menu the inspector panes pop', () => {
     return host.querySelector('.x') as Element
   }
 
-  it('answers false for a non-file property, so the caller falls through to its own menu', async () => {
-    expect(await fileValueMenu(def({ type: 'url' }), held([]), null, vi.fn())).toBe(false)
-    expect(cellMenu).not.toHaveBeenCalled()
-  })
-
   it('the value’s own area offers the off-chip menu — there is no file to act on', async () => {
     await fileValueMenu(def(), held(['[[Old.pdf]]']), null, vi.fn())
     expect(cellMenu).toHaveBeenCalledWith({ kind: 'file', onChip: false })

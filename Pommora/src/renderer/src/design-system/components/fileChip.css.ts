@@ -21,6 +21,5 @@ export const fileChip = style({
 /** The type glyph, one tone below the name it introduces. */
 export const fileChipIcon = style({ color: c.label.secondary })
 
-/** The name answers to no file. It still renders — the value is on disk and has to be removable —
- *  but reads as naming nothing. */
+/** The dim a reference naming nothing wears — see FileChip's `unresolved`. */
 export const fileChipUnresolved = style({ opacity: 'var(--state-inactive)' })

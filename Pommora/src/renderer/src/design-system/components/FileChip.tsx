@@ -5,7 +5,7 @@ import { cx } from '@renderer/design-system/cx'
 import { fileChip, fileChipIcon, fileChipUnresolved } from './fileChip.css'
 
 /** What a file property's VALUE renders as — the file's type glyph and its name inside the
- *  `file` chip shape, which is chip-label's box drawn at the tertiary tone over no fill.
+ *  `file` chip shape, which is chip-label's box bordered at the quaternary tone over no fill.
  *
  *  Distinct from [[FileLabel]], which names a file or folder inside a FIELD and carries no chrome:
  *  a value stands beside other values in a cell and takes a box the way they do, while a name
