@@ -523,7 +523,7 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
 #### Gate 4 — the destination exists
 - [x] Gate commands green. Negative control verified both ways.
 - [x] **Fixture first**, as Gate 2 — still nothing in-app fills a file value at this phase.
-- [x] **Seen running:** the File editor pane, the Directory field, a refused folder.
+- [ ] **Seen running:** the File editor pane, the Directory field, a refused folder.
 - [x] Simplification and review dispatched — ask first.
 
 ---
