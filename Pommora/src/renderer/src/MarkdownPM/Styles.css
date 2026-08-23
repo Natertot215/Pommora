@@ -21,9 +21,14 @@
   --mdpm-scale: var(--editor-scale);
   /* The corner every boxed construct rounds to, and the breathing room each floats off its
      neighbours by — the quote, the callout, the code block and the table. Each still names its own
-     knob below and can be retuned alone; these are what they agree on when nobody has. */
+     knob below and can be retuned alone; these are what they agree on when nobody has.
+
+     The gap is scaled rather than fixed, so a page at 150% spaces its blocks as generously as it
+     sets its text. Only the base sits here: a custom property's var()s resolve where the property is
+     DECLARED, so a calc naming --glyph-scale would freeze at 1 up here and inherit down already
+     wrong. The multiply lives on .mdpm-shell, beside the scale it reads. */
   --md-box-radius: 6px;
-  --md-box-gap: 6px;
+  --md-box-gap-base: 6px; /* KNOB — the distance at 100% */
 }
 
 .mdpm-shell {
@@ -34,6 +39,9 @@
      content padding) stay on --mdpm-scale and never see --block-zoom; only glyphs read this. Absent
      --block-zoom (full-page editor, or a 1.0 tile) makes this identical to --mdpm-scale. */
   --glyph-scale: calc(var(--mdpm-scale) * var(--block-zoom, 1));
+  /* Declared here, not at :root, so it resolves against THIS shell's scale — an embed states its
+     own, and spaces the blocks inside it by that one rather than by the page's. */
+  --md-box-gap: calc(var(--md-box-gap-base) * var(--glyph-scale));
   --fold-chevron-size: calc(var(--text-title3-size) * var(--glyph-scale));
   position: relative;
   /* Own stacking context, below the sidebar's step, so the absolutely-positioned banner header can
