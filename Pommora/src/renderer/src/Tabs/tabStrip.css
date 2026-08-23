@@ -118,25 +118,20 @@
   --over-scroll-fade: 16px;
 }
 
-/* The hover-fade × (the chip glyph, a plain fade — no melt on glass). It sits in the label's
-   reserved right lane, so the ellipsis clears it without masking the text. */
+/* The shared HoverRemove's seat on a tab — a plain fade, no melt: glass has no solid ground for
+   the tail to melt into. It sits in the label's reserved right lane, so the fade clears it
+   without masking the text. Doubled where it overrides what the component states. */
 .tab-x {
   position: absolute;
   right: calc(var(--tab-pad-x, 12px) - 6px);
-  display: flex;
-  padding: 3px;
-  border: none;
   border-radius: 5px;
-  background: none;
   color: var(--label-secondary);
-  cursor: pointer;
-  opacity: 0;
   transition:
     opacity var(--duration-fast) var(--ease-standard),
     background var(--duration-fast) var(--ease-standard);
 }
-.tab:hover .tab-x {
-  opacity: 1;
+.tab-x.tab-x {
+  padding: 3px;
 }
 .tab-x:hover {
   background: var(--state-hover);

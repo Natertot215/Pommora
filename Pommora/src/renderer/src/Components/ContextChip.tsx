@@ -1,9 +1,9 @@
-import { chipContext, chipColor, chipRemovable } from '@renderer/design-system/tokens'
+import { chipContext, chipColor } from '@renderer/design-system/tokens'
 import type { ChipColorName } from '@renderer/design-system/tokens/chip.css'
 import { cx } from '@renderer/design-system/cx'
-import { overScrollHost } from '@renderer/design-system/interactions/OverScroll'
+import { hoverRemoveHost } from '@renderer/design-system/interactions/HoverRemove'
 import { Icon } from '@renderer/design-system/symbols'
-import { ChipLabel, ChipRemoveButton } from './Chip'
+import { ChipLabel } from './Chip'
 
 export function ContextChip({
   color,
@@ -17,12 +17,9 @@ export function ContextChip({
   onRemove?: () => void
 }): React.JSX.Element {
   return (
-    <span
-      className={cx(chipContext, chipColor[color], onRemove && cx(chipRemovable, overScrollHost))}
-    >
-      {onRemove ? <ChipRemoveButton onRemove={onRemove} /> : null}
+    <span className={cx(chipContext, chipColor[color], onRemove && hoverRemoveHost)}>
       {icon ? <Icon name={icon} size="control" /> : null}
-      <ChipLabel label={title} removable={!!onRemove} />
+      <ChipLabel label={title} onRemove={onRemove} />
     </span>
   )
 }
