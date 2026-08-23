@@ -76,6 +76,18 @@ export const text = {
  * rows. The WIDTH cap is the consumer's: a `maxWidth` for chips, the flex parent for rows (minWidth:0
  * lets it shrink to the available track).
  */
+/** The scrolled state's own declarations — one spelling, entered from the label's hover here and
+ *  from the CHIP's hover in the chip system, whose removable labels are pointer-inert and so can
+ *  never hover themselves. Content sliding off the left edge fades out ("eclipses") through a mask
+ *  rather than hard-clipping — clean over translucent glass. Opt-in per context via --scroll-fade
+ *  (0 = an opaque no-op mask, no fade). */
+export const scrollRevealed = {
+  overflowX: 'auto',
+  textOverflow: 'clip',
+  maskImage: 'linear-gradient(to right, transparent 0, #000 var(--scroll-fade, 0px))',
+  WebkitMaskImage: 'linear-gradient(to right, transparent 0, #000 var(--scroll-fade, 0px))',
+} as const
+
 export const truncateHoverScroll = style({
   minWidth: 0,
   whiteSpace: 'nowrap',
@@ -84,14 +96,6 @@ export const truncateHoverScroll = style({
   textOverflow: 'ellipsis',
   scrollbarWidth: 'none',
   selectors: {
-    // On hover the label scrolls; content sliding off the left edge fades out ("eclipses") through a
-    // mask rather than hard-clipping — clean over translucent glass (dissolves into it, no opaque
-    // backdrop needed). Opt-in per context via --scroll-fade (0 = an opaque no-op mask, no fade).
-    '&:hover': {
-      overflowX: 'auto',
-      textOverflow: 'clip',
-      maskImage: 'linear-gradient(to right, transparent 0, #000 var(--scroll-fade, 0px))',
-      WebkitMaskImage: 'linear-gradient(to right, transparent 0, #000 var(--scroll-fade, 0px))',
-    },
+    '&:hover': scrollRevealed,
   },
 })
