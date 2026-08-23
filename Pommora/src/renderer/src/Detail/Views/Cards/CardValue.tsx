@@ -17,7 +17,7 @@ import type { ResolveContext } from '../Table/resolveContext'
 import { PropertyEditor } from '../PropertyEditing/PropertyEditor'
 import { numberDivisor } from '../PropertyEditing/formatValue'
 import { sharedValueClickAction } from '../PropertyEditing/valueClick'
-import { fileChipIndex, runFilePick } from '../PropertyEditing/filePick'
+import { fileChipIndex, fileValueWithout, runFilePick } from '../PropertyEditing/filePick'
 
 export function CardValue({
   row,
@@ -135,13 +135,29 @@ export function CardValue({
       }
     }
     const barCapable = dt === 'number' && numberDivisor(schemaDef) !== undefined
-    const menuCtx = cellMenuContextFor(column, dt, style, !isBlankValue(v), true, barCapable)
+    const chip = fileChipIndex(e.target)
+    const menuCtx = cellMenuContextFor(
+      column,
+      dt,
+      style,
+      !isBlankValue(v),
+      true,
+      barCapable,
+      chip !== null,
+    )
     if (!menuCtx) return
     const action = await holdGhost(() => window.nexus.cellMenu(menuCtx))
     if (!action) return
     if (action === 'cell:clear') commit(null)
     else if (action === 'cell:hide') onHide(column.id)
-    else if (action === 'cell:edit') {
+    else if (action === 'file:remove') {
+      if (chip !== null) commit(fileValueWithout(v, chip))
+    } else if (action === 'file:add' || action === 'file:replace') {
+      if (schemaDef)
+        void runFilePick(schemaDef, v, action === 'file:replace' ? chip : null).then((next) => {
+          if (next !== undefined) commit(next)
+        })
+    } else if (action === 'cell:edit') {
       if (t === 'url' && anchorRef.current) onOpenPicker(column, 'link', anchorRef.current)
       else setMode('editor')
     } else if (action === 'cell:rename')
