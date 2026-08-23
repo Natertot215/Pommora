@@ -3,19 +3,30 @@ import { cx } from '../cx'
 import { truncateHoverScroll } from '../tokens/typography.css'
 import '../edge-fade.css'
 
+// A later call on the same element takes the tween over — enter and leave can trade a chip's
+// label mid-flight, and two live loops would fight over one scrollLeft.
+const tweens = new WeakMap<HTMLElement, number>()
+
 /** scrollLeft isn't a CSS-transitionable property, so this rAF tween replaces it — reads --duration-base, never hardcodes the timing. */
-export function slideScrollBack(scroller: HTMLElement): void {
+export function slideScrollTo(scroller: HTMLElement, to: number): void {
   const from = scroller.scrollLeft
-  if (from <= 0) return
+  if (from === to) return
+  const id = (tweens.get(scroller) ?? 0) + 1
+  tweens.set(scroller, id)
   const raw = getComputedStyle(document.documentElement).getPropertyValue('--duration-base').trim()
   const ms = (raw.endsWith('ms') ? Number.parseFloat(raw) : Number.parseFloat(raw) * 1000) || 240
   const t0 = performance.now()
   const tick = (t: number): void => {
+    if (tweens.get(scroller) !== id) return
     const p = Math.min(1, (t - t0) / ms)
-    scroller.scrollLeft = from * (1 - p) ** 3 // ease-out settle into the start, matching --ease-standard
+    scroller.scrollLeft = to + (from - to) * (1 - p) ** 3 // ease-out settle, matching --ease-standard
     if (p < 1) requestAnimationFrame(tick)
   }
   requestAnimationFrame(tick)
+}
+
+export function slideScrollBack(scroller: HTMLElement): void {
+  slideScrollTo(scroller, 0)
 }
 
 /**

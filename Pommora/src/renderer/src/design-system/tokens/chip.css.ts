@@ -1,7 +1,7 @@
 import { style, styleVariants } from '@vanilla-extract/css'
 import { RAMP_FAMILIES, RAMP_STEPS, type CellKey } from '@shared/theme'
 import { vars as colorVars } from './color.css'
-import { text, truncateHoverScroll } from './typography.css'
+import { scrollRevealed, text, truncateHoverScroll } from './typography.css'
 import { cellColor, cellTint } from './ramp'
 import { tint } from './tint'
 
@@ -174,6 +174,11 @@ export const chipLabelWrap = style([
     position: 'relative',
     selectors: {
       [`${chipRemovable} &`]: { pointerEvents: 'none' },
+      // A pointer-inert label can never hover itself, so on a removable chip the scrolled state
+      // rides the CHIP's hover instead — the box never moves; the chip tweens scrollLeft for the
+      // wheel the label cannot receive. A mask change riding an ancestor :hover repaints fine;
+      // it is the sibling-keyed mask flips the reveal note below forbids.
+      [`${chipRemovable}:hover &`]: scrollRevealed,
     },
   },
 ])

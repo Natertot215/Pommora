@@ -15,6 +15,22 @@ import {
 import type { ChipColorName } from '@renderer/design-system/tokens/chip.css'
 import { Icon } from '@renderer/design-system/symbols'
 import { cx } from '@renderer/design-system/cx'
+import { slideScrollTo } from '@renderer/design-system/components/OverflowScroll'
+
+/** A removable chip's label is pointer-inert (the melt guard), so the wheel-on-hover reveal every
+ *  other truncated label has can never fire on it. The CHIP stands in: hovering it tweens the
+ *  label's tail into view within the same box, and leaving settles it back. Spread on the root of
+ *  every removable chip; the tween no-ops when nothing is clipped. */
+export const chipHoverScroll = {
+  onPointerEnter: (e: React.PointerEvent<HTMLElement>): void => {
+    const w = e.currentTarget.querySelector(`.${chipLabelWrap}`)
+    if (w instanceof HTMLElement) slideScrollTo(w, w.scrollWidth - w.clientWidth)
+  },
+  onPointerLeave: (e: React.PointerEvent<HTMLElement>): void => {
+    const w = e.currentTarget.querySelector(`.${chipLabelWrap}`)
+    if (w instanceof HTMLElement) slideScrollTo(w, 0)
+  },
+}
 
 /** Context chips use their own shape (ContextChip's chip-context) — not part of this map. */
 const SHAPE = { pill: chipPill, label: chipLabel, file: chipFile, plain: chipPlain } as const
@@ -53,6 +69,7 @@ export function Chip({
   return (
     <span
       className={cx(SHAPE[shape], color && chipColor[color], onRemove && chipRemovable, className)}
+      {...(onRemove ? chipHoverScroll : {})}
     >
       {onRemove ? <ChipRemoveButton onRemove={onRemove} /> : null}
       {icon}
