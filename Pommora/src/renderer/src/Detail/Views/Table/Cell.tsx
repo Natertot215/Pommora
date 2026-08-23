@@ -14,8 +14,8 @@ import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
 import { OverflowScroll } from '@renderer/design-system/components/OverflowScroll'
 import { SegmentRun } from '@renderer/design-system/components/SegmentRun/SegmentRun'
 import { resolveFileValue } from '@renderer/assetUrl'
-import { fileLabelText, fileValueWithout } from '../PropertyEditing/filePick'
-import { declaredType, resolveFieldValue } from '../pipeline/value'
+import { fileValueWithout } from '../PropertyEditing/filePick'
+import { declaredType, fileName, resolveFieldValue } from '../pipeline/value'
 import { formatDate, formatNumber, numberDivisor } from '../PropertyEditing/formatValue'
 import { statusGroupGlyph, statusGroupOf } from '../PropertyEditing/statusCycle'
 import { StatusCapsule } from '../PropertyEditing/StatusCapsule'
@@ -196,7 +196,7 @@ export function Cell({
             // Positional, never the value: two identical wikilinks — a hand-edit, a sync merge —
             // would collide as keys and send the hover-× to the wrong one.
             key: String(i),
-            label: fileLabelText(f),
+            label: fileName(f),
             // A name nothing answers to still renders. The value is in frontmatter and the user
             // has to be able to see it to remove it.
             unresolved: resolveFileValue(f, ctx.assets).kind === 'unresolved',

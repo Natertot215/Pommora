@@ -6,7 +6,7 @@
 import type { SortCriterion } from '@shared/views'
 import type { ViewRow } from '@shared/types'
 import { type PropertyDefinition, RESERVED_PROPERTY_ID } from '@shared/properties'
-import { declaredType, modifiedStampString, resolveFieldValue } from './value'
+import { declaredType, fileName, modifiedStampString, resolveFieldValue } from './value'
 import { linkDisplayText } from '@shared/linkValue'
 
 type SortKey = number | string
@@ -74,9 +74,9 @@ function boolRank(row: ViewRow, propertyId: string, schema: PropertyDefinition[]
   return v.kind === 'checkbox' && v.value ? 1 : 0 // false (0) < true (1); absent = false
 }
 
-/** Orderable text for the text-ish types `buildCriterion` routes here (url, multiSelect).
- *  select/status sort via `rank()` (schema option order) and never reach this; relation/file/
- *  absent have no orderable text → "". */
+/** Orderable text for the text-ish types `buildCriterion` routes here (url, multiSelect, file).
+ *  select/status sort via `rank()` (schema option order) and never reach this; relation/absent
+ *  have no orderable text → "". */
 function sortText(row: ViewRow, propertyId: string, schema: PropertyDefinition[]): string {
   const v = resolveFieldValue(row, propertyId, schema)
   switch (v.kind) {
@@ -86,6 +86,10 @@ function sortText(row: ViewRow, propertyId: string, schema: PropertyDefinition[]
       return linkDisplayText(v.value)
     case 'multiSelect':
       return v.value.join(',')
+    case 'file':
+      // The FILENAMES, not the raw `[[…]]` references — every value would otherwise share the
+      // leading bracket and order by whatever follows it.
+      return v.value.map(fileName).join(',')
     default:
       return ''
   }

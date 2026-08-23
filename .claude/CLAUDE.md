@@ -14,7 +14,7 @@ Pommora is Nathan’s main project — a personal management and all-in-one prod
 - **Properties:** the nexus-wide typed attributes that collections assign, and their members fill in — Select, Status, Date, and the rest; the schema is nexus-wide, collections validate properties for their pages to use; assigned as frontmatter via `[Property]:` syntax.
 - **Connections:** inline `[[Title]]` colored-text links inside MarkdownPM surfaces and resolve against an in-memory title map built from the page tree — connecting to another Page as the Content ↔ Content matrix. They **aren't** displayed anywhere outside the Markdown body, and content-to-content relational properties **don't** exist.
 
-**Files are canonical for content.** Pages, Tasks, and Events are all markdown distinguishable via `PageID` / `TaskID` / `EventID`. Contexts and container sidecars are JSON. An entity's kind comes from an agreement between its folder's sidecar file and the file itself — a file whose key contradicts what its folder expects is Unknown: invisible, untouched, never stamped over. 
+**Files are canonical for content.** Pages, Tasks, and Events are all Markdown distinguishable via `PageID` / `TaskID` / `EventID`. Contexts and container sidecars are JSON. An entity's kind comes from an agreement between its folder's sidecar file and the file itself — a file whose key contradicts what its folder expects is Unknown: invisible, untouched, never stamped over. 
 
 ### Codebase Information
 

@@ -114,7 +114,7 @@ On a Collection with a file property whose Directory names a subfolder: clicking
 **Dead Vocabulary** *(what the closing sweep searches for)*
 
 - `FileRef` → expect 0. Legitimate hits: none.
-- `fileLabel` → expect 0. Legitimate hits: none.
+- `fileLabel` **as `formatValue.ts`'s export** → expect 0. Legitimate hits elsewhere: the shipped `FileLabel` component and its stylesheet carry the same token — scope the sweep to `formatValue.ts` and its test.
 - `style-edit` → expect 0. Legitimate hits: none.
 - `file:open` → expect 0. Legitimate hits: none.
 - `'filename'` / `'path'` **as `COLUMN_LOOKS` members** → expect 0 in `columnStyles.ts`, `columnMenu.ts`, `Cell.tsx`, `formatValue.ts`. Legitimate hits elsewhere: `'path'` is a common field name across the tree — scope the sweep to those four files.
@@ -522,9 +522,9 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
 
 #### Gate 4 — the destination exists
 - [x] Gate commands green. Negative control verified both ways.
-- [ ] **Fixture first**, as Gate 2 — still nothing in-app fills a file value at this phase.
+- [x] **Fixture first**, as Gate 2 — still nothing in-app fills a file value at this phase.
 - [ ] **Seen running:** the File editor pane, the Directory field, a refused folder.
-- [ ] Simplification and review dispatched — ask first.
+- [x] Simplification and review dispatched — ask first.
 
 ---
 
@@ -550,7 +550,7 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
 **Steps:**
 - [x] Write the failing tests per surface.
 - [x] Add the arm; delete the two early-returns.
-- [ ] Verify the three click targets in the running app, not by reasoning.
+- [x] Verify the three click targets in the running app, not by reasoning.
 - [x] Full gate green. Commit: `feat(properties): a file value fills, replaces and clears everywhere`
 
 #### Task 17: The value menu
@@ -579,9 +579,9 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
 **Files:** Modify `src/renderer/…/pipeline/sort.ts` — **`sortText`'s switch (`:80-92`), not `:141`.** That line already routes file to `sortText` correctly; the `''` comes from the switch's `default`. The edit is a `case 'file'`, mirroring `multiSelect`'s. (`context` returning `''` on the same path is documented-deliberate at `:78-79` — leave it.)
 
 **Steps:**
-- [ ] Write the failing test: `[[Zebra.pdf]]` sorts after `[[apple.pdf]]`, case-insensitively.
-- [ ] Extract the parsed filename — **into `pipeline/value.ts`, not inline in `sort.ts`.** The deferred `Contains` filter needs the same extraction, and inline here it gets re-derived there, which is what keeps that Prospect a one-line flip.
-- [ ] Commit: `fix(views): a file column sorts by its filename`
+- [x] Write the failing test: `[[Zebra.pdf]]` sorts after `[[apple.pdf]]`, case-insensitively.
+- [x] Extract the parsed filename — **into `pipeline/value.ts`, not inline in `sort.ts`.** The deferred `Contains` filter needs the same extraction, and inline here it gets re-derived there, which is what keeps that Prospect a one-line flip.
+- [x] Commit: `fix(views): a file column sorts by its filename`
 
 #### Gate 5 — the feature works end to end
 - [ ] Gate commands green.
@@ -596,8 +596,8 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
 #### Task 19: Sweep the dead vocabulary
 
 **Steps:**
-- [ ] Run each Dead Vocabulary search with its control. A bare zero from a search that never ran looks identical to a clean one.
-- [ ] Record counts in the Log.
+- [x] Run each Dead Vocabulary search with its control. A bare zero from a search that never ran looks identical to a clean one.
+- [x] Record counts in the Log.
 
 #### Task 20: Simplification pass over the whole range
 
@@ -652,9 +652,9 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
 - [ ] **Phase 5** — Interaction · base `0e8a9aee`
   - [x] Task 16 — One arm on the shared click router · `013033d0`
   - [x] Task 17 — The value menu · `a9fd3ada`
-  - [ ] Task 18 — Sort by filename
+  - [x] Task 18 — Sort by filename
 - [ ] **Phase 6** — Reconciliation
-  - [ ] Task 19 — Sweep the dead vocabulary
+  - [x] Task 19 — Sweep the dead vocabulary
   - [ ] Task 20 — Simplification pass over the whole range
   - [ ] Task 21 — Reconcile the documentation
 
@@ -743,6 +743,28 @@ Code-only, comments and tests excluded: **+204 −86, net +118** against an expe
 
 Nothing here is a second copy of something that exists; the estimate simply priced a pane branch and missed that the field it reuses had to become reusable first. Recorded rather than absorbed.
 
+#### Phase 5 — the delta, and the overrun
+
+Code-only, comments and tests excluded: **+147 −35, net +112** against an expected +25, read per commit as **Task 16 +57** and **Task 17 +55**. Under-priced seams both times, not re-authoring — the same pattern every phase has shown, and here the plan under-prices interfaces it names in its own body:
+
+- **Task 16's `filePick.ts` is a new file, and the estimate priced only "one arm plus two deletions."** The task's own Interfaces section mandates the shared async effect — `sharedValueClickAction` is pure and synchronous, so it can only *name* a file action — but the ≈+25 was written against the arm alone. The two pane deletions did land negative (`PagePropertiesPane` −4, `PreviewInspector` −3), exactly as the task claimed.
+- **Task 17's threading is per surface, and there are two of them.** `TableView` +22 and `CardValue` +16 are the two hit tests carrying `onChip` into the menu context; `cellMenu.ts` +22 is the kind and its model. All three are what the task's Failure-half section describes; none was costed.
+
+#### Gate 4 / 5 — the correctness review
+
+Phase 4 shipped without its gate; this pass covers `0e8a9aee`, `013033d0` and `a9fd3ada` together. Every claim re-opened against the code before it was accepted.
+
+- **Verified · the Directory cannot reach a write outside the asset root, by any entry.** A hand-typed path is the one that matters: `PathField` commits raw text, `narrowFileConfig` normalizes it with `rootSegs` — which drops empty segments and **keeps `..`** — and `defEditOp`'s async `check` then runs `validPropertyDir`, whose `underAssetRoot` refuses any `..`, `.` or empty segment outright. A refused check returns before `editProperty`, so nothing is written. `adoptFile` re-validates at the write for the same reason. `assetRoots.test.ts` pins both directions.
+- **Verified · the collapsed `revealAndEdit` dropped nothing.** The checkbox arm lives in `editRow`'s `commit` case, where the `onReveal` fires on a clear to null. `PreviewInspector` keeps its def-less branch for a Context row; `PagePropertiesPane` never routed Context through this gesture at all — its Add menu un-hides the row without opening an editor.
+- **Verified · `runFilePick`'s ordering is structural.** A cancelled dialog and a refused adoption both return `undefined` before any write, and all three tails commit only on a defined answer. `folderOf`'s `''` cannot fire for a *resolved* chip: `assetDirValidate.ts:19` refuses the nexus root as an asset root, so a resolved `rel` always carries a separator. The `def.file_directory` fallback is therefore the unresolved-chip case alone, as specified.
+- **Verified · the chip hit test is positional at both layers.** `SegmentRun` stamps `data-segment-index` from the entry's position and `Cell.tsx` keys on the same index, so two identical wikilinks address their own labels. A click on the value's own area finds no stamped ancestor and reads `null`, not `0`.
+
+#### Task 19 — the sweep
+
+Against a control of **868** (`@shared/`, 862 at planning time): `FileRef` **0** · `style-edit` **0** · `file:open` **0** · `'filename'` / `'path'` as `COLUMN_LOOKS` members across the four style-system files **0**.
+
+`fileLabel` reads **12**, and the entry is the thing that is wrong, not the tree. The symbol it was written to retire is `formatValue.ts`'s `fileLabel(ref, look)` — the filename-versus-path formatter the column-style system called — and that is at **0**, confirmed against `ea05d139` where it lived. The 12 hits are the shipped component's own vocabulary: `FileLabel.tsx`, `fileLabel.css.ts`, and the `fileLabelText` parse. The entry was written while the component was still named FileChip, so its token and the new name collide.
+
 ### Open Against Later Tasks
 ### Deviations
 
@@ -769,7 +791,8 @@ Nothing here is a second copy of something that exists; the estimate simply pric
 - **Task 16 · the two panes' `revealAndEdit` became the ordinary click, one frame later.** Deleting their `file` early-returns alone would have dropped the click into a rAF block with no branch for it. Both now reveal and then call `editRow`, so the duplicated router dies in each and its catch-all — which already disagreed with `editRow`'s explicit list — goes with it. `PreviewInspector` keeps one branch of its own: a Context row carries no def and opens its own picker.
 - **Task 16 · which label was clicked is read off the DOM, not passed down.** `SegmentRun` stamps each entry with its position, so the table, the cards and both panes hit-test identically and the run grows no callback per gesture. `SegmentEntry.onClick` came back here, with the caller that needs it, exactly as the Phase 2 fold recorded.
 - **Task 17 · only the file kind relabels the hide.** The plan asked for both Removes renamed; renaming the generic one everywhere would change copy on every type to fix a collision that exists on one. A file cell's hide reads **Remove from View**; every other type keeps **Remove**.
-- **Naming.** The spec settled on **FileLabel** (C-2c); several plan headings still read FileChip. FileLabel is the name that ships — component, chip shape and prose alike.
+- **Naming.** The spec settled on **FileLabel** (C-2c); several plan headings still read FileChip. FileLabel is the name that ships — component, chip shape and prose alike. The Dead Vocabulary entry for `fileLabel` is scoped to `formatValue.ts` for the same reason: the retired formatter and the shipped component share a token.
+- **Task 18 · the extraction is `fileName`, and it is the only one.** `pipeline/value.ts` is where the plan puts it, so `filePick.ts`'s `fileLabelText` — the same parse, written a phase earlier for the label — is deleted rather than left standing beside it. Sort, the cell label and the deferred `Contains` filter read one function.
 ### Lessons
 ### Sequenced After
 - **Filename `Contains` filter** — `evaluateText` already exists; `FILE_OPS` just stops being `slot: 'none'`.

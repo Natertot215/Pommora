@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { PAGE_ID_KEY } from '@shared/identity'
 import type { ViewRow } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
-import { declaredType, resolveFieldValue } from './value'
+import { declaredType, fileName, resolveFieldValue } from './value'
 import { propsAtRoot } from '@renderer/testing/propsAtRoot'
 
 const schema: PropertyDefinition[] = [
@@ -187,5 +187,12 @@ describe('resolveFieldValue — the declared type is obeyed, never inferred from
       kind: 'select',
       value: 'opt_a',
     })
+  })
+})
+
+describe('fileName', () => {
+  it('reads the wikilink’s title, and leaves anything else as written', () => {
+    expect(fileName('[[Report.pdf]]')).toBe('Report.pdf')
+    expect(fileName('Report.pdf')).toBe('Report.pdf')
   })
 })
