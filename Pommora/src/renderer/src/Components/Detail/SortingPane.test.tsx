@@ -117,24 +117,27 @@ describe('SortingPane rows', () => {
     expect(texts()).not.toContain('Sub-Sort')
   })
 
-  it('the Sort By picker lists None + Title + Modified + sortable defs, excluding file, and a pick writes slot 0', async () => {
+  it('the Sort By picker lists None + Title + Modified + every sortable def, and a pick writes slot 0', async () => {
     await mount(view())
     await openPicker('Sort By')
     expect(menuTexts()).toContain('Title')
     expect(menuTexts()).toContain('Modified')
     expect(menuTexts()).toContain('Status')
     expect(menuTexts()).toContain('When')
-    expect(menuTexts()).not.toContain('Attachment') // file sorts to a no-op — never offered
+    expect(menuTexts()).toContain('Attachment') // file ranks by its filename, so it is offered
     await pickOption('Status')
     expect(lastSaved().sort).toEqual([{ property_id: 'prop_status', direction: 'ascending' }])
   })
 
-  it('per-type Order labels: status reads Default, datetime reads Ascending', async () => {
+  it('per-type Order labels: status reads Default, datetime Ascending, file A → Z', async () => {
     await mount(view({ sort: [{ property_id: 'prop_status', direction: 'ascending' }] }))
     expect(texts()).toContain('Order')
     expect(texts()).toContain('Default')
     await mount(view({ sort: [{ property_id: 'prop_when', direction: 'ascending' }] }))
     expect(texts()).toContain('Ascending')
+    // file orders by text, so it reads the text pair rather than the value one
+    await mount(view({ sort: [{ property_id: 'prop_file', direction: 'ascending' }] }))
+    expect(texts()).toContain('A → Z')
   })
 
   it('a Sub-Sort pick writes slot 1 and its sub Order reads Default/Reversed', async () => {
