@@ -17,7 +17,8 @@ import {
 import { resolveFieldValue } from '../pipeline/value'
 import { buildResolveContext, type ResolveContext } from '../Table/resolveContext'
 import { sharedValueClickAction } from './valueClick'
-import { fileChipIndex, pickFileInto } from './filePick'
+import { fileChipIndex, fileValueMenu, pickFileInto } from './filePick'
+import { linkValueMenuTarget, showConnectionMenu } from '@renderer/Embeds/connectionMenu'
 
 // One home for both page-property surfaces — the Settings pane's Properties leaf and the floating
 // preview's inspector. What they share is everything about resolving a page into rows and writing a
@@ -50,6 +51,15 @@ export interface PropertyRows {
    *  the node actually clicked, which is what says WHICH file label a file click landed on. They
    *  differ because a row's handler carries `currentTarget` for the anchor and `target` for the
    *  hit — passing the anchor for both reads every click as the value's own area. */
+  /** The VALUE's own right-click, and whether it claimed the event — a file pops the Add · Replace
+   *  · Remove triad, a live link pops the link menu, and anything else falls through to the row's
+   *  menu, where Remove belongs to the property rather than to the value it holds. */
+  valueMenu: (
+    id: string,
+    value: PropertyValue,
+    target: EventTarget | null,
+    handlers: { emptyRow: (id: string, clear: boolean) => void; setEditing: (e: Editing) => void },
+  ) => boolean
   editRow: (
     def: PropertyDefinition,
     el: HTMLElement,
@@ -170,6 +180,25 @@ export function usePropertyRows(
     if (def.type === 'number' || def.type === 'url') setEditing({ id: def.id, mode: 'editor' })
   }
 
+  const valueMenu: PropertyRows['valueMenu'] = (id, value, target, { emptyRow, setEditing }) => {
+    const def = schema.find((d) => d.id === id)
+    if (def?.type === 'file') {
+      void fileValueMenu(def, value, target, (next) => commitValue(id, next))
+      return true
+    }
+    const link =
+      value.kind === 'url'
+        ? linkValueMenuTarget(value.value, (action) => {
+            if (action === 'link:clear') return emptyRow(id, true)
+            if (action === 'rename' || action === 'editLink')
+              setEditing({ id, mode: action === 'editLink' ? 'editor' : 'rename' })
+          })
+        : null
+    if (!link) return false
+    showConnectionMenu(link)
+    return true
+  }
+
   return {
     schema,
     ctx,
@@ -179,6 +208,7 @@ export function usePropertyRows(
     isContextRow,
     commitValue,
     commitContext,
+    valueMenu,
     editRow,
   }
 }

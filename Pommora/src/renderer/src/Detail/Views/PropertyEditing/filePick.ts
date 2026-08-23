@@ -5,15 +5,18 @@
 
 import type { PropertyDefinition } from '@shared/properties'
 import type { PropertyValue } from '@shared/propertyValue'
+import type { CellMenuAction } from '@shared/cellMenu'
 import { parentOf } from '@shared/treePatch'
+import { assetSubRoot } from '@shared/nexusPaths'
 import { resolveFileValue } from '@renderer/assetUrl'
 import { useSession } from '@renderer/store'
+import { SEGMENT_INDEX_ATTR } from '@renderer/design-system/components/SegmentRun/SegmentRun'
 
 /** Which label a click landed on, or null for the value's own area. The run stamps its entries
  *  with their position, so the table, the cards and both panes hit-test the same way. */
 export function fileChipIndex(target: EventTarget | null): number | null {
-  const el = target instanceof Element ? target.closest('[data-segment-index]') : null
-  const i = el ? Number(el.getAttribute('data-segment-index')) : Number.NaN
+  const el = target instanceof Element ? target.closest(`[${SEGMENT_INDEX_ATTR}]`) : null
+  const i = el ? Number(el.getAttribute(SEGMENT_INDEX_ATTR)) : Number.NaN
   return Number.isInteger(i) ? i : null
 }
 
@@ -57,10 +60,10 @@ export async function runFilePick(
 
 /** Where this property's files live, nexus-relative — which is the only domain `pickFile` reads.
  *  A Directory is stored relative to the ASSET root, so handing it over unjoined would open a
- *  same-named folder at the nexus root, and an unset one would open the nexus root itself. */
+ *  same-named folder at the nexus root, and an unset one would open the nexus root itself. The
+ *  join is the one main writes through, so the dialog opens on the folder the bytes land in. */
 function propertyFolder(def: PropertyDefinition): string {
-  const assetRoot = useSession.getState().tree?.assetDirectory ?? ''
-  return [assetRoot, def.file_directory].filter(Boolean).join('/')
+  return assetSubRoot(useSession.getState().tree?.assetDirectory ?? '', def.file_directory)
 }
 
 /** The nexus-relative folder a resolved reference sits in, or '' where nothing answers to it. */
@@ -83,21 +86,24 @@ export function pickFileInto(
   })
 }
 
-/** The value menu's three file actions, for the surfaces that pop one. Remove needs no dialog and
- *  Add differs from Replace only in whether it carries the chip, so the triad is one branch rather
- *  than a copy per surface. */
+/** The value menu's three file actions, and whether it took one — the shape `runPageSendAction`
+ *  already gives a surface's menu routing, so a caller picks up where this leaves off instead of
+ *  testing the prefix and casting the action back. Remove needs no dialog and Add differs from
+ *  Replace only in whether it carries the chip, so the triad is one branch rather than a copy
+ *  per surface. */
 export function runFileMenuAction(
-  action: 'file:add' | 'file:replace' | 'file:remove',
+  action: CellMenuAction,
   def: PropertyDefinition | undefined,
   current: PropertyValue,
   chip: number | null,
   commit: (next: PropertyValue | null) => void,
-): void {
+): boolean {
   if (action === 'file:remove') {
     if (chip !== null) commit(fileValueWithout(current, chip))
-  } else if (def) {
-    pickFileInto(def, current, action === 'file:replace' ? chip : null, commit)
-  }
+  } else if (action === 'file:add' || action === 'file:replace') {
+    if (def) pickFileInto(def, current, action === 'file:replace' ? chip : null, commit)
+  } else return false
+  return true
 }
 
 /**
@@ -115,6 +121,5 @@ export async function fileValueMenu(
 ): Promise<void> {
   const chip = fileChipIndex(target)
   const action = await window.nexus.cellMenu({ kind: 'file', onChip: chip !== null })
-  if (action === 'file:add' || action === 'file:replace' || action === 'file:remove')
-    runFileMenuAction(action, def, current, chip, commit)
+  if (action) runFileMenuAction(action, def, current, chip, commit)
 }

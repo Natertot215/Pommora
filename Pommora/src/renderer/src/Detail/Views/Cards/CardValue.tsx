@@ -141,17 +141,10 @@ export function CardValue({
     if (!menuCtx) return
     const action = await holdGhost(() => window.nexus.cellMenu(menuCtx))
     if (!action) return
+    if (runFileMenuAction(action, schemaDef, v, chip, commit)) return
     if (action === 'cell:clear') commit(null)
     else if (action === 'cell:hide') onHide(column.id)
-    else if (action.startsWith('file:')) {
-      runFileMenuAction(
-        action as 'file:add' | 'file:replace' | 'file:remove',
-        schemaDef,
-        v,
-        chip,
-        commit,
-      )
-    } else if (action === 'cell:edit') {
+    else if (action === 'cell:edit') {
       if (t === 'url' && anchorRef.current) onOpenPicker(column, 'link', anchorRef.current)
       else setMode('editor')
     } else if (action === 'cell:rename')

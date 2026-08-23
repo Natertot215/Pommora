@@ -704,23 +704,17 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     const t = declaredType(col.id, schema)
     // The shared click semantics (cycle/toggle/picker/datetime) live in one router; only the
     // surface-specific tails (number/url placement) stay here.
-    const shared = sharedValueClickAction(
-      t,
-      colStyle(col.id).look,
-      resolveFieldValue(row, col.id, schema),
-      schema.find((d) => d.id === col.id),
-    )
+    const value = resolveFieldValue(row, col.id, schema)
+    const def = schema.find((d) => d.id === col.id)
+    const shared = sharedValueClickAction(t, colStyle(col.id).look, value, def)
     if (shared) {
       e.stopPropagation()
       if (shared.kind === 'commit') commitCellValue(row, col.id, shared.value)
-      // A file value is filled through the OS dialog: a label replaces the file it names and opens
+      // A file value is filled through the OS dialog: a chip replaces the file it names and opens
       // at that file's own folder, the value's own area adds and opens at the property's Directory.
       else if (shared.kind === 'file') {
-        const def = schema.find((d) => d.id === col.id)
         if (def)
-          pickFileInto(def, resolveFieldValue(row, col.id, schema), fileChipIndex(e.target), (n) =>
-            commitCellValue(row, col.id, n),
-          )
+          pickFileInto(def, value, fileChipIndex(e.target), (n) => commitCellValue(row, col.id, n))
       } else setEditing({ rowId: row.id, colId: col.id, mode: 'picker' })
     } else if (t === 'number') {
       e.stopPropagation()
@@ -987,6 +981,16 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     const action = await holdGhost(() => window.nexus.cellMenu(ctx))
     if (!action) return
     if (runPageSendAction(action, row.path)) return
+    if (
+      runFileMenuAction(
+        action,
+        schema.find((d) => d.id === col.id),
+        resolveFieldValue(row, col.id, schema),
+        chip,
+        (n) => commitCellValue(row, col.id, n),
+      )
+    )
+      return
     if (action === 'title:preview')
       useSession.getState().openPreview({ id: row.id, path: row.path })
     else if (action === 'title:newtab')
@@ -1009,14 +1013,6 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     } else if (action === 'cell:clear') {
       if (col.kind === 'context') commitContextValue(row, col.id, [])
       else commitCellValue(row, col.id, null)
-    } else if (action.startsWith('file:')) {
-      runFileMenuAction(
-        action as 'file:add' | 'file:replace' | 'file:remove',
-        schema.find((d) => d.id === col.id),
-        resolveFieldValue(row, col.id, schema),
-        chip,
-        (n) => commitCellValue(row, col.id, n),
-      )
     } else if (action.startsWith('style:')) {
       const parsed = parseStyleAction(action)
       if (parsed) setColumnStyle(col.id, parsed.key, parsed.value)
