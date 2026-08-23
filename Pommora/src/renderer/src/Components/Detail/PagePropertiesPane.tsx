@@ -6,6 +6,7 @@ import type { ResolvedColumn } from '@shared/types'
 import { Icon } from '@renderer/design-system/symbols'
 import { PickerMenu, PickerOption } from '@renderer/design-system/components/PickerMenu'
 import { MenuPaneTopRow, MenuScrollFrame } from '../../design-system/components/menu'
+import { fileValueMenu } from '@renderer/Detail/Views/PropertyEditing/filePick'
 import { Cell } from '../../Detail/Views/Table/Cell'
 import { linkAlias, linkEditText, urlValueFromEdit, urlValueFromRename } from '@shared/linkValue'
 import { resolveTitle, validateLink } from '@renderer/linkResolve'
@@ -117,9 +118,16 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
     else setRevealed((prev) => new Set([...prev].filter((r) => r !== id)))
   }
   // The VALUE's own menu: a live link pops the link menu — the same one every other surface pops on
-  // the same link — closing on Clear alone. Remove belongs to the property rather than to the value
-  // it holds, so it stays on the row's menu and is reached by right-clicking the property itself.
-  const valueMenu = (id: string, value: PropertyValue): boolean => {
+  // the same link — closing on Clear alone; a file pops the same Add · Replace · Remove triad the
+  // table and the cards reach through their column menu. Remove belongs to the property rather than
+  // to the value it holds, so it stays on the row's menu and is reached by right-clicking the
+  // property itself.
+  const valueMenu = (id: string, value: PropertyValue, target: EventTarget | null): boolean => {
+    const def = schema.find((d) => d.id === id)
+    if (def?.type === 'file') {
+      void fileValueMenu(def, value, target, (next) => commitValue(id, next))
+      return true
+    }
     const link =
       value.kind === 'url'
         ? linkValueMenuTarget(value.value, (action) => {
@@ -221,7 +229,7 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
                     <span
                       className={s.value}
                       onContextMenu={(e) => {
-                        if (!valueMenu(id, resolveFieldValue(row, id, schema))) return
+                        if (!valueMenu(id, resolveFieldValue(row, id, schema), e.target)) return
                         e.preventDefault()
                         e.stopPropagation()
                       }}

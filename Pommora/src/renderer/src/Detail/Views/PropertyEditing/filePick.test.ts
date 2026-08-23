@@ -2,7 +2,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PropertyDefinition } from '@shared/properties'
 import { useSession } from '@renderer/store'
-import { fileChipIndex, fileValueWithout, pickFileInto, runFilePick } from './filePick'
+import {
+  fileChipIndex,
+  fileValueMenu,
+  fileValueWithout,
+  pickFileInto,
+  runFilePick,
+} from './filePick'
 
 const def = (over: Partial<PropertyDefinition> = {}): PropertyDefinition =>
   ({ id: 'p', name: 'Attachments', type: 'file', ...over }) as PropertyDefinition
@@ -11,11 +17,13 @@ const held = (value: string[]) => ({ kind: 'file', value }) as const
 
 let pickFile: ReturnType<typeof vi.fn>
 let adoptFile: ReturnType<typeof vi.fn>
+let cellMenu: ReturnType<typeof vi.fn>
 
 beforeEach(() => {
   pickFile = vi.fn(async () => '/outside/New.pdf')
   adoptFile = vi.fn(async () => ({ ok: true, value: '[[New.pdf]]' }))
-  ;(globalThis as { window?: unknown }).window = { nexus: { pickFile, adoptFile } }
+  cellMenu = vi.fn(async () => null)
+  ;(globalThis as { window?: unknown }).window = { nexus: { pickFile, adoptFile, cellMenu } }
   useSession.setState({
     assetMap: { files: { 'old.pdf': ['file-assets/Specs/Old.pdf'] }, version: 1 },
     // A Directory is stored under the asset root, so the root has to be present for the join to
@@ -129,6 +137,45 @@ describe('pickFileInto', () => {
     pickFile.mockResolvedValueOnce(null)
     pickFileInto(def(), held(['[[Old.pdf]]']), null, commit)
     await new Promise((r) => setTimeout(r, 0))
+    expect(commit).not.toHaveBeenCalled()
+  })
+})
+
+describe('fileValueMenu — the value menu the inspector panes pop', () => {
+  const chipAt = (i: number): Element => {
+    const host = document.createElement('div')
+    host.innerHTML = `<span data-segment-index="${i}"><b class="x">f</b></span>`
+    return host.querySelector('.x') as Element
+  }
+
+  it('answers false for a non-file property, so the caller falls through to its own menu', async () => {
+    expect(await fileValueMenu(def({ type: 'url' }), held([]), null, vi.fn())).toBe(false)
+    expect(cellMenu).not.toHaveBeenCalled()
+  })
+
+  it('the value’s own area offers the off-chip menu — there is no file to act on', async () => {
+    await fileValueMenu(def(), held(['[[Old.pdf]]']), null, vi.fn())
+    expect(cellMenu).toHaveBeenCalledWith({ kind: 'file', onChip: false })
+  })
+
+  it('a chip offers the on-chip menu, and Remove drops that chip alone', async () => {
+    const commit = vi.fn()
+    cellMenu.mockResolvedValueOnce('file:remove')
+    await fileValueMenu(def(), held(['[[A.pdf]]', '[[B.pdf]]']), chipAt(1), commit)
+    expect(cellMenu).toHaveBeenCalledWith({ kind: 'file', onChip: true })
+    expect(commit).toHaveBeenCalledWith(held(['[[A.pdf]]']))
+  })
+
+  it('Replace picks into the chip it was opened on', async () => {
+    const commit = vi.fn()
+    cellMenu.mockResolvedValueOnce('file:replace')
+    await fileValueMenu(def(), held(['[[A.pdf]]', '[[B.pdf]]']), chipAt(0), commit)
+    await vi.waitFor(() => expect(commit).toHaveBeenCalledWith(held(['[[New.pdf]]', '[[B.pdf]]'])))
+  })
+
+  it('a dismissed menu writes nothing', async () => {
+    const commit = vi.fn()
+    await fileValueMenu(def(), held(['[[A.pdf]]']), chipAt(0), commit)
     expect(commit).not.toHaveBeenCalled()
   })
 })
