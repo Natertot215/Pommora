@@ -2,8 +2,7 @@ import { Fragment, useMemo, useRef, useState } from 'react'
 import { DragGhost } from '@renderer/design-system/interactions/DragGhost'
 import { DropLine } from '@renderer/design-system/interactions/DropLine'
 import { Icon } from '@renderer/design-system/symbols'
-import { chipPill, chipColor } from '@renderer/design-system/tokens'
-import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
+import { labelColorFor } from '@renderer/design-system/tokens/colorMap'
 import {
   addStatusOption,
   recolorStatusOption,
@@ -13,7 +12,6 @@ import {
 } from '@shared/optionModel'
 import type { StatusGroup } from '@shared/properties'
 import { cx } from '@renderer/design-system/cx'
-import { chipShapeForType } from '../Chip'
 import {
   GhostOptionChip,
   OptionNameCaret,
@@ -23,6 +21,7 @@ import {
 import { OptionSlot } from './OptionRow'
 import { useStatusReorder } from './useStatusReorder'
 import * as s from './settingsPane.css'
+import { labelColor, optionShapeFor, shape } from '@renderer/design-system/labels'
 
 /**
  * Double-click a group heading to rename its label. The id underneath never changes — a calendar
@@ -97,7 +96,7 @@ export function StatusEditor({
     adding?.groupId === g.id && adding.index === index ? (
       <div className={s.optionRow}>
         <OptionNameCaret
-          className={cx(chipPill, chipColor[chipColorFor(g.color)])}
+          className={cx(shape.pill, labelColor[labelColorFor(g.color)])}
           onCommit={(raw) => commitAdd(g.id, raw, index)}
           onCancel={() => setAdding(null)}
         />
@@ -163,8 +162,8 @@ export function StatusEditor({
                     ghost={ghostApi}
                     onOpenMenu={() => void openMenu(o.value, o.label)}
                     label={o.label}
-                    shape={chipShapeForType('status')}
-                    color={chipColorFor(o.color ?? g.color)}
+                    shape={optionShapeFor('status')}
+                    color={labelColorFor(o.color ?? g.color)}
                     renaming={renaming === o.value}
                     coloring={isColoring}
                     paletteRef={paletteBtnRef}

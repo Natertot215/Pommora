@@ -7,14 +7,14 @@ import {
   viewEmbedZoom,
 } from '@shared/types'
 import type { CellKey } from '@shared/theme'
-import { chipColorFor } from './tokens/colorMap'
+import { labelColorFor } from './tokens/colorMap'
 import { cellColor, checkboxTint } from './tokens/ramp'
 
 /** The ramp cell a color setting names, or null when it defers. Every sentinel — `accent`,
- *  `system`, `default` — and the absent key alike read as no cell, which `chipColorFor` already
+ *  `system`, `default` — and the absent key alike read as no cell, which `labelColorFor` already
  *  answers for: naming them again here would be a second roster to keep in step with the first. */
 function settingCell(setting: unknown): CellKey | null {
-  const key = typeof setting === 'string' ? chipColorFor(setting) : 'default'
+  const key = typeof setting === 'string' ? labelColorFor(setting) : 'default'
   return key === 'default' ? null : key
 }
 

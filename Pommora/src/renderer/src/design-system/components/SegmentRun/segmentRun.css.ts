@@ -24,10 +24,10 @@ export const segmentRun = style({
   gap: SEGMENT_GAP,
   // The FIELD is what runs out of room, so the eclipse belongs here — one fade at its trailing
   // edge saying "there is more". Per-segment fades would put a gradient mid-field on every title,
-  // which reads as several broken labels rather than one truncated list. `--chip-max` is lifted
+  // which reads as several broken labels rather than one truncated list. `--label-max` is lifted
   // for the same reason: a chip's own 80px cap would ellipsize each title separately, stacking a
   // second truncation on top of the run's one honest signal.
-  vars: { '--over-scroll-fade': SEGMENT_FADE, '--chip-max': 'none' },
+  vars: { '--over-scroll-fade': SEGMENT_FADE, '--label-max': 'none' },
 })
 
 /** One entry — its glyph and its title. Segments hold their natural width so the RUN is what

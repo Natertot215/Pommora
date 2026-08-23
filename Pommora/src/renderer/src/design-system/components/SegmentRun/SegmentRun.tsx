@@ -1,7 +1,7 @@
 import { Fragment } from 'react'
 import { OverScroll } from '../../interactions/OverScroll'
-import { FileLabel } from '../FileLabel'
 import * as sr from './segmentRun.css'
+import { FileLabel } from '../../labels'
 
 /** The stamp a surface hit-tests to learn which entry a click landed on. Written here and by the
  *  file cell, which composes its own chips rather than a run, and read back by the file effect —

@@ -3,13 +3,11 @@ import { type ReactNode, useEffect, useRef } from 'react'
 import type { CollectionNode, ResolvedGroup, SetNode } from '@shared/types'
 import type { SavedView } from '@shared/views'
 import { text } from '@renderer/design-system/tokens'
-import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
+import { labelColorFor } from '@renderer/design-system/tokens/colorMap'
 import { cx } from '@renderer/design-system/cx'
 import { asRenderableIcon, Icon } from '@renderer/design-system/symbols'
 import { Reveal } from '@renderer/design-system/components/Reveal'
 import { registerDiscloseTarget } from '@renderer/design-system/interactions/dragDisclose'
-import { Chip, chipShapeForType } from '@renderer/Components/Chip'
-import { ContextChip } from '@renderer/Components/ContextChip'
 import { RenamableTitle } from '@renderer/Components/RenamableTitle'
 import { declaredType } from './pipeline/value'
 import { findOption, groupLabel } from './Table/cellResolve'
@@ -19,6 +17,7 @@ import type { ResolveContext } from './Table/resolveContext'
 import './GroupBand.css'
 import { onActivateKey } from '@renderer/design-system/interactions/activate'
 import { twisty, twistyOpen } from '@renderer/design-system/components/menu/menu.css'
+import { ContextChip, Label, optionShapeFor } from '@renderer/design-system/labels'
 
 /** The single home for group-band glyph resolution, shared by the table and cards views. Chip
  *  color/shape resolve from the schema here, so `ResolvedGroup` stays colorless. */
@@ -90,7 +89,7 @@ export function resolveBandHead(
     const title = space?.title ?? value
     return {
       label: title,
-      glyph: <ContextChip color={chipColorFor(space?.color)} title={title} icon={space?.icon} />,
+      glyph: <ContextChip color={labelColorFor(space?.color)} title={title} icon={space?.icon} />,
     }
   }
 
@@ -103,10 +102,10 @@ export function resolveBandHead(
       return {
         label,
         glyph: (
-          <Chip
-            color={chipColorFor(opt?.color)}
-            label={opt?.label ?? value}
-            shape={chipShapeForType(groupType)}
+          <Label
+            color={labelColorFor(opt?.color)}
+            text={opt?.label ?? value}
+            shape={optionShapeFor(groupType)}
           />
         ),
       }

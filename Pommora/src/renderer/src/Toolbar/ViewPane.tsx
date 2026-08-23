@@ -17,7 +17,7 @@ import { PaneDnd, RowShell, usePaneRegions } from '../Components/Detail/paneDnd'
 import type { PaneDrop, PaneRow, paneSlot } from '../Components/Detail/paneDndModel'
 import { useSaveView, useViewEmbedScope } from '@renderer/Embeds/ViewEmbedScope'
 import { ColorPicker } from '../Components/Detail/ColorPicker'
-import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
+import { labelColorFor } from '@renderer/design-system/tokens/colorMap'
 import { RenamableLabel } from '../Components/RenamableLabel'
 import { IconPicker } from '../Components/IconPicker'
 import { useSession } from '../store'
@@ -234,7 +234,7 @@ export function ViewPane({
       />
       <ColorPicker
         open={colorFor !== null}
-        selected={chipColorFor(colorFor?.color)}
+        selected={labelColorFor(colorFor?.color)}
         onPick={(picked) => {
           if (colorFor) void saveView({ ...colorFor, color: picked })
           setColorFor(null)

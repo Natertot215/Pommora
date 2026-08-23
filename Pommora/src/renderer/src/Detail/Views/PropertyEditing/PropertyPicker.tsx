@@ -3,11 +3,10 @@ import type { ColumnLook } from '@shared/columnStyles'
 import { type PropertyDefinition, statusOptions } from '@shared/properties'
 import type { PropertyValue } from '@shared/propertyValue'
 import { PickerMenu, PickerOption } from '@renderer/design-system/components/PickerMenu/PickerMenu'
-import { Chip, chipShapeForType } from '@renderer/Components/Chip'
-import { ContextChip } from '@renderer/Components/ContextChip'
-import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
+import { labelColorFor } from '@renderer/design-system/tokens/colorMap'
 import { statusGroupOf } from './statusCycle'
 import { StatusCapsule } from './StatusCapsule'
+import { ContextChip, Label, optionShapeFor } from '@renderer/design-system/labels'
 
 /** A pickable option — status options flatten out of their groups, select/multi read
  *  `select_options`. An option is never filtered by what it's called: the starter options a new
@@ -134,12 +133,12 @@ export function PropertyOptionRows({
             {capsule ? (
               <StatusCapsule color={o.color} group={group} />
             ) : contextOptions ? (
-              <ContextChip color={chipColorFor(o.color)} title={o.label} icon={o.icon} />
+              <ContextChip color={labelColorFor(o.color)} title={o.label} icon={o.icon} />
             ) : (
-              <Chip
-                color={chipColorFor(o.color)}
-                label={o.label}
-                shape={chipShapeForType(def.type)}
+              <Label
+                color={labelColorFor(o.color)}
+                text={o.label}
+                shape={optionShapeFor(def.type)}
               />
             )}
           </PickerOption>

@@ -525,7 +525,7 @@ export function PointMenu({
  *  marks the chosen one is the nexus's `pickerSelection` setting, resolved in CSS off a root class,
  *  so no call site states a mode and every picker in the app answers the setting together.
  *
- *  Chip overflow (truncate + scroll) is `chipLabel`'s in design-system/tokens — none of it here. */
+ *  Label overflow (truncate + scroll) is the shared OverScroll's — none of it here. */
 export function PickerOption({
   children,
   onClick,

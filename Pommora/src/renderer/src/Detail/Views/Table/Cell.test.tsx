@@ -5,11 +5,12 @@ import { createRoot, type Root } from 'react-dom/client'
 import type { ColumnStyle } from '@shared/columnStyles'
 import type { PropertyDefinition } from '@shared/properties'
 import type { ResolvedColumn, ViewRow } from '@shared/types'
-import { chipColor } from '@renderer/design-system/tokens'
+
 import { EMPTY_ASSET_MAP } from '@shared/types'
 import { Cell } from './Cell'
 import type { ResolveContext } from './resolveContext'
 import { propsAtRoot } from '@renderer/testing/propsAtRoot'
+import { labelColor } from '@renderer/design-system/labels'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -138,14 +139,14 @@ describe('checkbox looks', () => {
     mount(rowWith({ prop_pin: true }), 'prop_pin', { look: 'checkbox' })
     const box = host.querySelector('span')
     expect(box?.style.background).not.toBe('') // tinted fill, not the grey default class
-    expect(box?.className).not.toContain(chipColor.default)
+    expect(box?.className).not.toContain(labelColor.default)
     expect(box?.style.color).toBe('var(--label-control)')
   })
 
   it('unchecked box is the neutral grey default, untinted', () => {
     mount(rowWith({}), 'prop_pin', { look: 'checkbox' })
     const box = host.querySelector('span')
-    expect(box?.className).toContain(chipColor.default)
+    expect(box?.className).toContain(labelColor.default)
     expect(box?.style.background).toBe('')
   })
 

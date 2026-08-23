@@ -1,13 +1,18 @@
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import { Icon } from '@renderer/design-system/symbols'
-import { chipColor } from '@renderer/design-system/tokens'
-import type { chipColorFor } from '@renderer/design-system/tokens/colorMap'
+
+import type { labelColorFor } from '@renderer/design-system/tokens/colorMap'
 import { cx } from '@renderer/design-system/cx'
-import { Chip, chipShapeClass, type ChipShape } from '../Chip'
 import { ColorPicker } from './ColorPicker'
 import { OptionNameCaret, ghostAnchorProps } from './GhostOptionChip'
 import type { GhostAnchor } from '@renderer/Detail/Views/useGhostAnchor'
 import * as s from './settingsPane.css'
+import {
+  Label,
+  labelColor,
+  shape as labelShape,
+  type LabelShape,
+} from '@renderer/design-system/labels'
 
 /** One reorderable option, the same row in the Select editor and the Status editor. Everything that
  *  differs between them — where the list came from, whether a group's color stands in for an unset
@@ -30,9 +35,9 @@ export function OptionRow({
   onPickColor,
 }: {
   label: string
-  shape: ChipShape
+  shape: LabelShape
   /** Already resolved — a Status option inherits its group's color, a Select option has only its own. */
-  color: ReturnType<typeof chipColorFor>
+  color: ReturnType<typeof labelColorFor>
   renaming: boolean
   coloring: boolean
   paletteRef: React.RefObject<HTMLButtonElement | null>
@@ -45,7 +50,7 @@ export function OptionRow({
   if (renaming) {
     return (
       <OptionNameCaret
-        className={cx(chipShapeClass(shape), chipColor[color])}
+        className={cx(labelShape[shape], labelColor[color])}
         value={label}
         onCommit={onCommitRename}
         onCancel={onCancelRename}
@@ -54,7 +59,7 @@ export function OptionRow({
   }
   return (
     <>
-      <Chip shape={shape} color={color} label={label} />
+      <Label shape={shape} color={color} text={label} />
       <span className={s.paletteAnchor}>
         <button
           ref={coloring ? paletteRef : undefined}

@@ -319,7 +319,7 @@ export const optionList = style({
   flexDirection: 'column',
   gap: `${OPTION.gapBetweenChips}px`,
   paddingTop: `${OPTION.gapAroundLabel}px`,
-  vars: { '--chip-pad-x': `${OPTION.chipPadX}px` },
+  vars: { '--label-pad-x': `${OPTION.chipPadX}px` },
 })
 
 export const optionRow = style({

@@ -1,4 +1,4 @@
-import { chipBoxGeometry } from '@renderer/design-system/tokens/chip.css'
+import { boxGeometry } from '@renderer/design-system/labels'
 import { cx } from '../cx'
 import './checkbox.css'
 
@@ -28,7 +28,7 @@ export function Checkbox({
       aria-checked={state}
       aria-label={ariaLabel}
       className={cx(
-        chipBoxGeometry,
+        boxGeometry,
         'pm-checkbox',
         small && 'pm-checkbox-small',
         state && 'pm-checkbox-checked',

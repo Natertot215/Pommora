@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { FileLabel } from './FileLabel'
+import { FileLabel } from './recipes'
 
 let root: Root | undefined
 let host: HTMLElement

@@ -1,6 +1,6 @@
 import type { StatusGroupId } from '@shared/properties'
-import { chipCapsule, chipColor } from '@renderer/design-system/tokens'
-import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
+import { labelColor, shape } from '@renderer/design-system/labels'
+import { labelColorFor } from '@renderer/design-system/tokens/colorMap'
 import { cx } from '@renderer/design-system/cx'
 import { Icon } from '@renderer/design-system/symbols'
 import { statusGroupGlyph } from './statusCycle'
@@ -16,7 +16,7 @@ export function StatusCapsule({
   group: StatusGroupId | undefined
 }): React.JSX.Element {
   return (
-    <span className={cx(chipCapsule, chipColor[chipColorFor(color)])}>
+    <span className={cx(shape.chip, labelColor[labelColorFor(color)])}>
       <Icon name={statusGroupGlyph(group)} size="body" />
     </span>
   )

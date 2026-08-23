@@ -1,11 +1,11 @@
 import { DEFAULT_ACCENT, type AccentSetting } from '@shared/types'
-import { chipColorFor } from './tokens/colorMap'
+import { labelColorFor } from './tokens/colorMap'
 import { ANCHOR_CELLS, cellColor } from './tokens/ramp'
 
 /** There is no separate "accent" color — it's always a cell of the ramp, resolved the same way a
  *  chip resolves one, so a legacy solid name and a stepped key both land on their own color. */
 const accentCell = (setting: string): string => {
-  const key = chipColorFor(setting)
+  const key = labelColorFor(setting)
   return cellColor(key === 'default' ? ANCHOR_CELLS[DEFAULT_ACCENT] : key)
 }
 

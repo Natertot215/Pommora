@@ -1,12 +1,12 @@
-import type { ChipColorName } from '@renderer/design-system/tokens/chip.css'
-import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
+import type { LabelColorName } from '@renderer/design-system/labels'
+import { labelColorFor } from '@renderer/design-system/tokens/colorMap'
 import { cellColor } from '@renderer/design-system/tokens/ramp'
 
 /** The CSS color a palette key resolves to: its stored cell, or the runtime system accent when
  *  unset ("Default"). One source for the link cell/editor AND the checkbox cell/editor. */
 export function solidColorCss(color: string | undefined): string {
   if (!color) return 'var(--system-accent)'
-  const key = chipColorFor(color)
+  const key = labelColorFor(color)
   return cellColor(key === 'default' ? 'grey-4' : key)
 }
 
@@ -17,7 +17,7 @@ export function solidColorCss(color: string | undefined): string {
 export function resolveColor(
   color: string | undefined,
   fallback: string,
-): { name: ChipColorName; css: string } {
+): { name: LabelColorName; css: string } {
   if (!color) return { name: 'accent', css: fallback }
-  return { name: chipColorFor(color), css: solidColorCss(color) }
+  return { name: labelColorFor(color), css: solidColorCss(color) }
 }

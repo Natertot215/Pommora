@@ -10,7 +10,7 @@ import type { SidePaneBounds } from '@renderer/design-system/components/SidePane
 import type { DevicePrefs } from '@shared/devicePrefs'
 import { PickerControl, type PickerChoice } from '@renderer/Components/Detail/PickerControl'
 import { ColorSwatch } from '@renderer/design-system/components/Switches/ColorSwatch'
-import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
+import { labelColorFor } from '@renderer/design-system/tokens/colorMap'
 import { solidColorCss } from '@renderer/Detail/Views/Table/solidColor'
 import { LINK_FORMAT_OPTIONS } from '@renderer/Components/Detail/LinkFormat'
 import { DEFAULT_LINK_DISPLAY, type LinkDisplay } from '@shared/properties'
@@ -659,7 +659,7 @@ function ColorRow({ row }: { row: RowOf<'color'> }): React.JSX.Element {
     <SettingsRow label={row.label} hint={row.hint}>
       <ColorSwatch
         label={row.label}
-        selected={inheriting ? 'default' : chipColorFor(value)}
+        selected={inheriting ? 'default' : labelColorFor(value)}
         css={inheriting ? row.inheritsVar : solidColorCss(value)}
         greyscale={row.greyscale}
         onPick={(next) => setPersonalization(row.key, (next ?? row.inherits) as never)}

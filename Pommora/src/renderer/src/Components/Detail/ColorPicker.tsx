@@ -1,6 +1,6 @@
 import type { RefObject } from 'react'
 import { PickerMenu } from '@renderer/design-system/components/PickerMenu/PickerMenu'
-import type { ChipColorName } from '@renderer/design-system/tokens/chip.css'
+import type { LabelColorName } from '@renderer/design-system/labels'
 import { cellColor, cellRing } from '@renderer/design-system/tokens/ramp'
 import { RAMP_FAMILIES, RAMP_STEPS, type CellKey } from '@shared/theme'
 import { cx } from '@renderer/design-system/cx'
@@ -26,7 +26,7 @@ export function ColorPicker({
   greyscale = true,
 }: {
   open: boolean
-  selected: ChipColorName
+  selected: LabelColorName
   onPick: (color: string | undefined) => void
   onDismiss: () => void
   triggerRef: RefObject<Element | null>
