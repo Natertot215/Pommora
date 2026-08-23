@@ -7,9 +7,11 @@ import {
   chipCapsule,
   chipBox,
   chipColor,
-  chipLabelWrap,
+  chipLabelCap,
 } from '@renderer/design-system/tokens'
 import { DualSwitch } from '@renderer/design-system/components/Switches/DualSwitch'
+import { Chip } from '@renderer/Components/Chip'
+import { ContextChip } from '@renderer/Components/ContextChip'
 import { FileChip } from '@renderer/design-system/components/FileChip'
 import { FileLabel } from '@renderer/design-system/components/FileLabel'
 import { Icon } from '@renderer/design-system/symbols'
@@ -17,6 +19,7 @@ import { SortableZone, useDragItem, reorder } from '@renderer/design-system/inte
 import type { ChipColorName } from '@renderer/design-system/tokens/chip.css'
 import { ANCHOR_CELLS, cellColor } from '@renderer/design-system/tokens/ramp'
 import { cx } from '@renderer/design-system/cx'
+import { overScrollUnmasked } from '@renderer/design-system/interactions/OverScroll'
 import { humanize, useIsCompact } from './helpers'
 
 // The demo rows show one chip per SPECTRUM anchor rather than all 64 cells — the ramp's shape is the
@@ -36,7 +39,7 @@ function ChipCell({
   const { setNodeRef, style, handle } = useDragItem(id)
   return (
     <span ref={setNodeRef} style={style} className={pillClass(color)} {...handle} title={color}>
-      <span className={chipLabelWrap}>{label}</span>
+      <span className={cx(chipLabelCap, overScrollUnmasked)}>{label}</span>
     </span>
   )
 }
@@ -50,7 +53,7 @@ function PillRow(): React.JSX.Element {
       {items.map((it) =>
         compact ? (
           <span key={it.id} className={pillClass(it.id)} title={it.id}>
-            <span className={chipLabelWrap}>{it.name}</span>
+            <span className={cx(chipLabelCap, overScrollUnmasked)}>{it.name}</span>
           </span>
         ) : (
           <ChipCell key={it.id} id={it.id} color={it.id} label={it.name} />
@@ -72,11 +75,15 @@ function PillRow(): React.JSX.Element {
 }
 
 const SHAPE_ROWS: Array<{ label: string; shape: string; content: () => ReactNode }> = [
-  { label: 'Label', shape: chipLabel, content: () => <span className={chipLabelWrap}>Label</span> },
+  {
+    label: 'Label',
+    shape: chipLabel,
+    content: () => <span className={cx(chipLabelCap, overScrollUnmasked)}>Label</span>,
+  },
   {
     label: 'Context',
     shape: chipContext,
-    content: () => <span className={chipLabelWrap}>Context</span>,
+    content: () => <span className={cx(chipLabelCap, overScrollUnmasked)}>Context</span>,
   },
   { label: 'Capsule', shape: chipCapsule, content: () => <Icon name="circle-dashed" size={13} /> },
   { label: 'Box', shape: chipBox, content: () => <Icon name="check" size={12} strokeWidth={3} /> },
@@ -191,6 +198,27 @@ const FILE_SHAPES: Array<{ label: string; content: ReactNode }> = [
   { label: 'Plain · a name inside a field', content: <FileLabel name="Meeting Notes.md" /> },
 ]
 
+/** A removable chip in every shape it can wear — the one state the rows above can't show, since
+ *  the melt only reads against a chip that carries a ground and a name long enough to smear. */
+function RemovableRow(): React.JSX.Element {
+  const [gone, setGone] = useState<string[]>([])
+  const shown = (['pill', 'label', 'file', 'plain'] as const).filter((s) => !gone.includes(s))
+  return (
+    <div className="ds-chip-row-items">
+      {shown.map((shape) => (
+        <Chip
+          key={shape}
+          shape={shape}
+          color={shape === 'pill' ? 'blue-4' : shape === 'label' ? 'green-4' : undefined}
+          label={`Removable ${shape}`}
+          onRemove={() => setGone((g) => [...g, shape])}
+        />
+      ))}
+      <ContextChip color="purple-4" title="Removable context" onRemove={() => {}} />
+    </div>
+  )
+}
+
 export function ChipsLeaf(): React.JSX.Element {
   return (
     <div className="ds-leaf">
@@ -207,6 +235,10 @@ export function ChipsLeaf(): React.JSX.Element {
               <ShapeRow rowId={shape.label} shape={shape.shape} content={shape.content} />
             </div>
           ))}
+          <div className="ds-chip-row">
+            <div className="ds-chip-rowlabel">Removable · hover the right third</div>
+            <RemovableRow />
+          </div>
           {FILE_SHAPES.map((s) => (
             <div className="ds-chip-row" key={s.label}>
               <div className="ds-chip-rowlabel">{s.label}</div>

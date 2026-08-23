@@ -344,11 +344,11 @@ export const ghostOptionRow = style([
 ])
 
 /** Outline only — the chip's border and label with its fill dropped, so a slot reads as a shape
- *  waiting to be filled rather than as a value that already has one. `--chip-fill` follows the
+ *  waiting to be filled rather than as a value that already has one. `--melt-ground` follows the
  *  background it no longer has, keeping the melt twins off a color the chip isn't wearing. */
 export const ghostChip = style({
   selectors: {
-    '&&': { background: 'transparent', vars: { '--chip-fill': 'transparent' } },
+    '&&': { background: 'transparent', vars: { '--melt-ground': 'transparent' } },
   },
 })
 

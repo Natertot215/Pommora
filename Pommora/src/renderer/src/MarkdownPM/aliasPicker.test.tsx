@@ -75,7 +75,7 @@ describe('the forget × is inert until it is revealed', () => {
     host = null
   })
 
-  // ChipRemoveButton gates its own click on computed opacity, so the reveal is what makes the ×
+  // HoverRemove gates its own click on computed opacity, so the reveal is what makes the ×
   // clickable at all. Opacity is set directly here rather than by hovering: jsdom applies no
   // stylesheet, and the point being pinned is the gate, not the CSS that drives it.
   const onPick = vi.fn()
