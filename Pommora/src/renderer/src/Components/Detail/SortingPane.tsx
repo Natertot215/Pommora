@@ -26,6 +26,7 @@ const SORTABLE_PANE = new Set([
   'checkbox',
   'url',
   'multi_select',
+  'file',
 ])
 
 const OPTION_DIRECTIONS: PickerChoice<Direction>[] = [
@@ -62,6 +63,7 @@ function directionOptions(
       return OPTION_DIRECTIONS
     case 'url':
     case 'multi_select':
+    case 'file':
       return TEXT_DIRECTIONS
     default:
       return VALUE_DIRECTIONS
