@@ -247,6 +247,12 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
                           ctx,
                           hideIcon: false,
                           style: { look: 'pill' },
+                          // The chip's hover × hands back what survives it — a Context keeps its
+                          // remaining Spaces, a property its remaining options.
+                          remove: def
+                            ? (next) => commitValue(id, next)
+                            : (next) =>
+                                commitContext(id, next?.kind === 'context' ? next.value : []),
                         }) ?? <span className="pgpreview-insp-empty">—</span>)
                       )}
                     </span>
