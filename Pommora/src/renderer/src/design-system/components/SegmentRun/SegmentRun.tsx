@@ -12,7 +12,6 @@ export interface SegmentEntry {
   icon?: React.ReactNode | false
   /** Opts this entry into the hover-×. It removes THIS entry, so the handler owns what that means. */
   onRemove?: () => void
-  /** Opts this entry into a click of its own — a file label opens the dialog at its own folder. */
   /** The entry names something that isn't there. It still renders, reading as naming nothing. */
   unresolved?: boolean
 }

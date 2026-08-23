@@ -108,8 +108,8 @@ function computeFieldValue(
 }
 
 /** The filename a file reference names — the wikilink's own title, or the raw text where it isn't
- *  one. The one extraction: sort orders by it, the label reads it, and a text filter over a file
- *  column reads the same one rather than re-deriving the parse. */
+ *  one. The one extraction, so the order a column sorts in and the text a cell shows can't
+ *  disagree about what a reference is called. */
 export const fileName = (reference: string): string =>
   parseConnectionText(reference)?.title ?? reference
 
