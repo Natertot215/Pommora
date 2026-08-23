@@ -26,7 +26,7 @@ Design System
 └── Pending
 ```
 
-The Pommora design system — the code mirror of the Figma "Pommora - React" library, which is canonical for design values and the visual reference for components. Tokens come in two tiers: raw **primitives**, and the meaningful **semantic** aliases built on them.
+The Pommora design system — the code mirror of the Figma "Pommora - React" library, which is canonical for design values and the visual reference for components. Tokens come in two tiers: raw **primitives**, and the meaningful **semantic** aliases built on them. This document *doesn’t* describe absolutely everything design-related, and sections may be non-exhaustive — catalogue-completion is the *goal*, not the promise.
 
 ### Tooling
 
@@ -66,17 +66,17 @@ The opaque content planes layered on the window substrate — addressed by role,
 
 #### Labels
 
-The text ladder — system-white at descending presence. Primary is the raw primitive passed through; the rest are opacity steps. Labels ride the near-white so the lightest label still reads over the heaviest fill.
+The text ladder — system-white at descending opacpresence. Primary is the raw primitive passed through; the rest are opacity steps. Labels ride the near-white so the lightest label still reads over the heaviest fill.
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/color.css.ts`
 
-| Title | Token | Value |
-| --- | --- | --- |
-| Label Primary | `label.primary` · `--label-primary` | system-white @ 100% |
-| Label Control | `label.control` · `--label-control` | system-white @ 80% |
-| Label Secondary | `label.secondary` · `--label-secondary` | system-white @ 65% |
-| Label Tertiary | `label.tertiary` · `--label-tertiary` | system-white @ 35% |
-| Label Quaternary | `label.quaternary` · `--label-quaternary` | system-white @ 20% |
+| Title            | Token                                     | Value               |
+| ---------------- | ----------------------------------------- | ------------------- |
+| Label Primary    | `label.primary` · `--label-primary`       | system-white @ 100% |
+| Label Control    | `label.control` · `--label-control`       | system-white @ 80%  |
+| Label Secondary  | `label.secondary` · `--label-secondary`   | system-white @ 65%  |
+| Label Tertiary   | `label.tertiary` · `--label-tertiary`     | system-white @ 35%  |
+| Label Quaternary | `label.quaternary` · `--label-quaternary` | system-white @ 20%  |
 
 #### States
 

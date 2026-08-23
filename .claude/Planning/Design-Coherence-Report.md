@@ -82,11 +82,11 @@ would call. It documents the machine's internals and hides its controls.
 
 Three statements the code contradicted, each verified and then replaced rather than annotated.
 
-| Was | Now | Evidence |
-| --- | --- | --- |
-| `--codeColor` | `--code` | `--codeColor` appears nowhere in `src/`; `codeColor` is the settings key |
+| Was                                                                                  | Now                                                                                           | Evidence                                                                             |
+| ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `--codeColor`                                                                        | `--code`                                                                                      | `--codeColor` appears nowhere in `src/`; `codeColor` is the settings key             |
 | "These are what an accent may be set to; the ramp widens what a chip may be colored" | "These are the anchor names still on disk; an accent and a chip alike resolve to a ramp cell" | `accent.ts` — "There is no separate 'accent' color — it's always a cell of the ramp" |
-| Cobalt | Light Blue | "Cobalt" appears nowhere in `src/`; the seat is `SPECTRUM.lightBlue` |
+| Cobalt                                                                               | Light Blue                                                                                    | "Cobalt" appears nowhere in `src/`; the seat is `SPECTRUM.lightBlue`                 |
 
 #### Corrections outstanding
 
@@ -238,16 +238,16 @@ that belongs where it is, pulling one string from app code; the repair is a prop
 
 Ranked by confidence, the components that should move:
 
-| Component | Consumers | Destination |
-| --- | --- | --- |
-| `Chip` + `ContextChip` | 12, two of them inside the design system | `components/Chip/` |
-| `EditableInput` | 5, one inside the design system | `components/EditableInput/` |
-| `ColorPicker` | 6, one inside the design system | `components/ColorPicker/` |
-| `RenamableLabel` | 8 | `components/EditableInput/` |
-| `PaneSlider` | 7 | `components/PaneSlider/` |
-| `solidColor.ts` | 11, six outside its own view folder | `tokens/` |
-| `checkboxLook.tsx` | 3 | beside `components/Checkbox.tsx` |
-| `PhotoCropModal` | 2 | `components/PhotoCrop/` |
+| Component              | Consumers                                | Destination                      |
+| ---------------------- | ---------------------------------------- | -------------------------------- |
+| `Chip` + `ContextChip` | 12, two of them inside the design system | `components/Chip/`               |
+| `EditableInput`        | 5, one inside the design system          | `components/EditableInput/`      |
+| `ColorPicker`          | 6, one inside the design system          | `components/ColorPicker/`        |
+| `RenamableLabel`       | 8                                        | `components/EditableInput/`      |
+| `PaneSlider`           | 7                                        | `components/PaneSlider/`         |
+| `solidColor.ts`        | 11, six outside its own view folder      | `tokens/`                        |
+| `checkboxLook.tsx`     | 3                                        | beside `components/Checkbox.tsx` |
+| `PhotoCropModal`       | 2                                        | `components/PhotoCrop/`          |
 
 `solidColor.ts` deserves its own note: it is pure token math over `colorMap` and `ramp`, it has no table
 knowledge, and it lives in `Detail/Views/Table/`. Six of its eleven consumers are elsewhere. It is the
@@ -277,17 +277,17 @@ fixes five copies and the silence together.
 
 The rest, ranked:
 
-| Finding | Sites | Owner it wants | Effort |
-| --- | --- | --- | --- |
-| The settings toggle row, restated verbatim **(concurrent)** | 7 | `ToggleRow`, beside the existing `ValueRow` | Small |
-| The property-editor config row **(concurrent)** | 7 | Promote `NumberEditor`'s private `Row` | Small |
-| The url-vs-type commit derivation | 4 | `editorValue.ts` | Small |
-| The link-accent derivation | 5 | One helper beside `solidColorCss` | Small |
-| The twisty glyph, hand-rolled beside its own helper | 3 | Export `Twisty` from `DisclosureRow` | Small |
-| `CollectionNode \| SetNode`, an unnamed type | 30+ | `type ViewSource` in the contract | Small |
-| The `.ppane-action` icon button | 6 | `PaneAction`, exported from `PreviewPane` | Small |
-| Raw `<webview>` mounts with a documented-by-cross-reference cast | 3 | A `WebGuest` owning the incantation | Medium |
-| Four independent hosts for the same picker triple | 4 | Generalize `CardPickerHost` | Medium |
+| Finding                                                          | Sites | Owner it wants                              | Effort |
+| ---------------------------------------------------------------- | ----- | ------------------------------------------- | ------ |
+| The settings toggle row, restated verbatim **(concurrent)**      | 7     | `ToggleRow`, beside the existing `ValueRow` | Small  |
+| The property-editor config row **(concurrent)**                  | 7     | Promote `NumberEditor`'s private `Row`      | Small  |
+| The url-vs-type commit derivation                                | 4     | `editorValue.ts`                            | Small  |
+| The link-accent derivation                                       | 5     | One helper beside `solidColorCss`           | Small  |
+| The twisty glyph, hand-rolled beside its own helper              | 3     | Export `Twisty` from `DisclosureRow`        | Small  |
+| `CollectionNode \| SetNode`, an unnamed type                     | 30+   | `type ViewSource` in the contract           | Small  |
+| The `.ppane-action` icon button                                  | 6     | `PaneAction`, exported from `PreviewPane`   | Small  |
+| Raw `<webview>` mounts with a documented-by-cross-reference cast | 3     | A `WebGuest` owning the incantation         | Medium |
+| Four independent hosts for the same picker triple                | 4     | Generalize `CardPickerHost`                 | Medium |
 
 #### The two structural twins
 
