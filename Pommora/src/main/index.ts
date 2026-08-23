@@ -61,7 +61,12 @@ import { pathExists } from './io/atomicWrite'
 import { readAppConfig, updateAppConfig, addRecent, DEFAULT_TRASH_MODE } from './appConfig'
 import { liveAssetMap, refreshAssetMap, takeAssetMapPush } from './assetMap'
 import { migrateAssets } from './assetMigrate'
-import { assetSubfolder, underAssetRoot, validPropertyDir } from './assetRoots'
+import {
+  assetSubfolder,
+  NOT_A_PROPERTY_DIR_MESSAGE,
+  underAssetRoot,
+  validPropertyDir,
+} from './assetRoots'
 import { assetsDir, relPosix } from './paths'
 import { rootSegs } from './exclusion'
 import { ASSET_MIME, IMAGE_EXTS } from '@shared/assetMime'
@@ -568,7 +573,7 @@ async function resolveSchemaFolder(
 // session refusals (NO_NEXUS / BUSY) the ipc module owns.
 const NEEDS_PROPERTY_ID = fail('operation-failed', 'A property id is required.')
 const NEEDS_ID_AND_VALUE = fail('operation-failed', 'A property id and value are required.')
-const NOT_A_PROPERTY_DIR = fail('invalid-path', 'That folder can’t hold this property’s files.')
+const NOT_A_PROPERTY_DIR = fail('invalid-path', NOT_A_PROPERTY_DIR_MESSAGE)
 const NEEDS_CONFIG_PATCH = fail('operation-failed', 'A config patch is required.')
 
 // The three shapes the no-container property channels share. Each states the ceremony once —

@@ -63,7 +63,7 @@ function folderOf(reference: string): string {
 
 /** The pick as every surface actually spends it: run it, and write only a defined answer —
  *  `undefined` is "nothing happened", which a bare `!= null` would mistake for a clear. Stated
- *  once so the five call sites can't each decide what a cancelled dialog means. */
+ *  once so no call site decides for itself what a cancelled dialog means. */
 export function pickFileInto(
   def: PropertyDefinition,
   current: PropertyValue,
@@ -73,4 +73,21 @@ export function pickFileInto(
   void runFilePick(def, current, chip).then((next) => {
     if (next !== undefined) commit(next)
   })
+}
+
+/** The value menu's three file actions, for the surfaces that pop one. Remove needs no dialog and
+ *  Add differs from Replace only in whether it carries the chip, so the triad is one branch rather
+ *  than a copy per surface. */
+export function runFileMenuAction(
+  action: 'file:add' | 'file:replace' | 'file:remove',
+  def: PropertyDefinition | undefined,
+  current: PropertyValue,
+  chip: number | null,
+  commit: (next: PropertyValue | null) => void,
+): void {
+  if (action === 'file:remove') {
+    if (chip !== null) commit(fileValueWithout(current, chip))
+  } else if (def) {
+    pickFileInto(def, current, action === 'file:replace' ? chip : null, commit)
+  }
 }

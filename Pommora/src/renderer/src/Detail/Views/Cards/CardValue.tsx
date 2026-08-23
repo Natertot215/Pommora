@@ -17,7 +17,7 @@ import type { ResolveContext } from '../Table/resolveContext'
 import { PropertyEditor } from '../PropertyEditing/PropertyEditor'
 import { numberDivisor } from '../PropertyEditing/formatValue'
 import { sharedValueClickAction } from '../PropertyEditing/valueClick'
-import { fileChipIndex, fileValueWithout, pickFileInto } from '../PropertyEditing/filePick'
+import { fileChipIndex, pickFileInto, runFileMenuAction } from '../PropertyEditing/filePick'
 
 export function CardValue({
   row,
@@ -143,10 +143,14 @@ export function CardValue({
     if (!action) return
     if (action === 'cell:clear') commit(null)
     else if (action === 'cell:hide') onHide(column.id)
-    else if (action === 'file:remove') {
-      if (chip !== null) commit(fileValueWithout(v, chip))
-    } else if (action === 'file:add' || action === 'file:replace') {
-      if (schemaDef) pickFileInto(schemaDef, v, action === 'file:replace' ? chip : null, commit)
+    else if (action.startsWith('file:')) {
+      runFileMenuAction(
+        action as 'file:add' | 'file:replace' | 'file:remove',
+        schemaDef,
+        v,
+        chip,
+        commit,
+      )
     } else if (action === 'cell:edit') {
       if (t === 'url' && anchorRef.current) onOpenPicker(column, 'link', anchorRef.current)
       else setMode('editor')
