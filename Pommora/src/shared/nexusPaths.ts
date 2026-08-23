@@ -27,6 +27,15 @@ export const CONTEXTS_DIR_REL = `${NEXUS_DIR}/${CONTEXTS_DIRNAME}`
 /** The thumbnail root, and the default value of the user-configurable `asset_directory`. */
 export const ASSETS_DIR_REL = `${NEXUS_DIR}/assets`
 
+/** The asset root a file property's files land under — the configured root, or the subfolder its
+ *  Directory names beneath it. An absent subfolder resolves to the root itself, so nothing
+ *  downstream special-cases one. Both processes compose it: main to aim the write, the renderer to
+ *  aim the dialog it opens, and a second spelling on either side would point them at two folders.
+ *  It composes only — the destination is REFUSED at `adoptFile`, where the write happens. */
+export function assetSubRoot(assetDir: string, subfolder: string | undefined): string {
+  return [assetDir, subfolder].filter(Boolean).join('/')
+}
+
 /** A nav key names a thumbnail's file, with its colon flipped to a dash — a colon is legal in a key
  *  and hostile in a filename. Stated here because the writer and every reader must agree on it. */
 export const thumbKey = (navKey: string): string => navKey.replace(':', '-')

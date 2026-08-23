@@ -358,3 +358,138 @@ Ordered by payoff against effort. Nothing here has been done.
   meant to be the system's, the ten restated sites should read it; if not, it should stop being bridged.
 - **Where `chip.css.ts` belongs.** 331 lines of component styling inside `tokens/`, and the token barrel
   is also the chip barrel.
+
+### VI. Relation To The Architecture Audit
+
+The audit reached the same finding from the opposite direction, and did so first. It asked *who imports
+out of a folder*; this survey asked *what a folder imports in*. Both describe the same edges.
+
+| The audit saw | This survey saw | Same edge |
+| --- | --- | --- |
+| `Components/Detail` is a feature subsystem wearing a shared-components address — 13 external importers | `ColorPicker`, `PaneSlider`, `PickerControl` are design-system components filed under a feature | yes |
+| `Table/` exports to eight external files at twelve sites — "four homes, not one" | `solidColor.ts` is token math with eleven consumers, six outside its own view folder | yes |
+| `PaneSlider` is stranded inside `Components/Detail` and imports exclusively from the design system | `PaneSlider`, seven consumers, belongs in `design-system/` | yes |
+
+The audit's framing is the more useful one and should be adopted: **this is a filing error, not an
+architecture error.** Nothing underneath is rotten — the dependency graph is acyclic, the layers are real,
+and the modules are individually well-built. What is wrong is the addresses. That is why the audit's
+estimate for both bundles is `net ≈ 0`: it is `git mv` plus import churn, and the typecheck catches every
+miss.
+
+#### A collision this session created
+
+Bundle 6a moves the view-settings/property-editing subsystem out of `Components/` into its own domain
+folder, and explicitly carves `PaneSlider` out into `design-system/` on the way. When that was written,
+`PaneSlider` was the only design-system-bound module in the folder.
+
+It no longer is. `ColorPicker` now has two importers inside `design-system/components/Switches/`, created
+in this session when `ColorSwatch` moved there. **Run 6a as written and `ColorPicker` rides into a feature
+domain while the design system imports it** — the inversion gets deeper, not shallower, and the new import
+path is longer than the one it replaces.
+
+The repair is small and belongs *before* 6a rather than after: extract the design-system-bound modules
+first, then move what remains. The audit's own ordering rule — 6a precedes 6b and 6c because both would
+otherwise add imports at the address being vacated — applies one level up. There is now a 6-zero.
+
+#### A disagreement worth settling
+
+The two analyses name different destinations for one module. The audit sends `checkboxLook` to "a
+property-display home" alongside `Cell`, `columnStyles` and `columnLabel`. This survey sends it to
+`design-system/components/` beside `Checkbox.tsx`, on the grounds that the two draw the same box and
+keeping them apart is the drift both their docblocks warn about.
+
+Both readings are defensible and they cannot both be right. The disagreement is not really about
+`checkboxLook` — it is about whether a layer exists between the design system and the features. That
+question is the subject of the next section.
+
+### VII. What A Refactor Would Actually Require
+
+Everything below is a decision, not a task. None of it should be started before the questions are
+answered, because each answer changes what the work is.
+
+#### The missing layer
+
+`Components/Detail` holds **49 modules. Thirteen touch the store or IPC. Of the remaining thirty-six, seven
+import a data-model type.** So roughly twenty-nine modules are neither feature code nor generic
+primitives — they are presentation that knows what a property is without knowing where one comes from.
+
+This is the layer the codebase keeps inventing and never naming. The audit invented it as "a
+property-display home" for `Cell` and `checkboxLook`. This survey invented it independently by proposing
+`OptionChip`. The chip system already lives it: `chip.css.ts` sits in `tokens/` because a chip is a token
+by construction, while `PropertiesPM` owns the words because a chip is what a *value* looks like.
+
+Two layers force every module into a bad fit. Three would file them honestly:
+
+```yaml
+design-system/     | • Knows nothing. No store, no IPC, no entity type. Chip, EditableInput,
+                   |   ColorPicker, PaneSlider, PickerControl, solidColor, the tokens.
+<the middle>/      | • Knows the model, not the app. checkboxLook, columnStyles, OptionChip,
+                   |   PropertyTypes, filterModel, the value editors, the chip-for-a-value rules.
+features/          | • Knows everything. The panes, the views, the surfaces that read the store.
+```
+
+The middle layer's name is a real decision and it is not cosmetic: it is what an agent pattern-matches
+against six months from now. `presentation/`, `property-ui/`, `model-ui/`, `display/` all read differently
+and each will attract different things.
+
+**The alternative is to decide the middle layer should not exist** — that model-aware presentation lives
+with its feature and the duplication is the price. That is a legitimate answer for a solo project, and it
+is cheaper today. It should be chosen deliberately rather than by default, because the current state is
+the default.
+
+#### The boundary needs a test, not a convention
+
+Design-system membership is currently decided per-move by whoever is moving something. That is precisely
+how five inversions accumulated while everyone involved believed the rule was obvious.
+
+A stated test — *knows no entity type, touches no store, touches no IPC* — is nearly right and has one
+known exception already in the tree: `symbols/index.tsx` imports `EntityIconKind` and exports a glyph
+registry keyed by Pommora entity kinds. Icon *rendering* is generic; the kind-to-glyph *mapping* is not.
+Either the mapping moves out, or the rule carries a named exception. An unstated exception is how rules
+stop being followed.
+
+More durable than any stated rule: **make the boundary a lint error.** Biome's configuration is already in
+place and its rule set supports restricting imports by path. One rule forbidding `@renderer/*` inside
+`design-system/**` would have refused this session's `ColorSwatch` import at the gate, which is the only
+mechanism that stops the inversion being re-earned every session. Everything else depends on remembering.
+
+#### Sequence
+
+The order is forced by the audit's own compounding argument, not by preference.
+
+1. **6-zero — extract before rehoming.** `Chip`, `EditableInput`, `ColorPicker` into `design-system/`;
+   `PaneSlider` as 6a already plans. Small, mechanical, and it makes 6a correct rather than harmful.
+2. **The boundary lint rule**, landed with 6-zero. It costs one config entry and permanently retires the
+   class of defect. Without it, step 1 is a snapshot rather than a fix.
+3. **6a and 6b as already scheduled.** `solidColor` reaches `tokens/` here, which retires this survey's
+   Tier 1 item 4 — the same move, already sequenced.
+4. **The middle-layer decision**, made before 6b rather than after, because 6b has to send `checkboxLook`
+   and `columnStyles` somewhere and that somewhere is the answer.
+5. **The reference document**, any time — it blocks nothing and unblocks everything. It is the only item
+   here that pays back on the very next session regardless of what else happens.
+
+The styling findings — the toolbar selector, the unread height vars, the motion homes — are independent of
+all of this and can be taken whenever. They touch different files and answer to no decision.
+
+#### Costs, stated plainly
+
+- **A quiet tree.** 6a and 6b are import churn across roughly seventy files. They cannot be run against a
+  working tree that a second session is editing. Today's tree is not quiet.
+- **Blame.** A rehome of this size rewrites `git blame` for the moved files. `git log --follow` still
+  reaches through, but casual archaeology gets harder for a while.
+- **No visible payoff.** Every item in steps 1 through 4 is `net ≈ 0` and changes nothing a user sees. The
+  return is entirely in what the *next* feature costs, which is real but deferred and unmeasurable at the
+  moment it is paid for.
+- **The middle layer is a one-way door in practice.** Naming it will attract modules for years. Renaming
+  it later costs another churn of the same size.
+
+#### What should not be done
+
+- **Not a separate "design-system cleanup."** Its Tier 1 items 3 and 4 *are* bundles 6a and 6b. Running
+  them as their own effort would either duplicate the scheduled work or move the same files in a different
+  direction than the audit intends.
+- **Not a rewrite.** Nothing here found a wrong architecture. Every finding is a module in the wrong folder
+  or a value stated twice. The correct instrument is `git mv` and a lint rule, not a redesign.
+- **Not all at once.** The single most valuable item — the reference document — has no dependency on any of
+  the moves and pays back immediately. Taking it first buys correct instincts for every session that
+  follows, including the sessions that do the moves.

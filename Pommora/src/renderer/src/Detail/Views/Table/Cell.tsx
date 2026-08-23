@@ -13,6 +13,7 @@ import { ContextChip } from '@renderer/Components/ContextChip'
 import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
 import { OverflowScroll } from '@renderer/design-system/components/OverflowScroll'
 import { FileChip } from '@renderer/design-system/components/FileChip'
+import { SEGMENT_INDEX_ATTR } from '@renderer/design-system/components/SegmentRun/SegmentRun'
 import { resolveFileValue } from '@renderer/assetUrl'
 import { fileValueWithout } from '../PropertyEditing/filePick'
 import { declaredType, fileName, resolveFieldValue } from '../pipeline/value'
@@ -196,7 +197,7 @@ export function Cell({
               // would collide as keys and send the hover-× to the wrong one. The stamp is what the
               // click and the menu hit-test, so a chip knows which file it names.
               key={String(i)}
-              data-segment-index={i}
+              {...{ [SEGMENT_INDEX_ATTR]: i }}
             >
               <FileChip
                 name={fileName(f)}

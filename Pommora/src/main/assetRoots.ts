@@ -3,10 +3,10 @@
 // two containment tests that disagree is a defect neither one's own tests can see.
 
 import { parseConnectionText } from '@shared/connections'
-import { ASSETS_DIR_REL } from '@shared/nexusPaths'
+import { ASSETS_DIR_REL, assetSubRoot } from '@shared/nexusPaths'
 import { normalizeSeg, rootSegs } from './exclusion'
 import { indexable, liveAssetMap, resolveAssetName } from './assetMap'
-import { assetSubRoot } from './paths'
+
 import { readWatchScope } from './settings'
 
 const startsUnder = (segs: string[], root: string): boolean => {
