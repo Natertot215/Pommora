@@ -19,7 +19,5 @@ export const chip = style({
 })
 
 /** The chosen color, worn as the Switch's own shell — it composes the switch's real track rather
- *  than restating its box, so the two can never drift and the swatch is the track's own size.
- *  Nameless on purpose: the ramp's cells carry no display names, and the color says more than a
- *  family name could. */
+ *  than restating its box, so the two can never drift and the swatch is the track's own size. */
 export const swatch = style([switchTrack, swatchFill])

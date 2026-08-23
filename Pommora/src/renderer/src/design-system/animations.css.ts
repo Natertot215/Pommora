@@ -2,7 +2,7 @@ import { globalKeyframes, style } from '@vanilla-extract/css'
 import { duration } from './tokens/motion'
 
 // The Bloom curve — Pommora-native, Apple-inspired. The one special-cased named curve (not a token).
-const BLOOM = 'cubic-bezier(0.32, 0.72, 0, 1)'
+const BLOOM = 'cubic-bezier(0.30, 0.75, 0, 1)'
 
 // Navigation/Settings menus use the slower `slow`-token Bloom here; PickerMenu + AutocompletePanel use
 // `dropdownOpen`/`dropdownClose` below (same keyframes, snappier `dropdown` token).
@@ -28,7 +28,6 @@ export const dropdownMenuClosing = style({
 })
 
 // Same Bloom keyframes + curve as `dropdownMenu`, on the snappier symmetric `dropdown` token.
-// PickerMenu + AutocompletePanel use these; Navigation/Settings menus keep the slower Bloom above.
 export const dropdownOpen = style({
   animation: `dropdown-menu ${duration.dropdown} ${BLOOM} both`,
   transformOrigin: 'var(--dropdown-origin, top center)',
@@ -39,7 +38,5 @@ export const dropdownClose = style({
   transformOrigin: 'var(--dropdown-origin, top center)',
 })
 
-// Title reveal — the ViewDropdown's labeled title sliding in/out as Show/Hide Title toggles. The panes'
-// Bloom curve on the snappy `dropdown` token, expressed as a transition timing (a two-state morph, not
-// a keyframe) so a consumer drops it onto whatever properties slide.
+// Title reveal — the ViewDropdown's labeled title sliding in/out as Show/Hide Title toggles.
 export const titleReveal = `${duration.dropdown} ${BLOOM}`
