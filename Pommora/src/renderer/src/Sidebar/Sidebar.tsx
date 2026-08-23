@@ -17,7 +17,6 @@ import { cx } from '@renderer/design-system/cx'
 import { contextDirRel } from '@shared/nexusPaths'
 import { MenuItem, titleInput } from '@renderer/design-system/components/menu'
 import { Reveal } from '@renderer/design-system/components/Reveal'
-import { slideScrollBack } from '@renderer/design-system/interactions/OverScroll'
 import type {
   CollectionNode,
   ContextGroup,
@@ -173,7 +172,6 @@ function DragRow({
     return registerDiscloseTarget(el.current, () => expandRef.current?.())
   }, [collapsed])
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: hover bookkeeping, not an interaction
     <div
       ref={(node) => {
         el.current = node
@@ -184,10 +182,6 @@ function DragRow({
       {...drag.handle}
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}
-      onMouseLeave={(e) => {
-        const sc = e.currentTarget.querySelector<HTMLElement>('[class*="titleText"]')
-        if (sc) slideScrollBack(sc)
-      }}
     >
       {children}
     </div>
