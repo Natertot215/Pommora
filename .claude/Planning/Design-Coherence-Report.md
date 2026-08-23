@@ -257,14 +257,14 @@ component's private table that got bridged by symmetry with the glyph ladder bes
 #### Motion has three homes and one wrong default
 
 230ms is the app's real interaction duration and it is not on `motion.ts`'s ladder (180/180/225/280/350),
-whose own comment claims that vocabulary is total. `DEFAULT_FEEL` holds 230 in `feel.tsx`, and
-`interactions.css` restates it as a literal fallback twice.
+whose own comment claims that vocabulary is total. `DEFAULT_FEEL` holds 230 in `feel.tsx`, and three app
+surfaces read it from there.
 
-**Verified: the fallback easing is wrong.** `DEFAULT_FEEL.easing` is `easing.out`
-(`cubic-bezier(0.22, 1, 0.36, 1)`), while the CSS reads `var(--ix-ease, ease)` — which is
-`easing.standard`. Anything rendered outside an `<Interactions>` provider animates on the wrong curve. A
-fourth curve, `BLOOM`, lives in `animations.css.ts`, and `motion.ts` documents its `dropdown` step as "the
-Bloom keyframes" — referencing a curve it does not own.
+`--ix-dur` / `--ix-ease` reach no further than the Interaction Lab: the only sheet reading them ships
+with the lab page, which always sets them. Their fallbacks disagree with `DEFAULT_FEEL` — `var(--ix-ease,
+ease)` against `easing.out` — and that disagreement is confined to a page whose own provider always wins.
+A fourth curve, `BLOOM`, lives in `animations.css.ts`, and `motion.ts` documents its `dropdown` step as
+"the Bloom keyframes" — referencing a curve it does not own.
 
 #### Dead, and what only looks dead
 
@@ -394,17 +394,21 @@ section about. The document's shape mirrors the disk's, and both are missing the
 │   ├── [AllSymbols.ts]                 | • The curated set
 │   ├── [customGlyphs.tsx]              | • The house-drawn marks
 │   └── [fileTypes.ts]                  | • Extension → glyph
-├── // interactions                     | • PommoraDND and the floating-window driver — unchanged
+├── // interactions                     | • PommoraDND and the floating-window driver
 │   ├── [engine.tsx] · [drag.tsx]       | • The engine and its React surface
+│   ├── [group.tsx]                     | • The grouped-drag family over the same engine
 │   ├── [gesture.ts] · [snapshot.ts]    | • One pointer lifecycle; measure-once geometry
-│   ├── [Board.tsx] · [group.tsx]       | • The two drag families
+│   ├── [shared.ts]                     | • The types and constants both families read
 │   ├── [DragGhost.tsx] · [DropLine.tsx]| • The drag chrome
+│   ├── [dragDisclose.ts]               | • Hover-to-open registration for tree targets
 │   ├── [FloatingWindow.tsx]            | • Move and resize for every floating window
-│   ├── [Interactions.tsx]              | • The provider publishing --ix-dur / --ix-ease
 │   ├── [feel.tsx]                      | • DEFAULT_FEEL and GLIDE_FEEL
 │   ├── [autoscroll.ts] · [keyboard.ts] | • Edge scroll; keyboard reordering
 │   ├── [a11y.ts] · [activate.ts]       | • The live region; Enter/Space → click
-│   └── [main.tsx]                      | • The Interaction Lab's own Vite entry
+│   ├── [ghost.css] · [dropChrome.css]  | • The drag chrome's sheets
+│   └── [floatingWindow.css]            | • The floating-window sheet
+│   ✂ [Board.tsx] · [Interactions.tsx] · [Surfaces.tsx] · [main.tsx] · [interactions.css]
+│                                       | • The Interaction Lab — moved to showcase/lab/
 ├── // components                       | ▸ Every component a folder; no loose helpers, no loose sheets
 │   ├── // CalendarPicker               | • Date, time and range — the largest undocumented component
 │   ├── // Checkbox                     | ▸ was Checkbox.tsx + checkbox.css at the folder root
@@ -586,6 +590,7 @@ What this audit got wrong and fixed. A finding that was withdrawn is as useful t
 | `PickerMenu.closing` is passed at zero of thirty sites | Passed at two, both inside `CalendarPicker`. Live API with two internal callers |
 | All twelve bridged `--z-*` vars are unread | All twelve are read. Withdrawn before reporting |
 | `--subline-h` and `--chips-gap` have diverged | Both convergent — the same value in every home. Recategorized as tokens the system should absorb |
+| `--ix-ease`'s wrong fallback strands app surfaces on the wrong curve | Reaches nothing. The only sheet reading the var ships with the Interaction Lab, which always sets it. `Interactions.tsx` is that lab's page, not a provider — both moved to `showcase/lab/` |
 
 Two process notes the log makes visible. A survey that measures two files against each other without
 accounting for what was already extracted beneath them will overstate the duplication — which is what
