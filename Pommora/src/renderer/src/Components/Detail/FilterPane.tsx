@@ -596,7 +596,7 @@ export function FilterPane({
     index: number,
     op: OperatorChoice | undefined,
   ): React.ReactNode => {
-    // An operandless operator (Is Empty · Is Checked · Has File) takes no value at all, and paints
+    // An operandless operator (Is Empty · Isn't Empty · Is Checked) takes no value at all, and paints
     // no slot — an empty field would advertise an operand the operator can't accept. The operator
     // widens instead, so the row still runs to the trailing edge.
     if (!op || op.slot === 'none') return null

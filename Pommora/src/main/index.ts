@@ -1426,9 +1426,6 @@ serveBridge(
 
     'property:setNumberFormat': defEditOp(narrowNumberFormat),
 
-    // Two predicates, not one: containment alone admits a `.private` folder that mkdirs, writes,
-    // and returns a valid-looking reference while the map drops it forever. Both run here against
-    // the real asset root, so the rule is stated once rather than split across two sites.
     'property:setFileDirectory': defEditOp(narrowFileConfig, async (root, changes) => {
       const dir = (changes as FileConfig).file_directory
       if (dir === undefined) return ok(null)

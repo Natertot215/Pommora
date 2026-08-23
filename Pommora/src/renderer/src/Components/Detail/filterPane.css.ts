@@ -201,7 +201,7 @@ export const chipRun = style({
   flex: '1 1 auto',
 })
 
-/** The Operator cell when its operator takes NO operand (Is Empty, Is Checked, Has File). With no
+/** The Operator cell when its operator takes NO operand (Is Empty, Isn't Empty, Is Checked). With no
  *  value cell to absorb it, the operator takes the row's leftover width itself — the last field
  *  present always runs to the trailing edge, so a two-field row reads as full width rather than
  *  trailing off into a gap. */
