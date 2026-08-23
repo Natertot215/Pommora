@@ -16,8 +16,8 @@ import * as gp from './groupingPane.css'
 
 type Direction = SortCriterion['direction']
 
-/** context/file route to a no-op text key in the sorter, so they're deliberately absent —
- *  never offer what the extractor can't rank. */
+/** Context routes to a no-op text key in the sorter, so it is deliberately absent — never offer
+ *  what the extractor can't rank. */
 const SORTABLE_PANE = new Set([
   'select',
   'status',
