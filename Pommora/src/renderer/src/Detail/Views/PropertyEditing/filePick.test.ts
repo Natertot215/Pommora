@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PropertyDefinition } from '@shared/properties'
 import { useSession } from '@renderer/store'
-import { fileChipIndex, fileLabelText, fileValueWithout, runFilePick } from './filePick'
+import { fileChipIndex, fileValueWithout, runFilePick } from './filePick'
 
 const def = (over: Partial<PropertyDefinition> = {}): PropertyDefinition =>
   ({ id: 'p', name: 'Attachments', type: 'file', ...over }) as PropertyDefinition
@@ -32,13 +32,6 @@ describe('fileValueWithout', () => {
 
   it('drops the RIGHT one when two entries are identical', () => {
     expect(fileValueWithout(held(['[[a]]', '[[a]]']), 1)).toEqual(held(['[[a]]']))
-  })
-})
-
-describe('fileLabelText', () => {
-  it('reads the wikilink’s title, and leaves anything else as written', () => {
-    expect(fileLabelText('[[Report.pdf]]')).toBe('Report.pdf')
-    expect(fileLabelText('Report.pdf')).toBe('Report.pdf')
   })
 })
 
