@@ -9,12 +9,7 @@
 //
 // So the returning content is reconciled against the CURRENT world before it lands: a governed
 // key survives only if what it names still exists, and whether a value stands is asked the way
-// the destination asks it. A Space title matches through the shared coercion every live path
-// uses, so a spelling the tree resolves is a value that stands; a property value is decoded
-// strictly against its definition, because a read renders whatever text a value holds while a
-// restore writes it back into a live schema. What survives comes back exactly as the file spelled
-// it — restore drops what nothing stands behind and narrows a multi-value key to its survivors,
-// and never rewrites a value that stands.
+// the destination asks it.
 
 import { contextKey, normalizeContextValue } from '@shared/contexts'
 import { parseGovernedKey } from '@shared/governedKeys'
