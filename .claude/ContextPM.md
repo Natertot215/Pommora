@@ -2,7 +2,7 @@
 
 ### Current Focus
 
-**Part 1 of the file-based arc shipped: the asset directory is the user's to choose.** `asset_directory` sits beside `excluded_folders` as a top-level settings key and travels with it as one `WatchScope`, so the walk, the corpus, the watcher's ignore and the classifier all learn the root from a single value — and the asset test runs ahead of every other skip, which is what lets a folder already listed in `excluded_folders` deliver events at all. A stored image is named the way Obsidian names one: `[[Banner.png]]`, resolved renderer-side against a filename map main holds and pushes, with a raw path and a web address passing through untouched. The live nexus points at `file-assets/`, `.nexus/assets` holds nothing but regenerated thumbnails, and all 45 page covers resolve where 44 of them rendered nothing before.
+**Parts 1 and 2 of the file-based arc have shipped; Part 3 is what's left.** The `file` property type is complete — the tenth and last — so a page holds named files that are legible on disk, resolvable without a database, and reachable in the OS's own browser from the value that names them. Part 1 is what it rests on: the asset directory is the user's to choose. `asset_directory` sits beside `excluded_folders` as a top-level settings key and travels with it as one `WatchScope`, so the walk, the corpus, the watcher's ignore and the classifier all learn the root from a single value — and the asset test runs ahead of every other skip, which is what lets a folder already listed in `excluded_folders` deliver events at all. A stored image is named the way Obsidian names one: `[[Banner.png]]`, resolved renderer-side against a filename map main holds and pushes, with a raw path and a web address passing through untouched. The live nexus points at `file-assets/`, `.nexus/assets` holds nothing but regenerated thumbnails, and all 45 page covers resolve where 44 of them rendered nothing before.
 
 **MarkdownPM is taking incremental improvements.** Highlights, Editor Scale, thirty-eight code languages, a Code Color, and a copy control on every code block's tag have landed in passes rather than as one feature. What is left of the editor's own gap list is small enough to keep taking that way — callout types, find-in-page, a slash menu, source mode. Image embedding is the exception and is not open yet: it waits on the file-based arc finishing, since a `FileRef` is what an inline image would resolve through.
 
@@ -11,7 +11,7 @@
 ### Immediate Work
 
 - [ ] The architecture-audit cleanup at [[Codebase-Cleanup-Checklist]] — bundles 6a → 6b, each carrying its own verification and the documentation entries it retires.
-- [ ] **Part 2 and Part 3 of the file-based arc** — `PhotoCropModal` widened past the nexus icon so banners, cards and other media can be cropped through it, and the `file` property type given real values. Either can lead; Part 3's `FileRef` is what the asset map was shaped around.
+- [ ] **Part 3 of the file-based arc** — `PhotoCropModal` widened past the nexus icon so banners, cards and other media crop through it. It is the profile photo's alone today, which is why `setProfileImage` still carries bytes while every banner carries a path.
 
 ### Pending Focuses
 
@@ -75,6 +75,10 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 
 ### Recent Work
 
+#### PM-114 || File Properties
+
+The `file` property type is complete — the tenth and last. A value is a bare array of `[[Basename.ext]]` wikilinks resolved in the asset map's basename domain, which puts file names in their own namespace and keeps them structurally outside the rename cascade: the scanner and the rewriter both read string frontmatter and skip arrays, so neither knows what a file property is. Each property names a **Directory** its files land in, validated for containment and for indexability — a contained folder the map would never walk is a write whose own reference can never resolve. The value's area adds and a chip replaces, both through the OS dialog opened at a folder, so revealing where a file lives and swapping it are one gesture and nothing opens a file in-app. Adoption is one exported seam carrying every guard that makes it safe, and a removed reference never deletes bytes: the seam dedups, so two pages can share one file.
+
 #### PM-112 || Variable Asset Directories
 
 The nexus asset directory became a folder the user picks, and a stored image became an ordinary named file in it. A banner keeps whatever name it had on disk and is named from Pommora by `[[That File.png]]`, which is the same reference Obsidian writes — so one folder serves both applications and neither owns it. Resolution is renderer-side against a map main patches from watch events and pushes, which is what makes a file arriving in a synced folder repaint what names it without a walk; nothing is persisted about an asset but its filename, so a sync eviction and re-download is a non-event and an external rename phantoms rather than being chased. The live nexus migrated: every reference the old writer minted moved out of `.nexus/assets`, byte-identical copies collapsed to one, invented `banner-<token>` names were replaced by their owners', and the folder was emptied through the trash. A replace now deletes only what Pommora minted under its own root — the configured folder is the user's, and a file there may be referenced from a note this app cannot see.
@@ -90,10 +94,6 @@ A Link property can now name a page, not just a web address. Pasting `[[Title]]`
 #### PM-109 || The Color Ramp
 
 The chip palette became a grid: `tokens/ramp.ts` owns what a color is — eight families of eight steps, dark to light, with greyscale reading the app's own surface tokens. Every legacy spectrum solid resolves to its exact cell through one accessor, so nothing on disk was migrated or rewritten. The picker that assigns them is an 8×8 grid where clicking the ringed cell clears, and links and checkboxes take that grid without its greyscale row — whose dark end is the window substrate itself — except where a value already lives there, since hiding a row would hide the only way to clear it. Appearance sets the accent, the internal link color, and the external link color from that ramp; each clears to what it inherits, so a cleared control reads as *follow* rather than *none*.
-
-#### PM-108 || Webpage Integration
-
-The editor embeds live websites the way it embeds Pages. A markdown link on its own line, with an explicit scheme, renders as a live tile in the shared embed framework — the bytes remain plain CommonMark, and formatting waits until the selection leaves the line. One main-process module governs every guest (the attach validator, the popup router that opens no OS window, the navigation scheme gate, and the zoom sync), and one renderer adjudicator decides where every external link opens, guest popups included. A guest is live only while its tile is fully visible, because a partially clipped webview paints outside its own box; a clipped tile keeps its last captured frame, and scrolled-out guests hide under a capped retention rather than unmounting. The in-app browser is a flavor of the floating preview window, and a dwell on a website link raises the shared hover card as a live render of the site that takes no clicks but scrolls, its wheel replayed into the guest from the main process. All surfaces share one persistent partition, so a sign-in anywhere authenticates everywhere per machine — there is no management surface by decision; the session simply remembers.
 
 ### Guidelines
 
