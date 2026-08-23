@@ -114,9 +114,33 @@ describe('decodeValue — a file value names files', () => {
     })
   })
 
-  it('the legacy object shape reads as null, never as a partial list', () => {
+  it('the legacy object shape reads as null — there is no name in it to keep', () => {
     expect(decodeValue(fileDef, [{ path: 'x/y.png' }])).toEqual({ kind: 'null' })
-    expect(decodeValue(fileDef, ['[[a.pdf]]', { path: 'b.png' }])).toEqual({ kind: 'null' })
+  })
+
+  it('an entry nothing can spell is DROPPED — it never takes the rest of the list with it', () => {
+    // A dangling `- ` under an attachment key is YAML null. Nulling the whole value would render
+    // the cell blank, and the next in-app add would write a one-entry list over references whose
+    // files are still on disk.
+    expect(decodeValue(fileDef, ['[[a.pdf]]', null])).toEqual({
+      kind: 'file',
+      value: ['[[a.pdf]]'],
+    })
+    expect(decodeValue(fileDef, ['[[a.pdf]]', 2026])).toEqual({
+      kind: 'file',
+      value: ['[[a.pdf]]'],
+    })
+    expect(decodeValue(fileDef, ['[[a.pdf]]', { path: 'b.png' }])).toEqual({
+      kind: 'file',
+      value: ['[[a.pdf]]'],
+    })
+    expect(decodeValue(fileDef, ['[[a.pdf]]', ''])).toEqual({ kind: 'file', value: ['[[a.pdf]]'] })
+    // The same rule under the restore gate — a poisoned entry must not cost a page its files there
+    // either.
+    expect(decodeValue(fileDef, ['[[a.pdf]]', null], { strict: true })).toEqual({
+      kind: 'file',
+      value: ['[[a.pdf]]'],
+    })
   })
 
   it('coerces the unquoted hand-edit YAML reads as a nested sequence', () => {
@@ -139,9 +163,11 @@ describe('decodeValue — a file value names files', () => {
     expect(decodeValue(fileDef, [['a.pdf', 'b.pdf']])).toEqual({ kind: 'null' })
   })
 
-  it('strict refuses emptiness and non-strings, never option membership', () => {
-    expect(decodeValue(fileDef, [])).toEqual({ kind: 'file', value: [] })
+  it('nothing left to name is nothing, and strict never gates on option membership', () => {
+    // An empty list and a list of only-unspellable entries are the same answer.
+    expect(decodeValue(fileDef, [])).toEqual({ kind: 'null' })
     expect(decodeValue(fileDef, [], { strict: true })).toEqual({ kind: 'null' })
+    expect(decodeValue(fileDef, [null, 2026])).toEqual({ kind: 'null' })
     // A file def has no options; strict must keep every value it holds.
     expect(decodeValue(fileDef, ['[[a.pdf]]'], { strict: true })).toEqual({
       kind: 'file',

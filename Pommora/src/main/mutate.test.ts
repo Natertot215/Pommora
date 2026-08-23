@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { PAGE_ID_KEY } from '@shared/identity'
-import { mkdtemp, rm, mkdir, writeFile, readFile, readdir, chmod } from 'node:fs/promises'
+import { mkdtemp, rm, mkdir, writeFile, readFile, readdir, chmod, symlink } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { adoptFile, handleMutate, type MutateDeps } from './mutate'
@@ -1084,6 +1084,27 @@ describe('adoptFile — the shared adoption seam', () => {
     })
     expect(r.ok).toBe(false)
     expect(await readdir(join(root, 'file-assets'))).toEqual([])
+  })
+
+  it('refuses a name that cannot be written as a link and read back', async () => {
+    // The reference pattern is single-line, so a name carrying a break mints one that writes and
+    // never parses — the same permanent blank the bracket and pipe refusals exist to prevent.
+    for (const name of ['line\nbreak.pdf', 'Q3|draft.pdf', 'Summary]].pdf'])
+      expect(await adoptFile(root, await pick(name), { allow: 'any' })).toMatchObject({ ok: false })
+    expect(await readdir(join(root, 'file-assets'))).toEqual([])
+  })
+
+  it('refuses a subfolder that is a symlink INTO the nexus — the lexical check cannot see it', async () => {
+    // A linked attachments folder is ordinary in a vault. Containment passes, and `resolveUnderRoot`
+    // bounds the NEXUS, which a link at the content tree satisfies — so the bytes would land among
+    // the user's pages, under a name `buildAssetMap` never walks into and can never resolve again.
+    await mkdir(join(root, 'Projects', 'Secret'), { recursive: true })
+    await symlink(join(root, 'Projects', 'Secret'), join(root, 'file-assets', 'Linked'))
+
+    const r = await adoptFile(root, await pick('Leak.pdf'), { allow: 'any', subfolder: 'Linked' })
+
+    expect(r.ok).toBe(false)
+    expect(await readdir(join(root, 'Projects', 'Secret'))).toEqual([])
   })
 
   it('never deletes: adopting a replacement leaves the file the old reference named', async () => {
