@@ -620,10 +620,10 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
 
 #### Gate 6 — closeout
 - [x] Every Dead Vocabulary sweep returns 0 against a non-zero control.
-- [ ] Delivery Claim written.
-- [ ] Neutral verifier dispatched against the **spec**, not the plan — "is this true?" — ask first.
+- [x] Delivery Claim written.
+- [x] Neutral verifier dispatched against the **spec**, not the plan — "is this true?" — ask first.
 - [ ] Attack pass dispatched only after a clean yes.
-- [ ] Lessons routed to `.claude/Guidelines/`.
+- [x] Lessons routed to `.claude/Guidelines/`.
 
 ---
 
@@ -653,7 +653,7 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
   - [x] Task 16 — One arm on the shared click router · `013033d0`
   - [x] Task 17 — The value menu · `a9fd3ada`
   - [x] Task 18 — Sort by filename · `5642599c` · `300e2ed1`
-- [ ] **Phase 6** — Reconciliation · base `0e994de0`
+- [x] **Phase 6** — Reconciliation · base `0e994de0`
   - [x] Task 19 — Sweep the dead vocabulary · `5642599c`
   - [x] Task 20 — Simplification pass over the whole range · `aa1aa2ea`
   - [x] Task 21 — Reconcile the documentation · `8be13cc8`
@@ -833,6 +833,12 @@ The immunity is real and it is **structural rather than type-aware**, which is t
 - **Task 18 · the pane's own allow-list had to open too.** The task named `sort.ts` alone, and the engine's `case 'file'` was the whole of what it described — but `SortingPane`'s `SORTABLE_PANE` set is the only door to a sort criterion (no column-header menu offers one), and it did not carry `file`. The arm would have shipped correct and unreachable. `file` joins the set and the text direction pair, so its Order reads **A → Z / Z → A** rather than Ascending/Descending. The pane's test asserted the exclusion in as many words; the behavior changed, so the assertion is inverted rather than removed.
 - **Task 18 · the extraction is `fileName`, and it is the only one.** `pipeline/value.ts` is where the plan puts it, so `filePick.ts`'s `fileLabelText` — the same parse, written a phase earlier for the label — is deleted rather than left standing beside it. Sort, the cell label and the deferred `Contains` filter read one function.
 ### Lessons
+
+Routed to `.claude/Guidelines/`:
+
+- **`Data-Layer.md`** — a path normalizer that drops empty segments does not drop `..`, and containment belongs at the write seam so every caller inherits it.
+- **`Adversarial-Review-Log.md`** — the three defects that survived every green gate, all one class: a mechanism built correctly and the thing that reaches it not. The unreachable sort, the hit test handed its anchor instead of its target, and a prop held for a consumer that arrived by another route.
+- **`Cohesion-Rulings.md`** — `startsUnder` / `assetSubfolder` stay apart (proposed twice), and `FileLabel` / `FileChip` are two components on purpose.
 ### Sequenced After
 - **Filename `Contains` filter** — `evaluateText` already exists; `FILE_OPS` just stops being `slot: 'none'`.
 - **Naming an existing nexus file by completion** — adoption and reference-writing stay separate steps in Task 14 so this can write a reference without adopting.
