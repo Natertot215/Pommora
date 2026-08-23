@@ -87,13 +87,12 @@
   text-overflow: clip;
   scrollbar-width: none;
 }
-.over-scroll-cap:hover {
-  overflow-x: auto;
-}
-/* A label that can't hover itself takes the scrolled state from an ancestor — a removable chip's
-   label is pointer-inert, a sidebar row's title is read as part of the row. */
+/* Scrolling and the ellipsis are the same switch: an ellipsis marks a tail you can't reach, so it
+   drops the moment the tail becomes reachable. */
+.over-scroll-cap:hover,
 .over-scroll-host:hover .over-scroll-cap {
   overflow-x: auto;
+  text-overflow: clip;
 }
 
 /* Hold the leading fade until a full fade-width has actually scrolled past: a first line at rest,
