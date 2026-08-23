@@ -10,7 +10,7 @@ import {
   TILE_GAP_PX,
   size,
 } from './size.css'
-import { TINT_STEPS } from './tint'
+import { mixAt, tintAt, TINT_STEPS } from './tint'
 import { duration, easing } from './motion'
 import { stack } from './stack'
 
@@ -97,6 +97,11 @@ globalStyle(':root', {
     // resize reads hotter than the hover that revealed it.
     '--accent-stroke-hot': 'color-mix(in srgb, var(--accent) var(--tint-primary), transparent)',
     '--accent-text': 'var(--accent)',
+    // The checkbox's three parts on the live accent. A chosen cell overrides these per element
+    // (personalization); clearing removes the override and the box follows the accent again.
+    '--checkbox-fill': tintAt('var(--accent)', TINT_STEPS.primary),
+    '--checkbox-border': tintAt('var(--accent)', TINT_STEPS.tertiary),
+    '--checkbox-mark': mixAt('var(--accent)', TINT_STEPS.quaternary, colorVars.color.label.primary),
     // The OS/system accent, always reflected (applySystemAccent overrides it at
     // runtime from the OS, independent of the Pommora --accent setting).
     '--system-accent': colorVars.color.solid[DEFAULT_ACCENT],

@@ -168,9 +168,6 @@
   padding-left: var(--trash-date-inset);
   padding-right: var(--cell-padding-x);
   color: var(--label-secondary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 /* A location that no longer exists reads as a record of one. */

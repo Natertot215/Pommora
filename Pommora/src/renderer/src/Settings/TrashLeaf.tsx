@@ -1,7 +1,7 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import { Checkbox } from '@renderer/design-system/components/Checkbox'
 import { SearchField } from '@renderer/design-system/components/SearchField'
-import { OverScroll } from '@renderer/design-system/interactions/OverScroll'
+import { OverScroll, overScrollEllipsis } from '@renderer/design-system/interactions/OverScroll'
 import { cx } from '@renderer/design-system/cx'
 import { entityIcon, Icon } from '@renderer/design-system/symbols'
 import { text } from '@renderer/design-system/tokens'
@@ -377,7 +377,7 @@ function TrashRowView({
           </OverScroll>
         )}
       </div>
-      <span className={cx('trash-date', text.caption.standard)}>{when}</span>
+      <span className={cx('trash-date', text.caption.standard, overScrollEllipsis)}>{when}</span>
     </div>
   )
 }

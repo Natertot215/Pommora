@@ -4,6 +4,7 @@ import { isBlankValue, propertyKey, type PropertyValue } from '@shared/propertyV
 import type { PageFrontmatter } from '@shared/schemas'
 import type { ResolvedColumn } from '@shared/types'
 import { cx } from '@renderer/design-system/cx'
+import { overScrollEllipsis } from '@renderer/design-system/interactions/OverScroll'
 import { Icon } from '@renderer/design-system/symbols'
 import { text } from '@renderer/design-system/tokens'
 import { PickerMenu, PickerOption } from '@renderer/design-system/components/PickerMenu'
@@ -179,7 +180,13 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
                       void rowMenu(id, label, resolveFieldValue(row, id, schema))
                     }}
                   >
-                    <span className={cx('pgpreview-insp-label', text.caption.standard)}>
+                    <span
+                      className={cx(
+                        'pgpreview-insp-label',
+                        text.caption.standard,
+                        overScrollEllipsis,
+                      )}
+                    >
                       <Icon name={icon} size="control" />
                       {label}
                     </span>
