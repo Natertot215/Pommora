@@ -49,6 +49,19 @@ const crispRamp =
 const blurRamp =
   'linear-gradient(to right, transparent calc(100% - 18px), #000000 calc(100% - 8px))'
 
+/**
+ * A twin sits inside the scroller, so its box has to be moved to the WINDOW the label is currently
+ * showing while its text stays put — `left` walks the box along, the matching negative indent walks
+ * the string back. That keeps every ramp stop inside the box, which is the only place a mask reads:
+ * a stop past `100%` falls outside the mask tile and the default repeat then paints nothing.
+ */
+const overWindow = {
+  left: 'var(--os-scroll, 0px)',
+  textIndent: 'calc(-1 * var(--os-scroll, 0px))',
+  maskRepeat: 'no-repeat',
+  WebkitMaskRepeat: 'no-repeat',
+} as const
+
 /** Wears `overScrollUnmasked`: a mask here erases every descendant, the twins included. Pointer-
  *  inert, or leaving :hover in the reveal's frame drops its repaint. */
 export const labelBox = style({
@@ -69,11 +82,11 @@ export const labelText = style({
   selectors: { [reveal]: { opacity: 0 } },
 })
 
-/** Clamped to the label box, so a truncated label melts at its clip edge. */
+/** `max-width` makes the ramp's `100%` the label BOX rather than the whole string. */
 export const labelMelt = style({
   position: 'absolute',
   top: 0,
-  left: 0,
+  ...overWindow,
   maxWidth: '100%',
   overflow: 'hidden',
   whiteSpace: 'nowrap',
@@ -89,7 +102,8 @@ export const labelMelt = style({
 export const labelBlur = style({
   position: 'absolute',
   top: 0,
-  left: 0,
+  ...overWindow,
+  maxWidth: '100%',
   whiteSpace: 'nowrap',
   color: 'var(--melt-ground)',
   filter: 'blur(2px)',

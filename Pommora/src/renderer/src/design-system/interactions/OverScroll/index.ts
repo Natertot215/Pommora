@@ -3,5 +3,4 @@ export {
   overScrollEllipsis,
   overScrollHost,
   overScrollUnmasked,
-  slideScrollBack,
 } from './OverScroll'

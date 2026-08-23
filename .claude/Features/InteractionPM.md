@@ -139,6 +139,12 @@ does nothing. An axis class carries the fade, `over-scroll-cap` adds the capped-
 and a label that cannot hover itself takes the scrolled state from an ancestor wearing
 `over-scroll-host`.
 
+Gesture and return are wired once for the whole document rather than per element: a cap is a bare
+class on markup as often as it is the component, and a pointer-inert label receives no events of its
+own. A capped label scrolls on one axis while a trackpad flick usually points the other way, so the
+dominant delta drives it either way; leaving a cap returns it on `base`. Each cap publishes how far
+it has been read past its start, for the overlays that have to land on the window it is showing.
+
 **SOURCE:** `Pommora/src/renderer/src/design-system/interactions/OverScroll/`
 
 | Title                 | Token                                        | Value                                             |
@@ -147,6 +153,7 @@ and a label that cannot hover itself takes the scrolled state from an ancestor w
 | Width Knob            | `@property --over-scroll-fade`               | `syntax "*"`, non-inheriting                      |
 | House Default         | `--os-fade-default`                          | `22px` block axis; `16px` inline; `0` under an ellipsis |
 | Axis                  | `--os-dir`                                   | `to bottom` fallback; `to right` on the inline axis |
+| Read Distance         | `--os-scroll`                                | live `scrollLeft` on the cap; `0px` fallback       |
 
 ### Hover Remove
 
