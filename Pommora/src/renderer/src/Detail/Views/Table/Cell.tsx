@@ -11,7 +11,7 @@ import { ProgressBar } from '@renderer/design-system/components/ProgressBar/Prog
 import { Chip, chipShapeForType } from '@renderer/Components/Chip'
 import { ContextChip } from '@renderer/Components/ContextChip'
 import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
-import { OverflowScroll } from '@renderer/design-system/components/OverflowScroll'
+import { OverScroll } from '@renderer/design-system/interactions/OverScroll'
 import { FileChip } from '@renderer/design-system/components/FileChip'
 import { SEGMENT_INDEX_ATTR } from '@renderer/design-system/components/SegmentRun/SegmentRun'
 import { resolveFileValue } from '@renderer/assetUrl'
@@ -52,10 +52,10 @@ export function Cell({
 }): React.JSX.Element | null {
   if (column.kind === 'title') {
     return (
-      <OverflowScroll className="cell-title">
+      <OverScroll className="cell-title">
         {hideIcon ? null : <EntityIcon kind="page" icon={row.icon} size="body" />}
         <span className="cell-title-text">{row.title}</span>
-      </OverflowScroll>
+      </OverScroll>
     )
   }
 
@@ -99,19 +99,19 @@ export function Cell({
         )
       }
       return (
-        <OverflowScroll className="cell-chips">
+        <OverScroll className="cell-chips">
           <Chip
             color={chipColorFor(opt?.color)}
             label={opt?.label ?? v.value}
             shape={chipShapeForType(dt ?? '')}
             {...(remove ? { onRemove: () => remove(null) } : {})}
           />
-        </OverflowScroll>
+        </OverScroll>
       )
     }
     case 'multiSelect':
       return (
-        <OverflowScroll className="cell-chips">
+        <OverScroll className="cell-chips">
           {v.value.map((val) => {
             const o = findOption(column.id, val, ctx.schema)
             return (
@@ -129,11 +129,11 @@ export function Cell({
               />
             )
           })}
-        </OverflowScroll>
+        </OverScroll>
       )
     case 'context':
       return (
-        <OverflowScroll className="cell-chips">
+        <OverScroll className="cell-chips">
           {v.value.map((id) => {
             const c = ctx.contextsById.get(id)
             return (
@@ -151,7 +151,7 @@ export function Cell({
               />
             )
           })}
-        </OverflowScroll>
+        </OverScroll>
       )
     case 'url':
       return (
@@ -165,14 +165,14 @@ export function Cell({
 
     case 'datetime':
       return (
-        <OverflowScroll className="cell-text-scroll cell-control">
+        <OverScroll className="cell-text-scroll cell-control">
           {formatDate(
             v.value,
             style.date_format ?? 'full',
             style.time_format ?? 'none',
             style.weekday ?? 'none',
           )}
-        </OverflowScroll>
+        </OverScroll>
       )
     case 'number': {
       const def = ctx.schema.find((d) => d.id === column.id)
@@ -184,13 +184,11 @@ export function Cell({
           </span>
         )
       }
-      return (
-        <OverflowScroll className="cell-text-scroll">{formatNumber(v.value, def)}</OverflowScroll>
-      )
+      return <OverScroll className="cell-text-scroll">{formatNumber(v.value, def)}</OverScroll>
     }
     case 'file':
       return (
-        <OverflowScroll className="cell-chips">
+        <OverScroll className="cell-chips">
           {v.value.map((f, i) => (
             <span
               // Positional, never the value: two identical wikilinks — a hand-edit, a sync merge —
@@ -208,7 +206,7 @@ export function Cell({
               />
             </span>
           ))}
-        </OverflowScroll>
+        </OverScroll>
       )
     default:
       return null

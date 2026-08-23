@@ -90,7 +90,7 @@ export const cellField = style([hairlineField, { width: 'auto', cursor: 'default
 /** A field's label — grows to fill, so a trailing chevron pins to the field's right edge. Carried
  *  by the label ITSELF rather than a `> span` descendant rule: a field's other spans are glyphs (the
  *  checkbox lead) and a rule keyed on tag position hands them the label's grow and clipping.
- *  Clipping and hover-scroll are the shared OverflowScroll's; this states only the sizing. */
+ *  Clipping and hover-scroll are the shared OverScroll's; this states only the sizing. */
 export const fieldLabel = style({
   flex: '1 1 auto',
   textAlign: 'left',

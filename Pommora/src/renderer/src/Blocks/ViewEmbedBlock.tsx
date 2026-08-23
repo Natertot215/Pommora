@@ -576,7 +576,7 @@ export function ViewEmbedBlock({
             </>
           )}
         </div>
-        <div className={`${s.body} edge-fade`}>
+        <div className={`${s.body} over-scroll`}>
           <div
             key={index}
             className={s.slideWrap}

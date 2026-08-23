@@ -64,7 +64,7 @@ export function PanesLeaf(): React.JSX.Element {
             open: railOpen,
             className: 'settings-rail',
             children: (
-              <div className="settings-rail-list edge-fade">
+              <div className="settings-rail-list over-scroll">
                 {CATEGORIES.map((c, i) => (
                   <button
                     key={c.key}
@@ -96,7 +96,7 @@ export function PanesLeaf(): React.JSX.Element {
             ),
           }}
         >
-          <div className="settings-body edge-fade">
+          <div className="settings-body over-scroll">
             <h2 className={cx('settings-heading', text.title3.emphasized)}>General</h2>
             <div className="settings-section">
               {ROWS.map(([label, hint]) => (

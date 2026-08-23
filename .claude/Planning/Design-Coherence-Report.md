@@ -117,16 +117,16 @@ belongs where it is, pulling one string from app code; the repair there is a pro
 
 #### What belongs inside
 
-| Component | Consumers | Destination |
-| --- | --- | --- |
-| `Chip` + `ContextChip` | 12, two inside the design system | `components/Chip/` |
-| `EditableInput` | 5, one inside the design system | `components/EditableInput/` |
-| `ColorPicker` | 6, one inside the design system | `components/ColorPicker/` |
-| `RenamableLabel` | 8 | `components/EditableInput/` |
-| `PaneSlider` | 7 | `components/PaneSlider/` |
-| `solidColor.ts` | 11, six outside its own view folder | `tokens/` |
-| `checkboxLook.tsx` | 3 | contested — see §VIII |
-| `PhotoCropModal` | 2 | `components/PhotoCrop/` |
+| Component              | Consumers                           | Destination                 |
+| ---------------------- | ----------------------------------- | --------------------------- |
+| `Chip` + `ContextChip` | 12, two inside the design system    | `components/Chip/`          |
+| `EditableInput`        | 5, one inside the design system     | `components/EditableInput/` |
+| `ColorPicker`          | 6, one inside the design system     | `components/ColorPicker/`   |
+| `RenamableLabel`       | 8                                   | `components/EditableInput/` |
+| `PaneSlider`           | 7                                   | `components/PaneSlider/`    |
+| `solidColor.ts`        | 11, six outside its own view folder | `tokens/`                   |
+| `checkboxLook.tsx`     | 3                                   | contested — see §VIII       |
+| `PhotoCropModal`       | 2                                   | `components/PhotoCrop/`     |
 
 `solidColor.ts` is the cleanest case: pure token math over `colorMap` and `ramp`, no table knowledge, filed
 under a view whose folder six of its eleven consumers sit outside of.
@@ -155,13 +155,13 @@ The system was built partly before its consumers existed. This is the archaeolog
 
 #### Options that were never options
 
-| Finding | Evidence | Do |
-| --- | --- | --- |
-| **`layout` is discarded by the engine and passed at 21 sites** | `drag.tsx:40` declares it; `:39`'s comment says "Informational only — the engine is geometry-driven"; `:74` destructures it as `layout: _layout` | Retire |
+| Finding                                                         | Evidence                                                                                                                                                              | Do                                                   |
+| --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| **`layout` is discarded by the engine and passed at 21 sites**  | `drag.tsx:40` declares it; `:39`'s comment says "Informational only — the engine is geometry-driven"; `:74` destructures it as `layout: _layout`                      | Retire                                               |
 | **`CalendarPicker`'s range mode defaults on and is never used** | `:89` `range = true`; both production callers pass `range={false}`. Behind it: `end`/`endOn`/`endMin` state, an endpoint-drag with role swapping, seven style exports | Decide — the largest speculative build in the system |
-| **`Segmented`'s `size` prop is never passed** | Zero of four call sites; the `'button-large'` default is the only bundle ever resolved, so 14 of `size.control`'s 21 fields are unreachable | Retire two bundles, or adopt them |
-| **`PreviewPane.scanLabel`** | Defaulted, never passed at four sites | Inline the string |
-| **`'table'` in the `Layout` union** | One use: the demo harness | Retires with `layout` |
+| **`Segmented`'s `size` prop is never passed**                   | Zero of four call sites; the `'button-large'` default is the only bundle ever resolved, so 14 of `size.control`'s 21 fields are unreachable                           | Retire two bundles, or adopt them                    |
+| **`PreviewPane.scanLabel`**                                     | Defaulted, never passed at four sites                                                                                                                                 | Inline the string                                    |
+| **`'table'` in the `Layout` union**                             | One use: the demo harness                                                                                                                                             | Retires with `layout`                                |
 
 #### The ladders each lost three names
 
@@ -270,11 +270,11 @@ A fourth curve, `BLOOM`, lives in `animations.css.ts`, and `motion.ts` documents
 
 Three confirmed orphans:
 
-| Orphan | Where | Evidence |
-| --- | --- | --- |
-| `--safe-top` / `-right` / `-bottom` / `-left` | `styles.css` | Names a mobile shell that does not exist; zero reads |
-| `--code-chevron-mask` | `theme-vars.css.ts` | A full inline SVG asset, **verified zero reads** |
-| `export const anchor` | `Toolbar/toolbarDropdown.css.ts` | All five importers use `anchorRight` |
+| Orphan                                        | Where                            | Evidence                                             |
+| --------------------------------------------- | -------------------------------- | ---------------------------------------------------- |
+| `--safe-top` / `-right` / `-bottom` / `-left` | `styles.css`                     | Names a mobile shell that does not exist; zero reads |
+| `--code-chevron-mask`                         | `theme-vars.css.ts`              | A full inline SVG asset, **verified zero reads**     |
+| `export const anchor`                         | `Toolbar/toolbarDropdown.css.ts` | All five importers use `anchorRight`                 |
 
 Three categories that look identical and are not, listed so a future sweep does not "fix" them: ~24
 bridge-completeness vars (the full icon and type ramps, declared so plain CSS can name a step — the file

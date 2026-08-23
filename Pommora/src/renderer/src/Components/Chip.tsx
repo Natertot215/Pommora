@@ -15,6 +15,7 @@ import {
 import type { ChipColorName } from '@renderer/design-system/tokens/chip.css'
 import { Icon } from '@renderer/design-system/symbols'
 import { cx } from '@renderer/design-system/cx'
+import { overScrollHost, overScrollUnmasked } from '@renderer/design-system/interactions/OverScroll'
 
 /** Context chips use their own shape (ContextChip's chip-context) — not part of this map. */
 const SHAPE = { pill: chipPill, label: chipLabel, file: chipFile, plain: chipPlain } as const
@@ -52,7 +53,12 @@ export function Chip({
 }): React.JSX.Element {
   return (
     <span
-      className={cx(SHAPE[shape], color && chipColor[color], onRemove && chipRemovable, className)}
+      className={cx(
+        SHAPE[shape],
+        color && chipColor[color],
+        onRemove && cx(chipRemovable, overScrollHost),
+        className,
+      )}
     >
       {onRemove ? <ChipRemoveButton onRemove={onRemove} /> : null}
       {icon}
@@ -72,7 +78,7 @@ export function ChipLabel({
   removable: boolean
 }): React.JSX.Element {
   return (
-    <span className={chipLabelWrap}>
+    <span className={cx(chipLabelWrap, overScrollUnmasked)}>
       <span className={chipLabelText}>{label}</span>
       {removable ? (
         <>

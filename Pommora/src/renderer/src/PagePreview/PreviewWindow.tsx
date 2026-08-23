@@ -230,7 +230,7 @@ function PreviewWindowBody({
       footer={<Subfield scope={scope} />}
       footerLead={<CitationsToggle scope={scope} />}
     >
-      <div className="pgpreview-body edge-fade pgembed-grows" ref={bodyRef}>
+      <div className="pgpreview-body over-scroll pgembed-grows" ref={bodyRef}>
         <PageEmbed
           key={target.path}
           path={target.path}

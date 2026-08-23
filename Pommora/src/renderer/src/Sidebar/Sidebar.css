@@ -115,7 +115,7 @@
   overflow-x: hidden;
   overflow-y: auto;
   height: 100%;
-  /* The scroll-edge fade rides the shared .edge-fade class (design-system) — the top fade
+  /* The scroll-edge fade rides the shared .over-scroll class (design-system) — the top fade
      tucks inside the header padding, so the header stays crisp at rest. */
 }
 .shell.ribbon-hidden .sidebar {
@@ -321,11 +321,10 @@
   margin-left: var(--sidebar-hidechevron-pad);
 }
 
-/* Opt into the left-edge scroll fade (truncateHoverScroll): only once a row is actually scrolled off the
-   start (JS adds .title-scrolled on scrollLeft>0) does its icon + title eclipse into the glass — hovering
-   at rest never fades the icon. ~the icon-zone width. */
-.sidebar .title-scrolled {
-  --scroll-fade: 24px;
+/* The left-edge fade a row's icon + title eclipse into the glass through — ~the icon-zone width.
+   The over-scroll engine holds it at rest on its own: at scroll 0 the leading edge is a no-op. */
+.sidebar [class*="titleText"] {
+  --over-scroll-fade: 24px;
 }
 
 /* Matches the tone the design system's leading .side slot gives an icon — this row's icon sits inline

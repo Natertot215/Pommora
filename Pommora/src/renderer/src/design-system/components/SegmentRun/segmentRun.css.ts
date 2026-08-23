@@ -27,7 +27,7 @@ export const segmentRun = style({
   // which reads as several broken labels rather than one truncated list. `--chip-max` is lifted
   // for the same reason: a chip's own 80px cap would ellipsize each title separately, stacking a
   // second truncation on top of the run's one honest signal.
-  vars: { '--edge-fade': SEGMENT_FADE, '--chip-max': 'none' },
+  vars: { '--over-scroll-fade': SEGMENT_FADE, '--chip-max': 'none' },
 })
 
 /** One entry — its glyph and its title. Segments hold their natural width so the RUN is what

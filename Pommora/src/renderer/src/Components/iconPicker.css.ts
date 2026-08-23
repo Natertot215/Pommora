@@ -55,15 +55,15 @@ export const favorites = style({
   overflow: 'hidden',
 })
 
-/** The inner horizontal, drag-reorderable strip — scrolls with the bare `overflow-eclipse` fade (not
- *  the OverflowScroll wrapper, so it never snaps back on hover-off). */
+/** The inner horizontal, drag-reorderable strip — wears the over-scroll classes bare rather than the
+ *  OverScroll wrapper, so it never snaps back on hover-off. */
 export const favScroll = style({
   display: 'flex',
   gap: 2,
   overflowX: 'auto',
   overflowY: 'hidden',
   scrollbarWidth: 'none',
-  vars: { '--edge-fade': '16px' },
+  vars: { '--over-scroll-fade': '16px' },
 })
 
 /** The vertical scroll region — holds the favorites strip AND the full-set grid, so favorites scroll
@@ -79,7 +79,7 @@ export const grid = style({
   overflowY: 'auto',
   overflowX: 'hidden',
   scrollbarWidth: 'none',
-  vars: { '--edge-fade': '20px' },
+  vars: { '--over-scroll-fade': '20px' },
 })
 
 /** The virtualized icon list inside the scroll region — its height is the full virtual extent; rows are

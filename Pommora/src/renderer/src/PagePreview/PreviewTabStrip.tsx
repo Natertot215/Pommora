@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { cx } from '@renderer/design-system/cx'
-import { OverflowScroll } from '@renderer/design-system/components/OverflowScroll'
+import { OverScroll } from '@renderer/design-system/interactions/OverScroll'
 import { SortableZone, useDragItem } from '@renderer/design-system/interactions/drag'
 import { DEFAULT_ENTITY_ICONS, Icon } from '@renderer/design-system/symbols'
 import { duration, text } from '@renderer/design-system/tokens'
@@ -101,7 +101,7 @@ export function PreviewTabStrip({
       )}
       <div className="pgpreview-tabwrap">
         {showStrip && (
-          <div className="pgpreview-tabscroll edge-fade-x" ref={scrollRef}>
+          <div className="pgpreview-tabscroll over-scroll-x" ref={scrollRef}>
             {/* The map sentinel and ghosts stay out of the item set — drag-inert and un-landable. */}
             <SortableZone
               items={renderEntries
@@ -194,7 +194,7 @@ function PreviewTabItem({
         <Icon name={isMap ? 'map' : 'file'} size={TAB_ICON} className="tab-icon" />
       )}
       {/* The map tab is icon-only — the label is its tooltip. */}
-      {!isMap && <OverflowScroll className="tab-label">{label}</OverflowScroll>}
+      {!isMap && <OverScroll className="tab-label">{label}</OverScroll>}
       {/* The map tab is perma-pinned — no ×; the model refuses the close anyway. */}
       {!isMap && (
         <button

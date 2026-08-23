@@ -4,7 +4,7 @@ import type { ColumnLook } from '@shared/columnStyles'
 import { isHttpLink } from '@shared/links'
 import { useSession } from '../../../store'
 import { cx } from '@renderer/design-system/cx'
-import { OverflowScroll } from '@renderer/design-system/components/OverflowScroll'
+import { OverScroll } from '@renderer/design-system/interactions/OverScroll'
 import { linkDisplayText, readLink, type LinkTarget } from '@shared/linkValue'
 import { resolveConnection } from '@renderer/treeIndex'
 import { solidColorCss } from './solidColor'
@@ -44,7 +44,7 @@ export function LinkCell({
     return <ConnectionCell target={target} showTitle={showFullLink === true} />
   if (!url) return null
   return (
-    <OverflowScroll className="cell-text-scroll">
+    <OverScroll className="cell-text-scroll">
       <a
         className={cx('cell-link', def?.link_underline && 'cell-link-underline')}
         style={{ color: solidColorCss(def?.link_color) }}
@@ -61,7 +61,7 @@ export function LinkCell({
       >
         {showFullLink ? url : linkDisplayText(raw, display, title)}
       </a>
-    </OverflowScroll>
+    </OverScroll>
   )
 }
 
@@ -82,7 +82,7 @@ function ConnectionCell({
   const select = useSession((s) => s.select)
   const page = resolveConnection(tree, target.title)
   return (
-    <OverflowScroll className="cell-text-scroll">
+    <OverScroll className="cell-text-scroll">
       <a
         className="cell-connection"
         href={page?.path}
@@ -96,6 +96,6 @@ function ConnectionCell({
       >
         {showTitle ? target.title : (target.alias ?? target.title)}
       </a>
-    </OverflowScroll>
+    </OverScroll>
   )
 }

@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 're
 import { createPortal } from 'react-dom'
 import { Icon } from '../../symbols'
 import { DualSwitch } from '../Switches/DualSwitch'
-import { OverflowScroll } from '../OverflowScroll'
+import { OverScroll } from '../../interactions/OverScroll'
 import { PickerMenu, PickerOption } from '../PickerMenu/PickerMenu'
 import { useExitPresence } from '../../useExitPresence'
 import { stack } from '../../tokens/stack'
@@ -394,9 +394,9 @@ export function CalendarPicker({
   ): React.JSX.Element => (
     <div className={s.field} key={label}>
       <Icon name="calendar" size="body" className={s.fieldIcon} />
-      <OverflowScroll className={s.fieldValue}>
+      <OverScroll className={s.fieldValue}>
         {k ? formatDateValue(k, condensed) : <span className={s.fieldEmpty}>--</span>}
-      </OverflowScroll>
+      </OverScroll>
     </div>
   )
   // The time reading follows the nexus-wide setting: twelveHour = (Hour):(Minutes)(PM), hour
@@ -426,7 +426,7 @@ export function CalendarPicker({
           onClick={(e) => e.stopPropagation()}
         >
           <PickerMenu solid direction="up" closing={timeMenuPresence.closing}>
-            <div className={cx(s.menuList, 'edge-fade')}>
+            <div className={cx(s.menuList, 'over-scroll')}>
               {(part === 'h' ? (twelve ? HOURS_12 : HOURS_24) : MINUTES).map((v) => (
                 <PickerOption key={v} selected={v === current} onClick={() => choose(v)}>
                   {optionRow(part === 'h' ? hourText(v) : pad(v))}
@@ -564,7 +564,7 @@ export function CalendarPicker({
           onClick={(e) => e.stopPropagation()}
         >
           <PickerMenu solid closing={menuPresence.closing}>
-            <div className={cx(s.menuList, 'edge-fade')}>
+            <div className={cx(s.menuList, 'over-scroll')}>
               {kind === 'month'
                 ? Array.from({ length: 12 }, (_, m) => (
                     <PickerOption

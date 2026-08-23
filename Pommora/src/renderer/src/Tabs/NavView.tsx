@@ -69,7 +69,7 @@ export function NavView(): React.JSX.Element {
           {searchInput}
         </div>
       )}
-      <div className="nav-view-scroll edge-fade">
+      <div className="nav-view-scroll over-scroll">
         {/* Search always renders Gallery cards (frozen layout) — the toggle governs only the
             recents/empty view. */}
         {results ? (

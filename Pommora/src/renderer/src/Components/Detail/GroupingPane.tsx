@@ -295,7 +295,7 @@ export function GroupingPane({
         </>
       )}
       <MenuSeparator flush />
-      <div className={`${gp.middle} overflow-eclipse-y`}>
+      <div className={`${gp.middle} over-scroll`}>
         {!structural && group.kind === 'property' ? (
           declaredType(group.property_id, schema) === 'datetime' ? (
             <DateBucketList

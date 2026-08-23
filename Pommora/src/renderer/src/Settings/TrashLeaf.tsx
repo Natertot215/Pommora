@@ -1,7 +1,7 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import { Checkbox } from '@renderer/design-system/components/Checkbox'
 import { SearchField } from '@renderer/design-system/components/SearchField'
-import { OverflowScroll } from '@renderer/design-system/components/OverflowScroll'
+import { OverScroll } from '@renderer/design-system/interactions/OverScroll'
 import { cx } from '@renderer/design-system/cx'
 import { entityIcon, Icon } from '@renderer/design-system/symbols'
 import { text } from '@renderer/design-system/tokens'
@@ -290,7 +290,7 @@ export function TrashLeaf(): React.JSX.Element {
           {rows.length === 0 ? 'Trash is empty.' : 'Nothing matches.'}
         </div>
       ) : (
-        <div className="trash-scroll edge-fade">
+        <div className="trash-scroll over-scroll">
           <div className="nav-list">
             {shown.map((row) => (
               <TrashRowView
@@ -357,9 +357,9 @@ function TrashRowView({
       />
       <div className="nav-item-main">
         <Icon name={icon} size="title3" className="nav-item-lead" />
-        <OverflowScroll className="nav-item-title">{row.title}</OverflowScroll>
+        <OverScroll className="nav-item-title">{row.title}</OverScroll>
         {row.crumbs.length > 0 && (
-          <OverflowScroll className={cx('nav-item-path', text.caption.standard)}>
+          <OverScroll className={cx('nav-item-path', text.caption.standard)}>
             {row.crumbs.map((crumb, i) => (
               // biome-ignore lint/suspicious/noArrayIndexKey: a breadcrumb is strictly positional
               <Fragment key={i}>
@@ -374,7 +374,7 @@ function TrashRowView({
                 <span className="nav-path-name">{crumb.title}</span>
               </Fragment>
             ))}
-          </OverflowScroll>
+          </OverScroll>
         )}
       </div>
       <span className={cx('trash-date', text.caption.standard)}>{when}</span>

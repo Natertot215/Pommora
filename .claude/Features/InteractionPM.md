@@ -99,17 +99,18 @@ Every in-app window mounts the shared `PreviewPane` surface on a `GlassWindow` f
 Motion timing has one canonical home — the duration scale and easings in the motion tokens, read through their `--duration-*` / `--ease-*` vars; the shared dropdown keyframes and the Bloom curve live in the animations layer and take their durations from those same tokens.
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/motion.ts` · `Pommora/src/renderer/src/design-system/animations.css.ts`
-| Title | Token | Value |
-| --- | --- | --- |
-| Fast | `duration.fast` · `--duration-fast` | `180ms` |
-| Disclosure | `duration.disclosure` · `--disclosure` | `180ms` |
-| Dropdown | `duration.dropdown` · `--duration-dropdown` | `225ms` |
-| Base | `duration.base` · `--duration-base` | `280ms` |
-| Slow | `duration.slow` · `--duration-slow` | `350ms` |
-| Standard Ease | `easing.standard` · `--ease-standard` | `ease` |
-| In-Out Ease | `easing.inOut` · `--ease-in-out` | `ease-in-out` |
-| Out Ease | `easing.out` · `--ease-out` | `cubic-bezier(0.22, 1, 0.36, 1)` — the drag feels read it directly; no CSS rule names the variable |
-| Bloom | `BLOOM` (`animations.css.ts`) | `cubic-bezier(0.32, 0.72, 0, 1)` — the one special-cased named curve |
+
+| Title         | Token                                       | Value                                                                                              |
+| ------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Fast          | `duration.fast` · `--duration-fast`         | `180ms`                                                                                            |
+| Disclosure    | `duration.disclosure` · `--disclosure`      | `180ms`                                                                                            |
+| Dropdown      | `duration.dropdown` · `--duration-dropdown` | `225ms`                                                                                            |
+| Base          | `duration.base` · `--duration-base`         | `280ms`                                                                                            |
+| Slow          | `duration.slow` · `--duration-slow`         | `350ms`                                                                                            |
+| Standard Ease | `easing.standard` · `--ease-standard`       | `ease`                                                                                             |
+| In-Out Ease   | `easing.inOut` · `--ease-in-out`            | `ease-in-out`                                                                                      |
+| Out Ease      | `easing.out` · `--ease-out`                 | `cubic-bezier(0.22, 1, 0.36, 1)` — the drag feels read it directly; no CSS rule names the variable |
+| Bloom         | `BLOOM` (`animations.css.ts`)               | `cubic-bezier(0.32, 0.72, 0, 1)` — the one special-cased named curve                               |
 
 Two kinds of timing stay in code rather than tokens. The drag feel presets are numeric because the engine interpolates them, not CSS; the engine's settle timing is a fallback rather than a duration — a drag commit fires on the overlay's `transitionend` and only falls back to a computed deadline if that event never arrives. `useExitPresence`'s default exit window derives from the slow duration token plus a small settle slack, so retuning the token moves every pane's unmount window with it.
 
@@ -120,6 +121,7 @@ One text-insertion identity for the whole app — every CodeMirror surface mount
 The drawn caret fades on a symmetric on/off cycle via twin keyframes in `Carets.css`; `editor/caret.ts` swaps the keyframe name on selection change to restart the cycle without reflow. On a fresh focus the overlay settles by convergence — re-measuring each frame until the bar holds still, deadline-capped — since a pane may still be animating open with moves no resize or input event reports. The overlay stands down once the caret has genuinely scrolled out of its field, an intersection test rather than a containment one — a tight line-height lets a resting bar overhang the field's box without having gone anywhere.
 
 **SOURCE:** `Pommora/src/renderer/src/Carets.css`
+
 | Title | Token | Value |
 | --- | --- | --- |
 | Bar Thickness | `--caret-width` | `2px` |
@@ -133,6 +135,7 @@ The drawn caret fades on a symmetric on/off cycle via twin keyframes in `Carets.
 The overflow-fade mechanism: three registered properties plus the four fade classes. `--edge-fade` is non-inheriting — the knob must sit on the element carrying the fade class, or it does nothing.
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/edge-fade.css`
+
 | Title | Token | Value |
 | --- | --- | --- |
 | Lead / Trail Progress | `@property --edge-a` / `--edge-b` | `<number>`, non-inheriting, initial `0` |

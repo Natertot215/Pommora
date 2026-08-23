@@ -72,7 +72,7 @@ export const menuList = style({
   flexDirection: 'column',
   gap: '2px',
   minWidth: '56px', // shrink-wrap to content; the floor keeps a one-word list off its own corners
-  maxHeight: '136px', // ≈6 option rows before it over-scrolls (rides the shared edge-fade)
+  maxHeight: '136px', // ≈6 option rows before it scrolls (rides the shared over-scroll)
   overflowY: 'auto',
   scrollbarWidth: 'none',
 })

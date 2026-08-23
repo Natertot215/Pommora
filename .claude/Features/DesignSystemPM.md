@@ -1,6 +1,6 @@
 ## Design System
 
-```yaml
+```
 Design System
 ├── Tooling
 ├── The Token Atlas
@@ -127,11 +127,11 @@ The color grid behind every chip and the picker that assigns one: eight families
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/ramp.ts`
 
-| Title           | Token           | Value                                    |
-| --------------- | --------------- | ---------------------------------------- |
-| Shading Step    | `RAMP_STEP`     | `15`                                     |
-| Darkness Step   | `DARKNESS_STEP` | `15`                                     |
-| Grey Outlines   | `GREY_OUTLINES` | `35` · `45` · `55` · `65` · `75` · `85` · `95` · `100` |
+| Title         | Token           | Value                                                  |
+| ------------- | --------------- | ------------------------------------------------------ |
+| Shading Step  | `RAMP_STEP`     | `15`                                                   |
+| Darkness Step | `DARKNESS_STEP` | `15`                                                   |
+| Grey Outlines | `GREY_OUTLINES` | `35` · `45` · `55` · `65` · `75` · `85` · `95` · `100` |
 
 #### Separators
 
@@ -184,36 +184,33 @@ The ten selectable solids plus the neutral chip default and the ramp's pink seat
 | Accent Stroke     | `--accent-stroke` / `--accent-stroke-hot`   | accent @ 40% / accent @ 60%                |
 | Link / Connection | `--link` / `--connection`                   | `var(--system-accent)` / → `var(--accent)` |
 | Error             | `--error`                                   | `SPECTRUM.red`                             |
-| Code              | `--code`      | `--solid-red` (user-selectable) @ 85%  |
+| Code              | `--code`                                    | `--solid-red` (user-selectable) @ 85%      |
 
 #### Chips & Labels
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/chip.css.ts`
 
-| Title | Token | Use Cases |
-| --- | -- | ---- |
-| Base | `chipBase` | Base styling for all chips. |
-| Pill | `chipPill` | A status' default chip style. |
-| Label | `chipLabel` | Standard rectangular base style; used in Select, Multi-Select, Context, File, and other label-based glyphs.  |
-| Context | `chipContext` | Spaces and Contexts; uses `chipLabel` with an icon + space-specific colored tint. |
-| Capsule | `chipCapsule` | Compact icon-only `chipPill` variant; an option for Status properties. |
-| Checkbox | `chipBox` | Multi-use checkboxes.  |
-| File | `chipFile` | Files or directories; `chipLabel` with type-specific icon. |
-| Plain | `chipPlain` | A file or folder name inside a field; the chip apparatus with no fill or border. |
+| Title     | Token         | Use Cases                                                                                                   |
+| --------- | ------------- | ----------------------------------------------------------------------------------------------------------- |
+| Base      | `chipBase`    | Base styling for all chips.                                                                                 |
+| Pill      | `OptionPill`  | A rounded label — status' default chip style.                                                               |
+| Label     | `OptionLabel` | Standard rectangular base style; used in Select, Multi-Select, Context, File, and other label-based glyphs. |
+| Capsule   | `OptionChip`  | Compact icon-only variant; an option for Status properties.                                                 |
+| Checkbox  | `chipBox`     | Multi-use checkboxes.                                                                                       |
+| FileChip  | `FileChip`    | Files and directories; `OptionLabel` with type-specific icon.                                               |
+| FileLabel | `FileLabel`   | Borderless label for directories or folder names inside a field.                                            |
 
 #### Components
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/components/`
 
-| Title | Source | Use Cases |
-| --- | --- | --- |
-| PathField | `PathField.tsx` | Input field for directories and path selections. |
-| FileChip | `FileChip.tsx` | A file property's value; the file's type glyph and name in the `chipFile` shape. |
-| FileLabel | `FileLabel.tsx` | A named file or folder inside a field, wearing `chipPlain`. |
-| SegmentRun | `SegmentRun/` | A divided run of FileLabels — a path's segments, or values standing beside one another. |
-| DualSwitch | `Switches/` - `DualSwitch` | Booleans; shared Switch shape with a sliding glass segment.  |
-| ColorSwatch | `Switches/` - `ColorSwatch` | Color-selections; re-uses the `Switch` shape.  |
-| Slider | `Slider/` | Sliding number selection.  |
+| Title       | Source                      | Use Cases                                                                               |
+| ----------- | --------------------------- | --------------------------------------------------------------------------------------- |
+| PathField   | `PathField.tsx`             | Input field for directories and path selections.                                        |
+| SegmentRun  | `SegmentRun/`               | A divided run of FileLabels — a path's segments, or values standing beside one another. |
+| DualSwitch  | `Switches/` - `DualSwitch`  | Booleans; shared Switch shape with a sliding glass segment.                             |
+| ColorSwatch | `Switches/` - `ColorSwatch` | Color-selections; re-uses the `Switch` shape.                                           |
+| Slider      | `Slider/`                   | Sliding number selection.                                                               |
 
 #### Geometry
 
