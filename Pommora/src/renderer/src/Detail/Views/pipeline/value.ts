@@ -19,6 +19,7 @@ import {
   RESERVED_PROPERTY_ID,
 } from '@shared/properties'
 import { decodeValue, type PropertyValue, propertyKey } from '@shared/propertyValue'
+import { parseConnectionText } from '@shared/connections'
 
 /** The declared type a column sorts/groups/filters by. Reserved columns map to a PropertyType or
  *  a synthetic sentinel: `_title`→'title', any registry Context id→'context', `_modified_at`→
@@ -105,6 +106,12 @@ function computeFieldValue(
   if (!def) return { kind: 'null' }
   return decodeValue(def, (fm as Record<string, unknown>)[propertyKey(def)])
 }
+
+/** The filename a file reference names — the wikilink's own title, or the raw text where it isn't
+ *  one. The one extraction: sort orders by it, the label reads it, and a text filter over a file
+ *  column reads the same one rather than re-deriving the parse. */
+export const fileName = (reference: string): string =>
+  parseConnectionText(reference)?.title ?? reference
 
 /** The `_modified_at` SORT/FILTER stamp: modified_at, falling back to created_at so a never-modified page orders by its creation time. Deliberately distinct from
  *  `resolveFieldValue('_modified_at')` (the display value, modified_at only, no fallback). Null

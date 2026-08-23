@@ -3,7 +3,6 @@
 // async effect: open the dialog, land the bytes, then write the reference. Without this the arm
 // would be shared and the effect would drift four ways, one per surface tail.
 
-import { parseConnectionText } from '@shared/connections'
 import type { PropertyDefinition } from '@shared/properties'
 import type { PropertyValue } from '@shared/propertyValue'
 import { resolveFileValue } from '@renderer/assetUrl'
@@ -62,7 +61,3 @@ function folderOf(reference: string): string {
   const cut = resolved.rel.lastIndexOf('/')
   return cut > 0 ? resolved.rel.slice(0, cut) : ''
 }
-
-/** What a file label reads as — the wikilink's own title, or the raw text where it isn't one. */
-export const fileLabelText = (reference: string): string =>
-  parseConnectionText(reference)?.title ?? reference
