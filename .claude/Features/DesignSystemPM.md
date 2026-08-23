@@ -187,10 +187,7 @@ The ten selectable solids plus the neutral chip default and the ramp's pink seat
 | Error             | `--error`                                   | `SPECTRUM.red`                             |
 | Code              | `--code`                                    | `--solid-red` (user-selectable) @ 85%      |
 
-#### Labels
-
-A shape says how big and how round; fill, outline, alignment and tint are independent axes, so any
-combination composes without a class of its own. Values and geometry are [[PropertiesPM]]'s.
+#### Labels & Chips
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/labels/`
 
@@ -220,13 +217,13 @@ combination composes without a class of its own. Values and geometry are [[Prope
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/components/`
 
-| Title       | Source                      | Use Cases                                                                               |
-| ----------- | --------------------------- | --------------------------------------------------------------------------------------- |
-| PathField   | `PathField.tsx`             | Input field for directories and path selections.                                        |
-| SegmentRun  | `SegmentRun/`               | A divided run of FileLabels — a path's segments, or values standing beside one another. |
-| DualSwitch  | `Switches/` - `DualSwitch`  | Booleans; shared Switch shape with a sliding glass segment.                             |
-| ColorSwatch | `Switches/` - `ColorSwatch` | Color-selections; re-uses the `Switch` shape.                                           |
-| Slider      | `Slider/`                   | Sliding number selection.                                                               |
+| Title | Source | Use Cases |
+| ------------------------------------ | ---------------------- | ------------------------------------------------------------------- |
+| PathField | `PathField.tsx` | Input field for directories and path selections. |
+| SegmentRun | `SegmentRun/` | A divided run of labels — a path's segments, or values standing beside one another. |
+| DualSwitch | `Switches/` - `DualSwitch` | Booleans; shared Switch shape with a sliding glass segment. |
+| ColorSwatch | `Switches/` - `ColorSwatch` | Color-selections; re-uses the `Switch` shape. |
+| Slider | `Slider/` | Sliding number selection. |
 
 #### Geometry
 
@@ -248,13 +245,9 @@ The glyph ladder, the per-size control bundles, and the bare layout constants JS
 
 The drag chrome's other two dimensions live beside the inset in the bridge: `--drop-line-thickness` (`2px`) and `--drop-dot-size` (`7px`), with `--drag-line` pointing at the accent. The list-outline rail (`--list-outline-*`: `2px` · segment tone · `999px` · `3px`) is the shared nested-run rail consumed by MarkdownPM's outliner and the grouping hierarchy.
 
-Stacking is named rather than numbered — separate ladders for the shell frame's in-flow chrome, a component's lift over its own siblings, and the fixed or portalled top layer, so a new surface picks a rung instead of inventing a z-index, and a step only ranks against others in its own ladder (`tokens/stack.ts`).
-
 #### Materials
 
 Two distinct glass systems. **Frost** is a CSS `backdrop-filter` recipe — a dimmed blur with a glassy edge — parameterized by `FrostParams`; zero-valued edge pieces emit nothing. **Liquid** is "Liquid Glass" — a real edge-refraction shader over the live app — worn by the in-use button controls and on-control segments.
-
-Frost comes in three tiers, and the ladder is what says how far a surface sits from the app. The **surface** is the fixed chrome the app is built on and stays brightest and clear; the **pane** floats over it a step dimmer; the **window** is that same pane carrying a body, because a window has to hold its own content legible over whatever it floats above where a menu is gone before that matters. A pane opening over another pane asks for `solid` and gets the window's fill and nothing else — the chrome it already has isn't restated.
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/materials/glass-pane.tsx` · `materials/glass-material.ts` · `materials/glass-controls.tsx`
 
@@ -268,8 +261,6 @@ Frost comes in three tiers, and the ladder is what says how far a surface sits f
 | Lower Rim / Depth / Rim Blur | `.lowerRim` / `.depth` / `.rimBlur` | `0.08` / `12` / `18` | `0.08` / `12` / `18` | `0` / `0` / `0` |
 | Fill | `.fill` · `SOLID_FILL` | unset (transparent) | `--bg-window` @ 90% | `--bg-window` @ 78% |
 | Shadow | `.shadow` | standard | standard | lift |
-
-`WINDOW_FROST` is `PANE_FROST` with the fill added and nothing else changed, so the two can't drift apart. The ghost keeps its own lighter fill on purpose: a chip in flight has to let the drop target read through it.
 
 #### Glass & Menus
 
@@ -326,4 +317,4 @@ The atlas continues in the specs that own each family: the editor's token pocket
 - **The inactive state token** — the empty-state text tone between secondary and tertiary; its interim consumers read tertiary, each marked `Awaiting proper inactive state token`.
 
 [^1]: [[SymbolsPM]]
-[^2]: [[PropertiesPM]] §Label Tokens
+[^2]: [[PropertiesPM]] §Chip Tokens
