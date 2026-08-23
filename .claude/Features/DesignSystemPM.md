@@ -6,7 +6,7 @@ Design System
 ├── The Token Atlas
 │   ├── Primitives
 │   ├── Surfaces
-│   ├── Labels
+│   ├── Label Colors
 │   ├── States
 │   ├── Fills
 │   ├── Tints
@@ -14,7 +14,8 @@ Design System
 │   ├── Shadows
 │   ├── Spectrum
 │   ├── Ramp
-│   ├── Chips
+│   ├── Labels
+│   ├── Interactions
 │   ├── Components
 │   ├── Geometry
 │   ├── Materials
@@ -64,9 +65,9 @@ The opaque content planes layered on the window substrate — addressed by role,
 | Surface Tertiary  | `surface.tertiary` · `--surface-tertiary`   | `#3A3A3E`         |
 | Interaction Field | `inputFieldVar` · `--input-field`           | `fill.quaternary` |
 
-#### Labels
+#### Label Colors
 
-The text ladder — system-white at descending opacpresence. Primary is the raw primitive passed through; the rest are opacity steps. Labels ride the near-white so the lightest label still reads over the heaviest fill.
+The text ladder — system-white at descending presence. Primary is the raw primitive passed through; the rest are opacity steps. Labels ride the near-white so the lightest label still reads over the heaviest fill.
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/color.css.ts`
 
@@ -186,19 +187,34 @@ The ten selectable solids plus the neutral chip default and the ramp's pink seat
 | Error             | `--error`                                   | `SPECTRUM.red`                             |
 | Code              | `--code`                                    | `--solid-red` (user-selectable) @ 85%      |
 
-#### Chips & Labels
+#### Labels
 
-**SOURCE:** `Pommora/src/renderer/src/design-system/tokens/chip.css.ts`
+A shape says how big and how round; fill, outline, alignment and tint are independent axes, so any
+combination composes without a class of its own. Values and geometry are [[PropertiesPM]]'s.
 
-| Title     | Token         | Use Cases                                                                                                   |
-| --------- | ------------- | ----------------------------------------------------------------------------------------------------------- |
-| Base      | `chipBase`    | Base styling for all chips.                                                                                 |
-| Pill      | `OptionPill`  | A rounded label — status' default chip style.                                                               |
-| Label     | `OptionLabel` | Standard rectangular base style; used in Select, Multi-Select, Context, File, and other label-based glyphs. |
-| Capsule   | `OptionChip`  | Compact icon-only variant; an option for Status properties.                                                 |
-| Checkbox  | `chipBox`     | Multi-use checkboxes.                                                                                       |
-| FileChip  | `FileChip`    | Files and directories; `OptionLabel` with type-specific icon.                                               |
-| FileLabel | `FileLabel`   | Borderless label for directories or folder names inside a field.                                            |
+**SOURCE:** `Pommora/src/renderer/src/design-system/labels/`
+
+| Title      | Token              | Use Cases                                                          |
+| ---------- | ------------------ | ------------------------------------------------------------------ |
+| Label      | `Label`            | The primitive every named label is a recipe over.                  |
+| Pill       | `shape.pill`       | A rounded label — a status value's default.                        |
+| Tag        | `shape.tag`        | The squared shape — select, multi-select, context and file values. |
+| Chip       | `shape.chip`       | Compact icon-only variant; an option for Status properties.        |
+| Box        | `shape.box`        | Multi-use checkboxes.                                              |
+| Treatments | `fill` · `outline` | Named only where a label differs from its tint.                    |
+| Palette    | `labelColor.*`     | One tinted variant per ramp cell, plus `default` and `accent`.     |
+| ContextChip| `ContextChip`      | A Context reference — neutral ground, color on border and text.    |
+| FileChip   | `FileChip`         | A file property's value; a tag with a `--label-tertiary`outline, no fill. |
+| FileLabel  | `FileLabel`        | A file or folder name inside a field; no chrome at all.            |
+
+#### Interactions
+
+**SOURCE:** `Pommora/src/renderer/src/design-system/interactions/`
+
+| Title       | Source          | Use Cases                                                                    |
+| ----------- | --------------- | ---------------------------------------------------------------------------- |
+| OverScroll  | `OverScroll/`   | Clipped content fades at whichever edge hides it, and scrolls under the pointer. |
+| HoverRemove | `HoverRemove/`  | The hover-revealed remove ×, with the label tail melting beneath it as an option. |
 
 #### Components
 
@@ -295,7 +311,7 @@ A data-driven design-system site (`npm run showcase`) with a live accent picker,
 
 ### Where the Rest Lives
 
-The atlas continues in the specs that own each family: the editor's token pockets in [[MarkdownPM]] §Design System, the type ramp in [[TypographyPM]], motion and the caret, edge-fade, and autoscroll tables in [[InteractionPM]], chips in [[PropertiesPM]], the card families in [[CardViewPM]], the table sheet in [[TableViewPM]], and the preview window's `--ppane-*` contract described in [[PagePreviewPM]]. Icons resolve through one `Icon` component against the curated `design-system/symbols` registry.[^1] The stack ladders, shell insets, and per-surface knob bundles stay in code — tunables, not vocabulary.
+The atlas continues in the specs that own each family: the editor's token pockets in [[MarkdownPM]] §Design System, the type ramp in [[TypographyPM]], motion and the caret, over-scroll, and autoscroll tables in [[InteractionPM]], labels in [[PropertiesPM]], the card families in [[CardViewPM]], the table sheet in [[TableViewPM]], and the preview window's `--ppane-*` contract described in [[PagePreviewPM]]. Icons resolve through one `Icon` component against the curated `design-system/symbols` registry.[^1] The stack ladders, shell insets, and per-surface knob bundles stay in code — tunables, not vocabulary.
 
 ### Known Issues
 
@@ -310,4 +326,4 @@ The atlas continues in the specs that own each family: the editor's token pocket
 - **The inactive state token** — the empty-state text tone between secondary and tertiary; its interim consumers read tertiary, each marked `Awaiting proper inactive state token`.
 
 [^1]: [[SymbolsPM]]
-[^2]: [[PropertiesPM]] §Chip Tokens
+[^2]: [[PropertiesPM]] §Label Tokens

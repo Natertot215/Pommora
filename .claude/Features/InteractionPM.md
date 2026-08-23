@@ -16,7 +16,8 @@ Interaction & Motion
 ├── Floating Windows
 ├── Timing Sources
 ├── The Caret
-├── Edge Fade
+├── Over Scroll
+├── Hover Remove
 ├── Autoscroll Tuning
 ├── Principles
 └── Pending
@@ -48,7 +49,7 @@ The same keyframes and curve on the **`dropdown`** token — snappier, also symm
 
 A surface riding either token stays mounted through its exit and drives an `open` prop; a surface torn out on dismissal skips its retract entirely, and `PickerMenu` says so in development when a consumer does it. Because the rows a pane holds are usually built from the state that opened it, and dismissing clears that state in the same tick, the pane keeps its last rows for the length of the exit rather than retracting empty.
 
-- **Placement + caps:** a `PickerMenu` anchors either to an element or to a bare point — a right-click's cursor, read as a zero-size rect, or a text caret, which carries the line's height so a flip clears it — and declares which edge it pins to, and therefore which way it grows when its content resizes. Left to itself it straddles the trigger where the whole pane fits there, and falls back to the right edge where centering would have to be clamped — a centered pane that gets clamped sits off its trigger anyway, and an edge anchor at least stays put as content grows. A pane whose content resizes while open names an edge instead, since a centered one grows both ways and walks its rows sideways. Both that choice and the collision flip are decided once per open, never per re-measure, so growing content can't teleport a pane mid-gesture. A height cap routes through the shared scroll frame (one overflow region, edge-fade included), and a fixed width removes horizontal resize for a tree picker. Selected rows may wear the shared ring, which merges vertically across an adjacent run.
+- **Placement + caps:** a `PickerMenu` anchors either to an element or to a bare point — a right-click's cursor, read as a zero-size rect, or a text caret, which carries the line's height so a flip clears it — and declares which edge it pins to, and therefore which way it grows when its content resizes. Left to itself it straddles the trigger where the whole pane fits there, and falls back to the right edge where centering would have to be clamped — a centered pane that gets clamped sits off its trigger anyway, and an edge anchor at least stays put as content grows. A pane whose content resizes while open names an edge instead, since a centered one grows both ways and walks its rows sideways. Both that choice and the collision flip are decided once per open, never per re-measure, so growing content can't teleport a pane mid-gesture. A height cap routes through the shared scroll frame (one overflow region, its fade included), and a fixed width removes horizontal resize for a tree picker. Selected rows may wear the shared ring, which merges vertically across an adjacent run.
 - **Two shells, one beak between them.** `MenuSurface` — the large toolbar dropdown, hanging off a named button — wears the beak, which points back at the button that opened it. A beak is not a shape a border can trace, so that shell alone draws its outline by hand: one curve cutting the frost and the same curve stroked as an SVG line. Every other pane is a plain rounded rect and mounts the pane material directly, keeping the material's own border, lighting and shadow. The rectangle is what makes a menu read as the OS's rather than as a bubble.
 - **The Bloom starts where the beak would have been.** A beaked pane takes its origin from the tip; a rectangular one takes the same figure from its placement pass — the point on the anchored edge nearest the trigger, held clear of the corner arc. Neither pane blooms from its own middle.
 - **The rows are the consumer's, not the shell's.** A fixed option set and a set of user-authored values take the same row, and how it states the chosen one is the nexus's `pickerSelection` setting — the row's own fill, or a trailing mark with the fill standing down. Where a pane holds a mark at all, the slot is laid out on every row inside it, so the pane can't resize as the selection moves. The icon grid, swatch grid, calendar and hover card were never rows at all and bring their own content.
@@ -130,18 +131,33 @@ The drawn caret fades on a symmetric on/off cycle via twin keyframes in `Carets.
 | Dip Opacity | `--caret-dim` | `0` |
 | I-Beam Cursor | `--caret-cursor` | inline SVG data-URI, hotspot `7 12` |
 
-### Edge Fade
+### Over Scroll
 
-The overflow-fade mechanism: three registered properties plus the four fade classes. `--edge-fade` is non-inheriting — the knob must sit on the element carrying the fade class, or it does nothing.
+The overflow-fade mechanism: three registered properties, two axis classes and three modifiers.
+`--over-scroll-fade` is non-inheriting — the knob must sit on the element carrying the class, or it
+does nothing. An axis class carries the fade, `over-scroll-cap` adds the capped-label box under it,
+and a label that cannot hover itself takes the scrolled state from an ancestor wearing
+`over-scroll-host`.
 
-**SOURCE:** `Pommora/src/renderer/src/design-system/edge-fade.css`
+**SOURCE:** `Pommora/src/renderer/src/design-system/interactions/OverScroll/`
 
-| Title | Token | Value |
-| --- | --- | --- |
-| Lead / Trail Progress | `@property --edge-a` / `--edge-b` | `<number>`, non-inheriting, initial `0` |
-| Width Knob | `@property --edge-fade` | `syntax "*"`, non-inheriting |
-| House Default | `--edge-fade-default` | `22px` on the fade classes; `16px` on both eclipses |
-| Axis | `--edge-dir` | `to bottom` fallback; `to right` on the x variants |
+| Title                 | Token                                        | Value                                             |
+| --------------------- | -------------------------------------------- | ------------------------------------------------- |
+| Lead / Trail Progress | `@property --os-lead` / `--os-trail`         | `<number>`, non-inheriting, initial `0`            |
+| Width Knob            | `@property --over-scroll-fade`               | `syntax "*"`, non-inheriting                      |
+| House Default         | `--os-fade-default`                          | `22px` block axis; `16px` inline; `0` under an ellipsis |
+| Axis                  | `--os-dir`                                   | `to bottom` fallback; `to right` on the inline axis |
+
+### Hover Remove
+
+The hover-revealed remove ×, with the label-tail melt as an option. 
+
+**SOURCE:** `Pommora/src/renderer/src/design-system/interactions/HoverRemove/`
+
+| Title       | Token                  | Value                                                     |
+| ----------- | ---------------------- | --------------------------------------------------------- |
+| Melt Ground | `--melt-ground`        | what the blurred twin smears into; follows the host's fill |
+| × Ink       | `--hover-remove-ink`   | `inherit` fallback; a neutral-filled label paints its own  |
 
 ### Autoscroll Tuning
 
