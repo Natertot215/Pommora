@@ -9,7 +9,8 @@ order; `--history` also carries the swatch colors and the head SHA.
 series holds one sample per day, so a commit touches exactly one row — measuring that commit's own
 archive answers it in a fraction of a second, where `--history` re-walks every day of the branch.
 It reads the commit rather than the working tree, so uncommitted work is never counted against a
-commit that doesn't contain it.
+commit that doesn't contain it. A commit that moved no code leaves the page untouched, so the
+refresh itself does not dirty the tree.
 
 `post-commit` runs `--update` after every commit; `install-hooks.sh` copies it into `.git/hooks`,
 which isn't versioned and so starts empty in a fresh clone.

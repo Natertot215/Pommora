@@ -204,6 +204,11 @@ def update() -> str:
 
     with open(HISTORY_JSON, encoding="utf-8") as fh:
         payload = json.load(fh)
+    # A commit that moved no code leaves the page alone. Rewriting it just to stamp a new SHA would
+    # dirty the tree on every commit forever — including the commit that carries the refresh — so
+    # `head` means the commit these numbers were measured at, which is the truthful reading anyway.
+    if any(s["d"] == date and s["v"] == row["v"] for s in payload["series"]):
+        return f"{date}  {head}  unchanged"
     series = [s for s in payload["series"] if s["d"] != date]
     series.append(row)
     series.sort(key=lambda s: s["d"])

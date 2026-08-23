@@ -36,8 +36,6 @@
 
 - **A second Add started while the first adoption is still copying loses one reference.** Every surface reads the value at click time and the adoption after the dialog is a plain await, so two picks straddling a large copy both tail the pre-commit list. Recorded rather than fixed: closing it means threading a getter through four call sites, and the damage is fully recoverable — the lost file is already under the asset root, so re-picking it takes the reference-in-place branch.
 - **Two live checks are Nathan's**, both ten seconds: picking a file from inside `.nexus/assets` while the configured root is elsewhere (⌘⇧. shows hidden folders — a dim chip means the copy-out did not fire), and whether the ×'s reveal survives moving the cursor toward it. Computed styles lie for that second one; only a live hover is truth.
-- **The settings pane's `minHeight={245}`** floors both PaneSlider slots, so the File editor's short body leaves dead space beneath it. A shared knob, not this feature's.
-
 #### Feedback
 
 - "If it's unreachable it's dead — that's the discipline." A prop the spec names but nothing consumes comes out; a ruling that defers a deletion on a prediction expires when the prediction resolves.

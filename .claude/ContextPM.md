@@ -6,12 +6,15 @@
 
 **MarkdownPM is taking incremental improvements.** Highlights, Editor Scale, thirty-eight code languages, a Code Color, and a copy control on every code block's tag have landed in passes rather than as one feature. What is left of the editor's own gap list is small enough to keep taking that way — callout types, find-in-page, a slash menu, source mode. Image embedding is the exception and is not open yet: it waits on the file-based arc finishing, since a `FileRef` is what an inline image would resolve through.
 
-**The architecture-audit cleanup continues.** Bundles 1, 2 and 3 landed 08-21; 6a → 6b are the high-priority pair next, and the evidence sits in [[Architecture Audit — Full-Codebase Report]] with the session-sized work at [[Codebase-Cleanup-Checklist]].
+**The architecture-audit cleanup continues.** Bundles 1, 2 and 3 landed 08-21; 6a → 6b are the high-priority pair next, and the evidence sits in [[Architecture Audit — Full-Codebase Report]] with the session-sized work at [[Codebase-Cleanup-Checklist]]. The cleanup runs its structural bundles through to the end before any design work joins it.
+
+**The design system has been audited and its work is deliberately unscheduled.** [[Design-Coherence-Report]] holds the findings: the reference document covers 4 of ~22 components and none of ~20 shared helpers, so an agent reading it hand-rolls what already exists; seven files inside `design-system/` import from app layers, which makes three app components design-system members in everything but location; and the drift — concentrated in geometry and in props rather than color — includes a drag prop discarded by its own engine at twenty-one call sites and a date-range picker built, styled and unreachable. None of it is an architectural error, and several of the findings are decisions rather than edits, so how they become work is its own planning session taken against the report rather than a queue absorbed into the cleanup. The one constraint that does not wait: `Chip`, `EditableInput` and `ColorPicker` move into the design system before the `Components/Detail` rehome, since the rehome would otherwise carry `ColorPicker` into a feature domain while the system imports it.
 
 ### Immediate Work
 
 - [ ] The architecture-audit cleanup at [[Codebase-Cleanup-Checklist]] — bundles 6a → 6b, each carrying its own verification and the documentation entries it retires.
 - [ ] **Part 3 of the file-based arc** — `PhotoCropModal` widened past the nexus icon so banners, cards and other media crop through it. It is the profile photo's alone today, which is why `setProfileImage` still carries bytes while every banner carries a path.
+- [ ] **A planning session against [[Design-Coherence-Report]]**, after the cleanup's structural bundles — its §VIII is the agenda, led by whether a layer exists between the design system and the features.
 
 ### Pending Focuses
 
