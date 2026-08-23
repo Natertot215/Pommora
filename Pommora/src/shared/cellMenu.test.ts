@@ -160,7 +160,7 @@ describe('cellMenuContextFor', () => {
   it('url → link (carrying filled); a file cell has no look left to offer', () => {
     expect(cellMenuContextFor(prop(), 'url', {}, true)).toEqual({ kind: 'link', filled: true })
     expect(cellMenuContextFor(prop(), 'file', {}, false)).toEqual({ kind: 'file', onChip: false })
-    expect(cellMenuContextFor(prop(), 'file', {}, true, false, false, true)).toEqual({
+    expect(cellMenuContextFor(prop(), 'file', {}, true, { onChip: true })).toEqual({
       kind: 'file',
       onChip: true,
     })
@@ -190,7 +190,7 @@ describe('cellMenuContextFor', () => {
   })
 
   it('number carries barCapable only when a bar can render (gates the Bar look)', () => {
-    expect(cellMenuContextFor(prop(), 'number', {}, true, false, true)).toEqual({
+    expect(cellMenuContextFor(prop(), 'number', {}, true, { barCapable: true })).toEqual({
       kind: 'style-only',
       type: 'number',
       current: {},
@@ -208,16 +208,16 @@ describe('cellMenuContextFor', () => {
   })
 
   it('hideable (cards): a filled cell carries hideable; a menu-less cell becomes remove-only', () => {
-    expect(cellMenuContextFor(prop(), 'select', {}, true, true)).toEqual({
+    expect(cellMenuContextFor(prop(), 'select', {}, true, { hideable: true })).toEqual({
       kind: 'clear-only',
       hideable: true,
     })
     // Empty select would be null (no menu) — but hideable still needs a Remove: remove-only MUST carry
     // the hideable flag, or the model appends nothing and the menu never pops (the composition seam).
-    const ctx = cellMenuContextFor(prop(), 'select', {}, false, true)
+    const ctx = cellMenuContextFor(prop(), 'select', {}, false, { hideable: true })
     expect(ctx).toEqual({ kind: 'remove-only', hideable: true })
     expect(cellMenuModel(ctx as CellMenuContext).items.map((i) => i.action)).toEqual(['cell:hide'])
-    expect(cellMenuContextFor(prop(), undefined, {}, true, true)).toEqual({
+    expect(cellMenuContextFor(prop(), undefined, {}, true, { hideable: true })).toEqual({
       kind: 'remove-only',
       hideable: true,
     })

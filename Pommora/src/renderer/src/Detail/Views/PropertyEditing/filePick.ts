@@ -5,6 +5,7 @@
 
 import type { PropertyDefinition } from '@shared/properties'
 import type { PropertyValue } from '@shared/propertyValue'
+import { parentOf } from '@shared/treePatch'
 import { resolveFileValue } from '@renderer/assetUrl'
 import { useSession } from '@renderer/store'
 
@@ -57,7 +58,19 @@ export async function runFilePick(
 /** The nexus-relative folder a resolved reference sits in, or '' where nothing answers to it. */
 function folderOf(reference: string): string {
   const resolved = resolveFileValue(reference, useSession.getState().assetMap)
-  if (resolved.kind !== 'asset') return ''
-  const cut = resolved.rel.lastIndexOf('/')
-  return cut > 0 ? resolved.rel.slice(0, cut) : ''
+  return resolved.kind === 'asset' ? parentOf(resolved.rel) : ''
+}
+
+/** The pick as every surface actually spends it: run it, and write only a defined answer —
+ *  `undefined` is "nothing happened", which a bare `!= null` would mistake for a clear. Stated
+ *  once so the five call sites can't each decide what a cancelled dialog means. */
+export function pickFileInto(
+  def: PropertyDefinition,
+  current: PropertyValue,
+  chip: number | null,
+  commit: (next: PropertyValue | null) => void,
+): void {
+  void runFilePick(def, current, chip).then((next) => {
+    if (next !== undefined) commit(next)
+  })
 }

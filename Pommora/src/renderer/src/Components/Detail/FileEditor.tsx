@@ -1,4 +1,5 @@
 import { PathField } from '@renderer/design-system/components/PathField'
+import { useSession } from '@renderer/store'
 import * as s from './settingsPane.css'
 
 /** Where this property's uploads land — the asset directory itself by default, or a subfolder
@@ -16,6 +17,9 @@ export function FileEditor({
   onSetDirectory: (dir: string) => void
   onBrowse: () => void
 }): React.JSX.Element {
+  // Unset means the asset root itself, so the field names that root rather than a generic word —
+  // the folder a file actually lands in is readable before anything is chosen.
+  const assetRoot = useSession((st) => st.tree?.assetDirectory ?? '')
   return (
     <div className={s.configEditor}>
       <div className={s.configRow}>
@@ -23,7 +27,7 @@ export function FileEditor({
         <PathField
           label="Directory"
           value={directory ?? ''}
-          placeholder="Asset folder"
+          placeholder={assetRoot}
           onCommit={onSetDirectory}
           onBrowse={onBrowse}
         />
