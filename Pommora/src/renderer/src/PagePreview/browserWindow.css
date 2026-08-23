@@ -41,6 +41,4 @@
 }
 .wbrowser-title-page {
   color: var(--label-secondary);
-  overflow: hidden;
-  text-overflow: ellipsis;
 }

@@ -186,10 +186,7 @@ export const titleInput = style({
 } as Parameters<typeof style>[0])
 
 /** Sub-label — under the title. */
-export const subLabel = style([
-  text.caption.standard,
-  { color: c.label.secondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
-])
+export const subLabel = style([text.caption.standard, { color: c.label.secondary }])
 
 /** Trailing detail — color inherited from `side`. */
 export const detail = style([text.footnote.emphasized])

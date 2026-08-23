@@ -3,7 +3,7 @@
    so the widget can name the class without importing a build artifact.
 
    inline-block (content-independent baseline) so toggling doesn't shift the box; the mark is
-   absolutely centered. Geometry is chipBoxGeometry's, worn alongside. */
+   absolutely centered. Geometry is boxGeometry's, worn alongside. */
 .pm-checkbox {
   box-sizing: border-box;
   display: inline-block;
@@ -13,12 +13,9 @@
   border-color: var(--label-tertiary);
   background: transparent;
   /* The three parts a chosen cell resolves through the ramp — its fill, its outline and its mark.
-     Unset is not a missing value but the whole point of clearing: each falls back to the accent
-     recipe, so a cleared checkbox keeps following the accent live rather than freezing a copy. */
-  color: var(
-    --checkbox-mark,
-    color-mix(in srgb, var(--accent) var(--tint-quaternary), var(--label-primary))
-  );
+     A cleared checkbox drops its override and inherits the accent recipe from :root, so it keeps
+     following the accent live rather than freezing a copy. */
+  color: var(--checkbox-mark);
   cursor: pointer;
 }
 .pm-checkbox svg {
@@ -28,18 +25,12 @@
   transform: translate(-50%, -50%);
 }
 .pm-checkbox-checked {
-  background: var(
-    --checkbox-fill,
-    color-mix(in srgb, var(--accent) var(--tint-primary), transparent)
-  );
-  border-color: var(
-    --checkbox-border,
-    color-mix(in srgb, var(--accent) var(--tint-tertiary), transparent)
-  );
+  background: var(--checkbox-fill);
+  border-color: var(--checkbox-border);
 }
 
 /* The gutter variant — for a row that seats its control in the same narrow inset a pin or a grip
-   rides, where the full box would overhang the row's edge. Overrides chipBoxGeometry rather than
+   rides, where the full box would overhang the row's edge. Overrides boxGeometry rather than
    forking it, so the two stay one shape at two sizes. */
 .pm-checkbox-small {
   width: 13px; /* KNOB */
