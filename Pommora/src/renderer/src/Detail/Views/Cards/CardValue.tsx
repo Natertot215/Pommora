@@ -17,7 +17,7 @@ import type { ResolveContext } from '../Table/resolveContext'
 import { PropertyEditor } from '../PropertyEditing/PropertyEditor'
 import { numberDivisor } from '../PropertyEditing/formatValue'
 import { sharedValueClickAction } from '../PropertyEditing/valueClick'
-import { fileChipIndex, fileValueWithout, runFilePick } from '../PropertyEditing/filePick'
+import { fileChipIndex, fileValueWithout, pickFileInto } from '../PropertyEditing/filePick'
 
 export function CardValue({
   row,
@@ -90,10 +90,7 @@ export function CardValue({
       if (shared.kind === 'commit') commit(shared.value)
       // A file value is filled through the OS dialog, not a picker anchored to this card.
       else if (shared.kind === 'file') {
-        if (schemaDef)
-          void runFilePick(schemaDef, v, fileChipIndex(e.target)).then((next) => {
-            if (next !== undefined) commit(next)
-          })
+        if (schemaDef) pickFileInto(schemaDef, v, fileChipIndex(e.target), commit)
       } else openPicker(shared.kind)
     } else if (t === 'number') {
       setMode('editor')
@@ -136,15 +133,11 @@ export function CardValue({
     }
     const barCapable = dt === 'number' && numberDivisor(schemaDef) !== undefined
     const chip = fileChipIndex(e.target)
-    const menuCtx = cellMenuContextFor(
-      column,
-      dt,
-      style,
-      !isBlankValue(v),
-      true,
+    const menuCtx = cellMenuContextFor(column, dt, style, !isBlankValue(v), {
+      hideable: true,
       barCapable,
-      chip !== null,
-    )
+      onChip: chip !== null,
+    })
     if (!menuCtx) return
     const action = await holdGhost(() => window.nexus.cellMenu(menuCtx))
     if (!action) return
@@ -153,10 +146,7 @@ export function CardValue({
     else if (action === 'file:remove') {
       if (chip !== null) commit(fileValueWithout(v, chip))
     } else if (action === 'file:add' || action === 'file:replace') {
-      if (schemaDef)
-        void runFilePick(schemaDef, v, action === 'file:replace' ? chip : null).then((next) => {
-          if (next !== undefined) commit(next)
-        })
+      if (schemaDef) pickFileInto(schemaDef, v, action === 'file:replace' ? chip : null, commit)
     } else if (action === 'cell:edit') {
       if (t === 'url' && anchorRef.current) onOpenPicker(column, 'link', anchorRef.current)
       else setMode('editor')

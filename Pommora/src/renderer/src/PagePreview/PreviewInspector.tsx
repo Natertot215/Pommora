@@ -96,20 +96,23 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
       : false
   }
 
-  const editRow = (def: PropertyDefinition, el: HTMLElement): void =>
-    editRowShared(def, el, {
-      setTrigger: (t) => {
-        triggerRef.current = t
+  const editRow = (def: PropertyDefinition, el: HTMLElement, from?: EventTarget | null): void =>
+    editRowShared(
+      def,
+      el,
+      {
+        setTrigger: (t) => {
+          triggerRef.current = t
+        },
+        setEditing,
+        onReveal: (id) => setRevealed((prev) => new Set([...prev, id])),
       },
-      setEditing,
-      onReveal: (id) => setRevealed((prev) => new Set([...prev, id])),
-    })
+      from,
+    )
 
   // Revealing a row and then editing it is the ORDINARY click one frame later — the row mounts
-  // next frame, so its value field can only be anchored to after paint. Routing it through the
-  // same `editRow` every other click takes is what keeps a new type from having to be taught to
-  // two places; this used to restate the routing inline, and its catch-all already disagreed with
-  // `editRow`'s explicit list. A Context row carries no def and opens its own picker.
+  // next frame, so its value field can only be anchored to after paint. It routes through the same
+  // `editRow` every other click takes, so a new type is taught to one place. A Context row carries no def and opens its own picker.
   const revealAndEdit = (id: string, def?: PropertyDefinition): void => {
     setAddOpen(false)
     setRevealed((prev) => new Set([...prev, id]))
@@ -205,7 +208,7 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
                         e.stopPropagation()
                       }}
                       onClick={(e) => {
-                        if (def) return editRow(def, e.currentTarget)
+                        if (def) return editRow(def, e.currentTarget, e.target)
                         triggerRef.current = e.currentTarget
                         setEditing({ id, mode: 'picker' })
                       }}

@@ -60,14 +60,16 @@ export interface CellMenuModel {
  *  context and select/multi = Clear alone. Clear is offered ONLY on a `filled` cell — a clear-only
  *  cell with no value has no menu at all, and a styleable one drops just its Clear. Anything else
  *  has no menu (null). Portable across the container views (Table cells, Cards values). */
+/** The surface's own facts about the cell, named rather than positional — four bare booleans in a
+ *  row read as nothing at a call site. */
+type CellMenuFlags = { hideable?: boolean; barCapable?: boolean; onChip?: boolean }
+
 export function cellMenuContextFor(
   col: ResolvedColumn,
   type: PropertyType | 'title' | undefined,
   style: ColumnStyle,
   filled: boolean,
-  hideable = false,
-  barCapable = false,
-  onChip = false,
+  { hideable = false, barCapable = false, onChip = false }: CellMenuFlags = {},
 ): CellMenuContext | null {
   const base = baseCellMenu(col, type, style, filled, barCapable, onChip)
   // Cards let any non-title cell drop its property (hideable): a cell that would otherwise have no menu
