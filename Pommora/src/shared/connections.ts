@@ -140,7 +140,10 @@ export function connectionText(title: string, alias?: string): string {
  *  splits off an alias — a title holding either has no spelling that means it. Every surface
  *  that offers a link or an embed reads this rather than restating it. */
 export function embeddableTitle(title: string): boolean {
-  return !title.includes(']') && !title.includes('|')
+  // A line break too: the pattern that reads a connection back is single-line, so a name carrying
+  // one mints a reference that can be written and never parsed — which is the blank the other two
+  // refusals exist to prevent, reached by a character rather than a bracket.
+  return !title.includes(']') && !title.includes('|') && !/[\r\n]/.test(title)
 }
 
 /** Write a page embed — the lone-line token, assembled in one place the way a connection is. */

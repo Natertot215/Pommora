@@ -87,17 +87,21 @@ export function decodeValue(
     }
     // Shape-identical to multi_select and deliberately NOT merged with it: multi_select is
     // option-gated under strict, and optionValues on a file def returns [] — a merged case would
-    // discard every attachment through the restore path. For file, strict refuses emptiness and
-    // non-strings and nothing else.
+    // discard every attachment through the restore path. File is gated on nothing but emptiness.
     case 'file': {
       if (!Array.isArray(raw)) return NULL
+      // An entry nothing can spell is DROPPED, never fatal to the list. A dangling `- ` under an
+      // attachment key is YAML null, and a hand-edit that leaves one behind must not take the
+      // page's other attachments with it — a nulled value renders blank, and the next in-app add
+      // writes a one-entry list straight over references whose files are still on disk.
       const entries: string[] = []
       for (const x of raw) {
         const entry = fileEntry(x)
-        if (entry === null) return NULL
-        entries.push(entry)
+        if (entry !== null && entry !== '') entries.push(entry)
       }
-      return strict && entries.length === 0 ? NULL : { kind: 'file', value: entries }
+      // Nothing left to name is nothing — which is also what `strict` refuses, so the two answers
+      // are the same one and the gate needs no arm of its own.
+      return entries.length === 0 ? NULL : { kind: 'file', value: entries }
     }
     default:
       // A Context column resolves at walk assembly and never routes here.

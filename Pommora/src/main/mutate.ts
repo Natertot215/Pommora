@@ -155,6 +155,18 @@ export async function adoptFile(
   // the root is what makes the existing-symlink case reachable at all.
   const canonical = await resolveUnderRoot(root, dir)
   if (!canonical.ok && canonical.error.code !== 'not-found') return canonical
+  // `resolveUnderRoot` bounds the NEXUS, which a link pointing at the content tree satisfies — so
+  // where a real SUBFOLDER answers, the boundary that matters is re-read from its canonical path.
+  // A link out of the nexus is already refused above; this is the one that lands bytes among the
+  // user's pages, under a name the asset map will never index. The root itself is exempt because
+  // `underAssetRoot` reads strictly below its root, and where the root is a link that is the asset
+  // directory setting's business rather than adoption's.
+  if (
+    opts.subfolder &&
+    canonical.ok &&
+    !underAssetRoot(relPosix(await realpath(root), canonical.value), assetDir)
+  )
+    return fault(NOT_A_PROPERTY_DIR_MESSAGE)
   const hit = resolveAssetName(await liveAssetMap(root), base)
   // A name several files answer to has no reference that means one of them — authoring it would
   // spell exactly what the resolver refuses to answer.
