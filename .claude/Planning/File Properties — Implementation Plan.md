@@ -765,6 +765,22 @@ Against a control of **868** (`@shared/`, 862 at planning time): `FileRef` **0**
 
 `fileLabel` reads **12**, and the entry is the thing that is wrong, not the tree. The symbol it was written to retire is `formatValue.ts`'s `fileLabel(ref, look)` — the filename-versus-path formatter the column-style system called — and that is at **0**, confirmed against `ea05d139` where it lived. The 12 hits are the shipped component's own vocabulary: `FileLabel.tsx`, `fileLabel.css.ts`, and the `fileLabelText` parse. The entry was written while the component was still named FileChip, so its token and the new name collide.
 
+#### Gate 4 / 5 — the simplification pass
+
+Every finding re-opened against the code before folding. Commit `d1788cf4`.
+
+- **Fixed · a file label in either inspector pane ADDED instead of replacing.** `fileChipIndex` walks *up* from the node it is given, and both panes handed it `e.currentTarget` — the value row, an ancestor of every label — so it could only ever answer null. The table and the cards pass `e.target` and always replaced correctly. The two facts are genuinely different: one anchors what opens, the other says what was hit, so `editRow` now takes them separately and a caller that conflates them reads as the value's own area. `revealAndEdit` passes only the anchor, which is right — a revealed row has no label under the cursor. Pinned by the case that makes it necessary: hit-testing a row that *wraps* labels answers null, hit-testing a label answers its index.
+- **Fixed · the pick's tail was written five times.** `void runFilePick(…).then((next) => { if (next !== undefined) commit(next) })` appeared at both Table sites, both Cards sites and in `usePropertyRows`. `pickFileInto` states it once, so the rule that `undefined` means *write nothing* — which a bare `!= null` would read as a clear — lives in one place.
+- **Fixed · `folderOf` re-spelled `parentOf`.** `shared/treePatch.ts` already exports the containing-directory of a nexus-relative path, with the off-by-one its own comment names. It is now called rather than restated.
+- **Fixed · the Directory refusal was spelled twice** in `main/index.ts`, once per entry, from the same verdict. One `NOT_A_PROPERTY_DIR` beside the file's existing `NEEDS_*` constants.
+- **Fixed · `cellMenuContextFor` ended in four bare booleans.** `(prop(), 'file', {}, true, false, false, true)` is unreadable without counting. The three surface-supplied flags became a named object; `filled` stays positional, which leaves thirteen of the sixteen call sites untouched.
+- **Fixed · `SegmentEntry.onClick` was plumbing with no caller.** Task 16 routed the click through `data-segment-index` instead, so the passthrough shipped dead. The Phase 2 fold had removed it once and Task 16 restored it in anticipation of a consumer that took a different route.
+- **Fixed · both panes' `revealAndEdit` comment narrated the rewrite** rather than the rule. It now says why the frame exists and why one router; what it used to be is not the reader's business.
+- **Fixed · `TableView` resolved a column's definition on every cell click** to serve one branch. It moved inside that branch.
+- **Open · `FileLabel.onClick` has no consumer.** Spec C-2c names the click as part of the component's interface, and Phase 2's ruling kept it for a Task 16 consumer that ended up hit-testing the DOM instead. The prop, its clickable-span branch and its stylesheet rule are therefore unreachable. Removing it is three lines and re-adding it is three lines; it is a design-system interface the spec names, so it is Nathan's call rather than a fold.
+- **Ruled, not fixed · `startsUnder` and `assetSubfolder` are two root-prefix comparisons in one file.** They differ by strictness and by what they return, and the stricter one is the security predicate that runs ahead of `resolveUnderRoot`. A prior ruling already kept it apart from `exclusion.ts`'s matcher for that reason; sharing a helper here would put the boundary check behind an abstraction serving a display concern.
+- **Ruled, not fixed · `canFillBlank` restates the router's type table.** One site, so the Rule of Two is unmet. Recorded because a new type has to teach two lists, which is the shape that becomes a defect at three.
+
 ### Open Against Later Tasks
 ### Deviations
 
