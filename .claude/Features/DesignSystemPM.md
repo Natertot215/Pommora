@@ -160,7 +160,7 @@ The two drop shadows — resting glass and lifted or dragged chrome. Every frost
 
 #### Spectrum
 
-The ten selectable solids plus the neutral chip default and the ramp's pink seat — authored once in `@shared/theme`, validated by main and renderer alike. These are what an accent may be set to; the ramp widens what a chip may be colored. The accent is a single-user value resolved from this palette (or the `system` OS accent); accented surfaces derive from `--accent` through the tint steps.
+The ten selectable solids plus the neutral chip default and the ramp's pink seat — authored once in `@shared/theme`, validated by main and renderer alike. These are the anchor names still on disk; an accent and a chip alike resolve to a ramp cell. The accent is a single-user value resolved from this palette (or the `system` OS accent); accented surfaces derive from `--accent` through the tint steps.
 
 **SOURCE:** `Pommora/src/shared/theme.ts` · `tokens/theme-vars.css.ts`
 
@@ -170,7 +170,7 @@ The ten selectable solids plus the neutral chip default and the ramp's pink seat
 | Orange            | `SPECTRUM.orange` · `--solid-orange`        | `#FF9F0A`                                  |
 | Yellow            | `SPECTRUM.yellow` · `--solid-yellow`        | `#FFD60A`                                  |
 | Green             | `SPECTRUM.green` · `--solid-green`          | `#32D74B`                                  |
-| Cobalt            | `SPECTRUM.lightBlue` · `--solid-light-blue` | `#7EC8E3`                                  |
+| Light Blue        | `SPECTRUM.lightBlue` · `--solid-light-blue` | `#7EC8E3`                                  |
 | Cyan              | `SPECTRUM.cyan` · `--solid-cyan`            | `#41959F`                                  |
 | Blue              | `SPECTRUM.blue` · `--solid-blue`            | `#0A84FF`                                  |
 | Purple            | `SPECTRUM.purple` · `--solid-purple`        | `#BF5AF2`                                  |
@@ -184,7 +184,7 @@ The ten selectable solids plus the neutral chip default and the ramp's pink seat
 | Accent Stroke     | `--accent-stroke` / `--accent-stroke-hot`   | accent @ 40% / accent @ 60%                |
 | Link / Connection | `--link` / `--connection`                   | `var(--system-accent)` / → `var(--accent)` |
 | Error             | `--error`                                   | `SPECTRUM.red`                             |
-| Code              | `--codeColor` | `--solid-red` (user-selectable) @ 85%  |
+| Code              | `--code`      | `--solid-red` (user-selectable) @ 85%  |
 
 #### Chips & Labels
 
@@ -199,6 +199,7 @@ The ten selectable solids plus the neutral chip default and the ramp's pink seat
 | Capsule | `chipCapsule` | Compact icon-only `chipPill` variant; an option for Status properties. |
 | Checkbox | `chipBox` | Multi-use checkboxes.  |
 | File | `chipFile` | Files or directories; `chipLabel` with type-specific icon. |
+| Plain | `chipPlain` | A file or folder name inside a field; the chip apparatus with no fill or border. |
 
 #### Components
 
@@ -207,6 +208,9 @@ The ten selectable solids plus the neutral chip default and the ramp's pink seat
 | Title | Source | Use Cases |
 | --- | --- | --- |
 | PathField | `PathField.tsx` | Input field for directories and path selections. |
+| FileChip | `FileChip.tsx` | A file property's value; the file's type glyph and name in the `chipFile` shape. |
+| FileLabel | `FileLabel.tsx` | A named file or folder inside a field, wearing `chipPlain`. |
+| SegmentRun | `SegmentRun/` | A divided run of FileLabels — a path's segments, or values standing beside one another. |
 | DualSwitch | `Switches/` - `DualSwitch` | Booleans; shared Switch shape with a sliding glass segment.  |
 | ColorSwatch | `Switches/` - `ColorSwatch` | Color-selections; re-uses the `Switch` shape.  |
 | Slider | `Slider/` | Sliding number selection.  |
