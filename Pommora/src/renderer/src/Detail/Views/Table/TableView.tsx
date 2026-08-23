@@ -21,7 +21,7 @@ import { PropertyEditor } from '../PropertyEditing/PropertyEditor'
 import { PropertyPicker, syntheticContextDef } from '../PropertyEditing/PropertyPicker'
 import { DatetimeValuePicker } from '../PropertyEditing/DatetimeValuePicker'
 import { sharedValueClickAction } from '../PropertyEditing/valueClick'
-import { fileChipIndex, fileValueWithout, pickFileInto } from '../PropertyEditing/filePick'
+import { fileChipIndex, pickFileInto, runFileMenuAction } from '../PropertyEditing/filePick'
 import { useSession } from '../../../store'
 import { pageMoveContext, runPageSendAction } from '../../../pageMenuActions'
 import { findCollectionForSet } from '../../Scope'
@@ -1009,18 +1009,14 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     } else if (action === 'cell:clear') {
       if (col.kind === 'context') commitContextValue(row, col.id, [])
       else commitCellValue(row, col.id, null)
-    } else if (action === 'file:remove') {
-      if (chip !== null)
-        commitCellValue(row, col.id, fileValueWithout(resolveFieldValue(row, col.id, schema), chip))
-    } else if (action === 'file:add' || action === 'file:replace') {
-      const def = schema.find((d) => d.id === col.id)
-      if (def)
-        pickFileInto(
-          def,
-          resolveFieldValue(row, col.id, schema),
-          action === 'file:replace' ? chip : null,
-          (n) => commitCellValue(row, col.id, n),
-        )
+    } else if (action.startsWith('file:')) {
+      runFileMenuAction(
+        action as 'file:add' | 'file:replace' | 'file:remove',
+        schema.find((d) => d.id === col.id),
+        resolveFieldValue(row, col.id, schema),
+        chip,
+        (n) => commitCellValue(row, col.id, n),
+      )
     } else if (action.startsWith('style:')) {
       const parsed = parseStyleAction(action)
       if (parsed) setColumnStyle(col.id, parsed.key, parsed.value)

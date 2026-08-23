@@ -52,7 +52,13 @@ import {
 } from './io/atomicWrite'
 import { recordWrite } from './io/writeEcho'
 import { readNavigationFile, writeNavigationState } from './io/navigationFile'
-import { assetFilePath, assetFileToDelete, underAssetRoot, validPropertyDir } from './assetRoots'
+import {
+  assetFilePath,
+  assetFileToDelete,
+  NOT_A_PROPERTY_DIR_MESSAGE,
+  underAssetRoot,
+  validPropertyDir,
+} from './assetRoots'
 import { createDisambiguated } from './disambiguate'
 import { writeAssetFile } from './assetWrite'
 import { serializeOnFile } from './io/fileLock'
@@ -142,7 +148,7 @@ export async function adoptFile(
   // index, so a write can't land somewhere its own reference will never resolve from.
   const dir = assetSubRoot(assetDir, opts.subfolder)
   if (opts.subfolder !== undefined && !validPropertyDir(opts.subfolder, assetDir))
-    return fault('That folder can’t hold this property’s files.')
+    return fault(NOT_A_PROPERTY_DIR_MESSAGE)
   // The one hole a lexical check can't see is a segment inside the root that is a symlink out.
   // A folder that already exists settles it by realpath; one that doesn't has no link to follow,
   // and `writeAssetFile`'s mkdir creates real directories. Resolving the SUBFOLDER rather than

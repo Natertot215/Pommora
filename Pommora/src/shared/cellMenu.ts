@@ -16,8 +16,10 @@ import type { ActionItem } from './menuModel'
  *  a `link` (url) cell gets Edit · Rename · Clear (its look is per-property, set in its pane, not a
  *  per-view Style); picker-based cells add Clear (`clearable` on a styleable type, `clear-only`
  *  for select/multi/context, which carry no Style). `hideable` (cards
- *  only) appends a trailing "Remove" that drops the property from the view — `remove-only` is the
- *  bare case for a cell that would otherwise have no menu (an empty picker, a file). */
+ *  only) appends a trailing "Remove" that drops the property from the view, which a `file` cell
+ *  names "Remove from View" so it can't be read as its own Remove File; `remove-only` is the bare
+ *  case for a cell that would otherwise have no menu (an empty picker). A `file` cell carries its
+ *  own Add · Replace · Remove triad instead of Style radios. */
 type CellMenuKind =
   | ({ kind: 'title'; alreadyOpen?: boolean } & PageMoveContext)
   | {
@@ -54,12 +56,6 @@ export interface CellMenuModel {
   style?: { label: string; rows: StyleMenuItem[] }
 }
 
-/** The right-click menu context for a value cell: title = page meta; url = Edit (+ Rename/Clear
- *  once filled); status/datetime (picker-based) = Style +
- *  Clear; the inline-clearable style types (checkbox/number/last_edited_time) = Style alone;
- *  context and select/multi = Clear alone. Clear is offered ONLY on a `filled` cell — a clear-only
- *  cell with no value has no menu at all, and a styleable one drops just its Clear. Anything else
- *  has no menu (null). Portable across the container views (Table cells, Cards values). */
 /** The surface's own facts about the cell, named rather than positional — four bare booleans in a
  *  row read as nothing at a call site. */
 type CellMenuFlags = { hideable?: boolean; barCapable?: boolean; onChip?: boolean }
@@ -81,7 +77,7 @@ export function cellMenuContextFor(
 
 function baseCellMenu(
   col: ResolvedColumn,
-  type: PropertyType | 'title' | 'context' | undefined,
+  type: PropertyType | 'title' | undefined,
   style: ColumnStyle,
   filled: boolean,
   barCapable: boolean,

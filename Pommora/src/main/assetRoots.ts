@@ -61,6 +61,10 @@ export async function assetFileToDelete(root: string, value: unknown): Promise<s
  *
  *  A symlinked segment is the one hole a lexical check can't see; adoption closes it where the
  *  write happens. */
+/** What a refused Directory says. One sentence, read by the channel that sets one and by the
+ *  adoption that writes under one. */
+export const NOT_A_PROPERTY_DIR_MESSAGE = 'That folder can’t hold this property’s files.'
+
 export function validPropertyDir(subfolder: string, assetDir: string): boolean {
   // No subfolder IS the asset root, which is always where files may land. `underAssetRoot` reads
   // strictly below its root, so the root itself would otherwise refuse.

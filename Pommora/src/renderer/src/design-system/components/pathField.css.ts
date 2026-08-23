@@ -10,7 +10,7 @@ import { text } from '../tokens/typography.css'
 
 const c = colorVars.color
 
-const LEAD_GAP = '6px'
+const LEAD_GAP = '6px' // KNOB
 
 export const pathField = style([
   hairlineField,
