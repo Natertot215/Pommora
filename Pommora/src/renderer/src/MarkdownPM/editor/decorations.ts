@@ -18,6 +18,7 @@ import {
   docString,
   perDoc,
 } from './docCache'
+import { CHECK_GLYPH, CODE_TAGS, COPY_GLYPH } from './codeGlyphs'
 import { claimedEmbeds } from './embedRanges'
 import { resolutionNudge } from './embedWidget'
 import { linkRest, linkTyping } from './linkGestures'
@@ -25,13 +26,13 @@ import {
   assembleLineIntents,
   type DocScan,
   GLYPH_CLASS,
+  codeBlockTextAt,
   lineIndexAt,
   NO_CARET,
   tokenIntents,
   type WidgetSpec,
 } from '../decorations/intent'
 import { resolveMdTarget, type ConnectionsApi } from '../connections'
-import { CODE_TAGS } from './codeGlyphs'
 import type { LinkStatus } from '@shared/connections'
 
 /** The class a valid external link wears — the hover gate reads the same constant, so the
@@ -139,30 +140,7 @@ class LineWidget extends WidgetType {
     const el = document.createElement('span')
     el.className = this.className
     el.setAttribute('aria-hidden', 'true')
-    if (this.text !== undefined) {
-      // A language with a mark wears it in front of its name; one without draws the name alone, and
-      // one whose mark already draws the wordmark draws the mark alone. The glyph is built here
-      // rather than styled in, because a widget is raw DOM with no React under it — and an <svg>
-      // carries `currentColor`, so the two halves take their own tones.
-      const tag = CODE_TAGS[this.text]
-      if (tag) {
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
-        svg.setAttribute('viewBox', '0 0 24 24')
-        svg.setAttribute('fill', 'none')
-        svg.setAttribute('stroke', 'currentColor')
-        svg.setAttribute('stroke-width', '2')
-        svg.setAttribute('stroke-linecap', 'round')
-        svg.setAttribute('stroke-linejoin', 'round')
-        svg.innerHTML = tag.glyph
-        el.appendChild(svg)
-      }
-      const name = tag?.label === undefined ? this.text : tag.label
-      if (name !== null) {
-        const label = document.createElement('span')
-        label.textContent = name
-        el.appendChild(label)
-      }
-    }
+    if (this.text !== undefined) el.textContent = this.text
     return el
   }
   /** Every glyph of this kind is decoration over a line that is still text, so a press on one
@@ -170,6 +148,102 @@ class LineWidget extends WidgetType {
    *  and the line's own menu is unreachable from the one part of it drawn rather than written. */
   ignoreEvent(): boolean {
     return false
+  }
+}
+
+/** A 24×24 mark, built rather than styled in: a widget is raw DOM with no React under it, and an
+ *  `<svg>` carries `currentColor` so each mark takes the tone its own slot names. */
+function mark(body: string, className: string): SVGSVGElement {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+  svg.setAttribute('viewBox', '0 0 24 24')
+  svg.setAttribute('fill', 'none')
+  svg.setAttribute('stroke', 'currentColor')
+  svg.setAttribute('stroke-width', '2')
+  svg.setAttribute('stroke-linecap', 'round')
+  svg.setAttribute('stroke-linejoin', 'round')
+  svg.innerHTML = body
+  svg.setAttribute('class', className)
+  return svg
+}
+
+/** How long the tag holds its answer before returning to what it was showing. */
+const COPIED_MS = 1000
+
+/** A code block's tag. One rule governs it whatever the block named: a language's own mark rests,
+ *  the copy mark takes its place under the pointer, and the check answers a press. A block that
+ *  named no language rests as nothing and reveals the same way — the affordance is the hover, not
+ *  the language.
+ *
+ *  The three marks share one fixed slot and are all built once, so which of them shows is an opacity
+ *  and never a rebuild. */
+class CodeTagWidget extends WidgetType {
+  constructor(readonly name?: string) {
+    super()
+  }
+  eq(o: CodeTagWidget): boolean {
+    return o.name === this.name
+  }
+  toDOM(view: EditorView): HTMLElement {
+    const el = document.createElement('span')
+    el.className = 'md-cb-lang'
+    const tag = this.name === undefined ? undefined : CODE_TAGS[this.name]
+    const label = tag?.label === undefined ? this.name : tag.label
+    const resting = label ?? ''
+
+    // The zone that arms the mark: the tag is a few characters in the corner, and reaching it means
+    // aiming. A real child rather than a pseudo-element, so the marks paint over it.
+    const reach = el.appendChild(document.createElement('span'))
+    reach.className = 'md-cb-reach'
+    const slot = el.appendChild(document.createElement('span'))
+    slot.className = 'md-cb-slot'
+    if (tag) slot.appendChild(mark(tag.glyph, 'md-cb-mark'))
+    slot.appendChild(mark(COPY_GLYPH, 'md-cb-copy'))
+    slot.appendChild(mark(CHECK_GLYPH, 'md-cb-done'))
+    // The word the tag carries, and the word it answers a press with. Empty is hidden in CSS, so a
+    // tag with no language to name carries no phantom gap and answers with the check alone.
+    const name = el.appendChild(document.createElement('span'))
+    name.className = 'md-cb-name'
+    name.textContent = resting
+
+    // The arc arms the mark and nothing more: a press inside it is a press on the code it is drawn
+    // over, placed where the pointer actually is. Left to fall through it would land on the widget's
+    // own position instead — the fence line, wherever in the block the press landed.
+    reach.addEventListener('mousedown', (e) => {
+      e.preventDefault()
+      const at = view.posAtCoords({ x: e.clientX, y: e.clientY })
+      if (at === null) return
+      view.dispatch({ selection: { anchor: at } })
+      view.focus()
+    })
+
+    let timer: number | undefined
+    const copy = (e: MouseEvent): void => {
+      e.preventDefault()
+      // Read at press time: two blocks in the same language are `eq`, so CM reuses the DOM and a
+      // range baked in at build time would name whichever of them mounted first.
+      const text = codeBlockTextAt(docScan(view.state.doc), view.posAtDOM(el))
+      if (!text) return
+      void window.nexus.writeClipboard(text)
+      el.classList.add('is-copied')
+      if (resting) name.textContent = 'Copied'
+      window.clearTimeout(timer)
+      timer = window.setTimeout(() => {
+        el.classList.remove('is-copied')
+        name.textContent = resting
+      }, COPIED_MS)
+    }
+    // The press is swallowed rather than allowed through: a caret landing on the fence line is what
+    // trades the tag back for the raw info word, which would unmount the thing being pressed.
+    for (const target of [slot, name]) {
+      target.addEventListener('mousedown', (e) => e.preventDefault())
+      target.addEventListener('click', copy)
+    }
+    return el
+  }
+  /** The press belongs to the tag; every other event belongs to the line under it, so the fence's
+   *  own context menu stays reachable from the chrome drawn over it. */
+  ignoreEvent(e: Event): boolean {
+    return e.type === 'mousedown' || e.type === 'click'
   }
 }
 
@@ -368,6 +442,12 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): Built {
         Decoration.widget({ widget: new LineWidget(it.className, it.text), side: -1 }).range(
           it.from,
         ),
+      )
+      continue
+    }
+    if (it.kind === 'codeTag') {
+      ranges.push(
+        Decoration.widget({ widget: new CodeTagWidget(it.name), side: -1 }).range(it.from),
       )
       continue
     }

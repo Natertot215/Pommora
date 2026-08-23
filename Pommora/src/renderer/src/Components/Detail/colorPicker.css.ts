@@ -16,23 +16,30 @@ export const row = style({
   gap: '3px',
 })
 
-export const swatch = style({
-  width: '18px',
-  height: '18px',
-  borderRadius: '4px',
-  border: 'none',
-  padding: 0,
-  cursor: 'default',
-  background: 'var(--sw)',
-  // The hairline keeps a dark cell legible against the pane.
-  boxShadow: `inset 0 0 0 1px ${c.separator.border}`,
-  outline: 'none',
-  outlineOffset: '1px',
-})
+/** What every swatch in the app has in common: it paints `--sw`. Doubled so it outranks whatever
+ *  box a consumer composed it onto — the settings field's swatch is a DualSwitch track, which states a
+ *  background of its own. */
+export const swatchFill = style({ selectors: { '&&': { background: 'var(--sw)' } } })
+
+export const swatch = style([
+  swatchFill,
+  {
+    width: '18px',
+    height: '18px',
+    borderRadius: '4px',
+    border: 'none',
+    padding: 0,
+    cursor: 'default',
+    // The hairline keeps a dark cell legible against the pane.
+    boxShadow: `inset 0 0 0 1px ${c.separator.border}`,
+    outline: 'none',
+    outlineOffset: '1px',
+  },
+])
 
 /** The selected cell rings in its own color at tint-primary. The dark seam under it is load-bearing
  *  at one square: the brightest grey's ring resolves to label-primary, which IS that square's fill,
- *  so without a separator the two merge into a single blob. Inert on the other 63. */
+ *  so without a separator the two merge into a single blob. */
 export const swatchSelected = style({
   boxShadow: `0 0 0 1px ${mixAt(c.system.black, 60, 'transparent')}`,
   outline: '2px solid var(--ring)',

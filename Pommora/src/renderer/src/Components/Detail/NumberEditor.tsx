@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { NumberConfig, NumberFamily } from '@shared/properties'
 import { CURRENCY_CODES } from '@shared/properties'
-import { Switch } from '@renderer/design-system/components/Switches/Switch'
+import { DualSwitch } from '@renderer/design-system/components/Switches/DualSwitch'
 import { Icon } from '@renderer/design-system/symbols'
 import { EditableInput } from '@renderer/Components/EditableInput'
 import { numberDivisor } from '@renderer/Detail/Views/PropertyEditing/formatValue'
@@ -128,7 +128,7 @@ export function NumberEditor({
 
       <Reveal open={!isPercent} fill>
         <Row label="Separators">
-          <Switch
+          <DualSwitch
             checked={config.number_separators ?? true}
             onChange={(next) => onSetConfig({ number_separators: next })}
             ariaLabel="Separators"
@@ -147,7 +147,7 @@ export function NumberEditor({
 
       <Reveal open={!isPercent} fill>
         <Row label="Fraction">
-          <Switch
+          <DualSwitch
             checked={fraction}
             onChange={(next) => onSetConfig({ number_fraction: next })}
             ariaLabel="Fraction"

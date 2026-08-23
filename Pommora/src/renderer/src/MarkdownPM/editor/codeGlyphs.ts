@@ -13,6 +13,13 @@ export interface CodeTag {
   label?: string | null
 }
 
+/** The tag's own chrome, which belongs to no language: the copy affordance every block carries, and
+ *  the check that answers a press. Same 24×24 body as a language mark, so one builder draws all of
+ *  them. */
+export const COPY_GLYPH =
+  '<path d="M7 9.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667l0 -8.666"/><path d="M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1"/>'
+export const CHECK_GLYPH = '<path d="M5 12l5 5l10 -10"/>'
+
 /** Keyed by the name a language's roster entry carries. */
 export const CODE_TAGS: Readonly<Record<string, CodeTag>> = {
   JavaScript: {

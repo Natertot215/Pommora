@@ -24,7 +24,6 @@
      below — so the tight packing is a single knob pair. */
   --chip-zoom: 0.85; /* KNOB — chip density on cards (the chip tokens' global zoom var) */
   --chip-pad-x: 4px; /* KNOB — horizontal padding of chips AND text values (tight) */
-  --switch-zoom: 0.75; /* KNOB — the Switch checkbox-look's card scale, a step under its own default */
   zoom: calc(var(--zoom, 1) * var(--block-zoom, 1));
   /* The leading band/row sits off the view's top edge (the embed's ActionBand line, the pane head)
      by one shoulder — the same rhythm the rows keep between themselves. */

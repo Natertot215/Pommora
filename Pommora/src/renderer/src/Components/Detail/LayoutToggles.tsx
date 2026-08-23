@@ -1,7 +1,7 @@
 import type { CollectionNode, SetNode } from '@shared/types'
 import type { SavedView } from '@shared/views'
 import { Icon } from '@renderer/design-system/symbols'
-import { Switch } from '@renderer/design-system/components/Switches/Switch'
+import { DualSwitch } from '@renderer/design-system/components/Switches/DualSwitch'
 import { MenuItem, MenuSeparator } from '../../design-system/components/menu'
 import { flushTrailing } from '../../design-system/components/menu/menu.css'
 import { cx } from '../../design-system/cx'
@@ -25,7 +25,7 @@ export function LayoutToggles({
         className={cx(flushTrailing, toggleRow)}
         leading={<Icon name="columns-3-cog" size={ICON.rootEntry} />}
         trailing={
-          <Switch
+          <DualSwitch
             checked={!(view.hide_column_icons ?? true)}
             onChange={(next) => write({ hide_column_icons: !next })}
             ariaLabel="Column Icons"
@@ -38,7 +38,7 @@ export function LayoutToggles({
         className={cx(flushTrailing, toggleRow)}
         leading={<Icon name="table" size={ICON.rootEntry} />}
         trailing={
-          <Switch
+          <DualSwitch
             checked={view.hide_borders ?? false}
             onChange={(next) => write({ hide_borders: next })}
             ariaLabel="Hide Borders"
@@ -51,7 +51,7 @@ export function LayoutToggles({
         className={cx(flushTrailing, toggleRow)}
         leading={<Icon name="file-text" size={ICON.rootEntry} />}
         trailing={
-          <Switch
+          <DualSwitch
             checked={!(view.hide_page_icons ?? false)}
             onChange={(next) => write({ hide_page_icons: !next })}
             ariaLabel="Page Icons"

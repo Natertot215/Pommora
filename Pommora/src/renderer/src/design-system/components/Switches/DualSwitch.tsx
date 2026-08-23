@@ -1,9 +1,9 @@
-import * as s from './switch.css'
+import * as s from './dualSwitch.css'
 import { cx } from '../../cx'
 import { GlassSegment } from '../../materials'
 
-/** Figma "Switch". Ticks fade on the same beat as the knob's slide (switch.css.ts). */
-export function Switch({
+/** Figma "Switch". Ticks fade on the same beat as the knob's slide (dualSwitch.css.ts). */
+export function DualSwitch({
   checked,
   onChange,
   disabled = false,
@@ -27,7 +27,7 @@ export function Switch({
       <span className={s.tickLine} aria-hidden />
       <span className={s.tickCircle} aria-hidden />
       <span className={s.knob}>
-        <GlassSegment style={{ borderRadius: 9 }}>
+        <GlassSegment style={{ borderRadius: s.KNOB_RADIUS }}>
           <span className={s.knobFill} />
         </GlassSegment>
       </span>

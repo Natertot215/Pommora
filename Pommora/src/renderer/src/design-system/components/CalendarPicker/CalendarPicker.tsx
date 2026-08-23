@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { Icon } from '../../symbols'
-import { Switch } from '../Switches/Switch'
+import { DualSwitch } from '../Switches/DualSwitch'
 import { OverflowScroll } from '../OverflowScroll'
 import { PickerMenu, PickerOption } from '../PickerMenu/PickerMenu'
 import { useExitPresence } from '../../useExitPresence'
@@ -717,7 +717,7 @@ export function CalendarPicker({
         {range && (
           <div className={s.switchRow}>
             <span className={s.switchLabel}>End Date</span>
-            <Switch
+            <DualSwitch
               checked={endOn}
               ariaLabel="End Date"
               onChange={(v) => {
@@ -731,7 +731,7 @@ export function CalendarPicker({
         )}
         <div className={s.switchRow}>
           <span className={s.switchLabel}>Use Time</span>
-          <Switch
+          <DualSwitch
             checked={timeOn}
             ariaLabel="Use Time"
             onChange={(v) => {

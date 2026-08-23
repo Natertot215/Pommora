@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Icon } from '@renderer/design-system/symbols'
-import { Switch } from '@renderer/design-system/components/Switches/Switch'
+import { DualSwitch } from '@renderer/design-system/components/Switches/DualSwitch'
 import { cx } from '@renderer/design-system/cx'
 import { text } from '@renderer/design-system/tokens'
 import {
@@ -39,11 +39,11 @@ export function PanesLeaf(): React.JSX.Element {
     <div className="panes-leaf">
       <div className="panes-knobs">
         <span className="panes-knob">
-          <Switch checked={railOpen} ariaLabel="Left pane" onChange={setRailOpen} />
+          <DualSwitch checked={railOpen} ariaLabel="Left pane" onChange={setRailOpen} />
           <span className={text.body.standard}>Category rail</span>
         </span>
         <span className="panes-knob">
-          <Switch checked={inspectorOpen} ariaLabel="Right pane" onChange={setInspectorOpen} />
+          <DualSwitch checked={inspectorOpen} ariaLabel="Right pane" onChange={setInspectorOpen} />
           <span className={text.body.standard}>Inspector</span>
         </span>
       </div>

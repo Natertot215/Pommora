@@ -1,7 +1,7 @@
 import type { CollectionNode, SetNode } from '@shared/types'
 import type { SavedView } from '@shared/views'
 import { Icon } from '@renderer/design-system/symbols'
-import { Switch } from '@renderer/design-system/components/Switches/Switch'
+import { DualSwitch } from '@renderer/design-system/components/Switches/DualSwitch'
 import { MenuItem } from '../../design-system/components/menu'
 import { flushTrailing } from '../../design-system/components/menu/menu.css'
 import { cx } from '../../design-system/cx'
@@ -25,7 +25,7 @@ export function CardsOptions({
         className={cx(flushTrailing, toggleRow)}
         leading={<Icon name="map" size={ICON.rootEntry} />}
         trailing={
-          <Switch
+          <DualSwitch
             checked={view.hide_location ?? false}
             onChange={(next) => write({ hide_location: next })}
             ariaLabel="Hide Location"
@@ -38,7 +38,7 @@ export function CardsOptions({
         className={cx(flushTrailing, toggleRow)}
         leading={<Icon name="wrap-text" size={ICON.rootEntry} />}
         trailing={
-          <Switch
+          <DualSwitch
             checked={view.wrap_titles ?? false}
             onChange={(next) => write({ wrap_titles: next })}
             ariaLabel="Wrap Titles"
@@ -51,7 +51,7 @@ export function CardsOptions({
         className={cx(flushTrailing, toggleRow)}
         leading={<Icon name="eye-off" size={ICON.rootEntry} />}
         trailing={
-          <Switch
+          <DualSwitch
             checked={view.hide_page_icons ?? false}
             onChange={(next) => write({ hide_page_icons: next })}
             ariaLabel="Hide Icons"
@@ -64,7 +64,7 @@ export function CardsOptions({
         className={cx(flushTrailing, toggleRow)}
         leading={<Icon name="folder-closed" size={ICON.rootEntry} />}
         trailing={
-          <Switch
+          <DualSwitch
             checked={view.set_cards ?? true}
             onChange={(next) => write({ set_cards: next })}
             ariaLabel="Set Cards"
