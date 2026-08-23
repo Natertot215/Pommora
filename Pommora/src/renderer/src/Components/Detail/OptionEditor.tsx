@@ -20,7 +20,7 @@ import {
 } from './GhostOptionChip'
 import { DragGhost } from '@renderer/design-system/interactions/DragGhost'
 import { DropLine } from '@renderer/design-system/interactions/DropLine'
-import { OptionRow } from './OptionRow'
+import { OptionSlot } from './OptionRow'
 import { useOptionReorder } from './useOptionReorder'
 import * as s from './settingsPane.css'
 
@@ -130,31 +130,23 @@ export function OptionEditor({
           const isColoring = coloring === o.value
           return (
             <Fragment key={o.value}>
-              {/* biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only drag affordance; keyboard reordering is not implemented */}
-              <div
-                ref={(el) => reorder.registerRow(o.value, el)}
-                {...ghostAnchorProps(ghostApi, o.value)}
-                className={cx(s.optionRow, reorder.dragging === o.value && s.rowDragging)}
-                onPointerDown={(e) => reorder.onRowPointerDown(o.value, e)}
-                onContextMenu={(e) => {
-                  e.preventDefault()
-                  void openMenu(o)
-                }}
-              >
-                <OptionRow
-                  label={o.label}
-                  shape={chipShapeForType(type)}
-                  color={chipColorFor(o.color)}
-                  renaming={renaming === o.value}
-                  coloring={isColoring}
-                  paletteRef={paletteBtnRef}
-                  onCommitRename={(raw) => commitRename(o.value, raw)}
-                  onCancelRename={() => setRenaming(null)}
-                  onToggleColoring={() => setColoring((v) => (v === o.value ? null : o.value))}
-                  onCloseColoring={() => setColoring(null)}
-                  onPickColor={(color) => pickColor(o, color)}
-                />
-              </div>
+              <OptionSlot
+                value={o.value}
+                drag={reorder}
+                ghost={ghostApi}
+                onOpenMenu={() => void openMenu(o)}
+                label={o.label}
+                shape={chipShapeForType(type)}
+                color={chipColorFor(o.color)}
+                renaming={renaming === o.value}
+                coloring={isColoring}
+                paletteRef={paletteBtnRef}
+                onCommitRename={(raw) => commitRename(o.value, raw)}
+                onCancelRename={() => setRenaming(null)}
+                onToggleColoring={() => setColoring((v) => (v === o.value ? null : o.value))}
+                onCloseColoring={() => setColoring(null)}
+                onPickColor={(color) => pickColor(o, color)}
+              />
               {slotAt(i + 1, o.value)}
             </Fragment>
           )

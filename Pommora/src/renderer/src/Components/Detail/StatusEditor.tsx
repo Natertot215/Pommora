@@ -20,7 +20,7 @@ import {
   ghostAnchorProps,
   useGhostOptionAnchor,
 } from './GhostOptionChip'
-import { OptionRow } from './OptionRow'
+import { OptionSlot } from './OptionRow'
 import { useStatusReorder } from './useStatusReorder'
 import * as s from './settingsPane.css'
 
@@ -157,31 +157,23 @@ export function StatusEditor({
               const isColoring = coloring === o.value
               return (
                 <Fragment key={o.value}>
-                  {/* biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only drag affordance; keyboard reordering is not implemented */}
-                  <div
-                    ref={(el) => reorder.registerRow(o.value, el)}
-                    {...ghostAnchorProps(ghostApi, o.value)}
-                    className={cx(s.optionRow, reorder.dragging === o.value && s.rowDragging)}
-                    onPointerDown={(e) => reorder.onRowPointerDown(o.value, e)}
-                    onContextMenu={(e) => {
-                      e.preventDefault()
-                      void openMenu(o.value, o.label)
-                    }}
-                  >
-                    <OptionRow
-                      label={o.label}
-                      shape={chipShapeForType('status')}
-                      color={chipColorFor(o.color ?? g.color)}
-                      renaming={renaming === o.value}
-                      coloring={isColoring}
-                      paletteRef={paletteBtnRef}
-                      onCommitRename={(raw) => commitRename(o.value, raw, g.label)}
-                      onCancelRename={() => setRenaming(null)}
-                      onToggleColoring={() => setColoring((v) => (v === o.value ? null : o.value))}
-                      onCloseColoring={() => setColoring(null)}
-                      onPickColor={(color) => pickColor(o.value, color)}
-                    />
-                  </div>
+                  <OptionSlot
+                    value={o.value}
+                    drag={reorder}
+                    ghost={ghostApi}
+                    onOpenMenu={() => void openMenu(o.value, o.label)}
+                    label={o.label}
+                    shape={chipShapeForType('status')}
+                    color={chipColorFor(o.color ?? g.color)}
+                    renaming={renaming === o.value}
+                    coloring={isColoring}
+                    paletteRef={paletteBtnRef}
+                    onCommitRename={(raw) => commitRename(o.value, raw, g.label)}
+                    onCancelRename={() => setRenaming(null)}
+                    onToggleColoring={() => setColoring((v) => (v === o.value ? null : o.value))}
+                    onCloseColoring={() => setColoring(null)}
+                    onPickColor={(color) => pickColor(o.value, color)}
+                  />
                   {slotAt(g, i + 1, o.value)}
                 </Fragment>
               )
