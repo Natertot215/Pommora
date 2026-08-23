@@ -14,6 +14,8 @@ Design System
 │   ├── Shadows
 │   ├── Spectrum
 │   ├── Ramp
+│   ├── Chips
+│   ├── Components
 │   ├── Geometry
 │   ├── Materials
 │   └── Glass & Menus
@@ -74,6 +76,7 @@ The text ladder — system-white at descending presence. Primary is the raw prim
 | Label Control | `label.control` · `--label-control` | system-white @ 80% |
 | Label Secondary | `label.secondary` · `--label-secondary` | system-white @ 65% |
 | Label Tertiary | `label.tertiary` · `--label-tertiary` | system-white @ 35% |
+| Label Quaternary | `label.quaternary` · `--label-quaternary` | system-white @ 20% |
 
 #### States
 
@@ -183,6 +186,40 @@ The ten selectable solids plus the neutral chip default and the ramp's pink seat
 | Error             | `--error`                                   | `SPECTRUM.red`                             |
 | Code              | `--code`                                    | red @ 85%                                  |
 
+#### Chips
+
+The chip **types** — what each shape is for. Their geometry, the tint recipe and the knobs are the
+property system's, since a chip is what a value looks like.[^2]
+
+**SOURCE:** `Pommora/src/renderer/src/design-system/tokens/chip.css.ts`
+
+| Title | Token | What wears it |
+| --- | --- | --- |
+| Base | `chipBase` | Every chip — the gap, the zoom knob and the control type. Never worn alone. |
+| Pill | `chipPill` | A Status value. The rounded one, reserved so a status reads apart at a glance. |
+| Label | `chipLabel` | A Select or Multi-Select option — the pill squared off. |
+| Context | `chipContext` | A Space a Context names. Label's geometry with more room and a neutral fill, the color moving to the border and the text. |
+| Capsule | `chipCapsule` | A status shown as its glyph alone, with no label beside it. |
+| Box | `chipBox` | A checkbox, and a status wearing the checkbox look. |
+| File | `chipFile` | A File property's value. Label's box drawn at the quaternary label tone over no fill — the empty middle says it names a file rather than holding a color. |
+| Plain | `chipPlain` | A file or folder named inside a FIELD. No fill and no border: a name inside a field is the field's content, and a box around it would be a box in a box. |
+
+A chip's color is assigned, and two shapes take none. Context paints its own neutral ground; File
+and Plain paint none at all, so both keep `--chip-fill` transparent — the melt twin behind a
+removable chip has to paint whatever is actually behind the label, and for these that is the row.
+
+#### Components
+
+The house components — the ones a surface reaches for rather than assembling. Each is listed with
+what it is and where it lives; the entries here are the roster, and a component earns its own
+section as its behavior grows past a line.
+
+**SOURCE:** `Pommora/src/renderer/src/design-system/components/`
+
+| Title | Source | What it is |
+| --- | --- | --- |
+| PathField | `PathField.tsx` | A folder path, and the two ways to change one. At rest it reads the stored path as a run of segments; a click hands over the raw text, since a path is typed as a path; a trailing glyph opens the folder dialog. Both halves commit through the same caller, so a hand-typed folder is refused for exactly the reasons a picked one is. It sizes to the path it holds and gives way when its row runs out, at which point the run's own fade eclipses the head. Worn by the Default Asset Directory setting and by a File property's Directory. |
+
 #### Geometry
 
 The glyph ladder, the per-size control bundles, and the bare layout constants JS math consumes as numbers.
@@ -281,3 +318,4 @@ The atlas continues in the specs that own each family: the editor's token pocket
 - **The inactive state token** — the empty-state text tone between secondary and tertiary; its interim consumers read tertiary, each marked `Awaiting proper inactive state token`.
 
 [^1]: [[SymbolsPM]]
+[^2]: [[PropertiesPM]] §Chip Tokens

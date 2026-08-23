@@ -38,6 +38,7 @@ const derived = createGlobalTheme(':root', {
       control: whiteA('80%'),
       secondary: whiteA('65%'),
       tertiary: whiteA('35%'),
+      quaternary: whiteA('20%'), // KNOB
     },
     // The app substrate — the base background (Figma "Background"). Single source:
     // @shared/theme WINDOW_BG, so the Electron window + this token never drift.

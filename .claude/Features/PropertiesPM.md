@@ -230,7 +230,8 @@ The chip is the property value's rendered form, so its design vocabulary lives h
 | Context | `chipContext` | h `22px` · `--chip-pad-x: 8px` · neutral fill, color on border and text |
 | Capsule | `chipCapsule` | h `20px` · pad `0 var(--chip-capsule-pad-x, 6px)` · radius `10px` · gap `0` |
 | Box | `chipBox` | `17px × 17px` · radius `5.5px` · border `1.5px` (the checkbox look) |
-| File | `chipFile` | h `20px` · no fill, no border · left-aligned · `--chip-fill: transparent` |
+| File | `chipFile` | chip-label's box · `label-quaternary` border · no fill · `--chip-fill: transparent` |
+| Plain | `chipPlain` | h `20px` · no fill, no border · left-aligned · `--chip-fill: transparent` |
 
 #### II. The Recipe & Variants
 | Title | Token | Value |
