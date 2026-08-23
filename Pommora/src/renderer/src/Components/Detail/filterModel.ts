@@ -148,11 +148,6 @@ const CHECKBOX_OPS: OperatorChoice[] = [
   { op: FILTER_OPS.is, label: "Isn't Checked", slot: 'none', impliedValue: 'false' },
 ]
 
-const FILE_OPS: OperatorChoice[] = [
-  { op: FILTER_OPS.isNotEmpty, label: 'Has File', slot: 'none' },
-  { op: FILTER_OPS.isEmpty, label: 'No File', slot: 'none' },
-]
-
 /** Location reads from the SET's side — you choose the Set, not the page, which is why "Contains"
  *  beats "Is Inside" as the label. Is/Isn't test the IMMEDIATE parent Set; Contains/Doesn't Contain are their any-depth twins. All
  *  four take a SET of Sets — "in any of these" — so the operand is chips like every other membership
@@ -191,7 +186,7 @@ export function operatorsFor(
     case 'url':
       return [...TEXT_OPS, ...EMPTIES]
     case 'file':
-      return FILE_OPS
+      return EMPTIES
     default:
       return []
   }
