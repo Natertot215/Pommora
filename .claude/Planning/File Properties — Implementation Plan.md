@@ -548,10 +548,10 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
 **Interaction sweep:** Add ↔ Remove; Replace ↔ cancelling the dialog. Three nested click targets in one cell — the value area, each chip, each chip's × — each inner one stopping propagation, so one click means exactly one thing. `ChipRemoveButton` gates on computed opacity, so an un-revealed × falls through to the chip's Replace rather than silently deleting.
 
 **Steps:**
-- [ ] Write the failing tests per surface.
-- [ ] Add the arm; delete the two early-returns.
+- [x] Write the failing tests per surface.
+- [x] Add the arm; delete the two early-returns.
 - [ ] Verify the three click targets in the running app, not by reasoning.
-- [ ] Full gate green. Commit: `feat(properties): a file value fills, replaces and clears everywhere`
+- [x] Full gate green. Commit: `feat(properties): a file value fills, replaces and clears everywhere`
 
 #### Task 17: The value menu
 
@@ -566,9 +566,9 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
 **The two Removes must not read the same.** `cellMenuModel` appends `{ label: 'Remove', action: 'cell:hide' }` to every `hideable` context, and cards always pass `hideable: true`. With this task's own Remove the card menu reads **Add · Replace · — · Remove · — · Remove**, distinguishable only by position, one of them destructive to the view's configuration. The actions differ so no wrong code runs — the wrong *item* gets clicked. Relabel: **Remove File** for the reference, **Remove from View** for the hide. File is the only type where the two co-occur; `link` and `clear-only` say "Clear".
 
 **Steps:**
-- [ ] Write the failing tests, including the empty-area case and the two Removes.
-- [ ] Implement; thread `onChip` from the hit test.
-- [ ] Full gate green. Commit: `feat(menus): Add · Replace · Remove on a file value`
+- [x] Write the failing tests, including the empty-area case and the two Removes.
+- [x] Implement; thread `onChip` from the hit test.
+- [x] Full gate green. Commit: `feat(menus): Add · Replace · Remove on a file value`
 
 #### Task 18: Sort by filename
 
@@ -649,9 +649,9 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
   - [x] Task 14 — Prove a replaced file survives · `1c6a176b`
 - [x] **Phase 4** — The Directory field · base `1c6a176b`
   - [x] Task 15 — The Directory, its validation, and its pane · `0e8a9aee`
-- [ ] **Phase 5** — Interaction
-  - [ ] Task 16 — One arm on the shared click router
-  - [ ] Task 17 — The value menu
+- [ ] **Phase 5** — Interaction · base `0e8a9aee`
+  - [x] Task 16 — One arm on the shared click router · `013033d0`
+  - [x] Task 17 — The value menu · `a9fd3ada`
   - [ ] Task 18 — Sort by filename
 - [ ] **Phase 6** — Reconciliation
   - [ ] Task 19 — Sweep the dead vocabulary
@@ -766,6 +766,9 @@ Nothing here is a second copy of something that exists; the estimate simply pric
 - **Task 12 · the subfolder joins through `assetSubRoot`.** `writeAssetFile` already takes the asset root as a nexus-relative string and `rootSegs` drops empty segments, so a root-plus-subfolder is one composition rather than a branch — and an absent or slash-padded subfolder resolves to the root itself with nothing downstream special-casing it. Task 15's validator reads the same function.
 - **Task 13 · the picker channel is renamed, not just widened.** B-3 settled that it takes an options argument rather than growing a twin; the name `pickImage` then reads wrong at every call site that picks a PDF. `nexus:pickFile` / `window.nexus.pickFile` — the type gate named all five call sites, none of which pass options, so the rename is mechanical and the behavior for banners is unchanged.
 - **Task 13 · the pick is bounded by TWO sets, not one.** `pickedPaths` records every file the dialog hands out and is what `assets:adopt` checks — the renderer never names a path main did not choose. `pickedImagePaths` stays the narrower set, added to only by an image pick, because B-3a's point is that widening the FILTER must not widen what `nexus:imageData` will read back.
+- **Task 16 · the two panes' `revealAndEdit` became the ordinary click, one frame later.** Deleting their `file` early-returns alone would have dropped the click into a rAF block with no branch for it. Both now reveal and then call `editRow`, so the duplicated router dies in each and its catch-all — which already disagreed with `editRow`'s explicit list — goes with it. `PreviewInspector` keeps one branch of its own: a Context row carries no def and opens its own picker.
+- **Task 16 · which label was clicked is read off the DOM, not passed down.** `SegmentRun` stamps each entry with its position, so the table, the cards and both panes hit-test identically and the run grows no callback per gesture. `SegmentEntry.onClick` came back here, with the caller that needs it, exactly as the Phase 2 fold recorded.
+- **Task 17 · only the file kind relabels the hide.** The plan asked for both Removes renamed; renaming the generic one everywhere would change copy on every type to fix a collision that exists on one. A file cell's hide reads **Remove from View**; every other type keeps **Remove**.
 - **Naming.** The spec settled on **FileLabel** (C-2c); several plan headings still read FileChip. FileLabel is the name that ships — component, chip shape and prose alike.
 ### Lessons
 ### Sequenced After

@@ -41,6 +41,7 @@ The design system lives in `src/renderer/src/design-system/`.
 The three raw system tones every derived grey, white, and black is an opacity of, plus the window substrate. Derivations use `greyA(pct)` / `whiteA(pct)` / `blackA(pct)` — `color-mix` of the primitive toward transparent.
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/color.css.ts` · `Pommora/src/shared/theme.ts`
+
 | Title             | Token                               | Value     |
 | ----------------- | ----------------------------------- | --------- |
 | System White      | `system.white` · `--system-white`   | `#E8E8E8` |
@@ -53,6 +54,7 @@ The three raw system tones every derived grey, white, and black is an opacity of
 The opaque content planes layered on the window substrate — addressed by role, and their own literals rather than derivations.
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/color.css.ts`
+
 | Title             | Token                                       | Value             |
 | ----------------- | ------------------------------------------- | ----------------- |
 | Surface Primary   | `surface.primary` · `--surface-primary`     | `#202022`         |
