@@ -1164,3 +1164,89 @@ describe('a file value never destroys what it stops naming', () => {
     expect(await pathExists(join(root, 'file-assets', 'Old.pdf'))).toBe(true)
   })
 })
+
+describe('the acceptance chain, read raw off the disk at every step', () => {
+  // The per-step facts each have their own test; this is the one that crosses them the way a
+  // session does — pick, add, add, replace, remove, clear — asserting the page's actual bytes,
+  // since the criterion is what an outside tool sees, not what the decoder answers.
+  let outside: string
+  beforeEach(async () => {
+    outside = await mkdtemp(join(tmpdir(), 'pom-chain-'))
+    await createProperty(root, { id: 'prop_f', name: 'Attachments', type: 'file' })
+    await writeFile(
+      join(root, '.nexus', 'settings.json'),
+      JSON.stringify({ asset_directory: 'file-assets' }),
+    )
+    await mkdir(join(root, 'file-assets'), { recursive: true })
+  })
+  afterEach(async () => {
+    await rm(outside, { recursive: true, force: true })
+  })
+  const pick = async (name: string, body: string): Promise<string> => {
+    const p = join(outside, name)
+    await writeFile(p, body)
+    return p
+  }
+  const setFiles = (value: string[]) =>
+    handleMutate(
+      {
+        op: 'setProperty',
+        path: 'Notes/Daily/Beta.md',
+        propertyId: 'prop_f',
+        value: { kind: 'file', value },
+      },
+      nexusDeps,
+    )
+
+  it('pick lands under the Directory, the page spells a quoted wikilink, and every later step leaves the rest alone', async () => {
+    const first = await adoptFile(root, await pick('Spec.pdf', 'spec-bytes'), {
+      allow: 'any',
+      subfolder: 'Reports',
+    })
+    expect(first).toEqual({ ok: true, value: '[[Spec.pdf]]' })
+    expect(await pathExists(join(root, 'file-assets', 'Reports', 'Spec.pdf'))).toBe(true)
+    expect((await setFiles(['[[Spec.pdf]]'])).ok).toBe(true)
+    expect(await read('Notes/Daily/Beta.md')).toContain('<Attachments>:\n  - "[[Spec.pdf]]"')
+
+    const second = await adoptFile(root, await pick('Notes.txt', 'note-bytes'), {
+      allow: 'any',
+      subfolder: 'Reports',
+    })
+    expect(second).toEqual({ ok: true, value: '[[Notes.txt]]' })
+    expect((await setFiles(['[[Spec.pdf]]', '[[Notes.txt]]'])).ok).toBe(true)
+    expect(await read('Notes/Daily/Beta.md')).toContain(
+      '<Attachments>:\n  - "[[Spec.pdf]]"\n  - "[[Notes.txt]]"',
+    )
+
+    const replacement = await adoptFile(root, await pick('Final.pdf', 'final-bytes'), {
+      allow: 'any',
+      subfolder: 'Reports',
+    })
+    expect(replacement).toEqual({ ok: true, value: '[[Final.pdf]]' })
+    expect((await setFiles(['[[Final.pdf]]', '[[Notes.txt]]'])).ok).toBe(true)
+    expect(await read('Notes/Daily/Beta.md')).toContain(
+      '<Attachments>:\n  - "[[Final.pdf]]"\n  - "[[Notes.txt]]"',
+    )
+    expect(await pathExists(join(root, 'file-assets', 'Reports', 'Spec.pdf'))).toBe(true)
+
+    expect((await setFiles(['[[Final.pdf]]'])).ok).toBe(true)
+    expect(await read('Notes/Daily/Beta.md')).toContain('<Attachments>:\n  - "[[Final.pdf]]"')
+    expect((await setFiles([])).ok).toBe(true)
+    expect(await read('Notes/Daily/Beta.md')).not.toContain('<Attachments>')
+    for (const name of ['Spec.pdf', 'Notes.txt', 'Final.pdf'])
+      expect(await pathExists(join(root, 'file-assets', 'Reports', name))).toBe(true)
+  })
+
+  it('re-picking a source already adopted answers the existing reference, not a copy', async () => {
+    const source = await pick('Same.pdf', 'same-bytes')
+    expect(await adoptFile(root, source, { allow: 'any', subfolder: 'Reports' })).toEqual({
+      ok: true,
+      value: '[[Same.pdf]]',
+    })
+    expect(await adoptFile(root, source, { allow: 'any', subfolder: 'Reports' })).toEqual({
+      ok: true,
+      value: '[[Same.pdf]]',
+    })
+    expect(await readdir(join(root, 'file-assets', 'Reports'))).toEqual(['Same.pdf'])
+  })
+})
