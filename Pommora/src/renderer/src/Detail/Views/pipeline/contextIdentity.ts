@@ -20,7 +20,7 @@ export interface SpaceIdentity {
   title: string
   /** Always renderable — the entry's own icon, else the Spaces default. */
   icon: string
-  /** Chip-solid key (open string; chipColorFor normalizes at render). */
+  /** Chip-solid key (open string; labelColorFor normalizes at render). */
   color?: string
   contextId: string
 }

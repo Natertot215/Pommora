@@ -2,17 +2,13 @@ import type { CSSProperties } from 'react'
 import type { ColumnStyle } from '@shared/columnStyles'
 import type { PropertyValue } from '@shared/propertyValue'
 import type { ResolvedColumn, ViewRow } from '@shared/types'
-import { chipBox, chipColor } from '@renderer/design-system/tokens'
 import { cx } from '@renderer/design-system/cx'
 import { Icon } from '@renderer/design-system/symbols'
 import { EntityIcon } from '@renderer/Components/EntityIcon'
 import { DualSwitch } from '@renderer/design-system/components/Switches/DualSwitch'
 import { ProgressBar } from '@renderer/design-system/components/ProgressBar/ProgressBar'
-import { Chip, chipShapeForType } from '@renderer/Components/Chip'
-import { ContextChip } from '@renderer/Components/ContextChip'
-import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
+import { labelColorFor } from '@renderer/design-system/tokens/colorMap'
 import { OverScroll } from '@renderer/design-system/interactions/OverScroll'
-import { FileChip } from '@renderer/design-system/components/FileChip'
 import { SEGMENT_INDEX_ATTR } from '@renderer/design-system/components/SegmentRun/SegmentRun'
 import { resolveFileValue } from '@renderer/assetUrl'
 import { fileValueWithout } from '../PropertyEditing/filePick'
@@ -25,6 +21,14 @@ import { LinkCell } from './LinkCell'
 import { solidColorCss } from './solidColor'
 import { CheckboxGlyph } from './checkboxLook'
 import type { ResolveContext } from './resolveContext'
+import {
+  ContextChip,
+  FileChip,
+  Label,
+  labelColor,
+  optionShapeFor,
+  shape,
+} from '@renderer/design-system/labels'
 
 /** Type-aware cell render — the per-view `style` picks each type's look + formats. Every value
  *  routes through the resolution context so no raw id ever shows; an empty/unknown value renders
@@ -91,7 +95,7 @@ export function Cell({
         return style.look === 'capsule' ? (
           <StatusCapsule color={opt?.color} group={group} />
         ) : (
-          <span className={cx(chipBox, chipColor[chipColorFor(opt?.color)])}>
+          <span className={cx(shape.box, labelColor[labelColorFor(opt?.color)])}>
             {group && group !== 'upcoming' ? (
               <Icon name={statusGroupGlyph(group)} size="control" strokeWidth={3} />
             ) : null}
@@ -100,10 +104,10 @@ export function Cell({
       }
       return (
         <OverScroll className="cell-chips">
-          <Chip
-            color={chipColorFor(opt?.color)}
-            label={opt?.label ?? v.value}
-            shape={chipShapeForType(dt ?? '')}
+          <Label
+            color={labelColorFor(opt?.color)}
+            text={opt?.label ?? v.value}
+            shape={optionShapeFor(dt ?? '')}
             {...(remove ? { onRemove: () => remove(null) } : {})}
           />
         </OverScroll>
@@ -115,11 +119,11 @@ export function Cell({
           {v.value.map((val) => {
             const o = findOption(column.id, val, ctx.schema)
             return (
-              <Chip
+              <Label
                 key={val}
-                color={chipColorFor(o?.color)}
-                label={o?.label ?? val}
-                shape={chipShapeForType(dt ?? '')}
+                color={labelColorFor(o?.color)}
+                text={o?.label ?? val}
+                shape={optionShapeFor(dt ?? '')}
                 {...(remove
                   ? {
                       onRemove: () =>
@@ -139,7 +143,7 @@ export function Cell({
             return (
               <ContextChip
                 key={id}
-                color={chipColorFor(c?.color)}
+                color={labelColorFor(c?.color)}
                 title={c?.title ?? id}
                 icon={c?.icon}
                 {...(remove

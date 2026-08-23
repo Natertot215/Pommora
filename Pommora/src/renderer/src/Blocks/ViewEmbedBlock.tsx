@@ -11,7 +11,7 @@ import {
 } from '@shared/views'
 import { Icon, iconNameOr } from '@renderer/design-system/symbols'
 import { cellColor } from '@renderer/design-system/tokens/ramp'
-import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
+import { labelColorFor } from '@renderer/design-system/tokens/colorMap'
 import { TINT_STEPS, tintAt } from '@renderer/design-system/tokens/tint'
 import { ColorPicker } from '@renderer/Components/Detail/ColorPicker'
 import { PickerMenu } from '@renderer/design-system/components/PickerMenu'
@@ -82,7 +82,7 @@ const viewIcon = (v: SavedView): string => iconNameOr(v.icon, 'table')
 /** A view's segment-stroke, as the style that carries it: its chip color at tint-primary, or
  *  nothing at all so the segment keeps the neutral hairline. */
 const strokeStyle = (v: SavedView): React.CSSProperties | undefined => {
-  const key = chipColorFor(v.color)
+  const key = labelColorFor(v.color)
   if (key === 'default') return undefined
   const stroke = tintAt(cellColor(key), TINT_STEPS.primary)
   return { '--segment-stroke': stroke } as React.CSSProperties
@@ -624,7 +624,7 @@ export function ViewEmbedBlock({
         />
         <ColorPicker
           open={colorFor !== null}
-          selected={chipColorFor(colorFor !== null ? views[colorFor]?.color : undefined)}
+          selected={labelColorFor(colorFor !== null ? views[colorFor]?.color : undefined)}
           onPick={(picked) => {
             if (colorFor !== null) persistConfig(colorFor, { ...views[colorFor], color: picked })
             setColorFor(null)

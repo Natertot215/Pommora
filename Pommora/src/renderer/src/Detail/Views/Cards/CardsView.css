@@ -22,15 +22,15 @@
   /* ONE padding source for everything in a card's value flow: the chip tokens' own vars. Chips read
      them natively; the text-shaped values (dates, numbers, links) are re-pointed at the same vars
      below — so the tight packing is a single knob pair. */
-  --chip-zoom: 0.85; /* KNOB — chip density on cards (the chip tokens' global zoom var) */
-  --chip-pad-x: 4px; /* KNOB — horizontal padding of chips AND text values (tight) */
+  --label-zoom: 0.85; /* KNOB — chip density on cards (the chip tokens' global zoom var) */
+  --label-pad-x: 4px; /* KNOB — horizontal padding of chips AND text values (tight) */
   zoom: calc(var(--zoom, 1) * var(--block-zoom, 1));
   /* The leading band/row sits off the view's top edge (the embed's ActionBand line, the pane head)
      by one shoulder — the same rhythm the rows keep between themselves. */
   padding-top: var(--band-clearance);
 }
 .cards-view.is-compact {
-  --card-row-h: 17px; /* KNOB — a compact property-value row (chip height × --chip-zoom) */
+  --card-row-h: 17px; /* KNOB — a compact property-value row (chip height × --label-zoom) */
   --card-foot-h: calc(
     1.5px +
     5px +
@@ -224,12 +224,12 @@
    pack at the same rhythm as the chips beside them. */
 .card-value .cell-text-scroll,
 .card-value .cell-control {
-  padding: 0 var(--chip-pad-x, 6px);
+  padding: 0 var(--label-pad-x, 6px);
 }
 /* A checkbox/switch is a fixed-size control (internal padding would distort it), so its OUTER value cell
    takes the chip-pad-x — it then sits at the same horizontal rhythm as the padded text/chip values. */
 .card-value:has(.cell-checkbox, .cell-switch) {
-  padding-inline: var(--chip-pad-x, 6px);
+  padding-inline: var(--label-pad-x, 6px);
 }
 /* Bar takes the full row width: its ProgressBar track is width:100%, which would otherwise collapse to a
    sliver inside the shrink-to-fit value (Compact breaks it onto its own line, Standard fills beside the label). */
@@ -244,7 +244,7 @@
 /* A visible-but-empty property row's placeholder (Standard) — a "--" fill-me affordance in the label's
    own emphasized tone (it reads as the row's empty half); the whole .card-value stays the click target. */
 .card-value-empty {
-  padding: 0 var(--chip-pad-x, 6px);
+  padding: 0 var(--label-pad-x, 6px);
   color: var(--label-secondary);
 }
 

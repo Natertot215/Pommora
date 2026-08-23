@@ -1,7 +1,6 @@
 import { Fragment, useMemo, useRef, useState } from 'react'
 import { Icon } from '@renderer/design-system/symbols'
-import { chipLabel, chipColor } from '@renderer/design-system/tokens'
-import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
+import { labelColorFor } from '@renderer/design-system/tokens/colorMap'
 import {
   addOption,
   recolorOption,
@@ -11,7 +10,6 @@ import {
 } from '@shared/optionModel'
 import type { PropertyType } from '@shared/properties'
 import { cx } from '@renderer/design-system/cx'
-import { chipShapeForType } from '../Chip'
 import {
   GhostOptionChip,
   OptionNameCaret,
@@ -23,6 +21,7 @@ import { DropLine } from '@renderer/design-system/interactions/DropLine'
 import { OptionSlot } from './OptionRow'
 import { useOptionReorder } from './useOptionReorder'
 import * as s from './settingsPane.css'
+import { labelColor, optionShapeFor, shape } from '@renderer/design-system/labels'
 
 /** A flat property owns one list, so its anchor needs no identity beyond being the only one. */
 const LIST_ANCHOR = 'options'
@@ -69,7 +68,7 @@ export function OptionEditor({
     adding === index ? (
       <div className={s.optionRow}>
         <OptionNameCaret
-          className={cx(chipLabel, chipColor.default)}
+          className={cx(shape.tag, labelColor.default)}
           onCommit={(raw) => commitAdd(raw, index)}
           onCancel={() => setAdding(null)}
         />
@@ -78,7 +77,7 @@ export function OptionEditor({
       <GhostOptionChip
         api={ghostApi}
         anchorId={anchorId}
-        shape={chipShapeForType(type)}
+        shape={optionShapeFor(type)}
         onCreate={() => setAdding(index)}
       />
     )
@@ -136,8 +135,8 @@ export function OptionEditor({
                 ghost={ghostApi}
                 onOpenMenu={() => void openMenu(o)}
                 label={o.label}
-                shape={chipShapeForType(type)}
-                color={chipColorFor(o.color)}
+                shape={optionShapeFor(type)}
+                color={labelColorFor(o.color)}
                 renaming={renaming === o.value}
                 coloring={isColoring}
                 paletteRef={paletteBtnRef}

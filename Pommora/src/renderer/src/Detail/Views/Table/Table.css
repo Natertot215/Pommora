@@ -301,7 +301,7 @@
 .cell-chips {
   display: inline-flex;
   align-items: center;
-  gap: var(--chips-gap);
+  gap: var(--labels-gap);
   max-width: 100%;
   min-width: 0;
 }

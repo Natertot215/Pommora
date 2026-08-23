@@ -2,12 +2,12 @@ import type { ReactNode } from 'react'
 import { cx } from '../../cx'
 import './overScroll.css'
 
-/** The capped-label class run. Exported for the vanilla-extract surfaces that build their own label
- *  box: the mask lives in a plain stylesheet, which a `style([])` cannot compose. */
+/** The capped-label class run. Exported for vanilla-extract surfaces: the mask lives in a plain
+ *  stylesheet, which a `style([])` cannot compose. */
 export const overScrollLabel = 'over-scroll-x over-scroll-cap'
 
-/** The same label, truncating with an ellipsis instead of a fade — the leading edge still
- *  dissolves what scrolled off the start where a surface names a width. */
+/** Truncating with an ellipsis instead of a fade; the leading edge still dissolves what scrolled
+ *  off the start where a surface names a width. */
 export const overScrollEllipsis = `${overScrollLabel} over-scroll-ellipsis`
 
 /** The cap without any mask, for a box whose DESCENDANTS must keep painting: a mask erases
@@ -33,10 +33,9 @@ export function slideScrollBack(scroller: HTMLElement): void {
 }
 
 /**
- * Overflowing content always ECLIPSES — a fade at whichever edge hides content, never a hard
- * cutoff. It activates only while content genuinely overflows: no JS measurement, so resizes, edits
- * and zoom re-resolve on their own. The consumer's class owns display/gap/width;
- * `--over-scroll-fade` tunes the width per context.
+ * Overflowing content ECLIPSES — a fade at whichever edge hides content, never a hard cutoff, and
+ * only while content genuinely overflows. No JS measurement, so resizes, edits and zoom re-resolve
+ * on their own. The consumer's class owns display/gap/width.
  */
 export function OverScroll({
   children,

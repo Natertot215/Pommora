@@ -45,7 +45,7 @@ export const label = style([titleText, { flex: '0 1 auto' }])
 export const value = style({
   // The chip run's spacing is the field's own: the cell renderer reads a gap the table scopes to
   // itself, so a field hosting those chips outside a table states the rhythm it wants.
-  vars: { '--chips-gap': '4px' },
+  vars: { '--labels-gap': '4px' },
   marginLeft: 'auto',
   flex: '0 1 auto',
   minWidth: 0,

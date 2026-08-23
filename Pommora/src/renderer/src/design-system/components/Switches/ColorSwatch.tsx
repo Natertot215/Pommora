@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { ColorPicker } from '@renderer/Components/Detail/ColorPicker'
-import type { ChipColorName } from '@renderer/design-system/tokens/chip.css'
+import type { LabelColorName } from '@renderer/design-system/labels'
 import { cellTint } from '@renderer/design-system/tokens/ramp'
 import { TINT_STEPS, tintAt } from '@renderer/design-system/tokens/tint'
 import type { CellKey } from '@shared/theme'
@@ -19,7 +19,7 @@ export function ColorSwatch({
   onPick,
 }: {
   label: string
-  selected: ChipColorName
+  selected: LabelColorName
   css: string
   /** Offer the grey row. Withheld by default for the reason the picker documents; a surface that
    *  resolves a cell through the chip recipe rather than painting it raw can take it. */
