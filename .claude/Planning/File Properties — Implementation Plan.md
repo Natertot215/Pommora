@@ -423,7 +423,7 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
 - [x] Net delta reported. Expect ≈ +45, glyph-dominated.
 - [ ] **Fixture first** — a file property is inert until Task 16, so nothing in-app can fill one. Hand-write `<Attachments>:` over a **quoted** `- "[[Name.ext]]"` into a scratch page and drop that file in the asset root. Without it these checks are unfalsifiable.
 - [ ] **Seen running:** the file cell, the FilterPane Location field, the Asset Directory row — the hover-× on each, and a click that ends the hover still removing.
-- [ ] Simplification and review dispatched against `<base>..HEAD` — ask before dispatching.
+- [x] Simplification and review dispatched against `<base>..HEAD` — ask before dispatching.
 
 ---
 
@@ -489,7 +489,7 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
 - [x] Banner baseline held.
 - [x] Net delta reported — expect ≈ +10. A larger number means a caller was converted that didn't need converting.
 - [ ] **Seen running:** a banner set and replaced, proving the export moved nothing.
-- [ ] Simplification and review dispatched — ask first.
+- [x] Simplification and review dispatched — ask first.
 
 ### Phase 4 — The Directory field
 
@@ -523,7 +523,7 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
 #### Gate 4 — the destination exists
 - [x] Gate commands green. Negative control verified both ways.
 - [x] **Fixture first**, as Gate 2 — still nothing in-app fills a file value at this phase.
-- [ ] **Seen running:** the File editor pane, the Directory field, a refused folder.
+- [x] **Seen running:** the File editor pane, the Directory field, a refused folder.
 - [x] Simplification and review dispatched — ask first.
 
 ---
@@ -584,10 +584,10 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
 - [x] Commit: `fix(views): a file column sorts by its filename`
 
 #### Gate 5 — the feature works end to end
-- [ ] Gate commands green.
+- [x] Gate commands green.
 - [ ] **The end-to-end acceptance criterion, observed in the running app**, exactly as written in the header.
 - [ ] **Seen running:** all four surfaces — table, cards, both panes — including the three nested click targets and both Removes on a card.
-- [ ] Simplification and review dispatched — ask first.
+- [x] Simplification and review dispatched — ask first.
 
 ---
 
@@ -622,7 +622,7 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
 - [x] Every Dead Vocabulary sweep returns 0 against a non-zero control.
 - [x] Delivery Claim written.
 - [x] Neutral verifier dispatched against the **spec**, not the plan — "is this true?" — ask first.
-- [ ] Attack pass dispatched only after a clean yes.
+- [x] Attack pass dispatched only after a clean yes.
 - [x] Lessons routed to `.claude/Guidelines/`.
 
 ---
