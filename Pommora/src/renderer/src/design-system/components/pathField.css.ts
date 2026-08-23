@@ -1,7 +1,7 @@
 // The house folder-path field — a lead glyph, the stored path as a run of segments, and a browse
-// affordance. It composes the house field chrome rather than restating it, and holds its own width
-// at its trailing edge like every other control: a deep path is eclipsed by the run's own fade
-// rather than pushing its row wider.
+// affordance. It composes the house field chrome rather than restating it, and takes its width from
+// whatever row it sits in: a deep path is eclipsed by the run's own fade rather than pushing its
+// row wider, so the field is free to be as wide as its host allows.
 import { style } from '@vanilla-extract/css'
 import { hairlineField } from './interactionField.css'
 import { focusRing } from './fieldRing'
@@ -10,16 +10,16 @@ import { text } from '../tokens/typography.css'
 
 const c = colorVars.color
 
-/** KNOB — the field's resting width. Wide enough for a two-segment path at the default type;
- *  anything longer eclipses rather than growing the row. */
-const FIELD_WIDTH = '220px'
-
 const LEAD_GAP = '6px'
 
 export const pathField = style([
   hairlineField,
   {
-    width: FIELD_WIDTH,
+    // The row decides how wide this gets — a settings row and a property pane are different widths,
+    // and a fixed one leaves the narrower of them with a field it can't fill. `minWidth: 0` is what
+    // lets the segment run overflow into its fade instead of forcing the field open.
+    flex: '1 1 auto',
+    minWidth: 0,
     cursor: 'text',
     ...focusRing('within'),
   },

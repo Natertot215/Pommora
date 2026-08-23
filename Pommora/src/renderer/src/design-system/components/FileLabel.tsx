@@ -3,7 +3,7 @@ import { Chip } from '@renderer/Components/Chip'
 import { Icon } from '@renderer/design-system/symbols'
 import { fileTypeIcon } from '@renderer/design-system/symbols/fileTypes'
 import { cx } from '@renderer/design-system/cx'
-import { fileLabelClickable, fileLabelUnresolved } from './fileLabel.css'
+import { fileLabelUnresolved } from './fileLabel.css'
 
 /** The app's standard rendering of a named file or folder: a leading glyph and the name, wearing
  *  the `file` chip shape so the hover-× and its melt come from the chip system rather than a second
@@ -16,19 +16,17 @@ export function FileLabel({
   name,
   icon,
   onRemove,
-  onClick,
   unresolved,
 }: {
   name: string
   icon?: ReactNode | false
   onRemove?: () => void
-  onClick?: () => void
   /** The name answers to no file. It still renders — the value is on disk and has to be
    *  removable — but reads as naming nothing. */
   unresolved?: boolean
 }): React.JSX.Element {
   const glyph = icon ?? <Icon name={fileTypeIcon(name)} size="control" />
-  const chip = (
+  return (
     <Chip
       shape="file"
       label={name}
@@ -36,12 +34,5 @@ export function FileLabel({
       className={cx(unresolved && fileLabelUnresolved)}
       {...(onRemove ? { onRemove } : {})}
     />
-  )
-  if (!onClick) return chip
-  return (
-    // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a value inside a grid cell — per-label tab stops flood the tab order, which is the grid's roving-tabindex gap rather than a lint fix
-    <span onClick={onClick} className={fileLabelClickable}>
-      {chip}
-    </span>
   )
 }
