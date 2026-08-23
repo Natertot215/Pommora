@@ -6,10 +6,7 @@
   min-width: 0;
   --detail-title-size: 24px;
 }
-/* The title-icon hide/show — one treatment for every heading icon (the Detail header, the
-   view-embed heading): max-width collapses the space on the slide token, the translate carries
-   it, the negative margin swallows the host's 8px gap. --title-icon-w is the shown ceiling;
-   hosts with a fixed icon box point it at their size var. */
+
 .title-icon-reveal {
   min-width: 0;
   max-width: var(--title-icon-w, 1em);
@@ -28,7 +25,6 @@
 }
 .detail-title-icon {
   flex: none;
-  /* Sizes to the title — the type scale drives both. KNOB: bump to e.g. calc(var(--detail-title-size) * 1.1). */
   --title-icon-w: var(--detail-title-size);
   width: var(--detail-title-size);
   height: var(--detail-title-size);

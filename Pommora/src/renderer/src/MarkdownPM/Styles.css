@@ -575,12 +575,7 @@
 
 /* "Outliner lines" personalization (class on <html>): a hairline guide down each nested list run. ONE rail per
    ANCESTOR level — a side widget (.md-outliner-rail, emitted per nested list line in intent.ts), so a level-3
-   item shows three stacked guides. SCOPED to dash-bullets (•) and checkboxes; ordered / arrow / + get no rail
-   (their glyph-center maths is deferred — see intent.ts railTypeClass). Each level's rail is a continuous RUN:
-   square through the middle so consecutive lines connect seamlessly, with an end-gap + rounded cap ONLY at the
-   run's first/last line (md-outliner-first/-last) — the blockquote bar's trick. A rail sits centered (pixel-snapped
-   left, below) on its ANCESTOR's glyph, so --rail-x tracks the ANCESTOR marker's TYPE (bullet • / checkbox box),
-   not the descendant's — which is why a nested checkbox never drags the guide off-center.                           */
+   item shows three stacked guides.*/
 .md-outliner-rail {
   display: none;
 }
@@ -712,10 +707,7 @@
 
 /* CITATIONS — the rows of the footnotes section. A row's number is a positional ordinal computed
    over hidden source, so its glyph shares the numeric-glyph rule with the ordered marker and the
-   code block's line count; it takes the ordered list's own zone so the two columns line up. The
-   `pre` and the content span are the list line's arrangement and are load-bearing for the same
-   reason: the marker zone is full of wrap opportunities that would drop a long word under the
-   number. A dimmed row is a citation nothing binds to — an orphan, or a duplicate that lost. */
+   code block's line count; it takes the ordered list's own zone so the two columns line up. */
 .mdpm-editor .cm-line:is(.md-cite, .md-cite-cont) {
   white-space: pre;
   color: var(--label-secondary);
@@ -751,9 +743,7 @@
 /* The task checkbox rides the shared fixed chip-box geometry, which the scale vars don't reach — so
    at any scale but 1 it reads wrong against the text beside it. Zoom the whole widget (box + stroke
    + checkmark) to --glyph-scale so it tracks the Editor Scale, an embed's base scale, and the
-   per-block Scale in lockstep with the glyphs. Safe because the widget is atomic: zoom can't disturb
-   caret mapping through it. The chipBoxGeometry token and every chip wearing it stay untouched.
-   Absent scale ⇒ zoom:1, a no-op. */
+   per-block Scale in lockstep with the glyphs. */
 .mdpm-editor .pm-checkbox {
   zoom: var(--glyph-scale);
 }
@@ -808,9 +798,7 @@
 }
 
 /* BOX BASE — every box construct (quote, callout, code block, nested quote) is the same shape: a line
-   run that floats off its neighbors and rounds its ends. CM6 GOTCHA: no line margins — they break
-   caret/arrow mapping (only padding is measured) — so the float is an OUTER gap held by the first and
-   last lines' padding, and the paint is an inset pseudo rather than a line background. */
+   run that floats off its neighbors and rounds its ends. */
 .mdpm-editor .cm-line:is(.md-bq, .md-callout, .md-cb) {
   position: relative;
   isolation: isolate;
@@ -940,8 +928,7 @@
 }
 /* A line the callout SHARES with a construct nested inside it still opens and closes the callout, and
    the nested construct has already claimed the shared --box-* names on that line — so the callout's
-   own head and foot read its own measures, at a weight the inner override can't take. Without this a
-   block ending a callout seats its last line flush against the closing border. */
+   own head and foot read its own measures, at a weight the inner override can't take. */
 .mdpm-editor .cm-line.md-callout.md-callout-first {
   padding-top: calc(var(--callout-gap) + var(--callout-inner-pad));
 }
@@ -997,9 +984,7 @@
 }
 /* When the quote (or a code block) is the callout's LAST element, its last line carries the callout's bottom
    padding (--callout-gap + --callout-inner-pad); pull the fill up by that so it ends inside the closing border
-   instead of hanging past it. The test is the CALLOUT's last line being code, not the block having closed —
-   a fence still being typed has no closing line and would otherwise spill past the border while you write it.
-   (No top twin: the callout's first line is always the atomic head.) */
+   instead of hanging past it. */
 .mdpm-editor .cm-line.md-callout-last.md-bq-in-last::after,
 .mdpm-editor .cm-line.md-callout-last.md-cb::after,
 .mdpm-editor .cm-line.md-callout-last.md-bq-in-last .md-bq-in-bar {
@@ -1007,11 +992,7 @@
 }
 /* Declared AFTER the nested quote above it, and that order is load-bearing: both rules weigh the same,
    and a code block sitting inside a nested quote is the innermost box on its line, so its measures have
-   to be the ones that land. Box rules run outermost-first for exactly this reason.
-   A code block inside a box sits inside the box gutter instead of bleeding edge-to-edge under the border:
-   its fill aligns with the gutter (--li-origin) and the mono text pads a further --cb-pad inside that, so it
-   reads like a normal code block nested in the box. The block's own rules carry both measures through
-   --cb-inset, so the fill, the text, and the language chrome all move together. */
+   to be the ones that land. Box rules run outermost-first for exactly this reason.*/
 .mdpm-editor .cm-line.md-callout.md-cb,
 .mdpm-editor .cm-line.md-bq-in.md-cb,
 .mdpm-editor .cm-line.md-bq.md-cb {
@@ -1051,12 +1032,7 @@
 }
 
 /* Fill is an inset ::after (caret-safe — a pseudo, never a margin) so the first/last line can hold an OUTER
-   vertical gap above/below the block — the same float the blockquote + callout use.
-   --cb-inset is how far the fill sits in from the line box (a box nests the block inside its gutter);
-   --cb-pad is the text's padding within that fill. Every horizontal measure the block takes — the fill's
-   edges, the code's own padding, the language chrome — reads them, so a nested block only re-states the two.
-   KNOBS: --cb-bg / --cb-radius / --cb-size (font scale) · --cb-gap (outer vertical breathing room)
-   · --cb-inset / --cb-pad (horizontal placement) */
+   vertical gap above/below the block — the same float the blockquote + callout use. */
 .mdpm-editor .cm-line.md-cb {
   --cb-radius: var(--md-box-radius);
   --cb-size: 0.85em;
@@ -1086,9 +1062,7 @@
 
 /* CODE TOKENS — a typed fence's nested parse, colored as spectrum-solid pastels (each solid mixed
    toward system-white). Scoped under .md-cb so a tag outside a fence colors nothing; a bare fence
-   has no nested parse and keeps the plain mono look.
-   KNOBS: --tok-tint (declared with the block's other measures above — the solid's share of the mix,
-   routed to the tint scale, where a lower step reads more pastel) + the per-token solid routing */
+   has no nested parse and keeps the plain mono look.*/
 .mdpm-editor .md-cb :is(.tok-kw, .tok-str, .tok-num, .tok-prop, .tok-fn, .tok-type) {
   color: color-mix(in srgb, var(--tok-solid) var(--tok-tint), var(--label-primary));
 }
@@ -1147,8 +1121,7 @@
   height: 1.15em;
 }
 /* The veil paints on a pseudo inset OUT of the slot rather than on the slot itself: the slot is the
-   mark's own bounding box, which the mark fills, leaving a 2.5% tint nothing to tint. Out here it
-   reads as a chip behind the mark, and costs the words beside it no reflow. */
+   mark's own bounding box, which the mark fills, leaving a 2.5% tint nothing to tint. */
 .mdpm-editor .md-cb .md-cb-lang .md-cb-slot::before {
   content: "";
   position: absolute;
@@ -1215,11 +1188,7 @@
    reaching back into the block rather than from the glyph alone. Snug at the top and right where the
    tag already is; the radius is what makes the far corner an arc instead of a square claim on the
    block. It answers a press as the marks do, which is the cost of it: text under the arc selects by
-   dragging from outside it.
-
-   Every box line isolates, so the arc would otherwise be painted over by each code line under it —
-   the fence line is lifted a step above its siblings for as long as it is carrying a tag, which is
-   the only thing of its that ever reaches past its own band. */
+   dragging from outside it. */
 .mdpm-editor .cm-line.md-cb-first:has(.md-cb-lang) {
   z-index: 1;
 }
@@ -1233,11 +1202,7 @@
   /* It stands in for the code it covers, so it reads as that code rather than as a control. */
   cursor: text;
 }
-/* LINE COUNT — the "Show Line Count In Code Blocks" setting. Numbers are widget chrome sitting at
-   the line's own first-character position — the block's padding is the only left inset — in the
-   block's own mono at label-tertiary; fence lines carry no number. The zone is ch-based (three
-   digits in THIS font), so the code column holds through 999 lines; the ordered-list hanging
-   indent keeps a wrapped line's continuation rows under the code, never under the number. */
+/* LINE COUNT — the "Show Line Count In Code Blocks" setting. */
 .md-cb-ln {
   display: none;
 }

@@ -70,9 +70,7 @@
 }
 /* A table content-view (collection/set): the banner scrolls away with the rows, and the body carries
    the views gutter (grips + group chevrons) carved from the inset — grid still lands on --content-inset
-   (page-consistent) — with the heading band flush under the banner divider. Scoped OFF block surfaces:
-   a homepage/context tile that merely embeds a view carries a `.table-head` deep inside, and this flush
-   treatment is for a WHOLE-PAGE table, never a surface that only contains one. */
+   (page-consistent) — with the heading band flush under the banner divider. . */
 .detail-scroll.has-header .detail-body:has(.table-head):not(:has(.blk-surface)) {
   padding-top: 0;
   padding-left: calc(var(--content-inset) - var(--fold-gutter));

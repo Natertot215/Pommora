@@ -31,10 +31,7 @@
 }
 
 /* The website flavor: the guest owns the card's whole box; the shield above it keeps the card a
-   glance surface — pointer events land on the host, never the site. The box both wear escapes the
-   pane's own 4px gutter so the site reads edge-to-edge like a page preview's body, and clips its
-   own corners — a pane clip can't reach a composited guest surface. Stated once, so the shield
-   can never drift off the surface it covers. */
+   glance surface — pointer events land on the host, never the site.  */
 .conn-hover-web,
 .conn-hover-web-shield {
   position: absolute;
@@ -133,8 +130,7 @@
     calc(16px * var(--mdpm-scale)) var(--fold-gutter);
 }
 /* A host that owns the scroll itself: the editor chain GROWS to its content (height:auto down to
-   the CM6 editor) so the HOST is the one scroller and content can ride under floating chrome. In a
-   tile the host caps the embed and CM6 scrolls internally; here nothing caps it. */
+   the CM6 editor) so the HOST is the one scroller and content can ride under floating chrome. */
 .pgembed-grows .pgembed,
 .pgembed-grows .pgembed .mdpm-shell,
 .pgembed-grows .mdpm-editor,
@@ -155,9 +151,7 @@
 
 /* Page-follows header chrome inside a tile (chrome='page'): the banner band holds the page's OWN
    layout contract — out of flow, its height reserved as editor padding — because an in-flow band
-   inside a fixed clipped tile would push the editor's viewport past the clip and strand it. Tile-
-   proportional, never the page's 230px. The coverless breadcrumb floats centered at the top and
-   reveals on tile hover, matching the accent border's own timing. */
+   inside a fixed clipped tile would push the editor's viewport past the clip and strand it. */
 .pgembed {
   /* KNOB — the embed banner band's height. */
   --embed-banner-h: 96px;
