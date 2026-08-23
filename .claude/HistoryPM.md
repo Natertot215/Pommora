@@ -126,7 +126,7 @@ The editor gained a highlight mark and three settings, and lost a piece of chrom
 
 The codeblock tag stopped reading `<YAML>` and started reading the language's own name beside its mark, and the set behind it went from seven languages to thirty-eight. `@codemirror/legacy-modes` was already a dependency carrying a hundred modes, so thirty cost a roster row and a loader row each, every parser its own chunk fetched when a fence first names it — the specifier written out per row because only a literal one is a chunk the bundler can split. The roster moved to `detect/codeLangs.ts` as plain data so the pure decoration layer can resolve a word to a name without pulling an editor into itself, and fourteen languages carry a mark, one whose glyph draws its own wordmark showing the mark alone. Last, the menu dispatcher was handing every line formatter the selection's start rather than its range, so Lists, Heading and Blockquote each marked only the first line of a multi-line selection; all three take both ends now, blank lines keep their seats, and a marker comes off only where every selected line already carries it.
 
-- **Commits:** `b1cbf8ff` · `4d6898ee` · `0f31f068` · `ace06db4` · `f396ec00` · `b133e583` (interleaved with PM-112's tail)
+- **Commits:** `b1cbf8ff` · `4d6898ee` · `0f31f068` · `ace06db4` · `f396ec00` · `b133e583`
 - **Diff:** Net +427 | +726 / −299
 
 #### PM-112 || Variable Asset Directories
