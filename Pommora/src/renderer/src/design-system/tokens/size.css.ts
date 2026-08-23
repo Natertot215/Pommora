@@ -2,23 +2,6 @@ import { createGlobalTheme } from '@vanilla-extract/css'
 
 /**
  * Size tokens — the single source for icon dimensions and control geometry.
- * Two scales, mirrored from Figma:
- *
- * - `icon.*` — the glyph ladder, named one-to-one with the type ramp in
- *   `typography.css.ts` so a glyph and the text beside it name the same step.
- *   Eleven names over eight values, matching the ramp's own repeats.
- *   `<Icon size="control" />` resolves to the var; `ICON_PX` carries the same
- *   ladder as bare numbers for the few consumers that size an element rather
- *   than a font (a profile photo's width/height).
- * - `control.button.*` — per-component size aliases (`button-small/medium/large`).
- *   Each is a geometry bundle whose `icon` field *references* the icon ladder rather
- *   than restating a dimension. The bundles are drawn values, not a formula: heights
- *   and radii climb with the step, while the divider height and the glyph do not —
- *   medium carries the tallest divider and shares its icon step with large. Large is
- *   exact from Figma (SEGMENTED · SYMBOL, Large/None); Small and Medium are held by
- *   hand until they're pulled.
- */
-
 /** The glyph ladder as bare numbers — the one place the pixel values live. Consumers that set a
  *  font-size read the vars below; the few that size an element (a profile photo's width/height)
  *  read these. */
@@ -79,7 +62,7 @@ const controlScale = createGlobalTheme(':root', {
 
 /** The one per-level inset every disclosure hierarchy steps by — the sidebar tree, table group
  *  nesting, and pane disclosure runs all derive from this single literal (theme-vars bridges it
- *  to `--disclosure-indent` for plain CSS). A number, not a var: drop-line math multiplies it. */
+ *  to `--disclosure-indent` for plain CSS).*/
 export const DISCLOSURE_INDENT = 14
 
 /** The shared left lane the fold chevron + block grips render in — one lane width agreed on by the
@@ -96,15 +79,12 @@ export const DROP_LINE_INSET = 2
  *  it can be grabbed. */
 export const TILE_MIN_PX = 64
 
-/** KNOB — the height a resizable tile reports and occupies before a persisted one exists. Read by
- *  the widget that answers CM6's height question and by the CSS that paints the box, so the two
- *  cannot disagree about how tall an unsized tile is. */
+/** KNOB — the height a resizable tile reports and occupies before a persisted one exists.*/
 export const TILE_DEFAULT_PX = 320
 
 /** KNOB — the gap a resizable tile floats in, above and below. A margin sits outside the box a block
  *  widget measures, so the value the widget answers CM6 with has to add it back or the height model
- *  runs short by the gap for every tile on the page. Read by the CSS that spends it and by the
- *  widget that answers for it. */
+ *  runs short by the gap for every tile on the page.*/
 export const TILE_GAP_PX = 4
 
 /** One token object: `size.icon.control`, `size.control['button-large'].height`, … */

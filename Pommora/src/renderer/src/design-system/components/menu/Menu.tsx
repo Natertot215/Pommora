@@ -235,12 +235,7 @@ export function MenuPaneTopRow({
 /**
  * Mirror of MenuPaneTopRow. Carries its own flush divider and bottom placement — it sinks to the
  * pane's bottom edge in a flex-column pane, and is inert when a frame already pins it in a footer
- * slot, so a footing can never lose its divider or ride up mid-pane. Placement only: no imposed
- * typography, so each menu keeps its own action sizing.
- */
-/** The lock a surface's bottom row carries — the same control on a board, a Space and a tile, so
- *  the three cannot come to disagree about its glyph, its wording, or what it announces. `noun`
- *  names what is being locked for a screen reader; the visible label is the verb alone. */
+ * slot, so a footing can never lose its divider or ride up mid-pane.*/
 export function FooterLockButton({
   locked,
   noun,

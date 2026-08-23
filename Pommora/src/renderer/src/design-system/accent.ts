@@ -20,7 +20,7 @@ export function applyAccent(setting: AccentSetting, systemColor: string | null):
   document.documentElement.style.setProperty('--accent', accentValue(setting, systemColor))
 }
 
-/** Independent of the Pommora `--accent` setting. External `[text](url)` links bind to `--system-accent`; internal connections bind to `--accent`. */
+/** Independent of the `--accent` setting. External `[text](url)` links bind to `--system-accent`; internal connections bind to `--accent`. */
 export function applySystemAccent(systemColor: string | null): void {
   if (typeof document === 'undefined') return
   const value = systemColor ?? readCssAccentColor() ?? accentCell(DEFAULT_ACCENT)
