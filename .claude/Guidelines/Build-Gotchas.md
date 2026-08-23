@@ -33,12 +33,6 @@ The remove ×'s label melt sits on a family of Chromium paint-invalidation drops
 - **The flipped element needs its own paint layer** — `labelText` carries `position: relative` or even its opacity flip doesn't repaint.
 - **The label must never enter the hover chain on a removable label** (`pointer-events: none`): if the label/text leaves `:hover` in the same frame the reveal flips, Chromium drops the reveal's repaint. This is also why a removable label's text scrolls from its host rather than itself. And no opacity TRANSITIONS on the masked twins — a fade's final un-hover frame can strand, leaving a smear on the resting label.
 
-A fourth rule is geometry rather than paint: **a mask only reads inside its own box.** The twins sit
-inside the scroller and travel with the label's text, so following a scrolled label means moving
-their BOXES onto the visible window (`left` plus a matching negative `text-indent`, off Over Scroll's
-`--os-scroll`) — never pushing the ramp's stops past `100%`. A stop outside the mask tile leaves the
-default `mask-repeat` tiling a fully transparent gradient, and the twin paints nothing at all.
-
 Re-running the reveal matrix (rest · left hover · center · right-third entered both ways · hover→leave) with screenshots is mandatory for ANY change touching these files. Also beware when CDP-verifying: synthetic hovers lose to Nathan's physical mouse if it's over the window, and the first interaction after an HMR edit can hit a stale DOM — always re-run a negative before believing it.
 
 ### Registered Properties & Derived Transitions
