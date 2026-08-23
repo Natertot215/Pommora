@@ -9,6 +9,7 @@ import {
   systemPreferences,
 } from 'electron'
 import type { OpenDialogOptions } from 'electron'
+import { assetSubRoot } from '@shared/nexusPaths'
 import { basename, dirname, extname, join, resolve, sep } from 'node:path'
 import { readFile, rename } from 'node:fs/promises'
 import type {
@@ -67,7 +68,7 @@ import {
   underAssetRoot,
   validPropertyDir,
 } from './assetRoots'
-import { assetsDir, assetSubRoot, relPosix } from './paths'
+import { assetsDir, relPosix } from './paths'
 import { rootSegs } from './exclusion'
 import { ASSET_MIME, IMAGE_EXTS } from '@shared/assetMime'
 import { validateAssetDir } from './assetDirValidate'

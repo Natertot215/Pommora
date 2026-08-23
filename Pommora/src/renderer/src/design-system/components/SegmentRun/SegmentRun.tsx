@@ -3,6 +3,11 @@ import { OverflowScroll } from '../OverflowScroll'
 import { FileLabel } from '../FileLabel'
 import * as sr from './segmentRun.css'
 
+/** The stamp a surface hit-tests to learn which entry a click landed on. Written here and by the
+ *  file cell, which composes its own chips rather than a run, and read back by the file effect —
+ *  three files, one attribute, so it is spelled once. */
+export const SEGMENT_INDEX_ATTR = 'data-segment-index'
+
 export interface SegmentEntry {
   key: string
   label: string
@@ -40,7 +45,7 @@ export function SegmentRun({
             ))}
           {/* Its position, so a surface can hit-test which entry a click or a right-click landed
               on without the run growing a callback per gesture. */}
-          <span className={sr.segment} data-segment-index={i}>
+          <span className={sr.segment} {...{ [SEGMENT_INDEX_ATTR]: i }}>
             <FileLabel
               name={e.label}
               // A nested run is a PATH: its segments are folders, not file types, and it carries
