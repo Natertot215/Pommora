@@ -51,7 +51,7 @@ A Page's values are wrapped title keys at its frontmatter root; a Task's or Even
 | **URL**               | `<Link>: https://…` or `<Link>: [[Page]]`                               | A string — an address with a scheme, or a connection naming a page.                  |
 | **Context**           | `(Context):` at the root, over a block sequence of bare Space titles    | One column per registry Context, synthesized at runtime — never a schema definition. |
 | **Last Edited Time**  | *(derived from `modified_at`)*                                          | Virtual — never persisted.                                                           |
-| **File / Attachment** | `[{ "path", "original_name", "added_at", "mime_type" }, ...]`           | Array; files copy into the Nexus.                                                    |
+| **File**              | `<Attachments>:` over a block sequence of `[[Basename.ext]]`            | Array of wikilinks naming files by basename; files copy into the Nexus.              |
 
 ### Identity & Name
 
@@ -133,6 +133,27 @@ A URL property also holds a **connection**. Pasting `[[Title]]` — what Copy Li
 
 A filled link value right-clicks to the **link menu** rather than a cell menu of its own — the same menu the editor pops on the same link[^2], so what a link offers doesn't depend on where it was found. A connection opens on Open Preview · Open New Tab and closes on Copy Link · Copy Path; an address opens on Open Preview · Open Browser · Copy Link. Both carry the authoring pair, and both end on **Clear** where the editor's ends on Remove Link · Delete, a value being the thing a property surface can act on. On an inspector row the split is the point: the value's menu clears the link, and **Remove** stays on the property itself, reached by right-clicking the row rather than the value it holds. A card's menu keeps the Remove that drops the property from the view, the card having no separate property to address.
 
+#### II. File
+
+A File property holds an ordered list of files that live in the Nexus, each named by a wikilink over its basename:
+
+```yaml
+<Attachments>:
+  - "[[Q3 Report.pdf]]"
+  - "[[Floorplan.png]]"
+```
+
+The name is the whole reference — no path is stored. It resolves against an in-memory basename index the file watcher keeps current, which is what lets the asset directory be re-pointed, a file be moved within it, or a sync eviction and re-download happen without any value going stale. A name that answers to no file still renders, dimmed: the value is on disk and has to be visible to be removable. Where several files share a basename the first by path order answers, matching the precedent every other asset reference follows.
+
+Each value renders as a **file label** — the file's own type glyph and its name, wearing the `chipFile` shape, so a list of attachments reads as a run of named files rather than paths. The glyph comes from the extension: 23 of them draw their own mark and anything else takes the generic file glyph.[^4]
+
+- **Directory** — the property-wide folder its files land in, set in the File editor pane and stored relative to the asset root, so re-pointing the root carries every property's folder with it. Unset means the root itself, which is what the field reads when nothing is chosen. A folder outside the root, or one the index could never reach, is refused at both the setting and the write.
+- **Filling a value** opens the operating system's file dialog. Clicking a label **replaces** the file it names and opens at that file's own folder, which makes "see where this lives" and "swap it" the same gesture; clicking the value's own area **adds**, opening at the property's Directory. A right-click offers **Add File · Replace File · Remove File**, or Add alone on an area holding nothing to act on. Removing a value drops the reference and leaves the bytes where they are.
+- **The file lands before the reference does.** Adoption copies the file in, steps a colliding name aside, and skips the copy entirely when the bytes already match one already there; only then is the name written. A cancelled dialog and a refused copy both leave the value exactly as it was.
+- **Sorting** reads the filename, so a column orders A → Z by what the label shows. Filtering is presence only — Is Empty and Is Not Empty.
+
+A File column carries no per-view Style: there is one way to render a file, and a sole look is not a choice.
+
 #### II. Context Links
 
 Context links are the only relation-type connection. They store as **parenthesized title keys at the entity root**, over a block sequence of bare Space titles:
@@ -209,6 +230,7 @@ The chip is the property value's rendered form, so its design vocabulary lives h
 | Context | `chipContext` | h `22px` · `--chip-pad-x: 8px` · neutral fill, color on border and text |
 | Capsule | `chipCapsule` | h `20px` · pad `0 var(--chip-capsule-pad-x, 6px)` · radius `10px` · gap `0` |
 | Box | `chipBox` | `17px × 17px` · radius `5.5px` · border `1.5px` (the checkbox look) |
+| File | `chipFile` | h `20px` · no fill, no border · left-aligned · `--chip-fill: transparent` |
 
 #### II. The Recipe & Variants
 | Title | Token | Value |
@@ -239,7 +261,6 @@ The remove-× melt (the hover-revealed remove zone, the crisp and blurred label 
 - **Page Property Panel** — the surface for setting property values on a Page in the main pane, and on a Task or Event anywhere. The Page Preview's front-matter inspector covers a Page inside the preview only; the main pane renders no property rows, and Agenda items have no value surface at all.
 - **Built-in Agenda Status** — the Status property Tasks and Events are meant to carry — a seed plus a delete guard that keeps it there. Neither exists, and neither does an agenda schema to hold them; a seeded config carries identity only.
 - **Lossy Change-Type Strip** — the cross-assigner value strip a lossy type change should trigger. `changeType` accepts the drop flag and ignores it, applying a plain global definition edit.
-- **Per-Type Editor Panes** — File is the one creatable type whose editor body is blank; it follows the shipped panes' patterns.
 - **Number Show-as for dynamic views** — the completion **Ring** and the Notion-style Number/Bar/Ring tile grid belong to view types with vertical room (Gallery/Board); the table ships the Number/Bar look row only. The bar's stroke is held pending a visual pass.
 - **Calendar Picker refinements** — range values (a datetime value is a single ISO on disk, so the value picker disables the shared picker's range mode), keyboard stepping on the time segments, and test coverage.
 - **Per-View Link Styling** — a URL property's look is entirely property-level. Letting a view override it is a prospect; the `column_styles` seam already carries per-view looks for the other types.
@@ -247,3 +268,4 @@ The remove-× melt (the hover-revealed remove zone, the crisp and blurred label 
 [^1]: [[ConfigurationPM]] §General
 [^2]: [[ConnectionsPM]]
 [^3]: [[NexusRecordPM]]
+[^4]: [[SymbolsPM]]

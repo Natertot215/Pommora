@@ -6,6 +6,8 @@ SymbolsPM
 │   ├── Sizes
 │   ├── View Settings Panes
 │   ├── Property Types
+│   ├── View Types
+│   ├── File Types
 │   └── Roles
 ├── Additional Assignments
 ├── The Picker
@@ -76,6 +78,14 @@ Pommora's standard semantic icons — the canonical glyph for each pane, propert
 | Calendar | `calendar-days`         |
 | Timeline | `chart-gantt`           |
 
+
+#### File Types
+
+A second family, keyed `file-type-<ext>` and drawn from Tabler's set, gives a file label the mark of what it holds. Per-extension rather than per-family: `.ts` and `.tsx` reading as one glyph loses the distinction the label exists to make.
+
+Twenty-three extensions draw their own: `bmp` `css` `csv` `doc` `docx` `html` `jpg` `js` `jsx` `pdf` `php` `png` `ppt` `rs` `sql` `svg` `ts` `tsx` `txt` `vue` `xls` `xml` `zip`. Six common alternate spellings route to the glyph they mean — `jpeg`→`jpg`, `htm`→`html`, `xlsx`→`xls`, `pptx`→`ppt`, `mjs`/`cjs`→`js`.
+
+The name is read case-insensitively, and anything the roster doesn't name takes `file-chart-column` — the File property type's own glyph. So does a name with no extension to read, a dotfile whose whole name is its name, and a name ending in a bare dot: the map always answers a glyph. A caller wanting none says so itself, which is what a path's segments do — they're folders, and the run carries one lead icon rather than a mark per segment.
 
 #### Roles
 
