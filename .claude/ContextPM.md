@@ -4,6 +4,8 @@
 
 **Part 1 of the file-based arc shipped: the asset directory is the user's to choose.** `asset_directory` sits beside `excluded_folders` as a top-level settings key and travels with it as one `WatchScope`, so the walk, the corpus, the watcher's ignore and the classifier all learn the root from a single value — and the asset test runs ahead of every other skip, which is what lets a folder already listed in `excluded_folders` deliver events at all. A stored image is named the way Obsidian names one: `[[Banner.png]]`, resolved renderer-side against a filename map main holds and pushes, with a raw path and a web address passing through untouched. The live nexus points at `file-assets/`, `.nexus/assets` holds nothing but regenerated thumbnails, and all 45 page covers resolve where 44 of them rendered nothing before.
 
+**MarkdownPM is taking incremental improvements.** Highlights, Editor Scale, thirty-eight code languages, a Code Color, and a copy control on every code block's tag have landed in passes rather than as one feature. What is left of the editor's own gap list is small enough to keep taking that way — callout types, find-in-page, a slash menu, source mode. Image embedding is the exception and is not open yet: it waits on the file-based arc finishing, since a `FileRef` is what an inline image would resolve through.
+
 **The architecture-audit cleanup continues.** Bundles 1, 2 and 3 landed 08-21; 6a → 6b are the high-priority pair next, and the evidence sits in [[Architecture Audit — Full-Codebase Report]] with the session-sized work at [[Codebase-Cleanup-Checklist]].
 
 ### Immediate Work

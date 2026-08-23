@@ -7,6 +7,7 @@ test files, type declaration shims, and anything outside the app source tree
 
   loc.py            -> JSON for the working tree
   loc.py --history  -> JSON with one sample per day of main's history
+  loc.py --update   -> fold HEAD into loc-history.json and the Line-Ledger page
 """
 
 from __future__ import annotations
@@ -171,7 +172,64 @@ def history() -> list[dict]:
     return out
 
 
+HERE = os.path.dirname(os.path.abspath(__file__))
+HISTORY_JSON = os.path.join(HERE, "loc-history.json")
+LEDGER_HTML = os.path.join(HERE, "Line-Ledger.html")
+DATA_TAG = re.compile(r'(<script id="data" type="application/json">).*?(</script>)', re.S)
+LEDGER_URL = "https://claude.ai/code/artifact/9172cda5-707d-4b69-aaed-d154dd2dd485"
+
+
+def measure_commit(rev: str) -> dict[str, int]:
+    """The tree as that commit recorded it — never the working one, which may hold anyone's
+    uncommitted work and would attribute it to a commit that doesn't contain it."""
+    with tempfile.TemporaryDirectory() as tmp:
+        tar = subprocess.run(
+            ["git", "-C", ROOT, "archive", rev, SRC], capture_output=True, check=True
+        )
+        subprocess.run(["tar", "-x", "-C", tmp], input=tar.stdout, check=True)
+        return measure_tree(tmp)
+
+
+def update() -> str:
+    """Fold HEAD into the stored history and the page that reads it.
+
+    The series holds one sample per day, so a new commit touches exactly one row — the last one on
+    its own date. Re-walking every day of the branch to learn that costs seconds and answers the
+    same thing the archive of a single commit does.
+    """
+    date = git("log", "-1", "--format=%ad", "--date=short", "HEAD").strip()
+    head = git("rev-parse", "--short", "HEAD").strip()
+    totals = measure_commit("HEAD")
+    row = {"d": date, "v": [totals[a] for a in ORDER]}
+
+    with open(HISTORY_JSON, encoding="utf-8") as fh:
+        payload = json.load(fh)
+    series = [s for s in payload["series"] if s["d"] != date]
+    series.append(row)
+    series.sort(key=lambda s: s["d"])
+    payload["series"] = series
+    payload["head"] = head
+
+    blob = json.dumps(payload, ensure_ascii=False)
+    with open(HISTORY_JSON, "w", encoding="utf-8") as fh:
+        fh.write(blob + "\n")
+
+    with open(LEDGER_HTML, encoding="utf-8") as fh:
+        page = fh.read()
+    if not DATA_TAG.search(page):
+        raise SystemExit("Line-Ledger.html has no <script id=\"data\"> tag to fill")
+    page = DATA_TAG.sub(lambda m: m.group(1) + blob + m.group(2), page, count=1)
+    with open(LEDGER_HTML, "w", encoding="utf-8") as fh:
+        fh.write(page)
+
+    return f"{date}  {head}  {sum(totals.values())} lines"
+
+
 if __name__ == "__main__":
+    if "--update" in sys.argv:
+        print(f"line ledger: {update()}")
+        print(f"  republish {os.path.relpath(LEDGER_HTML, ROOT)} to {LEDGER_URL}")
+        sys.exit(0)
     if "--history" in sys.argv:
         payload = {
             "areas": ORDER,

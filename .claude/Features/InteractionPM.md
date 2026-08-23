@@ -10,7 +10,7 @@ Interaction & Motion
 ├── The `--io` Progress
 ├── Reveal
 ├── Pane Slide + Resize
-├── Switch
+├── DualSwitch
 ├── Drag Motion
 ├── Scroll Glide
 ├── Floating Windows
@@ -76,7 +76,7 @@ Disclosure **chevrons** rotate 90° through the shared `twisty` (`menu.css.ts`) 
 
 Both slots stay mounted, each measured by a `ResizeObserver`, so the target size is known the instant the active slot flips, and the outgoing detail is held through the slide-out. Optional width and height floors keep a sparse pane from shrink-wrapping, and transitions arm only after first paint, so a pane snaps to its measured size on open. The slider only slides and resizes — a slot needing a ceiling, a scroll region, or a bottom-pinned footer wraps its content in the shared menu scroll frame, and the slider animates to the already-capped height.
 
-### Switch
+### DualSwitch
 
 `design-system/components/Switches/` — the knob slides between its on/off ticks, the ticks cross-fade, and the track tint crossfades, all on the `fast` beat under one easing const, so the toggle reads as a single move.
 

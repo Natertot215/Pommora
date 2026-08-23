@@ -103,7 +103,7 @@ The **Status editor** edits it in place — a group-labeled option list (double-
 
 #### II. Checkbox
 
-A boolean with two per-view looks and one property-wide color. The **look** (`column_styles`) is **Checkbox** (a rounded box) or **Switch** (the Figma switch) — toggling one on assigns `true` in place, toggling off strips the key. The **color** (def-level `checkbox_color`) applies to the ON state only: a checked box fills with it and a switch's on-track tints, while an empty box and an off switch stay neutral grey. An absent color follows the nexus-configured accent live. The **Checkbox editor** pane pairs a color control (a nameless swatch wearing the Switch's own shell, opening the recolor picker) with a Style picker (Checkbox ⇄ Switch, the shared double-chevron control). Its picker withholds the greyscale row, whose dark end is the window substrate itself.
+A boolean with two per-view looks and one property-wide color. The **look** (`column_styles`) is **Checkbox** (a rounded box) or **Switch** (a DualSwitch) — toggling one on assigns `true` in place, toggling off strips the key. The **color** (def-level `checkbox_color`) applies to the ON state only: a checked box fills with it and a DualSwitch's on-track tints, while an empty box and an off switch stay neutral grey. An absent color follows the nexus-configured accent live. The **Checkbox editor** pane pairs a ColorSwatch, which wears the DualSwitch's own shell with a Style picker (Checkbox ⇄ Switch, the shared double-chevron control). Its picker withholds the greyscale row, whose dark end is the window substrate itself.
 
 #### II. Number
 

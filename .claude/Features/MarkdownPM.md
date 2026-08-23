@@ -174,7 +174,7 @@ List geometry scopes to `.cm-line.md-li`; the outliner rail aliases the shared `
 | Box Corner | `--md-box-radius` | `6px` · `:root` — what quote, callout, code and highlight round to; each still names its own knob and can be retuned alone |
 | Box Gap | `--md-box-gap-base` / `--md-box-gap` | `6px` · `:root` / `base × --glyph-scale` · `.mdpm-shell` — what quote, callout, code and the table float off their neighbours by, scaling with the surface as their text does; declared on the shell because a custom property's `var()`s resolve where it is declared, so an embed spaces by its own scale |
 | Highlight | `--highlight` / `--highlight-bleed` | → the Highlight Color, else the accent, worn at tint-secondary / `0.1em` · `.md-highlight` |
-| Language Tag | `.md-cb-lang` | name at → label-control, its mark at → label-secondary, `1.15em` — fifteen languages carry one |
+| Language Tag | `.md-cb-lang` | name at → label-control, its mark at → label-secondary, `1.15em` — fifteen languages carry one. Every tag is also the block's copy control: a language's mark rests, the copy mark takes its place under the pointer, and a press on either the mark or the name hands the block's lines over and answers with an accent check. A quarter-disc reaching back into the block arms the mark without becoming a target itself |
 | Line-Number Zone | `--cb-ln-zone` | `calc(3ch + var(--list-gap))` |
 
 #### II. Syntax Colors
@@ -204,7 +204,7 @@ One pastel recipe: `color-mix(in srgb, var(--tok-solid) var(--tok-tint), var(--l
 
 - **Multi-citation markers** — `[^#-#]`, a dash inside one marker binding it to two footnotes at once, so a single point in the body can carry more than one citation.
 - **Image + LaTeX render seams** — LaTeX is detected and styled only, and the wiki-image form rests inert: an image-style `![[file.png]]` target fails page resolution and renders nothing. The bang-paren form is spoken for — `![Label](url)` alone on a line is a webpage embed[^4] — so a future image renderer arrives through the wiki form.
-- **Fenced-code copy button** · **zoom slider** UI placement · **heading-fold inside a callout** (headings render there, but the fold chevron isn't prefix-aware) · **table inside a callout** (renders as raw text; needs prefix-aware region detection).
+- **Zoom slider** UI placement · **heading-fold inside a callout** (headings render there, but the fold chevron isn't prefix-aware) · **table inside a callout** (renders as raw text; needs prefix-aware region detection).
 - **Outliner rails on ordered / arrow / `+` lists** — the guide is bullets + checkboxes only; the other glyphs need their own glyph-center math before their rails read straight.
 - **Codeblock Style ▸ Language grip menu** — retyping a block's language from its grip; the list's Type ▸ arm is the pattern it follows. Widening the curated language set is one description in the highlight module plus its package.
 
