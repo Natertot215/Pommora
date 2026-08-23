@@ -19,9 +19,11 @@
      Global default so a host's value inherits INTO the shell. */
   --editor-scale: 1;
   --mdpm-scale: var(--editor-scale);
-  /* The corner every boxed construct rounds to. Each still names its own knob below and can be
-     retuned alone; this is what they agree on when nobody has. */
+  /* The corner every boxed construct rounds to, and the breathing room each floats off its
+     neighbours by — the quote, the callout, the code block and the table. Each still names its own
+     knob below and can be retuned alone; these are what they agree on when nobody has. */
   --md-box-radius: 6px;
+  --md-box-gap: 6px;
 }
 
 .mdpm-shell {
@@ -843,7 +845,7 @@
   --box-z: -2;
   --box-radius-l: 0px;
   --box-radius-r: var(--md-box-radius);
-  --bq-gap: 6px;
+  --bq-gap: var(--md-box-gap);
   --box-gap: var(--bq-gap);
   --box-pad: 4px;
   --li-origin: 16px; /* the quote's inner gutter — lists / code inside indent from it (matches padding-left) */
@@ -893,7 +895,7 @@
   --callout-radius: var(--md-box-radius);
   /* Slightly roomier inner gutter + head/foot so a fold chevron has space to live inside the box. */
   --callout-pad: 15px;
-  --callout-gap: 6px;
+  --callout-gap: var(--md-box-gap);
   --callout-inner-pad: 8px;
   --box-gap: var(--callout-gap);
   --box-pad: var(--callout-inner-pad);
@@ -1058,7 +1060,7 @@
   --box-z: -1;
   --box-radius-l: var(--cb-radius);
   --box-radius-r: var(--cb-radius);
-  --cb-gap: 6px;
+  --cb-gap: var(--md-box-gap);
   --box-gap: var(--cb-gap);
   --box-pad: 6px;
   --tok-tint: var(--tint-primary);
