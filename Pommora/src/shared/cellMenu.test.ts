@@ -71,6 +71,32 @@ describe('cellMenuModel', () => {
     expect(m.style).toBeUndefined()
   })
 
+  it('a file value: Add alone off the value’s area, the full set off a label', () => {
+    const area = cellMenuModel({ kind: 'file', onChip: false })
+    expect(area.items.map((i) => [i.label, i.action])).toEqual([['Add File', 'file:add']])
+    // Replace and Remove address the label that was clicked; the value's own area has no file for
+    // either to act on.
+    const onChip = cellMenuModel({ kind: 'file', onChip: true })
+    expect(onChip.items.map((i) => [i.label, i.action])).toEqual([
+      ['Add File', 'file:add'],
+      ['Replace File', 'file:replace'],
+      ['Remove File', 'file:remove'],
+    ])
+    expect(onChip.style).toBeUndefined()
+  })
+
+  it('a card’s two Removes are told apart by their words, not their position', () => {
+    // `hideable` appends a Remove that drops the property from the VIEW. A file cell carries its
+    // own Remove for the reference, and two items spelled the same — one destructive to a value,
+    // one to the view's configuration — would differ only by where they sit.
+    const card = cellMenuModel({ kind: 'file', onChip: true, hideable: true })
+    const labels = card.items.map((i) => i.label)
+    expect(labels).toEqual(['Add File', 'Replace File', 'Remove File', 'Remove from View'])
+    expect(new Set(labels).size).toBe(labels.length)
+    // Every other type keeps the plain word.
+    expect(cellMenuModel({ kind: 'clear-only', hideable: true }).items.at(-1)?.label).toBe('Remove')
+  })
+
   it('link (a filled url cell): Edit + Rename + Clear, no Style (its look is per-property)', () => {
     const m = cellMenuModel({ kind: 'link', filled: true })
     expect(m.items.map((i) => [i.label, i.action])).toEqual([
@@ -133,10 +159,10 @@ describe('cellMenuContextFor', () => {
 
   it('url → link (carrying filled); a file cell has no look left to offer', () => {
     expect(cellMenuContextFor(prop(), 'url', {}, true)).toEqual({ kind: 'link', filled: true })
-    expect(cellMenuContextFor(prop(), 'file', {}, false)).toBeNull()
-    expect(cellMenuContextFor(prop(), 'file', {}, false, true)).toEqual({
-      kind: 'remove-only',
-      hideable: true,
+    expect(cellMenuContextFor(prop(), 'file', {}, false)).toEqual({ kind: 'file', onChip: false })
+    expect(cellMenuContextFor(prop(), 'file', {}, true, false, false, true)).toEqual({
+      kind: 'file',
+      onChip: true,
     })
   })
 
