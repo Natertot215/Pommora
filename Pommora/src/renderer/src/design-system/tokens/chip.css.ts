@@ -125,7 +125,7 @@ export const chipFile = style([
     selectors: {
       '&&': {
         background: 'transparent',
-        borderColor: colorVars.color.label.tertiary,
+        borderColor: colorVars.color.label.quaternary,
         vars: { '--chip-fill': 'transparent' },
       },
     },
