@@ -40,6 +40,10 @@ export type ExternalLinkColorSetting = ColorSetting<'system'>
 export type CheckboxColorSetting = ColorSetting<'accent'>
 /** The wash a `==highlight==` wears. Cleared follows the accent. */
 export type HighlightColorSetting = ColorSetting<'accent'>
+/** Inline `code` text and its wash. `'default'` is the sentinel rather than `'red'` — red is a real
+ *  pick, and the two must stay distinguishable: cleared removes the var so the theme's own red
+ *  answers, while picking red pins the ramp cell. */
+export type CodeColorSetting = ColorSetting<'default'>
 
 /** The nexus-wide clock for the datetime picker (twelveHour = AM/PM segments, the default;
  *  twentyFourHour = flat HH:MM). Lives at `personalization.timeFormat`. */
@@ -101,6 +105,7 @@ export interface Personalization {
   externalLinkColor?: ExternalLinkColorSetting
   checkboxColor?: CheckboxColorSetting
   highlightColor?: HighlightColorSetting
+  codeColor?: CodeColorSetting
   /** Whether a checked task reads as done — its text dimmed and struck through. Display only: the
    *  strike is drawn, never written, so the file stays the plain `- [x]` it was. Absent = off. */
   muteCheckedItems?: boolean

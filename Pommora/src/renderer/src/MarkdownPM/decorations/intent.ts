@@ -108,6 +108,9 @@ export type DecoIntent =
   | { kind: 'atomic'; from: number; to: number }
   | { kind: 'widget'; from: number; to: number; spec: WidgetSpec }
   | { kind: 'lineWidget'; from: number; className: string; text?: string }
+  /** A code block's top-right tag. `name` is the language it resolved to, absent when the fence
+   *  named none the roster answers to — the copy affordance the tag carries is the same either way. */
+  | { kind: 'codeTag'; from: number; name?: string }
   | { kind: 'line'; from: number; className: string; level?: number }
   | {
       kind: 'rail'
@@ -117,6 +120,21 @@ export type DecoIntent =
       first: boolean
       last: boolean
     }
+
+/** The lines a code block holds, with the quote prefix its opening fence carried stripped back off —
+ *  what a reader would have if they had selected the block without its fences. `pos` is anywhere on
+ *  the opening line. */
+export function codeBlockTextAt(scan: DocScan, pos: number): string {
+  const start = lineIndexAt(scan, pos)
+  const depth = scan.fences[start]?.depth ?? 0
+  const out: string[] = []
+  for (let i = start + 1; i < scan.lines.length; i++) {
+    if (scan.fences[i]?.role !== 'content') break
+    const line = scan.lines[i]
+    out.push(line.slice(quotePrefixWidth(line, depth)))
+  }
+  return out.join('\n')
+}
 
 // The outliner rail's x sits on its ANCESTOR's glyph center, so its class tracks the ancestor marker's TYPE
 // (--rail-x set in CSS per class) — a nested checkbox under a bullet parent gets the bullet center, not its own.
@@ -263,14 +281,11 @@ function lineIntentsInto(
     // both TypeScript, and the block says which language it is, not which spelling opened it. A word
     // no language answers to selects no parse, so it keeps its raw text and takes no tag.
     const named = fence.lang ? codeLanguageName(fence.lang) : null
-    if (fence.role === 'open' && named && !caretOnLine && infoStart < le) {
-      intents.push({
-        kind: 'lineWidget',
-        from: infoStart,
-        className: 'md-cb-lang',
-        text: named,
-      })
-      intents.push({ kind: 'hide', from: infoStart, to: le })
+    if (fence.role === 'open' && !caretOnLine) {
+      // Every block carries the tag, because every block can be copied — a language only decides
+      // what the tag says at rest. A word no language answers to keeps its raw text beside it.
+      intents.push({ kind: 'codeTag', from: infoStart, name: named ?? undefined })
+      if (named && infoStart < le) intents.push({ kind: 'hide', from: infoStart, to: le })
     }
     // Line-count chrome: every content line carries its number; the personalization root class
     // decides whether any of it renders.

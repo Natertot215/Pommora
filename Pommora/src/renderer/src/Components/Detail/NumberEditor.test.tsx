@@ -6,7 +6,7 @@ import type { NumberConfig } from '@shared/properties'
 import { NumberEditor } from './NumberEditor'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
-// The Switch's GlassSegment measures itself; jsdom has no ResizeObserver.
+// The DualSwitch's GlassSegment measures itself; jsdom has no ResizeObserver.
 class ResizeObserverStub {
   observe(): void {}
   unobserve(): void {}

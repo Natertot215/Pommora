@@ -1,5 +1,4 @@
 import { globalStyle, style } from '@vanilla-extract/css'
-import { track as switchTrack } from '../../design-system/components/Switches/switch.css'
 import { vars as colorVars, inputFieldVar } from '../../design-system/tokens/color.css'
 import { text } from '../../design-system/tokens/typography.css'
 import type { IconSize } from '../../design-system/tokens/size.css'
@@ -407,36 +406,6 @@ export const configRow = style({
  *  pane sits at control scale, but a label is what the row says, so it reads at full strength while
  *  its glyph and its value stay a step under. */
 export const configLabel = style([text.control.emphasized, { color: c.label.primary }])
-
-/** The color control cluster — the clickable chip; the ColorPicker anchors below. */
-export const colorCluster = style({
-  position: 'relative',
-  display: 'flex',
-  alignItems: 'center',
-  gap: '4px',
-})
-
-export const colorChip = style({
-  border: 'none',
-  background: 'none',
-  padding: 0,
-  cursor: 'default',
-  display: 'flex',
-})
-
-/** The chosen color, worn as the Switch's own shell — it composes the switch's real track rather
- *  than restating its box, so the two can never drift and the swatch rides `--switch-zoom` with it.
- *  The doubled selector outguns the track's own background. Nameless on purpose: the ramp's cells
- *  carry no display names, and the swatch says more than a family name could. */
-export const colorSwatch = style([
-  switchTrack,
-  {
-    // The outline a greyscale cell brings with it; every other cell passes `transparent` and the
-    // swatch reads as the bare fill it always did.
-    border: '1px solid var(--sw-outline, transparent)',
-    selectors: { '&&': { background: 'var(--sw)' } },
-  },
-])
 
 /** The scoped-pane footer breadcrumb — the embed's source path, `(icon) Collection › (icon) Set`;
  *  the lock rides the trailing slot. */

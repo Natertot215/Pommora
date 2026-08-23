@@ -6,7 +6,7 @@ import { chipBox, chipColor } from '@renderer/design-system/tokens'
 import { cx } from '@renderer/design-system/cx'
 import { Icon } from '@renderer/design-system/symbols'
 import { EntityIcon } from '@renderer/Components/EntityIcon'
-import { Switch } from '@renderer/design-system/components/Switches/Switch'
+import { DualSwitch } from '@renderer/design-system/components/Switches/DualSwitch'
 import { ProgressBar } from '@renderer/design-system/components/ProgressBar/ProgressBar'
 import { Chip, chipShapeForType } from '@renderer/Components/Chip'
 import { ContextChip } from '@renderer/Components/ContextChip'
@@ -75,7 +75,7 @@ export function Cell({
         className="cell-switch"
         style={{ ...(color ? { '--accent': solidColorCss(color) } : {}) } as CSSProperties}
       >
-        <Switch checked={checked} onChange={() => {}} ariaLabel="Checkbox value" />
+        <DualSwitch checked={checked} onChange={() => {}} ariaLabel="Checkbox value" />
       </span>
     ) : (
       <CheckboxGlyph checked={checked} color={color} className="cell-checkbox" />

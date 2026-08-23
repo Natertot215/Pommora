@@ -18,10 +18,7 @@ import type {
   PageNode,
   SetNode,
   SpaceNode,
-  ConnectionColorSetting,
-  ExternalLinkColorSetting,
-  CheckboxColorSetting,
-  HighlightColorSetting,
+  ColorSetting,
   EntityIconKind,
   FolderPlacement,
   Personalization,
@@ -97,16 +94,18 @@ export function readPersonalization(raw: unknown): Personalization {
     v === 'top' || v === 'bottom' ? v : undefined
   const mode = (v: unknown): SidebarMode | undefined =>
     v === 'collections' || v === 'contexts' || v === 'agenda' ? v : undefined
+  /** A deferring color setting: its own sentinel, or a ramp cell. Anything else is an unwritten key
+   *  rather than a value — the settings surface would have nothing to show for it. */
+  const colorSetting = <S extends string>(v: unknown, inherit: S): ColorSetting<S> | undefined => {
+    const c = asString(v)
+    return c === inherit || (c != null && isColorKey(c)) ? (c as ColorSetting<S>) : undefined
+  }
   // An unwritten key stays unwritten — only a stored number clamps to the ramp.
   const scale = (v: unknown, fallback: number): number | undefined =>
     typeof v === 'number' ? coerceScale(v, fallback) : undefined
   const ribbonOrder = Array.isArray(p.ribbonOrder)
     ? p.ribbonOrder.filter((v): v is string => typeof v === 'string' && v.length > 0)
     : []
-  const conn = asString(p.connectionColor)
-  const ext = asString(p.externalLinkColor)
-  const chk = asString(p.checkboxColor)
-  const hil = asString(p.highlightColor)
   const rawIcons =
     p.defaultIcons != null && typeof p.defaultIcons === 'object' && !Array.isArray(p.defaultIcons)
       ? (p.defaultIcons as Record<string, unknown>)
@@ -121,22 +120,11 @@ export function readPersonalization(raw: unknown): Personalization {
     : []
   return {
     accent: resolveAccent(asString(p.accent)),
-    connectionColor:
-      conn === 'accent' || (conn != null && isColorKey(conn))
-        ? (conn as ConnectionColorSetting)
-        : undefined,
-    externalLinkColor:
-      ext === 'system' || (ext != null && isColorKey(ext))
-        ? (ext as ExternalLinkColorSetting)
-        : undefined,
-    checkboxColor:
-      chk === 'accent' || (chk != null && isColorKey(chk))
-        ? (chk as CheckboxColorSetting)
-        : undefined,
-    highlightColor:
-      hil === 'accent' || (hil != null && isColorKey(hil))
-        ? (hil as HighlightColorSetting)
-        : undefined,
+    connectionColor: colorSetting(p.connectionColor, 'accent'),
+    externalLinkColor: colorSetting(p.externalLinkColor, 'system'),
+    checkboxColor: colorSetting(p.checkboxColor, 'accent'),
+    highlightColor: colorSetting(p.highlightColor, 'accent'),
+    codeColor: colorSetting(p.codeColor, 'default'),
     muteCheckedItems: bool(p.muteCheckedItems),
     hideChevrons: bool(p.hideChevrons),
     outlinerLines: bool(p.outlinerLines),

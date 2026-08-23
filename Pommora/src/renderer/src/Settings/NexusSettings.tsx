@@ -2,14 +2,14 @@ import { useState } from 'react'
 import { cx } from '@renderer/design-system/cx'
 import { Icon } from '@renderer/design-system/symbols'
 import { text } from '@renderer/design-system/tokens'
-import { Switch } from '@renderer/design-system/components/Switches/Switch'
+import { DualSwitch } from '@renderer/design-system/components/Switches/DualSwitch'
 import { Slider } from '@renderer/design-system/components/Slider/Slider'
 import { PreviewPane } from '@renderer/design-system/components/PreviewPane/PreviewPane'
 import type { FloatingBounds } from '@renderer/design-system/interactions/FloatingWindow'
 import type { SidePaneBounds } from '@renderer/design-system/components/SidePane/SidePane'
 import type { DevicePrefs } from '@shared/devicePrefs'
 import { PickerControl, type PickerChoice } from '@renderer/Components/Detail/PickerControl'
-import { ColorSwatchField } from '@renderer/Components/Detail/ColorPicker'
+import { ColorSwatch } from '@renderer/design-system/components/Switches/ColorSwatch'
 import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
 import { solidColorCss } from '@renderer/Detail/Views/Table/solidColor'
 import { LINK_FORMAT_OPTIONS } from '@renderer/Components/Detail/LinkFormat'
@@ -67,7 +67,7 @@ type PickerRow<T extends string> = RowText & {
 
 /** Every sentinel a color setting can defer to. Keeping it a closed union is what stops a color row
  *  from naming an unrelated string key — `ColorSetting<string>` widens to plain `string`. */
-type InheritSentinel = 'system' | 'accent'
+type InheritSentinel = 'system' | 'accent' | 'default'
 
 /** A row in a leaf's section: the words, and the control that writes one key. */
 type Row =
@@ -403,12 +403,6 @@ const LEAVES = roster([
           },
           {
             kind: 'toggle',
-            key: 'codeblockLineCount',
-            label: 'Show Line Count In Code Blocks',
-            hint: "Number a codeblock's lines — display chrome, never editable text.",
-          },
-          {
-            kind: 'toggle',
             key: 'outlinerLines',
             label: 'Outliner Lines',
             hint: 'Show indent rails on nested lists in the editor.',
@@ -425,6 +419,26 @@ const LEAVES = roster([
             hint: 'The wash behind highlighted text. Cleared follows the accent.',
             inherits: 'accent',
             inheritsVar: 'var(--accent)',
+          },
+        ],
+      },
+      {
+        title: 'Code',
+        rows: [
+          {
+            kind: 'color',
+            key: 'codeColor',
+            label: 'Code Color',
+            hint: 'Inline `code` and the wash behind it. Cleared reads red.',
+            inherits: 'default',
+            inheritsVar: 'var(--code)',
+            greyscale: true,
+          },
+          {
+            kind: 'toggle',
+            key: 'codeblockLineCount',
+            label: 'Show Line Count In Code Blocks',
+            hint: "Number a codeblock's lines — display chrome, never editable text.",
           },
         ],
       },
@@ -643,7 +657,7 @@ function ColorRow({ row }: { row: RowOf<'color'> }): React.JSX.Element {
 
   return (
     <SettingsRow label={row.label} hint={row.hint}>
-      <ColorSwatchField
+      <ColorSwatch
         label={row.label}
         selected={inheriting ? 'default' : chipColorFor(value)}
         css={inheriting ? row.inheritsVar : solidColorCss(value)}
@@ -661,7 +675,7 @@ function ToggleRow({ row }: { row: RowOf<'toggle'> }): React.JSX.Element {
 
   return (
     <SettingsRow label={row.label} hint={row.hint}>
-      <Switch
+      <DualSwitch
         checked={on}
         ariaLabel={row.label}
         // Stores only the OFF state — an untouched nexus keeps a clean file (no-empties discipline).
@@ -678,7 +692,7 @@ function DeviceRow({ row }: { row: RowOf<'device'> }): React.JSX.Element {
   const setDevicePref = useSession((s) => s.setDevicePref)
   return (
     <SettingsRow label={row.label} hint={row.hint}>
-      <Switch
+      <DualSwitch
         checked={on}
         ariaLabel={row.label}
         // Off stores no key — the clean-file discipline every row follows.
