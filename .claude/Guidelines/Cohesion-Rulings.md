@@ -81,6 +81,17 @@ plausible from the outside. Reopen any of them with a reason, not with a fresh r
   would have reused its generic half — a document's footnotes section — is a fold region rather than
   a block widget.
 
+- `assetRoots.ts`'s `startsUnder` and `assetSubfolder` stay two functions. Both case-fold a root
+  prefix and they differ only by strictness and by what they return, which is why a sweep proposes
+  merging them — it has now been proposed twice. `startsUnder` is the security predicate running
+  ahead of `resolveUnderRoot`; `assetSubfolder` answers a display question. Sharing a helper puts
+  the boundary check behind an abstraction serving a position lookup, which is the same reason the
+  earlier ruling kept it apart from `exclusion.ts`'s `prefixMatcher`.
+- `FileLabel` and `FileChip` are two components on purpose, and `chipPlain` and `chipFile` are two
+  shapes for the same reason. A name inside a FIELD is that field's content and takes no chrome — a
+  box around it is a box in a box; a file property's VALUE stands beside other values in a cell and
+  takes a box the way they do. They render the same string and mean different things.
+
 ### The Exhaustiveness Sweep
 
 A read-only sweep found twenty-two dispatch sites where a shared action union survives to the
