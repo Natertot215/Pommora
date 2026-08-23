@@ -602,8 +602,8 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
 #### Task 20: Simplification pass over the whole range
 
 **Steps:**
-- [ ] Dispatch `code-simplifier` against the full feature range — **ask Nathan first.**
-- [ ] Verify each finding against the code before folding.
+- [x] Dispatch `code-simplifier` against the full feature range — **ask Nathan first.**
+- [x] Verify each finding against the code before folding.
 
 #### Task 21: Reconcile the documentation
 
@@ -614,12 +614,12 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
 **Files:** `.claude/Features/PropertiesPM.md`, `ViewsPM.md`, `TableViewPM.md`, `DesignSystemPM.md`, `SymbolsPM.md`, `ArchitecturePM.md`
 
 **Steps:**
-- [ ] Rewrite each claim in the Made False table. Replace, never amend — no "formerly", no supersedes note.
-- [ ] Move File out of `PropertiesPM.md`'s Pending list.
-- [ ] Commit: `docs(properties): the file property is what it is`
+- [x] Rewrite each claim in the Made False table. Replace, never amend — no "formerly", no supersedes note.
+- [x] Move File out of `PropertiesPM.md`'s Pending list.
+- [x] Commit: `docs(properties): the file property is what it is`
 
 #### Gate 6 — closeout
-- [ ] Every Dead Vocabulary sweep returns 0 against a non-zero control.
+- [x] Every Dead Vocabulary sweep returns 0 against a non-zero control.
 - [ ] Delivery Claim written.
 - [ ] Neutral verifier dispatched against the **spec**, not the plan — "is this true?" — ask first.
 - [ ] Attack pass dispatched only after a clean yes.
@@ -649,14 +649,14 @@ The mandated first deliverable. Every consumer opened, not recalled. Counts re-d
   - [x] Task 14 — Prove a replaced file survives · `1c6a176b`
 - [x] **Phase 4** — The Directory field · base `1c6a176b`
   - [x] Task 15 — The Directory, its validation, and its pane · `0e8a9aee`
-- [ ] **Phase 5** — Interaction · base `0e8a9aee`
+- [x] **Phase 5** — Interaction · base `0e8a9aee`
   - [x] Task 16 — One arm on the shared click router · `013033d0`
   - [x] Task 17 — The value menu · `a9fd3ada`
-  - [x] Task 18 — Sort by filename
-- [ ] **Phase 6** — Reconciliation
-  - [x] Task 19 — Sweep the dead vocabulary
-  - [ ] Task 20 — Simplification pass over the whole range
-  - [ ] Task 21 — Reconcile the documentation
+  - [x] Task 18 — Sort by filename · `5642599c` · `300e2ed1`
+- [ ] **Phase 6** — Reconciliation · base `0e994de0`
+  - [x] Task 19 — Sweep the dead vocabulary · `5642599c`
+  - [x] Task 20 — Simplification pass over the whole range · `aa1aa2ea`
+  - [x] Task 21 — Reconcile the documentation · `8be13cc8`
 
 ### Rulings
 
@@ -781,6 +781,28 @@ Every finding re-opened against the code before folding. Commit `d1788cf4`.
 - **Ruled, not fixed · `startsUnder` and `assetSubfolder` are two root-prefix comparisons in one file.** They differ by strictness and by what they return, and the stricter one is the security predicate that runs ahead of `resolveUnderRoot`. A prior ruling already kept it apart from `exclusion.ts`'s matcher for that reason; sharing a helper here would put the boundary check behind an abstraction serving a display concern.
 - **Ruled, not fixed · `canFillBlank` restates the router's type table.** One site, so the Rule of Two is unmet. Recorded because a new type has to teach two lists, which is the shape that becomes a defect at three.
 
+#### Phase 6 — the delta, and the closing pass
+
+Code-only: **+137 −116, net +21**, over five commits — Task 18 `+2`, the Gate 4/5 fold `+1`, the field-width and dead-click removal `−9`, the sort target `+2`, Task 20 `+25`. The phase had no estimate; it was reconciliation.
+
+Every finding opened against the code before folding. Commit `aa1aa2ea`.
+
+- **Priority 1 came back empty, which is the result that matters.** The pass was aimed at hand-rolled parallels — the feature's own thesis is that it invents the least — and found none. Every seam it could have re-spelled it consumes instead: `parentOf`, `parseConnectionText` / `normalizeTitle` / `connectionText`, `rootSegs` / `normalizeSeg` / `indexable`, and `Chip` / `hairlineField` / `focusRing` / `OverflowScroll`. `SegmentRun` has three real consumers, so it is a shared component rather than a wrapper around one caller.
+- **Fixed · the menu's three file actions were written twice**, once per surface that pops a menu. Remove needs no dialog and Add differs from Replace only in whether it carries the chip, so `runFileMenuAction` states the triad once and each surface names its own commit.
+- **Fixed · the refusal sentence had two homes.** It now lives beside `validPropertyDir`, the predicate both the set side and the write side answer to.
+- **Fixed · `cellMenu.ts` stated its per-kind matrix twice**, and the second copy had drifted onto the wrong declaration and omitted `file` entirely. The kind union's own header covers it; the duplicate is gone, and the header now says what a `file` cell carries.
+- **Fixed · `baseCellMenu` widened its type parameter with `| 'context'`** where `PropertyType` already holds it, which made the `context` branch read as if it were handling an outsider.
+- **Fixed · `SegmentRun` kept the doc line for a prop it no longer has**, and `value.ts`'s `fileName` claimed a text filter reads it. Neither was true: the click routes through `data-segment-index`, and the file filter is presence-only.
+- **Fixed · `pathField.css.ts`'s `LEAD_GAP` carried no `KNOB`** where every sibling spacing constant in `segmentRun.css.ts` does.
+- **Ruled, not fixed · `startsUnder` and `assetSubfolder`.** Raised twice now, and the answer is the same both times: `startsUnder` is the security predicate that runs ahead of `resolveUnderRoot`, and putting it behind a helper shared with a display concern is what the earlier ruling declined.
+- **Noted, outside this feature · three flush-on-unmount implementations** (`PathField`, `FilterPane`, `PropertyEditor`). The rule of three is met, but each carries a different guard — draft-is-null, value-changed, and a StrictMode `done` ref — which are reasons to stay apart rather than an accident.
+
+#### Requirement 14 was unmet until the closing pass
+
+`ConnectionsPM.md` recorded that the rename cascade rewrites every frontmatter URL value naming a renamed page, and said nothing about file values — the exact silence the requirement exists to close, since the next reader to notice the omission would close it as a bug.
+
+The immunity is real and it is **structural rather than type-aware**, which is the part worth writing down: both the content index's `frontmatterMentions` and the rewriter's `rewriteFrontmatterConnections` read only string-valued frontmatter, and a file value is an array. Neither knows what a file property is, and neither needs to.
+
 ### Open Against Later Tasks
 ### Deviations
 
@@ -818,3 +840,35 @@ Every finding re-opened against the code before folding. Commit `d1788cf4`.
 - **The asset-migration gap (spec F-9)** — covers already orphan on a custom→custom directory change. Belongs to the asset layer.
 
 ### Closeout
+
+#### Delivery Claim
+
+The `file` property type is complete — the last of the ten. Twenty-six commits, code-only **+758 −426, net +332** against an expected ≈+46, comments and tests excluded. Every phase's overrun is itemized in this Log and every one is the same shape: a seam the plan's own body called for and its estimate never priced. Nothing was re-authored, and the per-phase figures sum to the whole.
+
+What is claimed, requirement by requirement:
+
+| # | Claim | Where it is true |
+| --- | --- | --- |
+| 1 | A file value is a bare array of `[[Name.ext]]` strings; the legacy `[{ path }]` object reads null | `propertyValue.ts` · both YAML spellings of a hand-edit coerce back |
+| 2 | `strict` refuses emptiness and non-strings only, never option membership | `propertyValue.ts` · the `file` case is deliberately not merged with `multi_select` |
+| 3 | Values resolve in the **basename** domain; an unparseable value renders unresolved, never as a path | `assetUrl.ts` `resolveFileValue` |
+| 4 · 4a | One adoption mechanism, exported and reachable as its own channel, carrying all five guards | `mutate.ts` `adoptFile` · `assets:adopt` |
+| 4b | Replace never deletes bytes | proven by test against the filesystem, not by a parameter |
+| 5 | A def-level Directory, validated for containment **and** indexability at both the set and the write | `assetRoots.ts` `validPropertyDir` · `defEditOp`'s async `check` |
+| 6 | FileLabel is a chip **shape** inheriting the removable chrome structurally; `SegmentRun` consumes it | `chip.css.ts` `chipFile` · `FileLabel.tsx` · FilterPane's Location field moved |
+| 7 | 23 `file-type-*` glyphs with six aliases, falling back to `file-chart-column` — always a glyph | `fileTypes.ts` |
+| 8 | The value's area adds; a label replaces at that file's folder; the hover-× removes — one arm, four surfaces | `valueClick.ts` · `filePick.ts` · `usePropertyRows.ts` |
+| 9 | Add File · Replace File · — · Remove File, with the clicked label riding the context | `cellMenu.ts` · `runFileMenuAction` |
+| 10 | File leaves the column-style system; sort ranks by filename; presence filters stand | `columnStyles.ts` · `sort.ts` + `value.ts` `fileName` · `filter.ts` |
+| 11 | Nothing opens the file in-app; `file:open` is retired at all three layers | zero hits, against a control of 868 |
+| 12 | Every falsified document is reconciled | `8be13cc8` |
+| 13 | TableView's raw-path text editor is removed, not adapted | the dialog is the only authoring surface |
+| 14 | The rename-cascade immunity is recorded as an invariant | `ConnectionsPM.md` §The Rename Cascade |
+
+**What is not claimed.** The end-to-end acceptance criterion has not been observed running — it needs a Collection with a file property whose Directory names a subfolder and real files on disk, and Nathan verifies that himself. Every claim above is grounded in code read or a test watched pass; none rests on the feature having been used.
+
+**What the gates say.** `npm run typecheck`, `npm run test` (3570) and `npm run lint` all exit 0, read directly. Every red seen during execution was attributed to the parallel session's in-flight work before it was dismissed.
+
+**Deliberately out of scope**, as specified: thumbnails, byte deletion, editor-body embeds, OS drag-and-drop, the filename `Contains` filter, and `migrateAssets`. The `Contains` filter is one flag away — `fileName` is already the extraction it needs.
+
+**One thing is open and it is Nathan's**, recorded rather than absorbed: the settings pane's `minHeight={245}` floors both slider slots, so the File editor's short body leaves dead space beneath it. It is a shared knob, not this feature's.
