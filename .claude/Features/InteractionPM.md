@@ -139,11 +139,11 @@ does nothing. An axis class carries the fade, `over-scroll-cap` adds the capped-
 and a label that cannot hover itself takes the scrolled state from an ancestor wearing
 `over-scroll-host`.
 
-Gesture and return are wired once for the whole document rather than per element: a cap is a bare
-class on markup as often as it is the component, and a pointer-inert label receives no events of its
-own. A capped label scrolls on one axis while a trackpad flick usually points the other way, so the
-dominant delta drives it either way; leaving a cap returns it on `base`. Each cap publishes how far
-it has been read past its start, for the overlays that have to land on the window it is showing.
+Gesture and return are wired once for the whole document, so a cap behaves the same worn as a bare
+class or mounted as the component. A capped label scrolls on one axis while a trackpad flick usually
+points the other way, so the dominant delta drives it either way; leaving a cap returns it on `base`.
+Each cap publishes how far it has been read past its start, for the overlays that land on the window
+it is showing.
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/interactions/OverScroll/`
 
