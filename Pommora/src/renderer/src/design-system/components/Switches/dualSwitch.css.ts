@@ -8,14 +8,10 @@ const ease = `${duration.fast} ${easing.standard}` // one motion source for the 
 const control = 'var(--label-control)' // knob fill + tick glyphs
 
 /**
- * The Figma "Switch" — a pill sliding a liquid-glass knob between a `|` (on) and an `O` (off)
- * tick. Geometry mirrors the Figma component; the knob insets from the track on every side, wrapped
- * in the real liquid glass (GlassControls).
- */
+ * The "Switch" — a pill sliding a liquid-glass knob between a `|` (on) and an `O` (off)
+ * tick.*/
 export const track = style({
   position: 'relative',
-  // The Figma box at the one size every surface reads it: stated in px rather than scaled to, so a
-  // measurement here is the measurement on screen and nothing downstream has a factor to apply.
   width: '43px',
   height: '19px',
   borderRadius: '10px',

@@ -7,12 +7,6 @@
    surrounding region as "near" so the reveal zone can be generous without an
    invisible button swallowing clicks to the content beneath, on direct hover,
    and on keyboard focus.
-
-   A host supplies its own bar height, the edge each of its controls sits in
-   from, their widths and padding, their z-index, the classes that mark the open
-   and near states, and anything the bar animates beyond its own height. A band
-   can carry a control at either end, each revealed by its own near-region, so
-   approaching one never lights up the other.
    ============================================================================ */
 .ppane-footer,
 .subfield-reveal {

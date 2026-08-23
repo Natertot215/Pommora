@@ -15,8 +15,7 @@ import { duration, easing } from './motion'
 import { stack } from './stack'
 
 // Bridge: expose the (hashed) vanilla-extract tokens as stable-named CSS custom
-// properties, so plain CSS (the showcase chrome) can reference them via var(--…)
-// instead of hardcoding the values — one source of truth across .ts and .css.
+// properties.
 globalStyle(':root', {
   vars: {
     // Primitives — the base palette every grey/white tone derives from.
@@ -47,43 +46,32 @@ globalStyle(':root', {
     '--separator-border': colorVars.color.separator.border,
     '--separator-segment': colorVars.color.separator.segment,
     // Heading seam — the heavier hairline that separates a heading band from the body below it (table
-    // heading↔rows, banner↔body, editor heading↔content). One global source so the seam is uniform
-    // app-wide; consume as a full border shorthand: `border-bottom: var(--border-heading)`.
+    // heading↔rows, banner↔body, editor heading↔content).
     '--border-heading': '1.75px solid var(--separator-border)',
     // Box seam — the border an outlined box/card draws around itself (gallery + page cards, the icon
-    // picker's favorites strip). One global source so the outline weight is uniform app-wide; consume
-    // as a full border shorthand: `border: var(--border-cell)`.
+    // picker's favorites strip).
     '--border-cell': '1.5px solid var(--separator-border)',
     // The pill radius — larger than any box that wears it, so both ends resolve to semicircles
-    // whatever the height. One name for every capsule: tabs, carets, progress bars, segmented
-    // controls, the outliner rail.
+    // whatever the height.
     '--radius-full': '999px',
     // Over-image legibility scrim for a title/search/icon sitting on a banner cover — one source for the
-    // banner title, the NavView search, and the editor's banner overlay. `-shadow` is the color alone,
-    // for a caller that composes its own; `-cast` is the whole shadow, worn as `text-shadow` on type
-    // and inside `drop-shadow()` on a glyph.
+    // banner title, the NavView search, and the editor's banner overlay.
     '--banner-shadow': '#0000008c',
     '--banner-cast': '0 1px 4px var(--banner-shadow)',
     // The container title's type size — the heading a Collection, Set, or page wears at the top of its
-    // own surface, over a banner cover or on the bare header that replaces one. Its own value: the
-    // heading sits deliberately between the ramp's title steps.
+    // own surface, over a banner cover or on the bare header that replaces one.
     '--container-title-size': '20px',
     // Interaction states — a system-grey wash, hover lighter than selected.
     '--state-hover': colorVars.color.state.hover,
     '--state-selected': colorVars.color.state.selected,
-    '--state-muted': colorVars.color.state.muted, // black de-emphasis veil (dimming)
-    // The opacity states — bare numbers consumed as `opacity:` on the element itself, never mixed
-    // into a color, which is why they hold their own values rather than borrowing the tint ladder's
-    // steps. They read as one ramp: the more a stand-in carries the original's presence, the less
-    // the original fades.
-    // Drag — a card whose own lifted clone floats alongside it.
+    '--state-muted': colorVars.color.state.muted,
     '--state-drag': '0.85',
     // Ghost — a thing being reordered with nothing standing in for it (table rows, sidebar rows,
     // editor blocks and list items, the pane property reorder).
     '--state-ghost': '0.65',
     // Inactive — the one still-here-but-not-active dim: empty-state copy, disabled controls,
     // the ghost "New Page" row. Worn as `opacity:` over the element's standard chrome.
-    '--state-inactive': '0.55', // KNOB
+    '--state-inactive': '0.55',
     // Drag insertion line — the drop-target marker (accent line + leading dot) shared by every drop-line
     // DnD surface: table rows/bands AND the settings-pane property reorder.
     '--drag-line': 'var(--accent)',
@@ -93,33 +81,27 @@ globalStyle(':root', {
     '--tile-default-height': `${TILE_DEFAULT_PX}px`,
     '--tile-gap': `${TILE_GAP_PX}px`,
     // List outline (the nested-run rail) — THE shared rail primitive: MarkdownPM's outliner guides
-    // and the Grouping pane's hierarchy rail consume these knobs; each surface owns only its
-    // positioning math.
+    // and the Grouping pane's hierarchy rail consume these knobs.
     '--list-outline-width': '2px',
     '--list-outline-color': 'var(--separator-segment)',
     '--list-outline-radius': 'var(--radius-full)',
     '--list-outline-gap': '3px',
     // Accent: a pointer, never a baked color. The static seed is the default
     // spectrum solid (DEFAULT_ACCENT); applyAccent overrides --accent at runtime
-    // from settings — any spectrum color, or the OS accent. -fill is a tint
-    // of whatever --accent currently is; tinted accent text IS --accent itself.
+    // from settings — any spectrum color, or the OS accent.
     '--accent': colorVars.color.solid[DEFAULT_ACCENT],
     '--accent-fill': 'color-mix(in srgb, var(--accent) 15%, transparent)',
-    // Active stroke — the accent-tint border COLOR every "this is the live one" outline wears
-    // (hovered page embeds, the active table cell, the open gallery card, the handle menu's title
-    // field). Color only, one global source; each surface keeps its own border width.
+    // Active stroke — the accent-tint border COLOR every "this is the live one" outline uses.
     '--accent-stroke': 'color-mix(in srgb, var(--accent) var(--tint-secondary), transparent)',
-    // The same stroke a notch stronger — worn while a surface is being actively manipulated, so a
-    // resize reads hotter than the hover that revealed it (SurfacePM's blocks, MarkdownPM's page
-    // tiles). Color only; each surface keeps its own border width.
+    // The same stroke a notch stronger — used while a surface is being actively manipulated, so a
+    // resize reads hotter than the hover that revealed it.
     '--accent-stroke-hot': 'color-mix(in srgb, var(--accent) var(--tint-primary), transparent)',
     '--accent-text': 'var(--accent)',
     // The OS/system accent, always reflected (applySystemAccent overrides it at
-    // runtime from the OS, independent of the Pommora --accent setting). Seeded
-    // with the default solid so SSR/cold paint has a value.
+    // runtime from the OS, independent of the Pommora --accent setting).
     '--system-accent': colorVars.color.solid[DEFAULT_ACCENT],
     // Semantic link colors (labels side, not tints): external links wear the OS
-    // accent, internal connections wear the Pommora accent; code is systemRed.
+    // accent, internal connections wear the app's accent; code is systemRed.
     '--link': 'var(--system-accent)',
     '--connection': 'var(--accent)',
     '--code': `color-mix(in srgb, ${colorVars.color.solid.red} 85%, transparent)`,
@@ -145,14 +127,12 @@ globalStyle(':root', {
     '--text-footnote-size': font.scale.footnote.size,
     '--text-subline-size': font.scale.subline.size,
     // The control-size heights — plain CSS sizes a row to a button by naming that button's alias
-    // rather than restating the height its .ts sibling already holds. The rest of each bundle
-    // (padding, radii, the divider) stays on the .ts side, where its only consumers are.
+    // rather than restating the height its .ts sibling already holds.
     '--button-small-height': size.control['button-small'].height,
     '--button-medium-height': size.control['button-medium'].height,
     '--button-large-height': size.control['button-large'].height,
     // How far past its own edge a floating pane travels to park fully off-screen — enough that its
-    // shadow clears the window too, not just its box. The sidebar and the inspector park by the same
-    // magnitude in opposite directions.
+    // shadow clears the window too, not just its box.
     '--park-clearance': '14px',
     // The top inset a floating window's content keeps so it clears the × floating over its corner.
     '--close-clearance': '30px',

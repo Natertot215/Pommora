@@ -4,8 +4,7 @@ import { GREY_DEFAULT, SPECTRUM, WINDOW_BG } from '@shared/theme'
 // Primitives — the base system palette. Grey/white/black are the single source for
 // every derived tone: labels are system-white at an opacity, fills and separators are
 // system-grey at one, and the states are grey washes but for the muted veil, which
-// darkens from system-black. The spectrum solids and the opaque surfaces are their own
-// values (not derived from a primitive).
+// darkens from system-black.
 const primitive = createGlobalTheme(':root', {
   color: {
     system: {
@@ -38,10 +37,9 @@ const derived = createGlobalTheme(':root', {
       control: whiteA('80%'),
       secondary: whiteA('65%'),
       tertiary: whiteA('35%'),
-      quaternary: whiteA('20%'), // KNOB
+      quaternary: whiteA('20%'),
     },
-    // The app substrate — the base background (Figma "Background"). Single source:
-    // @shared/theme WINDOW_BG, so the Electron window + this token never drift.
+    // The app substrate — the base background's single source: @shared/theme WINDOW_BG, so the Electron window + this token never drift.
     background: {
       window: WINDOW_BG,
     },
@@ -90,8 +88,6 @@ export const inputFieldVar = 'var(--input-field)'
 globalStyle(':root', {
   vars: {
     '--shadow-standard': '0 8px 25px #00000040',
-    // The lift shadow — one source for every dragged-overlay treatment (the engine's
-    // .ix-overlay, SurfacePM's lifted tile, the drag ghost).
     '--shadow-lift': '0 12px 30px #00000066',
   },
 })

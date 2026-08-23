@@ -11,7 +11,7 @@ import { tint } from '../tokens/tint'
 const labelBase = style([
   text.control.semibold,
   {
-    // THE label-size knob — set it on any scope (or :root).
+    // THE label-size knob — optional.
     zoom: 'var(--label-zoom, 1.0)',
     display: 'inline-flex',
     alignItems: 'center',
@@ -141,4 +141,4 @@ export const roomy = style({ height: '22px', vars: { '--label-pad-x': '8px' } })
 
 /** The cap lives on the TEXT, not the label — a % width is unreliable in a shrink-to-fit flex box,
  *  and this way the truncation lands at the padding edge instead of floating mid-label. */
-export const textCap = style({ maxWidth: 'var(--label-max, 80px)' })
+export const textCap = style({ maxWidth: 'var(--label-max, 85px)' })
