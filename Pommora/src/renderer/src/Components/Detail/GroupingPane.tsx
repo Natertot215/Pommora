@@ -28,7 +28,7 @@ import {
 import { registerDiscloseTarget } from '../../design-system/interactions/dragDisclose'
 import { DragGhost } from '@renderer/design-system/interactions/DragGhost'
 import { EyeToggle } from './EyeToggle'
-import { Switch } from '../../design-system/components/Switches/Switch'
+import { DualSwitch } from '../../design-system/components/Switches/DualSwitch'
 import { useSaveView } from '@renderer/Embeds/ViewEmbedScope'
 import { declaredType } from '../../Detail/Views/pipeline/value'
 import {
@@ -196,7 +196,7 @@ export function GroupingPane({
           </span>
         }
         trailing={
-          <Switch
+          <DualSwitch
             checked={hideEmpty}
             onChange={(next) => save({ hide_empty_groups: next })}
             ariaLabel="Hide Empty Groups"

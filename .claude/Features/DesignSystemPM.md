@@ -1,6 +1,6 @@
 ## Design System
 
-```
+```yaml
 Design System
 ├── Tooling
 ├── The Token Atlas
@@ -109,7 +109,7 @@ The five-step system-grey overlay ramp for cards, chips, and fields sitting on a
 
 #### Tints
 
-The one opacity ladder any base color is mixed at. `mixAt(base, pct, into)` is the underlying primitive — a `color-mix` of the base toward anything, in sRGB or oklch, short-circuiting to the raw base at 100; `tintAt(base, step)` is that mix toward transparent. The chip recipe, the ramp, and the accent strokes all read these steps.
+The one opacity ladder any base color is mixed at —  a `color-mix` of the base toward anything, in sRGB or oklch, short-circuiting to the raw base at 100; `tintAt(base, step)` is that mix toward transparent. The chip recipe, the ramp, and the accent strokes all read these steps.
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/tint.ts`
 
@@ -123,7 +123,7 @@ The one opacity ladder any base color is mixed at. `mixAt(base, pct, into)` is t
 
 #### Ramp
 
-The color grid behind every chip and the picker that assigns one: eight families, eight steps each, running dark on the left to light on the right, with each spectrum solid seated on an exact cell so a color stored before the ramp resolves into it unchanged. Five families shade from a single anchor by one knob; blue crosses between two anchors in oklch so the passage keeps its chroma; purple seats three; the greyscale row is the app's own surface tokens rather than a computed ramp, and carries the only rendering exceptions — its brightest cells tint from a darkened base, and all eight outline against the label ramp.
+The color grid behind every chip and the picker that assigns one: eight families, eight steps each, running dark on the left to light on the right, with each spectrum solid seated on an exact cell so a color stored before the ramp resolves into it unchanged.
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/ramp.ts`
 
@@ -160,7 +160,7 @@ The two drop shadows — resting glass and lifted or dragged chrome. Every frost
 
 #### Spectrum
 
-The ten selectable solids plus the neutral chip default and the ramp's pink seat — authored once in `@shared/theme`, validated by main and renderer alike. The ten are what an accent may be set to; the ramp widens what a chip may be colored, not what the accent may be. The accent is a single user value resolved from this palette (or `system`, the OS accent, read at load); accented surfaces derive from `--accent` through the tint steps, so changing the accent recolors everything at once.
+The ten selectable solids plus the neutral chip default and the ramp's pink seat — authored once in `@shared/theme`, validated by main and renderer alike. These are what an accent may be set to; the ramp widens what a chip may be colored. The accent is a single-user value resolved from this palette (or the `system` OS accent); accented surfaces derive from `--accent` through the tint steps.
 
 **SOURCE:** `Pommora/src/shared/theme.ts` · `tokens/theme-vars.css.ts`
 
@@ -184,41 +184,32 @@ The ten selectable solids plus the neutral chip default and the ramp's pink seat
 | Accent Stroke     | `--accent-stroke` / `--accent-stroke-hot`   | accent @ 40% / accent @ 60%                |
 | Link / Connection | `--link` / `--connection`                   | `var(--system-accent)` / → `var(--accent)` |
 | Error             | `--error`                                   | `SPECTRUM.red`                             |
-| Code              | `--code`                                    | red @ 85%                                  |
+| Code              | `--codeColor` | `--solid-red` (user-selectable) @ 85%  |
 
-#### Chips
-
-The chip **types** — what each shape is for. Their geometry, the tint recipe and the knobs are the
-property system's, since a chip is what a value looks like.[^2]
+#### Chips & Labels
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/chip.css.ts`
 
-| Title | Token | What wears it |
-| --- | --- | --- |
-| Base | `chipBase` | Every chip — the gap, the zoom knob and the control type. Never worn alone. |
-| Pill | `chipPill` | A Status value. The rounded one, reserved so a status reads apart at a glance. |
-| Label | `chipLabel` | A Select or Multi-Select option — the pill squared off. |
-| Context | `chipContext` | A Space a Context names. Label's geometry with more room and a neutral fill, the color moving to the border and the text. |
-| Capsule | `chipCapsule` | A status shown as its glyph alone, with no label beside it. |
-| Box | `chipBox` | A checkbox, and a status wearing the checkbox look. |
-| File | `chipFile` | A File property's value. Label's box drawn at the quaternary label tone over no fill — the empty middle says it names a file rather than holding a color. |
-| Plain | `chipPlain` | A file or folder named inside a FIELD. No fill and no border: a name inside a field is the field's content, and a box around it would be a box in a box. |
-
-A chip's color is assigned, and two shapes take none. Context paints its own neutral ground; File
-and Plain paint none at all, so both keep `--chip-fill` transparent — the melt twin behind a
-removable chip has to paint whatever is actually behind the label, and for these that is the row.
+| Title | Token | Use Cases |
+| --- | -- | ---- |
+| Base | `chipBase` | Base styling for all chips. |
+| Pill | `chipPill` | A status' default chip style. |
+| Label | `chipLabel` | Standard rectangular base style; used in Select, Multi-Select, Context, File, and other label-based glyphs.  |
+| Context | `chipContext` | Spaces and Contexts; uses `chipLabel` with an icon + space-specific colored tint. |
+| Capsule | `chipCapsule` | Compact icon-only `chipPill` variant; an option for Status properties. |
+| Checkbox | `chipBox` | Multi-use checkboxes.  |
+| File | `chipFile` | Files or directories; `chipLabel` with type-specific icon. |
 
 #### Components
 
-The house components — the ones a surface reaches for rather than assembling. Each is listed with
-what it is and where it lives; the entries here are the roster, and a component earns its own
-section as its behavior grows past a line.
-
 **SOURCE:** `Pommora/src/renderer/src/design-system/components/`
 
-| Title | Source | What it is |
+| Title | Source | Use Cases |
 | --- | --- | --- |
-| PathField | `PathField.tsx` | A folder path, and the two ways to change one. At rest it reads the stored path as a run of segments; a click hands over the raw text, since a path is typed as a path; a trailing glyph opens the folder dialog. Both halves commit through the same caller, so a hand-typed folder is refused for exactly the reasons a picked one is. It sizes to the path it holds and gives way when its row runs out, at which point the run's own fade eclipses the head. Worn by the Default Asset Directory setting and by a File property's Directory. |
+| PathField | `PathField.tsx` | Input field for directories and path selections. |
+| DualSwitch | `Switches/` - `DualSwitch` | Booleans; shared Switch shape with a sliding glass segment.  |
+| ColorSwatch | `Switches/` - `ColorSwatch` | Color-selections; re-uses the `Switch` shape.  |
+| Slider | `Slider/` | Sliding number selection.  |
 
 #### Geometry
 
@@ -284,7 +275,7 @@ Which tier each surface wears, and the two menu shells built on the pane.
 
 The reusable pieces mirror the Figma library and consume semantic tokens only; a component's own behavior lives in its spec.
 
-- **Switches and toggles** — the Switch wears the checkbox look at control scale with one disabled dim (`--state-inactive`) and carries its own size behind `--switch-zoom`, so a surface retunes it by setting that var rather than wrapping it; dual-option toggles are always switches or the toggleable double-chevron, never dropdown pickers.
+- **Dual-option toggles** are always switches or the toggleable double-chevron, never dropdown pickers.
 - **Chevrons and twisties** — disclosure glyphs ride the fold-chevron mask tokens (`--fold-chevron-mask`, `--code-chevron-mask` — inline SVG masks bridged from theme-vars) at the tertiary label tone, stepping by the disclosure indent.
 - **The drag grip** — the six-dot glyph is one masked asset (`--grip-glyph`).
 - **The ActionBand** (`Detail/ActionBand.css.ts`) is the shared home for toolbar-row affordances any surface mounts — ViewSegments first, plus the hover-revealed settings button; a segment's collapsible title rides Segmented-Controls' `labelSlot`.

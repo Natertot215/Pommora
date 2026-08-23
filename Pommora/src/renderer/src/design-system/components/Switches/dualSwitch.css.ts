@@ -13,13 +13,12 @@ const control = 'var(--label-control)' // knob fill + tick glyphs
  * in the real liquid glass (GlassControls).
  */
 export const track = style({
-  // THE switch-size knob. The component owns its scale so no consumer has to wrap it — every
-  // surface but Cards wanted the same step down, and each was rolling its own zoom to get there.
-  zoom: 'var(--switch-zoom, 0.8)',
   position: 'relative',
-  width: '54px',
-  height: '24px',
-  borderRadius: '12px',
+  // The Figma box at the one size every surface reads it: stated in px rather than scaled to, so a
+  // measurement here is the measurement on screen and nothing downstream has a factor to apply.
+  width: '43px',
+  height: '19px',
+  borderRadius: '10px',
   border: '1px solid var(--label-secondary)',
   background: c.fill.quinary,
   padding: 0,
@@ -39,14 +38,18 @@ export const knob = style({
   display: 'flex', // drops the inline-block baseline descender so translateY centers the glass exactly
   transform: 'translateY(-50%)',
   transition: `transform ${ease}`,
-  selectors: { [`${trackOn} &`]: { transform: 'translate(22px, -50%)' } },
+  selectors: { [`${trackOn} &`]: { transform: 'translate(16px, -50%)' } },
 })
+
+/** The knob's corner, read by the fill AND by the glass wrapping it — the two are one edge, and
+ *  stating it twice is what let a resize move one of them alone. */
+export const KNOB_RADIUS = 7
 
 export const knobFill = style({
   display: 'block',
-  width: '26px',
-  height: '18px',
-  borderRadius: '9px',
+  width: '21px',
+  height: '14px',
+  borderRadius: `${KNOB_RADIUS}px`,
   background: control,
 })
 
@@ -61,10 +64,10 @@ const tickBase = style({
 export const tickLine = style([
   tickBase,
   {
-    left: '13px',
+    left: '10px',
     transform: 'translate(-50%, -50%)',
     width: '2px',
-    height: '10px',
+    height: '8px',
     background: control,
     opacity: 0,
     selectors: { [`${trackOn} &`]: { opacity: 1 } },
@@ -74,11 +77,11 @@ export const tickLine = style([
 export const tickCircle = style([
   tickBase,
   {
-    right: '10px',
+    right: '8px',
     transform: 'translateY(-50%)',
-    width: '6px',
-    height: '6px',
-    border: `1.5px solid ${control}`,
+    width: '5px',
+    height: '5px',
+    border: `1px solid ${control}`,
     opacity: 1,
     selectors: { [`${trackOn} &`]: { opacity: 0 } },
   },

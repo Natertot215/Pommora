@@ -6,15 +6,23 @@ import {
   embedZoom,
   viewEmbedZoom,
 } from '@shared/types'
+import type { CellKey } from '@shared/theme'
 import { chipColorFor } from './tokens/colorMap'
 import { cellColor, checkboxTint } from './tokens/ramp'
 
-/** A color setting resolves to its own cell, or defers to whatever it inherits — the sentinel and
- *  the absent key mean the same thing, so one helper serves every one of them. */
-function settingColorCss(setting: unknown, inherit: string): string {
-  if (typeof setting !== 'string' || setting === 'accent' || setting === 'system') return inherit
-  const key = chipColorFor(setting)
-  return key === 'default' ? inherit : cellColor(key)
+/** The ramp cell a color setting names, or null when it defers. Every sentinel — `accent`,
+ *  `system`, `default` — and the absent key alike read as no cell, which `chipColorFor` already
+ *  answers for: naming them again here would be a second roster to keep in step with the first. */
+function settingCell(setting: unknown): CellKey | null {
+  const key = typeof setting === 'string' ? chipColorFor(setting) : 'default'
+  return key === 'default' ? null : key
+}
+
+/** A color setting as CSS: its own cell, or whatever it inherits — `null` for a setting whose
+ *  deferral is the var's ABSENCE rather than a copy of what it would inherit. */
+function settingColorCss<I extends string | null>(setting: unknown, inherit: I): string | I {
+  const key = settingCell(setting)
+  return key === null ? inherit : cellColor(key)
 }
 
 /** What one key writes to the root element. A `null` REMOVES the var rather than setting it, for a
@@ -26,8 +34,8 @@ type VarWriter = (value: unknown) => Record<string, string | null>
  *  arrives with the darkness offset that keeps it dark enough and the outline it borrows — a grey
  *  cell has no chroma to draw one from, and painted raw its dark end is the page it sits on. */
 const checkboxVars: VarWriter = (value) => {
-  const key = typeof value === 'string' && value !== 'accent' ? chipColorFor(value) : 'default'
-  if (key === 'default')
+  const key = settingCell(value)
+  if (key === null)
     return { '--checkbox-fill': null, '--checkbox-border': null, '--checkbox-mark': null }
   const { background, borderColor, color } = checkboxTint(key)
   return {
@@ -51,6 +59,9 @@ const ROOT_VARS: Partial<Record<keyof Personalization, VarWriter>> = {
   externalLinkColor: (v) => ({ '--link': settingColorCss(v, 'var(--system-accent)') }),
   checkboxColor: checkboxVars,
   highlightColor: (v) => ({ '--highlight': settingColorCss(v, 'var(--accent)') }),
+  // Cleared REMOVES `--code` rather than restating the theme's red: the stylesheet declares it at
+  // :root, so an absent inline var is what lets the theme keep answering as it moves.
+  codeColor: (v) => ({ '--code': settingColorCss(v, null) }),
 }
 
 /** The knobs that render as a root class toggled by a boolean — a new one is an entry here. */

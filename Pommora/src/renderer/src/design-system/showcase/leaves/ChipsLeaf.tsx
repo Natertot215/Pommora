@@ -9,7 +9,7 @@ import {
   chipColor,
   chipLabelWrap,
 } from '@renderer/design-system/tokens'
-import { Switch } from '@renderer/design-system/components/Switches/Switch'
+import { DualSwitch } from '@renderer/design-system/components/Switches/DualSwitch'
 import { Icon } from '@renderer/design-system/symbols'
 import { SortableZone, useDragItem, reorder } from '@renderer/design-system/interactions/drag'
 import type { ChipColorName } from '@renderer/design-system/tokens/chip.css'
@@ -160,7 +160,7 @@ function SwitchDemo({ color }: { color: ChipColorName }): React.JSX.Element {
       title={color}
       style={{ '--accent': solid } as React.CSSProperties}
     >
-      <Switch checked={on} onChange={setOn} ariaLabel={color} />
+      <DualSwitch checked={on} onChange={setOn} ariaLabel={color} />
     </span>
   )
 }

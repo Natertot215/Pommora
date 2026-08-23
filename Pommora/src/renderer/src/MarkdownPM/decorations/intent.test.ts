@@ -6,6 +6,7 @@ import {
   decorationsFor,
   docLineIntents,
   NO_CARET,
+  codeBlockTextAt,
   scanDoc,
   tokenIntents,
   type DecoIntent,
@@ -312,9 +313,7 @@ describe('decoration intents', () => {
     expect(inContent.filter((d) => d.kind === 'hide')).toHaveLength(1)
     const onOpen = decorationsFor(t, tokenize(t), new Set(), 2) // caret on the ```js line
     expect(onOpen.filter((d) => d.kind === 'hide')).toHaveLength(0)
-    expect(
-      onOpen.filter((d) => d.kind === 'lineWidget' && d.className === 'md-cb-lang'),
-    ).toHaveLength(0)
+    expect(onOpen.filter((d) => d.kind === 'codeTag')).toHaveLength(0)
   })
 
   it('an indented typed fence hides only its info word — never its own backticks', () => {
@@ -322,24 +321,53 @@ describe('decoration intents', () => {
     const intents = decorationsFor(t, tokenize(t), new Set(), 0) // caret on the list line
     const hides = intents.filter((d): d is Extract<typeof d, { kind: 'hide' }> => d.kind === 'hide')
     expect(hides.map((h) => t.slice(h.from, h.to))).toEqual(['yaml'])
-    const lang = intents.find((d) => d.kind === 'lineWidget' && d.className === 'md-cb-lang')
+    const lang = intents.find((d) => d.kind === 'codeTag')
     expect(lang && 'from' in lang ? lang.from : -1).toBe(t.indexOf('yaml'))
   })
 
-  it('a typed fence wears its inline glyph at the info word; a bare fence wears none', () => {
+  it('a typed fence names its language; a bare one still carries the tag, unnamed', () => {
     const t = 'p\n```yaml\nkey: 1\n```'
-    const glyphs = decorationsFor(t, tokenize(t), new Set(), 0).filter(
-      (d): d is Extract<typeof d, { kind: 'lineWidget' }> => d.kind === 'lineWidget',
+    const tags = decorationsFor(t, tokenize(t), new Set(), 0).filter(
+      (d): d is Extract<typeof d, { kind: 'codeTag' }> => d.kind === 'codeTag',
     )
-    const lang = glyphs.find((g) => g.className === 'md-cb-lang')
     // The language's own name, not the word that opened it — `yml` and `yaml` are both YAML.
-    expect(lang?.text).toBe('YAML')
-    expect(lang?.from).toBe(t.indexOf('yaml')) // in-line, right where the info word sits
+    expect(tags[0]?.name).toBe('YAML')
+    expect(tags[0]?.from).toBe(t.indexOf('yaml')) // in-line, right where the info word sits
+  })
+
+  // Every block can be copied, so every block carries the tag, named or not.
+  it('a bare fence carries an unnamed tag and hides nothing', () => {
     const bare = 'p\n```\nx\n```'
-    const none = decorationsFor(bare, tokenize(bare), new Set(), 0).filter(
-      (d) => d.kind === 'lineWidget' && d.className === 'md-cb-lang',
+    const intents = decorationsFor(bare, tokenize(bare), new Set(), 0)
+    const tags = intents.filter(
+      (d): d is Extract<typeof d, { kind: 'codeTag' }> => d.kind === 'codeTag',
     )
-    expect(none).toHaveLength(0)
+    expect(tags).toHaveLength(1)
+    expect(tags[0].name).toBeUndefined()
+    expect(intents.filter((d) => d.kind === 'hide')).toHaveLength(0)
+  })
+
+  // A word no language answers to keeps its raw text, and takes an unnamed tag beside it.
+  it('an unrecognized info word keeps its text and takes an unnamed tag', () => {
+    const t = 'p\n```foobar\nx\n```'
+    const intents = decorationsFor(t, tokenize(t), new Set(), 0)
+    const tag = intents.find(
+      (d): d is Extract<typeof d, { kind: 'codeTag' }> => d.kind === 'codeTag',
+    )
+    expect(tag?.name).toBeUndefined()
+    expect(intents.filter((d) => d.kind === 'hide')).toHaveLength(0)
+  })
+
+  it('the tag reads back the block it sits on, fences off and quote prefix stripped', () => {
+    const plain = '```js\nconst a = 1\n\nconst b = 2\n```\nafter'
+    expect(codeBlockTextAt(scanDoc(plain), 2)).toBe('const a = 1\n\nconst b = 2')
+
+    // A quoted block gives back what it holds, not the `> ` the quote wrapped it in.
+    const quoted = '> ```py\n> x = 1\n> y = 2\n> ```'
+    expect(codeBlockTextAt(scanDoc(quoted), 4)).toBe('x = 1\ny = 2')
+
+    // An empty block has nothing to hand over, and says so rather than handing back its fences.
+    expect(codeBlockTextAt(scanDoc('```\n```'), 1)).toBe('')
   })
 
   it('content lines carry their 1-based line-count chrome; fence lines carry none', () => {

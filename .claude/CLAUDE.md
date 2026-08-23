@@ -40,7 +40,7 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 - **Never do expensive work "on every X," never "reload the entire Y."** No O(N) / allocating / layout-reading work on a high-frequency trigger, and no full-nexus rebuild / re-walk when an incremental or cached update works — it’s *the* lag source.
 - **Placeholders** never display build-status or meta text — an unbuilt surface is simply blank.
 - **Ask before designing.** Stop to disclose assumptions and clarify direction before any design or interaction-based decision — don't guess at how something looks or behaves; the codebase usually describes something that already exists. Any in-flight decisions must be disclosed as they’re being made.
-- **Tokens must** be pulled from their sources in `/design-system`— never hand-roll tokens without explicit direction; dual-option toggles must always use either switches or double-chevron toggles.
+- **Tokens must** be pulled from their sources in `/design-system`— never hand-roll tokens without explicit direction; what you're looking for almost *always* already exists. 
 - **Most recent wins** is the primary philosophy around handling concurrency, cross-device, and external editing conflicts.
 
 ### Locked Decisions

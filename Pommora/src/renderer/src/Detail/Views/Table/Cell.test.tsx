@@ -13,7 +13,7 @@ import { propsAtRoot } from '@renderer/testing/propsAtRoot'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
-// The Switch's GlassSegment (liquid glass) measures itself; jsdom has no ResizeObserver.
+// The DualSwitch's GlassSegment (liquid glass) measures itself; jsdom has no ResizeObserver.
 class ResizeObserverStub {
   observe(): void {}
   unobserve(): void {}
@@ -110,7 +110,7 @@ describe('status looks', () => {
 })
 
 describe('checkbox looks', () => {
-  it('switch renders the real Switch, checked from the value', () => {
+  it('switch renders the real DualSwitch, checked from the value', () => {
     mount(rowWith({ prop_done: true }), 'prop_done', { look: 'switch' })
     const sw = host.querySelector('[role="switch"]')
     expect(sw).toBeTruthy()

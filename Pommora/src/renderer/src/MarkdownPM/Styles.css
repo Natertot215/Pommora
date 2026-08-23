@@ -1062,6 +1062,8 @@
   --cb-size: 0.85em;
   --cb-inset: 0px;
   --cb-pad: 12px;
+  --cb-copy-reach: 24em; /* KNOB — how far left and down the copy mark arms from */
+  --cb-mark-pad: 4px; /* KNOB — the chip the hover veil paints behind the mark */
   --cb-bg: var(--fill-secondary);
   --box-fill: var(--cb-bg);
   --box-inset: var(--cb-inset);
@@ -1132,18 +1134,104 @@
   color: var(--label-control);
   /* The line-count hanging indent inherits — reset it or the chrome slides left by the zone. */
   text-indent: 0;
-  pointer-events: none;
   user-select: none;
+  cursor: default;
+}
+/* THE MARK SLOT — one fixed square the three marks stack in, so which of them shows is an opacity
+   and never a reflow. A language without a mark still reserves it, which is what keeps every block's
+   name the same distance from the block's right edge. */
+.mdpm-editor .md-cb .md-cb-lang .md-cb-slot {
+  position: relative;
+  flex: none;
+  width: 1.15em; /* KNOB — the mark's size against its name */
+  height: 1.15em;
+}
+/* The veil paints on a pseudo inset OUT of the slot rather than on the slot itself: the slot is the
+   mark's own bounding box, which the mark fills, leaving a 2.5% tint nothing to tint. Out here it
+   reads as a chip behind the mark, and costs the words beside it no reflow. */
+.mdpm-editor .md-cb .md-cb-lang .md-cb-slot::before {
+  content: "";
+  position: absolute;
+  inset: calc(-1 * var(--cb-mark-pad));
+  border-radius: var(--md-box-radius);
+  background: var(--state-hover);
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-standard);
+}
+.mdpm-editor .md-cb .md-cb-lang .md-cb-slot:hover::before {
+  opacity: 1;
 }
 .mdpm-editor .md-cb .md-cb-lang svg {
   /* Block, so the glyph brings no inline baseline strut of its own — as an inline box it sits on
      the text baseline and rides a few pixels low of the words it labels, which centering the flex
      items cannot correct. */
   display: block;
-  flex: none;
-  width: 1.15em; /* KNOB — the mark's size against its name */
-  height: 1.15em;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   color: var(--label-secondary);
+  opacity: 0;
+  transition: opacity var(--duration-slow) var(--ease-standard);
+}
+/* THE COPY AFFORDANCE — the tag is a button as much as a label, so every block can be taken whole
+   without selecting it. A language's own mark rests; the copy mark takes the slot under the pointer;
+   the check answers a press. One rule whatever the block named — a block naming none rests as
+   nothing and reveals the same way. */
+.mdpm-editor .md-cb .md-cb-lang .md-cb-mark,
+.mdpm-editor .md-cb .md-cb-lang:hover .md-cb-copy {
+  opacity: 1;
+}
+.mdpm-editor .md-cb .md-cb-lang:hover .md-cb-mark {
+  opacity: 0;
+}
+.mdpm-editor .md-cb .md-cb-lang.is-copied .md-cb-mark,
+.mdpm-editor .md-cb .md-cb-lang.is-copied .md-cb-copy {
+  opacity: 0;
+}
+.mdpm-editor .md-cb .md-cb-lang.is-copied .md-cb-done {
+  opacity: 1;
+  color: var(--accent);
+}
+/* A tag with nothing to say carries no word — and no gap where one would have been. It says
+   "Copied" for a beat after a press, which is the one thing every tag has to say. */
+.mdpm-editor .md-cb .md-cb-lang .md-cb-name:empty {
+  display: none;
+}
+/* The copy mark reads a step under a language's own — it is an affordance rather than a label. Its
+   slot takes the standard hover veil, so the mark answers the pointer only when the pointer is
+   actually on it and not merely somewhere in the arc that armed it. */
+.mdpm-editor .md-cb .md-cb-lang .md-cb-copy {
+  color: var(--label-tertiary);
+}
+/* The arc arms the mark; it doesn't advertise itself. Only the two things a press actually lands on
+   — the mark and the word — say so under the pointer. */
+.mdpm-editor .md-cb .md-cb-lang .md-cb-slot,
+.mdpm-editor .md-cb .md-cb-lang .md-cb-name {
+  cursor: pointer;
+}
+
+/* THE REACH — the tag is a few characters in the corner, so the copy mark arms from a quarter-disc
+   reaching back into the block rather than from the glyph alone. Snug at the top and right where the
+   tag already is; the radius is what makes the far corner an arc instead of a square claim on the
+   block. It answers a press as the marks do, which is the cost of it: text under the arc selects by
+   dragging from outside it.
+
+   Every box line isolates, so the arc would otherwise be painted over by each code line under it —
+   the fence line is lifted a step above its siblings for as long as it is carrying a tag, which is
+   the only thing of its that ever reaches past its own band. */
+.mdpm-editor .cm-line.md-cb-first:has(.md-cb-lang) {
+  z-index: 1;
+}
+.mdpm-editor .md-cb .md-cb-lang .md-cb-reach {
+  position: absolute;
+  top: calc(-1 * var(--cb-pad));
+  right: calc(-1 * var(--cb-pad));
+  left: calc(-1 * var(--cb-copy-reach));
+  bottom: calc(-1 * var(--cb-copy-reach));
+  border-bottom-left-radius: var(--cb-copy-reach);
+  /* It stands in for the code it covers, so it reads as that code rather than as a control. */
+  cursor: text;
 }
 /* LINE COUNT — the "Show Line Count In Code Blocks" setting. Numbers are widget chrome sitting at
    the line's own first-character position — the block's padding is the only left inset — in the

@@ -1,19 +1,11 @@
 import type { CSSProperties } from 'react'
-import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
-import { solidColorCss } from '@renderer/Detail/Views/Table/solidColor'
-import type { ChipColorName } from '@renderer/design-system/tokens/chip.css'
-import { Switch } from '@renderer/design-system/components/Switches/Switch'
+import { resolveColor } from '@renderer/Detail/Views/Table/solidColor'
+import { DualSwitch } from '@renderer/design-system/components/Switches/DualSwitch'
 import type { LinkConfig, LinkDisplay } from '@shared/properties'
-import { ColorSwatchField } from './ColorPicker'
+import { ColorSwatch } from '@renderer/design-system/components/Switches/ColorSwatch'
 import { PickerControl } from './PickerControl'
 import { LINK_FORMAT_OPTIONS } from './LinkFormat'
 import * as s from './settingsPane.css'
-
-/** Shared with the URL cell's own render via solidColorCss, so the two stay in sync. */
-function resolveLinkColor(color: string | undefined): { name: ChipColorName; css: string } {
-  if (!color) return { name: 'accent', css: solidColorCss(undefined) }
-  return { name: chipColorFor(color), css: solidColorCss(color) }
-}
 
 /**
  * The chosen color themes the pane's own Switches via a scoped `--accent`. The alias (a per-value
@@ -30,13 +22,13 @@ export function URLEditor({
   color: string | undefined
   onSetConfig: (patch: LinkConfig) => void
 }): React.JSX.Element {
-  const link = resolveLinkColor(color)
+  const link = resolveColor(color, 'var(--system-accent)')
 
   return (
     <div className={s.configEditor} style={{ '--accent': link.css } as CSSProperties}>
       <div className={s.configRow}>
         <span className={s.configLabel}>Underline</span>
-        <Switch
+        <DualSwitch
           checked={underline}
           onChange={(v) => onSetConfig({ link_underline: v })}
           ariaLabel="Underline links"
@@ -44,7 +36,7 @@ export function URLEditor({
       </div>
       <div className={s.configRow}>
         <span className={s.configLabel}>Color</span>
-        <ColorSwatchField
+        <ColorSwatch
           label="Color"
           selected={link.name}
           css={link.css}

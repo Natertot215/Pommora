@@ -1,0 +1,13 @@
+#!/bin/sh
+# Refreshes the line ledger's stored numbers and the page that reads them, once per commit.
+#
+# The logic lives in loc.py; this is the shim git calls. Quiet during a rebase or a merge
+# resolution — those replay many commits and only the last one's numbers survive.
+git_dir=$(git rev-parse --git-dir)
+if [ -d "$git_dir/rebase-merge" ] || [ -d "$git_dir/rebase-apply" ] || [ -f "$git_dir/MERGE_HEAD" ]; then
+  exit 0
+fi
+
+root=$(git rev-parse --show-toplevel)
+python3 "$root/.claude/scripts/loc.py" --update || echo "line ledger: skipped (loc.py --update failed)"
+exit 0
