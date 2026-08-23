@@ -8,10 +8,8 @@ import type { FilterRule, SavedView } from '@shared/views'
 import { Icon } from '@renderer/design-system/symbols'
 import { SegmentRun } from '@renderer/design-system/components/SegmentRun/SegmentRun'
 import * as sr from '@renderer/design-system/components/SegmentRun/segmentRun.css'
-import { Chip, type ChipShape, chipShapeForType } from '@renderer/Components/Chip'
 import { EntityIcon } from '@renderer/Components/EntityIcon'
-import { ContextChip } from '@renderer/Components/ContextChip'
-import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
+import { labelColorFor } from '@renderer/design-system/tokens/colorMap'
 import {
   DisclosureRow,
   MenuBottomRow,
@@ -62,6 +60,7 @@ import {
 } from './filterModel'
 import * as gp from './groupingPane.css'
 import * as fp from './filterPane.css'
+import { ContextChip, Label, optionShapeFor, type LabelShape } from '@renderer/design-system/labels'
 
 const MATCH_OPTIONS: PickerChoice<MatchMode>[] = [
   { value: 'all', label: 'All' },
@@ -373,7 +372,7 @@ function ChipsField({
   values: string[]
   options: ContextOption[]
   isContext: boolean
-  chipShape: ChipShape
+  chipShape: LabelShape
   onCommit: (next: string[]) => void
 }): React.JSX.Element {
   const [open, setOpen] = useState(false)
@@ -392,16 +391,16 @@ function ChipsField({
               return isContext ? (
                 <ContextChip
                   key={v}
-                  color={chipColorFor(o?.color)}
+                  color={labelColorFor(o?.color)}
                   title={o?.label ?? v}
                   {...(o?.icon ? { icon: o.icon } : {})}
                   onRemove={() => toggle(v)}
                 />
               ) : (
-                <Chip
+                <Label
                   key={v}
-                  color={chipColorFor(o?.color)}
-                  label={o?.label ?? v}
+                  color={labelColorFor(o?.color)}
+                  text={o?.label ?? v}
                   shape={chipShape}
                   onRemove={() => toggle(v)}
                 />
@@ -422,9 +421,9 @@ function ChipsField({
                   onClick={() => toggle(o.value)}
                 >
                   {isContext ? (
-                    <ContextChip color={chipColorFor(o.color)} title={o.label} />
+                    <ContextChip color={labelColorFor(o.color)} title={o.label} />
                   ) : (
-                    <Chip color={chipColorFor(o.color)} label={o.label} shape={chipShape} />
+                    <Label color={labelColorFor(o.color)} text={o.label} shape={chipShape} />
                   )}
                 </PickerOption>
               ))}
@@ -662,7 +661,7 @@ export function FilterPane({
           values={rule.values ?? []}
           options={options}
           isContext={isContext}
-          chipShape={chipShapeForType(type ?? 'select')}
+          chipShape={optionShapeFor(type ?? 'select')}
           onCommit={(values) => patch({ values })}
         />
       )

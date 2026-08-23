@@ -11,9 +11,9 @@ import {
   type GhostAnchor,
 } from '@renderer/Detail/Views/useGhostAnchor'
 import { cx } from '@renderer/design-system/cx'
-import { Chip, type ChipShape } from '../Chip'
 import { EditableInput } from '../EditableInput'
 import * as s from './settingsPane.css'
+import { Label, type LabelShape } from '@renderer/design-system/labels'
 
 // The table's grace: the slot sits flush under the list it joins, so a leave closes it immediately
 // and landing in the slot keeps it alive either way.
@@ -81,7 +81,7 @@ export function GhostOptionChip({
 }: {
   api: GhostAnchor
   anchorId: string
-  shape: ChipShape
+  shape: LabelShape
   onCreate: () => void
 }): React.JSX.Element | null {
   const ghost = api.ghost
@@ -101,10 +101,10 @@ export function GhostOptionChip({
           onCreate()
         }}
       >
-        <Chip
+        <Label
           shape={shape}
           color="default"
-          label="New Option"
+          text="New Option"
           className={cx(s.ghostChip, 'ghost-worn')}
         />
       </button>

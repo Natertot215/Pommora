@@ -11,7 +11,7 @@ import { footerLockAction } from '@renderer/design-system/components/menu/menu.c
 import { PointMenu } from '@renderer/design-system/components/PickerMenu'
 import { TINT_STEPS, tintAt } from '@renderer/design-system/tokens/tint'
 import { cellColor } from '@renderer/design-system/tokens/ramp'
-import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
+import { labelColorFor } from '@renderer/design-system/tokens/colorMap'
 import { useSession } from '../../store'
 import { findSpace } from '../Scope'
 import { IconPicker } from '../../Components/IconPicker'
@@ -33,7 +33,7 @@ export function SpaceSettingsContent({ id }: { id: string }): React.JSX.Element 
   const color = spaceColor(tree, id)
   if (!node) return null
 
-  const resolved = chipColorFor(color)
+  const resolved = labelColorFor(color)
   const solid = resolved === 'default' ? null : cellColor(resolved)
 
   return (

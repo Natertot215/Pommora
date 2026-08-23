@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import { chipBox, chipColor } from '@renderer/design-system/tokens'
+import { labelColor, shape } from '@renderer/design-system/labels'
 import { cx } from '@renderer/design-system/cx'
 import { Icon } from '@renderer/design-system/symbols'
 import { tint } from '@renderer/design-system/tokens/tint'
@@ -28,7 +28,7 @@ export function CheckboxGlyph({
 }): React.JSX.Element {
   return (
     <span
-      className={cx(chipBox, checked ? undefined : chipColor.default, className)}
+      className={cx(shape.box, checked ? undefined : labelColor.default, className)}
       style={checkboxBoxStyle(checked, color)}
     >
       {checked ? <Icon name="check" size="control" strokeWidth={3} /> : null}

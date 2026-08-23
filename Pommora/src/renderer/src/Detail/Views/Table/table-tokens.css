@@ -17,7 +17,7 @@
   --cell-padding-x: 12px;
   --cell-padding-y: 6px; /* drives row height */
   --cell-icon-gap: 6px; /* used by the title cell + group glyph */
-  --chips-gap: 4px; /* used by multi-select / relation cells */
+  --labels-gap: 4px; /* used by multi-select / relation cells */
   --row-indent: var(
     --disclosure-indent
   ); /* per-nesting-depth inset (Set within Set, group members) — the shared disclosure step */

@@ -1,11 +1,11 @@
 import { useState, type ReactNode } from 'react'
-import { ChipsLeaf } from './ChipsLeaf'
+import { LabelsLeaf } from './LabelsLeaf'
 import { MenuLeaf } from './MenuLeaf'
 import { CalendarPicker } from '@renderer/design-system/components/CalendarPicker/CalendarPicker'
 import { PickerMenu, PickerOption } from '@renderer/design-system/components/PickerMenu/PickerMenu'
 import { MenuSurface } from '@renderer/design-system/components/menu'
-import { Chip } from '@renderer/Components/Chip'
 import { condensedDate, formatDate } from '@renderer/Detail/Views/PropertyEditing/formatValue'
+import { Label } from '@renderer/design-system/labels'
 
 /** A button that pops the REAL component beneath it — the popup components demo as they
  *  actually behave, never as stubs. */
@@ -63,7 +63,7 @@ export function ComponentsLeaf(): React.JSX.Element {
             <PickerMenu solid>
               {PICKER_LABELS.map((o, i) => (
                 <PickerOption key={o.label} selected={i === 0} onClick={() => {}}>
-                  <Chip color={o.color} label={o.label} shape="label" />
+                  <Label color={o.color} text={o.label} shape="tag" />
                 </PickerOption>
               ))}
             </PickerMenu>
@@ -84,7 +84,7 @@ export function ComponentsLeaf(): React.JSX.Element {
           </PopupButton>
         </div>
       </section>
-      <ChipsLeaf />
+      <LabelsLeaf />
       <MenuLeaf />
     </div>
   )

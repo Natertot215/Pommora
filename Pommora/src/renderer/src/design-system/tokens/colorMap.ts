@@ -7,7 +7,7 @@ import { ANCHOR_CELLS } from './ramp'
 
 const ANCHORS: Readonly<Record<string, CellKey>> = ANCHOR_CELLS
 
-export function chipColorFor(color: string | undefined): CellKey | 'default' {
+export function labelColorFor(color: string | undefined): CellKey | 'default' {
   if (!color) return 'default'
   const anchor = ANCHORS[color]
   if (anchor) return anchor

@@ -43,8 +43,7 @@ import type { Band } from '../../Detail/Views/bandDndModel'
 import { reparentFsOrder, structuralOrderAfterDrop } from '../../Detail/Views/bandDndModel'
 import { nextOrder } from '@renderer/Sidebar/sidebarDndModel'
 import { EntityIcon } from '@renderer/Components/EntityIcon'
-import { Chip, chipShapeForType } from '../Chip'
-import { chipColorFor } from '../../design-system/tokens/colorMap'
+import { labelColorFor } from '../../design-system/tokens/colorMap'
 import { cx } from '../../design-system/cx'
 import { useSession } from '../../store'
 import { PickerControl, type PickerChoice } from './PickerControl'
@@ -53,6 +52,7 @@ import { propertyTypeIconName } from './PropertyTypes'
 import { useGroupingListDrag, type GroupingDrop } from './groupingDnd'
 import { hiddenRow } from './settingsPane.css'
 import * as gp from './groupingPane.css'
+import { Label, optionShapeFor } from '@renderer/design-system/labels'
 
 /** Checkbox is deliberately absent — the pipeline still renders it from a foreign sidecar; the
  *  pane never authors it. */
@@ -411,7 +411,7 @@ export function PropertyPreview({
   const type = def.type === 'status' ? 'status' : 'select'
   const chip = (o: { value: string; label: string; color?: string }): React.JSX.Element => (
     <div key={o.value} className={cx(gp.chipRow, hiddenSet?.has(o.value) && hiddenRow)}>
-      <Chip color={chipColorFor(o.color)} label={o.label} shape={chipShapeForType(type)} />
+      <Label color={labelColorFor(o.color)} text={o.label} shape={optionShapeFor(type)} />
       {rowEye(o.label, o.value, { hiddenSet, onToggleHidden })}
     </div>
   )
@@ -486,7 +486,7 @@ export function CustomList({
               dnd.draggingId === v && gp.ghosted,
             )}
           >
-            <Chip color={chipColorFor(o.color)} label={o.label} shape={chipShapeForType(type)} />
+            <Label color={labelColorFor(o.color)} text={o.label} shape={optionShapeFor(type)} />
             {rowEye(o.label, v, { hiddenSet, onToggleHidden })}
           </div>,
         ]
@@ -715,7 +715,7 @@ function LocationHierarchy({
           dnd.draggingId === id && gp.ghosted,
         )}
       >
-        <Chip color={chipColorFor(o.color)} label={o.label} shape={chipShapeForType(subType)} />
+        <Label color={labelColorFor(o.color)} text={o.label} shape={optionShapeFor(subType)} />
         {rowEye(o.label, subHiddenKey(o.value), { hiddenSet, onToggleHidden })}
       </div>
     )
