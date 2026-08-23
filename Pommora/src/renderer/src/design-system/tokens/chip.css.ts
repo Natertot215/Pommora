@@ -112,8 +112,8 @@ export const chipPlain = style([
   },
 ])
 
-/** chip-file — what a FILE PROPERTY'S VALUE wears: chip-label's geometry and outline weight, drawn
- *  at the tertiary label tone over no fill at all. A file value stands beside other values in a
+/** chip-file — what a FILE PROPERTY'S VALUE wears: chip-label's geometry and outline weight, the
+ *  border at the quaternary label tone over no fill at all. A file value stands beside other values in a
  *  cell, so it takes a box the way they do; the empty middle is what says the box names a file
  *  rather than holding a color. The `&&` beats `chipColor`, which a caller has no business
  *  assigning here — a file carries no color of its own. `--chip-fill` stays transparent for the

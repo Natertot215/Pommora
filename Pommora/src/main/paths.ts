@@ -53,8 +53,7 @@ export function assetsDir(root: string, assetDir: string): string {
 /** The asset root a property's files land under — the configured root, or a subfolder named
  *  beneath it. An absent subfolder resolves to the root itself, so nothing downstream has to
  *  special-case one. It composes only; the destination is REFUSED at `adoptFile`, which is where
- *  the write happens — `rootSegs` drops empty segments but not `..`, and `join` collapses those
- *  straight past the root. */
+ *  the write happens. */
 export function assetSubRoot(assetDir: string, subfolder: string | undefined): string {
   return subfolder ? `${assetDir}/${subfolder}` : assetDir
 }

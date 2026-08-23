@@ -12,8 +12,6 @@ export interface SegmentEntry {
   icon?: React.ReactNode | false
   /** Opts this entry into the hover-×. It removes THIS entry, so the handler owns what that means. */
   onRemove?: () => void
-  /** The entry names something that isn't there. It still renders, reading as naming nothing. */
-  unresolved?: boolean
 }
 
 /** The divided run. `nested` says what the entries are to each other, which is what the separator
@@ -50,7 +48,6 @@ export function SegmentRun({
               // deriving one per segment.
               icon={e.icon ?? (nested ? false : undefined)}
               {...(e.onRemove ? { onRemove: e.onRemove } : {})}
-              {...(e.unresolved ? { unresolved: true } : {})}
             />
           </span>
         </Fragment>

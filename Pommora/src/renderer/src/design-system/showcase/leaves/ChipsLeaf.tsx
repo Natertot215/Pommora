@@ -10,6 +10,8 @@ import {
   chipLabelWrap,
 } from '@renderer/design-system/tokens'
 import { DualSwitch } from '@renderer/design-system/components/Switches/DualSwitch'
+import { FileChip } from '@renderer/design-system/components/FileChip'
+import { FileLabel } from '@renderer/design-system/components/FileLabel'
 import { Icon } from '@renderer/design-system/symbols'
 import { SortableZone, useDragItem, reorder } from '@renderer/design-system/interactions/drag'
 import type { ChipColorName } from '@renderer/design-system/tokens/chip.css'
@@ -182,6 +184,13 @@ function CheckboxDemo({ color }: { color: ChipColorName }): React.JSX.Element {
 // Components not yet built — they land as new leaves under the Components section.
 const PENDING = ['Button', 'Separator', 'Row']
 
+/** The two colorless shapes, which the shape rows can't show: those fan a shape across every chip
+ *  color, and a file carries none of its own — its name and its type glyph are the whole content. */
+const FILE_SHAPES: Array<{ label: string; content: ReactNode }> = [
+  { label: 'File · a file property’s value', content: <FileChip name="Q3 Report.pdf" /> },
+  { label: 'Plain · a name inside a field', content: <FileLabel name="Meeting Notes.md" /> },
+]
+
 export function ChipsLeaf(): React.JSX.Element {
   return (
     <div className="ds-leaf">
@@ -196,6 +205,12 @@ export function ChipsLeaf(): React.JSX.Element {
             <div className="ds-chip-row" key={shape.label}>
               <div className="ds-chip-rowlabel">{shape.label}</div>
               <ShapeRow rowId={shape.label} shape={shape.shape} content={shape.content} />
+            </div>
+          ))}
+          {FILE_SHAPES.map((s) => (
+            <div className="ds-chip-row" key={s.label}>
+              <div className="ds-chip-rowlabel">{s.label}</div>
+              <div className="ds-chip-row-items">{s.content}</div>
             </div>
           ))}
         </div>
