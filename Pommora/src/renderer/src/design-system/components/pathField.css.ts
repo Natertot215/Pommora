@@ -55,7 +55,10 @@ export const browse = style({
 export const input = style([
   text.body.standard,
   {
-    flex: '1 1 auto',
+    // Sized by its text, not by the browser's default 20-character box — the field is pinned to
+    // its at-rest width while editing, and the input widens it only when the path outgrows that.
+    fieldSizing: 'content',
+    flex: '1 0 auto',
     minWidth: 0,
     border: 'none',
     outline: 'none',

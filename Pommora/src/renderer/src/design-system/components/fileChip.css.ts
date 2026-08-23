@@ -1,5 +1,4 @@
-import { globalStyle, style } from '@vanilla-extract/css'
-import { chipLabelWrap } from '../tokens/chip.css'
+import { style } from '@vanilla-extract/css'
 import { vars as colorVars } from '../tokens/color.css'
 
 const c = colorVars.color
@@ -22,10 +21,3 @@ export const fileChipIcon = style({ color: c.label.secondary })
 /** The name answers to no file. It still renders — the value is on disk and has to be removable —
  *  but reads as naming nothing. */
 export const fileChipUnresolved = style({ opacity: 'var(--state-inactive)' })
-
-// The whole name, on the chip's own hover. A removable chip's label is pointer-inert — the melt
-// machinery's guard against a Chromium repaint defect — so it can never scroll its own text, and a
-// capped filename would be unreadable. Lifting the cap from the CHIP grows it instead, and the run
-// it sits in scrolls to reach it. Driven from the chip rather than the label for the same reason:
-// the label must never enter the hover chain that flips the ×-reveal.
-globalStyle(`${fileChip}:hover .${chipLabelWrap}`, { maxWidth: 'none' })

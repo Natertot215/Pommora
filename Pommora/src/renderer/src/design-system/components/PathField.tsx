@@ -24,6 +24,15 @@ export function PathField({
   onBrowse: () => void
 }): React.JSX.Element {
   const [draft, setDraft] = useState<string | null>(null)
+  // The width the field had at rest, pinned for the whole edit. The input's intrinsic width has
+  // nothing to do with the segments it replaces, so an unpinned swap re-flows the row on every
+  // click into the field. The input itself sizes to its text, so the field grows past the pin
+  // only when the typed path actually needs the room.
+  const restWidth = useRef(0)
+  const openEdit = (el: HTMLElement): void => {
+    restWidth.current = el.offsetWidth
+    setDraft(value)
+  }
   // A STABLE callback ref, so it runs when the input mounts and never again — which is what
   // select-on-open means. An effect keyed on the draft would re-select after every keystroke, and
   // the next character would replace the value; an inline callback ref re-runs per render and does
@@ -61,8 +70,9 @@ export function PathField({
       tabIndex={draft === null ? 0 : -1}
       aria-label={label}
       className={pf.pathField}
-      onClick={() => draft === null && setDraft(value)}
-      onKeyDown={onActivateKey(() => setDraft(value))}
+      style={draft === null ? undefined : { minWidth: restWidth.current }}
+      onClick={(e) => draft === null && openEdit(e.currentTarget)}
+      onKeyDown={(e) => onActivateKey(() => openEdit(e.currentTarget))(e)}
     >
       <Icon name="folder-closed" size="body" className={pf.leadIcon} />
       {draft === null ? (
