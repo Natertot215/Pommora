@@ -32,6 +32,7 @@ globalStyle(':root', {
     '--label-primary': colorVars.color.label.primary,
     '--label-secondary': colorVars.color.label.secondary,
     '--label-tertiary': colorVars.color.label.tertiary,
+    '--label-quaternary': colorVars.color.label.quaternary,
     '--label-control': colorVars.color.label.control,
     '--bg-window': colorVars.color.background.window,
     '--surface-primary': colorVars.color.surface.primary,
