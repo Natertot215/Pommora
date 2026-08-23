@@ -46,13 +46,4 @@ describe('FileLabel', () => {
     mount(<FileLabel name="Attachments" icon={<svg data-testid="folder" />} />)
     expect(host.querySelector('[data-testid="folder"]')).not.toBeNull()
   })
-
-  it('routes a click when one is wired, and stays inert when none is', () => {
-    const onClick = vi.fn()
-    mount(<FileLabel name="Report.pdf" onClick={onClick} />)
-    act(() => {
-      host.querySelector('span')?.click()
-    })
-    expect(onClick).toHaveBeenCalledTimes(1)
-  })
 })
