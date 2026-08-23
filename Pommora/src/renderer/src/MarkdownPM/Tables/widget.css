@@ -1,9 +1,12 @@
 /* The table's outer gap is PADDING, never a margin. A block widget answers CodeMirror with the box
    it measures, and a margin is outside that box — so the height model runs short by the gap for
    every table on the page, and a click below one lands on the wrong line by the accumulated amount.
-   The wrapper carries no border or fill, so the two spell the same space. */
+   The wrapper carries no border or fill, so the two spell the same space.
+
+   The distance itself is the one every boxed construct floats off its neighbours by, so a table
+   sitting between a quote and a code block reads at the same remove from each. */
 .mdpm-tbl-widget {
-  padding: 0.4em 0;
+  padding: var(--md-box-gap) 0;
 }
 
 .mdpm-tbl-wrap {
@@ -16,10 +19,15 @@
      scrollbar — growing the gutter keeps it inside, trading table width instead. */
   --gutter-right: max(var(--grip-gutter), var(--tbl-add-span));
   position: relative;
-  /* Top + left gutters reserve hoverable space for the grips INSIDE the wrap (a negative-margin gutter
-     hanging into the editor's chrome renders but can't be hovered — the chrome intercepts it). The right
-     gutter holds the column append strip. */
-  padding: var(--grip-gutter) var(--gutter-right) 0 var(--grip-gutter);
+  /* Left + right gutters reserve space INSIDE the wrap (a negative-margin gutter hanging into the
+     editor's chrome renders but can't be hovered — the chrome intercepts it): the left holds the row
+     grips, the right the column append strip.
+
+     The TOP reserves nothing. It held the grip's full height, which stacked on the widget's own
+     block gap and put a table four times further below the line above it than a quote or a code
+     block sits. The column grips live in that gap instead — the widget's padding is inside the
+     widget's box, so a band placed there is still hoverable. */
+  padding: 0 var(--gutter-right) 0 var(--grip-gutter);
 }
 
 .mdpm-tbl {
@@ -47,9 +55,17 @@
 .mdpm-tbl-dragging .mdpm-tbl-grip-zone {
   cursor: grabbing;
 }
+/* Seated in the widget's block gap, directly above the table rather than in a band of its own. */
 .mdpm-tbl-grip-col {
-  top: 0;
-  height: var(--grip-gutter);
+  top: calc(-1 * var(--md-box-gap));
+  height: var(--md-box-gap);
+}
+/* The reach the band itself is too thin to give. A pseudo-element takes no layout space, so the grip
+   stays as easy to hit as it was while the table sits where the other boxes do. */
+.mdpm-tbl-grip-col::before {
+  content: "";
+  position: absolute;
+  inset: calc(-1 * var(--grip-gutter)) 0 0;
 }
 .mdpm-tbl-grip-row {
   left: 0;
