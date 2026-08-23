@@ -3,6 +3,7 @@ import {
   chipPill,
   chipFile,
   chipLabel,
+  chipPlain,
   chipColor,
   chipLabelWrap,
   chipLabelBlur,
@@ -16,7 +17,7 @@ import { Icon } from '@renderer/design-system/symbols'
 import { cx } from '@renderer/design-system/cx'
 
 /** Context chips use their own shape (ContextChip's chip-context) — not part of this map. */
-const SHAPE = { pill: chipPill, label: chipLabel, file: chipFile } as const
+const SHAPE = { pill: chipPill, label: chipLabel, file: chipFile, plain: chipPlain } as const
 export type ChipShape = keyof typeof SHAPE
 
 /** The class a shape wears, for the surfaces that dress something to READ as a chip without being

@@ -489,7 +489,7 @@ export function PropertiesPane({
             directory={def.file_directory}
             onSetDirectory={(dir) => void saveFileDirectory(def.id, dir)}
             onBrowse={() => {
-              void window.nexus.chooseAssetDir('property').then((picked) => {
+              void window.nexus.chooseAssetDir('property', def.file_directory).then((picked) => {
                 if (picked.ok && picked.value !== null) void saveFileDirectory(def.id, picked.value)
               })
             }}

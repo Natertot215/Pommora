@@ -18,6 +18,9 @@ beforeEach(() => {
   ;(globalThis as { window?: unknown }).window = { nexus: { pickFile, adoptFile } }
   useSession.setState({
     assetMap: { files: { 'old.pdf': ['file-assets/Specs/Old.pdf'] }, version: 1 },
+    // A Directory is stored under the asset root, so the root has to be present for the join to
+    // be the thing under test rather than a no-op.
+    tree: { assetDirectory: 'file-assets' } as never,
   })
 })
 
@@ -69,7 +72,8 @@ describe('runFilePick', () => {
       held(['[[Old.pdf]]']),
       null,
     )
-    expect(pickFile).toHaveBeenCalledWith({ any: true, dir: 'Attachments' })
+    // The dialog opens under the ASSET root, never at a same-named folder off the nexus root.
+    expect(pickFile).toHaveBeenCalledWith({ any: true, dir: 'file-assets/Attachments' })
     expect(adoptFile).toHaveBeenCalledWith('/outside/New.pdf', 'Attachments')
     expect(next).toEqual(held(['[[Old.pdf]]', '[[New.pdf]]']))
   })
@@ -82,12 +86,8 @@ describe('runFilePick', () => {
 
   it('an unresolved label falls back to the property’s Directory, never the dialog’s own memory', async () => {
     await runFilePick(def({ file_directory: 'Attachments' }), held(['[[Gone.pdf]]']), 0)
-    expect(pickFile).toHaveBeenCalledWith({ any: true, dir: 'Attachments' })
-  })
-
-  it('a property with no Directory opens wherever the dialog would', async () => {
-    await runFilePick(def(), held([]), null)
-    expect(pickFile).toHaveBeenCalledWith({ any: true })
+    // The dialog opens under the ASSET root, never at a same-named folder off the nexus root.
+    expect(pickFile).toHaveBeenCalledWith({ any: true, dir: 'file-assets/Attachments' })
   })
 
   it('a cancelled dialog writes nothing, and never adopts', async () => {
@@ -99,6 +99,23 @@ describe('runFilePick', () => {
   it('a refused adoption leaves the value alone — the reference follows the bytes', async () => {
     adoptFile.mockResolvedValueOnce({ ok: false, error: { code: 'invalid-path', message: 'no' } })
     expect(await runFilePick(def(), held(['[[Old.pdf]]']), 0)).toBeUndefined()
+  })
+})
+
+describe('runFilePick — where the dialog opens', () => {
+  it('a property naming no Directory opens at the asset root, not the nexus root', async () => {
+    await runFilePick(def(), held([]), null)
+    expect(pickFile).toHaveBeenCalledWith({ any: true, dir: 'file-assets' })
+  })
+
+  it('a resolved label opens at that file’s own folder, which is already nexus-relative', async () => {
+    await runFilePick(def({ file_directory: 'Attachments' }), held(['[[Old.pdf]]']), 0)
+    expect(pickFile).toHaveBeenCalledWith({ any: true, dir: 'file-assets/Specs' })
+  })
+
+  it('an UNRESOLVED label has no folder of its own, so it falls to the property’s', async () => {
+    await runFilePick(def({ file_directory: 'Attachments' }), held(['[[Ghost.pdf]]']), 0)
+    expect(pickFile).toHaveBeenCalledWith({ any: true, dir: 'file-assets/Attachments' })
   })
 })
 

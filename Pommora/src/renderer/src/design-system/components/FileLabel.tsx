@@ -28,7 +28,7 @@ export function FileLabel({
   const glyph = icon ?? <Icon name={fileTypeIcon(name)} size="control" />
   return (
     <Chip
-      shape="file"
+      shape="plain"
       label={name}
       icon={glyph}
       className={cx(unresolved && fileLabelUnresolved)}

@@ -87,19 +87,20 @@ export const chipCapsule = style([
   },
 ])
 
-/** chip-file — the named-file / named-folder shape: a leading glyph and a title, and no chrome at
- *  all. It wears `chipBase` for the gap, the `--chip-zoom` knob and the control type, so it sits
- *  beside every other chip, but paints no fill and no border — a file value reads as a value, not
- *  as a field. Being a shape rather than a lookalike is what gives it `chipRemovable` /
- *  `chipRemove` and the melt reveal structurally, instead of a second copy of that machinery.
+/** chip-plain — the named-file / named-folder shape worn inside a FIELD: a leading glyph and a
+ *  title, and no chrome at all. It wears `chipBase` for the gap, the `--chip-zoom` knob and the
+ *  control type, so it sits beside every other chip, but paints no fill and no border — a name
+ *  inside a field is the field's content, and a second box around it reads as a box in a box.
+ *  Being a shape rather than a lookalike is what gives it `chipRemovable` / `chipRemove` and the
+ *  melt reveal structurally, instead of a second copy of that machinery.
  *
  *  `--chip-fill` FOLLOWS the background, and this shape's is transparent — so the melt twin paints
  *  nothing and the tail dissolves through `chipLabelMelt`'s ramp alone. Naming a color here would
  *  be a guess: a label with no fill sits directly on whatever is behind it, which is a translucent
- *  field wash in the Filter pane and a table row that changes to its hover tone on the very hover
- *  that reveals the ×. Leaving the var UNSET is the one thing that can't be done — the declaration
- *  would drop and the twin would inherit the label color, stacking a crisp duplicate on the text. */
-export const chipFile = style([
+ *  field wash in the Filter pane and a path field elsewhere. Leaving the var UNSET is the one thing
+ *  that can't be done — the declaration would drop and the twin would inherit the label color,
+ *  stacking a crisp duplicate on the text. */
+export const chipPlain = style([
   chipBase,
   {
     height: '20px',
@@ -108,6 +109,26 @@ export const chipFile = style([
     // say none, or the UA's `medium` paints a 3px rule in the text color.
     border: 'none',
     vars: { '--chip-fill': 'transparent' },
+  },
+])
+
+/** chip-file — what a FILE PROPERTY'S VALUE wears: chip-label's geometry and outline weight, drawn
+ *  at the tertiary label tone over no fill at all. A file value stands beside other values in a
+ *  cell, so it takes a box the way they do; the empty middle is what says the box names a file
+ *  rather than holding a color. The `&&` beats `chipColor`, which a caller has no business
+ *  assigning here — a file carries no color of its own. `--chip-fill` stays transparent for the
+ *  same reason chip-plain's does: the melt twin has to paint the ground, and the ground is
+ *  whatever the row has moved to under the cursor. */
+export const chipFile = style([
+  chipLabel,
+  {
+    selectors: {
+      '&&': {
+        background: 'transparent',
+        borderColor: colorVars.color.label.tertiary,
+        vars: { '--chip-fill': 'transparent' },
+      },
+    },
   },
 ])
 

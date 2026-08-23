@@ -42,7 +42,7 @@ export async function runFilePick(
 ): Promise<PropertyValue | null | undefined> {
   const files = filesOf(current)
   const named = chip === null ? undefined : files[chip]
-  const dir = (named && folderOf(named)) || def.file_directory || undefined
+  const dir = (named && folderOf(named)) || propertyFolder(def)
   const picked = await window.nexus.pickFile({ any: true, ...(dir ? { dir } : {}) })
   if (picked === null) return undefined
   // The reference is written only after the bytes land — a failed adoption leaves the value alone.
@@ -53,6 +53,14 @@ export async function runFilePick(
       ? [...files, adopted.value]
       : files.map((f, i) => (i === chip ? adopted.value : f))
   return { kind: 'file', value: next }
+}
+
+/** Where this property's files live, nexus-relative — which is the only domain `pickFile` reads.
+ *  A Directory is stored relative to the ASSET root, so handing it over unjoined would open a
+ *  same-named folder at the nexus root, and an unset one would open the nexus root itself. */
+function propertyFolder(def: PropertyDefinition): string {
+  const assetRoot = useSession.getState().tree?.assetDirectory ?? ''
+  return [assetRoot, def.file_directory].filter(Boolean).join('/')
 }
 
 /** The nexus-relative folder a resolved reference sits in, or '' where nothing answers to it. */
