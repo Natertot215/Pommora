@@ -1,7 +1,7 @@
 import { style, styleVariants } from '@vanilla-extract/css'
 import { RAMP_FAMILIES, RAMP_STEPS, type CellKey } from '@shared/theme'
 import { vars as colorVars } from './color.css'
-import { text, truncateHoverScroll } from './typography.css'
+import { scrollRevealed, text, truncateHoverScroll } from './typography.css'
 import { cellColor, cellTint } from './ramp'
 import { tint } from './tint'
 
@@ -174,6 +174,13 @@ export const chipLabelWrap = style([
     position: 'relative',
     selectors: {
       [`${chipRemovable} &`]: { pointerEvents: 'none' },
+      // Which is why the scrolled state is entered from the CHIP on a removable one: a pointer-inert
+      // label never matches its own `:hover`, so `truncateHoverScroll`'s half is unreachable and a
+      // capped name would have no way to be read whole. The box does not move — the cap holds and
+      // the text scrolls inside it. Safe against the reveal note below: the label never enters or
+      // leaves the hover chain, its ancestor does, and crossing into the × zone keeps the chip
+      // hovered throughout, so nothing here flips in the frame that flips the reveal.
+      [`${chipRemovable}:hover &`]: scrollRevealed,
     },
   },
 ])
