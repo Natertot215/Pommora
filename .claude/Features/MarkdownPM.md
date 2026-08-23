@@ -172,7 +172,7 @@ List geometry scopes to `.cm-line.md-li`; the outliner rail aliases the shared `
 | Nested Quote | `--nq-bar` / `--nq-bar-radius` / `--box-radius-r` / `--nq-gap` / `--nq-inset` | `3px` / `2px` / `5px` / `9px` / `2px` · `.md-callout.md-bq-in` |
 | Code Block | `--cb-bg` / `--cb-radius` / `--cb-size` / `--cb-gap` / `--cb-pad` | → fill-secondary / → box corner / `0.85em` / `6px` / `12px` · `.md-cb` |
 | Box Corner | `--md-box-radius` | `6px` · `:root` — what quote, callout, code and highlight round to; each still names its own knob and can be retuned alone |
-| Box Gap | `--md-box-gap` | `6px` · `:root` — what quote, callout, code and the table float off their neighbours by, on the same terms |
+| Box Gap | `--md-box-gap-base` / `--md-box-gap` | `6px` · `:root` / `base × --glyph-scale` · `.mdpm-shell` — what quote, callout, code and the table float off their neighbours by, scaling with the surface as their text does; declared on the shell because a custom property's `var()`s resolve where it is declared, so an embed spaces by its own scale |
 | Highlight | `--highlight` / `--highlight-bleed` | → the Highlight Color, else the accent, worn at tint-secondary / `0.1em` · `.md-highlight` |
 | Language Tag | `.md-cb-lang` | name at → label-control, its mark at → label-secondary, `1.15em` — fifteen languages carry one |
 | Line-Number Zone | `--cb-ln-zone` | `calc(3ch + var(--list-gap))` |
