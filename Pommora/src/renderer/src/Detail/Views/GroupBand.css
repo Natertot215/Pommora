@@ -2,11 +2,6 @@
    table + cards views each scope the divergent bits: the table's gutter chevron + sticky head, the
    cards' sibling seams. The glyph itself resolves identically for both (GroupBand). */
 
-/* The seam law, shared by every banded view: the view binds --band-clearance — one shoulder of its
-   content rhythm — and the band seam derives as two. The head clears its own content by one; a band
-   that OPENS a disclosure leads by one, the head's clearance supplying the other, so a nested band's
-   seam still reads two and clearances never stack. Collapsed, the head has no content to clear — the
-   clearance folds away with it, on the chevron's own beat. */
 .group-band {
   --band-gap: calc(2 * var(--band-clearance));
 }

@@ -1,9 +1,6 @@
 /* ============================================================================
    CARD TOKENS — the geometry the two card families agreed on: the NavWindow /
-   NavView gallery and the Collection/Set Cards renderer. One owner for the
-   values that matched; each family overrides only what genuinely differs (the
-   gallery's deeper cover zoom, Cards' Scale factor and its own band heights).
-   These are tuned live.
+   NavView gallery and the Collection/Set Cards renderer.
    ============================================================================ */
 :root {
   /* KNOB — the shared column-width floor. Bigger = fewer, larger columns that grow further before a
@@ -20,11 +17,7 @@
 /* ── THE CARD CHASSIS ──────────────────────────────────────────────────────
    The shape both families draw. A card is a cover band over a title area: the
    cover fills its band and the placeholder fills the cover's box when there is
-   no image; the title area is a top-anchored column on a darker shelf. Each
-   family carries only what genuinely differs — its band height, its own body
-   floor, and whatever chrome it overlays.
-   Each family's own class joins the selector lists below — one place names who
-   shares the shape, so the two never drift apart again.
+   no image; the title area is a top-anchored column on a darker shelf. 
    ────────────────────────────────────────────────────────────────────────── */
 
 .page-card-thumb img,
@@ -61,8 +54,6 @@
   gap: 4px;
   padding: 8px 9px;
   min-width: 0;
-  /* The muted dimming veil over the pane glass — reads as a slightly-darker glass shelf, mirroring the
-     glass's own dimming. (A nested backdrop-filter wouldn't: Chromium doesn't stack frost-in-frost.) */
   background: var(--state-muted);
   border-top: var(--border-cell);
 }
@@ -77,9 +68,6 @@
   align-items: center;
   min-width: 0;
   --over-scroll-fade: 14px;
-  /* overflow-y:hidden (truncateHoverScroll) clips at the padding box; descenders sit at the content
-     edge and get sliced when the line-box rounds tight at zoom. A hair of vertical padding pushes the
-     clip past them without touching the horizontal truncation fade. */
   padding-block: 1px;
 }
 

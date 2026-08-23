@@ -3,24 +3,18 @@ import { cx } from '../../cx'
 import { overScrollHost, overScrollUnmasked } from '../OverScroll'
 import * as s from './hoverRemove.css'
 
-/** The class the element holding a `HoverRemove` wears: it seats the × and, for `reveal="host"`,
- *  is the thing whose hover reveals it. Carries the over-scroll host too — a wrapped label is
- *  pointer-inert, so its scroll can only be armed from here. */
+/** What the element holding a `HoverRemove` wears — it seats the × and, for `reveal="host"`, is
+ *  what reveals it. Carries the over-scroll host: a wrapped label can't arm its own scroll. */
 export const hoverRemoveHost = cx(s.host, overScrollHost)
 
 const revealed = (el: Element): boolean => Number.parseFloat(getComputedStyle(el).opacity) > 0.5
 
 /**
- * The app's one hover-revealed remove ×, rendered as SIBLINGS rather than a wrapper: the reveal
- * runs through a sibling combinator, so the × has to precede the text inside the host's own box.
+ * The app's one hover-revealed remove ×, rendered as SIBLINGS rather than a wrapper — the reveal
+ * runs through a sibling combinator, so the × has to precede the text inside the host's box.
  *
- * `reveal="self"` gives the × the host's right third — a × only its own hover reveals has to be
- * findable. `reveal="host"` leaves it a bare button the caller seats, since the host's hover
- * already surfaces it.
- *
- * INERT until revealed: the zone is always hoverable (that's what reveals it), but a click only
- * removes once the × is actually visible, so a fast click on an invisible control can't silently
- * delete a value.
+ * INERT until revealed: a click only removes once the × is actually visible, so a fast click on an
+ * invisible control can't silently delete a value.
  */
 export function HoverRemove({
   onRemove,
@@ -33,15 +27,13 @@ export function HoverRemove({
   labelClassName,
 }: {
   onRemove: () => void
-  /** The text the × sits beside. Omitted where the host already draws its own. */
+  /** Omitted where the host already draws its own text. */
   children?: string
-  /** Melt the text tail beneath the ×. Needs a ground to melt into (`--melt-ground`), which is
-   *  why glass surfaces take the plain fade instead. */
+  /** Needs a ground to melt into (`--melt-ground`), which is why glass takes the plain fade. */
   blur?: boolean
   reveal?: 'self' | 'host'
   label?: string
   size?: React.ComponentProps<typeof Icon>['size']
-  /** Dresses the ×. */
   className?: string
   /** Dresses the text box — where a host states its own width cap. */
   labelClassName?: string

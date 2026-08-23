@@ -2,9 +2,8 @@ import type { ReactNode } from 'react'
 import { cx } from '../../cx'
 import './overScroll.css'
 
-/** The capped-label class run. Exported for vanilla-extract surfaces: the mask lives in a plain
- *  stylesheet, which a `style([])` cannot compose. */
-export const overScrollLabel = 'over-scroll-x over-scroll-cap'
+/** The capped-label class run — a plain stylesheet, since a `style([])` cannot compose a mask. */
+const overScrollLabel = 'over-scroll-x over-scroll-cap'
 
 /** Truncating with an ellipsis instead of a fade; the leading edge still dissolves what scrolled
  *  off the start where a surface names a width. */

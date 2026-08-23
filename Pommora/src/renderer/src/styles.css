@@ -61,15 +61,10 @@ textarea,
 /* Hover "pop" — a slight scale-up emphasis on hover, ridden on the slow token so it swells rather
    than flicks. Reusable: add `hover-pop` to any element you want to lift on hover; tune the swell
    with --pop-scale. A consumer that ALSO transitions another property (a border, say) must co-list
-   transform in its own `transition` (one element resolves to a single transition value). Never put
-   it on a drag-engine surface — that element's inline transform would swallow the scale; put it on
-   an inner layer instead. */
+   transform in its own `transition` (one element resolves to a single transition value). */
 .hover-pop {
   position: relative;
   transition: transform var(--duration-slow) var(--ease-standard);
-  /* Standing compositor layer: the swell AND its return both run on the element's own texture, so
-     text never re-snaps per glyph against the scaling chassis (a hover-scoped hint drops the layer
-     at un-hover and the return jitters). Raster is viewport-tiled, so offscreen pops cost nothing. */
   will-change: transform;
 }
 .hover-pop:hover {
@@ -93,9 +88,7 @@ textarea,
 }
 
 /* A floating window's trailing button pair composes two moves into ONE transform: this entry
-   nudge and the side-pane swallow derived from --io. Registered so the nudge interpolates as a
-   value — transitioning the transform itself would restart every frame that --io advances, and
-   the pair would chase the pane instead of tracking it. */
+   nudge and the side-pane swallow derived from --io. . */
 @property --ppane-flow-reveal {
   syntax: "<length>";
   inherits: false;
@@ -107,17 +100,8 @@ textarea,
   height: 100dvh;
   --io: 0;
   transition: --io var(--duration-base) var(--ease-standard);
-  /* App-level clip: zero scroll at the shell. The floating sidebar/inspector park off-screen via
-     transform; without this their off-screen box adds a horizontal scroll region. Inner scrollers
-     (detail, editor, tables) keep their own overflow. `clip` not `hidden`: hidden still leaves a
-     scrollable box that text-selection auto-scroll (drag past the edge) pans to reveal the inspector;
-     clip is not a scroll container at all, so there's nothing to pan. */
   overflow: clip;
   background: var(--main-bg);
-  /* THE single content gutter — one value reused by every detail view (spaces, homepage, tables)
-     + the editor (24pt, the shared inset). Change here only. The table remaps --gutter to its
-     narrower grip lane (fold-gutter), so full-bleed surfaces (the table heading band) read
-     --content-gutter for the true content-to-glass margin. */
   --content-gutter: 24px;
   --gutter: var(--content-gutter);
   /* Left inset that clears the floating glass sidebar (variable width); its base addend IS the
@@ -126,12 +110,7 @@ textarea,
   /* Right inset mirrors the left: bare gutter normally, expanding to clear the inspector when open. */
   --content-inset-right: var(--gutter);
   /* Surface insets: block-based views (homepage, contexts) drop the content gutter — their tile handles
-     supply the grip/chevron actions a page/table needs the fold-gutter for, so no reserved lane. The
-     gutter PORTION of the content inset swaps for a tight value; the floating sidebar/inspector clearance
-     stays. The tile BODY runs its own inter-tile lane; the banner title sits a touch looser, on its own
-     separate value. */
-  /* The tight inter-tile lane — the gutter a view runs once its container has already cleared the
-     floating sidebar/inspector (a whole-page view adds it to that clearance; a tile embed runs it bare). */
+     supply the grip/chevron actions a page/table needs the fold-gutter for, so no reserved lane.*/
   --surface-lane: 8px;
   --surface-inset: calc(var(--content-inset) - var(--gutter) + var(--surface-lane));
   --surface-inset-right: calc(var(--content-inset-right) - var(--gutter) + var(--surface-lane));
@@ -151,8 +130,7 @@ textarea,
 }
 
 /* Draggable titlebar strip across the top of the frameless (hiddenInset) window — the whole top
-   edge moves the window; the native traffic lights stay clickable through it. Any interactive
-   control placed here later must opt out with -webkit-app-region: no-drag. */
+   edge moves the window; the native traffic lights stay clickable through it. */
 .titlebar {
   position: absolute;
   top: 0;
@@ -170,9 +148,7 @@ textarea,
 }
 
 /* The sidebar's own drag strip — the .titlebar deliberately starts past the sidebar, and a drag region
-   can't live inside the frosted Surface, so this shell-level strip covers the sidebar's top band. Spans
-   the traffic-light row over the panel, stopping short of the collapse toggle (top-right) so it stays
-   clickable; the native lights sit above it. Rides the same tier as .titlebar. */
+   can't live inside the frosted Surface, so this shell-level strip covers the sidebar's top band. */
 .sidebar-titlebar {
   position: absolute;
   top: 0;

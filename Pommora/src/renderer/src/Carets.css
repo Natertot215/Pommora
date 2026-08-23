@@ -1,8 +1,5 @@
 /* The Pommora caret — one text-insertion identity for the whole app: the drawn blinking bar (the "I", a
-   CodeMirror `layer` in editor/caret.ts) paired with the double-T I-beam hover cursor. Both halves read the
-   same :root knobs so they always match. Inside CodeMirror the bar is a `layer`; over native <input>/<textarea>
-   it's an overlay positioned by nativeCaret.ts — same visual, two position sources. New interaction-type
-   cursors get designed alongside --caret-cursor here. */
+   CodeMirror `layer` in editor/caret.ts) paired with the double-T I-beam hover cursor. */
 
 :root {
   /* --caret-width : bar thickness | --caret-color : fill (drawn bar + native caret-color)
@@ -43,11 +40,7 @@ textarea,
   caret-color: transparent;
 }
 
-/* CodeMirror surfaces: hide the native caret so the drawn one (customCaret layer) stands alone. CM's baseTheme
-   sets `&light/&dark .cm-content { caret-color: black/white }` at specificity (0,2,0) — the source of the black
-   caret. We use the full DOM path `.cm-editor .cm-scroller .cm-content` (0,3,0) to beat it by SPECIFICITY, not
-   the load-order luck a tied (0,2,0) selector relies on. Don't shorten it. Editor-agnostic — every CM surface
-   matches. */
+/* CodeMirror surfaces: hide the native caret so the drawn one (customCaret layer) stands alone. */
 .cm-editor .cm-scroller .cm-content {
   caret-color: transparent;
 }
