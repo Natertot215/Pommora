@@ -1,4 +1,4 @@
-import { Interactions } from '../../interactions/Interactions'
+import { Interactions } from '../lab/Interactions'
 
 /** Interactions · the in-house drag engine's own lab (list / grid / table / tree /
  *  cross-list board / constraints / auto-scroll), folded in unchanged. */

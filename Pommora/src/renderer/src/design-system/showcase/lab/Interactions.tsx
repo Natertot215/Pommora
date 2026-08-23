@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import { DEFAULT_FEEL } from './feel'
+import { DEFAULT_FEEL } from '../../interactions/feel'
 import {
   ListSurface,
   GridSurface,
