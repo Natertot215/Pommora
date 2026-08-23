@@ -140,10 +140,10 @@ export function IconPicker({
       />
       {favs.length === 0 && <div className={s.separator} />}
 
-      <div ref={setScrollEl} className={cx(s.grid, 'overflow-eclipse-y')}>
+      <div ref={setScrollEl} className={cx(s.grid, 'over-scroll')}>
         {favs.length > 0 && (
           <div className={s.favorites}>
-            <div className={cx(s.favScroll, 'overflow-eclipse')}>
+            <div className={cx(s.favScroll, 'over-scroll-x')}>
               <SortableZone items={favs} layout="grid" onReorder={reorderFavs}>
                 {favs.map((id) => (
                   <FavCell

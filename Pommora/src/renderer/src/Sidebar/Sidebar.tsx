@@ -17,7 +17,7 @@ import { cx } from '@renderer/design-system/cx'
 import { contextDirRel } from '@shared/nexusPaths'
 import { MenuItem, titleInput } from '@renderer/design-system/components/menu'
 import { Reveal } from '@renderer/design-system/components/Reveal'
-import { slideScrollBack } from '@renderer/design-system/components/OverflowScroll'
+import { slideScrollBack } from '@renderer/design-system/interactions/OverScroll'
 import type {
   CollectionNode,
   ContextGroup,
@@ -690,22 +690,7 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
     )
   }
 
-  // React doesn't delegate `scroll` (onScroll binds straight to the node) and scroll doesn't
-  // bubble, so a prop on <nav> would never see a descendant .titleText's scroll — a native
-  // capture-phase listener does. slideTitleBack's rAF drives scrollLeft to 0, re-firing this to
-  // clear the flag.
   const navRef = useRef<HTMLElement>(null)
-  useEffect(() => {
-    const nav = navRef.current
-    if (!nav) return
-    const onScroll = (e: Event): void => {
-      const sc = e.target as HTMLElement
-      if (sc?.matches?.('[class*="titleText"]'))
-        sc.classList.toggle('title-scrolled', sc.scrollLeft > 0)
-    }
-    nav.addEventListener('scroll', onScroll, { capture: true })
-    return () => nav.removeEventListener('scroll', onScroll, { capture: true })
-  }, [])
 
   // One index serves both layers — during the mode cross-fade both are mounted, and each building
   // its own full-tree index would double the work per tree change.
@@ -812,7 +797,7 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
     <SidebarGhost.Provider value={ghostValue}>
       <SidebarGhostApi.Provider value={sidebarGhostApi}>
         <GhostSuppress.Provider value={ghostApi.suppressWrap}>
-          <nav ref={navRef} className="sidebar edge-fade">
+          <nav ref={navRef} className="sidebar over-scroll">
             <div className="sidebar-mode-stage">
               {exit && (
                 <div

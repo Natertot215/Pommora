@@ -72,11 +72,10 @@
    nothing keeps the house fade. */
 .pgpreview .pgpreview-tabscroll,
 .pgpreview-crumbs {
-  --edge-fade: 16px;
+  --over-scroll-fade: 16px;
 }
 .pgpreview-crumbs {
   min-width: 0;
   /* The crumbs also hover-scroll, which reads its own knob. */
-  --scroll-fade: 16px;
 }
 /* Tone comes from the shared crumb-two-tone treatment beside NavCrumbs (navList.css). */

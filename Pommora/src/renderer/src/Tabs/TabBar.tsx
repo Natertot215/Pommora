@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { Icon } from '@renderer/design-system/symbols'
 import { cx } from '@renderer/design-system/cx'
-import { OverflowScroll } from '@renderer/design-system/components/OverflowScroll'
+import { OverScroll } from '@renderer/design-system/interactions/OverScroll'
 import { duration, text } from '@renderer/design-system/tokens'
 import { SortableZone, useDragItem, type DragItem } from '@renderer/design-system/interactions/drag'
 import { onActivateKey } from '@renderer/design-system/interactions/activate'
@@ -220,7 +220,7 @@ function TabBarBody({
         </SortableZone>
       )}
       {pinnedEntries.length > 0 && unpinnedEntries.length > 0 && <span className="tab-divider" />}
-      <div className="tab-scroll edge-fade-x" ref={stripRef}>
+      <div className="tab-scroll over-scroll-x" ref={stripRef}>
         <SortableZone
           items={liveEntries.map((e) => e.tab.id)}
           layout="list"
@@ -381,7 +381,7 @@ function UnpinnedTab({
         ) : (
           <EntityGlyph item={entry.res} size="body" className={cx('tab-icon', slideClass)} />
         )}
-        <OverflowScroll className={cx('tab-label', slideClass)}>{title}</OverflowScroll>
+        <OverScroll className={cx('tab-label', slideClass)}>{title}</OverScroll>
       </Fragment>
       {/* Plain hover-fade, never the chip melt — glass has no solid fill for it. */}
       <button

@@ -111,12 +111,11 @@
 .tab-label {
   flex: 1;
   min-width: 0;
-  /* The sidebar's OverflowScroll mechanism (nav-item-title): eclipse-fade + hover-scroll at the shared
+  /* The sidebar's over-scroll mechanism (nav-item-title): fade + hover-scroll at the shared
      16px fade. The ×'s lane reserve is tighter than the sidebar's own so the title gets more width
      before it eclipses — padding-right is the × clearance knob. */
   padding-right: 8px;
-  --edge-fade: 16px;
-  --scroll-fade: 16px;
+  --over-scroll-fade: 16px;
 }
 
 /* The hover-fade × (the chip glyph, a plain fade — no melt on glass). It sits in the label's

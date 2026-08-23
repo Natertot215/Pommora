@@ -239,7 +239,7 @@ export function SortingPane({
           {finiteDef && (
             <>
               <MenuSeparator flush />
-              <div className={`${gp.middle} overflow-eclipse-y`}>
+              <div className={`${gp.middle} over-scroll`}>
                 {primary.order ? (
                   <CustomList
                     group={{ order_mode: 'manual', order: primary.order }}

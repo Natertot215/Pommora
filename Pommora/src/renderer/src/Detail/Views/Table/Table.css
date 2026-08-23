@@ -276,7 +276,7 @@
 
 /* Type-aware cell content (chips, title icon, links). The page icon reads at the shared icon tone
    (same as the sidebar's), a step under the title text. */
-/* The title is an OverflowScroll box (the sidebar-row mechanism): icon + text INLINE in one nowrap
+/* The title is an OverScroll box (the sidebar-row mechanism): icon + text INLINE in one nowrap
    scroller, so the icon rides the hover-scroll with the title instead of pinning while text slides.
    The lead cell keeps overflow visible for the gutter grip, so the content box carries the cap. */
 .cell-title {
@@ -305,7 +305,7 @@
   max-width: 100%;
   min-width: 0;
 }
-/* Chips never squish — they hold their size and the OverflowScroll box scrolls them instead. */
+/* Chips never squish — they hold their size and the OverScroll box scrolls them instead. */
 .cell-chips > * {
   flex: none;
 }

@@ -14,7 +14,7 @@ const HEAD_PAD_R = '12px'
 
 // KNOB — how far the scroll region rises BEHIND the transparent switcher so rows flow UNDER the whole
 // toolbar and dissolve at the title divider (not just under its lower half), matching the switcher's
-// full height. The scroll-fade (--edge-fade below) spans the same distance so a row is fully gone by
+// full height. The fade (--over-scroll-fade below) spans the same distance so a row is fully gone by
 // the divider.
 const FADE_RISE = `calc(${SEGMENT_H} + 12px)`
 
@@ -158,7 +158,7 @@ export const body = style({
   paddingTop: FADE_RISE,
   // The top scroll-fade spans the toolbar height (matches FADE_RISE), so a row dissolves fully as it
   // rises under the transparent switcher, disappearing at the title divider.
-  vars: { '--edge-fade': FADE_RISE },
+  vars: { '--over-scroll-fade': FADE_RISE },
 })
 
 /** The embed zoom lands on the table's own token scope — the var is declared ON .table-view

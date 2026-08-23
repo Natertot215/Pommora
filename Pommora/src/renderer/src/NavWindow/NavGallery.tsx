@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { cx } from '@renderer/design-system/cx'
 import { text } from '@renderer/design-system/tokens'
-import { OverflowScroll } from '@renderer/design-system/components/OverflowScroll'
+import { OverScroll } from '@renderer/design-system/interactions/OverScroll'
 import { SortableZone, useDragItem, type DragItem } from '@renderer/design-system/interactions/drag'
 import type { NavRef } from '@shared/types'
 import { useSession } from '../store'
@@ -136,10 +136,10 @@ function GalleryCard({
           <NavPinButton it={it} className="nav-gallery-pin" />
         </div>
         <div className="nav-gallery-text">
-          <OverflowScroll className={cx('nav-gallery-title', text.footnote.emphasized)}>
+          <OverScroll className={cx('nav-gallery-title', text.footnote.emphasized)}>
             <EntityGlyph item={it} size="body" className="nav-gallery-title-icon" />
             {it.title}
-          </OverflowScroll>
+          </OverScroll>
           <NavCrumbs path={it.path} className="nav-gallery-loc" iconSize="caption" />
         </div>
       </div>

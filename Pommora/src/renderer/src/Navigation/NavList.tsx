@@ -3,7 +3,7 @@ import { Icon } from '@renderer/design-system/symbols'
 import type { IconSize } from '@renderer/design-system/tokens/size.css'
 import { cx } from '@renderer/design-system/cx'
 import { text } from '@renderer/design-system/tokens'
-import { OverflowScroll } from '@renderer/design-system/components/OverflowScroll'
+import { OverScroll } from '@renderer/design-system/interactions/OverScroll'
 import { onActivateKey } from '@renderer/design-system/interactions/activate'
 import { TableRowDnd, useTableRowDrag } from '../Detail/Views/Table/tableDnd'
 import type { NavRef, SelectTarget } from '@shared/types'
@@ -30,7 +30,7 @@ export function NavCrumbs({
 }): React.JSX.Element | null {
   if (path.length === 0) return null
   return (
-    <OverflowScroll className={cx(className, text.caption.standard)}>
+    <OverScroll className={cx(className, text.caption.standard)}>
       {path.map((crumb, i) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: a breadcrumb is strictly positional and never reorders
         <Fragment key={i}>
@@ -39,7 +39,7 @@ export function NavCrumbs({
           <span className="nav-path-name">{crumb.title}</span>
         </Fragment>
       ))}
-    </OverflowScroll>
+    </OverScroll>
   )
 }
 
@@ -182,7 +182,7 @@ function NavRow({
       <NavPinButton it={it} className="nav-item-pin" />
       <div className="nav-item-main">
         <EntityGlyph item={it} size="title3" className="nav-item-lead" />
-        <OverflowScroll className="nav-item-title">{it.title}</OverflowScroll>
+        <OverScroll className="nav-item-title">{it.title}</OverScroll>
         <NavCrumbs path={it.path} className="nav-item-path" iconSize="control" />
       </div>
     </div>
@@ -262,10 +262,8 @@ export function NavList({
       )}
       {extras?.map((e) => (
         <div key={e.key} className="nav-item nav-item-inert" title="This result can't be opened">
-          <OverflowScroll className="nav-item-title">{e.title}</OverflowScroll>
-          <OverflowScroll className={cx('nav-item-path', text.caption.standard)}>
-            {e.kind}
-          </OverflowScroll>
+          <OverScroll className="nav-item-title">{e.title}</OverScroll>
+          <OverScroll className={cx('nav-item-path', text.caption.standard)}>{e.kind}</OverScroll>
         </div>
       ))}
     </div>

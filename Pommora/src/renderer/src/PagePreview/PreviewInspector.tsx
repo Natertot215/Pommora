@@ -156,7 +156,7 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
 
   return (
     <div className="pgpreview-insp">
-      <div className="pgpreview-insp-rows edge-fade">
+      <div className="pgpreview-insp-rows over-scroll">
         {/* Nothing pre-shows — on an empty page the Add affordance alone sits at the top. */}
         {[
           contextRows.filter((t) => isAssigned(t.id)).map((t) => ({ def: null, ...t })),

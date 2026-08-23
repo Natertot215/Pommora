@@ -1,7 +1,7 @@
 import { style, styleVariants } from '@vanilla-extract/css'
 import { RAMP_FAMILIES, RAMP_STEPS, type CellKey } from '@shared/theme'
 import { vars as colorVars } from './color.css'
-import { scrollRevealed, text, truncateHoverScroll } from './typography.css'
+import { text } from './typography.css'
 import { cellColor, cellTint } from './ramp'
 import { tint } from './tint'
 
@@ -158,39 +158,28 @@ export const chipBox = style([chipBase, chipBoxGeometry])
  *  from the `chipLabel` SHAPE above. */
 export const chipRemovable = style({ position: 'relative' })
 
-// The cap lives on the LABEL, not the chip (a % width is unreliable in a shrink-to-fit flex chip): the
-// label truncates at `--chip-max` and the chip wraps it snugly, so the ellipsis lands at the padding
-// edge instead of floating mid-chip. `--chip-max` is overridable per context. The
-// ellipsis-at-rest / scroll-on-hover behavior is the shared `truncateHoverScroll`; the cap is the add.
-// `position: relative` anchors the removable chip's twins; masks NEVER go on this box — a
-// mask here erases every descendant, the twins included. On a REMOVABLE chip the label is
-// pointer-inert (inherited by the text): hovering the label body must do nothing, and if the
-// label or text ever LEAVES :hover in the frame that flips the ×-reveal, Chromium drops the
-// reveal's repaint beneath it — so they must never enter the hover chain at all.
-export const chipLabelWrap = style([
-  truncateHoverScroll,
-  {
-    maxWidth: 'var(--chip-max, 80px)',
-    position: 'relative',
-    selectors: {
-      [`${chipRemovable} &`]: { pointerEvents: 'none' },
-      // Which is why the scrolled state is entered from the CHIP on a removable one: a pointer-inert
-      // label never matches its own `:hover`, so `truncateHoverScroll`'s half is unreachable and a
-      // capped name would have no way to be read whole. The box does not move — the cap holds and
-      // the text scrolls inside it. Safe against the reveal note below: the label never enters or
-      // leaves the hover chain, its ancestor does, and crossing into the × zone keeps the chip
-      // hovered throughout, so nothing here flips in the frame that flips the reveal.
-      [`${chipRemovable}:hover &`]: scrollRevealed,
-    },
+// The cap lives on the LABEL, not the chip (a % width is unreliable in a shrink-to-fit flex chip):
+// the label truncates at `--chip-max` and the chip wraps it snugly, so the ellipsis lands at the
+// padding edge instead of floating mid-chip. The markup wears `overScrollUnmasked` beside this —
+// masks NEVER go on this box, since one erases every descendant, the twins included, which is also
+// why the removable chip enters the scrolled state from the CHIP (`overScrollHost`) rather than
+// here. On a REMOVABLE chip the label is pointer-inert (inherited by the text): hovering the label
+// body must do nothing, and if the label or text ever LEAVES :hover in the frame that flips the
+// ×-reveal, Chromium drops the reveal's repaint beneath it.
+export const chipLabelWrap = style({
+  maxWidth: 'var(--chip-max, 80px)',
+  position: 'relative',
+  selectors: {
+    [`${chipRemovable} &`]: { pointerEvents: 'none' },
   },
-])
+})
 
 // Hovering a REMOVABLE chip BLURS the label's tail under the × — a true blur, not a fade-out.
 // Two perfectly-stacked copies of the same text crossfade over one ramp
 // ending at the ×'s left edge (10px inside the text run's end): the crisp copy masks OUT across it
 // while its blurred twin masks IN, so the letters visibly smear into the clear zone the × floats in.
 const crispRamp =
-  'linear-gradient(to right, transparent 0, #000000 var(--scroll-fade, 0px), #000000 calc(100% - 18px), transparent calc(100% - 8px))'
+  'linear-gradient(to right, transparent 0, #000000 var(--over-scroll-fade, 0px), #000000 calc(100% - 18px), transparent calc(100% - 8px))'
 const blurRamp =
   'linear-gradient(to right, transparent calc(100% - 18px), #000000 calc(100% - 8px))'
 

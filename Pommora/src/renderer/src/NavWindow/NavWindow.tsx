@@ -172,7 +172,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
         className: 'navwindow-rail',
         children: (
           <>
-            <div className="navwindow-rail-list edge-fade">
+            <div className="navwindow-rail-list over-scroll">
               <NavList items={resolvedFavorites} onSelect={goClose} onOpenNewTab={goNewTab} />
             </div>
             <button
@@ -204,7 +204,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
           <PreviewTabStrip index={resolveIndex} title={null} />
         </div>
         {pageTarget ? (
-          <div className="navwindow-page edge-fade pgembed-grows" ref={pageScrollRef}>
+          <div className="navwindow-page over-scroll pgembed-grows" ref={pageScrollRef}>
             <PageEmbed
               key={pageTarget.path}
               path={pageTarget.path}
@@ -225,7 +225,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
                 placeholder="Search…"
               />
             </div>
-            <div className="navwindow-main-scroll edge-fade">
+            <div className="navwindow-main-scroll over-scroll">
               {/* `extras` has no card form, so Gallery is passed none at all — inert hits surface
                   in List only. */}
               {viewMode === 'gallery' ? (
