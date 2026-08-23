@@ -53,7 +53,6 @@ The type tokens are authored in vanilla-extract in two layers — **font primiti
 
 ### Pending
 
-- **Display-step consumers** — Large Title, Title 1, and Title 2 are defined with no consumer.
 - **Letter-spacing scale** — the composed styles pin tracking to zero; no tracking scale exists.
 - **Monospace / code font** — the editor draws code from a hand-written stack with no `mono` token behind it.
 - **Markdown element mapping** — no ramp style is assigned to any Markdown element.
