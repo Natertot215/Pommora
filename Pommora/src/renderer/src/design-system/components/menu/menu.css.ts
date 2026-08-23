@@ -1,7 +1,7 @@
 import { globalStyle, style } from '@vanilla-extract/css'
 import { vars as colorVars } from '../../tokens/color.css'
 import { DISCLOSURE_INDENT } from '../../tokens/size.css'
-import { font, text, truncateHoverScroll } from '../../tokens/typography.css'
+import { font, text } from '../../tokens/typography.css'
 import { duration, easing } from '../../tokens/motion'
 import { TINT_STEPS, tintAt } from '../../tokens/tint'
 import { fieldRing, ROW_RING } from '../fieldRing'
@@ -165,9 +165,9 @@ export const titleWrap = style({
   gap: '2px',
 })
 
-/** Title line — inherits the row's size + color; ellipsis at rest, scrolls the full value on hover
- *  (shared `truncateHoverScroll`, the chip-label behavior). */
-export const titleText = style([truncateHoverScroll])
+/** Title line — inherits the row's size + color. The row markup wears `overScrollEllipsis` beside
+ *  this, which is where the truncation and the hover-scroll come from. */
+export const titleText = style({})
 
 /** Inline-rename field for a menu row — sits flush in the title slot: the row's own font, color, and
  *  metrics with no border/padding/background of its own, so swapping it in for the title text is

@@ -88,8 +88,7 @@
   min-width: 0;
   font-size: var(--text-body-size);
   color: var(--label-primary);
-  --edge-fade: 16px;
-  --scroll-fade: 16px;
+  --over-scroll-fade: 16px;
 }
 .nav-item-path {
   flex: 0 1 auto;
@@ -97,8 +96,7 @@
   max-width: 55%;
   margin-left: auto;
   color: var(--label-secondary);
-  --edge-fade: 16px;
-  --scroll-fade: 16px;
+  --over-scroll-fade: 16px;
 }
 .nav-path-icon {
   color: var(--label-tertiary);

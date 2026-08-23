@@ -1,6 +1,6 @@
 import { style } from '@vanilla-extract/css'
 import { vars as colorVars } from '../design-system/tokens/color.css'
-import { font, truncateHoverScroll } from '../design-system/tokens/typography.css'
+import { font } from '../design-system/tokens/typography.css'
 
 const c = colorVars.color
 
@@ -41,9 +41,8 @@ export const titleFieldRow = style({
   gap: '6px',
   overflow: 'hidden',
 })
-/** Page title — matches the menu's rows (truncateHoverScroll caps long titles). */
+/** Page title — matches the menu's rows; the markup wears `overScrollEllipsis` for the cap. */
 export const titleFieldText = style([
-  truncateHoverScroll,
   {
     flex: 1,
     minWidth: 0,
@@ -54,7 +53,6 @@ export const titleFieldText = style([
 ])
 /** Location sub-line — a step under the title. */
 export const titleFieldLoc = style([
-  truncateHoverScroll,
   {
     flex: 1,
     minWidth: 0,

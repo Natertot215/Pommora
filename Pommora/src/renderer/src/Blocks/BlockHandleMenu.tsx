@@ -26,6 +26,7 @@ import {
 } from '@renderer/design-system/components/menu/menu.css'
 import { PaneSlider } from '@renderer/Components/Detail/PaneSlider'
 import { cx } from '@renderer/design-system/cx'
+import { overScrollEllipsis } from '@renderer/design-system/interactions/OverScroll'
 import { ZOOM_STEPS, zoomStep } from './blockZoom'
 import * as s from './handleMenu.css'
 
@@ -230,12 +231,12 @@ export function BlockHandleMenu({
           >
             <span className={s.titleFieldRow}>
               <Icon name={pageInfo.icon} size={GLYPH} className={s.titleFieldIcon} />
-              <span className={s.titleFieldText}>{pageInfo.title}</span>
+              <span className={cx(s.titleFieldText, overScrollEllipsis)}>{pageInfo.title}</span>
             </span>
             {location && (
               <span className={s.titleFieldRow}>
                 <Icon name={location.icon} size={LOC_GLYPH} className={s.titleFieldLocIcon} />
-                <span className={s.titleFieldLoc}>{location.title}</span>
+                <span className={cx(s.titleFieldLoc, overScrollEllipsis)}>{location.title}</span>
               </span>
             )}
           </button>

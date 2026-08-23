@@ -31,7 +31,7 @@ import {
   PICKER_MAX_HEIGHT,
   PICKER_TREE_WIDTH,
 } from '../../design-system/components/PickerMenu/pickerMenu.css'
-import { OverflowScroll } from '../../design-system/components/OverflowScroll'
+import { OverScroll } from '../../design-system/interactions/OverScroll'
 import { Reveal } from '../../design-system/components/Reveal'
 import { duration as motion } from '../../design-system/tokens/motion'
 import { CalendarPicker } from '../../design-system/components/CalendarPicker/CalendarPicker'
@@ -146,9 +146,9 @@ function FieldPicker({
         onClick={() => setOpen(true)}
       >
         {leadGlyph ? <span className={fp.leadGlyph}>{leadGlyph}</span> : null}
-        <OverflowScroll className={cx(fp.fieldLabel, display === null && fp.placeholder)}>
+        <OverScroll className={cx(fp.fieldLabel, display === null && fp.placeholder)}>
           {display ?? placeholder}
-        </OverflowScroll>
+        </OverScroll>
         {chevron ? <Icon name="chevrons-up-down" size="control" className={fp.chevron} /> : null}
       </button>
       {/* Built only while mounted: JSX children evaluate on EVERY render, so an un-gated render prop
@@ -386,7 +386,7 @@ function ChipsField({
         {shown.length === 0 ? (
           <span className={fp.placeholder}>Value</span>
         ) : (
-          <OverflowScroll className={fp.chipRun}>
+          <OverScroll className={fp.chipRun}>
             {shown.map((v) => {
               const o = byValue.get(v)
               return isContext ? (
@@ -407,7 +407,7 @@ function ChipsField({
                 />
               )
             })}
-          </OverflowScroll>
+          </OverScroll>
         )}
       </ValueFieldShell>
       <PickerMenu open={open} onDismiss={() => setOpen(false)} triggerRef={ref}>
@@ -849,7 +849,7 @@ export function FilterPane({
           </MenuItem>
         </>
       ) : (
-        <div className={cx(gp.middle, fp.body, 'overflow-eclipse-y')}>
+        <div className={cx(gp.middle, fp.body, 'over-scroll')}>
           <div className={fp.ruleList}>
             {rows.map(ruleRow)}
             {draftRow}

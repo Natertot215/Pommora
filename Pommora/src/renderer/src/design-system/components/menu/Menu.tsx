@@ -3,6 +3,7 @@ import { DISCLOSURE_INDENT } from '../../tokens/size.css'
 import { Icon, type IconName } from '../../symbols'
 import * as s from './menu.css'
 import { cx } from '../../cx'
+import { overScrollEllipsis } from '../../interactions/OverScroll'
 import { onActivateClick } from '../../interactions/activate'
 import { lockLabel } from '@shared/toggleLabels'
 
@@ -58,7 +59,7 @@ export function MenuItem({
     >
       {leading != null && <span className={s.side}>{leading}</span>}
       <span className={s.titleWrap}>
-        <span className={s.titleText}>{children}</span>
+        <span className={cx(s.titleText, overScrollEllipsis)}>{children}</span>
         {subLabel != null && <span className={s.subLabel}>{subLabel}</span>}
       </span>
       {hasTrailing && (
@@ -83,7 +84,7 @@ export function MenuHeading({
   return (
     <div className={s.heading}>
       {leading != null && <span className={s.side}>{leading}</span>}
-      <span className={s.titleText} style={{ flex: '1 1 auto', minWidth: 0 }}>
+      <span className={cx(s.titleText, overScrollEllipsis)} style={{ flex: '1 1 auto' }}>
         {children}
       </span>
       {detail != null && <span className={cx(s.side, s.detail)}>{detail}</span>}
@@ -287,7 +288,7 @@ export function MenuBottomRow({
 
 /**
  * The body is the ONE overflow region: a drag inside auto-scrolls it (it owns the scroll
- * ancestor), and it carries the shared edge-fade mask. PaneSlider slides between frames but never
+ * ancestor), and it carries the shared over-scroll mask. PaneSlider slides between frames but never
  * caps/scrolls a slot itself — this frame is the single source.
  */
 export function MenuScrollFrame({
@@ -304,7 +305,7 @@ export function MenuScrollFrame({
   return (
     <div className={s.scrollFrame} style={{ maxHeight }}>
       {header && <div className={s.scrollFrameEdge}>{header}</div>}
-      <div className={cx(s.scrollFrameBody, 'edge-fade')}>{children}</div>
+      <div className={cx(s.scrollFrameBody, 'over-scroll')}>{children}</div>
       {footer && <div className={s.scrollFrameEdge}>{footer}</div>}
     </div>
   )

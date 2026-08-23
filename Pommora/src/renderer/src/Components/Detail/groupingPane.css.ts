@@ -33,12 +33,13 @@ globalStyle(`${pickerTone} ${pickerValue}${pickerValue}${pickerValue}`, { color:
 /** KNOB — the middle region's scroll ceiling. */
 const MIDDLE_MAX_HEIGHT = '280px'
 
-/** The scrollable order region between the dividers — wears the shared vertical eclipse fade
- *  (the bare `overflow-eclipse-y` class rides in the component, the Icon Picker precedent). */
+/** The scrollable order region between the dividers — wears the shared block-axis fade, the class
+ *  riding in the component (the Icon Picker precedent). */
 export const middle = style({
   position: 'relative',
   maxHeight: MIDDLE_MAX_HEIGHT,
   overflowY: 'auto',
+  vars: { '--over-scroll-fade': '16px' },
 })
 
 /** The pane's own gutter for the shared `drop-line` — wider than the token default so the

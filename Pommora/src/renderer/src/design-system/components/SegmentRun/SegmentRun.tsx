@@ -1,5 +1,5 @@
 import { Fragment } from 'react'
-import { OverflowScroll } from '../OverflowScroll'
+import { OverScroll } from '../../interactions/OverScroll'
 import { FileLabel } from '../FileLabel'
 import * as sr from './segmentRun.css'
 
@@ -34,7 +34,7 @@ export function SegmentRun({
   nested?: boolean
 }): React.JSX.Element {
   return (
-    <OverflowScroll className={sr.segmentRun}>
+    <OverScroll className={sr.segmentRun}>
       {entries.map((e, i) => (
         <Fragment key={e.key}>
           {i > 0 &&
@@ -57,6 +57,6 @@ export function SegmentRun({
           </span>
         </Fragment>
       ))}
-    </OverflowScroll>
+    </OverScroll>
   )
 }

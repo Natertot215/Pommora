@@ -53,7 +53,7 @@ export function EditableInput({
       ref={inputRef}
       // The input is its own inline scroller, so the eclipse fade follows the caret to whichever
       // edge is hiding text — an ellipsis can't; Chromium drops it while a field is focused.
-      className={cx(className, !boxed && 'overflow-eclipse', autoSize && autoSizeInput)}
+      className={cx(className, !boxed && 'over-scroll-x', autoSize && autoSizeInput)}
       defaultValue={initialText ?? value}
       size={autoSize ? 1 : undefined}
       // Every consumer is a title field — proper nouns, not prose; squiggles are noise.

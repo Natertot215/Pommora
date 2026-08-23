@@ -13,7 +13,7 @@
   --tab-gap: 6px;
   --tab-divider-w: 2px; /* pinned│unpinned segment divider */
   --tab-divider-h: 16px;
-  --tab-edge-fade: 20px;
+  --tab-over-scroll: 20px;
   --tab-plus-gutter: 28px; /* trailing room so the parked + clears the last tab's × */
   --tab-nav-slide: 10px; /* Back/Forward content slide-in distance */
 
@@ -83,9 +83,9 @@
   border-radius: var(--radius-full);
 }
 
-/* ---- unpinned strip: overflow-scroll + the shared edge-fade (edge-fade-x carries the mask) ---- */
+/* ---- unpinned strip: the shared over-scroll on the inline axis ---- */
 .tab-scroll {
-  --edge-fade: var(--tab-edge-fade);
+  --over-scroll-fade: var(--tab-over-scroll);
   position: relative;
   flex: 1;
   min-width: 0;

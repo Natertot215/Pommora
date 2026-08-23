@@ -23,7 +23,7 @@ import { type CardBanner, isCompact, isLocationFsOrder, type SavedView } from '@
 import type { ColumnStyle } from '@shared/columnStyles'
 import { entityIcon, Icon } from '@renderer/design-system/symbols'
 import { text } from '@renderer/design-system/tokens/typography.css'
-import { OverflowScroll } from '@renderer/design-system/components/OverflowScroll'
+import { OverScroll } from '@renderer/design-system/interactions/OverScroll'
 import {
   DragGroup,
   type DragItem,
@@ -1063,10 +1063,10 @@ function SetCard({ set, drag }: { set: SetNode; drag?: DragItem }): React.JSX.El
           )}
         </div>
         <div className="page-card-text">
-          <OverflowScroll className={cx('page-card-title', cardTitleType)}>
+          <OverScroll className={cx('page-card-title', cardTitleType)}>
             <Icon name={iconName} className="page-card-title-icon" />
             <span className="page-card-title-text">{set.title}</span>
-          </OverflowScroll>
+          </OverScroll>
         </div>
       </div>
     </div>
@@ -1239,10 +1239,10 @@ const CardFace = memo(function CardFace({
     (view.wrap_titles ?? false) ? (
       <span className={cx('page-card-title is-wrap', cardTitleType)}>{titleBody}</span>
     ) : (
-      <OverflowScroll className={cx('page-card-title', cardTitleType)}>{titleBody}</OverflowScroll>
+      <OverScroll className={cx('page-card-title', cardTitleType)}>{titleBody}</OverScroll>
     )
   // While this card is the naming target the whole title row swaps for the fenced field —
-  // outside the OverflowScroll clip, the glyph staying put, pointerdown stopped against the
+  // outside the OverScroll clip, the glyph staying put, pointerdown stopped against the
   // whole-surface drag handle.
   const namingRow = naming && (
     <span

@@ -548,7 +548,7 @@ function NexusSettingsBody({ closing }: { closing: boolean }): React.JSX.Element
         children: (
           <>
             <div
-              className="settings-rail-list edge-fade"
+              className="settings-rail-list over-scroll"
               role="tablist"
               aria-label="Settings categories"
             >
@@ -600,7 +600,7 @@ function LeafBodyView({ category }: { category: CategoryKey }): React.JSX.Elemen
   if (leaf.Surface) return <leaf.Surface />
   const { sections } = leaf
   return (
-    <div className="settings-body edge-fade">
+    <div className="settings-body over-scroll">
       <h2 className={cx('settings-heading', text.title3.emphasized)}>
         <Icon name={leaf.icon} className="settings-heading-icon" />
         {leaf.label}

@@ -76,8 +76,7 @@
   display: flex;
   align-items: center;
   min-width: 0;
-  --edge-fade: 14px;
-  --scroll-fade: 14px;
+  --over-scroll-fade: 14px;
   /* overflow-y:hidden (truncateHoverScroll) clips at the padding box; descenders sit at the content
      edge and get sliced when the line-box rounds tight at zoom. A hair of vertical padding pushes the
      clip past them without touching the horizontal truncation fade. */

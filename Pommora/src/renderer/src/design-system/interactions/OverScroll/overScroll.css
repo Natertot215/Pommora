@@ -1,0 +1,115 @@
+/* THE over-scroll edge fade — every clipped edge rides this one mechanism. Two progress vars
+   animate along the box's own scroll range, so a box whose content fits has an inactive timeline
+   and the mask collapses to a no-op. An AXIS class carries the fade, `over-scroll-cap` adds the
+   capped-label box under it, and the modifiers tune what the edges mean. */
+@property --os-lead {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+@property --os-trail {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+/* Non-inheriting so a container tuning its own fade doesn't leak that width into descendant labels
+   (universal syntax keeps var() fallbacks alive). */
+@property --over-scroll-fade {
+  syntax: "*";
+  inherits: false;
+}
+
+@keyframes os-lead {
+  0% {
+    --os-lead: 0;
+  }
+  10%,
+  100% {
+    --os-lead: 1;
+  }
+}
+@keyframes os-trail {
+  0%,
+  90% {
+    --os-trail: 1;
+  }
+  100% {
+    --os-trail: 0;
+  }
+}
+
+.over-scroll,
+.over-scroll-x {
+  --os-fade-width: var(--over-scroll-fade, var(--os-fade-default));
+  animation-name: os-lead, os-trail;
+  animation-duration: auto;
+  animation-timing-function: linear;
+  mask-image: linear-gradient(
+    /* biome-ignore lint/correctness/noInvalidDirectionInLinearGradient: each class supplies its own
+       axis through this var, which no static parse can resolve. */
+    var(--os-dir, to bottom),
+    transparent 0,
+    var(--system-black) calc(var(--os-lead) * var(--os-fade-width)),
+    var(--system-black) calc(100% - var(--os-trail) * var(--os-fade-width)),
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    /* biome-ignore lint/correctness/noInvalidDirectionInLinearGradient: each class supplies its own
+       axis through this var, which no static parse can resolve. */
+    var(--os-dir, to bottom),
+    transparent 0,
+    var(--system-black) calc(var(--os-lead) * var(--os-fade-width)),
+    var(--system-black) calc(100% - var(--os-trail) * var(--os-fade-width)),
+    transparent 100%
+  );
+}
+
+/* THE house fade width, stated once. */
+.over-scroll {
+  --os-fade-default: 22px;
+  animation-timeline: scroll(self block);
+}
+
+/* Tighter than the house width — here the fade IS the truncation signal, read at the scale of a word. */
+.over-scroll-x {
+  --os-fade-default: 16px;
+  --os-dir: to right;
+  animation-timeline: scroll(self inline);
+}
+
+/* `hidden` still drives the scroll timeline, so the mask resolves in both states. The WIDTH cap is
+   the consumer's: a max-width for labels, the flex parent for rows. */
+.over-scroll-cap {
+  min-width: 0;
+  white-space: nowrap;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  text-overflow: clip;
+  scrollbar-width: none;
+}
+.over-scroll-cap:hover {
+  overflow-x: auto;
+}
+/* A label that can't hover itself takes the scrolled state from an ancestor — a removable chip's
+   label is pointer-inert, a sidebar row's title is read as part of the row. */
+.over-scroll-host:hover .over-scroll-cap {
+  overflow-x: auto;
+}
+
+/* Hold the leading fade until a full fade-width has actually scrolled past: a first line at rest,
+   or a small autofocus offset, shouldn't fade. */
+.over-scroll-gated {
+  animation-fill-mode: both;
+  animation-range:
+    var(--os-fade-width) 100%,
+    normal;
+}
+
+/* An ellipsis marks the end, so the trailing fade drops (one animation; --os-trail holds its 0
+   initial). The leading edge still dissolves what scrolled off the start, but only where a surface
+   names a width. */
+.over-scroll-ellipsis {
+  --os-fade-default: 0px;
+  animation-name: os-lead;
+  text-overflow: ellipsis;
+}
