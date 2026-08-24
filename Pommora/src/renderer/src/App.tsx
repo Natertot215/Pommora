@@ -6,7 +6,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from 'react'
 import { useSession } from './store'
-import { Surface } from './Components/Surface'
+import { Surface } from '@renderer/DesignSystem/Materials/Surface'
 import { Sidebar } from './Sidebar/Sidebar'
 import { Ribbon } from './Sidebar/Ribbon'
 import { DetailPane } from './Detail/DetailPane'
@@ -19,6 +19,7 @@ import { NexusSettings } from './Settings/NexusSettings'
 import { ConnectionHoverCard } from './Embeds/ConnectionHoverCard'
 import { contextTargetToSelect } from './Tabs/tabsModel'
 import { useNavThumbnails } from './Navigation/useNavThumbnails'
+import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { matchesCommand } from './Commands'
 import { openWebLink } from './openWebLink'
@@ -246,15 +247,16 @@ export function App(): React.JSX.Element {
           .shell.sidebar-hidden translates it off. */}
       <Surface>
         {status === 'ready' && tree && <Ribbon />}
-        <button
-          type="button"
+        <Button
+          size="button-large"
+          paddingX="0"
           className="sidebar-toggle sidebar-collapse"
           onClick={toggleSidebar}
           aria-label="Collapse sidebar"
           title="Collapse sidebar"
         >
           <Icon name="log-out" size="title2" className="flip-x" />
-        </button>
+        </Button>
         {status === 'loading' && <div className="state">Loading Nexus…</div>}
         {status === 'empty' && (
           <div className="state">
@@ -288,15 +290,16 @@ export function App(): React.JSX.Element {
         />
       )}
       {/* Always mounted (never conditionally rendered) so there's no in/out snap as the sidebar slides. */}
-      <button
-        type="button"
+      <Button
+        size="button-large"
+        paddingX="0"
         className="sidebar-toggle sidebar-expand"
         onClick={toggleSidebar}
         aria-label="Show sidebar"
         title="Show sidebar"
       >
         <Icon name="log-out" size="title2" />
-      </button>
+      </Button>
       {status === 'ready' && <InspectorPanel open={inspectorOpen} />}
       {status === 'ready' && <NavWindow />}
       {status === 'ready' && <PreviewWindow />}

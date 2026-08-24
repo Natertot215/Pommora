@@ -2,6 +2,7 @@ import type { IconName } from '../../Symbols'
 import { ColorsLeaf } from './ColorsLeaf'
 import { TypographyLeaf } from './TypographyLeaf'
 import { IconsLeaf } from './IconsLeaf'
+import { ButtonsLeaf } from './ButtonsLeaf'
 import { ComponentsLeaf } from './ComponentsLeaf'
 import { GlassLeaf } from './GlassLeaf'
 import { InteractionsLeaf } from './InteractionsLeaf'
@@ -46,6 +47,13 @@ export const LEAVES: readonly Leaf[] = [
     icon: 'shapes',
     section: 'foundations',
     render: () => <IconsLeaf />,
+  },
+  {
+    id: 'buttons',
+    label: 'Buttons',
+    icon: 'square-dashed',
+    section: 'components',
+    render: () => <ButtonsLeaf />,
   },
   {
     id: 'components',

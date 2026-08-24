@@ -1,6 +1,6 @@
 import { style } from '@vanilla-extract/css'
-import { TINT_STEPS, text, tintAt, vars } from '@renderer/DesignSystem/Tokens'
-import { stack } from '@renderer/DesignSystem/Tokens/stack'
+import { TINT_STEPS, text, tintAt, vars } from '../../Tokens'
+import { stack } from '../../Tokens/stack'
 
 const c = vars.color
 
@@ -62,28 +62,3 @@ export const actions = style({
   alignSelf: 'stretch',
   justifyContent: 'flex-end',
 })
-
-const buttonBase = {
-  padding: '5px 14px',
-  borderRadius: '7px',
-  border: 'none',
-  cursor: 'default',
-} as const
-export const button = style([
-  text.body.standard,
-  {
-    ...buttonBase,
-    color: c.label.primary,
-    background: c.fill.secondary,
-    selectors: { '&:hover': { background: c.fill.primary } },
-  },
-])
-export const buttonPrimary = style([
-  text.body.emphasized,
-  {
-    ...buttonBase,
-    color: c.label.primary,
-    background: 'var(--accent)',
-    selectors: { '&:disabled': { opacity: 'var(--state-inactive)' } },
-  },
-])

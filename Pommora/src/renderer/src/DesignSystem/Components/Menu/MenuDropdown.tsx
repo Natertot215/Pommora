@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
-import { SegmentedButton, type Segment } from '../Controls/Segmented-Controls'
+import { Segmented, type Segment } from '../Controls/Button'
 import { useDismiss } from '../useDismiss'
 import { useExitPresence } from '../../Animation/useExitPresence'
 import { MenuSurface } from './MenuSurface'
@@ -74,7 +74,8 @@ export function MenuDropdown({
     onClick: () => setOpen((v) => !v),
   }
   const button = (
-    <SegmentedButton
+    <Segmented
+      glass
       segments={[segment]}
       className={classNames?.button}
       labelCollapsed={labelCollapsed}

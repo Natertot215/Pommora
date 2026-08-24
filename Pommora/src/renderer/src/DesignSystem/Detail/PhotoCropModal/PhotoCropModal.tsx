@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { clamp } from '@renderer/DesignSystem/Util/clamp'
-import { GlassWindow } from '@renderer/DesignSystem/Materials'
+import { clamp } from '../../Util/clamp'
+import { Button } from '../../Components/Controls/Button'
+import { GlassWindow } from '../../Materials'
 import * as s from './photoCropModal.css'
 
 // The circle's bounding box is what gets exported.
@@ -152,17 +153,13 @@ export function PhotoCropModal({
           />
         )}
         <div className={s.actions}>
-          <button type="button" className={s.button} onClick={onCancel} disabled={busy}>
-            Cancel
-          </button>
-          <button
-            type="button"
-            className={s.buttonPrimary}
+          <Button type="filled" label="Cancel" onClick={onCancel} disabled={busy} />
+          <Button
+            type="solid"
+            label="Choose"
             onClick={() => void choose()}
             disabled={busy || !nat || error}
-          >
-            Choose
-          </button>
+          />
         </div>
       </GlassWindow>
     </div>,

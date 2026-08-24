@@ -28,7 +28,7 @@ export const segmentRow = style({
 })
 
 /** One segment: icon + title, hairline-bordered. The active segment lifts on the selected-state
- *  fill (surfacepm idiom, not outline). Gap is zero — Segmented-Controls' collapsible `labelSlot`
+ *  fill (surfacepm idiom, not outline). Gap is zero — Button's collapsible `labelSlot`
  *  is the sole icon↔title spacing, so the hidden state sits pixel-identical to a bare icon segment. */
 export const segment = style([
   text.control.emphasized,

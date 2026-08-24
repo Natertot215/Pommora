@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
-import { cx } from '@renderer/DesignSystem/Util/cx'
-import { duration, ms } from '@renderer/DesignSystem/Animation'
-import { useExitPresence } from '@renderer/DesignSystem/Animation/useExitPresence'
+import { cx } from '../../Util/cx'
+import { duration, ms } from '../../Animation'
+import { useExitPresence } from '../../Animation/useExitPresence'
 import * as s from './paneSlider.css'
 
 // The slide runs on `base`; a close holds the detail mounted exactly that long (below) so it slides

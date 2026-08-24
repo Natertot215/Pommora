@@ -194,6 +194,7 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 | Title         | Export                              | What it is                                                              |
 | ------------- | ----------------------------------- | ----------------------------------------------------------------------- |
 | GlassSurface  | `GlassSurface` · `frostMaterial`    | The app's fixed chrome tier — sidebar, inspector, side rail.            |
+| Surface       | `Surface`                           | GlassSurface as the floating overlay over the main view.                |
 | GlassPane     | `GlassPane` · `PANE_FROST`          | Anything floating over it — menus, pickers, the autocomplete.           |
 | GlassWindow   | `GlassWindow` · `WINDOW_FROST`      | The pane tier carrying a body — preview, nav, settings, the crop modal. |
 | Ghost         | `GHOST_FROST`                       | The edge-free frost the drag chip wears.                                |
@@ -252,7 +253,8 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 | DualSwitch  | `DualSwitch`                          | A boolean toggle with a sliding glass segment.                 |
 | ColorSwatch | `ColorSwatch`                         | The switch shape holding a color, anchoring a ColorPicker.     |
 | Slider      | `Slider`                              | Sliding number selection.                                      |
-| Segmented   | `SegmentedSymbol` · `SegmentedButton` | Icon or label options in one control, divided by segments.     |
+| Button      | `Button`                              | `type` base · tinted · solid · filled · destructive, `size` on the icon ladder, `outline`, `revealOnHover`, `ghostRest`. |
+| Segmented   | `Segmented`                           | N Buttons of one type divided by `segment`; `glass` for the toolbar. |
 
 #### Pickers
 
@@ -298,6 +300,7 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 | ---------- | ------------------------------------- | ----------------------------------------------------- |
 | PreviewPane | `Detail/PreviewPane` — `PreviewPane` | The floating window surface every in-app window mounts.[^1] |
 | SidePane | `Detail/SidePane` — `SidePane` · `sidePaneWidth` | A pane carried on a window's edge by `--io`. |
+| PhotoCropModal | `Detail/PhotoCropModal` — `PhotoCropModal` | The circular crop window behind every photo pick. |
 | Tile chassis | `Detail/tile-chassis.css` | The resizable tile frame SurfacePM and embeds share. |
 | Sidebar | app: `Sidebar/` | [[SidebarPM]] |
 | Tabs · Toolbar | app: `Tabs/` · `Toolbar/` | [[NavigationPM]] |
@@ -351,7 +354,6 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 
 ### Pending
 
-- **Buttons** — a size × content × treatment recipe over Label, with Segmented as N buttons divided by `segment`; lands in Controls.
 - **Spacing and radius** — `--radius-full` is the scale's only member; the rest stay ad-hoc until lifted from Figma.
 - **Light/dark theming** — the system is dark-only.
 - **The inactive state token** — the empty-state tone between secondary and tertiary; interim consumers read tertiary.

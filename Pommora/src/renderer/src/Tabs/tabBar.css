@@ -109,16 +109,7 @@
      + under the scroll's transparent right edge, and without this the scroll box eats its clicks. */
   position: relative;
   z-index: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  padding: 0 6px;
-  border: none;
-  border-radius: 6px;
-  background: none;
   color: var(--label-secondary);
-  cursor: pointer;
   opacity: 0;
   transition:
     opacity var(--duration-fast) var(--ease-base),
@@ -142,7 +133,4 @@
 .app-toolbar:has(.app-toolbar-cluster--nav button:hover) .tab-plus,
 .app-toolbar:has(.app-toolbar-right button:hover) .tab-plus {
   opacity: 0;
-}
-.tab-plus:hover {
-  background: var(--state-hover);
 }

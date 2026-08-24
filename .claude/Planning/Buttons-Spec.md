@@ -7,7 +7,7 @@ Figma: https://www.figma.com/design/fYZ5oiK7stC3diRhaBHl1r/Pommora---React?node-
 **Home:** `DesignSystem/Components/Controls/Button/` — `Button.tsx`, `button.css.ts`. `Segmented-Controls/` folds in.
 
 ```
-<Button type="filled" size="button-medium" icon="sliders" label="Filters" outline glass onClick … />
+<Button type="filled" size="button-medium" icon="sliders" label="Filters" outline onClick … />
 <Segmented type="base" size="button-large" glass segments={[…]} />
 ```
 
@@ -17,7 +17,7 @@ Figma: https://www.figma.com/design/fYZ5oiK7stC3diRhaBHl1r/Pommora---React?node-
 | `size`    | `button-small` · `button-medium` · `button-large`              | `size.control` — height, segment height, padX, radius, segment radius, divider height, icon step |
 | content   | `icon` · `icon` + `label` · `label`                            | icon-only takes the size ladder; labeled buttons take the standard size |
 | `outline` | boolean                                                        | the `labels.css` rule — a border in the type's own color, `--tint-quaternary` for the accent types, `label.quaternary` for base/filled |
-| `glass`   | boolean, default off                                           | `GlassControls` wrapper — the toolbar only                                  |
+| `glass`   | boolean on `Segmented`, default off                                           | `GlassControls` wrapper — the toolbar only                                  |
 | state     | hover · disabled                                               | `state.hover` fill (`--tint-secondary` of the accent for tinted/solid), `label.tertiary` when disabled; no selected state — a button is a single click |
 
 **Types**
@@ -49,7 +49,7 @@ Type is one CSS-var pair set by a `styleVariants` — `--button-fill` and `--but
 | `Segmented-Controls/` (SegmentedSymbol · SegmentedButton) | `Controls/Button/` — `Segmented` is the run form      |
 | Toolbar Back/Forward · Trio · dropdown triggers           | `Segmented type="base" glass`                         |
 | PhotoCropModal Cancel · Choose                            | `Button type="filled"` · `Button type="solid"`        |
-| `ActionBand.segment` (fill.quaternary + hairline)          | `Button type="filled" outline`; its active state stays a local modifier — it is a toggle |
+| `ActionBand.segment`                                       | stays — a purposely divergent tab-style control (Nathan's call) |
 | `settingsPane.iconButton`                                  | `Button type="filled" icon`                           |
 | `menu.css accessoryButton` and its seven derivatives       | `Button type="base" icon size="button-small"` + the `ghostRest` / `revealOnHover` modifiers |
 | `.ppane-action` · `.subfield-add` · `.tab-plus` · `.add-banner-btn` · `.group-band-add` · `.mdpm-tbl-add` · `.settings-cat` · `.open-btn` · `.navwindow-style-toggle` · CalendarPicker `navBtn` / `titleBtn` | `Button type="base"` at the matching content mode |

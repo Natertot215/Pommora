@@ -31,3 +31,13 @@ export const surface = style({
 // its own title tone outside a surface, and the picker-menu OPTION deliberately breaks from it —
 // a separate surface, not this global.
 globalStyle(`${surface} .${titleText}`, { color: c.label.primary })
+
+/** The menu gutter, for a menu pane hosted in the PICKER shell — a view tile's Settings hangs off a
+ *  button inside a scrolling surface, so it needs the picker's portal anchoring while still being a
+ *  menu: its flush dividers and trailing crumbs are cut against this gutter, not the picker's tighter
+ *  one. Worn with `bareSurface`, so it is the pane's sole gutter. */
+export const hostedGutter = style({
+  padding: `6px ${MENU_GUTTER}`,
+  display: 'flex',
+  flexDirection: 'column',
+})
