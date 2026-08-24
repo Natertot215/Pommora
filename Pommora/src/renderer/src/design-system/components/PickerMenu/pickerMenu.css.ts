@@ -14,11 +14,14 @@ const c = colorVars.color
  *  here so the design system owns it; the block drill menus consume it from here. */
 export const PICKER_MAX_HEIGHT = 240
 
-/** KNOB — a DISCLOSURE picker's width floor and ceiling. The pane sizes to its VISIBLE rows —
- *  closed subtrees unmount, so a folded long title can't hold the pane wide — and an edge-anchored
- *  open keeps the growth on one side when a disclosure reveals a longer row. */
-export const PICKER_TREE_MIN_WIDTH = 140
-export const PICKER_TREE_MAX_WIDTH = 260
+/** A DISCLOSURE picker's frame — sized by its VISIBLE rows (closed subtrees unmount, so a folded
+ *  long title can't hold the pane wide), floored so a sparse tree still reads as a pane, capped so
+ *  a deep title truncates instead of running the screen. An edge-anchored open keeps the growth on
+ *  one side when a disclosure reveals a longer row. */
+export const treePane = style({
+  minWidth: 140, // KNOB
+  maxWidth: 260, // KNOB
+})
 
 // Selection paints at the shared row weight; only the TONE separates it from keyboard focus.
 const OPTION_RING = `${ROW_RING}px`
