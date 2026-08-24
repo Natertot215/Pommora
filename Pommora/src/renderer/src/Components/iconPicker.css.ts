@@ -1,6 +1,5 @@
 import { style } from '@vanilla-extract/css'
 import { text, TINT_STEPS, tintAt, vars } from '@renderer/design-system/tokens'
-import { inputFieldVar } from '@renderer/design-system/tokens/color.css'
 import { fieldRing, focusRing } from '@renderer/design-system/fields/fieldRing'
 import { separatorLine } from '@renderer/design-system/components/menu/menu.css'
 
@@ -28,7 +27,7 @@ export const search = style([
     boxSizing: 'border-box',
     textAlign: 'left',
     color: vars.color.label.primary,
-    background: inputFieldVar,
+    background: vars.color.fill.quaternary,
     border: 'none',
     borderRadius: 8,
     outline: 'none',

@@ -74,7 +74,6 @@
   min-width: 120px;
   font: inherit;
   color: var(--label-primary);
-  background: var(--input-field);
   border: 1px solid var(--accent-stroke);
   border-radius: 4px;
   padding: 0 4px;
