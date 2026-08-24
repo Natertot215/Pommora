@@ -11,7 +11,7 @@ import {
   type GhostAnchor,
 } from '@renderer/Detail/Views/useGhostAnchor'
 import { cx } from '@renderer/design-system/cx'
-import { EditableInput } from '../../design-system/fields'
+import { bare, EditableInput } from '../../design-system/fields'
 import * as s from './settingsPane.css'
 import { Label, type LabelShape } from '@renderer/design-system/labels'
 
@@ -52,7 +52,7 @@ export function OptionNameCaret({
       <EditableInput
         value={value}
         autoSize
-        className={s.optionInput}
+        className={bare}
         onCommit={onCommit}
         onCancel={onCancel}
       />

@@ -5,6 +5,18 @@ import { fieldRing } from './fieldRing'
 
 const c = colorVars.color
 
+/** The transparent search look — every search field agrees on this much; layout and type stay with
+ *  the host. Stated before the boxed chrome so a search composed INTO a box keeps the box's fill. */
+export const search = style({
+  border: 'none',
+  outline: 'none',
+  background: 'transparent',
+  color: c.label.primary,
+  selectors: {
+    '&::placeholder': { color: c.label.tertiary },
+  },
+})
+
 // § BOX
 
 /** The rounded input surface. The OutlineTint channel: any ancestor (or the
@@ -61,16 +73,6 @@ export const input = style([
     },
   },
 ])
-
-/** Only what every search field agrees on. Size, color, background and ring belong to the surface the
- *  field sits in, so anything a caller could reasonably differ on is left to the caller's own class. */
-export const search = style({
-  border: 'none',
-  outline: 'none',
-  selectors: {
-    '&::placeholder': { color: c.label.tertiary },
-  },
-})
 
 // § BARE
 

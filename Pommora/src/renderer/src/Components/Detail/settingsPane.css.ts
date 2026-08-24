@@ -352,9 +352,6 @@ export const ghostChip = style({
   },
 })
 
-/** The inline add/rename caret — bare input inside the chip, which owns the font, padding, and fill. */
-export const optionInput = bare
-
 /** The recolor icon's positioning context — the ColorPicker anchors (centered, below) to this. */
 export const paletteAnchor = style({ position: 'relative', display: 'flex', alignItems: 'center' })
 
