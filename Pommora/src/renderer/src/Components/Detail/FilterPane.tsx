@@ -287,18 +287,10 @@ function LocationField({
   onCommit: (next: string[]) => void
 }): React.JSX.Element {
   const [open, setOpen] = useState(false)
-  const [query, setQuery] = useState('')
   const ref = useRef<HTMLDivElement>(null)
-  const caretRef = useRef<HTMLInputElement>(null)
   const expanded = useDisclosureSet()
   const { shown, toggle } = useMultiValue(values, onCommit)
-  const allSets = flattenSets(sets)
-  const byId = new Map(allSets.map((s) => [s.id, s]))
-  useEffect(() => {
-    if (open) caretRef.current?.focus()
-  }, [open])
-  const q = query.trim().toLowerCase()
-  const matches = q ? allSets.filter((s) => s.title.toLowerCase().includes(q)) : null
+  const byId = new Map(flattenSets(sets).map((s) => [s.id, s]))
 
   const renderSet = (s: SetNode): React.JSX.Element => {
     const kids = s.sets ?? []
@@ -327,7 +319,7 @@ function LocationField({
   return (
     <>
       <ValueFieldShell hostRef={ref} onOpen={() => setOpen(true)}>
-        {shown.length === 0 && !open ? (
+        {shown.length === 0 ? (
           <span className={fp.placeholder}>Value</span>
         ) : (
           <SegmentRun
@@ -345,51 +337,23 @@ function LocationField({
             })}
           />
         )}
-        {open && (
-          <input
-            ref={caretRef}
-            className={fp.cellCaret}
-            value={query}
-            aria-label="Search Sets or type a path"
-            spellCheck={false}
-            onClick={(e) => e.stopPropagation()}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && query.trim()) {
-                // The typed entry is applied as-is — a path a later Set fulfills without the
-                // rule being rewritten.
-                toggle(query.trim())
-                setQuery('')
-              } else if (e.key === 'Escape' && query) {
-                e.preventDefault()
-                setQuery('')
-              }
-            }}
-          />
-        )}
       </ValueFieldShell>
       {/* Left-anchored: disclosing a Set widens the pane, and a right-anchored pane would walk every
           row sideways out from under the cursor mid-click. Capped so a deep tree scrolls instead of
           running off the screen. */}
       <PickerMenu
         open={open}
-        onDismiss={() => {
-          setOpen(false)
-          setQuery('')
-        }}
+        onDismiss={() => setOpen(false)}
         triggerRef={ref}
         origin="left"
         maxHeight={PICKER_MAX_HEIGHT}
         width={PICKER_TREE_WIDTH}
-        manageFocus={false}
       >
         {!open
           ? null
-          : matches
-            ? matches.map((s) => renderSet({ ...s, sets: [] }))
-            : sets.length === 0
-              ? emptyPicker('No Sets in this collection.')
-              : sets.map(renderSet)}
+          : sets.length === 0
+            ? emptyPicker('No Sets in this collection.')
+            : sets.map(renderSet)}
       </PickerMenu>
     </>
   )
