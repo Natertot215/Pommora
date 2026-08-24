@@ -254,8 +254,8 @@ Base commit recorded in the Log when the phase opens. All moves are `git mv` so 
 **Failure half:** content that fits — the OverScroll timeline stays inactive and the mask no-ops (`overScroll.css:1-4`); zero children — an empty content row renders nothing extra; a boxed field — the fade rides the inner row, never the box (the mask-dissolves-the-box rule).
 
 **Steps:**
-- [ ] Implement the opt-in content row; prove it on the Task 8 composition (its long-labels case fades with no per-site var).
-- [ ] Gates green. Commit: `refactor(fields): the field content row caps itself`
+- [x] Implement the opt-in content row; its proof rides Task 8's composition (the long-labels case fades with no per-site var).
+- [x] Gates green. Commit: `refactor(fields): the field content row caps itself`
 
 #### Task 8: Press-to-edit extracted; caret + labels in one field
 
