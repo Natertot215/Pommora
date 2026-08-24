@@ -63,7 +63,6 @@ The opaque content planes layered on the window substrate — addressed by role,
 | Surface Primary   | `surface.primary` · `--surface-primary`     | `#202022`         |
 | Surface Secondary | `surface.secondary` · `--surface-secondary` | `#2A2A2E`         |
 | Surface Tertiary  | `surface.tertiary` · `--surface-tertiary`   | `#3A3A3E`         |
-| Interaction Field | `inputFieldVar` · `--input-field`           | `fill.quaternary` |
 
 #### Label Colors
 

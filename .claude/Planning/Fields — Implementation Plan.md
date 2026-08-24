@@ -162,9 +162,9 @@ Base commit recorded in the Log when the phase opens. All moves are `git mv` so 
 - Control: `rg -F -- '--fill-quaternary' Pommora/src` → ≥ 1 (the bridge). Zero means the sweep never ran.
 
 **Steps:**
-- [ ] Re-point the four consumers, delete the token block, delete the doc row.
-- [ ] Both sweeps → 0 against the control; gates green.
-- [ ] Commit: `refactor(tokens): the input fill is the quaternary fill, stated once`
+- [x] Re-point the four consumers, delete the token block, delete the doc row.
+- [x] Both sweeps → 0 against the control; gates green.
+- [x] Commit: `refactor(tokens): the input fill is the quaternary fill, stated once`
 
 #### Gate 1 — the family stands, nothing looks different
 - [ ] Gates green, exit codes read directly.

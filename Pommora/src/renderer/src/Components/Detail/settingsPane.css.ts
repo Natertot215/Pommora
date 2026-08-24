@@ -1,5 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css'
-import { vars as colorVars, inputFieldVar } from '../../design-system/tokens/color.css'
+import { vars as colorVars } from '../../design-system/tokens/color.css'
 import { text } from '../../design-system/tokens/typography.css'
 import type { IconSize } from '../../design-system/tokens/size.css'
 import { duration, easing } from '../../design-system/tokens/motion'
@@ -97,11 +97,10 @@ export const iconButton = style({
   justifyContent: 'center',
   borderRadius: '8px',
   border: 'none',
-  background: inputFieldVar,
+  background: c.fill.quaternary,
   cursor: 'default',
   color: COLOR.actionLabel,
   boxShadow: fieldRing(),
-  selectors: { '&:hover': { background: c.fill.quaternary } },
 })
 
 export const titleField = style({ flex: '1 1 auto', minWidth: 0 })
