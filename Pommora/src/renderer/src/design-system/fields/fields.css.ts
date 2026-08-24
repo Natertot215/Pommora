@@ -68,9 +68,6 @@ export const input = style([
     border: 'none',
     outline: 'none',
     font: 'inherit',
-    selectors: {
-      '&::placeholder': { color: c.label.tertiary },
-    },
   },
 ])
 

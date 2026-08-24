@@ -19,13 +19,7 @@ export const content = style({
   boxSizing: 'border-box',
 })
 
-export const search = style([
-  input,
-  {
-    textAlign: 'left',
-  },
-  focusRing(),
-])
+export const search = style([input, { textAlign: 'left' }, focusRing()])
 
 export const separator = style([separatorLine, { flex: '0 0 auto' }])
 
