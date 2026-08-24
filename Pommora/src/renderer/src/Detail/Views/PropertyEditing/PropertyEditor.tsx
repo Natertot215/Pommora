@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { cx } from '@renderer/design-system/cx'
+import { bare } from '@renderer/design-system/fields'
 
 /**
  * Table-agnostic: raw text in/out — the caller owns the value typing, parsing, and write.
@@ -50,6 +51,7 @@ export function PropertyEditor({
   return (
     <input
       className={cx(
+        bare,
         'property-editor',
         validate != null && text.trim() !== '' && !validate(text.trim()) && 'property-editor-ghost',
       )}

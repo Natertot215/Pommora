@@ -31,7 +31,9 @@
   color: var(--label-control);
 }
 .detail-title-text,
-.detail-title-input {
+/* Doubled: the family reset also states `font`/`color` at this weight, and the title's own scale
+   must win on specificity, not on stylesheet order. */
+.detail-title-input.detail-title-input {
   font-size: var(--detail-title-size);
   font-weight: var(--weight-bold);
   color: var(--label-primary);
@@ -45,9 +47,4 @@
 .detail-title-input {
   flex: 1 1 auto;
   min-width: 0;
-  border: none;
-  outline: none;
-  padding: 0;
-  background: transparent;
-  font-family: var(--font-family);
 }

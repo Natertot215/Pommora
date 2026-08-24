@@ -5,6 +5,7 @@ import type { SavedView } from '@shared/views'
 import { text } from '@renderer/design-system/tokens'
 import { labelColorFor } from '@renderer/design-system/tokens/colorMap'
 import { cx } from '@renderer/design-system/cx'
+import { bare } from '@renderer/design-system/fields'
 import { asRenderableIcon, Icon } from '@renderer/design-system/symbols'
 import { Reveal } from '@renderer/design-system/components/Reveal'
 import { registerDiscloseTarget } from '@renderer/design-system/interactions/dragDisclose'
@@ -58,8 +59,8 @@ export function resolveBandHead(
               path={setPath}
               kind="set"
               title={title}
-              className="band-title-input"
-              boxed
+              className={cx(bare, 'band-title-input')}
+              renames="title"
               host="detail"
             />
           ) : (

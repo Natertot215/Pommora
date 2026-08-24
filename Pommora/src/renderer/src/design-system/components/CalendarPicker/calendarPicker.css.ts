@@ -3,6 +3,7 @@ import { vars } from '../../tokens/color.css'
 import { duration, easing } from '../../tokens/motion'
 import { TINT_STEPS, tintAt } from '../../tokens/tint'
 import { font } from '../../tokens/typography.css'
+import { bare } from '../../fields/fields.css'
 import { stack } from '../../tokens/stack'
 
 const c = vars.color
@@ -240,25 +241,24 @@ export const timeSeg = style({
 })
 /* The double-click caret editor — the segment's own look; select-all drives replace-on-type but
    the selection paints transparent (highlighting disabled). */
-export const timeSegInput = style({
-  boxSizing: 'content-box', // 2-digit glyphs + caret live in the content width; padding sits outside (no clip)
-  width: '2.4ch',
-  border: 'none',
-  outline: 'none',
-  background: 'transparent',
-  textAlign: 'center',
-  padding: '1px 4px',
-  borderRadius: '5px',
-  fontFamily: 'inherit',
-  fontSize: font.scale.control.size,
-  fontWeight: font.weight.emphasized,
-  color: c.label.primary,
-  selectors: {
-    '&::selection': { background: 'transparent' },
-    // The set time, dimmed — the type-over hint (opacity:1 so only the token color dims it).
-    '&::placeholder': { color: c.label.tertiary, opacity: 1 },
+export const timeSegInput = style([
+  bare,
+  {
+    boxSizing: 'content-box', // 2-digit glyphs + caret live in the content width; padding sits outside (no clip)
+    width: '2.4ch',
+    textAlign: 'center',
+    padding: '1px 4px',
+    borderRadius: '5px',
+    fontSize: font.scale.control.size,
+    fontWeight: font.weight.emphasized,
+    color: c.label.primary,
+    selectors: {
+      '&::selection': { background: 'transparent' },
+      // The set time, dimmed — the type-over hint (opacity:1 so only the token color dims it).
+      '&::placeholder': { color: c.label.tertiary, opacity: 1 },
+    },
   },
-})
+])
 export const timeColon = style({ color: c.label.secondary })
 
 /* ── Boolean rows (the real Switch) ── */

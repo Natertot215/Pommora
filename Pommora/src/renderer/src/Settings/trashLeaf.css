@@ -29,8 +29,6 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  /* The search row rides the window's top edge the way NavWindow's does — the floating × shares
-     the line rather than pushing the row down. */
   padding-top: var(--glass-inset);
 }
 
