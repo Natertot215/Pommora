@@ -64,7 +64,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       style={{
         height: inRun ? g.segmentHeight : g.height,
         borderRadius: inRun ? g.segmentRadius : g.radius,
-        paddingInline: paddingX ?? (labeled ? s.LABEL_PAD_X : g.paddingX),
+        paddingInline: paddingX ?? (labeled ? g.labelPaddingX : g.paddingX),
         ...(icon ? { fontSize: iconSize ? vars.size.icon[iconSize] : g.icon } : null),
         ...style,
       }}
@@ -109,7 +109,12 @@ export function Segmented({
   className?: string
 }): React.JSX.Element {
   const g = vars.size.control[size]
-  const containerStyle = { height: g.height, borderRadius: g.radius }
+  const containerStyle = {
+    height: g.height,
+    borderRadius: g.radius,
+    display: 'flex',
+    alignItems: 'center',
+  }
   const buttons = segments.map((seg, i) => (
     // biome-ignore lint/suspicious/noArrayIndexKey: segments are a fixed config array that never reorders
     <Fragment key={i}>
