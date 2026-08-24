@@ -8,10 +8,12 @@ import { TINT_STEPS, tintAt } from '../tokens/tint'
  *  only in tone, so one can never read as heavier than the other. */
 export const ROW_RING = 2
 
+/** The channel's one spelling — every ring fragment reads the color through this. */
+export const FIELD_RING_VAR = 'var(--field-ring, transparent)'
+
 /** What `--field-ring` paints, at a given thickness — compose this instead of restating the
  *  shadow, so the channel and its geometry can never drift apart. */
-export const fieldRing = (width = 1): string =>
-  `inset 0 0 0 ${width}px var(--field-ring, transparent)`
+export const fieldRing = (width = 1): string => `inset 0 0 0 ${width}px ${FIELD_RING_VAR}`
 
 /** The error preset on the channel — no transition: a state, not a gesture. */
 export const errorRing = (): { vars: Record<string, string> } => ({
