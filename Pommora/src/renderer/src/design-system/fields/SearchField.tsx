@@ -8,17 +8,22 @@ type Props = Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 
   inputRef?: Ref<HTMLInputElement>
 }
 
+/** The one search placeholder — every filter field reads this copy unless a caller overrides it. */
+export const SEARCH_PLACEHOLDER = 'Search…'
+
 /** The app's filter field. Controlled, never spell-checked, and stripped of the browser's own chrome. */
 export function SearchField({
   value,
   onValueChange,
   inputRef,
   className,
+  placeholder = SEARCH_PLACEHOLDER,
   ...rest
 }: Props): React.JSX.Element {
   return (
     <input
       {...rest}
+      placeholder={placeholder}
       ref={inputRef}
       className={cx(s.search, className)}
       value={value}

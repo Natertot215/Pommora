@@ -51,7 +51,6 @@ export function NavView(): React.JSX.Element {
       className={cx('nav-view-search', text.body.standard)}
       value={query}
       onValueChange={setQuery}
-      placeholder="Search…"
     />
   )
 
