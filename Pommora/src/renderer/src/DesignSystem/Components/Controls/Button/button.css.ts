@@ -22,7 +22,7 @@ export const button = style({
   flexShrink: 0,
   boxSizing: 'border-box',
   padding: 0,
-  border: `${OUTLINE_W} solid transparent`,
+  border: 'none',
   outline: 'none',
   background: 'var(--button-fill)',
   color: 'var(--button-ink)',
@@ -80,7 +80,7 @@ export const type = styleVariants({
   },
 })
 
-export const outlined = style({ borderColor: 'var(--button-outline)' })
+export const outlined = style({ boxShadow: `inset 0 0 0 ${OUTLINE_W} var(--button-outline)` })
 
 export const revealOnHover = style({
   opacity: 0,
