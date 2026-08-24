@@ -1,7 +1,7 @@
 import { type Ref, useState } from 'react'
 import type { TitleMenuAction } from '@shared/identityMenus'
 import { Icon } from '@renderer/DesignSystem/Symbols'
-import { RenamableLabel, bare } from '@renderer/DesignSystem/Components/Fields'
+import { RenamableLabel, base } from '@renderer/DesignSystem/Components/Fields'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import './DetailTitleHeader.css'
 
@@ -58,7 +58,7 @@ export function DetailTitleHeader({
         renames="title"
         editing={editing}
         value={title}
-        className={cx(bare, 'detail-title-input')}
+        className={cx(base, 'detail-title-input')}
         onCommit={(next) => {
           setEditing(false)
           void onRename(next)

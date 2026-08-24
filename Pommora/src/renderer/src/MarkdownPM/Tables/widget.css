@@ -74,7 +74,7 @@
 .mdpm-tbl-grip {
   color: var(--label-secondary);
   opacity: 0;
-  transition: opacity var(--duration-fast) var(--ease-standard, ease);
+  transition: opacity var(--duration-fast) var(--ease-base, ease);
 }
 .mdpm-tbl-grip-zone:hover .mdpm-tbl-grip {
   opacity: 1;
@@ -98,8 +98,8 @@
   opacity: 0;
   pointer-events: none;
   transition:
-    opacity var(--duration-base) var(--ease-standard, ease),
-    background var(--duration-base) var(--ease-standard, ease);
+    opacity var(--duration-base) var(--ease-base, ease),
+    background var(--duration-base) var(--ease-base, ease);
 }
 .mdpm-tbl-wrap:hover .mdpm-tbl-add {
   opacity: 1;
@@ -151,7 +151,7 @@
 
 .mdpm-tbl-dragging .mdpm-tbl-cell,
 .mdpm-tbl-dragging .mdpm-tbl tr {
-  transition: transform var(--duration-fast) var(--ease-standard, ease);
+  transition: transform var(--duration-fast) var(--ease-base, ease);
 }
 .mdpm-tbl-subject {
   position: relative;

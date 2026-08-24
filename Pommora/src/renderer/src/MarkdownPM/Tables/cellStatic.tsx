@@ -163,7 +163,7 @@ function StaticCellImpl({
   cites?: string
   ordinalOf?: (label: string) => number | null
   connections?: () => ConnectionsApi | undefined
-  onActivate: (coords: { x: number; y: number }) => void
+  onActivate: (coords: { x: number; y: number }, sweep?: 'start' | 'end') => void
   /** Replace the cell's whole text — how a resting cell performs a link action without becoming an editor. */
   onCommit: (text: string) => void
   /** Enter the cell with `range` selected, for the actions that put you in position to retype. */
@@ -267,9 +267,31 @@ function StaticCellImpl({
       }}
       onMouseOut={onHoverLeave}
       onClick={(e) => {
-        if (e.button !== 0 || e.detail !== 1) return
+        if (e.button !== 0) return
         onHoverEnd()
-        ;(claimCite(e) ?? claimLink(e))?.()
+        const go = claimCite(e) ?? claimLink(e)
+        if (go) return go()
+        // A press that dragged out a selection leaves it standing — the highlight IS what it asked
+        // for. A plain click carries none, and enters the cell at the point it landed on.
+        if (e.detail === 1 && window.getSelection()?.isCollapsed === false) return
+        onActivate({ x: e.clientX, y: e.clientY })
+      }}
+      onMouseUp={(e) => {
+        // A sweep that crossed into the table from the prose: the page's document and the cell's are
+        // two documents, so only the half that reached this cell can be acted on. Re-seat it here.
+        // A sweep that began inside the table is the cell-to-cell highlight, and stands as drawn.
+        if (e.button !== 0) return
+        const sel = window.getSelection()
+        const anchor = sel?.anchorNode
+        if (!sel || sel.isCollapsed || !anchor) return
+        const wrap = e.currentTarget.closest('.mdpm-tbl-wrap')
+        if (!wrap || wrap.contains(anchor)) return
+        const above =
+          (wrap.compareDocumentPosition(anchor) & Node.DOCUMENT_POSITION_PRECEDING) !== 0
+        const coords = { x: e.clientX, y: e.clientY }
+        // CM6 finishes its own pointer selection on a document-level mouseup, force-writing the page's
+        // DOM selection — so the cell takes the seat on the microtask after that write, not before it.
+        queueMicrotask(() => onActivate(coords, above ? 'start' : 'end'))
       }}
       onMouseDown={(e) => {
         // A right press on a link belongs to that link's menu, and claiming it here is what stops the
@@ -278,15 +300,10 @@ function StaticCellImpl({
           if (linkSpanAt(e.target)) e.preventDefault()
           return
         }
-        if (e.button !== 0) return
-        // The cell swaps itself into an editor on mousedown, so a press bound for a link or a
-        // footnote has to be claimed HERE — claiming the click instead arrives after the swap, which
-        // is the "clicking a link drops you into its syntax" symptom.
-        if (claimCite(e) || claimLink(e)) return
-        // Stop the browser's native mousedown focus/selection: the cell swaps to an editor that we focus
-        // ourselves, and the native focus-shift otherwise races ours — the "needs two clicks" bug.
-        e.preventDefault()
-        onActivate({ x: e.clientX, y: e.clientY })
+        // A press bound for a link or a footnote is claimed HERE, so the browser never starts a
+        // selection under it. Every other press is the browser's to run: the cell rests until the
+        // click, so a drag that begins in one cell highlights across as many as it reaches.
+        if (e.button === 0) claimCite(e) || claimLink(e)
       }}
     >
       {renderCellContent(text, connections, ordinalOf)}

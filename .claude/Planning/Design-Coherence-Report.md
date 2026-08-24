@@ -452,7 +452,7 @@ Where the report's work stands, kept current so a session can read its position 
 - **HoverRemove** — the hover-revealed remove × under `interactions/HoverRemove`.
 - **The Interaction Lab** moved to `showcase/lab/`.
 - **The checkbox recipe** — the capped labels wear the one cap, and the checkbox reads its recipe.
-- **The fields family** (`DesignSystem/Components/Fields/`) — the Fields plan executed 08-24: one axes stylesheet (boxed · hairline · bare · search), `InputField` (the renamed `InteractionField`), the ring channel with rest/focus/error presets and one spelling (`FIELD_RING_VAR`), `--input-field` gone with zero trace, seven hand-rolled bare-input resets retired onto one `bare`, the transparent search look and the placeholder tone family-owned, and the editing chain (`EditableInput` · `RenamableLabel` · `useDraftEdit` extracted from PathField) living beside its chrome. The `EditableInput`-before-rehome constraint is satisfied. Net code delta negative.
+- **The fields family** (`DesignSystem/Components/Fields/`) — the Fields plan executed 08-24: one axes stylesheet (boxed · hairline · base · search), `InputField` (the renamed `InteractionField`), the ring channel with rest/focus/error presets and one spelling (`FIELD_RING_VAR`), `--input-field` gone with zero trace, seven hand-rolled bare-input resets retired onto one `base`, the transparent search look and the placeholder tone family-owned, and the editing chain (`EditableInput` · `RenamableLabel` · `useDraftEdit` extracted from PathField) living beside its chrome. The `EditableInput`-before-rehome constraint is satisfied. Net code delta negative.
 - **ColorPicker** has landed in `DesignSystem/components`
 
 #### Remaining Slices

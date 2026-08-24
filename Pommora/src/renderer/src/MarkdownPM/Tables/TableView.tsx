@@ -93,7 +93,7 @@ export function TableView({
   onSettled?: () => void
   onExit: (dir: 'before' | 'after') => void
   onReorder: (axis: Axis, from: number, to: number) => boolean
-  onResize: (boundaryIndex: number, dashDelta: number) => boolean
+  onResize: (widths: number[]) => boolean
   onAppend: (axis: Axis) => void
   onMenu: (ctx: TableMenuContext) => void
   onTableDrag: (e: PointerEvent) => void
@@ -136,6 +136,10 @@ export function TableView({
   // The other way a cell can be entered with a position already in mind: a link menu's Rename or
   // Edit Link, which enter it only to put the caret over what you came to replace.
   const initialSelect = useRef<[number, number] | null>(null)
+  // A selection swept in from outside the table lands here rather than in the page's document: the
+  // two are separate documents, so the half that reached the cell is the half a shortcut can act on.
+  // Which end of the cell it anchors at is the direction the sweep came from.
+  const sweepFrom = useRef<'start' | 'end' | null>(null)
 
   // The numbering, read back into a lookup once per change rather than per cell.
   const ordinalOf = useMemo(() => {
@@ -298,17 +302,17 @@ export function TableView({
     })
   }
 
-  // Preview is pixel-exact (override both <col> widths in px); on release we quantize the new left width
-  // to whole dashes and commit one resizeColumn.
+  // Preview is pixel-exact (override both <col> widths in px); on release the whole row is re-expressed
+  // as its share of the dash scale, so the boundary keeps the pixels it was dropped on.
   const startResize = (e: React.PointerEvent<HTMLDivElement>, boundaryIndex: number): void => {
     if (e.button !== 0) return
     e.preventDefault()
     const i = boundaryIndex
-    const leftDashes = Math.max(1, model.columns[i].dashes)
-    const rightDashes = Math.max(1, model.columns[i + 1].dashes)
-    const combinedDashes = leftDashes + rightDashes
-    const startLeftPx = geom.cols[i]?.width ?? 0
-    const startRightPx = geom.cols[i + 1]?.width ?? 0
+    const widths = geom.cols.map((c) => c.width)
+    const combinedDashes =
+      Math.max(1, model.columns[i].dashes) + Math.max(1, model.columns[i + 1].dashes)
+    const startLeftPx = widths[i] ?? 0
+    const startRightPx = widths[i + 1] ?? 0
     const combinedPx = startLeftPx + startRightPx
     if (combinedPx === 0) return
     const oneDashPx = combinedPx / combinedDashes
@@ -328,13 +332,14 @@ export function TableView({
           startRightPx - oneDashPx,
         )
         leftPx = startLeftPx + delta
-        setResize({ boundaryIndex: i, leftPx, rightPx: startRightPx - delta })
+        setResize({ boundaryIndex: i, leftPx, rightPx: combinedPx - leftPx })
       },
       onDrop: () => {
-        const newLeftDashes = clamp(Math.round(leftPx / oneDashPx), 1, combinedDashes - 1)
-        const dashDelta = newLeftDashes - leftDashes
-        // No change (or a no-op commit) won't re-render → clear the preview here, like reorder's onDrop.
-        if (dashDelta === 0 || !onResize(i, dashDelta)) setResize(null)
+        const next = widths.map((w, ci) =>
+          ci === i ? leftPx : ci === i + 1 ? combinedPx - leftPx : w,
+        )
+        // A no-op commit won't re-render → clear the preview here, like reorder's onDrop.
+        if (!onResize(next)) setResize(null)
       },
       onAbort: () => setResize(null),
       activation: 0, // a resize arms on the first move, the SurfacePM edge precedent
@@ -350,6 +355,7 @@ export function TableView({
     }
     caretCoords.current = null // keyboard nav lands the caret at the end of the target cell
     initialSelect.current = null
+    sweepFrom.current = null
     setActive({ row: target.row, col: target.col })
   }
 
@@ -363,6 +369,7 @@ export function TableView({
           ordinalOf={ordinalOf}
           caretCoords={caretCoords.current}
           initialSelect={initialSelect.current}
+          sweepFrom={sweepFrom.current}
           onCommit={(t) => onCellCommit(row, col, t)}
           onNavigate={(dir) => navigate(row, col, dir)}
           onUndo={onUndo}
@@ -377,12 +384,13 @@ export function TableView({
         ordinalOf={ordinalOf}
         connections={connections}
         onCite={onCite}
-        onActivate={(coords) => {
+        onActivate={(coords, sweep) => {
           // Activation swaps the cell into its editor — a pending or open hover card over the
           // cell must not hang above the editing seat.
           dismissHoverCard()
           caretCoords.current = coords
           initialSelect.current = null
+          sweepFrom.current = sweep ?? null
           setActive({ row, col })
         }}
         onCommit={(t) => {
@@ -397,6 +405,7 @@ export function TableView({
           dismissHoverCard()
           caretCoords.current = null
           initialSelect.current = range
+          sweepFrom.current = null
           setActive({ row, col })
         }}
         onHoverArm={intent.arm}

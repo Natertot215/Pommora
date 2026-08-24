@@ -108,6 +108,7 @@ describe('an entered cell draws what the resting cell drew', () => {
     ) as HTMLElement
     await act(async () => {
       cell.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }))
+      cell.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0, detail: 1 }))
     })
     const editor = container.querySelector('.cm-editor')
     expect(editor).not.toBeNull()
@@ -147,6 +148,7 @@ describe('a marker in a resting cell leads to its citation', () => {
     ) as HTMLElement
     await act(async () => {
       cell.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }))
+      cell.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0, detail: 1 }))
     })
     expect(cited).toEqual([])
     expect(container.querySelector('.cm-editor')).not.toBeNull()
@@ -163,6 +165,7 @@ describe('an entered cell follows the numbering too', () => {
     ) as HTMLElement
     await act(async () => {
       cell.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }))
+      cell.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0, detail: 1 }))
     })
     const inEditor = (): (string | null)[] =>
       [...container.querySelectorAll('.cm-editor .md-cite-ref')].map((el) => el.textContent)

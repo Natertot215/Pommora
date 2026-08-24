@@ -29,7 +29,7 @@ import {
   deleteRow,
   clearColumn,
   clearRow,
-  resizeColumn,
+  resizeColumns,
 } from './operations'
 import { tableMergeGuard } from './guard'
 import type { TableModel } from './model'
@@ -191,11 +191,11 @@ class TableWidget extends WidgetType {
       )
       if (change) view.dispatch({ changes: change })
     }
-    const resize = (boundaryIndex: number, dashDelta: number): boolean => {
+    const resize = (widths: number[]): boolean => {
       const change = structuralEditChange(docScan(view.state.doc), this.tableIndex, (m) =>
-        resizeColumn(m, boundaryIndex, dashDelta),
+        resizeColumns(m, widths),
       )
-      if (!change) return false // dashDelta clamped to a no-op — nothing dispatched
+      if (!change) return false // the same serialization — nothing dispatched
       view.dispatch({ changes: change })
       return true
     }

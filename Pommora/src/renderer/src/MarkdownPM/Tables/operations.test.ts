@@ -5,7 +5,7 @@ import {
   insertRow,
   deleteRow,
   setAlign,
-  resizeColumn,
+  resizeColumns,
   moveRow,
   moveColumn,
   clearColumn,
@@ -31,15 +31,23 @@ describe('operations', () => {
     expect(m.rows[0]).toEqual(['1', '2', '', '3'])
   })
 
-  it('resizeColumn transfers dashes between the two adjacent columns only', () => {
-    const m = resizeColumn(base, 0, +3)
-    expect(m.columns.map((c) => c.dashes)).toEqual([13, 7, 10]) // col2 untouched, total constant
+  it('resizeColumns re-expresses every column as its share of the dash scale', () => {
+    // The dropped boundary moved a quarter of the row into the first column.
+    const m = resizeColumns(base, [500, 300, 200])
+    expect(m.columns.map((c) => c.dashes)).toEqual([50, 30, 20])
   })
 
-  it('resizeColumn clamps the shrinking column at the 1-dash floor, total conserved', () => {
-    const m = resizeColumn(base, 0, -20)
-    expect(m.columns[0].dashes).toBe(1) // boundaryIndex column shrinks to floor on a negative delta
-    expect(m.columns[0].dashes + m.columns[1].dashes).toBe(20)
+  it('resizeColumns spends the same scale however narrow the source was written', () => {
+    const narrow: TableModel = { ...base, columns: base.columns.map((c) => ({ ...c, dashes: 3 })) }
+    expect(resizeColumns(narrow, [500, 300, 200]).columns.map((c) => c.dashes)).toEqual([
+      50, 30, 20,
+    ])
+  })
+
+  it('resizeColumns floors a vanishing column at one dash', () => {
+    const m = resizeColumns(base, [1000, 1, 1])
+    expect(m.columns[1].dashes).toBe(1)
+    expect(m.columns[2].dashes).toBe(1)
   })
 
   it('deleteColumn removes the cell from every row', () => {

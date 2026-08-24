@@ -9,7 +9,7 @@ export {
   autoSizeInput,
   autoSizeMirror,
   autoSizeWrap,
-  bare,
+  base,
   contentRow,
   field,
   hairlineField,

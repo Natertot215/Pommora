@@ -1,4 +1,4 @@
-## Design System
+``## Design System
 
 ```
 Design System
@@ -41,8 +41,6 @@ The Pommora design system — the code mirror of the Figma "Pommora - React" lib
 | System Black      | `system.black` · `--system-black`   | `#010101` |
 | Window Background | `background.window` · `--bg-window` | `#1A1A1C` |
 
-Every derived grey, white, and black is an opacity of one primitive (`greyA` / `whiteA` / `blackA`).
-
 #### Surfaces
 
 | Title             | Token                                       | Value     |
@@ -55,19 +53,19 @@ Every derived grey, white, and black is an opacity of one primitive (`greyA` / `
 
 | Title            | Token                                     | Value               |
 | ---------------- | ----------------------------------------- | ------------------- |
-| Label Primary    | `label.primary` · `--label-primary`       | system-white @ 100% |
-| Label Control    | `label.control` · `--label-control`       | system-white @ 80%  |
-| Label Secondary  | `label.secondary` · `--label-secondary`   | system-white @ 65%  |
-| Label Tertiary   | `label.tertiary` · `--label-tertiary`     | system-white @ 35%  |
-| Label Quaternary | `label.quaternary` · `--label-quaternary` | system-white @ 20%  |
+| Label Primary    | `label.primary` · `--label-primary`       | `system-white` @ 100% |
+| Label Control    | `label.control` · `--label-control`       | `system-white` @ 80% |
+| Label Secondary  | `label.secondary` · `--label-secondary`   | `system-white` @ 65% |
+| Label Tertiary   | `label.tertiary` · `--label-tertiary`     | `system-white` @ 35% |
+| Label Quaternary | `label.quaternary` · `--label-quaternary` | `system-white`@ 20% |
 
 #### States
 
 | Title    | Token                                 | Value              |
 | -------- | ------------------------------------- | ------------------ |
-| Hover    | `state.hover` · `--state-hover`       | system-grey @ 2.5% |
-| Selected | `state.selected` · `--state-selected` | system-grey @ 5%   |
-| Muted    | `state.muted` · `--state-muted`       | system-black @ 10% |
+| Hover    | `state.hover` · `--state-hover`       | `system-grey` @ 2.5% |
+| Selected | `state.selected` · `--state-selected` | `system-grey` @ 5% |
+| Muted    | `state.muted` · `--state-muted`       | `system-black` @ 10% |
 | Drag     | `STATE_OPACITY.drag` · `--state-drag`         | `0.85`             |
 | Ghost    | `STATE_OPACITY.ghost` · `--state-ghost`       | `0.65`             |
 | Inactive | `STATE_OPACITY.inactive` · `--state-inactive` | `0.55`             |
@@ -78,11 +76,11 @@ Hover and selected paint behind content, muted over it; the three opacities are 
 
 | Title           | Token                                   | Value             |
 | --------------- | --------------------------------------- | ----------------- |
-| Fill Primary    | `fill.primary` · `--fill-primary`       | system-grey @ 20% |
-| Fill Secondary  | `fill.secondary` · `--fill-secondary`   | system-grey @ 15% |
-| Fill Tertiary   | `fill.tertiary` · `--fill-tertiary`     | system-grey @ 10% |
-| Fill Quaternary | `fill.quaternary` · `--fill-quaternary` | system-grey @ 6%  |
-| Fill Quinary    | `fill.quinary` · `--fill-quinary`       | system-grey @ 4%  |
+| Fill Primary    | `fill.primary` · `--fill-primary`       | `system-grey` @ 20% |
+| Fill Secondary  | `fill.secondary` · `--fill-secondary`   | `system-grey` @ 15% |
+| Fill Tertiary   | `fill.tertiary` · `--fill-tertiary`     | `system-grey` @ 10% |
+| Fill Quaternary | `fill.quaternary` · `--fill-quaternary` | `system-grey` @ 6% |
+| Fill Quinary    | `fill.quinary` · `--fill-quinary`       | `system-grey` @ 4% |
 
 #### Tints
 
@@ -267,43 +265,43 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 
 #### Menu
 
-| Title         | Export                                              | What it is                                                     |
-| ------------- | --------------------------------------------------- | -------------------------------------------------------------- |
-| Menu          | `Menu` · `MenuItem` · `MenuHeading` · `MenuSeparator` · `MenuCaption` | The row vocabulary.                          |
-| Bars          | `MenuTopRow` · `MenuPaneTopRow` · `MenuBottomRow` · `FooterLockButton` | The pinned header and footer tiers.         |
-| Scroll frame  | `MenuScrollFrame` · `MENU_MAX_HEIGHT`               | The one capped overflow region with its fade.                  |
-| DisclosureRow | `DisclosureRow` · `useDisclosureSet`                | A folding row on DropOutline.                                  |
-| MenuSurface   | `MenuSurface`                                       | The beaked pane the large toolbar dropdown hangs off a button. |
-| MenuDropdown  | `MenuDropdown`                                      | The shell around a trigger — open state, dismiss, growth bound. |
-| NotchedPane   | `NotchedPane`                                       | The beaked frost shell MenuSurface composes.                   |
-| Growth        | `growToContent`                                     | The measured height a pane grows to.                           |
+| Title | Export | What it is |
+| ------------ | ----------------------------------------------- | ----------------------------------------- |
+| Menu | `Menu` · `MenuItem` · `MenuHeading` · `MenuSeparator` · `MenuCaption` | The row vocabulary. |
+| Bars | `MenuTopRow` · `MenuPaneTopRow` · `MenuBottomRow` · `FooterLockButton` | The pinned header and footer tiers. |
+| Scroll frame | `MenuScrollFrame` · `MENU_MAX_HEIGHT` | The one capped overflow region with its fade. |
+| DisclosureRow | `DisclosureRow` · `useDisclosureSet` | A folding row on DropOutline. |
+| MenuSurface | `MenuSurface` | The beaked pane the large toolbar dropdown hangs off a button. |
+| MenuDropdown | `MenuDropdown` | The shell around a trigger — open state, dismiss, growth bound. |
+| NotchedPane | `NotchedPane` | The beaked frost shell MenuSurface composes. |
+| Growth | `growToContent` | The measured height a pane grows to. |
 
 #### Fields
 
-| Title          | Export                                        | What it is                                                             |
-| -------------- | --------------------------------------------- | ---------------------------------------------------------------------- |
-| InputField     | `InputField`                                  | The field box; `capped` scrolls its content under the fade.            |
-| Chrome         | `field` · `input` · `hairlineField` · `bare` · `search` | Boxed, raw caret, cell-tight, chromeless, and the search look. |
-| Ring           | `fieldRing()` · `focusRing()` · `errorRing()` · `ROW_RING` | One inset-shadow channel; presets set only its color.     |
-| Placeholder    | `placeholder`                                 | The ghost-text tone.                                                   |
-| SearchField    | `SearchField` · `SEARCH_PLACEHOLDER`          | The controlled filter input the list surfaces share.                   |
-| PathField      | `PathField`                                   | A folder path — a SegmentRun at rest, raw text under a click.          |
-| EditableInput  | `EditableInput`                               | Enter commits, Escape abandons, blur settles.                          |
-| RenamableLabel | `RenamableLabel`                              | The inline-rename swap.                                                |
-| useDraftEdit   | `useDraftEdit`                                | Rest content until a click, then a width-pinned draft.                 |
+| Title | Export | What it is |
+| ----------- | -------------------------------------------- | ---------------------------------------------- |
+| InputField | `InputField` | The field box; `capped` scrolls its content under the fade. |
+| Chrome | `field` · `input` · `hairlineField` · `base` · `search` | Boxed, raw caret, cell-tight, chromeless, and the search look. |
+| Ring | `fieldRing()` · `focusRing()` · `errorRing()` · `ROW_RING` | One inset-shadow channel; presets set only its color. |
+| Placeholder | `placeholder` | The ghost-text tone. |
+| SearchField | `SearchField` · `SEARCH_PLACEHOLDER` | The controlled filter input the list surfaces share. |
+| PathField | `PathField` | A folder path — a SegmentRun at rest, raw text under a click. |
+| EditableInput | `EditableInput` | Enter commits, Escape abandons, blur settles. |
+| RenamableLabel | `RenamableLabel` | The inline-rename swap. |
+| useDraftEdit | `useDraftEdit` | Rest content until a click, then a width-pinned draft. |
 
 ### Detail
 
 `Detail/` — the composite, feature-facing shells. App surfaces are listed by reference; their code stays in the app.
 
-| Title       | Location                          | What it is                                                              |
-| ----------- | --------------------------------- | ----------------------------------------------------------------------- |
-| PreviewPane | `Detail/PreviewPane` — `PreviewPane` | The floating window surface every in-app window mounts.[^1]         |
-| SidePane    | `Detail/SidePane` — `SidePane` · `sidePaneWidth` | A pane carried on a window's edge by `--io`.             |
-| Tile chassis | `Detail/tile-chassis.css`        | The resizable tile frame SurfacePM and embeds share.                    |
-| Sidebar     | app: `Sidebar/`                   | [[SidebarPM]]                                                           |
-| Tabs · Toolbar | app: `Tabs/` · `Toolbar/`      | [[NavigationPM]]                                                        |
-| Table · Cards | app: `Detail/Views/`            | [[TableViewPM]] · [[CardViewPM]] — future residents here.               |
+| Title | Location | What it is |
+| ---------- | ------------------------------------- | ----------------------------------------------------- |
+| PreviewPane | `Detail/PreviewPane` — `PreviewPane` | The floating window surface every in-app window mounts.[^1] |
+| SidePane | `Detail/SidePane` — `SidePane` · `sidePaneWidth` | A pane carried on a window's edge by `--io`. |
+| Tile chassis | `Detail/tile-chassis.css` | The resizable tile frame SurfacePM and embeds share. |
+| Sidebar | app: `Sidebar/` | [[SidebarPM]] |
+| Tabs · Toolbar | app: `Tabs/` · `Toolbar/` | [[NavigationPM]] |
+| Table · Cards | app: `Detail/Views/` | [[TableViewPM]] · [[CardViewPM]] — future residents here. |
 
 ### Interaction
 
@@ -340,7 +338,7 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 
 ### Symbols
 
-`Symbols/` — `Icon` and the curated registry (`icons`, `IconName`, `entityIcon`), `AllSymbols.ts` (`searchIcons`), `fileTypes.ts` (`fileTypeIcon`), `customGlyphs.tsx`, and `masks.ts` (the grip, fold-chevron, and link glyphs as CSS masks). [[SymbolsPM]] is the spec.
+`Symbols/` — `Icon` and the curated registry (`icons`, `IconName`, `entityIcon`), `AllSymbols.ts` (`searchIcons`), `fileTypes.ts` (`fileTypeIcon`), `customGlyphs.tsx`, and `masks.ts` (the grip, fold-chevron, and link glyphs as CSS masks).[^2]
 
 ### Showcase
 
@@ -360,3 +358,4 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 - **Type** — no tracking scale, no `mono` token behind the editor's code stack, no Markdown element mapping, no multi-line clamp.
 
 [^1]: [[PagePreviewPM]]
+[^2]: [[SymbolsPM]]

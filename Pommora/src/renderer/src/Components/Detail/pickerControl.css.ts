@@ -1,7 +1,7 @@
 import { style } from '@vanilla-extract/css'
 import { vars as colorVars } from '@renderer/DesignSystem/Tokens/color.css'
 import { text } from '@renderer/DesignSystem/Tokens/typography.css'
-import { bare } from '@renderer/DesignSystem/Components/Fields/fields.css'
+import { base } from '@renderer/DesignSystem/Components/Fields/fields.css'
 
 const c = colorVars.color
 
@@ -29,4 +29,4 @@ export const value = style([
 /** What the value wears while it is being written rather than read — the UA's box stripped, sized to
  *  its text. Worn ALONGSIDE whichever value tone the trigger is already showing, so a footing picker
  *  keeps its own while editing rather than reverting to the standard one. */
-export const caretShape = style([bare, { width: 'auto', minWidth: '12px' }])
+export const caretShape = style([base, { width: 'auto', minWidth: '12px' }])

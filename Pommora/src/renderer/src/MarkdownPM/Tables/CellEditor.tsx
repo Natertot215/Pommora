@@ -4,6 +4,7 @@ import { Annotation, EditorState, Prec } from '@codemirror/state'
 import { defaultKeymap } from '@codemirror/commands'
 import { customCaret } from '../editor/caret'
 import { markdownDecorations } from '../editor/decorations'
+import { formatKeymap } from '../editor/formatKeymap'
 import { cellCitations, citesChanged } from './cellCitations'
 import { autoPair, autoDelete, type Edit } from '../input'
 import { docScan } from '../editor/docCache'
@@ -58,6 +59,7 @@ export function CellEditor({
   onRedo,
   caretCoords,
   initialSelect,
+  sweepFrom,
   connections,
   ordinalOf,
 }: {
@@ -71,6 +73,9 @@ export function CellEditor({
   caretCoords?: { x: number; y: number } | null
   /** A span to enter the cell with already selected — the link menu's Rename and Edit Link. */
   initialSelect?: [number, number] | null
+  /** The cell was entered by a selection swept in from outside the table: the caret lands at the
+   *  release point as ever, and the end the sweep came from becomes the selection's anchor. */
+  sweepFrom?: 'start' | 'end' | null
   connections?: () => ConnectionsApi | undefined
   /** The document's footnote numbering, which this editor's own one-cell document cannot hold. */
   ordinalOf?: (label: string) => number | null
@@ -177,6 +182,9 @@ export function CellEditor({
               { key: 'Mod-y', run: consume(() => onRedoRef.current()) },
             ]),
           ),
+          // The inline chords are the body's, not the table's — a cell formats with the same keys and
+          // the same transforms every other surface uses.
+          formatKeymap,
           keymap.of(defaultKeymap),
           // Character-pair auto-pairing only (not the main editor's list/blockquote input) so the `[[…]]`
           // query closes and autocomplete can fire.
@@ -212,10 +220,13 @@ export function CellEditor({
         pos = null
       }
     }
+    const head = pos ?? end
     view.dispatch({
       selection: initialSelect
         ? { anchor: Math.min(initialSelect[0], end), head: Math.min(initialSelect[1], end) }
-        : { anchor: pos ?? end },
+        : sweepFrom
+          ? { anchor: sweepFrom === 'start' ? 0 : end, head }
+          : { anchor: head },
     })
     return () => {
       view.destroy()

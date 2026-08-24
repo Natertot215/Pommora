@@ -1,7 +1,7 @@
 import { style } from '@vanilla-extract/css'
 import { vars as colorVars } from '@renderer/DesignSystem/Tokens/color.css'
 import { font } from '@renderer/DesignSystem/Tokens/typography.css'
-import { bare } from '@renderer/DesignSystem/Components/Fields/fields.css'
+import { base } from '@renderer/DesignSystem/Components/Fields/fields.css'
 
 /** The editor body — no flex `gap` (a collapsed Reveal would otherwise consume a phantom gap on each
  *  side, so hidden rows double the spacing around them); each Row carries its own top margin, which
@@ -27,7 +27,7 @@ export const valueControl = style({
 /** The in-place caret — bare, at the value's own control metrics so the caret is sized to the text (not
  *  the UA default), reading in the same tone as the resting value. */
 export const valueCaret = style([
-  bare,
+  base,
   {
     fontSize: font.scale.control.size,
     lineHeight: font.scale.control.line,
