@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react'
+import { FieldsLeaf } from './FieldsLeaf'
 import { LabelsLeaf } from './LabelsLeaf'
 import { MenuLeaf } from './MenuLeaf'
 import { CalendarPicker } from '@renderer/design-system/components/CalendarPicker/CalendarPicker'
@@ -84,6 +85,7 @@ export function ComponentsLeaf(): React.JSX.Element {
           </PopupButton>
         </div>
       </section>
+      <FieldsLeaf />
       <LabelsLeaf />
       <MenuLeaf />
     </div>

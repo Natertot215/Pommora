@@ -298,9 +298,9 @@ Base commit recorded in the Log when the phase opens. All moves are `git mv` so 
 - Showcase: a Fields section inside `ComponentsLeaf` (the LabelsLeaf registration mode) showing the axes, the ring presets including ErrorRing, and the caret+labels composition.
 
 **Steps:**
-- [ ] Write all five; full-width prose lines, no wrap.
-- [ ] The full-prose pass over every doc this plan touched: nothing reads as pending, open, or upcoming once it's done — stale claims are DELETED or restated as currently true, never amended with notes.
-- [ ] Gates green (showcase compiles). Commit: `docs(fields): the family is on the record`
+- [x] Write all five; full-width prose lines, no wrap.
+- [x] The full-prose pass over every doc this plan touched: nothing reads as pending, open, or upcoming once it's done — stale claims are DELETED or restated as currently true, never amended with notes.
+- [x] Gates green (showcase compiles). Commit: `docs(fields): the family is on the record`
 
 #### Gate 4 / Closeout
 - [ ] Dead Vocabulary sweeps → 0 against the control.
@@ -324,8 +324,8 @@ Base commit recorded in the Log when the phase opens. All moves are `git mv` so 
 - [x] **Phase 3** — behavior
   - [x] Task 7 — OverScroll at source · `db907e51`
   - [x] Task 8 — press-to-edit · `101b51a5`
-- [ ] **Phase 4** — the record
-  - [ ] Task 9 — docs + showcase · `<commit>`
+- [x] **Phase 4** — the record
+  - [x] Task 9 — docs + showcase · (this commit)
 
 ### Rulings
 - 08-24 (Nathan): the FilterPane keeps its pre-plan picker behavior — the Location cell's press-to-edit adoption is withdrawn; nothing beyond the field-chrome migration touches the filter. `useDraftEdit` and the InputField composition ship with PathField and the showcase as their surfaces.

@@ -133,7 +133,7 @@ The drawn caret fades on a symmetric on/off cycle via twin keyframes in `Carets.
 
 ### OverScroll
 
-The overflow-fade mechanism: three registered properties, two axis classes, and three modifiers. `--over-scroll-fade` is non-inheriting — the knob must sit on the element carrying the class, or it does nothing. An axis class carries the fade; `over-scroll-cap` adds a capped-label box beneath it; and a label that cannot hover itself takes the scrolled state from an ancestor with `over-scroll-host`.
+The overflow-fade mechanism: three registered properties, two axis classes, and three modifiers. `--over-scroll-fade` is non-inheriting — the knob must sit on the element carrying the class, or it does nothing. Field content applies it at source through the family's own pieces: `EditableInput` carries the caret fade, and `InputField`'s capped content row states the fade default once as its own knob. An axis class carries the fade; `over-scroll-cap` adds a capped-label box beneath it; and a label that cannot hover itself takes the scrolled state from an ancestor with `over-scroll-host`.
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/interactions/OverScroll/`
 

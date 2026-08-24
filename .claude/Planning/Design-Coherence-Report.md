@@ -442,3 +442,25 @@ What this audit got wrong and fixed. A finding that was withdrawn is as useful t
 | `--ix-ease`'s wrong fallback strands app surfaces on the wrong curve | Reaches nothing. The only sheet reading the var ships with the Interaction Lab, which always sets it. `Interactions.tsx` is that lab's page, not a provider — both moved to `showcase/lab/`                                                                                                                                                                                       |
 
 Two process notes the log makes visible. A survey that measures two files against each other without accounting for what was already extracted beneath them will overstate the duplication — which is what happened with the option editors. And deferring to a prior ruling without checking what the ruling actually covered is the opposite error: a decision bounds what it decided, not everything near it.
+
+### XI. Implementation Tracking
+
+Where the report's work stands, kept current so a session can read its position without replaying the audit.
+
+#### Landed
+
+- **The labels family** — four shapes, the treatment axes, the tint recipe, the recipes (`design-system/labels/`).
+- **OverScroll** — one overflow-fade mechanism under `interactions/OverScroll`, composed at source by its consumers.
+- **HoverRemove** — the hover-revealed remove × under `interactions/HoverRemove`.
+- **The Interaction Lab** moved to `showcase/lab/`.
+- **The checkbox recipe** — the capped labels wear the one cap, and the checkbox reads its recipe.
+- **The fields family** (`design-system/fields/`) — the Fields plan executed 08-24: one axes stylesheet (boxed · hairline · bare · search), `InputField` (the renamed `InteractionField`), the ring channel with rest/focus/error presets and one spelling (`FIELD_RING_VAR`), `--input-field` gone with zero trace, seven hand-rolled bare-input resets retired onto one `bare`, the transparent search look and the placeholder tone family-owned, and the editing chain (`EditableInput` · `RenamableLabel` · `useDraftEdit` extracted from PathField) living beside its chrome. The `EditableInput`-before-rehome constraint is satisfied. Net code delta negative.
+
+#### Remaining Slices
+
+- **The boundary slice** — `ColorPicker` moves in; a lint rule pins the design-system import direction. The recommended next slice.
+- **The root pile** — the loose helpers and sheets at `design-system/`'s root each find a folder.
+- **The reference document rewrite** — DesignSystemPM grew its Interactive Fields corner; the other ~18 undocumented components and ~20 helpers remain.
+- **The twin extraction** — `PagePropertiesPane`/`PreviewInspector` (~470 lines of parallel structure).
+- **The §VIII decisions** — a session against the open questions above, taken as decisions rather than edits.
+- **The toolbar selector** and the repeated-behavior sweep.

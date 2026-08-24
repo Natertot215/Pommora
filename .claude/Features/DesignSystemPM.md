@@ -15,6 +15,7 @@ Design System
 │   ├── Spectrum
 │   ├── Ramp
 │   ├── Labels
+│   ├── Interactive Fields
 │   ├── Interactions
 │   ├── Components
 │   ├── Geometry
@@ -203,6 +204,28 @@ The ten selectable solids plus the neutral chip default and the ramp's pink seat
 | FileChip   | `FileChip`         | A file property's value; a tag with a `--label-tertiary`outline, no fill. |
 | FileLabel  | `FileLabel`        | A file or folder name inside a field; no chrome at all.            |
 
+#### Interactive Fields
+
+The field family — every input surface's chrome and editing behavior in one home. Three chrome axes compose every field look; the `--field-ring` channel carries rest, focus, and error tones through one inset shadow; the editing behaviors live beside the chrome they animate. A value inside a field is content and takes no chrome of its own ([[FileLabel]]); a new field-shaped surface composes these exports rather than restating them.
+
+**SOURCE:** `Pommora/src/renderer/src/design-system/fields/`
+
+| Title | Token | Use Cases |
+| -------------- | ---------------------------------------------- | ------------------------------------------------------------------------------ |
+| InputField | `InputField` | The field box as a component; `capped` scrolls its content row under the fade. |
+| Boxed | `field` · `input` | The rounded quaternary-fill surface; `input` is the same chrome on a raw caret. |
+| Hairline | `hairlineField` | The tighter cell variant — its own width, the separator stroke on the channel. |
+| Bare | `bare` | No box at all: the caret reads as the text it replaced. |
+| Search | `search` | The transparent search look — border, fill, and placeholder tone stated once. |
+| Ring Channel | `fieldRing()` · `focusRing()` · `errorRing()` | One inset-shadow spelling; presets set only the `--field-ring` color. |
+| Placeholder | `placeholder` | The ghost-text tone for empty-state hints inside any field. |
+| Content Row | `contentRow` | The opt-in overflow cap `InputField capped` mounts. |
+| SearchField | `SearchField` | The controlled filter input four surfaces share — never spell-checked. |
+| PathField | `PathField` | A folder path: a FileLabel run at rest, the raw text under a click. |
+| EditableInput | `EditableInput` | The commit/cancel caret — Enter commits, Escape abandons, blur settles. |
+| RenamableLabel | `RenamableLabel` | The inline-rename swap; `title` seats the caret at the end, `row` selects all. |
+| Press-To-Edit | `useDraftEdit` | Rest content until a click, then a width-pinned draft with select-on-open. |
+
 #### Interactions
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/interactions/`
@@ -218,7 +241,6 @@ The ten selectable solids plus the neutral chip default and the ramp's pink seat
 
 | Title | Source | Use Cases |
 | -------------------------- | -------------------------------- | ------------------------------------------------------------------- |
-| PathField | `PathField.tsx` | Input field for directories and path selections. |
 | SegmentRun | `SegmentRun/` | A divided run of labels — a path's segments, or values standing beside one another. |
 | DualSwitch | `Switches/` - `DualSwitch` | Booleans; shared Switch shape with a sliding glass segment. |
 | ColorSwatch | `Switches/` - `ColorSwatch` | Color-selections; re-uses the `Switch` shape. |
