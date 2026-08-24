@@ -167,13 +167,13 @@ Base commit recorded in the Log when the phase opens. All moves are `git mv` so 
 - [x] Commit: `refactor(tokens): the input fill is the quaternary fill, stated once`
 
 #### Gate 1 — the family stands, nothing looks different
-- [ ] Gates green, exit codes read directly.
-- [ ] Derivations re-run against controls; counts matched or the divergence rewrote the plan.
-- [ ] `rg -F "InteractionField" Pommora/src` → 0; `rg -F "KNOB" design-system/fields` count equals the pre-move sum.
-- [ ] Simplification (`code-simplifier`) + review (`feature-dev:code-reviewer`) dispatched against `<base>..HEAD` scoped to the phase's paths; concerns fixed or ruled.
-- [ ] App launched (`env -u ELECTRON_RUN_AS_NODE npm run dev`): Nav/Trash/IconPicker searches, a PageSettings header rename, a FilterPane rule, a Settings path row — all render and edit as before. (Full-restart, not HMR — extension-adjacent CSS moves.)
-- [ ] Look-back: no duplication introduced by this phase, no deviation from the core mandate (one family, composed not restated) — anything found is fixed at this gate, not carried.
-- [ ] Progress hashes filled in.
+- [x] Gates green, exit codes read directly.
+- [x] Derivations re-run against controls; counts matched or the divergence rewrote the plan.
+- [x] `rg -F "InteractionField" Pommora/src` → 0; `rg -F "KNOB" design-system/fields` count equals the pre-move sum (3).
+- [x] Simplification (`code-simplifier`) + review (`feature-dev:code-reviewer`) dispatched against `<base>..HEAD` scoped to the phase's paths; concerns fixed or ruled.
+- [x] App launched (fresh instance, scratch nexus, CDP-driven): Nav search edits live with the tertiary placeholder, Trash search renders, a ViewSettings header rename opens on the family chrome with the caret at the end, a FilterPane rule renders its hairline cells, and the Settings path row's press-to-edit selects-on-open at its pinned width. The IconPicker search is untouched until Task 4 and takes its running check at Gate 2.
+- [x] Look-back: the one duplication this phase introduced (IconPicker's `::placeholder` restating the family rule) was found by the simplification pass and removed at this gate; no deviation from the mandate.
+- [x] Progress hashes filled in.
 
 ---
 
@@ -313,10 +313,10 @@ Base commit recorded in the Log when the phase opens. All moves are `git mv` so 
 ## Implementation Log
 
 ### Progress
-- [ ] **Phase 1** — the family lands · base `e932f2b6`
-  - [ ] Task 1 — axes, ring, primitive · `<commit>`
-  - [ ] Task 2 — behavior chain moves · `<commit>`
-  - [ ] Task 3 — `--input-field` zero trace · `<commit>`
+- [x] **Phase 1** — the family lands · base `e932f2b6`
+  - [x] Task 1 — axes, ring, primitive · `80f93a31`
+  - [x] Task 2 — behavior chain moves · `5196a097`
+  - [x] Task 3 — `--input-field` zero trace · `9b475c46`
 - [ ] **Phase 2** — the parallels fold
   - [ ] Task 4 — IconPicker search · `<commit>`
   - [ ] Task 5 — bare twins · `<commit>`
@@ -336,9 +336,11 @@ Base commit recorded in the Log when the phase opens. All moves are `git mv` so 
 
 ### Open Against Later Tasks
 - (Task 5 or Gate 2) `filterPane.css.ts` defines its own `placeholder` class (`label.tertiary`) — a twin of the family's; fold it when FilterPane is next touched.
+- (Gate 2) `bare`'s `font: inherit` emits after the typography ramp (verified against the live sheet: bare at ordinal 136, ramp at 27), so `numberEditor.css.ts`'s `valueCaret` no longer holds `text.control.standard`'s pin while editing — whether that moves pixels depends on the pane's inherited font. Check the number caret's computed font in the running app at Gate 2 (a `Count` number property is seeded in the scratch nexus); pin locally from the type tokens only if it actually drifts.
 - (Task 6) `cellInput` composing `hairlineField` brings `overflow: hidden` + `nowrap` onto a raw `<input>` — unproven whether Chromium's internal editor scroller keeps the caret visible past the clip. Ten-second check at implementation: type past the cell width in a FilterPane text rule.
 
 ### Deviations
+- 08-23 Gate 1: between Task 3 and Task 5 the GroupBand rename box shows border without fill — Task 3 deleted its `background` line while the block's kill lands in Task 5, as the plan sequences it. Transient by construction; both reviewers flagged it, closed by Task 5.
 - 08-23 plan-attack round (pre-ratification): six findings, five folded — InlineEditHeader's inline ring style reclassified from duplication to sole carrier of the Space color (Task 6 Survivors); `bare` grew `font: 'inherit'` (Task 1); SearchField keeps a narrow border/outline reset instead of wearing `bare` (Task 2 — cascade-order conflict with Task 4's boxed IconPicker chrome, verified against real vanilla-extract emission); `SearchField.test.tsx`'s exact-class-count assertion rewritten in-task (Task 2); Task 7 re-scoped from "cap every field" to "the family piece that owns each scroller carries the fade" — the chrome is class-consumed, so a component cap reached two surfaces and changed both without ratification. Three derivation counts corrected. The GroupBand finding was already superseded by Nathan's bare-caret ruling.
 ### Lessons
 ### Sequenced After
