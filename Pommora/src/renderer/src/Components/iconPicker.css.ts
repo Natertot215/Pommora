@@ -32,9 +32,6 @@ export const search = style([
     borderRadius: 8,
     outline: 'none',
     boxShadow: fieldRing(1), // the argument is the ring-width knob
-    selectors: {
-      '&::placeholder': { color: vars.color.label.tertiary },
-    },
   },
   focusRing(),
 ])
