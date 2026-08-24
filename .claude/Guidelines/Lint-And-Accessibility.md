@@ -27,7 +27,7 @@ Placement is finicky in JSX: a suppression attaches to the **next line**, so it 
 
 The bar is real, not decorative. An element that behaves like a control **is** a control: it carries a role, takes focus, and activates from the keyboard.
 
-- **One activation primitive.** `design-system/interactions/activate.ts` is the keyboard half of a click surface — Enter and Space re-dispatch as a genuine click so the element's own `onClick` runs with a real event. There is no second code path to keep in sync, and no per-surface keyboard handler to re-derive.
+- **One activation primitive.** `DesignSystem/Interactions/activate.ts` is the keyboard half of a click surface — Enter and Space re-dispatch as a genuine click so the element's own `onClick` runs with a real event. There is no second code path to keep in sync, and no per-surface keyboard handler to re-derive.
 
 - **Tab strips are tablists with roving tabindex.** Each tab carries its role and selected state, and only the active tab holds the tab stop, so a strip is one stop rather than one per tab.
 

@@ -225,7 +225,7 @@ faint tint of the base) — and it composes with any shape. The color itself com
 rows run a family from dark to light; the greyscale row is the one exception, tinting its brightest
 cells from a darkened base and outlining all eight against the label ramp so they read on any surface.
 
-**SOURCE:** `Pommora/src/renderer/src/design-system/labels/` · `tokens/tint.ts` · `tokens/colorMap.ts` · `tokens/ramp.ts`
+**SOURCE:** `Pommora/src/renderer/src/DesignSystem/Labels/` · `Tokens/tint.ts` · `Tokens/colorMap.ts` · `Tokens/ramp.ts`
 
 #### II. Shapes
 

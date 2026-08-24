@@ -18,7 +18,7 @@ Pommora is Nathan’s main project — a personal management and all-in-one prod
 
 ### Codebase Information
 
-Pommora is an **Electron** desktop app — a **React + TypeScript** renderer over a Node main process that owns the filesystem. electron-vite · Electron 42 · React 19 · TypeScript 6 · Vite 7 + `@vitejs/plugin-react` 5  · Zustand · TanStack Virtual · `react-markdown` + `remark-gfm` · `eemeli/yaml` · `lucide-react` (the curated icon registry — `design-system/symbols`; `@tabler/icons-react` stays installed as a second source to pull from per-icon) · Vitest. Editor: **MarkdownPM** — a CodeMirror 6 custom-build Markdown editor on the Pommora monorepo. 
+Pommora is an **Electron** desktop app — a **React + TypeScript** renderer over a Node main process that owns the filesystem. electron-vite · Electron 42 · React 19 · TypeScript 6 · Vite 7 + `@vitejs/plugin-react` 5  · Zustand · TanStack Virtual · `react-markdown` + `remark-gfm` · `eemeli/yaml` · `lucide-react` (the curated icon registry — `DesignSystem/Symbols`; `@tabler/icons-react` stays installed as a second source to pull from per-icon) · Vitest. Editor: **MarkdownPM** — a CodeMirror 6 custom-build Markdown editor on the Pommora monorepo. 
 
 - **No dependency lock-in.** Every library sits behind a thin seam (SQLite behind `db//driver.ts`, YAML behind `pageFile.ts`, IDs behind `ids.ts`, glass behind `Surface`) so it's swappable without touching callers. Version numbers are compatibility pins, not endorsements.
 - **The Figma Library** (https://www.figma.com/file/fYZ5oiK7stC3diRhaBHl1r) is used for designing; the live showcase deploys from `Pommora/` to https://pommora-design-system.vercel.app.
@@ -40,7 +40,7 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 - **Never do expensive work "on every X," never "reload the entire Y."** No O(N) / allocating / layout-reading work on a high-frequency trigger, and no full-nexus rebuild / re-walk when an incremental or cached update works — it’s *the* lag source.
 - **Placeholders** never display build-status or meta text — an unbuilt surface is simply blank.
 - **Ask before designing.** Stop to disclose assumptions and clarify direction before any design or interaction-based decision — don't guess at how something looks or behaves; the codebase usually describes something that already exists. Any in-flight decisions must be disclosed as they’re being made.
-- **Tokens must** be pulled from their sources in `/design-system`— never hand-roll tokens without explicit direction; what you're looking for almost *always* already exists. 
+- **Tokens must** be pulled from their sources in `/DesignSystem` — never hand-roll tokens without explicit direction; what you're looking for almost *always* already exists. 
 - **Most recent wins** is the primary philosophy around handling concurrency, cross-device, and external editing conflicts.
 
 ### Locked Decisions
@@ -69,8 +69,8 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 │   │   ├── [ConfigurationPM.md]         | • Per-Nexus personalization, settings, and profile
 │   │   ├── [ConnectionsPM.md]           | • Inline title links — the sole connection syntax
 │   │   ├── [ContextsPM.md]              | • The organization layer, its registry, and Context identity
-│   │   ├── [DesignSystemPM.md]          | • The design system — the token atlas and the materials on it.
-│   │   ├── [InteractionPM.md]           | • The animation system — motion tokens and named aliases
+│   │   ├── [DesignSystemPM.md]          | • The design system — the one-look ledger of tokens, materials, and components
+│   │   ├── [InteractionPM.md]           | • The named motions and the interaction primitives
 │   │   ├── [MarkdownPM.md]              | • The in-house Markdown editor on a CodeMirror 6 substrate
 │   │   ├── [NavigationPM.md]            | • Tabs, per-tab history, breadcrumbs, and nav search
 │   │   ├── [NexusRecordPM.md]           | • Provenance and the deletion record in .trash
@@ -86,7 +86,6 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 │   │   ├── [SurfacePM.md]               | • The composable dashboard layer of draggable tiles
 │   │   ├── [SymbolsPM.md]               | • The curated semantic icon registry
 │   │   ├── [TableViewPM.md]             | • The Table renderer over one shared CSS grid track set
-│   │   ├── [TypographyPM.md]            | • The type system and its token source of truth
 │   │   ├── [ViewsPM.md]                 | • Saved presentations of a Collection — six modeled types
 │   │   └── [WebviewPM.md]               | • The web layer — webpage embeds, the browser, sessions, hover previews
 │   ├── // Guidelines                    | • Behavioral rules and hard-won traps, grouped by domain
@@ -132,13 +131,17 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 │   │           ├── // SurfacePM         | • The tile-based dashboard engine
 │   │           ├── // Tabs              | • The tabs + navigational overlays
 │   │           ├── // Toolbar           | • The window toolbar
-│   │           ├── // design-system     | • The design system
-│   │           │   ├── // components    | • Design-system components — pickers, panes, fields
-│   │           │   ├── // interactions  | • PommoraDND — the drag-and-drop engine
-│   │           │   ├── // materials     | • Glass — surfaces, panes, windows, controls
-│   │           │   ├── // showcase      | • The deployed component-library site
-│   │           │   ├── // symbols       | • The curated icon registry — the primary glyph source
-│   │           │   └── // tokens        | • Color, type, motion, chip — the token source of truth
+│   │           ├── // DesignSystem      | • The design system — DesignSystemPM is its ledger
+│   │           │   ├── // Tokens        | • Color, type, geometry — the token source of truth
+│   │           │   ├── // Materials     | • Glass — surfaces, panes, windows, controls
+│   │           │   ├── // Labels        | • Labels and chips
+│   │           │   ├── // Elements      | • The atomic bits — outline, chevron, segment
+│   │           │   ├── // Components    | • Controls, pickers, menus, fields
+│   │           │   ├── // Detail        | • The composite shells — preview and side panes
+│   │           │   ├── // Interactions  | • PommoraDND and the pointer/scroll layer
+│   │           │   ├── // Animation     | • Motion tokens, the feel, and the enter/exit primitives
+│   │           │   ├── // Symbols       | • The curated icon registry — the primary glyph source
+│   │           │   └── // Showcase      | • The deployed component-library site
 │   │           ├── App.tsx              | • The shell — three panes and the routed surface
 │   │           └── store.ts             | • The Zustand store holding renderer state
 ```

@@ -140,6 +140,7 @@ The root of everything: one size factor for structure, one derived factor for gl
 | Fold Chevron Size | `--fold-chevron-size` | `calc(var(--text-title3-size) * var(--glyph-scale))` · `.mdpm-shell` |
 
 #### II. Header, Banner & Title
+
 | Title | Token | Value · Scope |
 | --- | --- | --- |
 | Page Title Size | `--detail-title-size` | `28px` · `.mdpm-header .detail-title` |
@@ -149,6 +150,7 @@ The root of everything: one size factor for structure, one derived factor for gl
 #### II. Lists & Outliner
 
 List geometry scopes to `.cm-line.md-li`; the outliner rail aliases the shared `--list-outline-*` primitives and adds its caps and x-position.
+
 | Title | Token | Value |
 | --- | --- | --- |
 | Marker Gap | `--list-gap` | `4px` (on `.cm-editor`) |
@@ -161,6 +163,7 @@ List geometry scopes to `.cm-line.md-li`; the outliner rail aliases the shared `
 | Rail Level | `--rail-level` | JS-set per rail element |
 
 #### II. Quotes, Callouts & Code
+
 | Title | Token | Value · Scope |
 | --- | --- | --- |
 | Quote Bar | `--bar-width` / `--bar-color` / `--bar-radius` | `4px` / → label-tertiary / `2px` · `.md-bq` |
@@ -187,6 +190,7 @@ One pastel recipe: `color-mix(in srgb, var(--tok-solid) var(--tok-tint), var(--l
 | Property / Function / Type | `.tok-prop` / `.tok-fn` / `.tok-type` | cobalt / yellow / cyan solids |
 
 #### II. Embeds & Autocomplete
+
 | Title | Token | Value · Scope |
 | --- | --- | --- |
 | Editing / Resizing Tile Ring | `--tile-border-color` | → accent-stroke / accent-stroke-hot · `.mdpm-embed-tile` states |
@@ -196,7 +200,6 @@ One pastel recipe: `color-mix(in srgb, var(--tok-solid) var(--tok-tint), var(--l
 ### Known Issues
 
 - **An unreproduced renderer crash on a programmatic scroll toward a table inside an embed tile** — the window goes black with no crash log, and the same jump replays cleanly. Unreproduced since; no mechanism established.
-- **A selection paints around a revealed connection's link glyph rather than across it** — the browser highlights text and steps over a decorative box holding none, leaving a notch mid-link. Giving the glyph an invisible space to carry the highlight worked in isolation and not in the editor.
 - **Codeblock syntax cannot be rendered when on the first line of a callout** — an accepted limitation to handle later. The fence grammar admits only whitespace and `>` levels before its marker run, so a fence authored on the head line sits behind the `[!type]` tag and reads as prose.
 - A mid-drag column hide/show or watcher view-push is silently reverted by a column drop's persist (`reorderColumn` reads grab-time state) — reachable only by mutating columns while holding a drag; a ref-read at commit fixes it if it's ever felt.
 

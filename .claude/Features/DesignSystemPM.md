@@ -2,49 +2,37 @@
 
 ```
 Design System
-├── Tooling
-├── The Token Atlas
-│   ├── Primitives
-│   ├── Surfaces
-│   ├── Label Colors
-│   ├── States
-│   ├── Fills
-│   ├── Tints
-│   ├── Separators
-│   ├── Shadows
-│   ├── Spectrum
-│   ├── Ramp
-│   ├── Labels
-│   ├── Interactive Fields
-│   ├── Interactions
-│   ├── Components
-│   ├── Geometry
-│   ├── Materials
-│   └── Glass & Menus
-├── Component Chrome
+├── Token Atlas
+│   ├── Primitives · Surfaces · Labels · States · Fills · Tints · Separators · Shadows · Spectrum · Ramp · Geometry
+│   └── Typography
+├── Materials
+├── Labels & Chips
+├── Elements
+├── Components
+│   ├── Controls
+│   ├── Pickers
+│   ├── Menu
+│   └── Fields
+├── Detail
+├── Interaction
+├── Animation
+├── Symbols
 ├── Showcase
-├── Where the Rest Lives
 ├── Known Issues
 └── Pending
 ```
 
-The Pommora design system — the code mirror of the Figma "Pommora - React" library, which is canonical for design values and the visual reference for components. Tokens come in two tiers: raw **primitives**, and the meaningful **semantic** aliases built on them. This document *doesn’t* describe absolutely everything design-related, and sections may be non-exhaustive — catalogue-completion is the *goal*, not the promise.
+The Pommora design system — the code mirror of the Figma "Pommora - React" library, which is canonical for design values. It lives in `src/renderer/src/DesignSystem/`, and this document is its ledger: one section per folder, one row per thing, with *name · export · what it is*. Values live in the Token Atlas and in code; a subsystem with its own spec ([[InteractionPM]], [[PommoraDND]], [[SymbolsPM]]) keeps its depth there and is pointed at, never restated.
 
-### Tooling
+**Tooling.** Token files are vanilla-extract `*.css.ts`, so a mistyped token is a compile error; `Tokens/theme-vars.css.ts` republishes every token under a stable `--name` for plain CSS, and a token without a bridged var is TS-only. Inter (variable) is the app font. The layer is app-agnostic: only `Tokens/` and `Theming/` import from `@shared`, nothing imports the store or IPC, and the whole tree builds as the standalone showcase. `Theming/` (`applyAccent` · `applyPersonalization`) and `Util/` (`cx` · `clamp` · `pad` · `moveItem`) are runtime homes with no catalog of their own.
 
-- **vanilla-extract** — token files are `*.css.ts`; the theme primitives emit real CSS variables and a typed `vars` object, making a mistyped token a compile error. The plugin is wired into the renderer Vite config.
-- **Inter** (variable font) covers the four weights the type ramp uses and is set as the app font.
-- **The bridge** — `tokens/theme-vars.css.ts` republishes the hashed vanilla-extract tokens under stable `--name` handles so plain `.css` files resolve the same source. Each table below lists a token's bridged var beside it; a token without one is TS-only.
+### Token Atlas
 
-The design system lives in `src/renderer/src/design-system/`.
-
-### The Token Atlas
+`Tokens/` — the value source. `color.css.ts` (`vars`), `size.css.ts` (`size`, `ICON_PX`, the geometry consts), `typography.css.ts` (`font`, `text`), `stack.ts` (`stack`), `tint.ts` (`tint`, `tintAt`, `mixAt`, `TINT_STEPS`), `ramp.ts` (`cellColor`, `cellTint`, `cellRing`, `checkboxTint`, `ANCHOR_CELLS`, the `RAMP_*` re-exports), `colorMap.ts` (`labelColorFor`), `card-tokens.css` (the card family's geometry), and the `theme-vars.css.ts` bridge. `index.ts` is the barrel.
 
 #### Primitives
 
-The three raw system tones every derived grey, white, and black is an opacity of, plus the window substrate. Derivations use `greyA(pct)` / `whiteA(pct)` / `blackA(pct)` — `color-mix` of the primitive toward transparent.
-
-**SOURCE:** `Pommora/src/renderer/src/design-system/tokens/color.css.ts` · `Pommora/src/shared/theme.ts`
+**SOURCE:** `Tokens/color.css.ts` · `Pommora/src/shared/theme.ts`
 
 | Title             | Token                               | Value     |
 | ----------------- | ----------------------------------- | --------- |
@@ -53,52 +41,40 @@ The three raw system tones every derived grey, white, and black is an opacity of
 | System Black      | `system.black` · `--system-black`   | `#010101` |
 | Window Background | `background.window` · `--bg-window` | `#1A1A1C` |
 
+Every derived grey, white, and black is an opacity of one primitive (`greyA` / `whiteA` / `blackA`).
+
 #### Surfaces
 
-The opaque content planes layered on the window substrate — addressed by role, and their own literals rather than derivations.
+| Title             | Token                                       | Value     |
+| ----------------- | ------------------------------------------- | --------- |
+| Surface Primary   | `surface.primary` · `--surface-primary`     | `#202022` |
+| Surface Secondary | `surface.secondary` · `--surface-secondary` | `#2A2A2E` |
+| Surface Tertiary  | `surface.tertiary` · `--surface-tertiary`   | `#3A3A3E` |
 
-**SOURCE:** `Pommora/src/renderer/src/design-system/tokens/color.css.ts`
+#### Labels
 
-| Title             | Token                                       | Value             |
-| ----------------- | ------------------------------------------- | ----------------- |
-| Surface Primary   | `surface.primary` · `--surface-primary`     | `#202022`         |
-| Surface Secondary | `surface.secondary` · `--surface-secondary` | `#2A2A2E`         |
-| Surface Tertiary  | `surface.tertiary` · `--surface-tertiary`   | `#3A3A3E`         |
-
-#### Label Colors
-
-The text ladder — system-white at descending presence. Primary is the raw primitive passed through; the rest are opacity steps. Labels ride the near-white so the lightest label still reads over the heaviest fill.
-
-**SOURCE:** `Pommora/src/renderer/src/design-system/tokens/color.css.ts`
-
-| Title | Token | Value |
-| --------------------- | ------------------------------------------------------- | ------------------------ |
-| Label Primary | `label.primary` · `--label-primary` | system-white @ 100% |
-| Label Control | `label.control` · `--label-control` | system-white @ 80% |
-| Label Secondary | `label.secondary` · `--label-secondary` | system-white @ 65% |
-| Label Tertiary | `label.tertiary` · `--label-tertiary` | system-white @ 35% |
-| Label Quaternary | `label.quaternary` · `--label-quaternary` | system-white @ 20% |
+| Title            | Token                                     | Value               |
+| ---------------- | ----------------------------------------- | ------------------- |
+| Label Primary    | `label.primary` · `--label-primary`       | system-white @ 100% |
+| Label Control    | `label.control` · `--label-control`       | system-white @ 80%  |
+| Label Secondary  | `label.secondary` · `--label-secondary`   | system-white @ 65%  |
+| Label Tertiary   | `label.tertiary` · `--label-tertiary`     | system-white @ 35%  |
+| Label Quaternary | `label.quaternary` · `--label-quaternary` | system-white @ 20%  |
 
 #### States
-
-The interaction states — two grey washes, one black veil, and three opacity dims. Hover and selected are fills painted behind content; muted is painted over it; drag, ghost, and inactive are consumed as `opacity:` on the element itself.
-
-**SOURCE:** `Pommora/src/renderer/src/design-system/tokens/color.css.ts` · `tokens/theme-vars.css.ts`
 
 | Title    | Token                                 | Value              |
 | -------- | ------------------------------------- | ------------------ |
 | Hover    | `state.hover` · `--state-hover`       | system-grey @ 2.5% |
 | Selected | `state.selected` · `--state-selected` | system-grey @ 5%   |
 | Muted    | `state.muted` · `--state-muted`       | system-black @ 10% |
-| Drag     | `--state-drag`                        | base @ 85%         |
-| Ghost    | `--state-ghost`                       | base @ 65%         |
-| Inactive | `--state-inactive`                    | base @ 55%         |
+| Drag     | `STATE_OPACITY.drag` · `--state-drag`         | `0.85`             |
+| Ghost    | `STATE_OPACITY.ghost` · `--state-ghost`       | `0.65`             |
+| Inactive | `STATE_OPACITY.inactive` · `--state-inactive` | `0.55`             |
+
+Hover and selected paint behind content, muted over it; the three opacities are worn as `opacity:` by the element itself.
 
 #### Fills
-
-The five-step system-grey overlay ramp for cards, chips, and fields sitting on a surface — most to least present. Strokes sit above fills: a separator reads harder than the surface it divides.
-
-**SOURCE:** `Pommora/src/renderer/src/design-system/tokens/color.css.ts`
 
 | Title           | Token                                   | Value             |
 | --------------- | --------------------------------------- | ----------------- |
@@ -110,9 +86,7 @@ The five-step system-grey overlay ramp for cards, chips, and fields sitting on a
 
 #### Tints
 
-The one opacity ladder any base color is mixed at —  a `color-mix` of the base toward anything, in sRGB or oklch, short-circuiting to the raw base at 100; `tintAt(base, step)` is that mix toward transparent. The chip recipe, the ramp, and the accent strokes all read these steps.
-
-**SOURCE:** `Pommora/src/renderer/src/design-system/tokens/tint.ts`
+**SOURCE:** `Tokens/tint.ts` — `tintAt(base, step)` mixes a base toward transparent; `mixAt` toward anything.
 
 | Title           | Token                                         | Value |
 | --------------- | --------------------------------------------- | ----- |
@@ -122,23 +96,7 @@ The one opacity ladder any base color is mixed at —  a `color-mix` of the base
 | Tint Tertiary   | `TINT_STEPS.tertiary` · `--tint-tertiary`     | 20%   |
 | Tint Quaternary | `TINT_STEPS.quaternary` · `--tint-quaternary` | 15%   |
 
-#### Ramp
-
-The color grid behind every chip and the picker that assigns one: eight families, eight steps each, running dark on the left to light on the right, with each spectrum solid seated on an exact cell so a color stored before the ramp resolves into it unchanged.
-
-**SOURCE:** `Pommora/src/renderer/src/design-system/tokens/ramp.ts`
-
-| Title         | Token           | Value                                                  |
-| ------------- | --------------- | ------------------------------------------------------ |
-| Shading Step  | `RAMP_STEP`     | `15`                                                   |
-| Darkness Step | `DARKNESS_STEP` | `15`                                                   |
-| Grey Outlines | `GREY_OUTLINES` | `35` · `45` · `55` · `65` · `75` · `85` · `95` · `100` |
-
 #### Separators
-
-Hairlines and the composed border shorthands built on them, plus the banner's legibility scrim.
-
-**SOURCE:** `Pommora/src/renderer/src/design-system/tokens/color.css.ts` · `tokens/theme-vars.css.ts`
 
 | Title             | Token                                       | Value                                  |
 | ----------------- | ------------------------------------------- | -------------------------------------- |
@@ -146,24 +104,19 @@ Hairlines and the composed border shorthands built on them, plus the banner's le
 | Separator Segment | `separator.segment` · `--separator-segment` | system-grey @ 20%                      |
 | Heading Seam      | `--border-heading`                          | `1.75px solid var(--separator-border)` |
 | Box Seam          | `--border-cell`                             | `1.5px solid var(--separator-border)`  |
-| Banner Scrim      | `--banner-shadow`                           | `#0000008C`                            |
+| Section Seam      | `--border-segment`                          | `1px solid var(--separator-segment)`   |
+| Banner Scrim      | `BANNER_SHADOW` · `--banner-shadow`         | `#0000008C`                            |
 
 #### Shadows
 
-The two drop shadows — resting glass and lifted or dragged chrome. Every frost surface ends its box-shadow stack in one of these.
-
-**SOURCE:** `Pommora/src/renderer/src/design-system/tokens/color.css.ts`
-
-| Title | Token | Value |
-| --- | --- | --- |
-| Standard | `shadowStandardVar` · `--shadow-standard` | `0 8px 25px #00000040` |
-| Lift | `shadowLiftVar` · `--shadow-lift` | `0 12px 30px #00000066` |
+| Title    | Token                                     | Value                   |
+| -------- | ----------------------------------------- | ----------------------- |
+| Standard | `shadowStandardVar` · `--shadow-standard` | `0 8px 25px #00000040`  |
+| Lift     | `shadowLiftVar` · `--shadow-lift`         | `0 12px 30px #00000066` |
 
 #### Spectrum
 
-The ten selectable solids plus the neutral chip default and the ramp's pink seat — authored once in `@shared/theme`, validated by main and renderer alike. These are the anchor names still on disk; an accent and a chip alike resolve to a ramp cell. The accent is a single-user value resolved from this palette (or the `system` OS accent); accented surfaces derive from `--accent` through the tint steps.
-
-**SOURCE:** `Pommora/src/shared/theme.ts` · `tokens/theme-vars.css.ts`
+**SOURCE:** `Pommora/src/shared/theme.ts` — authored once, validated by main and renderer alike; the accent resolves from it (or the OS accent) at runtime.
 
 | Title             | Token                                       | Value                                      |
 | ----------------- | ------------------------------------------- | ------------------------------------------ |
@@ -185,157 +138,225 @@ The ten selectable solids plus the neutral chip default and the ramp's pink seat
 | Accent Stroke     | `--accent-stroke` / `--accent-stroke-hot`   | accent @ 40% / accent @ 60%                |
 | Link / Connection | `--link` / `--connection`                   | `var(--system-accent)` / → `var(--accent)` |
 | Error             | `--error`                                   | `SPECTRUM.red`                             |
-| Code              | `--code`                                    | `--solid-red` (user-selectable) @ 85%      |
+| Code              | `--code`                                    | `--solid-red` @ 85%                        |
 
-#### Labels & Chips
+#### Ramp
 
-**SOURCE:** `Pommora/src/renderer/src/design-system/labels/`
+**SOURCE:** `Tokens/ramp.ts` — eight families × eight steps, dark to light, each spectrum solid seated on an exact cell.
 
-| Title      | Token              | Use Cases                                                          |
-| ---------- | ------------------ | ------------------------------------------------------------------ |
-| Label      | `Label`            | The primitive every named label is a recipe over.                  |
-| Pill       | `shape.pill`       | A rounded label — a status value's default.                        |
-| Tag        | `shape.tag`        | The squared shape — select, multi-select, context and file values. |
-| Chip       | `shape.chip`       | Compact icon-only variant; an option for Status properties.        |
-| Box        | `shape.box`        | Multi-use checkboxes.                                              |
-| Treatments | `fill` · `outline` | Named only where a label differs from its tint.                    |
-| Palette    | `labelColor.*`     | One tinted variant per ramp cell, plus `default` and `accent`.     |
-| ContextChip| `ContextChip`      | A Context reference — neutral ground, color on border and text.    |
-| FileChip   | `FileChip`         | A file property's value; a tag with a `--label-tertiary`outline, no fill. |
-| FileLabel  | `FileLabel`        | A file or folder name inside a field; no chrome at all.            |
-
-#### Interactive Fields
-
-The field family — every input surface's chrome and editing behavior in one home. Three chrome axes compose every field look; the `--field-ring` channel carries rest, focus, and error tones through one inset shadow; the editing behaviors live beside the chrome they animate. 
-
-**SOURCE:** `Pommora/src/renderer/src/design-system/fields/`
-
-| Title          | Token                                         | Use Cases                                                                                                   |
-| -------------- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| InputField     | `InputField`                                  | The field box as a component; `capped` scrolls its content row under the fade.                              |
-| Boxed          | `field` · `input`                             | The rounded quaternary-fill surface; `input` is the same chrome on a raw caret.                             |
-| Hairline       | `hairlineField`                               | The tighter cell variant — its own width, the separator stroke on the channel.                              |
-| Bare           | `bare`                                        | No box at all: the caret reads as the text it replaced.                                                     |
-| Search         | `search`                                      | The transparent search look — border, fill, and placeholder tone stated once.                               |
-| Ring Channel   | `fieldRing()` · `focusRing()` · `errorRing()` | One inset-shadow spelling; presets set only the `--field-ring` color.                                       |
-| Placeholder    | `placeholder`                                 | The ghost-text tone — every field axis paints `::placeholder` with it, and the class carries it onto spans. |
-| Content Row    | `contentRow`                                  | The opt-in overflow cap `InputField capped` mounts.                                                         |
-| SearchField    | `SearchField` · `SEARCH_PLACEHOLDER`          | The controlled filter input four surfaces share — never spell-checked, reading the one search copy.         |
-| PathField      | `PathField`                                   | A folder path: a FileLabel run at rest, the raw text under a click.                                         |
-| EditableInput  | `EditableInput`                               | The commit/cancel caret — Enter commits, Escape abandons, blur settles.                                     |
-| RenamableLabel | `RenamableLabel`                              | The inline-rename swap; `title` seats the caret at the end, `row` selects all.                              |
-| Press-To-Edit  | `useDraftEdit`                                | Rest content until a click, then a width-pinned draft with select-on-open.                                  |
-
-#### Interactions
-
-**SOURCE:** `Pommora/src/renderer/src/design-system/interactions/`
-
-| Title       | Source          | Use Cases                                                                    |
-| ----------- | --------------- | ---------------------------------------------------------------------------- |
-| OverScroll  | `OverScroll/`   | Clipped content fades at whichever edge hides it, and scrolls under the pointer. |
-| HoverRemove | `HoverRemove/`  | The hover-revealed remove ×, with the label tail melting beneath it as an option. |
-
-#### Components
-
-**SOURCE:** `Pommora/src/renderer/src/design-system/components/`
-
-| Title | Source | Use Cases |
-| -------------------------- | -------------------------------- | ------------------------------------------------------------------- |
-| SegmentRun | `SegmentRun/` | A divided run of labels — a path's segments, or values standing beside one another. |
-| DualSwitch | `Switches/` - `DualSwitch` | Booleans; shared Switch shape with a sliding glass segment. |
-| ColorSwatch | `Switches/` - `ColorSwatch` | Color-selections; re-uses the `Switch` shape. |
-| Slider | `Slider/` | Sliding number selection. |
+| Title         | Token           | Value                                                  |
+| ------------- | --------------- | ------------------------------------------------------ |
+| Shading Step  | `RAMP_STEP`     | `15`                                                   |
+| Darkness Step | `DARKNESS_STEP` | `15`                                                   |
+| Grey Outlines | `GREY_OUTLINES` | `35` · `45` · `55` · `65` · `75` · `85` · `95` · `100` |
 
 #### Geometry
 
-The glyph ladder, the per-size control bundles, and the bare layout constants JS math consumes as numbers.
+**SOURCE:** `Tokens/size.css.ts`
 
-**SOURCE:** `Pommora/src/renderer/src/design-system/tokens/size.css.ts` · `tokens/theme-vars.css.ts`
+| Title             | Token                                          | Value                                                             |
+| ----------------- | ---------------------------------------------- | ----------------------------------------------------------------- |
+| Icon Ladder       | `size.icon.*` · `--icon-*` · `ICON_PX`         | Eleven steps named for the type ramp — `largeTitle` `26px` → `subline` `10px` |
+| Button Small      | `size.control['button-small']`                 | h `24px` · segment `20px` · padX `4px` · radius `8px` · icon `body`  |
+| Button Medium     | `size.control['button-medium']`                | h `28px` · segment `24px` · padX `5px` · radius `10px` · icon `title3` |
+| Button Large      | `size.control['button-large']`                 | h `32px` · segment `28px` · padX `8px` · radius `12px` · icon `title3` |
+| Pill Radius       | `RADIUS_FULL` · `--radius-full`                | `999px`                                                           |
+| Container Title   | `CONTAINER_TITLE_SIZE` · `--container-title-size` | `20px`                                                         |
+| Disclosure Indent | `DISCLOSURE_INDENT` · `--disclosure-indent`    | `14px`                                                            |
+| Fold Gutter       | `FOLD_GUTTER` · `--fold-gutter-base`           | `20px`                                                            |
+| Drop Line         | `DROP_LINE_THICKNESS` · `DROP_DOT_SIZE` · `DROP_LINE_INSET` | `2px` · `7px` · `2px`                                |
+| List Outline      | `LIST_OUTLINE_WIDTH` · `LIST_OUTLINE_GAP` · `--list-outline-*` | `2px` · `3px` · segment tone · pill radius        |
+| Park / Close      | `PARK_CLEARANCE` · `CLOSE_CLEARANCE`           | `14px` · `30px`                                                   |
+| Tile              | `TILE_MIN_PX` · `TILE_DEFAULT_PX` · `TILE_GAP_PX` | `64px` · `320px` · `4px`                                       |
 
-| Title                       | Token                                       | Value                                                                            |
-| --------------------------- | ------------------------------------------- | -------------------------------------------------------------------------------- |
-| Icon Ladder                 | `size.icon.*` · `--icon-*` · `ICON_PX`      | Eleven steps named for the type ramp — `largeTitle` `26px` through `subline` `10px` |
-| Button Small                | `size.control['button-small']`              | h `24px` · segment `20px` · padX `4px` · radius `8px` · icon `body`                  |
-| Button Medium               | `size.control['button-medium']`             | h `28px` · segment `24px` · padX `5px` · radius `10px` · icon `title3`                 |
-| Button Large                | `size.control['button-large']`              | h `32px` · segment `28px` · padX `8px` · radius `12px` · icon `title3`                 |
-| Disclosure Indent           | `DISCLOSURE_INDENT` · `--disclosure-indent` | `14px`                                                                           |
-| Fold Gutter                 | `FOLD_GUTTER` · `--fold-gutter-base`        | `20px`                                                                           |
-| Drop-Line Inset             | `DROP_LINE_INSET` · `--drop-line-inset`     | `2px`                                                                            |
-| Tile Minimum                | `TILE_MIN_PX`                               | `64px`                                                                           |
-| Pill Radius                 | `--radius-full`                             | `999px` — larger than any box that wears it, so both ends resolve to semicircles |
+#### Typography
 
-The drag chrome's other two dimensions live beside the inset in the bridge: `--drop-line-thickness` (`2px`) and `--drop-dot-size` (`7px`), with `--drag-line` pointing at the accent. The list-outline rail (`--list-outline-*`: `2px` · segment tone · `999px` · `3px`) is the shared nested-run rail consumed by MarkdownPM's outliner and the grouping hierarchy.
+**SOURCE:** `Tokens/typography.css.ts` — Inter, variable. `text.<style>.<variant>` composes size and line height from the style with weight from the variant: Standard `400` · Emphasized `500` · Semibold `600` · Bold `700`, tracking pinned to `0`. The sizes are the macOS AppKit scale drawn in Inter; **Control** and **Subline** are renamed for what they drive here.
 
-#### Materials
+| Style       | Token             | Size / Line     | Character                                            |
+| ----------- | ----------------- | --------------- | ---------------------------------------------------- |
+| Large Title | `text.largeTitle` | `26px` / `32px` | display step                                         |
+| Title 1     | `text.title1`     | `22px` / `26px` | display step                                         |
+| Title 2     | `text.title2`     | `17px` / `22px` | display step                                         |
+| Title 3     | `text.title3`     | `15px` / `20px` | the smallest display step                            |
+| Headline    | `text.headline`   | `13px` / `16px` | body-size heading — distinct by weight, not scale    |
+| Body        | `text.body`       | `13px` / `16px` | the standard content size; carries the row primitive |
+| Callout     | `text.callout`    | `12px` / `15px` | a step under body — headers and ancillary labels     |
+| Control     | `text.control`    | `12px` / `15px` | chips and control chrome                             |
+| Caption     | `text.caption`    | `11px` / `14px` | the secondary line under a title                     |
+| Footnote    | `text.footnote`   | `10px` / `13px` | small detail                                         |
+| Subline     | `text.subline`    | `10px` / `12px` | footnote's size on a tighter line box                |
 
-Two distinct glass systems. **Frost** is a CSS `backdrop-filter` recipe — a dimmed blur with a glassy edge — parameterized by `FrostParams`; zero-valued edge pieces emit nothing. **Liquid** is "Liquid Glass" — a real edge-refraction shader over the live app — worn by the in-use button controls and on-control segments.
+Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → Headline / Emphasized; row sub-label → Caption, trailing detail → Footnote / Emphasized; pane header → Callout / Emphasized; settings section headings → Title 3 / Emphasized; table column headers → Callout / Semibold; chips and sidebar section headers → Control / Semibold; on-control labels → Control / Emphasized; picker, segmented, and tab labels → Control; card titles → Body / Semibold; the Subfield → Subline / Emphasized. The [[MarkdownPM|Markdown editor]] scales from its own zoom root in `em` multiples, drawing weight from the shared ladder.
 
-**SOURCE:** `Pommora/src/renderer/src/design-system/materials/glass-pane.tsx` · `materials/glass-material.ts` · `materials/glass-controls.tsx`
+### Materials
 
-| Title | Token | PANE_FROST | WINDOW_FROST | GHOST_FROST |
-| --- | ---- | -- | --- | --- |
-| Blur | `.blur` | `6` | `6` | `6` |
-| Brightness | `.brightness` | `90` | `90` | `100` |
-| Border Alpha | `.borderAlpha` | `0.12` | `0.12` | `0` |
-| Top Specular | `.topSpecular` | `0.35` | `0.35` | `0` |
-| Inner Ring | `.innerRing` | `0.08` | `0.08` | `0` |
-| Lower Rim / Depth / Rim Blur | `.lowerRim` / `.depth` / `.rimBlur` | `0.08` / `12` / `18` | `0.08` / `12` / `18` | `0` / `0` / `0` |
-| Fill | `.fill` · `SOLID_FILL` | unset (transparent) | `--bg-window` @ 90% | `--bg-window` @ 78% |
-| Shadow | `.shadow` | standard | standard | lift |
+`Materials/` — two glass engines behind one barrel. **Frost** is a CSS `backdrop-filter` recipe parameterized by `FrostParams`; **Liquid** is a real edge-refraction shader (`@samasante/liquid-glass`) worn by the in-use controls.
 
-#### Glass & Menus
+| Title         | Export                              | What it is                                                              |
+| ------------- | ----------------------------------- | ----------------------------------------------------------------------- |
+| GlassSurface  | `GlassSurface` · `frostMaterial`    | The app's fixed chrome tier — sidebar, inspector, side rail.            |
+| GlassPane     | `GlassPane` · `PANE_FROST`          | Anything floating over it — menus, pickers, the autocomplete.           |
+| GlassWindow   | `GlassWindow` · `WINDOW_FROST`      | The pane tier carrying a body — preview, nav, settings, the crop modal. |
+| Ghost         | `GHOST_FROST`                       | The edge-free frost the drag chip wears.                                |
+| Frost engine  | `frostStyle` · `SOLID_FILL` · `OUTLINE_INSET` | The recipe itself, the window fill share, and the acted-on edge inset. |
+| GlassControls | `GlassControls` · `CONTROL_OPTICS`  | Liquid glass on the button controls.                                    |
+| GlassSegment  | `GlassSegment`                      | Liquid glass on the small on-control segments.                          |
 
-Which tier each surface wears, and the two menu shells built on the pane.
+| Visual | PANE_FROST | WINDOW_FROST         | GHOST_FROST |
+| ---------------- | ---------- | -------------------- | ----------- |
+| Blur             | `6`        | `6`                  | `6`         |
+| Brightness       | `90`       | `90`                 | `100`       |
+| Border Alpha     | `0.12`     | `0.12`               | `0`         |
+| Top Specular     | `0.35`     | `0.35`               | `0`         |
+| Inner Ring       | `0.08`     | `0.08`               | `0`         |
+| Lower Rim / Depth / Rim Blur | `0.08` / `12` / `18` | `0.08` / `12` / `18` | `0` / `0` / `0` |
+| Fill             | unset      | `--bg-window` @ 90%  | `--bg-window` @ 78% |
+| Shadow           | standard   | standard             | lift        |
 
-**SOURCE:** `Pommora/src/renderer/src/design-system/materials/glass-pane.tsx` · `materials/glass-material.ts` · `materials/glass-window.tsx` · `materials/glass-surface.tsx` · `components/PickerMenu/pickerMenu.css.ts` · `components/notchedPane.css.ts`
+`--glass-outline` re-colors any tier's edge while it is being driven (a resize in flight, an active embed).
 
-| Title | Token | Value | Used By |
-| --- | --- | --- | --- |
-| Surfaces | `GlassSurface` · `frostMaterial` | brightness `95`, clear | sidebar · inspector · side rail |
-| Panes  | `GlassPane` · `PANE_FROST` | brightness `90`, clear | menus · pickers · the autocomplete |
-| Windows  | `GlassWindow` · `WINDOW_FROST` | brightness `90`, filled | preview · nav · settings · the crop modal |
-| Shared body | `SOLID_FILL` | `0.9` of `--bg-window` | the window tier, and any pane asking for `solid` |
-| Ghost | `GHOST_FROST` | brightness `100`, edge-free | the drag chip |
-| Acted-on edge | `--glass-outline` | unset | any tier being resized or driven |
-| Rectangular menu | `PANE_RADIUS` | `12` | `PickerMenu` — every menu and picker |
-| Beaked menu | `BEAK_RADIUS` | `12` | `MenuSurface` — the large toolbar dropdown, alone |
+### Labels & Chips
 
-### Component Chrome
+`Labels/` — `Label.tsx`, `labels.css.ts` (the axes), `recipes.tsx`, `SegmentRun.tsx`.
 
-The reusable pieces mirror the Figma library and consume semantic tokens only; a component's own behavior lives in its spec.
+| Title      | Export                       | What it is                                                              |
+| ---------- | ---------------------------- | ----------------------------------------------------------------------- |
+| Label      | `Label`                      | The axis-composed primitive every named label is a recipe over.         |
+| Shapes     | `shape.pill/tag/chip/box`    | Rounded status default · squared value · icon-only · checkbox.          |
+| Treatments | `fill` · `outline`           | Named only where a label differs from its tint.                         |
+| Palette    | `labelColor.*`               | One tinted variant per ramp cell, plus `default` and `accent`.          |
+| ContextChip | `ContextChip`               | A Context reference — neutral ground, color on border and text.         |
+| FileChip   | `FileChip`                   | A file property's value — a tag with a tertiary outline, no fill.       |
+| FileLabel  | `FileLabel`                  | A file or folder name inside a field, no chrome.                        |
+| SegmentRun | `SegmentRun` · `SEGMENT_GAP` | A run of FileLabels divided by PathChevrons — a path, or values side by side. |
 
-- **Dual-option toggles** are always switches or the toggleable double-chevron, never dropdown pickers.
-- **Chevrons and twisties** — disclosure glyphs ride the fold-chevron mask tokens (`--fold-chevron-mask`, `--code-chevron-mask` — inline SVG masks bridged from theme-vars) at the tertiary label tone, stepping by the disclosure indent.
-- **The drag grip** — the six-dot glyph is one masked asset (`--grip-glyph`).
-- **The ActionBand** (`Detail/ActionBand.css.ts`) is the shared home for toolbar-row affordances any surface mounts — ViewSegments first, plus the hover-revealed settings button; a segment's collapsible title rides Segmented-Controls' `labelSlot`.
-- **Two menu shells.** `PickerMenu` is the rectangle every menu and picker mounts, owning anchoring, dismissal, focus and the scroll cap; `MenuSurface` is the beaked pane the large toolbar dropdown hangs off a named button, and the only surface still drawing its own outline. Why the beak sits where it does, and how each blooms, is [[InteractionPM]]'s.
-- **The toolbar dropdown shell** splits again — `MenuSurface` is the pane (state-free); `MenuDropdown` is the shell around a trigger (open state, outside-dismiss, anchored surface, optional growth bound). Surface-specific geometry stays with the surface that means it.
-- **One picker row, marked two ways.** A fixed option set and a set of user-authored chips take the same row, and how it states the chosen one is the nexus's `pickerSelection` setting: outlined marks it by the row's own fill, checked by a trailing accent mark with the fill and the ring standing down — either way, one signal per state. In a pane that holds a mark at all, the slot is laid out on every row, so the pane can't resize as the selection travels between labels of unequal length; a picker whose value is unset reserves nothing.
-- **Rows read at two tiers.** A menu row is body text; a picker's rows drop to the control ramp, because they are a control's options rather than a menu's commands. The picker's pane states that once and every row inside inherits it, so no row carries a ramp of its own. Both tiers read the primary tone — only size marks the difference.
-- **A pane's pinned bars are the ActionRow tier** — a full ramp under the rows they frame, at the secondary tone, since a header or footer borders the list rather than joining it. `PickerMenu` takes a header and a footer, so any picker can carry them.
-- **The acted-on edge.** `--glass-outline` re-colors a tier's edge while its surface is being driven — a resize in flight, an active embed. It paints twice, as the border and once inward, because a tint on a one-pixel border reads far fainter than the same color on the thicker borders tiles wear, and widening the border would shift everything inside it.
-- **The drop chrome** — the insertion line, dot, host, and `DragGhost` live in `design-system/interactions` (`dropChrome.css`, `DropLine.tsx`, `DragGhost.tsx`).
-- **The capped label** — ellipsis at rest, scroll-on-hover with a mask fade at the leading edge — is the app-wide overflow treatment for constrained text, defined with the type tokens.
+### Elements
+
+`Elements/` — the atomic bits every surface composes; each is one folder with a style sheet and, where needed, a component.
+
+| Title       | Export                                                  | What it is                                                                 |
+| ----------- | ------------------------------------------------------- | -------------------------------------------------------------------------- |
+| DropOutline | `dropOutline` · `dropOutlineOpen` · `dropOutlineSpacer` · `railRow` | The fold chevron and the rail that descends from its center, on `--disclosure-rail-x`. |
+| PathChevron | `PathChevron`                                           | The `›` between path segments; `tone` and `size` knobs.                    |
+| Segment     | `segment`                                               | The between-values pill — `--segment-width` / `--segment-color` override it. |
+| ProgressBar | `ProgressBar`                                           | A determinate bar on the accent.                                           |
+
+### Components
+
+`Components/` — grouped as the ledger reads. `dropdownAnchor.ts` (`dropdownAnchor`, `DROPDOWN_GAP`) and `useDismiss.ts` are the shared placement and outside-click helpers at the root.
+
+#### Controls
+
+| Title       | Export                                | What it is                                                     |
+| ----------- | ------------------------------------- | -------------------------------------------------------------- |
+| Checkbox    | `Checkbox`                            | The box, on the accent or a chosen cell.                       |
+| DualSwitch  | `DualSwitch`                          | A boolean toggle with a sliding glass segment.                 |
+| ColorSwatch | `ColorSwatch`                         | The switch shape holding a color, anchoring a ColorPicker.     |
+| Slider      | `Slider`                              | Sliding number selection.                                      |
+| Segmented   | `SegmentedSymbol` · `SegmentedButton` | Icon or label options in one control, divided by segments.     |
+
+#### Pickers
+
+| Title          | Export                                     | What it is                                                   |
+| -------------- | ------------------------------------------ | ------------------------------------------------------------ |
+| PickerMenu     | `PickerMenu` · `PointMenu` · `PickerOption` | The rectangle every menu and picker mounts — anchoring, dismissal, focus, the scroll cap. |
+| CalendarPicker | `CalendarPicker`                           | Date and time selection.                                     |
+| ColorPicker    | `ColorPicker`                              | The 8×8 ramp grid; clicking the selected cell clears.        |
+| TextPicker     | `TextPicker`                               | A typed-value picker in the shared pane.                     |
+
+#### Menu
+
+| Title         | Export                                              | What it is                                                     |
+| ------------- | --------------------------------------------------- | -------------------------------------------------------------- |
+| Menu          | `Menu` · `MenuItem` · `MenuHeading` · `MenuSeparator` · `MenuCaption` | The row vocabulary.                          |
+| Bars          | `MenuTopRow` · `MenuPaneTopRow` · `MenuBottomRow` · `FooterLockButton` | The pinned header and footer tiers.         |
+| Scroll frame  | `MenuScrollFrame` · `MENU_MAX_HEIGHT`               | The one capped overflow region with its fade.                  |
+| DisclosureRow | `DisclosureRow` · `useDisclosureSet`                | A folding row on DropOutline.                                  |
+| MenuSurface   | `MenuSurface`                                       | The beaked pane the large toolbar dropdown hangs off a button. |
+| MenuDropdown  | `MenuDropdown`                                      | The shell around a trigger — open state, dismiss, growth bound. |
+| NotchedPane   | `NotchedPane`                                       | The beaked frost shell MenuSurface composes.                   |
+| Growth        | `growToContent`                                     | The measured height a pane grows to.                           |
+
+#### Fields
+
+| Title          | Export                                        | What it is                                                             |
+| -------------- | --------------------------------------------- | ---------------------------------------------------------------------- |
+| InputField     | `InputField`                                  | The field box; `capped` scrolls its content under the fade.            |
+| Chrome         | `field` · `input` · `hairlineField` · `bare` · `search` | Boxed, raw caret, cell-tight, chromeless, and the search look. |
+| Ring           | `fieldRing()` · `focusRing()` · `errorRing()` · `ROW_RING` | One inset-shadow channel; presets set only its color.     |
+| Placeholder    | `placeholder`                                 | The ghost-text tone.                                                   |
+| SearchField    | `SearchField` · `SEARCH_PLACEHOLDER`          | The controlled filter input the list surfaces share.                   |
+| PathField      | `PathField`                                   | A folder path — a SegmentRun at rest, raw text under a click.          |
+| EditableInput  | `EditableInput`                               | Enter commits, Escape abandons, blur settles.                          |
+| RenamableLabel | `RenamableLabel`                              | The inline-rename swap.                                                |
+| useDraftEdit   | `useDraftEdit`                                | Rest content until a click, then a width-pinned draft.                 |
+
+### Detail
+
+`Detail/` — the composite, feature-facing shells. App surfaces are listed by reference; their code stays in the app.
+
+| Title       | Location                          | What it is                                                              |
+| ----------- | --------------------------------- | ----------------------------------------------------------------------- |
+| PreviewPane | `Detail/PreviewPane` — `PreviewPane` | The floating window surface every in-app window mounts.[^1]         |
+| SidePane    | `Detail/SidePane` — `SidePane` · `sidePaneWidth` | A pane carried on a window's edge by `--io`.             |
+| Tile chassis | `Detail/tile-chassis.css`        | The resizable tile frame SurfacePM and embeds share.                    |
+| Sidebar     | app: `Sidebar/`                   | [[SidebarPM]]                                                           |
+| Tabs · Toolbar | app: `Tabs/` · `Toolbar/`      | [[NavigationPM]]                                                        |
+| Table · Cards | app: `Detail/Views/`            | [[TableViewPM]] · [[CardViewPM]] — future residents here.               |
+
+### Interaction
+
+`Interactions/` — the content-agnostic pointer, scroll, and drag layer; fields and labels depend down into it, nothing reaches up. [[InteractionPM]] and [[PommoraDND]] hold the depth.
+
+| Title        | Export                                                  | What it is                                             |
+| ------------ | ------------------------------------------------------- | ------------------------------------------------------ |
+| Drag engine  | `Zone` · `SortableZone` · `DragGroup` · `useDragItem` · `reorder` | The in-house DND.                           |
+| Drop chrome  | `DropLine` · `DragGhost` · `dropChrome.css` · `ghost.css` | The insertion line, dot, and the glass drag chip.    |
+| Disclose     | `beginDragDisclose` · `registerDiscloseTarget`          | Hover-open while dragging.                             |
+| Snapshot     | `useDragSnapshot`                                       | The list held still for a drag's duration.             |
+| Gesture      | `usePointerGesture` · `beginPointerGesture`             | Press, threshold, move, release.                       |
+| Autoscroll   | `armAutoScroll` · `scrollGlide` · `AUTOSCROLL_KNOBS`    | Edge-proximity scrolling and the glide to a destination. |
+| Keyboard     | `keyboardNext` · `onActivateClick` · `onActivateKey` · `announce` | Arrow stepping, Enter/Space activation, live-region announcements. |
+| OverScroll   | `OverScroll`                                            | Overflow fades at the hidden edge, scrolls under the pointer. |
+| HoverRemove  | `HoverRemove` · `hoverRemoveHost`                       | The hover-revealed ×, with the label-tail melt.        |
+| Floating     | `useFloatingWindow` · `FloatingResizeCorners` · `floatingWindow.css` · `resize-strip.css` | Move and resize for any floating surface. |
+| Reveal bar   | `useRevealNear` · `reveal-bar.css`                      | A control shown as the pointer nears an edge.          |
+| Held         | `useHeld`                                               | A value that lingers through an exit.                  |
+
+### Animation
+
+`Animation/` — the one motion source: the ladder, the two curves, the drag feel, the Bloom keyframes, and the enter/exit primitives. [[InteractionPM]] describes the named motions.
+
+| Title     | Export                                    | What it is                                                              |
+| --------- | ----------------------------------------- | ----------------------------------------------------------------------- |
+| Durations | `duration.fast/dropdown/base/slow` · `--duration-*` · `ms()` | `180ms` · `225ms` · `280ms` · `350ms`; `ms` reads one as a number. |
+| Ease      | `easing.baseEase` · `--ease-base`         | `ease` — the everyday curve.                                            |
+| Snap      | `easing.baseSnap` · `--ease-snap`         | `cubic-bezier(0.22, 1, 0.36, 1)` — the decelerate drag and tiles ride. |
+| Feel      | `DEFAULT_FEEL` · `GLIDE_FEEL`             | Duration + snap as numbers for the drag engine — the `dropdown` and `slow` rungs. |
+| Bloom     | `dropdownMenu` · `dropdownMenuClosing` · `dropdownOpen` · `dropdownClose` · `titleReveal` | The pane open/close keyframes at the `slow` and `dropdown` rungs. |
+| Reveal    | `Reveal`                                  | The `0fr ↔ 1fr` body open/close on the `fast` rung.                     |
+| Exit      | `useExitPresence`                         | Keeps a surface mounted through its close.                              |
+
+### Symbols
+
+`Symbols/` — `Icon` and the curated registry (`icons`, `IconName`, `entityIcon`), `AllSymbols.ts` (`searchIcons`), `fileTypes.ts` (`fileTypeIcon`), `customGlyphs.tsx`, and `masks.ts` (the grip, fold-chevron, and link glyphs as CSS masks). [[SymbolsPM]] is the spec.
 
 ### Showcase
 
-A data-driven design-system site (`npm run showcase`) with a live accent picker, built statically and deployed at https://pommora-design-system.vercel.app.
-
-### Where the Rest Lives
-
-The atlas continues in the specs that own each family: the editor's token pockets in [[MarkdownPM]] §Design System, the type ramp in [[TypographyPM]], motion and the caret, over-scroll, and autoscroll tables in [[InteractionPM]], labels in [[PropertiesPM]], the card families in [[CardViewPM]], the table sheet in [[TableViewPM]], and the preview window's `--ppane-*` contract described in [[PagePreviewPM]]. Icons resolve through one `Icon` component against the curated `design-system/symbols` registry.[^1] The stack ladders, shell insets, and per-surface knob bundles stay in code — tunables, not vocabulary.
+`Showcase/` — the data-driven site (`npm run showcase`), one leaf per domain and a `lab/` sandbox, deployed at https://pommora-design-system.vercel.app.
 
 ### Known Issues
 
-- **Voiding Liquid Glass can't be done in place** — its `backdrop-filter` displacement is a dynamically generated SVG filter ID CSS can neither reconstruct nor interpolate, so the inspector "swallow" renders the pill as a two-layer control: a fading glass layer behind a solid bare-button layer.
-- **Scrollbars are hidden app-wide** — Chromium's default bar reads heavy, and the native auto-hiding overlay isn't reliably available, so scrolling is trackpad and wheel only.
+- **Voiding Liquid Glass can't be done in place** — its displacement filter is a generated SVG ID CSS can't interpolate, so the inspector "swallow" renders the pill as a fading glass layer behind a solid bare layer.
+- **Scrollbars are hidden app-wide** — Chromium's default bar reads heavy and the auto-hiding overlay isn't reliable, so scrolling is trackpad and wheel only.
 
 ### Pending
 
-- **Spacing and radius** — `--radius-full` is the scale's first member, minted from the pill radius nine surfaces had been spelling by hand. The rest of the corners and spacing steps remain ad-hoc literals until they're lifted from Figma.
-- **Light/dark theming** — a future seam; the system is dark-only.
-- **Accent editing UI** — deferred; the control surface is the config file.
-- **The inactive state token** — the empty-state text tone between secondary and tertiary; its interim consumers read tertiary, each marked `Awaiting proper inactive state token`.
+- **Buttons** — a size × content × treatment recipe over Label, with Segmented as N buttons divided by `segment`; lands in Controls.
+- **Spacing and radius** — `--radius-full` is the scale's only member; the rest stay ad-hoc until lifted from Figma.
+- **Light/dark theming** — the system is dark-only.
+- **The inactive state token** — the empty-state tone between secondary and tertiary; interim consumers read tertiary.
+- **Type** — no tracking scale, no `mono` token behind the editor's code stack, no Markdown element mapping, no multi-line clamp.
 
-[^1]: [[SymbolsPM]]
-[^2]: [[PropertiesPM]] §Chip Tokens
+[^1]: [[PagePreviewPM]]
