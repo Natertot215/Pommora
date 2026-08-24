@@ -4,6 +4,7 @@ import {
   RenamableLabel,
   input as fieldInputClass,
 } from '@renderer/DesignSystem/Components/Fields'
+import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { DashIcon } from './DashIcon'
 import * as s from './settingsPane.css'
@@ -46,16 +47,18 @@ export function InlineEditHeader({
       className={s.header}
       style={outline ? ({ '--field-ring': outline } as React.CSSProperties) : undefined}
     >
-      <button
+      <Button
         ref={iconRef}
-        type="button"
+        type="filled"
+        size="button-medium"
+        paddingX="0"
         className={s.iconButton}
         aria-label="Edit icon"
         disabled={readOnly || !onIconClick}
         onClick={onIconClick}
       >
         {icon ? <Icon name={icon} /> : <DashIcon />}
-      </button>
+      </Button>
       <RenamableLabel
         renames="title"
         editing={editing && !readOnly}

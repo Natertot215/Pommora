@@ -42,7 +42,7 @@ export const segment = style({
  *  label's — a FileLabel already spaces its glyph — so this states only that a glyph never squeezes. */
 export const segmentIcon = style({ flexShrink: 0 })
 
-/** The house segment separator (Segmented-Controls), measured against the FIELD rather than given
+/** The house segment separator (Segmented), measured against the FIELD rather than given
  *  a fixed height: it stretches with the run and insets a few px, so it stays proportional if the
  *  field's type or padding ever moves. What a FLAT run wears — the entries stand beside each
  *  other and none contains another. */

@@ -15,7 +15,7 @@ import {
 import { IconPicker } from '../IconPicker'
 import { InlineEditHeader } from './InlineEditHeader'
 import { PagePropertiesPane } from './PagePropertiesPane'
-import { PaneSlider } from './PaneSlider'
+import { PaneSlider } from '@renderer/DesignSystem/Components/PaneSlider/PaneSlider'
 import { ICON } from './settingsPane.css'
 import { pageLinkText } from '@shared/pageMenu'
 

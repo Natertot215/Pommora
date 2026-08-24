@@ -21,7 +21,7 @@ import { GroupingPane } from './GroupingPane'
 import { SortingPane } from './SortingPane'
 import { FilterPane } from './FilterPane'
 import { ViewSettings } from './ViewSettings'
-import { PaneSlider } from './PaneSlider'
+import { PaneSlider } from '@renderer/DesignSystem/Components/PaneSlider/PaneSlider'
 import {
   AccessoryButton,
   MenuBottomRow,

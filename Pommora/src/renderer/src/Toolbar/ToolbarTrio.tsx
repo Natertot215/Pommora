@@ -1,7 +1,4 @@
-import {
-  SegmentedSymbol,
-  type Segment,
-} from '@renderer/DesignSystem/Components/Controls/Segmented-Controls'
+import { Segmented, type Segment } from '@renderer/DesignSystem/Components/Controls/Button'
 
 /**
  * The glass pill is a separate in-flow layer from the live buttons so it can fade independently as
@@ -16,10 +13,10 @@ export function ToolbarTrio({ segments }: { segments: Segment[] }): React.JSX.El
   return (
     <div className="toolbar-trio">
       <div className="toolbar-trio-glass" aria-hidden inert>
-        <SegmentedSymbol segments={segments} />
+        <Segmented glass segments={segments} />
       </div>
       <div className="toolbar-trio-cover">
-        <SegmentedSymbol segments={segments} glass={false} />
+        <Segmented segments={segments} />
       </div>
     </div>
   )

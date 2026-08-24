@@ -2,6 +2,7 @@ import { type ReactNode, useRef, useState } from 'react'
 import type { CollectionNode, SetNode } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
 import { mintDefaultView, mintNewView, type SavedView } from '@shared/views'
+import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
 import { Icon, iconNameOr } from '@renderer/DesignSystem/Symbols'
 import {
   Menu,
@@ -11,7 +12,7 @@ import {
   AccessoryButton,
 } from '@renderer/DesignSystem/Components/Menu'
 import { titleInput } from '@renderer/DesignSystem/Components/Menu/menu.css'
-import { PaneSlider } from '../Components/Detail/PaneSlider'
+import { PaneSlider } from '@renderer/DesignSystem/Components/PaneSlider/PaneSlider'
 import { ViewSettings } from '../Components/Detail/ViewSettings'
 import { PaneDnd, RowShell, usePaneRegions } from '../Components/Detail/paneDnd'
 import type { PaneDrop, PaneRow, paneSlot } from '../Components/Detail/paneDndModel'
@@ -172,17 +173,17 @@ export function ViewPane({
                   className={activeId === v.id ? optionRing : undefined}
                   leading={<Icon name={iconNameOr(v.icon, 'table')} size="title3" />}
                   trailing={
-                    <button
-                      type="button"
+                    <Button
+                      paddingX="0"
+                      icon="chevron-right"
+                      iconSize="title3"
                       className={vd.chevronButton}
                       aria-label={`Edit ${v.name}`}
                       onClick={(e) => {
                         e.stopPropagation()
                         setEditingId(v.id)
                       }}
-                    >
-                      <Icon name="chevron-right" size="title3" />
-                    </button>
+                    />
                   }
                   onClick={renamingId === v.id ? undefined : () => switchTo(v.id)}
                   onContextMenu={(e) => void rowMenu(v, e)}

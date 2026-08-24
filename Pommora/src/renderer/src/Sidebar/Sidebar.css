@@ -78,19 +78,19 @@
 .ribbon-icon,
 .sidebar-toggle {
   -webkit-app-region: no-drag;
+  width: var(--button-large-height);
+  color: var(--label-secondary);
+}
+.ribbon-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Match the toolbar buttons (button-large) so they read as part of the same row. */
-  width: var(--button-large-height);
   height: var(--button-large-height);
   padding: 0;
   border: 0;
   background: transparent;
-  color: var(--label-secondary);
 }
-.ribbon-icon:hover,
-.sidebar-toggle:hover {
+.ribbon-icon:hover {
   background: var(--state-hover);
 }
 

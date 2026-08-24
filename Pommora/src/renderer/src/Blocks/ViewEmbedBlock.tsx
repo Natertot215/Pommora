@@ -33,6 +33,7 @@ import { IconPicker } from '@renderer/Components/IconPicker'
 import { findCollection, findCollectionForSet, findSet } from '@renderer/Detail/Scope'
 import { ViewRenderer } from '@renderer/Detail/Views/ViewRenderer'
 import { SettingsPane } from '@renderer/Components/Detail/SettingsPane'
+import { hostedGutter } from '@renderer/DesignSystem/Components/Menu/menuSurface.css'
 import { ViewEmbedScopeProvider } from '@renderer/Embeds/ViewEmbedScope'
 import { useSession } from '@renderer/store'
 import { PICKER_MAX_HEIGHT } from '@renderer/DesignSystem/Components/Pickers/PickerMenu/pickerMenu.css'
@@ -41,7 +42,7 @@ import {
   labelSlot,
   labelSlotHidden,
   labelText,
-} from '@renderer/DesignSystem/Components/Controls/Segmented-Controls/segmented.css'
+} from '@renderer/DesignSystem/Components/Controls/Button/button.css'
 import {
   SEGMENT_ICON,
   segment,
@@ -587,7 +588,13 @@ export function ViewEmbedBlock({
         </div>
         {/* PickerMenu owns the anchoring (scroll/resize re-measure, collision flip) — a hand-rolled
             fixed portal detaches when the surface scrolls. */}
-        <PickerMenu open={cfgOpen} onDismiss={() => setCfgOpen(false)} triggerRef={btnRef}>
+        <PickerMenu
+          open={cfgOpen}
+          onDismiss={() => setCfgOpen(false)}
+          triggerRef={btnRef}
+          bareSurface
+          contentClassName={hostedGutter}
+        >
           <SettingsPane />
         </PickerMenu>
         {/* No edit chevrons — per-view editing lives behind the Settings affordance, not in the switcher. */}

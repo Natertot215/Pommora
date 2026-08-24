@@ -1,8 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import {
-  SegmentedSymbol,
-  type Segment,
-} from '@renderer/DesignSystem/Components/Controls/Segmented-Controls'
+import { Segmented, type Segment } from '@renderer/DesignSystem/Components/Controls/Button'
 import { useDismiss } from '@renderer/DesignSystem/Components/useDismiss'
 import { ToolbarTrio } from './ToolbarTrio'
 import { ViewDropdown } from './ViewDropdown'
@@ -104,7 +101,7 @@ export function Toolbar({
   return (
     <div className="app-toolbar">
       <div className="app-toolbar-cluster app-toolbar-cluster--nav">
-        <SegmentedSymbol segments={backForward} paddingX="6px" iconSize="title2" />
+        <Segmented glass segments={backForward} paddingX="6px" iconSize="title2" />
       </div>
       <TabBar />
       <div className="app-toolbar-right">
