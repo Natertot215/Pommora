@@ -132,7 +132,7 @@ export const connector = style([
   },
 ])
 
-export const placeholder = style({ color: c.label.tertiary })
+export { placeholder } from '../../design-system/fields/fields.css'
 
 /** The blank lead-row slots — empty fields need an explicit floor to read as fields at all; the
  *  narrow one matches the operator's compact register so the row scans {wide}{narrow}{wide}. */
