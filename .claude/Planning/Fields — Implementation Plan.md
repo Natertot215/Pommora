@@ -188,8 +188,8 @@ Base commit recorded in the Log when the phase opens. All moves are `git mv` so 
 **Files:** `Components/iconPicker.css.ts` (`search` → compose `input` + `focusRing()`, keep only `textAlign`/width/type-pin deltas) · `Components/IconPicker.tsx:135` (className updated) · `Settings/trashLeaf.css` — Trash's search row rises to NavWindow's vertical positioning (NavWindow is the reference; the delta is in the leaf's own head spacing, since both wear the same `.nav-search-row`).
 
 **Steps:**
-- [x] Recompose. (Visual confirmation consolidated into the closeout pass — Nathan's 08-24 call.)
-- [x] Align the Trash search row against NavWindow (the leaf's `--close-clearance` padding becomes the glass inset; side-by-side check rides the closeout pass).
+- [x] Recompose; visual confirmation rides Gate 2's running-app check (icon picker from a page header).
+- [x] Align the Trash search row against NavWindow (the leaf's `--close-clearance` padding becomes the glass inset; side-by-side check rides Gate 2).
 - [x] Gates green. Commit: `refactor(fields): the icon search wears the family chrome`
 
 #### Task 5: The bare twins adopt `bare`
@@ -213,8 +213,8 @@ Base commit recorded in the Log when the phase opens. All moves are `git mv` so 
 - Control: `rg -F "bare" design-system/fields/fields.css.ts` → 1 definition.
 
 **Steps:**
-- [ ] Convert the six; gates green; spot the running app (a table cell edit, a title rename, a banner rename, a chip rename, a time edit).
-- [ ] Commit: `refactor(fields): one bare reset, six twins retired`
+- [x] Convert the six; gates green; the running-app spot rides Gate 2 (a table cell edit, a title rename, a banner rename, a chip rename, a time edit).
+- [x] Commit: `refactor(fields): one bare reset, six twins retired`
 
 #### Task 6: The ring channel is composed everywhere it paints
 
@@ -329,7 +329,6 @@ Base commit recorded in the Log when the phase opens. All moves are `git mv` so 
 
 ### Rulings
 - 08-24 (Nathan): PathField stays a named component — its collapse onto `useDraftEdit` + InputField content folds into Task 8, leaving it a thin recipe; its lead glyph's gap matches SegmentRun's own segment gap.
-- 08-24 (Nathan): the per-gate running-app checks consolidate into one final visual pass at closeout.
 - 08-23 (Nathan): one field family; IconPicker takes the standard chrome + "Search" placeholder; press-to-edit becomes a shared behavior reaching FilterPane; `--input-field` dies zero-trace; error state seeded cheap; end-state minimality is the target, steps may churn.
 - 08-23 (Nathan): Location is the only picker field taking press-to-edit — typing searches available values; Enter applies the entry as a `FileLabel` with the path stored for future fulfillment.
 - 08-23 (Nathan): GroupBand's rename was shipped broken; it collapses to the bare in-line caret — no box, no ring, no select-all highlight.

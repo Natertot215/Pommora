@@ -13,8 +13,7 @@ export const ROW_RING = 2
 export const fieldRing = (width = 1): string =>
   `inset 0 0 0 ${width}px var(--field-ring, transparent)`
 
-/** The error preset on the channel — a style FRAGMENT like `focusRing`, minus the transition:
- *  an invalid value is a state, not a gesture, so it lands without animating. */
+/** The error preset on the channel — no transition: a state, not a gesture. */
 export const errorRing = (): { vars: Record<string, string> } => ({
   vars: { '--field-ring': tintAt('var(--error)', TINT_STEPS.primary) },
 })

@@ -12,6 +12,7 @@ export function RenamableTitle({
   title,
   className,
   boxed,
+  renames = 'row',
   host,
 }: {
   path: string
@@ -20,6 +21,7 @@ export function RenamableTitle({
   className: string
   /** The field carries its own border and fill — see `EditableInput`. */
   boxed?: boolean
+  renames?: 'title' | 'row'
   host: RenameHost
 }): React.JSX.Element {
   const target = useSession((s) => s.renamingPath === path)
@@ -42,7 +44,7 @@ export function RenamableTitle({
   const owns = target && token !== null && winner === token
   return (
     <RenamableLabel
-      renames="row"
+      renames={renames}
       editing={owns}
       emptyInitial={owns && renamingCreate}
       value={title}

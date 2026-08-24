@@ -13,6 +13,7 @@ import { surface } from '../../design-system/components/menu/menuSurface.css'
 import { dropdownAnchor } from '../../design-system/components/dropdownAnchor'
 import { stack } from '../../design-system/tokens/stack'
 import { fieldRing } from '../../design-system/fields/fieldRing'
+import { bare } from '../../design-system/fields/fields.css'
 
 const c = colorVars.color
 
@@ -352,15 +353,7 @@ export const ghostChip = style({
 })
 
 /** The inline add/rename caret — bare input inside the chip, which owns the font, padding, and fill. */
-export const optionInput = style({
-  background: 'transparent',
-  border: 'none',
-  outline: 'none',
-  padding: 0,
-  margin: 0,
-  color: 'inherit',
-  font: 'inherit',
-})
+export const optionInput = bare
 
 /** The recolor icon's positioning context — the ColorPicker anchors (centered, below) to this. */
 export const paletteAnchor = style({ position: 'relative', display: 'flex', alignItems: 'center' })

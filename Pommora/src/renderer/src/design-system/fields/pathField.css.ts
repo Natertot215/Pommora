@@ -10,7 +10,7 @@ import { text } from '../tokens/typography.css'
 
 const c = colorVars.color
 
-const LEAD_GAP = '5px' // KNOB — matches SegmentRun's own gap, so the lead glyph reads as part of the run
+const LEAD_GAP = '5px' // KNOB — SegmentRun's own gap
 const BROWSE_GAP = '8px' // KNOB — how far the browse action stands off the path it follows
 
 export const pathField = style([
