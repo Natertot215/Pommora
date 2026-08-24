@@ -5,14 +5,14 @@
 // component is editor-agnostic: visibility and the outside-click seam arrive as props and nothing
 // here imports CodeMirror, so a future dashboard host mounts it unchanged.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { cx } from '@renderer/design-system/cx'
-import { overScrollEllipsis } from '@renderer/design-system/interactions/OverScroll'
-import { text } from '@renderer/design-system/tokens'
+import { cx } from '@renderer/DesignSystem/Util/cx'
+import { overScrollEllipsis } from '@renderer/DesignSystem/Interactions/OverScroll'
+import { text } from '@renderer/DesignSystem/Tokens'
 import { linkDomain } from '@shared/links'
 import { DEFAULT_LINK_DISPLAY } from '@shared/properties'
 import { WEB_PARTITION } from '@shared/types'
 import { webpageTileTitle } from '@shared/webpageEmbed'
-import { useDismiss } from '@renderer/design-system/components/useDismiss'
+import { useDismiss } from '@renderer/DesignSystem/Components/useDismiss'
 import { useSession } from '../store'
 import { openWebLink } from '../openWebLink'
 import { webGuestRetention } from './webRetention'

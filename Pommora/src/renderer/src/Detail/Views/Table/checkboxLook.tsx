@@ -1,8 +1,8 @@
 import type { CSSProperties } from 'react'
-import { labelColor, shape } from '@renderer/design-system/labels'
-import { cx } from '@renderer/design-system/cx'
-import { Icon } from '@renderer/design-system/symbols'
-import { tint } from '@renderer/design-system/tokens/tint'
+import { labelColor, shape } from '@renderer/DesignSystem/Labels'
+import { cx } from '@renderer/DesignSystem/Util/cx'
+import { Icon } from '@renderer/DesignSystem/Symbols'
+import { tint } from '@renderer/DesignSystem/Tokens/tint'
 import { solidColorCss } from './solidColor'
 
 /** A checked box tints its color — a set solid, else the system accent, so it matches the switch

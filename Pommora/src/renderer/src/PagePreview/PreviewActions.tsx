@@ -1,4 +1,4 @@
-import { Icon } from '@renderer/design-system/symbols'
+import { Icon } from '@renderer/DesignSystem/Symbols'
 
 // The surface's swallow math sizes itself for exactly this pair — stays one component rather than
 // a shape each window re-declares.

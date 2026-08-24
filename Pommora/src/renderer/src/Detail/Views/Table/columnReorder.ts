@@ -1,4 +1,4 @@
-import { reorder } from '@renderer/design-system/interactions/drag'
+import { reorder } from '@renderer/DesignSystem/Interactions/drag'
 
 /**
  * Translate a header drag into a new `property_order`. The visible columns reorder; any hidden

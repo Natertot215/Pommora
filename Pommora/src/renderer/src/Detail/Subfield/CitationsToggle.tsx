@@ -1,6 +1,6 @@
 import { citationsLabel } from '@shared/toggleLabels'
-import { text } from '@renderer/design-system/tokens/typography.css'
-import { onActivateClick } from '@renderer/design-system/interactions/activate'
+import { text } from '@renderer/DesignSystem/Tokens/typography.css'
+import { onActivateClick } from '@renderer/DesignSystem/Interactions/activate'
 import { citationsVisible, openPageBody, useSession } from '../../store'
 import { pageStats } from './subfieldStats'
 import type { SubfieldScope } from './subfieldItems'

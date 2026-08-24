@@ -10,7 +10,7 @@ import { parentOf } from '@shared/treePatch'
 import { assetSubRoot } from '@shared/nexusPaths'
 import { resolveFileValue } from '@renderer/assetUrl'
 import { useSession } from '@renderer/store'
-import { SEGMENT_INDEX_ATTR } from '@renderer/design-system/components/SegmentRun/SegmentRun'
+import { SEGMENT_INDEX_ATTR } from '@renderer/DesignSystem/Labels/SegmentRun'
 
 /** Which label a click landed on, or null for the value's own area. The run stamps its entries
  *  with their position, so the table, the cards and both panes hit-test the same way. */

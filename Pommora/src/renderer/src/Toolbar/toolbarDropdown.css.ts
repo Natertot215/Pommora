@@ -1,6 +1,6 @@
 import { globalStyle, style } from '@vanilla-extract/css'
-import { dropdownAnchor } from '@renderer/design-system/components/dropdownAnchor'
-import { stack } from '@renderer/design-system/tokens/stack'
+import { dropdownAnchor } from '@renderer/DesignSystem/Components/dropdownAnchor'
+import { stack } from '@renderer/DesignSystem/Tokens/stack'
 
 // ── KNOBS — the toolbar dropdown button geometry (tune here) ──
 const BUTTON = {

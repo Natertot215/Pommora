@@ -45,7 +45,7 @@
   gap: 8px; /* the shared detail-title icon gap */
   text-shadow: var(--banner-cast);
   pointer-events: none;
-  transition: left var(--duration-base) var(--ease-standard);
+  transition: left var(--duration-base) var(--ease-base);
 }
 .banner-title-text {
   min-width: 0;
@@ -94,10 +94,10 @@
   /* Hide/show slides the icon in/out on the slide token (--duration-base) — max-width collapses the
      space, the translate carries it, and the negative margin swallows the banner-title gap. */
   transition:
-    max-width var(--duration-base) var(--ease-standard),
-    opacity var(--duration-base) var(--ease-standard),
-    transform var(--duration-base) var(--ease-standard),
-    margin-right var(--duration-base) var(--ease-standard);
+    max-width var(--duration-base) var(--ease-base),
+    opacity var(--duration-base) var(--ease-base),
+    transform var(--duration-base) var(--ease-base),
+    margin-right var(--duration-base) var(--ease-base);
 }
 .banner-home-icon.is-hidden {
   max-width: 0;
@@ -128,8 +128,8 @@
      pages' inset divider. The shared heading↔body seam, same as the banner image's bottom. */
   border-bottom: var(--border-heading);
   transition:
-    padding-left var(--duration-base) var(--ease-standard),
-    padding-right var(--duration-base) var(--ease-standard);
+    padding-left var(--duration-base) var(--ease-base),
+    padding-right var(--duration-base) var(--ease-base);
 }
 .shell.is-resizing .banner-empty {
   transition: none;
@@ -178,8 +178,8 @@
   border-radius: 5px;
   opacity: 0;
   transition:
-    opacity var(--duration-fast) var(--ease-standard),
-    background var(--duration-fast) var(--ease-standard);
+    opacity var(--duration-fast) var(--ease-base),
+    background var(--duration-fast) var(--ease-base);
 }
 .add-banner-strip:hover .add-banner-btn,
 .add-banner-btn:focus-visible {

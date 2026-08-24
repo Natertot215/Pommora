@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { IconName } from '@renderer/design-system/symbols'
+import type { IconName } from '@renderer/DesignSystem/Symbols'
 import type { ViewType } from '@shared/views'
 import { iconForTypeSwitch } from './viewIcon'
 

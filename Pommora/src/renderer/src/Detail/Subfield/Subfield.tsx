@@ -1,5 +1,5 @@
 import type { SelectionState } from '@shared/types'
-import { text } from '@renderer/design-system/tokens'
+import { text } from '@renderer/DesignSystem/Tokens'
 import { useSession } from '../../store'
 import { subfieldCrumbs } from './crumbs'
 import { SubfieldBreadcrumb } from './SubfieldBreadcrumb'

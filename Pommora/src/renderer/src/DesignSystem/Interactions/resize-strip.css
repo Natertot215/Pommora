@@ -1,0 +1,33 @@
+/* The edge-drag resize strip: an invisible band along a pane's edge, with no visible handle. Every
+   strip reads as the same affordance under the cursor and never drags the window with it; how it is
+   laid out is the host's own, because an overlaid pane hangs its strip off an edge while an in-flow
+   one seats it as a column in the row. */
+.sidepane-resize {
+  cursor: col-resize;
+  -webkit-app-region: no-drag;
+}
+
+/* The overlaid strips — absolutely placed against the edge they straddle. Each host supplies only
+   which edge it hangs from, its inset, and its z-index. */
+.sidebar-resize,
+.inspector-resize,
+.ppane-side-right-overlay-resize,
+.ppane-side-left-overlay-resize {
+  position: absolute;
+  width: 9px;
+  cursor: col-resize;
+  -webkit-app-region: no-drag;
+}
+
+/* The one horizontal strip — an embedded tile's bottom edge, straddling its border. Same affordance,
+   turned ninety degrees, so the inset comes from the host and the band's depth is the strip's. */
+.mdpm-embed-resize {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: -3px;
+  height: 8px;
+  cursor: ns-resize;
+  z-index: 2;
+  -webkit-app-region: no-drag;
+}

@@ -1,8 +1,8 @@
 import type { StatusGroupId } from '@shared/properties'
-import { labelColor, shape } from '@renderer/design-system/labels'
-import { labelColorFor } from '@renderer/design-system/tokens/colorMap'
-import { cx } from '@renderer/design-system/cx'
-import { Icon } from '@renderer/design-system/symbols'
+import { labelColor, shape } from '@renderer/DesignSystem/Labels'
+import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
+import { cx } from '@renderer/DesignSystem/Util/cx'
+import { Icon } from '@renderer/DesignSystem/Symbols'
 import { statusGroupGlyph } from './statusCycle'
 
 /** The capsule look for a status value — an icon-only chip carrying its group glyph (upcoming falls

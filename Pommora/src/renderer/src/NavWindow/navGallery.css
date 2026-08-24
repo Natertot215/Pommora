@@ -1,4 +1,4 @@
-/* The gallery's card geometry is the shared family (design-system/card-tokens.css); only the deeper
+/* The gallery's card geometry is the shared family (DesignSystem/Tokens/card-tokens.css); only the deeper
    cover zoom is the gallery's own. All cards share ONE grid — pinned first, recents flowing straight
    after them (L→R/T→B), no divider. */
 .nav-gallery {
@@ -51,8 +51,8 @@
   overflow: hidden;
   background: none;
   transition:
-    border-color var(--duration-base) var(--ease-standard),
-    transform var(--duration-slow) var(--ease-standard);
+    border-color var(--duration-base) var(--ease-base),
+    transform var(--duration-slow) var(--ease-base);
 }
 /* Open entity — same accent-tint border as an active SurfacePM embed/resize. */
 .nav-gallery-card.is-active .nav-gallery-card-body {
@@ -80,7 +80,7 @@
   color: var(--label-tertiary);
   cursor: pointer;
   opacity: 0;
-  transition: opacity var(--duration-base) var(--ease-standard);
+  transition: opacity var(--duration-base) var(--ease-base);
 }
 .nav-gallery-card:hover .nav-gallery-pin {
   opacity: 1;

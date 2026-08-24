@@ -7,12 +7,12 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react'
-import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
-import { useDragSnapshot } from '@renderer/design-system/interactions/snapshot'
-import { EDITABLE_TARGETS } from '@renderer/design-system/interactions/shared'
-import { DragGhost } from '@renderer/design-system/interactions/DragGhost'
-import { DropLine } from '@renderer/design-system/interactions/DropLine'
-import { armAutoScroll } from '@renderer/design-system/interactions/autoscroll'
+import { usePointerGesture } from '@renderer/DesignSystem/Interactions/gesture'
+import { useDragSnapshot } from '@renderer/DesignSystem/Interactions/snapshot'
+import { EDITABLE_TARGETS } from '@renderer/DesignSystem/Interactions/shared'
+import { DragGhost } from '@renderer/DesignSystem/Interactions/DragGhost'
+import { DropLine } from '@renderer/DesignSystem/Interactions/DropLine'
+import { armAutoScroll } from '@renderer/DesignSystem/Interactions/autoscroll'
 import { sectionEnd, type OutlineHeading } from '@renderer/MarkdownPM/editor/folding'
 import { moveHeadingSection } from '../Detail/pageEditor'
 

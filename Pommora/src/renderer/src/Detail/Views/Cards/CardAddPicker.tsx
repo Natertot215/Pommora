@@ -1,10 +1,10 @@
 import { type CSSProperties, type RefObject, useEffect, useState } from 'react'
 import type { PropertyDefinition } from '@shared/properties'
 import type { PropertyValue } from '@shared/propertyValue'
-import { Icon } from '@renderer/design-system/symbols'
-import { PickerMenu } from '@renderer/design-system/components/PickerMenu/PickerMenu'
-import { MenuItem, MenuPaneTopRow } from '@renderer/design-system/components/menu'
-import { flushTrailing } from '@renderer/design-system/components/menu/menu.css'
+import { Icon } from '@renderer/DesignSystem/Symbols'
+import { PickerMenu } from '@renderer/DesignSystem/Components/Pickers/PickerMenu/PickerMenu'
+import { MenuItem, MenuPaneTopRow } from '@renderer/DesignSystem/Components/Menu'
+import { flushTrailing } from '@renderer/DesignSystem/Components/Menu/menu.css'
 import { PaneSlider } from '@renderer/Components/Detail/PaneSlider'
 import { propertyTypeIconName } from '@renderer/Components/Detail/PropertyTypes'
 import {
@@ -16,7 +16,7 @@ import type { ContextOption } from '../pipeline/contextOptions'
 import { PropertyEditor } from '../PropertyEditing/PropertyEditor'
 import { type AddEntry, orderAddableEntries, parseEditorValue } from './cardValueInput'
 import { compactRow } from './cardAddPicker.css'
-import { cx } from '@renderer/design-system/cx'
+import { cx } from '@renderer/DesignSystem/Util/cx'
 
 function ValuePane({
   def,
@@ -137,7 +137,7 @@ export function CardAddPicker({
                   leading={
                     <Icon name={propertyTypeIconName(e.type) ?? 'square-dashed'} size="body" />
                   }
-                  trailing={e.revealOnly ? undefined : <Icon name="chevron-right" size="body" />}
+                  trailing={e.revealOnly ? undefined : <Icon name="chevron-right" />}
                   onClick={() => {
                     if (e.revealOnly) {
                       onReveal(e)

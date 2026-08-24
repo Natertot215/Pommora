@@ -21,17 +21,17 @@ import type { PageFrontmatter } from '@shared/schemas'
 import { applyValueAtRoot, type PropertyValue } from '@shared/propertyValue'
 import { type CardBanner, isCompact, isLocationFsOrder, type SavedView } from '@shared/views'
 import type { ColumnStyle } from '@shared/columnStyles'
-import { entityIcon, Icon } from '@renderer/design-system/symbols'
-import { text } from '@renderer/design-system/tokens/typography.css'
-import { OverScroll } from '@renderer/design-system/interactions/OverScroll'
+import { entityIcon, Icon } from '@renderer/DesignSystem/Symbols'
+import { text } from '@renderer/DesignSystem/Tokens/typography.css'
+import { OverScroll } from '@renderer/DesignSystem/Interactions/OverScroll'
 import {
   DragGroup,
   type DragItem,
   SortableZone,
   useDragItem,
   useGroupedDragItem,
-} from '@renderer/design-system/interactions/drag'
-import { cx } from '@renderer/design-system/cx'
+} from '@renderer/DesignSystem/Interactions/drag'
+import { cx } from '@renderer/DesignSystem/Util/cx'
 import { assetUrl } from '../../../assetUrl'
 import { useAssetResolver, useAssetUrl, useSession } from '../../../store'
 import { byOrder, parentOf } from '@shared/treePatch'
@@ -55,7 +55,7 @@ import {
   useClearStrandedGhost,
   useGhostAnchor,
 } from '../useGhostAnchor'
-import { DEFAULT_FEEL } from '@renderer/design-system/interactions/feel'
+import { DEFAULT_FEEL } from '@renderer/DesignSystem/Animation/feel'
 import { useViewCreation } from '../useViewCreation'
 import { declaredType } from '../pipeline/value'
 import { resolveView } from '../pipeline/resolveView'
@@ -95,7 +95,7 @@ import { pageMoveContext, runPageSendAction } from '@renderer/pageMenuActions'
 import { hideShown, unhide } from '@renderer/Components/Detail/hiddenPaneModel'
 import { IconPicker } from '@renderer/Components/IconPicker'
 import { RenamableTitle } from '@renderer/Components/RenamableTitle'
-import { titleInput } from '@renderer/design-system/components/menu'
+import { titleInput } from '@renderer/DesignSystem/Components/Menu'
 import { isOpenInTabs } from '../../../Tabs/tabsModel'
 import './CardsView.css'
 

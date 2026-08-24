@@ -1,6 +1,6 @@
-import type { LabelColorName } from '@renderer/design-system/labels'
-import { labelColorFor } from '@renderer/design-system/tokens/colorMap'
-import { cellColor } from '@renderer/design-system/tokens/ramp'
+import type { LabelColorName } from '@renderer/DesignSystem/Labels'
+import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
+import { cellColor } from '@renderer/DesignSystem/Tokens/ramp'
 
 /** The CSS color a palette key resolves to: its stored cell, or the runtime system accent when
  *  unset ("Default"). One source for the link cell/editor AND the checkbox cell/editor. */

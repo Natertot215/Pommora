@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { cx } from '@renderer/design-system/cx'
-import { duration, easing } from '@renderer/design-system/tokens'
+import { footerLabel } from '@shared/toggleLabels'
+import { cx } from '@renderer/DesignSystem/Util/cx'
+import { duration, easing, ms } from '@renderer/DesignSystem/Animation'
 import {
   PREVIEW_PANE_INSPECTOR,
   PreviewPane,
-} from '@renderer/design-system/components/PreviewPane/PreviewPane'
-import { useExitPresence } from '../design-system/useExitPresence'
+} from '@renderer/DesignSystem/Detail/PreviewPane/PreviewPane'
+import { useExitPresence } from '@renderer/DesignSystem/Animation/useExitPresence'
 import { PageEmbed } from '../Embeds/PageEmbed'
 import { Subfield } from '../Detail/Subfield/Subfield'
 import { CitationsToggle } from '../Detail/Subfield/CitationsToggle'
@@ -138,7 +139,7 @@ function PreviewWindowBody({
     if (!swapped || !previewSlide || previewSlide.seq === playedSeq.current) return
     playedSeq.current = previewSlide.seq
     const x = previewSlide.dir === 'back' ? -SLIDE_PX : SLIDE_PX
-    const timing = { duration: Number.parseInt(duration.fast, 10), easing: easing.standard }
+    const timing = { duration: ms(duration.fast), easing: easing.baseEase }
     bodyRef.current?.animate(
       [
         { transform: `translateX(${x}px)`, opacity: 0 },
@@ -179,7 +180,7 @@ function PreviewWindowBody({
           opacity: 0,
         },
       ],
-      { duration: Number.parseInt(duration.base, 10), easing: easing.standard, fill: 'forwards' },
+      { duration: ms(duration.base), easing: easing.baseEase, fill: 'forwards' },
     )
   }, [closing])
 
@@ -228,6 +229,7 @@ function PreviewWindowBody({
       }}
       // Scoped to THIS page and counting the window's own body — never the app-wide live count.
       footer={<Subfield scope={scope} />}
+      footerLabel={footerLabel}
       footerLead={<CitationsToggle scope={scope} />}
     >
       <div className="pgpreview-body over-scroll pgembed-grows" ref={bodyRef}>

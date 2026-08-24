@@ -8,15 +8,15 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react'
-import { DISCLOSURE_INDENT } from '@renderer/design-system/tokens/size.css'
-import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
-import { useDragSnapshot } from '@renderer/design-system/interactions/snapshot'
-import { EDITABLE_TARGETS } from '@renderer/design-system/interactions/shared'
+import { DISCLOSURE_INDENT } from '@renderer/DesignSystem/Tokens/size.css'
+import { usePointerGesture } from '@renderer/DesignSystem/Interactions/gesture'
+import { useDragSnapshot } from '@renderer/DesignSystem/Interactions/snapshot'
+import { EDITABLE_TARGETS } from '@renderer/DesignSystem/Interactions/shared'
 import { titleFromPath } from '@shared/connections'
-import { DragGhost } from '@renderer/design-system/interactions/DragGhost'
-import { DropLine } from '@renderer/design-system/interactions/DropLine'
-import { announce } from '@renderer/design-system/interactions/a11y'
-import { armAutoScroll } from '@renderer/design-system/interactions/autoscroll'
+import { DragGhost } from '@renderer/DesignSystem/Interactions/DragGhost'
+import { DropLine } from '@renderer/DesignSystem/Interactions/DropLine'
+import { announce } from '@renderer/DesignSystem/Interactions/a11y'
+import { armAutoScroll } from '@renderer/DesignSystem/Interactions/autoscroll'
 import type { FolderPlacement } from '@shared/types'
 import type { MutateRequest } from '@shared/mutate'
 import {

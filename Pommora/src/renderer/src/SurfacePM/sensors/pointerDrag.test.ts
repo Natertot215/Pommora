@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { ACTIVATION } from '@renderer/design-system/interactions/shared'
+import { ACTIVATION } from '@renderer/DesignSystem/Interactions/shared'
 import { startPointerDrag } from './pointerDrag'
 
 function harness(threshold?: number) {

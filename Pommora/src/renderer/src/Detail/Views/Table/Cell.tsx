@@ -2,14 +2,14 @@ import type { CSSProperties } from 'react'
 import type { ColumnStyle } from '@shared/columnStyles'
 import type { PropertyValue } from '@shared/propertyValue'
 import type { ResolvedColumn, ViewRow } from '@shared/types'
-import { cx } from '@renderer/design-system/cx'
-import { Icon } from '@renderer/design-system/symbols'
+import { cx } from '@renderer/DesignSystem/Util/cx'
+import { Icon } from '@renderer/DesignSystem/Symbols'
 import { EntityIcon } from '@renderer/Components/EntityIcon'
-import { DualSwitch } from '@renderer/design-system/components/Switches/DualSwitch'
-import { ProgressBar } from '@renderer/design-system/components/ProgressBar/ProgressBar'
-import { labelColorFor } from '@renderer/design-system/tokens/colorMap'
-import { OverScroll } from '@renderer/design-system/interactions/OverScroll'
-import { SEGMENT_INDEX_ATTR } from '@renderer/design-system/components/SegmentRun/SegmentRun'
+import { DualSwitch } from '@renderer/DesignSystem/Components/Controls/Switches/DualSwitch'
+import { ProgressBar } from '@renderer/DesignSystem/Elements/ProgressBar/ProgressBar'
+import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
+import { OverScroll } from '@renderer/DesignSystem/Interactions/OverScroll'
+import { SEGMENT_INDEX_ATTR } from '@renderer/DesignSystem/Labels/SegmentRun'
 import { resolveFileValue } from '@renderer/assetUrl'
 import { fileValueWithout } from '../PropertyEditing/filePick'
 import { declaredType, fileName, resolveFieldValue } from '../pipeline/value'
@@ -28,7 +28,7 @@ import {
   labelColor,
   optionShapeFor,
   shape,
-} from '@renderer/design-system/labels'
+} from '@renderer/DesignSystem/Labels'
 
 /** Type-aware cell render — the per-view `style` picks each type's look + formats. Every value
  *  routes through the resolution context so no raw id ever shows; an empty/unknown value renders

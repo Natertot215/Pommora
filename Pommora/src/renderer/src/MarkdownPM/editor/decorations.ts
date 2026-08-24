@@ -34,7 +34,7 @@ import {
 } from '../decorations/intent'
 import { resolveMdTarget, type ConnectionsApi } from '../connections'
 import type { LinkStatus } from '@shared/connections'
-import { boxGeometry } from '@renderer/design-system/labels'
+import { boxGeometry } from '@renderer/DesignSystem/Labels'
 
 /** The class a valid external link wears — the hover gate reads the same constant, so the
  *  decorator and the arming selector cannot drift. */

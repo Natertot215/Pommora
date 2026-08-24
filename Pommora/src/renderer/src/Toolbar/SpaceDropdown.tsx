@@ -1,5 +1,5 @@
-import { MenuDropdown } from '@renderer/design-system/components/menu'
-import { entityIcon } from '@renderer/design-system/symbols'
+import { MenuDropdown } from '@renderer/DesignSystem/Components/Menu'
+import { entityIcon } from '@renderer/DesignSystem/Symbols'
 import { useSession } from '../store'
 import * as s from './toolbarDropdown.css'
 

@@ -1,7 +1,7 @@
 import { style } from '@vanilla-extract/css'
-import { vars as colorVars } from '../../design-system/tokens/color.css'
-import { text } from '../../design-system/tokens/typography.css'
-import { bare } from '../../design-system/fields/fields.css'
+import { vars as colorVars } from '@renderer/DesignSystem/Tokens/color.css'
+import { text } from '@renderer/DesignSystem/Tokens/typography.css'
+import { bare } from '@renderer/DesignSystem/Components/Fields/fields.css'
 
 const c = colorVars.color
 

@@ -5,7 +5,7 @@
 // Pure: no fs, no React.
 
 import type { NexusTree } from '@shared/types'
-import { entityIcon } from '@renderer/design-system/symbols'
+import { entityIcon } from '@renderer/DesignSystem/Symbols'
 
 export interface ContextIdentity {
   title: string

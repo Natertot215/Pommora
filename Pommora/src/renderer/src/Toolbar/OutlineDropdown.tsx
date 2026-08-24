@@ -7,8 +7,8 @@ import {
   itemEmphasized,
   titleInput,
   useDisclosureSet,
-} from '@renderer/design-system/components/menu'
-import { RenamableLabel } from '@renderer/design-system/fields'
+} from '@renderer/DesignSystem/Components/Menu'
+import { RenamableLabel } from '@renderer/DesignSystem/Components/Fields'
 import { openPageBody, useSession } from '../store'
 import { viewSettingsScope } from '../Detail/ViewSettingsScope'
 import { renameHeadingAtOffset, travelPageTo } from '../Detail/pageEditor'
@@ -121,7 +121,7 @@ function OutlineRow({
       }
       icon={null}
       className={itemEmphasized}
-      twisty={nested ? 'chevron' : 'spacer'}
+      dropOutline={nested ? 'chevron' : 'spacer'}
       open={disclosure.has(node.key)}
       onToggle={() => disclosure.toggle(node.key)}
       onClick={editing ? undefined : () => travelPageTo(node.from)}

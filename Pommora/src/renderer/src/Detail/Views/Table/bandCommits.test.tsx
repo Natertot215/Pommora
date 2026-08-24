@@ -239,9 +239,9 @@ describe('structural band reorder', () => {
     await mountTable(structuralSource())
     await dragBand(2, 2) // B above A
     await drop()
-    const twisty = host.querySelectorAll('.group-band-twisty')[0]
+    const outline = host.querySelectorAll('.group-band-drop-outline')[0]
     await act(async () => {
-      ;(twisty as HTMLElement).click()
+      ;(outline as HTMLElement).click()
     })
     expect(saveSpy).toHaveBeenCalledTimes(2)
     expect(lastSavedView().group_order).toEqual(['sB', 'sA', 'sA1'])
@@ -521,9 +521,9 @@ describe('band reparent', () => {
     await dragBand(2, 12) // nest B into A — the commit defers behind the fs round-trip
     await drop()
     // Mid-flight, the user collapses a group (a sibling persist with fresh state).
-    const twisty = host.querySelectorAll('.group-band-twisty')[0]
+    const outline = host.querySelectorAll('.group-band-drop-outline')[0]
     await act(async () => {
-      ;(twisty as HTMLElement).click()
+      ;(outline as HTMLElement).click()
     })
     const collapsedAtToggle = (saveSpy.mock.calls.at(-1)?.[2] as SavedView).collapsed_groups
     await act(async () => {

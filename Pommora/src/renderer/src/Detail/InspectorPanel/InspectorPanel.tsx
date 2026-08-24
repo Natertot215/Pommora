@@ -1,4 +1,4 @@
-import { GlassSurface } from '@renderer/design-system/materials'
+import { GlassSurface } from '@renderer/DesignSystem/Materials'
 import './inspector-panel.css'
 
 /**

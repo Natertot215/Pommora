@@ -8,13 +8,13 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react'
-import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
-import { useDragSnapshot } from '@renderer/design-system/interactions/snapshot'
-import { announce } from '@renderer/design-system/interactions/a11y'
-import { EDITABLE_TARGETS, GHOST_OFFSET } from '@renderer/design-system/interactions/shared'
-import { DragGhost } from '@renderer/design-system/interactions/DragGhost'
-import { DropLine } from '@renderer/design-system/interactions/DropLine'
-import { armAutoScroll } from '@renderer/design-system/interactions/autoscroll'
+import { usePointerGesture } from '@renderer/DesignSystem/Interactions/gesture'
+import { useDragSnapshot } from '@renderer/DesignSystem/Interactions/snapshot'
+import { announce } from '@renderer/DesignSystem/Interactions/a11y'
+import { EDITABLE_TARGETS, GHOST_OFFSET } from '@renderer/DesignSystem/Interactions/shared'
+import { DragGhost } from '@renderer/DesignSystem/Interactions/DragGhost'
+import { DropLine } from '@renderer/DesignSystem/Interactions/DropLine'
+import { armAutoScroll } from '@renderer/DesignSystem/Interactions/autoscroll'
 import type { MeasuredRow } from '@renderer/Sidebar/sidebarDndModel'
 import { type Band, type BandIndex, type BandSlot, bandSlot, buildBandIndex } from './bandDndModel'
 

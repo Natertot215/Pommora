@@ -4,12 +4,12 @@
 // `editorGestureCleanup` is that abort, and it goes in every extension array that starts one.
 import type { ChangeSpec } from '@codemirror/state'
 import { type EditorView, ViewPlugin } from '@codemirror/view'
-import { resolveScroller, startAutoScroll } from '../../design-system/interactions/autoscroll'
+import { resolveScroller, startAutoScroll } from '@renderer/DesignSystem/Interactions/autoscroll'
 import {
   beginPointerGesture,
   type GestureHandle,
   type PointerGestureSpec,
-} from '../../design-system/interactions/gesture'
+} from '@renderer/DesignSystem/Interactions/gesture'
 import { Overlay, setShade } from './dragChrome'
 
 // One handle, matching the skeleton's own singleton: only one editor gesture is live app-wide. It

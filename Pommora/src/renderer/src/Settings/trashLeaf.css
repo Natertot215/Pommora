@@ -1,11 +1,6 @@
 /* The Trash leaf. The rows are the navigation list's, borrowed whole, with one lane added for the
    deletion time — so this file styles the frame the rows sit in and the lane, and nothing about a
    row itself.
-
-   The nav row's horizontal rhythm rides `--navwindow-inset`, which only the two nav windows declare;
-   this window is in neither scope, so the leaf declares it. An unset custom property with no
-   fallback resolves to its initial value in silence, which is how a borrowed surface ships wrong
-   while reading right in the file. */
 /* The class is doubled deliberately: `table-tokens.css` declares two of the tokens below on
    `.trash-leaf` as well, at the same weight, and this is what makes the leaf's values win on
    specificity rather than on which stylesheet the bundler happened to emit last. */
@@ -18,11 +13,7 @@
      on one line and the box has room of its own. */
   --trash-gutter: 20px; /* KNOB */
   --trash-lead: calc(var(--navwindow-inset) + var(--trash-gutter));
-  /* The table's own cell inset, pointed at this surface's, so a lane's trailing text ends exactly
-     where every rule here does rather than 2px past it. */
   --cell-padding-x: var(--navwindow-inset);
-  /* The heading row's height, cut with its type: this strip's labels sit a step under the table's,
-     so the band they sit in comes down with them. */
   --heading-padding-y: 6px; /* KNOB */
   flex: 1;
   min-width: 0;
@@ -32,15 +23,6 @@
   padding-top: var(--glass-inset);
 }
 
-/* The heading is the table's, borrowed: `.table-head` brings the control tone, `.col-header` the
-   truncation and the trailing inset each lane needs. What the leaf drops is the fill — a small
-   strip inside a floating window reads as labels over data, not as a band — the full-bleed margins,
-   which exist to reach a full-page view's glass edges, and the seam, redrawn below at the search
-   divider's weight.
-
-   Every override here is scoped under the leaf so it outranks the borrowed rule on SPECIFICITY.
-   At equal weight the winner would be whichever stylesheet loaded last, and a heading that breaks
-   when an import moves breaks silently. */
 .trash-leaf .trash-head {
   display: flex;
   align-items: center;
@@ -49,10 +31,6 @@
   background: none;
   margin: 0;
   padding: 0;
-  /* The lanes stay full-bleed so the column divider lands on the rows' own boundary; the seam is
-     drawn separately, inset to exactly the width the search row's divider spans — and drawn at that
-     divider's weight rather than the table heading's heavier one, so the two rules bounding this
-     strip read as a pair. */
   border-bottom: none;
 }
 .trash-leaf .trash-head::after {
@@ -61,15 +39,10 @@
   left: var(--navwindow-inset);
   right: var(--navwindow-inset);
   bottom: 0;
-  border-bottom: 1px solid var(--separator-segment);
+  border-bottom: var(--border-segment);
 }
 /* The table's leading bar marks its gutter↔Title junction; this strip has no gutter column, so the
-   bar would sit alone at the edge bounding nothing. The divider BETWEEN the columns stays.
-
-   The divider itself is drawn once here for the heading and every row alike, rather than left as
-   the table's heading bar over the table's full-height row hairline: a column strip this short
-   reads better as one segmented axis. It hangs inside the lane it ends — `.col-header` clips its
-   overflow so a long label truncates — so every lane draws it on its own trailing edge. */
+   bar would sit alone at the edge bounding nothing. The divider BETWEEN the columns stays.*/
 .trash-head .col-header:first-child::before {
   content: none;
 }
@@ -128,9 +101,7 @@
 }
 
 /* The table's row treatment: a line between rows rather than under each one, so a list has none
-   above its first nor below its last. The line is drawn rather than bordered so it spans the same
-   width the search row's divider and the heading's seam do — every horizontal rule on this surface
-   agrees, while the row's own highlight still runs edge to edge beneath it. */
+   above its first nor below its last.*/
 .trash-leaf .nav-item + .nav-item::before {
   content: "";
   position: absolute;
@@ -145,21 +116,17 @@
 }
 
 /* The pin's affordance exactly: a glyph in the row's left inset, absolute so it never shifts the
-   row's content, hidden until the row is hovered, and holding the accent once set. Once anything is
-   checked the whole column shows — a selection is being built, and the boxes it is being built from
-   should not have to be hunted for. */
+   row's content, hidden until the row is hovered, and holding the accent once set. */
 .trash-check {
   position: absolute;
   left: calc(var(--navwindow-inset) + var(--trash-gutter) / 2);
   top: 50%;
   transform: translate(-50%, -50%);
   opacity: 0;
-  transition: opacity var(--duration-base) var(--ease-standard);
+  transition: opacity var(--duration-base) var(--ease-base);
 }
 .nav-item:hover .trash-check,
 .trash-leaf.has-checked .trash-check,
-/* Keyboard parity: without this, tabbing into an unchecked list lands on a control at zero
-   opacity — a focus ring on an invisible element is invisible too. */
 .trash-check:focus-visible {
   opacity: 1;
 }

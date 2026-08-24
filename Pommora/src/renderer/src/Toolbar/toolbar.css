@@ -37,7 +37,7 @@
   );
   /* Only `left` animates (sidebar collapse); the trio rides the inspector via its own transform, so the
      bar's `right` stays fixed. */
-  transition: left var(--duration-base) var(--ease-standard);
+  transition: left var(--duration-base) var(--ease-base);
 }
 .shell.sidebar-hidden .app-toolbar {
   left: 0;

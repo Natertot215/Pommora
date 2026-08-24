@@ -2,26 +2,26 @@ import { type ReactNode, useRef, useState } from 'react'
 import type { CollectionNode, SetNode } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
 import { mintDefaultView, mintNewView, type SavedView } from '@shared/views'
-import { Icon, iconNameOr } from '@renderer/design-system/symbols'
+import { Icon, iconNameOr } from '@renderer/DesignSystem/Symbols'
 import {
   Menu,
   MenuItem,
   MenuBottomRow,
   MenuScrollFrame,
   AccessoryButton,
-} from '../design-system/components/menu'
-import { titleInput } from '../design-system/components/menu/menu.css'
+} from '@renderer/DesignSystem/Components/Menu'
+import { titleInput } from '@renderer/DesignSystem/Components/Menu/menu.css'
 import { PaneSlider } from '../Components/Detail/PaneSlider'
 import { ViewSettings } from '../Components/Detail/ViewSettings'
 import { PaneDnd, RowShell, usePaneRegions } from '../Components/Detail/paneDnd'
 import type { PaneDrop, PaneRow, paneSlot } from '../Components/Detail/paneDndModel'
 import { useSaveView, useViewEmbedScope } from '@renderer/Embeds/ViewEmbedScope'
-import { ColorPicker } from '../Components/Detail/ColorPicker'
-import { labelColorFor } from '@renderer/design-system/tokens/colorMap'
-import { RenamableLabel } from '@renderer/design-system/fields'
+import { ColorPicker } from '@renderer/DesignSystem/Components/Pickers/ColorPicker/ColorPicker'
+import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
+import { RenamableLabel } from '@renderer/DesignSystem/Components/Fields'
 import { IconPicker } from '../Components/IconPicker'
 import { useSession } from '../store'
-import { optionRing } from '@renderer/design-system/components/PickerMenu/pickerMenu.css'
+import { optionRing } from '@renderer/DesignSystem/Components/Pickers/PickerMenu/pickerMenu.css'
 import * as vd from './toolbarDropdown.css'
 
 // Width/height floor — a sparse list reserves the square (footer pinned to bottom); rows fill

@@ -5,7 +5,7 @@ import {
   DEFAULT_ENTITY_ICONS,
   Icon,
   type IconName,
-} from '@renderer/design-system/symbols'
+} from '@renderer/DesignSystem/Symbols'
 import { DashIcon } from './DashIcon'
 
 /**

@@ -1,8 +1,8 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { findScroller, startAutoScroll } from '@renderer/design-system/interactions/autoscroll'
-import { DEFAULT_FEEL, type Feel } from '@renderer/design-system/interactions/feel'
-import { SETTLE_FALLBACK } from '@renderer/design-system/interactions/shared'
-import { TILE_MIN_PX } from '@renderer/design-system/tokens/size.css'
+import { findScroller, startAutoScroll } from '@renderer/DesignSystem/Interactions/autoscroll'
+import { DEFAULT_FEEL, type Feel } from '@renderer/DesignSystem/Animation/feel'
+import { SETTLE_FALLBACK } from '@renderer/DesignSystem/Interactions/shared'
+import { TILE_MIN_PX } from '@renderer/DesignSystem/Tokens/size.css'
 import { findTile } from './core/model'
 import type { DividerRef, Edge, SurfaceLayout } from './core/model'
 import { resolveEdge } from './core/edges'
@@ -18,7 +18,7 @@ import {
 import { computeGeometry, type Rect, type SurfaceGeometry } from './core/rects'
 import { snapAxis, xCandidates, yCandidates } from './core/snap'
 import { startPointerDrag } from './sensors/pointerDrag'
-import '../design-system/tile-chassis.css'
+import '@renderer/DesignSystem/Detail/tile-chassis.css'
 import './surfacepm.css'
 
 // Moving a block lifts THE BLOCK ITSELF under the pointer (shadowed, 1:1, no ghost) while its

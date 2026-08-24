@@ -1,5 +1,5 @@
 import { useRef, useState, type ReactNode } from 'react'
-import { Icon, type IconName } from '@renderer/design-system/symbols'
+import { Icon, type IconName } from '@renderer/DesignSystem/Symbols'
 import { useSession } from '../../store'
 import {
   DEFAULT_LINK_DISPLAY,
@@ -30,12 +30,12 @@ import {
   MenuBottomRow,
   MenuSeparator,
   AccessoryButton,
-} from '../../design-system/components/menu'
-import { flushTrailing, titleInput } from '../../design-system/components/menu/menu.css'
-import { Reveal } from '../../design-system/components/Reveal'
-import { duration } from '../../design-system/tokens/motion'
+} from '@renderer/DesignSystem/Components/Menu'
+import { flushTrailing, titleInput } from '@renderer/DesignSystem/Components/Menu/menu.css'
+import { Reveal } from '@renderer/DesignSystem/Animation/Reveal'
+import { duration } from '@renderer/DesignSystem/Animation'
 import { IconPicker } from '../IconPicker'
-import { RenamableLabel } from '../../design-system/fields'
+import { RenamableLabel } from '@renderer/DesignSystem/Components/Fields'
 import { InlineEditHeader } from './InlineEditHeader'
 import { OptionEditor } from './OptionEditor'
 import { StatusEditor } from './StatusEditor'
@@ -44,9 +44,12 @@ import { PaneSlider } from './PaneSlider'
 import { PaneDnd, RowShell, usePaneRegions } from './paneDnd'
 import { nexusReorderIndex, type PaneDrop, type PaneRow } from './paneDndModel'
 import { CREATABLE_TYPES, PropertyTypeIcon, propertyTypeLabel } from './PropertyTypes'
-import { cx } from '../../design-system/cx'
+import { cx } from '@renderer/DesignSystem/Util/cx'
 import * as s from './settingsPane.css'
-import { twisty, twistyOpen } from '../../design-system/components/menu/menu.css'
+import {
+  dropOutline,
+  dropOutlineOpen,
+} from '@renderer/DesignSystem/Elements/DropOutline/dropOutline.css'
 import { normalizePropertyName, wrapKey } from '@shared/governedKeys'
 
 type DetailView = { kind: 'type' } | { kind: 'edit'; id: string }
@@ -102,7 +105,7 @@ function ListGroups({
                 className={flushTrailing}
                 leading={<PropertyTypeIcon type={d.type} size={s.ICON.doc} />}
                 detail={propertyTypeLabel(d.type)}
-                trailing={<Icon name="chevron-right" size={s.ICON.rowChevron} />}
+                trailing={<Icon name="chevron-right" />}
                 onClick={() => onOpenEditor(d.id)}
                 onContextMenu={(e) => {
                   e.preventDefault()
@@ -122,9 +125,9 @@ function ListGroups({
         <button type="button" className={s.allHeadingRow} onClick={onToggleAll}>
           <Icon
             name="chevron-right"
-            size={s.ICON.twisty}
-            className={cx(twisty, allOpen && twistyOpen)}
-            data-twisty
+            size={s.ICON.dropOutline}
+            className={cx(dropOutline, allOpen && dropOutlineOpen)}
+            data-drop-outline
           />
           <span className={s.allPropertiesLabel}>All Properties</span>
         </button>
@@ -396,7 +399,7 @@ export function PropertiesPane({
           key={type}
           className={flushTrailing}
           leading={<PropertyTypeIcon type={type} size={s.ICON.doc} />}
-          trailing={<Icon name="chevron-right" size={s.ICON.rowChevron} />}
+          trailing={<Icon name="chevron-right" />}
           onClick={() => void create(type)}
         >
           {propertyTypeLabel(type)}

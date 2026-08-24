@@ -1,8 +1,8 @@
 import { Fragment, useMemo, useRef, useState } from 'react'
-import { DragGhost } from '@renderer/design-system/interactions/DragGhost'
-import { DropLine } from '@renderer/design-system/interactions/DropLine'
-import { Icon } from '@renderer/design-system/symbols'
-import { labelColorFor } from '@renderer/design-system/tokens/colorMap'
+import { DragGhost } from '@renderer/DesignSystem/Interactions/DragGhost'
+import { DropLine } from '@renderer/DesignSystem/Interactions/DropLine'
+import { Icon } from '@renderer/DesignSystem/Symbols'
+import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import {
   addStatusOption,
   recolorStatusOption,
@@ -11,7 +11,7 @@ import {
   fallbackTitle,
 } from '@shared/optionModel'
 import type { StatusGroup } from '@shared/properties'
-import { cx } from '@renderer/design-system/cx'
+import { cx } from '@renderer/DesignSystem/Util/cx'
 import {
   GhostOptionChip,
   OptionNameCaret,
@@ -21,7 +21,7 @@ import {
 import { OptionSlot } from './OptionRow'
 import { useStatusReorder } from './useStatusReorder'
 import * as s from './settingsPane.css'
-import { labelColor, optionShapeFor, shape } from '@renderer/design-system/labels'
+import { labelColor, optionShapeFor, shape } from '@renderer/DesignSystem/Labels'
 
 /**
  * Double-click a group heading to rename its label. The id underneath never changes — a calendar

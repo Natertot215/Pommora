@@ -8,11 +8,14 @@
 // A field's glyphs space THEMSELVES: a leading icon and a trailing chevron want different gaps, and
 // one container `gap` can only state one — so each role carries its own margin and the field sets none.
 import { style } from '@vanilla-extract/css'
-import { vars as colorVars } from '../../design-system/tokens/color.css'
-import { text } from '../../design-system/tokens/typography.css'
-import { field as fieldBase, hairlineField } from '../../design-system/fields/fields.css'
-import { focusRing } from '../../design-system/fields/fieldRing'
-import { growToContent } from '../../design-system/components/menu/paneGrowth'
+import { vars as colorVars } from '@renderer/DesignSystem/Tokens/color.css'
+import { text } from '@renderer/DesignSystem/Tokens/typography.css'
+import {
+  field as fieldBase,
+  hairlineField,
+} from '@renderer/DesignSystem/Components/Fields/fields.css'
+import { focusRing } from '@renderer/DesignSystem/Components/Fields/fieldRing'
+import { growToContent } from '@renderer/DesignSystem/Components/Menu/paneGrowth'
 
 const c = colorVars.color
 
@@ -132,7 +135,7 @@ export const connector = style([
   },
 ])
 
-export { placeholder } from '../../design-system/fields/fields.css'
+export { placeholder } from '@renderer/DesignSystem/Components/Fields/fields.css'
 
 /** The blank lead-row slots — empty fields need an explicit floor to read as fields at all; the
  *  narrow one matches the operator's compact register so the row scans {wide}{narrow}{wide}. */

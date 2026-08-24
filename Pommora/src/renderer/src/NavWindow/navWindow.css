@@ -24,8 +24,8 @@
      --io swallow, and transitioning it would retarget on every frame --io advances. */
   --ppane-flow-reveal: 6px;
   transition:
-    opacity var(--duration-base) var(--ease-standard),
-    --ppane-flow-reveal var(--duration-base) var(--ease-standard);
+    opacity var(--duration-base) var(--ease-base),
+    --ppane-flow-reveal var(--duration-base) var(--ease-base);
 }
 .navwindow.is-page-tab .ppane-actions-flow {
   opacity: 1;
@@ -52,8 +52,8 @@
      retarget on every frame that --io advances. */
   padding-right: calc(var(--glass-inset) + 56px + var(--ppane-title-squeeze, 0px));
   transition:
-    height var(--duration-base) var(--ease-standard),
-    padding-left var(--duration-base) var(--ease-standard);
+    height var(--duration-base) var(--ease-base),
+    padding-left var(--duration-base) var(--ease-base);
 }
 .navwindow.is-page-tab .navwindow-tabs {
   padding-left: calc(var(--glass-inset) + 22px); /* KNOB — clearance past the scan glyph */
@@ -87,7 +87,7 @@
   min-height: 0;
   overflow-y: auto;
   scrollbar-width: none;
-  transition: padding-right var(--duration-base) var(--ease-standard);
+  transition: padding-right var(--duration-base) var(--ease-base);
 }
 .ppane.is-side-right-open .navwindow-page {
   padding-right: calc(var(--ppane-side-r-w) + var(--ppane-side-inset));

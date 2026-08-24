@@ -1,0 +1,50 @@
+/* The reveal bar: a fixed-height bar that slides open at a surface's bottom edge, with a chevron
+   riding directly above it (mirroring its height) so the toggle bounces up and down with the bar
+   and never overlaps its items.
+
+   The toggle rests invisible and reveals three ways: the host marks a large surrounding region as
+   "near" so the reveal zone can be generous without an invisible button swallowing clicks to the
+   content beneath, on direct hover, and on keyboard focus. */
+.ppane-footer,
+.subfield-reveal {
+  flex: none;
+  height: 0;
+  overflow: hidden;
+}
+
+.ppane-footer-toggle,
+.subfield-toggle,
+.footnotes-toggle {
+  position: absolute;
+  bottom: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  appearance: none;
+  border: 0;
+  background: none;
+  border-radius: 5px;
+  color: var(--label-secondary);
+  cursor: default;
+  opacity: 0;
+  -webkit-app-region: no-drag;
+  transition:
+    bottom var(--duration-base) var(--ease-base),
+    opacity var(--duration-fast) var(--ease-base),
+    background var(--duration-fast) var(--ease-base);
+}
+
+.ppane-footer-toggle:hover,
+.ppane-footer-toggle:focus-visible,
+.subfield-toggle:hover,
+.subfield-toggle:focus-visible,
+.footnotes-toggle:hover,
+.footnotes-toggle:focus-visible {
+  opacity: 1;
+}
+
+.ppane-footer-toggle:hover,
+.subfield-toggle:hover,
+.footnotes-toggle:hover {
+  background: var(--state-hover);
+}

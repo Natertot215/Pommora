@@ -31,7 +31,7 @@
   /* Scrolled content dissolves under the floating toolbar (the shared scroll-edge fade); the fade
      width matches the toolbar strip so nothing hard-clips behind it. */
   --over-scroll-fade: var(--ppane-toolbar-h);
-  transition: padding-right var(--duration-base) var(--ease-standard);
+  transition: padding-right var(--duration-base) var(--ease-base);
 }
 .ppane.is-side-right-open .pgpreview-body {
   padding-right: calc(var(--ppane-side-r-w) + var(--ppane-side-inset));

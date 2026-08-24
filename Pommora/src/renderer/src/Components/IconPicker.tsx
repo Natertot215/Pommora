@@ -7,17 +7,13 @@ import {
   useState,
 } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { PickerMenu } from '@renderer/design-system/components/PickerMenu/PickerMenu'
-import { SearchField } from '@renderer/design-system/fields'
-import { Icon } from '@renderer/design-system/symbols'
-import {
-  lucideGlyph,
-  searchIcons,
-  type IconEntry,
-} from '@renderer/design-system/symbols/AllSymbols'
-import { reorder, SortableZone, useDragItem } from '@renderer/design-system/interactions/drag'
+import { PickerMenu } from '@renderer/DesignSystem/Components/Pickers/PickerMenu/PickerMenu'
+import { SearchField } from '@renderer/DesignSystem/Components/Fields'
+import { Icon } from '@renderer/DesignSystem/Symbols'
+import { lucideGlyph, searchIcons, type IconEntry } from '@renderer/DesignSystem/Symbols/AllSymbols'
+import { reorder, SortableZone, useDragItem } from '@renderer/DesignSystem/Interactions/drag'
 import { useSession } from '@renderer/store'
-import { cx } from '@renderer/design-system/cx'
+import { cx } from '@renderer/DesignSystem/Util/cx'
 import * as s from './iconPicker.css'
 
 const { CELL } = s

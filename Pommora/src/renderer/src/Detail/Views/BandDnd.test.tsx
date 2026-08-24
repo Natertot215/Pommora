@@ -132,7 +132,7 @@ describe('band drag gesture', () => {
     })
   })
 
-  it('twisty pointerdown never arms the gesture — a follow-up click still toggles', async () => {
+  it('outline pointerdown never arms the gesture — a follow-up click still toggles', async () => {
     const toggleSpy = vi.fn()
     const group: ResolvedGroup = { key: 'A', kind: 'structural-set', items: [], isCollapsed: false }
     const view: SavedView = {
@@ -162,16 +162,16 @@ describe('band drag gesture', () => {
         </BandDnd>,
       )
     })
-    const twisty = host.querySelector('.group-band-twisty') as HTMLElement
+    const outline = host.querySelector('.group-band-drop-outline') as HTMLElement
     await act(async () => {
-      firePointer(twisty, 'pointerdown', { x: 5, y: 5 })
+      firePointer(outline, 'pointerdown', { x: 5, y: 5 })
     })
     await act(async () => {
       firePointer(window, 'pointermove', { x: 60, y: 60 })
     })
     expect(line()).toBeNull()
     await act(async () => {
-      twisty.click()
+      outline.click()
     })
     expect(toggleSpy).toHaveBeenCalledOnce()
     expect(dropSpy).not.toHaveBeenCalled()

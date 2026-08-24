@@ -4,8 +4,8 @@
 // here beside them, not re-rolled at its surface.
 
 import { keyframes, style } from '@vanilla-extract/css'
-import { vars as colorVars } from '../design-system/tokens/color.css'
-import { text } from '../design-system/tokens/typography.css'
+import { vars as colorVars } from '@renderer/DesignSystem/Tokens/color.css'
+import { text } from '@renderer/DesignSystem/Tokens/typography.css'
 
 const c = colorVars.color
 
@@ -84,14 +84,14 @@ export const segmentEntering = style({
   overflow: 'hidden',
   animationName: segmentIn,
   animationDuration: 'var(--duration-dropdown)',
-  animationTimingFunction: 'var(--ease-standard)',
+  animationTimingFunction: 'var(--ease-base)',
 })
 export const segmentExiting = style({
   overflow: 'hidden',
   pointerEvents: 'none',
   animationName: segmentOut,
   animationDuration: 'var(--duration-dropdown)',
-  animationTimingFunction: 'var(--ease-standard)',
+  animationTimingFunction: 'var(--ease-base)',
 })
 
 /** A trailing glyph after the label slot (the dropdown chevron) — carries its own lead-in since
@@ -111,7 +111,7 @@ export const settingsBtn = style({
   color: c.label.tertiary,
   opacity: 0,
   transition:
-    'opacity var(--duration-fast) var(--ease-standard), background var(--duration-fast) var(--ease-standard)',
+    'opacity var(--duration-fast) var(--ease-base), background var(--duration-fast) var(--ease-base)',
   ':hover': { background: c.state.hover },
 })
 

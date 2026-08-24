@@ -1,9 +1,10 @@
 import { useRef } from 'react'
+import { lockLabel } from '@shared/toggleLabels'
 import { useAssetUrl, useSession } from '../../store'
-import { DEFAULT_NEXUS_ICON, Icon } from '../../design-system/symbols'
-import { InputField } from '../../design-system/fields'
-import { MenuBottomRow, MenuScrollFrame } from '../../design-system/components/menu'
-import { FooterLockButton } from '@renderer/design-system/components/menu'
+import { DEFAULT_NEXUS_ICON, Icon } from '@renderer/DesignSystem/Symbols'
+import { InputField } from '@renderer/DesignSystem/Components/Fields'
+import { MenuBottomRow, MenuScrollFrame } from '@renderer/DesignSystem/Components/Menu'
+import { FooterLockButton } from '@renderer/DesignSystem/Components/Menu'
 import { IconPicker } from '../IconPicker'
 import { PhotoCropModal } from '../PhotoCropModal'
 import { useNexusIcon } from '../useNexusIcon'
@@ -43,7 +44,7 @@ export function SettingsScaffold(): React.JSX.Element | null {
           <MenuBottomRow
             leading={
               <FooterLockButton
-                locked={locked}
+                verb={lockLabel(locked)}
                 noun="board"
                 onToggle={() => void setLocked(!locked)}
               />

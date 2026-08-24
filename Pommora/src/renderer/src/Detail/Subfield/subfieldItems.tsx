@@ -1,7 +1,7 @@
 import type { SelectionState } from '@shared/types'
 import { DEFAULT_LABELS } from '@shared/types'
 import { containerCreators } from '@shared/mutate'
-import { Icon } from '@renderer/design-system/symbols'
+import { Icon } from '@renderer/DesignSystem/Symbols'
 import { openPageBody, useSession } from '../../store'
 import { findCollection } from '../Scope'
 import { pageStats } from './subfieldStats'

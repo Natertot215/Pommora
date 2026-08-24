@@ -1,7 +1,7 @@
 import {
   SegmentedSymbol,
   type Segment,
-} from '@renderer/design-system/components/Segmented-Controls'
+} from '@renderer/DesignSystem/Components/Controls/Segmented-Controls'
 
 /**
  * The glass pill is a separate in-flow layer from the live buttons so it can fade independently as

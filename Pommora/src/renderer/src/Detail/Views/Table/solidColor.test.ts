@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { vars as colorVars } from '@renderer/design-system/tokens/color.css'
-import { ANCHOR_CELLS, cellColor } from '@renderer/design-system/tokens/ramp'
+import { vars as colorVars } from '@renderer/DesignSystem/Tokens/color.css'
+import { ANCHOR_CELLS, cellColor } from '@renderer/DesignSystem/Tokens/ramp'
 import { solidColorCss } from './solidColor'
 
 describe('solidColorCss', () => {

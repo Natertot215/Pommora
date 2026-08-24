@@ -1,6 +1,6 @@
 import { Fragment, useMemo, useRef, useState } from 'react'
-import { Icon } from '@renderer/design-system/symbols'
-import { labelColorFor } from '@renderer/design-system/tokens/colorMap'
+import { Icon } from '@renderer/DesignSystem/Symbols'
+import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import {
   addOption,
   recolorOption,
@@ -9,19 +9,19 @@ import {
   type Option,
 } from '@shared/optionModel'
 import type { PropertyType } from '@shared/properties'
-import { cx } from '@renderer/design-system/cx'
+import { cx } from '@renderer/DesignSystem/Util/cx'
 import {
   GhostOptionChip,
   OptionNameCaret,
   ghostAnchorProps,
   useGhostOptionAnchor,
 } from './GhostOptionChip'
-import { DragGhost } from '@renderer/design-system/interactions/DragGhost'
-import { DropLine } from '@renderer/design-system/interactions/DropLine'
+import { DragGhost } from '@renderer/DesignSystem/Interactions/DragGhost'
+import { DropLine } from '@renderer/DesignSystem/Interactions/DropLine'
 import { OptionSlot } from './OptionRow'
 import { useOptionReorder } from './useOptionReorder'
 import * as s from './settingsPane.css'
-import { labelColor, optionShapeFor, shape } from '@renderer/design-system/labels'
+import { labelColor, optionShapeFor, shape } from '@renderer/DesignSystem/Labels'
 
 /** A flat property owns one list, so its anchor needs no identity beyond being the only one. */
 const LIST_ANCHOR = 'options'
