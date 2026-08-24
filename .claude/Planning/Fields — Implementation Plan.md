@@ -116,10 +116,10 @@ Base commit recorded in the Log when the phase opens. All moves are `git mv` so 
 - Assumed by: every later task; consumers re-point in Task 2.
 
 **Steps:**
-- [ ] `git mv` the three files; apply the rename and the fill inline; write the barrel.
-- [ ] Re-point the two old-path importer sets the type gate names (expect: `pathField.css.ts`, `filterPane.css.ts`, `textPicker.css.ts`, `iconPicker.css.ts`, `settingsPane.css.ts`, `pickerMenu.css.ts`, `menu/menu.css.ts`, `InlineEditHeader.tsx`, `SettingsScaffold.tsx`, `numberEditor.css.ts`, `pickerControl.css.ts` — let typecheck enumerate; a file the gate misses is a stale string import, sweep `rg -F "interactionField"` and `rg -F "components/fieldRing"`).
-- [ ] Gates green. Grep `KNOB` count in moved files matches pre-move.
-- [ ] Commit: `refactor(fields): the field chrome becomes a family`
+- [x] `git mv` the three files; apply the rename and the fill inline; write the barrel.
+- [x] Re-point the two old-path importer sets the type gate names (expect: `pathField.css.ts`, `filterPane.css.ts`, `textPicker.css.ts`, `iconPicker.css.ts`, `settingsPane.css.ts`, `pickerMenu.css.ts`, `menu/menu.css.ts`, `InlineEditHeader.tsx`, `SettingsScaffold.tsx`, `numberEditor.css.ts`, `pickerControl.css.ts` — let typecheck enumerate; a file the gate misses is a stale string import, sweep `rg -F "interactionField"` and `rg -F "components/fieldRing"`).
+- [x] Gates green. Grep `KNOB` count in moved files matches pre-move.
+- [x] Commit: `refactor(fields): the field chrome becomes a family`
 
 #### Task 2: The behavior chain moves in
 
@@ -313,7 +313,7 @@ Base commit recorded in the Log when the phase opens. All moves are `git mv` so 
 ## Implementation Log
 
 ### Progress
-- [ ] **Phase 1** — the family lands · base `<commit>`
+- [ ] **Phase 1** — the family lands · base `e932f2b6`
   - [ ] Task 1 — axes, ring, primitive · `<commit>`
   - [ ] Task 2 — behavior chain moves · `<commit>`
   - [ ] Task 3 — `--input-field` zero trace · `<commit>`
@@ -335,6 +335,7 @@ Base commit recorded in the Log when the phase opens. All moves are `git mv` so 
 - 08-23 (Nathan): NavView's search keeps its banner-slot metrics as ordinary host deltas, not a framed exception; Trash's search row rises to match NavWindow's positioning (NavWindow is correct).
 
 ### Open Against Later Tasks
+- (Task 5 or Gate 2) `filterPane.css.ts` defines its own `placeholder` class (`label.tertiary`) — a twin of the family's; fold it when FilterPane is next touched.
 - (Task 6) `cellInput` composing `hairlineField` brings `overflow: hidden` + `nowrap` onto a raw `<input>` — unproven whether Chromium's internal editor scroller keeps the caret visible past the clip. Ten-second check at implementation: type past the cell width in a FilterPane text rule.
 
 ### Deviations

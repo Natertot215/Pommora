@@ -4,18 +4,6 @@ import { style } from '@vanilla-extract/css'
 // shrink-wraps to its text through CSS reflow — never a per-keystroke layout read. Font + padding
 // inherit from the caller's surface (the option chip), so the mirror measures in the same metrics.
 
-/** The in-place caret's own reset. An unstyled <input> wears the UA's box — a white fill, a border
- *  and a focus ring in the system accent — which is chrome around a field that is meant to read as
- *  the text it replaced. Stripped to nothing, it inherits the surface's metrics and leaves the
- *  selection to the native highlight. */
-export const bare = style({
-  border: 'none',
-  outline: 'none',
-  padding: 0,
-  background: 'transparent',
-  color: 'inherit',
-})
-
 export const autoSizeWrap = style({ display: 'inline-grid' })
 
 export const autoSizeMirror = style({

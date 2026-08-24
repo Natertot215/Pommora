@@ -3,8 +3,8 @@
 // holds: it widens as the path deepens and gives way when the row runs out, at which point the run's
 // own fade eclipses the head rather than the field pushing its row wider.
 import { style } from '@vanilla-extract/css'
-import { hairlineField } from './interactionField.css'
-import { focusRing } from './fieldRing'
+import { hairlineField } from '../fields/fields.css'
+import { focusRing } from '../fields/fieldRing'
 import { vars as colorVars } from '../tokens/color.css'
 import { text } from '../tokens/typography.css'
 
