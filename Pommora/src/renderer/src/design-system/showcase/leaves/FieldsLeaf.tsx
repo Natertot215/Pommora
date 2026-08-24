@@ -27,7 +27,7 @@ export function FieldsLeaf(): React.JSX.Element {
         <input className={input} defaultValue="Input — the boxed chrome on a caret" />
         <input className={bare} defaultValue="Bare — the caret in the text it replaced" />
         <div className={errorField}>ErrorRing — the channel at the error tint</div>
-        <SearchField value={search} onValueChange={setSearch} placeholder="Search…" />
+        <SearchField value={search} onValueChange={setSearch} />
         <PathField
           label="Path"
           value={path}
