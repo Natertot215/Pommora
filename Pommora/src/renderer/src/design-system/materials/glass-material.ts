@@ -14,17 +14,11 @@ import { shadowStandardVar } from '../tokens/color.css'
  *  everything inside it, so the weight goes where nothing can move. */
 export const OUTLINE_INSET = 'inset 0 0 0 1px var(--glass-outline, transparent)'
 
-/** Both passes of the outline move together: a color easing in beside an edge that snapped is the
- *  desync that made the old stroke flash white for a frame. */
-export const OUTLINE_TRANSITION =
-  'border-color var(--duration-base) var(--ease-standard), box-shadow var(--duration-base) var(--ease-standard)'
-
 export const frostMaterial: CSSProperties = {
   background: 'transparent', // no fill
   backdropFilter: 'blur(6px) brightness(95%)', // no saturate
   WebkitBackdropFilter: 'blur(6px) brightness(95%)',
   border: '1px solid var(--glass-outline, #FFFFFF1F)',
-  transition: OUTLINE_TRANSITION,
   boxShadow: [
     OUTLINE_INSET,
     'inset 0 1px 0 #FFFFFF59', // top specular — the glassy edge highlight

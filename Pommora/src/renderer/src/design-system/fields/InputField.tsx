@@ -3,7 +3,7 @@ import * as s from './fields.css'
 import { cx } from '../cx'
 import { onActivateKey } from '../interactions/activate'
 
-/** For editing, pass `fieldInputClass` to a raw <input> (e.g. EditableInput) so the editor reuses the exact chrome with no focus ring/animation. */
+/** For editing, pass the family `input` class to a raw <input> (e.g. EditableInput) so the editor reuses the exact chrome with no focus ring/animation. */
 export function InputField({
   children,
   className,
@@ -37,6 +37,3 @@ export function InputField({
     </div>
   )
 }
-
-/** The borderless, focus-ring-free input chrome — hand to EditableInput's `className`. */
-export const fieldInputClass = s.input
