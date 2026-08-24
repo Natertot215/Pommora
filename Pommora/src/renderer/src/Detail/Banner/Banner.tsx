@@ -5,7 +5,8 @@ import { IconPicker } from '@renderer/Components/IconPicker'
 import { useAssetUrl, useSession } from '../../store'
 import { isSurfaceKind, type BannerOwner } from '../Scope'
 import { DetailTitleHeader } from '../DetailTitleHeader'
-import { RenamableLabel } from '@renderer/design-system/fields'
+import { RenamableLabel, bare } from '@renderer/design-system/fields'
+import { cx } from '@renderer/design-system/cx'
 import { AddBannerButton } from './AddBannerButton'
 import { useBannerMenu } from './useBannerMenu'
 
@@ -51,7 +52,7 @@ export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {
       renames="title"
       editing={editingHome}
       value={owner.name}
-      className={className}
+      className={cx(bare, className)}
       onCommit={commitHome}
       onCancel={() => setEditingHome(false)}
     >

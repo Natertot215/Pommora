@@ -5,7 +5,7 @@ import { fieldRing } from './fieldRing'
 
 const c = colorVars.color
 
-// § BOX — the boxed field chrome and its variants. One fill, one radius, one ring channel.
+// § BOX
 
 /** The rounded input surface. The OutlineTint channel: any ancestor (or the
  *  component's `outline` prop) sets `--field-ring` and the field paints the house inset ring
@@ -72,12 +72,12 @@ export const search = style({
   },
 })
 
-// § BARE — no box at all: the caret sits in the text it replaced.
+// § BARE
 
 /** The in-place caret's own reset. An unstyled <input> wears the UA's box — a white fill, a border
  *  and a focus ring in the system accent — which is chrome around a field that is meant to read as
  *  the text it replaced. Stripped to nothing, it inherits the surface's metrics and leaves the
- *  selection to the native highlight. `font` must be stated: an <input> never inherits it on its own. */
+ *  selection to the native highlight. `font` is stated because an <input> never inherits it. */
 export const bare = style({
   border: 'none',
   outline: 'none',
@@ -87,9 +87,8 @@ export const bare = style({
   font: 'inherit',
 })
 
-// § CONTENT — what sits inside a field, box or not.
+// § CONTENT
 
-/** The ghost-text tone — placeholders and empty-state hints inside any field. */
 export const placeholder = style({ color: c.label.tertiary })
 
 // Auto-sizing field: the input overlays a hidden mirror span in ONE grid cell, so the field

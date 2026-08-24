@@ -143,12 +143,6 @@
 /* The inline cell editor — replaces the cell's content in flow, inheriting its type ramp. */
 .property-editor {
   width: 100%;
-  padding: 0;
-  border: none;
-  outline: none;
-  background: transparent;
-  font: inherit;
-  color: inherit;
 }
 /* Ghosted while the typed value isn't a valid link yet — the field wears the link's color (set inline)
    faded to the shared ghost opacity, so it previews as the link, dimmed, until it snaps solid. */

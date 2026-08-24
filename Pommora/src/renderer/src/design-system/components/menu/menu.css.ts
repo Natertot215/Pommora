@@ -1,10 +1,11 @@
-import { globalStyle, style } from '@vanilla-extract/css'
+import { globalStyle, style, type StyleRule } from '@vanilla-extract/css'
 import { vars as colorVars } from '../../tokens/color.css'
 import { DISCLOSURE_INDENT } from '../../tokens/size.css'
 import { font, text } from '../../tokens/typography.css'
 import { duration, easing } from '../../tokens/motion'
 import { TINT_STEPS, tintAt } from '../../tokens/tint'
 import { fieldRing, ROW_RING } from '../../fields/fieldRing'
+import { bare } from '../../fields/fields.css'
 
 const c = colorVars.color
 
@@ -172,18 +173,14 @@ export const titleText = style({})
 /** Inline-rename field for a menu row — sits flush in the title slot: the row's own font, color, and
  *  metrics with no border/padding/background of its own, so swapping it in for the title text is
  *  dimensionally identical (no row nudge). The caret alone marks edit mode. */
-export const titleInput = style({
-  width: '100%',
-  minWidth: 0,
-  font: 'inherit',
-  color: 'inherit',
-  background: 'transparent',
-  border: 'none',
-  padding: 0,
-  margin: 0,
-  outline: 'none',
-  WebkitAppRegion: 'no-drag',
-} as Parameters<typeof style>[0])
+export const titleInput = style([
+  bare,
+  {
+    width: '100%',
+    minWidth: 0,
+    WebkitAppRegion: 'no-drag',
+  } as StyleRule,
+])
 
 /** Sub-label — under the title. */
 export const subLabel = style([text.caption.standard, { color: c.label.secondary }])
