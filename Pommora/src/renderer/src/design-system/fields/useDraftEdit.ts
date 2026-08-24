@@ -13,13 +13,10 @@ export function useDraftEdit({
   draft: string | null
   openEdit: (el: HTMLElement) => void
   restProps: { style: React.CSSProperties | undefined }
-  inputProps: {
-    ref: (el: HTMLInputElement | null) => void
-    value: string
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
-    onBlur: () => void
-    onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void
-  }
+  inputProps: Pick<
+    React.ComponentProps<'input'>,
+    'ref' | 'value' | 'onChange' | 'onBlur' | 'onKeyDown'
+  >
 } {
   const [draft, setDraft] = useState<string | null>(null)
   // The width the field had at rest, pinned for the whole edit. The input's intrinsic width has
