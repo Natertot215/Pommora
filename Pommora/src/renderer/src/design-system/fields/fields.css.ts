@@ -5,6 +5,11 @@ import { fieldRing } from './fieldRing'
 
 const c = colorVars.color
 
+/** Every field's ghost text reads one tone — the axes spread this so no input states its own. */
+const placeholderTone = {
+  selectors: { '&::placeholder': { color: c.label.tertiary } },
+}
+
 /** The transparent search look — every search field agrees on this much; layout and type stay with
  *  the host. Stated before the boxed chrome so a search composed INTO a box keeps the box's fill. */
 export const search = style({
@@ -12,9 +17,7 @@ export const search = style({
   outline: 'none',
   background: 'transparent',
   color: c.label.primary,
-  selectors: {
-    '&::placeholder': { color: c.label.tertiary },
-  },
+  ...placeholderTone,
 })
 
 // § BOX
@@ -35,6 +38,7 @@ export const field = style([
     width: '100%',
     boxSizing: 'border-box',
     boxShadow: fieldRing(),
+    ...placeholderTone,
   },
 ])
 
@@ -84,6 +88,7 @@ export const bare = style({
   background: 'transparent',
   color: 'inherit',
   font: 'inherit',
+  ...placeholderTone,
 })
 
 // § CONTENT

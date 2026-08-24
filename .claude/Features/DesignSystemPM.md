@@ -218,9 +218,9 @@ The field family — every input surface's chrome and editing behavior in one ho
 | Bare | `bare` | No box at all: the caret reads as the text it replaced. |
 | Search | `search` | The transparent search look — border, fill, and placeholder tone stated once. |
 | Ring Channel | `fieldRing()` · `focusRing()` · `errorRing()` | One inset-shadow spelling; presets set only the `--field-ring` color. |
-| Placeholder | `placeholder` | The ghost-text tone for empty-state hints inside any field. |
+| Placeholder | `placeholder` | The ghost-text tone — every field axis paints `::placeholder` with it, and the class carries it onto spans. |
 | Content Row | `contentRow` | The opt-in overflow cap `InputField capped` mounts. |
-| SearchField | `SearchField` | The controlled filter input four surfaces share — never spell-checked. |
+| SearchField | `SearchField` · `SEARCH_PLACEHOLDER` | The controlled filter input four surfaces share — never spell-checked, reading the one search copy. |
 | PathField | `PathField` | A folder path: a FileLabel run at rest, the raw text under a click. |
 | EditableInput | `EditableInput` | The commit/cancel caret — Enter commits, Escape abandons, blur settles. |
 | RenamableLabel | `RenamableLabel` | The inline-rename swap; `title` seats the caret at the end, `row` selects all. |

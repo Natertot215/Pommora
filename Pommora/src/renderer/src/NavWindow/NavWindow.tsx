@@ -222,7 +222,6 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
                 className={text.body.standard}
                 value={query}
                 onValueChange={setQuery}
-                placeholder="Search…"
               />
             </div>
             <div className="navwindow-main-scroll over-scroll">
