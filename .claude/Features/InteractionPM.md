@@ -93,7 +93,7 @@ The destination is re-read every frame rather than resolved once: a host that re
 
 ### Floating Windows
 
-Every in-app window mounts the shared `PreviewPane` surface on a `GlassWindow` foundation and opens and closes on the floating-window in/out it owns — a scale-fade on `--disclosure`, exit held by `useExitPresence`. A window that wants its own exit suppresses that scale-out rather than layering a second motion on top: the Page Preview's promote does exactly this and plays the **engulf**, a WAAPI FLIP from the window's live rect onto the detail pane's (translate to center, scale to box, fade) on `base`/`easing.standard`. A FLIP measures the window from the surface's own root, never by walking up from an inner node. Tab switches slide content on the preview's own stamp, and an open side pane rides the same keyframes. A window carries a pane on either edge at once, and a side opening moves the window's own edge outward by that pane's width rather than taking it from the body — so a second pane never squeezes what the first one left. The title ↔ tab morph rides the tab-open `@starting-style` growth (`tabStrip.css`) with the title fading and sliding on the base tokens.
+Every in-app window mounts the shared `PreviewPane` surface on a `GlassWindow` foundation and opens and closes on the floating-window in/out it owns — a scale-fade on `--disclosure`, exit held by `useExitPresence`. A window that wants its own exit suppresses that scale-out rather than layering a second motion on top: the Page Preview's promote does exactly this and plays the **engulf**, a WAAPI FLIP from the window's live rect onto the detail pane's (translate to center, scale to box, fade) on `base`/`easing.standard`. A FLIP measures the window from the surface's own root, never by walking up from an inner node. Tab switches slide content on the preview's own stamp, and an open side pane rides the same keyframes. A window carries a pane on either edge at once, and its own edge never moves: the pane opens exactly as the detail inspector does — parked off the edge and carried home by `--io` with no transition of its own, while the body and footer beside it give up that width on the base tokens. The title ↔ tab morph rides the tab-open `@starting-style` growth (`tabStrip.css`) with the title fading and sliding on the base tokens.
 
 ### Timing Sources
 
@@ -131,19 +131,9 @@ The drawn caret fades on a symmetric on/off cycle via twin keyframes in `Carets.
 | Dip Opacity | `--caret-dim` | `0` |
 | I-Beam Cursor | `--caret-cursor` | inline SVG data-URI, hotspot `7 12` |
 
-### Over Scroll
+### OverScroll
 
-The overflow-fade mechanism: three registered properties, two axis classes and three modifiers.
-`--over-scroll-fade` is non-inheriting — the knob must sit on the element carrying the class, or it
-does nothing. An axis class carries the fade, `over-scroll-cap` adds the capped-label box under it,
-and a label that cannot hover itself takes the scrolled state from an ancestor wearing
-`over-scroll-host`.
-
-Gesture and return are wired once for the whole document, so a cap behaves the same worn as a bare
-class or mounted as the component. A capped label scrolls on one axis while a trackpad flick usually
-points the other way, so the dominant delta drives it either way; leaving a cap returns it on `base`.
-Each cap publishes how far it has been read past its start, for the overlays that land on the window
-it is showing.
+The overflow-fade mechanism: three registered properties, two axis classes, and three modifiers. `--over-scroll-fade` is non-inheriting — the knob must sit on the element carrying the class, or it does nothing. An axis class carries the fade; `over-scroll-cap` adds a capped-label box beneath it; and a label that cannot hover itself takes the scrolled state from an ancestor with `over-scroll-host`.
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/interactions/OverScroll/`
 

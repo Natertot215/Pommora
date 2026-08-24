@@ -71,13 +71,13 @@ The text ladder — system-white at descending presence. Primary is the raw prim
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/color.css.ts`
 
-| Title            | Token                                     | Value               |
-| ---------------- | ----------------------------------------- | ------------------- |
-| Label Primary    | `label.primary` · `--label-primary`       | system-white @ 100% |
-| Label Control    | `label.control` · `--label-control`       | system-white @ 80%  |
-| Label Secondary  | `label.secondary` · `--label-secondary`   | system-white @ 65%  |
-| Label Tertiary   | `label.tertiary` · `--label-tertiary`     | system-white @ 35%  |
-| Label Quaternary | `label.quaternary` · `--label-quaternary` | system-white @ 20%  |
+| Title | Token | Value |
+| --------------------- | ------------------------------------------------------- | ------------------------ |
+| Label Primary | `label.primary` · `--label-primary` | system-white @ 100% |
+| Label Control | `label.control` · `--label-control` | system-white @ 80% |
+| Label Secondary | `label.secondary` · `--label-secondary` | system-white @ 65% |
+| Label Tertiary | `label.tertiary` · `--label-tertiary` | system-white @ 35% |
+| Label Quaternary | `label.quaternary` · `--label-quaternary` | system-white @ 20% |
 
 #### States
 
@@ -218,7 +218,7 @@ The ten selectable solids plus the neutral chip default and the ramp's pink seat
 **SOURCE:** `Pommora/src/renderer/src/design-system/components/`
 
 | Title | Source | Use Cases |
-| ------------------------------------ | ---------------------- | ------------------------------------------------------------------- |
+| -------------------------- | -------------------------------- | ------------------------------------------------------------------- |
 | PathField | `PathField.tsx` | Input field for directories and path selections. |
 | SegmentRun | `SegmentRun/` | A divided run of labels — a path's segments, or values standing beside one another. |
 | DualSwitch | `Switches/` - `DualSwitch` | Booleans; shared Switch shape with a sliding glass segment. |
@@ -252,10 +252,10 @@ Two distinct glass systems. **Frost** is a CSS `backdrop-filter` recipe — a di
 **SOURCE:** `Pommora/src/renderer/src/design-system/materials/glass-pane.tsx` · `materials/glass-material.ts` · `materials/glass-controls.tsx`
 
 | Title | Token | PANE_FROST | WINDOW_FROST | GHOST_FROST |
-| --- | --- | --- | --- | --- |
+| --- | ---- | -- | --- | --- |
 | Blur | `.blur` | `6` | `6` | `6` |
 | Brightness | `.brightness` | `90` | `90` | `100` |
-| Border Alpha | `.borderAlpha` | `0.12` | `0.12` | `0`  |
+| Border Alpha | `.borderAlpha` | `0.12` | `0.12` | `0` |
 | Top Specular | `.topSpecular` | `0.35` | `0.35` | `0` |
 | Inner Ring | `.innerRing` | `0.08` | `0.08` | `0` |
 | Lower Rim / Depth / Rim Blur | `.lowerRim` / `.depth` / `.rimBlur` | `0.08` / `12` / `18` | `0.08` / `12` / `18` | `0` / `0` / `0` |
