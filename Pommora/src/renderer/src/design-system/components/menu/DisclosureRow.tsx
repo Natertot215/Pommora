@@ -3,6 +3,7 @@ import { Icon } from '../../symbols'
 import { cx } from '../../cx'
 import { Reveal } from '../Reveal'
 import { MenuItem } from './Menu'
+import { PickerOption } from '../PickerMenu/PickerMenu'
 import { railRow, twisty, twistyOpen, twistySpacer } from './menu.css'
 
 /** Which nodes are disclosed. The set holds the EXCEPTIONS to `defaultOpen`, never the open nodes
@@ -63,6 +64,7 @@ export function DisclosureRow({
   onClick,
   onContextMenu,
   selected = false,
+  picker = false,
   className,
   trailing,
   wrap,
@@ -77,6 +79,9 @@ export function DisclosureRow({
   onClick?: () => void
   onContextMenu?: (e: React.MouseEvent) => void
   selected?: boolean
+  /** Renders the row as a PickerOption — the picker tier, whose selection mark answers the nexus's
+   *  `pickerSelection` setting — instead of a menu row. A value-picking tree wants this. */
+  picker?: boolean
   className?: string
   /** Right-edge accessory, passed through to the MenuItem slot. */
   trailing?: ReactNode
@@ -84,7 +89,21 @@ export function DisclosureRow({
   wrap?: (row: ReactNode) => ReactNode
   children?: ReactNode
 }): React.JSX.Element {
-  const row = (
+  const row = picker ? (
+    <PickerOption
+      selected={selected}
+      ring
+      onClick={onClick}
+      leading={
+        <>
+          {twistyGlyph(kind, open, onToggle)}
+          {icon}
+        </>
+      }
+    >
+      {title}
+    </PickerOption>
+  ) : (
     <MenuItem
       selected={selected}
       className={className}
