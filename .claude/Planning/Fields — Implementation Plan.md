@@ -227,8 +227,8 @@ Base commit recorded in the Log when the phase opens. All moves are `git mv` so 
 **Survivors:** `InlineEditHeader.tsx:44`'s inline `--field-ring` style stays — it is not a duplication of `InputField`'s prop plumbing but the *sole carrier* of the Space's color ring: the settingsPane `header` class only seeds the grey default, and `SpaceSettings` passes `outline` with the Space's own tint. `ContextsPM.md` documents the behavior as shipped.
 
 **Steps:**
-- [ ] Convert; gates green; FilterPane text rule (long-value caret check included) + menu-row selection + a colored Space's settings header ring checked running.
-- [ ] Commit: `refactor(fields): the ring channel has one spelling`
+- [x] Convert; gates green; the FilterPane text rule (long-value caret check), menu-row selection, and a colored Space's header ring ride Gate 2's running check.
+- [x] Commit: `refactor(fields): the ring channel has one spelling`
 
 #### Gate 2 — no restated chrome
 - [ ] Gates green; derivations re-run.

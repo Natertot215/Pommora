@@ -4,7 +4,7 @@ import { font, text } from '../../tokens/typography.css'
 import { TINT_STEPS, tintAt } from '../../tokens/tint'
 import { stack } from '../../tokens/stack'
 import { dropdownAnchor } from '../dropdownAnchor'
-import { fieldRing, ROW_RING } from '../../fields/fieldRing'
+import { FIELD_RING_VAR, fieldRing, ROW_RING } from '../../fields/fieldRing'
 import { rowShell, ROW_LINE, ROW_SIZE } from '../menu/menu.css'
 
 const c = colorVars.color
@@ -37,12 +37,11 @@ export const optionRing = style({
 // This is default behavior of the ring itself, not something a consumer opts into: any list whose
 // selected rows are siblings gets it for free. A COLLAPSED Reveal between two rows is transparent to
 // the run — it is a zero-height spacer, not a separator (hence the `data-reveal` hop).
-const RING = 'var(--field-ring, transparent)'
 const SIDES = {
-  left: `inset ${OPTION_RING} 0 0 0 ${RING}`,
-  right: `inset -${OPTION_RING} 0 0 0 ${RING}`,
-  top: `inset 0 ${OPTION_RING} 0 0 ${RING}`,
-  bottom: `inset 0 -${OPTION_RING} 0 0 ${RING}`,
+  left: `inset ${OPTION_RING} 0 0 0 ${FIELD_RING_VAR}`,
+  right: `inset -${OPTION_RING} 0 0 0 ${FIELD_RING_VAR}`,
+  top: `inset 0 ${OPTION_RING} 0 0 ${FIELD_RING_VAR}`,
+  bottom: `inset 0 -${OPTION_RING} 0 0 ${FIELD_RING_VAR}`,
 }
 const COLLAPSED = '[data-reveal]:not([data-open])'
 /** "…is directly above another selected row", with or without a collapsed disclosure between. */

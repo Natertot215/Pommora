@@ -171,7 +171,7 @@ export const lockedCaption = style([
 /** The typed value input — the cell-field recipe as a bare <input>, focus lighting the shared
  *  inset accent stroke (the TextPicker recipe). */
 export const cellInput = style([
-  fieldBase,
+  hairlineField,
   {
     // Sizes to its text (an input's intrinsic width otherwise ignores content); small floor for empty.
     fieldSizing: 'content',
@@ -179,12 +179,6 @@ export const cellInput = style([
     // Absorbs the row's leftover width like the other value slots, so a text rule ends flush.
     flex: '1 1 auto',
     minWidth: '52px',
-    padding: '3px 6px',
-    border: 'none',
-    outline: 'none',
-    fontFamily: 'inherit',
-    color: c.label.control,
-    ...restRing,
     ...focusRing(),
   },
 ])
