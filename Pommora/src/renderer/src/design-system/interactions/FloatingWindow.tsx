@@ -35,7 +35,6 @@ export function useFloatingWindow(
   style: CSSProperties
   onWindowDown: (e: ReactPointerEvent<HTMLElement>) => void
   startDrag: (mode: FloatingDragMode, e: ReactPointerEvent<HTMLElement>) => void
-  widenBy: (dx: number) => void
 } {
   let stored = geoStore.get(id)
   if (!stored) {
@@ -117,21 +116,10 @@ export function useFloatingWindow(
     if ((e.target as HTMLElement).matches(dragSurfaces)) startDrag('move', e)
   }
 
-  // A column appearing beside the body widens the window rather than taking the body's width.
-  // The window walks left by half the growth so it opens outward from its own center, and stops
-  // at the viewport rather than growing off-screen — where the body absorbs whatever is left.
-  const widenBy = (dx: number): void => {
-    const w = clamp(g.w + dx, bounds.minW, window.innerWidth)
-    g.x = clamp(g.x - Math.round((w - g.w) / 2), 0, Math.max(0, window.innerWidth - w))
-    g.w = w
-    force((n) => n + 1)
-  }
-
   return {
     style: { left: g.x, top: g.y, width: g.w, height: g.h },
     onWindowDown,
     startDrag,
-    widenBy,
   }
 }
 
