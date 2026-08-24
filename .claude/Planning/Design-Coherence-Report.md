@@ -224,27 +224,27 @@ IPC returns the envelope so a refusal is visible. Four surfaces void it away, so
 
 #### The rest
 
-| Finding | Sites | Owner it wants | Effort |
-| --- | --- | --- | --- |
-| The settings toggle row, verbatim **(concurrent)** | 7 | `ToggleRow`, beside the existing `ValueRow` | Small |
-| The property-editor config row **(concurrent)** | 7 | Promote `NumberEditor`'s private `Row` | Small |
-| The url-vs-type commit derivation | 4 | `editorValue.ts` | Small |
-| The link-accent derivation | 5 | One helper beside `solidColorCss` | Small |
-| The twisty glyph, hand-rolled beside its own helper | 3 | Export `Twisty` from `DisclosureRow` | Small |
-| `CollectionNode \| SetNode`, an unnamed type | 30+ | `type ViewSource` in the contract | Small |
-| The `.ppane-action` icon button | 6 | `PaneAction`, exported from `PreviewPane` | Small |
-| Raw `<webview>` mounts with a cast documented by cross-reference | 3 | A `WebGuest` owning the incantation | Medium |
-| Four independent hosts for one picker triple | 4 | Generalize `CardPickerHost` | Medium |
+| Finding                                                          | Sites | Owner it wants                              | Effort |
+| ---------------------------------------------------------------- | ----- | ------------------------------------------- | ------ |
+| The settings toggle row, verbatim **(concurrent)**               | 7     | `ToggleRow`, beside the existing `ValueRow` | Small  |
+| The property-editor config row **(concurrent)**                  | 7     | Promote `NumberEditor`'s private `Row`      | Small  |
+| The url-vs-type commit derivation                                | 4     | `editorValue.ts`                            | Small  |
+| The link-accent derivation                                       | 5     | One helper beside `solidColorCss`           | Small  |
+| The twisty glyph, hand-rolled beside its own helper              | 3     | Export `Twisty` from `DisclosureRow`        | Small  |
+| `CollectionNode \| SetNode`, an unnamed type                     | 30+   | `type ViewSource` in the contract           | Small  |
+| The `.ppane-action` icon button                                  | 6     | `PaneAction`, exported from `PreviewPane`   | Small  |
+| Raw `<webview>` mounts with a cast documented by cross-reference | 3     | A `WebGuest` owning the incantation         | Medium |
+| Four independent hosts for one picker triple                     | 4     | Generalize `CardPickerHost`                 | Medium |
 
 #### Interaction behaviors still spread thin
 
 Surfaced while consolidating the fade and the remove ×; none was in scope for that work.
 
-| Finding | Sites | What it wants |
-| --- | --- | --- |
-| Hover-reveal by `opacity: 0` → `1`, hand-rolled | 45 rules across 18 stylesheets | A shared primitive, the way Bloom is the one pane-open source |
-| Effective zoom re-derived through `getComputedStyle` | 3, in Cards and Table | One reader; each parses the same property to answer the same question |
-| A control gating its own click on its computed opacity | 1, inside `HoverRemove` | Works, but it is a hidden contract: a skin revealing by any other means silently breaks the click |
+| Finding                                                | Sites                          | What it wants                                                                                     |
+| ------------------------------------------------------ | ------------------------------ | ------------------------------------------------------------------------------------------------- |
+| Hover-reveal by `opacity: 0` → `1`, hand-rolled        | 45 rules across 18 stylesheets | A shared primitive, the way Bloom is the one pane-open source                                     |
+| Effective zoom re-derived through `getComputedStyle`   | 3, in Cards and Table          | One reader; each parses the same property to answer the same question                             |
+| A control gating its own click on its computed opacity | 1, inside `HoverRemove`        | Works, but it is a hidden contract: a skin revealing by any other means silently breaks the click |
 
 #### The structural twin
 
@@ -432,13 +432,13 @@ Answered questions, recorded so a later sweep reads the ruling instead of re-rai
 
 What this audit got wrong and fixed. A finding that was withdrawn is as useful to know as one that stood.
 
-| Claim | Correction |
-| ---------------------------------------------- | ------------------------------------------------------ |
-| `OptionEditor` should become an adapter over `StatusEditor` | Wrong at that level. The hook adapter works by *hiding* grouping from the flat case; a merged component would impose it instead, and the heading is a renameable control rather than a suppressible label. Withdrawn — but the withdrawal was also wrong: a 26-line row wrapper above the seam `c1fe6afa` drew was genuinely undone, and has since been extracted as `OptionSlot` |
-| "The size ladder is declared, bridged, and bypassed" | Blurred two token families in one file. The glyph ladder is routed and settled; only the button bundles are open |
-| `PickerMenu.closing` is passed at zero of thirty sites | Passed at two, both inside `CalendarPicker`. Live API with two internal callers |
-| All twelve bridged `--z-*` vars are unread | All twelve are read. Withdrawn before reporting |
-| `--subline-h` and `--chips-gap` have diverged | Both convergent — the same value in every home. Recategorized as tokens, the system should absorb |
-| `--ix-ease`'s wrong fallback strands app surfaces on the wrong curve | Reaches nothing. The only sheet reading the var ships with the Interaction Lab, which always sets it. `Interactions.tsx` is that lab's page, not a provider — both moved to `showcase/lab/` |
+| Claim                                                                | Correction                                                                                                                                                                                                                                                                                                                                                                        |
+| -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `OptionEditor` should become an adapter over `StatusEditor`          | Wrong at that level. The hook adapter works by *hiding* grouping from the flat case; a merged component would impose it instead, and the heading is a renameable control rather than a suppressible label. Withdrawn — but the withdrawal was also wrong: a 26-line row wrapper above the seam `c1fe6afa` drew was genuinely undone, and has since been extracted as `OptionSlot` |
+| "The size ladder is declared, bridged, and bypassed"                 | Blurred two token families in one file. The glyph ladder is routed and settled; only the button bundles are open                                                                                                                                                                                                                                                                  |
+| `PickerMenu.closing` is passed at zero of thirty sites               | Passed at two, both inside `CalendarPicker`. Live API with two internal callers                                                                                                                                                                                                                                                                                                   |
+| All twelve bridged `--z-*` vars are unread                           | All twelve are read. Withdrawn before reporting                                                                                                                                                                                                                                                                                                                                   |
+| `--subline-h` and `--chips-gap` have diverged                        | Both convergent — the same value in every home. Recategorized as tokens, the system should absorb                                                                                                                                                                                                                                                                                 |
+| `--ix-ease`'s wrong fallback strands app surfaces on the wrong curve | Reaches nothing. The only sheet reading the var ships with the Interaction Lab, which always sets it. `Interactions.tsx` is that lab's page, not a provider — both moved to `showcase/lab/`                                                                                                                                                                                       |
 
 Two process notes the log makes visible. A survey that measures two files against each other without accounting for what was already extracted beneath them will overstate the duplication — which is what happened with the option editors. And deferring to a prior ruling without checking what the ruling actually covered is the opposite error: a decision bounds what it decided, not everything near it.

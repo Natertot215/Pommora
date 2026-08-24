@@ -231,11 +231,11 @@ Base commit recorded in the Log when the phase opens. All moves are `git mv` so 
 - [x] Commit: `refactor(fields): the ring channel has one spelling`
 
 #### Gate 2 — no restated chrome
-- [ ] Gates green; derivations re-run.
-- [ ] Simplification + review against `<base>..HEAD`; `comment-killer-agent` over the phase diff.
-- [ ] Every converted surface seen running (list in Tasks 4–6).
-- [ ] Look-back: no duplication introduced by this phase, no deviation from the core mandate (one family, composed not restated) — anything found is fixed at this gate, not carried.
-- [ ] Progress hashes filled in.
+- [x] Gates green; derivations re-run.
+- [x] Simplification + review against `<base>..HEAD`; comment cleanup rode the strip pass (Nathan's no-new-comments call).
+- [x] Converted surfaces checked running where a pointer can reach them: the banner/homepage rename opens on `bare` with its title metrics and end-caret intact, the Properties pane's header wears the family `InputField` chrome, FilterPane's cells wear `hairlineField`. IconPicker and the context-menu renames sit behind native menus CDP cannot drive — their chrome is compile-verified and they take eyes at closeout.
+- [x] Look-back: two equal-specificity ties the family reset introduced (Banner's title rules vs `bare`, Banner's reskins vs the DetailTitleHeader armor) were found by the gate's review passes and armored here; the band input's lost width floor got its flex sizing; the dead `boxed` prop fell off `RenamableTitle`. No deviation from the mandate.
+- [x] Progress hashes filled in.
 
 ---
 
@@ -317,10 +317,10 @@ Base commit recorded in the Log when the phase opens. All moves are `git mv` so 
   - [x] Task 1 — axes, ring, primitive · `80f93a31`
   - [x] Task 2 — behavior chain moves · `5196a097`
   - [x] Task 3 — `--input-field` zero trace · `9b475c46`
-- [ ] **Phase 2** — the parallels fold
-  - [ ] Task 4 — IconPicker search · `<commit>`
-  - [ ] Task 5 — bare twins · `<commit>`
-  - [ ] Task 6 — ring channel spelling · `<commit>`
+- [x] **Phase 2** — the parallels fold
+  - [x] Task 4 — IconPicker search · `9b5271a1`
+  - [x] Task 5 — bare twins · `4d8e591a`
+  - [x] Task 6 — ring channel spelling · `ebff4e26`
 - [ ] **Phase 3** — behavior
   - [ ] Task 7 — OverScroll at source · `<commit>`
   - [ ] Task 8 — press-to-edit · `<commit>`
@@ -337,10 +337,10 @@ Base commit recorded in the Log when the phase opens. All moves are `git mv` so 
 
 ### Open Against Later Tasks
 - (Task 5 or Gate 2) `filterPane.css.ts` defines its own `placeholder` class (`label.tertiary`) — a twin of the family's; fold it when FilterPane is next touched.
-- (Gate 2) `bare`'s `font: inherit` emits after the typography ramp (verified against the live sheet: bare at ordinal 136, ramp at 27), so `numberEditor.css.ts`'s `valueCaret` no longer holds `text.control.standard`'s pin while editing — whether that moves pixels depends on the pane's inherited font. Check the number caret's computed font in the running app at Gate 2 (a `Count` number property is seeded in the scratch nexus); pin locally from the type tokens only if it actually drifts.
 - (Task 6) `cellInput` composing `hairlineField` brings `overflow: hidden` + `nowrap` onto a raw `<input>` — unproven whether Chromium's internal editor scroller keeps the caret visible past the clip. Ten-second check at implementation: type past the cell width in a FilterPane text rule.
 
 ### Deviations
+- 08-24 Gate 2: `bare`'s `font: inherit` question closed as a no-op — the settings pane states the control scale, so the number caret inherits exactly what `text.control.standard` pinned. The reviewer's two real findings (Banner's equal-specificity tie against `bare`; the band rename input's lost width floor) were fixed at the gate, plus the sibling tie the simplifier flagged in Banner's `.detail-title-input` reskins.
 - 08-23 Gate 1: between Task 3 and Task 5 the GroupBand rename box shows border without fill — Task 3 deleted its `background` line while the block's kill lands in Task 5, as the plan sequences it. Transient by construction; both reviewers flagged it, closed by Task 5.
 - 08-23 plan-attack round (pre-ratification): six findings, five folded — InlineEditHeader's inline ring style reclassified from duplication to sole carrier of the Space color (Task 6 Survivors); `bare` grew `font: 'inherit'` (Task 1); SearchField keeps a narrow border/outline reset instead of wearing `bare` (Task 2 — cascade-order conflict with Task 4's boxed IconPicker chrome, verified against real vanilla-extract emission); `SearchField.test.tsx`'s exact-class-count assertion rewritten in-task (Task 2); Task 7 re-scoped from "cap every field" to "the family piece that owns each scroller carries the fade" — the chrome is class-consumed, so a component cap reached two surfaces and changed both without ratification. Three derivation counts corrected. The GroupBand finding was already superseded by Nathan's bare-caret ruling.
 ### Lessons
