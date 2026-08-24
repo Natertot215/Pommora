@@ -1,6 +1,6 @@
 import type { CSSProperties, HTMLAttributes, ReactNode, Ref } from 'react'
 import { shadowLiftVar, shadowStandardVar } from '../tokens/color.css'
-import { OUTLINE_INSET, OUTLINE_TRANSITION } from './glass-material'
+import { OUTLINE_INSET } from './glass-material'
 
 /** The static frostMaterial's recipe (glass-material.ts) — a dimmed blur with a glassy edge — made
  *  parametric so a pane can be tuned live. PANE_FROST is that recipe at a slightly deeper dim; every
@@ -90,7 +90,6 @@ export function frostStyle(p: FrostParams): CSSProperties {
     WebkitBackdropFilter: filter,
     ...(p.borderAlpha > 0 && {
       border: `1px solid var(--glass-outline, #FFFFFF${hexA(p.borderAlpha)})`,
-      transition: OUTLINE_TRANSITION,
     }),
     boxShadow: edges.join(', '),
   }

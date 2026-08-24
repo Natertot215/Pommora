@@ -1,7 +1,7 @@
 import { style } from '@vanilla-extract/css'
 import { vars } from '../../tokens/color.css'
 import { font } from '../../tokens/typography.css'
-import { field } from '../../fields/fields.css'
+import { bare, field } from '../../fields/fields.css'
 import { focusRing } from '../../fields/fieldRing'
 
 const c = vars.color
@@ -26,25 +26,23 @@ export const suffixField = style([
 /** The bare inner value input — no chrome (the wrapper owns the fill + stroke); fills the space left of
  *  the pinned hint and scrolls its own overflow. The fade is the shared over-scroll every unboxed
  *  `EditableInput` wears. */
-export const suffixInput = style({
-  flex: '1 1 auto',
-  minWidth: 0,
-  minHeight: 0,
-  padding: 0,
-  whiteSpace: 'nowrap',
-  overflowX: 'auto',
-  overflowY: 'hidden',
-  scrollbarWidth: 'none',
-  lineHeight: font.scale.control.line,
-  border: 'none',
-  outline: 'none',
-  background: 'transparent',
-  fontFamily: 'inherit',
-  fontSize: font.scale.control.size,
-  fontWeight: font.weight.emphasized,
-  color: c.label.primary,
-  vars: { '--over-scroll-fade': '12px' },
-})
+export const suffixInput = style([
+  bare,
+  {
+    flex: '1 1 auto',
+    minWidth: 0,
+    minHeight: 0,
+    whiteSpace: 'nowrap',
+    overflowX: 'auto',
+    overflowY: 'hidden',
+    scrollbarWidth: 'none',
+    lineHeight: font.scale.control.line,
+    fontSize: font.scale.control.size,
+    fontWeight: font.weight.emphasized,
+    color: c.label.primary,
+    vars: { '--over-scroll-fade': '12px' },
+  },
+])
 
 /** The "/ N" out-of hint pinned to the field's right — never scrolling. */
 export const trailing = style({
