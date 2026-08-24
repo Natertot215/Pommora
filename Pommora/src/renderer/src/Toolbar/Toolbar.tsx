@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import {
   SegmentedSymbol,
   type Segment,
-} from '@renderer/design-system/components/Segmented-Controls'
-import { useDismiss } from '@renderer/design-system/components/useDismiss'
+} from '@renderer/DesignSystem/Components/Controls/Segmented-Controls'
+import { useDismiss } from '@renderer/DesignSystem/Components/useDismiss'
 import { ToolbarTrio } from './ToolbarTrio'
 import { ViewDropdown } from './ViewDropdown'
 import { SpaceDropdown } from './SpaceDropdown'
@@ -13,7 +13,7 @@ import { TabBar } from '../Tabs/TabBar'
 import { activeUnpinnedTab } from '../Tabs/tabsModel'
 import { SettingsDropdown } from '../Components/Detail/SettingsDropdown'
 import { useSession } from '../store'
-import { useExitPresence } from '@renderer/design-system/useExitPresence'
+import { useExitPresence } from '@renderer/DesignSystem/Animation/useExitPresence'
 import './toolbar.css'
 
 type TrioPanel = 'navigation' | 'settings'

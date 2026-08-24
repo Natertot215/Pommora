@@ -27,7 +27,7 @@
   flex-direction: column;
   padding-top: 6px;
   margin-top: 6px;
-  border-top: 1px solid var(--separator-segment);
+  border-top: var(--border-segment);
 }
 .settings-cat {
   display: flex;

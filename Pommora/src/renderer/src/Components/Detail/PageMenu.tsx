@@ -1,17 +1,17 @@
 import { useRef, useState } from 'react'
-import { entityIcon, Icon } from '@renderer/design-system/symbols'
+import { entityIcon, Icon } from '@renderer/DesignSystem/Symbols'
 import { useSession } from '../../store'
 import {
   flushTrailing,
   footerLockAction,
   lockIcon,
-} from '../../design-system/components/menu/menu.css'
+} from '@renderer/DesignSystem/Components/Menu/menu.css'
 import {
   MenuBottomRow,
   MenuItem,
   MenuScrollFrame,
   MenuSeparator,
-} from '../../design-system/components/menu'
+} from '@renderer/DesignSystem/Components/Menu'
 import { IconPicker } from '../IconPicker'
 import { InlineEditHeader } from './InlineEditHeader'
 import { PagePropertiesPane } from './PagePropertiesPane'
@@ -65,7 +65,7 @@ export function PageMenu(): React.JSX.Element | null {
       <MenuItem
         className={flushTrailing}
         leading={<Icon name="server" size={ICON.rootEntry} />}
-        trailing={<Icon name="chevron-right" size={ICON.rowChevron} />}
+        trailing={<Icon name="chevron-right" />}
         onClick={() => setPane('properties')}
       >
         Properties

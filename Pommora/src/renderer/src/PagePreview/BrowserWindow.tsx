@@ -3,15 +3,15 @@
 // one webview owns the whole body on the shared partition. A summon while open retakes the window
 // in place; the singleton the page preview also is.
 import { useEffect, useRef, useState } from 'react'
-import { cx } from '@renderer/design-system/cx'
-import { overScrollEllipsis } from '@renderer/design-system/interactions/OverScroll'
-import { text } from '@renderer/design-system/tokens'
-import { Icon } from '@renderer/design-system/symbols'
-import { PreviewPane } from '@renderer/design-system/components/PreviewPane/PreviewPane'
-import type { FloatingBounds } from '@renderer/design-system/interactions/FloatingWindow'
+import { cx } from '@renderer/DesignSystem/Util/cx'
+import { overScrollEllipsis } from '@renderer/DesignSystem/Interactions/OverScroll'
+import { text } from '@renderer/DesignSystem/Tokens'
+import { Icon } from '@renderer/DesignSystem/Symbols'
+import { PreviewPane } from '@renderer/DesignSystem/Detail/PreviewPane/PreviewPane'
+import type { FloatingBounds } from '@renderer/DesignSystem/Interactions/FloatingWindow'
 import { linkDomain } from '@shared/links'
 import { WEB_PARTITION } from '@shared/types'
-import { useExitPresence } from '../design-system/useExitPresence'
+import { useExitPresence } from '@renderer/DesignSystem/Animation/useExitPresence'
 import { useSession } from '../store'
 import './browserWindow.css'
 

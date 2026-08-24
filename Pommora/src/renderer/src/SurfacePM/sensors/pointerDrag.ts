@@ -2,7 +2,7 @@
 // Zones can't host. Shares the engine's vocabulary: the app-wide ACTIVATION threshold and the
 // post-drop click suppression.
 
-import { ACTIVATION, suppressNextClick } from '@renderer/design-system/interactions/shared'
+import { ACTIVATION, suppressNextClick } from '@renderer/DesignSystem/Interactions/shared'
 
 export interface PointerDragHandlers {
   /** Fires rAF-coalesced with the cumulative delta from the drag origin. */

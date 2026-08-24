@@ -15,7 +15,7 @@ import {
   findScroller,
   SEEK_GLIDE,
   scrollGlide,
-} from '@renderer/design-system/interactions/autoscroll'
+} from '@renderer/DesignSystem/Interactions/autoscroll'
 import { useSession } from '../../store'
 import { declaredType, resolveFieldValue } from './pipeline/value'
 import { filterSeeds } from './pipeline/creationSeeds'

@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef } from 'react'
 import type { PageDetail } from '@shared/types'
 import { useSession } from '../store'
-import { useRevealNear } from '@renderer/design-system/revealBar'
+import { useRevealNear } from '@renderer/DesignSystem/Interactions/revealBar'
 import { navKey } from '../Navigation/navRecents'
 import { readWarm } from '../Tabs/warmCache'
-import { duration, easing } from '@renderer/design-system/tokens'
-import { Icon } from '@renderer/design-system/symbols'
+import { duration, easing, ms } from '@renderer/DesignSystem/Animation'
+import { Icon } from '@renderer/DesignSystem/Symbols'
 import { findCollection, findSet } from './Scope'
 import { ContainerView } from './ContainerView'
 import { HomepageView } from './HomepageView'
@@ -153,7 +153,7 @@ export function DetailPane(): React.JSX.Element {
         { transform: `translateX(${x}px)`, opacity: 0 },
         { transform: 'translateX(0)', opacity: 1 },
       ],
-      { duration: Number.parseInt(duration.fast, 10), easing: easing.standard },
+      { duration: ms(duration.fast), easing: easing.baseEase },
     )
   }, [selection, navSlide])
   // Cursor in a band control's general area — one region per end of the bar, so approaching the

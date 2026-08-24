@@ -5,7 +5,7 @@
 import type { DateFormat, TimeFormat, WeekdayFormat } from '@shared/columnStyles'
 import type { DateGranularity, DateSeparator } from '@shared/views'
 import type { NumberConfig } from '@shared/properties'
-import { pad } from '@renderer/design-system/pad'
+import { pad } from '@renderer/DesignSystem/Util/pad'
 
 // Intl formatter construction is pricey and the card grid formats per-cell — cache by options tuple
 // instead of rebuilding per format() call. en-US is pinned everywhere, so the key is the options alone.

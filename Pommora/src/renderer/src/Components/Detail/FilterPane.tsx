@@ -5,11 +5,11 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
 import type { FilterRule, SavedView } from '@shared/views'
-import { Icon } from '@renderer/design-system/symbols'
-import { SegmentRun } from '@renderer/design-system/components/SegmentRun/SegmentRun'
-import * as sr from '@renderer/design-system/components/SegmentRun/segmentRun.css'
+import { Icon } from '@renderer/DesignSystem/Symbols'
+import { SegmentRun } from '@renderer/DesignSystem/Labels/SegmentRun'
+import * as sr from '@renderer/DesignSystem/Labels/segmentRun.css'
 import { EntityIcon } from '@renderer/Components/EntityIcon'
-import { labelColorFor } from '@renderer/design-system/tokens/colorMap'
+import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import {
   DisclosureRow,
   MenuBottomRow,
@@ -17,21 +17,21 @@ import {
   MenuItem,
   MenuPaneTopRow,
   useDisclosureSet,
-} from '../../design-system/components/menu'
+} from '@renderer/DesignSystem/Components/Menu'
 import {
   flushTrailing,
   footingLabel,
   footingSymbol,
-} from '../../design-system/components/menu/menu.css'
-import { PickerMenu, PickerOption } from '../../design-system/components/PickerMenu'
+} from '@renderer/DesignSystem/Components/Menu/menu.css'
+import { PickerMenu, PickerOption } from '@renderer/DesignSystem/Components/Pickers/PickerMenu'
 import {
   PICKER_MAX_HEIGHT,
   treePane,
-} from '../../design-system/components/PickerMenu/pickerMenu.css'
-import { OverScroll } from '../../design-system/interactions/OverScroll'
-import { Reveal } from '../../design-system/components/Reveal'
-import { duration as motion } from '../../design-system/tokens/motion'
-import { CalendarPicker } from '../../design-system/components/CalendarPicker/CalendarPicker'
+} from '@renderer/DesignSystem/Components/Pickers/PickerMenu/pickerMenu.css'
+import { OverScroll } from '@renderer/DesignSystem/Interactions/OverScroll'
+import { Reveal } from '@renderer/DesignSystem/Animation/Reveal'
+import { duration as motion, ms } from '@renderer/DesignSystem/Animation'
+import { CalendarPicker } from '@renderer/DesignSystem/Components/Pickers/CalendarPicker/CalendarPicker'
 import { contextIdsOf, isContextColumnId } from '../../Detail/Views/pipeline/contextIdentity'
 import { useStyleFor } from '../../Detail/Views/Table/columnStyles'
 import { useSession } from '../../store'
@@ -40,8 +40,8 @@ import { contextOptionsFor, type ContextOption } from '../../Detail/Views/pipeli
 import { declaredType } from '../../Detail/Views/pipeline/value'
 import { toggleValue } from '../../Detail/Views/PropertyEditing/PropertyPicker'
 import { CheckboxGlyph } from '../../Detail/Views/Table/checkboxLook'
-import { onActivateKey } from '../../design-system/interactions/activate'
-import { cx } from '../../design-system/cx'
+import { onActivateKey } from '@renderer/DesignSystem/Interactions/activate'
+import { cx } from '@renderer/DesignSystem/Util/cx'
 import { useSaveView } from '../../Embeds/ViewEmbedScope'
 import { PickerControl, type PickerChoice } from './PickerControl'
 import { optionsOf } from './GroupingPane'
@@ -59,7 +59,7 @@ import {
 } from './filterModel'
 import * as gp from './groupingPane.css'
 import * as fp from './filterPane.css'
-import { ContextChip, Label, optionShapeFor, type LabelShape } from '@renderer/design-system/labels'
+import { ContextChip, Label, optionShapeFor, type LabelShape } from '@renderer/DesignSystem/Labels'
 
 const MATCH_OPTIONS: PickerChoice<MatchMode>[] = [
   { value: 'all', label: 'All' },
@@ -72,7 +72,7 @@ const ACTIVE_OPTIONS: PickerChoice<'on' | 'off'>[] = [
 ]
 
 /** The disclosure beat in ms — how long a just-added row is flagged for its unfold. */
-const DISCLOSURE_MS = Number.parseInt(motion.disclosure, 10)
+const DISCLOSURE_MS = ms(motion.fast)
 
 /** `animate` is opt-IN and read only at mount, so neither opening the pane nor the tree reload
  *  behind every commit can replay the unfold across the list. There is no exit beat — rows are
@@ -275,7 +275,7 @@ function ValueFieldShell({
 /** The Location field — Sets have no color of their own, so the picked ones read as titles divided
  *  by the house segment hairline rather than as colorless chips. Its PICKER is the Grouping pane's
  *  set list: a MenuItem per Set wearing that Set's own icon, children disclosed on the rail behind a
- *  twisty. The chevron discloses, the row selects. */
+ *  outline. The chevron discloses, the row selects. */
 function LocationField({
   values,
   sets,
@@ -301,7 +301,7 @@ function LocationField({
         icon={<EntityIcon kind="set" icon={s.icon} size="body" />}
         // The row picks a value here, so the chevron is the only way into a child Set — it survives
         // the Hide Chevrons personalization, and a leaf holds its width so glyphs stay in one column.
-        twisty={kids.length > 0 ? 'chevron' : 'spacer'}
+        dropOutline={kids.length > 0 ? 'chevron' : 'spacer'}
         open={expanded.has(s.id)}
         onToggle={() => expanded.toggle(s.id)}
         onClick={() => toggle(s.id)}

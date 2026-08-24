@@ -1,7 +1,7 @@
 import { globalStyle, keyframes, style } from '@vanilla-extract/css'
-import { titleReveal } from '../design-system/animations.css'
-import { vars as colorVars } from '../design-system/tokens/color.css'
-import { duration } from '../design-system/tokens/motion'
+import { titleReveal } from '@renderer/DesignSystem/Animation/animations.css'
+import { vars as colorVars } from '@renderer/DesignSystem/Tokens/color.css'
+import { duration } from '@renderer/DesignSystem/Animation'
 import { SEGMENT_H, segmentRow, settingsBtn } from '../Detail/ActionBand.css'
 import { EMBED_SCALE_DEFAULT, embedZoom, viewEmbedZoom } from '@shared/types'
 
@@ -119,7 +119,7 @@ const viewSwitchSlide = keyframes({
 export const slideWrap = style({
   animationName: viewSwitchSlide,
   animationDuration: 'var(--duration-base)',
-  animationTimingFunction: 'var(--ease-standard)',
+  animationTimingFunction: 'var(--ease-base)',
 })
 
 export const spacer = style({ flex: '1 1 auto' })
@@ -129,7 +129,7 @@ export const spacer = style({ flex: '1 1 auto' })
 export const newViewReveal = style({
   display: 'inline-flex',
   opacity: 0,
-  transition: 'opacity var(--duration-fast) var(--ease-standard)',
+  transition: 'opacity var(--duration-fast) var(--ease-base)',
 })
 globalStyle(`${switcherRow}:hover ${newViewReveal}`, { opacity: 1 })
 
@@ -189,7 +189,7 @@ globalStyle(`${body} .cards-view .cards-grid, ${body} .cards-view .set-cards-row
 })
 // GLYPH parity with the embedded table's bands, not box parity: the table floats its chevron out
 // of flow (glyph flush at its 20px-real grid start), while the cards chevron is in flow ahead of
-// the glyph — so the cards lead subtracts that chevron cluster (the twisty's 12px Icon + the band
+// the glyph — so the cards lead subtracts that chevron cluster (the outline's 12px Icon + the band
 // gap), in-zoom AFTER the division; the fold-gutter anchor alone holds in real px.
 globalStyle(`${body} .cards-view .group-band-row`, {
   paddingLeft: `calc(var(--fold-gutter) / (var(--zoom, 1) * var(--block-zoom, 1)) - (12px + var(--cell-icon-gap, 6px)))`,

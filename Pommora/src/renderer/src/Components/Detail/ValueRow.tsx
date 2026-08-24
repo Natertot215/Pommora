@@ -1,7 +1,7 @@
-import { Icon } from '@renderer/design-system/symbols'
-import { MenuItem } from '../../design-system/components/menu'
-import { flushTrailing } from '../../design-system/components/menu/menu.css'
-import { cx } from '../../design-system/cx'
+import { Icon } from '@renderer/DesignSystem/Symbols'
+import { MenuItem } from '@renderer/DesignSystem/Components/Menu'
+import { flushTrailing } from '@renderer/DesignSystem/Components/Menu/menu.css'
+import { cx } from '@renderer/DesignSystem/Util/cx'
 import { PickerControl, type PickerChoice } from './PickerControl'
 import * as gp from './groupingPane.css'
 

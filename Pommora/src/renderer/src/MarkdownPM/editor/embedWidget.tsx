@@ -24,12 +24,12 @@ import {
   type ViewUpdate,
   WidgetType,
 } from '@codemirror/view'
-import { cx } from '@renderer/design-system/cx'
-import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
-import { clamp } from '@renderer/design-system/clamp'
-import { TILE_DEFAULT_PX, TILE_GAP_PX, TILE_MIN_PX } from '@renderer/design-system/tokens/size.css'
+import { cx } from '@renderer/DesignSystem/Util/cx'
+import { usePointerGesture } from '@renderer/DesignSystem/Interactions/gesture'
+import { clamp } from '@renderer/DesignSystem/Util/clamp'
+import { TILE_DEFAULT_PX, TILE_GAP_PX, TILE_MIN_PX } from '@renderer/DesignSystem/Tokens/size.css'
 import { normalizeTitle, pageEmbedText, titleFromPath } from '@shared/connections'
-import '@renderer/design-system/tile-chassis.css'
+import '@renderer/DesignSystem/Detail/tile-chassis.css'
 import { loneWebpageEmbed } from '@shared/webpageEmbed'
 import { DEFAULT_ZOOM, zoomStep } from '@renderer/Blocks/blockZoom'
 import { docScan } from './docCache'

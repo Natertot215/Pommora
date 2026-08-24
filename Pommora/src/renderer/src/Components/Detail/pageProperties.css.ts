@@ -1,8 +1,8 @@
 import { style } from '@vanilla-extract/css'
-import { vars as colorVars } from '../../design-system/tokens/color.css'
-import { text } from '../../design-system/tokens/typography.css'
-import { item, titleText } from '../../design-system/components/menu/menu.css'
-import { growToContent } from '../../design-system/components/menu/paneGrowth'
+import { vars as colorVars } from '@renderer/DesignSystem/Tokens/color.css'
+import { text } from '@renderer/DesignSystem/Tokens/typography.css'
+import { item, titleText } from '@renderer/DesignSystem/Components/Menu/menu.css'
+import { growToContent } from '@renderer/DesignSystem/Components/Menu/paneGrowth'
 
 const c = colorVars.color
 

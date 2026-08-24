@@ -23,11 +23,11 @@
      fast beat so the segment (sibling, below) appears FIRST and the tab then slides out beside it; color
      is the active fade. */
   transition:
-    color var(--duration-base) var(--ease-standard),
-    max-width var(--duration-base) var(--ease-standard) var(--duration-fast),
-    min-width var(--duration-base) var(--ease-standard) var(--duration-fast),
-    padding var(--duration-base) var(--ease-standard) var(--duration-fast),
-    opacity var(--duration-base) var(--ease-standard) var(--duration-fast);
+    color var(--duration-base) var(--ease-base),
+    max-width var(--duration-base) var(--ease-base) var(--duration-fast),
+    min-width var(--duration-base) var(--ease-base) var(--duration-fast),
+    padding var(--duration-base) var(--ease-base) var(--duration-fast),
+    opacity var(--duration-base) var(--ease-base) var(--duration-fast);
 }
 /* A tab opens by growing from nothing (the neighbors reflow with it). */
 @starting-style {
@@ -58,21 +58,15 @@
 .tab.is-dragging {
   opacity: var(--state-ghost);
 }
-/* The inter-tab segment — a SIBLING pill (not a ::before) rendered before every tab but the first, so
-   the tab's overflow:hidden can't clip it as the tab collapses to 0. It RIDES the tab's own motion:
-   the same base duration and the same fast open-delay, so it fades in exactly while the tab slides
-   out, and collapses in step with it on close (is-closing zeroes the delay, like the tab's). */
+/* A SIBLING pill (not a ::before) so the tab's overflow:hidden can't clip it as the tab collapses to 0.
+   Width flows through --segment-width so it animates with the tab; is-closing zeroes it in step. */
 .tab-seg {
-  flex: 0 0 auto;
-  align-self: center;
-  width: var(--tab-divider-w, 2px);
+  --segment-width: var(--tab-divider-w, 2px);
   height: var(--tab-divider-h, 16px);
-  background: var(--separator-segment);
-  border-radius: var(--radius-full);
   pointer-events: none;
   transition:
-    opacity var(--duration-base) var(--ease-standard) var(--duration-fast),
-    width var(--duration-base) var(--ease-standard) var(--duration-fast);
+    opacity var(--duration-base) var(--ease-base) var(--duration-fast),
+    width var(--duration-base) var(--ease-base) var(--duration-fast);
 }
 @starting-style {
   .tab-seg {
@@ -80,7 +74,7 @@
   }
 }
 .tab-seg.is-closing {
-  width: 0;
+  --segment-width: 0;
   opacity: 0;
   transition-delay: 0s;
 }
@@ -103,10 +97,10 @@
   }
 }
 .nav-slide-back {
-  animation: tab-nav-slide-back var(--duration-base) var(--ease-standard);
+  animation: tab-nav-slide-back var(--duration-base) var(--ease-base);
 }
 .nav-slide-fwd {
-  animation: tab-nav-slide-fwd var(--duration-base) var(--ease-standard);
+  animation: tab-nav-slide-fwd var(--duration-base) var(--ease-base);
 }
 .tab-label {
   flex: 1;
@@ -127,8 +121,8 @@
   border-radius: 5px;
   color: var(--label-secondary);
   transition:
-    opacity var(--duration-fast) var(--ease-standard),
-    background var(--duration-fast) var(--ease-standard);
+    opacity var(--duration-fast) var(--ease-base),
+    background var(--duration-fast) var(--ease-base);
 }
 .tab-x.tab-x {
   padding: 3px;

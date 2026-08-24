@@ -19,7 +19,7 @@ import { NexusSettings } from './Settings/NexusSettings'
 import { ConnectionHoverCard } from './Embeds/ConnectionHoverCard'
 import { contextTargetToSelect } from './Tabs/tabsModel'
 import { useNavThumbnails } from './Navigation/useNavThumbnails'
-import { Icon } from '@renderer/design-system/symbols'
+import { Icon } from '@renderer/DesignSystem/Symbols'
 import { matchesCommand } from './Commands'
 import { openWebLink } from './openWebLink'
 

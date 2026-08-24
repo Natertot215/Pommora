@@ -1,6 +1,6 @@
-import { Icon } from '@renderer/design-system/symbols'
-import { ICON_PX, type IconSize } from '@renderer/design-system/tokens/size.css'
-import { cx } from '@renderer/design-system/cx'
+import { Icon } from '@renderer/DesignSystem/Symbols'
+import { ICON_PX, type IconSize } from '@renderer/DesignSystem/Tokens/size.css'
+import { cx } from '@renderer/DesignSystem/Util/cx'
 
 import { useAssetUrl, useSession } from '../store'
 import type { ResolvedNav } from './navResolve'

@@ -4,7 +4,7 @@
 
 import { toNavRef } from '@shared/types'
 import type { NavRef, SelectTarget } from '@shared/types'
-import { moveItem } from '@renderer/design-system/moveItem'
+import { moveItem } from '@renderer/DesignSystem/Util/moveItem'
 
 /** Generous default history depth (deep history + a tunable cap, not a tight ~50). */
 export const RECENTS_CAP = 100

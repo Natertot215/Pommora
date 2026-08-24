@@ -1,18 +1,18 @@
 import { globalStyle, style } from '@vanilla-extract/css'
-import { vars as colorVars } from '../../design-system/tokens/color.css'
-import { text } from '../../design-system/tokens/typography.css'
-import type { IconSize } from '../../design-system/tokens/size.css'
-import { duration, easing } from '../../design-system/tokens/motion'
+import { vars as colorVars } from '@renderer/DesignSystem/Tokens/color.css'
+import { text } from '@renderer/DesignSystem/Tokens/typography.css'
+import type { IconSize } from '@renderer/DesignSystem/Tokens/size.css'
+import { duration, easing } from '@renderer/DesignSystem/Animation'
 import {
   accessoryButton,
   accessoryGhostRest,
   footingLabel,
   titleText,
-} from '../../design-system/components/menu/menu.css'
-import { surface } from '../../design-system/components/menu/menuSurface.css'
-import { dropdownAnchor } from '../../design-system/components/dropdownAnchor'
-import { stack } from '../../design-system/tokens/stack'
-import { fieldRing } from '../../design-system/fields/fieldRing'
+} from '@renderer/DesignSystem/Components/Menu/menu.css'
+import { surface } from '@renderer/DesignSystem/Components/Menu/menuSurface.css'
+import { dropdownAnchor } from '@renderer/DesignSystem/Components/dropdownAnchor'
+import { stack } from '@renderer/DesignSystem/Tokens/stack'
+import { fieldRing } from '@renderer/DesignSystem/Components/Fields/fieldRing'
 
 const c = colorVars.color
 
@@ -54,9 +54,8 @@ export const ICON = {
   add: 'body', // the header ⊕ (square-plus) — sized to the back-row heading
   editorMenu: 'body', // the editor header's ⋮ — sized to the back-row heading
   doc: 'control', // the property-type icon on every row (assigned · registry · type picker)
-  rowChevron: 'title3', // the trailing › on navigable rows (root entries + assigned rows)
   rootEntry: 'title3', // the root menu's leading icons (Properties · Visibility · …)
-  twisty: 'control', // the All Properties disclosure chevron
+  dropOutline: 'control', // the All Properties disclosure chevron
   rowPlus: 'control', // the registry row's + glyph
   eye: 'body', // the Visibility pane's eye / eye-off glyph
   optionsAdd: 'control', // the option editor's "Options" + glyph
@@ -153,7 +152,7 @@ export const topRowAction = style([
  *  to meet the assigned rows while its list unfolds beneath. */
 export const allSpacer = style({
   flex: '1 1 0px',
-  transition: `flex-grow ${duration.base} ${easing.standard}`,
+  transition: `flex-grow ${duration.base} ${easing.baseEase}`,
 })
 export const allSpacerCollapsed = style({ flexGrow: 0 })
 
@@ -163,7 +162,7 @@ export const allSpacerCollapsed = style({ flexGrow: 0 })
 export const allHeadingRow = style({
   // The pane's beat, not the disclosure beat: this row's chevron, its Reveal unfold and the elastic
   // spacer's height-resize all have to land together, and the other two run on `base`.
-  vars: { '--twisty-beat': 'var(--duration-base)' },
+  vars: { '--drop-outline-beat': 'var(--duration-base)' },
   display: 'flex',
   alignItems: 'center',
   gap: '4px',
@@ -304,7 +303,7 @@ export const groupAdd = style([
   optionsAdd,
   {
     opacity: 0,
-    transition: `opacity ${duration.fast} ${easing.standard}, background ${duration.fast} ${easing.standard}`,
+    transition: `opacity ${duration.fast} ${easing.baseEase}, background ${duration.fast} ${easing.baseEase}`,
     selectors: {
       [`${statusGroup}:hover &`]: { opacity: 1 },
       '&&': { color: c.label.tertiary },
@@ -360,7 +359,7 @@ export const paletteButton = style([
   accessoryButton,
   {
     opacity: 0,
-    transition: `opacity ${duration.fast} ${easing.standard}, background ${duration.fast} ${easing.standard}`,
+    transition: `opacity ${duration.fast} ${easing.baseEase}, background ${duration.fast} ${easing.baseEase}`,
     selectors: {
       [`${optionRow}:hover &`]: { opacity: 'var(--state-ghost)' },
       [`${optionRow}:hover &:hover`]: { opacity: 1, background: COLOR.iconHover },

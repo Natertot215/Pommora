@@ -8,7 +8,7 @@ import {
   type Text,
   type Range,
 } from '@codemirror/state'
-import { duration } from '@renderer/design-system/tokens/motion'
+import { duration, ms } from '@renderer/DesignSystem/Animation'
 import { docScan } from './docCache'
 import { headingSections } from './headingScan'
 import { createBlockDragGesture } from './blockDrag'
@@ -32,7 +32,7 @@ export interface FoldsApi {
 /** The reveal's own beat, plus slack for the frame that draws its final height. Anything measuring a
  *  section that just opened has to wait it out: a folded region has no height to scroll to, so a
  *  travel timed any earlier lands on the collapsed document. */
-export const FOLD_SETTLE_MS = Number.parseInt(duration.disclosure, 10) + 30
+export const FOLD_SETTLE_MS = ms(duration.fast) + 30
 
 /** Marks the mount-time re-apply of saved folds so the persist listener doesn't echo it straight back to disk. */
 const initialFoldAnnotation = Annotation.define<boolean>()
@@ -151,8 +151,8 @@ type Phase = 'collapsing' | 'collapsed' | 'expanding'
 interface FoldEntry {
   kind: FoldKind
   anchor: number
-  from: number // first body line start
-  to: number // last body line end
+  from: number
+  to: number
   phase: Phase
   /** The folded body's line DOM, captured when it was still on screen. It rides the ENTRY rather
    *  than a map beside it: the entry is what remaps when the document moves, and a clone kept under
@@ -170,8 +170,8 @@ const foldEffect = StateEffect.define<{
   animate: boolean
   clone?: HTMLElement
 }>()
-const settleEffect = StateEffect.define<number>() // collapsing → collapsed (animation done)
-const expandEffect = StateEffect.define<number>() // collapsed → expanding (start opening)
+const settleEffect = StateEffect.define<number>()
+const expandEffect = StateEffect.define<number>()
 const dropEffect = StateEffect.define<number>() // expanding done → remove the fold
 
 function cloneBody(view: EditorView, from: number, to: number): HTMLElement {

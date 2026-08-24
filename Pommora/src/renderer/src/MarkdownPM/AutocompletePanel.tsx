@@ -1,10 +1,10 @@
 import { useRef } from 'react'
 import { EntityIcon } from '@renderer/Components/EntityIcon'
-import { Icon } from '@renderer/design-system/symbols'
-import { PickerMenu } from '@renderer/design-system/components/PickerMenu'
-import { HoverRemove, hoverRemoveHost } from '@renderer/design-system/interactions/HoverRemove'
-import { cx } from '@renderer/design-system/cx'
-import { overScrollEllipsis } from '@renderer/design-system/interactions/OverScroll'
+import { Icon } from '@renderer/DesignSystem/Symbols'
+import { PickerMenu } from '@renderer/DesignSystem/Components/Pickers/PickerMenu'
+import { HoverRemove, hoverRemoveHost } from '@renderer/DesignSystem/Interactions/HoverRemove'
+import { cx } from '@renderer/DesignSystem/Util/cx'
+import { overScrollEllipsis } from '@renderer/DesignSystem/Interactions/OverScroll'
 import type { AcRow } from './autocomplete'
 
 interface Props {

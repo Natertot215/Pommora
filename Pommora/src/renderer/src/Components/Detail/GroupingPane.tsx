@@ -10,7 +10,7 @@ import type {
   StructuralOrderMode,
   SubGroupConfig,
 } from '@shared/views'
-import { Icon, asRenderableIcon } from '@renderer/design-system/symbols'
+import { Icon, asRenderableIcon } from '@renderer/DesignSystem/Symbols'
 import {
   DisclosureRow,
   MenuItem,
@@ -19,16 +19,16 @@ import {
   MenuScrollFrame,
   MenuBottomRow,
   useDisclosureSet,
-} from '../../design-system/components/menu'
+} from '@renderer/DesignSystem/Components/Menu'
 import {
   flushTrailing,
   footingLabel,
   footingSymbol,
-} from '../../design-system/components/menu/menu.css'
-import { registerDiscloseTarget } from '../../design-system/interactions/dragDisclose'
-import { DragGhost } from '@renderer/design-system/interactions/DragGhost'
+} from '@renderer/DesignSystem/Components/Menu/menu.css'
+import { registerDiscloseTarget } from '@renderer/DesignSystem/Interactions/dragDisclose'
+import { DragGhost } from '@renderer/DesignSystem/Interactions/DragGhost'
 import { EyeToggle } from './EyeToggle'
-import { DualSwitch } from '../../design-system/components/Switches/DualSwitch'
+import { DualSwitch } from '@renderer/DesignSystem/Components/Controls/Switches/DualSwitch'
 import { useSaveView } from '@renderer/Embeds/ViewEmbedScope'
 import { declaredType } from '../../Detail/Views/pipeline/value'
 import {
@@ -43,8 +43,8 @@ import type { Band } from '../../Detail/Views/bandDndModel'
 import { reparentFsOrder, structuralOrderAfterDrop } from '../../Detail/Views/bandDndModel'
 import { nextOrder } from '@renderer/Sidebar/sidebarDndModel'
 import { EntityIcon } from '@renderer/Components/EntityIcon'
-import { labelColorFor } from '../../design-system/tokens/colorMap'
-import { cx } from '../../design-system/cx'
+import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
+import { cx } from '@renderer/DesignSystem/Util/cx'
 import { useSession } from '../../store'
 import { PickerControl, type PickerChoice } from './PickerControl'
 import { ValueRow } from './ValueRow'
@@ -52,7 +52,7 @@ import { propertyTypeIconName } from './PropertyTypes'
 import { useGroupingListDrag, type GroupingDrop } from './groupingDnd'
 import { hiddenRow } from './settingsPane.css'
 import * as gp from './groupingPane.css'
-import { Label, optionShapeFor } from '@renderer/design-system/labels'
+import { Label, optionShapeFor } from '@renderer/DesignSystem/Labels'
 
 /** Checkbox is deliberately absent — the pipeline still renders it from a foreign sidecar; the
  *  pane never authors it. */
@@ -732,7 +732,7 @@ function LocationHierarchy({
         key={s.id}
         title={s.title}
         icon={<EntityIcon kind="set" icon={s.icon} size="body" />}
-        twisty={disclosable && !hideChevrons ? 'chevron' : 'none'}
+        dropOutline={disclosable && !hideChevrons ? 'chevron' : 'none'}
         open={expanded.has(s.id)}
         onToggle={() => expanded.toggle(s.id)}
         onClick={disclosable ? () => expanded.toggle(s.id) : undefined}

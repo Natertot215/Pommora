@@ -1,6 +1,10 @@
 import { type Ref, useState } from 'react'
-import { InputField, RenamableLabel, input as fieldInputClass } from '../../design-system/fields'
-import { Icon } from '../../design-system/symbols'
+import {
+  InputField,
+  RenamableLabel,
+  input as fieldInputClass,
+} from '@renderer/DesignSystem/Components/Fields'
+import { Icon } from '@renderer/DesignSystem/Symbols'
 import { DashIcon } from './DashIcon'
 import * as s from './settingsPane.css'
 

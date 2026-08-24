@@ -1,6 +1,6 @@
 import { style } from '@vanilla-extract/css'
-import { TINT_STEPS, text, tintAt, vars } from '@renderer/design-system/tokens'
-import { stack } from '@renderer/design-system/tokens/stack'
+import { TINT_STEPS, text, tintAt, vars } from '@renderer/DesignSystem/Tokens'
+import { stack } from '@renderer/DesignSystem/Tokens/stack'
 
 const c = vars.color
 

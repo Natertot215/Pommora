@@ -8,14 +8,14 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react'
-import { cx } from '@renderer/design-system/cx'
-import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
-import { useDragSnapshot } from '@renderer/design-system/interactions/snapshot'
-import { EDITABLE_TARGETS, GHOST_OFFSET } from '@renderer/design-system/interactions/shared'
-import { DragGhost } from '@renderer/design-system/interactions/DragGhost'
-import { DropLine } from '@renderer/design-system/interactions/DropLine'
-import { armAutoScroll } from '@renderer/design-system/interactions/autoscroll'
-import { announce } from '@renderer/design-system/interactions/a11y'
+import { cx } from '@renderer/DesignSystem/Util/cx'
+import { usePointerGesture } from '@renderer/DesignSystem/Interactions/gesture'
+import { useDragSnapshot } from '@renderer/DesignSystem/Interactions/snapshot'
+import { EDITABLE_TARGETS, GHOST_OFFSET } from '@renderer/DesignSystem/Interactions/shared'
+import { DragGhost } from '@renderer/DesignSystem/Interactions/DragGhost'
+import { DropLine } from '@renderer/DesignSystem/Interactions/DropLine'
+import { armAutoScroll } from '@renderer/DesignSystem/Interactions/autoscroll'
+import { announce } from '@renderer/DesignSystem/Interactions/a11y'
 import type { MeasuredRow } from '@renderer/Sidebar/sidebarDndModel'
 import { type PaneDrop, type PaneRow, type PaneSlot, type Region, paneSlot } from './paneDndModel'
 import * as s from './settingsPane.css'
@@ -159,7 +159,7 @@ export function PaneDnd({
   }
 
   const begin = (id: string, e: ReactPointerEvent): void => {
-    // `button` beyond the band guard: a row's +, the twisty, and rename inputs never arm a drag.
+    // `button` beyond the band guard: a row's +, the outline, and rename inputs never arm a drag.
     if ((e.target as HTMLElement).closest?.(`button, ${EDITABLE_TARGETS}`)) return
     const el = els.current.get(id)
     if (!el) return

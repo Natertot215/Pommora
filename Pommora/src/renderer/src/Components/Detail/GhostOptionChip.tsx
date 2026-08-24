@@ -4,16 +4,16 @@
 // does, so the dwell before it arms, the grace on a leave, and the disclosure beat are the table's
 // rather than this surface's own; only the thing being created differs.
 import { useRef } from 'react'
-import { Reveal } from '@renderer/design-system/components/Reveal'
+import { Reveal } from '@renderer/DesignSystem/Animation/Reveal'
 import {
   GHOST_DWELL_MS,
   useGhostAnchor,
   type GhostAnchor,
 } from '@renderer/Detail/Views/useGhostAnchor'
-import { cx } from '@renderer/design-system/cx'
-import { bare, EditableInput } from '../../design-system/fields'
+import { cx } from '@renderer/DesignSystem/Util/cx'
+import { bare, EditableInput } from '@renderer/DesignSystem/Components/Fields'
 import * as s from './settingsPane.css'
-import { Label, type LabelShape } from '@renderer/design-system/labels'
+import { Label, type LabelShape } from '@renderer/DesignSystem/Labels'
 
 // The table's grace: the slot sits flush under the list it joins, so a leave closes it immediately
 // and landing in the slot keeps it alive either way.

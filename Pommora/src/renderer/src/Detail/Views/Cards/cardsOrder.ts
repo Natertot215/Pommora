@@ -2,7 +2,7 @@
 // The manual-order gate the pipeline sorter reads lives in pipeline/sort.ts (resolveManualOrder), shared
 // with the table.
 
-import { moveItem } from '@renderer/design-system/moveItem'
+import { moveItem } from '@renderer/DesignSystem/Util/moveItem'
 
 export function reorderIds(ids: string[], activeId: string, overId: string): string[] {
   const from = ids.indexOf(activeId)

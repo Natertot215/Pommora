@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { cx } from '@renderer/design-system/cx'
-import { bare } from '@renderer/design-system/fields'
+import { cx } from '@renderer/DesignSystem/Util/cx'
+import { bare } from '@renderer/DesignSystem/Components/Fields'
 
 /**
  * Table-agnostic: raw text in/out — the caller owns the value typing, parsing, and write.

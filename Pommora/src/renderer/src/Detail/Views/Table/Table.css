@@ -60,7 +60,7 @@
 .table-grid.col-sliding .table-head,
 .table-grid.col-sliding .data-row {
   /* biome-ignore lint/complexity/noImportantStyles: must beat the base row rule that suppresses column transitions. */
-  transition: grid-template-columns var(--disclosure) var(--ease-standard) !important;
+  transition: grid-template-columns var(--duration-fast) var(--ease-base) !important;
 }
 
 .table-head {
@@ -233,7 +233,7 @@
 
 /* Borderless structure-on-demand — with the body lines gone, structure surfaces only while you're changing
    columns: resizing or reordering fades the vertical dividers back in for reference, and the cell you're
-   editing wears a faint rounded accent ring. Both ride --ease-standard so they fade in and close smoothly. */
+   editing wears a faint rounded accent ring. Both ride --ease-base so they fade in and close smoothly. */
 .table-grid.no-borders .data-cell {
   position: relative;
 }
@@ -246,7 +246,7 @@
   width: var(--table-border-width);
   background: var(--separator-border);
   opacity: 0;
-  transition: opacity var(--duration-base) var(--ease-standard);
+  transition: opacity var(--duration-base) var(--ease-base);
   pointer-events: none;
 }
 .table-grid.no-borders.col-resizing-active .data-cell::after,
@@ -261,7 +261,7 @@
   border: var(--table-border-width) solid var(--accent-stroke);
   border-radius: var(--cell-active-radius);
   opacity: 0;
-  transition: opacity var(--duration-base) var(--ease-standard);
+  transition: opacity var(--duration-base) var(--ease-base);
   pointer-events: none;
 }
 .table-grid.no-borders .data-cell.cell-active::before {
@@ -357,7 +357,7 @@
   color: var(--label-tertiary);
   cursor: grab;
   opacity: 0;
-  transition: opacity var(--duration-fast) var(--ease-standard);
+  transition: opacity var(--duration-fast) var(--ease-base);
 }
 .data-row:hover .row-grip {
   opacity: 1;
@@ -366,7 +366,7 @@
   cursor: grabbing;
 }
 
-/* The shared disclosure head (twisty + glyph + hover "+") over the group's rows, a full-width band off
+/* The shared disclosure head (outline + glyph + hover "+") over the group's rows, a full-width band off
    the column grid. The chrome lives on .group-band-* (GroupBand.css); the table scopes the section
    rhythm (the row), the sticky pin (the head), and the gutter chevron. */
 .table-view .group-band-row {
@@ -389,7 +389,7 @@
 /* Band drag states live with the band — GroupBand.css (Cards renders the same bands). */
 /* The chevron floats into the views gutter, one --gutter left of the head content (which starts flush
    on the grid — groupIndent has no cell-padding-x base), landing in the grip lane. */
-.table-view .group-band-twisty {
+.table-view .group-band-drop-outline {
   position: absolute;
   left: calc(-1 * var(--gutter));
   width: var(

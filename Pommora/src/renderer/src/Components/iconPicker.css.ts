@@ -1,8 +1,8 @@
 import { style } from '@vanilla-extract/css'
-import { TINT_STEPS, tintAt, vars } from '@renderer/design-system/tokens'
-import { focusRing } from '@renderer/design-system/fields/fieldRing'
-import { input } from '@renderer/design-system/fields/fields.css'
-import { separatorLine } from '@renderer/design-system/components/menu/menu.css'
+import { TINT_STEPS, tintAt, vars } from '@renderer/DesignSystem/Tokens'
+import { focusRing } from '@renderer/DesignSystem/Components/Fields/fieldRing'
+import { input } from '@renderer/DesignSystem/Components/Fields/fields.css'
+import { separatorLine } from '@renderer/DesignSystem/Components/Menu/menu.css'
 
 export const CELL = 34
 const GUTTER = 8

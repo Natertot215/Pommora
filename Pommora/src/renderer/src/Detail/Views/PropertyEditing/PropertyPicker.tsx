@@ -2,11 +2,14 @@ import type { RefObject } from 'react'
 import type { ColumnLook } from '@shared/columnStyles'
 import { type PropertyDefinition, statusOptions } from '@shared/properties'
 import type { PropertyValue } from '@shared/propertyValue'
-import { PickerMenu, PickerOption } from '@renderer/design-system/components/PickerMenu/PickerMenu'
-import { labelColorFor } from '@renderer/design-system/tokens/colorMap'
+import {
+  PickerMenu,
+  PickerOption,
+} from '@renderer/DesignSystem/Components/Pickers/PickerMenu/PickerMenu'
+import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import { statusGroupOf } from './statusCycle'
 import { StatusCapsule } from './StatusCapsule'
-import { ContextChip, Label, optionShapeFor } from '@renderer/design-system/labels'
+import { ContextChip, Label, optionShapeFor } from '@renderer/DesignSystem/Labels'
 
 /** A pickable option — status options flatten out of their groups, select/multi read
  *  `select_options`. An option is never filtered by what it's called: the starter options a new

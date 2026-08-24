@@ -61,8 +61,8 @@
   padding-left: calc(var(--content-inset) - var(--fold-gutter));
   padding-right: var(--content-inset-right);
   transition:
-    padding-left var(--duration-base) var(--ease-standard),
-    padding-right var(--duration-base) var(--ease-standard);
+    padding-left var(--duration-base) var(--ease-base),
+    padding-right var(--duration-base) var(--ease-base);
 }
 .shell.is-resizing .mdpm-editor {
   transition: none;
@@ -170,8 +170,8 @@
   padding: var(--cite-divider-gap) 0;
   cursor: pointer;
   transition:
-    opacity var(--disclosure) var(--ease-standard),
-    filter var(--disclosure) var(--ease-standard);
+    opacity var(--duration-fast) var(--ease-base),
+    filter var(--duration-fast) var(--ease-base);
 }
 .mdpm-editor .cm-content.mdpm-cite-tail {
   padding-bottom: var(--cite-divider-gap);
@@ -230,7 +230,7 @@
    below such a block drifts from its heading by a scroll-dependent amount. A line ::before shares the
    heading's own layout box and can't drift. Closed: points right, dim + persistent (a standing affordance);
    open: points down, hover-only. KNOBS: --fold-gutter (chevron offset into the inset, the root token) ·
-   --fold-chevron-size · motion via --disclosure / --ease-standard. */
+   --fold-chevron-size · motion via --disclosure / --ease-base. */
 .mdpm-editor .cm-line.md-foldable {
   position: relative;
 }
@@ -248,8 +248,8 @@
   transform: translateY(-50%);
   cursor: pointer;
   transition:
-    transform var(--disclosure) var(--ease-standard),
-    opacity var(--disclosure) var(--ease-standard);
+    transform var(--duration-fast) var(--ease-base),
+    opacity var(--duration-fast) var(--ease-base);
 }
 .mdpm-editor .cm-line.md-fold-open::before {
   transform: translateY(-50%) rotate(90deg);
@@ -303,7 +303,7 @@
     --grip-top,
     calc(var(--box-head-pad, 0px) + 0.8em - var(--icon-body) / 2 * var(--glyph-scale))
   );
-  transition: opacity var(--duration-fast) var(--ease-standard);
+  transition: opacity var(--duration-fast) var(--ease-base);
 }
 .mdpm-editor .cm-line.md-block-handle.md-grip-hot::before {
   opacity: 1;
@@ -315,7 +315,7 @@
 /* The body collapses/expands on the sidebar's exact Reveal motion (grid 0fr↔1fr). */
 .mdpm-fold-reveal {
   display: grid;
-  transition: grid-template-rows var(--disclosure) var(--ease-standard);
+  transition: grid-template-rows var(--duration-fast) var(--ease-base);
 }
 .mdpm-fold-reveal-inner {
   overflow: hidden;
@@ -482,8 +482,8 @@
   -webkit-user-select: none;
   /* Scale animates on the standard beat — the registered --block-zoom interpolates. */
   transition:
-    border-color var(--duration-base) var(--ease-standard),
-    --block-zoom var(--duration-base) var(--ease-standard);
+    border-color var(--duration-base) var(--ease-base),
+    --block-zoom var(--duration-base) var(--ease-base);
 }
 .mdpm-embed-tile:hover,
 .mdpm-embed-tile.is-editing-tile {
@@ -1020,7 +1020,7 @@
   position: absolute;
   left: var(--grip-x);
   top: calc(var(--callout-gap) + var(--grip-y));
-  transition: opacity var(--duration-fast) var(--ease-standard, ease);
+  transition: opacity var(--duration-fast) var(--ease-base, ease);
   /* cursor:grab (shared) receives the press so the pseudo targets its line → the gesture fires. */
 }
 .mdpm-editor .cm-line.md-callout-first.md-grip-hot::after {
@@ -1129,7 +1129,7 @@
   border-radius: var(--md-box-radius);
   background: var(--state-hover);
   opacity: 0;
-  transition: opacity var(--duration-fast) var(--ease-standard);
+  transition: opacity var(--duration-fast) var(--ease-base);
 }
 .mdpm-editor .md-cb .md-cb-lang .md-cb-slot:hover::before {
   opacity: 1;
@@ -1145,7 +1145,7 @@
   height: 100%;
   color: var(--label-secondary);
   opacity: 0;
-  transition: opacity var(--duration-slow) var(--ease-standard);
+  transition: opacity var(--duration-slow) var(--ease-base);
 }
 /* THE COPY AFFORDANCE — the tag is a button as much as a label, so every block can be taken whole
    without selecting it. A language's own mark rests; the copy mark takes the slot under the pointer;

@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import type { OpenIn } from '@shared/types'
-import { Icon, entityIcon, iconNameOr, type IconName } from '@renderer/design-system/symbols'
+import { Icon, entityIcon, iconNameOr, type IconName } from '@renderer/DesignSystem/Symbols'
+import { PathChevron } from '@renderer/DesignSystem/Elements/PathChevron/PathChevron'
 import { EntityIcon } from '@renderer/Components/EntityIcon'
 import {
   detail as detailText,
@@ -8,8 +9,8 @@ import {
   footingSymbol,
   rowDisabled,
   side,
-} from '../../design-system/components/menu/menu.css'
-import { cx } from '../../design-system/cx'
+} from '@renderer/DesignSystem/Components/Menu/menu.css'
+import { cx } from '@renderer/DesignSystem/Util/cx'
 import { crumbRow, footerLock, footerLockActive, ICON } from './settingsPane.css'
 import { useSession } from '../../store'
 import { findCollection, findSet, findCollectionForSet } from '../../Detail/Scope'
@@ -29,7 +30,7 @@ import {
   MenuSeparator,
   MenuCaption,
   MenuPaneTopRow,
-} from '../../design-system/components/menu'
+} from '@renderer/DesignSystem/Components/Menu'
 import { IconPicker } from '../IconPicker'
 import { InlineEditHeader } from './InlineEditHeader'
 import { useViewEmbedScope } from '@renderer/Embeds/ViewEmbedScope'
@@ -141,7 +142,7 @@ export function SettingsPane(): React.JSX.Element | null {
             <span className={detailText}>
               {openInValue === 'page-preview' ? 'Preview' : 'Full Page'}
             </span>
-            <Icon name="chevrons-up-down" size={ICON.rowChevron} />
+            <Icon name="chevrons-up-down" size="control" />
           </span>
         }
         onClick={toggleOpenIn}
@@ -175,7 +176,7 @@ export function SettingsPane(): React.JSX.Element | null {
           key={e.id}
           className={cx(flushTrailing, frozen(e.id) && rowDisabled)}
           leading={<Icon name={e.icon} size={ICON.rootEntry} />}
-          trailing={<Icon name="chevron-right" size={ICON.rowChevron} />}
+          trailing={<Icon name="chevron-right" />}
           onClick={frozen(e.id) ? undefined : () => open(e.id)}
         >
           {e.label}
@@ -196,7 +197,7 @@ export function SettingsPane(): React.JSX.Element | null {
               <span>{schemaCollection.title}</span>
               {node.kind === 'set' && (
                 <>
-                  <span>›</span>
+                  <PathChevron size="caption" />
                   <span className={footingSymbol}>
                     <EntityIcon kind="set" icon={node.icon} size="control" />
                   </span>

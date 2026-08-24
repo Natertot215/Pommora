@@ -5,7 +5,7 @@
 // picks within one tile carry PommoraDND's hysteresis: near a quadrant diagonal
 // the previous edge holds until the new one genuinely beats it, killing flicker.
 
-import { HYSTERESIS } from '@renderer/design-system/interactions/shared'
+import { HYSTERESIS } from '@renderer/DesignSystem/Interactions/shared'
 import type { Edge, SurfaceLayout } from './model'
 import type { SurfaceGeometry } from './rects'
 

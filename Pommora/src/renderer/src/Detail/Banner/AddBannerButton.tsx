@@ -1,4 +1,4 @@
-import { Icon } from '@renderer/design-system/symbols'
+import { Icon } from '@renderer/DesignSystem/Symbols'
 
 export function AddBannerButton({ onClick }: { onClick: () => void }): React.JSX.Element {
   return (

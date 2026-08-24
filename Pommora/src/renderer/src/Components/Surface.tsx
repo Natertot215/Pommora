@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { GlassSurface } from '@renderer/design-system/materials'
+import { GlassSurface } from '@renderer/DesignSystem/Materials'
 
 // A floating glass overlay on top of the main view, so its backdrop-filter samples the app
 // content, never the desktop. Attaches to GlassSurface — the app's largest, backmost glass tier;

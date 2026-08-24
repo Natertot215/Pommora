@@ -1,4 +1,4 @@
-import type { IconName } from '@renderer/design-system/symbols'
+import type { IconName } from '@renderer/DesignSystem/Symbols'
 import type { PropertyDefinition, StatusGroupId } from '@shared/properties'
 
 const STATUS_GROUP_GLYPH: Record<string, IconName> = {

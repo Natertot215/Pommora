@@ -12,10 +12,10 @@
   max-width: var(--title-icon-w, 1em);
   overflow: hidden;
   transition:
-    max-width var(--duration-base) var(--ease-standard),
-    opacity var(--duration-base) var(--ease-standard),
-    transform var(--duration-base) var(--ease-standard),
-    margin-right var(--duration-base) var(--ease-standard);
+    max-width var(--duration-base) var(--ease-base),
+    opacity var(--duration-base) var(--ease-base),
+    transform var(--duration-base) var(--ease-base),
+    margin-right var(--duration-base) var(--ease-base);
 }
 .title-icon-reveal.is-hidden {
   max-width: 0;

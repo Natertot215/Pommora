@@ -1,14 +1,15 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { Icon } from '@renderer/design-system/symbols'
-import { cx } from '@renderer/design-system/cx'
-import { duration, easing, text } from '@renderer/design-system/tokens'
+import { Icon } from '@renderer/DesignSystem/Symbols'
+import { cx } from '@renderer/DesignSystem/Util/cx'
+import { duration, easing, ms } from '@renderer/DesignSystem/Animation'
+import { text } from '@renderer/DesignSystem/Tokens'
 import {
   PREVIEW_PANE_INSPECTOR,
   PreviewPane,
-} from '@renderer/design-system/components/PreviewPane/PreviewPane'
-import { SearchField } from '@renderer/design-system/fields'
+} from '@renderer/DesignSystem/Detail/PreviewPane/PreviewPane'
+import { SearchField } from '@renderer/DesignSystem/Components/Fields'
 import type { NavRef } from '@shared/types'
-import { useExitPresence } from '../design-system/useExitPresence'
+import { useExitPresence } from '@renderer/DesignSystem/Animation/useExitPresence'
 import { PageEmbed } from '../Embeds/PageEmbed'
 import type { ConnectionsApi } from '../MarkdownPM/connections'
 import { showConnectionMenu } from '../Embeds/connectionMenu'
@@ -84,7 +85,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
         },
         { transform: 'translate(0px, 0px) scale(1)' },
       ],
-      { duration: Number.parseInt(duration.base, 10), easing: easing.standard },
+      { duration: ms(duration.base), easing: easing.baseEase },
     )
   }, [])
   // The inspector is PAGE TABS ONLY (deliberate) — it dies on the map return.

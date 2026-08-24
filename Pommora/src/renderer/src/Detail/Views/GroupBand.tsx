@@ -2,13 +2,13 @@ import { EntityIcon } from '@renderer/Components/EntityIcon'
 import { type ReactNode, useEffect, useRef } from 'react'
 import type { CollectionNode, ResolvedGroup, SetNode } from '@shared/types'
 import type { SavedView } from '@shared/views'
-import { text } from '@renderer/design-system/tokens'
-import { labelColorFor } from '@renderer/design-system/tokens/colorMap'
-import { cx } from '@renderer/design-system/cx'
-import { bare } from '@renderer/design-system/fields'
-import { asRenderableIcon, Icon } from '@renderer/design-system/symbols'
-import { Reveal } from '@renderer/design-system/components/Reveal'
-import { registerDiscloseTarget } from '@renderer/design-system/interactions/dragDisclose'
+import { text } from '@renderer/DesignSystem/Tokens'
+import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
+import { cx } from '@renderer/DesignSystem/Util/cx'
+import { bare } from '@renderer/DesignSystem/Components/Fields'
+import { asRenderableIcon, Icon } from '@renderer/DesignSystem/Symbols'
+import { Reveal } from '@renderer/DesignSystem/Animation/Reveal'
+import { registerDiscloseTarget } from '@renderer/DesignSystem/Interactions/dragDisclose'
 import { RenamableTitle } from '@renderer/Components/RenamableTitle'
 import { declaredType } from './pipeline/value'
 import { findOption, groupLabel } from './Table/cellResolve'
@@ -16,9 +16,12 @@ import { CheckboxGlyph } from './Table/checkboxLook'
 import { formatBucketLabel } from './PropertyEditing/formatValue'
 import type { ResolveContext } from './Table/resolveContext'
 import './GroupBand.css'
-import { onActivateKey } from '@renderer/design-system/interactions/activate'
-import { twisty, twistyOpen } from '@renderer/design-system/components/menu/menu.css'
-import { ContextChip, Label, optionShapeFor } from '@renderer/design-system/labels'
+import { onActivateKey } from '@renderer/DesignSystem/Interactions/activate'
+import {
+  dropOutline,
+  dropOutlineOpen,
+} from '@renderer/DesignSystem/Elements/DropOutline/dropOutline.css'
+import { ContextChip, Label, optionShapeFor } from '@renderer/DesignSystem/Labels'
 
 /** The single home for group-band glyph resolution, shared by the table and cards views. Chip
  *  color/shape resolve from the schema here, so `ResolvedGroup` stays colorless. */
@@ -159,7 +162,7 @@ export interface BandDragHandle {
   isNestTarget: boolean
 }
 
-/** The twisty and "+" isolate their pointerdown so they never arm a band drag; a double-click's
+/** The outline and "+" isolate their pointerdown so they never arm a band drag; a double-click's
  *  two leading clicks also net out on the disclosure toggle (harmless, not a bug). */
 export function GroupBand({
   glyph,
@@ -226,7 +229,7 @@ export function GroupBand({
           >
             <button
               type="button"
-              className="group-band-twisty"
+              className="group-band-drop-outline"
               onClick={onToggle}
               onPointerDown={(e) => e.stopPropagation()}
               aria-label={collapsed ? 'Expand group' : 'Collapse group'}
@@ -234,8 +237,8 @@ export function GroupBand({
               <Icon
                 name="chevron-right"
                 size="control"
-                className={cx(twisty, !collapsed && twistyOpen)}
-                data-twisty
+                className={cx(dropOutline, !collapsed && dropOutlineOpen)}
+                data-drop-outline
               />
             </button>
             {/* biome-ignore lint/a11y/useSemanticElements: a real <button> cannot host this surface — it doubles as a drag handle and wraps block content */}
