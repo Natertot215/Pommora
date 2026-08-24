@@ -4,7 +4,7 @@ import { DISCLOSURE_INDENT } from '../../tokens/size.css'
 import { font, text } from '../../tokens/typography.css'
 import { duration, easing } from '../../tokens/motion'
 import { TINT_STEPS, tintAt } from '../../tokens/tint'
-import { fieldRing, ROW_RING } from '../fieldRing'
+import { fieldRing, ROW_RING } from '../../fields/fieldRing'
 
 const c = colorVars.color
 

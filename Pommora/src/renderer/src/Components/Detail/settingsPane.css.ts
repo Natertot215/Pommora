@@ -12,7 +12,7 @@ import {
 import { surface } from '../../design-system/components/menu/menuSurface.css'
 import { dropdownAnchor } from '../../design-system/components/dropdownAnchor'
 import { stack } from '../../design-system/tokens/stack'
-import { fieldRing } from '../../design-system/components/fieldRing'
+import { fieldRing } from '../../design-system/fields/fieldRing'
 
 const c = colorVars.color
 

@@ -1,7 +1,7 @@
 import { style } from '@vanilla-extract/css'
 import { vars as colorVars } from '../../design-system/tokens/color.css'
 import { text } from '../../design-system/tokens/typography.css'
-import { bare } from '../EditableInput.css'
+import { bare } from '../../design-system/fields/fields.css'
 
 /** The editor body — no flex `gap` (a collapsed Reveal would otherwise consume a phantom gap on each
  *  side, so hidden rows double the spacing around them); each Row carries its own top margin, which

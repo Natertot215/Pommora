@@ -1,5 +1,5 @@
 import { type Ref, useState } from 'react'
-import { InteractionField, fieldInputClass } from '../../design-system/components/InteractionField'
+import { InputField, fieldInputClass } from '../../design-system/fields'
 import { Icon } from '../../design-system/symbols'
 import { RenamableLabel } from '../RenamableLabel'
 import { DashIcon } from './DashIcon'
@@ -65,12 +65,12 @@ export function InlineEditHeader({
         }}
         onCancel={() => setEditing(false)}
       >
-        <InteractionField
+        <InputField
           className={s.titleField}
           onClick={readOnly ? undefined : () => setEditing(true)}
         >
           {value}
-        </InteractionField>
+        </InputField>
       </RenamableLabel>
     </div>
   )
