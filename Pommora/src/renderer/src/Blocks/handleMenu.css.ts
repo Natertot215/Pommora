@@ -11,7 +11,15 @@ export const PANE_W = 120
 // The stretch ceiling — a pane may grow to fit content up to this, then labels truncate.
 export const PANE_MAX_W = 180
 
-export const pane = style({ minWidth: PANE_W, maxWidth: PANE_MAX_W, boxSizing: 'border-box' })
+/** A column, so a pane's own rows fill its width: a `button` row sizes to fit-content in a block
+ *  box, which strands a trailing chosen-mark against the label instead of the pane's edge. */
+export const pane = style({
+  display: 'flex',
+  flexDirection: 'column',
+  minWidth: PANE_W,
+  maxWidth: PANE_MAX_W,
+  boxSizing: 'border-box',
+})
 
 /** The page-embed title field — the source page's identity as a bordered "field" reading like an
  *  input but acting as a link: clicking it opens the page full-view. Its border wears the accent tint

@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css'
-import { duration, easing } from '@renderer/DesignSystem/Animation'
+import { duration, easing } from '../../Animation'
 
 /** Clips the off-screen slot so the sliding panes stay inside the glass bounds. */
 export const viewport = style({ position: 'relative', overflow: 'hidden' })

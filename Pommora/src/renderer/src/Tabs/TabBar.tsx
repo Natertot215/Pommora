@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
+import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { OverScroll } from '@renderer/DesignSystem/Interactions/OverScroll'
@@ -259,16 +260,17 @@ function TabBarBody({
         </SortableZone>
       </div>
       {/* Outside the masked scroller — inside it, the edge fade would dim the parked + itself. */}
-      <button
-        type="button"
+      <Button
+        size="button-large"
+        paddingX="6px"
+        icon="plus"
+        iconSize="body"
         className="tab-plus"
         data-create
         aria-label="New Tab"
         title="New Tab"
         onClick={openNewTab}
-      >
-        <Icon name="plus" size="body" />
-      </button>
+      />
     </div>
   )
 }

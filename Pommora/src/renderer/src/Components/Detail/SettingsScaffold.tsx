@@ -2,11 +2,12 @@ import { useRef } from 'react'
 import { lockLabel } from '@shared/toggleLabels'
 import { useAssetUrl, useSession } from '../../store'
 import { DEFAULT_NEXUS_ICON, Icon } from '@renderer/DesignSystem/Symbols'
+import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
 import { InputField } from '@renderer/DesignSystem/Components/Fields'
 import { MenuBottomRow, MenuScrollFrame } from '@renderer/DesignSystem/Components/Menu'
 import { FooterLockButton } from '@renderer/DesignSystem/Components/Menu'
 import { IconPicker } from '../IconPicker'
-import { PhotoCropModal } from '../PhotoCropModal'
+import { PhotoCropModal } from '@renderer/DesignSystem/Detail/PhotoCropModal/PhotoCropModal'
 import { useNexusIcon } from '../useNexusIcon'
 import { blockHostKey, type BlockHostRef } from '@shared/blocks'
 
@@ -53,9 +54,11 @@ export function SettingsScaffold(): React.JSX.Element | null {
         }
       >
         <div className={s.header}>
-          <button
+          <Button
             ref={iconRef}
-            type="button"
+            type="filled"
+            size="button-medium"
+            paddingX="0"
             className={s.iconButton}
             onClick={() => void openMenu()}
             aria-label="Change the nexus icon or photo"
@@ -65,7 +68,7 @@ export function SettingsScaffold(): React.JSX.Element | null {
             ) : (
               <Icon name={profileIcon ?? DEFAULT_NEXUS_ICON} />
             )}
-          </button>
+          </Button>
           <InputField className={s.titleField}>{tree.nexus.name}</InputField>
         </div>
       </MenuScrollFrame>

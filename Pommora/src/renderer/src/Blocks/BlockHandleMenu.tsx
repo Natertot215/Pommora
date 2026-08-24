@@ -25,7 +25,7 @@ import {
   lockIcon,
   rowDisabled,
 } from '@renderer/DesignSystem/Components/Menu/menu.css'
-import { PaneSlider } from '@renderer/Components/Detail/PaneSlider'
+import { PaneSlider } from '@renderer/DesignSystem/Components/PaneSlider/PaneSlider'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { overScrollEllipsis } from '@renderer/DesignSystem/Interactions/OverScroll'
 import { ZOOM_STEPS, zoomStep } from './blockZoom'

@@ -190,7 +190,7 @@ function CheckboxDemo({ color }: { color: LabelColorName }): React.JSX.Element {
   )
 }
 
-const PENDING = ['Button', 'Separator', 'Row']
+const PENDING = ['Separator', 'Row']
 
 /** The two colorless shapes, which the shape rows can't show: those fan a shape across every chip
  *  color, and a file carries none of its own — its name and its type glyph are the whole content. */

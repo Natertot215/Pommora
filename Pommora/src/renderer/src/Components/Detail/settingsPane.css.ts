@@ -90,14 +90,6 @@ export const header = style({
 export const iconButton = style({
   flex: '0 0 auto',
   width: `${SIZE.iconPickerButton}px`,
-  height: `${SIZE.iconPickerButton}px`,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  borderRadius: '8px',
-  border: 'none',
-  background: c.fill.quaternary,
-  cursor: 'default',
   color: COLOR.actionLabel,
   boxShadow: fieldRing(),
 })

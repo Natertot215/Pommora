@@ -31,7 +31,7 @@ export const anchor = style(dropdownAnchor('center', stack.local.lifted))
 export const anchorRight = style(dropdownAnchor('right', stack.local.lifted))
 
 /** The trigger button — one padding for both states; the segment's own gap is zeroed so the collapsing
- *  label slot (segmented.css) is the sole icon↔title spacing, and the icon-only state sits flush. */
+ *  label slot (button.css) is the sole icon↔title spacing, and the icon-only state sits flush. */
 export const button = style({ paddingInline: BUTTON.padX })
 globalStyle(`${button} button`, { gap: 0 })
 
@@ -47,10 +47,5 @@ export const chrome = { wrapper, button, anchor }
  *  control-tone rule (0,1,1) would paint it bright — the `&&` (0,2,0) pins it to the row's trailing tone,
  *  matching the ViewSettings/SettingsPane nav chevrons (bare Icons the rule can't touch). */
 export const chevronButton = style({
-  border: 'none',
-  background: 'none',
-  padding: 0,
-  cursor: 'default',
-  display: 'flex',
   selectors: { '&&': { color: 'var(--label-secondary)' } },
 })
