@@ -29,6 +29,11 @@
      inspector opens instead of parking under the floating pane — one shared magnitude, no bespoke slide. */
   margin-right: calc(4px + var(--toolbar-swallow));
   pointer-events: auto;
+  /* Not an app-region: a native drag region never delivers hover to the renderer; the bar drags the
+     window through the JS mover instead, so the same pixels hover AND drag. */
+  -webkit-app-region: no-drag;
+}
+.tab-bar.reveal-on-hover {
   opacity: 0;
   transition: opacity var(--duration-base) var(--ease-base);
 }
