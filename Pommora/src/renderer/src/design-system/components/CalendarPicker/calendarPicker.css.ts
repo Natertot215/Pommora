@@ -254,8 +254,8 @@ export const timeSegInput = style([
     color: c.label.primary,
     selectors: {
       '&::selection': { background: 'transparent' },
-      // The set time, dimmed — the type-over hint (opacity:1 so only the token color dims it).
-      '&::placeholder': { color: c.label.tertiary, opacity: 1 },
+      // The set time as the type-over hint — the tone is the family's; opacity:1 so only it dims.
+      '&::placeholder': { opacity: 1 },
     },
   },
 ])

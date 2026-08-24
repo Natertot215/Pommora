@@ -132,12 +132,7 @@ export function IconPicker({
       bareSurface
       contentClassName={s.content}
     >
-      <SearchField
-        className={s.search}
-        placeholder="Search"
-        value={query}
-        onValueChange={setQuery}
-      />
+      <SearchField className={s.search} value={query} onValueChange={setQuery} />
       {favs.length === 0 && <div className={s.separator} />}
 
       <div ref={setScrollEl} className={cx(s.grid, 'over-scroll')}>

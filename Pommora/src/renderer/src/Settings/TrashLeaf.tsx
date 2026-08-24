@@ -249,7 +249,6 @@ export function TrashLeaf(): React.JSX.Element {
           className={text.body.standard}
           value={query}
           onValueChange={setQuery}
-          placeholder="Search…"
           // Escape belongs to the field while it holds a query; the window's own listener stands
           // down on a handled press, so clearing never also closes.
           onKeyDown={(e) => {
