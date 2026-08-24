@@ -10,7 +10,7 @@
 import { style } from '@vanilla-extract/css'
 import { vars as colorVars } from '../../design-system/tokens/color.css'
 import { text } from '../../design-system/tokens/typography.css'
-import { field as fieldBase, hairlineField } from '../../design-system/fields/fields.css'
+import { bare, field as fieldBase, hairlineField } from '../../design-system/fields/fields.css'
 import { focusRing } from '../../design-system/fields/fieldRing'
 import { growToContent } from '../../design-system/components/menu/paneGrowth'
 
@@ -180,6 +180,18 @@ export const cellInput = style([
     flex: '1 1 auto',
     minWidth: '52px',
     ...focusRing(),
+  },
+])
+
+/** The Location cell's typing caret — sits beside the picked labels; the picker filters live and
+ *  Enter applies the typed path as a value. */
+export const cellCaret = style([
+  bare,
+  {
+    flex: '1 1 auto',
+    minWidth: '24px',
+    fieldSizing: 'content',
+    color: c.label.control,
   },
 ])
 
