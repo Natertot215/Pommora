@@ -75,7 +75,6 @@ export function PickerMenu({
   header,
   footer,
   maxHeight,
-  width,
   bareSurface = false,
   manageFocus = true,
   contentClassName,
@@ -110,9 +109,6 @@ export function PickerMenu({
   header?: ReactNode
   footer?: ReactNode
   maxHeight?: number
-  /** Pair with `origin="left"`: without this, widening content near a viewport edge still drags
-   *  every row sideways via the position clamp. */
-  width?: number
   bareSurface?: boolean
   manageFocus?: boolean
   contentClassName?: string
@@ -320,7 +316,6 @@ export function PickerMenu({
     anchorHeight,
     bounds,
     anchorY,
-    width,
     onDirection,
   ])
 
@@ -412,7 +407,6 @@ export function PickerMenu({
       style={
         {
           ...(pos?.origin ? { '--dropdown-origin': pos.origin } : null),
-          ...(width !== undefined ? { width } : null),
           ...style,
           ...(closing ? { pointerEvents: 'none' as const } : null),
         } as CSSProperties

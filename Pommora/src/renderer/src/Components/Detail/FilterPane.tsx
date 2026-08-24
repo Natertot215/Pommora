@@ -26,8 +26,7 @@ import {
 import { PickerMenu, PickerOption } from '../../design-system/components/PickerMenu'
 import {
   PICKER_MAX_HEIGHT,
-  PICKER_TREE_MAX_WIDTH,
-  PICKER_TREE_MIN_WIDTH,
+  treePane,
 } from '../../design-system/components/PickerMenu/pickerMenu.css'
 import { OverScroll } from '../../design-system/interactions/OverScroll'
 import { Reveal } from '../../design-system/components/Reveal'
@@ -345,7 +344,7 @@ function LocationField({
         triggerRef={ref}
         origin="left"
         maxHeight={PICKER_MAX_HEIGHT}
-        style={{ minWidth: PICKER_TREE_MIN_WIDTH, maxWidth: PICKER_TREE_MAX_WIDTH }}
+        contentClassName={treePane}
       >
         {!open
           ? null
