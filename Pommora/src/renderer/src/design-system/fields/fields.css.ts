@@ -91,6 +91,17 @@ export const bare = style({
 
 export const placeholder = style({ color: c.label.tertiary })
 
+const CONTENT_FADE = '16px' // KNOB — the field content row's fade width
+
+/** The opt-in content row — the flex cap `over-scroll-x over-scroll-cap` scrolls inside. */
+export const contentRow = style({
+  display: 'flex',
+  alignItems: 'center',
+  flex: '1 1 auto',
+  minWidth: 0,
+  vars: { '--over-scroll-fade': CONTENT_FADE },
+})
+
 // Auto-sizing field: the input overlays a hidden mirror span in ONE grid cell, so the field
 // shrink-wraps to its text through CSS reflow — never a per-keystroke layout read. Font + padding
 // inherit from the caller's surface (the option chip), so the mirror measures in the same metrics.
