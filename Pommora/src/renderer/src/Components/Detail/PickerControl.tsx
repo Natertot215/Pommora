@@ -75,7 +75,7 @@ export function PickerControl<T extends string>({
   const trigger = (
     <span ref={ref} className={s.host}>
       {typing && typeable ? (
-        <span className={s.trigger}>
+        <span className={cx(s.trigger, valueClass)}>
           <EditableInput
             value={typeable.text}
             className={cx(valueClass, s.caretShape)}

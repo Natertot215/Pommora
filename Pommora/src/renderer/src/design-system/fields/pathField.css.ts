@@ -3,7 +3,7 @@
 // holds: it widens as the path deepens and gives way when the row runs out, at which point the run's
 // own fade eclipses the head rather than the field pushing its row wider.
 import { style } from '@vanilla-extract/css'
-import { hairlineField, placeholder as placeholderTone } from './fields.css'
+import { hairlineField, placeholder as fieldPlaceholder } from './fields.css'
 import { focusRing } from './fieldRing'
 import { vars as colorVars } from '../tokens/color.css'
 import { text } from '../tokens/typography.css'
@@ -70,4 +70,4 @@ export const input = style([
 ])
 
 /** What an unset path reads as — the default it falls back to, stated rather than left blank. */
-export const placeholder = style([text.body.standard, placeholderTone])
+export const placeholder = style([text.body.standard, fieldPlaceholder])

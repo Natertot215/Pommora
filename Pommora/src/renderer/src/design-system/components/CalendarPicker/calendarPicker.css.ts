@@ -251,6 +251,7 @@ export const timeSegInput = style([
     borderRadius: '5px',
     fontSize: font.scale.control.size,
     fontWeight: font.weight.emphasized,
+    lineHeight: 'normal',
     color: c.label.primary,
     selectors: {
       '&::selection': { background: 'transparent' },
