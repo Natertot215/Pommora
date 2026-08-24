@@ -22,8 +22,10 @@
 /* One container-title size for the banner overlay AND the banner-less header (DRY) — a
    non-banner view's title must not differ in size from a banner view's, and collections + sets
    (same Banner) stay identical. */
+/* The empty-title class is doubled: the rename input wears it beside the family reset, whose
+   `font` shorthand sits at the same weight — the title's scale must win on specificity. */
 .banner-title,
-.banner-empty-title {
+.banner-empty-title.banner-empty-title {
   font-size: var(--container-title-size);
   font-weight: var(--weight-semibold);
   color: var(--label-primary);
@@ -63,7 +65,7 @@
 }
 .banner-title .detail-title-icon,
 .banner-title .detail-title-text,
-.banner-title .detail-title-input {
+.banner-title .detail-title-input.detail-title-input {
   pointer-events: auto;
 }
 .banner-title .detail-title-icon {
@@ -147,7 +149,7 @@
   min-width: 0;
 }
 .banner-empty-title .detail-title-text,
-.banner-empty-title .detail-title-input {
+.banner-empty-title .detail-title-input.detail-title-input {
   font-weight: var(--weight-semibold);
   color: var(--label-primary);
 }

@@ -11,7 +11,6 @@ export function RenamableTitle({
   kind,
   title,
   className,
-  boxed,
   renames = 'row',
   host,
 }: {
@@ -19,8 +18,6 @@ export function RenamableTitle({
   kind: MutableKind
   title: string
   className: string
-  /** The field carries its own border and fill — see `EditableInput`. */
-  boxed?: boolean
   renames?: 'title' | 'row'
   host: RenameHost
 }): React.JSX.Element {
@@ -49,7 +46,6 @@ export function RenamableTitle({
       emptyInitial={owns && renamingCreate}
       value={title}
       className={className}
-      boxed={boxed}
       onCommit={(next) => void submitRename(path, kind, next)}
       onCancel={cancelRename}
     />
