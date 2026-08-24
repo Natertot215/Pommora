@@ -206,25 +206,25 @@ The ten selectable solids plus the neutral chip default and the ramp's pink seat
 
 #### Interactive Fields
 
-The field family — every input surface's chrome and editing behavior in one home. Three chrome axes compose every field look; the `--field-ring` channel carries rest, focus, and error tones through one inset shadow; the editing behaviors live beside the chrome they animate. A value inside a field is content and takes no chrome of its own ([[FileLabel]]); a new field-shaped surface composes these exports rather than restating them.
+The field family — every input surface's chrome and editing behavior in one home. Three chrome axes compose every field look; the `--field-ring` channel carries rest, focus, and error tones through one inset shadow; the editing behaviors live beside the chrome they animate. 
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/fields/`
 
-| Title | Token | Use Cases |
-| -------------- | ---------------------------------------------- | ------------------------------------------------------------------------------ |
-| InputField | `InputField` | The field box as a component; `capped` scrolls its content row under the fade. |
-| Boxed | `field` · `input` | The rounded quaternary-fill surface; `input` is the same chrome on a raw caret. |
-| Hairline | `hairlineField` | The tighter cell variant — its own width, the separator stroke on the channel. |
-| Bare | `bare` | No box at all: the caret reads as the text it replaced. |
-| Search | `search` | The transparent search look — border, fill, and placeholder tone stated once. |
-| Ring Channel | `fieldRing()` · `focusRing()` · `errorRing()` | One inset-shadow spelling; presets set only the `--field-ring` color. |
-| Placeholder | `placeholder` | The ghost-text tone — every field axis paints `::placeholder` with it, and the class carries it onto spans. |
-| Content Row | `contentRow` | The opt-in overflow cap `InputField capped` mounts. |
-| SearchField | `SearchField` · `SEARCH_PLACEHOLDER` | The controlled filter input four surfaces share — never spell-checked, reading the one search copy. |
-| PathField | `PathField` | A folder path: a FileLabel run at rest, the raw text under a click. |
-| EditableInput | `EditableInput` | The commit/cancel caret — Enter commits, Escape abandons, blur settles. |
-| RenamableLabel | `RenamableLabel` | The inline-rename swap; `title` seats the caret at the end, `row` selects all. |
-| Press-To-Edit | `useDraftEdit` | Rest content until a click, then a width-pinned draft with select-on-open. |
+| Title          | Token                                         | Use Cases                                                                                                   |
+| -------------- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| InputField     | `InputField`                                  | The field box as a component; `capped` scrolls its content row under the fade.                              |
+| Boxed          | `field` · `input`                             | The rounded quaternary-fill surface; `input` is the same chrome on a raw caret.                             |
+| Hairline       | `hairlineField`                               | The tighter cell variant — its own width, the separator stroke on the channel.                              |
+| Bare           | `bare`                                        | No box at all: the caret reads as the text it replaced.                                                     |
+| Search         | `search`                                      | The transparent search look — border, fill, and placeholder tone stated once.                               |
+| Ring Channel   | `fieldRing()` · `focusRing()` · `errorRing()` | One inset-shadow spelling; presets set only the `--field-ring` color.                                       |
+| Placeholder    | `placeholder`                                 | The ghost-text tone — every field axis paints `::placeholder` with it, and the class carries it onto spans. |
+| Content Row    | `contentRow`                                  | The opt-in overflow cap `InputField capped` mounts.                                                         |
+| SearchField    | `SearchField` · `SEARCH_PLACEHOLDER`          | The controlled filter input four surfaces share — never spell-checked, reading the one search copy.         |
+| PathField      | `PathField`                                   | A folder path: a FileLabel run at rest, the raw text under a click.                                         |
+| EditableInput  | `EditableInput`                               | The commit/cancel caret — Enter commits, Escape abandons, blur settles.                                     |
+| RenamableLabel | `RenamableLabel`                              | The inline-rename swap; `title` seats the caret at the end, `row` selects all.                              |
+| Press-To-Edit  | `useDraftEdit`                                | Rest content until a click, then a width-pinned draft with select-on-open.                                  |
 
 #### Interactions
 

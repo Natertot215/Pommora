@@ -87,6 +87,11 @@ plausible from the outside. Reopen any of them with a reason, not with a fresh r
   ahead of `resolveUnderRoot`; `assetSubfolder` answers a display question. Sharing a helper puts
   the boundary check behind an abstraction serving a position lookup, which is the same reason the
   earlier ruling kept it apart from `exclusion.ts`'s `prefixMatcher`.
+- A plain-CSS host rule that shares a property with the field family's `bare`/`search` reset ties it
+  at (0,1,0), and the winner would be bundle order. The host wins on SPECIFICITY instead — the
+  doubled-class selector `DetailTitleHeader.css` and `Banner.css` wear — never on which stylesheet
+  the bundler emitted last. A host whose colliding declarations were simply deleted (the reset now
+  owns them) needs no armor.
 - `FileLabel` and `FileChip` are two recipes on purpose. A name inside a FIELD is that field's
   content and takes no chrome — a box around it is a box in a box; a file property's VALUE stands
   beside other values in a cell and takes a box the way they do. They render the same string and
