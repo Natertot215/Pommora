@@ -328,6 +328,7 @@ Base commit recorded in the Log when the phase opens. All moves are `git mv` so 
   - [ ] Task 9 — docs + showcase · `<commit>`
 
 ### Rulings
+- 08-24 (Nathan): the FilterPane keeps its pre-plan picker behavior — the Location cell's press-to-edit adoption is withdrawn; nothing beyond the field-chrome migration touches the filter. `useDraftEdit` and the InputField composition ship with PathField and the showcase as their surfaces.
 - 08-24 (Nathan): PathField stays a named component — its collapse onto `useDraftEdit` + InputField content folds into Task 8, leaving it a thin recipe; its lead glyph's gap matches SegmentRun's own segment gap.
 - 08-23 (Nathan): one field family; IconPicker takes the standard chrome + "Search" placeholder; press-to-edit becomes a shared behavior reaching FilterPane; `--input-field` dies zero-trace; error state seeded cheap; end-state minimality is the target, steps may churn.
 - 08-23 (Nathan): Location is the only picker field taking press-to-edit — typing searches available values; Enter applies the entry as a `FileLabel` with the path stored for future fulfillment.
