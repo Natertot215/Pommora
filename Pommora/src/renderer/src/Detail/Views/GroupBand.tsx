@@ -5,7 +5,7 @@ import type { SavedView } from '@shared/views'
 import { text } from '@renderer/DesignSystem/Tokens'
 import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import { cx } from '@renderer/DesignSystem/Util/cx'
-import { bare } from '@renderer/DesignSystem/Components/Fields'
+import { base } from '@renderer/DesignSystem/Components/Fields'
 import { asRenderableIcon, Icon } from '@renderer/DesignSystem/Symbols'
 import { Reveal } from '@renderer/DesignSystem/Animation/Reveal'
 import { registerDiscloseTarget } from '@renderer/DesignSystem/Interactions/dragDisclose'
@@ -62,7 +62,7 @@ export function resolveBandHead(
               path={setPath}
               kind="set"
               title={title}
-              className={cx(bare, 'band-title-input')}
+              className={cx(base, 'band-title-input')}
               renames="title"
               host="detail"
             />

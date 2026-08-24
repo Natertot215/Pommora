@@ -5,7 +5,7 @@ import { font, text } from '../../Tokens/typography.css'
 import { duration, easing } from '../../Animation/motion'
 import { TINT_STEPS, tintAt } from '../../Tokens/tint'
 import { fieldRing, ROW_RING } from '../Fields/fieldRing'
-import { bare } from '../Fields/fields.css'
+import { base } from '../Fields/fields.css'
 
 const c = colorVars.color
 
@@ -121,7 +121,7 @@ export const titleText = style({})
  *  metrics with no border/padding/background of its own, so swapping it in for the title text is
  *  dimensionally identical (no row nudge). The caret alone marks edit mode. */
 export const titleInput = style([
-  bare,
+  base,
   {
     width: '100%',
     minWidth: 0,

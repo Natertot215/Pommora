@@ -49,21 +49,19 @@ export function clearRow(m: TableModel, atBodyIndex: number): TableModel {
   return { ...m, rows: m.rows.map((r, i) => (i === atBodyIndex ? r.map(() => '') : r)) }
 }
 
-// Positive dashDelta widens columns[boundaryIndex] and narrows columns[boundaryIndex+1]
-// (the boundary moves right); the total is conserved and the shrinking side floors at 1 dash.
-export function resizeColumn(m: TableModel, boundaryIndex: number, dashDelta: number): TableModel {
-  const left = m.columns[boundaryIndex].dashes
-  const right = m.columns[boundaryIndex + 1].dashes
-  const d = clamp(dashDelta, -(left - 1), right - 1)
+// A column's width IS its dash count, so the dashes a resized row is written at ARE the resolution a
+// drop can land on — the three `| --- | --- |` carries leave six positions across the whole table.
+const DASH_SCALE = 100
+
+export function resizeColumns(m: TableModel, widths: number[]): TableModel {
+  const total = widths.reduce((sum, w) => sum + w, 0)
+  if (total <= 0) return m
   return {
     ...m,
-    columns: m.columns.map((c, i) =>
-      i === boundaryIndex
-        ? { ...c, dashes: left + d }
-        : i === boundaryIndex + 1
-          ? { ...c, dashes: right - d }
-          : c,
-    ),
+    columns: m.columns.map((c, i) => ({
+      ...c,
+      dashes: Math.max(1, Math.round(((widths[i] ?? 0) / total) * DASH_SCALE)),
+    })),
   }
 }
 

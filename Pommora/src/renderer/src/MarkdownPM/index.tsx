@@ -458,7 +458,9 @@ export function MarkdownEditor({
     else requestAnimationFrame(restoreScroll)
     void tableHeadingColsRef.current?.load().then((indices) => applySavedHeadingCols(view, indices))
     // The header parks on scroll via a CSS scroll-driven animation (Styles.css) — no JS scroll handler.
-    const unsubMenu = menuRef.current?.onAction((action) => applyEditorAction(view, action))
+    const unsubMenu = menuRef.current?.onAction((action) => {
+      if (ownsEditorMenu(view)) applyEditorAction(view, action)
+    })
     return () => {
       unsubMenu?.()
       releaseEditorMenu(view)
