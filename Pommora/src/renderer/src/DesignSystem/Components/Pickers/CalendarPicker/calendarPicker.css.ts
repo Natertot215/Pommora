@@ -3,7 +3,7 @@ import { vars } from '../../../Tokens/color.css'
 import { duration, easing } from '../../../Animation/motion'
 import { TINT_STEPS, tintAt } from '../../../Tokens/tint'
 import { font } from '../../../Tokens/typography.css'
-import { bare } from '../../Fields/fields.css'
+import { base } from '../../Fields/fields.css'
 import { segment } from '../../../Elements/Segment/segment.css'
 import { stack } from '../../../Tokens/stack'
 
@@ -232,7 +232,7 @@ export const timeSeg = style({
 /* The double-click caret editor — the segment's own look; select-all drives replace-on-type but
    the selection paints transparent (highlighting disabled). */
 export const timeSegInput = style([
-  bare,
+  base,
   {
     boxSizing: 'content-box', // 2-digit glyphs + caret live in the content width; padding sits outside (no clip)
     width: '2.4ch',

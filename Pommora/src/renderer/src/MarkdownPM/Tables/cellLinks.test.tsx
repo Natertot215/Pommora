@@ -109,6 +109,9 @@ describe('a connection in a resting cell behaves like one in the body', () => {
       cell.dispatchEvent(
         new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0 }),
       )
+      cell.dispatchEvent(
+        new MouseEvent('click', { bubbles: true, cancelable: true, button: 0, detail: 1 }),
+      )
     })
     expect(opened).not.toHaveBeenCalled()
     expect(container.querySelectorAll('.cm-editor').length).toBeGreaterThan(0)
@@ -166,6 +169,9 @@ describe('the picker survives being clicked', () => {
       cell.dispatchEvent(
         new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0 }),
       )
+      cell.dispatchEvent(
+        new MouseEvent('click', { bubbles: true, cancelable: true, button: 0, detail: 1 }),
+      )
     })
     expect(container.querySelectorAll('.cm-editor').length).toBeGreaterThan(0)
 
@@ -190,6 +196,9 @@ describe('the picker survives being clicked', () => {
       )
       cell.dispatchEvent(
         new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0 }),
+      )
+      cell.dispatchEvent(
+        new MouseEvent('click', { bubbles: true, cancelable: true, button: 0, detail: 1 }),
       )
     })
     await act(async () => {

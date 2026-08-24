@@ -66,29 +66,15 @@ function cellEl(row: number, col: number): HTMLElement {
   return tr.children[col] as HTMLElement
 }
 
-// Imitate a real click on a resting cell: a pointerdown (the clear-listener watches this) then the
-// mousedown StaticCell activates on.
+// Imitate a real click on a resting cell: a pointerdown (the clear-listener watches this), the
+// mousedown the browser's own selection would begin on, and the click StaticCell activates on.
 async function clickCell(row: number, col: number): Promise<void> {
   const div = cellEl(row, col).querySelector('.mdpm-tbl-cell-static') as HTMLElement
+  const at = { bubbles: true, cancelable: true, button: 0, clientX: 4, clientY: 4 }
   await act(async () => {
-    div.dispatchEvent(
-      new MouseEvent('pointerdown', {
-        bubbles: true,
-        cancelable: true,
-        button: 0,
-        clientX: 4,
-        clientY: 4,
-      }),
-    )
-    div.dispatchEvent(
-      new MouseEvent('mousedown', {
-        bubbles: true,
-        cancelable: true,
-        button: 0,
-        clientX: 4,
-        clientY: 4,
-      }),
-    )
+    div.dispatchEvent(new MouseEvent('pointerdown', at))
+    div.dispatchEvent(new MouseEvent('mousedown', at))
+    div.dispatchEvent(new MouseEvent('click', { ...at, detail: 1 }))
   })
 }
 
@@ -128,7 +114,9 @@ describe('table single-live-cell navigation', () => {
     expect(activeText()).toBe('c2')
   })
 
-  it('the activating mousedown is preventDefault-ed so the browser cannot steal focus (the two-click bug)', async () => {
+  // The press belongs to the browser: a drag that begins in one cell has to be able to highlight
+  // across the ones it reaches, which it cannot do if the cell swaps to an editor under it.
+  it('leaves the press alone, so a selection can be dragged out of the cell', async () => {
     await mount()
     const div = cellEl(1, 0).querySelector('.mdpm-tbl-cell-static') as HTMLElement
     const ev = new MouseEvent('mousedown', {
@@ -141,7 +129,8 @@ describe('table single-live-cell navigation', () => {
     await act(async () => {
       div.dispatchEvent(ev)
     })
-    expect(ev.defaultPrevented).toBe(true)
+    expect(ev.defaultPrevented).toBe(false)
+    expect(editors().length).toBe(0)
   })
 
   it('clicking outside the table demotes the active cell back to static', async () => {

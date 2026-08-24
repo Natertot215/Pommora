@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { EditorState } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import { applyEditorAction, claimEditorMenu, releaseEditorMenu } from './menu'
+import { applyEditorAction, claimEditorMenu, ownsEditorMenu, releaseEditorMenu } from './menu'
 
 const views: EditorView[] = []
 
@@ -11,6 +11,10 @@ function mount(doc: string): EditorView {
   views.push(view)
   return view
 }
+
+/** What every mounted editor's bridge subscription does with a broadcast action. */
+const deliver = (view: EditorView, action: string): boolean =>
+  ownsEditorMenu(view) && applyEditorAction(view, action)
 
 afterEach(() => {
   for (const v of views.splice(0)) {
@@ -25,7 +29,7 @@ afterEach(() => {
 describe('the native menu has one subject', () => {
   it('an unclaimed editor refuses the action outright', () => {
     const a = mount('one')
-    expect(applyEditorAction(a, 'mdpm:heading:1')).toBe(false)
+    expect(deliver(a, 'mdpm:heading:1')).toBe(false)
     expect(a.state.doc.toString()).toBe('one')
   })
 
@@ -34,8 +38,8 @@ describe('the native menu has one subject', () => {
     const b = mount('two')
     claimEditorMenu(a)
 
-    expect(applyEditorAction(a, 'mdpm:heading:1')).toBe(true)
-    expect(applyEditorAction(b, 'mdpm:heading:1')).toBe(false)
+    expect(deliver(a, 'mdpm:heading:1')).toBe(true)
+    expect(deliver(b, 'mdpm:heading:1')).toBe(false)
 
     expect(a.state.doc.toString()).toBe('# one')
     expect(b.state.doc.toString()).toBe('two')
@@ -46,7 +50,7 @@ describe('the native menu has one subject', () => {
     claimEditorMenu(a)
     a.contentDOM.blur()
     expect(a.hasFocus).toBe(false)
-    expect(applyEditorAction(a, 'mdpm:heading:1')).toBe(true)
+    expect(deliver(a, 'mdpm:heading:1')).toBe(true)
     expect(a.state.doc.toString()).toBe('# one')
   })
 
@@ -56,8 +60,8 @@ describe('the native menu has one subject', () => {
     claimEditorMenu(a)
     releaseEditorMenu(a)
 
-    expect(applyEditorAction(a, 'mdpm:heading:1')).toBe(false)
-    expect(applyEditorAction(b, 'mdpm:heading:1')).toBe(false)
+    expect(deliver(a, 'mdpm:heading:1')).toBe(false)
+    expect(deliver(b, 'mdpm:heading:1')).toBe(false)
     expect(a.state.doc.toString()).toBe('one')
     expect(b.state.doc.toString()).toBe('two')
   })
@@ -68,8 +72,8 @@ describe('the native menu has one subject', () => {
     claimEditorMenu(a)
     claimEditorMenu(b)
 
-    expect(applyEditorAction(a, 'mdpm:heading:1')).toBe(false)
-    expect(applyEditorAction(b, 'mdpm:heading:1')).toBe(true)
+    expect(deliver(a, 'mdpm:heading:1')).toBe(false)
+    expect(deliver(b, 'mdpm:heading:1')).toBe(true)
     expect(a.state.doc.toString()).toBe('one')
     expect(b.state.doc.toString()).toBe('# two')
   })
@@ -77,7 +81,15 @@ describe('the native menu has one subject', () => {
   it('an action from another sender is still none of the editor’s business', () => {
     const a = mount('one')
     claimEditorMenu(a)
-    expect(applyEditorAction(a, 'nav:back')).toBe(false)
+    expect(deliver(a, 'nav:back')).toBe(false)
     expect(a.state.doc.toString()).toBe('one')
+  })
+
+  /** A keymap only ever runs on the view the keystroke landed in, so the chord applies without a
+   *  claim — the gate is the broadcast's, not the transform's. */
+  it('a keystroke applies to its own editor with no claim in play', () => {
+    const a = mount('one')
+    expect(applyEditorAction(a, 'mdpm:heading:1')).toBe(true)
+    expect(a.state.doc.toString()).toBe('# one')
   })
 })

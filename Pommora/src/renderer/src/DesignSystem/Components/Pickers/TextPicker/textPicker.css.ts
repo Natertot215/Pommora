@@ -1,7 +1,7 @@
 import { style } from '@vanilla-extract/css'
 import { vars } from '../../../Tokens/color.css'
 import { font } from '../../../Tokens/typography.css'
-import { bare, field } from '../../Fields/fields.css'
+import { base, field } from '../../Fields/fields.css'
 import { focusRing } from '../../Fields/fieldRing'
 
 const c = vars.color
@@ -27,7 +27,7 @@ export const suffixField = style([
  *  the pinned hint and scrolls its own overflow. The fade is the shared over-scroll every unboxed
  *  `EditableInput` wears. */
 export const suffixInput = style([
-  bare,
+  base,
   {
     flex: '1 1 auto',
     minWidth: 0,

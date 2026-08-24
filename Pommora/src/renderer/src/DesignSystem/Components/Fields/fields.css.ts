@@ -75,13 +75,13 @@ export const input = style([
   },
 ])
 
-// § BARE
+// § BASE
 
 /** The in-place caret's own reset. An unstyled <input> wears the UA's box — a white fill, a border
  *  and a focus ring in the system accent — which is chrome around a field that is meant to read as
  *  the text it replaced. Stripped to nothing, it inherits the surface's metrics and leaves the
  *  selection to the native highlight. `font` is stated because an <input> never inherits it. */
-export const bare = style({
+export const base = style({
   border: 'none',
   outline: 'none',
   padding: 0,

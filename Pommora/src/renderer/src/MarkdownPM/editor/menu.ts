@@ -82,10 +82,11 @@ function insertLinkOverSelection(view: EditorView): boolean {
   return true
 }
 
-/** Apply a `mdpm:*` menu action to the editor; ignores actions from other `menu:action` senders. */
+/** Apply a `mdpm:*` menu action to the editor; ignores actions from other `menu:action` senders.
+ *  Applies to whatever view is handed in — a keymap already runs on the focused one, and the
+ *  broadcast menu subscription is the only caller that has to ask `ownsEditorMenu` first. */
 export function applyEditorAction(view: EditorView, raw: string): boolean {
   if (!raw.startsWith(EDITOR_ACTION_PREFIX)) return false
-  if (!ownsEditorMenu(view)) return false
   const action = raw.slice(EDITOR_ACTION_PREFIX.length)
   // Page embeds type the opener and hand off to the autocomplete, not a plain format edit.
   if (action === 'block:page') return embedInsertAtCaret(view)
