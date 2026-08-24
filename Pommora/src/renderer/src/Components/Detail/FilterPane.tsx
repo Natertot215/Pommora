@@ -25,7 +25,6 @@ import {
 } from '../../design-system/components/menu/menu.css'
 import { PickerMenu, PickerOption } from '../../design-system/components/PickerMenu'
 import {
-  optionRing,
   PICKER_MAX_HEIGHT,
   PICKER_TREE_WIDTH,
 } from '../../design-system/components/PickerMenu/pickerMenu.css'
@@ -307,9 +306,7 @@ function LocationField({
         onToggle={() => expanded.toggle(s.id)}
         onClick={() => toggle(s.id)}
         selected={picked}
-        // A Set row carries no color of its own, so the selected fill alone is easy to lose in a
-        // packed tree — the ring is what makes a pick obvious at a glance.
-        className={picked ? optionRing : undefined}
+        picker
       >
         {kids.length > 0 ? kids.map(renderSet) : undefined}
       </DisclosureRow>

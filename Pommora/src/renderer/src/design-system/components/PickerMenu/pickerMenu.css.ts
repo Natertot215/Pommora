@@ -17,7 +17,7 @@ export const PICKER_MAX_HEIGHT = 240
 /** KNOB — a DISCLOSURE picker's fixed width. A tree picker must not resize horizontally: revealing a
  *  longer child row would otherwise widen the pane, and against a viewport edge that drags every row
  *  sideways mid-click. Fixed here, eclipsed there. */
-export const PICKER_TREE_WIDTH = 210
+export const PICKER_TREE_WIDTH = 170
 
 // Selection paints at the shared row weight; only the TONE separates it from keyboard focus.
 const OPTION_RING = `${ROW_RING}px`
