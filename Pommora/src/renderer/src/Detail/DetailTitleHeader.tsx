@@ -1,6 +1,7 @@
 import { type Ref, useState } from 'react'
+import type { TitleMenuAction } from '@shared/identityMenus'
 import { Icon } from '@renderer/design-system/symbols'
-import { RenamableLabel } from '@renderer/Components/RenamableLabel'
+import { RenamableLabel } from '@renderer/design-system/fields'
 import './DetailTitleHeader.css'
 
 interface Props {
@@ -9,7 +10,7 @@ interface Props {
   iconRef?: Ref<SVGSVGElement>
   // biome-ignore lint/suspicious/noConfusingVoidType: the union is deliberate: a caller may hand back nothing or a promise, and `undefined` in place of `void` breaks assignability for the sync handlers.
   onRename: (newName: string) => void | Promise<boolean | void>
-  requestMenu: () => Promise<'rename' | 'editIcon' | 'toggleIcon' | null>
+  requestMenu: () => Promise<TitleMenuAction | null>
   onEditIcon: () => void
   onToggleIcon?: () => void
   iconHidden?: boolean

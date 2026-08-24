@@ -6,7 +6,7 @@ import {
   PREVIEW_PANE_INSPECTOR,
   PreviewPane,
 } from '@renderer/design-system/components/PreviewPane/PreviewPane'
-import { SearchField } from '@renderer/design-system/components/SearchField'
+import { SearchField } from '@renderer/design-system/fields'
 import type { NavRef } from '@shared/types'
 import { useExitPresence } from '../design-system/useExitPresence'
 import { PageEmbed } from '../Embeds/PageEmbed'

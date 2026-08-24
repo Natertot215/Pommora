@@ -62,6 +62,16 @@ export const input = style([
   },
 ])
 
+/** Only what every search field agrees on. Size, color, background and ring belong to the surface the
+ *  field sits in, so anything a caller could reasonably differ on is left to the caller's own class. */
+export const search = style({
+  border: 'none',
+  outline: 'none',
+  selectors: {
+    '&::placeholder': { color: c.label.tertiary },
+  },
+})
+
 // § BARE — no box at all: the caret sits in the text it replaced.
 
 /** The in-place caret's own reset. An unstyled <input> wears the UA's box — a white fill, a border
@@ -81,3 +91,17 @@ export const bare = style({
 
 /** The ghost-text tone — placeholders and empty-state hints inside any field. */
 export const placeholder = style({ color: c.label.tertiary })
+
+// Auto-sizing field: the input overlays a hidden mirror span in ONE grid cell, so the field
+// shrink-wraps to its text through CSS reflow — never a per-keystroke layout read. Font + padding
+// inherit from the caller's surface (the option chip), so the mirror measures in the same metrics.
+export const autoSizeWrap = style({ display: 'inline-grid' })
+
+export const autoSizeMirror = style({
+  gridArea: '1 / 1',
+  visibility: 'hidden',
+  whiteSpace: 'pre',
+  pointerEvents: 'none',
+})
+
+export const autoSizeInput = style({ gridArea: '1 / 1', width: '100%', minWidth: 0 })

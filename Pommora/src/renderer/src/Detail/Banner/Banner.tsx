@@ -5,7 +5,7 @@ import { IconPicker } from '@renderer/Components/IconPicker'
 import { useAssetUrl, useSession } from '../../store'
 import { isSurfaceKind, type BannerOwner } from '../Scope'
 import { DetailTitleHeader } from '../DetailTitleHeader'
-import { RenamableLabel } from '../../Components/RenamableLabel'
+import { RenamableLabel } from '@renderer/design-system/fields'
 import { AddBannerButton } from './AddBannerButton'
 import { useBannerMenu } from './useBannerMenu'
 
@@ -32,7 +32,7 @@ export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {
   const openHomeTitleMenu = async (e: React.MouseEvent): Promise<void> => {
     e.preventDefault()
     e.stopPropagation() // the homepage title menu, not the banner's Change/Remove-photo menu underneath
-    // No Change Icon here — the nexus icon is set from Settings / the ribbon, not this menu.
+    // No Edit Icon here — the nexus icon is set from Settings / the ribbon, not this menu.
     const action = await window.nexus.titleMenu({ toggleIcon: true, iconHidden, noEditIcon: true })
     if (action === 'rename') setEditingHome(true)
     else if (action === 'toggleIcon') await toggleHeadingIcon()

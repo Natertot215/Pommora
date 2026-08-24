@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, createRef } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { SearchField } from './SearchField'
+import { search } from './fields.css'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 let host: HTMLDivElement
@@ -25,10 +26,10 @@ describe('SearchField — the field four surfaces share', () => {
     expect(field().hasAttribute('placeholder')).toBe(false)
   })
 
-  it('keeps the caller class alongside its own', () => {
+  it('keeps the caller class alongside the family reset', () => {
     act(() => root.render(<SearchField value="" onValueChange={() => {}} className="mine" />))
     expect(field().classList.contains('mine')).toBe(true)
-    expect(field().classList.length).toBe(2)
+    expect(field().classList.contains(search)).toBe(true)
   })
 
   it('never spell-checks, whatever the surface', () => {

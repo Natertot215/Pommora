@@ -1,5 +1,5 @@
 // The Default Asset Directory setting — the house path field, pointed at the nexus.
-import { PathField } from '@renderer/design-system/components/PathField'
+import { PathField } from '@renderer/design-system/fields'
 import { useSession } from '../store'
 import { SettingsRow, type RowText } from './SettingsRow'
 

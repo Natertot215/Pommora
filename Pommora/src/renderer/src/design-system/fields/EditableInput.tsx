@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
-import { cx } from '../design-system/cx'
-import { autoSizeWrap, autoSizeMirror, autoSizeInput } from './EditableInput.css'
+import { cx } from '../cx'
+import { autoSizeWrap, autoSizeMirror, autoSizeInput } from './fields.css'
 
 /**
  * The `settled` guard stops Enter (which blurs) and the trailing blur from both committing;
