@@ -73,13 +73,13 @@ Constraints: the design-system boundary holds — nothing in `fields/` imports t
 
 **Made False** *(each rewrite lands in the commit that falsifies it)*
 
-| Doc | The specific claim | What makes it false | Task |
-| --- | --- | --- | --- |
-| DesignSystemPM.md:66 | `Interaction Field \| inputFieldVar · --input-field \| fill.quaternary` (Surfaces row) | The token is deleted | 3 |
-| DesignSystemPM.md:222 | `PathField \| PathField.tsx \|` under SOURCE `design-system/components/` | PathField moves to `fields/` | 9 |
-| Design-Coherence-Report §III/§VII | `EditableInput` destination `components/EditableInput/`; `InteractionField` listed as a components/ folder | Both land in `fields/` instead | 2 |
-| ContextPM.md (Current Focus) | "consolidated onto the `InteractionField` chrome" | The component is renamed `InputField` | 9 |
-| InteractionPM.md (OverScroll SOURCE trail) | Consumer-placed fade var described as the opt-in for field content | Fields apply it at source | 8 |
+| Doc                                        | The specific claim                                                                                         | What makes it false                   | Task |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------- | ------------------------------------- | ---- |
+| DesignSystemPM.md:66                       | `Interaction Field \| inputFieldVar · --input-field \| fill.quaternary` (Surfaces row)                     | The token is deleted                  | 3    |
+| DesignSystemPM.md:222                      | `PathField \| PathField.tsx \|` under SOURCE `design-system/components/`                                   | PathField moves to `fields/`          | 9    |
+| Design-Coherence-Report §III/§VII          | `EditableInput` destination `components/EditableInput/`; `InteractionField` listed as a components/ folder | Both land in `fields/` instead        | 2    |
+| ContextPM.md (Current Focus)               | "consolidated onto the `InteractionField` chrome"                                                          | The component is renamed `InputField` | 9    |
+| InteractionPM.md (OverScroll SOURCE trail) | Consumer-placed fade var described as the opt-in for field content                                         | Fields apply it at source             | 8    |
 
 **Dead Vocabulary** *(the closing sweep searches for)*
 
@@ -188,9 +188,9 @@ Base commit recorded in the Log when the phase opens. All moves are `git mv` so 
 **Files:** `Components/iconPicker.css.ts` (`search` → compose `input` + `focusRing()`, keep only `textAlign`/width/type-pin deltas) · `Components/IconPicker.tsx:135` (className updated) · `Settings/trashLeaf.css` — Trash's search row rises to NavWindow's vertical positioning (NavWindow is the reference; the delta is in the leaf's own head spacing, since both wear the same `.nav-search-row`).
 
 **Steps:**
-- [ ] Recompose; visually confirm in the running app (icon picker from a page header).
-- [ ] Align the Trash search row against NavWindow side-by-side in the running app.
-- [ ] Gates green. Commit: `refactor(fields): the icon search wears the family chrome`
+- [x] Recompose. (Visual confirmation consolidated into the closeout pass — Nathan's 08-24 call.)
+- [x] Align the Trash search row against NavWindow (the leaf's `--close-clearance` padding becomes the glass inset; side-by-side check rides the closeout pass).
+- [x] Gates green. Commit: `refactor(fields): the icon search wears the family chrome`
 
 #### Task 5: The bare twins adopt `bare`
 
@@ -328,6 +328,8 @@ Base commit recorded in the Log when the phase opens. All moves are `git mv` so 
   - [ ] Task 9 — docs + showcase · `<commit>`
 
 ### Rulings
+- 08-24 (Nathan): PathField stays a named component — its collapse onto `useDraftEdit` + InputField content folds into Task 8, leaving it a thin recipe; its lead glyph's gap matches SegmentRun's own segment gap.
+- 08-24 (Nathan): the per-gate running-app checks consolidate into one final visual pass at closeout.
 - 08-23 (Nathan): one field family; IconPicker takes the standard chrome + "Search" placeholder; press-to-edit becomes a shared behavior reaching FilterPane; `--input-field` dies zero-trace; error state seeded cheap; end-state minimality is the target, steps may churn.
 - 08-23 (Nathan): Location is the only picker field taking press-to-edit — typing searches available values; Enter applies the entry as a `FileLabel` with the path stored for future fulfillment.
 - 08-23 (Nathan): GroupBand's rename was shipped broken; it collapses to the bare in-line caret — no box, no ring, no select-all highlight.

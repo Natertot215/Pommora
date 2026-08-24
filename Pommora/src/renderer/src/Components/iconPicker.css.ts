@@ -1,6 +1,7 @@
 import { style } from '@vanilla-extract/css'
-import { text, TINT_STEPS, tintAt, vars } from '@renderer/design-system/tokens'
-import { fieldRing, focusRing } from '@renderer/design-system/fields/fieldRing'
+import { TINT_STEPS, tintAt, vars } from '@renderer/design-system/tokens'
+import { focusRing } from '@renderer/design-system/fields/fieldRing'
+import { input } from '@renderer/design-system/fields/fields.css'
 import { separatorLine } from '@renderer/design-system/components/menu/menu.css'
 
 export const CELL = 34
@@ -18,20 +19,10 @@ export const content = style({
   boxSizing: 'border-box',
 })
 
-// The body portal escapes the app's type context, so the ramp is pinned explicitly.
 export const search = style([
-  text.body.standard,
+  input,
   {
-    width: '100%',
-    padding: '6px 8px',
-    boxSizing: 'border-box',
     textAlign: 'left',
-    color: vars.color.label.primary,
-    background: vars.color.fill.quaternary,
-    border: 'none',
-    borderRadius: 8,
-    outline: 'none',
-    boxShadow: fieldRing(1), // the argument is the ring-width knob
   },
   focusRing(),
 ])
