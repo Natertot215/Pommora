@@ -87,7 +87,7 @@ plausible from the outside. Reopen any of them with a reason, not with a fresh r
   ahead of `resolveUnderRoot`; `assetSubfolder` answers a display question. Sharing a helper puts
   the boundary check behind an abstraction serving a position lookup, which is the same reason the
   earlier ruling kept it apart from `exclusion.ts`'s `prefixMatcher`.
-- A plain-CSS host rule that shares a property with the field family's `bare`/`search` reset ties it
+- A plain-CSS host rule that shares a property with the field family's `base`/`search` reset ties it
   at (0,1,0), and the winner would be bundle order. The host wins on SPECIFICITY instead — the
   doubled-class selector `DetailTitleHeader.css` and `Banner.css` wear — never on which stylesheet
   the bundler emitted last. A host whose colliding declarations were simply deleted (the reset now
