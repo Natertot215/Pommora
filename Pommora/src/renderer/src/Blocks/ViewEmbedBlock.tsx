@@ -28,7 +28,7 @@ import {
 } from '@renderer/design-system/components/menu/menu.css'
 import { reorder, SortableZone, useDragItem } from '@renderer/design-system/interactions/drag'
 import { optionRing } from '@renderer/design-system/components/PickerMenu/pickerMenu.css'
-import { RenamableLabel } from '@renderer/Components/RenamableLabel'
+import { RenamableLabel } from '@renderer/design-system/fields'
 import { IconPicker } from '@renderer/Components/IconPicker'
 import { findCollection, findCollectionForSet, findSet } from '@renderer/Detail/Scope'
 import { ViewRenderer } from '@renderer/Detail/Views/ViewRenderer'
@@ -240,7 +240,7 @@ export function ViewEmbedBlock({
   // (icon, color) drops from the chip itself, never the embed. Element, not HTMLElement: the title
   // row's anchor is the SVG icon glyph.
   const menuAnchorRef = useRef<Element | null>(null)
-  // The title row's leading glyph — the Change Icon picker hangs off it, not the whole row.
+  // The title row's leading glyph — the Edit Icon picker hangs off it, not the whole row.
   const titleIconRef = useRef<SVGSVGElement>(null)
   const [exitingId, setExitingId] = useState<string | null>(null)
   const [enteringIds, setEnteringIds] = useState<Set<string>>(() => new Set())

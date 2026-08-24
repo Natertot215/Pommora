@@ -38,10 +38,6 @@
   line-height: 20px;
   font-weight: var(--weight-emphasized);
 }
-.nav-view-search::placeholder {
-  color: var(--label-tertiary);
-}
-
 /* When NavView wears the Homepage banner, the search sits in the banner-title slot — re-enable pointer
    hits (the banner-title is inert) and add over-image legibility. */
 .nav-view-banner .banner-title {

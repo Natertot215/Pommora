@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import { Checkbox } from '@renderer/design-system/components/Checkbox'
-import { SearchField } from '@renderer/design-system/components/SearchField'
+import { SearchField } from '@renderer/design-system/fields'
 import { OverScroll, overScrollEllipsis } from '@renderer/design-system/interactions/OverScroll'
 import { cx } from '@renderer/design-system/cx'
 import { entityIcon, Icon } from '@renderer/design-system/symbols'

@@ -8,7 +8,7 @@ import {
   titleInput,
   useDisclosureSet,
 } from '@renderer/design-system/components/menu'
-import { RenamableLabel } from '@renderer/Components/RenamableLabel'
+import { RenamableLabel } from '@renderer/design-system/fields'
 import { openPageBody, useSession } from '../store'
 import { viewSettingsScope } from '../Detail/ViewSettingsScope'
 import { renameHeadingAtOffset, travelPageTo } from '../Detail/pageEditor'

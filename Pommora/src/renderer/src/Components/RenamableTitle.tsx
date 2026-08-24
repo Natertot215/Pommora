@@ -1,7 +1,7 @@
 import type { MutableKind, RenameHost } from '@shared/mutate'
 import { useEffect, useState } from 'react'
 import { useSession } from '../store'
-import { RenamableLabel } from './RenamableLabel'
+import { RenamableLabel } from '../design-system/fields'
 
 /** `renamingPath` is set by the native context menu's Rename via `begin-rename`. Every host
  *  surface claims when it becomes the target; the fence resolves one winner, so a path visible

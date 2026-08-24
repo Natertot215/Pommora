@@ -8,7 +8,7 @@ import {
 } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { PickerMenu } from '@renderer/design-system/components/PickerMenu/PickerMenu'
-import { SearchField } from '@renderer/design-system/components/SearchField'
+import { SearchField } from '@renderer/design-system/fields'
 import { Icon } from '@renderer/design-system/symbols'
 import {
   lucideGlyph,
