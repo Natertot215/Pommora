@@ -27,8 +27,6 @@
 }
 .nav-view-search {
   width: 100%;
-  background: transparent;
-  color: var(--label-primary);
   font-size: 16px; /* KNOB — a step down from the banner-title size */
   /* The drawn caret takes its height from the COMPUTED line-height (nativeCaret.ts), so a field that
      overrides its font-size has to carry a line box to match — otherwise the bar is sized for the

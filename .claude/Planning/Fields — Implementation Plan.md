@@ -275,10 +275,10 @@ Base commit recorded in the Log when the phase opens. All moves are `git mv` so 
 - [x] Gates green. Commit: `refactor(fields): press-to-edit is a behavior, not a component's secret`
 
 #### Gate 3 — behaviors proven running
-- [ ] Gates green; both PathField consumers + TextPicker + FilterPane exercised in the app.
-- [ ] Simplification + review against `<base>..HEAD`; concerns fixed or ruled.
-- [ ] Look-back: no duplication introduced by this phase, no deviation from the core mandate (one family, composed not restated) — anything found is fixed at this gate, not carried.
-- [ ] Progress hashes filled in.
+- [x] Gates green. Exercised running: the Settings path row's press-to-edit on the extracted hook (select-on-open, pinned width), and the Location cell end-to-end — the caret takes focus beside the picked labels (`manageFocus={false}`, the autocomplete's own seam), typing filters the Set picker live, and Enter stores the typed path beside the picked Set. TextPicker's and FileEditor's recompositions are composition-order-verified by the review pass; both sit behind property configs the scratch nexus doesn't reach.
+- [x] Simplification + review against `<base>..HEAD`; the review came back clean on all five probes, the simplifier folded sixteen lines (one tree walk, the flat match rows reusing `renderSet`, the hook's typed `inputProps`).
+- [x] Look-back: the transparent search look moved into the family `search` (stated before the boxed chrome so a boxed composer keeps its fill) and its two host restatements died; the `optionInput` and `fieldInputClass` aliases died; NumberEditor's caret dropped a ramp pin the cascade had already retired.
+- [x] Progress hashes filled in.
 
 ---
 
@@ -321,9 +321,9 @@ Base commit recorded in the Log when the phase opens. All moves are `git mv` so 
   - [x] Task 4 — IconPicker search · `9b5271a1`
   - [x] Task 5 — bare twins · `4d8e591a`
   - [x] Task 6 — ring channel spelling · `ebff4e26`
-- [ ] **Phase 3** — behavior
-  - [ ] Task 7 — OverScroll at source · `<commit>`
-  - [ ] Task 8 — press-to-edit · `<commit>`
+- [x] **Phase 3** — behavior
+  - [x] Task 7 — OverScroll at source · `db907e51`
+  - [x] Task 8 — press-to-edit · `101b51a5`
 - [ ] **Phase 4** — the record
   - [ ] Task 9 — docs + showcase · `<commit>`
 
@@ -340,6 +340,7 @@ Base commit recorded in the Log when the phase opens. All moves are `git mv` so 
 - (Task 6) `cellInput` composing `hairlineField` brings `overflow: hidden` + `nowrap` onto a raw `<input>` — unproven whether Chromium's internal editor scroller keeps the caret visible past the clip. Ten-second check at implementation: type past the cell width in a FilterPane text rule.
 
 ### Deviations
+- 08-24 Gate 3: the Location picker takes `manageFocus={false}` — the pane's focus grab was stealing the cell caret's focus, and the autocomplete already models a pane that shows while focus stays in the field. The caret+labels proof shipped on the Location cell; the showcase entry lands once, with Task 9.
 - 08-24 Gate 2: `bare`'s `font: inherit` question closed as a no-op — the settings pane states the control scale, so the number caret inherits exactly what `text.control.standard` pinned. The reviewer's two real findings (Banner's equal-specificity tie against `bare`; the band rename input's lost width floor) were fixed at the gate, plus the sibling tie the simplifier flagged in Banner's `.detail-title-input` reskins.
 - 08-23 Gate 1: between Task 3 and Task 5 the GroupBand rename box shows border without fill — Task 3 deleted its `background` line while the block's kill lands in Task 5, as the plan sequences it. Transient by construction; both reviewers flagged it, closed by Task 5.
 - 08-23 plan-attack round (pre-ratification): six findings, five folded — InlineEditHeader's inline ring style reclassified from duplication to sole carrier of the Space color (Task 6 Survivors); `bare` grew `font: 'inherit'` (Task 1); SearchField keeps a narrow border/outline reset instead of wearing `bare` (Task 2 — cascade-order conflict with Task 4's boxed IconPicker chrome, verified against real vanilla-extract emission); `SearchField.test.tsx`'s exact-class-count assertion rewritten in-task (Task 2); Task 7 re-scoped from "cap every field" to "the family piece that owns each scroller carries the fade" — the chrome is class-consumed, so a component cap reached two surfaces and changed both without ratification. Three derivation counts corrected. The GroupBand finding was already superseded by Nathan's bare-caret ruling.

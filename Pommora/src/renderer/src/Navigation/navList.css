@@ -13,8 +13,6 @@
 }
 .nav-search-row input {
   flex: 1;
-  background: transparent;
-  color: var(--label-primary);
 }
 
 .nav-list {

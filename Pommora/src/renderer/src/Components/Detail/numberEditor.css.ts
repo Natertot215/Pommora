@@ -27,7 +27,6 @@ export const valueControl = style({
 /** The in-place caret — bare, at the value's own control metrics so the caret is sized to the text (not
  *  the UA default), reading in the same tone as the resting value. */
 export const valueCaret = style([
-  text.control.standard,
   bare,
   {
     minWidth: '12px',

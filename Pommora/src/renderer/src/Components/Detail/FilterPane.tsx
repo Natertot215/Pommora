@@ -292,12 +292,13 @@ function LocationField({
   const caretRef = useRef<HTMLInputElement>(null)
   const expanded = useDisclosureSet()
   const { shown, toggle } = useMultiValue(values, onCommit)
-  const byId = new Map(flattenSets(sets).map((s) => [s.id, s]))
+  const allSets = flattenSets(sets)
+  const byId = new Map(allSets.map((s) => [s.id, s]))
   useEffect(() => {
     if (open) caretRef.current?.focus()
   }, [open])
   const q = query.trim().toLowerCase()
-  const matches = q ? flattenSets(sets).filter((s) => s.title.toLowerCase().includes(q)) : null
+  const matches = q ? allSets.filter((s) => s.title.toLowerCase().includes(q)) : null
 
   const renderSet = (s: SetNode): React.JSX.Element => {
     const kids = s.sets ?? []
@@ -380,23 +381,12 @@ function LocationField({
         origin="left"
         maxHeight={PICKER_MAX_HEIGHT}
         width={PICKER_TREE_WIDTH}
+        manageFocus={false}
       >
         {!open
           ? null
           : matches
-            ? matches.map((s) => (
-                <DisclosureRow
-                  key={s.id}
-                  title={s.title}
-                  icon={<EntityIcon kind="set" icon={s.icon} size="body" />}
-                  twisty="spacer"
-                  open={false}
-                  onToggle={() => {}}
-                  onClick={() => toggle(s.id)}
-                  selected={shown.includes(s.id)}
-                  className={shown.includes(s.id) ? optionRing : undefined}
-                />
-              ))
+            ? matches.map((s) => renderSet({ ...s, sets: [] }))
             : sets.length === 0
               ? emptyPicker('No Sets in this collection.')
               : sets.map(renderSet)}
