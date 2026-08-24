@@ -1,10 +1,11 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
-import { Checkbox } from '@renderer/design-system/components/Checkbox'
-import { SearchField } from '@renderer/design-system/fields'
-import { OverScroll, overScrollEllipsis } from '@renderer/design-system/interactions/OverScroll'
-import { cx } from '@renderer/design-system/cx'
-import { entityIcon, Icon } from '@renderer/design-system/symbols'
-import { text } from '@renderer/design-system/tokens'
+import { Checkbox } from '@renderer/DesignSystem/Components/Controls/Checkbox'
+import { SearchField } from '@renderer/DesignSystem/Components/Fields'
+import { OverScroll, overScrollEllipsis } from '@renderer/DesignSystem/Interactions/OverScroll'
+import { PathChevron } from '@renderer/DesignSystem/Elements/PathChevron/PathChevron'
+import { cx } from '@renderer/DesignSystem/Util/cx'
+import { entityIcon, Icon } from '@renderer/DesignSystem/Symbols'
+import { text } from '@renderer/DesignSystem/Tokens'
 import { type DateFormat, defaultStyleFor } from '@shared/columnStyles'
 import type { MutateRequest } from '@shared/mutate'
 import type { CollectionNode } from '@shared/types'
@@ -362,7 +363,7 @@ function TrashRowView({
             {row.crumbs.map((crumb, i) => (
               // biome-ignore lint/suspicious/noArrayIndexKey: a breadcrumb is strictly positional
               <Fragment key={i}>
-                {i > 0 && <span className="nav-path-sep">›</span>}
+                {i > 0 && <PathChevron size="caption" className="nav-path-sep" />}
                 {crumb.kind && (
                   <Icon
                     name={entityIcon(crumb.kind, undefined, defaultIcons)}

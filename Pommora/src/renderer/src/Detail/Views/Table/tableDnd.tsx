@@ -8,12 +8,12 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react'
-import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
-import { useDragSnapshot } from '@renderer/design-system/interactions/snapshot'
-import { announce } from '@renderer/design-system/interactions/a11y'
-import { DROP_LINE_INSET } from '@renderer/design-system/interactions/shared'
-import { DropLine } from '@renderer/design-system/interactions/DropLine'
-import { armAutoScroll } from '@renderer/design-system/interactions/autoscroll'
+import { usePointerGesture } from '@renderer/DesignSystem/Interactions/gesture'
+import { useDragSnapshot } from '@renderer/DesignSystem/Interactions/snapshot'
+import { announce } from '@renderer/DesignSystem/Interactions/a11y'
+import { DROP_LINE_INSET } from '@renderer/DesignSystem/Interactions/shared'
+import { DropLine } from '@renderer/DesignSystem/Interactions/DropLine'
+import { armAutoScroll } from '@renderer/DesignSystem/Interactions/autoscroll'
 
 // Table row drag — the sidebar drop-line gesture: an accent insertion LINE marks the exact slot,
 // the picked-up row mutes in place (--state-ghost), and NO row displaces. Where you drop disambiguates:

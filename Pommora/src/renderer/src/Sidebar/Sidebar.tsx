@@ -12,11 +12,11 @@ import {
   useClearStrandedGhost,
   useGhostAnchor,
 } from '@renderer/Detail/Views/useGhostAnchor'
-import { Icon, type IconName, entityIcon } from '@renderer/design-system/symbols'
-import { cx } from '@renderer/design-system/cx'
+import { Icon, type IconName, entityIcon } from '@renderer/DesignSystem/Symbols'
+import { cx } from '@renderer/DesignSystem/Util/cx'
 import { contextDirRel } from '@shared/nexusPaths'
-import { MenuItem, titleInput } from '@renderer/design-system/components/menu'
-import { Reveal } from '@renderer/design-system/components/Reveal'
+import { MenuItem, titleInput } from '@renderer/DesignSystem/Components/Menu'
+import { Reveal } from '@renderer/DesignSystem/Animation/Reveal'
 import type {
   CollectionNode,
   ContextGroup,
@@ -32,7 +32,7 @@ import { DEFAULT_NEW_NAME, type MutableKind, type MutateRequest } from '@shared/
 import { createSpaceLabel } from '@shared/contexts'
 import { SidebarDnd, useSidebarDrag } from './sidebarDnd'
 import { buildIndex } from './sidebarDndModel'
-import { registerDiscloseTarget } from '@renderer/design-system/interactions/dragDisclose'
+import { registerDiscloseTarget } from '@renderer/DesignSystem/Interactions/dragDisclose'
 import { AgendaMode } from './AgendaMode'
 import { loadOpen, saveOpen } from './disclosureState'
 import { useSession } from '../store'
@@ -40,7 +40,11 @@ import { pageMoveContext } from '../pageMenuActions'
 import { contextTargetToSelect, isOpenInTabs } from '../Tabs/tabsModel'
 import { RenamableTitle } from '../Components/RenamableTitle'
 import { IconPicker } from '../Components/IconPicker'
-import { twisty, twistyOpen, twistySpacer } from '@renderer/design-system/components/menu/menu.css'
+import {
+  dropOutline,
+  dropOutlineOpen,
+  dropOutlineSpacer,
+} from '@renderer/DesignSystem/Elements/DropOutline/dropOutline.css'
 
 /** Every PathNode carries kind/id/path/title; code-keyed saved rows don't, so they never wire
  *  this. Tab membership rides along so the menu's open item reads stateful. */
@@ -139,7 +143,9 @@ function Leaf({
       indent={depth}
       onClick={onSelect}
       onContextMenu={ctxHandler(onContextMenu)}
-      leading={chevronSpace ? <span className={twistySpacer} data-twisty-spacer /> : null}
+      leading={
+        chevronSpace ? <span className={dropOutlineSpacer} data-drop-outline-spacer /> : null
+      }
     >
       <Icon name={icon} size="title3" className="row-icon" />
       {rename ? <RowTitle path={rename.path} kind={rename.kind} title={title} /> : title}
@@ -272,8 +278,8 @@ function Disclosure({
         <Icon
           name="chevron-right"
           size="control"
-          className={cx(twisty, open && twistyOpen)}
-          data-twisty
+          className={cx(dropOutline, open && dropOutlineOpen)}
+          data-drop-outline
         />
       }
     >
@@ -329,7 +335,7 @@ function PageRow({
   const ghost = useContext(SidebarGhost)
   const api = useContext(SidebarGhostApi)
   const holdGhost = useContext(GhostSuppress)
-  // Change Icon arrives from the native menu as a path; the row that owns it opens the picker
+  // Edit Icon arrives from the native menu as a path; the row that owns it opens the picker
   // against its own glyph, so the surface the gesture happened on is the one that answers.
   const iconPath = useSession((s) => s.iconPath)
   const endIcon = useSession((s) => s.endIcon)
@@ -406,7 +412,7 @@ function GhostLeaf({ depth }: { depth: number }): React.JSX.Element {
         <MenuItem
           className="row"
           indent={depth}
-          leading={<span className={twistySpacer} data-twisty-spacer />}
+          leading={<span className={dropOutlineSpacer} data-drop-outline-spacer />}
         >
           <Icon
             name={entityIcon('page', undefined, defaultIcons)}

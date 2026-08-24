@@ -1,21 +1,22 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
-import { cx } from '@renderer/design-system/cx'
-import { OverScroll } from '@renderer/design-system/interactions/OverScroll'
-import { HoverRemove, hoverRemoveHost } from '@renderer/design-system/interactions/HoverRemove'
-import { SortableZone, useDragItem } from '@renderer/design-system/interactions/drag'
-import { DEFAULT_ENTITY_ICONS, Icon } from '@renderer/design-system/symbols'
-import { duration, text } from '@renderer/design-system/tokens'
+import { cx } from '@renderer/DesignSystem/Util/cx'
+import { OverScroll } from '@renderer/DesignSystem/Interactions/OverScroll'
+import { HoverRemove, hoverRemoveHost } from '@renderer/DesignSystem/Interactions/HoverRemove'
+import { SortableZone, useDragItem } from '@renderer/DesignSystem/Interactions/drag'
+import { DEFAULT_ENTITY_ICONS, Icon } from '@renderer/DesignSystem/Symbols'
+import { duration, ms } from '@renderer/DesignSystem/Animation'
+import { text } from '@renderer/DesignSystem/Tokens'
 import { EntityGlyph } from '../Navigation/EntityGlyph'
 import { resolveWith, type ResolveIndex, type ResolvedNav } from '../Navigation/navResolve'
-import { useExitPresence } from '../design-system/useExitPresence'
+import { useExitPresence } from '@renderer/DesignSystem/Animation/useExitPresence'
 import { useSession } from '../store'
 import type { PreviewTab } from './previewTabs'
 import '../Tabs/tabStrip.css'
 import './previewTabStrip.css'
 
-const BASE_MS = Number.parseInt(duration.base, 10)
+const BASE_MS = ms(duration.base)
 /** The toolbar strip's EXIT_MS twin. */
-const EXIT_MS = BASE_MS + Number.parseInt(duration.fast, 10)
+const EXIT_MS = BASE_MS + ms(duration.fast)
 const TAB_ICON = 'control'
 
 interface Entry {

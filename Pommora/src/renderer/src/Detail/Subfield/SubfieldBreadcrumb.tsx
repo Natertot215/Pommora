@@ -1,6 +1,7 @@
 import { Fragment } from 'react'
-import { overScrollEllipsis } from '@renderer/design-system/interactions/OverScroll'
-import { cx } from '@renderer/design-system/cx'
+import { overScrollEllipsis } from '@renderer/DesignSystem/Interactions/OverScroll'
+import { cx } from '@renderer/DesignSystem/Util/cx'
+import { PathChevron } from '@renderer/DesignSystem/Elements/PathChevron/PathChevron'
 import type { Crumb } from './crumbs'
 
 const crumb = (ghost?: boolean): string =>
@@ -11,7 +12,7 @@ export function SubfieldBreadcrumb({ crumbs }: { crumbs: Crumb[] }): React.JSX.E
     <div className="subfield-crumbs">
       {crumbs.map((c, i) => (
         <Fragment key={c.key}>
-          {i > 0 && <span className="subfield-sep">›</span>}
+          {i > 0 && <PathChevron tone="secondary" />}
           {c.onClick ? (
             <button type="button" className={crumb(c.ghost)} onClick={c.onClick}>
               {c.title}

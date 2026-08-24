@@ -1,6 +1,6 @@
 import { useSession } from '../../store'
 import { viewSettingsScope } from '../../Detail/ViewSettingsScope'
-import { MenuSurface } from '../../design-system/components/menu'
+import { MenuSurface } from '@renderer/DesignSystem/Components/Menu'
 import { SettingsPane } from './SettingsPane'
 import { PageMenu } from './PageMenu'
 import { SettingsScaffold } from './SettingsScaffold'

@@ -92,7 +92,7 @@ The Filter leaf, both doors, authoring the filter as a flat row list — `(conne
 
 What and Operator hold their content whole, so only the value cell absorbs a squeeze — a clipped value scrolls under the pointer on the same box the chips and menu rows use. The footing carries two independent axes: the match mode (**All / Any**, a label-less in-place toggle) and whether the filter runs at all. A shape the pane can't represent renders locked behind an explicit Reset, never silently flattened.
 
-**Location** is the one target with a tree — its picker is the Grouping pane's set list, a row per Set wearing that Set's own icon, children disclosed on the shared rail behind a twisty, at a fixed width and height cap so disclosing a Set scrolls rather than moving rows out from under the cursor. Picked Sets read as titles divided by the house segment hairline rather than as chips, since a Set carries no color of its own; each carries a hover-revealed remove, and the trailing one takes the field's slack.
+**Location** is the one target with a tree — its picker is the Grouping pane's set list, a row per Set wearing that Set's own icon, children disclosed on the shared rail behind a fold chevron, at a fixed width and height cap so disclosing a Set scrolls rather than moving rows out from under the cursor. Picked Sets read as titles divided by the house segment hairline rather than as chips, since a Set carries no color of its own; each carries a hover-revealed remove, and the trailing one takes the field's slack.
 
 #### II. The Visibility Pane
 

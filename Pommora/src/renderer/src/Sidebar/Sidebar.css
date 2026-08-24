@@ -12,7 +12,7 @@
   border-radius: var(--glass-radius);
   overflow: hidden;
   -webkit-app-region: drag;
-  transition: transform var(--duration-base) var(--ease-standard);
+  transition: transform var(--duration-base) var(--ease-base);
 }
 /* Collapsed: slide the panel fully off the left edge — pure slide, no fade, so the motion reads
    on the way OUT (not just in); the detail reclaims the gutter. */
@@ -52,7 +52,7 @@
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  transition: transform var(--duration-base) var(--ease-standard);
+  transition: transform var(--duration-base) var(--ease-base);
 }
 /* ⌘E (settings.json commands.toggle-ribbon): slide the ribbon off the panel's left edge — same
    motion as the sidebar's own collapse — while .sidebar's margin animates shut to reclaim the
@@ -107,7 +107,7 @@
      divider (rows carry their own pad); top clears the traffic lights. */
   margin-left: var(--ribbon-w);
   padding: 46px 10px 12px 0;
-  transition: margin-left var(--duration-base) var(--ease-standard);
+  transition: margin-left var(--duration-base) var(--ease-base);
   /* The panel is a FIXED-width view: it scrolls vertically only. overflow-x:hidden caps the row track
      at the visible width so long titles ellipsize at their row edge (and hover-scroll) instead of
      widening the scroll-area — without it, overflow-y:auto computes overflow-x:auto and the whole
@@ -147,20 +147,20 @@
    content. Both layers are transparent glass, so a plain overlay would read as text-on-text —
    instead two complementary clip sweeps tile the width at every frame (incoming visible left of
    the edge, outgoing right of it), while an inner translate gives the incoming content its
-   rightward slide. Shell-move tokens (--duration-base / --ease-standard), like every other slide. */
+   rightward slide. Shell-move tokens (--duration-base / --ease-base), like every other slide. */
 .mode-exit {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   pointer-events: none;
-  animation: sidebar-mode-out var(--duration-base) var(--ease-standard) forwards;
+  animation: sidebar-mode-out var(--duration-base) var(--ease-base) forwards;
 }
 .mode-enter {
-  animation: sidebar-mode-in var(--duration-base) var(--ease-standard);
+  animation: sidebar-mode-in var(--duration-base) var(--ease-base);
 }
 .mode-enter-slide {
-  animation: sidebar-mode-slide var(--duration-base) var(--ease-standard);
+  animation: sidebar-mode-slide var(--duration-base) var(--ease-base);
 }
 @keyframes sidebar-mode-in {
   from {
@@ -201,9 +201,9 @@
   border-radius: 6px;
   cursor: pointer;
   transition:
-    opacity var(--duration-fast) var(--ease-standard),
-    color var(--duration-fast) var(--ease-standard),
-    background var(--duration-fast) var(--ease-standard);
+    opacity var(--duration-fast) var(--ease-base),
+    color var(--duration-fast) var(--ease-base),
+    background var(--duration-fast) var(--ease-base);
 }
 .sidebar-toggle .flip-x {
   transform: scaleX(-1);
@@ -237,10 +237,10 @@
   transform: translateX(-6px);
   pointer-events: none;
   transition:
-    opacity var(--duration-base) var(--ease-standard),
-    transform var(--duration-base) var(--ease-standard),
-    color var(--duration-fast) var(--ease-standard),
-    background var(--duration-fast) var(--ease-standard);
+    opacity var(--duration-base) var(--ease-base),
+    transform var(--duration-base) var(--ease-base),
+    color var(--duration-fast) var(--ease-base),
+    background var(--duration-fast) var(--ease-base);
 }
 .shell.sidebar-hidden .sidebar-expand {
   opacity: 1;
@@ -301,11 +301,11 @@
 /* "Hide Chevrons" personalization (class on <html>): the leading chevron slot collapses to a tunable
    gutter. KNOB: --chevron-gutter (default 0 = flush with the section header; the glyph is clipped by
    overflow, and the negative margin cancels the row's 8px leading gap so 0 truly sits flush — bump it for
-   breathing room). Matched by the data-twisty / data-twisty-spacer hook the slot holds — the look is the
+   breathing room). Matched by the data-drop-outline / data-drop-outline-spacer hook the slot holds — the look is the
    design system's hashed class, so this rule keys on the attribute instead. The Saved strip (no chevron
    slot) is untouched. The header row still toggles on click. */
-.hide-chevrons .row > span:has(> [data-twisty]),
-.hide-chevrons .row > span:has(> [data-twisty-spacer]) {
+.hide-chevrons .row > span:has(> [data-drop-outline]),
+.hide-chevrons .row > span:has(> [data-drop-outline-spacer]) {
   --chevron-gutter: 2px;
   width: var(--chevron-gutter);
   min-width: var(--chevron-gutter);

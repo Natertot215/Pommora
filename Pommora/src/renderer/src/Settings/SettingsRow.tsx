@@ -1,7 +1,7 @@
 // The words every settings row wears, whatever writes beside them — one shape for the roster's
 // config-driven rows and the fetched sections alike.
-import { cx } from '@renderer/design-system/cx'
-import { text } from '@renderer/design-system/tokens'
+import { cx } from '@renderer/DesignSystem/Util/cx'
+import { text } from '@renderer/DesignSystem/Tokens'
 
 export interface RowText {
   label: string

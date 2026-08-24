@@ -8,7 +8,7 @@
   margin: 0 var(--navwindow-inset);
   padding: 9px 0;
   color: var(--label-tertiary);
-  border-bottom: 1px solid var(--separator-segment);
+  border-bottom: var(--border-segment);
   flex-shrink: 0;
 }
 .nav-search-row input {
@@ -30,7 +30,7 @@
   border-radius: 6px;
   /* The hover fill fades in AND out on the pane's own open speed — symmetric (ease-in-out), never
      a slow linger. */
-  transition: background var(--disclosure) var(--ease-in-out);
+  transition: background var(--duration-fast) ease-in-out;
 }
 /* Pin toggle centered in the row's left inset gutter (absolute so it never shifts the row content out
    of alignment with un-pinned rows). Shares the gallery's hover-reveal mechanism: fades in on the row
@@ -47,7 +47,7 @@
   color: var(--label-tertiary);
   cursor: pointer;
   opacity: 0;
-  transition: opacity var(--duration-base) var(--ease-standard);
+  transition: opacity var(--duration-base) var(--ease-base);
 }
 .nav-item:hover .nav-item-pin {
   opacity: 1;
@@ -106,7 +106,6 @@
   vertical-align: middle;
 }
 .nav-path-sep {
-  color: var(--label-tertiary);
   margin: 0 4px;
   vertical-align: middle;
 }

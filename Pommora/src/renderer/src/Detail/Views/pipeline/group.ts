@@ -6,7 +6,7 @@
 import type { CollectionNode, PageNode, ResolvedGroup, SetNode, ViewRow } from '@shared/types'
 import type { DateGranularity, EmptyPlacement, GroupConfig, SubGroupConfig } from '@shared/views'
 import { PAGE_ID_KEY } from '@shared/identity'
-import { pad } from '@renderer/design-system/pad'
+import { pad } from '@renderer/DesignSystem/Util/pad'
 import type { PageFrontmatter } from '@shared/schemas'
 import { optionValues, type PropertyDefinition } from '@shared/properties'
 import { UNGROUPED } from '@shared/types'

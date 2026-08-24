@@ -1,0 +1,56 @@
+import { useEffect, useRef, useState, type RefObject } from 'react'
+
+/** camelCase / kebab-case key -> "Title Case" label. */
+export function humanize(key: string): string {
+  return key
+    .replace(/[-_]/g, ' ')
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/([a-zA-Z])(\d)/g, '$1 $2')
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
+/** Read back a rendered color → "#RRGGBB", or "#RRGGBB · NN%" when it carries an
+ *  alpha (the opacity tokens), so the gallery shows base + percent, never an opaque
+ *  A## byte. */
+export function formatColor(css: string): string {
+  const m = css.match(/-?\d*\.?\d+/g)
+  if (!m || m.length < 3) return css
+  // rgb()/rgba() carry 0-255 channels; color(srgb …) — what color-mix computes to — carries 0-1.
+  const srgb = css.startsWith('color(')
+  const to255 = (n: string): number => Math.round(Number(n) * (srgb ? 255 : 1))
+  const ch = (n: number): string => Math.max(0, Math.min(255, n)).toString(16).padStart(2, '0')
+  const hex = `#${m.slice(0, 3).map(to255).map(ch).join('')}`.toUpperCase()
+  const a = m.length >= 4 ? Number(m[3]) : 1
+  return a < 1 ? `${hex} · ${Math.round(a * 100)}%` : hex
+}
+
+/** Read a value back from a rendered node on mount — so a swatch/type sample shows
+ *  its real computed value rather than a restated literal. */
+export function useComputedStyleText<T extends HTMLElement>(
+  read: (cs: CSSStyleDeclaration) => string,
+): [RefObject<T | null>, string] {
+  const ref = useRef<T>(null)
+  const [value, setValue] = useState('')
+  useEffect(() => {
+    if (ref.current) setValue(read(getComputedStyle(ref.current)))
+  }, [read])
+  return [ref, value]
+}
+
+const COMPACT_QUERY = '(max-width: 720px)'
+
+/** True on compact (mobile-width) screens — the same breakpoint the mobile nav uses.
+ *  Galleries drop their drag wiring here: a draggable item sets `touch-action: none`,
+ *  which would otherwise trap touch scrolling on a tall grid. */
+export function useIsCompact(): boolean {
+  const [compact, setCompact] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia(COMPACT_QUERY).matches,
+  )
+  useEffect(() => {
+    const mq = window.matchMedia(COMPACT_QUERY)
+    const onChange = (): void => setCompact(mq.matches)
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [])
+  return compact
+}

@@ -1,4 +1,4 @@
-/* Shared group-band chrome — the disclosure head (twisty + glyph + hover "+") over the band body. The
+/* Shared group-band chrome — the disclosure head (outline + glyph + hover "+") over the band body. The
    table + cards views each scope the divergent bits: the table's gutter chevron + sticky head, the
    cards' sibling seams. The glyph itself resolves identically for both (GroupBand). */
 
@@ -7,7 +7,7 @@
 }
 .group-band-row {
   padding-bottom: var(--band-clearance);
-  transition: padding-bottom var(--twisty-beat, var(--disclosure)) var(--ease-standard);
+  transition: padding-bottom var(--drop-outline-beat, var(--duration-fast)) var(--ease-base);
 }
 .group-band-row[data-disclose] {
   padding-bottom: 0;
@@ -43,7 +43,7 @@
 .group-name > svg {
   color: var(--label-secondary);
 }
-.group-band-twisty,
+.group-band-drop-outline,
 .group-band-add {
   display: inline-flex;
   align-items: center;
@@ -57,7 +57,7 @@
    row is the reveal target. */
 .group-band-add {
   opacity: 0;
-  transition: opacity var(--duration-fast) var(--ease-standard);
+  transition: opacity var(--duration-fast) var(--ease-base);
 }
 .group-band-row:hover .group-band-add {
   opacity: 1;

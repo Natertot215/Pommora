@@ -1,5 +1,5 @@
-import { Icon } from '@renderer/design-system/symbols'
-import { cx } from '../../design-system/cx'
+import { Icon } from '@renderer/DesignSystem/Symbols'
+import { cx } from '@renderer/DesignSystem/Util/cx'
 import * as s from './settingsPane.css'
 
 /** The visibility eye — rest shows the current state's glyph, hover previews the toggle: a hidden

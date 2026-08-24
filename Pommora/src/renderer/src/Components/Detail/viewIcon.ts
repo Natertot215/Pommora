@@ -1,4 +1,4 @@
-import type { IconName } from '@renderer/design-system/symbols'
+import type { IconName } from '@renderer/DesignSystem/Symbols'
 import type { ViewType } from '@shared/views'
 
 export function iconForTypeSwitch(

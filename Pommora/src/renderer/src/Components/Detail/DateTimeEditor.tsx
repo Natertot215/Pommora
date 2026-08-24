@@ -1,7 +1,7 @@
 import type { ColumnStyle, DateFormat, TimeFormat, WeekdayFormat } from '@shared/columnStyles'
-import { Icon, type IconName } from '@renderer/design-system/symbols'
+import { Icon, type IconName } from '@renderer/DesignSystem/Symbols'
 import { PickerControl } from './PickerControl'
-import { Reveal } from '../../design-system/components/Reveal'
+import { Reveal } from '@renderer/DesignSystem/Animation/Reveal'
 import { optionsLabel } from './settingsPane.css'
 import * as s from './dateTimeEditor.css'
 

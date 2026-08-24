@@ -10,7 +10,7 @@ import {
   type ViewPick,
   type ViewPickerItem,
 } from '@shared/blocks'
-import { GLIDE_FEEL } from '@renderer/design-system/interactions/feel'
+import { GLIDE_FEEL } from '@renderer/DesignSystem/Animation/feel'
 import type { ConnPage, ConnectionsApi } from '@renderer/MarkdownPM/connections'
 import {
   containersByPathOf,
@@ -23,12 +23,12 @@ import { hoverConnection, hoverWebsite } from '@renderer/Embeds/ConnectionHoverC
 import { attachBelow, insertBand, removeTile as removeLeaf } from '@renderer/SurfacePM/core/ops'
 import { getTile } from '@renderer/SurfacePM/core/model'
 import { SurfaceView, type BackdropTarget } from '@renderer/SurfacePM/SurfaceView'
-import { entityIcon, iconNameOr } from '@renderer/design-system/symbols'
+import { entityIcon, iconNameOr } from '@renderer/DesignSystem/Symbols'
 import type { EntityIconKind } from '@shared/types'
 import { useSession } from '@renderer/store'
 import { tileMenuModel } from '@shared/tileMenu'
 import { popRowMenu, useNativeMenus } from '@renderer/nativeMenus'
-import { useHeld } from '@renderer/design-system/useHeld'
+import { useHeld } from '@renderer/DesignSystem/Interactions/useHeld'
 import { findCollection, findCollectionForSet, findSet } from '@renderer/Detail/Scope'
 import { mintDefaultView } from '@shared/views'
 import type { CollectionNode, NexusTree, SetNode } from '@shared/types'

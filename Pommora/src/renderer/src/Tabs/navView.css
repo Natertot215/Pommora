@@ -17,20 +17,15 @@
 .nav-view-head {
   flex-shrink: 0;
   padding: 0 0 10px;
-  border-bottom: 1px solid var(--separator-segment);
+  border-bottom: var(--border-segment);
   margin: 0 var(--surface-banner-inset-right) 0 var(--surface-banner-inset);
-  /* Glide with the sidebar/inspector slide, like .detail/.detail-body — the shell swaps the inset
-     vars discretely, so each consumer animates its own derived edge. */
   transition:
-    margin-left var(--duration-base) var(--ease-standard),
-    margin-right var(--duration-base) var(--ease-standard);
+    margin-left var(--duration-base) var(--ease-base),
+    margin-right var(--duration-base) var(--ease-base);
 }
 .nav-view-search {
   width: 100%;
-  font-size: 16px; /* KNOB — a step down from the banner-title size */
-  /* The drawn caret takes its height from the COMPUTED line-height (nativeCaret.ts), so a field that
-     overrides its font-size has to carry a line box to match — otherwise the bar is sized for the
-     type ramp this field left behind. */
+  font-size: 16px;
   line-height: 20px;
   font-weight: var(--weight-emphasized);
 }
@@ -52,13 +47,12 @@
      padding is zeroed (both axes, above), so these ARE the edges. */
   padding: 8px var(--surface-inset-right) 28px var(--surface-inset);
   transition:
-    padding-left var(--duration-base) var(--ease-standard),
-    padding-right var(--duration-base) var(--ease-standard);
+    padding-left var(--duration-base) var(--ease-base),
+    padding-right var(--duration-base) var(--ease-base);
 }
 
 /* The LIST rides the content inset (matching pages) on BOTH sides, not the wider surface inset the
-   gallery/scroll sits on — so its rows aren't wider than the content view. The list's own padding adds
-   the content−surface gap on top of the scroll's surface inset; rows + pins shift as one, gallery untouched. */
+   gallery/scroll sits on — so its rows aren't wider than the content view.*/
 .nav-view .nav-list {
   padding-left: calc(var(--content-inset) - var(--surface-inset));
   padding-right: calc(var(--content-inset-right) - var(--surface-inset-right));

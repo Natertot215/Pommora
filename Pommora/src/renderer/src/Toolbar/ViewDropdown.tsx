@@ -1,6 +1,6 @@
 import type { CollectionNode, SetNode } from '@shared/types'
-import { MenuDropdown } from '@renderer/design-system/components/menu'
-import { iconNameOr } from '@renderer/design-system/symbols'
+import { MenuDropdown } from '@renderer/DesignSystem/Components/Menu'
+import { iconNameOr } from '@renderer/DesignSystem/Symbols'
 import { useSession } from '../store'
 import { findCollection, findSet, findCollectionForSet, isDepth1Set } from '../Detail/Scope'
 import { useActiveView } from '../Detail/Views/useActiveView'

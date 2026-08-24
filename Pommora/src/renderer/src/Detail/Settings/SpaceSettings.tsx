@@ -1,21 +1,20 @@
 import { blockHostKey } from '@shared/blocks'
+import { lockLabel } from '@shared/toggleLabels'
 import { useRef, useState } from 'react'
-import { Icon, entityIcon } from '@renderer/design-system/symbols'
+import { Icon, entityIcon } from '@renderer/DesignSystem/Symbols'
 import {
   FooterLockButton,
   MenuBottomRow,
-  MenuItem,
   MenuScrollFrame,
-} from '@renderer/design-system/components/menu'
-import { footerLockAction } from '@renderer/design-system/components/menu/menu.css'
-import { PointMenu } from '@renderer/design-system/components/PickerMenu'
-import { TINT_STEPS, tintAt } from '@renderer/design-system/tokens/tint'
-import { cellColor } from '@renderer/design-system/tokens/ramp'
-import { labelColorFor } from '@renderer/design-system/tokens/colorMap'
+} from '@renderer/DesignSystem/Components/Menu'
+import { footerLockAction } from '@renderer/DesignSystem/Components/Menu/menu.css'
+import { TINT_STEPS, tintAt } from '@renderer/DesignSystem/Tokens/tint'
+import { cellColor } from '@renderer/DesignSystem/Tokens/ramp'
+import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import { useSession } from '../../store'
 import { findSpace } from '../Scope'
 import { IconPicker } from '../../Components/IconPicker'
-import { ColorPicker } from '../../Components/Detail/ColorPicker'
+import { ColorPicker } from '@renderer/DesignSystem/Components/Pickers/ColorPicker/ColorPicker'
 import { InlineEditHeader } from '../../Components/Detail/InlineEditHeader'
 
 export function SpaceSettingsContent({ id }: { id: string }): React.JSX.Element | null {
@@ -28,13 +27,34 @@ export function SpaceSettingsContent({ id }: { id: string }): React.JSX.Element 
   const headerRef = useRef<HTMLDivElement>(null)
   const [pickerOpen, setPickerOpen] = useState(false)
   const [colorOpen, setColorOpen] = useState(false)
-  const [headerMenu, setHeaderMenu] = useState<{ x: number; y: number } | null>(null)
+  const [renaming, setRenaming] = useState(false)
   const node = findSpace(tree, id)
   const color = spaceColor(tree, id)
   if (!node) return null
 
+  const iconHidden = node.headingIconHidden === true
   const resolved = labelColorFor(color)
   const solid = resolved === 'default' ? null : cellColor(resolved)
+
+  const openHeaderMenu = async (e: React.MouseEvent): Promise<void> => {
+    // Main pops its own editor menu for ANY editable target and a renderer preventDefault
+    // can't suppress it, so the gesture stays yielded mid-rename — two menus over one field
+    // would lose both picks. This row's own menu owns everywhere else.
+    if ((e.target as HTMLElement).closest('input, textarea, [contenteditable]')) return
+    e.preventDefault()
+    e.stopPropagation()
+    const action = await window.nexus.titleMenu({ toggleIcon: true, iconHidden, changeColor: true })
+    if (action === 'rename') setRenaming(true)
+    else if (action === 'editIcon') setPickerOpen(true)
+    else if (action === 'toggleIcon')
+      await mutate({
+        op: 'setHeadingIconHidden',
+        path: node.path,
+        kind: 'space',
+        hidden: !iconHidden,
+      })
+    else if (action === 'changeColor') setColorOpen(true)
+  }
 
   return (
     <div style={{ minWidth: 225, minHeight: 245, display: 'flex', flexDirection: 'column' }}>
@@ -43,13 +63,12 @@ export function SpaceSettingsContent({ id }: { id: string }): React.JSX.Element 
           <MenuBottomRow
             leading={
               <FooterLockButton
-                locked={locked}
+                verb={lockLabel(locked)}
                 noun="board"
                 onToggle={() => void setHostLocked({ kind: 'space', id }, !locked)}
               />
             }
             trailing={
-              // Stub — its menu is a later arrival.
               <button type="button" aria-label="More actions" className={footerLockAction} disabled>
                 <Icon name="ellipsis" size="body" />
               </button>
@@ -58,23 +77,14 @@ export function SpaceSettingsContent({ id }: { id: string }): React.JSX.Element 
         }
       >
         {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
-        <div
-          ref={headerRef}
-          onContextMenu={(e) => {
-            // Main pops its own editor menu for ANY editable target and a renderer preventDefault
-            // can't suppress it, so the gesture stays yielded mid-rename — two menus over one field
-            // would lose both picks. This row's own menu owns everywhere else.
-            if ((e.target as HTMLElement).closest('input, textarea, [contenteditable]')) return
-            e.preventDefault()
-            e.stopPropagation()
-            setHeaderMenu({ x: e.clientX, y: e.clientY })
-          }}
-        >
+        <div ref={headerRef} onContextMenu={(e) => void openHeaderMenu(e)}>
           <InlineEditHeader
             value={node.name}
             icon={entityIcon('space', node.icon, defaultIcons)}
             iconRef={iconRef}
             outline={solid ? tintAt(solid, TINT_STEPS.secondary) : undefined}
+            editing={renaming}
+            onEditingChange={setRenaming}
             onIconClick={() => setPickerOpen(true)}
             onCommit={(next) => {
               if (next && next !== node.name)
@@ -83,17 +93,6 @@ export function SpaceSettingsContent({ id }: { id: string }): React.JSX.Element 
           />
         </div>
       </MenuScrollFrame>
-      <PointMenu at={headerMenu} onDismiss={() => setHeaderMenu(null)}>
-        <MenuItem
-          leading={<Icon name="palette" size="body" />}
-          onClick={() => {
-            setHeaderMenu(null)
-            setColorOpen(true)
-          }}
-        >
-          Change Color
-        </MenuItem>
-      </PointMenu>
       <IconPicker
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}

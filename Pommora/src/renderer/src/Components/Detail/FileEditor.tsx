@@ -1,4 +1,4 @@
-import { PathField } from '@renderer/design-system/fields'
+import { PathField } from '@renderer/DesignSystem/Components/Fields'
 import { useSession } from '@renderer/store'
 import * as s from './settingsPane.css'
 

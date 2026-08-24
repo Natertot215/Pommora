@@ -1,13 +1,13 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
-import { cx } from '../../design-system/cx'
-import { duration } from '../../design-system/tokens/motion'
-import { useExitPresence } from '../../design-system/useExitPresence'
+import { cx } from '@renderer/DesignSystem/Util/cx'
+import { duration, ms } from '@renderer/DesignSystem/Animation'
+import { useExitPresence } from '@renderer/DesignSystem/Animation/useExitPresence'
 import * as s from './paneSlider.css'
 
 // The slide runs on `base`; a close holds the detail mounted exactly that long (below) so it slides
 // OUT at full size instead of vanishing — a collapsing empty slot fed the ResizeObserver mid-slide,
 // which was the slide-out jitter.
-const SLIDE_MS = Number.parseInt(duration.base, 10)
+const SLIDE_MS = ms(duration.base)
 
 /**
  * The one slide primitive every pane rides, so no surface hand-rolls its own push/back state.

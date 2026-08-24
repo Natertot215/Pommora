@@ -1,10 +1,11 @@
 import { Fragment, useEffect, useMemo, useState } from 'react'
-import { Icon } from '@renderer/design-system/symbols'
-import type { IconSize } from '@renderer/design-system/tokens/size.css'
-import { cx } from '@renderer/design-system/cx'
-import { text } from '@renderer/design-system/tokens'
-import { OverScroll } from '@renderer/design-system/interactions/OverScroll'
-import { onActivateKey } from '@renderer/design-system/interactions/activate'
+import { Icon } from '@renderer/DesignSystem/Symbols'
+import type { IconSize } from '@renderer/DesignSystem/Tokens/size.css'
+import { cx } from '@renderer/DesignSystem/Util/cx'
+import { text } from '@renderer/DesignSystem/Tokens'
+import { OverScroll } from '@renderer/DesignSystem/Interactions/OverScroll'
+import { PathChevron } from '@renderer/DesignSystem/Elements/PathChevron/PathChevron'
+import { onActivateKey } from '@renderer/DesignSystem/Interactions/activate'
 import { TableRowDnd, useTableRowDrag } from '../Detail/Views/Table/tableDnd'
 import type { NavRef, SelectTarget } from '@shared/types'
 import { useSession } from '../store'
@@ -34,7 +35,7 @@ export function NavCrumbs({
       {path.map((crumb, i) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: a breadcrumb is strictly positional and never reorders
         <Fragment key={i}>
-          {i > 0 && <span className="nav-path-sep">›</span>}
+          {i > 0 && <PathChevron size="caption" className="nav-path-sep" />}
           <Icon name={crumb.icon} size={iconSize} className="nav-path-icon" />
           <span className="nav-path-name">{crumb.title}</span>
         </Fragment>

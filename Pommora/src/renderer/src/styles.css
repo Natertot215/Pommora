@@ -64,7 +64,7 @@ textarea,
    transform in its own `transition` (one element resolves to a single transition value). */
 .hover-pop {
   position: relative;
-  transition: transform var(--duration-slow) var(--ease-standard);
+  transition: transform var(--duration-slow) var(--ease-base);
   will-change: transform;
 }
 .hover-pop:hover {
@@ -99,7 +99,7 @@ textarea,
   position: relative;
   height: 100dvh;
   --io: 0;
-  transition: --io var(--duration-base) var(--ease-standard);
+  transition: --io var(--duration-base) var(--ease-base);
   overflow: clip;
   background: var(--main-bg);
   --content-gutter: 24px;
@@ -141,7 +141,7 @@ textarea,
   height: var(--toolbar-h);
   z-index: var(--z-titlebar);
   -webkit-app-region: drag;
-  transition: left var(--duration-base) var(--ease-standard);
+  transition: left var(--duration-base) var(--ease-base);
 }
 .shell.sidebar-hidden .titlebar {
   left: 0;

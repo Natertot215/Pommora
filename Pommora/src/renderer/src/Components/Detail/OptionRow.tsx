@@ -1,9 +1,9 @@
 import type { PointerEvent as ReactPointerEvent } from 'react'
-import { Icon } from '@renderer/design-system/symbols'
+import { Icon } from '@renderer/DesignSystem/Symbols'
 
-import type { labelColorFor } from '@renderer/design-system/tokens/colorMap'
-import { cx } from '@renderer/design-system/cx'
-import { ColorPicker } from './ColorPicker'
+import type { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
+import { cx } from '@renderer/DesignSystem/Util/cx'
+import { ColorPicker } from '@renderer/DesignSystem/Components/Pickers/ColorPicker/ColorPicker'
 import { OptionNameCaret, ghostAnchorProps } from './GhostOptionChip'
 import type { GhostAnchor } from '@renderer/Detail/Views/useGhostAnchor'
 import * as s from './settingsPane.css'
@@ -12,7 +12,7 @@ import {
   labelColor,
   shape as labelShape,
   type LabelShape,
-} from '@renderer/design-system/labels'
+} from '@renderer/DesignSystem/Labels'
 
 /** One reorderable option, the same row in the Select editor and the Status editor. Everything that
  *  differs between them — where the list came from, whether a group's color stands in for an unset

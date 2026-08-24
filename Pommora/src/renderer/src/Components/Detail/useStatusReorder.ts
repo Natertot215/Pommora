@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
-import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
-import { useDragSnapshot } from '@renderer/design-system/interactions/snapshot'
-import { EDITABLE_TARGETS, GHOST_OFFSET } from '@renderer/design-system/interactions/shared'
-import { announce } from '@renderer/design-system/interactions/a11y'
-import { armAutoScroll } from '@renderer/design-system/interactions/autoscroll'
+import { usePointerGesture } from '@renderer/DesignSystem/Interactions/gesture'
+import { useDragSnapshot } from '@renderer/DesignSystem/Interactions/snapshot'
+import { EDITABLE_TARGETS, GHOST_OFFSET } from '@renderer/DesignSystem/Interactions/shared'
+import { announce } from '@renderer/DesignSystem/Interactions/a11y'
+import { armAutoScroll } from '@renderer/DesignSystem/Interactions/autoscroll'
 
 // The one reorder implementation under both option editors — `useOptionReorder` adapts it to a flat
 // list. A drag can reorder within a group OR cross into another group (including an empty one); on

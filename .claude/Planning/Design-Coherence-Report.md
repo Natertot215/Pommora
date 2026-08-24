@@ -9,9 +9,9 @@ An audit of the design system, the styling layer, the component layer, and the r
 | Sweep | Covered |
 | ------------------ | ---------------------------------------------------------------------------------- |
 | Design-system membership | Every component under `renderer/src/`, tested for data-model coupling and consumer count |
-| Styling health | 44 plain `.css` + 43 `.css.ts`, 11,673 lines, against `design-system/tokens/` |
+| Styling health | 44 plain `.css` + 43 `.css.ts`, 11,673 lines, against `DesignSystem/Tokens/` |
 | Component health | The renderer's component tree, for repeated behavior and re-implemented primitives.  |
-| Reference audit | `DesignSystemPM.md` (312 lines) against `design-system/` (~140 files) |
+| Reference audit | `DesignSystemPM.md` (312 lines) against `DesignSystem/` (~140 files) |
 | Drift archaeology | The whole system, for what was minted speculatively and what was superseded in place. |
 
 Findings sitting in files owned by a concurrent work stream are marked **(concurrent)** — real, but not safe to act on until that work lands.
@@ -69,29 +69,27 @@ Three remain, because repairing them means adding rather than replacing:
 
 - **`chipBase` is advertised as a token and is not one.** `tokens/chip.css.ts` declares it `const`, not `export`, and it is absent from the barrel. No caller can import it. `PropertiesPM.md` repeats the claim.
 - **The Ramp table documents private constants** while omitting the exported API.
-- **The Components table is framed as the roster of `design-system/components/` and lists 4 of ~22.** The framing is the defect: it tells a reader the list is exhaustive.
+- **The Components table is framed as the roster of `DesignSystem/Components/` and lists 4 of ~22.** The framing is the defect: it tells a reader the list is exhaustive.
 
 ### III. The Boundary
 
 #### The design system already depends on app code
 
-Proof rather than prediction — **five files inside `design-system/` import from app layers:**
+Proof rather than prediction — **two files inside `DesignSystem/` import from app layers:**
 
 ```
-ColorSwatch.tsx        → @renderer/Components/Detail/ColorPicker
-colorSwatch.css.ts     → @renderer/Components/Detail/colorPicker.css
 menu/Menu.tsx          → @shared/toggleLabels
 PreviewPane.tsx        → @shared/toggleLabels
 ```
 
-The system cannot build without `ColorPicker` — a design-system component today in everything but location. The last two entries are the milder case — a component that belongs where it is, pulling one string from app code; the repair there is a prop, not a move.
+`ColorPicker` was the load-bearing case — a design-system component in everything but location — and now lives in `components/ColorPicker/`, so `ColorSwatch.tsx` and `colorSwatch.css.ts` reach it within the system. The two entries left are the milder case — a component that belongs where it is, pulling one string from app code; the repair there is a prop, not a move.
 
 #### What belongs inside
 
 | Component              | Consumers                           | Destination                 |
 | ---------------------- | ----------------------------------- | --------------------------- |
 | `EditableInput`        | 5, one inside the design system     | ✓ landed — `fields/`        |
-| `ColorPicker`          | 6, one inside the design system     | `components/ColorPicker/`   |
+| `ColorPicker`          | 6, one inside the design system     | ✓ landed — `components/ColorPicker/` |
 | `RenamableLabel`       | 8                                   | ✓ landed — `fields/`        |
 | `PaneSlider`           | 7                                   | `components/PaneSlider/`    |
 | `solidColor.ts`        | 11, six outside its own view folder | `tokens/`                   |
@@ -108,7 +106,7 @@ The system cannot build without `ColorPicker` — a design-system component toda
 
 Membership is currently decided per-move by whoever is moving something, which is how five inversions accumulated while everyone involved believed the rule was obvious. A stated test — *knows no entity type, touches no store, touches no IPC* — is nearly right, with `symbols/` as the known exception.
 
-More durable than any stated rule: **make the boundary a lint error.** Biome's configuration supports restricting imports by path. One rule forbidding `@renderer/*` inside `design-system/**` would refuse the next inversion at the gate. Everything else depends on remembering.
+More durable than any stated rule: **make the boundary a lint error.** Biome's configuration supports restricting imports by path. One rule forbidding `@renderer/*` inside `DesignSystem/**` would refuse the next inversion at the gate. Everything else depends on remembering.
 
 ### IV. Drift
 
@@ -154,7 +152,7 @@ The token covers one of three surfaces wearing the concept it names, which is al
 
 | Token | Declared in | Read by |
 | --- | --- | --- |
-| `--glass-inset` | `renderer/src/styles.css` (app root) | 30 sites across eight features, **including `design-system/`** |
+| `--glass-inset` | `renderer/src/styles.css` (app root) | 30 sites across eight features, **including `DesignSystem/`** |
 | `--glass-radius` | `renderer/src/styles.css` | design-system, Detail, Embeds, Sidebar |
 | `--twisty-beat` | `Components/Detail/settingsPane.css.ts` | **design-system** and Detail |
 
@@ -258,10 +256,10 @@ Recorded so a future sweep does not re-litigate them. `Toolbar/`'s dropdowns all
 
 #### The root is the disorder
 
-`design-system/` has five named folders and **fifteen loose files at its root**, plus three helpers filed inside `components/` that are not components.
+`DesignSystem/` has five named folders and **fifteen loose files at its root**, plus three helpers filed inside `components/` that are not components.
 
 ```yaml
-design-system/
+DesignSystem/
 ├── tokens/ · materials/ · symbols/ · interactions/ · components/
 ├── clamp.ts · cx.ts · moveItem.ts · pad.ts              | • pure helpers, uncategorized
 ├── useExitPresence.ts · useHeld.ts · revealBar.ts       | • hooks, uncategorized
@@ -326,7 +324,7 @@ This is the same gap the reference document has. **The document has no Helpers s
 ├── // components                       | ▸ Every component a folder; no loose helpers, no loose sheets
 │   ├── // CalendarPicker               | • Date, time and range — the largest undocumented component
 │   ├── // Checkbox                     | ▸ was Checkbox.tsx + checkbox.css at the folder root
-│   ├── // ColorPicker                  | ← from Components/Detail — the system already imports it
+│   ├── // ColorPicker                  | ✓ landed — moved from Components/Detail, where the system already imported it
 │   ├── // Menu                         | ▸ was menu/ — the system's only lowercase folder
 │   │   ├── [Menu.tsx]                  | • The eleven row and frame pieces
 │   │   ├── [MenuSurface.tsx]           | • The beaked toolbar pane
@@ -368,7 +366,7 @@ This is the same gap the reference document has. **The document has no Helpers s
 
 Three choices worth stating. **One `helpers/`, not `helpers/` and `hooks/`** — splitting by whether something calls a React hook sorts by implementation detail; a caller asking "is there already a clamp" does not first ask whether clamping is stateful. **`theme/` earns a folder despite holding two files** because it is the one place the system legitimately reads app types, and naming it is what lets the boundary rule elsewhere be absolute. **`components/` becomes uniformly foldered** on the rule *more than one file gets a folder*, which also collects the two tests not living beside their component.
 
-The chip family has since landed as `design-system/labels/`, and the fade and the remove × as `interactions/OverScroll/` and `interactions/HoverRemove/` — so `components/` no longer expects a `Chip` folder, the root pile is two stylesheets lighter, and the token barrel has stopped being the chip barrel.
+The chip family has since landed as `DesignSystem/Labels/`, and the fade and the remove × as `interactions/OverScroll/` and `interactions/HoverRemove/` — so `components/` no longer expects a `Chip` folder, the root pile is two stylesheets lighter, and the token barrel has stopped being the chip barrel.
 
 #### The ledger
 
@@ -413,7 +411,7 @@ The planning session's agenda. Each is cheap once decided and wrong to guess at.
 
 #### Constraints the planning session inherits
 
-- **The extraction precedes the rehome.** The cleanup's `Components/Detail` rehome moves that folder to a feature domain and already carves out `PaneSlider`. `ColorPicker` now has two importers inside `design-system/` — so the rehome as written would carry it into a feature domain while the system imports it, deepening the inversion. Whatever the design plan turns out to be, the three arrivals have to land before that rehome runs.
+- **The extraction precedes the rehome — and the inverting pieces have landed.** The cleanup's `Components/Detail` rehome moves that folder to a feature domain. `ColorPicker` had two importers inside `DesignSystem/`, so leaving it behind would have carried it into a feature domain while the system imported it; it now lives in `components/ColorPicker/`, alongside the already-landed `EditableInput` and `RenamableLabel`. `PaneSlider` still moves too, but its consumers are all external, so its move is ordering, not inversion.
 - **No visible payoff.** Nearly all of it is `net ≈ 0` and changes nothing a user sees. The return is in what the next feature costs.
 - **Not a rewrite.** Nothing here found a wrong architecture. The instrument is `git mv` and a lint rule.
 - **The document depends on none of it** and pays back on the very next session, including the sessions that do the moves.
@@ -449,17 +447,17 @@ Where the report's work stands, kept current so a session can read its position 
 
 #### Landed
 
-- **The labels family** — four shapes, the treatment axes, the tint recipe, the recipes (`design-system/labels/`).
+- **The labels family** — four shapes, the treatment axes, the tint recipe, the recipes (`DesignSystem/Labels/`).
 - **OverScroll** — one overflow-fade mechanism under `interactions/OverScroll`, composed at source by its consumers.
 - **HoverRemove** — the hover-revealed remove × under `interactions/HoverRemove`.
 - **The Interaction Lab** moved to `showcase/lab/`.
 - **The checkbox recipe** — the capped labels wear the one cap, and the checkbox reads its recipe.
-- **The fields family** (`design-system/fields/`) — the Fields plan executed 08-24: one axes stylesheet (boxed · hairline · bare · search), `InputField` (the renamed `InteractionField`), the ring channel with rest/focus/error presets and one spelling (`FIELD_RING_VAR`), `--input-field` gone with zero trace, seven hand-rolled bare-input resets retired onto one `bare`, the transparent search look and the placeholder tone family-owned, and the editing chain (`EditableInput` · `RenamableLabel` · `useDraftEdit` extracted from PathField) living beside its chrome. The `EditableInput`-before-rehome constraint is satisfied. Net code delta negative.
+- **The fields family** (`DesignSystem/Components/Fields/`) — the Fields plan executed 08-24: one axes stylesheet (boxed · hairline · bare · search), `InputField` (the renamed `InteractionField`), the ring channel with rest/focus/error presets and one spelling (`FIELD_RING_VAR`), `--input-field` gone with zero trace, seven hand-rolled bare-input resets retired onto one `bare`, the transparent search look and the placeholder tone family-owned, and the editing chain (`EditableInput` · `RenamableLabel` · `useDraftEdit` extracted from PathField) living beside its chrome. The `EditableInput`-before-rehome constraint is satisfied. Net code delta negative.
+- **ColorPicker** has landed in `DesignSystem/components`
 
 #### Remaining Slices
 
-- **The boundary slice** — `ColorPicker` moves in; a lint rule pins the design-system import direction. The recommended next slice.
-- **The root pile** — the loose helpers and sheets at `design-system/`'s root each find a folder.
+- **The root pile** — the loose helpers and sheets at `DesignSystem/`'s root each find a folder.
 - **The reference document rewrite** — DesignSystemPM grew its Interactive Fields corner; the other ~18 undocumented components and ~20 helpers remain.
 - **The twin extraction** — `PagePropertiesPane`/`PreviewInspector` (~470 lines of parallel structure).
 - **The §VIII decisions** — a session against the open questions above, taken as decisions rather than edits.

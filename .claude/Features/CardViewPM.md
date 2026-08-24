@@ -76,9 +76,9 @@ Cards live in the ViewSettings type grid and carry their options in the Layout l
 
 ### Card Tokens
 
-The card grid's design vocabulary. The geometry the two card families agreed on — the floor, gaps, thumb share, and cover zoom — lives once in `design-system/card-tokens.css`, shared with the NavWindow / NavView gallery; the Cards renderer's own scope (`.cards-view`) overrides only what genuinely differs. Atlas convention per [[DesignSystemPM]].
+The card grid's design vocabulary. The geometry the two card families agreed on — the floor, gaps, thumb share, and cover zoom — lives once in `DesignSystem/Tokens/card-tokens.css`, shared with the NavWindow / NavView gallery; the Cards renderer's own scope (`.cards-view`) overrides only what genuinely differs. Atlas convention per [[DesignSystemPM]].
 
-**SOURCE:** `Pommora/src/renderer/src/design-system/card-tokens.css` · `Pommora/src/renderer/src/Detail/Views/Cards/CardsView.css`
+**SOURCE:** `Pommora/src/renderer/src/DesignSystem/Tokens/card-tokens.css` · `Pommora/src/renderer/src/Detail/Views/Cards/CardsView.css`
 
 | Title | Token | Value |
 | --- | --- | --- |

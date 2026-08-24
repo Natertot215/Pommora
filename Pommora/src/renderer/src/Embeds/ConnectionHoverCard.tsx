@@ -4,10 +4,10 @@ import { LINK_RESOLVE_TIMEOUT_MS } from '@shared/links'
 import {
   PickerMenu,
   type PickerDirection,
-} from '@renderer/design-system/components/PickerMenu/PickerMenu'
+} from '@renderer/DesignSystem/Components/Pickers/PickerMenu/PickerMenu'
 import { EditorView } from '@codemirror/view'
 import { HEADING_FOLD_LINE, toggleFoldAt } from '@renderer/MarkdownPM/editor/folding'
-import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
+import { usePointerGesture } from '@renderer/DesignSystem/Interactions/gesture'
 import { WEB_PARTITION, type HoverCardSize } from '@shared/types'
 import { pageIndexOf } from '../treeIndex'
 import { fetchPageDetail, readPageDetail } from '../Tabs/warmCache'

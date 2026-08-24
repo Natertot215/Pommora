@@ -69,7 +69,7 @@ Its body is the front-matter inspector, properties only — no title or banner r
 
 ### The Token Contract
 
-**SOURCE:** `Pommora/src/renderer/src/design-system/components/PreviewPane/previewPane.css`
+**SOURCE:** `Pommora/src/renderer/src/DesignSystem/Detail/PreviewPane/previewPane.css`
 
 The window states its own dimensions — its toolbar height, the width of each side pane, its footer height, and how far the trailing controls slide aside as a pane opens. A host that embeds the window may retune any of them for itself without editing the window: the navigation window widens the trailing gap and sets its own reveal distances, and the floating preview supplies its footer height.
 

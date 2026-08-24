@@ -10,7 +10,7 @@ import { EMPTY_ASSET_MAP } from '@shared/types'
 import { Cell } from './Cell'
 import type { ResolveContext } from './resolveContext'
 import { propsAtRoot } from '@renderer/testing/propsAtRoot'
-import { labelColor } from '@renderer/design-system/labels'
+import { labelColor } from '@renderer/DesignSystem/Labels'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 

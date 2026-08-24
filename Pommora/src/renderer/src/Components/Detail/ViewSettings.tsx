@@ -8,7 +8,7 @@ import {
   type SavedView,
   type ViewType,
 } from '@shared/views'
-import { Icon, type IconName } from '@renderer/design-system/symbols'
+import { Icon, type IconName } from '@renderer/DesignSystem/Symbols'
 import {
   MenuItem,
   MenuSeparator,
@@ -16,7 +16,7 @@ import {
   MenuScrollFrame,
   MenuBottomRow,
   AccessoryButton,
-} from '../../design-system/components/menu'
+} from '@renderer/DesignSystem/Components/Menu'
 import {
   detail,
   flushTrailing,
@@ -24,9 +24,9 @@ import {
   footingSymbol,
   item,
   side,
-} from '../../design-system/components/menu/menu.css'
-import { PickerMenu } from '../../design-system/components/PickerMenu'
-import { Slider } from '../../design-system/components/Slider/Slider'
+} from '@renderer/DesignSystem/Components/Menu/menu.css'
+import { PickerMenu } from '@renderer/DesignSystem/Components/Pickers/PickerMenu'
+import { Slider } from '@renderer/DesignSystem/Components/Controls/Slider/Slider'
 import { useSession } from '../../store'
 import { useSaveView } from '@renderer/Embeds/ViewEmbedScope'
 import { InlineEditHeader } from './InlineEditHeader'
@@ -39,7 +39,7 @@ import { SortingPane } from './SortingPane'
 import { FilterPane } from './FilterPane'
 import { PaneSlider } from './PaneSlider'
 import { iconForTypeSwitch } from './viewIcon'
-import { cx } from '../../design-system/cx'
+import { cx } from '@renderer/DesignSystem/Util/cx'
 import * as vs from './viewSettings.css'
 
 // Unimplemented types render at full weight but their tiles are inert.
@@ -346,7 +346,7 @@ export function ViewSettings({
       key={r.id}
       className={flushTrailing}
       leading={<Icon name={r.icon} size="title3" />}
-      trailing={<Icon name="chevron-right" size="title3" />}
+      trailing={<Icon name="chevron-right" />}
       onClick={() => setLeaf(r.id)}
     >
       {r.label}

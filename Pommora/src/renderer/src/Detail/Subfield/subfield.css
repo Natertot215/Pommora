@@ -16,8 +16,8 @@
   border-top: var(--border-heading);
   -webkit-app-region: no-drag;
   transition:
-    padding-left var(--duration-base) var(--ease-standard),
-    padding-right var(--duration-base) var(--ease-standard);
+    padding-left var(--duration-base) var(--ease-base),
+    padding-right var(--duration-base) var(--ease-base);
 }
 .shell.is-resizing .subfield {
   transition: none;
@@ -63,8 +63,7 @@ button.subfield-crumb.ghost:hover {
   color: var(--label-secondary);
 }
 
-/* Separators (the breadcrumb › and the stats ·) — dimmer, and one step larger than the Subline
-   text so the glyphs stay legible. */
+/* The stats · bullet — dimmer, and one step larger than the Subline text so the glyph stays legible. */
 .subfield-sep {
   flex: none;
   font-size: var(--text-control-size);
@@ -119,7 +118,7 @@ button.subfield-crumb.ghost:hover {
 }
 
 .subfield-reveal {
-  transition: height var(--duration-base) var(--ease-standard);
+  transition: height var(--duration-base) var(--ease-base);
 }
 .detail-pane.subfield-open .subfield-reveal {
   height: var(--subline-h);

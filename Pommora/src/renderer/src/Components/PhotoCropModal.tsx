@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { clamp } from '@renderer/design-system/clamp'
-import { GlassWindow } from '@renderer/design-system/materials'
+import { clamp } from '@renderer/DesignSystem/Util/clamp'
+import { GlassWindow } from '@renderer/DesignSystem/Materials'
 import * as s from './photoCropModal.css'
 
 // The circle's bounding box is what gets exported.

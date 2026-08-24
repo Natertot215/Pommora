@@ -5,7 +5,7 @@
    view embed scales the grid as a unit. `.is-compact` = Card Banner: None — imageless cards. */
 .cards-view {
   /* The shared card floor × the Scale factor — the base itself lives with the rest of the card
-     family in design-system/card-tokens.css, along with the gaps, thumb share, and cover zoom. */
+     family in DesignSystem/Tokens/card-tokens.css, along with the gaps, thumb share, and cover zoom. */
   --card-min: calc(var(--card-min-base) * var(--card-scale, 1));
   --set-card-min: calc(var(--card-min) * 1.5); /* KNOB — the Set Cards row's larger floor */
   --thumb-h: calc(
@@ -117,7 +117,7 @@
    body rather than the card, so the heavier outline holds while the skeleton inside it lifts. */
 .ghost-card .page-card-body {
   border-width: 2px; /* KNOB */
-  animation: ghost-card-in var(--duration-base) var(--ease-standard);
+  animation: ghost-card-in var(--duration-base) var(--ease-base);
 }
 @keyframes ghost-card-in {
   from {
@@ -135,8 +135,8 @@
   overflow: hidden;
   background: none;
   transition:
-    border-color var(--duration-base) var(--ease-standard),
-    transform var(--duration-slow) var(--ease-standard);
+    border-color var(--duration-base) var(--ease-base),
+    transform var(--duration-slow) var(--ease-base);
 }
 
 .page-card-thumb {

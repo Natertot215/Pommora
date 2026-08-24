@@ -3,7 +3,7 @@
 
 import type { NavRef, NewTabSentinel, SelectTarget, StoredTab, Tab, TabTarget } from '@shared/types'
 import type { MutableKind } from '@shared/mutate'
-import { moveItem } from '@renderer/design-system/moveItem'
+import { moveItem } from '@renderer/DesignSystem/Util/moveItem'
 import { navKey } from '../Navigation/navRecents'
 import { reconcileWith, type ReconcileIndex } from '../selection'
 

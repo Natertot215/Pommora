@@ -44,7 +44,7 @@
 }
 .conn-hover-web-shield {
   background: var(--surface-primary);
-  transition: opacity var(--duration-base) var(--ease-standard);
+  transition: opacity var(--duration-base) var(--ease-base);
 }
 .conn-hover-web-shield.is-lifted {
   opacity: 0;
@@ -73,7 +73,13 @@
 }
 
 /* Resizing wears the hot accent stroke tiles and embeds use, set on the glass's own outline knob —
-   breathing in and out on the same beat as the tile border it mirrors. */
+   breathing in and out on the same beat as the tile border it mirrors — both passes together, since
+   a color easing in beside an edge that snapped is what flashed the stroke white for a frame. */
+[data-picker-portal] div:has(.conn-hover-body) {
+  transition:
+    border-color var(--duration-base) var(--ease-base),
+    box-shadow var(--duration-base) var(--ease-base);
+}
 [data-picker-portal] div:has(.conn-hover-resize-e:hover),
 [data-picker-portal] div:has(.conn-hover-resize-s:hover),
 [data-picker-portal] div:has(.conn-hover-resize-se:hover),
@@ -207,7 +213,7 @@
   z-index: 2;
   opacity: 0;
   pointer-events: none;
-  transition: opacity var(--duration-base) var(--ease-standard);
+  transition: opacity var(--duration-base) var(--ease-base);
 }
 .mdpm-embed-tile:hover .pgembed-crumbs,
 .mdpm-embed-tile:hover .wpembed-title {

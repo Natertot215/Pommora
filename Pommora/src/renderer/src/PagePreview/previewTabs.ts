@@ -1,5 +1,5 @@
 import type { PreviewTabTarget } from '@shared/types'
-import { moveItem } from '@renderer/design-system/moveItem'
+import { moveItem } from '@renderer/DesignSystem/Util/moveItem'
 
 // Bespoke close/spawn (NOT tabsModel's) — the last tab closing kills the window, and there are no pins.
 

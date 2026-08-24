@@ -1,6 +1,6 @@
 import { style } from '@vanilla-extract/css'
-import { vars as colorVars } from '../design-system/tokens/color.css'
-import { font } from '../design-system/tokens/typography.css'
+import { vars as colorVars } from '@renderer/DesignSystem/Tokens/color.css'
+import { font } from '@renderer/DesignSystem/Tokens/typography.css'
 
 const c = colorVars.color
 

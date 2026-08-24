@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css'
-import { vars } from '@renderer/design-system/tokens'
+import { vars } from '@renderer/DesignSystem/Tokens'
 
 const c = vars.color
 

@@ -2,7 +2,7 @@
 // page-surface one: it composes the editor's own reveal seam, the editor shell's header-zone
 // variable, and the design system's glide, and every surface that mounts an editor can want it.
 import type { EditorView } from '@codemirror/view'
-import { SEEK_GLIDE, scrollGlide } from '@renderer/design-system/interactions/autoscroll'
+import { SEEK_GLIDE, scrollGlide } from '@renderer/DesignSystem/Interactions/autoscroll'
 import { FOLD_SETTLE_MS, expandFoldsAt } from './folding'
 
 // Fallback inset, used only where the page header hasn't published its height yet.

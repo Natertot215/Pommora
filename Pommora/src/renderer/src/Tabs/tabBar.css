@@ -29,14 +29,8 @@
      inspector opens instead of parking under the floating pane — one shared magnitude, no bespoke slide. */
   margin-right: calc(4px + var(--toolbar-swallow));
   pointer-events: auto;
-  /* NOT an app-region: a native drag region never delivers hover to the renderer, which kills the
-     bar-hover + reveal over the empty space. The bar drags the window via the JS mover instead
-     (TabBar's onPointerDown → win:dragBy), so the same pixels hover AND drag. */
-  -webkit-app-region: no-drag;
-}
-.tab-bar.reveal-on-hover {
   opacity: 0;
-  transition: opacity var(--duration-base) var(--ease-standard);
+  transition: opacity var(--duration-base) var(--ease-base);
 }
 .tab-bar.reveal-on-hover:hover {
   opacity: 1;
@@ -48,6 +42,7 @@
   align-items: center;
   flex: 0 1 auto;
   min-width: 0;
+  height: 100%;
   overflow: hidden; /* bounded — uncapped pins never collide with the right cluster */
 }
 .tab-pinned {
@@ -60,7 +55,7 @@
   flex: 0 0 auto;
   color: var(--label-tertiary);
   cursor: default;
-  transition: color var(--duration-base) var(--ease-standard);
+  transition: color var(--duration-base) var(--ease-base);
 }
 .tab-pinned:hover {
   background: var(--state-hover);
@@ -74,13 +69,9 @@
 
 /* ---- segment divider between the zones ---- */
 .tab-divider {
-  flex: 0 0 auto;
-  align-self: center;
-  width: var(--tab-divider-w);
+  --segment-width: var(--tab-divider-w);
   height: var(--tab-divider-h);
   margin: 0 4px;
-  background: var(--separator-segment);
-  border-radius: var(--radius-full);
 }
 
 /* ---- unpinned strip: the shared over-scroll on the inline axis ---- */
@@ -125,17 +116,15 @@
   cursor: pointer;
   opacity: 0;
   transition:
-    opacity var(--duration-fast) var(--ease-standard),
-    color var(--duration-fast) var(--ease-standard),
-    background var(--duration-fast) var(--ease-standard);
+    opacity var(--duration-fast) var(--ease-base),
+    color var(--duration-fast) var(--ease-base),
+    background var(--duration-fast) var(--ease-base);
 }
 .tab-bar:hover .tab-plus {
   opacity: 1;
 }
 /* The + also reveals when the content's header is hovered — the banner OR the banner-less heading — so
-   it's reachable as you move toward the top of the content, not only on the thin toolbar strip. :has on
-   the EXISTING header (no overlay), so nothing below is blocked; it triggers on the whole banner, not
-   strictly its top half. */
+   it's reachable as you move toward the top of the content, not only on the thin toolbar strip. */
 .shell:has(.detail-scroll .banner:hover) .tab-plus,
 .shell:has(.detail-scroll .banner-empty:hover) .tab-plus,
 .shell:has(.mdpm-header:hover) .tab-plus,
@@ -144,9 +133,7 @@
   opacity: 1;
 }
 /* The + reveals across the tab bar, but Back/Forward and the right cluster (view dropdown + trio)
-   aren't tab chrome — suppress it while one of those is hovered. `.app-toolbar` is pointer-events:none
-   with only the buttons interactive, so a hovered button can't co-occur with a tab-bar OR banner hover
-   (they're separate regions) — this is a belt-and-suspenders guard, not a specificity race. */
+   aren't tab chrome — suppress it while one of those is hovered. */
 .app-toolbar:has(.app-toolbar-cluster--nav button:hover) .tab-plus,
 .app-toolbar:has(.app-toolbar-right button:hover) .tab-plus {
   opacity: 0;

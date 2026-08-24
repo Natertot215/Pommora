@@ -1,4 +1,4 @@
-import { Icon, entityIcon } from '@renderer/design-system/symbols'
+import { Icon, entityIcon } from '@renderer/DesignSystem/Symbols'
 import type { EntityIconKind } from '@shared/types'
 import { useSession } from '../store'
 

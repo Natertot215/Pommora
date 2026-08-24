@@ -9,39 +9,39 @@ import {
   type SavedView,
   type ViewState,
 } from '@shared/views'
-import { Icon, iconNameOr } from '@renderer/design-system/symbols'
-import { cellColor } from '@renderer/design-system/tokens/ramp'
-import { labelColorFor } from '@renderer/design-system/tokens/colorMap'
-import { TINT_STEPS, tintAt } from '@renderer/design-system/tokens/tint'
-import { ColorPicker } from '@renderer/Components/Detail/ColorPicker'
-import { PickerMenu } from '@renderer/design-system/components/PickerMenu'
+import { Icon, iconNameOr } from '@renderer/DesignSystem/Symbols'
+import { cellColor } from '@renderer/DesignSystem/Tokens/ramp'
+import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
+import { TINT_STEPS, tintAt } from '@renderer/DesignSystem/Tokens/tint'
+import { ColorPicker } from '@renderer/DesignSystem/Components/Pickers/ColorPicker/ColorPicker'
+import { PickerMenu } from '@renderer/DesignSystem/Components/Pickers/PickerMenu'
 import {
   AccessoryButton,
   Menu,
   MenuBottomRow,
   MenuItem,
   MenuScrollFrame,
-} from '@renderer/design-system/components/menu'
+} from '@renderer/DesignSystem/Components/Menu'
 import {
   titleInput as rowInput,
   rowDisabled,
-} from '@renderer/design-system/components/menu/menu.css'
-import { reorder, SortableZone, useDragItem } from '@renderer/design-system/interactions/drag'
-import { optionRing } from '@renderer/design-system/components/PickerMenu/pickerMenu.css'
-import { RenamableLabel } from '@renderer/design-system/fields'
+} from '@renderer/DesignSystem/Components/Menu/menu.css'
+import { reorder, SortableZone, useDragItem } from '@renderer/DesignSystem/Interactions/drag'
+import { optionRing } from '@renderer/DesignSystem/Components/Pickers/PickerMenu/pickerMenu.css'
+import { RenamableLabel } from '@renderer/DesignSystem/Components/Fields'
 import { IconPicker } from '@renderer/Components/IconPicker'
 import { findCollection, findCollectionForSet, findSet } from '@renderer/Detail/Scope'
 import { ViewRenderer } from '@renderer/Detail/Views/ViewRenderer'
 import { SettingsPane } from '@renderer/Components/Detail/SettingsPane'
 import { ViewEmbedScopeProvider } from '@renderer/Embeds/ViewEmbedScope'
 import { useSession } from '@renderer/store'
-import { PICKER_MAX_HEIGHT } from '@renderer/design-system/components/PickerMenu/pickerMenu.css'
-import { cx } from '@renderer/design-system/cx'
+import { PICKER_MAX_HEIGHT } from '@renderer/DesignSystem/Components/Pickers/PickerMenu/pickerMenu.css'
+import { cx } from '@renderer/DesignSystem/Util/cx'
 import {
   labelSlot,
   labelSlotHidden,
   labelText,
-} from '@renderer/design-system/components/Segmented-Controls/segmented.css'
+} from '@renderer/DesignSystem/Components/Controls/Segmented-Controls/segmented.css'
 import {
   SEGMENT_ICON,
   segment,

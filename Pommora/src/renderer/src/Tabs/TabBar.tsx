@@ -1,12 +1,14 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
-import { Icon } from '@renderer/design-system/symbols'
-import { cx } from '@renderer/design-system/cx'
-import { OverScroll } from '@renderer/design-system/interactions/OverScroll'
-import { HoverRemove, hoverRemoveHost } from '@renderer/design-system/interactions/HoverRemove'
-import { duration, text } from '@renderer/design-system/tokens'
-import { SortableZone, useDragItem, type DragItem } from '@renderer/design-system/interactions/drag'
-import { onActivateKey } from '@renderer/design-system/interactions/activate'
-import { suppressNextClick } from '@renderer/design-system/interactions/shared'
+import { Icon } from '@renderer/DesignSystem/Symbols'
+import { cx } from '@renderer/DesignSystem/Util/cx'
+import { OverScroll } from '@renderer/DesignSystem/Interactions/OverScroll'
+import { HoverRemove, hoverRemoveHost } from '@renderer/DesignSystem/Interactions/HoverRemove'
+import { duration, ms } from '@renderer/DesignSystem/Animation'
+import { text } from '@renderer/DesignSystem/Tokens'
+import { segment } from '@renderer/DesignSystem/Elements/Segment/segment.css'
+import { SortableZone, useDragItem, type DragItem } from '@renderer/DesignSystem/Interactions/drag'
+import { onActivateKey } from '@renderer/DesignSystem/Interactions/activate'
+import { suppressNextClick } from '@renderer/DesignSystem/Interactions/shared'
 import type { Tab, TabTarget } from '@shared/types'
 import { useSession } from '../store'
 import { pageMoveContext, runPageSendAction } from '../pageMenuActions'
@@ -17,10 +19,10 @@ import { cycle } from './tabsModel'
 import './tabStrip.css'
 import './tabBar.css'
 
-const BASE_MS = Number.parseInt(duration.base, 10)
+const BASE_MS = ms(duration.base)
 /** One fast beat added for the segment's delayed exit — the ghost stays rendered until the whole
  *  sequence lands. */
-const EXIT_MS = BASE_MS + Number.parseInt(duration.fast, 10)
+const EXIT_MS = BASE_MS + ms(duration.fast)
 
 interface TabEntry {
   tab: Tab
@@ -208,7 +210,7 @@ function TabBarBody({
           <div className="tab-pinned-zone">
             {pinnedEntries.map((e, i) => (
               <Fragment key={e.tab.id}>
-                {i > 0 && <span className="tab-seg" aria-hidden />}
+                {i > 0 && <span className={cx(segment, 'tab-seg')} aria-hidden />}
                 <PinnedTab
                   entry={e}
                   active={e.tab.id === activeTabId}
@@ -220,7 +222,9 @@ function TabBarBody({
           </div>
         </SortableZone>
       )}
-      {pinnedEntries.length > 0 && unpinnedEntries.length > 0 && <span className="tab-divider" />}
+      {pinnedEntries.length > 0 && unpinnedEntries.length > 0 && (
+        <span className={cx(segment, 'tab-divider')} />
+      )}
       <div className="tab-scroll over-scroll-x" ref={stripRef}>
         <SortableZone
           items={liveEntries.map((e) => e.tab.id)}
@@ -235,7 +239,7 @@ function TabBarBody({
                     the first LIVE tab closes in its place instead. */}
                 {i > 0 && (
                   <span
-                    className={cx('tab-seg', (ghost || i === firstLive) && 'is-closing')}
+                    className={cx(segment, 'tab-seg', (ghost || i === firstLive) && 'is-closing')}
                     aria-hidden
                   />
                 )}

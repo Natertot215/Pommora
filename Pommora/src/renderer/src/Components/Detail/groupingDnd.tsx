@@ -2,11 +2,11 @@
 // wiring and the insertion line live here. paneDnd doesn't fit: its two-region assigned/all
 // vocabulary has no parent/nest concept, and the hierarchy list needs reparent drops.
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
-import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
-import { useDragSnapshot } from '@renderer/design-system/interactions/snapshot'
-import { GHOST_OFFSET } from '@renderer/design-system/interactions/shared'
-import { announce } from '@renderer/design-system/interactions/a11y'
-import { armAutoScroll } from '@renderer/design-system/interactions/autoscroll'
+import { usePointerGesture } from '@renderer/DesignSystem/Interactions/gesture'
+import { useDragSnapshot } from '@renderer/DesignSystem/Interactions/snapshot'
+import { GHOST_OFFSET } from '@renderer/DesignSystem/Interactions/shared'
+import { announce } from '@renderer/DesignSystem/Interactions/a11y'
+import { armAutoScroll } from '@renderer/DesignSystem/Interactions/autoscroll'
 import type { Band, BandIndex, BandSlot } from '../../Detail/Views/bandDndModel'
 import { bandSlot, buildBandIndex, canNest } from '../../Detail/Views/bandDndModel'
 

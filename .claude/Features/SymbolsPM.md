@@ -15,7 +15,7 @@ SymbolsPM
 └── Pending
 ```
 
-Pommora's standard semantic icons — the canonical glyph for each pane, property type, and recurring concept. The curated registry behind `design-system/symbols` is the primary source and the app's own vocabulary. A caller with no assigned glyph renders `DashIcon`, the dashed-square placeholder, until a symbol is chosen; an id that resolves in neither source falls back to `square-dashed`.
+Pommora's standard semantic icons — the canonical glyph for each pane, property type, and recurring concept. The curated registry behind `DesignSystem/Symbols` is the primary source and the app's own vocabulary. A caller with no assigned glyph renders `DashIcon`, the dashed-square placeholder, until a symbol is chosen; an id that resolves in neither source falls back to `square-dashed`.
 
 ### The Registry
 
@@ -26,6 +26,7 @@ Pommora's standard semantic icons — the canonical glyph for each pane, propert
 **Scale Resolution:** Every glyph draws at a size taken from one ladder, so a symbol's scale is a named step rather than a per-surface number. A step sets the icon's `font-size` and the glyph renders at `1em`, which keeps stroke weight proportional and lets a symbol inherit its surrounding type when no step is named.
 
 #### Sizes
+
 | Step         | Size |
 | ------------ | ---- |
 | `largeTitle` | 26px |
@@ -40,8 +41,8 @@ Pommora's standard semantic icons — the canonical glyph for each pane, propert
 | `footnote`   | 10px |
 | `subline`    | 10px |
 
-
 #### View Settings Panes
+
 | Pane          | Icon                 |
 | ------------- | -------------------- |
 | Configuration | `sliders-horizontal` |
@@ -53,6 +54,7 @@ Pommora's standard semantic icons — the canonical glyph for each pane, propert
 | Sort          | `arrow-up-down`      |
 
 #### Property Types
+
 | Type         | Icon                 |
 | ------------ | -------------------- |
 | Number       | `hash`               |
@@ -69,6 +71,7 @@ Pommora's standard semantic icons — the canonical glyph for each pane, propert
 | Created      | `clock-plus`         |
 
 #### View Types
+
 | Type     | Icon                    |
 | -------- | ----------------------- |
 | Table    | `table`                 |

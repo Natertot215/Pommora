@@ -19,8 +19,8 @@
   /* The morph: the title fades/slides LEFT toward the strip as tab #2 grows in, and returns the
      same way — the strip's own motion is the tab-open @starting-style growth. */
   transition:
-    opacity var(--duration-base) var(--ease-standard),
-    transform var(--duration-base) var(--ease-standard);
+    opacity var(--duration-base) var(--ease-base),
+    transform var(--duration-base) var(--ease-base);
 }
 @starting-style {
   .pgpreview-title {

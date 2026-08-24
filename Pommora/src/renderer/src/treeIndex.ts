@@ -12,7 +12,7 @@
 
 import type { EntityRecord } from '@shared/record'
 import type { NavRef, NexusTree, PageNode, SetNode } from '@shared/types'
-import { DEFAULT_NEXUS_ICON, entityIcon, iconNameOr } from '@renderer/design-system/symbols'
+import { DEFAULT_NEXUS_ICON, entityIcon, iconNameOr } from '@renderer/DesignSystem/Symbols'
 import { buildPageIndex, type ConnPage, type PageIndex } from './MarkdownPM/connections'
 import { navKey } from './Navigation/navRecents'
 import type { NavCore, PathCrumb, ResolveIndex } from './Navigation/navResolve'

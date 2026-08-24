@@ -29,8 +29,8 @@
   padding: 38px var(--content-inset-right) 28px var(--content-inset);
   overflow-y: auto;
   transition:
-    padding-left var(--duration-base) var(--ease-standard),
-    padding-right var(--duration-base) var(--ease-standard);
+    padding-left var(--duration-base) var(--ease-base),
+    padding-right var(--duration-base) var(--ease-base);
 }
 
 /* Full-bleed like the banner-bearing scaffold: no padding here, so the banner spans the pane edge-to-edge
@@ -60,8 +60,8 @@
 .detail-body {
   padding: 38px var(--content-inset-right) 28px var(--content-inset);
   transition:
-    padding-left var(--duration-base) var(--ease-standard),
-    padding-right var(--duration-base) var(--ease-standard);
+    padding-left var(--duration-base) var(--ease-base),
+    padding-right var(--duration-base) var(--ease-base);
 }
 /* A header (banner image or banner-less title) already clears the toolbar, so the body sits just
    under it; without a header the body itself clears the toolbar. */

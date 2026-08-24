@@ -4,7 +4,7 @@ The component-library showcase deploys to Vercel from this repo. It builds the *
 
 ### What Goes Live
 
-`design-system.html` → the data-driven showcase (`src/renderer/src/design-system/showcase/`): color tokens, the type ramp, chips, icons, glass materials, and a live accent picker. `vite build` emits it into `dist/`, served at `/`.
+`design-system.html` → the data-driven showcase (`src/renderer/src/DesignSystem/Showcase/`): color tokens, the type ramp, chips, icons, glass materials, and a live accent picker. `vite build` emits it into `dist/`, served at `/`.
 
 ### How the Pointing Works (post-consolidation)
 

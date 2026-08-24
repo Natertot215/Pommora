@@ -16,7 +16,7 @@ Pommora's in-house drag-and-drop engine, owning the interaction layer the way Ma
 
 ### The Seam
 
-**SOURCE:** `Pommora/src/renderer/src/design-system/interactions/gesture.ts` · `interactions/drag.tsx` · `Pommora/src/renderer/src/MarkdownPM/editor/EditorGesture.ts`
+**SOURCE:** `Pommora/src/renderer/src/DesignSystem/Interactions/gesture.ts` · `interactions/drag.tsx` · `Pommora/src/renderer/src/MarkdownPM/editor/EditorGesture.ts`
 
 Every draggable surface in Pommora goes through this layer rather than reaching for a drag library itself, which is what lets a drag feel the same wherever it starts.
 
@@ -26,7 +26,7 @@ One gesture runs at a time. A press becomes a drag only once it travels far enou
 
 Two kinds of pointer work live here. **Drags** move something from one place to another, and carry the full lifecycle above. **Scrub controls** — a pane's resize edge, a slider, panning a photo, dragging a window by its chrome — respond from the instant of the press, with no threshold to cross, since there is no click meaning to protect.
 
-**`design-system/interactions/drag.tsx`** is the sort-engine seam:
+**`DesignSystem/Interactions/drag.tsx`** is the sort-engine seam:
 
 - **`SortableZone`** — one sortable list. Standalone by default (list, grid, table, each tree level); pass `group` to make it a member of a `DragGroup` (cross-list).
 - **`DragGroup`** — a set of zones that hand items between each other (the board), with a portal overlay.

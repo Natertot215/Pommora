@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { lockLabel } from '@shared/toggleLabels'
 import type {
   BlockEntry,
   BlockStyle,
@@ -7,9 +8,9 @@ import type {
   ViewPick,
   ViewPickerItem,
 } from '@shared/blocks'
-import { Icon } from '@renderer/design-system/symbols'
-import { PickerMenu, PickerOption } from '@renderer/design-system/components/PickerMenu'
-import { PICKER_MAX_HEIGHT } from '@renderer/design-system/components/PickerMenu/pickerMenu.css'
+import { Icon } from '@renderer/DesignSystem/Symbols'
+import { PickerMenu, PickerOption } from '@renderer/DesignSystem/Components/Pickers/PickerMenu'
+import { PICKER_MAX_HEIGHT } from '@renderer/DesignSystem/Components/Pickers/PickerMenu/pickerMenu.css'
 import {
   FooterLockButton,
   MenuBottomRow,
@@ -17,16 +18,16 @@ import {
   MenuPaneTopRow,
   MenuScrollFrame,
   MenuSeparator,
-} from '@renderer/design-system/components/menu'
+} from '@renderer/DesignSystem/Components/Menu'
 import {
   footerAction,
   footerLockAction,
   lockIcon,
   rowDisabled,
-} from '@renderer/design-system/components/menu/menu.css'
+} from '@renderer/DesignSystem/Components/Menu/menu.css'
 import { PaneSlider } from '@renderer/Components/Detail/PaneSlider'
-import { cx } from '@renderer/design-system/cx'
-import { overScrollEllipsis } from '@renderer/design-system/interactions/OverScroll'
+import { cx } from '@renderer/DesignSystem/Util/cx'
+import { overScrollEllipsis } from '@renderer/DesignSystem/Interactions/OverScroll'
 import { ZOOM_STEPS, zoomStep } from './blockZoom'
 import * as s from './handleMenu.css'
 
@@ -213,7 +214,7 @@ export function BlockHandleMenu({
                   Locked
                 </span>
               ) : (
-                <FooterLockButton locked={locked} noun="tile" onToggle={onToggleLock} />
+                <FooterLockButton verb={lockLabel(locked)} noun="tile" onToggle={onToggleLock} />
               )
             }
           />

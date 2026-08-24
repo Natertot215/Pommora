@@ -1,4 +1,3 @@
-import { clamp } from '@renderer/design-system/clamp'
 import type { Align, Column, TableModel } from './model'
 
 type RowWhere = 'above' | 'below'

@@ -15,7 +15,7 @@ The working checklist for the architecture-audit cleanup — every task verified
 
 **Ordering constraints (the only hard ones):**
 
-- Bundle 6a runs its extraction task before its rehome task — the rehome would otherwise carry `ColorPicker`, which two files inside `design-system/` now import, into a feature domain. Bundle 6a lands before 6b and 6c — both would otherwise add imports at the address being vacated. 6b is high priority and follows 6a immediately: its wrong-address imports deepen with every session that touches their consumers.
+- Bundle 6a lands before 6b and 6c — both would otherwise add imports at the address being vacated. 6b is high priority and follows 6a immediately: its wrong-address imports deepen with every session that touches their consumers.
 - Bundle 6c (the view host) lands before any third view renderer is attempted.
 - Bundle 5 is best taken immediately before the next store-heavy feature.
 
@@ -95,8 +95,8 @@ Chrome is produced in two stages, and only the second was scoped. The **derivati
 
 #### II. Bundle 6a — `Components/Detail` Rehome · one session, quiet tree · net ≈ 0
 
-- [ ] **`EditableInput` and `ColorPicker` move into `design-system/components/` first.** Both already have consumers inside the design system; `ColorPicker`'s two are why this precedes the rehome rather than following it. The chip family has already moved, as `design-system/labels/`.
-- [ ] **The view-settings/property-editing subsystem moves out of `Components/`** to its own domain folder beside `Detail/`; `PaneSlider` is promoted into `design-system/` where its imports already live; the CLAUDE.md codebase map updates. `git mv` plus import churn; typecheck catches every miss.
+- [x] **`EditableInput` and `ColorPicker` have moved into the design system** ahead of the rehome — `EditableInput` into `DesignSystem/Components/Fields/`, `ColorPicker` into `DesignSystem/Components/ColorPicker/`. Both had consumers inside the design system, so the rehome no longer carries a design-system dependency into a feature domain. The chip family moved earlier, as `DesignSystem/Labels/`.
+- [ ] **The view-settings/property-editing subsystem moves out of `Components/`** to its own domain folder beside `Detail/`; `PaneSlider` is promoted into `DesignSystem/` where its imports already live; the CLAUDE.md codebase map updates. `git mv` plus import churn; typecheck catches every miss.
 
 **Verification:** gates; nothing behavioral moves.
 **Retires:** nothing listed — new work.
@@ -149,11 +149,10 @@ bundles are a system ladder or one component's table — and each of those chang
 is. Bundling them as tasks would force those answers by default, which is how the drift the report
 documents accumulated in the first place.
 
-**The one constraint this queue inherits:** two modules the design system already imports —
-`EditableInput` and `ColorPicker` — must move into it before Bundle 6a. The rehome carries
-`Components/Detail` into a feature domain, and `ColorPicker` now has two importers inside
-`design-system/`, so running 6a first would deepen the inversion rather than close it. That extraction is
-small and mechanical; it is listed in 6a's own task below rather than waiting on the design session.
+**The constraint this queue inherited is met:** the two modules the design system imports —
+`EditableInput` and `ColorPicker` — now live inside it, in `DesignSystem/Components/Fields/` and
+`DesignSystem/Components/ColorPicker/`. Bundle 6a's rehome can carry `Components/Detail` into a feature
+domain without dragging a design-system dependency along with it.
 
 ### I. Open Questions — Not Scheduled
 
