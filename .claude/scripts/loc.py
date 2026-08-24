@@ -25,7 +25,7 @@ SRC = "Pommora/src"
 # Ordered: the first matching prefix wins, so specific paths precede their parents.
 AREAS = [
     ("Editor — MarkdownPM", ["renderer/src/MarkdownPM"]),
-    ("Design System", ["renderer/src/design-system"]),
+    ("Design System", ["renderer/src/DesignSystem"]),
     (
         "Surfaces & Embeds",
         [
@@ -64,7 +64,7 @@ ORDER = [
 ]
 COLORS = ["#1C7629", "#075CB2", "#8C7606", "#DC519F", "#B26F07", "#A24CCE", "#D93B31"]
 
-SKIP_DIR = {"node_modules", "dist", "out", ".git", "showcase", "testing"}
+SKIP_DIR = {"node_modules", "dist", "out", ".git", "Showcase", "testing"}
 EXT = (".ts", ".tsx", ".css")
 
 
