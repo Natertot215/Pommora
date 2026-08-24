@@ -1,9 +1,11 @@
 import { style } from '@vanilla-extract/css'
-import { vars as colorVars, inputFieldVar } from '../tokens/color.css'
+import { vars as colorVars } from '../tokens/color.css'
 import { text } from '../tokens/typography.css'
 import { fieldRing } from './fieldRing'
 
 const c = colorVars.color
+
+// § BOX — the boxed field chrome and its variants. One fill, one radius, one ring channel.
 
 /** The rounded input surface. The OutlineTint channel: any ancestor (or the
  *  component's `outline` prop) sets `--field-ring` and the field paints the house inset ring
@@ -16,7 +18,7 @@ export const field = style([
     minHeight: '28px',
     padding: '4px 8px',
     borderRadius: '8px',
-    background: inputFieldVar,
+    background: c.fill.quaternary,
     color: c.label.primary,
     width: '100%',
     boxSizing: 'border-box',
@@ -54,5 +56,28 @@ export const input = style([
     border: 'none',
     outline: 'none',
     font: 'inherit',
+    selectors: {
+      '&::placeholder': { color: c.label.tertiary },
+    },
   },
 ])
+
+// § BARE — no box at all: the caret sits in the text it replaced.
+
+/** The in-place caret's own reset. An unstyled <input> wears the UA's box — a white fill, a border
+ *  and a focus ring in the system accent — which is chrome around a field that is meant to read as
+ *  the text it replaced. Stripped to nothing, it inherits the surface's metrics and leaves the
+ *  selection to the native highlight. `font` must be stated: an <input> never inherits it on its own. */
+export const bare = style({
+  border: 'none',
+  outline: 'none',
+  padding: 0,
+  background: 'transparent',
+  color: 'inherit',
+  font: 'inherit',
+})
+
+// § CONTENT — what sits inside a field, box or not.
+
+/** The ghost-text tone — placeholders and empty-state hints inside any field. */
+export const placeholder = style({ color: c.label.tertiary })

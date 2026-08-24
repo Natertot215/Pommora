@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react'
-import * as s from './interactionField.css'
+import * as s from './fields.css'
 import { onActivateKey } from '../interactions/activate'
 
 /** For editing, pass `fieldInputClass` to a raw <input> (e.g. EditableInput) so the editor reuses the exact chrome with no focus ring/animation. */
-export function InteractionField({
+export function InputField({
   children,
   className,
   onClick,

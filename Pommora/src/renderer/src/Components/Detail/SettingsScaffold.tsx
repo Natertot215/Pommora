@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import { useAssetUrl, useSession } from '../../store'
 import { DEFAULT_NEXUS_ICON, Icon } from '../../design-system/symbols'
-import { InteractionField } from '../../design-system/components/InteractionField'
+import { InputField } from '../../design-system/fields'
 import { MenuBottomRow, MenuScrollFrame } from '../../design-system/components/menu'
 import { FooterLockButton } from '@renderer/design-system/components/menu'
 import { IconPicker } from '../IconPicker'
@@ -65,7 +65,7 @@ export function SettingsScaffold(): React.JSX.Element | null {
               <Icon name={profileIcon ?? DEFAULT_NEXUS_ICON} />
             )}
           </button>
-          <InteractionField className={s.titleField}>{tree.nexus.name}</InteractionField>
+          <InputField className={s.titleField}>{tree.nexus.name}</InputField>
         </div>
       </MenuScrollFrame>
       <IconPicker

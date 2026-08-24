@@ -1,8 +1,8 @@
 import { style } from '@vanilla-extract/css'
 import { vars } from '../../tokens/color.css'
 import { font } from '../../tokens/typography.css'
-import { field } from '../interactionField.css'
-import { focusRing } from '../fieldRing'
+import { field } from '../../fields/fields.css'
+import { focusRing } from '../../fields/fieldRing'
 
 const c = vars.color
 

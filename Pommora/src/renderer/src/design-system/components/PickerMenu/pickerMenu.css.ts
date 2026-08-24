@@ -4,7 +4,7 @@ import { font, text } from '../../tokens/typography.css'
 import { TINT_STEPS, tintAt } from '../../tokens/tint'
 import { stack } from '../../tokens/stack'
 import { dropdownAnchor } from '../dropdownAnchor'
-import { fieldRing, ROW_RING } from '../fieldRing'
+import { fieldRing, ROW_RING } from '../../fields/fieldRing'
 import { rowShell, ROW_LINE, ROW_SIZE } from '../menu/menu.css'
 
 const c = colorVars.color

@@ -1,12 +1,4 @@
-import {
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type CSSProperties,
-  type ReactNode,
-  type Ref,
-} from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type Ref } from 'react'
 import { GlassWindow } from '@renderer/design-system/materials'
 import { Icon } from '@renderer/design-system/symbols'
 import { cx } from '@renderer/design-system/cx'
@@ -81,9 +73,6 @@ export interface PreviewPaneProps {
   children: ReactNode
 }
 
-const sideDelta = (open: boolean, was: boolean, width: number): number =>
-  open === was ? 0 : open ? width : -width
-
 // The title is pointer-inert, so a press on it falls through to the toolbar and arms the move.
 const DRAG_SURFACES = '.ppane, .ppane-toolbar, .ppane-row'
 
@@ -111,12 +100,7 @@ export function PreviewPane({
   children,
 }: PreviewPaneProps): React.JSX.Element {
   const surfaces = dragSurfaces ? `${DRAG_SURFACES}, ${dragSurfaces}` : DRAG_SURFACES
-  const {
-    style: winStyle,
-    onWindowDown,
-    startDrag,
-    widenBy,
-  } = useFloatingWindow(id, bounds, surfaces)
+  const { style: winStyle, onWindowDown, startDrag } = useFloatingWindow(id, bounds, surfaces)
 
   // Seeded from the persisted slot so the first painted frame already carries the restored width.
   const [leftW, setLeftW] = useState(() =>
@@ -129,19 +113,6 @@ export function PreviewPane({
 
   const leftOpen = left ? left.open !== false : false
   const rightOpen = right ? right.open !== false : false
-
-  // A side opening widens the window by that pane's width, so the body keeps the width it had
-  // and a second pane never squeezes the first one's neighbor. Width DRAGS are deliberately not
-  // reflected: dragging a pane's own strip reallocates inside the window, which is what the grip
-  // means. Only an open/close transition moves the window's own edge.
-  const sidesOpen = useRef({ left: leftOpen, right: rightOpen })
-  useLayoutEffect(() => {
-    const was = sidesOpen.current
-    if (was.left === leftOpen && was.right === rightOpen) return
-    const delta = sideDelta(leftOpen, was.left, leftW) + sideDelta(rightOpen, was.right, rightW)
-    sidesOpen.current = { left: leftOpen, right: rightOpen }
-    if (delta) widenBy(delta)
-  }, [leftOpen, rightOpen, leftW, rightW, widenBy])
 
   const hasFooter = footer !== undefined && footer !== null && footer !== false
   // Footer collapse is session-only — a floating surface never persists it.

@@ -10,11 +10,8 @@
 import { style } from '@vanilla-extract/css'
 import { vars as colorVars } from '../../design-system/tokens/color.css'
 import { text } from '../../design-system/tokens/typography.css'
-import {
-  field as fieldBase,
-  hairlineField,
-} from '../../design-system/components/interactionField.css'
-import { focusRing } from '../../design-system/components/fieldRing'
+import { field as fieldBase, hairlineField } from '../../design-system/fields/fields.css'
+import { focusRing } from '../../design-system/fields/fieldRing'
 import { growToContent } from '../../design-system/components/menu/paneGrowth'
 
 const c = colorVars.color
@@ -74,13 +71,13 @@ export const whatCell = style({
   flex: '0 0 auto',
 })
 
-/** The house ring CHANNEL, not a hand-rolled shadow: interactionField already paints
+/** The house ring CHANNEL, not a hand-rolled shadow: the field chrome already paints
  *  `inset 0 0 0 1px var(--field-ring)`, so a field only sets the color. Overriding boxShadow
  *  instead would also stomp the channel for any ancestor that sets it. */
 const restRing = { vars: { '--field-ring': c.separator.border } }
 
 /** The shared hairline-field recipe in its column: flush to the gutters, STANDARD field height
- *  (the interactionField floor), separator-hairline stroke, and the house field's own BODY
+ *  (the field-chrome floor), separator-hairline stroke, and the house field's own BODY
  *  type — a filter row is content the user reads, not chrome, so it holds the reading size rather
  *  than the compact control scale (which shrank the chips inside it to match). The variant is
  *  already rigid; a cell naming the rule (What, Operator) must stay whole at any pane width, and
