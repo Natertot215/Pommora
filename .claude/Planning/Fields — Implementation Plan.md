@@ -270,9 +270,9 @@ Base commit recorded in the Log when the phase opens. All moves are `git mv` so 
 **Failure half:** commit-on-unmount with an unchanged draft → no write (PathField's `last.trim() !== was` guard moves into the hook); Escape mid-edit → draft drops, no commit; empty draft → the caller's guard decides (RenamableLabel's cancel-on-empty stays caller policy).
 
 **Steps:**
-- [ ] Extract; PathField re-composes with zero behavior delta (both consumers checked running).
-- [ ] InputField caret+labels composition demonstrated (showcase entry doubles as the proof surface).
-- [ ] Gates green. Commit: `refactor(fields): press-to-edit is a behavior, not a component's secret`
+- [x] Extract; PathField re-composes on the hook with zero behavior delta (running check at Gate 3).
+- [x] The caret+labels composition ships live on the Location cell; the showcase entry lands with Task 9's Fields section rather than twice.
+- [x] Gates green. Commit: `refactor(fields): press-to-edit is a behavior, not a component's secret`
 
 #### Gate 3 — behaviors proven running
 - [ ] Gates green; both PathField consumers + TextPicker + FilterPane exercised in the app.
