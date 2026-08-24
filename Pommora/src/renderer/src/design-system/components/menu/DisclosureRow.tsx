@@ -4,7 +4,7 @@ import { cx } from '../../cx'
 import { Reveal } from '../Reveal'
 import { MenuItem } from './Menu'
 import { PickerOption } from '../PickerMenu/PickerMenu'
-import { railRow, twisty, twistyOpen, twistySpacer } from './menu.css'
+import { railRow, side, twisty, twistyOpen, twistySpacer } from './menu.css'
 
 /** Which nodes are disclosed. The set holds the EXCEPTIONS to `defaultOpen`, never the open nodes
  *  themselves — so a default-open tree needs no seed and stays right as nodes appear and vanish
@@ -95,10 +95,10 @@ export function DisclosureRow({
       ring
       onClick={onClick}
       leading={
-        <>
+        <span className={side}>
           {twistyGlyph(kind, open, onToggle)}
           {icon}
-        </>
+        </span>
       }
     >
       {title}
