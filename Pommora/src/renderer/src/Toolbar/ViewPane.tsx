@@ -18,7 +18,7 @@ import type { PaneDrop, PaneRow, paneSlot } from '../Components/Detail/paneDndMo
 import { useSaveView, useViewEmbedScope } from '@renderer/Embeds/ViewEmbedScope'
 import { ColorPicker } from '../Components/Detail/ColorPicker'
 import { labelColorFor } from '@renderer/design-system/tokens/colorMap'
-import { RenamableLabel } from '../Components/RenamableLabel'
+import { RenamableLabel } from '@renderer/design-system/fields'
 import { IconPicker } from '../Components/IconPicker'
 import { useSession } from '../store'
 import { optionRing } from '@renderer/design-system/components/PickerMenu/pickerMenu.css'

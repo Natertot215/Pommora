@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { cx } from '@renderer/design-system/cx'
 import { text } from '@renderer/design-system/tokens'
-import { SearchField } from '@renderer/design-system/components/SearchField'
+import { SearchField } from '@renderer/design-system/fields'
 import type { NavRef } from '@shared/types'
 import { useAssetUrl, useSession } from '../store'
 import { moveByKey } from '../Navigation/navRecents'

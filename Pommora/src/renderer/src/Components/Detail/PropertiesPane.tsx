@@ -35,7 +35,7 @@ import { flushTrailing, titleInput } from '../../design-system/components/menu/m
 import { Reveal } from '../../design-system/components/Reveal'
 import { duration } from '../../design-system/tokens/motion'
 import { IconPicker } from '../IconPicker'
-import { RenamableLabel } from '../RenamableLabel'
+import { RenamableLabel } from '../../design-system/fields'
 import { InlineEditHeader } from './InlineEditHeader'
 import { OptionEditor } from './OptionEditor'
 import { StatusEditor } from './StatusEditor'

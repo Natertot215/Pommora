@@ -143,11 +143,11 @@ Base commit recorded in the Log when the phase opens. All moves are `git mv` so 
 **Failure half:** a missed importer is a compile error (module not found) — the gate enumerates; no silent misses possible for TS. The one silent class is a *string* class reference: sweep `rg -F "over-scroll-x" design-system/fields` to confirm `EditableInput`'s bare-mode class survived the move.
 
 **Steps:**
-- [ ] Move, merge the stylesheet, re-point, barrel.
-- [ ] `.nav-search-row` and NavView placeholder rules: delete `navView.css:41`'s `::placeholder` block (now family-owned); confirm `navList.css` needs no addition (inherits the family rule).
-- [ ] Gates green; `SearchField.test.tsx` and `renamableTitle.test.tsx` pass from new import paths.
-- [ ] Update the Design-Coherence-Report §III/§VII arrival rows in this commit (Made False).
-- [ ] Commit: `refactor(fields): the editing chain lives beside its chrome`
+- [x] Move, merge the stylesheet, re-point, barrel.
+- [x] `.nav-search-row` and NavView placeholder rules: delete `navView.css:41`'s `::placeholder` block (now family-owned); confirm `navList.css` needs no addition (inherits the family rule).
+- [x] Gates green; `SearchField.test.tsx` and `renamableTitle.test.tsx` pass from new import paths.
+- [x] Update the Design-Coherence-Report §III/§VII arrival rows in this commit (Made False).
+- [x] Commit: `refactor(fields): the editing chain lives beside its chrome`
 
 #### Task 3: `--input-field` dies with zero trace
 

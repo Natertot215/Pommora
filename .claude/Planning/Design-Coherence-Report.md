@@ -78,22 +78,21 @@ Three remain, because repairing them means adding rather than replacing:
 Proof rather than prediction — **five files inside `design-system/` import from app layers:**
 
 ```
-TextPicker.tsx         → @renderer/Components/EditableInput
 ColorSwatch.tsx        → @renderer/Components/Detail/ColorPicker
 colorSwatch.css.ts     → @renderer/Components/Detail/colorPicker.css
 menu/Menu.tsx          → @shared/toggleLabels
 PreviewPane.tsx        → @shared/toggleLabels
 ```
 
-The system cannot build without `EditableInput` or `ColorPicker`. Both are design-system components today in everything but location. The last two entries are the milder case — a component that belongs where it is, pulling one string from app code; the repair there is a prop, not a move.
+The system cannot build without `ColorPicker` — a design-system component today in everything but location. The last two entries are the milder case — a component that belongs where it is, pulling one string from app code; the repair there is a prop, not a move.
 
 #### What belongs inside
 
 | Component              | Consumers                           | Destination                 |
 | ---------------------- | ----------------------------------- | --------------------------- |
-| `EditableInput`        | 5, one inside the design system     | `components/EditableInput/` |
+| `EditableInput`        | 5, one inside the design system     | ✓ landed — `fields/`        |
 | `ColorPicker`          | 6, one inside the design system     | `components/ColorPicker/`   |
-| `RenamableLabel`       | 8                                   | `components/EditableInput/` |
+| `RenamableLabel`       | 8                                   | ✓ landed — `fields/`        |
 | `PaneSlider`           | 7                                   | `components/PaneSlider/`    |
 | `solidColor.ts`        | 11, six outside its own view folder | `tokens/`                   |
 | `checkboxLook.tsx`     | 3                                   | contested — see §VIII       |
@@ -323,12 +322,11 @@ This is the same gap the reference document has. **The document has no Helpers s
 │   ✂ [Board.tsx] · [Interactions.tsx] · [Surfaces.tsx] · [main.tsx] · [interactions.css]
 │                                       | • The Interaction Lab — moved to showcase/lab/
 ├── // labels                           | ✓ LANDED — four shapes, the treatment axes, the tint recipe, the recipes
+├── // fields                            | ✓ LANDED — the field family: axes sheet, ring helper, InputField, the editing chain
 ├── // components                       | ▸ Every component a folder; no loose helpers, no loose sheets
 │   ├── // CalendarPicker               | • Date, time and range — the largest undocumented component
 │   ├── // Checkbox                     | ▸ was Checkbox.tsx + checkbox.css at the folder root
 │   ├── // ColorPicker                  | ← from Components/Detail — the system already imports it
-│   ├── // EditableInput                | ← from Components/ — EditableInput + RenamableLabel
-│   ├── // InteractionField             | ▸ was InteractionField.tsx + interactionField.css.ts
 │   ├── // Menu                         | ▸ was menu/ — the system's only lowercase folder
 │   │   ├── [Menu.tsx]                  | • The eleven row and frame pieces
 │   │   ├── [MenuSurface.tsx]           | • The beaked toolbar pane
@@ -337,11 +335,9 @@ This is the same gap the reference document has. **The document has no Helpers s
 │   │   └── [paneGrowth.ts]             | • growToContent — serves this folder alone
 │   ├── // NotchedPane                  | ▸ was NotchedPane.tsx + notchedPane.css.ts
 │   ├── // PaneSlider                   | ← from Components/Detail
-│   ├── // PathField                    | ▸ was PathField.tsx + pathField.css.ts
 │   ├── // PickerMenu                   | • The rectangle every menu and picker mounts
 │   ├── // PreviewPane                  | • The floating-window shell; gains PaneAction
 │   ├── // ProgressBar                  | • Trackless fill bar
-│   ├── // SearchField                  | ▸ was SearchField.tsx + css + its orphaned test
 │   ├── // SegmentRun                   | • The divided run — hairlines or breadcrumbs
 │   ├── // Segmented                    | ▸ was Segmented-Controls/ — the only hyphenated folder
 │   ├── // SidePane                     | • The resizable edge rail

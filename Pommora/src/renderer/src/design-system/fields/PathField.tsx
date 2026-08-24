@@ -3,7 +3,7 @@
 // caller, so a hand-typed folder is refused for exactly the reasons a picked one is.
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Icon } from '../symbols'
-import { SegmentRun } from './SegmentRun/SegmentRun'
+import { SegmentRun } from '../components/SegmentRun/SegmentRun'
 import { onActivateKey } from '../interactions/activate'
 import * as pf from './pathField.css'
 
