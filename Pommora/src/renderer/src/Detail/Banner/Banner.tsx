@@ -3,6 +3,7 @@ import type { MutableKind } from '@shared/mutate'
 import { DEFAULT_NEXUS_ICON, Icon, entityIcon } from '@renderer/DesignSystem/Symbols'
 import { IconPicker } from '@renderer/Settings/IconPicker'
 import { useAssetUrl, useSession } from '../../store'
+import { AssetImage } from '@renderer/DesignSystem/Components/AssetImage/AssetImage'
 import { isSurfaceKind, type BannerOwner } from '../Scope'
 import { DetailTitleHeader } from '../DetailTitleHeader'
 import { RenamableLabel, base } from '@renderer/DesignSystem/Components/Fields'
@@ -27,7 +28,7 @@ export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {
   // Always rendered (never conditionally removed) so hide/show slides it in/out rather than popping.
   const homeIcon = (): React.ReactNode => {
     const cls = iconHidden ? 'banner-home-icon is-hidden' : 'banner-home-icon'
-    if (homePhotoSrc) return <img className={cls} src={homePhotoSrc} alt="" />
+    if (homePhotoSrc) return <AssetImage value={nexus?.profileImage} className={cls} />
     return <Icon name={nexus?.profileIcon ?? DEFAULT_NEXUS_ICON} className={cls} />
   }
   const openHomeTitleMenu = async (e: React.MouseEvent): Promise<void> => {
@@ -120,7 +121,7 @@ export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {
         void openMenu()
       }}
     >
-      <img className="banner-img" src={bannerSrc} alt="" />
+      <AssetImage value={owner.banner} className="banner-img" />
       {owner.kind === 'homepage' ? (
         // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
         <span className="banner-title" onContextMenu={(e) => void openHomeTitleMenu(e)}>

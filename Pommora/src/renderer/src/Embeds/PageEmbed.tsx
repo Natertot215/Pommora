@@ -8,6 +8,7 @@ import { nativeEditorMenu } from '@renderer/MarkdownPM/editor/menu'
 import { flushPageSave, schedulePageSave } from '@renderer/Detail/pageFlush'
 import { fetchPageDetail, readPageDetail } from '@renderer/Tabs/warmCache'
 import { useAssetUrl, useEmbedScale, useSession } from '../store'
+import { AssetImage } from '@renderer/DesignSystem/Components/AssetImage/AssetImage'
 import { useBannerMenu } from '../Detail/Banner/useBannerMenu'
 import { NavTrail } from '@renderer/DesignSystem/Elements/NavTrail'
 import { text } from '@renderer/DesignSystem/Tokens'
@@ -193,7 +194,7 @@ function EmbedBanner({
         void bannerMenu()
       }}
     >
-      <img className="mdpm-banner-img" src={coverSrc} alt="" />
+      <AssetImage value={cover} className="mdpm-banner-img" />
       <div className="mdpm-banner-overlay">
         <span className="detail-title-text">{title}</span>
       </div>
