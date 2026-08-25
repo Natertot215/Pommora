@@ -4,11 +4,9 @@ import type { BannerOwnerKind } from '@shared/mutate'
 import type { Crop } from '@shared/schemas'
 import { GhostSuppress } from '../Views/useGhostAnchor'
 
-/** The one place a banner band pops its menu: Add / Change / Edit / Remove, the image pick, the
- *  setBanner mutation, and the crop editor. `add` is derived from whether a banner is set; the
- *  ghost-suppress Context lets the card seats stand their hover ghost down while the menu owns the
- *  pointer (a pass-through default leaves the others unaffected). Edit opens the picker on the
- *  seat's own box ratio. */
+/** The one place a banner band pops its menu. The ghost-suppress Context lets the card seats stand
+ *  their hover ghost down while the menu owns the pointer (a pass-through default leaves the
+ *  others unaffected). */
 export function useBannerMenu(
   path: string,
   kind: BannerOwnerKind,
@@ -55,12 +53,17 @@ export function useBannerMenu(
     else if (action === 'edit') openEditor()
     else if (action === 'remove') await setBanner(null)
   }
-  const onSave = (crop: Crop): Promise<void> =>
-    mutate({ op: 'setCrop', image: value ?? '', crop }).then((ok) => {
-      if (ok) onDone?.()
-    })
+  const onSave = async (crop: Crop): Promise<void> => {
+    closeEditor()
+    if (await mutate({ op: 'setCrop', image: value ?? '', crop })) onDone?.()
+  }
+  // onDone advances the seat's value (a page cover refreshes only on refetch, not a tree push), so
+  // the picker's re-pick Save-hold — cleared when value changes — never dead-ends on a page seat.
   const onRepick = (source: string): Promise<boolean> =>
-    mutate({ op: 'setBanner', path, kind, source })
+    mutate({ op: 'setBanner', path, kind, source }).then((ok) => {
+      if (ok) onDone?.()
+      return ok
+    })
 
   return { openMenu, addOrChange, editing, openEditor, closeEditor, boxAspect, onSave, onRepick }
 }

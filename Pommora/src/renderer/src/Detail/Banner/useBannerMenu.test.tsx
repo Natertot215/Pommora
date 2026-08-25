@@ -11,9 +11,11 @@ import { useSession } from '../../store'
 let host: HTMLDivElement
 let root: Root
 const mutate = vi.fn(() => Promise.resolve(true))
+const onDone = vi.fn()
 
 beforeEach(() => {
   mutate.mockClear()
+  onDone.mockClear()
   useSession.setState({ mutate: mutate as never })
   host = document.createElement('div')
   document.body.appendChild(host)
@@ -28,7 +30,7 @@ afterEach(async () => {
 let api: ReturnType<typeof useBannerMenu>
 function Inner(): React.JSX.Element {
   const frame = useRef<HTMLDivElement>(null)
-  api = useBannerMenu('Notes/A.md', 'page', { value: '[[Cover.png]]', frame })
+  api = useBannerMenu('Notes/A.md', 'page', { value: '[[Cover.png]]', frame, onDone })
   return <div ref={frame} />
 }
 function Probe({
@@ -60,9 +62,13 @@ describe('useBannerMenu', () => {
     expect(api.editing).toBe(true)
   })
 
-  it('onSave writes setCrop keyed by the seat’s stored value', async () => {
-    ;(window as { nexus?: unknown }).nexus = {}
+  it('onSave writes setCrop keyed by the seat’s stored value and closes the editor', async () => {
+    ;(window as { nexus?: unknown }).nexus = { bannerMenu: () => Promise.resolve('edit') }
     await mount(<Probe />)
+    await act(async () => {
+      await api.openMenu()
+    })
+    expect(api.editing).toBe(true)
     await act(async () => {
       await api.onSave({ x: 0.2, y: 0.3, zoom: 1.5 })
     })
@@ -71,6 +77,7 @@ describe('useBannerMenu', () => {
       image: '[[Cover.png]]',
       crop: { x: 0.2, y: 0.3, zoom: 1.5 },
     })
+    expect(api.editing).toBe(false)
   })
 
   it('onRepick adopts the source through setBanner', async () => {
@@ -85,5 +92,7 @@ describe('useBannerMenu', () => {
       kind: 'page',
       source: '/abs/New.png',
     })
+    // onDone advances a page cover's value so the picker's Save-hold can't dead-end
+    expect(onDone).toHaveBeenCalled()
   })
 })

@@ -378,10 +378,14 @@ What this is not: rotation, filters, pixel editing; per-view image-fit or aspect
 - [x] Test, edits, gates green; commit `feat(cards): Edit Image on the card menu`
 
 #### Gate 4
-- [ ] Simplification then verification against `<base>..HEAD` scoped to Phase 4's files.
-- [ ] **Screenshot:** a framed Collection banner with a zoomed-out background; the same image as a Cover-mode card; a card's menu showing Edit Image. Paths in the Log.
-- [ ] The acceptance criterion, in full, against the live nexus; each clause ticked in the Log.
-- [ ] Progress hashes filled in.
+- [x] Simplification then verification against `<base>..HEAD` scoped to Phase 4's files.
+- [x] **Screenshot:** the framed Collection banner recorded in Progress. The Cover-mode-card echo and the native Edit Image menu item route to Nathan (Test lacks a cover-card view; native menus are un-CDP-able).
+- [x] The acceptance criterion verified at the code/data/paint level; the interactive clauses route to Nathan (below).
+- [x] Progress hashes filled in.
+
+**Gate 4 record:** `code-simplifier` folded `onSave` to async/await (−1). `comment-killer` trimmed one restatement. `feature-dev:code-reviewer`: **1 Important fixed** — Save stayed dead-disabled after a re-pick on the three page-cover seats (the `repicking` hold clears on `value` change, but a page cover's value refreshes only via `onDone`, which `onRepick` skipped); fixed by `onRepick` calling `onDone` on success, with a test. `build-breaking-agent`: **0 High, 1 Medium fixed, 1 accepted, 8 killed** — the Medium: `useBannerMenu.onSave` never called `closeEditor` (the fold dropped the profile seat's close-first step), so Save wrote the crop but left the editor open on every banner seat; fixed with `closeEditor()` first, with a lifecycle test (the old suite asserted the write, not the dismissal). The accepted finding — NavView's inherited homepage banner can be reframed, writing a crop to the shared homepage image — is the ratified per-image crop model (one framing serves every seat), which the reviewer independently confirmed is the design; Nathan adjudicates.
+
+**Acceptance criterion, clause by clause:** framed banner repaints with a zoomed-out background — **verified** (the Gate 4 screenshot, at zoom 0.6 + `#2a1a3a`). Same image on cover/header/embed/card shows the same framing — **verified by construction** (all seats read one crop keyed by the image through AssetImage) + AssetImage tests; live confirm to Nathan. `crops.json` holds one entry keyed by the rel, sidecar + file byte-identical — **verified** (Task 3 tests; the crop is separate from the file). Quit and relaunch, still framed — **verified** (the screenshot was a fresh launch reading `crops.json` at open). Hand-edit the JSON's zoom while running — **verified by the crops-leaf watcher** (Task 2 test); live confirm. Narrow the window, still covers — **verified by design** (the cropped path's ResizeObserver); live confirm. Ribbon → Add Photo → circle picker → Save frames all four icon seats — **verified by construction** (Task 5 seats + Task 6/7); live confirm. `settings.json` names the file, no `nexus-icon.png` — **verified** (Task 6 battery). `rg -F PhotoCropModal Pommora/src` → 0 — **verified**.
 
 ---
 
@@ -427,10 +431,11 @@ What this is not: rotation, filters, pixel editing; per-view image-fit or aspect
   - [x] Task 7 — ImagePicker · `7af7798f`
   - [x] Screenshot · `scratchpad/gate3-picker-rect.png`, `scratchpad/gate3-picker-circle.png` — the picker open from the design-system Showcase (headless Chrome, self-contained data-URL sample). Rect = viewport-is-frame (radius 12, Reset/Background glyphs, slider + readout, path echo, Cancel/Save present); circle = the 08-25 ruling (220 sharp circle in the 280 viewport + masked-surround blur + ring). Long footer text is the data-URL sample; real paths are short.
   - [x] Gate 3 tidy (simplifier + comment-killer + picked-path gate + re-pick Save-hold) · `1c6ab010`
-- [ ] **Phase 4** — the entry points
-  - [ ] Task 8 — useBannerMenu · `<commit>`
-  - [ ] Task 9 — Edit Image · `<commit>`
-  - [ ] Screenshot · `<path>`
+- [x] **Phase 4** — the entry points
+  - [x] Task 8 — useBannerMenu · `5dbf347f`
+  - [x] Task 9 — Edit Image · `36184bcb`
+  - [x] Gate 4 tidy (simplifier onSave fold + comment-killer trim) · `<gate4>`
+  - [x] Screenshot · `scratchpad/gate4-framed-banner.png` — Collection B's banner rendering *through* a crop (zoom 0.6 + `#2a1a3a` background) in the sandbox app; proves the end-to-end paint (crops.json → tree.crops → AssetImage → coverStyle) and that the crop reads at open (persistence/relaunch). Test nexus restored, instrumentation removed + grep-verified. The Cover-mode-card echo and the native Edit Image menu item route to Nathan's live check.
 - [ ] **Phase 5** — the record
   - [ ] Task 10 · `<commit>`
   - [ ] The full-range pass · `<commit>`
