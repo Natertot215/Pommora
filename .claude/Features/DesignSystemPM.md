@@ -248,7 +248,7 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 
 | Title       | Export                                | What it is                                                     |
 | ----------- | ------------------------------------- | -------------------------------------------------------------- |
-| Button      | `Button`                              | `type` × `size` × content (icon · icon + label · label), with `outline` as an inset ring and the `revealOnHover` / `ghostRest` modifiers; hover only, never a selected state. |
+| Button      | `Button`                              | `type` × `size` × content (icon · icon + label · label), with `outline` as an inset ring and the `revealOnHover` / `ghostRest` modifiers; hover on every button, and `pressed` — the selected wash, held under hover — only for a toggle that is on or a trigger whose menu is open. |
 | Segmented   | `Segmented`                           | N Buttons of one type divided by `segment`; `glass` for the toolbar. |
 | Checkbox    | `Checkbox`                            | The box, on the accent or a chosen cell.                       |
 | DualSwitch  | `DualSwitch`                          | A boolean toggle with a sliding glass segment.                 |
