@@ -59,6 +59,11 @@ export function InputField({
         setEditing(true)
       }
     : onClick
+  const content = capped ? (
+    <span className={cx(s.contentRow, 'over-scroll-x', 'over-scroll-cap')}>{children}</span>
+  ) : (
+    children
+  )
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: the button role is applied conditionally on the click handler, which a static parse cannot see
     <div
@@ -91,12 +96,10 @@ export function InputField({
           }}
           onCancel={() => setEditing(false)}
         >
-          {children}
+          {content}
         </RenamableLabel>
-      ) : capped ? (
-        <span className={cx(s.contentRow, 'over-scroll-x', 'over-scroll-cap')}>{children}</span>
       ) : (
-        children
+        content
       )}
       {trailing && <span className={s.trailing}>{trailing}</span>}
     </div>
