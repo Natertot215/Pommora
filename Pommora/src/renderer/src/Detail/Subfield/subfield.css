@@ -29,9 +29,6 @@
   justify-content: flex-start;
   gap: 0;
 }
-/* Drop the button's own left padding here so the chevron sits flush on the subfield inset (where a
-   page's breadcrumb text lands), not offset past it. */
-
 .subfield-crumbs {
   --path-chevron-color: var(--label-secondary);
   overflow: hidden;
