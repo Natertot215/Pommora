@@ -2,6 +2,7 @@
 // One definition so a non-Electron host (mobile WebView) can swap the scheme in a single place.
 
 import { normalizeTitle, parseConnectionText } from '@shared/connections'
+import { WEB_ADDRESS } from '@shared/nexusPaths'
 import type { AssetMap } from '@shared/types'
 
 // Per SEGMENT, not `encodeURI` over the whole path: that helper leaves `#` and `?` alone, so a
@@ -15,10 +16,6 @@ export type AssetValue =
   | { kind: 'external'; url: string }
   | { kind: 'unresolved' }
 
-// A scheme is what separates a web address from a filename: `isValidLink`'s dotted-host rule
-// would read `Banner.png` as a website, and every asset would stop rendering.
-const SCHEMED = /^[a-z][a-z0-9+.-]*:/i
-
 /** What one stored asset value names. Three spellings reach here: the Obsidian wikilink both
  *  applications write, a web address, and the nexus-relative path Pommora used to mint. The
  *  wikilink is parsed by `parseConnectionText`, so an asset reference and a Link property can
@@ -28,7 +25,7 @@ export function resolveAssetValue(value: string, map: AssetMap): AssetValue {
   if (!raw) return { kind: 'unresolved' }
   const named = namedAsset(raw, map)
   if (named) return named
-  if (SCHEMED.test(raw)) return { kind: 'external', url: raw }
+  if (WEB_ADDRESS.test(raw)) return { kind: 'external', url: raw }
   return { kind: 'asset', rel: raw }
 }
 
