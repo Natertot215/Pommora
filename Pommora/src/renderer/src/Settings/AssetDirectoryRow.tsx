@@ -16,7 +16,12 @@ export function AssetDirectoryRow({ label, hint }: RowText): React.JSX.Element {
       <InputField
         chrome="bordered"
         label={label}
-        edit={{ value: stored, onCommit: (next) => void setAssetDirectory(next) }}
+        edit={{
+          value: stored,
+          onCommit: (next) => void setAssetDirectory(next),
+          renames: 'row',
+          emptyCommits: true,
+        }}
         leading={<Icon name="folder-closed" size="body" />}
         trailing={
           <Button

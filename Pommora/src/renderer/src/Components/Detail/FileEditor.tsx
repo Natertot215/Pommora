@@ -32,7 +32,7 @@ export function FileEditor({
         <InputField
           chrome="bordered"
           label="Directory"
-          edit={{ value, onCommit: onSetDirectory }}
+          edit={{ value, onCommit: onSetDirectory, renames: 'row', emptyCommits: true }}
           leading={<Icon name="folder-closed" size="body" />}
           trailing={
             <Button

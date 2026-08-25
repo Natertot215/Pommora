@@ -17,6 +17,7 @@ export function EditableInput({
   autoSize,
   caretAtEnd,
   boxed,
+  ariaLabel,
   onCommit,
   onCancel,
 }: {
@@ -27,6 +28,7 @@ export function EditableInput({
   autoSize?: boolean
   caretAtEnd?: boolean
   boxed?: boolean
+  ariaLabel?: string
   onCommit: (next: string) => void
   onCancel: () => void
 }): React.JSX.Element {
@@ -54,6 +56,7 @@ export function EditableInput({
       size={autoSize ? 1 : undefined}
       // Every consumer is a title field — proper nouns, not prose; squiggles are noise.
       spellCheck={false}
+      aria-label={ariaLabel}
       maxLength={maxLength}
       onFocus={(e) => {
         if (!caretAtEnd) return e.currentTarget.select()
