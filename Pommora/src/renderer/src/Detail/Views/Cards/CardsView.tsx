@@ -35,6 +35,8 @@ import { cx } from '@renderer/DesignSystem/Util/cx'
 import { assetUrl } from '../../../assetUrl'
 import { useSession } from '../../../store'
 import { AssetImage } from '@renderer/DesignSystem/Components/AssetImage/AssetImage'
+import { ImagePicker } from '@renderer/DesignSystem/Components/ImagePicker/ImagePicker'
+import { useBannerMenu } from '@renderer/Detail/Banner/useBannerMenu'
 import { byOrder, parentOf } from '@shared/treePatch'
 import { thumbKey, thumbRel } from '@shared/nexusPaths'
 import { navKey } from '@renderer/Navigation/navRecents'
@@ -1004,22 +1006,14 @@ function DraggableSetCard({ set }: { set: SetNode }): React.JSX.Element {
 
 function SetCard({ set, drag }: { set: SetNode; drag?: DragItem }): React.JSX.Element {
   const select = useSession((s) => s.select)
-  const mutate = useSession((s) => s.mutate)
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
   const iconName = entityIcon('set', set.icon, defaultIcons)
-  const holdGhost = useContext(GhostSuppress)
-  // Right-click the set's image band → the native banner menu (Add when unset, Change/Remove when
-  // set), the same setBanner flow the page cards use — kind 'set', reloading the tree on the write.
-  const onThumbContextMenu = async (e: React.MouseEvent): Promise<void> => {
-    e.preventDefault()
-    e.stopPropagation()
-    const action = await holdGhost(() => window.nexus.bannerMenu(set.banner ? {} : { add: true }))
-    if (!action) return
-    const source = action === 'remove' ? null : await window.nexus.pickFile()
-    if (action === 'remove' || source) {
-      await mutate({ op: 'setBanner', path: set.path, kind: 'set', source })
-    }
-  }
+  const thumbRef = useRef<HTMLDivElement>(null)
+  const { openMenu, editing, closeEditor, boxAspect, onSave, onRepick } = useBannerMenu(
+    set.path,
+    'set',
+    { value: set.banner, frame: thumbRef },
+  )
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
     <div
@@ -1034,7 +1028,15 @@ function SetCard({ set, drag }: { set: SetNode; drag?: DragItem }): React.JSX.El
     >
       <div className="page-card-body hover-pop">
         {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
-        <div className="page-card-thumb" onContextMenu={(e) => void onThumbContextMenu(e)}>
+        <div
+          ref={thumbRef}
+          className="page-card-thumb"
+          onContextMenu={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            void openMenu()
+          }}
+        >
           <AssetImage
             value={set.banner}
             fallback={
@@ -1042,6 +1044,15 @@ function SetCard({ set, drag }: { set: SetNode; drag?: DragItem }): React.JSX.El
                 <Icon name={iconName} size="largeTitle" />
               </span>
             }
+          />
+          <ImagePicker
+            open={editing}
+            value={set.banner ?? ''}
+            shape="rect"
+            boxAspect={boxAspect}
+            onCancel={closeEditor}
+            onSave={onSave}
+            onRepick={onRepick}
           />
         </div>
         <div className="page-card-text">
@@ -1177,6 +1188,7 @@ const CardFace = memo(function CardFace({
   naming,
   onImgError,
   textRef,
+  thumbRef,
   onThumbContextMenu,
   onZoneClick,
   onCommitValue,
@@ -1199,6 +1211,7 @@ const CardFace = memo(function CardFace({
   allowInlineRemove: boolean
   onImgError?: () => void
   textRef?: React.Ref<HTMLDivElement>
+  thumbRef?: React.Ref<HTMLDivElement>
   onThumbContextMenu?: (e: React.MouseEvent) => void
   /** The add-property action (empty-flow / breadcrumb / text-zone empty space). Absent on the ghost. */
   onZoneClick?: (e: React.MouseEvent) => void
@@ -1254,6 +1267,7 @@ const CardFace = memo(function CardFace({
       {banner !== 'none' && (
         // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
         <div
+          ref={thumbRef}
           className={cx('page-card-thumb', banner === 'preview' && 'is-capture')}
           onContextMenu={onThumbContextMenu ? (e) => void onThumbContextMenu(e) : undefined}
         >
@@ -1415,32 +1429,23 @@ const PageCard = memo(function PageCard({
 
   const cover = typeof row.frontmatter.cover === 'string' ? row.frontmatter.cover : undefined
   const onImgError = useCallback(() => setFailed(true), [])
-  // Right-click the image band → the page-banner menu (the PageHeader flow), worded for the view's
-  // display config: Cover mode says Cover, Preview says Banner (it edits the page banner either way —
-  // the one settable image; a Preview thumb itself is a capture, not a pickable file).
-  const onThumbContextMenu = useCallback(
-    async (e: React.MouseEvent): Promise<void> => {
-      e.preventDefault()
-      e.stopPropagation()
-      const noun = banner === 'cover' ? 'Cover' : 'Banner'
-      const action = await holdGhost(() =>
-        window.nexus.bannerMenu(cover ? { noun } : { noun, add: true }),
-      )
-      if (!action) return
-      if (action === 'remove') {
-        if (await mutate({ op: 'setBanner', path: row.path, kind: 'page', source: null }))
-          onRefreshValues()
-        return
-      }
-      const picked = await window.nexus.pickFile()
-      if (
-        picked &&
-        (await mutate({ op: 'setBanner', path: row.path, kind: 'page', source: picked }))
-      )
-        onRefreshValues()
-    },
-    [banner, cover, mutate, row.path, onRefreshValues],
-  )
+  const thumbRef = useRef<HTMLDivElement>(null)
+  // The image band's banner menu (the PageHeader flow), worded for the view's display config —
+  // Cover mode says Cover, Preview says Banner (both edit the page's one settable image; a Preview
+  // thumb is a capture, not a pickable file). Edit joins it; onSave frames the cover.
+  const {
+    openMenu: openBannerMenu,
+    editing,
+    closeEditor,
+    boxAspect,
+    onSave,
+    onRepick,
+  } = useBannerMenu(row.path, 'page', {
+    value: cover,
+    frame: thumbRef,
+    noun: banner === 'cover' ? 'Cover' : 'Banner',
+    onDone: onRefreshValues,
+  })
   // Only Preview's capture thumbnail rides `src`; a Cover is framed by AssetImage from `cover`.
   const src = banner === 'preview' ? thumbSrc(nexusId, row.id, version) : undefined
   if (src !== lastSrc.current) {
@@ -1498,7 +1503,12 @@ const PageCard = memo(function PageCard({
             naming={naming}
             onImgError={onImgError}
             textRef={textRef}
-            onThumbContextMenu={onThumbContextMenu}
+            thumbRef={thumbRef}
+            onThumbContextMenu={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              void openBannerMenu()
+            }}
             onZoneClick={openAdd}
             onCommitValue={onCommitValue}
             onStyle={onStyle}
@@ -1515,6 +1525,15 @@ const PageCard = memo(function PageCard({
         value={typeof row.icon === 'string' ? row.icon : undefined}
         onSelect={(icon) => void mutate({ op: 'setIcon', path: row.path, kind: 'page', icon })}
         onClose={() => setIconOpen(false)}
+      />
+      <ImagePicker
+        open={editing}
+        value={cover ?? ''}
+        shape="rect"
+        boxAspect={boxAspect}
+        onCancel={closeEditor}
+        onSave={onSave}
+        onRepick={onRepick}
       />
     </div>
   )
