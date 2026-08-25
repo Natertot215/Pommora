@@ -2,10 +2,11 @@ import { describe, expect, it } from 'vitest'
 import {
   clampZoom,
   coverStyle,
+  cropWindow,
   DEFAULT_CROP,
+  dragWindow,
   MAX_ZOOM,
   MIN_ZOOM,
-  panDelta,
   panToCrop,
 } from './cropGeometry'
 import { cropKeyFor } from './nexusPaths'
@@ -91,33 +92,65 @@ describe('panToCrop', () => {
   })
 })
 
-describe('panDelta', () => {
-  const anchor: Crop = { x: 0.5, y: 0.5, zoom: 1.5 }
+describe('cropWindow', () => {
+  it('is the whole image for a matching seat at zoom 1', () => {
+    expect(cropWindow({ x: 0.5, y: 0.5, zoom: 1 }, 1, 1)).toEqual({
+      left: 0,
+      top: 0,
+      width: 1,
+      height: 1,
+    })
+  })
 
-  it('reads the live zoom, not the anchor zoom, for the overhang', () => {
-    const out = panDelta(anchor, 2, 2, 1, 100, 10, 0)
-    expect(out.x).toBeCloseTo(0.4, 10)
+  it('a wide seat over a square image takes the full width and a centered band', () => {
+    expect(cropWindow({ x: 0.5, y: 0.5, zoom: 1 }, 1, 0.5)).toEqual({
+      left: 0,
+      top: 0.25,
+      width: 1,
+      height: 0.5,
+    })
+  })
+
+  it('zoom shrinks the window and the focal point places it', () => {
+    expect(cropWindow({ x: 1, y: 1, zoom: 2 }, 1, 1)).toEqual({
+      left: 0.5,
+      top: 0.5,
+      width: 0.5,
+      height: 0.5,
+    })
+  })
+
+  it('is the whole image where either aspect is unusable', () => {
+    expect(cropWindow({ x: 0.5, y: 0.5, zoom: 2 }, 0, 1)).toEqual({
+      left: 0,
+      top: 0,
+      width: 1,
+      height: 1,
+    })
+  })
+})
+
+describe('dragWindow', () => {
+  const anchor: Crop = { x: 0.5, y: 0.5, zoom: 2 }
+
+  it('walks the focal point across the room the window leaves', () => {
+    const out = dragWindow(anchor, 1, 1, 100, 100, 10, 0)
+    expect(out.x).toBeCloseTo(0.7, 10)
     expect(out.y).toBe(0.5)
-    expect(out.zoom).toBe(1.5)
+    expect(out.zoom).toBe(2)
   })
 
-  it('returns exactly the anchor when the total delta is zero', () => {
-    expect(panDelta(anchor, 2, 2, 1, 100, 0, 0)).toEqual(anchor)
+  it('returns exactly the anchor for a zero delta', () => {
+    expect(dragWindow(anchor, 1, 1, 100, 100, 0, 0)).toEqual(anchor)
   })
 
-  it('leaves an axis untouched when its overhang is zero', () => {
-    const out = panDelta({ x: 0.5, y: 0.5, zoom: 1 }, 1, 2, 1, 100, 40, 40)
-    expect(out.x).toBe(0.5)
-    expect(out.y).not.toBe(0.5)
-  })
-
-  it('does not pan below fill — a negative overhang leaves the anchor untouched on both axes', () => {
-    const below: Crop = { x: 0.5, y: 0.5, zoom: 0.5 }
-    expect(panDelta(below, 0.5, 1, 1, 100, 40, 40)).toEqual(below)
+  it('leaves an axis fixed when the window fills it (no room to move)', () => {
+    const out = dragWindow({ x: 0.5, y: 0.5, zoom: 1 }, 1, 1, 100, 100, 40, 40)
+    expect(out).toEqual({ x: 0.5, y: 0.5, zoom: 1 })
   })
 
   it('falls back to the anchor on an unusable frame', () => {
-    expect(panDelta(anchor, 2, 2, 1, 0, 10, 10)).toEqual(anchor)
+    expect(dragWindow(anchor, 1, 1, 0, 100, 10, 10)).toEqual(anchor)
   })
 })
 

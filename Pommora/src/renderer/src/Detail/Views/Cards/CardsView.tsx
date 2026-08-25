@@ -1012,7 +1012,7 @@ function SetCard({ set, drag }: { set: SetNode; drag?: DragItem }): React.JSX.El
   const { openMenu, editing, closeEditor, boxAspect, onSave, onRepick } = useBannerMenu(
     set.path,
     'set',
-    { value: set.banner, frame: thumbRef },
+    { value: set.banner, frame: thumbRef, autoEdit: true },
   )
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
@@ -1448,6 +1448,7 @@ const PageCard = memo(function PageCard({
     frame: thumbRef,
     noun: banner === 'cover' ? 'Cover' : 'Banner',
     onDone: onRefreshValues,
+    autoEdit: true,
   })
   // Only Preview's capture thumbnail rides `src`; a Cover is framed by AssetImage from `cover`.
   const src = banner === 'preview' ? thumbSrc(nexusId, row.id, version) : undefined

@@ -10,7 +10,10 @@ import { useSession } from '../../store'
 
 let host: HTMLDivElement
 let root: Root
-const mutate = vi.fn(() => Promise.resolve(true))
+const mutate = vi.fn((_req, _onCreated, onAdopted?: (a: string | undefined) => void) => {
+  onAdopted?.('[[Picked.png]]')
+  return Promise.resolve(true)
+})
 const onDone = vi.fn()
 
 beforeEach(() => {
@@ -28,22 +31,24 @@ afterEach(async () => {
 })
 
 let api: ReturnType<typeof useBannerMenu>
-function Inner(): React.JSX.Element {
+function Inner({ autoEdit }: { autoEdit?: boolean }): React.JSX.Element {
   const frame = useRef<HTMLDivElement>(null)
-  api = useBannerMenu('Notes/A.md', 'page', { value: '[[Cover.png]]', frame, onDone })
+  api = useBannerMenu('Notes/A.md', 'page', { value: '[[Cover.png]]', frame, onDone, autoEdit })
   return <div ref={frame} />
 }
 function Probe({
   ghost,
+  autoEdit,
 }: {
   ghost?: (fn: () => Promise<unknown>) => Promise<unknown>
+  autoEdit?: boolean
 }): React.JSX.Element {
   return ghost ? (
     <GhostSuppress.Provider value={ghost as never}>
-      <Inner />
+      <Inner autoEdit={autoEdit} />
     </GhostSuppress.Provider>
   ) : (
-    <Inner />
+    <Inner autoEdit={autoEdit} />
   )
 }
 
@@ -80,18 +85,47 @@ describe('useBannerMenu', () => {
     expect(api.editing).toBe(false)
   })
 
+  it('autoEdit pops the crop editor after a fresh pick', async () => {
+    ;(window as { nexus?: unknown }).nexus = {
+      bannerMenu: () => Promise.resolve('change'),
+      pickFile: () => Promise.resolve('/abs/Picked.png'),
+    }
+    await mount(<Probe autoEdit />)
+    await act(async () => {
+      await api.openMenu()
+    })
+    expect(mutate).toHaveBeenCalledWith(
+      { op: 'setBanner', path: 'Notes/A.md', kind: 'page', source: '/abs/Picked.png' },
+      undefined,
+      expect.any(Function),
+    )
+    expect(api.editing).toBe(true)
+  })
+
+  it('without autoEdit a fresh pick sets the image and leaves the editor closed', async () => {
+    ;(window as { nexus?: unknown }).nexus = {
+      bannerMenu: () => Promise.resolve('change'),
+      pickFile: () => Promise.resolve('/abs/Picked.png'),
+    }
+    await mount(<Probe />)
+    await act(async () => {
+      await api.openMenu()
+    })
+    expect(mutate).toHaveBeenCalled()
+    expect(api.editing).toBe(false)
+  })
+
   it('onRepick adopts the source through setBanner', async () => {
     ;(window as { nexus?: unknown }).nexus = {}
     await mount(<Probe />)
     await act(async () => {
       await api.onRepick('/abs/New.png')
     })
-    expect(mutate).toHaveBeenCalledWith({
-      op: 'setBanner',
-      path: 'Notes/A.md',
-      kind: 'page',
-      source: '/abs/New.png',
-    })
+    expect(mutate).toHaveBeenCalledWith(
+      { op: 'setBanner', path: 'Notes/A.md', kind: 'page', source: '/abs/New.png' },
+      undefined,
+      expect.any(Function),
+    )
     // onDone advances a page cover's value so the picker's Save-hold can't dead-end
     expect(onDone).toHaveBeenCalled()
   })

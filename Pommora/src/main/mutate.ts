@@ -8,7 +8,7 @@
 // dangling reference. System-trash is injected (deps.trashToSystem) so this stays testable.
 
 import { basename, dirname, extname, join, relative, sep } from 'node:path'
-import { readFile, realpath, rm } from 'node:fs/promises'
+import { readFile, realpath } from 'node:fs/promises'
 import { sessionRoot } from './session'
 import { resolveUnderRoot } from './pathSafety'
 import { createPage, renamePage, movePage, updatePageProperty } from './crud/page'
@@ -76,7 +76,7 @@ import { NO_NEXUS } from './ipc'
 import type { TrashMode } from './appConfig'
 import { readRegistry } from './io/propertiesRegistry'
 import { deindexPath, indexWrittenPage, moveIndexPaths, seedContentIndex } from './indexSeed'
-import { NON_CORPUS_TOP, TRASH_DIR, assetSubRoot, cropKeyFor } from '@shared/nexusPaths'
+import { HTTP_URL, NON_CORPUS_TOP, TRASH_DIR, assetSubRoot, cropKeyFor } from '@shared/nexusPaths'
 import { clampZoom } from '@shared/cropGeometry'
 import { connectionText, embeddableTitle } from '@shared/connections'
 import { ASSET_MIME } from '@shared/assetMime'
@@ -86,15 +86,11 @@ import { AMBIGUOUS, indexable, liveAssetMap, resolveAssetName } from './assetMap
 /** What the orchestration needs from the Electron layer (injected to keep this testable). */
 export interface MutateDeps {
   trashMode: TrashMode
-  /** Move a path to the OS trash (shell.trashItem). The 'system' trashMode and the emptying op
-   *  with the switch off both use it. */
+  /** Move a path to the OS trash (shell.trashItem). */
   trashToSystem: (absPath: string) => Promise<void>
   /** `personalization.permanentDelete` — what emptying a bundle means. Read main-side per
    *  operation: the renderer never carries the flag that chooses between recoverable and gone. */
   permanentDelete?: boolean
-  /** Whether an absolute `source` was handed out by main's own file dialog or paste — the renderer
-   *  never names a path main did not choose. Injected by the IPC layer; absent in-process. */
-  wasPicked?: (absPath: string) => boolean
 }
 
 const relJoin = (parent: string, child: string): string => (parent ? `${parent}/${child}` : child)
@@ -106,10 +102,11 @@ async function dropReplacedAsset(
   root: string,
   prev: string | null,
   next: string | null,
+  trash: (absPath: string) => Promise<void>,
 ): Promise<void> {
   if (!prev || prev === (await assetFileToDelete(root, next))) return
-  await rm(join(root, prev), { force: true }).catch(() => {})
-  // Best-effort like the rm above and like the crops read path: a corrupt crops.json must not
+  await trash(join(root, prev)).catch(() => {})
+  // Best-effort like the trash above and like the crops read path: a corrupt crops.json must not
   // fail the banner/profile op whose asset was already removed.
   await updateCrops(root, (b) => setOrDrop(b, prev, null)).catch(() => {})
 }
@@ -245,16 +242,11 @@ export async function handleMutate(req: MutateRequest, deps: MutateDeps): Promis
   }
 }
 
+// An http(s) source is stored by reference — the same value a web-address banner already carries.
+const adoptImageSource = (root: string, source: string): Promise<Result<string>> =>
+  HTTP_URL.test(source) ? Promise.resolve(ok(source)) : adoptFile(root, source, { allow: 'image' })
+
 async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Promise<MutateReply> {
-  // An adopted image's `source` is an absolute path outside the nexus; it is only ever one main's
-  // dialog or paste handed out, never one the renderer names on its own.
-  if (
-    (req.op === 'setBanner' || req.op === 'setProfileImage') &&
-    req.source &&
-    deps.wasPicked &&
-    !deps.wasPicked(req.source)
-  )
-    return fault('That file was not picked here.')
   switch (req.op) {
     case 'createPage': {
       // '' parentPath = the nexus root (e.g. a page directly under an adopted root); '.'
@@ -446,13 +438,13 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       const settingsPath = nexusConfig(root, NEXUS_CONFIG_FILES.settings)
       const existing = await readJsonObject(settingsPath)
       const prev = await assetFileToDelete(root, existing?.profile_image)
-      const adopted = req.source ? await adoptFile(root, req.source, { allow: 'image' }) : ok(null)
+      const adopted = req.source ? await adoptImageSource(root, req.source) : ok(null)
       if (!adopted.ok) return adopted
       // Set the field first, then delete a replaced file — a failed write never leaves
       // profile_image pointing at a deleted file (mirrors the banner/cover ordering).
       await updateSettings(root, (cur) => setOrDrop(cur, 'profile_image', adopted.value))
-      await dropReplacedAsset(root, prev, adopted.value)
-      return ok({})
+      await dropReplacedAsset(root, prev, adopted.value, deps.trashToSystem)
+      return ok(adopted.value ? { adopted: adopted.value } : {})
     }
 
     case 'setProfileIcon': {
@@ -475,7 +467,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       // Adoption stays inside each owner arm, AFTER that owner has been validated — a picked file
       // must not land in the asset directory for a banner the write is about to refuse.
       const adopt = async (): Promise<Result<string | null>> =>
-        req.source ? adoptFile(root, req.source, { allow: 'image' }) : ok(null)
+        req.source ? adoptImageSource(root, req.source) : ok(null)
       // A page's banner is the `cover` key in its `.md` frontmatter, not a JSON sidecar.
       // Foreign frontmatter + body survive.
       if (req.kind === 'page') {
@@ -502,8 +494,8 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
             resolved.value,
             mergeFrontmatter(existing, rel ? { cover: rel } : {}, ['cover'], body),
           )
-          await dropReplacedAsset(root, prev, rel)
-          return ok({})
+          await dropReplacedAsset(root, prev, rel, deps.trashToSystem)
+          return ok(rel ? { adopted: rel } : {})
         })
       }
       // The NavView's banner rides navigation.json — the pointer is the only linkage, so the
@@ -516,8 +508,8 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         const adopted = await adopt()
         if (!adopted.ok) return adopted
         await writeNavigationState(root, { banner: adopted.value ?? undefined })
-        await dropReplacedAsset(root, prevNav, adopted.value)
-        return ok({})
+        await dropReplacedAsset(root, prevNav, adopted.value, deps.trashToSystem)
+        return ok(adopted.value ? { adopted: adopted.value } : {})
       }
       // Resolve the config holding the banner field, per owner kind: the homepage is a singleton
       // (.nexus/homepage.json); the rest are folder sidecars.
@@ -547,8 +539,8 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         seed,
       )
       if (!written.ok) return written
-      await dropReplacedAsset(root, prev, adopted.value)
-      return ok({})
+      await dropReplacedAsset(root, prev, adopted.value, deps.trashToSystem)
+      return ok(adopted.value ? { adopted: adopted.value } : {})
     }
 
     case 'setHeadingIconHidden': {

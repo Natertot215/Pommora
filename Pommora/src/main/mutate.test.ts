@@ -19,7 +19,7 @@ import { createProperty } from './crud/registryProperty'
 import { liveAssetMap, resolveAssetName, takeAssetMapPush } from './assetMap'
 
 let root: string
-const nexusDeps: MutateDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
+const nexusDeps: MutateDeps = { trashMode: 'nexus', trashToSystem: (p) => rm(p, { force: true }) }
 
 const read = async (rel: string): Promise<string> => readFile(join(root, rel), 'utf8')
 
@@ -555,28 +555,38 @@ describe('handleMutate — review-round hardening', () => {
     expect(JSON.parse(await read('.nexus/settings.json')).profile_image).toBeUndefined()
   })
 
-  it('refuses a source main did not hand out, and admits one it did (the picked-path gate)', async () => {
-    const src = await pickImage('Real.png')
-    // wasPicked provided and the path unknown → refused
-    expect(
-      (
-        await handleMutate(
-          { op: 'setProfileImage', source: src },
-          { ...nexusDeps, wasPicked: () => false },
-        )
-      ).ok,
-    ).toBe(false)
-    expect(JSON.parse(await read('.nexus/settings.json')).profile_image).toBeUndefined()
-    // the same source, now recognized → admitted
-    expect(
-      (
-        await handleMutate(
-          { op: 'setProfileImage', source: src },
-          { ...nexusDeps, wasPicked: (p) => p === src },
-        )
-      ).ok,
-    ).toBe(true)
+  it('adopts a real local image source the renderer named (no picked-path gate)', async () => {
+    const r = await handleMutate(
+      { op: 'setProfileImage', source: await pickImage('Real.png') },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(true)
     expect(JSON.parse(await read('.nexus/settings.json')).profile_image).toBe('[[Real.png]]')
+  })
+
+  it('stores an http(s) source by reference', async () => {
+    const url = 'https://example.com/photo.png'
+    const r = await handleMutate({ op: 'setProfileImage', source: url }, nexusDeps)
+    expect(r.ok).toBe(true)
+    expect(JSON.parse(await read('.nexus/settings.json')).profile_image).toBe(url)
+  })
+
+  it('a source that resolves to no image faults and leaves the prior photo untouched', async () => {
+    await handleMutate({ op: 'setProfileImage', source: await pickImage('First.png') }, nexusDeps)
+    expect(JSON.parse(await read('.nexus/settings.json')).profile_image).toBe('[[First.png]]')
+    // A file: URL — like any non-image string — dies in adoptFile with no extension it can show.
+    const r = await handleMutate({ op: 'setProfileImage', source: 'file:///etc/passwd' }, nexusDeps)
+    expect(r.ok).toBe(false)
+    expect(JSON.parse(await read('.nexus/settings.json')).profile_image).toBe('[[First.png]]')
+  })
+
+  it('a replaced photo asset moves to the trash, not a hard delete', async () => {
+    const trashToSystem = vi.fn(async (_p: string) => {})
+    const deps: MutateDeps = { trashMode: 'system', trashToSystem }
+    await handleMutate({ op: 'setProfileImage', source: await pickImage('Old.png') }, deps)
+    await handleMutate({ op: 'setProfileImage', source: await pickImage('New.png') }, deps)
+    expect(trashToSystem).toHaveBeenCalledOnce()
+    expect(trashToSystem.mock.calls[0][0]).toContain('Old.png')
   })
 
   it('homepage setBanner preserves blocks/icon/foreign keys (read-merge-write)', async () => {
@@ -916,7 +926,7 @@ describe('handleMutate — setCrop', () => {
     const r = await setCrop('[[Cover.png]]', { x: 0.3, y: 0.4, zoom: 99 })
     expect(r.ok).toBe(true)
     expect(await cropsOf()).toEqual({
-      '.nexus/assets/Cover.png': { x: 0.3, y: 0.4, zoom: 4 },
+      '.nexus/assets/Cover.png': { x: 0.3, y: 0.4, zoom: 2 },
     })
   })
 

@@ -38,25 +38,26 @@ export const viewport = style({
 })
 export const grabbing = style({ cursor: 'grabbing' })
 
-/** The dark, blurred bleed behind the circle (its child paints the same framing, out of focus). */
-export const surround = style({
+/** The whole image, dimmed and blurred behind the crop — what the frame keeps but the seat drops. */
+export const dimImage = style({
   position: 'absolute',
-  inset: 0,
-  overflow: 'hidden',
-  filter: 'blur(6px) brightness(0.5)',
+  objectFit: 'fill',
+  filter: 'blur(2px) brightness(0.4)',
   pointerEvents: 'none',
 })
 
-export const circleFrame = style({
+/** The sharp crop — the exact region the seat shows, cut out of the dimmed image and ringed. */
+export const cropBox = style({
   position: 'absolute',
   overflow: 'hidden',
-  borderRadius: '50%',
+  border: `1.5px solid ${c.label.control}`,
+  pointerEvents: 'none',
 })
 
-export const ring = style({
+/** The bright image inside the crop, offset to line up under the dimmed one behind it. */
+export const cropImage = style({
   position: 'absolute',
-  border: `1px solid ${c.label.secondary}`,
-  pointerEvents: 'none',
+  objectFit: 'fill',
 })
 
 /** The Reset / Background glyphs in the frame corners — label-secondary over the accessory look. */
@@ -71,23 +72,20 @@ const cornerGlyph = style([
 export const cornerGlyphStart = style([cornerGlyph, { left: '8px' }])
 export const cornerGlyphEnd = style([cornerGlyph, { right: '8px' }])
 
-/** The colour input stays mounted (showPicker throws off-DOM) but out of sight. */
-export const colorInput = style({
-  position: 'absolute',
-  width: 0,
-  height: 0,
-  opacity: 0,
-  pointerEvents: 'none',
-})
-
 export const message = style([text.footnote.standard, { color: c.label.secondary }])
+
+/** The zoom row spans the frame width so the strip fills it, the readout riding at its end. */
+export const sliderRow = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '10px',
+})
 
 export const actions = style({
   display: 'flex',
   gap: '8px',
-  alignSelf: 'stretch',
   alignItems: 'center',
   justifyContent: 'flex-end',
 })
 
-export const pathField = style({ flex: 1, minWidth: 0 })
+export const pathField = style({ flex: 1, minWidth: 0, overflow: 'hidden' })
