@@ -286,15 +286,15 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 
 #### Pickers
 
-| Title          | Export                                     | What it is                                                   |
-| -------------- | ------------------------------------------ | ------------------------------------------------------------ |
-| PickerMenu     | `PickerMenu` · `PointMenu` · `PickerOption` | The rectangle every menu and picker mounts — anchoring, dismissal, focus, the scroll cap. |
-| CalendarPicker | `CalendarPicker`                           | Date and time selection.                                     |
-| ColorPicker    | `ColorPicker`                              | The 8×8 ramp grid; clicking the selected cell clears.        |
-| IconPicker     | `IconPicker` · `IconFavorites`             | The searchable glyph grid with a reorderable favorites strip; the app binds favorites through `Settings/IconPicker`. |
-| TextPicker     | `TextPicker`                               | A typed-value picker in the shared pane.                     |
-| ImagePicker    | `ImagePicker`                              | Frames a stored image — a focal point and a zoom — as a circle or a rect cut to its seat. |
-| AssetImage     | `AssetImage`                               | The one element that draws a stored image, through its crop when one exists. |
+| Title          | Export                                      | What it is                                                                                                           |
+| -------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| PickerMenu     | `PickerMenu` · `PointMenu` · `PickerOption` | The rectangle every menu and picker mounts — anchoring, dismissal, focus, the scroll cap.                            |
+| CalendarPicker | `CalendarPicker`                            | Date and time selection.                                                                                             |
+| ColorPicker    | `ColorPicker`                               | The 8×8 ramp grid; clicking the selected cell clears.                                                                |
+| IconPicker     | `IconPicker` · `IconFavorites`              | The searchable glyph grid with a reorderable favorites strip; the app binds favorites through `Settings/IconPicker`. |
+| TextPicker     | `TextPicker`                                | A typed-value picker in the shared pane.                                                                             |
+| ImagePicker    | `ImagePicker`                               | Frames a stored image — a focal point and a zoom — as a circle or a rect cut to its seat.                            |
+| AssetImage     | `AssetImage`                                | The one element that draws a stored image, through its crop when one exists.                                         |
 
 #### Menu
 
