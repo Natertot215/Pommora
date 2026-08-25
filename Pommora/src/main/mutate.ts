@@ -119,7 +119,9 @@ async function dropReplacedAsset(
 ): Promise<void> {
   if (!prev || prev === (await assetFileToDelete(root, next))) return
   await rm(join(root, prev), { force: true }).catch(() => {})
-  await updateCrops(root, (b) => setOrDrop(b, prev, null))
+  // Best-effort like the rm above and like the crops read path: a corrupt crops.json must not
+  // fail the banner/profile op whose asset was already removed.
+  await updateCrops(root, (b) => setOrDrop(b, prev, null)).catch(() => {})
 }
 
 /** Adopt the file behind an absolute path and answer the `[[Name.ext]]` that names it. A file

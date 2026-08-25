@@ -219,6 +219,7 @@ export async function migrateAssets(root: string): Promise<AssetMigration | null
     if (toRel) rekeys.push([from, toRel])
   }
   if (rekeys.length) {
+    // Best-effort: a corrupt crops.json must not block open after the originals were trashed.
     await updateCrops(root, (b) => {
       const next = { ...b }
       for (const [fromRel, toRel] of rekeys) {
@@ -227,7 +228,7 @@ export async function migrateAssets(root: string): Promise<AssetMigration | null
         delete next[fromRel]
       }
       return next
-    })
+    }).catch(() => {})
   }
   return result
 }

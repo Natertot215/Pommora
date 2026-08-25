@@ -16,10 +16,10 @@ import { getLiveTree } from './liveTree'
 import { nexusConfig, NEXUS_CONFIG_FILES } from './paths'
 import { readSettingsLeaves, scopeOf, type SettingsLeaves } from './readNexus'
 
-/** Serialized read-modify-write of settings.json — the one primitive every settings writer funnels
+/** Serialized read-modify-write of a `.nexus` config file — the one primitive every writer funnels
  *  through, so concurrent writes to different keys can't clobber each other. A missing file
  *  starts empty; an unreadable one fails the write (the throw lands as the operation's error
- *  envelope) rather than replacing the user's settings. */
+ *  envelope) rather than replacing what's already on disk. */
 export async function updateNexusConfig(
   root: string,
   file: keyof typeof NEXUS_CONFIG_FILES,

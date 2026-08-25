@@ -147,12 +147,11 @@ async function routeMutation(
     // the app's own watcher never sees — so the writer re-reads that leaf itself.
     case 'setBanner':
     case 'setHeadingIconHidden': {
-      const own =
-        req.kind === 'homepage'
-          ? await patchHomepageFromDisk(root)
-          : req.kind === 'navview'
-            ? 'ok' // navigation.json is a file the walk never reads
-            : ((await patchEntityFromDisk(root, req.kind, req.path)) ?? 'refresh')
+      let own: 'ok' | 'refresh'
+      if (req.kind === 'homepage') own = await patchHomepageFromDisk(root)
+      else if (req.kind === 'navview')
+        own = 'ok' // navigation.json is a file the walk never reads
+      else own = (await patchEntityFromDisk(root, req.kind, req.path)) ?? 'refresh'
       if (own === 'refresh') return 'refresh'
       return req.op === 'setBanner' ? patchCropsFromDisk(root) : 'ok'
     }
