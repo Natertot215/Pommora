@@ -45,6 +45,7 @@ const OPTION = {
   gapBetweenChips: 6,
   chipPadX: 6, // option chip horizontal padding — retunes the shared label default, this pane only
   groupGap: 12, // status only: gap between one group's block (heading + chips) and the next
+  compactTitleGap: 8, // a Compact chip → the name standing beside it
 }
 
 /** — ICONS — which ladder step each glyph in this pane names, consumed by PropertiesPane/ViewPane
@@ -310,6 +311,22 @@ export const optionRow = style({
   alignItems: 'center',
   justifyContent: 'space-between',
 })
+
+/** The chip and, in Compact, the name beside it — one cluster, so the row's spread still puts the
+ *  recolor icon alone at the trailing edge. */
+export const optionLead = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: `${OPTION.compactTitleGap}px`,
+  minWidth: 0,
+})
+
+/** The name a Compact chip can't say itself — the editor names every option even where the view
+ *  shows only its glyph. */
+export const compactTitle = style([
+  text.control.standard,
+  { color: c.label.control, whiteSpace: 'nowrap' },
+])
 
 /** The New Option ghost — a chip for an option that doesn't exist yet. It arms and discloses on the
  *  shared ghost mechanism (`useGhostAnchor` + `Reveal`, the same dwell and beat the table's New Page

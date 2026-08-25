@@ -15,7 +15,7 @@ export function statusGroupGlyph(group: string | undefined): IconName {
 
 export function statusGroupOf(
   value: string,
-  def: PropertyDefinition | undefined,
+  def: Pick<PropertyDefinition, 'status_groups'> | undefined,
 ): StatusGroupId | undefined {
   for (const g of def?.status_groups ?? []) {
     if (g.options.some((o) => o.value === value)) return g.id

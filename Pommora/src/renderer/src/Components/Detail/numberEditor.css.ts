@@ -8,8 +8,13 @@ import { base } from '@renderer/DesignSystem/Components/Fields/fields.css'
  *  rides inside a Reveal and so collapses to nothing when the row is hidden. */
 export const section = style({ display: 'flex', flexDirection: 'column', paddingTop: '6px' })
 
-/** One row's spacing — the inter-row gap, applied per-row so a hidden Reveal contributes none. */
-export const row = style({ marginTop: '8px' })
+/** One row's spacing — the inter-row gap, applied per-row so a hidden Reveal contributes none. The
+ *  first row takes none: the section's own top pad is the whole gap, so the pane opens level with
+ *  the editors that lead with a config row rather than a heading. */
+export const row = style({
+  marginTop: '8px',
+  selectors: { '&:first-child': { marginTop: 0 } },
+})
 
 /** The Value control — the value + double-chevron in one box, identical at rest and while editing so the
  *  number never shifts; editing just swaps the static value for an in-place caret. */
