@@ -111,6 +111,11 @@ describe('panDelta', () => {
     expect(out.y).not.toBe(0.5)
   })
 
+  it('does not pan below fill — a negative overhang leaves the anchor untouched on both axes', () => {
+    const below: Crop = { x: 0.5, y: 0.5, zoom: 0.5 }
+    expect(panDelta(below, 0.5, 1, 1, 100, 40, 40)).toEqual(below)
+  })
+
   it('falls back to the anchor on an unusable frame', () => {
     expect(panDelta(anchor, 2, 2, 1, 0, 10, 10)).toEqual(anchor)
   })
