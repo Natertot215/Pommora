@@ -58,6 +58,10 @@ plausible from the outside. Reopen any of them with a reason, not with a fresh r
 - `Tables/codec.ts`'s `parseTable` is production-dead on purpose: it is the reference implementation
   `modelFromRegion` is pinned against in `Tables/regions.test.ts`. Production-dead is not dead.
 - `GlassWindow`, `GlassSurface` and `GlassControls` are deliberate semantic slots, not duplication.
+- A lag-compensating UI hold keys on the operation resolving, not on a downstream value change. The
+  ImagePicker's re-pick Save-hold waited for the `value` prop to advance; a dedup adopt of the
+  already-set image writes the same value back, so the change never came and Save stranded. Any hold
+  released only by an effect a no-op path can withhold is a latent deadlock.
 - The autocomplete panel's row does not adopt the shared menu-row primitive. Taking its metrics
   changes how the panel looks, which is a design decision rather than a consolidation.
 - `PageHeader` stays driven rather than store-reading. A floating preview draws a page that is not

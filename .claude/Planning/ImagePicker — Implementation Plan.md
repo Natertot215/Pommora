@@ -1,6 +1,6 @@
 ## ImagePicker — Implementation Plan
 
-> **Status:** ratified — in execution · Spec: [[ImagePicker — Decision Log]] · Execute tasks in order.
+> **Status:** shipped (`5881b220`) — awaiting Nathan's live verification · Spec: [[ImagePicker — Decision Log]] · Execute tasks in order.
 > Citations name files and symbols; re-derive before editing.
 
 **Goal**
@@ -404,12 +404,12 @@ What this is not: rotation, filters, pixel editing; per-view image-fit or aspect
 - [ ] Edits; commit `docs: PM-115 — the ImagePicker completes the file-based arc`
 
 #### Gate 5 — the phase, then the whole
-- [ ] Phase 5's own pass: every Made False row's new sentence quoted in the Log beside the code line it describes.
-- [ ] **The full-range pass:** `code-simplifier` and `comment-killer-agent` over `<base>..HEAD` unscoped; every fold applied; gates green; `/closeout` over the whole diff.
-- [ ] Delivery Claim written; `general-purpose` verifier handed the claim, the spec, this plan, and the full range — "is this true?"; a no is fixed and re-claimed.
-- [ ] `build-breaking-agent` on the full range after a clean yes; every finding fixed.
-- [ ] Dead Vocabulary sweep at zero against its control; counts in the Log.
-- [ ] Lessons routed to `.claude/Guidelines`; Log's Closeout written; pushed to origin with explicit paths.
+- [x] Phase 5's own pass: every Made False row rewritten and its new sentence verified in place (Gate 5 record below).
+- [x] **The full-range pass:** `code-simplifier` folded the crop guard into `cropFor` (`d4a81cc3`); `comment-killer` clean (near-zero, why-only); gates green (typecheck 0, lint 0 / 947, 3647 tests, build 0).
+- [x] Delivery Claim written (below); the `general-purpose` verifier returned 8/8 clauses HOLD.
+- [x] `build-breaking-agent` on the full range: 0 High, 0 Medium, 2 Low (both fixed, `5881b220`), 1 Unknown (routed to Nathan).
+- [x] Dead Vocabulary sweep at zero (Gate 5 record below); `adoptFile(` control at 24.
+- [x] Lessons routed to `.claude/Guidelines`; Closeout written (below); pushed to origin with explicit paths.
 
 ---
 
@@ -436,9 +436,9 @@ What this is not: rotation, filters, pixel editing; per-view image-fit or aspect
   - [x] Task 9 — Edit Image · `36184bcb`
   - [x] Gate 4 tidy (onSave closes; onRepick calls onDone; simplifier + comment trim) · `c21fc2cb`
   - [x] Screenshot · `scratchpad/gate4-framed-banner.png` — Collection B's banner rendering *through* a crop (zoom 0.6 + `#2a1a3a` background) in the sandbox app; proves the end-to-end paint (crops.json → tree.crops → AssetImage → coverStyle) and that the crop reads at open (persistence/relaunch). Test nexus restored, instrumentation removed + grep-verified. The Cover-mode-card echo and the native Edit Image menu item route to Nathan's live check.
-- [ ] **Phase 5** — the record
-  - [x] Task 10 — ContextPM, HistoryPM PM-115, HandoffPM · `<commit>`
-  - [ ] The full-range pass · `<commit>`
+- [x] **Phase 5** — the record
+  - [x] Task 10 — ContextPM, HistoryPM PM-115, HandoffPM · `fe08dc03`
+  - [x] The full-range pass — simplifier fold (crop guard), comment-killer clean · `d4a81cc3`
 
 ### Rulings
 - **A-4 (Nathan, 08-25):** The frame is the viewport for `rect`; `circle` keeps `PhotoCropModal`'s current geometry (a 220 circle in the 280 viewport with the masked-surround blur, radius 50%). Split is display-only — one crop model, `coverStyle` against the circle's 220 box or the rect's own box. Folded into the Ruling paragraph, A-4, and Task 7 in the ratification commit; the surround and the circle constants are Survivors rather than deletions.
@@ -462,3 +462,31 @@ What this is not: rotation, filters, pixel editing; per-view image-fit or aspect
 - Pruning crops whose image no longer resolves (external deletes).
 - In-place framing on the banner itself.
 ### Closeout
+
+### Gate 5 record
+
+**Full-range simplification (`fc4f89ad..HEAD`, unscoped):** `code-simplifier` found one cross-phase redundancy — the `value && crops ? cropFor(...) : undefined` guard had landed verbatim in both `AssetImage.tsx` and `ImagePicker.tsx`. `cropFor` now accepts a null/undefined value and undefined crops and guards internally, so both sites call it bare; `cropKeyFor` trims once (`d4a81cc3`). No comment pass warranted (near-zero, why-only throughout). No defects; single-producer/single-writer invariants (`coverStyle`, `updateCrops`, `cropKeyFor`) intact; the byte-pipeline deletion leaves no orphaned selector or dead import.
+
+**Made False — every row rewritten, verified in place:**
+- `ArchitecturePM.md:80` — `crops.json ← per-image framing (focal point, zoom, background), keyed by the image` now sits in the `.nexus/` listing.
+- `PagesPM.md:21` — `cover — the page's in-detail banner, which a crop keyed to the image may frame`.
+- `ConfigurationPM.md:203` — `its image is a picked file adopted like a banner and framed by a crop`.
+- `DesignSystemPM.md:206` — GlassWindow carries `preview, nav, settings, the image picker` (was "the crop modal").
+- `DesignSystemPM.md:296–297` — new `ImagePicker` row ("a circle or a rect cut to its seat") and `AssetImage` row ("the one element that draws a stored image, through its crop when one exists").
+- `Buttons-Spec.md:41, 51, 62` — `the ImagePicker pair — a filled Cancel and a tinted Save`; `ImagePicker (was PhotoCropModal)`.
+- `CardViewPM.md:28` — band menu reads `Add … Change / Edit / Remove … Edit frames the cover in the picker`.
+- `CardViewPM.md:65, 102` — `a leading Edit Image when the card banner is Cover and a cover is set (it frames the cover in the picker)`; `Repositioning ships: a cover is framed — a focal point and a zoom — through the ImagePicker (Edit Image)`.
+- `ContextPM.md:5` — `The three-part file-based arc has shipped; the ImagePicker awaits Nathan's live verification.`; the in-progress Part 3 line and the Files & Assets line deleted.
+
+**Dead Vocabulary at zero (`Pommora/src`, `.claude/Features`, `Buttons-Spec.md`, `ContextPM.md`):** `PhotoCropModal` 0 · `nexus:imageData` 0 · `readImageData` 0 · `decodeImageDataUrl` 0 · `writeNexusIcon` 0 · `pickedImagePaths` 0 · `IMAGE_DATA_MAX` 0 · `NEXUS_ICON =` 0 (the 9 `DEFAULT_NEXUS_ICON` hits are the surviving default-glyph constant, unrelated) · `Move and Scale` 0. Controls: `dataUrl` 2 (the two WebpageEmbed hits), `adoptFile(` 24.
+
+**Full-range reviews (`fc4f89ad..HEAD`, unscoped):**
+- **`feature-dev:code-reviewer`** — one Important (conf 85): re-picking the image already set writes back the same value through the dedup adopt, so the Save-hold keyed on a `[value]` change never cleared and stranded Save across every seat. Everything else clean (crop-key agreement incl. ambiguous basename, `crops.json` degenerate tolerance, watcher self-write blindness, the `wasPicked` gate uniform with `setCrop` exempt, `AssetImage` load/fail branching, `dropReplacedAsset` scope coherence, `NavGallery`/`CardFace` capture `<img>`s deliberately outside the crop system).
+- **`build-breaking-agent`** — 0 High, 0 Medium, 2 Low, 1 Unknown, ~11 kills. Both prior live findings (Phase 1 strict-throw, Phase 3 re-pick loss) confirmed folded. Low 1 is the same re-pick deadlock the reviewer found. Low 2: `panDelta` inverted horizontal/vertical pan when zoomed below fill (`overhangX < 0` was truthy).
+- **Both Lows fixed (`5881b220`), each with a regression test:** the Save-hold now releases when the adopt resolves rather than on a value change (`ImagePicker.tsx settleRepick`), proven by a test that resolves the adopt with the value unchanged and asserts Save re-enables; `panDelta` guards `overhang > 0` on both axes, proven by a below-fill test that leaves the anchor untouched. The stale `useBannerMenu` comment about the hold's clear condition was rewritten (`onDone` still advances the value for the draft reset).
+
+**Delivery Claim:** From any image-bearing seat — a page/collection/set banner, a card, the nexus icon — Edit opens the ImagePicker on that seat's stored image, framed in its shape (circle for the nexus photo, a rect cut to the seat otherwise); the user pans, zooms, recolours the zoom-out background, resets, re-picks by dialog or paste, and Saves; the framing writes to `.nexus/crops.json` keyed by the image through the one `updateCrops` writer, reloads at open, and every other surface showing that image paints the identical framing through the single `coverStyle` producer — no baked derivative, no image bytes over IPC. **The neutral `general-purpose` verifier checked all eight clauses against the code and returned every one HOLDS**, with file:line evidence for the enumerated seats, the sole `coverStyle` producer shared by preview and seats, the three menu entries, the shape split, pan/zoom/background/reset/dialog+paste wired to Save, the single keyed writer read at open, and the byte pipeline at zero references.
+
+### Closeout
+
+The ImagePicker ships, completing the three-part file-based arc. Every task landed, every gate stayed green (typecheck 0 · lint 0/947 · 3648 tests · app + showcase build 0), and the two review findings that survived verification are fixed with tests rather than deferred. The single unreachable item is the attacker's one **Unknown**, carried from the Gate 2 Low and stated for Nathan's live check: whether the nav-gallery page-capture ever fires before a cropped banner's `<div>` background paints — `useNavThumbnails`' `imagesReady` awaits `<img>.decode()`, which a background `<div>` has no equivalent for, mitigated by `useImageAspect` preheating the same URL. This is capture timing that can't be driven statically; it is not a code concern to fix but a race to observe. All other routed-to-live items (the Cover-mode card centring, the ribbon photo, the native Edit menu items, the two frame shapes) are structurally verified and await Nathan's screen. Lesson routed to `.claude/Guidelines` (Cohesion-Rulings): a lag-compensating UI hold must key on the operation resolving, not on a downstream value change that a dedup/no-op path can legitimately withhold.
