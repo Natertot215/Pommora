@@ -229,8 +229,8 @@ What this is not: rotation, filters, pixel editing; per-view image-fit or aspect
 **Must agree:** the picker paints its frame through this component with `preview` — one test asserts the div's inline style equals `coverStyle(preview, aspect, boxAspect)`.
 
 **Steps:**
-- [ ] Failing tests: no crop → an `<img>`; a crop under the resolved key → a div whose inline style equals `coverStyle(...)`; `preview` overrides; a failed load → `fallback`; the cache keys by URL and notifies once per frame for two resolves.
-- [ ] Implement; gates green. Commit: `feat(design-system): AssetImage — a stored image, painted through its crop when one exists`
+- [x] Failing tests: no crop → an `<img>`; a crop under the resolved key → a div whose inline style equals `coverStyle(...)`; `preview` overrides; a failed load → `fallback`; the cache keys by URL and notifies once per frame for two resolves. Plus the renderer-side must-agree half (Task 3 deviation).
+- [x] Implement; gates green. Commit: `feat(design-system): AssetImage — a stored image, painted through its crop when one exists`
 
 #### Task 5: The ten seats
 
@@ -412,7 +412,7 @@ What this is not: rotation, filters, pixel editing; per-view image-fit or aspect
   - [x] Task 1 — the crop model · `163d2646`
   - [x] Task 2 — the crops leaf · `94f5d3d9`
   - [x] Task 3 — updateCrops, setCrop, the orphan, the migration · `9ef8d1cc`
-  - [x] Gate 1 — simplification (1 fold), comment-killer (1 stale docblock), reviewers (0 High; 1 Medium fixed) · `cae60050`
+  - [x] Gate 1 — simplification (1 fold), comment-killer (1 stale docblock), reviewers (0 High; 1 Medium fixed) · `73b1a5e4`
 - [ ] **Phase 2** — one seat, painted once
   - [ ] Task 4 — AssetImage · `<commit>`
   - [ ] Task 5 — the ten seats · `<commit>`
