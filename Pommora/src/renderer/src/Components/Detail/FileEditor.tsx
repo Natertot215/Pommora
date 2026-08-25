@@ -1,6 +1,6 @@
 import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
 import { InputField, placeholder } from '@renderer/DesignSystem/Components/Fields'
-import { NavTrail } from '@renderer/DesignSystem/Elements/NavTrail'
+import { NavTrail, pathSegments } from '@renderer/DesignSystem/Elements/NavTrail'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { useSession } from '@renderer/store'
 import * as s from './settingsPane.css'
@@ -24,10 +24,7 @@ export function FileEditor({
   // the folder a file actually lands in is readable before anything is chosen.
   const assetRoot = useSession((st) => st.tree?.assetDirectory ?? '')
   const value = directory ?? ''
-  const segments = value
-    .split('/')
-    .filter(Boolean)
-    .map((title) => ({ title }))
+  const segments = pathSegments(value)
   return (
     <div className={s.configEditor}>
       <div className={s.configRow}>
