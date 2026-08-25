@@ -47,7 +47,6 @@ import {
   pathExists,
   readJsonObject,
   rmwJsonStrict,
-  atomicWriteBinary,
   atomicWriteFile,
 } from './io/atomicWrite'
 import { recordWrite } from './io/writeEcho'
@@ -82,7 +81,7 @@ import { clampZoom } from '@shared/cropGeometry'
 import { connectionText, embeddableTitle } from '@shared/connections'
 import { ASSET_MIME } from '@shared/assetMime'
 import { neverWatched } from './exclusion'
-import { AMBIGUOUS, indexable, liveAssetMap, patchHeldAssetMap, resolveAssetName } from './assetMap'
+import { AMBIGUOUS, indexable, liveAssetMap, resolveAssetName } from './assetMap'
 
 /** What the orchestration needs from the Electron layer (injected to keep this testable). */
 export interface MutateDeps {
@@ -96,18 +95,6 @@ export interface MutateDeps {
 }
 
 const relJoin = (parent: string, child: string): string => (parent ? `${parent}/${child}` : child)
-
-function decodeImageDataUrl(dataUrl: string): { ext: string; buffer: Buffer } | null {
-  const m = /^data:image\/([a-z0-9.+-]+);base64,(.+)$/i.exec(dataUrl)
-  if (!m) return null
-  const subtype = m[1].toLowerCase()
-  return { ext: subtype === 'jpeg' ? 'jpg' : subtype, buffer: Buffer.from(m[2], 'base64') }
-}
-
-/** The profile photo is a crop rather than a chosen file — bytes with no source name to keep —
- *  so it wears the name the nexus gives its own singleton, and a later crop rewrites that same
- *  file instead of minting one beside it. */
-const NEXUS_ICON = 'nexus-icon.png'
 
 /** Delete the file a replaced image value named, unless the new value names it too. The stored
  *  spellings are not comparable: a wikilink and a path can mean one file, and a singleton
@@ -198,23 +185,6 @@ export async function adoptFile(
 /** The nexus icon. It rewrites the file the setting ALREADY names — the one Pommora last wrote
  *  there — so cropping twice leaves one icon rather than a trail of them. A file the setting does
  *  not name is someone else's, even under this name, so the first crop mints beside it. */
-async function writeNexusIcon(
-  root: string,
-  dataUrl: string,
-  current: unknown,
-): Promise<Result<string>> {
-  const decoded = decodeImageDataUrl(dataUrl)
-  if (!decoded) return fault('Unsupported image data.')
-  const { assetDir } = await readWatchScope(root)
-  const mine = await assetFilePath(root, current)
-  if (mine && underAssetRoot(mine, assetDir)) {
-    await atomicWriteBinary(join(root, mine), decoded.buffer)
-    // Same name, same paths: only the version tells the renderer to re-request the image.
-    patchHeldAssetMap(root, mine, 'change')
-    return ok(connectionText(basename(mine)))
-  }
-  return writeAssetFile(root, assetDir, NEXUS_ICON, decoded.buffer)
-}
 
 /** The nexus's own machinery — never a renderer-mutable entity. The read side skips these,
  *  so the write side refuses to rename/delete them (defense against a buggy/hostile renderer
@@ -462,21 +432,18 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
     }
 
     case 'setProfileImage': {
-      // Profile avatar → the nexus icon in the asset directory, named by wikilink in
-      // settings.profile_image (read-merge-write, other keys preserved).
+      // The nexus photo is a picked file adopted into the asset directory, named by wikilink in
+      // settings.profile_image — setBanner's navview arm with a different field. Its circle framing
+      // is a separate crop on the adopted image.
       const settingsPath = nexusConfig(root, NEXUS_CONFIG_FILES.settings)
       const existing = await readJsonObject(settingsPath)
       const prev = await assetFileToDelete(root, existing?.profile_image)
-      let rel: string | null = null
-      if (req.dataUrl) {
-        const written = await writeNexusIcon(root, req.dataUrl, existing?.profile_image)
-        if (!written.ok) return written
-        rel = written.value
-      }
+      const adopted = req.source ? await adoptFile(root, req.source, { allow: 'image' }) : ok(null)
+      if (!adopted.ok) return adopted
       // Set the field first, then delete a replaced file — a failed write never leaves
       // profile_image pointing at a deleted file (mirrors the banner/cover ordering).
-      await updateSettings(root, (cur) => setOrDrop(cur, 'profile_image', rel))
-      await dropReplacedAsset(root, prev, rel)
+      await updateSettings(root, (cur) => setOrDrop(cur, 'profile_image', adopted.value))
+      await dropReplacedAsset(root, prev, adopted.value)
       return ok({})
     }
 

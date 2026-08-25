@@ -8,7 +8,6 @@ import { InputField } from '@renderer/DesignSystem/Components/Fields'
 import { MenuBottomRow, MenuScrollFrame } from '@renderer/DesignSystem/Components/Menu'
 import { FooterLockButton } from '@renderer/DesignSystem/Components/Menu'
 import { IconPicker } from '@renderer/Settings/IconPicker'
-import { PhotoCropModal } from '@renderer/DesignSystem/Components/PhotoCropModal/PhotoCropModal'
 import { useNexusIcon } from '../useNexusIcon'
 import { blockHostKey, type BlockHostRef } from '@shared/blocks'
 
@@ -24,17 +23,8 @@ export function SettingsScaffold(): React.JSX.Element | null {
   const locked = useSession((st) => st.hostLocks[blockHostKey(HOMEPAGE_HOST)] ?? false)
   const setHostLocked = useSession((st) => st.setHostLocked)
   const setLocked = (v: boolean): Promise<void> => setHostLocked(HOMEPAGE_HOST, v)
-  const {
-    profileImage,
-    profileIcon,
-    openMenu,
-    cropImage,
-    setCropImage,
-    pickerOpen,
-    setPickerOpen,
-    confirmCrop,
-    selectGlyph,
-  } = useNexusIcon()
+  const { profileImage, profileIcon, openMenu, pickerOpen, setPickerOpen, selectGlyph } =
+    useNexusIcon()
   const iconRef = useRef<HTMLButtonElement>(null)
   const photoUrl = useAssetUrl(profileImage)
   if (!tree || selection.kind !== 'homepage') return null
@@ -80,13 +70,6 @@ export function SettingsScaffold(): React.JSX.Element | null {
         value={profileIcon}
         onSelect={selectGlyph}
       />
-      {cropImage && (
-        <PhotoCropModal
-          image={cropImage}
-          onCancel={() => setCropImage(null)}
-          onConfirm={confirmCrop}
-        />
-      )}
     </>
   )
 }

@@ -291,8 +291,8 @@ What this is not: rotation, filters, pixel editing; per-view image-fit or aspect
 **Negative control:** "a replaced profile image under the configured root survives" goes red if `dropReplacedAsset` receives the raw path instead of `assetFileToDelete`'s answer.
 
 **Steps:**
-- [ ] Replacement tests; the edits in one commit (the hazard window); gates green.
-- [ ] Commit: `refactor(identity): the nexus photo is a path and a crop; the byte channel is gone`
+- [x] Replacement tests; the edits in one commit (the hazard window); gates green. `nexus:imageData` → 0 (control `nexus:pickFile` → 3); dead vocab all 0.
+- [x] Commit: `refactor(identity): the nexus photo is a path and a crop; the byte channel is gone`
 
 #### Task 7: `PhotoCropModal` becomes `ImagePicker`
 
@@ -418,7 +418,7 @@ What this is not: rotation, filters, pixel editing; per-view image-fit or aspect
 - [x] **Phase 2** — one seat, painted once
   - [x] Task 4 — AssetImage · `eb1b6f9e`
   - [x] Task 5 — the ten seats · `1fb8140f`
-  - [x] Gate 2 tidy (CardFace placeholder fold) · `<gate2>`
+  - [x] Gate 2 tidy (CardFace placeholder fold) · `222bcaf0`
   - [x] Screenshot · `scratchpad/gate2-initial.png` (Page B full-bleed cover), `scratchpad/gate2-collectionB.png` (Collection B banner) — sandboxed build (POMMORA_USERDATA, own port 9333) on the Test nexus, Nathan's live session and NexusOS untouched, instrumentation removed + grep-verified. Cover-mode card centering + the ribbon photo were not capturable (Test has no cards view and its profile asset doesn't resolve); both are structurally verified by the code-reviewer and routed to Nathan's morning acceptance check.
 - [ ] **Phase 3** — the icon on the model, then the picker
   - [ ] Task 6 — the icon on the model · `<commit>`
