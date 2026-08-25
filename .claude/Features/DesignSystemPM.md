@@ -225,7 +225,7 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 | ContextChip | `ContextChip`               | A Context reference — neutral ground, color on border and text.         |
 | FileChip   | `FileChip`                   | A file property's value — a tag with a tertiary outline, no fill.       |
 | FileLabel  | `FileLabel`                  | A file or folder name inside a field, no chrome.                        |
-| SegmentRun | `SegmentRun` · `SEGMENT_GAP` | A run of FileLabels divided by PathChevrons — a path, or values side by side. |
+| SegmentRun | `SegmentRun` · `SEGMENT_GAP` | A run of FileLabels standing side by side, hairline-divided. |
 
 ### Elements
 
@@ -302,12 +302,12 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 
 | Title | Export | What it is |
 | ----------- | -------------------------------------------- | ---------------------------------------------- |
-| InputField | `InputField` | The field box; `capped` scrolls its content under the fade. |
-| Chrome | `field` · `input` · `hairlineField` · `base` · `search` | Boxed, raw caret, cell-tight, chromeless, and the search look. |
+| InputField | `InputField` · `FieldEdit` | The field box — `boxed` or `bordered` chrome; `capped` scrolls its content under the fade; `edit` swaps a draft caret in under a click; `trailing` seats an action after the content. |
+| Chrome | `field` · `input` · `borderedField` · `draftInput` · `base` · `search` | Boxed, raw caret, cell-tight, the draft caret, chromeless, and the search look. |
 | Ring | `fieldRing()` · `focusRing()` · `errorRing()` · `ROW_RING` | One inset-shadow channel; presets set only its color. |
 | Placeholder | `placeholder` | The ghost-text tone. |
 | SearchField | `SearchField` · `SEARCH_PLACEHOLDER` | The controlled filter input the list surfaces share. |
-| PathField | `PathField` | A folder path — a SegmentRun at rest, raw text under a click. |
+| PathField | `PathField` | A folder path on InputField — a lead glyph, a NavTrail at rest, a browse action. |
 | EditableInput | `EditableInput` | Enter commits, Escape abandons, blur settles. |
 | RenamableLabel | `RenamableLabel` | The inline-rename swap. |
 | useDraftEdit | `useDraftEdit` | Rest content until a click, then a width-pinned draft. |
