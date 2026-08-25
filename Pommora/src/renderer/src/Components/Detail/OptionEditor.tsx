@@ -5,6 +5,7 @@ import {
   addOption,
   recolorOption,
   reorderOption,
+  setOptionIcon,
   fallbackTitle,
   type Option,
 } from '@shared/optionModel'
@@ -18,7 +19,7 @@ import {
 } from './GhostOptionChip'
 import { DragGhost } from '@renderer/DesignSystem/Interactions/DragGhost'
 import { DropLine } from '@renderer/DesignSystem/Interactions/DropLine'
-import { OptionSlot } from './OptionRow'
+import { OptionSlot, OptionStyleRow, type OptionStyle } from './OptionRow'
 import { useOptionReorder } from './useOptionReorder'
 import * as s from './settingsPane.css'
 import { labelColor, optionShapeFor, shape } from '@renderer/DesignSystem/Labels'
@@ -31,14 +32,18 @@ const LIST_ANCHOR = 'options'
 export function OptionEditor({
   type,
   options,
+  look,
   onSetOptions,
+  onSetStyle,
   onRenameOption,
   onRemoveOption,
   onClearOption,
 }: {
   type: PropertyType
   options: Option[]
+  look: OptionStyle
   onSetOptions: (next: Option[]) => void
+  onSetStyle: (look: OptionStyle) => void
   onRenameOption: (oldValue: string, newTitle: string) => void
   onRemoveOption: (value: string) => void
   onClearOption: (value: string) => void
@@ -48,6 +53,7 @@ export function OptionEditor({
   const [adding, setAdding] = useState<number | null>(null)
   const [renaming, setRenaming] = useState<string | null>(null)
   const [coloring, setColoring] = useState<string | null>(null)
+  const [iconEditing, setIconEditing] = useState<string | null>(null)
   // The open row's recolor button — the ColorPicker measures + dismiss-exempts it (only one is open).
   const paletteBtnRef = useRef<HTMLButtonElement>(null)
   // Identity-stable across the hook's own re-renders — its list-change invalidation keys on this.
@@ -57,7 +63,9 @@ export function OptionEditor({
   )
   // Each option is its own anchor, so the slot opens under whichever chip the pointer rests on; an
   // empty list has no chip to anchor to, so the list itself stands in for the first one.
-  const ghostApi = useGhostOptionAnchor(adding !== null || renaming !== null || coloring !== null)
+  const ghostApi = useGhostOptionAnchor(
+    adding !== null || renaming !== null || coloring !== null || iconEditing !== null,
+  )
 
   const commitAdd = (raw: string, at: number): void => {
     setAdding(null)
@@ -87,8 +95,9 @@ export function OptionEditor({
     if (title !== oldValue) onRenameOption(oldValue, title)
   }
   const openMenu = async (o: Option): Promise<void> => {
-    const action = await window.nexus.optionMenu({ name: o.label })
+    const action = await window.nexus.optionMenu({ name: o.label, canEditIcon: true })
     if (action === 'option:rename') setRenaming(o.value)
+    else if (action === 'option:edit-icon') setIconEditing(o.value)
     else if (action === 'option:remove') onRemoveOption(o.value)
     else if (action === 'option:clear') onClearOption(o.value)
   }
@@ -96,9 +105,14 @@ export function OptionEditor({
     setColoring(null)
     onSetOptions(recolorOption(options, o.value, color))
   }
+  const pickIcon = (o: Option, icon: string | undefined): void => {
+    setIconEditing(null)
+    onSetOptions(setOptionIcon(options, o.value, icon))
+  }
 
   return (
     <div className={s.optionEditor}>
+      <OptionStyleRow look={look} onSetStyle={onSetStyle} />
       <div className={s.optionsRow}>
         <span className={s.optionsLabel}>Options</span>
         <Button
@@ -135,17 +149,21 @@ export function OptionEditor({
                 drag={reorder}
                 ghost={ghostApi}
                 onOpenMenu={() => void openMenu(o)}
+                type={type}
                 label={o.label}
-                shape={optionShapeFor(type)}
                 color={labelColorFor(o.color)}
+                icon={o.icon}
                 renaming={renaming === o.value}
                 coloring={isColoring}
+                iconEditing={iconEditing === o.value}
                 paletteRef={paletteBtnRef}
                 onCommitRename={(raw) => commitRename(o.value, raw)}
                 onCancelRename={() => setRenaming(null)}
                 onToggleColoring={() => setColoring((v) => (v === o.value ? null : o.value))}
                 onCloseColoring={() => setColoring(null)}
                 onPickColor={(color) => pickColor(o, color)}
+                onEditIcon={(icon) => pickIcon(o, icon)}
+                onCloseIcon={() => setIconEditing(null)}
               />
               {slotAt(i + 1, o.value)}
             </Fragment>

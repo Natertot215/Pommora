@@ -7,13 +7,22 @@ import type { ActionItem } from './menuModel'
 
 export interface OptionMenuContext {
   name: string
+  /** Select / multi only — adds Edit Icon for the option's Compact glyph. */
+  canEditIcon?: boolean
 }
 
-export type OptionMenuAction = 'option:rename' | 'option:remove' | 'option:clear'
+export type OptionMenuAction =
+  | 'option:rename'
+  | 'option:edit-icon'
+  | 'option:remove'
+  | 'option:clear'
 
-export function optionMenuModel(): ActionItem<OptionMenuAction>[] {
+/** `canEditIcon` gates the Compact glyph editor onto select / multi options; status options wear
+ *  their group's glyph, so they never carry one of their own. */
+export function optionMenuModel(canEditIcon = false): ActionItem<OptionMenuAction>[] {
   return [
     { label: 'Rename', action: 'option:rename' },
+    ...(canEditIcon ? [{ label: 'Edit Icon', action: 'option:edit-icon' as const }] : []),
     { label: 'Remove', action: 'option:remove', confirm: true },
     { label: 'Clear', action: 'option:clear', confirm: true },
   ]

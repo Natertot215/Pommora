@@ -4,7 +4,13 @@
 
 import type { PropertyType, StatusGroup } from './properties'
 
-export type Option = { value: string; label: string; color?: string; group_id?: string }
+export type Option = {
+  value: string
+  label: string
+  color?: string
+  icon?: string
+  group_id?: string
+}
 
 /** The empty-name fallback when a rename field is left blank: Select / Multi → "Label"; Status → its
  *  group's label (so an unnamed status option reads as its group). */
@@ -122,6 +128,20 @@ export function recolorOption(
     if (o.value !== value) return o
     const { color: _drop, ...rest } = o
     return color ? { ...rest, color } : rest
+  })
+}
+
+/** Set or clear an option's Compact glyph (undefined removes the field → the chip falls back to the
+ *  type default, single tag for select and double for multi). */
+export function setOptionIcon(
+  options: Option[],
+  value: string,
+  icon: string | undefined,
+): Option[] {
+  return options.map((o) => {
+    if (o.value !== value) return o
+    const { icon: _drop, ...rest } = o
+    return icon ? { ...rest, icon } : rest
   })
 }
 

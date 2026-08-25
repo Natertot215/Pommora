@@ -1,52 +1,97 @@
-import type { PointerEvent as ReactPointerEvent } from 'react'
+import { useRef, type PointerEvent as ReactPointerEvent } from 'react'
 import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
 
 import type { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { ColorPicker } from '@renderer/DesignSystem/Components/Pickers/ColorPicker/ColorPicker'
+import { Icon, iconNameOr } from '@renderer/DesignSystem/Symbols'
+import { defaultOptionIcon } from '@renderer/Detail/Views/PropertyEditing/OptionChip'
+import { IconPicker } from '@renderer/Settings/IconPicker'
 import { OptionNameCaret, ghostAnchorProps } from './GhostOptionChip'
 import type { GhostAnchor } from '@renderer/Detail/Views/useGhostAnchor'
+import { PickerControl } from './PickerControl'
 import * as s from './settingsPane.css'
 import {
   Label,
   labelColor,
+  optionShapeFor,
   shape as labelShape,
-  type LabelShape,
 } from '@renderer/DesignSystem/Labels'
+
+export type OptionStyle = 'standard' | 'compact'
+
+const OPTION_STYLE_OPTIONS = [
+  { value: 'standard', label: 'Standard' },
+  { value: 'compact', label: 'Compact' },
+] as const
+
+/** The Standard/Compact toggle, one component so the status and select/multi editors offer the axis
+ *  in the identical place. It writes the active view's column look (per-view, like every other Style). */
+export function OptionStyleRow({
+  look,
+  onSetStyle,
+}: {
+  look: OptionStyle
+  onSetStyle: (look: OptionStyle) => void
+}): React.JSX.Element {
+  return (
+    <div className={s.configRow}>
+      <span className={s.configLabel}>Style</span>
+      <PickerControl
+        ariaLabel="Chip style"
+        value={look}
+        options={OPTION_STYLE_OPTIONS}
+        onPick={onSetStyle}
+      />
+    </div>
+  )
+}
 
 /** One reorderable option, the same row in the Select editor and the Status editor. Everything that
  *  differs between them — where the list came from, whether a group's color stands in for an unset
- *  one, which shape the chip takes — is resolved by the caller and arrives here already decided, so
- *  the row states the chip, the naming caret, the palette and its picker exactly once.
+ *  one — is resolved by the caller and arrives here already decided, so the row states the chip, the
+ *  naming caret, the palette and its picker exactly once. The chip shape follows the property type.
  *
  *  The drag wiring stays with the caller: the row registers itself, but the gesture belongs to the
  *  list that owns the ordering. */
 export function OptionRow({
+  type,
   label,
-  shape,
   color,
+  icon,
   renaming,
   coloring,
+  iconEditing,
   paletteRef,
   onCommitRename,
   onCancelRename,
   onToggleColoring,
   onCloseColoring,
   onPickColor,
+  onEditIcon,
+  onCloseIcon,
 }: {
+  type: string
   label: string
-  shape: LabelShape
   /** Already resolved — a Status option inherits its group's color, a Select option has only its own. */
   color: ReturnType<typeof labelColorFor>
+  /** The option's own Compact glyph, if it carries one. */
+  icon?: string
   renaming: boolean
   coloring: boolean
+  /** The Compact glyph editor is open on this option — it previews its icon-only variant. */
+  iconEditing?: boolean
   paletteRef: React.RefObject<HTMLButtonElement | null>
   onCommitRename: (raw: string) => void
   onCancelRename: () => void
   onToggleColoring: () => void
   onCloseColoring: () => void
   onPickColor: (color: string | undefined) => void
+  onEditIcon?: (icon: string | undefined) => void
+  onCloseIcon?: () => void
 }): React.JSX.Element {
+  const iconAnchor = useRef<HTMLSpanElement>(null)
+  const shape = optionShapeFor(type)
   if (renaming) {
     return (
       <OptionNameCaret
@@ -55,6 +100,26 @@ export function OptionRow({
         onCommit={onCommitRename}
         onCancel={onCancelRename}
       />
+    )
+  }
+  // Editing the glyph previews the Compact (icon-only) variant, the mirror of rename revealing the
+  // full name — you see the option as its icon while you pick it.
+  if (iconEditing) {
+    return (
+      <span className={s.paletteAnchor} ref={iconAnchor}>
+        <Label
+          shape={shape}
+          color={color}
+          icon={<Icon name={iconNameOr(icon, defaultOptionIcon(type))} size="body" />}
+        />
+        <IconPicker
+          open
+          value={icon}
+          onSelect={(id) => onEditIcon?.(id)}
+          onClose={() => onCloseIcon?.()}
+          triggerRef={iconAnchor}
+        />
+      </span>
     )
   }
   return (

@@ -7,9 +7,8 @@ import {
   PickerOption,
 } from '@renderer/DesignSystem/Components/Pickers/PickerMenu/PickerMenu'
 import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
-import { statusGroupOf } from './statusCycle'
-import { StatusCapsule } from './StatusCapsule'
-import { ContextChip, Label, optionShapeFor } from '@renderer/DesignSystem/Labels'
+import { SpaceChip } from '@renderer/DesignSystem/Labels'
+import { OptionChip } from './OptionChip'
 
 /** A pickable option — status options flatten out of their groups, select/multi read
  *  `select_options`. An option is never filtered by what it's called: the starter options a new
@@ -63,8 +62,8 @@ export function PropertyPicker({
   /** Click x (viewport px). When set, the pane centers on the click point instead of the trigger's
    *  fixed center (the card value gesture). Omitted → the default right-anchored dropdown. */
   anchorX?: number
-  /** The column's resolved look — a status column on a glyph look (checkbox/capsule) renders
-   *  its OPTIONS as capsule chips too (deliberate); pill columns keep labeled pills. */
+  /** The column's resolved look — a Compact status column renders its OPTIONS as glyph chips too
+   *  (deliberate); select/multi options stay labeled so a value is pickable by name. */
   look?: ColumnLook
   /** Context columns (the registry Contexts + user context props) pick from the NEXUS's contexts,
    *  not the def — the caller supplies the column's list. Toggles like multi; commits `context`. */
@@ -124,29 +123,26 @@ export function PropertyOptionRows({
     return <div style={{ minWidth: 96, height: 24 }} />
   return (
     <>
-      {options.map((o) => {
-        const capsule = def.type === 'status' && (look === 'checkbox' || look === 'capsule')
-        const group = capsule ? statusGroupOf(o.value, def) : undefined
-        return (
-          <PickerOption
-            key={o.value}
-            selected={selected.includes(o.value)}
-            onClick={() => onPick(o.value)}
-          >
-            {capsule ? (
-              <StatusCapsule color={o.color} group={group} />
-            ) : contextOptions ? (
-              <ContextChip color={labelColorFor(o.color)} title={o.label} icon={o.icon} />
-            ) : (
-              <Label
-                color={labelColorFor(o.color)}
-                text={o.label}
-                shape={optionShapeFor(def.type)}
-              />
-            )}
-          </PickerOption>
-        )
-      })}
+      {options.map((o) => (
+        <PickerOption
+          key={o.value}
+          selected={selected.includes(o.value)}
+          onClick={() => onPick(o.value)}
+        >
+          {contextOptions ? (
+            <SpaceChip color={labelColorFor(o.color)} title={o.label} icon={o.icon} />
+          ) : (
+            // Select/multi options stay labeled even in a Compact column — you pick a value by name;
+            // status keeps its group-glyph picker.
+            <OptionChip
+              type={def.type}
+              look={def.type === 'status' ? look : undefined}
+              option={o}
+              def={def}
+            />
+          )}
+        </PickerOption>
+      ))}
     </>
   )
 }

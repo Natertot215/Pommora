@@ -2,8 +2,6 @@ import type { CSSProperties } from 'react'
 import type { ColumnStyle } from '@shared/columnStyles'
 import type { PropertyValue } from '@shared/propertyValue'
 import type { ResolvedColumn, ViewRow } from '@shared/types'
-import { cx } from '@renderer/DesignSystem/Util/cx'
-import { Icon } from '@renderer/DesignSystem/Symbols'
 import { EntityIcon } from '@renderer/Components/EntityIcon'
 import { DualSwitch } from '@renderer/DesignSystem/Components/Controls/Switches/DualSwitch'
 import { ProgressBar } from '@renderer/DesignSystem/Elements/ProgressBar/ProgressBar'
@@ -14,21 +12,13 @@ import { resolveFileValue } from '@renderer/assetUrl'
 import { fileValueWithout } from '../PropertyEditing/filePick'
 import { declaredType, fileName, resolveFieldValue } from '../pipeline/value'
 import { formatDate, formatNumber, numberDivisor } from '../PropertyEditing/formatValue'
-import { statusGroupGlyph, statusGroupOf } from '../PropertyEditing/statusCycle'
-import { StatusCapsule } from '../PropertyEditing/StatusCapsule'
+import { OptionChip } from '../PropertyEditing/OptionChip'
 import { findOption } from './cellResolve'
 import { LinkCell } from './LinkCell'
 import { solidColorCss } from './solidColor'
 import { CheckboxGlyph } from './checkboxLook'
 import type { ResolveContext } from './resolveContext'
-import {
-  ContextChip,
-  FileChip,
-  Label,
-  labelColor,
-  optionShapeFor,
-  shape,
-} from '@renderer/DesignSystem/Labels'
+import { FileChip, SpaceChip } from '@renderer/DesignSystem/Labels'
 
 /** Type-aware cell render — the per-view `style` picks each type's look + formats. Every value
  *  routes through the resolution context so no raw id ever shows; an empty/unknown value renders
@@ -51,7 +41,7 @@ export function Cell({
    *  what you're aliasing (a url cell only). */
   showFullLink?: boolean
   /** Commits the value that remains after a chip's hover × (null = the property clears entirely).
-   *  Only PILL chips wire it — capsule/checkbox looks clear via their menu instead. */
+   *  Only Standard chips wire it — Compact looks clear via their menu instead. */
   remove?: (next: PropertyValue | null) => void
 }): React.JSX.Element | null {
   if (column.kind === 'title') {
@@ -90,25 +80,14 @@ export function Cell({
   switch (v.kind) {
     case 'select': {
       const opt = findOption(column.id, v.value, ctx.schema)
-      if (dt === 'status' && (style.look === 'capsule' || style.look === 'checkbox')) {
-        const group = statusGroupOf(v.value, def)
-        return style.look === 'capsule' ? (
-          <StatusCapsule color={opt?.color} group={group} />
-        ) : (
-          <span className={cx(shape.box, labelColor[labelColorFor(opt?.color)])}>
-            {group && group !== 'upcoming' ? (
-              <Icon name={statusGroupGlyph(group)} size="control" strokeWidth={3} />
-            ) : null}
-          </span>
-        )
-      }
       return (
         <OverScroll className="cell-chips">
-          <Label
-            color={labelColorFor(opt?.color)}
-            text={opt?.label ?? v.value}
-            shape={optionShapeFor(dt ?? '')}
-            {...(remove ? { onRemove: () => remove(null) } : {})}
+          <OptionChip
+            type={dt ?? ''}
+            look={style.look}
+            option={opt ?? { value: v.value }}
+            def={def}
+            {...(remove && style.look !== 'compact' ? { onRemove: () => remove(null) } : {})}
           />
         </OverScroll>
       )
@@ -119,12 +98,12 @@ export function Cell({
           {v.value.map((val) => {
             const o = findOption(column.id, val, ctx.schema)
             return (
-              <Label
+              <OptionChip
                 key={val}
-                color={labelColorFor(o?.color)}
-                text={o?.label ?? val}
-                shape={optionShapeFor(dt ?? '')}
-                {...(remove
+                type={dt ?? ''}
+                look={style.look}
+                option={o ?? { value: val }}
+                {...(remove && style.look !== 'compact'
                   ? {
                       onRemove: () =>
                         remove({ kind: 'multiSelect', value: v.value.filter((x) => x !== val) }),
@@ -141,7 +120,7 @@ export function Cell({
           {v.value.map((id) => {
             const c = ctx.contextsById.get(id)
             return (
-              <ContextChip
+              <SpaceChip
                 key={id}
                 color={labelColorFor(c?.color)}
                 title={c?.title ?? id}

@@ -18,10 +18,10 @@ import {
   ghostAnchorProps,
   useGhostOptionAnchor,
 } from './GhostOptionChip'
-import { OptionSlot } from './OptionRow'
+import { OptionSlot, OptionStyleRow, type OptionStyle } from './OptionRow'
 import { useStatusReorder } from './useStatusReorder'
 import * as s from './settingsPane.css'
-import { labelColor, optionShapeFor, shape } from '@renderer/DesignSystem/Labels'
+import { labelColor, shape } from '@renderer/DesignSystem/Labels'
 
 /**
  * Double-click a group heading to rename its label. The id underneath never changes — a calendar
@@ -30,13 +30,17 @@ import { labelColor, optionShapeFor, shape } from '@renderer/DesignSystem/Labels
  */
 export function StatusEditor({
   groups,
+  look,
   onSetGroups,
+  onSetStyle,
   onRenameOption,
   onRemoveOption,
   onClearOption,
 }: {
   groups: StatusGroup[]
+  look: OptionStyle
   onSetGroups: (next: StatusGroup[]) => void
+  onSetStyle: (look: OptionStyle) => void
   onRenameOption: (oldValue: string, newTitle: string) => void
   onRemoveOption: (value: string) => void
   onClearOption: (value: string) => void
@@ -119,70 +123,79 @@ export function StatusEditor({
     return reorder.dragging
   }
   return (
-    <div className={s.statusGroups} ref={reorder.containerRef}>
-      <DragGhost x={reorder.ghost?.x ?? null} y={reorder.ghost?.y ?? null} label={draggedLabel()} />
-      {groups.map((g) => (
-        <div key={g.id} className={s.statusGroup}>
-          <div className={s.optionsRow}>
-            {renamingGroup === g.id ? (
-              <OptionNameCaret
-                className={s.optionsLabel}
-                value={g.label}
-                onCommit={(raw) => commitGroupRename(g.id, raw)}
-                onCancel={() => setRenamingGroup(null)}
+    <>
+      <OptionStyleRow look={look} onSetStyle={onSetStyle} />
+      <div className={s.statusGroups} ref={reorder.containerRef}>
+        <DragGhost
+          x={reorder.ghost?.x ?? null}
+          y={reorder.ghost?.y ?? null}
+          label={draggedLabel()}
+        />
+        {groups.map((g) => (
+          <div key={g.id} className={s.statusGroup}>
+            <div className={s.optionsRow}>
+              {renamingGroup === g.id ? (
+                <OptionNameCaret
+                  className={s.optionsLabel}
+                  value={g.label}
+                  onCommit={(raw) => commitGroupRename(g.id, raw)}
+                  onCancel={() => setRenamingGroup(null)}
+                />
+              ) : (
+                // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
+                <span className={s.optionsLabel} onDoubleClick={() => setRenamingGroup(g.id)}>
+                  {g.label}
+                </span>
+              )}
+              <Button
+                size="button-inline"
+                paddingX="0"
+                icon="plus"
+                iconSize={s.ICON.optionsAdd}
+                className={s.groupAdd}
+                data-create
+                aria-label={`Add to ${g.label}`}
+                onClick={() => setAdding({ groupId: g.id, index: g.options.length })}
               />
-            ) : (
-              // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
-              <span className={s.optionsLabel} onDoubleClick={() => setRenamingGroup(g.id)}>
-                {g.label}
-              </span>
-            )}
-            <Button
-              size="button-inline"
-              paddingX="0"
-              icon="plus"
-              iconSize={s.ICON.optionsAdd}
-              className={s.groupAdd}
-              data-create
-              aria-label={`Add to ${g.label}`}
-              onClick={() => setAdding({ groupId: g.id, index: g.options.length })}
-            />
+            </div>
+            <div
+              className={cx('drop-line-host', s.optionList)}
+              ref={(el) => reorder.registerGroup(g.id, el)}
+              {...(g.options.length === 0 ? ghostAnchorProps(ghostApi, g.id) : {})}
+            >
+              {g.options.map((o, i) => {
+                const isColoring = coloring === o.value
+                return (
+                  <Fragment key={o.value}>
+                    <OptionSlot
+                      value={o.value}
+                      drag={reorder}
+                      ghost={ghostApi}
+                      onOpenMenu={() => void openMenu(o.value, o.label)}
+                      type="status"
+                      label={o.label}
+                      color={labelColorFor(o.color ?? g.color)}
+                      renaming={renaming === o.value}
+                      coloring={isColoring}
+                      paletteRef={paletteBtnRef}
+                      onCommitRename={(raw) => commitRename(o.value, raw, g.label)}
+                      onCancelRename={() => setRenaming(null)}
+                      onToggleColoring={() => setColoring((v) => (v === o.value ? null : o.value))}
+                      onCloseColoring={() => setColoring(null)}
+                      onPickColor={(color) => pickColor(o.value, color)}
+                    />
+                    {slotAt(g, i + 1, o.value)}
+                  </Fragment>
+                )
+              })}
+              {g.options.length === 0 ? slotAt(g, 0, g.id) : null}
+              {reorder.drop?.groupId === g.id ? (
+                <DropLine style={{ top: reorder.drop.top }} />
+              ) : null}
+            </div>
           </div>
-          <div
-            className={cx('drop-line-host', s.optionList)}
-            ref={(el) => reorder.registerGroup(g.id, el)}
-            {...(g.options.length === 0 ? ghostAnchorProps(ghostApi, g.id) : {})}
-          >
-            {g.options.map((o, i) => {
-              const isColoring = coloring === o.value
-              return (
-                <Fragment key={o.value}>
-                  <OptionSlot
-                    value={o.value}
-                    drag={reorder}
-                    ghost={ghostApi}
-                    onOpenMenu={() => void openMenu(o.value, o.label)}
-                    label={o.label}
-                    shape={optionShapeFor('status')}
-                    color={labelColorFor(o.color ?? g.color)}
-                    renaming={renaming === o.value}
-                    coloring={isColoring}
-                    paletteRef={paletteBtnRef}
-                    onCommitRename={(raw) => commitRename(o.value, raw, g.label)}
-                    onCancelRename={() => setRenaming(null)}
-                    onToggleColoring={() => setColoring((v) => (v === o.value ? null : o.value))}
-                    onCloseColoring={() => setColoring(null)}
-                    onPickColor={(color) => pickColor(o.value, color)}
-                  />
-                  {slotAt(g, i + 1, o.value)}
-                </Fragment>
-              )
-            })}
-            {g.options.length === 0 ? slotAt(g, 0, g.id) : null}
-            {reorder.drop?.groupId === g.id ? <DropLine style={{ top: reorder.drop.top }} /> : null}
-          </div>
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
+    </>
   )
 }

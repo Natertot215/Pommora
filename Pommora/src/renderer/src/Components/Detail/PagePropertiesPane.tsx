@@ -253,7 +253,7 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
                           column,
                           ctx,
                           hideIcon: false,
-                          style: { look: 'pill' },
+                          style: { look: 'standard' },
                           // The chip's hover × hands back what survives it — a Context keeps its
                           // remaining Spaces, a property its remaining options.
                           remove: def

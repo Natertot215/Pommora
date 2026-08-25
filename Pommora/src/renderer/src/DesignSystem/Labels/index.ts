@@ -1,8 +1,9 @@
 export { Label, type LabelProps } from './Label'
-export { ContextChip, FileChip, FileLabel, optionShapeFor } from './recipes'
+export { FileChip, FileLabel, SpaceChip, optionShapeFor } from './recipes'
 export {
   alignStart,
   boxGeometry,
+  checkboxBox,
   fill,
   labelColor,
   outline,

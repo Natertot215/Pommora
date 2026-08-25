@@ -60,7 +60,8 @@ import {
 } from './filterModel'
 import * as gp from './groupingPane.css'
 import * as fp from './filterPane.css'
-import { ContextChip, Label, optionShapeFor, type LabelShape } from '@renderer/DesignSystem/Labels'
+import { SpaceChip } from '@renderer/DesignSystem/Labels'
+import { OptionChip } from '@renderer/Detail/Views/PropertyEditing/OptionChip'
 
 const MATCH_OPTIONS: PickerChoice<MatchMode>[] = [
   { value: 'all', label: 'All' },
@@ -364,13 +365,13 @@ function ChipsField({
   values,
   options,
   isContext,
-  chipShape,
+  type,
   onCommit,
 }: {
   values: string[]
   options: ContextOption[]
   isContext: boolean
-  chipShape: LabelShape
+  type: string
   onCommit: (next: string[]) => void
 }): React.JSX.Element {
   const [open, setOpen] = useState(false)
@@ -387,7 +388,7 @@ function ChipsField({
             {shown.map((v) => {
               const o = byValue.get(v)
               return isContext ? (
-                <ContextChip
+                <SpaceChip
                   key={v}
                   color={labelColorFor(o?.color)}
                   title={o?.label ?? v}
@@ -395,11 +396,10 @@ function ChipsField({
                   onRemove={() => toggle(v)}
                 />
               ) : (
-                <Label
+                <OptionChip
                   key={v}
-                  color={labelColorFor(o?.color)}
-                  text={o?.label ?? v}
-                  shape={chipShape}
+                  type={type}
+                  option={o ?? { value: v }}
                   onRemove={() => toggle(v)}
                 />
               )
@@ -419,9 +419,9 @@ function ChipsField({
                   onClick={() => toggle(o.value)}
                 >
                   {isContext ? (
-                    <ContextChip color={labelColorFor(o.color)} title={o.label} />
+                    <SpaceChip color={labelColorFor(o.color)} title={o.label} />
                   ) : (
-                    <Label color={labelColorFor(o.color)} text={o.label} shape={chipShape} />
+                    <OptionChip type={type} option={o} />
                   )}
                 </PickerOption>
               ))}
@@ -659,7 +659,7 @@ export function FilterPane({
           values={rule.values ?? []}
           options={options}
           isContext={isContext}
-          chipShape={optionShapeFor(type ?? 'select')}
+          type={type ?? 'select'}
           onCommit={(values) => patch({ values })}
         />
       )

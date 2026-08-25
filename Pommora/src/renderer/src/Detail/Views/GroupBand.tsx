@@ -22,7 +22,8 @@ import {
   dropOutline,
   dropOutlineOpen,
 } from '@renderer/DesignSystem/Elements/DropOutline/dropOutline.css'
-import { ContextChip, Label, optionShapeFor } from '@renderer/DesignSystem/Labels'
+import { SpaceChip } from '@renderer/DesignSystem/Labels'
+import { OptionChip } from './PropertyEditing/OptionChip'
 
 /** The single home for group-band glyph resolution, shared by the table and cards views. Chip
  *  color/shape resolve from the schema here, so `ResolvedGroup` stays colorless. */
@@ -94,7 +95,7 @@ export function resolveBandHead(
     const title = space?.title ?? value
     return {
       label: title,
-      glyph: <ContextChip color={labelColorFor(space?.color)} title={title} icon={space?.icon} />,
+      glyph: <SpaceChip color={labelColorFor(space?.color)} title={title} icon={space?.icon} />,
     }
   }
 
@@ -106,13 +107,7 @@ export function resolveBandHead(
       const opt = findOption(propId, value, ctx.schema)
       return {
         label,
-        glyph: (
-          <Label
-            color={labelColorFor(opt?.color)}
-            text={opt?.label ?? value}
-            shape={optionShapeFor(groupType)}
-          />
-        ),
+        glyph: <OptionChip type={groupType} option={opt ?? { value }} def={def} />,
       }
     }
     case 'checkbox': {
