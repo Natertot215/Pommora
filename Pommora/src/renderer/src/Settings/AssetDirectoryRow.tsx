@@ -2,7 +2,6 @@
 import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
 import { InputField, placeholder } from '@renderer/DesignSystem/Components/Fields'
 import { NavTrail } from '@renderer/DesignSystem/Elements/NavTrail'
-import { Icon } from '@renderer/DesignSystem/Symbols'
 import { useSession } from '../store'
 import { SettingsRow, type RowText } from './SettingsRow'
 
@@ -12,7 +11,7 @@ export function AssetDirectoryRow({ label, hint }: RowText): React.JSX.Element {
   const segments = stored
     .split('/')
     .filter(Boolean)
-    .map((title) => ({ title }))
+    .map((title) => ({ title, icon: 'folder-closed' }))
 
   return (
     <SettingsRow label={label} hint={hint}>
@@ -20,7 +19,6 @@ export function AssetDirectoryRow({ label, hint }: RowText): React.JSX.Element {
         chrome="bordered"
         label={label}
         edit={{ value: stored, onCommit: (next) => void setAssetDirectory(next) }}
-        leading={<Icon name="folder-closed" size="body" />}
         trailing={
           <Button
             type="base"
