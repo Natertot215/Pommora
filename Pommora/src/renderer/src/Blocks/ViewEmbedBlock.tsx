@@ -29,7 +29,7 @@ import {
 import { reorder, SortableZone, useDragItem } from '@renderer/DesignSystem/Interactions/drag'
 import { optionRing } from '@renderer/DesignSystem/Components/Pickers/PickerMenu/pickerMenu.css'
 import { RenamableLabel } from '@renderer/DesignSystem/Components/Fields'
-import { IconPicker } from '@renderer/Components/IconPicker'
+import { IconPicker } from '@renderer/Settings/IconPicker'
 import { findCollection, findCollectionForSet, findSet } from '@renderer/Detail/Scope'
 import { ViewRenderer } from '@renderer/Detail/Views/ViewRenderer'
 import { SettingsPane } from '@renderer/Components/Detail/SettingsPane'

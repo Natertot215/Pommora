@@ -31,7 +31,7 @@ import {
   MenuCaption,
   MenuPaneTopRow,
 } from '@renderer/DesignSystem/Components/Menu'
-import { IconPicker } from '../IconPicker'
+import { IconPicker } from '@renderer/Settings/IconPicker'
 import { InlineEditHeader } from './InlineEditHeader'
 import { useViewEmbedScope } from '@renderer/Embeds/ViewEmbedScope'
 import { lockLabel } from '@shared/toggleLabels'

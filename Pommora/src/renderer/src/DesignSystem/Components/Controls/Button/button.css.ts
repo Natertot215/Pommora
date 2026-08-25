@@ -4,7 +4,7 @@ import { TINT_STEPS, text, tintAt, vars } from '../../../Tokens'
 
 const c = vars.color
 
-export const OUTLINE_W = '1.25px'
+const OUTLINE_W = '1.25px'
 
 export const container = style({
   display: 'flex',

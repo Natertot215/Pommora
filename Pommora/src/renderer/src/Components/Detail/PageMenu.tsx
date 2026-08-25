@@ -14,7 +14,7 @@ import {
   MenuScrollFrame,
   MenuSeparator,
 } from '@renderer/DesignSystem/Components/Menu'
-import { IconPicker } from '../IconPicker'
+import { IconPicker } from '@renderer/Settings/IconPicker'
 import { InlineEditHeader } from './InlineEditHeader'
 import { PagePropertiesPane } from './PagePropertiesPane'
 import { PaneSlider } from '@renderer/DesignSystem/Components/PaneSlider/PaneSlider'

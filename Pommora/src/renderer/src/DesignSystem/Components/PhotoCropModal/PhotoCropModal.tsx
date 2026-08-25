@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { clamp } from '../../Util/clamp'
-import { Button } from '../../Components/Controls/Button'
+import { Button } from '../Controls/Button'
 import { GlassWindow } from '../../Materials'
 import * as s from './photoCropModal.css'
 

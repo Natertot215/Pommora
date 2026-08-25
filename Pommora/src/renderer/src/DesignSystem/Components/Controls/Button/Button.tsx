@@ -137,13 +137,10 @@ export function Segmented({
       />
     </Fragment>
   ))
+  const hostProps = { className: cx(s.container, className), style: containerStyle }
   return glass ? (
-    <GlassControls className={cx(s.container, className)} style={containerStyle}>
-      {buttons}
-    </GlassControls>
+    <GlassControls {...hostProps}>{buttons}</GlassControls>
   ) : (
-    <div className={cx(s.container, className)} style={containerStyle}>
-      {buttons}
-    </div>
+    <div {...hostProps}>{buttons}</div>
   )
 }

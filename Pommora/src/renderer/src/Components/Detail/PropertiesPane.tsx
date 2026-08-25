@@ -36,7 +36,7 @@ import {
 import { flushTrailing, titleInput } from '@renderer/DesignSystem/Components/Menu/menu.css'
 import { Reveal } from '@renderer/DesignSystem/Animation/Reveal'
 import { duration } from '@renderer/DesignSystem/Animation'
-import { IconPicker } from '../IconPicker'
+import { IconPicker } from '@renderer/Settings/IconPicker'
 import { RenamableLabel } from '@renderer/DesignSystem/Components/Fields'
 import { InlineEditHeader } from './InlineEditHeader'
 import { OptionEditor } from './OptionEditor'

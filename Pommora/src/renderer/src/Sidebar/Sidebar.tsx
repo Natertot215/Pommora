@@ -39,7 +39,7 @@ import { useSession } from '../store'
 import { pageMoveContext } from '../pageMenuActions'
 import { contextTargetToSelect, isOpenInTabs } from '../Tabs/tabsModel'
 import { RenamableTitle } from '../Components/RenamableTitle'
-import { IconPicker } from '../Components/IconPicker'
+import { IconPicker } from '@renderer/Settings/IconPicker'
 import {
   dropOutline,
   dropOutlineOpen,

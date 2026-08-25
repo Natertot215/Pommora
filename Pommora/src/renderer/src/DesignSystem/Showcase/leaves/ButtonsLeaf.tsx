@@ -1,12 +1,13 @@
-import { Button, type ButtonType, Segmented } from '../../Components/Controls/Button'
+import { Button, type ButtonType, type Segment, Segmented } from '../../Components/Controls/Button'
 import type { ButtonSize } from '../../Tokens'
 
 const TYPES: ButtonType[] = ['base', 'filled', 'tinted', 'solid', 'destructive']
 const SIZES: ButtonSize[] = ['button-small', 'button-medium', 'button-large']
 const RUNS = [2, 3, 4, 5, 6]
 
-const symbols = (n: number) => Array.from({ length: n }, () => ({ icon: 'square-dashed' }))
-const labels = (n: number) => Array.from({ length: n }, () => ({ label: 'Label' }))
+const SYMBOL: Segment = { icon: 'square-dashed' }
+const LABEL: Segment = { label: 'Label' }
+const run = (n: number, seg: Segment): Segment[] => Array.from({ length: n }, () => seg)
 
 function Row({ title, children }: { title: string; children: React.ReactNode }): React.JSX.Element {
   return (
@@ -14,6 +15,20 @@ function Row({ title, children }: { title: string; children: React.ReactNode }):
       <span className="ds-chip-rowlabel">{title}</span>
       <div className="ds-chip-row-items">{children}</div>
     </div>
+  )
+}
+
+function SegmentedRows({ size, seg }: { size: ButtonSize; seg: Segment }): React.JSX.Element {
+  return (
+    <>
+      {TYPES.map((type) => (
+        <Row key={type} title={type}>
+          {RUNS.map((n) => (
+            <Segmented key={n} type={type} size={size} segments={run(n, seg)} />
+          ))}
+        </Row>
+      ))}
+    </>
   )
 }
 
@@ -44,26 +59,14 @@ export function ButtonsLeaf(): React.JSX.Element {
       </section>
       <section className="ds-section">
         <h2>Segmented · Button</h2>
-        {TYPES.map((type) => (
-          <Row key={type} title={type}>
-            {RUNS.map((n) => (
-              <Segmented key={n} type={type} size="button-small" segments={labels(n)} />
-            ))}
-          </Row>
-        ))}
+        <SegmentedRows size="button-small" seg={LABEL} />
       </section>
       {SIZES.map((size) => (
         <section key={size} className="ds-section">
           <h2>Segmented · Symbol · {size.replace('button-', '')}</h2>
-          {TYPES.map((type) => (
-            <Row key={type} title={type}>
-              {RUNS.map((n) => (
-                <Segmented key={n} type={type} size={size} segments={symbols(n)} />
-              ))}
-            </Row>
-          ))}
+          <SegmentedRows size={size} seg={SYMBOL} />
           <Row title="glass">
-            <Segmented glass size={size} segments={symbols(3)} />
+            <Segmented glass size={size} segments={run(3, SYMBOL)} />
           </Row>
         </section>
       ))}
