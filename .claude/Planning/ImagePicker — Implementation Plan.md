@@ -401,7 +401,7 @@ What this is not: rotation, filters, pixel editing; per-view image-fit or aspect
 - `HandoffPM.md` — rewritten for this session per `/handoff`.
 
 **Steps:**
-- [ ] Edits; commit `docs: PM-115 — the ImagePicker completes the file-based arc`
+- [x] Edits; commit `docs: PM-115 — the ImagePicker completes the file-based arc` · `fe08dc03`
 
 #### Gate 5 — the phase, then the whole
 - [x] Phase 5's own pass: every Made False row rewritten and its new sentence verified in place (Gate 5 record below).
