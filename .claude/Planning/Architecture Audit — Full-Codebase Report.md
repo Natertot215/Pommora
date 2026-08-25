@@ -12,14 +12,14 @@ The health signal worth naming: the aggregate net reduction available across eve
 
 ### Domain Scoreboard
 
-| Domain | Code (raw) | Verdict | The one thing wrong |
-|---|---|---|---|
-| Data core (`main/` sans boundary) | ~27k incl. tests | Healthy | Context journal misses the slot law its property sibling has |
-| Process boundary (bridge, menus, shared) | ~10k | Healthy | `index.ts` is a 1,532-code-line collision point (known) |
-| MarkdownPM | ~23.6k | Healthy | Input layer re-scans the whole document per keystroke |
-| View layer (`Detail/`) | ~19.4k | Healthy | ~180 lines of host plumbing duplicated across Table and Cards (known, sharpened) |
-| Design system + Components | ~26k | Healthy | `Components/Detail` is a misfiled 6,800-line feature subsystem |
-| Shell, store, satellites | ~13k | Healthy | The page-state singleton, whose workarounds leaked into four files (known, sharpened) |
+| Domain                                   | Code (raw)       | Verdict | The one thing wrong                                                                   |
+| ---------------------------------------- | ---------------- | ------- | ------------------------------------------------------------------------------------- |
+| Data core (`main/` sans boundary)        | ~27k incl. tests | Healthy | Context journal misses the slot law its property sibling has                          |
+| Process boundary (bridge, menus, shared) | ~10k             | Healthy | `index.ts` is a 1,532-code-line collision point (known)                               |
+| MarkdownPM                               | ~23.6k           | Healthy | Input layer re-scans the whole document per keystroke                                 |
+| View layer (`Detail/`)                   | ~19.4k           | Healthy | ~180 lines of host plumbing duplicated across Table and Cards (known, sharpened)      |
+| Design system + Components               | ~26k             | Healthy | `Components/Detail` is a misfiled 6,800-line feature subsystem                        |
+| Shell, store, satellites                 | ~13k             | Healthy | The page-state singleton, whose workarounds leaked into four files (known, sharpened) |
 
 Measured highlights that earned the healthy verdicts: **zero** literal hex or rgba colors in ~7,300 lines of feature CSS (100% token adherence, grep-verified); the 117-channel IPC bridge derives both ends from one typed map with compile-time exhaustiveness; the 22 native-menu modules are thin adapters over one three-layer chassis, not 22 copies; the editor holds one cached document scan with a required code-exclusion contract; the view pipeline is pure, staged, and source-agnostic; SurfacePM's engine/consumer seam is a single props interface.
 
