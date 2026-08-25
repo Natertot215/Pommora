@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
   clampZoom,
+  coverRect,
   coverStyle,
-  cropWindow,
   DEFAULT_CROP,
-  dragWindow,
+  dragRect,
   MAX_ZOOM,
   MIN_ZOOM,
   panToCrop,
@@ -92,65 +92,80 @@ describe('panToCrop', () => {
   })
 })
 
-describe('cropWindow', () => {
-  it('is the whole image for a matching seat at zoom 1', () => {
-    expect(cropWindow({ x: 0.5, y: 0.5, zoom: 1 }, 1, 1)).toEqual({
+describe('coverRect', () => {
+  it('exactly fills a seat of its own shape at zoom 1', () => {
+    expect(coverRect({ x: 0.5, y: 0.5, zoom: 1 }, 1, 100, 100)).toEqual({
       left: 0,
       top: 0,
-      width: 1,
-      height: 1,
+      width: 100,
+      height: 100,
     })
   })
 
-  it('a wide seat over a square image takes the full width and a centered band', () => {
-    expect(cropWindow({ x: 0.5, y: 0.5, zoom: 1 }, 1, 0.5)).toEqual({
+  it('overflows the axis the seat is short on, centered by the focal point', () => {
+    expect(coverRect({ x: 0.5, y: 0.5, zoom: 1 }, 1, 200, 100)).toEqual({
       left: 0,
-      top: 0.25,
-      width: 1,
-      height: 0.5,
+      top: -50,
+      width: 200,
+      height: 200,
     })
   })
 
-  it('zoom shrinks the window and the focal point places it', () => {
-    expect(cropWindow({ x: 1, y: 1, zoom: 2 }, 1, 1)).toEqual({
-      left: 0.5,
-      top: 0.5,
-      width: 0.5,
-      height: 0.5,
+  it('the focal point pushes the overflow to the far edge', () => {
+    expect(coverRect({ x: 1, y: 1, zoom: 2 }, 1, 100, 100)).toEqual({
+      left: -100,
+      top: -100,
+      width: 200,
+      height: 200,
     })
   })
 
-  it('is the whole image where either aspect is unusable', () => {
-    expect(cropWindow({ x: 0.5, y: 0.5, zoom: 2 }, 0, 1)).toEqual({
-      left: 0,
-      top: 0,
-      width: 1,
-      height: 1,
+  it('below zoom 1 the image shrinks inside the seat and leaves room around it', () => {
+    expect(coverRect({ x: 0.5, y: 0.5, zoom: 0.5 }, 1, 100, 100)).toEqual({
+      left: 25,
+      top: 25,
+      width: 50,
+      height: 50,
     })
+  })
+
+  it('is null where the aspect or either seat dimension is unusable', () => {
+    expect(coverRect(DEFAULT_CROP, 0, 100, 100)).toBeNull()
+    expect(coverRect(DEFAULT_CROP, 1, 0, 100)).toBeNull()
+    expect(coverRect(DEFAULT_CROP, 1, 100, Number.NaN)).toBeNull()
   })
 })
 
-describe('dragWindow', () => {
+describe('dragRect', () => {
   const anchor: Crop = { x: 0.5, y: 0.5, zoom: 2 }
 
-  it('walks the focal point across the room the window leaves', () => {
-    const out = dragWindow(anchor, 1, 1, 100, 100, 10, 0)
-    expect(out.x).toBeCloseTo(0.7, 10)
+  it('an image larger than its seat follows the pointer', () => {
+    const out = dragRect(anchor, 1, 100, 100, 10, 0)
+    expect(coverRect(out, 1, 100, 100)?.left).toBeCloseTo(-40, 10)
     expect(out.y).toBe(0.5)
     expect(out.zoom).toBe(2)
   })
 
+  it('an image smaller than its seat follows the pointer the same way', () => {
+    const shrunk: Crop = { x: 0.5, y: 0.5, zoom: 0.5 }
+    const out = dragRect(shrunk, 1, 100, 100, 10, 0)
+    expect(coverRect(out, 1, 100, 100)?.left).toBeCloseTo(35, 10)
+  })
+
   it('returns exactly the anchor for a zero delta', () => {
-    expect(dragWindow(anchor, 1, 1, 100, 100, 0, 0)).toEqual(anchor)
+    expect(dragRect(anchor, 1, 100, 100, 0, 0)).toEqual(anchor)
   })
 
-  it('leaves an axis fixed when the window fills it (no room to move)', () => {
-    const out = dragWindow({ x: 0.5, y: 0.5, zoom: 1 }, 1, 1, 100, 100, 40, 40)
-    expect(out).toEqual({ x: 0.5, y: 0.5, zoom: 1 })
+  it('leaves an axis fixed when the image meets the seat on it (no room to move)', () => {
+    expect(dragRect({ x: 0.5, y: 0.5, zoom: 1 }, 1, 100, 100, 40, 40)).toEqual({
+      x: 0.5,
+      y: 0.5,
+      zoom: 1,
+    })
   })
 
-  it('falls back to the anchor on an unusable frame', () => {
-    expect(dragWindow(anchor, 1, 1, 0, 100, 10, 10)).toEqual(anchor)
+  it('falls back to the anchor on an unusable seat', () => {
+    expect(dragRect(anchor, 1, 0, 100, 10, 10)).toEqual(anchor)
   })
 })
 

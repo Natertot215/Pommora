@@ -4,9 +4,9 @@ import type { Crop } from '@shared/schemas'
 import {
   clamp,
   clampZoom,
-  cropWindow,
+  coverRect,
   DEFAULT_CROP,
-  dragWindow,
+  dragRect,
   MAX_ZOOM,
   MIN_ZOOM,
 } from '@shared/cropGeometry'
@@ -19,15 +19,15 @@ import { Button } from '../Controls/Button'
 import { Slider } from '../Controls/Slider/Slider'
 import { AccessoryButton } from '../Menu/Menu'
 import { InputField } from '../Fields'
-import { NavTrail, pathSegments } from '../../Elements/NavTrail'
 import { Icon } from '../../Symbols'
 import { GlassWindow } from '../../Materials'
 import { usePointerGesture } from '../../Interactions/gesture'
 import * as s from './imagePicker.css'
 
-const FRAME_H = 260 // KNOB — every frame's fixed height (the image sets the width)
-const MIN_W = 220 // KNOB — narrowest the frame gets (a tall image)
-const MAX_W = 460 // KNOB — widest before a wide image zooms instead of stretching
+const FRAME_H = 260 // KNOB — every frame's fixed height (the seat sets the width)
+const MIN_W = 220 // KNOB — narrowest the frame gets (a tall seat)
+const MAX_W = 460 // KNOB — widest the frame gets (a wide seat)
+const MARGIN = 28 // KNOB — the dimmed room around the seat, where the overflow shows
 const RECT_RADIUS = 12 // KNOB
 const SCROLL_RATE = 0.0015 // KNOB
 const PINCH_RATE = 0.01 // KNOB
@@ -146,17 +146,20 @@ export function ImagePicker({
 
   const failed = aspect === null
   const isCircle = shape === 'circle'
-  const imgAspect = aspect && aspect > 0 ? aspect : boxAspect
-  const imgH = FRAME_H
-  const imgW = FRAME_H / imgAspect
-  const frameW = clamp(Math.round(imgW), MIN_W, MAX_W)
-  // The image sits at its own aspect and the frame clamps around it: a wide image overflows the
-  // max width and is cropped (zoomed), a tall one leaves the frame wider than itself.
-  const imgLeft = (frameW - imgW) / 2
-  const win = cropWindow(draft, imgAspect, boxAspect)
+  // A seat measured before it lays out answers a degenerate aspect — square rather than divide by it.
+  const seatAspect = boxAspect > 0 && Number.isFinite(boxAspect) ? boxAspect : 1
+  const imgAspect = aspect && aspect > 0 ? aspect : seatAspect
+  const boxH = Math.min(FRAME_H - MARGIN * 2, (MAX_W - MARGIN * 2) * seatAspect)
+  const boxW = boxH / seatAspect
+  const frameW = clamp(Math.round(boxW + MARGIN * 2), MIN_W, MAX_W)
+  const boxLeft = (frameW - boxW) / 2
+  const boxTop = (FRAME_H - boxH) / 2
+  const rect = coverRect(draft, imgAspect, boxW, boxH) ?? { left: 0, top: 0, width: 0, height: 0 }
   const resolved = resolveAssetValue(value, map)
   const echoPath = resolved.kind === 'asset' ? resolved.rel : value
+  const fileName = echoPath.split('/').filter(Boolean).pop() ?? echoPath
   const imgProps = { src: url ?? '', draggable: false }
+  const imgSize = { width: rect.width, height: rect.height }
 
   const startPan = (e: React.PointerEvent): void => {
     const el = frameRef.current
@@ -176,15 +179,7 @@ export function ImagePicker({
       },
       onDragMove: (ev) =>
         setDraft(
-          dragWindow(
-            anchor,
-            aspectRef.current ?? 0,
-            boxAspect,
-            imgW,
-            imgH,
-            ev.clientX - sx,
-            ev.clientY - sy,
-          ),
+          dragRect(anchor, aspectRef.current ?? 0, boxW, boxH, ev.clientX - sx, ev.clientY - sy),
         ),
       onDrop: () => {},
       teardown: () => setDragging(false),
@@ -253,30 +248,31 @@ export function ImagePicker({
         <div
           ref={frameRef}
           className={viewportClass}
-          style={{ width: frameW, height: FRAME_H, background: draft.color || undefined }}
+          style={{ width: frameW, height: FRAME_H }}
           onPointerDown={startPan}
         >
           <img
             {...imgProps}
             alt=""
             className={s.dimImage}
-            style={{ width: imgW, height: imgH, left: imgLeft, top: 0 }}
+            style={{ ...imgSize, left: boxLeft + rect.left, top: boxTop + rect.top }}
           />
           <div
             className={s.cropBox}
             style={{
-              left: imgLeft + win.left * imgW,
-              top: win.top * imgH,
-              width: win.width * imgW,
-              height: win.height * imgH,
+              left: boxLeft,
+              top: boxTop,
+              width: boxW,
+              height: boxH,
               borderRadius: isCircle ? '50%' : RECT_RADIUS,
+              background: draft.color || undefined,
             }}
           >
             <img
               {...imgProps}
               alt=""
               className={s.cropImage}
-              style={{ width: imgW, height: imgH, left: -win.left * imgW, top: -win.top * imgH }}
+              style={{ ...imgSize, left: rect.left, top: rect.top }}
             />
           </div>
           {glyphs}
@@ -293,7 +289,8 @@ export function ImagePicker({
               ariaLabel="Zoom"
               onInput={setZoom}
               onCommit={setZoom}
-              format={(v) => `${v.toFixed(2)}×`}
+              format={(v) => `${v.toFixed(2)}x`}
+              readoutClassName={s.zoomReadout}
             />
           </div>
         )}
@@ -328,7 +325,7 @@ export function ImagePicker({
               ) : undefined
             }
           >
-            <NavTrail segments={pathSegments(echoPath)} />
+            {fileName}
           </InputField>
           <Button
             type="tinted"

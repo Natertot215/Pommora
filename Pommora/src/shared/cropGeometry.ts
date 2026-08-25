@@ -16,12 +16,13 @@ const pct = (n: number): string => `${Number((n * 100).toFixed(4))}%`
 
 export const clampZoom = (zoom: number): number => clamp(zoom, MIN_ZOOM, MAX_ZOOM)
 
+const widthMeets = (imageAspect: number, boxAspect: number): boolean => imageAspect > boxAspect
+
 export function coverStyle(crop: Crop, imageAspect: number, boxAspect: number): CoverStyle | null {
   if (!usable(imageAspect) || !usable(boxAspect)) return null
   const zoom = clampZoom(Number.isFinite(crop.zoom) ? crop.zoom : 1)
-  const widthFills = imageAspect > boxAspect
   return {
-    backgroundSize: widthFills ? `${pct(zoom)} auto` : `auto ${pct(zoom)}`,
+    backgroundSize: widthMeets(imageAspect, boxAspect) ? `${pct(zoom)} auto` : `auto ${pct(zoom)}`,
     backgroundPosition: `${pct(clamp(crop.x, 0, 1))} ${pct(clamp(crop.y, 0, 1))}`,
     backgroundColor: crop.color ?? '',
   }
@@ -31,44 +32,47 @@ export function panToCrop(crop: Crop, dx: number, dy: number): Crop {
   return { ...crop, x: clamp(crop.x + dx, 0, 1), y: clamp(crop.y + dy, 0, 1) }
 }
 
-export interface CropWindow {
+export interface CoverRect {
   left: number
   top: number
   width: number
   height: number
 }
 
-// The sub-rectangle of the shown image (fractions, 0..1) that a seat of `boxAspect` displays under
-// this crop — the sharp window drawn over the full, dimmed image. width/height shrink with zoom;
-// left/top place the window from the focal point across the room the zoom leaves.
-export function cropWindow(crop: Crop, imageAspect: number, boxAspect: number): CropWindow {
-  if (!usable(imageAspect) || !usable(boxAspect)) return { left: 0, top: 0, width: 1, height: 1 }
+// The pixel form of the background-size/-position pair `coverStyle` hands a seat, for surfaces that
+// draw the image as an element instead.
+export function coverRect(
+  crop: Crop,
+  imageAspect: number,
+  boxW: number,
+  boxH: number,
+): CoverRect | null {
+  if (!usable(imageAspect) || !usable(boxW) || !usable(boxH)) return null
   const z = clampZoom(Number.isFinite(crop.zoom) ? crop.zoom : 1)
-  const widthFills = imageAspect > boxAspect
-  const width = clamp(widthFills ? 1 / z : imageAspect / (z * boxAspect), 0, 1)
-  const height = clamp(widthFills ? boxAspect / (z * imageAspect) : 1 / z, 0, 1)
+  const width = widthMeets(imageAspect, boxH / boxW) ? z * boxW : (z * boxH) / imageAspect
+  const height = width * imageAspect
   return {
-    left: clamp(crop.x, 0, 1) * (1 - width),
-    top: clamp(crop.y, 0, 1) * (1 - height),
+    left: (boxW - width) * clamp(crop.x, 0, 1),
+    top: (boxH - height) * clamp(crop.y, 0, 1),
     width,
     height,
   }
 }
 
-// Move the crop window across the shown image by a pixel delta — the focal point walks the room the
-// window leaves on each axis. Anchored on the gesture-start crop so a clamp never accumulates.
-export function dragWindow(
+// The room on an axis is signed, so one expression carries both regimes: an image wider than its
+// seat pans beneath it, a smaller one slides across it, each following the pointer. Anchored on the
+// gesture-start crop so a clamp never accumulates.
+export function dragRect(
   anchor: Crop,
   imageAspect: number,
-  boxAspect: number,
-  imgW: number,
-  imgH: number,
+  boxW: number,
+  boxH: number,
   totalDx: number,
   totalDy: number,
 ): Crop {
-  if (!usable(imageAspect) || !usable(boxAspect) || !usable(imgW) || !usable(imgH)) return anchor
-  const win = cropWindow(anchor, imageAspect, boxAspect)
-  const travelX = imgW * (1 - win.width)
-  const travelY = imgH * (1 - win.height)
-  return panToCrop(anchor, travelX > 0 ? totalDx / travelX : 0, travelY > 0 ? totalDy / travelY : 0)
+  const rect = coverRect(anchor, imageAspect, boxW, boxH)
+  if (!rect) return anchor
+  const roomX = boxW - rect.width
+  const roomY = boxH - rect.height
+  return panToCrop(anchor, roomX === 0 ? 0 : totalDx / roomX, roomY === 0 ? 0 : totalDy / roomY)
 }
