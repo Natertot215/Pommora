@@ -2,7 +2,7 @@ import { useState } from 'react'
 import {
   base,
   field,
-  hairlineField,
+  borderedField,
   input,
   InputField,
   PathField,
@@ -20,8 +20,8 @@ export function FieldsLeaf(): React.JSX.Element {
       <h2>Fields</h2>
       <div className={rows}>
         <div className={field}>Boxed — the quaternary fill on the ring channel</div>
-        <div className={hairlineField} style={{ width: 'fit-content' }}>
-          Hairline — its own width, the separator stroke
+        <div className={borderedField} style={{ width: 'fit-content' }}>
+          Bordered — its own width, the separator stroke
         </div>
         <input className={input} defaultValue="Input — the boxed chrome on a caret" />
         <input className={base} defaultValue="Base — the caret in the text it replaced" />

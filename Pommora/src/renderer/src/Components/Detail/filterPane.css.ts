@@ -12,7 +12,7 @@ import { vars as colorVars } from '@renderer/DesignSystem/Tokens/color.css'
 import { text } from '@renderer/DesignSystem/Tokens/typography.css'
 import {
   field as fieldBase,
-  hairlineField,
+  borderedField,
 } from '@renderer/DesignSystem/Components/Fields/fields.css'
 import { focusRing } from '@renderer/DesignSystem/Components/Fields/fieldRing'
 import { growToContent } from '@renderer/DesignSystem/Components/Menu/paneGrowth'
@@ -85,7 +85,7 @@ const restRing = { vars: { '--field-ring': c.separator.border } }
  *  than the compact control scale (which shrank the chips inside it to match). The variant is
  *  already rigid; a cell naming the rule (What, Operator) must stay whole at any pane width, and
  *  only the value cell opts back into shrinking so it alone absorbs the overflow. */
-export const cellField = style([hairlineField, { width: 'auto', cursor: 'default' }])
+export const cellField = style([borderedField, { width: 'auto', cursor: 'default' }])
 
 /** A field's label — grows to fill, so a trailing chevron pins to the field's right edge. Carried
  *  by the label ITSELF rather than a `> span` descendant rule: a field's other spans are glyphs (the
@@ -174,7 +174,7 @@ export const lockedCaption = style([
 /** The typed value input — the cell-field recipe as a bare <input>, focus lighting the shared
  *  inset accent stroke (the TextPicker recipe). */
 export const cellInput = style([
-  hairlineField,
+  borderedField,
   {
     // Sizes to its text (an input's intrinsic width otherwise ignores content); small floor for empty.
     fieldSizing: 'content',
