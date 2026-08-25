@@ -96,32 +96,9 @@
   color: var(--label-secondary);
   --over-scroll-fade: 16px;
 }
-.nav-path-icon {
-  color: var(--label-tertiary);
-  vertical-align: middle;
-  margin-right: 3px;
-}
-.nav-path-name {
-  color: var(--label-secondary);
-  vertical-align: middle;
-}
-.nav-path-sep {
-  margin: 0 4px;
-  vertical-align: middle;
-}
 .nav-item-inert {
   opacity: var(--state-inactive);
   padding: 5px var(--navwindow-inset, 8px);
   gap: 7px;
   cursor: default;
-}
-/* The centered two-tone location crumb — one treatment wherever a page's whereabouts is shown as a
-   title: the preview window's single-tab title and the embedded-page tile's hover breadcrumb. The
-   trail reads dimmer; the page itself (the last crumb, icon + name) reads brighter. */
-.crumb-two-tone .nav-path-name {
-  color: var(--label-tertiary);
-}
-.crumb-two-tone .nav-path-name:last-of-type,
-.crumb-two-tone .nav-path-icon:last-of-type {
-  color: var(--label-control);
 }

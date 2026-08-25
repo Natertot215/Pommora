@@ -76,11 +76,11 @@ import { flattenBands } from '../bandDndModel'
 import { bandReorderPatch, groupingKeyOf, useBandOrdering } from '../useBandOrdering'
 import { nextOrder } from '@renderer/Sidebar/sidebarDndModel'
 import { buildResolveContext, type ResolveContext } from '../Table/resolveContext'
-import { NavCrumbs } from '../../../Navigation/NavList'
-import type { PathCrumb } from '../../../Navigation/navResolve'
+import { NavTrail, type TrailSegment } from '@renderer/DesignSystem/Elements/NavTrail'
+import { ancestryOf } from '../../../treeIndex'
 
-/** One identity for "no location trail", so a crumb-less card's CardFace can still compare equal. */
-const NO_CRUMBS: PathCrumb[] = []
+/** One identity for "no location trail", so a trail-less card's CardFace can still compare equal. */
+const NO_TRAIL: TrailSegment[] = []
 import { type AddPickerRequest, CardPickerHost, type ValuePickerRequest } from './CardPickerHost'
 import { CardValue } from './CardValue'
 import { reorderIds } from './cardsOrder'
@@ -310,19 +310,6 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   )
   const labels = tree?.labels
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
-  // Set id → its within-container location trail (Set › Sub-set crumbs) — one walk, read per card.
-  const setChains = useMemo(() => {
-    const m = new Map<string, PathCrumb[]>()
-    const walk = (sets: SetNode[] | undefined, trail: PathCrumb[]): void => {
-      for (const s of sets ?? []) {
-        const t = [...trail, { icon: entityIcon('set', s.icon, defaultIcons), title: s.title }]
-        m.set(s.id, t)
-        walk(s.sets, t)
-      }
-    }
-    walk(source.sets, [])
-    return m
-  }, [source])
   // Under location (structural) grouping the band header IS the top-level set, so the breadcrumb
   // drops that leading crumb and starts at the next set down — the band already shows it.
   // Property/flat grouping keeps the full chain (the band is a bucket, not a location).
@@ -488,15 +475,15 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   // called inline), since chain.slice allocates and a fresh array per render would defeat each
   // card's memo.
   const locByRow = useMemo(() => {
-    const m = new Map<string, PathCrumb[]>()
-    if (hideLocation) return m
+    const m = new Map<string, TrailSegment[]>()
+    if (hideLocation || !tree) return m
     for (const r of flattenGroups(groups)) {
       if (!r.parentSetId) continue
-      const chain = setChains.get(r.parentSetId)
-      if (chain) m.set(r.id, structural ? chain.slice(1) : chain)
+      const chain = ancestryOf(tree, { kind: 'set', id: r.parentSetId })
+      if (chain) m.set(r.id, chain.slice(structural ? 2 : 1))
     }
     return m
-  }, [groups, setChains, structural, hideLocation])
+  }, [groups, tree, structural, hideLocation])
 
   // The grid-level picker requests — ONE host owns the portal pickers so card remounts (regroup,
   // re-sort, collapse) can never tear an open picker out mid-flight (CardPickerHost).
@@ -821,7 +808,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
                       banner={banner}
                       ctx={ctx}
                       labels={labels}
-                      crumbs={locByRow.get(id) ?? NO_CRUMBS}
+                      crumbs={locByRow.get(id) ?? NO_TRAIL}
                       src={oSrc}
                       iconName={entityIcon('page', r.icon, defaultIcons)}
                       columns={columns}
@@ -1081,7 +1068,7 @@ interface PageCardProps {
   columns: ResolvedColumn[]
   ctx: ResolveContext | null
   labels: NexusLabels | undefined
-  loc?: PathCrumb[]
+  loc?: TrailSegment[]
   onCommitValue: (row: ViewRow, column: ResolvedColumn, value: PropertyValue | null) => void
   onStyle: (colId: string, key: keyof ColumnStyle & string, value: string) => void
   onOpen: (row: ViewRow, newTab: boolean) => void
@@ -1207,7 +1194,7 @@ const CardFace = memo(function CardFace({
   banner: CardBanner
   ctx: ResolveContext | null
   labels: NexusLabels | undefined
-  crumbs: PathCrumb[]
+  crumbs: TrailSegment[]
   src: string | undefined
   iconName: string
   columns: ResolvedColumn[]
@@ -1307,7 +1294,7 @@ const CardFace = memo(function CardFace({
         {crumbs.length > 0 && (
           // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
           <div className="page-card-loc-zone" onClick={onZoneClick}>
-            <NavCrumbs path={crumbs} className="page-card-loc" iconSize="caption" />
+            <NavTrail segments={crumbs} className={cx('page-card-loc', text.caption.standard)} />
           </div>
         )}
       </div>
@@ -1421,7 +1408,7 @@ const PageCard = memo(function PageCard({
         onOpenAddPicker({ rowId: row.id, anchor: textRef.current, initialEntry: entry })
     }
   }
-  const crumbs = loc ?? NO_CRUMBS
+  const crumbs = loc ?? NO_TRAIL
 
   const cover = typeof row.frontmatter.cover === 'string' ? row.frontmatter.cover : undefined
   const coverSrc = useAssetUrl(cover)

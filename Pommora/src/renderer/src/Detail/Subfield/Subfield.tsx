@@ -1,8 +1,10 @@
 import type { SelectionState } from '@shared/types'
 import { text } from '@renderer/DesignSystem/Tokens'
+import { cx } from '@renderer/DesignSystem/Util/cx'
 import { useSession } from '../../store'
 import { subfieldCrumbs } from './crumbs'
-import { SubfieldBreadcrumb } from './SubfieldBreadcrumb'
+import { NavTrail } from '@renderer/DesignSystem/Elements/NavTrail'
+import { overScrollEllipsis } from '@renderer/DesignSystem/Interactions/OverScroll'
 import { DEFAULT_ITEMS, SubfieldItem, type SubfieldScope, isSubfieldItemId } from './subfieldItems'
 import './subfield.css'
 
@@ -21,7 +23,7 @@ export function Subfield({ scope }: { scope?: SubfieldScope }): React.JSX.Elemen
   const rawCrumbs = subfieldCrumbs(tree, crumbSelection, scope ? null : crumbDepth, (t, dir) =>
     navigateCrumb(t, dir),
   )
-  const crumbs = scope ? rawCrumbs.map((c) => ({ ...c, onClick: undefined })) : rawCrumbs
+  const crumbs = scope ? rawCrumbs.map((c) => ({ ...c, onSelect: undefined })) : rawCrumbs
   const kind = crumbSelection.kind
   const items = (order[kind] ?? DEFAULT_ITEMS[kind] ?? []).filter(isSubfieldItemId)
 
@@ -31,7 +33,13 @@ export function Subfield({ scope }: { scope?: SubfieldScope }): React.JSX.Elemen
     <div
       className={`subfield ${text.subline.emphasized}${crumbs.length === 0 ? ' subfield-lead' : ''}`}
     >
-      <SubfieldBreadcrumb crumbs={crumbs} />
+      <NavTrail
+        segments={crumbs}
+        chevronSize="control"
+        overScroll={false}
+        className="subfield-crumbs"
+        segmentClassName={cx('subfield-crumb', overScrollEllipsis)}
+      />
       <div className="subfield-items">
         {items.map((id) => (
           <SubfieldItem key={id} id={id} scope={scope} />

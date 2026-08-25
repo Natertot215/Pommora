@@ -1,12 +1,11 @@
 import { useRef, useState } from 'react'
 import type { OpenIn } from '@shared/types'
 import { Icon, entityIcon, iconNameOr, type IconName } from '@renderer/DesignSystem/Symbols'
-import { PathChevron } from '@renderer/DesignSystem/Elements/PathChevron/PathChevron'
-import { EntityIcon } from '@renderer/Components/EntityIcon'
+import { NavTrail, type TrailSegment } from '@renderer/DesignSystem/Elements/NavTrail'
+import { ancestryOf } from '../../treeIndex'
 import {
   detail as detailText,
   flushTrailing,
-  footingSymbol,
   rowDisabled,
   side,
 } from '@renderer/DesignSystem/Components/Menu/menu.css'
@@ -35,6 +34,8 @@ import { IconPicker } from '@renderer/Settings/IconPicker'
 import { InlineEditHeader } from './InlineEditHeader'
 import { useViewEmbedScope } from '@renderer/Embeds/ViewEmbedScope'
 import { lockLabel } from '@shared/toggleLabels'
+
+const NO_TRAIL: TrailSegment[] = []
 
 type PaneId = 'configuration' | 'properties' | 'visibility' | 'layout' | 'filter' | 'group' | 'sort'
 interface MenuEntry {
@@ -190,21 +191,12 @@ export function SettingsPane(): React.JSX.Element | null {
       footer={
         <MenuBottomRow
           leading={
-            <span className={crumbRow}>
-              <span className={footingSymbol}>
-                <EntityIcon kind="collection" icon={schemaCollection.icon} size="control" />
-              </span>
-              <span>{schemaCollection.title}</span>
-              {node.kind === 'set' && (
-                <>
-                  <PathChevron size="caption" />
-                  <span className={footingSymbol}>
-                    <EntityIcon kind="set" icon={node.icon} size="control" />
-                  </span>
-                  <span>{node.title}</span>
-                </>
-              )}
-            </span>
+            <NavTrail
+              segments={(tree && ancestryOf(tree, node)) ?? NO_TRAIL}
+              iconSize="control"
+              overScroll={false}
+              className={crumbRow}
+            />
           }
           trailing={
             <AccessoryButton

@@ -79,8 +79,7 @@
   color: var(--label-primary);
 }
 
-/* The location line is NavCrumbs — the house breadcrumb formula (caption type, per-crumb icons,
-   › separators). */
+/* The location line is a NavTrail. */
 .page-card-loc,
 .nav-gallery-loc {
   color: var(--label-secondary);

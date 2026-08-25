@@ -33,31 +33,12 @@
    page's breadcrumb text lands), not offset past it. */
 
 .subfield-crumbs {
-  display: flex;
-  align-items: center;
+  --nav-trail-ink: inherit;
   gap: 4px;
-  min-width: 0;
   overflow: hidden;
 }
 .subfield-crumb {
-  appearance: none;
-  border: 0;
-  background: none;
-  padding: 0;
-  font: inherit;
-  color: inherit;
-  cursor: default;
   max-width: 220px;
-}
-button.subfield-crumb:hover {
-  color: var(--label-secondary);
-}
-.subfield-crumb.ghost {
-  opacity: var(--state-inactive);
-}
-button.subfield-crumb.ghost:hover {
-  opacity: 1;
-  color: var(--label-secondary);
 }
 
 /* The stats · bullet — dimmer, and one step larger than the Subline text so the glyph stays legible. */

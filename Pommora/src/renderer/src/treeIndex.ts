@@ -11,26 +11,38 @@
 // projections collapse duplicates last-wins, which is what a Map built from a list always did.
 
 import type { EntityRecord } from '@shared/record'
-import type { NavRef, NexusTree, PageNode, SetNode } from '@shared/types'
+import {
+  type NavRef,
+  type NexusTree,
+  type PageNode,
+  type SelectTarget,
+  type SetNode,
+  toNavRef,
+} from '@shared/types'
 import { DEFAULT_NEXUS_ICON, entityIcon, iconNameOr } from '@renderer/DesignSystem/Symbols'
 import { buildPageIndex, type ConnPage, type PageIndex } from './MarkdownPM/connections'
 import { navKey } from './Navigation/navRecents'
-import type { NavCore, PathCrumb, ResolveIndex } from './Navigation/navResolve'
+import type { NavCore, ResolveIndex } from './Navigation/navResolve'
 import type { SearchEntry } from './Navigation/navSearch'
 import type { ReconcileIndex } from './selection'
 
 /** The `{id, title, path}` tuple is `EntityRecord`'s; `id` and `path` are '' for the folderless,
  *  id-less homepage singleton. `kind` stays local — the unions are disjoint (`homepage` here,
  *  `context` there). */
-interface NodeRecord extends Pick<EntityRecord, 'id' | 'title' | 'path'> {
+interface NodeRecord extends TrailNode {
   key: string
   kind: 'homepage' | 'space' | 'collection' | 'set' | 'page'
-  /** Resolved display glyph — the user's own icon if renderable, else the nexus default. */
-  icon: string
   /** The node's own raw icon field — surfaces that render absence read this, not the resolved glyph. */
   ownIcon?: string
-  /** Container breadcrumbs, excluding the entity itself. */
-  crumbs: PathCrumb[]
+  /** The containers above the entity, outermost first. */
+  parents: TrailNode[]
+}
+
+/** One node on an entity's ancestry — identity plus its resolved display core. */
+export interface TrailNode extends Pick<EntityRecord, 'id' | 'title' | 'path'> {
+  kind: 'homepage' | 'context' | 'space' | 'collection' | 'set' | 'page'
+  /** Resolved display glyph — the user's own icon if renderable, else the nexus default. */
+  icon: string
 }
 
 export interface ContainerCore {
@@ -50,6 +62,7 @@ interface TreeIndex {
   pageIndex?: PageIndex
   containers?: Map<string, ContainerCore>
   navKeys?: string[]
+  ancestry?: Map<string, TrailNode[]>
 }
 
 const byTree = new WeakMap<NexusTree, TreeIndex>()
@@ -73,12 +86,15 @@ function walk(tree: NexusTree): NodeRecord[] {
     title: tree.nexus.name,
     icon: iconNameOr(tree.nexus.profileIcon, DEFAULT_NEXUS_ICON),
     path: '',
-    crumbs: [],
+    parents: [],
   })
   for (const g of tree.contexts ?? []) {
-    const groupCrumb: PathCrumb = {
-      icon: entityIcon('context', g.def.icon, di),
+    const group: TrailNode = {
+      kind: 'context',
+      id: g.def.id,
       title: g.def.title,
+      icon: entityIcon('context', g.def.icon, di),
+      path: '',
     }
     for (const s of g.spaces)
       nodes.push({
@@ -89,10 +105,10 @@ function walk(tree: NexusTree): NodeRecord[] {
         icon: entityIcon('space', s.icon, di),
         ownIcon: s.icon,
         path: s.path,
-        crumbs: [groupCrumb],
+        parents: [group],
       })
   }
-  const addPage = (p: PageNode, crumbs: PathCrumb[]): void => {
+  const addPage = (p: PageNode, parents: TrailNode[]): void => {
     nodes.push({
       key: navKey({ kind: 'page', id: p.id }),
       kind: 'page',
@@ -101,42 +117,41 @@ function walk(tree: NexusTree): NodeRecord[] {
       icon: entityIcon('page', p.icon, di),
       ownIcon: p.icon,
       path: p.path,
-      crumbs,
+      parents,
     })
   }
-  const walkSets = (sets: SetNode[] | undefined, parents: PathCrumb[]): void => {
+  const walkSets = (sets: SetNode[] | undefined, parents: TrailNode[]): void => {
     for (const s of sets ?? []) {
-      const icon = entityIcon('set', s.icon, di)
-      nodes.push({
+      const node: NodeRecord = {
         key: navKey({ kind: 'set', id: s.id }),
         kind: 'set',
         id: s.id,
         title: s.title,
-        icon,
+        icon: entityIcon('set', s.icon, di),
         ownIcon: s.icon,
         path: s.path,
-        crumbs: parents,
-      })
-      const chain = [...parents, { icon, title: s.title }]
+        parents,
+      }
+      nodes.push(node)
+      const chain = [...parents, node]
       for (const p of s.pages) addPage(p, chain)
       walkSets(s.sets, chain)
     }
   }
   for (const col of tree.collections ?? []) {
-    const icon = entityIcon('collection', col.icon, di)
-    nodes.push({
+    const node: NodeRecord = {
       key: navKey({ kind: 'collection', id: col.id }),
       kind: 'collection',
       id: col.id,
       title: col.title,
-      icon,
+      icon: entityIcon('collection', col.icon, di),
       ownIcon: col.icon,
       path: col.path,
-      crumbs: [],
-    })
-    const colCrumb: PathCrumb = { icon, title: col.title }
-    for (const p of col.pages) addPage(p, [colCrumb])
-    walkSets(col.sets, [colCrumb])
+      parents: [],
+    }
+    nodes.push(node)
+    for (const p of col.pages) addPage(p, [node])
+    walkSets(col.sets, [node])
   }
   return nodes
 }
@@ -176,10 +191,22 @@ export function resolveIndexOf(tree: NexusTree): ResolveIndex {
   const ix = indexFor(tree)
   if (!ix.resolve) {
     const m: ResolveIndex = new Map<string, NavCore>()
-    for (const r of ix.nodes) m.set(r.key, { icon: r.icon, title: r.title, path: r.crumbs })
+    for (const r of ix.nodes) m.set(r.key, { icon: r.icon, title: r.title, path: r.parents })
     ix.resolve = m
   }
   return ix.resolve
+}
+
+/** The entity's ancestry including itself, outermost first — what every location trail draws from.
+ *  Null when the ref no longer resolves. */
+export function ancestryOf(tree: NexusTree, ref: NavRef | SelectTarget): TrailNode[] | null {
+  const ix = indexFor(tree)
+  if (!ix.ancestry) {
+    const m = new Map<string, TrailNode[]>()
+    for (const r of ix.nodes) m.set(r.key, [...r.parents, r])
+    ix.ancestry = m
+  }
+  return ix.ancestry.get(navKey(toNavRef(ref))) ?? null
 }
 
 /** Tree-derived search entries, grouped by kind (homepage, spaces, collections, sets, pages) so
