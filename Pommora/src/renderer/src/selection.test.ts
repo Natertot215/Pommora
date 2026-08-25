@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { ASSETS_DIR_REL } from '@shared/nexusPaths'
 import type { NexusTree, SelectionState } from '@shared/types'
-import { DEFAULT_LABELS } from '@shared/types'
 import { reconcileSelection } from './selection'
 
 function tree(pages: { id: string; path: string }[]): NexusTree {
@@ -20,7 +19,6 @@ function tree(pages: { id: string; path: string }[]): NexusTree {
         pages: pages.map((p) => ({ kind: 'page', id: p.id, title: 'P', path: p.path })),
       },
     ],
-    labels: DEFAULT_LABELS,
     accent: 'lavender',
     personalization: {},
     commands: {},

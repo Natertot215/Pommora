@@ -7,7 +7,6 @@ import type { Result } from './result'
 import type { PageMoveContext } from './pageMenu'
 import type { PropertyValue } from './propertyValue'
 import type { Crop } from './schemas'
-import { subSetLabel, type NexusLabels } from './types'
 
 /** The mutate channel's reply — `created` appears only on the create ops; `renamed` only on
  *  page renames, carrying what actually landed (a from-create rename may disambiguate away
@@ -174,15 +173,10 @@ export interface Creator {
  *  container's contents are a property of the container, not of the surface asking.
  *
  *  A Set nests to any depth, so it offers what a Collection offers; only the nested container's
- *  label differs, since a Set inside a Set is a Sub-Set. Labels are per-nexus and resolved here
- *  rather than written literally, which is what keeps a renamed Set named the same in both menus. */
-export function containerCreators(
-  kind: MutableContainerKind,
-  parentPath: string,
-  labels: NexusLabels,
-): Creator[] {
+ *  label differs, since a Set inside a Set is a Sub-Set. */
+export function containerCreators(kind: MutableContainerKind, parentPath: string): Creator[] {
   const name = DEFAULT_NEW_NAME
-  const nested = kind === 'collection' ? labels.pageSet.singular : subSetLabel(labels)
+  const nested = kind === 'collection' ? 'Set' : 'Sub-Set'
   return [
     { label: 'New Page', req: { op: 'createPage', parentPath, name } },
     { label: `New ${nested}`, req: { op: 'createContainer', parentPath, kind: 'set', name } },

@@ -143,10 +143,6 @@ beforeEach(() => {
     columnMenu: vi.fn(async () => null),
     openExternal: openExternalSpy,
   }
-  const pair = (singular: string, plural: string): { singular: string; plural: string } => ({
-    singular,
-    plural,
-  })
   useSession.setState({
     tree: {
       personalization: {},
@@ -173,15 +169,6 @@ beforeEach(() => {
         },
       ],
       collections: [],
-      labels: {
-        area: pair('Area', 'Areas'),
-        topic: pair('Topic', 'Topics'),
-        project: pair('Project', 'Projects'),
-        pageCollection: pair('Collection', 'Collections'),
-        pageSet: pair('Set', 'Sets'),
-        agendaTask: pair('Task', 'Tasks'),
-        agendaEvent: pair('Event', 'Events'),
-      },
     } as never,
     selection: { kind: 'none' } as never,
     select: selectSpy as never,
@@ -257,35 +244,6 @@ describe('status cell gestures', () => {
       propertyId: 'prop_status',
       value: { kind: 'select', value: 'complete' },
     })
-  })
-
-  it('a VALUED checkbox-look status cell cycles the group directly — no picker', async () => {
-    await mountTable(sourceWith({ prop_status: { look: 'checkbox' } }))
-    await act(async () => {
-      statusCell().click()
-    })
-    expect(pickerText()).not.toContain('Not started') // no picker options
-    expect(mutateSpy).toHaveBeenCalledWith({
-      op: 'setProperty',
-      path: 'Col/Page One.md',
-      propertyId: 'prop_status',
-      value: { kind: 'select', value: 'complete' }, // active (in_progress) → done's first option
-    })
-  })
-
-  it('an EMPTY checkbox-look status cell never cycles — it opens the picker, options as capsules', async () => {
-    await mountTable(sourceWith({ prop_status: { look: 'checkbox' } }))
-    const emptyStatusCell = host
-      .querySelectorAll<HTMLElement>('.data-row')[1]
-      .querySelectorAll<HTMLElement>('.data-cell')[1]
-    await act(async () => {
-      emptyStatusCell.click()
-    })
-    expect(mutateSpy).not.toHaveBeenCalled()
-    const optionButtons = pickerButtons()
-    expect(optionButtons.length).toBe(3)
-    expect(pickerText()).not.toContain('Active') // capsule options carry glyphs, not labels
-    expect(optionButtons[0].querySelector('svg')).toBeTruthy()
   })
 })
 
@@ -676,13 +634,13 @@ describe('chip hover × — the per-chip remove (pill looks only)', () => {
     })
   })
 
-  it('capsule + checkbox status looks carry NO × — Clear lives in their menu', async () => {
+  it('a Compact status look carries NO × — Clear lives in its menu', async () => {
     ;(window.nexus as { loadValues: unknown }).loadValues = async () => ({
       p1: { id: 'p1', ...propsAtRoot({ prop_status: 'active' }, allDefs) },
     })
     const styled = chipSource()
     ;(styled.views as Array<{ column_styles?: unknown }>)[0].column_styles = {
-      prop_status: { look: 'capsule' },
+      prop_status: { look: 'compact' },
     }
     await mountTable(styled)
     expect(removesIn(cell(1)).length).toBe(0)

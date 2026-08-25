@@ -2,7 +2,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ASSETS_DIR_REL } from '@shared/nexusPaths'
 import type { NexusTree, PageDetail, SelectTarget, Tab } from '@shared/types'
-import { DEFAULT_LABELS } from '@shared/types'
 import { useSession } from './store'
 import { newTabTab } from './Tabs/tabsModel'
 import { navKey } from './Navigation/navRecents'
@@ -310,7 +309,6 @@ function treeWith(pages: { id: string; path: string }[]): NexusTree {
         pages: pages.map((p) => ({ kind: 'page', id: p.id, title: 'P', path: p.path })),
       },
     ],
-    labels: DEFAULT_LABELS,
     accent: 'lavender',
     personalization: {},
     commands: {},

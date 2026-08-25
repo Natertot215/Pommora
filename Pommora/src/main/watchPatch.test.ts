@@ -70,7 +70,7 @@ describe('applyWatchEvents — must agree with the walk', () => {
     )
     await writeFile(
       abs('.nexus', 'settings.json'),
-      JSON.stringify({ labels: { area: { singular: 'Realm', plural: 'Realms' } } }),
+      JSON.stringify({ profile_subtitle: 'Second brain' }),
     )
     await writeFile(abs('.nexus', 'homepage.json'), JSON.stringify({ banner: 'Loose/b.png' }))
 
@@ -96,7 +96,7 @@ describe('applyWatchEvents — must agree with the walk', () => {
     expect(notes?.pages.map((p) => p.id)).toEqual([ULID_B, ULID_A])
     expect(notes?.pages[0]?.contextValues).toEqual({ ctx1: ['sp1'] })
     expect(live?.contexts[0]?.spaces[0]?.color).toBe('mint')
-    expect(live?.labels.area.singular).toBe('Realm')
+    expect(live?.nexus.profileSubtitle).toBe('Second brain')
     expect(live?.homepage.banner).toBe('Loose/b.png')
 
     const walked = await readNexus(root)

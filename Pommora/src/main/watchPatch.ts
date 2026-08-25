@@ -409,7 +409,6 @@ export async function patchSettingsFromDisk(root: string): Promise<'ok' | 'refre
 function applySettingsLeaves(root: string, leaves: SettingsLeaves): 'ok' | 'refresh' {
   return applyPatch(root, (t) => ({
     ...t,
-    labels: leaves.labels,
     accent: leaves.accent,
     personalization: leaves.personalization,
     commands: leaves.commands,

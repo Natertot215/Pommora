@@ -8,14 +8,7 @@ import {
   useRef,
   useState,
 } from 'react'
-import type {
-  CollectionNode,
-  NexusLabels,
-  ResolvedColumn,
-  ResolvedGroup,
-  SetNode,
-  ViewRow,
-} from '@shared/types'
+import type { CollectionNode, ResolvedColumn, ResolvedGroup, SetNode, ViewRow } from '@shared/types'
 import { UNGROUPED } from '@shared/types'
 import type { PageFrontmatter } from '@shared/schemas'
 import { applyValueAtRoot, type PropertyValue } from '@shared/propertyValue'
@@ -301,8 +294,8 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   const setIcons = useMemo(() => buildSetIcons(source), [source])
   const ctx = useMemo(
     () => (tree ? buildResolveContext(tree, schema, assetMap) : null),
-    // buildResolveContext reads only contexts, labels and the asset map — keying on those slices keeps ctx identity across unrelated tree pushes, so memoized cards hold.
-    [tree?.contexts, tree?.labels, schema, assetMap],
+    // buildResolveContext reads only contexts and the asset map — keying on those slices keeps ctx identity across unrelated tree pushes, so memoized cards hold.
+    [tree?.contexts, schema, assetMap],
   )
   // Raw `view`: resolveColumns never reads column_styles, and liveView identity would break the
   // per-card memo on every band drop.
@@ -310,7 +303,6 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     () => resolveColumns(view, schema, contextIds),
     [view, schema, contextIds],
   )
-  const labels = tree?.labels
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
   // Under location (structural) grouping the band header IS the top-level set, so the breadcrumb
   // drops that leading crumb and starts at the next set down — the band already shows it.
@@ -804,7 +796,6 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
                       view={liveView}
                       banner={banner}
                       ctx={ctx}
-                      labels={labels}
                       crumbs={locByRow.get(id) ?? NO_TRAIL}
                       src={oSrc}
                       cover={oCover}
@@ -862,7 +853,6 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
                           nexusId={nexusId}
                           columns={columns}
                           ctx={ctx}
-                          labels={labels}
                           loc={locByRow.get(row.id)}
                           draggable={cardDragEnabled}
                           onCommitValue={cardApi.onCommitValue}
@@ -908,7 +898,6 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
             rowById={rowById}
             view={liveView}
             ctx={ctx}
-            labels={labels}
             columns={columns}
             commitValue={commitValue}
             contextOptionsFor={contextOptionsFor}
@@ -1073,7 +1062,6 @@ interface PageCardProps {
   nexusId: string
   columns: ResolvedColumn[]
   ctx: ResolveContext | null
-  labels: NexusLabels | undefined
   loc?: TrailSegment[]
   onCommitValue: (row: ViewRow, column: ResolvedColumn, value: PropertyValue | null) => void
   onStyle: (colId: string, key: keyof ColumnStyle & string, value: string) => void
@@ -1098,7 +1086,6 @@ function CardProperties({
   row,
   view,
   ctx,
-  labels,
   shown,
   onZoneClick,
   onCommitValue,
@@ -1111,7 +1098,6 @@ function CardProperties({
   | 'row'
   | 'view'
   | 'ctx'
-  | 'labels'
   | 'onCommitValue'
   | 'onStyle'
   | 'onHide'
@@ -1122,7 +1108,7 @@ function CardProperties({
   onZoneClick: (e: React.MouseEvent) => void
 }): React.JSX.Element | null {
   const styleFor = useStyleFor()
-  if (!ctx || !labels) return null
+  if (!ctx) return null
   const compact = isCompact(view)
   // The RESOLVED style (type defaults under the saved entry) — the table's shared resolver, so the
   // Style menu's checked radio reflects what actually renders (a raw entry leaves defaults unchecked).
@@ -1178,7 +1164,6 @@ const CardFace = memo(function CardFace({
   view,
   banner,
   ctx,
-  labels,
   crumbs,
   src,
   cover,
@@ -1201,7 +1186,6 @@ const CardFace = memo(function CardFace({
   view: SavedView
   banner: CardBanner
   ctx: ResolveContext | null
-  labels: NexusLabels | undefined
   crumbs: TrailSegment[]
   src: string | undefined
   /** The page's `cover` value — Cover mode frames it through AssetImage; Preview uses `src`. */
@@ -1298,7 +1282,6 @@ const CardFace = memo(function CardFace({
             row={row}
             view={view}
             ctx={ctx}
-            labels={labels}
             shown={shown}
             onCommitValue={onCommitValue}
             onStyle={onStyle}
@@ -1330,7 +1313,6 @@ const PageCard = memo(function PageCard({
   nexusId,
   columns,
   ctx,
-  labels,
   loc,
   onCommitValue,
   onStyle,
@@ -1365,8 +1347,7 @@ const PageCard = memo(function PageCard({
   const textRef = useRef<HTMLDivElement>(null)
   // Built where it's read — both consumers are event handlers, and computing it in render walked
   // the schema per card for a list only a click ever looks at. The grid-level host builds its own.
-  const addableNow = (): AddEntry[] =>
-    ctx && labels ? addEntriesFor(row, view, ctx, columns, tree) : []
+  const addableNow = (): AddEntry[] => (ctx ? addEntriesFor(row, view, ctx, columns, tree) : [])
   const openAdd = useCallback(
     (e: React.MouseEvent): void => {
       e.stopPropagation()
@@ -1374,7 +1355,7 @@ const PageCard = memo(function PageCard({
       if (!isDragging && addableNow().length > 0 && textRef.current)
         onOpenAddPicker({ rowId: row.id, anchor: textRef.current, initialEntry: null })
     },
-    [isDragging, onOpenAddPicker, row, ctx, labels, view, columns, tree],
+    [isDragging, onOpenAddPicker, row, ctx, view, columns, tree],
   )
   const mutate = useSession((s) => s.mutate)
   // The card is the live naming target — creation and menu Rename both open the fenced inline
@@ -1497,7 +1478,6 @@ const PageCard = memo(function PageCard({
             view={view}
             banner={banner}
             ctx={ctx}
-            labels={labels}
             crumbs={crumbs}
             src={failed ? undefined : src}
             cover={cover}

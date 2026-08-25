@@ -6,7 +6,6 @@ import {
   coerceViewScale,
   type NavViewMode,
   type NavViewModes,
-  type NexusLabels,
   type Personalization,
   type SubfieldConfig,
 } from '@shared/types'
@@ -57,7 +56,7 @@ export function updateCrops(
  *  the moments before a walk has installed a tree for this root: launch-restore and adoption. */
 async function liveLeaves(
   root: string,
-): Promise<Pick<SettingsLeaves, 'personalization' | 'labels' | 'excluded' | 'assetDirectory'>> {
+): Promise<Pick<SettingsLeaves, 'personalization' | 'excluded' | 'assetDirectory'>> {
   const tree = getLiveTree()
   if (tree?.nexus.rootPath === root) return tree
   const settings = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings))) ?? {}
@@ -67,11 +66,6 @@ async function liveLeaves(
 /** The nexus-wide interface personalization — the source the named readers below narrow. */
 export const readLivePersonalization = async (root: string): Promise<Personalization> =>
   (await liveLeaves(root)).personalization
-
-/** The nexus's labels — for the callers outside the tree walk that need to name an entity (a
- *  native menu building its "New …" items). */
-export const readNexusLabels = async (root: string): Promise<NexusLabels> =>
-  (await liveLeaves(root)).labels
 
 /** The scope the walk and the watcher arm with — the user's `excluded_folders` and the asset
  *  root. A missing or unreadable settings file excludes nothing and takes the default root. */

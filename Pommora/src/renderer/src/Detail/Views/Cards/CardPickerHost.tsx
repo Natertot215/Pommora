@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import type { NexusLabels, ResolvedColumn, ViewRow } from '@shared/types'
+import type { ResolvedColumn, ViewRow } from '@shared/types'
 import { isBlankValue, type PropertyValue } from '@shared/propertyValue'
 import { isCompact, type SavedView } from '@shared/views'
 import { PickerMenu } from '@renderer/DesignSystem/Components/Pickers/PickerMenu/PickerMenu'
@@ -49,7 +49,6 @@ export function CardPickerHost({
   rowById,
   view,
   ctx,
-  labels,
   columns,
   commitValue,
   contextOptionsFor,
@@ -63,7 +62,6 @@ export function CardPickerHost({
   rowById: Map<string, ViewRow>
   view: SavedView
   ctx: ResolveContext
-  labels: NexusLabels | undefined
   columns: ResolvedColumn[]
   commitValue: (row: ViewRow, column: ResolvedColumn, value: PropertyValue | null) => void
   contextOptionsFor: (column: ResolvedColumn) => ContextOption[] | null
@@ -120,8 +118,7 @@ export function CardPickerHost({
 
   const aReq = add ?? lastAdd.current
   const aRow = aReq ? rowById.get(aReq.rowId) : undefined
-  const aEntries =
-    aRow && labels ? addEntriesFor(aRow, view, ctx, columns, tree) : ([] as AddEntry[])
+  const aEntries = aRow ? addEntriesFor(aRow, view, ctx, columns, tree) : ([] as AddEntry[])
 
   // One commit gate for every value-picker surface: an add-originated open reveals on the first
   // real commit (revealProperty is idempotent + in-flight-deduped, so repeat commits no-op).

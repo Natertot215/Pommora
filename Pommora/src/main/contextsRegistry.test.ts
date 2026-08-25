@@ -5,7 +5,6 @@ import { join } from 'node:path'
 import { ensureContextsRegistry, mutateRegistryFile, readRegistry } from './contextsRegistry'
 import { contextsRegistryFile, nexusDir } from './paths'
 import { readJsonStrict, rmwJsonStrict } from './io/atomicWrite'
-import { DEFAULT_LABELS } from '@shared/types'
 
 let root: string
 beforeEach(async () => {
@@ -24,7 +23,7 @@ describe('paths', () => {
 
 describe('readRegistry', () => {
   it('seeds the three contexts on a true fresh nexus and writes the file', async () => {
-    const r = await readRegistry(root, DEFAULT_LABELS)
+    const r = await readRegistry(root)
     expect(r.ok).toBe(true)
     if (!r.ok) return
     expect(r.value.contexts.map((c) => c.id)).toHaveLength(3)
@@ -53,7 +52,7 @@ describe('readRegistry', () => {
 
   it('fails on corrupt JSON and leaves the file untouched', async () => {
     await writeFile(contextsRegistryFile(root), '{nope')
-    const r = await readRegistry(root, DEFAULT_LABELS)
+    const r = await readRegistry(root)
     expect(r.ok).toBe(false)
     expect(await readFile(contextsRegistryFile(root), 'utf8')).toBe('{nope')
   })
@@ -61,7 +60,7 @@ describe('readRegistry', () => {
 
 describe('mutateRegistryFile', () => {
   it('round-trips unknown fields at both levels', async () => {
-    await readRegistry(root, DEFAULT_LABELS)
+    await readRegistry(root)
     const before = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
     before.foreign = { keep: true }
     before.contexts[0].future_field = 7
@@ -96,7 +95,7 @@ describe('mutateRegistryFile', () => {
         contexts: [...cur.contexts, { id: 'ctx_y', title: 'Y', singular: 'Y' }],
       })),
     ])
-    const after = await readRegistry(root, DEFAULT_LABELS)
+    const after = await readRegistry(root)
     expect(after.ok).toBe(true)
     if (!after.ok) return
     const titles = after.value.contexts.map((c) => c.title)

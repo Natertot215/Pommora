@@ -1,6 +1,5 @@
 import type { SelectionState } from '@shared/types'
 import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
-import { DEFAULT_LABELS } from '@shared/types'
 import { containerCreators } from '@shared/mutate'
 import { openPageBody, useSession } from '../../store'
 import { findCollection } from '../Scope'
@@ -61,10 +60,9 @@ function AddMenuItem(): React.JSX.Element | null {
   const selection = useSession((s) => s.selection)
   const tree = useSession((s) => s.tree)
   if (selection.kind !== 'collection' && selection.kind !== 'set') return null
-  const labels = tree?.labels
   const parentPath =
     selection.kind === 'set' ? selection.path : (findCollection(tree, selection.id)?.path ?? '')
-  const creators = containerCreators(selection.kind, parentPath, labels ?? DEFAULT_LABELS)
+  const creators = containerCreators(selection.kind, parentPath)
   const onAdd = (): void => void useSession.getState().createFromMenu(creators, 'detail')
   return (
     <Button

@@ -153,24 +153,11 @@ beforeEach(() => {
     columnMenu: vi.fn(async () => null),
     contextMenu: contextMenuSpy,
   }
-  const pair = (singular: string, plural: string): { singular: string; plural: string } => ({
-    singular,
-    plural,
-  })
   useSession.setState({
     tree: {
       collections: [],
       contexts: [],
       personalization: {},
-      labels: {
-        area: pair('Area', 'Areas'),
-        topic: pair('Topic', 'Topics'),
-        project: pair('Project', 'Projects'),
-        pageCollection: pair('Collection', 'Collections'),
-        pageSet: pair('Set', 'Sets'),
-        agendaTask: pair('Task', 'Tasks'),
-        agendaEvent: pair('Event', 'Events'),
-      },
     } as never,
     selection: { kind: 'none' } as never,
     select: selectSpy as never,

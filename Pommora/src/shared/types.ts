@@ -344,26 +344,6 @@ export interface CollectionNode extends PathNode {
   viewStyle?: ViewStyle
 }
 
-/** A user-facing entity name in both forms. */
-export interface LabelPair {
-  singular: string
-  plural: string
-}
-
-/** Per-Nexus UI labels (read from `settings.labels.{area,topic,project,page_collection,page_set,agenda_task,agenda_event}`).
- *  All three Contexts are first-class LabelPairs; sidebar section headers derive from the plurals
- *  (Areas ← area.plural, Topics ← topic.plural, Collections ← pageCollection.plural). "Sub-Set" is
- *  derived as `"Sub-" + pageSet.singular`, never stored. */
-export interface NexusLabels {
-  area: LabelPair
-  topic: LabelPair
-  project: LabelPair
-  pageCollection: LabelPair
-  pageSet: LabelPair
-  agendaTask: LabelPair
-  agendaEvent: LabelPair
-}
-
 /** The asset root's files, keyed by normalized basename — what a `[[Name.png]]` reference
  *  resolves against. Every path answering to a name is held, sorted, so display can take the
  *  first while a delete refuses to choose; holding only the winner would leave an unlink with
@@ -411,7 +391,6 @@ export interface NexusTree {
    *  raw/unmigrated tree — the open path migrates + seeds before anything renders). */
   collections: CollectionNode[]
   contexts: ContextGroup[]
-  labels: NexusLabels
   /** Resolved app accent from .nexus/settings.json (defaults to DEFAULT_ACCENT). */
   accent: AccentSetting
   /** Nexus-wide interface personalization (`settings.json` `personalization`) — the DRY config the
@@ -645,18 +624,3 @@ export interface ResolvedGroup {
  *  `collapsed_groups`, so it round-trips across builds — the single source the pipeline and the
  *  render code both match group keys against. */
 export const UNGROUPED = '_ungrouped'
-
-export const DEFAULT_LABELS: NexusLabels = {
-  area: { singular: 'Area', plural: 'Areas' },
-  topic: { singular: 'Topic', plural: 'Topics' },
-  project: { singular: 'Project', plural: 'Projects' },
-  pageCollection: { singular: 'Collection', plural: 'Collections' },
-  pageSet: { singular: 'Set', plural: 'Sets' },
-  agendaTask: { singular: 'Task', plural: 'Tasks' },
-  agendaEvent: { singular: 'Event', plural: 'Events' },
-}
-
-/** The derived Sub-Set label (deeper Sets); never stored. */
-export function subSetLabel(labels: NexusLabels): string {
-  return `Sub-${labels.pageSet.singular}`
-}

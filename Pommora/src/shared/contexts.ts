@@ -4,7 +4,6 @@
 // Pure: no fs, no React — both processes import it.
 
 import { z } from 'zod'
-import type { NexusLabels } from './types'
 import { isGovernedKey, parseGovernedKey, wrapKey } from './governedKeys'
 
 /** `singular` is the seeded three's only (Areas/Topics/Projects) — set once at registry
@@ -64,24 +63,19 @@ export function normalizeContextValue(raw: unknown): string {
   return String(raw).trim().toLowerCase().normalize('NFC')
 }
 
-/** The fresh-nexus registry: titles from the three LabelPairs' plurals, singulars from their
- *  singular halves, a minted id each. Colliding custom plurals disambiguate ("Title 2") —
- *  titles are nexus-wide identity, so two entries can never share one. */
-export function seededRegistry(labels: NexusLabels, mintId: () => string): ContextsRegistry {
-  const pairs = [labels.area, labels.topic, labels.project]
-  const taken = new Set<string>()
+/** The fresh-nexus registry: the three seeded Contexts, a minted id each. */
+export function seededRegistry(mintId: () => string): ContextsRegistry {
   return {
-    contexts: pairs.map((pair) => {
-      let title = pair.plural
-      for (let n = 2; taken.has(title); n++) title = `${pair.plural} ${n}`
-      taken.add(title)
-      return { id: mintId(), title, singular: pair.singular }
-    }),
+    contexts: [
+      { id: mintId(), title: 'Areas', singular: 'Area' },
+      { id: mintId(), title: 'Topics', singular: 'Topic' },
+      { id: mintId(), title: 'Projects', singular: 'Project' },
+    ],
   }
 }
 
-/** The create-entry label for a Context's Spaces. A seeded Context carries the singular its
- *  label pair gave it ("New Area"); one the user minted has none to speak for it. */
+/** The create-entry label for a Context's Spaces. A seeded Context carries a singular
+ *  ("New Area"); one the user minted has none to speak for it. */
 export function createSpaceLabel(def: ContextDef): string {
   return def.singular ? `New ${def.singular}` : 'New Space'
 }

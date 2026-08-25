@@ -23,7 +23,6 @@ import {
 } from '@shared/pageMenu'
 import { rowTemplate } from './rowMenu'
 import type { ContextTarget, Creator, MutableKind, MutateRequest } from '@shared/mutate'
-import { readNexusLabels } from './settings'
 import { openLabel } from '@shared/toggleLabels'
 
 /** The "New …" creators a container offers; pages + Spaces + the legacy area/topic/project
@@ -38,7 +37,7 @@ async function creatorsFor(
   switch (kind) {
     case 'collection':
     case 'set':
-      return containerCreators(kind, parentPath, await readNexusLabels(root))
+      return containerCreators(kind, parentPath)
     case 'context': {
       const reg = await readRegistryStrict(root)
       const def = reg.ok
