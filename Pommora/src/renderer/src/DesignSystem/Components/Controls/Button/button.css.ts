@@ -27,13 +27,22 @@ export const button = style({
   color: 'var(--button-ink)',
   whiteSpace: 'nowrap',
   cursor: 'default',
-  transition:
-    'background var(--duration-fast) var(--ease-base), color var(--duration-fast) var(--ease-base), opacity var(--duration-fast) var(--ease-base)',
+  transition: `background var(--duration-fast) var(--ease-base), color var(--duration-fast) var(--ease-base), opacity var(--duration-fast) var(--ease-base), padding-inline ${titleReveal}`,
   selectors: {
     '&:hover:not(:disabled)': {
       background: `linear-gradient(${c.state.hover}, ${c.state.hover}), var(--button-fill)`,
     },
     '&:disabled': { opacity: 'var(--state-inactive)' },
+  },
+})
+
+/** Held down — a toggle that is on, a trigger whose menu is open. The selected wash holds under
+ *  hover so an engaged button doesn't lighten further. */
+export const pressed = style({
+  selectors: {
+    '&, &:hover:not(:disabled)': {
+      background: `linear-gradient(${c.state.selected}, ${c.state.selected}), var(--button-fill)`,
+    },
   },
 })
 

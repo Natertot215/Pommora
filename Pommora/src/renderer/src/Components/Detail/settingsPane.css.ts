@@ -394,9 +394,3 @@ export const crumbRow = style([
 export const footerLock = style({
   selectors: { '&&&&': { color: c.label.tertiary } },
 })
-
-/** Locked state — reads engaged via the active state fill alone (no color lift). `--state-active` isn't
- *  a token (state = hover / selected / muted) — this rides the mapped equivalent instead. */
-export const footerLockActive = style({
-  background: 'var(--state-selected)',
-})

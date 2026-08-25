@@ -234,7 +234,7 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 | --------------- | -------------------------------- | ----------------------------------------------------- |
 | DropOutline | `dropOutline` · `dropOutlineOpen` · `dropOutlineSpacer` · `railRow` | The fold chevron and the rail that descends from its center, on `--disclosure-rail-x`. |
 | PathChevron | `PathChevron` | The `›` between path segments; `tone` and `size` knobs. |
-| NavTrail | `NavTrail` · `TrailSegment` | An entity's location as a chevron-divided run of icon + title segments — inert, selectable, or a navigable path with a dimmed ghost tail; `emphasize` lifts the current stop. |
+| NavTrail | `NavTrail` · `NavTrailProps` · `TrailSegment` | An entity's location as a chevron-divided run of icon + title segments — inert, selectable, or a navigable path with a dimmed ghost tail; `emphasize` lifts the current stop. |
 | Segment | `segment` | The between-values pill — `--segment-width` / `--segment-color` override it. |
 | ProgressBar | `ProgressBar` | A determinate bar on the accent. |
 
@@ -299,11 +299,13 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 
 #### Fields
 
+`Fields/` — the input surfaces and the runs that sit inside them; `SegmentRun.tsx` lives here because a run of values is a field's content, not a label's.
+
 | Title | Export | What it is |
 | ----------- | -------------------------------------------- | ---------------------------------------------- |
 | InputField | `InputField` · `FieldEdit` | The field box — `boxed` or `bordered` chrome; `capped` scrolls its content under the fade; `edit` swaps a draft caret in under a click; `leading` seats a glyph before the content, `trailing` an action after it. A folder path is a NavTrail inside one. |
-| SegmentRun | `SegmentRun` · `SEGMENT_GAP` | Values standing side by side inside a field, hairline-divided. |
-| Chrome | `field` · `input` · `borderedField` · `draftInput` · `leading` · `trailing` · `base` · `search` | Boxed, raw caret, cell-tight, the draft caret, the two slots, chromeless, and the search look. |
+| SegmentRun | `SegmentRun` · `SegmentEntry` · `SEGMENT_INDEX_ATTR` | Values standing side by side inside a field, hairline-divided; each entry a FileLabel, stamped with its index for hit-testing. |
+| Chrome | `field` · `input` · `borderedField` · `editable` · `draftInput` · `leading` · `trailing` · `base` · `search` | Boxed, raw caret, cell-tight, press-to-edit, the draft caret, the two slots, chromeless, and the search look. |
 | Ring | `fieldRing()` · `focusRing()` · `errorRing()` · `ROW_RING` | One inset-shadow channel; presets set only its color. |
 | Placeholder | `placeholder` | The ghost-text tone. |
 | SearchField | `SearchField` · `SEARCH_PLACEHOLDER` | The controlled filter input the list surfaces share. |

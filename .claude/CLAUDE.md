@@ -135,7 +135,7 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 │   │           │   ├── // Tokens        | • Color, type, geometry — the token source of truth
 │   │           │   ├── // Materials     | • Glass — surfaces, panes, windows, controls
 │   │           │   ├── // Labels        | • Labels and chips
-│   │           │   ├── // Elements      | • The atomic bits — outline, chevron, segment
+│   │           │   ├── // Elements      | • The atomic bits — outline, chevron, trail, segment
 │   │           │   ├── // Components    | • Controls, pickers, menus, fields
 │   │           │   ├── // Detail        | • The composite shells — preview and side panes
 │   │           │   ├── // Interactions  | • PommoraDND and the pointer/scroll layer

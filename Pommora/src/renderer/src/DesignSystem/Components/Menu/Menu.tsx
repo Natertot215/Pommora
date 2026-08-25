@@ -167,9 +167,10 @@ export const AccessoryButton = forwardRef<
     className?: string
     create?: boolean
     disabled?: boolean
+    pressed?: boolean
   }
 >(function AccessoryButton(
-  { icon, size, ariaLabel, box, onClick, className, create = false, disabled = false },
+  { icon, size, ariaLabel, box, onClick, className, create = false, disabled = false, pressed },
   ref,
 ): React.JSX.Element {
   return (
@@ -180,6 +181,7 @@ export const AccessoryButton = forwardRef<
       icon={icon}
       iconSize={size}
       disabled={disabled}
+      pressed={pressed}
       className={cx(s.accessoryButton, className)}
       data-create={create || undefined}
       style={box ? ({ '--accessory-box': `${box}px` } as CSSProperties) : undefined}
