@@ -10,12 +10,12 @@ import { useImageAspect } from './imageAspect'
 import { fill } from './assetImage.css'
 
 export function cropFor(
-  value: string,
+  value: string | null | undefined,
   map: AssetMap,
-  crops: Record<string, Crop>,
+  crops: Record<string, Crop> | undefined,
 ): Crop | undefined {
-  const raw = value.trim()
-  if (!raw) return undefined
+  const raw = value?.trim()
+  if (!raw || !crops) return undefined
   const resolved = resolveAssetValue(raw, map)
   const key = cropKeyFor(resolved.kind === 'asset' ? resolved.rel : null, raw)
   return key ? crops[key] : undefined
@@ -36,7 +36,7 @@ export function AssetImage({ value, className, style, fallback = null, preview }
   const map = useSession((s) => s.assetMap)
   const crops = useSession((s) => s.tree?.crops)
   const url = resolveAssetUrl(value, map)
-  const crop = preview ?? (value && crops ? cropFor(value, map, crops) : undefined)
+  const crop = preview ?? cropFor(value, map, crops)
 
   const aspect = useImageAspect(crop && url ? url : undefined)
   const [box, setBox] = useState<{ w: number; h: number } | null>(null)

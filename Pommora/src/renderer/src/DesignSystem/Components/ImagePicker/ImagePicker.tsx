@@ -73,7 +73,7 @@ export function ImagePicker({
   // swaps `value` while open, before main's confirming push lands the new reference). Deliberately
   // keyed on open/value only, not on every map/crops push.
   useEffect(() => {
-    if (open) setDraft((value && crops ? cropFor(value, map, crops) : undefined) ?? DEFAULT_CROP)
+    if (open) setDraft(cropFor(value, map, crops) ?? DEFAULT_CROP)
   }, [open, value])
 
   // The new image has arrived — the re-pick is settled.

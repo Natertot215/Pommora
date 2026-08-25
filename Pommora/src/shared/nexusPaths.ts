@@ -53,7 +53,8 @@ export const WEB_ADDRESS = /^[a-z][a-z0-9+.-]*:/i
 
 // One spelling: main keys crops from `assetFilePath`, the renderer from `resolveAssetValue`.
 export function cropKeyFor(rel: string | null, raw: string): string | null {
-  return rel ?? (WEB_ADDRESS.test(raw.trim()) ? raw.trim() : null)
+  const trimmed = raw.trim()
+  return rel ?? (WEB_ADDRESS.test(trimmed) ? trimmed : null)
 }
 
 /** A Context's own folder — its title names it, which is why a retitle is a folder rename. */
