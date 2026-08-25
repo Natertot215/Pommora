@@ -4,7 +4,7 @@
 // recipe: a divider spaced by its own margins sits evenly only while its neighbors are symmetric,
 // and a trailing affordance on one segment breaks exactly that.
 import { style } from '@vanilla-extract/css'
-import { segment as segmentHairline } from '../Elements/Segment/segment.css'
+import { segment as segmentHairline } from '../../Elements/Segment/segment.css'
 
 const SEGMENT_GAP = '4px' // KNOB
 const SEGMENT_DIVIDER_INSET = '3px' // KNOB

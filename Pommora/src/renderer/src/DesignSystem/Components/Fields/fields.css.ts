@@ -1,7 +1,7 @@
 import { style } from '@vanilla-extract/css'
 import { vars as colorVars } from '../../Tokens/color.css'
 import { text } from '../../Tokens/typography.css'
-import { fieldRing } from './fieldRing'
+import { fieldRing, focusRing } from './fieldRing'
 
 const c = colorVars.color
 
@@ -92,6 +92,21 @@ export const draftInput = style([
     color: c.label.control,
   },
 ])
+
+const LEAD_GAP = '5px' // KNOB — a leading glyph's stand-off from the content
+const TRAIL_GAP = '8px' // KNOB — how far a trailing action stands off the content it follows
+
+/** A glyph before the content — one lead icon saying what the field holds. */
+export const leading = style({ marginRight: LEAD_GAP, flexShrink: 0, color: c.label.secondary })
+
+/** An action after the content. A real gap rather than an auto margin: a field sized to its
+ *  content collapses an auto margin to nothing, and the action reads as the last word of the
+ *  content instead of the action it is. */
+export const trailing = style({ marginLeft: TRAIL_GAP, flexShrink: 0 })
+
+/** A press-to-edit field — a caret cursor at rest, the ring on focus, and room to give way so the
+ *  content's own fade eclipses the head rather than the field pushing its row wider. */
+export const editable = style({ cursor: 'text', flex: '0 1 auto', ...focusRing('within') })
 
 // § BASE
 

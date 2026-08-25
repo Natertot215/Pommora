@@ -140,7 +140,7 @@
 /* A location that no longer exists reads as a record of one. */
 .trash-leaf .is-historical .nav-item-path {
   font-style: italic;
-  --nav-trail-ink: var(--label-tertiary);
+  color: var(--label-tertiary);
 }
 
 .trash-empty {

@@ -1,14 +1,9 @@
 import { useState } from 'react'
-import {
-  base,
-  field,
-  borderedField,
-  input,
-  InputField,
-  PathField,
-  SearchField,
-} from '../../Components/Fields'
+import { base, field, borderedField, input, InputField, SearchField } from '../../Components/Fields'
 import { FileLabel } from '../../Labels'
+import { Button } from '../../Components/Controls/Button'
+import { NavTrail } from '../../Elements/NavTrail'
+import { Icon } from '../../Symbols'
 import { errorField, rows } from './fieldsLeaf.css'
 
 export function FieldsLeaf(): React.JSX.Element {
@@ -27,13 +22,27 @@ export function FieldsLeaf(): React.JSX.Element {
         <input className={base} defaultValue="Base — the caret in the text it replaced" />
         <div className={errorField}>ErrorRing — the channel at the error tint</div>
         <SearchField value={search} onValueChange={setSearch} />
-        <PathField
+        <InputField
+          chrome="bordered"
           label="Path"
-          value={path}
-          placeholder="No folder"
-          onCommit={setPath}
-          onBrowse={() => {}}
-        />
+          edit={{ value: path, onCommit: setPath }}
+          leading={<Icon name="folder-closed" size="body" />}
+          trailing={
+            <Button
+              type="base"
+              size="button-inline"
+              icon="folder-open"
+              aria-label="Choose Folder"
+            />
+          }
+        >
+          <NavTrail
+            segments={path
+              .split('/')
+              .filter(Boolean)
+              .map((title) => ({ title }))}
+          />
+        </InputField>
         <InputField capped>
           <FileLabel name="Drafts" />
           <FileLabel name="Archive/Old" />

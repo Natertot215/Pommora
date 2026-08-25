@@ -1,8 +1,8 @@
 export { EditableInput } from './EditableInput'
 export { type FieldEdit, InputField } from './InputField'
-export { PathField } from './PathField'
 export { RenamableLabel } from './RenamableLabel'
 export { SEARCH_PLACEHOLDER, SearchField } from './SearchField'
+export { SEGMENT_INDEX_ATTR, type SegmentEntry, SegmentRun } from './SegmentRun'
 export { useDraftEdit } from './useDraftEdit'
 export { ROW_RING, errorRing, fieldRing, focusRing } from './fieldRing'
 export {
@@ -14,6 +14,9 @@ export {
   field,
   borderedField,
   draftInput,
+  editable,
+  leading,
+  trailing,
   input,
   placeholder,
   search,
