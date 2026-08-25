@@ -20,9 +20,7 @@ export function Subfield({ scope }: { scope?: SubfieldScope }): React.JSX.Elemen
     : selection
   // The preview is tab-neutral — no dimmed tail, and its crumbs describe location without driving the
   // main pane. Elsewhere the depth extends the path to the deepest node visited on it.
-  const rawCrumbs = subfieldCrumbs(tree, crumbSelection, scope ? null : crumbDepth, (t, dir) =>
-    navigateCrumb(t, dir),
-  )
+  const rawCrumbs = subfieldCrumbs(tree, crumbSelection, scope ? null : crumbDepth, navigateCrumb)
   const crumbs = scope ? rawCrumbs.map((c) => ({ ...c, onSelect: undefined })) : rawCrumbs
   const kind = crumbSelection.kind
   const items = (order[kind] ?? DEFAULT_ITEMS[kind] ?? []).filter(isSubfieldItemId)
