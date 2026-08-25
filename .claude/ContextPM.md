@@ -10,7 +10,7 @@
 
 - [ ] The architecture-audit cleanup at [[Codebase-Cleanup-Checklist]] — bundles 6a → 6b, each carrying its own verification and the documentation entries it retires.
 - [ ] **Part 3 of the file-based arc** — `PhotoCropModal` widened past the nexus icon so banners, cards and other media crop through it. It is the profile photo's alone today, which is why `setProfileImage` still carries bytes while every banner carries a path.
-- [ ] **A planning session against [[Design-Coherence-Report]]**, after the cleanup's structural bundles — its §VIII is the agenda, led by whether a layer exists between the design system and the features.
+- [ ] **A planning session against [[Design-Coherence-Report]] §VIII** — the middle layer, `checkboxLook`, the container title, CalendarPicker's range mode, the tab strips, `--gutter`; the report's structural findings have landed.
 
 ### Pending Focuses
 
