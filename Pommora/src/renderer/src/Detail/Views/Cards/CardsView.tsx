@@ -1244,6 +1244,11 @@ const CardFace = memo(function CardFace({
       />
     </span>
   )
+  const ph = (
+    <span className="page-card-ph">
+      <Icon name={iconName} size="title1" />
+    </span>
+  )
   return (
     <>
       {banner !== 'none' && (
@@ -1253,20 +1258,11 @@ const CardFace = memo(function CardFace({
           onContextMenu={onThumbContextMenu ? (e) => void onThumbContextMenu(e) : undefined}
         >
           {banner === 'cover' ? (
-            <AssetImage
-              value={cover}
-              fallback={
-                <span className="page-card-ph">
-                  <Icon name={iconName} size="title1" />
-                </span>
-              }
-            />
+            <AssetImage value={cover} fallback={ph} />
           ) : src ? (
             <img src={src} alt="" onError={onImgError} />
           ) : (
-            <span className="page-card-ph">
-              <Icon name={iconName} size="title1" />
-            </span>
+            ph
           )}
         </div>
       )}
