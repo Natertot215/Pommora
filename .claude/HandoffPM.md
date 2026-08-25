@@ -5,58 +5,98 @@
 #### Current Focus
 
 **Session ID:** 5897f22e-4fa9-4416-b22b-4de359243564
-**Date:** 08-24-2026
+**Dates:** 08-24-2026
 **Model:** Fable 5
 
-**The design system is one tree that reads like its ledger, and it has a Button.** Eight commits, `4d7feba7 → e5a5ce40`, in three arcs.
+**The design-system rework — the second line of work beside the file arc.** One long session in two halves. The first half made `DesignSystem/` one tree that reads like its ledger and gave it a Button (`4d7feba7 → defb6960`; the reorganization, motion in `Animation/`, `theme-vars` a pure bridge, `Components/Controls/Button/` worn by every toolbar button and every former ghost, IconPicker and PhotoCropModal lifted inside). The second half (`278f585c → 8f3246d3`) applied the same method — recipe owns the look, surface owns the click, measure over CDP before claiming anything — to the next three families that were still hand-rolled per surface.
 
-**Arc 1 — the reorganization (`4d7feba7`).** `src/renderer/src/design-system/` became `DesignSystem/` with every area Capitalized and every stray homed: Tokens · Materials · Labels · Elements · Components/{Controls, Pickers, Menu, Fields} · Detail · Interactions · Animation · Symbols · Theming · Util · Showcase. `NotchedPane` joined Menu, SidePane and PreviewPane joined Detail, SegmentRun joined Labels, ProgressBar joined Elements, and the motion pieces scattered over three folders became one `Animation/` (motion, feel, the Bloom keyframes, `useExitPresence`, `Reveal`). Motion has one ladder and two curves — `easing.baseEase` (`--ease-base`) and `easing.baseSnap` (`--ease-snap`); `easing.inOut` and `duration.disclosure` are gone, and `Feel` reads the ladder through `ms()`. Only `Tokens/` and `Theming/` reach `@shared`; `theme-vars` republishes only, its authored literals homed in `size.css.ts`, `color.css.ts`, and `Symbols/masks.ts`. The Elements consolidation from earlier in the session (DropOutline · PathChevron · Segment) rode the same commit. `DesignSystemPM` was rewritten as the one-look ledger — one section per folder, one row per thing — and `TypographyPM` retired into it; `InteractionPM` points at it for values. The chromeless field treatment was renamed `bare → base` (`8afff1d2`).
+**Trails.** Twelve surfaces drew a location; seven rendered one component, one was a byte-copy, four were their own, and beneath them four separate ancestry computations disagreed about where a page lived. Now `Elements/NavTrail` is the one element — segments `{ title, icon?, ghost?, onSelect? }` divided by `PathChevron`, inert / selectable / navigable by what the caller passes, `emphasize` for the current stop, no ink of its own so the host's color reaches it — and `ancestryOf` on `treeIndex` is the one ancestry, which the subfield spine, card footing, preview and embed trails all slice. The subfield's own O(N) tree search (run twice per render) and Cards' private walk are gone.
 
-**Arc 2 — Button (`21faf5b5` + two fixes).** `DesignSystem/Components/Controls/Button/` is the one button: five types as one CSS-var pair (`base` · `tinted` · `solid` · `filled` · `destructive`), the `size.control` bundles for geometry, icon / icon+label / label content, an optional outline as an inset ring, and the `revealOnHover` / `ghostRest` modifiers. `Segmented` is N Buttons divided by the house `segment`, with `glass` for the toolbar; `Segmented-Controls/` folded into it. Every toolbar-row button is a Button (Back/Forward, the dropdown triggers, the trio, the tab +, the sidebar toggles, the ViewPane row chevron); PhotoCropModal's pair is filled + solid; the settings icon-picker button is filled. **ActionBand keeps its own tab-style segment on purpose.** `PaneSlider`, `Surface`, and `PhotoCropModal` moved into the design system; the showcase gained a Buttons leaf laid out as the Figma card.
+**Fields.** `PathField` was three things wearing one name. `InputField` absorbed the first two as capabilities — `chrome="bordered"`, `edit` (press-to-edit), `leading` and `trailing` slots (the trailing action pins to the field's edge, tertiary) — and the path is composed at its sites from `pathSegments()` + `NavTrail` + a Browse `Button`. `SegmentRun` lost its chevron mode and moved into Fields; `hairlineField → borderedField`. Then the two press-to-edit mechanisms collapsed to one: `useDraftEdit` is deleted, `InputField.edit` rides `RenamableLabel` over `EditableInput` with the rest width held, `renames` seats the caret, `emptyCommits` lets a value field clear, and a host may drive `editing`. `InlineEditHeader` is an icon Button beside an `InputField edit`. A build-breaking pass found six things the swap dropped (caret overflow past the pane, the unreachable empty reset on both path fields, a tone step on click, select-all lost on paths, an unnamed caret, a false one-mechanism claim) — all six closed at `8f3246d3` with `InputField`'s first tests.
 
-**Arc 3 — the ghost sweep (`e5a5ce40`).** A fourth size, `button-inline` (20px / r5 / control icon), is the row-affordance tier, and every hand-rolled ghost button moved onto it: the menu accessory family and its settings-pane derivatives, the footer text and lock actions, the preview window's actions, the subfield add and view toggle, the banner add, the group-band add, the calendar nav and title, both "Add Property" affordances, the filter add-rule, the Open button, and the NavWindow style toggle. Each site keeps placement and tone only. The size bundles carry `labelPaddingX` beside `paddingX`. Empty values read as the pane's `—` on cards and in the calendar too.
+**Button** learned `pressed` (the selected wash held under hover; the scoped pane's lock rides it instead of its own fill) and a collapsed label now takes the icon inset — the Views trigger's width regression. Everything above is verified in a sandbox instance over CDP against the Test nexus: subfield tones, nav-row tones, the path field's width pin and caret seat, a pane-header rename. Not verified on Nathan's screen: the trailing glyph's tertiary tone, the Views trigger width, the header caret at 40+ characters.
 
 #### Completion Criteria
 
-- [x] **Gates green at every commit** — typecheck 0, biome clean (936 files), 286 test files / 3594 tests, app + showcase build.
-- [x] **Sweep proofs** — `design-system/` in source 610 → 0; `--ease-standard` 139 → 0; `var(--disclosure)` 11 → 0; `parseInt(duration…)` 14 → 0; `bare` treatment 47 → 0; `KNOB` 128 → 131 (Nathan's additions), `(Nathan's call)` intact.
-- [x] **Toolbar geometry measured, not reasoned** — a sandbox instance (`POMMORA_USERDATA` + `POMMORA_DEBUG_PORT`, against the Test nexus) over CDP: every pill button and glyph centers at the row's y=22, glass layer and cover identical, Back/Forward divided. Two regressions found and fixed that way: a transparent border widening every segment (now an inset ring), and the glass wrapper's `inline-block` swallowing the class's centering (now inline `display:flex; align-items:center` on the pill — deliberate, don't move it to the class).
-- [x] **A comment pass over the whole `DesignSystem/` tree** and the reorg-touched app files — it cost one casualty, the tab bar's `.reveal-on-hover` selector (`aca13970` restored it).
+- [x] **One location trail, one ancestry** — `NavCrumbs`, `SubfieldBreadcrumb`, `chainOf`, `setChains`, `PathCrumb`, `.nav-path-*`, `.crumb-two-tone` all gone with no dangling consumer; `resolveWith` keeps its six live callers.
+- [x] **One press-to-edit mechanism across every field surface** — `useDraftEdit` gone; every rename in the renderer rides `RenamableLabel` (OutlineDropdown, ViewPane, RenamableTitle → GroupBand, PropertiesPane, DetailTitleHeader, Banner, ViewEmbedBlock's pill) or `EditableInput` directly where the caret is the surface. The view embed's title stays a block-level `contentEditable` by design.
+- [x] **Gates green at every commit** — typecheck 0 · biome clean (938) · 288 files / 3602 tests · app + showcase build.
+- [x] **The ledger reads as the tree does** — `DesignSystemPM` names NavTrail, the Fields section (InputField's props, SegmentRun, the chrome row, `borderedField`), Button's `pressed`; `PathField` and `useDraftEdit` rows gone; the CLAUDE.md map names the trail.
+- [ ] **Eyeballed on Nathan's screen** — the trailing glyph's tertiary tone, the Views trigger beside its neighbors, a long page title under Rename.
 
 #### Next Session
 
-1. **Eyeball the sweep** — the row-affordance sites moved from 16–20px hand boxes to the 20px inline bundle; the simplifier flagged `.subfield-viewtype` no longer sitting flush on the subfield inset (its `padding-left: 0` override lost to Button's inline padding — rule deleted, inset is now the bundle's 4px). Retune `button-inline` in `Tokens/size.css.ts` if anything reads off.
-2. **The Figma parity pass on Button** — no Figma MCP is wired into Claude Code here; the types and sizes were built from Nathan's spec and the existing `size.control` geometry, which he confirmed is the Figma geometry. Open [Buttons-Spec.md](Planning/Buttons-Spec.md) against the Figma card and note any deviation.
-3. **The continuous codebase cleanup** — [[Codebase-Cleanup-Checklist]], 6a → 6b next (the `Components/Detail` rehome: PaneSlider is already across; the property-editor pieces stay app-side by design).
-4. **Restart the dev server** after pulling — the folder rename invalidated Vite's module graph; ⌘R is not enough.
-
-#### Open
-
-- **Line-Ledger artifact** — the post-commit hook asks for a republish each commit; the published artifact holds a newer, larger version than the regenerated file (it has `10e30d59`, the disk file doesn't), so it was never force-published. The hook's history window looks truncated — Nathan's call.
-- **`footingLabel = style([actionRow])`** in `menu.css.ts` is an empty composition kept as a named route; collapse only if the name should go.
-- **`export { stack }`** in the Tokens barrel has no consumer (everything deep-imports); pre-existing, left.
-- **Showcase `MenuLeaf.tsx:20`** pins `<Icon size={16}>` next to rows that size by text — cosmetic, unfixed.
-- **Uncommitted, not mine:** `src/main`, `src/preload`, `src/shared/*`, `store.ts`, Nathan's script files and planning-doc deletions — parallel sessions' work, deliberately left.
+1. **Reload and eyeball** the three unverified-on-screen items above; retune `--nav-trail-glyph`, the trailing slot's tone in `fields.css.ts`, or `button-large`'s `paddingX` in `Tokens/size.css.ts` if anything reads off.
+2. **Part 3 of the file arc — the ImagePicker.** [[ImagePicker — Decision Log]] and [[ImagePicker — Implementation Plan]] landed from the parallel session (`f68683cd`); one design-system surface for banners, cards, icons and the nexus photo, widening `PhotoCropModal` past the profile photo. Read both before touching `PhotoCropModal`.
+3. **The Figma parity pass on Button** — still open from the first half; no Figma MCP is wired here. [[Buttons-Spec]] against the Figma card.
+4. **Restart the dev server** after pulling — module moves (`SegmentRun`, the deleted `PathField`/`useDraftEdit`) invalidate Vite's graph; ⌘R is not enough.
 
 #### Feedback
 
-- "All code-folders need to be caps." The root included — `DesignSystem/`, not `design-system/`.
-- "Keep comments to its absolute minimum" / "strip the comments" — new files ship comment-free; a comment pass follows every build.
 - "As long as it's coherent and doesn't just wrap these things in sloppily." A consolidation that leaves the old box and wraps it is the failure; the recipe owns the look, the surface owns what happens on click.
-- "ActionBand should stay as its own purposefully divergent tab-style button." Toggle-shaped surfaces keep their selected state outside Button — Button has hover only.
-- "Back-forth sizing is intentional, but ALL toolbar buttons need to become buttons; not just the trio."
-- "Stop it and fix the fucking alignment issue… there is no time pressure; use my live nexus." Measure over CDP before claiming alignment; a screenshot from Nathan's stale dev server is not evidence either way.
-
-#### Touched Files
-
-- **Design system:** the whole `DesignSystem/` tree (164 files, renamed); new `Components/Controls/Button/` (Button.tsx, button.css.ts, Button.test.tsx), `Animation/index.ts`, `Symbols/masks.ts`, `Components/PaneSlider/`, `Detail/PhotoCropModal/`, `Materials/Surface.tsx`, `Showcase/leaves/ButtonsLeaf.tsx`; `Tokens/size.css.ts` (`button-inline`, `labelPaddingX`, the homed geometry consts), `Tokens/color.css.ts` (`STATE_OPACITY`, `BANNER_SHADOW`), `Tokens/theme-vars.css.ts` (bridge only), `Menu/menu.css.ts` + `Menu.tsx` (`AccessoryButton`, `FooterLockButton`, `FooterMoreButton` on Button).
-- **App:** every import site (`@renderer/DesignSystem/…`); the toolbar (`Toolbar.tsx`, `ToolbarTrio.tsx`, `ViewPane.tsx`, `toolbarDropdown.css.ts`), `Tabs/TabBar.tsx` + `tabBar.css`, `App.tsx`, `Sidebar/Sidebar.css`, the settings-pane family (`settingsPane.css.ts`, `PropertiesPane`, `OptionEditor`, `StatusEditor`, `OptionRow`, `EyeToggle`, `InlineEditHeader`, `SettingsScaffold`, `PageMenu`, `PagePropertiesPane`, `FilterPane`), `Blocks/BlockHandleMenu.tsx`, `Detail/Banner/*`, `Detail/Subfield/*`, `Detail/Views/GroupBand.*`, `Detail/Views/Cards/CardValue.tsx`, `NavWindow/*`, `PagePreview/*`, `styles.css`, `MarkdownPM/editor/folding.ts`.
-- **Docs:** `DesignSystemPM.md` (the ledger), `InteractionPM.md`, `TypographyPM.md` (deleted), `CLAUDE.md` (maps), `ContextPM.md`, `Planning/Buttons-Spec.md` (new), `Planning/DesignSystem-Organization.md` + `Elements-Consolidation-Plan.md` (deleted, executed), path fixes across Features/Guidelines/Resources/Planning.
+- "PathField must be retired; just give InputField itself the ability to add an optional leading or trailing glyph or button; that's the whole consolidation." Slots on the field, composition at the site — not a component that hoards chrome, edit mode and an action.
+- "Don't create new behavior; add that as a next-feature candidate in ContextPM." A mechanism the codebase could use (TokenField) is recorded, not built, mid-consolidation.
+- "Why should it stay?" — on a three-line parse duplicated at three sites. "Retire the component" never means "share nothing"; a pure function is not the thing that was retired.
+- "The DesignSystem reworking arc IS important, but WON'T be a history entry since it's amending rather than additive, and detailing it may just hint towards past incorrect behaviors."
+- "Stop it and fix the fucking alignment issue… there is no time pressure; use my live nexus." Measure over CDP before claiming alignment; a screenshot from a stale dev server is not evidence either way.
 
 #### Session Pointers
 
-- `DesignSystem/Components/Controls/Button/Button.tsx` — `Segmented`'s `containerStyle` carries `display:flex; alignItems:center` inline on purpose: `GlassControls` renders `inline-block` and a class can't beat it. `inRun` switches a Button to the segment geometry (`segmentHeight` / `segmentRadius`).
-- `button.css.ts` — a type is one `styleVariants` row setting `--button-fill` / `--button-ink` / `--button-outline`; hover is one gradient overlay of `state.hover` over `--button-fill`, so no per-type hover exists. `base` overrides the disabled rule to `label.tertiary` (the toolbar's mute); every other type dims by `--state-inactive`.
-- `Tokens/size.css.ts` — `button-inline` is the only bundle not in Figma; it exists because the app has a whole tier of 16–20px row affordances below the ladder's `small`.
-- `Menu/menu.css.ts` — `accessoryButton` is now width-only (`--accessory-box`, default 20px) plus its tertiary `&&` pin; the box is Button's.
-- `Build-Gotchas.md §sandbox` — the `POMMORA_USERDATA` line is instrumentation added per pass and removed before committing; the scratch `pommora.json` pointed at `/Users/nathantaichman/Test`, and the harness is `scratchpad/cdp.mjs` + `measure.js` (session-local; recreate from the guideline).
+- `DesignSystem/Elements/NavTrail/NavTrail.tsx` — the trail; `pathSegments()` beside it parses a filesystem path. `--nav-trail-glyph` is the only var; ink comes from the host.
+- `treeIndex.ts` `ancestryOf(tree, ref)` — the chain including the entity, outermost first, cached per tree; `Subfield/crumbs.ts` `spineOf` gates it to collection/set/page (`hasSpine` is load-bearing, not defensive).
+- `DesignSystem/Components/Fields/InputField.tsx` — `chrome` · `edit` (`FieldEdit`: value, onCommit, renames, emptyCommits, editing, onEditingChange) · `leading` · `trailing` · `capped`. `fields.css.ts` holds `borderedField`, `editable`, `draftInput`, `leading`, `trailing` (KNOBs `LEAD_GAP`, `TRAIL_GAP`).
+- `DesignSystem/Components/Fields/RenamableLabel.tsx` — the rename swap and its commit guard; `EditableInput.tsx` — the caret itself.
+- `Components/Detail/InlineEditHeader.tsx` — the five-pane header: icon Button + `InputField edit`, `editing` driven by a menu's Rename.
+- `DesignSystem/Components/Controls/Button/` — `pressed`; `labeled` reads `labelCollapsed`, so a collapsed label takes the icon inset.
+- `Build-Gotchas.md §sandbox` — the `POMMORA_USERDATA` line goes into `src/main/index.ts` before `requestSingleInstanceLock` per pass and comes out before committing; harness is scratchpad `cdp.mjs` + probe scripts (session-local; recreate from the guideline).
+- `.claude/scripts/Line-Ledger.html` — regenerated by the post-commit hook; published at https://claude.ai/code/artifact/9172cda5-707d-4b69-aaed-d154dd2dd485 (read before publishing; the artifact tool refuses an unread republish).
+
+#### Working Notes
+
+- `--x: inherit` on a custom property inherits the *custom property*, not the value it's meant to alias — it read as unset and fell to the fallback. Alias with `var(--label-control)`.
+- `RenamableLabel` encodes title semantics — caret at end, empty cancels, size to content. A value field (a path) wants `renames: 'row'` and `emptyCommits`; the default is right for names only.
+- The `draftInput` caret must inherit its field's color and shrink (`flex: 1 1 auto`); stating a tone or `flex-shrink: 0` was right for `borderedField` and wrong for the boxed header.
+- `PaneSlider`'s inert flip fires a real blur, so Back commits an in-flight edit; the unmount flush `useDraftEdit` had is not needed by any host traced.
+- Zero tests mount `InlineEditHeader` or `RenamableLabel`-inside-a-field; `InputField.test.tsx` (jsdom, `act`, `focusout` for React's onBlur) is the pattern to extend.
+- The auto-mode classifier intermittently refuses `git commit`; a message file via `-F` and a retry landed it.
+
+**FILES ADDED**
+
+- `Pommora/src/renderer/src/DesignSystem/Elements/NavTrail/` (NavTrail.tsx · navTrail.css.ts · index.ts · NavTrail.test.tsx)
+- `Pommora/src/renderer/src/DesignSystem/Components/Fields/InputField.test.tsx`
+- `Pommora/src/renderer/src/DesignSystem/Components/Controls/Button/` (Button.tsx · button.css.ts · Button.test.tsx · index.ts), `Animation/index.ts`, `Symbols/masks.ts`, `Components/PaneSlider/`, `Components/PhotoCropModal/`, `Components/Pickers/IconPicker/`, `Materials/Surface.tsx`, `Showcase/leaves/ButtonsLeaf.tsx`, `Settings/iconFavorites.ts`, `Settings/IconPicker.tsx` (the first half)
+- `.claude/Planning/Buttons-Spec.md`; `.claude/Planning/ImagePicker — Decision Log.md`, `— Implementation Plan.md` (parallel session)
+
+**FILES MODIFIED**
+
+- `Pommora/src/renderer/src/treeIndex.ts`, `Navigation/{NavList.tsx, navList.css, navResolve.ts}`, `NavWindow/NavGallery.tsx`, `Detail/Subfield/{Subfield.tsx, crumbs.ts, subfield.css}`, `Detail/Views/Cards/CardsView.tsx`, `Detail/Views/{Table/Cell.tsx, PropertyEditing/filePick.ts}`, `Embeds/PageEmbed.tsx`, `PagePreview/{PreviewWindow.tsx, previewTabStrip.css}`, `Settings/{AssetDirectoryRow.tsx, TrashLeaf.tsx, trashLeaf.css}`, `Components/Detail/{FileEditor, FilterPane, InlineEditHeader, SettingsPane}.tsx`, `Components/Detail/{filterPane, settingsPane}.css.ts`
+- `Pommora/src/renderer/src/DesignSystem/Components/Fields/{InputField.tsx, EditableInput.tsx, RenamableLabel.tsx, fields.css.ts, index.ts}`, `Components/Controls/Button/{Button.tsx, button.css.ts}`, `Components/Menu/Menu.tsx`, `Showcase/leaves/FieldsLeaf.tsx`, `Tokens/{card-tokens.css, size.css.ts}`
+- `Pommora/src/renderer/src/DesignSystem/Components/Fields/{SegmentRun.tsx, segmentRun.css.ts}` (moved from `Labels/`)
+- The whole `DesignSystem/` tree and every import site (the first half's rename); `Toolbar/*`, `Tabs/*`, `App.tsx`, `Sidebar/Sidebar.css`, `Blocks/BlockHandleMenu.tsx`, `Detail/Banner/*`, `Detail/Views/GroupBand.*`, `NavWindow/*`, `MarkdownPM/editor/folding.ts`, `styles.css`
+- `Pommora/src/{main/index.ts, preload/index.ts, renderer/src/store.ts, shared/*}` (parallel session: Edit Icon, Change Color)
+- `.claude/{CLAUDE.md, ContextPM.md}`, `Features/{DesignSystemPM, ArchitecturePM, CardViewPM, InteractionPM, PagePreviewPM, SubfieldPM}.md`, `Planning/{Codebase-Cleanup-Checklist, Design-Coherence-Report, Architecture Audit — Full-Codebase Report}.md`, `.claude/scripts/{Line-Ledger.html, loc-history.json}`
+
+**FILES REMOVED**
+
+- `Pommora/src/renderer/src/DesignSystem/Components/Fields/{PathField.tsx, pathField.css.ts, useDraftEdit.ts}`
+- `Pommora/src/renderer/src/Detail/Subfield/SubfieldBreadcrumb.tsx`
+- `Pommora/src/renderer/src/DesignSystem/Components/Controls/Segmented-Controls/`, `Features/TypographyPM.md`, `Planning/{DesignSystem-Organization, Elements-Consolidation-Plan, NavTrail-Consolidation}.md` (executed)
+- `Planning/{Asset Directory — Decision Log, Asset Directory — Implementation Plan, File Properties — Decision Log, File Properties — Implementation Plan}.md` (executed; parallel session)
+
+**COMMITS**
+
+- `4d7feba7` — refactor(design-system): one home per thing — DesignSystem/ mirrors its ledger
+- `8afff1d2` · `0c219509` · `aca13970` — bare → base; the ledger script; the tab bar's reveal selector restored
+- `21faf5b5` · `a7a9c163` · `94f28432` · `e5a5ce40` — one Button recipe; the inset ring; the glass pill centers; every ghost is a Button
+- `496b4c02` · `96230467` · `defb6960` — the first-half handoff; IconPicker and PhotoCropModal are components; the rehome's constraint satisfied
+- `278f585c` · `c2b0597f` — NavTrail is the one location trail, ancestryOf the one ancestry; the subfield keeps its tones
+- `f42594b7` · `03efc3ed` · `2a5695c0` · `6e6946ed` · `267a0f95` · `4446a2bf` · `54b612e9` — InputField owns press-to-edit; PathField retires into the slots; SegmentRun is a Field; the field's width, glyphs, slot centering, the trailing edge
+- `6be4aef7` — Button carries a pressed state; a collapsed label reads as icon-only
+- `56d3c76a` · `fb27e7f0` · `6e0e2295` · `babe0a3d` — the arc simplified; pathSegments; TokenField is a candidate; the renderer filing is boring work
+- `cabf6804` · `8f3246d3` — one press-to-edit; the review's six findings closed
+- `f68683cd` · `86b57b43` — the ImagePicker plans (parallel); Edit Icon and Change Color, the executed plans archived
+
+#### Handoff Guidelines
+
+- The handoff is not a History entry — the design-system rework amends what exists and takes none; write what a session needs to resume, not a record of what was wrong before.
+- Measured claims and eyeballed claims stay distinct; a sandbox measurement is not Nathan's screen.
