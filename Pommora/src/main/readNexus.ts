@@ -45,7 +45,13 @@ import {
 } from '@shared/types'
 import { isColorKey } from '@shared/theme'
 import { savedView, type SavedView } from '@shared/views'
-import { coerceOpenIn, coerceViewButton, coerceViewStyle } from '@shared/schemas'
+import {
+  type Crop,
+  coerceOpenIn,
+  coerceViewButton,
+  coerceViewStyle,
+  cropsFile,
+} from '@shared/schemas'
 import { LINK_DISPLAYS, type PropertyDefinition } from '@shared/properties'
 import { makeCollectionNode, makePageNode, makeSetNode, makeSpaceNode } from '@shared/treePatch'
 import { adoptedId } from './ids'
@@ -280,6 +286,13 @@ export function readHomepageLeaves(config: Json): NexusTree['homepage'] {
     banner: asString(config.banner),
     headingIconHidden: config.heading_icon_hidden === true,
   }
+}
+
+/** The `crops.json` leaf — same decoding for the walk and the watcher's crops patch. A malformed
+ *  entry drops (the codec's `.catch`); the file is never taken down by one bad key. */
+export function readCropLeaves(config: Json): NexusTree['crops'] {
+  const byImage = cropsFile.parse(config).byImage ?? {}
+  return Object.fromEntries(Object.entries(byImage).filter((e): e is [string, Crop] => !!e[1]))
 }
 
 /** `state.json`'s per-Context Space-order blob — one decode for the walk and the order patch,
@@ -608,12 +621,13 @@ export async function readNexus(root: string): Promise<NexusTree> {
 }
 
 async function walkNexus(root: string): Promise<NexusTree> {
-  const [identityRead, settings, state, homepageConfig, registry, ctxRegistryRaw] =
+  const [identityRead, settings, state, homepageConfig, cropsConfig, registry, ctxRegistryRaw] =
     await Promise.all([
       readJsonStrict(nexusConfig(root, NEXUS_CONFIG_FILES.identity)),
       readConfig(nexusConfig(root, NEXUS_CONFIG_FILES.settings)),
       readConfig(nexusConfig(root, NEXUS_CONFIG_FILES.state)),
       readConfig(nexusConfig(root, NEXUS_CONFIG_FILES.homepage)),
+      readConfig(nexusConfig(root, NEXUS_CONFIG_FILES.crops)),
       readRegistry(root),
       readSidecar(contextsRegistryFile(root)),
     ])
@@ -700,6 +714,7 @@ async function walkNexus(root: string): Promise<NexusTree> {
       profileSubtitle: leaves.profileSubtitle,
     },
     homepage: readHomepageLeaves(homepageConfig),
+    crops: readCropLeaves(cropsConfig),
     contexts: contexts ?? [],
     collections,
     labels: leaves.labels,

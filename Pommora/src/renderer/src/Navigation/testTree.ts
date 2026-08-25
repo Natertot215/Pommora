@@ -8,6 +8,7 @@ export function makeTree(): NexusTree {
   return {
     nexus: { id: 'nx', rootPath: '/x', name: 'TestNexus', profileImage: null, profileSubtitle: '' },
     homepage: { headingIconHidden: false },
+    crops: {},
     contexts: [
       {
         def: { id: 'g1', title: 'Realms', singular: 'Realm' },

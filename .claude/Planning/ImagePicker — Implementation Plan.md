@@ -165,9 +165,9 @@ What this is not: rotation, filters, pixel editing; per-view image-fit or aspect
 **Must agree:** walk and patch decode through one `readCropLeaves`; `stabilize(walked, live)` is identity after a crops write (the pattern at `watchPatch.test.ts:102-103`).
 
 **Steps:**
-- [ ] Failing test: `crops.json` with one valid and one malformed entry → `live.crops` holds the valid one; `classifyEvent` answers `crops-leaf`; `stabilize(walked, live)` is `live`.
-- [ ] The edits; the fixtures; the doc line; gates green.
-- [ ] Commit: `feat(nexus): crops.json rides the tree as a leaf`
+- [x] Failing test: `crops.json` with one valid and one malformed entry → `live.crops` holds the valid one; `classifyEvent` answers `crops-leaf`; `stabilize(walked, live)` is `live`.
+- [x] The edits; the fixtures; the doc line; gates green.
+- [x] Commit: `feat(nexus): crops.json rides the tree as a leaf`
 
 #### Task 3: `updateCrops` — the one writer; `setCrop`; the orphan; the migration
 

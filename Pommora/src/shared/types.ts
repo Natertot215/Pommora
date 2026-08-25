@@ -4,7 +4,7 @@
 import { SPECTRUM, type CellKey } from './theme'
 import type { ContextDef } from './contexts'
 import type { LinkDisplay, PropertyDefinition } from './properties'
-import type { PageFrontmatter } from './schemas'
+import type { Crop, PageFrontmatter } from './schemas'
 import type { DateFormat } from './columnStyles'
 import type { PommoraError } from './result'
 import type { SavedView } from './views'
@@ -404,6 +404,9 @@ export interface NexusTree {
    *  icon is hidden. The block doc's heavy layout/blocks stay off the walk, loaded lazily by
    *  useBlockDoc. */
   homepage: { banner?: string; headingIconHidden: boolean }
+  /** Per-image framing from `.nexus/crops.json`, keyed by the image (nexus-relative path or raw
+   *  web address). Absent key ⇒ the seat draws its plain image. */
+  crops: Record<string, Crop>
   /** Registry-backed Context groups in registry order, each with its Spaces ([] on a
    *  raw/unmigrated tree — the open path migrates + seeds before anything renders). */
   collections: CollectionNode[]

@@ -77,6 +77,7 @@ A Nexus is a single folder, opened via picker and treated as canonical content. 
     settings.json                       ← per-Nexus UI labels + accent + excluded_folders + profile
     properties.json                     ← nexus-wide property registry (propId → definition)
     homepage.json                       ← the Homepage's banner + heading icon
+    crops.json                          ← per-image framing (focal point, zoom, background), keyed by the image
     navigation.json                     ← pinned + favorites (ordered ID-only arrays) + the NavView banner
     nexus.db                            ← device-local operational state (schema-versioned)
     contexts.json                       ← the Context registry (order = display)

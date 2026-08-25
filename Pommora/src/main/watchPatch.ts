@@ -20,6 +20,7 @@ import { resolveOrder } from './order'
 import { NEXUS_CONFIG_FILES, SIDECAR_FILENAME, SPACE_SIDECAR, nexusConfig, relPosix } from './paths'
 import {
   parseViews,
+  readCropLeaves,
   readHomepageLeaves,
   readPageRecord,
   readSettingsLeaves,
@@ -55,6 +56,7 @@ export type WatchClass =
   | { kind: 'space-meta'; dirRel: string }
   | { kind: 'settings-leaf' }
   | { kind: 'homepage-leaf' }
+  | { kind: 'crops-leaf' }
   | { kind: 'asset'; rel: string; event: WatchEventName }
   | { kind: 'index-only'; rel: string }
   | { kind: 'ignored' }
@@ -131,6 +133,7 @@ export function classifyEvent(
   if (segs[0] === NEXUS_DIR) {
     if (rel === `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.settings}`) return { kind: 'settings-leaf' }
     if (rel === `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.homepage}`) return { kind: 'homepage-leaf' }
+    if (rel === `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.crops}`) return { kind: 'crops-leaf' }
     if (
       segs[1] === CONTEXTS_DIRNAME &&
       segs.length === 5 &&
@@ -254,6 +257,8 @@ async function applyOne(
       return applySettingsLeaf(root, watched)
     case 'homepage-leaf':
       return patchHomepageFromDisk(root)
+    case 'crops-leaf':
+      return patchCropsFromDisk(root)
     case 'full-refresh':
       return 'refresh'
   }
@@ -458,4 +463,9 @@ export async function patchSpaceOrderFromDisk(
 export async function patchHomepageFromDisk(root: string): Promise<'ok' | 'refresh'> {
   const config = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.homepage))) ?? {}
   return applyPatch(root, (t) => ({ ...t, homepage: readHomepageLeaves(config) }))
+}
+
+export async function patchCropsFromDisk(root: string): Promise<'ok' | 'refresh'> {
+  const config = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.crops))) ?? {}
+  return applyPatch(root, (t) => ({ ...t, crops: readCropLeaves(config) }))
 }
