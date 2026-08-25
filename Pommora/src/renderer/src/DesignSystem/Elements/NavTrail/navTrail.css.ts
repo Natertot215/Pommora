@@ -7,7 +7,6 @@ export const trail = style({
   display: 'flex',
   alignItems: 'center',
   minWidth: 0,
-  selectors: { '&&': { color: `var(--nav-trail-ink, ${c.label.secondary})` } },
 })
 
 export const segment = style({
@@ -39,7 +38,7 @@ export const ghost = style({
   selectors: { 'button&:hover': { opacity: 1 } },
 })
 
-export const emphasized = style({ vars: { '--nav-trail-ink': c.label.tertiary } })
+export const emphasized = style({ color: c.label.tertiary })
 
 export const current = style({
   color: c.label.control,

@@ -9,7 +9,7 @@ import { DualSwitch } from '@renderer/DesignSystem/Components/Controls/Switches/
 import { ProgressBar } from '@renderer/DesignSystem/Elements/ProgressBar/ProgressBar'
 import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import { OverScroll } from '@renderer/DesignSystem/Interactions/OverScroll'
-import { SEGMENT_INDEX_ATTR } from '@renderer/DesignSystem/Labels/SegmentRun'
+import { SEGMENT_INDEX_ATTR } from '@renderer/DesignSystem/Components/Fields/SegmentRun'
 import { resolveFileValue } from '@renderer/assetUrl'
 import { fileValueWithout } from '../PropertyEditing/filePick'
 import { declaredType, fileName, resolveFieldValue } from '../pipeline/value'

@@ -1,4 +1,7 @@
-import { PathField } from '@renderer/DesignSystem/Components/Fields'
+import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
+import { InputField, placeholder } from '@renderer/DesignSystem/Components/Fields'
+import { NavTrail } from '@renderer/DesignSystem/Elements/NavTrail'
+import { Icon } from '@renderer/DesignSystem/Symbols'
 import { useSession } from '@renderer/store'
 import * as s from './settingsPane.css'
 
@@ -6,8 +9,8 @@ import * as s from './settingsPane.css'
  *  beneath it. Def-level (property-wide), like a link's color or a number's format. The path is
  *  relative to the asset root rather than to the nexus, so re-pointing the root carries it along.
  *
- *  It wears the house path field, the same control the Default Asset Directory setting is: one
- *  scope up, aimed at the folder rather than the root. */
+ *  The same field the Default Asset Directory setting is: one scope up, aimed at the folder
+ *  rather than the root. */
 export function FileEditor({
   directory,
   onSetDirectory,
@@ -20,17 +23,39 @@ export function FileEditor({
   // Unset means the asset root itself, so the field names that root rather than a generic word —
   // the folder a file actually lands in is readable before anything is chosen.
   const assetRoot = useSession((st) => st.tree?.assetDirectory ?? '')
+  const value = directory ?? ''
+  const segments = value
+    .split('/')
+    .filter(Boolean)
+    .map((title) => ({ title }))
   return (
     <div className={s.configEditor}>
       <div className={s.configRow}>
         <span className={s.configLabel}>Directory</span>
-        <PathField
+        <InputField
+          chrome="bordered"
           label="Directory"
-          value={directory ?? ''}
-          placeholder={assetRoot}
-          onCommit={onSetDirectory}
-          onBrowse={onBrowse}
-        />
+          edit={{ value, onCommit: onSetDirectory }}
+          leading={<Icon name="folder-closed" size="body" />}
+          trailing={
+            <Button
+              type="base"
+              size="button-inline"
+              icon="folder-open"
+              aria-label="Choose Folder"
+              onClick={(e) => {
+                e.stopPropagation()
+                onBrowse()
+              }}
+            />
+          }
+        >
+          {segments.length > 0 ? (
+            <NavTrail segments={segments} />
+          ) : (
+            <span className={placeholder}>{assetRoot}</span>
+          )}
+        </InputField>
       </div>
     </div>
   )
