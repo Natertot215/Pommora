@@ -258,7 +258,7 @@ export function ImagePicker({
             style={{ ...imgSize, left: boxLeft + rect.left, top: boxTop + rect.top }}
           />
           <div
-            className={s.cropBox}
+            className={s.seatBox}
             style={{
               left: boxLeft,
               top: boxTop,
@@ -271,7 +271,7 @@ export function ImagePicker({
             <img
               {...imgProps}
               alt=""
-              className={s.cropImage}
+              className={s.seatImage}
               style={{ ...imgSize, left: rect.left, top: rect.top }}
             />
           </div>

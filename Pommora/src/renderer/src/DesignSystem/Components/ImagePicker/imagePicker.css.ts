@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css'
-import { text, tintAt, vars } from '../../Tokens'
+import { text, vars } from '../../Tokens'
 import { stack } from '../../Tokens/stack'
 import { accessoryButton, detail } from '../Menu/menu.css'
 
@@ -15,7 +15,7 @@ export const backdrop = style({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  background: tintAt(c.system.black, 'secondary'),
+  background: c.state.muted,
 })
 
 export const panel = style({
@@ -33,7 +33,7 @@ export const viewport = style({
   position: 'relative',
   overflow: 'hidden',
   borderRadius: '8px',
-  background: c.surface.primary,
+  background: c.fill.secondary,
   cursor: 'grab',
   touchAction: 'none',
   userSelect: 'none',
@@ -50,7 +50,7 @@ export const dimImage = style({
 
 /** The seat itself — ringed and fixed. It clips the sharp image and paints the crop's own fill
  *  wherever the image doesn't reach. */
-export const cropBox = style({
+export const seatBox = style({
   position: 'absolute',
   overflow: 'hidden',
   border: `1.5px solid ${c.label.control}`,
@@ -58,7 +58,7 @@ export const cropBox = style({
 })
 
 /** The bright image inside the seat, at the same rect as the dimmed one behind it. */
-export const cropImage = style({
+export const seatImage = style({
   position: 'absolute',
   objectFit: 'fill',
 })

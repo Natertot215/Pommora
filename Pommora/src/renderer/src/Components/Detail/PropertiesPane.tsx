@@ -429,10 +429,10 @@ export function PropertiesPane({
         </>
       )
     }
+    const columnStyle = styleFor(def.id, schema, activeView)
     // Status and select/multi wear the Standard/Compact axis in the pinned footing, where it stays
     // reachable past however far the option list runs.
-    const optionLook: OptionStyle =
-      styleFor(def.id, schema, activeView).look === 'compact' ? 'compact' : 'standard'
+    const optionLook: OptionStyle = columnStyle.look === 'compact' ? 'compact' : 'standard'
     const styleFooting =
       hasSelectOptions(def.type) || def.type === 'status' ? (
         <MenuBottomRow>
@@ -506,13 +506,13 @@ export function PropertiesPane({
           />
         ) : def.type === 'datetime' ? (
           <DateTimeEditor
-            style={styleFor(def.id, schema, activeView)}
+            style={columnStyle}
             onChange={(patch) => void saveColumnStyle(def.id, patch)}
           />
         ) : def.type === 'checkbox' ? (
           <CheckboxEditor
             color={def.checkbox_color}
-            look={styleFor(def.id, schema, activeView).look === 'switch' ? 'switch' : 'checkbox'}
+            look={columnStyle.look === 'switch' ? 'switch' : 'checkbox'}
             onSetColor={(next) => void saveCheckboxColor(def.id, next)}
             onSetStyle={(look) => void saveColumnStyle(def.id, { look })}
           />
@@ -526,7 +526,7 @@ export function PropertiesPane({
               number_fraction: def.number_fraction,
               number_denominator: def.number_denominator,
             }}
-            look={styleFor(def.id, schema, activeView).look === 'bar' ? 'bar' : 'number'}
+            look={columnStyle.look === 'bar' ? 'bar' : 'number'}
             onSetConfig={(patch) => void saveNumberFormat(def.id, patch)}
             onSetStyle={(look) => void saveColumnStyle(def.id, { look })}
           />
