@@ -88,15 +88,12 @@
   height: var(--button-large-height);
   padding: 0;
   border: 0;
+  border-radius: 8px;
   background: transparent;
+  cursor: default;
 }
 .ribbon-icon:hover {
   background: var(--state-hover);
-}
-
-.ribbon-icon {
-  border-radius: 8px;
-  cursor: default;
 }
 
 /* --- sidebar content --- */

@@ -93,7 +93,7 @@ import {
 } from './cardValueInput'
 import { pageMoveContext, runPageSendAction } from '@renderer/pageMenuActions'
 import { hideShown, unhide } from '@renderer/Components/Detail/hiddenPaneModel'
-import { IconPicker } from '@renderer/Components/IconPicker'
+import { IconPicker } from '@renderer/Settings/IconPicker'
 import { RenamableTitle } from '@renderer/Components/RenamableTitle'
 import { titleInput } from '@renderer/DesignSystem/Components/Menu'
 import { isOpenInTabs } from '../../../Tabs/tabsModel'
