@@ -25,7 +25,7 @@ A page card is an image band over a text area — title, then properties, then a
 
 ### Card Image
 
-A per-view **Card Banner** control chooses the image source: **Cover** (the page's banner), **Preview** (the captured page thumbnail), or **None** (imageless, compact cards). A page lacking an image under Cover or Preview shows the placeholder, keeping heights uniform within a view. Right-clicking the image band pops the native banner menu — Add when the page has no cover, Change / Remove when it does — worded for the view's source and editing the page's one banner image through the PageHeader flow, so the card refreshes live on the write.
+A per-view **Card Banner** control chooses the image source: **Cover** (the page's banner), **Preview** (the captured page thumbnail), or **None** (imageless, compact cards). A page lacking an image under Cover or Preview shows the placeholder, keeping heights uniform within a view. Right-clicking the image band pops the native banner menu — Add when the page has no cover, Change / Edit / Remove when it does — worded for the view's source and editing the page's one banner image through the PageHeader flow (Edit frames the cover in the picker), so the card refreshes live on the write.
 
 ### Layouts
 

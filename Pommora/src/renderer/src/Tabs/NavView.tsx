@@ -1,10 +1,12 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { text } from '@renderer/DesignSystem/Tokens'
 import { SearchField } from '@renderer/DesignSystem/Components/Fields'
 import type { NavRef } from '@shared/types'
 import { useAssetUrl, useSession } from '../store'
 import { AssetImage } from '@renderer/DesignSystem/Components/AssetImage/AssetImage'
+import { ImagePicker } from '@renderer/DesignSystem/Components/ImagePicker/ImagePicker'
+import { useBannerMenu } from '../Detail/Banner/useBannerMenu'
 import { moveByKey } from '../Navigation/navRecents'
 import { splitSearch, useNavData } from '../Navigation/useNavData'
 import { NavGallery } from '../NavWindow/NavGallery'
@@ -27,25 +29,19 @@ export function NavView(): React.JSX.Element {
   const ownBanner = useSession((s) => s.navBanner)
   const homeBanner = useSession((s) => s.tree?.homepage.banner)
   const bannerSrc = useAssetUrl(ownBanner ?? homeBanner)
-  const mutate = useSession((s) => s.mutate)
+  const bannerRef = useRef<HTMLDivElement>(null)
+  // Remove clears only NavView's own override (falls back to the homepage banner) — offered only
+  // while an override exists (`noRemove` when the shown banner is the inherited homepage one).
+  const { openMenu, addOrChange, editing, closeEditor, boxAspect, onSave, onRepick } =
+    useBannerMenu('', 'navview', {
+      value: ownBanner ?? homeBanner,
+      frame: bannerRef,
+      noRemove: !ownBanner,
+    })
   const [query, setQuery] = useState('')
   const results = useMemo(() => (query.trim() ? splitSearch(search(query)) : null), [query, search])
   const open = (target: NavRef): void => go(target)
   const openNew = (target: NavRef): void => go(target, undefined, { newTab: true })
-
-  // Remove clears only NavView's own override (falls back to the homepage banner) — offered only
-  // while an override exists.
-  const changeBanner = async (): Promise<void> => {
-    const picked = await window.nexus.pickFile()
-    if (picked) await mutate({ op: 'setBanner', path: '', kind: 'navview', source: picked })
-  }
-  const onBannerMenu = async (e: React.MouseEvent): Promise<void> => {
-    e.preventDefault()
-    const action = await window.nexus.bannerMenu({ noRemove: !ownBanner })
-    if (action === 'change') await changeBanner()
-    else if (action === 'remove')
-      await mutate({ op: 'setBanner', path: '', kind: 'navview', source: null })
-  }
 
   const searchInput = (
     <SearchField
@@ -59,13 +55,29 @@ export function NavView(): React.JSX.Element {
     <div className="nav-view">
       {bannerSrc ? (
         // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
-        <div className="banner nav-view-banner" onContextMenu={(e) => void onBannerMenu(e)}>
+        <div
+          ref={bannerRef}
+          className="banner nav-view-banner"
+          onContextMenu={(e) => {
+            e.preventDefault()
+            void openMenu()
+          }}
+        >
           <AssetImage value={ownBanner ?? homeBanner} className="banner-img" />
           <div className="banner-title">{searchInput}</div>
+          <ImagePicker
+            open={editing}
+            value={ownBanner ?? homeBanner ?? ''}
+            shape="rect"
+            boxAspect={boxAspect}
+            onCancel={closeEditor}
+            onSave={onSave}
+            onRepick={onRepick}
+          />
         </div>
       ) : (
         <div className="nav-view-head">
-          <AddBannerButton onClick={() => void changeBanner()} />
+          <AddBannerButton onClick={() => void addOrChange()} />
           {searchInput}
         </div>
       )}

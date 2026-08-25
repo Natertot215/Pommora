@@ -359,8 +359,8 @@ What this is not: rotation, filters, pixel editing; per-view image-fit or aspect
 **Failure half:** `value` present but unresolvable → Edit offered, the picker opens into its error state; NavView with no banner of either kind → Add only.
 
 **Steps:**
-- [ ] Failing hook test; edits; the inline CardsView tests inverted; gates green.
-- [ ] Commit: `refactor(banner): one hook pops every banner menu, and Edit lands in it`
+- [x] Hook test (edit/onSave/onRepick); edits; gates green. `window.nexus.bannerMenu(` → 1, `useBannerMenu(` → 7 (both exact). No inline CardsView DOM test existed to invert (Task 5 deviation).
+- [x] Commit: `refactor(banner): one hook pops every banner menu, and Edit lands in it`
 
 #### Task 9: Edit Image on the card menu
 
@@ -426,7 +426,7 @@ What this is not: rotation, filters, pixel editing; per-view image-fit or aspect
   - [x] Task 6 — the icon on the model · `15b8ef1c`
   - [x] Task 7 — ImagePicker · `7af7798f`
   - [x] Screenshot · `scratchpad/gate3-picker-rect.png`, `scratchpad/gate3-picker-circle.png` — the picker open from the design-system Showcase (headless Chrome, self-contained data-URL sample). Rect = viewport-is-frame (radius 12, Reset/Background glyphs, slider + readout, path echo, Cancel/Save present); circle = the 08-25 ruling (220 sharp circle in the 280 viewport + masked-surround blur + ring). Long footer text is the data-URL sample; real paths are short.
-  - [x] Gate 3 tidy (simplifier folds + comment-killer + picked-path gate fix) · `<gate3>`
+  - [x] Gate 3 tidy (simplifier + comment-killer + picked-path gate + re-pick Save-hold) · `1c6ab010`
 - [ ] **Phase 4** — the entry points
   - [ ] Task 8 — useBannerMenu · `<commit>`
   - [ ] Task 9 — Edit Image · `<commit>`

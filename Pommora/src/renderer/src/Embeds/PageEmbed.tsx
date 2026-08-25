@@ -9,6 +9,7 @@ import { flushPageSave, schedulePageSave } from '@renderer/Detail/pageFlush'
 import { fetchPageDetail, readPageDetail } from '@renderer/Tabs/warmCache'
 import { useAssetUrl, useEmbedScale, useSession } from '../store'
 import { AssetImage } from '@renderer/DesignSystem/Components/AssetImage/AssetImage'
+import { ImagePicker } from '@renderer/DesignSystem/Components/ImagePicker/ImagePicker'
 import { useBannerMenu } from '../Detail/Banner/useBannerMenu'
 import { NavTrail } from '@renderer/DesignSystem/Elements/NavTrail'
 import { text } from '@renderer/DesignSystem/Tokens'
@@ -182,12 +183,21 @@ function EmbedBanner({
   cover: string
   onChanged: () => void
 }): React.JSX.Element | null {
-  const { openMenu: bannerMenu } = useBannerMenu(path, 'page', onChanged)
+  const bannerRef = useRef<HTMLDivElement>(null)
+  const {
+    openMenu: bannerMenu,
+    editing,
+    closeEditor,
+    boxAspect,
+    onSave,
+    onRepick,
+  } = useBannerMenu(path, 'page', { value: cover, frame: bannerRef, onDone: onChanged })
   const coverSrc = useAssetUrl(cover)
   if (!coverSrc) return null
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control
     <div
+      ref={bannerRef}
       className="mdpm-banner"
       onContextMenu={(e) => {
         e.preventDefault()
@@ -198,6 +208,15 @@ function EmbedBanner({
       <div className="mdpm-banner-overlay">
         <span className="detail-title-text">{title}</span>
       </div>
+      <ImagePicker
+        open={editing}
+        value={cover ?? ''}
+        shape="rect"
+        boxAspect={boxAspect}
+        onCancel={closeEditor}
+        onSave={onSave}
+        onRepick={onRepick}
+      />
     </div>
   )
 }

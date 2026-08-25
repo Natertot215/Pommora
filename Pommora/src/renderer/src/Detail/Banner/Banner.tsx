@@ -4,6 +4,7 @@ import { DEFAULT_NEXUS_ICON, Icon, entityIcon } from '@renderer/DesignSystem/Sym
 import { IconPicker } from '@renderer/Settings/IconPicker'
 import { useAssetUrl, useSession } from '../../store'
 import { AssetImage } from '@renderer/DesignSystem/Components/AssetImage/AssetImage'
+import { ImagePicker } from '@renderer/DesignSystem/Components/ImagePicker/ImagePicker'
 import { isSurfaceKind, type BannerOwner } from '../Scope'
 import { DetailTitleHeader } from '../DetailTitleHeader'
 import { RenamableLabel, base } from '@renderer/DesignSystem/Components/Fields'
@@ -67,7 +68,9 @@ export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {
       </span>
     </RenamableLabel>
   )
-  const { openMenu, addOrChange } = useBannerMenu(owner.path, owner.kind)
+  const bannerRef = useRef<HTMLDivElement>(null)
+  const { openMenu, addOrChange, editing, closeEditor, boxAspect, onSave, onRepick } =
+    useBannerMenu(owner.path, owner.kind, { value: owner.banner, frame: bannerRef })
 
   const homeClass = owner.kind === 'homepage' ? ' is-homepage' : ''
   const surfaceClass = isSurfaceKind(owner.kind) ? ' is-surface' : ''
@@ -115,6 +118,7 @@ export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
     <div
+      ref={bannerRef}
       className={`banner${homeClass}${surfaceClass}`}
       onContextMenu={(e) => {
         e.preventDefault()
@@ -122,6 +126,15 @@ export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {
       }}
     >
       <AssetImage value={owner.banner} className="banner-img" />
+      <ImagePicker
+        open={editing}
+        value={owner.banner ?? ''}
+        shape="rect"
+        boxAspect={boxAspect}
+        onCancel={closeEditor}
+        onSave={onSave}
+        onRepick={onRepick}
+      />
       {owner.kind === 'homepage' ? (
         // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
         <span className="banner-title" onContextMenu={(e) => void openHomeTitleMenu(e)}>
