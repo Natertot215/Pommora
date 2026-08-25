@@ -18,9 +18,10 @@
 - [x] **One writer, one key, one live patch** — `updateCrops` is the sole writer of `crops.json`, `cropKeyFor` the sole key, the `crops-leaf` watcher the sole live update; each writer self-confirms through `patchCropsFromDisk`.
 - [x] **The byte pipeline is gone** — `nexus:imageData`, `writeNexusIcon`, `decodeImageDataUrl`, `NEXUS_ICON`, `pickedImagePaths`, `IMAGE_DATA_MAX` all zero; the nexus photo adopts a path like a banner.
 - [x] **Every stored image paints through `AssetImage`** — the ten hand-rolled `<img>` seats replaced, gated on a crop existing so an uncropped seat loads no aspect.
-- [x] **Gates green at every commit** — typecheck 0 · biome clean (947) · 3648 tests · app + showcase build.
+- [x] **Gates green at every commit** — typecheck 0 · biome clean (947) · 3659 tests · app + showcase build.
 - [x] **Full-range reviews clean** — the correctness pass and the attacker both found the same Save-hold deadlock (re-picking the already-set image); fixed with the hold releasing on the adopt resolving, plus a below-fill `panDelta` inversion, both with tests (`5881b220`). The verifier returned 8/8 acceptance clauses HOLD.
 - [x] **Eyeballed on Nathan's screen** — the two frame shapes, the corner glyphs, the footer's re-pick and paste, the Edit entry from all three menus.
+- [x] **Redesign + final review shipped** (`0dad74f8`) — the unified frame, typed-path adoption, trash-move on replace, Edit-above-Change menus, portal-click containment (click/context-menu/pointer-down), and card auto-open, closed by a six-agent pass (two simplify, two correctness + wiring, two break). Both reviewers' one finding — the re-pick Save-hold releasing before the seat's value landed — is fixed: `MutateReply` carries the adopted value and the hold waits for the seat to reach it, a dedup releasing at once. The shared-asset trash and the below-fill-color preview are recorded above as follow-ons.
 
 #### Next Session
 
