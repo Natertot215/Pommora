@@ -12,7 +12,7 @@ import {
 import { Icon, iconNameOr } from '@renderer/DesignSystem/Symbols'
 import { cellColor } from '@renderer/DesignSystem/Tokens/ramp'
 import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
-import { TINT_STEPS, tintAt } from '@renderer/DesignSystem/Tokens/tint'
+import { tintAt } from '@renderer/DesignSystem/Tokens/tint'
 import { ColorPicker } from '@renderer/DesignSystem/Components/Pickers/ColorPicker/ColorPicker'
 import { PickerMenu } from '@renderer/DesignSystem/Components/Pickers/PickerMenu'
 import {
@@ -85,7 +85,7 @@ const viewIcon = (v: SavedView): string => iconNameOr(v.icon, 'table')
 const strokeStyle = (v: SavedView): React.CSSProperties | undefined => {
   const key = labelColorFor(v.color)
   if (key === 'default') return undefined
-  const stroke = tintAt(cellColor(key), TINT_STEPS.primary)
+  const stroke = tintAt(cellColor(key), 'primary')
   return { '--segment-stroke': stroke } as React.CSSProperties
 }
 

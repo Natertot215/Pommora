@@ -1,6 +1,6 @@
 import { style } from '@vanilla-extract/css'
 import { vars as colorVars } from '@renderer/DesignSystem/Tokens/color.css'
-import { tintAt, TINT_STEPS } from '@renderer/DesignSystem/Tokens/tint'
+import { tintAt } from '@renderer/DesignSystem/Tokens/tint'
 
 const c = colorVars.color
 
@@ -39,7 +39,7 @@ export const tile = style({
   selectors: { '&&': { color: c.solid.grey } },
 })
 
-export const tileSelected = style({ borderColor: tintAt('var(--accent)', TINT_STEPS.primary) })
+export const tileSelected = style({ borderColor: tintAt('var(--accent)', 'primary') })
 
 /** The Scale footing row — composed WITH the menu `item` class so it sits on the exact MenuItem
  *  chassis (inset, gap, height) the Style row above it uses; this only widens it to the bar. */

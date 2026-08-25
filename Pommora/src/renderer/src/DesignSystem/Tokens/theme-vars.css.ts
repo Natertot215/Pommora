@@ -23,6 +23,8 @@ import { mixAt, tintAt, TINT_STEPS } from './tint'
 import { duration, easing } from '../Animation/motion'
 import { stack } from './stack'
 
+const CHECKBOX_BASE = 'var(--checkbox-base, var(--accent))'
+
 // Bridge: expose the (hashed) vanilla-extract tokens as stable-named CSS custom
 // properties.
 globalStyle(':root', {
@@ -31,12 +33,10 @@ globalStyle(':root', {
     '--system-grey': colorVars.color.system.grey,
     '--system-white': colorVars.color.system.white,
     '--system-black': colorVars.color.system.black,
-    // Tint scale — opacity steps applied to a base color (color-mix). Step values only.
-    '--tint-primary': `${TINT_STEPS.primary}%`,
-    '--tint-secondary': `${TINT_STEPS.secondary}%`,
-    '--tint-tertiary': `${TINT_STEPS.tertiary}%`,
-    '--tint-quaternary': `${TINT_STEPS.quaternary}%`,
-    '--tint-solid': `${TINT_STEPS.solid}%`,
+    // Tint scale — generated from the ladder, so retuning a step lands in one place.
+    ...Object.fromEntries(
+      Object.entries(TINT_STEPS).map(([step, pct]) => [`--tint-${step}`, `${pct}%`]),
+    ),
     '--label-primary': colorVars.color.label.primary,
     '--label-secondary': colorVars.color.label.secondary,
     '--label-tertiary': colorVars.color.label.tertiary,
@@ -109,11 +109,11 @@ globalStyle(':root', {
     // resize reads hotter than the hover that revealed it.
     '--accent-stroke-hot': 'color-mix(in srgb, var(--accent) var(--tint-primary), transparent)',
     '--accent-text': 'var(--accent)',
-    // The checkbox's three parts on the live accent. A chosen cell overrides these per element
-    // (personalization); clearing removes the override and the box follows the accent again.
-    '--checkbox-fill': tintAt('var(--accent)', TINT_STEPS.primary),
-    '--checkbox-border': tintAt('var(--accent)', TINT_STEPS.tertiary),
-    '--checkbox-mark': mixAt('var(--accent)', TINT_STEPS.quaternary, colorVars.color.label.primary),
+    // The checkbox's three parts off one base — the accent until a chosen cell overrides it per
+    // element (personalization). Its border sits a step softer: a glyph-sized box wants that.
+    '--checkbox-fill': tintAt(CHECKBOX_BASE, 'primary'),
+    '--checkbox-border': tintAt(CHECKBOX_BASE, 'tertiary'),
+    '--checkbox-mark': mixAt(CHECKBOX_BASE, 'quaternary', colorVars.color.label.primary),
     // The OS/system accent, always reflected (applySystemAccent overrides it at
     // runtime from the OS, independent of the Pommora --accent setting).
     '--system-accent': colorVars.color.solid[DEFAULT_ACCENT],
@@ -163,9 +163,7 @@ globalStyle(':root', {
     // (lucide chevron-right, a CSS mask because it paints on a line ::before — an <Icon> can't).
     '--grip-glyph': GRIP_GLYPH,
     '--fold-chevron-mask': FOLD_CHEVRON_MASK,
-    // Lucide's `link-2`, traced from the package's own geometry rather than redrawn. Worn as a
-    // mask so the glyph takes its color from whatever paints it — which is how it reports
-    // whether a connection's target resolves.
+    // Lucide's `link-2`, traced from the package's own geometry rather than redrawn.
     '--conn-link-mask': CONN_LINK_MASK,
     // The same chevron a stroke step lighter — the codeblock language chrome's bracket.
     '--code-chevron-mask': CODE_CHEVRON_MASK,

@@ -1,8 +1,7 @@
 import type { CSSProperties } from 'react'
-import { checkboxBox, labelColor } from '@renderer/DesignSystem/Labels'
+import { checkboxBox, labelColor, tinted } from '@renderer/DesignSystem/Labels'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { Icon } from '@renderer/DesignSystem/Symbols'
-import { tint } from '@renderer/DesignSystem/Tokens/tint'
 import { solidColorCss } from './solidColor'
 
 /** A checked box tints its color — a set solid, else the system accent, so it matches the switch
@@ -12,7 +11,11 @@ import { solidColorCss } from './solidColor'
  *  descender). */
 export function checkboxBoxStyle(checked: boolean, color: string | undefined): CSSProperties {
   const base: CSSProperties = { verticalAlign: 'middle', color: 'var(--label-control)' }
-  return checked ? { ...tint(color ? solidColorCss(color) : 'var(--accent)'), ...base } : base
+  if (!checked) return base
+  return {
+    ...base,
+    '--label-base': color ? solidColorCss(color) : 'var(--accent)',
+  } as CSSProperties
 }
 
 /** The checkbox box itself — the box chip, its checked tint, and the check glyph as one component,
@@ -28,7 +31,7 @@ export function CheckboxGlyph({
 }): React.JSX.Element {
   return (
     <span
-      className={cx(checkboxBox, checked ? undefined : labelColor.default, className)}
+      className={cx(checkboxBox, checked ? tinted : labelColor.default, className)}
       style={checkboxBoxStyle(checked, color)}
     >
       {checked ? <Icon name="check" size="control" strokeWidth={3} /> : null}
