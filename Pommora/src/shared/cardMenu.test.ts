@@ -39,6 +39,12 @@ describe('cardMenuModel', () => {
     expect(cardMenuModel({ addable: [] }).addProperty).toBeUndefined()
   })
 
+  it('leads with Edit Image only when the image is editable', () => {
+    expect(cardMenuModel({ addable: [] }).items.some((i) => i.action === 'image:edit')).toBe(false)
+    const m = cardMenuModel({ addable: [], editableImage: true })
+    expect(m.items[0]).toMatchObject({ label: 'Edit Image', action: 'image:edit' })
+  })
+
   it('opens the send block with Move To once the card is given destinations', () => {
     const m = cardMenuModel({
       addable: [],

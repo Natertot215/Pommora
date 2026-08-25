@@ -12,13 +12,15 @@ import {
 } from './pageMenu'
 import type { ActionItem } from './menuModel'
 
-export type CardMenuAction = PageMetaAction | `add:${string}` | PageMoveAction
+export type CardMenuAction = PageMetaAction | `add:${string}` | PageMoveAction | 'image:edit'
 
 export interface CardMenuContext extends PageMoveContext {
   /** Blank, addable properties — already ordered by the renderer (pane-kinds first). */
   addable: Array<{ id: string; name: string }>
   /** An open page reads "Open" (focus its tab) rather than "Open New Tab". */
   alreadyOpen?: boolean
+  /** Cover mode with a cover set — the card's own Edit Image, framing the cover in the picker. */
+  editableImage?: boolean
 }
 
 export interface CardMenuModel {
@@ -29,12 +31,13 @@ export interface CardMenuModel {
 
 /** The pure per-card item model — main maps it to Electron MenuItems. */
 export function cardMenuModel(ctx: CardMenuContext): CardMenuModel {
+  const meta = pageMetaMenuItems(ctx.alreadyOpen, {
+    newPages: 'single',
+    move: offersMove(ctx),
+    clipboard: true,
+  })
   return {
-    items: pageMetaMenuItems(ctx.alreadyOpen, {
-      newPages: 'single',
-      move: offersMove(ctx),
-      clipboard: true,
-    }),
+    items: ctx.editableImage ? [{ label: 'Edit Image', action: 'image:edit' }, ...meta] : meta,
     addProperty:
       ctx.addable.length > 0
         ? ctx.addable.map((d) => ({ label: d.name, action: `add:${d.id}` as const }))
