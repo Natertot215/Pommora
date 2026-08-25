@@ -1834,6 +1834,7 @@ serveBridge(
             ? [{ label: `Add ${noun}`, click: pick('change') }]
             : [
                 { label: `Change ${noun}`, click: pick('change') },
+                { label: `Edit ${noun}`, click: pick('edit') },
                 ...(opts?.noRemove ? [] : [{ label: `Remove ${noun}`, click: pick('remove') }]),
               ],
         )

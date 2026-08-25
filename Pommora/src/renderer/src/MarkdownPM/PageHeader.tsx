@@ -1,6 +1,7 @@
-import { forwardRef } from 'react'
+import { forwardRef, useRef } from 'react'
 import { useAssetUrl, useSession } from '../store'
 import { AssetImage } from '@renderer/DesignSystem/Components/AssetImage/AssetImage'
+import { ImagePicker } from '@renderer/DesignSystem/Components/ImagePicker/ImagePicker'
 import { useBannerMenu } from '../Detail/Banner/useBannerMenu'
 import { AddBannerButton } from '../Detail/Banner/AddBannerButton'
 import { DetailTitleHeader } from '../Detail/DetailTitleHeader'
@@ -39,7 +40,20 @@ export const PageHeader = forwardRef<HTMLDivElement, Props>(function PageHeader(
   const { path, title, cover, icon, iconHidden } = page
   const coverSrc = useAssetUrl(cover)
   const reloadPage = useSession((s) => s.reloadPage)
-  const { openMenu: bannerMenu, addOrChange } = useBannerMenu(path, 'page', () => void reloadPage())
+  const bannerRef = useRef<HTMLDivElement>(null)
+  const {
+    openMenu: bannerMenu,
+    addOrChange,
+    editing,
+    closeEditor,
+    boxAspect,
+    onSave,
+    onRepick,
+  } = useBannerMenu(path, 'page', {
+    value: cover,
+    frame: bannerRef,
+    onDone: () => void reloadPage(),
+  })
 
   const titleHeader = (
     <DetailTitleHeader
@@ -58,6 +72,7 @@ export const PageHeader = forwardRef<HTMLDivElement, Props>(function PageHeader(
       {coverSrc ? (
         // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
         <div
+          ref={bannerRef}
           className="mdpm-banner"
           onContextMenu={(e) => {
             e.preventDefault()
@@ -66,6 +81,15 @@ export const PageHeader = forwardRef<HTMLDivElement, Props>(function PageHeader(
         >
           <AssetImage value={cover} className="mdpm-banner-img" />
           <div className="mdpm-banner-overlay">{titleHeader}</div>
+          <ImagePicker
+            open={editing}
+            value={cover ?? ''}
+            shape="rect"
+            boxAspect={boxAspect}
+            onCancel={closeEditor}
+            onSave={onSave}
+            onRepick={onRepick}
+          />
         </div>
       ) : (
         <>

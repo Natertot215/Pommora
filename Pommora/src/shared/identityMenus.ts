@@ -6,6 +6,6 @@ export type NexusIconAction = 'changeIcon' | 'addPhoto' | 'editPhoto' | 'removeP
 
 export type TitleMenuAction = 'rename' | 'editIcon' | 'toggleIcon' | 'changeColor'
 
-export type BannerMenuAction = 'change' | 'remove'
+export type BannerMenuAction = 'change' | 'edit' | 'remove'
 
 export type IconFavoriteMenuAction = 'toggle'
