@@ -195,8 +195,8 @@ What this is not: rotation, filters, pixel editing; per-view image-fit or aspect
 **Must agree:** `cropKeyFor(await assetFilePath(root, v), v)` equals `cropKeyFor(resolveAssetValue(v, map).rel, v)` for `[[Name.png]]` under one `liveAssetMap`.
 
 **Steps:**
-- [ ] Failing tests: set → the key at the resolved path with the clamped zoom; an ambiguous name → refused; null → key gone, foreign key kept; the negative-control pair; the Must-agree comparison; a URL value keys raw; the migration re-keys a moved file.
-- [ ] Implement; gates green. Commit: `feat(nexus): one writer for crops.json — Save, a replaced image, and the migration`
+- [x] Failing tests: set → the key at the resolved path with the clamped zoom; an ambiguous name → refused; null → key gone, foreign key kept; the negative-control pair (proven red without the guard); the Must-agree comparison (main-side; renderer-side in Task 4); a URL value keys raw; the migration re-keys a moved file.
+- [x] Implement; gates green. Commit: `feat(nexus): one writer for crops.json — Save, a replaced image, and the migration`
 
 #### Gate 1
 - [ ] Simplification then verification against `<base>..HEAD` scoped to `shared/cropGeometry*`, `shared/schemas*`, `shared/nexusPaths.ts`, `shared/mutate.ts`, `shared/types.ts`, `main/readNexus.ts`, `main/watchPatch.ts`, `main/mutate.ts`, `main/mutatePatch.ts`, `main/settings.ts`, `main/assetMigrate.ts`, `main/paths.ts`.
@@ -434,6 +434,7 @@ What this is not: rotation, filters, pixel editing; per-view image-fit or aspect
 - **Task 1 — `.finite()` dropped.** The plan's `z.number().finite()` becomes `z.number()`: zod 4.4.3 rejects `NaN`/`Infinity` from `z.number()` natively (Build-Gotchas), so `.finite()` is redundant and its API is gone in zod 4.
 - **Task 1 — `WEB_ADDRESS` is the current `SCHEMED`.** The web-address regex the plan names `WEB_ADDRESS` lives today as `SCHEMED = /^[a-z][a-z0-9+.-]*:/i` in `assetUrl.ts:20` (2 uses). It moves to `shared/nexusPaths.ts` as `WEB_ADDRESS`; `assetUrl.ts` imports it. `cropKeyFor`'s web test is the same regex `resolveAssetValue`'s external branch uses — not a second, narrower one.
 - **Task 7 — pan `boxW` reads the frame, not the viewport (08-25 ruling consequence).** Under the split, the circle's frame is the 220 box while the viewport is 280; `panDelta`'s `boxW` must be the frame `coverStyle` paints or the circle's overhang is wrong by 280/220. Plan text corrected at ratification.
+- **Task 3 — the must-agree is split across two test files.** A single test importing both main's `assetFilePath` and the renderer's `resolveAssetValue` can't typecheck — `@renderer` isn't on the main tsconfig's paths (the process boundary). The main-side half (`assetFilePath` → `cropKeyFor` → the rel) lives in `mutate.test.ts`; the renderer-side half (`resolveAssetValue` → `cropKeyFor` → the same rel) lands in Task 4's `AssetImage.test.tsx`. Both feed the one `cropKeyFor`, so the agreement holds.
 ### Lessons
 ### Sequenced After
 - Sapphire reading `.nexus/crops.json` as its crop source.

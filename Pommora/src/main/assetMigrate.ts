@@ -27,7 +27,8 @@ import { AMBIGUOUS, buildAssetMap, refreshAssetMap, resolveAssetName } from './a
 import { writeAssetFile } from './assetWrite'
 import { corpusFiles, listEntries, listFilesRecursive } from './io/walk'
 import { NEXUS_CONFIG_FILES, SIDECARS, assetsDir, nexusConfig, relPosix } from './paths'
-import { readWatchScope, updateSettings } from './settings'
+import { readWatchScope, updateCrops, updateSettings } from './settings'
+import { assetFilePath } from './assetRoots'
 import { basenameNoMd } from './coerce'
 
 export interface AssetMigration {
@@ -210,6 +211,24 @@ export async function migrateAssets(root: string): Promise<AssetMigration | null
     result.trashed = await sweepLegacyRoot(root)
   }
   await refreshAssetMap(root)
+
+  // A crop keys by the image's path, so a moved file's framing follows it to the new root.
+  const rekeys: [string, string][] = []
+  for (const { from, to } of result.moved) {
+    const toRel = await assetFilePath(root, to)
+    if (toRel) rekeys.push([from, toRel])
+  }
+  if (rekeys.length) {
+    await updateCrops(root, (b) => {
+      const next = { ...b }
+      for (const [fromRel, toRel] of rekeys) {
+        if (next[fromRel] === undefined) continue
+        next[toRel] = next[fromRel]
+        delete next[fromRel]
+      }
+      return next
+    })
+  }
   return result
 }
 

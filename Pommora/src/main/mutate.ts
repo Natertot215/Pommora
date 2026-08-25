@@ -66,7 +66,7 @@ import { splitEnvelope, mergeFrontmatter, readFrontmatterFields } from './io/pag
 import { basenameNoMd } from './coerce'
 import { nexusConfig, relPosix, sidecarPath, NEXUS_CONFIG_FILES } from './paths'
 import { resolveFolderKind } from './folderKind'
-import { readWatchScope, updateSettings } from './settings'
+import { readWatchScope, updateCrops, updateSettings } from './settings'
 import { newId } from './ids'
 import { mintDefaultView, VIEW_ID_PREFIX } from '@shared/views'
 import { ok, fail, errText, type Result } from '@shared/result'
@@ -77,7 +77,8 @@ import { NO_NEXUS } from './ipc'
 import type { TrashMode } from './appConfig'
 import { readRegistry } from './io/propertiesRegistry'
 import { deindexPath, indexWrittenPage, moveIndexPaths, seedContentIndex } from './indexSeed'
-import { NON_CORPUS_TOP, TRASH_DIR, assetSubRoot } from '@shared/nexusPaths'
+import { NON_CORPUS_TOP, TRASH_DIR, assetSubRoot, cropKeyFor } from '@shared/nexusPaths'
+import { clampZoom } from '@shared/cropGeometry'
 import { connectionText, embeddableTitle } from '@shared/connections'
 import { ASSET_MIME } from '@shared/assetMime'
 import { neverWatched } from './exclusion'
@@ -118,6 +119,7 @@ async function dropReplacedAsset(
 ): Promise<void> {
   if (!prev || prev === (await assetFileToDelete(root, next))) return
   await rm(join(root, prev), { force: true }).catch(() => {})
+  await updateCrops(root, (b) => setOrDrop(b, prev, null))
 }
 
 /** Adopt the file behind an absolute path and answer the `[[Name.ext]]` that names it. A file
@@ -480,6 +482,15 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       // Glyph identity fallback → `settings.profile_icon` (read-merge-write, other keys preserved);
       // null clears it. No asset write — it's a symbol name, not an image.
       await updateSettings(root, (cur) => setOrDrop(cur, 'profile_icon', req.icon))
+      return ok({})
+    }
+
+    case 'setCrop': {
+      const key = cropKeyFor(await assetFilePath(root, req.image), req.image)
+      if (!key) return fault('That image can’t be framed.')
+      await updateCrops(root, (b) =>
+        setOrDrop(b, key, req.crop && { ...req.crop, zoom: clampZoom(req.crop.zoom) }),
+      )
       return ok({})
     }
 

@@ -139,6 +139,22 @@ describe('migrateAssets', () => {
     expect(after).toContain('(Areas):')
   })
 
+  it('re-keys a moved file’s crop to its new path', async () => {
+    await asset('a/Photo.png', 'photo-bytes')
+    await writeFile(
+      join(root, 'Notes', '_pagecollection.json'),
+      JSON.stringify({ id: 'pt', banner: '.nexus/assets/a/Photo.png' }),
+    )
+    await writeFile(
+      join(root, '.nexus', 'crops.json'),
+      JSON.stringify({ byImage: { '.nexus/assets/a/Photo.png': { x: 0.3, y: 0.4, zoom: 2 } } }),
+    )
+    await migrateAssets(root)
+    expect(JSON.parse(await read('.nexus/crops.json')).byImage).toEqual({
+      'file-assets/Photo.png': { x: 0.3, y: 0.4, zoom: 2 },
+    })
+  })
+
   // A value the migration writes that the resolver cannot read is a silent blanking of every
   // banner at once, so the two mechanisms are crossed rather than each tested alone.
   it('every rewritten value resolves against the map main now holds', async () => {
