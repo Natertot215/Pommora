@@ -49,6 +49,13 @@ export const thumbsRel = (nexusId: string): string =>
   `${ASSETS_DIR_REL}/${nexusId}/${THUMBNAILS_SEGMENT}`
 export const thumbRel = (nexusId: string, key: string): string => `${thumbsRel(nexusId)}/${key}.jpg`
 
+export const WEB_ADDRESS = /^[a-z][a-z0-9+.-]*:/i
+
+// One spelling: main keys crops from `assetFilePath`, the renderer from `resolveAssetValue`.
+export function cropKeyFor(rel: string | null, raw: string): string | null {
+  return rel ?? (WEB_ADDRESS.test(raw.trim()) ? raw.trim() : null)
+}
+
 /** A Context's own folder — its title names it, which is why a retitle is a folder rename. */
 export const contextDirRel = (title: string): string => `${CONTEXTS_DIR_REL}/${title}`
 
