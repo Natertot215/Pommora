@@ -47,7 +47,7 @@ Two kinds of pointer work live here. **Drags** move something from one place to 
 **Displacement** is one of the system's two permanent drop treatments: neighbors reflow to open the gap the item will land in. Two engines sit behind the seam for it, sharing types and the measure-once / decide-then-animate model:
 
 - **Single-zone** (`engine.tsx`) — list, grid, table, and each tree level. The dragged item moves in place, its transform following the pointer, and neighbors shift to open the gap. Used where the surface isn't clipped.
-- **Cross-list** (`group.tsx`) — the board. A `DragGroup` owns the one active drag across its zones. The lifted card is hidden in its source column and rendered as a fixed portal overlay under the cursor, escaping any column clipping; every column shifts its items by one slot-pitch to show where the card would land. The move commits once, and columns are never mutated mid-drag.
+- **Cross-list** (`group.tsx`) — the board. A `DragGroup` owns the one active drag across its zones. The lifted card is hidden in its source column and rendered as a fixed portal overlay under the cursor, escaping any column clipping; every column shifts its items by one slot-pitch to show where the card would land.
 
 ### Insertion Line
 

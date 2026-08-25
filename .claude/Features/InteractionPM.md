@@ -27,7 +27,7 @@ The named motions and the interaction primitives, built on the ladder and curves
 
 ### Motion Tokens
 
-Every permanent transition reads `DesignSystem/Animation/motion.ts` — `duration.fast/dropdown/base/slow` and `easing.baseEase/baseSnap`, bridged as `--duration-*` / `--ease-base` / `--ease-snap` — and the values sit in [[DesignSystemPM]] §Animation. The Bloom curve (`animations.css.ts`) is the one special-cased named curve outside the token set: the open and close curve both dropdown motions share.
+Every permanent transition reads `DesignSystem/Animation/motion.ts` — `duration.fast/dropdown/base/slow` and `easing.baseEase/baseSnap`, bridged as `--duration-*` / `--ease-base` / `--ease-snap`. The Bloom curve (`animations.css.ts`) is the one special-cased named curve outside the token set: the open and close curve both dropdown motions share.
 
 ### Named Animations
 
@@ -47,7 +47,7 @@ A surface riding either token stays mounted through its exit and drives an `open
 - **Two shells, one beak between them.** `MenuSurface` — the large toolbar dropdown, hanging off a named button — wears the beak, which points back at the button that opened it. A beak is not a shape a border can trace, so that shell alone draws its outline by hand: one curve cutting the frost and the same curve stroked as an SVG line. Every other pane is a plain rounded rect and mounts the pane material directly, keeping the material's own border, lighting and shadow. The rectangle is what makes a menu read as the OS's rather than as a bubble.
 - **The Bloom starts where the beak would have been.** A beaked pane takes its origin from the tip; a rectangular one takes the same figure from its placement pass — the point on the anchored edge nearest the trigger, held clear of the corner arc. Neither pane blooms from its own middle.
 - **The rows are the consumer's, not the shell's.** A fixed option set and a set of user-authored values take the same row, and how it states the chosen one is the nexus's `pickerSelection` setting — the row's own fill, or a trailing mark with the fill standing down. Where a pane holds a mark at all, the slot is laid out on every row inside it, so the pane can't resize as the selection moves. The icon grid, swatch grid, calendar and hover card were never rows at all and bring their own content.
-- **The wikilink autocomplete rides the same shell as everything else**, anchored to the caret rather than an element — which is a line, not a point, so the anchor carries a height and a pane flipping above it clears the line rather than landing back over it. It centers on the caret and slides within the editor's own surface, not the viewport: a pane stopping at the window edge has already crossed whatever pane sits beside its own. It takes no backdrop and no focus, since the editor's keymap owns arrows, Return and Escape.
+- **The wikilink autocomplete rides the same shell as everything else**, anchored to the caret rather than an element. It centers on the caret and slides within the editor's own surface, not the viewport: a pane stopping at the window edge has already crossed whatever pane sits beside its own. It takes no backdrop and no focus, since the editor's keymap owns arrows, Return and Escape.
 
 #### Header Scroll-Park
 

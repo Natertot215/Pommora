@@ -18,7 +18,7 @@ The operational layer's schema-bearing tier. A Page Collection is a folder at th
 | **Page Set**        | Organizing sub-folder at any depth; inherits the schema, adds none | Folder + `_pageset.json`[^1]                      |
 | **Content**         | Pages only (`.md`)                                                 | Files at any level                                |
 
-Property definitions live in the nexus-wide registry (`.nexus/properties.json`); the assignment lives on the Collection, and Sets inherit it whole. Nesting is unbounded. Each Collection carries its own saved views — the view model, pipeline, and renderers live in [[ViewsPM]]; the page document in [[PagesPM]].
+Property definitions live in the nexus-wide registry (`.nexus/properties.json`); the assignment lives on the Collection, and Sets inherit it whole. Each Collection carries its own saved views — the view model, pipeline, and renderers live in [[ViewsPM]]; the page document in [[PagesPM]].
 
 ### Sidecar + Schema
 
@@ -55,7 +55,7 @@ Collections live as siblings at the Nexus root — there's no `Pages/` wrapper. 
 
 ### CRUD
 
-One generic folder-entity CRUD. Create writes the folder plus its sidecar; a name already taken disambiguates on a numeric suffix so a new entity always appears, while a rename onto a taken name fails outright, and both reject a name the walk could never surface again. Delete moves the folder, and everything under it, to the configured delete target.[^3] Top-level Collections persist their order in `.nexus/state.json`; a Collection holds its children's order in its own sidecar.
+One generic folder-entity CRUD. Create writes the folder plus its sidecar; a name already taken disambiguates on a numeric suffix so a new entity always appears, while a rename onto a taken name fails outright, and both reject a name the walk could never surface again. Delete moves the folder, and everything under it, to the configured delete target.[^3] Top-level Collections persist their order in `.nexus/state.json`.
 
 [^1]: [[PageSetsPM]]
 [^2]: [[PropertiesPM]] §Schema Mutations

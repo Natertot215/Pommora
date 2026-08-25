@@ -15,7 +15,7 @@ Navigation
 
 How you get from where you are to where you want to be — a **toolbar tab bar** holding the open working set, each tab with its own history and a footer breadcrumb for local moves, over a shared **Navigation layer** for the cross-tree jumps (recent, pinned, searched, favorited) the sidebar tree alone can't serve.
 
-The main pane shows the **active tab's** entity; selecting one anywhere drives that tab, replacing its content on an unpinned tab and spawning a new one off a pinned tab. A per-tab history records each selection, and the footer breadcrumb shows the active tab's location.
+The main pane shows the **active tab's** entity; selecting one anywhere drives that tab, replacing its content on an unpinned tab and spawning a new one off a pinned tab.
 
 ### The Navigation Layer
 
@@ -51,7 +51,7 @@ The most recently visited page tabs go further: their surface is **parked** rath
 
 ### Back and Forward
 
-Back and Forward walk per-tab history — each tab owns its own stack, and the toolbar arrows step the active tab, skipping deleted entities along the way. A history step re-selects without re-recording. History belongs to the unpinned strip — a pinned tab's content never changes in place, so it holds none and the arrows disable there. A tab's history targets persist with the set, so Back still works cold after relaunch; the warm state is session-only.
+Back and Forward walk per-tab history — each tab owns its own stack, and the toolbar arrows step the active tab, skipping deleted entities along the way. A history step re-selects without re-recording. History belongs to the unpinned strip — a pinned tab's content never changes in place, so it holds none and the arrows disable there. A tab's history targets persist with the set, so Back still works cold after relaunch.
 
 ### NavView
 

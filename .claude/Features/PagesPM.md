@@ -24,13 +24,13 @@ Frontmatter carries `PageID` — the key naming the kind, holding a bare ULID �
 
 ### Title + Membership
 
-The filename minus `.md` is the title — there's no `title` field, and a rename is a file rename. The page's own header carries its `icon` beside that title, hidden unless the page is opted into showing it: whether the header draws the glyph is chrome rather than content, so it keys by `PageID` in the per-machine store while the glyph itself stays in frontmatter. Within a folder, names must be unique: a colliding create auto-disambiguates with a numeric suffix, and a colliding rename is rejected — except a just-created page's first naming, which counts as part of the creation and disambiguates the same way. Titles aren't unique Nexus-wide — two Pages in different folders can share one, and a `[[Title]]` to a shared title resolves as ambiguous connections. Membership is purely positional: moving the file between Collections or Sets changes its membership, with no additional field to update.
+The filename minus `.md` is the title — there's no `title` field, and a rename is a file rename. The page's own header carries its `icon` beside that title, hidden unless the page is opted into showing it: whether the header draws the glyph is chrome rather than content, so it keys by `PageID` in the per-machine store while the glyph itself stays in frontmatter. Within a folder, names must be unique: a colliding create auto-disambiguates with a numeric suffix, and a colliding rename is rejected — except a just-created page's first naming, which counts as part of the creation and disambiguates the same way. Titles aren't unique Nexus-wide — two Pages in different folders can share one, and a `[[Title]]` to a shared title resolves as ambiguous connections.
 
 Every creation surface runs one act: the page exists on disk as Untitled the moment the gesture fires, and its title opens as an uncommitted rename whose field is empty. Confirming names the page; leaving any other way — a click elsewhere, Esc, a view switch — keeps Untitled.
 
 ### Opening Behavior
 
-Clicking a Page opens it in the active tab, replacing that tab's selection, and the editor auto-saves on a debounce. A Collection can route its Pages to the floating Page Preview window instead via `open_in`; ⌘-click always bypasses to a full page in a new tab.
+Clicking a Page opens it in the active tab, replacing that tab's selection, and the editor auto-saves on a debounce. A Collection can route its Pages to the floating Page Preview window[^1] instead via `open_in`; ⌘-click always bypasses to a full page in a new tab.
 
 ### Outline
 
