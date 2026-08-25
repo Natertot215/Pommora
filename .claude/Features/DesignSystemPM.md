@@ -198,16 +198,16 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 
 `Materials/` — two glass engines behind one barrel. **Frost** is a CSS `backdrop-filter` recipe parameterized by `FrostParams`; **Liquid** is a real edge-refraction shader (`@samasante/liquid-glass`) worn by the in-use controls.
 
-| Title         | Export                              | What it is                                                              |
-| ------------- | ----------------------------------- | ----------------------------------------------------------------------- |
-| GlassSurface  | `GlassSurface` · `frostMaterial`    | The app's fixed chrome tier — sidebar, inspector, side rail.            |
-| Surface       | `Surface`                           | GlassSurface as the floating overlay over the main view.                |
-| GlassPane     | `GlassPane` · `PANE_FROST`          | Anything floating over it — menus, pickers, the autocomplete.           |
-| GlassWindow   | `GlassWindow` · `WINDOW_FROST`      | The pane tier carrying a body — preview, nav, settings, the crop modal. |
-| Ghost         | `GHOST_FROST`                       | The edge-free frost the drag chip wears.                                |
-| Frost engine  | `frostStyle` · `SOLID_FILL` · `OUTLINE_INSET` | The recipe itself, the window fill share, and the acted-on edge inset. |
-| GlassControls | `GlassControls` · `CONTROL_OPTICS`  | Liquid glass on the button controls.                                    |
-| GlassSegment  | `GlassSegment`                      | Liquid glass on the small on-control segments.                          |
+| Title         | Export                                        | What it is                                                              |
+| ------------- | --------------------------------------------- | ----------------------------------------------------------------------- |
+| GlassSurface  | `GlassSurface` · `frostMaterial`              | The app's fixed chrome tier — sidebar, inspector, side rail.            |
+| Surface       | `Surface`                                     | GlassSurface as the floating overlay over the main view.                |
+| GlassPane     | `GlassPane` · `PANE_FROST`                    | Anything floating over it — menus, pickers, the autocomplete.           |
+| GlassWindow   | `GlassWindow` · `WINDOW_FROST`                | The pane tier carrying a body — preview, nav, settings, the crop modal. |
+| Ghost         | `GHOST_FROST`                                 | The edge-free frost the drag chip wears.                                |
+| Frost engine  | `frostStyle` · `SOLID_FILL` · `OUTLINE_INSET` | The recipe itself, the window fill share, and the acted-on edge inset.  |
+| GlassControls | `GlassControls` · `CONTROL_OPTICS`            | Liquid glass on the button controls.                                    |
+| GlassSegment  | `GlassSegment`                                | Liquid glass on the small on-control segments.                          |
 
 | Visual | PANE_FROST | WINDOW_FROST         | GHOST_FROST |
 | ---------------- | ---------- | -------------------- | ----------- |
@@ -256,14 +256,14 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 
 `Controls/` — the atomic interactive pieces. `Button` is the recipe; the rest are the single-purpose controls beside it.
 
-| Title       | Export                                | What it is                                                     |
-| ----------- | ------------------------------------- | -------------------------------------------------------------- |
-| Button      | `Button`                              | `type` × `size` × content (icon · icon + label · label), with `outline` as an inset ring and the `revealOnHover` / `ghostRest` modifiers; hover on every button, and `pressed` — the selected wash, held under hover — only for a toggle that is on or a trigger whose menu is open. |
-| Segmented   | `Segmented`                           | N Buttons of one type divided by `segment`; `glass` for the toolbar. |
-| Checkbox    | `Checkbox`                            | The box, on the accent or a chosen cell.                       |
-| DualSwitch  | `DualSwitch`                          | A boolean toggle with a sliding glass segment.                 |
-| ColorSwatch | `ColorSwatch`                         | The switch shape holding a color, anchoring a ColorPicker.     |
-| Slider      | `Slider`                              | Sliding number selection.                                      |
+| Title       | Export        | What it is                                                                                                                                                                                                      |
+| ----------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Button      | `Button`      | `type` × `size` × content (icon · icon + label · label), with `outline` as an inset ring and the `revealOnHover` / `ghostRest` modifiers; hover on every button, and `pressed` for a toggle whose menu is open. |
+| Segmented   | `Segmented`   | N Buttons of one type divided by `segment`; `glass` for the toolbar.                                                                                                                                            |
+| Checkbox    | `Checkbox`    | The box, on the accent or a chosen cell.                                                                                                                                                                        |
+| DualSwitch  | `DualSwitch`  | A boolean toggle with a sliding glass segment.                                                                                                                                                                  |
+| ColorSwatch | `ColorSwatch` | The switch shape holding a color, anchoring a ColorPicker.                                                                                                                                                      |
+| Slider      | `Slider`      | Sliding number selection.                                                                                                                                                                                       |
 
 **Button Types** — one `--button-fill` / `--button-ink` / `--button-outline` triple per row; the hover is `state.hover` laid over the fill.
 
@@ -311,16 +311,16 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 
 `Fields/` — the input surfaces and the runs that sit inside them; `SegmentRun.tsx` lives here because a run of values is a field's content, not a label's.
 
-| Title | Export | What it is |
-| ----------- | -------------------------------------------- | ---------------------------------------------- |
-| InputField | `InputField` · `FieldEdit` | The field box — `boxed` or `bordered` chrome; `capped` scrolls its content under the fade; `edit` swaps a RenamableLabel caret in under a click, the field's rest width held; a host may drive `editing`, `renames` seats the caret and `emptyCommits` makes a cleared value a commit; `leading` seats a glyph before the content, `trailing` an action after it. A folder path is a NavTrail inside one. |
-| SegmentRun | `SegmentRun` · `SegmentEntry` · `SEGMENT_INDEX_ATTR` | Values standing side by side inside a field, hairline-divided; each entry a FileLabel, stamped with its index for hit-testing. |
-| Chrome | `field` · `input` · `borderedField` · `editable` · `draftInput` · `leading` · `trailing` · `base` · `search` | Boxed, raw caret, cell-tight, press-to-edit, the draft caret, the two slots, chromeless, and the search look. |
-| Ring | `fieldRing()` · `focusRing()` · `errorRing()` · `ROW_RING` | One inset-shadow channel; presets set only its color. |
-| Placeholder | `placeholder` | The ghost-text tone. |
-| SearchField | `SearchField` · `SEARCH_PLACEHOLDER` | The controlled filter input the list surfaces share. |
-| EditableInput | `EditableInput` | Enter commits, Escape abandons, blur settles. |
-| RenamableLabel | `RenamableLabel` | The inline-rename swap. |
+| Title          | Export                                                                                                       | What it is                                                                                                    |
+| -------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| InputField     | `InputField` · `FieldEdit`                                                                                   | The field box — `boxed` or `bordered` chrome.                                                                 |
+| SegmentRun     | `SegmentRun` · `SegmentEntry` · `SEGMENT_INDEX_ATTR`                                                         | Values standing side by side inside a field; segment-divided.                                                 |
+| Chrome         | `field` · `input` · `borderedField` · `editable` · `draftInput` · `leading` · `trailing` · `base` · `search` | Boxed, raw caret, cell-tight, press-to-edit, the draft caret, the two slots, chromeless, and the search look. |
+| Ring           | `fieldRing()` · `focusRing()` · `errorRing()` · `ROW_RING`                                                   | One inset-shadow channel; presets set  it’s color.                                                            |
+| Placeholder    | `placeholder`                                                                                                | The ghost-text tone.                                                                                          |
+| SearchField    | `SearchField` · `SEARCH_PLACEHOLDER`                                                                         | The controlled filter input the list surfaces share.                                                          |
+| EditableInput  | `EditableInput`                                                                                              | Enter commits, Escape abandons, blur settles.                                                                 |
+| RenamableLabel | `RenamableLabel`                                                                                             | The inline-rename swap.                                                                                       |
 
 ### Detail
 
