@@ -45,8 +45,7 @@ export const field = style([
 /** The bordered cell variant — a left-aligned, tighter-padded field that holds its own width in a
  *  flex run and eclipses its overflow rather than growing. Seeds the resting stroke through the house
  *  ring CHANNEL, not a hand-rolled shadow: `field` already paints `inset 0 0 0 1px var(--field-ring)`,
- *  so a variant only sets the color. Overriding boxShadow instead would also stomp the channel for any
- *  ancestor that sets it. Width and cursor stay with the consumer — they are what actually differ. */
+ *  so a variant only sets the color.*/
 export const borderedField = style([
   field,
   {
@@ -106,7 +105,12 @@ export const trailing = style({ marginLeft: TRAIL_GAP, flexShrink: 0 })
 
 /** A press-to-edit field — a caret cursor at rest, the ring on focus, and room to give way so the
  *  content's own fade eclipses the head rather than the field pushing its row wider. */
-export const editable = style({ cursor: 'text', flex: '0 1 auto', ...focusRing('within') })
+export const editable = style({
+  width: 'auto',
+  flex: '0 1 auto',
+  cursor: 'text',
+  ...focusRing('within'),
+})
 
 // § BASE
 
