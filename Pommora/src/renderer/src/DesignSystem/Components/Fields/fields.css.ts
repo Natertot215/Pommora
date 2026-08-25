@@ -107,7 +107,12 @@ export const leading = style({ ...slot, marginRight: LEAD_GAP, color: c.label.se
 
 /** An action pinned to the field's trailing edge, never closer than the gap to the content — so a
  *  content-sized field still separates the two, and a wide field doesn't strand it mid-way. */
-export const trailing = style({ ...slot, marginLeft: 'auto', paddingLeft: TRAIL_GAP })
+export const trailing = style({
+  ...slot,
+  marginLeft: 'auto',
+  paddingLeft: TRAIL_GAP,
+  color: c.label.tertiary,
+})
 
 /** A press-to-edit field — a caret cursor at rest, the ring on focus, and room to give way so the
  *  content's own fade eclipses the head rather than the field pushing its row wider. */

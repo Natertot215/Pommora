@@ -33,6 +33,7 @@ export function FieldsLeaf(): React.JSX.Element {
               size="button-inline"
               icon="folder-open"
               aria-label="Choose Folder"
+              onClick={(e) => e.stopPropagation()}
             />
           }
         >

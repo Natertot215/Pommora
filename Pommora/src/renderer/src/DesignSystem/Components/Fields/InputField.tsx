@@ -9,6 +9,10 @@ export interface FieldEdit {
   onCommit: (next: string) => void
 }
 
+/** The inert stand-in for a field that isn't press-to-edit — `useDraftEdit` is a hook, so it runs
+ *  either way and this is what it runs on. */
+const NO_EDIT: FieldEdit = { value: '', onCommit: () => {} }
+
 export function InputField({
   children,
   className,
@@ -35,11 +39,13 @@ export function InputField({
   trailing?: ReactNode
   label?: string
 }): React.JSX.Element {
-  const draftEdit = useDraftEdit(edit ?? { value: '', onCommit: () => {} })
+  const draftEdit = useDraftEdit(edit ?? NO_EDIT)
   const editing = edit !== undefined && draftEdit.draft !== null
-  const activate = edit
-    ? (el: HTMLElement) => draftEdit.draft === null && draftEdit.openEdit(el)
-    : onClick && (() => onClick())
+  const activate: ((el: HTMLElement) => void) | undefined = edit
+    ? (el) => {
+        if (draftEdit.draft === null) draftEdit.openEdit(el)
+      }
+    : onClick
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: the button role is applied conditionally on the click handler, which a static parse cannot see
     <div
