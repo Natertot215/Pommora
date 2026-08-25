@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { Crop } from '@shared/schemas'
 import { clampZoom, DEFAULT_CROP, MAX_ZOOM, MIN_ZOOM, panDelta } from '@shared/cropGeometry'
@@ -45,8 +45,9 @@ export function ImagePicker({
   boxAspect: number
   onCancel: () => void
   onSave: (crop: Crop) => void | Promise<void>
-  /** Re-pick or paste a new image from inside the editor — the seat adopts the abs path. */
-  onRepick?: (source: string) => void | Promise<void>
+  /** Re-pick or paste a new image from inside the editor — the seat adopts the abs path and
+   *  answers whether it landed (so the picker can hold Save until the new `value` arrives). */
+  onRepick?: (source: string) => boolean | Promise<boolean>
 }): React.JSX.Element | null {
   const map = useSession((st) => st.assetMap)
   const crops = useSession((st) => st.tree?.crops)
@@ -56,6 +57,10 @@ export function ImagePicker({
   const [draft, setDraft] = useState<Crop>(DEFAULT_CROP)
   const [busy, setBusy] = useState(false)
   const [dragging, setDragging] = useState(false)
+  // A re-pick adopts a new image, but `value` (the old one, now deleted) lags behind main's
+  // confirming push — so Save is held until `value` actually changes, or the crop writes to the
+  // deleted image and the new one lands uncropped.
+  const [repicking, setRepicking] = useState(false)
   const draftRef = useRef(draft)
   draftRef.current = draft
   const aspectRef = useRef(aspect)
@@ -70,6 +75,21 @@ export function ImagePicker({
   useEffect(() => {
     if (open) setDraft((value && crops ? cropFor(value, map, crops) : undefined) ?? DEFAULT_CROP)
   }, [open, value])
+
+  // The new image has arrived — the re-pick is settled.
+  useEffect(() => setRepicking(false), [value])
+
+  // Hold Save while a re-picked image is adopting; a refused adopt clears the hold at once.
+  const settleRepick = useCallback(
+    (source: string): void => {
+      if (!onRepick) return
+      setRepicking(true)
+      void Promise.resolve(onRepick(source)).then((ok) => {
+        if (!ok) setRepicking(false)
+      })
+    },
+    [onRepick],
+  )
 
   useEffect(() => {
     if (!open) return
@@ -97,12 +117,12 @@ export function ImagePicker({
     if (!open || !onRepick) return
     const onPaste = (): void => {
       void window.nexus.pasteImage().then((p) => {
-        if (p) void onRepick(p)
+        if (p) settleRepick(p)
       })
     }
     document.addEventListener('paste', onPaste)
     return () => document.removeEventListener('paste', onPaste)
-  }, [open, onRepick])
+  }, [open, onRepick, settleRepick])
 
   if (!open) return null
 
@@ -147,7 +167,7 @@ export function ImagePicker({
   }
 
   const save = async (): Promise<void> => {
-    if (busy || failed) return
+    if (busy || failed || repicking) return
     setBusy(true)
     try {
       await onSave(draft)
@@ -158,7 +178,7 @@ export function ImagePicker({
   const repick = (): void => {
     if (!onRepick) return
     void window.nexus.pickFile().then((p) => {
-      if (p) void onRepick(p)
+      if (p) settleRepick(p)
     })
   }
   const pickBackground = (): void => {
@@ -168,6 +188,9 @@ export function ImagePicker({
       /* off-DOM or outside a gesture */
     }
   }
+
+  const viewportClass = dragging ? `${s.viewport} ${s.grabbing}` : s.viewport
+  const setZoom = (z: number): void => setDraft((d) => ({ ...d, zoom: clampZoom(z) }))
 
   const preview = <AssetImage value={value} preview={draft} />
   const glyphs = (
@@ -194,7 +217,7 @@ export function ImagePicker({
       <GlassWindow className={s.panel}>
         {isCircle ? (
           <div
-            className={dragging ? `${s.viewport} ${s.grabbing}` : s.viewport}
+            className={viewportClass}
             style={{ width: FRAME_W, height: FRAME_W }}
             onPointerDown={startPan}
           >
@@ -208,7 +231,7 @@ export function ImagePicker({
         ) : (
           <div
             ref={frameRef}
-            className={dragging ? `${s.viewport} ${s.grabbing}` : s.viewport}
+            className={viewportClass}
             style={{ width: FRAME_W, height: frameH, borderRadius: RECT_RADIUS }}
             onPointerDown={startPan}
           >
@@ -233,8 +256,8 @@ export function ImagePicker({
             max={MAX_ZOOM}
             step={0.01}
             ariaLabel="Zoom"
-            onInput={(z) => setDraft((d) => ({ ...d, zoom: clampZoom(z) }))}
-            onCommit={(z) => setDraft((d) => ({ ...d, zoom: clampZoom(z) }))}
+            onInput={setZoom}
+            onCommit={setZoom}
             format={(v) => `${v.toFixed(2)}×`}
           />
         )}
@@ -267,7 +290,7 @@ export function ImagePicker({
             type="tinted"
             label="Save"
             onClick={() => void save()}
-            disabled={busy || aspect == null}
+            disabled={busy || aspect == null || repicking}
           />
         </div>
       </GlassWindow>

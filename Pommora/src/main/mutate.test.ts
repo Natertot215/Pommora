@@ -555,6 +555,30 @@ describe('handleMutate — review-round hardening', () => {
     expect(JSON.parse(await read('.nexus/settings.json')).profile_image).toBeUndefined()
   })
 
+  it('refuses a source main did not hand out, and admits one it did (the picked-path gate)', async () => {
+    const src = await pickImage('Real.png')
+    // wasPicked provided and the path unknown → refused
+    expect(
+      (
+        await handleMutate(
+          { op: 'setProfileImage', source: src },
+          { ...nexusDeps, wasPicked: () => false },
+        )
+      ).ok,
+    ).toBe(false)
+    expect(JSON.parse(await read('.nexus/settings.json')).profile_image).toBeUndefined()
+    // the same source, now recognized → admitted
+    expect(
+      (
+        await handleMutate(
+          { op: 'setProfileImage', source: src },
+          { ...nexusDeps, wasPicked: (p) => p === src },
+        )
+      ).ok,
+    ).toBe(true)
+    expect(JSON.parse(await read('.nexus/settings.json')).profile_image).toBe('[[Real.png]]')
+  })
+
   it('homepage setBanner preserves blocks/icon/foreign keys (read-merge-write)', async () => {
     await writeFile(
       join(root, '.nexus', 'homepage.json'),

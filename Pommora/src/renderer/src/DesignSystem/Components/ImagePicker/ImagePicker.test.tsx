@@ -172,6 +172,35 @@ describe('ImagePicker', () => {
     expect(onCancel).toHaveBeenCalled()
   })
 
+  it('holds Save while a re-picked image adopts, releasing when the new value lands', async () => {
+    const bothMap = {
+      files: { 'cover.png': ['file-assets/Cover.png'], 'new.png': ['file-assets/New.png'] },
+      version: ver++,
+    }
+    useSession.setState({ assetMap: bothMap, tree: treeWith({ 'file-assets/Cover.png': STORED }) })
+    ;(window as { nexus?: unknown }).nexus = { pickFile: () => Promise.resolve('/abs/New.png') }
+    const onRepick = vi.fn(() => Promise.resolve(true))
+    const base = {
+      open: true as const,
+      shape: 'rect' as const,
+      boxAspect: 0.5,
+      onCancel: () => {},
+      onSave: () => {},
+      onRepick,
+    }
+    await mount(<ImagePicker value="[[Cover.png]]" {...base} />)
+    await loadImage()
+    expect((byText('Save') as HTMLButtonElement).disabled).toBe(false)
+    await act(async () => byLabel('Choose Image')?.click())
+    await act(async () => {})
+    expect(onRepick).toHaveBeenCalledWith('/abs/New.png')
+    expect((byText('Save') as HTMLButtonElement).disabled).toBe(true)
+    await mount(<ImagePicker value="[[New.png]]" {...base} />)
+    await loadImage()
+    expect((byText('Save') as HTMLButtonElement).disabled).toBe(false)
+    ;(window as { nexus?: unknown }).nexus = undefined
+  })
+
   it('the colour input lands on draft.color, which Save reports', async () => {
     useSession.setState({
       assetMap: freshMap(),
