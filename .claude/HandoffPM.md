@@ -1,67 +1,62 @@
 ## Handoff — Pommora
 
-> **User Prompt:** *"Verify the File Properties implementation to a standard where a future reviewer finds nothing. There is one criterion: the files are implemented completely, precisely, surgically, and cohesively with the rest of the codebase — no errors, no simplification opportunities, no isolated code that could have been inherited from what already exists, and no sense that `file` was not part of the original property types."*
+> **User Prompt:** *"Go for it. Keep in mind when writing the descriptions of the items on the doc, that they must be BRIEF… Once this is done; do a final sweep simplification pass, commit, and give the diff tree."* — then, the same session: *"buttons are definitely in-scope here, and a shared Controls/ folder is likely where they'd go."*
 
 #### Current Focus
 
-**Session ID:** 80a10e7b-1f2a-4d86-a973-10f5f6ea1333
-**Date:** 08-22-2026
-**Model:** Fable 5 → Opus 5
+**Session ID:** 5897f22e-4fa9-4416-b22b-4de359243564
+**Date:** 08-24-2026
+**Model:** Fable 5
 
-**Part 2 of the file-based arc is done: `file` is complete, the tenth and last property type.** A value is a bare array of `[[Basename.ext]]` wikilinks resolved in the asset map's basename domain; each property names a **Directory** its files land in; the value's own area adds and a chip replaces, both through the OS dialog opened at a folder, so revealing where a file lives and swapping it are the same gesture. Adoption is one exported seam, `adoptFile`, carrying every guard that makes it safe, and no reference removal ever deletes bytes — the seam dedups, so two pages can share one file.
+**The design system is one tree that reads like its ledger, and it has a Button.** Eight commits, `4d7feba7 → e5a5ce40`, in three arcs.
 
-**This session was the verification round, and it found real defects after a clean gate.** Four lenses were run against the shipped feature rather than a checklist: an end-to-end chain read raw off the disk, a gesture × surface matrix over all four value surfaces, an interfaces-and-adjacencies attack, and a line-by-line scrutiny pass. Every finding was verified against the code before folding, and each new guard was negative-controlled in both directions.
+**Arc 1 — the reorganization (`4d7feba7`).** `src/renderer/src/design-system/` became `DesignSystem/` with every area Capitalized and every stray homed: Tokens · Materials · Labels · Elements · Components/{Controls, Pickers, Menu, Fields} · Detail · Interactions · Animation · Symbols · Theming · Util · Showcase. `NotchedPane` joined Menu, SidePane and PreviewPane joined Detail, SegmentRun joined Labels, ProgressBar joined Elements, and the motion pieces scattered over three folders became one `Animation/` (motion, feel, the Bloom keyframes, `useExitPresence`, `Reveal`). Motion has one ladder and two curves — `easing.baseEase` (`--ease-base`) and `easing.baseSnap` (`--ease-snap`); `easing.inOut` and `duration.disclosure` are gone, and `Feel` reads the ladder through `ms()`. Only `Tokens/` and `Theming/` reach `@shared`; `theme-vars` republishes only, its authored literals homed in `size.css.ts`, `color.css.ts`, and `Symbols/masks.ts`. The Elements consolidation from earlier in the session (DropOutline · PathChevron · Segment) rode the same commit. `DesignSystemPM` was rewritten as the one-look ledger — one section per folder, one row per thing — and `TypographyPM` retired into it; `InteractionPM` points at it for values. The chromeless field treatment was renamed `bare → base` (`8afff1d2`).
 
-- **A pick from a hidden folder under the asset root minted a reference nothing could ever resolve.** `underAssetRoot` admits a dot-prefixed segment that `indexable` drops forever, so the bytes were referenced in place and the chip read unresolved with no error at any layer. Containment and reachability are separate predicates; adoption now asks both, and such a pick falls through to the copy.
-- **Three dead interfaces came out.** `fileValueMenu`'s boolean was structurally unconsumable — both callers decide the type first, because a context-menu handler must answer `preventDefault` synchronously — and a test pinned the dead arm, which is what kept it reading as live. `FileLabel`'s `unresolved` prop and its whole stylesheet were the twin of the `onClick` prop deleted a phase earlier and never re-censused.
-- **The showcase and the atlas never learned the two new chip shapes**, which is where a developer looks before hand-rolling a parallel.
+**Arc 2 — Button (`21faf5b5` + two fixes).** `DesignSystem/Components/Controls/Button/` is the one button: five types as one CSS-var pair (`base` · `tinted` · `solid` · `filled` · `destructive`), the `size.control` bundles for geometry, icon / icon+label / label content, an optional outline as an inset ring, and the `revealOnHover` / `ghostRest` modifiers. `Segmented` is N Buttons divided by the house `segment`, with `glass` for the toolbar; `Segmented-Controls/` folded into it. Every toolbar-row button is a Button (Back/Forward, the dropdown triggers, the trio, the tab +, the sidebar toggles, the ViewPane row chevron); PhotoCropModal's pair is filled + solid; the settings icon-picker button is filled. **ActionBand keeps its own tab-style segment on purpose.** `PaneSlider`, `Surface`, and `PhotoCropModal` moved into the design system; the showcase gained a Buttons leaf laid out as the Figma card.
 
-**The simplification pass consolidated four seams.** The two inspector panes' `valueMenu` was byte-identical in both files and joined `editRow` on the hook they already share; `runFileMenuAction` now answers whether it took the action — `runPageSendAction`'s shape, four lines above one of its call sites — so neither surface tests the prefix or casts the action back; the segment stamp is a named constant rather than a string in three files; and `assetSubRoot` moved to `shared/nexusPaths.ts`, so main's write and the renderer's dialog compose a property's folder the one way.
+**Arc 3 — the ghost sweep (`e5a5ce40`).** A fourth size, `button-inline` (20px / r5 / control icon), is the row-affordance tier, and every hand-rolled ghost button moved onto it: the menu accessory family and its settings-pane derivatives, the footer text and lock actions, the preview window's actions, the subfield add and view toggle, the banner add, the group-band add, the calendar nav and title, both "Add Property" affordances, the filter add-rule, the Open button, and the NavWindow style toggle. Each site keeps placement and tone only. The size bundles carry `labelPaddingX` beside `paddingX`. Empty values read as the pane's `—` on cards and in the calendar too.
 
 #### Completion Criteria
 
-- [x] **Gates green** — typecheck 0, 3585 tests over 284 files, `biome check` clean over 921 files, `npm run build` 0. Read directly, never through a pipe.
-- [x] **The end-to-end acceptance criterion is now a test** — `mutate.test.ts` reads the page's raw bytes after every step: pick into the subfolder, the quoted `- "[[Name.ext]]"`, add, replace, remove, clear taking the key. Every file's bytes survive; a re-pick answers the existing reference rather than a copy.
-- [x] **Every new guard negative-controlled** — the `indexable` check removed sends its test red and restored sends it green; breaking the `data-segment-index` stamp turns the replace gesture into an add, which is the defect the DOM test exists to catch.
-- [x] **The gesture × surface matrix has no empty cell** — every gesture on the table cell, the card, the page pane and the preview inspector reaches the same `filePick.ts` primitives. The keyboard path is parity: no property type has one on any of the four surfaces, and the ×'s `:focus-visible` reveal is shared by every chip type.
-- [x] **The chip's hover-scroll measured, not reasoned** — driven by a dispatched `Input.dispatchMouseEvent` in headless Chrome against the built CSS. The cap holds at 65px, the label scrolls its full 122px of hidden text, and the chip measures 81px before, during and after.
-- [x] **Dead vocabulary 0** against a control of 873; no instrumentation, no orphaned exports.
+- [x] **Gates green at every commit** — typecheck 0, biome clean (936 files), 286 test files / 3594 tests, app + showcase build.
+- [x] **Sweep proofs** — `design-system/` in source 610 → 0; `--ease-standard` 139 → 0; `var(--disclosure)` 11 → 0; `parseInt(duration…)` 14 → 0; `bare` treatment 47 → 0; `KNOB` 128 → 131 (Nathan's additions), `(Nathan's call)` intact.
+- [x] **Toolbar geometry measured, not reasoned** — a sandbox instance (`POMMORA_USERDATA` + `POMMORA_DEBUG_PORT`, against the Test nexus) over CDP: every pill button and glyph centers at the row's y=22, glass layer and cover identical, Back/Forward divided. Two regressions found and fixed that way: a transparent border widening every segment (now an inset ring), and the glass wrapper's `inline-block` swallowing the class's centering (now inline `display:flex; align-items:center` on the pill — deliberate, don't move it to the class).
+- [x] **A comment pass over the whole `DesignSystem/` tree** and the reorg-touched app files — it cost one casualty, the tab bar's `.reveal-on-hover` selector (`aca13970` restored it).
 
-#### Next Session — Two Parallel Tracks
+#### Next Session
 
-1. **The continuous codebase cleanup** — [[Codebase-Cleanup-Checklist]], 6a → 6b next (the rehome, then Table hoisting). Any session starts it with "Run the next bundle from Codebase-Cleanup-Checklist."
-2. **Part 3 of the file-based arc** — `PhotoCropModal` widened past the nexus icon so banners, cards and other media crop through it. It is the profile photo's alone today, which is why `setProfileImage` still carries bytes while every banner carries a path.
+1. **Eyeball the sweep** — the row-affordance sites moved from 16–20px hand boxes to the 20px inline bundle; the simplifier flagged `.subfield-viewtype` no longer sitting flush on the subfield inset (its `padding-left: 0` override lost to Button's inline padding — rule deleted, inset is now the bundle's 4px). Retune `button-inline` in `Tokens/size.css.ts` if anything reads off.
+2. **The Figma parity pass on Button** — no Figma MCP is wired into Claude Code here; the types and sizes were built from Nathan's spec and the existing `size.control` geometry, which he confirmed is the Figma geometry. Open [Buttons-Spec.md](Planning/Buttons-Spec.md) against the Figma card and note any deviation.
+3. **The continuous codebase cleanup** — [[Codebase-Cleanup-Checklist]], 6a → 6b next (the `Components/Detail` rehome: PaneSlider is already across; the property-editor pieces stay app-side by design).
+4. **Restart the dev server** after pulling — the folder rename invalidated Vite's module graph; ⌘R is not enough.
 
-#### Open Against File Properties
+#### Open
 
-- **A second Add started while the first adoption is still copying loses one reference.** Every surface reads the value at click time and the adoption after the dialog is a plain await, so two picks straddling a large copy both tail the pre-commit list. Recorded rather than fixed: closing it means threading a getter through four call sites, and the damage is fully recoverable — the lost file is already under the asset root, so re-picking it takes the reference-in-place branch.
-- **Two live checks are Nathan's**, both ten seconds: picking a file from inside `.nexus/assets` while the configured root is elsewhere (⌘⇧. shows hidden folders — a dim chip means the copy-out did not fire), and whether the ×'s reveal survives moving the cursor toward it. Computed styles lie for that second one; only a live hover is truth.
+- **Line-Ledger artifact** — the post-commit hook asks for a republish each commit; the published artifact holds a newer, larger version than the regenerated file (it has `10e30d59`, the disk file doesn't), so it was never force-published. The hook's history window looks truncated — Nathan's call.
+- **`footingLabel = style([actionRow])`** in `menu.css.ts` is an empty composition kept as a named route; collapse only if the name should go.
+- **`export { stack }`** in the Tokens barrel has no consumer (everything deep-imports); pre-existing, left.
+- **Showcase `MenuLeaf.tsx:20`** pins `<Icon size={16}>` next to rows that size by text — cosmetic, unfixed.
+- **Uncommitted, not mine:** `src/main`, `src/preload`, `src/shared/*`, `store.ts`, Nathan's script files and planning-doc deletions — parallel sessions' work, deliberately left.
+
 #### Feedback
 
-- "If it's unreachable it's dead — that's the discipline." A prop the spec names but nothing consumes comes out; a ruling that defers a deletion on a prediction expires when the prediction resolves.
-- "Stop and analyze the pattern other chips use, implement the fix, and actually verify it's the correct and simplest actual method." A JS tween was authored where `truncateHoverScroll` already existed — the mechanism was there and only the melt guard's `pointer-events: none` blocked it.
-- "The chip max stays, and the chip never re-sizes." The cap is the design; the label scrolls inside it.
-- "You're not blocked by any method of verification — live nexus, computer use, don't let anything seem off the table."
+- "All code-folders need to be caps." The root included — `DesignSystem/`, not `design-system/`.
+- "Keep comments to its absolute minimum" / "strip the comments" — new files ship comment-free; a comment pass follows every build.
+- "As long as it's coherent and doesn't just wrap these things in sloppily." A consolidation that leaves the old box and wraps it is the failure; the recipe owns the look, the surface owns what happens on click.
+- "ActionBand should stay as its own purposefully divergent tab-style button." Toggle-shaped surfaces keep their selected state outside Button — Button has hover only.
+- "Back-forth sizing is intentional, but ALL toolbar buttons need to become buttons; not just the trio."
+- "Stop it and fix the fucking alignment issue… there is no time pressure; use my live nexus." Measure over CDP before claiming alignment; a screenshot from Nathan's stale dev server is not evidence either way.
 
 #### Touched Files
 
-- **Main:** `mutate.ts` (the `indexable` gate at the reference-in-place branch), `assetRoots.ts`, `paths.ts`, `index.ts`.
-- **Shared:** `nexusPaths.ts` (`assetSubRoot` moved here), `cellMenu.ts`.
-- **Renderer:** `PropertyEditing/filePick.ts` + `usePropertyRows.ts` (the hoisted `valueMenu`), `Table/TableView.tsx` + `Cell.tsx`, `Cards/CardValue.tsx`, `PagePropertiesPane.tsx`, `PreviewInspector.tsx`, `filterModel.ts`, `FilterPane.tsx`.
-- **Design system:** `tokens/chip.css.ts` + `typography.css.ts` (`scrollRevealed`), `FileChip.tsx`/`fileChip.css.ts`, `FileLabel.tsx` (`fileLabel.css.ts` deleted), `PathField.tsx` + `pathField.css.ts`, `SegmentRun.tsx`, `showcase/leaves/ChipsLeaf.tsx`.
-- **Tests:** `mutate.test.ts` (the acceptance chain + the hidden-folder control), `cellGestures.test.tsx` (the stamp × hit-test crossing), `filePick.test.ts`.
+- **Design system:** the whole `DesignSystem/` tree (164 files, renamed); new `Components/Controls/Button/` (Button.tsx, button.css.ts, Button.test.tsx), `Animation/index.ts`, `Symbols/masks.ts`, `Components/PaneSlider/`, `Detail/PhotoCropModal/`, `Materials/Surface.tsx`, `Showcase/leaves/ButtonsLeaf.tsx`; `Tokens/size.css.ts` (`button-inline`, `labelPaddingX`, the homed geometry consts), `Tokens/color.css.ts` (`STATE_OPACITY`, `BANNER_SHADOW`), `Tokens/theme-vars.css.ts` (bridge only), `Menu/menu.css.ts` + `Menu.tsx` (`AccessoryButton`, `FooterLockButton`, `FooterMoreButton` on Button).
+- **App:** every import site (`@renderer/DesignSystem/…`); the toolbar (`Toolbar.tsx`, `ToolbarTrio.tsx`, `ViewPane.tsx`, `toolbarDropdown.css.ts`), `Tabs/TabBar.tsx` + `tabBar.css`, `App.tsx`, `Sidebar/Sidebar.css`, the settings-pane family (`settingsPane.css.ts`, `PropertiesPane`, `OptionEditor`, `StatusEditor`, `OptionRow`, `EyeToggle`, `InlineEditHeader`, `SettingsScaffold`, `PageMenu`, `PagePropertiesPane`, `FilterPane`), `Blocks/BlockHandleMenu.tsx`, `Detail/Banner/*`, `Detail/Subfield/*`, `Detail/Views/GroupBand.*`, `Detail/Views/Cards/CardValue.tsx`, `NavWindow/*`, `PagePreview/*`, `styles.css`, `MarkdownPM/editor/folding.ts`.
+- **Docs:** `DesignSystemPM.md` (the ledger), `InteractionPM.md`, `TypographyPM.md` (deleted), `CLAUDE.md` (maps), `ContextPM.md`, `Planning/Buttons-Spec.md` (new), `Planning/DesignSystem-Organization.md` + `Elements-Consolidation-Plan.md` (deleted, executed), path fixes across Features/Guidelines/Resources/Planning.
 
 #### Session Pointers
 
-- `main/mutate.ts` — `adoptFile` is THE adoption seam; its guard stack is four checks that each cover a hole the others don't (lexical `..`, realpath-against-the-asset-root for a symlink, `indexable` for reachability, `embeddableTitle`/`neverWatched` for the name). Nothing in it collapses.
-- `shared/propertyValue.ts` — the `file` case stays physically separate from `multi_select`'s and says why at the site. Merging them routes file through the option gate, where `optionValues` answers `[]` and `strict` discards every attachment through the restore path.
-- `renderer/Detail/Views/PropertyEditing/filePick.ts` — the one file effect. `runFilePick` answers `undefined` for "write nothing", which a bare `!= null` would read as a clear; `pickFileInto` states that rule once.
-- `design-system/tokens/chip.css.ts` — the melt machinery's header is load-bearing. A removable chip's label is pointer-inert, so anything keyed on the label's own `:hover` is unreachable; enter that state from `${chipRemovable}:hover` instead, which is outside the frame the ×-reveal flips.
-
-#### Working Notes
-
-- **Containment is not reachability.** A path can sit provably inside a root and still be somewhere the index will never hold. The boundary check answers the question it was asked, and the wrong question fails silently — a write there, or a reference to a file already there, resolves to nothing forever with no error at any layer.
-- **A capped label that cannot hover itself has no reveal.** `truncateHoverScroll` is the app's one ellipsis-at-rest / scroll-on-hover mechanism, and the melt guard's `pointer-events: none` makes its hover half unreachable on every removable chip. The fix is the same declarations one selector up, never a second mechanism.
-- **The showcase is a consumer.** A design-system shape that never lands on the deployed roster is a shape nobody can find, which is the drift the design system exists to prevent — arriving through the one surface a feature's Made False table never lists.
-- **A test can pin a dead arm.** `fileValueMenu`'s unreachable guard read as live precisely because a test asserted it. When a dead interface is removed, census the rest of that component's interface in the same pass; the reason one prop went dead is rarely unique to it.
-- **A parallel session is live in this tree** and holds MarkdownPM, NexusSettings, personalization and the ledger scripts. Stage explicit paths, never a directory, and read `git diff --cached --name-only` before every commit.
+- `DesignSystem/Components/Controls/Button/Button.tsx` — `Segmented`'s `containerStyle` carries `display:flex; alignItems:center` inline on purpose: `GlassControls` renders `inline-block` and a class can't beat it. `inRun` switches a Button to the segment geometry (`segmentHeight` / `segmentRadius`).
+- `button.css.ts` — a type is one `styleVariants` row setting `--button-fill` / `--button-ink` / `--button-outline`; hover is one gradient overlay of `state.hover` over `--button-fill`, so no per-type hover exists. `base` overrides the disabled rule to `label.tertiary` (the toolbar's mute); every other type dims by `--state-inactive`.
+- `Tokens/size.css.ts` — `button-inline` is the only bundle not in Figma; it exists because the app has a whole tier of 16–20px row affordances below the ladder's `small`.
+- `Menu/menu.css.ts` — `accessoryButton` is now width-only (`--accessory-box`, default 20px) plus its tertiary `&&` pin; the box is Button's.
+- `Build-Gotchas.md §sandbox` — the `POMMORA_USERDATA` line is instrumentation added per pass and removed before committing; the scratch `pommora.json` pointed at `/Users/nathantaichman/Test`, and the harness is `scratchpad/cdp.mjs` + `measure.js` (session-local; recreate from the guideline).
