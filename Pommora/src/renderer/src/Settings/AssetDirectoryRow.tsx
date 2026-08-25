@@ -35,7 +35,7 @@ export function AssetDirectoryRow({ label, hint }: RowText): React.JSX.Element {
         }
       >
         {segments.length > 0 ? (
-          <NavTrail segments={segments} />
+          <NavTrail segments={segments} iconSize="body" />
         ) : (
           <span className={placeholder}>No folder</span>
         )}
