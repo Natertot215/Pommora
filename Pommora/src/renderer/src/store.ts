@@ -93,7 +93,10 @@ import { dropCapturedOutside } from './Navigation/useNavThumbnails'
 import { stabilize } from '@shared/treeStabilize'
 import { applyAccent, applySystemAccent } from '@renderer/DesignSystem/Theming/accent'
 import type { DevicePrefs } from '@shared/devicePrefs'
-import { applyPersonalization, applyPersonalizationKey } from './design-system/personalization'
+import {
+  applyPersonalization,
+  applyPersonalizationKey,
+} from '@renderer/DesignSystem/Theming/personalization'
 import { findCollection, findSet, findCollectionForSet, isDepth1Set } from './Detail/Scope'
 import { crumbDepthFor } from './Detail/Subfield/crumbs'
 import { ensureContainerView, wireViewAdopted } from './Detail/Views/viewMint'
@@ -418,7 +421,7 @@ interface SessionState {
   beginRename: (path: string, create?: boolean, host?: RenameHost) => void
   cancelRename: () => void
   submitRename: (path: string, kind: MutableKind, newName: string) => Promise<boolean>
-  /** The page whose icon picker is open, from a menu's Change Icon. One consumer — the sidebar row
+  /** The page whose icon picker is open, from a menu's Edit Icon. One consumer — the sidebar row
    *  — so it needs no owner fence: the row at this path opens the picker and clears it on dismiss. */
   iconPath: string | null
   beginIcon: (path: string) => void

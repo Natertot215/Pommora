@@ -3,13 +3,13 @@ import { type CellMenuContext, cellMenuContextFor, cellMenuModel } from './cellM
 import type { ResolvedColumn } from './types'
 
 describe('cellMenuModel', () => {
-  it('title: Open Preview + stateful Open lead + Rename + Change Icon + New Page pair + the send block + separator-gated Delete', () => {
+  it('title: Open Preview + stateful Open lead + Rename + Edit Icon + New Page pair + the send block + separator-gated Delete', () => {
     const m = cellMenuModel({ kind: 'title' })
     expect(m.items.map((i) => [i.label, i.action])).toEqual([
       ['Open Preview', 'title:preview'],
       ['Open New Tab', 'title:newtab'],
       ['Rename', 'title:rename'],
-      ['Change Icon', 'title:icon'],
+      ['Edit Icon', 'title:icon'],
       ['New Page Above', 'title:newabove'],
       ['New Page Below', 'title:newbelow'],
       ['Copy Link', 'title:copylink'],

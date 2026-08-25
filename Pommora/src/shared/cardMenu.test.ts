@@ -7,7 +7,7 @@ describe('cardMenuModel', () => {
     expect(m.items.map((i) => [i.label, i.action])).toEqual([
       ['Open New Tab', 'title:newtab'],
       ['Rename', 'title:rename'],
-      ['Change Icon', 'title:icon'],
+      ['Edit Icon', 'title:icon'],
       ['New Page', 'title:newbelow'],
       ['Copy Link', 'title:copylink'],
       ['Copy Path', 'title:copypath'],

@@ -1,4 +1,4 @@
-// The page context-menu meta block (Open · Rename · Change Icon · Delete) and the send block that
+// The page context-menu meta block (Open · Rename · Edit Icon · Delete) and the send block that
 // closes it (Move To ▸ · Copy Link · Copy Path) — shared by every surface that right-clicks a page:
 // the table cell's title menu and the row grip's, the card's, the sidebar row's, a tab's, and a
 // NavWindow row's, so the page actions stay single-sourced. An already-open page reads "Open"
@@ -107,7 +107,7 @@ export function pageMetaMenuItems(
     ...(opts.preview ? [{ label: 'Open Preview', action: 'title:preview' as const }] : []),
     { label: openLabel(alreadyOpen), action: 'title:newtab' },
     { label: 'Rename', action: 'title:rename', separatorBefore: true },
-    { label: 'Change Icon', action: 'title:icon' },
+    { label: 'Edit Icon', action: 'title:icon' },
     ...(opts.newPages === 'pair'
       ? [
           { label: 'New Page Above', action: 'title:newabove' as const, separatorBefore: true },

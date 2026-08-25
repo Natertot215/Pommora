@@ -329,7 +329,14 @@ export interface Asks {
     reply: BannerMenuAction | null
   }
   'nexus:titleMenu': {
-    args: [opts?: { toggleIcon?: boolean; iconHidden?: boolean; noEditIcon?: boolean }]
+    args: [
+      opts?: {
+        toggleIcon?: boolean
+        iconHidden?: boolean
+        noEditIcon?: boolean
+        changeColor?: boolean
+      },
+    ]
     reply: TitleMenuAction | null
   }
   'table-menu': { args: [ctx: TableMenuContext]; reply: TableMenuAction | null }
@@ -371,7 +378,7 @@ export interface Pushes {
   // first commit rides the create (disambiguating, cascade-free).
   'begin-rename': { path: string; create?: boolean; host?: RenameHost }
   'new-page-adjacent': { path: string; where: 'above' | 'below'; host?: RenameHost }
-  // Change Icon, like Rename, is a renderer affordance a native menu can only ask for: the picker
+  // Edit Icon, like Rename, is a renderer affordance a native menu can only ask for: the picker
   // anchors to the row the gesture happened on, which only the renderer can find.
   'begin-icon': { path: string; host?: RenameHost }
   'open-in-new-tab': ContextTarget

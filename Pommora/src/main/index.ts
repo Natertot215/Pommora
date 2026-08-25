@@ -1785,14 +1785,14 @@ serveBridge(
       },
     },
 
-    // The nexus identity icon menu (Change Icon → the renderer's glyph picker; Add/Change Photo → the native
+    // The nexus identity icon menu (Edit Icon → the renderer's glyph picker; Add/Change Photo → the native
     // image pick, done renderer-side). Returns the chosen action; the renderer runs the picker/pick + mutate.
     'nexus:iconMenu': {
       kind: 'menu',
       fn: async (win: BrowserWindow, arg: unknown): Promise<NexusIconAction | null> => {
         const opts = (arg ?? {}) as { hasPhoto?: boolean; hasGlyph?: boolean }
         return popReturningMenu<NexusIconAction>(win, (pick) => [
-          { label: 'Change Icon', click: pick('changeIcon') },
+          { label: 'Edit Icon', click: pick('changeIcon') },
           { label: opts.hasPhoto ? 'Change Photo' : 'Add Photo', click: pick('addPhoto') },
           ...(opts.hasPhoto || opts.hasGlyph ? [{ type: 'separator' as const }] : []),
           ...(opts.hasPhoto ? [{ label: 'Remove Photo', click: pick('removePhoto') }] : []),
@@ -1846,7 +1846,7 @@ serveBridge(
       },
     },
 
-    // Rename is always offered; Change Icon unless `noEditIcon` (the homepage sets its icon from
+    // Rename is always offered; Edit Icon unless `noEditIcon` (the homepage sets its icon from
     // the settings pane, not here); `toggleIcon` adds the Hide/Show Icon item.
     'nexus:titleMenu': {
       kind: 'menu',
@@ -1855,12 +1855,19 @@ serveBridge(
           toggleIcon?: boolean
           iconHidden?: boolean
           noEditIcon?: boolean
+          changeColor?: boolean
         }
         return popReturningMenu<TitleMenuAction>(win, (pick) => [
           { label: 'Rename', click: pick('rename') },
-          ...(opts.noEditIcon ? [] : [{ label: 'Change Icon', click: pick('editIcon') }]),
+          ...(opts.noEditIcon ? [] : [{ label: 'Edit Icon', click: pick('editIcon') }]),
           ...(opts.toggleIcon
             ? [{ label: iconLabel(!opts.iconHidden), click: pick('toggleIcon') }]
+            : []),
+          ...(opts.changeColor
+            ? [
+                { type: 'separator' as const },
+                { label: 'Change Color', click: pick('changeColor') },
+              ]
             : []),
         ])
       },
