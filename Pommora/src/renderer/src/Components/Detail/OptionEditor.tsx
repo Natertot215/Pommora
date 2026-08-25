@@ -1,6 +1,5 @@
 import { Fragment, useMemo, useRef, useState } from 'react'
 import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
-import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import {
   addOption,
   recolorOption,
@@ -19,7 +18,7 @@ import {
 } from './GhostOptionChip'
 import { DragGhost } from '@renderer/DesignSystem/Interactions/DragGhost'
 import { DropLine } from '@renderer/DesignSystem/Interactions/DropLine'
-import { OptionSlot, OptionStyleRow, type OptionStyle } from './OptionRow'
+import { OptionSlot, type OptionStyle } from './OptionRow'
 import { useOptionReorder } from './useOptionReorder'
 import * as s from './settingsPane.css'
 import { labelColor, optionShapeFor, shape } from '@renderer/DesignSystem/Labels'
@@ -34,7 +33,6 @@ export function OptionEditor({
   options,
   look,
   onSetOptions,
-  onSetStyle,
   onRenameOption,
   onRemoveOption,
   onClearOption,
@@ -43,7 +41,6 @@ export function OptionEditor({
   options: Option[]
   look: OptionStyle
   onSetOptions: (next: Option[]) => void
-  onSetStyle: (look: OptionStyle) => void
   onRenameOption: (oldValue: string, newTitle: string) => void
   onRemoveOption: (value: string) => void
   onClearOption: (value: string) => void
@@ -112,7 +109,6 @@ export function OptionEditor({
 
   return (
     <div className={s.optionEditor}>
-      <OptionStyleRow look={look} onSetStyle={onSetStyle} />
       <div className={s.optionsRow}>
         <span className={s.optionsLabel}>Options</span>
         <Button
@@ -150,8 +146,9 @@ export function OptionEditor({
                 ghost={ghostApi}
                 onOpenMenu={() => void openMenu(o)}
                 type={type}
+                look={look}
                 label={o.label}
-                color={labelColorFor(o.color)}
+                color={o.color}
                 icon={o.icon}
                 renaming={renaming === o.value}
                 coloring={isColoring}
