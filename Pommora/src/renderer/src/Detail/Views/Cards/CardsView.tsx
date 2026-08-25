@@ -1407,12 +1407,14 @@ const PageCard = memo(function PageCard({
       window.nexus.cardMenu({
         addable: menuAddable,
         alreadyOpen,
+        editableImage: banner === 'cover' && !!cover,
         ...pageMoveContext(tree, row.path),
       }),
     )
     if (!action) return
     if (runPageSendAction(action, row.path)) return
-    if (action === 'title:newtab') onOpen(row, true)
+    if (action === 'image:edit') openEditor()
+    else if (action === 'title:newtab') onOpen(row, true)
     else if (action === 'title:rename') useSession.getState().beginRename(row.path, false, 'detail')
     else if (action === 'title:icon') setIconOpen(true)
     else if (action === 'title:newbelow') onNewBelow(row)
@@ -1436,6 +1438,7 @@ const PageCard = memo(function PageCard({
   const {
     openMenu: openBannerMenu,
     editing,
+    openEditor,
     closeEditor,
     boxAspect,
     onSave,
