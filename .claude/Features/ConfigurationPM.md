@@ -183,10 +183,6 @@ Nexus-wide interface config, stored as the `personalization` object in `.nexus/s
 - **ribbonOrder** — the ribbon's launcher-icon order below the pinned Homepage. Written by drag-to-reorder; a partial or stale value is repaired on read, so a newly added icon never vanishes.
 - **defaultViewScale** — the window zoom a Nexus opens at, and what ⌘0 resets to. Stated as a multiplier where 1.0 is the interface at its intended size; the host zoom it resolves to is a step below that, so the chrome reads at its drawn scale rather than the browser's. Clamped on read and applied main-side.
 
-### Labels
-
-Every entity kind carries a **renameable display label** in `settings.json` — the code identity is fixed, the shown name is the user's. Each is a **LabelPair** of singular and plural; the deeper-Set label derives from the Set singular and is never stored. Seeding a fresh Nexus's Context registry takes its Context titles from the matching label plurals; from then on live Context names read from the registry itself. A partial or absent `labels` blob falls back per field, so an unset name still resolves to its default.
-
 ### Write Discipline
 
 Every `settings.json` write funnels through one per-file serialize lock, so concurrent writers can't drop each other's keys. Unrecognized keys are preserved by value on write, so a key one build doesn't know — desktop ↔ mobile version skew — survives the round-trip.

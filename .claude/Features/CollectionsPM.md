@@ -18,7 +18,7 @@ The operational layer's schema-bearing tier. A Page Collection is a folder at th
 | **Page Set**        | Organizing sub-folder at any depth; inherits the schema, adds none | Folder + `_pageset.json`[^1]                      |
 | **Content**         | Pages only (`.md`)                                                 | Files at any level                                |
 
-Property definitions live in the nexus-wide registry (`.nexus/properties.json`); the assignment lives on the Collection, and Sets inherit it whole. Nesting is unbounded. The default UI label is "Collection," renameable per Nexus. Each Collection carries its own saved views — the view model, pipeline, and renderers live in [[ViewsPM]]; the page document in [[PagesPM]].
+Property definitions live in the nexus-wide registry (`.nexus/properties.json`); the assignment lives on the Collection, and Sets inherit it whole. Nesting is unbounded. Each Collection carries its own saved views — the view model, pipeline, and renderers live in [[ViewsPM]]; the page document in [[PagesPM]].
 
 ### Sidecar + Schema
 

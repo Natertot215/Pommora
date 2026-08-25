@@ -52,7 +52,7 @@ A **Context** is a user-defined, free-standing group of **Spaces**, owned by a r
 
 #### The Operational Layer — Collections & Content
 
-| Entity              | Role                                                          | Default UI Label  |
+| Entity              | Role                                                          |  UI Label         |
 | ------------------- | ------------------------------------------------------------- | ----------------- |
 | **Page Collection** | Top container for Pages; assigns their nexus-wide properties  | "Collection"      |
 | **Page Set**        | Recursive sub-folder inside a Collection; inherits the schema | "Set" / "Sub-Set" |
@@ -197,11 +197,11 @@ The current build is ad-hoc-signed. A distributable release adds electron-builde
 ### v1 Scope
 
 - **Contexts & Spaces** — free-standing, user-manageable Context groups holding Spaces (the registry seeds Areas / Topics / Projects), each group a sidebar disclosure. No containment, no parents.
-- **Page Collections + Sets + Pages** — schema-bearing Collections, schema-less recursive Sets, and Markdown Pages. UI labels renameable. Each Collection chooses preview-window vs. main-pane opening.
+- **Page Collections + Sets + Pages** — schema-bearing Collections, schema-less recursive Sets, and Markdown Pages. Each Collection chooses preview-window vs. main-pane opening.
 - **Pages** — Markdown + frontmatter (including the wrapped Context and property keys), the MarkdownPM editor, Columns and Callouts.
 - **Agenda** — Tasks and Events with a required built-in Status on each; sync opt-in; reached through the sidebar ribbon's own Agenda mode.
 - **Homepage** — singleton dashboard, always reachable from the ribbon's identity icon.
-- **Settings** — storage, label wiring across renameable surfaces, accent-color reading, and the full editing UI.
+- **Settings** — storage, accent-color reading, and the full editing UI.
 - Property panel driven by each entity's schema, the full v1 catalog (including Status and File / Attachment), and per-view configuration (sort / group / filter / layout / visibility).
 - Connections — `[[Page]]` inline links, the sole connection syntax, with automatic rename cascade across all referencing bodies.
 - A file watcher keeping the tree live, and global full-text search.
