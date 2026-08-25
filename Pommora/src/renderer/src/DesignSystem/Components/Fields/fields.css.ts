@@ -92,7 +92,7 @@ export const draftInput = style([
   },
 ])
 
-const LEAD_GAP = '5px' // KNOB — a leading glyph's stand-off from the content
+const LEAD_GAP = '6px' // KNOB — a leading glyph's stand-off from the content
 const TRAIL_GAP = '8px' // KNOB — how far a trailing action stands off the content it follows
 
 const slot = {
@@ -105,10 +105,9 @@ const slot = {
 /** A glyph before the content — one lead icon saying what the field holds. */
 export const leading = style({ ...slot, marginRight: LEAD_GAP, color: c.label.secondary })
 
-/** An action after the content. A real gap rather than an auto margin: a field sized to its
- *  content collapses an auto margin to nothing, and the action reads as the last word of the
- *  content instead of the action it is. */
-export const trailing = style({ ...slot, marginLeft: TRAIL_GAP })
+/** An action pinned to the field's trailing edge, never closer than the gap to the content — so a
+ *  content-sized field still separates the two, and a wide field doesn't strand it mid-way. */
+export const trailing = style({ ...slot, marginLeft: 'auto', paddingLeft: TRAIL_GAP })
 
 /** A press-to-edit field — a caret cursor at rest, the ring on focus, and room to give way so the
  *  content's own fade eclipses the head rather than the field pushing its row wider. */
