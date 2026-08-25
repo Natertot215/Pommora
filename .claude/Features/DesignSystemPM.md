@@ -313,7 +313,7 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 
 | Title | Export | What it is |
 | ----------- | -------------------------------------------- | ---------------------------------------------- |
-| InputField | `InputField` · `FieldEdit` | The field box — `boxed` or `bordered` chrome; `capped` scrolls its content under the fade; `edit` swaps a RenamableLabel caret in under a click, the field's rest width held; a host may drive `editing`; `leading` seats a glyph before the content, `trailing` an action after it. A folder path is a NavTrail inside one. |
+| InputField | `InputField` · `FieldEdit` | The field box — `boxed` or `bordered` chrome; `capped` scrolls its content under the fade; `edit` swaps a RenamableLabel caret in under a click, the field's rest width held; a host may drive `editing`, `renames` seats the caret and `emptyCommits` makes a cleared value a commit; `leading` seats a glyph before the content, `trailing` an action after it. A folder path is a NavTrail inside one. |
 | SegmentRun | `SegmentRun` · `SegmentEntry` · `SEGMENT_INDEX_ATTR` | Values standing side by side inside a field, hairline-divided; each entry a FileLabel, stamped with its index for hit-testing. |
 | Chrome | `field` · `input` · `borderedField` · `editable` · `draftInput` · `leading` · `trailing` · `base` · `search` | Boxed, raw caret, cell-tight, press-to-edit, the draft caret, the two slots, chromeless, and the search look. |
 | Ring | `fieldRing()` · `focusRing()` · `errorRing()` · `ROW_RING` | One inset-shadow channel; presets set only its color. |
