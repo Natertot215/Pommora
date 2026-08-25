@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { Crop } from '@shared/schemas'
 import { useSession } from '../store'
 
 /** A photo outranks a glyph in display; a glyph outranks the default placeholder. */
@@ -6,8 +7,11 @@ export function useNexusIcon() {
   const profileImage = useSession((st) => st.tree?.nexus.profileImage ?? null)
   const profileIcon = useSession((st) => st.tree?.nexus.profileIcon)
   const mutate = useSession((st) => st.mutate)
-  const [cropImage, setCropImage] = useState<string | null>(null)
+  const [editing, setEditing] = useState(false)
   const [pickerOpen, setPickerOpen] = useState(false)
+
+  const openEditor = (): void => setEditing(true)
+  const closeEditor = (): void => setEditing(false)
 
   const openMenu = async (): Promise<void> => {
     const action = await window.nexus.iconMenu({
@@ -16,23 +20,23 @@ export function useNexusIcon() {
     })
     if (action === 'changeIcon') setPickerOpen(true)
     else if (action === 'addPhoto') {
-      const picked = await window.nexus.pickFile()
-      const bytes = picked && (await window.nexus.imageData(picked))
-      if (bytes) setCropImage(bytes)
-    } else if (action === 'removePhoto') await mutate({ op: 'setProfileImage', dataUrl: null })
+      const source = await window.nexus.pickFile()
+      if (source && (await mutate({ op: 'setProfileImage', source }))) openEditor()
+    } else if (action === 'removePhoto') await mutate({ op: 'setProfileImage', source: null })
     else if (action === 'removeIcon') await mutate({ op: 'setProfileIcon', icon: null })
   }
 
-  const confirmCrop = async (dataUrl: string): Promise<void> => {
-    setCropImage(null)
-    await mutate({ op: 'setProfileImage', dataUrl })
+  const onSave = async (crop: Crop): Promise<void> => {
+    closeEditor()
+    if (profileImage) await mutate({ op: 'setCrop', image: profileImage, crop })
   }
+
   // Clears the photo — otherwise it would still outrank the newly picked glyph in display.
   const selectGlyph = (id: string): void => {
     setPickerOpen(false)
     void (async () => {
       await mutate({ op: 'setProfileIcon', icon: id })
-      if (profileImage) await mutate({ op: 'setProfileImage', dataUrl: null })
+      if (profileImage) await mutate({ op: 'setProfileImage', source: null })
     })()
   }
 
@@ -40,11 +44,12 @@ export function useNexusIcon() {
     profileImage,
     profileIcon,
     openMenu,
-    cropImage,
-    setCropImage,
+    editing,
+    openEditor,
+    closeEditor,
+    onSave,
     pickerOpen,
     setPickerOpen,
-    confirmCrop,
     selectGlyph,
   }
 }

@@ -505,55 +505,54 @@ describe('handleMutate — review-round hardening', () => {
     expect(JSON.parse(await read('.nexus/settings.json')).profile_subtitle.length).toBe(30)
   })
 
-  it('setProfileImage writes the nexus icon under its own name and links it', async () => {
+  const pickImage = async (name: string, body = 'img-bytes'): Promise<string> => {
+    await mkdir(join(root, '_picks'), { recursive: true })
+    const p = join(root, '_picks', name)
+    await writeFile(p, body)
+    return p
+  }
+
+  it('adopts a picked image under the asset root and names it by wikilink', async () => {
     const r = await handleMutate(
-      { op: 'setProfileImage', dataUrl: 'data:image/png;base64,iVBORw0KGgo=' },
+      { op: 'setProfileImage', source: await pickImage('Photo.png') },
       nexusDeps,
     )
     expect(r.ok).toBe(true)
-    const cfg = JSON.parse(await read('.nexus/settings.json'))
-    expect(cfg.profile_image).toBe('[[nexus-icon.png]]')
-    expect(await pathExists(join(root, '.nexus/assets/nexus-icon.png'))).toBe(true)
+    expect(JSON.parse(await read('.nexus/settings.json')).profile_image).toBe('[[Photo.png]]')
+    expect(await pathExists(join(root, '.nexus/assets/Photo.png'))).toBe(true)
   })
 
-  it('a second crop rewrites the same icon rather than minting one beside it', async () => {
-    const png = (b: string): string => `data:image/png;base64,${b}`
-    await handleMutate({ op: 'setProfileImage', dataUrl: png('iVBORw0KGgo=') }, nexusDeps)
-    await handleMutate({ op: 'setProfileImage', dataUrl: png('iVBORw0KGgoBBB=') }, nexusDeps)
-    expect(JSON.parse(await read('.nexus/settings.json')).profile_image).toBe('[[nexus-icon.png]]')
-    expect(await readdir(join(root, '.nexus/assets'))).toEqual(['nexus-icon.png'])
-  })
-
-  it("a stranger's file wearing the icon's name is minted beside, never over", async () => {
-    // The setting names the file Pommora last wrote. One it does not name is someone else's,
-    // and nothing on the shared path is trashed.
+  it('a replaced photo under .nexus/assets is deleted; one under the configured root is not', async () => {
+    // default root (.nexus/assets): Pommora's own, so a replacement cleans it up
+    await handleMutate({ op: 'setProfileImage', source: await pickImage('First.png') }, nexusDeps)
+    await handleMutate({ op: 'setProfileImage', source: await pickImage('Second.png') }, nexusDeps)
+    expect(await pathExists(join(root, '.nexus/assets/First.png'))).toBe(false)
+    // configured root (file-assets): shared, so a replaced file survives
     await writeFile(
       join(root, '.nexus', 'settings.json'),
       JSON.stringify({ asset_directory: 'file-assets' }),
     )
-    const assets = join(root, 'file-assets')
-    await mkdir(assets, { recursive: true })
-    await writeFile(join(assets, 'nexus-icon.png'), 'theirs')
-    const r = await handleMutate(
-      { op: 'setProfileImage', dataUrl: 'data:image/png;base64,iVBORw0KGgo=' },
-      nexusDeps,
-    )
-    expect(r.ok).toBe(true)
-    expect(JSON.parse(await read('.nexus/settings.json')).profile_image).toBe(
-      '[[nexus-icon 2.png]]',
-    )
-    expect(await readFile(join(assets, 'nexus-icon.png'), 'utf8')).toBe('theirs')
+    await mkdir(join(root, 'file-assets'), { recursive: true })
+    await handleMutate({ op: 'setProfileImage', source: await pickImage('Kept.png') }, nexusDeps)
+    await handleMutate({ op: 'setProfileImage', source: await pickImage('Next.png') }, nexusDeps)
+    expect(await pathExists(join(root, 'file-assets/Kept.png'))).toBe(true)
   })
 
-  it('setProfileImage null clears the field + deletes the file', async () => {
-    await handleMutate(
-      { op: 'setProfileImage', dataUrl: 'data:image/png;base64,iVBORw0KGgo=' },
-      nexusDeps,
-    )
-    const r = await handleMutate({ op: 'setProfileImage', dataUrl: null }, nexusDeps)
+  it('setProfileImage null clears the field and deletes what Pommora minted', async () => {
+    await handleMutate({ op: 'setProfileImage', source: await pickImage('Gone.png') }, nexusDeps)
+    const r = await handleMutate({ op: 'setProfileImage', source: null }, nexusDeps)
     expect(r.ok).toBe(true)
     expect(JSON.parse(await read('.nexus/settings.json')).profile_image).toBeUndefined()
-    expect(await pathExists(join(root, '.nexus/assets/nexus-icon.png'))).toBe(false)
+    expect(await pathExists(join(root, '.nexus/assets/Gone.png'))).toBe(false)
+  })
+
+  it('a non-image source is refused, writing nothing', async () => {
+    const r = await handleMutate(
+      { op: 'setProfileImage', source: await pickImage('Notes.txt') },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(false)
+    expect(JSON.parse(await read('.nexus/settings.json')).profile_image).toBeUndefined()
   })
 
   it('homepage setBanner preserves blocks/icon/foreign keys (read-merge-write)', async () => {

@@ -746,11 +746,9 @@ async function mutateDeps(): Promise<MutateDeps> {
 }
 
 // What the dialog has handed the renderer this session. A picked file sits outside the nexus, so
-// the channels that read one back cannot be bounded by the root — they are bounded by the pick
-// instead, and the renderer never names a path main did not choose. `pickedImagePaths` stays the
-// narrower set on purpose: widening the FILTER must not widen what `nexus:imageData` will read.
+// the channel that adopts one cannot be bounded by the root — it is bounded by the pick instead,
+// and the renderer never names a path main did not choose.
 const pickedPaths = new Set<string>()
-const pickedImagePaths = new Set<string>()
 async function pickFilePath(win: BrowserWindow, opts?: PickFileOptions): Promise<string | null> {
   const root = sessionRoot()
   // The renderer holds nexus-relative paths only, so the folder to open at is joined here. It
@@ -763,26 +761,8 @@ async function pickFilePath(win: BrowserWindow, opts?: PickFileOptions): Promise
     ...(opts?.any ? {} : { filters: [{ name: 'Images', extensions: IMAGE_EXTS }] }),
   })
   const picked = result.canceled ? null : (result.filePaths[0] ?? null)
-  if (picked) {
-    pickedPaths.add(picked)
-    if (!opts?.any) pickedImagePaths.add(picked)
-  }
+  if (picked) pickedPaths.add(picked)
   return picked
-}
-
-// Reading one picked image into a data URL is what lets a surface show a file BEFORE it is
-// adopted — the crop modal, whose output is a new image rather than the file itself.
-const IMAGE_DATA_MAX = 64 * 1024 * 1024
-async function readImageData(absPath: unknown): Promise<string | null> {
-  if (typeof absPath !== 'string' || !pickedImagePaths.has(absPath)) return null
-  const mime = ASSET_MIME[extname(absPath).toLowerCase()]
-  if (!mime) return null
-  try {
-    const buf = await readFile(absPath)
-    return buf.byteLength > IMAGE_DATA_MAX ? null : `data:${mime};base64,${buf.toString('base64')}`
-  } catch {
-    return null
-  }
 }
 
 /** An asset a mutation adopted never reaches the watcher — `atomicWriteBinary` records its own
@@ -1823,7 +1803,6 @@ serveBridge(
         return adopted
       },
     },
-    'nexus:imageData': { kind: 'raw', fn: readImageData },
 
     // Change/Remove for an existing image, a single Add item when `add`. The noun follows the
     // surface's vocabulary (Banner by default; the cards' Cover-mode thumb passes "Cover").

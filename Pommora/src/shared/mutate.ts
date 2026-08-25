@@ -86,7 +86,9 @@ export type MutateRequest =
   // A CROP rather than a chosen file, so it carries bytes: they land in the asset directory
   // under the nexus icon's own name and `settings.profile_image` names it by wikilink; null ⇒
   // clear the field.
-  | { op: 'setProfileImage'; dataUrl: string | null }
+  // `source` is the absolute path of a picked file, adopted into the asset directory like a banner;
+  // null clears it. The circle framing is a separate crop keyed to the adopted image.
+  | { op: 'setProfileImage'; source: string | null }
   // The identity fallback when no photo is set, in `settings.profile_icon`; null ⇒ clear it.
   | { op: 'setProfileIcon'; icon: string | null }
   // Set the nexus profile subtitle (≤30 chars, enforced) in `settings.profile_subtitle`. Parked: the
