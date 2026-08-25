@@ -443,6 +443,7 @@ interface SessionState {
   mutate: (
     req: MutateRequest,
     onCreated?: (created: { id: string; path: string }) => void | Promise<void>,
+    onAdopted?: (adopted: string | undefined) => void,
   ) => Promise<boolean>
 }
 
@@ -1791,7 +1792,7 @@ export const useSession = create<SessionState>((set, get) => {
         get().bumpValuesEpoch(wrapKey('property', before), wrapKey('property', after))
       return true
     },
-    mutate: async (req, onCreated) => {
+    mutate: async (req, onCreated, onAdopted) => {
       const res = await window.nexus.mutate(req)
       if (!res.ok) {
         await window.nexus.showError(res.error.message)
@@ -1892,6 +1893,7 @@ export const useSession = create<SessionState>((set, get) => {
         }
       }
       if (!createdShown && res.value.created && onCreated) await onCreated(res.value.created)
+      onAdopted?.(res.value.adopted)
       return true
     },
   }

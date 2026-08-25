@@ -1,10 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { Crop } from '@shared/schemas'
-import { clampZoom, DEFAULT_CROP, MAX_ZOOM, MIN_ZOOM, panDelta } from '@shared/cropGeometry'
+import {
+  clamp,
+  clampZoom,
+  cropWindow,
+  DEFAULT_CROP,
+  dragWindow,
+  MAX_ZOOM,
+  MIN_ZOOM,
+} from '@shared/cropGeometry'
+import { HTTP_URL } from '@shared/nexusPaths'
 import { resolveAssetUrl, resolveAssetValue } from '@renderer/assetUrl'
 import { useSession } from '@renderer/store'
-import { AssetImage, cropFor } from '../AssetImage/AssetImage'
+import { cropFor } from '../AssetImage/AssetImage'
 import { useImageAspect } from '../AssetImage/imageAspect'
 import { Button } from '../Controls/Button'
 import { Slider } from '../Controls/Slider/Slider'
@@ -16,19 +25,12 @@ import { GlassWindow } from '../../Materials'
 import { usePointerGesture } from '../../Interactions/gesture'
 import * as s from './imagePicker.css'
 
-const FRAME_W = 280 // KNOB
-const CIRCLE = 220 // KNOB — the circle keeps its prior 220-in-280 geometry (the 08-25 ruling)
+const FRAME_H = 260 // KNOB — every frame's fixed height (the image sets the width)
+const MIN_W = 220 // KNOB — narrowest the frame gets (a tall image)
+const MAX_W = 460 // KNOB — widest before a wide image zooms instead of stretching
 const RECT_RADIUS = 12 // KNOB
 const SCROLL_RATE = 0.0015 // KNOB
 const PINCH_RATE = 0.01 // KNOB
-
-const CENTERED: React.CSSProperties = {
-  width: CIRCLE,
-  height: CIRCLE,
-  top: '50%',
-  left: '50%',
-  transform: 'translate(-50%, -50%)',
-}
 
 export function ImagePicker({
   open,
@@ -45,9 +47,10 @@ export function ImagePicker({
   boxAspect: number
   onCancel: () => void
   onSave: (crop: Crop) => void | Promise<void>
-  /** Re-pick or paste a new image from inside the editor — the seat adopts the abs path and
-   *  answers whether it landed (so the picker can hold Save until the new `value` arrives). */
-  onRepick?: (source: string) => boolean | Promise<boolean>
+  /** Re-pick or paste a new image from inside the editor — the seat adopts the source and answers
+   *  the value it landed on, so Save is held until the seat's `value` reaches it (a dedup, where the
+   *  adopted value is the one already shown, releases at once). */
+  onRepick?: (source: string) => Promise<string | undefined>
 }): React.JSX.Element | null {
   const map = useSession((st) => st.assetMap)
   const crops = useSession((st) => st.tree?.crops)
@@ -61,12 +64,12 @@ export function ImagePicker({
   // confirming push — so Save is held until `value` actually changes, or the crop writes to the
   // deleted image and the new one lands uncropped.
   const [repicking, setRepicking] = useState(false)
+  const [pendingValue, setPendingValue] = useState<string | null>(null)
   const draftRef = useRef(draft)
   draftRef.current = draft
   const aspectRef = useRef(aspect)
   aspectRef.current = aspect
   const frameRef = useRef<HTMLDivElement>(null)
-  const colorInput = useRef<HTMLInputElement>(null)
   const gesture = usePointerGesture()
 
   // Reset the draft from the stored crop when the editor opens or its image changes (a re-pick
@@ -76,21 +79,35 @@ export function ImagePicker({
     if (open) setDraft(cropFor(value, map, crops) ?? DEFAULT_CROP)
   }, [open, value])
 
-  // Hold Save only while the adopt is in flight — a dedup adopt returns the same value, so waiting
-  // on a value change would strand the hold when the re-picked image is the one already set.
+  // Hold Save until the re-picked image's value actually lands on the seat, or a fast Save writes
+  // the crop to the just-replaced image and the new one lands uncropped. A dedup (or a failed
+  // adopt) lands on the value already shown and releases at once, so the hold never strands.
   const settleRepick = useCallback(
     (source: string): void => {
       if (!onRepick) return
       setRepicking(true)
-      void Promise.resolve(onRepick(source)).then(() => setRepicking(false))
+      void Promise.resolve(onRepick(source)).then((landed) => {
+        if (!landed || landed === value) {
+          setRepicking(false)
+          setPendingValue(null)
+        } else setPendingValue(landed)
+      })
     },
-    [onRepick],
+    [onRepick, value],
   )
+
+  // The re-picked value has landed on the seat (the draft re-seeds on it) — Save is safe again.
+  useEffect(() => {
+    if (pendingValue !== null && value === pendingValue) {
+      setRepicking(false)
+      setPendingValue(null)
+    }
+  }, [value, pendingValue])
 
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') onCancel()
+      if (e.key === 'Escape' && !e.defaultPrevented) onCancel()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -111,7 +128,12 @@ export function ImagePicker({
 
   useEffect(() => {
     if (!open || !onRepick) return
-    const onPaste = (): void => {
+    const onPaste = (e: ClipboardEvent): void => {
+      const text = e.clipboardData?.getData('text').trim()
+      if (text && HTTP_URL.test(text)) {
+        settleRepick(text)
+        return
+      }
       void window.nexus.pasteImage().then((p) => {
         if (p) settleRepick(p)
       })
@@ -124,14 +146,21 @@ export function ImagePicker({
 
   const failed = aspect === null
   const isCircle = shape === 'circle'
-  const frameH = isCircle ? FRAME_W : Math.round(FRAME_W * boxAspect)
+  const imgAspect = aspect && aspect > 0 ? aspect : boxAspect
+  const imgH = FRAME_H
+  const imgW = FRAME_H / imgAspect
+  const frameW = clamp(Math.round(imgW), MIN_W, MAX_W)
+  // The image sits at its own aspect and the frame clamps around it: a wide image overflows the
+  // max width and is cropped (zoomed), a tall one leaves the frame wider than itself.
+  const imgLeft = (frameW - imgW) / 2
+  const win = cropWindow(draft, imgAspect, boxAspect)
   const resolved = resolveAssetValue(value, map)
   const echoPath = resolved.kind === 'asset' ? resolved.rel : value
+  const imgProps = { src: url ?? '', draggable: false }
 
   const startPan = (e: React.PointerEvent): void => {
     const el = frameRef.current
     if (!el || failed) return
-    const boxW = el.getBoundingClientRect().width
     const anchor = draftRef.current
     const sx = e.clientX
     const sy = e.clientY
@@ -147,12 +176,12 @@ export function ImagePicker({
       },
       onDragMove: (ev) =>
         setDraft(
-          panDelta(
+          dragWindow(
             anchor,
-            draftRef.current.zoom,
             aspectRef.current ?? 0,
             boxAspect,
-            boxW,
+            imgW,
+            imgH,
             ev.clientX - sx,
             ev.clientY - sy,
           ),
@@ -178,17 +207,18 @@ export function ImagePicker({
     })
   }
   const pickBackground = (): void => {
-    try {
-      colorInput.current?.showPicker()
-    } catch {
-      /* off-DOM or outside a gesture */
-    }
+    const Eye = (window as { EyeDropper?: new () => { open: () => Promise<{ sRGBHex: string }> } })
+      .EyeDropper
+    if (!Eye) return
+    void new Eye()
+      .open()
+      .then((r) => setDraft((d) => ({ ...d, color: r.sRGBHex })))
+      .catch(() => {})
   }
 
   const viewportClass = dragging ? `${s.viewport} ${s.grabbing}` : s.viewport
   const setZoom = (z: number): void => setDraft((d) => ({ ...d, zoom: clampZoom(z) }))
 
-  const preview = <AssetImage value={value} preview={draft} />
   const glyphs = (
     <>
       <AccessoryButton
@@ -209,61 +239,79 @@ export function ImagePicker({
   )
 
   return createPortal(
-    <div className={s.backdrop} onPointerDown={(e) => e.target === e.currentTarget && onCancel()}>
+    // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: a modal scrim, not a control — it swallows the portal's own pointer events (which bubble the React tree into whatever opened the picker: a card's click-to-open, right-click menu, or drag handle) and dismisses on an outside click; Escape is the keyboard dismissal.
+    <div
+      className={s.backdrop}
+      onPointerDown={(e) => e.stopPropagation()}
+      onContextMenu={(e) => e.stopPropagation()}
+      onClick={(e) => {
+        e.stopPropagation()
+        if (e.target === e.currentTarget) onCancel()
+      }}
+    >
       <GlassWindow className={s.panel}>
-        {isCircle ? (
+        <div
+          ref={frameRef}
+          className={viewportClass}
+          style={{ width: frameW, height: FRAME_H, background: draft.color || undefined }}
+          onPointerDown={startPan}
+        >
+          <img
+            {...imgProps}
+            alt=""
+            className={s.dimImage}
+            style={{ width: imgW, height: imgH, left: imgLeft, top: 0 }}
+          />
           <div
-            className={viewportClass}
-            style={{ width: FRAME_W, height: FRAME_W }}
-            onPointerDown={startPan}
+            className={s.cropBox}
+            style={{
+              left: imgLeft + win.left * imgW,
+              top: win.top * imgH,
+              width: win.width * imgW,
+              height: win.height * imgH,
+              borderRadius: isCircle ? '50%' : RECT_RADIUS,
+            }}
           >
-            <div className={s.surround}>{preview}</div>
-            <div ref={frameRef} className={s.circleFrame} style={CENTERED}>
-              {preview}
-            </div>
-            <div className={s.ring} style={{ ...CENTERED, borderRadius: '50%' }} />
-            {glyphs}
+            <img
+              {...imgProps}
+              alt=""
+              className={s.cropImage}
+              style={{ width: imgW, height: imgH, left: -win.left * imgW, top: -win.top * imgH }}
+            />
           </div>
-        ) : (
-          <div
-            ref={frameRef}
-            className={viewportClass}
-            style={{ width: FRAME_W, height: frameH, borderRadius: RECT_RADIUS }}
-            onPointerDown={startPan}
-          >
-            {preview}
-            <div className={s.ring} style={{ inset: 0, borderRadius: RECT_RADIUS }} />
-            {glyphs}
-          </div>
-        )}
-        <input
-          ref={colorInput}
-          className={s.colorInput}
-          type="color"
-          value={draft.color ?? '#000000'}
-          onInput={(e) => setDraft((d) => ({ ...d, color: (e.target as HTMLInputElement).value }))}
-        />
+          {glyphs}
+        </div>
         {failed ? (
           <span className={s.message}>Couldn’t load that image.</span>
         ) : (
-          <Slider
-            value={draft.zoom}
-            min={MIN_ZOOM}
-            max={MAX_ZOOM}
-            step={0.01}
-            ariaLabel="Zoom"
-            onInput={setZoom}
-            onCommit={setZoom}
-            format={(v) => `${v.toFixed(2)}×`}
-          />
+          <div className={s.sliderRow} style={{ width: frameW }}>
+            <Slider
+              value={draft.zoom}
+              min={MIN_ZOOM}
+              max={MAX_ZOOM}
+              step={0.01}
+              ariaLabel="Zoom"
+              onInput={setZoom}
+              onCommit={setZoom}
+              format={(v) => `${v.toFixed(2)}×`}
+            />
+          </div>
         )}
-        <div className={s.actions}>
+        <div className={s.actions} style={{ width: frameW }}>
           <Button type="filled" label="Cancel" onClick={onCancel} disabled={busy} />
           <InputField
             chrome="bordered"
             capped
             className={s.pathField}
             label="Image"
+            edit={{
+              value: echoPath,
+              onCommit: (next) => {
+                const v = next.trim()
+                if (v && v !== echoPath) settleRepick(v)
+              },
+              renames: 'row',
+            }}
             leading={<Icon name="image" size="body" />}
             trailing={
               onRepick ? (

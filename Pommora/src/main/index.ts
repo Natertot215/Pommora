@@ -743,7 +743,6 @@ async function mutateDeps(): Promise<MutateDeps> {
     trashMode: config.trashMode ?? DEFAULT_TRASH_MODE,
     trashToSystem: (p) => shell.trashItem(p),
     permanentDelete: root === null ? false : await readPermanentDelete(root),
-    wasPicked: (p) => pickedPaths.has(p),
   }
 }
 
@@ -1786,8 +1785,8 @@ serveBridge(
         const opts = (arg ?? {}) as { hasPhoto?: boolean; hasGlyph?: boolean }
         return popReturningMenu<NexusIconAction>(win, (pick) => [
           { label: 'Edit Icon', click: pick('changeIcon') },
-          { label: opts.hasPhoto ? 'Change Photo' : 'Add Photo', click: pick('addPhoto') },
           ...(opts.hasPhoto ? [{ label: 'Edit Photo', click: pick('editPhoto') }] : []),
+          { label: opts.hasPhoto ? 'Change Photo' : 'Add Photo', click: pick('addPhoto') },
           ...(opts.hasPhoto || opts.hasGlyph ? [{ type: 'separator' as const }] : []),
           ...(opts.hasPhoto ? [{ label: 'Remove Photo', click: pick('removePhoto') }] : []),
           ...(opts.hasGlyph ? [{ label: 'Remove Icon', click: pick('removeIcon') }] : []),
@@ -1833,8 +1832,8 @@ serveBridge(
           opts?.add
             ? [{ label: `Add ${noun}`, click: pick('change') }]
             : [
-                { label: `Change ${noun}`, click: pick('change') },
                 { label: `Edit ${noun}`, click: pick('edit') },
+                { label: `Change ${noun}`, click: pick('change') },
                 ...(opts?.noRemove ? [] : [{ label: `Remove ${noun}`, click: pick('remove') }]),
               ],
         )

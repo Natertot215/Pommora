@@ -33,8 +33,14 @@ export function useNexusIcon() {
   }
 
   // Re-pick or paste from inside the editor: adopt the new file and keep the editor open on it;
-  // the boolean lets the picker hold Save until the new image lands.
-  const onRepick = (source: string): Promise<boolean> => mutate({ op: 'setProfileImage', source })
+  // the adopted value lets the picker hold Save until the new image lands on the seat.
+  const onRepick = async (source: string): Promise<string | undefined> => {
+    let adopted: string | undefined
+    await mutate({ op: 'setProfileImage', source }, undefined, (a) => {
+      adopted = a
+    })
+    return adopted
+  }
 
   // Clears the photo — otherwise it would still outrank the newly picked glyph in display.
   const selectGlyph = (id: string): void => {

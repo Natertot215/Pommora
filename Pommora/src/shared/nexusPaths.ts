@@ -51,6 +51,10 @@ export const thumbRel = (nexusId: string, key: string): string => `${thumbsRel(n
 
 export const WEB_ADDRESS = /^[a-z][a-z0-9+.-]*:/i
 
+// A remote image a picker may adopt by reference. Only http(s) — a `file:`/`data:` source is not
+// stored raw; it falls to `adoptFile`, which refuses anything that isn't an image it can name.
+export const HTTP_URL = /^https?:\/\//i
+
 // One spelling: main keys crops from `assetFilePath`, the renderer from `resolveAssetValue`.
 export function cropKeyFor(rel: string | null, raw: string): string | null {
   const trimmed = raw.trim()
