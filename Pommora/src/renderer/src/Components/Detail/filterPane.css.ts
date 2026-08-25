@@ -203,22 +203,10 @@ export const controlFieldWide = style([cellField, { flex: '1 1 auto' }])
 
 /** The add-rule affordance — sits at the foot of the rule list, aligned under the rows themselves
  *  rather than pinned as a footing, so adding reads as extending the list rather than a pane action. */
-export const addRow = style([
-  text.control.emphasized,
-  {
-    alignSelf: 'flex-start',
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '20px',
-    height: '20px',
-    marginTop: '2px',
-    borderRadius: '5px',
-    border: 'none',
-    background: 'none',
-    padding: 0,
-    color: c.label.tertiary,
-    cursor: 'default',
-    selectors: { '&:hover': { background: 'var(--state-hover)', color: c.label.secondary } },
-  },
-])
+export const addRow = style({
+  alignSelf: 'flex-start',
+  width: '20px',
+  marginTop: '2px',
+  color: c.label.tertiary,
+  selectors: { '&:hover': { color: c.label.secondary } },
+})

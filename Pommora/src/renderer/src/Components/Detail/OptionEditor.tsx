@@ -1,5 +1,5 @@
 import { Fragment, useMemo, useRef, useState } from 'react'
-import { Icon } from '@renderer/DesignSystem/Symbols'
+import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
 import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import {
   addOption,
@@ -101,15 +101,16 @@ export function OptionEditor({
     <div className={s.optionEditor}>
       <div className={s.optionsRow}>
         <span className={s.optionsLabel}>Options</span>
-        <button
-          type="button"
+        <Button
+          size="button-inline"
+          paddingX="0"
+          icon="plus"
+          iconSize={s.ICON.optionsAdd}
           className={s.optionsAdd}
           data-create
           aria-label="Add Option"
           onClick={() => setAdding(options.length)}
-        >
-          <Icon name="plus" size={s.ICON.optionsAdd} />
-        </button>
+        />
       </div>
       <div
         className={cx('drop-line-host', s.optionList)}

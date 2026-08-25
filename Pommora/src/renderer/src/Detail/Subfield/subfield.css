@@ -31,9 +31,6 @@
 }
 /* Drop the button's own left padding here so the chevron sits flush on the subfield inset (where a
    page's breadcrumb text lands), not offset past it. */
-.subfield.subfield-lead .subfield-viewtype {
-  padding-left: 0;
-}
 
 .subfield-crumbs {
   display: flex;
@@ -83,38 +80,10 @@ button.subfield-crumb.ghost:hover {
   gap: 6px;
   white-space: nowrap;
 }
-.subfield-add {
-  appearance: none;
-  border: 0;
-  background: none;
-  padding: 2px;
-  display: inline-flex;
-  border-radius: 5px;
-  color: var(--label-secondary);
-  cursor: default;
-  -webkit-app-region: no-drag;
-}
-.subfield-add:hover {
-  background: var(--state-hover);
-}
-
-/* NavView's List/Gallery toggle — an icon-leading label, matching the other footing glyphs. */
+.subfield-add,
 .subfield-viewtype {
-  appearance: none;
-  font: inherit;
-  border: 0;
-  background: none;
-  padding: 2px 4px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  border-radius: 5px;
   color: var(--label-secondary);
-  cursor: default;
   -webkit-app-region: no-drag;
-}
-.subfield-viewtype:hover {
-  background: var(--state-hover);
 }
 
 .subfield-reveal {

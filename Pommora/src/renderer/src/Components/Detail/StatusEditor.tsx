@@ -1,7 +1,7 @@
 import { Fragment, useMemo, useRef, useState } from 'react'
+import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
 import { DragGhost } from '@renderer/DesignSystem/Interactions/DragGhost'
 import { DropLine } from '@renderer/DesignSystem/Interactions/DropLine'
-import { Icon } from '@renderer/DesignSystem/Symbols'
 import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import {
   addStatusOption,
@@ -137,15 +137,16 @@ export function StatusEditor({
                 {g.label}
               </span>
             )}
-            <button
-              type="button"
+            <Button
+              size="button-inline"
+              paddingX="0"
+              icon="plus"
+              iconSize={s.ICON.optionsAdd}
               className={s.groupAdd}
               data-create
               aria-label={`Add to ${g.label}`}
               onClick={() => setAdding({ groupId: g.id, index: g.options.length })}
-            >
-              <Icon name="plus" size={s.ICON.optionsAdd} />
-            </button>
+            />
           </div>
           <div
             className={cx('drop-line-host', s.optionList)}

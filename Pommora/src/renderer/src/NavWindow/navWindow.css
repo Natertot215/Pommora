@@ -140,17 +140,6 @@
   position: relative;
   z-index: 3;
   align-self: flex-start;
-  display: flex;
-  align-items: center;
-  gap: 3px;
   margin-top: 4px;
-  padding: 3px 5px;
-  border: none;
-  background: none;
-  border-radius: 5px;
   color: var(--label-secondary);
-  cursor: pointer;
-}
-.navwindow-style-toggle:hover {
-  background: var(--state-hover);
 }

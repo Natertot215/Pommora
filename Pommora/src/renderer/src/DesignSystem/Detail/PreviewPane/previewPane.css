@@ -123,17 +123,8 @@
   z-index: 3;
 }
 .ppane-action {
-  display: flex;
-  padding: 3px;
-  border: none;
-  border-radius: 6px;
-  background: none;
   /* An active state never brightens the glyph. */
   color: var(--label-secondary);
-  cursor: pointer;
-}
-.ppane-action:hover {
-  background: var(--state-hover);
 }
 
 /* ---- side panes. Material and inner geometry come from the SidePane shell; only positioning and

@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
 import { entityIcon, Icon } from '@renderer/DesignSystem/Symbols'
 import { useSession } from '../../store'
 import {
@@ -7,6 +8,7 @@ import {
   lockIcon,
 } from '@renderer/DesignSystem/Components/Menu/menu.css'
 import {
+  FooterMoreButton,
   MenuBottomRow,
   MenuItem,
   MenuScrollFrame,
@@ -81,21 +83,12 @@ export function PageMenu(): React.JSX.Element | null {
             leading={
               // Parked: a page has no board to lock. Inert rather than a live button wired to a
               // no-op, which reads as broken instead of pending.
-              <button type="button" aria-label="Lock" className={footerLockAction} disabled>
+              <Button size="button-inline" aria-label="Lock" className={footerLockAction} disabled>
                 <Icon name="lock" size="control" className={lockIcon} />
                 Lock
-              </button>
+              </Button>
             }
-            trailing={
-              <button
-                type="button"
-                aria-label="More actions"
-                className={footerLockAction}
-                onClick={() => void runFooterAction()}
-              >
-                <Icon name="ellipsis" size="body" />
-              </button>
-            }
+            trailing={<FooterMoreButton onClick={() => void runFooterAction()} />}
           />
         }
       >

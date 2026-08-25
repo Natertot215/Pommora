@@ -1,5 +1,5 @@
 import type { PointerEvent as ReactPointerEvent } from 'react'
-import { Icon } from '@renderer/DesignSystem/Symbols'
+import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
 
 import type { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import { cx } from '@renderer/DesignSystem/Util/cx'
@@ -61,16 +61,17 @@ export function OptionRow({
     <>
       <Label shape={shape} color={color} text={label} />
       <span className={s.paletteAnchor}>
-        <button
+        <Button
           ref={coloring ? paletteRef : undefined}
-          type="button"
+          size="button-inline"
+          paddingX="0"
+          icon="palette"
+          iconSize={s.ICON.palette}
           className={s.paletteButton}
           style={coloring ? { opacity: 1 } : undefined}
           aria-label="Recolor"
           onClick={onToggleColoring}
-        >
-          <Icon name="palette" size={s.ICON.palette} />
-        </button>
+        />
         <ColorPicker
           open={coloring}
           selected={color}

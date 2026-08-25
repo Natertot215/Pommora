@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { Icon } from '@renderer/DesignSystem/Symbols'
+import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { duration, easing, ms } from '@renderer/DesignSystem/Animation'
 import { text } from '@renderer/DesignSystem/Tokens'
@@ -176,14 +176,14 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
             <div className="navwindow-rail-list over-scroll">
               <NavList items={resolvedFavorites} onSelect={goClose} onOpenNewTab={goNewTab} />
             </div>
-            <button
-              type="button"
-              className={cx('navwindow-style-toggle', text.footnote.emphasized)}
+            <Button
+              size="button-inline"
+              icon="chevrons-up-down"
+              iconSize="control"
+              label={viewMode === 'list' ? 'List' : 'Gallery'}
+              className="navwindow-style-toggle"
               onClick={toggleViewMode}
-            >
-              <Icon name="chevrons-up-down" size="control" />
-              <span>{viewMode === 'list' ? 'List' : 'Gallery'}</span>
-            </button>
+            />
           </>
         ),
       }}

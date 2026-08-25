@@ -1,5 +1,6 @@
 import { forwardRef, type ReactNode, type MouseEvent, type CSSProperties } from 'react'
-import { DISCLOSURE_INDENT } from '../../Tokens/size.css'
+import { DISCLOSURE_INDENT, type IconSize } from '../../Tokens/size.css'
+import { Button } from '../Controls/Button'
 import { Icon, type IconName } from '../../Symbols'
 import * as s from './menu.css'
 import { cx } from '../../Util/cx'
@@ -159,7 +160,7 @@ export const AccessoryButton = forwardRef<
   HTMLButtonElement,
   {
     icon: IconName
-    size: React.ComponentProps<typeof Icon>['size']
+    size: IconSize
     ariaLabel: string
     box?: number
     onClick: () => void
@@ -172,9 +173,12 @@ export const AccessoryButton = forwardRef<
   ref,
 ): React.JSX.Element {
   return (
-    <button
+    <Button
       ref={ref}
-      type="button"
+      size="button-inline"
+      paddingX="0"
+      icon={icon}
+      iconSize={size}
       disabled={disabled}
       className={cx(s.accessoryButton, className)}
       data-create={create || undefined}
@@ -184,9 +188,7 @@ export const AccessoryButton = forwardRef<
         e.stopPropagation()
         onClick()
       }}
-    >
-      <Icon name={icon} size={size} />
-    </button>
+    />
   )
 })
 
@@ -235,15 +237,35 @@ export function FooterLockButton({
   onToggle: () => void
 }): React.JSX.Element {
   return (
-    <button
-      type="button"
+    <Button
+      size="button-inline"
       aria-label={`${verb} ${noun}`}
       className={s.footerLockAction}
       onClick={onToggle}
     >
       <Icon name="lock" size="control" className={s.lockIcon} />
       {verb}
-    </button>
+    </Button>
+  )
+}
+
+export function FooterMoreButton({
+  onClick,
+  disabled,
+}: {
+  onClick?: () => void
+  disabled?: boolean
+}): React.JSX.Element {
+  return (
+    <Button
+      size="button-inline"
+      aria-label="More actions"
+      className={s.footerLockAction}
+      onClick={onClick}
+      disabled={disabled}
+    >
+      <Icon name="ellipsis" size="body" />
+    </Button>
   )
 }
 

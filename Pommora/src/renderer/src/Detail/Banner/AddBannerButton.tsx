@@ -1,19 +1,20 @@
-import { Icon } from '@renderer/DesignSystem/Symbols'
+import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
 
 export function AddBannerButton({ onClick }: { onClick: () => void }): React.JSX.Element {
   return (
-    <div className="add-banner-strip">
-      <button
-        type="button"
+    <div className="add-banner-strip" data-reveal-host>
+      <Button
+        size="button-inline"
+        icon="square-plus"
+        iconSize="body"
+        label="Add Banner"
+        revealOnHover
         className="add-banner-btn"
         onClick={onClick}
         data-create
         aria-label="Add banner"
         title="Add a banner"
-      >
-        <Icon name="square-plus" size="body" />
-        Add Banner
-      </button>
+      />
     </div>
   )
 }

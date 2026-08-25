@@ -1,4 +1,5 @@
 import { Icon } from '@renderer/DesignSystem/Symbols'
+import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import * as s from './settingsPane.css'
 
@@ -17,8 +18,9 @@ export function EyeToggle({
   onToggle: () => void
 }): React.JSX.Element {
   return (
-    <button
-      type="button"
+    <Button
+      size="button-inline"
+      paddingX="0"
       className={cx(s.eyeButton, className)}
       aria-label={`${hidden ? 'Show' : 'Hide'} ${name}`}
       onClick={(e) => {
@@ -32,6 +34,6 @@ export function EyeToggle({
       <span className={s.eyeHoverGlyph}>
         <Icon name={hidden ? 'eye' : 'eye-off'} size={s.ICON.eye} />
       </span>
-    </button>
+    </Button>
   )
 }
