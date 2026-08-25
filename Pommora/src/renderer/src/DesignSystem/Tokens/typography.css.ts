@@ -3,9 +3,7 @@ import { createGlobalTheme, style } from '@vanilla-extract/css'
 /**
  * Typography primitives — the raw type scale and the single source of truth.
  * Edit a value here and it propagates to every composed text style and every
- * component that uses one; weights follow the standard/emphasized/semibold/bold
- * ladder by name, not a per-style emphasis.
- */
+ * component that uses one.*/
 export const font = createGlobalTheme(':root', {
   family:
     "'Inter Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
@@ -39,8 +37,7 @@ type ScaleKey = keyof typeof font.scale
 type WeightKey = keyof typeof font.weight
 
 // Each text style exposes all four weights by name. The variant IS its weight, uniformly across every
-// style: standard / emphasized / semibold / bold map straight to the font.weight ladder above. No
-// role-based remapping — pick the size by style key, the weight by variant name.
+// style: standard / emphasized / semibold / bold map straight to the font.weight ladder above.
 const ramp = (key: ScaleKey): Record<WeightKey, string> => {
   const base = {
     fontFamily: font.family,
