@@ -20,13 +20,34 @@ import { readSettingsLeaves, scopeOf, type SettingsLeaves } from './readNexus'
  *  through, so concurrent writes to different keys can't clobber each other. A missing file
  *  starts empty; an unreadable one fails the write (the throw lands as the operation's error
  *  envelope) rather than replacing the user's settings. */
-export async function updateSettings(
+export async function updateNexusConfig(
   root: string,
+  file: keyof typeof NEXUS_CONFIG_FILES,
   mutate: (current: Record<string, unknown>) => Record<string, unknown>,
 ): Promise<void> {
-  const path = nexusConfig(root, NEXUS_CONFIG_FILES.settings)
+  const path = nexusConfig(root, NEXUS_CONFIG_FILES[file])
   const written = await rmwJsonStrict(path, mutate, () => ({}))
   if (!written.ok) throw new Error(written.error.message)
+}
+
+export const updateSettings = (
+  root: string,
+  mutate: (current: Record<string, unknown>) => Record<string, unknown>,
+): Promise<void> => updateNexusConfig(root, 'settings', mutate)
+
+/** Merge the `byImage` map in `crops.json` (serialized; foreign top-level keys preserved). The
+ *  one owner every crop writer funnels through, so `byImage` is never spelled two ways. */
+export function updateCrops(
+  root: string,
+  edit: (byImage: Record<string, unknown>) => Record<string, unknown>,
+): Promise<void> {
+  return updateNexusConfig(root, 'crops', (cur) => {
+    const b =
+      cur.byImage != null && typeof cur.byImage === 'object' && !Array.isArray(cur.byImage)
+        ? (cur.byImage as Record<string, unknown>)
+        : {}
+    return { ...cur, byImage: edit(b) }
+  })
 }
 
 /** The leaves `settings.json` feeds, for the main-side consumers that want one of them and not a

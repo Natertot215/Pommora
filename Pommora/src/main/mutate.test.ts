@@ -5,6 +5,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { adoptFile, handleMutate, type MutateDeps } from './mutate'
 import { NEW_PAGE_SLOT } from '@shared/mutate'
+import type { Crop } from '@shared/schemas'
+import { cropKeyFor } from '@shared/nexusPaths'
+import { assetFilePath } from './assetRoots'
 
 const A_ID = '01KVGMT8BFG350FZZXAMG1QDRA'
 const B_ID = '01KVGMT8BFG350FZZXAMG1QDRB'
@@ -857,6 +860,99 @@ describe('handleMutate — setBanner', () => {
     expect(r.ok).toBe(true)
     expect(JSON.parse(await read('.nexus/homepage.json')).banner).toBe('[[Home.png]]')
     expect((await readNexus(root)).homepage.banner).toBe('[[Home.png]]')
+  })
+})
+
+describe('handleMutate — setCrop', () => {
+  let outside: string
+  beforeEach(async () => {
+    outside = await mkdtemp(join(tmpdir(), 'pom-pick-'))
+  })
+  afterEach(async () => {
+    await rm(outside, { recursive: true, force: true })
+  })
+  const pick = async (name: string, body = 'image-bytes'): Promise<string> => {
+    const p = join(outside, name)
+    await writeFile(p, body)
+    return p
+  }
+  const setBannerPage = (source: string | null) =>
+    handleMutate({ op: 'setBanner', path: 'Notes/Daily/Alpha.md', kind: 'page', source }, nexusDeps)
+  const setCrop = (image: string, crop: Crop | null) =>
+    handleMutate({ op: 'setCrop', image, crop }, nexusDeps)
+  const cropsOf = async (): Promise<Record<string, Crop> | undefined> => {
+    try {
+      return JSON.parse(await read('.nexus/crops.json')).byImage
+    } catch {
+      return undefined
+    }
+  }
+
+  it('stores the crop at the resolved path with the zoom clamped', async () => {
+    await setBannerPage(await pick('Cover.png'))
+    const r = await setCrop('[[Cover.png]]', { x: 0.3, y: 0.4, zoom: 99 })
+    expect(r.ok).toBe(true)
+    expect(await cropsOf()).toEqual({
+      '.nexus/assets/Cover.png': { x: 0.3, y: 0.4, zoom: 4 },
+    })
+  })
+
+  it('refuses an ambiguous name, writing nothing', async () => {
+    await writeFile(
+      join(root, '.nexus', 'settings.json'),
+      JSON.stringify({ asset_directory: 'file-assets' }),
+    )
+    for (const sub of ['a', 'b']) {
+      await mkdir(join(root, 'file-assets', sub), { recursive: true })
+      await writeFile(join(root, 'file-assets', sub, 'Twin.png'), 'bytes')
+    }
+    await openSession(root)
+    const r = await setCrop('[[Twin.png]]', { x: 0.5, y: 0.5, zoom: 1 })
+    expect(r.ok).toBe(false)
+    expect(await cropsOf()).toBeUndefined()
+  })
+
+  it('a URL value keys the crop by its raw string', async () => {
+    const r = await setCrop('https://example.com/a.png', { x: 0.2, y: 0.2, zoom: 1.5 })
+    expect(r.ok).toBe(true)
+    expect(await cropsOf()).toEqual({
+      'https://example.com/a.png': { x: 0.2, y: 0.2, zoom: 1.5 },
+    })
+  })
+
+  it('null deletes the key and preserves a foreign top-level key', async () => {
+    await setBannerPage(await pick('Cover.png'))
+    await setCrop('[[Cover.png]]', { x: 0.3, y: 0.4, zoom: 2 })
+    const raw = JSON.parse(await read('.nexus/crops.json'))
+    await writeFile(
+      join(root, '.nexus', 'crops.json'),
+      JSON.stringify({ ...raw, plugin_field: 'keep' }),
+    )
+    const r = await setCrop('[[Cover.png]]', null)
+    expect(r.ok).toBe(true)
+    expect(await cropsOf()).toEqual({})
+    expect(JSON.parse(await read('.nexus/crops.json')).plugin_field).toBe('keep')
+  })
+
+  // Negative control: replacing a page's cover clears the old cover's crop (dropReplacedAsset),
+  // and leaves every other key untouched. Remove the updateCrops call in dropReplacedAsset and
+  // the first assertion goes red.
+  it('a replaced cover clears its old crop and leaves other keys untouched', async () => {
+    await setBannerPage(await pick('Cover.png'))
+    await setCrop('[[Cover.png]]', { x: 0.3, y: 0.4, zoom: 2 })
+    await setCrop('https://example.com/keep.png', { x: 0.5, y: 0.5, zoom: 1 })
+    expect(await setBannerPage(await pick('Next.png'))).toMatchObject({ ok: true })
+    const crops = await cropsOf()
+    expect(crops?.['.nexus/assets/Cover.png']).toBeUndefined()
+    expect(crops?.['https://example.com/keep.png']).toEqual({ x: 0.5, y: 0.5, zoom: 1 })
+  })
+
+  // Main-side half of the must-agree; the renderer-side (resolveAssetValue → cropKeyFor) is
+  // asserted in AssetImage.test — a single test can't import both across the process boundary.
+  it('keys the image main-side by its resolved nexus-relative path', async () => {
+    await setBannerPage(await pick('Cover.png'))
+    const value = '[[Cover.png]]'
+    expect(cropKeyFor(await assetFilePath(root, value), value)).toBe('.nexus/assets/Cover.png')
   })
 })
 
