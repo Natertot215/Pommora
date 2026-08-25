@@ -252,7 +252,7 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 
 ### Components
 
-`Components/` — grouped as the ledger reads. `dropdownAnchor.ts` (`dropdownAnchor`, `DROPDOWN_GAP`) and `useDismiss.ts` are the shared placement and outside-click helpers at the root.
+`Components/` — grouped as the ledger reads. `dropdownAnchor.ts` (`dropdownAnchor`, `DROPDOWN_GAP`) and `useDismiss.ts` are the shared placement and dismissal helpers at the root — the latter owning both the outside click and the Escape, which peels one layer at a time: an open picker or a field taking its own Escape leaves the host it sits in standing.
 
 #### Controls
 
