@@ -259,7 +259,7 @@ Where the report's work stands, kept current so a session can read its position 
 - **The reference document** — rewritten as the ledger; `TypographyPM` retired into it.
 - **Button** — `Components/Controls/Button/`, the toolbar and every former ghost on it; the button bundles adopted as the system ladder; `pressed` for a toggle that is on or a trigger whose menu is open.
 - **NavTrail** — `Elements/NavTrail/`, the one location trail over `treeIndex`'s one `ancestryOf`; the nav rows, gallery cards, card footings, embed hover, preview title, trash rows, scoped footer and subfield all draw it.
-- **The field slots** — `InputField` carries `chrome`, `edit`, `leading` and `trailing`; `PathField` retired into them; `SegmentRun` lives in Fields. `edit` rides `RenamableLabel`, so the codebase has one press-to-edit mechanism; `InlineEditHeader` is a layout of an icon Button beside it.
+- **The field slots** — `InputField` carries `chrome`, `edit`, `leading` and `trailing`; `PathField` retired into them; `SegmentRun` lives in Fields. `edit` rides `RenamableLabel`, so every field surface shares one press-to-edit mechanism; `InlineEditHeader` is a layout of an icon Button beside it. The view embed's title (`Blocks/ViewEmbedBlock.tsx` `EmbedTitle`) edits in place as a block-level `contentEditable` with its own semantics — select-all on open, an empty commit clears back to the source — and stays apart by design.
 
 #### Remaining Slices
 
