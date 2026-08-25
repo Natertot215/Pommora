@@ -67,7 +67,7 @@ Disclosure **chevrons** rotate 90° through the shared `dropOutline` (`Elements/
 
 ### Pane Slide + Resize
 
-`Components/Detail/PaneSlider.tsx` is the one two-slot drill-down primitive every pane rides — root ↔ detail on the shared `--duration-base`/`--ease-base` — and it nests, since a detail may itself be a slider. The horizontal slide runs on that beat and width eases with it; height joins the ease only across a navigation flip, tracking its content untransitioned between flips since the animating child owns that beat.
+`DesignSystem/Components/PaneSlider/PaneSlider.tsx` is the one two-slot drill-down primitive every pane rides — root ↔ detail on the shared `--duration-base`/`--ease-base` — and it nests, since a detail may itself be a slider. The horizontal slide runs on that beat and width eases with it; height joins the ease only across a navigation flip, tracking its content untransitioned between flips since the animating child owns that beat.
 
 Both slots stay mounted, each measured by a `ResizeObserver`, so the target size is known the instant the active slot flips, and the outgoing detail is held through the slide-out. Optional width and height floors keep a sparse pane from shrink-wrapping, and transitions arm only after first paint, so a pane snaps to its measured size on open. The slider only slides and resizes — a slot needing a ceiling, a scroll region, or a bottom-pinned footer wraps its content in the shared menu scroll frame, and the slider animates to the already-capped height.
 
