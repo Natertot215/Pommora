@@ -30,7 +30,6 @@ Pommora's bet: a Markdown-canonical foundation with a fast property and query en
 
 Two layers, PARA-aligned. The organization layer holds categorical anchors; the operational layer holds the actual data. Operational entities relate to organization entities via parenthesized Context keys at the frontmatter or the JSON root.
 
-
 | PARA Term   | Pommora Term                  | Layer        |
 | ----------- | ----------------------------- | ------------ |
 | (Workspace) | **Nexus**                     | Root         |
@@ -119,7 +118,7 @@ A **Page Collection** is the operational container — a top-level folder whose 
 
 A Collection nests **Page Sets** to any depth — schema-less sub-folders that inherit the Collection's whole schema. The first level (a "Set") carries its own views and sorting and is selectable; deeper levels ("Sub-Sets") are plain organizing folders. Nesting is unbounded, with no roll-up — discovery, rendering, and navigation recurse on the real folder tree.
 
-Moving a Page **across Collections** never strips — its values ride along, the destination shows only the properties it assigns, and the rest sit inert in frontmatter until assigned there; moving **within** a Collection (between its Sets and root, at any depth) changes nothing, since the schema is shared. The schema is edited from a Collection Settings surface; per-view configuration (sort / filter / group / layout) is a separate per-view surface.[^4]
+Moving a Page **across Collections** never strips — its values ride along, the destination shows only the properties it assigns, and the rest sit inert in frontmatter until assigned there; moving **within** a Collection (between its Sets and root, at any depth) changes nothing, since the schema is shared. The schema is edited from a Collection Settings surface; per-view configuration (sort/filter/group/layout) is a separate per-view surface.[^4]
 
 #### Contexts & Spaces
 

@@ -38,7 +38,6 @@ A page embed's header follows the page itself: a configured banner renders as a 
 Two framework laws reach beyond blocks:
 
 - **Popups escape the tile.** A tile is a `transform`ed ancestor, which re-anchors `position: fixed` descendants to itself, so any popup born inside an embed renders through a body-level portal.
-
 - **Scroll is edge-release.** At rest a tile scrolls its own overflow and releases to the page at its bounds — content that fits passes the wheel straight through, and the text carries no I-beam. The tile holding a live edit contains its scroll instead.
 
 ### Surface Interaction

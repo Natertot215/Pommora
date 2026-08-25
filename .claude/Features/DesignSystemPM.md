@@ -38,7 +38,7 @@ The Pommora design system — the code mirror of the Figma "Pommora - React" lib
 
 ### Token Atlas
 
-`Tokens/` — the value source. `color.css.ts` (`vars`), `size.css.ts` (`size`, `ICON_PX`, the geometry consts), `typography.css.ts` (`font`, `text`), `stack.ts` (`stack`), `tint.ts` (`tint`, `tintAt`, `mixAt`, `TINT_STEPS`), `ramp.ts` (`cellColor`, `cellTint`, `cellRing`, `checkboxTint`, `ANCHOR_CELLS`, the `RAMP_*` re-exports), `colorMap.ts` (`labelColorFor`), `card-tokens.css` (the card family's geometry), and the `theme-vars.css.ts` bridge. `index.ts` is the barrel.
+`Tokens/` — the value source. `color.css.ts` (`vars`), `size.css.ts` (`size`, `ICON_PX`, the geometry consts), `typography.css.ts` (`font`, `text`), `stack.ts` (`stack`), `tint.ts` (`tintAt`, `mixAt`, `TINT_STEPS`), `ramp.ts` (`cellColor`, `cellPaint`, `cellRing`, `ANCHOR_CELLS`, the `RAMP_*` re-exports), `colorMap.ts` (`labelColorFor`), `card-tokens.css` (the card family's geometry), and the `theme-vars.css.ts` bridge. `index.ts` is the barrel.
 
 #### Primitives
 
@@ -94,7 +94,7 @@ Hover and selected paint behind content, muted over it; the three opacities are 
 
 #### Tints
 
-**SOURCE:** `Tokens/tint.ts` — `tintAt(base, step)` mixes a base toward transparent; `mixAt` toward anything.
+**SOURCE:** `Tokens/tint.ts` — `tintAt(base, step)` mixes a base toward transparent; `mixAt` toward anything. A consumer names a step rather than its percentage, and the mix reaches CSS carrying the step's var, so the ladder stays live: retuning a step here re-tints every surface that names it. A raw number is for an amount no step names — the ramp's own shading, a one-off wash.
 
 | Title           | Token                                         | Value |
 | --------------- | --------------------------------------------- | ----- |
@@ -231,8 +231,9 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 | Label      | `Label`                      | The axis-composed primitive every named label is a recipe over.         |
 | Shapes     | `shape.pill/tag`             | Rounded status default · squared value. Compact is either rendered icon-only. |
 | Checkbox box | `checkboxBox`              | The task checkbox's `17px` square — base + `boxGeometry`, outside the shape roster. |
+| Tint       | `tinted`                     | Fill, outline and text mixed off `--label-base` — a surface wanting a color chip sets that one var. |
 | Treatments | `fill` · `outline`           | Named only where a label differs from its tint.                         |
-| Palette    | `labelColor.*`               | One tinted variant per ramp cell, plus `default` and `accent`.          |
+| Palette    | `labelColor.*`               | One variant per ramp cell naming its base, plus `default` and `accent`. |
 | SpaceChip  | `SpaceChip`                  | A Space reference — neutral ground, color on border and text.           |
 | FileChip   | `FileChip`                   | A file property's value — a tag with a tertiary outline, no fill.       |
 | FileLabel  | `FileLabel`                  | A file or folder name inside a field, no chrome.                        |
@@ -294,7 +295,7 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 | ColorPicker    | `ColorPicker`                               | The 8×8 ramp grid; clicking the selected cell clears.                                                                |
 | IconPicker     | `IconPicker` · `IconFavorites`              | The searchable glyph grid with a reorderable favorites strip; the app binds favorites through `Settings/IconPicker`. |
 | TextPicker     | `TextPicker`                                | A typed-value picker in the shared pane.                                                                             |
-| ImagePicker    | `ImagePicker`                               | Frames a stored image — a focal point and a zoom — as a circle or a rect cut to its seat.                            |
+| ImagePicker    | `ImagePicker`                               | Frames a stored image — a focal point and a zoom — inside a fixed seat, circle or rect; below fill the picked color shows around it. |
 | AssetImage     | `AssetImage`                                | The one element that draws a stored image, through its crop when one exists.                                         |
 
 #### Menu
