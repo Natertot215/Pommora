@@ -235,6 +235,7 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 | --------------- | -------------------------------- | ----------------------------------------------------- |
 | DropOutline | `dropOutline` · `dropOutlineOpen` · `dropOutlineSpacer` · `railRow` | The fold chevron and the rail that descends from its center, on `--disclosure-rail-x`. |
 | PathChevron | `PathChevron` | The `›` between path segments; `tone` and `size` knobs. |
+| NavTrail | `NavTrail` · `TrailSegment` | An entity's location as a chevron-divided run of icon + title segments — inert, selectable, or a navigable path with a dimmed ghost tail; `emphasize` lifts the current stop. |
 | Segment | `segment` | The between-values pill — `--segment-width` / `--segment-color` override it. |
 | ProgressBar | `ProgressBar` | A determinate bar on the accent. |
 
@@ -269,9 +270,9 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 
 | Title | Token | Value |
 | ---------- | ------------------- | ----------------------------------------------------------------------- |
-| Inline | `size.control['button-inline']` | h `20px` · segment `18px` · padX `2px` · label padX `4px` · radius `5px` · icon `control` — the row affordances |
+| Inline | `size.control['button-inline']` | h `20px` · segment `18px` · padX `2px` · label padX `4px` · radius `6px` · icon `control` — the row affordances |
 | Small | `size.control['button-small']` | h `24px` · segment `20px` · padX `4px` · label padX `12px` · radius `8px` · icon `body` |
-| Medium | `size.control['button-medium']` | h `28px` · segment `24px` · padX `5px` · label padX `12px` · radius `10px` · icon `title3` |
+| Medium | `size.control['button-medium']` | h `28px` · segment `24px` · padX `6px` · label padX `12px` · radius `10px` · icon `title3` |
 | Large | `size.control['button-large']` | h `32px` · segment `28px` · padX `8px` · label padX `12px` · radius `12px` · icon `title3` |
 
 #### Pickers
