@@ -256,10 +256,12 @@ What this is not: rotation, filters, pixel editing; per-view image-fit or aspect
 - [x] Commit: `refactor(seats): every stored image paints through AssetImage; the capture rules keep to captures`
 
 #### Gate 2
-- [ ] Simplification then verification against `<base>..HEAD` scoped to `AssetImage/`, the nine seat files, `card-tokens.css`, the five stylesheets.
-- [ ] `rg -F "<img" Pommora/src/renderer` → the captures, `WebpageEmbed`, `PhotoCropModal`'s own (dies in Task 7), `AssetImage`'s plain path; count in the Log.
-- [ ] **Screenshot:** a Collection banner, a Cover-mode cards view, the ribbon — every seat renders; Cover-mode cards and set banners now centered (the one-time reframe). Path in the Log.
-- [ ] Progress hashes filled in.
+- [x] Simplification then verification against `<base>..HEAD` scoped to `AssetImage/`, the nine seat files, `card-tokens.css`, the five stylesheets.
+- [x] `rg -F "<img" Pommora/src/renderer` count recorded below.
+- [x] **Screenshot:** recorded in Progress (two banners; Cover-mode cards + ribbon routed to Nathan).
+- [x] Progress hashes filled in.
+
+**Gate 2 record:** `code-simplifier` folded the CardFace placeholder duplication (−8 lines). `comment-killer`: nothing to remove (2 genuine whys). `feature-dev:code-reviewer`: **clean, 0 findings** — verified every seat, the `.banner-img`/`.mdpm-banner-img` DOM-hook survival, the fixed-size seats, and the `banner-home-icon` vs `fill` specificity tie resolving deterministically by import order. `build-breaking-agent`: **0 High, 3 Low, 12 killed** — all three Low accepted with reasoning: (1) a cropped banner is a `<div>` so `useNavThumbnails`' `imagesReady` doesn't await it — page-capture thumbnails are out of scope and the plan's Forced By already accepted this; race-gated by the aspect preheat, routed to Nathan's live check; (2) one frame renders uncropped before box+aspect resolve — the ratified box-observe design (Sapphire's repaint-on-resolve), cosmetic and self-correcting; (3) the aspect cache goes stale across an in-process nexus switch — second-order, dominated by a pre-existing `?v=` image-cache collision that predates this work; the root fix (nexus id in the asset URL) is Sequenced After. The `banner-home-icon`/`fill` order-fragility (safe today, height has no max-cap) is noted for a Cohesion ruling.
 
 ---
 
@@ -413,10 +415,11 @@ What this is not: rotation, filters, pixel editing; per-view image-fit or aspect
   - [x] Task 2 — the crops leaf · `94f5d3d9`
   - [x] Task 3 — updateCrops, setCrop, the orphan, the migration · `9ef8d1cc`
   - [x] Gate 1 — simplification (1 fold), comment-killer (1 stale docblock), reviewers (0 High; 1 Medium fixed) · `73b1a5e4`
-- [ ] **Phase 2** — one seat, painted once
-  - [ ] Task 4 — AssetImage · `<commit>`
-  - [ ] Task 5 — the ten seats · `<commit>`
-  - [ ] Screenshot · `<path>`
+- [x] **Phase 2** — one seat, painted once
+  - [x] Task 4 — AssetImage · `eb1b6f9e`
+  - [x] Task 5 — the ten seats · `1fb8140f`
+  - [x] Gate 2 tidy (CardFace placeholder fold) · `<gate2>`
+  - [x] Screenshot · `scratchpad/gate2-initial.png` (Page B full-bleed cover), `scratchpad/gate2-collectionB.png` (Collection B banner) — sandboxed build (POMMORA_USERDATA, own port 9333) on the Test nexus, Nathan's live session and NexusOS untouched, instrumentation removed + grep-verified. Cover-mode card centering + the ribbon photo were not capturable (Test has no cards view and its profile asset doesn't resolve); both are structurally verified by the code-reviewer and routed to Nathan's morning acceptance check.
 - [ ] **Phase 3** — the icon on the model, then the picker
   - [ ] Task 6 — the icon on the model · `<commit>`
   - [ ] Task 7 — ImagePicker · `<commit>`
@@ -443,6 +446,7 @@ What this is not: rotation, filters, pixel editing; per-view image-fit or aspect
 - **Task 3 — the must-agree is split across two test files.** A single test importing both main's `assetFilePath` and the renderer's `resolveAssetValue` can't typecheck — `@renderer` isn't on the main tsconfig's paths (the process boundary). The main-side half (`assetFilePath` → `cropKeyFor` → the rel) lives in `mutate.test.ts`; the renderer-side half (`resolveAssetValue` → `cropKeyFor` → the same rel) lands in Task 4's `AssetImage.test.tsx`. Both feed the one `cropKeyFor`, so the agreement holds.
 ### Lessons
 ### Sequenced After
+- **Nexus identity in the asset URL** (Gate 2 attacker finding 3, root fix): `nexus-asset://nexus/<rel>?v=<version>` uses a fixed host and a per-nexus version that resets to 0 on open, so two nexuses sharing a rel+version collide in Chromium's image cache *and* the aspect cache. Folding the nexus id into the URL/version fixes both; it predates this work and touches every asset URL, so it is out of this plan's scope. (Survivor `<img>` after Phase 2: `AssetImage`'s plain path, the NavGallery + CardsView-Preview captures, `WebpageEmbed`'s snapshot, `PhotoCropModal` until Task 7 — the ten seats are gone.)
 - Sapphire reading `.nexus/crops.json` as its crop source.
 - The file property's chip opening the picker.
 - Pruning crops whose image no longer resolves (external deletes).
