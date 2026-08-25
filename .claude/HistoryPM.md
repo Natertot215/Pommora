@@ -130,8 +130,8 @@ The crop surface is complete — one design-system component every image the nex
 
 `ImagePicker` is what edits a framing: a portal modal that shows the whole image dimmed and blurred with the crop drawn sharp and ringed on top, so a framing is read against everything it leaves out. The frame is a fixed height at the image's own aspect, widening to a bound before a wide image crops rather than stretches; the crop reads as a circle for the nexus photo and the seat's own rectangle for a banner or a card, the shape carried by the ring's radius alone. Panning walks the crop across the image on the app's one pointer-gesture primitive, zoom resizes it, and a background colour is lifted from the screen through the platform eyedropper. Edit reaches it from the banner menu, the card menu's leading item, and the nexus icon menu; its footer cancels, carries the image's path in an editable field that re-picks through the file dialog or a pasted path or link, and saves. `PhotoCropModal` — the Move-and-Scale surface that only ever cropped the nexus icon — is what it grew out of.
 
-- **Commits:** `6b04b90d^..5881b220`
-- **Diff:** Net +1469 | +2131 / −662
+- **Commits:** `6b04b90d^..0dad74f8`
+- **Diff:** Net +701 | +1221 / −520
 
 #### PM-114 || File Properties
 
