@@ -12,6 +12,7 @@ Properties
 │   ├── II. Date & Time
 │   ├── II. Select & Multi-Select
 │   ├── II. Links & URL
+│   ├── II. File
 │   └── II. Context Links
 ├── Auto-Managed Properties
 ├── Where Properties Live
@@ -20,9 +21,6 @@ Properties
 ├── Validation
 ├── The Index
 ├── Label Tokens
-│   ├── II. Shapes
-│   ├── II. The Recipe & Variants
-│   └── II. Knobs
 ├── Known Issues
 └── Pending
 ```
@@ -99,7 +97,7 @@ A workflow property whose values sort into status **groups**. The group model is
 
 Every value references its group by id, and the status semantics resolve by id rather than list position; further groups drop into the open enum with no data change. An option's `value` is its label — renaming rewrites both and cascades onto every assigning page. An option without its own color wears its group's. Sort is group position first, then option order within it. Status is opt-in on a Collection like any other property.
 
-The **Status editor** edits it in place — a group-labeled option list (double-click a heading to relabel its group), each option a pill chip in its group's color, a per-group `+` for an inline-named option, a hover palette to recolor, drag to reorder within or across groups, and a right-click **Rename · Remove · Clear** menu.
+The **Status editor** edits it in place — a **Style** toggle over a group-labeled option list (double-click a heading to relabel its group), a per-group `+` for an inline-named option, a hover palette to recolor, drag to reorder within or across groups, and a right-click **Rename · Remove · Clear** menu. The value is a pill chip in its group's color; **Compact** style renders it icon-only as the group's glyph.
 
 #### II. Checkbox
 
@@ -117,7 +115,7 @@ Stores a single ISO value — a date-only string folds into Date on read, a with
 
 #### II. Select & Multi-Select
 
-Select stores a bare string and renders one colored chip; Multi-Select stores a bare array and renders several. Both draw from a shared option list on the definition — an option's `value` is its label, so renaming rewrites both and cascades onto every assigning page. The **option editor** is an inline list of chips: a per-list `+` adds an inline-named option, a hover palette recolors, drag reorders, and a right-click offers **Rename · Remove · Clear**; creating the property seeds one starter option. Neither carries a per-view Style — their chips always take the squared label shape, the pill being Status's alone.
+Select stores a bare string and renders one colored **tag** chip; Multi-Select a bare array rendering several. Both draw from a shared option list. The **option editor** is an inline list under a **Style** toggle: a per-list `+`, a hover palette to recolor, drag to reorder, and a right-click **Rename · Edit Icon · Remove · Clear**; creating the property seeds one starter option. **Compact** style renders each chip icon-only — the option's own icon (Edit Icon), or the single/double-tag default.
 
 #### II. Links & URL
 
@@ -145,7 +143,7 @@ A File property holds an ordered list of files that live in the Nexus, each name
 
 The name is the whole reference — no path is stored. It resolves against an in-memory basename index the file watcher keeps current, which is what lets the asset directory be re-pointed, a file be moved within it, or a sync eviction and re-download happen without any value going stale. A name that answers to no file still renders, dimmed: the value is on disk and has to be visible to be removable. Where several files share a basename the first by path order answers, matching the precedent every other asset reference follows.
 
-Each value renders as a **file chip** — the file's own type glyph and its name, wearing a tag with a tertiary outline and no fill, so a list of attachments reads as a run of named files rather than paths. A chip is its whole filename; the cell it sits in is what clips and scrolls when the run outgrows the column. The glyph comes from the extension: 23 of them draw their own mark and anything else takes the generic file glyph.[^4]
+Each value renders as a **file chip** — the file's type glyph and its name — so a list of attachments reads as named files rather than paths. A chip is its whole filename; the cell it sits in clips and scrolls when the run outgrows the column. The glyph comes from the extension: 23 draw their own mark and anything else takes the generic file glyph.[^4]
 
 - **Directory** — the property-wide folder its files land in, set in the File editor pane and stored relative to the asset root, so re-pointing the root carries every property's folder with it. Unset means the root itself, which is what the field reads when nothing is chosen. A folder outside the root, or one the index could never reach, is refused at both the setting and the write.
 - **Filling a value** opens the operating system's file dialog. Clicking a chip **replaces** the file it names and opens at that file's own folder, which makes "see where this lives" and "swap it" the same gesture; clicking the value's own area **adds**, opening at the property's Directory. A right-click offers **Add File · Replace File · Remove File**, or Add alone on an area holding nothing to act on. Removing a value drops the reference and leaves the bytes where they are.
@@ -209,7 +207,7 @@ Neither Remove nor the global delete is cross-file atomic — each is a per-file
 
 ### Validation
 
-At every write, a created property's `name` is non-empty and its `id` is unique and not reserved. Select and Multi-select option titles must be unique within the property; there's no minimum count, and a zero-option Select is legal. **Names are unique nexus-wide**, compared case-folded, because the name is the on-disk key. A leading `$` is refused, reserving `$`-prefixed keys for system-assigned roles; a leading `_` is allowed, since the wrap is the namespace boundary. Agenda's own definitions keep their own unique-name rule over their own namespace. Assigning runs no name check — it references an existing definition. Each member value's shape must match its schema entry's type.
+At every write, a created property's `name` is non-empty and its `id` is unique and not reserved. Select and Multi-select option titles must be unique within the property; there's no minimum count, and a zero-option Select is legal. **Names are unique nexus-wide**, compared case-folded, because the name is the on-disk key. A leading `$` is refused, reserving `$`-prefixed keys for system-assigned roles; a leading `_` is allowed, since the wrap is the namespace boundary. Agenda's own definitions keep their own unique-name rule over their own namespace. Each member value's shape must match its schema entry's type.
 
 ### The Index
 
@@ -217,71 +215,7 @@ At every write, a created property's `name` is non-empty and its `id` is unique 
 
 ### Label Tokens
 
-The label is the property value's rendered form, so its design vocabulary lives here. A SHAPE says
-how big and how round and nothing else; fill, outline, alignment and tint are independent axes, so
-any combination is reachable without minting a class. One tint recipe drives every color — the
-picked cell at fixed tint steps (a heavier fill, a lighter stroke, a near-white text wash carrying a
-faint tint of the base) — and it composes with any shape. The color itself comes from the ramp, whose
-rows run a family from dark to light; the greyscale row is the one exception, tinting its brightest
-cells from a darkened base and outlining all eight against the label ramp so they read on any surface.
-
-**SOURCE:** `Pommora/src/renderer/src/DesignSystem/Labels/` · `Tokens/tint.ts` · `Tokens/colorMap.ts` · `Tokens/ramp.ts`
-
-#### II. Shapes
-
-| Title | Token | Value |
-| --- | --- | --- |
-| Base | `labelBase` | zoom `var(--label-zoom, 1.0)` · gap `4px` · type `text.control.semibold` |
-| Pill | `shape.pill` | h `20px` · pad `0 var(--label-pad-x, 6px)` · radius `10px` · border `2px` |
-| Tag | `shape.tag` | h `20px` · same pad · radius `6px` · border `2px` |
-| Chip | `shape.chip` | h `20px` · pad `0 var(--label-chip-pad-x, 6px)` · radius `10px` · gap `0` |
-| Box | `shape.box` | `17px × 17px` · radius `5.5px` · border `1.5px` (the checkbox look) |
-
-#### II. Treatments
-
-Named only where the label differs from its tint.
-
-| Title | Token | Value |
-| --- | --- | --- |
-| Neutral Fill | `fill.neutral` | `fill-quaternary` ground, color left on border and text |
-| No Fill | `fill.none` | transparent ground; `--melt-ground` stated, never unset |
-| Tertiary Outline | `outline.tertiary` | `label-quaternary` border |
-| No Outline | `outline.none` | `border: none` |
-| Start-Aligned | `alignStart` | a name inside a field reads from its start |
-| Roomy | `roomy` | h `22px` · `--label-pad-x: 8px` |
-
-#### II. Recipes
-
-| Title | Composition |
-| --- | --- |
-| Option Value | `shape` from `optionShapeFor(type)` — `pill` for status, `tag` otherwise |
-| `ContextChip` | `tag` · `fill.neutral` · `roomy` · icon + title |
-| `FileChip` | `tag` · `fill.none` · `outline.tertiary` · type glyph + name |
-| `FileLabel` | `tag` · `fill.none` · `outline.none` · `alignStart` · glyph + name |
-
-#### II. The Recipe & Variants
-
-| Title | Token | Value |
-| --- | --- | --- |
-| Background | `tint(base).background` | base @ tint-primary (60%) |
-| Border | `tint(base).borderColor` | base @ tint-secondary (40%) |
-| Text | `tint(base).color` | base @ 15% mixed toward label-primary |
-| Variants | `labelColor.*` | the 64 ramp cells + `default` (`grey-4`'s value) + `accent` (`--system-accent`) |
-| Palette Accessor | `labelColorFor(color)` | the cell when it's one, a legacy solid name normalized to its anchor cell, else `default` |
-
-#### II. Knobs
-
-| Title | Token | Value |
-| --- | --- | --- |
-| Zoom | `--label-zoom` | fallback `1.0`; Cards retunes `0.85` |
-| Pad X | `--label-pad-x` | fallback `6px`; Cards `4px`, the option editor its own |
-| Chip Pad X | `--label-chip-pad-x` | fallback `6px` |
-| Text Cap | `--label-max` | fallback `80px` |
-| Ground / Accent Channels | `--melt-ground` / `--label-accent` | set by the variant — base @ 60% / the raw base |
-
-The hover-revealed remove × and its label-tail melt are the shared `HoverRemove`'s, described in
-[[InteractionPM]]; its guards — static masks, opacity-only transitions, a pointer-inert label —
-protect against a Chromium repaint defect and stay as written.
+A property value renders as a **label** — a chip whose shape names the property's kind (status a pill, other options a tag). The label's design vocabulary — the shape roster, tints, treatments, and knobs — is the design system's, held in [[DesignSystemPM]].
 
 ### Known Issues
 
@@ -290,7 +224,7 @@ protect against a Chromium repaint defect and stay as written.
 ### Pending
 
 - **Page Property Panel** — the surface for setting property values on a Page in the main pane, and on a Task or Event anywhere. The Page Preview's front-matter inspector covers a Page inside the preview only; the main pane renders no property rows, and Agenda items have no value surface at all.
-- **Built-in Agenda Status** — the Status property Tasks and Events are meant to carry — a seed plus a delete guard that keeps it there. Neither exists, and neither does an agenda schema to hold them; a seeded config carries identity only.
+- **Built-in Agenda Status** — the Status property Tasks and Events are meant to carry — a seed plus a delete guard that keeps it there. Neither exists, and neither does an agenda schema to hold them.
 - **Lossy Change-Type Strip** — the cross-assigner value strip a lossy type change should trigger. `changeType` accepts the drop flag and ignores it, applying a plain global definition edit.
 - **Number Show-as for dynamic views** — the completion **Ring** and the Notion-style Number/Bar/Ring tile grid belong to view types with vertical room (Gallery/Board); the table ships the Number/Bar look row only. The bar's stroke is held pending a visual pass.
 - **Calendar Picker refinements** — range values (a datetime value is a single ISO on disk, so the value picker disables the shared picker's range mode), keyboard stepping on the time segments, and test coverage.

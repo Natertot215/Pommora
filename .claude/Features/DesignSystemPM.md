@@ -229,10 +229,11 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 | Title      | Export                       | What it is                                                              |
 | ---------- | ---------------------------- | ----------------------------------------------------------------------- |
 | Label      | `Label`                      | The axis-composed primitive every named label is a recipe over.         |
-| Shapes     | `shape.pill/tag/chip/box`    | Rounded status default · squared value · icon-only · checkbox.          |
+| Shapes     | `shape.pill/tag`             | Rounded status default · squared value. Compact is either rendered icon-only. |
+| Checkbox box | `checkboxBox`              | The task checkbox's `17px` square — base + `boxGeometry`, outside the shape roster. |
 | Treatments | `fill` · `outline`           | Named only where a label differs from its tint.                         |
 | Palette    | `labelColor.*`               | One tinted variant per ramp cell, plus `default` and `accent`.          |
-| ContextChip | `ContextChip`               | A Context reference — neutral ground, color on border and text.         |
+| SpaceChip  | `SpaceChip`                  | A Space reference — neutral ground, color on border and text.           |
 | FileChip   | `FileChip`                   | A file property's value — a tag with a tertiary outline, no fill.       |
 | FileLabel  | `FileLabel`                  | A file or folder name inside a field, no chrome.                        |
 
