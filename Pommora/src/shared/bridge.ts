@@ -323,6 +323,8 @@ export interface Asks {
    *  channel rather than a field on a write: fusing them would make one IPC perform two writes
    *  with partial-failure semantics, and forecloses naming a file already in the nexus. */
   'assets:adopt': { args: [source: string, subfolder?: string]; reply: Result<string> }
+  // The temp PNG path of a pasted clipboard image, adopted like a picked file (null if none).
+  'nexus:pasteImage': { args: []; reply: string | null }
   'nexus:bannerMenu': {
     args: [opts?: { noRemove?: boolean; noun?: string; add?: boolean }]
     reply: BannerMenuAction | null
