@@ -5,7 +5,6 @@ import { accessoryButton } from '../Menu/menu.css'
 
 const c = vars.color
 
-/** Scrim behind the picker — system-black at a tint-scale step, the project's opacity mechanism. */
 export const backdrop = style({
   position: 'fixed',
   inset: 0,
@@ -16,7 +15,6 @@ export const backdrop = style({
   background: tintAt(c.system.black, TINT_STEPS.secondary),
 })
 
-/** Dialog panel — layout on top of the GlassWindow frost Material. */
 export const panel = style({
   display: 'flex',
   flexDirection: 'column',
@@ -49,7 +47,6 @@ export const surround = style({
   pointerEvents: 'none',
 })
 
-/** The sharp circle, centered in the viewport. */
 export const circleFrame = style({
   position: 'absolute',
   overflow: 'hidden',
@@ -93,5 +90,4 @@ export const actions = style({
   justifyContent: 'flex-end',
 })
 
-/** The path echo grows to fill the footer between Cancel and Save. */
 export const pathField = style({ flex: 1, minWidth: 0 })

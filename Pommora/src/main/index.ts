@@ -743,6 +743,7 @@ async function mutateDeps(): Promise<MutateDeps> {
     trashMode: config.trashMode ?? DEFAULT_TRASH_MODE,
     trashToSystem: (p) => shell.trashItem(p),
     permanentDelete: root === null ? false : await readPermanentDelete(root),
+    wasPicked: (p) => pickedPaths.has(p),
   }
 }
 

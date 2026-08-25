@@ -92,6 +92,9 @@ export interface MutateDeps {
   /** `personalization.permanentDelete` — what emptying a bundle means. Read main-side per
    *  operation: the renderer never carries the flag that chooses between recoverable and gone. */
   permanentDelete?: boolean
+  /** Whether an absolute `source` was handed out by main's own file dialog or paste — the renderer
+   *  never names a path main did not choose. Injected by the IPC layer; absent in-process. */
+  wasPicked?: (absPath: string) => boolean
 }
 
 const relJoin = (parent: string, child: string): string => (parent ? `${parent}/${child}` : child)
@@ -182,10 +185,6 @@ export async function adoptFile(
   return writeAssetFile(root, dir, base, bytes)
 }
 
-/** The nexus icon. It rewrites the file the setting ALREADY names — the one Pommora last wrote
- *  there — so cropping twice leaves one icon rather than a trail of them. A file the setting does
- *  not name is someone else's, even under this name, so the first crop mints beside it. */
-
 /** The nexus's own machinery — never a renderer-mutable entity. The read side skips these,
  *  so the write side refuses to rename/delete them (defense against a buggy/hostile renderer
  *  message). Contexts live UNDER `.nexus/contexts/<Title>/` and stay mutable — only the root,
@@ -247,6 +246,15 @@ export async function handleMutate(req: MutateRequest, deps: MutateDeps): Promis
 }
 
 async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Promise<MutateReply> {
+  // An adopted image's `source` is an absolute path outside the nexus; it is only ever one main's
+  // dialog or paste handed out, never one the renderer names on its own.
+  if (
+    (req.op === 'setBanner' || req.op === 'setProfileImage') &&
+    req.source &&
+    deps.wasPicked &&
+    !deps.wasPicked(req.source)
+  )
+    return fault('That file was not picked here.')
   switch (req.op) {
     case 'createPage': {
       // '' parentPath = the nexus root (e.g. a page directly under an adopted root); '.'

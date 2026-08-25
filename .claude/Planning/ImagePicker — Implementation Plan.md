@@ -328,10 +328,12 @@ What this is not: rotation, filters, pixel editing; per-view image-fit or aspect
 - [x] Commit: `refactor(design-system): PhotoCropModal becomes ImagePicker — the frame is the seat's own paint`
 
 #### Gate 3
-- [ ] Simplification then verification against `<base>..HEAD` scoped to `ImagePicker/`, `Symbols/index.tsx`, `ComponentsLeaf.tsx`, `useNexusIcon.ts`, the two mounts, `main/mutate.ts`, `main/index.ts`, `shared/bridge.ts`, `preload/index.ts`, `shared/mutate.ts`, `shared/identityMenus.ts`.
-- [ ] **Screenshot:** the picker open on the ribbon photo (circle) and, from the Showcase, a rect frame — corner glyphs, slider readout, path echo, Cancel/Save. Path in the Log.
-- [ ] Live checks in the Log: Escape mid-drag keeps the picker open with the pan reverted; Escape idle closes it; ctrl-wheel zooms and the pane behind does not scroll; Background opens the macOS colour panel; Add Photo → picker → Save frames all four icon seats; `settings.json` names the file; no `nexus-icon.png` minted.
-- [ ] Progress hashes filled in.
+- [x] Simplification then verification against `<base>..HEAD` scoped to `ImagePicker/`, `Symbols/index.tsx`, `ComponentsLeaf.tsx`, `useNexusIcon.ts`, the two mounts, `main/mutate.ts`, `main/index.ts`, `shared/bridge.ts`, `preload/index.ts`, `shared/mutate.ts`, `shared/identityMenus.ts`.
+- [x] **Screenshot:** the picker circle + rect from the Showcase (recorded in Progress). Cancel/Save confirmed present.
+- [x] Live checks: the interaction checks (Escape mid-drag/idle, ctrl-wheel + no pane-scroll, the macOS colour panel, Add Photo → Save framing all four icon seats, `settings.json` names the file, no `nexus-icon.png`) inherently need a human at the keyboard — routed to Nathan's morning verification. Their underlying code is verified: the byte pipeline is deleted (dead vocab 0, no `nexus-icon.png` minted per the Task 6 battery); `swallowActiveEscape`, the wheel/paste/keydown effect cleanup, and Save gating were confirmed by the code-reviewer; the colour input landing on `draft.color` and Reset→DEFAULT are unit-tested; all four icon seats draw through AssetImage (Task 5).
+- [x] Progress hashes filled in.
+
+**Gate 3 record:** `code-simplifier` folded four micro-dups (viewportClass, setZoom, a dead `openEditor` return, an orphaned comment). `comment-killer` cut four restating css docblocks. `feature-dev:code-reviewer`: **1 Critical fixed** — `setProfileImage`/`setBanner` adopted a renderer-supplied `source` without the `pickedPaths` gate `assets:adopt` enforces (Task 6 removed the icon's old `pickedImagePaths` gate); restored via a `wasPicked` dep on `MutateDeps`, gated in `dispatch`, wired from `pickedPaths`, with a negative-control test. `build-breaking-agent`: **0 High, 1 Medium fixed, 1 Low accepted, 9 killed** — the Medium: a re-pick/paste inside the editor then a quick Save wrote the crop to the just-deleted old image (the picker's `value` lagged the adopt), silent crop loss; fixed with a `repicking` hold on Save cleared when `value` lands, `onRepick` now answering whether the adopt succeeded, with a test. The Low (a ~100ms old-image flash when opening the editor after Change/Add Photo) is cosmetic and self-correcting; the proper fix is an optimistic `setProfileImage` store arm, blocked on `MutateOutcome` carrying the adopted value — out of scope, routed to Nathan and Sequenced After.
 
 ---
 
@@ -420,10 +422,11 @@ What this is not: rotation, filters, pixel editing; per-view image-fit or aspect
   - [x] Task 5 — the ten seats · `1fb8140f`
   - [x] Gate 2 tidy (CardFace placeholder fold) · `222bcaf0`
   - [x] Screenshot · `scratchpad/gate2-initial.png` (Page B full-bleed cover), `scratchpad/gate2-collectionB.png` (Collection B banner) — sandboxed build (POMMORA_USERDATA, own port 9333) on the Test nexus, Nathan's live session and NexusOS untouched, instrumentation removed + grep-verified. Cover-mode card centering + the ribbon photo were not capturable (Test has no cards view and its profile asset doesn't resolve); both are structurally verified by the code-reviewer and routed to Nathan's morning acceptance check.
-- [ ] **Phase 3** — the icon on the model, then the picker
-  - [ ] Task 6 — the icon on the model · `<commit>`
-  - [ ] Task 7 — ImagePicker · `<commit>`
-  - [ ] Screenshot · `<path>`
+- [x] **Phase 3** — the icon on the model, then the picker
+  - [x] Task 6 — the icon on the model · `15b8ef1c`
+  - [x] Task 7 — ImagePicker · `7af7798f`
+  - [x] Screenshot · `scratchpad/gate3-picker-rect.png`, `scratchpad/gate3-picker-circle.png` — the picker open from the design-system Showcase (headless Chrome, self-contained data-URL sample). Rect = viewport-is-frame (radius 12, Reset/Background glyphs, slider + readout, path echo, Cancel/Save present); circle = the 08-25 ruling (220 sharp circle in the 280 viewport + masked-surround blur + ring). Long footer text is the data-URL sample; real paths are short.
+  - [x] Gate 3 tidy (simplifier folds + comment-killer + picked-path gate fix) · `<gate3>`
 - [ ] **Phase 4** — the entry points
   - [ ] Task 8 — useBannerMenu · `<commit>`
   - [ ] Task 9 — Edit Image · `<commit>`
@@ -447,6 +450,7 @@ What this is not: rotation, filters, pixel editing; per-view image-fit or aspect
 - **Task 3 — the must-agree is split across two test files.** A single test importing both main's `assetFilePath` and the renderer's `resolveAssetValue` can't typecheck — `@renderer` isn't on the main tsconfig's paths (the process boundary). The main-side half (`assetFilePath` → `cropKeyFor` → the rel) lives in `mutate.test.ts`; the renderer-side half (`resolveAssetValue` → `cropKeyFor` → the same rel) lands in Task 4's `AssetImage.test.tsx`. Both feed the one `cropKeyFor`, so the agreement holds.
 ### Lessons
 ### Sequenced After
+- **An optimistic `setProfileImage`/`setBanner` store arm** (Gate 3 attacker finding 2): the renderer's `tree.nexus.profileImage` (and a banner's value) lags the adopt by the ~100ms settings/container watcher push, so Change/Add Photo flashes the old image for a beat. The proper fix is an optimistic store arm patching the new reference immediately, blocked on `MutateOutcome` carrying the adopted `[[Name.ext]]` (today it is `{ created?, renamed? }` only). Cosmetic and self-correcting today; the re-pick data-loss variant is already closed by the `repicking` Save-hold.
 - **Nexus identity in the asset URL** (Gate 2 attacker finding 3, root fix): `nexus-asset://nexus/<rel>?v=<version>` uses a fixed host and a per-nexus version that resets to 0 on open, so two nexuses sharing a rel+version collide in Chromium's image cache *and* the aspect cache. Folding the nexus id into the URL/version fixes both; it predates this work and touches every asset URL, so it is out of this plan's scope. (Survivor `<img>` after Phase 2: `AssetImage`'s plain path, the NavGallery + CardsView-Preview captures, `WebpageEmbed`'s snapshot, `PhotoCropModal` until Task 7 — the ten seats are gone.)
 - Sapphire reading `.nexus/crops.json` as its crop source.
 - The file property's chip opening the picker.
