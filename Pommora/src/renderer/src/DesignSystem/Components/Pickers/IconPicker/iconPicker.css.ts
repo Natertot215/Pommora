@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css'
-import { TINT_STEPS, tintAt, vars } from '../../../Tokens'
+import { tintAt, vars } from '../../../Tokens'
 import { focusRing } from '../../../Components/Fields/fieldRing'
 import { input } from '../../../Components/Fields/fields.css'
 import { separatorLine } from '../../../Components/Menu/menu.css'
@@ -88,5 +88,5 @@ export const cell = style({
 
 export const cellSelected = style({
   color: 'var(--accent)',
-  background: tintAt('var(--accent)', TINT_STEPS.quaternary),
+  background: tintAt('var(--accent)', 'quaternary'),
 })

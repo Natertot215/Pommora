@@ -1,11 +1,14 @@
 import { useState, type CSSProperties } from 'react'
-import { vars, tint, tintAt, TINT_STEPS } from '../../Tokens'
-import { shape } from '../../Labels'
+import { vars, tintAt, TINT_STEPS } from '../../Tokens'
+import { shape, tinted } from '../../Labels'
+import { cx } from '../../Util/cx'
 import { SortableZone, useDragItem, reorder } from '../../Interactions/drag'
 import { applyAccent, readCssAccentColor } from '../../Theming/accent'
 import { SOLID_COLORS, type AccentSetting } from '@shared/types'
 import { accentValue } from '../../Theming/accent'
 import { humanize, formatColor, useComputedStyleText, useIsCompact } from './helpers'
+
+const ACCENT_CHIP = { '--label-base': 'var(--accent)' } as CSSProperties
 
 // Accent is excluded from the static groups below — it has its own live picker.
 const PRIMITIVE_GROUP: [string, Record<string, string>] = ['Primitives', vars.color.system]
@@ -130,7 +133,7 @@ function AccentDemo(): React.JSX.Element {
         </div>
         <div className="ds-accent-samples">
           <span className="ds-accent-btn">Accent button</span>
-          <span className={shape.pill} style={tint('var(--accent)')}>
+          <span className={cx(shape.pill, tinted)} style={ACCENT_CHIP}>
             Accent
           </span>
           <span className="ds-accent-link">Accent text</span>
@@ -151,7 +154,7 @@ function TintRow({ name, color }: { name: string; color: string }): React.JSX.El
         <span
           key={k}
           className="ds-tint-swatch"
-          style={{ background: tintAt(color, TINT_STEPS[k]) }}
+          style={{ background: tintAt(color, k) }}
           title={`${name} · ${k} ${TINT_STEPS[k]}%`}
         />
       ))}
@@ -170,7 +173,7 @@ function TintScale(): React.JSX.Element {
           <span
             key={k}
             className="ds-tint-swatch"
-            style={{ background: tintAt(color, TINT_STEPS[k]) }}
+            style={{ background: tintAt(color, k) }}
             title={`${name} · ${k} ${TINT_STEPS[k]}%`}
           />
         ))}

@@ -1,6 +1,6 @@
 import { style } from '@vanilla-extract/css'
 import { vars as colorVars } from '../../../Tokens/color.css'
-import { tintAt, TINT_STEPS } from '../../../Tokens/tint'
+import { tintAt } from '../../../Tokens/tint'
 import { duration, easing } from '../../../Animation/motion'
 
 const c = colorVars.color
@@ -23,7 +23,7 @@ export const track = style({
   transition: `background ${ease}`,
 })
 
-export const trackOn = style({ background: tintAt('var(--accent)', TINT_STEPS.primary) })
+export const trackOn = style({ background: tintAt('var(--accent)', 'primary') })
 
 // The sliding slot — vertically centered so the border never offsets it; it shrink-wraps the
 // glass-wrapped fill and slides between off (left) and on (right).

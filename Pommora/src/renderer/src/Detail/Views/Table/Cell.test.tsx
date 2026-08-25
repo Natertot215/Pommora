@@ -130,7 +130,7 @@ describe('checkbox looks', () => {
   it('checked box tints the property color, check at label-control', () => {
     mount(rowWith({ prop_pin: true }), 'prop_pin', { look: 'checkbox' })
     const box = host.querySelector('span')
-    expect(box?.style.background).not.toBe('') // tinted fill, not the grey default class
+    expect(box?.style.getPropertyValue('--label-base')).not.toBe('') // tinted, not the grey default
     expect(box?.className).not.toContain(labelColor.default)
     expect(box?.style.color).toBe('var(--label-control)')
   })
@@ -139,13 +139,13 @@ describe('checkbox looks', () => {
     mount(rowWith({}), 'prop_pin', { look: 'checkbox' })
     const box = host.querySelector('span')
     expect(box?.className).toContain(labelColor.default)
-    expect(box?.style.background).toBe('')
+    expect(box?.style.getPropertyValue('--label-base')).toBe('')
   })
 
   it('a colorless checked box tints the configured accent via var(--accent), matching the switch', () => {
     mount(rowWith({ prop_done: true }), 'prop_done', { look: 'checkbox' }) // prop_done has no checkbox_color
     const box = host.querySelector('span')
-    expect(box?.style.background).toContain('var(--accent)')
+    expect(box?.style.getPropertyValue('--label-base')).toBe('var(--accent)')
   })
 
   it('scopes --accent to the property color so the switch on-track tints', () => {

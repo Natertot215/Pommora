@@ -1,6 +1,6 @@
 import { globalStyle, style, styleVariants } from '@vanilla-extract/css'
 import { titleReveal } from '../../../Animation/animations.css'
-import { TINT_STEPS, text, tintAt, vars } from '../../../Tokens'
+import { text, tintAt, vars } from '../../../Tokens'
 
 const c = vars.color
 
@@ -60,16 +60,16 @@ export const type = styleVariants({
   },
   tinted: {
     vars: {
-      '--button-fill': tintAt(accent, TINT_STEPS.tertiary),
+      '--button-fill': tintAt(accent, 'tertiary'),
       '--button-ink': accent,
-      '--button-outline': tintAt(accent, TINT_STEPS.quaternary),
+      '--button-outline': tintAt(accent, 'quaternary'),
     },
   },
   solid: {
     vars: {
-      '--button-fill': tintAt(accent, TINT_STEPS.primary),
+      '--button-fill': tintAt(accent, 'primary'),
       '--button-ink': c.label.primary,
-      '--button-outline': tintAt(accent, TINT_STEPS.quaternary),
+      '--button-outline': tintAt(accent, 'quaternary'),
     },
   },
   filled: {
@@ -81,9 +81,9 @@ export const type = styleVariants({
   },
   destructive: {
     vars: {
-      '--button-fill': tintAt(error, TINT_STEPS.tertiary),
-      '--button-ink': tintAt(error, TINT_STEPS.primary),
-      '--button-outline': tintAt(error, TINT_STEPS.quaternary),
+      '--button-fill': tintAt(error, 'tertiary'),
+      '--button-ink': tintAt(error, 'primary'),
+      '--button-outline': tintAt(error, 'quaternary'),
     },
   },
 })

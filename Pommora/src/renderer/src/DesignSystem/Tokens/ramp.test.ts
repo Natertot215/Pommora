@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { PINK, RAMP_FAMILIES, RAMP_STEPS, SPECTRUM, isColorKey, type CellKey } from '@shared/theme'
 import { vars as colorVars } from './color.css'
-import { ANCHOR_CELLS, cellColor, cellRing, cellTint } from './ramp'
-import { TINT_STEPS, mixAt, tint, tintAt } from './tint'
+import { ANCHOR_CELLS, cellColor, cellPaint, cellRing } from './ramp'
+import { mixAt, tintAt } from './tint'
 
 const c = colorVars.color
 const WHITE = c.system.white
@@ -17,9 +17,14 @@ describe('mixAt', () => {
     expect(mixAt('#FFF', 25, '#000', 'oklch')).toBe('color-mix(in oklch, #FFF 25%, #000)')
   })
 
-  it('returns the bare base at full strength', () => {
+  it('returns the bare base at a full-strength amount', () => {
     expect(mixAt('#FFF', 100, '#000')).toBe('#FFF')
-    expect(tintAt('#FFF', TINT_STEPS.solid)).toBe('#FFF')
+  })
+
+  it('routes a named step through its var, so the ladder stays live', () => {
+    expect(tintAt('#FFF', 'primary')).toBe(
+      'color-mix(in srgb, #FFF var(--tint-primary), transparent)',
+    )
   })
 })
 
@@ -84,10 +89,7 @@ describe('anchors', () => {
   // Consequence of that seat: grey-6 falls inside the darkness-offset zone, so a chip carrying the
   // legacy `grey` renders a step darker than it did before the ramp. Pinned, not hidden.
   it('renders the grey anchor darker than the bare solid, per the greyscale exception', () => {
-    expect(cellTint(ANCHOR_CELLS.grey)).not.toEqual(tint(c.solid.grey))
-    expect(cellTint(ANCHOR_CELLS.grey).background).toBe(
-      tint(mixAt(c.solid.grey, 85, BLACK)).background,
-    )
+    expect(cellPaint(ANCHOR_CELLS.grey).base).toBe(mixAt(c.solid.grey, 85, BLACK))
   })
 
   it('seats pink at purple-5 without making it a spectrum solid', () => {
@@ -96,32 +98,32 @@ describe('anchors', () => {
   })
 })
 
-describe('cellTint', () => {
-  it('is the plain chip recipe off the grid', () => {
-    expect(cellTint('red-3')).toEqual(tint(c.solid.red))
+describe('cellPaint', () => {
+  it('is the bare cell color off the grid, with no outline of its own', () => {
+    expect(cellPaint('red-3')).toEqual({ base: c.solid.red })
   })
 
   it('darkens the base of the two brightest greys so their text still reads', () => {
-    expect(cellTint('grey-7')).not.toEqual(tint(cellColor('grey-7')))
-    expect(cellTint('grey-6')).not.toEqual(tint(cellColor('grey-6')))
-    expect(cellTint('grey-5').background).toBe(tint(cellColor('grey-5')).background)
+    expect(cellPaint('grey-7').base).not.toBe(cellColor('grey-7'))
+    expect(cellPaint('grey-6').base).not.toBe(cellColor('grey-6'))
+    expect(cellPaint('grey-5').base).toBe(cellColor('grey-5'))
   })
 
-  it('rides the label-tertiary ladder on every grey border', () => {
-    expect(cellTint('grey-0').borderColor).toBe(tintAt(c.label.tertiary, 35))
-    expect(cellTint('grey-7').borderColor).toBe(c.label.tertiary)
+  it('rides the label-tertiary ladder on every grey outline', () => {
+    expect(cellPaint('grey-0').outline).toBe(tintAt(c.label.tertiary, 35))
+    expect(cellPaint('grey-7').outline).toBe(c.label.tertiary)
   })
 })
 
 describe('cellRing', () => {
   it('is the solid at tint-primary on a chromatic row', () => {
-    expect(cellRing('red-6')).toBe(tintAt(cellColor('red-6'), TINT_STEPS.primary))
+    expect(cellRing('red-6')).toBe(tintAt(cellColor('red-6'), 'primary'))
   })
 
   it('is the chip border on the grey row, where they are one thing', () => {
     for (const step of RAMP_STEPS) {
       const key = `grey-${step}` as CellKey
-      expect(cellRing(key)).toBe(cellTint(key).borderColor)
+      expect(cellRing(key)).toBe(cellPaint(key).outline)
     }
   })
 })
@@ -152,7 +154,7 @@ describe('the anchors survive the generation unchanged', () => {
       (k) => k !== 'grey',
     )
     for (const key of chromatic) {
-      expect(cellTint(ANCHOR_CELLS[key])).toEqual(tint(c.solid[key]))
+      expect(cellPaint(ANCHOR_CELLS[key])).toEqual({ base: c.solid[key] })
     }
   })
 

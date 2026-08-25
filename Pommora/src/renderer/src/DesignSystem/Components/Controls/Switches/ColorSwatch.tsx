@@ -1,8 +1,8 @@
 import { useRef, useState } from 'react'
 import { ColorPicker } from '../../Pickers/ColorPicker/ColorPicker'
 import type { LabelColorName } from '../../../Labels'
-import { cellTint } from '../../../Tokens/ramp'
-import { TINT_STEPS, tintAt } from '../../../Tokens/tint'
+import { cellPaint } from '../../../Tokens/ramp'
+import { tintAt } from '../../../Tokens/tint'
 import type { CellKey } from '@shared/theme'
 import * as s from './colorSwatch.css'
 
@@ -26,10 +26,9 @@ export function ColorSwatch({
   greyscale?: boolean
   onPick: (color: string | undefined) => void
 }): React.JSX.Element {
-  // A grey cell reads through the chip recipe — the wash the row's darkness offset produces, and the
-  // borrowed outline that stands in for the chroma it hasn't got. Painted raw it would sink into the
-  // pane at the dark end, which is exactly why the row is withheld from the surfaces that do that.
-  const grey = selected.startsWith('grey-') ? cellTint(selected as CellKey) : null
+  // Through the chip recipe — painted raw a grey cell sinks into the pane at its dark end, which is
+  // exactly why that row is withheld from surfaces that do that.
+  const cell = selected.startsWith('grey-') ? cellPaint(selected as CellKey) : null
   const [open, setOpen] = useState(false)
   const chipRef = useRef<HTMLButtonElement>(null)
 
@@ -46,9 +45,9 @@ export function ColorSwatch({
           className={s.swatch}
           style={
             {
-              '--sw': grey?.background ?? tintAt(css, TINT_STEPS.primary),
+              '--sw': tintAt(cell?.base ?? css, 'primary'),
               // A grey cell brings its own outline; every other leaves the box's own standing.
-              borderColor: grey?.borderColor,
+              borderColor: cell?.outline,
             } as React.CSSProperties
           }
         />

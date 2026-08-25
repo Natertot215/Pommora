@@ -1,5 +1,6 @@
 import { createGlobalTheme, globalStyle } from '@vanilla-extract/css'
 import { GREY_DEFAULT, SPECTRUM, WINDOW_BG } from '@shared/theme'
+import { tintAt } from './tint'
 
 // Primitives — the base system palette. Grey/white/black are the single source for
 // every derived tone: labels are system-white at an opacity, fills and separators are
@@ -15,15 +16,8 @@ const primitive = createGlobalTheme(':root', {
   },
 })
 
-// base @ alpha — apply an opacity to a primitive. color-mix(… X%, transparent) is
-// the project's established opacity mechanism (see tint.ts / theme-vars.css.ts),
-// so a derived token references the primitive var rather than baking its hex.
-const greyA = (pct: string): string =>
-  `color-mix(in srgb, ${primitive.color.system.grey} ${pct}, transparent)`
-const whiteA = (pct: string): string =>
-  `color-mix(in srgb, ${primitive.color.system.white} ${pct}, transparent)`
-const blackA = (pct: string): string =>
-  `color-mix(in srgb, ${primitive.color.system.black} ${pct}, transparent)`
+// Each token's share is its own; the named ladder in `tint.ts` is for what a surface tints on purpose.
+const { grey, white, black } = primitive.color.system
 
 // Derived tokens mirrored from the Figma color collection.
 const derived = createGlobalTheme(':root', {
@@ -33,11 +27,11 @@ const derived = createGlobalTheme(':root', {
     // the on-control label worn by control chrome — toolbar / subfield / editor / switches / the
     // table heading — bright but a step under primary.
     label: {
-      primary: primitive.color.system.white,
-      control: whiteA('80%'),
-      secondary: whiteA('65%'),
-      tertiary: whiteA('35%'),
-      quaternary: whiteA('20%'),
+      primary: white,
+      control: tintAt(white, 80),
+      secondary: tintAt(white, 65),
+      tertiary: tintAt(white, 35),
+      quaternary: tintAt(white, 20),
     },
     // The app substrate — the base background's single source: @shared/theme WINDOW_BG, so the Electron window + this token never drift.
     background: {
@@ -51,24 +45,24 @@ const derived = createGlobalTheme(':root', {
     },
     // Overlay fills over a surface.
     fill: {
-      primary: greyA('20%'),
-      secondary: greyA('15%'),
-      tertiary: greyA('10%'),
-      quaternary: greyA('6%'),
-      quinary: greyA('4%'),
+      primary: tintAt(grey, 20),
+      secondary: tintAt(grey, 15),
+      tertiary: tintAt(grey, 10),
+      quaternary: tintAt(grey, 6),
+      quinary: tintAt(grey, 4),
     },
     // Interaction states — system-grey washes, but for `muted`: a de-emphasis veil that dims a
     // surface a step DARKER, so it derives from system-black rather than the grey the others share.
     state: {
-      hover: greyA('2.5%'),
-      selected: greyA('5%'),
-      muted: blackA('10%'),
+      hover: tintAt(grey, 2.5),
+      selected: tintAt(grey, 5),
+      muted: tintAt(black, 10),
     },
     // Hairlines — system-grey. `border` is the one hairline tone; `segment` is the lighter step the
     // outliner rails and segment dividers wear.
     separator: {
-      border: greyA('25%'),
-      segment: greyA('20%'),
+      border: tintAt(grey, 25),
+      segment: tintAt(grey, 20),
     },
   },
 })

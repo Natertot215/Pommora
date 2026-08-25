@@ -32,7 +32,7 @@ const FALLBACK: ColumnWidth = { min: 80, default: 140, max: UNCAPPED }
 
 // Per-look min overrides, keyed [type][look], replacing the type's base min (default + max stay
 // type-level). Status, select and multi-select are one option-chip family, so they share OPTION_MIN.
-const OPTION_MIN = { compact: 45, standard: 80 } as const
+const OPTION_MIN = { compact: 65, standard: 80 } as const
 const STYLE_MIN: Record<string, Partial<Record<string, number>>> = {
   checkbox: { switch: 70 },
   status: OPTION_MIN,
@@ -54,9 +54,9 @@ export function widthFor(
 }
 
 /** A column's effective min width — the type's base min, replaced by the per-style min wherever the
- *  table defines one (a Switch checkbox needs room the checkbox min can't give; a Pill status wants more
- *  than a Checkbox status). `look` omitted resolves the type's DEFAULT look, so an unstyled status reads
- *  its Pill min; reserved timestamp columns keep the base. */
+ *  table defines one (a Switch checkbox needs room the checkbox min can't give; a Standard option chip
+ *  carries a label where a Compact one carries a glyph). `look` omitted resolves the type's DEFAULT
+ *  look, so an unstyled option column reads its Standard min; reserved timestamp columns keep the base. */
 export function minWidthFor(
   columnId: string,
   schema: PropertyDefinition[],

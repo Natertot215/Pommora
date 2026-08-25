@@ -1,22 +1,37 @@
-import { style, styleVariants } from '@vanilla-extract/css'
-import { RAMP_FAMILIES, RAMP_STEPS, type CellKey } from '../Tokens/ramp'
+import { style, styleVariants, type ComplexStyleRule } from '@vanilla-extract/css'
+import { RAMP_FAMILIES, RAMP_STEPS, cellColor, cellPaint, type CellKey } from '../Tokens/ramp'
 import { vars as colorVars } from '../Tokens/color.css'
 import { text } from '../Tokens/typography.css'
-import { cellColor, cellTint } from '../Tokens/ramp'
-import { tint } from '../Tokens/tint'
+import { mixAt, tintAt } from '../Tokens/tint'
 
-// § SHAPE — geometry alone. Fill, outline, alignment and tint are separate axes, so any
-// combination is reachable without minting a class for it.
+// § VALUES — every number a label uses, one place each.
+
+// Geometry for Pill + Label [Standard] chips; used by Status, Select, and Multi-Select
+const SIZE = {
+  height: '20px',
+  roomyHeight: '22px',
+  gap: '4px',
+  padX: '6px',
+  roomyPadX: '8px',
+  border: '2px',
+  pillRadius: '10px',
+  tagRadius: '6px',
+  textMax: '85px',
+
+  // Geometry for Checkbox properties.
+  boxSide: '17px',
+  boxRadius: '5.5px',
+  boxBorder: '1.5px',
+} as const
 
 const labelBase = style([
   text.control.semibold,
   {
-    // THE label-size knob — optional.
     zoom: 'var(--label-zoom, 1.0)',
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '4px',
+    gap: SIZE.gap,
     boxSizing: 'border-box',
     borderStyle: 'solid',
     whiteSpace: 'nowrap',
@@ -25,74 +40,76 @@ const labelBase = style([
 
 /** Dimensions without the base, for a surface drawing its own frame (`pm-checkbox`). */
 export const boxGeometry = style({
-  width: '17px',
-  height: '17px',
+  width: SIZE.boxSide,
+  height: SIZE.boxSide,
   padding: 0,
-  borderRadius: '5.5px',
-  borderWidth: '1.5px',
+  borderRadius: SIZE.boxRadius,
+  borderWidth: SIZE.boxBorder,
 })
 
-/** The task checkbox's box — the box geometry over the label base. Kept out of the `shape` roster on
- *  purpose: a checkbox is a control, never an option chip's shape. */
+/** The task checkbox's box. */
 export const checkboxBox = style([labelBase, boxGeometry])
 
-/** `pill` and `tag` share `--label-pad-x` so a surface retunes them together. An option chip's
- *  Compact style is these same shapes rendered icon-only, so the corner radius never changes. */
+// Geometry for the [Compact] style; same property assignment as [Standard].
+const chip = (radius: string): ComplexStyleRule => [
+  labelBase,
+  {
+    height: SIZE.height,
+    padding: `0 var(--label-pad-x, ${SIZE.padX})`,
+    borderRadius: radius,
+    borderWidth: SIZE.border,
+  },
+]
+
 export const shape = {
-  pill: style([
-    labelBase,
-    {
-      height: '20px',
-      padding: '0 var(--label-pad-x, 6px)',
-      borderRadius: '10px',
-      borderWidth: '2px',
-    },
-  ]),
-  tag: style([
-    labelBase,
-    {
-      height: '20px',
-      padding: '0 var(--label-pad-x, 6px)',
-      borderRadius: '6px',
-      borderWidth: '2px',
-    },
-  ]),
+  pill: style(chip(SIZE.pillRadius)),
+  tag: style(chip(SIZE.tagRadius)),
 } as const
 export type LabelShape = keyof typeof shape
 
-// § COLOR — one variant per palette key; every shape composes with any of them.
+// § COLOR — the tint recipe once, then one variant per palette key naming only its base.
 
-/** `--melt-ground` is what a removable label's blurred twin smears into, so it FOLLOWS the fill;
- *  `--label-accent` is the saturated identity color, for surfaces wanting the color itself rather
- *  than tint's mostly-neutral text mix. */
-const labelFrom = (
-  recipe: ReturnType<typeof tint>,
-  accent: string,
-): ReturnType<typeof tint> & { vars: Record<string, string> } => ({
-  ...recipe,
-  vars: { '--melt-ground': recipe.background, '--label-accent': accent },
+const BASE = 'var(--label-base)'
+const FILL = tintAt(BASE, 'primary')
+
+/** THE tint: fill, outline and text mixed off the base. `--melt-ground` must be STATED — left unset
+ *  the declaration drops and the blurred twin inherits the text color, stacking a crisp duplicate. */
+export const tinted = style({
+  background: FILL,
+  borderColor: tintAt(BASE, 'secondary'),
+  color: mixAt(BASE, 'quaternary', colorVars.color.label.primary),
+  vars: { '--melt-ground': FILL, '--label-accent': BASE },
 })
 
-const labelTint = (base: string): ReturnType<typeof labelFrom> => labelFrom(tint(base), base)
+/** A palette key: what it tints from, the outline a row brings instead of mixing one, and the raw
+ *  color where the base differs from it — the greyscale row darkens before it tints. */
+type Paint = { base: string; outline?: string; accent?: string }
+const variant = ({ base, outline, accent }: Paint): ComplexStyleRule => [
+  tinted,
+  {
+    vars: { '--label-base': base, ...(accent === base ? {} : { '--label-accent': accent }) },
+    ...(outline ? { borderColor: outline } : {}),
+  },
+]
 
 // Generated rather than listed, so a retuned cell or an added family can't leave a label behind.
 const cellVariants = Object.fromEntries(
   RAMP_FAMILIES.flatMap((family) =>
     RAMP_STEPS.map((step) => {
       const key = `${family}-${step}` as CellKey
-      return [key, labelFrom(cellTint(key), cellColor(key))]
+      return [key, variant({ ...cellPaint(key), accent: cellColor(key) })]
     }),
   ),
-) as Record<CellKey, ReturnType<typeof labelFrom>>
+) as Record<CellKey, ComplexStyleRule>
 
 export const labelColor = styleVariants({
   ...cellVariants,
   // `default` takes grey-4's base color but keeps the plain recipe — and stays its OWN key, since a
   // grid cell would open the picker ringed on an uncolored value and leave clearing unreachable.
-  default: labelTint(cellColor('grey-4')),
+  default: variant({ base: cellColor('grey-4') }),
   // The link-color "Default": the runtime system accent, tinted like any solid. A link seeds to this
   // (the picker's no-selection state), so it must be a real palette key — not the neutral grey default.
-  accent: labelTint('var(--system-accent)'),
+  accent: variant({ base: 'var(--system-accent)' }),
 })
 
 /** The label palette keys — the single source consumers (cells, `colorMap`) target. */
@@ -115,8 +132,6 @@ export const fill = {
       },
     },
   }),
-  /** `--melt-ground` must still be STATED: left unset the declaration drops and the twin inherits
-   *  the text color, stacking a crisp duplicate over the label. */
   none: style({
     selectors: { '&&': { background: 'transparent', vars: { '--melt-ground': 'transparent' } } },
   }),
@@ -125,14 +140,14 @@ export const fill = {
 export const outline = {
   tertiary: style({ selectors: { '&&': { borderColor: colorVars.color.label.quaternary } } }),
   // `labelBase` sets border-STYLE and every shape names its width; a chrome-less one has to say
-  // none, or the UA's `medium` paints a 3px rule in the text color.
+  // none, or the UA's `medium` paints a rule in the text color.
   none: style({ border: 'none' }),
 } as const
 
 export const alignStart = style({ justifyContent: 'flex-start' })
 
-export const roomy = style({ height: '22px', vars: { '--label-pad-x': '8px' } })
+export const roomy = style({ height: SIZE.roomyHeight, vars: { '--label-pad-x': SIZE.roomyPadX } })
 
 /** The cap lives on the TEXT, not the label — a % width is unreliable in a shrink-to-fit flex box,
  *  and this way the truncation lands at the padding edge instead of floating mid-label. */
-export const textCap = style({ maxWidth: 'var(--label-max, 85px)' })
+export const textCap = style({ maxWidth: `var(--label-max, ${SIZE.textMax})` })

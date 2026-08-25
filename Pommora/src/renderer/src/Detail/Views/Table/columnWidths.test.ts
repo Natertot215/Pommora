@@ -45,7 +45,7 @@ describe('minWidthFor', () => {
 
   it('shares one option-chip min set across status, select and multi-select', () => {
     for (const p of ['prop_status', 'prop_select', 'prop_multi']) {
-      expect(minWidthFor(p, schema, 'compact')).toBe(45)
+      expect(minWidthFor(p, schema, 'compact')).toBe(65)
       expect(minWidthFor(p, schema, 'standard')).toBe(80)
     }
   })
