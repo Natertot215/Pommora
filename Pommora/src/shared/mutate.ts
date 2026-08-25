@@ -6,6 +6,7 @@
 import type { Result } from './result'
 import type { PageMoveContext } from './pageMenu'
 import type { PropertyValue } from './propertyValue'
+import type { Crop } from './schemas'
 import { subSetLabel, type NexusLabels } from './types'
 
 /** The mutate channel's reply — `created` appears only on the create ops; `renamed` only on
@@ -96,6 +97,9 @@ export type MutateRequest =
   // its own name — or referenced where it is, when it already sits there — and the owner's config
   // (folder sidecar, homepage.json, or a page's frontmatter `cover`) names it by wikilink.
   | { op: 'setBanner'; path: string; kind: BannerOwnerKind; source: string | null }
+  // Frame a stored image — `image` is the value verbatim (wikilink, path, or web address), keyed
+  // by the resolved image in `.nexus/crops.json`; `crop: null` deletes the framing.
+  | { op: 'setCrop'; image: string; crop: Crop | null }
   // Hide or show an entity's banner-heading icon — a `heading_icon_hidden` boolean in the
   // owner's config (folder sidecar or homepage.json; absent = shown). `true` hides, `false` clears it.
   | { op: 'setHeadingIconHidden'; path: string; kind: BannerOwnerKind; hidden: boolean }

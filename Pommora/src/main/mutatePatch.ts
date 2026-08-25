@@ -24,6 +24,7 @@ import { dropLiveTree, getLiveTree, refreshAfterWrite } from './liveTree'
 import {
   applyPatch,
   patchContainerFromDisk,
+  patchCropsFromDisk,
   patchHomepageFromDisk,
   patchPageFromDisk,
   patchSettingsFromDisk,
@@ -142,16 +143,30 @@ async function routeMutation(
     case 'setIcon':
       // A Context's icon lives in its registry — a structural walk input.
       return patchEntityFromDisk(root, req.kind, req.path) ?? 'refresh'
+    // A banner replace drops the old image's crop through dropReplacedAsset — a crops.json write
+    // the app's own watcher never sees — so the writer re-reads that leaf itself.
     case 'setBanner':
-    case 'setHeadingIconHidden':
-      if (req.kind === 'homepage') return patchHomepageFromDisk(root)
-      if (req.kind === 'navview') return 'ok' // navigation.json is a file the walk never reads
-      return patchEntityFromDisk(root, req.kind, req.path) ?? 'refresh'
+    case 'setHeadingIconHidden': {
+      const own =
+        req.kind === 'homepage'
+          ? await patchHomepageFromDisk(root)
+          : req.kind === 'navview'
+            ? 'ok' // navigation.json is a file the walk never reads
+            : ((await patchEntityFromDisk(root, req.kind, req.path)) ?? 'refresh')
+      if (own === 'refresh') return 'refresh'
+      return req.op === 'setBanner' ? patchCropsFromDisk(root) : 'ok'
+    }
     case 'setContext':
       return isSpacePath(req.path)
         ? patchSpaceFromDisk(root, req.path)
         : patchPageFromDisk(root, req.path)
-    case 'setProfileImage':
+    case 'setCrop':
+      return patchCropsFromDisk(root)
+    case 'setProfileImage': {
+      const own = await patchSettingsFromDisk(root)
+      if (own === 'refresh') return 'refresh'
+      return patchCropsFromDisk(root)
+    }
     case 'setProfileIcon':
     case 'setProfileSubtitle':
       return patchSettingsFromDisk(root)
