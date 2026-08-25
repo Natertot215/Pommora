@@ -38,7 +38,7 @@ Type is one CSS-var pair set by a `styleVariants` — `--button-fill` and `--but
 
 - **The size system already exists and has one client.** `Tokens/size.css.ts` holds `size.control['button-small|medium|large']` and `Segmented.tsx` is the only component reading it. `Sidebar.css` and `tabBar.css` match `--button-large-height` by name.
 - **`Segmented` is the de facto button.** Icon-only and icon+label modes, a collapsible label slot, `glass` as a prop, the house `segment` divider, and the one-segment case shipping through `MenuDropdown`. It lacks label-only rendering and every type.
-- **The five looks in the wild:** (A) the liquid-glass segmented pill — toolbar only; (B) ~25 hand-rolled ghost buttons — `border:none; background:none`, secondary/tertiary tone, `--state-hover` fill, with reveal-on-hover and `--state-ghost` rest as call-site axes; the one named member is `menu.css.ts accessoryButton`; (C) two quaternary-filled bordered boxes — `ActionBand.segment` and `settingsPane.iconButton`; (D) the PhotoCropModal pair — neutral `fill.secondary` and the app's only accent-filled button; (E) hover-recolor-only, no box.
+- **The five looks in the wild:** (A) the liquid-glass segmented pill — toolbar only; (B) ~25 hand-rolled ghost buttons — `border:none; background:none`, secondary/tertiary tone, `--state-hover` fill, with reveal-on-hover and `--state-ghost` rest as call-site axes; the one named member is `menu.css.ts accessoryButton`; (C) two quaternary-filled bordered boxes — `ActionBand.segment` and `settingsPane.iconButton`; (D) the ImagePicker pair — a `filled` Cancel and a `tinted` Save; (E) hover-recolor-only, no box.
 - **Destructive does not exist.** `--error` is consumed by error text only.
 - **Labels is the structural model.** `labels.css.ts` composes `shape × labelColor × fill × outline`; Button is the same axis idea over `size.control`.
 
@@ -48,7 +48,7 @@ Type is one CSS-var pair set by a `styleVariants` — `--button-fill` and `--but
 | --------------------------------------------------------- | ----------------------------------------------------- |
 | `Segmented-Controls/` (SegmentedSymbol · SegmentedButton) | `Controls/Button/` — `Segmented` is the run form      |
 | Toolbar Back/Forward · Trio · dropdown triggers           | `Segmented type="base" glass`                         |
-| PhotoCropModal Cancel · Choose                            | `Button type="filled"` · `Button type="solid"`        |
+| ImagePicker Cancel · Save                                 | `Button type="filled"` · `Button type="tinted"`       |
 | `ActionBand.segment`                                       | stays — a purposely divergent tab-style control (Nathan's call) |
 | `settingsPane.iconButton`                                  | `Button type="filled" icon`                           |
 | `menu.css accessoryButton` and its seven derivatives       | `Button type="base" icon size="button-small"` + the `ghostRest` / `revealOnHover` modifiers |
@@ -59,4 +59,4 @@ Two modifiers ride beside the recipe, since they are states rather than types: `
 
 ### Strays (app `Components/`)
 
-Move: `PaneSlider` → `DesignSystem/Components/` (already slated), `Surface.tsx` → `Materials/` (or a `GlassSurface` prop), `PhotoCropModal` → `DesignSystem/Components/`. Stay: `EyeToggle`, `DashIcon`, `InlineEditHeader`, `OptionRow`, `GhostOptionChip`, `PickerControl` — property-editor pieces on the pane's own stylesheet, bundle 6a's feature folder.
+Move: `PaneSlider` → `DesignSystem/Components/` (already slated), `Surface.tsx` → `Materials/` (or a `GlassSurface` prop), `ImagePicker` (was `PhotoCropModal`) → `DesignSystem/Components/`. Stay: `EyeToggle`, `DashIcon`, `InlineEditHeader`, `OptionRow`, `GhostOptionChip`, `PickerControl` — property-editor pieces on the pane's own stylesheet, bundle 6a's feature folder.

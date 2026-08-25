@@ -11,7 +11,8 @@ import {
 import type { OpenDialogOptions } from 'electron'
 import { assetSubRoot } from '@shared/nexusPaths'
 import { basename, dirname, extname, join, resolve, sep } from 'node:path'
-import { readFile, rename } from 'node:fs/promises'
+import { readFile, rename, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
 import type {
   HoverCardSize,
   NavigationState,
@@ -763,6 +764,17 @@ async function pickFilePath(win: BrowserWindow, opts?: PickFileOptions): Promise
   const picked = result.canceled ? null : (result.filePaths[0] ?? null)
   if (picked) pickedPaths.add(picked)
   return picked
+}
+
+// A pasted image is read from the OS clipboard here (no bytes cross the bridge) and written to a
+// temp PNG the caller adopts like any picked file — so paste rides the same source-adopt path.
+async function pasteImagePath(): Promise<string | null> {
+  const image = clipboard.readImage()
+  if (image.isEmpty()) return null
+  const path = join(tmpdir(), `pommora-paste-${Date.now()}.png`)
+  await writeFile(path, image.toPNG())
+  pickedPaths.add(path)
+  return path
 }
 
 /** An asset a mutation adopted never reaches the watcher — `atomicWriteBinary` records its own
@@ -1774,6 +1786,7 @@ serveBridge(
         return popReturningMenu<NexusIconAction>(win, (pick) => [
           { label: 'Edit Icon', click: pick('changeIcon') },
           { label: opts.hasPhoto ? 'Change Photo' : 'Add Photo', click: pick('addPhoto') },
+          ...(opts.hasPhoto ? [{ label: 'Edit Photo', click: pick('editPhoto') }] : []),
           ...(opts.hasPhoto || opts.hasGlyph ? [{ type: 'separator' as const }] : []),
           ...(opts.hasPhoto ? [{ label: 'Remove Photo', click: pick('removePhoto') }] : []),
           ...(opts.hasGlyph ? [{ label: 'Remove Icon', click: pick('removeIcon') }] : []),
@@ -1784,6 +1797,7 @@ serveBridge(
     // The banner's Add/Change affordances use this directly (the photo's "Add Photo" menu wraps
     // the same picker).
     'nexus:pickFile': { kind: 'menu', fn: pickFilePath },
+    'nexus:pasteImage': { kind: 'raw', fn: pasteImagePath },
 
     // Bounded by the pick, like every other read-back of an outside path; the DESTINATION is
     // refused inside `adoptFile`, at the write.

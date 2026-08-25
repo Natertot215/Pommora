@@ -22,13 +22,19 @@ export function useNexusIcon() {
     else if (action === 'addPhoto') {
       const source = await window.nexus.pickFile()
       if (source && (await mutate({ op: 'setProfileImage', source }))) openEditor()
-    } else if (action === 'removePhoto') await mutate({ op: 'setProfileImage', source: null })
+    } else if (action === 'editPhoto') openEditor()
+    else if (action === 'removePhoto') await mutate({ op: 'setProfileImage', source: null })
     else if (action === 'removeIcon') await mutate({ op: 'setProfileIcon', icon: null })
   }
 
   const onSave = async (crop: Crop): Promise<void> => {
     closeEditor()
     if (profileImage) await mutate({ op: 'setCrop', image: profileImage, crop })
+  }
+
+  // Re-pick or paste from inside the editor: adopt the new file and keep the editor open on it.
+  const onRepick = async (source: string): Promise<void> => {
+    await mutate({ op: 'setProfileImage', source })
   }
 
   // Clears the photo — otherwise it would still outrank the newly picked glyph in display.
@@ -48,6 +54,7 @@ export function useNexusIcon() {
     openEditor,
     closeEditor,
     onSave,
+    onRepick,
     pickerOpen,
     setPickerOpen,
     selectGlyph,

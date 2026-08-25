@@ -2,6 +2,7 @@ import { useRef } from 'react'
 import { DEFAULT_NEXUS_ICON, Icon } from '@renderer/DesignSystem/Symbols'
 import { ICON_PX, type IconSize } from '@renderer/DesignSystem/Tokens/size.css'
 import { IconPicker } from '@renderer/Settings/IconPicker'
+import { ImagePicker } from '@renderer/DesignSystem/Components/ImagePicker/ImagePicker'
 import { useNexusIcon } from '../Components/useNexusIcon'
 import { useAssetUrl } from '../store'
 import { AssetImage } from '@renderer/DesignSystem/Components/AssetImage/AssetImage'
@@ -10,8 +11,18 @@ import * as s from './nexusHeader.css'
 /** Click (homepage select) is owned by the wrapping ribbon button, not here. Rename-nexus lives
  *  on the homepage banner title, not here either. */
 export function NexusPhoto({ size }: { size: IconSize }): React.JSX.Element {
-  const { profileImage, profileIcon, openMenu, pickerOpen, setPickerOpen, selectGlyph } =
-    useNexusIcon()
+  const {
+    profileImage,
+    profileIcon,
+    openMenu,
+    editing,
+    closeEditor,
+    onSave,
+    onRepick,
+    pickerOpen,
+    setPickerOpen,
+    selectGlyph,
+  } = useNexusIcon()
   const ref = useRef<HTMLSpanElement>(null)
   const photoUrl = useAssetUrl(profileImage)
   // The photo is an element, not a glyph — it needs the step's pixel value, and the fallback
@@ -43,6 +54,15 @@ export function NexusPhoto({ size }: { size: IconSize }): React.JSX.Element {
         triggerRef={ref}
         value={profileIcon}
         onSelect={selectGlyph}
+      />
+      <ImagePicker
+        open={editing}
+        value={profileImage ?? ''}
+        shape="circle"
+        boxAspect={1}
+        onCancel={closeEditor}
+        onSave={onSave}
+        onRepick={onRepick}
       />
     </>
   )

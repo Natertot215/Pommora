@@ -203,7 +203,7 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 | GlassSurface  | `GlassSurface` · `frostMaterial`              | The app's fixed chrome tier — sidebar, inspector, side rail.            |
 | Surface       | `Surface`                                     | GlassSurface as the floating overlay over the main view.                |
 | GlassPane     | `GlassPane` · `PANE_FROST`                    | Anything floating over it — menus, pickers, the autocomplete.           |
-| GlassWindow   | `GlassWindow` · `WINDOW_FROST`                | The pane tier carrying a body — preview, nav, settings, the crop modal. |
+| GlassWindow   | `GlassWindow` · `WINDOW_FROST`                | The pane tier carrying a body — preview, nav, settings, the image picker. |
 | Ghost         | `GHOST_FROST`                                 | The edge-free frost the drag chip wears.                                |
 | Frost engine  | `frostStyle` · `SOLID_FILL` · `OUTLINE_INSET` | The recipe itself, the window fill share, and the acted-on edge inset.  |
 | GlassControls | `GlassControls` · `CONTROL_OPTICS`            | Liquid glass on the button controls.                                    |
@@ -293,6 +293,8 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 | ColorPicker    | `ColorPicker`                              | The 8×8 ramp grid; clicking the selected cell clears.        |
 | IconPicker     | `IconPicker` · `IconFavorites`             | The searchable glyph grid with a reorderable favorites strip; the app binds favorites through `Settings/IconPicker`. |
 | TextPicker     | `TextPicker`                               | A typed-value picker in the shared pane.                     |
+| ImagePicker    | `ImagePicker`                              | Frames a stored image — a focal point and a zoom — as a circle or a rect cut to its seat. |
+| AssetImage     | `AssetImage`                               | The one element that draws a stored image, through its crop when one exists. |
 
 #### Menu
 

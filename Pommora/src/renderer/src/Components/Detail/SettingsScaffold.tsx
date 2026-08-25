@@ -4,6 +4,7 @@ import { useAssetUrl, useSession } from '../../store'
 import { DEFAULT_NEXUS_ICON, Icon } from '@renderer/DesignSystem/Symbols'
 import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
 import { AssetImage } from '@renderer/DesignSystem/Components/AssetImage/AssetImage'
+import { ImagePicker } from '@renderer/DesignSystem/Components/ImagePicker/ImagePicker'
 import { InputField } from '@renderer/DesignSystem/Components/Fields'
 import { MenuBottomRow, MenuScrollFrame } from '@renderer/DesignSystem/Components/Menu'
 import { FooterLockButton } from '@renderer/DesignSystem/Components/Menu'
@@ -23,8 +24,18 @@ export function SettingsScaffold(): React.JSX.Element | null {
   const locked = useSession((st) => st.hostLocks[blockHostKey(HOMEPAGE_HOST)] ?? false)
   const setHostLocked = useSession((st) => st.setHostLocked)
   const setLocked = (v: boolean): Promise<void> => setHostLocked(HOMEPAGE_HOST, v)
-  const { profileImage, profileIcon, openMenu, pickerOpen, setPickerOpen, selectGlyph } =
-    useNexusIcon()
+  const {
+    profileImage,
+    profileIcon,
+    openMenu,
+    editing,
+    closeEditor,
+    onSave,
+    onRepick,
+    pickerOpen,
+    setPickerOpen,
+    selectGlyph,
+  } = useNexusIcon()
   const iconRef = useRef<HTMLButtonElement>(null)
   const photoUrl = useAssetUrl(profileImage)
   if (!tree || selection.kind !== 'homepage') return null
@@ -69,6 +80,15 @@ export function SettingsScaffold(): React.JSX.Element | null {
         triggerRef={iconRef}
         value={profileIcon}
         onSelect={selectGlyph}
+      />
+      <ImagePicker
+        open={editing}
+        value={profileImage ?? ''}
+        shape="circle"
+        boxAspect={1}
+        onCancel={closeEditor}
+        onSave={onSave}
+        onRepick={onRepick}
       />
     </>
   )
