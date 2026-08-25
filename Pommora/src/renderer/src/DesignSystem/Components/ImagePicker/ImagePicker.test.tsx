@@ -172,14 +172,15 @@ describe('ImagePicker', () => {
     expect(onCancel).toHaveBeenCalled()
   })
 
-  it('holds Save while a re-picked image adopts, releasing when the new value lands', async () => {
+  it('holds Save while a re-picked image adopts, then releases even when the value is unchanged', async () => {
     const bothMap = {
       files: { 'cover.png': ['file-assets/Cover.png'], 'new.png': ['file-assets/New.png'] },
       version: ver++,
     }
     useSession.setState({ assetMap: bothMap, tree: treeWith({ 'file-assets/Cover.png': STORED }) })
     ;(window as { nexus?: unknown }).nexus = { pickFile: () => Promise.resolve('/abs/New.png') }
-    const onRepick = vi.fn(() => Promise.resolve(true))
+    let settle: (ok: boolean) => void = () => {}
+    const onRepick = vi.fn(() => new Promise<boolean>((resolve) => (settle = resolve)))
     const base = {
       open: true as const,
       shape: 'rect' as const,
@@ -195,8 +196,9 @@ describe('ImagePicker', () => {
     await act(async () => {})
     expect(onRepick).toHaveBeenCalledWith('/abs/New.png')
     expect((byText('Save') as HTMLButtonElement).disabled).toBe(true)
-    await mount(<ImagePicker value="[[New.png]]" {...base} />)
-    await loadImage()
+    // A dedup adopt of the already-set image writes back the same value, so no value change comes.
+    // The hold must release on the adopt resolving, or Save deadlocks against a change that never lands.
+    await act(async () => settle(true))
     expect((byText('Save') as HTMLButtonElement).disabled).toBe(false)
     ;(window as { nexus?: unknown }).nexus = undefined
   })

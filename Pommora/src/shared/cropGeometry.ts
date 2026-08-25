@@ -52,7 +52,7 @@ export function panDelta(
   const overhangY = shownH - boxH
   return panToCrop(
     anchor,
-    overhangX ? -totalDx / overhangX : 0,
-    overhangY ? -totalDy / overhangY : 0,
+    overhangX > 0 ? -totalDx / overhangX : 0,
+    overhangY > 0 ? -totalDy / overhangY : 0,
   )
 }
