@@ -74,4 +74,5 @@ export const NEXUS_CONFIG_FILES = {
   homepage: 'homepage.json',
   navigation: 'navigation.json',
   properties: 'properties.json',
+  crops: 'crops.json',
 } as const

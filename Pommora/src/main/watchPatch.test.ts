@@ -103,6 +103,24 @@ describe('applyWatchEvents — must agree with the walk', () => {
     expect(stabilize(walked, live)).toBe(live)
   })
 
+  it('patches crops.json as a leaf, dropping a malformed entry, walk-identically', async () => {
+    await refreshTree(root)
+    await writeFile(
+      abs('.nexus', 'crops.json'),
+      JSON.stringify({
+        byImage: {
+          'Loose/b.png': { x: 0.3, y: 0.4, zoom: 2 },
+          'Loose/bad.png': { x: 'nope', y: 0.5, zoom: 1 },
+        },
+      }),
+    )
+    const result = await applyWatchEvents(root, [ev('change', '.nexus', 'crops.json')], scope())
+    expect(result).toBe('patched')
+    const live = getLiveTree()
+    expect(live?.crops).toEqual({ 'Loose/b.png': { x: 0.3, y: 0.4, zoom: 2 } })
+    expect(stabilize(await readNexus(root), live)).toBe(live)
+  })
+
   it('a page deleted between event and read applies as a remove, walk-identically', async () => {
     await refreshTree(root)
     await unlink(abs('Notes', 'A.md'))
@@ -202,6 +220,7 @@ describe('classifyEvent', () => {
     )
     expect(kind(ev('change', '.nexus', 'settings.json'))).toBe('settings-leaf')
     expect(kind(ev('change', '.nexus', 'homepage.json'))).toBe('homepage-leaf')
+    expect(kind(ev('change', '.nexus', 'crops.json'))).toBe('crops-leaf')
     expect(kind(ev('add', 'Loose', 'second.md'))).toBe('index-only')
     expect(kind(ev('add', 'root-note.md'))).toBe('index-only')
     expect(kind(ev('change', 'Hidden', 'x.md'), ['Hidden'])).toBe('ignored')
