@@ -25,7 +25,7 @@ export function FieldsLeaf(): React.JSX.Element {
         <InputField
           chrome="bordered"
           label="Path"
-          edit={{ value: path, onCommit: setPath }}
+          edit={{ value: path, onCommit: setPath, renames: 'row', emptyCommits: true }}
           leading={<Icon name="folder-closed" size="body" />}
           trailing={
             <Button

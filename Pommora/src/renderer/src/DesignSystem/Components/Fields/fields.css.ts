@@ -81,14 +81,14 @@ export const draftInput = style([
   text.body.standard,
   {
     fieldSizing: 'content',
-    flex: '1 0 auto',
+    flex: '1 1 auto',
     minWidth: 0,
     border: 'none',
     outline: 'none',
     background: 'none',
     padding: 0,
     fontFamily: 'inherit',
-    color: c.label.control,
+    color: 'inherit',
   },
 ])
 

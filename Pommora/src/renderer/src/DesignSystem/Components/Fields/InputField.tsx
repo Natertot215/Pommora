@@ -9,6 +9,8 @@ export interface FieldEdit {
   onCommit: (next: string) => void
   /** Where the caret lands — a `title` opens with it at the end, a `row` selected whole. */
   renames?: 'title' | 'row'
+  /** A value rather than a name: clearing the field commits the empty string. */
+  emptyCommits?: boolean
   /** Uncontrolled by default: a click opens the field. A host with its own way in — a menu's
    *  Rename — drives it instead. */
   editing?: boolean
@@ -81,6 +83,8 @@ export function InputField({
           value={edit.value}
           className={s.draftInput}
           boxed
+          ariaLabel={label}
+          emptyCommits={edit.emptyCommits}
           onCommit={(next) => {
             setEditing(false)
             edit.onCommit(next)

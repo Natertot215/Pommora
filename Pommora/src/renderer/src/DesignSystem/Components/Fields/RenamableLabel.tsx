@@ -13,6 +13,8 @@ export function RenamableLabel({
   className,
   autoSize,
   boxed,
+  ariaLabel,
+  emptyCommits,
   onCommit,
   onCancel,
   children,
@@ -24,6 +26,9 @@ export function RenamableLabel({
   className: string
   autoSize?: boolean
   boxed?: boolean
+  ariaLabel?: string
+  /** A value field rather than a name: clearing it is a commit — the caller's unset — not a cancel. */
+  emptyCommits?: boolean
   onCommit: (next: string) => void
   onCancel: () => void
   children?: React.ReactNode
@@ -36,8 +41,9 @@ export function RenamableLabel({
       className={className}
       autoSize={autoSize}
       boxed={boxed}
+      ariaLabel={ariaLabel}
       caretAtEnd={renames === 'title'}
-      onCommit={(next) => (next && next !== value ? onCommit(next) : onCancel())}
+      onCommit={(next) => ((next || emptyCommits) && next !== value ? onCommit(next) : onCancel())}
       onCancel={onCancel}
     />
   )
