@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
 import type { PropertyDefinition } from '@shared/properties'
 import { isBlankValue, propertyKey, type PropertyValue } from '@shared/propertyValue'
 import type { PageFrontmatter } from '@shared/schemas'
@@ -269,10 +270,15 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
           ),
         )}
         {(hiddenProps.length > 0 || hiddenContexts.length > 0) && (
-          <button type="button" ref={addRef} className={s.add} onClick={() => setAddOpen(true)}>
-            <Icon name="plus" size="control" />
-            <span>Add Property</span>
-          </button>
+          <Button
+            ref={addRef}
+            size="button-inline"
+            icon="plus"
+            iconSize="control"
+            label="Add Property"
+            className={s.add}
+            onClick={() => setAddOpen(true)}
+          />
         )}
       </div>
       <PickerMenu

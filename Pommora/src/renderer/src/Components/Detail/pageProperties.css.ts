@@ -58,19 +58,4 @@ export const value = style({
 export const empty = style([text.caption.standard, { color: c.label.tertiary }])
 
 /** Sits outside the field blocks — an ancillary affordance, not a row in either group. */
-export const add = style([
-  text.footnote.standard,
-  {
-    alignSelf: 'flex-start',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-    padding: '2px 4px',
-    border: 'none',
-    borderRadius: '5px',
-    background: 'none',
-    color: c.label.secondary,
-    cursor: 'default',
-    selectors: { '&:hover': { background: c.state.hover } },
-  },
-])
+export const add = style({ alignSelf: 'flex-start', color: c.label.secondary })

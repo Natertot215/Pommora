@@ -197,7 +197,7 @@ export function CardValue({
       ) : isBlankValue(v) && canFillBlank ? (
         // A visible-but-empty property (Standard shows every visible property, filled or not): a clickable
         // placeholder so the row fills in place — only for kinds a blank click actually fills.
-        <span className={cx('card-value-empty', text.caption.emphasized)}>--</span>
+        <span className={cx('card-value-empty', text.caption.emphasized)}>—</span>
       ) : (
         <Cell
           row={row}

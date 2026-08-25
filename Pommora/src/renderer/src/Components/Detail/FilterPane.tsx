@@ -2,6 +2,7 @@
 // neither of which touches the rules. A hand-authored tree the pane can't represent renders locked
 // behind an explicit Reset (never silently flattened).
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
 import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
 import type { FilterRule, SavedView } from '@shared/views'
@@ -849,8 +850,11 @@ export function FilterPane({
           <div className={fp.ruleList}>
             {rows.map(ruleRow)}
             {draftRow}
-            <button
-              type="button"
+            <Button
+              size="button-inline"
+              paddingX="0"
+              icon="plus"
+              iconSize="body"
               className={fp.addRow}
               data-create
               aria-label="Add filter rule"
@@ -858,9 +862,7 @@ export function FilterPane({
               onClick={() =>
                 draft === false && setDraft(rows.length === 0 ? null : connectorFor(mode))
               }
-            >
-              <Icon name="plus" size="body" />
-            </button>
+            />
           </div>
         </div>
       )}

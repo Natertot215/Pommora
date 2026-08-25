@@ -28,10 +28,21 @@ const iconScale = createGlobalTheme(':root', {
 // `icon` references the ladder above (DRY linkage). Large is exact from Figma.
 const controlScale = createGlobalTheme(':root', {
   control: {
+    'button-inline': {
+      height: '20px',
+      segmentHeight: '18px',
+      paddingX: '2px',
+      labelPaddingX: '4px',
+      radius: '5px',
+      segmentRadius: '4px',
+      dividerHeight: '12px',
+      icon: iconScale.icon.control,
+    },
     'button-small': {
       height: '24px',
       segmentHeight: '20px',
       paddingX: '4px',
+      labelPaddingX: '12px',
       radius: '8px',
       segmentRadius: '4px',
       dividerHeight: '14px',
@@ -41,6 +52,7 @@ const controlScale = createGlobalTheme(':root', {
       height: '28px',
       segmentHeight: '24px',
       paddingX: '5px',
+      labelPaddingX: '12px',
       radius: '10px',
       segmentRadius: '5px',
       dividerHeight: '18px',
@@ -50,6 +62,7 @@ const controlScale = createGlobalTheme(':root', {
       height: '32px',
       segmentHeight: '28px',
       paddingX: '8px',
+      labelPaddingX: '12px',
       radius: '12px',
       segmentRadius: '6px',
       dividerHeight: '14px',

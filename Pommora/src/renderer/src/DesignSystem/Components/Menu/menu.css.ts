@@ -2,7 +2,6 @@ import { globalStyle, style, type StyleRule } from '@vanilla-extract/css'
 import { vars as colorVars } from '../../Tokens/color.css'
 import { ROW_PAD_X } from '../../Elements/DropOutline/dropOutline.css'
 import { font, text } from '../../Tokens/typography.css'
-import { duration, easing } from '../../Animation/motion'
 import { TINT_STEPS, tintAt } from '../../Tokens/tint'
 import { fieldRing, ROW_RING } from '../Fields/fieldRing'
 import { base } from '../Fields/fields.css'
@@ -177,27 +176,8 @@ export const menu = style({ display: 'flex', flexDirection: 'column', padding: '
  *  palette). Box via `--accessory-box` (consumers pass their own). The `&&` pins the
  *  action tone above `.app-toolbar button`'s control-tone rule (0,1,1). */
 export const accessoryButton = style({
-  width: 'var(--accessory-box, 16px)',
-  height: 'var(--accessory-box, 16px)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  border: 'none',
-  background: 'none',
-  padding: 0,
-  cursor: 'default',
-  borderRadius: '5px',
-  transition: `background ${duration.fast} ${easing.baseEase}`,
-  selectors: {
-    '&&': { color: c.label.tertiary },
-    '&:hover': { background: c.state.hover },
-  },
-})
-/** Rest-ghosted variant (the eye toggle) — dimmed at rest, full on hover. */
-export const accessoryGhostRest = style({
-  opacity: 'var(--state-ghost)',
-  transition: `opacity ${duration.fast} ${easing.baseEase}, background ${duration.fast} ${easing.baseEase}`,
-  selectors: { '&:hover': { opacity: 1 } },
+  width: 'var(--accessory-box, 20px)',
+  selectors: { '&&': { color: c.label.tertiary } },
 })
 // ── TopRow / BottomRow rhythm ──
 
@@ -246,24 +226,9 @@ export const bottomBar = style({ marginTop: 'auto' })
 // reads a step quieter than a body row, an ancillary action; its symbol sits a step under the TopBar
 // chevron. One source; the Style row + MenuBottomRow route here.
 export const footingLabel = style([actionRow])
-/** A pinned-footer text action — footing tone over the accessory hover pill. */
-export const footerAction = style([
-  footingLabel,
-  {
-    border: 'none',
-    background: 'none',
-    padding: '2px 4px',
-    borderRadius: '5px',
-    cursor: 'default',
-    selectors: { '&:hover': { background: c.state.hover } },
-  },
-])
 /** The footing lock action — a left-pinned labeled toggle (lock icon + label), a step-quieter
  *  icon than its label. No pressed/selected state — it never mutes on lock. */
-export const footerLockAction = style([
-  footerAction,
-  { display: 'inline-flex', alignItems: 'center', gap: '5px' },
-])
+export const footerLockAction = style([footingLabel, { gap: '5px' }])
 export const lockIcon = style({ selectors: { '&&': { color: c.label.tertiary } } })
 export const footingSymbol = style({
   display: 'inline-flex',

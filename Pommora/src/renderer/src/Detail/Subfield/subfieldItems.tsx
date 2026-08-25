@@ -1,7 +1,7 @@
 import type { SelectionState } from '@shared/types'
+import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
 import { DEFAULT_LABELS } from '@shared/types'
 import { containerCreators } from '@shared/mutate'
-import { Icon } from '@renderer/DesignSystem/Symbols'
 import { openPageBody, useSession } from '../../store'
 import { findCollection } from '../Scope'
 import { pageStats } from './subfieldStats'
@@ -67,15 +67,15 @@ function AddMenuItem(): React.JSX.Element | null {
   const creators = containerCreators(selection.kind, parentPath, labels ?? DEFAULT_LABELS)
   const onAdd = (): void => void useSession.getState().createFromMenu(creators, 'detail')
   return (
-    <button
-      type="button"
+    <Button
+      size="button-inline"
+      icon="plus"
+      iconSize="body"
       className="subfield-add"
       onClick={onAdd}
       aria-label="Add"
       title={creators.map((c) => c.label).join(' / ')}
-    >
-      <Icon name="plus" size="body" />
-    </button>
+    />
   )
 }
 
@@ -85,15 +85,15 @@ function ViewTypeItem(): React.JSX.Element {
   const mode = useSession((s) => s.navViewMode)
   const setMode = useSession((s) => s.setNavViewMode)
   return (
-    <button
-      type="button"
+    <Button
+      size="button-inline"
+      icon="chevrons-up-down"
+      iconSize="body"
+      label={mode === 'list' ? 'List' : 'Gallery'}
       className="subfield-viewtype"
       onClick={() => setMode(mode === 'list' ? 'gallery' : 'list')}
       title={mode === 'list' ? 'Switch to Gallery' : 'Switch to List'}
-    >
-      <Icon name="chevrons-up-down" size="body" />
-      <span>{mode === 'list' ? 'List' : 'Gallery'}</span>
-    </button>
+    />
   )
 }
 

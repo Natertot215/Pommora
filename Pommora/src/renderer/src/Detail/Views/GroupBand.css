@@ -43,8 +43,7 @@
 .group-name > svg {
   color: var(--label-secondary);
 }
-.group-band-drop-outline,
-.group-band-add {
+.group-band-drop-outline {
   display: inline-flex;
   align-items: center;
   border: none;
@@ -53,14 +52,8 @@
   color: var(--label-tertiary);
   cursor: default;
 }
-/* Hover-revealed structural-band "+" (inert stub — the create-page routing is deferred); the whole band
-   row is the reveal target. */
 .group-band-add {
-  opacity: 0;
-  transition: opacity var(--duration-fast) var(--ease-base);
-}
-.group-band-row:hover .group-band-add {
-  opacity: 1;
+  color: var(--label-tertiary);
 }
 
 /* Drag states — the glyph is the drag surface; the picked-up band mutes in place and the shared
