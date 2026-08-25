@@ -170,7 +170,7 @@ A page's frontmatter carries its identity and property values; its configuration
 
 ### Personalization
 
-Nexus-wide interface config, stored as the `personalization` object in `.nexus/settings.json`. A key the schema doesn't parse is dropped on read and falls back to its default, so a hand-typed bad value reverts on the next open. Every key the Settings window writes is tabled above; the rest are written by the app itself rather than by a row.
+Nexus-wide interface config, stored as the `personalization` object in `.nexus/settings.json`. A key the schema doesn't parse falls back to its default on read, so a hand-typed bad value reverts on the next open. Every key the Settings window writes is tabled above; the rest are written by the app itself rather than by a row.
 
 - **accent** — the app-wide accent: a ramp cell, a legacy solid name, or `system` to follow the OS.
 - **connectionColor** — the inline `[[Title]]` connection color; tracks the accent live by default, or pins a ramp cell.
