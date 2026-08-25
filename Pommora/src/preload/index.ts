@@ -188,6 +188,8 @@ const api = {
   // Open the native image picker directly → the chosen file's path (null if canceled).
   pickFile: ask('nexus:pickFile'),
   adoptFile: ask('assets:adopt'),
+  // A pasted clipboard image, landed as a temp file whose path adopts like a picked one.
+  pasteImage: ask('nexus:pasteImage'),
   // `noRemove` drops the Remove item (an inherited banner has nothing of its own to remove).
   bannerMenu: ask('nexus:bannerMenu'),
   // The Rename / Edit Icon menu for a detail title.

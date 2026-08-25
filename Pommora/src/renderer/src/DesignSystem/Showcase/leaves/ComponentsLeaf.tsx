@@ -3,6 +3,7 @@ import { FieldsLeaf } from './FieldsLeaf'
 import { LabelsLeaf } from './LabelsLeaf'
 import { MenuLeaf } from './MenuLeaf'
 import { CalendarPicker } from '../../Components/Pickers/CalendarPicker/CalendarPicker'
+import { ImagePicker } from '../../Components/ImagePicker/ImagePicker'
 import { PickerMenu, PickerOption } from '../../Components/Pickers/PickerMenu/PickerMenu'
 import { MenuSurface } from '../../Components/Menu'
 import { condensedDate, formatDate } from '@renderer/Detail/Views/PropertyEditing/formatValue'
@@ -30,6 +31,37 @@ function PopupButton({
   )
 }
 
+const SAMPLE_IMAGE = `data:image/svg+xml;utf8,${encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400"><rect width="600" height="400" fill="#4a6d8c"/><circle cx="300" cy="200" r="120" fill="#e8b04b"/></svg>',
+)}`
+
+function ImagePickerDemo(): React.JSX.Element {
+  const [open, setOpen] = useState(false)
+  const [shape, setShape] = useState<'circle' | 'rect'>('rect')
+  return (
+    <>
+      <button type="button" className="ds-switcher-btn" onClick={() => setOpen(true)}>
+        ImagePicker
+      </button>
+      <button
+        type="button"
+        className="ds-switcher-btn"
+        onClick={() => setShape((s) => (s === 'rect' ? 'circle' : 'rect'))}
+      >
+        {shape}
+      </button>
+      <ImagePicker
+        open={open}
+        value={SAMPLE_IMAGE}
+        shape={shape}
+        boxAspect={shape === 'rect' ? 1 / 3 : 1}
+        onCancel={() => setOpen(false)}
+        onSave={() => setOpen(false)}
+      />
+    </>
+  )
+}
+
 const PICKER_LABELS = [
   { label: 'Active', color: 'blue-1' },
   { label: 'On Hold', color: 'orange-3' },
@@ -44,6 +76,7 @@ export function ComponentsLeaf(): React.JSX.Element {
       <section className="ds-section">
         <h2>Popups</h2>
         <div className="ds-switcher">
+          <ImagePickerDemo />
           <PopupButton label="CalendarPicker">
             <CalendarPicker
               range
