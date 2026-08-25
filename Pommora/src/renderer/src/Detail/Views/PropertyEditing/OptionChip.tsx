@@ -34,7 +34,7 @@ export function OptionChip({
   look?: ColumnLook
   option: OptionChipData | undefined
   /** Status only: resolves the value's group for the Compact glyph. */
-  def?: PropertyDefinition
+  def?: Pick<PropertyDefinition, 'status_groups'>
   onRemove?: () => void
   className?: string
 }): React.JSX.Element {

@@ -33,13 +33,20 @@ import {
   MenuSeparator,
   AccessoryButton,
 } from '@renderer/DesignSystem/Components/Menu'
-import { flushTrailing, titleInput } from '@renderer/DesignSystem/Components/Menu/menu.css'
+import {
+  flushTrailing,
+  footingLabel,
+  footingSymbol,
+  titleInput,
+} from '@renderer/DesignSystem/Components/Menu/menu.css'
 import { Reveal } from '@renderer/DesignSystem/Animation/Reveal'
 import { duration } from '@renderer/DesignSystem/Animation'
 import { IconPicker } from '@renderer/Settings/IconPicker'
 import { RenamableLabel } from '@renderer/DesignSystem/Components/Fields'
 import { InlineEditHeader } from './InlineEditHeader'
 import { OptionEditor } from './OptionEditor'
+import { OPTION_STYLE_OPTIONS, type OptionStyle } from './OptionRow'
+import { PickerControl } from './PickerControl'
 import { StatusEditor } from './StatusEditor'
 import { URLEditor } from './URLEditor'
 import { PaneSlider } from '@renderer/DesignSystem/Components/PaneSlider/PaneSlider'
@@ -422,6 +429,35 @@ export function PropertiesPane({
         </>
       )
     }
+    // Status and select/multi wear the Standard/Compact axis in the pinned footing, where it stays
+    // reachable past however far the option list runs.
+    const optionLook: OptionStyle =
+      styleFor(def.id, schema, activeView).look === 'compact' ? 'compact' : 'standard'
+    const styleFooting =
+      hasSelectOptions(def.type) || def.type === 'status' ? (
+        <MenuBottomRow>
+          <MenuItem
+            className={flushTrailing}
+            leading={
+              <span className={footingSymbol}>
+                <Icon name="palette" size="control" />
+              </span>
+            }
+            trailing={
+              <PickerControl
+                ariaLabel="Chip style"
+                value={optionLook}
+                options={OPTION_STYLE_OPTIONS}
+                onPick={(look) => void saveColumnStyle(def.id, { look })}
+                solid
+                footing
+              />
+            }
+          >
+            <span className={footingLabel}>Style</span>
+          </MenuItem>
+        </MenuBottomRow>
+      ) : undefined
     return (
       <MenuScrollFrame
         header={actionHeader('Properties', backToList, {
@@ -430,6 +466,7 @@ export function PropertiesPane({
           ariaLabel: 'Property Menu',
           onClick: () => void editorMenu(def),
         })}
+        footer={styleFooting}
       >
         <InlineEditHeader
           value={def.name}
@@ -443,9 +480,8 @@ export function PropertiesPane({
           <OptionEditor
             type={def.type}
             options={def.select_options ?? []}
-            look={styleFor(def.id, schema, activeView).look === 'compact' ? 'compact' : 'standard'}
+            look={optionLook}
             onSetOptions={(next) => void saveOptions(def.id, next)}
-            onSetStyle={(look) => void saveColumnStyle(def.id, { look })}
             onRenameOption={(oldValue, newTitle) => void renameOption(def.id, oldValue, newTitle)}
             onRemoveOption={(value) => void removeOption(def.id, value)}
             onClearOption={(value) => void clearOption(def.id, value)}
@@ -453,9 +489,8 @@ export function PropertiesPane({
         ) : def.type === 'status' ? (
           <StatusEditor
             groups={def.status_groups ?? []}
-            look={styleFor(def.id, schema, activeView).look === 'compact' ? 'compact' : 'standard'}
+            look={optionLook}
             onSetGroups={(next) => void saveStatusGroups(def.id, next)}
-            onSetStyle={(look) => void saveColumnStyle(def.id, { look })}
             onRenameOption={(oldValue, newTitle) =>
               void renameStatusOption(def.id, oldValue, newTitle)
             }
