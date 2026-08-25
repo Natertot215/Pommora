@@ -8,7 +8,7 @@ Contexts & Spaces
 └── Pending
 ```
 
-The organization layer. A **Context** is a user-defined group — a fresh Nexus seeds Areas, Topics, and Projects as ordinary, fully manageable entries — and a **Space** is one member inside a Context. Content relates *to* Spaces: a Page, Task, or Event tags whichever Spaces fit, independently, and no Context contains or parents another. Contexts carry no pages and no schema; a Space is a categorical anchor with a block surface of its own.[^1]
+The organization layer. A **Context** is a user-defined group — a fresh nexus seeds Areas, Topics, and Projects on open, as ordinary, fully manageable entries — and a **Space** is an individual member inside one Context. Content relates *to* Spaces; no Context contains or parents another, and an entity tags whichever Spaces fit, independently. Contexts carry no pages and no schema; a Space is a categorical anchor with a block surface of its own.[^1]
 
 ### The Registry Model
 

@@ -94,7 +94,7 @@ Agenda items carry no content model yet: no fields, no create path, no read surf
 
 #### II. The Asset Directory
 
-One directory holds the assets entities point at — banners, the Nexus icon, file-property attachments, thumbnails — configurable to any folder in the Nexus and defaulting to `.nexus/assets`.[^3] It is excluded from content adoption but otherwise watched like any folder, and a file landing there patches an in-memory basename list (`src/main/assetMap.ts`) that the renderer resolves `[[File.png]]` against. Nothing about a file is stored but its name, so a sync eviction and re-download is a non-event, and assets are served to the renderer over the read-only `nexus-asset://` scheme.
+One directory holds the assets entities point at — used for banners, nexus icon, embedded files, ect... — configurable to any folder in the Nexus and defaulting to `.nexus/assets`.[^3] The configured directory is excluded from content-adoption but is otherwise managed by the watcher the same way. A file landing there patches an in-memory filename list that the renderer resolves `[[File.png]]` against; nothing about it is stored except its name, which is what makes a sync eviction and re-download a non-event. Assets are served to the renderer over the read-only `nexus-asset://` scheme.
 
 ### The Data Layer
 

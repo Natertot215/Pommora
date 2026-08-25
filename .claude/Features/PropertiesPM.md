@@ -45,7 +45,7 @@ Every property carries two independent identifiers. Its **`id`** is stable and n
 
 ### Value Shapes
 
-A value is decoded against the type its definition declares (`src/shared/propertyValue.ts`): the key names the property, so the definition is in hand before the value is read, and nothing is inferred from a value's shape. Two rules follow. **No value, no key** — setting a property to null or any empty value removes its key from the member file, so a member without a value never carries a placeholder; checkbox `false` and number `0` are real values and stay. **An unmatched wrapped key persists inert** — a key naming no registry entry is preserved by value and read by nothing. Foreign frontmatter sits alongside untouched:
+A value is decoded against the type its definition declares (`src/shared/propertyValue.ts`): the key names the property, so the definition is in hand before the value is read, and nothing is inferred from a value's shape. Two rules follow. **No value, no key** — setting a property to null or any empty value removes its key from the member file, so a member without a value never carries a placeholder; checkbox `false` and number `0` are real values and stay. **An unmatched wrapped key persists inert** — a key naming no registry entry is preserved by value and read by nothing. Here's an example of how the frontmatter page with both Pommora-managed and externally-applied frontmatter would appear:
 
 ```yaml
 (Projects):
@@ -55,8 +55,10 @@ A value is decoded against the type its definition declares (`src/shared/propert
   - Docs
 Areas:
   - Work
+  - "[[Personal]]"
 tags:
   - Obsidian
+  - Task
 ```
 
 ### Property Types
@@ -112,6 +114,15 @@ Context links are the relation layer. They store as parenthesized title keys at 
 ### Auto-Managed Properties
 
 Every Page carries its kind's id key (`PageID`, holding a ULID assigned at creation), `created_at`, and `modified_at`, maintained by Pommora and not user-creatable. `modified_at` surfaces as **Last Edited Time**, whose column shows the stored stamp; sorting and filtering fall back to `created_at` for a never-modified page. A schema edit is not a page edit: renaming a property, changing its type, or reordering an assignment leaves every member's `modified_at` untouched.[^7]
+
+Additionally, pages may carry a `cover` property used for storing their banners.
+
+```yaml
+PageID:
+created_at:
+modified_at:
+cover:
+```
 
 ### Shared Mechanisms
 
