@@ -62,7 +62,7 @@ Cards reorder within their band by displacement (the nav gallery's drag), writin
 
 **Band drag** reorders the bands themselves, on the same insertion-line gesture the table's group headers use: the glyph is the drag surface, the chevron and the hover "+" isolate on pointerdown so neither arms it, and a collapsed band springs open when a drag dwells over it. Where the table offers a middle zone that nests one Set inside another, Cards does not — one flat level leaves no depth for a nest to land in, so every band splits into a before/after slot and every drop is a reorder. A structural reorder writes the view's band order, except under Sort By: Location, where the filesystem *is* the order and the container's Set order takes the write instead; a property band's reorder writes its bucket order and moves the grouping to a manual one, the drag being the choice. The new order paints on the drop and persists behind it.
 
-A card's **right-click** opens a native menu: the **Add Property ▸** submenu over the page-meta block — Open · Rename · Edit Icon · **New Page** · the send block of **Move To ▸** the Collection/Set tree, Copy Link and Copy Path · Delete. New Page creates flow-after (a grid has no above); Rename opens the same inline naming field creation uses, in the title's own seat. Edit Icon mounts the icon picker. A value's own right-click menu takes precedence over the card menu, and every card-level native menu stands the hover ghost down until it closes.
+A card's **right-click** opens a native menu: the **Add Property ▸** submenu over the page-meta block — a leading **Edit Image** when the card banner is Cover and a cover is set (it frames the cover in the picker), then Open · Rename · Edit Icon · **New Page** · the send block of **Move To ▸** the Collection/Set tree, Copy Link and Copy Path · Delete. New Page creates flow-after (a grid has no above); Rename opens the same inline naming field creation uses, in the title's own seat. Edit Icon mounts the icon picker. A value's own right-click menu takes precedence over the card menu, and every card-level native menu stands the hover ghost down until it closes.
 
 ### Creating in the Grid
 
@@ -99,7 +99,7 @@ The card grid's design vocabulary. The geometry the two card families agreed on 
 - **The set-card ghost** — dwelling on a Set Card growing a ghost that creates a Set; waits on the container creation contract (positional order, the create-origin naming law, a set-card rename entry).
 - **Set-Card view previews** — a Set Card opening a preview of the Set's view; v1 navigates.
 - **File-property covers** — any File property declaring itself the card's image; the Card Banner mode set is extensible for a fourth "Property" mode.
-- **Fit Image / Reposition** — contain-vs-fill and hover-reposition on covers; v1 is fill-crop.
+- **Fit Image** — contain-vs-fill on covers. Repositioning ships: a cover is framed — a focal point and a zoom — through the ImagePicker (Edit Image), stored beside the nexus by the image.
 
 [^1]: §Creating in the Grid
 [^2]: [[ViewsPM]] §II. The Sorting Pane

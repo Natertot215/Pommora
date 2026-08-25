@@ -375,7 +375,7 @@ What this is not: rotation, filters, pixel editing; per-view image-fit or aspect
 - Test: `shared/cardMenu.test.ts` — the item only with `editableImage`.
 
 **Steps:**
-- [ ] Test, edits, gates green; commit `feat(cards): Edit Image on the card menu`
+- [x] Test, edits, gates green; commit `feat(cards): Edit Image on the card menu`
 
 #### Gate 4
 - [ ] Simplification then verification against `<base>..HEAD` scoped to Phase 4's files.
