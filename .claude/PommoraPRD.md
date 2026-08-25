@@ -65,7 +65,7 @@ A Collection assigns which registry properties its Pages validate, and that sche
 #### Singletons
 
 - **Homepage** — one composed-blocks dashboard per Nexus, the landing surface; always reachable and not user-deletable, its config file written by the first banner or heading-icon edit.
-- **Settings** — per-Nexus, user-overridable UI labels and accent color.
+- **Settings** — per-Nexus interface preferences, the accent color among them.
 
 #### Identity and linking
 
@@ -106,7 +106,10 @@ The main process is the sole filesystem owner; the renderer never touches Node. 
 
 A Page is a Markdown document — one continuous stream, not a stack of blocks. The filename *is* the title, and the parent Page Collection is implied by location. Pages conform to their Collection's schema, and its values live in YAML frontmatter, each under their property's own name.
 
-Pages support everything in standard Markdown — paragraphs, headings, bulleted / numbered / task lists, fenced and inline code, images, GFM tables, blockquotes, and horizontal rules — all of which round-trip natively to any external tool. **Headings fold**, with the fold state held per-machine in the database rather than the portable 
+Pages support everything in standard Markdown — paragraphs, headings, bulleted / numbered / task lists, fenced and inline code, images, GFM tables, blockquotes, and horizontal rules — all of which round-trip natively to any external tool. **Headings fold**, with the fold state held per-machine in the database rather than the portable `.md`. On top of that, Pages support two Pommora rendering directives, each degrading to plain Markdown for external tools:
+
+- **Callouts** — content rendered as an outlined box, distinct from a blockquote's filled left-bar emphasis.
+- **Columns** — a section rendered in evenly-divided horizontal columns; visual layout only. Specified, not built.
 
 Each Collection decides where its Pages open — the main detail pane, or the floating Page Preview window.[^2] The editor architecture and the page entity carry their own docs.[^3]
 
@@ -153,9 +156,7 @@ The registered view types are **Table**, **Cards**, **List**, **Gallery**, **Cal
 
 #### Connections
 
-Connections are Content ←> Content links on the Markdown body via either `[[Title]]` or `[Alias](Title)` syntax, and resolves via 
-
-(currently only pages; the Markdown surface of the pending Tasks feature will likely also support connections)
+Connections are Content ←> Content links on the Markdown body via either `[[Title]]` or `[Alias](Title)` syntax, and may also be assigned on the Markdown’s frontmatter through the link property. Currently, only Pages use Connections; the Markdown surface of the pending Tasks feature will likely also support them.
 
 In v1, connections resolve by title. A uniquely-held title is live and navigable; a title held by two Pages is ambiguous; an unmatched one renders as inert literal text with the brackets visible, going live the moment a single matching Page exists. Renaming a target **cascades** — every referencing body is rewritten to the new title, per-file atomic and re-runnable rather than transactional. Resolution runs on an in-memory map and the cascade scans the page tree, so connections depend on no database at all. Typing `[[` plus at least one character opens an autocomplete over prefix-matching Pages Nexus-wide.[^10]
 
