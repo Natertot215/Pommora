@@ -74,7 +74,7 @@ A Nexus is a single folder, opened via picker and treated as canonical content. 
   .nexus/                               ← app-internal config + the device-local database
     nexus.json                          ← nexus ULID + createdAt + the agenda singleton registration
     state.json                          ← top-level ordering (Collections, per-Context Space order)
-    settings.json                       ← per-Nexus UI labels + accent + excluded_folders + profile
+    settings.json                       ← per-Nexus personalization + accent + excluded_folders + profile
     properties.json                     ← nexus-wide property registry (propId → definition)
     homepage.json                       ← the Homepage's banner + heading icon
     crops.json                          ← per-image framing (focal point, zoom, background), keyed by the image
