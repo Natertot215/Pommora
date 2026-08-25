@@ -203,12 +203,13 @@ Landed 08-24. `DesignSystem/` is one Capitalized tree, every area a folder, mirr
 
 The planning session's agenda. Each is cheap once decided and wrong to guess at.
 
-- **Does a middle layer exist?** `Components/Detail` holds 49 modules; 13 touch the store or IPC, and of the remaining 36 only 7 import a data-model type. So ~29 are neither feature code nor generic primitives — presentation that knows what a property is without knowing where one comes from. This is the layer the codebase keeps inventing and never naming. **Recommendation: leave it unbuilt for now.** The proven pain is seven inversions, all fixed by the design system's own boundary. A third layer asks for 29 filing decisions on speculation when exactly one module has a contested address, and it is a one-way door that will attract modules for years.
+- **Does a middle layer exist? — answered: no.** The renderer filing ([[Codebase-Cleanup-Checklist]] 6a) moves `Components/Detail` into `Detail/` as feature code and lifts the one generic piece, `EyeToggle`, into Controls. For the record, the shape that was weighed: `Components/Detail` held 49 modules; 13 touch the store or IPC, and of the remaining 36 only 7 import a data-model type. So ~29 are neither feature code nor generic primitives — presentation that knows what a property is without knowing where one comes from. This is the layer the codebase keeps inventing and never naming. **Recommendation: leave it unbuilt for now.** The proven pain is seven inversions, all fixed by the design system's own boundary. A third layer asks for 29 filing decisions on speculation when exactly one module has a contested address, and it is a one-way door that will attract modules for years.
 - **Where does `checkboxLook` go?** The one contested address, and the sharp end of the question above. It is the visual twin of `components/Checkbox.tsx`, and it is also property-display code. Whichever answer is taken defines whether the middle layer is real.
 - **The container title.** `--container-title-size` (20px) covers one of three surfaces wearing that concept; the others are 24px and 28px. Either the token is the banner's variant and renames, or it is the container title and the other two are drift.
 - **CalendarPicker's range mode.** Built, styled, and unreachable. Claim it or retire it.
 - **The two tab strips.** 90/180/240/12/6 against 70/150/200/10/5, with no comment saying the smaller window scales deliberately and no single ratio generating one from the other.
 - **`--gutter` is one name for two lanes** (`--content-gutter` and `--fold-gutter`). One renames.
+- **Two press-to-edit mechanisms.** `useDraftEdit` (InputField's `edit`) and `RenamableLabel` over `EditableInput` both swap resting content for a caret; `InlineEditHeader` composes the second where the first now suffices. One absorbs the other.
 
 #### Constraints the planning session inherits
 
@@ -253,14 +254,16 @@ Where the report's work stands, kept current so a session can read its position 
 - **HoverRemove** — the hover-revealed remove × under `interactions/HoverRemove`.
 - **The Interaction Lab** moved to `showcase/lab/`.
 - **The checkbox recipe** — the capped labels wear the one cap, and the checkbox reads its recipe.
-- **The fields family** (`DesignSystem/Components/Fields/`) — the Fields plan executed 08-24: one axes stylesheet (boxed · hairline · base · search), `InputField` (the renamed `InteractionField`), the ring channel with rest/focus/error presets and one spelling (`FIELD_RING_VAR`), `--input-field` gone with zero trace, seven hand-rolled bare-input resets retired onto one `base`, the transparent search look and the placeholder tone family-owned, and the editing chain (`EditableInput` · `RenamableLabel` · `useDraftEdit` extracted from PathField) living beside its chrome. The `EditableInput`-before-rehome constraint is satisfied. Net code delta negative.
+- **The fields family** (`DesignSystem/Components/Fields/`) — the Fields plan executed 08-24: one axes stylesheet (boxed · bordered · base · search), `InputField` (the renamed `InteractionField`), the ring channel with rest/focus/error presets and one spelling (`FIELD_RING_VAR`), `--input-field` gone with zero trace, seven hand-rolled bare-input resets retired onto one `base`, the transparent search look and the placeholder tone family-owned, and the editing chain (`EditableInput` · `RenamableLabel` · `useDraftEdit` extracted from PathField) living beside its chrome. The `EditableInput`-before-rehome constraint is satisfied. Net code delta negative.
 - **ColorPicker**, **PaneSlider**, **PhotoCropModal**, **IconPicker**, **Surface** — inside the system; the `@shared` leaks closed as props.
 - **The reorganization** — `DesignSystem/` as the mirrored tree, the root pile homed, motion consolidated in `Animation/`, `theme-vars` a pure bridge.
 - **The reference document** — rewritten as the ledger; `TypographyPM` retired into it.
-- **Button** — `Components/Controls/Button/`, the toolbar and every former ghost on it; the button bundles adopted as the system ladder.
+- **Button** — `Components/Controls/Button/`, the toolbar and every former ghost on it; the button bundles adopted as the system ladder; `pressed` for a toggle that is on or a trigger whose menu is open.
+- **NavTrail** — `Elements/NavTrail/`, the one location trail over `treeIndex`'s one `ancestryOf`; the nav rows, gallery cards, card footings, embed hover, preview title, trash rows, scoped footer and subfield all draw it.
+- **The field slots** — `InputField` carries `chrome`, `edit`, `leading` and `trailing`; `PathField` retired into them; `SegmentRun` lives in Fields.
 
 #### Remaining Slices
 
 - **The twin extraction** — `PagePropertiesPane`/`PreviewInspector` (~470 lines of parallel structure).
-- **The §VIII decisions** — the middle layer, `checkboxLook`, the container title, CalendarPicker's range mode, the two tab strips, `--gutter`.
+- **The §VIII decisions** — `checkboxLook`, the container title, CalendarPicker's range mode, the two tab strips, `--gutter`, the two press-to-edit mechanisms.
 - **The toolbar selector**, the repeated-behavior sweep, `solidColor.ts` → `Tokens/`, and the two unread orphans.

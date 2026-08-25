@@ -93,10 +93,10 @@ Chrome is produced in two stages, and only the second was scoped. The **derivati
 **Verification:** gates + new slice tests; app open — tab switch with a dirty editor (edits survive), cold swap, parked tab with a playing web tile survives a flip, preview open beside a different active page, pin/unpin, restore on relaunch.
 **Retires:** ContextPM Boring Work "Per-tab page state is modelled as global singletons" and "The store split."
 
-#### II. Bundle 6a — `Components/Detail` Rehome · one session, quiet tree · net ≈ 0
+#### II. Bundle 6a — The Renderer Filing · one session, quiet tree · net ≈ 0 · The Boring Work
 
 - [x] **`EditableInput` and `ColorPicker` have moved into the design system** ahead of the rehome — `EditableInput` into `DesignSystem/Components/Fields/`, `ColorPicker` into `DesignSystem/Components/Pickers/ColorPicker/`. Both had consumers inside the design system, so the rehome no longer carries a design-system dependency into a feature domain. The chip family moved earlier, as `DesignSystem/Labels/`.
-- [ ] **The view-settings/property-editing subsystem moves out of `Components/`** to its own domain folder beside `Detail/`; `PaneSlider`, `PhotoCropModal`, `IconPicker` and `Surface` are already inside `DesignSystem/`; the CLAUDE.md codebase map updates. `git mv` plus import churn; typecheck catches every miss.
+- [ ] **The view-settings/property-editing subsystem moves out of `Components/`** into `src/Detail` itself, beside the surfaces that open it; `EyeToggle` lifts into `DesignSystem/Components/Controls`; `EntityIcon`, `useNexusIcon` and `RenamableTitle` file by consumer; `Components/` is deleted and the CLAUDE.md codebase map updates. `git mv` plus import churn; typecheck catches every miss. 6b and the Cards hoisting ride the same pass — one filing of the whole `Detail/` tree, not three.
 
 **Verification:** gates; nothing behavioral moves.
 **Retires:** nothing listed — new work.
@@ -151,8 +151,8 @@ documents accumulated in the first place.
 
 **The constraint this queue inherited is met:** the two modules the design system imports —
 `EditableInput` and `ColorPicker` — now live inside it, in `DesignSystem/Components/Fields/` and
-`DesignSystem/Components/Pickers/ColorPicker/`. Bundle 6a's rehome can carry `Components/Detail` into a feature
-domain without dragging a design-system dependency along with it.
+`DesignSystem/Components/Pickers/ColorPicker/`. Bundle 6a's filing can carry `Components/Detail` into `Detail/`
+without dragging a design-system dependency along with it.
 
 ### I. Open Questions — Not Scheduled
 
