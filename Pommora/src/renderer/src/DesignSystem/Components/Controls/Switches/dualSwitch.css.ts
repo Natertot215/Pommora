@@ -7,15 +7,28 @@ const c = colorVars.color
 const ease = `${duration.fast} ${easing.baseEase}` // one motion source for the whole switch
 const control = 'var(--label-control)'
 
+// The four the knob's travel is measured from; every other number states itself where it's read.
+const TRACK_WIDTH = 43
+const TRACK_BORDER = 1
+const KNOB_WIDTH = 21
+const KNOB_INSET = 2
+
+/** The knob's corner, read by the fill AND by the glass wrapping it — the two are one edge, and
+ *  stating it twice is what let a resize move one of them alone. */
+export const KNOB_RADIUS = 7
+
+// How far the knob slides: the track's inner width, less the knob and the inset it keeps at each end.
+const KNOB_TRAVEL = TRACK_WIDTH - 2 * TRACK_BORDER - KNOB_WIDTH - 2 * KNOB_INSET
+
 /**
  * The "Switch" — a pill sliding a liquid-glass knob between a `|` (on) and an `O` (off)
  * tick.*/
 export const track = style({
   position: 'relative',
-  width: '43px',
+  width: `${TRACK_WIDTH}px`,
   height: '19px',
   borderRadius: '10px',
-  border: '1px solid var(--label-secondary)',
+  border: `${TRACK_BORDER}px solid var(--label-secondary)`,
   background: c.fill.quinary,
   padding: 0,
   flex: '0 0 auto',
@@ -30,20 +43,16 @@ export const trackOn = style({ background: tintAt('var(--accent)', 'primary') })
 export const knob = style({
   position: 'absolute',
   top: '50%',
-  left: '2px',
+  left: `${KNOB_INSET}px`,
   display: 'flex', // drops the inline-block baseline descender so translateY centers the glass exactly
   transform: 'translateY(-50%)',
   transition: `transform ${ease}`,
-  selectors: { [`${trackOn} &`]: { transform: 'translate(16px, -50%)' } },
+  selectors: { [`${trackOn} &`]: { transform: `translate(${KNOB_TRAVEL}px, -50%)` } },
 })
-
-/** The knob's corner, read by the fill AND by the glass wrapping it — the two are one edge, and
- *  stating it twice is what let a resize move one of them alone. */
-export const KNOB_RADIUS = 7
 
 export const knobFill = style({
   display: 'block',
-  width: '21px',
+  width: `${KNOB_WIDTH}px`,
   height: '14px',
   borderRadius: `${KNOB_RADIUS}px`,
   background: control,

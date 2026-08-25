@@ -1,4 +1,4 @@
-import { globalStyle, keyframes, style } from '@vanilla-extract/css'
+import { globalStyle, keyframes, style, type StyleRule } from '@vanilla-extract/css'
 import { vars } from '../../../Tokens/color.css'
 import { duration, easing } from '../../../Animation/motion'
 import { tintAt } from '../../../Tokens/tint'
@@ -13,9 +13,20 @@ const c = vars.color
 const endpointFill = tintAt('var(--accent)', 'secondary')
 const bandFill = tintAt('var(--accent)', 'tertiary')
 
+// The inset the week row, the day grid, the fields and both dividers share.
+const GUTTER = '2px'
+
+// The fill layer's inset inside a day cell, and its corner. A range end's outer corner sits one
+// inset further out (7px), so the strip's rounded edge and the fill beneath it land flush.
+const PILL_INSET = '1px'
+const PILL_RADIUS = '6px'
+const ROW_END_RADIUS = '7px'
+
+// The hairline both dividers draw; each states its own margin.
+const hairline = { height: '1px', background: c.separator.border } as const
+
 /* The picker's intrinsic width — the PickerMenu pane shrink-wraps this (+ its gutters). THE
-   sizing knob; everything inside flows from it. textAlign resets the host's inheritance — a
-   picker mounted inside a <button> trigger would otherwise center every label. */
+   sizing knob; everything inside flows from it.*/
 export const root = style({ width: '215px', textAlign: 'left' })
 
 /* Content size changes (toggles, month row-count) ride the same beat as PaneSlider's viewport —
@@ -25,11 +36,7 @@ export const morph = style({ overflow: 'hidden' })
 export const morphAnimated = style({ transition: `height ${duration.base} ${easing.baseEase}` })
 
 export const head = style({ display: 'flex', alignItems: 'center', padding: '2px 4px 6px' })
-export const headDivider = style({
-  height: '1px',
-  background: c.separator.border,
-  margin: '0 2px 6px',
-})
+export const headDivider = style({ ...hairline, margin: `0 ${GUTTER} 6px` })
 export const titleGroup = style({ flex: 1, display: 'flex', gap: '1px' })
 export const titleBtn = style({
   position: 'relative',
@@ -71,7 +78,7 @@ export const optionRow = style({
 export const weekRow = style({
   display: 'grid',
   gridTemplateColumns: 'repeat(7, 1fr)',
-  padding: '0 2px',
+  padding: `0 ${GUTTER}`,
 })
 export const weekday = style({
   textAlign: 'center',
@@ -105,7 +112,7 @@ export const days = style({
   display: 'grid',
   gridTemplateColumns: 'repeat(7, 1fr)',
   rowGap: '2px',
-  padding: '0 2px 2px',
+  padding: `0 ${GUTTER} ${GUTTER}`,
   width: '50%',
   flex: 'none',
 })
@@ -125,8 +132,8 @@ export const dayOut = style({ color: c.label.tertiary })
    full-width, so a range reads as ONE connected strip, never per-day pills. */
 export const pill = style({
   position: 'absolute',
-  inset: '1px',
-  borderRadius: '6px',
+  inset: PILL_INSET,
+  borderRadius: PILL_RADIUS,
   zIndex: -1,
   selectors: { [`${day}:hover &`]: { background: c.state.hover } },
 })
@@ -136,36 +143,31 @@ export const daySelected = style({ fontWeight: font.weight.semibold })
 /* Range endpoints stay FULLY rounded pills; the band runs UNDERNEATH them (a half-width
    under-layer toward the range side), so the strip connects while the endpoint keeps both its
    rounded edges overlapping the under-tint. */
-export const bandUnderStart = style({
+const band = (inset: string): StyleRule => ({
   background: `${bandFill} !important`,
   borderRadius: 0,
-  inset: '1px 0 1px 50%',
+  inset,
 })
-export const bandUnderEnd = style({
-  background: `${bandFill} !important`,
-  borderRadius: 0,
-  inset: '1px 50% 1px 0',
+export const bandUnderStart = style(band(`${PILL_INSET} 0 ${PILL_INSET} 50%`))
+export const bandUnderEnd = style(band(`${PILL_INSET} 50% ${PILL_INSET} 0`))
+export const pillMid = style(band(`${PILL_INSET} 0`))
+export const pillRowFirst = style({
+  borderRadius: `${ROW_END_RADIUS} 0 0 ${ROW_END_RADIUS}`,
+  inset: `${PILL_INSET} 0 ${PILL_INSET} ${PILL_INSET}`,
 })
-export const pillMid = style({
-  background: `${bandFill} !important`,
-  borderRadius: 0,
-  inset: '1px 0',
+export const pillRowLast = style({
+  borderRadius: `0 ${ROW_END_RADIUS} ${ROW_END_RADIUS} 0`,
+  inset: `${PILL_INSET} ${PILL_INSET} ${PILL_INSET} 0`,
 })
-export const pillRowFirst = style({ borderRadius: '7px 0 0 7px', inset: '1px 0 1px 1px' })
-export const pillRowLast = style({ borderRadius: '0 7px 7px 0', inset: '1px 1px 1px 0' })
 
-export const divider = style({
-  height: '1px',
-  background: c.separator.border,
-  margin: '7px 2px 8px',
-})
+export const divider = style({ ...hairline, margin: `7px ${GUTTER} 8px` })
 
 /* EQUAL breathing room above and below, mirroring the divider's own bottom margin. */
 export const fields = style({
   display: 'flex',
   flexDirection: 'column',
   gap: '6px',
-  padding: '0 2px',
+  padding: `0 ${GUTTER}`,
   marginBottom: '8px',
 })
 export const fieldRow = style({ display: 'flex', gap: '6px' })

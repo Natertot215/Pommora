@@ -145,10 +145,11 @@ function AccentDemo(): React.JSX.Element {
 
 const TINT_ORDER = ['primary', 'secondary', 'tertiary', 'quaternary', 'solid'] as const
 
-function TintRow({ name, color }: { name: string; color: string }): React.JSX.Element {
-  const { setNodeRef, style, handle } = useDragItem(name)
+/** A row's contents — the name and its swatch across every step; the draggable row and the compact
+ *  list wear the same set. */
+function TintCells({ name, color }: { name: string; color: string }): React.JSX.Element {
   return (
-    <div ref={setNodeRef} style={style} className="ds-tint-row" {...handle}>
+    <>
       <span className="ds-tint-rowlabel">{humanize(name)}</span>
       {TINT_ORDER.map((k) => (
         <span
@@ -158,6 +159,15 @@ function TintRow({ name, color }: { name: string; color: string }): React.JSX.El
           title={`${name} · ${k} ${TINT_STEPS[k]}%`}
         />
       ))}
+    </>
+  )
+}
+
+function TintRow({ name, color }: { name: string; color: string }): React.JSX.Element {
+  const { setNodeRef, style, handle } = useDragItem(name)
+  return (
+    <div ref={setNodeRef} style={style} className="ds-tint-row" {...handle}>
+      <TintCells name={name} color={color} />
     </div>
   )
 }
@@ -168,15 +178,7 @@ function TintScale(): React.JSX.Element {
   const rows = compact ? (
     colors.map(([name, color]) => (
       <div className="ds-tint-row" key={name}>
-        <span className="ds-tint-rowlabel">{humanize(name)}</span>
-        {TINT_ORDER.map((k) => (
-          <span
-            key={k}
-            className="ds-tint-swatch"
-            style={{ background: tintAt(color, k) }}
-            title={`${name} · ${k} ${TINT_STEPS[k]}%`}
-          />
-        ))}
+        <TintCells name={name} color={color} />
       </div>
     ))
   ) : (
