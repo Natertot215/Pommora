@@ -947,6 +947,12 @@ describe('handleMutate — setCrop', () => {
     expect(crops?.['https://example.com/keep.png']).toEqual({ x: 0.5, y: 0.5, zoom: 1 })
   })
 
+  it('a corrupt crops.json does not fail a banner replace (best-effort crop cleanup)', async () => {
+    await setBannerPage(await pick('Cover.png'))
+    await writeFile(join(root, '.nexus', 'crops.json'), '[]') // valid JSON, not an object
+    expect((await setBannerPage(await pick('Next.png'))).ok).toBe(true)
+  })
+
   // Main-side half of the must-agree; the renderer-side (resolveAssetValue → cropKeyFor) is
   // asserted in AssetImage.test — a single test can't import both across the process boundary.
   it('keys the image main-side by its resolved nexus-relative path', async () => {

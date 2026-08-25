@@ -199,8 +199,10 @@ What this is not: rotation, filters, pixel editing; per-view image-fit or aspect
 - [x] Implement; gates green. Commit: `feat(nexus): one writer for crops.json — Save, a replaced image, and the migration`
 
 #### Gate 1
-- [ ] Simplification then verification against `<base>..HEAD` scoped to `shared/cropGeometry*`, `shared/schemas*`, `shared/nexusPaths.ts`, `shared/mutate.ts`, `shared/types.ts`, `main/readNexus.ts`, `main/watchPatch.ts`, `main/mutate.ts`, `main/mutatePatch.ts`, `main/settings.ts`, `main/assetMigrate.ts`, `main/paths.ts`.
-- [ ] Every concern fixed. Progress hashes filled in.
+- [x] Simplification then verification against `<base>..HEAD` scoped to `shared/cropGeometry*`, `shared/schemas*`, `shared/nexusPaths.ts`, `shared/mutate.ts`, `shared/types.ts`, `main/readNexus.ts`, `main/watchPatch.ts`, `main/mutate.ts`, `main/mutatePatch.ts`, `main/settings.ts`, `main/assetMigrate.ts`, `main/paths.ts`.
+- [x] Every concern fixed. Progress hashes filled in.
+
+**Gate 1 record:** `code-simplifier` folded one nested ternary → if/else in `mutatePatch.ts` (−1 line). `comment-killer` corrected one stale docblock (`updateNexusConfig` still said "settings" after genericization). `feature-dev:code-reviewer`: clean, 0 findings. `build-breaking-agent`: 0 High, 1 Medium (fixed), 4 Latent (ratified/unreachable), 9 killed. The Medium — `dropReplacedAsset` and the migration re-key wrote `crops.json` strictly *after* irreversible disk steps, so a corrupt `crops.json` failed the banner/profile op or 404'd migrated banners where the read path shrugs it off — is fixed with a best-effort `.catch` on both secondary writes (`setCrop`'s own write stays strict), proven by a regression test red-without/green-with. L1 (ambiguous-basename Save) and the below-1 pan-direction check routed to Open Against Later Tasks for Task 7.
 
 ---
 
@@ -406,10 +408,11 @@ What this is not: rotation, filters, pixel editing; per-view image-fit or aspect
 ## Implementation Log
 
 ### Progress
-- [ ] **Phase 1** — the model and the store · base `fc4f89ad8623724509f29528106b2242f00269f5`
-  - [ ] Task 1 — the crop model · `<commit>`
-  - [ ] Task 2 — the crops leaf · `<commit>`
-  - [ ] Task 3 — updateCrops, setCrop, the orphan, the migration · `<commit>`
+- [x] **Phase 1** — the model and the store · base `fc4f89ad8623724509f29528106b2242f00269f5`
+  - [x] Task 1 — the crop model · `163d2646`
+  - [x] Task 2 — the crops leaf · `94f5d3d9`
+  - [x] Task 3 — updateCrops, setCrop, the orphan, the migration · `9ef8d1cc`
+  - [x] Gate 1 — simplification (1 fold), comment-killer (1 stale docblock), reviewers (0 High; 1 Medium fixed) · `cae60050`
 - [ ] **Phase 2** — one seat, painted once
   - [ ] Task 4 — AssetImage · `<commit>`
   - [ ] Task 5 — the ten seats · `<commit>`
@@ -430,6 +433,8 @@ What this is not: rotation, filters, pixel editing; per-view image-fit or aspect
 - **A-4 (Nathan, 08-25):** The frame is the viewport for `rect`; `circle` keeps `PhotoCropModal`'s current geometry (a 220 circle in the 280 viewport with the masked-surround blur, radius 50%). Split is display-only — one crop model, `coverStyle` against the circle's 220 box or the rect's own box. Folded into the Ruling paragraph, A-4, and Task 7 in the ratification commit; the surround and the circle constants are Survivors rather than deletions.
 - **A-5 revised (Nathan, 08-25):** The footer path field is no longer a read-only echo — it gains a trailing action that reopens the OS file explorer (`AssetDirectoryRow`'s affordance; reuses `pickFile()`) and accepts a **paste** of an image. Both re-pick the picker's image → adopt → the seat's set op → reframe on the new `value`. Paste writes the pasted bytes as a normal asset file (Electron `clipboard.readImage()` main-side, or a copied file by path); it keeps the crop separate and does **not** revive Task 6's deleted crop-baking byte channel. Scope lands in Task 7 (footer field) with a narrow adopt-from-clipboard channel; exact seat wiring settled when Task 7 is built. Anticipated already by Task 7's draft-reset-on-`value`-change.
 ### Open Against Later Tasks
+- **Task 7 (Gate 1 attacker, L1):** Cropping an image whose basename is duplicated elsewhere under the asset root — main's `cropKeyFor` faults (`AMBIGUOUS` → null) while the renderer's `resolveAssetValue` picks a first-sorted rel. Save must fault visibly, not silently no-op. Consistent with the ratified "a name several files answer to names none of them"; verify at the picker.
+- **Task 7 (Gate 1 attacker, Unknown):** Below-1 zoom exposes the underfill regime (`MIN_ZOOM 0.25`, intended per C-1). Verify the pan direction still reads correctly when the image is letterboxed on its background; the math matches CSS background-position underfill, but confirm it in the live check.
 ### Deviations
 - **Task 1 — `.finite()` dropped.** The plan's `z.number().finite()` becomes `z.number()`: zod 4.4.3 rejects `NaN`/`Infinity` from `z.number()` natively (Build-Gotchas), so `.finite()` is redundant and its API is gone in zod 4.
 - **Task 1 — `WEB_ADDRESS` is the current `SCHEMED`.** The web-address regex the plan names `WEB_ADDRESS` lives today as `SCHEMED = /^[a-z][a-z0-9+.-]*:/i` in `assetUrl.ts:20` (2 uses). It moves to `shared/nexusPaths.ts` as `WEB_ADDRESS`; `assetUrl.ts` imports it. `cropKeyFor`'s web test is the same regex `resolveAssetValue`'s external branch uses — not a second, narrower one.
