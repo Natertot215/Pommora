@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { base, field, borderedField, input, InputField, SearchField } from '../../Components/Fields'
 import { FileLabel } from '../../Labels'
 import { Button } from '../../Components/Controls/Button'
-import { NavTrail } from '../../Elements/NavTrail'
+import { NavTrail, pathSegments } from '../../Elements/NavTrail'
 import { Icon } from '../../Symbols'
 import { errorField, rows } from './fieldsLeaf.css'
 
@@ -37,12 +37,7 @@ export function FieldsLeaf(): React.JSX.Element {
             />
           }
         >
-          <NavTrail
-            segments={path
-              .split('/')
-              .filter(Boolean)
-              .map((title) => ({ title }))}
-          />
+          <NavTrail segments={pathSegments(path)} />
         </InputField>
         <InputField capped>
           <FileLabel name="Drafts" />

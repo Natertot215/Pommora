@@ -76,3 +76,11 @@ export function NavTrail({
     </Host>
   )
 }
+
+/** A filesystem path as a trail — one segment per folder, the empties a leading or doubled slash
+ *  leaves behind dropped. */
+export const pathSegments = (path: string): TrailSegment[] =>
+  path
+    .split('/')
+    .filter(Boolean)
+    .map((title) => ({ title }))
