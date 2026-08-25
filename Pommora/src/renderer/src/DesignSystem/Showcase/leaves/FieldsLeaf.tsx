@@ -3,6 +3,7 @@ import { base, field, borderedField, input, InputField, SearchField } from '../.
 import { FileLabel } from '../../Labels'
 import { Button } from '../../Components/Controls/Button'
 import { NavTrail } from '../../Elements/NavTrail'
+import { Icon } from '../../Symbols'
 import { errorField, rows } from './fieldsLeaf.css'
 
 export function FieldsLeaf(): React.JSX.Element {
@@ -25,6 +26,7 @@ export function FieldsLeaf(): React.JSX.Element {
           chrome="bordered"
           label="Path"
           edit={{ value: path, onCommit: setPath }}
+          leading={<Icon name="folder-closed" size="body" />}
           trailing={
             <Button
               type="base"
@@ -35,11 +37,10 @@ export function FieldsLeaf(): React.JSX.Element {
           }
         >
           <NavTrail
-            iconSize="body"
             segments={path
               .split('/')
               .filter(Boolean)
-              .map((title) => ({ title, icon: 'folder-closed' }))}
+              .map((title) => ({ title }))}
           />
         </InputField>
         <InputField capped>
