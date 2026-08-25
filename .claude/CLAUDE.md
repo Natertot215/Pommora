@@ -81,7 +81,6 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 │   │   ├── [PropertiesPM.md]            | • The property system and the nexus-wide registry
 │   │   ├── [QuickCapturePM.md]          | • Capture from outside the main window — a design, not a record
 │   │   ├── [SidebarPM.md]               | • The ribbon and the content column that switches with it
-│   │   ├── [StructurePM.md]             | • The two-layer, PARA-aligned organization
 │   │   ├── [SubfieldPM.md]              | • The bottom bar of every content view
 │   │   ├── [SurfacePM.md]               | • The composable dashboard layer of draggable tiles
 │   │   ├── [SymbolsPM.md]               | • The curated semantic icon registry
