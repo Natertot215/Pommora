@@ -1,0 +1,208 @@
+## View Types
+
+```
+View Types
+├── The Saved-View Model
+├── The Pipeline
+│   ├── II. Filter
+│   ├── II. Group
+│   ├── II. Sort
+│   └── II. Columns
+├── Creation
+├── Group Bands
+├── Surfaces
+├── Table
+│   ├── II. The Grid
+│   ├── II. Columns
+│   ├── II. Rows & Cells
+│   ├── II. The Table Sheet
+│   └── II. Known Issues
+├── Cards
+│   ├── II. Properties on Cards
+│   ├── II. Grouping, Location & Set Cards
+│   ├── II. Drag & Menus
+│   ├── II. Card Tokens
+│   └── II. Prospects
+├── List · Gallery · Calendar · Timeline
+└── Pending
+```
+
+A view is a saved presentation of a Collection's or a depth-1 Set's Pages.[^1] It never modifies its source: filtering, grouping, and sorting are presentation only, computed by one pure pipeline that every renderer draws from. Six view types are registered in `src/shared/views.ts` — **Table**, **Cards**, **List**, **Gallery**, **Calendar**, and **Timeline** — of which Table and Cards have renderers; the other four appear in the type picker at full weight but don't switch. Views also render inside dashboard and page tiles as view embeds, through the same pipeline.[^2]
+
+### The Saved-View Model
+
+Each container's sidecar holds an ordered `views[]`, each entry modeled by `savedView` in `src/shared/views.ts`. A saved view records its `id` (a ULID), `name`, `icon`, an optional `color` (a ramp cell worn as the view's segment stroke), and its renderer `type`. Its column layout carries `property_order`, `hidden_properties`, per-column widths and alignments, and `column_styles` — the per-type look and the date, weekday, and time formats, which live per view here rather than on the property definition.[^3] Its query config carries the `sort` list, the `filter` group, the `group` config with the view-level band order, and the display options each renderer reads — card scale, collapsed and hidden bands, the cards toggles.
+
+The **active view** is tracked per machine and kept out of the synced sidecar.[^4] The ViewDropdown in the toolbar — its glyph the active view's icon — opens the ViewPane to switch it, and view CRUD (create as "Untitled", rename, duplicate, delete, reorder) persists to the sidecar. Two per-container presentation settings ride the sidecar and sync: **Show Title** and **View Style**.[^5] A container never presents an empty `views[]`: an app-created container is seeded with a default view on disk, and an empty view-bearing container mints one on first entry.
+
+### The Pipeline
+
+`resolveView` in `src/renderer/src/Detail/Views/pipeline/` composes four pure stages — **columns → filter → group → sort** — over a view, its rows, its schema, and the container's set tree, knowing nothing about where they came from, so a full page and an embedded tile run the same code. Row frontmatter loads lazily per container over a batch IPC.
+
+#### II. Filter
+
+A filter is a recursive group of rules under a match mode — **All** (and) or **Any** (or) — evaluated at every depth. Negation lives on the per-rule operators (Isn't, Isn't Empty, Doesn't Contain), so "none of these" is spelled as an All of negated rules. Whether the filter runs at all is a separate axis, `filter_enabled`, so parking a filter keeps its rules and its mode. A rule the schema can't read — an unknown operator, a deleted property or Set, an operand not yet supplied — abstains rather than voting, and a filter that abstains in whole filters nothing; a row holding no value matches no positive comparison.
+
+The operator families are type-aware, defined in `src/renderer/src/Components/Detail/filterModel.ts`:
+
+| Type | Operators |
+| --- | --- |
+| Text (Title) | Is · Isn't · Starts With · Contains · Doesn't Contain |
+| Number | Is · Isn't · Greater Than · At Least · Less Than · At Most · Is Empty · Isn't Empty |
+| Date | Is (calendar day) · Before · After (both inclusive) · Is Empty · Isn't Empty |
+| Checkbox | Is (true / false) |
+| Select · Status | Is · Isn't (chips read as any-of / none-of) · Is Empty · Isn't Empty |
+| Multi-select · Context | Is Any · Is All · Isn't · Is Empty · Isn't Empty |
+| File | Is Empty · Isn't Empty |
+| Location | Is · Isn't (immediate parent Set) · Contains · Doesn't Contain (any depth) |
+
+#### II. Group
+
+Grouping is structural (by Set and Sub-Set disclosure), flat, or by a property; the groupable types are Select, Status, Checkbox, and Date, with a date grouping by day, week, month, or year. Option order follows the schema until a band drag snapshots a manual order the view owns. A non-groupable or deleted property falls back to structural, and every consumer follows that effective mode. Structural grouping carries two companions: `structural_order_mode`, whose `location` value mirrors the filesystem order, and `sub_group`, a property bucketing inside each top-level Set band.
+
+An option with no rows renders as an empty band, and **Hide Empty Groups** drops those for every grouping kind. Rows with no value render as a header-less tail placed by `ungrouped_placement` rather than as a "None" band. Any band can be hidden outright through `hidden_groups`, resolved in the pipeline so a hidden band, its rows, and its chrome never reach a renderer; the Grouping pane is where hidden groups stay reachable.
+
+#### II. Sort
+
+A multi-key list applied in priority order, stable on ties, with per-type comparators: Select and Status by option order or a criterion's own Custom order, dates chronological, checkbox by rank, text case-insensitive. The Sorting pane authors the first two slots (primary and sub-sort) and owns the `sort` slot; a deeper hand-authored array is honored until the pane's first write replaces it. Two effective criteria retire row drag-reorder, since manual order is meaningless under a multi-key sort; a criterion whose property was deleted sorts by nothing and doesn't count.
+
+#### II. Columns
+
+An allowlist: a schema property or a Context column renders only when the view's `property_order` lists it and `hidden_properties` doesn't, so a property or Context created after a view stays off until revealed. Title is always present.
+
+### Creation
+
+Every renderer creates through one act (`useViewCreation.ts`): the page exists on disk as Untitled the moment a gesture fires, stamped with the values its birth context implies — the band's group value, and values on the active sort criteria that carry one (Select, Status, Checkbox, Number, Date) — with its order settled in the same act, and the renderer opens its own naming field over the row already real.[^6] A view's filter stamps the values its rules cleanly imply; metadata is never changed to satisfy a filter, so a page a non-derivable rule excludes creates and stays filtered out.
+
+Every renderer also shares the **hover ghost** (`useGhostAnchor.ts`): dwelling on a row or card extends a ghost "New Page" beneath it at the inactive dim, on that renderer's own chrome, and clicking it creates there. One dwell paces every surface, grace is per-surface, and a menu or editor owning the pointer stands the ghost down.
+
+### Group Bands
+
+Structural and property groups render as disclosure bands (`GroupBand.tsx`, `GroupBand.css`) in both renderers: a header carrying the group's glyph, label, and chevron, collapsing on the shared disclosure motion with a persisted collapse. Select and Status bucket headings wear their chips; date buckets wear the property icon over a label in the column's date format. Band seams follow one rule — a section lead is twice the head-to-row clearance, state-free, so nothing above a band moves on toggle. The hover **+** appears on structural Set headers only, creating in that Set; a property bucket can't infer a location.
+
+Bands drag by their glyph on the shared insertion-line gesture,[^7] over a frozen snapshot of the geometry and the band list. What a drop writes depends on the mode: under Custom order a structural drop merges into the view-level `group_order`, a property drop writes `group.order` and flips its mode to manual, and a sub-group bucket drop writes the global bucket order; under **Order = Location** a same-parent structural reorder writes the real filesystem instead. A cross-tree drop — nesting one Set into another, or landing under a different parent — moves the folder in every mode.
+
+### Surfaces
+
+The view's configuration is edited through a handful of panes, each reachable from the toolbar.
+
+- **ViewPane** — the dropdown the ViewDropdown opens: a row per saved view (click switches, the chevron opens that view's settings, right-click offers Rename, Edit Icon, Edit Color, Delete) over a New View footer. Right-clicking the ViewDropdown itself sets the two presentation settings.
+- **ViewSettings** — the per-view editor, reached from a ViewPane row's chevron (with the ⋮ Duplicate and Delete and the four leaf rows) or from the SettingsPane's Layout entry (the flat door). It holds the click-to-rename name, the 3×2 type picker, and the type's options: the Layout leaf is the visibility list for a Table, and the cards options for Cards with Style, Card Banner, and Scale pinned in its footing.
+- **SettingsPane** — the toolbar's sliders button: **Configuration** (the Collection's Open In), **Properties**, **Visibility**, and the Layout, Group, Filter, and Sort leaves.
+- **Grouping** — Group By (Location, or a Select, Status, or Date property), a Date By granularity, per-kind Order pickers (Location: Custom or Location; Select and Status: Default, Reversed, Custom; Date: Ascending or Descending), and a Sub-Group picker with its own Order. The middle shows the set hierarchy or the option list, each row carrying the hide eye; the footing holds Hide Empty Groups, Ungrouped Top or Bottom, and the date Separation. A cards view drops Sub-Group and gains a None row.
+- **Sorting** — Sort By (None, Title, Modified, and the sortable properties), a per-type Order picker (Custom snapshots the current sequence into a draggable list), and a Sub-Sort with its own Order. A cards view adds **Location** as a reserved sort with its own Location or Custom order.
+- **Filtering** — the filter as a flat row list, `(connector)(what)(operator)(value)(×)`, serialized to the nested group: a run of Ands is one group and an Or starts the next. The footing carries the All/Any toggle and the on/off axis. Location's picker is the Set tree. A shape the pane can't represent renders locked behind a Reset rather than being flattened.
+- **Visibility** — the shown/hidden split as one flat list: shown rows in column order, then hidden rows ghosted after them. Dragging into the shown zone reorders or unhides at the slot; dragging into the hidden zone hides; each row's eye toggles it. Title is a draggable anchor that never hides.
+
+### Table
+
+The Table renderer (`src/renderer/src/Detail/Views/Table/`) draws a container's Pages as rows on a single CSS grid. It is presentation only: the pipeline hands it resolved groups and per-cell values, and the table owns the layout, the column ergonomics, and the row chrome.
+
+#### II. The Grid
+
+The header band and every data row are separate CSS grids reading one shared track set, so columns align across bands without a `<colgroup>`; a trailing filler track absorbs any pane width past the summed columns. Every column, the title included, holds its resolved width. While the columns fit the pane, the table stays capped at the content inset; once anything pushes the sum past it, the whole view scrolls horizontally, heading and rows together, with the left gutter as the fixed boundary. The heading band's fill bleeds to both glass edges while its tracks stay locked to the body grid. A gutter left of the grid — the same lane and width as the editor's fold gutter — holds the row grips and the band chevrons; band headers stick left while columns scroll.
+
+#### II. Columns
+
+Widths are per-type `{min, default, max}` from one source (`columnWidths.ts`), clamped on every resolve so a stale saved value can't squash a column below legibility or stretch it past its ceiling; Title alone is uncapped. Resize is a right-edge strip; reorder drags the header as one band while neighbors slide to open the gap; Hide animates the track shut. Right-clicking a header opens the native column menu: alignment, the per-type **Style** submenu (**Format** for Link and Number, whose rows are one), **Icon** toggling the view-wide column icons, and Hide. Status, Select, and Multi-select share the Standard and Compact styles; a Link column's rows are the three link forms and a column naming none reads the property's; Number's format is property-wide and only its Number or Bar look is per view. The title column is the primary column and is neither hideable, alignable, nor styleable.
+
+#### II. Rows & Cells
+
+A cell's content is type-aware — a page icon and title, chips, a checkbox or switch, a link, file chips, a formatted date or number, or a progress bar — reading the per-view column style. Every cell owns its click through the shared gesture rules in `PropertyEditing/valueClick.ts`: the title navigates, option cells open the shared value dropdown, a checkbox toggles, a number enters its inline editor, a link opens, and a file chip opens the file dialog.[^8] Right-click always opens a menu: the title gets the page menu with New Page Above and Below, a link cell the link menu, a file cell its Add, Replace, and Remove rows, and style-bearing types their column's style radios. Chip values carry the hover × that removes one value without opening the picker. Inline edits follow Enter to confirm, click-out to save, and Esc to revert. A hover-revealed grip in the gutter lifts the row for drag-reorder and carries its own menu (Open Preview, Open New Tab, Rename, Edit Icon, New Page Above and Below, Delete).
+
+The table's three creation triggers ride the shared act: the structural header's **+** creates at that Set's end and glides to the row; **New Page Above / Below** on the grip and title menus creates beside its anchor; and the hover ghost row creates below. A single density token (`--zoom`) scales text, chips, padding, and widths together, compounding with a tile's Scale when embedded.
+
+#### II. The Table Sheet
+
+The table's design vocabulary is a whole-file token sheet scoped to `.table-view`, `.table-empty`, and `.trash-leaf`, which borrows the heading half. Atlas convention per [[DesignSystemPM]].
+
+**SOURCE:** `Pommora/src/renderer/src/Detail/Views/Table/table-tokens.css` · `Pommora/src/renderer/src/Detail/Views/Table/Table.css`
+
+| Title | Token | Value |
+| --- | --- | --- |
+| Density | `--zoom` | `1` (the Compact knob's target) |
+| Cell Padding | `--cell-padding-x` / `--cell-padding-y` | `12px` / `6px` |
+| Cell Icon Gap / Label Run Gap | `--cell-icon-gap` / `--labels-gap` | `6px` / `4px` |
+| Nesting Indent | `--row-indent` | → `var(--disclosure-indent)` |
+| Loose-Row Inset | `--loose-inset` | `8px` |
+| Grip Gutter | `--gutter` | → `var(--fold-gutter)` (remapped mid-tree — table descendants wanting the content gutter read `--content-gutter`) |
+| Hairline | `--table-border-width` / `--table-border` | `1.25px` / composed on `--separator-border` |
+| Active Cell Radius | `--cell-active-radius` | `4px` |
+| Heading | `--heading-fill` / `--heading-text` / `--heading-divider` | → fill-quinary / label-control / border-heading |
+| Heading Segment | `--heading-segment` / `-height` / `-width` | → label-tertiary / `16px` / `1.5px` |
+| Heading Padding | `--heading-padding-y` | `8px` |
+| Band Clearance | `--band-clearance` | → `var(--cell-padding-y)` (the seam rule's input) |
+| Resizer Strip | `--resizer-width` | `8px` |
+| Column Drag | `--col-highlight` / `--col-drag-band` / `--col-shift-ease` | → state-selected / bg-window / fast+standard |
+| Empty Pad | `--empty-pad-y` | `24px` |
+| Right Inset | `--table-right-inset` | → content gutter; `0px` once overflowing (declared in `Table.css`) |
+
+#### II. Known Issues
+
+- **Row grips scroll with their row on horizontal scroll.** Freezing them cleanly means freezing the whole title column, which is an open decision.
+- **A mid-drag column hide or watcher view-push is reverted by the column drop's persist**, since the drop reads grab-time state. Reachable only by changing columns while holding a drag.
+
+### Cards
+
+The Cards renderer (`src/renderer/src/Detail/Views/Cards/`) draws Pages as a resizable card grid over the same pipeline, and draws the same inside a view embed at the embed's zoom. A card is an image band over a text area — title, then properties, then an optional location footing — with the image band a fixed height scaled by the card factor and every card in a row matching its tallest sibling. The grid is an auto-fill track set off a column-width floor, sharing its chassis (grid mechanics, borders, hover lift) with the Navigation gallery. **Scale** is a slider in ViewSettings' footing, persisted as `card_size`. A per-view **Card Banner** chooses the image: **Cover** (the page's banner), **Preview** (the captured thumbnail), or **None** (imageless, compact cards); right-clicking the image band edits the page's banner through the page header's own flow. The layout is the view's `format` — **Standard** (title, then one labeled row per property) or **Compact** (label-less values packed in order) — shaped further by **Wrap Titles** and **Hide Icons**.
+
+#### II. Properties on Cards
+
+Cards show every visible property through the shared chip and cell renderers, and each value is interactive on the same gesture rules the table cells use — a click opens the value's picker, a checkbox toggles.[^8] Right-clicking a value opens the cell menu with a trailing **Remove** that drops the property from the view; a live link opens the link menu instead. The whole card is a drag handle, so a value's click stops before the card sees it, and only the title and the image band open the page. Pickers mount at one grid-level host so an open picker survives row churn. A two-stage **add-picker** — from empty space in the text area, the location footing, or the card menu's **Add Property ▸** — lists everything not shown on the card and reveals a property on its first committed value.
+
+#### II. Grouping, Location & Set Cards
+
+Cards never indent: structural grouping renders one flat band per top-level Set with its whole subtree gathered inside, a property grouping replaces those with bucket bands, and ungrouped pages band under the container's own heading. No sub-grouping applies. **Group By: None** renders one headerless list, and **Sort By: Location** orders at the resolve level with a Location (filesystem, drag off) or Custom (manual, drag on) order; the two together are the flat, filesystem-ordered list. Each card's **location footing** is a NavTrail of its Set ancestry, governed by **Hide Location**; under structural grouping it drops the leading crumb the band already names. A **Set Cards** switch adds a leading row of larger cards, one per Set, each navigating to it and reorderable by drag, which writes the container's set order.
+
+#### II. Drag & Menus
+
+Cards reorder within their band by displacement,[^7] writing the per-machine manual order the pipeline reads as its lowest-priority tiebreaker; two effective sort criteria or a Location sort retire it. A card dropped across location bands moves the page into that band's Set at its landing slot. Band drag is the shared insertion-line gesture without a nest zone — every drop is a reorder, writing the view's band order, or the container's Set order under Sort By: Location. A card's right-click menu holds **Add Property ▸** over the page menu: Edit Image when a cover is set, Open, Rename, Edit Icon, New Page, Move To ▸, Copy Link, Copy Path, Delete.[^9] New Page creates after the anchor, and the hover ghost grows a skeleton card at the next flow slot with neighbors making room.
+
+#### II. Card Tokens
+
+The geometry the two card families share — the floor, gaps, thumb share, and cover zoom — lives once in `DesignSystem/Tokens/card-tokens.css`, shared with the Navigation gallery; the Cards renderer's own scope overrides only what differs. Atlas convention per [[DesignSystemPM]].
+
+**SOURCE:** `Pommora/src/renderer/src/DesignSystem/Tokens/card-tokens.css` · `Pommora/src/renderer/src/Detail/Views/Cards/CardsView.css`
+
+| Title | Token | Value |
+| --- | --- | --- |
+| Column Floor | `--card-min-base` | `180px` (shared; the unscaled floor) |
+| Scaled Floor | `--card-min` | `calc(var(--card-min-base) * var(--card-scale, 1))` in `.cards-view` |
+| Gaps | `--card-gap-h` / `--card-gap-v` | `10px` / `10px` (shared) |
+| Cover Zoom | `--cover-zoom` | `1` (shared) |
+| Thumb Share | `--thumb-share` | `65%` (shared) |
+| Set-Card Floor | `--set-card-min` | `calc(var(--card-min) * 1.5)` |
+| Thumb Height | `--thumb-h` | `calc(104px * var(--card-scale, 1))` |
+| Body Minimum | `--card-body-min` | `calc(var(--thumb-h) * 0.54)`; compact recomputes from its row stack |
+| Band Clearance | `--band-clearance` | → `var(--card-gap-v)` (the seam rule's input) |
+| Compact Rows | `--card-row-h` / `--card-foot-h` | `17px` / composed |
+| Label Retunes | `--label-zoom` / `--label-pad-x` | `0.85` / `4px` |
+
+#### II. Prospects
+
+- **A Set-Card ghost** — dwelling on a Set Card growing a ghost that creates a Set.
+- **Set-Card previews** — a Set Card opening a preview of the Set's view; today it navigates.
+- **File-property covers** — any File property declaring itself the card's image, a fourth Card Banner mode.
+- **Fit Image** — contain versus fill on covers. Repositioning ships through the ImagePicker.
+
+### List · Gallery · Calendar · Timeline
+
+Registered in the type union and present as picker tiles, with no renderer behind them; a view of any of these types falls through to the table.
+
+---
+
+#### Pending
+
+- **Table Flatten and Location subtitle** — the table's no-grouping mode, with a page's location as a subtitle in its title cell under its own Flatten and Hide Location toggles. Cards already carry both.
+- **The property-bucket +** — a property or ungrouped band offers no create, since a bucket can't infer a location.
+- **ViewBar** — the Toolbar value of View Style, an inline switcher bar. The setting persists; Toolbar mode reuses the dropdown until the surface exists.
+
+[^1]: [[CollectionsPM]]
+[^2]: [[SurfacePM]] §Tile Types
+[^3]: [[PropertiesPM]] §Property Types
+[^4]: [[ArchitecturePM]] §Persistence
+[^5]: [[ConfigurationPM]] §Collections
+[^6]: [[PagesPM]] §Title + Membership
+[^7]: [[PommoraDND]]
+[^8]: [[PropertiesPM]] §Shared Mechanisms
+[^9]: [[InterfacePM]] §The Sidebar

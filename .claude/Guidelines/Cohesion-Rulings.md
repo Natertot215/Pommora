@@ -44,9 +44,10 @@ plausible from the outside. Reopen any of them with a reason, not with a fresh r
 
 - `shared/pageMenu.ts`'s leading-separator drop stays. A test asserts the *model* drops it, which is
   a contract on the model rather than an artifact of how a menu happens to be drawn.
-- Cross-document restatement stays. `ViewsPM` owns the shared mechanisms and the per-surface
-  documents defer to it explicitly while describing what their own surface dresses it in — that is
-  behavior a reader of `CardViewPM` needs.
+- Each shared mechanism has one owning document and every other document points at it with a
+  footnote or a one-line blurb. `ViewTypesPM` owns the pipeline, creation, and group bands with a
+  section per renderer beneath; the cross-document restatement the split renderer docs carried
+  is what the documentation audit removed, and a sweep should not re-propose it.
 - `gripMenu`, `trashMenu`, and `contextMenu` keep their main-side shape. The first resolves object
   actions through an arbitrary-depth pick tree that `ActionItem` cannot express; the second already
   keeps its labels in `shared/` and pops through the nesting primitive; the third runs its writes

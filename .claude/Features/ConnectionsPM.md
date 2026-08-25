@@ -6,67 +6,81 @@ Connections
 ├── Resolution
 ├── The Rename Cascade
 ├── Rendering
+├── The Link Menu
 ├── Autocomplete
-├── The Alias Memory
 ├── Known Issues
 └── Prospects
 ```
 
-A **Connection** is a link pointing to another Page, using two compatible syntaxes — the wikilink `[[Title]]`, and the markdown link `[Alias](Title)` whose target names a page rather than a website. The text is canonical and Obsidian-readable, and resolution is computed at read time. Connections are authored inline in a Markdown body or in a markdown block tile, and a **URL property** holds one as its whole value — the same `[[Title]]`, written into frontmatter, where it reads as a connection rather than an address. Pages are the only targets — Spaces come through Context links, and Tasks and Events are never targets.
+A **Connection** is a link from one Page to another, written in the page's Markdown body. Two syntaxes spell one — the wikilink `[[Title]]` and the markdown link `[Alias](Title)` whose target names a page — and the word covers both. A connection may also be held as the whole value of a Link property, where it reads as a connection rather than an address. Connections are the only page-to-page relation Pommora has; Contexts are the relation layer, and there is no relation-type property. 
 
 ### Syntax + Scope
 
-The parser matches on the title alone, so `[[Title|Alias]]` resolves to the same Page while the alias is what the reader sees — the title and its pipe join the hidden marker set, revealed like any other syntax once the caret enters. A pipe can't appear in a title — it opens that tail — and the shared name rule rejects it at creation everywhere.
+The grammar lives in `src/shared/connections.ts` (the wikilink) and `src/shared/links.ts` (the markdown link), shared code both processes read so the editor's tokenizer and main's rename rewriter can never disagree about what a link is. One normalization — trim, case-fold, NFC — is applied to every title on every side, so the scanner, the resolver, and the uniqueness check always agree.
 
-A **markdown link** names a page through its target, percent-encoded so a title's spaces and parentheses survive a grammar whose target ends at the first `)`. Page resolution is tried before the URL gate, which accepts any dotted host: without that ordering a page called `Node.js` would be read as a website and become unreachable through this form. A target carrying a scheme or a path separator addresses something outside the Nexus and never names a page, so a URL can't reach one by its last segment. The label is the author's own text, free where a connection's title is its target. `[[Title]](target)` stays a connection followed by literal parentheses, which is what a shared vault means by it — CommonMark would read the outer brackets as a link's label, but doing so here would create a link the rename cascade's own grammar cannot match. A `!`-prefixed markdown link standing alone on its line is not a connection or a link at all: it is the webpage-embed form, rendered as a live tile.[^1]
+- **Wikilinks** — `[[Title]]` resolves by its title. `[[Title|Alias]]` shows the alias and still resolves by the title; the title and its pipe join the hidden markers and reveal with the caret like any other syntax. A title can't contain `|`, and the name rule rejects one at creation.
+- **Markdown links** — `[Label](Title)` names a page through its target, percent-encoded so spaces and parentheses survive. A target carrying a scheme or a path separator is addressing something outside the Nexus and is never read as a page title, so a URL can't reach a page by its last segment. The label is the author's own text.
+- **Scope** — Pages are the only targets. Spaces are reached through Context links, and Tasks and Events aren't targets. A `!`-prefixed form standing alone on a line is not a connection: `![[Title]]` is a page embed and `![Label](url)` a webpage embed, each rendered as a live tile.[^1]
 
 ### Resolution
 
-A scanned title, matched through one shared normalization, lands in one of three states:
+Every title the scanner finds is looked up in an in-memory map built from the page tree (`treeIndex` in the renderer, the content index in main), and lands in one of three states:
 
-- **Resolved** — one Page holds the title; the link is styled and navigable, its target's ULID in memory.
-- **Ambiguous** — several Pages hold it, so no target can be picked; the link is muted and inert until one side is renamed.
-- **Phantom** — no Page holds it; the link stays literal bracketed text, going live on the editor's next update once a single match exists.
+- **Resolved** — exactly one Page holds the title. The link is styled and navigable, and its target's id is known in memory.
+- **Ambiguous** — more than one Page holds it, so no target can be chosen. The link is muted and inert until one side is renamed.
+- **Phantom** — no Page holds it. The link stays literal bracketed text and goes live on the editor's next update once a single match exists.
 
 ### The Rename Cascade
 
-Identity is the title and the text carries no id, so a rename **cascades** — renaming a target rewrites every body holding its old title, in all three syntaxes, one sweep per pattern, and every frontmatter URL value naming it alongside them. A markdown link's target is re-encoded for the new title and its label is left alone, on the same principle that carries an alias through. An alias rides through: a rename changes which Page a connection points at, never the words the author chose to show for it. The cascade opens only the files the content index says mention the old title — a page whose sole reference is a URL property included, since the index records what frontmatter names as readily as what a body does, keeping its own per-file check as the confirmation inside each rewrite — a stale row costs one wasted read, never a wrong rewrite — and falls back to reading the whole corpus when no index exists. Either way the reach is the corpus itself: un-adopted folders included, excluded folders untouchable, and a file the sweeps won't admit is passed over, so a rename never rewrites a body Pommora would refuse to render. 
-
-**A file value's wikilinks are not connections, and the cascade must never learn to read them.** A File property's `[[Basename.ext]]` names a file in the asset directory, resolved in a wholly separate domain from the page-title map — the two happen to share a spelling and mean different things. Both halves of the cascade skip it structurally rather than by type: the index and the rewriter each read only string-valued frontmatter, and a file value is an array. So a page renamed to match some attachment's filename leaves that attachment alone, and the omission is the correct behavior rather than a gap to close.[^7]
+Because a connection's identity is its title, renaming a page rewrites every body that names the old title. `src/main/connections/rewrite.ts` is the primitive — one pure pass over three patterns (wikilink, page embed, markdown link) plus the Link property values in frontmatter — and the cascade runs it over every file the content index says mentions the title, confirming each under its own lock, with assigned aliases also using the same cascading mechanism; Connections inside code syntax aren't cascaded. A File property's `[[Basename.ext]]` values are in a different domain and are left alone.[^2] Anything inside a code span or fence is a sample and is never rewritten.
 
 ### Rendering
 
-A resolved connection is inline text in the connection color — never a chip — brackets hidden until the caret enters it. Revealed, a connection wearing a pipe shows both of its meanings at once: its target is marked as a target rather than as prose, and a link glyph introduces it. The glyph is the part that reports resolution — it takes the connection color where a Page answers to that target and reads muted where none does — so the treatment follows the pipe rather than waiting on a title that happens to match. A link just finished — Enter on an alias, a page accepted from the picker — leaves the caret on its closer and stays rendered there, so finishing one reads as finished. A connection being typed takes the same color from its first character, rather than reading as prose until a title happens to match, without claiming to resolve; clicking into one that names no page inspects an unresolved link, and it stays unresolved. A markdown link naming a page wears the same color, leads to the same place, and raises the same hover preview, all decided by one resolver behind the click path and both renderers, so a link can never be painted as one thing and act as another; one that names a website keeps the external-link treatment and raises the hover card's live site flavor on the same dwell[^1], and one that names neither keeps the broken-link treatment unchanged. Click opens it, routed by the `connectionsOpenInPreview` personalization knob[^3]; ⌘-click opens a new tab; hover raises the preview hover card[^4]; right-click pops a native menu opening on the same pair every page menu opens on, **Open Preview** and **Open New Tab** — the latter reading **Open** where the page already holds a tab, and each dropped outright where its own surface is already showing that page, so a link naming the page in hand offers nowhere to open it — then, where the surface can take an edit, the two authoring actions, **Add Title** (**Edit Title** once one exists) and **Edit Link**, and closing on **Copy Link** · **Copy Path**, which put the page's `[[Title]]` and its location read from the nexus root on the clipboard exactly as the page menu's own items do.
-A markdown link is offered the menu its target earns rather than the one its syntax suggests: one naming a page carries the same items, minus the authoring pair that belongs to `[[ ]]`; one naming a website opens on **Open Preview** · **Open Browser** — the in-app browser and the system one, each named outright rather than deferring to the open-in preference — and is offered nothing else that needs a page behind it, carrying instead the items that edit the link itself: **Rename** · **Edit Link** · **Copy Link** · **Format ▸**, then **Remove Link** · **Delete** below a separator.[^5] Where a surface can't take an edit, the two opens and **Copy Link** remain. Inside a link's own syntax, the menu stands down, leaving the native editor menu its spelling and substitution items. Ambiguous links keep the bracket treatment in their muted tone. A phantom is inert either way, and reads whichever way the user asks for: muted like any other invalid link with its syntax showing, or as the raw prose it is written as, set by the `plainUnresolvedLinks` personalization knob. Page prose alone follows that knob — a table cell and the fields outside a page body stay muted, since a link that leads nowhere there is being read rather than written.
+A connection renders as inline text in the connection color (the **Internal Link Color** setting[^3]), never as a chip, with its brackets hidden until the caret enters it. Revealed, an aliased connection shows both halves — the target marked as a target, the alias as prose — with a link glyph between them that takes the connection color when the target resolves and reads muted when it doesn't. A connection being typed takes the color from its first character, so it never reads as prose while a title is being written. A markdown link that names a page uses the same color, leads to the same place, and shows the same hover card; one that names a website keeps the external-link treatment (External Link Color); and one that names neither keeps the broken-link treatment.
+
+Clicking a connection opens the page, routed by **Open Connections In Preview** — the active tab by default, the floating preview when the setting is on, and ⌘-click always takes the other route.[^3] Resting on a resolved connection raises the hover card with a read-only render of the target.[^4] Ambiguous links keep the bracket treatment in a muted tone; a phantom is inert and reads either muted with its syntax showing or as plain prose, per **Display Unresolved Links As Plain Syntax**, which applies to page prose only — cells and other fields stay muted.
+
+### The Link Menu
+
+Right-clicking any link, wherever it sits, opens one native menu built from one model (`src/shared/connMenu.ts`), so the actions a link offers never depend on where it was found. The rows follow what the link is and where it sits:
+
+| | Page connection | Website link |
+| --- | --- | --- |
+| **Open** | Open Preview · Open New Tab (reads *Open* where the page already holds a tab; each dropped where its own surface is already showing the page) | Open Preview · Open Browser (the in-app browser and the system one) |
+| **Author** (editable surfaces) | Add Title / Edit Title · Edit Link | Rename · Edit Link |
+| **Copy** | Copy Link · Copy Path | Copy Link |
+| **Format** (editor only) | — | Format ▸ Full Link · Short Link · Page Title, rewriting the label alone |
+| **Close, in the editor** | — | Remove Link (keeps the label as prose) · Delete |
+| **Close, in a property cell** | Clear (· Remove on a card, dropping the property from the view) | Clear (· Remove) |
+
+A read-only surface — a hover card, an embedded page at rest — offers the opens and Copy Link. Inside a link's own syntax the menu stands down, leaving the native editor menu its spelling and substitution items.
 
 ### Autocomplete
 
-One panel serves four forms, distinguished by where the caret sits. Typing inside `[[ ]]`'s title filters Pages nexus-wide by title prefix; an empty query lists nothing, its pool being every Page there is. The panel anchors below the caret, flipping above only to avoid overflowing the viewport. Arrows move the selection, Return commits the form being typed — a bare `[[Title]]`, or `![[Title]]` when the panel fires on the embed syntax, where the pool also drops already-embedded pages, the host chain, and titles the embed grammar can't express. Escape closes, each key falling through to the editor's own binding while the panel is closed. One state machine drives the page editor, block tiles, and markdown table cells alike; the embed form fires only in page-body editors.
+One picker (`MarkdownPM/autocomplete.ts`, driven by `useConnectionAutocomplete`) serves every place a connection is typed — the page editor, table cells, and markdown block tiles — anchored below the caret and flipping above only to stay in the viewport. Arrows move the selection, Return commits, Escape closes, and each key falls through to the editor while the panel is closed. What it offers depends on where the caret is:
 
-Within an alias, the panel lists the names Page has previously been given. A pipe with nothing between it and the closer is an alias waiting to be written, and that shape alone is what opens the list — however the pipe arrived. Accepting a page whose names are worth offering opens one for you, so those names come back without a character being typed; accepting an alias finishes the link it belongs to rather than leaving the caret inside it. A suggestion identical to what is already written is withheld, since accepting it would be a no-op that holds Return away from the editor. Each row carries a hover-revealed **×** that forgets that alias for good.
+- **Inside `[[ ]]`** — Pages nexus-wide, matched by title prefix; an empty query lists nothing.
+- **Inside `![[ ]]`** — the same pool, minus pages already embedded, the host chain, and titles the embed grammar can't express. Page-body editors only.
+- **After a pipe** — the aliases this Page has been given before. Accepting a page whose aliases are worth offering opens the list without a keystroke when **Automatically Suggest Existing Aliases When Linking A Page** is on, and **Remove Title On Link Change** decides whether re-aiming a link drops the alias it wore.[^3] Each row carries a hover-revealed × that forgets that alias.
+- **Inside a markdown link's `( )`** — Pages; accepting one encodes the target and hands the caret to the label, pre-filled with the page's title and selected.
 
-Inside a markdown link's `( )` the panel offers Pages, and accepting one encodes the target and hands the caret back to the label — pre-filled with the Page's own title and selected, since the display text is free and unwritten. A label already written is left as the author left it.
+**Alias memory.** A Page remembers the aliases it has been given. The list is written when an alias is authored rather than derived by scanning bodies, so forgetting one sticks. It is keyed by page id, so it survives a rename, and lives in `nexus.db` as a per-machine accelerator — the alias itself is on the page in universal syntax, and losing the record costs a suggestion, never a link.
 
-### The Alias Memory
+---
 
-A Page remembers the aliases it has been given. The list is written when an alias is authored — on leaving it, which is also when an alias opened and abandoned drops its pipe — rather than derived from a scan of every body, because a derived list cannot honor a real deletion and the next scan would resurrect what the × removed. It is keyed by PageID, so it survives a rename, and it lives in `nexus.db` beside the other per-machine records rather than on disk in the Nexus: the alias itself is written on-page in universal syntax, and what the database holds is an autocomplete accelerator whose loss costs a suggestion and never a link. A duplicated Page carries its memory, and deleting a Page does not clear it; it matches every sibling record and leaves the restore path intact.
+#### Known Issues
 
-### Known Issues
+- **The cascade is per-file, not cross-file atomic.** A page pass failing partway reverts the target's rename, leaving already-rewritten bodies pointing at a title no page holds until the rename is re-run.
+- **The markdown-block healing pass is best-effort.** Its failure is swallowed, and blocks stay stale until the next rewrite.
 
-- **The cascade is per-file, not cross-file atomic** — a page pass failing partway reverts the target's rename, leaving already-rewritten bodies pointing at a title no Page holds until the rename is re-run.
-- **The markdown-block healing pass is best-effort** — its failure is swallowed, and blocks stay stale until the next rewrite.
-
-### Prospects
+#### Prospects
 
 - **Duplicate disambiguation** — id-scoping so a connection to an ambiguous title can pick its target inline.
-- **Backlinks panel** — a surface listing every Page that links to the current one; it rides the reverse lookup a content index would answer, and no index exists.[^6]
-- **An alias-management pane** — curating a Page's remembered aliases wholesale rather than forgetting them one at a time through the picker's ×.
-- **Wider targets + embeds** — Tasks and Events as targets, heading and block anchors (`#`, `#^`), and transclusion (`![[ ]]`).
+- **Backlinks** — a surface listing every Page that links to the current one. The content index already records mentions; the surface doesn't exist.
+- **Alias management** — curating a Page's remembered aliases in one place rather than forgetting them one at a time.
+- **Wider targets** — Tasks and Events, heading and block anchors (`#`, `#^`).
 
-[^1]: [[WebviewPM]]
-[^2]: [[MarkdownPM]] §Page Embeds
-[^3]: [[ConfigurationPM]]
-[^4]: [[PagePreviewPM]]
-[^5]: [[MarkdownPM]]
-[^6]: [[ArchitecturePM]]
-[^7]: [[PropertiesPM]] §File
+[^1]: [[MarkdownPM]] §Embeds · [[WebviewPM]]
+[^2]: [[PropertiesPM]] §File
+[^3]: [[ConfigurationPM]] §Navigation · §Appearance · §Files & Links · §Pages & Editor
+[^4]: [[InterfacePM]] §The Hover Card

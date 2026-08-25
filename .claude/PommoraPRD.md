@@ -71,7 +71,7 @@ A Collection assigns which registry properties its Pages validate, and that sche
 - **`id`** — a stable ULID assigned at creation, never changing. A content file stores it under a key that names its kind (`PageID` / `TaskID` / `EventID`), which is also how a file placed in the wrong folder is recognized and left alone. A body connection is a title, a Context link is a title, and a property value sits under its property's name — each resolved at read time, each held correct across a rename by a sweep over the files that hold it.
 - **Title** — the display name, carried as the filename (minus extension), freely renameable. Renames are filesystem renames; in-memory references resolve to the current title at render time. Within a container, a colliding Page creation auto-disambiguates and a rename is rejected. Titles aren't unique Nexus-wide — a connection to a title shared by two Pages resolves as ambiguous.
 
-Operational entities tag Spaces through parenthesized Context keys — `(Projects):` over a block sequence of bare Space titles at the frontmatter root (or, for a Space, its sidecar root) — the **only** relation-type connection. Page-to-Page links are body `[[Title]]` connections, or as Markdown link `[Title](Page)` syntax. 
+Operational entities tag Spaces through parenthesized Context keys — `(Projects):` over a block sequence of bare Space titles at the frontmatter root (or, for a Space, its sidecar root). Contexts are the only relation Pommora has. Page-to-Page links are **Connections**: the word covers both the `[[Title]]` and `[Label](Title)` syntaxes in a body, and a connection may also be held as a Link property's value.
 
 ---
 
@@ -83,7 +83,7 @@ Pommora is an Electron desktop app — a React + TypeScript renderer over a Node
 
 **No dependency lock-in.** Every library sits behind a thin seam — the editor, YAML, IDs, SQLite, the glass material, the drag engine — so it's swappable without touching callers. Version numbers are compatibility pins, not endorsements.
 
-The main process is the sole filesystem owner; the renderer never touches Node. One shared bridge map declares every IPC channel once — both sides derive from it, and IPC never throws across the boundary: data channels return one structured result envelope.[^1]
+The main process is the sole filesystem owner; the renderer never touches Node, and the two speak over one typed bridge.[^1]
 
 #### Core Constraints
 
@@ -95,11 +95,11 @@ The main process is the sole filesystem owner; the renderer never touches Node. 
 
 **Files are canonical.** Everything a user creates lives as a plain file in a folder they pick, and that folder is the whole product — it can sit in any synced location and travels intact. Pages, Tasks, and Events are Markdown with YAML frontmatter; Contexts and all configuration are JSON. Databases are used sparingly, but aren't prohibited; they're leveraged for operation-based value, and an information-bearing role isn't out of the question. **The line runs at assignment.** A property *definition* — its name, type, options and formats — may move into the database, and the file format is what makes that safe: because a Page's frontmatter names its own properties, losing the registry costs presentation config rather than the ability to read a value. An *assignment* (which properties a Collection carries) stays on that Collection's sidecar, and a *value* stays in its Page's frontmatter, so a Nexus's structure and its content both remain readable from the files alone.
 
-**Kind comes from the folder's sidecar, not the file.** Each container folder carries a small config sidecar that declares what it is and what schema its contents share — `_pagecollection.json`, `_pageset.json`, `_space.json`, `_taskconfig.json` / `_eventconfig.json`. A folder *is* a Page Collection because it holds the Page Collection sidecar — folder names stay freely renameable, and no file extension ever carries a kind. The content file inside must agree with the folder that declares it, storing its id under the key naming that kind; one whose key contradicts its folder is Unknown — invisible, untouched, never stamped over. App-internal config and the device-local database live under a hidden `.nexus/` folder that travels with the Nexus.
+**Kind comes from the folder's sidecar, not the file.** Each container folder carries a small config sidecar that declares what it is and what schema its contents share — `_pagecollection.json`, `_pageset.json`, `_space.json`, `_taskconfig.json` / `_eventconfig.json`. A folder *is* a Page Collection because it holds the Page Collection sidecar, so folder names stay freely renameable and no file extension carries a kind. A content file must agree with the folder that declares it, and one that doesn't is left alone as Unknown.[^1] App-internal config and the device-local database live under a hidden `.nexus/` folder that travels with the Nexus.
 
 **Foreign data is preserved.** Frontmatter and sidecar keys Pommora doesn't recognize are carried through untouched on every write — and the page writer preserves YAML comments too, so opening a folder that's also an Obsidian vault leaves notes byte-identical until the user edits them.
 
-**The database is off the read path and holds no content.** Reads are a single filesystem walk; nothing user-created depends on a database being present — not a hard-locked decision, and open to reconsideration. A device-local database carries per-machine chrome — folds, view selection, tabs — so losing it costs a machine its arrangement and never a Nexus its contents. Deletions move to a recoverable in-Nexus trash that mirrors the folder chain the item came from, so the layout itself records where an item lived, and a settings window can display and restore them.
+**The database is off the read path and holds no content.** Reads are a single filesystem walk; nothing user-created depends on a database being present — not a hard-locked decision, and open to reconsideration. A device-local database carries per-machine chrome — folds, view selection, tabs — so losing it costs a machine its arrangement and never a Nexus its contents. Deletions move to a recoverable in-Nexus trash that mirrors the folder chain the item came from, and a settings leaf displays and restores them.
 
 #### Pages
 
@@ -122,7 +122,7 @@ Moving a Page **across Collections** never strips — its values ride along, the
 
 #### Contexts & Spaces
 
-`.nexus/contexts.json` owns Context identity — id, title, singular, icon, array order as display order — and each Space is a folder at `.nexus/contexts/<Context>/<Space>/` gated by its `_space.json` sidecar (id, chip-solid color, banner, and its own relation keys); its block document is a device-local row.[^5] There is no `parents` field and no containment. The folder name is the title; renaming in the UI runs the journaled title cascade across every member file.
+`.nexus/contexts.json` owns Context identity — id, title, singular, icon, array order as display order — and each Space is a folder at `.nexus/contexts/<Context>/<Space>/` gated by its `_space.json` sidecar (id, chip color, banner, and its own relation keys); its block document is a device-local row.[^5] There is no `parents` field and no containment. The folder name is the title, and a rename cascades across every member file.
 
 A Context link is a **dual surface**: an operational entity tags a Space by holding its title under the Context's parenthesized key, and the reverse direction — every entity tagging a Space — resolves through a query rather than a stored inbound list; Spaces carry no schema. Space-to-Space links ride the same parenthesized keys in a Space's own sidecar.[^6]
 
@@ -155,9 +155,9 @@ The registered view types are **Table**, **Cards**, **List**, **Gallery**, **Cal
 
 #### Connections
 
-Connections are Content ←> Content links on the Markdown body via either `[[Title]]` or `[Alias](Title)` syntax, and may also be assigned on the Markdown’s frontmatter through the link property. Currently, only Pages use Connections; the Markdown surface of the pending Tasks feature will likely also support them.
+Connections are Content ↔ Content links on the Markdown body via either `[[Title]]` or `[Alias](Title)` syntax, and may also be held in frontmatter as a Link property's value. Currently, only Pages use Connections; the Markdown surface of the pending Tasks feature will likely also support them.
 
-In v1, connections resolve by title. A uniquely-held title is live and navigable; a title held by two Pages is ambiguous; an unmatched one renders as inert literal text with the brackets visible, going live the moment a single matching Page exists. Renaming a target **cascades** — every referencing body is rewritten to the new title, per-file atomic and re-runnable rather than transactional. Resolution runs on an in-memory map and the cascade scans the page tree, so connections depend on no database at all. Typing `[[` plus at least one character opens an autocomplete over prefix-matching Pages Nexus-wide.[^10]
+In v1, connections resolve by title. A uniquely-held title is live and navigable; a title held by two Pages is ambiguous; an unmatched one renders as inert literal text with the brackets visible, going live the moment a single matching Page exists. Renaming a target cascades to every referencing body. Typing `[[` plus at least one character opens an autocomplete over prefix-matching Pages Nexus-wide.[^10]
 
 #### Sidebar Navigation
 
@@ -177,7 +177,7 @@ The main pane is **multi-tab**: warm, state-preserving toolbar tabs, one view mo
 
 #### First-Launch Experience
 
-On launch Pommora restores the last opened Nexus or opens empty — never a launch modal. The File menu's Open Nexus picks a folder, and a dropped folder opens the same way. Seeding is split by what it costs to be wrong: the Contexts registry seeds on any open that finds none, because a Nexus without one can't mint its first Context; the Tasks and Events folders seed **only** as a folder becomes a Nexus, because re-seeding an established one would recreate folders its owner deleted. Settings and the Homepage config are written into existence by the first write that needs them — a knob flip, a banner — and every read tolerates their absence. Opening a folder that isn't a Nexus runs an idempotent adoption pass that classifies each folder by position and leaves existing notes untouched until edited. 
+On launch Pommora restores the last opened Nexus or opens empty, with no launch modal. The File menu's Open Nexus picks a folder, and a dropped folder opens the same way. The Contexts registry seeds on any open that finds none; the Tasks and Events folders seed only as a folder first becomes a Nexus. Settings and the Homepage config are written into existence by the first write that needs them, and opening a folder that isn't a Nexus runs an adoption pass that leaves existing notes untouched until edited.[^1] 
 
 #### Design System
 
@@ -189,7 +189,7 @@ First-party where Electron reaches it — the native menu bar and dark mode are 
 
 #### Distribution
 
-The current build is ad-hoc-signed. A distributable release adds electron-builder packaging, electron-updater auto-update over GitHub Releases for the direct build, and `@electron/notarize` for a Developer ID identity under the hardened runtime. A Mac App Store build runs sandboxed with security-scoped access to the user-picked Nexus folder — the same constraint a sandboxed native build carries, no feature blocker.[^15]
+The current build is ad-hoc-signed and packaged through electron-builder (`npm run package`). A distributable release adds electron-updater auto-update over GitHub Releases for the direct build, and `@electron/notarize` for a Developer ID identity under the hardened runtime. A Mac App Store build runs sandboxed with security-scoped access to the user-picked Nexus folder — the same constraint a sandboxed native build carries, no feature blocker.[^15]
 
 ---
 
@@ -200,30 +200,40 @@ The current build is ad-hoc-signed. A distributable release adds electron-builde
 - **Pages** — Markdown + frontmatter (including the wrapped Context and property keys), the MarkdownPM editor, Columns and Callouts.
 - **Agenda** — Tasks and Events with a required built-in Status on each; sync opt-in; reached through the sidebar ribbon's own Agenda mode.
 - **Homepage** — singleton dashboard, always reachable from the ribbon's identity icon.
-- **Settings** — storage, accent-color reading, and the full editing UI.
+- **Settings** — the Nexus Settings window over `settings.json`; a handful of keys remain hand-edited.
 - Property panel driven by each entity's schema, the full v1 catalog (including Status and File / Attachment), and per-view configuration (sort / group / filter / layout / visibility).
-- Connections — `[[Page]]` inline links, the sole connection syntax, with automatic rename cascade across all referencing bodies.
+- Connections — `[[Page]]` and `[Label](Page)` inline links, with automatic rename cascade across all referencing bodies.
 - A file watcher keeping the tree live, and global full-text search.
 - Sidebar — the ribbon's Collections / Contexts / Agenda modes plus user-creatable Collection sections, reorderable with drag-and-drop.
 - Inline editing of embedded views.
 - One design scheme plus in-app accent customization.
 
-**Out (post-v1):** additional view types beyond the v1 set, synced page-body blocks, sync, mobile, plugins, ad-hoc properties, multi-Collection pages, independent UI titles, in-line view embeds in Pages, chip-style connections, full Settings editing UI, and more — the catalog is [[FrameworkPM]] §Prospects.
+**Out (post-v1):** additional view types beyond the v1 set, synced page-body blocks, sync, mobile, plugins, ad-hoc properties, multi-Collection pages, independent UI titles, in-line view embeds in Pages, chip-style connections, and more — the catalog is [[FrameworkPM]] §Prospects.
+
+---
+
+### Locked Decisions
+
+**Nothing is set in stone but these:** every other decision — model, structure, vocabulary, interaction — is open to challenge and rework whenever an idea earns it. These decisions need explicit sign-offs to change; everything else needs only a good reason.
+
+- **Reasonable Legibility:** The user's Nexus, its filesystem structure, and the general context of the content within it must be understandable through the filesystem structure itself, be reasonably app-agnostic, or clearly understood through a single user guide.
+- **Reasonable Translation:** The general structure of the file tree and on-disk data must be translatable between other filesystem-based applications. CommonMark specification is the standard convention; app-unique syntax is an acceptable per-case decision — but legibility concerns *context*, not every byte the app stores: per-machine operational info, accelerators, or similar information may be more appropriate to store in the `nexus.db` rather than hand-editable and exposed data.
+- **Single-window now, multi-window-ready seams** — data is main-owned and store-cached per renderer; the live-refresh bus is a swappable transport; windows identified by serializable refs. No global singleton holding shared mutable client state.
 
 ---
 
 [^1]: [[ArchitecturePM]]
-[^2]: [[PagePreviewPM]]
+[^2]: [[InterfacePM]] §Floating Windows
 [^3]: [[MarkdownPM]] · [[PagesPM]]
-[^4]: [[CollectionsPM]] · [[PageSetsPM]]
+[^4]: [[CollectionsPM]]
 [^5]: [[SurfacePM]]
 [^6]: [[ContextsPM]]
-[^7]: [[AgendaPM]]
+[^7]: [[ArchitecturePM]] §The Agenda Singletons
 [^8]: [[PropertiesPM]]
-[^9]: [[ViewsPM]]
+[^9]: [[ViewTypesPM]]
 [^10]: [[ConnectionsPM]]
-[^11]: [[SidebarPM]]
+[^11]: [[InterfacePM]] §The Sidebar
 [^12]: [[NavigationPM]]
 [^13]: [[DesignSystemPM]] · [[InteractionPM]]
-[^14]: [[Mac-Integration]]
-[^15]: [[Distribution]]
+[^14]: `// Resources // Mac-Integration.md`
+[^15]: `// Resources // Distribution.md`

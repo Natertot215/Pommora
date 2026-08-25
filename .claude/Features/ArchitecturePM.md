@@ -3,247 +3,243 @@
 ```
 Architecture
 ├── The Shape of the App
-├── Principles
 ├── The Nexus Layout
-│   ├── Classification
-│   ├── The Agenda Singletons
-│   ├── The Trash
-│   └── Folder Exclusion
+│   ├── II. Classification
+│   ├── II. The Agenda Singletons
+│   ├── II. Folder Exclusion
+│   └── II. The Asset Directory
 ├── The Data Layer
-│   ├── The Read + State Layer
-│   ├── Mutations
-│   ├── The Atomic-Write Contract
-│   ├── The Device-Local Database
-│   ├── The File Watcher
-│   ├── Adoption
-│   └── Migration
+│   ├── II. The Read + State Layer
+│   ├── II. Mutations
+│   ├── II. The Atomic-Write Contract
+│   ├── II. The Device-Local Database
+│   ├── II. The File Watcher
+│   ├── II. Adoption
+│   └── II. Persistence
 ├── The Process Boundary
-│   ├── The Bridge
-│   ├── Native Menus
-│   └── The Push Path
 ├── The Renderer
-│   ├── The Store
-│   ├── Tabs, Warmth, and Navigation
-│   ├── The View Pipeline
-│   ├── The Editor
-│   ├── Embeds and Floating Windows
-│   └── The Design System
 ├── What the Data Layer Leaves to the OS
 ├── Known Issues
 └── Pending
 ```
 
-The whole-app architecture guide — how the two processes divide the work, how data moves between them, and how each renderer domain sits on the same few seams. Per-domain depth lives in each domain's own document; this one is the map. The PRD carries the high-altitude storage model.
+The whole-app architecture guide: how the two processes divide the work, how data moves between them, and how each renderer domain sits on the same few seams. Per-domain depth lives in each domain's own document; this one is the map and the overview of how each part works in the codebase, and the home of the cross-cutting rules no single feature owns. The PRD carries the product-level storage model.[^1]
 
 ### The Shape of the App
 
-Pommora is two programs sharing one window. The **main process** is the one that touches the computer — it reads and writes every file, owns the database, pops native menus, and creates windows. The **renderer** is the React app inside the window — it draws everything and holds the interface's working state, and it cannot touch a file directly. Between them sits a deliberately narrow **bridge**: the renderer asks, main answers, and every ask is declared in one shared contract both sides compile against.
-
-The split is a security posture and an architecture at once. Because only main can act on the world, every rule about files — atomicity, locks, what may be written where — lives in exactly one process, and the renderer can be wrong without the Nexus paying for it. The renderer, in turn, treats what main last confirmed as its cache: it patches optimistically for responsiveness, and the confirmed state that follows agrees with what was already drawn.
-
-### Principles
-
-1.  **Files are canonical.** One `.md` grammar covers the operational layer — Pages, Tasks, and Events alike, each naming its kind in its id key — and JSON carries sidecars, configs, and registries. The database is reserved for operational state rather than for content, and the line runs at assignment — a property definition may move into it, while the assignment on a container's sidecar and the value in a Page's frontmatter stay as files. Structure and content remain readable without Pommora; nothing is trapped.
-2.  **Agent legibility.** External agents — Claude via MCP, any filesystem tool, vim, Obsidian — read the content and understand the context of a user's Nexus straight from plain files. The bar is convention-aware rather than stranger-instant; a file that abstracts a resolver or an id reference still counts as legible once the convention is learned, and no user data lives in a binary blob. Legibility is a claim about content rather than about every byte the app stores, which is why per-machine chrome belongs in the database.
-3. **Each fact has one home.** One corpus definition, one folder classifier, one path-safety funnel, one mention scanner, one order rule — and the same discipline in the renderer: one token source, one drag engine, one menu chassis, one view pipeline. Where two surfaces need the same behavior, the behavior is hoisted rather than restated.
+Pommora is two programs sharing one window. The **main process** (`src/main/`) is the one that touches the computer: it reads and writes every file, owns the database, pops native menus, and creates windows. The **renderer** (`src/renderer/`) is the React app inside the window: it draws everything and holds the interface's working state, and it cannot touch a file directly. Between them sits a deliberately narrow **bridge** (`src/preload/`, typed by `src/shared/bridge.ts`): the renderer asks, main answers, and every ask is declared in one shared contract both sides compile against. Only main can act on the world, so every rule about files lives in exactly one process, and the renderer treats what main last confirmed as its cache — patching optimistically for responsiveness, with the confirmed state that follows agreeing with what was already drawn.
 
 ### The Nexus Layout
 
-A Nexus is a single folder, opened via picker and treated as canonical content. It can sit in iCloud Drive, Dropbox, or any synced folder for device-to-device sync.
+A Nexus is a single folder, opened through a picker and treated as canonical content. It can sit in iCloud Drive, Dropbox, or any synced folder for device-to-device sync.
 
 ```
-<picked nexus folder>/                  ← canonical content; syncs with cloud
-  <Collection>/                         ← Page Collection (top folder, identified by sidecar)
-    _pagecollection.json                ← Collection sidecar (schema assignment + order + views)
-    <Set>/                              ← Page Set
-      _pageset.json                     ← Set sidecar (order + views)
-      <SubSet>/                         ← Sub-Set (recursive — any depth)
-        _pageset.json
-        <Page>.md                       ← Page nested in a Sub-Set
-      <Page>.md                         ← Page at the Set root
-    <Page>.md                           ← Page directly in the Collection root
+// <Nexus>                               | • The picked folder — canonical content; syncs with the cloud
+├── // .nexus                            | • App-internal config and the device-local database
+│   ├── // assets                        | • The default asset directory — banners, files, thumbnails
+│   ├── // contexts                      | • One folder per Context, one per Space beneath it
+│   │   └── // <Context>
+│   │       └── // <Space>
+│   │           └── _space.json          | • The Space's identity, color, banner, and its own relation keys
+│   ├── // homepage                      | • The Homepage's markdown-block bodies
+│   ├── contexts.json                    | • The Context registry — order is display order
+│   ├── crops.json                       | • Per-image framing, keyed by the image
+│   ├── homepage.json                    | • The Homepage's banner and heading icon
+│   ├── navigation.json                  | • Pins and favorites as ordered id arrays, plus the NavView banner
+│   ├── nexus.db                         | • Device-local operational state and the content index
+│   ├── nexus.json                       | • The Nexus id, creation stamp, and the Agenda registration
+│   ├── properties.json                  | • The nexus-wide property registry
+│   ├── settings.json                    | • Personalization, accent, excluded folders, the profile
+│   └── state.json                       | • Top-level Collection order
+├── // .trash                            | • Deleted entities, mirroring the chain they came from
+│   └── // <Collection>
+│       └── // <stamp>__<Page>           | • A deletion bundle — the artifact beside its record
+│           ├── [<Page>.md]
+│           └── _record.json
+├── // <Collection>                      | • A Page Collection — identified by its sidecar, not its name
+│   ├── // <Set>                         | • A Page Set, recursive to any depth
+│   │   ├── // <SubSet>
+│   │   │   ├── [<Page>.md]
+│   │   │   └── _pageset.json
+│   │   ├── [<Page>.md]
+│   │   └── _pageset.json                | • Order and views
+│   ├── [<Page>.md]                      | • A Page at the Collection root
+│   └── _pagecollection.json             | • Schema assignment, order, views, open-in
+├── // <Events>                          | • The Events singleton — registered by its sidecar's id
+│   ├── [<Event>.md]                     | • EventID in frontmatter
+│   └── _eventconfig.json
+└── // <Tasks>                           | • The Tasks singleton — registered by its sidecar's id; flat
+    ├── [<Task>.md]                      | • TaskID in frontmatter
+    └── _taskconfig.json
 
-  <Tasks>/                              ← Tasks singleton (registered by _taskconfig.json's id)
-    _taskconfig.json
-    <title>.md                          ← Task — TaskID in frontmatter, flat (no subfolders)
-
-  <Events>/                             ← Events singleton (registered by _eventconfig.json's id)
-    _eventconfig.json
-    <title>.md                          ← Event — EventID in frontmatter
-
-  .nexus/                               ← app-internal config + the device-local database
-    nexus.json                          ← nexus ULID + createdAt + the agenda singleton registration
-    state.json                          ← top-level ordering (Collections, per-Context Space order)
-    settings.json                       ← per-Nexus personalization + accent + excluded_folders + profile
-    properties.json                     ← nexus-wide property registry (propId → definition)
-    homepage.json                       ← the Homepage's banner + heading icon
-    crops.json                          ← per-image framing (focal point, zoom, background), keyed by the image
-    navigation.json                     ← pinned + favorites (ordered ID-only arrays) + the NavView banner
-    nexus.db                            ← device-local operational state (schema-versioned)
-    contexts.json                       ← the Context registry (order = display)
-    contexts/<Context>/<Space>/_space.json ← one Space per folder
-
-  .trash/                               ← deleted entities (nexus-local trash)
-    <Collection>/<Set>/<stamp>__<Page>.md  ← the source chain, mirrored; stamped leaf
-
-<app-support>/                          ← machine-specific; never syncs
-  pommora.json                          ← last-opened path + recents + trash mode
+// <app-support>                         | • Machine-specific; never syncs
+└── pommora.json                         | • Last-opened Nexus, recent Nexuses, trash mode
 ```
 
-Every sidecar's field shape is canonical in `src/shared/schemas.ts`.
+Every sidecar's field shape is canonical in `src/shared/schemas.ts`; every on-disk name both processes speak is in `src/shared/nexusPaths.ts`, and every absolute path main builds comes from `src/main/paths.ts`.
 
-#### Classification
+#### II. Classification
 
-A root folder containing a Pages sidecar is a Page Collection regardless of its folder name — folders can be renamed freely in Finder. The per-kind sidecar filenames (`_pagecollection.json` / `_taskconfig.json` / `_eventconfig.json`) discriminate kind at the root; below it, position alone decides — every non-excluded subfolder of a Collection or Set is itself a Set, at any depth, carrying its own saved views wherever it sits. Page Collections and the Tasks and Events singletons live as siblings at the nexus root, with no wrapper folder above them. `.nexus/` and `.trash/` are hidden from the sidebar and from non-Pommora tools by convention, matching `.obsidian/`.
+Folder kind is decided by one resolver, `src/main/folderKind.ts`. At the Nexus root the sidecar filename discriminates — `_pagecollection.json`, `_taskconfig.json`, `_eventconfig.json` — so a folder is a Collection because it carries the Collection sidecar regardless of its name, and folders rename freely. Below the root, position alone decides: every non-excluded subfolder of a Collection or Set is a Set, at any depth, storing views in its sidecar wherever it sits while only a depth-1 Set is offered them.[^2] Collections and the two Agenda singletons live as siblings at the root with no wrapper folder. `.nexus/` and `.trash/` are hidden from the sidebar and from other tools by the dotfile convention, matching `.obsidian/`.
 
-#### The Agenda Singletons
+#### II. The Agenda Singletons
 
-A Tasks or Events singleton is the folder whose config sidecar id matches the registration `nexus.json` holds — folder names are renameable defaults, a Page Collection named "Tasks" is still a Collection, and no name is reserved. Registration is written once, at nexus creation, and never backfilled: seeding runs only when a nexus is first opened without an identity file, and reopening a nexus never recreates folders its owner deleted. A hand-made agenda config carries an id the record doesn't name and stays inert.
+A Tasks or Events singleton is the folder whose config sidecar id matches the registration `nexus.json` holds. The folder names are renameable defaults, a Collection named "Tasks" is still a Collection, and no name is reserved. Registration is written once, at Nexus creation, when the two folders are seeded; reopening a Nexus never recreates folders its owner deleted, and a hand-made agenda config carries an id the record doesn't name and stays inert. A copy is the case the record can't settle alone — every ordinary duplication reproduces the registered id — so two root folders answering to one record register neither, a copy below the root is inert on depth and stays where it was filed, and a registered singleton found nested with its root slot empty is carried home on the next open.
 
-A copy is the case the record can't settle alone. Every ordinary duplication — a Finder duplicate, a restored backup, a sync-conflict copy — reproduces the registered ID, and two root folders answering to one record register nobody; deleting the stray config restores the nexus completely. A copy below the root is inert on depth alone and stays where its owner filed it. A registered singleton genuinely dragged away from the root is carried home on the next open; when the root still holds one, a nested claimant is treated as a copy and left in place.
+Agenda items carry no content model yet: no fields, no create path, no read surface, and `NavRef` admits `task` and `event` while the tab resolver, the pin target, and search refuse them so a stored ref resolves to nothing rather than to a broken destination. Four decisions are settled and bind the work that builds them: Tasks and Events are Markdown, with the body as the description, so they inherit the page writers, the link cascade, and the editor; they enter the tree walk as their own top-level branch, giving every item a record, a nav key, and a search entry, while Collection-scoped consumers stay page-only; both kinds carry a built-in, non-deletable Status property tracking engagement rather than the clock; and EventKit sync is an opt-in mirror to the system Reminders and Calendar, an API-only translation that constrains nothing stored on disk.
 
-#### The Trash
+#### II. Folder Exclusion
 
-A deleted entity moves to `.trash/` under the folder chain it came from, where a bundle holding the artifact and a record of what departed is minted. The record and restore model are the [[NexusRecordPM|Nexus Records]].
+`excluded_folders` in `settings.json` takes anchored Nexus-relative paths, and exclusion is total. One predicate (`src/main/exclusion.ts`) is honored by the read walk, the adoption pass, the watcher, the content index's corpus, and every cascade, so nothing under an excluded folder is read, shown, indexed, swept, or rewritten, and no enumeration descends into one. Un-adopted folders are a different case: they stay outside the tree but are fully indexed and cascade-reachable.
 
-#### Folder Exclusion
+#### II. The Asset Directory
 
-`excluded_folders` on `settings.json` takes anchored nexus-relative paths, and exclusion is total: one predicate is honored by the read walk, the adoption pass, the watcher, the content index's corpus, and every cascade — query path and fallback scan alike. Nothing under an excluded folder is read, shown, indexed, swept, or rewritten, so a rename leaves an excluded note's `[[link]]`s as they were — and no enumeration descends into one, so the cost of excluding a folder is nothing rather than the price of listing it and discarding the result. Un-adopted folders are not excluded folders; they remain outside the tree but are fully indexed and cascade-reachable.
-
-#### The Asset Directory
-
-One directory holds the assets entities point at — used for banners, nexus icon, embedded files, ect... — configurable to any folder in the Nexus and defaulting to `.nexus/assets`. The configured directory is excluded from content-adoption but is otherwise managed by the watcher the same way. A file landing there patches an in-memory filename list that the renderer resolves `[[File.png]]` against; nothing about it is stored except its name, which is what makes a sync eviction and re-download a non-event.
+One directory holds the assets entities point at — banners, the Nexus icon, file-property attachments, thumbnails — configurable to any folder in the Nexus and defaulting to `.nexus/assets`.[^3] It is excluded from content adoption but otherwise watched like any folder, and a file landing there patches an in-memory basename list (`src/main/assetMap.ts`) that the renderer resolves `[[File.png]]` against. Nothing about a file is stored but its name, so a sync eviction and re-download is a non-event, and assets are served to the renderer over the read-only `nexus-asset://` scheme.
 
 ### The Data Layer
 
-#### The Read + State Layer
+#### II. The Read + State Layer
 
-The read side is one eager, read-only walk in main (`readNexus`) producing a pre-ordered `NexusTree` — the whole tree in a single pass, consumed by the renderer without re-sorting and held in a Zustand store. There is no per-kind manager layer, no per-entity cache, and no dependency-injection graph.
+The read side is one eager, read-only walk in main — `readNexus` — producing a pre-ordered `NexusTree` in a single pass, consumed by the renderer without re-sorting and held in its Zustand store. There is no per-kind manager layer, no per-entity cache, and no dependency-injection graph. The walk runs at open and on Reload; between them main holds its result as the **live tree** (`src/main/liveTree.ts`), serving reads from memory and patching it in place as writes confirm and watcher events classify. An mtime-gated parse cache keeps a walk cheap by reusing decoded sidecars and frontmatter for unchanged files, and a structural-sharing pass in the renderer collapses an unchanged subtree back to its previous object identity so a push re-renders only what moved. Main reads its own settings from that tree — the labels a native menu shows, the zoom a window opens at, the exclusion list — with the disk read as the fallback before a walk has installed one.
 
-The walk runs at open and on Reload — the deliberate verification points — and main holds its result as the live tree, serving reads from memory and patching it in place as writes confirm and watcher events classify. The walk stays cheap through an mtime-gated parse cache that reuses decoded sidecars and frontmatter for unchanged files, and a structural-sharing stabilize pass in the renderer collapses an unchanged subtree back to its previous object identity so a push re-renders only what moved.
+Renderer lookups derive from `treeIndex`: one record per entity (kind, id, title, icon, path, parents), cached against the tree object. `ancestryOf` is the one ancestry every location trail is a slice of; the record list keeps duplicate ids so title resolution can answer "ambiguous," and the reconcile, resolve, search, connections, and thumbnail tables all derive from the same records.
 
-The held tree is also what main reads its own settings from. The labels a native menu names an entity with, the zoom a window opens at, what emptying the trash means, and the exclusion list are all leaves the walk already decoded and the watcher keeps current, so the daily callers — every mutation, every context-menu pop, every cascade scan — ask the tree rather than the file, and the disk read survives as the fallback for the moments before a walk has installed one. Registry writes patch it the same way: a re-read of `properties.json` lands the definition in both of its homes, the tree's registry and each Collection's resolved schema, reference-identically, so a Collection that does not carry the edited property keeps its identity. Those edits move no assignment list and cost no sidecar read at all; the four operations that do move one — assigning, unassigning, reordering, and the create that assigns — name their Collection, and only that sidecar is read.
+#### II. Mutations
 
-Renderer lookups over the tree derive from `treeIndex` — one record per entity (kind, id, title, resolved icon, path, its parent records), cached against the tree object itself. `ancestryOf` is the one ancestry — every location trail, the subfield's included, is a slice of it. The record list keeps duplicate ids so title resolution can still answer "ambiguous," while the keyed projections collapse last-wins; the reconcile, resolve, search, connections, and thumbnail tables all derive from the same records. The reserved `context` selection kind always reconciles to nothing — a Context group is a disclosure rather than a destination, so no stored selection may resolve to one.
+Every change funnels through one dispatcher, `mutate` in `src/main/mutate.ts`: it resolves and checks paths, refuses reserved targets, and routes each operation to its implementation. Cascade policy is stated beside it once — a page rename reverts if its link rewrite fails; a Context delete unlinks its Spaces before the folder moves to the trash.[^4] The write path never runs inside a read, and every write channel confirms itself: after a successful write, main applies the matching change to its live tree — a pure transform where the request carries the whole fact, a one-file re-read where the writer normalizes — and pushes the tree when it moved.
 
-The write path never runs inside a read. Every write channel confirms itself: after a successful write, main applies the matching change to its live tree — a pure transform where the request carries the whole fact, a one-file re-read where the writer normalizes — and pushes the tree when it moved. A write with no patch degrades to one verification walk; a value-only write, which the tree cannot see, costs nothing at all.
+Several rules hold across every entity and are stated here rather than per feature:
 
-#### Mutations
+- **Names.** Create under a taken name disambiguates with a numeric suffix (`createDisambiguated`); rename onto a taken name is refused; both reject a name the walk could never surface.
+- **No empties.** An emptied value deletes its key — a property, a Context tag, a color, a banner — never writing a placeholder.
+- **Foreign data survives.** Every rewrite of a page or sidecar edits the modeled keys in place and preserves every foreign key and YAML comment by value.
+- **Governed keys.** Pommora recognizes its own frontmatter keys by their wrap alone — `(Context)` for the organization layer, `<Property>` for the attribute layer (`src/shared/governedKeys.ts`) — partitioning the keyspace with no reserved-name blocklist. Recognizing a key is not resolving one; a key registers as a live value only on a registry match.
+- **Sweeps and journals.** Governed-key sweeps — the writes that touch many files because a property or Context changed — share one walk (enumerate, lock, admission-check, decide, write only what changed), open only the files the content index names as candidates, and confirm each under its own lock. Multi-file schema and Context operations serialize on one chain and write a crash journal first — intent to disk before action — so an interrupted rename is finished by the next open's replay rather than left half-applied.[^5]
+- **Connections.** One mention scanner covers the three link syntaxes, code-masked, and one rewriter applies a rename.[^6]
 
-Every change funnels through one dispatcher (`mutate`) in main: it resolves and checks paths, refuses reserved targets, and routes each operation to its implementation. Cascade policy is stated beside it once — a page rename reverts if its link rewrite fails; a Context delete unlinks its Spaces before the folder moves to the trash. Governed-key sweeps — the writes that touch many files because a property or Context changed — share one walk (enumerate, lock, admission-check, decide, write only what changed) with scope and capture as parameters.
+#### II. The Atomic-Write Contract
 
-Multi-file schema and Context operations serialize on one chain and write a crash journal first — intent-to-disk before action — so an interrupted rename is finished by the next open's replay rather than left half-applied. Connections have one mention scanner (three syntaxes, code-masked) and one rewriter; a rename opens only the files the content index names as candidates and confirms each under that file's own lock, with a full scan as the fallback when no index exists.
+Every file write goes through an atomic path — temp file plus rename (`src/main/io/atomicWrite.ts`) — leaving either the whole old file or the whole new file after a crash. Pages write through the YAML-and-Markdown engine, which places the body directly after the closing fence and re-serializes only the modeled keys; sidecars, Contexts, Settings, and the Homepage write as JSON. Atomicity prevents a torn file; serialization prevents a lost update: every read-modify-write runs under a lock keyed on the file it rewrites (`src/main/io/fileLock.ts`) and reads fresh inside that lock, so two writers to one file queue. A page's path key is shared by its body write, its property writes, and its rename or move; a container's sidecar key is taken by every writer of that file. The locks are process state, and the app holds a single-instance lock, so a relaunch raises the existing window.
 
-#### The Atomic-Write Contract
+Autosave belongs to one path-keyed flush registry shared by every editor host: edits debounce per page path, any path flushes on demand, and everything flushes on teardown, Nexus switch, and window close.
 
-Every file write goes through an atomic path — temp-file plus rename, leaving either the whole old file or the whole new file after a crash:
+#### II. The Device-Local Database
 
-- **YAML + Markdown write** — Pages. The body follows the closing fence directly, with no separator blank line. Only modeled keys are re-serialized; every foreign frontmatter key and comment survives by value.
-- **JSON write** — sidecars, Contexts, Settings, Homepage.
-- **Schema transaction** — multi-file commits that succeed or fail as a unit, such as a Collection-scoped property delete or a lossy type change: stage every payload to a temp sibling, rename each over its target, and roll the filesystem back on any failure. The nexus-wide property delete runs per-file over a `.trash` snapshot instead.
+**SOURCE:** `src/main/db/schema.ts` · `src/main/db/localState.ts` · `src/main/indexSeed.ts`
 
-Atomicity prevents a file from being torn; serialization prevents an update from being lost. Every read-modify-write runs under a lock keyed on the file it rewrites and reads fresh inside that lock, queueing two writers to one file. The JSON primitive takes the lock itself, deriving the key from the path it writes; a write needing a wider span — most often a schema-validated read — holds the lock at the caller over the read/write pair. A page's path key is shared by its body write, its property writes, and the relocate, rename, or move performed; a container's sidecar key is taken by every writer of that file.
+`nexus.db` lives inside the Nexus, so a moved or renamed folder keeps it, but it never syncs: it holds what is true of this computer's session rather than of the content. It has two roles. **Operational state** is a keyed store (`local_state`) of per-machine chrome — folds, the active view and manual order per container, heading columns and the header icon, footnotes overrides, embed heights and zooms, aliases, fetched link titles, block documents, the tab set, the preview sets, the recents stream, the record baseline, the hover card size, and device preferences — each change a single-row upsert, an empty value deleting its key. **The content index** (`mentions`, `page_values`, `indexed_files`) records which pages mention which titles and which governed keys and values each page carries. It is derived state, disposable by construction: the open-time seed rebuilds it from the corpus, reading only files whose mtime or size moved since they were last indexed, over the same set of files the sweeps rewrite (`corpusFiles`), so "indexed" and "rewritable" name one set. A query answers null when there is no index and its caller falls back to a full scan.
 
-The locks are process-state, and the app holds a single-instance lock — a relaunch raises the existing window, and a process may own many windows.
+The schema grows without migrations — additive tables reach existing files on open — and a version mismatch on an existing table's shape deletes the file and starts clean, costing a machine its chrome once. On the file side, nothing on disk carries a schema version: sidecars decode loosely, a version key an outside tool adds survives as a foreign key, and `settings.json` is written into existence by the first write that needs it, every read tolerating its absence.
 
-**Page save contract.** The editor binds only to `body`; frontmatter is held as a typed struct and re-serialized on save. Autosave belongs to one path-keyed flush registry shared by every editor host — edits debounce per page path, any path flushes on demand, and everything flushes on teardown, nexus switch, and window close.
+#### II. The File Watcher
 
-#### The Device-Local Database
+Out-of-band changes — Obsidian, vim, Finder, cloud sync — reach the app without a restart through a recursive watch on the Nexus root (`src/main/watcher.ts`). The database and its WAL siblings, `.trash`, `node_modules`, dotfile cruft, block-host content folders, and the user's excluded folders are ignored at intake; `.nexus/` itself stays watched, since Contexts, settings, and ordering live there, and so does the asset directory. Every in-app write records itself and the watcher skips recorded paths, since in-app changes confirm through their own channels; between writes, the newest on-disk state wins. Events accumulate through a debounced settle, then classify: a page created, edited, or deleted, a sidecar edited, and the settings and homepage leaves each patch the live tree at the cost of one file read, an asset event patches that folder's listing, and everything unclassifiable — directory changes, the registries, orderings, a sidecar appearing or vanishing — falls back to one verification walk that re-parses only entries whose mtime or size changed. The resulting tree pushes whole when it changed, where structural sharing collapses echoes to no re-renders. Identity survives an external rename because the id rides in the file itself.
 
-**SOURCE:** `Pommora/src/main/db/schema.ts` · `Pommora/src/main/db/driver.ts` · `Pommora/src/main/indexSeed.ts`
+#### II. Adoption
 
-A database file lives inside the Nexus itself, so moving or renaming the folder leaves it intact and travelling with its content. It holds two things: the state that belongs to this machine, and an index of what the Nexus's pages say.
+Opening a folder as a Nexus runs an idempotent, best-effort pass (`src/main/adopt.ts`) that stamps a real ULID into every entity still lacking one: a raw folder gets its sidecar, an externally authored page gets its kind's id key, and nothing stamped depends on a sibling having been stamped first. Root folders holding content become Collections and everything nested becomes a Set; excluded and hidden folders, empty sidecar-less folders, and anything the resolver can't place are left alone. Every page and Set move passes one main-side check admitting only a Collection or a Set as its destination.
 
-Its structure grows without migrations. A database made before a feature existed gains that feature's storage the next time the app opens it, with every existing row untouched. Where the file cannot be written to at all — read-only media — the session simply carries on without the newest additions.
+**Kind authority is the folder's sidecar, and the file must agree with it.** A content file stores its id under the key naming its kind — `PageID`, `TaskID`, `EventID` (`src/shared/identity.ts`) — and admission is the one place every key is checked. Its answers are: the key agrees (a member), no key at all (adoptable, stamped at open, and read throughout under a synthetic id hashed from its path until the stamp lands), or **Unknown** — a key contradicting the folder, a value that can't be an identity, or two keys at once. Unknown is invisible and untouched: absent from the tree, skipped by every nexus-wide write, left byte-identical on disk. A stray `.png` in a Collection gets the same treatment.
 
-**The content index** records which pages mention which titles and which property-wrapped frontmatter keys and values each page carries. It is derived state, disposable by construction: deleting `nexus.db` costs it nothing — the open-time seed rebuilds it from the corpus, reading only files whose `(mtime, size)` moved since they were last indexed and pruning paths the corpus no longer yields, so the full-corpus read happens once per database, ever. The corpus is the sweeps' own — every markdown file outside `.nexus`, `.trash`, and the user's excluded folders, un-adopted folders included — enumerated through one helper (`corpusFiles`), so "indexed" and "rewritable" name the same set of files, and mention extraction shares the cascade prefilter's parse, so a title the index recorded is exactly one the prefilter affirms. A query answers null when there is no index — no database handle, or tables that never landed — and its caller falls back to a full scan; an empty answer is a real one.
+#### II. Persistence
 
-**What lives here** is per-machine chrome — folded headings, the active view per container, manual row order under a sort, table heading columns, the fetched-title cache, the aliases each Page has been given, the tab set, the preview sets, the recents stream, and every block host's document; none of it is authored content, and two machines interleaving any of it has no correct answer. The alias record is the clearest statement of the boundary: the alias itself is written on-page in universal syntax, and what the database keeps is the accelerator that returns it.
+What Pommora remembers, and for how long. Four tiers, told by where a thing is written: the Nexus's own files travel with it, its database stays on the machine that made it, the app's own preferences sit outside every Nexus, and everything else lasts the run.
 
-**What doesn't:** pinned and favorites live in `navigation.json` — rarely written, and the one part of Navigation worth following a user across machines — as ordered arrays of bare `{kind, id}` refs written as a serialized patch. A markdown tile's body stays a file; it is prose and lives in the connections graph. Everything canonical — the registry, Contexts, settings, schemas, and each host's sidecar — stays a file, where a Nexus's meaning survives without Pommora.
+**Travels with the Nexus.** Written into `.nexus/` files, so a synced or copied Nexus arrives with all of it, and a hand edit from outside is read back live.
 
-A Pommora-governed frontmatter key is recognized by its wrap alone — `(Context)` for the organization layer, `<Property>` for the attribute layer — partitioning the keyspace with no reserved-name blocklist while every foreign key and comment survives a rewrite. Recognizing a key is not resolving one; a key registers as a live value only on a registry match.
+| State | Where it lives | What clears it |
+| --- | --- | --- |
+| Every setting in the Settings window | `settings.json` | Changing it; a row at its default stores no key |
+| Pins and Favorites | `navigation.json` | Unpinning or removing; an entry that stops resolving hides but is never dropped |
+| Property definitions and their order | `properties.json` | Editing the registry |
+| Top-level Collection order | `state.json` | Reordering |
+| Saved views and what a container is | Each container's own sidecar | Editing the view; deleting the container |
+| Page bodies, frontmatter, and their property values | The Markdown files themselves | Editing the page |
 
-Every operational-state action is a single statement — a change is a single-row upsert, and an empty value deletes its key. Navigation intent is the one operational write that goes to disk, and it keeps the before-quit gate deferred, delaying exit until the write settles.
+**Stays on this machine, inside the Nexus.** `nexus.db` sits beside those files and travels with a moved Nexus, but never syncs.
 
-**Versioned, not migrated.** A schema mismatch on open deletes the file and starts clean, costing a machine its chrome once — the schema stays small enough that the trade is worth it.
+| State | What it remembers | What clears it |
+| --- | --- | --- |
+| Tabs | The open set, which was active, and each tab's Back/Forward history as bare refs | Closing a tab; a schema-version change |
+| Folds | Which headings and lists are collapsed, per page | Unfolding; emptying the list deletes the row |
+| Embed heights · heading columns · header glyph · footnotes | Per-page editor chrome — a tile's dragged height and Scale, a table's heading column, whether the page shows its icon or its footnotes | Changing it back |
+| Active view and manual page order | Which saved view a container opens on, and the hand order inside it | Picking another view; reordering |
+| Preview and NavWindow tab sets | The floating window's tabs per origin page, and which preview was open | Closing the last tab of a set |
+| Recents | The navigation trail, most recent first, capped by roll-off | Roll-off |
+| Hover card size | The one universal preview-card size | Resizing it |
+| Fetched link titles | A URL's page title, so the same link never refetches | Nothing — a cached title is kept |
+| Dashboard blocks | Each block surface's layout and its blocks | Editing the surface |
+| Aliases | The names each page has been given, for the picker | Forgetting one from the picker |
+| The record baseline | What the last open saw, for the deletion record | The next open |
+| Use Native Menus | The one machine-level preference | Toggling it |
 
-#### The File Watcher
+**Stays on this computer, outside every Nexus.** Belongs to the app rather than to any Nexus, so it holds no matter which one is open.
 
-Out-of-band changes — Obsidian, vim, Finder, cloud sync — reach the sidebar without a restart through a recursive watch on the Nexus root. The database and its WAL siblings, `.trash`, `node_modules`, dotfile cruft, block-host tile bodies, and the user's `excluded_folders` are ignored at intake; `.nexus/` itself stays watched, since Contexts, settings, and ordering live there, and so is the asset directory, which is tested ahead of every other skip so a folder named in `excluded_folders` still delivers its files.
+| State | What it remembers | What clears it |
+| --- | --- | --- |
+| The last Nexus opened, the recent Nexus list, and the trash mode | Where to reopen, and what deleting means | Opening another Nexus; the list rolls off at ten |
+| Sidebar and Inspector widths, and which sidebar sections are open | The shell's own proportions | Dragging them; an out-of-range value self-corrects on read |
+| Web sessions | Cookies, logins, and site storage for every embedded page, browser tab, and hover preview — one shared session | Nothing in the app clears it today |
 
-Every in-app write records itself, and the watcher skips recorded paths — in-app changes confirm through their own channels. Between writes, authority is recency: the newest on-disk state wins. Surviving events accumulate through a debounced settle, then classify: a page created, edited, or deleted, a container or Space sidecar edited, and the settings and homepage leaves each patch the live tree at the cost of one file read, while a note in an unadopted folder updates only its index rows. An asset event patches that folder's listing alone. Everything unclassifiable — directory changes, the registries, orderings, a sidecar appearing or vanishing, a scope change — falls back to one verification walk: every directory enumerated, every file statted, reads and parses run only for entries whose mtime or size has changed. A folder appearing under a name the walk hides is the one directory event that does not, since nothing the tree can hold could have arrived under it. The index reconciles on top of that walk only when the batch could have moved the corpus, so a walk forced by a registry edit leaves the index exactly as it already was. The resulting tree pushes whole over IPC when it changed, where structural sharing collapses echoes to zero re-renders. Identity survives an external rename because the id rides in the file itself.
+**Lasts the run.** Held in memory, gone when Pommora closes — the difference between returning to a page and rebuilding it.
 
-#### Adoption
+| State | What it remembers | What ends it |
+| --- | --- | --- |
+| Parked page surfaces | The two most recent page tabs stay built, held off screen, so a flip resumes them | A third tab taking the slot; closing the tab |
+| Warm tab state | Serialized editor state — text, caret, undo history — plus scroll, for every tab beyond the parked ones | Twenty entries per tab, then the oldest goes; closing the tab; an outside edit to that page |
+| Retained web guests | A scrolled-out or parked site stays alive, paused, keeping its scroll, typed input, and playing media | Five hidden guests, then the least recent is torn down |
+| Embed tile and preview-window warmth | The same editor state for tiles inside a page and for preview tabs | The page's body changing since capture; closing the preview window |
+| Pending page saves | A typed body waiting on its debounce, flushed on unmount, Nexus switch, and window close | The write landing |
 
-Opening a folder as a Nexus stamps every un-adopted entity with a real ULID — a raw folder gets its sidecar, an externally-authored page gets its kind's id key, and nothing stamped depends on a sibling having been stamped first. Root folders holding content become Page Collections and everything nested becomes a Set; excluded and hidden folders, empty sidecar-less folders, and anything the resolver can't place are left alone, and an unrecognized sidecar stays inert beside the one Pommora writes. A registered agenda singleton stamps its own direct `.md` members under the agenda kind and never recurses. The pass is silent, best-effort, idempotent, and safe to re-run on partial state.
-
-**A move is refused unless its destination holds pages.** Every page and Set move passes one main-side check admitting only a Collection or a Set — not the nexus root, not an agenda singleton, not a folder the resolver can't place.
-
-**Kind authority is the folder's sidecar, and the file must agree with it.** A content file stores its id under the key naming its kind — `PageID`, `TaskID`, `EventID`. Admission is the one place every key is checked, since telling a mismatched file from a missing one is a multi-key question. Its answers are: the key agrees (a member), no key at all (adoptable, stamped at open), or **Unknown** — a key contradicting the folder, a value that can't be an identity, or two keys at once.
-
-**Unknown is invisible and untouched** — not an error, not surfaced, not indexed, never stamped over: absent from the tree, skipped by every nexus-wide write, left byte-identical on disk. A stray `.png` in a Collection gets the same treatment. A file with no key is the opposite case and is admitted throughout — identity decides whether a value can be handed back, never whether it may be cleared.
-
-#### Migration
-
-The database side is covered above — a version mismatch deletes the file and starts clean. On the file side, nothing on disk carries a schema version and no migration runs: sidecars decode loosely, a version key an outside tool adds survives as an ordinary foreign key, and property values are name-keyed at the frontmatter root, rewritten in place by the rename sweep rather than by a versioned pass. `settings.json` is written into existence by the first write that needs it and holds only what was written; every read tolerates its absence and falls back per field.
+Deliberately never kept: the window opens at one size every launch, and floating windows re-center rather than reopening where they were left, since a remembered position strands chrome off screen when the display changes.
 
 ### The Process Boundary
 
-#### The Bridge
+**The Bridge.** Every channel between the window and main is declared once, in a types-only map (`src/shared/bridge.ts`): its direction, what it carries, and what it answers with. The preload derives its entire API from that map with one dialer per declared name, and main registers every handler through one loop that demands a handler per channel, so a channel on only one side or a drifted signature is a build error. Requests that read or write data always answer with the `Result` envelope — the value, or a structured refusal naming what went wrong — and never throw across the boundary; a few channels answer more plainly, such as a menu resolving to the action chosen or to nothing, and each declares that beside itself.
 
-**SOURCE:** `Pommora/src/shared/bridge.ts` · `Pommora/src/shared/result.ts` · `Pommora/src/main/ipc.ts` · `Pommora/src/preload`
+**Native Menus.** Right-click menus are native and pop from main; click-driven menus are in-house and drawn by the renderer. The native family is one chassis in three layers — a row shape every menu model emits, a pop-and-resolve primitive, and a model-to-template converter — with each menu a thin adapter over it, and the labels and gating living in shared, tested models under `src/shared/*Menu.ts`, so the renderer and main can't disagree about what a menu says.
 
-Every channel between the window and main is declared once, in a types-only map: its direction, what it carries, and what it answers with. The preload derives its entire API from that map with one dialer per declared name, and main registers every handler through one loop that demands a handler per channel — a channel that exists on only one side, or a handler whose signature drifts, is a build error rather than a failure at runtime.
-
-Requests that read or write data always answer, never fail outright. An answer carries either the value or a structured refusal naming what went wrong and where, so a surface can report a refusal in its own terms instead of the window falling over. A few channels answer more plainly — a menu resolving to the action a person chose or to nothing at all, a lookup whose absence is itself the answer — and each handler declares that boundary policy beside itself.
-
-The declaration holds types alone and no running code, which is what lets the sandboxed layer between the two processes stay as thin as it is.
-
-#### Native Menus
-
-Right-click menus are native and pop from main; click-driven menus are in-house and drawn by the renderer — that selector, not preference, decides which family a menu belongs to. The native family is one chassis in three layers: a row shape every menu model emits, a pop-and-resolve primitive stated once, and a model-to-template converter. Each individual menu is a thin adapter over that chassis, and the labels and gating live in shared, tested models — so the renderer and main cannot disagree about what a menu says or when a row is offered.
-
-#### The Push Path
-
-Change flows one way. The renderer asks; main writes, confirms against its live tree, and when the tree moved, pushes it whole to the window on one channel — the write-confirmation path and the watcher share that single funnel. The renderer's structural-sharing pass then collapses unchanged subtrees to their previous identities, so an echoed push re-renders nothing and a real change re-renders only what moved.
+**The Push Path.** Change flows one way. The renderer asks; main writes, confirms against its live tree, and when the tree moved pushes it whole to the window on one channel — the write-confirmation path and the watcher share that funnel. The renderer's structural-sharing pass then collapses unchanged subtrees to their previous identities, so an echoed push re-renders nothing and a real change re-renders only what moved.
 
 ### The Renderer
 
-#### The Store
+**The Store.** One Zustand store (`src/renderer/src/store.ts`) is the renderer's shared room: the tree, the selection, tabs and their histories, the open page, navigation state, the floating windows, and personalization live together, so features react to each other without private channels. Surfaces subscribe field by field, never wholesale, so a change repaints its readers alone. The store is per-window working state: main owns the data, and the store caches what main last confirmed.
 
-One Zustand store is the renderer's shared room: the tree, the selection, tabs and their histories, the open page, navigation state, the floating preview, and personalization live together, so features react to each other without private channels — the shape that retired a whole class of two-copies bugs. Surfaces subscribe field-by-field, never wholesale, so a change repaints its readers alone. The store is per-window working state: main owns the data, and the store caches what main last confirmed, patched optimistically ahead of the round trip.
+**Tabs, Warmth, and Navigation.** Tabs are a pure, tested model — unpinned tabs are the persisted row, pinned tabs derive live from their pin references, and each tab owns its history stack. Warmth lives outside React, as per-tab snapshots plus a path-keyed detail slot with a single shared fetch, so revisiting a page resumes instead of reloading, and the most recent page tabs keep their whole surface mounted off screen. Recents, pins, and favorites are bare references resolved against the live tree at render time, which is what makes them rename-proof.[^7]
 
-#### Tabs, Warmth, and Navigation
+**The View Pipeline.** A Collection renders through one pure pipeline — columns, filter, group, sort — that takes its view, rows, and schema as inputs and knows nothing about where they came from, so a full page and an embedded tile run the same code. Table and Cards are the two shipped renderers over it, sharing the band chrome, creation engine, and ordering machinery. Value edits are optimistic: the renderer patches a local override immediately, the mutation confirms through main, and the confirmed tree agrees with what was drawn.[^8]
 
-Tabs are a pure, tested model: unpinned tabs are the persisted row, pinned tabs derive live from their pin references against the tree, and each tab owns its history stack. Warmth lives outside React — per-tab snapshots plus a path-keyed detail slot with a single shared fetch — so revisiting a page resumes instead of reloading, and the most recent page tabs keep their whole surface mounted off-screen, which is what lets an embedded website survive a tab flip. Recents, pins, and favorites are bare `{kind, id}` references resolved against the live tree at render time, which is what makes them rename-proof: the reference never stored the title it displays.
+**The Editor.** MarkdownPM is a CodeMirror 6 editor whose central law is a single cached document model: everything the editor knows about a document's structure derives once per version, every feature reads the same answers, and line chrome, widgets, and the spans a caret must skip are emitted from one intent stream. Tables and embeds render as live widgets over canonical Markdown source, with transaction guards refusing or repairing edits that would corrupt a construct.[^9]
 
-#### The View Pipeline
+**Embeds and Floating Windows.** One `PageEmbed` renders a real page inside any foreign surface — the floating preview, the NavWindow, hover cards, dashboard tiles, and the editor's `![[Title]]` widget are the same component — and an edit made anywhere routes through the page's own save path. Floating windows share one chassis, `PreviewPane`, mounted by the page preview, the NavWindow, the in-app browser, and Settings; hover cards ride the lighter menu chassis instead. Live websites are webview guests governed by one main-side owner and one renderer adjudicator deciding where every external link opens.[^10]
 
-A Collection renders through one pure pipeline — columns, filter, group, sort — that takes its view, rows, and schema as inputs and knows nothing about where they came from, so a full page and an embedded tile run the same code. The pipeline's output is a row model a renderer draws; Table and Cards are the two shipped renderers over it, sharing the band chrome, creation engine, and ordering machinery. View definitions save on the container's sidecar; the active choice and manual tiebreak order are per-machine. Value edits are optimistic: the renderer patches a local override immediately, the mutation confirms through main, and the confirmed tree agrees with what was already drawn.
-
-#### The Editor
-
-MarkdownPM is a CodeMirror 6 editor whose central law is a single cached document model: everything the editor knows about a document's structure — code fences, tables, callouts, math, embeds, the citations section — derives once per document version, and every feature reads the same answers, with construct exclusion ("a `$$` inside a fence is code") assembled in exactly one place. Line chrome, widgets, and the spans a caret must skip are emitted from one intent stream, so what is drawn and what the caret respects are one fact. Tables and embeds render as live widgets over canonical Markdown source, with transaction-layer guards refusing or repairing edits that would corrupt a construct. The bytes on disk stay plain CommonMark/GFM throughout — every widget is presentation over source, never a second format.
-
-#### Embeds and Floating Windows
-
-One `PageEmbed` renders a real page inside any foreign surface — the floating preview, the navigation window, hover cards, dashboard tiles, and the editor's `![[Title]]` widget are the same component — and an edit made anywhere routes through the page's own save path. Floating windows share one chassis (`PreviewPane`: glass, per-window geometry, side panes, footer) mounted by the page preview, the navigation window, the in-app browser, and Settings; hover cards ride the lighter menu chassis instead, because a hover affordance must never steal a click or take focus. Live websites are webview guests governed by one main-side owner (attach validation, popup routing, zoom sync) and one renderer adjudicator deciding where every external link opens; all guests share one persistent session partition per machine.
-
-#### The Design System
-
-Every color, size, weight, and duration is a token defined once in TypeScript and republished as CSS variables, so stylesheets and components read the same source; feature CSS consumes tokens rather than values. Glass is one frost recipe in three semantic tiers; floating panes share one anchored shell with collision handling and dismissal; menu rows share one primitive. PommoraDND is the in-house drag engine — a gesture layer that tells clicks from drags, displacement engines for lists and boards, and composable primitives (frozen geometry snapshots, one app-wide autoscroll, shared drop-line and ghost chrome) that insertion-style drags assemble with their own drop math. The deployed showcase renders the system from the same sources, so it cannot drift from the app.
+**The Design System.** Every color, size, weight, and duration is a token defined once in TypeScript and republished as CSS variables, so stylesheets and components read one source. Glass is one frost recipe in three semantic tiers; floating panes share one anchored shell; menu rows share one primitive. PommoraDND is the in-house drag engine, and the deployed showcase renders the system from the same sources.[^11]
 
 ### What the Data Layer Leaves to the OS
 
 - **Versioning, file history, backup** — Time Machine, `git` on the Nexus, filesystem snapshots. In-session undo comes from the editor.
-- **Cross-device sync** — placing the Nexus in a synced folder gives device-to-device sync; real cloud sync is a long-term Prospect.
+- **Cross-device sync** — placing the Nexus in a synced folder gives device-to-device sync; real cloud sync is a long-term prospect.
 
-### Known Issues
+---
+
+#### Known Issues
 
 - **A locked or mid-sync database file runs the session without persisted state.** Only a healthy, open report of the wrong schema version earns the delete-and-restart; a file that fails to open at all stays put until a later launch reads it.
 
-### Pending
+#### Pending
 
 - **Folder-exclusion editing UI** — `excluded_folders` is hand-edited; its Settings surface is deferred.
 - **Index consumers** — Linked-From, backlinks, ContextView membership, and full-text search each ride the content index as their own arcs; the FTS table is the one piece of schema still unwritten.
+- **Agenda** — the item format, the field vocabulary, ordering, and every surface, under the four decisions in §The Agenda Singletons.
+
+[^1]: [[PommoraPRD]] §Storage Philosophy
+[^2]: [[CollectionsPM]] §Page Sets
+[^3]: [[ConfigurationPM]] §Files & Links
+[^4]: [[ContextsPM]] §Writes · [[NexusRecordPM]]
+[^5]: [[PropertiesPM]] §Shared Mechanisms
+[^6]: [[ConnectionsPM]] §The Rename Cascade
+[^7]: [[NavigationPM]]
+[^8]: [[ViewTypesPM]]
+[^9]: [[MarkdownPM]]
+[^10]: [[SurfacePM]] §The Embed Framework · [[InterfacePM]] §Floating Windows · [[WebviewPM]]
+[^11]: [[DesignSystemPM]] · [[PommoraDND]]
