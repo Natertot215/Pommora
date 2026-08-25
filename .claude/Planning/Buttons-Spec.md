@@ -59,4 +59,4 @@ Two modifiers ride beside the recipe, since they are states rather than types: `
 
 ### Strays (app `Components/`)
 
-Move: `PaneSlider` → `DesignSystem/Components/` (already slated), `Surface.tsx` → `Materials/` (or a `GlassSurface` prop), `PhotoCropModal` → `DesignSystem/Detail/`. Stay: `EyeToggle`, `DashIcon`, `InlineEditHeader`, `OptionRow`, `GhostOptionChip`, `PickerControl` — property-editor pieces on the pane's own stylesheet, bundle 6a's feature folder.
+Move: `PaneSlider` → `DesignSystem/Components/` (already slated), `Surface.tsx` → `Materials/` (or a `GlassSurface` prop), `PhotoCropModal` → `DesignSystem/Components/`. Stay: `EyeToggle`, `DashIcon`, `InlineEditHeader`, `OptionRow`, `GhostOptionChip`, `PickerControl` — property-editor pieces on the pane's own stylesheet, bundle 6a's feature folder.

@@ -13,7 +13,7 @@ import { cellColor } from '@renderer/DesignSystem/Tokens/ramp'
 import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import { useSession } from '../../store'
 import { findSpace } from '../Scope'
-import { IconPicker } from '../../Components/IconPicker'
+import { IconPicker } from '@renderer/Settings/IconPicker'
 import { ColorPicker } from '@renderer/DesignSystem/Components/Pickers/ColorPicker/ColorPicker'
 import { InlineEditHeader } from '../../Components/Detail/InlineEditHeader'
 

@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import type { MutableKind } from '@shared/mutate'
 import { DEFAULT_NEXUS_ICON, Icon, entityIcon } from '@renderer/DesignSystem/Symbols'
-import { IconPicker } from '@renderer/Components/IconPicker'
+import { IconPicker } from '@renderer/Settings/IconPicker'
 import { useAssetUrl, useSession } from '../../store'
 import { isSurfaceKind, type BannerOwner } from '../Scope'
 import { DetailTitleHeader } from '../DetailTitleHeader'

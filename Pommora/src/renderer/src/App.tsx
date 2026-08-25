@@ -261,12 +261,7 @@ export function App(): React.JSX.Element {
         {status === 'empty' && (
           <div className="state">
             No Nexus Open
-            <Button
-              size="button-small"
-              label="Open Folder…"
-              className="open-btn"
-              onClick={() => void choose()}
-            />
+            <Button label="Open Folder…" className="open-btn" onClick={() => void choose()} />
           </div>
         )}
         {status === 'error' && (

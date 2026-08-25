@@ -189,9 +189,7 @@ textarea,
   opacity: var(--state-inactive);
 }
 
-/* Interim empty-state CTA — matches the app's white-alpha chrome; replace with the design-system
-   Button when that component ships. no-drag: it sits in the draggable glass Surface, so it must
-   opt out to receive clicks. */
+/* no-drag: it sits in the draggable glass Surface, so it must opt out to receive clicks. */
 .open-btn {
   -webkit-app-region: no-drag;
   margin: 12px auto 0;

@@ -95,8 +95,8 @@ Chrome is produced in two stages, and only the second was scoped. The **derivati
 
 #### II. Bundle 6a — `Components/Detail` Rehome · one session, quiet tree · net ≈ 0
 
-- [x] **`EditableInput` and `ColorPicker` have moved into the design system** ahead of the rehome — `EditableInput` into `DesignSystem/Components/Fields/`, `ColorPicker` into `DesignSystem/Components/ColorPicker/`. Both had consumers inside the design system, so the rehome no longer carries a design-system dependency into a feature domain. The chip family moved earlier, as `DesignSystem/Labels/`.
-- [ ] **The view-settings/property-editing subsystem moves out of `Components/`** to its own domain folder beside `Detail/`; `PaneSlider` is promoted into `DesignSystem/` where its imports already live; the CLAUDE.md codebase map updates. `git mv` plus import churn; typecheck catches every miss.
+- [x] **`EditableInput` and `ColorPicker` have moved into the design system** ahead of the rehome — `EditableInput` into `DesignSystem/Components/Fields/`, `ColorPicker` into `DesignSystem/Components/Pickers/ColorPicker/`. Both had consumers inside the design system, so the rehome no longer carries a design-system dependency into a feature domain. The chip family moved earlier, as `DesignSystem/Labels/`.
+- [ ] **The view-settings/property-editing subsystem moves out of `Components/`** to its own domain folder beside `Detail/`; `PaneSlider`, `PhotoCropModal`, `IconPicker` and `Surface` are already inside `DesignSystem/`; the CLAUDE.md codebase map updates. `git mv` plus import churn; typecheck catches every miss.
 
 **Verification:** gates; nothing behavioral moves.
 **Retires:** nothing listed — new work.
@@ -151,7 +151,7 @@ documents accumulated in the first place.
 
 **The constraint this queue inherited is met:** the two modules the design system imports —
 `EditableInput` and `ColorPicker` — now live inside it, in `DesignSystem/Components/Fields/` and
-`DesignSystem/Components/ColorPicker/`. Bundle 6a's rehome can carry `Components/Detail` into a feature
+`DesignSystem/Components/Pickers/ColorPicker/`. Bundle 6a's rehome can carry `Components/Detail` into a feature
 domain without dragging a design-system dependency along with it.
 
 ### I. Open Questions — Not Scheduled

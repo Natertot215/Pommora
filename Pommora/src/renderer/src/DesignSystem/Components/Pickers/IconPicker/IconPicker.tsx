@@ -7,18 +7,17 @@ import {
   useState,
 } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { PickerMenu } from '@renderer/DesignSystem/Components/Pickers/PickerMenu/PickerMenu'
-import { SearchField } from '@renderer/DesignSystem/Components/Fields'
-import { Icon } from '@renderer/DesignSystem/Symbols'
-import { lucideGlyph, searchIcons, type IconEntry } from '@renderer/DesignSystem/Symbols/AllSymbols'
-import { reorder, SortableZone, useDragItem } from '@renderer/DesignSystem/Interactions/drag'
-import { useSession } from '@renderer/store'
-import { cx } from '@renderer/DesignSystem/Util/cx'
+import { PickerMenu } from '../PickerMenu/PickerMenu'
+import { SearchField } from '../../Fields'
+import { Icon } from '../../../Symbols'
+import { lucideGlyph, searchIcons, type IconEntry } from '../../../Symbols/AllSymbols'
+import { reorder, SortableZone, useDragItem } from '../../../Interactions/drag'
+import { cx } from '../../../Util/cx'
 import * as s from './iconPicker.css'
 
 const { CELL } = s
 
-interface Props {
+export interface IconPickerProps {
   open: boolean
   onClose: () => void
   /** The element the pane anchors to (an icon glyph is an SVG, so `Element`, not just `HTMLElement`).
@@ -27,6 +26,14 @@ interface Props {
   value?: string
   onSelect?: (id: string) => void
   direction?: 'down' | 'up' | 'left' | 'right'
+  favorites: IconFavorites
+}
+
+export type IconFavorites = {
+  ids: string[]
+  onChange: (next: string[]) => void
+  /** The right-click menu; answers `'toggle'` when the favorite flips. */
+  onMenu?: (isFavorite: boolean) => Promise<'toggle' | null>
 }
 
 export function IconPicker({
@@ -36,10 +43,9 @@ export function IconPicker({
   value,
   onSelect,
   direction = 'down',
-}: Props): React.JSX.Element | null {
-  const favorites = useSession((st) => st.personalization.favoriteIcons)
-  const setPersonalization = useSession((st) => st.setPersonalization)
-  const favs = favorites ?? []
+  favorites,
+}: IconPickerProps): React.JSX.Element | null {
+  const favs = favorites.ids
 
   const [query, setQuery] = useState('')
   const filtered = useMemo(() => searchIcons(query), [query])
@@ -54,10 +60,9 @@ export function IconPicker({
 
   const toggleFav = useCallback(
     (id: string) => {
-      const next = favs.includes(id) ? favs.filter((f) => f !== id) : [...favs, id]
-      setPersonalization('favoriteIcons', next.length ? next : undefined)
+      favorites.onChange(favs.includes(id) ? favs.filter((f) => f !== id) : [...favs, id])
     },
-    [favs, setPersonalization],
+    [favs, favorites.onChange],
   )
   const reorderFavs = useCallback(
     (a: string, o: string) => {
@@ -66,17 +71,16 @@ export function IconPicker({
         a,
         o,
       ).map((x) => x.id)
-      setPersonalization('favoriteIcons', next)
+      favorites.onChange(next)
     },
-    [favs, setPersonalization],
+    [favs, favorites.onChange],
   )
 
   // Right-click ⇒ the native Favorite/Remove menu (main-owned); the renderer applies the toggle.
   const openContext = useCallback(
     async (e: MouseEvent, id: string) => {
       e.preventDefault()
-      const res = await window.nexus.iconFavoriteMenu(favs.includes(id))
-      if (res === 'toggle') toggleFav(id)
+      if ((await favorites.onMenu?.(favs.includes(id))) === 'toggle') toggleFav(id)
     },
     [favs, toggleFav],
   )

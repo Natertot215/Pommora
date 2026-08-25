@@ -155,10 +155,6 @@ Hover and selected paint behind content, muted over it; the three opacities are 
 | Title             | Token                                          | Value                                                             |
 | ----------------- | ---------------------------------------------- | ----------------------------------------------------------------- |
 | Icon Ladder       | `size.icon.*` · `--icon-*` · `ICON_PX`         | Eleven steps named for the type ramp — `largeTitle` `26px` → `subline` `10px` |
-| Button Inline     | `size.control['button-inline']`                | h `20px` · segment `18px` · padX `2px` · label padX `4px` · radius `5px` · icon `control` — the row affordances |
-| Button Small      | `size.control['button-small']`                 | h `24px` · segment `20px` · padX `4px` · radius `8px` · icon `body`  |
-| Button Medium     | `size.control['button-medium']`                | h `28px` · segment `24px` · padX `5px` · radius `10px` · icon `title3` |
-| Button Large      | `size.control['button-large']`                 | h `32px` · segment `28px` · padX `8px` · radius `12px` · icon `title3` |
 | Pill Radius       | `RADIUS_FULL` · `--radius-full`                | `999px`                                                           |
 | Container Title   | `CONTAINER_TITLE_SIZE` · `--container-title-size` | `20px`                                                         |
 | Disclosure Indent | `DISCLOSURE_INDENT` · `--disclosure-indent`    | `14px`                                                            |
@@ -235,12 +231,12 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 
 `Elements/` — the atomic bits every surface composes; each is one folder with a style sheet and, where needed, a component.
 
-| Title       | Export                                                  | What it is                                                                 |
-| ----------- | ------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Title | Export | What it is |
+| --------------- | -------------------------------- | ----------------------------------------------------- |
 | DropOutline | `dropOutline` · `dropOutlineOpen` · `dropOutlineSpacer` · `railRow` | The fold chevron and the rail that descends from its center, on `--disclosure-rail-x`. |
-| PathChevron | `PathChevron`                                           | The `›` between path segments; `tone` and `size` knobs.                    |
-| Segment     | `segment`                                               | The between-values pill — `--segment-width` / `--segment-color` override it. |
-| ProgressBar | `ProgressBar`                                           | A determinate bar on the accent.                                           |
+| PathChevron | `PathChevron` | The `›` between path segments; `tone` and `size` knobs. |
+| Segment | `segment` | The between-values pill — `--segment-width` / `--segment-color` override it. |
+| ProgressBar | `ProgressBar` | A determinate bar on the accent. |
 
 ### Components
 
@@ -248,14 +244,35 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 
 #### Controls
 
+`Controls/` — the atomic interactive pieces. `Button` is the recipe; the rest are the single-purpose controls beside it.
+
 | Title       | Export                                | What it is                                                     |
 | ----------- | ------------------------------------- | -------------------------------------------------------------- |
+| Button      | `Button`                              | `type` × `size` × content (icon · icon + label · label), with `outline` as an inset ring and the `revealOnHover` / `ghostRest` modifiers; hover only, never a selected state. |
+| Segmented   | `Segmented`                           | N Buttons of one type divided by `segment`; `glass` for the toolbar. |
 | Checkbox    | `Checkbox`                            | The box, on the accent or a chosen cell.                       |
 | DualSwitch  | `DualSwitch`                          | A boolean toggle with a sliding glass segment.                 |
 | ColorSwatch | `ColorSwatch`                         | The switch shape holding a color, anchoring a ColorPicker.     |
 | Slider      | `Slider`                              | Sliding number selection.                                      |
-| Button      | `Button`                              | `type` base · tinted · solid · filled · destructive, `size` from the four control bundles, `outline`, `revealOnHover`, `ghostRest`. |
-| Segmented   | `Segmented`                           | N Buttons of one type divided by `segment`; `glass` for the toolbar. |
+
+**Button Types** — one `--button-fill` / `--button-ink` / `--button-outline` triple per row; the hover is `state.hover` laid over the fill.
+
+| Type        | Fill                          | Text                          |
+| ----------- | ----------------------------- | ----------------------------- |
+| Base        | none                          | inherits                      |
+| Tinted      | accent @ `--tint-tertiary`    | accent                        |
+| Solid       | accent @ `--tint-primary`     | `--label-primary`             |
+| Filled      | `--fill-tertiary`             | `--label-primary`             |
+| Destructive | `--error` @ `--tint-tertiary` | `--error` @ `--tint-primary`  |
+
+**Button Sizes** — `size.control` in `Tokens/size.css.ts`; icon-only buttons take the ladder, labeled buttons take the bundle's label inset.
+
+| Title | Token | Value |
+| ---------- | ------------------- | ----------------------------------------------------------------------- |
+| Inline | `size.control['button-inline']` | h `20px` · segment `18px` · padX `2px` · label padX `4px` · radius `5px` · icon `control` — the row affordances |
+| Small | `size.control['button-small']` | h `24px` · segment `20px` · padX `4px` · label padX `12px` · radius `8px` · icon `body` |
+| Medium | `size.control['button-medium']` | h `28px` · segment `24px` · padX `5px` · label padX `12px` · radius `10px` · icon `title3` |
+| Large | `size.control['button-large']` | h `32px` · segment `28px` · padX `8px` · label padX `12px` · radius `12px` · icon `title3` |
 
 #### Pickers
 
@@ -264,6 +281,7 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 | PickerMenu     | `PickerMenu` · `PointMenu` · `PickerOption` | The rectangle every menu and picker mounts — anchoring, dismissal, focus, the scroll cap. |
 | CalendarPicker | `CalendarPicker`                           | Date and time selection.                                     |
 | ColorPicker    | `ColorPicker`                              | The 8×8 ramp grid; clicking the selected cell clears.        |
+| IconPicker     | `IconPicker` · `IconFavorites`             | The searchable glyph grid with a reorderable favorites strip; the app binds favorites through `Settings/IconPicker`. |
 | TextPicker     | `TextPicker`                               | A typed-value picker in the shared pane.                     |
 
 #### Menu
@@ -301,7 +319,6 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 | ---------- | ------------------------------------- | ----------------------------------------------------- |
 | PreviewPane | `Detail/PreviewPane` — `PreviewPane` | The floating window surface every in-app window mounts.[^1] |
 | SidePane | `Detail/SidePane` — `SidePane` · `sidePaneWidth` | A pane carried on a window's edge by `--io`. |
-| PhotoCropModal | `Detail/PhotoCropModal` — `PhotoCropModal` | The circular crop window behind every photo pick. |
 | Tile chassis | `Detail/tile-chassis.css` | The resizable tile frame SurfacePM and embeds share. |
 | Sidebar | app: `Sidebar/` | [[SidebarPM]] |
 | Tabs · Toolbar | app: `Tabs/` · `Toolbar/` | [[NavigationPM]] |
