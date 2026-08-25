@@ -12,10 +12,14 @@ import { subSetLabel, type NexusLabels } from './types'
 /** The mutate channel's reply — `created` appears only on the create ops; `renamed` only on
  *  page renames, carrying what actually landed (a from-create rename may disambiguate away
  *  from the requested name, and every consumer patches from the landed name, never the ask). */
-export type MutateReply = Result<{
+export interface MutateOutcome {
   created?: { id: string; path: string }
   renamed?: { path: string; name: string }
-}>
+  /** The `[[Name.ext]]` an image op adopted — so a re-pick's Save-hold waits for the seat's value
+   *  to reach it, and a dedup (adopted === the value already set) releases at once. */
+  adopted?: string
+}
+export type MutateReply = Result<MutateOutcome>
 
 /** The base name a "New …" action gives a fresh entity (main disambiguates collisions). */
 export const DEFAULT_NEW_NAME = 'Untitled'

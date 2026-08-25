@@ -172,6 +172,56 @@ describe('ImagePicker', () => {
     expect(onCancel).toHaveBeenCalled()
   })
 
+  it('stands down when a handled Escape has been prevented (the field cancels its own edit)', async () => {
+    useSession.setState({ assetMap: freshMap(), tree: treeWith({}) })
+    const onCancel = vi.fn()
+    await mount(
+      <ImagePicker
+        open
+        value="[[Cover.png]]"
+        shape="rect"
+        boxAspect={0.5}
+        onCancel={onCancel}
+        onSave={() => {}}
+      />,
+    )
+    const prevent = (e: Event): void => e.preventDefault()
+    window.addEventListener('keydown', prevent, { capture: true })
+    await act(async () =>
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', cancelable: true })),
+    )
+    window.removeEventListener('keydown', prevent, { capture: true })
+    expect(onCancel).not.toHaveBeenCalled()
+  })
+
+  it('a click or right-click inside the picker does not bubble to the surface that opened it', async () => {
+    useSession.setState({
+      assetMap: freshMap(),
+      tree: treeWith({ 'file-assets/Cover.png': STORED }),
+    })
+    const surfaceClick = vi.fn()
+    const surfaceMenu = vi.fn()
+    await mount(
+      // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: a stand-in for a card's open-on-click / right-click surface — the picker portals out but its events bubble the React tree back here
+      <div onClick={surfaceClick} onContextMenu={surfaceMenu}>
+        <ImagePicker
+          open
+          value="[[Cover.png]]"
+          shape="rect"
+          boxAspect={0.5}
+          onCancel={() => {}}
+          onSave={() => {}}
+        />
+      </div>,
+    )
+    await loadImage()
+    const save = byText('Save')
+    await act(async () => save?.click())
+    await act(async () => save?.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true })))
+    expect(surfaceClick).not.toHaveBeenCalled()
+    expect(surfaceMenu).not.toHaveBeenCalled()
+  })
+
   it('holds Save while a re-picked image adopts, then releases even when the value is unchanged', async () => {
     const bothMap = {
       files: { 'cover.png': ['file-assets/Cover.png'], 'new.png': ['file-assets/New.png'] },
@@ -179,8 +229,8 @@ describe('ImagePicker', () => {
     }
     useSession.setState({ assetMap: bothMap, tree: treeWith({ 'file-assets/Cover.png': STORED }) })
     ;(window as { nexus?: unknown }).nexus = { pickFile: () => Promise.resolve('/abs/New.png') }
-    let settle: (ok: boolean) => void = () => {}
-    const onRepick = vi.fn(() => new Promise<boolean>((resolve) => (settle = resolve)))
+    let settle: (landed: string | undefined) => void = () => {}
+    const onRepick = vi.fn(() => new Promise<string | undefined>((resolve) => (settle = resolve)))
     const base = {
       open: true as const,
       shape: 'rect' as const,
@@ -196,18 +246,55 @@ describe('ImagePicker', () => {
     await act(async () => {})
     expect(onRepick).toHaveBeenCalledWith('/abs/New.png')
     expect((byText('Save') as HTMLButtonElement).disabled).toBe(true)
-    // A dedup adopt of the already-set image writes back the same value, so no value change comes.
-    // The hold must release on the adopt resolving, or Save deadlocks against a change that never lands.
-    await act(async () => settle(true))
+    // A dedup adopt lands on the value already shown, so no value change is coming; the hold
+    // releases at once rather than deadlocking against a change that never lands.
+    await act(async () => settle('[[Cover.png]]'))
     expect((byText('Save') as HTMLButtonElement).disabled).toBe(false)
     ;(window as { nexus?: unknown }).nexus = undefined
   })
 
-  it('the colour input lands on draft.color, which Save reports', async () => {
+  it('holds Save after a re-pick until the seat’s value reaches the adopted image', async () => {
+    const bothMap = {
+      files: { 'cover.png': ['file-assets/Cover.png'], 'new.png': ['file-assets/New.png'] },
+      version: ver++,
+    }
+    useSession.setState({ assetMap: bothMap, tree: treeWith({ 'file-assets/Cover.png': STORED }) })
+    ;(window as { nexus?: unknown }).nexus = { pickFile: () => Promise.resolve('/abs/New.png') }
+    let settle: (landed: string | undefined) => void = () => {}
+    const onRepick = vi.fn(() => new Promise<string | undefined>((resolve) => (settle = resolve)))
+    const base = {
+      open: true as const,
+      shape: 'rect' as const,
+      boxAspect: 0.5,
+      onCancel: () => {},
+      onSave: () => {},
+      onRepick,
+    }
+    await mount(<ImagePicker value="[[Cover.png]]" {...base} />)
+    await loadImage()
+    await act(async () => byLabel('Choose Image')?.click())
+    // The adopt lands on a different image than the seat currently shows.
+    await act(async () => settle('[[New.png]]'))
+    // Save stays held — a crop now would write to the old image, before the new one lands.
+    expect((byText('Save') as HTMLButtonElement).disabled).toBe(true)
+    // The seat's value reaches the adopted image → the hold releases.
+    await mount(<ImagePicker value="[[New.png]]" {...base} />)
+    await loadImage()
+    expect((byText('Save') as HTMLButtonElement).disabled).toBe(false)
+    ;(window as { nexus?: unknown }).nexus = undefined
+  })
+
+  it('the eyedropper lands its colour on draft.color, which Save reports', async () => {
     useSession.setState({
       assetMap: freshMap(),
       tree: treeWith({ 'file-assets/Cover.png': STORED }),
     })
+    class FakeEye {
+      open(): Promise<{ sRGBHex: string }> {
+        return Promise.resolve({ sRGBHex: '#ff0000' })
+      }
+    }
+    ;(window as { EyeDropper?: unknown }).EyeDropper = FakeEye
     const onSave = vi.fn()
     await mount(
       <ImagePicker
@@ -220,15 +307,10 @@ describe('ImagePicker', () => {
       />,
     )
     await loadImage()
-    const color = document.body.querySelector<HTMLInputElement>('input[type="color"]')
-    expect(color).not.toBeNull()
-    await act(async () => {
-      if (color) {
-        color.value = '#ff0000'
-        color.dispatchEvent(new Event('input', { bubbles: true }))
-      }
-    })
+    await act(async () => byLabel('Background')?.click())
+    await act(async () => {})
     await act(async () => byText('Save')?.click())
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ color: '#ff0000' }))
+    ;(window as { EyeDropper?: unknown }).EyeDropper = undefined
   })
 })
