@@ -1,4 +1,5 @@
 import { EntityIcon } from '@renderer/Components/EntityIcon'
+import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
 import { type ReactNode, useEffect, useRef } from 'react'
 import type { CollectionNode, ResolvedGroup, SetNode } from '@shared/types'
 import type { SavedView } from '@shared/views'
@@ -226,6 +227,7 @@ export function GroupBand({
               dragHandle?.isNestTarget && 'band-nest-target',
             )}
             onContextMenu={onContextMenu}
+            data-reveal-host
           >
             <button
               type="button"
@@ -262,17 +264,18 @@ export function GroupBand({
               {glyph}
             </span>
             {showAdd ? (
-              <button
-                type="button"
+              <Button
+                size="button-inline"
+                icon="plus"
+                iconSize="body"
+                revealOnHover
                 className="group-band-add"
                 tabIndex={-1}
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={onAdd}
                 data-create
                 aria-label="New page in group"
-              >
-                <Icon name="plus" size="body" />
-              </button>
+              />
             ) : null}
           </div>
         </div>

@@ -3,10 +3,10 @@
 // one webview owns the whole body on the shared partition. A summon while open retakes the window
 // in place; the singleton the page preview also is.
 import { useEffect, useRef, useState } from 'react'
+import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { overScrollEllipsis } from '@renderer/DesignSystem/Interactions/OverScroll'
 import { text } from '@renderer/DesignSystem/Tokens'
-import { Icon } from '@renderer/DesignSystem/Symbols'
 import { PreviewPane } from '@renderer/DesignSystem/Detail/PreviewPane/PreviewPane'
 import type { FloatingBounds } from '@renderer/DesignSystem/Interactions/FloatingWindow'
 import { linkDomain } from '@shared/links'
@@ -103,24 +103,24 @@ function BrowserWindowBody({
       ariaLabel="Browser"
       lead={
         <>
-          <button
-            type="button"
+          <Button
+            size="button-inline"
+            icon="chevron-left"
+            iconSize="body"
             className="ppane-action"
             title="Back"
             disabled={!nav.back}
             onClick={() => ref.current?.goBack()}
-          >
-            <Icon name="chevron-left" size="body" />
-          </button>
-          <button
-            type="button"
+          />
+          <Button
+            size="button-inline"
+            icon="chevron-right"
+            iconSize="body"
             className="ppane-action"
             title="Forward"
             disabled={!nav.forward}
             onClick={() => ref.current?.goForward()}
-          >
-            <Icon name="chevron-right" size="body" />
-          </button>
+          />
         </>
       }
       title={

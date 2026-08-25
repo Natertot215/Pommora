@@ -14,7 +14,7 @@ Figma: https://www.figma.com/design/fYZ5oiK7stC3diRhaBHl1r/Pommora---React?node-
 | Axis      | Values                                                         | Source                                              |
 | --------- | -------------------------------------------------------------- | --------------------------------------------------- |
 | `type`    | `base` · `tinted` · `solid` · `filled` · `destructive`         | fill + text tokens below                            |
-| `size`    | `button-small` · `button-medium` · `button-large`              | `size.control` — height, segment height, padX, radius, segment radius, divider height, icon step |
+| `size`    | `button-inline` · `button-small` · `button-medium` · `button-large` | `size.control` — height, segment height, padX, radius, segment radius, divider height, icon step |
 | content   | `icon` · `icon` + `label` · `label`                            | icon-only takes the size ladder; labeled buttons take the standard size |
 | `outline` | boolean                                                        | an inset ring in the type's own color, `--tint-quaternary` for the accent types, `label.quaternary` for base/filled |
 | `glass`   | boolean on `Segmented`, default off                                           | `GlassControls` wrapper — the toolbar only                                  |

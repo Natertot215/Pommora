@@ -155,6 +155,7 @@ Hover and selected paint behind content, muted over it; the three opacities are 
 | Title             | Token                                          | Value                                                             |
 | ----------------- | ---------------------------------------------- | ----------------------------------------------------------------- |
 | Icon Ladder       | `size.icon.*` · `--icon-*` · `ICON_PX`         | Eleven steps named for the type ramp — `largeTitle` `26px` → `subline` `10px` |
+| Button Inline     | `size.control['button-inline']`                | h `20px` · segment `18px` · padX `2px` · label padX `4px` · radius `5px` · icon `control` — the row affordances |
 | Button Small      | `size.control['button-small']`                 | h `24px` · segment `20px` · padX `4px` · radius `8px` · icon `body`  |
 | Button Medium     | `size.control['button-medium']`                | h `28px` · segment `24px` · padX `5px` · radius `10px` · icon `title3` |
 | Button Large      | `size.control['button-large']`                 | h `32px` · segment `28px` · padX `8px` · radius `12px` · icon `title3` |
@@ -253,7 +254,7 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 | DualSwitch  | `DualSwitch`                          | A boolean toggle with a sliding glass segment.                 |
 | ColorSwatch | `ColorSwatch`                         | The switch shape holding a color, anchoring a ColorPicker.     |
 | Slider      | `Slider`                              | Sliding number selection.                                      |
-| Button      | `Button`                              | `type` base · tinted · solid · filled · destructive, `size` on the icon ladder, `outline`, `revealOnHover`, `ghostRest`. |
+| Button      | `Button`                              | `type` base · tinted · solid · filled · destructive, `size` from the four control bundles, `outline`, `revealOnHover`, `ghostRest`. |
 | Segmented   | `Segmented`                           | N Buttons of one type divided by `segment`; `glass` for the toolbar. |
 
 #### Pickers

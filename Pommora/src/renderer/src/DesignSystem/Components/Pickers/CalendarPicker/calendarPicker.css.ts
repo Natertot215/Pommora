@@ -16,7 +16,7 @@ const bandFill = tintAt('var(--accent)', TINT_STEPS.tertiary)
 /* The picker's intrinsic width — the PickerMenu pane shrink-wraps this (+ its gutters). THE
    sizing knob; everything inside flows from it. textAlign resets the host's inheritance — a
    picker mounted inside a <button> trigger would otherwise center every label. */
-export const root = style({ width: '216px', textAlign: 'left' })
+export const root = style({ width: '215px', textAlign: 'left' })
 
 /* Content size changes (toggles, month row-count) ride the same beat as PaneSlider's viewport —
    the ViewPane feel: measured height, transition armed only after first paint so the pane opens
@@ -32,15 +32,10 @@ export const headDivider = style({
 })
 export const titleGroup = style({ flex: 1, display: 'flex', gap: '1px' })
 export const titleBtn = style({
-  all: 'unset',
   position: 'relative',
   fontSize: font.scale.body.size,
   fontWeight: font.weight.semibold,
   color: c.label.control,
-  padding: '2px 5px',
-  borderRadius: '5px',
-  transition: `background ${duration.fast} ${easing.baseEase}`,
-  selectors: { '&:hover': { background: c.state.hover } },
 })
 /* translateY nudges the chevron cluster up without costing the row any height. */
 export const nav = style({
@@ -50,17 +45,7 @@ export const nav = style({
   transform: 'translateY(-2px)',
 })
 export const navSegment = style([segment, { width: '1px', height: '12px' }])
-export const navBtn = style({
-  all: 'unset',
-  width: '24px',
-  height: '22px',
-  borderRadius: '6px',
-  display: 'grid',
-  placeItems: 'center',
-  color: c.label.secondary,
-  transition: `background ${duration.fast} ${easing.baseEase}`,
-  selectors: { '&:hover': { background: c.state.hover } },
-})
+export const navBtn = style({ width: '24px', color: c.label.secondary })
 
 export const ddWrap = style({ display: 'contents' })
 globalStyle(`${ddWrap} > div`, { zIndex: stack.top.menuOverlay, pointerEvents: 'auto' })
@@ -141,7 +126,7 @@ export const dayOut = style({ color: c.label.tertiary })
 export const pill = style({
   position: 'absolute',
   inset: '1px',
-  borderRadius: '7px',
+  borderRadius: '6px',
   zIndex: -1,
   selectors: { [`${day}:hover &`]: { background: c.state.hover } },
 })
@@ -222,7 +207,7 @@ export const timeSeg = style({
   all: 'unset',
   position: 'relative',
   padding: '1px 2px',
-  borderRadius: '5px',
+  borderRadius: '6px',
   fontSize: font.scale.control.size,
   fontWeight: font.weight.emphasized,
   color: c.label.primary,
@@ -238,7 +223,7 @@ export const timeSegInput = style([
     width: '2.4ch',
     textAlign: 'center',
     padding: '1px 4px',
-    borderRadius: '5px',
+    borderRadius: '6px',
     fontSize: font.scale.control.size,
     fontWeight: font.weight.emphasized,
     lineHeight: 'normal',
@@ -256,7 +241,8 @@ export const switchRow = style({
   display: 'flex',
   alignItems: 'center',
   minHeight: '28px',
-  padding: '0 2px',
+  // The head's inset, not the grid's — a footing row reads against the month title above it.
+  padding: '0 4px',
 })
 export const switchLabel = style({
   flex: 1,

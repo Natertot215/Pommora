@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
 import type { PropertyDefinition } from '@shared/properties'
 import { isBlankValue, propertyKey, type PropertyValue } from '@shared/propertyValue'
 import type { PageFrontmatter } from '@shared/schemas'
@@ -260,15 +261,15 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
           ),
         )}
         {(contextRows.some((t) => !isAssigned(t.id)) || schema.some((d) => !isAssigned(d.id))) && (
-          <button
-            type="button"
+          <Button
             ref={addRef}
-            className={cx('pgpreview-insp-add', text.footnote.standard)}
+            size="button-inline"
+            icon="plus"
+            iconSize="caption"
+            label="Add Property"
+            className="pgpreview-insp-add"
             onClick={() => setAddOpen(true)}
-          >
-            <Icon name="plus" size="caption" />
-            <span>Add Property</span>
-          </button>
+          />
         )}
       </div>
       <PickerMenu

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
 import { lockLabel } from '@shared/toggleLabels'
 import type {
   BlockEntry,
@@ -20,8 +21,8 @@ import {
   MenuSeparator,
 } from '@renderer/DesignSystem/Components/Menu'
 import {
-  footerAction,
   footerLockAction,
+  footingLabel,
   lockIcon,
   rowDisabled,
 } from '@renderer/DesignSystem/Components/Menu/menu.css'
@@ -65,14 +66,14 @@ function DrillLevel({
           footerNodes.length ? (
             <MenuBottomRow
               leading={footerNodes.map((n, i) => (
-                <button
+                <Button
                   key={`${n.label}-${String(i)}`}
-                  type="button"
-                  className={footerAction}
+                  size="button-inline"
+                  className={footingLabel}
                   onClick={n.pick === undefined ? undefined : () => resolve(n.pick)}
                 >
                   {n.label}
-                </button>
+                </Button>
               ))}
             />
           ) : undefined

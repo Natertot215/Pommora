@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type Ref } from 'react'
+import { Button } from '../../Components/Controls/Button'
 import { GlassWindow } from '../../Materials'
 import { Icon } from '../../Symbols'
 import { cx } from '../../Util/cx'
@@ -193,9 +194,14 @@ export function PreviewPane({
       <div className="ppane-toolbar">
         <div className="ppane-actions ppane-actions-lead">
           {onScan && (
-            <button type="button" className="ppane-action" title={scanLabel} onClick={onScan}>
-              <Icon name="scan" size="body" />
-            </button>
+            <Button
+              size="button-inline"
+              icon="scan"
+              iconSize="body"
+              className="ppane-action"
+              title={scanLabel}
+              onClick={onScan}
+            />
           )}
           {lead}
         </div>
@@ -204,9 +210,14 @@ export function PreviewPane({
         {title}
         <div className="ppane-actions ppane-actions-trail">
           {actions && <div className="ppane-actions-flow">{actions}</div>}
-          <button type="button" className="ppane-action" title="Close" onClick={onClose}>
-            <Icon name="x" size="body" />
-          </button>
+          <Button
+            size="button-inline"
+            icon="x"
+            iconSize="body"
+            className="ppane-action"
+            title="Close"
+            onClick={onClose}
+          />
         </div>
       </div>
       {body}

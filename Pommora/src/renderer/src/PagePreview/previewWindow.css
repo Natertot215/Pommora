@@ -122,16 +122,5 @@
    own); its picker borrows the Group/Sort property menu. */
 .pgpreview-insp-add {
   align-self: flex-start;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 4px;
-  border: none;
-  border-radius: 5px;
-  background: none;
   color: var(--label-tertiary);
-  cursor: pointer;
-}
-.pgpreview-insp-add:hover {
-  background: var(--state-hover);
 }

@@ -241,7 +241,7 @@
   width: 100%;
   overflow: visible;
 }
-/* A visible-but-empty property row's placeholder (Standard) — a "--" fill-me affordance in the label's
+/* A visible-but-empty property row's placeholder (Standard) — the properties pane's "—" fill-me affordance in the label's
    own emphasized tone (it reads as the row's empty half); the whole .card-value stays the click target. */
 .card-value-empty {
   padding: 0 var(--label-pad-x, 6px);

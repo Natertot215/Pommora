@@ -1,5 +1,7 @@
 import { useRef, useState, type ReactNode } from 'react'
+import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
 import { Icon, type IconName } from '@renderer/DesignSystem/Symbols'
+import type { IconSize } from '@renderer/DesignSystem/Tokens'
 import { useSession } from '../../store'
 import {
   DEFAULT_LINK_DISPLAY,
@@ -143,8 +145,11 @@ function ListGroups({
                     onRowMenu(d, 'all')
                   }}
                   trailing={
-                    <button
-                      type="button"
+                    <Button
+                      size="button-inline"
+                      paddingX="0"
+                      icon="plus"
+                      iconSize={s.ICON.rowPlus}
                       className={s.rowPlus}
                       data-create
                       aria-label={`Assign ${d.name}`}
@@ -152,9 +157,7 @@ function ListGroups({
                         e.stopPropagation()
                         onAssign(d.id)
                       }}
-                    >
-                      <Icon name="plus" size={s.ICON.rowPlus} />
-                    </button>
+                    />
                   }
                 >
                   {title(d)}
@@ -220,7 +223,7 @@ export function PropertiesPane({
     onBackClick: () => void,
     action: {
       icon: IconName
-      size: React.ComponentProps<typeof Icon>['size']
+      size: IconSize
       ariaLabel: string
       onClick: () => void
     },
@@ -229,17 +232,18 @@ export function PropertiesPane({
       label={label}
       onBack={onBackClick}
       trailing={
-        <button
-          type="button"
+        <Button
+          size="button-inline"
+          paddingX="0"
+          icon={action.icon}
+          iconSize={action.size}
           className={s.topRowAction}
           aria-label={action.ariaLabel}
           onClick={(e) => {
             e.stopPropagation()
             action.onClick()
           }}
-        >
-          <Icon name={action.icon} size={action.size} />
-        </button>
+        />
       }
     />
   )

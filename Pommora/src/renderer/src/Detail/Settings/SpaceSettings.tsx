@@ -1,13 +1,13 @@
 import { blockHostKey } from '@shared/blocks'
 import { lockLabel } from '@shared/toggleLabels'
 import { useRef, useState } from 'react'
-import { Icon, entityIcon } from '@renderer/DesignSystem/Symbols'
+import { entityIcon } from '@renderer/DesignSystem/Symbols'
 import {
   FooterLockButton,
+  FooterMoreButton,
   MenuBottomRow,
   MenuScrollFrame,
 } from '@renderer/DesignSystem/Components/Menu'
-import { footerLockAction } from '@renderer/DesignSystem/Components/Menu/menu.css'
 import { TINT_STEPS, tintAt } from '@renderer/DesignSystem/Tokens/tint'
 import { cellColor } from '@renderer/DesignSystem/Tokens/ramp'
 import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
@@ -68,11 +68,7 @@ export function SpaceSettingsContent({ id }: { id: string }): React.JSX.Element 
                 onToggle={() => void setHostLocked({ kind: 'space', id }, !locked)}
               />
             }
-            trailing={
-              <button type="button" aria-label="More actions" className={footerLockAction} disabled>
-                <Icon name="ellipsis" size="body" />
-              </button>
-            }
+            trailing={<FooterMoreButton disabled />}
           />
         }
       >

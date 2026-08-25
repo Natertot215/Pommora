@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { Button } from '../../Controls/Button'
 import { createPortal } from 'react-dom'
 import { Icon } from '../../../Symbols'
 import { DualSwitch } from '../../Controls/Switches/DualSwitch'
@@ -78,6 +79,10 @@ function SizeMorph({ children }: { children: ReactNode }): React.JSX.Element {
 // Local YYYY-MM-DD key (never toISOString — a UTC key shifts the day west of Greenwich; the
 // formatters parse date-only strings as LOCAL midnight, so the key must be minted locally too).
 const keyOf = (d: Date): string => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+
+/** KNOB — the Month/Year buttons' own inset. The size token's label padding is a pill's; here the two
+ *  read as one title, so the pair sits a word-space apart rather than two pills apart. */
+const TITLE_PAD_X = '2px'
 
 /** Display formats are INJECTED so the owning property's config stays the boss; times are
  *  display-only until the entry UX is designed. */
@@ -394,7 +399,7 @@ export function CalendarPicker({
     <div className={s.field} key={label}>
       <Icon name="calendar" size="body" className={s.fieldIcon} />
       <OverScroll className={s.fieldValue}>
-        {k ? formatDateValue(k, condensed) : <span className={s.fieldEmpty}>--</span>}
+        {k ? formatDateValue(k, condensed) : <span className={s.fieldEmpty}>—</span>}
       </OverScroll>
     </div>
   )
@@ -528,7 +533,7 @@ export function CalendarPicker({
           {twelve && ampmSegment(which, mins)}
         </span>
       ) : (
-        <span className={cx(s.fieldValue, s.fieldEmpty)}>--</span>
+        <span className={cx(s.fieldValue, s.fieldEmpty)}>—</span>
       )}
     </div>
   )
@@ -594,8 +599,9 @@ export function CalendarPicker({
       <SizeMorph>
         <div className={s.head}>
           <span className={s.titleGroup}>
-            <button
-              type="button"
+            <Button
+              size="button-inline"
+              paddingX={TITLE_PAD_X}
               className={s.titleBtn}
               onClick={(e) =>
                 setMenu(
@@ -605,9 +611,10 @@ export function CalendarPicker({
             >
               {cursor.toLocaleDateString('en-US', { month: 'long' })}
               {menu?.kind === 'month' && selectionMenu('month')}
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              size="button-inline"
+              paddingX={TITLE_PAD_X}
               className={s.titleBtn}
               onClick={(e) =>
                 setMenu(
@@ -617,26 +624,28 @@ export function CalendarPicker({
             >
               {year}
               {menu?.kind === 'year' && selectionMenu('year')}
-            </button>
+            </Button>
           </span>
           <span className={s.nav}>
-            <button
-              type="button"
+            <Button
+              size="button-inline"
+              paddingX="0"
+              icon="chevron-left"
+              iconSize="title3"
               className={s.navBtn}
               aria-label="Previous month"
               onClick={() => nav(-1)}
-            >
-              <Icon name="chevron-left" size="title3" />
-            </button>
+            />
             <span className={s.navSegment} aria-hidden />
-            <button
-              type="button"
+            <Button
+              size="button-inline"
+              paddingX="0"
+              icon="chevron-right"
+              iconSize="title3"
               className={s.navBtn}
               aria-label="Next month"
               onClick={() => nav(1)}
-            >
-              <Icon name="chevron-right" size="title3" />
-            </button>
+            />
           </span>
         </div>
         <div className={s.headDivider} />

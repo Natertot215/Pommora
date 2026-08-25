@@ -3,9 +3,9 @@ import { vars as colorVars } from '@renderer/DesignSystem/Tokens/color.css'
 import { text } from '@renderer/DesignSystem/Tokens/typography.css'
 import type { IconSize } from '@renderer/DesignSystem/Tokens/size.css'
 import { duration, easing } from '@renderer/DesignSystem/Animation'
+import { ghostRest } from '@renderer/DesignSystem/Components/Controls/Button/button.css'
 import {
   accessoryButton,
-  accessoryGhostRest,
   footingLabel,
   titleText,
 } from '@renderer/DesignSystem/Components/Menu/menu.css'
@@ -44,7 +44,6 @@ const OPTION = {
   gapAroundLabel: 6, // "Options" → first chip (the gap ABOVE "Options" is the header's own bottom pad)
   gapBetweenChips: 6,
   chipPadX: 6, // option chip horizontal padding — retunes the shared label default, this pane only
-  addBox: 20, // the "Options" + hit target (its glyph is ICON.optionsAdd)
   groupGap: 12, // status only: gap between one group's block (heading + chips) and the next
 }
 
@@ -128,7 +127,6 @@ export const topRowAction = style([
   {
     flex: '0 0 auto',
     width: `${SIZE.topRowActionWidth}px`,
-    height: 'auto',
     justifyContent: 'flex-end',
     selectors: { '&&': { color: c.label.secondary } },
   },
@@ -208,7 +206,7 @@ export const hiddenZone = style({ flex: '1 1 auto' })
  *  rides eyeHidden + resets its own opacity to 1, so it dims by ONLY the row's ghost (never double-dims). */
 export const eyeButton = style([
   accessoryButton,
-  accessoryGhostRest,
+  ghostRest,
   { selectors: { [`${hiddenRow} &`]: { color: COLOR.eyeHidden, opacity: 1 } } },
 ])
 export const eyeRestGlyph = style({
@@ -226,9 +224,12 @@ export const eyeHoverGlyph = style({
 export const eyeInert = style([
   accessoryButton,
   {
-    cursor: 'default',
+    width: '20px',
+    height: '20px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
     opacity: 'var(--state-ghost)',
-    selectors: { '&:hover': { background: 'transparent', opacity: 'var(--state-ghost)' } },
   },
 ])
 
@@ -282,10 +283,7 @@ export const optionsLabel = style([text.footnote.semibold, { color: COLOR.headin
 export const allPropertiesLabel = style([optionsLabel, { color: c.label.secondary }])
 
 /** The always-shown + that appends an option — the shared action-symbol color, brightening on hover. */
-export const optionsAdd = style([
-  accessoryButton,
-  { width: `${OPTION.addBox}px`, height: `${OPTION.addBox}px` },
-])
+export const optionsAdd = accessoryButton
 
 /** Status only — the per-group + . Reuses the "Options" + button, hidden until you hover the group
  *  (its heading or its chips), with a state-hover fill on direct hover; the `&&` clears
@@ -295,7 +293,6 @@ export const groupAdd = style([
   optionsAdd,
   {
     opacity: 0,
-    transition: `opacity ${duration.fast} ${easing.baseEase}, background ${duration.fast} ${easing.baseEase}`,
     selectors: {
       [`${statusGroup}:hover &`]: { opacity: 1 },
       '&&': { color: c.label.tertiary },
@@ -351,7 +348,6 @@ export const paletteButton = style([
   accessoryButton,
   {
     opacity: 0,
-    transition: `opacity ${duration.fast} ${easing.baseEase}, background ${duration.fast} ${easing.baseEase}`,
     selectors: {
       [`${optionRow}:hover &`]: { opacity: 'var(--state-ghost)' },
       [`${optionRow}:hover &:hover`]: { opacity: 1, background: COLOR.iconHover },
