@@ -4,55 +4,52 @@
 Webview
 ├── Webpage Embeds
 ├── Engagement & Retention
-├── Titles & The Grip
 ├── Link Opening
 ├── Web Sessions
+├── The Browser Window
 ├── Website Hover Previews
 └── Pending
 ```
 
-Webview is Pommora's web layer: live websites embedded in Page bodies, an in-app browser, one remembered web session, and live hover previews for website links. Every web surface renders through Electron's webview guests under one main-process governor — the attach validator, the popup router, and the zoom sync live in a single module, and no surface carries its own rules.
+Pommora's web layer: live websites embedded in Page bodies, an in-app browser, one remembered web session, and live hover previews for website links. Every web surface is an Electron webview guest under one main-process governor, `src/main/webGuests.ts`, which owns what an attach is allowed to be, which session guests live on, where their popups go, and how they track the host's zoom; no surface carries rules of its own. Exactly three renderer components mount a guest — the webpage tile, the browser window, and the hover card — all on the shared partition.
 
 ### Webpage Embeds
 
-A markdown link alone on its own line, carrying an explicit HTTP(S) scheme, is a webpage embed: the line renders as a live website tile on the shared [[SurfacePM|Embed Framework]] chassis, height-draggable and persisted per host and address like a page tile's. The document bytes stay plain CommonMark — the syntax is the image form, so a shared vault reads the line as an image reference pointing at a URL, a legible and translatable shape.[^1] A tile inside a nested surface — a page embed's body, a page shown in the hover card — renders its face unconditionally; only a page's own body runs live tiles.
+A markdown link alone on its own line with an explicit http(s) scheme is a webpage embed: `![Label](url)`, recognized by the grammar in `src/shared/webpageEmbed.ts` and rendered as a live website tile on the shared embed framework, height-draggable and persisted per host and address like a page tile.[^1] The document stays plain CommonMark; a shared vault reads the line as an image reference pointing at a URL. Formation is deliberate: a line the selection sits on stays raw text, and the tile forms when the selection departs, so typing an address never pulls a tile in under the caret. A tile is created through the context menu's **Embed ▸ Webpage**, through **Paste As ▸ Embedded Link** where a copied address meets a blank line, or by hand.
 
-Formation is deliberate: a line the selection sits on stays raw text, and the tile forms when the selection departs — typing an address never yanks a tile in under the caret. Creation runs through the context menu's **Embed ▸ Webpage** door, through **Paste As ▸ Embedded Link** where a copied address meets a blank line, or by hand; pasting an address into the empty form writes the address bare rather than nesting a formatted link. The claim is keyed by the address, duplicates allowed, and owned by the same claim machinery page embeds use.
-
-**A guest is live only while its tile is fully visible in the scrollport** — a partially clipped webview paints outside its own box, so visibility management is the rendering model, not an optimization. A tile scrolled out keeps its last frame painted on its face, so a clipped tile reads as a paused page rather than a blank; a failed load shows the site's domain, and a first load with no frame yet is simply blank. Re-entry retries a failed site in the user's presence.
+A guest is live only while its tile is fully visible in the scrollport, since a partially clipped webview paints outside its own box; a tile scrolled out keeps its last frame painted on its face, a failed load shows the site's domain, and re-entry retries a failed site. Tile titles are display-only and resolved at render — a hand-written label wins, and an empty one derives through the Nexus's default link format, sharing the fetched-title path the cells use. The tile's grip menu carries **Edit Link**, which returns the tile to its raw address with the address selected, re-forming the tile when the line is left.
 
 ### Engagement & Retention
 
-A live tile is **inert until clicked in**: wheel and pointer pass to the document, and one click engages the site — from there, interaction belongs to the page until a click lands outside the tile, Escape is pressed, or the tile scrolls into the clip zone. Guests scroll out of view, hiding rather than unmounting, keeping the site's own state alive under a capped least-recently-hidden retention; the cap's eviction tears the oldest hidden guest down, and its tile reloads fresh on its next entry.
-
-Retention carries across tab switches for as many recent page tabs as stay parked[^2]: the tab's whole surface is held rather than rebuilt, so its guests pause the way a scrolled-out tile does and resume on return with the session, scroll, and playing media they had. A tab beyond that reach rebuilds its surface, and its sites load fresh.
-
-### Titles & The Grip
-
-Tile titles are display-only and resolved at render — a hand-written label wins, an empty one derives through the nexus's default link format, sharing the fetched-title path table cells use. Nothing is ever written back into the document. The hover-revealed title is itself a link, opening the address per the open-in preference. The tile's grip menu carries **Edit Link** above Delete, and it edits in the line like every other Edit Link does: the tile returns to the raw address it holds with that address selected, so typing replaces it, and leaving the line re-forms the tile. The site is asked to load only once the new address is the document's — nothing reloads to show a caret.
+A live tile is inert until clicked in: wheel and pointer pass to the document, and one click engages the site, after which interaction belongs to the page until a click lands outside the tile, Escape is pressed, or the tile scrolls out. Guests that scroll out of view hide rather than unmount, keeping the site's state alive under a capped least-recently-hidden retention (`Embeds/webRetention.ts`); the cap's eviction tears the oldest hidden guest down and its tile reloads fresh on its next entry. Retention carries across tab switches for the page tabs that stay parked, so a site resumes with its session, scroll, and playing media; a tab beyond that reach rebuilds and its sites load fresh.[^2]
 
 ### Link Opening
 
-One renderer adjudicator decides where every external link opens — editor clicks, table cells, tile titles, and guest popups all route through it, honoring the **Open Links In Pommora** preferenc[^3]: off opens the system browser, on summons the floating in-app browser.[^4] A guest's `window.open` never opens an OS window; main denies it and hands the address to the same adjudicator.
+One renderer adjudicator, `src/renderer/src/openWebLink.ts`, decides where every external link opens — editor clicks, table cells, tile titles, and guest popups all route through it — honoring **Open Links In Pommora**: off opens the system browser, on summons the floating in-app browser.[^3] A guest's `window.open` never opens an OS window; main denies it and hands the address to the same adjudicator.
 
 ### Web Sessions
 
-Every web surface — tiles, the browser, hover cards — shares one session: sign in to a site in any of them, and every other one is signed in, per machine, surviving restarts.[^5] There is nothing to manage and no settings surface; the session simply remembers. The session wears a cleaned user agent, with a further surgical variant for Google's sign-in host, best-effort by design. Embedded pages scale with the window's zoom, times the Webpage Zoom preference, times the tile's own Scale, where one is set, stamped from the main process on every navigation; a tile's Scale applies in one step rather than animating, since a guest re-zooms the whole.
+Every web surface shares one persistent session partition per machine: sign in to a site in any of them and every other one is signed in, surviving restarts. There is nothing to manage and no settings surface. The session uses a cleaned user agent with a variant for Google's sign-in host, best-effort by design. Embedded pages scale with the window's zoom, times **Webpage Zoom**, times the tile's own Scale where one is set, stamped from main on every navigation.[^3]
+
+### The Browser Window
+
+The in-app browser (`PagePreview/BrowserWindow.tsx`) is a flavor of the floating window chassis:[^4] back and forward glyphs lead the toolbar, the centered title tracks the guest's current page and escalates it to the system browser on click, and one webview on the shared partition owns the whole body. It is a singleton like the page preview — a summon while open retakes it in place, re-aiming the standing guest even at an address it has navigated away from — and its geometry persists on its own window id.
 
 ### Website Hover Previews
 
-Dwelling on a website link raises the shared hover card as a live render of the site[^6]: the card opens wearing a quiet cover, the site fades in once it paints, and a page that fails or never paints closes the card whole. The card's guest allows no popups and takes no clicks — a glance surface by contract — but it reads past its first screen: the wheel is handed down to the guest through the main process, since the covering chrome holds the pointer on the card's behalf and the guest would otherwise never see it.
+Dwelling on a website link raises the shared hover card as a live render of the site.[^5] The card's guest allows no popups and takes no clicks — a glance surface by contract — but it reads past its first screen: the wheel is handed down to the guest through main, since the covering shield holds the pointer on the card's behalf.
 
-### Pending
+---
 
-- The browser chrome's Safari-style treatment — the bar area above a page whose color reads as the page's own — isn't settled; the resting shape is the transparent band.
-- A guest's scripted popups ride the open-link chain without a user-gesture gate — acceptable for trusted embeds, ungated by decision pending.
-- Retention is bounded by the editor's viewport recycling: a tile scrolled far enough loses its widget and its guest regardless of the cap.
-- A retained guest keeps playing audio by design; whether scroll-out should mute is an open product call.
+#### Pending
 
-[^1]: [[MarkdownPM]] §Webpage Embeds
+- **The browser chrome's treatment** — the bar above a page whose color reads as the page's own isn't settled; the resting shape is the transparent band.
+- **Scripted popups** ride the open-link chain without a user-gesture gate — acceptable for trusted embeds, ungated by decision pending.
+- **Retention past viewport recycling** — a tile scrolled far enough loses its widget and its guest regardless of the cap.
+- **Audio on scroll-out** — a retained guest keeps playing by design; whether scroll-out should mute is open.
+
+[^1]: [[MarkdownPM]] §Embeds · [[SurfacePM]] §The Embed Framework
 [^2]: [[NavigationPM]] §Toolbar Tabs
 [^3]: [[ConfigurationPM]] §Interface
-[^4]: [[PagePreviewPM]] §The Browser Flavor
-[^5]: [[NavigationPM]] §State Persistence
-[^6]: [[PagePreviewPM]] §The Hover Card
+[^4]: [[InterfacePM]] §Floating Windows
+[^5]: [[InterfacePM]] §The Hover Card

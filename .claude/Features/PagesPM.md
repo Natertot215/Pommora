@@ -6,57 +6,47 @@ Pages
 ├── Title + Membership
 ├── Opening Behavior
 ├── Outline
-├── Editor UI State
-├── Read + Write
-├── Adoption
 ├── Pending
 └── Prospects
 ```
 
-A Page is one Markdown file inside a [[CollectionsPM|Collection]] — the operational entity that holds free prose. A Page is a single `.md`: YAML frontmatter for identity and [[PropertiesPM|property]]
-values, then a Markdown body. Membership is by location — a file inside a Collection, or one of its Sets at any depth, is a Page in that Collection and conforms to that Collection's property schema; there's no container field. The body is portable Markdown, edited in [[MarkdownPM]], and can hold inline `[[Title]]` [[ConnectionsPM|Connections]]
+A Page is one Markdown file inside a Collection — the operational entity that holds free prose. It is a single Markdown file with YAML frontmatter for identity — keyed via `PageID:` — and property values above a Markdown body, edited in MarkdownPM.[^1] Membership is by location: a file inside a Collection, or inside one of its Sets at any depth, is a Page of that Collection and conforms to that Collection's property schema, with no container field of its own. The body is portable Markdown and accessed via MarkdownPM, which can hold internal and external embeddings, as well as Connections to other Pages.[^2] Per-page interface state — heading folds, the header icon's visibility, per-table heading-column choices, the footnotes override, embedded tile heights and scaling factors — are persisted per-machine in `nexus.db`, and keyed by `PageID:`.[^7]
 
 ### On-Disk Shape
 
-Frontmatter carries `PageID` — the key naming the kind, holding a bare ULID — an optional `icon`, `created_at` / `modified_at`, and `cover` — the page's in-detail banner, which a crop keyed to the image may frame — plus the wrapped keys: `(Context)` keys naming Spaces, and one `<Property>` key per value the page holds. [[PropertiesPM|Property]] values conform to the owning Collection's schema. Foreign frontmatter keys — and YAML comments — are preserved by value on every write; the writer re-serializes only the modeled keys.
+The frontmatter is modeled by `pageFrontmatter` in `src/shared/schemas.ts` as a loose object: five keys Pommora governs, and everything else preserved as written. `PageID` names the kind and holds a bare ULID; `icon`, `created_at`, `modified_at`, and `cover` (the page's banner image, which a crop keyed to the image may frame) are optional. Around them sit the wrapped keys — `(Context)` keys naming Spaces, and one `<Property>` key per value the page holds, conforming to the owning Collection's schema.[^3] Foreign frontmatter keys and YAML comments survive every write, because the page engine (`src/main/io/pageFile.ts`) edits the original YAML document in place rather than rebuilding it, and each write lands through the atomic temp-file-plus-rename path.[^2]
 
-`modified_at` answers to a property value change, a text change, a location change, and a rename. A schema-level edit is not one of them — renaming a property rewrites the key on every page holding it without moving a stamp, since a derived rewrite is not a user modification, and the `[[link]]` rename cascade runs under the same rule.
+`modified_at` is stamped on a property value change, a text change, a move, and a rename. A schema-level change — renaming a property, which rewrites the key on every page holding it — is not a page edit and moves no stamp, and the connection rename cascade runs under the same rule.
 
 ### Title + Membership
 
-The filename minus `.md` is the title — there's no `title` field, and a rename is a file rename. The page's own header carries its `icon` beside that title, hidden unless the page is opted into showing it: whether the header draws the glyph is chrome rather than content, so it keys by `PageID` in the per-machine store while the glyph itself stays in frontmatter. Within a folder, names must be unique: a colliding create auto-disambiguates with a numeric suffix, and a colliding rename is rejected — except a just-created page's first naming, which counts as part of the creation and disambiguates the same way. Titles aren't unique Nexus-wide — two Pages in different folders can share one, and a `[[Title]]` to a shared title resolves as ambiguous connections.
+The filename minus `.md` is the title; there is no `title` field, and a rename is a file rename. The page's header shows its `icon` beside the title when the page is opted into showing it, a choice kept per machine while the glyph itself stays in frontmatter. Within a folder, names must be unique: creating a page under a taken name disambiguates with a numeric suffix, while renaming onto a taken name is refused. Titles aren't unique Nexus-wide, so two Pages in different folders can share one, and a connection to a shared title resolves as ambiguous.[^4]
 
-Every creation surface runs one act: the page exists on disk as Untitled the moment the gesture fires, and its title opens as an uncommitted rename whose field is empty. Confirming names the page; leaving any other way — a click elsewhere, Esc, a view switch — keeps Untitled.
+Every creation surface — the sidebar, a table row, a card, the grid — runs one act (`createDisambiguated` in `src/main/mutate.ts`): the page exists on disk as **Untitled** the moment the gesture fires, and its title opens as an uncommitted rename with an empty field. Confirming names the page, disambiguating like a create; leaving the field any other way keeps Untitled.
 
 ### Opening Behavior
 
-Clicking a Page opens it in the active tab, replacing that tab's selection, and the editor auto-saves on a debounce. A Collection can route its Pages to the floating Page Preview window[^1] instead via `open_in`; ⌘-click always bypasses to a full page in a new tab.
+Clicking a Page opens it in the active tab, replacing that tab's selection, and the editor auto-saves on a debounce. A Collection can instead route its Pages to the floating Page Preview window through its **Open In** setting;[^5] ⌘-click always opens a full page in a new tab. Additionally, hovering over a page's link within its body reveals a non-editable dropdown panel that serves as an in-body preview. [^6]
 
 ### Outline
 
-A page's own table of contents, in the toolbar. Present only while the detail pane holds a Page; it takes the Views button's slot rather than adding one — a selection is either a container or a Page. Rows carry each heading's own text at the emphasized weight with its markers stripped, nested by heading level and opened fully. Levels may skip freely, so a heading attaches to the nearest shallower one above it. A heading with nothing beneath it still appears, keeping consecutive headings both visible even though the fold machinery has nothing to fold there.
+A page's own table of contents, in the toolbar (`src/renderer/src/Toolbar/OutlineDropdown.tsx`, built from the editor's heading fold model). It appears only when the detail pane contains a Page and occupies the Views button's slot, since a selection is either a container or a Page. Rows carry each heading's text with its markers stripped, nested by level and opened fully; levels may skip freely, so a heading attaches to the nearest shallower one above it, and a heading with nothing beneath it still appears. A row's chevron collapses a group in the dropdown only, without touching the page, and neither gesture dismisses the pane. Clicking a row scrolls the page to that heading, first opening any collapsed section that hides it, without moving the caret or editing the document.
 
-The chevron collapses a group in the dropdown only and leaves the page untouched; neither gesture dismisses the pane, so a long document can be worked through without reopening the list. The row travels to its heading — a scroll glide rather than a cut — never editing the document and never moving the caret, opening any collapsed section hiding the target and waiting for that reveal to land before scrolling. A heading arrives at the band the page header occupies, the same height as its own inline title. Long headings truncate in the row and scroll on hover; the pane widens with its content only until its edge would leave the window.
+---
 
-### Editor UI State
+#### Pending
 
-Per-page editor UI state lives per-machine in the database, never in the portable `.md`: heading-fold state and per-table heading-column choices, each keyed by page ID. Keeping this state out of the frontmatter leaves the `.md` out of cloud-sync churn.
+- **Columns** — a multi-column section directive rendering a section in evenly divided horizontal columns; visual layout only. Callouts already render.
 
-### Read + Write
+#### Prospects
 
-A Page reads through a lenient envelope split — a missing or unterminated frontmatter fence yields an all-body read, so a frontmatter-less Markdown file still opens. A separator blank line after the closing fence is stripped on read and never written, so a note never opens with an empty line under Obsidian's properties panel. Every write goes through the comment-preserving merge and an atomic temp-file-plus-rename. The editor binds to the body and debounces saves; frontmatter is a typed object the editor can't corrupt.
-
-### Adoption
-
-Opening a folder adopts it: every `.md` carrying no kind key is stamped with a fresh `PageID`, so the index and every later write key off a stable identity. That stamp runs through the same preserving merge — foreign frontmatter, YAML comments, and the body all survive, and the kind key is the only one added. A file whose key contradicts its folder is never stamped — it is Unknown: absent from the tree, skipped by every nexus-wide write, left byte-identical. A file carrying no key reads throughout, wearing a synthetic id hashed from its Nexus-relative path, stable across launches, until the stamp lands. Missing timestamps fall back to the file's own.
-
-### Pending
-
-- **Columns directive** — the multi-column section directive; specified, not built. Callouts already render in the editor.
-
-### Prospects
-
-- **Sub-Pages** — a nested Page hierarchy beyond the current flat Page-in-container model.
+- **Sub-Pages** — a nested Page hierarchy beyond the flat Page-in-container model.
 - **Independent UI titles** — a display title distinct from the filename, so a rename needn't move the file.
 
-[^1]: [[PagePreviewPM]]
+[^1]: [[MarkdownPM]]
+[^2]: [[ArchitecturePM]] §The Atomic-Write Contract · §Adoption
+[^3]: [[PropertiesPM]] · [[ContextsPM]]
+[^4]: [[ConnectionsPM]]
+[^5]: [[CollectionsPM]] §Open In
+[^6]: [[InterfacePM]] §Floating Windows · §The Hover Card
+[^7]: [[ArchitecturePM]] §Persistence

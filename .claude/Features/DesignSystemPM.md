@@ -34,7 +34,7 @@ Design System
 
 The Pommora design system — the code mirror of the Figma "Pommora - React" library, which is canonical for design values. It lives in `src/renderer/src/DesignSystem/`, and this document is its ledger: one section per folder, one row per thing, with *name · export · what it is*. Values live in the Token Atlas and in code; a subsystem with its own spec ([[InteractionPM]], [[PommoraDND]], [[SymbolsPM]]) keeps its depth there and is pointed at, never restated.
 
-**Tooling.** Token files are vanilla-extract `*.css.ts`, so a mistyped token is a compile error; `Tokens/theme-vars.css.ts` republishes every token under a stable `--name` for plain CSS, and a token without a bridged var is TS-only. Inter (variable) is the app font. The layer is app-agnostic: only `Tokens/` and `Theming/` import from `@shared`, nothing imports the store or IPC, and the whole tree builds as the standalone showcase. `Theming/` (`applyAccent` · `applyPersonalization`) and `Util/` (`cx` · `clamp` · `pad` · `moveItem`) are runtime homes with no catalog of their own.
+**Tooling.** Token files are vanilla-extract `*.css.ts`, so a mistyped token is a compile error; `Tokens/theme-vars.css.ts` republishes every token under a stable `--name` for plain CSS, and a token without a bridged var is TS-only. Inter (variable) is the app font. The layer builds as the standalone showcase; a handful of components (`ImagePicker`, `AssetImage`) reach the store for the assets they draw. `Theming/` (`applyAccent` · `applyPersonalization`) and `Util/` (`cx` · `clamp` · `pad` · `moveItem`) are runtime homes with no catalog of their own.
 
 ### Token Atlas
 
@@ -229,8 +229,8 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 | Title      | Export                       | What it is                                                              |
 | ---------- | ---------------------------- | ----------------------------------------------------------------------- |
 | Label      | `Label`                      | The axis-composed primitive every named label is a recipe over.         |
-| Shapes     | `shape.pill/tag`             | Rounded status default · squared value. Compact is either rendered icon-only. |
-| Checkbox box | `checkboxBox`              | The task checkbox's `17px` square — base + `boxGeometry`, outside the shape roster. |
+| Shapes     | `shape.pill/tag` · `optionShapeFor` | Rounded status default · squared value, resolved per type. Compact is either rendered icon-only. |
+| Checkbox | `checkboxBox`              | The task checkbox's `17px` square — base + `boxGeometry`, outside the shape roster. |
 | Tint       | `tinted`                     | Fill, outline and text mixed off `--label-base` — a surface wanting a color chip sets that one var. |
 | Treatments | `fill` · `outline`           | Named only where a label differs from its tint.                         |
 | Palette    | `labelColor.*`               | One variant per ramp cell naming its base, plus `default` and `accent`. |
@@ -252,20 +252,20 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 
 ### Components
 
-`Components/` — grouped as the ledger reads. `dropdownAnchor.ts` (`dropdownAnchor`, `DROPDOWN_GAP`) and `useDismiss.ts` are the shared placement and dismissal helpers at the root — the latter owning both the outside click and the Escape, which peels one layer at a time: an open picker or a field taking its own Escape leaves the host it sits in standing.
+`Components/` — grouped as the ledger reads. `dropdownAnchor.ts` (`dropdownAnchor`, `DROPDOWN_GAP`) and `useDismiss.ts` are the shared placement and outside-click helpers at the root, beside two root-level components: `ImagePicker` (frames a stored image — a focal point and a zoom — as a circle or a rect cut to its seat) and `AssetImage` (the one element that draws a stored image, through its crop when one exists).
 
 #### Controls
 
 `Controls/` — the atomic interactive pieces. `Button` is the recipe; the rest are the single-purpose controls beside it.
 
-| Title       | Export        | What it is                                                                                                                                                                                                      |
-| ----------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Button      | `Button`      | `type` × `size` × content (icon · icon + label · label), with `outline` as an inset ring and the `revealOnHover` / `ghostRest` modifiers; hover on every button, and `pressed` for a toggle whose menu is open. |
-| Segmented   | `Segmented`   | N Buttons of one type divided by `segment`; `glass` for the toolbar.                                                                                                                                            |
-| Checkbox    | `Checkbox`    | The box, on the accent or a chosen cell.                                                                                                                                                                        |
-| DualSwitch  | `DualSwitch`  | A boolean toggle with a sliding glass segment.                                                                                                                                                                  |
-| ColorSwatch | `ColorSwatch` | The switch shape holding a color, anchoring a ColorPicker.                                                                                                                                                      |
-| Slider      | `Slider`      | Sliding number selection.                                                                                                                                                                                       |
+| Title | Export | What it is |
+| --------- | ------------ | ------------------------------------------------------------------------------- |
+| Button | `Button` | `type` × `size` × content (icon · icon + label · label), with `outline` as an inset ring and the `revealOnHover` / `ghostRest` modifiers; hover on every button, and `pressed` for a toggle whose menu is open. |
+| Segmented | `Segmented` | N Buttons of one type divided by `segment`; `glass` for the toolbar. |
+| Checkbox | `Checkbox` | The box, on the accent or a chosen cell. |
+| DualSwitch | `DualSwitch` | A boolean toggle with a sliding glass segment. |
+| ColorSwatch | `ColorSwatch` | The switch shape holding a color, anchoring a ColorPicker. |
+| Slider | `Slider` | Sliding number selection. |
 
 **Button Types** — one `--button-fill` / `--button-ink` / `--button-outline` triple per row; the hover is `state.hover` laid over the fill.
 
@@ -290,20 +290,18 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 
 | Title          | Export                                      | What it is                                                                                                           |
 | -------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| PickerMenu     | `PickerMenu` · `PointMenu` · `PickerOption` | The rectangle every menu and picker mounts — anchoring, dismissal, focus, the scroll cap.                            |
+| PickerMenu     | `PickerMenu` · `PointMenu` · `PickerOption` | The rectangle every menu and picker mounts — anchoring to an element or a bare point, the collision flip decided once per open, dismissal, focus, the scroll cap. The wikilink autocomplete and the hover card ride it too. |
 | CalendarPicker | `CalendarPicker`                            | Date and time selection.                                                                                             |
 | ColorPicker    | `ColorPicker`                               | The 8×8 ramp grid; clicking the selected cell clears.                                                                |
 | IconPicker     | `IconPicker` · `IconFavorites`              | The searchable glyph grid with a reorderable favorites strip; the app binds favorites through `Settings/IconPicker`. |
 | TextPicker     | `TextPicker`                                | A typed-value picker in the shared pane.                                                                             |
-| ImagePicker    | `ImagePicker`                               | Frames a stored image — a focal point and a zoom — inside a fixed seat, circle or rect; below fill the picked color shows around it. |
-| AssetImage     | `AssetImage`                                | The one element that draws a stored image, through its crop when one exists.                                         |
 
 #### Menu
 
 | Title | Export | What it is |
 | ------------ | ----------------------------------------------- | ----------------------------------------- |
-| Menu | `Menu` · `MenuItem` · `MenuHeading` · `MenuSeparator` · `MenuCaption` | The row vocabulary. |
-| Bars | `MenuTopRow` · `MenuPaneTopRow` · `MenuBottomRow` · `FooterLockButton` | The pinned header and footer tiers. |
+| Menu | `Menu` · `MenuItem` · `MenuHeading` · `MenuSeparator` · `MenuCaption` · `itemEmphasized` · `titleInput` | The row vocabulary, the emphasized row, and the flush inline-rename input. |
+| Bars | `MenuTopRow` · `MenuPaneTopRow` · `MenuBottomRow` · `FooterLockButton` · `FooterMoreButton` · `AccessoryButton` | The pinned header and footer tiers and their buttons. |
 | Scroll frame | `MenuScrollFrame` · `MENU_MAX_HEIGHT` | The one capped overflow region with its fade. |
 | DisclosureRow | `DisclosureRow` · `useDisclosureSet` | A folding row on DropOutline. |
 | MenuSurface | `MenuSurface` | The beaked pane the large toolbar dropdown hangs off a button. |
@@ -319,8 +317,8 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 | -------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
 | InputField     | `InputField` · `FieldEdit`                                                                                   | The field box — `boxed` or `bordered` chrome.                                                                 |
 | SegmentRun     | `SegmentRun` · `SegmentEntry` · `SEGMENT_INDEX_ATTR`                                                         | Values standing side by side inside a field; segment-divided.                                                 |
-| Chrome         | `field` · `input` · `borderedField` · `editable` · `draftInput` · `leading` · `trailing` · `base` · `search` | Boxed, raw caret, cell-tight, press-to-edit, the draft caret, the two slots, chromeless, and the search look. |
-| Ring           | `fieldRing()` · `focusRing()` · `errorRing()` · `ROW_RING`                                                   | One inset-shadow channel; presets set  it’s color.                                                            |
+| Chrome         | `field` · `input` · `borderedField` · `base` · `search` · `autoSizeInput` · `autoSizeMirror` · `autoSizeWrap` | Boxed, raw caret, bordered, chromeless, the search look, and the auto-sizing input trio. |
+| Ring           | `fieldRing()` · `focusRing()` · `errorRing()` · `ROW_RING`                                                   | One inset-shadow channel; presets set its color.                                                            |
 | Placeholder    | `placeholder`                                                                                                | The ghost-text tone.                                                                                          |
 | SearchField    | `SearchField` · `SEARCH_PLACEHOLDER`                                                                         | The controlled filter input the list surfaces share.                                                          |
 | EditableInput  | `EditableInput`                                                                                              | Enter commits, Escape abandons, blur settles.                                                                 |
@@ -332,12 +330,12 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 
 | Title | Location | What it is |
 | ---------- | ------------------------------------- | ----------------------------------------------------- |
-| PreviewPane | `Detail/PreviewPane` — `PreviewPane` | The floating window surface every in-app window mounts.[^1] |
+| PreviewPane | `Detail/PreviewPane` — `PreviewPane` | The floating window surface every in-app window mounts; its own dimensions — toolbar height, side-pane widths, footer height, the trailing-control slide — are custom properties in `previewPane.css` a host may retune.[^1] |
 | SidePane | `Detail/SidePane` — `SidePane` · `sidePaneWidth` | A pane carried on a window's edge by `--io`. |
 | Tile chassis | `Detail/tile-chassis.css` | The resizable tile frame SurfacePM and embeds share. |
-| Sidebar | app: `Sidebar/` | [[SidebarPM]] |
-| Tabs · Toolbar | app: `Tabs/` · `Toolbar/` | [[NavigationPM]] |
-| Table · Cards | app: `Detail/Views/` | [[TableViewPM]] · [[CardViewPM]] — future residents here. |
+| Sidebar · Toolbar | app: `Sidebar/` · `Toolbar/` | [[InterfacePM]] |
+| Tabs | app: `Tabs/` | [[NavigationPM]] |
+| Table · Cards | app: `Detail/Views/` | [[ViewTypesPM]] — future residents here. |
 
 ### Interaction
 
@@ -345,7 +343,7 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 
 | Title        | Export                                                  | What it is                                             |
 | ------------ | ------------------------------------------------------- | ------------------------------------------------------ |
-| Drag engine  | `Zone` · `SortableZone` · `DragGroup` · `useDragItem` · `reorder` | The in-house DND.                           |
+| Drag engine  | `SortableZone` · `DragGroup` · `GroupZone` · `useDragItem` · `useGroupedDragItem` · `reorder` · `arraySwap` | The in-house DND. |
 | Drop chrome  | `DropLine` · `DragGhost` · `dropChrome.css` · `ghost.css` | The insertion line, dot, and the glass drag chip.    |
 | Disclose     | `beginDragDisclose` · `registerDiscloseTarget`          | Hover-open while dragging.                             |
 | Snapshot     | `useDragSnapshot`                                       | The list held still for a drag's duration.             |
@@ -374,23 +372,25 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 
 ### Symbols
 
-`Symbols/` — `Icon` and the curated registry (`icons`, `IconName`, `entityIcon`), `AllSymbols.ts` (`searchIcons`), `fileTypes.ts` (`fileTypeIcon`), `customGlyphs.tsx`, and `masks.ts` (the grip, fold-chevron, and link glyphs as CSS masks).[^2]
+`Symbols/` — `Icon` and the curated registry (`icons`, `IconName`, `entityIcon`), `AllSymbols.ts` (`searchIcons`), `fileTypes.ts` (`fileTypeIcon`), `customGlyphs.tsx`, and `masks.ts` (the grip, fold-chevron, code-chevron, and link glyphs as CSS masks).[^2]
 
 ### Showcase
 
-`Showcase/` — the data-driven site (`npm run showcase`), one leaf per domain and a `lab/` sandbox, deployed at https://pommora-design-system.vercel.app.
+`Showcase/` — the data-driven component-library site, deployed at https://pommora-design-system.vercel.app from the same sources the app builds from, so it can't drift. `npm run showcase` serves it and `npm run build:showcase` builds it; `Showcase/leaves/registry.tsx` registers one leaf per domain across four sections, plus the `lab/` sandbox and the SurfacePM stress harness.
 
-### Known Issues
+---
+
+#### Known Issues
 
 - **Voiding Liquid Glass can't be done in place** — its displacement filter is a generated SVG ID CSS can't interpolate, so the inspector "swallow" renders the pill as a fading glass layer behind a solid bare layer.
 - **Scrollbars are hidden app-wide** — Chromium's default bar reads heavy and the auto-hiding overlay isn't reliable, so scrolling is trackpad and wheel only.
 
-### Pending
+#### Pending
 
 - **Spacing and radius** — `--radius-full` is the scale's only member; the rest stay ad-hoc until lifted from Figma.
 - **Light/dark theming** — the system is dark-only.
-- **The inactive state token** — the empty-state tone between secondary and tertiary; interim consumers read tertiary.
-- **Type** — no tracking scale, no `mono` token behind the editor's code stack, no Markdown element mapping, no multi-line clamp.
+- **An inactive label tone** — the empty-state text color between secondary and tertiary; interim consumers read tertiary. (The `--state-inactive` opacity above is a different thing.)
+- **Type** — no tracking scale, no Markdown element mapping, no multi-line clamp.
 
-[^1]: [[PagePreviewPM]]
+[^1]: [[InterfacePM]] §Floating Windows
 [^2]: [[SymbolsPM]]
