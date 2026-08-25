@@ -8,7 +8,7 @@
 
 ### Immediate Work
 
-- [ ] **Part 3 of the file-based arc — the ImagePicker**, in progress: one design-system surface for choosing and cropping a banner, a card cover, an icon or the nexus photo, widening `PhotoCropModal` past the profile photo (which is why `setProfileImage` still carries bytes while every banner carries a path).
+- [ ] **Part 3 of the file-based arc — the ImagePicker**, in progress: one design-system surface for choosing and cropping a banner, a card cover, an icon or the nexus photo, widening `PhotoCropModal` past the profile photo (which is why `setProfileImage` still carries bytes while every banner carries a path). [[ImagePicker — Decision Log]] and [[ImagePicker — Implementation Plan]] are the spec.
 - [ ] **A planning session against [[Design-Coherence-Report]] §VIII** — `checkboxLook`, the container title, CalendarPicker's range mode, the tab strips, `--gutter`; the report's structural findings have landed and the middle-layer question is answered by the filing.
 
 ### Pending Focuses
