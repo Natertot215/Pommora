@@ -188,9 +188,6 @@ const api = {
   // Open the native image picker directly → the chosen file's path (null if canceled).
   pickFile: ask('nexus:pickFile'),
   adoptFile: ask('assets:adopt'),
-  // The bytes behind one picked image path, for a surface that must SHOW it before it is
-  // adopted — the crop modal, whose output is a new image rather than the file itself.
-  imageData: ask('nexus:imageData'),
   // `noRemove` drops the Remove item (an inherited banner has nothing of its own to remove).
   bannerMenu: ask('nexus:bannerMenu'),
   // The Rename / Edit Icon menu for a detail title.
