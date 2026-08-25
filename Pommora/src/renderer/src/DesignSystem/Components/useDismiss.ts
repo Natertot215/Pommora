@@ -39,8 +39,10 @@ export function useDismiss(
     }
     const onKey = (e: KeyboardEvent): void => {
       // An open picker owns its own Escape — it closes itself and this host stays put (Escape
-      // peels one popover at a time, never the pane out from under the picker in it).
-      if (e.key === 'Escape' && openPickers === 0) onClose()
+      // peels one popover at a time, never the pane out from under the picker in it). A field
+      // inside the host marks its own Escape handled on the same contract, so abandoning a rename
+      // never takes the pane holding it.
+      if (e.key === 'Escape' && !e.defaultPrevented && openPickers === 0) onClose()
     }
     if (outsideClick) document.addEventListener('pointerdown', onDown, true)
     document.addEventListener('keydown', onKey)
