@@ -9,9 +9,10 @@ import { flushPageSave, schedulePageSave } from '@renderer/Detail/pageFlush'
 import { fetchPageDetail, readPageDetail } from '@renderer/Tabs/warmCache'
 import { useAssetUrl, useEmbedScale, useSession } from '../store'
 import { useBannerMenu } from '../Detail/Banner/useBannerMenu'
-import { NavCrumbs } from '../Navigation/NavList'
-import { resolveWith } from '../Navigation/navResolve'
-import { resolveIndexOf } from '../treeIndex'
+import { NavTrail } from '@renderer/DesignSystem/Elements/NavTrail'
+import { text } from '@renderer/DesignSystem/Tokens'
+import { cx } from '@renderer/DesignSystem/Util/cx'
+import { ancestryOf } from '../treeIndex'
 
 import './embeds.css'
 import { embedZoom } from '@shared/types'
@@ -204,9 +205,9 @@ function EmbedBanner({
  *  the shared two-tone treatment. */
 function EmbedCrumbs({ id }: { id: string }): React.JSX.Element | null {
   const tree = useSession((s) => s.tree)
-  if (!tree) return null
-  const res = resolveWith(resolveIndexOf(tree), { kind: 'page', id })
-  if (!res) return null
-  const crumbs = [...res.path, { icon: res.icon, title: res.title }]
-  return <NavCrumbs path={crumbs} className="pgembed-crumbs crumb-two-tone" iconSize="caption" />
+  const trail = tree && ancestryOf(tree, { kind: 'page', id })
+  if (!trail) return null
+  return (
+    <NavTrail segments={trail} emphasize className={cx('pgembed-crumbs', text.caption.standard)} />
+  )
 }

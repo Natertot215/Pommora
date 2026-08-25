@@ -1,8 +1,8 @@
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Checkbox } from '@renderer/DesignSystem/Components/Controls/Checkbox'
 import { SearchField } from '@renderer/DesignSystem/Components/Fields'
 import { OverScroll, overScrollEllipsis } from '@renderer/DesignSystem/Interactions/OverScroll'
-import { PathChevron } from '@renderer/DesignSystem/Elements/PathChevron/PathChevron'
+import { NavTrail } from '@renderer/DesignSystem/Elements/NavTrail'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { entityIcon, Icon } from '@renderer/DesignSystem/Symbols'
 import { text } from '@renderer/DesignSystem/Tokens'
@@ -358,24 +358,14 @@ function TrashRowView({
       <div className="nav-item-main">
         <Icon name={icon} size="title3" className="nav-item-lead" />
         <OverScroll className="nav-item-title">{row.title}</OverScroll>
-        {row.crumbs.length > 0 && (
-          <OverScroll className={cx('nav-item-path', text.caption.standard)}>
-            {row.crumbs.map((crumb, i) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: a breadcrumb is strictly positional
-              <Fragment key={i}>
-                {i > 0 && <PathChevron size="caption" className="nav-path-sep" />}
-                {crumb.kind && (
-                  <Icon
-                    name={entityIcon(crumb.kind, undefined, defaultIcons)}
-                    size="control"
-                    className="nav-path-icon"
-                  />
-                )}
-                <span className="nav-path-name">{crumb.title}</span>
-              </Fragment>
-            ))}
-          </OverScroll>
-        )}
+        <NavTrail
+          segments={row.crumbs.map((crumb) => ({
+            title: crumb.title,
+            icon: crumb.kind && entityIcon(crumb.kind, undefined, defaultIcons),
+          }))}
+          iconSize="control"
+          className={cx('nav-item-path', text.caption.standard)}
+        />
       </div>
       <span className={cx('trash-date', text.caption.standard, overScrollEllipsis)}>{when}</span>
     </div>

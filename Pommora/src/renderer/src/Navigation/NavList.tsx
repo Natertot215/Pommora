@@ -1,10 +1,9 @@
-import { Fragment, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Icon } from '@renderer/DesignSystem/Symbols'
-import type { IconSize } from '@renderer/DesignSystem/Tokens/size.css'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { text } from '@renderer/DesignSystem/Tokens'
 import { OverScroll } from '@renderer/DesignSystem/Interactions/OverScroll'
-import { PathChevron } from '@renderer/DesignSystem/Elements/PathChevron/PathChevron'
+import { NavTrail } from '@renderer/DesignSystem/Elements/NavTrail'
 import { onActivateKey } from '@renderer/DesignSystem/Interactions/activate'
 import { TableRowDnd, useTableRowDrag } from '../Detail/Views/Table/tableDnd'
 import type { NavRef, SelectTarget } from '@shared/types'
@@ -17,32 +16,6 @@ import type { ResolvedNav } from './navResolve'
 import { EntityGlyph } from './EntityGlyph'
 import './navList.css'
 import { pinLabel } from '@shared/toggleLabels'
-
-/** Shared by the list rows and the gallery cards — differing only by wrapper class + glyph size.
- *  Null when at root. */
-export function NavCrumbs({
-  path,
-  className,
-  iconSize,
-}: {
-  path: ResolvedNav['path']
-  className: string
-  iconSize: IconSize
-}): React.JSX.Element | null {
-  if (path.length === 0) return null
-  return (
-    <OverScroll className={cx(className, text.caption.standard)}>
-      {path.map((crumb, i) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: a breadcrumb is strictly positional and never reorders
-        <Fragment key={i}>
-          {i > 0 && <PathChevron size="caption" className="nav-path-sep" />}
-          <Icon name={crumb.icon} size={iconSize} className="nav-path-icon" />
-          <span className="nav-path-name">{crumb.title}</span>
-        </Fragment>
-      ))}
-    </OverScroll>
-  )
-}
 
 /** A NATIVE Electron menu (the tab/cell-menu pattern) — renders nothing, fires on mount, closes
  *  when the menu resolves. Shared by the NavWindow list AND gallery. */
@@ -184,7 +157,11 @@ function NavRow({
       <div className="nav-item-main">
         <EntityGlyph item={it} size="title3" className="nav-item-lead" />
         <OverScroll className="nav-item-title">{it.title}</OverScroll>
-        <NavCrumbs path={it.path} className="nav-item-path" iconSize="control" />
+        <NavTrail
+          segments={it.path}
+          iconSize="control"
+          className={cx('nav-item-path', text.caption.standard)}
+        />
       </div>
     </div>
   )

@@ -5,13 +5,8 @@
 // re-flatten the tree per row.
 
 import type { NavRef } from '@shared/types'
+import type { TrailSegment } from '@renderer/DesignSystem/Elements/NavTrail'
 import { navKey } from './navRecents'
-
-/** One container in an entry's path — its resolved icon glyph + title (chevron-joined at render). */
-export interface PathCrumb {
-  icon: string
-  title: string
-}
 
 export interface ResolvedNav {
   key: string
@@ -21,12 +16,12 @@ export interface ResolvedNav {
   title: string
   icon: string
   /** The container chain the entry lives under (empty for a top-level Collection / Homepage). */
-  path: PathCrumb[]
+  path: TrailSegment[]
   /** Drives the pin button's active/toggle state at render (is-pinned style, aria-label). */
   pinned?: boolean
 }
 
-export type NavCore = { icon: string; title: string; path: PathCrumb[] }
+export type NavCore = { icon: string; title: string; path: TrailSegment[] }
 /** navKey → display core. Projected once per tree; resolution is then an O(1) lookup per entry. */
 export type ResolveIndex = Map<string, NavCore>
 
