@@ -33,7 +33,7 @@ const controlScale = createGlobalTheme(':root', {
       segmentHeight: '18px',
       paddingX: '2px',
       labelPaddingX: '4px',
-      radius: '5px',
+      radius: '6px',
       segmentRadius: '4px',
       dividerHeight: '12px',
       icon: iconScale.icon.control,
@@ -51,7 +51,7 @@ const controlScale = createGlobalTheme(':root', {
     'button-medium': {
       height: '28px',
       segmentHeight: '24px',
-      paddingX: '5px',
+      paddingX: '6px',
       labelPaddingX: '12px',
       radius: '10px',
       segmentRadius: '5px',

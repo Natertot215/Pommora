@@ -8,7 +8,8 @@ import { useSession } from '../store'
 import { navKey } from '../Navigation/navRecents'
 import type { ResolvedNav } from '../Navigation/navResolve'
 import { EntityGlyph } from '../Navigation/EntityGlyph'
-import { NavCrumbs, NavPinButton, NavRowMenu } from '../Navigation/NavList'
+import { NavTrail } from '@renderer/DesignSystem/Elements/NavTrail'
+import { NavPinButton, NavRowMenu } from '../Navigation/NavList'
 import './navGallery.css'
 import { onActivateKey } from '@renderer/DesignSystem/Interactions/activate'
 import { thumbKey, thumbRel } from '@shared/nexusPaths'
@@ -140,7 +141,7 @@ function GalleryCard({
             <EntityGlyph item={it} size="body" className="nav-gallery-title-icon" />
             {it.title}
           </OverScroll>
-          <NavCrumbs path={it.path} className="nav-gallery-loc" iconSize="caption" />
+          <NavTrail segments={it.path} className={cx('nav-gallery-loc', text.caption.standard)} />
         </div>
       </div>
     </div>

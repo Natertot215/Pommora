@@ -50,7 +50,7 @@ Cards never indent: structural grouping renders a flat disclosure band per top-l
 
 **Flattening** is **Group By: None** — the `flat` grouping, rendered as one headerless list. **Sort By: Location** orders at the resolve level, with its Order picker offering Location (filesystem order, drag off) or Custom (the view's manual order, drag on) — the full semantics are the pipeline's.[^2] The flat, filesystem-ordered list is Group By: None over Sort By: Location, and it shows each card's full location footing.
 
-Each card's **location footing** is a Set / sub-Set breadcrumb governed by a standing **Hide Location** switch, independent of grouping mode. Under structural grouping the band header already names the top-level Set, so the footing drops that leading crumb; a flat or property list shows the full chain.
+Each card's **location footing** is a NavTrail of the page's Set / sub-Set ancestry governed by a standing **Hide Location** switch, independent of grouping mode. Under structural grouping the band header already names the top-level Set, so the footing drops that leading crumb; a flat or property list shows the full chain.
 
 ### Set Cards
 

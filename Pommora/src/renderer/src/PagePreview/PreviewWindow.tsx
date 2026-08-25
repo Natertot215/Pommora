@@ -15,9 +15,9 @@ import type { ConnectionsApi } from '../MarkdownPM/connections'
 import { showConnectionMenu } from '../Embeds/connectionMenu'
 import { hoverConnection, hoverWebsite } from '../Embeds/ConnectionHoverCard'
 import { getDetailPaneRect } from '../Detail/DetailPane'
-import { NavCrumbs } from '../Navigation/NavList'
-import { resolveWith } from '../Navigation/navResolve'
-import { pageIndexOf, resolveIndexOf } from '../treeIndex'
+import { NavTrail, type TrailSegment } from '@renderer/DesignSystem/Elements/NavTrail'
+import { text } from '@renderer/DesignSystem/Tokens'
+import { ancestryOf, pageIndexOf, resolveIndexOf } from '../treeIndex'
 import { useEmbedScale, useSession, type PreviewTarget } from '../store'
 import { PreviewActions } from './PreviewActions'
 import { PreviewInspector } from './PreviewInspector'
@@ -38,6 +38,8 @@ const STATS_DEBOUNCE_MS = 120
 // The class tells the stylesheet to suppress the shell's default scale-out so one motion owns the
 // window; a plain dismiss keeps it.
 const EXIT_CLASS = { dismiss: '', engulf: 'engulfing', morph: 'morphing' } as const
+
+const NO_TRAIL: TrailSegment[] = []
 
 export function PreviewWindow(): React.JSX.Element | null {
   // Keys on the PAGE flavor, not the derived target — the nav flavor renders in NavWindow's
@@ -121,11 +123,7 @@ function PreviewWindowBody({
 
   const resolveIndex = tree ? resolveIndexOf(tree) : null
 
-  const crumbs = useMemo(() => {
-    if (!resolveIndex) return []
-    const res = resolveWith(resolveIndex, { kind: 'page', id: target.id })
-    return res ? [...res.path, { icon: res.icon, title: res.title }] : []
-  }, [resolveIndex, target])
+  const trail = (tree && ancestryOf(tree, { kind: 'page', id: target.id })) ?? NO_TRAIL
 
   // The open inspector RIDES the same keyframes as the body — one motion, transform only, so the
   // pane never blinks.
@@ -201,10 +199,10 @@ function PreviewWindowBody({
         <PreviewTabStrip
           index={resolveIndex}
           title={
-            <NavCrumbs
-              path={crumbs}
-              className="pgpreview-crumbs crumb-two-tone"
-              iconSize="caption"
+            <NavTrail
+              segments={trail}
+              emphasize
+              className={cx('pgpreview-crumbs', text.caption.standard)}
             />
           }
         />
