@@ -7,7 +7,6 @@ import {
   parseContextKey,
   seededRegistry,
 } from './contexts'
-import { DEFAULT_LABELS } from './types'
 
 describe('contextKey / parseContextKey', () => {
   it('wraps a title in its layer sigil', () => {
@@ -52,19 +51,11 @@ describe('seededRegistry', () => {
     return () => `id-${++n}`
   }
 
-  it('yields the three seeded contexts in label order, each with a minted id', () => {
-    const reg = seededRegistry(DEFAULT_LABELS, mint())
+  it('yields the three seeded contexts in order, each with a minted id', () => {
+    const reg = seededRegistry(mint())
     expect(reg.contexts.map((c) => c.id)).toEqual(['id-1', 'id-2', 'id-3'])
     expect(reg.contexts.map((c) => c.title)).toEqual(['Areas', 'Topics', 'Projects'])
     expect(reg.contexts.map((c) => c.singular)).toEqual(['Area', 'Topic', 'Project'])
-  })
-
-  it('disambiguates colliding custom plurals — titles are nexus-wide identity', () => {
-    const reg = seededRegistry(
-      { ...DEFAULT_LABELS, topic: { singular: 'Area', plural: 'Areas' } },
-      mint(),
-    )
-    expect(reg.contexts.map((c) => c.title)).toEqual(['Areas', 'Areas 2', 'Projects'])
   })
 })
 

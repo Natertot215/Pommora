@@ -671,9 +671,7 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
       )
   }
   const newCollectionMenu = (): void => {
-    // Labeled from the registry like every other creator — a nexus that renames Collection
-    // renames this too.
-    const label = `New ${tree?.labels?.pageCollection.singular ?? 'Collection'}`
+    const label = 'New Collection'
     void useSession.getState().createFromMenu(
       [
         {

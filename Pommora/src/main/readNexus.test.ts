@@ -657,67 +657,6 @@ describe('readNexus — personalization', () => {
   })
 })
 
-describe('readNexus — structured labels', () => {
-  const roots: string[] = []
-  const mk = (settings: object): string => {
-    const root = mkdtempSync(join(tmpdir(), 'pom-labels-'))
-    roots.push(root)
-    d(join(root, '.nexus'))
-    w(join(root, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nxl', createdAt: '2026' }))
-    w(join(root, '.nexus', 'settings.json'), JSON.stringify(settings))
-    return root
-  }
-  afterAll(() =>
-    roots.forEach((r) => {
-      rmSync(r, { recursive: true, force: true })
-    }),
-  )
-
-  it('parses the labels blob into the structured shape, defaulting absent pairs', async () => {
-    const t = await readNexus(
-      mk({
-        labels: {
-          page_collection: { singular: 'Library', plural: 'Libraries' },
-          page_set: { singular: 'Shelf', plural: 'Shelves' },
-          project: { singular: 'Initiative', plural: 'Initiatives' },
-          agenda_task: { singular: 'Todo', plural: 'Todos' },
-          agenda_event: { singular: 'Happening', plural: 'Happenings' },
-        },
-      }),
-    )
-    expect(t.labels.area).toEqual({ singular: 'Area', plural: 'Areas' })
-    expect(t.labels.topic).toEqual({ singular: 'Topic', plural: 'Topics' })
-    expect(t.labels.pageCollection).toEqual({ singular: 'Library', plural: 'Libraries' })
-    expect(t.labels.pageSet).toEqual({ singular: 'Shelf', plural: 'Shelves' })
-    expect(t.labels.project).toEqual({ singular: 'Initiative', plural: 'Initiatives' })
-    expect(t.labels.agendaTask).toEqual({ singular: 'Todo', plural: 'Todos' })
-    expect(t.labels.agendaEvent).toEqual({ singular: 'Happening', plural: 'Happenings' })
-  })
-
-  it('reads area/topic LabelPairs directly; a foreign key inside labels is inert', async () => {
-    const t = await readNexus(
-      mk({
-        labels: {
-          area: { singular: 'Zone', plural: 'Zones' },
-          topic: { singular: 'Theme', plural: 'Themes' },
-          outside_sections: { areas: 'IGNORED', topics: 'IGNORED' },
-        },
-      }),
-    )
-    expect(t.labels.area).toEqual({ singular: 'Zone', plural: 'Zones' })
-    expect(t.labels.topic).toEqual({ singular: 'Theme', plural: 'Themes' })
-  })
-
-  it('falls back to defaults on missing keys (area/topic → Area(s)/Topic(s))', async () => {
-    const t = await readNexus(mk({}))
-    expect(t.labels.area).toEqual({ singular: 'Area', plural: 'Areas' })
-    expect(t.labels.topic).toEqual({ singular: 'Topic', plural: 'Topics' })
-    expect(t.labels.pageCollection).toEqual({ singular: 'Collection', plural: 'Collections' })
-    expect(t.labels.pageSet).toEqual({ singular: 'Set', plural: 'Sets' })
-    expect(t.labels.project.plural).toBe('Projects')
-  })
-})
-
 describe('readNexus — profile (from settings)', () => {
   const roots: string[] = []
   const mk = (settings: object): string => {

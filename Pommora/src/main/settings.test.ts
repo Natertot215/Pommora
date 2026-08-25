@@ -5,7 +5,6 @@ import { join } from 'node:path'
 import {
   readDefaultViewScale,
   readWatchScope,
-  readNexusLabels,
   readPermanentDelete,
   updateSettings,
   writePersonalization,
@@ -116,7 +115,6 @@ describe('the live-tree fast path', () => {
     await write({
       personalization: { permanentDelete: true, defaultViewScale: 1.5 },
       excluded_folders: ['Archive'],
-      labels: { page_collection: { singular: 'Shelf' } },
     })
     await refreshTree(root)
     // The file is gone; every answer below can only come from the tree.
@@ -124,7 +122,6 @@ describe('the live-tree fast path', () => {
     expect(await readPermanentDelete(root)).toBe(true)
     expect(await readDefaultViewScale(root)).toBe(1.5)
     expect((await readWatchScope(root)).excluded).toEqual(['Archive'])
-    expect((await readNexusLabels(root)).pageCollection.singular).toBe('Shelf')
   })
 
   it('falls back to disk for a root no tree is held for', async () => {

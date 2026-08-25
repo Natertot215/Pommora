@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { buildResolveContext } from './resolveContext'
-import { DEFAULT_LABELS, EMPTY_ASSET_MAP, type NexusTree } from '@shared/types'
+import { EMPTY_ASSET_MAP, type NexusTree } from '@shared/types'
 
 const tree = {
   contexts: [
@@ -22,15 +22,13 @@ const tree = {
       spaces: [{ id: 't1', kind: 'space', title: 'Reading', path: 'R', contextId: 'ctx_topics' }],
     },
   ],
-  labels: DEFAULT_LABELS,
   personalization: {},
 } as unknown as NexusTree
 
 describe('buildResolveContext', () => {
-  it('bundles schema + the identity seam Space map + labels', () => {
+  it('bundles schema + the identity seam Space map', () => {
     const ctx = buildResolveContext(tree, [], EMPTY_ASSET_MAP)
     expect(ctx.schema).toEqual([])
-    expect(ctx.labels).toBe(DEFAULT_LABELS)
     expect(ctx.contextsById.get('a1')?.title).toBe('Personal')
     expect(ctx.contextsById.get('t1')?.title).toBe('Reading')
   })

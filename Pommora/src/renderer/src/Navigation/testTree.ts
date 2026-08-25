@@ -2,7 +2,6 @@
 // with a nested Set so location-chain resolution is exercised. Not shipped — imported only by *.test.
 import type { NexusTree } from '@shared/types'
 import { ASSETS_DIR_REL } from '@shared/nexusPaths'
-import { DEFAULT_LABELS } from '@shared/types'
 
 export function makeTree(): NexusTree {
   return {
@@ -56,7 +55,6 @@ export function makeTree(): NexusTree {
         ],
       },
     ],
-    labels: DEFAULT_LABELS,
     accent: 'lavender',
     personalization: {},
     commands: {},

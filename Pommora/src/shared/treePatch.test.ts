@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { ASSETS_DIR_REL } from '@shared/nexusPaths'
 import type { CollectionNode, NexusTree } from '@shared/types'
-import { DEFAULT_LABELS } from '@shared/types'
 import { NEW_PAGE_SLOT } from '@shared/mutate'
 import {
   insertCreatedInTree,
@@ -48,7 +47,6 @@ function tree(): NexusTree {
     crops: {},
     contexts: [],
     collections: [notes, work],
-    labels: DEFAULT_LABELS,
     accent: 'lavender',
     personalization: {},
     commands: {},

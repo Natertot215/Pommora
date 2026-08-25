@@ -4,12 +4,7 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import type { ReactNode } from 'react'
 import type { PropertyDefinition } from '@shared/properties'
-import {
-  EMPTY_ASSET_MAP,
-  type CollectionNode,
-  DEFAULT_LABELS,
-  type ResolvedGroup,
-} from '@shared/types'
+import { EMPTY_ASSET_MAP, type CollectionNode, type ResolvedGroup } from '@shared/types'
 import type { GroupConfig, SavedView } from '@shared/views'
 import type { ResolveContext } from './Table/resolveContext'
 import { resolveBandHead } from './GroupBand'
@@ -43,7 +38,6 @@ const ctx: ResolveContext = {
   schema,
   contextsById: new Map(),
   contexts: new Map(),
-  labels: DEFAULT_LABELS,
   assets: EMPTY_ASSET_MAP,
 }
 const source = {
