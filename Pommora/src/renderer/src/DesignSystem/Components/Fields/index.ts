@@ -1,5 +1,5 @@
 export { EditableInput } from './EditableInput'
-export { InputField } from './InputField'
+export { type FieldEdit, InputField } from './InputField'
 export { PathField } from './PathField'
 export { RenamableLabel } from './RenamableLabel'
 export { SEARCH_PLACEHOLDER, SearchField } from './SearchField'
@@ -12,7 +12,8 @@ export {
   base,
   contentRow,
   field,
-  hairlineField,
+  borderedField,
+  draftInput,
   input,
   placeholder,
   search,

@@ -1,7 +1,6 @@
 // A divided run of titles inside a field — the honest treatment for a list of plain names that
 // carry no color of their own, where a chip would render as a colorless box pretending to be a
-// value. The Filter pane's Location field wears it over Sets; the asset-directory row wears it
-// over path segments. Spacing is the run's GAP, never margins on the pieces — the tab strip's
+// value. The Filter pane's Location field wears it over Sets. Spacing is the run's GAP, never margins on the pieces — the tab strip's
 // recipe: a divider spaced by its own margins sits evenly only while its neighbors are symmetric,
 // and a trailing affordance on one segment breaks exactly that.
 import { style } from '@vanilla-extract/css'
@@ -44,8 +43,7 @@ export const segmentIcon = style({ flexShrink: 0 })
 
 /** The house segment separator (Segmented), measured against the FIELD rather than given
  *  a fixed height: it stretches with the run and insets a few px, so it stays proportional if the
- *  field's type or padding ever moves. What a FLAT run wears — the entries stand beside each
- *  other and none contains another. */
+ *  field's type or padding ever moves. */
 export const segmentDivider = style([
   segmentHairline,
   { alignSelf: 'stretch', marginBlock: SEGMENT_DIVIDER_INSET },

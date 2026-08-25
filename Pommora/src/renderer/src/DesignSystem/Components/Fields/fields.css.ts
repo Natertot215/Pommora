@@ -42,12 +42,12 @@ export const field = style([
   },
 ])
 
-/** The hairline cell variant — a left-aligned, tighter-padded field that holds its own width in a
+/** The bordered cell variant — a left-aligned, tighter-padded field that holds its own width in a
  *  flex run and eclipses its overflow rather than growing. Seeds the resting stroke through the house
  *  ring CHANNEL, not a hand-rolled shadow: `field` already paints `inset 0 0 0 1px var(--field-ring)`,
  *  so a variant only sets the color. Overriding boxShadow instead would also stomp the channel for any
  *  ancestor that sets it. Width and cursor stay with the consumer — they are what actually differ. */
-export const hairlineField = style([
+export const borderedField = style([
   field,
   {
     flex: '0 0 auto',
@@ -72,6 +72,24 @@ export const input = style([
     border: 'none',
     outline: 'none',
     font: 'inherit',
+  },
+])
+
+/** The draft caret a press-to-edit field swaps in — sized by its text, pinned to the rest width by
+ *  the field, and stating its own type: an <input> takes its line-height from the browser, and the
+ *  caret is drawn to that. */
+export const draftInput = style([
+  text.body.standard,
+  {
+    fieldSizing: 'content',
+    flex: '1 0 auto',
+    minWidth: 0,
+    border: 'none',
+    outline: 'none',
+    background: 'none',
+    padding: 0,
+    fontFamily: 'inherit',
+    color: c.label.control,
   },
 ])
 
