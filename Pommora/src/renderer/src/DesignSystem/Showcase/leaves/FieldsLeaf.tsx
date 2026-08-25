@@ -35,6 +35,7 @@ export function FieldsLeaf(): React.JSX.Element {
           }
         >
           <NavTrail
+            iconSize="body"
             segments={path
               .split('/')
               .filter(Boolean)
