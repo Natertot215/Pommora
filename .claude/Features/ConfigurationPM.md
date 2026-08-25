@@ -16,7 +16,6 @@ Configuration
 ├── Collections
 ├── Pages
 ├── Personalization
-├── Labels
 ├── Write Discipline
 ├── App Configuration (Per-Device)
 └── Pending
@@ -196,7 +195,7 @@ A second class of machine-local state resides in the Nexus's own database rather
 ### Pending
 
 - **Beyond the knobs that ship** — default icons, both placement knobs, and the default view scale have no in-app writer and are hand-set in `settings.json`, with the watcher applying the change live. All are wireable through the existing setter.
-- **Scopes with no renderer-facing setter** — labels and the per-device app config have no IPC a UI could write through; each needs a handler first. The profile is further along: its image is a picked file adopted like a banner and framed by a crop, its icon a glyph name — both written from the ribbon's identity menu, and the subtitle has an op and handler waiting on a surface to drive them.
+- **Scopes with no renderer-facing setter** — the per-device app config has no IPC a UI could write through; it needs a handler first. The profile is further along: its image is a picked file adopted like a banner and framed by a crop, its icon a glyph name — both written from the ribbon's identity menu, and the subtitle has an op and handler waiting on a surface to drive them.
 - **Command rebinding** — data-ready and unbuilt; shortcuts don't ship without per-shortcut sign-off. The Shortcuts leaf lists its bindings and offers no control over them until they do.
 - **Two names for one date form** — the Trash column's own menu calls `monthDayYear` "Short Date", where every other surface calls it "MM/DD/YYYY" and reserves "Short Date" for the `short` form. The two vocabularies need reconciling.
 - **Page configuration** — §Pages is scaffolded and unwritten.
