@@ -33,7 +33,7 @@ export const viewport = style({
   position: 'relative',
   overflow: 'hidden',
   borderRadius: '8px',
-  background: c.fill.secondary,
+  background: c.fill.tertiary,
   cursor: 'grab',
   touchAction: 'none',
   userSelect: 'none',
