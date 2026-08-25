@@ -1,6 +1,7 @@
 import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
 import { InputField, placeholder } from '@renderer/DesignSystem/Components/Fields'
 import { NavTrail } from '@renderer/DesignSystem/Elements/NavTrail'
+import { Icon } from '@renderer/DesignSystem/Symbols'
 import { useSession } from '@renderer/store'
 import * as s from './settingsPane.css'
 
@@ -26,7 +27,7 @@ export function FileEditor({
   const segments = value
     .split('/')
     .filter(Boolean)
-    .map((title) => ({ title, icon: 'folder-closed' }))
+    .map((title) => ({ title }))
   return (
     <div className={s.configEditor}>
       <div className={s.configRow}>
@@ -35,6 +36,7 @@ export function FileEditor({
           chrome="bordered"
           label="Directory"
           edit={{ value, onCommit: onSetDirectory }}
+          leading={<Icon name="folder-closed" size="body" />}
           trailing={
             <Button
               type="base"
@@ -49,7 +51,7 @@ export function FileEditor({
           }
         >
           {segments.length > 0 ? (
-            <NavTrail segments={segments} iconSize="body" />
+            <NavTrail segments={segments} />
           ) : (
             <span className={placeholder}>{assetRoot}</span>
           )}
