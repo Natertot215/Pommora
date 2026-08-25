@@ -17,10 +17,11 @@ const pct = (n: number): string => `${Number((n * 100).toFixed(4))}%`
 export const clampZoom = (zoom: number): number => clamp(zoom, MIN_ZOOM, MAX_ZOOM)
 
 const widthMeets = (imageAspect: number, boxAspect: number): boolean => imageAspect > boxAspect
+const cropZoom = (crop: Crop): number => clampZoom(Number.isFinite(crop.zoom) ? crop.zoom : 1)
 
 export function coverStyle(crop: Crop, imageAspect: number, boxAspect: number): CoverStyle | null {
   if (!usable(imageAspect) || !usable(boxAspect)) return null
-  const zoom = clampZoom(Number.isFinite(crop.zoom) ? crop.zoom : 1)
+  const zoom = cropZoom(crop)
   return {
     backgroundSize: widthMeets(imageAspect, boxAspect) ? `${pct(zoom)} auto` : `auto ${pct(zoom)}`,
     backgroundPosition: `${pct(clamp(crop.x, 0, 1))} ${pct(clamp(crop.y, 0, 1))}`,
@@ -48,7 +49,7 @@ export function coverRect(
   boxH: number,
 ): CoverRect | null {
   if (!usable(imageAspect) || !usable(boxW) || !usable(boxH)) return null
-  const z = clampZoom(Number.isFinite(crop.zoom) ? crop.zoom : 1)
+  const z = cropZoom(crop)
   const width = widthMeets(imageAspect, boxH / boxW) ? z * boxW : (z * boxH) / imageAspect
   const height = width * imageAspect
   return {
