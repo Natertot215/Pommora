@@ -1,9 +1,5 @@
 import { type Ref, useState } from 'react'
-import {
-  InputField,
-  RenamableLabel,
-  input as fieldInputClass,
-} from '@renderer/DesignSystem/Components/Fields'
+import { InputField } from '@renderer/DesignSystem/Components/Fields'
 import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { DashIcon } from './DashIcon'
@@ -59,25 +55,13 @@ export function InlineEditHeader({
       >
         {icon ? <Icon name={icon} /> : <DashIcon />}
       </Button>
-      <RenamableLabel
-        renames="title"
-        editing={editing && !readOnly}
-        value={value}
-        className={`${fieldInputClass} ${s.titleField}`}
-        boxed
-        onCommit={(next) => {
-          setEditing(false)
-          onCommit(next)
-        }}
-        onCancel={() => setEditing(false)}
+      <InputField
+        className={s.titleField}
+        label="Title"
+        edit={readOnly ? undefined : { value, onCommit, editing, onEditingChange: setEditing }}
       >
-        <InputField
-          className={s.titleField}
-          onClick={readOnly ? undefined : () => setEditing(true)}
-        >
-          {value}
-        </InputField>
-      </RenamableLabel>
+        {value}
+      </InputField>
     </div>
   )
 }
