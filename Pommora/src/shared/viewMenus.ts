@@ -42,15 +42,15 @@ function styleRow<A extends ViewStyleAction>(current: ViewStyle): ActionItem<A> 
   }
 }
 
-/** The embed title row's chrome menu. Change Icon appears only while an icon is shown, since it
+/** The embed title row's chrome menu. Edit Icon appears only while an icon is shown, since it
  *  has nothing to change otherwise. */
 export function embedTitleMenuItems(
   iconShown: boolean,
   level: number,
 ): ActionItem<EmbedTitleMenuAction>[] {
   return [
+    ...(iconShown ? [{ label: 'Edit Icon', action: 'change-icon' as const }] : []),
     { label: iconLabel(iconShown), action: 'toggle-icon' },
-    ...(iconShown ? [{ label: 'Change Icon', action: 'change-icon' as const }] : []),
     {
       label: 'Title Size',
       // A branch takes no action of its own; it carries the leading leaf's, so a host that ever

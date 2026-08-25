@@ -1,4 +1,4 @@
-// The card's right-click menu: page-meta actions (Open · Rename · Change Icon · Delete), an
+// The card's right-click menu: page-meta actions (Open · Rename · Edit Icon · Delete), an
 // Add Property ▸ submenu of the card's blank, addable properties, and the send block the other page
 // menus carry — Move To ▸ over the Collection/Set tree, then the two copies. The renderer builds both
 // trees (already ordered) and routes the chosen action; main maps this model to Electron MenuItems.

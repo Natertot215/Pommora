@@ -183,7 +183,7 @@ const api = {
   // `get` returns the whole cached map; `fetch` resolves one URL (cache hit or live fetch).
   linkTitles: { get: ask('linkTitles:get'), fetch: ask('linkTitles:fetch') },
   systemAccent: ask('theme:systemAccent'),
-  // Pop the native nexus-identity icon menu (Change Icon / Add·Change Photo / removes) → the chosen action.
+  // Pop the native nexus-identity icon menu (Edit Icon / Add·Change Photo / removes) → the chosen action.
   iconMenu: ask('nexus:iconMenu'),
   // Open the native image picker directly → the chosen file's path (null if canceled).
   pickFile: ask('nexus:pickFile'),

@@ -4,7 +4,7 @@
 
 export type NexusIconAction = 'changeIcon' | 'addPhoto' | 'removePhoto' | 'removeIcon'
 
-export type TitleMenuAction = 'rename' | 'editIcon' | 'toggleIcon'
+export type TitleMenuAction = 'rename' | 'editIcon' | 'toggleIcon' | 'changeColor'
 
 export type BannerMenuAction = 'change' | 'remove'
 
