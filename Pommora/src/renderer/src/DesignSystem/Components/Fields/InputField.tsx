@@ -17,6 +17,7 @@ export function InputField({
   capped,
   chrome = 'boxed',
   edit,
+  leading,
   trailing,
   label,
 }: {
@@ -28,6 +29,8 @@ export function InputField({
   chrome?: 'boxed' | 'bordered'
   /** Press-to-edit: the children at rest, a draft caret over the raw value under a click. */
   edit?: FieldEdit
+  /** Before the content — one lead glyph. */
+  leading?: ReactNode
   /** After the content, outside the draft — an action the field carries. */
   trailing?: ReactNode
   label?: string
@@ -40,7 +43,11 @@ export function InputField({
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: the button role is applied conditionally on the click handler, which a static parse cannot see
     <div
-      className={cx(chrome === 'bordered' ? s.borderedField : s.field, className)}
+      className={cx(
+        chrome === 'bordered' ? s.borderedField : s.field,
+        edit && s.editable,
+        className,
+      )}
       style={{
         ...(edit ? draftEdit.restProps.style : undefined),
         ...(outline ? ({ '--field-ring': outline } as React.CSSProperties) : undefined),
@@ -49,6 +56,7 @@ export function InputField({
       onClick={activate ? (e) => activate(e.currentTarget) : undefined}
       onKeyDown={activate ? (e) => onActivateKey(() => activate(e.currentTarget))(e) : undefined}
     >
+      {leading && <span className={s.leading}>{leading}</span>}
       {editing ? (
         <input className={s.draftInput} aria-label={label} {...draftEdit.inputProps} />
       ) : capped ? (
@@ -56,7 +64,7 @@ export function InputField({
       ) : (
         children
       )}
-      {trailing}
+      {trailing && <span className={s.trailing}>{trailing}</span>}
     </div>
   )
 }
