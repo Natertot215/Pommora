@@ -5,6 +5,9 @@ import { accessoryButton, detail } from '../Menu/menu.css'
 
 const c = vars.color
 
+// How far the corner glyphs sit in from the frame's edges — the same inset on all three sides.
+const CORNER_INSET = '8px'
+
 export const backdrop = style({
   position: 'fixed',
   inset: 0,
@@ -23,7 +26,6 @@ export const panel = style({
   padding: '18px',
   borderRadius: '12px',
   border: `1px solid ${c.separator.border}`,
-  boxShadow: `0 20px 60px ${tintAt(c.system.black, 'primary')}`,
 })
 
 /** The frame the image is dragged inside — it holds the seat and the dimmed room around it. */
@@ -66,12 +68,12 @@ const cornerGlyph = style([
   accessoryButton,
   {
     position: 'absolute',
-    bottom: '8px',
+    bottom: CORNER_INSET,
     selectors: { '&&&': { color: c.label.secondary } },
   },
 ])
-export const cornerGlyphStart = style([cornerGlyph, { left: '8px' }])
-export const cornerGlyphEnd = style([cornerGlyph, { right: '8px' }])
+export const cornerGlyphStart = style([cornerGlyph, { left: CORNER_INSET }])
+export const cornerGlyphEnd = style([cornerGlyph, { right: CORNER_INSET }])
 
 export const message = style([text.footnote.standard, { color: c.label.secondary }])
 
