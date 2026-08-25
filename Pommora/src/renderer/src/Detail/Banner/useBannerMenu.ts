@@ -57,8 +57,8 @@ export function useBannerMenu(
     closeEditor()
     if (await mutate({ op: 'setCrop', image: value ?? '', crop })) onDone?.()
   }
-  // onDone advances the seat's value (a page cover refreshes only on refetch, not a tree push), so
-  // the picker's re-pick Save-hold — cleared when value changes — never dead-ends on a page seat.
+  // onDone advances the seat's value so the picker resets its draft to the new image; a page cover
+  // refreshes only on refetch, not a tree push, so without it the editor keeps framing the old one.
   const onRepick = (source: string): Promise<boolean> =>
     mutate({ op: 'setBanner', path, kind, source }).then((ok) => {
       if (ok) onDone?.()

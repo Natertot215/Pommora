@@ -76,17 +76,13 @@ export function ImagePicker({
     if (open) setDraft(cropFor(value, map, crops) ?? DEFAULT_CROP)
   }, [open, value])
 
-  // The new image has arrived — the re-pick is settled.
-  useEffect(() => setRepicking(false), [value])
-
-  // Hold Save while a re-picked image is adopting; a refused adopt clears the hold at once.
+  // Hold Save only while the adopt is in flight — a dedup adopt returns the same value, so waiting
+  // on a value change would strand the hold when the re-picked image is the one already set.
   const settleRepick = useCallback(
     (source: string): void => {
       if (!onRepick) return
       setRepicking(true)
-      void Promise.resolve(onRepick(source)).then((ok) => {
-        if (!ok) setRepicking(false)
-      })
+      void Promise.resolve(onRepick(source)).then(() => setRepicking(false))
     },
     [onRepick],
   )
