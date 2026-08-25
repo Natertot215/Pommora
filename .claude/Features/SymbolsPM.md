@@ -110,7 +110,7 @@ A handful of glyph roles recur across the app, each carrying a consistent meanin
 
 ### The Picker
 
-The curated registry above is the app's own semantic vocabulary — the fixed glyphs the UI reaches for by name. The **Icon Picker** the user opens to assign an entity's icon is a separate, wider surface exposing the entire Lucide set, kebab-keyed and searchable. Favorites persist with the nexus's personalization. A picked id is stored as its bare Lucide kebab id, the same convention the curated keys follow, and resolution reads the curated registry first, then the full set.
+The **Icon Picker** the user opens to assign an entity's icon is a separate, wider surface exposing the entire Lucide set, kebab-keyed and searchable. Favorites persist with the nexus's personalization. A picked id is stored as its bare Lucide kebab id, the same convention the curated keys follow, and resolution reads the curated registry first, then the full set.
 
 ### Known Issues
 

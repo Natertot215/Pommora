@@ -29,7 +29,8 @@ Retention carries across tab switches for as many recent page tabs as stay parke
 
 ### Titles & The Grip
 
-Tile titles are display-only and resolved at render — a hand-written label wins, an empty one derives through the nexus's default link format, sharing the fetched-title path table cells use. Nothing is ever written back into the document. The hover-revealed title is itself a link, opening the address per the open-in preference. The tile's grip menu carries **Edit Link** above Delete, and it edits in the line like every other Edit Link does: the tile returns to the raw address it holds with that address selected, so typing replaces it, and leaving the line re-forms the tile. The site is asked to load only once the new address is the document's — nothing reloads to show a caret. 
+Tile titles are display-only and resolved at render — a hand-written label wins, an empty one derives through the nexus's default link format, sharing the fetched-title path table cells use. Nothing is ever written back into the document. The hover-revealed title is itself a link, opening the address per the open-in preference. The tile's grip menu carries **Edit Link** above Delete, and it edits in the line like every other Edit Link does: the tile returns to the raw address it holds with that address selected, so typing replaces it, and leaving the line re-forms the tile. The site is asked to load only once the new address is the document's — nothing reloads to show a caret.
+
 ### Link Opening
 
 One renderer adjudicator decides where every external link opens — editor clicks, table cells, tile titles, and guest popups all route through it, honoring the **Open Links In Pommora** preferenc[^3]: off opens the system browser, on summons the floating in-app browser.[^4] A guest's `window.open` never opens an OS window; main denies it and hands the address to the same adjudicator.

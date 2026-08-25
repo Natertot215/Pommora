@@ -6,9 +6,9 @@ Agenda
 └── Pending
 ```
 
-The operational layer's calendar-anchored side: two peer entity kinds, **Tasks** (reminder-shaped) and **Events** (calendar-shaped), each a `.md` carrying its kind's id key. Each kind lives in its own singleton folder at the nexus root, discovered by a config sidecar and never by folder name — the folders stay renameable, and a folder carrying an agenda config is not a Collection.[^1]
+The operational layer's calendar-anchored side: two peer entity kinds, **Tasks** (reminder-shaped) and **Events** (calendar-shaped), each a `.md` carrying its kind's id key. Each kind lives in its own singleton folder at the nexus root, discovered by a config sidecar and never by folder name — the folders stay renameable.[^1]
 
-Agenda currently carries no on-disk format, no CRUD, and no read surface — the item format, field vocabulary, ordering, and surfaces are the Agenda rethink's to answer. What holds regardless of the form it takes:
+Agenda currently carries no on-disk format, no CRUD, and no read surface. What holds regardless of the form it takes:
 
 - **Sidecar-declared kind.** A folder's kind is determined by the JSON filename it carries (`_taskconfig.json` / `_eventconfig.json`). A folder the nexus registers is that singleton; one it does not is inert, and neither is ever adopted as a Collection. A registered singleton stamps its own direct members and is flat — nothing below it is walked or stamped.
 - **Identity refs.** `NavRef` admits `task` and `event` as bare `{kind, id}` refs, and `navigation.json` persists them. The tab resolver, the pin target, and the favorite add each refuse an agenda kind while nothing routes one, so a stored ref resolves to nothing rather than to a broken destination.

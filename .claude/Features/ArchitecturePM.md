@@ -104,7 +104,7 @@ A copy is the case the record can't settle alone. Every ordinary duplication —
 
 #### The Trash
 
-A deleted entity moves to `.trash/` under the folder chain it came from, where a bundle holding the artifact and a record of what departed is pruned. The record and restore model are the [[NexusRecordPM|Nexus Records]].
+A deleted entity moves to `.trash/` under the folder chain it came from, where a bundle holding the artifact and a record of what departed is minted. The record and restore model are the [[NexusRecordPM|Nexus Records]].
 
 #### Folder Exclusion
 
