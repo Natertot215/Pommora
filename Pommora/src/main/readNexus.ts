@@ -12,8 +12,6 @@ import type {
   AccentSetting,
   CollectionNode,
   ContextGroup,
-  LabelPair,
-  NexusLabels,
   NexusTree,
   PageNode,
   SetNode,
@@ -34,7 +32,6 @@ import { DATE_FORMATS } from '@shared/columnStyles'
 import {
   DEFAULT_ACCENT,
   DEFAULT_COMMANDS,
-  DEFAULT_LABELS,
   EMBED_SCALE_DEFAULT,
   ENTITY_ICON_KINDS,
   WEB_ZOOM_DEFAULT,
@@ -180,36 +177,11 @@ export function readCommands(raw: unknown): Record<string, string> {
   return commands
 }
 
-// Parse the on-disk `settings.labels` blob into the structured camelCase NexusLabels,
-// defaulting per-field so a partial/absent blob still yields full labels.
-export function readLabels(raw: unknown): NexusLabels {
-  const obj = (v: unknown): Record<string, unknown> =>
-    v != null && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : {}
-  const pair = (v: unknown, fallback: LabelPair): LabelPair => {
-    const o = obj(v)
-    return {
-      singular: asString(o.singular) ?? fallback.singular,
-      plural: asString(o.plural) ?? fallback.plural,
-    }
-  }
-  const L = obj(raw)
-  return {
-    area: pair(L.area, DEFAULT_LABELS.area),
-    topic: pair(L.topic, DEFAULT_LABELS.topic),
-    project: pair(L.project, DEFAULT_LABELS.project),
-    pageCollection: pair(L.page_collection, DEFAULT_LABELS.pageCollection),
-    pageSet: pair(L.page_set, DEFAULT_LABELS.pageSet),
-    agendaTask: pair(L.agenda_task, DEFAULT_LABELS.agendaTask),
-    agendaEvent: pair(L.agenda_event, DEFAULT_LABELS.agendaEvent),
-  }
-}
-
 /** Every tree leaf `settings.json` feeds, decoded in one place — the walk and the watcher's
  *  settings patch read the same file through the same coercions, so they cannot disagree. */
 export interface SettingsLeaves {
   excluded: string[]
   assetDirectory: string
-  labels: NexusLabels
   accent: AccentSetting
   personalization: Personalization
   commands: Record<string, string>
@@ -263,7 +235,6 @@ export function readSettingsLeaves(settings: Json): SettingsLeaves {
   return {
     excluded: asStringArray(settings.excluded_folders) ?? [],
     assetDirectory: readAssetDirectoryLeaf(settings.asset_directory),
-    labels: readLabels(settings.labels),
     accent: personalization.accent ?? DEFAULT_ACCENT,
     personalization,
     commands: readCommands(settings.commands),
@@ -717,7 +688,6 @@ async function walkNexus(root: string): Promise<NexusTree> {
     crops: readCropLeaves(cropsConfig),
     contexts: contexts ?? [],
     collections,
-    labels: leaves.labels,
     accent: leaves.accent,
     personalization: leaves.personalization,
     commands: leaves.commands,

@@ -307,8 +307,8 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   }, [source, effectiveValues, liveView, schema, manualOrder, contextIds])
   const ctx = useMemo(
     () => (tree ? buildResolveContext(tree, schema, assetMap) : null),
-    // buildResolveContext reads only contexts, labels and the asset map — keying on those slices keeps ctx identity across unrelated tree pushes, so memoized rows hold.
-    [tree?.contexts, tree?.labels, schema, assetMap],
+    // buildResolveContext reads only contexts and the asset map — keying on those slices keeps ctx identity across unrelated tree pushes, so memoized rows hold.
+    [tree?.contexts, schema, assetMap],
   )
   // One mounted observer, two targets, one job (the overflowing flag): the view (pane resizes) and
   // the grid (min-width sizes its box only while the columns overflow the pane — in the fit regime
@@ -706,7 +706,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     // surface-specific tails (number/url placement) stay here.
     const value = resolveFieldValue(row, col.id, schema)
     const def = schema.find((d) => d.id === col.id)
-    const shared = sharedValueClickAction(t, colStyle(col.id).look, value, def)
+    const shared = sharedValueClickAction(t, value)
     if (shared) {
       e.stopPropagation()
       if (shared.kind === 'commit') commitCellValue(row, col.id, shared.value)
