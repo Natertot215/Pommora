@@ -20,7 +20,7 @@
    no image; the title area is a top-anchored column on a darker shelf. 
    ────────────────────────────────────────────────────────────────────────── */
 
-.page-card-thumb img,
+.page-card-thumb.is-capture img,
 .nav-gallery-thumb img {
   display: block;
   width: 100%;

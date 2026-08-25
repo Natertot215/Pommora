@@ -1,5 +1,6 @@
 import { forwardRef } from 'react'
 import { useAssetUrl, useSession } from '../store'
+import { AssetImage } from '@renderer/DesignSystem/Components/AssetImage/AssetImage'
 import { useBannerMenu } from '../Detail/Banner/useBannerMenu'
 import { AddBannerButton } from '../Detail/Banner/AddBannerButton'
 import { DetailTitleHeader } from '../Detail/DetailTitleHeader'
@@ -63,7 +64,7 @@ export const PageHeader = forwardRef<HTMLDivElement, Props>(function PageHeader(
             void bannerMenu()
           }}
         >
-          <img className="mdpm-banner-img" src={coverSrc} alt="" />
+          <AssetImage value={cover} className="mdpm-banner-img" />
           <div className="mdpm-banner-overlay">{titleHeader}</div>
         </div>
       ) : (

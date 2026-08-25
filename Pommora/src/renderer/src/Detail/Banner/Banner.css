@@ -11,12 +11,6 @@
     --border-heading
   ); /* the shared heading↔body seam (same token as the table heading) */
 }
-.banner-img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover; /* aspect-fill, center-cropped */
-}
 /* The name sits at the content's left margin (clear of the sidebar), not the full-bleed image
    edge — so it reads on the visible part of the banner. */
 /* One container-title size for the banner overlay AND the banner-less header (DRY) — a

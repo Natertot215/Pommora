@@ -20,10 +20,3 @@ export const photo = style({
 /** Faint placeholder tint for the EMPTY slot only — dropped once a photo is set so its
  *  transparent areas fall through to the glass instead of a solid fill. */
 export const photoEmpty = style({ background: c.fill.tertiary })
-
-export const photoImg = style({
-  width: '100%',
-  height: '100%',
-  objectFit: 'cover',
-  display: 'block',
-})
