@@ -434,10 +434,10 @@ What this is not: rotation, filters, pixel editing; per-view image-fit or aspect
 - [x] **Phase 4** — the entry points
   - [x] Task 8 — useBannerMenu · `5dbf347f`
   - [x] Task 9 — Edit Image · `36184bcb`
-  - [x] Gate 4 tidy (simplifier onSave fold + comment-killer trim) · `<gate4>`
+  - [x] Gate 4 tidy (onSave closes; onRepick calls onDone; simplifier + comment trim) · `c21fc2cb`
   - [x] Screenshot · `scratchpad/gate4-framed-banner.png` — Collection B's banner rendering *through* a crop (zoom 0.6 + `#2a1a3a` background) in the sandbox app; proves the end-to-end paint (crops.json → tree.crops → AssetImage → coverStyle) and that the crop reads at open (persistence/relaunch). Test nexus restored, instrumentation removed + grep-verified. The Cover-mode-card echo and the native Edit Image menu item route to Nathan's live check.
 - [ ] **Phase 5** — the record
-  - [ ] Task 10 · `<commit>`
+  - [x] Task 10 — ContextPM, HistoryPM PM-115, HandoffPM · `<commit>`
   - [ ] The full-range pass · `<commit>`
 
 ### Rulings
