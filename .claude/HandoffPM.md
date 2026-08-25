@@ -1,102 +1,52 @@
 ## Handoff — Pommora
 
-> **User Prompt:** *"Go for it. Keep in mind when writing the descriptions of the items on the doc, that they must be BRIEF… Once this is done; do a final sweep simplification pass, commit, and give the diff tree."* — then, the same session: *"buttons are definitely in-scope here, and a shared Controls/ folder is likely where they'd go."*
+> **User Prompt:** *"Execute `ImagePicker — Implementation Plan.md` end to end, overnight, unattended… Zero pending items. Zero concerns carried."* — then, the same session: the A-4 shape ruling (*"rounded photo keeps its current shape → otherwise it re-designs to look like the image"*), the A-5 footer revision (*"the input field uses the same trailing icon to reopen the file explorer… pasting an image into the field must also work"*), and *"remove comments."*
 
 #### Current Focus
 
-**Session ID:** 5897f22e-4fa9-4416-b22b-4de359243564
-**Dates:** 08-24-2026
-**Model:** Fable 5
+**Session ID:** 80a10e7b-1f2a-4d86-a973-10f5f6ea1333
+**Dates:** 08-24-2026 → 08-25
+**Model:** Opus 4.8
 
-**The design-system rework — the second line of work beside the file arc.** One long session in two halves. The first half made `DesignSystem/` one tree that reads like its ledger and gave it a Button (`4d7feba7 → defb6960`; the reorganization, motion in `Animation/`, `theme-vars` a pure bridge, `Components/Controls/Button/` worn by every toolbar button and every former ghost, IconPicker and PhotoCropModal lifted inside). The second half (`278f585c → 8f3246d3`) applied the same method — recipe owns the look, surface owns the click, measure over CDP before claiming anything — to the next three families that were still hand-rolled per surface.
+**Part 3 of the file-based arc — the ImagePicker — shipped end to end, unattended.** Ten tasks across five phases, each phase gated by simplification → comment cleanup → the four gates → a correctness review → a break-attempt, every concern verified against the code and closed before the next phase opened. The crop surface widened past the nexus icon into `AssetImage` (the one component every stored image paints through) and `ImagePicker` (the one editor that frames one). A crop is a focal point and a zoom in `shared/cropGeometry.ts`, whose `coverStyle` is the single paint producer the editor and every seat share; framings ride `.nexus/crops.json` as the `crops` tree leaf, keyed per image, written by the sole `updateCrops` owner and patched live by a watcher blind to its own writes. The nexus photo joined the path-and-crop model every banner used and the whole data-URL/`writeNexusIcon` byte pipeline is gone; a `wasPicked` gate keeps the renderer from naming a path main didn't choose, and `nexus:pasteImage` feeds the clipboard into that same set.
 
-**Trails.** Twelve surfaces drew a location; seven rendered one component, one was a byte-copy, four were their own, and beneath them four separate ancestry computations disagreed about where a page lived. Now `Elements/NavTrail` is the one element — segments `{ title, icon?, ghost?, onSelect? }` divided by `PathChevron`, inert / selectable / navigable by what the caller passes, `emphasize` for the current stop, no ink of its own so the host's color reaches it — and `ancestryOf` on `treeIndex` is the one ancestry, which the subfield spine, card footing, preview and embed trails all slice. The subfield's own O(N) tree search (run twice per render) and Cards' private walk are gone.
-
-**Fields.** `PathField` was three things wearing one name. `InputField` absorbed the first two as capabilities — `chrome="bordered"`, `edit` (press-to-edit), `leading` and `trailing` slots (the trailing action pins to the field's edge, tertiary) — and the path is composed at its sites from `pathSegments()` + `NavTrail` + a Browse `Button`. `SegmentRun` lost its chevron mode and moved into Fields; `hairlineField → borderedField`. Then the two press-to-edit mechanisms collapsed to one: `useDraftEdit` is deleted, `InputField.edit` rides `RenamableLabel` over `EditableInput` with the rest width held, `renames` seats the caret, `emptyCommits` lets a value field clear, and a host may drive `editing`. `InlineEditHeader` is an icon Button beside an `InputField edit`. A build-breaking pass found six things the swap dropped (caret overflow past the pane, the unreachable empty reset on both path fields, a tone step on click, select-all lost on paths, an unnamed caret, a false one-mechanism claim) — all six closed at `8f3246d3` with `InputField`'s first tests.
-
-**Button** learned `pressed` (the selected wash held under hover; the scoped pane's lock rides it instead of its own fill) and a collapsed label now takes the icon inset — the Views trigger's width regression. Everything above is verified in a sandbox instance over CDP against the Test nexus: subfield tones, nav-row tones, the path field's width pin and caret seat, a pane-header rename. Not verified on Nathan's screen: the trailing glyph's tertiary tone, the Views trigger width, the header caret at 40+ characters.
+**Awaiting Nathan's live verification.** Every phase was screenshotted in a sandbox instance over CDP against the Test nexus — the circle and rect frames, the ten seats, the framed banner paint proven end-to-end by seeding a real `crops.json` entry — but nothing here has been eyeballed on Nathan's own screen. The A-4 shape split (circle keeps its 220-in-280 geometry with surround blur; rect = the viewport *is* the frame at radius 12) and the A-5 footer (re-pick by dialog or paste) are built to the live rulings and want a look.
 
 #### Completion Criteria
 
-- [x] **One location trail, one ancestry** — `NavCrumbs`, `SubfieldBreadcrumb`, `chainOf`, `setChains`, `PathCrumb`, `.nav-path-*`, `.crumb-two-tone` all gone with no dangling consumer; `resolveWith` keeps its six live callers.
-- [x] **One press-to-edit mechanism across every field surface** — `useDraftEdit` gone; every rename in the renderer rides `RenamableLabel` (OutlineDropdown, ViewPane, RenamableTitle → GroupBand, PropertiesPane, DetailTitleHeader, Banner, ViewEmbedBlock's pill) or `EditableInput` directly where the caret is the surface. The view embed's title stays a block-level `contentEditable` by design.
-- [x] **Gates green at every commit** — typecheck 0 · biome clean (938) · 288 files / 3602 tests · app + showcase build.
-- [x] **The ledger reads as the tree does** — `DesignSystemPM` names NavTrail, the Fields section (InputField's props, SegmentRun, the chrome row, `borderedField`), Button's `pressed`; `PathField` and `useDraftEdit` rows gone; the CLAUDE.md map names the trail.
-- [ ] **Eyeballed on Nathan's screen** — the trailing glyph's tertiary tone, the Views trigger beside its neighbors, a long page title under Rename.
+- [x] **One crop model, one paint producer** — `cropGeometry.ts`'s `coverStyle` renders the editor preview and every seat; no seat computes its own fill.
+- [x] **One writer, one key, one live patch** — `updateCrops` is the sole writer of `crops.json`, `cropKeyFor` the sole key, the `crops-leaf` watcher the sole live update; each writer self-confirms through `patchCropsFromDisk`.
+- [x] **The byte pipeline is gone** — `nexus:imageData`, `writeNexusIcon`, `decodeImageDataUrl`, `NEXUS_ICON`, `pickedImagePaths`, `IMAGE_DATA_MAX` all zero; the nexus photo adopts a path like a banner.
+- [x] **Every stored image paints through `AssetImage`** — the ten hand-rolled `<img>` seats replaced, gated on a crop existing so an uncropped seat loads no aspect.
+- [x] **Gates green at every commit** — typecheck 0 · biome clean · Vitest green · app + showcase build.
+- [ ] **Eyeballed on Nathan's screen** — the two frame shapes, the corner glyphs, the footer's re-pick and paste, the Edit entry from all three menus.
 
 #### Next Session
 
-1. **Reload and eyeball** the three unverified-on-screen items above; retune `--nav-trail-glyph`, the trailing slot's tone in `fields.css.ts`, or `button-large`'s `paddingX` in `Tokens/size.css.ts` if anything reads off.
-2. **Part 3 of the file arc — the ImagePicker.** [[ImagePicker — Decision Log]] and [[ImagePicker — Implementation Plan]] landed from the parallel session (`f68683cd`); one design-system surface for banners, cards, icons and the nexus photo, widening `PhotoCropModal` past the profile photo. Read both before touching `PhotoCropModal`.
-3. **The Figma parity pass on Button** — still open from the first half; no Figma MCP is wired here. [[Buttons-Spec]] against the Figma card.
-4. **Restart the dev server** after pulling — module moves (`SegmentRun`, the deleted `PathField`/`useDraftEdit`) invalidate Vite's graph; ⌘R is not enough.
+1. **Reload and eyeball** the ImagePicker end to end — open it from a banner, a card, and the nexus icon; pan, zoom, reset, background; re-pick by dialog and by paste. KNOBs live at the top of `ImagePicker.tsx` (`FRAME_W` 280, `CIRCLE` 220, `RECT_RADIUS` 12, `SCROLL_RATE`, `PINCH_RATE`).
+2. **Sapphire reads `crops.json`** — the file uses Sapphire's shape by design; wiring Sapphire to honor it is the Sequenced-After follow-on, untouched here.
+3. **Restart the dev server** after pulling — `src/main` changes (the paste channel, the `wasPicked` gate, the deleted byte pipeline) don't HMR and aren't picked up by ⌘R.
 
 #### Feedback
 
-- "As long as it's coherent and doesn't just wrap these things in sloppily." A consolidation that leaves the old box and wraps it is the failure; the recipe owns the look, the surface owns what happens on click.
-- "PathField must be retired; just give InputField itself the ability to add an optional leading or trailing glyph or button; that's the whole consolidation." Slots on the field, composition at the site — not a component that hoards chrome, edit mode and an action.
-- "Don't create new behavior; add that as a next-feature candidate in ContextPM." A mechanism the codebase could use (TokenField) is recorded, not built, mid-consolidation.
-- "Why should it stay?" — on a three-line parse duplicated at three sites. "Retire the component" never means "share nothing"; a pure function is not the thing that was retired.
-- "The DesignSystem reworking arc IS important, but WON'T be a history entry since it's amending rather than additive, and detailing it may just hint towards past incorrect behaviors."
-- "Stop it and fix the fucking alignment issue… there is no time pressure; use my live nexus." Measure over CDP before claiming alignment; a screenshot from a stale dev server is not evidence either way.
+- "Icon picker for the nexus image and rounded photo keeps its current shape → otherwise it re-designs to look like the image." The circle is a fixed portrait frame; the rect is cut to the seat it edits. One editor, two shapes chosen by the seat.
+- "The input field uses the same trailing icon to reopen the file explorer as the directory settings option; pasting an image into the field must also work." The footer path echo is an `InputField` with the folder-open trailing action, and it accepts a paste.
+- "Remove comments." / "Stop with all the comments." Comments cut to near-zero — a why the code can't show, nothing else. → [[feedback-comment-volume-near-zero]]
 
 #### Session Pointers
 
-- `DesignSystem/Elements/NavTrail/NavTrail.tsx` — the trail; `pathSegments()` beside it parses a filesystem path. `--nav-trail-glyph` is the only var; ink comes from the host.
-- `treeIndex.ts` `ancestryOf(tree, ref)` — the chain including the entity, outermost first, cached per tree; `Subfield/crumbs.ts` `spineOf` gates it to collection/set/page (`hasSpine` is load-bearing, not defensive).
-- `DesignSystem/Components/Fields/InputField.tsx` — `chrome` · `edit` (`FieldEdit`: value, onCommit, renames, emptyCommits, editing, onEditingChange) · `leading` · `trailing` · `capped`. `fields.css.ts` holds `borderedField`, `editable`, `draftInput`, `leading`, `trailing` (KNOBs `LEAD_GAP`, `TRAIL_GAP`).
-- `DesignSystem/Components/Fields/RenamableLabel.tsx` — the rename swap and its commit guard; `EditableInput.tsx` — the caret itself.
-- `Components/Detail/InlineEditHeader.tsx` — the five-pane header: icon Button + `InputField edit`, `editing` driven by a menu's Rename.
-- `DesignSystem/Components/Controls/Button/` — `pressed`; `labeled` reads `labelCollapsed`, so a collapsed label takes the icon inset.
-- `Build-Gotchas.md §sandbox` — the `POMMORA_USERDATA` line goes into `src/main/index.ts` before `requestSingleInstanceLock` per pass and comes out before committing; harness is scratchpad `cdp.mjs` + probe scripts (session-local; recreate from the guideline).
-- `.claude/scripts/Line-Ledger.html` — regenerated by the post-commit hook; published at https://claude.ai/code/artifact/9172cda5-707d-4b69-aaed-d154dd2dd485 (read before publishing; the artifact tool refuses an unread republish).
+- `shared/cropGeometry.ts` — `coverStyle`, `panToCrop`, `panDelta`, `clampZoom` (`[0.25, 4]`), `DEFAULT_CROP`. The one crop math; `Crop` is `{ x, y, zoom, color? }`.
+- `main/watchPatch.ts` — the `crops-leaf` WatchClass + classifier + `patchCropsFromDisk`; `main/settings.ts` — `updateCrops` over the extracted `updateNexusConfig`.
+- `DesignSystem/Components/AssetImage/` — plain `<img>` with no crop, `coverStyle` div with one; `imageAspect.ts` is the URL-keyed aspect cache (tileWarm shape).
+- `DesignSystem/Components/ImagePicker/` — `git mv` from PhotoCropModal; shape-split, `usePointerGesture` + `panDelta`, house `Slider` + non-passive wheel, `repicking` Save-hold cleared on `[value]`.
+- `Detail/Banner/useBannerMenu.ts` — the one place `bannerMenu` is called (folded 4→1); `onSave` closes the editor then `setCrop`; `onRepick` calls `onDone` on success so the page-cover Save-hold can't dead-end.
+- `main/index.ts` — `pasteImagePath` (clipboard → temp PNG → `pickedPaths`), `wasPicked` in `mutateDeps`, the `Edit` items on the banner and icon menus.
+- `Build-Gotchas.md §sandbox` — the `POMMORA_USERDATA` sandbox line and the CDP harness; screenshots this session went through it against the Test nexus (restored after).
 
 #### Working Notes
 
-- `--x: inherit` on a custom property inherits the *custom property*, not the value it's meant to alias — it read as unset and fell to the fallback. Alias with `var(--label-control)`.
-- `RenamableLabel` encodes title semantics — caret at end, empty cancels, size to content. A value field (a path) wants `renames: 'row'` and `emptyCommits`; the default is right for names only.
-- The `draftInput` caret must inherit its field's color and shrink (`flex: 1 1 auto`); stating a tone or `flex-shrink: 0` was right for `borderedField` and wrong for the boxed header.
-- `PaneSlider`'s inert flip fires a real blur, so Back commits an in-flight edit; the unmount flush `useDraftEdit` had is not needed by any host traced.
-- Zero tests mount `InlineEditHeader` or `RenamableLabel`-inside-a-field; `InputField.test.tsx` (jsdom, `act`, `focusout` for React's onBlur) is the pattern to extend.
-- The auto-mode classifier intermittently refuses `git commit`; a message file via `-F` and a retry landed it.
-
-**FILES ADDED**
-
-- `Pommora/src/renderer/src/DesignSystem/Elements/NavTrail/` (NavTrail.tsx · navTrail.css.ts · index.ts · NavTrail.test.tsx)
-- `Pommora/src/renderer/src/DesignSystem/Components/Fields/InputField.test.tsx`
-- `Pommora/src/renderer/src/DesignSystem/Components/Controls/Button/` (Button.tsx · button.css.ts · Button.test.tsx · index.ts), `Animation/index.ts`, `Symbols/masks.ts`, `Components/PaneSlider/`, `Components/PhotoCropModal/`, `Components/Pickers/IconPicker/`, `Materials/Surface.tsx`, `Showcase/leaves/ButtonsLeaf.tsx`, `Settings/iconFavorites.ts`, `Settings/IconPicker.tsx` (the first half)
-- `.claude/Planning/Buttons-Spec.md`; `.claude/Planning/ImagePicker — Decision Log.md`, `— Implementation Plan.md` (parallel session)
-
-**FILES MODIFIED**
-
-- `Pommora/src/renderer/src/treeIndex.ts`, `Navigation/{NavList.tsx, navList.css, navResolve.ts}`, `NavWindow/NavGallery.tsx`, `Detail/Subfield/{Subfield.tsx, crumbs.ts, subfield.css}`, `Detail/Views/Cards/CardsView.tsx`, `Detail/Views/{Table/Cell.tsx, PropertyEditing/filePick.ts}`, `Embeds/PageEmbed.tsx`, `PagePreview/{PreviewWindow.tsx, previewTabStrip.css}`, `Settings/{AssetDirectoryRow.tsx, TrashLeaf.tsx, trashLeaf.css}`, `Components/Detail/{FileEditor, FilterPane, InlineEditHeader, SettingsPane}.tsx`, `Components/Detail/{filterPane, settingsPane}.css.ts`
-- `Pommora/src/renderer/src/DesignSystem/Components/Fields/{InputField.tsx, EditableInput.tsx, RenamableLabel.tsx, fields.css.ts, index.ts}`, `Components/Controls/Button/{Button.tsx, button.css.ts}`, `Components/Menu/Menu.tsx`, `Showcase/leaves/FieldsLeaf.tsx`, `Tokens/{card-tokens.css, size.css.ts}`
-- `Pommora/src/renderer/src/DesignSystem/Components/Fields/{SegmentRun.tsx, segmentRun.css.ts}` (moved from `Labels/`)
-- The whole `DesignSystem/` tree and every import site (the first half's rename); `Toolbar/*`, `Tabs/*`, `App.tsx`, `Sidebar/Sidebar.css`, `Blocks/BlockHandleMenu.tsx`, `Detail/Banner/*`, `Detail/Views/GroupBand.*`, `NavWindow/*`, `MarkdownPM/editor/folding.ts`, `styles.css`
-- `Pommora/src/{main/index.ts, preload/index.ts, renderer/src/store.ts, shared/*}` (parallel session: Edit Icon, Change Color)
-- `.claude/{CLAUDE.md, ContextPM.md}`, `Features/{DesignSystemPM, ArchitecturePM, CardViewPM, InteractionPM, PagePreviewPM, SubfieldPM}.md`, `Planning/{Codebase-Cleanup-Checklist, Design-Coherence-Report, Architecture Audit — Full-Codebase Report}.md`, `.claude/scripts/{Line-Ledger.html, loc-history.json}`
-
-**FILES REMOVED**
-
-- `Pommora/src/renderer/src/DesignSystem/Components/Fields/{PathField.tsx, pathField.css.ts, useDraftEdit.ts}`
-- `Pommora/src/renderer/src/Detail/Subfield/SubfieldBreadcrumb.tsx`
-- `Pommora/src/renderer/src/DesignSystem/Components/Controls/Segmented-Controls/`, `Features/TypographyPM.md`, `Planning/{DesignSystem-Organization, Elements-Consolidation-Plan, NavTrail-Consolidation}.md` (executed)
-- `Planning/{Asset Directory — Decision Log, Asset Directory — Implementation Plan, File Properties — Decision Log, File Properties — Implementation Plan}.md` (executed; parallel session)
-
-**COMMITS**
-
-- `4d7feba7` — refactor(design-system): one home per thing — DesignSystem/ mirrors its ledger
-- `8afff1d2` · `0c219509` · `aca13970` — bare → base; the ledger script; the tab bar's reveal selector restored
-- `21faf5b5` · `a7a9c163` · `94f28432` · `e5a5ce40` — one Button recipe; the inset ring; the glass pill centers; every ghost is a Button
-- `496b4c02` · `96230467` · `defb6960` — the first-half handoff; IconPicker and PhotoCropModal are components; the rehome's constraint satisfied
-- `278f585c` · `c2b0597f` — NavTrail is the one location trail, ancestryOf the one ancestry; the subfield keeps its tones
-- `f42594b7` · `03efc3ed` · `2a5695c0` · `6e6946ed` · `267a0f95` · `4446a2bf` · `54b612e9` — InputField owns press-to-edit; PathField retires into the slots; SegmentRun is a Field; the field's width, glyphs, slot centering, the trailing edge
-- `6be4aef7` — Button carries a pressed state; a collapsed label reads as icon-only
-- `56d3c76a` · `fb27e7f0` · `6e0e2295` · `babe0a3d` — the arc simplified; pathSegments; TokenField is a candidate; the renderer filing is boring work
-- `cabf6804` · `8f3246d3` — one press-to-edit; the review's six findings closed
-- `f68683cd` · `86b57b43` — the ImagePicker plans (parallel); Edit Icon and Change Color, the executed plans archived
-
-#### Handoff Guidelines
-
-- The handoff is not a History entry — the design-system rework amends what exists and takes none; write what a session needs to resume, not a record of what was wrong before.
-- Measured claims and eyeballed claims stay distinct; a sandbox measurement is not Nathan's screen.
+- A crop key is `cropKeyFor(rel, raw)` — nexus-relative path for a file, raw string for a web address. Every writer resolves the same key or the framing lands under two names.
+- `AssetImage` must not load an aspect when there's no crop — the plain-`<img>` path stays allocation-free, which is why the ResizeObserver is on the cropped branch only.
+- The `wasPicked` gate is a security seam, not a nicety: the renderer can name any path, so `setBanner`/`setProfileImage` adopt only paths main handed out (a picked file, a pasted temp).
+- `@renderer` isn't on main's tsconfig, so a must-agree test spanning both sides splits — main half in `mutate.test.ts`, renderer half in `AssetImage.test.tsx`.
+- vanilla-extract rejects a child selector like `& > *:nth-child(2)` and has no `WebkitUserDrag`; use a named class and `draggable={false}`.

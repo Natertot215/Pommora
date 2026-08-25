@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 08-25-2026              | PM-115 | The ImagePicker                                      |
 | 08-22-2026              | PM-114 | File Properties                                      |
 | 08-22-2026              | PM-113 | MarkdownPM Improvements                              |
 | 08-21-2026 → 08-22      | PM-112 | Variable Asset Directories                           |
@@ -118,6 +119,19 @@
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
 
+
+#### PM-115 || The ImagePicker
+
+**DATE:** 08-25-2026
+
+The crop surface is complete — one design-system component every image the nexus shows now frames through, closing the three-part file-based arc. A crop is a focal point and a zoom rather than a pixel rectangle, and `shared/cropGeometry.ts` is its one paint producer: `coverStyle` turns a crop and two aspect ratios into a single background declaration, so the editor previewing a framing and every seat displaying it read from the same function and cannot drift, and one stored framing reads correctly at any box size. Crops ride `.nexus/crops.json` keyed by the image — a nexus-relative path for a file, the raw string for a web address — carried on the tree as the `crops` leaf, read once at open and patched live by a watcher that ignores its own writes, with `updateCrops` the sole writer and `cropKeyFor` the sole key. The framing lives beside the image and never rewrites the file or the note, so it follows the nexus across devices and serves every surface the picture appears on at once.
+
+`AssetImage` replaced the ten hand-rolled `<img>` seats behind one gate: with no crop it stays a plain `<img>` and loads no aspect at all, and only when a crop exists does it paint the `coverStyle` box and observe its own size through a ResizeObserver for the fill axis — the cost of framing is paid only where a framing is set. The nexus photo joined the same path-and-crop model every banner already used: `setProfileImage` adopts a picked file exactly as `setBanner` does, and the entire data-URL pipeline that once baked a PNG in a canvas and shipped its bytes over IPC — `nexus:imageData`, `writeNexusIcon`, `decodeImageDataUrl`, `NEXUS_ICON` — is gone. Every write of a path names a file the renderer never chose, so `wasPicked` gates `setBanner` and `setProfileImage` on the set of paths main itself handed out, and `nexus:pasteImage` extends that set by writing the OS clipboard's image to a temp file main picks.
+
+`ImagePicker` is what edits a framing: a portal modal that frames its stored image as a circle held at a fixed geometry with a surrounding blur, or as a rectangle cut to the exact aspect of the seat it edits, panning on the app's one pointer-gesture primitive and zooming out onto a background colour drawn from the image. Edit reaches it from the banner menu, the card menu's leading item, and the nexus icon menu; its footer cancels, echoes the image's path, and re-picks either through the file dialog or by pasting. `PhotoCropModal` — the Move-and-Scale surface that only ever cropped the nexus icon — is what it grew out of.
+
+- **Commits:** `6b04b90d^..HEAD`
+- **Diff:** Net +1503 | +2078 / −575
 
 #### PM-114 || File Properties
 
