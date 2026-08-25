@@ -24,6 +24,8 @@ type ButtonProps = Look & {
   ghostRest?: boolean
   /** Inside a Segmented run — the segment geometry rather than the pill's. */
   inRun?: boolean
+  /** Engaged — a toggle that is on, or a trigger whose menu is open. */
+  pressed?: boolean
 } & Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'type'>
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
@@ -39,6 +41,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     revealOnHover,
     ghostRest,
     inRun,
+    pressed,
     className,
     style,
     children,
@@ -47,7 +50,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   ref,
 ) {
   const g = vars.size.control[size]
-  const labeled = label !== undefined || children !== undefined
+  const labeled = (label !== undefined && !labelCollapsed) || children !== undefined
   return (
     <button
       ref={ref}
@@ -59,6 +62,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
         revealOnHover && s.revealOnHover,
         ghostRest && s.ghostRest,
         labeled && !icon && s.labelOnly,
+        pressed && s.pressed,
         className,
       )}
       style={{
@@ -68,6 +72,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
         ...(icon ? { fontSize: iconSize ? vars.size.icon[iconSize] : g.icon } : null),
         ...style,
       }}
+      aria-pressed={pressed}
       {...rest}
     >
       {icon && <Icon name={icon} />}

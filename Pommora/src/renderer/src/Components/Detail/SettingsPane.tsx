@@ -10,7 +10,7 @@ import {
   side,
 } from '@renderer/DesignSystem/Components/Menu/menu.css'
 import { cx } from '@renderer/DesignSystem/Util/cx'
-import { crumbRow, footerLock, footerLockActive, ICON } from './settingsPane.css'
+import { crumbRow, footerLock, ICON } from './settingsPane.css'
 import { useSession } from '../../store'
 import { findCollection, findSet, findCollectionForSet } from '../../Detail/Scope'
 import { pickView } from '../../Detail/Views/pipeline/pickView'
@@ -204,7 +204,8 @@ export function SettingsPane(): React.JSX.Element | null {
               size="control"
               box={20}
               ariaLabel={lockLabel(scope.locked, 'view configuration')}
-              className={scope.locked ? `${footerLock} ${footerLockActive}` : footerLock}
+              className={footerLock}
+              pressed={scope.locked}
               onClick={() => scope.setLocked(!scope.locked)}
             />
           }
