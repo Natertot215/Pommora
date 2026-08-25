@@ -49,7 +49,7 @@ export function FileEditor({
           }
         >
           {segments.length > 0 ? (
-            <NavTrail segments={segments} />
+            <NavTrail segments={segments} iconSize="body" />
           ) : (
             <span className={placeholder}>{assetRoot}</span>
           )}
