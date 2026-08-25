@@ -90,23 +90,15 @@ const mount = (row: ViewRow, columnId: string, style: ColumnStyle): void => {
 describe('status looks', () => {
   const row = rowWith({ prop_status: 'active' })
 
-  it('pill renders the labeled chip', () => {
-    mount(row, 'prop_status', { look: 'pill' })
+  it('standard renders the labeled chip', () => {
+    mount(row, 'prop_status', { look: 'standard' })
     expect(host.textContent).toContain('Active')
   })
 
-  it('capsule renders the icon-only chip — glyph by group, no label', () => {
-    mount(row, 'prop_status', { look: 'capsule' })
+  it('compact renders the icon-only chip — glyph by group, no label', () => {
+    mount(row, 'prop_status', { look: 'compact' })
     expect(host.textContent).not.toContain('Active')
     expect(host.querySelector('svg')).toBeTruthy()
-  })
-
-  it('checkbox renders the square with the group glyph — empty for upcoming, filled past it', () => {
-    mount(rowWith({ prop_status: 'not_started' }), 'prop_status', { look: 'checkbox' })
-    expect(host.querySelector('svg')).toBeNull()
-    mount(rowWith({ prop_status: 'complete' }), 'prop_status', { look: 'checkbox' })
-    expect(host.querySelector('svg')).toBeTruthy()
-    expect(host.textContent).not.toContain('Complete')
   })
 })
 

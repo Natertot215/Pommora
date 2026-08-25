@@ -85,7 +85,7 @@ export function CardValue({
     }
     // The shared click semantics (cycle/toggle/picker/datetime) live in one router; only the
     // surface-specific tails (number/url placement) stay here.
-    const shared = sharedValueClickAction(t, style.look, v, schemaDef)
+    const shared = sharedValueClickAction(t, v)
     if (shared) {
       if (shared.kind === 'commit') commit(shared.value)
       // A file value is filled through the OS dialog, not a picker anchored to this card.

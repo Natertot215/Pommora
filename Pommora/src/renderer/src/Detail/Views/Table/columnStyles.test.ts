@@ -22,7 +22,7 @@ function view(over: Partial<SavedView>): SavedView {
 
 describe('styleFor', () => {
   it('returns the type defaults with no view entry', () => {
-    expect(styleFor('prop_status', schema, view({}))).toEqual({ look: 'pill' })
+    expect(styleFor('prop_status', schema, view({}))).toEqual({ look: 'standard' })
     expect(styleFor('prop_date', schema, view({}))).toEqual({
       date_format: 'full',
       time_format: 'none',
@@ -41,8 +41,8 @@ describe('styleFor', () => {
   })
 
   it('honors a saved look over the default', () => {
-    const v = view({ column_styles: { prop_status: { look: 'capsule' } } })
-    expect(styleFor('prop_status', schema, v)).toEqual({ look: 'capsule' })
+    const v = view({ column_styles: { prop_status: { look: 'compact' } } })
+    expect(styleFor('prop_status', schema, v)).toEqual({ look: 'compact' })
   })
 
   it('falls back to empty defaults for an unknown column', () => {
@@ -51,7 +51,7 @@ describe('styleFor', () => {
 
   it('a caught-invalid saved value falls back to the default instead of erasing it', () => {
     const v = view({ column_styles: { prop_status: { look: 'zebra' } } } as never)
-    expect(styleFor('prop_status', schema, v)).toEqual({ look: 'pill' })
+    expect(styleFor('prop_status', schema, v)).toEqual({ look: 'standard' })
   })
 
   it("takes the nexus's date form where the column set none", () => {

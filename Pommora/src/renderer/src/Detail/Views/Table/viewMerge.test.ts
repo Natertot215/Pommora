@@ -50,18 +50,18 @@ describe('mergeOverrides', () => {
   })
 
   it('folds style overrides per-KEY — a partial override never wipes a saved sibling key', () => {
-    const view = base({ column_styles: { a: { look: 'capsule', date_format: 'short' } } })
+    const view = base({ column_styles: { a: { look: 'compact', date_format: 'short' } } })
     const out = mergeOverrides(view, {}, {}, new Set(), {}, { a: { time_format: 'twelveHour' } })
     expect(out.column_styles?.a).toEqual({
-      look: 'capsule',
+      look: 'compact',
       date_format: 'short',
       time_format: 'twelveHour',
     })
   })
 
   it('keeps untouched columns and lets the override key win', () => {
-    const view = base({ column_styles: { a: { look: 'pill' }, b: { look: 'checkbox' } } })
-    const out = mergeOverrides(view, {}, {}, new Set(), {}, { a: { look: 'capsule' } })
-    expect(out.column_styles).toEqual({ a: { look: 'capsule' }, b: { look: 'checkbox' } })
+    const view = base({ column_styles: { a: { look: 'standard' }, b: { look: 'checkbox' } } })
+    const out = mergeOverrides(view, {}, {}, new Set(), {}, { a: { look: 'compact' } })
+    expect(out.column_styles).toEqual({ a: { look: 'compact' }, b: { look: 'checkbox' } })
   })
 })

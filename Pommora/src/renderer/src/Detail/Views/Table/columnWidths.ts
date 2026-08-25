@@ -30,13 +30,14 @@ const WIDTHS: Record<string, ColumnWidth> = {
 
 const FALLBACK: ColumnWidth = { min: 80, default: 140, max: UNCAPPED }
 
-// Per-STYLE min overrides (TableView Prospect: each look carries its own column min, so a compact look
-// shrinks tighter than a wide one). Keyed [type][look]; where an entry exists it replaces the type's
-// base min (default + max stay type-level). checkbox→switch is the live case — the scaled switch plus
-// cell padding overflows the checkbox type's own min; status is the scaffold (checkbox < capsule < pill).
+// Per-look min overrides, keyed [type][look], replacing the type's base min (default + max stay
+// type-level). Status, select and multi-select are one option-chip family, so they share OPTION_MIN.
+const OPTION_MIN = { compact: 45, standard: 80 } as const
 const STYLE_MIN: Record<string, Partial<Record<string, number>>> = {
   checkbox: { switch: 70 },
-  status: { checkbox: 45, capsule: 65, pill: 80 },
+  status: OPTION_MIN,
+  select: OPTION_MIN,
+  multi_select: OPTION_MIN,
 }
 
 /** The {min, default, max} width for a column, keyed by its declared type (`_created_at` special-cased,

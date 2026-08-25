@@ -1,7 +1,8 @@
 import { useState, type ReactNode } from 'react'
 import { vars } from '../../Tokens'
 import {
-  ContextChip,
+  SpaceChip,
+  checkboxBox,
   FileChip,
   FileLabel,
   fill,
@@ -82,12 +83,6 @@ const SHAPE_ROWS: Array<{ label: string; shape: string; content: () => ReactNode
     label: 'Context · tag + neutral fill',
     shape: cx(shape.tag, fill.neutral, roomy),
     content: () => <span className={cx(textCap, overScrollUnmasked)}>Context</span>,
-  },
-  { label: 'Chip', shape: shape.chip, content: () => <Icon name="circle-dashed" size={13} /> },
-  {
-    label: 'Box',
-    shape: shape.box,
-    content: () => <Icon name="check" size={12} strokeWidth={3} />,
   },
 ]
 
@@ -181,7 +176,7 @@ function CheckboxDemo({ color }: { color: LabelColorName }): React.JSX.Element {
   return (
     <button
       type="button"
-      className={cx(shape.box, labelColor[color], 'ds-checkbox-demo')}
+      className={cx(checkboxBox, labelColor[color], 'ds-checkbox-demo')}
       title={color}
       onClick={() => setOn((x) => !x)}
     >
@@ -213,7 +208,7 @@ function RemovableRow(): React.JSX.Element {
         <Label shape="tag" color="green-4" text="Removable tag" onRemove={drop('tag')} />
       )}
       {live('context') && (
-        <ContextChip color="purple-4" title="Removable context" onRemove={drop('context')} />
+        <SpaceChip color="purple-4" title="Removable context" onRemove={drop('context')} />
       )}
       {live('file') && <FileChip name="Removable file.pdf" onRemove={drop('file')} />}
       {live('plain') && <FileLabel name="Removable name.md" onRemove={drop('plain')} />}
