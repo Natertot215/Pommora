@@ -32,7 +32,12 @@ export const boxGeometry = style({
   borderWidth: '1.5px',
 })
 
-/** `pill` and `tag` share `--label-pad-x` so a surface retunes them together. */
+/** The task checkbox's box — the box geometry over the label base. Kept out of the `shape` roster on
+ *  purpose: a checkbox is a control, never an option chip's shape. */
+export const checkboxBox = style([labelBase, boxGeometry])
+
+/** `pill` and `tag` share `--label-pad-x` so a surface retunes them together. An option chip's
+ *  Compact style is these same shapes rendered icon-only, so the corner radius never changes. */
 export const shape = {
   pill: style([
     labelBase,
@@ -52,17 +57,6 @@ export const shape = {
       borderWidth: '2px',
     },
   ]),
-  chip: style([
-    labelBase,
-    {
-      height: '20px',
-      padding: '0 var(--label-chip-pad-x, 6px)',
-      borderRadius: '10px',
-      borderWidth: '2px',
-      gap: 0,
-    },
-  ]),
-  box: style([labelBase, boxGeometry]),
 } as const
 export type LabelShape = keyof typeof shape
 

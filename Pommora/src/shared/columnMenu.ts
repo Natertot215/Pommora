@@ -59,7 +59,7 @@ export interface StyleMenuItem {
 }
 
 /** The per-type Style items — the ONE place that knows which types are style-addressable
- *  (select/multi/context aren't: each renders one fixed chip shape, never a user-picked look).
+ *  (context isn't: it renders one fixed chip shape, never a user-picked look).
  *  Datetime labels are format-type NAMES, never rendered samples. */
 export function styleMenuItems(ctx: StyleMenuContext): StyleMenuItem[] {
   const { type, current } = ctx
@@ -75,7 +75,9 @@ export function styleMenuItems(ctx: StyleMenuContext): StyleMenuItem[] {
   const look = row('look', current.look)
   switch (type) {
     case 'status':
-      return [look('Pill', 'pill'), look('Capsule', 'capsule'), look('Checkbox', 'checkbox')]
+    case 'select':
+    case 'multi_select':
+      return [look('Standard', 'standard'), look('Compact', 'compact')]
     case 'checkbox':
       return [look('Checkbox', 'checkbox'), look('Switch', 'switch')]
     case 'url':

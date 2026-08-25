@@ -9,6 +9,7 @@ import {
   renameOption,
   recolorOption,
   reorderOption,
+  setOptionIcon,
   fallbackTitle,
 } from './optionModel'
 import type { StatusGroup } from './properties'
@@ -49,6 +50,15 @@ describe('optionModel', () => {
       { value: 'A', label: 'A', color: 'blue' },
     ])
     expect(recolorOption([opt('A', 'blue')], 'A', undefined)).toEqual([opt('A')])
+  })
+
+  it('setOptionIcon sets the icon key; clearing removes it', () => {
+    expect(setOptionIcon([opt('A')], 'A', 'star')).toEqual([
+      { value: 'A', label: 'A', icon: 'star' },
+    ])
+    expect(setOptionIcon([{ value: 'A', label: 'A', icon: 'star' }], 'A', undefined)).toEqual([
+      opt('A'),
+    ])
   })
 
   it('reorderOption moves an option to a new index', () => {

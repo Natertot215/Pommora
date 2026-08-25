@@ -9,8 +9,8 @@ import { DEFAULT_LINK_DISPLAY, LINK_DISPLAYS, type PropertyDefinition } from './
  *  are simply gone: the schema drops a value it no longer knows, so a column saved with one falls
  *  back to its property's Format, which is what it was showing anyway. */
 export const COLUMN_LOOKS = [
-  'pill',
-  'capsule',
+  'standard',
+  'compact',
   'checkbox',
   'switch',
   ...LINK_DISPLAYS,
@@ -50,7 +50,8 @@ export const columnStyle = z.looseObject({
 export type ColumnStyle = z.infer<typeof columnStyle>
 
 /** The type-default style — string-keyed so `shared/` needs nothing from the renderer's
- *  `declaredType`. Select/multi aren't style-addressable: their chips always render pill. */
+ *  `declaredType`. Status and select/multi share the Standard/Compact axis; the shape stays each
+ *  type's own (pill for status, tag for select). */
 export function defaultStyleFor(
   declaredType: string | undefined,
   /** The column's property, for the one type whose default look is a setting rather than a constant. */
@@ -60,7 +61,9 @@ export function defaultStyleFor(
 ): ColumnStyle {
   switch (declaredType) {
     case 'status':
-      return { look: 'pill' }
+    case 'select':
+    case 'multi_select':
+      return { look: 'standard' }
     case 'checkbox':
       return { look: 'checkbox' }
     // A url column reads the way its property says to unless this view says otherwise — so the

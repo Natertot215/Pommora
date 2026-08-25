@@ -13,8 +13,8 @@ export function optionShapeFor(type: string): LabelShape {
   return type === 'status' ? 'pill' : 'tag'
 }
 
-/** A Context reference — colorless ground, so it reads as something you can open. */
-export function ContextChip({
+/** A Space reference — colorless ground, so it reads as something you can open. */
+export function SpaceChip({
   title,
   icon,
   ...rest

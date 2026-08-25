@@ -57,12 +57,12 @@ describe('cellMenuModel', () => {
     const m = cellMenuModel({
       kind: 'style-only',
       type: 'status',
-      current: { look: 'pill' },
+      current: { look: 'standard' },
       clearable: true,
     })
     expect(m.items.map((i) => [i.label, i.action])).toEqual([['Clear', 'cell:clear']])
-    expect(m.style?.rows.map((r) => r.label)).toEqual(['Pill', 'Capsule', 'Checkbox'])
-    expect(m.style?.rows.find((r) => r.value === 'pill')?.checked).toBe(true)
+    expect(m.style?.rows.map((r) => r.label)).toEqual(['Standard', 'Compact'])
+    expect(m.style?.rows.find((r) => r.value === 'standard')?.checked).toBe(true)
   })
 
   it('clear-only (select/multi/context): just Clear', () => {

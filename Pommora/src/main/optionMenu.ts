@@ -30,7 +30,7 @@ export function popOptionMenu(
   return popReturningMenu<OptionMenuAction>(win, (pick, pickAfter) => {
     let separated = false
     const items: MenuItemConstructorOptions[] = []
-    for (const it of optionMenuModel()) {
+    for (const it of optionMenuModel(ctx.canEditIcon)) {
       if (it.confirm && !separated) {
         items.push({ type: 'separator' })
         separated = true

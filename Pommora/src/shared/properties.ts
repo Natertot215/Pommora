@@ -58,6 +58,8 @@ export const CURRENCY_CODES = ['USD', 'EUR', 'GBP', 'AUD', 'CAD', 'JPY'] as cons
 const selectOption = z.looseObject({
   value: z.string(),
   label: z.string(),
+  // A per-option glyph for the Compact style; absent falls to the type's default (tag / tags).
+  icon: z.string().optional().catch(undefined),
   // Open solid-palette key (chipColorFor normalizes on render). Lenient: a non-string degrades to
   // undefined rather than failing the whole def parse.
   color: z.string().optional().catch(undefined),

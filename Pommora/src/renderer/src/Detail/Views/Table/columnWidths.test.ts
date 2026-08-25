@@ -4,6 +4,8 @@ import { RESERVED_PROPERTY_ID, type PropertyDefinition } from '@shared/propertie
 
 const schema: PropertyDefinition[] = [
   { id: 'prop_status', name: 'Status', type: 'status' },
+  { id: 'prop_select', name: 'Tag', type: 'select' },
+  { id: 'prop_multi', name: 'Tags', type: 'multi_select' },
   { id: 'prop_n', name: 'Count', type: 'number' },
   { id: 'prop_done', name: 'Done', type: 'checkbox' },
 ]
@@ -41,10 +43,11 @@ describe('minWidthFor', () => {
     expect(minWidthFor('prop_done', schema, 'switch')).toBe(70)
   })
 
-  it('scaffolds graded status mins — checkbox < capsule < pill', () => {
-    expect(minWidthFor('prop_status', schema, 'checkbox')).toBe(45)
-    expect(minWidthFor('prop_status', schema, 'capsule')).toBe(65)
-    expect(minWidthFor('prop_status', schema, 'pill')).toBe(80)
+  it('shares one option-chip min set across status, select and multi-select', () => {
+    for (const p of ['prop_status', 'prop_select', 'prop_multi']) {
+      expect(minWidthFor(p, schema, 'compact')).toBe(45)
+      expect(minWidthFor(p, schema, 'standard')).toBe(80)
+    }
   })
 
   it('falls back to the base min for a type/look with no override', () => {

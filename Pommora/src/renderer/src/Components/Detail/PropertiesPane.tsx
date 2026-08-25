@@ -443,7 +443,9 @@ export function PropertiesPane({
           <OptionEditor
             type={def.type}
             options={def.select_options ?? []}
+            look={styleFor(def.id, schema, activeView).look === 'compact' ? 'compact' : 'standard'}
             onSetOptions={(next) => void saveOptions(def.id, next)}
+            onSetStyle={(look) => void saveColumnStyle(def.id, { look })}
             onRenameOption={(oldValue, newTitle) => void renameOption(def.id, oldValue, newTitle)}
             onRemoveOption={(value) => void removeOption(def.id, value)}
             onClearOption={(value) => void clearOption(def.id, value)}
@@ -451,7 +453,9 @@ export function PropertiesPane({
         ) : def.type === 'status' ? (
           <StatusEditor
             groups={def.status_groups ?? []}
+            look={styleFor(def.id, schema, activeView).look === 'compact' ? 'compact' : 'standard'}
             onSetGroups={(next) => void saveStatusGroups(def.id, next)}
+            onSetStyle={(look) => void saveColumnStyle(def.id, { look })}
             onRenameOption={(oldValue, newTitle) =>
               void renameStatusOption(def.id, oldValue, newTitle)
             }

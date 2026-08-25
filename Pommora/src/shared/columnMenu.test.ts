@@ -13,15 +13,22 @@ const items = (
 ) => styleMenuItems({ type, current, barCapable })
 
 describe('styleMenuItems', () => {
-  it('status offers the three looks, current checked', () => {
-    const rows = items('status', { look: 'capsule' })
+  it('status offers Standard and Compact, current checked', () => {
+    const rows = items('status', { look: 'compact' })
     expect(rows.map((r) => [r.label, r.value])).toEqual([
-      ['Pill', 'pill'],
-      ['Capsule', 'capsule'],
-      ['Checkbox', 'checkbox'],
+      ['Standard', 'standard'],
+      ['Compact', 'compact'],
     ])
-    expect(rows.find((r) => r.value === 'capsule')?.checked).toBe(true)
+    expect(rows.find((r) => r.value === 'compact')?.checked).toBe(true)
     expect(rows.every((r) => r.key === 'look')).toBe(true)
+  })
+
+  it('select and multi-select offer Standard and Compact', () => {
+    expect(items('select', { look: 'standard' }).map((r) => r.value)).toEqual([
+      'standard',
+      'compact',
+    ])
+    expect(items('multi_select', {}).map((r) => r.value)).toEqual(['standard', 'compact'])
   })
 
   it('checkbox offers Checkbox/Switch; url the three link forms; file Filename/Full Path', () => {
@@ -91,16 +98,14 @@ describe('styleMenuItems', () => {
     expect(items('last_edited_time', {}).map((r) => r.label)).toContain('Short Date')
   })
 
-  it('select/multi/context get no Style items', () => {
-    expect(items('select')).toEqual([])
-    expect(items('multi_select')).toEqual([])
+  it('context gets no Style items', () => {
     expect(items('context')).toEqual([])
   })
 })
 
 describe('parseStyleAction', () => {
   it('round-trips a style action string', () => {
-    expect(parseStyleAction('style:look:capsule')).toEqual({ key: 'look', value: 'capsule' })
+    expect(parseStyleAction('style:look:compact')).toEqual({ key: 'look', value: 'compact' })
     expect(parseStyleAction('style:date_format:monthDayYear')).toEqual({
       key: 'date_format',
       value: 'monthDayYear',

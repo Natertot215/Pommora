@@ -6,14 +6,14 @@ import type { CollectionNode, ResolvedGroup, SetNode } from '@shared/types'
 import type { SavedView } from '@shared/views'
 import type { ResolveContext } from './resolveContext'
 
-/** A select/status option for a stored value, via the column's schema def — `{ label, color? }`,
- *  undefined if the column isn't a select/status or the value is unknown. Chip cells read `color`;
- *  text resolution reads `label`. */
+/** A select/status option for a stored value, via the column's schema def — undefined if the column
+ *  isn't a select/status or the value is unknown. Chip cells read `color` and (Compact) `icon`; text
+ *  resolution reads `label`. */
 export function findOption(
   columnId: string,
   value: string,
   schema: PropertyDefinition[],
-): { label: string; color?: string } | undefined {
+): { value: string; label: string; color?: string; icon?: string } | undefined {
   const def = schema.find((d) => d.id === columnId)
   return (
     def?.select_options?.find((o) => o.value === value) ??

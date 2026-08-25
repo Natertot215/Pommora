@@ -19,7 +19,7 @@ describe('COLUMN_LOOKS', () => {
 
 describe('defaultStyleFor', () => {
   it('gives each look-bearing type its default look', () => {
-    expect(defaultStyleFor('status')).toEqual({ look: 'pill' })
+    expect(defaultStyleFor('status')).toEqual({ look: 'standard' })
     expect(defaultStyleFor('checkbox')).toEqual({ look: 'checkbox' })
     expect(defaultStyleFor('url')).toEqual({ look: 'link-full' })
   })
@@ -62,9 +62,12 @@ describe('defaultStyleFor', () => {
     expect(defaultStyleFor('number')).toEqual({ look: 'number' })
   })
 
-  it('select/multi and unknown types are not style-addressable', () => {
-    expect(defaultStyleFor('select')).toEqual({})
-    expect(defaultStyleFor('multi_select')).toEqual({})
+  it('select/multi default to the Standard option look', () => {
+    expect(defaultStyleFor('select')).toEqual({ look: 'standard' })
+    expect(defaultStyleFor('multi_select')).toEqual({ look: 'standard' })
+  })
+
+  it('an unknown type is not style-addressable', () => {
     expect(defaultStyleFor(undefined)).toEqual({})
   })
 })
@@ -72,7 +75,7 @@ describe('defaultStyleFor', () => {
 describe('columnStyle codec', () => {
   it('round-trips a full entry', () => {
     const entry = {
-      look: 'capsule',
+      look: 'compact',
       date_format: 'short',
       time_format: 'twelveHour',
       weekday: 'short',
@@ -87,8 +90,8 @@ describe('columnStyle codec', () => {
   })
 
   it('lets unknown keys ride through', () => {
-    expect(columnStyle.parse({ look: 'pill', outside_key: true })).toEqual({
-      look: 'pill',
+    expect(columnStyle.parse({ look: 'standard', outside_key: true })).toEqual({
+      look: 'standard',
       outside_key: true,
     })
   })

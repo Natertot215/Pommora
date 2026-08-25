@@ -165,7 +165,7 @@ export function usePropertyRows(
     // checkbox is true-or-absent on disk, never a stored false — the shared click-semantics router
     // handles it; number/url stay inline in the host.
     const current = row ? resolveFieldValue(row, def.id, schema) : ({ kind: 'null' } as const)
-    const shared = sharedValueClickAction(def.type, undefined, current, def)
+    const shared = sharedValueClickAction(def.type, current)
     if (shared) {
       if (shared.kind === 'commit') {
         commitValue(def.id, shared.value)
