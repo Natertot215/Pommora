@@ -7,7 +7,7 @@ export const trail = style({
   display: 'flex',
   alignItems: 'center',
   minWidth: 0,
-  color: `var(--nav-trail-ink, ${c.label.secondary})`,
+  selectors: { '&&': { color: `var(--nav-trail-ink, ${c.label.secondary})` } },
 })
 
 export const segment = style({
@@ -23,7 +23,7 @@ export const segment = style({
   gap: '3px',
   minWidth: 0,
   selectors: {
-    'button&:hover': { color: c.label.primary },
+    'button&:hover': { color: c.label.secondary },
   },
 })
 
