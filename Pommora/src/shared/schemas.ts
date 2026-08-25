@@ -20,6 +20,18 @@ export const coerceViewButton = (raw: unknown): 'icon' | 'labeled' | undefined =
 export const coerceViewStyle = (raw: unknown): 'dropdown' | 'toolbar' | undefined =>
   viewStyleField.parse(raw)
 
+export const crop = z.object({
+  x: z.number(),
+  y: z.number(),
+  zoom: z.number(),
+  color: z.string().optional(),
+})
+export type Crop = z.infer<typeof crop>
+
+export const cropsFile = z.looseObject({
+  byImage: z.record(z.string(), crop.optional().catch(undefined)).optional().catch(undefined),
+})
+
 /** Fields shared by every folder sidecar. Loose ⇒ unknown keys are retained. Exported because it
  *  is exactly the identity-only shape a kind resolver needs: it reads a sidecar the caller has
  *  ALREADY located by filename, purely to recover its id. It is deliberately non-discriminating —

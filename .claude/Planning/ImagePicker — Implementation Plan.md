@@ -138,9 +138,9 @@ What this is not: rotation, filters, pixel editing; per-view image-fit or aspect
 **Must agree:** `coverStyle(DEFAULT_CROP, a, b)` is `cover` centered for every `a`, `b` — one test across portrait, square and landscape at aspects 1, 230/900, 104/180.
 
 **Steps:**
-- [ ] Port; add `panDelta`; the codecs; the key rule; move `WEB_ADDRESS`.
-- [ ] Tests: both fill branches; the equal-aspect boundary; `zoom` out of bounds; a zero aspect; `panToCrop` clamping at both ends; the Must-agree table; `panDelta` — anchor zoom 1.5, live zoom 2 moves by `totalDx / overhang(2)`, and a total delta back to 0 returns exactly the anchor; `cropKeyFor` for a rel, a URL, and neither.
-- [ ] Gates green. Commit: `feat(shared): the crop model — a focal point and a zoom, one producer of the paint`
+- [x] Port; add `panDelta`; the codecs; the key rule; move `WEB_ADDRESS`.
+- [x] Tests: both fill branches; the equal-aspect boundary; `zoom` out of bounds; a zero aspect; `panToCrop` clamping at both ends; the Must-agree table; `panDelta` — anchor zoom 1.5, live zoom 2 moves by `totalDx / overhang(2)`, and a total delta back to 0 returns exactly the anchor; `cropKeyFor` for a rel, a URL, and neither.
+- [x] Gates green. Commit: `feat(shared): the crop model — a focal point and a zoom, one producer of the paint`
 
 #### Task 2: `.nexus/crops.json` as the `crops` leaf
 
