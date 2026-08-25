@@ -1,7 +1,7 @@
 import { globalStyle, keyframes, style } from '@vanilla-extract/css'
 import { vars } from '../../../Tokens/color.css'
 import { duration, easing } from '../../../Animation/motion'
-import { TINT_STEPS, tintAt } from '../../../Tokens/tint'
+import { tintAt } from '../../../Tokens/tint'
 import { font } from '../../../Tokens/typography.css'
 import { base } from '../../Fields/fields.css'
 import { segment } from '../../../Elements/Segment/segment.css'
@@ -10,8 +10,8 @@ import { stack } from '../../../Tokens/stack'
 const c = vars.color
 // Selection tints: endpoints at a stronger tint, the in-between band a
 // step lighter — both off the live --accent.
-const endpointFill = tintAt('var(--accent)', TINT_STEPS.secondary)
-const bandFill = tintAt('var(--accent)', TINT_STEPS.tertiary)
+const endpointFill = tintAt('var(--accent)', 'secondary')
+const bandFill = tintAt('var(--accent)', 'tertiary')
 
 /* The picker's intrinsic width — the PickerMenu pane shrink-wraps this (+ its gutters). THE
    sizing knob; everything inside flows from it. textAlign resets the host's inheritance — a

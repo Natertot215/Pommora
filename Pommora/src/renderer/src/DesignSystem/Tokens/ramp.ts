@@ -11,7 +11,7 @@ import {
 
 export { RAMP_FAMILIES, RAMP_STEPS, type CellKey, type RampFamily, type RampStep }
 import { vars as colorVars } from './color.css'
-import { TINT_STEPS, mixAt, tint, tintAt } from './tint'
+import { mixAt, tintAt } from './tint'
 
 const c = colorVars.color
 const WHITE = c.system.white
@@ -125,28 +125,19 @@ const DARKNESS_STEP = 15
 /** Greyscale borders ride label-tertiary — the row has no chroma of its own to outline with. */
 const GREY_OUTLINES = [35, 45, 55, 65, 75, 85, 95, 100].map((pct) => tintAt(c.label.tertiary, pct))
 
-/** A cell as a chip wears it. The greyscale row is the exception the rest of the grid doesn't need. */
-export const cellTint = (key: CellKey): ReturnType<typeof tint> => {
+/** What a cell hands the tint recipe: the base color fill, outline and text all mix from, plus the
+ *  outline the greyscale row brings of its own — that row has no chroma to draw one from. */
+export const cellPaint = (key: CellKey): { base: string; outline?: string } => {
   const { family, step } = parse(key)
   const color = RAMP[family][step]
-  if (family !== 'grey') return tint(color)
-  const base = step >= 6 ? mixAt(color, 100 - (step - 5) * DARKNESS_STEP, BLACK) : color
-  return { ...tint(base), borderColor: GREY_OUTLINES[step] }
-}
-
-/** A cell as the task checkbox wears it. The box is a chip at a smaller size, so it takes the chip's
- *  recipe whole — including the greyscale row's darkness offset and its borrowed outline, which is
- *  what lets a grey checkbox read at all — and softens the border by one tint step, the one thing a
- *  box the size of a glyph wants differently from a chip. */
-export const checkboxTint = (key: CellKey): ReturnType<typeof tint> => {
-  const chip = cellTint(key)
-  if (parse(key).family === 'grey') return chip
-  return { ...chip, borderColor: tintAt(cellColor(key), TINT_STEPS.tertiary) }
+  if (family !== 'grey') return { base: color }
+  return {
+    base: step >= 6 ? mixAt(color, 100 - (step - 5) * DARKNESS_STEP, BLACK) : color,
+    outline: GREY_OUTLINES[step],
+  }
 }
 
 /** The picker's selection ring. On the grey row the ring and the chip's border are one thing by
- *  construction, so it reads the recipe; every other row rings with the solid at tint-primary. */
+ *  construction; every other row rings with the solid at tint-primary. */
 export const cellRing = (key: CellKey): string =>
-  parse(key).family === 'grey'
-    ? cellTint(key).borderColor
-    : tintAt(cellColor(key), TINT_STEPS.primary)
+  cellPaint(key).outline ?? tintAt(cellColor(key), 'primary')

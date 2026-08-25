@@ -2,7 +2,7 @@ import { globalStyle, style, type StyleRule } from '@vanilla-extract/css'
 import { vars as colorVars } from '../../Tokens/color.css'
 import { ROW_PAD_X } from '../../Elements/DropOutline/dropOutline.css'
 import { font, text } from '../../Tokens/typography.css'
-import { TINT_STEPS, tintAt } from '../../Tokens/tint'
+import { tintAt } from '../../Tokens/tint'
 import { fieldRing, ROW_RING } from '../Fields/fieldRing'
 import { base } from '../Fields/fields.css'
 
@@ -30,7 +30,7 @@ export const rowShell = style({
     '&:focus-visible': {
       outline: 'none',
       boxShadow: fieldRing(ROW_RING),
-      vars: { '--field-ring': tintAt('var(--accent)', TINT_STEPS.secondary) },
+      vars: { '--field-ring': tintAt('var(--accent)', 'secondary') },
     },
   },
 })

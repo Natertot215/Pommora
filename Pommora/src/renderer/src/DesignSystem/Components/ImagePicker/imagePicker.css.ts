@@ -1,7 +1,7 @@
 import { style } from '@vanilla-extract/css'
-import { TINT_STEPS, text, tintAt, vars } from '../../Tokens'
+import { text, tintAt, vars } from '../../Tokens'
 import { stack } from '../../Tokens/stack'
-import { accessoryButton } from '../Menu/menu.css'
+import { accessoryButton, detail } from '../Menu/menu.css'
 
 const c = vars.color
 
@@ -12,7 +12,7 @@ export const backdrop = style({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  background: tintAt(c.system.black, TINT_STEPS.secondary),
+  background: tintAt(c.system.black, 'secondary'),
 })
 
 export const panel = style({
@@ -23,10 +23,10 @@ export const panel = style({
   padding: '18px',
   borderRadius: '12px',
   border: `1px solid ${c.separator.border}`,
-  boxShadow: `0 20px 60px ${tintAt(c.system.black, TINT_STEPS.primary)}`,
+  boxShadow: `0 20px 60px ${tintAt(c.system.black, 'primary')}`,
 })
 
-/** The frame the image is dragged inside — a surface fills it while the photo loads. */
+/** The frame the image is dragged inside — it holds the seat and the dimmed room around it. */
 export const viewport = style({
   position: 'relative',
   overflow: 'hidden',
@@ -38,7 +38,7 @@ export const viewport = style({
 })
 export const grabbing = style({ cursor: 'grabbing' })
 
-/** The whole image, dimmed and blurred behind the crop — what the frame keeps but the seat drops. */
+/** The whole image, dimmed and blurred — the part spilling past the seat, still in view. */
 export const dimImage = style({
   position: 'absolute',
   objectFit: 'fill',
@@ -46,7 +46,8 @@ export const dimImage = style({
   pointerEvents: 'none',
 })
 
-/** The sharp crop — the exact region the seat shows, cut out of the dimmed image and ringed. */
+/** The seat itself — ringed and fixed. It clips the sharp image and paints the crop's own fill
+ *  wherever the image doesn't reach. */
 export const cropBox = style({
   position: 'absolute',
   overflow: 'hidden',
@@ -54,7 +55,7 @@ export const cropBox = style({
   pointerEvents: 'none',
 })
 
-/** The bright image inside the crop, offset to line up under the dimmed one behind it. */
+/** The bright image inside the seat, at the same rect as the dimmed one behind it. */
 export const cropImage = style({
   position: 'absolute',
   objectFit: 'fill',
@@ -80,6 +81,8 @@ export const sliderRow = style({
   alignItems: 'center',
   gap: '10px',
 })
+
+export const zoomReadout = style([detail, { color: c.label.secondary }])
 
 export const actions = style({
   display: 'flex',

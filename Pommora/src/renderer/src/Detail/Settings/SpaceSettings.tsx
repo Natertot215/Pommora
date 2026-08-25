@@ -8,7 +8,7 @@ import {
   MenuBottomRow,
   MenuScrollFrame,
 } from '@renderer/DesignSystem/Components/Menu'
-import { TINT_STEPS, tintAt } from '@renderer/DesignSystem/Tokens/tint'
+import { tintAt } from '@renderer/DesignSystem/Tokens/tint'
 import { cellColor } from '@renderer/DesignSystem/Tokens/ramp'
 import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import { useSession } from '../../store'
@@ -78,7 +78,7 @@ export function SpaceSettingsContent({ id }: { id: string }): React.JSX.Element 
             value={node.name}
             icon={entityIcon('space', node.icon, defaultIcons)}
             iconRef={iconRef}
-            outline={solid ? tintAt(solid, TINT_STEPS.secondary) : undefined}
+            outline={solid ? tintAt(solid, 'secondary') : undefined}
             editing={renaming}
             onEditingChange={setRenaming}
             onIconClick={() => setPickerOpen(true)}

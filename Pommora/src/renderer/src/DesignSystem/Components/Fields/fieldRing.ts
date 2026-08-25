@@ -2,7 +2,7 @@
 // helper that BUILDS a declaration lives beside the stylesheet rather than inside it — `.css.ts`
 // files still import from here freely; the restriction is only on what a stylesheet exports.
 import { duration, easing } from '../../Animation/motion'
-import { TINT_STEPS, tintAt } from '../../Tokens/tint'
+import { tintAt } from '../../Tokens/tint'
 
 /** KNOB — a menu ROW's ring weight. Selection and keyboard focus both paint at this width and differ
  *  only in tone, so one can never read as heavier than the other. */
@@ -17,7 +17,7 @@ export const fieldRing = (width = 1): string => `inset 0 0 0 ${width}px ${FIELD_
 
 /** The error preset on the channel — no transition: a state, not a gesture. */
 export const errorRing = (): { vars: Record<string, string> } => ({
-  vars: { '--field-ring': tintAt('var(--error)', TINT_STEPS.primary) },
+  vars: { '--field-ring': tintAt('var(--error)', 'primary') },
 })
 
 /** A style FRAGMENT spread into a field's own rule — stating the transition and the `:focus` var
@@ -32,7 +32,7 @@ export const focusRing = (
   selectors: {
     [scope === 'within' ? '&:focus-within' : '&:focus, &:focus-visible']: {
       outline: 'none',
-      vars: { '--field-ring': tintAt('var(--accent)', TINT_STEPS.secondary) },
+      vars: { '--field-ring': tintAt('var(--accent)', 'secondary') },
     },
   },
 })

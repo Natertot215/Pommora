@@ -10,6 +10,7 @@ export {
   roomy,
   shape,
   textCap,
+  tinted,
   type LabelColorName,
   type LabelShape,
 } from './labels.css'

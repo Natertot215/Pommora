@@ -97,7 +97,7 @@ A workflow property whose values sort into status **groups**. The group model is
 
 Every value references its group by id, and the status semantics resolve by id rather than list position; further groups drop into the open enum with no data change. An option's `value` is its label — renaming rewrites both and cascades onto every assigning page. An option without its own color wears its group's. Sort is group position first, then option order within it. Status is opt-in on a Collection like any other property.
 
-The **Status editor** edits it in place — a **Style** toggle over a group-labeled option list (double-click a heading to relabel its group), a per-group `+` for an inline-named option, a hover palette to recolor, drag to reorder within or across groups, and a right-click **Rename · Remove · Clear** menu. The value is a pill chip in its group's color; **Compact** style renders it icon-only as the group's glyph.
+The **Status editor** edits it in place — a group-labeled option list (double-click a heading to relabel its group), a per-group `+` for an inline-named option, a hover palette to recolor, drag to reorder within or across groups, and a right-click **Rename · Remove · Clear** menu. The value is a pill chip in its group's color; **Compact** style renders it icon-only as the group's glyph.
 
 #### II. Checkbox
 
@@ -115,7 +115,7 @@ Stores a single ISO value — a date-only string folds into Date on read, a with
 
 #### II. Select & Multi-Select
 
-Select stores a bare string and renders one colored **tag** chip; Multi-Select a bare array rendering several. Both draw from a shared option list. The **option editor** is an inline list under a **Style** toggle: a per-list `+`, a hover palette to recolor, drag to reorder, and a right-click **Rename · Edit Icon · Remove · Clear**; creating the property seeds one starter option. **Compact** style renders each chip icon-only — the option's own icon (Edit Icon), or the single/double-tag default.
+Select stores a bare string and renders one colored **tag** chip; Multi-Select a bare array rendering several. Both draw from a shared option list. The **option editor** is an inline list: a per-list `+`, a hover palette to recolor, drag to reorder, and a right-click **Rename · Edit Icon · Remove · Clear**; creating the property seeds one starter option. **Compact** style renders each chip icon-only — the option's own icon (Edit Icon), or the single/double-tag default.
 
 #### II. Links & URL
 
@@ -188,6 +188,8 @@ The first surface for setting values is the table's cells; on a Page, the entity
 #### The Properties Pane
 
 The pane in the toolbar's Settings dropdown is the full assign surface for a Collection — assigned properties on top (chevron → the per-property editor), and an **All Properties** disclosure pinned to the pane's bottom that rises open to list every unassigned registry definition in the nexus order, each promotable via its `+` or by dragging into the assigned group at a slot. Dragging within a group reorders it (assigned = the Collection's order; All Properties = the nexus order); dragging an assigned row out removes it. Creating (the `+` in the pane's pinned bottom row) mints into the registry — appending to the nexus order, seeding per-type options — and assigns here. Renames, type changes, and option edits change the global definition for every assigner. The global **Delete lives only inside a property's own editor pane**, behind its ⋮ menu and a native confirm.
+
+Status and Select/Multi-Select carry their **Style** axis in the editor's pinned bottom row, below the divider, so it stays reachable however far the option list runs. The list above it is a live preview: the options render in whichever style is selected, Compact showing each one as the icon it will wear, with its name standing beside it so the editor still says which option is which.
 
 ### Schema Mutations
 | Mutation                   | Effect on Existing Values                                                                                                                                                                                                                                                                                                                                                                                                                                                               |

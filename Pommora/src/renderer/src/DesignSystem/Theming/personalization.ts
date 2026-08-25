@@ -8,7 +8,7 @@ import {
 } from '@shared/types'
 import type { CellKey } from '@shared/theme'
 import { labelColorFor } from '../Tokens/colorMap'
-import { cellColor, checkboxTint } from '../Tokens/ramp'
+import { cellColor, cellPaint } from '../Tokens/ramp'
 
 /** The ramp cell a color setting names, or null when it defers. Every sentinel — `accent`,
  *  `system`, `default` — and the absent key alike read as no cell, which `labelColorFor` already
@@ -30,19 +30,13 @@ function settingColorCss<I extends string | null>(setting: unknown, inherit: I):
  *  freeze it where it stood. */
 type VarWriter = (value: unknown) => Record<string, string | null>
 
-/** The task checkbox's three parts, resolved through the chip's own recipe so the greyscale row
- *  arrives with the darkness offset that keeps it dark enough and the outline it borrows — a grey
- *  cell has no chroma to draw one from, and painted raw its dark end is the page it sits on. */
+/** Resolved through the chip's own recipe, so the greyscale row arrives with the darkness offset and
+ *  borrowed outline it needs — painted raw its dark end is the page it sits on. */
 const checkboxVars: VarWriter = (value) => {
   const key = settingCell(value)
-  if (key === null)
-    return { '--checkbox-fill': null, '--checkbox-border': null, '--checkbox-mark': null }
-  const { background, borderColor, color } = checkboxTint(key)
-  return {
-    '--checkbox-fill': background,
-    '--checkbox-border': borderColor,
-    '--checkbox-mark': color,
-  }
+  if (key === null) return { '--checkbox-base': null, '--checkbox-border': null }
+  const { base, outline } = cellPaint(key)
+  return { '--checkbox-base': base, '--checkbox-border': outline ?? null }
 }
 
 /** The knobs that render as root vars — a scale, a color, or a family of either. */
