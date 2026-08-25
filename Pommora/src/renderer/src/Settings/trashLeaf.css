@@ -8,9 +8,6 @@
   --navwindow-inset: 14px; /* KNOB — the leaf's content inset, the rows' and the heading's alike */
   --trash-date-lane: 160px; /* KNOB — fixed, so the dates line up down the list */
   --trash-date-inset: 10px; /* KNOB — clears the column divider, heading and rows alike */
-  /* The strip the checkbox rides, left of where content starts — the row's equivalent of the
-     gutter a pin or a grip sits in. Content clears it, so a row's glyph and a column's label land
-     on one line and the box has room of its own. */
   --trash-gutter: 20px; /* KNOB */
   --trash-lead: calc(var(--navwindow-inset) + var(--trash-gutter));
   --cell-padding-x: var(--navwindow-inset);
@@ -75,7 +72,7 @@
 }
 .trash-head-glyph {
   display: flex;
-  margin-right: 7px; /* the row's own glyph-to-title gap */
+  margin-right: 6px; /* the row's own glyph-to-title gap */
 }
 /* A column's glyph sits a step under its label, which is the relationship the table's own header
    icon already keeps against the same heading tone. */

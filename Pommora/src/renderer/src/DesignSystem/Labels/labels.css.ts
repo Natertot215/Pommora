@@ -87,7 +87,10 @@ type Paint = { base: string; outline?: string; accent?: string }
 const variant = ({ base, outline, accent }: Paint): ComplexStyleRule => [
   tinted,
   {
-    vars: { '--label-base': base, ...(accent === base ? {} : { '--label-accent': accent }) },
+    vars: {
+      '--label-base': base,
+      ...(accent && accent !== base ? { '--label-accent': accent } : {}),
+    },
     ...(outline ? { borderColor: outline } : {}),
   },
 ]
