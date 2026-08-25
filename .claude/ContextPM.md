@@ -9,7 +9,7 @@
 ### Immediate Work
 
 - [ ] **Part 3 of the file-based arc — the ImagePicker**, in progress: one design-system surface for choosing and cropping a banner, a card cover, an icon or the nexus photo, widening `PhotoCropModal` past the profile photo (which is why `setProfileImage` still carries bytes while every banner carries a path).
-- [ ] **A planning session against [[Design-Coherence-Report]] §VIII** — `checkboxLook`, the container title, CalendarPicker's range mode, the tab strips, `--gutter`, and the two press-to-edit mechanisms; the report's structural findings have landed and the middle-layer question is answered by the filing.
+- [ ] **A planning session against [[Design-Coherence-Report]] §VIII** — `checkboxLook`, the container title, CalendarPicker's range mode, the tab strips, `--gutter`; the report's structural findings have landed and the middle-layer question is answered by the filing.
 
 ### Pending Focuses
 
@@ -23,7 +23,6 @@
 
 Findings where the correct answer isn't established in the codebase — design and product decisions, not cleanup. Each is cheap once it's decided.
 
-- [ ] **Two press-to-edit mechanisms.** `useDraftEdit` (InputField's `edit`: a width-pinned draft caret, commit on Enter or blur) and `RenamableLabel` over `EditableInput` (the rename swap: auto-sizing, caret-at-end for titles, an unchanged or emptied name cancels) both turn resting content into a caret and back. `InlineEditHeader` — the icon-plus-title pane header five panes share — composes the second beside `InputField`, so the header is a layout, not a redundancy; the redundancy is underneath it. One mechanism absorbs the other, and the header then reads as `InputField edit` with a `leading` icon button.
 - [ ] **`cursor: default` versus `cursor: pointer` has no rule** — roughly twenty sites each, design-system components consistently on `default` and feature surfaces mixed. Pick one convention for clickable non-link controls and the sweep is mechanical.
 - [ ] **Cards has no loading or empty state**, where Table returns both; a blank grid is indistinguishable from broken. Loading versus empty versus error is a real distinction and wants one decision in `ViewRenderer` rather than one per renderer.
 - [ ] **Two retention budgets act on the same guests and neither knows it.** Parked page surfaces cap at 2 tabs, hidden web guests at 5, and parking routes every tile inside a parked surface through the hidden-guest path — two parked tabs holding four web tiles each already exceeds the guest cap, so the LRU tears down the live sessions parking exists to preserve. One budget with tiers, or the numbers chosen together.

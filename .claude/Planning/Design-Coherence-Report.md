@@ -209,7 +209,6 @@ The planning session's agenda. Each is cheap once decided and wrong to guess at.
 - **CalendarPicker's range mode.** Built, styled, and unreachable. Claim it or retire it.
 - **The two tab strips.** 90/180/240/12/6 against 70/150/200/10/5, with no comment saying the smaller window scales deliberately and no single ratio generating one from the other.
 - **`--gutter` is one name for two lanes** (`--content-gutter` and `--fold-gutter`). One renames.
-- **Two press-to-edit mechanisms.** `useDraftEdit` (InputField's `edit`) and `RenamableLabel` over `EditableInput` both swap resting content for a caret; `InlineEditHeader` composes the second where the first now suffices. One absorbs the other.
 
 #### Constraints the planning session inherits
 
@@ -260,10 +259,10 @@ Where the report's work stands, kept current so a session can read its position 
 - **The reference document** — rewritten as the ledger; `TypographyPM` retired into it.
 - **Button** — `Components/Controls/Button/`, the toolbar and every former ghost on it; the button bundles adopted as the system ladder; `pressed` for a toggle that is on or a trigger whose menu is open.
 - **NavTrail** — `Elements/NavTrail/`, the one location trail over `treeIndex`'s one `ancestryOf`; the nav rows, gallery cards, card footings, embed hover, preview title, trash rows, scoped footer and subfield all draw it.
-- **The field slots** — `InputField` carries `chrome`, `edit`, `leading` and `trailing`; `PathField` retired into them; `SegmentRun` lives in Fields.
+- **The field slots** — `InputField` carries `chrome`, `edit`, `leading` and `trailing`; `PathField` retired into them; `SegmentRun` lives in Fields. `edit` rides `RenamableLabel`, so the codebase has one press-to-edit mechanism; `InlineEditHeader` is a layout of an icon Button beside it.
 
 #### Remaining Slices
 
 - **The twin extraction** — `PagePropertiesPane`/`PreviewInspector` (~470 lines of parallel structure).
-- **The §VIII decisions** — `checkboxLook`, the container title, CalendarPicker's range mode, the two tab strips, `--gutter`, the two press-to-edit mechanisms.
+- **The §VIII decisions** — `checkboxLook`, the container title, CalendarPicker's range mode, the two tab strips, `--gutter`.
 - **The toolbar selector**, the repeated-behavior sweep, `solidColor.ts` → `Tokens/`, and the two unread orphans.
