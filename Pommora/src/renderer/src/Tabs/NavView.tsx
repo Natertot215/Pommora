@@ -4,6 +4,7 @@ import { text } from '@renderer/DesignSystem/Tokens'
 import { SearchField } from '@renderer/DesignSystem/Components/Fields'
 import type { NavRef } from '@shared/types'
 import { useAssetUrl, useSession } from '../store'
+import { AssetImage } from '@renderer/DesignSystem/Components/AssetImage/AssetImage'
 import { moveByKey } from '../Navigation/navRecents'
 import { splitSearch, useNavData } from '../Navigation/useNavData'
 import { NavGallery } from '../NavWindow/NavGallery'
@@ -59,7 +60,7 @@ export function NavView(): React.JSX.Element {
       {bannerSrc ? (
         // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
         <div className="banner nav-view-banner" onContextMenu={(e) => void onBannerMenu(e)}>
-          <img className="banner-img" src={bannerSrc} alt="" />
+          <AssetImage value={ownBanner ?? homeBanner} className="banner-img" />
           <div className="banner-title">{searchInput}</div>
         </div>
       ) : (

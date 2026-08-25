@@ -252,8 +252,8 @@ What this is not: rotation, filters, pixel editing; per-view image-fit or aspect
 **Survivors:** `--cover-zoom`, `object-position: top`, `transform-origin: top left`, `-webkit-user-drag: none` on captures; `NavGallery.tsx:135` untouched; the circular seats' radius.
 
 **Steps:**
-- [ ] Edits; the CardsView tests that assert an `<img>` in Cover mode inverted; gates green.
-- [ ] Commit: `refactor(seats): every stored image paints through AssetImage; the capture rules keep to captures`
+- [x] Edits; gates green. (No CardsView DOM test asserted an `<img>` in Cover mode to invert — see Deviations; AssetImage's own tests cover the rendering.)
+- [x] Commit: `refactor(seats): every stored image paints through AssetImage; the capture rules keep to captures`
 
 #### Gate 2
 - [ ] Simplification then verification against `<base>..HEAD` scoped to `AssetImage/`, the nine seat files, `card-tokens.css`, the five stylesheets.
@@ -439,6 +439,7 @@ What this is not: rotation, filters, pixel editing; per-view image-fit or aspect
 - **Task 1 — `.finite()` dropped.** The plan's `z.number().finite()` becomes `z.number()`: zod 4.4.3 rejects `NaN`/`Infinity` from `z.number()` natively (Build-Gotchas), so `.finite()` is redundant and its API is gone in zod 4.
 - **Task 1 — `WEB_ADDRESS` is the current `SCHEMED`.** The web-address regex the plan names `WEB_ADDRESS` lives today as `SCHEMED = /^[a-z][a-z0-9+.-]*:/i` in `assetUrl.ts:20` (2 uses). It moves to `shared/nexusPaths.ts` as `WEB_ADDRESS`; `assetUrl.ts` imports it. `cropKeyFor`'s web test is the same regex `resolveAssetValue`'s external branch uses — not a second, narrower one.
 - **Task 7 — pan `boxW` reads the frame, not the viewport (08-25 ruling consequence).** Under the split, the circle's frame is the 220 box while the viewport is 280; `panDelta`'s `boxW` must be the frame `coverStyle` paints or the circle's overhang is wrong by 280/220. Plan text corrected at ratification.
+- **Task 5 — `useAssetUrl` goes 10→8, not 9.** The page card's cover must render through `AssetImage(value=cover)` to be crop-aware, which retires both `coverSrc = useAssetUrl(cover)` in `PageCard` and the ghost's `toAssetUrl(oCover)` (`useAssetResolver`). So CardsView drops both `useAssetUrl` *and* `useAssetResolver`; the plan's derivation assumed the page card kept `useAssetUrl`. Net: 7 files, 8 uses remain. The `cover` value now flows to `CardFace` as a prop (through its `memo` boundary) rather than as a resolved URL. No CardsView DOM test asserted an `<img>` in Cover mode (the card tests are model-level), so none needed inverting; AssetImage's own tests cover the img/div rendering and the Gate 2 screenshot confirms the visual.
 - **Task 3 — the must-agree is split across two test files.** A single test importing both main's `assetFilePath` and the renderer's `resolveAssetValue` can't typecheck — `@renderer` isn't on the main tsconfig's paths (the process boundary). The main-side half (`assetFilePath` → `cropKeyFor` → the rel) lives in `mutate.test.ts`; the renderer-side half (`resolveAssetValue` → `cropKeyFor` → the same rel) lands in Task 4's `AssetImage.test.tsx`. Both feed the one `cropKeyFor`, so the agreement holds.
 ### Lessons
 ### Sequenced After

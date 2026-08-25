@@ -33,7 +33,8 @@ import {
 } from '@renderer/DesignSystem/Interactions/drag'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { assetUrl } from '../../../assetUrl'
-import { useAssetResolver, useAssetUrl, useSession } from '../../../store'
+import { useSession } from '../../../store'
+import { AssetImage } from '@renderer/DesignSystem/Components/AssetImage/AssetImage'
 import { byOrder, parentOf } from '@shared/treePatch'
 import { thumbKey, thumbRel } from '@shared/nexusPaths'
 import { navKey } from '@renderer/Navigation/navRecents'
@@ -113,7 +114,6 @@ const CARDS_GHOST_GRACE_MS = 200 // KNOB
  *  table reads. Cards never indent — descendants roll up under their top-level band; ungrouped
  *  pages band under the container's own heading. */
 export function CardsView({ source }: { source: CollectionNode | SetNode }): React.JSX.Element {
-  const toAssetUrl = useAssetResolver()
   const tree = useSession((s) => s.tree)
   const assetMap = useSession((s) => s.assetMap)
   const select = useSession((s) => s.select)
@@ -779,12 +779,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
             const r = rowById.get(id)
             if (!r || !ctx) return null
             const oCover = typeof r.frontmatter.cover === 'string' ? r.frontmatter.cover : undefined
-            const oSrc =
-              banner === 'cover'
-                ? (toAssetUrl(oCover) ?? undefined)
-                : banner === 'preview'
-                  ? thumbSrc(nexusId, r.id, 0)
-                  : undefined
+            const oSrc = banner === 'preview' ? thumbSrc(nexusId, r.id, 0) : undefined
             return (
               <div
                 className={cx('cards-view', banner === 'none' && 'is-compact')}
@@ -810,6 +805,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
                       labels={labels}
                       crumbs={locByRow.get(id) ?? NO_TRAIL}
                       src={oSrc}
+                      cover={oCover}
                       iconName={entityIcon('page', r.icon, defaultIcons)}
                       columns={columns}
                       allowInlineRemove={false}
@@ -1009,8 +1005,6 @@ function DraggableSetCard({ set }: { set: SetNode }): React.JSX.Element {
 function SetCard({ set, drag }: { set: SetNode; drag?: DragItem }): React.JSX.Element {
   const select = useSession((s) => s.select)
   const mutate = useSession((s) => s.mutate)
-  const [failed, setFailed] = useState(false)
-  const src = useAssetUrl(set.banner) ?? undefined
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
   const iconName = entityIcon('set', set.icon, defaultIcons)
   const holdGhost = useContext(GhostSuppress)
@@ -1041,13 +1035,14 @@ function SetCard({ set, drag }: { set: SetNode; drag?: DragItem }): React.JSX.El
       <div className="page-card-body hover-pop">
         {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
         <div className="page-card-thumb" onContextMenu={(e) => void onThumbContextMenu(e)}>
-          {src && !failed ? (
-            <img src={src} alt="" onError={() => setFailed(true)} />
-          ) : (
-            <span className="page-card-ph">
-              <Icon name={iconName} size="largeTitle" />
-            </span>
-          )}
+          <AssetImage
+            value={set.banner}
+            fallback={
+              <span className="page-card-ph">
+                <Icon name={iconName} size="largeTitle" />
+              </span>
+            }
+          />
         </div>
         <div className="page-card-text">
           <OverScroll className={cx('page-card-title', cardTitleType)}>
@@ -1175,6 +1170,7 @@ const CardFace = memo(function CardFace({
   labels,
   crumbs,
   src,
+  cover,
   iconName,
   columns,
   allowInlineRemove,
@@ -1196,6 +1192,8 @@ const CardFace = memo(function CardFace({
   labels: NexusLabels | undefined
   crumbs: TrailSegment[]
   src: string | undefined
+  /** The page's `cover` value — Cover mode frames it through AssetImage; Preview uses `src`. */
+  cover?: string
   iconName: string
   columns: ResolvedColumn[]
   allowInlineRemove: boolean
@@ -1251,10 +1249,19 @@ const CardFace = memo(function CardFace({
       {banner !== 'none' && (
         // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
         <div
-          className="page-card-thumb"
+          className={cx('page-card-thumb', banner === 'preview' && 'is-capture')}
           onContextMenu={onThumbContextMenu ? (e) => void onThumbContextMenu(e) : undefined}
         >
-          {src ? (
+          {banner === 'cover' ? (
+            <AssetImage
+              value={cover}
+              fallback={
+                <span className="page-card-ph">
+                  <Icon name={iconName} size="title1" />
+                </span>
+              }
+            />
+          ) : src ? (
             <img src={src} alt="" onError={onImgError} />
           ) : (
             <span className="page-card-ph">
@@ -1411,7 +1418,6 @@ const PageCard = memo(function PageCard({
   const crumbs = loc ?? NO_TRAIL
 
   const cover = typeof row.frontmatter.cover === 'string' ? row.frontmatter.cover : undefined
-  const coverSrc = useAssetUrl(cover)
   const onImgError = useCallback(() => setFailed(true), [])
   // Right-click the image band → the page-banner menu (the PageHeader flow), worded for the view's
   // display config: Cover mode says Cover, Preview says Banner (it edits the page banner either way —
@@ -1439,12 +1445,8 @@ const PageCard = memo(function PageCard({
     },
     [banner, cover, mutate, row.path, onRefreshValues],
   )
-  const src =
-    banner === 'cover'
-      ? (coverSrc ?? undefined)
-      : banner === 'preview'
-        ? thumbSrc(nexusId, row.id, version)
-        : undefined
+  // Only Preview's capture thumbnail rides `src`; a Cover is framed by AssetImage from `cover`.
+  const src = banner === 'preview' ? thumbSrc(nexusId, row.id, version) : undefined
   if (src !== lastSrc.current) {
     lastSrc.current = src
     if (failed) setFailed(false)
@@ -1493,6 +1495,7 @@ const PageCard = memo(function PageCard({
             labels={labels}
             crumbs={crumbs}
             src={failed ? undefined : src}
+            cover={cover}
             iconName={iconName}
             columns={columns}
             allowInlineRemove={allowInlineRemove}

@@ -3,6 +3,7 @@ import { lockLabel } from '@shared/toggleLabels'
 import { useAssetUrl, useSession } from '../../store'
 import { DEFAULT_NEXUS_ICON, Icon } from '@renderer/DesignSystem/Symbols'
 import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
+import { AssetImage } from '@renderer/DesignSystem/Components/AssetImage/AssetImage'
 import { InputField } from '@renderer/DesignSystem/Components/Fields'
 import { MenuBottomRow, MenuScrollFrame } from '@renderer/DesignSystem/Components/Menu'
 import { FooterLockButton } from '@renderer/DesignSystem/Components/Menu'
@@ -64,7 +65,7 @@ export function SettingsScaffold(): React.JSX.Element | null {
             aria-label="Change the nexus icon or photo"
           >
             {photoUrl ? (
-              <img className={s.headerPhotoImg} src={photoUrl} alt="" />
+              <AssetImage value={profileImage} className={s.headerPhotoImg} />
             ) : (
               <Icon name={profileIcon ?? DEFAULT_NEXUS_ICON} />
             )}

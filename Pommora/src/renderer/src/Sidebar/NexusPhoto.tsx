@@ -5,6 +5,7 @@ import { IconPicker } from '@renderer/Settings/IconPicker'
 import { PhotoCropModal } from '@renderer/DesignSystem/Components/PhotoCropModal/PhotoCropModal'
 import { useNexusIcon } from '../Components/useNexusIcon'
 import { useAssetUrl } from '../store'
+import { AssetImage } from '@renderer/DesignSystem/Components/AssetImage/AssetImage'
 import * as s from './nexusHeader.css'
 
 /** Click (homepage select) is owned by the wrapping ribbon button, not here. Rename-nexus lives
@@ -41,7 +42,7 @@ export function NexusPhoto({ size }: { size: IconSize }): React.JSX.Element {
         title="Right-click to set an icon or photo"
       >
         {photoUrl ? (
-          <img className={s.photoImg} src={photoUrl} alt="" />
+          <AssetImage value={profileImage} />
         ) : (
           <Icon name={profileIcon ?? DEFAULT_NEXUS_ICON} size={Math.round(px * 0.6)} />
         )}
