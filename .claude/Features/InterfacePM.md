@@ -9,8 +9,8 @@ Interface
 ├── The Subfield
 ├── Floating Windows
 │   ├── II. Page Preview
-│   └── II. The NavWindow
-├── The Preview Inspector
+│   ├── II. The NavWindow
+│   └── II. The Settings Window
 ├── The Hover Card
 └── Pending
 ```
@@ -66,9 +66,9 @@ Every in-app window mounts one chassis, **PreviewPane** (`DesignSystem/Detail/Pr
 
 #### II. Page Preview
 
-The floating page window (`PagePreview/PreviewWindow.tsx`): a movable, resizable, fully editable window that opens Pages without touching the main pane's selection, tabs, history, or recents. One preview exists at a time, and a new summon overtakes it in place. The toolbar takes its band form; the scan glyph on the left **promotes** the page — it opens for real in the main pane while the window plays the engulf, a FLIP from the window's rect onto the detail pane's — and the right cluster holds a parked Settings glyph, the inspector toggle, and the close.
+The floating page window (`PagePreview/PreviewWindow.tsx`): a movable, resizable, fully editable window that opens Pages without touching the main pane's selection, tabs, history, or recents. One preview exists at a time, and a new summon overtakes it in place. The toolbar takes its band form; the scan glyph on the left **promotes** the page — it opens for real in the main pane while the window plays the engulf, a FLIP from the window's rect onto the detail pane's — and the right cluster holds a parked Settings glyph, the inspector toggle, and the close. That inspector — an overlay side slot at one remembered width, shared with the NavWindow's page tabs — is the frontmatter inspector: contexts and properties in two group fields, each rendering only once something is assigned, an Add affordance alone on an empty page, and rows edited through the same primitives the table cells use, with right-click popping the property menu or, on a value holding a link, the link menu.[^13] The window's footer is the scoped Subfield.
 
-The window is a small tabbed app of its own. A connection clicked inside it opens as a tab beside the origin rather than navigating away, deduplicating against a tab already open for that page; closing the active tab falls to its left neighbor, closing the origin re-parents the set to the left-most survivor, and closing the last tab closes the window. A single-tab window shows the page's ancestry as a centered NavTrail; the second tab's birth collapses that title into a standard tab strip, and closing back to one returns it. Tabs drag-reorder, and the whole set persists per origin across sessions, per machine, restored against the live tree.[^1] Warmth is per tab: editor state, undo, and scroll come back on switch.
+The window is a small tabbed app of its own. A connection clicked inside it opens as a tab beside the origin rather than navigating away, deduplicating against a tab already open for that page; closing the active tab falls to its left neighbor, closing the origin re-parents the set to the left-most survivor, and closing the last tab closes the window. A single-tab window shows the page's ancestry as a centered NavTrail; the second tab's birth collapses that title into a standard tab strip, and closing back to one returns it. Tabs drag-reorder, and the whole set persists per origin across sessions, per-machine, restored against the live tree.[^1] Warmth is per tab: editor state, undo, and scroll come back on switch.
 
 Three routes lead in: a Collection whose **Open In** is the preview routes its title clicks and sidebar rows here;[^4] **Open Connections In Preview** routes wiki-link clicks here, with ⌘-click taking the other route, and from inside a preview a ⌘-click opens a new app tab behind it;[^3] and ⌘N while the preview is open promotes the active tab to a new app tab.
 
@@ -76,9 +76,9 @@ Three routes lead in: a Collection whose **Open In** is the preview routes its t
 
 The NavWindow is a flavor of the same window with the floating toolbar: tab 1 is a perma-pinned, icon-only map tab whose content is the window's whole body — the Favorites rail, the search field, and the gallery — and page tabs open beside it from its rows when the window's routing override is on. An active page tab swaps the body for the editable embed and slides the rail closed; the map tab is the return. Opening the NavWindow over a live preview morphs one window into the other, a FLIP from the preview's rect, and the window's tab set persists across sessions. What the NavWindow is *for* — recents, pins, favorites, search — is Navigation's.[^12]
 
-### The Preview Inspector
+#### II. The Settings Window
 
-The right-hand pane of the Page Preview and the NavWindow's page tabs is a PreviewPane side slot in overlay mode, carried by the window's own openness and sharing one remembered width. Its body is the frontmatter inspector, properties only: two group fields, contexts then properties, each rendering only once something is assigned, with an Add affordance alone on an empty page. Each row is an icon-leading label with its value hugging the right edge, editing through the same primitives the table cells use; right-click on a row pops the property menu (Clear on a filled row, then Remove), and a value holding a link pops the link menu.[^13] The window's footer is the scoped Subfield.
+The Nexus Settings window (`Settings/NexusSettings.tsx`) is summoned and dismissed by the ribbon's Settings glyph and takes the floating toolbar, with a rail of leaves in a side slot and the panel they open beside it: General, Interface, Navigation, Appearance, Files & Links, Properties, Pages & Editor, Automations, and Shortcuts listed from the top, and Trash anchored to the rail's foot. A leaf either fills the panel with sections of labeled rows, each row writing one key of the Nexus's personalization,[^11] or hands the panel over to a surface of its own, which is what Trash does. A leaf whose own settings are undecided still holds its place in the rail and opens empty.
 
 ### The Hover Card
 

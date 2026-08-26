@@ -63,7 +63,7 @@ describe('readDefaultViewScale', () => {
 
   it('clamps out-of-range values so a typo cannot brick the window', async () => {
     await write({ personalization: { defaultViewScale: 125 } })
-    expect(await readDefaultViewScale(root)).toBe(3) // MAX
+    expect(await readDefaultViewScale(root)).toBe(1.5) // MAX
     await write({ personalization: { defaultViewScale: 0.1 } })
     expect(await readDefaultViewScale(root)).toBe(0.5) // MIN
   })

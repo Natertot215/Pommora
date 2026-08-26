@@ -45,7 +45,11 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 
 ### Locked Decisions
 
-The decisions that need explicit sign-off to change live at the bottom of [[PommoraPRD]] §Locked Decisions; everything else needs only a good reason.
+**Nothing is set in stone but these:** Every other decision — model, structure, vocabulary, interaction — is open to challenge and rework whenever an idea earns it. These decisions need explicit sign-offs to change; everything else needs only a good reason.
+
+- **Reasonable Legibility:** The user's Nexus, its filesystem structure, and the general context of the content within it must be understandable through the filesystem structure itself, be reasonably app-agnostic, or clearly understood through a single user guide. 
+- **Reasonable Translation:** The general structure of the file tree and on-disk data must be translatable between other filesystem-based applications. CommonMark specification is the standard convention; app-unique syntax is an acceptable per-case decision — but legibility concerns *context*, not every byte the app stores: per-machine operational info, accelerators, or similar information may be more appropriate to store in the `nexus.db` rather than hand-editable and exposed data.
+- **Single-window now, multi-window-ready seams** — data is main-owned + Query/store-cached per renderer; the live-refresh bus is a swappable transport; windows identified by serializable refs. No global singleton holding shared mutable client state.
 
 #### Important Information
 

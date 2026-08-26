@@ -3,13 +3,11 @@
 ```
 View Types
 ├── The Saved-View Model
+├── Creation
 ├── The Pipeline
 │   ├── II. Filter
 │   ├── II. Group
-│   ├── II. Sort
-│   └── II. Columns
-├── Creation
-├── Group Bands
+│   └── II. Sort
 ├── Surfaces
 ├── Table
 │   ├── II. The Grid
@@ -35,6 +33,12 @@ Each container's sidecar holds an ordered `views[]`, each entry modeled by `save
 
 The **active view** is tracked per machine and kept out of the synced sidecar.[^4] The ViewDropdown in the toolbar — its glyph the active view's icon — opens the ViewPane to switch it, and view CRUD (create as "Untitled", rename, duplicate, delete, reorder) persists to the sidecar. Two per-container presentation settings ride the sidecar and sync: **Show Title** and **View Style**.[^5] A container never presents an empty `views[]`: an app-created container is seeded with a default view on disk, and an empty view-bearing container mints one on first entry.
 
+### Creation
+
+Every renderer creates through one act (`useViewCreation.ts`): the page exists on disk as Untitled the moment a gesture fires, stamped with the values its birth context implies — the band's group value, and values on the active sort criteria that carry one (Select, Status, Checkbox, Number, Date) — with its order settled in the same act, and the renderer opens its own naming field over the row already real.[^6] A view's filter stamps the values its rules cleanly imply; metadata is never changed to satisfy a filter, so a page a non-derivable rule excludes creates and stays filtered out.
+
+Every renderer also shares the **hover ghost** (`useGhostAnchor.ts`): dwelling on a row or card extends a ghost "New Page" beneath it at the inactive dim, on that renderer's own chrome, and clicking it creates there. One dwell paces every surface; grace is per-surface, and a menu or editor owning the pointer stands the ghost down.
+
 ### The Pipeline
 
 `resolveView` in `src/renderer/src/Detail/Views/pipeline/` composes four pure stages — **columns → filter → group → sort** — over a view, its rows, its schema, and the container's set tree, knowing nothing about where they came from, so a full page and an embedded tile run the same code. Row frontmatter loads lazily per container over a batch IPC.
@@ -58,29 +62,17 @@ The operator families are type-aware, defined in `src/renderer/src/Components/De
 
 #### II. Group
 
-Grouping is structural (by Set and Sub-Set disclosure), flat, or by a property; the groupable types are Select, Status, Checkbox, and Date, with a date grouping by day, week, month, or year. Option order follows the schema until a band drag snapshots a manual order the view owns. A non-groupable or deleted property falls back to structural, and every consumer follows that effective mode. Structural grouping carries two companions: `structural_order_mode`, whose `location` value mirrors the filesystem order, and `sub_group`, a property bucketing inside each top-level Set band.
+Grouping is structural (by Set and Sub-Set disclosure), flat, or by a property — Select, Status, Checkbox, or Date, the last bucketing by day, week, month, or year. Options order by the schema until a band drag snapshots a manual order the view owns, and a non-groupable or deleted property falls back to structural, which every consumer then follows. Structural grouping adds two companions: `structural_order_mode`, mirroring filesystem order under its `location` value, and `sub_group`, a property bucketing inside each top-level Set band.
 
-An option with no rows renders as an empty band, and **Hide Empty Groups** drops those for every grouping kind. Rows with no value render as a header-less tail placed by `ungrouped_placement` rather than as a "None" band. Any band can be hidden outright through `hidden_groups`, resolved in the pipeline so a hidden band, its rows, and its chrome never reach a renderer; the Grouping pane is where hidden groups stay reachable.
+Per-group disclosure bands(`GroupBand.tsx`) are shown in both renderers: glyph, label, and chevron over a persisted collapse on the shared disclosure motion, Select and Status headings wearing their chips and date buckets the property icon over the column's date format. A section lead is twice the head-to-row clearance and state-free, so nothing above a band moves on toggle, and the hover **+** appears on structural Set headers alone, since a property bucket can't infer a location. 
+
+Ungrouped pages under a property-grouped configuration use a style-specific "none" label as their heading unless the **Hide Empty Groups** option takes it; `hidden_groups` drops them outright. Ungrouped pages in location-based grouping aren't placed under a disclosure label, and are instead placed as root-level rows with their order defined via the view's `ungrouped_order` option. 
+
+Bands drag by that same glyph on the shared insertion-line gesture[^7] over a frozen snapshot of the geometry: under Custom order, a structural drop merges into the view-level `group_order`, a property drop writes `group.order` and flips its mode to manual, and a sub-group drop writes the global bucket order, while **Order = Location** sends a same-parent reorder to the filesystem instead. A cross-tree drop — nesting one Set into another, or landing under a different parent — moves the folder in every mode.
 
 #### II. Sort
 
 A multi-key list applied in priority order, stable on ties, with per-type comparators: Select and Status by option order or a criterion's own Custom order, dates chronological, checkbox by rank, text case-insensitive. The Sorting pane authors the first two slots (primary and sub-sort) and owns the `sort` slot; a deeper hand-authored array is honored until the pane's first write replaces it. Two effective criteria retire row drag-reorder, since manual order is meaningless under a multi-key sort; a criterion whose property was deleted sorts by nothing and doesn't count.
-
-#### II. Columns
-
-An allowlist: a schema property or a Context column renders only when the view's `property_order` lists it and `hidden_properties` doesn't, so a property or Context created after a view stays off until revealed. Title is always present.
-
-### Creation
-
-Every renderer creates through one act (`useViewCreation.ts`): the page exists on disk as Untitled the moment a gesture fires, stamped with the values its birth context implies — the band's group value, and values on the active sort criteria that carry one (Select, Status, Checkbox, Number, Date) — with its order settled in the same act, and the renderer opens its own naming field over the row already real.[^6] A view's filter stamps the values its rules cleanly imply; metadata is never changed to satisfy a filter, so a page a non-derivable rule excludes creates and stays filtered out.
-
-Every renderer also shares the **hover ghost** (`useGhostAnchor.ts`): dwelling on a row or card extends a ghost "New Page" beneath it at the inactive dim, on that renderer's own chrome, and clicking it creates there. One dwell paces every surface, grace is per-surface, and a menu or editor owning the pointer stands the ghost down.
-
-### Group Bands
-
-Structural and property groups render as disclosure bands (`GroupBand.tsx`, `GroupBand.css`) in both renderers: a header carrying the group's glyph, label, and chevron, collapsing on the shared disclosure motion with a persisted collapse. Select and Status bucket headings wear their chips; date buckets wear the property icon over a label in the column's date format. Band seams follow one rule — a section lead is twice the head-to-row clearance, state-free, so nothing above a band moves on toggle. The hover **+** appears on structural Set headers only, creating in that Set; a property bucket can't infer a location.
-
-Bands drag by their glyph on the shared insertion-line gesture,[^7] over a frozen snapshot of the geometry and the band list. What a drop writes depends on the mode: under Custom order a structural drop merges into the view-level `group_order`, a property drop writes `group.order` and flips its mode to manual, and a sub-group bucket drop writes the global bucket order; under **Order = Location** a same-parent structural reorder writes the real filesystem instead. A cross-tree drop — nesting one Set into another, or landing under a different parent — moves the folder in every mode.
 
 ### Surfaces
 
@@ -96,11 +88,11 @@ The view's configuration is edited through a handful of panes, each reachable fr
 
 ### Table
 
-The Table renderer (`src/renderer/src/Detail/Views/Table/`) draws a container's Pages as rows on a single CSS grid. It is presentation only: the pipeline hands it resolved groups and per-cell values, and the table owns the layout, the column ergonomics, and the row chrome.
+The Table renderer (`src/renderer/src/Detail/Views/Table/`) draws a container's Pages as rows on a single CSS grid. It is presentation only: the pipeline hands it resolved groups and per-cell values, and the table owns the layout, the column ergonomics, and the row chrome. The table's three creation triggers ride the shared act: the structural header's **+** creates at that Set's end and glides to the row; **New Page Above / Below** on the grip and title menus creates beside its anchor; and the hover ghost row creates below. 
 
 #### II. The Grid
 
-The header band and every data row are separate CSS grids reading one shared track set, so columns align across bands without a `<colgroup>`; a trailing filler track absorbs any pane width past the summed columns. Every column, the title included, holds its resolved width. While the columns fit the pane, the table stays capped at the content inset; once anything pushes the sum past it, the whole view scrolls horizontally, heading and rows together, with the left gutter as the fixed boundary. The heading band's fill bleeds to both glass edges while its tracks stay locked to the body grid. A gutter left of the grid — the same lane and width as the editor's fold gutter — holds the row grips and the band chevrons; band headers stick left while columns scroll.
+The header band and every data row are separate CSS grids reading one shared track set, so columns align across bands without a `<colgroup>`; a trailing filler track absorbs any pane width past the summed columns. Every column, including the title, maintains its resolved width. While the columns fit the pane, the table stays capped at the content inset; once anything pushes the sum past it, the whole view scrolls horizontally, heading and rows together, with the left gutter as the fixed boundary. The heading band's fill bleeds to both glass edges while its tracks stay locked to the body grid. A gutter left of the grid — the same lane and width as the editor's fold gutter — holds the row grips and the band chevrons; band headers stick left while columns scroll.
 
 #### II. Columns
 
@@ -109,8 +101,6 @@ Widths are per-type `{min, default, max}` from one source (`columnWidths.ts`), c
 #### II. Rows & Cells
 
 A cell's content is type-aware — a page icon and title, chips, a checkbox or switch, a link, file chips, a formatted date or number, or a progress bar — reading the per-view column style. Every cell owns its click through the shared gesture rules in `PropertyEditing/valueClick.ts`: the title navigates, option cells open the shared value dropdown, a checkbox toggles, a number enters its inline editor, a link opens, and a file chip opens the file dialog.[^8] Right-click always opens a menu: the title gets the page menu with New Page Above and Below, a link cell the link menu, a file cell its Add, Replace, and Remove rows, and style-bearing types their column's style radios. Chip values carry the hover × that removes one value without opening the picker. Inline edits follow Enter to confirm, click-out to save, and Esc to revert. A hover-revealed grip in the gutter lifts the row for drag-reorder and carries its own menu (Open Preview, Open New Tab, Rename, Edit Icon, New Page Above and Below, Delete).
-
-The table's three creation triggers ride the shared act: the structural header's **+** creates at that Set's end and glides to the row; **New Page Above / Below** on the grip and title menus creates beside its anchor; and the hover ghost row creates below. A single density token (`--zoom`) scales text, chips, padding, and widths together, compounding with a tile's Scale when embedded.
 
 #### II. The Table Sheet
 
