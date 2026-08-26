@@ -9,23 +9,23 @@ import { overScrollEllipsis } from '@renderer/DesignSystem/Interactions/OverScro
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { text } from '@renderer/DesignSystem/Tokens'
 import { PickerMenu, PickerOption } from '@renderer/DesignSystem/Components/Pickers/PickerMenu'
-import { Cell } from '../Detail/Views/Table/Cell'
-import { contextOptionsFor } from '../Detail/Views/pipeline/contextOptions'
-import { PropertyEditor } from '../Detail/Views/PropertyEditing/PropertyEditor'
-import { parseEditorValue } from '../Detail/Views/Cards/cardValueInput'
+import { Cell } from '@renderer/Views/TableView/Cell'
+import { contextOptionsFor } from '@renderer/Views/pipeline/contextOptions'
+import { PropertyEditor } from '@renderer/Views/PropertyEditing/PropertyEditor'
+import { parseEditorValue } from '@renderer/Views/CardView/cardValueInput'
 import { linkAlias, linkEditText, urlValueFromEdit, urlValueFromRename } from '@shared/linkValue'
 import { resolveTitle, validateLink } from '@renderer/linkResolve'
 import { TextPicker } from '@renderer/DesignSystem/Components/Pickers/TextPicker'
-import { solidColorCss } from '@renderer/Detail/Views/Table/solidColor'
-import { PropertyPicker, syntheticContextDef } from '../Detail/Views/PropertyEditing/PropertyPicker'
-import { DatetimeValuePicker } from '../Detail/Views/PropertyEditing/DatetimeValuePicker'
-import { resolveFieldValue } from '../Detail/Views/pipeline/value'
+import { solidColorCss } from '@renderer/Views/TableView/solidColor'
+import { PropertyPicker, syntheticContextDef } from '@renderer/Views/PropertyEditing/PropertyPicker'
+import { DatetimeValuePicker } from '@renderer/Views/PropertyEditing/DatetimeValuePicker'
+import { resolveFieldValue } from '@renderer/Views/pipeline/value'
 import { fetchPageDetail, readPageDetail } from '../Tabs/warmCache'
 import {
   propertyIcon,
   usePropertyRows,
   type Editing,
-} from '../Detail/Views/PropertyEditing/usePropertyRows'
+} from '@renderer/Views/PropertyEditing/usePropertyRows'
 import { useSession, type PreviewTarget } from '../store'
 
 // Editable through the SAME primitives the table views use (Cell render, PropertyPicker/

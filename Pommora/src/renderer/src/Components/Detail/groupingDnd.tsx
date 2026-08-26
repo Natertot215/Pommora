@@ -7,8 +7,8 @@ import { useDragSnapshot } from '@renderer/DesignSystem/Interactions/snapshot'
 import { GHOST_OFFSET } from '@renderer/DesignSystem/Interactions/shared'
 import { announce } from '@renderer/DesignSystem/Interactions/a11y'
 import { armAutoScroll } from '@renderer/DesignSystem/Interactions/autoscroll'
-import type { Band, BandIndex, BandSlot } from '../../Detail/Views/bandDndModel'
-import { bandSlot, buildBandIndex, canNest } from '../../Detail/Views/bandDndModel'
+import type { Band, BandIndex, BandSlot } from '@renderer/Views/bandDndModel'
+import { bandSlot, buildBandIndex, canNest } from '@renderer/Views/bandDndModel'
 
 export interface GroupingDrop {
   kind: 'reorder' | 'reparent'

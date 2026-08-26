@@ -6,7 +6,7 @@ import { createContext, useContext } from 'react'
 import type { CollectionNode, SetNode } from '@shared/types'
 import { fail, ok, type Result } from '@shared/result'
 import { pickViewState, type SavedView, type ViewState } from '@shared/views'
-import { saveViewAdopting } from '@renderer/Detail/Views/viewMint'
+import { saveViewAdopting } from '@renderer/Views/viewMint'
 
 /** Surfaces must report this, never swallow it — a write that looked live and silently dropped
  *  is the bug this guards against. */

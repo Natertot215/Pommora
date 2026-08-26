@@ -1,7 +1,7 @@
 import type { CollectionNode, SetNode } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
 import type { SavedView } from '@shared/views'
-import { useSession } from '../../store'
+import { useSession } from '../store'
 import { useViewEmbedScope } from '@renderer/Embeds/ViewEmbedScope'
 import { pickView } from './pipeline/pickView'
 

@@ -2,7 +2,7 @@ import { type RefObject, useContext, useState } from 'react'
 import { useSession } from '../../store'
 import type { BannerOwnerKind } from '@shared/mutate'
 import type { Crop } from '@shared/schemas'
-import { GhostSuppress } from '../Views/useGhostAnchor'
+import { GhostSuppress } from '@renderer/Views/useGhostAnchor'
 
 /** The one place a banner band pops its menu. The ghost-suppress Context lets the card seats stand
  *  their hover ghost down while the menu owns the pointer (a pass-through default leaves the

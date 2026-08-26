@@ -1,7 +1,7 @@
 import type { ColumnStyle } from '@shared/columnStyles'
 import type { PropertyValue } from '@shared/propertyValue'
 import { CalendarPicker } from '@renderer/DesignSystem/Components/Pickers/CalendarPicker/CalendarPicker'
-import { useSession } from '../../../store'
+import { useSession } from '../../store'
 import { formatDate } from './formatValue'
 
 /** The shared datetime editing surface: owns the value↔ISO mapping, the date_format remap, and

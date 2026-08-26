@@ -11,7 +11,7 @@ import type { DevicePrefs } from '@shared/devicePrefs'
 import { PickerControl, type PickerChoice } from '@renderer/DesignSystem/Elements/PickerControl'
 import { ColorSwatch } from '@renderer/DesignSystem/Components/Controls/Switches/ColorSwatch'
 import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
-import { solidColorCss } from '@renderer/Detail/Views/Table/solidColor'
+import { solidColorCss } from '@renderer/Views/TableView/solidColor'
 import { LINK_FORMAT_OPTIONS } from '@renderer/Properties/LinkFormat'
 import { DEFAULT_LINK_DISPLAY, type LinkDisplay } from '@shared/properties'
 import {

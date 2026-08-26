@@ -3,7 +3,7 @@ import { defaultStyleFor, type ColumnStyle, type DateFormat } from '@shared/colu
 import type { PropertyDefinition } from '@shared/properties'
 import type { SavedView } from '@shared/views'
 import { declaredType } from '../pipeline/value'
-import { useSession } from '../../../store'
+import { useSession } from '../../store'
 
 /** The resolved style for a column: the saved entry's defined keys win over the type defaults
  *  (a caught-invalid saved value parses to `undefined` and must not erase a default). The nexus's
