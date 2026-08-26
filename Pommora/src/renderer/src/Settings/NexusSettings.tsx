@@ -22,8 +22,9 @@ import {
   EDITOR_SCALE_DEFAULT,
   EMBED_SCALE_DEFAULT,
   SCALE_STEPS,
+  VIEW_SCALE_DEFAULT,
+  VIEW_SCALE_STEPS,
   WEB_ZOOM_DEFAULT,
-  coerceScale,
   type ColorSetting,
   type Personalization,
   type PickerSelection,
@@ -107,11 +108,12 @@ type Row =
   | PickerRow<TimeFormatSetting>
   | PickerRow<PickerSelection>
   | (RowText & {
-      /** A scale factor offered through the percent vocabulary, stepping the shared ramp. */
+      /** A scale factor worn as a percent, stepping the row's own ramp or the shared one. */
       kind: 'zoom'
       key: KeyOf<number>
       /** The factor the control clears back to — stored as no key at all. */
       fallback: number
+      steps?: readonly number[]
     })
 
 type RowOf<K extends Row['kind']> = Extract<Row, { kind: K }>
@@ -217,6 +219,14 @@ const LEAVES = roster([
             hint: 'How every picker marks the row you are on.',
             fallback: 'outlined',
             options: pickerSelectionOptions,
+          },
+          {
+            kind: 'zoom',
+            key: 'defaultViewScale',
+            label: 'Interface Scale',
+            hint: 'The scaling factor applied to the entire interface; additional scaling preferences compound this value.',
+            fallback: VIEW_SCALE_DEFAULT,
+            steps: VIEW_SCALE_STEPS,
           },
           {
             kind: 'zoom',
@@ -709,17 +719,17 @@ const zoomChoice = (f: number): PickerChoice<string> => ({
   value: String(f),
   label: zoomPercent(f),
 })
-const scaleChoices = SCALE_STEPS.map(zoomChoice)
 function ZoomRow({ row }: { row: RowOf<'zoom'> }): React.JSX.Element {
   const stored = useSession((s) => s.personalization[row.key]) ?? row.fallback
   const setPersonalization = useSession((s) => s.setPersonalization)
+  const steps = row.steps ?? SCALE_STEPS
   const commit = (factor: number): void =>
     setPersonalization(row.key, factor === row.fallback ? undefined : factor)
   // A typed scale keeps its own place among the steps, so the control reads the real value rather
   // than the step nearest it.
-  const choices = SCALE_STEPS.some((f) => f === stored)
-    ? scaleChoices
-    : [...SCALE_STEPS, stored].sort((a, b) => a - b).map(zoomChoice)
+  const choices = (
+    steps.some((f) => f === stored) ? steps : [...steps, stored].sort((a, b) => a - b)
+  ).map(zoomChoice)
   return (
     <SettingsRow label={row.label} hint={row.hint}>
       <PickerControl
@@ -733,7 +743,8 @@ function ZoomRow({ row }: { row: RowOf<'zoom'> }): React.JSX.Element {
           text: String(Math.round(stored * 100)),
           onCommit: (written) => {
             const percent = Number.parseFloat(written.replace('%', '').trim())
-            if (Number.isFinite(percent)) commit(coerceScale(percent / 100, row.fallback))
+            if (Number.isFinite(percent))
+              commit(Math.min(steps[steps.length - 1], Math.max(steps[0], percent / 100)))
           },
         }}
       />

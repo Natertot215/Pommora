@@ -219,11 +219,13 @@ export const embedZoom = (scale: number): number => 1 + Math.log2(scale)
 export const viewEmbedZoom = (scale: number): number => (15 / 13) * embedZoom(scale)
 
 /** The per-nexus default window zoom (`personalization.defaultViewScale`), stated as the multiplier
- *  a user reads: 1.0 is the interface at its own intended size. Clamped so a hand-typed settings.json
- *  value can't make the window unusable; absent/invalid → 1.0 (100%). */
+ *  a user reads: 1.0 is the interface at its own intended size. The Interface Scale picker steps
+ *  this even ramp, and a hand-typed value — written in the settings file or into the control —
+ *  clamps to the ramp's own ends; absent/invalid → 1.0 (100%). */
 export const VIEW_SCALE_DEFAULT = 1
-export const VIEW_SCALE_MIN = 0.5
-export const VIEW_SCALE_MAX = 3
+export const VIEW_SCALE_STEPS = [0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4, 1.5] as const
+export const VIEW_SCALE_MIN = VIEW_SCALE_STEPS[0]
+export const VIEW_SCALE_MAX = VIEW_SCALE_STEPS[VIEW_SCALE_STEPS.length - 1]
 export function coerceViewScale(v: unknown): number {
   if (typeof v !== 'number' || !Number.isFinite(v)) return VIEW_SCALE_DEFAULT
   return Math.min(VIEW_SCALE_MAX, Math.max(VIEW_SCALE_MIN, v))
