@@ -1,10 +1,10 @@
-// Per-container non-view settings CRUD — the sidecar's open_in / view_button / view_style. A
+// Per-container non-view settings CRUD — the sidecar's open_in / view_button. A
 // read-modify-write through readSidecar/writeSidecar so foreign keys (and every field not in the
 // patch) ride through untouched. open_in is collection-owned; a Set write is refused. Errors flow as
 // Result, never thrown.
 
 import { pageCollectionSidecar, pageSetSidecar } from '@shared/schemas'
-import type { OpenIn, ViewButton, ViewStyle } from '@shared/types'
+import type { OpenIn, ViewButton } from '@shared/types'
 import { ok, fail, type Result } from '@shared/result'
 import { readSidecar, writeSidecar, withSidecarLock } from '../sidecarIO'
 import { nowIso } from './util'
@@ -15,7 +15,6 @@ type ContainerKind = 'collection' | 'set'
 export type ContainerConfigPatch = {
   open_in?: OpenIn
   view_button?: ViewButton
-  view_style?: ViewStyle
 }
 
 function readCfgSidecar(folder: string, kind: ContainerKind) {

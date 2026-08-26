@@ -30,7 +30,7 @@ import {
   scopeOf,
   type SettingsLeaves,
 } from './readNexus'
-import { coerceOpenIn, coerceViewButton, coerceViewStyle } from '@shared/schemas'
+import { coerceOpenIn, coerceViewButton } from '@shared/schemas'
 import {
   makeCollectionNode,
   makeSetNode,
@@ -350,7 +350,6 @@ export async function patchContainerFromDisk(
     pages: resolveOrder(node.pages, asStringArray(meta.page_order), fb),
     views: parseViews(meta.views),
     viewButton: coerceViewButton(meta.view_button),
-    viewStyle: coerceViewStyle(meta.view_style),
   }
   const next =
     node.kind === 'collection'

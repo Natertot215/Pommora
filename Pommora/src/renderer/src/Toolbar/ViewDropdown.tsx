@@ -7,8 +7,7 @@ import { useActiveView } from '../Detail/Views/useActiveView'
 import { ViewPane } from './ViewPane'
 import * as s from './toolbarDropdown.css'
 
-/** Renders only on a Collection / depth-1 Set (sub-Sets don't own saved views). The `view_style`
- *  branch is a seam — Toolbar mode reuses this dropdown button until ViewBar lands. */
+/** Renders only on a Collection / depth-1 Set (sub-Sets don't own saved views). */
 export function ViewDropdown(): React.JSX.Element | null {
   const selection = useSession((st) => st.selection)
   const tree = useSession((st) => st.tree)
@@ -36,20 +35,11 @@ function ViewDropdownInner({ node }: { node: CollectionNode | SetNode }): React.
     e.preventDefault()
     const action = await window.nexus.viewButtonMenu({
       viewButton: node.viewButton ?? 'icon',
-      viewStyle: node.viewStyle ?? 'dropdown',
     })
-    if (!action) return
-    // Each arm names the action it answers, so an unhandled one writes nothing at all.
-    const patch =
-      action === 'toggle-title'
-        ? { view_button: labeled ? ('icon' as const) : ('labeled' as const) }
-        : action === 'style-dropdown'
-          ? { view_style: 'dropdown' as const }
-          : action === 'style-toolbar'
-            ? { view_style: 'toolbar' as const }
-            : null
-    if (!patch) return
-    await window.nexus.container.configure(node.path, node.kind, patch)
+    if (action !== 'toggle-title') return
+    await window.nexus.container.configure(node.path, node.kind, {
+      view_button: labeled ? 'icon' : 'labeled',
+    })
   }
 
   return (
