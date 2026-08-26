@@ -24,7 +24,7 @@ import { PreviewInspector } from '../PagePreview/PreviewInspector'
 import { consumeWindowMorph } from '../PagePreview/WindowMorph'
 import { PreviewTabStrip } from '../PagePreview/PreviewTabStrip'
 import { usePreviewWarm } from '../PagePreview/usePreviewWarm'
-import { NavGallery } from './NavGallery'
+import { NavGallery } from '../Navigation/NavGallery'
 import './navWindow.css'
 
 const RAIL = { min: 120, def: 200, max: 320 }

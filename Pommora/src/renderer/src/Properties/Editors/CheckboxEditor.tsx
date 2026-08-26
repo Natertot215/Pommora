@@ -1,7 +1,7 @@
 import { resolveColor } from '@renderer/Detail/Views/Table/solidColor'
 import { ColorSwatch } from '@renderer/DesignSystem/Components/Controls/Switches/ColorSwatch'
-import { PickerControl } from './PickerControl'
-import * as s from './settingsPane.css'
+import { PickerControl } from '@renderer/DesignSystem/Elements/PickerControl'
+import * as s from '../../Components/Detail/settingsPane.css'
 
 export type CheckboxLook = 'checkbox' | 'switch'
 

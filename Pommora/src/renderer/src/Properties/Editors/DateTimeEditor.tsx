@@ -1,8 +1,8 @@
 import type { ColumnStyle, DateFormat, TimeFormat, WeekdayFormat } from '@shared/columnStyles'
 import { Icon, type IconName } from '@renderer/DesignSystem/Symbols'
-import { PickerControl } from './PickerControl'
+import { PickerControl } from '@renderer/DesignSystem/Elements/PickerControl'
 import { Reveal } from '@renderer/DesignSystem/Animation/Reveal'
-import { optionsLabel } from './settingsPane.css'
+import { optionsLabel } from '../../Components/Detail/settingsPane.css'
 import * as s from './dateTimeEditor.css'
 
 const DATE_OPTIONS: { value: DateFormat; label: string }[] = [

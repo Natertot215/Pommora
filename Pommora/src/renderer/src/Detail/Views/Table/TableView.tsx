@@ -39,7 +39,7 @@ import { bandReorderPatch, groupingKeyOf, useBandOrdering } from '../useBandOrde
 import { nextOrder } from '@renderer/Sidebar/sidebarDndModel'
 import { Cell } from './Cell'
 import { EntityIcon } from '@renderer/Components/EntityIcon'
-import { PropertyTypeIcon } from '@renderer/Components/Detail/PropertyTypes'
+import { PropertyTypeIcon } from '@renderer/Properties/PropertyTypes'
 import { ViewGroupBand } from '../ViewGroupBand'
 import { Reveal } from '@renderer/DesignSystem/Animation/Reveal'
 import { resolveBandHead } from '../GroupBand'

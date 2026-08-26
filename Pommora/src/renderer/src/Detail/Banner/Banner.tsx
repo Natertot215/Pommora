@@ -4,7 +4,7 @@ import { DEFAULT_NEXUS_ICON, Icon, entityIcon } from '@renderer/DesignSystem/Sym
 import { IconPicker } from '@renderer/Settings/IconPicker'
 import { useAssetUrl, useSession } from '../../store'
 import { AssetImage } from '@renderer/DesignSystem/Components/AssetImage/AssetImage'
-import { ImagePicker } from '@renderer/DesignSystem/Components/ImagePicker/ImagePicker'
+import { ImagePicker } from '@renderer/DesignSystem/Components/Pickers/ImagePicker/ImagePicker'
 import { isSurfaceKind, type BannerOwner } from '../Scope'
 import { DetailTitleHeader } from '../DetailTitleHeader'
 import { RenamableLabel, base } from '@renderer/DesignSystem/Components/Fields'

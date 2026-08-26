@@ -6,7 +6,7 @@ import { applyValueAtRoot, type PropertyValue } from '@shared/propertyValue'
 import type { PageFrontmatter } from '@shared/schemas'
 import type { NexusTree, ViewRow } from '@shared/types'
 import { asRenderableIcon } from '@renderer/DesignSystem/Symbols'
-import { propertyTypeIconName } from '@renderer/Components/Detail/PropertyTypes'
+import { propertyTypeIconName } from '@renderer/Properties/PropertyTypes'
 import { useSession } from '@renderer/store'
 import {
   contextIdentityOf,

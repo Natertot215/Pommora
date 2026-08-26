@@ -1,7 +1,7 @@
 import { style } from '@vanilla-extract/css'
-import { text, vars } from '../../Tokens'
-import { stack } from '../../Tokens/stack'
-import { accessoryButton, detail } from '../Menu/menu.css'
+import { text, vars } from '../../../Tokens'
+import { stack } from '../../../Tokens/stack'
+import { accessoryButton, detail } from '../../Menu/menu.css'
 
 const c = vars.color
 

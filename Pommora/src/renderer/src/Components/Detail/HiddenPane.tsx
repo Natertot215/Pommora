@@ -14,8 +14,8 @@ import { PaneDnd, RowShell, usePaneRegions } from './paneDnd'
 import type { PaneDrop, PaneRow } from './paneDndModel'
 import { contextIdsOf, contextsByIdOf } from '../../Detail/Views/pipeline/contextIdentity'
 import { hiddenListIds, hiddenPaneSlot, hideShown, placeInShown, unhide } from './hiddenPaneModel'
-import { EyeToggle } from './EyeToggle'
-import { PropertyTypeIcon } from './PropertyTypes'
+import { EyeToggle, EYE_ICON } from '@renderer/DesignSystem/Elements/EyeToggle'
+import { PropertyTypeIcon } from '../../Properties/PropertyTypes'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import * as s from './settingsPane.css'
 
@@ -49,7 +49,7 @@ function VisibilityGroups({
   const eyeFor = (id: string): ReactNode =>
     id === RESERVED_PROPERTY_ID.title ? (
       <span className={s.eyeInert} aria-hidden>
-        <Icon name="eye" size={s.ICON.eye} />
+        <Icon name="eye" size={EYE_ICON} />
       </span>
     ) : (
       <EyeToggle

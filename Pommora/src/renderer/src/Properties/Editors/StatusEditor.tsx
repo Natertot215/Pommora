@@ -17,10 +17,10 @@ import {
   OptionNameCaret,
   ghostAnchorProps,
   useGhostOptionAnchor,
-} from './GhostOptionChip'
-import { OptionSlot, type OptionStyle } from './OptionRow'
-import { useStatusReorder } from './useStatusReorder'
-import * as s from './settingsPane.css'
+} from '../GhostOptionChip'
+import { OptionSlot, type OptionStyle } from '../OptionRow'
+import { useStatusReorder } from '../useStatusReorder'
+import * as s from '../../Components/Detail/settingsPane.css'
 import { labelColor, shape } from '@renderer/DesignSystem/Labels'
 
 /**

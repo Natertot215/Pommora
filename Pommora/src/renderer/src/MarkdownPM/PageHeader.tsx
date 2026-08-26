@@ -1,7 +1,7 @@
 import { forwardRef, useRef } from 'react'
 import { useAssetUrl, useSession } from '../store'
 import { AssetImage } from '@renderer/DesignSystem/Components/AssetImage/AssetImage'
-import { ImagePicker } from '@renderer/DesignSystem/Components/ImagePicker/ImagePicker'
+import { ImagePicker } from '@renderer/DesignSystem/Components/Pickers/ImagePicker/ImagePicker'
 import { useBannerMenu } from '../Detail/Banner/useBannerMenu'
 import { AddBannerButton } from '../Detail/Banner/AddBannerButton'
 import { DetailTitleHeader } from '../Detail/DetailTitleHeader'

@@ -3,9 +3,9 @@ import { resolveColor } from '@renderer/Detail/Views/Table/solidColor'
 import { DualSwitch } from '@renderer/DesignSystem/Components/Controls/Switches/DualSwitch'
 import type { LinkConfig, LinkDisplay } from '@shared/properties'
 import { ColorSwatch } from '@renderer/DesignSystem/Components/Controls/Switches/ColorSwatch'
-import { PickerControl } from './PickerControl'
-import { LINK_FORMAT_OPTIONS } from './LinkFormat'
-import * as s from './settingsPane.css'
+import { PickerControl } from '@renderer/DesignSystem/Elements/PickerControl'
+import { LINK_FORMAT_OPTIONS } from '../LinkFormat'
+import * as s from '../../Components/Detail/settingsPane.css'
 
 /**
  * The chosen color themes the pane's own Switches via a scoped `--accent`. The alias (a per-value

@@ -3,13 +3,13 @@ import { vars as colorVars } from '@renderer/DesignSystem/Tokens/color.css'
 import { text } from '@renderer/DesignSystem/Tokens/typography.css'
 import type { IconSize } from '@renderer/DesignSystem/Tokens/size.css'
 import { duration, easing } from '@renderer/DesignSystem/Animation'
-import { ghostRest } from '@renderer/DesignSystem/Components/Controls/Button/button.css'
 import {
   accessoryButton,
   footingLabel,
   titleText,
 } from '@renderer/DesignSystem/Components/Menu/menu.css'
 import { surface } from '@renderer/DesignSystem/Components/Menu/menuSurface.css'
+import { button as eyeToggleButton } from '@renderer/DesignSystem/Elements/EyeToggle/eyeToggle.css'
 import { dropdownAnchor } from '@renderer/DesignSystem/Components/dropdownAnchor'
 import { stack } from '@renderer/DesignSystem/Tokens/stack'
 import { fieldRing } from '@renderer/DesignSystem/Components/Fields/fieldRing'
@@ -57,7 +57,6 @@ export const ICON = {
   rootEntry: 'title3', // the root menu's leading icons (Properties · Visibility · …)
   dropOutline: 'control', // the All Properties disclosure chevron
   rowPlus: 'control', // the registry row's + glyph
-  eye: 'body', // the Visibility pane's eye / eye-off glyph
   optionsAdd: 'control', // the option editor's "Options" + glyph
   palette: 'body', // the option row's hover recolor glyph
 } satisfies Record<string, IconSize>
@@ -198,22 +197,9 @@ export const hiddenRow = style({
  *  highlight covers the empty space beneath them even while nothing's hidden yet. */
 export const hiddenZone = style({ flex: '1 1 auto' })
 
-/** The eye toggle — the action-symbol color + ghost at rest, un-ghosting on hover (no color shift);
- *  the glyph swaps open ↔ off (the pair passes reversed in JSX on a hidden row). On a hidden row it
- *  rides eyeHidden + resets its own opacity to 1, so it dims by ONLY the row's ghost (never double-dims). */
-export const eyeButton = style([
-  accessoryButton,
-  ghostRest,
-  { selectors: { [`${hiddenRow} &`]: { color: COLOR.eyeHidden, opacity: 1 } } },
-])
-export const eyeRestGlyph = style({
-  display: 'flex',
-  selectors: { [`${eyeButton}:hover &`]: { display: 'none' } },
-})
-export const eyeHoverGlyph = style({
-  display: 'none',
-  selectors: { [`${eyeButton}:hover &`]: { display: 'flex' } },
-})
+/** A hidden row's eye rides eyeHidden and resets its own opacity to 1, so it dims by ONLY the row's
+ *  ghost rather than double-dimming. */
+globalStyle(`${hiddenRow} ${eyeToggleButton}`, { color: COLOR.eyeHidden, opacity: 1 })
 
 /** Title's inert eye — the same glyph + box for visual parity with the other rows, but it never
  *  hides: no hover-preview swap, no hover fill, no pointer (clicking does nothing). Sits at the rest
