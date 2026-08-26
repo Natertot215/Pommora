@@ -10,7 +10,7 @@
 
 ### Immediate Work
 
-- [ ] **Two filing calls left open by the current reorganization.** Whether `Detail/Views/PropertyEditing` — the row engine both `PagePropertiesPane` and `PreviewInspector` run on — folds into `Properties/` beside the panes that use it, and whether `Settings/IconPicker` and `iconFavorites` move to `Components/`. The IconPicker pair is not redundant with the design system's: the wrapper injects this nexus's favorites so fourteen call sites don't each wire it, and nothing about it belongs to the Settings window.
+- [ ] **Rule on [[RendererAtlas]] §V.** The atlas carries every organizational decision with a recommendation; the arc cannot start its non-mechanical rows until the structural ones (D-A through D-I) are stamped.
 
 ### Pending Focuses
 
@@ -20,13 +20,10 @@
 
 #### Two — The Refactoring
 
-The whole-renderer organizational arc, broken into single-session phases. It is moves and merges rather than behavior: nothing here is broken, and the reason to do it is that the tree no longer describes what the app is. The folder-level decisions inside it are unsettled and want a plan before they want moves. It consumes what were three separate threads — the renderer filing, table hoisting, and the design audit's remaining structural questions.
+The whole-renderer organizational arc: moves and merges rather than behavior, broken into single-session phases. Its one source is [[RendererAtlas]] — the map as it is, the eight rules that decide where anything goes, the target tree with every file placed under a rule, the token verdicts, and the decisions the tree cannot make. A session takes rows from the atlas's ledger; nothing about the arc lives anywhere else.
 
-- [ ] **The renderer's own tree.** `Detail/` is renamed to `Interface`, naming what it actually holds: the main window's interface-level surfaces. `Views/` moves out to the root, since a saved view's presentation has nothing to do with the detail pane it happens to render into. `Components/Detail` stays for now — its remaining contents are the view-settings panes, which are one coherent subject — and `Components/` keeps the strays that are genuinely shared. A first pass has already run: the property surface is at `Properties/`, `PickerControl` and `EyeToggle` are design-system Elements, `NavGallery` is in `Navigation/` beside the parts it is built from, and a Space has one toolbar surface instead of two.
-- [ ] **The design system's boundary.** `DesignSystem/` should be the pieces and not an owner, and today it is both. Moving `Pickers/` out of it is the option worth considering first, and `PreviewPane` is the case that argues the other way — five consumers across the Settings window, the Showcase, and both floating windows make it a genuinely shared chassis. `SidePane` has exactly one consumer and `tile-chassis.css` is component CSS rather than a token file, so `DesignSystem/Detail/` empties either way. `Elements/PickerControl` reaching into the app for `nativeMenus` is the first upward dependency the design system has, and the boundary decision either sanctions it or inverts the seam into a prop.
-- [ ] **The floating windows are one family filed as three.** `NavWindow`, `PagePreview`, and the browser window inside `PagePreview` share the chassis and the FLIP morph between them. A `PreviewPanes/` root holding the three is the shape; the browser window is a split out of `PagePreview` rather than a move.
-- [ ] **Table hoisting.** Eighteen modules outside `Detail/Views/Table/` import from it — the navigation list uses the table's drag module — and `Table.css` loads globally from `main.tsx`, so a table-scoped refactor reaches the nav gallery and the settings panes. A shared `design-system/tables` is the wrong destination: the two table implementations share nothing, correctly so, and what leaks out is a color token, a property-value renderer, property display helpers, a checkbox glyph, and a drag module — four homes, not one. The import cycle is closed, so what remains is the CSS and the four homes, and splitting `Table.css` needs screenshot verification of the nav gallery, both settings leaves, the preview inspector, and the properties panes.
-- [ ] **The remaining design-audit findings.** [[Design-Coherence-Report]] §VIII — `checkboxLook`, the container title, CalendarPicker's range mode, the tab strips, `--gutter`. Structural rather than cosmetic, and they resolve alongside the filing rather than in a pass of their own.
+- [ ] **The rulings the atlas waits on** — its §V, each with a recommendation: the design system's three upward reaches and the lint rule that keeps them closed; where value rendering lives; the floating family's name and the chassis's; the spacing and radius scales; the container title; the toolbar selector's unwinding order; the cursor convention.
+- [ ] **The ledger** — 228 moves under eight rules, 87 of them renames alone. Any row can be taken in isolation; the typecheck catches every miss.
 
 #### Three — The Codebase Cleanup
 

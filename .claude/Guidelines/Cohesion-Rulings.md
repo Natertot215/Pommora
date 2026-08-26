@@ -119,7 +119,7 @@ Take these first if the sweep is ever opened:
   suppression is the finding.
 - **`MarkdownPM/editor/gripMenu.ts:107` and `:170`** — two switches over one union, each
   intentionally partial, neither saying so.
-- **`Components/Detail/PropertiesPane.tsx:365` and `:374`, `PagePropertiesPane.tsx:167`,
+- **`Properties/PropertiesPane.tsx:365` and `:374`, `PagePropertiesPane.tsx:167`,
   `PagePreview/PreviewInspector.tsx:199`** — four un-linked partial chains over `PropertyMenuAction`,
   each handling two of its five members.
 - **`Detail/Views/Cards/CardValue.tsx:115`** — handles only the `cell:*` half of `CellMenuAction`. A
@@ -147,3 +147,10 @@ re-deriving any of them is reading stale claims:
 - One `FooterLockButton` serves the board, the Space, and the tile.
 - "A duplicated container-session state whose reset rules have drifted" names no construct in the
   codebase under that vocabulary or any near it.
+
+### The Design Layer
+
+The rulings about the renderer's organization, styling, and naming — what stays literal, which ladders are settled, which var families only look dead, which concept-name conflicts were refuted — are rostered in [[RendererAtlas]] §VI and are reopened the same way as everything here: with a reason. Two method notes the design sweeps earned belong beside the code-level ones above.
+
+- A survey measuring two files against each other without accounting for what was already extracted beneath them will overstate the duplication. The option editors read as one component in two shells until the reorder implementation and the chip row already living below both were counted out.
+- Deferring to a prior ruling without checking what it actually covered is the opposite error: a decision bounds what it decided, not everything near it. The combinator ruling covers the IPC handlers, not the crud layer beneath them; the radius ruling covers feature sites picking from the set, not the set being declared six times.

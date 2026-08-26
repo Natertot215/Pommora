@@ -1,104 +1,75 @@
 ## Handoff — Pommora
 
-> **User Prompt:** *"Add a single picker in Settings > Interface; double-chevron picker dropdown like other scaling mechs."* — then, the same session: *"make it the shared behavior where the trailing percent symbol never disappears when you right-click to enter the field. no jump — absolutely seamless"*, *"refactor settings where it only contains SpaceSettings to go into toolbar"*, and *"This is a REAL refactoring opportunity."*
+> **User Prompt:** *"come up with core focuses and themes that also consider the design coherence report … a complete fresh audit of everything under render … a multi-agent protocol … a legible document that gives nathan the full picture, and CLEAR framework for what the most simple and effective outcome of any work following would be"* — then: *"go — but this must replace the existing doc + remove the relevant cleanup bundles so info is clearly visible in its true source. Super in-depth, multi part doc"*, *"design calls are absolutely essential and feedback has no bounds"*, and *"it's your job to make sense of all of this into an executive summary, and also lightly rewrite the doc once all lenses are in."*
 
 #### Current Focus
 
 **Session ID:** 14cb88d4-ef66-4a6d-a7c7-18bd37efbbaa
-**Dates:** 08-25-2026
-**Model:** Opus 5 (1M context)
+**Dates:** 08-25-2026 → 08-26
+**Model:** Opus 5 (1M context) → Fable 5
 
-**Two settings features, then an opportunistic renderer reorganization that turned into the opening move of a much larger one.** The session opened on Interface Scale and closed on a folder-by-folder audit of `src/renderer/src` whose conclusion is a new focus rather than a finished one.
+**The Renderer Atlas.** The session's first half was the settings pair and the reorganization recorded in History; the second half produced the one document the Refactoring arc runs on. Three audit reports already agreed the renderer was healthy and misfiled, and none of them drew the target or wrote the test. The atlas does both: seven read-only lenses keyed on the file path — Cartographer, Boundary, Stylist, Semantic, Recipe, Lexicographer, Archivist — joined into a map as it is, eight grep-testable rules, a target tree with every one of 453 files placed under a rule, 219 token verdicts, twenty-six decisions with recommendations, and the ruling roster that lets a future sweep read instead of re-derive. Every claim that places a file or sets a verdict was opened at its cited line; the corrections log records what was withdrawn.
 
-**Interface Scale** gave the existing `personalization.defaultViewScale` key a row in Settings → Interface. The key already existed, was already applied main-side, and was already what ⌘0 resets to — ConfigurationPM listed it under "Knobs without a row" — so nothing new was invented: the picker steps an even 50–150% ramp in ten-point increments (`VIEW_SCALE_STEPS`), `VIEW_SCALE_MAX` came down from 3 to 1.5 to match, and `personalization:set` gained a second main-side effect beside `webZoomFactor` so the pick re-zooms the window immediately rather than waiting for a reload. 100% still resolves to Electron's 0.9 through `viewScaleZoom`; `VIEW_SCALE_BASE` was not touched.
+**What the atlas replaced.** The Design Coherence Report is deleted; its §VIII decisions, §IX standing calls, §X corrections and process notes, and §XI slices all live in the atlas's Parts V, VI, and VII as current truth. The Codebase-Cleanup Checklist lost Bundles 6a and 6b and its Design Arm section — the organizational work — and keeps 6c (the view host, now Bundle 6) as behavioral. ContextPM's Refactoring arc is two bullets pointing at the atlas, and the Immediate Work item became "rule on §V." Cohesion-Rulings gained a design-layer section holding the two process notes and a pointer at the atlas's roster. Six stale code citations across four documents were repointed to `Properties/`.
 
-**The typed-unit suffix** followed from Nathan noticing the percent sign vanishing when a zoom row's field opens. `PickerControl`'s `typeable` now takes an optional `suffix` drawn beside the field inside a zero-gap box, so the digits sit at the width they were read at and the mark never leaves; a press on the mark is swallowed so it can't pull focus and commit the edit. All three zoom rows pass `'%'`.
-
-**The reorganization** began with one stranded folder (`Detail/Settings/`, holding only `SpaceSettings.tsx`) and widened as Nathan worked through the tree alongside. What moved: `Components/Detail`'s property surface into a new top-level `Properties/` with per-type editors under `Properties/Editors/`; `PickerControl` and `EyeToggle` into `DesignSystem/Elements/`; `NavGallery` into `Navigation/`, where its own dependencies already were; `SpaceSettings` folded into `SpaceDropdown`, which is now the sole Space surface. Nathan moved `ImagePicker` into `Pickers/` himself and its imports were repaired around it. `EyeToggle` needed its styles extracted out of `settingsPane.css` first — it was reaching into that pane's `hiddenRow` class — so the element now owns its own styles and the pane keeps only the hidden-row dimming, pointing at the element rather than the reverse.
-
-**The two settings features are committed; the reorganization is not.** 69 files are staged: typecheck clean, biome clean across 950 files, 3653 tests passing. Two things carry risk that a gate cannot see — the trio's Settings dropdown now renders nothing when a Space is selected (the Space dropdown owns that surface outright), and `DesignSystem/Elements/PickerControl` imports `nativeMenus` from the app, which is the first time the design system reaches upward into it.
+**Where it stands.** The atlas is written, ~800 lines, uncommitted alongside the retirements. It is a Planning document and deliberately so — the tree it draws will be wrong in detail at three times the code; the rules will not be. Its Part V is the gate: the structural decisions D-A through D-I block the ledger's non-mechanical rows, and nothing else in the arc can be sequenced until they are stamped. The one behavioral finding in the whole exercise — `Blocks/ViewEmbedBlock.tsx:88` drops `cellPaint().outline`, so a grey-celled view embed draws an invisible stroke — is a one-identifier fix and is not made here.
 
 #### Completion Criteria
 
-- [x] **Interface Scale writes the existing key** — `defaultViewScale`, not a second one; ConfigurationPM's Interface table carries the row and its Personalization and Pending entries are gone.
-- [x] **The pick applies on assignment** — `personalization:set` re-zooms the window; no reload involved.
-- [x] **The unit is shared, not per-row** — `typeable.suffix` lives on `PickerControl`; every zoom row reads the same behavior.
-- [x] **Every relocation is a relocation** — no behavior changed by a move; gates green at each step.
-- [x] **`Components/Detail` and `Detail/Settings` no longer hold what isn't theirs** — the property surface, the two elements, and the Space pane are at their own addresses.
-- [ ] **The reorganization is committed** — 69 files staged and unreviewed by Nathan.
-- [ ] **The Space dropdown is eyeballed** — icon, editable title, lock footer, and the icon and color pickers, with the trio's Settings button blank behind it.
+- [x] **Every file accounted for** — 453 rows in the ledger, zero unmatched; 228 move, 225 stay.
+- [x] **Every rule testable** — each of the eight carries the grep that checks it.
+- [x] **Every load-bearing claim opened at its line** before entering the document; withdrawals in §VII.
+- [x] **The rulings survive** — the Design Report's settled calls and the Cohesion rulings are rostered in §VI as current truth, no tombstones.
+- [x] **The superseded sources are gone or repointed** — the Design Report deleted, 6a/6b/Design Arm removed, ContextPM and Cohesion-Rulings pointing at the atlas, stale citations fixed.
+- [ ] **The Space dropdown is eyeballed** — carried from 08-25: icon, editable title, lock footer, the two pickers, with the trio's Settings button blank behind it. The one visible behavior change of the committed reorganization, unconfirmed.
+- [ ] **The atlas is committed.**
+- [ ] **Part V is ruled** — D-A through D-I first; the token verdicts marked `call` in IV.4 after.
 
 #### Next Session
 
-1. **Review and commit the staged reorganization.** 69 files, all gates green. Renderer-only, so ⌘R picks it up — no dev restart.
-2. **Eyeball the Space dropdown.** It draws the Space's own icon on the toolbar button now, and its pane holds what `SpaceSettings` held. The trio's Settings button showing nothing on a Space is intended.
-3. **Two open calls from the reorganization**, both recorded in Context: whether `Detail/Views/PropertyEditing` folds into `Properties/Rows`, and whether `Settings/IconPicker` + `iconFavorites` move to `Components/` — neither is redundant, both are misfiled.
-4. **The Refactoring arc wants a plan before it wants moves.** Context §Pending Focuses states its shape; the folder-level decisions inside it are unsettled and each phase should be session-sized.
+1. **Read the atlas's Executive Summary and Part V, then rule.** Twenty-six decisions, each with a recommendation. The structural nine (D-A to D-I) gate the ledger; the rest can be taken in any order.
+2. **Fix the one bug** — `Blocks/ViewEmbedBlock.tsx:88` → `cellRing(key)`. One line; it does not wait for a ruling.
+3. **The first three token edits are five lines** — mint the three seam widths, move `label.quaternary` to Separators as `separator.control`, mint `--border-control`. They are the precondition for the separator rule being lintable and they change zero pixels.
+4. **The lint rule (D-B)** can land before the reaches close: `noRestrictedImports` from `DesignSystem/**` with an allowlist of the three files.
+5. **Eyeball the Space dropdown** — still owed from 08-25.
+6. **Inline Page Properties** runs parallel and shares no files with any of this.
 
 #### Feedback
 
-- "It must apply on assignment, not command r." Read as a requirement on the setting rather than on the dev process; the main-side branch already did this, and the restart caveat was about `src/main` not hot-reloading.
-- "no jump — absolutely seamless." The field and its unit sit in one zero-gap box rather than as two flex children, so the trigger's own 4px gap can't open between the digits and the mark.
-- "SpaceDropdown should be the source; not the other one. Condense those and delete the old one."
-- "If PickerControl is the double-chevron picker; that goes into DesignSystem/Elements. If not — dont touch it."
-- "I want the vibe to be clear that its just 'it doesnt make sense' rather than things being broken." The Refactoring arc is written as organization, not repair.
+- "design calls are absolutely essential and feedback has no bounds — all of your CLAUDE.md's should make that clear." Every lens was briefed to state its taste rather than abstain; Part IV's verdicts carry a column saying which rows are calls, and Part V recommends on every decision.
+- "it must replace the existing doc + remove the relevant cleanup bundles so info is clearly visible in its true source." The Design Report is deleted rather than pointed at; the checklist keeps only its behavioral bundles.
+- "process-irrelevant, the 'clean kitchen' goals or final structure is the priority; and should also be inherently scalable." Part III is the tree and the ledger with no sequencing; Part II's rules are what file the next 900 files.
 
 #### Session Pointers
 
-- `shared/types.ts` — `VIEW_SCALE_STEPS` and the `coerceViewScale` clamp derived off its ends; `SCALE_STEPS` is the other, uneven ramp the embed and web-zoom rows still take.
-- `main/index.ts` `personalization:set` — the two keys with a main-side effect: `webZoomFactor` re-stamps guests, `defaultViewScale` re-zooms the window.
-- `DesignSystem/Elements/PickerControl/` — `PickerControl.tsx`, its stylesheet, and an `index.ts` re-exporting `pickerValue` for the two callers that want the value class alone.
-- `DesignSystem/Elements/EyeToggle/` — `EYE_ICON` is the glyph step; `HiddenPane`'s inert twin reads it rather than restating a size. The hidden-row dimming is a `globalStyle` in `settingsPane.css.ts` pointing at the element's `button` class.
-- `Toolbar/SpaceDropdown.tsx` — the whole Space surface: `MenuDropdown` chrome, `InlineEditHeader`, the lock footer, `IconPicker` and `ColorPicker`, and the right-click title menu.
-- `Properties/` — panes and shared rows at the root, per-type editors under `Editors/`.
-- `.claude/Planning/Inline Page Properties — Decision Log.md` — the other live focus, untouched this session.
+- `.claude/Planning/RendererAtlas.md` — the document. Executive Summary first; Part III.1 for the tree; Part V for what needs a ruling; Part IV.4's ranked ten for the first token edits.
+- The seven lenses' tables — `cartographer.csv`, `boundary.csv`, `stylist-*.csv`, `semantic-*.csv`, `recipe-verdicts.csv`, `lexicographer-*.csv`, `archivist-*.csv` — and `ledger.py`, which generated the file-placement ledger from the Cartographer's graph, sit in this session's scratchpad under `atlas/`. They are working files, not part of the repo.
+- `.claude/Planning/Codebase-Cleanup-Checklist.md` — Bundles 4, 5, 6 (the view host), 7, 8 remain; the header and ordering constraints point at the atlas.
+- `Pommora/src/renderer/src/DesignSystem/Tokens/theme-vars.css.ts:59-65` — the three seam shorthands the first mint publishes widths beside; `:105` the raw `15%` that `--accent-fill`'s redefinition removes.
 
 #### Working Notes
 
-- A relocation script that re-derives every relative specifier will "normalize" correct ones too — a directory import resolves to its `index.ts` and comes back written as `../input/index`. Resolve against the pre-move layout and rewrite only the specifiers that actually point at something that moved.
-- A moved file's own imports and its consumers' imports are two separate passes, and a batch that splits one folder into two levels needs a third for the siblings that landed at different depths.
-- `git mv` on a file with staged content needs `-f`; a plain `mv` of a folder was refused by the sandbox where `rm -rf` and `git restore` were not.
-- Vanilla-extract can't style a descendant from `style()` — a pane that wants to tone an element it hosts uses `globalStyle` against the imported class.
-- The trailing `%` span must swallow `mousedown`, or pressing it blurs the field and commits the edit.
+- A per-lens split joins on filename; a per-folder split produces reports that agree and do not compose. The join is what lets one sentence say "a piece that reaches the store and declares three vars outside Tokens under a lowercase name."
+- A relocation script must resolve specifiers against the pre-move layout and rewrite only the ones that point at something that moved; re-deriving every relative import normalizes correct ones into `../x/index`.
+- Semantic and Recipe are different jobs: one judges a read against the token's purpose, the other judges the token against its readers. A token with thirty wrong reads is a recipe defect, not thirty consumer defects.
+- Recipe overruled three earlier findings by reading the line rather than the count — a comment naming the element, a value that was 40% not 15%, a literal that was owned but not centralized. Counts propose; lines decide.
+- The `--safe-*` vars have two lenses saying keep and one ruling row saying delete; the atlas rules keep and records it in VI.1 so the fourth re-derivation does not happen.
 
 **FILES ADDED**
 
-- `Pommora/src/renderer/src/DesignSystem/Elements/EyeToggle/eyeToggle.css.ts`
-- `Pommora/src/renderer/src/DesignSystem/Elements/EyeToggle/index.ts`
-- `Pommora/src/renderer/src/DesignSystem/Elements/PickerControl/index.ts`
-- `.claude/Planning/Inline Page Properties — Decision Log.md`
+- `.claude/Planning/RendererAtlas.md`
 
 **FILES MODIFIED**
 
-- `.claude/CLAUDE.md` — the codemap gains `Properties/`
-- `.claude/Features/ConfigurationPM.md` — Interface Scale's row; its Personalization and Pending entries removed
-- `.claude/Features/DesignSystemPM.md` — PickerControl and EyeToggle in Elements, ImagePicker in Pickers
-- `.claude/Features/PropertiesPM.md` — the Properties Pane's path
-- `Pommora/src/shared/types.ts` — `VIEW_SCALE_STEPS`, the clamp derived off its ends
-- `Pommora/src/main/index.ts` — `defaultViewScale` re-zooms on write
-- `Pommora/src/main/settings.test.ts` — the clamp ceiling
-- `Pommora/src/renderer/src/Settings/NexusSettings.tsx` — the Interface Scale row; `zoom` rows carry their own ramp
-- `Pommora/src/renderer/src/Toolbar/SpaceDropdown.tsx` — the whole Space surface
-- `Pommora/src/renderer/src/Detail/ViewSettingsScope.ts` — the `space` scope removed
-- `Pommora/src/renderer/src/Components/Detail/` — nine panes and stylesheets repointed; `settingsPane.css.ts` gave up the eye styles
-- `Pommora/src/renderer/src/Navigation/NavWindow.tsx`, `Tabs/NavView.tsx`, `Sidebar/NexusPhoto.tsx`, `Embeds/PageEmbed.tsx`, `MarkdownPM/PageHeader.tsx` — import repointing across the moves
-- `Pommora/src/renderer/src/Detail/Banner/Banner.tsx`, `Detail/Views/Cards/CardAddPicker.tsx`, `Detail/Views/Cards/CardsView.tsx`, `Detail/Views/Table/TableView.tsx`, `Detail/Views/PropertyEditing/usePropertyRows.ts`, `Settings/TrashLeaf.tsx` — the same
-- `Pommora/src/renderer/src/DesignSystem/Showcase/leaves/ComponentsLeaf.tsx` — the ImagePicker path
-- `Pommora/src/renderer/src/DesignSystem/Components/Controls/checkbox.css`, `Pommora/src/renderer/src/styles.css`, `Pommora/src/shared/theme.ts` — Nathan's own
+- `.claude/ContextPM.md` — the Refactoring arc points at the atlas; Immediate Work is "rule on §V"
+- `.claude/Planning/Codebase-Cleanup-Checklist.md` — Bundles 6a and 6b and the Design Arm removed; header, ordering constraints, and the closing paragraph repointed; 6c renumbered 6
+- `.claude/Guidelines/Cohesion-Rulings.md` — a design-layer section; two citations repointed to `Properties/`
+- `.claude/Planning/Inline Page Properties — Decision Log.md` · `.claude/Planning/Documentation Audit — Report and Plan.md` — citations repointed to `Properties/`
+- `.claude/HandoffPM.md`
 
 **FILES REMOVED**
 
-- `Pommora/src/renderer/src/Detail/Settings/SpaceSettings.tsx` — folded into `SpaceDropdown`
-- `.claude/Planning/Buttons-Spec.md`, `Chip Style Axis — Implementation Plan.md`, `Fields — Implementation Plan.md` — settled, retired with `c0fe1a4c`
-
-**FILES RENAMED**
-
-- `Components/Detail/{PropertiesPane,PagePropertiesPane,PropertyTypes,ValueRow,OptionRow,GhostOptionChip,DashIcon,LinkFormat,useOptionReorder,useStatusReorder}` + their stylesheets and tests → `Properties/`
-- `Components/Detail/{Checkbox,DateTime,File,Number,Option,Status,URL}Editor` + their stylesheets and tests → `Properties/Editors/`
-- `Components/Detail/PickerControl` + its stylesheet and test → `DesignSystem/Elements/PickerControl/`
-- `Components/Detail/EyeToggle.tsx` → `DesignSystem/Elements/EyeToggle/EyeToggle.tsx`
-- `NavWindow/NavGallery.tsx` + `navGallery.css` → `Navigation/`
-- `DesignSystem/Components/ImagePicker/` → `DesignSystem/Components/Pickers/ImagePicker/` (Nathan's move)
+- `.claude/Planning/Design-Coherence-Report.md` — retired into the atlas
 
 **COMMITS**
 
@@ -106,6 +77,8 @@
 - `991f4199` — feat(picker): a typed value keeps the unit it is read in
 - `c0fe1a4c` — docs(planning): the inline page properties decision log replaces three settled plans
 - `e815fb06` — chore(ledger): line counts through the Interface Scale picker
+- `ddc0ee9e` — refactor(renderer): the property surface, two elements, and the gallery find their own folders
+- `cd36b8e6` — docs: the handoff for the settings pair, and Context turns toward The Refactoring
 
 #### Handoff Guidelines
 

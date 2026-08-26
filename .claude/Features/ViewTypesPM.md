@@ -31,7 +31,7 @@ A view is a saved presentation of a Collection's or a depth-1 Set's Pages.[^1] I
 
 Each container's sidecar holds an ordered `views[]`, each entry modeled by `savedView` in `src/shared/views.ts`. A saved view records its `id` (a ULID), `name`, `icon`, an optional `color` (a ramp cell worn as the view's segment stroke), and its renderer `type`. Its column layout carries `property_order`, `hidden_properties`, per-column widths and alignments, and `column_styles` — the per-type look and the date, weekday, and time formats, which live per view here rather than on the property definition.[^3] Its query config carries the `sort` list, the `filter` group, the `group` config with the view-level band order, and the display options each renderer reads — card scale, collapsed and hidden bands, the cards toggles.
 
-The **active view** is tracked per machine and kept out of the synced sidecar.[^4] The ViewDropdown in the toolbar — its glyph the active view's icon — opens the ViewPane to switch it, and view CRUD (create as "Untitled", rename, duplicate, delete, reorder) persists to the sidecar. Two per-container presentation settings ride the sidecar and sync: **Show Title** and **View Style**.[^5] A container never presents an empty `views[]`: an app-created container is seeded with a default view on disk, and an empty view-bearing container mints one on first entry.
+The **active view** is tracked per machine and kept out of the synced sidecar.[^4] The ViewDropdown in the toolbar — its glyph the active view's icon — opens the ViewPane to switch it, and view CRUD (create as "Untitled", rename, duplicate, delete, reorder) persists to the sidecar. A per-container presentation setting rides the sidecar and syncs: **Show Title**.[^5] A container never presents an empty `views[]`: an app-created container is seeded with a default view on disk, and an empty view-bearing container mints one on first entry.
 
 ### Creation
 
@@ -78,7 +78,7 @@ A multi-key list applied in priority order, stable on ties, with per-type compar
 
 The view's configuration is edited through a handful of panes, each reachable from the toolbar.
 
-- **ViewPane** — the dropdown the ViewDropdown opens: a row per saved view (click switches, the chevron opens that view's settings, right-click offers Rename, Edit Icon, Edit Color, Delete) over a New View footer. Right-clicking the ViewDropdown itself sets the two presentation settings.
+- **ViewPane** — the dropdown the ViewDropdown opens: a row per saved view (click switches, the chevron opens that view's settings, right-click offers Rename, Edit Icon, Edit Color, Delete) over a New View footer. Right-clicking the ViewDropdown itself toggles Show Title.
 - **ViewSettings** — the per-view editor, reached from a ViewPane row's chevron (with the ⋮ Duplicate and Delete and the four leaf rows) or from the SettingsPane's Layout entry (the flat door). It holds the click-to-rename name, the 3×2 type picker, and the type's options: the Layout leaf is the visibility list for a Table, and the cards options for Cards with Style, Card Banner, and Scale pinned in its footing.
 - **SettingsPane** — the toolbar's sliders button: **Configuration** (the Collection's Open In), **Properties**, **Visibility**, and the Layout, Group, Filter, and Sort leaves.
 - **Grouping** — Group By (Location, or a Select, Status, or Date property), a Date By granularity, per-kind Order pickers (Location: Custom or Location; Select and Status: Default, Reversed, Custom; Date: Ascending or Descending), and a Sub-Group picker with its own Order. The middle shows the set hierarchy or the option list, each row carrying the hide eye; the footing holds Hide Empty Groups, Ungrouped Top or Bottom, and the date Separation. A cards view drops Sub-Group and gains a None row.
@@ -185,7 +185,6 @@ Registered in the type union and present as picker tiles, with no renderer behin
 
 - **Table Flatten and Location subtitle** — the table's no-grouping mode, with a page's location as a subtitle in its title cell under its own Flatten and Hide Location toggles. Cards already carry both.
 - **The property-bucket +** — a property or ungrouped band offers no create, since a bucket can't infer a location.
-- **ViewBar** — the Toolbar value of View Style, an inline switcher bar. The setting persists; Toolbar mode reuses the dropdown until the surface exists.
 
 [^1]: [[CollectionsPM]]
 [^2]: [[SurfacePM]] §Tile Types
