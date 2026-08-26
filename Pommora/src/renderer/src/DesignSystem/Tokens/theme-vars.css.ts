@@ -4,12 +4,11 @@ import { BANNER_SHADOW, STATE_OPACITY, vars as colorVars } from './color.css'
 import { font } from './typography.css'
 import {
   CLOSE_CLEARANCE,
-  CONTAINER_TITLE_SIZE,
   DISCLOSURE_INDENT,
   DROP_DOT_SIZE,
   DROP_LINE_INSET,
   DROP_LINE_THICKNESS,
-  FOLD_GUTTER,
+  DETAIL_WIDTH,
   LIST_OUTLINE_GAP,
   LIST_OUTLINE_WIDTH,
   PARK_CLEARANCE,
@@ -18,7 +17,7 @@ import {
   TILE_GAP_PX,
   size,
 } from './size.css'
-import { CODE_CHEVRON_MASK, CONN_LINK_MASK, FOLD_CHEVRON_MASK, GRIP_GLYPH } from '../Symbols/masks'
+import { CONN_LINK_MASK, FOLD_CHEVRON_MASK, GRIP_GLYPH } from '../Symbols/masks'
 import { mixAt, tintAt, TINT_STEPS } from './tint'
 import { duration, easing } from '../Animation/motion'
 import { stack } from './stack'
@@ -40,7 +39,6 @@ globalStyle(':root', {
     '--label-primary': colorVars.color.label.primary,
     '--label-secondary': colorVars.color.label.secondary,
     '--label-tertiary': colorVars.color.label.tertiary,
-    '--label-quaternary': colorVars.color.label.quaternary,
     '--label-control': colorVars.color.label.control,
     '--bg-window': colorVars.color.background.window,
     '--surface-primary': colorVars.color.surface.primary,
@@ -70,9 +68,6 @@ globalStyle(':root', {
     // banner title, the NavView search, and the editor's banner overlay.
     '--banner-shadow': BANNER_SHADOW,
     '--banner-cast': '0 1px 4px var(--banner-shadow)',
-    // The container title's type size — the heading a Collection, Set, or page wears at the top of its
-    // own surface, over a banner cover or on the bare header that replaces one.
-    '--container-title-size': CONTAINER_TITLE_SIZE,
     // Interaction states — a system-grey wash, hover lighter than selected.
     '--state-hover': colorVars.color.state.hover,
     '--state-selected': colorVars.color.state.selected,
@@ -98,17 +93,22 @@ globalStyle(':root', {
     '--list-outline-color': 'var(--separator-segment)',
     '--list-outline-radius': 'var(--radius-full)',
     '--list-outline-gap': `${LIST_OUTLINE_GAP}px`,
+    // Over-scroll fade — the three edge-dissolve widths a scrollable surface picks from, so a surface
+    // names a step rather than restating a pixel. Set as `--over-scroll-fade` on the scroll host.
+    '--fade-light': '12px',
+    '--fade-base': '16px',
+    '--fade-strong': '20px',
+    '--fade-heavy': '24px',
     // Accent: a pointer, never a baked color. The static seed is the default
     // spectrum solid (DEFAULT_ACCENT); applyAccent overrides --accent at runtime
     // from settings — any spectrum color, or the OS accent.
     '--accent': colorVars.color.solid[DEFAULT_ACCENT],
-    '--accent-fill': 'color-mix(in srgb, var(--accent) 15%, transparent)',
+    '--accent-fill': 'color-mix(in srgb, var(--accent) var(--tint-quaternary), transparent)',
     // Active stroke — the accent-tint border COLOR every "this is the live one" outline uses.
     '--accent-stroke': 'color-mix(in srgb, var(--accent) var(--tint-secondary), transparent)',
     // The same stroke a notch stronger — used while a surface is being actively manipulated, so a
     // resize reads hotter than the hover that revealed it.
     '--accent-stroke-hot': 'color-mix(in srgb, var(--accent) var(--tint-primary), transparent)',
-    '--accent-text': 'var(--accent)',
     // The checkbox's three parts off one base — the accent until a chosen cell overrides it per
     // element (personalization). Its border sits a step softer: a glyph-sized box wants that.
     '--checkbox-fill': tintAt(CHECKBOX_BASE, 'primary'),
@@ -132,10 +132,9 @@ globalStyle(':root', {
     '--weight-semibold': font.weight.semibold,
     '--weight-bold': font.weight.bold,
     // Type sizes — the full ramp, so plain CSS names a step rather than restating a pixel value.
-    '--text-large-title-size': font.scale.largeTitle.size,
-    '--text-title1-size': font.scale.title1.size,
-    '--text-title2-size': font.scale.title2.size,
-    '--text-title3-size': font.scale.title3.size,
+    '--text-title-large-size': font.scale.titleLarge.size,
+    '--text-title-medium-size': font.scale.titleMedium.size,
+    '--text-title-small-size': font.scale.titleSmall.size,
     '--text-headline-size': font.scale.headline.size,
     '--text-body-size': font.scale.body.size,
     '--text-callout-size': font.scale.callout.size,
@@ -156,8 +155,8 @@ globalStyle(':root', {
     '--disclosure-indent': `${DISCLOSURE_INDENT}px`,
     // The fold/grip lane the editor, table views, block tiles, and embeds all carve from the content
     // inset.
-    '--fold-gutter-base': `${FOLD_GUTTER}px`,
-    '--fold-gutter': 'var(--fold-gutter-base)',
+    '--width-detail-base': `${DETAIL_WIDTH}px`,
+    '--width-detail': 'var(--width-detail-base)',
     // Masked-glyph assets shared across module boundaries: the 6-dot drag grip (lucide grip-vertical,
     // read by MarkdownPM's rail grips AND SurfacePM's block handle) and the fold chevron
     // (lucide chevron-right, a CSS mask because it paints on a line ::before — an <Icon> can't).
@@ -165,8 +164,6 @@ globalStyle(':root', {
     '--fold-chevron-mask': FOLD_CHEVRON_MASK,
     // Lucide's `link-2`, traced from the package's own geometry rather than redrawn.
     '--conn-link-mask': CONN_LINK_MASK,
-    // The same chevron a stroke step lighter — the codeblock language chrome's bracket.
-    '--code-chevron-mask': CODE_CHEVRON_MASK,
     // Spectrum solids as literal vars, so plain CSS routes to the same palette (the code tokens
     // mix these toward system-white at a tint-scale share for their pastels).
     '--solid-red': colorVars.color.solid.red,

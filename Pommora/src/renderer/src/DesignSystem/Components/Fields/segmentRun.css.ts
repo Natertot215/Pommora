@@ -10,7 +10,7 @@ const SEGMENT_GAP = '4px' // KNOB
 const SEGMENT_DIVIDER_INSET = '3px' // KNOB
 
 /** KNOB — wide enough that the eclipse reads as a dissolve rather than a cut. */
-const SEGMENT_FADE = '30px'
+const SEGMENT_FADE = 'var(--fade-strong)'
 
 /** The run. It STRETCHES so the hairline can measure itself against the field. */
 export const segmentRun = style({

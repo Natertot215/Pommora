@@ -10,9 +10,9 @@ The renderer as it is, the renderer as it should be, and the calls between. It i
 
 **Structure.** Sixteen top-level folders say where a thing was first mounted, not what it is. Three folders are named `Detail` for three unrelated things; `Components/` is twenty-two view-settings panes and three shared files; twelve app-core modules sit at the root with no folder; thirty files have no importer in their own folder. The design system reaches upward into the app in exactly three files. The target tree (§Structure) makes fourteen folders of the sixteen, each answering "what is this" in one word, and places every file under eight testable rules; 228 files move, 87 of those by rename alone, and the instrument is `git mv`.
 
-**Geometry.** Motion is perfect — 165 reads, zero off the ladder. Color is near-perfect — 20 raw values, one stray. Geometry is where the discipline stops: 681 bare pixel values on a `2·4·6·8·10·12·14·16·20·24·28` grid the code already agreed on and never named; 224 custom properties declared outside `Tokens/`, two of them read by the design system with no fallback.
+**Geometry.** Motion is perfect — 165 reads, zero off the ladder. Color is near-perfect — 20 raw values, all accounted for. Geometry is where the discipline stops: 681 bare pixel values on a `2·4·6·8·10·12·14·16·20·24·28` grid the code already agreed on and never named; 224 custom properties declared outside `Tokens/`, two of them read by the design system with no fallback.
 
-**Tokens.** The consumer side is 96% right — 41 findings against 1,071 reads — and the misuse is one shape: when a surface needs an edge, it reaches for a label tone, and five of the eight sites that do it are inside the design system, while `separator.*` — the family named for that edge — sits starved. The system is under-declared rather than broken: it publishes `--border-cell` and not its width, eleven type sizes and zero line heights, and eight of the fifteen mints proposed are ingredients that already exist unpublished.
+**Tokens.** The consumer side is 96% right — 41 findings against 1,071 reads — and the misuse is one shape: when a surface needs an edge, it reaches for a label tone, and five of the eight sites that do it are inside the design system, while `separator.*` — the family named for that edge — sits starved. The system is under-declared rather than broken: it publishes `--border-cell` and not its width, eleven type sizes and zero line heights, and six of the thirteen mints proposed are ingredients that already exist unpublished.
 
 **What this document decides.** The eight rules and the tree are the atlas's own calls, drawn from evidence and the two rulings already taken (`Detail` → `Interface`, `Views` to the root). The open decisions in each section and the taste-marked token verdicts are recommendations awaiting a stamp; the structural ones gate the tree's non-mechanical moves, everything else can start today. Nothing here changes behavior except one line in `ViewEmbedBlock.tsx`.
 
@@ -181,14 +181,13 @@ Seventeen concepts checked for two spellings. **Confirmed, worth settling:**
 
 **356 custom properties are declared, 224 outside `Tokens/`.** Four are orphans, all deliberate — `--safe-top/right/bottom/left` (`styles.css:13-16`, forward declarations for the mobile shell). Nine are declared by the app and read from inside the design system; seven carry fallbacks and are override hooks by design. **Two are hard upward dependencies with no fallback:** `--glass-inset` (`styles.css:9`, read at `previewPane.css:17`) and `--glass-radius` (`styles.css:10`, read at `previewPane.css:10` and `sidePane.css:10`) — mount either shell in the Showcase without `styles.css` and it loses its inset and corner radius, the one place the layering rule is broken in CSS. Three more families behave like tokens and are declared in app files by accident of history: the shell's three dimensions (`--toolbar-h`, `--sidebar-width`, `--inspector-width`), the layout grid (`--content-inset*`, `--surface-inset*`, 36 reads across five features), and `--subline-h` (24px in two homes, with `previewWindow.css:7` a comment explaining the duplication).
 
-**Two channels nobody owns.** `--over-scroll-fade` has fourteen override sites; nine sit on a `12/16/20/24px` ladder and five route through private aliases — it stopped being an override hook and became an unnamed four-step scale. And seven scale vars multiply each other with no stated composition rule — `--zoom`, `--block-zoom`, `--label-zoom`, `--mdpm-scale`, `--editor-scale`, `--card-scale`, `--glyph-scale`, plus `--cover-zoom` — a var per surface, growing.
+**The zoom family has no composition rule.** Seven scale vars multiply each other with nothing stating which compose and which are terminal — `--zoom`, `--block-zoom`, `--label-zoom`, `--mdpm-scale`, `--editor-scale`, `--card-scale`, `--glyph-scale`, plus `--cover-zoom` — a var per surface, growing.
 
 #### Open Decisions — Geometry
 
 - **The spacing scale.** 681 literals on a grid the code already agreed on. *Recommendation:* mint `size.space` and `--space-*` from the code — `2·4·6·8·10·12·14·16·20·24·28` — and reconcile with Figma after, not before. The residue of `3/5/9/22px` becomes a visible, arguable list of sixty-odd exceptions instead of an invisible 681. `18px` (13 sites) is left off deliberately.
 - **The radius set.** *Recommendation:* no ladder — every radius literal already matches a value `size.control['button-*'].radius` publishes, so the literals are owned but not centralized, which is not the minting condition. Two things change: `--glass-radius` becomes a token (below), which collapses four of the six writers of `12px`; and `Slider.tsx:106`'s `borderRadius: 9` gets a reason or a repoint.
 - **`--glass-inset` and `--glass-radius`.** *Recommendation:* mint both into `Tokens/` as `size.glass`. The deciding fact is not what kind of value each is but that the design system reads both with no fallback — the one place the layering law is broken in CSS — and a token the design system can read is the fix. `--glass-radius` also silently equals the large button radius and `RECT_RADIUS` at `ImagePicker.tsx:31`: three writers, one number. Give the design-system reads a fallback either way.
-- **`--gutter`.** A pure alias declared one line below the thing it aliases, redeclared with a different meaning inside tables. *Recommendation:* delete it; nine reads say `--content-gutter` or `--fold-gutter` at the same length. Zero visual change.
 - **The two tab strips.** Four of the preview strip's five values are already 5/6 of the main strip's; only `--tab-min` (70 vs 90) breaks it. *Recommendation:* set `--tab-min: 75px` and add one comment saying the floating window wears the tab strip at 5/6.
 - **The convergent values.** `--subline-h` (24px in two homes, one a comment explaining the duplication) and `--labels-gap` (4px in three). *Recommendation:* absorb both into `Tokens/`; `--subline-h` first, because `previewPane.css:21` already reads it with a hardcoded fallback inside the design system.
 - **The zoom family.** Seven scale vars with no stated composition rule. *Recommendation:* one `Tokens/scale.ts` naming the axes — window, editor, embed, card, glyph — and how they compose, with every `--*-zoom`/`--*-scale` var reading from it. Without it there will be a var per surface at 3× the code.
@@ -207,11 +206,9 @@ The consumer side is fact — every read opened at its line. The verdicts are th
 
 **`separator.*` is starved on its own job.** The family that should own those edges has three consumer reads for `separator.segment` and nine for `separator.border`; `segment` is tied 3–3 with `label.tertiary` on the one job it is named for. The three composed seams — `--border-heading` 1.75px, `--border-cell` 1.5px, `--border-segment` 1px — are correct and restated by hand five times (`Styles.css:788`, `:884`, `labels.css.ts:24`, `imagePicker.css.ts:56`, `nexusSettings.css:71`) for a structural reason: the bridge publishes each seam as a whole shorthand and never its width, so a rule needing a radius cap cannot use `border` and must restate `1.5px`. **A sixth seam weight the ledger never named:** `1.25px`, five independent declarers, no owner — `button.css.ts:7`, `checkbox.css:39`, `tile-chassis.css:6`, `ActionBand.css.ts:48`, `table-tokens.css:31`. It is the control seam, and the checkbox declares itself `1.25px` in `checkbox.css:39` and `1.5px` in `labels.css.ts:24`: one control, two widths, two files.
 
-**Two accent ladders wear one name.** `--accent-stroke` (secondary, 40%) and `--accent-stroke-hot` (primary, 60%) are correct for tile chrome — selected rings at stroke, being-resized at hot. A second, unledgered ladder runs in `Components/`: focus = secondary (`fieldRing.ts:35`, `menu.css.ts:33`), selection = primary (`pickerMenu.css.ts:34`, `viewSettings.css.ts:42`). In SurfacePM `primary` means *being manipulated*; in PickerMenu it means *selected at rest* — so a selected tile in ViewSettings rings a step brighter than a selected tile in SurfacePM.
-
 **Two type reads paint nothing they name.** `navView.css:28`'s 16px overrides a `text.body.standard` class `NavView.tsx:48` put on the same element, so that token read paints nothing. And `text.callout.emphasized`, the ledger's rung for pane headers, has zero reads against three sibling panes at three different weights (`menu.css.ts:160` caption.emphasized, `settingsPane.css.ts:262` footnote.semibold, `groupingPane.css.ts:54` footnote.emphasized).
 
-**Sibling drift — a file diverging from one it shares a chassis with.** `NavGallery.tsx:140` (footnote.emphasized) against `CardsView.tsx:101` (body.semibold) while `card-tokens.css:74` says the two share one title tone; `TrashLeaf.tsx:264` (caption.semibold) against `TableView.tsx:1699` (callout.semibold) while TrashLeaf wears the class `table-head`; `groupingPane.css.ts:16`'s `subLabel` (body.emphasized) against `menu.css.ts:131`'s `subLabel` (caption.standard) — same export name, same color, 13px against 11px. A shared class name is not a shared type decision, and nothing in the build catches it. One more: `outlineDropdown.css.ts:12` dims a dragging row with `--state-inactive` where the identically-named export at three other sites uses `--state-ghost`.
+**Sibling drift — a file diverging from one it shares a chassis with.** `NavGallery.tsx:140` (footnote.emphasized) against `CardsView.tsx:101` (body.semibold) while `card-tokens.css:74` says the two share one title tone; `TrashLeaf.tsx:264` (caption.semibold) against `TableView.tsx:1699` (callout.semibold) while TrashLeaf wears the class `table-head`; `groupingPane.css.ts:16`'s `subLabel` (body.emphasized) against `menu.css.ts:131`'s `subLabel` (caption.standard) — same export name, same color, 13px against 11px. A shared class name is not a shared type decision, and nothing in the build catches it.
 
 **The one live bug.** `Blocks/ViewEmbedBlock.tsx:88` hand-rolls `tintAt(cellColor(key), 'primary')` where `cellRing(key)` exists at `ramp.ts:143` as `cellPaint(key).outline ?? tintAt(cellColor(key), 'primary')`. The hand-roll reproduces the fallback and drops the first branch, so a view assigned a **grey** cell gets a chroma-less tint of a grey instead of its `GREY_OUTLINES` step. Behavioral, not stylistic; the fix is one identifier, `cellRing(key)`, and it waits for no ruling.
 
@@ -223,9 +220,7 @@ Literals whose value *is* a token, and values built from ingredients where a rec
 | --- | --- | --- |
 | `Styles.css:788`, `:884` · `labels.css.ts:24` · `imagePicker.css.ts:56` | `1.5px` | `--border-cell`'s width, once the bridge publishes it |
 | `button.css.ts:7` · `checkbox.css:39` · `tile-chassis.css:6` · `ActionBand.css.ts:48` · `table-tokens.css:31` | `1.25px` | nothing yet — the control seam |
-| `NotchedPane.tsx:112` | `stroke="#FFFFFF"` | brighter than `system.white`'s `#E8E8E8`; `currentColor` |
 | `ViewEmbedBlock.tsx:88` | `tintAt(cellColor(key), 'primary')` | `cellRing(key)` — the live bug |
-| `pickerMenu.css.ts:34` · `viewSettings.css.ts:42` | `tintAt('var(--accent)', 'primary')` | `--accent-stroke-hot`, or `--accent-stroke` once the ladder is ruled |
 | `nexusSettings.css:71` | `1px solid var(--separator-border)` | `--border-segment` |
 | `ColorSwatch.tsx:48` | half of `cellPaint` inline | `cellPaint(key)` |
 
@@ -235,8 +230,8 @@ Each is written to be lintable, with its carve-out stated.
 
 1. **`label.*` paints ink — text and glyphs.** Never a border, rule, bar, or box fill. *Carve-out:* `background-color: var(--label-*)` is legal iff the same rule sets `mask` or `-webkit-mask`. Eight violations today; four correct sites a naive rule would flag.
 2. **`separator.*` paints every hairline, seam, divider, and rail.** A rule drawn as a filled box (for a radius or partial length) still reads `separator.*` for color and a bridged `--border-*-width` for thickness. The ladder gains its sixth rung, `--border-control` at 1.25px, before this is enforceable.
-3. **`fill.*` paints an area over a surface; `state.*` an area behind content.** Neither paints an edge or ink. *Carve-out:* `outline: Npx solid var(--state-selected)` beside `background: var(--state-selected)` is a fill bleeding past its box (`GroupBand.css:65-67`). One violation (`Sidebar.css:73`).
-4. **An accent tone is read by name, never mixed.** Wash → `--accent-fill`; live outline → `--accent-stroke`; being driven → `--accent-stroke-hot`; focus → `fieldRing()`. One ruling settles the rest: `--accent-stroke-hot` means *being driven right now*, so PickerMenu and ViewSettings (`pickerMenu.css.ts:34`, `viewSettings.css.ts:42`), which read `primary` at rest, step down to `--accent-stroke`.
+3. **`fill.*` paints an area over a surface; `state.*` an area behind content.** Neither paints an edge or ink. *Carve-out:* `outline: Npx solid var(--state-selected)` beside `background: var(--state-selected)` is a fill bleeding past its box (`GroupBand.css:65-67`).
+4. **An accent tone is read by name, never mixed.** Wash → `--accent-fill`; live outline → `--accent-stroke`; being driven → `--accent-stroke-hot`; focus → `fieldRing()`.
 5. **A ramp cell's paint comes from `cellPaint` / `cellRing` / `cellColor`, never `tintAt(cellColor(…))`.** The grey row's outline branch exists because the naive composition is wrong there. Two violations, one a live bug.
 6. **A type decision is a `text.<style>.<variant>` class and nothing else.** No px `font-size`, no `font:` shorthand, no `--*-title-size` var holding a literal; a surface that scales reads `calc(var(--text-*-size) * var(--scale))`. *Corollary:* a file sharing a chassis with another shares its type step — NavGallery takes CardsView's, TrashLeaf takes TableView's, groupingPane takes menu's.
 7. **The shared type and icon steps are one ladder with two units.** A size not on it is a defect in the ladder, not a licence. The container-title family (`titleSmall`/`titleMedium`/`titleLarge`, bridged as `--text-title-*-size`) is the type ramp's alone — no glyph ladder consumes it, so it carries no icon twin.
@@ -244,38 +239,31 @@ Each is written to be lintable, with its carve-out stated.
 
 #### The Verdicts
 
-210 tokens carry an open verdict — the custom properties the bridge emits, every TS token export, and the app-declared vars that behave like tokens. **166 keep · 16 repoint · 15 mint · 6 redefine · 5 merge · 1 rename · 1 retire.** 172 follow from counts alone; 38 involve a design call. Four in five rows are `keep`; the failures cluster where the design system publishes a composed value and withholds its ingredients — it ships `--border-cell` and not its width, so four files restate `1.5px`; eleven type sizes and zero line heights, so a plain-CSS surface cannot name a leading. Eight of the fifteen mints are an ingredient that already exists and is not published.
+202 tokens carry an open verdict — the custom properties the bridge emits, every TS token export, and the app-declared vars that behave like tokens. **166 keep · 14 repoint · 13 mint · 5 redefine · 4 merge.** 166 follow from counts alone; 36 involve a design call. Four in five rows are `keep`; the failures cluster where the design system publishes a composed value and withholds its ingredients — it ships `--border-cell` and not its width, so four files restate `1.5px`. Six of the thirteen mints are an ingredient that already exists and is not published.
 
-**Redefine — the readers outvoted the definition (6).**
+**Redefine — the readers outvoted the definition (5).**
 
 | Token | Reads | New definition | Taste |
 | --- | --- | --- | --- |
 | `text.callout` | 1 | The table and column-header step (Semibold). The ledger's second assignment — "pane header → Callout / Emphasized" — has no referent in the product and is struck. | call |
 | `text.footnote` | 12 | Small detail *and* the in-pane section heading (Emphasized). `settingsPane.css.ts:262` repoints from semibold to emphasized so the siblings match. | call |
 | `surface.primary` · `secondary` · `tertiary` | 2 · 1 · 1 | The opaque grey ladder the ramp's grey row sits on, moved beside Ramp in the ledger. Pommora layers with frost over `--bg-window`, not flat fills; the trio stops looking abandoned. | call |
-| `--over-scroll-fade` | 2 by name, 14 overrides | Not a card token: the app-wide OverScroll channel. Base moves to the bridge; its four steps get names (`--fade-sm` 12 · `-md` 16 · `-lg` 20 · `-xl` 24). | call |
 
-**Mint — a value the code agreed on with no token (15).**
+**Mint — a value the code agreed on with no token (13).**
 
 | Mint | Value | What it absorbs | Taste |
 | --- | --- | --- | --- |
 | `--border-heading-width` · `--border-cell-width` · `--border-segment-width` | 1.75 · 1.5 · 1px | Six hand-rolled widths; the precondition for the separator rule. Three lines, six sites. | evidence |
 | `--border-control` | 1.25px | Five declarers; settles the checkbox's 1.25-vs-1.5 contradiction (1.25 wins — it is a control). | call |
-| `--text-*-line` | eleven values | The line heights the bridge never published; `navView.css:28`'s off-ramp 16px is the case a published line would catch. | evidence |
 | `size.space.*` · `--space-*` | the `2…28` grid | ~480 of the 681 literals; the residue (3, 5, 9, 18, 22) becomes a visible list of ~60. | call |
 | `--glass-inset` · `--glass-radius` | 5px · 12px | 37 reads, two inside the design system with no fallback — the one real layering violation. | evidence |
 | `--subline-h` · `--toolbar-h` | 24px · 38px | The shell's bands, beside the `--button-*-height` trio the bridge already publishes. | call |
 | `--sidebar-width` · `--inspector-width` | seeded defaults | Read by `styles.css:108`/`:124` in a `calc` with no declared default. | call |
-| `--content-gutter` | 24px | The addend that keeps left and right insets equal — a layout constant with a stated invariant. | call |
 | `Tokens/scale.ts` | a rule, not a var | The zoom family's composition — which axes multiply, which are terminal. | call |
 
-**Merge (5):** `--accent-text` → `--accent` (verbatim alias, zero readers); `--main-bg` → `--bg-window` (pure alias, all reads in `styles.css`); `--table-border-width` and `--tile-border` → `--border-control`; `--heading-segment-width` → `--border-cell-width`.
+**Merge (4):** `--main-bg` → `--bg-window` (pure alias, all reads in `styles.css`); `--table-border-width` and `--tile-border` → `--border-control`; `--heading-segment-width` → `--border-cell-width`.
 
-**Rename (1):** `--gutter` → `--content-gutter` on `.shell`, `--table-gutter` inside tables; the four-letter alias goes.
-
-**Retire (1):** `--code-chevron-mask` — zero reads, verified three times, a full inline SVG payload rather than a ramp member, so bridge completeness does not shield it.
-
-**Repoint — right token, wrong consumers (16).** The eight label-as-edge sites (`Controls/` first — it teaches the next control's author); `Sidebar.css:73`'s ribbon divider from `fill.secondary` to `separator.border`; `table-tokens.css:41`'s `--heading-segment` to `separator.segment`; `outlineDropdown.css.ts:12` from inactive to ghost; `PropertiesPane.tsx:143`'s `<Reveal>` back to `fast`; `nexusSettings.css:71` to `--border-segment`; the sibling-drift trio; `subfield.css:43-44` off control-size and bold; and `ViewEmbedBlock.tsx:88` → `cellRing(key)`, the live bug.
+**Repoint — right token, wrong consumers (14).** The eight label-as-edge sites (`Controls/` first — it teaches the next control's author); `table-tokens.css:41`'s `--heading-segment` to `separator.segment`; `PropertiesPane.tsx:143`'s `<Reveal>` back to `fast`; `nexusSettings.css:71` to `--border-segment`; the sibling-drift trio; `subfield.css:43-44` off control-size and bold; and `ViewEmbedBlock.tsx:88` → `cellRing(key)`, the live bug.
 
 **Where Recipe overrules an earlier lens.** The pane-header finding: `menu.css.ts:160`'s own comment says it is a nav row, not a header, so the vote on in-pane section headings is 3–0 *for* footnote. The radius scale: refused — every literal already matches `size.control['button-*'].radius`, owned but not centralized, and the four writers of `12px` are a `--glass-radius` mint, not a scale. A third `stack.local` rung: declined — a private ladder inside one component is the rule working.
 
@@ -287,9 +275,8 @@ Each is written to be lintable, with its carve-out stated.
 | 2 | Mint `--border-control` | 1 + 5 repoints | 5 declarers; the checkbox contradiction |
 | 3 | `ViewEmbedBlock.tsx:88` → `cellRing(key)` | 1 | The only behavioral defect |
 | 4 | The eight label-as-edge repoints | 8 | 8 sites, unambiguous after the separator mint |
-| 5 | Settle the accent ladder | 2 | PickerMenu and ViewSettings step down to `--accent-stroke` |
-| 6 | Mint the spacing scale | ~11 | ~480 literals; needs the sign-off above |
-| 7 | Mint `--glass-inset` / `--glass-radius` | 2 | 37 reads; closes the layering violation |
+| 5 | Mint the spacing scale | ~11 | ~480 literals; needs the sign-off above |
+| 6 | Mint `--glass-inset` / `--glass-radius` | 2 | 37 reads; closes the layering violation |
 
 #### Open Decisions — Tokens
 
@@ -305,7 +292,7 @@ Each is written to be lintable, with its carve-out stated.
 
 **Six feature sheets load globally from `main.tsx:16-20`** — `Sidebar.css`, `Detail.css`, `Banner.css`, `table-tokens.css`, `Table.css` — with no global justification, and four are also imported by their own component, so nobody knows which import is load-bearing. The design-system sheets on `main.tsx:6-13` are correctly global.
 
-**Motion is perfect** — every transition reads `var(--duration-*)` or `duration.*`; the four raw times are a caret blink cadence and three `0s` delays. **Color is near-perfect** — 20 raw values, all but one explicable (the token sources, the frost recipe's four specular whites, the melt gradient's black stops). The one stray: `NotchedPane.tsx:112` `stroke="#FFFFFF"`.
+**Motion is perfect** — every transition reads `var(--duration-*)` or `duration.*`; the four raw times are a caret blink cadence and three `0s` delays. **Color is near-perfect** — 20 raw values, all explicable (the token sources, the frost recipe's four specular whites, the melt gradient's black stops, and one documented outlier at `NotchedPane.tsx:112`).
 
 **Inline styles are 83 sites in 50 files, and most are right.** Measured geometry, custom-property injection, and genuinely dynamic values could not be a stylesheet. The static offenders are fourteen, nine inside the design system, and two byte-identical: `CardAddPicker.tsx:130` and `PropertyPicker.tsx:123` both write `{ minWidth: 96, height: 24 }`.
 

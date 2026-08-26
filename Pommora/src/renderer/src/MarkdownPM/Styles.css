@@ -32,7 +32,7 @@
 }
 
 .mdpm-shell {
-  /* --fold-gutter (the root design-system token) is the width of the left strip the fold chevron lives
+  /* --width-detail (the root design-system token) is the width of the left strip the fold chevron lives
      in, carved from the --content-inset margin so the body still lands on --content-inset.
      --fold-chevron-size: chevron glyph size (title3). (--label-control is the single global :root def.) */
   /* Glyph scale = the structural px scale × the per-block Scale. Structural dims (gutter WIDTH,
@@ -42,7 +42,7 @@
   /* Declared here, not at :root, so it resolves against THIS shell's scale — an embed states its
      own, and spaces the blocks inside it by that one rather than by the page's. */
   --md-box-gap: calc(var(--md-box-gap-base) * var(--glyph-scale));
-  --fold-chevron-size: calc(var(--text-title3-size) * var(--glyph-scale));
+  --fold-chevron-size: calc(var(--text-headline-size) * var(--glyph-scale));
   position: relative;
   /* Own stacking context, below the sidebar's step, so the absolutely-positioned banner header can
      layer above the editor body WITHOUT its z-index escaping to cover the floating sidebar. */
@@ -55,10 +55,10 @@
 .mdpm-editor {
   height: 100%;
   /* The page surface is full-bleed (banner edge-to-edge). The body inset is split: the editor reclaims
-     --fold-gutter (scroller starts that far left of --content-inset) and .cm-content re-adds it as padding,
-     leaving a --fold-gutter strip at the scroller's left — inside its clip — for the fold chevron, while
+     --width-detail (scroller starts that far left of --content-inset) and .cm-content re-adds it as padding,
+     leaving a --width-detail strip at the scroller's left — inside its clip — for the fold chevron, while
      text still lands on --content-inset. (Always present, so no spacer is needed when a page has no folds.) */
-  padding-left: calc(var(--content-inset) - var(--fold-gutter));
+  padding-left: calc(var(--content-inset) - var(--width-detail));
   padding-right: var(--content-inset-right);
   transition:
     padding-left var(--duration-base) var(--ease-base),
@@ -99,9 +99,9 @@
   --cite-divider-gap: 14px; /* KNOB: the seam's breathing room, the title divider's own */
   /* The drawn caret + I-beam cursor are app-wide — see Carets.css. */
   /* Top reserves the header zone — set live from the header's measured height (index.tsx ResizeObserver).
-     Left re-adds the --fold-gutter the editor reclaimed, so text lands on --content-inset and the chevron
+     Left re-adds the --width-detail the editor reclaimed, so text lands on --content-inset and the chevron
      strip stays inside the scroller's clip. */
-  padding: var(--header-zone, 90px) 0 90px var(--fold-gutter);
+  padding: var(--header-zone, 90px) 0 90px var(--width-detail);
   /* The base is --editor-font-size (the editor `zoom` prop). --block-zoom applies the per-block Scale
      LINEARLY here — NOT through the clamped zoom curve — so it stays locked to --glyph-scale (both are
      × --block-zoom) and never floors. Absent --block-zoom ⇒ unchanged. em children ride this root. */
@@ -135,7 +135,7 @@
 /* One title size in both states — a banner must not shrink the title. The title reads as the page's
    first line rather than as chrome around it, so it takes the Editor Scale with the body. */
 .mdpm-header .detail-title {
-  --detail-title-size: calc(28px * var(--editor-scale, 1));
+  --detail-title-size: calc(var(--text-title-large-size) * var(--editor-scale, 1));
 }
 
 /* No-banner state: canonical .add-banner-strip / .add-banner-btn live in Banner.css. Top padding
@@ -159,7 +159,7 @@
 }
 .mdpm-divider {
   height: 0;
-  margin: 0 var(--gutter) 0 var(--content-inset);
+  margin: 0 var(--width-content) 0 var(--content-inset);
 }
 /* The section's own seam. It takes the editor's text column rather than the header's insets, and it
    blur-fades on the disclosure's beat instead of cutting — the rule reads as the boundary opening
@@ -223,7 +223,7 @@
    estimates off-screen variable-height blocks (callouts, folds) at the default height — so a gutter chevron
    below such a block drifts from its heading by a scroll-dependent amount. A line ::before shares the
    heading's own layout box and can't drift. Closed: points right, dim + persistent (a standing affordance);
-   open: points down, hover-only. KNOBS: --fold-gutter (chevron offset into the inset, the root token) ·
+   open: points down, hover-only. KNOBS: --width-detail (chevron offset into the inset, the root token) ·
    --fold-chevron-size · motion via --disclosure / --ease-base. */
 .mdpm-editor .cm-line.md-foldable {
   position: relative;
@@ -232,7 +232,7 @@
   content: "";
   position: absolute;
   /* Centered in the gutter strip — the anchor self-adjusts to glyph + gutter size. */
-  left: calc(-1 * var(--fold-gutter) + (var(--fold-gutter) - var(--fold-chevron-size)) / 2);
+  left: calc(-1 * var(--width-detail) + (var(--width-detail) - var(--fold-chevron-size)) / 2);
   top: 50%;
   width: var(--fold-chevron-size);
   height: var(--fold-chevron-size);
@@ -259,7 +259,7 @@
 
 /* BLOCK DRAG HANDLE — a grip on each draggable block's first line, content-anchored like the chevron (a
    ::before on the line, so it can't drift below callouts/folds). Hover-revealed. Glyph mirrors the
-   table/callout grips (the shared --grip-glyph). KNOBS: --fold-gutter (rail x) · --grip-top (first-line
+   table/callout grips (the shared --grip-glyph). KNOBS: --width-detail (rail x) · --grip-top (first-line
    offset — box blocks override it to drop the grip onto their padded first row, e.g. the code fence). */
 /* Shared masked-grip recipe (look only — each instance owns its own anchor below). */
 .mdpm-editor .cm-line.md-block-handle::before,
@@ -289,8 +289,8 @@
   position: absolute;
   left: calc(
     -1 *
-    var(--fold-gutter) +
-    (var(--fold-gutter) - var(--icon-body) * var(--glyph-scale)) /
+    var(--width-detail) +
+    (var(--width-detail) - var(--icon-body) * var(--glyph-scale)) /
     2
   );
   top: var(

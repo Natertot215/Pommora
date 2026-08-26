@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css'
-import { tintAt, vars } from '../../../Tokens'
+import { vars } from '../../../Tokens'
 import { focusRing } from '../../../Components/Fields/fieldRing'
 import { input } from '../../../Components/Fields/fields.css'
 import { separatorLine } from '../../../Components/Menu/menu.css'
@@ -44,7 +44,7 @@ export const favScroll = style({
   overflowX: 'auto',
   overflowY: 'hidden',
   scrollbarWidth: 'none',
-  vars: { '--over-scroll-fade': '16px' },
+  vars: { '--over-scroll-fade': 'var(--fade-base)' },
 })
 
 /** The vertical scroll region — holds the favorites strip AND the full-set grid, so favorites scroll
@@ -60,7 +60,7 @@ export const grid = style({
   overflowY: 'auto',
   overflowX: 'hidden',
   scrollbarWidth: 'none',
-  vars: { '--over-scroll-fade': '20px' },
+  vars: { '--over-scroll-fade': 'var(--fade-base)' },
 })
 
 /** The virtualized icon list inside the scroll region — its height is the full virtual extent; rows are
@@ -88,5 +88,5 @@ export const cell = style({
 
 export const cellSelected = style({
   color: 'var(--accent)',
-  background: tintAt('var(--accent)', 'quaternary'),
+  background: 'var(--accent-fill)',
 })

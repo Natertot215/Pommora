@@ -611,7 +611,7 @@ function LeafBodyView({ category }: { category: CategoryKey }): React.JSX.Elemen
   const { sections } = leaf
   return (
     <div className="settings-body over-scroll">
-      <h2 className={cx('settings-heading', text.title3.emphasized)}>
+      <h2 className={cx('settings-heading', text.headline.emphasized)}>
         <Icon name={leaf.icon} className="settings-heading-icon" />
         {leaf.label}
       </h2>

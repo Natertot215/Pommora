@@ -39,7 +39,7 @@ export const middle = style({
   position: 'relative',
   maxHeight: MIDDLE_MAX_HEIGHT,
   overflowY: 'auto',
-  vars: { '--over-scroll-fade': '16px' },
+  vars: { '--over-scroll-fade': 'var(--fade-base)' },
 })
 
 /** The pane's own gutter for the shared `drop-line` — wider than the token default so the

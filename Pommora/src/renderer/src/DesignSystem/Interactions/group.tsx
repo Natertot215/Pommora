@@ -720,7 +720,7 @@ export function DragGroup({
               width: active.rect.width,
               height: active.rect.height,
               borderRadius: 12,
-              background: 'color-mix(in srgb, var(--accent) var(--tint-secondary), transparent)',
+              background: 'var(--accent-stroke)',
               pointerEvents: 'none',
               zIndex: stack.top.dropPreview,
             }}

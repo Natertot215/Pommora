@@ -54,7 +54,7 @@ export const type = styleVariants({
     vars: {
       '--button-fill': 'transparent',
       '--button-ink': 'currentColor',
-      '--button-outline': c.label.quaternary,
+      '--button-outline': c.separator.border,
     },
     selectors: { '&:disabled': { opacity: 1, color: c.label.tertiary } },
   },
@@ -76,7 +76,7 @@ export const type = styleVariants({
     vars: {
       '--button-fill': c.fill.tertiary,
       '--button-ink': c.label.primary,
-      '--button-outline': c.label.quaternary,
+      '--button-outline': c.separator.border,
     },
   },
   destructive: {

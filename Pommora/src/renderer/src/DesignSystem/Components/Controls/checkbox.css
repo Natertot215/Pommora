@@ -10,7 +10,7 @@
   position: relative;
   vertical-align: -0.18em;
   border-style: solid;
-  border-color: var(--label-quaternary);
+  border-color: var(--separator-border);
   background: transparent;
   /* The three parts a chosen cell resolves through the ramp — its fill, its outline and its mark.
      A cleared checkbox drops its override and inherits the accent recipe from :root, so it keeps

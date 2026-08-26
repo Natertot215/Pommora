@@ -143,7 +143,7 @@ export const base = style({
 
 export const placeholder = style({ color: c.label.tertiary })
 
-const CONTENT_FADE = '16px' // KNOB — the field content row's fade width
+const CONTENT_FADE = 'var(--fade-base)' // KNOB — the field content row's fade width
 
 /** The opt-in content row — the flex cap `over-scroll-x over-scroll-cap` scrolls inside. */
 export const contentRow = style({

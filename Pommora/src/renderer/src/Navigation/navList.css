@@ -86,7 +86,7 @@
   min-width: 0;
   font-size: var(--text-body-size);
   color: var(--label-primary);
-  --over-scroll-fade: 16px;
+  --over-scroll-fade: var(--fade-base);
 }
 .nav-item-path {
   flex: 0 1 auto;
@@ -94,7 +94,7 @@
   max-width: 55%;
   margin-left: auto;
   color: var(--label-secondary);
-  --over-scroll-fade: 16px;
+  --over-scroll-fade: var(--fade-base);
 }
 .nav-item-inert {
   opacity: var(--state-inactive);

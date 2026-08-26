@@ -23,9 +23,6 @@
   ); /* per-nesting-depth inset (Set within Set, group members) — the shared disclosure step */
   --loose-inset: 8px; /* title inset for ungrouped/loose rows — tucked left of the cell-padding-x column inset */
 
-  /* — Gutter (row grips + group chevrons float left into this strip) — */
-  --gutter: var(--fold-gutter); /* carved from --content-inset; matches MarkdownPM's fold gutter */
-
   /* — Borders — the ONE token for every standard table hairline (vertical column lines + horizontal row
        underlines). The heading row's seams are heavier/different (see Heading below). — */
   --table-border-width: 1.25px;
