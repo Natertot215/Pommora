@@ -139,7 +139,11 @@ export const separator = style({
   alignItems: 'center',
   padding: '0 8px',
 })
-export const separatorLine = style({ height: '1px', width: '100%', background: c.separator.border })
+export const separatorLine = style({
+  height: 'var(--width-100)',
+  width: '100%',
+  background: c.border.base,
+})
 
 /** Flush variant — no side inset, so the hairline spans the surface gutter edge-to-edge. */
 export const separatorFlush = style({ padding: 0 })

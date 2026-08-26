@@ -31,7 +31,7 @@ export const favorites = style({
   flex: '0 0 auto',
   boxSizing: 'border-box',
   padding: '2px 4px',
-  border: 'var(--border-cell)',
+  border: 'var(--width-150) solid var(--border-base)',
   borderRadius: 8,
   overflow: 'hidden',
 })

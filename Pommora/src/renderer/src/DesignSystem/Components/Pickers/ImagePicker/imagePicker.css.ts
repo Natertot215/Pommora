@@ -25,7 +25,7 @@ export const panel = style({
   gap: '14px',
   padding: '18px',
   borderRadius: '12px',
-  border: `1px solid ${c.separator.border}`,
+  border: `var(--width-100) solid ${c.border.base}`,
 })
 
 /** The frame the image is dragged inside — it holds the seat and the dimmed room around it. */
@@ -53,7 +53,7 @@ export const dimImage = style({
 export const seatBox = style({
   position: 'absolute',
   overflow: 'hidden',
-  border: `1.5px solid ${c.label.control}`,
+  border: `var(--width-150) solid ${c.label.control}`,
   pointerEvents: 'none',
 })
 

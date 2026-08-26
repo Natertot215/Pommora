@@ -55,7 +55,7 @@
   padding: 8px 9px;
   min-width: 0;
   background: var(--state-muted);
-  border-top: var(--border-cell);
+  border-top: var(--width-150) solid var(--border-base);
 }
 
 /* One line inside the title area — the title itself or the location beneath it. */

@@ -77,9 +77,9 @@ const controlScale = createGlobalTheme(':root', {
 export const DISCLOSURE_INDENT = 14
 
 /** The shared left lane the fold chevron + block grips render in — one lane width agreed on by the
- *  editor, table views, block tiles, and embeds (theme-vars bridges it to `--width-detail`; embeds
+ *  editor, table views, block tiles, and embeds (theme-vars bridges it to `--inset-detail`; embeds
  *  override with the same base scaled by `--mdpm-scale`). */
-export const DETAIL_WIDTH = 20
+export const INSET_DETAIL = 20
 
 /** Px an insertion line is pulled in from its surface's edges — the third dimension of the
  *  drop-line primitive (`--drop-line-thickness` / `--drop-dot-size` carry the other two). */

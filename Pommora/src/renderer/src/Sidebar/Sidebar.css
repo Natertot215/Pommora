@@ -69,8 +69,8 @@
   top: 46px;
   bottom: var(--ribbon-divider-bottom);
   right: 0px;
-  width: 1.75px;
-  background: var(--fill-secondary);
+  width: var(--width-175);
+  background: var(--border-faint);
 }
 /* The sidebar's icon buttons — a square button-large box, borderless over its own transparency,
    the secondary tone lifting on hover. The ribbon's glyphs and the pane toggle share it; each keeps

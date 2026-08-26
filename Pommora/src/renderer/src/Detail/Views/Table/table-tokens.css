@@ -25,8 +25,8 @@
 
   /* — Borders — the ONE token for every standard table hairline (vertical column lines + horizontal row
        underlines). The heading row's seams are heavier/different (see Heading below). — */
-  --table-border-width: 1.25px;
-  --table-border: var(--table-border-width) solid var(--separator-border);
+  --table-border-width: var(--width-125);
+  --table-border: var(--table-border-width) solid var(--border-base);
   --cell-active-radius: 4px; /* corner radius of the borderless active-cell accent ring */
 
   /* — Heading row — the header band reads distinct from the body: a faint fill, dimmed control text, a
@@ -34,10 +34,10 @@
        full-height hairlines). */
   --heading-fill: var(--fill-quinary);
   --heading-text: var(--label-control);
-  --heading-divider: var(--border-heading);
-  --heading-segment: var(--label-tertiary);
+  --heading-divider: var(--width-175) solid var(--border-base);
+  --heading-segment: var(--border-light);
   --heading-segment-height: 16px; /* shorter than the row — reads like a segmented control */
-  --heading-segment-width: 1.5px;
+  --heading-segment-width: var(--width-150);
   --heading-padding-y: 8px; /* clears the label off the top + bottom seams */
 
   /* — Group sections — the seam law's binding (GroupBand.css): the row rhythm is the shoulder;

@@ -23,7 +23,7 @@ const PILL_RADIUS = '6px'
 const ROW_END_RADIUS = '7px'
 
 // The hairline both dividers draw; each states its own margin.
-const hairline = { height: '1px', background: c.separator.border } as const
+const hairline = { height: 'var(--width-100)', background: c.border.base } as const
 
 /* The picker's intrinsic width — the PickerMenu pane shrink-wraps this (+ its gutters). THE
    sizing knob; everything inside flows from it.*/
@@ -137,7 +137,7 @@ export const pill = style({
   zIndex: -1,
   selectors: { [`${day}:hover &`]: { background: c.state.hover } },
 })
-export const pillToday = style({ boxShadow: `inset 0 0 0 1px ${c.label.tertiary}` })
+export const pillToday = style({ boxShadow: `inset 0 0 0 var(--width-100) ` })
 export const pillSelected = style({ background: `${endpointFill} !important` })
 export const daySelected = style({ fontWeight: font.weight.semibold })
 /* Range endpoints stay FULLY rounded pills; the band runs UNDERNEATH them (a half-width
@@ -177,7 +177,7 @@ export const field = style({
   display: 'flex',
   alignItems: 'center',
   gap: '6px',
-  border: `1px solid ${c.separator.border}`,
+  border: `var(--width-100) solid ${c.border.base}`,
   borderRadius: '8px',
   padding: '4px 7px',
   background: c.fill.tertiary, // ad-hoc fill on this surface, not the shared token ramp

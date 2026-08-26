@@ -30,7 +30,7 @@ code {
   font-weight: 600;
   margin: 0 0 20px;
   padding-bottom: 8px;
-  border-bottom: 1px solid var(--separator-border);
+  border-bottom: var(--width-100) solid var(--border-base);
 }
 
 .ds-swatches {
@@ -42,7 +42,7 @@ code {
   border-radius: 10px;
   overflow: hidden;
   background: var(--surface-secondary);
-  border: 1px solid var(--separator-border);
+  border: var(--width-100) solid var(--border-base);
 }
 .ds-swatch-chip {
   height: 64px;
@@ -78,12 +78,12 @@ code {
   color: var(--label-tertiary);
   font-weight: 600;
   padding-bottom: 14px;
-  border-bottom: 1px solid var(--separator-border);
+  border-bottom: var(--width-100) solid var(--border-base);
   margin-bottom: 4px;
 }
 .ds-type-entry {
   padding: 12px 0;
-  border-bottom: 1px solid var(--separator-border);
+  border-bottom: var(--width-100) solid var(--border-base);
 }
 .ds-type-entry-label {
   font-size: 11px;
@@ -131,7 +131,7 @@ code {
   border-radius: 6px;
   background: var(--surface-tertiary);
   color: var(--label-secondary);
-  border: 1px solid var(--separator-border);
+  border: var(--width-100) solid var(--border-base);
 }
 
 .ds-icon-grid {
@@ -147,7 +147,7 @@ code {
   padding: 14px 8px;
   border-radius: 10px;
   background: var(--surface-secondary);
-  border: 1px solid var(--separator-border);
+  border: var(--width-100) solid var(--border-base);
   color: var(--label-primary);
 }
 .ds-icon-name {
@@ -454,7 +454,7 @@ code {
 .gl-sw {
   padding: 4px 10px;
   border-radius: 6px;
-  border: 1px solid var(--separator-border);
+  border: var(--width-100) solid var(--border-base);
   background: transparent;
   color: var(--label-secondary);
   font: inherit;
@@ -471,7 +471,7 @@ code {
   overflow: hidden;
   background-size: cover;
   background-position: center;
-  border: 1px solid var(--separator-border);
+  border: var(--width-100) solid var(--border-base);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -518,7 +518,7 @@ code {
   width: 100%;
   padding: 8px 12px;
   border-radius: 8px;
-  border: 1px solid var(--separator-border);
+  border: var(--width-100) solid var(--border-base);
   background: transparent;
   color: var(--label-primary);
   font: inherit;
@@ -540,7 +540,7 @@ code {
 .gl-preset-btn {
   padding: 5px 12px;
   border-radius: 7px;
-  border: 1px solid var(--separator-border);
+  border: var(--width-100) solid var(--border-base);
   background: var(--state-selected);
   color: var(--label-primary);
   font: inherit;
@@ -605,7 +605,7 @@ code {
 .ds-tint-swatch {
   height: 28px;
   border-radius: 6px;
-  border: 1px solid var(--separator-border);
+  border: var(--width-100) solid var(--border-base);
 }
 
 .ds-switcher {
@@ -616,7 +616,7 @@ code {
 }
 .ds-switcher-btn {
   appearance: none;
-  border: 1px solid var(--separator-border);
+  border: var(--width-100) solid var(--border-base);
   border-radius: 8px;
   background: var(--fill-quinary, transparent);
   color: var(--label-secondary, #f1f1f1a6);

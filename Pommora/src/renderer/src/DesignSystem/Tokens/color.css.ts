@@ -57,11 +57,11 @@ const derived = createGlobalTheme(':root', {
       selected: tintAt(grey, 5),
       muted: tintAt(black, 10),
     },
-    // Hairlines — system-grey. `border` is the one hairline tone; `segment` is the lighter step the
-    // outliner rails and segment dividers wear.
-    separator: {
-      border: tintAt(grey, 25),
-      segment: tintAt(grey, 20),
+    // Edge colors — standalone and purposefully distinct grey tones for borders, segments, and dividers.
+    border: {
+      base: tintAt(grey, 25),
+      light: tintAt(grey, 20),
+      faint: tintAt(grey, 15),
     },
   },
 })
@@ -70,8 +70,8 @@ const derived = createGlobalTheme(':root', {
 // pickers). Not a color, but this is the design-system's named-token home. Consume via `shadowStandardVar`.
 globalStyle(':root', {
   vars: {
-    '--shadow-standard': '0 8px 25px #00000040',
-    '--shadow-lift': '0 12px 30px #00000066',
+    '--shadow-base': '0 8px 25px #00000040',
+    '--shadow-strong': '0 12px 30px #00000065',
   },
 })
 export const shadowStandardVar = 'var(--shadow-standard)'

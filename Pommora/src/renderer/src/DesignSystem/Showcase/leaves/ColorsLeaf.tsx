@@ -19,7 +19,7 @@ const COLOR_GROUPS: Array<[string, Record<string, string>]> = [
   ['Surface', vars.color.surface],
   ['Fills', vars.color.fill],
   ['States', vars.color.state],
-  ['Separators', vars.color.separator],
+  ['Borders', vars.color.border],
 ]
 
 type SwatchItem = { id: string; name: string; color: string }

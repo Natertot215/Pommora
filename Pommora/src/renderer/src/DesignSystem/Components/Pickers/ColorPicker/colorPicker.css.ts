@@ -25,7 +25,7 @@ export const swatch = style({
   cursor: 'default',
   background: 'var(--sw)',
   // The hairline keeps a dark cell legible against the pane.
-  boxShadow: `inset 0 0 0 1px ${c.separator.border}`,
+  boxShadow: `inset 0 0 0 var(--width-100) ${c.border.base}`,
   outline: 'none',
   outlineOffset: '1px',
 })
@@ -35,5 +35,5 @@ export const swatch = style({
  *  so without a separator the two merge into a single blob. */
 export const swatchSelected = style({
   boxShadow: `0 0 0 1px ${tintAt(c.system.black, 60)}`,
-  outline: '2px solid var(--ring)',
+  outline: 'var(--width-200) solid var(--ring)',
 })

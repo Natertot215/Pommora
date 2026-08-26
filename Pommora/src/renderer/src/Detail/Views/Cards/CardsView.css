@@ -130,7 +130,7 @@
   flex-direction: column;
   width: 100%;
   height: 100%;
-  border: var(--border-cell);
+  border: var(--width-150) solid var(--border-base);
   border-radius: 10px;
   overflow: hidden;
   background: none;
@@ -254,6 +254,6 @@
   display: flex;
   min-width: 0;
   margin-top: auto;
-  border-top: var(--border-cell);
+  border-top: var(--width-150) solid var(--border-base);
   padding-top: 5px; /* KNOB — divider-to-crumbs clearance */
 }
