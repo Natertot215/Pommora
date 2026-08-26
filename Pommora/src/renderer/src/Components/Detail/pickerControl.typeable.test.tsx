@@ -33,7 +33,7 @@ function mount(): void {
         value="1"
         options={OPTIONS}
         onPick={() => {}}
-        typeable={{ text: '100', onCommit }}
+        typeable={{ text: '100', suffix: '%', onCommit }}
       />,
     )
   })
@@ -72,6 +72,13 @@ describe('a typeable picker', () => {
     expect(input?.value).toBe('100')
     expect(document.activeElement).toBe(input)
     expect([input?.selectionStart, input?.selectionEnd]).toEqual([0, 3])
+  })
+
+  it('keeps the unit drawn beside the field', () => {
+    expect(trigger().textContent).toContain('100%')
+    press(trigger(), 'contextmenu', { button: 2 })
+    expect(field()?.value).toBe('100')
+    expect(host.textContent).toContain('%')
   })
 
   it('leaves the list closed', () => {

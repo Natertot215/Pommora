@@ -26,6 +26,10 @@ export const value = style([
   { selectors: { '&&': { color: c.label.secondary } } },
 ])
 
+/** Field and unit as one word — the trigger's own gap would open between the digits and the mark
+ *  they are counted in. */
+export const written = style({ display: 'inline-flex', alignItems: 'center' })
+
 /** What the value wears while it is being written rather than read — the UA's box stripped, sized to
  *  its text. Worn ALONGSIDE whichever value tone the trigger is already showing, so a footing picker
  *  keeps its own while editing rather than reverting to the standard one. */
