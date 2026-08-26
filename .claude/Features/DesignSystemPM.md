@@ -122,6 +122,17 @@ Hover and selected paint behind content, muted over it; the three opacities are 
 | Standard | `shadowStandardVar` · `--shadow-standard` | `0 8px 25px #00000040`  |
 | Lift     | `shadowLiftVar` · `--shadow-lift`         | `0 12px 30px #00000066` |
 
+#### Fades
+
+The over-scroll edge-dissolve widths a scrollable surface names on `--over-scroll-fade`; the OverScroll primitive reads that to fade a row out as it leaves the viewport. A floating window sets its own dynamically, to its toolbar's height, so content dissolves exactly under the toolbar.
+
+| Title       | Token           | Value  | Role                              |
+| ----------- | --------------- | ------ | --------------------------------- |
+| Fade Light  | `--fade-light`  | `12px` | a small control (the text picker) |
+| Fade Base   | `--fade-base`   | `16px` | the common case — lists, tabs, pickers, cards |
+| Fade Strong | `--fade-strong` | `20px` | cell overflow (the chip run)      |
+| Fade Heavy  | `--fade-heavy`  | `24px` | a detail surface (the sidebar)    |
+
 #### Spectrum
 
 **SOURCE:** `Pommora/src/shared/theme.ts` — authored once, validated by main and renderer alike; the accent resolves from it (or the OS accent) at runtime.
@@ -167,7 +178,8 @@ Hover and selected paint behind content, muted over it; the three opacities are 
 | Icon Ladder       | `size.icon.*` · `--icon-*` · `ICON_PX`         | Eleven steps named for the type ramp — `largeTitle` `26px` → `subline` `10px` |
 | Pill Radius       | `RADIUS_FULL` · `--radius-full`                | `999px`                                                           |
 | Disclosure Indent | `DISCLOSURE_INDENT` · `--disclosure-indent`    | `14px`                                                            |
-| Fold Gutter       | `FOLD_GUTTER` · `--fold-gutter-base`           | `20px`                                                            |
+| Width Content     | `--width-content`                              | `24px` — the content column's inset from the shell edges          |
+| Width Detail      | `DETAIL_WIDTH` · `--width-detail`              | `20px` — the grip / fold-chevron lane the editor, tables, and tiles share |
 | Drop Line         | `DROP_LINE_THICKNESS` · `DROP_DOT_SIZE` · `DROP_LINE_INSET` | `2px` · `7px` · `2px`                                |
 | List Outline      | `LIST_OUTLINE_WIDTH` · `LIST_OUTLINE_GAP` · `--list-outline-*` | `2px` · `3px` · segment tone · pill radius        |
 | Park / Close      | `PARK_CLEARANCE` · `CLOSE_CLEARANCE`           | `14px` · `30px`                                                   |
