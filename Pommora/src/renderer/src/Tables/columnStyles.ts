@@ -2,8 +2,8 @@ import { useCallback } from 'react'
 import { defaultStyleFor, type ColumnStyle, type DateFormat } from '@shared/columnStyles'
 import type { PropertyDefinition } from '@shared/properties'
 import type { SavedView } from '@shared/views'
-import { declaredType } from '../pipeline/value'
-import { useSession } from '../../store'
+import { declaredType } from '@renderer/Views/pipeline/value'
+import { useSession } from '@renderer/store'
 
 /** The resolved style for a column: the saved entry's defined keys win over the type defaults
  *  (a caught-invalid saved value parses to `undefined` and must not erase a default). The nexus's

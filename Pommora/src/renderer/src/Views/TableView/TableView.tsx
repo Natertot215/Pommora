@@ -32,22 +32,22 @@ import { useSaveView } from '@renderer/Embeds/ViewEmbedScope'
 import type { SetTreeNode } from '../pipeline/group'
 import { buildResolveContext, type ResolveContext } from './resolveContext'
 import { writeContextValue } from '../contextCellWrite'
-import { buildSetIcons, buildSetNames, buildSetPaths } from './cellResolve'
+import { buildSetIcons, buildSetNames, buildSetPaths } from '@renderer/Tables/cellResolve'
 import { BandDnd, type BandDrop } from '../BandDnd'
 import { flattenBands, propertyOrderAfterDrop, reparentFsOrder } from '../bandDndModel'
 import { bandReorderPatch, groupingKeyOf, useBandOrdering } from '../useBandOrdering'
 import { nextOrder } from '@renderer/Sidebar/sidebarDndModel'
-import { Cell } from './Cell'
+import { Cell } from '@renderer/Tables/Cell'
 import { EntityIcon } from '@renderer/Components/EntityIcon'
 import { PropertyTypeIcon } from '@renderer/Properties/PropertyTypes'
 import { ViewGroupBand } from '../ViewGroupBand'
 import { Reveal } from '@renderer/DesignSystem/Animation/Reveal'
 import { resolveBandHead } from '../GroupBand'
-import { columnLabel } from './columnLabel'
-import { clampWidth, widthFor } from './columnWidths'
-import { alignFor } from './columnAlign'
-import { useStyleFor } from './columnStyles'
-import { reorderColumns } from './columnReorder'
+import { columnLabel } from '@renderer/Tables/columnLabel'
+import { clampWidth, widthFor } from '@renderer/Tables/columnWidths'
+import { alignFor } from '@renderer/Tables/columnAlign'
+import { useStyleFor } from '@renderer/Tables/columnStyles'
+import { reorderColumns } from '@renderer/Tables/columnReorder'
 import { mergeOverrides, mergeStyleRecords } from './viewMerge'
 import { groupKeyToValue, REASSIGNABLE_GROUP_TYPES } from './reassign'
 import { cx } from '@renderer/DesignSystem/Util/cx'
@@ -58,12 +58,14 @@ import { PickerMenu } from '@renderer/DesignSystem/Components/Pickers/PickerMenu
 import { TextPicker } from '@renderer/DesignSystem/Components/Pickers/TextPicker'
 import { numberDivisor } from '../PropertyEditing/formatValue'
 import { usePointerGesture } from '@renderer/DesignSystem/Interactions/gesture'
+import { ColumnHeader } from '@renderer/Tables/ColumnHeader'
+import './TableView.css'
 import { announce } from '@renderer/DesignSystem/Interactions/a11y'
 import { findScroller, startAutoScroll } from '@renderer/DesignSystem/Interactions/autoscroll'
 import { GHOST_DWELL_MS, useClearStrandedGhost, useGhostAnchor } from '../useGhostAnchor'
 import { useViewCreation } from '../useViewCreation'
-import { TableRowDnd, useTableRowDrag } from './tableDnd'
-import { solidColorCss } from './solidColor'
+import { TableRowDnd, useTableRowDrag } from '@renderer/Tables/tableDnd'
+import { solidColorCss } from '@renderer/Tables/solidColor'
 import { openWebLink } from '@renderer/openWebLink'
 import {
   linkAlias,
@@ -1551,7 +1553,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   }
 
   return (
-    <div ref={viewRef} className={cx('table-view', overflowing && 'overflowing')}>
+    <div ref={viewRef} className={cx('table table-view', overflowing && 'overflowing')}>
       <IconPicker
         open={iconPickerOpen}
         onClose={() => setIconPickerOpen(false)}
@@ -1627,83 +1629,6 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       </BandDnd>
       {cellPicker()}
       {renameField()}
-    </div>
-  )
-}
-
-/** One column header: the whole cell is the grab surface for the smooth-shift reorder (`dragging`
- *  applies the ghost veil + solid band, `transform` slides it with the cursor) plus a right-edge resize
- *  strip. The strip stops propagation so a resize never starts a reorder; the resize pointer delta
- *  is divided by the live zoom so a screen drag maps onto the grid's pre-zoom track width. */
-function ColumnHeader({
-  id,
-  label,
-  icon,
-  width,
-  align,
-  transform,
-  dragging,
-  onDragStart,
-  onResize,
-  onResizeStart,
-  onResizeAbort,
-  onResizeEnd,
-  onResizeCommit,
-  onContextMenu,
-}: {
-  id: string
-  label: string
-  icon: React.ReactNode
-  width: number
-  align: ColumnAlign
-  transform: string | undefined
-  dragging: boolean
-  onDragStart: (e: React.PointerEvent) => void
-  onResize: (id: string, width: number) => number
-  onResizeStart: (id: string) => void
-  onResizeAbort: () => void
-  onResizeEnd: () => void
-  onResizeCommit: (id: string, width: number) => void
-  onContextMenu?: (e: React.MouseEvent) => void
-}): React.JSX.Element {
-  const beginGesture = usePointerGesture()
-  // On the skeleton like its GFM sibling: cancel reverts instead of committing, and a zero-move
-  // click ends through teardown alone.
-  const startResize = (e: React.PointerEvent<HTMLSpanElement>): void => {
-    e.preventDefault()
-    e.stopPropagation() // a resize never bubbles up to start a column reorder
-    const grip = e.currentTarget
-    const cell = grip.closest('.col-header')
-    const zoom = (cell && cell.getBoundingClientRect().width / width) || 1
-    const startX = e.clientX
-    let last = width
-    beginGesture({
-      el: grip,
-      event: e,
-      activation: 0,
-      onActivate: () => {
-        onResizeStart(id)
-        return true
-      },
-      onDragMove: (ev) => {
-        last = onResize(id, width + (ev.clientX - startX) / zoom)
-      },
-      onDrop: () => onResizeCommit(id, last),
-      onAbort: onResizeAbort,
-      teardown: onResizeEnd,
-    })
-  }
-  return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
-    <div
-      className={cx('col-header', text.callout.semibold, dragging && 'col-dragging')}
-      style={{ transform, textAlign: align }}
-      onPointerDown={onDragStart}
-      onContextMenu={onContextMenu}
-    >
-      {icon}
-      {label}
-      <span className="col-resizer" onPointerDown={startResize} />
     </div>
   )
 }

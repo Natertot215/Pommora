@@ -16,8 +16,8 @@ import './Carets.css'
 import './Sidebar/Sidebar.css'
 import './Detail/Detail.css'
 import './Detail/Banner/Banner.css'
-import './Views/TableView/table-tokens.css'
-import './Views/TableView/Table.css'
+import './Tables/table-tokens.css'
+import './Tables/Table.css'
 
 createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>

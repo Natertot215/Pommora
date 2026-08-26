@@ -123,6 +123,7 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 │   │           ├── // Settings          | • The settings surface
 │   │           ├── // Sidebar           | • The ribbon and its content column
 │   │           ├── // SurfacePM         | • The tile-based dashboard engine
+│   │           ├── // Tables            | • The tabular chrome — TableView and the Trash wear it
 │   │           ├── // Tabs              | • The tabs + navigational overlays
 │   │           ├── // Toolbar           | • The window toolbar
 │   │           ├── // Views             | • The view pipeline and renderers — TableView, CardView, bands

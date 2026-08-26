@@ -162,7 +162,7 @@ export const body = style({
 })
 
 /** The embed zoom lands on the table's own token scope — the var is declared ON .table-view
- *  (table-tokens.css), so only a descendant-scoped redeclaration outranks it. The root var carries
+ *  (Tables/table-tokens.css), so only a descendant-scoped redeclaration outranks it. The root var carries
  *  the Embed Scale setting; its fallback is the default the setting stores no key for. */
 globalStyle(`${body} .table-view, ${body} .table-empty`, {
   vars: { '--zoom': `var(--view-embed-zoom, ${viewEmbedZoom(EMBED_SCALE_DEFAULT)})` },
@@ -196,8 +196,9 @@ globalStyle(`${body} .cards-view .group-band-row`, {
 })
 
 /** Embedded tables shed the column-header band chrome — no heading fill, no divider under it;
- *  the header row reads as bare column labels over the data. */
-globalStyle(`${body} .table-head`, { background: 'none', borderBottom: 'none' })
+ *  the header row reads as bare column labels over the data: the clear heading, bound the way any
+ *  host tunes its heading. */
+globalStyle(`${body} .table`, { vars: { '--heading-fill': 'none', '--heading-divider': 'none' } })
 
 /** The heading strip's leading cap (.col-header:first-child::before) marks the gutter↔Title junction, so
  *  it sits --inset-detail in — but the embed header insets at HEAD_PAD_L. Pull ONLY the cap out to the

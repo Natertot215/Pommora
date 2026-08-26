@@ -1,5 +1,5 @@
 import { type PropertyDefinition, RESERVED_PROPERTY_ID } from '@shared/properties'
-import type { ContextIdentity } from '../pipeline/contextIdentity'
+import type { ContextIdentity } from '@renderer/Views/pipeline/contextIdentity'
 
 // Built-in reserved columns with fixed English labels (context titles are registry data).
 const RESERVED_LABEL: Record<string, string> = {

@@ -1,15 +1,11 @@
 /* ============================================================================
-   TABLE TOKENS — the single source for every tunable number in the table view.
-   Retune any table dimension by editing ONE line here, aliased to a design-system
-   token wherever one exists. Scoped to the table surface so the vars stay
-   table-owned (no global leak).
+   TABLE TOKENS — the single source for every tunable number in a table. Retune any dimension by
+   editing ONE line here, aliased to a design-system token wherever one exists. Scoped to `.table`,
+   the class every tabular surface wears, so the vars stay table-owned (no global leak); a host
+   rebinds what it needs — the heading fill and divider, the cell padding — in its own scope.
    ============================================================================ */
-/* `.trash-leaf` borrows the heading half — the seam, the control tone and the segment bars — so a
-   column strip reads the same wherever one is drawn. It takes the tokens by joining this scope
-   rather than restating their values. */
-.table-view,
-.table-empty,
-.trash-leaf {
+.table,
+.table-empty {
   /* — Density — */
   --zoom: 1; /* One knob scales text + chips + padding + widths together. */
 
