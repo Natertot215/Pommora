@@ -29,7 +29,7 @@
 
 1. **Read the atlas's Executive Summary and Part V, then rule.** Twenty-six decisions, each with a recommendation. The structural nine (D-A to D-I) gate the ledger; the rest can be taken in any order.
 2. **Fix the one bug** — `Blocks/ViewEmbedBlock.tsx:88` → `cellRing(key)`. One line; it does not wait for a ruling.
-3. **The first three token edits are five lines** — mint the three seam widths, move `label.quaternary` to Separators as `separator.control`, mint `--border-control`. They are the precondition for the separator rule being lintable and they change zero pixels.
+3. **The remaining seam edits are two mints** — the three seam widths and `--border-control` beside them. They are the precondition for the separator rule being lintable and they change zero pixels.
 4. **The lint rule (D-B)** can land before the reaches close: `noRestrictedImports` from `DesignSystem/**` with an allowlist of the three files.
 5. **Eyeball the Space dropdown** — still owed from 08-25.
 6. **Inline Page Properties** runs parallel and shares no files with any of this.
@@ -42,10 +42,10 @@
 
 #### Session Pointers
 
-- `.claude/Planning/RendererAtlas.md` — the document. Executive Summary first; Part III.1 for the tree; Part V for what needs a ruling; Part IV.4's ranked ten for the first token edits.
+- `.claude/Planning/RendererAtlas.md` — the document. Executive Summary first; Part III.1 for the tree; Part V for what needs a ruling; Part IV.4's ranked list for the first token edits.
 - The seven lenses' tables — `cartographer.csv`, `boundary.csv`, `stylist-*.csv`, `semantic-*.csv`, `recipe-verdicts.csv`, `lexicographer-*.csv`, `archivist-*.csv` — and `ledger.py`, which generated the file-placement ledger from the Cartographer's graph, sit in this session's scratchpad under `atlas/`. They are working files, not part of the repo.
 - `.claude/Planning/Codebase-Cleanup-Checklist.md` — Bundles 4, 5, 6 (the view host), 7, 8 remain; the header and ordering constraints point at the atlas.
-- `Pommora/src/renderer/src/DesignSystem/Tokens/theme-vars.css.ts:59-65` — the three seam shorthands the first mint publishes widths beside; `:105` the raw `15%` that `--accent-fill`'s redefinition removes.
+- `Pommora/src/renderer/src/DesignSystem/Tokens/theme-vars.css.ts` — the three seam shorthands (`--border-heading`/`-cell`/`-segment`) the first mint publishes widths beside.
 
 #### Working Notes
 
