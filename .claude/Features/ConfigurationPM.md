@@ -147,7 +147,6 @@ A Collection's own configuration, stored in its `_pagecollection.json` sidecar a
 | --- | --- | --- | --- |
 | Open In | `open_in` | How a page opens from its container. | **Full Page** · Page Preview |
 | Show Title | `view_button` | Whether the view dropdown button shows the view's name beside its glyph. | **Icon** · Labeled |
-| View Style | `view_style` | How the view switcher presents itself. | **Dropdown** · Toolbar |
 
 The sidecar's remaining fields are structure rather than configuration: the entity's id and icon, its banner, its page and set ordering, its property assignment list, and its saved views.[^6]
 

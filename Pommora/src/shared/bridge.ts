@@ -142,7 +142,7 @@ export interface Asks {
     args: [
       containerPath: string,
       kind: 'collection' | 'set',
-      patch: { open_in?: OpenIn; view_button?: ViewButton; view_style?: ViewStyle },
+      patch: { open_in?: OpenIn; view_button?: ViewButton },
     ]
     reply: Result<null>
   }
@@ -301,7 +301,7 @@ export interface Asks {
 
   // Native menus — each resolves the picked action, or null on dismiss
   'view-button-menu': {
-    args: [current: { viewButton: ViewButton; viewStyle: ViewStyle }]
+    args: [current: { viewButton: ViewButton }]
     reply: ViewButtonMenuAction | null
   }
   'view-row-menu': { args: [ctx: ViewRowMenuContext]; reply: ViewRowAction | null }

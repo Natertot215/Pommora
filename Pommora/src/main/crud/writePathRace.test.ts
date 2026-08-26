@@ -58,12 +58,12 @@ describe('concurrent sidecar writers', () => {
     await Promise.all([
       setChildOrder(folder, 'set_order', ['s1']),
       saveView(folder, 'collection', view('view_1')),
-      setContainerConfig(folder, 'collection', { view_style: 'toolbar' }),
+      setContainerConfig(folder, 'collection', { view_button: 'labeled' }),
     ])
     const sidecar = await readSidecar(folder, 'collection', pageCollectionSidecar)
     expect(sidecar?.set_order).toEqual(['s1'])
     expect((sidecar?.views as SavedView[] | undefined)?.map((v) => v.id)).toEqual(['view_1'])
-    expect(sidecar?.view_style).toBe('toolbar')
+    expect(sidecar?.view_button).toBe('labeled')
     // The sidecar's own identity is never a casualty of a merge that lost its base.
     expect(typeof sidecar?.id).toBe('string')
   })

@@ -42,13 +42,7 @@ import {
 } from '@shared/types'
 import { isColorKey } from '@shared/theme'
 import { savedView, type SavedView } from '@shared/views'
-import {
-  type Crop,
-  coerceOpenIn,
-  coerceViewButton,
-  coerceViewStyle,
-  cropsFile,
-} from '@shared/schemas'
+import { type Crop, coerceOpenIn, coerceViewButton, cropsFile } from '@shared/schemas'
 import { LINK_DISPLAYS, type PropertyDefinition } from '@shared/properties'
 import { makeCollectionNode, makePageNode, makeSetNode, makeSpaceNode } from '@shared/treePatch'
 import { adoptedId } from './ids'
@@ -476,7 +470,6 @@ async function readSet(
     pages: resolveOrder(pages, asStringArray(meta.page_order), fb),
     views: parseViews(meta.views),
     viewButton: coerceViewButton(meta.view_button),
-    viewStyle: coerceViewStyle(meta.view_style),
   })
 }
 
@@ -522,7 +515,6 @@ async function readPageCollection(
     views: parseViews(meta.views),
     openIn: coerceOpenIn(meta.open_in),
     viewButton: coerceViewButton(meta.view_button),
-    viewStyle: coerceViewStyle(meta.view_style),
   })
 }
 

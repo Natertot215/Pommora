@@ -14,7 +14,6 @@ import type {
   SetNode,
   SpaceNode,
   ViewButton,
-  ViewStyle,
 } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
 import type { SavedView } from '@shared/views'
@@ -76,7 +75,6 @@ export function makeSetNode(f: {
   pages?: PageNode[]
   views?: SavedView[]
   viewButton?: ViewButton
-  viewStyle?: ViewStyle
 }): SetNode {
   return {
     kind: 'set',
@@ -90,7 +88,6 @@ export function makeSetNode(f: {
     pages: f.pages ?? [],
     views: f.views,
     viewButton: f.viewButton,
-    viewStyle: f.viewStyle,
   }
 }
 
@@ -107,7 +104,6 @@ export function makeCollectionNode(f: {
   views?: SavedView[]
   openIn?: OpenIn
   viewButton?: ViewButton
-  viewStyle?: ViewStyle
 }): CollectionNode {
   return {
     kind: 'collection',
@@ -123,7 +119,6 @@ export function makeCollectionNode(f: {
     views: f.views,
     openIn: f.openIn,
     viewButton: f.viewButton,
-    viewStyle: f.viewStyle,
   }
 }
 
