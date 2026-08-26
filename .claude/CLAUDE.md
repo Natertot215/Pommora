@@ -111,6 +111,7 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 │   │   └── // renderer                  | • The React renderer — it never touches Node
 │   │       └── // src
 │   │           ├── // Blocks            | • Tile content for the dashboard layer
+│   │           ├── // Cards             | • The card chassis — the gallery and CardView wear it
 │   │           ├── // Components        | • Shared components — chips, icons, editable titles
 │   │           ├── // Detail            | • The main pane — routed views, inspector, subfield, banner
 │   │           ├── // Embeds            | • The embed framework's consumers
