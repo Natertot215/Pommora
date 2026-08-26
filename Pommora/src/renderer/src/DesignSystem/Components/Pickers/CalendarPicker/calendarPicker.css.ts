@@ -191,7 +191,6 @@ export const fieldValue = style({
   fontWeight: font.weight.emphasized,
   color: c.label.primary,
 })
-export const fieldEmpty = style({ color: c.label.tertiary })
 /* Equal halves everywhere — the time field just tightens its own
    metrics so [hh]:[mm] AM/PM fits its half. */
 export const fieldTime = style({ flex: 1, gap: '4px', paddingLeft: '6px', paddingRight: '6px' })

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildResolveContext } from './resolveContext'
+import { buildResolveContext } from '@renderer/Properties/resolveContext'
 import { EMPTY_ASSET_MAP, type NexusTree } from '@shared/types'
 
 const tree = {

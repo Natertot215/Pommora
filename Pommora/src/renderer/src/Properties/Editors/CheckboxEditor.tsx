@@ -1,4 +1,4 @@
-import { resolveColor } from '@renderer/Tables/solidColor'
+import { resolveColor } from '@renderer/DesignSystem/Tokens/solidColor'
 import { ColorSwatch } from '@renderer/DesignSystem/Components/Controls/Switches/ColorSwatch'
 import { PickerControl } from '@renderer/DesignSystem/Elements/PickerControl'
 import * as s from '../../Components/Detail/settingsPane.css'

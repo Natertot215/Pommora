@@ -1,3 +1,4 @@
+import { EmptyValue } from '@renderer/DesignSystem/Elements/EmptyValue/EmptyValue'
 import { useContext, useRef, useState } from 'react'
 import type { ResolvedColumn, ViewRow } from '@shared/types'
 import { isBlankValue, type PropertyValue } from '@shared/propertyValue'
@@ -6,18 +7,22 @@ import { cellMenuContextFor } from '@shared/cellMenu'
 import { parseStyleAction } from '@shared/columnMenu'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { text } from '@renderer/DesignSystem/Tokens/typography.css'
-import { declaredType, resolveFieldValue } from '../pipeline/value'
-import { GhostSuppress } from '../useGhostAnchor'
-import { Cell } from '@renderer/Tables/Cell'
+import { declaredType, resolveFieldValue } from '@renderer/Properties/value'
+import { GhostSuppress } from '@renderer/DesignSystem/Interactions/ghostAnchor'
+import { Cell } from '@renderer/Properties/Editing/Cell'
 import { linkAlias, linkEditText, urlValueFromEdit, urlValueFromRename } from '@shared/linkValue'
 import { resolveTitle, validateLink } from '@renderer/linkResolve'
 import { linkValueMenuTarget, showConnectionMenu } from '@renderer/Embeds/connectionMenu'
-import { parseEditorValue } from './cardValueInput'
-import type { ResolveContext } from '../TableView/resolveContext'
-import { PropertyEditor } from '../PropertyEditing/PropertyEditor'
-import { numberDivisor } from '../PropertyEditing/formatValue'
-import { sharedValueClickAction } from '../PropertyEditing/valueClick'
-import { fileChipIndex, pickFileInto, runFileMenuAction } from '../PropertyEditing/filePick'
+import { parseEditorValue } from '@renderer/Properties/Editing/cardValueInput'
+import type { ResolveContext } from '@renderer/Properties/resolveContext'
+import { PropertyEditor } from '@renderer/Properties/Editing/PropertyEditor'
+import { numberDivisor } from '@renderer/Properties/Editing/formatValue'
+import { sharedValueClickAction } from '@renderer/Properties/Editing/valueClick'
+import {
+  fileChipIndex,
+  pickFileInto,
+  runFileMenuAction,
+} from '@renderer/Properties/Editing/filePick'
 
 export function CardValue({
   row,
@@ -197,7 +202,7 @@ export function CardValue({
       ) : isBlankValue(v) && canFillBlank ? (
         // A visible-but-empty property (Standard shows every visible property, filled or not): a clickable
         // placeholder so the row fills in place — only for kinds a blank click actually fills.
-        <span className={cx('card-value-empty', text.caption.emphasized)}>—</span>
+        <EmptyValue className={cx('card-value-empty', text.caption.emphasized)} />
       ) : (
         <Cell
           row={row}

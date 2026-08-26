@@ -6,7 +6,6 @@ import {
   Icon,
   type IconName,
 } from '@renderer/DesignSystem/Symbols'
-import { DashIcon } from './DashIcon'
 
 /**
  * The single source for per-property-type presentation, catalogd in Features/SymbolsPM.md.
@@ -55,7 +54,7 @@ export function PropertyTypeIcon({
   size?: React.ComponentProps<typeof Icon>['size']
 }): React.JSX.Element {
   const name = (type === 'title' ? TITLE_META : PROPERTY_TYPES[type]).icon
-  return name ? <Icon name={name} size={size} /> : <DashIcon />
+  return <Icon name={name ?? 'square-dashed'} size={size} />
 }
 
 /** One shape for both Sort's What and Filter's What — the panes differ only in which defs

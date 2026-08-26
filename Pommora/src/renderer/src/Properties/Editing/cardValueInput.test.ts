@@ -2,13 +2,13 @@ import { describe, expect, it } from 'vitest'
 import type { PropertyDefinition } from '@shared/properties'
 import { propertyKey } from '@shared/propertyValue'
 import type { ResolvedColumn, ViewRow } from '@shared/types'
-import type { ResolveContext } from '../TableView/resolveContext'
+import type { ResolveContext } from '@renderer/Properties/resolveContext'
 import {
   type AddEntry,
   orderAddableEntries,
   parseEditorValue,
   shownColumnsFor,
-} from './cardValueInput'
+} from '@renderer/Properties/Editing/cardValueInput'
 
 describe('parseEditorValue', () => {
   it('number: parses a finite value, trims, clears on empty, rejects garbage', () => {

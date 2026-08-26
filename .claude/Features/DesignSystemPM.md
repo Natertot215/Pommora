@@ -267,6 +267,7 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 | ProgressBar | `ProgressBar` | A determinate bar on the accent. |
 | PickerControl | `PickerControl` · `labelOf` · `PickerChoice` · `pickerValue` | The double-chevron picker: two options toggle in place; three or more pop a PickerMenu; right-clicks write values into the field. |
 | EyeToggle | `EyeToggle` · `EYE_ICON` | The visibility eye — the current state's glyph at rest, the toggle previewed on hover. |
+| EmptyValue | `EmptyValue` | The one "nothing here yet" mark a value slot shows — a property row, a card value, a date field — a tertiary `—`; the host sets the type size. |
 
 ### Components
 

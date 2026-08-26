@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { checkboxBoxStyle } from './checkboxLook'
+import { checkboxBoxStyle } from '@renderer/Properties/Editing/checkboxLook'
 
 const base = (checked: boolean, color?: string): string | undefined =>
   (checkboxBoxStyle(checked, color) as Record<string, string>)['--label-base']

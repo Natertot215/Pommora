@@ -30,7 +30,7 @@ import { DragGhost } from '@renderer/DesignSystem/Interactions/DragGhost'
 import { EyeToggle } from '@renderer/DesignSystem/Elements/EyeToggle'
 import { DualSwitch } from '@renderer/DesignSystem/Components/Controls/Switches/DualSwitch'
 import { useSaveView } from '@renderer/Embeds/ViewEmbedScope'
-import { declaredType } from '@renderer/Views/pipeline/value'
+import { declaredType } from '@renderer/Properties/value'
 import {
   bucketKey,
   bucketOrder,
@@ -38,7 +38,7 @@ import {
   groupsStructurally,
   subHiddenKey,
 } from '@renderer/Views/pipeline/group'
-import { formatBucketLabel, NUMERIC_FORMATS } from '@renderer/Views/PropertyEditing/formatValue'
+import { formatBucketLabel, NUMERIC_FORMATS } from '@renderer/Properties/Editing/formatValue'
 import type { Band } from '@renderer/Views/bandDndModel'
 import { reparentFsOrder, structuralOrderAfterDrop } from '@renderer/Views/bandDndModel'
 import { nextOrder } from '@renderer/Sidebar/sidebarDndModel'
@@ -51,7 +51,7 @@ import { propertyTypeIconName } from '../../Properties/PropertyTypes'
 import { useGroupingListDrag, type GroupingDrop } from './groupingDnd'
 import { hiddenRow } from './settingsPane.css'
 import * as gp from './groupingPane.css'
-import { OptionChip } from '@renderer/Views/PropertyEditing/OptionChip'
+import { OptionChip } from '@renderer/Properties/Editing/OptionChip'
 
 /** Checkbox is deliberately absent — the pipeline still renders it from a foreign sidecar; the
  *  pane never authors it. */

@@ -1,6 +1,6 @@
 import { type PropertyDefinition, RESERVED_PROPERTY_ID } from '@shared/properties'
 import { defaultStyleFor } from '@shared/columnStyles'
-import { declaredType } from '@renderer/Views/pipeline/value'
+import { declaredType } from '@renderer/Properties/value'
 
 export interface ColumnWidth {
   min: number

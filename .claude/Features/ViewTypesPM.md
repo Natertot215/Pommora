@@ -37,7 +37,7 @@ The **active view** is tracked per machine and kept out of the synced sidecar.[^
 
 Every renderer creates through one act (`useViewCreation.ts`): the page exists on disk as Untitled the moment a gesture fires, stamped with the values its birth context implies — the band's group value, and values on the active sort criteria that carry one (Select, Status, Checkbox, Number, Date) — with its order settled in the same act, and the renderer opens its own naming field over the row already real.[^6] A view's filter stamps the values its rules cleanly imply; metadata is never changed to satisfy a filter, so a page a non-derivable rule excludes creates and stays filtered out.
 
-Every renderer also shares the **hover ghost** (`useGhostAnchor.ts`): dwelling on a row or card extends a ghost "New Page" beneath it at the inactive dim, on that renderer's own chrome, and clicking it creates there. One dwell paces every surface; grace is per-surface, and a menu or editor owning the pointer stands the ghost down.
+Every renderer also shares the **hover ghost** (`DesignSystem/Interactions/ghostAnchor.ts`): dwelling on a row or card extends a ghost "New Page" beneath it at the inactive dim, on that renderer's own chrome, and clicking it creates there. One dwell paces every surface; grace is per-surface, and a menu or editor owning the pointer stands the ghost down.
 
 ### The Pipeline
 
@@ -100,7 +100,7 @@ Widths are per-type `{min, default, max}` from one source (`columnWidths.ts`), c
 
 #### II. Rows & Cells
 
-A cell's content is type-aware — a page icon and title, chips, a checkbox or switch, a link, file chips, a formatted date or number, or a progress bar — reading the per-view column style. Every cell owns its click through the shared gesture rules in `PropertyEditing/valueClick.ts`: the title navigates, option cells open the shared value dropdown, a checkbox toggles, a number enters its inline editor, a link opens, and a file chip opens the file dialog.[^8] Right-click always opens a menu: the title gets the page menu with New Page Above and Below, a link cell the link menu, a file cell its Add, Replace, and Remove rows, and style-bearing types their column's style radios. Chip values carry the hover × that removes one value without opening the picker. Inline edits follow Enter to confirm, click-out to save, and Esc to revert. A hover-revealed grip in the gutter lifts the row for drag-reorder and carries its own menu (Open Preview, Open New Tab, Rename, Edit Icon, New Page Above and Below, Delete).
+A cell's content is type-aware — a page icon and title, chips, a checkbox or switch, a link, file chips, a formatted date or number, or a progress bar — reading the per-view column style. Every cell owns its click through the shared gesture rules in `Properties/Editing/valueClick.ts`: the title navigates, option cells open the shared value dropdown, a checkbox toggles, a number enters its inline editor, a link opens, and a file chip opens the file dialog.[^8] Right-click always opens a menu: the title gets the page menu with New Page Above and Below, a link cell the link menu, a file cell its Add, Replace, and Remove rows, and style-bearing types their column's style radios. Chip values carry the hover × that removes one value without opening the picker. Inline edits follow Enter to confirm, click-out to save, and Esc to revert. A hover-revealed grip in the gutter lifts the row for drag-reorder and carries its own menu (Open Preview, Open New Tab, Rename, Edit Icon, New Page Above and Below, Delete).
 
 #### II. The Table Sheet
 

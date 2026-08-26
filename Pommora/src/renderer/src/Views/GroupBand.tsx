@@ -11,11 +11,11 @@ import { asRenderableIcon, Icon } from '@renderer/DesignSystem/Symbols'
 import { Reveal } from '@renderer/DesignSystem/Animation/Reveal'
 import { registerDiscloseTarget } from '@renderer/DesignSystem/Interactions/dragDisclose'
 import { RenamableTitle } from '@renderer/Components/RenamableTitle'
-import { declaredType } from './pipeline/value'
-import { findOption, groupLabel } from '@renderer/Tables/cellResolve'
-import { CheckboxGlyph } from '@renderer/Tables/checkboxLook'
-import { formatBucketLabel } from './PropertyEditing/formatValue'
-import type { ResolveContext } from './TableView/resolveContext'
+import { declaredType } from '@renderer/Properties/value'
+import { findOption, groupLabel } from '@renderer/Properties/Editing/cellResolve'
+import { CheckboxGlyph } from '@renderer/Properties/Editing/checkboxLook'
+import { formatBucketLabel } from '@renderer/Properties/Editing/formatValue'
+import type { ResolveContext } from '@renderer/Properties/resolveContext'
 import './GroupBand.css'
 import { onActivateKey } from '@renderer/DesignSystem/Interactions/activate'
 import {
@@ -23,7 +23,7 @@ import {
   dropOutlineOpen,
 } from '@renderer/DesignSystem/Elements/DropOutline/dropOutline.css'
 import { SpaceChip } from '@renderer/DesignSystem/Labels'
-import { OptionChip } from './PropertyEditing/OptionChip'
+import { OptionChip } from '@renderer/Properties/Editing/OptionChip'
 
 /** The single home for group-band glyph resolution, shared by the table and cards views. Chip
  *  color/shape resolve from the schema here, so `ResolvedGroup` stays colorless. */

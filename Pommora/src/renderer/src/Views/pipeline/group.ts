@@ -10,7 +10,7 @@ import { pad } from '@renderer/DesignSystem/Util/pad'
 import type { PageFrontmatter } from '@shared/schemas'
 import { optionValues, type PropertyDefinition } from '@shared/properties'
 import { UNGROUPED } from '@shared/types'
-import { declaredType, resolveFieldValue } from './value'
+import { declaredType, resolveFieldValue } from '@renderer/Properties/value'
 
 /** Only these declared types group; everything else falls back to structural. */
 const GROUPABLE = new Set<string>(['select', 'status', 'checkbox', 'datetime'])

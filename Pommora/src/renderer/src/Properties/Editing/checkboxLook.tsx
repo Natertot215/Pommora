@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react'
 import { checkboxBox, labelColor, tinted } from '@renderer/DesignSystem/Labels'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { Icon } from '@renderer/DesignSystem/Symbols'
-import { solidColorCss } from './solidColor'
+import { solidColorCss } from '@renderer/DesignSystem/Tokens/solidColor'
 
 /** A checked box tints its color — a set solid, else the system accent, so it matches the switch
  *  look; the check glyph itself always stays label-control regardless. `verticalAlign: middle` pins

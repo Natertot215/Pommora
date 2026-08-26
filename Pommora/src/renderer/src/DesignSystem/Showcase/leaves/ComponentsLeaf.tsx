@@ -6,7 +6,7 @@ import { CalendarPicker } from '../../Components/Pickers/CalendarPicker/Calendar
 import { ImagePicker } from '../../Components/Pickers/ImagePicker/ImagePicker'
 import { PickerMenu, PickerOption } from '../../Components/Pickers/PickerMenu/PickerMenu'
 import { MenuSurface } from '../../Components/Menu'
-import { condensedDate, formatDate } from '@renderer/Views/PropertyEditing/formatValue'
+import { condensedDate, formatDate } from '@renderer/Properties/Editing/formatValue'
 import { Label } from '../../Labels'
 
 function PopupButton({
