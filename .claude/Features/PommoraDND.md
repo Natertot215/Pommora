@@ -77,5 +77,5 @@ The tunables are custom properties declared at `:root`, overridable on any ances
 - **Mobile readiness** — the sensor and collision layers keep it viable (draggables opt out of native panning, `pointercancel` tears a gesture down, collision math never bakes in hit-target sizes); a touch pass adds a press-delay alongside the travel-distance activation.
 
 [^1]: [[InterfacePM]] §The Sidebar
-[^2]: [[ViewTypesPM]] §Group Bands
+[^2]: [[ViewTypesPM]] §Group
 [^3]: [[MarkdownPM]] §Block Structure

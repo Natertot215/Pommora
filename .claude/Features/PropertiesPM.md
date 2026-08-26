@@ -3,8 +3,7 @@
 ```
 Properties
 ├── The Type Catalog
-├── Identity & Name
-├── Value Shapes
+├── Identity & Values
 ├── Property Types
 │   ├── II. Status
 │   ├── II. Checkbox
@@ -39,13 +38,13 @@ The ten types are the `propertyType` enum in `src/shared/properties.ts`; the on-
 | **Last Edited Time** | *(derived from `modified_at`)* | Virtual — never persisted |
 | **File** | `<Attachments>:` over a block sequence of `[[Basename.ext]]` | Array of wikilinks naming files by basename; files copy into the Nexus |
 
-### Identity & Name
+### Identity & Values
 
-Every property carries two independent identifiers. Its **`id`** is stable and never changes: user properties mint a `prop_<ulid>`, and built-ins use a reserved `_`-prefixed id (`_id`, `_title`, `_created_at`, `_modified_at`, `_location`) that user properties can't claim. The id is the key in the registry, in a Collection's assignment list and restore cache, and in every saved view; member files never carry it. Its **`name`** is the key a value writes under, wrapped as `<Name>` — unique nexus-wide, case-folded, trimmed and NFC-normalized once at write. A rename cascades the key across every page holding it; a rename onto a taken name is refused. The page `cover` is a root frontmatter field rather than a property and never appears in a properties UI.
+Every property carries two independent identifiers. Its **`id`** is stable and never changes: user properties mint a `prop_<ulid>`, and built-ins use a reserved `_`-prefixed id (`_id`, `_title`, `_created_at`, `_modified_at`, `_location`) that user properties can't claim. The id is the key in the registry, in a Collection's assignment list and restore cache, and in every saved view; member files never carry it. Its **`name`** is the key a value writes under, wrapped as `<Name>` — unique nexus-wide, case-folded, trimmed and NFC-normalized once at write. A rename cascades the key across every page holding it; a rename onto a taken name is refused.
 
-### Value Shapes
+A value is decoded against the type its definition declares (`src/shared/propertyValue.ts`): the key names the property, so the definition is in hand before the value is read, and nothing is inferred from a value's shape. Two rules follow. **No value, no key** — setting a property to null or any empty value removes its key from the member file, so a member without a value never carries a placeholder; checkbox `false` and number `0` are real values and stay. **An unmatched wrapped key persists inert** — a key naming no registry entry is preserved by value and read by nothing. 
 
-A value is decoded against the type its definition declares (`src/shared/propertyValue.ts`): the key names the property, so the definition is in hand before the value is read, and nothing is inferred from a value's shape. Two rules follow. **No value, no key** — setting a property to null or any empty value removes its key from the member file, so a member without a value never carries a placeholder; checkbox `false` and number `0` are real values and stay. **An unmatched wrapped key persists inert** — a key naming no registry entry is preserved by value and read by nothing. Here's an example of how the frontmatter page with both Pommora-managed and externally-applied frontmatter would appear:
+Here's an example of how the frontmatter page with both Pommora-managed and externally-applied frontmatter would appear:
 
 ```yaml
 (Projects):
@@ -109,13 +108,11 @@ The property-wide **Directory** is the folder its files land in, stored relative
 
 #### II. Context
 
-Context links are the relation layer. They store as parenthesized title keys at the entity root over a block sequence of bare Space titles, in a page's frontmatter and at a `_space.json`'s root alike. They are never schema definitions: each registry Context resolves to one column at runtime, alongside the assigned schema rather than inside it.[^6]
+Context links are the relation layer. They store as parenthesized title keys at the entity root, over a block sequence of bare Space titles, in a page's frontmatter, and at the root of `_space.json`, alike. They are never schema definitions: each registry Context resolves to one column at runtime, alongside the assigned schema rather than inside it.[^6]
 
 ### Auto-Managed Properties
 
-Every Page carries its kind's id key (`PageID`, holding a ULID assigned at creation), `created_at`, and `modified_at`, maintained by Pommora and not user-creatable. `modified_at` surfaces as **Last Edited Time**, whose column shows the stored stamp; sorting and filtering fall back to `created_at` for a never-modified page. A schema edit is not a page edit: renaming a property, changing its type, or reordering an assignment leaves every member's `modified_at` untouched.[^7]
-
-Additionally, pages may carry a `cover` property used for storing their banners.
+Every Page carries its kind's id key (`PageID`, holding a ULID assigned at creation), `created_at`, and `modified_at`, maintained by Pommora and not user-creatable. `modified_at` surfaces as **Last Edited Time**, whose column shows the stored stamp; sorting and filtering fall back to `created_at` for a never-modified page; pages may also carry `cover:` which assigns their banners. A schema edit is not a page edit: renaming a property, changing its type, or reordering an assignment leaves every member's `modified_at` untouched.[^7]
 
 ```yaml
 PageID:
@@ -157,7 +154,6 @@ Neither Remove nor the global delete is cross-file atomic; each is a per-file fa
 
 #### Pending
 
-- **Page Property Panel** — the surface for setting property values on a Page in the main pane. Today the table's cells and the Page Preview's inspector are the value surfaces.
 - **Lossy type change** — the cross-assigner value strip a lossy type change should trigger; `changeType` accepts the drop flag and ignores it.
 - **Number looks for other views** — the completion Ring and the Number / Bar / Ring tile grid belong to view types with vertical room; the table ships Number and Bar.
 - **Calendar Picker** — range values, keyboard stepping on the time segments.
