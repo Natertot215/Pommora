@@ -355,7 +355,7 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 | Sidebar · Toolbar | app: `Sidebar/` · `Toolbar/` | [[InterfacePM]] |
 | Tabs | app: `Tabs/` | [[NavigationPM]] |
 | Cards | app: `Cards/` — `Card.tsx` · `cards.css` | The card chassis every card surface wears — the Navigation gallery and CardView. `CardRoot` (drag shell; `is-locked` holds the 125/90 aspect with the cover at `--thumb-share`, the default reflows below a `--card-thumb-h` band; `is-active` wears the accent stroke) → `CardBody` (frame, hover-pop) → `CardThumb` (`is-capture` marks a captured preview, zoomed by `--preview-zoom`) / `CardText` → `CardTitle` (body-semibold; scroll, wrap, or static) · `CardTrail`. `.card-grid` is the shared grid — auto-fit, or `is-fill` to hold empty tracks. A `.card-pin` inside the thumb is the opt-in pin. Its tokens sit on `:root`; [[ViewTypesPM]] carries the sheet. |
-| Table | app: `Views/TableView/` | [[ViewTypesPM]] — a future resident here. |
+| Tables | app: `Tables/` — `Table.css` · `table-tokens.css` · `ColumnHeader` · `Cell` · `tableDnd` | The tabular chrome every table surface wears (TableView, the Trash): the column-header band with `.col-header` segment bars (`.table-segment` puts the bar on any element), row and column hairlines, the column drag and resize strips, `no-borders`, and the cell content types. A host wears `.table`, lays its own grid on `--cols`, rebinds the heading fill and divider in its scope, and states `is-clear` for a bare heading. [[ViewTypesPM]] carries the sheet. |
 
 ### Interaction
 

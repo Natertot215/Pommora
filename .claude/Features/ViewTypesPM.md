@@ -88,7 +88,7 @@ The view's configuration is edited through a handful of panes, each reachable fr
 
 ### Table
 
-The Table renderer (`src/renderer/src/Views/TableView/`) draws a container's Pages as rows on a single CSS grid. It is presentation only: the pipeline hands it resolved groups and per-cell values, and the table owns the layout, the column ergonomics, and the row chrome. The table's three creation triggers ride the shared act: the structural header's **+** creates at that Set's end and glides to the row; **New Page Above / Below** on the grip and title menus creates beside its anchor; and the hover ghost row creates below. 
+The Table renderer (`src/renderer/src/Views/TableView/`) draws a container's Pages as rows on a single CSS grid, wearing the shared Tables chrome ([[DesignSystemPM]]) — the column-header band, its segment bars, the hairlines, the borderless regime, and the cell renderers live in `src/renderer/src/Tables/`. It is presentation only: the pipeline hands it resolved groups and per-cell values, and the view owns the shell, the grid density, the grip gutter, and the band rhythm. The table's three creation triggers ride the shared act: the structural header's **+** creates at that Set's end and glides to the row; **New Page Above / Below** on the grip and title menus creates beside its anchor; and the hover ghost row creates below. 
 
 #### II. The Grid
 
@@ -104,9 +104,9 @@ A cell's content is type-aware — a page icon and title, chips, a checkbox or s
 
 #### II. The Table Sheet
 
-The table's design vocabulary is a whole-file token sheet scoped to `.table-view`, `.table-empty`, and `.trash-leaf`, which borrows the heading half. Atlas convention per [[DesignSystemPM]].
+The table's design vocabulary is a whole-file token sheet scoped to `.table`, the class every tabular surface wears ([[DesignSystemPM]] · Tables). A host rebinds what it needs in its own scope — the heading fill and divider, the cell padding — and states `is-clear` for a heading with no fill and no seam; the body hairline stays one width. TableView adds its own layer over it. Atlas convention per [[DesignSystemPM]].
 
-**SOURCE:** `Pommora/src/renderer/src/Views/TableView/table-tokens.css` · `Pommora/src/renderer/src/Views/TableView/Table.css`
+**SOURCE:** `Pommora/src/renderer/src/Tables/table-tokens.css` · `Pommora/src/renderer/src/Tables/Table.css` · `Pommora/src/renderer/src/Views/TableView/TableView.css`
 
 | Title | Token | Value |
 | --- | --- | --- |
@@ -115,17 +115,16 @@ The table's design vocabulary is a whole-file token sheet scoped to `.table-view
 | Cell Icon Gap / Label Run Gap | `--cell-icon-gap` / `--labels-gap` | `6px` / `4px` |
 | Nesting Indent | `--row-indent` | → `var(--disclosure-indent)` |
 | Loose-Row Inset | `--loose-inset` | `8px` |
-| Grip Gutter | `--gutter` | → `var(--fold-gutter)` (remapped mid-tree — table descendants wanting the content gutter read `--content-gutter`) |
-| Hairline | `--table-border-width` / `--table-border` | `1.25px` / composed on `--separator-border` |
+| Hairline | `--table-border-width` / `--table-border` | → `var(--width-125)` / composed on `--border-base` |
 | Active Cell Radius | `--cell-active-radius` | `4px` |
-| Heading | `--heading-fill` / `--heading-text` / `--heading-divider` | → fill-quinary / label-control / border-heading |
-| Heading Segment | `--heading-segment` / `-height` / `-width` | → label-tertiary / `16px` / `1.5px` |
+| Heading | `--heading-fill` / `--heading-text` / `--heading-divider` | → fill-quinary / label-control / `width-175` on `border-base` (host-bound) |
+| Heading Segment | `--heading-segment` / `-height` / `-width` / `--segment-tone` | → border-light / `16px` / `width-150` / a `.table-segment`'s own tone |
 | Heading Padding | `--heading-padding-y` | `8px` |
 | Band Clearance | `--band-clearance` | → `var(--cell-padding-y)` (the seam rule's input) |
 | Resizer Strip | `--resizer-width` | `8px` |
 | Column Drag | `--col-highlight` / `--col-drag-band` / `--col-shift-ease` | → state-selected / bg-window / fast+standard |
 | Empty Pad | `--empty-pad-y` | `24px` |
-| Right Inset | `--table-right-inset` | → content gutter; `0px` once overflowing (declared in `Table.css`) |
+| Right Inset | `--table-right-inset` | → `--inset-content`; `0px` once overflowing (TableView's own) |
 
 #### II. Known Issues
 
