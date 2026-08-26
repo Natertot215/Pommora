@@ -4,7 +4,7 @@
 import { globalStyle, style } from '@vanilla-extract/css'
 import { vars as colorVars } from '@renderer/DesignSystem/Tokens/color.css'
 import { text } from '@renderer/DesignSystem/Tokens/typography.css'
-import { value as pickerValue } from './pickerControl.css'
+import { pickerValue } from '@renderer/DesignSystem/Elements/PickerControl'
 
 const c = colorVars.color
 

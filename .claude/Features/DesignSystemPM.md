@@ -249,10 +249,12 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 | NavTrail | `NavTrail` · `NavTrailProps` · `TrailSegment` | An entity's location as a chevron-divided run of icon + title segments — inert, selectable, or a navigable path with a dimmed ghost tail; `emphasize` lifts the current stop. |
 | Segment | `segment` | The between-values pill — `--segment-width` / `--segment-color` override it. |
 | ProgressBar | `ProgressBar` | A determinate bar on the accent. |
+| PickerControl | `PickerControl` · `labelOf` · `PickerChoice` · `pickerValue` | The double-chevron picker: two options toggle in place; three or more pop a PickerMenu; right-clicks write values into the field. |
+| EyeToggle | `EyeToggle` · `EYE_ICON` | The visibility eye — the current state's glyph at rest, the toggle previewed on hover. |
 
 ### Components
 
-`Components/` — grouped as the ledger reads. `dropdownAnchor.ts` (`dropdownAnchor`, `DROPDOWN_GAP`) and `useDismiss.ts` are the shared placement and outside-click helpers at the root, beside two root-level components: `ImagePicker` (frames a stored image — a focal point and a zoom — as a circle or a rect cut to its seat) and `AssetImage` (the one element that draws a stored image, through its crop when one exists).
+`Components/` — grouped as the ledger reads. `dropdownAnchor.ts` (`dropdownAnchor`, `DROPDOWN_GAP`) and `useDismiss.ts` are the shared placement and outside-click helpers at the root, beside `AssetImage`, the one element that draws a stored image, through its crop when one exists.
 
 #### Controls
 
@@ -294,9 +296,10 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 | CalendarPicker | `CalendarPicker`                            | Date and time selection.                                                                                             |
 | ColorPicker    | `ColorPicker`                               | The 8×8 ramp grid; clicking the selected cell clears.                                                                |
 | IconPicker     | `IconPicker` · `IconFavorites`              | The searchable glyph grid with a reorderable favorites strip; the app binds favorites through `Settings/IconPicker`. |
+| ImagePicker    | `ImagePicker`                               | Frames a stored image — a focal point and a zoom — as a circle or a rect cut to its seat. |
 | TextPicker     | `TextPicker`                                | A typed-value picker in the shared pane.                                                                             |
 
-#### Menu
+#### Menus
 
 | Title | Export | What it is |
 | ------------ | ----------------------------------------------- | ----------------------------------------- |

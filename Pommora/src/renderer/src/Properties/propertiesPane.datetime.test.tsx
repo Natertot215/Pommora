@@ -4,7 +4,7 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { stubPointerCapture } from '@renderer/testing/pointerHarness'
 import type { PropertyDefinition } from '@shared/properties'
-import { useSession } from '../../store'
+import { useSession } from '../store'
 import { PropertiesPane } from './PropertiesPane'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 

@@ -12,7 +12,7 @@ import {
 } from '@renderer/Detail/Views/useGhostAnchor'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { base, EditableInput } from '@renderer/DesignSystem/Components/Fields'
-import * as s from './settingsPane.css'
+import * as s from '../Components/Detail/settingsPane.css'
 import { Label, type LabelShape } from '@renderer/DesignSystem/Labels'
 
 // The table's grace: the slot sits flush under the list it joins, so a leave closes it immediately

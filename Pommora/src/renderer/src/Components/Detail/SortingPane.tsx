@@ -7,11 +7,11 @@ import { LOCATION_SORT, type SavedView, type SortCriterion } from '@shared/views
 import { MenuPaneTopRow, MenuSeparator } from '@renderer/DesignSystem/Components/Menu'
 import { useSaveView } from '@renderer/Embeds/ViewEmbedScope'
 import { declaredType } from '../../Detail/Views/pipeline/value'
-import type { PickerChoice } from './PickerControl'
-import { ValueRow } from './ValueRow'
+import type { PickerChoice } from '@renderer/DesignSystem/Elements/PickerControl'
+import { ValueRow } from '../../Properties/ValueRow'
 import { CustomList, PropertyPreview, optionsOf } from './GroupingPane'
 import { bucketOrder } from '../../Detail/Views/pipeline/group'
-import { MODIFIED_TARGET, schemaTargets, TITLE_TARGET } from './PropertyTypes'
+import { MODIFIED_TARGET, schemaTargets, TITLE_TARGET } from '../../Properties/PropertyTypes'
 import * as gp from './groupingPane.css'
 
 type Direction = SortCriterion['direction']

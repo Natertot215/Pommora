@@ -12,7 +12,7 @@ import type { Icon } from '@renderer/DesignSystem/Symbols'
 import { contextsByIdOf } from '../../Detail/Views/pipeline/contextIdentity'
 import { declaredType } from '../../Detail/Views/pipeline/value'
 import { FILTER_OPS } from '../../Detail/Views/pipeline/filter'
-import { MODIFIED_TARGET, schemaTargets, TITLE_TARGET } from './PropertyTypes'
+import { MODIFIED_TARGET, schemaTargets, TITLE_TARGET } from '../../Properties/PropertyTypes'
 
 export type Connector = 'and' | 'or'
 

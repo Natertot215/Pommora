@@ -8,11 +8,11 @@ import { PreviewPane } from '@renderer/DesignSystem/Detail/PreviewPane/PreviewPa
 import type { FloatingBounds } from '@renderer/DesignSystem/Interactions/FloatingWindow'
 import type { SidePaneBounds } from '@renderer/DesignSystem/Detail/SidePane/SidePane'
 import type { DevicePrefs } from '@shared/devicePrefs'
-import { PickerControl, type PickerChoice } from '@renderer/Components/Detail/PickerControl'
+import { PickerControl, type PickerChoice } from '@renderer/DesignSystem/Elements/PickerControl'
 import { ColorSwatch } from '@renderer/DesignSystem/Components/Controls/Switches/ColorSwatch'
 import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import { solidColorCss } from '@renderer/Detail/Views/Table/solidColor'
-import { LINK_FORMAT_OPTIONS } from '@renderer/Components/Detail/LinkFormat'
+import { LINK_FORMAT_OPTIONS } from '@renderer/Properties/LinkFormat'
 import { DEFAULT_LINK_DISPLAY, type LinkDisplay } from '@shared/properties'
 import {
   DEFAULT_TIME_FORMAT,

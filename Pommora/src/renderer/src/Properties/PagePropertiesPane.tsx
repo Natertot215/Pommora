@@ -7,27 +7,24 @@ import type { ResolvedColumn } from '@shared/types'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { PickerMenu, PickerOption } from '@renderer/DesignSystem/Components/Pickers/PickerMenu'
 import { MenuPaneTopRow, MenuScrollFrame } from '@renderer/DesignSystem/Components/Menu'
-import { Cell } from '../../Detail/Views/Table/Cell'
+import { Cell } from '../Detail/Views/Table/Cell'
 import { linkAlias, linkEditText, urlValueFromEdit, urlValueFromRename } from '@shared/linkValue'
 import { resolveTitle, validateLink } from '@renderer/linkResolve'
 import { TextPicker } from '@renderer/DesignSystem/Components/Pickers/TextPicker'
 import { solidColorCss } from '@renderer/Detail/Views/Table/solidColor'
-import { contextOptionsFor } from '../../Detail/Views/pipeline/contextOptions'
-import { resolveFieldValue } from '../../Detail/Views/pipeline/value'
-import { PropertyEditor } from '../../Detail/Views/PropertyEditing/PropertyEditor'
-import {
-  PropertyPicker,
-  syntheticContextDef,
-} from '../../Detail/Views/PropertyEditing/PropertyPicker'
-import { DatetimeValuePicker } from '../../Detail/Views/PropertyEditing/DatetimeValuePicker'
-import { parseEditorValue } from '../../Detail/Views/Cards/cardValueInput'
+import { contextOptionsFor } from '../Detail/Views/pipeline/contextOptions'
+import { resolveFieldValue } from '../Detail/Views/pipeline/value'
+import { PropertyEditor } from '../Detail/Views/PropertyEditing/PropertyEditor'
+import { PropertyPicker, syntheticContextDef } from '../Detail/Views/PropertyEditing/PropertyPicker'
+import { DatetimeValuePicker } from '../Detail/Views/PropertyEditing/DatetimeValuePicker'
+import { parseEditorValue } from '../Detail/Views/Cards/cardValueInput'
 import { side } from '@renderer/DesignSystem/Components/Menu/menu.css'
 import {
   propertyIcon,
   usePropertyRows,
   type Editing,
-} from '../../Detail/Views/PropertyEditing/usePropertyRows'
-import { useSession } from '../../store'
+} from '../Detail/Views/PropertyEditing/usePropertyRows'
+import { useSession } from '../store'
 import * as s from './pageProperties.css'
 
 /** A row in either field block, its glyph already resolved — a Context carries no `def`. */
