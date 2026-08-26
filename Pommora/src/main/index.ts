@@ -1601,8 +1601,10 @@ serveBridge(
         if (typeof key !== 'string' || !key)
           return fail('operation-failed', 'Invalid personalization key.')
         await writePersonalization(root, key, value)
-        // The one personalization key with a main-side effect: guests re-stamp in place.
+        // The personalization keys with a main-side effect: guests re-stamp, the window re-zooms.
         if (key === 'webZoomFactor') setWebZoomFactor(coerceScale(value, WEB_ZOOM_DEFAULT))
+        if (key === 'defaultViewScale' && mainWindow && !mainWindow.isDestroyed())
+          setHostZoom(mainWindow.webContents, viewScaleZoom(coerceViewScale(value)))
         // No renderer confirm exists for this channel (the slice patches optimistically), yet
         // it writes a field the walk reads — the push set's membership predicate.
         await confirmSettingsWrite()
