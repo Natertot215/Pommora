@@ -1,21 +1,17 @@
-/* CardsView — the Collection/Set cards renderer's ONE CSS home. The card chassis (aspect, border,
-   radius, gaps, title-area) starts from NavGallery's values — the title/property area is allowed to
-   diverge as the card design settles. The pane insets live in Detail.css (the `:has(.cards-view)`
-   body rule — the block-surface inset regime, no views gutter); the embed zoom law rides here so a
-   view embed scales the grid as a unit. `.is-compact` = Card Banner: None — imageless cards. */
+/* CardView — the Collection/Set cards renderer's own layer over the src/Cards chassis: the Scale
+   factor, the properties area, the location footing, the Set Cards row, and the band seams. The pane
+   insets live in Detail.css (the `:has(.cards-view)` body rule — the block-surface inset regime, no
+   views gutter); the embed zoom law rides here so a view embed scales the grid as a unit.
+   `.is-compact` = Card Banner: None — imageless cards. */
 .cards-view {
-  /* The shared card floor × the Scale factor — the base itself lives with the rest of the card
-     family in DesignSystem/Tokens/card-tokens.css, along with the gaps, thumb share, and cover zoom. */
+  /* The shared floors × the Scale factor — the bases live with the chassis in src/Cards/cards.css. */
   --card-min: calc(var(--card-min-base) * var(--card-scale, 1));
   --set-card-min: calc(var(--card-min) * 1.5); /* KNOB — the Set Cards row's larger floor */
-  --thumb-h: calc(
-    104px *
-    var(--card-scale, 1)
-  ); /* KNOB — page-card image band height (fixed; the card grows below it) */
+  --card-thumb-h: calc(var(--card-thumb-h-base) * var(--card-scale, 1));
   /* KNOB — the body-area's reserved floor. An empty card keeps
      that image:body proportion instead of collapsing to the title; a content-heavy card still grows
      past it (no aspect clip). */
-  --card-body-min: calc(var(--thumb-h) * 0.54);
+  --card-body-min: calc(var(--card-thumb-h) * 0.54);
   /* The seam law's binding (GroupBand.css): the card rhythm is the shoulder; tune --card-gap-v, not
      this. */
   --band-clearance: var(--card-gap-v);
@@ -39,28 +35,16 @@
   --card-body-min: calc(16px + 18px + 4px + 3px + 2 * var(--card-row-h));
 }
 /* With the breadcrumb footing present, add its height so the 2-row reserve still sits ABOVE it. */
-.cards-view.is-compact .page-card-text:has(.page-card-loc-zone) {
+.cards-view.is-compact .card-text:has(.card-loc-zone) {
   min-height: calc(var(--card-body-min) + var(--card-foot-h));
 }
 
-/* ── The Set Cards row: larger cards at a FIXED size — set-scale tracks (no stretch, unlike
-   the page grid's auto-fit fill); they wrap left-aligned as rows fill. ── */
+/* ── The Set Cards row: larger, locked cards at a FIXED size — set-scale tracks (no stretch, unlike
+   the page grid's fill); they wrap left-aligned as rows fill. ── */
 .set-cards-row {
   display: grid;
   grid-template-columns: repeat(auto-fill, var(--set-card-min));
   gap: var(--card-gap-v) var(--card-gap-h);
-}
-.set-card {
-  aspect-ratio: 125 / 90;
-  align-self: start;
-  text-align: left;
-  cursor: pointer;
-  border: none;
-  background: none;
-  padding: 0;
-}
-.set-card.is-dragging {
-  opacity: var(--state-drag);
 }
 
 /* ── Disclosure bands (shared GroupBand chrome): the heading over the band's card grid. The chrome,
@@ -72,37 +56,22 @@
   margin-top: var(--band-gap);
 }
 
+/* The band grid wears the chassis grid in its fill regime: every band lays the same track set
+   regardless of how many cards it holds, so a 3-card band's cards stay the size of a full band's.
+   The grid IS the cross-band DragGroup's zone element, a <ul> — strip its list chrome. A floor so an
+   EMPTY band still presents a drop target (a card can be dragged into an empty group to reassign).
+   Page cards reflow: a fixed image band, title + properties + footing extending below, every card
+   stretched to its row's tallest sibling. */
 .cards-grid {
-  /* auto-FILL (not auto-fit): every band lays the same track set regardless of how many cards it
-     holds — empty tracks hold their space, so a 3-card band's cards stay the same size as a full
-     band's instead of ballooning to fill the row (NavGallery's is-fill rationale). */
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(var(--card-min), 1fr));
-  gap: var(--card-gap-v) var(--card-gap-h);
-  /* The grid IS the cross-band DragGroup's zone element, a <ul> — strip its list chrome. A floor so an
-     EMPTY band still presents a drop target (a card can be dragged into an empty group to reassign). */
   list-style: none;
   margin: 0;
   padding: 0;
   min-height: 44px;
 }
 
-/* A page card's image band is a fixed height; title + properties + footing extend below. Cards
-   STRETCH to their grid row's height (the default), so every card in a row matches its tallest
-   sibling — a location can't make one card taller than its row-mates. */
-.page-card {
-  text-align: left;
-  cursor: pointer;
-  border: none;
-  background: none;
-  padding: 0;
-}
-.page-card.is-dragging {
-  opacity: var(--state-drag);
-}
 /* The drag ghost only — an opaque backing so the lifted card reads solid over the cards it floats
    above (the real card body stays transparent, showing the page behind it). */
-.page-card-ghost .page-card-body {
+.card-overlay .card-body {
   background: var(--bg-window);
 }
 
@@ -115,7 +84,7 @@
 /* The hover ghost card — the card's own skeleton (thumb placeholder, divider, title row,
    property labels), its outer border heavier than a card's so the ghost reads. The dim rides the
    body rather than the card, so the heavier outline holds while the skeleton inside it lifts. */
-.ghost-card .page-card-body {
+.ghost-card .card-body {
   border-width: 2px; /* KNOB */
   animation: ghost-card-in var(--duration-base) var(--ease-base);
 }
@@ -125,56 +94,23 @@
   }
 }
 
-.page-card-body {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
-  border: var(--width-150) solid var(--border-base);
-  border-radius: 10px;
-  overflow: hidden;
-  background: none;
-  transition:
-    border-color var(--duration-base) var(--ease-base),
-    transform var(--duration-slow) var(--ease-base);
-}
-
-.page-card-thumb {
-  position: relative;
-  flex: 0 0 var(--thumb-h);
-  min-height: 0;
-  overflow: hidden;
-  background: var(--fill-tertiary);
-}
-/* Set cards keep the fixed aspect, so their image band stays a SHARE of the card height. */
-.set-card .page-card-thumb {
-  flex: 0 0 var(--thumb-share);
-}
-
-/* Cards reserves a body floor so an empty card keeps its image:body proportion. */
-.page-card-text {
+/* A reflow card reserves a body floor so an empty card keeps its image:body proportion. */
+.cards-view .card:not(.is-locked) .card-text {
   min-height: var(--card-body-min);
 }
-.cards-view.is-compact .page-card .page-card-text {
+.cards-view.is-compact .card:not(.is-locked) .card-text {
   border-top: none;
 }
 
 /* The naming session's title row — a plain flex row (never the truncating scroll box, whose clip
    would hide the field's caret travel); the glyph keeps its seat beside the field. */
-.page-card-title:has(.card-title-input) {
+.card-title:has(.card-title-input) {
   display: flex;
   align-items: center;
 }
 .card-title-input {
   flex: 1;
   min-width: 0;
-}
-.page-card-title.is-wrap {
-  display: inline;
-}
-.page-card-title.is-wrap .page-card-title-icon {
-  vertical-align: -2px;
-  margin-right: 5px;
 }
 /* ── Properties: the card body between title and footing — rendered ONLY when the card
    has values (an empty card shows no gap; its add trigger scopes to the breadcrumb). Empty
@@ -250,7 +186,7 @@
 
 /* The breadcrumb is ALWAYS the card's footing — pinned to the bottom (margin-top:auto) with a divider
    above it, unconditionally — independent of whether properties sit above it. */
-.page-card-loc-zone {
+.card-loc-zone {
   display: flex;
   min-width: 0;
   margin-top: auto;

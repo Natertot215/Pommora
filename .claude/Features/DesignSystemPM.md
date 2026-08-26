@@ -34,11 +34,13 @@ Design System
 
 The Pommora design system — the code mirror of the Figma "Pommora - React" library, which is canonical for design values. It lives in `src/renderer/src/DesignSystem/`, and this document is its ledger: one section per folder, one row per thing, with *name · export · what it is*. Values live in the Token Atlas and in code; a subsystem with its own spec ([[InteractionPM]], [[PommoraDND]], [[SymbolsPM]]) keeps its depth there and is pointed at, never restated.
 
-**Tooling.** Token files are vanilla-extract `*.css.ts`, so a mistyped token is a compile error; `Tokens/theme-vars.css.ts` republishes every token under a stable `--name` for plain CSS, and a token without a bridged var is TS-only. Inter (variable) is the app font. The layer builds as the standalone showcase; a handful of components (`ImagePicker`, `AssetImage`) reach the store for the assets they draw. `Theming/` (`applyAccent` · `applyPersonalization`) and `Util/` (`cx` · `clamp` · `pad` · `moveItem`) are runtime homes with no catalog of their own.
+- **Tooling:** Token files are vanilla-extract `*.css.ts`, so a mistyped token is a compile error; `Tokens/theme-vars.css.ts` republishes every token under a stable `--name` for plain CSS, and a token without a bridged var is TS-only. Inter (variable) is the app font. The layer builds as the standalone showcase; a handful of components (`ImagePicker`, `AssetImage`) reach the store for the assets they draw. `Theming/` (`applyAccent` · `applyPersonalization`) and `Util/` (`cx` · `clamp` · `pad` · `moveItem`) are runtime homes with no catalog of their own.
+
+- **Conventions:** Pommora heavily *prefers* even-factored scaling for all geometrical applications(2px -> 4px... 12px -> 14px... 20px -> 22px...), while typography scaling is purposefully independent of such convention. 
 
 ### Token Atlas
 
-`Tokens/` — the value source. `color.css.ts` (`vars`), `size.css.ts` (`size`, `ICON_PX`, the geometry consts), `typography.css.ts` (`font`, `text`), `stack.ts` (`stack`), `tint.ts` (`tintAt`, `mixAt`, `TINT_STEPS`), `ramp.ts` (`cellColor`, `cellPaint`, `cellRing`, `ANCHOR_CELLS`, the `RAMP_*` re-exports), `colorMap.ts` (`labelColorFor`), `card-tokens.css` (the card family's geometry), and the `theme-vars.css.ts` bridge. `index.ts` is the barrel.
+`Tokens/` — the value source. `color.css.ts` (`vars`), `size.css.ts` (`size`, `ICON_PX`, the geometry consts), `typography.css.ts` (`font`, `text`), `stack.ts` (`stack`), `tint.ts` (`tintAt`, `mixAt`, `TINT_STEPS`), `ramp.ts` (`cellColor`, `cellPaint`, `cellRing`, `ANCHOR_CELLS`, the `RAMP_*` re-exports), `colorMap.ts` (`labelColorFor`), and the `theme-vars.css.ts` bridge. `index.ts` is the barrel.
 
 #### Primitives
 
@@ -123,8 +125,8 @@ An edge composes a width and a color — `var(--width-XXX) solid var(--border-YY
 
 | Title    | Token                                     | Value                   |
 | -------- | ----------------------------------------- | ----------------------- |
-| Standard | `shadowStandardVar` · `--shadow-standard` | `0 8px 25px #00000040`  |
-| Lift     | `shadowLiftVar` · `--shadow-lift`         | `0 12px 30px #00000066` |
+| Base | `shadowStandardVar` · `--shadow-base` | `0 8px 25px #00000040` |
+| Strong | `shadowLiftVar` · `--shadow-strong` | `0 12px 30px #00000065` |
 
 #### Fades
 
@@ -352,7 +354,8 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 | Tile chassis | `Detail/tile-chassis.css` | The resizable tile frame SurfacePM and embeds share. |
 | Sidebar · Toolbar | app: `Sidebar/` · `Toolbar/` | [[InterfacePM]] |
 | Tabs | app: `Tabs/` | [[NavigationPM]] |
-| Table · Cards | app: `Views/` | [[ViewTypesPM]] — future residents here. |
+| Cards | app: `Cards/` — `Card.tsx` · `cards.css` | The card chassis every card surface wears — the Navigation gallery and CardView. `CardRoot` (drag shell; `is-locked` holds the 125/90 aspect with the cover at `--thumb-share`, the default reflows below a `--card-thumb-h` band; `is-active` wears the accent stroke) → `CardBody` (frame, hover-pop) → `CardThumb` (`is-capture` marks a captured preview, zoomed by `--preview-zoom`) / `CardText` → `CardTitle` (body-semibold; scroll, wrap, or static) · `CardTrail`. `.card-grid` is the shared grid — auto-fit, or `is-fill` to hold empty tracks. A `.card-pin` inside the thumb is the opt-in pin. Its tokens sit on `:root`; [[ViewTypesPM]] carries the sheet. |
+| Table | app: `Views/TableView/` | [[ViewTypesPM]] — a future resident here. |
 
 ### Interaction
 

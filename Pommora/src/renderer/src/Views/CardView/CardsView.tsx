@@ -16,7 +16,15 @@ import { type CardBanner, isCompact, isLocationFsOrder, type SavedView } from '@
 import type { ColumnStyle } from '@shared/columnStyles'
 import { entityIcon, Icon } from '@renderer/DesignSystem/Symbols'
 import { text } from '@renderer/DesignSystem/Tokens/typography.css'
-import { OverScroll } from '@renderer/DesignSystem/Interactions/OverScroll'
+import {
+  CardBody,
+  CardPlaceholder,
+  CardRoot,
+  CardText,
+  CardThumb,
+  CardTitle,
+  CardTrail,
+} from '@renderer/Cards/Card'
 import {
   DragGroup,
   type DragItem,
@@ -72,7 +80,7 @@ import { flattenBands } from '../bandDndModel'
 import { bandReorderPatch, groupingKeyOf, useBandOrdering } from '../useBandOrdering'
 import { nextOrder } from '@renderer/Sidebar/sidebarDndModel'
 import { buildResolveContext, type ResolveContext } from '../TableView/resolveContext'
-import { NavTrail, type TrailSegment } from '@renderer/DesignSystem/Elements/NavTrail'
+import type { TrailSegment } from '@renderer/DesignSystem/Elements/NavTrail'
 import { ancestryOf } from '../../treeIndex'
 
 /** One identity for "no location trail", so a trail-less card's CardFace can still compare equal. */
@@ -97,8 +105,6 @@ import './CardsView.css'
 
 const thumbSrc = (nexusId: string, pageId: string, v: number): string =>
   `${assetUrl(thumbRel(nexusId, thumbKey(navKey({ kind: 'page', id: pageId }))))}?v=${v}`
-
-const cardTitleType = text.body.semibold
 
 // ── TUNABLE ── how long a left ghost card survives before it collapses — unlike the table's
 // flush ghost, the pointer must cross the grid gap to reach it, so zero would kill it mid-travel.
@@ -786,11 +792,12 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
                   } as React.CSSProperties
                 }
               >
-                <div
-                  className="page-card is-dragging page-card-ghost"
+                <CardRoot
+                  dragging
+                  className="card-overlay"
                   style={{ width: '100%', height: '100%' }}
                 >
-                  <div className="page-card-body">
+                  <CardBody pop={false}>
                     <CardFace
                       row={r}
                       view={liveView}
@@ -808,8 +815,8 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
                       onHide={NOOP}
                       onOpenValuePicker={NOOP}
                     />
-                  </div>
-                </div>
+                  </CardBody>
+                </CardRoot>
               </div>
             )
           }}
@@ -841,7 +848,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
                     group="cards"
                     id={g.key}
                     items={rows.map((r) => r.id)}
-                    className="cards-grid"
+                    className="cards-grid card-grid is-fill"
                   >
                     {rows.flatMap((row) => {
                       const card = (
@@ -938,27 +945,26 @@ function GhostCard({
 }): React.JSX.Element {
   const props = isCompact(view) ? [] : columns.filter((c) => c.kind !== 'title')
   return (
-    // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a hover-born affordance wearing the grid's own card chrome — keyboard creation lives in the menus
-    <div
+    <CardRoot
       data-ghost-root
-      className="page-card ghost-card"
+      className="ghost-card"
       onPointerEnter={onEnter}
       onPointerLeave={onLeave}
       onClick={onCreate}
     >
-      <div className="page-card-body ghost-worn">
+      <CardBody pop={false} className="ghost-worn">
         {banner !== 'none' && (
-          <div className="page-card-thumb">
-            <span className="page-card-ph">
+          <CardThumb>
+            <CardPlaceholder>
               <Icon name={iconName} size="title1" />
-            </span>
-          </div>
+            </CardPlaceholder>
+          </CardThumb>
         )}
-        <div className="page-card-text">
-          <span className={cx('page-card-title', cardTitleType)}>
-            <Icon name={iconName} className="page-card-title-icon" />
-            <span className="page-card-title-text">New Page</span>
-          </span>
+        <CardText>
+          <CardTitle mode="static">
+            <Icon name={iconName} className="card-title-icon" />
+            <span className="card-title-text">New Page</span>
+          </CardTitle>
           {props.length > 0 && ctx && (
             <div className="card-props">
               {props.map((c) => (
@@ -970,9 +976,9 @@ function GhostCard({
               ))}
             </div>
           )}
-        </div>
-      </div>
-    </div>
+        </CardText>
+      </CardBody>
+    </CardRoot>
   )
 }
 
@@ -1004,22 +1010,17 @@ function SetCard({ set, drag }: { set: SetNode; drag?: DragItem }): React.JSX.El
     { value: set.banner, frame: thumbRef, autoEdit: true },
   )
   return (
-    // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
-    <div
-      ref={drag?.setNodeRef}
-      style={drag?.style}
-      {...(drag?.handle ?? { role: 'button', tabIndex: 0 })}
-      className={cx('set-card', drag?.isDragging && 'is-dragging')}
+    <CardRoot
+      drag={drag}
+      locked
       onClick={(e) => {
         if (!drag?.isDragging)
           void select({ kind: 'set', id: set.id, path: set.path }, { newTab: e.metaKey })
       }}
     >
-      <div className="page-card-body hover-pop">
-        {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
-        <div
+      <CardBody>
+        <CardThumb
           ref={thumbRef}
-          className="page-card-thumb"
           onContextMenu={(e) => {
             e.preventDefault()
             e.stopPropagation()
@@ -1029,9 +1030,9 @@ function SetCard({ set, drag }: { set: SetNode; drag?: DragItem }): React.JSX.El
           <AssetImage
             value={set.banner}
             fallback={
-              <span className="page-card-ph">
+              <CardPlaceholder>
                 <Icon name={iconName} size="largeTitle" />
-              </span>
+              </CardPlaceholder>
             }
           />
           <ImagePicker
@@ -1043,15 +1044,15 @@ function SetCard({ set, drag }: { set: SetNode; drag?: DragItem }): React.JSX.El
             onSave={onSave}
             onRepick={onRepick}
           />
-        </div>
-        <div className="page-card-text">
-          <OverScroll className={cx('page-card-title', cardTitleType)}>
-            <Icon name={iconName} className="page-card-title-icon" />
-            <span className="page-card-title-text">{set.title}</span>
-          </OverScroll>
-        </div>
-      </div>
-    </div>
+        </CardThumb>
+        <CardText>
+          <CardTitle>
+            <Icon name={iconName} className="card-title-icon" />
+            <span className="card-title-text">{set.title}</span>
+          </CardTitle>
+        </CardText>
+      </CardBody>
+    </CardRoot>
   )
 }
 
@@ -1209,28 +1210,19 @@ const CardFace = memo(function CardFace({
     [ctx, columns, row, view],
   )
   const titleIcon = !(view.hide_page_icons ?? false) && (
-    <Icon name={iconName} className="page-card-title-icon" />
+    <Icon name={iconName} className="card-title-icon" />
   )
-  const titleBody = (
-    <>
+  const titleRow = (
+    <CardTitle mode={(view.wrap_titles ?? false) ? 'wrap' : 'scroll'}>
       {titleIcon}
-      <span className="page-card-title-text">{row.title}</span>
-    </>
+      <span className="card-title-text">{row.title}</span>
+    </CardTitle>
   )
-  const titleRow =
-    (view.wrap_titles ?? false) ? (
-      <span className={cx('page-card-title is-wrap', cardTitleType)}>{titleBody}</span>
-    ) : (
-      <OverScroll className={cx('page-card-title', cardTitleType)}>{titleBody}</OverScroll>
-    )
   // While this card is the naming target the whole title row swaps for the fenced field —
   // outside the OverScroll clip, the glyph staying put, pointerdown stopped against the
   // whole-surface drag handle.
   const namingRow = naming && (
-    <span
-      className={cx('page-card-title', cardTitleType)}
-      onPointerDown={(e) => e.stopPropagation()}
-    >
+    <CardTitle mode="static" onPointerDown={(e) => e.stopPropagation()}>
       {titleIcon}
       <RenamableTitle
         path={row.path}
@@ -1239,20 +1231,19 @@ const CardFace = memo(function CardFace({
         className={cx(titleInput, 'card-title-input')}
         host="detail"
       />
-    </span>
+    </CardTitle>
   )
   const ph = (
-    <span className="page-card-ph">
+    <CardPlaceholder>
       <Icon name={iconName} size="title1" />
-    </span>
+    </CardPlaceholder>
   )
   return (
     <>
       {banner !== 'none' && (
-        // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
-        <div
+        <CardThumb
           ref={thumbRef}
-          className={cx('page-card-thumb', banner === 'preview' && 'is-capture')}
+          capture={banner === 'preview'}
           onContextMenu={onThumbContextMenu ? (e) => void onThumbContextMenu(e) : undefined}
         >
           {banner === 'cover' ? (
@@ -1262,11 +1253,9 @@ const CardFace = memo(function CardFace({
           ) : (
             ph
           )}
-        </div>
+        </CardThumb>
       )}
-      {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix */}
-      <div
-        className="page-card-text"
+      <CardText
         ref={textRef}
         onClick={
           onZoneClick
@@ -1293,11 +1282,11 @@ const CardFace = memo(function CardFace({
         )}
         {crumbs.length > 0 && (
           // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
-          <div className="page-card-loc-zone" onClick={onZoneClick}>
-            <NavTrail segments={crumbs} className={cx('page-card-loc', text.caption.standard)} />
+          <div className="card-loc-zone" onClick={onZoneClick}>
+            <CardTrail segments={crumbs} />
           </div>
         )}
-      </div>
+      </CardText>
     </>
   )
 })
@@ -1438,18 +1427,16 @@ const PageCard = memo(function PageCard({
     if (failed) setFailed(false)
   }
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
+  const active = useSession((s) => s.selection.kind === 'page' && s.selection.id === row.id)
   const iconName = entityIcon('page', row.icon, defaultIcons)
 
   // The drag engine fires a synthesized click after a pointer drag — a reorder-drop must not
   // navigate (NavGallery's `!isDragging` guard).
   return (
-    // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
-    <div
-      ref={drag?.setNodeRef}
-      style={drag?.style}
-      {...(drag?.handle ?? { role: 'button', tabIndex: 0 })}
+    <CardRoot
+      drag={drag}
+      active={active}
       data-rid={row.id}
-      className={cx('page-card', drag?.isDragging && 'is-dragging')}
       onPointerEnter={() => onHover(row.id, true)}
       onPointerLeave={() => onHover(row.id, false)}
       onClick={(e) => {
@@ -1459,11 +1446,7 @@ const PageCard = memo(function PageCard({
         // elementFromPoint reads the real element under the pointer, robust to whatever moved between
         // press and release (a value's own click stops propagation, so it never reaches here).
         const hit = document.elementFromPoint(e.clientX, e.clientY)
-        if (
-          hit &&
-          e.currentTarget.contains(hit) &&
-          hit.closest('.page-card-title, .page-card-thumb')
-        )
+        if (hit && e.currentTarget.contains(hit) && hit.closest('.card-title, .card-thumb'))
           onOpen(row, e.metaKey)
       }}
       onContextMenu={onCardContextMenu}
@@ -1472,7 +1455,7 @@ const PageCard = memo(function PageCard({
           the drag engine, and the body is hover-pop's surface whose stylesheet transitions
           transform (an inverse transform there would animate — a wrong-direction hop). */}
       <div className="card-displace">
-        <div className="page-card-body hover-pop">
+        <CardBody>
           <CardFace
             row={row}
             view={view}
@@ -1499,7 +1482,7 @@ const PageCard = memo(function PageCard({
             onHide={onHide}
             onOpenValuePicker={onOpenValuePicker}
           />
-        </div>
+        </CardBody>
       </div>
       {/* A persistent mount riding `open` — the Bloom-out plays on dismiss (a conditional mount
           tears the instance out mid-exit). The add-picker lives at the grid-level host, not here. */}
@@ -1519,6 +1502,6 @@ const PageCard = memo(function PageCard({
         onSave={onSave}
         onRepick={onRepick}
       />
-    </div>
+    </CardRoot>
   )
 })

@@ -1,14 +1,20 @@
 import { useState } from 'react'
 import { cx } from '@renderer/DesignSystem/Util/cx'
-import { text } from '@renderer/DesignSystem/Tokens'
-import { OverScroll } from '@renderer/DesignSystem/Interactions/OverScroll'
 import { SortableZone, useDragItem, type DragItem } from '@renderer/DesignSystem/Interactions/drag'
+import {
+  CardBody,
+  CardPlaceholder,
+  CardRoot,
+  CardText,
+  CardThumb,
+  CardTitle,
+  CardTrail,
+} from '@renderer/Cards/Card'
 import type { NavRef } from '@shared/types'
 import { useSession } from '../store'
 import { navKey } from './navRecents'
 import type { ResolvedNav } from './navResolve'
 import { EntityGlyph } from './EntityGlyph'
-import { NavTrail } from '@renderer/DesignSystem/Elements/NavTrail'
 import { NavPinButton, NavRowMenu } from './NavList'
 import './navGallery.css'
 import { onActivateKey } from '@renderer/DesignSystem/Interactions/activate'
@@ -47,7 +53,7 @@ export function NavGallery({
   // Search results render static — dragging a filtered view would rewrite the recents order out from under the query.
   return (
     <div className="nav-gallery">
-      <div className={cx('nav-gallery-grid', frozenLayout && 'is-fill')}>
+      <div className={cx('card-grid', frozenLayout && 'is-fill')}>
         {pins.length > 0 && (
           <SortableZone items={pins.map((p) => p.key)} layout="grid" onReorder={reorderPin}>
             {pins.map(card)}
@@ -112,38 +118,33 @@ function GalleryCard({
   }
 
   return (
-    // biome-ignore lint/a11y/useSemanticElements: a real <button> cannot host this surface — it doubles as a drag handle and wraps block content
-    // biome-ignore lint/a11y/useKeyWithClickEvents: the drag handle spread supplies onKeyDown (Space/Enter lift), which a spread hides from static analysis
-    <div
-      ref={drag?.setNodeRef}
-      style={drag?.style}
-      {...(drag?.handle ?? {})}
-      role="button"
-      tabIndex={0}
+    <CardRoot
+      drag={drag}
+      active={active}
+      locked
       {...(drag ? {} : { onKeyDown: onActivateKey(() => onSelect(it.target)) })}
-      className={cx('nav-gallery-card', active && 'is-active', drag?.isDragging && 'is-dragging')}
       onClick={open}
       onContextMenu={(e) => onMenu(it, e)}
     >
-      <div className="nav-gallery-card-body hover-pop">
-        <div className="nav-gallery-thumb">
+      <CardBody>
+        <CardThumb capture>
           {failed ? (
-            <div className="nav-gallery-ph">
+            <CardPlaceholder>
               <EntityGlyph item={it} size="title1" />
-            </div>
+            </CardPlaceholder>
           ) : (
             <img src={src} loading="lazy" alt="" onError={() => setFailed(true)} />
           )}
-          <NavPinButton it={it} className="nav-gallery-pin" />
-        </div>
-        <div className="nav-gallery-text">
-          <OverScroll className={cx('nav-gallery-title', text.footnote.emphasized)}>
-            <EntityGlyph item={it} size="body" className="nav-gallery-title-icon" />
+          <NavPinButton it={it} className="card-pin" />
+        </CardThumb>
+        <CardText>
+          <CardTitle>
+            <EntityGlyph item={it} size="body" className="card-title-icon" />
             {it.title}
-          </OverScroll>
-          <NavTrail segments={it.path} className={cx('nav-gallery-loc', text.caption.standard)} />
-        </div>
-      </div>
-    </div>
+          </CardTitle>
+          <CardTrail segments={it.path} />
+        </CardText>
+      </CardBody>
+    </CardRoot>
   )
 }

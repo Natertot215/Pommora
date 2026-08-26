@@ -134,7 +134,7 @@ The table's design vocabulary is a whole-file token sheet scoped to `.table-view
 
 ### Cards
 
-The Cards renderer (`src/renderer/src/Views/CardView/`) draws Pages as a resizable card grid over the same pipeline, and draws the same inside a view embed at the embed's zoom. A card is an image band over a text area — title, then properties, then an optional location footing — with the image band a fixed height scaled by the card factor and every card in a row matching its tallest sibling. The grid is an auto-fill track set off a column-width floor, sharing its chassis (grid mechanics, borders, hover lift) with the Navigation gallery. **Scale** is a slider in ViewSettings' footing, persisted as `card_size`. A per-view **Card Banner** chooses the image: **Cover** (the page's banner), **Preview** (the captured thumbnail), or **None** (imageless, compact cards); right-clicking the image band edits the page's banner through the page header's own flow. The layout is the view's `format` — **Standard** (title, then one labeled row per property) or **Compact** (label-less values packed in order) — shaped further by **Wrap Titles** and **Hide Icons**.
+The Cards renderer (`src/renderer/src/Views/CardView/`) draws Pages as a resizable card grid over the same pipeline, and draws the same inside a view embed at the embed's zoom. A card is an image band over a text area — title, then properties, then an optional location footing — with the image band a fixed height scaled by the card factor and every card in a row matching its tallest sibling. The grid is the shared card grid in its fill regime, and every card is the `src/Cards` chassis ([[DesignSystemPM]]): page cards reflow below a fixed image band, Set Cards are locked to the card aspect. **Scale** is a slider in ViewSettings' footing, persisted as `card_size`. A per-view **Card Banner** chooses the image: **Cover** (the page's banner), **Preview** (the captured thumbnail), or **None** (imageless, compact cards); right-clicking the image band edits the page's banner through the page header's own flow. The layout is the view's `format` — **Standard** (title, then one labeled row per property) or **Compact** (label-less values packed in order) — shaped further by **Wrap Titles** and **Hide Icons**.
 
 #### II. Properties on Cards
 
@@ -150,20 +150,21 @@ Cards reorder within their band by displacement,[^7] writing the per-machine man
 
 #### II. Card Tokens
 
-The geometry the two card families share — the floor, gaps, thumb share, and cover zoom — lives once in `DesignSystem/Tokens/card-tokens.css`, shared with the Navigation gallery; the Cards renderer's own scope overrides only what differs. Atlas convention per [[DesignSystemPM]].
+The chassis tokens — the floor, gaps, thumb height and share, and preview zoom — live with the chassis in `src/Cards/cards.css` ([[DesignSystemPM]]); the renderer's own scope rescales the floors by the Scale factor and adds what only the collection layer needs. Atlas convention per [[DesignSystemPM]].
 
-**SOURCE:** `Pommora/src/renderer/src/DesignSystem/Tokens/card-tokens.css` · `Pommora/src/renderer/src/Views/CardView/CardsView.css`
+**SOURCE:** `Pommora/src/renderer/src/Cards/cards.css` · `Pommora/src/renderer/src/Views/CardView/CardsView.css`
 
 | Title | Token | Value |
 | --- | --- | --- |
-| Column Floor | `--card-min-base` | `180px` (shared; the unscaled floor) |
-| Scaled Floor | `--card-min` | `calc(var(--card-min-base) * var(--card-scale, 1))` in `.cards-view` |
-| Gaps | `--card-gap-h` / `--card-gap-v` | `10px` / `10px` (shared) |
-| Cover Zoom | `--cover-zoom` | `1` (shared) |
-| Thumb Share | `--thumb-share` | `65%` (shared) |
+| Column Floor | `--card-min-base` / `--card-min` | `180px` (chassis; the unscaled floor and its live alias) |
+| Gaps | `--card-gap-h` / `--card-gap-v` | `10px` / `10px` (chassis) |
+| Thumb Height | `--card-thumb-h-base` / `--card-thumb-h` | `104px` (chassis; the reflow band and its live alias) |
+| Thumb Share | `--thumb-share` | `65%` (chassis; a locked card's image share) |
+| Preview Zoom | `--preview-zoom` | `1.25` (chassis; captured previews only) |
+| Scaled Floor | `--card-min` | `calc(var(--card-min-base) * var(--card-scale, 1))` |
+| Scaled Thumb | `--card-thumb-h` | `calc(var(--card-thumb-h-base) * var(--card-scale, 1))` |
 | Set-Card Floor | `--set-card-min` | `calc(var(--card-min) * 1.5)` |
-| Thumb Height | `--thumb-h` | `calc(104px * var(--card-scale, 1))` |
-| Body Minimum | `--card-body-min` | `calc(var(--thumb-h) * 0.54)`; compact recomputes from its row stack |
+| Body Minimum | `--card-body-min` | `calc(var(--card-thumb-h) * 0.54)`; compact recomputes from its row stack |
 | Band Clearance | `--band-clearance` | → `var(--card-gap-v)` (the seam rule's input) |
 | Compact Rows | `--card-row-h` / `--card-foot-h` | `17px` / composed |
 | Label Retunes | `--label-zoom` / `--label-pad-x` | `0.85` / `4px` |

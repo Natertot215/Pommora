@@ -74,7 +74,7 @@ Three phases: Views leaves `Detail/` for the renderer root, then the card chassi
 **Settled:**
 
 - Nomenclature: `Views/CardView/`, `Views/TableView/`, `src/Cards/`, `src/Tables/`; `MarkdownPM/Tables/` unchanged.
-- One chassis, reflow by default; `is-locked` (aspect `125/90` + thumb share) only on Set Cards. Gallery cards become reflow.
+- One chassis, reflow by default; `is-locked` (aspect `125/90` + thumb share) on Set Cards and gallery cards, whose auto-fit stretch needs the aspect to hold. Page cards reflow.
 - Titles are `text.body.semibold` everywhere; the cqi clamps and `container-type` retire. `--card-scale` sizes the card, never the type.
 - `--cover-zoom` → `--preview-zoom`, default `1.25`, applied to every captured-preview image. `AssetImage` covers stay unzoomed (user-cropped).
 - The active stroke (`is-active` → `--accent-stroke`) lives in `Cards/cards.css`; page cards gain it.
@@ -98,7 +98,7 @@ Three phases: Views leaves `Detail/` for the renderer root, then the card chassi
 | Embed heading strip | heading fill + bottom seam removed; leading cap re-anchored | `Blocks/viewEmbed.css.ts:200-210` |
 | Tile `is-borderless` | the block frame (`tile-chassis`), unrelated to the table | `SurfacePM/surfacepm.css:186`, `BlockSurface.tsx:277` |
 
-**Settled:** extraction depth A — the chrome kit consolidates into `Tables/` now. Border width, heading fill, and `is-clear` are Tables variables the consuming surface binds; the embed's title strip stays the embed's. `columnStyles`, `columnLabel`, `columnAlign`, `checkboxLook`, `solidColor`, `Cell` move to `Tables/` as root mechanisms surfaces opt into (an archive or the Trash may want them).
+**Settled:** extraction depth A — the chrome kit consolidates into `Tables/` now. Heading fill, heading-divider width, and `is-clear` are Tables variables the consuming surface binds; the body hairline width stays one standard; `hide_borders` (`.no-borders`) moves into Tables. The embed's title strip stays the embed's. `columnStyles`, `columnLabel`, `columnAlign`, `checkboxLook`, `solidColor`, `Cell` move to `Tables/` as root mechanisms surfaces opt into (an archive or the Trash may want them).
 
 **Steps:**
 
