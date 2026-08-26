@@ -141,7 +141,7 @@ export const fill = {
 } as const
 
 export const outline = {
-  tertiary: style({ selectors: { '&&': { borderColor: colorVars.color.label.quaternary } } }),
+  tertiary: style({ selectors: { '&&': { borderColor: colorVars.color.separator.border } } }),
   // `labelBase` sets border-STYLE and every shape names its width; a chrome-less one has to say
   // none, or the UA's `medium` paints a rule in the text color.
   none: style({ border: 'none' }),

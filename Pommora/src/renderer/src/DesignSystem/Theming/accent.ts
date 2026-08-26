@@ -14,7 +14,7 @@ export function accentValue(setting: AccentSetting, systemColor: string | null):
   return accentCell(setting)
 }
 
-/** `--accent-fill` / `--accent-text` are color-mix derivations of `--accent` (theme-vars.css.ts), so setting this one property recolors every accented surface. */
+/** `--accent-fill` is a color-mix derivation of `--accent` (theme-vars.css.ts), so setting this one property recolors every accented surface. */
 export function applyAccent(setting: AccentSetting, systemColor: string | null): void {
   if (typeof document === 'undefined') return
   document.documentElement.style.setProperty('--accent', accentValue(setting, systemColor))

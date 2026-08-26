@@ -93,7 +93,7 @@ export function PanesLeaf(): React.JSX.Element {
           }}
         >
           <div className="settings-body over-scroll">
-            <h2 className={cx('settings-heading', text.title3.emphasized)}>General</h2>
+            <h2 className={cx('settings-heading', text.headline.emphasized)}>General</h2>
             <div className="settings-section">
               {ROWS.map(([label, hint]) => (
                 <div key={label} className="settings-row">

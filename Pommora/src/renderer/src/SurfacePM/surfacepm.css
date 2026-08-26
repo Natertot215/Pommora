@@ -87,7 +87,7 @@
   z-index: 0;
   pointer-events: none;
   border-radius: 16px;
-  background: color-mix(in srgb, var(--accent) var(--tint-secondary), transparent);
+  background: var(--accent-stroke);
 }
 
 /* The block drag handle — a bordered chip NOTCHED into the left border: its own

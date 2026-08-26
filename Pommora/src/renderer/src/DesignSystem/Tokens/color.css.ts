@@ -31,7 +31,6 @@ const derived = createGlobalTheme(':root', {
       control: tintAt(white, 80),
       secondary: tintAt(white, 65),
       tertiary: tintAt(white, 35),
-      quaternary: tintAt(white, 20),
     },
     // The app substrate — the base background's single source: @shared/theme WINDOW_BG, so the Electron window + this token never drift.
     background: {

@@ -19,11 +19,12 @@ export const font = createGlobalTheme(':root', {
   },
 
   scale: {
-    largeTitle: { size: '26px', line: '32px' },
-    title1: { size: '22px', line: '26px' },
-    title2: { size: '17px', line: '22px' },
-    title3: { size: '15px', line: '20px' },
-    headline: { size: '13px', line: '16px' },
+    // Container-title family — the heading a Collection, Set, or page wears at the top of its own
+    // surface. Large over an editor banner, Medium on the bare page header, Small over a Banner cover.
+    titleLarge: { size: '28px', line: '32px' },
+    titleMedium: { size: '24px', line: '28px' },
+    titleSmall: { size: '20px', line: '24px' },
+    headline: { size: '15px', line: '20px' },
     body: { size: '13px', line: '16px' },
     callout: { size: '12px', line: '15px' },
     control: { size: '12px', line: '15px' },
@@ -54,10 +55,9 @@ const ramp = (key: ScaleKey): Record<WeightKey, string> => {
 }
 
 export const text = {
-  largeTitle: ramp('largeTitle'),
-  title1: ramp('title1'),
-  title2: ramp('title2'),
-  title3: ramp('title3'),
+  titleLarge: ramp('titleLarge'),
+  titleMedium: ramp('titleMedium'),
+  titleSmall: ramp('titleSmall'),
   headline: ramp('headline'),
   body: ramp('body'),
   callout: ramp('callout'),
