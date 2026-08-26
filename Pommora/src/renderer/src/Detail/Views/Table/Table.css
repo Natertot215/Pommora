@@ -7,14 +7,14 @@
      sidebar edge left, the inspector/window edge right) — the heading band full-bleeds to them while the
      grid's content box (and so every row) stays exactly where it was. The left margin walks the body's
      reclaimed detail lane back out to the content gutter; the right walks the content edge out by it. */
-  margin-left: calc(var(--width-detail) - var(--width-content));
-  margin-right: calc(-1 * var(--width-content));
+  margin-left: calc(var(--inset-detail) - var(--inset-content));
+  margin-right: calc(-1 * var(--inset-content));
   /* Re-add the content gutter the body reclaimed so the grid lands on --content-inset (grips + chevrons
      sit in the strip to its left). The RIGHT inset is a scoped var: full gutter while the columns fit
      (the rounded, content-inset look), collapsed to nothing once they overflow — the table flattens and
      h-scrolls to the glass edge (the Apple table model) while the left gutter stays solid. */
-  --table-right-inset: var(--width-content);
-  padding-left: var(--width-content);
+  --table-right-inset: var(--inset-content);
+  padding-left: var(--inset-content);
   padding-right: var(--table-right-inset);
   overflow-x: auto;
 }
@@ -76,9 +76,9 @@
      re-land the column tracks on the exact same content width as a data row — an un-padded (wider) header
      would resolve its tracks against a different box than the rows and drift every column. Staying in the
      grid keeps the band h-scrolling with the body. */
-  margin-left: calc(-1 * var(--width-content));
+  margin-left: calc(-1 * var(--inset-content));
   margin-right: calc(-1 * var(--table-right-inset));
-  padding-left: var(--width-content);
+  padding-left: var(--inset-content);
   padding-right: var(--table-right-inset);
 }
 .col-header-icon {
@@ -244,7 +244,7 @@
   inset-block: 0;
   right: 0;
   width: var(--table-border-width);
-  background: var(--separator-border);
+  background: var(--border-base);
   opacity: 0;
   transition: opacity var(--duration-base) var(--ease-base);
   pointer-events: none;
@@ -344,10 +344,10 @@
   position: absolute;
   left: calc(
     -1 *
-    var(--width-detail)
+    var(--inset-detail)
   ); /* the views gutter, left of the grid (same lane as the chevron) */
   width: var(
-    --width-detail
+    --inset-detail
   ); /* span the lane so justify-content centers the glyph in it, not flush-left */
   top: 50%;
   transform: translateY(-50%);
@@ -387,13 +387,13 @@
   display: inline-flex;
 }
 /* Band drag states live with the band — GroupBand.css (Cards renders the same bands). */
-/* The chevron floats into the views gutter, one --width-detail left of the head content (which starts flush
+/* The chevron floats into the views gutter, one --inset-detail left of the head content (which starts flush
    on the grid — groupIndent has no cell-padding-x base), landing in the grip lane. */
 .table-view .group-band-drop-outline {
   position: absolute;
-  left: calc(-1 * var(--width-detail));
+  left: calc(-1 * var(--inset-detail));
   width: var(
-    --width-detail
+    --inset-detail
   ); /* span the lane so justify-content centers the chevron in it, not flush-left */
   top: 50%;
   transform: translateY(-50%);

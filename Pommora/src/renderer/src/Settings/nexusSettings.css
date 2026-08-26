@@ -27,7 +27,7 @@
   flex-direction: column;
   padding-top: 6px;
   margin-top: 6px;
-  border-top: var(--border-segment);
+  border-top: var(--width-100) solid var(--border-light);
 }
 .settings-cat {
   display: flex;
@@ -68,7 +68,7 @@
   padding-bottom: 10px;
   /* The panel's one rule — it separates the leaf's title from its body, which is why the rows
      beneath carry none of their own. */
-  border-bottom: 1px solid var(--separator-border);
+  border-bottom: var(--width-100) solid var(--border-base);
 }
 .settings-heading-icon {
   color: var(--label-secondary);

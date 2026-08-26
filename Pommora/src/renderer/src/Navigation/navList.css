@@ -8,7 +8,7 @@
   margin: 0 var(--navwindow-inset);
   padding: 9px 0;
   color: var(--label-tertiary);
-  border-bottom: var(--border-segment);
+  border-bottom: var(--width-100) solid var(--border-light);
   flex-shrink: 0;
 }
 .nav-search-row input {

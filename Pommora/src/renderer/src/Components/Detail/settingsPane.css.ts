@@ -81,7 +81,7 @@ export const header = style({
   alignItems: 'center',
   gap: '8px',
   padding: '2px 0 6px 2px',
-  vars: { '--field-ring': c.separator.border },
+  vars: { '--field-ring': c.border.base },
 })
 
 /** Square icon button — opens the icon picker. Paints the shared OutlineTint channel so a

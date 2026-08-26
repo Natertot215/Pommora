@@ -58,7 +58,7 @@ export const borderedField = style([
     color: c.label.control,
     overflow: 'hidden',
     whiteSpace: 'nowrap',
-    vars: { '--field-ring': c.separator.border },
+    vars: { '--field-ring': c.border.base },
   },
 ])
 

@@ -88,7 +88,7 @@ export function frostStyle(p: FrostParams): CSSProperties {
     backdropFilter: filter,
     WebkitBackdropFilter: filter,
     ...(p.borderAlpha > 0 && {
-      border: `1px solid var(--glass-outline, #FFFFFF${hexA(p.borderAlpha)})`,
+      border: `var(--width-100) solid var(--glass-outline, #FFFFFF${hexA(p.borderAlpha)})`,
     }),
     boxShadow: edges.join(', '),
   }

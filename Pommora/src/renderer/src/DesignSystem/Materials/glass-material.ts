@@ -18,7 +18,7 @@ export const frostMaterial: CSSProperties = {
   background: 'transparent',
   backdropFilter: 'blur(6px) brightness(95%)',
   WebkitBackdropFilter: 'blur(6px) brightness(95%)',
-  border: '1px solid var(--glass-outline, #FFFFFF1F)',
+  border: 'var(--width-100) solid var(--glass-outline, #FFFFFF1F)',
   boxShadow: [
     OUTLINE_INSET,
     'inset 0 1px 0 #FFFFFF59', // top specular — the glassy edge highlight

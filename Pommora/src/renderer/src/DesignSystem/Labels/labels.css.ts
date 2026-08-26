@@ -13,7 +13,7 @@ const SIZE = {
   gap: '4px',
   padX: '6px',
   roomyPadX: '8px',
-  border: '2px',
+  border: 'var(--width-200)',
   pillRadius: '10px',
   tagRadius: '6px',
   textMax: '85px',
@@ -21,7 +21,7 @@ const SIZE = {
   // Geometry for Checkbox properties.
   boxSide: '17px',
   boxRadius: '5.5px',
-  boxBorder: '1.5px',
+  boxBorder: 'var(--width-150)',
 } as const
 
 const labelBase = style([
@@ -141,7 +141,7 @@ export const fill = {
 } as const
 
 export const outline = {
-  tertiary: style({ selectors: { '&&': { borderColor: colorVars.color.separator.border } } }),
+  tertiary: style({ selectors: { '&&': { borderColor: colorVars.color.border.base } } }),
   // `labelBase` sets border-STYLE and every shape names its width; a chrome-less one has to say
   // none, or the UA's `medium` paints a rule in the text color.
   none: style({ border: 'none' }),
