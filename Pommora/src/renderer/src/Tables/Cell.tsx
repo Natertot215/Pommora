@@ -9,15 +9,19 @@ import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import { OverScroll } from '@renderer/DesignSystem/Interactions/OverScroll'
 import { SEGMENT_INDEX_ATTR } from '@renderer/DesignSystem/Components/Fields/SegmentRun'
 import { resolveFileValue } from '@renderer/assetUrl'
-import { fileValueWithout } from '../PropertyEditing/filePick'
-import { declaredType, fileName, resolveFieldValue } from '../pipeline/value'
-import { formatDate, formatNumber, numberDivisor } from '../PropertyEditing/formatValue'
-import { OptionChip } from '../PropertyEditing/OptionChip'
+import { fileValueWithout } from '@renderer/Views/PropertyEditing/filePick'
+import { declaredType, fileName, resolveFieldValue } from '@renderer/Views/pipeline/value'
+import {
+  formatDate,
+  formatNumber,
+  numberDivisor,
+} from '@renderer/Views/PropertyEditing/formatValue'
+import { OptionChip } from '@renderer/Views/PropertyEditing/OptionChip'
 import { findOption } from './cellResolve'
 import { LinkCell } from './LinkCell'
 import { solidColorCss } from './solidColor'
 import { CheckboxGlyph } from './checkboxLook'
-import type { ResolveContext } from './resolveContext'
+import type { ResolveContext } from '@renderer/Views/TableView/resolveContext'
 import { FileChip, SpaceChip } from '@renderer/DesignSystem/Labels'
 
 /** Type-aware cell render — the per-view `style` picks each type's look + formats. Every value

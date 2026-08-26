@@ -1,10 +1,7 @@
-/* The Trash leaf. The rows are the navigation list's, borrowed whole, with one lane added for the
-   deletion time — so this file styles the frame the rows sit in and the lane, and nothing about a
-   row itself.
-/* The class is doubled deliberately: `table-tokens.css` declares two of the tokens below on
-   `.trash-leaf` as well, at the same weight, and this is what makes the leaf's values win on
-   specificity rather than on which stylesheet the bundler happened to emit last. */
-.trash-leaf.trash-leaf {
+/* The Trash leaf — a clear-headed table (Tables) whose rows are the navigation list's, borrowed
+   whole, with one lane added for the deletion time. This file styles the frame, the lane, and the
+   tokens the leaf rebinds; the compound selector outranks the `.table` scope those tokens come from. */
+.trash-leaf.table {
   --navwindow-inset: 14px; /* KNOB — the leaf's content inset, the rows' and the heading's alike */
   --trash-date-lane: 160px; /* KNOB — fixed, so the dates line up down the list */
   --trash-date-inset: 10px; /* KNOB — clears the column divider, heading and rows alike */
@@ -25,11 +22,10 @@
   align-items: center;
   position: relative;
   flex-shrink: 0;
-  background: none;
   margin: 0;
   padding: 0;
-  border-bottom: none;
 }
+/* The clear heading's own seam, inset to the rows. */
 .trash-leaf .trash-head::after {
   content: "";
   position: absolute;
@@ -43,25 +39,9 @@
 .trash-head .col-header:first-child::before {
   content: none;
 }
-.trash-leaf .trash-head .trash-head-name::after,
-.trash-leaf .nav-item .nav-item-main::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  right: 0;
-  transform: translateY(-50%);
-  width: var(--heading-segment-width);
-  height: var(--heading-segment-height);
-  border-radius: var(--heading-segment-width);
-  pointer-events: none;
-}
-/* The heading's reads as heading chrome; a row's reads as a separator, exactly as the table's two
-   do — one shape and one axis, two tones. */
-.trash-leaf .trash-head .trash-head-name::after {
-  background: var(--heading-segment);
-}
-.trash-leaf .nav-item .nav-item-main::after {
-  background: var(--border-base);
+/* A row's segment bar reads as a separator, the heading's as heading chrome — one shape, two tones. */
+.trash-leaf .nav-item-main {
+  --segment-tone: var(--border-base);
 }
 .trash-leaf .trash-head-name {
   flex: 1;
@@ -108,7 +88,6 @@
   border-top: var(--table-border);
 }
 .trash-leaf .nav-item-main {
-  position: relative;
   padding-left: var(--trash-lead);
 }
 

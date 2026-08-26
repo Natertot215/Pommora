@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { columnLabel } from './columnLabel'
-import { contextsByIdOf } from '../pipeline/contextIdentity'
+import { contextsByIdOf } from '@renderer/Views/pipeline/contextIdentity'
 import { RESERVED_PROPERTY_ID, type PropertyDefinition } from '@shared/properties'
 
 const schema: PropertyDefinition[] = [

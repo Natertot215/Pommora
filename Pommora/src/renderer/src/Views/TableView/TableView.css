@@ -1,0 +1,120 @@
+/* The Collection TableView's own layer over the Tables chrome: the shell that widens to the glass
+   edges, the grid density, the hide/slide beat, the grip gutter, and the group-band rhythm. Every
+   number lives in Tables/table-tokens.css. */
+
+.table-view {
+  /* Width is auto (not 100%) so the negative side margins WIDEN the box out to both glass edges (the
+     sidebar edge left, the inspector/window edge right) — the heading band full-bleeds to them while the
+     grid's content box (and so every row) stays exactly where it was. The left margin walks the body's
+     reclaimed detail lane back out to the content gutter; the right walks the content edge out by it. */
+  margin-left: calc(var(--inset-detail) - var(--inset-content));
+  margin-right: calc(-1 * var(--inset-content));
+  /* Re-add the content gutter the body reclaimed so the grid lands on --content-inset (grips + chevrons
+     sit in the strip to its left). The RIGHT inset is a scoped var: full gutter while the columns fit
+     (the rounded, content-inset look), collapsed to nothing once they overflow — the table flattens and
+     h-scrolls to the glass edge (the Apple table model) while the left gutter stays solid. */
+  --table-right-inset: var(--inset-content);
+  padding-left: var(--inset-content);
+  padding-right: var(--table-right-inset);
+  overflow-x: auto;
+}
+.table-view.overflowing {
+  --table-right-inset: 0px;
+}
+
+.table-empty {
+  color: var(--label-primary);
+  opacity: var(--state-inactive);
+  padding: var(--empty-pad-y) 0;
+}
+
+/* The grid container: a vertical stack of full-width bands. Each band that shows columns is itself a
+   grid reading --cols. min-width (the summed column widths, inline) makes it scroll; width:100% lets
+   the trailing 1fr filler track eat slack. */
+.table-grid {
+  width: 100%;
+  /* Base density (--zoom) × the per-block Scale (--block-zoom, set on a SurfacePM tile; absent = 1). The
+     table scales as a unit within the tile's fixed inset. Chromium resolves % zoom-aware, so width:100%
+     still fills the pane; the drag/resize math reads the resolved `zoom` so hits stay 1:1. */
+  zoom: calc(var(--zoom) * var(--block-zoom, 1));
+}
+
+/* Hide + style-slide animation: while a column collapses (Hide) or slides out to a wider per-style min
+   (a look change), animate the track set on the disclosure token. Active ONLY during those beats (never
+   during a drag), so resize stays instant. !important beats the drag engine's inline `transition: none`
+   on the row (the row is both the grid AND the drag node); the header has no inline style, so this is
+   redundant-but-harmless there. */
+.table-grid.col-hiding .table-head,
+.table-grid.col-hiding .data-row,
+.table-grid.col-sliding .table-head,
+.table-grid.col-sliding .data-row {
+  /* biome-ignore lint/complexity/noImportantStyles: must beat the base row rule that suppresses column transitions. */
+  transition: grid-template-columns var(--duration-fast) var(--ease-base) !important;
+}
+
+/* Sits in the views gutter (the same strip the group chevron occupies), revealed on row hover;
+   the lifted row ghosts (MarkdownPM feel). */
+.data-cell.cell-lead {
+  position: relative; /* containing block for the grip in the views gutter */
+  overflow: visible; /* let the grip escape left into the gutter */
+}
+.row-grip {
+  position: absolute;
+  left: calc(
+    -1 *
+    var(--inset-detail)
+  ); /* the views gutter, left of the grid (same lane as the chevron) */
+  width: var(
+    --inset-detail
+  ); /* span the lane so justify-content centers the glyph in it, not flush-left */
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--label-tertiary);
+  cursor: grab;
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-base);
+}
+.data-row:hover .row-grip {
+  opacity: 1;
+}
+.row-grip:active {
+  cursor: grabbing;
+}
+
+/* The shared disclosure head (outline + glyph + hover "+") over the group's rows, a full-width band off
+   the column grid. The chrome lives on .group-band-* (GroupBand.css); the table scopes the section
+   rhythm (the row), the sticky pin (the head), and the gutter chevron. */
+.table-view .group-band-row {
+  /* No zoom of its own — the row sits inside .table-grid's compound zoom already, so it scales in
+     lockstep with the data rows; any re-application here would square a factor. */
+  padding-top: var(--band-gap);
+}
+/* A sub-group bucket band reads as a row, not a section — one shoulder, not two. */
+.table-view .group-band.sub-band .group-band-row {
+  padding-top: var(--band-clearance);
+}
+.table-view .group-band-head {
+  /* Sticky-left so the disclosure label + its chevron hold the gutter when the columns scroll — the
+     group stays legible instead of sliding off. Also the containing block for the chevron's absolute
+     float. left:0 = the grid's content start; at rest it sits in flow, only pinning once scrolled. */
+  position: sticky;
+  left: 0;
+  display: inline-flex;
+}
+/* Band drag states live with the band — GroupBand.css (Cards renders the same bands). */
+/* The chevron floats into the views gutter, one --inset-detail left of the head content (which starts flush
+   on the grid — groupIndent has no cell-padding-x base), landing in the grip lane. */
+.table-view .group-band-drop-outline {
+  position: absolute;
+  left: calc(-1 * var(--inset-detail));
+  width: var(
+    --inset-detail
+  ); /* span the lane so justify-content centers the chevron in it, not flush-left */
+  top: 50%;
+  transform: translateY(-50%);
+  justify-content: center;
+  cursor: pointer;
+}

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { buildSetIcons, buildSetNames, findOption, groupLabel, optionLabel } from './cellResolve'
 import { EMPTY_ASSET_MAP, UNGROUPED, type CollectionNode, type ResolvedGroup } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
-import type { ResolveContext } from './resolveContext'
+import type { ResolveContext } from '@renderer/Views/TableView/resolveContext'
 
 const schema: PropertyDefinition[] = [
   {
