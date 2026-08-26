@@ -3,7 +3,7 @@ import { MenuDropdown } from '@renderer/DesignSystem/Components/Menu'
 import { iconNameOr } from '@renderer/DesignSystem/Symbols'
 import { useSession } from '../store'
 import { findCollection, findSet, findCollectionForSet, isDepth1Set } from '../Detail/Scope'
-import { useActiveView } from '../Detail/Views/useActiveView'
+import { useActiveView } from '@renderer/Views/useActiveView'
 import { ViewPane } from './ViewPane'
 import * as s from './toolbarDropdown.css'
 

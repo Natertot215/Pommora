@@ -1,10 +1,10 @@
 import { useMemo } from 'react'
 import type { CollectionNode, SetNode } from '@shared/types'
-import { useSession } from '../../store'
+import { useSession } from '../store'
 import { useActiveView } from './useActiveView'
-import { TableView } from './Table/TableView'
+import { TableView } from './TableView/TableView'
 import { resolveContainerSchema } from './pipeline/pickView'
-import { CardsView } from './Cards/CardsView'
+import { CardsView } from './CardView/CardsView'
 
 export function ViewRenderer({ source }: { source: CollectionNode | SetNode }): React.JSX.Element {
   const tree = useSession((s) => s.tree)

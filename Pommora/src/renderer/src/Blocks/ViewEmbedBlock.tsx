@@ -31,7 +31,7 @@ import { optionRing } from '@renderer/DesignSystem/Components/Pickers/PickerMenu
 import { RenamableLabel } from '@renderer/DesignSystem/Components/Fields'
 import { IconPicker } from '@renderer/Settings/IconPicker'
 import { findCollection, findCollectionForSet, findSet } from '@renderer/Detail/Scope'
-import { ViewRenderer } from '@renderer/Detail/Views/ViewRenderer'
+import { ViewRenderer } from '@renderer/Views/ViewRenderer'
 import { SettingsPane } from '@renderer/Components/Detail/SettingsPane'
 import { hostedGutter } from '@renderer/DesignSystem/Components/Menu/menuSurface.css'
 import { ViewEmbedScopeProvider } from '@renderer/Embeds/ViewEmbedScope'

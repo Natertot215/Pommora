@@ -16,7 +16,7 @@ import {
   stubPointerCapture,
   stubRect,
 } from '@renderer/testing/pointerHarness'
-import { useSession } from '../../../store'
+import { useSession } from '../../store'
 import { TableView } from './TableView'
 import { propsAtRoot } from '@renderer/testing/propsAtRoot'
 

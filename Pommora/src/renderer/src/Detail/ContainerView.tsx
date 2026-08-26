@@ -1,6 +1,6 @@
 import type { CollectionNode, SetNode } from '@shared/types'
 import { DetailScaffold } from './DetailScaffold'
-import { ViewRenderer } from './Views/ViewRenderer'
+import { ViewRenderer } from '@renderer/Views/ViewRenderer'
 import { containerOwner } from './Scope'
 
 export function ContainerView({ source }: { source: CollectionNode | SetNode }): React.JSX.Element {

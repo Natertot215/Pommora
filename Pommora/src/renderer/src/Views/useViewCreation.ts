@@ -16,12 +16,12 @@ import {
   SEEK_GLIDE,
   scrollGlide,
 } from '@renderer/DesignSystem/Interactions/autoscroll'
-import { useSession } from '../../store'
+import { useSession } from '../store'
 import { declaredType, resolveFieldValue } from './pipeline/value'
 import { filterSeeds } from './pipeline/creationSeeds'
 import { flattenContainer } from './pipeline/group'
 import { orderWithSlot, tieOrderWith } from './creationOrder'
-import { groupKeyToValue } from './Table/reassign'
+import { groupKeyToValue } from './TableView/reassign'
 
 // Sort criteria whose value a new page can inherit from its anchor — single-value user properties.
 // Title and Modified aren't property ids and multi-value types don't copy; under those the row

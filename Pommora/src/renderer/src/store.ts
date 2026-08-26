@@ -27,7 +27,7 @@ import {
   type MutateRequest,
   type RenameHost,
 } from '@shared/mutate'
-import { orderWithSlot } from './Detail/Views/creationOrder'
+import { orderWithSlot } from './Views/creationOrder'
 import { contextDirRel } from '@shared/nexusPaths'
 import { caught, errText, fail, type PommoraError, type Result } from '@shared/result'
 import { reconcileSelection, reconcileWith } from './selection'
@@ -99,7 +99,7 @@ import {
 } from '@renderer/DesignSystem/Theming/personalization'
 import { findCollection, findSet, findCollectionForSet, isDepth1Set } from './Detail/Scope'
 import { crumbDepthFor } from './Detail/Subfield/crumbs'
-import { ensureContainerView, wireViewAdopted } from './Detail/Views/viewMint'
+import { ensureContainerView, wireViewAdopted } from './Views/viewMint'
 import { normalizePropertyName, wrapKey } from '@shared/governedKeys'
 
 interface RenameClaim {

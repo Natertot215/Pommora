@@ -2,9 +2,9 @@ import type { ReactNode } from 'react'
 import type { CollectionNode, ResolvedGroup, SetNode } from '@shared/types'
 import type { SavedView } from '@shared/views'
 import { GroupBand, resolveBandHead } from './GroupBand'
-import { bandShowsAdd } from './Cards/cardsBand'
+import { bandShowsAdd } from './CardView/cardsBand'
 import { useBandDrag } from './BandDnd'
-import type { ResolveContext } from './Table/resolveContext'
+import type { ResolveContext } from './TableView/resolveContext'
 
 /** The band adapter every view renders: it holds the `useBandDrag` hook (which throws outside
  *  `<BandDnd>`, so it can't live in the shared presentational GroupBand) and the native Set context

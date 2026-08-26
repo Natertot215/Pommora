@@ -122,10 +122,10 @@ Take these first if the sweep is ever opened:
 - **`Properties/PropertiesPane.tsx:365` and `:374`, `PagePropertiesPane.tsx:167`,
   `PagePreview/PreviewInspector.tsx:199`** — four un-linked partial chains over `PropertyMenuAction`,
   each handling two of its five members.
-- **`Detail/Views/Cards/CardValue.tsx:115`** — handles only the `cell:*` half of `CellMenuAction`. A
+- **`Views/CardView/CardValue.tsx:115`** — handles only the `cell:*` half of `CellMenuAction`. A
   title column reaching it would pop the full nine-row page-meta menu with none of it handled; the
   only thing preventing that is a `kind !== 'title'` filter in `cardValueInput.ts:37`.
-- **`Detail/Views/Table/TableView.tsx:975`** — the cell-menu chain omits `cell:hide`, dead only
+- **`Views/TableView/TableView.tsx:975`** — the cell-menu chain omits `cell:hide`, dead only
   because `hideable` is passed `false` at `:961`.
 
 Two things the sweep must not produce. There is no `assertNever` helper and one should not be

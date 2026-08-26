@@ -9,9 +9,9 @@ import type { FilterGroup, FilterRule, MatchMode } from '@shared/views'
 export type { MatchMode }
 import type { NexusTree } from '@shared/types'
 import type { Icon } from '@renderer/DesignSystem/Symbols'
-import { contextsByIdOf } from '../../Detail/Views/pipeline/contextIdentity'
-import { declaredType } from '../../Detail/Views/pipeline/value'
-import { FILTER_OPS } from '../../Detail/Views/pipeline/filter'
+import { contextsByIdOf } from '@renderer/Views/pipeline/contextIdentity'
+import { declaredType } from '@renderer/Views/pipeline/value'
+import { FILTER_OPS } from '@renderer/Views/pipeline/filter'
 import { MODIFIED_TARGET, schemaTargets, TITLE_TARGET } from '../../Properties/PropertyTypes'
 
 export type Connector = 'and' | 'or'
