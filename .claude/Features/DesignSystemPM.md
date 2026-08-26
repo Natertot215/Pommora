@@ -67,7 +67,6 @@ The Pommora design system — the code mirror of the Figma "Pommora - React" lib
 | Label Control    | `label.control` · `--label-control`       | `system-white` @ 80% |
 | Label Secondary  | `label.secondary` · `--label-secondary`   | `system-white` @ 65% |
 | Label Tertiary   | `label.tertiary` · `--label-tertiary`     | `system-white` @ 35% |
-| Label Quaternary | `label.quaternary` · `--label-quaternary` | `system-white`@ 20% |
 
 #### States
 
@@ -110,9 +109,10 @@ Hover and selected paint behind content, muted over it; the three opacities are 
 | ----------------- | ------------------------------------------- | -------------------------------------- |
 | Separator Border  | `separator.border` · `--separator-border`   | system-grey @ 25%                      |
 | Separator Segment | `separator.segment` · `--separator-segment` | system-grey @ 20%                      |
-| Heading Seam      | `--border-heading`                          | `1.75px solid var(--separator-border)` |
-| Box Seam          | `--border-cell`                             | `1.5px solid var(--separator-border)`  |
-| Section Seam      | `--border-segment`                          | `1px solid var(--separator-segment)`   |
+| Separator Control | `separator.control` · `--separator-control` | system-white @ 20%                     |
+| Heading Border    | `--border-heading`                          | `1.75px solid var(--separator-border)` |
+| Cell Border       | `--border-cell`                             | `1.5px solid var(--separator-border)`  |
+| Segment Border    | `--border-segment`                          | `1px solid var(--separator-segment)`   |
 | Banner Scrim      | `BANNER_SHADOW` · `--banner-shadow`         | `#0000008C`                            |
 
 #### Shadows
@@ -166,7 +166,6 @@ Hover and selected paint behind content, muted over it; the three opacities are 
 | ----------------- | ---------------------------------------------- | ----------------------------------------------------------------- |
 | Icon Ladder       | `size.icon.*` · `--icon-*` · `ICON_PX`         | Eleven steps named for the type ramp — `largeTitle` `26px` → `subline` `10px` |
 | Pill Radius       | `RADIUS_FULL` · `--radius-full`                | `999px`                                                           |
-| Container Title   | `CONTAINER_TITLE_SIZE` · `--container-title-size` | `20px`                                                         |
 | Disclosure Indent | `DISCLOSURE_INDENT` · `--disclosure-indent`    | `14px`                                                            |
 | Fold Gutter       | `FOLD_GUTTER` · `--fold-gutter-base`           | `20px`                                                            |
 | Drop Line         | `DROP_LINE_THICKNESS` · `DROP_DOT_SIZE` · `DROP_LINE_INSET` | `2px` · `7px` · `2px`                                |
@@ -180,11 +179,10 @@ Hover and selected paint behind content, muted over it; the three opacities are 
 
 | Style       | Token             | Size / Line     | Character                                            |
 | ----------- | ----------------- | --------------- | ---------------------------------------------------- |
-| Large Title | `text.largeTitle` | `26px` / `32px` | display step                                         |
-| Title 1     | `text.title1`     | `22px` / `26px` | display step                                         |
-| Title 2     | `text.title2`     | `17px` / `22px` | display step                                         |
-| Title 3     | `text.title3`     | `15px` / `20px` | the smallest display step                            |
-| Headline    | `text.headline`   | `13px` / `16px` | body-size heading — distinct by weight, not scale    |
+| Title Large  | `text.titleLarge`  | `28px` / `32px` | container title — over an editor banner              |
+| Title Medium | `text.titleMedium` | `24px` / `28px` | container title — the bare page header               |
+| Title Small  | `text.titleSmall`  | `20px` / `24px` | container title — over a Banner cover                |
+| Headline    | `text.headline`   | `15px` / `20px` | the smallest heading step; the one 15px style        |
 | Body        | `text.body`       | `13px` / `16px` | the standard content size; carries the row primitive |
 | Callout     | `text.callout`    | `12px` / `15px` | a step under body — headers and ancillary labels     |
 | Control     | `text.control`    | `12px` / `15px` | chips and control chrome                             |
