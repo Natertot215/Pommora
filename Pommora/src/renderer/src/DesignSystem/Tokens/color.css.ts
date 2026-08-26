@@ -74,8 +74,8 @@ globalStyle(':root', {
     '--shadow-strong': '0 12px 30px #00000065',
   },
 })
-export const shadowStandardVar = 'var(--shadow-standard)'
-export const shadowLiftVar = 'var(--shadow-lift)'
+export const shadowStandardVar = 'var(--shadow-base)'
+export const shadowLiftVar = 'var(--shadow-strong)'
 
 // Opacity dims worn by the element itself, unlike the state washes painted behind it.
 export const STATE_OPACITY = { drag: '0.85', ghost: '0.65', inactive: '0.55' } as const

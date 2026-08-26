@@ -20,7 +20,9 @@ export const segment = style({
   display: 'inline-flex',
   alignItems: 'center',
   gap: '3px',
-  minWidth: 0,
+  // A segment never shrinks: the run overflows its cap as one row and the cap clips and fades it,
+  // rather than each segment squeezing onto the next.
+  flexShrink: 0,
   selectors: {
     'button&:hover': { color: c.label.secondary },
   },
@@ -31,7 +33,7 @@ export const glyph = style({
   color: `var(--nav-trail-glyph, ${c.label.tertiary})`,
 })
 
-export const chevron = style({ margin: '0 4px' })
+export const chevron = style({ flexShrink: 0, margin: '0 4px' })
 
 export const ghost = style({
   opacity: STATE_OPACITY.inactive,

@@ -199,9 +199,7 @@
 .mdpm-banner {
   position: relative;
   height: 230px;
-  border-bottom: var(
-    --border-heading
-  ); /* the shared heading↔body seam (same token as the table heading + collection banner) */
+  border-bottom: var(--width-175) solid var(--border-base); /* the shared heading↔body seam (same token as the table heading + collection banner) */
 }
 .mdpm-banner-overlay {
   position: absolute;

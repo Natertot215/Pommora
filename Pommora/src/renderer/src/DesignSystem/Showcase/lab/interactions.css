@@ -93,7 +93,7 @@
 }
 .ix-overlay {
   cursor: grabbing;
-  box-shadow: var(--shadow-lift);
+  box-shadow: var(--shadow-strong);
   background: var(--surface-tertiary);
 }
 

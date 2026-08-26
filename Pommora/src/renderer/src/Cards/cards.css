@@ -1,0 +1,174 @@
+/* ============================================================================
+   CARDS — the one card chassis every card surface wears: the Navigation gallery and the
+   Collection CardView. A card is a cover band over a title area.
+   ============================================================================ */
+:root {
+  /* KNOB — the shared column-width floor. Bigger = fewer, larger columns that grow further before a
+     new one snaps them back; smaller = more, tighter columns. `-base` is the unscaled value, so a
+     scaling host (CardView's Scale factor) rebuilds --card-min from it without restating the number. */
+  --card-min-base: 180px;
+  --card-min: var(--card-min-base);
+  --card-gap-h: 10px; /* KNOB — inter-card spacing */
+  --card-gap-v: 10px;
+  /* KNOB — the reflow thumb's fixed height; the card grows below it. Same `-base` pattern. */
+  --card-thumb-h-base: 104px;
+  --card-thumb-h: var(--card-thumb-h-base);
+  --thumb-share: 65%; /* KNOB — a locked card's image share of its height; the title area takes the rest */
+  --preview-zoom: 1.25; /* KNOB — captured previews zoom into the top; a user-cropped cover never does */
+}
+
+/* ── THE GRID ─────────────────────────────────────────────────────────────
+   auto-FIT: with no empty tracks to pad, cards STRETCH to fill the width, so a wider host grows
+   the cards rather than shrinking them — they only step down when there's room for another whole
+   column, then grow again from there. `is-fill` holds the empty tracks instead, so a sparse grid
+   keeps its cards card-sized rather than ballooning to fill the row.
+   ────────────────────────────────────────────────────────────────────────── */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(var(--card-min), 1fr));
+  gap: var(--card-gap-v) var(--card-gap-h);
+}
+.card-grid.is-fill {
+  grid-template-columns: repeat(auto-fill, minmax(var(--card-min), 1fr));
+}
+
+/* ── THE CARD ─────────────────────────────────────────────────────────────
+   Root = drag shell (the engine owns its transform); body = the frame + hover-pop. A locked card
+   holds the aspect and lets its cover take a share; a reflow card fixes its cover and grows below.
+   ────────────────────────────────────────────────────────────────────────── */
+.card {
+  min-width: 0; /* a grid item sizes to its content by default — a long trail would widen the card past its track instead of clipping */
+  text-align: left;
+  cursor: pointer;
+  border: none;
+  background: none;
+  padding: 0;
+}
+.card.is-locked {
+  aspect-ratio: 125 / 90;
+  align-self: start; /* a taller row-sibling can't stretch it past its aspect height */
+}
+.card.is-dragging {
+  opacity: var(--state-drag);
+}
+
+.card-body {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  border: var(--width-150) solid var(--border-base);
+  border-radius: 10px;
+  overflow: hidden;
+  background: none;
+  transition:
+    border-color var(--duration-base) var(--ease-base),
+    transform var(--duration-slow) var(--ease-base);
+}
+/* The open entity — the same accent stroke an active embed wears. */
+.card.is-active .card-body {
+  border-color: var(--accent-stroke);
+}
+
+.card-thumb {
+  position: relative;
+  flex: 0 0 var(--card-thumb-h);
+  min-height: 0;
+  overflow: hidden;
+  background: var(--fill-tertiary);
+}
+.card.is-locked .card-thumb {
+  flex-basis: var(--thumb-share);
+}
+
+.card-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top; /* a page's inline title banner sits at the top of the shot */
+  -webkit-user-drag: none; /* the image never drags on its own — the card owns the drag (or nothing) */
+}
+.card-thumb.is-capture img {
+  transform: scale(var(--preview-zoom));
+  transform-origin: top left; /* anchor the zoom at the title / line-starts so it never clips them */
+}
+
+.card-ph {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--label-tertiary);
+  background: var(--fill-quaternary);
+}
+
+/* The pin — a surface opts in by mounting one inside the thumb. Overlaid top-right, no fill;
+   hover-revealed until pinned. */
+.card-pin {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  padding: 3px;
+  border: none;
+  background: none;
+  color: var(--label-tertiary);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--duration-base) var(--ease-base);
+}
+.card:hover .card-pin {
+  opacity: 1;
+}
+.card-pin.is-pinned {
+  color: var(--accent);
+  opacity: 1;
+}
+
+/* The title area: a top-anchored column on a darker shelf. The title is pinned to the top, never
+   centered, so a card with no location keeps its title where one with a location does. */
+.card-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 4px;
+  padding: 8px 9px;
+  min-width: 0;
+  background: var(--state-muted);
+  border-top: var(--width-150) solid var(--border-base);
+}
+.card.is-locked .card-text {
+  min-height: 0; /* the cover band decides; the text takes what's left */
+}
+
+/* One line inside the title area — the title itself or the location beneath it. */
+.card-title,
+.card-loc {
+  flex: 0 0 auto; /* each is its own fixed row — the title never grows to fill / recenter */
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  --over-scroll-fade: var(--fade-base);
+  padding-block: 1px;
+}
+.card-title {
+  gap: 4px;
+  color: var(--label-primary);
+}
+.card-title.is-wrap {
+  display: inline;
+}
+.card-title.is-wrap .card-title-icon {
+  vertical-align: -2px;
+  margin-right: 5px;
+}
+.card-title-icon {
+  flex: 0 0 auto;
+  color: var(--label-secondary);
+}
+.card-loc {
+  color: var(--label-secondary);
+}
