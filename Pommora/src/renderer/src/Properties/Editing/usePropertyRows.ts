@@ -13,9 +13,9 @@ import {
   contextIdsOf,
   isContextColumnId,
   spaceIdentityOf,
-} from '../pipeline/contextIdentity'
-import { resolveFieldValue } from '../pipeline/value'
-import { buildResolveContext, type ResolveContext } from '../TableView/resolveContext'
+} from '@renderer/Properties/contextIdentity'
+import { resolveFieldValue } from '@renderer/Properties/value'
+import { buildResolveContext, type ResolveContext } from '@renderer/Properties/resolveContext'
 import { sharedValueClickAction } from './valueClick'
 import { fileChipIndex, fileValueMenu, pickFileInto } from './filePick'
 import { linkValueMenuTarget, showConnectionMenu } from '@renderer/Embeds/connectionMenu'

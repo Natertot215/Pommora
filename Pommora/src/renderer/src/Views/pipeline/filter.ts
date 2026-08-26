@@ -17,7 +17,7 @@ import {
   RESERVED_PROPERTY_ID,
 } from '@shared/properties'
 import { isBlankValue, type PropertyValue } from '@shared/propertyValue'
-import { declaredType, modifiedStampString, resolveFieldValue } from './value'
+import { declaredType, modifiedStampString, resolveFieldValue } from '@renderer/Properties/value'
 import { type SetTreeNode, subtreeIds } from './group'
 import { linkDisplayText } from '@shared/linkValue'
 

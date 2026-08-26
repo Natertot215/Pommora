@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import { resolveColor } from '@renderer/Tables/solidColor'
+import { resolveColor } from '@renderer/DesignSystem/Tokens/solidColor'
 import { DualSwitch } from '@renderer/DesignSystem/Components/Controls/Switches/DualSwitch'
 import type { LinkConfig, LinkDisplay } from '@shared/properties'
 import { ColorSwatch } from '@renderer/DesignSystem/Components/Controls/Switches/ColorSwatch'

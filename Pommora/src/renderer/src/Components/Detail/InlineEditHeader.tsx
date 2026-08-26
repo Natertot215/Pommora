@@ -2,7 +2,6 @@ import { type Ref, useState } from 'react'
 import { InputField } from '@renderer/DesignSystem/Components/Fields'
 import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
 import { Icon } from '@renderer/DesignSystem/Symbols'
-import { DashIcon } from '../../Properties/DashIcon'
 import * as s from './settingsPane.css'
 
 /** `iconRef` registers the icon button's element so an external picker can anchor to it. */
@@ -53,7 +52,7 @@ export function InlineEditHeader({
         disabled={readOnly || !onIconClick}
         onClick={onIconClick}
       >
-        {icon ? <Icon name={icon} /> : <DashIcon />}
+        <Icon name={icon ?? 'square-dashed'} />
       </Button>
       <InputField
         className={s.titleField}

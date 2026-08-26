@@ -181,7 +181,6 @@
    own emphasized tone (it reads as the row's empty half); the whole .card-value stays the click target. */
 .card-value-empty {
   padding: 0 var(--label-pad-x, 6px);
-  color: var(--label-secondary);
 }
 
 /* The breadcrumb is ALWAYS the card's footing — pinned to the bottom (margin-top:auto) with a divider

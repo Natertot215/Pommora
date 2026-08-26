@@ -7,8 +7,8 @@ import type { PropertyDefinition } from '@shared/properties'
 import type { ResolvedColumn, ViewRow } from '@shared/types'
 
 import { EMPTY_ASSET_MAP } from '@shared/types'
-import { Cell } from './Cell'
-import type { ResolveContext } from '@renderer/Views/TableView/resolveContext'
+import { Cell } from '@renderer/Properties/Editing/Cell'
+import type { ResolveContext } from '@renderer/Properties/resolveContext'
 import { propsAtRoot } from '@renderer/testing/propsAtRoot'
 import { labelColor } from '@renderer/DesignSystem/Labels'
 

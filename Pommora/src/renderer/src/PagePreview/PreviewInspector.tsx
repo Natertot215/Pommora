@@ -1,3 +1,4 @@
+import { EmptyValue } from '@renderer/DesignSystem/Elements/EmptyValue/EmptyValue'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
 import type { PropertyDefinition } from '@shared/properties'
@@ -9,23 +10,23 @@ import { overScrollEllipsis } from '@renderer/DesignSystem/Interactions/OverScro
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { text } from '@renderer/DesignSystem/Tokens'
 import { PickerMenu, PickerOption } from '@renderer/DesignSystem/Components/Pickers/PickerMenu'
-import { Cell } from '@renderer/Tables/Cell'
-import { contextOptionsFor } from '@renderer/Views/pipeline/contextOptions'
-import { PropertyEditor } from '@renderer/Views/PropertyEditing/PropertyEditor'
-import { parseEditorValue } from '@renderer/Views/CardView/cardValueInput'
+import { Cell } from '@renderer/Properties/Editing/Cell'
+import { contextOptionsFor } from '@renderer/Properties/contextOptions'
+import { PropertyEditor } from '@renderer/Properties/Editing/PropertyEditor'
+import { parseEditorValue } from '@renderer/Properties/Editing/cardValueInput'
 import { linkAlias, linkEditText, urlValueFromEdit, urlValueFromRename } from '@shared/linkValue'
 import { resolveTitle, validateLink } from '@renderer/linkResolve'
 import { TextPicker } from '@renderer/DesignSystem/Components/Pickers/TextPicker'
-import { solidColorCss } from '@renderer/Tables/solidColor'
-import { PropertyPicker, syntheticContextDef } from '@renderer/Views/PropertyEditing/PropertyPicker'
-import { DatetimeValuePicker } from '@renderer/Views/PropertyEditing/DatetimeValuePicker'
-import { resolveFieldValue } from '@renderer/Views/pipeline/value'
+import { solidColorCss } from '@renderer/DesignSystem/Tokens/solidColor'
+import { PropertyPicker, syntheticContextDef } from '@renderer/Properties/Editing/PropertyPicker'
+import { DatetimeValuePicker } from '@renderer/Properties/Editing/DatetimeValuePicker'
+import { resolveFieldValue } from '@renderer/Properties/value'
 import { fetchPageDetail, readPageDetail } from '../Tabs/warmCache'
 import {
   propertyIcon,
   usePropertyRows,
   type Editing,
-} from '@renderer/Views/PropertyEditing/usePropertyRows'
+} from '@renderer/Properties/Editing/usePropertyRows'
 import { useSession, type PreviewTarget } from '../store'
 
 // Editable through the SAME primitives the table views use (Cell render, PropertyPicker/
@@ -251,7 +252,7 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
                             ? (next) => commitValue(id, next)
                             : (next) =>
                                 commitContext(id, next?.kind === 'context' ? next.value : []),
-                        }) ?? <span className="pgpreview-insp-empty">—</span>)
+                        }) ?? <EmptyValue className="pgpreview-insp-empty" />)
                       )}
                     </span>
                   </div>

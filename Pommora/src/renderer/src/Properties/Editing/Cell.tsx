@@ -9,19 +9,15 @@ import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import { OverScroll } from '@renderer/DesignSystem/Interactions/OverScroll'
 import { SEGMENT_INDEX_ATTR } from '@renderer/DesignSystem/Components/Fields/SegmentRun'
 import { resolveFileValue } from '@renderer/assetUrl'
-import { fileValueWithout } from '@renderer/Views/PropertyEditing/filePick'
-import { declaredType, fileName, resolveFieldValue } from '@renderer/Views/pipeline/value'
-import {
-  formatDate,
-  formatNumber,
-  numberDivisor,
-} from '@renderer/Views/PropertyEditing/formatValue'
-import { OptionChip } from '@renderer/Views/PropertyEditing/OptionChip'
-import { findOption } from './cellResolve'
-import { LinkCell } from './LinkCell'
-import { solidColorCss } from './solidColor'
-import { CheckboxGlyph } from './checkboxLook'
-import type { ResolveContext } from '@renderer/Views/TableView/resolveContext'
+import { fileValueWithout } from '@renderer/Properties/Editing/filePick'
+import { declaredType, fileName, resolveFieldValue } from '@renderer/Properties/value'
+import { formatDate, formatNumber, numberDivisor } from '@renderer/Properties/Editing/formatValue'
+import { OptionChip } from '@renderer/Properties/Editing/OptionChip'
+import { findOption } from '@renderer/Properties/Editing/cellResolve'
+import { LinkCell } from '@renderer/Properties/Editing/LinkCell'
+import { solidColorCss } from '@renderer/DesignSystem/Tokens/solidColor'
+import { CheckboxGlyph } from '@renderer/Properties/Editing/checkboxLook'
+import type { ResolveContext } from '@renderer/Properties/resolveContext'
 import { FileChip, SpaceChip } from '@renderer/DesignSystem/Labels'
 
 /** Type-aware cell render — the per-view `style` picks each type's look + formats. Every value

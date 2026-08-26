@@ -115,7 +115,6 @@
   background: var(--state-hover);
 }
 .pgpreview-insp-empty {
-  color: var(--label-tertiary);
   font-size: var(--text-caption-size);
 }
 /* + Add Property — a bare footnote affordance OUTSIDE the properties field (no field of its

@@ -2,7 +2,7 @@ import { useCallback } from 'react'
 import { defaultStyleFor, type ColumnStyle, type DateFormat } from '@shared/columnStyles'
 import type { PropertyDefinition } from '@shared/properties'
 import type { SavedView } from '@shared/views'
-import { declaredType } from '@renderer/Views/pipeline/value'
+import { declaredType } from '@renderer/Properties/value'
 import { useSession } from '@renderer/store'
 
 /** The resolved style for a column: the saved entry's defined keys win over the type defaults

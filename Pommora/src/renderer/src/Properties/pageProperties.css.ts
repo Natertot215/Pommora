@@ -55,7 +55,7 @@ export const value = style({
   textAlign: 'right',
 })
 
-export const empty = style([text.caption.standard, { color: c.label.tertiary }])
+export const empty = style([text.caption.standard])
 
 /** Sits outside the field blocks — an ancillary affordance, not a row in either group. */
 export const add = style({ alignSelf: 'flex-start', color: c.label.secondary })

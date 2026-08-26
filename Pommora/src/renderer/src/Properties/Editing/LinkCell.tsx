@@ -7,7 +7,7 @@ import { cx } from '@renderer/DesignSystem/Util/cx'
 import { OverScroll } from '@renderer/DesignSystem/Interactions/OverScroll'
 import { linkDisplayText, readLink, type LinkTarget } from '@shared/linkValue'
 import { resolveConnection } from '@renderer/treeIndex'
-import { solidColorCss } from './solidColor'
+import { solidColorCss } from '@renderer/DesignSystem/Tokens/solidColor'
 import { openWebLink } from '@renderer/openWebLink'
 
 /** The url-cell body, split out so ONLY url cells pay for the page-title store subscription + the

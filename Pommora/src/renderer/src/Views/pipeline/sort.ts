@@ -6,7 +6,12 @@
 import type { SortCriterion } from '@shared/views'
 import type { ViewRow } from '@shared/types'
 import { type PropertyDefinition, RESERVED_PROPERTY_ID } from '@shared/properties'
-import { declaredType, fileName, modifiedStampString, resolveFieldValue } from './value'
+import {
+  declaredType,
+  fileName,
+  modifiedStampString,
+  resolveFieldValue,
+} from '@renderer/Properties/value'
 import { linkDisplayText } from '@shared/linkValue'
 
 type SortKey = number | string

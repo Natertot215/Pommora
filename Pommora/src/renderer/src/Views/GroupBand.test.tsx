@@ -6,7 +6,7 @@ import type { ReactNode } from 'react'
 import type { PropertyDefinition } from '@shared/properties'
 import { EMPTY_ASSET_MAP, type CollectionNode, type ResolvedGroup } from '@shared/types'
 import type { GroupConfig, SavedView } from '@shared/views'
-import type { ResolveContext } from './TableView/resolveContext'
+import type { ResolveContext } from '@renderer/Properties/resolveContext'
 import { resolveBandHead } from './GroupBand'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 

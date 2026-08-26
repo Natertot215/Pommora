@@ -11,10 +11,14 @@ import {
   PropertyOptionRows,
   pickSemantics,
   syntheticContextDef,
-} from '../PropertyEditing/PropertyPicker'
-import type { ContextOption } from '../pipeline/contextOptions'
-import { PropertyEditor } from '../PropertyEditing/PropertyEditor'
-import { type AddEntry, orderAddableEntries, parseEditorValue } from './cardValueInput'
+} from '@renderer/Properties/Editing/PropertyPicker'
+import type { ContextOption } from '@renderer/Properties/contextOptions'
+import { PropertyEditor } from '@renderer/Properties/Editing/PropertyEditor'
+import {
+  type AddEntry,
+  orderAddableEntries,
+  parseEditorValue,
+} from '@renderer/Properties/Editing/cardValueInput'
 import { compactRow } from './cardAddPicker.css'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 

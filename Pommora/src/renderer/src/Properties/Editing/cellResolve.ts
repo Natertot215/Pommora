@@ -4,7 +4,7 @@
 import { type PropertyDefinition, statusOptions } from '@shared/properties'
 import type { CollectionNode, ResolvedGroup, SetNode } from '@shared/types'
 import type { SavedView } from '@shared/views'
-import type { ResolveContext } from '@renderer/Views/TableView/resolveContext'
+import type { ResolveContext } from '@renderer/Properties/resolveContext'
 
 /** A select/status option for a stored value, via the column's schema def — undefined if the column
  *  isn't a select/status or the value is unknown. Chip cells read `color` and (Compact) `icon`; text
