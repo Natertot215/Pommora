@@ -118,6 +118,7 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 │   │           ├── // NavWindow         | • The standalone navigation window
 │   │           ├── // Navigation        | • Tabs, history, breadcrumbs, search
 │   │           ├── // PagePreview       | • The floating page window
+│   │           ├── // Properties       | • The property surface — the panes, the rows, the per-type editors
 │   │           ├── // Settings          | • The settings surface
 │   │           ├── // Sidebar           | • The ribbon and its content column
 │   │           ├── // SurfacePM         | • The tile-based dashboard engine
