@@ -60,8 +60,7 @@ textarea,
 
 /* Hover "pop" — a slight scale-up emphasis on hover, ridden on the slow token so it swells rather
    than flicks. Reusable: add `hover-pop` to any element you want to lift on hover; tune the swell
-   with --pop-scale. A consumer that ALSO transitions another property (a border, say) must co-list
-   transform in its own `transition` (one element resolves to a single transition value). */
+   with --pop-scale.*/
 .hover-pop {
   position: relative;
   transition: transform var(--duration-slow) var(--ease-base);

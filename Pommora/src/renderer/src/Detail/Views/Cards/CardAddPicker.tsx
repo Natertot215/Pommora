@@ -6,7 +6,7 @@ import { PickerMenu } from '@renderer/DesignSystem/Components/Pickers/PickerMenu
 import { MenuItem, MenuPaneTopRow } from '@renderer/DesignSystem/Components/Menu'
 import { flushTrailing } from '@renderer/DesignSystem/Components/Menu/menu.css'
 import { PaneSlider } from '@renderer/DesignSystem/Components/PaneSlider/PaneSlider'
-import { propertyTypeIconName } from '@renderer/Components/Detail/PropertyTypes'
+import { propertyTypeIconName } from '@renderer/Properties/PropertyTypes'
 import {
   PropertyOptionRows,
   pickSemantics,

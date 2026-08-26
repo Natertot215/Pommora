@@ -1,10 +1,10 @@
 import { useRef, useState } from 'react'
-import { EditableInput } from '@renderer/DesignSystem/Components/Fields'
-import { cx } from '@renderer/DesignSystem/Util/cx'
-import { Icon } from '@renderer/DesignSystem/Symbols'
-import { PickerMenu, PickerOption } from '@renderer/DesignSystem/Components/Pickers/PickerMenu'
-import { detail } from '@renderer/DesignSystem/Components/Menu/menu.css'
-import { popRowMenu, useNativeMenus } from '../../nativeMenus'
+import { EditableInput } from '../../Components/Fields'
+import { cx } from '../../Util/cx'
+import { Icon } from '../../Symbols'
+import { PickerMenu, PickerOption } from '../../Components/Pickers/PickerMenu'
+import { detail } from '../../Components/Menu/menu.css'
+import { popRowMenu, useNativeMenus } from '@renderer/nativeMenus'
 import * as s from './pickerControl.css'
 
 export type PickerChoice<T extends string> = {

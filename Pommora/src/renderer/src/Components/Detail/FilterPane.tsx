@@ -44,7 +44,7 @@ import { CheckboxGlyph } from '../../Detail/Views/Table/checkboxLook'
 import { onActivateKey } from '@renderer/DesignSystem/Interactions/activate'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { useSaveView } from '../../Embeds/ViewEmbedScope'
-import { PickerControl, type PickerChoice } from './PickerControl'
+import { PickerControl, type PickerChoice } from '@renderer/DesignSystem/Elements/PickerControl'
 import { optionsOf } from './GroupingPane'
 import {
   type Connector,

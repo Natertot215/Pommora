@@ -10,7 +10,7 @@ import { OptionChip } from '@renderer/Detail/Views/PropertyEditing/OptionChip'
 import { IconPicker } from '@renderer/Settings/IconPicker'
 import { OptionNameCaret, ghostAnchorProps } from './GhostOptionChip'
 import type { GhostAnchor } from '@renderer/Detail/Views/useGhostAnchor'
-import * as s from './settingsPane.css'
+import * as s from '../Components/Detail/settingsPane.css'
 import { labelColor, shape as labelShape, optionShapeFor } from '@renderer/DesignSystem/Labels'
 
 export type OptionStyle = Extract<ColumnLook, 'standard' | 'compact'>

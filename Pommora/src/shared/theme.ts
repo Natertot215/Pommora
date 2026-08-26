@@ -8,8 +8,7 @@
 export const WINDOW_BG = '#1A1A1C'
 
 // The spectrum solids, for the same reason: main can't read a vanilla-extract token, while
-// color.css.ts needs the values to build the :root vars. Written once here, mirrored from the
-// Figma color collection.
+// color.css.ts needs the values to build the :root vars.
 //   color.css.ts → color.solid tokens → every --color-* consumer
 //   isColorKey   → the legacy half of the storable-color vocabulary, beside the ramp cells
 export const SPECTRUM = {

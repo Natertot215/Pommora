@@ -2,7 +2,7 @@ import { type Ref, useState } from 'react'
 import { InputField } from '@renderer/DesignSystem/Components/Fields'
 import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
 import { Icon } from '@renderer/DesignSystem/Symbols'
-import { DashIcon } from './DashIcon'
+import { DashIcon } from '../../Properties/DashIcon'
 import * as s from './settingsPane.css'
 
 /** `iconRef` registers the icon button's element so an external picker can anchor to it. */

@@ -1,5 +1,5 @@
 import { LINK_DISPLAY_LABELS, LINK_DISPLAYS, type LinkDisplay } from '@shared/properties'
-import type { PickerChoice } from './PickerControl'
+import type { PickerChoice } from '@renderer/DesignSystem/Elements/PickerControl'
 
 /** The three link forms as a picker's rows — read by a URL property's own Format control and by the
  *  nexus-wide default in Settings.

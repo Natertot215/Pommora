@@ -3,7 +3,7 @@ import { InputField, placeholder } from '@renderer/DesignSystem/Components/Field
 import { NavTrail, pathSegments } from '@renderer/DesignSystem/Elements/NavTrail'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { useSession } from '@renderer/store'
-import * as s from './settingsPane.css'
+import * as s from '../../Components/Detail/settingsPane.css'
 
 /** Where this property's uploads land — the asset directory itself by default, or a subfolder
  *  beneath it. Def-level (property-wide), like a link's color or a number's format. The path is

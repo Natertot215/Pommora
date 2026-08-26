@@ -4,7 +4,6 @@ import { MenuSurface } from '@renderer/DesignSystem/Components/Menu'
 import { SettingsPane } from './SettingsPane'
 import { PageMenu } from './PageMenu'
 import { SettingsScaffold } from './SettingsScaffold'
-import { SpaceSettingsContent } from '../../Detail/Settings/SpaceSettings'
 import * as s from './settingsPane.css'
 
 /** The button never binds to a specific pane — the content view's scope decides which one renders. */
@@ -24,8 +23,6 @@ export function SettingsDropdown({
           <SettingsPane />
         ) : scope === 'page' ? (
           <PageMenu />
-        ) : scope === 'space' && selection.kind === 'space' ? (
-          <SpaceSettingsContent id={selection.id} />
         ) : scope === 'homepage' || scope === 'context' ? (
           <SettingsScaffold />
         ) : (
