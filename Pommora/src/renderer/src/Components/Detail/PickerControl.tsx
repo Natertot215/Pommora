@@ -32,8 +32,10 @@ export function PickerControl<T extends string>({
   options: readonly PickerChoice<T>[]
   onPick: (v: T) => void
   /** A control whose value can also be written out. A right press turns the trigger's value into a
-   *  field holding `text`, selected and ready to overwrite, without opening the list at all. */
-  typeable?: { text: string; onCommit: (typed: string) => void }
+   *  field holding `text`, selected and ready to overwrite, without opening the list at all. A value
+   *  worn with a unit hands that unit over as `suffix`: it stays drawn beside the field, so the mark
+   *  never leaves and the digits stay where they were read. */
+  typeable?: { text: string; suffix?: string; onCommit: (typed: string) => void }
   /** Opaque menu surface — for pickers that open over another pane (the block Scale idiom). */
   solid?: boolean
   /** Pinned-footer tone — the value reads `detail`, sitting level with the Style row's label. */
@@ -76,16 +78,24 @@ export function PickerControl<T extends string>({
     <span ref={ref} className={s.host}>
       {typing && typeable ? (
         <span className={cx(s.trigger, valueClass)}>
-          <EditableInput
-            value={typeable.text}
-            className={cx(valueClass, s.caretShape)}
-            autoSize
-            onCommit={(written) => {
-              setTyping(false)
-              typeable.onCommit(written)
-            }}
-            onCancel={() => setTyping(false)}
-          />
+          <span className={s.written}>
+            <EditableInput
+              value={typeable.text}
+              className={cx(valueClass, s.caretShape)}
+              autoSize
+              onCommit={(typed) => {
+                setTyping(false)
+                typeable.onCommit(typed)
+              }}
+              onCancel={() => setTyping(false)}
+            />
+            {typeable.suffix && (
+              // A press on the mark would otherwise pull focus out of the field and commit the edit.
+              <span aria-hidden onMouseDown={(e) => e.preventDefault()}>
+                {typeable.suffix}
+              </span>
+            )}
+          </span>
           {chevron}
         </span>
       ) : (
