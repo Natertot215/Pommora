@@ -737,10 +737,11 @@ function ZoomRow({ row }: { row: RowOf<'zoom'> }): React.JSX.Element {
         value={String(stored)}
         options={choices}
         onPick={(v) => commit(Number(v))}
-        // The bare number, so a second press lands on the digits themselves rather than behind a
-        // percent sign. Anything unreadable as one leaves the scale where it stood.
+        // The digits are the field and the percent sign stays beside it, so the value reads the same
+        // written as read. Anything unreadable as a number leaves the scale where it stood.
         typeable={{
           text: String(Math.round(stored * 100)),
+          suffix: '%',
           onCommit: (written) => {
             const percent = Number.parseFloat(written.replace('%', '').trim())
             if (Number.isFinite(percent))
