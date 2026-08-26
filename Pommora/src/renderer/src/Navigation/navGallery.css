@@ -1,8 +1,7 @@
-/* The gallery's card geometry is the shared family (DesignSystem/Tokens/card-tokens.css); only the deeper
-   cover zoom is the gallery's own. All cards share ONE grid — pinned first, recents flowing straight
-   after them (L→R/T→B), no divider. */
+/* The gallery — the card chassis is src/Cards; this is the gallery's own layer: the host insets and
+   the grid regime. All cards share ONE grid — pinned first, recents flowing straight after them
+   (L→R/T→B), no divider. */
 .nav-gallery {
-  --cover-zoom: 1.25; /* KNOB — the gallery reads its covers zoomed further into the top than Cards does */
   display: flex;
   flex-direction: column;
   gap: var(--card-gap-v);
@@ -10,96 +9,6 @@
      lands on the surface inset; NavWindow lets its scroll be the sole gap, not doubled). */
   padding: var(--navwindow-inset-v, 6px) var(--navwindow-inset, 12px);
 }
-.nav-gallery-grid {
-  /* auto-FIT (not auto-fill): with no empty tracks to pad, the cards STRETCH to fill the width, so a
-     wider window grows the cards rather than shrinking them — they only step down when there's room
-     for another whole column (a layout change), then grow again from there. */
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(var(--card-min), 1fr));
-  gap: var(--card-gap-v) var(--card-gap-h);
-}
-/* Search must NOT relayout — filtering to fewer results keeps the column tracks (and card size) the view
-   opened with, unlike a resize. auto-FILL holds the empty tracks so 2 results stay card-sized, never
-   ballooning to fill the row the way auto-fit would. */
-.nav-gallery-grid.is-fill {
-  grid-template-columns: repeat(auto-fill, minmax(var(--card-min), 1fr));
-}
-
-.nav-gallery-card {
-  /* Grid item + drag-transform shell. The drag engine owns THIS element's inline transform/transition,
-     so the visual frame + hover-pop live on the inner body below, where they can't collide with it.
-     align-self:start so a taller row-sibling can't stretch it past its aspect height. */
-  aspect-ratio: 125 / 90;
-  align-self: start;
-  text-align: left;
-  cursor: pointer;
-}
-.nav-gallery-card.is-dragging {
-  opacity: var(--state-drag);
-}
-/* The visual card: bordered frame + the query container for the cqi typography below + the hover-pop
-   surface (its `hover-pop` class scales it on hover — see styles.css). Kept off the drag shell so the
-   pop's scale never fights the drag's translate. */
-.nav-gallery-card-body {
-  container-type: inline-size;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
-  border: var(--width-150) solid var(--border-base);
-  border-radius: 10px;
-  overflow: hidden;
-  background: none;
-  transition:
-    border-color var(--duration-base) var(--ease-base),
-    transform var(--duration-slow) var(--ease-base);
-}
-/* Open entity — same accent-tint border as an active SurfacePM embed/resize. */
-.nav-gallery-card.is-active .nav-gallery-card-body {
-  border-color: var(--accent-stroke);
-}
-
-.nav-gallery-thumb {
-  position: relative;
-  flex: 0 0 var(--thumb-share);
-  min-height: 0;
-  overflow: hidden;
-  background: var(--fill-tertiary);
-}
-
-/* Pin overlaid top-right ON the thumbnail — no fill. Hover-revealed on unpinned cards; solid (still
-   no background) once pinned. */
-.nav-gallery-pin {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  display: flex;
-  padding: 3px;
-  border: none;
-  background: none;
-  color: var(--label-tertiary);
-  cursor: pointer;
-  opacity: 0;
-  transition: opacity var(--duration-base) var(--ease-base);
-}
-.nav-gallery-card:hover .nav-gallery-pin {
-  opacity: 1;
-}
-.nav-gallery-pin.is-pinned {
-  color: var(--accent);
-  opacity: 1;
-}
-
-/* The gallery card is aspect-locked, so its title area takes what the cover band leaves. */
-.nav-gallery-text {
-  min-height: 0;
-}
-/* Typography scales with the card: cqi = 1% of the card's width (the card is the query container), so
-   a bigger card reads bigger text. Clamped so tiny/huge cards stay legible. Card-prefixed to outrank
-   the text-ramp class's font-size. */
-.nav-gallery-card .nav-gallery-title {
-  font-size: clamp(11px, 5.5cqi, 18px);
-}
-.nav-gallery-card .nav-gallery-loc {
-  font-size: clamp(9px, 4.3cqi, 14px);
-}
+/* The grid stretches its cards to the width (card-grid's auto-fit). Search must NOT relayout —
+   filtering to fewer results keeps the column tracks the view opened with, so the host flips
+   `is-fill` while a query is live. */

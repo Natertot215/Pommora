@@ -64,7 +64,7 @@
 .spm-tile.is-lifted {
   z-index: var(--z-lifted);
   cursor: grabbing;
-  box-shadow: var(--shadow-lift);
+  box-shadow: var(--shadow-strong);
   /* The selected tone — a notch brighter than hover, still opaque over main-bg. */
   background: linear-gradient(var(--state-selected), var(--state-selected)), var(--main-bg);
 }
