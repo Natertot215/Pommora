@@ -4,18 +4,22 @@ import { isBlankValue, type PropertyValue } from '@shared/propertyValue'
 import { isCompact, type SavedView } from '@shared/views'
 import { PickerMenu } from '@renderer/DesignSystem/Components/Pickers/PickerMenu/PickerMenu'
 import { TextPicker } from '@renderer/DesignSystem/Components/Pickers/TextPicker'
-import type { ContextOption } from '../pipeline/contextOptions'
-import { declaredType, resolveFieldValue } from '../pipeline/value'
+import type { ContextOption } from '@renderer/Properties/contextOptions'
+import { declaredType, resolveFieldValue } from '@renderer/Properties/value'
 import { useStyleFor } from '@renderer/Tables/columnStyles'
 import { linkEditText, urlValueFromEdit } from '@shared/linkValue'
 import { resolveTitle } from '@renderer/linkResolve'
-import { solidColorCss } from '@renderer/Tables/solidColor'
-import type { ResolveContext } from '../TableView/resolveContext'
-import { PropertyPicker, syntheticContextDef } from '../PropertyEditing/PropertyPicker'
+import { solidColorCss } from '@renderer/DesignSystem/Tokens/solidColor'
+import type { ResolveContext } from '@renderer/Properties/resolveContext'
+import { PropertyPicker, syntheticContextDef } from '@renderer/Properties/Editing/PropertyPicker'
 import { useSession } from '../../store'
-import { DatetimeValuePicker } from '../PropertyEditing/DatetimeValuePicker'
+import { DatetimeValuePicker } from '@renderer/Properties/Editing/DatetimeValuePicker'
 import { CardAddPicker } from './CardAddPicker'
-import { addColumn, addEntriesFor, type AddEntry } from './cardValueInput'
+import {
+  addColumn,
+  addEntriesFor,
+  type AddEntry,
+} from '@renderer/Properties/Editing/cardValueInput'
 
 /** A value's request to open its picker — the anchor is the clicked value span. */
 export type ValuePickerRequest = {

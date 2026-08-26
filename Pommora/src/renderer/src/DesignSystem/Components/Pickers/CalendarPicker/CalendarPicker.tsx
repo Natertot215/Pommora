@@ -1,3 +1,4 @@
+import { EmptyValue } from '../../../Elements/EmptyValue/EmptyValue'
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { Button } from '../../Controls/Button'
 import { createPortal } from 'react-dom'
@@ -399,7 +400,7 @@ export function CalendarPicker({
     <div className={s.field} key={label}>
       <Icon name="calendar" size="body" className={s.fieldIcon} />
       <OverScroll className={s.fieldValue}>
-        {k ? formatDateValue(k, condensed) : <span className={s.fieldEmpty}>—</span>}
+        {k ? formatDateValue(k, condensed) : <EmptyValue />}
       </OverScroll>
     </div>
   )
@@ -533,7 +534,7 @@ export function CalendarPicker({
           {twelve && ampmSegment(which, mins)}
         </span>
       ) : (
-        <span className={cx(s.fieldValue, s.fieldEmpty)}>—</span>
+        <EmptyValue className={s.fieldValue} />
       )}
     </div>
   )

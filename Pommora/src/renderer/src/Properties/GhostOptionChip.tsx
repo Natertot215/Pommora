@@ -5,7 +5,11 @@
 // rather than this surface's own; only the thing being created differs.
 import { useRef } from 'react'
 import { Reveal } from '@renderer/DesignSystem/Animation/Reveal'
-import { GHOST_DWELL_MS, useGhostAnchor, type GhostAnchor } from '@renderer/Views/useGhostAnchor'
+import {
+  GHOST_DWELL_MS,
+  useGhostAnchor,
+  type GhostAnchor,
+} from '@renderer/DesignSystem/Interactions/ghostAnchor'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { base, EditableInput } from '@renderer/DesignSystem/Components/Fields'
 import * as s from '../Components/Detail/settingsPane.css'

@@ -35,7 +35,6 @@ const COLOR = {
 const SIZE = {
   topRowActionWidth: 20, // height hugs the glyph
   iconPickerButton: 28,
-  dashIcon: 16,
   dragHighlightRadius: 6,
 }
 
@@ -102,15 +101,6 @@ export const headerPhotoImg = style({
 })
 
 /** Placeholder dashed-square menu icon (until the real symbols are specified). */
-export const dashIcon = style({
-  width: `${SIZE.dashIcon}px`,
-  height: `${SIZE.dashIcon}px`,
-  borderRadius: '3px',
-  border: '1px dashed currentColor',
-  opacity: 'var(--state-inactive)',
-  flex: '0 0 auto',
-})
-
 // ═══════════════════════════════════════════════════════════════════════════
 // § TOPROW — the ‹ back row + its trailing ⊕ / ⋮ action
 // ═══════════════════════════════════════════════════════════════════════════

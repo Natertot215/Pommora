@@ -1,3 +1,4 @@
+import { EmptyValue } from '@renderer/DesignSystem/Elements/EmptyValue/EmptyValue'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
 import type { PropertyDefinition } from '@shared/properties'
@@ -7,23 +8,23 @@ import type { ResolvedColumn } from '@shared/types'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { PickerMenu, PickerOption } from '@renderer/DesignSystem/Components/Pickers/PickerMenu'
 import { MenuPaneTopRow, MenuScrollFrame } from '@renderer/DesignSystem/Components/Menu'
-import { Cell } from '@renderer/Tables/Cell'
+import { Cell } from '@renderer/Properties/Editing/Cell'
 import { linkAlias, linkEditText, urlValueFromEdit, urlValueFromRename } from '@shared/linkValue'
 import { resolveTitle, validateLink } from '@renderer/linkResolve'
 import { TextPicker } from '@renderer/DesignSystem/Components/Pickers/TextPicker'
-import { solidColorCss } from '@renderer/Tables/solidColor'
-import { contextOptionsFor } from '@renderer/Views/pipeline/contextOptions'
-import { resolveFieldValue } from '@renderer/Views/pipeline/value'
-import { PropertyEditor } from '@renderer/Views/PropertyEditing/PropertyEditor'
-import { PropertyPicker, syntheticContextDef } from '@renderer/Views/PropertyEditing/PropertyPicker'
-import { DatetimeValuePicker } from '@renderer/Views/PropertyEditing/DatetimeValuePicker'
-import { parseEditorValue } from '@renderer/Views/CardView/cardValueInput'
+import { solidColorCss } from '@renderer/DesignSystem/Tokens/solidColor'
+import { contextOptionsFor } from '@renderer/Properties/contextOptions'
+import { resolveFieldValue } from '@renderer/Properties/value'
+import { PropertyEditor } from '@renderer/Properties/Editing/PropertyEditor'
+import { PropertyPicker, syntheticContextDef } from '@renderer/Properties/Editing/PropertyPicker'
+import { DatetimeValuePicker } from '@renderer/Properties/Editing/DatetimeValuePicker'
+import { parseEditorValue } from '@renderer/Properties/Editing/cardValueInput'
 import { side } from '@renderer/DesignSystem/Components/Menu/menu.css'
 import {
   propertyIcon,
   usePropertyRows,
   type Editing,
-} from '@renderer/Views/PropertyEditing/usePropertyRows'
+} from '@renderer/Properties/Editing/usePropertyRows'
 import { useSession } from '../store'
 import * as s from './pageProperties.css'
 
@@ -257,7 +258,7 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
                             ? (next) => commitValue(id, next)
                             : (next) =>
                                 commitContext(id, next?.kind === 'context' ? next.value : []),
-                        }) ?? <span className={s.empty}>—</span>)
+                        }) ?? <EmptyValue className={s.empty} />)
                       )}
                     </span>
                   </div>

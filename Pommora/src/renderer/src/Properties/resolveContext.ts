@@ -5,7 +5,7 @@ import {
   contextsByIdOf,
   type SpaceIdentity,
   spacesByIdOf,
-} from '../pipeline/contextIdentity'
+} from '@renderer/Properties/contextIdentity'
 
 export interface ResolveContext {
   schema: PropertyDefinition[]

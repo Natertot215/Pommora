@@ -49,7 +49,7 @@ import { resolveColumns } from '../pipeline/columns'
 import {
   contextOptionsFor as contextOptionsForSpaces,
   type ContextOption,
-} from '../pipeline/contextOptions'
+} from '@renderer/Properties/contextOptions'
 import { flattenContainer, groupsStructurally, subtreeIds } from '../pipeline/group'
 import { resolvedSortCount, resolveManualOrder } from '../pipeline/sort'
 import {
@@ -58,28 +58,32 @@ import {
   GhostSuppress,
   useClearStrandedGhost,
   useGhostAnchor,
-} from '../useGhostAnchor'
+} from '@renderer/DesignSystem/Interactions/ghostAnchor'
 import { DEFAULT_FEEL } from '@renderer/DesignSystem/Animation/feel'
 import { useViewCreation } from '../useViewCreation'
-import { declaredType } from '../pipeline/value'
+import { declaredType } from '@renderer/Properties/value'
 import { resolveView } from '../pipeline/resolveView'
 import { useValuesEpoch } from '../useValuesEpoch'
 import { useActiveView } from '../useActiveView'
 import { useViewOrders } from '../useViewOrders'
-import { columnLabel } from '@renderer/Tables/columnLabel'
-import { contextIdsOf } from '../pipeline/contextIdentity'
+import { columnLabel } from '@renderer/Properties/Editing/columnLabel'
+import { contextIdsOf } from '@renderer/Properties/contextIdentity'
 import { resolveContainerSchema } from '../pipeline/pickView'
 import { useStyleFor } from '@renderer/Tables/columnStyles'
 import { writeContextValue } from '../contextCellWrite'
 import { groupKeyToValue, REASSIGNABLE_GROUP_TYPES } from '../TableView/reassign'
-import { buildSetIcons, buildSetNames, buildSetPaths } from '@renderer/Tables/cellResolve'
+import {
+  buildSetIcons,
+  buildSetNames,
+  buildSetPaths,
+} from '@renderer/Properties/Editing/cellResolve'
 import { resolveBandHead } from '../GroupBand'
 import { ViewGroupBand } from '../ViewGroupBand'
 import { BandDnd, type BandDrop } from '../BandDnd'
 import { flattenBands } from '../bandDndModel'
 import { bandReorderPatch, groupingKeyOf, useBandOrdering } from '../useBandOrdering'
 import { nextOrder } from '@renderer/Sidebar/sidebarDndModel'
-import { buildResolveContext, type ResolveContext } from '../TableView/resolveContext'
+import { buildResolveContext, type ResolveContext } from '@renderer/Properties/resolveContext'
 import type { TrailSegment } from '@renderer/DesignSystem/Elements/NavTrail'
 import { ancestryOf } from '../../treeIndex'
 
@@ -94,7 +98,7 @@ import {
   addEntriesFor,
   orderAddableEntries,
   shownColumnsFor,
-} from './cardValueInput'
+} from '@renderer/Properties/Editing/cardValueInput'
 import { pageMoveContext, runPageSendAction } from '@renderer/pageMenuActions'
 import { hideShown, unhide } from '@renderer/Components/Detail/hiddenPaneModel'
 import { IconPicker } from '@renderer/Settings/IconPicker'
