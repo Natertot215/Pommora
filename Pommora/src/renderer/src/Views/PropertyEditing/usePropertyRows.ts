@@ -15,7 +15,7 @@ import {
   spaceIdentityOf,
 } from '../pipeline/contextIdentity'
 import { resolveFieldValue } from '../pipeline/value'
-import { buildResolveContext, type ResolveContext } from '../Table/resolveContext'
+import { buildResolveContext, type ResolveContext } from '../TableView/resolveContext'
 import { sharedValueClickAction } from './valueClick'
 import { fileChipIndex, fileValueMenu, pickFileInto } from './filePick'
 import { linkValueMenuTarget, showConnectionMenu } from '@renderer/Embeds/connectionMenu'

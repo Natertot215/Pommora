@@ -1,6 +1,6 @@
 import { useEffect, type Dispatch, type SetStateAction } from 'react'
 import type { PageFrontmatter } from '@shared/schemas'
-import { useSession } from '../../store'
+import { useSession } from '../store'
 
 type Overrides = Record<string, PageFrontmatter>
 

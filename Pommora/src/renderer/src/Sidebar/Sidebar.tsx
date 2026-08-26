@@ -11,7 +11,7 @@ import {
   GhostSuppress,
   useClearStrandedGhost,
   useGhostAnchor,
-} from '@renderer/Detail/Views/useGhostAnchor'
+} from '@renderer/Views/useGhostAnchor'
 import { Icon, type IconName, entityIcon } from '@renderer/DesignSystem/Symbols'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { contextDirRel } from '@shared/nexusPaths'

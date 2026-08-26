@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { PropertyDefinition } from '@shared/properties'
 import { propertyKey } from '@shared/propertyValue'
 import type { ResolvedColumn, ViewRow } from '@shared/types'
-import type { ResolveContext } from '../Table/resolveContext'
+import type { ResolveContext } from '../TableView/resolveContext'
 import {
   type AddEntry,
   orderAddableEntries,

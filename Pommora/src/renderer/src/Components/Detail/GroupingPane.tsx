@@ -30,17 +30,17 @@ import { DragGhost } from '@renderer/DesignSystem/Interactions/DragGhost'
 import { EyeToggle } from '@renderer/DesignSystem/Elements/EyeToggle'
 import { DualSwitch } from '@renderer/DesignSystem/Components/Controls/Switches/DualSwitch'
 import { useSaveView } from '@renderer/Embeds/ViewEmbedScope'
-import { declaredType } from '../../Detail/Views/pipeline/value'
+import { declaredType } from '@renderer/Views/pipeline/value'
 import {
   bucketKey,
   bucketOrder,
   flattenContainer,
   groupsStructurally,
   subHiddenKey,
-} from '../../Detail/Views/pipeline/group'
-import { formatBucketLabel, NUMERIC_FORMATS } from '../../Detail/Views/PropertyEditing/formatValue'
-import type { Band } from '../../Detail/Views/bandDndModel'
-import { reparentFsOrder, structuralOrderAfterDrop } from '../../Detail/Views/bandDndModel'
+} from '@renderer/Views/pipeline/group'
+import { formatBucketLabel, NUMERIC_FORMATS } from '@renderer/Views/PropertyEditing/formatValue'
+import type { Band } from '@renderer/Views/bandDndModel'
+import { reparentFsOrder, structuralOrderAfterDrop } from '@renderer/Views/bandDndModel'
 import { nextOrder } from '@renderer/Sidebar/sidebarDndModel'
 import { EntityIcon } from '@renderer/Components/EntityIcon'
 import { cx } from '@renderer/DesignSystem/Util/cx'
@@ -51,7 +51,7 @@ import { propertyTypeIconName } from '../../Properties/PropertyTypes'
 import { useGroupingListDrag, type GroupingDrop } from './groupingDnd'
 import { hiddenRow } from './settingsPane.css'
 import * as gp from './groupingPane.css'
-import { OptionChip } from '@renderer/Detail/Views/PropertyEditing/OptionChip'
+import { OptionChip } from '@renderer/Views/PropertyEditing/OptionChip'
 
 /** Checkbox is deliberately absent — the pipeline still renders it from a foreign sidecar; the
  *  pane never authors it. */
