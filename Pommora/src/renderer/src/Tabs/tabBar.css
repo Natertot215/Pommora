@@ -13,7 +13,7 @@
   --tab-gap: 6px;
   --tab-divider-w: 2px; /* pinned│unpinned segment divider */
   --tab-divider-h: 16px;
-  --tab-over-scroll: 20px;
+  --tab-over-scroll: var(--fade-base);
   --tab-plus-gutter: 28px; /* trailing room so the parked + clears the last tab's × */
   --tab-nav-slide: 10px; /* Back/Forward content slide-in distance */
 

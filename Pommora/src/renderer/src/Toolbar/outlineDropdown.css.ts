@@ -9,4 +9,4 @@ export const pane = style({
 })
 
 /** The dragged heading and its whole section dim while it's carried to its new slot. */
-export const rowDragging = style({ opacity: 'var(--state-inactive)' })
+export const rowDragging = style({ opacity: 'var(--state-ghost)' })

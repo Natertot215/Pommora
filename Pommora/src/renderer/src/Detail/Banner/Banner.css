@@ -6,7 +6,7 @@
   height: 230px;
   /* The banner title's type size — the identity icon beside it is sized to match, so both read the
      one declaration rather than each restating the number. */
-  --detail-title-size: var(--container-title-size);
+  --detail-title-size: var(--text-title-small-size);
   border-bottom: var(
     --border-heading
   ); /* the shared heading↔body seam (same token as the table heading) */
@@ -20,7 +20,7 @@
    `font` shorthand sits at the same weight — the title's scale must win on specificity. */
 .banner-title,
 .banner-empty-title.banner-empty-title {
-  font-size: var(--container-title-size);
+  font-size: var(--text-title-small-size);
   font-weight: var(--weight-semibold);
   color: var(--label-primary);
   overflow: hidden;
@@ -31,7 +31,7 @@
   position: absolute;
   bottom: 12px;
   /* Every banner title sits on the tight --surface-banner-inset, content and surface views alike — the
-     title hugs the block gutter even when the body carries the wider fold-gutter. */
+     title hugs the block gutter even when the body carries the wider detail lane. */
   left: var(--surface-banner-inset);
   right: 28px;
   display: flex;
@@ -54,7 +54,7 @@
 .banner-title .detail-title {
   /* Stated on the element, not inherited: DetailTitleHeader sets its own default on this same
      class, and a property set on the element beats one coming down from the banner. */
-  --detail-title-size: var(--container-title-size);
+  --detail-title-size: var(--text-title-small-size);
   min-width: 0;
 }
 .banner-title .detail-title-icon,
@@ -139,7 +139,7 @@
 /* The banner-less header hosts the same DetailTitleHeader as the banner overlay — re-skin it to
    the shared container-title size (no shadow/pointer tricks: there's no image underneath). */
 .banner-empty-title .detail-title {
-  --detail-title-size: var(--container-title-size);
+  --detail-title-size: var(--text-title-small-size);
   min-width: 0;
 }
 .banner-empty-title .detail-title-text,

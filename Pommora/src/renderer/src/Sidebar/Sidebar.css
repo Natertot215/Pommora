@@ -321,7 +321,7 @@
 /* The left-edge fade a row's icon + title eclipse into the glass through — ~the icon-zone width.
    The over-scroll engine holds it at rest on its own: at scroll 0 the leading edge is a no-op. */
 .sidebar [class*="titleText"] {
-  --over-scroll-fade: 24px;
+  --over-scroll-fade: var(--fade-heavy);
 }
 
 /* Matches the tone the design system's leading .side slot gives an icon — this row's icon sits inline

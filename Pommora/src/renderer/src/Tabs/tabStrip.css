@@ -109,7 +109,7 @@
      16px fade. The ×'s lane reserve is tighter than the sidebar's own so the title gets more width
      before it eclipses — padding-right is the × clearance knob. */
   padding-right: 8px;
-  --over-scroll-fade: 16px;
+  --over-scroll-fade: var(--fade-base);
 }
 
 /* The shared HoverRemove's seat on a tab — a plain fade, no melt: glass has no solid ground for

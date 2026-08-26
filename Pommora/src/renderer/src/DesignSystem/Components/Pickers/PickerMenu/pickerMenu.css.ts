@@ -1,7 +1,6 @@
 import { globalStyle, style } from '@vanilla-extract/css'
 import { vars as colorVars } from '../../../Tokens/color.css'
 import { font, text } from '../../../Tokens/typography.css'
-import { tintAt } from '../../../Tokens/tint'
 import { stack } from '../../../Tokens/stack'
 import { dropdownAnchor } from '../../dropdownAnchor'
 import { FIELD_RING_VAR, fieldRing, ROW_RING } from '../../Fields/fieldRing'
@@ -31,7 +30,7 @@ const OPTION_RING = `${ROW_RING}px`
  *  two signals on one row read as two different states. Painted through the house `--field-ring`
  *  channel, and INSET, so it rides inside the row's radius and never reflows the list. */
 export const optionRing = style({
-  vars: { '--field-ring': tintAt('var(--accent)', 'primary') },
+  vars: { '--field-ring': 'var(--accent-stroke-hot)' },
   boxShadow: fieldRing(ROW_RING),
 })
 

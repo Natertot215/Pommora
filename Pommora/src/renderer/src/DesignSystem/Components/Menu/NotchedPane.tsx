@@ -109,6 +109,7 @@ export function NotchedPane({
             d={d}
             fill="none"
             strokeWidth={1}
+            // Known outlier: a pure-white frost edge, deliberately brighter than the palette's system-white.
             stroke="#FFFFFF"
             strokeOpacity={PANE_FROST.borderAlpha}
           />

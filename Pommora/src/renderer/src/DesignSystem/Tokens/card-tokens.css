@@ -67,7 +67,7 @@
   display: flex;
   align-items: center;
   min-width: 0;
-  --over-scroll-fade: 14px;
+  --over-scroll-fade: var(--fade-base);
   padding-block: 1px;
 }
 
