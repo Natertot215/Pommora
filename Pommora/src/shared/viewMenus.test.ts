@@ -33,25 +33,21 @@ describe('the view embed’s area menu', () => {
       'Show Title',
     )
   })
-})
 
-describe('the view button’s menu', () => {
-  it('names the title toggle after what pressing it does', () => {
-    expect(labels(viewButtonMenuItems({ viewButton: 'labeled', viewStyle: 'toolbar' }))).toContain(
-      'Hide Title',
-    )
-    expect(labels(viewButtonMenuItems({ viewButton: 'icon', viewStyle: 'toolbar' }))).toContain(
-      'Show Title',
-    )
-  })
-
-  it('marks the style in force, on the same rows the embed offers', () => {
-    const style = viewButtonMenuItems({ viewButton: 'icon', viewStyle: 'toolbar' }).find(
+  it('marks the style in force on the Style submenu', () => {
+    const style = embedAreaMenuItems({ viewStyle: 'toolbar', titleShown: true }).find(
       (r) => r.label === 'Style',
     )?.submenu
     expect(style?.map((r) => [r.label, r.checked])).toEqual([
       ['Dropdown', false],
       ['Toolbar', true],
     ])
+  })
+})
+
+describe('the view button’s menu', () => {
+  it('names the title toggle after what pressing it does', () => {
+    expect(labels(viewButtonMenuItems({ viewButton: 'labeled' }))).toContain('Hide Title')
+    expect(labels(viewButtonMenuItems({ viewButton: 'icon' }))).toContain('Show Title')
   })
 })

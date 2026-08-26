@@ -176,7 +176,7 @@ import type {
   NexusIconAction,
   TitleMenuAction,
 } from '@shared/identityMenus'
-import type { AssetMap, PickFileOptions, ViewButton, ViewStyle } from '@shared/types'
+import type { AssetMap, PickFileOptions, ViewButton } from '@shared/types'
 import {
   EMPTY_ASSET_MAP,
   WEB_ZOOM_DEFAULT,
@@ -1226,7 +1226,7 @@ serveBridge(
       },
     },
 
-    // Per-container non-view settings (open_in / view_button / view_style) — the synced sidecar write
+    // Per-container non-view settings (open_in / view_button) — the synced sidecar write
     // behind the ViewDropdown context menu + the Configuration/Open In row.
     'container:configure': {
       kind: 'envelope',
@@ -1726,10 +1726,9 @@ serveBridge(
     'view-button-menu': {
       kind: 'menu',
       fn: async (win: BrowserWindow, current: unknown): Promise<ViewButtonMenuAction | null> => {
-        const c = current as { viewButton?: unknown; viewStyle?: unknown } | null
+        const c = current as { viewButton?: unknown } | null
         const viewButton: ViewButton = c?.viewButton === 'labeled' ? 'labeled' : 'icon'
-        const viewStyle: ViewStyle = c?.viewStyle === 'toolbar' ? 'toolbar' : 'dropdown'
-        return popViewButtonMenu(win, { viewButton, viewStyle })
+        return popViewButtonMenu(win, { viewButton })
       },
     },
 

@@ -11,14 +11,11 @@ const ulidList = z.array(z.string()).optional()
 // Each field doubles as the read-side coercer for readNexus.
 export const openInField = z.enum(['full-page', 'page-preview']).optional().catch(undefined)
 export const viewButtonField = z.enum(['icon', 'labeled']).optional().catch(undefined)
-export const viewStyleField = z.enum(['dropdown', 'toolbar']).optional().catch(undefined)
 
 export const coerceOpenIn = (raw: unknown): 'full-page' | 'page-preview' | undefined =>
   openInField.parse(raw)
 export const coerceViewButton = (raw: unknown): 'icon' | 'labeled' | undefined =>
   viewButtonField.parse(raw)
-export const coerceViewStyle = (raw: unknown): 'dropdown' | 'toolbar' | undefined =>
-  viewStyleField.parse(raw)
 
 export const crop = z.object({
   x: z.number(),
@@ -53,7 +50,6 @@ export const pageCollectionSidecar = baseSidecar.extend({
   views: z.array(savedView).optional(),
   open_in: openInField,
   view_button: viewButtonField,
-  view_style: viewStyleField,
 })
 
 // `_pageset.json` is the RECURSIVE level at any depth. Parentage is the folder nesting itself,
@@ -65,7 +61,6 @@ export const pageSetSidecar = baseSidecar.extend({
   banner: z.string().optional(),
   views: z.array(savedView).optional(),
   view_button: viewButtonField,
-  view_style: viewStyleField,
 })
 
 /** Page (.md) frontmatter. Context links are parenthesized TITLE keys (`(Projects):`)

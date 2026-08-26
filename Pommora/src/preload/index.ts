@@ -51,7 +51,7 @@ const api = {
     reorder: ask('views:reorder'),
     delete: ask('views:delete'),
   },
-  // Per-container non-view settings (open_in is collection-only; view_button / view_style either level).
+  // Per-container non-view settings (open_in is collection-only; view_button either level).
   container: { configure: ask('container:configure') },
   // The ViewDropdown right-click menu — resolves the picked action (or null on dismiss).
   viewButtonMenu: ask('view-button-menu'),

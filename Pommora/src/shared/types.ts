@@ -314,7 +314,7 @@ export interface ContextGroup {
 export type OpenIn = 'full-page' | 'page-preview'
 /** The ViewDropdown button presentation: icon-only vs icon + view name (Show/Hide Title). */
 export type ViewButton = 'icon' | 'labeled'
-/** The view-switcher presentation: the dropdown or the inline ViewBar (Prospect). */
+/** A view embed's switcher presentation: a dropdown button or an inline toolbar of view pills. */
 export type ViewStyle = 'dropdown' | 'toolbar'
 
 export interface SetNode extends PathNode {
@@ -325,9 +325,8 @@ export interface SetNode extends PathNode {
   pages: PageNode[]
   /** Saved views from the sidecar `views[]` (depth-1 Sets only; deeper Sub-Sets ignore them). */
   views?: SavedView[]
-  /** Per-container ViewDropdown presentation (sidecar `view_button` / `view_style`). */
+  /** Per-container ViewDropdown presentation (sidecar `view_button`). */
   viewButton?: ViewButton
-  viewStyle?: ViewStyle
 }
 
 export interface CollectionNode extends PathNode {
@@ -341,9 +340,8 @@ export interface CollectionNode extends PathNode {
   views?: SavedView[]
   /** Collection-owned page-open behavior (sidecar `open_in`). */
   openIn?: OpenIn
-  /** Per-container ViewDropdown presentation (sidecar `view_button` / `view_style`). */
+  /** Per-container ViewDropdown presentation (sidecar `view_button`). */
   viewButton?: ViewButton
-  viewStyle?: ViewStyle
 }
 
 /** The asset root's files, keyed by normalized basename — what a `[[Name.png]]` reference
