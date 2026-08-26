@@ -352,7 +352,7 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 | Tile chassis | `Detail/tile-chassis.css` | The resizable tile frame SurfacePM and embeds share. |
 | Sidebar · Toolbar | app: `Sidebar/` · `Toolbar/` | [[InterfacePM]] |
 | Tabs | app: `Tabs/` | [[NavigationPM]] |
-| Table · Cards | app: `Detail/Views/` | [[ViewTypesPM]] — future residents here. |
+| Table · Cards | app: `Views/` | [[ViewTypesPM]] — future residents here. |
 
 ### Interaction
 

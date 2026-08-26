@@ -124,6 +124,7 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 │   │           ├── // SurfacePM         | • The tile-based dashboard engine
 │   │           ├── // Tabs              | • The tabs + navigational overlays
 │   │           ├── // Toolbar           | • The window toolbar
+│   │           ├── // Views             | • The view pipeline and renderers — TableView, CardView, bands
 │   │           ├── // DesignSystem      | • The design system — DesignSystemPM is its ledger
 │   │           │   ├── // Tokens        | • Color, type, geometry — the token source of truth
 │   │           │   ├── // Materials     | • Glass — surfaces, panes, windows, controls
