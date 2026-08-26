@@ -35,7 +35,7 @@ export const titleField = style({
   boxSizing: 'border-box',
   margin: '0 0 3px',
   padding: '3px 6px',
-  border: '1px solid var(--accent-stroke)',
+  border: 'var(--width-100) solid var(--accent-stroke)',
   borderRadius: '5px',
   background: 'none',
   textAlign: 'left',

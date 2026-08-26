@@ -35,7 +35,7 @@
 }
 .ix-card {
   background: var(--surface-secondary);
-  border: 1px solid var(--separator-border);
+  border: var(--width-100) solid var(--border-base);
   border-radius: 14px;
   padding: 16px;
 }
@@ -75,7 +75,7 @@
   padding: 9px 12px;
   border-radius: 9px;
   background: var(--surface-tertiary);
-  border: 1px solid var(--separator-border);
+  border: var(--width-100) solid var(--border-base);
   color: var(--label-primary);
   font-size: 13px;
   cursor: grab;
@@ -137,11 +137,11 @@
   color: var(--label-tertiary);
   font-weight: 600;
   padding: 0 10px 8px;
-  border-bottom: 1px solid var(--separator-border);
+  border-bottom: var(--width-100) solid var(--border-base);
 }
 .ix-table td {
   padding: 9px 10px;
-  border-bottom: 1px solid var(--separator-border);
+  border-bottom: var(--width-100) solid var(--border-base);
 }
 .ix-table tbody tr {
   cursor: grab;
@@ -178,7 +178,7 @@
   padding: 7px 9px;
   border-radius: 8px;
   background: var(--surface-tertiary);
-  border: 1px solid var(--separator-border);
+  border: var(--width-100) solid var(--border-base);
   color: var(--label-primary);
   font-size: 13px;
   cursor: grab;
@@ -235,7 +235,7 @@
   font-size: 11px;
   color: var(--label-secondary);
   background: var(--surface-tertiary);
-  border: 1px solid var(--separator-border);
+  border: var(--width-100) solid var(--border-base);
   border-radius: 7px;
   padding: 5px 9px;
   cursor: pointer;
@@ -255,7 +255,7 @@
   flex: 1;
   min-width: 0;
   background: var(--surface-primary);
-  border: 1px solid var(--separator-border);
+  border: var(--width-100) solid var(--border-base);
   border-radius: 10px;
   padding: 10px;
 }

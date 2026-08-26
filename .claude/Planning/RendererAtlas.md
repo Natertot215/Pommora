@@ -12,7 +12,7 @@ The renderer as it is, the renderer as it should be, and the calls between. It i
 
 **Geometry.** Motion is perfect — 165 reads, zero off the ladder. Color is near-perfect — 20 raw values, all accounted for. Geometry is where the discipline stops: 681 bare pixel values on a `2·4·6·8·10·12·14·16·20·24·28` grid the code already agreed on and never named; 224 custom properties declared outside `Tokens/`, two of them read by the design system with no fallback.
 
-**Tokens.** The consumer side is 96% right — 41 findings against 1,071 reads — and the misuse is one shape: when a surface needs an edge, it reaches for a label tone, and five of the eight sites that do it are inside the design system, while `separator.*` — the family named for that edge — sits starved. The system is under-declared rather than broken: it publishes `--border-cell` and not its width, eleven type sizes and zero line heights, and six of the thirteen mints proposed are ingredients that already exist unpublished.
+**Tokens.** The consumer side is 96% right, and the one misuse — a surface reaching for a label tone where it needs an edge — now has a home: the `--border-*` color ladder (`base`/`light`/`faint`) and the literal `--width-*` ladder, composed at the consumer. What stays under-declared is the spacing grid and the line-height family the bridge never published.
 
 **What this document decides.** The eight rules and the tree are the atlas's own calls, drawn from evidence and the two rulings already taken (`Detail` → `Interface`, `Views` to the root). The open decisions in each section and the taste-marked token verdicts are recommendations awaiting a stamp; the structural ones gate the tree's non-mechanical moves, everything else can start today. Nothing here changes behavior except one line in `ViewEmbedBlock.tsx`.
 
@@ -200,11 +200,7 @@ The consumer side is fact — every read opened at its line. The verdicts are th
 
 #### Where Reads Go Wrong
 
-**The sweeps that came back clean, so nobody re-runs them:** zero `fill.*`/`surface.*`/`separator.*` reads used as text color; zero `state.*` used as a border or text; zero hand-rolled `rgba()`; zero hand-rolled `999px` beside `--radius-full`; zero motion values off the four-rung ladder across 165 reads; zero hand-rolled `z-index` against `stack.top` — the 38 bare `z-index: 0..4` literals are the in-context sibling ordering `stack.ts` licenses.
-
-**`label.*` paints edges at eight sites.** The ink family — `system-white` at four opacities, ~226 reads — paints something that is not ink at `table-tokens.css:43` (a 1.5px column divider), `MarkdownPM/Styles.css:883` (a callout's box seam), `:964` and `:831` (quote bars), `dualSwitch.css.ts:31` (track border), `slider.css.ts:31` (the knob's box fill), `imagePicker.css.ts:56` (the crop ring), `calendarPicker.css.ts:140` (today's ring). The carve-out a lint rule must state: `background-color: var(--label-*)` is correct under a `-webkit-mask` (`Styles.css:239, :270, :442`, `surfacepm.css:125` paint glyphs through a mask channel).
-
-**`separator.*` is starved on its own job.** The family that should own those edges has three consumer reads for `separator.segment` and nine for `separator.border`; `segment` is tied 3–3 with `label.tertiary` on the one job it is named for. The three composed seams — `--border-heading` 1.75px, `--border-cell` 1.5px, `--border-segment` 1px — are correct and restated by hand five times (`Styles.css:788`, `:884`, `labels.css.ts:24`, `imagePicker.css.ts:56`, `nexusSettings.css:71`) for a structural reason: the bridge publishes each seam as a whole shorthand and never its width, so a rule needing a radius cap cannot use `border` and must restate `1.5px`. **A sixth seam weight the ledger never named:** `1.25px`, five independent declarers, no owner — `button.css.ts:7`, `checkbox.css:39`, `tile-chassis.css:6`, `ActionBand.css.ts:48`, `table-tokens.css:31`. It is the control seam, and the checkbox declares itself `1.25px` in `checkbox.css:39` and `1.5px` in `labels.css.ts:24`: one control, two widths, two files.
+**The sweeps that came back clean, so nobody re-runs them:** zero `fill.*`/`surface.*`/`border.*` reads used as text color; zero `state.*` used as a border or text; zero hand-rolled `rgba()`; zero hand-rolled `999px` beside `--radius-full`; zero motion values off the four-rung ladder across 165 reads; zero hand-rolled `z-index` against `stack.top` — the 38 bare `z-index: 0..4` literals are the in-context sibling ordering `stack.ts` licenses.
 
 **Two type reads paint nothing they name.** `navView.css:28`'s 16px overrides a `text.body.standard` class `NavView.tsx:48` put on the same element, so that token read paints nothing. And `text.callout.emphasized`, the ledger's rung for pane headers, has zero reads against three sibling panes at three different weights (`menu.css.ts:160` caption.emphasized, `settingsPane.css.ts:262` footnote.semibold, `groupingPane.css.ts:54` footnote.emphasized).
 
@@ -218,18 +214,15 @@ Literals whose value *is* a token, and values built from ingredients where a rec
 
 | Site | Hand-roll | The token or recipe |
 | --- | --- | --- |
-| `Styles.css:788`, `:884` · `labels.css.ts:24` · `imagePicker.css.ts:56` | `1.5px` | `--border-cell`'s width, once the bridge publishes it |
-| `button.css.ts:7` · `checkbox.css:39` · `tile-chassis.css:6` · `ActionBand.css.ts:48` · `table-tokens.css:31` | `1.25px` | nothing yet — the control seam |
 | `ViewEmbedBlock.tsx:88` | `tintAt(cellColor(key), 'primary')` | `cellRing(key)` — the live bug |
-| `nexusSettings.css:71` | `1px solid var(--separator-border)` | `--border-segment` |
 | `ColorSwatch.tsx:48` | half of `cellPaint` inline | `cellPaint(key)` |
 
 #### One Rule Per Family
 
 Each is written to be lintable, with its carve-out stated.
 
-1. **`label.*` paints ink — text and glyphs.** Never a border, rule, bar, or box fill. *Carve-out:* `background-color: var(--label-*)` is legal iff the same rule sets `mask` or `-webkit-mask`. Eight violations today; four correct sites a naive rule would flag.
-2. **`separator.*` paints every hairline, seam, divider, and rail.** A rule drawn as a filled box (for a radius or partial length) still reads `separator.*` for color and a bridged `--border-*-width` for thickness. The ladder gains its sixth rung, `--border-control` at 1.25px, before this is enforceable.
+1. **`label.*` paints ink — text and glyphs.** Never a border, rule, bar, or box fill. *Carve-out:* `background-color: var(--label-*)` is legal iff the same rule sets `mask` or `-webkit-mask`; and a deliberately bright edge over variable ground (the image crop ring, the switch track, MarkdownPM's rules) is a ruled exception, not a violation.
+2. **`--border-*` paints every hairline, seam, divider, and rail.** An edge composes `var(--width-XXX) solid var(--border-YYY)`; a filled box (drawn for a radius or partial length) reads `--border-*` for color and a `--width-*` for thickness. The color ladder is `base`/`light`/`faint`; the widths `100 · 125 · 150 · 175 · 200`.
 3. **`fill.*` paints an area over a surface; `state.*` an area behind content.** Neither paints an edge or ink. *Carve-out:* `outline: Npx solid var(--state-selected)` beside `background: var(--state-selected)` is a fill bleeding past its box (`GroupBand.css:65-67`).
 4. **An accent tone is read by name, never mixed.** Wash → `--accent-fill`; live outline → `--accent-stroke`; being driven → `--accent-stroke-hot`; focus → `fieldRing()`.
 5. **A ramp cell's paint comes from `cellPaint` / `cellRing` / `cellColor`, never `tintAt(cellColor(…))`.** The grey row's outline branch exists because the naive composition is wrong there. Two violations, one a live bug.
@@ -239,7 +232,7 @@ Each is written to be lintable, with its carve-out stated.
 
 #### The Verdicts
 
-202 tokens carry an open verdict — the custom properties the bridge emits, every TS token export, and the app-declared vars that behave like tokens. **166 keep · 14 repoint · 13 mint · 5 redefine · 4 merge.** 166 follow from counts alone; 36 involve a design call. Four in five rows are `keep`; the failures cluster where the design system publishes a composed value and withholds its ingredients — it ships `--border-cell` and not its width, so four files restate `1.5px`. Six of the thirteen mints are an ingredient that already exists and is not published.
+185 tokens carry an open verdict — the custom properties the bridge emits, every TS token export, and the app-declared vars that behave like tokens. **166 keep · 4 repoint · 9 mint · 5 redefine · 1 merge.** Four in five rows are `keep`; the failures that remain cluster where the design system publishes a composed value and withholds its ingredients. Several of the mints are an ingredient that already exists and is not published.
 
 **Redefine — the readers outvoted the definition (5).**
 
@@ -249,21 +242,19 @@ Each is written to be lintable, with its carve-out stated.
 | `text.footnote` | 12 | Small detail *and* the in-pane section heading (Emphasized). `settingsPane.css.ts:262` repoints from semibold to emphasized so the siblings match. | call |
 | `surface.primary` · `secondary` · `tertiary` | 2 · 1 · 1 | The opaque grey ladder the ramp's grey row sits on, moved beside Ramp in the ledger. Pommora layers with frost over `--bg-window`, not flat fills; the trio stops looking abandoned. | call |
 
-**Mint — a value the code agreed on with no token (13).**
+**Mint — a value the code agreed on with no token (9).**
 
 | Mint | Value | What it absorbs | Taste |
 | --- | --- | --- | --- |
-| `--border-heading-width` · `--border-cell-width` · `--border-segment-width` | 1.75 · 1.5 · 1px | Six hand-rolled widths; the precondition for the separator rule. Three lines, six sites. | evidence |
-| `--border-control` | 1.25px | Five declarers; settles the checkbox's 1.25-vs-1.5 contradiction (1.25 wins — it is a control). | call |
 | `size.space.*` · `--space-*` | the `2…28` grid | ~480 of the 681 literals; the residue (3, 5, 9, 18, 22) becomes a visible list of ~60. | call |
 | `--glass-inset` · `--glass-radius` | 5px · 12px | 37 reads, two inside the design system with no fallback — the one real layering violation. | evidence |
 | `--subline-h` · `--toolbar-h` | 24px · 38px | The shell's bands, beside the `--button-*-height` trio the bridge already publishes. | call |
 | `--sidebar-width` · `--inspector-width` | seeded defaults | Read by `styles.css:108`/`:124` in a `calc` with no declared default. | call |
 | `Tokens/scale.ts` | a rule, not a var | The zoom family's composition — which axes multiply, which are terminal. | call |
 
-**Merge (4):** `--main-bg` → `--bg-window` (pure alias, all reads in `styles.css`); `--table-border-width` and `--tile-border` → `--border-control`; `--heading-segment-width` → `--border-cell-width`.
+**Merge (1):** `--main-bg` → `--bg-window` (pure alias, all reads in `styles.css`).
 
-**Repoint — right token, wrong consumers (14).** The eight label-as-edge sites (`Controls/` first — it teaches the next control's author); `table-tokens.css:41`'s `--heading-segment` to `separator.segment`; `PropertiesPane.tsx:143`'s `<Reveal>` back to `fast`; `nexusSettings.css:71` to `--border-segment`; the sibling-drift trio; `subfield.css:43-44` off control-size and bold; and `ViewEmbedBlock.tsx:88` → `cellRing(key)`, the live bug.
+**Repoint — right token, wrong consumers (4).** `PropertiesPane.tsx:143`'s `<Reveal>` override back to `fast`; the sibling-drift trio; `subfield.css:43-44` off control-size and bold; and `ViewEmbedBlock.tsx:88` → `cellRing(key)`, the live bug.
 
 **Where Recipe overrules an earlier lens.** The pane-header finding: `menu.css.ts:160`'s own comment says it is a nav row, not a header, so the vote on in-pane section headings is 3–0 *for* footnote. The radius scale: refused — every literal already matches `size.control['button-*'].radius`, owned but not centralized, and the four writers of `12px` are a `--glass-radius` mint, not a scale. A third `stack.local` rung: declined — a private ladder inside one component is the rule working.
 
@@ -271,18 +262,14 @@ Each is written to be lintable, with its carve-out stated.
 
 | # | Edit | Lines | Fixes |
 | --- | --- | --- | --- |
-| 1 | Mint the three seam widths | 3 | 6 sites, and the separator rule becomes lintable |
-| 2 | Mint `--border-control` | 1 + 5 repoints | 5 declarers; the checkbox contradiction |
-| 3 | `ViewEmbedBlock.tsx:88` → `cellRing(key)` | 1 | The only behavioral defect |
-| 4 | The eight label-as-edge repoints | 8 | 8 sites, unambiguous after the separator mint |
-| 5 | Mint the spacing scale | ~11 | ~480 literals; needs the sign-off above |
-| 6 | Mint `--glass-inset` / `--glass-radius` | 2 | 37 reads; closes the layering violation |
+| 1 | `ViewEmbedBlock.tsx:88` → `cellRing(key)` | 1 | The only behavioral defect |
+| 2 | Mint the spacing scale | ~11 | ~480 literals; needs the sign-off above |
+| 3 | Mint `--glass-inset` / `--glass-radius` | 2 | 37 reads; closes the layering violation |
 
 #### Open Decisions — Tokens
 
 - **Three checkboxes.** `Labels/checkboxBox` (the 17px task square, in place), `Controls/checkbox.css` (the control's chrome), `Table/checkboxLook.tsx` (the cell glyph). *Recommendation:* `checkboxBox` is the recipe; the other two read its geometry rather than restating it. Do this before `checkboxLook` moves under the value-rendering decision, so the move carries a thin file.
 - **`--tint-solid`.** Zero reads, but the bridge emits the whole ladder by construction and `mixAt` short-circuits at 100 (`tint.ts:23`). *Recommendation:* keep, and add four words to DesignSystemPM's Tints table noting the short-circuit.
-- **The control seam.** `1.25px` has five declarers and no owner, and the checkbox carries two widths in two files. *Recommendation:* mint `--border-control` at 1.25px beside the three composed seams, publish each seam's width as its own var so a radius-capped rule can read it, and have the five declarers read it. Then the seam ladder is `1 · 1.25 · 1.5 · 1.75` with one owner each.
 
 ---
 

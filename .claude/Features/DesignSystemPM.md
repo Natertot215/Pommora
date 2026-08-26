@@ -103,17 +103,21 @@ Hover and selected paint behind content, muted over it; the three opacities are 
 | Tint Tertiary   | `TINT_STEPS.tertiary` · `--tint-tertiary`     | 20%   |
 | Tint Quaternary | `TINT_STEPS.quaternary` · `--tint-quaternary` | 15%   |
 
-#### Separators
+#### Borders
 
-| Title             | Token                                       | Value                                  |
-| ----------------- | ------------------------------------------- | -------------------------------------- |
-| Separator Border  | `separator.border` · `--separator-border`   | system-grey @ 25%                      |
-| Separator Segment | `separator.segment` · `--separator-segment` | system-grey @ 20%                      |
-| Separator Control | `separator.control` · `--separator-control` | system-white @ 20%                     |
-| Heading Border    | `--border-heading`                          | `1.75px solid var(--separator-border)` |
-| Cell Border       | `--border-cell`                             | `1.5px solid var(--separator-border)`  |
-| Segment Border    | `--border-segment`                          | `1px solid var(--separator-segment)`   |
-| Banner Scrim      | `BANNER_SHADOW` · `--banner-shadow`         | `#0000008C`                            |
+An edge composes a width and a color — `var(--width-XXX) solid var(--border-YYY)`. Colors by intensity, then the literal width ladder.
+
+| Title        | Token                             | Value             |
+| ------------ | --------------------------------- | ----------------- |
+| Border Base  | `border.base` · `--border-base`   | system-grey @ 25% |
+| Border Light | `border.light` · `--border-light` | system-grey @ 20% |
+| Border Faint | `border.faint` · `--border-faint` | system-grey @ 15% |
+| Width 100    | `--width-100`                     | `1px`             |
+| Width 125    | `--width-125`                     | `1.25px`          |
+| Width 150    | `--width-150`                     | `1.5px`           |
+| Width 175    | `--width-175`                     | `1.75px`          |
+| Width 200    | `--width-200`                     | `2px`             |
+| Banner Scrim | `BANNER_SHADOW` · `--banner-shadow` | `#0000008C`     |
 
 #### Shadows
 
@@ -178,8 +182,8 @@ The over-scroll edge-dissolve widths a scrollable surface names on `--over-scrol
 | Icon Ladder       | `size.icon.*` · `--icon-*` · `ICON_PX`         | Eleven steps named for the type ramp — `largeTitle` `26px` → `subline` `10px` |
 | Pill Radius       | `RADIUS_FULL` · `--radius-full`                | `999px`                                                           |
 | Disclosure Indent | `DISCLOSURE_INDENT` · `--disclosure-indent`    | `14px`                                                            |
-| Width Content     | `--width-content`                              | `24px` — the content column's inset from the shell edges          |
-| Width Detail      | `DETAIL_WIDTH` · `--width-detail`              | `20px` — the grip / fold-chevron lane the editor, tables, and tiles share |
+| Inset Content     | `--inset-content`                              | `24px` — the content column's inset from the shell edges          |
+| Inset Detail      | `INSET_DETAIL` · `--inset-detail`              | `20px` — the grip / fold-chevron lane the editor, tables, and tiles share |
 | Drop Line         | `DROP_LINE_THICKNESS` · `DROP_DOT_SIZE` · `DROP_LINE_INSET` | `2px` · `7px` · `2px`                                |
 | List Outline      | `LIST_OUTLINE_WIDTH` · `LIST_OUTLINE_GAP` · `--list-outline-*` | `2px` · `3px` · segment tone · pill radius        |
 | Park / Close      | `PARK_CLEARANCE` · `CLOSE_CLEARANCE`           | `14px` · `30px`                                                   |
@@ -187,7 +191,7 @@ The over-scroll edge-dissolve widths a scrollable surface names on `--over-scrol
 
 #### Typography
 
-**SOURCE:** `Tokens/typography.css.ts` — Inter, variable. `text.<style>.<variant>` composes size and line height from the style with weight from the variant: Standard `400` · Emphasized `500` · Semibold `600` · Bold `700`, tracking pinned to `0`. The sizes are the macOS AppKit scale drawn in Inter; **Control** and **Subline** are renamed for what they drive here.
+**SOURCE:** `Tokens/typography.css.ts` — Inter, variable. `text.<style>.<variant>` composes size and line height from the style with weight from the variant: Standard `400` · Emphasized `500` · Semibold `600` · Bold `700`, tracking pinned to `0`. The body-and-down sizes follow the macOS AppKit scale drawn in Inter; the container-title family (`titleLarge`/`Medium`/`Small`) is Pommora's own. **Control** and **Subline** are renamed for what they drive here.
 
 | Style       | Token             | Size / Line     | Character                                            |
 | ----------- | ----------------- | --------------- | ---------------------------------------------------- |
@@ -202,7 +206,7 @@ The over-scroll edge-dissolve widths a scrollable surface names on `--over-scrol
 | Footnote    | `text.footnote`   | `10px` / `13px` | small detail                                         |
 | Subline     | `text.subline`    | `10px` / `12px` | footnote's size on a tighter line box                |
 
-Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → Headline / Emphasized; row sub-label → Caption, trailing detail → Footnote / Emphasized; pane header → Callout / Emphasized; settings section headings → Title 3 / Emphasized; table column headers → Callout / Semibold; chips and sidebar section headers → Control / Semibold; on-control labels → Control / Emphasized; picker, segmented, and tab labels → Control; card titles → Body / Semibold; the Subfield → Subline / Emphasized. The [[MarkdownPM|Markdown editor]] scales from its own zoom root in `em` multiples, drawing weight from the shared ladder.
+Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → Headline / Emphasized; row sub-label → Caption, trailing detail → Footnote / Emphasized; pane header → Callout / Emphasized; settings section headings → Headline / Emphasized; table column headers → Callout / Semibold; chips and sidebar section headers → Control / Semibold; on-control labels → Control / Emphasized; picker, segmented, and tab labels → Control; card titles → Body / Semibold; the Subfield → Subline / Emphasized. The [[MarkdownPM|Markdown editor]] scales from its own zoom root in `em` multiples, drawing weight from the shared ladder.
 
 ### Materials
 

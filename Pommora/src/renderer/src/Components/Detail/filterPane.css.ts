@@ -77,7 +77,7 @@ export const whatCell = style({
 /** The house ring CHANNEL, not a hand-rolled shadow: the field chrome already paints
  *  `inset 0 0 0 1px var(--field-ring)`, so a field only sets the color. Overriding boxShadow
  *  instead would also stomp the channel for any ancestor that sets it. */
-const restRing = { vars: { '--field-ring': c.separator.border } }
+const restRing = { vars: { '--field-ring': c.border.base } }
 
 /** The shared hairline-field recipe in its column: flush to the gutters, STANDARD field height
  *  (the field-chrome floor), separator-hairline stroke, and the house field's own BODY

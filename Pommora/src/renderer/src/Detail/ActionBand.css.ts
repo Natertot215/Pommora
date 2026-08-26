@@ -45,7 +45,7 @@ export const segment = style([
     borderRadius: '8px',
     background: c.fill.quaternary,
     // A view's own chip color lands on the stroke alone (outline-only for now).
-    border: `1.25px solid var(--segment-stroke, ${c.separator.segment})`,
+    border: `var(--width-125) solid var(--segment-stroke, ${c.border.light})`,
     color: c.label.secondary,
     whiteSpace: 'nowrap',
     cursor: 'default',

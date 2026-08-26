@@ -85,7 +85,7 @@ export const tickCircle = style([
     transform: 'translateY(-50%)',
     width: '5px',
     height: '5px',
-    border: `1px solid ${control}`,
+    border: `var(--width-100) solid ${control}`,
     opacity: 1,
     selectors: { [`${trackOn} &`]: { opacity: 0 } },
   },

@@ -17,7 +17,7 @@
 .nav-view-head {
   flex-shrink: 0;
   padding: 0 0 10px;
-  border-bottom: var(--border-segment);
+  border-bottom: var(--width-100) solid var(--border-light);
   margin: 0 var(--surface-banner-inset-right) 0 var(--surface-banner-inset);
   transition:
     margin-left var(--duration-base) var(--ease-base),

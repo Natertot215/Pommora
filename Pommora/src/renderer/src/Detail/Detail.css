@@ -73,7 +73,7 @@
    (page-consistent) — with the heading band flush under the banner divider. . */
 .detail-scroll.has-header .detail-body:has(.table-head):not(:has(.blk-surface)) {
   padding-top: 0;
-  padding-left: calc(var(--content-inset) - var(--width-detail));
+  padding-left: calc(var(--content-inset) - var(--inset-detail));
 }
 /* A cards content-view (collection/set): the card grid runs the tight surface inset — cards carry no
    grips/chevron lane, so no views gutter is reserved — with the block surfaces' banner clearance.

@@ -4,7 +4,7 @@ import { text, tintAt, vars } from '../../../Tokens'
 
 const c = vars.color
 
-const OUTLINE_W = '1.25px'
+const OUTLINE_W = 'var(--width-125)'
 
 export const container = style({
   display: 'flex',
@@ -54,7 +54,7 @@ export const type = styleVariants({
     vars: {
       '--button-fill': 'transparent',
       '--button-ink': 'currentColor',
-      '--button-outline': c.separator.border,
+      '--button-outline': c.border.base,
     },
     selectors: { '&:disabled': { opacity: 1, color: c.label.tertiary } },
   },
@@ -76,7 +76,7 @@ export const type = styleVariants({
     vars: {
       '--button-fill': c.fill.tertiary,
       '--button-ink': c.label.primary,
-      '--button-outline': c.separator.border,
+      '--button-outline': c.border.base,
     },
   },
   destructive: {

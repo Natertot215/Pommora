@@ -40,8 +40,8 @@
   border-spacing: 0;
   table-layout: fixed;
   font: inherit;
-  border-top: var(--border-cell);
-  border-left: var(--border-cell);
+  border-top: var(--width-150) solid var(--border-base);
+  border-left: var(--width-150) solid var(--border-base);
 }
 
 .mdpm-tbl-grip-zone {
@@ -91,7 +91,7 @@
   align-items: center;
   justify-content: center;
   padding: 0;
-  border: var(--border-cell);
+  border: var(--width-150) solid var(--border-base);
   border-radius: 4px;
   background: none;
   color: var(--label-tertiary);
@@ -171,8 +171,8 @@
   overflow-wrap: anywhere;
   vertical-align: top;
   text-align: left;
-  border-right: var(--border-cell);
-  border-bottom: var(--border-cell);
+  border-right: var(--width-150) solid var(--border-base);
+  border-bottom: var(--width-150) solid var(--border-base);
 }
 
 .mdpm-tbl thead .mdpm-tbl-cell {

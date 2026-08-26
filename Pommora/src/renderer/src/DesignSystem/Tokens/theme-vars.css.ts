@@ -8,7 +8,7 @@ import {
   DROP_DOT_SIZE,
   DROP_LINE_INSET,
   DROP_LINE_THICKNESS,
-  DETAIL_WIDTH,
+  INSET_DETAIL,
   LIST_OUTLINE_GAP,
   LIST_OUTLINE_WIDTH,
   PARK_CLEARANCE,
@@ -40,27 +40,27 @@ globalStyle(':root', {
     '--label-secondary': colorVars.color.label.secondary,
     '--label-tertiary': colorVars.color.label.tertiary,
     '--label-control': colorVars.color.label.control,
+
     '--bg-window': colorVars.color.background.window,
     '--surface-primary': colorVars.color.surface.primary,
     '--surface-secondary': colorVars.color.surface.secondary,
     '--surface-tertiary': colorVars.color.surface.tertiary,
-    // Overlay fills (system-grey ramp) — used for cards/chips over a surface.
+
     '--fill-primary': colorVars.color.fill.primary,
     '--fill-secondary': colorVars.color.fill.secondary,
     '--fill-tertiary': colorVars.color.fill.tertiary,
     '--fill-quaternary': colorVars.color.fill.quaternary,
     '--fill-quinary': colorVars.color.fill.quinary,
-    '--separator-border': colorVars.color.separator.border,
-    '--separator-segment': colorVars.color.separator.segment,
-    // Heading seam — the heavier hairline that separates a heading band from the body below it (table
-    // heading↔rows, banner↔body, editor heading↔content).
-    '--border-heading': '1.75px solid var(--separator-border)',
-    // Box seam — the border an outlined box/card draws around itself (gallery + page cards, the icon
-    // picker's favorites strip).
-    '--border-cell': '1.5px solid var(--separator-border)',
-    // Section seam — the plain hairline that divides one section from the next (a header's lower edge,
-    // a settings category's top edge).
-    '--border-segment': '1px solid var(--separator-segment)',
+
+    '--border-base': colorVars.color.border.base,
+    '--border-light': colorVars.color.border.light,
+    '--border-faint': colorVars.color.border.faint,
+
+    '--width-100': '1px',
+    '--width-125': '1.25px',
+    '--width-150': '1.5px',
+    '--width-175': '1.75px',
+    '--width-200': '2px',
     // The pill radius — larger than any box that wears it, so both ends resolve to semicircles
     // whatever the height.
     '--radius-full': RADIUS_FULL,
@@ -90,7 +90,7 @@ globalStyle(':root', {
     // List outline (the nested-run rail) — THE shared rail primitive: MarkdownPM's outliner guides
     // and the Grouping pane's hierarchy rail consume these knobs.
     '--list-outline-width': `${LIST_OUTLINE_WIDTH}px`,
-    '--list-outline-color': 'var(--separator-segment)',
+    '--list-outline-color': 'var(--border-light)',
     '--list-outline-radius': 'var(--radius-full)',
     '--list-outline-gap': `${LIST_OUTLINE_GAP}px`,
     // Over-scroll fade — the three edge-dissolve widths a scrollable surface picks from, so a surface
@@ -155,8 +155,8 @@ globalStyle(':root', {
     '--disclosure-indent': `${DISCLOSURE_INDENT}px`,
     // The fold/grip lane the editor, table views, block tiles, and embeds all carve from the content
     // inset.
-    '--width-detail-base': `${DETAIL_WIDTH}px`,
-    '--width-detail': 'var(--width-detail-base)',
+    '--inset-detail-base': `${INSET_DETAIL}px`,
+    '--inset-detail': 'var(--inset-detail-base)',
     // Masked-glyph assets shared across module boundaries: the 6-dot drag grip (lucide grip-vertical,
     // read by MarkdownPM's rail grips AND SurfacePM's block handle) and the fold chevron
     // (lucide chevron-right, a CSS mask because it paints on a line ::before — an <Icon> can't).

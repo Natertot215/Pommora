@@ -30,7 +30,7 @@ export const tile = style({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  border: `${GRID.tileBorder}px solid ${c.separator.border}`,
+  border: `${GRID.tileBorder}px solid ${c.border.base}`,
   borderRadius: `${GRID.tileRadius}px`,
   background: 'none',
   padding: 0,

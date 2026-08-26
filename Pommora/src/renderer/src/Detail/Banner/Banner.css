@@ -120,7 +120,7 @@
     var(--surface-banner-inset);
   /* Full-width divider below the title — content-views always carry it (banner or not), unlike
      pages' inset divider. The shared heading↔body seam, same as the banner image's bottom. */
-  border-bottom: var(--border-heading);
+  border-bottom: var(--width-175) solid var(--border-base);
   transition:
     padding-left var(--duration-base) var(--ease-base),
     padding-right var(--duration-base) var(--ease-base);
