@@ -1,44 +1,10 @@
-/* Table view — a container's pages as rows on a CSS grid: the header band and every data row share one
-   column track set (--cols, set inline), so columns align without a <colgroup>. Group sections are
-   full-width bands off the column grid. Every number lives in table-tokens.css. */
+/* Tables — the tabular chrome every table surface wears: the column-header band with its
+   segment bars, the row and column hairlines, the column drag and resize strips, the borderless
+   regime, and the cell content types. A surface wears `.table` (the token scope, table-tokens.css)
+   and lays its own grid; the Collection TableView (Views/TableView) and the Trash both do. */
 
-.table-view {
-  /* Width is auto (not 100%) so the negative side margins WIDEN the box out to both glass edges (the
-     sidebar edge left, the inspector/window edge right) — the heading band full-bleeds to them while the
-     grid's content box (and so every row) stays exactly where it was. The left margin walks the body's
-     reclaimed detail lane back out to the content gutter; the right walks the content edge out by it. */
-  margin-left: calc(var(--inset-detail) - var(--inset-content));
-  margin-right: calc(-1 * var(--inset-content));
-  /* Re-add the content gutter the body reclaimed so the grid lands on --content-inset (grips + chevrons
-     sit in the strip to its left). The RIGHT inset is a scoped var: full gutter while the columns fit
-     (the rounded, content-inset look), collapsed to nothing once they overflow — the table flattens and
-     h-scrolls to the glass edge (the Apple table model) while the left gutter stays solid. */
-  --table-right-inset: var(--inset-content);
-  padding-left: var(--inset-content);
-  padding-right: var(--table-right-inset);
-  overflow-x: auto;
-}
-.table-view.overflowing {
-  --table-right-inset: 0px;
-}
-
-.table-empty {
-  color: var(--label-primary);
-  opacity: var(--state-inactive);
-  padding: var(--empty-pad-y) 0;
-}
-
-/* The grid container: a vertical stack of full-width bands. Each band that shows columns is itself a
-   grid reading --cols. min-width (the summed column widths, inline) makes it scroll; width:100% lets
-   the trailing 1fr filler track eat slack. */
-.table-grid {
-  width: 100%;
-  /* Base density (--zoom) × the per-block Scale (--block-zoom, set on a SurfacePM tile; absent = 1). The
-     table scales as a unit within the tile's fixed inset. Chromium resolves % zoom-aware, so width:100%
-     still fills the pane; the drag/resize math reads the resolved `zoom` so hits stay 1:1. */
-  zoom: calc(var(--zoom) * var(--block-zoom, 1));
-}
-
+/* The header band and every data row share one column track set (--cols, set inline by the host),
+   so columns align without a <colgroup>. */
 /* Header band + every data row share the column tracks; the final 1fr is the filler. Stretch (not center)
    so every cell fills the row height — an empty cell's full-height column divider then matches a filled
    one's, instead of collapsing to a short centered bar. The row height is set by its tallest (content) cell,
@@ -50,17 +16,12 @@
   align-items: stretch;
 }
 
-/* Hide + style-slide animation: while a column collapses (Hide) or slides out to a wider per-style min
-   (a look change), animate the track set on the disclosure token. Active ONLY during those beats (never
-   during a drag), so resize stays instant. !important beats the drag engine's inline `transition: none`
-   on the row (the row is both the grid AND the drag node); the header has no inline style, so this is
-   redundant-but-harmless there. */
-.table-grid.col-hiding .table-head,
-.table-grid.col-hiding .data-row,
-.table-grid.col-sliding .table-head,
-.table-grid.col-sliding .data-row {
-  /* biome-ignore lint/complexity/noImportantStyles: must beat the base row rule that suppresses column transitions. */
-  transition: grid-template-columns var(--duration-fast) var(--ease-base) !important;
+/* A clear heading — no fill, no seam; the segment bars alone divide the columns. The host
+   states it when its heading sits under chrome of its own (the Trash's inset hairline); it binds the
+   same two vars any host tunes. */
+.table.is-clear {
+  --heading-fill: none;
+  --heading-divider: none;
 }
 
 .table-head {
@@ -178,21 +139,24 @@
    feel), shorter than the row, instead of the data rows' full-height hairline. The ::after sits on each
    column's right edge; the first column also carries a ::before leading bar at the grid's left edge (the
    gutter↔Title junction) so the heading reads as a bounded segmented strip. Absolutely placed so they add
-   no track width; the radius reuses the bar width so the thin caps fully round. */
+   no track width; the radius reuses the bar width so the thin caps fully round. `.table-segment` is the
+   same bar on any element a host wants divided — its tone rides --segment-tone. */
 .col-header:not(:last-child)::after,
-.col-header:first-child::before {
+.col-header:first-child::before,
+.table-segment::after {
   content: "";
   position: absolute;
   top: 50%;
+  right: 0;
   transform: translateY(-50%);
   width: var(--heading-segment-width);
   height: var(--heading-segment-height);
   border-radius: var(--heading-segment-width);
-  background: var(--heading-segment);
+  background: var(--segment-tone, var(--heading-segment));
   pointer-events: none;
 }
-.col-header:not(:last-child)::after {
-  right: 0;
+.table-segment {
+  position: relative;
 }
 .col-header:first-child::before {
   left: 0;
@@ -332,71 +296,4 @@
   align-items: center;
   width: 100%;
   height: 100%;
-}
-
-/* Sits in the views gutter (the same strip the group chevron occupies), revealed on row hover;
-   the lifted row ghosts (MarkdownPM feel). */
-.data-cell.cell-lead {
-  position: relative; /* containing block for the grip in the views gutter */
-  overflow: visible; /* let the grip escape left into the gutter */
-}
-.row-grip {
-  position: absolute;
-  left: calc(
-    -1 *
-    var(--inset-detail)
-  ); /* the views gutter, left of the grid (same lane as the chevron) */
-  width: var(
-    --inset-detail
-  ); /* span the lane so justify-content centers the glyph in it, not flush-left */
-  top: 50%;
-  transform: translateY(-50%);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--label-tertiary);
-  cursor: grab;
-  opacity: 0;
-  transition: opacity var(--duration-fast) var(--ease-base);
-}
-.data-row:hover .row-grip {
-  opacity: 1;
-}
-.row-grip:active {
-  cursor: grabbing;
-}
-
-/* The shared disclosure head (outline + glyph + hover "+") over the group's rows, a full-width band off
-   the column grid. The chrome lives on .group-band-* (GroupBand.css); the table scopes the section
-   rhythm (the row), the sticky pin (the head), and the gutter chevron. */
-.table-view .group-band-row {
-  /* No zoom of its own — the row sits inside .table-grid's compound zoom already, so it scales in
-     lockstep with the data rows; any re-application here would square a factor. */
-  padding-top: var(--band-gap);
-}
-/* A sub-group bucket band reads as a row, not a section — one shoulder, not two. */
-.table-view .group-band.sub-band .group-band-row {
-  padding-top: var(--band-clearance);
-}
-.table-view .group-band-head {
-  /* Sticky-left so the disclosure label + its chevron hold the gutter when the columns scroll — the
-     group stays legible instead of sliding off. Also the containing block for the chevron's absolute
-     float. left:0 = the grid's content start; at rest it sits in flow, only pinning once scrolled. */
-  position: sticky;
-  left: 0;
-  display: inline-flex;
-}
-/* Band drag states live with the band — GroupBand.css (Cards renders the same bands). */
-/* The chevron floats into the views gutter, one --inset-detail left of the head content (which starts flush
-   on the grid — groupIndent has no cell-padding-x base), landing in the grip lane. */
-.table-view .group-band-drop-outline {
-  position: absolute;
-  left: calc(-1 * var(--inset-detail));
-  width: var(
-    --inset-detail
-  ); /* span the lane so justify-content centers the chevron in it, not flush-left */
-  top: 50%;
-  transform: translateY(-50%);
-  justify-content: center;
-  cursor: pointer;
 }

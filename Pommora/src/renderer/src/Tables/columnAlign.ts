@@ -1,7 +1,7 @@
 import type { PropertyDefinition } from '@shared/properties'
 import { RESERVED_PROPERTY_ID } from '@shared/properties'
 import type { ColumnAlign, SavedView } from '@shared/views'
-import { declaredType } from '../pipeline/value'
+import { declaredType } from '@renderer/Views/pipeline/value'
 
 // The chip- and box-shaped values center; so does a datetime, whose formatted value reads centered.
 // The reserved Modified timestamp keeps Title's left metadata treatment.

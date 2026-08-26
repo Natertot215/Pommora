@@ -16,8 +16,6 @@ import { containerTargets, contextTargets } from '../destinationTree'
 import { fuzzyScore } from '../Navigation/navSearch'
 import { useSession } from '../store'
 import '../Navigation/navList.css'
-import '@renderer/Views/TableView/table-tokens.css'
-import '@renderer/Views/TableView/Table.css'
 import './trashLeaf.css'
 
 /** Identity-stable, so a tree push with no collections can't re-run the destination walk. */
@@ -244,7 +242,7 @@ export function TrashLeaf(): React.JSX.Element {
   }
 
   return (
-    <div className={cx('trash-leaf', checked.size > 0 && 'has-checked')}>
+    <div className={cx('trash-leaf table is-clear', checked.size > 0 && 'has-checked')}>
       <div className="nav-search-row">
         <SearchField
           className={text.body.standard}
@@ -355,7 +353,7 @@ function TrashRowView({
         onChange={onToggle}
         ariaLabel={`Select ${row.title}`}
       />
-      <div className="nav-item-main">
+      <div className="nav-item-main table-segment">
         <Icon name={icon} size="title3" className="nav-item-lead" />
         <OverScroll className="nav-item-title">{row.title}</OverScroll>
         <NavTrail
