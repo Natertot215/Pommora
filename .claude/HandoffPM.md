@@ -12,12 +12,11 @@
 
 **Two regressions Nathan saw were not regressions.** The slider's lost track and the switch's lost on-fill were the dev server holding stale vanilla-extract hashes — deleting `label.quaternary` from `color.css.ts` shifted every var hash, and any `.css.ts` not recompiled since still named the old one. A dev-server restart cures it; ⌘R does not. That diagnosis came after a false fix: the `--tint-*` ladder was declared undefined on a literal-name grep and minted a second time, when `theme-vars.css.ts:37` had generated it from `TINT_STEPS` all along. The comment-killer caught the duplicate at closeout and it never landed. Build-Gotchas carries the trap.
 
-**Vocabulary and the plan.** [[DesignTermsV2]] was written, stress-tested, and ruled: Window (floating windows) · Pane (a surface floating over another — sidebar, inspector, side slots, the hover preview, the autocomplete) · Menu (a dropdown surface on a trigger) · Frame (one page in a Menu's or Window's hierarchy) · Picker. PaneSlide is the sidebar/inspector in-out; FrameSlide the push/back between frames. Recipe families (`Glass/`, `Menus/`) name their parts in kebab by ruling. What the vocabulary still owes is design, not renames: the Menu recipe's row kinds and rosters, and the main window mounting `SidePane`. Rulings taken today are in the atlas's Settled list: spacing and radius literal on the even grid with odd values reconciling per consumer, the toolbar tone rule, `--tint-solid` kept, `subChip` kept. Nathan's four-var zoom scheme was evaluated against the evidence: three renames are clean; the `--page-scale` merge costs a font-path rewire. [[RendererRefactor]] now exists as the ledger — end goal, every row done, in flight, and pending, and the rulings it waits on — so the next session plans from it rather than continuing by feel.
+**Vocabulary and the plan.** The vocabulary was ruled and applied: Window (floating windows) · Pane (a surface floating over another — sidebar, inspector, side slots, the hover preview, the autocomplete) · Menu (a dropdown surface on a trigger) · Frame (one page in a Menu's or Window's hierarchy) · Picker. PaneSlide is the sidebar/inspector in-out; FrameSlide the push/back between frames. Recipe families (`Glass/`, `Menus/`) name their parts in kebab by ruling. What the vocabulary still owes is design, not renames: the Menu recipe's row kinds and rosters, and the main window mounting `SidePane`. Rulings taken today are in the atlas's Settled list: spacing and radius literal on the even grid with odd values reconciling per consumer, the toolbar tone rule, `--tint-solid` kept, `subChip` kept. Nathan's four-var zoom scheme was evaluated against the evidence: three renames are clean; the `--page-scale` merge costs a font-path rewire. [[RendererRefactor]] now exists as the ledger — end goal, every row done, in flight, and pending, and the rulings it waits on — so the next session plans from it rather than continuing by feel.
 
 #### Completion Criteria
 
 - [ ] **The next session recaps before it moves** — the Done rows in [[RendererRefactor]] are confirmed against the tree, the Pending rows are ordered into sessions, and the Open Rulings that gate them are taken.
-- [x] **The vocabulary is applied** — every rename in [[DesignTermsV2]] is on disk.
 - [ ] **The Menu recipe** — the row kinds named once, `menu-roster`, Sort and Hidden as rosters, the frame stylesheets down to geometry.
 - [ ] **The side slot** — the main window mounts `SidePane`; PaneSlide is one motion.
 - [ ] **The filing rows are executed** — `Interface/`, `Core/`, `Connections/`, `Navigation/` absorbing `Tabs/`, the Showcase out, `Surface/`, the casing renames — and the atlas's eight rule greps return empty.
@@ -30,7 +29,7 @@
 
 1. **Read [[RendererRefactor]] first, then this document, then the atlas's Settled list.** Confirm the Done rows hold on disk (`ls src/renderer/src` — `Cards`, `Tables`, `Views`, `Windows`, `Frames`, `Properties` at the root; no `PagePreview`, `NavWindow`, or `Components/Detail`; `DesignSystem/` holding `Glass/` and `Menus/`, no `Materials/`).
 2. **Plan, with Nathan.** Order the Pending rows into sessions; take the Open Rulings — the zoom merge, the glass tokens, the three design-system reaches, `Interface/`'s scope, `NavWindow`'s home, the `PropertyFrame` edge, the three "preview" strings. Nathan is still weighing the token moves and alias naming from the early commits; that conversation belongs here, before any further row.
-3. **Then the Menu recipe** — the design session [[DesignTermsV2]] §The Menu Recipe describes: row kinds named once in `Menus/menu-base.css.ts`, `menu-roster`, `MenuDropdown` + `MenuSurface` → `Menu`, Sort and Hidden to rosters, `frames.css.ts` to geometry.
+3. **Then the Menu recipe** — the design session the ledger's In Flight row specifies: row kinds named once in `Menus/menu-base.css.ts`, `menu-roster`, `MenuDropdown` + `MenuSurface` → `Menu`, Sort and Hidden to rosters, `frames.css.ts` to geometry.
 4. **`cellRing(key)`** rides whichever session touches `Blocks/` first.
 5. **Inline Page Properties** runs parallel on its own Decision Log and shares no files with any of this.
 
@@ -45,7 +44,6 @@
 #### Session Pointers
 
 - `.claude/Planning/RendererRefactor.md` — the ledger; read first.
-- `.claude/Planning/DesignTermsV2.md` — the five terms, the motions, the rename tables, the calls, the session order.
 - `.claude/Planning/RendererAtlas.md` — §The Filing Rules for the eight greps; §The Target Tree with `✓` on executed rows; §Settled for every ruling; the Open Decisions blocks for what still needs one.
 - `Pommora/src/renderer/src/Windows/` — the floating family; `Windows/window-base.css` for the `.window-*` chassis and its `--window-*` knobs.
 - `Pommora/src/renderer/src/Settings/SettingsRow.tsx` — the `MenuItem` adapter; `settingsWindow.css` `.settings-wide` is the KNOB for a slider or path field's seat width.
@@ -64,7 +62,6 @@
 **FILES ADDED**
 
 - `.claude/Planning/RendererRefactor.md`
-- `.claude/Planning/DesignTermsV2.md`
 - `Pommora/src/renderer/src/DesignSystem/Glass/` — the five tier files
 - `Pommora/src/renderer/src/Windows/window-base.tsx` · `window-base.css`
 
@@ -79,6 +76,7 @@
 
 **FILES REMOVED**
 
+- `.claude/Planning/DesignTermsV2.md` — folded into the ledger once its renames landed
 - `Pommora/src/renderer/src/PagePreview/` and `NavWindow/` — into `Windows/`
 - `Pommora/src/renderer/src/DesignSystem/Materials/` — into `Glass/`
 - `Pommora/src/renderer/src/Components/Detail/` — into `Frames/`

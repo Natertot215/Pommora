@@ -57,7 +57,7 @@ Two more rules are recorded for the Cleanup lane because they change behavior ra
 
 #### The Target Tree
 
-Each folder answers "what is this" in one word. New folders are marked; ✓ marks a row already true on disk, so it is not re-proposed; files are shown only where they carry a finding.
+Each folder answers "what is this" in one word. A row marked NEW, MOVED, or RENAMED is a move still to make; every other row is the tree as it stands; files are shown only where they carry a finding.
 
 ```
 // src/renderer/src                     | • The React renderer — it never touches Node
@@ -67,7 +67,7 @@ Each folder answers "what is this" in one word. New folders are marked; ✓ mark
 │   ├── ImagePicker.tsx                 | • NEW wrapper — binds paste, pick, and the asset map
 │   ├── PickerControl.tsx               | • NEW wrapper — binds the native row menu
 │   └── …                               | • EntityIcon, RenamableTitle, useNexusIcon, iconFavorites
-├── // Cards                            | ✓ The card chassis the gallery and CardView wear
+├── // Cards                            | • The card chassis the gallery and CardView wear
 ├── // Connections                      | • NEW — the connection pane and the link menu, with link resolution
 │   ├── linkResolve.ts · openWebLink.ts | • MOVED from the root
 │   └── …                               | • ConnectionHoverCard, HoverCardPresenter, connectionMenu, hoverCardSize
@@ -78,38 +78,38 @@ Each folder answers "what is this" in one word. New folders are marked; ✓ mark
 ├── // DesignSystem                     | • The pieces; Detail/ and Showcase/ are gone
 │   ├── // Components
 │   │   ├── // Pickers                  | • Stays; PickerMenu is the most-composed primitive in the system
-│   │   ├── // SidePane                 | ✓ the sliding side slot, from DesignSystem/Detail
-│   │   └── // WindowBase            | ✓ the shell every window mounts, from Detail/PreviewPane
-│   ├── // Interactions                 | ✓ ghostAnchor.ts, from Views
+│   │   ├── // SidePane                 | • The sliding side slot
+│   │   └── // WindowBase            | • MOVED to Windows/window-base — the one base component
+│   ├── // Interactions
 │   │   └── reorderModel.ts             | • MOVED from Sidebar/sidebarDndModel — a generic reorder model
-│   ├── // Glass                        | ✓ the material — glass-base, -window, -surface, -control, -pane · gains --glass-radius
-│   ├── // Menus                        | ✓ the menu recipe — menu-base, -row, -surface, -shell, -disclosure, -anchor, frame-slide, frame-growth
-│   ├── // Tokens                       | ✓ solidColor.ts · gains the shell geometry, --subline-h
+│   ├── // Glass                        | • The material — glass-base, -window, -surface, -control, -pane · gains --glass-radius
+│   ├── // Menus                        | • The menu recipe — menu-base, -row, -surface, -shell, -disclosure, -anchor, frame-slide, frame-growth; gains menu-roster
+│   ├── // Tokens                       | • Gains the shell geometry, --subline-h
 │   └── …                               | • Animation, Elements, Labels, Symbols, Theming, Util
 ├── // Embeds                           | • The embed framework's consumers — page, webpage, retention
-├── // Frames                           | ✓ The frames a Menu or Window opens onto — filter, group, sort, hidden, layout, settings; from Components/Detail
+├── // Frames                           | • The frames a Menu or Window opens onto — filter, group, sort, hidden, layout, settings
 ├── // Interface                        | • RENAMED from Detail — the main window's chrome and its routed pane
 │   ├── // Banner · // Subfield
-│   ├── // InspectorPane                | ✓ from InspectorPanel
+│   ├── // InspectorPane                | • The inspector's side slot
 │   ├── // Sidebar · // Toolbar         | • MOVED from the root
-│   ├── NavView.tsx                     | ✓ the fifth routed view, beside its four siblings, from Tabs
-│   └── …                               | • ContainerView, ContentView (✓ was DetailPane), DetailScaffold, HomepageView, PageView, SpaceView, scope
+│   ├── NavView.tsx                     | • The fifth routed view, beside its four siblings
+│   └── …                               | • ContainerView, ContentView, DetailScaffold, HomepageView, PageView, SpaceView, scope
 ├── // MarkdownPM                       | • The editor; subfolders capitalize; otherwise untouched
 ├── // Navigation                       | • The nav layer — absorbs Tabs; NavWindow is a Window
 │   ├── TabBar.tsx · tabsModel.ts       | • MOVED from Tabs — per-tab history is navigation
 │   └── …
-├── // Properties                       | ✓ The value layer — resolution at the root, Editing/ and Editors/ beneath
-├── // Settings                         | ✓ The Settings window alone, on the menu row primitive
+├── // Properties                       | • The value layer — resolution at the root, Editing/ and Editors/ beneath
+├── // Settings                         | • The Settings window alone
 ├── // Showcase                         | • MOVED out of DesignSystem — a deployed site, not a piece
 ├── // Surface                          | • RENAMED from SurfacePM; absorbs Blocks — the tile world in one folder
 │   ├── // Blocks                       | • Tile content; block becomes tile in identifiers
 │   ├── actionBand.css.ts               | • MOVED from Detail — Blocks is its only consumer
 │   └── tileChassis.css                 | • MOVED from DesignSystem/Detail
-├── // Tables                           | ✓ The tabular chrome TableView and the Trash wear — tableDnd, ColumnHeader, column mechanics
-├── // Views                            | ✓ Saved-view presentation; TableView/ and CardView/ hold only the view layer
+├── // Tables                           | • The tabular chrome TableView and the Trash wear
+├── // Views                            | • Saved-view presentation; TableView/ and CardView/ hold only the view layer
 │   ├── ViewEmbedScope.tsx              | • MOVED from Embeds — view infrastructure, fourteen consumers outside Embeds
 │   └── …                               | • Pipeline, GroupBand, ViewRenderer
-├── // Windows                          | ✓ The floating family — PageWindow, WebWindow, NavWindow, the tab strip, windowMorph
+├── // Windows                          | • The floating family — PageWindow, WebWindow, NavWindow on window-base, the tab strip, windowMorph
 ├── // testing                          | • The shared test harnesses; gains Navigation's fixture tree
 └── App.tsx · main.tsx · styles.css · Carets.css · env.d.ts
 ```
@@ -139,7 +139,7 @@ The eight that gate the tree's non-mechanical moves. Each is a fork the rules do
 
 **Four folder names mislead.** Two `Detail` folders for two unrelated things — the main window's chrome, and the settings panes under `Components/`. `Blocks/` and `SurfacePM/` name one unit `block` and `tile`. `Properties/Editing/` and `Properties/Editors/` are two folders of property editors in two vocabularies, with a `DatetimeValuePicker`/`DateTimeEditor` split on the same word. `Components/` and `DesignSystem/Components/` share a name, and `Settings/IconPicker.tsx` exports an `IconPicker` that shadows the design system's, imported aliased as `Picker` — ten call sites import the Settings one, almost certainly believing otherwise.
 
-**The floating-surface vocabulary is [[DesignTermsV2]]'s five words** — Window, Pane, Menu, Frame, Picker — applied across the tree: `Frames/`, `DesignSystem/Menus/`, `DesignSystem/Glass/`, `InspectorPane`, `ConnectionPane`, `AutocompletePane`, the toolbar's `*Menu`. What remains of it is the Menu recipe's row kinds and the main window mounting `SidePane`.
+**The floating-surface vocabulary is five words** — Window, Pane, Menu, Frame, Picker — carried in [[DesignSystemPM]]. What the tree still owes it is the Menu recipe's row kinds and the main window mounting `SidePane`, both rows in [[RendererRefactor]].
 
 #### The Concept Table
 
@@ -312,4 +312,4 @@ Rulings a sweep would otherwise re-derive wrongly, carried as current truth. Reo
 
 **Process notes that outlive their documents.** A survey measuring two files against each other without accounting for what was already extracted beneath them overstates the duplication — the ~470-line twin figure is honest only because `usePropertyRows`, `PropertyEditor`, and `PropertyPicker` were counted out. A ruling bounds what it decided, not everything near it. Re-derive citations against the current code before editing; the tree moves. Restate rather than amend — a fixed item is deleted, a changed fact rewritten as currently true.
 
-**Where the surfaces live.** The property surface is `Properties/`; `EyeToggle` and `PickerControl` are `DesignSystem/Elements/`; `NavGallery` is `Navigation/`; `ImagePicker` is `DesignSystem/Components/Pickers/`; `SpaceSettings` is folded into `Toolbar/SpaceDropdown`. `Detail` → `Interface` is ruled and awaits execution; the rest of the tree is unexecuted.
+**Where the surfaces live.** The property surface is `Properties/`; `EyeToggle` and `PickerControl` are `DesignSystem/Elements/`; `NavGallery` is `Navigation/`; `ImagePicker` is `DesignSystem/Components/Pickers/`; `SpaceSettings` is folded into `Toolbar/SpaceDropdown`. `Detail` → `Interface` is ruled; the moves the tree still marks are in [[RendererRefactor]].
