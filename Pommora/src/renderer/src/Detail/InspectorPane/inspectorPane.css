@@ -3,17 +3,15 @@
    when closed. Open/closed state + the content push are driven by .shell.inspector-open. */
 .inspector-glass {
   position: absolute;
-  top: var(--glass-inset);
-  right: var(--glass-inset);
-  bottom: var(--glass-inset);
+  top: var(--app-inset);
+  right: var(--app-inset);
+  bottom: var(--app-inset);
   width: var(--inspector-width);
   z-index: var(--z-inspector);
-  border-radius: var(--glass-radius);
+  border-radius: var(--app-radius);
   overflow: hidden;
   /* Slide driven by --io (shell): fully off-screen at 0, home at 1. No own transition — --io carries it. */
-  transform: translateX(
-    calc((1 - var(--io)) * (100% + var(--glass-inset) + var(--park-clearance)))
-  );
+  transform: translateX(calc((1 - var(--io)) * (100% + var(--app-inset) + var(--park-clearance))));
   pointer-events: none;
   -webkit-app-region: no-drag;
 }
@@ -26,8 +24,8 @@
 }
 
 .inspector-resize {
-  top: var(--glass-inset);
-  bottom: var(--glass-inset);
-  right: calc(var(--glass-inset) + var(--inspector-width) - 3px);
+  top: var(--app-inset);
+  bottom: var(--app-inset);
+  right: calc(var(--app-inset) + var(--inspector-width) - 3px);
   z-index: var(--z-inspector-resize);
 }

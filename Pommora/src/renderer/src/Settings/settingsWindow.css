@@ -3,7 +3,7 @@
 
 .settings-window {
   /* Rings on the glass inset like the NavWindow rather than running edge-to-edge. */
-  padding: var(--glass-inset);
+  padding: var(--app-inset);
   /* KNOB — the frame's content inset. */
   --settings-inset: 18px;
 }

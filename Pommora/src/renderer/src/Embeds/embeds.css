@@ -36,7 +36,7 @@
 .conn-hover-web-shield {
   position: absolute;
   inset: -4px;
-  border-radius: var(--glass-radius);
+  border-radius: var(--app-radius);
 }
 .conn-hover-web {
   display: flex;

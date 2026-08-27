@@ -7,11 +7,11 @@
      currentColor ink; the only mute is a Back/Forward button with nowhere to go, whose :disabled
      state drops to label-tertiary. A dropdown pane restates its own ground. */
   color: var(--label-control);
-  /* Cluster tops sit on the sidebar/inspector glass top edge — glass-inset plus an optical
+  /* Cluster tops sit on the sidebar/inspector glass top edge — app-inset plus an optical
      nudge (the liquid-glass pill reads a hair high against the frost panels otherwise). */
-  top: calc(var(--glass-inset) + 1px);
+  top: calc(var(--app-inset) + 1px);
   /* Hug the sidebar's right edge (clusters then sit a small gap in via padding). */
-  left: calc(var(--glass-inset) + var(--sidebar-width));
+  left: calc(var(--app-inset) + var(--sidebar-width));
   right: 0;
   height: var(--toolbar-h);
   /* Tops the frame's ladder so the trio rides over the inspector glass and its resize strip and stays
@@ -33,7 +33,7 @@
     0px,
     calc(
       var(--io) *
-      (var(--inspector-width) + var(--glass-inset)) -
+      (var(--inspector-width) + var(--app-inset)) -
       10px -
       var(--trio-w, 0px) -
       var(--trio-inset)
