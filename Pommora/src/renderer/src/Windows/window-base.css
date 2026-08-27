@@ -100,7 +100,7 @@
   height: var(--window-toolbar-h);
   /* The glyphs align to the side pane's box: the × sits over the pane's inner corner, and the
      leading glyph mirrors the same inset. */
-  padding: 0 calc(var(--window-side-inset) + 6px);
+  padding: 0 var(--surface-inset);
 }
 
 /* Floating mode: no strip. The clusters pin to the top corners and everything between them stays

@@ -188,6 +188,9 @@ The over-scroll edge-dissolve widths a scrollable surface names on `--over-scrol
 | Pill Radius       | `RADIUS_FULL` · `--radius-full`                | `999px`                                                           |
 | Disclosure Indent | `DISCLOSURE_INDENT` · `--disclosure-indent`    | `14px`                                                            |
 | Inset Content     | `--inset-content`                              | `24px` — the content column's inset from the shell edges          |
+| App Inset         | `--app-inset` · `--app-radius`                 | `5px` · `12px` — a floating glass pane's gap from the window edge, and its corner (`styles.css`) |
+| Surface Inset     | `--surface-inset` · `MENU_GUTTER`              | `10px` — glass edge → content, inside a menu, side pane, or window toolbar (`styles.css`) |
+| Row Inset         | `--row-inset` · `ROW_INSET`                    | `6px` — row edge → text, inside a menu row; the disclosure rail centers off it (`styles.css`) |
 | Inset Detail      | `INSET_DETAIL` · `--inset-detail`              | `20px` — the grip / fold-chevron lane the editor, tables, and tiles share |
 | Drop Line         | `DROP_LINE_THICKNESS` · `DROP_DOT_SIZE` · `DROP_LINE_INSET` | `2px` · `7px` · `2px`                                |
 | List Outline      | `LIST_OUTLINE_WIDTH` · `LIST_OUTLINE_GAP` · `--list-outline-*` | `2px` · `3px` · segment tone · pill radius        |

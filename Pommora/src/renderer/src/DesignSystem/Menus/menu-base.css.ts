@@ -1,6 +1,6 @@
 import { globalStyle, style, type StyleRule } from '@vanilla-extract/css'
 import { vars as colorVars } from '../Tokens/color.css'
-import { ROW_PAD_X } from '../Elements/DropOutline/dropOutline.css'
+import { ROW_INSET } from '../Elements/DropOutline/dropOutline.css'
 import { font, text } from '../Tokens/typography.css'
 import { tintAt } from '../Tokens/tint'
 import { fieldRing, ROW_RING } from '../Components/Fields/fieldRing'
@@ -50,7 +50,7 @@ export const item = style([
     alignItems: 'center',
     gap: `${ROW_GAP}px`,
     minHeight: '24px',
-    padding: `6px ${ROW_PAD_X}px`,
+    padding: `6px ${ROW_INSET}`,
     fontSize: ROW_SIZE,
     lineHeight: ROW_LINE,
     color: c.label.primary,
