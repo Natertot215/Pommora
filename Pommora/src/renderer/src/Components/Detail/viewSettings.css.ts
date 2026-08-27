@@ -23,8 +23,7 @@ export const grid = style({
 /** One type tile — a rounded rect, wider than tall, holding only its type glyph over the glass. The glyph
  *  is opaque, not a white-alpha label tone: an alpha tone doubles where the glyph's own strokes overlap
  *  (the grid crossings, the bar edges) and its soft edges read as aliasing — an opaque hex composites
- *  clean. The `&&` pins it above `.app-toolbar button`'s control-tone rule (pane lives in the toolbar's
- *  DOM). */
+ *  clean. */
 export const tile = style({
   aspectRatio: `${GRID.tileAspect}`,
   display: 'flex',
@@ -35,7 +34,7 @@ export const tile = style({
   background: 'none',
   padding: 0,
   cursor: 'default',
-  selectors: { '&&': { color: c.solid.grey } },
+  color: c.solid.grey,
 })
 
 export const tileSelected = style({ borderColor: 'var(--accent-stroke-hot)' })

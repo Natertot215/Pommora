@@ -5,6 +5,7 @@ import type { IconSize } from '@renderer/DesignSystem/Tokens/size.css'
 import { duration, easing } from '@renderer/DesignSystem/Animation'
 import {
   accessoryButton,
+  bottomRow,
   footingLabel,
   titleText,
 } from '@renderer/DesignSystem/Components/Menu/menu.css'
@@ -100,21 +101,20 @@ export const headerPhotoImg = style({
   borderRadius: '8px',
 })
 
-/** Placeholder dashed-square menu icon (until the real symbols are specified). */
 // ═══════════════════════════════════════════════════════════════════════════
 // § TOPROW — the ‹ back row + its trailing ⊕ / ⋮ action
 // ═══════════════════════════════════════════════════════════════════════════
 
 /** The TopRow's trailing action (⊕ create / ⋮ menu) — the shared accessory recipe, retuned for the
  *  TopRow: width-only (height hugs the glyph), right-aligned to the gutter edge, matching the back-row
- *  heading's tone. The `&&` clears the `.app-toolbar button` control-tone default. */
+ *  heading's tone. */
 export const topRowAction = style([
   accessoryButton,
   {
     flex: '0 0 auto',
     width: `${SIZE.topRowActionWidth}px`,
     justifyContent: 'flex-end',
-    selectors: { '&&': { color: c.label.secondary } },
+    color: c.label.secondary,
   },
 ])
 
@@ -259,17 +259,12 @@ export const allPropertiesLabel = style([optionsLabel, { color: c.label.secondar
 export const optionsAdd = accessoryButton
 
 /** Status only — the per-group + . Reuses the "Options" + button, hidden until you hover the group
- *  (its heading or its chips), with a state-hover fill on direct hover; the `&&` clears
- *  `.app-toolbar button`'s control-tone default (0,1,1) so it reads at its own rest tone, not the
- *  toolbar's. */
+ *  (its heading or its chips), with a state-hover fill on direct hover. */
 export const groupAdd = style([
   optionsAdd,
   {
     opacity: 0,
-    selectors: {
-      [`${statusGroup}:hover &`]: { opacity: 1 },
-      '&&': { color: c.label.tertiary },
-    },
+    selectors: { [`${statusGroup}:hover &`]: { opacity: 1 } },
   },
 ])
 
@@ -378,8 +373,8 @@ export const crumbRow = style([
   { display: 'inline-flex', alignItems: 'center', gap: '4px', minWidth: 0 },
 ])
 
-/** The scoped footer's lock reads the footing TRAILING tone, a step under the leading breadcrumb;
- *  quadrupled to outrank the BottomRow's own icon-tone bump. */
+/** The scoped footer's lock reads the footing TRAILING tone, a step under the leading breadcrumb —
+ *  scoped to the BottomRow so it outranks the row's own icon-tone bump. */
 export const footerLock = style({
-  selectors: { '&&&&': { color: c.label.tertiary } },
+  selectors: { [`${bottomRow} &`]: { color: c.label.tertiary } },
 })
