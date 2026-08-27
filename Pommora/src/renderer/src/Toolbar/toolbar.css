@@ -20,8 +20,8 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  /* Back/Forward hugs the sidebar (tight left); trio sits a small gap off the window edge. */
-  padding: 0 var(--surface-inset) 0 4px;
+  /* Back/Forward hugs the sidebar (tight left); the trio sits on the app inset, flush with the inspector's edge. */
+  padding: 0 var(--app-inset) 0 4px;
   pointer-events: none;
   --trio-inset: 4px; /* breathing room so the swallowed pill doesn't sit flush against the pane's seam */
   /* The single swallow magnitude, shared by the right cluster's ride AND the tab-bar's right-edge
@@ -34,7 +34,7 @@
     calc(
       var(--io) *
       (var(--inspector-width) + var(--app-inset)) -
-      10px -
+      var(--app-inset) -
       var(--trio-w, 0px) -
       var(--trio-inset)
     )
