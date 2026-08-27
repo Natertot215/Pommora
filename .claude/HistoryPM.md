@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 08-27-2026              | PM-116 | Every Open Page Has A Slot; The Store Is Seven Slices |
 | 08-25-2026              | PM-115 | The ImagePicker                                      |
 | 08-22-2026              | PM-114 | File Properties                                      |
 | 08-22-2026              | PM-113 | MarkdownPM Improvements                              |
@@ -119,6 +120,17 @@
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
 
+
+#### PM-116 || Every Open Page Has A Slot; The Store Is Seven Slices
+
+**DATE:** 08-27-2026
+
+The renderer store's page state moved from one singleton describing the active tab to `pages: Record<pageId, PageSlot>`, a slot per page open in any tab holding its detail and live body. Slots key by page id rather than tab id: a page is one document however many tabs point at it, and a page id survives rename and pin/unpin where a pinned tab's id does not. `selection` stayed a field and is documented as what the pane shows — during a cold page open it lags the active tab until the fetch lands or the deadline passes, which is the pause-on-change — and `pageFrozen` became `frozenOf`, derived from that lag. `PageView` reads `pages[pageId]` and lost its `detail` prop; `ContentView` builds its hosts from the loaded page ids, keyed by page so becoming shown, being parked, or being pinned is a class change rather than a remount, and subscribes to `readyPageIds`, a primitive, so typing never re-renders the pane. The outgoing-page capture moved from the store's `captureOutgoingDetail` and its four callers to `PageView`'s unmount seam, reading the slot and tab id through refs and gated on a warm-cache generation that `clearWarm` bumps, so a surface torn down by a rename's cascade cannot refill the cache with the pre-cascade body. `Subfield` and `CitationsToggle` take one `page` prop from every host, the Page Window marking its crumbs `inert`; `pinnedTabs` kept one writer, `setPinned`; `previewTarget` became `previewTargetOf` over `deriveTarget`, which returns the active preview tab's stored target.
+
+**The split:** `store.ts` became a composition root over seven slice files in `Store/` — `NexusSlice`, `NavigationSlice`, `PreviewSlice`, `ChromeSlice`, `ConfigSlice`, `RenameSlice`, `CacheSlice` — each a `StateCreator` over the full `SessionState`, with the React hooks staying in the root. Boundaries follow the transactions: tabs, pages, selection, history, and the nav layer are one slice because `select`, the pin gestures, and the restore write across them. What crosses a boundary is a named action — `reconcileNavigation`, `reconcilePreview`, `restoreNavigation`, `patchPagesFor`, and a `reset*` per slice that a nexus switch calls — and `makeTabId`, `findContainer`, and `parentPathOf` moved to `tabsModel` and `Scope`. Every one of the 113 importers compiled unchanged.
+
+- **Commits:** `f72d34de^..c927a41a`
+- **Diff:** Net +52 | +1866 / −1814
 
 #### PM-115 || The ImagePicker
 
