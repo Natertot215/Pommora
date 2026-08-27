@@ -13,7 +13,7 @@
   /* The portal pads like the embed, not a page — MarkdownPM's page-level insets don't apply inside
      a foreign surface. The detail lane scales off --mdpm-scale (set inline by PageEmbed from its single
      Embed Scale setting), so the whole embed's geometry follows one variable. */
-  --inset-detail: calc(var(--inset-detail-base) * var(--mdpm-scale));
+  --detail-inset: calc(var(--detail-inset-base) * var(--mdpm-scale));
 }
 .tile-chassis.is-editing-tile .pgembed {
   overflow-y: auto;
@@ -55,7 +55,7 @@
   overscroll-behavior: contain;
   /* Grip menus, fold chevrons, and gutter actions are inactive here — the card is scroll-only —
      so the gutter lane reserves nothing. */
-  --inset-detail: 0px;
+  --detail-inset: 0px;
 }
 /* KNOB — the card's interior inset: no vertical padding (scroll-only chrome earns none),
    symmetric sides. The caret never enters, so no I-beam either. */
@@ -133,7 +133,7 @@
 }
 .pgembed .mdpm-editor .cm-content {
   padding: calc(16px * var(--mdpm-scale)) calc(14px * var(--mdpm-scale))
-    calc(16px * var(--mdpm-scale)) var(--inset-detail);
+    calc(16px * var(--mdpm-scale)) var(--detail-inset);
 }
 /* A host that owns the scroll itself: the editor chain GROWS to its content (height:auto down to
    the CM6 editor) so the HOST is the one scroller and content can ride under floating chrome. */
