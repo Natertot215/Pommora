@@ -299,12 +299,12 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
 - [x] Commit: `docs: every open page has a slot; the store is seven slices`.
 
 #### Gate 2 — one store, seven files, nothing moved
-- [ ] Gate commands green, exit codes read directly.
-- [ ] Derivations re-run: 113 importers unchanged; Dead Vocabulary → 0 against the control.
-- [ ] `code-simplifier` then `comment-killer-agent` against `<base>..HEAD` scoped to `Store/`, `store.ts`; `KNOB` verified.
-- [ ] `feature-dev:code-reviewer` against the same range; every concern fixed or ruled.
-- [ ] The Acceptance sequence seen running on the split store.
-- [ ] Progress hashes filled in; the whole-diff and `store.ts` code-line deltas recorded.
+- [x] Gate commands green, exit codes read directly (typecheck 0 · 294/3,656 · lint 0).
+- [x] Derivations re-run: 113 importers unchanged (zero consumer edits in the split commit); Dead Vocabulary → 0 against the control (113); the 49 literal initial values of the old store all present verbatim in the slices.
+- [x] `code-simplifier` then `comment-killer-agent` against `d59b5528^..HEAD` scoped to `Store/`, `store.ts`; `KNOB` verified.
+- [x] `feature-dev:code-reviewer` against the same range; no findings; its one named gap (initial values) closed by the census above.
+- [ ] The Acceptance sequence seen running on the split store — Nathan's pass on the live dev instance.
+- [x] Progress hashes filled in; the whole-diff and `store.ts` code-line deltas recorded.
 
 ---
 
@@ -315,7 +315,7 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
   - [x] Task 1 — The slot, the hosts, and the capture at unmount · `<commit>` · `store.ts` 1,620 → 1,612 code lines; whole diff −29
   - [x] Task 2 — The Subfield is driven · `<commit>` · `inert` marks a floating window's crumbs (the tab-neutral, no-click behavior the `scope` mode carried needs its own signal once every host passes a page)
   - [x] Task 3 — One writer for the pinned tabs; the preview target is read · `<commit>` · `store.ts` 1,596 code lines
-- [ ] **Phase 2** — The file becomes slices · base `0c0e651a`
+- [ ] **Phase 2** — The file becomes slices · base `0c0e651a` · commits `d59b5528` `c927a41a` `a77b3360` `1c300851` `b1b810a2` · `store.ts` 51 lines; store code 1,620 → 1,654 across eight files; whole plan net +52 code lines excluding tests · Gate 2 green but for the running-thing pass
   - [x] Task 4 — The slice files and the composition root · `<commit>` · `store.ts` 51 lines; `Store/` 1,940 lines across eight files
   - [x] Task 5 — Tests for what the re-key created · `<commit>` · three new cases; the other three the plan listed were already pinned by the rewritten warm-tab block
   - [x] Task 6 — The documents · `<commit>`
@@ -336,3 +336,13 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
 - Split view and a raised `WARM_TABS` land on `pages`; `registerPageEditor` (one published editor) and `ContentView`'s module-held `paneEl` are the two single-pane assumptions split view meets next.
 - The preview window's page as a slot, if `PageEmbed` ever loads through the store — today it owns its fetch, so the preview keeps a local body.
 ### Closeout
+
+**Delivery Claim** (08-27-2026, HEAD `b1b810a2`):
+
+1. Every requirement traces to a landed task: R1 (`pages` by page id; the four fields gone) → Task 1 `f72d34de`; R2 (`selection` stays; `frozenOf`) → Task 1; R3 (`PageView({ tabId, pageId, parked })`, hosts by page id, no `detail` prop, no warm read in `useHosts`) → Task 1 + `33d5a2bb`; R4 (driven Subfield, `scope` gone, only the stats leaves subscribe to the body) → Task 2 `0b7a81ce`; R5 (capture at unmount under the generation, tab id at capture time) → Task 1; R6 (`setPinned`; `previewTargetOf` over `deriveTarget`) → Task 3 `eb4e03f6`; R7 (seven slices under `Store/`, composition root, importers unchanged) → Task 4 `d59b5528`; R8 (tests) → the rewritten warm-tab block + Task 5 `c927a41a`.
+2. The Acceptance criterion's behavioral half is proven by tests (slot survives a switch with no fetch; the pause holds on the shown slot; the fence drops a stale landing; a rename deletes parked slots and a return fetches cold; a re-path spares the shown slot; `frozenOf` across the pause) and its grep half by the Dead Vocabulary sweep; its visual half — the slide, pin/unpin without remount, the preview footer, the profiler, ⌘R — is the one item not observed by this session and is deferred to Nathan's pass on the live instance.
+3. No new dependency. Zustand stays bare.
+4. No mechanism duplicated: one slot deleter (`keepSlots`), one live-slot patcher (`patchReadyAt`), one pinned writer (`setPinned`), one preview-target definition (`deriveTarget`), one footer mode (`page`), one active-tab lookup (`activeTabOf`).
+5. Nothing left with nothing to vary: `PAGE_CLEARED`, `captureOutgoingDetail`, `openPageBody`, `SubfieldScope`, `useAssetResolver`, `previewTarget`'s seven writers, and the store's `findActiveTab` are gone.
+6. No work added to a high-frequency path: typing writes one slot through `patchReadyAt`; `ContentView` subscribes to `readyPageIds` (a primitive) and `ContentFooter` alone to the slot; every selector returns a stored reference or a primitive.
+7. Deviations from the ratified spec are recorded in the Log and in the Checklist: page-id keys, `selection` kept, `pinnedTabs` stored, the preview's local body kept, per-slice `reset*` actions, `patchPagesFor` as a fourth named action, the hooks in the root.
