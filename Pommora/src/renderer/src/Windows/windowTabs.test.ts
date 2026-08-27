@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { NexusTree } from '@shared/types'
-import { useSession } from '../store'
+import { previewTargetOf, useSession } from '../store'
 import { captureWindowWarm, clearWindowWarm, readWindowWarm } from './windowWarm'
 
 const page = (id: string) => ({ id, path: `Notes/${id}.md` })
@@ -131,7 +131,7 @@ describe('windowTabs — durable sets (H-3/H-6/H-10)', () => {
     const p = useSession.getState().preview!
     expect(p.tabs.map((t) => (t.target.kind === 'page' ? t.target.id : ''))).toEqual(['x', 'y'])
     expect(p.tabs.find((t) => t.id === p.activeTabId)?.target).toMatchObject({ id: 'y' })
-    expect(useSession.getState().previewTarget).toEqual({ id: 'y', path: 'Notes/y.md' })
+    expect(previewTargetOf(useSession.getState())).toMatchObject({ id: 'y', path: 'Notes/y.md' })
   })
 
   it('drag-reorder moves a page tab and the mirrored record keeps the new order (H-3)', () => {

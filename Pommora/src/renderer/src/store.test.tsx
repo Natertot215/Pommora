@@ -2,7 +2,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ASSETS_DIR_REL } from '@shared/nexusPaths'
 import type { NexusTree, PageDetail, SelectTarget, Tab } from '@shared/types'
-import { frozenOf, type PageSlot, shownDetail, shownPage, useSession } from './store'
+import {
+  frozenOf,
+  type PageSlot,
+  previewTargetOf,
+  shownDetail,
+  shownPage,
+  useSession,
+} from './store'
 import { newTabTab } from './Tabs/tabsModel'
 import { navKey } from './Navigation/navRecents'
 import { clearWarm } from './Tabs/warmCache'
@@ -356,7 +363,7 @@ describe('store — applyTree reconciles the preview tabs (D-6)', () => {
     )
     let p = useSession.getState().preview
     expect(p?.tabs[0].target).toMatchObject({ id: 'b', path: 'Notes/Renamed.md' })
-    expect(useSession.getState().previewTarget).toEqual({ id: 'c', path: 'Notes/C.md' })
+    expect(previewTargetOf(useSession.getState())).toMatchObject({ id: 'c', path: 'Notes/C.md' })
 
     await useSession.getState().applyTree(treeWith([{ id: 'c', path: 'Notes/C.md' }]))
     p = useSession.getState().preview
@@ -365,7 +372,7 @@ describe('store — applyTree reconciles the preview tabs (D-6)', () => {
 
     await useSession.getState().applyTree(treeWith([]))
     expect(useSession.getState().preview).toBeNull()
-    expect(useSession.getState().previewTarget).toBeNull()
+    expect(previewTargetOf(useSession.getState())).toBeNull()
   })
 
   it('folds multiple simultaneous dead tabs: a dead active with a dead left neighbor lands on the survivor', async () => {
@@ -444,7 +451,7 @@ describe('store — applyTree reconciles the preview tabs (D-6)', () => {
     const p = useSession.getState().preview
     expect(p?.flavor).toBe('nav')
     expect(p?.tabs.map((t) => t.target.kind)).toEqual(['navwindow'])
-    expect(useSession.getState().previewTarget).toBeNull()
+    expect(previewTargetOf(useSession.getState())).toBeNull()
   })
 })
 

@@ -13,7 +13,7 @@ import { showConnectionMenu } from '../Embeds/connectionMenu'
 import { hoverConnection, hoverWebsite } from '../Embeds/ConnectionPane'
 import { moveByKey } from '../Navigation/navRecents'
 import { pageIndexOf, resolveIndexOf } from '../treeIndex'
-import { useSession } from '../store'
+import { previewTargetOf, useSession } from '../store'
 import { splitSearch, useNavData } from '../Navigation/useNavData'
 import { NavList } from '../Navigation/NavList'
 import { WindowActions } from './WindowActions'
@@ -98,7 +98,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   const toggleViewMode = (): void => setNavWindowMode(viewMode === 'list' ? 'gallery' : 'list')
 
   const preview = useSession((s) => s.preview)
-  const pageTarget = useSession((s) => (s.preview?.flavor === 'nav' ? s.previewTarget : null))
+  const pageTarget = useSession((s) => (s.preview?.flavor === 'nav' ? previewTargetOf(s) : null))
   // Also re-focuses on every map-tab return — the input remounts when a page tab swaps the body away.
   useEffect(() => {
     if (!pageTarget) {

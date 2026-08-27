@@ -30,7 +30,7 @@ import {
 import { orderWithSlot } from './Views/creationOrder'
 import { contextDirRel } from '@shared/nexusPaths'
 import { caught, errText, fail, type PommoraError, type Result } from '@shared/result'
-import { reconcileSelection, reconcileWith } from './selection'
+import { type ReconcileIndex, reconcileSelection, reconcileWith } from './selection'
 import { navKeysOf, reconcileIndexOf } from './treeIndex'
 import {
   insertCreatedInTree,
@@ -180,6 +180,8 @@ export const shownDetail = (s: SessionState): PageDetail | null => {
   const slot = shownPage(s)
   return slot?.status === 'ready' ? slot.detail : null
 }
+
+export const previewTargetOf = (s: SessionState): PreviewTarget | null => deriveTarget(s.preview)
 
 export const pageBody = (slot: PageSlot | undefined): string =>
   slot?.status === 'ready' ? slot.body : ''
@@ -384,7 +386,6 @@ interface SessionState {
 
   preview: PreviewState | null
   previewsFile: PreviewsFile
-  previewTarget: PreviewTarget | null
   previewSlide: { dir: 'back' | 'fwd'; seq: number } | null
   openPreview: (target: PreviewTarget) => void
   openNavPreview: () => void
@@ -486,7 +487,6 @@ export const useSession = create<SessionState>((set, get) => {
       navOpen: false,
       preview: null,
       previewsFile: EMPTY_PREVIEWS,
-      previewTarget: null,
       previewSlide: null,
       pinned: [],
       pinnedTabs: [],
@@ -513,7 +513,7 @@ export const useSession = create<SessionState>((set, get) => {
     try {
       // Close before the root can flip, even if the adopt is then canceled — data safety
       // beats window persistence.
-      set({ navOpen: false, preview: null, previewTarget: null })
+      set({ navOpen: false, preview: null })
       // Flush every pending page-body write to the CURRENT nexus before an adopt flips the root —
       // else a debounce timer or an embed's exit flush landing after the flip binds the NEW nexus
       // and overwrites a same-relative-path file there. Awaited so main binds the old root.
@@ -620,7 +620,7 @@ export const useSession = create<SessionState>((set, get) => {
     extra?: { previewSlide: ReturnType<typeof stampByOrder> },
   ): void => {
     const prev = get().preview
-    set({ preview: next, previewTarget: deriveTarget(next), ...extra })
+    set({ preview: next, ...extra })
     const retire =
       prev && prev.flavor === 'page' && prev.originId !== next?.originId ? prev.originId : undefined
     mirrorPreviews(retire)
@@ -714,10 +714,16 @@ export const useSession = create<SessionState>((set, get) => {
     })
   }
 
-  // The pin gestures' writer — one of pinnedTabs' four (load, tree push, nav push, here).
+  // pinnedTabs' one writer. Identity-preserving, like stabilize(): an echo keeps the same array,
+  // so memos hold.
+  const setPinned = (pinned: NavRef[], index: ReconcileIndex | null): void => {
+    const next = derivePinnedTabs(pinned, index)
+    set((s) => ({ pinned, pinnedTabs: sameTabs(s.pinnedTabs, next) ? s.pinnedTabs : next }))
+  }
+
   const commitPinned = (pinned: NavRef[]): void => {
     const tree = get().tree
-    set({ pinned, pinnedTabs: derivePinnedTabs(pinned, tree ? reconcileIndexOf(tree) : null) })
+    setPinned(pinned, tree ? reconcileIndexOf(tree) : null)
     writeNav({ pinned })
   }
 
@@ -844,9 +850,8 @@ export const useSession = create<SessionState>((set, get) => {
               const pinned = nav?.pinned ?? []
               const restoreTree = get().tree
               const restoreIndex = restoreTree ? reconcileIndexOf(restoreTree) : null
+              setPinned(pinned, restoreIndex)
               set({
-                pinned,
-                pinnedTabs: derivePinnedTabs(pinned, restoreIndex),
                 favorites: nav?.favorites ?? [],
                 recents: nav?.recents ?? [],
                 navBanner: nav?.banner,
@@ -906,10 +911,8 @@ export const useSession = create<SessionState>((set, get) => {
       const tree = stabilize(incoming, get().tree)
       set({ status: 'ready', tree })
       const index = reconcileIndexOf(tree)
-      // Tree push = pinned hydration writer #2: renames re-title, moves re-path, deletes drop.
-      // Identity-preserving, like stabilize(): an echo push keeps the same array, so memos hold.
-      const nextPinnedTabs = derivePinnedTabs(get().pinned, index)
-      if (!sameTabs(get().pinnedTabs, nextPinnedTabs)) set({ pinnedTabs: nextPinnedTabs })
+      // A tree push re-hydrates the pins: renames re-title, moves re-path, deletes drop.
+      setPinned(get().pinned, index)
       const prev = get().selection
       const next = reconcileWith(index, prev)
       if (next !== prev) {
@@ -1299,14 +1302,9 @@ export const useSession = create<SessionState>((set, get) => {
     // The push carries the FILE's keys (an external edit): pinned, favorites, banner. Recents
     // aren't in the file — the in-memory stream always leads.
     applyNavChanged: (nav) => {
-      const pinned = nav.pinned ?? []
       const tree = get().tree
-      set({
-        pinned,
-        pinnedTabs: derivePinnedTabs(pinned, tree ? reconcileIndexOf(tree) : null),
-        favorites: nav.favorites ?? [],
-        navBanner: nav.banner,
-      })
+      setPinned(nav.pinned ?? [], tree ? reconcileIndexOf(tree) : null)
+      set({ favorites: nav.favorites ?? [], navBanner: nav.banner })
       graduatePinCovered()
       ensureLiveActive()
     },
@@ -1365,7 +1363,7 @@ export const useSession = create<SessionState>((set, get) => {
     },
     closeNav: () => {
       clearWindowWarm()
-      set({ navOpen: false, preview: null, previewTarget: null })
+      set({ navOpen: false, preview: null })
       mirrorPreviews()
     },
     toggleNav: () => {
@@ -1389,7 +1387,6 @@ export const useSession = create<SessionState>((set, get) => {
     closeBrowser: () => set({ browserSummon: null }),
     preview: null,
     previewsFile: EMPTY_PREVIEWS,
-    previewTarget: null,
     previewSlide: null,
     openPreview: (target) => {
       const cur = get().preview
@@ -1408,7 +1405,7 @@ export const useSession = create<SessionState>((set, get) => {
       clearWindowWarm()
       // previewExit re-seeds on every open — only the close that wrote 'engulf' may play the FLIP;
       // the other window-closing paths never write the flag.
-      set({ preview, previewTarget: deriveTarget(preview), navOpen: false, previewExit: 'dismiss' })
+      set({ preview, navOpen: false, previewExit: 'dismiss' })
       mirrorPreviews()
     },
     openNavPreview: () => {
@@ -1428,11 +1425,7 @@ export const useSession = create<SessionState>((set, get) => {
         activeTabId: sentinel.id,
       }
       clearWindowWarm()
-      set({
-        preview,
-        previewTarget: deriveTarget(preview),
-        previewExit: morphing ? 'morph' : 'dismiss',
-      })
+      set({ preview, previewExit: morphing ? 'morph' : 'dismiss' })
       mirrorPreviews()
     },
     setNavOverride: (on) => savePreviewsFile({ ...get().previewsFile, navOverride: on }),
@@ -1478,7 +1471,7 @@ export const useSession = create<SessionState>((set, get) => {
     },
     closePreview: (reason) => {
       clearWindowWarm()
-      set({ preview: null, previewTarget: null, previewExit: reason ?? 'dismiss' })
+      set({ preview: null, previewExit: reason ?? 'dismiss' })
       mirrorPreviews()
     },
     select: async (target, opts) => {
