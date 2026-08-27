@@ -13,7 +13,7 @@ const c = colorVars.color
  * grid each state a tighter gutter of their own, which is a difference in what those surfaces are for
  * rather than drift: a menu only ever drops, while a picker opens in whichever direction it fits.
  */
-export const MENU_GUTTER = '10px'
+export const MENU_GUTTER = 'var(--surface-inset)'
 
 /** The large-menu shell: glass (from NotchedShell) + rounded corners + the shared gutter, floored
  *  at a minimum width so a sparse pane never shrink-wraps narrow. The top gutter clears the beak
