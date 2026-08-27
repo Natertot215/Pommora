@@ -1,7 +1,4 @@
-// The words every settings row wears, whatever writes beside them — one shape for the roster's
-// config-driven rows and the fetched sections alike.
-import { cx } from '@renderer/DesignSystem/Util/cx'
-import { text } from '@renderer/DesignSystem/Tokens'
+import { MenuItem } from '@renderer/DesignSystem/Components/Menu'
 
 export interface RowText {
   label: string
@@ -11,15 +8,15 @@ export interface RowText {
 export function SettingsRow({
   label,
   hint,
+  wide = false,
   children,
-}: RowText & { children: React.ReactNode }): React.JSX.Element {
+}: RowText & { wide?: boolean; children: React.ReactNode }): React.JSX.Element {
   return (
-    <div className="settings-row">
-      <div className="settings-row-text">
-        <span className={cx('settings-row-label', text.body.standard)}>{label}</span>
-        <span className={cx('settings-row-hint', text.footnote.standard)}>{hint}</span>
-      </div>
-      {children}
-    </div>
+    <MenuItem
+      subLabel={hint}
+      trailing={wide ? <span className="settings-wide">{children}</span> : children}
+    >
+      {label}
+    </MenuItem>
   )
 }
