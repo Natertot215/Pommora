@@ -21,7 +21,7 @@
   align-items: flex-start;
   justify-content: space-between;
   /* Back/Forward hugs the sidebar (tight left); trio sits a small gap off the window edge. */
-  padding: 0 10px 0 4px;
+  padding: 0 var(--surface-inset) 0 4px;
   pointer-events: none;
   --trio-inset: 4px; /* breathing room so the swallowed pill doesn't sit flush against the pane's seam */
   /* The single swallow magnitude, shared by the right cluster's ride AND the tab-bar's right-edge

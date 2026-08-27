@@ -103,7 +103,7 @@
      an overlapping nav wins hit-testing and eats every ribbon click. Content sits against the
      divider (rows carry their own pad); top clears the traffic lights. */
   margin-left: var(--ribbon-w);
-  padding: 46px 10px 12px 0;
+  padding: 46px var(--surface-inset) 12px 0;
   transition: margin-left var(--duration-base) var(--ease-base);
   /* The pane is a FIXED-width view: it scrolls vertically only. overflow-x:hidden caps the row track
      at the visible width so long titles ellipsize at their row edge (and hover-scroll) instead of
@@ -186,7 +186,7 @@
 
 /* --- agenda mode --- */
 .agenda-empty {
-  padding: 8px 6px;
+  padding: 8px var(--row-inset);
   color: var(--label-tertiary);
 }
 
