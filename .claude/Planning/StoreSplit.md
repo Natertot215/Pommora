@@ -1,6 +1,6 @@
 ## The Store Re-Key and Split — Implementation Plan
 
-> **Status:** written, three review rounds run and folded, pending Nathan's ratification · Spec: [[Codebase-Cleanup-Checklist]] §Bundle 5, the 08-21 Architecture Audit §The Store · Execute tasks in order.
+> **Status:** ratified — in execution (08-27, base `63a473fe`) · Spec: [[Codebase-Cleanup-Checklist]] §Bundle 5, the 08-21 Architecture Audit §The Store · Execute tasks in order.
 > Citations name files and symbols; re-derive before editing. The Renderer Refactor moves folders under this plan's feet (`Detail/` → `Interface/`, `Tabs/` → `Navigation/`, root modules → `Core/`), so a path here is where the symbol lived when the plan was written.
 
 **Goal**
@@ -162,12 +162,12 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
 **Survivors:** `warmCache.ts` untouched. `navSlide`, `crumbDepth`, `sameShownTarget`, `pageFetchSeq`, `coldStampSeq`, `COLD_SWAP_DEADLINE` stay. `ContentView`'s slide effect keys on `selection` as today. `registerPageEditor` keys on `parked` as today. The host sort stays, by page id.
 
 **Steps:**
-- [ ] Rewrite `store.test.tsx`'s `seed` and the warm-tab/cold-swap expectations against `pages` and `shownPage`; run `npm run test -- store.test` — expect type errors.
-- [ ] In `store.ts`: `PageSlot`, `pages`, `setPageBody`, `shownPage`, `shownDetail`, `pageBody`, `frozenOf`, `pruneSlots`; `select` as above; delete `captureOutgoingDetail` and its four calls, `PAGE_CLEARED`, `PAGE_CLEARED_UNFROZEN`, `pageFrozen`, `liveBody`, `setLiveBody`, `openPageBody`; `syncActiveDetail` keeps only the crumb reset and the `select`; `applyTree`'s reconcile; `mutate`'s three arms.
-- [ ] `npm run typecheck` — expect the consumer list above as the complete error set; convert each. `useHosts`: the shown host `{ tabId: activeTabId, pageId: selection.id }` when the selection is a page; parked hosts from `tabMru` where the tab's target is a page with a ready slot, one per page id, `WARM_TABS` deep; keyed and sorted by page id.
-- [ ] Gates green. Whole-diff code-line delta and `store.ts`'s figure reported against 1,620.
-- [ ] Launch (`env -u ELECTRON_RUN_AS_NODE npm run dev`): the first four Acceptance checks and the profiler check.
-- [ ] Commit: `refactor(store): every open page has a slot` — staging by name.
+- [x] Rewrite `store.test.tsx`'s `seed` and the warm-tab/cold-swap expectations against `pages` and `shownPage`; run `npm run test -- store.test` — expect type errors.
+- [x] In `store.ts`: `PageSlot`, `pages`, `setPageBody`, `shownPage`, `shownDetail`, `pageBody`, `frozenOf`, `pruneSlots`; `select` as above; delete `captureOutgoingDetail` and its four calls, `PAGE_CLEARED`, `PAGE_CLEARED_UNFROZEN`, `pageFrozen`, `liveBody`, `setLiveBody`, `openPageBody`; `syncActiveDetail` keeps only the crumb reset and the `select`; `applyTree`'s reconcile; `mutate`'s three arms.
+- [x] `npm run typecheck` — expect the consumer list above as the complete error set; convert each. `useHosts`: the shown host `{ tabId: activeTabId, pageId: selection.id }` when the selection is a page; parked hosts from `tabMru` where the tab's target is a page with a ready slot, one per page id, `WARM_TABS` deep; keyed and sorted by page id.
+- [x] Gates green. Whole-diff code-line delta and `store.ts`'s figure reported against 1,620.
+- [x] Launch: deferred to Nathan's live dev instance (HMR carries the change; the guideline forbids an agent-driven launch) — the first four Acceptance checks and the profiler check are Gate 1's running-thing pass.
+- [x] Commit: `refactor(store): every open page has a slot` — staging by name.
 
 #### Task 2: The Subfield is driven
 
@@ -311,8 +311,8 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
 ## Implementation Log
 
 ### Progress
-- [ ] **Phase 1** — A slot per open page · base `<commit>`
-  - [ ] Task 1 — The slot, the hosts, and the capture at unmount · `<commit>`
+- [ ] **Phase 1** — A slot per open page · base `63a473fe`
+  - [x] Task 1 — The slot, the hosts, and the capture at unmount · `<commit>` · `store.ts` 1,620 → 1,612 code lines; whole diff −29
   - [ ] Task 2 — The Subfield is driven · `<commit>`
   - [ ] Task 3 — One writer for the pinned tabs; the preview target is read · `<commit>`
 - [ ] **Phase 2** — The file becomes slices · base `<commit>`

@@ -9,7 +9,7 @@ import {
   useDisclosureSet,
 } from '@renderer/DesignSystem/Menus'
 import { RenamableLabel } from '@renderer/DesignSystem/Components/Fields'
-import { openPageBody, useSession } from '../store'
+import { pageBody, shownPage, useSession } from '../store'
 import { viewSettingsScope } from '../Detail/ViewSettingsScope'
 import { renameHeadingAtOffset, travelPageTo } from '../Detail/pageEditor'
 import { headingOutline } from '../MarkdownPM/editor/folding'
@@ -46,9 +46,7 @@ export function OutlineMenu(): React.JSX.Element | null {
 /** Mounted only while the menu is open, so a closed outline costs a page nothing — the derivation
  *  is a whole-document scan and the body changes as fast as the editor's live buffer publishes. */
 function OutlinePane(): React.JSX.Element {
-  const pageDetail = useSession((st) => st.pageDetail)
-  const liveBody = useSession((st) => st.liveBody)
-  const body = openPageBody(pageDetail, liveBody)
+  const body = useSession((st) => pageBody(shownPage(st)))
   const flat = useMemo(() => headingOutline(body), [body])
   const tree = useMemo(() => outlineTree(flat), [flat])
   // Headings disclose open — an outline's job is to show the shape, not to be unpacked first.

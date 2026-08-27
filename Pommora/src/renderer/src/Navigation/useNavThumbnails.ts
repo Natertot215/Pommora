@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import type { ThumbRect } from '@shared/types'
-import { useSession } from '../store'
+import { pageBody, shownPage, useSession } from '../store'
 import { navKey } from './navRecents'
 
 // The `.content-pane` fills the whole window; the sidebar, toolbar, and inspector are floating overlays
@@ -55,7 +55,7 @@ export function dropCapturedOutside(live: ReadonlySet<string>): void {
 // carves off the sidebar/inspector overlays) is captured.
 export function useNavThumbnails(): void {
   const selection = useSession((s) => s.selection)
-  const pageStatus = useSession((s) => s.pageStatus)
+  const pageStatus = useSession((s) => shownPage(s)?.status)
   const navOpen = useSession((s) => s.navOpen)
   const bumpThumb = useSession((s) => s.bumpThumb)
 
@@ -80,12 +80,7 @@ export function useNavThumbnails(): void {
           captured.clear()
           capturedNexus = s.tree?.nexus.id ?? null
         }
-        const marker =
-          selection.kind === 'page'
-            ? s.liveBody?.path === selection.path
-              ? s.liveBody.body
-              : s.pageDetail?.body
-            : s.tree
+        const marker = selection.kind === 'page' ? pageBody(shownPage(s)) : s.tree
         if (captured.get(key) === marker) return
         const res = await window.nexus.capture.thumbnail(
           key,

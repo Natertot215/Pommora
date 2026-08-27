@@ -1,7 +1,7 @@
 import type { SelectionState } from '@shared/types'
 import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
 import { containerCreators } from '@shared/mutate'
-import { openPageBody, useSession } from '../../store'
+import { pageBody, shownPage, useSession } from '../../store'
 import { findCollection } from '../Scope'
 import { pageStats } from './subfieldStats'
 
@@ -41,9 +41,7 @@ export const DEFAULT_ITEMS: Record<SelectionState['kind'], SubfieldItemId[]> = {
  *  the scope's own body. Unscoped (the detail pane), the editing buffer wins over the loaded snapshot
  *  while it's for this same page; falls back to the loaded body before any edit. */
 function PageStatsItem({ scope }: SubfieldItemProps): React.JSX.Element {
-  const pageDetail = useSession((s) => s.pageDetail)
-  const liveBody = useSession((s) => s.liveBody)
-  const body = scope ? scope.body : openPageBody(pageDetail, liveBody)
+  const body = useSession((s) => (scope ? scope.body : pageBody(shownPage(s))))
   const stats = pageStats(body)
   return (
     <span className="subfield-stats" title="Lines · Words · Characters">

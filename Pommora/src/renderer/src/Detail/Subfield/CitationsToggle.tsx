@@ -1,7 +1,7 @@
 import { citationsLabel } from '@shared/toggleLabels'
 import { text } from '@renderer/DesignSystem/Tokens/typography.css'
 import { onActivateClick } from '@renderer/DesignSystem/Interactions/activate'
-import { citationsVisible, openPageBody, useSession } from '../../store'
+import { citationsVisible, pageBody, shownDetail, shownPage, useSession } from '../../store'
 import { pageStats } from './subfieldStats'
 import type { SubfieldScope } from './subfieldItems'
 
@@ -13,10 +13,9 @@ import type { SubfieldScope } from './subfieldItems'
  *  exists, an orphan included, so a section can never become unreachable. The label states what the
  *  click will do and reads the current state at once. */
 export function CitationsToggle({ scope }: { scope?: SubfieldScope }): React.JSX.Element | null {
-  const pageDetail = useSession((s) => s.pageDetail)
-  const liveBody = useSession((s) => s.liveBody)
-  const target = scope ? scope.target : pageDetail
-  const body = scope ? scope.body : openPageBody(pageDetail, liveBody)
+  const detail = useSession(shownDetail)
+  const target = scope ? scope.target : detail
+  const body = useSession((s) => (scope ? scope.body : pageBody(shownPage(s))))
   const stats = pageStats(body)
   const shown = useSession((s) => citationsVisible(s, target?.id))
   const toggle = useSession((s) => s.toggleCitations)
