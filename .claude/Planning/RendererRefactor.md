@@ -43,7 +43,6 @@ Grouped by the atlas section that carries the evidence. Each row is a session or
 
 #### Tokens And Geometry
 
-- [ ] `--app-inset` and `--app-radius` into `Tokens/` as `size.glass`, with fallbacks at the design-system reads — awaiting the ruling.
 - [ ] `--subline-h` and `--labels-gap` absorbed into `Tokens/`; `--tab-min: 75px` so the floating tab strip is 5/6 of the main one.
 - [ ] Odd spacing values (`3` / `5` / `9px`) reconciled to the nearer even step per consumer, as each is opened; `Slider.tsx:106`'s radius `9` with them.
 - [ ] One checkbox recipe — `Labels/checkboxBox` as the source; `Controls/checkbox.css` and `Properties/Editing/checkboxLook` read its geometry.
@@ -64,7 +63,6 @@ Grouped by the atlas section that carries the evidence. Each row is a session or
 The calls only Nathan can make, each of which deletes a block in the atlas when taken.
 
 - The zoom merge — whether `--page-scale` absorbs `--mdpm-scale`, given the font-path rewiring it costs.
-- `--app-inset` / `--app-radius` as tokens.
 - The design system's three reaches — invert now, or leave under the lint's allowlist.
 - `Interface/` absorbing `Sidebar/` and `Toolbar/`.
 - `Windows/` keeping `NavWindow`, or `Navigation/` taking it ungrouped.

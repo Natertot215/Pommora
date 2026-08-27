@@ -32,7 +32,7 @@
 }
 
 .mdpm-shell {
-  /* --inset-detail (the root design-system token) is the width of the left strip the fold chevron lives
+  /* --detail-inset (the root design-system token) is the width of the left strip the fold chevron lives
      in, carved from the --content-inset margin so the body still lands on --content-inset.
      --fold-chevron-size: chevron glyph size (title3). (--label-control is the single global :root def.) */
   /* Glyph scale = the structural px scale × the per-block Scale. Structural dims (gutter WIDTH,
@@ -55,10 +55,10 @@
 .mdpm-editor {
   height: 100%;
   /* The page surface is full-bleed (banner edge-to-edge). The body inset is split: the editor reclaims
-     --inset-detail (scroller starts that far left of --content-inset) and .cm-content re-adds it as padding,
-     leaving a --inset-detail strip at the scroller's left — inside its clip — for the fold chevron, while
+     --detail-inset (scroller starts that far left of --content-inset) and .cm-content re-adds it as padding,
+     leaving a --detail-inset strip at the scroller's left — inside its clip — for the fold chevron, while
      text still lands on --content-inset. (Always present, so no spacer is needed when a page has no folds.) */
-  padding-left: calc(var(--content-inset) - var(--inset-detail));
+  padding-left: calc(var(--content-inset) - var(--detail-inset));
   padding-right: var(--content-inset-right);
   transition:
     padding-left var(--duration-base) var(--ease-base),
@@ -99,9 +99,9 @@
   --cite-divider-gap: 14px; /* KNOB: the seam's breathing room, the title divider's own */
   /* The drawn caret + I-beam cursor are app-wide — see Carets.css. */
   /* Top reserves the header zone — set live from the header's measured height (index.tsx ResizeObserver).
-     Left re-adds the --inset-detail the editor reclaimed, so text lands on --content-inset and the chevron
+     Left re-adds the --detail-inset the editor reclaimed, so text lands on --content-inset and the chevron
      strip stays inside the scroller's clip. */
-  padding: var(--header-zone, 90px) 0 90px var(--inset-detail);
+  padding: var(--header-zone, 90px) 0 90px var(--detail-inset);
   /* The base is --editor-font-size (the editor `zoom` prop). --block-zoom applies the per-block Scale
      LINEARLY here — NOT through the clamped zoom curve — so it stays locked to --glyph-scale (both are
      × --block-zoom) and never floors. Absent --block-zoom ⇒ unchanged. em children ride this root. */
@@ -221,7 +221,7 @@
    estimates off-screen variable-height blocks (callouts, folds) at the default height — so a gutter chevron
    below such a block drifts from its heading by a scroll-dependent amount. A line ::before shares the
    heading's own layout box and can't drift. Closed: points right, dim + persistent (a standing affordance);
-   open: points down, hover-only. KNOBS: --inset-detail (chevron offset into the inset, the root token) ·
+   open: points down, hover-only. KNOBS: --detail-inset (chevron offset into the inset, the root token) ·
    --fold-chevron-size · motion via --disclosure / --ease-base. */
 .mdpm-editor .cm-line.md-foldable {
   position: relative;
@@ -230,7 +230,7 @@
   content: "";
   position: absolute;
   /* Centered in the gutter strip — the anchor self-adjusts to glyph + gutter size. */
-  left: calc(-1 * var(--inset-detail) + (var(--inset-detail) - var(--fold-chevron-size)) / 2);
+  left: calc(-1 * var(--detail-inset) + (var(--detail-inset) - var(--fold-chevron-size)) / 2);
   top: 50%;
   width: var(--fold-chevron-size);
   height: var(--fold-chevron-size);
@@ -257,7 +257,7 @@
 
 /* BLOCK DRAG HANDLE — a grip on each draggable block's first line, content-anchored like the chevron (a
    ::before on the line, so it can't drift below callouts/folds). Hover-revealed. Glyph mirrors the
-   table/callout grips (the shared --grip-glyph). KNOBS: --inset-detail (rail x) · --grip-top (first-line
+   table/callout grips (the shared --grip-glyph). KNOBS: --detail-inset (rail x) · --grip-top (first-line
    offset — box blocks override it to drop the grip onto their padded first row, e.g. the code fence). */
 /* Shared masked-grip recipe (look only — each instance owns its own anchor below). */
 .mdpm-editor .cm-line.md-block-handle::before,
@@ -287,8 +287,8 @@
   position: absolute;
   left: calc(
     -1 *
-    var(--inset-detail) +
-    (var(--inset-detail) - var(--icon-body) * var(--glyph-scale)) /
+    var(--detail-inset) +
+    (var(--detail-inset) - var(--icon-body) * var(--glyph-scale)) /
     2
   );
   top: var(
