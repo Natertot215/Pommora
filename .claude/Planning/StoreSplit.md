@@ -191,9 +191,9 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
 **Failure half:** `page` null while the shown page is loading → the stats item renders its empty state; during a cold pause the shown slot is still the outgoing page's, so the footer keeps describing what is on screen, as today.
 
 **Steps:**
-- [ ] Convert the four files; `npm run typecheck` lists every other `scope` consumer — expect none.
-- [ ] Gates green; app: the main pane's count follows typing; the preview's follows its own body; crumbs under a preview stay inert; the profiler check holds.
-- [ ] Commit: `refactor(subfield): one driven footer`.
+- [x] Convert the four files; `npm run typecheck` lists every other `scope` consumer — expect none.
+- [x] Gates green; app (Gate 1 pass): the main pane's count follows typing; the preview's follows its own body; crumbs under a preview stay inert; the profiler check holds.
+- [x] Commit: `refactor(subfield): one driven footer`.
 
 #### Task 3: One writer for the pinned tabs; the preview target is read, not stored
 
@@ -313,7 +313,7 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
 ### Progress
 - [ ] **Phase 1** — A slot per open page · base `63a473fe`
   - [x] Task 1 — The slot, the hosts, and the capture at unmount · `<commit>` · `store.ts` 1,620 → 1,612 code lines; whole diff −29
-  - [ ] Task 2 — The Subfield is driven · `<commit>`
+  - [x] Task 2 — The Subfield is driven · `<commit>` · `inert` marks a floating window's crumbs (the tab-neutral, no-click behavior the `scope` mode carried needs its own signal once every host passes a page)
   - [ ] Task 3 — One writer for the pinned tabs; the preview target is read · `<commit>`
 - [ ] **Phase 2** — The file becomes slices · base `<commit>`
   - [ ] Task 4 — The slice files and the composition root · `<commit>`

@@ -12,7 +12,7 @@ const written: [string, boolean | null][] = []
 }
 
 const CITED = 'body[^a] here\n\n[^a]: the citation'
-const target = { id: 'page-1', path: 'Notes/A.md' }
+const target = { kind: 'page' as const, id: 'page-1', path: 'Notes/A.md' }
 
 let container: HTMLDivElement
 let root: Root
@@ -22,7 +22,7 @@ async function mount(body: string): Promise<void> {
   document.body.appendChild(container)
   root = createRoot(container)
   await act(async () => {
-    root.render(createElement(CitationsToggle, { scope: { target, body } }))
+    root.render(createElement(CitationsToggle, { page: { target, body } }))
   })
 }
 

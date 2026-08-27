@@ -7,7 +7,7 @@ import { useExitPresence } from '@renderer/DesignSystem/Animation/useExitPresenc
 import { PageEmbed } from '../Embeds/PageEmbed'
 import { Subfield } from '../Detail/Subfield/Subfield'
 import { CitationsToggle } from '../Detail/Subfield/CitationsToggle'
-import type { SubfieldScope } from '../Detail/Subfield/subfieldItems'
+import type { SubfieldPage } from '../Detail/Subfield/subfieldItems'
 import type { ConnectionsApi } from '../MarkdownPM/connections'
 import { showConnectionMenu } from '../Embeds/connectionMenu'
 import { hoverConnection, hoverWebsite } from '../Embeds/ConnectionPane'
@@ -70,8 +70,8 @@ function PageWindowBody({
   const [editing, setEditing] = useState(false)
   useEffect(() => setEditing(false), [target.path])
 
-  // Counts a LOCAL body — never the shared `liveBody` slot (single-owner; a second writer would
-  // evict the main pane's live count).
+  // The window's page is not a store slot (the embed loads through the path-keyed detail cache),
+  // so its footer counts a local body.
   const [previewBody, setPreviewBody] = useState('')
   const statsTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const seededPath = useRef<string | null>(null)
@@ -95,8 +95,8 @@ function PageWindowBody({
     }
     statsTimer.current = setTimeout(() => setPreviewBody(b), STATS_DEBOUNCE_MS)
   }
-  const scope = useMemo<SubfieldScope>(
-    () => ({ target: { id: target.id, path: target.path }, body: previewBody }),
+  const page = useMemo<SubfieldPage>(
+    () => ({ target: { kind: 'page', id: target.id, path: target.path }, body: previewBody }),
     [target.id, target.path, previewBody],
   )
   // Escape closes the inspector first, then the window.
@@ -223,9 +223,9 @@ function PageWindowBody({
         ),
       }}
       // Scoped to THIS page and counting the window's own body — never the app-wide live count.
-      footer={<Subfield scope={scope} />}
+      footer={<Subfield page={page} inert />}
       footerLabel={footerLabel}
-      footerLead={<CitationsToggle scope={scope} />}
+      footerLead={<CitationsToggle page={page} />}
     >
       <div className="page-window-body over-scroll pgembed-grows" ref={bodyRef}>
         <PageEmbed

@@ -1,9 +1,9 @@
 import { citationsLabel } from '@shared/toggleLabels'
 import { text } from '@renderer/DesignSystem/Tokens/typography.css'
 import { onActivateClick } from '@renderer/DesignSystem/Interactions/activate'
-import { citationsVisible, pageBody, shownDetail, shownPage, useSession } from '../../store'
+import { citationsVisible, useSession } from '../../store'
 import { pageStats } from './subfieldStats'
-import type { SubfieldScope } from './subfieldItems'
+import type { SubfieldPage } from './subfieldItems'
 
 /** Show / Hide Footnotes for the open page — a lead control in the reveal band above the Subfield,
  *  facing the bar's own collapse chevron across it. It rides that band rather than the bar's item
@@ -12,11 +12,9 @@ import type { SubfieldScope } from './subfieldItems'
  *  Absent from a page with no citation lines: there is nothing to disclose. Present the moment one
  *  exists, an orphan included, so a section can never become unreachable. The label states what the
  *  click will do and reads the current state at once. */
-export function CitationsToggle({ scope }: { scope?: SubfieldScope }): React.JSX.Element | null {
-  const detail = useSession(shownDetail)
-  const target = scope ? scope.target : detail
-  const body = useSession((s) => (scope ? scope.body : pageBody(shownPage(s))))
-  const stats = pageStats(body)
+export function CitationsToggle({ page }: { page: SubfieldPage | null }): React.JSX.Element | null {
+  const target = page?.target
+  const stats = pageStats(page?.body ?? '')
   const shown = useSession((s) => citationsVisible(s, target?.id))
   const toggle = useSession((s) => s.toggleCitations)
   if (stats.citations === 0 || !target) return null
