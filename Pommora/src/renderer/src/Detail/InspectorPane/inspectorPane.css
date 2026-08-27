@@ -20,7 +20,7 @@
 }
 
 .inspector-body {
-  padding: 16px;
+  padding: var(--surface-inset);
 }
 
 .inspector-resize {
