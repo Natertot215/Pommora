@@ -6,8 +6,8 @@
   --main-bg: var(
     --bg-window
   ); /* the background.window token via the theme-vars bridge — single source (@shared/theme) */
-  --glass-inset: 5px; /* gap from the window edges */
-  --glass-radius: 12px; /* matched to the macOS window corner (≈ window radius − inset) */
+  --app-inset: 5px; /* gap from the window edges */
+  --app-radius: 12px; /* matched to the macOS window corner (≈ window radius − inset) */
   --toolbar-h: 38px; /* the top strip: titlebar drag region + floating toolbar clusters */
   /* iOS safe-area insets — inert on desktop (no cutouts); the mobile shell / drawers / bottom bar mount to these. */
   --safe-top: env(safe-area-inset-top, 0px);
@@ -103,7 +103,7 @@ textarea,
   --inset-content: 24px;
   /* Left inset that clears the floating glass sidebar (variable width); its base addend IS the
      gutter, so left + right stay equal. Collapses to the bare gutter when the sidebar hides. */
-  --content-inset: calc(var(--glass-inset) + var(--sidebar-width) + var(--inset-content));
+  --content-inset: calc(var(--app-inset) + var(--sidebar-width) + var(--inset-content));
   /* Right inset mirrors the left: bare gutter normally, expanding to clear the inspector when open. */
   --content-inset-right: var(--inset-content);
   /* Surface insets: block-based views (homepage, contexts) drop the content gutter — their tile handles
@@ -123,7 +123,7 @@ textarea,
 }
 .shell.inspector-open {
   --io: 1;
-  --content-inset-right: calc(var(--glass-inset) + var(--inspector-width) + var(--inset-content));
+  --content-inset-right: calc(var(--app-inset) + var(--inspector-width) + var(--inset-content));
 }
 /* Edge-drag resize holds --io at its current value (no re-animate) so the pane tracks the cursor 1:1. */
 .shell.is-resizing {
@@ -137,7 +137,7 @@ textarea,
   top: 0;
   /* Start past the sidebar so it never overlays it — the sidebar is its own drag region.
      (Overlaying stole the hover from the collapse button as the cursor approached it.) */
-  left: calc(var(--glass-inset) + var(--sidebar-width) + var(--glass-inset));
+  left: calc(var(--app-inset) + var(--sidebar-width) + var(--app-inset));
   right: 0;
   height: var(--toolbar-h);
   z-index: var(--z-titlebar);
@@ -154,8 +154,8 @@ textarea,
   position: absolute;
   top: 0;
   left: 0;
-  width: calc(var(--glass-inset) + var(--sidebar-width) - 48px);
-  height: calc(var(--glass-inset) + var(--toolbar-h));
+  width: calc(var(--app-inset) + var(--sidebar-width) - 48px);
+  height: calc(var(--app-inset) + var(--toolbar-h));
   z-index: var(--z-titlebar);
   -webkit-app-region: drag;
 }

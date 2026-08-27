@@ -7,5 +7,5 @@
   min-height: 0;
   overflow: hidden;
   padding: 6px;
-  border-radius: var(--glass-radius);
+  border-radius: var(--app-radius);
 }

@@ -110,11 +110,11 @@
    it sits as the view's header, not inside the padded body. */
 .banner-empty {
   /* The Add-Banner zone (--add-banner-zone) opens below the floating toolbar; the title follows it.
-     Top pad clears the toolbar (glass-inset + 1px optical + toolbar-h) so the zone starts exactly at
+     Top pad clears the toolbar (app-inset + 1px optical + toolbar-h) so the zone starts exactly at
      the toolbar's bottom edge, and the button centers vertically inside that zone (see .add-banner-strip). */
   --add-banner-zone: 44px;
   /* Title on the unified surface inset (matches the banner-image header's title). */
-  padding: calc(var(--glass-inset) + 1px + var(--toolbar-h)) var(--content-inset-right) 14px
+  padding: calc(var(--app-inset) + 1px + var(--toolbar-h)) var(--content-inset-right) 14px
     var(--surface-banner-inset);
   /* Full-width divider below the title — content-views always carry it (banner or not), unlike
      pages' inset divider. The shared heading↔body seam, same as the banner image's bottom. */

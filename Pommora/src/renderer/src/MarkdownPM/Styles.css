@@ -143,7 +143,7 @@
    in the gap. */
 .mdpm-header:not(.has-banner) {
   --add-banner-zone: 44px;
-  padding-top: calc(var(--glass-inset) + 1px + var(--toolbar-h));
+  padding-top: calc(var(--app-inset) + 1px + var(--toolbar-h));
 }
 .mdpm-header:not(.has-banner) .add-banner-strip {
   padding-left: var(--content-inset);
