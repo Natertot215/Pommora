@@ -110,7 +110,7 @@ Pages support everything in standard Markdown — paragraphs, headings, bulleted
 - **Callouts** — content rendered as an outlined box, distinct from a blockquote's filled left-bar emphasis.
 - **Columns** — a section rendered in evenly-divided horizontal columns; visual layout only. Specified, not built.
 
-Each Collection decides where its Pages open — the main detail pane, or the floating Page Preview window.[^2] The editor architecture and the page entity carry their own docs.[^3]
+Each Collection decides where its Pages open — the main detail pane, or the floating Page Window.[^2] The editor architecture and the page entity carry their own docs.[^3]
 
 #### Page Collections and Sets
 
