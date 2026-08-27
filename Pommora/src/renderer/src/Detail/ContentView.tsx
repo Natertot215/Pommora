@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react'
-import { frozenOf, useSession } from '../store'
+import { frozenOf, shownPage, useSession } from '../store'
 import { useRevealNear } from '@renderer/DesignSystem/Interactions/revealBar'
 import { duration, easing, ms } from '@renderer/DesignSystem/Animation'
 import { Icon } from '@renderer/DesignSystem/Symbols'
@@ -10,6 +10,7 @@ import { SpaceView } from './SpaceView'
 import { PageView } from './PageView'
 import { NavView } from './NavView'
 import { Subfield } from './Subfield/Subfield'
+import type { SubfieldPage } from './Subfield/subfieldItems'
 import { footerLabel } from '@shared/toggleLabels'
 import { CitationsToggle } from './Subfield/CitationsToggle'
 
@@ -115,7 +116,6 @@ export function ContentView(): React.JSX.Element {
   const frozen = useSession(frozenOf)
   const navSlide = useSession((s) => s.navSlide)
   const expanded = useSession((s) => s.subfieldExpanded)
-  const setExpanded = useSession((s) => s.setSubfieldExpanded)
   const activeTabId = useSession((s) => s.activeTabId)
   const hosts = useHosts()
 
@@ -184,23 +184,36 @@ export function ContentView(): React.JSX.Element {
         })}
         <DetailView />
       </div>
-      {showSubfield && (
-        <>
-          <button
-            type="button"
-            className="subfield-toggle"
-            onClick={() => setExpanded(!expanded)}
-            aria-label={footerLabel(expanded)}
-            title={footerLabel(expanded)}
-          >
-            <Icon name={expanded ? 'chevron-down' : 'chevron-up'} size="title3" />
-          </button>
-          <CitationsToggle />
-          <div className="subfield-reveal">
-            <Subfield />
-          </div>
-        </>
-      )}
+      {showSubfield && <ContentFooter />}
     </div>
+  )
+}
+
+/** The pane's footer, and the one thing in the pane that follows the shown page's live body — so
+ *  typing re-renders the footer and nothing above it. */
+function ContentFooter(): React.JSX.Element {
+  const expanded = useSession((s) => s.subfieldExpanded)
+  const setExpanded = useSession((s) => s.setSubfieldExpanded)
+  const slot = useSession(shownPage)
+  const page = useMemo<SubfieldPage | null>(
+    () => (slot?.status === 'ready' ? { target: slot.target, body: slot.body } : null),
+    [slot],
+  )
+  return (
+    <>
+      <button
+        type="button"
+        className="subfield-toggle"
+        onClick={() => setExpanded(!expanded)}
+        aria-label={footerLabel(expanded)}
+        title={footerLabel(expanded)}
+      >
+        <Icon name={expanded ? 'chevron-down' : 'chevron-up'} size="title3" />
+      </button>
+      <CitationsToggle page={page} />
+      <div className="subfield-reveal">
+        <Subfield page={page} />
+      </div>
+    </>
   )
 }

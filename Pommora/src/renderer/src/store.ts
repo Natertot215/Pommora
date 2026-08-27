@@ -78,13 +78,7 @@ import {
   reorderWithinZone,
   tabKey,
 } from './Tabs/tabsModel'
-import {
-  clearWarm,
-  dropPageDetail,
-  dropWarmDetail,
-  dropWarmTab,
-  readWarm,
-} from './Tabs/warmCache'
+import { clearWarm, dropPageDetail, dropWarmDetail, dropWarmTab, readWarm } from './Tabs/warmCache'
 import { clearWindowWarm, dropWindowWarm } from './Windows/windowWarm'
 import { stashWindowMorph } from './Windows/windowMorph'
 import { flushAllPageSaves } from './Detail/pageFlush'

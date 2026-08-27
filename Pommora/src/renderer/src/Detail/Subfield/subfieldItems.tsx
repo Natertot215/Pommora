@@ -1,7 +1,7 @@
 import type { SelectionState } from '@shared/types'
 import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
 import { containerCreators } from '@shared/mutate'
-import { pageBody, shownPage, useSession } from '../../store'
+import { type PageTarget, useSession } from '../../store'
 import { findCollection } from '../Scope'
 import { pageStats } from './subfieldStats'
 
@@ -15,16 +15,14 @@ export function isSubfieldItemId(id: string): id is SubfieldItemId {
   return (ALL_ITEM_IDS as string[]).includes(id)
 }
 
-/** An optional per-mount scope. When a host (the floating preview) passes it, the footer describes
- *  THIS target and counts THIS body instead of the global selection. The preview's body is its own
- *  local buffer — never the shared `liveBody` slot, which has a single owner (the active main
- *  editor); a second writer would evict the main pane's live count. */
-export interface SubfieldScope {
-  target: { id: string; path: string }
+/** The page a host's footer describes and the body it counts — the host hands it down, so the
+ *  main pane and a floating window drive the same footer from their own page. */
+export interface SubfieldPage {
+  target: PageTarget
   body: string
 }
 export interface SubfieldItemProps {
-  scope?: SubfieldScope
+  page: SubfieldPage | null
 }
 
 export const DEFAULT_ITEMS: Record<SelectionState['kind'], SubfieldItemId[]> = {
@@ -37,12 +35,9 @@ export const DEFAULT_ITEMS: Record<SelectionState['kind'], SubfieldItemId[]> = {
   page: ['pageStats'],
 }
 
-/** Lines · Words · Characters for the open page — live as you type. Scoped (the preview), it counts
- *  the scope's own body. Unscoped (the detail pane), the editing buffer wins over the loaded snapshot
- *  while it's for this same page; falls back to the loaded body before any edit. */
-function PageStatsItem({ scope }: SubfieldItemProps): React.JSX.Element {
-  const body = useSession((s) => (scope ? scope.body : pageBody(shownPage(s))))
-  const stats = pageStats(body)
+/** Lines · Words · Characters for the host's page — live as you type. */
+function PageStatsItem({ page }: SubfieldItemProps): React.JSX.Element {
+  const stats = pageStats(page?.body ?? '')
   return (
     <span className="subfield-stats" title="Lines · Words · Characters">
       {stats.lines.toLocaleString()}
@@ -95,11 +90,11 @@ function ViewTypeItem(): React.JSX.Element {
 
 export function SubfieldItem({
   id,
-  scope,
+  page,
 }: { id: SubfieldItemId } & SubfieldItemProps): React.JSX.Element | null {
   switch (id) {
     case 'pageStats':
-      return <PageStatsItem scope={scope} />
+      return <PageStatsItem page={page} />
     case 'addMenu':
       return <AddMenuItem />
     case 'viewType':

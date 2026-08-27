@@ -57,8 +57,7 @@ export function PageEmbed({
   onBeginEdit: () => void
   connections?: ConnectionsApi
   locked?: boolean
-  /** The floating preview drives its own Subfield stats from a LOCAL buffer via this — never the
-   *  shared `liveBody` slot (single-owner; a second writer would evict the main pane's count). */
+  /** The floating window counts its footer from the body this reports. */
   onBody?: (body: string) => void
   /** A restored entry mounts synchronously (its doc IS the body — no fetch/blank frame); capture
    *  fires at unmount. Block tiles ride the session tile cache (tileWarm), keyed by host chain. */
