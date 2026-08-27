@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react'
-import { frozenOf, shownPage, useSession } from '../store'
+import { frozenOf, readyPageIds, shownPage, useSession } from '../store'
 import { useRevealNear } from '@renderer/DesignSystem/Interactions/revealBar'
 import { duration, easing, ms } from '@renderer/DesignSystem/Animation'
 import { Icon } from '@renderer/DesignSystem/Symbols'
@@ -79,8 +79,11 @@ function useHosts(): Host[] {
   const tabs = useSession((s) => s.tabs)
   const tabMru = useSession((s) => s.tabMru)
   const activeTabId = useSession((s) => s.activeTabId)
-  const pages = useSession((s) => s.pages)
+  // WHICH pages are loaded, never the record itself — a slot re-identifies at every keystroke, so
+  // holding `pages` here would commit the whole pane on every one.
+  const readyIds = useSession(readyPageIds)
   return useMemo(() => {
+    const ready = new Set(readyIds.split(','))
     const hosts: Host[] = []
     if (selection.kind === 'page') hosts.push({ tabId: activeTabId, pageId: selection.id })
     // The budget counts parked surfaces alone, so the knob means the same number whether or not
@@ -89,7 +92,7 @@ function useHosts(): Host[] {
     for (const id of tabMru) {
       if (parked >= WARM_TABS || id === activeTabId) continue
       const target = tabs.find((t) => t.id === id)?.target
-      if (target?.kind !== 'page' || pages[target.id]?.status !== 'ready') continue
+      if (target?.kind !== 'page' || !ready.has(target.id)) continue
       if (hosts.some((h) => h.pageId === target.id)) continue
       hosts.push({ tabId: id, pageId: target.id })
       parked++
@@ -97,7 +100,7 @@ function useHosts(): Host[] {
     // Rendered in a fixed order, never most-recent-first: reordering keyed children moves their
     // DOM, and a moved webview is re-attached — which ends the very guest this exists to keep.
     return hosts.sort((a, b) => (a.pageId < b.pageId ? -1 : 1))
-  }, [selection, tabs, tabMru, activeTabId, pages])
+  }, [selection, tabs, tabMru, activeTabId, readyIds])
 }
 
 const VIEW_SLIDE_PX = 14
