@@ -232,7 +232,7 @@ Where each goes: menu and sidebar rows → Body; menu headings → Headline / Em
 | ------------ | ------------------------------------------------------------------------------------------ |
 | GlassPane    | `InspectorPane`, `SidePane`, and `PickerMenu` with `glass="pane"` — `ConnectionPane`, `AutocompletePane` |
 | GlassSurface | `PickerMenu` by default, and `NotchedShell` beneath `MenuSurface`                          |
-| GlassWindow  | `WindowChassis` and `ImagePicker`                                                          |
+| GlassWindow  | `WindowBase` and `ImagePicker`                                                          |
 
 | Visual | SURFACE_FROST | WINDOW_FROST         | GHOST_FROST |
 | ---------------- | ---------- | -------------------- | ----------- |
@@ -345,7 +345,7 @@ Where each goes: menu and sidebar rows → Body; menu headings → Headline / Em
 
 | Title | Export | What it is |
 | ------------- | ------------------------------------- | ----------------------------------------------------- |
-| WindowChassis | `WindowChassis` | The floating window surface every in-app window mounts; its own dimensions — toolbar height, side-pane widths, footer height, the trailing-control slide — are custom properties in `windowChassis.css` a host may retune.[^1] |
+| WindowBase | `WindowBase` | The floating window surface every in-app window mounts; its own dimensions — toolbar height, side-pane widths, footer height, the trailing-control slide — are custom properties in `window-base.css` a host may retune.[^1] |
 | SidePane | `SidePane` · `sidePaneWidth` | A pane carried on a window's edge by `--io`. |
 
 ### Menus

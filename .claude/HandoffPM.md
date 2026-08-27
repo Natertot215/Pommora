@@ -5,10 +5,10 @@
 #### Current Focus
 
 **Session ID:** 14cb88d4-ef66-4a6d-a7c7-18bd37efbbaa
-**Dates:** 08-25-2026 → 08-26
+**Dates:** 08-25-2026 → 08-27
 **Model:** Opus 5 (1M context) → Fable 5
 
-**The Renderer Refactor, day one.** The session opened on the atlas — seven lenses over 453 files, eight filing rules, a target tree — and then took its rows as they came: the token cleanups first (strays cleared, the `--width-*` and `--fade-*` names, the `--border-*` edge ladder composed at the consumer), then the structural moves (`Views/` to the root, `Cards/` as the one chassis, `Tables/` as the tabular chrome, `Properties/` as the value layer, the dependency order `DesignSystem ← Properties ← Tables ← Views`), then the day's second half: the Settings window onto the menu row primitive, the toolbar's tone moved from a `button` selector to the container with its ten specificity pins flattened, `--label-zoom` retired, and the Windows block — `src/Windows/` holding `PageWindow`, `WebWindow`, `NavWindow`; the chassis renamed `WindowChassis` and moved to `DesignSystem/Components/`; `DetailPane` → `ContentView`; `NavView` to `Detail/`; `NotchedPane` → `NotchedShell`. Fourteen commits sit on `main` past `origin/main`, each one green.
+**The Renderer Refactor, day one and the morning after.** The session opened on the atlas — seven lenses over 453 files, eight filing rules, a target tree — and then took its rows as they came: the token cleanups first (strays cleared, the `--width-*` and `--fade-*` names, the `--border-*` edge ladder composed at the consumer), then the structural moves (`Views/` to the root, `Cards/` as the one chassis, `Tables/` as the tabular chrome, `Properties/` as the value layer, the dependency order `DesignSystem ← Properties ← Tables ← Views`), then the day's second half: the Settings window onto the menu row primitive, the toolbar's tone moved from a `button` selector to the container with its ten specificity pins flattened, `--label-zoom` retired, and the Windows block — `src/Windows/` holding `PageWindow`, `WebWindow`, `NavWindow`; the chassis renamed `WindowBase` and moved to `DesignSystem/Components/`; `DetailPane` → `ContentView`; `NavView` to `Detail/`; `NotchedPane` → `NotchedShell`. Then the vocabulary was ruled and applied in one pass: Window · Pane · Menu · Frame · Picker. `Materials/` became `DesignSystem/Glass/` (`glass-base`, `-window`, `-surface`, `-control`, `-pane`, with `GlassPane` and `GlassSurface` swapped to their meanings); `Components/Detail/` became `Frames/` with every `*Pane` a `*Frame`; `DesignSystem/Components/Menu/` became `DesignSystem/Menus/` in kebab parts with `FrameSlide`; `InspectorPane`, `ConnectionPane`, `AutocompletePane` on `glass-pane`; the toolbar's `*Menu`; `SettingsWindow`; the chassis is `Windows/window-base` — `WindowBase`. Nineteen commits sit on `main` past `origin/main`, each one green.
 
 **Two regressions Nathan saw were not regressions.** The slider's lost track and the switch's lost on-fill were the dev server holding stale vanilla-extract hashes — deleting `label.quaternary` from `color.css.ts` shifted every var hash, and any `.css.ts` not recompiled since still named the old one. A dev-server restart cures it; ⌘R does not. That diagnosis came after a false fix: the `--tint-*` ladder was declared undefined on a literal-name grep and minted a second time, when `theme-vars.css.ts:37` had generated it from `TINT_STEPS` all along. The comment-killer caught the duplicate at closeout and it never landed. Build-Gotchas carries the trap.
 
@@ -45,7 +45,7 @@
 - `.claude/Planning/RendererRefactor.md` — the ledger; read first.
 - `.claude/Planning/DesignTermsV2.md` — the five terms, the motions, the rename tables, the calls, the session order.
 - `.claude/Planning/RendererAtlas.md` — §The Filing Rules for the eight greps; §The Target Tree with `✓` on executed rows; §Settled for every ruling; the Open Decisions blocks for what still needs one.
-- `Pommora/src/renderer/src/Windows/` — the floating family; `DesignSystem/Components/WindowChassis/windowChassis.css` for the `.window-*` chassis and its `--window-*` knobs.
+- `Pommora/src/renderer/src/Windows/` — the floating family; `Windows/window-base.css` for the `.window-*` chassis and its `--window-*` knobs.
 - `Pommora/src/renderer/src/Settings/SettingsRow.tsx` — the `MenuItem` adapter; `nexusSettings.css` `.settings-wide` is the KNOB for a slider or path field's seat width.
 - `Pommora/src/renderer/src/Toolbar/toolbar.css` — `.app-toolbar { color: var(--label-control) }` is the toolbar's tone; the chassis toolbar carries the same line.
 - `Pommora/src/renderer/src/DesignSystem/Tokens/theme-vars.css.ts:37` — where the `--tint-*` ladder is generated from `TINT_STEPS`.
@@ -63,6 +63,8 @@
 
 - `.claude/Planning/RendererRefactor.md`
 - `.claude/Planning/DesignTermsV2.md`
+- `Pommora/src/renderer/src/DesignSystem/Glass/` — the five tier files
+- `Pommora/src/renderer/src/Windows/window-base.tsx` · `window-base.css`
 
 **FILES MODIFIED**
 
@@ -76,6 +78,9 @@
 **FILES REMOVED**
 
 - `Pommora/src/renderer/src/PagePreview/` and `NavWindow/` — into `Windows/`
+- `Pommora/src/renderer/src/DesignSystem/Materials/` — into `Glass/`
+- `Pommora/src/renderer/src/Components/Detail/` — into `Frames/`
+- `Pommora/src/renderer/src/DesignSystem/Components/Menu/`, `PaneSlider/`, `WindowChassis/` — into `Menus/` and `Windows/`
 - `Pommora/src/renderer/src/DesignSystem/Detail/PreviewPane/` and `SidePane/` — into `DesignSystem/Components/`
 - `.claude/Planning/Documentation Audit — Report and Plan.md`
 
@@ -93,8 +98,12 @@
 - `5bbd8a98` — refactor(renderer): one PathField, the simplification pass, and the closeout's repairs
 - `aec1137c` — refactor(settings): the Settings window wears the menu row primitive
 - `bdba9bdd` — refactor(toolbar): the tone is the container's, and the pins built against a button selector go
-- `77b8937e` — refactor(windows): the floating family is src/Windows, and the chassis is WindowChassis
+- `77b8937e` — refactor(windows): the floating family is src/Windows, and the chassis is WindowBase
 - `cf7cfaa6` — chore(ledger): line counts through the Windows move
+- `162f80a5` — docs: the handoff for the refactor's first day
+- `00874fd7` — docs(prd): the floating page window by its name
+- `19254825` — refactor(vocabulary): Window, Pane, Menu, Frame, Picker — applied across the renderer
+- `9746d3af` — chore(ledger): line counts through the vocabulary pass
 
 #### Handoff Guidelines
 
