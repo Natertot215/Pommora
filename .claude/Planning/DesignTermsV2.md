@@ -2,7 +2,7 @@
 
 **Date:** 08-26-2026 · **Scope:** every floating or sliding surface in the renderer, the motions between them, and the names in code, CSS, and the Feature docs that carry them · **Status:** ruled 08-26 and applied — every rename below is on disk; what remains is the Menu recipe's row kinds, the rosters, and the main window mounting `SidePane`
 
-One word per shape. "Pane" named five different things — a toolbar dropdown's content (`ViewPane`, `NavPane`, `SettingsPane`), the page inside its drill-down (`FilterPane`, `GroupingPane`, `SortingPane`, `HiddenPane`, `PropertiesPane`), the beaked shell they hang in (now `NotchedShell`), the chassis every floating window mounted, and the sliding side slot (`SidePane`, `InspectorPanel`); "Preview" named a window that previews nothing. The chassis is now `WindowChassis` and the floating family lives in `Windows/`; the rest of this document decides the others. The vocabulary below gives each shape one word, each word one test, and each motion the word of the shape it moves. Nothing here changes behavior; it changes what things are called so the next surface is named by its shape rather than by where it was first mounted.
+One word per shape. "Pane" named five different things — a toolbar dropdown's content (`ViewPane`, `NavPane`, `SettingsPane`), the page inside its drill-down (`FilterPane`, `GroupingPane`, `SortingPane`, `HiddenPane`, `PropertiesPane`), the beaked shell they hang in (now `NotchedShell`), the chassis every floating window mounted, and the sliding side slot (`SidePane`, `InspectorPanel`); "Preview" named a window that previews nothing. The chassis is now `WindowBase` and the floating family lives in `Windows/`; the rest of this document decides the others. The vocabulary below gives each shape one word, each word one test, and each motion the word of the shape it moves. Nothing here changes behavior; it changes what things are called so the next surface is named by its shape rather than by where it was first mounted.
 
 ### The Terms
 
@@ -10,7 +10,7 @@ Five shapes, ruled. A surface is exactly one of the five.
 
 | Term | What it is | Today | Motion |
 |---|---|---|---|
-| **Window** | A floating, movable, resizable surface with its own toolbar — `PageWindow`, `WebWindow`, `NavWindow`, the Settings window. Mounts `WindowChassis`. | executed | Scale-fade in/out; Engulf on promote |
+| **Window** | A floating, movable, resizable surface with its own toolbar — `PageWindow`, `WebWindow`, `NavWindow`, the Settings window. Mounts `WindowBase`. | executed | Scale-fade in/out; Engulf on promote |
 | **Pane** | A surface floating over another — the sidebar and the inspector on the main window, the tab strip and inspector on a floating one, and the surfaces anchored in content: the connection hover preview and the editor's autocomplete. Wears `glass-pane`. | `SidePane`, `InspectorPane`, `ConnectionPane`, `AutocompletePane` | **PaneSlide** — the sidebar's and inspector's in-out |
 | **Menu** | A dropdown surface hung off a trigger — the toolbar's Space, Outline, View, Settings, Nav menus; a right-click; a picker's options. Wears `glass-surface`. | `MenuDropdown` + `MenuSurface` + `NotchedShell` in `Menus/`; `SpaceMenu`, `OutlineMenu`, `ViewMenu`, `SettingsMenu`, `NavMenu` | Bloom, on the `menu` token |
 | **Frame** | One page inside a Menu or a Window's hierarchy — Filter, Group, Sort, Hidden, Layout, Properties, each Settings category. | `FilterFrame`, `GroupFrame`, `SortFrame`, `HiddenFrame`, `LayoutFrame`, `PropertyFrame`, `SettingsFrame`, `ViewFrame`, the Settings window's `FRAMES` | **FrameSlide** — the push/back between frames (`Menus/frame-slide`) |
@@ -62,7 +62,7 @@ Executed as renames; Sort and Hidden are still components until the roster exist
 | File | What it is | Today | Worn by |
 |---|---|---|---|
 | `glass-base` | The shared recipe — `frostStyle`, the frost params, `OUTLINE_INSET`, the ghost frost | `glass-pane.tsx` (the functions) + `glass-material.ts` | every tier below; the drag ghost |
-| `glass-window` | The 90% `--bg-window` fill — `WINDOW_FROST` | `GlassWindow` | `WindowChassis`, the ImagePicker |
+| `glass-window` | The 90% `--bg-window` fill — `WINDOW_FROST` | `GlassWindow` | `WindowBase`, the ImagePicker |
 | `glass-surface` | The standard menu glass — `PANE_FROST`, no fill | `GlassPane` | `menu-shell`, `PickerMenu` |
 | `glass-control` | The liquid-glass control optics, and the knob segment | `GlassControls` + `GlassSegment` | Button, DualSwitch, Slider |
 | `glass-pane` | The 10% tint the chrome panes wear | `GlassSurface` (`frostMaterial`) + `Surface.tsx` | the sidebar, the inspector, `SidePane` |
