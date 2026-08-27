@@ -14,7 +14,7 @@
 - [ ] **The Menu recipe** — the row kinds named once in `Menus/menu-base.css`, `menu-roster`, `MenuDropdown` + `MenuSurface` → `Menu`, Sort and Hidden to rosters, the frame stylesheets to geometry. The vocabulary's design half; the row carries the spec.
 - [ ] **The side slot** — the main window mounts `SidePane` and PaneSlide becomes one motion; the two inspectors reconciled.
 - [ ] **The remaining filing rows** — `Detail` → `Interface`, `Core/`, `Connections/`, `Navigation/` absorbing `Tabs/`, the Showcase out, `SurfacePM` → `Surface`, the casing renames — each a session or a few folded into one.
-- [ ] **The token and scale rows** — the three zoom renames and the `--page-scale` merge, `--subline-h` and `--labels-gap`, the checkbox recipe, the odd spacing values per consumer.
+- [ ] **The token and scale rows** — the three zoom renames and the `--page-scale` merge, `--labels-gap`, the checkbox recipe, the odd spacing values per consumer.
 - [ ] **`Blocks/ViewEmbedBlock.tsx:88` → `cellRing(key)`** — the arc's one behavioral fix; one identifier.
 - [ ] **Eyeball the Space dropdown** — carried from 08-25: icon, editable title, lock footer, the two pickers, with the trio's Settings button blank behind it.
 
