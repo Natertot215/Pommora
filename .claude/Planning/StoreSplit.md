@@ -295,8 +295,8 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
 - Control: `rg -F 'useSession' .claude/Features` → ≥ 1.
 
 **Steps:**
-- [ ] Rewrite each; re-read ArchitecturePM §The Store whole.
-- [ ] Commit: `docs: every open page has a slot; the store is seven slices`.
+- [x] Rewrite each; re-read ArchitecturePM §The Store whole.
+- [x] Commit: `docs: every open page has a slot; the store is seven slices`.
 
 #### Gate 2 — one store, seven files, nothing moved
 - [ ] Gate commands green, exit codes read directly.
@@ -318,7 +318,7 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
 - [ ] **Phase 2** — The file becomes slices · base `0c0e651a`
   - [x] Task 4 — The slice files and the composition root · `<commit>` · `store.ts` 51 lines; `Store/` 1,940 lines across eight files
   - [x] Task 5 — Tests for what the re-key created · `<commit>` · three new cases; the other three the plan listed were already pinned by the rewritten warm-tab block
-  - [ ] Task 6 — The documents · `<commit>`
+  - [x] Task 6 — The documents · `<commit>`
 
 ### Rulings
 - (Claude, planning) `ChromeSlice` and `ConfigSlice` stay two files: no transaction crosses them, and "window furniture" and "the user's settings" are different answers to "what state is this." Not to be re-litigated at Task 4.

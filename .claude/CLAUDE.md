@@ -138,6 +138,7 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 │   │           │   ├── // Animation     | • Motion tokens, the feel, and the enter/exit primitives
 │   │           │   ├── // Symbols       | • The curated icon registry — the primary glyph source
 │   │           │   └── // Showcase      | • The deployed component-library site
+│   │           ├── // Store             | • The store's seven slices — nexus, navigation, preview, chrome, config, rename, cache
 │   │           ├── App.tsx              | • The shell — three panes and the routed surface
-│   │           └── store.ts             | • The Zustand store holding renderer state
+│   │           └── store.ts             | • The composition root — one `useSession` over the slices, and the React hooks
 ```
