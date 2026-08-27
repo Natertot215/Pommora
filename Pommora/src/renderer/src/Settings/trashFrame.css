@@ -14,7 +14,7 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  padding-top: var(--app-inset);
+  padding-top: var(--surface-inset);
 }
 
 .trash-frame .trash-head {
