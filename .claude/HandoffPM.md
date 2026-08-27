@@ -20,7 +20,7 @@
 - [ ] **The Menu recipe** — the row kinds named once, `menu-roster`, Sort and Hidden as rosters, the frame stylesheets down to geometry.
 - [ ] **The side slot** — the main window mounts `SidePane`; PaneSlide is one motion.
 - [ ] **The filing rows are executed** — `Interface/`, `Core/`, `Connections/`, `Navigation/` absorbing `Tabs/`, the Showcase out, `Surface/`, the casing renames — and the atlas's eight rule greps return empty.
-- [ ] **The token and scale rows are settled** — the zoom renames and merge, the glass tokens, `--subline-h` / `--labels-gap`, the checkbox recipe.
+- [ ] **The token and scale rows are settled** — the zoom renames and merge, `--subline-h` / `--labels-gap`, the checkbox recipe.
 - [ ] **`ViewEmbedBlock.tsx:88` reads `cellRing(key)`.**
 - [ ] **The atlas's Open Decisions sections are empty**, each block deleted by a ruling.
 - [ ] **The Space dropdown is eyeballed** — carried from 08-25.
@@ -28,7 +28,7 @@
 #### Next Session
 
 1. **Read [[RendererRefactor]] first, then this document, then the atlas's Settled list.** Confirm the Done rows hold on disk (`ls src/renderer/src` — `Cards`, `Tables`, `Views`, `Windows`, `Frames`, `Properties` at the root; no `PagePreview`, `NavWindow`, or `Components/Detail`; `DesignSystem/` holding `Glass/` and `Menus/`, no `Materials/`).
-2. **Plan, with Nathan.** Order the Pending rows into sessions; take the Open Rulings — the zoom merge, the glass tokens, the three design-system reaches, `Interface/`'s scope, `NavWindow`'s home, the `PropertyFrame` edge, the three "preview" strings. Nathan is still weighing the token moves and alias naming from the early commits; that conversation belongs here, before any further row.
+2. **Plan, with Nathan.** Order the Pending rows into sessions; take the Open Rulings — the zoom merge, the three design-system reaches, `Interface/`'s scope, `NavWindow`'s home, the `PropertyFrame` edge, the three "preview" strings. Nathan is still weighing the token moves and alias naming from the early commits; that conversation belongs here, before any further row.
 3. **Then the Menu recipe** — the design session the ledger's In Flight row specifies: row kinds named once in `Menus/menu-base.css.ts`, `menu-roster`, `MenuDropdown` + `MenuSurface` → `Menu`, Sort and Hidden to rosters, `frames.css.ts` to geometry.
 4. **`cellRing(key)`** rides whichever session touches `Blocks/` first.
 5. **Inline Page Properties** runs parallel on its own Decision Log and shares no files with any of this.
