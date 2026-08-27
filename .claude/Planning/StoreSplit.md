@@ -278,8 +278,8 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
 - Test: `store.test.tsx` — a `describe('store — page slots')` block with those six; the rename-return case seeds warm after a `clearWarm()` the way an unmount capture would and asserts `openPage` is called.
 
 **Steps:**
-- [ ] Write the six; run — green on the first run, or Task 1 has a defect: fix Task 1, record in Deviations.
-- [ ] Commit: `test(store): the slots`.
+- [x] Write the tests; run — green on the first run, or Task 1 has a defect: fix Task 1, record in Deviations.
+- [x] Commit: `test(store): the slots`.
 
 #### Task 6: The documents
 
@@ -317,7 +317,7 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
   - [x] Task 3 — One writer for the pinned tabs; the preview target is read · `<commit>` · `store.ts` 1,596 code lines
 - [ ] **Phase 2** — The file becomes slices · base `0c0e651a`
   - [x] Task 4 — The slice files and the composition root · `<commit>` · `store.ts` 51 lines; `Store/` 1,940 lines across eight files
-  - [ ] Task 5 — Tests for what the re-key created · `<commit>`
+  - [x] Task 5 — Tests for what the re-key created · `<commit>` · three new cases; the other three the plan listed were already pinned by the rewritten warm-tab block
   - [ ] Task 6 — The documents · `<commit>`
 
 ### Rulings
