@@ -3,7 +3,7 @@
 
 /* The tile IS the CM6 portal (read-only at rest). Its padding is the BLOCK's own
    — the editor's boundary-to-first-line standard via .cm-content, never the
-   host page's insets (--content-start / --rail-inset / the page head-tail).
+   host page's insets (--content-inset / --rail-inset / the page head-tail).
 
    SCROLL MODEL (edge-release, matching view embeds): at rest a block scrolls its
    OWN overflow, releasing to the page at its top/bottom bound (default scroll-

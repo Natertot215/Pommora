@@ -106,18 +106,12 @@ textarea,
   background: var(--main-bg);
   --content-inset: 24px;
   /* The pane clearances: how far the floating sidebar / inspector reach in from the window edge;
-     0 when the pane is away. Every start position below is a clearance plus one gap. */
+     0 when the pane is away; a consumer adds its gap to one of these. */
   --sidebar-clearance: calc(var(--app-inset) + var(--sidebar-width));
   --inspector-clearance: 0px;
-  --content-start: calc(var(--sidebar-clearance) + var(--content-inset));
-  --content-start-right: calc(var(--inspector-clearance) + var(--content-inset));
-  --banner-start: calc(var(--sidebar-clearance) + var(--content-edge));
-  --banner-start-right: calc(var(--inspector-clearance) + var(--content-edge));
   /* Block-based views (homepage, contexts) run a tighter lane — their tile handles supply the
      grip/chevron actions a page/table reserves the rail for. */
   --surface-lane: 8px;
-  --surface-start: calc(var(--sidebar-clearance) + var(--surface-lane));
-  --surface-start-right: calc(var(--inspector-clearance) + var(--surface-lane));
 }
 .shell.sidebar-hidden {
   --sidebar-clearance: 0px;

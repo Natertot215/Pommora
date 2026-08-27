@@ -18,7 +18,8 @@
   flex-shrink: 0;
   padding: 0 0 10px;
   border-bottom: var(--width-100) solid var(--border-light);
-  margin: 0 var(--banner-start-right) 0 var(--banner-start);
+  margin: 0 calc(var(--inspector-clearance) + var(--content-edge)) 0
+    calc(var(--sidebar-clearance) + var(--content-edge));
   transition:
     margin-left var(--duration-base) var(--ease-base),
     margin-right var(--duration-base) var(--ease-base);
@@ -45,7 +46,8 @@
   overflow-y: auto;
   /* Card edges land on the EXACT homepage block-surface insets set in Detail.css. The gallery's own
      padding is zeroed (both axes, above), so these ARE the edges. */
-  padding: 8px var(--surface-start-right) 28px var(--surface-start);
+  padding: 8px calc(var(--inspector-clearance) + var(--surface-lane)) 28px
+    calc(var(--sidebar-clearance) + var(--surface-lane));
   transition:
     padding-left var(--duration-base) var(--ease-base),
     padding-right var(--duration-base) var(--ease-base);
