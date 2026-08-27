@@ -175,7 +175,6 @@ export type PageSlot =
 
 type ReadySlot = Extract<PageSlot, { status: 'ready' }>
 
-/** A freshly loaded page's slot: the live buffer opens as the load snapshot. */
 const readySlot = (target: PageTarget, detail: PageDetail): ReadySlot => ({
   status: 'ready',
   target,
@@ -688,7 +687,6 @@ export const useSession = create<SessionState>((set, get) => {
     if (kept.length !== Object.keys(pages).length) set({ pages: Object.fromEntries(kept) })
   }
 
-  // A page stays loaded while it is shown or some live tab points at it.
   const pruneSlots = (): void => {
     const s = get()
     const live = new Set<string>()

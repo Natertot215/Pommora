@@ -87,7 +87,7 @@ function useHosts(): Host[] {
     const hosts: Host[] = []
     if (selection.kind === 'page') hosts.push({ tabId: activeTabId, pageId: selection.id })
     // The budget counts parked surfaces alone, so the knob means the same number whether or not
-    // the shown surface is itself a page. Only a loaded page has something to park.
+    // the shown surface is itself a page.
     let parked = 0
     for (const id of tabMru) {
       if (parked >= WARM_TABS || id === activeTabId) continue
