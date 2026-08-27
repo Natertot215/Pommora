@@ -30,7 +30,7 @@ One type takes two roles by depth. A **Set** — a direct child of the Collectio
 
 ### Open In
 
-Each Collection carries an `open_in` field that decides where its Pages open — the main detail pane, or the floating Page Preview window — defaulting to the full page when absent. Container-view title clicks and sidebar rows both honor it, and ⌘-click always opens a full page in a new tab. The field is Collection-owned: a Set proxies its Collection's value and a write against a Set is refused (`src/main/crud/containerConfig.ts`). It is set from the **Open In** row of the container's Configuration pane.[^3]
+Each Collection carries an `open_in` field that decides where its Pages open — the main detail pane, or the floating Page Window — defaulting to the full page when absent. Container-view title clicks and sidebar rows both honor it, and ⌘-click always opens a full page in a new tab. The field is Collection-owned: a Set proxies its Collection's value and a write against a Set is refused (`src/main/crud/containerConfig.ts`). It is set from the **Open In** row of the container's Configuration pane.[^3]
 
 ### Move Semantics
 

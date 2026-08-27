@@ -116,9 +116,7 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 │   │           ├── // Detail            | • The main pane — routed views, inspector, subfield, banner
 │   │           ├── // Embeds            | • The embed framework's consumers
 │   │           ├── // MarkdownPM        | • The editor — parser, tokens, decorations, input, tables
-│   │           ├── // NavWindow         | • The standalone navigation window
 │   │           ├── // Navigation        | • Tabs, history, breadcrumbs, search
-│   │           ├── // PagePreview       | • The floating page window
 │   │           ├── // Properties       | • The property layer — value resolution, the editing surface, the panes
 │   │           ├── // Settings          | • The settings surface
 │   │           ├── // Sidebar           | • The ribbon and its content column
@@ -127,13 +125,14 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 │   │           ├── // Tabs              | • The tabs + navigational overlays
 │   │           ├── // Toolbar           | • The window toolbar
 │   │           ├── // Views             | • The view pipeline and renderers — TableView, CardView, bands
+│   │           ├── // Windows           | • The floating windows — Page, Web, Nav — and their tab strips
 │   │           ├── // DesignSystem      | • The design system — DesignSystemPM is its ledger
 │   │           │   ├── // Tokens        | • Color, type, geometry — the token source of truth
 │   │           │   ├── // Materials     | • Glass — surfaces, panes, windows, controls
 │   │           │   ├── // Labels        | • Labels and chips
 │   │           │   ├── // Elements      | • The atomic bits — outline, chevron, trail, segment
-│   │           │   ├── // Components    | • Controls, pickers, menus, fields
-│   │           │   ├── // Detail        | • The composite shells — preview and side panes
+│   │           │   ├── // Components    | • Controls, pickers, menus, fields, the window chassis
+│   │           │   ├── // Detail        | • The tile chassis
 │   │           │   ├── // Interactions  | • PommoraDND and the pointer/scroll layer
 │   │           │   ├── // Animation     | • Motion tokens, the feel, and the enter/exit primitives
 │   │           │   ├── // Symbols       | • The curated icon registry — the primary glyph source

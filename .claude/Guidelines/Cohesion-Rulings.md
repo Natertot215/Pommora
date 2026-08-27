@@ -65,7 +65,7 @@ plausible from the outside. Reopen any of them with a reason, not with a fresh r
   released only by an effect a no-op path can withhold is a latent deadlock.
 - The autocomplete panel's row does not adopt the shared menu-row primitive. Taking its metrics
   changes how the panel looks, which is a design decision rather than a consolidation.
-- `PageHeader` stays driven rather than store-reading. A floating preview draws a page that is not
+- `PageHeader` stays driven rather than store-reading. A Page Window draws a page that is not
   the active one, so a header reading the active page would draw the wrong title.
 - The insert-an-id-at-an-index idiom stays written out. Its four sites differ in whether the id was
   already removed and in whether the list is being built or replaced, so a shared helper would take
@@ -120,7 +120,7 @@ Take these first if the sweep is ever opened:
 - **`MarkdownPM/editor/gripMenu.ts:107` and `:170`** — two switches over one union, each
   intentionally partial, neither saying so.
 - **`Properties/PropertiesPane.tsx:365` and `:374`, `PagePropertiesPane.tsx:167`,
-  `PagePreview/PreviewInspector.tsx:199`** — four un-linked partial chains over `PropertyMenuAction`,
+  `Windows/WindowInspector.tsx:199`** — four un-linked partial chains over `PropertyMenuAction`,
   each handling two of its five members.
 - **`Views/CardView/CardValue.tsx:115`** — handles only the `cell:*` half of `CellMenuAction`. A
   title column reaching it would pop the full nine-row page-meta menu with none of it handled; the
