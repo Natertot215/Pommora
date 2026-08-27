@@ -1,6 +1,6 @@
 ## The Store Re-Key and Split — Implementation Plan
 
-> **Status:** written, pending review · Spec: [[Codebase-Cleanup-Checklist]] §Bundle 5, the 08-21 Architecture Audit §The Store · Execute tasks in order.
+> **Status:** written, three review rounds run and folded, pending Nathan's ratification · Spec: [[Codebase-Cleanup-Checklist]] §Bundle 5, the 08-21 Architecture Audit §The Store · Execute tasks in order.
 > Citations name files and symbols; re-derive before editing. The Renderer Refactor moves folders under this plan's feet (`Detail/` → `Interface/`, `Tabs/` → `Navigation/`, root modules → `Core/`), so a path here is where the symbol lived when the plan was written.
 
 **Goal**
@@ -9,7 +9,7 @@ The renderer's store holds a slot for every page that is open in any tab, not on
 
 Why this shape. The singleton's workarounds have leaked into six files as a prop detour (`PageView.detail`), a bypass parameter (`Subfield.scope`), target-guessing (`ContentView.useHosts`), and a capture-before-mutate ordering rule (`captureOutgoingDetail`) that four callers must honor. A slot per open page deletes each of those rather than accommodating them. Slots key by **page id**, not tab id: a page is one document with one live body however many tabs point at it, a page id survives rename and pin/unpin where a tab id does not (a pinned tab's id is `pin:<key>`, an unpinned one's a UUID), and split view — two panes on one page — wants exactly one slot. `selection` stays a field: it is not a copy of the active tab's target but *what the pane is showing*, and during a cold page open it lags the tab by design — that lag is how pause-on-change works (`store.test.tsx` "a cold switch pauses on the outgoing view"). The invariant that makes the lag mean something: **the shown page's slot lives until the next selection lands**, so the one slot-pruner keeps the shown page beside the tabs' pages. The outgoing-page capture moves to where the page actually leaves the screen — `PageView`'s existing unmount `capture` seam, which already writes editor state under the tab that mounted it — so the store has no capture and no ordering rule. The re-key leads and the file split follows because the re-key draws the slice boundary. Alternatives weighed: splitting first (freezes the singleton into its own file); a second store for pages (the two-copies bug class the single store killed); keying by tab id (the pin/unpin id churn above, two live bodies for one file); deriving `selection` (deletes the pause); keeping `captureOutgoingDetail` with a smaller body (keeps the ordering rule and misses `openNewTab`, which never reaches `select`).
 
-Bounds. One `useSession`, field-by-field subscription, main owns the data — unchanged. Zustand stays bare. The warm cache (`Tabs/warmCache.ts`) stays as the per-tab *history* store (Back/Forward warmth, embed rehydration); a slot is an open page's *current* state. Simplicity is the bound every task is judged by: a field that can be derived cheaply is derived; a fact has one writer and one deleter; nothing is added to handle a state the code cannot reach. This plan does not virtualize, does not touch `main/index.ts`, and does not add split view — it builds the state split view lands on.
+Bounds. One `useSession`, field-by-field subscription, main owns the data — unchanged. Zustand stays bare. The warm cache (`Tabs/warmCache.ts`) stays as the per-tab *history* store (Back/Forward warmth, embed rehydration), gaining only a clear generation; a slot is an open page's *current* state. Simplicity is the bound every task is judged by: a field that can be derived cheaply is derived; a fact has one writer and one deleter; nothing is added to handle a state the code cannot reach. This plan does not virtualize, does not touch `main/index.ts`, and does not add split view — it builds the state split view lands on.
 
 **Requirements**
 
@@ -17,7 +17,7 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
 2. `selection` stays, typed and commented as the shown selection; the shown page's slot survives until the next selection lands; `pageFrozen` is derived by one selector using `sameShownTarget`.
 3. `PageView({ tabId, pageId, parked })` reads `pages[pageId]`; hosts are keyed by page id; the `detail` prop is gone; `ContentView.useHosts` builds hosts from `pages`, never from the warm cache.
 4. The Subfield and CitationsToggle take `page: SubfieldPage | null` from every host; the `scope` parameter and the store-reading mode are gone; only the two stats leaves subscribe to the live body.
-5. `captureOutgoingDetail` is gone with its four callers; a page's detail and live body reach the warm cache through `PageView`'s unmount capture, beside the editor state.
+5. `captureOutgoingDetail` is gone with its four callers; a page's detail and live body reach the warm cache through `PageView`'s unmount capture, beside the editor state, under the tab id current at capture time, and only while the warm generation it mounted under holds.
 6. `pinnedTabs` has one writer; `previewTarget` is a selector; `deriveTarget` returns the stored target and stays the one definition.
 7. The store is slice files under `src/renderer/src/Store/`, each a `StateCreator` over the full state, composed in `store.ts`; every existing `useSession` importer compiles unchanged.
 8. Behavior holds: every existing store test passes, rewritten only where it seeded the retired fields; the eight running-app checks in Acceptance are seen; typing does not re-render the content pane.
@@ -30,7 +30,8 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
 - `select`'s record block moves the tab's target *before* the page case runs (`openTabModel` then the `switch`), and `jumpActiveHistory` moves it before calling `select` at all → no live tab points at the outgoing page during the pause; a pruner that keys on tabs alone deletes the frozen page. The pruner keeps `selection.id`.
 - Zustand 5's `useStore` is `useSyncExternalStore` with no selector memo (`node_modules/zustand/react.js`) → every exported selector returns a stored reference, a primitive, or a module constant.
 - `setPageBody` runs at `STATS_DEBOUNCE_MS` (120 ms) while typing → the slot reference churns at ~8 Hz; detail readers subscribe to `shownDetail` (identity-stable because `setPageBody` spreads the slot), readiness gates to `status`, and only the stats leaves to the body.
-- `MarkdownEditor`'s `warm` prop is read at mount (`deps []`) and its unmount cleanup calls `warm.capture` → `PageView`'s capture closure is mount-frozen and must read the live slot through a ref.
+- `MarkdownEditor`'s `warm` prop is read at mount (`deps []`) and its unmount cleanup calls `warm.capture` → `PageView`'s capture closure is mount-frozen and reads the live slot and the current tab id through refs (hosts keyed by page id no longer remount when `activeTabId` changes under them — pin/unpin — so the tab id the seam captures under must be read at capture time).
+- React commits after the store action that caused it → a capture at unmount always lands *after* `mutate`'s rename arm has run `clearWarm()`, and would refill the cache with the pre-cascade body. `warmCache` carries a generation that `clearWarm` bumps; a surface captures only if the generation it mounted under still holds. This also closes the latent case where a captured `editorState` survived a clear (masked today only because the store's capture, not the editor's, carried the detail the restore gate checks).
 - `pinnedTabs` is stored because deriving it walks the tree and its readers are hot → it stays stored with one writer. The Checklist's "derive from `derivePinnedTabs`" is corrected in Task 3.
 - Only the active tab ever fetches (every fetch runs through `select`) → one in-flight fence (`pageFetchSeq`) and one abandoned-slide fence (`coldStampSeq`) are correct and stay.
 - `graduatePinCovered` and `unpinTab` never shrink the set of pointed-at page ids (a pinned target is covered by `pinnedTabs`; an unpin replaces the pin with a tab on the same target) → the pruner runs in two places: the end of `select` and `applyTabResult`, which `closeTab` and `applyTree`'s dropped-tab loop both route through.
@@ -47,7 +48,7 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
 - `d0e1313e` reduced the page-state reset sites to two constants and ruled one blanket constant "would erase the reason." The reason was the singleton; a slot is deleted whole.
 - The Audit ruled the singleton blocks within-window ambition (`WARM_TABS`, split view), not the locked multi-window seam.
 - Cohesion-Rulings: "`PageHeader` stays driven rather than store-reading" — the Subfield joins it.
-- Review round one: deriving `selection` and keying by tab id were attacked and fell. Round two: deleting the outgoing slot on "no tab points at it" kills the pause; capture inside `select` misses `activateTab` (which moves `activeTabId` first) and `openNewTab` (which never reaches `select`); a `loading` slot variant, a `NONE` constant, and a `frozenOf` read inside `select` were all found unnecessary. All folded; none re-litigated.
+- Review round one: deriving `selection` and keying by tab id were attacked and fell. Round two: deleting the outgoing slot on "no tab points at it" kills the pause; capture inside `select` misses `activateTab` (which moves `activeTabId` first) and `openNewTab` (which never reaches `select`); a `loading` slot variant, a `NONE` constant, and a `frozenOf` read inside `select` were all found unnecessary. Round three: an unfenced unmount capture refills warm after a rename's `clearWarm()`; `applyTree`'s slot reconcile must spare the shown slot (Requirement 2); the seam's tab id goes stale without a remount. All folded; none re-litigated.
 
 **Grounding**
 
@@ -81,7 +82,8 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
 - Never two writers for one fact. A slot is written only by the four named slot writers (`select`, `setPageBody`, `reloadPage`, `mutate`'s arms) and deleted only by `pruneSlots`, `applyTree`'s reconcile, and `resetNexusSession`.
 - Selectors return stored references, primitives, or module constants — never a constructed object.
 - Nothing O(tabs × N) on a store change: a selector may `find` over tabs; it may not walk the tree. Nothing subscribes to the live body except the two stats leaves.
-- Out of scope everywhere: `main/`, `preload/`, `shared/`, the warm cache's shape, `PageEmbed`, `MarkdownPM`, keybindings, any visual change.
+- `PageTarget` is `Extract<SelectTarget, { kind: 'page' }>`, never a second declaration of that shape.
+- Out of scope everywhere: `main/`, `preload/`, `shared/`, the warm cache's entry shape, `PageEmbed`, `MarkdownPM`, keybindings, any visual change.
 
 **Made False**
 
@@ -95,7 +97,7 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
 | `Planning/Architecture Audit` §The Store | "`selection` is a hand-synchronized copy of the active tab's target" | it is the shown selection, and its lag is the pause | 3 |
 | `ContextPM.md` §Three | "Per-tab page state is modelled as global singletons"; "The store split" | both delivered | 6 |
 | `Detail/ContentView.tsx` comment | "The page this surface will settle on is its TAB's, not the selection's …" | hosts are built from named facts | 1 |
-| `MarkdownPM/index.tsx` cleanup comment | "this capture lands under the identity this editor mounted with — never the next tab's, even though the switch already updated the store" | still true; unchanged | — |
+| `MarkdownPM/index.tsx` cleanup comment | "this capture lands under the identity this editor mounted with — never the next tab's, even though the switch already updated the store" | the seam now resolves the tab id at capture time; the comment moves to `PageView`'s seam and says so | 1 |
 
 **Dead Vocabulary**
 
@@ -117,7 +119,9 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
 
 **Files:**
 - Modify: `Pommora/src/renderer/src/store.ts` — `SessionState` (the four fields, `setLiveBody`, `select`, `reloadPage`), `PAGE_CLEARED`/`PAGE_CLEARED_UNFROZEN`, `resetNexusSession`, `syncActiveDetail`, `captureOutgoingDetail` and its four callers (`activateTab`, `openNewTab`, `jumpActiveHistory`, `select`), `applyTabResult`, `applyTree` (the selection reconcile and the dropped-tab loop), `select`, `reloadPage`, `mutate` (`rename`, `delete`, `setIcon` arms), `openPageBody`.
-- Modify: `Pommora/src/renderer/src/Detail/PageView.tsx` — props `{ tabId, pageId, parked }`; read `s.pages[pageId]`; `pushLiveBody` → `setPageBody(path, body)`; `warm.capture` adds `pageDetail` from a slot ref.
+- Modify: `Pommora/src/renderer/src/Tabs/warmCache.ts` — `clearWarm` bumps a module generation; `warmGeneration()` exported.
+- Modify: `Pommora/src/renderer/src/Detail/PageView.tsx` — props `{ tabId, pageId, parked }`; read `s.pages[pageId]`; `pushLiveBody` → `setPageBody(path, body)`; `warm.capture` reads the slot and tab id through refs and is gated on the mount-time generation.
+- Modify: `Pommora/src/renderer/src/MarkdownPM/index.tsx` — the cleanup comment about the capture identity moves out (the seam owns that fact now); no code change.
 - Modify: `Pommora/src/renderer/src/Detail/ContentView.tsx` — `useHosts`; `key={h.pageId}`; `frozen` reads `frozenOf`.
 - Modify: the active-page readers — `Toolbar/OutlineMenu.tsx`, `Frames/PageMenu.tsx`, `Properties/PageProperties.tsx`, `Embeds/connectionMenu.ts` read `shownDetail`; `Navigation/useNavThumbnails.ts` subscribes to `shownPage(s)?.status` and reads the body through `getState()` at capture time as today; `Detail/Subfield/subfieldItems.tsx`, `CitationsToggle.tsx` read `shownDetail` and `pageBody(shownPage(s))` — the `scope` mode is untouched here (Task 2).
 - Test: `Pommora/src/renderer/src/store.test.tsx` — `seed` takes `pages`; expectations on `pageStatus`/`pageDetail` read the slot; the capture test seeds warm directly (the capture is now the surface's).
@@ -148,11 +152,12 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
       // the active tab (pinned or not) has a target that is not newtab and !sameShownTarget(s.selection, target)
   ```
   `select(target, opts)` keeps its signature. The frozen-clear branch at its top becomes `if (get().navSlide?.seq === coldStampSeq) set({ navSlide: null })`. Its page case, in order: **(b)** `pages[B]` is ready with `detail.path === target.path` → `set({ selection })`, done — the tab-switch-back and the same-tab re-select, no fetch; **(c)** warm has a same-path detail at `(tabId, navKey(B))` → write a ready slot from it (`body: cached.body`) and the selection, done; **(d)** cold: `seq = ++pageFetchSeq`, `coldStampSeq` as today, arm the deadline that writes `selection = B` alone if `seq` still holds (a missing slot is the placeholder), fetch, land `ready`/`error` plus `selection = B` if `seq` still holds. A non-page target sets the selection (the `ensureContainerView` calls stay). `pruneSlots()` runs at the end of every completed `select` and inside `applyTabResult`: keep a key if it is `selection.id` or some live tab's page target id.
-- `PageView`: `const slotRef = useRef(slot); slotRef.current = slot`; `warm.capture: (state) => captureWarm(tabId, warmKey, { ...state, pageDetail: slotRef.current?.status === 'ready' ? { ...slotRef.current.detail, body: slotRef.current.body } : undefined })`. A host that never became ready captures no detail, and `restore`'s path gate then mounts cold, as today.
-- `applyTree`'s reconcile: for every slot, `reconcileWith(index, slot.target)`: gone → delete; path changed → delete (the shown one is re-selected by the existing selection reconcile and refetches; a parked one refetches on return). `resetNexusSession` → `pages: {}`.
+- `warmCache.ts`: `let generation = 0`; `clearWarm` does `generation++`; `export const warmGeneration = (): number => generation`.
+- `PageView`: `const live = useRef({ slot, tabId }); live.current = { slot, tabId }`; `const mountedGen = useRef(warmGeneration())`; `warm.capture: (state) => { if (warmGeneration() !== mountedGen.current) return; const { slot, tabId } = live.current; captureWarm(tabId, warmKey, slot?.status === 'ready' ? { ...state, pageDetail: { ...slot.detail, body: slot.body } } : state) }`. A host that never became ready captures editor state without a detail, and `restore`'s path gate then mounts cold, as today; a host unmounting after a clear captures nothing. `restore` reads `readWarm(live.current.tabId, warmKey)` at mount, which is the mount-time tab id — the same thing.
+- `applyTree`'s reconcile: for every slot except `selection.id`, `reconcileWith(index, slot.target)`: gone → delete; path changed → delete (a parked one refetches on return). The shown slot is left for the existing selection reconcile, whose `select(next, { record: false })` lands a fresh slot over it at (d) — the pause holds meanwhile, and the editor never unmounts until the swap. `resetNexusSession` → `pages: {}`.
 - Assumed by: Task 2 (`shownDetail`, `pageBody`), Task 4 (the slice boundary), Task 5 (tests).
 
-**Failure half:** a fetch landing after the tab moved on → `seq` differs, dropped (today's fence). `activeTabId === ''` → `frozenOf` false, `shownPage` undefined. `setPageBody` for a path with no ready slot → no-op. A tab moving A → B → Back to A inside one round trip → (d) supersedes (d); A's slot is still present (the pruner has not run — `select` did not complete), so Back hits (b). A page whose surface is evicted past `WARM_TABS` → unmount capture writes its detail and body; return → (b) if some tab still points at it, else (c). A rename mutation → the shown slot reloads; every other slot is deleted and warm clears, as today. `setIcon` on a page → its ready slot's `detail.frontmatter` patched, warm detail dropped. `delete` → its slot and its path-keyed detail dropped. Two tabs on one page (a ⌘-click plus Back can produce it) → one slot, one body, one surface — the intended semantics.
+**Failure half:** a fetch landing after the tab moved on → `seq` differs, dropped (today's fence). `activeTabId === ''` → `frozenOf` false, `shownPage` undefined. `setPageBody` for a path with no ready slot → no-op. A tab moving A → B → Back to A inside one round trip → (d) supersedes (d); A's slot is still present (the pruner has not run — `select` did not complete), so Back hits (b). A page whose surface is evicted past `WARM_TABS` → unmount capture writes its detail and body; return → (b) if some tab still points at it, else (c). A rename mutation → `clearWarm()` bumps the generation, the shown slot reloads, every other slot is deleted; the parked surfaces that unmount as a result capture nothing, and their pages return through (d) on the healed body. Pin or unpin the shown tab → the host's key (page id) holds, no remount, and a later capture lands under the pin id the seam reads at that moment. The shown page renamed or moved in-app or on disk → its slot is spared by the reconcile, the selection reconcile re-selects it, the pause holds, one swap at landing. `setIcon` on a page → its ready slot's `detail.frontmatter` patched, warm detail dropped. `delete` → its slot and its path-keyed detail dropped. Two tabs on one page (a ⌘-click plus Back can produce it) → one slot, one body, one surface — the intended semantics.
 
 **Survivors:** `warmCache.ts` untouched. `navSlide`, `crumbDepth`, `sameShownTarget`, `pageFetchSeq`, `coldStampSeq`, `COLD_SWAP_DEADLINE` stay. `ContentView`'s slide effect keys on `selection` as today. `registerPageEditor` keys on `parked` as today. The host sort stays, by page id.
 
@@ -204,7 +209,7 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
 
 **Derivation**
 - `rg -F 'previewTarget' Pommora/src/renderer/src --glob '!*.test.*'` → count at execution; all convert. Legitimate hits after: the selector; `PreviewTarget` the type.
-- `rg -F 'deriveTarget' Pommora/src/renderer/src` → `windowTabs.ts`, `store.ts`, `connectionMenu.ts`, `windowTabs.test.ts` at planning; unchanged set after.
+- `rg -F 'deriveTarget' Pommora/src/renderer/src` → `windowTabs.ts`, `store.ts`, `connectionMenu.ts` at planning; unchanged set after. `windowTabs.test.ts` asserts on `previewTarget`'s shape and gains `kind: 'page'` in the same commit.
 - `rg -F 'derivePinnedTabs' Pommora/src/renderer/src/store.ts` → 4 → 1.
 - Control: `rg -F 'pinnedTabs' Pommora/src/renderer/src -l` → ≥ 3.
 
@@ -267,13 +272,13 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
 
 **Requirement:** 8
 
-**Why:** The store has a 530-line integration test; a test that re-proves a move is ceremony. What earns a test is behavior the re-key created: a slot surviving a tab switch without a fetch; the shown page's slot surviving the pause after its tab moved on; a slot outliving one tab while another points at it and dying with the last; a rename deleting the parked slots and reloading the shown one; `frozenOf` across the pause.
+**Why:** The store has a 530-line integration test; a test that re-proves a move is ceremony. What earns a test is behavior the re-key created: a slot surviving a tab switch without a fetch; the shown page's slot surviving the pause after its tab moved on; a slot outliving one tab while another points at it and dying with the last; a rename deleting the parked slots and reloading the shown one, **and a return to a parked page after a rename fetching cold** (a warm entry captured under a stale generation is refused — the test the rename fence exists for); the shown slot spared by `applyTree` when its path changes; `frozenOf` across the pause.
 
 **Files:**
-- Test: `store.test.tsx` — a `describe('store — page slots')` block with those five.
+- Test: `store.test.tsx` — a `describe('store — page slots')` block with those six; the rename-return case seeds warm after a `clearWarm()` the way an unmount capture would and asserts `openPage` is called.
 
 **Steps:**
-- [ ] Write the five; run — green on the first run, or Task 1 has a defect: fix Task 1, record in Deviations.
+- [ ] Write the six; run — green on the first run, or Task 1 has a defect: fix Task 1, record in Deviations.
 - [ ] Commit: `test(store): the slots`.
 
 #### Task 6: The documents
