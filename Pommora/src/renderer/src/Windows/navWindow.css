@@ -3,7 +3,7 @@
 
 .navwindow {
   /* The window rings on the glass inset rather than running edge-to-edge. */
-  padding: var(--app-inset);
+  padding: var(--surface-inset);
   /* KNOB — the pair sits further off the × here than in a toolbar band. */
   --window-trail-gap: 6px;
   /* KNOB — the shared content inset (search divider + rows align to this). */
@@ -45,18 +45,18 @@
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  padding-left: 6px;
+  padding-left: var(--row-inset);
   /* KNOB — clearance past settings + X, plus the squeeze that stops the row at an open pane's
      leading edge; without the second term the tabs run under the pane. The squeeze carries its own
      motion through --io, so padding-right stays OUT of the transition list — transitioning it would
      retarget on every frame that --io advances. */
-  padding-right: calc(var(--app-inset) + 56px + var(--window-title-squeeze, 0px));
+  padding-right: calc(var(--surface-inset) + 56px + var(--window-title-squeeze, 0px));
   transition:
     height var(--duration-base) var(--ease-base),
     padding-left var(--duration-base) var(--ease-base);
 }
 .navwindow.is-page-tab .navwindow-tabs {
-  padding-left: calc(var(--app-inset) + 22px); /* KNOB — clearance past the scan glyph */
+  padding-left: calc(var(--surface-inset) + 22px); /* KNOB — clearance past the scan glyph */
 }
 .navwindow-tabs.has-tabs {
   height: var(--navwindow-tabs-h);

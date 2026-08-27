@@ -144,7 +144,7 @@ export const allHeadingRow = style({
   gap: '4px',
   width: '100%',
   minHeight: '24px',
-  padding: '6px 6px',
+  padding: '6px var(--row-inset)',
   paddingLeft: 0,
   border: 'none',
   background: 'none',
