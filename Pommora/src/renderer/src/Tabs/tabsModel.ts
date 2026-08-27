@@ -315,3 +315,5 @@ export function cycle(orderedIds: string[], activeTabId: string, dir: 1 | -1): s
   if (i === -1) return orderedIds[0]
   return orderedIds[(i + dir + orderedIds.length) % orderedIds.length]
 }
+
+export const makeTabId = (): string => crypto.randomUUID()
