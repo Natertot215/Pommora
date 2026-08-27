@@ -187,7 +187,7 @@ The over-scroll edge-dissolve widths a scrollable surface names on `--over-scrol
 | Icon Ladder       | `size.icon.*` · `--icon-*` · `ICON_PX`         | Eleven steps named for the type ramp — `largeTitle` `26px` → `subline` `10px` |
 | Pill Radius       | `RADIUS_FULL` · `--radius-full`                | `999px`                                                           |
 | Disclosure Indent | `DISCLOSURE_INDENT` · `--disclosure-indent`    | `14px`                                                            |
-| Inset Content     | `--inset-content`                              | `24px` — the content column's inset from the shell edges          |
+| Content Inset     | `--content-inset` · `--content-edge(-right)` · `--surface-edge(-right)` | `24px` — the content column's gutter; the edge pair composes it with `--app-inset` and the pane widths into where content starts from the window edge (`styles.css`) |
 | App Inset         | `--app-inset` · `--app-radius`                 | `5px` · `12px` — a floating glass pane's gap from the window edge, and its corner (`styles.css`) |
 | Surface Inset     | `--surface-inset` · `MENU_GUTTER`              | `10px` — glass edge → content, inside a menu, side pane, the inspector, or a window toolbar (`styles.css`) |
 | Row Inset         | `--row-inset` · `ROW_INSET`                    | `6px` — row edge → text, inside a menu row; the disclosure rail centers off it (`styles.css`) |
