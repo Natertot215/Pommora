@@ -26,8 +26,8 @@ import { pageLinkText } from '@shared/pageMenu'
 const FOOTER_ACTIONS = ['title:rename', 'title:reveal', 'title:copylink', 'title:delete'] as const
 
 /** The Settings menu's page scope — the Page's identity, and the frames that configure it.
- *  Reads `pageDetail`, the same source the editor's header renders from, so the title and glyph
- *  here and on the page never disagree. */
+ *  Reads the shown page's detail, the same source the editor's header renders from, so the title
+ *  and glyph here and on the page never disagree. */
 export function PageMenu(): React.JSX.Element | null {
   const pageDetail = useSession(shownDetail)
   const defaultIcons = useSession((st) => st.personalization.defaultIcons)

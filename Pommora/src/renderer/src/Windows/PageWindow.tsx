@@ -222,7 +222,6 @@ function PageWindowBody({
           </div>
         ),
       }}
-      // Scoped to THIS page and counting the window's own body — never the app-wide live count.
       footer={<Subfield page={page} inert />}
       footerLabel={footerLabel}
       footerLead={<CitationsToggle page={page} />}
