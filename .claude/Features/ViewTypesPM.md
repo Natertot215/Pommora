@@ -166,7 +166,7 @@ The chassis tokens — the floor, gaps, thumb height and share, and preview zoom
 | Body Minimum | `--card-body-min` | `calc(var(--card-thumb-h) * 0.54)`; compact recomputes from its row stack |
 | Band Clearance | `--band-clearance` | → `var(--card-gap-v)` (the seam rule's input) |
 | Compact Rows | `--card-row-h` / `--card-foot-h` | `17px` / composed |
-| Label Retunes | `--label-zoom` / `--label-pad-x` | `0.85` / `4px` |
+| Label Retunes | `--label-pad-x` | `4px` |
 
 #### II. Prospects
 
