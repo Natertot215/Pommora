@@ -5,209 +5,212 @@
 
 **Goal**
 
-The renderer's store describes every open tab's page, not only the shown one, and lives as domain slice files composing one `useSession`. At the end: `pages: Record<tabId, PageSlot>` replaces the five singleton fields (`pageStatus`, `pageDetail`, `pageError`, `pageFrozen`, `liveBody`); `selection` is a selector over the active tab rather than a hand-synchronized copy; a `PageView` is `PageView({ tabId })` and reads its own slot whether shown or parked; the Subfield is driven by whichever host mounts it; and the 1,906-line file is nine files whose names answer "what state is this."
+The renderer's store holds a slot for every page that is open in any tab, not only the shown one, and lives as domain slice files composing one `useSession`. At the end: `pages: Record<pageId, PageSlot>` replaces the four singleton fields (`pageStatus`, `pageDetail`, `pageError`, `liveBody`); `pageFrozen` is derived; a `PageView` reads its own slot whether shown or parked, so the `detail` prop and the warm-cache read in `ContentView` go; the Subfield is driven by whichever host mounts it; and the 1,906-line file is seven files whose names answer "what state is this."
 
-Why this shape. The singleton's workarounds have leaked into six files as prop detours (`PageView.detail`), bypass parameters (`Subfield.scope`), target-guessing (`ContentView.useHosts`), a capture-before-mutate ordering rule (`captureOutgoingDetail`), and two module fences (`pageFetchSeq`, `coldStampSeq`) that exist only because one slot serves N tabs. Keying by tab deletes each of those rather than accommodating them. The re-key leads and the file split follows because the re-key is what draws the slice boundary: `select` is tabs' and pages' joint transaction, so they are one slice, and a split done first would freeze the singleton into its own file and make the re-key a cross-file edit. The alternatives weighed: splitting first (rejected above); a second store for pages (rejected — the shared room is what lets tabs, pins, previews, and pages react to each other, and two stores is the two-copies bug class the single store killed); keying by path instead of tab (rejected — two tabs on one file is already prevented at the host, and a tab is what navigates, so a tab is what owns a page).
+Why this shape. The singleton's workarounds have leaked into six files as a prop detour (`PageView.detail`), a bypass parameter (`Subfield.scope`), target-guessing (`ContentView.useHosts`), and a capture-before-mutate ordering rule (`captureOutgoingDetail`) that five callers must honor. A slot per open page deletes each of those rather than accommodating them. Slots key by **page id**, not tab id: a page is one document with one live body however many tabs point at it (the host already enforces one surface per page), a page id survives rename and pin/unpin where a tab id does not (a pinned tab's id is `pin:<key>`, an unpinned one's a UUID), and split view — two panes on one page — wants exactly one slot. `selection` stays a field: it is not a copy of the active tab's target but *what the pane is showing*, and during a cold page open it lags the tab by design — that lag is how pause-on-change works (`store.test.tsx` "a cold switch pauses on the outgoing view"). Deriving it would delete a shipped behavior; naming it correctly costs nothing. The re-key leads and the file split follows because the re-key draws the slice boundary. Alternatives weighed: splitting first (freezes the singleton into its own file); a second store for pages (the two-copies bug class the single store killed); keying by tab id (the pin/unpin id churn above, and two tabs on one page would be two live bodies for one file).
 
-Bounds. The store's shape — one `useSession`, field-by-field subscription, main owns the data — stays. Zustand stays bare: no middleware, no persist. The warm cache (`Tabs/warmCache.ts`) stays as the per-tab *history* store (Back/Forward warmth, embed rehydration); the slot is a tab's *current* page. This plan does not virtualize, does not touch `main/index.ts`, and does not add split view — it builds the state split view lands on.
+Bounds. One `useSession`, field-by-field subscription, main owns the data — unchanged. Zustand stays bare. The warm cache (`Tabs/warmCache.ts`) stays as the per-tab *history* store (Back/Forward warmth, embed rehydration); a slot is an open page's *current* state. Simplicity is the bound every task is judged by: a field that can be derived cheaply is derived; a helper two slices call is one named action, never a copy; nothing is added to handle a state the code cannot reach. This plan does not virtualize, does not touch `main/index.ts`, and does not add split view — it builds the state split view lands on.
 
 **Requirements**
 
-1. Page state is keyed by tab: `pages: Record<string, PageSlot>`, one slot per tab currently showing a page; a tab on a non-page has no slot.
-2. `selection` is derived from `(tabs, pinnedTabs, activeTabId)` through one selector; no store field named `selection` remains.
-3. The cold-swap pause, the fetch fence, and the live body are per-slot facts; `pageFetchSeq`, `coldStampSeq`, `pageFrozen`, and `liveBody` are gone.
-4. `PageView({ tabId, parked })` reads `pages[tabId]`; the `detail` prop is gone; `ContentView.useHosts` reads slots, never the warm cache.
-5. The Subfield and CitationsToggle are driven by a `page: { target, body } | null` prop from every host; the `scope` parameter and the store-reading mode are gone.
-6. `captureOutgoingDetail` is gone; a tab's outgoing page is captured to warm in the one place a slot is replaced.
-7. `pinnedTabs` has one writer; `previewTarget` is a selector.
-8. The store is slice files under `src/renderer/src/Store/`, each a `StateCreator` over the full state, composed in `store.ts`; every existing `useSession` importer compiles unchanged.
-9. Behavior holds: every existing store test passes (rewritten only where it seeded the retired fields), and the running-app checks in Acceptance are seen.
+1. Page state is `pages: Record<string, PageSlot>` keyed by page id; a slot exists for every page some live tab (pinned or not) points at and has shown; the singleton fields `pageStatus`, `pageDetail`, `pageError`, `liveBody` are gone.
+2. `selection` stays, typed and commented as the shown selection; `pageFrozen` is derived as "the active tab's target is not the shown selection" through one selector.
+3. `PageView({ tabId, pageId, parked })` reads `pages[pageId]`; the `detail` prop is gone; `ContentView.useHosts` builds hosts from `pages`, never from the warm cache.
+4. The Subfield and CitationsToggle take `page: SubfieldPage | null` from every host; the `scope` parameter and the store-reading mode are gone.
+5. `captureOutgoingDetail` is gone; a tab's outgoing page is captured to warm inside `select`, the one place a tab's target moves.
+6. `pinnedTabs` has one writer; `previewTarget` is a selector that returns a stored reference.
+7. The store is slice files under `src/renderer/src/Store/`, each a `StateCreator` over the full state, composed in `store.ts`; every existing `useSession` importer compiles unchanged.
+8. Behavior holds: every existing store test passes, rewritten only where it seeded the retired fields; the seven running-app checks in Acceptance are seen.
 
-**Acceptance — the whole thing working:** with two page tabs open, type in tab A, switch to tab B, type there, switch back to A — A shows the typed text with no fetch (the `openPage` mock or the network panel is silent) and its scroll holds; then open a page preview over B and confirm the preview's Subfield word count tracks the preview's body while the main pane's tracks B's; then ⌘R — both tabs restore. And `rg -F pageDetail src/renderer/src --glob '!*.test.*'` returns hits only inside `PageSlot` readers (the Derivation's allowlist).
+**Acceptance — the whole thing working:** with two page tabs open, type in tab A, switch to tab B, type there, switch back to A — A shows the typed text, `openPage` was not called, and its scroll holds; cold-open a third page from A on a nexus where the fetch outlasts a frame — A holds frozen and the slide plays once, on the new page; pin A's tab and unpin it — A never blanks; rename a page linked from B while B is parked, return to B — B shows the healed link; open a page preview over B — the preview's Subfield count tracks the preview's body while the main pane's tracks B's; ⌘R — both tabs restore. And `rg -F pageDetail Pommora/src/renderer/src --glob '!*.test.*'` returns hits only at the allowlist in Dead Vocabulary.
 
 **Forced By**
 
-- `select` writes tabs, recents, breadcrumb depth, the slide stamp, and page state in one act (`store.ts` `select`) → tabs, pages, history, and the derived selection are one slice.
-- `pinnedTabs` is stored because deriving it needs `reconcileIndexOf(tree)`, an O(N) walk, and its readers are hot (`store.ts` comment at the field) → it stays stored; the fix is one writer, not a selector. This deviates from the Checklist's "derive from `derivePinnedTabs`" line, and the Checklist is corrected in Task 3.
-- `PageEmbed` inside the preview window and inside tiles loads through the path-keyed detail cache, not the store (`Embeds/PageEmbed.tsx` `fetchPageDetail`) → the preview's page is not a store slot; the preview keeps a local body and passes it as the Subfield's `page` prop. The Checklist's "deletes PreviewWindow's parallel body buffer" is not delivered by this plan; what is deleted is the Subfield's two modes.
-- 113 files import `useSession` from `../store` (`rg -l "from '.*store'" src/renderer/src`) → `store.ts` stays the composition root and the import path; slices live beside it.
-- The Renderer Refactor's `Core/` row (`RendererRefactor.md` "Core/ for the root modules — store …") is pending → `Store/` moves under `Core/` with `store.ts` when that row lands; this plan does not pre-empt it.
-- The working tree carries the refactor uncommitted, including `Detail/PageView.tsx` and `Windows/PageWindow.tsx` (`git status` at planning time) → execution starts only on a committed tree; every commit stages explicit paths.
-- Zustand 5 (`package.json`) → slices are `StateCreator<SessionState, [], [], Slice>`; no middleware tuple.
-- The `PAGE_CLEARED` / `PAGE_CLEARED_UNFROZEN` split records that `select` clears `pageFrozen` itself (commit `d0e1313e`) → both constants retire with the fields; the reason retires with them.
+- `select` writes tabs, recents, breadcrumb depth, the slide stamp, the shown selection, and the page slot in one act → tabs, pages, selection, and history are one slice; and pins ↔ tabs are bidirectional (`graduatePinCovered`, `ensureLiveActive`, `load`'s pin seeding) → the nav layer joins that slice rather than calling across a boundary.
+- Zustand 5's `useStore` is `useSyncExternalStore` with no selector memo (`node_modules/zustand/react.js`) → a selector that builds an object re-renders forever; every exported selector returns a stored reference, a primitive, or a module constant.
+- `pinnedTabs` is stored because deriving it walks the tree (`reconcileIndexOf`) and its readers are hot → it stays stored with one writer. The Checklist's "derive from `derivePinnedTabs`" is corrected in Task 3.
+- The pause-on-change is `selection` lagging the tab until the fetch lands or `COLD_SWAP_DEADLINE` (`select`'s page case; the test at "a cold switch pauses") → `selection` stays a field; `pageFrozen` is exactly the lag and is derived.
+- Only the active tab ever fetches (every fetch runs through `select`) → one in-flight fence (`pageFetchSeq`) is correct, not a singleton smell; it and `coldStampSeq` stay.
+- A rename's link cascade rewrites bodies nexus-wide, and today's `clearWarm()` is what tears parked editors down so they remount on the healed body (`mutate`'s `rename` arm comment) → with slots making parked surfaces resident, the rename arm deletes every non-shown slot (they refetch cold on return) and reloads the shown one.
+- `PageEmbed` (preview window, tiles) loads through the path-keyed detail cache, not the store → the preview's page is not a slot; the preview keeps its local body and passes it as `page`. The Checklist's "deletes PreviewWindow's parallel body buffer" is not delivered here.
+- 113 files import from `../store` → `store.ts` stays the composition root and the import path.
+- The Renderer Refactor's `Core/` row is pending → `Store/` moves with `store.ts` when it lands.
+- The working tree carries the refactor uncommitted (`git status` at planning) → execution starts only on a committed tree; every commit stages explicit paths.
 
 **Inherited Reasoning**
 
-- `8c7df3bc` put alias memory in its own slice *inside* the file — the precedent that a domain has its own initial state and writer; this plan makes that the file boundary.
-- `d0e1313e` reduced nine page-state reset sites to two constants and ruled that one blanket constant "would erase the reason." The reason was the singleton; with slots there is nothing to reset partially.
-- The Audit ruled the singleton "does not violate the locked multi-window decision (the store is per-renderer) — what it blocks is within-window ambition: `WARM_TABS`, split view." Nothing here is multi-window work.
-- Cohesion-Rulings: "`PageHeader` stays driven rather than store-reading" — the Subfield joins it; this is the rule generalizing, not a new one.
+- `8c7df3bc` put alias memory in its own slice inside the file — a domain owns its initial state and writers; this plan makes that the file boundary.
+- `d0e1313e` reduced the page-state reset sites to two constants and ruled one blanket constant "would erase the reason." The reason was the singleton; a slot is deleted whole.
+- The Audit ruled the singleton blocks within-window ambition (`WARM_TABS`, split view), not the locked multi-window seam. Nothing here is multi-window work.
+- Cohesion-Rulings: "`PageHeader` stays driven rather than store-reading" — the Subfield joins it.
+- First review round (this plan's own): deriving `selection` and keying by tab id were both attacked and both fell — the findings are folded above, not re-litigated.
 
 **Grounding**
 
-- `Pommora/src/renderer/src/store.ts` — the whole file; `select`, `syncActiveDetail`, `captureOutgoingDetail`, `applyTree`, `resetNexusSession`, `mutate` are the joint transactions.
-- `Pommora/src/renderer/src/store.test.tsx` — 530 lines; the warm-tab and cold-swap tests seed `pageStatus`/`pageDetail`/`selection` and are the behavior contract this plan carries.
-- `Pommora/src/renderer/src/Tabs/warmCache.ts` — two caches: per-tab `(tabId, navKey) → WarmEntry` and path-keyed `PageDetail`; the slot replaces neither.
-- `Pommora/src/renderer/src/Detail/ContentView.tsx` — `useHosts`, `WARM_TABS`, the `is-frozen` class.
-- `Pommora/src/renderer/src/Detail/PageView.tsx` — the `detail` prop and the three conditional selectors.
-- `Pommora/src/renderer/src/Detail/Subfield/{Subfield,subfieldItems,CitationsToggle}.tsx` — `SubfieldScope` and its two modes.
-- `Pommora/src/renderer/src/Windows/PageWindow.tsx` — the local `previewBody` and the `scope` memo.
-- `Pommora/src/renderer/src/Navigation/useNavThumbnails.ts`, `Toolbar/OutlineMenu.tsx`, `Frames/PageMenu.tsx`, `Properties/PageProperties.tsx`, `Embeds/connectionMenu.ts` — the active-page readers.
-- `Pommora/src/renderer/src/Tabs/tabsModel.ts`, `Windows/windowTabs.ts`, `selection.ts` — the pure models the slices call.
-- `.claude/Planning/Codebase-Cleanup-Checklist.md` §Bundle 5; `.claude/Planning/Architecture Audit — Full-Codebase Report.md` §The Store; `.claude/Planning/RendererRefactor.md` the `Core/` row.
-- `.claude/Guidelines/Cohesion-Rulings.md`; `.claude/Features/ArchitecturePM.md` §The Store, §Tabs, Warmth, and Navigation.
+- `Pommora/src/renderer/src/store.ts` — whole; `select`, `syncActiveDetail`, `captureOutgoingDetail`, `applyTree`, `resetNexusSession`, `mutate` are the joint transactions.
+- `Pommora/src/renderer/src/store.test.tsx` — the cold-swap and warm-tab tests are the behavior contract.
+- `Pommora/src/renderer/src/Tabs/warmCache.ts` — two caches; the slot replaces neither.
+- `Pommora/src/renderer/src/Detail/ContentView.tsx` — `useHosts`, `WARM_TABS`, `is-frozen`, the slide effect.
+- `Pommora/src/renderer/src/Detail/PageView.tsx` — the `detail` prop, the three conditional selectors, `registerPageEditor`, `pushLiveBody`.
+- `Pommora/src/renderer/src/Detail/Subfield/{Subfield,subfieldItems,CitationsToggle}.tsx` — `SubfieldScope`.
+- `Pommora/src/renderer/src/Windows/PageWindow.tsx` — `previewBody`, the `scope` memo.
+- `Pommora/src/renderer/src/Tabs/tabsModel.ts` (`pinTabId`, `openTab`, `derivePinnedTabs`), `Windows/windowTabs.ts` (`deriveTarget`), `selection.ts` (`reconcileWith`).
+- The active-page readers: `Navigation/useNavThumbnails.ts`, `Toolbar/OutlineMenu.tsx`, `Frames/PageMenu.tsx`, `Properties/PageProperties.tsx`, `Embeds/connectionMenu.ts`.
+- `.claude/Planning/Codebase-Cleanup-Checklist.md` §Bundle 5; `Architecture Audit — Full-Codebase Report.md` §The Store; `RendererRefactor.md` the `Core/` row; `.claude/Guidelines/Cohesion-Rulings.md`; `.claude/Features/ArchitecturePM.md` §The Store, §Tabs, Warmth, and Navigation.
 
 **Environment**
 
-- Plan directory: `.claude/Planning/`. Spec input: the Checklist's Bundle 5 and the Audit's ruling (both read whole).
-- Explorer: `Explore`. Code reviewer: `feature-dev:code-reviewer`. Attack reviewer: `build-breaking-agent`. Neutral verifier: `general-purpose` handed the claim and the spec. Simplification: `code-simplifier` then `comment-killer-agent`.
-- Gates, run from `Pommora/`: `npm run typecheck` · `npm run test` · `npm run lint`. Exit codes read directly. Baseline at planning: all three green on the dirty tree; 294 test files, 3,653 tests; `store.ts` 1,620 code lines (blank and comment lines excluded).
-- Rules directory: `.claude/Guidelines/` (read: Cohesion-Rulings, Build-Gotchas, Lint-And-Accessibility).
+- Plan directory `.claude/Planning/`. Spec: the Checklist's Bundle 5 and the Audit's ruling, read whole.
+- Explorer `Explore` · code reviewer `feature-dev:code-reviewer` · attack reviewer `build-breaking-agent` · neutral verifier `general-purpose` handed the claim and the spec · simplification `code-simplifier` then `comment-killer-agent`.
+- Gates from `Pommora/`: `npm run typecheck` · `npm run test` · `npm run lint`, exit codes read directly. Baseline: all green; 294 test files, 3,653 tests; `store.ts` 1,620 code lines (blank and comment lines excluded).
+- Rules: `.claude/Guidelines/` (Cohesion-Rulings, Build-Gotchas, Lint-And-Accessibility read).
 
-**Shapes:** refactor (baseline: 3,653 tests, every one still green; the seven running-app checks) · removal (the inventory in Dead Vocabulary; deletion order is task order) · user-visible (tab flip, cold swap, preview Subfield, ⌘R restore).
+**Shapes:** refactor (baseline 3,653 tests green; the seven running-app checks) · removal (inventory in Dead Vocabulary; deletion order is task order) · user-visible (tab flip, cold swap, pin/unpin, preview Subfield, restore).
 
 **Global Constraints (every task inherits these)**
 
-- Gates: `npm run typecheck && npm run test && npm run lint` from `Pommora/`, exit codes read directly, never through a pipe.
-- No implementation edit before the plan is ratified. No task starts on a tree with uncommitted changes under `Pommora/src` — the refactor session's work commits first.
-- Stage explicit paths only; never `git add -A` or a directory. Nathan's pre-staged doc edits ride along untouched.
-- Files are PascalCase (`Store/TabsSlice.ts`). Biome formats on write; an Edit failing on whitespace means re-read and retry.
-- Comments: one load-bearing *why* per file at most; none that restate a value or narrate the old shape. `KNOB` markers survive.
-- Never two writers for one fact. A slot is written only by the tabs slice.
+- `npm run typecheck && npm run test && npm run lint` from `Pommora/`, exit codes read directly.
+- No implementation edit before ratification. No task starts on a tree with uncommitted changes under `Pommora/src`.
+- Stage explicit paths; never `git add -A` or a directory. Pre-staged doc edits ride along untouched.
+- Files are PascalCase (`Store/NavigationSlice.ts`). Biome formats on write.
+- Comments: at most one load-bearing *why* per file; none restating a value or narrating the old shape. `KNOB` markers survive.
+- Never two writers for one fact. A slot is written only by the navigation slice.
+- Selectors return stored references, primitives, or module constants — never a constructed object.
 - Nothing O(tabs × N) on a store change: a selector may `find` over tabs; it may not walk the tree.
-- Out of scope everywhere: `main/`, `preload/`, `shared/`, the warm cache's shape, `PageEmbed`, `MarkdownPM`, any keybinding, any visual change.
+- Out of scope everywhere: `main/`, `preload/`, `shared/`, the warm cache's shape, `PageEmbed`, `MarkdownPM`, keybindings, any visual change.
 
 **Made False**
 
 | Doc | The specific claim | What makes it false | Task |
 | --- | --- | --- | --- |
-| `Features/ArchitecturePM.md` §The Store | "the tree, the selection, tabs and their histories, the open page … live together" | the open page is per tab; selection is derived | 6 |
-| `Features/ArchitecturePM.md` §Tabs, Warmth, and Navigation | "Warmth lives outside React, as per-tab snapshots plus a path-keyed detail slot" — still true, but the *current* page of a parked tab is now store state, not a warm read | slots | 6 |
-| `Features/NavigationPM.md` / `InterfacePM.md` | any sentence naming `pageDetail`, `liveBody`, the `detail` prop, or `scope` — enumerated by the Derivation in Task 6 | retired names | 6 |
+| `Features/ArchitecturePM.md` §The Store | "the tree, the selection, tabs and their histories, the open page … live together" | every open page has a slot; the slice files by name | 6 |
+| `Features/ArchitecturePM.md` §Tabs, Warmth, and Navigation | a parked tab's page is read from warmth | a parked tab's page is its slot; warmth is history | 6 |
+| `Features/NavigationPM.md`, `InterfacePM.md` | any sentence naming `pageDetail`, `liveBody`, the `detail` prop, or `scope` — enumerated by Task 6's Derivation | retired names | 6 |
 | `CLAUDE.md` codemap | "`store.ts` · The Zustand store holding renderer state" | a `Store/` folder holds the slices | 6 |
-| `Planning/Codebase-Cleanup-Checklist.md` §Bundle 5 | "`pinnedTabs` … derive from `derivePinnedTabs`"; "deletes PreviewWindow's parallel body buffer"; "the store has none today" | one writer, not a selector; the buffer stays; `store.test.tsx` exists | 3 |
+| `Planning/Codebase-Cleanup-Checklist.md` §Bundle 5 | "`pages: Record<tabId, …>`"; "`selection` derives from `(tabs, activeTabId)`"; "`pinnedTabs` … derive from `derivePinnedTabs`"; "deletes PreviewWindow's parallel body buffer"; "the store has none today" | keyed by page id; `selection` is the shown selection by design; one writer; the buffer stays; `store.test.tsx` exists | 3 |
+| `Planning/Architecture Audit` §The Store | "`selection` is a hand-synchronized copy of the active tab's target" | it is the shown selection, and its lag is the pause | 3 |
 | `ContextPM.md` §Three | "Per-tab page state is modelled as global singletons"; "The store split" | both delivered | 6 |
-| `Detail/ContentView.tsx` comment | "The page this surface will settle on is its TAB's, not the selection's …" | the host reads its slot | 1 |
+| `Detail/ContentView.tsx` comment | "The page this surface will settle on is its TAB's, not the selection's …" | hosts are built from named facts | 1 |
 
 **Dead Vocabulary**
 
-- `pageStatus` · `pageDetail` · `pageError` · `pageFrozen` · `liveBody` · `setLiveBody` · `captureOutgoingDetail` · `PAGE_CLEARED` · `coldStampSeq` · `pageFetchSeq` · `sameShownTarget` · `SubfieldScope` · `openPageBody` → expect 0 in `src/renderer/src` outside tests. Legitimate hits: `pageDetail` as the `WarmEntry.pageDetail` field in `warmCache.ts` and its readers; `pageDetail` as a local variable name is allowed only inside `PageView` and `PageProperties` where it names the slot's detail.
-- `s.selection` → expect 0. Legitimate hits: none.
-- Control: `useSession` → 113 files at planning. Zero here means the sweep never ran.
+- `pageStatus` · `pageError` · `pageFrozen` (as a field) · `liveBody` · `setLiveBody` · `captureOutgoingDetail` · `PAGE_CLEARED` · `PAGE_CLEARED_UNFROZEN` · `SubfieldScope` · `openPageBody` → expect 0 in `src/renderer/src` outside tests.
+- `pageDetail` → legitimate hits: `warmCache.ts` (the `WarmEntry.pageDetail` field) and its readers/writers (`select`'s capture, `PageView`'s `warm.restore`); as a local name for a slot's detail. Everything else converts.
+- Control: `useSession` → 113 files at planning. Zero means the sweep never ran.
 
 **Hazard Window:** none. Every task leaves the app runnable.
 
 ---
 
-### Phase 1 — Page state keys by tab
+### Phase 1 — A slot per open page
 
-#### Task 1: The slot, the derived selection, and the one page-opener
+#### Task 1: The slot, the hosts, and the one capture
 
-**Requirement:** 1, 2, 3, 4, 6
+**Requirement:** 1, 2, 3, 5
 
-**Why:** This is the re-key itself, and it is one commit because the singleton has one writer set (`select`, `syncActiveDetail`, `applyTree`, `resetNexusSession`, `reloadPage`, `mutate`) that must move together — a store with both a `pages` map and a `pageDetail` field is two writers for one fact, which the hard rules forbid even for a commit. Everything later in the plan (driven Subfield, hosts reading slots, the slice boundary) is a consequence of this shape. The shape: a slot carries its own target, status, detail, live body, and error, so every fence that was module-level becomes a field of the thing it fences.
+**Why:** This is the re-key, and it is one commit because the singleton's writers (`select`, `syncActiveDetail`, `applyTree`, `resetNexusSession`, `reloadPage`, `mutate`) must move together — a store carrying both `pages` and `pageDetail` is two writers for one fact. The slot holds a page's status, detail, and live body; `selection` keeps the pause; the fetch fence stays one module counter because only the shown tab fetches. `PageView` reads its slot; `ContentView` builds hosts from two named facts (the shown selection, the tab targets) instead of one guess.
 
 **Files:**
-- Modify: `Pommora/src/renderer/src/store.ts` — `SessionState` (the five fields, `selection`, `setLiveBody`, `select`, `reloadPage`), `PAGE_CLEARED`/`PAGE_CLEARED_UNFROZEN`, `sameShownTarget`, `pageFetchSeq`, `coldStampSeq`, `resetNexusSession`, `syncActiveDetail`, `captureOutgoingDetail`, `jumpActiveHistory`, `activateTab`, `openNewTab`, `closeTab`, `graduatePinCovered`, `unpinTab`, `applyTree` (the selection reconcile and the dropped-tab loop), `select`, `reloadPage`, `newPage`, `mutate` (`rename`, `delete`, `setIcon` arms), `openPageBody`.
-- Modify: `Pommora/src/renderer/src/Detail/PageView.tsx` — drop the `detail` prop; read `s.pages[tabId]`; `pushLiveBody` calls `setPageBody(tabId, body)`.
-- Modify: `Pommora/src/renderer/src/Detail/ContentView.tsx` — `useHosts` reads `s.pages`; `frozen` reads the active slot's status; `DetailView` and the slide effect read `selectionOf`.
-- Modify: the active-page readers — `Toolbar/OutlineMenu.tsx`, `Frames/PageMenu.tsx`, `Properties/PageProperties.tsx`, `Embeds/connectionMenu.ts`, `Navigation/useNavThumbnails.ts`, `Detail/Subfield/subfieldItems.tsx`, `Detail/Subfield/CitationsToggle.tsx` — each swaps its selector for `activePage(s)`; the Subfield's `scope` mode is untouched here (Task 2).
-- Modify: the selection readers — `Sidebar/Sidebar.tsx`, `Navigation/NavGallery.tsx`, `Detail/DetailScaffold.tsx`, `Detail/Subfield/Subfield.tsx`, `Embeds/ConnectionPane.tsx`, `Views/TableView/TableView.tsx`, `Views/CardView/CardsView.tsx` — `useSession((s) => s.selection)` becomes `useSession(selectionOf)`.
-- Test: `Pommora/src/renderer/src/store.test.tsx` — `seed` and every `pageStatus`/`pageDetail`/`selection` expectation rewritten against `pages` and `selectionOf`.
+- Modify: `Pommora/src/renderer/src/store.ts` — `SessionState` (the four fields, `setLiveBody`, `select`, `reloadPage`), `PAGE_CLEARED`/`PAGE_CLEARED_UNFROZEN`, `resetNexusSession`, `syncActiveDetail`, `captureOutgoingDetail` and its five callers (`activateTab`, `openNewTab`, `jumpActiveHistory`, `select`, and the `closeTab`/`applyTabResult` path), `applyTree` (the selection reconcile and the dropped-tab loop), `select`, `reloadPage`, `mutate` (`rename`, `delete`, `setIcon` arms), `openPageBody`.
+- Modify: `Pommora/src/renderer/src/Detail/PageView.tsx` — props `{ tabId, pageId, parked }`; read `s.pages[pageId]`; `pushLiveBody` → `setPageBody(path, body)`.
+- Modify: `Pommora/src/renderer/src/Detail/ContentView.tsx` — `useHosts`; `frozen` reads `frozenOf`.
+- Modify: the active-page readers — `Toolbar/OutlineMenu.tsx`, `Frames/PageMenu.tsx`, `Properties/PageProperties.tsx`, `Embeds/connectionMenu.ts`, `Navigation/useNavThumbnails.ts`, `Detail/Subfield/subfieldItems.tsx`, `Detail/Subfield/CitationsToggle.tsx` — each reads `shownPage(s)`; the Subfield's `scope` mode is untouched here (Task 2).
+- Test: `Pommora/src/renderer/src/store.test.tsx` — `seed` takes `pages`; expectations on `pageStatus`/`pageDetail` read the slot.
 
 **Derivation**
-- `rg -F 's.selection' Pommora/src/renderer/src --glob '!*.test.*'` → 13 hits in 10 files at planning; all convert. Legitimate hits after: 0.
-- `rg -F 'pageDetail' Pommora/src/renderer/src --glob '!*.test.*' --glob '!store.ts'` → 27 hits in 12 files at planning. Legitimate hits after: `warmCache.ts` (the `WarmEntry` field and its readers), `ContentView.tsx`'s `readWarm(...)?.pageDetail` is gone (hosts read slots).
-- `rg -F 'liveBody' Pommora/src/renderer/src --glob '!*.test.*'` → 4 files at planning (`store.ts`, `PageView.tsx`, `subfieldItems.tsx`, `CitationsToggle.tsx`, `OutlineMenu.tsx`, `useNavThumbnails.ts`); all convert. Legitimate hits after: 0.
+- `rg -F 'pageDetail' Pommora/src/renderer/src --glob '!*.test.*' --glob '!store.ts'` → 57 hits in 10 files at planning; re-run at execution; every hit outside the allowlist converts.
+- `rg -F 'liveBody' Pommora/src/renderer/src --glob '!*.test.*'` → 7 files at planning (two are comments in `PageEmbed.tsx` and `PageWindow.tsx`); all convert or are rewritten.
+- `rg -F 'pageFrozen' Pommora/src/renderer/src --glob '!*.test.*'` → `store.ts`, `ContentView.tsx` at planning → 0 after (the selector is `frozenOf`).
 - Control: `rg -F 'useSession' Pommora/src/renderer/src -l` → 113.
 
 **Interfaces**
-- Produces, in `store.ts` (moved to `Store/TabsSlice.ts` by Task 4):
+- Produces, in `store.ts` (moved to `Store/NavigationSlice.ts` by Task 4):
 
   ```ts
   export type PageTarget = { kind: 'page'; id: string; path: string }
   export type PageSlot =
-    | { status: 'cold'; target: PageTarget; seq: number }      // fetch in flight, outgoing surface holds
-    | { status: 'loading'; target: PageTarget; seq: number }   // deadline passed, placeholder shows
+    | { status: 'loading'; target: PageTarget }
     | { status: 'ready'; target: PageTarget; detail: PageDetail; body: string }
     | { status: 'error'; target: PageTarget; error: PommoraError }
-  pages: Record<string, PageSlot>
-  setPageBody: (tabId: string, body: string) => void
-  reloadPage: () => Promise<void>            // the active slot
+  pages: Record<string, PageSlot>                    // keyed by page id
+  setPageBody: (path: string, body: string) => void  // the live buffer; no-op unless a ready slot has that path
+  reloadPage: () => Promise<void>                    // the shown page's slot
   export const NONE: SelectionState = { kind: 'none' }
-  export const selectionOf = (s: SessionState): SelectionState  // active tab's target, or NONE for a newtab or no tab
-  export const activePage = (s: SessionState): PageSlot | undefined   // s.pages[s.activeTabId]
-  export const activeDetail = (s: SessionState): PageDetail | null    // ready slot's detail, else null
-  export const pageBody = (slot: PageSlot | undefined): string        // ready slot's live body, else ''
+  export const shownPage = (s: SessionState): PageSlot | undefined
+      // s.selection.kind === 'page' ? s.pages[s.selection.id] : undefined
+  export const shownDetail = (s: SessionState): PageDetail | null
+  export const pageBody = (slot: PageSlot | undefined): string   // ready → body, else ''
+  export const frozenOf = (s: SessionState): boolean
+      // the active tab's target (pinned or not) is not the shown selection; newtab counts as none
   ```
-  `select(target, opts)` keeps its signature. Internally the page case becomes `openPageIn(tabId, target)`: read the tab's current slot; if it is ready and its target differs, `captureWarm(tabId, navKey(old.target), { pageDetail: { ...old.detail, body: old.body } })`; if warm has a same-path detail for the new target, write a ready slot; else write `cold` with a fresh per-slot `seq`, arm the deadline that flips `cold → loading` when `pages[tabId].seq` still matches, fetch, and land `ready`/`error` when it still matches. A tab moving to a non-page deletes its slot after the same capture.
-- Assumed by: Task 2 (`pageBody`, `activePage`), Task 4 (the slice boundary), Task 5 (tests).
+  `select(target, opts)` keeps its signature. Its page case, in order: **(a)** the tab moved from page A to a different target → `captureWarm(tabId, navKey(A), { pageDetail: {...slotA.detail, body: slotA.body} })` from A's slot, *if* no other live tab points at A delete `pages[A]`; **(b)** `pages[B]` is ready with `detail.path === target.path` → `set({ selection })`, done — this is the tab-switch-back and the same-tab re-select, and it fetches nothing; **(c)** warm has a same-path detail for `(tabId, navKey(B))` → write a ready slot from it and the selection, done; **(d)** cold: `seq = ++pageFetchSeq`, `coldStampSeq` as today, arm the deadline that writes `pages[B] = loading` and `selection = B` if `seq` still holds, fetch, land `ready`/`error` and `selection = B` if `seq` still holds. A non-page target runs (a) and sets the selection. Nothing else in the store writes a slot except `reloadPage`, `setPageBody`, `mutate`'s three arms, and the two deleters below.
+- Slot deletion: `applyTree`'s reconcile — for every slot, `reconcileWith(index, slot.target)`: gone → delete; path changed → delete (the shown one is re-selected by the existing selection reconcile and refetches; a parked one refetches cold on return); `closeTab`/`applyTree`'s dropped-tab loop/`graduatePinCovered`/`unpinTab` → nothing, because a page id is not a tab id — a slot outlives its tabs only until (a) or the reconcile prunes it, and `pruneSlots()` after those four is one `for` over `pages` keeping keys some live tab (pinned or not) points at. `resetNexusSession` → `pages: {}`.
+- Assumed by: Task 2 (`shownPage`, `pageBody`), Task 4 (the slice boundary), Task 5 (tests).
 
-**Failure half:** a fetch landing after its tab closed → `pages[tabId]` is gone, `seq` cannot match, nothing writes. A fetch landing after the tab navigated again → `seq` differs, dropped. `activeTabId === ''` (never seeded) → `selectionOf` is `NONE`, `activePage` undefined. `setPageBody` on a tab with no ready slot → no-op. `applyTree` dropping a tab → its slot deleted with its warm entries. `resetNexusSession` → `pages: {}`. A rename mutation → every ready slot refetches (the cascade rewrites bodies nexus-wide), and warm clears as today.
+**Failure half:** a fetch landing after the tab moved on → `seq` differs, dropped (today's fence). `activeTabId === ''` → `frozenOf` false, `shownPage` undefined. `setPageBody` for a path with no ready slot → no-op. A tab moving A → B → Back to A inside one round trip → (d) supersedes (d); the warm capture at (a) ran before the first fetch. A rename mutation → the shown slot reloads; every other slot is deleted and warm clears, as today. A `setIcon` on a page → its slot's `detail.frontmatter` patched if ready, warm detail dropped, as today. A `delete` → its slot and its path-keyed detail dropped.
 
-**Survivors:** `warmCache.ts` unchanged — history warmth and embed rehydration are not the slot's job. `navSlide` and `crumbDepth` stay as they are; the slide effect in `ContentView` keys on `selectionOf` instead of `s.selection`. `COLD_SWAP_DEADLINE` stays a module constant. The `is-frozen` class stays; it reads `activePage(s)?.status === 'cold'`. `ContentView` keeps the last shown host while the active slot is `cold` — a `useRef` of the last host whose slot was ready, which is UI state and belongs there.
+**Survivors:** `warmCache.ts` untouched. `navSlide`, `crumbDepth`, `sameShownTarget`, `pageFetchSeq`, `coldStampSeq`, `COLD_SWAP_DEADLINE` stay — they fence the one fetch in flight and the one slide, and the pause is unchanged. `ContentView`'s slide effect keys on `selection` as today. `registerPageEditor` keys on `parked` as today; the shown host is the active tab when the selection is a page.
 
 **Steps:**
-- [ ] Rewrite `store.test.tsx`'s `seed` to take `pages` and the tests under "warm tabs" to assert on `activePage` / `selectionOf`; run `npm run test -- store.test` — expect the file red on type errors (the fields don't exist yet).
-- [ ] In `store.ts`: add `PageSlot`, `pages`, `setPageBody`, `selectionOf`, `activePage`, `activeDetail`, `pageBody`; write `openPageIn`; rewrite `select`'s page case to call it and its non-page cases to delete the tab's slot (the `ensureContainerView` calls stay); delete `captureOutgoingDetail` and every call; delete `PAGE_CLEARED`, `PAGE_CLEARED_UNFROZEN`, `sameShownTarget` (the slide-stamp guard compares `selectionOf(s)` before and after the tab move), `pageFetchSeq`, `coldStampSeq`, `pageFrozen`, `liveBody`, `setLiveBody`, `openPageBody`, and the `selection` field; `syncActiveDetail` no longer clears page state (a tab keeps its slot when it stops being active); `closeTab`, `graduatePinCovered`, `unpinTab`, and `applyTree`'s dropped-tab loop delete the slot beside `dropWarmTab`; `mutate`'s `rename` arm refetches every ready slot, `delete` deletes any slot at that path, `setIcon` patches every ready slot at that path.
-- [ ] `npm run typecheck` — expect the consumer list above as the complete error set; convert each. `PageView` reads `useSession((s) => s.pages[tabId])`; `ContentView.useHosts` builds hosts from `tabMru` where `s.pages[id]?.status === 'ready'`, one per path, `WARM_TABS` parked; `useNavThumbnails` reads `activePage` and `selectionOf`.
-- [ ] Gates green. Count: `store.ts` code lines reported against 1,620.
-- [ ] Launch (`env -u ELECTRON_RUN_AS_NODE npm run dev`): two page tabs, type in each, flip — text holds, no fetch; cold-open a third page — the outgoing view holds until the swap; Back/Forward within a tab is warm; close a tab; ⌘R restores.
-- [ ] Commit: `refactor(store): a page belongs to its tab` — staging `store.ts`, `store.test.tsx`, and the converted files by name.
+- [ ] Rewrite `store.test.tsx`'s `seed` and the warm-tab/cold-swap expectations against `pages` and `shownPage`; run `npm run test -- store.test` — expect type errors (the fields don't exist yet).
+- [ ] In `store.ts`: `PageSlot`, `pages`, `setPageBody`, `shownPage`, `shownDetail`, `pageBody`, `frozenOf`; `select`'s page case as (a)–(d) and its non-page cases as (a) plus the selection (the `ensureContainerView` calls stay); delete `captureOutgoingDetail` and every call; delete `PAGE_CLEARED`, `PAGE_CLEARED_UNFROZEN`, `pageFrozen`, `liveBody`, `setLiveBody`, `openPageBody`; `syncActiveDetail` keeps only the crumb reset and the `select`; `applyTree`'s reconcile prunes slots as above; `pruneSlots()` after the four tab-set shrinkers; `mutate`'s three arms.
+- [ ] `npm run typecheck` — expect the consumer list above as the complete error set; convert each. `useHosts`: the shown host `{ tabId: activeTabId, pageId: selection.id }` when the selection is a page; parked hosts from `tabMru` where the tab's target is a page with a ready slot, one per page id, `WARM_TABS` deep; sorted by tab id as today.
+- [ ] Gates green. `store.ts` code lines reported against 1,620.
+- [ ] Launch (`env -u ELECTRON_RUN_AS_NODE npm run dev`): the first four Acceptance checks.
+- [ ] Commit: `refactor(store): every open page has a slot` — staging `store.ts`, `store.test.tsx`, and the converted files by name.
 
 #### Task 2: The Subfield is driven
 
-**Requirement:** 5
+**Requirement:** 4
 
-**Why:** With the body in the slot, the main pane can hand the Subfield `{ target, body }` exactly as the preview window already does — one mode, no `scope` parameter, no store-reading branch. It is the `PageHeader` ruling applied to the footer.
+**Why:** With the body in the slot, the main pane hands the Subfield `{ target, body }` exactly as the preview window does — one mode, no `scope`, no store-reading branch. The `PageHeader` ruling applied to the footer.
 
 **Files:**
-- Modify: `Pommora/src/renderer/src/Detail/Subfield/subfieldItems.tsx` — `SubfieldScope` becomes `SubfieldPage = { target: PageTarget; body: string }`; `PageStatsItem` reads its prop only.
-- Modify: `Pommora/src/renderer/src/Detail/Subfield/Subfield.tsx`, `CitationsToggle.tsx` — prop `page: SubfieldPage | null`; the crumb selection derives from `page?.target` or `selectionOf`.
-- Modify: `Pommora/src/renderer/src/Detail/ContentView.tsx` — passes `page` built from `activePage(s)` (memoized on the slot).
-- Modify: `Pommora/src/renderer/src/Windows/PageWindow.tsx` — its `scope` memo renames to `page`; the local `previewBody` stays.
+- Modify: `Pommora/src/renderer/src/Detail/Subfield/subfieldItems.tsx` — `SubfieldScope` becomes `SubfieldPage = { target: PageTarget; body: string }`; `PageStatsItem` reads its prop.
+- Modify: `Subfield.tsx`, `CitationsToggle.tsx` — prop `page: SubfieldPage | null`; the crumb selection is `page?.target ?? selection`.
+- Modify: `Pommora/src/renderer/src/Detail/ContentView.tsx` — passes `page` from `shownPage(s)`, memoized on the slot reference.
+- Modify: `Pommora/src/renderer/src/Windows/PageWindow.tsx` — the `scope` memo renames to `page`; `previewBody` stays.
 
 **Derivation**
-- `rg -F 'scope' Pommora/src/renderer/src/Detail/Subfield Pommora/src/renderer/src/Windows/PageWindow.tsx` → count at execution; every hit is either converted or is an unrelated word (`ViewSettingsScope` is not in these paths).
+- `rg -F 'scope' Pommora/src/renderer/src/Detail/Subfield Pommora/src/renderer/src/Windows/PageWindow.tsx` → count at execution; each hit converts or is an unrelated word.
 - Control: `rg -F 'Subfield' Pommora/src/renderer/src -l` → ≥ 6.
 
 **Interfaces**
-- Produces: `export type SubfieldPage = { target: PageTarget; body: string }`; `Subfield({ page })`, `CitationsToggle({ page })`.
-- Assumed by: nothing later.
+- Produces: `SubfieldPage`; `Subfield({ page })`, `CitationsToggle({ page })`.
 
-**Failure half:** `page` null on a page kind (slot cold/loading) → the stats item renders its empty state, as the unscoped branch did for `pageDetail === null`.
+**Failure half:** `page` null while the shown page is loading → the stats item renders its empty state; during a cold pause the shown slot is still the outgoing page's, so the footer keeps describing what is on screen, as today.
 
 **Steps:**
-- [ ] Convert the four files; `npm run typecheck` lists every other `scope` consumer — expect none outside them.
-- [ ] Gates green; app: the main pane's word count follows typing; the preview's follows its own body; the crumbs under a preview stay non-clickable.
+- [ ] Convert the four files; `npm run typecheck` lists every other `scope` consumer — expect none.
+- [ ] Gates green; app: the main pane's count follows typing; the preview's follows its own body; crumbs under a preview stay inert.
 - [ ] Commit: `refactor(subfield): one driven footer`.
 
-#### Task 3: One writer for the pinned tabs, and the preview target as a selector
+#### Task 3: One writer for the pinned tabs; the preview target is read, not stored
 
-**Requirement:** 7
+**Requirement:** 6
 
-**Why:** `pinnedTabs` has four writers (`load`, `applyTree`, `applyNavChanged`, `commitPinned`) that each inline `derivePinnedTabs(pinned, index)`; one `setPinned(pinned, index)` makes the derivation one line and the invariant "pinnedTabs is always pinned hydrated against the current index" a fact of the helper. `previewTarget` is `deriveTarget(preview)` — O(preview tabs), so it is a selector. Both belong to the slices Task 4 draws, so they are settled first.
+**Why:** `pinnedTabs` has four writers each inlining `derivePinnedTabs(pinned, index)`; one `setPinned(pinned, index)` makes the invariant a fact of the helper. `previewTarget` is stored and written at seven sites (`commitPreview`, `openPreview`, `openNavPreview`, `closeNav`, `closePreview`, `openVia`, `resetNexusSession`); a selector returning the active preview tab's stored `target` (a `SelectTarget` — `{ id, path }` reads off it) deletes all seven. It must return the reference, not `deriveTarget`'s fresh object.
 
 **Files:**
-- Modify: `Pommora/src/renderer/src/store.ts` — `setPinned`; the four writers; `previewTarget` field removed; `previewTargetOf` selector exported.
+- Modify: `Pommora/src/renderer/src/store.ts` — `setPinned`; the four writers; `previewTarget` field removed; `previewTargetOf` exported; `deriveTarget` import dropped if unused.
 - Modify: every `previewTarget` reader (Derivation).
-- Modify: `.claude/Planning/Codebase-Cleanup-Checklist.md` §Bundle 5 — the three claims in Made False rewritten.
+- Modify: `.claude/Planning/Codebase-Cleanup-Checklist.md` §Bundle 5 and the Audit §The Store — the claims in Made False rewritten.
 
 **Derivation**
-- `rg -F 'previewTarget' Pommora/src/renderer/src --glob '!*.test.*'` → count at execution; all convert to `previewTargetOf`. Legitimate hits after: the selector's definition.
+- `rg -F 'previewTarget' Pommora/src/renderer/src --glob '!*.test.*'` → count at execution; all convert. Legitimate hits after: the selector's definition; `PreviewTarget` the type.
 - `rg -F 'derivePinnedTabs' Pommora/src/renderer/src/store.ts` → 4 at planning → 1 after.
 - Control: `rg -F 'pinnedTabs' Pommora/src/renderer/src -l` → ≥ 3.
 
 **Steps:**
 - [ ] `setPinned`; convert the four; `previewTargetOf`; convert readers; gates green.
-- [ ] App: pin, unpin, reorder a pin; a tree push that renames a pinned page re-titles the pin; open a preview and its tab strip target matches.
-- [ ] Commit: `refactor(store): pinned tabs have one writer; the preview target is derived`.
+- [ ] App: pin, unpin, reorder a pin; a renamed pinned page re-titles; a preview's tab strip matches its target.
+- [ ] Commit: `refactor(store): pinned tabs have one writer; the preview target is read off its tab`.
 
 #### Gate 1 — the singleton is gone
 - [ ] Gate commands green, exit codes read directly.
-- [ ] Dead Vocabulary sweep for the Phase 1 tokens (`pageStatus` … `openPageBody`, `s.selection`, `SubfieldScope`) → 0 against the control.
+- [ ] Dead Vocabulary sweep for the Phase 1 tokens → 0 against the control; `pageDetail` hits all on the allowlist.
 - [ ] Every task that diverged had its dependents re-derived and rewritten.
-- [ ] `code-simplifier` then `comment-killer-agent` against `<base>..HEAD` scoped to the phase's paths; the reports cite files inside it; `KNOB` markers grep-verified after.
+- [ ] `code-simplifier` then `comment-killer-agent` against `<base>..HEAD` scoped to the phase's paths; `KNOB` grep-verified after.
 - [ ] `feature-dev:code-reviewer` against the same range; every concern fixed or ruled.
 - [ ] The Acceptance sequence seen running.
 - [ ] `store.ts` code-line delta recorded in Progress.
@@ -218,97 +221,91 @@ Bounds. The store's shape — one `useSession`, field-by-field subscription, mai
 
 #### Task 4: The slice files and the composition root
 
-**Requirement:** 8
+**Requirement:** 7
 
-**Why:** Nine domains sit in one file in three disjoint regions each; a reader looking for "what does closing a tab do" reads the interface at one line, the helper at another, and the action at a third. A slice file holds its state type, its initial state, its helpers, and its actions in one place, and its name is the answer. The boundaries are the ones Phase 1 drew: tabs, pages, history, and selection are one slice because `select` is their transaction; the preview and browser are one because `openNavPreview` morphs one into the other; the nexus lifecycle owns `applyTree` and `mutate` because both are tree writers. No behavior moves.
+**Why:** Nine domains sit in one file in three disjoint regions each. A slice file holds its state type, its initial state, its helpers, and its actions in one place, and its name is the answer. Boundaries follow the transactions, not the field names: tabs, pages, selection, history, pins, recents, and favorites are one slice because `select`, `graduatePinCovered`, `ensureLiveActive`, and `load`'s restore all write across them; the preview and browser are one because `openNavPreview` morphs one into the other; the nexus lifecycle owns `applyTree` and `mutate` because both are tree writers. Seven files, not nine, because a boundary that forces a helper into the public state to cross it is the wrong boundary. The few genuine cross-slice acts are named actions.
 
 **Files:**
 - Create, under `Pommora/src/renderer/src/Store/`:
-  - `NexusSlice.ts` — `status`, `tree`, `error`, `load`, `applyTree`, `choose`, `openDropped`, `resetNexusSession` (spreading each slice's exported `perNexusInitial`), `openVia`, `mutate`, the system-accent and device-prefs module state.
-  - `ChromeSlice.ts` — sidebar/ribbon/inspector widths and visibility, `subfieldExpanded`/`subfieldOrder`, `navWindowMode`/`navViewMode`, `settingsOpen`, `commands`; the width constants and `localStorage` readers.
-  - `ConfigSlice.ts` — `personalization`, `devicePrefs`, `citationsShown` and its three writers, `citationsVisible`, `useEmbedScale`.
-  - `TabsSlice.ts` — `tabs`, `activeTabId`, `tabMru`, `pages`, `crumbDepth`, `navSlide`, every tab action, `select`, `openPageIn`, `setPageBody`, `reloadPage`, `newPage`, `createFromMenu`, `newPageAdjacent`, `selectionOf`, `activePage`, `activeDetail`, `pageBody`, `PageSlot`, `NONE`.
-  - `NavSlice.ts` — `recents`, `favorites`, `pinned`, `pinnedTabs`, `navBanner`, `navOpen`, `thumbVersions`, `assetMap`, `setPinned`, `writeNav`, `commitRecents`, `graduatePinCovered`, `ensureLiveActive`, every pin/favorite/recent action, `useAssetUrl`, `useAssetResolver`.
-  - `PreviewSlice.ts` — `preview`, `previewsFile`, `previewSlide`, `previewExit`, `browserSummon`, `browserSeq`, every preview and browser action, `previewTargetOf`, `mirrorPreviews`, `reconcileRecord`, `commitPreview`.
-  - `RenameSlice.ts` — the rename fence (`renamingPath` … `submitRename`), `iconPath`, `renamingProperty`, `valuesEpoch`, `submitPropertyRename`; `RenameClaim`, `resolveRenameWinner`, the token and orphan timer.
-  - `CacheSlice.ts` — `linkTitles`, `activeViews`, `pageAliases`, `hostLocks` and their writers; the `wireViewAdopted` wiring.
-  - `SessionState.ts` — `export type SessionState = NexusSlice & ChromeSlice & … & CacheSlice`; `export type Slice<T> = StateCreator<SessionState, [], [], T>`.
-- Modify: `Pommora/src/renderer/src/store.ts` — becomes the composition root: `create<SessionState>()((...a) => ({ ...createNexusSlice(...a), … }))` plus re-exports of every name the 113 importers use (`useSession`, `SelectTarget`, `PreviewTarget`, `selectionOf`, `activePage`, `activeDetail`, `pageBody`, `previewTargetOf`, `citationsVisible`, `useEmbedScale`, `useAssetUrl`, `useAssetResolver`, `PageSlot`, `SubfieldPage`).
-- Test: `Pommora/src/renderer/src/store.test.tsx` — unchanged in content; it imports from `./store` and stays the integration contract.
+  - `SessionState.ts` — `export type SessionState = NexusSlice & NavigationSlice & PreviewSlice & ChromeSlice & ConfigSlice & RenameSlice & CacheSlice`; `export type Slice<T> = StateCreator<SessionState, [], [], T>`.
+  - `NexusSlice.ts` — `status`, `tree`, `error`, `load`, `applyTree`, `choose`, `openDropped`, `mutate`, `resetNexusSession` (spreads every slice's exported `perNexusInitial`), `openVia`; the system-accent and device-prefs module state.
+  - `NavigationSlice.ts` — `tabs`, `activeTabId`, `tabMru`, `pages`, `selection`, `crumbDepth`, `navSlide`, `recents`, `favorites`, `pinned`, `pinnedTabs`, `navBanner`, `thumbVersions`, `navOpen`; every tab, page, history, pin, favorite, recent, and thumbnail action; `select`, `setPageBody`, `reloadPage`, `newPage`, `createFromMenu`, `newPageAdjacent`; the selectors `shownPage`, `shownDetail`, `pageBody`, `frozenOf`, `NONE`; `PageSlot`, `PageTarget`. Two actions exist so the nexus slice can call them by name: `reconcileNavigation(index)` (today's tab, pin, selection, and slot reconcile inside `applyTree`) and `restoreNavigation(nav, tabs, previews)` (today's first-load restore block).
+  - `PreviewSlice.ts` — `preview`, `previewsFile`, `previewSlide`, `previewExit`, `browserSummon`, `browserSeq`; every preview and browser action; `previewTargetOf`; `reconcilePreview(index)` (today's preview reconcile inside `applyTree`).
+  - `ChromeSlice.ts` — `sidebarVisible`, `ribbonVisible`, `sidebarWidth`, `inspectorWidth`, `persistPaneWidths`, `subfieldExpanded`, `subfieldOrder`, `navWindowMode`, `navViewMode`, `settingsOpen`, `commands`; the width constants and `localStorage` readers.
+  - `ConfigSlice.ts` — `personalization`, `devicePrefs`, `citationsShown` and its three writers; `citationsVisible`, `useEmbedScale`.
+  - `RenameSlice.ts` — the rename fence, `iconPath`, `renamingProperty`, `valuesEpoch`, `submitPropertyRename`; `RenameClaim`, `resolveRenameWinner`, the token and orphan timer.
+  - `CacheSlice.ts` — `linkTitles`, `activeViews`, `pageAliases`, `hostLocks`, `assetMap` and their writers; `useAssetUrl`, `useAssetResolver`; the `wireViewAdopted` wiring.
+- Modify: `Pommora/src/renderer/src/store.ts` — the composition root: `create<SessionState>()((...a) => ({ ...createNexusSlice(...a), … }))` plus re-exports of every externally imported name (`useSession`, `SelectTarget`, `PreviewTarget`, `shownPage`, `shownDetail`, `pageBody`, `frozenOf`, `previewTargetOf`, `citationsVisible`, `useEmbedScale`, `useAssetUrl`, `PageSlot`, `SubfieldPage`).
+- Test: `store.test.tsx` — unchanged; it imports from `./store`.
 
 **Derivation**
-- `rg -F "from '../store'" Pommora/src/renderer/src -l` plus the `./store` and `@renderer/store` spellings → 113 at planning; must be 113 after with zero edits in those files.
-- Cross-slice calls: at execution, list every helper a slice calls from another (`get().select`, `ensureLiveActive`, `syncActiveDetail`, `clearWarm`, `mirrorPreviews`) — a helper called across two slices is an action on `SessionState`, never a bare import between slice files. Expect: `syncActiveDetail` and `ensureLiveActive` both become tabs-slice actions since `NavSlice` and `NexusSlice` call them.
+- Importers: `rg -l -F "store'" Pommora/src/renderer/src --glob '*.ts' --glob '*.tsx'` → 113 at planning; 113 after with zero edits in those files.
+- Cross-slice census, run before the first file is created: for each closure helper in `store.ts`, list the returned actions that call it; a helper called only from one slice's actions moves with that slice; a helper called from two slices' actions is one of the three named actions above (`reconcileNavigation`, `reconcilePreview`, `restoreNavigation`) or a pure function moved to a module (`makeTabId`, `toPreviewRecord`, `stampByOrder`, `findContainer`, `parentPathOf`). If the census finds a fourth cross-slice helper, it becomes a named action and is recorded in Deviations — the boundary is not redrawn.
 - Control: `rg -F 'create<SessionState>' Pommora/src/renderer/src` → 1.
 
 **Interfaces**
-- Produces: `Slice<T>`; one `createXSlice: Slice<XSlice>` per file; `perNexusInitial` per slice that has per-nexus state (tabs, nav, preview, cache, chrome's subfield and modes).
-- Assumed by: Task 5 (tests import slices by name only if a slice has pure logic worth a unit test — none is expected; the integration test stands), Task 6 (docs).
+- Produces: `Slice<T>`; one `createXSlice: Slice<XSlice>` per file; `perNexusInitial` from each slice holding per-nexus state (navigation, preview, cache, chrome's subfield and modes).
 
-**Failure half:** none — the shape is a move. The negative control is the test suite and the typecheck: a helper left in the wrong file is a missing import, a field left out of a slice is a missing property on `SessionState`.
+**Failure half:** none — a move. The negative control is the typecheck and the suite: a helper in the wrong file is a missing import; a field left out of a slice is a missing property on `SessionState`.
 
 **Steps:**
-- [ ] Create `SessionState.ts` and the eight slice files by moving code, not rewriting it; module state (`nextRenameToken`, `systemAccentCache`, …) moves with its slice.
-- [ ] `store.ts` composes and re-exports; `npm run typecheck` — expect green with zero consumer edits; if a consumer needs an edit, the re-export list is incomplete — fix the list, not the consumer.
-- [ ] Gates green; `store.test.tsx` passes without edits.
+- [ ] Run the census; record its table in the Log.
+- [ ] Create `SessionState.ts` and the seven slice files by moving code; module state moves with its slice.
+- [ ] `store.ts` composes and re-exports; `npm run typecheck` — green with zero consumer edits, or the re-export list is incomplete.
+- [ ] Gates green; `store.test.tsx` passes unedited.
 - [ ] App: the Acceptance sequence.
-- [ ] Commit: `refactor(store): the session is nine slices in Store/`.
+- [ ] Commit: `refactor(store): the session is seven slices in Store/`.
 
-#### Task 5: Slice tests where a slice has logic of its own
+#### Task 5: Tests for what the re-key created
 
-**Requirement:** 9
+**Requirement:** 8
 
-**Why:** The Checklist asks for "slice tests"; the store already has a 530-line integration test, and a test that re-proves a move is ceremony. What earns a test is logic the re-key created: `openPageIn`'s fence (a fetch landing after close, after re-navigation, after a warm return), `selectionOf` (newtab, pinned active, empty), and `setPinned`'s invariant. The existing cold-swap tests cover most of the first; this task adds only what they miss.
+**Why:** The store has a 530-line integration test; a test that re-proves a move is ceremony. What earns a test is behavior the re-key created: a slot surviving a tab switch without a fetch; a slot outliving one tab while another points at it; a rename deleting the parked slots and reloading the shown one; `frozenOf` across the pause.
 
 **Files:**
-- Test: `Pommora/src/renderer/src/store.test.tsx` — a `describe('store — page slots')` block: a fetch landing after `closeTab` writes nothing; a tab's slot survives `activateTab` away and back with no fetch; a rename mutation refetches every ready slot; `selectionOf` on a pinned active tab returns the pin's target.
+- Test: `store.test.tsx` — a `describe('store — page slots')` block with those four.
 
 **Steps:**
-- [ ] Write the four; run — expect all green on the first run (they describe Task 1's behavior); if one is red, Task 1 has a defect — fix Task 1, record it in Deviations.
-- [ ] Commit: `test(store): the slot's fences`.
+- [ ] Write the four; run — green on the first run, or Task 1 has a defect: fix Task 1, record in Deviations.
+- [ ] Commit: `test(store): the slots`.
 
 #### Task 6: The documents
 
-**Requirement:** 8, 9
+**Requirement:** 7, 8
 
-**Why:** Every doc in Made False goes false at Task 1 or Task 4; they are rewritten here in one commit because they describe the finished shape, and a doc rewritten mid-phase describes a shape that lasts one commit.
+**Why:** Every doc in Made False went false at Task 1 or 4; they are rewritten here in one commit because they describe the finished shape.
 
 **Files:**
-- Modify: `.claude/Features/ArchitecturePM.md` §The Store (the store is per-tab pages plus derived selection; the slice files by name), §Tabs, Warmth, and Navigation (a parked tab's page is its slot; warmth is history).
-- Modify: `.claude/Features/NavigationPM.md`, `InterfacePM.md` — per the Derivation.
-- Modify: `.claude/CLAUDE.md` codemap — a `// Store` line under `src/renderer/src`.
-- Modify: `.claude/ContextPM.md` — the two §Three items retire; the line counts.
-- Modify: `.claude/Planning/Codebase-Cleanup-Checklist.md` §Bundle 5 — ticked, with the two deviations named.
-- Modify: `.claude/HistoryPM.md` — one entry per phase, per `History-Format.md`.
+- Modify: `.claude/Features/ArchitecturePM.md` §The Store, §Tabs, Warmth, and Navigation; `NavigationPM.md`, `InterfacePM.md` per the Derivation; `.claude/CLAUDE.md` codemap (a `// Store` line); `ContextPM.md` (the two §Three items retire; the counts); `Codebase-Cleanup-Checklist.md` §Bundle 5 ticked with its deviations named; `HistoryPM.md` one entry per phase per `History-Format.md`.
 
 **Derivation**
-- `rg -F -e 'pageDetail' -e 'liveBody' -e 'detail prop' -e 'scope' .claude/Features .claude/Guidelines` (one token per command) → counts at execution; each hit rewritten or confirmed unrelated.
+- `rg -F 'pageDetail' .claude/Features .claude/Guidelines` · `rg -F 'liveBody' …` · `rg -F 'detail prop' …` · `rg -F 'scope' …` (one token per command) → counts at execution; each hit rewritten or confirmed unrelated.
 - Control: `rg -F 'useSession' .claude/Features` → ≥ 1.
 
 **Steps:**
 - [ ] Rewrite each; re-read ArchitecturePM §The Store whole.
-- [ ] Commit: `docs: the store is per-tab pages in nine slices`.
+- [ ] Commit: `docs: every open page has a slot; the store is seven slices`.
 
-#### Gate 2 — one store, nine files, nothing moved
+#### Gate 2 — one store, seven files, nothing moved
 - [ ] Gate commands green, exit codes read directly.
-- [ ] Derivations re-run: 113 importers unchanged; Dead Vocabulary sweep → 0 against the control.
-- [ ] `code-simplifier` then `comment-killer-agent` against `<base>..HEAD` scoped to `Store/`, `store.ts`; `KNOB` markers verified.
+- [ ] Derivations re-run: 113 importers unchanged; Dead Vocabulary → 0 against the control.
+- [ ] `code-simplifier` then `comment-killer-agent` against `<base>..HEAD` scoped to `Store/`, `store.ts`; `KNOB` verified.
 - [ ] `feature-dev:code-reviewer` against the same range; every concern fixed or ruled.
-- [ ] The Acceptance sequence seen running once more on the split store.
-- [ ] Progress hashes filled in; the code-line delta for the whole plan recorded against 1,620.
+- [ ] The Acceptance sequence seen running on the split store.
+- [ ] Progress hashes filled in; the plan's code-line delta recorded against 1,620.
 
 ---
 
 ## Implementation Log
 
 ### Progress
-- [ ] **Phase 1** — Page state keys by tab · base `<commit>`
-  - [ ] Task 1 — The slot, the derived selection, and the one page-opener · `<commit>`
+- [ ] **Phase 1** — A slot per open page · base `<commit>`
+  - [ ] Task 1 — The slot, the hosts, and the one capture · `<commit>`
   - [ ] Task 2 — The Subfield is driven · `<commit>`
-  - [ ] Task 3 — One writer for the pinned tabs; the preview target as a selector · `<commit>`
+  - [ ] Task 3 — One writer for the pinned tabs; the preview target is read · `<commit>`
 - [ ] **Phase 2** — The file becomes slices · base `<commit>`
   - [ ] Task 4 — The slice files and the composition root · `<commit>`
-  - [ ] Task 5 — Slice tests where a slice has logic of its own · `<commit>`
+  - [ ] Task 5 — Tests for what the re-key created · `<commit>`
   - [ ] Task 6 — The documents · `<commit>`
 
 ### Rulings
@@ -317,6 +314,6 @@ Bounds. The store's shape — one `useSession`, field-by-field subscription, mai
 ### Lessons
 ### Sequenced After
 - The `Core/` filing row moves `store.ts` and `Store/` together (RendererRefactor).
-- Split view and a raised `WARM_TABS` land on `pages` (Checklist closing paragraph).
-- The preview window's page as a store slot, if the tile embed path ever routes through the store — today `PageEmbed` owns its fetch, so the preview keeps a local body.
+- Split view and a raised `WARM_TABS` land on `pages`; `registerPageEditor` (one published editor) and `ContentView`'s module-held `paneEl` are the two single-pane assumptions split view meets next.
+- The preview window's page as a slot, if `PageEmbed` ever loads through the store — today it owns its fetch, so the preview keeps a local body.
 ### Closeout
