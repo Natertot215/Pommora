@@ -97,3 +97,28 @@ export function containerOwner(node: CollectionNode | SetNode): BannerOwner {
     headingIconHidden: node.headingIconHidden,
   }
 }
+
+/** Page paths are POSIX, so a page's container is its path minus the last segment. */
+export const parentPathOf = (path: string): string => path.split('/').slice(0, -1).join('/')
+
+/** Depth-first over collections and their nested sets — callers name the container they want by
+ *  whichever key they hold (id from a selection, path from a page's parent). */
+export function findContainer(
+  tree: NexusTree,
+  match: (node: CollectionNode | SetNode) => boolean,
+): CollectionNode | SetNode | null {
+  const inSets = (sets: SetNode[] | undefined): SetNode | null => {
+    for (const s of sets ?? []) {
+      if (match(s)) return s
+      const deep = inSets(s.sets)
+      if (deep) return deep
+    }
+    return null
+  }
+  for (const c of tree.collections ?? []) {
+    if (match(c)) return c
+    const hit = inSets(c.sets)
+    if (hit) return hit
+  }
+  return null
+}
