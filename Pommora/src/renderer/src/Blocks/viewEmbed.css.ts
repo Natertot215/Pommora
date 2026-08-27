@@ -139,7 +139,7 @@ globalStyle(`${tile}:hover ${settingsBtn}`, { opacity: 1 })
 /** The dropdown-mode view list — the ViewFrame's row anatomy inside a PickerMenu. */
 export const listPane = style({ minWidth: 150 })
 
-// The table gutter (row grips + group chevrons strip) resolves from the root --inset-detail token,
+// The table gutter (row grips + group chevrons strip) resolves from the root --detail-inset token,
 // so an embedded table shares the page lane without a host rule reaching in.
 //
 // SCROLL MODEL (edge-release): the rows scroll vertically inside the body (the header rows stay pinned
@@ -192,7 +192,7 @@ globalStyle(`${body} .cards-view .cards-grid, ${body} .cards-view .set-cards-row
 // the glyph — so the cards lead subtracts that chevron cluster (the outline's 12px Icon + the band
 // gap), in-zoom AFTER the division; the detail lane anchor alone holds in real px.
 globalStyle(`${body} .cards-view .group-band-row`, {
-  paddingLeft: `calc(var(--inset-detail) / (var(--zoom, 1) * var(--block-zoom, 1)) - (12px + var(--cell-icon-gap, 6px)))`,
+  paddingLeft: `calc(var(--detail-inset) / (var(--zoom, 1) * var(--block-zoom, 1)) - (12px + var(--cell-icon-gap, 6px)))`,
 })
 
 /** Embedded tables shed the column-header band chrome — no heading fill, no divider under it;
@@ -201,12 +201,12 @@ globalStyle(`${body} .cards-view .group-band-row`, {
 globalStyle(`${body} .table`, { vars: { '--heading-fill': 'none', '--heading-divider': 'none' } })
 
 /** The heading strip's leading cap (.col-header:first-child::before) marks the gutter↔Title junction, so
- *  it sits --inset-detail in — but the embed header insets at HEAD_PAD_L. Pull ONLY the cap out to the
+ *  it sits --detail-inset in — but the embed header insets at HEAD_PAD_L. Pull ONLY the cap out to the
  *  header inset so the strip's left edge lines up under the title + pills; the columns + gutter stay put.
  *  The col-header clips overflow (label truncation), so the first one lets its leading cap escape left. */
 globalStyle(`${body} .col-header:first-child`, { overflow: 'visible' })
 globalStyle(`${body} .col-header:first-child::before`, {
   // The pseudo lives inside the grid's zoom while HEAD_PAD_L is a real-px inset — divide it out,
   // like the cards rules above, so the cap holds the pill line at any block zoom.
-  left: `calc((${HEAD_PAD_L} / (var(--zoom, 1) * var(--block-zoom, 1))) - var(--inset-detail))`,
+  left: `calc((${HEAD_PAD_L} / (var(--zoom, 1) * var(--block-zoom, 1))) - var(--detail-inset))`,
 })

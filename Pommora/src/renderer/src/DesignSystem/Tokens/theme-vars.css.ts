@@ -8,7 +8,7 @@ import {
   DROP_DOT_SIZE,
   DROP_LINE_INSET,
   DROP_LINE_THICKNESS,
-  INSET_DETAIL,
+  DETAIL_INSET,
   LIST_OUTLINE_GAP,
   LIST_OUTLINE_WIDTH,
   PARK_CLEARANCE,
@@ -155,8 +155,8 @@ globalStyle(':root', {
     '--disclosure-indent': `${DISCLOSURE_INDENT}px`,
     // The fold/grip lane the editor, table views, block tiles, and embeds all carve from the content
     // inset.
-    '--inset-detail-base': `${INSET_DETAIL}px`,
-    '--inset-detail': 'var(--inset-detail-base)',
+    '--detail-inset-base': `${DETAIL_INSET}px`,
+    '--detail-inset': 'var(--detail-inset-base)',
     // Masked-glyph assets shared across module boundaries: the 6-dot drag grip (lucide grip-vertical,
     // read by MarkdownPM's rail grips AND SurfacePM's block handle) and the fold chevron
     // (lucide chevron-right, a CSS mask because it paints on a line ::before — an <Icon> can't).

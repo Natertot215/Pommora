@@ -7,7 +7,7 @@
      sidebar edge left, the inspector/window edge right) — the heading band full-bleeds to them while the
      grid's content box (and so every row) stays exactly where it was. The left margin walks the body's
      reclaimed detail lane back out to the content gutter; the right walks the content edge out by it. */
-  margin-left: calc(var(--inset-detail) - var(--inset-content));
+  margin-left: calc(var(--detail-inset) - var(--inset-content));
   margin-right: calc(-1 * var(--inset-content));
   /* Re-add the content gutter the body reclaimed so the grid lands on --content-inset (grips + chevrons
      sit in the strip to its left). The RIGHT inset is a scoped var: full gutter while the columns fit
@@ -63,8 +63,8 @@
 .row-grip,
 .table-view .group-band-drop-outline {
   position: absolute;
-  left: calc(-1 * var(--inset-detail));
-  width: var(--inset-detail);
+  left: calc(-1 * var(--detail-inset));
+  width: var(--detail-inset);
   top: 50%;
   transform: translateY(-50%);
   justify-content: center;
