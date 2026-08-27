@@ -3,8 +3,6 @@
    regime, and the cell content types. A surface wears `.table` (the token scope, table-tokens.css)
    and lays its own grid; the Collection TableView (Views/TableView) and the Trash both do. */
 
-/* The header band and every data row share one column track set (--cols, set inline by the host),
-   so columns align without a <colgroup>. */
 /* Header band + every data row share the column tracks; the final 1fr is the filler. Stretch (not center)
    so every cell fills the row height — an empty cell's full-height column divider then matches a filled
    one's, instead of collapsing to a short centered bar. The row height is set by its tallest (content) cell,
@@ -185,9 +183,8 @@
 
 /* Drop-line drag chrome (line, dot, host) is the design system's — dropChrome.css. */
 
-/* Hide Borders toggle — drops the body grid lines for a clean, line-free table: the row dividers (rows'
-   top) and the vertical column hairlines (each cell's right edge). The heading row keeps its borders (the
-   bottom seam + the segment bars) so the header stays structured over a lineless body. */
+/* Hide Borders toggle — the heading row keeps its borders (the bottom seam + the segment bars) so it
+   stays structured over a lineless body. */
 .table-grid.no-borders .data-row {
   border-top: none;
 }
@@ -201,7 +198,6 @@
 .table-grid.no-borders .data-cell {
   position: relative;
 }
-/* Every column's vertical hairline fades in while a column is being resized or reordered, then fades back out. */
 .table-grid.no-borders .data-cell::after {
   content: "";
   position: absolute;
@@ -217,7 +213,6 @@
 .table-grid.no-borders.col-dragging-active .data-cell::after {
   opacity: 1;
 }
-/* Active-cell accent ring — a rounded accent outline (not an inside fill) around the cell being edited. */
 .table-grid.no-borders .data-cell::before {
   content: "";
   position: absolute;

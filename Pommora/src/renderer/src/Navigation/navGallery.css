@@ -9,6 +9,3 @@
      lands on the surface inset; NavWindow lets its scroll be the sole gap, not doubled). */
   padding: var(--navwindow-inset-v, 6px) var(--navwindow-inset, 12px);
 }
-/* The grid stretches its cards to the width (card-grid's auto-fit). Search must NOT relayout —
-   filtering to fewer results keeps the column tracks the view opened with, so the host flips
-   `is-fill` while a query is live. */

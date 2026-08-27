@@ -42,6 +42,7 @@
 /* A row's segment bar reads as a separator, the heading's as heading chrome — one shape, two tones. */
 .trash-leaf .nav-item-main {
   --segment-tone: var(--border-base);
+  padding-left: var(--trash-lead);
 }
 .trash-leaf .trash-head-name {
   flex: 1;
@@ -86,9 +87,6 @@
   right: var(--navwindow-inset);
   top: 0;
   border-top: var(--table-border);
-}
-.trash-leaf .nav-item-main {
-  padding-left: var(--trash-lead);
 }
 
 /* The pin's affordance exactly: a glyph in the row's left inset, absolute so it never shifts the

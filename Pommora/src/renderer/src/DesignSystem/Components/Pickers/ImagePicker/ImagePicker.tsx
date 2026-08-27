@@ -18,7 +18,7 @@ import { useImageAspect } from '../../AssetImage/imageAspect'
 import { Button } from '../../Controls/Button'
 import { Slider } from '../../Controls/Slider/Slider'
 import { AccessoryButton } from '../../Menu/Menu'
-import { InputField } from '../../Fields'
+import { BrowseButton, InputField } from '../../Fields'
 import { Icon } from '../../../Symbols'
 import { GlassWindow } from '../../../Materials'
 import { usePointerGesture } from '../../../Interactions/gesture'
@@ -311,18 +311,7 @@ export function ImagePicker({
             }}
             leading={<Icon name="image" size="body" />}
             trailing={
-              onRepick ? (
-                <Button
-                  type="base"
-                  size="button-inline"
-                  icon="folder-open"
-                  aria-label="Choose Image"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    repick()
-                  }}
-                />
-              ) : undefined
+              onRepick ? <BrowseButton label="Choose Image" onBrowse={repick} /> : undefined
             }
           >
             {fileName}

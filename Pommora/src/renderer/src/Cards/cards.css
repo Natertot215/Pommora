@@ -11,7 +11,7 @@
   --card-gap-h: 10px; /* KNOB — inter-card spacing */
   --card-gap-v: 10px;
   /* KNOB — the reflow thumb's fixed height; the card grows below it. Same `-base` pattern. */
-  --card-thumb-h-base: 104px;
+  --card-thumb-h-base: 100px;
   --card-thumb-h: var(--card-thumb-h-base);
   --thumb-share: 65%; /* KNOB — a locked card's image share of its height; the title area takes the rest */
   --preview-zoom: 1.25; /* KNOB — captured previews zoom into the top; a user-cropped cover never does */
@@ -104,14 +104,13 @@
   background: var(--fill-quaternary);
 }
 
-/* The pin — a surface opts in by mounting one inside the thumb. Overlaid top-right, no fill;
-   hover-revealed until pinned. */
+/* The pin — a surface opts in by mounting one inside the thumb. */
 .card-pin {
   position: absolute;
   top: 6px;
   right: 6px;
   display: flex;
-  padding: 3px;
+  padding: 2px;
   border: none;
   background: none;
   color: var(--label-tertiary);
@@ -135,7 +134,7 @@
   flex-direction: column;
   justify-content: flex-start;
   gap: 4px;
-  padding: 8px 9px;
+  padding: 8px 8px;
   min-width: 0;
   background: var(--state-muted);
   border-top: var(--width-150) solid var(--border-base);
@@ -144,7 +143,6 @@
   min-height: 0; /* the cover band decides; the text takes what's left */
 }
 
-/* One line inside the title area — the title itself or the location beneath it. */
 .card-title,
 .card-loc {
   flex: 0 0 auto; /* each is its own fixed row — the title never grows to fill / recenter */
