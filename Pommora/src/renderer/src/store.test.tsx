@@ -55,6 +55,7 @@ const seed = (partial: Partial<State>): void => {
     pinnedTabs: [],
     recents: [],
     selection: { kind: 'none' },
+    pages: {},
     tree: null,
     ...partial,
   })
@@ -347,15 +348,15 @@ describe('store — page slots', () => {
     })
     await useSession
       .getState()
-      .mutate({ op: 'rename', path: 'Notes/c.md', kind: 'page', newName: 'd' })
+      .mutate({ op: 'rename', path: 'Notes/b.md', kind: 'page', newName: 'd' })
     const s = useSession.getState()
     expect(s.pages.b).toBeUndefined()
     expect(s.pages.a?.status).toBe('ready')
     expect(openPage()).toHaveBeenCalledWith('Notes/a.md')
-    // Returning to the parked page fetches cold — nothing warm survived the cascade.
+    // Returning to the parked page fetches cold at its re-pathed file — nothing warm survived.
     openPage().mockClear()
     useSession.getState().activateTab('t2')
-    expect(openPage()).toHaveBeenCalledWith('Notes/b.md')
+    expect(openPage()).toHaveBeenCalledWith('Notes/d.md')
   })
 
   it('a tree push that re-paths the shown page spares its slot while the re-select is in flight', async () => {
