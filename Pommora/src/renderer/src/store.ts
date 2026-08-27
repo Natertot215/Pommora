@@ -79,7 +79,6 @@ import {
   tabKey,
 } from './Tabs/tabsModel'
 import {
-  captureWarm,
   clearWarm,
   dropPageDetail,
   dropWarmDetail,
