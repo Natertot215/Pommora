@@ -6,8 +6,9 @@
 // Store-free, so the store can reach the eviction without importing the hook that reads it back.
 export const captured = new Map<string, unknown>()
 let nexus: string | null = null
-export const capturedNexus = (): string | null => nexus
-export const setCapturedNexus = (id: string | null): void => {
+export function scopeCaptured(id: string | null): void {
+  if (nexus === id) return
+  captured.clear()
   nexus = id
 }
 
