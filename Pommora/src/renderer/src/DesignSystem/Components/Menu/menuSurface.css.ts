@@ -1,6 +1,6 @@
 import { globalStyle, style } from '@vanilla-extract/css'
 import { vars as colorVars } from '../../Tokens/color.css'
-import { BEAK_RADIUS } from './notchedPane.css'
+import { BEAK_RADIUS } from './notchedShell.css'
 import { titleText } from './menu.css'
 
 const c = colorVars.color
@@ -15,10 +15,11 @@ const c = colorVars.color
  */
 export const MENU_GUTTER = '10px'
 
-/** The large-dropdown shell: glass (from NotchedPane) + rounded corners + the shared gutter, floored
+/** The large-dropdown shell: glass (from NotchedShell) + rounded corners + the shared gutter, floored
  *  at a minimum width so a sparse pane never shrink-wraps narrow. The top gutter clears the beak
  *  band via the shell's published --notch-h. */
 export const surface = style({
+  color: c.label.primary,
   borderRadius: `${BEAK_RADIUS}px`,
   padding: `6px ${MENU_GUTTER}`,
   paddingTop: 'calc(var(--notch-h, 0px) + 6px)',

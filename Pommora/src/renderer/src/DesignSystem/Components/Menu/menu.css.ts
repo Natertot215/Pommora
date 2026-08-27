@@ -177,11 +177,10 @@ export const menu = style({ display: 'flex', flexDirection: 'column', padding: '
 // row: a dropdown-only treatment belongs on its own class, never on `item`.
 
 /** The one icon-button recipe behind every TopRow/BottomRow/row affordance (ellipsis · plus · eye ·
- *  palette). Box via `--accessory-box` (consumers pass their own). The `&&` pins the
- *  action tone above `.app-toolbar button`'s control-tone rule (0,1,1). */
+ *  palette). Box via `--accessory-box` (consumers pass their own). */
 export const accessoryButton = style({
   width: 'var(--accessory-box, 20px)',
-  selectors: { '&&': { color: c.label.tertiary } },
+  color: c.label.tertiary,
 })
 // ── TopRow / BottomRow rhythm ──
 
@@ -234,13 +233,9 @@ export const footingLabel = style([actionRow])
  *  icon than its label. No pressed/selected state — it never mutes on lock. */
 export const footerLockAction = style([footingLabel, { gap: '5px' }])
 export const lockIcon = style({ selectors: { '&&': { color: c.label.tertiary } } })
-export const footingSymbol = style({
-  display: 'inline-flex',
-  selectors: { '&&&': { color: c.label.secondary } },
-})
-// A BottomRow's icon buttons read the footing tone, not the accessoryButton default — the tripled
-// class outranks accessoryButton's `&&`.
-globalStyle(`${bottomRow} ${accessoryButton}${accessoryButton}`, { color: c.label.secondary })
+export const footingSymbol = style({ display: 'inline-flex', color: c.label.secondary })
+// A BottomRow's icon buttons read the footing tone, not the accessoryButton default.
+globalStyle(`${bottomRow} ${accessoryButton}`, { color: c.label.secondary })
 // A footing's value reads the footing tone too — the row's own default color yields inside the
 // bottom bar, so a footing's label + value + symbol all sit at one tier.
 globalStyle(`${bottomBar} ${detail}`, { color: c.label.secondary })

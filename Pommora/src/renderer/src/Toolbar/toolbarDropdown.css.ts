@@ -43,9 +43,6 @@ export const buttonSlot = style({ display: 'contents' })
  *  given dropdown actually uses, so what a dropdown does differently is the only thing it states. */
 export const chrome = { wrapper, button, anchor }
 
-/** The ViewPane row's push chevron. It's a <button> in the toolbar's DOM, so `.app-toolbar button`'s
- *  control-tone rule (0,1,1) would paint it bright — the `&&` (0,2,0) pins it to the row's trailing tone,
- *  matching the ViewSettings/SettingsPane nav chevrons (bare Icons the rule can't touch). */
-export const chevronButton = style({
-  selectors: { '&&': { color: 'var(--label-secondary)' } },
-})
+/** The ViewPane row's push chevron — the row's trailing tone, matching the ViewSettings/SettingsPane
+ *  nav chevrons. */
+export const chevronButton = style({ color: 'var(--label-secondary)' })

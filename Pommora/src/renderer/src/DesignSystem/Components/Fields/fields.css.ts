@@ -1,4 +1,4 @@
-import { globalStyle, style } from '@vanilla-extract/css'
+import { style } from '@vanilla-extract/css'
 import { vars as colorVars } from '../../Tokens/color.css'
 import { text } from '../../Tokens/typography.css'
 import { fieldRing, focusRing } from './fieldRing'
@@ -113,9 +113,6 @@ export const trailing = style({
   paddingLeft: TRAIL_GAP,
   color: c.label.tertiary,
 })
-// The action wears the slot's tone even inside a toolbar pane, whose `.app-toolbar button` rule
-// (0,1,1) would otherwise recolor it to the control tone.
-globalStyle(`${trailing}${trailing} > button`, { color: 'inherit' })
 
 /** A press-to-edit field — a caret cursor at rest, the ring on focus, and room to give way so the
  *  content's own fade eclipses the head rather than the field pushing its row wider. */
