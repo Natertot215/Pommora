@@ -63,7 +63,7 @@ import {
   detectConnectionQuery,
   whenAcOpen,
 } from './useConnectionAutocomplete'
-import { AutocompletePanel } from './AutocompletePanel'
+import { AutocompletePane } from './AutocompletePane'
 import { citationsVisible, useSession } from '../store'
 import type { ConnectionsApi } from './connections'
 import { PageHeader } from './PageHeader'
@@ -182,7 +182,7 @@ export function MarkdownEditor({
 
   // This page's answer, or the nexus-wide default where nobody has given one. Read from the live
   // slice, so flipping the setting reaches an open page rather than waiting for the tree to echo —
-  // and so a preview, a hover card and the main pane all draw the same page the same way.
+  // and so a preview, a hover pane and the main pane all draw the same page the same way.
   const citesShown = useSession((s) => citationsVisible(s, pageId))
   const citesShownRef = useRef(citesShown)
   citesShownRef.current = citesShown
@@ -205,7 +205,7 @@ export function MarkdownEditor({
 
   // CM6 extensions are built once at mount, so they read live state + actions through refs. The `[[…]]`
   // autocomplete state machine is shared with table cells; this editor's seams are the candidate source
-  // (the embed form's own pool, over-fetched to survive its filter) and the inline panel placement
+  // (the embed form's own pool, over-fetched to survive its filter) and the inline pane placement
   // (rendered below).
   const { ac, setAc, candidates, acIndex, commit, acCtl } = useConnectionAutocomplete(
     viewRef,
@@ -326,8 +326,8 @@ export function MarkdownEditor({
       aliasOnLeave(() => connectionsRef.current),
       linkRest,
       linkTyping,
-      // Close the connection panel when focus leaves the editor (sidebar click, Cmd-Tab) — the cell
-      // editor has the same handler; without it the glass panel floats over unrelated UI.
+      // Close the connection pane when focus leaves the editor (sidebar click, Cmd-Tab) — the cell
+      // editor has the same handler; without it the glass pane floats over unrelated UI.
       EditorView.domEventHandlers({
         blur: () => {
           setAc(null)
@@ -372,7 +372,7 @@ export function MarkdownEditor({
 
         // Read-only mounts never autocomplete: a click seating the caret inside a rendered
         // [[Title]] would otherwise pop the picker over a surface that can't accept an edit —
-        // a locked embed, or the hover card gazing at its own links.
+        // a locked embed, or the hover preview gazing at its own links.
         if ((u.docChanged || u.selectionSet) && !u.state.readOnly)
           detectConnectionQuery(u.view, setAc, true)
       }),
@@ -529,7 +529,7 @@ export function MarkdownEditor({
         />
       )}
       <div ref={host} className="mdpm-editor" />
-      <AutocompletePanel
+      <AutocompletePane
         open={ac !== null}
         candidates={candidates}
         index={acIndex}

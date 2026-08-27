@@ -1,4 +1,4 @@
-/* The Page Window. Shell, toolbar, inspector, and footer come from the WindowChassis surface;
+/* The Page Window. Shell, toolbar, inspector, and footer come from the WindowBase surface;
    what remains here is what only this window has — its custom exits, its body scroll model, and the
    front-matter inspector's rows. */
 

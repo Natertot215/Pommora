@@ -1,21 +1,21 @@
 import { style } from '@vanilla-extract/css'
 import { vars as colorVars } from '@renderer/DesignSystem/Tokens/color.css'
 import { text } from '@renderer/DesignSystem/Tokens/typography.css'
-import { item, titleText } from '@renderer/DesignSystem/Components/Menu/menu.css'
-import { growToContent } from '@renderer/DesignSystem/Components/Menu/paneGrowth'
+import { item, titleText } from '@renderer/DesignSystem/Menus/menu-base.css'
+import { growToContent } from '@renderer/DesignSystem/Menus/frame-growth'
 
 const c = colorVars.color
 
 /** KNOB — the pane's content-driven width ceiling. */
 const PAGE_PROPERTIES_MAX_WIDTH = '350px'
 
-export const pane = style({
+export const frame = style({
   ...growToContent(PAGE_PROPERTIES_MAX_WIDTH),
   display: 'flex',
   flexDirection: 'column',
 })
 
-/** No horizontal inset of its own — the surface's shared dropdown gutter is the only one, so the
+/** No horizontal inset of its own — the surface's shared menu gutter is the only one, so the
  *  field blocks land on the same edge as the header and its divider. */
 export const rows = style({
   display: 'flex',
@@ -25,7 +25,7 @@ export const rows = style({
 })
 
 /** A field block — Contexts in one, properties in the next. The fill is what separates them, so the
- *  leaf carries no headings. */
+ *  frame carries no headings. */
 export const group = style({
   display: 'flex',
   flexDirection: 'column',

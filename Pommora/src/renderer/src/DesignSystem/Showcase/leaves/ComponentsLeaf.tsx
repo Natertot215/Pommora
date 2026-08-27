@@ -5,7 +5,7 @@ import { MenuLeaf } from './MenuLeaf'
 import { CalendarPicker } from '../../Components/Pickers/CalendarPicker/CalendarPicker'
 import { ImagePicker } from '../../Components/Pickers/ImagePicker/ImagePicker'
 import { PickerMenu, PickerOption } from '../../Components/Pickers/PickerMenu/PickerMenu'
-import { MenuSurface } from '../../Components/Menu'
+import { MenuSurface } from '../../Menus'
 import { condensedDate, formatDate } from '@renderer/Properties/Editing/formatValue'
 import { Label } from '../../Labels'
 

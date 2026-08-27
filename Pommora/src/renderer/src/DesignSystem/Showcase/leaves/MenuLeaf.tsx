@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Menu, MenuItem, MenuHeading, MenuSeparator } from '../../Components/Menu'
+import { Menu, MenuItem, MenuHeading, MenuSeparator } from '../../Menus'
 import { Icon } from '../../Symbols'
 
 function Panel({ children }: { children: ReactNode }): React.JSX.Element {

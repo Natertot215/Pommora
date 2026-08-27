@@ -7,7 +7,7 @@ import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { overScrollEllipsis } from '@renderer/DesignSystem/Interactions/OverScroll'
 import { text } from '@renderer/DesignSystem/Tokens'
-import { WindowChassis } from '@renderer/DesignSystem/Components/WindowChassis/WindowChassis'
+import { WindowBase } from './window-base'
 import type { FloatingBounds } from '@renderer/DesignSystem/Interactions/FloatingWindow'
 import { linkDomain } from '@shared/links'
 import { WEB_PARTITION } from '@shared/types'
@@ -94,7 +94,7 @@ function WebWindowBody({
   }, [])
 
   return (
-    <WindowChassis
+    <WindowBase
       id="web-browser"
       className="wbrowser"
       closing={closing}
@@ -148,6 +148,6 @@ function WebWindowBody({
           allowpopups={'' as unknown as boolean}
         />
       </div>
-    </WindowChassis>
+    </WindowBase>
   )
 }

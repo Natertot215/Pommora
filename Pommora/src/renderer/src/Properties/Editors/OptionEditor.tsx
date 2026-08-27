@@ -20,7 +20,7 @@ import { DragGhost } from '@renderer/DesignSystem/Interactions/DragGhost'
 import { DropLine } from '@renderer/DesignSystem/Interactions/DropLine'
 import { OptionSlot, type OptionStyle } from '../OptionRow'
 import { useOptionReorder } from '../useOptionReorder'
-import * as s from '../../Components/Detail/settingsPane.css'
+import * as s from '../../Frames/frames.css'
 import { labelColor, optionShapeFor, shape } from '@renderer/DesignSystem/Labels'
 
 /** A flat property owns one list, so its anchor needs no identity beyond being the only one. */

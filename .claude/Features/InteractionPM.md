@@ -5,7 +5,7 @@ Interaction & Motion
 ├── Motion Tokens
 ├── Named Animations
 │   ├── II. Bloom
-│   ├── II. Dropdown
+│   ├── II. Menu
 │   ├── II. Header Scroll-Park
 │   └── II. Floating Windows
 ├── Primitives
@@ -20,7 +20,7 @@ The named motions and the interaction primitives, built on the duration ladder a
 
 ### Motion Tokens
 
-Every permanent transition reads `DesignSystem/Animation/motion.ts` — `duration.fast/dropdown/base/slow` and `easing.baseEase/baseSnap`, bridged to CSS as `--duration-*`, `--ease-base`, and `--ease-snap`. The Bloom curve in `animations.css.ts` is the one named curve outside the token set: the open-and-close curve both dropdown motions share. Debounces and zero-delay cleanups are not motion and never take a token.
+Every permanent transition reads `DesignSystem/Animation/motion.ts` — `duration.fast/menu/base/slow` and `easing.baseEase/baseSnap`, bridged to CSS as `--duration-*`, `--ease-base`, and `--ease-snap`. The Bloom curve in `animations.css.ts` is the one named curve outside the token set: the open-and-close curve both Bloom rungs share. Debounces and zero-delay cleanups are not motion and never take a token.
 
 ### Named Animations
 
@@ -28,11 +28,11 @@ Each motion is named for what it does; the code name beside it is what a grep fi
 
 #### II. Bloom
 
-Pommora's canonical pane and menu open, the `dropdown-menu` / `dropdown-menu-out` keyframe pair: a zoom from the trigger — scale to 1 plus a fade on the Bloom curve, no blur — run on the `slow` token through the `dropdownMenu` and `dropdownMenuClosing` classes. It is symmetric, so a click-off retracts the pane rather than cutting it, and the parent keeps the pane mounted through the exit with `useExitPresence`. The origin is the consumer's: the class reads `--dropdown-origin`, and the beaked shell (`NotchedShell`) writes its own beak tip there, so a beaked surface blooms from its beak while a plain pane blooms from the point on its anchored edge nearest the trigger. `MenuSurface`, the shell every large toolbar dropdown mounts, carries this motion. A pane's placement and collision flip are decided once per open, and how a picker's rows mark the chosen one follows the **Show Selection In Pickers As** setting.[^3]
+Pommora's canonical menu open, the `menu-bloom` / `menu-bloom-out` keyframe pair: a zoom from the trigger — scale to 1 plus a fade on the Bloom curve, no blur — run on the `slow` token through the `menuBloom` and `menuBloomClosing` classes. It is symmetric, so a click-off retracts the menu rather than cutting it, and the parent keeps the menu mounted through the exit with `useExitPresence`. The origin is the consumer's: the class reads `--menu-origin`, and the beaked shell (`NotchedShell`) writes its own beak tip there, so a beaked surface blooms from its beak while a plain menu blooms from the point on its anchored edge nearest the trigger. `MenuSurface`, the shell every large toolbar menu mounts, carries this motion. A menu's placement and collision flip are decided once per open, and how a picker's rows mark the chosen one follows the **Show Selection In Pickers As** setting.[^3]
 
-#### II. Dropdown
+#### II. Menu
 
-The same keyframes and curve on the `dropdown` token — snappier, also symmetric, reading the same origin and retracting through the same `useExitPresence`. Inline surfaces take this variant. The overtake sweep the sidebar plays when its mode switches is its own pair, `sidebar-mode-*` in `Sidebar/Sidebar.css`: the incoming mode slides in from the ribbon edge over the sitting content.
+The same keyframes and curve on the `menu` token through `bloomOpen` and `bloomClose` — snappier, also symmetric, reading the same origin and retracting through the same `useExitPresence`. Pickers, the autocomplete, and the hover pane take this variant. The overtake sweep the sidebar plays when its mode switches is its own pair, `sidebar-mode-*` in `Sidebar/Sidebar.css`: the incoming mode slides in from the ribbon edge over the sitting content.
 
 #### II. Header Scroll-Park
 
@@ -50,7 +50,9 @@ The interaction layer in `DesignSystem/Interactions/` and `Animation/`: content-
 
 **Reveal.** `Animation/Reveal.tsx` is the canonical body open and close: a `grid-template-rows: 0fr ↔ 1fr` transition on the `fast` token, mounting at 0fr and unmounting on `transitionend`, that stops clipping once open so overhanging affordances aren't cut off. It backs the sidebar's nested trees, the settings panes, and the heading-fold body. Disclosure chevrons rotate through the shared `dropOutline` on the same beat, so rotate and unfold land together.
 
-**Pane Slide.** `Components/PaneSlider/PaneSlider.tsx` is the two-slot drill-down every pane runs on — root and detail on the base tokens — and it nests. Both slots stay mounted and measured, so the target size is known the instant the active slot flips; a slot needing a ceiling or a pinned footer wraps its content in the shared menu scroll frame.
+**PaneSlide.** The sidebar's and the inspector's in-out: the `--io` progress carries a pane home from its parked edge while the body beside it gives up the width, on the base tokens.
+
+**FrameSlide.** `DesignSystem/Menus/frame-slide.tsx` is the two-slot push and back every frame runs on — root and detail on the base tokens — and it nests. Both slots stay mounted and measured, so the target size is known the instant the active slot flips; a slot needing a ceiling or a pinned footer wraps its content in the shared menu scroll frame.
 
 **Scroll Glide.** Travel to a known destination in a document you're already in — the page Outline's jump is its first caller. It shares its module with the drag auto-scroll and its one-owner-at-a-time rule, re-reads the destination every frame so a lazily rendering host's estimate is absorbed into the motion, fixes its beat from the opening distance, and cancels on any real scroll input.
 
@@ -98,7 +100,7 @@ The hover-revealed remove ×, with the label-tail melt as an option: hovering a 
 ### Principles
 
 - **One progress variable** drives a coordinated multi-element move rather than N independent transitions that can desync — and it is the variable that transitions, never a property derived from it.
-- **One primitive per pattern** — `Reveal` for expand and collapse, the shared dropdown keyframes for a pane open, `PaneSlider` for a drill-down, the drag engine for reorder.
+- **One primitive per pattern** — `Reveal` for expand and collapse, the shared Bloom keyframes for a menu open, `FrameSlide` for a drill-down, the drag engine for reorder.
 - **Tokens over literals** — duration and easing come from `motion.ts`; a hardcoded duration in a permanent surface reads a token or justifies a new one.
 - **Compositor- and pointer-driven where it counts** — scroll-park, drag chrome, and edge-resize run 1:1 with input, so motion never lags it.
 

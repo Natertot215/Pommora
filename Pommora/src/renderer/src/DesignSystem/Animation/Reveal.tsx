@@ -4,7 +4,7 @@ import { duration as motionDuration, easing } from './motion'
 /**
  * Children mount on open and unmount once the collapse finishes, so closed subtrees stay out of
  * the DOM (no regression to the sidebar's lazy rendering). `duration` overrides the default
- * disclosure beat — a Reveal inside a PaneSlider pins to the pane's beat so the unfold and the
+ * disclosure beat — a Reveal inside a FrameSlide pins to the frame's beat so the unfold and the
  * height-resize land together.
  *
  * The inner clips only while animating/collapsed; once idle it stops clipping so overhanging

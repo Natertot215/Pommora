@@ -21,19 +21,16 @@ import {
   MenuBottomRow,
   MenuItem,
   MenuScrollFrame,
-} from '@renderer/DesignSystem/Components/Menu'
-import {
-  titleInput as rowInput,
-  rowDisabled,
-} from '@renderer/DesignSystem/Components/Menu/menu.css'
+} from '@renderer/DesignSystem/Menus'
+import { titleInput as rowInput, rowDisabled } from '@renderer/DesignSystem/Menus/menu-base.css'
 import { reorder, SortableZone, useDragItem } from '@renderer/DesignSystem/Interactions/drag'
 import { optionRing } from '@renderer/DesignSystem/Components/Pickers/PickerMenu/pickerMenu.css'
 import { RenamableLabel } from '@renderer/DesignSystem/Components/Fields'
 import { IconPicker } from '@renderer/Settings/IconPicker'
 import { findCollection, findCollectionForSet, findSet } from '@renderer/Detail/Scope'
 import { ViewRenderer } from '@renderer/Views/ViewRenderer'
-import { SettingsPane } from '@renderer/Components/Detail/SettingsPane'
-import { hostedGutter } from '@renderer/DesignSystem/Components/Menu/menuSurface.css'
+import { SettingsFrame } from '@renderer/Frames/SettingsFrame'
+import { hostedGutter } from '@renderer/DesignSystem/Menus/menu-surface.css'
 import { ViewEmbedScopeProvider } from '@renderer/Embeds/ViewEmbedScope'
 import { useSession } from '@renderer/store'
 import { PICKER_MAX_HEIGHT } from '@renderer/DesignSystem/Components/Pickers/PickerMenu/pickerMenu.css'
@@ -595,7 +592,7 @@ export function ViewEmbedBlock({
           bareSurface
           contentClassName={hostedGutter}
         >
-          <SettingsPane />
+          <SettingsFrame />
         </PickerMenu>
         {/* No edit chevrons — per-view editing lives behind the Settings affordance, not in the switcher. */}
         <PickerMenu open={listOpen} onDismiss={() => setListOpen(false)} triggerRef={dropRef}>

@@ -1,7 +1,7 @@
 import { style } from '@vanilla-extract/css'
 import type { IconSize } from '../../Tokens/size.css'
 import { ghostRest } from '../../Components/Controls/Button/button.css'
-import { accessoryButton } from '../../Components/Menu/menu.css'
+import { accessoryButton } from '../../Menus/menu-base.css'
 
 /** The ladder step the eye's glyph names. A host drawing an inert twin for visual parity reads this
  *  rather than restating a size. */

@@ -1,96 +1,80 @@
 ## Design Terms V2
 
-**Date:** 08-26-2026 · **Scope:** every floating or sliding surface in the renderer, the motions between them, and the names in code, CSS, and the Feature docs that carry them · **Status:** ruled in part — the Windows block is executed; the rest executes once §The Calls are stamped
+**Date:** 08-26-2026 · **Scope:** every floating or sliding surface in the renderer, the motions between them, and the names in code, CSS, and the Feature docs that carry them · **Status:** ruled 08-26 and applied — every rename below is on disk; what remains is the Menu recipe's row kinds, the rosters, and the main window mounting `SidePane`
 
 One word per shape. "Pane" named five different things — a toolbar dropdown's content (`ViewPane`, `NavPane`, `SettingsPane`), the page inside its drill-down (`FilterPane`, `GroupingPane`, `SortingPane`, `HiddenPane`, `PropertiesPane`), the beaked shell they hang in (now `NotchedShell`), the chassis every floating window mounted, and the sliding side slot (`SidePane`, `InspectorPanel`); "Preview" named a window that previews nothing. The chassis is now `WindowChassis` and the floating family lives in `Windows/`; the rest of this document decides the others. The vocabulary below gives each shape one word, each word one test, and each motion the word of the shape it moves. Nothing here changes behavior; it changes what things are called so the next surface is named by its shape rather than by where it was first mounted.
 
 ### The Terms
 
-Five shapes. A surface is exactly one of the five; a term that fits two surfaces the same way is the wrong term.
+Five shapes, ruled. A surface is exactly one of the five.
 
-| Term | What it is | The test | Holds |
+| Term | What it is | Today | Motion |
 |---|---|---|---|
-| **Menu** | A glass surface hung off a trigger — a toolbar glyph, a right-click, a chip, a field. Opens on Bloom, dismisses on outside-press or Esc. The toolbar's dropdowns are Menus: `SpaceMenu`, `OutlineMenu`, `ViewMenu`, `SettingsMenu`, `NavMenu`. | It has a trigger and it goes away when you click elsewhere. | Panes, or rows directly |
-| **Pane** | One page of a Menu or a Window — the content a trigger opens onto, or a tab's worth of it that slides against its siblings. `GroupPane`, `FilterPane`, `SortPane`, `HiddenPane`, `LayoutPane`, `PropertyPane`, and each Settings category, `TrashPane` among them. | It has a back-row or a rail entry, and switching to its sibling slides. | Rows, sections, controls |
-| **Window** | A floating, movable, resizable surface with its own toolbar, sealed off from the main shell's geometry — `PageWindow`, `WebWindow`, `NavWindow`, the Settings window. Mounts `WindowChassis`. The word is the multi-window seam's: a Window is what becomes an OS window when the app grows a second one. | It has a close glyph and a drag surface, and it remembers its size. | A body, and side slots on its edges |
-| **Frame** | A surface that floats in content, anchored to a point in it and owned by it — the connection hover preview (`PageFrame`, `WebFrame`), the editor's autocomplete (`AutoFrame`). Not a Menu: it opens on a condition (hover, typing), not a press. | It appears without a click and follows what it is anchored to. | Its own content |
-| **Picker** | A control that presents a bounded set of values and commits one — text, color, icon, image, calendar, and the inline picker control. `PickerMenu` is a Menu of a Picker's options and already wears `menu.css`. | It has a value and offers alternatives. | Options |
+| **Window** | A floating, movable, resizable surface with its own toolbar — `PageWindow`, `WebWindow`, `NavWindow`, the Settings window. Mounts `WindowChassis`. | executed | Scale-fade in/out; Engulf on promote |
+| **Pane** | A surface floating over another — the sidebar and the inspector on the main window, the tab strip and inspector on a floating one, and the surfaces anchored in content: the connection hover preview and the editor's autocomplete. Wears `glass-pane`. | `SidePane`, `InspectorPane`, `ConnectionPane`, `AutocompletePane` | **PaneSlide** — the sidebar's and inspector's in-out |
+| **Menu** | A dropdown surface hung off a trigger — the toolbar's Space, Outline, View, Settings, Nav menus; a right-click; a picker's options. Wears `glass-surface`. | `MenuDropdown` + `MenuSurface` + `NotchedShell` in `Menus/`; `SpaceMenu`, `OutlineMenu`, `ViewMenu`, `SettingsMenu`, `NavMenu` | Bloom, on the `menu` token |
+| **Frame** | One page inside a Menu or a Window's hierarchy — Filter, Group, Sort, Hidden, Layout, Properties, each Settings category. | `FilterFrame`, `GroupFrame`, `SortFrame`, `HiddenFrame`, `LayoutFrame`, `PropertyFrame`, `SettingsFrame`, `ViewFrame`, the Settings window's `FRAMES` | **FrameSlide** — the push/back between frames (`Menus/frame-slide`) |
+| **Picker** | A control that presents a bounded set of values and commits one. Unchanged. | — | — |
 
-The sliding side slot — the main window's sidebar and inspector, a floating window's tab strip and inspector — is `SidePane` today, and keeps that name until §The Calls settles whether the main window mounts it. Two words leave the vocabulary: **Dropdown** (every dropdown is a Menu; the word survives only where it names the anchoring geometry) and **Preview** (nothing previews; the floating page window is `PageWindow`). **Surface** stays SurfacePM's word for the dashboard; the glass material keeps its `Glass*` names in `Materials/` and is not a surface term. **Card** is the `src/Cards` chassis; the hover *card* becomes a Frame. **Panel** is not a term.
+**Dropdown**, **Preview**, **Leaf**, and **Panel** leave the vocabulary. **Surface** stays SurfacePM's word for the dashboard. **Card** is the `src/Cards` chassis.
 
-### The Motions
+### The Menu Recipe
 
-| Motion | What it moves | Today | Where it lives |
+`DesignSystem/Menus/` exists with the files below; the recipe work — the row kinds named once, `menu-roster`, the fold of `MenuDropdown` + `MenuSurface` into one `Menu`, `MenuScrollFrame` → `MenuScroll` — is the next session. The recipe names every row kind once, and a Frame picks kinds rather than declaring type, tone, or padding of its own. The pane stylesheets that exist today (`settingsPane.css.ts` at forty exports, `filterPane.css.ts`, `groupingPane.css.ts`, `viewSettings.css.ts`) shrink to geometry or disappear, and the three files that each decide what a header looks like become one line in `menu-base.css`.
+
+```
+// DesignSystem/Menus                    | • The Menu recipe — one shell, one row vocabulary, one frame chassis
+├── menu-base.tsx · menu-base.css        | • The trigger + surface (folds MenuDropdown, MenuSurface); every row kind's type rung, tone, and geometry
+├── menu-shell.tsx · menu-shell.css      | • The beaked glass-surface the menu wears (today's NotchedShell)
+├── menu-row.tsx                         | • The row kinds: item, heading, section title, sub-label, detail, control row, chip run, slider row, sub row
+├── menu-frame.tsx                       | • The frame chassis: top row, scroll body, bottom row, FrameSlide hosting (folds MenuScrollFrame, MenuPaneTopRow, MenuBottomRow)
+├── menu-roster.tsx                      | • NEW — renders a roster: sections → rows of a kind, each kind's control in the trailing slot
+├── menu-accessory.tsx                   | • The one icon-button recipe (today's AccessoryButton)
+├── menu-anchor.ts                       | • Today's dropdownAnchor
+├── frame-slide.tsx                      | • Today's PaneSlider
+└── index.ts
+```
+
+Row-kind values the recipe owns: the icon ↔ title gap (`ROW_GAP` 8), the row inset (`ROW_PAD_X`), the row floor (24px), the gutter (`MENU_GUTTER` 10px), the shell corner (`BEAK_RADIUS` 12), the minimum width (225px), and one type rung per kind.
+
+### The Frames Folder
+
+Executed as renames; Sort and Hidden are still components until the roster exists, and the frame stylesheets still carry their type and tone until the recipe takes them.
+
+```
+// Frames                                | • The frames the Menus and Windows open onto — feature code, RENAMED from Components/Detail
+├── SettingsMenu.tsx                     | • The toolbar's Settings trigger + its frame stack (today's SettingsDropdown + SettingsPane)
+├── LayoutFrame.tsx                      | • Today's ViewSettings — a roster with the type-tile grid as its one custom row
+├── FilterFrame.tsx · filterDnd.ts       | • Logic-shaped: the filter-tree editor; no stylesheet
+├── GroupFrame.tsx · groupDnd.ts         | • Logic-shaped: set hierarchy and sub-group order; no stylesheet
+├── sortRoster.ts · hiddenRoster.ts      | • Sort and Hidden as data — no component; menu-roster renders them
+├── PageMenu.tsx                         | • The page's right-click / ⋮ menu
+├── frameDnd.tsx                         | • Today's paneDnd — the engine binding the DnD frames share
+└── frames.css.ts                        | • Geometry only — the frame width, the type-tile grid, the swatch grid
+```
+
+`Properties/PropertyFrame.tsx` stays in the value layer (R4). The Settings window's leaves become `SettingsFrame` / `TrashFrame` and its `LEAVES` roster becomes `menu-roster` input. The toolbar's triggers become `SpaceMenu`, `OutlineMenu`, `ViewMenu`, `NavMenu` in `Toolbar/`. What disappears: `SortingPane.tsx`, `HiddenPane.tsx`, `MenuDropdown.tsx`, `MenuSurface.tsx`, `Settings/SettingsRow.tsx`, `groupingPane.css.ts`, `viewSettings.css.ts`, most of `settingsPane.css.ts` and `filterPane.css.ts`.
+
+### The Glass Family — executed
+
+`DesignSystem/Glass/`, one recipe and four tiers named by what they are for. `GlassPane` and `GlassSurface` traded names in the move: the menu glass is `GlassSurface`, the clear chrome tier is `GlassPane`. `PickerMenu` takes `glass="pane"` for the two anchored panes.
+
+| File | What it is | Today | Worn by |
 |---|---|---|---|
-| **Bloom** | A Menu opening from its trigger and retracting into it | Bloom, on the `dropdown` token | `dropdown-menu` keyframes · `--dropdown-origin` · `useExitPresence` |
-| **PaneSlide** | The push/back between two Panes inside one Menu or Window | Pane Slide (`PaneSlider`) — already named for it | `Components/PaneSlider/` |
-| **SideSlide** | A side slot opening and closing on a window's edge, the body squeezing beside it | the `--io` / `--io-l` drivers, the sidebar's mode overtake, the inspector's swallow | `styles.css` · `windowChassis.css` · `Sidebar.css` |
-| **Scale-fade** | A Window opening and closing | `window-in` / `window-out` | `windowChassis.css` |
-| **Engulf** | A Window's content promoting into the main pane | Engulf | `PageWindow.tsx` |
+| `glass-base` | The shared recipe — `frostStyle`, the frost params, `OUTLINE_INSET`, the ghost frost | `glass-pane.tsx` (the functions) + `glass-material.ts` | every tier below; the drag ghost |
+| `glass-window` | The 90% `--bg-window` fill — `WINDOW_FROST` | `GlassWindow` | `WindowChassis`, the ImagePicker |
+| `glass-surface` | The standard menu glass — `PANE_FROST`, no fill | `GlassPane` | `menu-shell`, `PickerMenu` |
+| `glass-control` | The liquid-glass control optics, and the knob segment | `GlassControls` + `GlassSegment` | Button, DualSwitch, Slider |
+| `glass-pane` | The 10% tint the chrome panes wear | `GlassSurface` (`frostMaterial`) + `Surface.tsx` | the sidebar, the inspector, `SidePane` |
 
-The `dropdown` motion token becomes `menu`; the Bloom keyframes and origin var follow it (`--menu-origin`). PaneSlide keeps its name and its primitive. SideSlide is the one motion that has three hand-rolled homes and no primitive — §The Calls carries whether it gets one.
-
-### The Renames
-
-Current name → V2 name, with the file that carries it. A row marked *fold* is two things becoming one; every other row is a rename and a `git mv`.
-
-#### Menus
-
-| Today | V2 | Where |
-|---|---|---|
-| `MenuDropdown` | `Menu` (the trigger + surface) | `DesignSystem/Components/Menu/MenuDropdown.tsx` |
-| `MenuSurface` | *fold* into `Menu` — the surface is the menu | `DesignSystem/Components/Menu/MenuSurface.tsx` |
-| `Menu` (the row column) | `MenuList` | `DesignSystem/Components/Menu/Menu.tsx` |
-| `MenuScrollFrame` | `MenuScroll` — the cap/scroll/footer wrapper, not a Frame | `DesignSystem/Components/Menu/Menu.tsx` |
-| `SpaceDropdown` · `OutlineDropdown` | `SpaceMenu` · `OutlineMenu` | `Toolbar/` |
-| `ViewDropdown` + `ViewPane` | `ViewMenu` — the trigger and its content are one menu; its pages are Panes | `Toolbar/ViewDropdown.tsx` · `Toolbar/ViewPane.tsx` |
-| `NavPane` | `NavMenu` | `Toolbar/NavPane.tsx` |
-| `SettingsDropdown` + `SettingsPane` | `SettingsMenu` | `Components/Detail/SettingsDropdown.tsx` · `SettingsPane.tsx` |
-| `toolbarDropdown.css.ts` · `outlineDropdown.css.ts` · `dropdownAnchor` | `toolbarMenu.css.ts` · `outlineMenu.css.ts` · `menuAnchor` | `Toolbar/` · `DesignSystem/Components/` |
-| `settingsPane.css.ts` | `settingsMenu.css.ts` — it styles the menu and its panes | `Components/Detail/` |
-| `PageMenu` · `BlockHandleMenu` · `PickerMenu` | stay | — |
-
-#### Panes
-
-| Today | V2 | Where |
-|---|---|---|
-| `GroupingPane` · `SortingPane` | `GroupPane` · `SortPane` — the noun, like their siblings | `Components/Detail/` |
-| `FilterPane` · `HiddenPane` | stay | `Components/Detail/` |
-| `ViewSettings` | `LayoutPane` | `Components/Detail/ViewSettings.tsx` |
-| `PropertiesPane` | `PropertyPane` | `Properties/PropertiesPane.tsx` |
-| the Settings window's leaves (`Leaf`, `LeafBodyView`, `TrashLeaf`) | `Pane` · `SettingsPane` · `TrashPane` — the same discipline as the menus' pages | `Settings/NexusSettings.tsx` · `Settings/TrashLeaf.tsx` |
-| `MenuPaneTopRow` | stays | `DesignSystem/Components/Menu/Menu.tsx` |
-| `Components/Detail/` | `Components/Panes/` — the folder the atlas left "by ruling" gets its real name with its contents | `Components/Detail/` |
-
-Whether the per-type panes keep their own components is answered by what they hold: each is its own rows and logic over one shared shell (`MenuScrollFrame` + `MenuPaneTopRow` + `PaneSlider`), so the shell is already one thing and the names are the discipline, not duplication. A pane that turns out to be only a list of `ValueRow`s (the Sort pane is the candidate) can collapse into a config-driven one; the others cannot.
-
-#### Frames
-
-| Today | V2 | Where |
-|---|---|---|
-| `ConnectionHoverCard` · `HoverCardPresenter` · `hoverCardSize` | `PageFrame` / `WebFrame` by what it shows · `FramePresenter` · `frameSize` | `Embeds/` → `Connections/` per the atlas |
-| `AutocompletePanel` | `AutoFrame` | `MarkdownPM/AutocompletePanel.tsx` |
-
-#### Windows — executed
-
-`PagePreview/` and `NavWindow/` are `Windows/`: `PageWindow`, `WebWindow`, `NavWindow`, `WindowActions`, `WindowInspector`, `WindowTabStrip`, `windowTabs`, `windowWarm`, `windowMorph`. The chassis is `DesignSystem/Components/WindowChassis/` (`.window-*`, `--window-*`, `window-in` / `window-out`); `SidePane` sits beside it in `Components/`. `Detail/DetailPane` is `Detail/ContentView` (`.content-view`); `NotchedPane` is `NotchedShell`; `Tabs/NavView` sits in `Detail/`. What remains of the family: `NexusSettings` → `SettingsWindow`, and the store's `closePreview` / `settingsOpen` names.
-
-#### The Docs
-
-`DesignSystemPM` §Components carries the five shapes as the vocabulary, replacing the six-word list; `InteractionPM` gains SideSlide as the side-slot motion; `InterfacePM` names the toolbar's Menus, the side slots, the four Windows, and the Frames; `ViewTypesPM` and `PropertiesPM` say Pane where they say leaf. Every mention is a one-word repair.
+Menus pull from `glass-surface`; Panes from `glass-pane`; Windows from `glass-window`. `GlassSegment` folds into `glass-control` as its `segment` optics.
 
 ### The Calls
 
-- **The side slot's word, and one primitive or two hosts.** `SidePane` is the sliding slot and every Window mounts it; the main window's sidebar and inspector do not — they drive `--io` / `--io-l` from `styles.css` on their own rules, which is why SideSlide has three homes. Under V2 "Pane" is a Menu's page, so the slot needs its own word (`SideSlot`, `Drawer`, or `SidePane` kept as a compound that no longer reads as a Pane). *Recommendation:* keep `SidePane` as the compound, mount it in the main window for both slots, and let SideSlide be one motion in one file. That mount is the only behavior change in this document.
-- **`Detail` as a name.** `Detail/` → `Interface/` is ruled in the atlas; `DetailScaffold` → `InterfaceScaffold` follows.
-- **The two inspectors.** `InspectorPanel` (main window) and `WindowInspector` (page window) draw the same frontmatter surface with different chrome. Whether they become one component or one name over two is measured by how much chrome they share, in the session that renames them.
-- **`Menu` the component.** The row column becomes `MenuList` and the trigger-plus-surface takes the bare name — a bare `Menu` should be the thing a reader pictures.
-- **Showcase leaves.** They stay "leaves" — the Showcase is leaving the design system and its internal names are its own.
-- **The `dropdown` motion token.** Renamed `menu` in the Menu session, which is already in every file that reads `--dropdown-origin`.
+- **The side slot's primitive.** The main window's sidebar and inspector do not mount `SidePane`; PaneSlide has three homes. The Panes session mounts it in the main window and consolidates the motion — the one behavior change in the vocabulary.
+- **The two inspectors** — one component or one name over two — measured in the Panes session.
 
 ### The Order
 
-1. **Menus** — the toolbar's three, `MenuDropdown` / `MenuSurface` / `MenuScrollFrame`, the `dropdown` token and origin var, the stylesheets.
-2. **Panes** — `GroupPane`, `SortPane`, `LayoutPane`, `PropertyPane`, the Settings leaves, `Components/Detail/` → `Components/Panes/`.
-3. **Frames** — the hover card's three files and the autocomplete.
-4. **The side slot** — the main window onto `SidePane`, SideSlide consolidated, the two inspectors reconciled, `SettingsWindow`.
+1. **The Menu recipe** — the row kinds named once in `menu-base.css`, `menu-roster`, `MenuDropdown` + `MenuSurface` → `Menu`, `MenuScrollFrame` → `MenuScroll`; Sort and Hidden to rosters; the frame stylesheets to geometry.
+2. **The side slot** — the main window onto `SidePane`, PaneSlide consolidated into one motion, the two inspectors reconciled, the store's `closePreview` / `settingsOpen` names.

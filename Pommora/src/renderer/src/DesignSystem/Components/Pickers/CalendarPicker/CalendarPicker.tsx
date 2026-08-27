@@ -24,7 +24,7 @@ const rectOf = (el: HTMLElement): TriggerRect => {
   return { x: r.x, y: r.y, w: r.width, h: r.height }
 }
 
-/** Portals to body as a fixed phantom of the trigger box, so the dropdown escapes the calendar
+/** Portals to body as a fixed phantom of the trigger box, so the menu escapes the calendar
  *  pane's clip-path while PickerMenu's anchor math still works unchanged. Pointer-inert — only
  *  the menu re-enables hits. */
 function PortalMenu({
@@ -55,8 +55,8 @@ function PortalMenu({
   )
 }
 
-/** PaneSlider's animated-viewport half, single-slot: content size changes morph on the shared
- *  beat instead of snapping (the ViewPane/menus feel). */
+/** FrameSlide's animated-viewport half, single-slot: content size changes morph on the shared
+ *  beat instead of snapping (the ViewFrame/menus feel). */
 function SizeMorph({ children }: { children: ReactNode }): React.JSX.Element {
   const ref = useRef<HTMLDivElement>(null)
   const [h, setH] = useState(0)
@@ -504,7 +504,7 @@ export function CalendarPicker({
       </button>
     )
   // The meridiem segment — a plain click-toggle, no affordance glyph
-  // (two values never earn a dropdown either).
+  // (two values never earn a menu either).
   const ampmSegment = (which: 'start' | 'end', mins: number): React.JSX.Element => {
     const setMins = setMinsFor(which)
     return (

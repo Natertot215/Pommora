@@ -50,7 +50,7 @@ Eight statements that decide where anything goes. Each is testable with a grep, 
 - **R4 — Properties is the value layer; Tables and Views import it downward.** `Properties/` holds the schema surface and the value vocabulary alike — resolution at its root, the formatters, cell, pickers, checkbox glyph, and column naming under `Editing/`, the per-type option editors under `Editors/`. `Tables/` is the tabular chrome and column mechanics; `Views/` the saved-view pipeline and renderers; `Cards/` the card chassis. *Test:* `grep -rl "@renderer/Views/\|@renderer/Tables/" Properties/` lists only `PropertiesPane.tsx` (the ruled Style-radio edge); `grep -rl "@renderer/Views/" Tables/ Cards/` returns nothing.
 - **R5 — A value read from two folders is a token, declared once.** Tokens in `DesignSystem/Tokens/`; the frost specular constants in `Materials/`; a per-surface tuning value is a `KNOB` with one owner and a fallback at every read. Spacing reads a named step (`--space-*`, once minted); a literal outside the step set is what needs justifying. *Test:* after the moves, `grep -rh "^\s*--[a-z-]*:" --exclude-dir=Tokens --exclude-dir=Materials .` lists only `KNOB`-commented and component-scoped declarations.
 - **R6 — The style form follows the class-name contract.** Plain `.css` is for a sheet that paints class names it does not emit — CodeMirror decorations, imperative DOM, a cross-module contract like the resize strips. Everything else is `.css.ts`. A `style` prop carries only a value computed this frame or a custom-property assignment. *Test:* `grep -rn "style={{" | grep -E "[0-9]+[,}]|'#|display:"` lists the fourteen static sites and nothing else.
-- **R7 — The name says what it is.** PascalCase iff the primary export is a React component; lowerCamel otherwise, stylesheets included, beside the component they dress; folders Capitalized. Floating surfaces use the design system's six words: Surface, Pane, Window, Dropdown, Menu, Picker. `Dnd` is the identifier spelling of `PommoraDND`; `PM` appears in one folder name, `MarkdownPM`, because it is a product name. *Test:* `find . -type d -name '[a-z]*'` returns only `testing/`.
+- **R7 — The name says what it is.** PascalCase iff the primary export is a React component; lowerCamel otherwise, stylesheets included, beside the component they dress; folders Capitalized. A recipe family — `Glass/`, `Menus/` — names its parts `family-part` in kebab, by ruling, because the files are parts of one thing rather than components in their own right. Floating surfaces use the design system's six words: Surface, Pane, Window, Dropdown, Menu, Picker. `Dnd` is the identifier spelling of `PommoraDND`; `PM` appears in one folder name, `MarkdownPM`, because it is a product name. *Test:* `find . -type d -name '[a-z]*'` returns only `testing/`.
 - **R8 — The root holds entries and global sheets.** `main.tsx`, `App.tsx`, `styles.css`, `Carets.css`, `env.d.ts`, and nothing else; app-core modules live in `Core/`. *Test:* `ls renderer/src/*.ts*` lists two files.
 
 Two more rules are recorded for the Cleanup lane because they change behavior rather than location: `window.nexus` reaches the renderer through one client module, and the store does not import feature modules (Cleanup Bundles 7 and 5). The tree assumes neither and is correct without them.
@@ -61,15 +61,14 @@ Each folder answers "what is this" in one word. New folders are marked; ✓ mark
 
 ```
 // src/renderer/src                     | • The React renderer — it never touches Node
-├── // Components                       | • App-bound wrappers over design-system pieces, and the view-settings panes
-│   ├── // Detail                       | • The Settings dropdown's panes — filter, group, sort, hide, view settings; stays by ruling
+├── // Components                       | • App-bound wrappers over design-system pieces
 │   ├── AssetImage.tsx                  | • NEW wrapper — binds the asset map and crops
 │   ├── IconPicker.tsx                  | • MOVED from Settings — binds this nexus's favorites
 │   ├── ImagePicker.tsx                 | • NEW wrapper — binds paste, pick, and the asset map
 │   ├── PickerControl.tsx               | • NEW wrapper — binds the native row menu
 │   └── …                               | • EntityIcon, RenamableTitle, useNexusIcon, iconFavorites
 ├── // Cards                            | ✓ The card chassis the gallery and CardView wear
-├── // Connections                      | • NEW — the hover card and the link menu, with link resolution
+├── // Connections                      | • NEW — the connection pane and the link menu, with link resolution
 │   ├── linkResolve.ts · openWebLink.ts | • MOVED from the root
 │   └── …                               | • ConnectionHoverCard, HoverCardPresenter, connectionMenu, hoverCardSize
 ├── // Core                             | • NEW — the app-core modules the whole renderer reads
@@ -83,13 +82,15 @@ Each folder answers "what is this" in one word. New folders are marked; ✓ mark
 │   │   └── // WindowChassis            | ✓ the shell every window mounts, from Detail/PreviewPane
 │   ├── // Interactions                 | ✓ ghostAnchor.ts, from Views
 │   │   └── reorderModel.ts             | • MOVED from Sidebar/sidebarDndModel — a generic reorder model
-│   ├── // Materials                    | • Gains --glass-radius and the specular constants; glass-*.tsx become Glass*.tsx
+│   ├── // Glass                        | ✓ the material — glass-base, -window, -surface, -control, -pane · gains --glass-radius
+│   ├── // Menus                        | ✓ the menu recipe — menu-base, -row, -surface, -shell, -disclosure, -anchor, frame-slide, frame-growth
 │   ├── // Tokens                       | ✓ solidColor.ts · gains the shell geometry, --subline-h
 │   └── …                               | • Animation, Elements, Labels, Symbols, Theming, Util
 ├── // Embeds                           | • The embed framework's consumers — page, webpage, retention
+├── // Frames                           | ✓ The frames a Menu or Window opens onto — filter, group, sort, hidden, layout, settings; from Components/Detail
 ├── // Interface                        | • RENAMED from Detail — the main window's chrome and its routed pane
 │   ├── // Banner · // Subfield
-│   ├── // InspectorPane                | • RENAMED from InspectorPanel
+│   ├── // InspectorPane                | ✓ from InspectorPanel
 │   ├── // Sidebar · // Toolbar         | • MOVED from the root
 │   ├── NavView.tsx                     | ✓ the fifth routed view, beside its four siblings, from Tabs
 │   └── …                               | • ContainerView, ContentView (✓ was DetailPane), DetailScaffold, HomepageView, PageView, SpaceView, scope
@@ -113,7 +114,7 @@ Each folder answers "what is this" in one word. New folders are marked; ✓ mark
 └── App.tsx · main.tsx · styles.css · Carets.css · env.d.ts
 ```
 
-**What moves and what holds.** The remaining moves are mostly renames (casing, the `glass-*` six, lowercase subfolders, stylesheets to lowerCamel) — mechanical and `git mv`-able in one commit — and the folders whose names do not describe them (R3) or whose consumers live elsewhere (R2). `MarkdownPM/` moves nothing but subfolder casing. `Components/Detail/` stays by ruling — its correct name is `Components/ViewSettings/`, and the rename waits for the folder to be opened for real work. `DesignSystem/Pickers/` stays: `PickerMenu` is the rectangle ~30 menus mount, and moving it would strand them on a feature-folder import.
+**What moves and what holds.** The remaining moves are mostly renames (casing, lowercase subfolders, stylesheets to lowerCamel) — mechanical and `git mv`-able in one commit — and the folders whose names do not describe them (R3) or whose consumers live elsewhere (R2). `MarkdownPM/` moves nothing but subfolder casing. `DesignSystem/Pickers/` stays: `PickerMenu` is the rectangle ~30 menus mount, and moving it would strand them on a feature-folder import.
 
 **What the tree does not do.** It does not split the store, unwrap IPC, or touch a line of behavior — those are edits, carried below as decisions. A session can execute any move in isolation; the typecheck catches every miss. The rules, not the tree, survive growth: a tree drawn for 453 files will be wrong in detail at 1,400, but the eight rules still file every new module. Three seats are built for that growth — `Core/` for the models every future feature reads, `Windows/` for the fourth and fifth floating windows, `Properties/Editing/` for every value renderer a new view type needs — and a new feature folder appears only when a domain has three or more surfaces of its own, the test `Connections/` is the first to pass.
 
@@ -138,23 +139,23 @@ The eight that gate the tree's non-mechanical moves. Each is a fork the rules do
 
 **Four folder names mislead.** Two `Detail` folders for two unrelated things — the main window's chrome, and the settings panes under `Components/`. `Blocks/` and `SurfacePM/` name one unit `block` and `tile`. `Properties/Editing/` and `Properties/Editors/` are two folders of property editors in two vocabularies, with a `DatetimeValuePicker`/`DateTimeEditor` split on the same word. `Components/` and `DesignSystem/Components/` share a name, and `Settings/IconPicker.tsx` exports an `IconPicker` that shadows the design system's, imported aliased as `Picker` — ten call sites import the Settings one, almost certainly believing otherwise.
 
-**The floating-surface vocabulary already exists and nobody wrote it down.** DesignSystemPM:205-206 defines Surface, Pane, Window, Dropdown, Menu, Picker. The app is 90% compliant. The three violations: `InspectorPanel` (a Pane), `AutocompletePanel` (a Menu), and `Toolbar/NavPane` rendered bare at `Toolbar.tsx:114` while both siblings go through a Dropdown shell. The chassis every window mounts is `WindowChassis`; the floating family is `Windows/`. [[DesignTermsV2]] carries the vocabulary that replaces the six words.
+**The floating-surface vocabulary is [[DesignTermsV2]]'s five words** — Window, Pane, Menu, Frame, Picker — applied across the tree: `Frames/`, `DesignSystem/Menus/`, `DesignSystem/Glass/`, `InspectorPane`, `ConnectionPane`, `AutocompletePane`, the toolbar's `*Menu`. What remains of it is the Menu recipe's row kinds and the main window mounting `SidePane`.
 
 #### The Concept Table
 
 Seventeen concepts checked for two spellings. **Confirmed, worth settling:**
 
-| Conflict | Count | Winner / note |
-| --- | --- | --- |
-| tile vs block | 179 vs 198 | tile — `block` inflated by MarkdownPM's unrelated paragraph model |
-| Pane vs Panel | 397 vs 2 real | Pane — `InspectorPanel`, `AutocompletePanel` are the strays |
-| View vs Renderer | 1,101 vs 7 | View — `ViewRenderer` collides with `src/renderer` and the `@renderer` alias |
-| icon vs glyph | 877 vs 92 | icon — `EntityGlyph`/`EntityIcon` are two wrappers over one `Icon` |
-| zoom vs scale | 85 vs 61 | zoom |
-| Space vs board | — | Space — `board` has four UI-string hits, zero identifiers (`noun="board"` at `SpaceDropdown.tsx:89`, `SettingsScaffold.tsx:51`) |
-| band ×3 | — | three unrelated concepts on one word — SurfacePM's layout run, the Views' group header, the toolbar's band form; `pipeline/group.ts` already exports `ResolvedGroup` for what `GroupBand` renders |
-| `PickerChoice` vs `PickerOption` | 43 vs 42 | two spellings for one list in the same layer |
-| warm vs cache | — | warm |
+| Conflict                         | Count         | Winner / note                                                                                                                                                                                     |
+| -------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| tile vs block                    | 179 vs 198    | tile — `block` inflated by MarkdownPM's unrelated paragraph model                                                                                                                                 |
+| Pane vs Panel                    | 397 vs 0      | Pane — the two strays are renamed                                                                                                                                       |
+| View vs Renderer                 | 1,101 vs 7    | View — `ViewRenderer` collides with `src/renderer` and the `@renderer` alias                                                                                                                      |
+| icon vs glyph                    | 877 vs 92     | icon — `EntityGlyph`/`EntityIcon` are two wrappers over one `Icon`                                                                                                                                |
+| zoom vs scale                    | 85 vs 61      | zoom                                                                                                                                                                                              |
+| Space vs board                   | —             | Space — `board` has four UI-string hits, zero identifiers (`noun="board"` at `SpaceDropdown.tsx:89`, `SettingsScaffold.tsx:51`)                                                                   |
+| band ×3                          | —             | three unrelated concepts on one word — SurfacePM's layout run, the Views' group header, the toolbar's band form; `pipeline/group.ts` already exports `ResolvedGroup` for what `GroupBand` renders |
+| `PickerChoice` vs `PickerOption` | 43 vs 42      | two spellings for one list in the same layer                                                                                                                                                      |
+| warm vs cache                    | —             | warm                                                                                                                                                                                              |
 
 **Refuted, do not re-raise:** nexus/vault (zero identifiers; three Obsidian-interop comments), chip/label (DesignSystemPM defines chip as a recipe of Label — correct), pane/dropdown (`Toolbar/` runs a real two-tier convention: `ViewDropdown` wraps `ViewPane` in `MenuDropdown`), select/option (`shared/properties.ts` layers them correctly), crumb/trail (split by layer, reads fine).
 
@@ -286,7 +287,7 @@ Rulings a sweep would otherwise re-derive wrongly, carried as current truth. Reo
 2. **Both ladders are settled** — `ICON_PX`/`size.icon` absorbs every icon size; `size.control`'s four bundles are the button ladder.
 3. **Bridge completeness is deliberate** — unread members of a fully-bridged ramp are not orphans.
 4. **The bridge is the primary token interface** — all 44 plain stylesheets depend on it; trimming on its understated comment would break the app.
-5. **Three var families look dead and are not** — bridge-completeness vars, fallback-only tuning hooks, and `Materials/`'s specular whites.
+5. **Three var families look dead and are not** — bridge-completeness vars, fallback-only tuning hooks, and `Glass/`'s specular whites.
 6. **`.css` vs `.css.ts` tracks module type** — no blanket migration; the 28 exceptions fail the test rather than disproving it.
 7. **The option editors stay two components** — merging inverts the hook adapter; the row wrapper is closed as `OptionSlot`.
 8. **`PickerMenu.closing` stays** — two live callers inside `CalendarPicker`.
@@ -311,4 +312,4 @@ Rulings a sweep would otherwise re-derive wrongly, carried as current truth. Reo
 
 **Process notes that outlive their documents.** A survey measuring two files against each other without accounting for what was already extracted beneath them overstates the duplication — the ~470-line twin figure is honest only because `usePropertyRows`, `PropertyEditor`, and `PropertyPicker` were counted out. A ruling bounds what it decided, not everything near it. Re-derive citations against the current code before editing; the tree moves. Restate rather than amend — a fixed item is deleted, a changed fact rewritten as currently true.
 
-**Where the surfaces live.** The property surface is `Properties/`; `EyeToggle` and `PickerControl` are `DesignSystem/Elements/`; `NavGallery` is `Navigation/`; `ImagePicker` is `DesignSystem/Components/Pickers/`; `SpaceSettings` is folded into `Toolbar/SpaceDropdown`. `Components/Detail` stays by ruling. `Detail` → `Interface` is ruled and awaits execution; the rest of the tree is unexecuted.
+**Where the surfaces live.** The property surface is `Properties/`; `EyeToggle` and `PickerControl` are `DesignSystem/Elements/`; `NavGallery` is `Navigation/`; `ImagePicker` is `DesignSystem/Components/Pickers/`; `SpaceSettings` is folded into `Toolbar/SpaceDropdown`. `Detail` → `Interface` is ruled and awaits execution; the rest of the tree is unexecuted.

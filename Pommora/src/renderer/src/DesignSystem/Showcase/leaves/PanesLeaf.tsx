@@ -1,15 +1,12 @@
 import { useState } from 'react'
 import { Icon } from '../../Symbols'
 import { DualSwitch } from '../../Components/Controls/Switches/DualSwitch'
-import { Menu, MenuItem } from '../../Components/Menu'
+import { Menu, MenuItem } from '../../Menus'
 import { cx } from '../../Util/cx'
 import { text } from '../../Tokens'
-import {
-  WindowChassis,
-  WINDOW_CHASSIS_INSPECTOR,
-} from '../../Components/WindowChassis/WindowChassis'
-import { SETTINGS_RAIL, SETTINGS_WIN } from '@renderer/Settings/NexusSettings'
-import '@renderer/Settings/nexusSettings.css'
+import { WindowBase, WINDOW_BASE_INSPECTOR } from '@renderer/Windows/window-base'
+import { SETTINGS_RAIL, SETTINGS_WIN } from '@renderer/Settings/SettingsWindow'
+import '@renderer/Settings/settingsWindow.css'
 import './panesLeaf.css'
 
 const CATEGORIES = [
@@ -29,7 +26,7 @@ const ROWS = [
   ['Time Format', "The Nexus's clock, wherever a time renders."],
 ]
 
-/** Opening a side pane widens the window by that pane's width, so the panel between
+/** Opening a side pane widens the window by that pane's width, so the space between
  *  them holds the width it had. */
 export function PanesLeaf(): React.JSX.Element {
   const [railOpen, setRailOpen] = useState(true)
@@ -49,7 +46,7 @@ export function PanesLeaf(): React.JSX.Element {
       </div>
 
       <div className="panes-stage">
-        <WindowChassis
+        <WindowBase
           id="showcase-settings"
           closing={false}
           onClose={() => undefined}
@@ -79,7 +76,7 @@ export function PanesLeaf(): React.JSX.Element {
           }}
           right={{
             windowId: 'showcase-settings-inspector',
-            bounds: WINDOW_CHASSIS_INSPECTOR,
+            bounds: WINDOW_BASE_INSPECTOR,
             mode: 'inflow',
             open: inspectorOpen,
             className: 'settings-rail',
@@ -105,7 +102,7 @@ export function PanesLeaf(): React.JSX.Element {
               ))}
             </div>
           </div>
-        </WindowChassis>
+        </WindowBase>
       </div>
     </div>
   )

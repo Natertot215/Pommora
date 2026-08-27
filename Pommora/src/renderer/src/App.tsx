@@ -6,17 +6,17 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from 'react'
 import { useSession } from './store'
-import { Surface } from '@renderer/DesignSystem/Materials/Surface'
+import { Surface } from '@renderer/DesignSystem/Glass/glass-pane'
 import { Sidebar } from './Sidebar/Sidebar'
 import { Ribbon } from './Sidebar/Ribbon'
 import { ContentView } from './Detail/ContentView'
 import { Toolbar } from './Toolbar/Toolbar'
-import { InspectorPanel } from './Detail/InspectorPanel/InspectorPanel'
+import { InspectorPane } from './Detail/InspectorPane/InspectorPane'
 import { NavWindow } from './Windows/NavWindow'
 import { PageWindow } from './Windows/PageWindow'
 import { WebWindow } from './Windows/WebWindow'
-import { NexusSettings } from './Settings/NexusSettings'
-import { ConnectionHoverCard } from './Embeds/ConnectionHoverCard'
+import { SettingsWindow } from './Settings/SettingsWindow'
+import { ConnectionPane } from './Embeds/ConnectionPane'
 import { contextTargetToSelect } from './Tabs/tabsModel'
 import { useNavThumbnails } from './Navigation/useNavThumbnails'
 import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
@@ -57,7 +57,7 @@ export function App(): React.JSX.Element {
 
   const [inspectorOpen, setInspectorOpen] = useState(false)
 
-  // `resizing` suspends the collapse transition so the panel tracks the cursor 1:1 during an
+  // `resizing` suspends the collapse transition so the pane tracks the cursor 1:1 during an
   // edge-drag; the store clamps + persists.
   const [resizing, setResizing] = useState(false)
   const drag = useRef({ active: false, startX: 0, startW: 0 })
@@ -206,7 +206,7 @@ export function App(): React.JSX.Element {
   }, [commands, toggleRibbon, toggleNav])
 
   // The sidebar only "hides" when a nexus is open (its content is the tree). With
-  // nothing open, the panel is the Open-Folder prompt — keep it visible so toggling
+  // nothing open, the pane is the Open-Folder prompt — keep it visible so toggling
   // off an empty window can't strand the user with no on-screen affordance.
   const sidebarHidden = status === 'ready' && !sidebarVisible
 
@@ -298,12 +298,12 @@ export function App(): React.JSX.Element {
       >
         <Icon name="log-out" size="title2" />
       </Button>
-      {status === 'ready' && <InspectorPanel open={inspectorOpen} />}
+      {status === 'ready' && <InspectorPane open={inspectorOpen} />}
       {status === 'ready' && <NavWindow />}
       {status === 'ready' && <PageWindow />}
       {status === 'ready' && <WebWindow />}
-      {status === 'ready' && <NexusSettings />}
-      {status === 'ready' && <ConnectionHoverCard />}
+      {status === 'ready' && <SettingsWindow />}
+      {status === 'ready' && <ConnectionPane />}
       {status === 'ready' && inspectorOpen && (
         <div
           className="inspector-resize"

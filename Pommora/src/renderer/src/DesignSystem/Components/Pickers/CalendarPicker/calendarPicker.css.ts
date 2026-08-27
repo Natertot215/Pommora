@@ -29,8 +29,8 @@ const hairline = { height: 'var(--width-100)', background: c.border.base } as co
    sizing knob; everything inside flows from it.*/
 export const root = style({ width: '215px', textAlign: 'left' })
 
-/* Content size changes (toggles, month row-count) ride the same beat as PaneSlider's viewport —
-   the ViewPane feel: measured height, transition armed only after first paint so the pane opens
+/* Content size changes (toggles, month row-count) ride the same beat as FrameSlide's viewport —
+   the ViewFrame feel: measured height, transition armed only after first paint so the pane opens
    at size instead of growing from 0. */
 export const morph = style({ overflow: 'hidden' })
 export const morphAnimated = style({ transition: `height ${duration.base} ${easing.baseEase}` })
@@ -100,7 +100,7 @@ const slideRight = keyframes({
 export const viewport = style({ overflow: 'hidden' })
 /* Top-aligned so each month grid keeps its own height — the viewport's computed height (not the
    taller neighbor) decides the pane, and SizeMorph animates the change WITH the slide (one beat,
-   the PaneSlider contract: the horizontal move and the resize land together). */
+   the FrameSlide contract: the horizontal move and the resize land together). */
 export const track = style({ display: 'flex', width: '200%', alignItems: 'flex-start' })
 export const trackLeft = style({
   animation: `${slideLeft} var(--duration-base) var(--ease-base) both`,

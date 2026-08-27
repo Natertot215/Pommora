@@ -1,4 +1,4 @@
-import { MenuItem } from '@renderer/DesignSystem/Components/Menu'
+import { MenuItem } from '@renderer/DesignSystem/Menus'
 
 export interface RowText {
   label: string

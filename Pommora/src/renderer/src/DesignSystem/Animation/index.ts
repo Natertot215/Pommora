@@ -3,9 +3,9 @@ export { DEFAULT_FEEL, GLIDE_FEEL, type Feel } from './feel'
 export { Reveal } from './Reveal'
 export { useExitPresence } from './useExitPresence'
 export {
-  dropdownClose,
-  dropdownMenu,
-  dropdownMenuClosing,
-  dropdownOpen,
+  bloomClose,
+  menuBloom,
+  menuBloomClosing,
+  bloomOpen,
   titleReveal,
 } from './animations.css'

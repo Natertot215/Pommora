@@ -41,11 +41,11 @@ The ladder is the design system's icon ladder,[^1] stated again here.
 
 ### Assignments
 
-Which glyph each recurring concept uses. The app decides these — the panes in `SettingsPane.tsx`, the property types in `PropertyTypes.tsx`, the view types in `ViewSettings.tsx` — and the registry supplies them.
+Which glyph each recurring concept uses. The app decides these — the frames in `Frames/SettingsFrame.tsx`, the property types in `PropertyTypes.tsx`, the view types in `Frames/LayoutFrame.tsx` — and the registry supplies them.
 
-#### II. View Settings Panes
+#### II. Settings Frames
 
-| Pane | Icon |
+| Frame | Icon |
 | --- | --- |
 | Configuration | `sliders-horizontal` |
 | Properties | `server` |

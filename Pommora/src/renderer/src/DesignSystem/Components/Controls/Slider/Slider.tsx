@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { ProgressBar } from '../../../Elements/ProgressBar/ProgressBar'
-import { GlassSegment } from '../../../Materials'
+import { GlassSegment } from '../../../Glass'
 import * as s from './slider.css'
 
 const decimalsOf = (step: number): number => {

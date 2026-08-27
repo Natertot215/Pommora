@@ -63,7 +63,7 @@ export const titleSlide = style({
   flex: '1 1 auto',
   minWidth: 0,
   transition: `transform ${titleReveal}, opacity ${titleReveal}`,
-  transitionDelay: duration.dropdown,
+  transitionDelay: duration.menu,
 })
 export const titleSlideHidden = style({
   transform: 'translateX(-24px)', // KNOB — the hide's slide distance
@@ -77,7 +77,7 @@ export const titleSpace = style({
 })
 export const titleSpaceHidden = style({
   gridTemplateRows: '0fr',
-  transitionDelay: duration.dropdown,
+  transitionDelay: duration.menu,
 })
 export const titleSpaceInner = style({ minHeight: 0, overflow: 'hidden' })
 
@@ -136,7 +136,7 @@ globalStyle(`${switcherRow}:hover ${newViewReveal}`, { opacity: 1 })
 // The embed binds the ActionBand settings affordance's reveal to whole-tile hover.
 globalStyle(`${tile}:hover ${settingsBtn}`, { opacity: 1 })
 
-/** The dropdown-mode view list — the ViewPane's row anatomy inside a PickerMenu. */
+/** The dropdown-mode view list — the ViewFrame's row anatomy inside a PickerMenu. */
 export const listPane = style({ minWidth: 150 })
 
 // The table gutter (row grips + group chevrons strip) resolves from the root --inset-detail token,

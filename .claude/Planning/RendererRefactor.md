@@ -9,9 +9,9 @@ The renderer works and is filed by the order things were built. The refactor mov
 The arc is finished when all of these hold at once:
 
 - The eight rule greps in [[RendererAtlas]] §The Filing Rules return empty, and the target tree is the tree on disk.
-- Every floating or sliding surface is named by [[DesignTermsV2]] — Menu, Pane, Window, Frame, Picker — and no `Dropdown`, `Preview`, or `Leaf` names one.
+- Every floating or sliding surface is named by [[DesignTermsV2]] — Window, Pane, Menu, Frame, Picker — and no `Dropdown`, `Preview`, `Leaf`, or `Panel` names one; the Menu recipe owns every row kind and no frame declares type, tone, or padding of its own.
 - The token ledger in [[DesignSystemPM]] describes every var the renderer declares; the atlas's Open Decisions sections are empty because each block was ruled and executed.
-- `Detail`, `Components/Detail`, `PagePreview`, `NavWindow`, `SurfacePM`, and the root-level app modules no longer exist as folders under those names.
+- `Detail`, `SurfacePM`, and the root-level app modules no longer exist as folders under those names.
 
 ### Done
 
@@ -32,12 +32,14 @@ Each row is on disk and committed; the commit is named where one commit carries 
 - [x] `--label-zoom` retired; chips render at one size everywhere.
 - [x] `Windows/` — `PageWindow`, `WebWindow`, `NavWindow`, the tab strip, the warm cache, the morph; the chassis is `DesignSystem/Components/WindowChassis` (`.window-*`), `SidePane` beside it; `Detail/DetailPane` → `Detail/ContentView`; `Tabs/NavView` → `Detail/NavView`; `NotchedPane` → `NotchedShell`.
 - [x] Rulings taken and written into the atlas's Settled list: spacing and radius stay literal on the even grid, odd values reconciling per consumer; the toolbar tone rule; the `--tint-solid` keep; `subChip` stays.
+- [x] The vocabulary applied — [[DesignTermsV2]]'s five words across the tree: `Frames/` from `Components/Detail` with every `*Pane` a `*Frame`; `DesignSystem/Menus/` in kebab parts with `FrameSlide`; `DesignSystem/Glass/` as `glass-base` / `-window` / `-surface` / `-control` / `-pane` with the tier names swapped to their meanings; `InspectorPane`, `ConnectionPane`, `AutocompletePane` on `glass-pane`; the toolbar's `*Menu`; `SettingsWindow`, `TrashFrame`; the `menu` motion token.
 
 ### In Flight
 
 Ruled, with a plan on paper, and not yet executed.
 
-- [ ] **The vocabulary — [[DesignTermsV2]]**, four sessions in order: Menus (`MenuDropdown` + `MenuSurface` → `Menu`, the row column → `MenuList`, `MenuScrollFrame` → `MenuScroll`, the toolbar's `*Dropdown` → `*Menu`, the `dropdown` motion token → `menu`); Panes (`GroupPane`, `SortPane`, `LayoutPane`, `PropertyPane`, the Settings leaves → `*Pane`, `Components/Detail/` → `Components/Panes/`); Frames (the hover card → `PageFrame` / `WebFrame`, the autocomplete → `AutoFrame`); the side slot (the main window onto `SidePane`, SideSlide consolidated, the two inspectors reconciled, `NexusSettings` → `SettingsWindow`, the store's `closePreview` / `settingsOpen` names).
+- [ ] **The Menu recipe** — the row kinds named once in `Menus/menu-base.css` (item, heading, section title, sub-label, detail, control row, chip run, slider row, sub row); `menu-roster` renders sections → rows of a kind; `MenuDropdown` + `MenuSurface` fold into `Menu`; `MenuScrollFrame` → `MenuScroll`; `SortFrame` and `HiddenFrame` become rosters; `frames.css.ts`, `filterFrame.css.ts`, `groupFrame.css.ts`, `layoutFrame.css.ts` shrink to geometry; the three files that each decide a header's type become one line.
+- [ ] **The side slot** — the main window's sidebar and inspector mount `SidePane`; PaneSlide becomes one motion in one file; `InspectorPane` and `WindowInspector` reconciled; the store's `closePreview` / `settingsOpen` names.
 - [ ] **The zoom family** — three renames (`--card-scale` → `--cards-scale`, `--zoom` and its embed feeders → `--view-scale`, `--block-zoom` → `--block-scale`) and one merge (`--editor-scale` + `--mdpm-scale` → `--page-scale`) that rewires the font path so an embed's font is not scaled twice; `--preview-zoom` renamed out of the family as a crop.
 - [ ] **Three strings still say "preview"** — the setting label "Open Connections In Preview", its hint, and one test title; UI copy waits on the wording.
 
@@ -87,9 +89,6 @@ The calls only Nathan can make, each of which deletes a block in the atlas or [[
 - The design system's three reaches — invert now, or leave under the lint's allowlist.
 - `Interface/` absorbing `Sidebar/` and `Toolbar/`.
 - `Windows/` keeping `NavWindow`, or `Navigation/` taking it ungrouped.
-- `SidePane` as the side slot's compound name, and the main window mounting it.
-- The bare `Menu` component as trigger-plus-surface.
-- The two inspectors — one component or one name over two.
 - The `PropertiesPane` Style-radio edge.
 - The wording for the three "preview" strings.
 

@@ -8,7 +8,7 @@ import { numberDivisor } from '@renderer/Properties/Editing/formatValue'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { PickerControl, type PickerChoice } from '@renderer/DesignSystem/Elements/PickerControl'
 import { Reveal } from '@renderer/DesignSystem/Animation/Reveal'
-import { configLabel, configRow } from '../../Components/Detail/settingsPane.css'
+import { configLabel, configRow } from '../../Frames/frames.css'
 import { pickerValue } from '@renderer/DesignSystem/Elements/PickerControl'
 import * as s from './numberEditor.css'
 
