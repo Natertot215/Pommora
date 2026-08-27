@@ -6,6 +6,6 @@
   flex-direction: column;
   min-height: 0;
   overflow: hidden;
-  padding: 6px;
+  padding: var(--surface-inset);
   border-radius: var(--app-radius);
 }
