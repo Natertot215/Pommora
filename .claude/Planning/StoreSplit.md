@@ -1,6 +1,6 @@
 ## The Store Re-Key and Split — Implementation Plan
 
-> **Status:** ratified — in execution (08-27, base `63a473fe`) · Spec: [[Codebase-Cleanup-Checklist]] §Bundle 5, the 08-21 Architecture Audit §The Store · Execute tasks in order.
+> **Status:** closed 08-27-2026 — both phases landed (`f72d34de^..bd1a551f`); the running-thing pass is Nathan's · Spec: [[Codebase-Cleanup-Checklist]] §Bundle 5, the 08-21 Architecture Audit §The Store · Execute tasks in order.
 > Citations name files and symbols; re-derive before editing. The Renderer Refactor moves folders under this plan's feet (`Detail/` → `Interface/`, `Tabs/` → `Navigation/`, root modules → `Core/`), so a path here is where the symbol lived when the plan was written.
 
 **Goal**
@@ -311,11 +311,11 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
 ## Implementation Log
 
 ### Progress
-- [ ] **Phase 1** — A slot per open page · base `63a473fe` · commits `f72d34de` `0b7a81ce` `eb4e03f6` `33d5a2bb` `6fa0e03d` · `store.ts` 1,620 → 1,587 code lines · Gate 1 green but for the running-thing pass
+- [x] **Phase 1** — A slot per open page · base `63a473fe` · commits `f72d34de` `0b7a81ce` `eb4e03f6` `33d5a2bb` `6fa0e03d` · `store.ts` 1,620 → 1,587 code lines · Gate 1 green but for the running-thing pass
   - [x] Task 1 — The slot, the hosts, and the capture at unmount · `<commit>` · `store.ts` 1,620 → 1,612 code lines; whole diff −29
   - [x] Task 2 — The Subfield is driven · `<commit>` · `inert` marks a floating window's crumbs (the tab-neutral, no-click behavior the `scope` mode carried needs its own signal once every host passes a page)
   - [x] Task 3 — One writer for the pinned tabs; the preview target is read · `<commit>` · `store.ts` 1,596 code lines
-- [ ] **Phase 2** — The file becomes slices · base `0c0e651a` · commits `d59b5528` `c927a41a` `a77b3360` `1c300851` `b1b810a2` · `store.ts` 51 lines; store code 1,620 → 1,654 across eight files; whole plan net +52 code lines excluding tests · Gate 2 green but for the running-thing pass
+- [x] **Phase 2** — The file becomes slices · base `0c0e651a` · commits `d59b5528` `c927a41a` `a77b3360` `1c300851` `b1b810a2` `45657b5c` `bd1a551f` · `store.ts` 51 lines; store code 1,620 → 1,654 across eight files; whole plan net +52 code lines excluding tests · Gate 2 green but for the running-thing pass
   - [x] Task 4 — The slice files and the composition root · `<commit>` · `store.ts` 51 lines; `Store/` 1,940 lines across eight files
   - [x] Task 5 — Tests for what the re-key created · `<commit>` · three new cases; the other three the plan listed were already pinned by the rewritten warm-tab block
   - [x] Task 6 — The documents · `<commit>`
@@ -331,13 +331,18 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
 - Task 1 (simplification pass): `useHosts` subscribed to `s.pages`, which re-identifies per keystroke — the pane committed at ~8 Hz against Requirement 8. Fixed by `readyPageIds`, a primitive selector of the loaded ids; the composition root's re-export list gains it in Task 4.
 - Task 1: the `MarkdownPM/index.tsx` capture-identity comment the plan said to move was left in place; removed at Gate 1.
 ### Lessons
+- A slice file must import nothing that imports the store. `createNavigationSlice` is a `const` the composition root calls at module scope, so a cycle that enters through the slice (vanilla-extract's compile enters the renderer through a stylesheet's imports and reached `store.ts` via `NavigationSlice → useNavThumbnails → store.ts`) throws `createNavigationSlice is not a function` at boot. The old cycle was benign only because its one binding was a hoisted `function`. Fix: the thumbnail markers moved to a store-free module; rule routed to Build-Gotchas.
+- A fence keyed on "since mount" outlives its cause when the host no longer remounts: hosts keyed by page id survive a rename's `clearWarm()`, so a mount-time generation muted every later capture from the shown surface. The generation re-arms per commit.
+- A test whose mutation names a path outside the seeded tree never reaches `applyTree`; the rename test now renames a page the tree holds, and `seed` resets `pages`.
 ### Sequenced After
+- A reload of the shown page cannot reach the mounted editor (`MarkdownEditor` keys on path and binds `initialBody` at mount) — pre-existing; after a rename's cascade the pane keeps the pre-cascade document and the next keystroke saves it back. The subtractive fix is to drop the shown slot too and let the re-select remount through the pause; a product call on the flash, so it waits for Nathan.
+- `ContentFooter` subscribes to the slot, so `Subfield`'s crumb derivation now re-runs at typing cadence; if the profiler shows `NavTrail` committing at ~8 Hz, a `useMemo` on `crumbSelection` closes it.
 - The `Core/` filing row moves `store.ts` and `Store/` together (RendererRefactor).
 - Split view and a raised `WARM_TABS` land on `pages`; `registerPageEditor` (one published editor) and `ContentView`'s module-held `paneEl` are the two single-pane assumptions split view meets next.
 - The preview window's page as a slot, if `PageEmbed` ever loads through the store — today it owns its fetch, so the preview keeps a local body.
 ### Closeout
 
-**Delivery Claim** (08-27-2026, HEAD `b1b810a2`):
+**Delivery Claim** (08-27-2026, HEAD `bd1a551f`; verified TRUE on all seven points by the neutral pass; the attack pass's three real findings — the fatal slice-entry cycle, the mount-lifetime fence, the reload overwriting the live buffer — were fixed in `bd1a551f`, and its two design calls are in Sequenced After):
 
 1. Every requirement traces to a landed task: R1 (`pages` by page id; the four fields gone) → Task 1 `f72d34de`; R2 (`selection` stays; `frozenOf`) → Task 1; R3 (`PageView({ tabId, pageId, parked })`, hosts by page id, no `detail` prop, no warm read in `useHosts`) → Task 1 + `33d5a2bb`; R4 (driven Subfield, `scope` gone, only the stats leaves subscribe to the body) → Task 2 `0b7a81ce`; R5 (capture at unmount under the generation, tab id at capture time) → Task 1; R6 (`setPinned`; `previewTargetOf` over `deriveTarget`) → Task 3 `eb4e03f6`; R7 (seven slices under `Store/`, composition root, importers unchanged) → Task 4 `d59b5528`; R8 (tests) → the rewritten warm-tab block + Task 5 `c927a41a`.
 2. The Acceptance criterion's behavioral half is proven by tests (slot survives a switch with no fetch; the pause holds on the shown slot; the fence drops a stale landing; a rename deletes parked slots and a return fetches cold; a re-path spares the shown slot; `frozenOf` across the pause) and its grep half by the Dead Vocabulary sweep; its visual half — the slide, pin/unpin without remount, the preview footer, the profiler, ⌘R — is the one item not observed by this session and is deferred to Nathan's pass on the live instance.
