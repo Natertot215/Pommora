@@ -66,14 +66,14 @@
 .subfield-reveal {
   transition: height var(--duration-base) var(--ease-base);
 }
-.detail-pane.subfield-open .subfield-reveal {
+.content-view.subfield-open .subfield-reveal {
   height: var(--subline-h);
 }
 .shell.is-resizing .subfield-reveal {
   transition: none;
 }
 
-/* The near-region this toggle reveals from is tracked in DetailPane (`.subfield-near`). */
+/* The near-region this toggle reveals from is tracked in ContentView (`.subfield-near`). */
 .subfield-toggle {
   right: 0;
   z-index: 2;
@@ -81,10 +81,10 @@
   height: var(--subline-h);
   padding: 0 12px 0 0;
 }
-.detail-pane.subfield-open .subfield-toggle {
+.content-view.subfield-open .subfield-toggle {
   bottom: var(--subline-h);
 }
-.detail-pane.subfield-near .subfield-toggle {
+.content-view.subfield-near .subfield-toggle {
   opacity: 1;
 }
 .shell.is-resizing .subfield-toggle {
@@ -101,10 +101,10 @@
   padding: 0 0 0 calc(var(--content-inset) - var(--inset-content) / 2);
   justify-content: flex-start;
 }
-.detail-pane.subfield-open .footnotes-toggle {
+.content-view.subfield-open .footnotes-toggle {
   bottom: var(--subline-h);
 }
-.detail-pane.subfield-near-lead .footnotes-toggle {
+.content-view.subfield-near-lead .footnotes-toggle {
   opacity: 1;
 }
 .shell.is-resizing .footnotes-toggle {

@@ -1,27 +1,27 @@
 import { useCallback, useEffect, useMemo, type RefObject } from 'react'
 import type { WarmSeam } from '@renderer/MarkdownPM/warmSeam'
 import { useSession } from '../store'
-import { capturePreviewWarm, readPreviewWarm, type PreviewWarmEntry } from './previewWarm'
+import { captureWindowWarm, readWindowWarm, type WindowWarmEntry } from './windowWarm'
 
 // Captures are LIVENESS-GATED — the editor's unmount capture trails the store's drop, and
 // ungated it would re-insert one ghost editorState per close.
 
-export function usePreviewWarm(
+export function useWindowWarm(
   scrollerRef: RefObject<HTMLElement | null>,
   activePath: string | undefined,
 ): WarmSeam | undefined {
   const activeTabId = useSession((s) => s.preview?.activeTabId)
 
-  const captureIfLive = useCallback((tabId: string, entry: PreviewWarmEntry): void => {
+  const captureIfLive = useCallback((tabId: string, entry: WindowWarmEntry): void => {
     const p = useSession.getState().preview
-    if (p?.tabs.some((t) => t.id === tabId)) capturePreviewWarm(tabId, entry)
+    if (p?.tabs.some((t) => t.id === tabId)) captureWindowWarm(tabId, entry)
   }, [])
 
   const seam = useMemo<WarmSeam | undefined>(
     () =>
       activeTabId
         ? {
-            restore: () => readPreviewWarm(activeTabId),
+            restore: () => readWindowWarm(activeTabId),
             capture: (state) => captureIfLive(activeTabId, state),
           }
         : undefined,
@@ -42,7 +42,7 @@ export function usePreviewWarm(
   // listener records the clamp as truth). Double-rAF lands after its first measure/layout pass.
   useEffect(() => {
     if (!activeTabId || activePath === undefined) return
-    const saved = readPreviewWarm(activeTabId)?.bodyScrollTop ?? 0
+    const saved = readWindowWarm(activeTabId)?.bodyScrollTop ?? 0
     let inner = 0
     const outer = requestAnimationFrame(() => {
       inner = requestAnimationFrame(() => {

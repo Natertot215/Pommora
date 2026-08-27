@@ -8,7 +8,7 @@ import {
 } from 'react'
 import { GlassPane, PANE_FROST } from '../../Materials'
 import { cx } from '../../Util/cx'
-import * as s from './notchedPane.css'
+import * as s from './notchedShell.css'
 
 const NOTCH_W = 34
 const NOTCH_H = 8
@@ -40,7 +40,7 @@ function panePath(w: number, h: number, nx: number): string {
 }
 
 /** `notchInsetRight` aims the beak from the pane's right edge; omitted = centered. */
-export function NotchedPane({
+export function NotchedShell({
   children,
   className,
   animationClass,

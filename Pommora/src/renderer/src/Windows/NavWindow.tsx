@@ -4,9 +4,9 @@ import { cx } from '@renderer/DesignSystem/Util/cx'
 import { duration, easing, ms } from '@renderer/DesignSystem/Animation'
 import { text } from '@renderer/DesignSystem/Tokens'
 import {
-  PREVIEW_PANE_INSPECTOR,
-  PreviewPane,
-} from '@renderer/DesignSystem/Detail/PreviewPane/PreviewPane'
+  WINDOW_CHASSIS_INSPECTOR,
+  WindowChassis,
+} from '@renderer/DesignSystem/Components/WindowChassis/WindowChassis'
 import { SearchField } from '@renderer/DesignSystem/Components/Fields'
 import type { NavRef } from '@shared/types'
 import { useExitPresence } from '@renderer/DesignSystem/Animation/useExitPresence'
@@ -19,11 +19,11 @@ import { pageIndexOf, resolveIndexOf } from '../treeIndex'
 import { useSession } from '../store'
 import { splitSearch, useNavData } from '../Navigation/useNavData'
 import { NavList } from '../Navigation/NavList'
-import { PreviewActions } from '../PagePreview/PreviewActions'
-import { PreviewInspector } from '../PagePreview/PreviewInspector'
-import { consumeWindowMorph } from '../PagePreview/WindowMorph'
-import { PreviewTabStrip } from '../PagePreview/PreviewTabStrip'
-import { usePreviewWarm } from '../PagePreview/usePreviewWarm'
+import { WindowActions } from './WindowActions'
+import { WindowInspector } from './WindowInspector'
+import { consumeWindowMorph } from './windowMorph'
+import { WindowTabStrip } from './WindowTabStrip'
+import { useWindowWarm } from './useWindowWarm'
 import { NavGallery } from '../Navigation/NavGallery'
 import './navWindow.css'
 
@@ -32,7 +32,7 @@ const RAIL = { min: 120, def: 200, max: 320 }
 // Matched against the press target itself, so child content — row internals, card bodies, the
 // search input — never arms a window move.
 const DRAG_SURFACES =
-  '.navwindow-content, .navwindow-rail, .navwindow-rail-list, .navwindow-main, .navwindow-main-scroll, .navwindow-search, .navwindow-page, .navwindow-tabs, .pgpreview-tabwrap, .pgpreview-tabscroll, .pgpreview-tabstrip, .nav-list, .nav-gallery, .nav-gallery .card-grid'
+  '.navwindow-content, .navwindow-rail, .navwindow-rail-list, .navwindow-main, .navwindow-main-scroll, .navwindow-search, .navwindow-page, .navwindow-tabs, .page-window-tabwrap, .page-window-tabscroll, .page-window-tabstrip, .nav-list, .nav-gallery, .nav-gallery .card-grid'
 
 export function NavWindow(): React.JSX.Element | null {
   const navOpen = useSession((s) => s.navOpen)
@@ -131,7 +131,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   const [editing, setEditing] = useState(false)
   useEffect(() => setEditing(false), [pageTarget?.path])
   const pageScrollRef = useRef<HTMLDivElement>(null)
-  const warmSeam = usePreviewWarm(pageScrollRef, pageTarget?.path)
+  const warmSeam = useWindowWarm(pageScrollRef, pageTarget?.path)
   const connections = useMemo<ConnectionsApi | undefined>(() => {
     if (!tree) return undefined
     const idx = pageIndexOf(tree)
@@ -147,7 +147,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   }, [tree, openPreviewTab, select])
 
   return (
-    <PreviewPane
+    <WindowChassis
       id="navwindow"
       rootRef={rootRef}
       closing={closing}
@@ -160,7 +160,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       ariaLabel="Navigation"
       onScan={promote}
       actions={
-        <PreviewActions
+        <WindowActions
           inspectorOpen={inspectorOpen}
           onToggleInspector={() => setInspectorOpen((v) => !v)}
         />
@@ -189,20 +189,20 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       }}
       right={{
         windowId: 'preview-inspector',
-        bounds: PREVIEW_PANE_INSPECTOR,
+        bounds: WINDOW_CHASSIS_INSPECTOR,
         mode: 'overlay',
         open: inspectorOpen && pageTarget !== null,
         className: 'navwindow-inspector',
         children: (
           <div className="navwindow-inspector-body">
-            {inspectorOpen && pageTarget && <PreviewInspector target={pageTarget} />}
+            {inspectorOpen && pageTarget && <WindowInspector target={pageTarget} />}
           </div>
         ),
       }}
     >
       <div className="navwindow-content">
         <div className={cx('navwindow-tabs', hasTabs && 'has-tabs')}>
-          <PreviewTabStrip index={resolveIndex} title={null} />
+          <WindowTabStrip index={resolveIndex} title={null} />
         </div>
         {pageTarget ? (
           <div className="navwindow-page over-scroll pgembed-grows" ref={pageScrollRef}>
@@ -255,6 +255,6 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
           </div>
         )}
       </div>
-    </PreviewPane>
+    </WindowChassis>
   )
 }

@@ -528,7 +528,7 @@ export interface PreviewsFile {
  *  renderer's reset can't drift into two different "empty". */
 export const EMPTY_PREVIEWS: PreviewsFile = { navSet: null, origins: {}, open: null }
 
-/** A detail-pane rectangle (DIP, viewport-relative) the renderer measures for a thumbnail capture. */
+/** A content-view rectangle (DIP, viewport-relative) the renderer measures for a thumbnail capture. */
 export interface ThumbRect {
   x: number
   y: number

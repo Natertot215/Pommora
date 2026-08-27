@@ -11,8 +11,8 @@
    which edge it hangs from, its inset, and its z-index. */
 .sidebar-resize,
 .inspector-resize,
-.ppane-side-right-overlay-resize,
-.ppane-side-left-overlay-resize {
+.window-side-right-overlay-resize,
+.window-side-left-overlay-resize {
   position: absolute;
   width: 9px;
   cursor: col-resize;

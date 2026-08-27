@@ -5,7 +5,7 @@
 let stash: DOMRect | null = null
 
 export const stashWindowMorph = (): void => {
-  stash = document.querySelector('.pgpreview')?.getBoundingClientRect() ?? null
+  stash = document.querySelector('.page-window')?.getBoundingClientRect() ?? null
 }
 
 export const consumeWindowMorph = (): DOMRect | null => {

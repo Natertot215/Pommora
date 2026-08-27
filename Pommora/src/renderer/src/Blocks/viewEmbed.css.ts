@@ -171,7 +171,7 @@ globalStyle(`${body} .table-view, ${body} .table-empty`, {
 /** Cards ride the SAME embed-zoom seam (.cards-view reads `zoom: --zoom * --block-zoom`), but take the
  *  BASE page-embed zoom — not the table's, whose 15/13 factor normalizes the table's 13px
  *  body. Cards have no single body-font base, so they scale like a page embed instead of inheriting the
- *  table's text-normalization; without this the card grid rendered at full detail-pane size in a tile. */
+ *  table's text-normalization; without this the card grid rendered at full content-view size in a tile. */
 globalStyle(`${body} .cards-view`, {
   vars: { '--zoom': `var(--embed-zoom, ${embedZoom(EMBED_SCALE_DEFAULT)})` },
   // The tail seam — the last card row clears the tile's bottom edge by the seam law's shoulder,

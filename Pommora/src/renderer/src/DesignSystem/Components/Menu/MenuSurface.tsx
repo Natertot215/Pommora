@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { cx } from '../../Util/cx'
 import { dropdownMenu, dropdownMenuClosing } from '../../Animation/animations.css'
-import { NotchedPane } from './NotchedPane'
+import { NotchedShell } from './NotchedShell'
 import * as s from './menuSurface.css'
 
 export function MenuSurface({
@@ -16,12 +16,12 @@ export function MenuSurface({
   notchInsetRight?: number
 }): React.JSX.Element {
   return (
-    <NotchedPane
+    <NotchedShell
       className={cx(s.surface, className)}
       animationClass={closing ? dropdownMenuClosing : dropdownMenu}
       notchInsetRight={notchInsetRight}
     >
       {children}
-    </NotchedPane>
+    </NotchedShell>
   )
 }

@@ -1,11 +1,11 @@
-/* The NavWindow. Shell, toolbar, and side panes come from the PreviewPane surface; what remains
+/* The NavWindow. Shell, toolbar, and side panes come from the WindowChassis surface; what remains
    here is this window's own interior — the rail's contents, the tab row, and the search list. */
 
 .navwindow {
   /* The window rings on the glass inset rather than running edge-to-edge. */
   padding: var(--glass-inset);
   /* KNOB — the pair sits further off the × here than in a toolbar band. */
-  --ppane-trail-gap: 6px;
+  --window-trail-gap: 6px;
   /* KNOB — the shared content inset (search divider + rows align to this). */
   --navwindow-inset: 12px;
   /* KNOB — list ROWS get a wider leading inset than the chrome so the pin marker has a gutter it
@@ -17,20 +17,20 @@
 /* The corner clusters exist only in the page-tab state — they fade in as a page tab activates and
    out on the map return. The scan/Open shows on BOTH flavors (a page tab promotes that page, the
    map flavor promotes the window into NavView), so only the trailing pair is page-tab-only. */
-.navwindow .ppane-actions-flow {
+.navwindow .window-actions-flow {
   opacity: 0;
   pointer-events: none;
   /* The nudge transitions as a VALUE, never as `transform` — the transform also carries the
      --io swallow, and transitioning it would retarget on every frame --io advances. */
-  --ppane-flow-reveal: 6px;
+  --window-flow-reveal: 6px;
   transition:
     opacity var(--duration-base) var(--ease-base),
-    --ppane-flow-reveal var(--duration-base) var(--ease-base);
+    --window-flow-reveal var(--duration-base) var(--ease-base);
 }
-.navwindow.is-page-tab .ppane-actions-flow {
+.navwindow.is-page-tab .window-actions-flow {
   opacity: 1;
   pointer-events: auto;
-  --ppane-flow-reveal: 0px;
+  --window-flow-reveal: 0px;
 }
 
 /* The strip row exists only past one tab — height grows in on the standard ease, nudging the
@@ -50,7 +50,7 @@
      leading edge; without the second term the tabs run under the pane. The squeeze carries its own
      motion through --io, so padding-right stays OUT of the transition list — transitioning it would
      retarget on every frame that --io advances. */
-  padding-right: calc(var(--glass-inset) + 56px + var(--ppane-title-squeeze, 0px));
+  padding-right: calc(var(--glass-inset) + 56px + var(--window-title-squeeze, 0px));
   transition:
     height var(--duration-base) var(--ease-base),
     padding-left var(--duration-base) var(--ease-base);
@@ -79,7 +79,7 @@
   min-height: 0;
 }
 
-/* The page tab's content: the body-owns-scroll model, same as the floating preview; the open
+/* The page tab's content: the body-owns-scroll model, same as the floating page window; the open
    inspector squeezes it aside. */
 .navwindow-page {
   flex: 1;
@@ -89,10 +89,10 @@
   scrollbar-width: none;
   transition: padding-right var(--duration-base) var(--ease-base);
 }
-.ppane.is-side-right-open .navwindow-page {
-  padding-right: calc(var(--ppane-side-r-w) + var(--ppane-side-inset));
+.window.is-side-right-open .navwindow-page {
+  padding-right: calc(var(--window-side-r-w) + var(--window-side-inset));
 }
-.ppane.is-resizing .navwindow-page {
+.window.is-resizing .navwindow-page {
   transition: none;
 }
 
