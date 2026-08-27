@@ -115,7 +115,7 @@ export function findContainer(
     }
     return null
   }
-  for (const c of tree.collections ?? []) {
+  for (const c of allCollections(tree)) {
     if (match(c)) return c
     const hit = inSets(c.sets)
     if (hit) return hit
