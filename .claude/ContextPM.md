@@ -6,11 +6,15 @@
 
 **The theme that has replaced it is the renderer's own organization.** The code works; where it lives increasingly doesn't make sense. `Detail/` holds the main-window interface alongside `Views/`, which has nothing to do with the detail pane. `Components/` is the pre-design-system shared-bits folder and its `Detail/` subfolder was a catch-all for the view-settings panes, every property editor, two general controls and a DnD binding. A Space had two toolbar surfaces, one of them blank. `NavGallery` sat in `NavWindow/` while every part it is built from sat in `Navigation/`. The design system owns pieces that are genuinely shared and also owns things it arguably shouldn't — Pickers being the clearest case — so the boundary between "the pieces" and "the surfaces that use them" is not currently drawn anywhere. None of this is a defect; it is accumulated filing, and it is what the next arc addresses.
 
-**Three focuses stand in front of the project**, described under §Pending Focuses. The Inline Page Properties work runs parallel to the other two on its own Decision Log. The Codebase Cleanup is the behavioral half — correctness, performance, and the structural moves inside the processes — and likely comes first, so the refactoring pass isn't moving files the cleanup is about to rewrite. The Refactoring is the whole-renderer organizational arc, broken into single-session phases, and is mostly moves and merges rather than behavior.
+**The Refactoring is active.** Four of the atlas's moves are executed: `Views/` sits at the renderer root; the card chassis is `Cards/`, worn by the Navigation gallery and CardView alike; the tabular chrome is `Tables/`, worn by TableView and the Trash; and the property value layer — resolution, formatters, the cell, the pickers — is `Properties/`, so the dependency order reads `DesignSystem ← Properties ← Tables ← Views`. The Inline Page Properties work runs parallel on its own Decision Log. The Codebase Cleanup is the behavioral half — correctness, performance, and the structural moves inside the processes — and follows once the moves that would otherwise reshuffle its files are done.
 
 ### Immediate Work
 
-- [ ] **Rule on [[RendererAtlas]] §V.** The atlas carries every organizational decision with a recommendation; the arc cannot start its non-mechanical rows until the structural ones (D-A through D-I) are stamped.
+- [ ] **Rule on [[RendererAtlas]]'s open decisions.** Each section carries its calls with a recommendation; the structural ones gate the tree's non-mechanical moves.
+- [ ] **Unwind the toolbar's `.app-toolbar button` tone rule** (`Toolbar/toolbar.css:98`) in the atlas's order — delete the colliding `color` first, then walk the `&&` doubles down with the app open. A Button inside a toolbar pane still needs a local pin until then (the field's trailing slot carries one).
+- [ ] **The Settings window's rows join the menu row primitive.** `Settings/SettingsRow.tsx` and `nexusSettings.css` hand-roll the row that `MenuItem` already is — label, hint, and a trailing control — so the two drift on padding and tone.
+- [ ] **`PropertiesPane`'s per-column Style radios** are a view-settings section inside the Properties pane (the one `Properties → Views`/`Tables` edge); lifting them beside the other view-settings panes closes it.
+- [ ] **Eyeball the Space dropdown** — carried from 08-25: icon, editable title, lock footer, the two pickers, with the trio's Settings button blank behind it.
 
 ### Pending Focuses
 
@@ -22,8 +26,9 @@
 
 The whole-renderer organizational arc: moves and merges rather than behavior, broken into single-session phases. Its one source is [[RendererAtlas]] — the map as it is, the eight rules that decide where anything goes, the target tree with every file placed under a rule, the token verdicts, and the decisions the tree cannot make. A session takes rows from the atlas's ledger; nothing about the arc lives anywhere else.
 
-- [ ] **The rulings the atlas waits on** — its §V, each with a recommendation: the design system's three upward reaches and the lint rule that keeps them closed; where value rendering lives; the floating family's name and the chassis's; the spacing and radius scales; the container title; the toolbar selector's unwinding order; the cursor convention.
-- [ ] **The ledger** — 228 moves under eight rules, 87 of them renames alone. Any row can be taken in isolation; the typecheck catches every miss.
+- [ ] **The rulings the atlas waits on** — its open decisions, each with a recommendation: the design system's three upward reaches and the lint rule that keeps them closed; the floating family's name and the chassis's; the spacing and radius scales; the toolbar selector's unwinding order; the cursor convention.
+- [ ] **The remaining moves** — `Detail` → `Interface`, `Core/`, `Windows/`, `Connections/`, the Showcase out of the design system, and the renames. Any row can be taken in isolation; the typecheck catches every miss.
+- [ ] **The one ruled upward edge** — `PropertiesPane`'s per-column Style radios read the active view and `useStyleFor`; lifting that section beside the other view-settings panes would close it.
 
 #### Three — The Codebase Cleanup
 

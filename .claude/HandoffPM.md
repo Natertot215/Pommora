@@ -29,10 +29,9 @@
 
 1. **Read the atlas's Executive Summary and Part V, then rule.** Twenty-six decisions, each with a recommendation. The structural nine (D-A to D-I) gate the ledger; the rest can be taken in any order.
 2. **Fix the one bug** — `Blocks/ViewEmbedBlock.tsx:88` → `cellRing(key)`. One line; it does not wait for a ruling.
-3. **The remaining seam edits are two mints** — the three seam widths and `--border-control` beside them. They are the precondition for the separator rule being lintable and they change zero pixels.
-4. **The lint rule (D-B)** can land before the reaches close: `noRestrictedImports` from `DesignSystem/**` with an allowlist of the three files.
-5. **Eyeball the Space dropdown** — still owed from 08-25.
-6. **Inline Page Properties** runs parallel and shares no files with any of this.
+3. **The lint rule (D-B)** can land before the reaches close: `noRestrictedImports` from `DesignSystem/**` with an allowlist of the three files.
+4. **Eyeball the Space dropdown** — still owed from 08-25.
+5. **Inline Page Properties** runs parallel and shares no files with any of this.
 
 #### Feedback
 
