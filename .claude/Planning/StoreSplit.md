@@ -261,12 +261,12 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
 **Failure half:** none — a move. The negative control is the typecheck and the suite: a helper in the wrong file is a missing import; a field left out of a slice is a missing property on `SessionState`.
 
 **Steps:**
-- [ ] Run the census; record its table in the Log.
-- [ ] Create `SessionState.ts` and the seven slice files by moving code; module state moves with its slice.
-- [ ] `store.ts` composes and re-exports; `npm run typecheck` — green with zero consumer edits, or the re-export list is incomplete.
-- [ ] Gates green; `store.test.tsx` passes unedited.
-- [ ] App: the Acceptance sequence.
-- [ ] Commit: `refactor(store): the session is seven slices in Store/`.
+- [x] Run the census; record its table in the Log.
+- [x] Create `SessionState.ts` and the seven slice files by moving code; module state moves with its slice.
+- [x] `store.ts` composes and re-exports; `npm run typecheck` — green with zero consumer edits, or the re-export list is incomplete.
+- [x] Gates green; `store.test.tsx` passes unedited.
+- [ ] App: the Acceptance sequence — Gate 2's running-thing pass.
+- [x] Commit: `refactor(store): the session is seven slices in Store/`.
 
 #### Task 5: Tests for what the re-key created
 
@@ -315,8 +315,8 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
   - [x] Task 1 — The slot, the hosts, and the capture at unmount · `<commit>` · `store.ts` 1,620 → 1,612 code lines; whole diff −29
   - [x] Task 2 — The Subfield is driven · `<commit>` · `inert` marks a floating window's crumbs (the tab-neutral, no-click behavior the `scope` mode carried needs its own signal once every host passes a page)
   - [x] Task 3 — One writer for the pinned tabs; the preview target is read · `<commit>` · `store.ts` 1,596 code lines
-- [ ] **Phase 2** — The file becomes slices · base `<commit>`
-  - [ ] Task 4 — The slice files and the composition root · `<commit>`
+- [ ] **Phase 2** — The file becomes slices · base `0c0e651a`
+  - [x] Task 4 — The slice files and the composition root · `<commit>` · `store.ts` 51 lines; `Store/` 1,940 lines across eight files
   - [ ] Task 5 — Tests for what the re-key created · `<commit>`
   - [ ] Task 6 — The documents · `<commit>`
 
@@ -325,6 +325,9 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
 
 ### Open Against Later Tasks
 ### Deviations
+- Task 4 (census): the per-nexus reset is a `reset*` action per slice (`resetNavigation`, `resetPreview`, `resetChrome`, `resetCaches`) rather than a `perNexusInitial` object each — two of the four carry side effects an initial-state object cannot (the fetch fence bump and `clearWarm()`; `clearWindowWarm()`), and one mechanism beats two.
+- Task 4 (census): `mutate`'s `rename`/`delete`/`setIcon`/`setBanner` arms called the navigation slice's slot helpers — a fourth cross-slice helper. Ruled (Claude): one named action, `patchPagesFor(req)`, carries every slot and warm-cache consequence of a confirmed write; `mutate` keeps the tree patch. `restoreNavigation` takes the read sidecars rather than the plan's `(nav, tabs, previews)` — the previews file is preview state and the nexus sets it directly.
+- Task 4: `useEmbedScale` and `useAssetUrl` stay in `store.ts`, not `ConfigSlice`/`CacheSlice` — a hook needs `useSession`, and a slice importing the root it composes is a runtime cycle. `useAssetResolver` had no external consumer and folded into `useAssetUrl`. `navOpen` lives in `PreviewSlice` (its actions call `mirrorPreviews`).
 - Task 1 (simplification pass): `useHosts` subscribed to `s.pages`, which re-identifies per keystroke — the pane committed at ~8 Hz against Requirement 8. Fixed by `readyPageIds`, a primitive selector of the loaded ids; the composition root's re-export list gains it in Task 4.
 - Task 1: the `MarkdownPM/index.tsx` capture-identity comment the plan said to move was left in place; removed at Gate 1.
 ### Lessons
