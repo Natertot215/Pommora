@@ -11,7 +11,8 @@
   --surface-inset: 10px; /* glass edge → content, inside any floating glass */
   --row-inset: 6px; /* row edge → text, inside a row */
   --toolbar-h: 38px;
-  --subfield-h: 24px; /* the Subfield bar; its riding toggle chevron and the window footer read it */
+  --subfield-h: 24px;
+  --content-edge: 12px; /* the band a banner title and the Subfield sit in, off the pane */ /* the Subfield bar; its riding toggle chevron and the window footer read it */
   /* iOS safe-area insets — inert on desktop (no cutouts); the mobile shell / drawers / bottom bar mount to these. */
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
@@ -104,29 +105,26 @@ textarea,
   overflow: clip;
   background: var(--main-bg);
   --content-inset: 24px;
-  /* Left inset that clears the floating glass sidebar (variable width); its base addend IS the
-     gutter, so left + right stay equal. Collapses to the bare gutter when the sidebar hides. */
-  --content-edge: calc(var(--app-inset) + var(--sidebar-width) + var(--content-inset));
-  /* Right inset mirrors the left: bare gutter normally, expanding to clear the inspector when open. */
-  --content-edge-right: var(--content-inset);
-  /* Surface insets: block-based views (homepage, contexts) drop the content gutter — their tile handles
-     supply the grip/chevron actions a page/table needs the detail lane for, so no reserved lane.*/
+  /* The pane clearances: how far the floating sidebar / inspector reach in from the window edge;
+     0 when the pane is away. Every start position below is a clearance plus one gap. */
+  --sidebar-clearance: calc(var(--app-inset) + var(--sidebar-width));
+  --inspector-clearance: 0px;
+  --content-start: calc(var(--sidebar-clearance) + var(--content-inset));
+  --content-start-right: calc(var(--inspector-clearance) + var(--content-inset));
+  --banner-start: calc(var(--sidebar-clearance) + var(--content-edge));
+  --banner-start-right: calc(var(--inspector-clearance) + var(--content-edge));
+  /* Block-based views (homepage, contexts) run a tighter lane — their tile handles supply the
+     grip/chevron actions a page/table reserves the rail for. */
   --surface-lane: 8px;
-  --surface-edge: calc(var(--content-edge) - var(--content-inset) + var(--surface-lane));
-  --surface-edge-right: calc(
-    var(--content-edge-right) -
-    var(--content-inset) +
-    var(--surface-lane)
-  );
-  --surface-banner-edge: calc(var(--content-edge) - var(--content-inset) + 12px);
-  --surface-banner-edge-right: calc(var(--content-edge-right) - var(--content-inset) + 12px);
+  --surface-start: calc(var(--sidebar-clearance) + var(--surface-lane));
+  --surface-start-right: calc(var(--inspector-clearance) + var(--surface-lane));
 }
 .shell.sidebar-hidden {
-  --content-edge: var(--content-inset);
+  --sidebar-clearance: 0px;
 }
 .shell.inspector-open {
   --io: 1;
-  --content-edge-right: calc(var(--app-inset) + var(--inspector-width) + var(--content-inset));
+  --inspector-clearance: calc(var(--app-inset) + var(--inspector-width));
 }
 /* Edge-drag resize holds --io at its current value (no re-animate) so the pane tracks the cursor 1:1. */
 .shell.is-resizing {

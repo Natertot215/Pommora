@@ -18,7 +18,7 @@
   flex-shrink: 0;
   padding: 0 0 10px;
   border-bottom: var(--width-100) solid var(--border-light);
-  margin: 0 var(--surface-banner-edge-right) 0 var(--surface-banner-edge);
+  margin: 0 var(--banner-start-right) 0 var(--banner-start);
   transition:
     margin-left var(--duration-base) var(--ease-base),
     margin-right var(--duration-base) var(--ease-base);
@@ -45,7 +45,7 @@
   overflow-y: auto;
   /* Card edges land on the EXACT homepage block-surface insets set in Detail.css. The gallery's own
      padding is zeroed (both axes, above), so these ARE the edges. */
-  padding: 8px var(--surface-edge-right) 28px var(--surface-edge);
+  padding: 8px var(--surface-start-right) 28px var(--surface-start);
   transition:
     padding-left var(--duration-base) var(--ease-base),
     padding-right var(--duration-base) var(--ease-base);
@@ -54,8 +54,8 @@
 /* The LIST rides the content inset (matching pages) on BOTH sides, not the wider surface inset the
    gallery/scroll sits on — so its rows aren't wider than the content view.*/
 .nav-view .nav-list {
-  padding-left: calc(var(--content-edge) - var(--surface-edge));
-  padding-right: calc(var(--content-edge-right) - var(--surface-edge-right));
+  padding-left: calc(var(--content-inset) - var(--surface-lane));
+  padding-right: calc(var(--content-inset) - var(--surface-lane));
 }
 /* The pin marker rides the gutter to the LEFT of the content — otherwise, at the zeroed row inset, it
    lands on the lead glyph. */
