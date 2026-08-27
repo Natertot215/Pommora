@@ -17,8 +17,7 @@
   --window-side-inset: var(--app-inset);
   --window-side-l-w: 200px;
   --window-side-r-w: 260px;
-  /* Follows the host's subline bar when it declares one, so the footer and its content agree. */
-  --window-footer-h: var(--subline-h, 24px);
+  --window-footer-h: var(--subfield-h);
   /* KNOB — the gap between the trailing button pair and the × that holds home. */
   --window-trail-gap: 2px;
 
