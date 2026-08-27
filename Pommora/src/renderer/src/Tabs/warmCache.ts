@@ -1,12 +1,11 @@
 // Module state, not store state — none of it is render state, and it must survive React remounts
-// while dying with the session. Two stores live here. The per-tab entries have two writers sharing
-// one key: the store captures pageDetail at switch-initiation; the editor captures editorState/
-// scrollTop at unmount (a capture under an already-closed tabId leaves one inert entry — tab ids
+// while dying with the session. Two stores live here. The per-tab entries are written by a page
+// surface at unmount — editorState, scrollTop, and the page's detail with its live body under
+// the tab that holds it (a capture under an already-closed tabId leaves one inert entry — tab ids
 // are never reused — that the nexus-switch clear reaps). The PATH-KEYED detail slot serves embed
 // rehydration: written on fetch and written THROUGH by the shared save scheduler, so a returning
 // tile always seeds on the newest body from any host — the per-tab snapshots can't serve that
 // (their body freshness lives in serialized editor state, which embeds deliberately don't keep).
-
 import type { PageDetail } from '@shared/types'
 
 export interface WarmEntry {

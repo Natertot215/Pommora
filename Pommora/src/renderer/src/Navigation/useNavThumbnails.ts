@@ -55,13 +55,13 @@ export function dropCapturedOutside(live: ReadonlySet<string>): void {
 // carves off the sidebar/inspector overlays) is captured.
 export function useNavThumbnails(): void {
   const selection = useSession((s) => s.selection)
-  const pageStatus = useSession((s) => shownPage(s)?.status)
+  const shownStatus = useSession((s) => shownPage(s)?.status)
   const navOpen = useSession((s) => s.navOpen)
   const bumpThumb = useSession((s) => s.bumpThumb)
 
   useEffect(() => {
     if (navOpen || selection.kind === 'none') return
-    if (selection.kind === 'page' && pageStatus !== 'ready') return
+    if (selection.kind === 'page' && shownStatus !== 'ready') return
     let canceled = false
     const timer = setTimeout(() => {
       void (async () => {
@@ -97,5 +97,5 @@ export function useNavThumbnails(): void {
       canceled = true
       clearTimeout(timer)
     }
-  }, [selection, pageStatus, navOpen, bumpThumb])
+  }, [selection, shownStatus, navOpen, bumpThumb])
 }
