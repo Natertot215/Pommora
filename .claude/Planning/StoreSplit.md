@@ -219,13 +219,13 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
 - [x] Commit: `refactor(store): pinned tabs have one writer; the preview target is read off its tab`.
 
 #### Gate 1 — the singleton is gone
-- [ ] Gate commands green, exit codes read directly.
-- [ ] Dead Vocabulary sweep for the Phase 1 tokens → 0 against the control; `pageDetail` hits all on the allowlist.
-- [ ] Every task that diverged had its dependents re-derived and rewritten.
-- [ ] `code-simplifier` then `comment-killer-agent` against `<base>..HEAD` scoped to the phase's paths; `KNOB` grep-verified after.
-- [ ] `feature-dev:code-reviewer` against the same range; every concern fixed or ruled.
-- [ ] The Acceptance sequence seen running.
-- [ ] The code-line deltas recorded in Progress.
+- [x] Gate commands green, exit codes read directly (typecheck 0 · 294/3,653 · lint 0).
+- [x] Dead Vocabulary sweep for the Phase 1 tokens → 0 against the control; `pageDetail` hits all on the allowlist.
+- [x] Every task that diverged had its dependents re-derived and rewritten.
+- [x] `code-simplifier` then `comment-killer-agent` against `<base>..HEAD` scoped to the phase's paths; `KNOB` grep-verified after.
+- [x] `feature-dev:code-reviewer` against the same range; one finding (the stale capture-identity comment in `MarkdownPM/index.tsx`), fixed.
+- [ ] The Acceptance sequence seen running — Nathan's pass on the live dev instance (HMR carries every Phase 1 commit).
+- [x] The code-line deltas recorded in Progress.
 
 ---
 
@@ -311,7 +311,7 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
 ## Implementation Log
 
 ### Progress
-- [ ] **Phase 1** — A slot per open page · base `63a473fe`
+- [ ] **Phase 1** — A slot per open page · base `63a473fe` · commits `f72d34de` `0b7a81ce` `eb4e03f6` `33d5a2bb` `6fa0e03d` · `store.ts` 1,620 → 1,587 code lines · Gate 1 green but for the running-thing pass
   - [x] Task 1 — The slot, the hosts, and the capture at unmount · `<commit>` · `store.ts` 1,620 → 1,612 code lines; whole diff −29
   - [x] Task 2 — The Subfield is driven · `<commit>` · `inert` marks a floating window's crumbs (the tab-neutral, no-click behavior the `scope` mode carried needs its own signal once every host passes a page)
   - [x] Task 3 — One writer for the pinned tabs; the preview target is read · `<commit>` · `store.ts` 1,596 code lines
@@ -325,6 +325,8 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
 
 ### Open Against Later Tasks
 ### Deviations
+- Task 1 (simplification pass): `useHosts` subscribed to `s.pages`, which re-identifies per keystroke — the pane committed at ~8 Hz against Requirement 8. Fixed by `readyPageIds`, a primitive selector of the loaded ids; the composition root's re-export list gains it in Task 4.
+- Task 1: the `MarkdownPM/index.tsx` capture-identity comment the plan said to move was left in place; removed at Gate 1.
 ### Lessons
 ### Sequenced After
 - The `Core/` filing row moves `store.ts` and `Store/` together (RendererRefactor).

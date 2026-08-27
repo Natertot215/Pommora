@@ -467,8 +467,6 @@ export function MarkdownEditor({
       if (warm) {
         unregisterHeal?.()
         view.scrollDOM.removeEventListener('scroll', onWarmScroll)
-        // `warm` is the mount-render prop (deps []), so this capture lands under the identity this
-        // editor mounted with — never the next tab's, even though the switch already updated the store.
         warm.capture({
           editorState: view.state.toJSON({ history: historyField }),
           scrollTop: lastScrollTop,
