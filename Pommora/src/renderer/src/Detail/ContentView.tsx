@@ -1,9 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react'
-import type { PageDetail } from '@shared/types'
-import { useSession } from '../store'
+import { frozenOf, useSession } from '../store'
 import { useRevealNear } from '@renderer/DesignSystem/Interactions/revealBar'
-import { navKey } from '../Navigation/navRecents'
-import { readWarm } from '../Tabs/warmCache'
 import { duration, easing, ms } from '@renderer/DesignSystem/Animation'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { findCollection, findSet } from './Scope'
@@ -70,50 +67,36 @@ function DetailView(): React.JSX.Element | null {
 // Each costs a live editor's DOM; what it buys is a tab flip that resumes rather than reloads.
 const WARM_TABS = 2
 
-/** One held-open page surface. The shown one reads its page from the store, so only a parked host
- *  carries one of its own. */
-type Host = { tabId: string; detail?: PageDetail }
+type Host = { tabId: string; pageId: string }
 
 /** The page surfaces to hold open: the shown one first, then the most recently visited page tabs
- *  behind it. Keyed by tab, so becoming shown (or being parked again) is a class change rather
- *  than a remount — which is the whole point, since a remount reloads every embedded site. One
- *  surface per page: a second tab on the same file would put two editors on one document. */
+ *  behind it. Keyed by page, so becoming shown, being parked, or the tab being pinned is a class
+ *  change rather than a remount — which is the whole point, since a remount reloads every embedded
+ *  site. One surface per page, however many tabs point at it. */
 function useHosts(): Host[] {
   const selection = useSession((s) => s.selection)
   const tabs = useSession((s) => s.tabs)
   const tabMru = useSession((s) => s.tabMru)
   const activeTabId = useSession((s) => s.activeTabId)
+  const pages = useSession((s) => s.pages)
   return useMemo(() => {
     const hosts: Host[] = []
-    const paths = new Set<string>()
-    if (selection.kind === 'page') {
-      hosts.push({ tabId: activeTabId })
-      // The page this surface will settle on is its TAB's, not the selection's: a cold switch holds
-      // the outgoing page in the store while the tab has already moved, and reading the selection
-      // there would count the page the parked tab owns as the shown one — dropping the very
-      // surface being parked, guest and all.
-      const target = tabs.find((t) => t.id === activeTabId)?.target
-      paths.add(target?.kind === 'page' ? target.path : selection.path)
-    }
+    if (selection.kind === 'page') hosts.push({ tabId: activeTabId, pageId: selection.id })
     // The budget counts parked surfaces alone, so the knob means the same number whether or not
-    // the shown surface is itself a page.
+    // the shown surface is itself a page. Only a loaded page has something to park.
     let parked = 0
     for (const id of tabMru) {
       if (parked >= WARM_TABS || id === activeTabId) continue
       const target = tabs.find((t) => t.id === id)?.target
-      if (target?.kind !== 'page') continue
-      // Only a tab that has actually been shown has a page in hand to park — one opened in the
-      // background has nothing warm to keep.
-      const detail = readWarm(id, navKey(target))?.pageDetail
-      if (!detail || paths.has(detail.path)) continue
-      paths.add(detail.path)
-      hosts.push({ tabId: id, detail })
+      if (target?.kind !== 'page' || pages[target.id]?.status !== 'ready') continue
+      if (hosts.some((h) => h.pageId === target.id)) continue
+      hosts.push({ tabId: id, pageId: target.id })
       parked++
     }
     // Rendered in a fixed order, never most-recent-first: reordering keyed children moves their
     // DOM, and a moved webview is re-attached — which ends the very guest this exists to keep.
-    return hosts.sort((a, b) => (a.tabId < b.tabId ? -1 : 1))
-  }, [selection, tabs, tabMru, activeTabId])
+    return hosts.sort((a, b) => (a.pageId < b.pageId ? -1 : 1))
+  }, [selection, tabs, tabMru, activeTabId, pages])
 }
 
 const VIEW_SLIDE_PX = 14
@@ -129,7 +112,7 @@ export function ContentView(): React.JSX.Element {
   const tree = useSession((s) => s.tree)
   // Cold-switch pause: the outgoing view holds as its last frame, input-frozen, until the incoming
   // page's fetch lands (or the deadline drops to the loading view) — see store.select's page case.
-  const frozen = useSession((s) => s.pageFrozen)
+  const frozen = useSession(frozenOf)
   const navSlide = useSession((s) => s.navSlide)
   const expanded = useSession((s) => s.subfieldExpanded)
   const setExpanded = useSession((s) => s.setSubfieldExpanded)
@@ -191,11 +174,11 @@ export function ContentView(): React.JSX.Element {
           const parked = h.tabId !== activeTabId
           return (
             <div
-              key={h.tabId}
+              key={h.pageId}
               className={parked ? 'detail detail-page is-parked' : 'detail detail-page'}
               aria-hidden={parked || undefined}
             >
-              <PageView tabId={h.tabId} parked={parked} detail={parked ? h.detail : undefined} />
+              <PageView tabId={h.tabId} pageId={h.pageId} parked={parked} />
             </div>
           )
         })}

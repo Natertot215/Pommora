@@ -2,10 +2,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ASSETS_DIR_REL } from '@shared/nexusPaths'
 import type { NexusTree, PageDetail, SelectTarget, Tab } from '@shared/types'
-import { useSession } from './store'
+import { frozenOf, type PageSlot, shownDetail, shownPage, useSession } from './store'
 import { newTabTab } from './Tabs/tabsModel'
 import { navKey } from './Navigation/navRecents'
-import { clearWarm, readWarm } from './Tabs/warmCache'
+import { clearWarm } from './Tabs/warmCache'
 
 // Stub the narrow window.nexus surface the tab glue reaches (page fetch, recents save, tab persist,
 // the applyTree accent read) so it runs in isolation.
@@ -141,34 +141,38 @@ describe('store — warm tabs (B-2/B-3)', () => {
     frontmatter: {},
     body: 'x',
   })
+  const ready = (id: string): PageSlot => ({
+    status: 'ready',
+    target: { kind: 'page', id, path: `/${id}` },
+    detail: detail(id),
+    body: 'x',
+  })
 
-  it('switching away captures the outgoing page detail; switching back is warm-instant — no fetch, no flash', () => {
+  it('a page keeps its slot while its tab is parked; switching back is instant — no fetch, no flash', () => {
     seed({
       tabs: [uTab('t1', pg('a'), [pg('a')], 0), uTab('t2', pg('b'), [pg('b')], 0)],
       activeTabId: 't1',
       selection: pg('a'),
-      pageStatus: 'ready',
-      pageDetail: detail('a'),
+      pages: { a: ready('a') },
     })
-    useSession.getState().activateTab('t2') // leaves t1 — captures its detail on the way out
-    expect(readWarm('t1', 'page:a')?.pageDetail?.id).toBe('a')
+    useSession.getState().activateTab('t2')
+    expect(useSession.getState().pages.a?.status).toBe('ready')
     ;(window.nexus.openPage as ReturnType<typeof vi.fn>).mockClear()
-    useSession.getState().activateTab('t1') // returns warm
+    useSession.getState().activateTab('t1')
     const s = useSession.getState()
-    expect(s.pageStatus).toBe('ready') // never passed through 'loading' — no flash
-    expect(s.pageDetail?.id).toBe('a')
+    expect(shownPage(s)?.status).toBe('ready') // never a placeholder — no flash
+    expect(shownDetail(s)?.id).toBe('a')
     expect(window.nexus.openPage).not.toHaveBeenCalled()
   })
 
-  it('a renamed entity misses the warm detail (path check) and falls through to the cold fetch', async () => {
+  it('a renamed entity misses the loaded slot and the warm detail (path check) and falls through to the cold fetch', async () => {
     seed({
       tabs: [uTab('t1', pg('a'), [pg('a')], 0)],
       activeTabId: 't1',
       selection: pg('a'),
-      pageStatus: 'ready',
-      pageDetail: detail('a'),
+      pages: { a: ready('a') },
     })
-    useSession.getState().activateTab('t2-nonexistent') // capture fires on the way out
+    useSession.getState().activateTab('t2-nonexistent')
     await useSession
       .getState()
       .select({ kind: 'page', id: 'a', path: '/a-renamed' }, { record: false })
@@ -188,16 +192,16 @@ describe('store — warm tabs (B-2/B-3)', () => {
       tabs: [uTab('t1', pg('a'), [pg('a')], 0), uTab('t2', pg('b'), [pg('b')], 0)],
       activeTabId: 't1',
       selection: pg('a'),
-      pageStatus: 'ready',
-      pageDetail: detail('a'),
+      pages: { a: ready('a') },
     })
-    useSession.getState().activateTab('t2') // cold fetch of /b now in flight; A captured warm
-    useSession.getState().activateTab('t1') // warm-instant back to A
-    expect(useSession.getState().pageDetail?.id).toBe('a')
+    useSession.getState().activateTab('t2') // cold fetch of /b now in flight
+    useSession.getState().activateTab('t1') // instant back to A's slot
+    expect(shownDetail(useSession.getState())?.id).toBe('a')
     resolveB({ ok: true, value: detail('b') }) // the stale response lands last
     await new Promise((r) => setTimeout(r, 0))
     const s = useSession.getState()
-    expect(s.pageDetail?.id).toBe('a') // fence held — B never clobbered the shown page
+    expect(shownDetail(s)?.id).toBe('a') // fence held — B never clobbered the shown page
+    expect(s.pages.b).toBeUndefined()
     expect(s.selection).toEqual(pg('a'))
   })
 
@@ -212,22 +216,20 @@ describe('store — warm tabs (B-2/B-3)', () => {
       tabs: [uTab('t1', pg('a'), [pg('a')], 0)],
       activeTabId: 't1',
       selection: pg('a'),
-      pageStatus: 'ready',
-      pageDetail: detail('a'),
-      pageFrozen: false,
+      pages: { a: ready('a') },
     })
     const p = useSession.getState().select(pg('b'))
     let s = useSession.getState()
     expect(s.selection).toEqual(pg('a')) // outgoing view still shown
-    expect(s.pageStatus).toBe('ready') // never passes through 'loading'
-    expect(s.pageFrozen).toBe(true) // ...but it's a held frame, not a live surface
+    expect(shownPage(s)?.status).toBe('ready') // its slot survives the pause
+    expect(frozenOf(s)).toBe(true) // ...but it's a held frame, not a live surface
     resolveB({ ok: true, value: detail('b') })
     await p
     s = useSession.getState()
     expect(s.selection).toEqual(pg('b'))
-    expect(s.pageStatus).toBe('ready')
-    expect(s.pageDetail?.id).toBe('b')
-    expect(s.pageFrozen).toBe(false)
+    expect(shownDetail(s)?.id).toBe('b')
+    expect(s.pages.a).toBeUndefined() // nothing points at A any more
+    expect(frozenOf(s)).toBe(false)
   })
 
   it('a navigation mid-pause supersedes the fetch — the stale response never lands', async () => {
@@ -241,20 +243,18 @@ describe('store — warm tabs (B-2/B-3)', () => {
       tabs: [uTab('t1', pg('a'), [pg('a')], 0)],
       activeTabId: 't1',
       selection: pg('a'),
-      pageStatus: 'ready',
-      pageDetail: detail('a'),
-      pageFrozen: false,
+      pages: { a: ready('a') },
     })
     const p = useSession.getState().select(pg('b')) // paused on A
     await useSession.getState().select({ kind: 'homepage' }) // user moves on mid-pause
     let s = useSession.getState()
     expect(s.selection).toEqual({ kind: 'homepage' })
-    expect(s.pageFrozen).toBe(false)
+    expect(frozenOf(s)).toBe(false)
     resolveB({ ok: true, value: detail('b') })
     await p
     s = useSession.getState()
     expect(s.selection).toEqual({ kind: 'homepage' }) // the stale B response was dropped
-    expect(s.pageDetail).toBeNull()
+    expect(s.pages).toEqual({})
   })
 
   it('a slow cold fetch falls back to the loading view at the deadline', async () => {
@@ -270,22 +270,19 @@ describe('store — warm tabs (B-2/B-3)', () => {
         tabs: [uTab('t1', pg('a'), [pg('a')], 0)],
         activeTabId: 't1',
         selection: pg('a'),
-        pageStatus: 'ready',
-        pageDetail: detail('a'),
-        pageFrozen: false,
+        pages: { a: ready('a') },
       })
       const p = useSession.getState().select(pg('b'))
-      expect(useSession.getState().pageFrozen).toBe(true)
+      expect(frozenOf(useSession.getState())).toBe(true)
       vi.advanceTimersByTime(300) // past the deadline — the loading view takes over
       let s = useSession.getState()
       expect(s.selection).toEqual(pg('b'))
-      expect(s.pageStatus).toBe('loading')
-      expect(s.pageFrozen).toBe(false)
+      expect(shownPage(s)).toBeUndefined()
+      expect(frozenOf(s)).toBe(false)
       resolveB({ ok: true, value: detail('b') })
       await p
       s = useSession.getState()
-      expect(s.pageStatus).toBe('ready')
-      expect(s.pageDetail?.id).toBe('b')
+      expect(shownDetail(s)?.id).toBe('b')
     } finally {
       vi.useRealTimers()
     }

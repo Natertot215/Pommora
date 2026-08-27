@@ -127,15 +127,6 @@ const RENAME_CLEARED = {
   renameWinner: null,
 } satisfies Partial<SessionState>
 
-// No page is open. `select` clears pageFrozen itself before it routes, so its own branches take
-// this trio; every clearer outside select has to unfreeze too, and takes the pair below.
-const PAGE_CLEARED = {
-  pageStatus: 'idle',
-  pageDetail: null,
-  pageError: undefined,
-} satisfies Partial<SessionState>
-const PAGE_CLEARED_UNFROZEN = { ...PAGE_CLEARED, pageFrozen: false } satisfies Partial<SessionState>
-
 function resolveRenameWinner(claims: RenameClaim[], fence: RenameFence): number | null {
   const live = claims.filter((c) => c.path === fence.renamingPath)
   if (live.length === 0) return null
@@ -181,17 +172,31 @@ function readStoredInspectorWidth(): number {
 export type { SelectTarget }
 
 export type PreviewTarget = { id: string; path: string }
+export type PageTarget = Extract<SelectTarget, { kind: 'page' }>
 
-/** The open page's CURRENT text. `pageDetail.body` is the load snapshot — autosave never updates it —
- *  so the live editing buffer wins whenever it belongs to this same page. Every steady-state reader of
- *  the open body goes through here; the outgoing-tab capture keys on `selection.path` instead, because
- *  it deliberately runs while `pageDetail` is still the leaving page's. */
-export function openPageBody(
-  pageDetail: { path: string; body: string } | null,
-  liveBody: { path: string; body: string } | null,
-): string {
-  if (!pageDetail) return ''
-  return liveBody?.path === pageDetail.path ? liveBody.body : pageDetail.body
+/** An open page's current state, keyed by page id — one slot per document however many tabs point
+ *  at it. `body` is the live editing buffer; `detail.body` is the load snapshot autosave never updates. */
+export type PageSlot =
+  | { status: 'ready'; target: PageTarget; detail: PageDetail; body: string }
+  | { status: 'error'; target: PageTarget; error: PommoraError }
+
+export const shownPage = (s: SessionState): PageSlot | undefined =>
+  s.selection.kind === 'page' ? s.pages[s.selection.id] : undefined
+
+export const shownDetail = (s: SessionState): PageDetail | null => {
+  const slot = shownPage(s)
+  return slot?.status === 'ready' ? slot.detail : null
+}
+
+export const pageBody = (slot: PageSlot | undefined): string =>
+  slot?.status === 'ready' ? slot.body : ''
+
+/** The pause-on-change: the active tab has moved on to a target the pane is not yet showing. */
+export const frozenOf = (s: SessionState): boolean => {
+  const target = (
+    s.tabs.find((t) => t.id === s.activeTabId) ?? s.pinnedTabs.find((t) => t.id === s.activeTabId)
+  )?.target
+  return target !== undefined && target.kind !== 'newtab' && !sameShownTarget(s.selection, target)
 }
 
 /** The nexus-wide embed scale, coerced. Every surface that mounts an embed reads it HERE, so what
@@ -250,8 +255,6 @@ function findContainer(
   }
   return null
 }
-
-type PageStatus = 'idle' | 'loading' | 'ready' | 'error'
 
 interface SessionState {
   status: 'idle' | 'loading' | 'ready' | 'error' | 'empty'
@@ -313,13 +316,11 @@ interface SessionState {
   openDropped: (file: File) => Promise<void>
   toggleSidebar: () => void
 
+  /** What the pane is showing. During a cold page open it lags the active tab's target until the
+   *  fetch lands or the deadline passes — that lag is the pause-on-change. */
   selection: SelectionState
-  pageStatus: PageStatus
-  pageFrozen: boolean
-  pageDetail: PageDetail | null
-  pageError?: PommoraError
-  liveBody: { path: string; body: string } | null
-  setLiveBody: (path: string, body: string) => void
+  pages: Record<string, PageSlot>
+  setPageBody: (path: string, body: string) => void
   /** `{ record: false }` refreshes the shown detail without touching the tab set or recents
    *  (Back/Forward, a path refetch, a tab activation, a preview open). `{ newTab: true }` forces a new tab. */
   select: (target: SelectTarget, opts?: { record?: boolean; newTab?: boolean }) => Promise<void>
@@ -485,8 +486,7 @@ export const useSession = create<SessionState>((set, get) => {
     devicePrefsLoaded = false
     set({
       selection: { kind: 'none' },
-      ...PAGE_CLEARED_UNFROZEN,
-      liveBody: null,
+      pages: {},
       tabs: [],
       activeTabId: '',
       tabMru: [],
@@ -649,10 +649,7 @@ export const useSession = create<SessionState>((set, get) => {
     const active = findActiveTab()
     if (!active || active.target.kind === 'newtab') {
       pageFetchSeq++
-      set({
-        selection: { kind: 'none' },
-        ...PAGE_CLEARED_UNFROZEN,
-      })
+      set({ selection: { kind: 'none' } })
       return
     }
     const tree = get().tree
@@ -672,10 +669,22 @@ export const useSession = create<SessionState>((set, get) => {
     void window.nexus.tabs.save({ tabs, activeTabId: s.activeTabId }).catch(() => undefined)
   }
 
+  // The one slot deleter: a page stays loaded while it is shown or some live tab points at it.
+  const pruneSlots = (): void => {
+    const s = get()
+    const live = new Set<string>()
+    if (s.selection.kind === 'page') live.add(s.selection.id)
+    for (const t of [...s.tabs, ...s.pinnedTabs])
+      if (t.target.kind === 'page') live.add(t.target.id)
+    if (Object.keys(s.pages).every((id) => live.has(id))) return
+    set({ pages: Object.fromEntries(Object.entries(s.pages).filter(([id]) => live.has(id))) })
+  }
+
   const applyTabResult = (r: { tabs: Tab[]; activeTabId: string; mru: string[] }): void => {
     const activeChanged = r.activeTabId !== get().activeTabId
     set({ tabs: r.tabs, activeTabId: r.activeTabId, tabMru: r.mru })
     if (activeChanged) syncActiveDetail()
+    pruneSlots()
     persistTabs()
   }
 
@@ -742,18 +751,6 @@ export const useSession = create<SessionState>((set, get) => {
     persistTabs()
   }
 
-  // Must run before select() mutates state — pageDetail nulls synchronously, so capturing any
-  // later would read the incoming tab's state instead of the outgoing one's.
-  const captureOutgoingDetail = (): void => {
-    const s = get()
-    if (s.selection.kind !== 'page' || s.pageStatus !== 'ready' || !s.pageDetail) return
-    // pageDetail.body is the load snapshot (autosave never updates it) — fold in the live buffer
-    // or a warm return shows pre-edit stats in the Subfield.
-    const body = s.liveBody?.path === s.selection.path ? s.liveBody.body : s.pageDetail.body
-    const detail = body === s.pageDetail.body ? s.pageDetail : { ...s.pageDetail, body }
-    captureWarm(s.activeTabId, navKey(s.selection), { pageDetail: detail })
-  }
-
   // Move the active tab's history pointer to an absolute stack index, showing what sits there without
   // re-recording — the one mover behind Back/Forward and breadcrumb re-navigation alike.
   const jumpActiveHistory = (i: number): void => {
@@ -763,7 +760,6 @@ export const useSession = create<SessionState>((set, get) => {
     if (i < 0 || i >= active.navStack.length || i === active.navIndex) return
     const resolved = s.tree ? reconcileSelection(s.tree, active.navStack[i]) : active.navStack[i]
     if (resolved.kind === 'none') return
-    captureOutgoingDetail()
     // target must move in lockstep with navIndex — openTab's dedup keys off target, so a stale
     // one would mis-dedup the very next click on the shown entity, destroying the Forward stack.
     set({
@@ -926,13 +922,22 @@ export const useSession = create<SessionState>((set, get) => {
       if (next !== prev) {
         if (next.kind === 'none') {
           pageFetchSeq++
-          set({
-            selection: next,
-            ...PAGE_CLEARED_UNFROZEN,
-          })
+          set({ selection: next })
         } else if (next.kind === 'page') {
           void get().select(next, { record: false })
         }
+      }
+      // The shown slot is spared: its re-select above lands a fresh one over it, and the pause
+      // holds meanwhile. Every other slot whose page is gone or re-pathed refetches on return.
+      {
+        const pages = get().pages
+        const shownId = prev.kind === 'page' ? prev.id : null
+        const kept = Object.entries(pages).filter(([id, slot]) => {
+          if (id === shownId) return true
+          const r = reconcileWith(index, slot.target)
+          return r.kind === 'page' && r.path === slot.target.path
+        })
+        if (kept.length !== Object.keys(pages).length) set({ pages: Object.fromEntries(kept) })
       }
       {
         const s = get()
@@ -1158,9 +1163,14 @@ export const useSession = create<SessionState>((set, get) => {
     },
 
     selection: { kind: 'none' },
-    ...PAGE_CLEARED_UNFROZEN,
-    liveBody: null,
-    setLiveBody: (path, body) => set({ liveBody: { path, body } }),
+    pages: {},
+    setPageBody: (path, body) =>
+      set((s) => {
+        const hit = Object.entries(s.pages).find(
+          ([, slot]) => slot.status === 'ready' && slot.detail.path === path,
+        )
+        return hit ? { pages: { ...s.pages, [hit[0]]: { ...hit[1], body } } } : {}
+      }),
     tabs: [],
     activeTabId: '',
     tabMru: [],
@@ -1181,7 +1191,6 @@ export const useSession = create<SessionState>((set, get) => {
     activateTab: (id) => {
       const s = get()
       if (s.activeTabId === id) return
-      captureOutgoingDetail()
       const order = [...s.pinnedTabs.map((t) => t.id), ...s.tabs.map((t) => t.id)]
       const dir: 'back' | 'forward' =
         order.indexOf(id) < order.indexOf(s.activeTabId) ? 'back' : 'forward'
@@ -1194,7 +1203,6 @@ export const useSession = create<SessionState>((set, get) => {
       persistTabs()
     },
     openNewTab: () => {
-      captureOutgoingDetail()
       const s = get()
       const res = openNewTabModel(s.tabs, makeTabId())
       const swaps = res.activeTabId !== s.activeTabId || s.selection.kind !== 'none'
@@ -1488,16 +1496,8 @@ export const useSession = create<SessionState>((set, get) => {
         const depth = crumbDepthFor(get().tree, get().crumbDepth, target)
         if (depth !== get().crumbDepth) set({ crumbDepth: depth })
       }
-      if (get().pageFrozen) {
-        const s = get()
-        set(
-          s.navSlide?.seq === coldStampSeq
-            ? { pageFrozen: false, navSlide: null }
-            : { pageFrozen: false },
-        )
-      }
+      if (get().navSlide?.seq === coldStampSeq) set({ navSlide: null })
       if (opts?.record !== false) {
-        captureOutgoingDetail()
         const s = get()
         const pinned = s.pinnedTabs
         const res = openTabModel(
@@ -1529,74 +1529,59 @@ export const useSession = create<SessionState>((set, get) => {
       }
       switch (target.kind) {
         case 'homepage':
-          set({
-            selection: { kind: 'homepage' },
-            ...PAGE_CLEARED,
-          })
-          return
+          set({ selection: { kind: 'homepage' } })
+          break
         case 'context':
-          set({
-            selection: { kind: 'context', id: target.id },
-            ...PAGE_CLEARED,
-          })
-          return
         case 'space':
-          set({
-            selection: { kind: 'space', id: target.id },
-            ...PAGE_CLEARED,
-          })
-          return
+          set({ selection: { kind: target.kind, id: target.id } })
+          break
         case 'collection': {
-          set({
-            selection: { kind: 'collection', id: target.id },
-            ...PAGE_CLEARED,
-          })
+          set({ selection: { kind: 'collection', id: target.id } })
           const col = findCollection(get().tree, target.id)
           if (col) ensureContainerView(col, col.properties ?? [])
-          return
+          break
         }
         case 'set': {
-          set({
-            selection: { kind: 'set', id: target.id, path: target.path },
-            ...PAGE_CLEARED,
-          })
+          set({ selection: { kind: 'set', id: target.id, path: target.path } })
           const setNode = findSet(get().tree, target.id)
           if (setNode && isDepth1Set(get().tree, target.id))
             ensureContainerView(
               setNode,
               findCollectionForSet(get().tree, target.id)?.properties ?? [],
             )
-          return
+          break
         }
         case 'page': {
-          // The path equality keeps a warm return honest across renames — a stale-path detail
-          // would route saves at the old file.
+          const pageSel: PageTarget = { kind: 'page', id: target.id, path: target.path }
+          // The path equality keeps a loaded or warm page honest across renames — a stale-path
+          // detail would route saves at the old file.
+          const loaded = get().pages[target.id]
+          if (loaded?.status === 'ready' && loaded.detail.path === target.path) {
+            set({ selection: pageSel })
+            break
+          }
           const cached = readWarm(get().activeTabId, navKey(target))?.pageDetail
           if (cached && cached.path === target.path) {
-            set({
-              selection: { kind: 'page', id: target.id, path: target.path },
-              pageStatus: 'ready',
-              pageDetail: cached,
-              pageError: undefined,
-              liveBody: { path: cached.path, body: cached.body },
-            })
-            return
+            set((s) => ({
+              selection: pageSel,
+              pages: {
+                ...s.pages,
+                [target.id]: {
+                  status: 'ready',
+                  target: pageSel,
+                  detail: cached,
+                  body: cached.body,
+                },
+              },
+            }))
+            break
           }
-          // Pause-on-change: the outgoing view holds frozen until the fetch lands or
-          // COLD_SWAP_DEADLINE passes; the seq fence drops a stale response after a newer navigation.
+          // Pause-on-change: the outgoing view holds until the fetch lands or COLD_SWAP_DEADLINE
+          // passes; the seq fence drops a stale response after a newer navigation.
           const seq = pageFetchSeq
           coldStampSeq = get().navSlide?.seq ?? -1
-          const pageSel = { kind: 'page' as const, id: target.id, path: target.path }
-          set({ pageFrozen: true })
           const fallback = setTimeout(() => {
-            if (seq !== pageFetchSeq) return
-            set({
-              selection: pageSel,
-              pageStatus: 'loading',
-              pageDetail: null,
-              pageError: undefined,
-              pageFrozen: false,
-            })
+            if (seq === pageFetchSeq) set({ selection: pageSel })
           }, COLD_SWAP_DEADLINE)
           let res: Awaited<ReturnType<typeof window.nexus.openPage>>
           try {
@@ -1606,33 +1591,28 @@ export const useSession = create<SessionState>((set, get) => {
           }
           clearTimeout(fallback)
           if (seq !== pageFetchSeq) return
-          if (res.ok) {
-            set({
-              selection: pageSel,
-              pageStatus: 'ready',
-              pageDetail: res.value,
-              pageError: undefined,
-              pageFrozen: false,
-            })
-          } else {
-            set({
-              selection: pageSel,
-              pageStatus: 'error',
-              pageDetail: null,
-              pageError: res.error,
-              pageFrozen: false,
-            })
-          }
-          return
+          const slot: PageSlot = res.ok
+            ? { status: 'ready', target: pageSel, detail: res.value, body: res.value.body }
+            : { status: 'error', target: pageSel, error: res.error }
+          set((s) => ({ selection: pageSel, pages: { ...s.pages, [target.id]: slot } }))
+          break
         }
       }
+      pruneSlots()
     },
 
     reloadPage: async () => {
-      const { selection } = get()
-      if (selection.kind !== 'page') return
-      const res = await window.nexus.openPage(selection.path).catch(() => null)
-      if (res?.ok) set({ pageDetail: res.value })
+      const shown = shownPage(get())
+      if (!shown) return
+      const res = await window.nexus.openPage(shown.target.path).catch(() => null)
+      if (!res?.ok) return
+      const slot: PageSlot = {
+        status: 'ready',
+        target: shown.target,
+        detail: res.value,
+        body: res.value.body,
+      }
+      set((s) => ({ pages: { ...s.pages, [shown.target.id]: slot } }))
     },
 
     newPage: async () => {
@@ -1826,11 +1806,20 @@ export const useSession = create<SessionState>((set, get) => {
             // restore would revive the pre-cascade body and the next keystroke would write it
             // back over the heal. Warmth is an accelerator; a rename trades it for correctness.
             clearWarm()
-            if (get().pageDetail) void get().reloadPage()
+            {
+              const shown = shownPage(get())
+              set({ pages: shown ? { [shown.target.id]: shown } : {} })
+              if (shown) void get().reloadPage()
+            }
             break
           case 'delete':
             patched = removeNodeInTree(cur, req.path)
             dropPageDetail(req.path)
+            set((s) => ({
+              pages: Object.fromEntries(
+                Object.entries(s.pages).filter(([, slot]) => slot.target.path !== req.path),
+              ),
+            }))
             break
           case 'reorderChildren':
             patched = reorderChildrenInTree(cur, req.parentPath, req.order)
@@ -1844,12 +1833,15 @@ export const useSession = create<SessionState>((set, get) => {
             // any warm one, or the header re-reads the pre-write value until the page refetches.
             if (req.kind === 'page') {
               dropWarmDetail(req.path)
-              const detail = get().pageDetail
-              if (detail && detail.path === req.path) {
-                const frontmatter = { ...detail.frontmatter }
+              const hit = Object.entries(get().pages).find(
+                ([, slot]) => slot.status === 'ready' && slot.detail.path === req.path,
+              )
+              if (hit && hit[1].status === 'ready') {
+                const frontmatter = { ...hit[1].detail.frontmatter }
                 if (req.icon === null) delete frontmatter.icon
                 else frontmatter.icon = req.icon
-                set({ pageDetail: { ...detail, frontmatter } })
+                const slot = { ...hit[1], detail: { ...hit[1].detail, frontmatter } }
+                set((s) => ({ pages: { ...s.pages, [hit[0]]: slot } }))
               }
             }
             break

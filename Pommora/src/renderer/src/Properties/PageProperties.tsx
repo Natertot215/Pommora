@@ -25,7 +25,7 @@ import {
   usePropertyRows,
   type Editing,
 } from '@renderer/Properties/Editing/usePropertyRows'
-import { useSession } from '../store'
+import { shownDetail, useSession } from '../store'
 import * as s from './pageProperties.css'
 
 /** A row in either field block, its glyph already resolved — a Context carries no `def`. */
@@ -37,7 +37,7 @@ type Field = { id: string; label: string; icon: string; def: PropertyDefinition 
  * preview inspector use, so this surface adds a shape, never a second way to write.
  */
 export function PageProperties({ onBack }: { onBack: () => void }): React.JSX.Element {
-  const pageDetail = useSession((st) => st.pageDetail)
+  const pageDetail = useSession(shownDetail)
   const tree = useSession((st) => st.tree)
   const [editing, setEditing] = useState<Editing>(null)
   const [addOpen, setAddOpen] = useState(false)
