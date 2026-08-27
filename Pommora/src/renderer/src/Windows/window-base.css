@@ -7,14 +7,14 @@
   z-index: var(--z-floating);
   display: flex;
   flex-direction: column;
-  border-radius: var(--glass-radius);
+  border-radius: var(--app-radius);
   /* The window CLIPS: a parked side pane must never peek past the glass edge. */
   overflow: hidden;
   animation: window-in var(--duration-fast) var(--ease-base);
 
   --window-toolbar-h: 34px; /* KNOB — toolbar strip height */
   /* KNOB — the ring side panes hold from the window edges. */
-  --window-side-inset: var(--glass-inset);
+  --window-side-inset: var(--app-inset);
   --window-side-l-w: 200px;
   --window-side-r-w: 260px;
   /* Follows the host's subline bar when it declares one, so the footer and its content agree. */

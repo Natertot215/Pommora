@@ -4,12 +4,12 @@
 /* Sidebar glass = LAYOUT only — a floating overlay inset from the window edge. */
 .surface-glass {
   position: absolute;
-  top: var(--glass-inset);
-  left: var(--glass-inset);
-  bottom: var(--glass-inset);
+  top: var(--app-inset);
+  left: var(--app-inset);
+  bottom: var(--app-inset);
   width: var(--sidebar-width);
   z-index: var(--z-sidebar);
-  border-radius: var(--glass-radius);
+  border-radius: var(--app-radius);
   overflow: hidden;
   -webkit-app-region: drag;
   transition: transform var(--duration-base) var(--ease-base);
@@ -17,7 +17,7 @@
 /* Collapsed: slide the pane fully off the left edge — pure slide, no fade, so the motion reads
    on the way OUT (not just in); the detail reclaims the gutter. */
 .shell.sidebar-hidden .surface-glass {
-  transform: translateX(calc(-100% - var(--glass-inset) - var(--park-clearance)));
+  transform: translateX(calc(-100% - var(--app-inset) - var(--park-clearance)));
   pointer-events: none;
 }
 /* During an edge-drag resize, track the cursor 1:1 (no easing lag). */
@@ -209,7 +209,7 @@
    then rides the sidebar off as it slides while the expand reveals at the top-left. */
 .sidebar-collapse {
   /* Inside the glass, puts the button's center on the toolbar buttons' row (the glass top is already
-     inset by --glass-inset; the toolbar sits an optical hair further in). */
+     inset by --app-inset; the toolbar sits an optical hair further in). */
   top: 1px;
   right: 10px;
   opacity: 0;
@@ -228,7 +228,7 @@
 .sidebar-expand {
   /* Same row as the toolbar buttons, centered between the traffic lights and Back/Forward (which
      reserves the matching right gap via the sidebar-hidden toolbar padding). */
-  top: calc(var(--glass-inset) + 1px);
+  top: calc(var(--app-inset) + 1px);
   left: 96px;
   opacity: 0;
   transform: translateX(-6px);
@@ -246,9 +246,9 @@
 }
 
 .sidebar-resize {
-  top: var(--glass-inset);
-  bottom: var(--glass-inset);
-  left: calc(var(--glass-inset) + var(--sidebar-width) - 3px);
+  top: var(--app-inset);
+  bottom: var(--app-inset);
+  left: calc(var(--app-inset) + var(--sidebar-width) - 3px);
   z-index: var(--z-sidebar-resize);
 }
 
