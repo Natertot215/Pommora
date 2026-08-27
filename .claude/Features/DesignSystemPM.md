@@ -15,15 +15,15 @@ Design System
 │   ├── Ramp
 │   ├── Geometry
 │   └── Typography
-├── Materials
+├── Glass
 ├── Labels & Chips
 ├── Elements
 ├── Components
 │   ├── Controls
 │   ├── Pickers
-│   ├── Menu
 │   ├── Fields
 │   └── Windows
+├── Menus
 ├── Detail
 ├── Interaction
 ├── Animation
@@ -38,6 +38,8 @@ The Pommora design system — the code mirror of the Figma "Pommora - React" lib
 - **Tooling:** Token files are vanilla-extract `*.css.ts`, so a mistyped token is a compile error; `Tokens/theme-vars.css.ts` republishes every token under a stable `--name` for plain CSS, and a token without a bridged var is TS-only. Inter (variable) is the app font. The layer builds as the standalone showcase; a handful of components (`ImagePicker`, `AssetImage`) reach the store for the assets they draw. `Theming/` (`applyAccent` · `applyPersonalization`) and `Util/` (`cx` · `clamp` · `pad` · `moveItem`) are runtime homes with no catalog of their own.
 
 - **Conventions:** Pommora heavily *prefers* even-factored scaling for all geometrical applications(2px -> 4px... 12px -> 14px... 20px -> 22px...), while typography scaling is purposefully independent of such convention. 
+
+- **Vocabulary:** Five words name the surfaces. A **Window** is a floating window; a **Pane** is a surface floating over another — the sidebar, the inspector, the side slots, the hover pane, the autocomplete; a **Menu** is a surface hung off a trigger; a **Frame** is one page inside a Menu's or Window's hierarchy — Filter, Group, Sort, Hidden, Layout, Properties, the Settings categories; a **Picker** chooses a value.
 
 ### Token Atlas
 
@@ -86,17 +88,17 @@ Hover and selected paint behind content, muted over it; the three opacities are 
 
 #### Fills
 
-| Title           | Token                                   | Value             |
-| --------------- | --------------------------------------- | ----------------- |
+| Title           | Token                                   | Value               |
+| --------------- | --------------------------------------- | ------------------- |
 | Fill Primary    | `fill.primary` · `--fill-primary`       | `system-grey` @ 20% |
 | Fill Secondary  | `fill.secondary` · `--fill-secondary`   | `system-grey` @ 15% |
 | Fill Tertiary   | `fill.tertiary` · `--fill-tertiary`     | `system-grey` @ 10% |
-| Fill Quaternary | `fill.quaternary` · `--fill-quaternary` | `system-grey` @ 6% |
-| Fill Quinary    | `fill.quinary` · `--fill-quinary`       | `system-grey` @ 4% |
+| Fill Quaternary | `fill.quaternary` · `--fill-quaternary` | `system-grey` @ 6%  |
+| Fill Quinary    | `fill.quinary` · `--fill-quinary`       | `system-grey` @ 4%  |
 
 #### Tints
 
-**SOURCE:** `Tokens/tint.ts` — `tintAt(base, step)` mixes a base toward transparent; `mixAt` toward anything. A consumer names a step rather than its percentage, and the mix reaches CSS carrying the step's var, so the ladder stays live: retuning a step here re-tints every surface that names it. A raw number is for an amount no step names — the ramp's own shading, a one-off wash.
+**SOURCE:** `Tokens/tint.ts` — `tintAt(base, step)` mixes a base toward transparent; `mixAt` toward anything. A consumer names a step rather than its percentage, and the mix reaches CSS carrying the step's var, so the ladder stays live: retuning a step here re-tints every surface that names it. 
 
 | Title           | Token                                         | Value |
 | --------------- | --------------------------------------------- | ----- |
@@ -110,17 +112,17 @@ Hover and selected paint behind content, muted over it; the three opacities are 
 
 An edge composes a width and a color — `var(--width-XXX) solid var(--border-YYY)`. Colors by intensity, then the literal width ladder.
 
-| Title        | Token                             | Value             |
-| ------------ | --------------------------------- | ----------------- |
-| Border Base  | `border.base` · `--border-base`   | system-grey @ 25% |
-| Border Light | `border.light` · `--border-light` | system-grey @ 20% |
-| Border Faint | `border.faint` · `--border-faint` | system-grey @ 15% |
-| Width 100    | `--width-100`                     | `1px`             |
-| Width 125    | `--width-125`                     | `1.25px`          |
-| Width 150    | `--width-150`                     | `1.5px`           |
-| Width 175    | `--width-175`                     | `1.75px`          |
-| Width 200    | `--width-200`                     | `2px`             |
-| Banner Scrim | `BANNER_SHADOW` · `--banner-shadow` | `#0000008C`     |
+| Title        | Token                               | Value               |
+| ------------ | ----------------------------------- | ------------------- |
+| Border Base  | `border.base` · `--border-base`     | `system-grey` @ 25% |
+| Border Light | `border.light` · `--border-light`   | `system-grey` @ 20% |
+| Border Faint | `border.faint` · `--border-faint`   | `system-grey` @ 15  |
+| Width 100    | `--width-100`                       | `1px`               |
+| Width 125    | `--width-125`                       | `1.25px`            |
+| Width 150    | `--width-150`                       | `1.5px`             |
+| Width 175    | `--width-175`                       | `1.75px`            |
+| Width 200    | `--width-200`                       | `2px`               |
+| Banner Scrim | `BANNER_SHADOW` · `--banner-shadow` | `#0000008C`         |
 
 #### Shadows
 
@@ -209,24 +211,30 @@ The over-scroll edge-dissolve widths a scrollable surface names on `--over-scrol
 | Footnote    | `text.footnote`   | `10px` / `13px` | small detail                                         |
 | Subline     | `text.subline`    | `10px` / `12px` | footnote's size on a tighter line box                |
 
-Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → Headline / Emphasized; row sub-label → Caption, trailing detail → Footnote / Emphasized; pane header → Callout / Emphasized; settings section headings → Headline / Emphasized; table column headers → Callout / Semibold; chips and sidebar section headers → Control / Semibold; on-control labels → Control / Emphasized; picker, segmented, and tab labels → Control; card titles → Body / Semibold; the Subfield → Subline / Emphasized. The [[MarkdownPM|Markdown editor]] scales from its own zoom root in `em` multiples, drawing weight from the shared ladder.
+Where each goes: menu and sidebar rows → Body; menu headings → Headline / Emphasized; row sub-label → Caption, trailing detail → Footnote / Emphasized; frame header → Callout / Emphasized; settings section headings → Headline / Emphasized; table column headers → Callout / Semibold; chips and sidebar section headers → Control / Semibold; on-control labels → Control / Emphasized; picker, segmented, and tab labels → Control; card titles → Body / Semibold; the Subfield → Subline / Emphasized. The [[MarkdownPM|Markdown editor]] scales from its own zoom root in `em` multiples, drawing weight from the shared ladder.
 
-### Materials
+### Glass
 
-`Materials/` — two glass engines behind one barrel. **Frost** is a CSS `backdrop-filter` recipe parameterized by `FrostParams`; **Liquid** is a real edge-refraction shader (`@samasante/liquid-glass`) worn by the in-use controls.
+`Glass/` — the material: one recipe in four tiers, brightest and clearest first, behind one barrel. **Frost** is a CSS `backdrop-filter` recipe parameterized by `FrostParams` in `glass-base.tsx`; `glass-pane.tsx`, `glass-surface.tsx`, and `glass-window.tsx` are its three tiers; `glass-control.tsx` is **Liquid**, a real edge-refraction shader (`@samasante/liquid-glass`) worn by the in-use controls.
 
 | Title         | Export                                        | What it is                                                              |
 | ------------- | --------------------------------------------- | ----------------------------------------------------------------------- |
-| GlassSurface  | `GlassSurface` · `frostMaterial`              | The app's fixed chrome tier — sidebar, inspector, side rail.            |
-| Surface       | `Surface`                                     | GlassSurface as the floating overlay over the main view.                |
-| GlassPane     | `GlassPane` · `PANE_FROST`                    | Anything floating over it — menus, pickers, the autocomplete.           |
-| GlassWindow   | `GlassWindow` · `WINDOW_FROST`                | The pane tier carrying a body — preview, nav, settings, the image picker. |
+| GlassPane     | `GlassPane` · `paneMaterial`                  | The clear chrome-pane tier — the sidebar, the inspector, the side slots, and the anchored surfaces (the hover pane, the autocomplete). |
+| Surface       | `Surface`                                     | GlassPane as the app root, the floating overlay over the main view.     |
+| GlassSurface  | `GlassSurface` · `SURFACE_FROST`              | A Menu floating over a pane, a step dimmer — menus, pickers; `solid` when it opens over another surface. |
+| GlassWindow   | `GlassWindow` · `WINDOW_FROST`                | That surface carrying the 90% `--bg-window` body — every floating window and the image picker. |
 | Ghost         | `GHOST_FROST`                                 | The edge-free frost the drag chip wears.                                |
 | Frost engine  | `frostStyle` · `SOLID_FILL` · `OUTLINE_INSET` | The recipe itself, the window fill share, and the acted-on edge inset.  |
 | GlassControls | `GlassControls` · `CONTROL_OPTICS`            | Liquid glass on the button controls.                                    |
 | GlassSegment  | `GlassSegment`                                | Liquid glass on the small on-control segments.                          |
 
-| Visual | PANE_FROST | WINDOW_FROST         | GHOST_FROST |
+| Tier | Wearer |
+| ------------ | ------------------------------------------------------------------------------------------ |
+| GlassPane    | `InspectorPane`, `SidePane`, and `PickerMenu` with `glass="pane"` — `ConnectionPane`, `AutocompletePane` |
+| GlassSurface | `PickerMenu` by default, and `NotchedShell` beneath `MenuSurface`                          |
+| GlassWindow  | `WindowChassis` and `ImagePicker`                                                          |
+
+| Visual | SURFACE_FROST | WINDOW_FROST         | GHOST_FROST |
 | ---------------- | ---------- | -------------------- | ----------- |
 | Blur             | `6`        | `6`                  | `6`         |
 | Brightness       | `90`       | `90`                 | `100`       |
@@ -272,7 +280,7 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 
 ### Components
 
-`Components/` — grouped as the ledger reads. `dropdownAnchor.ts` (`dropdownAnchor`, `DROPDOWN_GAP`) and `useDismiss.ts` are the shared placement and outside-click helpers at the root, beside `AssetImage`, the one element that draws a stored image, through its crop when one exists.
+`Components/` — grouped as the ledger reads. `useDismiss.ts` is the shared outside-click helper at the root, beside `AssetImage`, the one element that draws a stored image, through its crop when one exists.
 
 #### Controls
 
@@ -310,25 +318,12 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 
 | Title          | Export                                      | What it is                                                                                                           |
 | -------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| PickerMenu     | `PickerMenu` · `PointMenu` · `PickerOption` | The rectangle every menu and picker mounts — anchoring to an element or a bare point, the collision flip decided once per open, dismissal, focus, the scroll cap. The wikilink autocomplete and the hover card ride it too. |
+| PickerMenu     | `PickerMenu` · `PointMenu` · `PickerOption` | The rectangle every menu and picker mounts — anchoring to an element or a bare point, the collision flip decided once per open, dismissal, focus, the scroll cap. The wikilink autocomplete and the hover pane ride it too, on pane glass. |
 | CalendarPicker | `CalendarPicker`                            | Date and time selection.                                                                                             |
 | ColorPicker    | `ColorPicker`                               | The 8×8 ramp grid; clicking the selected cell clears.                                                                |
 | IconPicker     | `IconPicker` · `IconFavorites`              | The searchable glyph grid with a reorderable favorites strip; the app binds favorites through `Settings/IconPicker`. |
 | ImagePicker    | `ImagePicker`                               | Frames a stored image — a focal point and a zoom — as a circle or a rect cut to its seat. |
 | TextPicker     | `TextPicker`                                | A typed-value picker in the shared pane.                                                                             |
-
-#### Menus
-
-| Title | Export | What it is |
-| ------------ | ----------------------------------------------- | ----------------------------------------- |
-| Menu | `Menu` · `MenuItem` · `MenuHeading` · `MenuSeparator` · `MenuCaption` · `itemEmphasized` · `titleInput` | The row vocabulary, the emphasized row, and the flush inline-rename input. |
-| Bars | `MenuTopRow` · `MenuPaneTopRow` · `MenuBottomRow` · `FooterLockButton` · `FooterMoreButton` · `AccessoryButton` | The pinned header and footer tiers and their buttons. |
-| Scroll frame | `MenuScrollFrame` · `MENU_MAX_HEIGHT` | The one capped overflow region with its fade. |
-| DisclosureRow | `DisclosureRow` · `useDisclosureSet` | A folding row on DropOutline. |
-| MenuSurface | `MenuSurface` | The beaked pane the large toolbar dropdown hangs off a button. |
-| MenuDropdown | `MenuDropdown` | The shell around a trigger — open state, dismiss, growth bound. |
-| NotchedShell | `NotchedShell` | The beaked frost shell MenuSurface composes. |
-| Growth | `growToContent` | The measured height a pane grows to. |
 
 #### Fields
 
@@ -353,17 +348,34 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 | WindowChassis | `WindowChassis` | The floating window surface every in-app window mounts; its own dimensions — toolbar height, side-pane widths, footer height, the trailing-control slide — are custom properties in `windowChassis.css` a host may retune.[^1] |
 | SidePane | `SidePane` · `sidePaneWidth` | A pane carried on a window's edge by `--io`. |
 
+### Menus
+
+`Menus/` — the menu recipe: the shell a trigger hangs, the rows inside it, the frame chassis, and the slide between frames. `menu-base.tsx` is the trigger shell, `menu-surface.tsx` and `menu-shell.tsx` the beaked surface, `menu-row.tsx` the rows, `menu-disclosure.tsx` the folding row, `menu-anchor.ts` the placement, `frame-growth.ts` and `frame-slide.tsx` the frame chassis.
+
+| Title | Export | What it is |
+| ------------ | ----------------------------------------------- | ----------------------------------------- |
+| Menu | `Menu` · `MenuItem` · `MenuHeading` · `MenuSeparator` · `MenuCaption` · `itemEmphasized` · `titleInput` | The row vocabulary, the emphasized row, and the flush inline-rename input. |
+| Bars | `MenuTopRow` · `MenuFrameTopRow` · `MenuBottomRow` · `FooterLockButton` · `FooterMoreButton` · `AccessoryButton` | The pinned header and footer tiers and their buttons. |
+| Scroll frame | `MenuScrollFrame` · `MENU_MAX_HEIGHT` | The one capped overflow region with its fade. |
+| DisclosureRow | `DisclosureRow` · `useDisclosureSet` | A folding row on DropOutline. |
+| MenuSurface | `MenuSurface` | The beaked surface the large toolbar menu hangs off a button. |
+| MenuDropdown | `MenuDropdown` | The shell around a trigger — open state, dismiss, growth bound. |
+| NotchedShell | `NotchedShell` | The beaked frost shell MenuSurface composes. |
+| Anchor | `menuAnchor` · `MenuPlacement` · `DROPDOWN_GAP` | Where a menu sits against its trigger. |
+| Growth | `growToContent` | The measured height a menu grows to. |
+| FrameSlide | `FrameSlide` | The two-slot push and back between a menu's frames. |
+
 ### Detail
 
 `Detail/` — the composite, feature-facing shells. App surfaces are listed by reference; their code stays in the app.
 
-| Title | Location | What it is |
-| ---------- | ------------------------------------- | ----------------------------------------------------- |
-| Tile chassis | `Detail/tile-chassis.css` | The resizable tile frame SurfacePM and embeds share. |
-| Sidebar · Toolbar | app: `Sidebar/` · `Toolbar/` | [[InterfacePM]] |
-| Tabs | app: `Tabs/` | [[NavigationPM]] |
-| Cards | app: `Cards/` — `Card.tsx` · `cards.css` | The card chassis every card surface wears — the Navigation gallery and CardView. `CardRoot` (drag shell; `is-locked` holds the 125/90 aspect with the cover at `--thumb-share`, the default reflows below a `--card-thumb-h` band; `is-active` wears the accent stroke) → `CardBody` (frame, hover-pop) → `CardThumb` (`is-capture` marks a captured preview, zoomed by `--preview-zoom`) / `CardText` → `CardTitle` (body-semibold; scroll, wrap, or static) · `CardTrail`. `.card-grid` is the shared grid — auto-fit, or `is-fill` to hold empty tracks. A `.card-pin` inside the thumb is the opt-in pin. Its tokens sit on `:root`; [[ViewTypesPM]] carries the sheet. |
-| Tables | app: `Tables/` — `Table.css` · `table-tokens.css` · `ColumnHeader` · `Cell` · `tableDnd` | The tabular chrome every table surface wears (TableView, the Trash): the column-header band with `.col-header` segment bars (`.table-segment` puts the bar on any element), row and column hairlines, the column drag and resize strips, `no-borders`, and the cell content types. A host wears `.table`, lays its own grid on `--cols`, rebinds the heading fill and divider in its scope, and states `is-clear` for a bare heading. [[ViewTypesPM]] carries the sheet. |
+| Title             | Location                                                                                 | What it is                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ----------------- | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tile chassis      | `Detail/tile-chassis.css`                                                                | The resizable tile frame SurfacePM and embeds share.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| Sidebar · Toolbar | app: `Sidebar/` · `Toolbar/`                                                             | [[InterfacePM]]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| Tabs              | app: `Tabs/`                                                                             | [[NavigationPM]]                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Cards             | app: `Cards/` — `Card.tsx` · `cards.css`                                                 | The card chassis every card surface wears — the Navigation gallery and CardView. `CardRoot` (drag shell; `is-locked` holds the 125/90 aspect with the cover at `--thumb-share`, the default reflows below a `--card-thumb-h` band; `is-active` wears the accent stroke) → `CardBody` (frame, hover-pop) → `CardThumb` (`is-capture` marks a captured preview, zoomed by `--preview-zoom`) / `CardText` → `CardTitle` (body-semibold; scroll, wrap, or static) · `CardTrail`. `.card-grid` is the shared grid — auto-fit, or `is-fill` to hold empty tracks. A `.card-pin` inside the thumb is the opt-in pin. Its tokens sit on `:root`; [[ViewTypesPM]] carries the sheet. |
+| Tables            | app: `Tables/` — `Table.css` · `table-tokens.css` · `ColumnHeader` · `Cell` · `tableDnd` | The tabular chrome every table surface wears (TableView, the Trash): the column-header band with `.col-header` segment bars (`.table-segment` puts the bar on any element), row and column hairlines, the column drag and resize strips, `no-borders`, and the cell content types. A host wears `.table`, lays its own grid on `--cols`, rebinds the heading fill and divider in its scope, and states `is-clear` for a bare heading. [[ViewTypesPM]] carries the sheet.                                                                                                                                                                                                    |
 
 ### Interaction
 
@@ -390,11 +402,11 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 
 | Title     | Export                                    | What it is                                                              |
 | --------- | ----------------------------------------- | ----------------------------------------------------------------------- |
-| Durations | `duration.fast/dropdown/base/slow` · `--duration-*` · `ms()` | `180ms` · `225ms` · `280ms` · `350ms`; `ms` reads one as a number. |
+| Durations | `duration.fast/menu/base/slow` · `--duration-*` · `ms()` | `180ms` · `225ms` · `280ms` · `350ms`; `ms` reads one as a number. |
 | Ease      | `easing.baseEase` · `--ease-base`         | `ease` — the everyday curve.                                            |
 | Snap      | `easing.baseSnap` · `--ease-snap`         | `cubic-bezier(0.22, 1, 0.36, 1)` — the decelerate drag and tiles ride. |
-| Feel      | `DEFAULT_FEEL` · `GLIDE_FEEL`             | Duration + snap as numbers for the drag engine — the `dropdown` and `slow` rungs. |
-| Bloom     | `dropdownMenu` · `dropdownMenuClosing` · `dropdownOpen` · `dropdownClose` · `titleReveal` | The pane open/close keyframes at the `slow` and `dropdown` rungs. |
+| Feel      | `DEFAULT_FEEL` · `GLIDE_FEEL`             | Duration + snap as numbers for the drag engine — the `menu` and `slow` rungs. |
+| Bloom     | `menuBloom` · `menuBloomClosing` · `bloomOpen` · `bloomClose` · `titleReveal` | The menu open/close keyframes at the `slow` and `menu` rungs. |
 | Reveal    | `Reveal`                                  | The `0fr ↔ 1fr` body open/close on the `fast` rung.                     |
 | Exit      | `useExitPresence`                         | Keeps a surface mounted through its close.                              |
 

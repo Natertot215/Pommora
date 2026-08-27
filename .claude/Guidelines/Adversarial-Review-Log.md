@@ -88,7 +88,7 @@ Same exercise, earlier feature. Note how many classes recur.
 
 **E — Connections inside cells**
 
-- Tab discarded an open autocomplete candidate: with the `[[…]]` panel open and a candidate highlighted, Tab navigated to the next cell instead of accepting it. Fixed — Tab is gated on the panel being open (picks when open, navigates only when closed).
+- Tab discarded an open autocomplete candidate: with the `[[…]]` pane open and a candidate highlighted, Tab navigated to the next cell instead of accepting it. Fixed — Tab is gated on the pane being open (picks when open, navigates only when closed).
 - Aliased `[[A|B]]` vs the cell pipe: the `|` in an aliased connection collides with the cell delimiter, with no way to disambiguate on disk. **Open** — autocomplete only inserts alias-free `[[Title]]`; the syntax call is unresolved.
 
 **F — Layout & chrome (incl. fix-induced)**

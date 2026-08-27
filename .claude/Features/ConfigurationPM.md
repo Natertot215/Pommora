@@ -24,7 +24,7 @@ Configuration reads at three scopes. A **Nexus** is configured from the Settings
 
 ### Settings
 
-The Nexus Settings window is a floating window summoned from the ribbon's Settings glyph, mounted on the shared window chassis.[^2] Its rail lists the leaves below; each row writes one key of the `personalization` object (`Personalization` in `src/shared/types.ts`), and a row at its default stores no key. Defaults are bold.
+The Nexus Settings window is a floating window summoned from the ribbon's Settings glyph, mounted on the shared window chassis.[^2] Its rail lists the frames below; each row writes one key of the `personalization` object (`Personalization` in `src/shared/types.ts`), and a row at its default stores no key. Defaults are bold.
 
 #### General
 
@@ -132,7 +132,7 @@ Keyboard shortcuts are data: the `commands` object in `settings.json` maps comma
 
 #### Trash
 
-The one surface leaf, anchored below the rail's separator. Its body is the deletion record's browser,[^4] and its column heading's menu carries the two display knobs.
+The one frame that is a surface of its own, anchored below the rail's separator. Its body is the deletion record's browser,[^4] and its column heading's menu carries the two display knobs.
 
 | Setting | Key | Description | Options |
 | --- | --- | --- | --- |
@@ -146,7 +146,7 @@ A Collection's own configuration, stored in its `_pagecollection.json` sidecar a
 | Setting | Key | Description | Options |
 | --- | --- | --- | --- |
 | Open In | `open_in` | How a page opens from its container. | **Full Page** · Page Preview |
-| Show Title | `view_button` | Whether the view dropdown button shows the view's name beside its glyph. | **Icon** · Labeled |
+| Show Title | `view_button` | Whether the view menu button shows the view's name beside its glyph. | **Icon** · Labeled |
 
 The sidecar's remaining fields are structure rather than configuration: the entity's id and icon, its banner, its page and set ordering, its property assignment list, and its saved views.[^6]
 

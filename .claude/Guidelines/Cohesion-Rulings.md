@@ -58,13 +58,13 @@ plausible from the outside. Reopen any of them with a reason, not with a fresh r
   violations and do not want dimming.
 - `Tables/codec.ts`'s `parseTable` is production-dead on purpose: it is the reference implementation
   `modelFromRegion` is pinned against in `Tables/regions.test.ts`. Production-dead is not dead.
-- `GlassWindow`, `GlassSurface` and `GlassControls` are deliberate semantic slots, not duplication.
+- `GlassPane`, `GlassSurface`, `GlassWindow` and `GlassControls` are deliberate semantic slots, not duplication.
 - A lag-compensating UI hold keys on the operation resolving, not on a downstream value change. The
   ImagePicker's re-pick Save-hold waited for the `value` prop to advance; a dedup adopt of the
   already-set image writes the same value back, so the change never came and Save stranded. Any hold
   released only by an effect a no-op path can withhold is a latent deadlock.
-- The autocomplete panel's row does not adopt the shared menu-row primitive. Taking its metrics
-  changes how the panel looks, which is a design decision rather than a consolidation.
+- The autocomplete pane's row does not adopt the shared menu-row primitive. Taking its metrics
+  changes how the pane looks, which is a design decision rather than a consolidation.
 - `PageHeader` stays driven rather than store-reading. A Page Window draws a page that is not
   the active one, so a header reading the active page would draw the wrong title.
 - The insert-an-id-at-an-index idiom stays written out. Its four sites differ in whether the id was
@@ -114,12 +114,12 @@ enclosing function returns a real, non-nullable value, and menu dispatch almost 
 
 Take these first if the sweep is ever opened:
 
-- **`Toolbar/ViewPane.tsx:128` and `Blocks/ViewEmbedBlock.tsx:437`** — two chains over one
+- **`Toolbar/ViewFrame.tsx:128` and `Blocks/ViewEmbedBlock.tsx:437`** — two chains over one
   union, each carrying an explicit `default: return` that silences the compiler *and* the bug. The
   suppression is the finding.
 - **`MarkdownPM/editor/gripMenu.ts:107` and `:170`** — two switches over one union, each
   intentionally partial, neither saying so.
-- **`Properties/PropertiesPane.tsx:365` and `:374`, `PagePropertiesPane.tsx:167`,
+- **`Properties/PropertyFrame.tsx:365` and `:374`, `PageProperties.tsx:167`,
   `Windows/WindowInspector.tsx:199`** — four un-linked partial chains over `PropertyMenuAction`,
   each handling two of its five members.
 - **`Views/CardView/CardValue.tsx:115`** — handles only the `cell:*` half of `CellMenuAction`. A

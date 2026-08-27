@@ -40,7 +40,6 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 - **Never do expensive work "on every X," never "reload the entire Y."** No O(N) / allocating / layout-reading work on a high-frequency trigger, and no full-nexus rebuild / re-walk when an incremental or cached update works — it’s *the* lag source.
 - **Placeholders** never display build-status or meta text — an unbuilt surface is simply blank.
 - **Ask before designing.** Stop to disclose assumptions and clarify direction before any design or interaction-based decision — don't guess at how something looks or behaves; the codebase usually describes something that already exists. Any in-flight decisions must be disclosed as they’re being made.
-- **Tokens must** be pulled from their sources in `/DesignSystem` — never hand-roll tokens without explicit direction; what you're looking for almost *always* already exists. 
 - **Most recent wins** is the primary philosophy around handling concurrency, cross-device, and external editing conflicts.
 
 ### Locked Decisions
@@ -48,7 +47,7 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 **Nothing is set in stone but these:** Every other decision — model, structure, vocabulary, interaction — is open to challenge and rework whenever an idea earns it. These decisions need explicit sign-offs to change; everything else needs only a good reason.
 
 - **Reasonable Legibility:** The user's Nexus, its filesystem structure, and the general context of the content within it must be understandable through the filesystem structure itself, be reasonably app-agnostic, or clearly understood through a single user guide. 
-- **Reasonable Translation:** The general structure of the file tree and on-disk data must be translatable between other filesystem-based applications. CommonMark specification is the standard convention; app-unique syntax is an acceptable per-case decision — but legibility concerns *context*, not every byte the app stores: per-machine operational info, accelerators, or similar information may be more appropriate to store in the `nexus.db` rather than hand-editable and exposed data.
+- **Reasonable Translation:** The general structure of the file tree and on-disk data must be translatable between other filesystem-based applications. App-unique syntax is an acceptable per-case decision — but legibility concerns *context*, not every byte the app stores: per-machine operational info, accelerators, or similar information may be more appropriate to store in the `nexus.db` rather than hand-editable and exposed data.
 - **Single-window now, multi-window-ready seams** — data is main-owned + Query/store-cached per renderer; the live-refresh bus is a swappable transport; windows identified by serializable refs. No global singleton holding shared mutable client state.
 
 #### Important Information
@@ -69,7 +68,7 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 │   │   ├── [ContextsPM.md]              | • The organization layer, its registry, and Context identity
 │   │   ├── [DesignSystemPM.md]          | • The design system — the one-look ledger of tokens, materials, and components
 │   │   ├── [InteractionPM.md]           | • The named motions and the interaction primitives
-│   │   ├── [InterfacePM.md]             | • The shell's surfaces — toolbar, sidebar, subfield, floating windows, hover card
+│   │   ├── [InterfacePM.md]             | • The shell's surfaces — toolbar, sidebar, subfield, floating windows, hover pane
 │   │   ├── [MarkdownPM.md]              | • The in-house Markdown editor on a CodeMirror 6 substrate
 │   │   ├── [NavigationPM.md]            | • The navigation layer, tabs, per-tab history, and NavView
 │   │   ├── [NexusRecordPM.md]           | • Provenance and the deletion record in .trash
@@ -112,9 +111,10 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 │   │       └── // src
 │   │           ├── // Blocks            | • Tile content for the dashboard layer
 │   │           ├── // Cards             | • The card chassis — the gallery and CardView wear it
-│   │           ├── // Components        | • Shared components — chips, icons, editable titles
+│   │           ├── // Components        | • Shared components — the entity icon, the renamable title
 │   │           ├── // Detail            | • The main pane — routed views, inspector, subfield, banner
 │   │           ├── // Embeds            | • The embed framework's consumers
+│   │           ├── // Frames            | • The frames a Menu or Window opens onto — filter, group, sort, layout, settings
 │   │           ├── // MarkdownPM        | • The editor — parser, tokens, decorations, input, tables
 │   │           ├── // Navigation        | • Tabs, history, breadcrumbs, search
 │   │           ├── // Properties       | • The property layer — value resolution, the editing surface, the panes
@@ -125,13 +125,14 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 │   │           ├── // Tabs              | • The tabs + navigational overlays
 │   │           ├── // Toolbar           | • The window toolbar
 │   │           ├── // Views             | • The view pipeline and renderers — TableView, CardView, bands
-│   │           ├── // Windows           | • The floating windows — Page, Web, Nav — and their tab strips
+│   │           ├── // Windows           | • The floating windows — Page, Web, Nav — on one window-base, and their tab strips
 │   │           ├── // DesignSystem      | • The design system — DesignSystemPM is its ledger
 │   │           │   ├── // Tokens        | • Color, type, geometry — the token source of truth
-│   │           │   ├── // Materials     | • Glass — surfaces, panes, windows, controls
+│   │           │   ├── // Glass         | • The material — one recipe, four tiers
 │   │           │   ├── // Labels        | • Labels and chips
 │   │           │   ├── // Elements      | • The atomic bits — outline, chevron, trail, segment
-│   │           │   ├── // Components    | • Controls, pickers, menus, fields, the window chassis
+│   │           │   ├── // Components    | • Controls, pickers, fields, the window chassis
+│   │           │   ├── // Menus         | • The menu recipe — shell, rows, frame chassis, the frame slide
 │   │           │   ├── // Detail        | • The tile chassis
 │   │           │   ├── // Interactions  | • PommoraDND and the pointer/scroll layer
 │   │           │   ├── // Animation     | • Motion tokens, the feel, and the enter/exit primitives

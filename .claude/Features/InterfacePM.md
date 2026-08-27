@@ -15,7 +15,7 @@ Interface
 └── Pending
 ```
 
-The shell and the surfaces it is built from: the three-pane window, the toolbar, the sidebar, the footer bar under every content view, the floating windows, and the hover card. Each is a surface that hosts content owned elsewhere — pages, views, the navigation layer — and this document describes the surfaces themselves: how they are laid out, what they show, and how you move between them. `App.tsx` composes them; the components live in `src/renderer/src/Sidebar/`, `Toolbar/`, `Detail/`, `Windows/`, and `Embeds/`.
+The shell and the surfaces it is built from: the three-pane window, the toolbar, the sidebar, the footer bar under every content view, the floating windows, and the hover pane. Each is a surface that hosts content owned elsewhere — pages, views, the navigation layer — and this document describes the surfaces themselves: how they are laid out, what they show, and how you move between them. `App.tsx` composes them; the components live in `src/renderer/src/Sidebar/`, `Toolbar/`, `Detail/`, `Windows/`, and `Embeds/`.
 
 ### The Shell
 
@@ -23,7 +23,7 @@ A three-pane shell: the sidebar, the main pane, and the inspector, with both sid
 
 ### The Toolbar
 
-The toolbar (`Toolbar/Toolbar.tsx`) holds the tab bar on its left and a trio of glass buttons on its right, with one slot between them that changes with the selection. The trio is the Navigation button (its pane is a placeholder), the Settings dropdown — the container's SettingsPane or a page's own Settings — and the inspector toggle; when the inspector opens, the trio rides its edge on the shared swallow motion. The middle slot holds the ViewDropdown on a container and the Outline on a page, since a selection is one or the other, and a Space shows its own dropdown there.[^2]
+The toolbar (`Toolbar/Toolbar.tsx`) holds the tab bar on its left and a trio of glass buttons on its right, with one slot between them that changes with the selection. The trio is the Navigation button (its menu is a placeholder), the Settings menu — the container's SettingsFrame or a page's own Settings — and the inspector toggle; when the inspector opens, the trio rides its edge on the shared swallow motion. The middle slot holds the ViewMenu on a container and the Outline on a page, since a selection is one or the other, and a Space shows its own menu there.[^2]
 
 ### The Sidebar
 
@@ -78,11 +78,11 @@ The NavWindow is a flavor of the same window with the floating toolbar: tab 1 is
 
 #### II. The Settings Window
 
-The Nexus Settings window (`Settings/NexusSettings.tsx`) is summoned and dismissed by the ribbon's Settings glyph and takes the floating toolbar, with a rail of leaves in a side slot and the panel they open beside it: General, Interface, Navigation, Appearance, Files & Links, Properties, Pages & Editor, Automations, and Shortcuts listed from the top, and Trash anchored to the rail's foot. A leaf either fills the panel with sections of labeled rows, each row writing one key of the Nexus's personalization,[^11] or hands the panel over to a surface of its own, which is what Trash does. A leaf whose own settings are undecided still holds its place in the rail and opens empty.
+The Nexus Settings window (`Settings/SettingsWindow.tsx`) is summoned and dismissed by the ribbon's Settings glyph and takes the floating toolbar, with a rail of frames in a side slot and the frame it opens beside it: General, Interface, Navigation, Appearance, Files & Links, Properties, Pages & Editor, Automations, and Shortcuts listed from the top, and Trash anchored to the rail's foot. A frame either fills with sections of labeled rows, each row writing one key of the Nexus's personalization,[^11] or is a surface of its own, which is what Trash is. A frame whose own settings are undecided still holds its place in the rail and opens empty.
 
-### The Hover Card
+### The Hover Pane
 
-Resting on a resolved connection past a short intent delay raises the hover card (`Embeds/ConnectionHoverCard.tsx`): a compact, read-only render of the target page through the embed framework, without its banner or inline title, on the PickerMenu chassis rather than a window — no backdrop, no focus, so it never steals a click. It is mounted once at app level and reached by every host, so one card exists app-wide. The card resolves its content before opening (a page that can't load opens nothing), centers on the live link and tracks it as the line reflows, scrolls within itself with headings folding on click, and closes on hover-off, Escape, navigation, or the link leaving view; **Hover Preview Linger** extends the stay.[^3] It resizes from its right and bottom edges to one remembered size per machine.
+Resting on a resolved connection past a short intent delay raises the hover pane (`Embeds/ConnectionPane.tsx`): a compact, read-only render of the target page through the embed framework, without its banner or inline title, on the PickerMenu chassis rather than a window — no backdrop, no focus, so it never steals a click. It is mounted once at app level and reached by every host, so one pane exists app-wide. The pane resolves its content before opening (a page that can't load opens nothing), centers on the live link and tracks it as the line reflows, scrolls within itself with headings folding on click, and closes on hover-off, Escape, navigation, or the link leaving view; **Hover Preview Linger** extends the stay.[^3] It resizes from its right and bottom edges to one remembered size per machine.
 
 A markdown link naming a website raises the same card as a live, non-interactive render of the site: it opens under a quiet cover that fades once the page paints, a page that fails or never paints closes the card, and a shield keeps every pointer event on the card while passing the wheel down so the site scrolls without becoming clickable.[^10]
 
@@ -91,7 +91,7 @@ A markdown link naming a website raises the same card as a live, non-interactive
 #### Pending
 
 - **The inspector pane** — reserved; its design pass is pending.
-- **The NavPane** — the toolbar Navigation button's dropdown is a blank placeholder; its content is undecided.
+- **The NavMenu** — the toolbar Navigation button's menu is a blank placeholder; its content is undecided.
 - **User sections** — an "Add Heading" entry in the Collections create menu, with drag-a-Collection-into-a-section.
 - **Always-on ribbon** — a ribbon that survives the sidebar collapsing.
 - **The engulf's landing** when the promoted page's main-pane fetch outlasts the FLIP; usually masked by warmth.

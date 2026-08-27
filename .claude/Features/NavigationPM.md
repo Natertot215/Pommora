@@ -52,7 +52,7 @@ The new-tab page (`Tabs/NavView.tsx`): a full-window Recents gallery or list ove
 
 #### Pending
 
-- **NavPane** — the toolbar Navigation button's dropdown, a blank placeholder whose content is undecided.
+- **NavMenu** — the toolbar Navigation button's menu, a blank placeholder whose content is undecided.
 - **Agenda is unsearchable** — Tasks and Events are absent from the tree the index builds from; the persistence layer admits their refs and renders them as inert rows.
 - **Body and full-text search** — waits on a SQLite FTS layer that doesn't exist.
 
