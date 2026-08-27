@@ -110,6 +110,10 @@ import './CardsView.css'
 const thumbSrc = (nexusId: string, pageId: string, v: number): string =>
   `${assetUrl(thumbRel(nexusId, thumbKey(navKey({ kind: 'page', id: pageId }))))}?v=${v}`
 
+// Frontmatter is untyped on disk — anything but a string on the key is not a cover.
+const coverOf = (row: ViewRow): string | undefined =>
+  typeof row.frontmatter.cover === 'string' ? row.frontmatter.cover : undefined
+
 // ── TUNABLE ── how long a left ghost card survives before it collapses — unlike the table's
 // flush ghost, the pointer must cross the grid gap to reach it, so zero would kill it mid-travel.
 // The dwell is the shared GHOST_DWELL_MS in useGhostAnchor.
@@ -782,7 +786,6 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
           renderOverlay={(id) => {
             const r = rowById.get(id)
             if (!r || !ctx) return null
-            const oCover = typeof r.frontmatter.cover === 'string' ? r.frontmatter.cover : undefined
             const oSrc = banner === 'preview' ? thumbSrc(nexusId, r.id, 0) : undefined
             return (
               <div
@@ -809,7 +812,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
                       ctx={ctx}
                       crumbs={locByRow.get(id) ?? NO_TRAIL}
                       src={oSrc}
-                      cover={oCover}
+                      cover={coverOf(r)}
                       iconName={entityIcon('page', r.icon, defaultIcons)}
                       columns={columns}
                       allowInlineRemove={false}
@@ -825,8 +828,6 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
             )
           }}
         >
-          {/* One flat level of bands, so a drop is always a reorder — a top set's whole subtree
-            already rolls into its own band here, leaving no depth for a nest to land in. */}
           <BandDnd bands={bands} labelFor={bandLabel} onDrop={onBandDrop} nestable={false}>
             {groups.map((g) => {
               const rows = flattenGroups([g])
@@ -967,7 +968,7 @@ function GhostCard({
         <CardText>
           <CardTitle mode="static">
             <Icon name={iconName} className="card-title-icon" />
-            <span className="card-title-text">New Page</span>
+            <span>New Page</span>
           </CardTitle>
           {props.length > 0 && ctx && (
             <div className="card-props">
@@ -1052,7 +1053,7 @@ function SetCard({ set, drag }: { set: SetNode; drag?: DragItem }): React.JSX.El
         <CardText>
           <CardTitle>
             <Icon name={iconName} className="card-title-icon" />
-            <span className="card-title-text">{set.title}</span>
+            <span>{set.title}</span>
           </CardTitle>
         </CardText>
       </CardBody>
@@ -1219,7 +1220,7 @@ const CardFace = memo(function CardFace({
   const titleRow = (
     <CardTitle mode={(view.wrap_titles ?? false) ? 'wrap' : 'scroll'}>
       {titleIcon}
-      <span className="card-title-text">{row.title}</span>
+      <span>{row.title}</span>
     </CardTitle>
   )
   // While this card is the naming target the whole title row swaps for the fenced field —
@@ -1403,7 +1404,7 @@ const PageCard = memo(function PageCard({
   }
   const crumbs = loc ?? NO_TRAIL
 
-  const cover = typeof row.frontmatter.cover === 'string' ? row.frontmatter.cover : undefined
+  const cover = coverOf(row)
   const onImgError = useCallback(() => setFailed(true), [])
   const thumbRef = useRef<HTMLDivElement>(null)
   // The image band's banner menu (the PageHeader flow), worded for the view's display config —

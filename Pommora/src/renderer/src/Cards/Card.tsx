@@ -6,7 +6,7 @@ import type { DragItem } from '@renderer/DesignSystem/Interactions/drag'
 import { NavTrail, type TrailSegment } from '@renderer/DesignSystem/Elements/NavTrail'
 import './cards.css'
 
-export const cardTitleType = text.body.emphasized
+const cardTitleType = text.body.emphasized
 
 type DivProps = React.HTMLAttributes<HTMLDivElement> & { ref?: React.Ref<HTMLDivElement> }
 
@@ -49,8 +49,7 @@ export function CardRoot({
   )
 }
 
-/** The visual card: the bordered, clipped frame. Pops on hover unless the caller says otherwise (a
- *  ghost or a drag overlay never pops). */
+/** Pops on hover unless the caller says otherwise (a ghost or a drag overlay never pops). */
 export function CardBody({
   pop = true,
   className,
@@ -95,14 +94,6 @@ export function CardTitle({
   )
 }
 
-export function CardTrail({
-  segments,
-  className,
-}: {
-  segments: TrailSegment[]
-  className?: string
-}): React.JSX.Element | null {
-  return (
-    <NavTrail segments={segments} className={cx('card-loc', text.caption.standard, className)} />
-  )
+export function CardTrail({ segments }: { segments: TrailSegment[] }): React.JSX.Element | null {
+  return <NavTrail segments={segments} className={cx('card-loc', text.caption.standard)} />
 }
