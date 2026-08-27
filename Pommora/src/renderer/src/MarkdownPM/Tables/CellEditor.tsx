@@ -20,7 +20,7 @@ import {
   detectConnectionQuery,
   whenAcOpen,
 } from '../useConnectionAutocomplete'
-import { AutocompletePanel } from '../AutocompletePanel'
+import { AutocompletePane } from '../AutocompletePane'
 import type { ConnectionsApi } from '../connections'
 import type { NavDir } from './navigate'
 
@@ -144,8 +144,8 @@ export function CellEditor({
                 ),
               },
               { key: 'Shift-Tab', run: consume(() => onNavigateRef.current('prev')) },
-              // With the connection panel open these keys drive it; when it's closed only Enter falls
-              // through to cell navigation (arrows/Escape are no-ops without an open panel).
+              // With the connection pane open these keys drive it; when it's closed only Enter falls
+              // through to cell navigation (arrows/Escape are no-ops without an open pane).
               {
                 key: 'Enter',
                 run: consume(() =>
@@ -258,7 +258,7 @@ export function CellEditor({
   return (
     <>
       <div ref={host} className="mdpm-tbl-cell-editor" />
-      <AutocompletePanel
+      <AutocompletePane
         open={ac !== null}
         candidates={candidates}
         index={acIndex}

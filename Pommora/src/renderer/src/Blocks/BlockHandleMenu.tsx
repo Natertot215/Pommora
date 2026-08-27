@@ -16,28 +16,28 @@ import {
   FooterLockButton,
   MenuBottomRow,
   MenuItem,
-  MenuPaneTopRow,
+  MenuFrameTopRow,
   MenuScrollFrame,
   MenuSeparator,
-} from '@renderer/DesignSystem/Components/Menu'
+} from '@renderer/DesignSystem/Menus'
 import {
   footerLockAction,
   footingLabel,
   lockIcon,
   rowDisabled,
-} from '@renderer/DesignSystem/Components/Menu/menu.css'
-import { PaneSlider } from '@renderer/DesignSystem/Components/PaneSlider/PaneSlider'
+} from '@renderer/DesignSystem/Menus/menu-base.css'
+import { FrameSlide } from '@renderer/DesignSystem/Menus/frame-slide'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { overScrollEllipsis } from '@renderer/DesignSystem/Interactions/OverScroll'
 import { ZOOM_STEPS, zoomStep } from './blockZoom'
 import * as s from './handleMenu.css'
 
-// Matches the SettingsPane ladder's control-size rows.
+// Matches the SettingsFrame ladder's control-size rows.
 const GLYPH = 12
 // The title field's location sub-line rides a step smaller than its glyph.
 const LOC_GLYPH = 11
 
-/** A nested PaneSlider per depth so every push AND back slides — a flat content swap would
+/** A nested FrameSlide per depth so every push AND back slides — a flat content swap would
  *  animate neither. */
 function DrillLevel({
   nodes,
@@ -61,7 +61,7 @@ function DrillLevel({
     <div className={s.pane}>
       <MenuScrollFrame
         maxHeight={PICKER_MAX_HEIGHT}
-        header={<MenuPaneTopRow label={backLabel} current={title} onBack={onBack} />}
+        header={<MenuFrameTopRow label={backLabel} current={title} onBack={onBack} />}
         footer={
           footerNodes.length ? (
             <MenuBottomRow
@@ -105,7 +105,7 @@ function DrillLevel({
     </div>
   )
   return (
-    <PaneSlider
+    <FrameSlide
       open={openIdx != null}
       root={rows}
       detail={
@@ -167,9 +167,9 @@ export function BlockHandleMenu({
   containerLocked?: boolean
 }): React.JSX.Element {
   const [pane, setPane] = useState<'root' | 'style' | 'page' | 'view'>('root')
-  // An anchored dropdown (not an in-menu pane) — the menu stays put while steps drop over it.
-  // Dismissal is a document listener (the CalendarPicker idiom) that spares the dropdown + trigger
-  // and closes on any other pointerdown.
+  // An anchored menu (not an in-menu frame) — the scale menu stays put while steps drop over it.
+  // Dismissal is a document listener (the CalendarPicker idiom) that spares the scale menu +
+  // trigger and closes on any other pointerdown.
   const [scaleOpen, setScaleOpen] = useState(false)
   const scaleTriggerRef = useRef<HTMLButtonElement>(null)
   useEffect(() => {
@@ -181,7 +181,7 @@ export function BlockHandleMenu({
     }
     const onKey = (e: KeyboardEvent): void => {
       if (e.key !== 'Escape') return
-      e.stopPropagation() // close the dropdown first, not the whole menu
+      e.stopPropagation() // close the scale menu first, not the whole menu
       setScaleOpen(false)
     }
     document.addEventListener('pointerdown', onDown, true)
@@ -320,7 +320,7 @@ export function BlockHandleMenu({
 
   const stylePane = (
     <div className={s.pane}>
-      <MenuPaneTopRow label="Menu" current="Style" onBack={() => setPane('root')} />
+      <MenuFrameTopRow label="Menu" current="Style" onBack={() => setPane('root')} />
       {(['bordered', 'borderless'] as const).map((v) => (
         <PickerOption
           key={v}
@@ -357,7 +357,7 @@ export function BlockHandleMenu({
   return (
     <>
       <PickerMenu open={open} onDismiss={onClose} triggerRef={{ current: anchor }} origin="center">
-        <PaneSlider open={pane !== 'root'} root={root} detail={detail} />
+        <FrameSlide open={pane !== 'root'} root={root} detail={detail} />
       </PickerMenu>
       {/* No onDismiss — the document listener above owns dismissal, so a pick can leave it open. */}
       <PickerMenu open={open && scaleOpen} triggerRef={scaleTriggerRef} solid>

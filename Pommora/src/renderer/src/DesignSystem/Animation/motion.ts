@@ -1,6 +1,6 @@
 export const duration = {
   fast: '180ms',
-  dropdown: '225ms',
+  menu: '225ms',
   base: '280ms',
   slow: '350ms',
 } as const

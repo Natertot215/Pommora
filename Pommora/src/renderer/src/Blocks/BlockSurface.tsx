@@ -19,7 +19,7 @@ import {
   type ContainerCore,
 } from '@renderer/treeIndex'
 import { showConnectionMenu } from '@renderer/Embeds/connectionMenu'
-import { hoverConnection, hoverWebsite } from '@renderer/Embeds/ConnectionHoverCard'
+import { hoverConnection, hoverWebsite } from '@renderer/Embeds/ConnectionPane'
 import { attachBelow, insertBand, removeTile as removeLeaf } from '@renderer/SurfacePM/core/ops'
 import { getTile } from '@renderer/SurfacePM/core/model'
 import { SurfaceView, type BackdropTarget } from '@renderer/SurfacePM/SurfaceView'

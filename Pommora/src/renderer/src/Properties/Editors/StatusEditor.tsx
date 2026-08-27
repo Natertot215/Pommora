@@ -20,7 +20,7 @@ import {
 } from '../GhostOptionChip'
 import { OptionSlot, type OptionStyle } from '../OptionRow'
 import { useStatusReorder } from '../useStatusReorder'
-import * as s from '../../Components/Detail/settingsPane.css'
+import * as s from '../../Frames/frames.css'
 import { labelColor, shape } from '@renderer/DesignSystem/Labels'
 
 /**

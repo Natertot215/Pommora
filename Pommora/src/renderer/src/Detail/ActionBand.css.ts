@@ -9,7 +9,7 @@ import { text } from '@renderer/DesignSystem/Tokens/typography.css'
 
 const c = colorVars.color
 
-// KNOBS — a segment's box: a fixed height with a wider horizontal padding gives the ViewDropdown
+// KNOBS — a segment's box: a fixed height with a wider horizontal padding gives the ViewMenu
 // button's slightly-rectangular ratio at the segment's own (smaller) size. SEGMENT_MIN_W floors the
 // width (0 = sized to content); SEGMENT_ICON is the leading glyph size (px, consumed by components).
 export const SEGMENT_H = '24px'
@@ -83,14 +83,14 @@ const segmentOut = keyframes({
 export const segmentEntering = style({
   overflow: 'hidden',
   animationName: segmentIn,
-  animationDuration: 'var(--duration-dropdown)',
+  animationDuration: 'var(--duration-menu)',
   animationTimingFunction: 'var(--ease-base)',
 })
 export const segmentExiting = style({
   overflow: 'hidden',
   pointerEvents: 'none',
   animationName: segmentOut,
-  animationDuration: 'var(--duration-dropdown)',
+  animationDuration: 'var(--duration-menu)',
   animationTimingFunction: 'var(--ease-base)',
 })
 
@@ -115,8 +115,8 @@ export const settingsBtn = style({
   ':hover': { background: c.state.hover },
 })
 
-/** While its pane is open the button stays shown and pressed — the selected-state fill held as if
- *  hovered, so it reads as the anchor of the open pane even once the pointer leaves the host. */
+/** While its menu is open the button stays shown and pressed — the selected-state fill held as if
+ *  hovered, so it reads as the anchor of the open menu even once the pointer leaves the host. */
 export const settingsBtnActive = style({
   opacity: 1,
   color: c.label.secondary,

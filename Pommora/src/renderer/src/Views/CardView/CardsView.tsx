@@ -100,10 +100,10 @@ import {
   shownColumnsFor,
 } from '@renderer/Properties/Editing/cardValueInput'
 import { pageMoveContext, runPageSendAction } from '@renderer/pageMenuActions'
-import { hideShown, unhide } from '@renderer/Components/Detail/hiddenPaneModel'
+import { hideShown, unhide } from '@renderer/Frames/hiddenFrameModel'
 import { IconPicker } from '@renderer/Settings/IconPicker'
 import { RenamableTitle } from '@renderer/Components/RenamableTitle'
-import { titleInput } from '@renderer/DesignSystem/Components/Menu'
+import { titleInput } from '@renderer/DesignSystem/Menus'
 import { isOpenInTabs } from '../../Tabs/tabsModel'
 import './CardsView.css'
 
@@ -367,7 +367,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   // container, which then repaints its header, not every card.
   const openValuePicker = (req: ValuePickerRequest): void => setValuePicker(req)
   // A native Add Property ▸ pick of a DEPENDENT kind (datetime/url) routes straight to the value's
-  // own dropdown — the add menu is never opened just to exit it.
+  // own menu — the add menu is never opened just to exit it.
   const openAddPicker = (req: AddPickerRequest): void => {
     const t = req.initialEntry?.def?.type
     if (req.initialEntry && !req.initialEntry.revealOnly && (t === 'datetime' || t === 'url')) {

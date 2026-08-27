@@ -2,20 +2,20 @@ import { useEffect, useRef, useState } from 'react'
 import { Segmented, type Segment } from '@renderer/DesignSystem/Components/Controls/Button'
 import { useDismiss } from '@renderer/DesignSystem/Components/useDismiss'
 import { ToolbarTrio } from './ToolbarTrio'
-import { ViewDropdown } from './ViewDropdown'
-import { SpaceDropdown } from './SpaceDropdown'
-import { OutlineDropdown } from './OutlineDropdown'
-import { NavPane } from './NavPane'
+import { ViewMenu } from './ViewMenu'
+import { SpaceMenu } from './SpaceMenu'
+import { OutlineMenu } from './OutlineMenu'
+import { NavMenu } from './NavMenu'
 import { TabBar } from '../Tabs/TabBar'
 import { activeUnpinnedTab } from '../Tabs/tabsModel'
-import { SettingsDropdown } from '../Components/Detail/SettingsDropdown'
+import { SettingsMenu } from '../Frames/SettingsMenu'
 import { useSession } from '../store'
 import { useExitPresence } from '@renderer/DesignSystem/Animation/useExitPresence'
 import './toolbar.css'
 
 type TrioPanel = 'navigation' | 'settings'
 /** Tagged by identity (not position) so inserting/reordering a button can't silently misaim its
- *  dropdown's beak. */
+ *  menu's beak. */
 type TrioSegment = Segment & { panel?: TrioPanel }
 
 export function Toolbar({
@@ -105,16 +105,16 @@ export function Toolbar({
       </div>
       <TabBar />
       <div className="app-toolbar-right">
-        <ViewDropdown />
-        <OutlineDropdown />
-        <SpaceDropdown />
+        <ViewMenu />
+        <OutlineMenu />
+        <SpaceMenu />
         <div className="app-toolbar-cluster app-toolbar-cluster--trio" ref={trioRef}>
           <ToolbarTrio segments={trio} />
           {navP.mounted && (
-            <NavPane closing={navP.closing} notchInsetRight={beakFor('navigation')} />
+            <NavMenu closing={navP.closing} notchInsetRight={beakFor('navigation')} />
           )}
           {settingsP.mounted && (
-            <SettingsDropdown closing={settingsP.closing} notchInsetRight={beakFor('settings')} />
+            <SettingsMenu closing={settingsP.closing} notchInsetRight={beakFor('settings')} />
           )}
         </div>
       </div>

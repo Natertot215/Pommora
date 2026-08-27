@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { frostMaterial } from '../Materials'
+import { paneMaterial } from '../Glass'
 import { Icon } from '../Symbols'
 import { leafById } from './leaves/registry'
 import { NavSections } from './NavSections'
@@ -23,7 +23,7 @@ export function ShowcaseMobileNav({
       <button
         type="button"
         className="sc-mobile-trigger"
-        style={frostMaterial}
+        style={paneMaterial}
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
       >
@@ -32,7 +32,7 @@ export function ShowcaseMobileNav({
         <Icon name={open ? 'chevron-up' : 'chevron-down'} size={15} />
       </button>
       {open && (
-        <div className="sc-mobile-menu" style={frostMaterial}>
+        <div className="sc-mobile-menu" style={paneMaterial}>
           <NavSections activeId={activeId} onSelect={choose} />
         </div>
       )}

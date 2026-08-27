@@ -4,7 +4,7 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { aliasSpanAt, emptyAliasPipeAt, linkAt } from '@shared/connections'
 import { aliasRows } from './autocomplete'
-import { AutocompletePanel } from './AutocompletePanel'
+import { AutocompletePane } from './AutocompletePane'
 import { buildPageIndex } from './connections'
 import { useSession } from '../store'
 
@@ -87,7 +87,7 @@ describe('the forget × is inert until it is revealed', () => {
     root = createRoot(host)
     await act(async () => {
       root?.render(
-        <AutocompletePanel
+        <AutocompletePane
           open
           candidates={[{ value: 'the plan', label: 'the plan', isPage: false, forget }]}
           index={0}

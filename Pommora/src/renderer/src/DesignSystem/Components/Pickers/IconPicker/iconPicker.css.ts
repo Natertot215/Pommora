@@ -2,7 +2,7 @@ import { style } from '@vanilla-extract/css'
 import { vars } from '../../../Tokens'
 import { focusRing } from '../../../Components/Fields/fieldRing'
 import { input } from '../../../Components/Fields/fields.css'
-import { separatorLine } from '../../../Components/Menu/menu.css'
+import { separatorLine } from '../../../Menus/menu-base.css'
 
 export const CELL = 34
 const GUTTER = 8

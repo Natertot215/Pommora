@@ -2,10 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { footerLabel } from '@shared/toggleLabels'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { duration, easing, ms } from '@renderer/DesignSystem/Animation'
-import {
-  WINDOW_CHASSIS_INSPECTOR,
-  WindowChassis,
-} from '@renderer/DesignSystem/Components/WindowChassis/WindowChassis'
+import { WINDOW_BASE_INSPECTOR, WindowBase } from './window-base'
 import { useExitPresence } from '@renderer/DesignSystem/Animation/useExitPresence'
 import { PageEmbed } from '../Embeds/PageEmbed'
 import { Subfield } from '../Detail/Subfield/Subfield'
@@ -13,7 +10,7 @@ import { CitationsToggle } from '../Detail/Subfield/CitationsToggle'
 import type { SubfieldScope } from '../Detail/Subfield/subfieldItems'
 import type { ConnectionsApi } from '../MarkdownPM/connections'
 import { showConnectionMenu } from '../Embeds/connectionMenu'
-import { hoverConnection, hoverWebsite } from '../Embeds/ConnectionHoverCard'
+import { hoverConnection, hoverWebsite } from '../Embeds/ConnectionPane'
 import { getContentViewRect } from '../Detail/ContentView'
 import { NavTrail, type TrailSegment } from '@renderer/DesignSystem/Elements/NavTrail'
 import { text } from '@renderer/DesignSystem/Tokens'
@@ -183,7 +180,7 @@ function PageWindowBody({
   }, [closing])
 
   return (
-    <WindowChassis
+    <WindowBase
       id="page-preview"
       rootRef={rootRef}
       className={cx('page-window', closing && EXIT_CLASS[exitReason])}
@@ -215,7 +212,7 @@ function PageWindowBody({
       }
       right={{
         windowId: 'preview-inspector',
-        bounds: WINDOW_CHASSIS_INSPECTOR,
+        bounds: WINDOW_BASE_INSPECTOR,
         mode: 'overlay',
         open: inspectorOpen,
         className: 'page-window-inspector',
@@ -241,6 +238,6 @@ function PageWindowBody({
           warm={warmSeam}
         />
       </div>
-    </WindowChassis>
+    </WindowBase>
   )
 }

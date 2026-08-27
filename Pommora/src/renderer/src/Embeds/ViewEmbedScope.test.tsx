@@ -6,8 +6,8 @@ import type { CollectionNode } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
 import type { SavedView, ViewState } from '@shared/views'
 import { useSession } from '@renderer/store'
-import { GroupingPane } from '@renderer/Components/Detail/GroupingPane'
-import { SettingsPane } from '@renderer/Components/Detail/SettingsPane'
+import { GroupFrame } from '@renderer/Frames/GroupFrame'
+import { SettingsFrame } from '@renderer/Frames/SettingsFrame'
 import {
   useSaveView,
   VIEW_CONFIG_LOCKED,
@@ -172,7 +172,7 @@ describe('a locked view-embed scope', () => {
   it('drops nothing to the source container either', async () => {
     await render(
       <ViewEmbedScopeProvider value={scope(true)}>
-        <GroupingPane
+        <GroupFrame
           source={source}
           view={view}
           schema={[statusDef]}
@@ -191,7 +191,7 @@ describe('a locked view-embed scope', () => {
   it('closes the config leaves in the settings pane, so there is nothing to author into', async () => {
     await render(
       <ViewEmbedScopeProvider value={scope(true)}>
-        <SettingsPane />
+        <SettingsFrame />
       </ViewEmbedScopeProvider>,
     )
     await clickRow('Group')
@@ -201,7 +201,7 @@ describe('a locked view-embed scope', () => {
   it('opens them when unlocked', async () => {
     await render(
       <ViewEmbedScopeProvider value={scope(false)}>
-        <SettingsPane />
+        <SettingsFrame />
       </ViewEmbedScopeProvider>,
     )
     await clickRow('Group')

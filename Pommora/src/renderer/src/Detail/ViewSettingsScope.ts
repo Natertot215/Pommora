@@ -1,7 +1,7 @@
 import type { SelectionState } from '@shared/types'
 
-/** Maps the current selection to a Settings-dropdown scope; SettingsDropdown switches on this to
- *  pick its pane. Adding a future surface's pane is a new case here + a switch arm there. */
+/** Maps the current selection to a Settings-menu scope; SettingsMenu switches on this to
+ *  pick its frame. Adding a future surface's frame is a new case here + a switch arm there. */
 export type ViewSettingsScope = 'view' | 'page' | 'context' | 'homepage' | 'none'
 
 export function viewSettingsScope(selection: SelectionState): ViewSettingsScope {

@@ -5,7 +5,7 @@ import type { LinkConfig, LinkDisplay } from '@shared/properties'
 import { ColorSwatch } from '@renderer/DesignSystem/Components/Controls/Switches/ColorSwatch'
 import { PickerControl } from '@renderer/DesignSystem/Elements/PickerControl'
 import { LINK_FORMAT_OPTIONS } from '../LinkFormat'
-import * as s from '../../Components/Detail/settingsPane.css'
+import * as s from '../../Frames/frames.css'
 
 /**
  * The chosen color themes the pane's own Switches via a scoped `--accent`. The alias (a per-value

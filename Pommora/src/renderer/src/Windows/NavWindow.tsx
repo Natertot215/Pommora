@@ -3,17 +3,14 @@ import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { duration, easing, ms } from '@renderer/DesignSystem/Animation'
 import { text } from '@renderer/DesignSystem/Tokens'
-import {
-  WINDOW_CHASSIS_INSPECTOR,
-  WindowChassis,
-} from '@renderer/DesignSystem/Components/WindowChassis/WindowChassis'
+import { WINDOW_BASE_INSPECTOR, WindowBase } from './window-base'
 import { SearchField } from '@renderer/DesignSystem/Components/Fields'
 import type { NavRef } from '@shared/types'
 import { useExitPresence } from '@renderer/DesignSystem/Animation/useExitPresence'
 import { PageEmbed } from '../Embeds/PageEmbed'
 import type { ConnectionsApi } from '../MarkdownPM/connections'
 import { showConnectionMenu } from '../Embeds/connectionMenu'
-import { hoverConnection, hoverWebsite } from '../Embeds/ConnectionHoverCard'
+import { hoverConnection, hoverWebsite } from '../Embeds/ConnectionPane'
 import { moveByKey } from '../Navigation/navRecents'
 import { pageIndexOf, resolveIndexOf } from '../treeIndex'
 import { useSession } from '../store'
@@ -147,7 +144,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   }, [tree, openPreviewTab, select])
 
   return (
-    <WindowChassis
+    <WindowBase
       id="navwindow"
       rootRef={rootRef}
       closing={closing}
@@ -189,7 +186,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       }}
       right={{
         windowId: 'preview-inspector',
-        bounds: WINDOW_CHASSIS_INSPECTOR,
+        bounds: WINDOW_BASE_INSPECTOR,
         mode: 'overlay',
         open: inspectorOpen && pageTarget !== null,
         className: 'navwindow-inspector',
@@ -255,6 +252,6 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
           </div>
         )}
       </div>
-    </WindowChassis>
+    </WindowBase>
   )
 }

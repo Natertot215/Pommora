@@ -15,7 +15,7 @@ import {
 import { Icon, type IconName, entityIcon } from '@renderer/DesignSystem/Symbols'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { contextDirRel } from '@shared/nexusPaths'
-import { MenuItem, titleInput } from '@renderer/DesignSystem/Components/Menu'
+import { MenuItem, titleInput } from '@renderer/DesignSystem/Menus'
 import { Reveal } from '@renderer/DesignSystem/Animation/Reveal'
 import type {
   CollectionNode,

@@ -74,13 +74,13 @@ globalStyle(':root', {
     '--state-muted': colorVars.color.state.muted,
     '--state-drag': STATE_OPACITY.drag,
     // Ghost — a thing being reordered with nothing standing in for it (table rows, sidebar rows,
-    // editor blocks and list items, the pane property reorder).
+    // editor blocks and list items, the frame property reorder).
     '--state-ghost': STATE_OPACITY.ghost,
     // Inactive — the one still-here-but-not-active dim: empty-state copy, disabled controls,
     // the ghost "New Page" row. Worn as `opacity:` over the element's standard chrome.
     '--state-inactive': STATE_OPACITY.inactive,
     // Drag insertion line — the drop-target marker (accent line + leading dot) shared by every drop-line
-    // DnD surface: table rows/bands AND the settings-pane property reorder.
+    // DnD surface: table rows/bands AND the settings-frame property reorder.
     '--drag-line': 'var(--accent)',
     '--drop-line-thickness': `${DROP_LINE_THICKNESS}px`,
     '--drop-dot-size': `${DROP_DOT_SIZE}px`,
@@ -88,7 +88,7 @@ globalStyle(':root', {
     '--tile-default-height': `${TILE_DEFAULT_PX}px`,
     '--tile-gap': `${TILE_GAP_PX}px`,
     // List outline (the nested-run rail) — THE shared rail primitive: MarkdownPM's outliner guides
-    // and the Grouping pane's hierarchy rail consume these knobs.
+    // and the Grouping frame's hierarchy rail consume these knobs.
     '--list-outline-width': `${LIST_OUTLINE_WIDTH}px`,
     '--list-outline-color': 'var(--border-light)',
     '--list-outline-radius': 'var(--radius-full)',
@@ -190,7 +190,7 @@ globalStyle(':root', {
     '--icon-subline': size.icon.subline,
     // Motion — shared durations + easing so every transition reads as one system.
     '--duration-fast': duration.fast,
-    '--duration-dropdown': duration.dropdown,
+    '--duration-menu': duration.menu,
     '--duration-base': duration.base,
     '--duration-slow': duration.slow,
     '--ease-base': easing.baseEase,

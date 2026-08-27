@@ -1,0 +1,126 @@
+/* The Trash leaf — a clear-headed table (Tables) whose rows are the navigation list's, borrowed
+   whole, with one lane added for the deletion time. This file styles the frame, the lane, and the
+   tokens the leaf rebinds; the compound selector outranks the `.table` scope those tokens come from. */
+.trash-frame.table {
+  --navwindow-inset: 14px; /* KNOB — the leaf's content inset, the rows' and the heading's alike */
+  --trash-date-lane: 160px; /* KNOB — fixed, so the dates line up down the list */
+  --trash-date-inset: 10px; /* KNOB — clears the column divider, heading and rows alike */
+  --trash-gutter: 20px; /* KNOB */
+  --trash-lead: calc(var(--navwindow-inset) + var(--trash-gutter));
+  --cell-padding-x: var(--navwindow-inset);
+  --heading-padding-y: 6px; /* KNOB */
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding-top: var(--glass-inset);
+}
+
+.trash-frame .trash-head {
+  display: flex;
+  align-items: center;
+  position: relative;
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0;
+}
+/* The clear heading's own seam, inset to the rows. */
+.trash-frame .trash-head::after {
+  content: "";
+  position: absolute;
+  left: var(--navwindow-inset);
+  right: var(--navwindow-inset);
+  bottom: 0;
+  border-bottom: var(--width-100) solid var(--border-light);
+}
+/* The table's leading bar marks its gutter↔Title junction; this strip has no gutter column, so the
+   bar would sit alone at the edge bounding nothing. The divider BETWEEN the columns stays.*/
+.trash-head .col-header:first-child::before {
+  content: none;
+}
+/* A row's segment bar reads as a separator, the heading's as heading chrome — one shape, two tones. */
+.trash-frame .nav-item-main {
+  --segment-tone: var(--border-base);
+  padding-left: var(--trash-lead);
+}
+.trash-frame .trash-head-name {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  padding-left: var(--trash-lead);
+}
+.trash-head-glyph {
+  display: flex;
+  margin-right: 6px; /* the row's own glyph-to-title gap */
+}
+/* A column's glyph sits a step under its label, which is the relationship the table's own header
+   icon already keeps against the same heading tone. */
+.trash-frame .trash-head svg {
+  color: var(--label-secondary);
+}
+.trash-frame .trash-head-date {
+  flex: 0 0 var(--trash-date-lane);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  /* One inset for both, so the label sits over its dates and neither crowds the column divider
+     that lands on the lane's edge. */
+  padding-left: var(--trash-date-inset);
+}
+
+.trash-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding-bottom: 6px;
+}
+
+/* The table's row treatment: a line between rows rather than under each one, so a list has none
+   above its first nor below its last.*/
+.trash-frame .nav-item + .nav-item::before {
+  content: "";
+  position: absolute;
+  left: var(--navwindow-inset);
+  right: var(--navwindow-inset);
+  top: 0;
+  border-top: var(--table-border);
+}
+
+/* The pin's affordance exactly: a glyph in the row's left inset, absolute so it never shifts the
+   row's content, hidden until the row is hovered, and holding the accent once set. */
+.trash-check {
+  position: absolute;
+  left: calc(var(--navwindow-inset) + var(--trash-gutter) / 2);
+  top: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  transition: opacity var(--duration-base) var(--ease-base);
+}
+.nav-item:hover .trash-check,
+.trash-frame.has-checked .trash-check,
+.trash-check:focus-visible {
+  opacity: 1;
+}
+.trash-date {
+  flex: 0 0 var(--trash-date-lane);
+  padding-left: var(--trash-date-inset);
+  padding-right: var(--cell-padding-x);
+  color: var(--label-secondary);
+}
+
+/* A location that no longer exists reads as a record of one. */
+.trash-frame .is-historical .nav-item-path {
+  font-style: italic;
+  color: var(--label-tertiary);
+}
+
+.trash-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--label-tertiary);
+}
