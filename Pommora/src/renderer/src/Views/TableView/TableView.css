@@ -7,14 +7,14 @@
      sidebar edge left, the inspector/window edge right) — the heading band full-bleeds to them while the
      grid's content box (and so every row) stays exactly where it was. The left margin walks the body's
      reclaimed detail lane back out to the content gutter; the right walks the content edge out by it. */
-  margin-left: calc(var(--detail-inset) - var(--inset-content));
-  margin-right: calc(-1 * var(--inset-content));
-  /* Re-add the content gutter the body reclaimed so the grid lands on --content-inset (grips + chevrons
+  margin-left: calc(var(--detail-inset) - var(--content-inset));
+  margin-right: calc(-1 * var(--content-inset));
+  /* Re-add the content gutter the body reclaimed so the grid lands on --content-edge (grips + chevrons
      sit in the strip to its left). The RIGHT inset is a scoped var: full gutter while the columns fit
      (the rounded, content-inset look), collapsed to nothing once they overflow — the table flattens and
      h-scrolls to the glass edge (the Apple table model) while the left gutter stays solid. */
-  --table-right-inset: var(--inset-content);
-  padding-left: var(--inset-content);
+  --table-right-inset: var(--content-inset);
+  padding-left: var(--content-inset);
   padding-right: var(--table-right-inset);
   overflow-x: auto;
 }
