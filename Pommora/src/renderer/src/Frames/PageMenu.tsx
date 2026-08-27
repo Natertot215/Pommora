@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
 import { entityIcon, Icon } from '@renderer/DesignSystem/Symbols'
-import { useSession } from '../store'
+import { shownDetail, useSession } from '../store'
 import {
   flushTrailing,
   footerLockAction,
@@ -29,7 +29,7 @@ const FOOTER_ACTIONS = ['title:rename', 'title:reveal', 'title:copylink', 'title
  *  Reads `pageDetail`, the same source the editor's header renders from, so the title and glyph
  *  here and on the page never disagree. */
 export function PageMenu(): React.JSX.Element | null {
-  const pageDetail = useSession((st) => st.pageDetail)
+  const pageDetail = useSession(shownDetail)
   const defaultIcons = useSession((st) => st.personalization.defaultIcons)
   const submitRename = useSession((st) => st.submitRename)
   const mutate = useSession((st) => st.mutate)

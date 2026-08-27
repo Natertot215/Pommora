@@ -108,8 +108,13 @@ export function dropWarmTab(tabId: string): void {
   cache.delete(tabId)
 }
 
+// A surface unmounting because of a clear captures after it — the generation lets it tell.
+let generation = 0
+export const warmGeneration = (): number => generation
+
 export function clearWarm(): void {
   cache.clear()
   detailByPath.clear()
   inFlight.clear()
+  generation++
 }

@@ -13,7 +13,7 @@ import { pageLinkText, pagePathText } from '@shared/pageMenu'
 import { openInAppBrowser } from '../Windows/WebWindow'
 import { deriveTarget } from '../Windows/windowTabs'
 import { isOpenInTabs } from '../Tabs/tabsModel'
-import { useSession } from '../store'
+import { shownDetail, useSession } from '../store'
 
 /** main pops the native menu at the cursor; the chosen action runs renderer-side (the sidebar
  *  contextMenu contract). Shared by every ConnectionsApi host and by the Link property's cells, so
@@ -45,14 +45,15 @@ export function showConnectionMenu(target: ConnMenuTarget): void {
   }
   const page = target.page
   const ref = { kind: 'page', id: page.id, path: page.path } as const
-  const { tabs, pinned, pageDetail, preview } = useSession.getState()
+  const s = useSession.getState()
+  const { tabs, pinned, preview } = s
   const ctx: ConnMenuContext = {
     ...shared,
     hasAlias: target.hasAlias,
     // A page already in hand is not somewhere to be opened. The two readings are independent: the
     // content view answers for the tab item, the page window for its own.
     open:
-      pageDetail?.path === page.path
+      shownDetail(s)?.path === page.path
         ? 'detail'
         : isOpenInTabs(tabs, pinned, ref)
           ? 'tab'
