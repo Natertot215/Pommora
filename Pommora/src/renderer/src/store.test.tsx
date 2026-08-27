@@ -167,7 +167,7 @@ describe('store — warm tabs (B-2/B-3)', () => {
     ;(window.nexus.openPage as ReturnType<typeof vi.fn>).mockClear()
     useSession.getState().activateTab('t1')
     const s = useSession.getState()
-    expect(shownPage(s)?.status).toBe('ready') // never a placeholder — no flash
+    expect(shownPage(s)?.status).toBe('ready')
     expect(shownDetail(s)?.id).toBe('a')
     expect(window.nexus.openPage).not.toHaveBeenCalled()
   })

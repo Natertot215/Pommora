@@ -35,7 +35,6 @@ export const DEFAULT_ITEMS: Record<SelectionState['kind'], SubfieldItemId[]> = {
   page: ['pageStats'],
 }
 
-/** Lines · Words · Characters for the host's page — live as you type. */
 function PageStatsItem({ page }: SubfieldItemProps): React.JSX.Element {
   const stats = pageStats(page?.body ?? '')
   return (
