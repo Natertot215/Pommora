@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { Icon } from '@renderer/DesignSystem/Symbols'
+import { Menu, MenuItem, MenuSeparator } from '@renderer/DesignSystem/Components/Menu'
 import { text } from '@renderer/DesignSystem/Tokens'
 import { DualSwitch } from '@renderer/DesignSystem/Components/Controls/Switches/DualSwitch'
 import { Slider } from '@renderer/DesignSystem/Components/Controls/Slider/Slider'
-import { PreviewPane } from '@renderer/DesignSystem/Detail/PreviewPane/PreviewPane'
+import { WindowChassis } from '@renderer/DesignSystem/Components/WindowChassis/WindowChassis'
 import type { FloatingBounds } from '@renderer/DesignSystem/Interactions/FloatingWindow'
-import type { SidePaneBounds } from '@renderer/DesignSystem/Detail/SidePane/SidePane'
+import type { SidePaneBounds } from '@renderer/DesignSystem/Components/SidePane/SidePane'
 import type { DevicePrefs } from '@shared/devicePrefs'
 import { PickerControl, type PickerChoice } from '@renderer/DesignSystem/Elements/PickerControl'
 import { ColorSwatch } from '@renderer/DesignSystem/Components/Controls/Switches/ColorSwatch'
@@ -541,7 +542,7 @@ function NexusSettingsBody({ closing }: { closing: boolean }): React.JSX.Element
   const [category, setCategory] = useState<CategoryKey>('general')
 
   return (
-    <PreviewPane
+    <WindowChassis
       id="settings"
       closing={closing}
       onClose={closeSettings}
@@ -557,26 +558,23 @@ function NexusSettingsBody({ closing }: { closing: boolean }): React.JSX.Element
         className: 'settings-rail',
         children: (
           <>
-            <div
-              className="settings-rail-list over-scroll"
-              role="tablist"
-              aria-label="Settings categories"
-            >
+            <Menu className="settings-rail-list over-scroll">
               {LEAVES.filter((l) => !l.foot).map((l) => (
                 <RailTab key={l.key} leaf={l} active={category} onPick={setCategory} />
               ))}
-            </div>
+            </Menu>
             {LEAVES.filter((l) => l.foot).map((l) => (
-              <div key={l.key} className="settings-rail-foot">
+              <Menu key={l.key} className="settings-rail-foot">
+                <MenuSeparator />
                 <RailTab leaf={l} active={category} onPick={setCategory} />
-              </div>
+              </Menu>
             ))}
           </>
         ),
       }}
     >
       <LeafBodyView category={category} />
-    </PreviewPane>
+    </WindowChassis>
   )
 }
 
@@ -590,16 +588,13 @@ function RailTab({
   onPick: (key: CategoryKey) => void
 }): React.JSX.Element {
   return (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={active === leaf.key}
-      className={cx('settings-cat', text.body.standard, active === leaf.key && 'is-active')}
+    <MenuItem
+      selected={active === leaf.key}
+      leading={<Icon name={leaf.icon} size="body" />}
       onClick={() => onPick(leaf.key)}
     >
-      <Icon name={leaf.icon} size="body" />
-      <span>{leaf.label}</span>
-    </button>
+      {leaf.label}
+    </MenuItem>
   )
 }
 
@@ -773,7 +768,7 @@ function SliderRow({ row }: { row: RowOf<'slider'> }): React.JSX.Element {
   const value = useSession((s) => s.personalization[row.key] ?? 0)
   const setPersonalization = useSession((s) => s.setPersonalization)
   return (
-    <SettingsRow label={row.label} hint={row.hint}>
+    <SettingsRow label={row.label} hint={row.hint} wide>
       <Slider
         value={value}
         min={0}

@@ -58,7 +58,7 @@ export function MenuItem({
       {leading != null && <span className={s.side}>{leading}</span>}
       <span className={s.titleWrap}>
         <span className={cx(s.titleText, overScrollEllipsis)}>{children}</span>
-        {subLabel != null && <span className={cx(s.subLabel, overScrollEllipsis)}>{subLabel}</span>}
+        {subLabel != null && <span className={s.subLabel}>{subLabel}</span>}
       </span>
       {hasTrailing && (
         <span className={s.side}>

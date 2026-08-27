@@ -1,9 +1,13 @@
 import { useState } from 'react'
 import { Icon } from '../../Symbols'
 import { DualSwitch } from '../../Components/Controls/Switches/DualSwitch'
+import { Menu, MenuItem } from '../../Components/Menu'
 import { cx } from '../../Util/cx'
 import { text } from '../../Tokens'
-import { PreviewPane, PREVIEW_PANE_INSPECTOR } from '../../Detail/PreviewPane/PreviewPane'
+import {
+  WindowChassis,
+  WINDOW_CHASSIS_INSPECTOR,
+} from '../../Components/WindowChassis/WindowChassis'
 import { SETTINGS_RAIL, SETTINGS_WIN } from '@renderer/Settings/NexusSettings'
 import '@renderer/Settings/nexusSettings.css'
 import './panesLeaf.css'
@@ -45,7 +49,7 @@ export function PanesLeaf(): React.JSX.Element {
       </div>
 
       <div className="panes-stage">
-        <PreviewPane
+        <WindowChassis
           id="showcase-settings"
           closing={false}
           onClose={() => undefined}
@@ -60,23 +64,22 @@ export function PanesLeaf(): React.JSX.Element {
             open: railOpen,
             className: 'settings-rail',
             children: (
-              <div className="settings-rail-list over-scroll">
+              <Menu className="settings-rail-list over-scroll">
                 {CATEGORIES.map((c, i) => (
-                  <button
+                  <MenuItem
                     key={c.key}
-                    type="button"
-                    className={cx('settings-cat', text.body.standard, i === 0 && 'is-active')}
+                    selected={i === 0}
+                    leading={<Icon name={c.icon} size="body" />}
                   >
-                    <Icon name={c.icon} size={14} />
-                    <span>{c.label}</span>
-                  </button>
+                    {c.label}
+                  </MenuItem>
                 ))}
-              </div>
+              </Menu>
             ),
           }}
           right={{
             windowId: 'showcase-settings-inspector',
-            bounds: PREVIEW_PANE_INSPECTOR,
+            bounds: WINDOW_CHASSIS_INSPECTOR,
             mode: 'inflow',
             open: inspectorOpen,
             className: 'settings-rail',
@@ -96,17 +99,13 @@ export function PanesLeaf(): React.JSX.Element {
             <h2 className={cx('settings-heading', text.headline.emphasized)}>General</h2>
             <div className="settings-section">
               {ROWS.map(([label, hint]) => (
-                <div key={label} className="settings-row">
-                  <div className="settings-row-text">
-                    <span className={cx('settings-row-label', text.body.standard)}>{label}</span>
-                    <span className={cx('settings-row-hint', text.footnote.standard)}>{hint}</span>
-                  </div>
-                  <span className={cx('settings-row-hint', text.body.standard)}>Full Date</span>
-                </div>
+                <MenuItem key={label} subLabel={hint} detail="Full Date">
+                  {label}
+                </MenuItem>
               ))}
             </div>
           </div>
-        </PreviewPane>
+        </WindowChassis>
       </div>
     </div>
   )

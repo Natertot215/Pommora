@@ -1,4 +1,3 @@
-// The Default Asset Directory setting — a folder path in a bordered field, pointed at the nexus.
 import { PathField } from '@renderer/DesignSystem/Components/Fields'
 import { useSession } from '../store'
 import { SettingsRow, type RowText } from './SettingsRow'
@@ -8,7 +7,7 @@ export function AssetDirectoryRow({ label, hint }: RowText): React.JSX.Element {
   const setAssetDirectory = useSession((s) => s.setAssetDirectory)
 
   return (
-    <SettingsRow label={label} hint={hint}>
+    <SettingsRow label={label} hint={hint} wide>
       <PathField
         label={label}
         value={stored}
