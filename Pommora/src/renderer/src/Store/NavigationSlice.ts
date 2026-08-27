@@ -19,7 +19,7 @@ import {
   recordRecent,
   removeRecentByKey,
 } from '../Navigation/navRecents'
-import { dropCapturedOutside } from '../Navigation/useNavThumbnails'
+import { dropCapturedOutside } from '../Navigation/thumbMarkers'
 import {
   activeUnpinnedTab,
   closeTab as closeTabModel,
@@ -641,8 +641,10 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       if (!shown) return
       const res = await window.nexus.openPage(shown.target.path).catch(() => null)
       if (!res?.ok) return
-      const slot = readySlot(shown.target, res.value)
-      set((s) => ({ pages: { ...s.pages, [shown.target.id]: slot } }))
+      const body = shown.status === 'ready' ? shown.body : res.value.body
+      set((s) => ({
+        pages: { ...s.pages, [shown.target.id]: { ...readySlot(shown.target, res.value), body } },
+      }))
     },
 
     newPage: async () => {

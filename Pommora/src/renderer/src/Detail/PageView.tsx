@@ -35,7 +35,12 @@ export function PageView({
   // very thing that unmounts a surface after a rename's cascade.
   const live = useRef({ slot, tabId })
   live.current = { slot, tabId }
+  // Re-armed per commit: a clear that tears THIS surface down runs its cleanup before the
+  // survivors' effects, so the stale generation is seen exactly by the captures a clear caused.
   const mountedGen = useRef(warmGeneration())
+  useEffect(() => {
+    mountedGen.current = warmGeneration()
+  })
   const submitRename = useSession((s) => s.submitRename)
   const mutate = useSession((s) => s.mutate)
   const tree = useSession((s) => s.tree)
