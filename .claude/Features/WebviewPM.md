@@ -33,7 +33,7 @@ Every web surface shares one persistent session partition per machine: sign in t
 
 ### The Browser Window
 
-The in-app browser (`PagePreview/BrowserWindow.tsx`) is a flavor of the floating window chassis:[^4] back and forward glyphs lead the toolbar, the centered title tracks the guest's current page and escalates it to the system browser on click, and one webview on the shared partition owns the whole body. It is a singleton like the page preview — a summon while open retakes it in place, re-aiming the standing guest even at an address it has navigated away from — and its geometry persists on its own window id.
+The **Web Window** (`Windows/WebWindow.tsx`), the in-app browser, is a flavor of the floating window chassis:[^4] back and forward glyphs lead the toolbar, the centered title tracks the guest's current page and escalates it to the system browser on click, and one webview on the shared partition owns the whole body. It is a singleton like the Page Window — a summon while open retakes it in place, re-aiming the standing guest even at an address it has navigated away from — and its geometry persists on its own window id.
 
 ### Website Hover Previews
 

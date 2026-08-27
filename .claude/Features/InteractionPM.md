@@ -28,7 +28,7 @@ Each motion is named for what it does; the code name beside it is what a grep fi
 
 #### II. Bloom
 
-Pommora's canonical pane and menu open, the `dropdown-menu` / `dropdown-menu-out` keyframe pair: a zoom from the trigger — scale to 1 plus a fade on the Bloom curve, no blur — run on the `slow` token through the `dropdownMenu` and `dropdownMenuClosing` classes. It is symmetric, so a click-off retracts the pane rather than cutting it, and the parent keeps the pane mounted through the exit with `useExitPresence`. The origin is the consumer's: the class reads `--dropdown-origin`, and the beaked shell (`NotchedPane`) writes its own beak tip there, so a beaked surface blooms from its beak while a plain pane blooms from the point on its anchored edge nearest the trigger. `MenuSurface`, the shell every large toolbar dropdown mounts, carries this motion. A pane's placement and collision flip are decided once per open, and how a picker's rows mark the chosen one follows the **Show Selection In Pickers As** setting.[^3]
+Pommora's canonical pane and menu open, the `dropdown-menu` / `dropdown-menu-out` keyframe pair: a zoom from the trigger — scale to 1 plus a fade on the Bloom curve, no blur — run on the `slow` token through the `dropdownMenu` and `dropdownMenuClosing` classes. It is symmetric, so a click-off retracts the pane rather than cutting it, and the parent keeps the pane mounted through the exit with `useExitPresence`. The origin is the consumer's: the class reads `--dropdown-origin`, and the beaked shell (`NotchedShell`) writes its own beak tip there, so a beaked surface blooms from its beak while a plain pane blooms from the point on its anchored edge nearest the trigger. `MenuSurface`, the shell every large toolbar dropdown mounts, carries this motion. A pane's placement and collision flip are decided once per open, and how a picker's rows mark the chosen one follows the **Show Selection In Pickers As** setting.[^3]
 
 #### II. Dropdown
 
@@ -40,7 +40,7 @@ The page banner and title zone slides up under the toolbar on scroll: a scroll-t
 
 #### II. Floating Windows
 
-Every in-app window opens and closes on the `ppane-in` / `ppane-out` scale-fade in `previewPane.css`, on `--duration-fast`, its exit held by `useExitPresence`. A window that wants its own exit suppresses that scale-out rather than layering a second motion on top: the Page Preview's promote plays the **engulf** (`engulfing` in `PreviewWindow.tsx`), a WAAPI FLIP from the window's live rect onto the detail pane's on the `base` token, and opening the NavWindow over a live preview plays the **morph**, the same FLIP between the two windows. A side pane opens the way the detail inspector does — parked off the edge and carried home by the `--io` progress — while the body beside it gives up that width on the base tokens.
+Every in-app window opens and closes on the `window-in` / `window-out` scale-fade in `windowChassis.css`, on `--duration-fast`, its exit held by `useExitPresence`. A window that wants its own exit suppresses that scale-out rather than layering a second motion on top: the Page Window's promote plays the **engulf** (`engulfing` in `PageWindow.tsx`), a WAAPI FLIP from the window's live rect onto the detail pane's on the `base` token, and opening the NavWindow over a live Page Window plays the **morph**, the same FLIP between the two windows. A side pane opens the way the detail inspector does — parked off the edge and carried home by the `--io` progress — while the body beside it gives up that width on the base tokens.
 
 ### Primitives
 

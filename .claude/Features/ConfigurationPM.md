@@ -56,7 +56,7 @@ The Nexus Settings window is a floating window summoned from the ribbon's Settin
 | Setting | Key | Description | Options |
 | --- | --- | --- | --- |
 | Close Navigation On Select | `navCloseOnSelect` | Picking an entity dismisses the Navigation window. | **On** · Off |
-| Open Connections In Preview | `connectionsOpenInPreview` | A connection click opens the preview window instead of navigating; ⌘-click takes the other route. | On · **Off** |
+| Open Connections In Preview | `connectionsOpenInPreview` | A connection click opens the Page Window instead of navigating; ⌘-click takes the other route. | On · **Off** |
 | Hover Preview Linger | `hoverPreviewLinger` | How long a connection's hover preview stays open after hovering off. | **None** · 1–30 seconds |
 
 #### Appearance

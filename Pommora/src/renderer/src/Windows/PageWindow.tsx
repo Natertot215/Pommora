@@ -3,9 +3,9 @@ import { footerLabel } from '@shared/toggleLabels'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { duration, easing, ms } from '@renderer/DesignSystem/Animation'
 import {
-  PREVIEW_PANE_INSPECTOR,
-  PreviewPane,
-} from '@renderer/DesignSystem/Detail/PreviewPane/PreviewPane'
+  WINDOW_CHASSIS_INSPECTOR,
+  WindowChassis,
+} from '@renderer/DesignSystem/Components/WindowChassis/WindowChassis'
 import { useExitPresence } from '@renderer/DesignSystem/Animation/useExitPresence'
 import { PageEmbed } from '../Embeds/PageEmbed'
 import { Subfield } from '../Detail/Subfield/Subfield'
@@ -14,22 +14,22 @@ import type { SubfieldScope } from '../Detail/Subfield/subfieldItems'
 import type { ConnectionsApi } from '../MarkdownPM/connections'
 import { showConnectionMenu } from '../Embeds/connectionMenu'
 import { hoverConnection, hoverWebsite } from '../Embeds/ConnectionHoverCard'
-import { getDetailPaneRect } from '../Detail/DetailPane'
+import { getContentViewRect } from '../Detail/ContentView'
 import { NavTrail, type TrailSegment } from '@renderer/DesignSystem/Elements/NavTrail'
 import { text } from '@renderer/DesignSystem/Tokens'
 import { ancestryOf, pageIndexOf, resolveIndexOf } from '../treeIndex'
 import { useEmbedScale, useSession, type PreviewTarget } from '../store'
-import { PreviewActions } from './PreviewActions'
-import { PreviewInspector } from './PreviewInspector'
-import { PreviewTabStrip } from './PreviewTabStrip'
-import { usePreviewWarm } from './usePreviewWarm'
-import './previewWindow.css'
+import { WindowActions } from './WindowActions'
+import { WindowInspector } from './WindowInspector'
+import { WindowTabStrip } from './WindowTabStrip'
+import { useWindowWarm } from './useWindowWarm'
+import './pageWindow.css'
 
 // The tab wrap's bare space moves too — a press on a .tab is not the wrap and never arms.
 const DRAG_SURFACES =
-  '.pgpreview-body, .pgpreview-tabwrap, .pgpreview-tabscroll, .pgpreview-tabstrip'
+  '.page-window-body, .page-window-tabwrap, .page-window-tabscroll, .page-window-tabstrip'
 
-// The DetailPane's view-slide value, on the preview's own stamp.
+// The ContentView's view-slide value, on the preview's own stamp.
 const SLIDE_PX = 14
 
 // Mirrors PageView — edits coalesce before the count recomputes.
@@ -41,7 +41,7 @@ const EXIT_CLASS = { dismiss: '', engulf: 'engulfing', morph: 'morphing' } as co
 
 const NO_TRAIL: TrailSegment[] = []
 
-export function PreviewWindow(): React.JSX.Element | null {
+export function PageWindow(): React.JSX.Element | null {
   // Keys on the PAGE flavor, not the derived target — the nav flavor renders in NavWindow's
   // chrome, and its map tab nulls the target without closing anything.
   const open = useSession((s) => s.preview?.flavor === 'page')
@@ -52,10 +52,10 @@ export function PreviewWindow(): React.JSX.Element | null {
   const held = useRef(target)
   if (target) held.current = target
   if (!mounted || !held.current) return null
-  return <PreviewWindowBody target={held.current} closing={closing} />
+  return <PageWindowBody target={held.current} closing={closing} />
 }
 
-function PreviewWindowBody({
+function PageWindowBody({
   target,
   closing,
 }: {
@@ -147,11 +147,11 @@ function PreviewWindowBody({
     )
     if (inspectorOpen)
       rootRef.current
-        ?.querySelector('.pgpreview-inspector')
+        ?.querySelector('.page-window-inspector')
         ?.animate([{ transform: `translateX(${x}px)` }, { transform: 'translateX(0)' }], timing)
   }, [target.path, previewSlide, inspectorOpen])
 
-  const warmSeam = usePreviewWarm(bodyRef, target.path)
+  const warmSeam = useWindowWarm(bodyRef, target.path)
 
   // Opens for real through the normal select; the window ENGULFS into the pane.
   const promote = (): void => {
@@ -159,13 +159,13 @@ function PreviewWindowBody({
     void select({ kind: 'page', id: target.id, path: target.path })
   }
 
-  // FLIP from the window's live rect onto the detail pane's. WAAPI owns it (the rects are runtime
+  // FLIP from the window's live rect onto the content view's. WAAPI owns it (the rects are runtime
   // values); the css .engulfing class only suppresses the default scale-out.
   const exitReason = useSession((s) => s.previewExit)
   useEffect(() => {
     if (!closing || useSession.getState().previewExit !== 'engulf') return
     const el = rootRef.current
-    const to = getDetailPaneRect()
+    const to = getContentViewRect()
     if (!el || !to) return
     const from = el.getBoundingClientRect()
     const dx = to.left + to.width / 2 - (from.left + from.width / 2)
@@ -183,10 +183,10 @@ function PreviewWindowBody({
   }, [closing])
 
   return (
-    <PreviewPane
+    <WindowChassis
       id="page-preview"
       rootRef={rootRef}
-      className={cx('pgpreview', closing && EXIT_CLASS[exitReason])}
+      className={cx('page-window', closing && EXIT_CLASS[exitReason])}
       closing={closing}
       onClose={() => closePreview()}
       onEscape={() => (inspectorOpen ? setInspectorOpen(false) : closePreview())}
@@ -196,32 +196,32 @@ function PreviewWindowBody({
       style={{ '--mdpm-scale': embedScale, '--editor-scale': 1 } as React.CSSProperties}
       onScan={promote}
       title={
-        <PreviewTabStrip
+        <WindowTabStrip
           index={resolveIndex}
           title={
             <NavTrail
               segments={trail}
               emphasize
-              className={cx('pgpreview-crumbs', text.caption.standard)}
+              className={cx('page-window-crumbs', text.caption.standard)}
             />
           }
         />
       }
       actions={
-        <PreviewActions
+        <WindowActions
           inspectorOpen={inspectorOpen}
           onToggleInspector={() => setInspectorOpen((v) => !v)}
         />
       }
       right={{
         windowId: 'preview-inspector',
-        bounds: PREVIEW_PANE_INSPECTOR,
+        bounds: WINDOW_CHASSIS_INSPECTOR,
         mode: 'overlay',
         open: inspectorOpen,
-        className: 'pgpreview-inspector',
+        className: 'page-window-inspector',
         children: (
-          <div className="pgpreview-inspector-body">
-            {inspectorOpen && <PreviewInspector target={target} />}
+          <div className="page-window-inspector-body">
+            {inspectorOpen && <WindowInspector target={target} />}
           </div>
         ),
       }}
@@ -230,7 +230,7 @@ function PreviewWindowBody({
       footerLabel={footerLabel}
       footerLead={<CitationsToggle scope={scope} />}
     >
-      <div className="pgpreview-body over-scroll pgembed-grows" ref={bodyRef}>
+      <div className="page-window-body over-scroll pgembed-grows" ref={bodyRef}>
         <PageEmbed
           key={target.path}
           path={target.path}
@@ -241,6 +241,6 @@ function PreviewWindowBody({
           warm={warmSeam}
         />
       </div>
-    </PreviewPane>
+    </WindowChassis>
   )
 }

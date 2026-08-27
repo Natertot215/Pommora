@@ -8,13 +8,11 @@ The renderer as it is, the renderer as it should be, and the calls between. It i
 
 **The renderer works.** It is filed by the order things were built, and its design system is read far more correctly than it is used. The lenses found no dead code, no wrong architecture, and one behavioral bug. What they found instead is three kinds of drift, each with a mechanical fix and each already half-done by the code itself.
 
-**Structure.** Most top-level folders say where a thing was first mounted, not what it is. Three folders are named `Detail` for three unrelated things; `Components/` is twenty-two view-settings panes and three shared files; twelve app-core modules sit at the root with no folder; thirty files have no importer in their own folder. The design system reaches upward into the app in exactly three files. The target tree (§Structure) places every file under eight testable rules, and the instrument is `git mv`. Four of its moves are executed: `Views/` sits at the root, the card chassis is `Cards/`, the tabular chrome is `Tables/`, and the property value layer is `Properties/` — the dependency order is `DesignSystem ← Properties ← Tables ← Views`, with `Cards` standing alone.
+**Structure.** Most top-level folders say where a thing was first mounted, not what it is. Three folders are named `Detail` for three unrelated things; `Components/` is twenty-two view-settings panes and three shared files; twelve app-core modules sit at the root with no folder; thirty files have no importer in their own folder. The design system reaches upward into the app in exactly three files. The target tree (§Structure) places every file under eight testable rules, and the instrument is `git mv`.
 
 **Geometry.** Motion is perfect — 165 reads, zero off the ladder. Color is near-perfect — 20 raw values, all accounted for. Geometry is where the discipline stops: 681 bare pixel values on a `2·4·6·8·10·12·14·16·20·24·28` grid the code already agreed on and never named; 224 custom properties declared outside `Tokens/`, two of them read by the design system with no fallback.
 
-**Tokens.** The consumer side is 96% right, and the one misuse — a surface reaching for a label tone where it needs an edge — now has a home: the `--border-*` color ladder (`base`/`light`/`faint`) and the literal `--width-*` ladder, composed at the consumer. What stays under-declared is the spacing grid and the line-height family the bridge never published.
-
-**What this document decides.** The eight rules and the tree are the atlas's own calls, drawn from evidence and the rulings already taken (`Detail` → `Interface`, and the four executed moves above). The open decisions in each section and the taste-marked token verdicts are recommendations awaiting a stamp; the structural ones gate the tree's non-mechanical moves, everything else can start today. Nothing here changes behavior except one line in `ViewEmbedBlock.tsx`.
+**What this document decides.** The eight rules and the tree are the atlas's own calls, drawn from evidence and the rulings already taken (`Detail` → `Interface`). The open decisions in each section and the taste-marked token verdicts are recommendations awaiting a stamp; the structural ones gate the tree's non-mechanical moves, everything else can start today. Nothing here changes behavior except one line in `ViewEmbedBlock.tsx`.
 
 **The lenses.** Seven read-only passes keyed on the file path so their tables join: **Cartographer** (what each file is and who consumes it, from a resolved import graph), **Boundary** (every import crossing a domain line), **Stylist** (what each file styles with), **Semantic** (whether a token read is for what the token is for), **Recipe** (whether a token's readers say it should be something else), **Lexicographer** (names against convention), **Archivist** (what was already ruled, verified against the code).
 
@@ -24,7 +22,7 @@ The renderer as it is, the renderer as it should be, and the calls between. It i
 
 #### The Shape Now
 
-Sixteen top-level folders hold 453 files and 64,412 lines. By kind: 160 models (pure logic, no React), 88 stylesheets, 86 pieces (render UI, read no store), 63 surfaces (render UI and read the store or IPC), 54 glue, 2 entries. The three biggest folders are `MarkdownPM/` (69 files, 14,104 lines), `Detail/` (87, 12,401), and `DesignSystem/` (139, 12,264). Three numbers frame the rest: **zero** dead files (every file but `env.d.ts`, `main.tsx`, and `testing/setup.ts` is reached); **thirty** files have no importer inside their own folder, the sharpest single wrong-folder signal; **three** files inside the design system import the app.
+Nineteen top-level folders hold 453 files and 64,412 lines. By kind: 160 models (pure logic, no React), 88 stylesheets, 86 pieces (render UI, read no store), 63 surfaces (render UI and read the store or IPC), 54 glue, 2 entries. The three biggest folders are `MarkdownPM/` (69 files, 14,104 lines), `Detail/` (87, 12,401), and `DesignSystem/` (139, 12,264). Three numbers frame the rest: **zero** dead files (every file but `env.d.ts`, `main.tsx`, and `testing/setup.ts` is reached); **thirty** files have no importer inside their own folder, the sharpest single wrong-folder signal; **three** files inside the design system import the app.
 
 **The design system reaches upward in exactly three files, and two read the store.** `DesignSystem/Components/AssetImage/AssetImage.tsx:6-7` imports `@renderer/assetUrl` and `@renderer/store`; `DesignSystem/Components/Pickers/ImagePicker/ImagePicker.tsx:14-15` does the same and adds the only two `window.nexus` calls in the design system at `:137` and `:200`; `DesignSystem/Elements/PickerControl/PickerControl.tsx:7` imports `@renderer/nativeMenus`, itself store and IPC. The Showcase deploys from these same sources, so two components in the deployed library need a nexus store to render. The fix pattern already exists: `Settings/IconPicker.tsx` is a ten-line wrapper that binds this nexus's favorites and hands them to the design-system `IconPicker` as a prop. A fourth reach is a type only — `DesignSystem/Symbols/index.tsx:81` imports `EntityIconKind` from `@shared/types` — and is the one to name as deliberate rather than close.
 
@@ -34,7 +32,7 @@ Sixteen top-level folders hold 453 files and 64,412 lines. By kind: 160 models (
 
 **The store is the composition root, not a leaf.** `store.ts:29-101` imports twelve feature modules and 114 files import it back, so every one of those folders is in a cycle with the store. This is a Cleanup-lane fact (the store split is Bundle 5), recorded because the target tree cannot make those folders independent while it holds, and the tree is honest about which edges the store keeps.
 
-**The value layer is `Properties/`.** `Properties/Editing/` holds the shared property-value vocabulary — `formatValue`, `PropertyPicker`, `OptionChip`, `PropertyEditor`, `DatetimeValuePicker`, `Cell`, `checkboxLook`, `columnLabel`, `usePropertyRows` — and `Properties/` root the resolution modules (`value`, `contextIdentity`, `contextOptions`, `resolveContext`). `Tables/` imports it downward for the cell renderers; `Views/` imports both. One upward edge remains by ruling: `Properties/PropertiesPane.tsx` reads `useActiveView` (Views) and `useStyleFor` (Tables) for its per-column Style radios, which read and write the active view's `column_styles` — a view-settings section inside the Properties pane. `usePropertyRows.ts`'s two consumers, `Properties/PagePropertiesPane.tsx` and `PagePreview/PreviewInspector.tsx`, still share roughly 470 identical lines of row chrome.
+**The value layer is `Properties/`, and the order is `DesignSystem ← Properties ← Tables ← Views`, with `Cards/` standing alone.** `Properties/Editing/` holds the shared property-value vocabulary — `formatValue`, `PropertyPicker`, `OptionChip`, `PropertyEditor`, `DatetimeValuePicker`, `Cell`, `checkboxLook`, `columnLabel`, `usePropertyRows` — and `Properties/` root the resolution modules (`value`, `contextIdentity`, `contextOptions`, `resolveContext`). `Tables/` imports it downward for the cell renderers; `Views/` imports both. One upward edge remains by ruling: `Properties/PropertiesPane.tsx` reads `useActiveView` (Views) and `useStyleFor` (Tables) for its per-column Style radios, which read and write the active view's `column_styles` — a view-settings section inside the Properties pane. `usePropertyRows.ts`'s two consumers, `Properties/PagePropertiesPane.tsx` and `PagePreview/PreviewInspector.tsx`, still share roughly 470 identical lines of row chrome.
 
 **Thirty files have no importer inside their own folder.** The worst: `Settings/IconPicker.tsx` (14 consumers, none in `Settings/`), `Embeds/ViewEmbedScope.tsx` (15, 14 outside — view infrastructure filed as an embed detail), `Tabs/warmCache.ts` (13, 12 outside — a cache, not a tab), `Embeds/connectionMenu.ts` (10, all outside), `Sidebar/sidebarDndModel.ts` (15, 11 outside — a generic reorder model), `Navigation/navRecents.ts` (15, 10 outside), `Tabs/tabsModel.ts` (12, 10 outside).
 
@@ -59,7 +57,7 @@ Two more rules are recorded for the Cleanup lane because they change behavior ra
 
 #### The Target Tree
 
-Each folder answers "what is this" in one word. New folders are marked; DONE marks a move already executed; files are shown only where they carry a finding.
+Each folder answers "what is this" in one word. New folders are marked; ✓ marks a row already true on disk, so it is not re-proposed; files are shown only where they carry a finding.
 
 ```
 // src/renderer/src                     | • The React renderer — it never touches Node
@@ -70,7 +68,7 @@ Each folder answers "what is this" in one word. New folders are marked; DONE mar
 │   ├── ImagePicker.tsx                 | • NEW wrapper — binds paste, pick, and the asset map
 │   ├── PickerControl.tsx               | • NEW wrapper — binds the native row menu
 │   └── …                               | • EntityIcon, RenamableTitle, useNexusIcon, iconFavorites
-├── // Cards                            | • DONE — the card chassis the gallery and CardView wear
+├── // Cards                            | ✓ The card chassis the gallery and CardView wear
 ├── // Connections                      | • NEW — the hover card and the link menu, with link resolution
 │   ├── linkResolve.ts · openWebLink.ts | • MOVED from the root
 │   └── …                               | • ConnectionHoverCard, HoverCardPresenter, connectionMenu, hoverCardSize
@@ -81,40 +79,36 @@ Each folder answers "what is this" in one word. New folders are marked; DONE mar
 ├── // DesignSystem                     | • The pieces; Detail/ and Showcase/ are gone
 │   ├── // Components
 │   │   ├── // Pickers                  | • Stays; PickerMenu is the most-composed primitive in the system
-│   │   └── // WindowChassis            | • RENAMED from Detail/PreviewPane — the shell every window mounts
-│   ├── // Interactions
-│   │   ├── ghostAnchor.ts              | • DONE — the hover-ghost hook, from Views
+│   │   ├── // SidePane                 | ✓ the sliding side slot, from DesignSystem/Detail
+│   │   └── // WindowChassis            | ✓ the shell every window mounts, from Detail/PreviewPane
+│   ├── // Interactions                 | ✓ ghostAnchor.ts, from Views
 │   │   └── reorderModel.ts             | • MOVED from Sidebar/sidebarDndModel — a generic reorder model
 │   ├── // Materials                    | • Gains --glass-radius and the specular constants; glass-*.tsx become Glass*.tsx
-│   ├── // Tokens                       | • solidColor.ts DONE; gains the spacing steps, the shell geometry, --subline-h
+│   ├── // Tokens                       | ✓ solidColor.ts · gains the shell geometry, --subline-h
 │   └── …                               | • Animation, Elements, Labels, Symbols, Theming, Util
 ├── // Embeds                           | • The embed framework's consumers — page, webpage, retention
 ├── // Interface                        | • RENAMED from Detail — the main window's chrome and its routed pane
 │   ├── // Banner · // Subfield
 │   ├── // InspectorPane                | • RENAMED from InspectorPanel
 │   ├── // Sidebar · // Toolbar         | • MOVED from the root
-│   ├── NavView.tsx                     | • MOVED from Tabs — the fifth routed view, beside its four siblings
-│   └── …                               | • ContainerView, DetailPane, DetailScaffold, HomepageView, PageView, SpaceView, scope
+│   ├── NavView.tsx                     | ✓ the fifth routed view, beside its four siblings, from Tabs
+│   └── …                               | • ContainerView, ContentView (✓ was DetailPane), DetailScaffold, HomepageView, PageView, SpaceView, scope
 ├── // MarkdownPM                       | • The editor; subfolders capitalize; otherwise untouched
 ├── // Navigation                       | • The nav layer — absorbs Tabs; NavWindow is a Window
 │   ├── TabBar.tsx · tabsModel.ts       | • MOVED from Tabs — per-tab history is navigation
 │   └── …
-├── // Properties                       | • DONE — the value layer: resolution at the root, Editing/ and Editors/ beneath
-├── // Settings                         | • The Settings window alone
-│   └── // SidePane                     | • MOVED from DesignSystem/Detail — its one consumer is here
+├── // Properties                       | ✓ The value layer — resolution at the root, Editing/ and Editors/ beneath
+├── // Settings                         | ✓ The Settings window alone, on the menu row primitive
 ├── // Showcase                         | • MOVED out of DesignSystem — a deployed site, not a piece
 ├── // Surface                          | • RENAMED from SurfacePM; absorbs Blocks — the tile world in one folder
 │   ├── // Blocks                       | • Tile content; block becomes tile in identifiers
 │   ├── actionBand.css.ts               | • MOVED from Detail — Blocks is its only consumer
 │   └── tileChassis.css                 | • MOVED from DesignSystem/Detail
-├── // Tables                           | • DONE — the tabular chrome; TableView and the Trash wear it; tableDnd, ColumnHeader, column mechanics
-├── // Views                            | • DONE — saved-view presentation at the root; TableView/ and CardView/ hold only the view layer
+├── // Tables                           | ✓ The tabular chrome TableView and the Trash wear — tableDnd, ColumnHeader, column mechanics
+├── // Views                            | ✓ Saved-view presentation; TableView/ and CardView/ hold only the view layer
 │   ├── ViewEmbedScope.tsx              | • MOVED from Embeds — view infrastructure, fourteen consumers outside Embeds
 │   └── …                               | • Pipeline, GroupBand, ViewRenderer
-├── // Windows                          | • NEW — the floating family, one chassis, one morph
-│   ├── // BrowserWindow                | • Split out of PagePreview
-│   ├── // NavWindow · // PagePreview
-│   └── windowMorph.ts                  | • The FLIP between windows
+├── // Windows                          | ✓ The floating family — PageWindow, WebWindow, NavWindow, the tab strip, windowMorph
 ├── // testing                          | • The shared test harnesses; gains Navigation's fixture tree
 └── App.tsx · main.tsx · styles.css · Carets.css · env.d.ts
 ```
@@ -129,8 +123,6 @@ The eight that gate the tree's non-mechanical moves. Each is a fork the rules do
 
 - **The design system's three upward reaches.** `AssetImage` and `ImagePicker` read the store to draw data they are given no other way; `PickerControl` reaches for a menu the app can hand it. *Recommendation:* invert all three through the wrapper pattern `Settings/IconPicker` already uses — the design-system piece takes `src`/`crop` (or one `resolveAsset`), `onPasteImage`/`onPickFile`, and `onRowMenu` as props; three thin wrappers in `Components/` bind them once. Then the sanctioned reaches are exactly one, `Symbols/` reading a type, written into DesignSystemPM §Tooling in the same edit.
 - **Make the boundary a lint rule.** *Recommendation:* now, with an allowlist of the three files until the reaches close. Biome `noRestrictedImports` forbidding `@renderer/store`, `@renderer/nativeMenus`, `@renderer/assetUrl`, and `@renderer/<Feature>/**` from `DesignSystem/**`. Its value is refusing the *next* inversion.
-- **The floating family's name.** `NavWindow`, `PagePreview`, and the browser window share the chassis and the morph, and `BrowserWindow.tsx` is already its own file. *Recommendation:* `Windows/`, not `PreviewPanes/` — these are Windows by the design system's own vocabulary, and `NavWindow` previews nothing.
-- **The chassis's name.** `PreviewPane` is mounted by four windows and the Settings window and previews nothing. *Recommendation:* `DesignSystem/Components/WindowChassis/`. It will feel wrong for a week; the week after, `previewPane.css` holding the Settings window's dimensions stops looking like an accident.
 - **`Components/`'s strays and the `IconPicker` wrapper.** The 08-25 ruling keeps `Components/` for the genuinely shared strays. *Recommendation:* `Settings/IconPicker.tsx` and `iconFavorites.ts` join them — fourteen importers across eight folders with no plurality — and the file is renamed `NexusIconPicker.tsx` so it stops shadowing the design-system export it wraps.
 - **`Detail` → `Interface`'s scope.** Ruled for `Detail/`; the atlas extends it to `Toolbar/` and `Sidebar/`, the same window's chrome read by the same InterfacePM. *Recommendation:* take the extension — two more top-level folders disappear and `Interface/` becomes the one place the main window's shape is decided. If refused, they stay at the root under R3.
 - **`SurfacePM` → `Surface`, and `block` → `tile`.** `MarkdownPM` keeps its suffix as a product name; `SurfacePM` is a leftover that already lost its abbreviation in `surfacepm.css`. *Recommendation:* rename the folder, absorb `Blocks/` as `Surface/Blocks/`, and rename `block` → `tile` in identifiers — the engine's own model file already says tile, and it frees `block` for MarkdownPM.
@@ -144,9 +136,9 @@ The eight that gate the tree's non-mechanical moves. Each is a fork the rules do
 
 **`PM` is a documentation convention that leaked into two folder names.** All eighteen feature docs are `*PM.md`; only `MarkdownPM/` and `SurfacePM/` exist as folders, and `PommoraDND` — an engine by the same test — lives at `DesignSystem/Interactions/` without one. `MarkdownPM` is a product name; `SurfacePM` is a leftover. **`DND` has four casings:** `PommoraDND` (docs), `Dnd` (every identifier, twelve of sixteen filenames), `dnd` (43 CSS classes), `DnD` (4). `Dnd` wins by two orders of magnitude and survives PascalCase composition.
 
-**Six folder names mislead.** Three `Detail` folders for three unrelated things. `NavWindow/` holds one component next to `Navigation/`, which holds everything it displays. `Tabs/NavView.tsx` is a routed detail view filed away from its four siblings. `Blocks/` and `SurfacePM/` name one unit `block` and `tile`. `Properties/Editing/` and `Properties/Editors/` are two folders of property editors in two vocabularies, with a `DatetimeValuePicker`/`DateTimeEditor` split on the same word. `Components/` and `DesignSystem/Components/` share a name, and `Settings/IconPicker.tsx` exports an `IconPicker` that shadows the design system's, imported aliased as `Picker` — ten call sites import the Settings one, almost certainly believing otherwise.
+**Four folder names mislead.** Two `Detail` folders for two unrelated things — the main window's chrome, and the settings panes under `Components/`. `Blocks/` and `SurfacePM/` name one unit `block` and `tile`. `Properties/Editing/` and `Properties/Editors/` are two folders of property editors in two vocabularies, with a `DatetimeValuePicker`/`DateTimeEditor` split on the same word. `Components/` and `DesignSystem/Components/` share a name, and `Settings/IconPicker.tsx` exports an `IconPicker` that shadows the design system's, imported aliased as `Picker` — ten call sites import the Settings one, almost certainly believing otherwise.
 
-**The floating-surface vocabulary already exists and nobody wrote it down.** DesignSystemPM:205-206 defines Surface, Pane, Window, Dropdown, Menu, Picker. The app is 90% compliant. The four violations: `InspectorPanel` (a Pane), `AutocompletePanel` (a Menu), `Toolbar/NavPane` rendered bare at `Toolbar.tsx:114` while both siblings go through a Dropdown shell, and — the important one — the chassis every window mounts is named `PreviewPane` (four windows, one previews nothing, and its stylesheet holds the Settings window's dimensions).
+**The floating-surface vocabulary already exists and nobody wrote it down.** DesignSystemPM:205-206 defines Surface, Pane, Window, Dropdown, Menu, Picker. The app is 90% compliant. The three violations: `InspectorPanel` (a Pane), `AutocompletePanel` (a Menu), and `Toolbar/NavPane` rendered bare at `Toolbar.tsx:114` while both siblings go through a Dropdown shell. The chassis every window mounts is `WindowChassis`; the floating family is `Windows/`. [[DesignTermsV2]] carries the vocabulary that replaces the six words.
 
 #### The Concept Table
 
@@ -172,20 +164,18 @@ Seventeen concepts checked for two spellings. **Confirmed, worth settling:**
 
 **681 bare pixel values across 168 files** (excluding `0px` and every `1px`), on an unnamed scale: `6px` ×101, `8px` ×72, `4px` ×68, `12px` ×44, `2px` ×43, `16px` ×40, `10px` ×33, `14px` ×27, `3px` ×24, `5px` ×20, `28px` ×18, `24px` ×17, `20px` ×17. That is a 4px grid with a 2px foot — `2·4·6·8·10·12·14·16·20·24·28` — already agreed on by the code and never named; `4`, `6`, `8` alone are 241 of the 681. The design system's own component layer is no more disciplined: `calendarPicker.css.ts` carries 38, second only to `MarkdownPM/Styles.css` (54). DesignSystemPM's Pending section says spacing and radius stay ad-hoc pending a Figma lift; 681 is what ad-hoc costs.
 
-**Radius restates six ways for four numbers.** `6/8/10/12` live in `size.control['button-*'].radius` (`size.css.ts:24-68`) and are hand-restated at `group.tsx:723`, `Slider.tsx:106`, `ImagePicker.tsx:31`, `styles.css:10`, `pickerMenu.css.ts:96`, `notchedPane.css.ts:4`. The standing ruling that radius literals stay literal is about *feature* sites picking from the set; it does not cover the set being declared six times.
+**Radius restates six ways for four numbers.** `6/8/10/12` live in `size.control['button-*'].radius` (`size.css.ts:24-68`) and are hand-restated at `group.tsx:723`, `Slider.tsx:106`, `ImagePicker.tsx:31`, `styles.css:10`, `pickerMenu.css.ts:96`, `notchedShell.css.ts:4`. The standing ruling that radius literals stay literal is about *feature* sites picking from the set; it does not cover the set being declared six times.
 
 **356 custom properties are declared, 224 outside `Tokens/`.** Four are orphans, all deliberate — `--safe-top/right/bottom/left` (`styles.css:13-16`, forward declarations for the mobile shell). Nine are declared by the app and read from inside the design system; seven carry fallbacks and are override hooks by design. **Two are hard upward dependencies with no fallback:** `--glass-inset` (`styles.css:9`, read at `previewPane.css:17`) and `--glass-radius` (`styles.css:10`, read at `previewPane.css:10` and `sidePane.css:10`) — mount either shell in the Showcase without `styles.css` and it loses its inset and corner radius, the one place the layering rule is broken in CSS. Three more families behave like tokens and are declared in app files by accident of history: the shell's three dimensions (`--toolbar-h`, `--sidebar-width`, `--inspector-width`), the layout grid (`--content-inset*`, `--surface-inset*`, 36 reads across five features), and `--subline-h` (24px in two homes, with `previewWindow.css:7` a comment explaining the duplication).
 
-**The zoom family has no composition rule.** Seven scale vars multiply each other with nothing stating which compose and which are terminal — `--zoom`, `--block-zoom`, `--label-zoom`, `--mdpm-scale`, `--editor-scale`, `--card-scale`, `--glyph-scale`, plus `--preview-zoom` — a var per surface, growing.
+**The zoom family has no composition rule.** Seven scale vars multiply each other with nothing stating which compose and which are terminal — `--zoom`, `--block-zoom`, `--mdpm-scale`, `--editor-scale`, `--card-scale`, `--glyph-scale`, plus `--preview-zoom` — a var per surface, growing.
 
 #### Open Decisions — Geometry
 
-- **The spacing scale.** 681 literals on a grid the code already agreed on. *Recommendation:* mint `size.space` and `--space-*` from the code — `2·4·6·8·10·12·14·16·20·24·28` — and reconcile with Figma after, not before. The residue of `3/5/9/22px` becomes a visible, arguable list of sixty-odd exceptions instead of an invisible 681. `18px` (13 sites) is left off deliberately.
-- **The radius set.** *Recommendation:* no ladder — every radius literal already matches a value `size.control['button-*'].radius` publishes, so the literals are owned but not centralized, which is not the minting condition. Two things change: `--glass-radius` becomes a token (below), which collapses four of the six writers of `12px`; and `Slider.tsx:106`'s `borderRadius: 9` gets a reason or a repoint.
-- **`--glass-inset` and `--glass-radius`.** *Recommendation:* mint both into `Tokens/` as `size.glass`. The deciding fact is not what kind of value each is but that the design system reads both with no fallback — the one place the layering law is broken in CSS — and a token the design system can read is the fix. `--glass-radius` also silently equals the large button radius and `RECT_RADIUS` at `ImagePicker.tsx:31`: three writers, one number. Give the design-system reads a fallback either way.
+- **`--glass-inset` and `--glass-radius`.** Awaiting the ruling. *Evidence:* `styles.css:9-10` declares both; `DesignSystem/Components/WindowChassis/windowChassis.css:10,17` and `DesignSystem/Components/SidePane/sidePane.css:10` read them with no fallback — the design system's only CSS reads that die outside the app. `--glass-radius` equals the large button radius and `RECT_RADIUS` at `ImagePicker.tsx:31`: three writers, one number. *Recommendation:* mint both into `Tokens/` as `size.glass`, and give the design-system reads a fallback either way.
 - **The two tab strips.** Four of the preview strip's five values are already 5/6 of the main strip's; only `--tab-min` (70 vs 90) breaks it. *Recommendation:* set `--tab-min: 75px` and add one comment saying the floating window wears the tab strip at 5/6.
 - **The convergent values.** `--subline-h` (24px in two homes, one a comment explaining the duplication) and `--labels-gap` (4px in three). *Recommendation:* absorb both into `Tokens/`; `--subline-h` first, because `previewPane.css:21` already reads it with a hardcoded fallback inside the design system.
-- **The zoom family.** Seven scale vars with no stated composition rule. *Recommendation:* one `Tokens/scale.ts` naming the axes — window, editor, embed, card, glyph — and how they compose, with every `--*-zoom`/`--*-scale` var reading from it. Without it there will be a var per surface at 3× the code.
+- **The zoom family.** Seven vars, and the evidence says they are three axes, one knob, one derivation, and one stray, not redundancies. *Axes:* `--editor-scale` (the nexus-wide Editor Scale, `personalization.ts:51`; `Styles.css:20` defaults it, `:108` scales the body font by it, `:138` the title) → `--mdpm-scale` (the editor's structural factor, `Styles.css:21` = editor-scale by default; `PageEmbed.tsx:141` and `PreviewWindow.tsx:196` set it to the embed's scale and reset `--editor-scale` to 1 because the embed already hands the editor a scaled font through its `zoom` prop at `PageEmbed.tsx:163` — a host *replaces* rather than compounds; 12 reads across `embeds.css` and `Styles.css`); `--block-zoom` (a dashboard tile's Scale, `surfacepm.css:39-57`, seven discrete steps; compounds INTO the others by design — `--glyph-scale = mdpm × block` at `Styles.css:41`, and `zoom: --zoom × --block-zoom` at `TableView.css:38` / `CardsView.css:23`); `--zoom` (a view's own density — `table-tokens.css:10` at 1, the embed seam writes it at `viewEmbed.css.ts:168,176` from `--view-embed-zoom` / `--embed-zoom`; `viewEmbed.css.ts:187-211` divide it back out so the heading insets hold in real px). *Knob:* `--card-scale` (`CardsView.css:8,10` — the grid floor and thumb height, never type, by ruling). *Derived:* `--glyph-scale` (8 reads, all `Styles.css`; the one `zoom:` property in the editor at `:740`). *Stray:* `--preview-zoom` (`cards.css:17,93`) is a `transform: scale` crop, not a scale axis. A single compounding `--zoom` is not available to custom properties — `--zoom: calc(var(--zoom) * k)` on a descendant is a cycle and invalidates — so "one var" would mean the `zoom` *property* at every level, which the editor rejects on purpose (`surfacepm.css:31-37`: chrome, gutter, and padding stay fixed under a tile's Scale; only glyphs and text move) and the card ruling rejects. *Proposed naming (Nathan, 08-26):* `--cards-scale` (cards) · `--view-scale` (view embeds — today's `--zoom`) · `--page-scale` (the editor — today's `--editor-scale` + `--mdpm-scale`) · `--block-scale` (tiles — today's `--block-zoom`). Three are renames. The fourth merges two vars whose split is load-bearing: an embed sets structure to its own scale and the font factor to 1; under one `--page-scale` the font line at `Styles.css:108` would scale the already-scaled embed font a second time unless it stops reading the page factor and the main page's font takes it another way (`MarkdownPM/index.tsx:520`).
 
 ---
 
@@ -201,7 +191,7 @@ The consumer side is fact — every read opened at its line. The verdicts are th
 
 **Sibling drift — a file diverging from one it shares a chassis with.** `TrashLeaf.tsx` (caption.semibold) against `Tables/ColumnHeader.tsx` (callout.semibold) while TrashLeaf wears the class `table-head`; `groupingPane.css.ts:16`'s `subLabel` (body.emphasized) against `menu.css.ts:131`'s `subLabel` (caption.standard) — same export name, same color, 13px against 11px. A shared class name is not a shared type decision, and nothing in the build catches it.
 
-**The one live bug.** `Blocks/ViewEmbedBlock.tsx:88` hand-rolls `tintAt(cellColor(key), 'primary')` where `cellRing(key)` exists at `ramp.ts:143` as `cellPaint(key).outline ?? tintAt(cellColor(key), 'primary')`. The hand-roll reproduces the fallback and drops the first branch, so a view assigned a **grey** cell gets a chroma-less tint of a grey instead of its `GREY_OUTLINES` step. Behavioral, not stylistic; the fix is one identifier, `cellRing(key)`, and it waits for no ruling.
+**The one live bug.** `Blocks/ViewEmbedBlock.tsx:88` hand-rolls `tintAt(cellColor(key), 'primary')` where `cellRing(key)` exists at `ramp.ts:142` as `cellPaint(key).outline ?? tintAt(cellColor(key), 'primary')`. The hand-roll reproduces the fallback and drops the first branch, so a view assigned a **grey** cell gets a chroma-less tint of a grey instead of its `GREY_OUTLINES` step. Behavioral, not stylistic; the fix is one identifier, `cellRing(key)`, and it waits for no ruling.
 
 #### The Hand-Rolled Sets
 
@@ -274,15 +264,14 @@ Each is written to be lintable, with its carve-out stated.
 
 **Three feature sheets load globally from `main.tsx`** — `Sidebar.css`, `Detail.css`, `Banner.css` — with no global justification; the contract sheets beside them (`cards.css`, `table-tokens.css`, `Table.css`) are global on purpose, painting class names two folders wear. The design-system sheets on `main.tsx:6-13` are correctly global.
 
-**Motion is perfect** — every transition reads `var(--duration-*)` or `duration.*`; the four raw times are a caret blink cadence and three `0s` delays. **Color is near-perfect** — 20 raw values, all explicable (the token sources, the frost recipe's four specular whites, the melt gradient's black stops, and one documented outlier at `NotchedPane.tsx:112`).
+**Motion is perfect** — every transition reads `var(--duration-*)` or `duration.*`; the four raw times are a caret blink cadence and three `0s` delays. **Color is near-perfect** — 20 raw values, all explicable (the token sources, the frost recipe's four specular whites, the melt gradient's black stops, and one documented outlier at `NotchedShell.tsx:112`).
 
 **Inline styles are 83 sites in 50 files, and most are right.** Measured geometry, custom-property injection, and genuinely dynamic values could not be a stylesheet. The static offenders are fourteen, nine inside the design system, and two byte-identical: `CardAddPicker.tsx:130` and `PropertyPicker.tsx:123` both write `{ minWidth: 96, height: 24 }`.
 
-**One toolbar selector has recruited seventeen doubled selectors** at `toolbar.css:98` and is still recruiting.
+**The toolbar's tone was a `button` selector** (`toolbar.css:98`, now the container's color) that had recruited ten doubled selectors to outrank it — Settled §26.
 
 #### Open Decisions — Styling
 
-- **The toolbar selector, in order.** *Recommendation:* delete the colliding `color` declaration at `toolbar.css:98` first — the buttons inside the toolbar are Buttons and Button owns `--button-ink` — then walk the seventeen doubles down one at a time with the app open. Do not unwind the armor before removing what it armors against; eleven of the doubles say so in their own comments.
 - **The 28 plain sheets.** *Recommendation:* migrate to `.css.ts` when each is next opened, never as a sweep — the rule that `.css` vs `.css.ts` tracks module type holds; these 28 fail the test. The five feature sheets loading from `main.tsx:16-20` go first.
 - **Inline style props.** *Recommendation:* the rule in R6, as a lint. Fourteen fixes, and the byte-identical `{ minWidth: 96, height: 24 }` pair becomes one class.
 - **The cursor convention.** Roughly twenty sites each way; design-system components consistently on `default`. *Recommendation:* `default` everywhere except links — this is a macOS desktop app wearing macOS materials, and AppKit shows the arrow on buttons, menu items, and rows. Settle it in the primitives (`MenuItem`, `AccessoryButton`, the picker row).
@@ -317,7 +306,9 @@ Rulings a sweep would otherwise re-derive wrongly, carried as current truth. Reo
 22. **The `--safe-*` vars stay** — documented forward declarations for the mobile shell. `--ppane-*` and `table-tokens.css`'s `.table`-scoped block stay — correctly scoped contracts; only the vars that leak (`--cell-padding-x`, `--labels-gap`) move.
 23. **Showcase-only is a real consumer class** — it deploys from the same sources the app builds from, so it cannot drift; which is why it must not live inside the tree it demonstrates.
 24. **Accepted, not defects:** dark-only theming · hidden scrollbars app-wide · Liquid Glass cannot be voided in place · no tracking scale · no inactive label tone yet.
+25. **Spacing stays literal, on the even grid** — no `--space-*` ladder. An odd value (`3/5/9px`, 24 + 20 + 8 sites) reconciles per consumer to the nearer even step when that consumer is next opened; `22px` is a step. Radius follows the same rule: an even literal is owned; `Slider.tsx:106`'s `9` is the one to reconcile.
+26. **The toolbar's tone is the container's, not a `button` selector's.** `.app-toolbar` and `.ppane-toolbar` declare `color: var(--label-control)` and every glyph inherits it through Button's `currentColor` ink; a dropdown surface restates its own ground (`menuSurface.css.ts`). The ten pins that existed only to outrank the old `.app-toolbar button` rule are gone; the thirteen `&&` pins left in the tree (`labels.css.ts`, `colorSwatch.css.ts`, `rowDisabled`, `lockIcon`, `pickerControl.css.ts`, `handleMenu.css.ts`, `numberEditor.css.ts`, `groupingPane.css.ts:70`) armor against other rules and are judged on their own.
 
 **Process notes that outlive their documents.** A survey measuring two files against each other without accounting for what was already extracted beneath them overstates the duplication — the ~470-line twin figure is honest only because `usePropertyRows`, `PropertyEditor`, and `PropertyPicker` were counted out. A ruling bounds what it decided, not everything near it. Re-derive citations against the current code before editing; the tree moves. Restate rather than amend — a fixed item is deleted, a changed fact rewritten as currently true.
 
-**Where the surfaces live.** The property surface is `Properties/`; `EyeToggle` and `PickerControl` are `DesignSystem/Elements/`; `NavGallery` is `Navigation/`; `ImagePicker` is `DesignSystem/Components/Pickers/`; `SpaceSettings` is folded into `Toolbar/SpaceDropdown`. `Components/Detail` stays by ruling. `Views` → root, `Cards/`, `Tables/`, and the `Properties/` value layer are executed; `Detail` → `Interface` is ruled and awaits execution; the rest of the tree is unexecuted.
+**Where the surfaces live.** The property surface is `Properties/`; `EyeToggle` and `PickerControl` are `DesignSystem/Elements/`; `NavGallery` is `Navigation/`; `ImagePicker` is `DesignSystem/Components/Pickers/`; `SpaceSettings` is folded into `Toolbar/SpaceDropdown`. `Components/Detail` stays by ruling. `Detail` → `Interface` is ruled and awaits execution; the rest of the tree is unexecuted.

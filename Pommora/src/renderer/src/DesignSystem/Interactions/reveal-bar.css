@@ -5,14 +5,14 @@
    The toggle rests invisible and reveals three ways: the host marks a large surrounding region as
    "near" so the reveal zone can be generous without an invisible button swallowing clicks to the
    content beneath, on direct hover, and on keyboard focus. */
-.ppane-footer,
+.window-footer,
 .subfield-reveal {
   flex: none;
   height: 0;
   overflow: hidden;
 }
 
-.ppane-footer-toggle,
+.window-footer-toggle,
 .subfield-toggle,
 .footnotes-toggle {
   position: absolute;
@@ -34,8 +34,8 @@
     background var(--duration-fast) var(--ease-base);
 }
 
-.ppane-footer-toggle:hover,
-.ppane-footer-toggle:focus-visible,
+.window-footer-toggle:hover,
+.window-footer-toggle:focus-visible,
 .subfield-toggle:hover,
 .subfield-toggle:focus-visible,
 .footnotes-toggle:hover,
@@ -43,7 +43,7 @@
   opacity: 1;
 }
 
-.ppane-footer-toggle:hover,
+.window-footer-toggle:hover,
 .subfield-toggle:hover,
 .footnotes-toggle:hover {
   background: var(--state-hover);

@@ -22,7 +22,8 @@ Design System
 │   ├── Controls
 │   ├── Pickers
 │   ├── Menu
-│   └── Fields
+│   ├── Fields
+│   └── Windows
 ├── Detail
 ├── Interaction
 ├── Animation
@@ -326,7 +327,7 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 | DisclosureRow | `DisclosureRow` · `useDisclosureSet` | A folding row on DropOutline. |
 | MenuSurface | `MenuSurface` | The beaked pane the large toolbar dropdown hangs off a button. |
 | MenuDropdown | `MenuDropdown` | The shell around a trigger — open state, dismiss, growth bound. |
-| NotchedPane | `NotchedPane` | The beaked frost shell MenuSurface composes. |
+| NotchedShell | `NotchedShell` | The beaked frost shell MenuSurface composes. |
 | Growth | `growToContent` | The measured height a pane grows to. |
 
 #### Fields
@@ -345,14 +346,19 @@ Where each goes: menu, dropdown, and sidebar rows → Body; menu headings → He
 | EditableInput  | `EditableInput`                                                                                              | Enter commits, Escape abandons, blur settles.                                                                 |
 | RenamableLabel | `RenamableLabel`                                                                                             | The inline-rename swap.                                                                                       |
 
+#### Windows
+
+| Title | Export | What it is |
+| ------------- | ------------------------------------- | ----------------------------------------------------- |
+| WindowChassis | `WindowChassis` | The floating window surface every in-app window mounts; its own dimensions — toolbar height, side-pane widths, footer height, the trailing-control slide — are custom properties in `windowChassis.css` a host may retune.[^1] |
+| SidePane | `SidePane` · `sidePaneWidth` | A pane carried on a window's edge by `--io`. |
+
 ### Detail
 
 `Detail/` — the composite, feature-facing shells. App surfaces are listed by reference; their code stays in the app.
 
 | Title | Location | What it is |
 | ---------- | ------------------------------------- | ----------------------------------------------------- |
-| PreviewPane | `Detail/PreviewPane` — `PreviewPane` | The floating window surface every in-app window mounts; its own dimensions — toolbar height, side-pane widths, footer height, the trailing-control slide — are custom properties in `previewPane.css` a host may retune.[^1] |
-| SidePane | `Detail/SidePane` — `SidePane` · `sidePaneWidth` | A pane carried on a window's edge by `--io`. |
 | Tile chassis | `Detail/tile-chassis.css` | The resizable tile frame SurfacePM and embeds share. |
 | Sidebar · Toolbar | app: `Sidebar/` · `Toolbar/` | [[InterfacePM]] |
 | Tabs | app: `Tabs/` | [[NavigationPM]] |

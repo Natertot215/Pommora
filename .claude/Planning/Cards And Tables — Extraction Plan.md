@@ -103,11 +103,10 @@ Three phases: Views leaves `Detail/` for the renderer root, then the card chassi
 **Steps:**
 
 1. Create `Tables/` at the root: `tables.css` (the moved `table-tokens.css`, scope list reduced to the kit's own root class), `Table.css` split — the chrome half (shell, grid tracks, heading band, segments, hairlines, resizer, column DnD, `no-borders`, gutter) moves; the cell-content-type and band-rhythm rules stay with the view.
-2. Heading variant as a class on the table root: `is-clear` (no fill, no seam) beside the default filled band — one definition the embed and the Trash both wear instead of stripping.
+2.  Heading variant as a class on the table root: `is-clear` (no fill, no seam) beside the default filled band — one definition the embed and the Trash both wear instead of stripping.
 3. Trash joins the kit as a proper consumer: its head is a kit heading; rows keep `.nav-item` but the hairline and segment bars come from kit classes rather than hand-rolled pseudos. The double import and the `.trash-leaf.trash-leaf` hack go; the Build-Gotchas entry is rewritten to describe the kit.
 4. `Blocks/viewEmbed.css.ts:200-210` swaps its strip rules for the variant class.
 5. The generic TSX moves: `tableDnd`, `columnWidths`, `columnReorder`, `columnAlign`, `columnStyles`, `columnLabel`, `checkboxLook`, `solidColor`, `Cell`, and `ColumnHeader` lifted out of TableView.
 6. `main.tsx:19-20` → `./Tables/…`; `Views/Table/TableView.tsx` imports the kit.
 7. Docs: ViewTypesPM's Table Sheet moves to a `TablesPM` (or a section of DesignSystemPM's component ledger); the gutter row and separator cites in that table are stale already and get rewritten in the same pass.
 8. Gates, KNOB grep, then eyeball the view table, an embedded table, and the Trash.
-

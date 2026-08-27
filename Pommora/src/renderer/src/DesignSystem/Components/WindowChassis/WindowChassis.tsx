@@ -10,14 +10,14 @@ import {
   type FloatingBounds,
 } from '../../Interactions/FloatingWindow'
 import { SidePane, sidePaneWidth, type SidePaneBounds } from '../SidePane/SidePane'
-import './previewPane.css'
+import './windowChassis.css'
 
 const BOUNDS: FloatingBounds = { minW: 360, minH: 280, defW: 850, defH: 600 }
 
 /** The shared inspector rail bounds — one remembered width across every window that hosts one. */
-export const PREVIEW_PANE_INSPECTOR: SidePaneBounds = { min: 180, def: 260, max: 420 }
+export const WINDOW_CHASSIS_INSPECTOR: SidePaneBounds = { min: 180, def: 260, max: 420 }
 
-export interface PreviewPaneSide {
+export interface WindowChassisSide {
   /** Panes sharing this id share one remembered width. */
   windowId: string
   bounds: SidePaneBounds
@@ -35,9 +35,9 @@ export interface PreviewPaneSide {
  * `floating` — no strip: action clusters pin to the top corners and everything between stays
  * clickable, so content reaching the top edge isn't covered.
  */
-export type PreviewPaneToolbar = 'band' | 'floating'
+export type WindowChassisToolbar = 'band' | 'floating'
 
-export interface PreviewPaneProps {
+export interface WindowChassisProps {
   /** Windows sharing this id share one stashed size slot. */
   id: string
   closing: boolean
@@ -51,7 +51,7 @@ export interface PreviewPaneProps {
   style?: CSSProperties
   /** Hosts running a FLIP measure their rect from here. */
   rootRef?: Ref<HTMLDivElement>
-  toolbar?: PreviewPaneToolbar
+  toolbar?: WindowChassisToolbar
   onScan?: () => void
   scanLabel?: string
   /** The lead cluster's own controls, after the scan glyph when both are present. */
@@ -61,8 +61,8 @@ export interface PreviewPaneProps {
   title?: ReactNode
   /** Rides the swallow when a right overlay pane opens. */
   actions?: ReactNode
-  left?: PreviewPaneSide
-  right?: PreviewPaneSide
+  left?: WindowChassisSide
+  right?: WindowChassisSide
   footer?: ReactNode
   footerLabel?: (open: boolean) => string
   /** A control riding the footer's reveal band, facing its collapse chevron across the bar. */
@@ -71,9 +71,9 @@ export interface PreviewPaneProps {
 }
 
 // The title is pointer-inert, so a press on it falls through to the toolbar and arms the move.
-const DRAG_SURFACES = '.ppane, .ppane-toolbar, .ppane-row'
+const DRAG_SURFACES = '.window, .window-toolbar, .window-row'
 
-export function PreviewPane({
+export function WindowChassis({
   id,
   closing,
   onClose,
@@ -96,7 +96,7 @@ export function PreviewPane({
   footerLabel,
   footerLead,
   children,
-}: PreviewPaneProps): React.JSX.Element {
+}: WindowChassisProps): React.JSX.Element {
   const surfaces = dragSurfaces ? `${DRAG_SURFACES}, ${dragSurfaces}` : DRAG_SURFACES
   const { style: winStyle, onWindowDown, startDrag } = useFloatingWindow(id, bounds, surfaces)
 
@@ -136,14 +136,14 @@ export function PreviewPane({
     return () => window.removeEventListener('keydown', onKey)
   }, [closing])
 
-  const pane = (side: PreviewPaneSide, which: 'left' | 'right'): React.JSX.Element => (
+  const pane = (side: WindowChassisSide, which: 'left' | 'right'): React.JSX.Element => (
     <SidePane
       windowId={side.windowId}
       side={which}
       bounds={side.bounds}
       open={side.open !== false}
-      className={cx(`ppane-side ppane-side-${which}-${side.mode}`, side.className)}
-      resizeClassName={`ppane-side-${which}-${side.mode}-resize`}
+      className={cx(`window-side window-side-${which}-${side.mode}`, side.className)}
+      resizeClassName={`window-side-${which}-${side.mode}-resize`}
       onWidthChange={which === 'left' ? setLeftW : setRightW}
       onResizingChange={setResizing}
     >
@@ -153,7 +153,7 @@ export function PreviewPane({
 
   const inflow = left?.mode === 'inflow' || right?.mode === 'inflow'
   const body = inflow ? (
-    <div className="ppane-row">
+    <div className="window-row">
       {left?.mode === 'inflow' && pane(left, 'left')}
       {children}
       {right?.mode === 'inflow' && pane(right, 'right')}
@@ -166,8 +166,8 @@ export function PreviewPane({
     <GlassWindow
       ref={rootRef}
       className={cx(
-        'ppane',
-        `ppane-toolbar-${toolbar}`,
+        'window',
+        `window-toolbar-${toolbar}`,
         className,
         leftOpen && 'is-side-left-open',
         rightOpen && 'is-side-right-open',
@@ -180,8 +180,8 @@ export function PreviewPane({
       style={
         {
           ...winStyle,
-          ...(left && { '--ppane-side-l-w': `${leftW}px` }),
-          ...(right && { '--ppane-side-r-w': `${rightW}px` }),
+          ...(left && { '--window-side-l-w': `${leftW}px` }),
+          ...(right && { '--window-side-r-w': `${rightW}px` }),
           ...style,
         } as CSSProperties
       }
@@ -191,14 +191,14 @@ export function PreviewPane({
       onMouseMove={hasFooter ? reveal.onMouseMove : undefined}
       onMouseLeave={hasFooter ? reveal.onMouseLeave : undefined}
     >
-      <div className="ppane-toolbar">
-        <div className="ppane-actions ppane-actions-lead">
+      <div className="window-toolbar">
+        <div className="window-actions window-actions-lead">
           {onScan && (
             <Button
               size="button-inline"
               icon="scan"
               iconSize="body"
-              className="ppane-action"
+              className="window-action"
               title={scanLabel}
               onClick={onScan}
             />
@@ -208,13 +208,13 @@ export function PreviewPane({
         {/* Rendered bare, not wrapped: a tab strip contributes its own flex child (and an
             absolutely-positioned title beside it), which a wrapper would collapse into one box. */}
         {title}
-        <div className="ppane-actions ppane-actions-trail">
-          {actions && <div className="ppane-actions-flow">{actions}</div>}
+        <div className="window-actions window-actions-trail">
+          {actions && <div className="window-actions-flow">{actions}</div>}
           <Button
             size="button-inline"
             icon="x"
             iconSize="body"
-            className="ppane-action"
+            className="window-action"
             title="Close"
             onClick={onClose}
           />
@@ -225,7 +225,7 @@ export function PreviewPane({
         <>
           <button
             type="button"
-            className="ppane-footer-toggle"
+            className="window-footer-toggle"
             onClick={() => setFooterOpen((v) => !v)}
             aria-label={footerLabel?.(footerOpen)}
             title={footerLabel?.(footerOpen)}
@@ -233,7 +233,7 @@ export function PreviewPane({
             <Icon name={footerOpen ? 'chevron-down' : 'chevron-up'} size="title3" />
           </button>
           {footerLead}
-          <div className="ppane-footer">{footer}</div>
+          <div className="window-footer">{footer}</div>
         </>
       )}
       {left?.mode === 'overlay' && pane(left, 'left')}

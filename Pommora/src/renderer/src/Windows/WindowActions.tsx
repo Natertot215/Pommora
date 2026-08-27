@@ -2,7 +2,7 @@ import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
 
 // The surface's swallow math sizes itself for exactly this pair — stays one component rather than
 // a shape each window re-declares.
-export function PreviewActions({
+export function WindowActions({
   inspectorOpen,
   onToggleInspector,
 }: {
@@ -16,7 +16,7 @@ export function PreviewActions({
         size="button-inline"
         icon="sliders-horizontal"
         iconSize="body"
-        className="ppane-action"
+        className="window-action"
         title="Settings"
         disabled
       />
@@ -24,7 +24,7 @@ export function PreviewActions({
         size="button-inline"
         icon="panel-right"
         iconSize="body"
-        className="ppane-action"
+        className="window-action"
         title="Inspector"
         aria-pressed={inspectorOpen}
         onClick={onToggleInspector}

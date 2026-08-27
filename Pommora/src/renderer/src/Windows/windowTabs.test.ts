@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { NexusTree } from '@shared/types'
 import { useSession } from '../store'
-import { capturePreviewWarm, clearPreviewWarm, readPreviewWarm } from './previewWarm'
+import { captureWindowWarm, clearWindowWarm, readWindowWarm } from './windowWarm'
 
 const page = (id: string) => ({ id, path: `Notes/${id}.md` })
 
@@ -29,7 +29,7 @@ const tree = {
 } as unknown as NexusTree
 
 beforeEach(() => {
-  clearPreviewWarm()
+  clearWindowWarm()
   useSession.setState({
     preview: null,
     navOpen: false,
@@ -38,7 +38,7 @@ beforeEach(() => {
   })
 })
 
-describe('previewTabs — the tab model (H-1/H-5/H-6/H-7)', () => {
+describe('windowTabs — the tab model (H-1/H-5/H-6/H-7)', () => {
   it('summon opens a single-tab window; re-summon of the same origin is a no-op (I-1)', () => {
     useSession.getState().openPreview(page('x'))
     const p1 = useSession.getState().preview
@@ -113,7 +113,7 @@ describe('previewTabs — the tab model (H-1/H-5/H-6/H-7)', () => {
   })
 })
 
-describe('previewTabs — durable sets (H-3/H-6/H-10)', () => {
+describe('windowTabs — durable sets (H-3/H-6/H-10)', () => {
   it("a summon restores the origin's remembered set; the active pointer survives", () => {
     useSession.setState({
       previewsFile: {
@@ -205,7 +205,7 @@ describe('previewTabs — durable sets (H-3/H-6/H-10)', () => {
   })
 })
 
-describe('previewTabs — the nav flavor (H-2)', () => {
+describe('windowTabs — the nav flavor (H-2)', () => {
   it('the map sentinel tab refuses to close; page tabs around it close normally', () => {
     useSession.getState().openNavPreview()
     useSession.getState().openPreviewTab(page('x'))
@@ -220,34 +220,34 @@ describe('previewTabs — the nav flavor (H-2)', () => {
   })
 })
 
-describe('previewTabs — warmth (H-8)', () => {
+describe('windowTabs — warmth (H-8)', () => {
   it('round-trips per tab id; a tab close evicts its entry; the window close clears all', () => {
     useSession.getState().openPreview(page('x'))
     useSession.getState().openPreviewTab(page('y'))
     const p = useSession.getState().preview!
     const [xTab, yTab] = p.tabs
-    capturePreviewWarm(xTab.id, { editorState: { doc: 'X' }, scrollTop: 5 })
-    capturePreviewWarm(yTab.id, { editorState: { doc: 'Y' }, scrollTop: 9 })
-    expect(readPreviewWarm(xTab.id)?.scrollTop).toBe(5)
+    captureWindowWarm(xTab.id, { editorState: { doc: 'X' }, scrollTop: 5 })
+    captureWindowWarm(yTab.id, { editorState: { doc: 'Y' }, scrollTop: 9 })
+    expect(readWindowWarm(xTab.id)?.scrollTop).toBe(5)
 
     useSession.getState().closePreviewTab(yTab.id)
-    expect(readPreviewWarm(yTab.id)).toBeUndefined()
-    expect(readPreviewWarm(xTab.id)?.scrollTop).toBe(5)
+    expect(readWindowWarm(yTab.id)).toBeUndefined()
+    expect(readWindowWarm(xTab.id)?.scrollTop).toBe(5)
 
     useSession.getState().closePreview()
-    expect(readPreviewWarm(xTab.id)).toBeUndefined()
+    expect(readWindowWarm(xTab.id)).toBeUndefined()
   })
 
   it('a summon clears prior warmth — restored ids are fresh, old entries unreachable', () => {
     useSession.getState().openPreview(page('x'))
     const xTab = useSession.getState().preview!.tabs[0]
-    capturePreviewWarm(xTab.id, { scrollTop: 7 })
+    captureWindowWarm(xTab.id, { scrollTop: 7 })
     useSession.getState().openPreview(page('z'))
-    expect(readPreviewWarm(xTab.id)).toBeUndefined()
+    expect(readWindowWarm(xTab.id)).toBeUndefined()
   })
 })
 
-describe('previewTabs — the NavWindow flavor entry (H-2/H-3)', () => {
+describe('windowTabs — the NavWindow flavor entry (H-2/H-3)', () => {
   it('openNav seeds the nav flavor with the remembered set (map tab active); closeNav keeps it durable', () => {
     useSession.setState({
       previewsFile: {
@@ -282,7 +282,7 @@ describe('previewTabs — the NavWindow flavor entry (H-2/H-3)', () => {
   })
 })
 
-describe('previewTabs — the engulf exit flag (A-4)', () => {
+describe('windowTabs — the engulf exit flag (A-4)', () => {
   it("a promote's engulf flag never leaks onto the next window's close", () => {
     useSession.getState().openPreview(page('x'))
     useSession.getState().closePreview('engulf')
@@ -293,7 +293,7 @@ describe('previewTabs — the engulf exit flag (A-4)', () => {
   })
 })
 
-describe('previewTabs — the slide stamp (Task 1.3)', () => {
+describe('windowTabs — the slide stamp (Task 1.3)', () => {
   it('stamps fwd on spawn, direction by strip order on activate, monotonic seq', () => {
     useSession.getState().openPreview(page('x'))
     useSession.getState().openPreviewTab(page('y'))

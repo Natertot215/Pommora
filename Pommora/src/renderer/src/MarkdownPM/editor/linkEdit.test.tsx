@@ -81,7 +81,7 @@ describe('the connection menu knows its span and its surface', () => {
     })
   })
 
-  // PreviewWindow starts read-only and silently drops doc changes, so Rename there would seat a
+  // PageWindow starts read-only and silently drops doc changes, so Rename there would seat a
   // caret and swallow every keystroke.
   // The native editor menu carries spelling, autocorrect and substitutions. Inside a link's syntax
   // you're editing prose, so that menu wins rather than being replaced by two link actions.

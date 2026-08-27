@@ -3,7 +3,7 @@
 // its key. A capture landing under an already-closed id (the store-first close beats the unmount
 // capture) leaves one inert entry, reaped by the next wholesale clear.
 
-export interface PreviewWarmEntry {
+export interface WindowWarmEntry {
   editorState?: unknown
   /** The editor's INTERNAL scroller — always 0 in the preview (the body owns scroll there). */
   scrollTop?: number
@@ -11,22 +11,22 @@ export interface PreviewWarmEntry {
   bodyScrollTop?: number
 }
 
-const cache = new Map<string, PreviewWarmEntry>()
+const cache = new Map<string, WindowWarmEntry>()
 
 /** Merge a partial capture — the editor (state) and the window (body scroll) write under one key. */
-export function capturePreviewWarm(tabId: string, patch: PreviewWarmEntry): void {
+export function captureWindowWarm(tabId: string, patch: WindowWarmEntry): void {
   cache.set(tabId, { ...cache.get(tabId), ...patch })
 }
 
-export function readPreviewWarm(tabId: string): PreviewWarmEntry | undefined {
+export function readWindowWarm(tabId: string): WindowWarmEntry | undefined {
   return cache.get(tabId)
 }
 
-export function dropPreviewWarm(tabId: string): void {
+export function dropWindowWarm(tabId: string): void {
   cache.delete(tabId)
 }
 
-export function clearPreviewWarm(): void {
+export function clearWindowWarm(): void {
   cache.clear()
 }
 

@@ -1,9 +1,9 @@
-/* The preview toolbar's center region: the single-tab breadcrumb title and the multi-tab strip it
+/* The page-window toolbar's center region: the single-tab breadcrumb title and the multi-tab strip it
    morphs into. Shared by every window that hosts preview tabs, so it lives with its component
    rather than in any one window's shell. Motion classes come from Tabs/tabStrip.css; geometry
    re-knobs here at caption scale. */
 
-.pgpreview-title {
+.page-window-title {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
@@ -15,7 +15,7 @@
   /* KNOB — the title/tab area sizes on the caption ramp, independent of the toolbar glyphs. */
   font-size: var(--text-caption-size);
   /* KNOB — the title's collapse-left travel as the strip grows in. */
-  --pgpreview-morph-slide: -12px;
+  --page-window-morph-slide: -12px;
   /* The morph: the title fades/slides LEFT toward the strip as tab #2 grows in, and returns the
      same way — the strip's own motion is the tab-open @starting-style growth. */
   transition:
@@ -23,17 +23,17 @@
     transform var(--duration-base) var(--ease-base);
 }
 @starting-style {
-  .pgpreview-title {
+  .page-window-title {
     opacity: 0;
-    transform: translateX(-50%) translateX(var(--pgpreview-morph-slide));
+    transform: translateX(-50%) translateX(var(--page-window-morph-slide));
   }
 }
-.pgpreview-title.is-collapsing {
+.page-window-title.is-collapsing {
   opacity: 0;
-  transform: translateX(-50%) translateX(var(--pgpreview-morph-slide));
+  transform: translateX(-50%) translateX(var(--page-window-morph-slide));
 }
 
-.pgpreview-tabwrap {
+.page-window-tabwrap {
   position: relative;
   flex: 1;
   min-width: 0;
@@ -44,9 +44,9 @@
      land on top of a label. NO transition: the squeeze is derived from --io, which is already
      interpolating, so transitioning the padding would retarget every frame and the strip would
      chase the pane instead of moving with it. */
-  padding-right: var(--ppane-title-squeeze, 0px);
+  padding-right: var(--window-title-squeeze, 0px);
 }
-.pgpreview-tabscroll {
+.page-window-tabscroll {
   position: relative;
   flex: 1;
   min-width: 0;
@@ -55,7 +55,7 @@
   overflow-y: hidden;
   scrollbar-width: none;
 }
-.pgpreview-tabstrip {
+.page-window-tabstrip {
   /* KNOBS — preview tab geometry: the caption-scale counterpart of the toolbar's .tab-bar block. */
   --tab-min: 70px;
   --tab-pref: 150px;
@@ -70,11 +70,11 @@
 }
 /* KNOB — the preview tightens the overflow dissolve on its scrolling chrome; a window that sets
    nothing keeps the house fade. */
-.pgpreview .pgpreview-tabscroll,
-.pgpreview-crumbs {
+.page-window .page-window-tabscroll,
+.page-window-crumbs {
   --over-scroll-fade: var(--fade-base);
 }
-.pgpreview-crumbs {
+.page-window-crumbs {
   min-width: 0;
   /* The crumbs also hover-scroll, which reads its own knob. */
 }

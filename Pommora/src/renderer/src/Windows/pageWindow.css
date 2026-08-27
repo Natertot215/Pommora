@@ -1,66 +1,66 @@
-/* The Page Preview window. Shell, toolbar, inspector, and footer come from the PreviewPane surface;
+/* The Page Window. Shell, toolbar, inspector, and footer come from the WindowChassis surface;
    what remains here is what only this window has — its custom exits, its body scroll model, and the
    front-matter inspector's rows. */
 
-.pgpreview {
-  /* The Subfield bar height (its riding toggle chevron reads it too) — mirrors the detail pane's
-     `--subline-h`; the floating window is outside `.detail-pane` so it can't inherit it. */
+.page-window {
+  /* The Subfield bar height (its riding toggle chevron reads it too) — mirrors the content view's
+     `--subline-h`; the floating window is outside `.content-view` so it can't inherit it. */
   --subline-h: 24px;
 }
 
-/* The promote exit: WAAPI drives the FLIP into the detail pane, so the shell's scale-out is
+/* The promote exit: WAAPI drives the FLIP into the content view, so the shell's scale-out is
    suppressed and the class only makes the exiting window inert. */
-.ppane.closing.pgpreview.engulfing {
+.window.closing.page-window.engulfing {
   animation: none;
   pointer-events: none;
 }
 /* The nav-swap exit: the NavWindow FLIPs from this window's stashed rect, so the outgoing preview
    vanishes at once — the nav carries the whole motion. */
-.ppane.closing.pgpreview.morphing {
+.window.closing.page-window.morphing {
   display: none;
 }
 
 /* ---- body: the embedded page, bare on the window glass. The top padding clears the floating
    toolbar at rest, then content scrolls under it. ---- */
-.pgpreview-body {
+.page-window-body {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
   scrollbar-width: none;
-  padding-top: var(--ppane-toolbar-h);
+  padding-top: var(--window-toolbar-h);
   /* Scrolled content dissolves under the floating toolbar (the shared scroll-edge fade); the fade
      width matches the toolbar strip so nothing hard-clips behind it. */
-  --over-scroll-fade: var(--ppane-toolbar-h);
+  --over-scroll-fade: var(--window-toolbar-h);
   transition: padding-right var(--duration-base) var(--ease-base);
 }
-.ppane.is-side-right-open .pgpreview-body {
-  padding-right: calc(var(--ppane-side-r-w) + var(--ppane-side-inset));
+.window.is-side-right-open .page-window-body {
+  padding-right: calc(var(--window-side-r-w) + var(--window-side-inset));
 }
-.ppane.is-resizing .pgpreview-body {
+.window.is-resizing .page-window-body {
   transition: none;
 }
 
 /* Align the footer content with the embed's text column — its left/right insets scale off the same
    --mdpm-scale the embed uses, so the crumbs sit under the body like the detail footer. */
-.pgpreview .ppane-footer .subfield {
+.page-window .window-footer .subfield {
   padding-left: calc(20px * var(--mdpm-scale));
   padding-right: calc(14px * var(--mdpm-scale));
 }
 
 /* ---- the front-matter inspector rows: property label + icon left, value hugging the right
    edge — properties only, no title/banner rows. ---- */
-.pgpreview-inspector-body {
+.page-window-inspector-body {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
   scrollbar-width: none;
 }
-.pgpreview-insp {
+.page-window-insp {
   display: flex;
   flex-direction: column;
   height: 100%;
 }
-.pgpreview-insp-rows {
+.page-window-insp-rows {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -69,10 +69,10 @@
   flex-direction: column;
   gap: 8px;
   /* The rows start BELOW the toolbar strip, never squished against the pane top. */
-  padding: var(--ppane-toolbar-h) 4px 4px;
+  padding: var(--window-toolbar-h) 4px 4px;
 }
 /* A group field: contexts and properties each sit in a rounded fill. */
-.pgpreview-insp-group {
+.page-window-insp-group {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -81,20 +81,20 @@
   border-radius: 6px;
   background: var(--fill-quaternary);
 }
-.pgpreview-insp-row {
+.page-window-insp-row {
   display: flex;
   align-items: center;
   gap: 8px;
   min-height: 22px;
 }
-.pgpreview-insp-label {
+.page-window-insp-label {
   display: flex;
   align-items: center;
   gap: 4px;
   flex: 0 0 40%;
   color: var(--label-control);
 }
-.pgpreview-insp-value {
+.page-window-insp-value {
   /* Content-sized and pushed right: the value IS the field, so pickers anchor to it, never to the
      row's empty middle. The chip run's spacing is the field's own — the cell renderer reads a gap
      the table scopes to itself, so a field hosting those chips outside a table states the rhythm. */
@@ -111,15 +111,15 @@
   padding: 2px 4px;
   cursor: pointer;
 }
-.pgpreview-insp-value:hover {
+.page-window-insp-value:hover {
   background: var(--state-hover);
 }
-.pgpreview-insp-empty {
+.page-window-insp-empty {
   font-size: var(--text-caption-size);
 }
 /* + Add Property — a bare footnote affordance OUTSIDE the properties field (no field of its
    own); its picker borrows the Group/Sort property menu. */
-.pgpreview-insp-add {
+.page-window-insp-add {
   align-self: flex-start;
   color: var(--label-tertiary);
 }

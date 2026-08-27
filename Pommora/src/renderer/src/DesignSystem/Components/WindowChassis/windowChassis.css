@@ -2,7 +2,7 @@
    its dismissal contract, side panes, and the footer. Hosts own their interior and their padding —
    a window that runs edge-to-edge and one that rings on the glass inset are both consumers here. */
 
-.ppane {
+.window {
   position: fixed;
   z-index: var(--z-floating);
   display: flex;
@@ -10,39 +10,45 @@
   border-radius: var(--glass-radius);
   /* The window CLIPS: a parked side pane must never peek past the glass edge. */
   overflow: hidden;
-  animation: ppane-in var(--duration-fast) var(--ease-base);
+  animation: window-in var(--duration-fast) var(--ease-base);
 
-  --ppane-toolbar-h: 34px; /* KNOB — toolbar strip height */
+  --window-toolbar-h: 34px; /* KNOB — toolbar strip height */
   /* KNOB — the ring side panes hold from the window edges. */
-  --ppane-side-inset: var(--glass-inset);
-  --ppane-side-l-w: 200px;
-  --ppane-side-r-w: 260px;
+  --window-side-inset: var(--glass-inset);
+  --window-side-l-w: 200px;
+  --window-side-r-w: 260px;
   /* Follows the host's subline bar when it declares one, so the footer and its content agree. */
-  --ppane-footer-h: var(--subline-h, 24px);
+  --window-footer-h: var(--subline-h, 24px);
   /* KNOB — the gap between the trailing button pair and the × that holds home. */
-  --ppane-trail-gap: 2px;
+  --window-trail-gap: 2px;
 
-  --ppane-flow-w: 46px; /* KNOB — the trailing pair's width (two buttons + gap) */
+  --window-flow-w: 46px; /* KNOB — the trailing pair's width (two buttons + gap) */
   /* KNOB — the pair's home gap from the window's right edge (× + gap + the toolbar's pane-aligned
      padding; tracks the inset so the landing math stays true at any ring). */
-  --ppane-flow-home: calc(var(--ppane-side-inset) + 28px);
-  --ppane-flow-inset: 4px; /* KNOB — breathing room off the pane's seam after the swallow */
+  --window-flow-home: calc(var(--window-side-inset) + 28px);
+  --window-flow-inset: 4px; /* KNOB — breathing room off the pane's seam after the swallow */
   /* THE distance the trailing pair travels to ride an open right pane's edge. */
-  --ppane-flow-shift: max(
+  --window-flow-shift: max(
     0px,
     var(--io) *
-    (var(--ppane-side-r-w) + var(--ppane-side-inset)) -
-    var(--ppane-flow-home) -
-    var(--ppane-flow-w) -
-    var(--ppane-flow-inset)
+    (var(--window-side-r-w) + var(--window-side-inset)) -
+    var(--window-flow-home) -
+    var(--window-flow-w) -
+    var(--window-flow-inset)
   );
   /* KNOB — the trailing cluster's rendered width (the pair, its gap, and the ×). */
-  --ppane-trail-w: 62px;
+  --window-trail-w: 62px;
   /* THE right squeeze a wide title (a tab strip) takes so it stops AT an open pane's leading edge.
      Not the pair's travel: the pair lands INSIDE the pane's corner, so a title that only cleared
      the pair would still lay a sliver of itself over the pane. The window insets cancel — the gap
      is the pane's width less the toolbar's own right padding and the trailing cluster. */
-  --ppane-title-squeeze: max(0px, var(--io) * var(--ppane-side-r-w) - 6px - var(--ppane-trail-w));
+  --window-title-squeeze: max(
+    0px,
+    var(--io) *
+    var(--window-side-r-w) -
+    6px -
+    var(--window-trail-w)
+  );
 
   /* The side-pane open/close drivers, declared HERE so the app-level --io (styles.css, an
      inheriting registered property driving the main inspector) can never leak into a floating
@@ -53,23 +59,23 @@
     --io var(--duration-base) var(--ease-base),
     --io-l var(--duration-base) var(--ease-base);
 }
-.ppane.is-side-right-open {
+.window.is-side-right-open {
   --io: 1;
 }
-.ppane.is-side-left-open {
+.window.is-side-left-open {
   --io-l: 1;
 }
-.ppane.closing {
-  animation: ppane-out var(--duration-fast) var(--ease-base) forwards;
+.window.closing {
+  animation: window-out var(--duration-fast) var(--ease-base) forwards;
   pointer-events: none;
 }
-@keyframes ppane-in {
+@keyframes window-in {
   from {
     opacity: 0;
     transform: scale(0.95);
   }
 }
-@keyframes ppane-out {
+@keyframes window-out {
   to {
     opacity: 0;
     transform: scale(0.95);
@@ -78,8 +84,11 @@
 
 /* ---- toolbar. A floating layer WITHIN the content — the body runs the full window and content
    scrolls beneath the strip; no seam, no bleed. ---- */
-.ppane-toolbar {
+.window-toolbar {
   position: absolute;
+  color: var(
+    --label-control
+  ); /* the toolbar's ground tone — the glyphs inherit it, as in the main toolbar */
   top: 0;
   left: 0;
   right: 0;
@@ -88,183 +97,178 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: var(--ppane-toolbar-h);
+  height: var(--window-toolbar-h);
   /* The glyphs align to the side pane's box: the × sits over the pane's inner corner, and the
      leading glyph mirrors the same inset. */
-  padding: 0 calc(var(--ppane-side-inset) + 6px);
+  padding: 0 calc(var(--window-side-inset) + 6px);
 }
 
 /* Floating mode: no strip. The clusters pin to the top corners and everything between them stays
    clickable, so a window whose own content reaches the top edge is never covered. */
-.ppane-toolbar-floating .ppane-toolbar {
+.window-toolbar-floating .window-toolbar {
   height: 0;
   padding: 0;
   pointer-events: none;
 }
-.ppane-toolbar-floating .ppane-actions {
+.window-toolbar-floating .window-actions {
   position: absolute;
-  top: calc(var(--ppane-side-inset) + 4px);
+  top: calc(var(--window-side-inset) + 4px);
   pointer-events: auto;
   /* Corner-pinned: children hang from the cluster's top edge, so a taller × never nudges its
      neighbors off that line. */
   align-items: flex-start;
 }
-.ppane-toolbar-floating .ppane-actions-lead {
-  left: calc(var(--ppane-side-inset) + 4px);
+.window-toolbar-floating .window-actions-lead {
+  left: calc(var(--window-side-inset) + 4px);
 }
-.ppane-toolbar-floating .ppane-actions-trail {
-  right: calc(var(--ppane-side-inset) + 4px);
+.window-toolbar-floating .window-actions-trail {
+  right: calc(var(--window-side-inset) + 4px);
 }
 
-.ppane-actions {
+.window-actions {
   display: flex;
   align-items: center;
-  gap: var(--ppane-trail-gap);
+  gap: var(--window-trail-gap);
   z-index: 3;
 }
-.ppane-action {
-  /* An active state never brightens the glyph. */
-  color: var(--label-secondary);
-}
-
 /* ---- side panes. Material and inner geometry come from the SidePane shell; only positioning and
    the slide live here. An OVERLAY pane rides the inset ring and is carried by its driver with no
    transition of its own; an IN-FLOW pane takes a column in the body row. ---- */
-.ppane-row {
+.window-row {
   display: flex;
   flex: 1;
   min-height: 0;
 }
 
-.ppane-side-right-overlay,
-.ppane-side-left-overlay {
+.window-side-right-overlay,
+.window-side-left-overlay {
   position: absolute;
-  top: var(--ppane-side-inset);
-  bottom: var(--ppane-side-inset);
+  top: var(--window-side-inset);
+  bottom: var(--window-side-inset);
   z-index: 2;
   pointer-events: none;
 }
-.ppane-side-right-overlay {
-  right: var(--ppane-side-inset);
-  width: var(--ppane-side-r-w);
+.window-side-right-overlay {
+  right: var(--window-side-inset);
+  width: var(--window-side-r-w);
   transform: translateX(
-    calc((1 - var(--io)) * (100% + var(--ppane-side-inset) + var(--park-clearance)))
+    calc((1 - var(--io)) * (100% + var(--window-side-inset) + var(--park-clearance)))
   );
 }
-.ppane.is-side-right-open .ppane-side-right-overlay {
+.window.is-side-right-open .window-side-right-overlay {
   pointer-events: auto;
 }
-.ppane-side-left-overlay {
-  left: var(--ppane-side-inset);
-  width: var(--ppane-side-l-w);
+.window-side-left-overlay {
+  left: var(--window-side-inset);
+  width: var(--window-side-l-w);
   transform: translateX(
-    calc((1 - var(--io-l)) * -1 * (100% + var(--ppane-side-inset) + var(--park-clearance)))
+    calc((1 - var(--io-l)) * -1 * (100% + var(--window-side-inset) + var(--park-clearance)))
   );
 }
-.ppane.is-side-left-open .ppane-side-left-overlay {
+.window.is-side-left-open .window-side-left-overlay {
   pointer-events: auto;
 }
 
-.ppane-side-right-overlay-resize,
-.ppane-side-left-overlay-resize {
-  top: var(--ppane-side-inset);
-  bottom: var(--ppane-side-inset);
+.window-side-right-overlay-resize,
+.window-side-left-overlay-resize {
+  top: var(--window-side-inset);
+  bottom: var(--window-side-inset);
   z-index: 4;
 }
-.ppane-side-right-overlay-resize {
-  right: calc(var(--ppane-side-inset) + var(--ppane-side-r-w) - 3px);
+.window-side-right-overlay-resize {
+  right: calc(var(--window-side-inset) + var(--window-side-r-w) - 3px);
 }
-.ppane-side-left-overlay-resize {
-  left: calc(var(--ppane-side-inset) + var(--ppane-side-l-w) - 3px);
+.window-side-left-overlay-resize {
+  left: calc(var(--window-side-inset) + var(--window-side-l-w) - 3px);
 }
 
 /* In-flow: a column in the body row. Closing FADES as it collapses — the glass material's border
    would otherwise survive the zero-width collapse as a doubled hairline at the edge. */
-.ppane-side-left-inflow,
-.ppane-side-right-inflow {
+.window-side-left-inflow,
+.window-side-right-inflow {
   flex-shrink: 0;
   transition:
     width var(--duration-base) var(--ease-base),
     opacity var(--duration-base) var(--ease-base);
 }
-.ppane-side-left-inflow {
-  width: var(--ppane-side-l-w);
+.window-side-left-inflow {
+  width: var(--window-side-l-w);
 }
-.ppane-side-right-inflow {
-  width: var(--ppane-side-r-w);
+.window-side-right-inflow {
+  width: var(--window-side-r-w);
 }
-.ppane:not(.is-side-left-open) .ppane-side-left-inflow,
-.ppane:not(.is-side-right-open) .ppane-side-right-inflow {
+.window:not(.is-side-left-open) .window-side-left-inflow,
+.window:not(.is-side-right-open) .window-side-right-inflow {
   width: 0;
   padding: 0;
   opacity: 0;
 }
 /* The in-flow strip is a column in the body row rather than an overlay, so it keeps its own
    geometry: the row's stretch gives it its height, and the pane's inset is its width. */
-.ppane-side-left-inflow-resize,
-.ppane-side-right-inflow-resize {
-  width: var(--ppane-side-inset);
+.window-side-left-inflow-resize,
+.window-side-right-inflow-resize {
+  width: var(--window-side-inset);
   flex-shrink: 0;
 }
 
 /* Edge-drag resize tracks the cursor 1:1 — nothing under the pane may lag behind it, the window
    root included (its own driver transitions must not re-animate mid-drag). */
-.ppane.is-resizing,
-.ppane.is-resizing .ppane-side-left-inflow,
-.ppane.is-resizing .ppane-side-right-inflow,
-.ppane.is-resizing .ppane-actions-flow,
-.ppane.is-resizing .ppane-footer,
-.ppane.is-resizing .ppane-footer-toggle {
+.window.is-resizing,
+.window.is-resizing .window-side-left-inflow,
+.window.is-resizing .window-side-right-inflow,
+.window.is-resizing .window-actions-flow,
+.window.is-resizing .window-footer,
+.window.is-resizing .window-footer-toggle {
   transition: none;
 }
 
 /* ---- footer: a bar pinned at the window bottom, squeezing left of an open right pane exactly
    as the body does. Its own border-top is the flush body/footer divider. ---- */
-.ppane-footer {
+.window-footer {
   /* The footer also squeezes left of an open right pane, so it animates its padding too. */
   transition:
     height var(--duration-base) var(--ease-base),
     padding-right var(--duration-base) var(--ease-base);
 }
-.ppane.is-footer-open .ppane-footer {
-  height: var(--ppane-footer-h);
+.window.is-footer-open .window-footer {
+  height: var(--window-footer-h);
 }
-.ppane.is-side-right-open .ppane-footer {
-  padding-right: calc(var(--ppane-side-r-w) + var(--ppane-side-inset));
+.window.is-side-right-open .window-footer {
+  padding-right: calc(var(--window-side-r-w) + var(--window-side-inset));
 }
-.ppane-footer-toggle {
+.window-footer-toggle {
   right: 16px; /* KNOB — clears the se resize corner */
   z-index: 4;
   width: 40px;
-  height: var(--ppane-footer-h);
+  height: var(--window-footer-h);
   padding: 0 6px 0 0;
 }
-.ppane.is-footer-open .ppane-footer-toggle {
-  bottom: var(--ppane-footer-h);
+.window.is-footer-open .window-footer-toggle {
+  bottom: var(--window-footer-h);
 }
-.ppane .footnotes-toggle {
+.window .footnotes-toggle {
   left: 0;
   z-index: 2;
-  height: var(--ppane-footer-h);
-  padding: 0 12px 0 var(--ppane-footer-lead, 14px);
+  height: var(--window-footer-h);
+  padding: 0 12px 0 var(--window-footer-lead, 14px);
   justify-content: flex-start;
 }
-.ppane.is-footer-open .footnotes-toggle {
-  bottom: var(--ppane-footer-h);
+.window.is-footer-open .footnotes-toggle {
+  bottom: var(--window-footer-h);
 }
-.ppane.is-footer-near-lead .footnotes-toggle,
-.ppane.is-footer-near .ppane-footer-toggle {
+.window.is-footer-near-lead .footnotes-toggle,
+.window.is-footer-near .window-footer-toggle {
   opacity: 1;
 }
 
 /* The trailing pair rides the right pane's edge: it holds at home until the pane's leading edge
    makes contact (the max() gate), then lands flush inside its corner. The × holds home. */
-.ppane-actions-flow {
+.window-actions-flow {
   display: flex;
   align-items: center;
   gap: 2px;
-  /* A host that reveals the pair (rather than showing it always) drives --ppane-flow-reveal rather
+  /* A host that reveals the pair (rather than showing it always) drives --window-flow-reveal rather
      than the transform itself, so its entry nudge and the swallow compose instead of clobbering. */
-  transform: translateX(var(--ppane-flow-reveal, 0px))
-    translateX(calc(-1 * var(--ppane-flow-shift)));
+  transform: translateX(var(--window-flow-reveal, 0px))
+    translateX(calc(-1 * var(--window-flow-shift)));
 }

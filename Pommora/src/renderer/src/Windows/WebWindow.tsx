@@ -1,19 +1,19 @@
 // The in-app browser — the floating window's browser flavor: back/forward lead the toolbar, the
 // centered title is the link itself (click escalates the CURRENT page to the system browser), and
 // one webview owns the whole body on the shared partition. A summon while open retakes the window
-// in place; the singleton the page preview also is.
+// in place; the singleton the page window also is.
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { overScrollEllipsis } from '@renderer/DesignSystem/Interactions/OverScroll'
 import { text } from '@renderer/DesignSystem/Tokens'
-import { PreviewPane } from '@renderer/DesignSystem/Detail/PreviewPane/PreviewPane'
+import { WindowChassis } from '@renderer/DesignSystem/Components/WindowChassis/WindowChassis'
 import type { FloatingBounds } from '@renderer/DesignSystem/Interactions/FloatingWindow'
 import { linkDomain } from '@shared/links'
 import { WEB_PARTITION } from '@shared/types'
 import { useExitPresence } from '@renderer/DesignSystem/Animation/useExitPresence'
 import { useSession } from '../store'
-import './browserWindow.css'
+import './webWindow.css'
 
 const BOUNDS: FloatingBounds = { minW: 480, minH: 360, defW: 1000, defH: 700 }
 
@@ -32,7 +32,7 @@ interface BrowserGuest extends HTMLElement {
   loadURL(url: string): Promise<void>
 }
 
-export function BrowserWindow(): React.JSX.Element | null {
+export function WebWindow(): React.JSX.Element | null {
   const summon = useSession((s) => s.browserSummon)
   const { mounted, closing } = useExitPresence(summon !== null)
   // Held through the exit animation (the store nulls the summon at close). An overtake swaps the
@@ -40,10 +40,10 @@ export function BrowserWindow(): React.JSX.Element | null {
   const held = useRef(summon)
   if (summon) held.current = summon
   if (!mounted || !held.current) return null
-  return <BrowserWindowBody summon={held.current} closing={closing} />
+  return <WebWindowBody summon={held.current} closing={closing} />
 }
 
-function BrowserWindowBody({
+function WebWindowBody({
   summon,
   closing,
 }: {
@@ -94,7 +94,7 @@ function BrowserWindowBody({
   }, [])
 
   return (
-    <PreviewPane
+    <WindowChassis
       id="web-browser"
       className="wbrowser"
       closing={closing}
@@ -107,7 +107,7 @@ function BrowserWindowBody({
             size="button-inline"
             icon="chevron-left"
             iconSize="body"
-            className="ppane-action"
+            className="window-action"
             title="Back"
             disabled={!nav.back}
             onClick={() => ref.current?.goBack()}
@@ -116,7 +116,7 @@ function BrowserWindowBody({
             size="button-inline"
             icon="chevron-right"
             iconSize="body"
-            className="ppane-action"
+            className="window-action"
             title="Forward"
             disabled={!nav.forward}
             onClick={() => ref.current?.goForward()}
@@ -148,6 +148,6 @@ function BrowserWindowBody({
           allowpopups={'' as unknown as boolean}
         />
       </div>
-    </PreviewPane>
+    </WindowChassis>
   )
 }

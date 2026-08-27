@@ -9,12 +9,12 @@ import { useSession } from './store'
 import { Surface } from '@renderer/DesignSystem/Materials/Surface'
 import { Sidebar } from './Sidebar/Sidebar'
 import { Ribbon } from './Sidebar/Ribbon'
-import { DetailPane } from './Detail/DetailPane'
+import { ContentView } from './Detail/ContentView'
 import { Toolbar } from './Toolbar/Toolbar'
 import { InspectorPanel } from './Detail/InspectorPanel/InspectorPanel'
-import { NavWindow } from './NavWindow/NavWindow'
-import { PreviewWindow } from './PagePreview/PreviewWindow'
-import { BrowserWindow } from './PagePreview/BrowserWindow'
+import { NavWindow } from './Windows/NavWindow'
+import { PageWindow } from './Windows/PageWindow'
+import { WebWindow } from './Windows/WebWindow'
 import { NexusSettings } from './Settings/NexusSettings'
 import { ConnectionHoverCard } from './Embeds/ConnectionHoverCard'
 import { contextTargetToSelect } from './Tabs/tabsModel'
@@ -53,7 +53,7 @@ export function App(): React.JSX.Element {
   const beginIcon = useSession((s) => s.beginIcon)
   const newPageAdjacent = useSession((s) => s.newPageAdjacent)
   const select = useSession((s) => s.select)
-  useNavThumbnails() // capture-on-open detail-pane thumbnails for the gallery
+  useNavThumbnails() // capture-on-open content-view thumbnails for the gallery
 
   const [inspectorOpen, setInspectorOpen] = useState(false)
 
@@ -241,7 +241,7 @@ export function App(): React.JSX.Element {
         />
       )}
       <main className="content-pane">
-        <DetailPane />
+        <ContentView />
       </main>
       {/* Always mounted so collapse/expand animates (slides) instead of snapping —
           .shell.sidebar-hidden translates it off. */}
@@ -300,8 +300,8 @@ export function App(): React.JSX.Element {
       </Button>
       {status === 'ready' && <InspectorPanel open={inspectorOpen} />}
       {status === 'ready' && <NavWindow />}
-      {status === 'ready' && <PreviewWindow />}
-      {status === 'ready' && <BrowserWindow />}
+      {status === 'ready' && <PageWindow />}
+      {status === 'ready' && <WebWindow />}
       {status === 'ready' && <NexusSettings />}
       {status === 'ready' && <ConnectionHoverCard />}
       {status === 'ready' && inspectorOpen && (

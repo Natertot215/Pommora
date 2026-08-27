@@ -117,7 +117,7 @@ export function ConnectionHoverCard(): React.JSX.Element {
   const hoveredRef = useRef(hovered)
   anchorRef.current = hovered?.el ?? null
   hoveredRef.current = hovered
-  // The Bloom-out rides the last real target (PreviewWindow's `held` pattern): the body keeps its
+  // The Bloom-out rides the last real target (PageWindow's `held` pattern): the body keeps its
   // content and the size stays frozen through the exit, and the next open supersedes the hold.
   const heldRef = useRef(hovered)
   if (hovered) heldRef.current = hovered

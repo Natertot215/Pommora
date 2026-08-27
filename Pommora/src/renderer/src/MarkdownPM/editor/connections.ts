@@ -88,7 +88,7 @@ export function connectionClicks(getApi: GetApi): Extension {
           kind: 'page',
           page,
           // Editability is read HERE rather than threaded through the host: `readOnly` is live inside
-          // the editor and PreviewWindow flips it at runtime through a Compartment, so a value captured
+          // the editor and PageWindow flips it at runtime through a Compartment, so a value captured
           // in a memoized seam goes stale.
           editable: !view.state.readOnly,
           hasAlias: hit.aliased,
