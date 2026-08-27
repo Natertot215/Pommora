@@ -22,8 +22,6 @@ type MenuItemProps = {
   children: ReactNode
 }
 
-/** The row primitive (menu item + sidebar row). Geometry + states only — every
- *  behavior (selection, rename, drag, context menu) is the consumer's, passed in. */
 export function MenuItem({
   leading,
   subLabel,
@@ -108,13 +106,8 @@ export function MenuCaption({ children }: { children: ReactNode }): React.JSX.El
   return <div className={s.caption}>{children}</div>
 }
 
-/** KNOB — a bar's glyph, sized against the ActionRow ramp its label rides rather than against the
- *  body rows below it. */
-const BAR_GLYPH = 12
+const BAR_GLYPH = 12 // KNOB
 
-/** A pane's TopRow — a leading ‹ chevron + label that pops the nav stack one level. The trailing
- *  action rides the row's trailing slot so it reads — and colors — as part of the TopRow, not a
- *  floating toolbar button beside it. */
 export function MenuTopRow({
   label,
   onClick,
@@ -155,7 +148,6 @@ export function Menu({
   return <div className={cx(s.menu, className)}>{children}</div>
 }
 
-/** No dedicated `variant` prop — ghost/hidden-rest styling composes via `className`. */
 export const AccessoryButton = forwardRef<
   HTMLButtonElement,
   {
@@ -225,10 +217,6 @@ export function MenuFrameTopRow({
   )
 }
 
-/**
- * Mirror of MenuFrameTopRow. Carries its own flush divider and bottom placement — it sinks to the
- * pane's bottom edge in a flex-column pane, and is inert when a frame already pins it in a footer
- * slot, so a footing can never lose its divider or ride up mid-pane.*/
 export function FooterLockButton({
   verb,
   noun,
@@ -294,11 +282,6 @@ export function MenuBottomRow({
   )
 }
 
-/**
- * The body is the ONE overflow region: a drag inside auto-scrolls it (it owns the scroll
- * ancestor), and it carries the shared over-scroll mask. FrameSlide slides between frames but never
- * caps/scrolls a slot itself — this frame is the single source.
- */
 export function MenuScrollFrame({
   header,
   footer,
