@@ -61,9 +61,8 @@ export type PageSlot =
 
 type ReadySlot = Extract<PageSlot, { status: 'ready' }>
 
-/** Where the user is — the tabs and their histories, the pages they hold open, what the pane is
- *  showing, and the nav layer of pins, recents, and favorites. One slice because `select`, the pin
- *  gestures, and the restore each write across all of it in one act. */
+/** One slice because `select`, the pin gestures, and the restore each write across all of it in
+ *  one act. */
 export interface NavigationSlice {
   /** What the pane is showing. During a cold page open it lags the active tab's target until the
    *  fetch lands or the deadline passes — that lag is the pause-on-change. */
@@ -118,8 +117,6 @@ export interface NavigationSlice {
   removeRecent: (key: string) => void
   reorderRecent: (activeKey: string, overKey: string) => void
   setRecentsOrder: (keys: string[]) => void
-  /** A tree push against everything here: pins re-hydrate, the shown selection follows its entity,
-   *  slots whose page is gone or re-pathed drop, every tab reconciles, and the active pointer is kept live. */
   reconcileNavigation: (index: ReconcileIndex) => void
   /** The first load's restore from the nexus's sidecars — the one hydration pass. */
   restoreNavigation: (nav: NavigationState | null, stored: StoredTabSet | null) => void

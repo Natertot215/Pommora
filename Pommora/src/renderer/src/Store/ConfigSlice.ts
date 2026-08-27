@@ -3,8 +3,6 @@ import type { Personalization } from '@shared/types'
 import { applyPersonalizationKey } from '@renderer/DesignSystem/Theming/personalization'
 import type { Slice } from './SessionState'
 
-/** The user's settings — the nexus's personalization, this machine's preferences, and the
- *  per-page footnote answers. */
 export interface ConfigSlice {
   personalization: Personalization
   setPersonalization: <K extends keyof Personalization>(key: K, value: Personalization[K]) => void

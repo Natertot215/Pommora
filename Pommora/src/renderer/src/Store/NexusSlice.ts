@@ -19,8 +19,6 @@ import { reconcileIndexOf } from '../treeIndex'
 import { flushAllPageSaves } from '../Detail/pageFlush'
 import type { Slice } from './SessionState'
 
-/** The nexus itself — its open state, the live tree main confirms, the one mutation gateway, and
- *  the session's opening and closing. */
 export interface NexusSlice {
   status: 'idle' | 'loading' | 'ready' | 'error' | 'empty'
   tree: NexusTree | null
