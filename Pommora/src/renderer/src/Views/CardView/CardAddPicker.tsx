@@ -3,9 +3,9 @@ import type { PropertyDefinition } from '@shared/properties'
 import type { PropertyValue } from '@shared/propertyValue'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { PickerMenu } from '@renderer/DesignSystem/Components/Pickers/PickerMenu/PickerMenu'
-import { MenuItem, MenuPaneTopRow } from '@renderer/DesignSystem/Components/Menu'
-import { flushTrailing } from '@renderer/DesignSystem/Components/Menu/menu.css'
-import { PaneSlider } from '@renderer/DesignSystem/Components/PaneSlider/PaneSlider'
+import { MenuItem, MenuFrameTopRow } from '@renderer/DesignSystem/Menus'
+import { flushTrailing } from '@renderer/DesignSystem/Menus/menu-base.css'
+import { FrameSlide } from '@renderer/DesignSystem/Menus/frame-slide'
 import { propertyTypeIconName } from '@renderer/Properties/PropertyTypes'
 import {
   PropertyOptionRows,
@@ -38,9 +38,9 @@ function ValuePane({
   onDone: () => void
   onBack: () => void
 }): React.JSX.Element {
-  const topRow = <MenuPaneTopRow label="Properties" current={def.name} onBack={onBack} />
-  // datetime/url never pane — they're DEPENDENT dropdowns (onPickDependent exits to the calendar /
-  // link dropdown); only number keeps an in-pane editor, chip kinds their option rows.
+  const topRow = <MenuFrameTopRow label="Properties" current={def.name} onBack={onBack} />
+  // datetime/url never frame — they're DEPENDENT menus (onPickDependent exits to the calendar /
+  // link menu); only number keeps an in-frame editor, chip kinds their option rows.
   if (def.type === 'number') {
     return (
       <>
@@ -103,13 +103,13 @@ export function CardAddPicker({
   initialEntry?: AddEntry | null
   onCommit: (entry: AddEntry, value: PropertyValue | null) => void
   onReveal: (entry: AddEntry) => void
-  /** A dependent-dropdown kind (datetime/url) picked in the list — the host exits this menu and
+  /** A dependent-menu kind (datetime/url) picked in the list — the host exits this menu and
    *  opens the value's own picker at the same anchor. */
   onPickDependent: (entry: AddEntry) => void
   onDismiss: () => void
 }): React.JSX.Element {
   const [picked, setPicked] = useState<AddEntry | null>(initialEntry ?? null)
-  // The picker mounts persistently (so the Bloom-out plays); each OPEN re-seeds the pane from
+  // The picker mounts persistently (so the Bloom-out plays); each OPEN re-seeds the frame from
   // initialEntry — the native Add Property ▸ jump — instead of relying on a fresh mount's initializer.
   useEffect(() => {
     if (open) setPicked(initialEntry ?? null)
@@ -127,7 +127,7 @@ export function CardAddPicker({
       // Tighten the "Properties" pane header for the add-picker's compact density.
       style={{ '--top-row-block': '0px' } as CSSProperties}
     >
-      <PaneSlider
+      <FrameSlide
         open={picked !== null}
         root={
           entries.length === 0 ? (

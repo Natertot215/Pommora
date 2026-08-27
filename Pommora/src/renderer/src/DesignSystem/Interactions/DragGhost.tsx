@@ -1,7 +1,7 @@
 import { createPortal } from 'react-dom'
 import type { ReactNode } from 'react'
 import { cx } from '../Util/cx'
-import { GHOST_FROST, frostStyle } from '../Materials/glass-pane'
+import { GHOST_FROST, frostStyle } from '../Glass/glass-base'
 import { text } from '../Tokens/typography.css'
 
 /** Portaled to body so it paints ABOVE any pane frost — without it, a drag's only visual is the

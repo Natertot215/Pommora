@@ -1,4 +1,4 @@
-/* The NavWindow. Shell, toolbar, and side panes come from the WindowChassis surface; what remains
+/* The NavWindow. Shell, toolbar, and side panes come from the WindowBase surface; what remains
    here is this window's own interior — the rail's contents, the tab row, and the search list. */
 
 .navwindow {

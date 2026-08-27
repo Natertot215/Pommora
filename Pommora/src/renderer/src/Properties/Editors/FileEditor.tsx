@@ -1,6 +1,6 @@
 import { PathField } from '@renderer/DesignSystem/Components/Fields'
 import { useSession } from '@renderer/store'
-import * as s from '../../Components/Detail/settingsPane.css'
+import * as s from '../../Frames/frames.css'
 
 /** Where this property's uploads land — the asset directory itself by default, or a subfolder
  *  beneath it. Def-level (property-wide), like a link's color or a number's format. The path is

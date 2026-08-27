@@ -1,6 +1,6 @@
 import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import { closeActiveHoverCard } from '@renderer/Embeds/HoverCardPresenter'
+import { closeActiveHoverCard } from '@renderer/Embeds/PanePresenter'
 import { seatAtNearerEdge } from './caretSeat'
 
 /** KNOB — the dwell before a connection's preview blooms. Exported so tests wait on the real value
@@ -52,7 +52,7 @@ interface PointerSpec<H extends PointerTarget> {
    *  hard rule). */
   hoverGate: string
   /** Whether a dwell could bloom anything at all on this surface — asked before the class gate, so a
-   *  host that offers no preview (a read-only embed, the hover card's own editor) pays neither the
+   *  host that offers no preview (a read-only embed, the hover preview's own editor) pays neither the
    *  layout read nor the tokenize. */
   armable: () => boolean
   hitAt: (view: EditorView, event: MouseEvent) => H | null
@@ -163,7 +163,7 @@ export function pointerHandlers<H extends PointerTarget>(spec: PointerSpec<H>): 
       const pop = spec.menu(hit, view)
       if (!pop) return false
       event.preventDefault()
-      // Only a press that actually pops a menu dismisses the card — a hover card mounts a real
+      // Only a press that actually pops a menu dismisses the pane — a hover preview mounts a real
       // editor carrying this same path, and its links arm no menu, so an unconditional close there
       // would shut the preview the gesture was aimed inside.
       closeActiveHoverCard()

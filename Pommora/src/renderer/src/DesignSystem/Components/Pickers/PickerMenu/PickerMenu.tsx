@@ -8,15 +8,15 @@ import {
   type RefObject,
 } from 'react'
 import { createPortal } from 'react-dom'
-import { dropdownOpen, dropdownClose } from '../../../Animation/animations.css'
+import { bloomOpen, bloomClose } from '../../../Animation/animations.css'
 import { useExitPresence } from '../../../Animation/useExitPresence'
 import { useHeld } from '../../../Interactions/useHeld'
-import { GlassPane } from '../../../Materials'
-import { MenuScrollFrame } from '../../Menu/Menu'
+import { GlassPane, GlassSurface } from '../../../Glass'
+import { MenuScrollFrame } from '../../../Menus/menu-row'
 import { markPickerOpen } from '../../useDismiss'
 import { Icon } from '../../../Symbols'
 import { cx } from '../../../Util/cx'
-import { DROPDOWN_GAP as GAP } from '../../dropdownAnchor'
+import { MENU_GAP as GAP } from '../../../Menus/menu-anchor'
 import * as s from './pickerMenu.css'
 
 const VIEWPORT_MARGIN = 8
@@ -43,7 +43,7 @@ const FOCUSABLE =
 const tabStops = (root: HTMLElement): HTMLElement[] =>
   Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE))
 
-// Uses the `dropdown` motion token (shared with AutocompletePanel). Self-managed (pass `open` +
+// Uses the `menu` motion token (shared with AutocompletePane). Self-managed (pass `open` +
 // `onDismiss`) owns its own mount/unmount and portals to a fixed top layer, escaping any clipping
 // ancestor; its backdrop also covers the trigger so a toggle can't dismiss-then-reopen. Manual
 // (pass `closing`, mount it yourself) is for bespoke close logic. A portal'd open reports itself
@@ -66,6 +66,7 @@ export function PickerMenu({
   triggerRef,
   closing: closingProp = false,
   solid = false,
+  glass = 'surface',
   direction = 'down',
   origin = 'auto',
   anchorX,
@@ -87,6 +88,9 @@ export function PickerMenu({
   triggerRef?: RefObject<Element | null>
   closing?: boolean
   solid?: boolean
+  /** The tier the menu wears — a Pane anchored in content (the hover preview, the autocomplete)
+   *  takes the clear pane glass rather than the menu's. */
+  glass?: 'surface' | 'pane'
   direction?: PickerDirection
   /** `auto` centers the pane on its trigger when it fits there whole, and falls back to the
    *  right-edge anchor when centering would have to be clamped against a viewport edge. Name an
@@ -103,7 +107,7 @@ export function PickerMenu({
   /** The box the pane slides within, viewport coords; the viewport when omitted. A pane that stops
    *  at the window edge has already crossed whatever pane sits beside its own. */
   bounds?: { left: number; right: number }
-  /** A pinned top / bottom bar, the menu family's own (MenuPaneTopRow, MenuBottomRow). Either one
+  /** A pinned top / bottom bar, the menu family's own (MenuFrameTopRow, MenuBottomRow). Either one
    *  puts the rows in the scroll frame, so the bars hold their place while the body scrolls between
    *  them. Both wear the ActionRow tier, a step under the rows they frame. */
   header?: ReactNode
@@ -392,21 +396,22 @@ export function PickerMenu({
   // shadow — nothing is suppressed and re-drawn by hand. The Bloom class rides the frost element
   // ITSELF: on an ancestor it would become the backdrop root and the backdrop-filter would silently
   // sample nothing.
+  const Shell = glass === 'pane' ? GlassPane : GlassSurface
   const pane = (
-    <GlassPane
+    <Shell
       ref={glassRef}
-      solid={solid}
+      solid={glass === 'surface' ? solid : undefined}
       className={cx(
         s.pane,
         !bareSurface && s.surface,
         contentClassName,
-        closing ? dropdownClose : dropdownOpen,
+        closing ? bloomClose : bloomOpen,
       )}
       // Through the Bloom-out the pane paints but mustn't ACT: content goes pointer-inert so a stray
       // click can't re-fire an option, while the layer below stays interactive to swallow the click.
       style={
         {
-          ...(pos?.origin ? { '--dropdown-origin': pos.origin } : null),
+          ...(pos?.origin ? { '--menu-origin': pos.origin } : null),
           ...style,
           ...(closing ? { pointerEvents: 'none' as const } : null),
         } as CSSProperties
@@ -425,7 +430,7 @@ export function PickerMenu({
           {body}
         </MenuScrollFrame>
       )}
-    </GlassPane>
+    </Shell>
   )
 
   if (!selfManaged) {

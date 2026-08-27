@@ -5,7 +5,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { usePointerGesture } from '@renderer/DesignSystem/Interactions/gesture'
 import { resolveScroller, startAutoScroll } from '@renderer/DesignSystem/Interactions/autoscroll'
 import { Icon } from '@renderer/DesignSystem/Symbols'
-import { closeActiveHoverCard } from '@renderer/Embeds/HoverCardPresenter'
+import { closeActiveHoverCard } from '@renderer/Embeds/PanePresenter'
 import type { Align, TableModel } from './model'
 import type { TableMenuContext } from '@shared/tableMenu'
 import { CellEditor } from './CellEditor'
@@ -221,7 +221,7 @@ export function TableView({
     const onDown = (e: PointerEvent): void => {
       const wrap = wrapRef.current
       if (!wrap || wrap.contains(e.target as Node)) return
-      // The autocomplete panel is a body-level portal, so it is "outside" by DOM and inside by
+      // The autocomplete pane is a body-level portal, so it is "outside" by DOM and inside by
       // intent. Demoting the cell on a pointerdown there tears the editor down before the press
       // that picked a suggestion can reach it, and the typed characters are left dangling.
       if ((e.target as HTMLElement).closest?.('.mdpm-ac')) return
@@ -385,7 +385,7 @@ export function TableView({
         connections={connections}
         onCite={onCite}
         onActivate={(coords, sweep) => {
-          // Activation swaps the cell into its editor — a pending or open hover card over the
+          // Activation swaps the cell into its editor — a pending or open hover preview over the
           // cell must not hang above the editing seat.
           dismissHoverCard()
           caretCoords.current = coords

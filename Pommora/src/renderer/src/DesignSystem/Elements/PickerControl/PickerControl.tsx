@@ -3,7 +3,7 @@ import { EditableInput } from '../../Components/Fields'
 import { cx } from '../../Util/cx'
 import { Icon } from '../../Symbols'
 import { PickerMenu, PickerOption } from '../../Components/Pickers/PickerMenu'
-import { detail } from '../../Components/Menu/menu.css'
+import { detail } from '../../Menus/menu-base.css'
 import { popRowMenu, useNativeMenus } from '@renderer/nativeMenus'
 import * as s from './pickerControl.css'
 
@@ -17,7 +17,7 @@ export const labelOf = <T extends string>(opts: readonly PickerChoice<T>[], v: T
   opts.find((o) => o.value === v)?.label ?? opts[0].label
 
 /** Two options toggle in place — a dual-option control is always a toggleable double-chevron, never
- *  a dropdown; three+ pop a centered PickerMenu, the house surface for a fixed option set. */
+ *  a menu; three+ pop a centered PickerMenu, the house surface for a fixed option set. */
 export function PickerControl<T extends string>({
   ariaLabel,
   value,

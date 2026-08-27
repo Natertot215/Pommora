@@ -210,7 +210,7 @@ code {
   font-weight: 600;
 }
 
-/* GlassSurface supplies the frost (blur / border / shadow); all layout
+/* GlassPane supplies the frost (blur / border / shadow); all layout
    (size / position / radius / padding) lives here. */
 .sc-shell {
   --sc-inset: 12px;

@@ -1,4 +1,4 @@
-/* Sidebar: the glass panel's LAYOUT (the MATERIAL lives in GlassSurface / glass-material.ts), its
+/* Sidebar: the glass pane's LAYOUT (the MATERIAL lives in GlassPane / glass-base.tsx), its
    content, collapse/expand + resize affordances, section headers, rows, and tree-drag styling. */
 
 /* Sidebar glass = LAYOUT only — a floating overlay inset from the window edge. */
@@ -14,7 +14,7 @@
   -webkit-app-region: drag;
   transition: transform var(--duration-base) var(--ease-base);
 }
-/* Collapsed: slide the panel fully off the left edge — pure slide, no fade, so the motion reads
+/* Collapsed: slide the pane fully off the left edge — pure slide, no fade, so the motion reads
    on the way OUT (not just in); the detail reclaims the gutter. */
 .shell.sidebar-hidden .surface-glass {
   transform: translateX(calc(-100% - var(--glass-inset) - var(--park-clearance)));
@@ -26,7 +26,7 @@
 }
 
 /* --- sidebar ribbon --- */
-/* A fixed icon strip pinned to the panel's left edge, OUTSIDE the scrolling .sidebar so scroll can
+/* A fixed icon strip pinned to the pane's left edge, OUTSIDE the scrolling .sidebar so scroll can
    neither move it nor cross its border. Needs its own no-drag (the .surface-glass parent is a
    window-drag region) and its own traffic-light offset (it's a separate column from .sidebar). */
 .surface-glass {
@@ -54,9 +54,9 @@
   gap: 6px;
   transition: transform var(--duration-base) var(--ease-base);
 }
-/* ⌘E (settings.json commands.toggle-ribbon): slide the ribbon off the panel's left edge — same
+/* ⌘E (settings.json commands.toggle-ribbon): slide the ribbon off the pane's left edge — same
    motion as the sidebar's own collapse — while .sidebar's margin animates shut to reclaim the
-   column. The panel's overflow:hidden clips the strip as it exits. */
+   column. The pane's overflow:hidden clips the strip as it exits. */
 .shell.ribbon-hidden .sidebar-ribbon {
   transform: translateX(calc(-100% - 2px));
   pointer-events: none;
@@ -105,7 +105,7 @@
   margin-left: var(--ribbon-w);
   padding: 46px 10px 12px 0;
   transition: margin-left var(--duration-base) var(--ease-base);
-  /* The panel is a FIXED-width view: it scrolls vertically only. overflow-x:hidden caps the row track
+  /* The pane is a FIXED-width view: it scrolls vertically only. overflow-x:hidden caps the row track
      at the visible width so long titles ellipsize at their row edge (and hover-scroll) instead of
      widening the scroll-area — without it, overflow-y:auto computes overflow-x:auto and the whole
      sidebar scrolls sideways while rows never truncate. */
@@ -218,7 +218,7 @@
 .sidebar-collapse:focus-visible {
   opacity: 1;
 }
-/* Stay lit through the collapse slide — rides the panel off fully visible, hides at rest. */
+/* Stay lit through the collapse slide — rides the pane off fully visible, hides at rest. */
 .shell.sidebar-hidden .sidebar-collapse {
   opacity: 1;
 }

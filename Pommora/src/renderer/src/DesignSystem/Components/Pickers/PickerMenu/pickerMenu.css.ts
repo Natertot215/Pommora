@@ -2,9 +2,9 @@ import { globalStyle, style } from '@vanilla-extract/css'
 import { vars as colorVars } from '../../../Tokens/color.css'
 import { font, text } from '../../../Tokens/typography.css'
 import { stack } from '../../../Tokens/stack'
-import { dropdownAnchor } from '../../dropdownAnchor'
+import { menuAnchor } from '../../../Menus/menu-anchor'
 import { FIELD_RING_VAR, fieldRing, ROW_RING } from '../../Fields/fieldRing'
-import { rowShell, ROW_LINE, ROW_SIZE } from '../../Menu/menu.css'
+import { rowShell, ROW_LINE, ROW_SIZE } from '../../../Menus/menu-base.css'
 
 const c = colorVars.color
 
@@ -72,9 +72,9 @@ globalStyle(BELOW.flatMap((b) => ABOVE.map((a) => `${b} ${optionRing}:has(${a})`
   ...SQUARE_BOTTOM,
 })
 
-export const anchor = style(dropdownAnchor('center', stack.local.overlay))
+export const anchor = style(menuAnchor('center', stack.local.overlay))
 /** Upward-opening variant — the pane hangs ABOVE its trigger. */
-export const anchorUp = style(dropdownAnchor('up', stack.local.overlay))
+export const anchorUp = style(menuAnchor('up', stack.local.overlay))
 
 /** THE chosen-row mark, for every menu that marks one — a row wearing a different mark from the row
  *  beside it is a bug, not a variant. It carries the accent whole rather than at a tint step: the
@@ -85,7 +85,7 @@ export const anchorUp = style(dropdownAnchor('up', stack.local.overlay))
 const CHOSEN_MARK = { color: 'var(--accent)', flex: 'none' } as const
 
 /** The self-managed top layer — a fixed body-portal position (set inline from the measured trigger)
- *  so the pane escapes any clipping ancestor (the settings dropdown's frost clip). */
+ *  so the pane escapes any clipping ancestor (the settings menu's frost clip). */
 export const layer = style({ position: 'fixed', zIndex: stack.top.menu })
 
 /** A transparent full-viewport catcher one layer BELOW the pane: any outside pointerdown (including
@@ -121,7 +121,7 @@ export const surface = style({
 })
 
 // The portal escapes any label-tone context, so the option must set its OWN type + color (else it
-// falls to the UA default — black, unsized — and the pane wraps). Matches a dropdown row title: the
+// falls to the UA default — black, unsized — and the pane wraps). Matches a menu row title: the
 // control scale at the control tone.
 export const option = style([
   text.control.standard,

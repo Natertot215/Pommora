@@ -35,7 +35,7 @@ export function splitSearch(results: SearchResult[]): {
   }
 }
 
-/** The shared read side both NavWindow + NavPane render from — one source, two presentations. The tree
+/** The shared read side both NavWindow + NavMenu render from — one source, two presentations. The tree
  *  index is memoized per tree, so search filters per keystroke WITHOUT re-walking the tree. */
 export function useNavData(): {
   resolvedRecents: ResolvedNav[]

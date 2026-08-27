@@ -1,4 +1,4 @@
-import { GlassSurface } from '../Materials'
+import { GlassPane } from '../Glass'
 import { Icon } from '../Symbols'
 import { NavSections } from './NavSections'
 
@@ -12,7 +12,7 @@ export function ShowcaseSidebar({
   onCollapse: () => void
 }): React.JSX.Element {
   return (
-    <GlassSurface className="sc-sidebar">
+    <GlassPane className="sc-sidebar">
       <div className="sc-sidebar-head">
         <span className="sc-brand">Pommora</span>
         <button
@@ -28,6 +28,6 @@ export function ShowcaseSidebar({
       <nav className="sc-nav">
         <NavSections activeId={activeId} onSelect={onSelect} />
       </nav>
-    </GlassSurface>
+    </GlassPane>
   )
 }
