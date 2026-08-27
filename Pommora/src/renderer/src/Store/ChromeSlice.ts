@@ -1,8 +1,6 @@
 import { DEFAULT_COMMANDS, type NavViewMode, type SelectionState } from '@shared/types'
 import type { Slice } from './SessionState'
 
-/** The window's furniture — pane widths and visibility, the footer's disclosure and order, the
- *  nav window's view modes, the settings window. */
 export interface ChromeSlice {
   sidebarVisible: boolean
   toggleSidebar: () => void

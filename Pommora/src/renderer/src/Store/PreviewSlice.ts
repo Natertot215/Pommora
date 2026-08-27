@@ -22,8 +22,6 @@ import type { SessionState, Slice } from './SessionState'
 
 export type PreviewTarget = { id: string; path: string }
 
-/** The floating windows — the page preview with its tab set, the nav window it morphs into, and
- *  the in-app browser's summons. */
 export interface PreviewSlice {
   preview: PreviewState | null
   previewsFile: PreviewsFile
@@ -48,10 +46,7 @@ export interface PreviewSlice {
   browserSeq: number
   openBrowser: (url: string) => void
   closeBrowser: () => void
-  /** A tree push against the open window's tabs: dead pages close, re-pathed ones follow, and
-   *  the remembered sets drop their dead origins. */
   reconcilePreview: (index: ReconcileIndex) => void
-  /** Everything a nexus owns of the window, closed and forgotten. */
   resetPreview: () => void
 }
 

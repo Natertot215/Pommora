@@ -19,8 +19,6 @@ export { frozenOf, pageBody, readyPageIds, shownDetail, shownPage } from './Stor
 export { previewTargetOf } from './Store/PreviewSlice'
 export { citationsVisible } from './Store/ConfigSlice'
 
-/** The one store — seven slices composed into a single room, so every feature reads and reacts to
- *  the same facts (→ `Store/SessionState`). */
 export const useSession = create<SessionState>()((...a) => ({
   ...createNexusSlice(...a),
   ...createNavigationSlice(...a),
