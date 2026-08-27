@@ -26,7 +26,7 @@
 .detail {
   height: 100%;
   /* Clear the floating glass sidebar (left) + inspector (right); both insets collapse with their panes. */
-  padding: 38px var(--content-inset-right) 28px var(--content-inset);
+  padding: 38px var(--content-edge-right) 28px var(--content-edge);
   overflow-y: auto;
   transition:
     padding-left var(--duration-base) var(--ease-base),
@@ -58,7 +58,7 @@
   overflow-y: auto;
 }
 .detail-body {
-  padding: 38px var(--content-inset-right) 28px var(--content-inset);
+  padding: 38px var(--content-edge-right) 28px var(--content-edge);
   transition:
     padding-left var(--duration-base) var(--ease-base),
     padding-right var(--duration-base) var(--ease-base);
@@ -69,27 +69,27 @@
   padding-top: 16px;
 }
 /* A table content-view (collection/set): the banner scrolls away with the rows, and the body carries
-   the views gutter (grips + group chevrons) carved from the inset — grid still lands on --content-inset
+   the views gutter (grips + group chevrons) carved from the inset — grid still lands on --content-edge
    (page-consistent) — with the heading band flush under the banner divider. . */
 .detail-scroll.has-header .detail-body:has(.table-head):not(:has(.blk-surface)) {
   padding-top: 0;
-  padding-left: calc(var(--content-inset) - var(--detail-inset));
+  padding-left: calc(var(--content-edge) - var(--detail-inset));
 }
 /* A cards content-view (collection/set): the card grid runs the tight surface inset — cards carry no
    grips/chevron lane, so no views gutter is reserved — with the block surfaces' banner clearance.
    Same whole-page scoping as the table rule: a tile that embeds a cards view never flips its body. */
 .detail-scroll.has-header .detail-body:has(.cards-view):not(:has(.blk-surface)) {
   padding-top: 8px;
-  padding-left: var(--surface-inset);
-  padding-right: var(--surface-inset-right);
+  padding-left: var(--surface-edge);
+  padding-right: var(--surface-edge-right);
 }
-/* A block-based surface (Homepage, contexts): tiles run the tight --surface-inset instead of the
+/* A block-based surface (Homepage, contexts): tiles run the tight --surface-edge instead of the
    content inset + detail lane — the tile handles supply the grip/chevron actions, so no reserved lane
    is needed. Driven by kind (is-surface), so a context with no live block surface still insets tight
    and its body stays aligned with its banner. */
 .detail-scroll.is-surface .detail-body {
-  padding-left: var(--surface-inset);
-  padding-right: var(--surface-inset-right);
+  padding-left: var(--surface-edge);
+  padding-right: var(--surface-edge-right);
 }
 /* Under a banner the tiles clear it by the SAME tight tile gutter they run on the sides — uniform
    all around, and never the container-table flush above. KNOB: the banner→first-tile clearance. */

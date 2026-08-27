@@ -35,9 +35,9 @@
      re-land the column tracks on the exact same content width as a data row — an un-padded (wider) header
      would resolve its tracks against a different box than the rows and drift every column. Staying in the
      grid keeps the band h-scrolling with the body. */
-  margin-left: calc(-1 * var(--inset-content));
+  margin-left: calc(-1 * var(--content-inset));
   margin-right: calc(-1 * var(--table-right-inset));
-  padding-left: var(--inset-content);
+  padding-left: var(--content-inset);
   padding-right: var(--table-right-inset);
 }
 .col-header-icon {
