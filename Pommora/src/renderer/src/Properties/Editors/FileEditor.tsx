@@ -1,7 +1,4 @@
-import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
-import { InputField, placeholder } from '@renderer/DesignSystem/Components/Fields'
-import { NavTrail, pathSegments } from '@renderer/DesignSystem/Elements/NavTrail'
-import { Icon } from '@renderer/DesignSystem/Symbols'
+import { PathField } from '@renderer/DesignSystem/Components/Fields'
 import { useSession } from '@renderer/store'
 import * as s from '../../Components/Detail/settingsPane.css'
 
@@ -24,35 +21,17 @@ export function FileEditor({
   // the folder a file actually lands in is readable before anything is chosen.
   const assetRoot = useSession((st) => st.tree?.assetDirectory ?? '')
   const value = directory ?? ''
-  const segments = pathSegments(value)
   return (
     <div className={s.configEditor}>
       <div className={s.configRow}>
         <span className={s.configLabel}>Directory</span>
-        <InputField
-          chrome="bordered"
+        <PathField
           label="Directory"
-          edit={{ value, onCommit: onSetDirectory, renames: 'row', emptyCommits: true }}
-          leading={<Icon name="folder-closed" size="body" />}
-          trailing={
-            <Button
-              type="base"
-              size="button-inline"
-              icon="folder-open"
-              aria-label="Choose Folder"
-              onClick={(e) => {
-                e.stopPropagation()
-                onBrowse()
-              }}
-            />
-          }
-        >
-          {segments.length > 0 ? (
-            <NavTrail segments={segments} />
-          ) : (
-            <span className={placeholder}>{assetRoot}</span>
-          )}
-        </InputField>
+          value={value}
+          empty={assetRoot}
+          onCommit={onSetDirectory}
+          onBrowse={onBrowse}
+        />
       </div>
     </div>
   )

@@ -32,7 +32,7 @@ const RAIL = { min: 120, def: 200, max: 320 }
 // Matched against the press target itself, so child content — row internals, card bodies, the
 // search input — never arms a window move.
 const DRAG_SURFACES =
-  '.navwindow-content, .navwindow-rail, .navwindow-rail-list, .navwindow-main, .navwindow-main-scroll, .navwindow-search, .navwindow-page, .navwindow-tabs, .pgpreview-tabwrap, .pgpreview-tabscroll, .pgpreview-tabstrip, .nav-list, .nav-gallery, .nav-gallery-grid'
+  '.navwindow-content, .navwindow-rail, .navwindow-rail-list, .navwindow-main, .navwindow-main-scroll, .navwindow-search, .navwindow-page, .navwindow-tabs, .pgpreview-tabwrap, .pgpreview-tabscroll, .pgpreview-tabstrip, .nav-list, .nav-gallery, .nav-gallery .card-grid'
 
 export function NavWindow(): React.JSX.Element | null {
   const navOpen = useSession((s) => s.navOpen)

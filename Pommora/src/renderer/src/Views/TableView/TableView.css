@@ -34,8 +34,7 @@
 .table-grid {
   width: 100%;
   /* Base density (--zoom) × the per-block Scale (--block-zoom, set on a SurfacePM tile; absent = 1). The
-     table scales as a unit within the tile's fixed inset. Chromium resolves % zoom-aware, so width:100%
-     still fills the pane; the drag/resize math reads the resolved `zoom` so hits stay 1:1. */
+     table scales as a unit within the tile's fixed inset. */
   zoom: calc(var(--zoom) * var(--block-zoom, 1));
 }
 
@@ -58,20 +57,21 @@
   position: relative; /* containing block for the grip in the views gutter */
   overflow: visible; /* let the grip escape left into the gutter */
 }
-.row-grip {
+/* The views gutter lane — the strip left of the grid that the row grip and the band chevron both
+   float into. Spanning the full lane (rather than sitting flush-left in it) is what lets
+   justify-content center the glyph within it. */
+.row-grip,
+.table-view .group-band-drop-outline {
   position: absolute;
-  left: calc(
-    -1 *
-    var(--inset-detail)
-  ); /* the views gutter, left of the grid (same lane as the chevron) */
-  width: var(
-    --inset-detail
-  ); /* span the lane so justify-content centers the glyph in it, not flush-left */
+  left: calc(-1 * var(--inset-detail));
+  width: var(--inset-detail);
   top: 50%;
   transform: translateY(-50%);
+  justify-content: center;
+}
+.row-grip {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
   color: var(--label-tertiary);
   cursor: grab;
   opacity: 0;
@@ -105,16 +105,8 @@
   display: inline-flex;
 }
 /* Band drag states live with the band — GroupBand.css (Cards renders the same bands). */
-/* The chevron floats into the views gutter, one --inset-detail left of the head content (which starts flush
-   on the grid — groupIndent has no cell-padding-x base), landing in the grip lane. */
+/* The chevron takes the gutter lane above, floating out of the head content (which starts flush on
+   the grid — groupIndent has no cell-padding-x base) into the grip's strip. */
 .table-view .group-band-drop-outline {
-  position: absolute;
-  left: calc(-1 * var(--inset-detail));
-  width: var(
-    --inset-detail
-  ); /* span the lane so justify-content centers the chevron in it, not flush-left */
-  top: 50%;
-  transform: translateY(-50%);
-  justify-content: center;
   cursor: pointer;
 }

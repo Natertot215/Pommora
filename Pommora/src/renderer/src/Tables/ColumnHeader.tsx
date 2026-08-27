@@ -43,7 +43,7 @@ export function ColumnHeader({
   // click ends through teardown alone.
   const startResize = (e: React.PointerEvent<HTMLSpanElement>): void => {
     e.preventDefault()
-    e.stopPropagation() // a resize never bubbles up to start a column reorder
+    e.stopPropagation()
     const grip = e.currentTarget
     const cell = grip.closest('.col-header')
     const zoom = (cell && cell.getBoundingClientRect().width / width) || 1

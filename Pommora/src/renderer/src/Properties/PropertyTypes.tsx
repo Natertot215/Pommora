@@ -8,7 +8,7 @@ import {
 } from '@renderer/DesignSystem/Symbols'
 
 /**
- * The single source for per-property-type presentation, catalogd in Features/SymbolsPM.md.
+ * The single source for per-property-type presentation, cataloged in Features/SymbolsPM.md.
  * `context` backs Context columns only, and `last_edited_time` is auto-managed — neither is
  * `creatable`.
  */

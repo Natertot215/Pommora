@@ -21,7 +21,7 @@
    z-index keeps its corner clickable over the window's resize handles. */
 .settings-rail-foot {
   position: relative;
-  z-index: 3;
+  z-index: 4;
   flex: 0 0 auto;
   display: flex;
   flex-direction: column;
@@ -33,7 +33,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 5px 8px;
+  padding: 6px 8px;
   border: none;
   border-radius: 6px;
   background: none;

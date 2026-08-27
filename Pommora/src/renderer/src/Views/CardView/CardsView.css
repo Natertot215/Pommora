@@ -94,7 +94,6 @@
   }
 }
 
-/* A reflow card reserves a body floor so an empty card keeps its image:body proportion. */
 .cards-view .card:not(.is-locked) .card-text {
   min-height: var(--card-body-min);
 }
@@ -102,12 +101,8 @@
   border-top: none;
 }
 
-/* The naming session's title row — a plain flex row (never the truncating scroll box, whose clip
-   would hide the field's caret travel); the glyph keeps its seat beside the field. */
-.card-title:has(.card-title-input) {
-  display: flex;
-  align-items: center;
-}
+/* The naming session's field, inside the title row's static mode — never the truncating scroll box,
+   whose clip would hide the caret's travel. The glyph keeps its seat beside it. */
 .card-title-input {
   flex: 1;
   min-width: 0;
@@ -146,8 +141,7 @@
   flex: 0 0 auto;
   color: var(--label-secondary);
 }
-/* A value never wraps — it clamps at the card's width; chips inside keep their own
-   hover-scroll/melt mechanics. */
+/* Chips inside a value keep their own hover-scroll/melt mechanics. */
 .card-value {
   display: inline-flex;
   align-items: center;
@@ -156,8 +150,6 @@
   white-space: nowrap;
   overflow: hidden;
 }
-/* The DRY padding link: text-shaped values read the chip tokens' pad var, so dates/numbers/links
-   pack at the same rhythm as the chips beside them. */
 .card-value .cell-text-scroll,
 .card-value .cell-control {
   padding: 0 var(--label-pad-x, 6px);
@@ -183,8 +175,8 @@
   padding: 0 var(--label-pad-x, 6px);
 }
 
-/* The breadcrumb is ALWAYS the card's footing — pinned to the bottom (margin-top:auto) with a divider
-   above it, unconditionally — independent of whether properties sit above it. */
+/* The breadcrumb is ALWAYS the card's footing, unconditionally — independent of whether properties
+   sit above it. */
 .card-loc-zone {
   display: flex;
   min-width: 0;
