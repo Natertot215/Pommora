@@ -8,8 +8,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding-left: var(--banner-start);
-  padding-right: var(--banner-start-right);
+  padding-left: calc(var(--sidebar-clearance) + var(--content-edge));
+  padding-right: calc(var(--inspector-clearance) + var(--content-edge));
   color: var(--label-control);
   border-top: var(--width-175) solid var(--border-base);
   -webkit-app-region: no-drag;
@@ -96,7 +96,7 @@
   left: 0;
   z-index: 2;
   height: var(--subfield-h);
-  padding: 0 0 0 var(--banner-start);
+  padding: 0 0 0 calc(var(--sidebar-clearance) + var(--content-edge));
   justify-content: flex-start;
 }
 .content-view.subfield-open .footnotes-toggle {
