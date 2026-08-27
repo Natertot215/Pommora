@@ -16,8 +16,6 @@ interface RenameFence {
   renamingHost: RenameHost | null
 }
 
-/** The naming sessions — an entity's rename with its owner fence, the icon picker's page, and a
- *  property's rename with the epoch that re-keys mounted values. */
 export interface RenameSlice {
   renamingPath: string | null
   /** The open rename is a just-created entity's naming session — the field opens empty and a

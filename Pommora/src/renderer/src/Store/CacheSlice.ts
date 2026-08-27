@@ -3,8 +3,6 @@ import { type AssetMap, EMPTY_ASSET_MAP } from '@shared/types'
 import { stabilize } from '@shared/treeStabilize'
 import type { Slice } from './SessionState'
 
-/** The id-keyed maps main confirms and the renderer caches — link titles, active views, page
- *  aliases, block-host locks, and the asset map. */
 export interface CacheSlice {
   linkTitles: Record<string, string>
   resolveLinkTitle: (url: string) => void
