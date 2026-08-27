@@ -187,12 +187,15 @@ The over-scroll edge-dissolve widths a scrollable surface names on `--over-scrol
 | Icon Ladder       | `size.icon.*` · `--icon-*` · `ICON_PX`         | Eleven steps named for the type ramp — `largeTitle` `26px` → `subline` `10px` |
 | Pill Radius       | `RADIUS_FULL` · `--radius-full`                | `999px`                                                           |
 | Disclosure Indent | `DISCLOSURE_INDENT` · `--disclosure-indent`    | `14px`                                                            |
-| Content Inset     | `--content-inset` · `--content-edge(-right)` · `--surface-edge(-right)` | `24px` — the content column's gutter; the edge pair composes it with `--app-inset` and the pane widths into where content starts from the window edge (`styles.css`) |
+| Content Inset     | `--content-inset` · `--content-start(-right)`  | `24px` — the gutter page text keeps off a pane; `--content-start` composes it with the pane clearance into where text begins from the window edge (`styles.css`) |
+| Content Edge      | `--content-edge` · `--banner-start(-right)`    | `12px` — the band a banner title and the Subfield sit in, off the pane (`styles.css`) |
+| Pane Clearance    | `--sidebar-clearance` · `--inspector-clearance` | `--app-inset` + the pane's width; `0px` when the pane is away — the base every `-start` adds its gap to (`styles.css`) |
+| Surface Lane      | `--surface-lane` · `--surface-start(-right)`   | `8px` — the tighter lane a dashboard's tiles run in (`styles.css`) |
 | Shell Bands       | `--toolbar-h` · `--subfield-h`                 | `38px` · `24px` — the toolbar strip and the Subfield bar; the window footer reads the latter (`styles.css`) |
-| App Inset         | `--app-inset` · `--app-radius`                 | `5px` · `12px` — a floating glass pane's gap from the window edge, and its corner (`styles.css`) |
+| App Inset         | `--app-inset` · `--app-radius`                 | `6px` · `12px` — a floating glass pane's gap from the window edge, and its corner (`styles.css`) |
 | Surface Inset     | `--surface-inset` · `MENU_GUTTER`              | `10px` — glass edge → content, inside a menu, side pane, the inspector, or a window toolbar (`styles.css`) |
 | Row Inset         | `--row-inset` · `ROW_INSET`                    | `6px` — row edge → text, inside a menu row; the disclosure rail centers off it (`styles.css`) |
-| Inset Detail      | `DETAIL_INSET` · `--detail-inset`              | `20px` — the grip / fold-chevron lane the editor, tables, and tiles share |
+| Rail Inset        | `RAIL_INSET` · `--rail-inset`              | `20px` — the grip / fold-chevron lane the editor, tables, and tiles share |
 | Drop Line         | `DROP_LINE_THICKNESS` · `DROP_DOT_SIZE` · `DROP_LINE_INSET` | `2px` · `7px` · `2px`                                |
 | List Outline      | `LIST_OUTLINE_WIDTH` · `LIST_OUTLINE_GAP` · `--list-outline-*` | `2px` · `3px` · segment tone · pill radius        |
 | Park / Close      | `PARK_CLEARANCE` · `CLOSE_CLEARANCE`           | `14px` · `30px`                                                   |
