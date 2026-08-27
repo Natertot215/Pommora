@@ -1,6 +1,6 @@
 ## Handoff — Pommora
 
-> **User Prompt:** *"come up with core focuses and themes that also consider the design coherence report … a complete fresh audit of everything under render … a multi-agent protocol … a legible document that gives nathan the full picture, and CLEAR framework for what the most simple and effective outcome of any work following would be"* — then: *"go — but this must replace the existing doc + remove the relevant cleanup bundles so info is clearly visible in its true source. Super in-depth, multi part doc"*, *"design calls are absolutely essential and feedback has no bounds"*, and *"it's your job to make sense of all of this into an executive summary, and also lightly rewrite the doc once all lenses are in."*
+> **User Prompt:** *"The Renderer Refactoring has been started, borders, re-orgs, and other touchups have been done. The V2-Vocab is queued as immediate, and the Immediate Work is the remainder of the refactoring … The clear goal of next session should largely be to recap, come together, and actually plan this out rather than just getting off track and changing course — this is a multi-day effort that's been going on for a day now, and is unorganized; we need to actually plan out everything that's been done, what we're gonna do, and how we're gonna manage continuity throughout."*
 
 #### Current Focus
 
@@ -8,76 +8,93 @@
 **Dates:** 08-25-2026 → 08-26
 **Model:** Opus 5 (1M context) → Fable 5
 
-**The Renderer Atlas.** The session's first half was the settings pair and the reorganization recorded in History; the second half produced the one document the Refactoring arc runs on. Three audit reports already agreed the renderer was healthy and misfiled, and none of them drew the target or wrote the test. The atlas does both: seven read-only lenses keyed on the file path — Cartographer, Boundary, Stylist, Semantic, Recipe, Lexicographer, Archivist — joined into a map as it is, eight grep-testable rules, a target tree with every one of 453 files placed under a rule, 219 token verdicts, twenty-six decisions with recommendations, and the ruling roster that lets a future sweep read instead of re-derive. Every claim that places a file or sets a verdict was opened at its cited line; the corrections log records what was withdrawn.
+**The Renderer Refactor, day one.** The session opened on the atlas — seven lenses over 453 files, eight filing rules, a target tree — and then took its rows as they came: the token cleanups first (strays cleared, the `--width-*` and `--fade-*` names, the `--border-*` edge ladder composed at the consumer), then the structural moves (`Views/` to the root, `Cards/` as the one chassis, `Tables/` as the tabular chrome, `Properties/` as the value layer, the dependency order `DesignSystem ← Properties ← Tables ← Views`), then the day's second half: the Settings window onto the menu row primitive, the toolbar's tone moved from a `button` selector to the container with its ten specificity pins flattened, `--label-zoom` retired, and the Windows block — `src/Windows/` holding `PageWindow`, `WebWindow`, `NavWindow`; the chassis renamed `WindowChassis` and moved to `DesignSystem/Components/`; `DetailPane` → `ContentView`; `NavView` to `Detail/`; `NotchedPane` → `NotchedShell`. Fourteen commits sit on `main` past `origin/main`, each one green.
 
-**What the atlas replaced.** The Design Coherence Report is deleted; its §VIII decisions, §IX standing calls, §X corrections and process notes, and §XI slices all live in the atlas's Parts V, VI, and VII as current truth. The Codebase-Cleanup Checklist lost Bundles 6a and 6b and its Design Arm section — the organizational work — and keeps 6c (the view host, now Bundle 6) as behavioral. ContextPM's Refactoring arc is two bullets pointing at the atlas, and the Immediate Work item became "rule on §V." Cohesion-Rulings gained a design-layer section holding the two process notes and a pointer at the atlas's roster. Six stale code citations across four documents were repointed to `Properties/`.
+**Two regressions Nathan saw were not regressions.** The slider's lost track and the switch's lost on-fill were the dev server holding stale vanilla-extract hashes — deleting `label.quaternary` from `color.css.ts` shifted every var hash, and any `.css.ts` not recompiled since still named the old one. A dev-server restart cures it; ⌘R does not. That diagnosis came after a false fix: the `--tint-*` ladder was declared undefined on a literal-name grep and minted a second time, when `theme-vars.css.ts:37` had generated it from `TINT_STEPS` all along. The comment-killer caught the duplicate at closeout and it never landed. Build-Gotchas carries the trap.
 
-**Where it stands.** The atlas is written, ~800 lines, uncommitted alongside the retirements. It is a Planning document and deliberately so — the tree it draws will be wrong in detail at three times the code; the rules will not be. Its Part V is the gate: the structural decisions D-A through D-I block the ledger's non-mechanical rows, and nothing else in the arc can be sequenced until they are stamped. The one behavioral finding in the whole exercise — `Blocks/ViewEmbedBlock.tsx:88` drops `cellPaint().outline`, so a grey-celled view embed draws an invisible stroke — is a one-identifier fix and is not made here.
+**Vocabulary and the plan.** [[DesignTermsV2]] was written, stress-tested, and rewritten to Nathan's retractions: five terms — Menu, Pane, Window, Frame, Picker — with Pane as a Menu's page (`GroupPane`, `FilterPane`, `TrashPane`), Frame as the in-content anchored surfaces (`PageFrame`, `WebFrame`, `AutoFrame`), Window executed. Rulings taken today are in the atlas's Settled list: spacing and radius literal on the even grid with odd values reconciling per consumer, the toolbar tone rule, `--tint-solid` kept, `subChip` kept. Nathan's four-var zoom scheme was evaluated against the evidence: three renames are clean; the `--page-scale` merge costs a font-path rewire. [[RendererRefactor]] now exists as the ledger — end goal, every row done, in flight, and pending, and the rulings it waits on — so the next session plans from it rather than continuing by feel.
 
 #### Completion Criteria
 
-- [x] **Every file accounted for** — 453 rows in the ledger, zero unmatched; 228 move, 225 stay.
-- [x] **Every rule testable** — each of the eight carries the grep that checks it.
-- [x] **Every load-bearing claim opened at its line** before entering the document; withdrawals in §VII.
-- [x] **The rulings survive** — the Design Report's settled calls and the Cohesion rulings are rostered in §VI as current truth, no tombstones.
-- [x] **The superseded sources are gone or repointed** — the Design Report deleted, 6a/6b/Design Arm removed, ContextPM and Cohesion-Rulings pointing at the atlas, stale citations fixed.
-- [ ] **The Space dropdown is eyeballed** — carried from 08-25: icon, editable title, lock footer, the two pickers, with the trio's Settings button blank behind it. The one visible behavior change of the committed reorganization, unconfirmed.
-- [ ] **The atlas is committed.**
-- [ ] **Part V is ruled** — D-A through D-I first; the token verdicts marked `call` in IV.4 after.
+- [ ] **The next session recaps before it moves** — the Done rows in [[RendererRefactor]] are confirmed against the tree, the Pending rows are ordered into sessions, and the Open Rulings that gate them are taken.
+- [ ] **The vocabulary is applied** — the four [[DesignTermsV2]] sessions executed and its rename tables emptied.
+- [ ] **The filing rows are executed** — `Interface/`, `Core/`, `Connections/`, `Navigation/` absorbing `Tabs/`, the Showcase out, `Surface/`, the casing renames — and the atlas's eight rule greps return empty.
+- [ ] **The token and scale rows are settled** — the zoom renames and merge, the glass tokens, `--subline-h` / `--labels-gap`, the checkbox recipe.
+- [ ] **`ViewEmbedBlock.tsx:88` reads `cellRing(key)`.**
+- [ ] **The atlas's Open Decisions sections are empty**, each block deleted by a ruling.
+- [ ] **The Space dropdown is eyeballed** — carried from 08-25.
 
 #### Next Session
 
-1. **Read the atlas's Executive Summary and Part V, then rule.** Twenty-six decisions, each with a recommendation. The structural nine (D-A to D-I) gate the ledger; the rest can be taken in any order.
-2. **Fix the one bug** — `Blocks/ViewEmbedBlock.tsx:88` → `cellRing(key)`. One line; it does not wait for a ruling.
-3. **The lint rule (D-B)** can land before the reaches close: `noRestrictedImports` from `DesignSystem/**` with an allowlist of the three files.
-4. **Eyeball the Space dropdown** — still owed from 08-25.
-5. **Inline Page Properties** runs parallel and shares no files with any of this.
+1. **Read [[RendererRefactor]] first, then this document, then the atlas's Settled list.** Confirm the Done rows hold on disk (`ls src/renderer/src` — `Cards`, `Tables`, `Views`, `Windows`, `Properties` at the root; no `PagePreview`, no `NavWindow`; `DesignSystem/Detail` holding only `tile-chassis.css`).
+2. **Plan, with Nathan.** Order the Pending rows into sessions; take the Open Rulings — the zoom merge, the glass tokens, the three design-system reaches, `Interface/`'s scope, the side slot's name and the main window mounting `SidePane`, the bare `Menu`, the two inspectors, the `PropertiesPane` edge, the three "preview" strings. Nathan is still weighing the token moves and alias naming from the early commits; that conversation belongs here, before any further row.
+3. **Then the vocabulary's Menus session** — the largest count and every row a rename the typecheck polices — unless the plan reorders it.
+4. **`cellRing(key)`** rides whichever session touches `Blocks/` first.
+5. **Inline Page Properties** runs parallel on its own Decision Log and shares no files with any of this.
 
 #### Feedback
 
-- "design calls are absolutely essential and feedback has no bounds — all of your CLAUDE.md's should make that clear." Every lens was briefed to state its taste rather than abstain; Part IV's verdicts carry a column saying which rows are calls, and Part V recommends on every decision.
-- "it must replace the existing doc + remove the relevant cleanup bundles so info is clearly visible in its true source." The Design Report is deleted rather than pointed at; the checklist keeps only its behavioral bundles.
-- "process-irrelevant, the 'clean kitchen' goals or final structure is the priority; and should also be inherently scalable." Part III is the tree and the ledger with no sequencing; Part II's rules are what file the next 900 files.
+- "stop being lazy and find the fucking issue. there is no background here." — a claim of "no regression found" was not an answer; reading the dev server's compiled CSS found it in one request.
+- "there's no need to measure. My eyes work." — visual reports are facts; diagnose in code, don't re-verify the report.
+- "most of these open decisions cite things without actually including evidence." — every block rewritten today carries file:line and counts; the rest re-derive when ruled.
+- "Please make sure the atlas is properly reworded … flag moved stuff on the actual tree itself so what's already established isn't re-stated." — executed rows wear `✓` on the target tree; decision blocks that were ruled are deleted, not annotated.
+- "subChip stays." · "Glass as a 'Surface' type and material is just more confusing — forget that." · "Pane as the view stuff makes sense, and I retract earlier."
 
 #### Session Pointers
 
-- `.claude/Planning/RendererAtlas.md` — the document. Executive Summary first; Part III.1 for the tree; Part V for what needs a ruling; Part IV.4's ranked list for the first token edits.
-- The seven lenses' tables — `cartographer.csv`, `boundary.csv`, `stylist-*.csv`, `semantic-*.csv`, `recipe-verdicts.csv`, `lexicographer-*.csv`, `archivist-*.csv` — and `ledger.py`, which generated the file-placement ledger from the Cartographer's graph, sit in this session's scratchpad under `atlas/`. They are working files, not part of the repo.
-- `.claude/Planning/Codebase-Cleanup-Checklist.md` — Bundles 4, 5, 6 (the view host), 7, 8 remain; the header and ordering constraints point at the atlas.
-- `Pommora/src/renderer/src/DesignSystem/Tokens/theme-vars.css.ts` — the three seam shorthands (`--border-heading`/`-cell`/`-segment`) the first mint publishes widths beside.
+- `.claude/Planning/RendererRefactor.md` — the ledger; read first.
+- `.claude/Planning/DesignTermsV2.md` — the five terms, the motions, the rename tables, the calls, the session order.
+- `.claude/Planning/RendererAtlas.md` — §The Filing Rules for the eight greps; §The Target Tree with `✓` on executed rows; §Settled for every ruling; the Open Decisions blocks for what still needs one.
+- `Pommora/src/renderer/src/Windows/` — the floating family; `DesignSystem/Components/WindowChassis/windowChassis.css` for the `.window-*` chassis and its `--window-*` knobs.
+- `Pommora/src/renderer/src/Settings/SettingsRow.tsx` — the `MenuItem` adapter; `nexusSettings.css` `.settings-wide` is the KNOB for a slider or path field's seat width.
+- `Pommora/src/renderer/src/Toolbar/toolbar.css` — `.app-toolbar { color: var(--label-control) }` is the toolbar's tone; the chassis toolbar carries the same line.
+- `Pommora/src/renderer/src/DesignSystem/Tokens/theme-vars.css.ts:37` — where the `--tint-*` ladder is generated from `TINT_STEPS`.
 
 #### Working Notes
 
-- A per-lens split joins on filename; a per-folder split produces reports that agree and do not compose. The join is what lets one sentence say "a piece that reaches the store and declares three vars outside Tokens under a lowercase name."
-- A relocation script must resolve specifiers against the pre-move layout and rewrite only the ones that point at something that moved; re-deriving every relative import normalizes correct ones into `../x/index`.
-- Semantic and Recipe are different jobs: one judges a read against the token's purpose, the other judges the token against its readers. A token with thirty wrong reads is a recipe defect, not thirty consumer defects.
-- Recipe overruled three earlier findings by reading the line rather than the count — a comment naming the element, a value that was 40% not 15%, a literal that was owned but not centralized. Counts propose; lines decide.
-- The `--safe-*` vars have two lenses saying keep and one ruling row saying delete; the atlas rules keep and records it in VI.1 so the fourth re-derivation does not happen.
+- A `.css.ts` that has not changed since a token was removed from `color.css.ts` keeps its old var hash in the dev server; the built app is unaffected. Restart the dev server before diagnosing a "lost fill."
+- Before claiming a CSS var is undefined, grep its template form (`` `--tint-${ ``) — the families are generated from ladders — and read the compiled module from the dev server (`curl localhost:<port>/src/…/x.css.ts.vanilla.css`).
+- Nathan's editor overwrote the atlas mid-session with a buffer that predated an edit; when he is editing a Planning document, confirm the file on disk before writing to it.
+- A "one `--zoom` with natural compounding" is not available to custom properties — a var that reads itself on a descendant is a cycle. Only the `zoom` property compounds, and the editor and the card grid deliberately do not use it for structure.
+- `EntityGlyph` stays in `Navigation/`: three of five consumers are there and it reads `navResolve`'s `ResolvedNav`.
+- The Settings rows' hover wash and caption-ramp hints are the menu family's, not a bug; `MenuItem`'s sub-label wrapping had no production consumer before Settings.
 
 **FILES ADDED**
 
-- `.claude/Planning/RendererAtlas.md`
+- `.claude/Planning/RendererRefactor.md`
+- `.claude/Planning/DesignTermsV2.md`
 
 **FILES MODIFIED**
 
-- `.claude/ContextPM.md` — the Refactoring arc points at the atlas; Immediate Work is "rule on §V"
-- `.claude/Planning/Codebase-Cleanup-Checklist.md` — Bundles 6a and 6b and the Design Arm removed; header, ordering constraints, and the closing paragraph repointed; 6c renumbered 6
-- `.claude/Guidelines/Cohesion-Rulings.md` — a design-layer section; two citations repointed to `Properties/`
-- `.claude/Planning/Inline Page Properties — Decision Log.md` · `.claude/Planning/Documentation Audit — Report and Plan.md` — citations repointed to `Properties/`
+- `.claude/ContextPM.md` — Current Focus, Immediate Work, and Pending Focus Two restated for the refactor's day one
+- `.claude/Planning/RendererAtlas.md` — rulings into Settled, evidence into the zoom and glass blocks, `✓` on executed rows, the floating-family and toolbar blocks deleted
+- `.claude/Guidelines/Build-Gotchas.md` — the stale-hash trap
+- `.claude/CLAUDE.md` · fourteen Feature docs · `Cohesion-Rulings.md` — the Windows names
+- `Pommora/src/renderer/src/Settings/*`, `DesignSystem/Components/Menu/*`, `Toolbar/toolbar.css`, the flattened-pin stylesheets, `Labels/labels.css.ts`, `Views/CardView/CardsView.css`, `Detail/ContentView.tsx` and its readers, `shared/types.ts`, `main/index.ts`
 - `.claude/HandoffPM.md`
 
 **FILES REMOVED**
 
-- `.claude/Planning/Design-Coherence-Report.md` — retired into the atlas
+- `Pommora/src/renderer/src/PagePreview/` and `NavWindow/` — into `Windows/`
+- `Pommora/src/renderer/src/DesignSystem/Detail/PreviewPane/` and `SidePane/` — into `DesignSystem/Components/`
+- `.claude/Planning/Documentation Audit — Report and Plan.md`
 
 **COMMITS**
 
-- `3f926099` — feat(settings): Interface Scale takes a row of its own
-- `991f4199` — feat(picker): a typed value keeps the unit it is read in
-- `c0fe1a4c` — docs(planning): the inline page properties decision log replaces three settled plans
-- `e815fb06` — chore(ledger): line counts through the Interface Scale picker
-- `ddc0ee9e` — refactor(renderer): the property surface, two elements, and the gallery find their own folders
-- `cd36b8e6` — docs: the handoff for the settings pair, and Context turns toward The Refactoring
+- `8dba1ee5` — refactor(views): purge the toolbar ViewDropdown's inert View Style toggle
+- `19d71280` — refactor(design-system): read the tokens the system already had
+- `b9367907` — docs(atlas): regroup the renderer atlas by subject
+- `715bd9a3` — refactor(tokens): clear the strays, name the widths and fades
+- `ad385956` — refactor(tokens): a literal border ladder — widths and edge colors, composed
+- `a9d8b0ef` — refactor(views): Views leaves Detail for the renderer root
+- `51e737df` — refactor(cards): one card chassis in src/Cards — the gallery and CardView wear it
+- `cd1fcdff` — refactor(tables): the tabular chrome lives in src/Tables — TableView and the Trash wear it
+- `230290fc` — refactor(properties): the value layer is Properties' — Tables and Views import downward
+- `5bbd8a98` — refactor(renderer): one PathField, the simplification pass, and the closeout's repairs
+- `aec1137c` — refactor(settings): the Settings window wears the menu row primitive
+- `bdba9bdd` — refactor(toolbar): the tone is the container's, and the pins built against a button selector go
+- `77b8937e` — refactor(windows): the floating family is src/Windows, and the chassis is WindowChassis
+- `cf7cfaa6` — chore(ledger): line counts through the Windows move
 
 #### Handoff Guidelines
 
