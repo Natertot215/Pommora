@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import type { ThumbRect } from '@shared/types'
 import { pageBody, shownPage, useSession } from '../store'
 import { navKey } from './navRecents'
+import { captured, capturedNexus, setCapturedNexus } from './thumbMarkers'
 
 // The `.content-pane` fills the whole window; the sidebar, toolbar, and inspector are floating overlays
 // on top of it. Carve off the sidebar (start right of it) and the inspector (end left of it), each skipped
@@ -30,21 +31,6 @@ async function imagesReady(pane: Element): Promise<void> {
       img.complete ? Promise.resolve() : img.decode().catch(() => undefined),
     ),
   )
-}
-
-// The capture gate: a shot is a full-window capture + a SYNCED write, and warm tab-switching is
-// the highest-frequency interaction — so an entity re-shoots only when its shown content actually
-// changed since its last shot. Pages mark on their current body text (the live buffer when it's
-// theirs); containers mark on the tree identity (stabilize keeps it for echoes, structural changes
-// mint a new one). Session-scoped; cleared on a nexus switch so keys can't collide across nexuses.
-const captured = new Map<string, unknown>()
-let capturedNexus: string | null = null
-
-/** Forget markers for entities no longer in the live set (their thumbnails are being evicted as
- *  orphans) — a marker outliving its file would block the re-shoot forever, leaving a permanent
- *  placeholder. */
-export function dropCapturedOutside(live: ReadonlySet<string>): void {
-  for (const key of captured.keys()) if (!live.has(key)) captured.delete(key)
 }
 
 // Snapshot the detail view as a gallery thumbnail — captured ONLY while the NavWindow is closed, so the
@@ -76,9 +62,9 @@ export function useNavThumbnails(): void {
         const key = navKey(selection)
         // The gate — read at capture time so the marker reflects what the shot will show.
         const s = useSession.getState()
-        if (capturedNexus !== (s.tree?.nexus.id ?? null)) {
+        if (capturedNexus() !== (s.tree?.nexus.id ?? null)) {
           captured.clear()
-          capturedNexus = s.tree?.nexus.id ?? null
+          setCapturedNexus(s.tree?.nexus.id ?? null)
         }
         const marker = selection.kind === 'page' ? pageBody(shownPage(s)) : s.tree
         if (captured.get(key) === marker) return
