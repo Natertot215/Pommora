@@ -33,7 +33,7 @@ import { useSession, type PreviewTarget } from '../store'
 // CalendarPicker, PropertyEditor). Writes ride the table's optimistic-patch pattern; the reconcile
 // re-paths the open tab on rename.
 
-export function PreviewInspector({ target }: { target: PreviewTarget }): React.JSX.Element {
+export function WindowInspector({ target }: { target: PreviewTarget }): React.JSX.Element {
   const tree = useSession((s) => s.tree)
   const [fm, setFm] = useState<PageFrontmatter | null>(null)
   const [title, setTitle] = useState('')
@@ -121,7 +121,7 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
     setRevealed((prev) => new Set([...prev, id]))
     requestAnimationFrame(() => {
       const el =
-        document.querySelector<HTMLElement>(`[data-insp-id="${id}"] .pgpreview-insp-value`) ??
+        document.querySelector<HTMLElement>(`[data-insp-id="${id}"] .page-window-insp-value`) ??
         addRef.current
       if (def && el) return editRow(def, el)
       triggerRef.current = el
@@ -129,7 +129,7 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
     })
   }
 
-  if (!ctx || !row || !fm) return <div className="pgpreview-insp" />
+  if (!ctx || !row || !fm) return <div className="page-window-insp" />
 
   // The same native menu the page's own properties pane pops: Clear empties the value and leaves
   // the row to be refilled, Remove empties it and takes the row away, back into Add Property.
@@ -158,8 +158,8 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
       (isContextRow(editing.id) ? syntheticContextDef(editing.id) : undefined))
 
   return (
-    <div className="pgpreview-insp">
-      <div className="pgpreview-insp-rows over-scroll">
+    <div className="page-window-insp">
+      <div className="page-window-insp-rows over-scroll">
         {/* Nothing pre-shows — on an empty page the Add affordance alone sits at the top. */}
         {[
           contextRows.filter((t) => isAssigned(t.id)).map((t) => ({ def: null, ...t })),
@@ -168,14 +168,14 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
             .map((d) => ({ def: d, id: d.id, label: d.name, icon: propertyIcon(d) })),
         ].map((group, gi) =>
           group.length === 0 ? null : (
-            <div key={gi === 0 ? 'contexts' : 'properties'} className="pgpreview-insp-group">
+            <div key={gi === 0 ? 'contexts' : 'properties'} className="page-window-insp-group">
               {group.map(({ def, id, label, icon }) => {
                 const col: ResolvedColumn = { id, kind: def ? 'property' : 'context' }
                 return (
                   // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
                   <div
                     key={id}
-                    className="pgpreview-insp-row"
+                    className="page-window-insp-row"
                     data-insp-id={id}
                     onContextMenu={(e) => {
                       e.preventDefault()
@@ -184,7 +184,7 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
                   >
                     <span
                       className={cx(
-                        'pgpreview-insp-label',
+                        'page-window-insp-label',
                         text.caption.standard,
                         overScrollEllipsis,
                       )}
@@ -194,7 +194,7 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
                     </span>
                     {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix */}
                     <span
-                      className="pgpreview-insp-value"
+                      className="page-window-insp-value"
                       onContextMenu={(e) => {
                         if (
                           !valueMenuShared(id, resolveFieldValue(row, id, schema), e.target, {
@@ -252,7 +252,7 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
                             ? (next) => commitValue(id, next)
                             : (next) =>
                                 commitContext(id, next?.kind === 'context' ? next.value : []),
-                        }) ?? <EmptyValue className="pgpreview-insp-empty" />)
+                        }) ?? <EmptyValue className="page-window-insp-empty" />)
                       )}
                     </span>
                   </div>
@@ -268,7 +268,7 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
             icon="plus"
             iconSize="caption"
             label="Add Property"
-            className="pgpreview-insp-add"
+            className="page-window-insp-add"
             onClick={() => setAddOpen(true)}
           />
         )}

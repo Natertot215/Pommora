@@ -11,7 +11,7 @@ import { ContainerView } from './ContainerView'
 import { HomepageView } from './HomepageView'
 import { SpaceView } from './SpaceView'
 import { PageView } from './PageView'
-import { NavView } from '../Tabs/NavView'
+import { NavView } from './NavView'
 import { Subfield } from './Subfield/Subfield'
 import { footerLabel } from '@shared/toggleLabels'
 import { CitationsToggle } from './Subfield/CitationsToggle'
@@ -118,12 +118,12 @@ function useHosts(): Host[] {
 
 const VIEW_SLIDE_PX = 14
 
-// The preview's engulf target: the detail pane's live rect, read once at promote time —
+// The preview's engulf target: this view's live rect, read once at promote time —
 // module-held so the floating window needs no prop threading across trees.
 let paneEl: HTMLElement | null = null
-export const getDetailPaneRect = (): DOMRect | null => paneEl?.getBoundingClientRect() ?? null
+export const getContentViewRect = (): DOMRect | null => paneEl?.getBoundingClientRect() ?? null
 
-export function DetailPane(): React.JSX.Element {
+export function ContentView(): React.JSX.Element {
   const selection = useSession((s) => s.selection)
   const selectionKind = selection.kind
   const tree = useSession((s) => s.tree)
@@ -169,7 +169,7 @@ export function DetailPane(): React.JSX.Element {
     (selectionKind === 'none' && !!tree)
 
   const paneClass =
-    'detail-pane' +
+    'content-view' +
     (showSubfield && expanded ? ' subfield-open' : '') +
     (showSubfield && reveal.near ? ' subfield-near' : '') +
     (showSubfield && reveal.nearLead ? ' subfield-near-lead' : '')
@@ -186,7 +186,7 @@ export function DetailPane(): React.JSX.Element {
       }}
       onMouseLeave={reveal.onMouseLeave}
     >
-      <div ref={viewRef} className={frozen ? 'detail-pane-view is-frozen' : 'detail-pane-view'}>
+      <div ref={viewRef} className={frozen ? 'content-view-view is-frozen' : 'content-view-view'}>
         {hosts.map((h) => {
           const parked = h.tabId !== activeTabId
           return (

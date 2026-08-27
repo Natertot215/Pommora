@@ -10,9 +10,9 @@ import { EntityGlyph } from '../Navigation/EntityGlyph'
 import { resolveWith, type ResolveIndex, type ResolvedNav } from '../Navigation/navResolve'
 import { useExitPresence } from '@renderer/DesignSystem/Animation/useExitPresence'
 import { useSession } from '../store'
-import type { PreviewTab } from './previewTabs'
+import type { PreviewTab } from './windowTabs'
 import '../Tabs/tabStrip.css'
-import './previewTabStrip.css'
+import './windowTabStrip.css'
 
 const BASE_MS = ms(duration.base)
 /** The toolbar strip's EXIT_MS twin. */
@@ -27,7 +27,7 @@ interface Entry {
 // The morph owner between the centered breadcrumb title and the left-aligned strip on the shared
 // tab-open motion. Ghost-closing keeps the strip mounted so the last collapse plays before the
 // title returns.
-export function PreviewTabStrip({
+export function WindowTabStrip({
   index,
   title,
 }: {
@@ -97,13 +97,13 @@ export function PreviewTabStrip({
   return (
     <>
       {titlePresence.mounted && (
-        <div className={cx('pgpreview-title', titlePresence.closing && 'is-collapsing')}>
+        <div className={cx('page-window-title', titlePresence.closing && 'is-collapsing')}>
           {titlePresence.closing ? heldTitle.current : title}
         </div>
       )}
-      <div className="pgpreview-tabwrap">
+      <div className="page-window-tabwrap">
         {showStrip && (
-          <div className="pgpreview-tabscroll over-scroll-x" ref={scrollRef}>
+          <div className="page-window-tabscroll over-scroll-x" ref={scrollRef}>
             {/* The map sentinel and ghosts stay out of the item set — drag-inert and un-landable. */}
             <SortableZone
               items={renderEntries
@@ -113,7 +113,7 @@ export function PreviewTabStrip({
               axis="x"
               onReorder={reorderPreviewTabs}
             >
-              <div className="pgpreview-tabstrip" role="tablist" aria-label="Preview tabs">
+              <div className="page-window-tabstrip" role="tablist" aria-label="Preview tabs">
                 {renderEntries.map(({ entry, ghost }, i) => (
                   <Fragment key={entry.tab.id}>
                     {i > 0 && (

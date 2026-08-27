@@ -10,8 +10,8 @@ import { isValidLink } from '@shared/links'
 import { readLink } from '@shared/linkValue'
 import { resolveConnection } from '@renderer/treeIndex'
 import { pageLinkText, pagePathText } from '@shared/pageMenu'
-import { openInAppBrowser } from '../PagePreview/BrowserWindow'
-import { deriveTarget } from '../PagePreview/previewTabs'
+import { openInAppBrowser } from '../Windows/WebWindow'
+import { deriveTarget } from '../Windows/windowTabs'
 import { isOpenInTabs } from '../Tabs/tabsModel'
 import { useSession } from '../store'
 
@@ -50,7 +50,7 @@ export function showConnectionMenu(target: ConnMenuTarget): void {
     ...shared,
     hasAlias: target.hasAlias,
     // A page already in hand is not somewhere to be opened. The two readings are independent: the
-    // detail pane answers for the tab item, the preview window for its own.
+    // content view answers for the tab item, the page window for its own.
     open:
       pageDetail?.path === page.path
         ? 'detail'

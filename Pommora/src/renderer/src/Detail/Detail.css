@@ -1,9 +1,9 @@
-/* Detail surface: the plain detail pane (none / page / not-found) and the banner-bearing scroller
+/* Detail surface: the plain detail views (none / page / not-found) and the banner-bearing scroller
    (DetailScaffold) + its placeholder/empty/error states. */
 
-/* The detail pane = the routed view (fills + scrolls) above the Subfield footer (pinned, collapsible).
+/* The content view = the routed view (fills + scrolls) above the Subfield footer (pinned, collapsible).
    position:relative anchors the hover toggle chevron. */
-.detail-pane {
+.content-view {
   /* Fixed Subfield bar height — the bar + its riding toggle chevron both read it, so a view switch
      with fewer items never janks the height. */
   --subline-h: 24px;
@@ -12,17 +12,17 @@
   display: flex;
   flex-direction: column;
 }
-.detail-pane-view {
+.content-view-view {
   flex: 1;
   min-height: 0;
 }
 /* Cold-switch pause: the outgoing view is a held frame, not a live surface — input can't land on a
    page that's already being left. */
-.detail-pane-view.is-frozen {
+.content-view-view.is-frozen {
   pointer-events: none;
 }
 
-/* --- detail pane (lives inside .content-pane, offset past the glass sidebar) --- */
+/* --- .detail (lives inside .content-pane, offset past the glass sidebar) --- */
 .detail {
   height: 100%;
   /* Clear the floating glass sidebar (left) + inspector (right); both insets collapse with their panes. */

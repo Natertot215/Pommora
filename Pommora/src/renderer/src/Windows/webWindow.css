@@ -7,7 +7,7 @@
   flex: 1;
   min-height: 0;
   display: flex;
-  padding-top: var(--ppane-toolbar-h);
+  padding-top: var(--window-toolbar-h);
 }
 /* biome-ignore lint/correctness/noUnknownTypeSelector: webview is Electron's guest element */
 .wbrowser-body webview {
@@ -16,7 +16,7 @@
   min-width: 0;
 }
 
-/* Centered in the strip, two-tone like the preview's crumb: the domain stands back, the page
+/* Centered in the strip, two-tone like the page window's crumb: the domain stands back, the page
    title carries. Ellipsized from the middle out so a long title never crowds the clusters. */
 .wbrowser-title {
   position: absolute;

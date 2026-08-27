@@ -50,7 +50,7 @@ import {
   reorderTabIn,
   type PreviewState,
   type PreviewTab,
-} from './PagePreview/previewTabs'
+} from './Windows/windowTabs'
 import { EMPTY_ASSET_MAP, toNavRef } from '@shared/types'
 import { resolveAssetUrl } from './assetUrl'
 import {
@@ -86,8 +86,8 @@ import {
   dropWarmTab,
   readWarm,
 } from './Tabs/warmCache'
-import { clearPreviewWarm, dropPreviewWarm } from './PagePreview/previewWarm'
-import { stashWindowMorph } from './PagePreview/WindowMorph'
+import { clearWindowWarm, dropWindowWarm } from './Windows/windowWarm'
+import { stashWindowMorph } from './Windows/windowMorph'
 import { flushAllPageSaves } from './Detail/pageFlush'
 import { dropCapturedOutside } from './Navigation/useNavThumbnails'
 import { stabilize } from '@shared/treeStabilize'
@@ -513,7 +513,7 @@ export const useSession = create<SessionState>((set, get) => {
       linkTitles: {},
     })
     clearWarm()
-    clearPreviewWarm()
+    clearWindowWarm()
   }
 
   const openVia = async (attempt: () => Promise<Result<boolean>>): Promise<void> => {
@@ -969,7 +969,7 @@ export const useSession = create<SessionState>((set, get) => {
             else if (r.kind === 'page' && r.path !== t.target.path) repath.set(t.id, r.path)
           }
           if (deadIds.length > 0 || repath.size > 0) {
-            for (const id of deadIds) dropPreviewWarm(id)
+            for (const id of deadIds) dropWindowWarm(id)
             let next: PreviewState | null = cur
             for (const id of deadIds) next = next && closeTabIn(next, id)
             if (next && repath.size > 0)
@@ -1363,7 +1363,7 @@ export const useSession = create<SessionState>((set, get) => {
       get().openNavPreview()
     },
     closeNav: () => {
-      clearPreviewWarm()
+      clearWindowWarm()
       set({ navOpen: false, preview: null, previewTarget: null })
       mirrorPreviews()
     },
@@ -1404,7 +1404,7 @@ export const useSession = create<SessionState>((set, get) => {
         tabs,
         activeTabId: (activeTab ?? tabs[0]).id,
       }
-      clearPreviewWarm()
+      clearWindowWarm()
       // previewExit re-seeds on every open — only the close that wrote 'engulf' may play the FLIP;
       // the other window-closing paths never write the flag.
       set({ preview, previewTarget: deriveTarget(preview), navOpen: false, previewExit: 'dismiss' })
@@ -1426,7 +1426,7 @@ export const useSession = create<SessionState>((set, get) => {
         tabs: [sentinel, ...pages],
         activeTabId: sentinel.id,
       }
-      clearPreviewWarm()
+      clearWindowWarm()
       set({
         preview,
         previewTarget: deriveTarget(preview),
@@ -1470,13 +1470,13 @@ export const useSession = create<SessionState>((set, get) => {
       const next = closeTabIn(cur, id)
       if (next === cur) return
       if (next === null) {
-        clearPreviewWarm()
+        clearWindowWarm()
         set({ previewExit: exit ?? 'dismiss' })
-      } else dropPreviewWarm(id)
+      } else dropWindowWarm(id)
       commitPreview(next)
     },
     closePreview: (reason) => {
-      clearPreviewWarm()
+      clearWindowWarm()
       set({ preview: null, previewTarget: null, previewExit: reason ?? 'dismiss' })
       mirrorPreviews()
     },

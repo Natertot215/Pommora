@@ -342,7 +342,7 @@ function createWindow(): void {
   }
 }
 
-// Gallery thumbnails — capture the detail-pane rect on entity-open, evict on membership roll-off.
+// Gallery thumbnails — capture the content-view rect on entity-open, evict on membership roll-off.
 const isRect = (v: unknown): v is ThumbRect =>
   isPlainObject(v) && ['x', 'y', 'width', 'height'].every((k) => typeof v[k] === 'number')
 

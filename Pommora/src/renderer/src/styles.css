@@ -87,7 +87,7 @@ textarea,
 
 /* A floating window's trailing button pair composes two moves into ONE transform: this entry
    nudge and the side-pane swallow derived from --io. . */
-@property --ppane-flow-reveal {
+@property --window-flow-reveal {
   syntax: "<length>";
   inherits: false;
   initial-value: 0px;
