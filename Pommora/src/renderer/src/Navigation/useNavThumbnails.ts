@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import type { ThumbRect } from '@shared/types'
 import { pageBody, shownPage, useSession } from '../store'
 import { navKey } from './navRecents'
-import { captured, capturedNexus, setCapturedNexus } from './thumbMarkers'
+import { captured, scopeCaptured } from './thumbMarkers'
 
 // The `.content-pane` fills the whole window; the sidebar, toolbar, and inspector are floating overlays
 // on top of it. Carve off the sidebar (start right of it) and the inspector (end left of it), each skipped
@@ -62,10 +62,7 @@ export function useNavThumbnails(): void {
         const key = navKey(selection)
         // The gate — read at capture time so the marker reflects what the shot will show.
         const s = useSession.getState()
-        if (capturedNexus() !== (s.tree?.nexus.id ?? null)) {
-          captured.clear()
-          setCapturedNexus(s.tree?.nexus.id ?? null)
-        }
+        scopeCaptured(s.tree?.nexus.id ?? null)
         const marker = selection.kind === 'page' ? pageBody(shownPage(s)) : s.tree
         if (captured.get(key) === marker) return
         const res = await window.nexus.capture.thumbnail(
