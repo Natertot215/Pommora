@@ -27,7 +27,6 @@ const SIZE = {
 const labelBase = style([
   text.control.semibold,
   {
-    zoom: 'var(--label-zoom, 1.0)',
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',

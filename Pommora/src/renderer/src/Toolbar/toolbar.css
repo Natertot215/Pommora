@@ -3,6 +3,10 @@
    each cluster opts back into pointer events AND out of the drag region. */
 .app-toolbar {
   position: absolute;
+  /* The toolbar's ground tone — every glyph in both clusters inherits it through Button's
+     currentColor ink; the only mute is a Back/Forward button with nowhere to go, whose :disabled
+     state drops to label-tertiary. A dropdown pane restates its own ground. */
+  color: var(--label-control);
   /* Cluster tops sit on the sidebar/inspector glass top edge — glass-inset plus an optical
      nudge (the liquid-glass pill reads a hair high against the frost panels otherwise). */
   top: calc(var(--glass-inset) + 1px);
@@ -91,10 +95,4 @@
 .toolbar-trio-cover {
   position: absolute;
   inset: 0;
-}
-
-/* Both clusters read as control-tint glyphs; the only mute is a Back/Forward button with nowhere to go
-   — its :disabled state drops to label-tertiary (from the shared segment style). */
-.app-toolbar button {
-  color: var(--label-control);
 }

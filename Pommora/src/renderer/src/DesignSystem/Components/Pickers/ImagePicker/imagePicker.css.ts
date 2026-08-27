@@ -69,7 +69,7 @@ const cornerGlyph = style([
   {
     position: 'absolute',
     bottom: CORNER_INSET,
-    selectors: { '&&&': { color: c.label.secondary } },
+    color: c.label.secondary,
   },
 ])
 export const cornerGlyphStart = style([cornerGlyph, { left: CORNER_INSET }])

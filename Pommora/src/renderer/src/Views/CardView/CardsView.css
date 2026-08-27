@@ -17,8 +17,7 @@
   --band-clearance: var(--card-gap-v);
   /* ONE padding source for everything in a card's value flow: the chip tokens' own vars. Chips read
      them natively; the text-shaped values (dates, numbers, links) are re-pointed at the same vars
-     below — so the tight packing is a single knob pair. */
-  --label-zoom: 0.85; /* KNOB — chip density on cards (the chip tokens' global zoom var) */
+     below — so the tight packing is a single knob. */
   --label-pad-x: 4px; /* KNOB — horizontal padding of chips AND text values (tight) */
   zoom: calc(var(--zoom, 1) * var(--block-zoom, 1));
   /* The leading band/row sits off the view's top edge (the embed's ActionBand line, the pane head)
@@ -26,7 +25,7 @@
   padding-top: var(--band-clearance);
 }
 .cards-view.is-compact {
-  --card-row-h: 17px; /* KNOB — a compact property-value row (chip height × --label-zoom) */
+  --card-row-h: 17px; /* KNOB — a compact property-value row */
   --card-foot-h: calc(
     1.5px +
     5px +
