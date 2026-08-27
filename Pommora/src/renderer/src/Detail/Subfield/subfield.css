@@ -3,7 +3,7 @@
    bullets · the + icon) at a dimmer one, a touch larger. Fixed height so switching to a view with
    fewer items (no word-count) never janks the bar. */
 .subfield {
-  height: var(--subline-h);
+  height: var(--subfield-h);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -67,7 +67,7 @@
   transition: height var(--duration-base) var(--ease-base);
 }
 .content-view.subfield-open .subfield-reveal {
-  height: var(--subline-h);
+  height: var(--subfield-h);
 }
 .shell.is-resizing .subfield-reveal {
   transition: none;
@@ -78,11 +78,11 @@
   right: 0;
   z-index: 2;
   width: 44px;
-  height: var(--subline-h);
+  height: var(--subfield-h);
   padding: 0 12px 0 0;
 }
 .content-view.subfield-open .subfield-toggle {
-  bottom: var(--subline-h);
+  bottom: var(--subfield-h);
 }
 .content-view.subfield-near .subfield-toggle {
   opacity: 1;
@@ -97,12 +97,12 @@
 .footnotes-toggle {
   left: 0;
   z-index: 2;
-  height: var(--subline-h);
+  height: var(--subfield-h);
   padding: 0 0 0 calc(var(--content-edge) - var(--content-inset) / 2);
   justify-content: flex-start;
 }
 .content-view.subfield-open .footnotes-toggle {
-  bottom: var(--subline-h);
+  bottom: var(--subfield-h);
 }
 .content-view.subfield-near-lead .footnotes-toggle {
   opacity: 1;

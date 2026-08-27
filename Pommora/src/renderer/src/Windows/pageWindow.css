@@ -2,12 +2,6 @@
    what remains here is what only this window has — its custom exits, its body scroll model, and the
    front-matter inspector's rows. */
 
-.page-window {
-  /* The Subfield bar height (its riding toggle chevron reads it too) — mirrors the content view's
-     `--subline-h`; the floating window is outside `.content-view` so it can't inherit it. */
-  --subline-h: 24px;
-}
-
 /* The promote exit: WAAPI drives the FLIP into the content view, so the shell's scale-out is
    suppressed and the class only makes the exiting window inert. */
 .window.closing.page-window.engulfing {

@@ -43,7 +43,7 @@ Grouped by the atlas section that carries the evidence. Each row is a session or
 
 #### Tokens And Geometry
 
-- [ ] `--subline-h` and `--labels-gap` absorbed into `Tokens/`; `--tab-min: 75px` so the floating tab strip is 5/6 of the main one.
+- [ ] `--labels-gap` absorbed into `Tokens/`; `--tab-min: 75px` so the floating tab strip is 5/6 of the main one.
 - [ ] Odd spacing values (`3` / `5` / `9px`) reconciled to the nearer even step per consumer, as each is opened; `Slider.tsx:106`'s radius `9` with them.
 - [ ] One checkbox recipe — `Labels/checkboxBox` as the source; `Controls/checkbox.css` and `Properties/Editing/checkboxLook` read its geometry.
 - [ ] The token ledger in [[DesignSystemPM]] carries the zoom composition (page → block → view, the card knob beside), the tint short-circuit note, and the five vocabulary terms.

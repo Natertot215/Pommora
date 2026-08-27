@@ -20,7 +20,7 @@
 - [ ] **The Menu recipe** — the row kinds named once, `menu-roster`, Sort and Hidden as rosters, the frame stylesheets down to geometry.
 - [ ] **The side slot** — the main window mounts `SidePane`; PaneSlide is one motion.
 - [ ] **The filing rows are executed** — `Interface/`, `Core/`, `Connections/`, `Navigation/` absorbing `Tabs/`, the Showcase out, `Surface/`, the casing renames — and the atlas's eight rule greps return empty.
-- [ ] **The token and scale rows are settled** — the zoom renames and merge, `--subline-h` / `--labels-gap`, the checkbox recipe.
+- [ ] **The token and scale rows are settled** — the zoom renames and merge, `--labels-gap`, the checkbox recipe.
 - [ ] **`ViewEmbedBlock.tsx:88` reads `cellRing(key)`.**
 - [ ] **The atlas's Open Decisions sections are empty**, each block deleted by a ruling.
 - [ ] **The Space dropdown is eyeballed** — carried from 08-25.
