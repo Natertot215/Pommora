@@ -162,11 +162,12 @@ export const readyPageIds = (s: SessionState): string =>
     .map(([id]) => id)
     .join(',')
 
+const activeTabOf = (s: SessionState): Tab | undefined =>
+  s.tabs.find((t) => t.id === s.activeTabId) ?? s.pinnedTabs.find((t) => t.id === s.activeTabId)
+
 /** The pause-on-change: the active tab has moved on to a target the pane is not yet showing. */
 export const frozenOf = (s: SessionState): boolean => {
-  const target = (
-    s.tabs.find((t) => t.id === s.activeTabId) ?? s.pinnedTabs.find((t) => t.id === s.activeTabId)
-  )?.target
+  const target = activeTabOf(s)?.target
   return target !== undefined && target.kind !== 'newtab' && !sameShownTarget(s.selection, target)
 }
 
@@ -190,20 +191,13 @@ const PER_NEXUS = {
 } satisfies Partial<NavigationSlice>
 
 export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
-  const findActiveTab = (): Tab | undefined => {
-    const s = get()
-    return (
-      s.tabs.find((t) => t.id === s.activeTabId) ?? s.pinnedTabs.find((t) => t.id === s.activeTabId)
-    )
-  }
-
   const syncActiveDetail = (): void => {
     // A tab-focus change (activate, new tab, a close refocusing) is not navigation — the breadcrumb
     // tail belongs to the tab you were walking, so it resets rather than leaking onto the new one.
     // In-tab moves and the breadcrumb-click dedup switch load detail through `select` directly, never
     // here, so their held depth is untouched.
     set({ crumbDepth: null })
-    const active = findActiveTab()
+    const active = activeTabOf(get())
     if (!active || active.target.kind === 'newtab') {
       pageFetchSeq++
       set({ selection: { kind: 'none' } })
@@ -757,7 +751,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
           // The cascade rewrites bodies NEXUS-WIDE — every warm copy is suspect, and the
           // tab-keyed editorState has no path fence (its key survives the rename): a warm
           // restore would revive the pre-cascade body and the next keystroke would write it
-          // back over the heal. Warmth is an accelerator; a rename trades it for correctness.
+          // back over the heal.
           clearWarm()
           const shownId = shownPage(get())?.target.id
           keepSlots((id) => id === shownId)

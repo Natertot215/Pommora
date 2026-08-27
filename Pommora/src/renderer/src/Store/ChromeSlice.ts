@@ -70,60 +70,64 @@ const PER_NEXUS = {
   navViewMode: 'list',
 } satisfies Partial<ChromeSlice>
 
-export const createChromeSlice: Slice<ChromeSlice> = (set, get) => ({
-  sidebarVisible: true,
-  toggleSidebar: () => set((s) => ({ sidebarVisible: !s.sidebarVisible })),
-  ribbonVisible: true,
-  toggleRibbon: () => set((s) => ({ ribbonVisible: !s.ribbonVisible })),
-  commands: DEFAULT_COMMANDS,
-
-  sidebarWidth: readStoredSidebarWidth(),
-  setSidebarWidth: (w) => set({ sidebarWidth: clampSidebar(w) }),
-  inspectorWidth: readStoredInspectorWidth(),
-  setInspectorWidth: (w) => set({ inspectorWidth: clampInspector(w) }),
-  persistPaneWidths: () => {
-    try {
-      localStorage.setItem(SIDEBAR_WIDTH_KEY, String(get().sidebarWidth))
-      localStorage.setItem(INSPECTOR_WIDTH_KEY, String(get().inspectorWidth))
-    } catch {
-      // widths just won't persist
-    }
-  },
-
-  ...PER_NEXUS,
-  setSubfieldExpanded: (expanded) => {
-    set({ subfieldExpanded: expanded })
+export const createChromeSlice: Slice<ChromeSlice> = (set, get) => {
+  const persistSubfield = (): void => {
     const s = get()
     void window.nexus.subfield
       .set({ order: s.subfieldOrder, expanded: s.subfieldExpanded })
       .catch(() => undefined)
-  },
-  setSubfieldOrder: (kind, ids) => {
-    set((s) => ({ subfieldOrder: { ...s.subfieldOrder, [kind]: ids } }))
-    const s = get()
-    void window.nexus.subfield
-      .set({ order: s.subfieldOrder, expanded: s.subfieldExpanded })
-      .catch(() => undefined)
-  },
-  setNavWindowMode: (mode) => {
-    set({ navWindowMode: mode })
+  }
+
+  const persistNavModes = (): void => {
     const s = get()
     void window.nexus.navViewModes
       .set({ window: s.navWindowMode, view: s.navViewMode })
       .catch(() => undefined)
-  },
-  setNavViewMode: (mode) => {
-    set({ navViewMode: mode })
-    const s = get()
-    void window.nexus.navViewModes
-      .set({ window: s.navWindowMode, view: s.navViewMode })
-      .catch(() => undefined)
-  },
+  }
 
-  settingsOpen: false,
-  openSettings: () => set({ settingsOpen: true }),
-  closeSettings: () => set({ settingsOpen: false }),
-  toggleSettings: () => set((s) => ({ settingsOpen: !s.settingsOpen })),
+  return {
+    sidebarVisible: true,
+    toggleSidebar: () => set((s) => ({ sidebarVisible: !s.sidebarVisible })),
+    ribbonVisible: true,
+    toggleRibbon: () => set((s) => ({ ribbonVisible: !s.ribbonVisible })),
+    commands: DEFAULT_COMMANDS,
 
-  resetChrome: () => set(PER_NEXUS),
-})
+    sidebarWidth: readStoredSidebarWidth(),
+    setSidebarWidth: (w) => set({ sidebarWidth: clampSidebar(w) }),
+    inspectorWidth: readStoredInspectorWidth(),
+    setInspectorWidth: (w) => set({ inspectorWidth: clampInspector(w) }),
+    persistPaneWidths: () => {
+      try {
+        localStorage.setItem(SIDEBAR_WIDTH_KEY, String(get().sidebarWidth))
+        localStorage.setItem(INSPECTOR_WIDTH_KEY, String(get().inspectorWidth))
+      } catch {
+        // widths just won't persist
+      }
+    },
+
+    ...PER_NEXUS,
+    setSubfieldExpanded: (expanded) => {
+      set({ subfieldExpanded: expanded })
+      persistSubfield()
+    },
+    setSubfieldOrder: (kind, ids) => {
+      set((s) => ({ subfieldOrder: { ...s.subfieldOrder, [kind]: ids } }))
+      persistSubfield()
+    },
+    setNavWindowMode: (mode) => {
+      set({ navWindowMode: mode })
+      persistNavModes()
+    },
+    setNavViewMode: (mode) => {
+      set({ navViewMode: mode })
+      persistNavModes()
+    },
+
+    settingsOpen: false,
+    openSettings: () => set({ settingsOpen: true }),
+    closeSettings: () => set({ settingsOpen: false }),
+    toggleSettings: () => set((s) => ({ settingsOpen: !s.settingsOpen })),
+
+    resetChrome: () => set(PER_NEXUS),
+  }
+}

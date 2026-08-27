@@ -5,6 +5,7 @@ import type { NexusTree, PageDetail, SelectTarget, Tab } from '@shared/types'
 import {
   frozenOf,
   type PageSlot,
+  type PageTarget,
   previewTargetOf,
   shownDetail,
   shownPage,
@@ -15,7 +16,7 @@ import { navKey } from './Navigation/navRecents'
 import { clearWarm } from './Tabs/warmCache'
 
 // Stub the narrow window.nexus surface the tab glue reaches (page fetch, recents save, tab persist,
-// the applyTree accent read) so it runs in isolation.
+// the mutation gateway, the applyTree accent read) so it runs in isolation.
 beforeEach(() => {
   clearWarm() // module state — never leaks across tests
   ;(window as unknown as { nexus: unknown }).nexus = {
@@ -27,6 +28,7 @@ beforeEach(() => {
     },
     systemAccent: vi.fn(async () => '#000000'),
     devicePrefs: { load: vi.fn(async () => ({ ok: true, value: null })) },
+    mutate: vi.fn(async () => ({ ok: true, value: {} })),
   }
 })
 
@@ -297,7 +299,7 @@ describe('store — warm tabs (B-2/B-3)', () => {
 })
 
 describe('store — page slots', () => {
-  const pg = (id: string, path = `Notes/${id}.md`): SelectTarget => ({ kind: 'page', id, path })
+  const pg = (id: string): PageTarget => ({ kind: 'page', id, path: `Notes/${id}.md` })
   const detail = (id: string, path = `Notes/${id}.md`): PageDetail => ({
     id,
     title: id.toUpperCase(),
@@ -305,10 +307,10 @@ describe('store — page slots', () => {
     frontmatter: {},
     body: 'x',
   })
-  const ready = (id: string, path = `Notes/${id}.md`): PageSlot => ({
+  const ready = (id: string): PageSlot => ({
     status: 'ready',
-    target: { kind: 'page', id, path },
-    detail: detail(id, path),
+    target: pg(id),
+    detail: detail(id),
     body: 'x',
   })
   const openPage = (): ReturnType<typeof vi.fn> => window.nexus.openPage as ReturnType<typeof vi.fn>
@@ -331,10 +333,6 @@ describe('store — page slots', () => {
     openPage().mockImplementation(async (path: string) => ({
       ok: true,
       value: detail(path.slice(6, 7), path),
-    }))
-    ;(window.nexus as unknown as Record<string, unknown>).mutate = vi.fn(async () => ({
-      ok: true,
-      value: {},
     }))
     seed({
       tree: treeWith([
