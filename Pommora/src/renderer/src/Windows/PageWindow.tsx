@@ -15,7 +15,7 @@ import { getContentViewRect } from '../Detail/ContentView'
 import { NavTrail, type TrailSegment } from '@renderer/DesignSystem/Elements/NavTrail'
 import { text } from '@renderer/DesignSystem/Tokens'
 import { ancestryOf, pageIndexOf, resolveIndexOf } from '../treeIndex'
-import { useEmbedScale, useSession, type PreviewTarget } from '../store'
+import { previewTargetOf, useEmbedScale, useSession, type PreviewTarget } from '../store'
 import { WindowActions } from './WindowActions'
 import { WindowInspector } from './WindowInspector'
 import { WindowTabStrip } from './WindowTabStrip'
@@ -42,7 +42,7 @@ export function PageWindow(): React.JSX.Element | null {
   // Keys on the PAGE flavor, not the derived target — the nav flavor renders in NavWindow's
   // chrome, and its map tab nulls the target without closing anything.
   const open = useSession((s) => s.preview?.flavor === 'page')
-  const target = useSession((s) => s.previewTarget)
+  const target = useSession(previewTargetOf)
   const { mounted, closing } = useExitPresence(open)
   // Held through the exit animation (the store nulls target at close). Not keyed by target — an
   // overtake swaps contents in place, the window never jumps.

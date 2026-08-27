@@ -56,10 +56,12 @@ export function closeTabIn(p: PreviewState, id: string): PreviewState | null {
   return { ...p, tabs, activeTabId, originId }
 }
 
-export function deriveTarget(p: PreviewState | null): { id: string; path: string } | null {
+/** The page the window is showing — the active tab's own target, so a subscriber sees one
+ *  reference per state; the nav flavor's map tab is no page. */
+export function deriveTarget(
+  p: PreviewState | null,
+): Extract<PreviewTabTarget, { kind: 'page' }> | null {
   if (!p) return null
   const active = p.tabs.find((t) => t.id === p.activeTabId)
-  return active && active.target.kind === 'page'
-    ? { id: active.target.id, path: active.target.path }
-    : null
+  return active?.target.kind === 'page' ? active.target : null
 }
