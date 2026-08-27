@@ -102,30 +102,30 @@ textarea,
   transition: --io var(--duration-base) var(--ease-base);
   overflow: clip;
   background: var(--main-bg);
-  --inset-content: 24px;
+  --content-inset: 24px;
   /* Left inset that clears the floating glass sidebar (variable width); its base addend IS the
      gutter, so left + right stay equal. Collapses to the bare gutter when the sidebar hides. */
-  --content-inset: calc(var(--app-inset) + var(--sidebar-width) + var(--inset-content));
+  --content-edge: calc(var(--app-inset) + var(--sidebar-width) + var(--content-inset));
   /* Right inset mirrors the left: bare gutter normally, expanding to clear the inspector when open. */
-  --content-inset-right: var(--inset-content);
+  --content-edge-right: var(--content-inset);
   /* Surface insets: block-based views (homepage, contexts) drop the content gutter — their tile handles
      supply the grip/chevron actions a page/table needs the detail lane for, so no reserved lane.*/
   --surface-lane: 8px;
-  --surface-inset: calc(var(--content-inset) - var(--inset-content) + var(--surface-lane));
-  --surface-inset-right: calc(
-    var(--content-inset-right) -
-    var(--inset-content) +
+  --surface-edge: calc(var(--content-edge) - var(--content-inset) + var(--surface-lane));
+  --surface-edge-right: calc(
+    var(--content-edge-right) -
+    var(--content-inset) +
     var(--surface-lane)
   );
-  --surface-banner-inset: calc(var(--content-inset) - var(--inset-content) + 12px);
-  --surface-banner-inset-right: calc(var(--content-inset-right) - var(--inset-content) + 12px);
+  --surface-banner-edge: calc(var(--content-edge) - var(--content-inset) + 12px);
+  --surface-banner-edge-right: calc(var(--content-edge-right) - var(--content-inset) + 12px);
 }
 .shell.sidebar-hidden {
-  --content-inset: var(--inset-content);
+  --content-edge: var(--content-inset);
 }
 .shell.inspector-open {
   --io: 1;
-  --content-inset-right: calc(var(--app-inset) + var(--inspector-width) + var(--inset-content));
+  --content-edge-right: calc(var(--app-inset) + var(--inspector-width) + var(--content-inset));
 }
 /* Edge-drag resize holds --io at its current value (no re-animate) so the pane tracks the cursor 1:1. */
 .shell.is-resizing {
