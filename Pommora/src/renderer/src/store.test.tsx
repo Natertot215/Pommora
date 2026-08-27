@@ -296,6 +296,95 @@ describe('store — warm tabs (B-2/B-3)', () => {
   })
 })
 
+describe('store — page slots', () => {
+  const pg = (id: string, path = `Notes/${id}.md`): SelectTarget => ({ kind: 'page', id, path })
+  const detail = (id: string, path = `Notes/${id}.md`): PageDetail => ({
+    id,
+    title: id.toUpperCase(),
+    path,
+    frontmatter: {},
+    body: 'x',
+  })
+  const ready = (id: string, path = `Notes/${id}.md`): PageSlot => ({
+    status: 'ready',
+    target: { kind: 'page', id, path },
+    detail: detail(id, path),
+    body: 'x',
+  })
+  const openPage = (): ReturnType<typeof vi.fn> => window.nexus.openPage as ReturnType<typeof vi.fn>
+
+  it('a slot outlives one tab while another points at its page, and dies with the last', () => {
+    seed({
+      tabs: [uTab('t1', pg('a'), [pg('a')], 0), uTab('t2', pg('a'), [pg('a')], 0)],
+      activeTabId: 't1',
+      tabMru: ['t1', 't2'],
+      selection: pg('a'),
+      pages: { a: ready('a') },
+    })
+    useSession.getState().closeTab('t2')
+    expect(useSession.getState().pages.a?.status).toBe('ready')
+    useSession.getState().closeTab('t1')
+    expect(useSession.getState().pages.a).toBeUndefined()
+  })
+
+  it('a rename deletes every parked slot and reloads the shown one', async () => {
+    openPage().mockImplementation(async (path: string) => ({
+      ok: true,
+      value: detail(path.slice(6, 7), path),
+    }))
+    ;(window.nexus as unknown as Record<string, unknown>).mutate = vi.fn(async () => ({
+      ok: true,
+      value: {},
+    }))
+    seed({
+      tree: treeWith([
+        { id: 'a', path: 'Notes/a.md' },
+        { id: 'b', path: 'Notes/b.md' },
+      ]),
+      tabs: [uTab('t1', pg('a'), [pg('a')], 0), uTab('t2', pg('b'), [pg('b')], 0)],
+      activeTabId: 't1',
+      tabMru: ['t1', 't2'],
+      selection: pg('a'),
+      pages: { a: ready('a'), b: ready('b') },
+    })
+    await useSession
+      .getState()
+      .mutate({ op: 'rename', path: 'Notes/c.md', kind: 'page', newName: 'd' })
+    const s = useSession.getState()
+    expect(s.pages.b).toBeUndefined()
+    expect(s.pages.a?.status).toBe('ready')
+    expect(openPage()).toHaveBeenCalledWith('Notes/a.md')
+    // Returning to the parked page fetches cold — nothing warm survived the cascade.
+    openPage().mockClear()
+    useSession.getState().activateTab('t2')
+    expect(openPage()).toHaveBeenCalledWith('Notes/b.md')
+  })
+
+  it('a tree push that re-paths the shown page spares its slot while the re-select is in flight', async () => {
+    let resolveA!: (v: unknown) => void
+    openPage().mockImplementation(() => new Promise((r) => (resolveA = r)))
+    seed({
+      tree: treeWith([{ id: 'a', path: 'Notes/a.md' }]),
+      tabs: [uTab('t1', pg('a'), [pg('a')], 0)],
+      activeTabId: 't1',
+      tabMru: ['t1'],
+      selection: pg('a'),
+      pages: { a: ready('a') },
+    })
+    const p = useSession.getState().applyTree(treeWith([{ id: 'a', path: 'Notes/moved.md' }]))
+    let s = useSession.getState()
+    expect(s.pages.a?.status).toBe('ready') // the pause holds on the old slot
+    expect(frozenOf(s)).toBe(true)
+    expect(openPage()).toHaveBeenCalledWith('Notes/moved.md')
+    resolveA({ ok: true, value: detail('a', 'Notes/moved.md') })
+    await p
+    await new Promise((r) => setTimeout(r, 0))
+    s = useSession.getState()
+    expect(shownDetail(s)?.path).toBe('Notes/moved.md')
+    expect(frozenOf(s)).toBe(false)
+  })
+})
+
 /** A minimal tree with one Collection holding the given top-level pages (selection.test.ts's shape). */
 function treeWith(pages: { id: string; path: string }[]): NexusTree {
   return {
