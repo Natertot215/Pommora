@@ -4,9 +4,6 @@
 /* The content view = the routed view (fills + scrolls) above the Subfield footer (pinned, collapsible).
    position:relative anchors the hover toggle chevron. */
 .content-view {
-  /* Fixed Subfield bar height — the bar + its riding toggle chevron both read it, so a view switch
-     with fewer items never janks the height. */
-  --subline-h: 24px;
   position: relative;
   height: 100%;
   display: flex;

@@ -6,11 +6,12 @@
   --main-bg: var(
     --bg-window
   ); /* the background.window token via the theme-vars bridge — single source (@shared/theme) */
-  --app-inset: 5px; /* gap from the window edges */
+  --app-inset: 6px; /* gap from the window edges */
   --app-radius: 12px; /* matched to the macOS window corner (≈ window radius − inset) */
   --surface-inset: 10px; /* glass edge → content, inside any floating glass */
   --row-inset: 6px; /* row edge → text, inside a row */
-  --toolbar-h: 38px; /* the top strip: titlebar drag region + floating toolbar clusters */
+  --toolbar-h: 38px;
+  --subfield-h: 24px; /* the Subfield bar; its riding toggle chevron and the window footer read it */ /* the top strip: titlebar drag region + floating toolbar clusters */
   /* iOS safe-area insets — inert on desktop (no cutouts); the mobile shell / drawers / bottom bar mount to these. */
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
