@@ -214,9 +214,9 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
 - Control: `rg -F 'pinnedTabs' Pommora/src/renderer/src -l` → ≥ 3.
 
 **Steps:**
-- [ ] `deriveTarget`'s return; `setPinned`; convert the four; `previewTargetOf`; convert readers; gates green (`windowTabs.test.ts` may assert on a fresh object — invert it in the same commit).
-- [ ] App: pin, unpin, reorder a pin; a renamed pinned page re-titles; a preview's tab strip matches its target; the NavWindow's map tab focuses its search.
-- [ ] Commit: `refactor(store): pinned tabs have one writer; the preview target is read off its tab`.
+- [x] `deriveTarget`'s return; `setPinned`; convert the four; `previewTargetOf`; convert readers; gates green (`windowTabs.test.ts` may assert on a fresh object — invert it in the same commit).
+- [x] App (Gate 1 pass): pin, unpin, reorder a pin; a renamed pinned page re-titles; a preview's tab strip matches its target; the NavWindow's map tab focuses its search.
+- [x] Commit: `refactor(store): pinned tabs have one writer; the preview target is read off its tab`.
 
 #### Gate 1 — the singleton is gone
 - [ ] Gate commands green, exit codes read directly.
@@ -314,7 +314,7 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
 - [ ] **Phase 1** — A slot per open page · base `63a473fe`
   - [x] Task 1 — The slot, the hosts, and the capture at unmount · `<commit>` · `store.ts` 1,620 → 1,612 code lines; whole diff −29
   - [x] Task 2 — The Subfield is driven · `<commit>` · `inert` marks a floating window's crumbs (the tab-neutral, no-click behavior the `scope` mode carried needs its own signal once every host passes a page)
-  - [ ] Task 3 — One writer for the pinned tabs; the preview target is read · `<commit>`
+  - [x] Task 3 — One writer for the pinned tabs; the preview target is read · `<commit>` · `store.ts` 1,596 code lines
 - [ ] **Phase 2** — The file becomes slices · base `<commit>`
   - [ ] Task 4 — The slice files and the composition root · `<commit>`
   - [ ] Task 5 — Tests for what the re-key created · `<commit>`
