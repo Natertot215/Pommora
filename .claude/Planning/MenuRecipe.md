@@ -369,9 +369,11 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 
 **Requirement:** 10
 
-**Why:** The pane is a `PickerMenu` (`bareSurface`) with a fully hand-rolled 28px row, `--fill-quaternary` selection, and no hover. As `item` inside a Compact pane it is 23, hovers, selects with `itemSelected`, and the `.mdpm-ac` max-height stops hardcoding `28px`.
+**Why:** The autocomplete becomes a standard Compact menu — nothing bespoke survives (Nathan, 08-28).
 
-**Files:** `MarkdownPM/AutocompletePane.tsx` (rows → `MenuItem` with `selected`, `onMouseDown={pick}` carrying the `preventDefault` and the `.mdpm-ac-forget` guard — never `onClick`, which would take focus and close the pane; the pane's `font-size` override deleted, so the text drops 15 → 12), `MarkdownPM/Styles.css` — `.mdpm-ac` keeps its pane box (width floor/cap, `overflow-y`, `padding: 4px`) and only its `max-height` line changes to `calc(var(--ac-rows) * 23px + 8px)`; `.mdpm-ac-row*` deleted, `.claude/Guidelines/Cohesion-Rulings.md:66` deleted.
+**Today:** `AutocompletePane.tsx` renders a `PickerMenu` (`bareSurface`, `contentClassName="mdpm-ac"`) with hand-rolled `div.mdpm-ac-row` rows — their own 28px box, `--fill-quaternary` selection (`.mdpm-ac-selected`), `.mdpm-ac-icon`, `.mdpm-ac-title` (secondary, the `.mdpm-ac-match` prefix primary), a `.mdpm-ac-forget` `HoverRemove` pushed right by `margin-left: auto` — and `.mdpm-ac` caps the pane at `calc(var(--ac-rows) * 28px + 8px)` (`--ac-rows: 4`), scrolls it, pads it 4px, and overrides the font to the editor's 15px.
+
+**Becomes:** the same `PickerMenu` pane, Compact by `pane`, on its own `surface` gutter (the 4px it already pads) and its own scroll cap (`maxHeight={PICKER_MAX_HEIGHT}` — `--ac-rows` had one reader and goes); rows are plain `MenuItem`s — `leading` the page `EntityIcon` or the split glyph, children the title with the match prefix as an inline `mdpm-ac-match` span (the one content class: `font-weight: emphasized`, since the row's title is the recipe's primary), `selected={i === v.index}` → `itemSelected`, `onMouseDown` carrying the `preventDefault` and the `.mdpm-ac-forget` guard (never `onClick`, which would take focus and close the pane), `trailing` the same `HoverRemove reveal="host"` with `hoverRemoveHost` on the row; `.mdpm-ac` keeps only its width floor and cap (KNOBs). `.mdpm-ac-row`, `-selected`, `-icon`, `-title`, `-forget` rules delete; the font override goes, so the text is the control ramp's 12; rows measure 23. `.claude/Guidelines/Cohesion-Rulings.md:66` is the closeout's.
 
 **Derivation**
 - `grep -rF "mdpm-ac-row" src` → 4 → 0. Control: `grep -rF "mdpm-ac" src` → ≥ 2.
@@ -379,8 +381,8 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 **Failure half:** zero suggestions → the pane doesn't open (existing behavior, unchanged); the active suggestion → `itemSelected`; keyboard navigation → the `selected` prop moves, no focus change.
 
 **Steps:**
-- [ ] Rewrite; `MarkdownPM` autocomplete tests pass; running pass on `[[` in a page.
-- [ ] Commit `refactor(markdown): the autocomplete rows are the menu's`.
+- [x] Rewrite; `MarkdownPM` autocomplete tests pass; running pass on `[[` in a page.
+- [x] Commit `refactor(markdown): the autocomplete rows are the menu's`.
 
 #### Task 12a: `NavTrail` owns its look
 
@@ -623,7 +625,7 @@ Every phase runs the same loop. Nothing advances on a summary; every claim is re
   - [x] Task 9 — NavList is a menu
   - [x] Task 10 — Settings rows
   - [x] Task 11 — value + the Scale row
-  - [ ] Task 12 — Autocomplete
+  - [x] Task 12 — Autocomplete
   - [ ] Task 12a — NavTrail owns its look
   - [ ] Task 12b — the Trash is a menu
 - [ ] **Phase 3** — The Index
@@ -641,6 +643,7 @@ Every phase runs the same loop. Nothing advances on a summary; every claim is re
   - [ ] Task 23 — the icon ladder is named as the type ramp is
 
 ### Rulings
+- 08-28 (Nathan): the autocomplete is a standard Compact menu; nothing bespoke survives. Every task's text names what exists today and what it becomes; where the written task is vague, the executor writes that pair in before committing.
 - 08-28 (Nathan): the Settings window's own tokens go — it is plain menu logic: the body pads `--surface-inset`, rows are `item`, headings are `heading` + `headingCaps`, controls sit at the trailing edge, no seat widths; only what is structurally Settings stays (the rail, the frame switch, the empty caption), and a structural reader keeps a literal + `KNOB`, not a var.
 - 08-28 (Nathan): the Trash keeps its checkboxes; they move into the lead inset.
 - 08-28 (Nathan): NavList and the Trash pad their lead with `--content-inset`, as TableView does; the pin / checkbox sits inside it. NavView too — its rows start on the content edge and pad their lead with `--content-inset` like every NavList, so all three surfaces read one `--row-pad-lead` and one overlay rule.
@@ -658,6 +661,7 @@ Every phase runs the same loop. Nothing advances on a summary; every claim is re
 - Task 9: the "today" figures in its prose predate Task 0's tree — `.nav-search-row` already pads `var(--surface-inset)`, `.nav-item-main` pads `6px` (rows likely 28 already), gap 6; the +2 / −10 / −12 search-edge offsets are stale. Re-read Task 9 against the live tree at Phase 2's open.
 
 ### Deviations
+- Task 12 (ruling 08-28): rewritten in the Today → Becomes form above. `aliasPicker.test.tsx` reached rows through `.mdpm-ac-row` and the glyph through `.mdpm-ac-icon`; the same assertions now key on `[class*="item"]` and its leading `[class*="side"] svg` (the selectors changed, the assertions did not). The pane's scroll cap is the picker's own 240 rather than four rows — the standard picker cap, per the ruling.
 - Task 11. Today: `LayoutFrame`'s Style row and `SettingsFrame`'s Open In row each hand-built a `side` holding a `detail` span and a chevron; the Scale row was a raw `div` wearing `item` + `scaleRow` (`width: 100%`) with the slider as a direct child; `BlockHandleMenu`'s Scale trigger typed its value through `handleMenu.scaleValue` (footnote · secondary); `groupFrame.groupByValue` had no reader (GroupFrame's `groupByValue` is a local const). Becomes: `MenuItem` takes `value` (rendered first in the trailing cluster, before `detail` and `trailing`) on the recipe's `value` class (control.standard · label-control); the two toggle rows pass `value` + a chevron `trailing`; the Scale row is a `MenuItem` with the slider as `trailing`; the block menu's trigger keeps its button and types its value with the recipe's `value`; `scaleRow`, `scaleValue`, and `groupByValue` delete. Hazard Window 3 widens to this slider: its track has no width in the trailing cluster until Task 14.
 - Task 10 (ruling 08-28). Today: `.settings-window` declared `--settings-inset: 18px` for `.settings-body` alone, the body's top pad read the theme's `--close-clearance` (`CLOSE_CLEARANCE` 30, one reader), `.settings-heading` sat on the body's edge, `.settings-empty` was a tertiary `<p>`, and `.settings-wide` seated a slider or path field in a 260px box through `SettingsRow`'s `wide`. Becomes: the body pads `--surface-inset` with a `30px` `KNOB` for the × clearance (`--close-clearance` and `CLOSE_CLEARANCE` deleted with their one reader), `.settings-heading` pads `0 var(--row-pad-x) 10px` so it lands on the rows' text edge, the empty state is `MenuCaption`, `.settings-wide` and `wide` are gone and the slider and path field sit in the trailing cluster as every switch does. Hazard Window 3: the slider's track has no width of its own until Task 14's `--row-trailing-width` (the `Slider` root is `flex: 1` in a shrink-wrapped cluster).
 - Task 9 (rulings 08-28): the Trash keeps its checkboxes, and every NavList surface pads its lead with `--content-inset` — so `navList.css`'s one `.nav-list` rule sets both row tokens for NavWindow, Trash, and NavView alike (`--row-pad-x: var(--navwindow-inset)`, which NavView already zeroes), `--nav-list-lead`, `--trash-gutter`, `--trash-lead`, and NavView's negative-left pin KNOB delete, and the Trash rows migrate here (a `.nav-item` cannot outlive this task) with the checkbox in the `overlay` slot. The overlay is the recipe's: `menu-base.css.ts` `overlay` — absolute, `left: calc(var(--row-pad-lead) / 2)` (the same 12px as `--content-inset / 2` on every surface, and it follows the lead should one change), revealed on `item:hover`; the pin's own look stays `.nav-pin` in `navList.css`, the checkbox's hold-visible stays `.trash-check`. `detail`'s 55% cap rides the trailing cluster — `${side}:has(${detail})` shrinks and caps at 55% of the row — because a percentage on `detail` itself would resolve against the shrink-wrapped cluster and leave a hole beside a truncated path; `detail` and `titleText` both carry `--over-scroll-fade`. The Trash's segment bar keeps `table-segment` on the row and moves its `right` to where the date lane begins (one override); `.trash-date` drops the right pad the row now carries (the head's trailing edge aligns at Task 12b). The inert extras row is `MenuItem disabled` with its tooltip on an inner span that re-enables pointer events, since `rowDisabled`'s `pointer-events: none` inherits. `MenuItem` is a `forwardRef` with `onMouseDown` and `overlay`; the `--surface-inset` control drops 9 → 8 with the NavView pin KNOB that read it.
