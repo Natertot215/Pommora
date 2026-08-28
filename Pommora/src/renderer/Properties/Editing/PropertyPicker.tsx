@@ -2,10 +2,7 @@ import type { RefObject } from 'react'
 import type { ColumnLook } from '@shared/columnStyles'
 import { type PropertyDefinition, statusOptions } from '@shared/properties'
 import type { PropertyValue } from '@shared/propertyValue'
-import {
-  PickerMenu,
-  PickerOption,
-} from '@renderer/DesignSystem/Components/Pickers/PickerMenu/PickerMenu'
+import { PickerMenu, PickerOption } from '@renderer/DesignSystem/Pickers/PickerMenu/PickerMenu'
 import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import { SpaceChip } from '@renderer/DesignSystem/Labels'
 import { OptionChip } from './OptionChip'

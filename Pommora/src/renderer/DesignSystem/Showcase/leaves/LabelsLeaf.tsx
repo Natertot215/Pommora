@@ -12,7 +12,7 @@ import {
   shape,
   textCap,
 } from '../../Labels'
-import { DualSwitch } from '../../Components/Controls/Switches/DualSwitch'
+import { DualSwitch } from '../../Controls/Switches/DualSwitch'
 import { Icon } from '../../Symbols'
 import { SortableZone, useDragItem, reorder } from '../../Interactions/drag'
 import type { LabelColorName } from '../../Labels'

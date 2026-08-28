@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Icon } from '../../Symbols'
-import { DualSwitch } from '../../Components/Controls/Switches/DualSwitch'
+import { DualSwitch } from '../../Controls/Switches/DualSwitch'
 import { Menu, MenuItem, heading, headingCaps } from '../../Menus'
 import { cx } from '../../Util/cx'
 import { text } from '../../Tokens'

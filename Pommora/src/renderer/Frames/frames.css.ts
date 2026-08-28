@@ -13,7 +13,7 @@ import {
 import { button as eyeToggleButton } from '@renderer/DesignSystem/Elements/EyeToggle/eyeToggle.css'
 import { menuAnchor } from '@renderer/DesignSystem/Menus/menu-anchor'
 import { stack } from '@renderer/DesignSystem/Tokens/stack'
-import { fieldRing } from '@renderer/DesignSystem/Components/Fields/fieldRing'
+import { fieldRing } from '@renderer/DesignSystem/Fields/fieldRing'
 const c = colorVars.color
 
 // KNOBS — every ViewFrame tunable, grouped by what it controls.

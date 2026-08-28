@@ -3,7 +3,7 @@ import { Icon } from '../Symbols'
 import { cx } from '../Util/cx'
 import { Reveal } from '../Animation/Reveal'
 import { MenuItem } from './menu-row'
-import { PickerOption } from '../Components/Pickers/PickerMenu/PickerMenu'
+import { PickerOption } from '../Pickers/PickerMenu/PickerMenu'
 import { side } from './menu-base.css'
 import {
   railRow,

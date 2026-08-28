@@ -1,4 +1,4 @@
-import { Segmented, type Segment } from '@renderer/DesignSystem/Components/Controls/Button'
+import { Segmented, type Segment } from '@renderer/DesignSystem/Controls/Button'
 
 /**
  * The glass pill is a separate in-flow layer from the live buttons so it can fade independently as

@@ -1,7 +1,7 @@
 import {
   IconPicker as Picker,
   type IconPickerProps,
-} from '@renderer/DesignSystem/Components/Pickers/IconPicker/IconPicker'
+} from '@renderer/DesignSystem/Pickers/IconPicker/IconPicker'
 import { useIconFavorites } from './iconFavorites'
 
 /** The IconPicker bound to this nexus's favorites. */

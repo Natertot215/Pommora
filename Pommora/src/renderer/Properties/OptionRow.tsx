@@ -1,11 +1,11 @@
 import { useRef, type PointerEvent as ReactPointerEvent } from 'react'
-import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
+import { Button } from '@renderer/DesignSystem/Controls/Button'
 
 import type { ColumnLook } from '@shared/columnStyles'
 import type { PropertyDefinition } from '@shared/properties'
 import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import { cx } from '@renderer/DesignSystem/Util/cx'
-import { ColorPicker } from '@renderer/DesignSystem/Components/Pickers/ColorPicker/ColorPicker'
+import { ColorPicker } from '@renderer/DesignSystem/Pickers/ColorPicker/ColorPicker'
 import { OptionChip } from '@renderer/Properties/Editing/OptionChip'
 import { IconPicker } from '@renderer/Settings/IconPicker'
 import { OptionNameCaret, ghostAnchorProps } from './GhostOptionChip'

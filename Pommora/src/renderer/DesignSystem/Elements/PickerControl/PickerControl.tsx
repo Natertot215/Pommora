@@ -1,8 +1,8 @@
 import { useRef, useState } from 'react'
-import { EditableInput } from '../../Components/Fields'
+import { EditableInput } from '../../Fields'
 import { cx } from '../../Util/cx'
 import { Icon } from '../../Symbols'
-import { PickerMenu, PickerOption } from '../../Components/Pickers/PickerMenu'
+import { PickerMenu, PickerOption } from '../../Pickers/PickerMenu'
 import { popRowMenu, useNativeMenus } from '@renderer/nativeMenus'
 import * as s from './pickerControl.css'
 

@@ -13,7 +13,7 @@ import {
 import { text } from '@renderer/DesignSystem/Tokens'
 import { WindowBase } from '@renderer/Windows/window-base'
 import type { FloatingBounds } from '@renderer/DesignSystem/Interactions/FloatingWindow'
-import type { SidePaneBounds } from '@renderer/DesignSystem/Components/SidePane/SidePane'
+import type { SidePaneBounds } from '@renderer/DesignSystem/SidePane/SidePane'
 import type { DevicePrefs } from '@shared/devicePrefs'
 import type { PickerChoice } from '@renderer/DesignSystem/Elements/PickerControl'
 import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'

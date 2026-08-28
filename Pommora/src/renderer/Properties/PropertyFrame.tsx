@@ -41,7 +41,7 @@ import {
 import { Reveal } from '@renderer/DesignSystem/Animation/Reveal'
 import { duration } from '@renderer/DesignSystem/Animation'
 import { IconPicker } from '@renderer/Settings/IconPicker'
-import { RenamableLabel } from '@renderer/DesignSystem/Components/Fields'
+import { RenamableLabel } from '@renderer/DesignSystem/Fields'
 import { InlineEditHeader } from '../Frames/InlineEditHeader'
 import { OptionEditor } from './Editors/OptionEditor'
 import { OPTION_STYLE_OPTIONS, type OptionStyle } from './OptionRow'
