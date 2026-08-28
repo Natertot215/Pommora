@@ -27,6 +27,7 @@ export function URLEditor({
             rows: [
               {
                 kind: 'item',
+                inert: true,
                 label: 'Underline',
                 trailing: {
                   kind: 'switch',
@@ -37,6 +38,7 @@ export function URLEditor({
               },
               {
                 kind: 'item',
+                inert: true,
                 label: 'Color',
                 trailing: {
                   kind: 'color',
@@ -48,6 +50,7 @@ export function URLEditor({
               },
               {
                 kind: 'item',
+                inert: true,
                 label: 'Format',
                 trailing: {
                   kind: 'picker',

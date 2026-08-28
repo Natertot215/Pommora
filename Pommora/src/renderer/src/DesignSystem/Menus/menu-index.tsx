@@ -34,6 +34,7 @@ export type MenuRow =
       trailing?: Trailing
       selected?: boolean
       disabled?: boolean
+      inert?: boolean
       onSelect?: () => void
       className?: string
     }
@@ -101,6 +102,7 @@ export function MenuRowView({ row }: { row: MenuRow }): React.JSX.Element {
           trailing={t && trailingNode(t)}
           selected={row.selected}
           disabled={row.disabled}
+          inert={row.inert}
           onClick={(t?.kind === 'value' && t.onToggle) || row.onSelect}
         >
           {row.label}
@@ -111,7 +113,7 @@ export function MenuRowView({ row }: { row: MenuRow }): React.JSX.Element {
 }
 
 const rowKey = (row: MenuRow, ordinal: number): string =>
-  'label' in row && typeof row.label === 'string' ? row.label : `${row.kind}:${ordinal}`
+  `${ordinal}:${'label' in row && typeof row.label === 'string' ? row.label : row.kind}`
 
 export function MenuIndex({ sections }: { sections: MenuSection[] }): React.JSX.Element {
   let ordinal = 0

@@ -1,6 +1,7 @@
-import { style } from '@vanilla-extract/css'
+import { globalStyle, style } from '@vanilla-extract/css'
 import { vars as colorVars } from '../../Tokens/color.css'
-import { text } from '../../Tokens/typography.css'
+import { font, text } from '../../Tokens/typography.css'
+import { footingBar } from '../../Menus/menu-base.css'
 import { base } from '../../Components/Fields/fields.css'
 
 const c = colorVars.color
@@ -28,3 +29,10 @@ export const value = style([
 export const written = style({ display: 'inline-flex', alignItems: 'center' })
 
 export const caretShape = style([base, { width: 'auto', minWidth: '12px' }])
+
+globalStyle(`${footingBar} ${value}`, {
+  fontSize: font.scale.footnote.size,
+  lineHeight: font.scale.footnote.line,
+  fontWeight: font.weight.emphasized,
+  color: c.label.secondary,
+})

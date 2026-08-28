@@ -32,6 +32,7 @@ export function CheckboxEditor({
             rows: [
               {
                 kind: 'item',
+                inert: true,
                 label: 'Color',
                 trailing: {
                   kind: 'color',
@@ -43,6 +44,7 @@ export function CheckboxEditor({
               },
               {
                 kind: 'item',
+                inert: true,
                 label: 'Style',
                 trailing: {
                   kind: 'picker',

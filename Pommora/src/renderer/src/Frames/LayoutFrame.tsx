@@ -169,7 +169,6 @@ export function LayoutFrame({
               options={BANNERS}
               onPick={(v) => write({ card_banner: v })}
               solid
-              footing
             />
           }
         >

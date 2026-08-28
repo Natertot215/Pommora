@@ -3,7 +3,6 @@ import { EditableInput } from '../../Components/Fields'
 import { cx } from '../../Util/cx'
 import { Icon } from '../../Symbols'
 import { PickerMenu, PickerOption } from '../../Components/Pickers/PickerMenu'
-import { detail } from '../../Menus/menu-base.css'
 import { popRowMenu, useNativeMenus } from '@renderer/nativeMenus'
 import * as s from './pickerControl.css'
 
@@ -25,7 +24,6 @@ export function PickerControl<T extends string>({
   onPick,
   typeable,
   solid = false,
-  footing = false,
 }: {
   ariaLabel: string
   value: T
@@ -38,8 +36,6 @@ export function PickerControl<T extends string>({
   typeable?: { text: string; suffix?: string; onCommit: (typed: string) => void }
   /** Opaque menu surface — for pickers that open over another pane (the block Scale idiom). */
   solid?: boolean
-  /** Pinned-footer tone — the value reads `detail`, sitting level with the Style row's label. */
-  footing?: boolean
 }): React.JSX.Element {
   const [open, setOpen] = useState(false)
   const [typing, setTyping] = useState(false)
@@ -70,18 +66,17 @@ export function PickerControl<T extends string>({
     else setOpen(true)
   }
 
-  const valueClass = footing ? detail : s.value
   const chevron = <Icon name="chevrons-up-down" size="control" />
   // The host span outlives the swap below, so the menu keeps measuring one box while the button it
   // holds becomes a field and back.
   const trigger = (
     <span ref={ref} className={s.host}>
       {typing && typeable ? (
-        <span className={cx(s.trigger, valueClass)}>
+        <span className={cx(s.trigger, s.value)}>
           <span className={s.written}>
             <EditableInput
               value={typeable.text}
-              className={cx(valueClass, s.caretShape)}
+              className={cx(s.value, s.caretShape)}
               autoSize
               onCommit={(typed) => {
                 setTyping(false)
@@ -115,7 +110,7 @@ export function PickerControl<T extends string>({
               : undefined
           }
         >
-          <span className={valueClass}>{labelOf(options, value)}</span>
+          <span className={s.value}>{labelOf(options, value)}</span>
           {chevron}
         </button>
       )}
