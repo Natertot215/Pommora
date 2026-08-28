@@ -112,9 +112,10 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 │   │           ├── // Blocks            | • Tile content for the dashboard layer
 │   │           ├── // Cards             | • The card chassis — the gallery and CardView wear it
 │   │           ├── // Components        | • Shared components — the entity icon, the renamable title
-│   │           ├── // Detail            | • The main pane — routed views, inspector, subfield, banner
-│   │           ├── // Embeds            | • The embed framework's consumers
+│   │           ├── // Embeds            | • The embed framework's consumers — page and webpage embeds, retention
 │   │           ├── // Frames            | • The frames a Menu or Window opens onto — filter, group, sort, layout, settings
+│   │           ├── // Interface         | • The main pane — routed views, inspector, subfield, banner
+│   │           ├── // Links             | • Everything that happens to a link — the hover pane, the link menu, resolution
 │   │           ├── // MarkdownPM        | • The editor — parser, tokens, decorations, input, tables
 │   │           ├── // Navigation        | • Tabs, history, breadcrumbs, search
 │   │           ├── // Properties       | • The property layer — value resolution, the editing surface, the panes
