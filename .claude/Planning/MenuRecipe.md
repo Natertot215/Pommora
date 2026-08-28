@@ -552,7 +552,7 @@ Written as **Today → Becomes**; counts re-derived at Phase 4's open.
 
 **Becomes:** `.shell` declares `--content-start: calc(var(--sidebar-clearance) + var(--content-edge))` and `--content-start-right: calc(var(--inspector-clearance) + var(--content-edge))` once, beside the clearances; every left and right reader reads the token. Nothing moves on screen.
 
-**Derivation:** `grep -rF "var(--sidebar-clearance) + var(--content-edge)" src` → 5 (+1) → 0; `grep -rF "var(--inspector-clearance) + var(--content-edge)" src` → count at open → 0. Control: `grep -rF -- "--sidebar-clearance" src` ≥ 3.
+**Derivation (at `6d651c19`):** `grep -rF "var(--sidebar-clearance) + var(--content-edge)" src` → 5 (`navView.css:16`, `subfield.css:11,101`, `Banner.css:33,119`) → 0; `grep -rF "var(--inspector-clearance) + var(--content-edge)" src` → 3 (`Banner.css:133`, `subfield.css:12`, `navView.css:15`) → 0. Control: `grep -rF -- "--sidebar-clearance" src` → 18.
 
 **Steps:**
 - [ ] Mint; repoint; gates; screenshots of the banner title, subfield, footnotes toggle, NavView head and list — nothing moves.
@@ -574,15 +574,15 @@ Written as **Today → Becomes**; counts re-derived at Phase 4's open.
 
 **Requirement:** none of the numbered ones — a naming debt the Figma mirror surfaced.
 
-**Today:** `Tokens/size.css.ts:6-18` `ICON_PX = { largeTitle: 26, title1: 22, title2: 17, title3: 15, headline: 13, body: 13, callout: 12, control: 12, caption: 11, footnote: 10, subline: 10 }`, `vars.size.icon.*` derived from it at `:22`; readers whole-renderer at Phase 2's open: `largeTitle` 3, `title1` 7, `title2` 7, `title3` 23 (definitions included).
+**Today (at `6d651c19`):** `Tokens/size.css.ts:6-18` `ICON_PX = { largeTitle: 26, title1: 22, title2: 17, title3: 15, headline: 13, body: 13, callout: 12, control: 12, caption: 11, footnote: 10, subline: 10 }`, `vars.size.icon.*` derived at `:22`, `IconSize` at `:98`. Readers outside the definition: `largeTitle` 1 (`CardsView.tsx:1039`), `title1` 5 (`Ribbon.tsx:77`, `NavGallery.tsx:133`, `LayoutFrame.tsx:266`, `CardsView.tsx:964,1243`), `title2` 4 (`App.tsx:258,299`, `Ribbon.tsx:120`, `Toolbar.tsx:104`, plus `iconPicker.css.ts:82` `vars.size.icon.title2`), `title3` 8 (`ViewEmbedBlock.tsx:574`, `TrashFrame.tsx:310`, `Sidebar.tsx:150,288,419`, `CalendarPicker.tsx:578,588`, `Symbols/index.tsx:230` a doc mention), `headline` **0**. `theme-vars.css.ts:131-141` mints eleven `--icon-*` CSS vars from the ladder; only `--icon-body` has readers (`MarkdownPM/Styles.css:193,194,212`). The type ramp is `titleLarge 28 · titleMedium 24 · titleSmall 20 · headline 15 · body 13 · callout 12 · control 12 · caption 11 · footnote 10 · subline 10`.
 
-**Becomes:** four title rungs today against three type-ramp names — list each rung's readers first; a rung with no reader outside its definition deletes (said so in the Log); the survivors are renamed `titleLarge` / `titleMedium` / `titleSmall` in descending size, every `size="…"` / `vars.size.icon.…` read following; the Figma `Icons` variables are Part 2 (the file is out of scope for this run); `DesignSystemPM.md`'s row at closeout.
+**Becomes:** `ICON_PX = { titleLarge: 26, titleMedium: 22, titleSmall: 17, headline: 15, body: 13, callout: 12, control: 12, caption: 11, footnote: 10, subline: 10 }` — `largeTitle` → `titleLarge`, `title1` → `titleMedium`, `title2` → `titleSmall`, `title3` → `headline` (15, the type ramp's headline), and the unread `headline: 13` rung deletes (it duplicated `body`); every reader above renamed; `theme-vars.css.ts` keeps `--icon-body` and drops the ten unread `--icon-*` lines. The Figma `Icons` variables are Part 2; `DesignSystemPM.md`'s row at closeout.
 
-**Derivation:** each old key → 0 after; control `grep -rF "ICON_PX" src` ≥ 3.
+**Derivation:** `grep -rF "largeTitle" src`, `"title1"`, `"title2"`, `"title3"` → each 0 after (the `Symbols/index.tsx:230` doc line reads `headline`); `grep -rF -- "--icon-" src` → the three `--icon-body` readers + its one definition. Control: `grep -rF "ICON_PX" src` ≥ 3.
 
 **Steps:**
-- [ ] Count each rung's readers; a rung with none deletes.
-- [ ] Rename; gates; commit `refactor(tokens): the icon ladder is named as the type ramp is`.
+- [ ] Rename the four rungs and delete the fifth; repoint every reader; drop the ten unread vars.
+- [ ] Gates; commit `refactor(tokens): the icon ladder is named as the type ramp is`.
 
 #### Gate 4 — the edges
 - [ ] The Loop, steps 3–5. Screenshots: banner, subfield, NavView head, the icon picker.
