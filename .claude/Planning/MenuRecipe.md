@@ -508,7 +508,7 @@ Every task below is written as **Today → Becomes**; line numbers are at `7f358
 **Derivation:** `grep -rF "ValueRow" src` → 15 → 0; `grep -rF "FootingPick" src` → 3 → 0; `grep -rF "pickerTone" src` → 4 → 0.
 
 **Steps:**
-- [ ] Migrate; `GroupFrame.test.tsx` and `SortFrame.test.tsx` pass; commit `refactor(frames): the value rows are index rows`.
+- [x] Migrate; `GroupFrame.test.tsx` and `SortFrame.test.tsx` pass; commit `refactor(frames): the value rows are index rows`.
 
 #### Task 19: The property editors
 

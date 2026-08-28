@@ -1,7 +1,6 @@
-import { globalStyle, style } from '@vanilla-extract/css'
+import { style } from '@vanilla-extract/css'
 import { vars as colorVars } from '@renderer/DesignSystem/Tokens/color.css'
 import { text } from '@renderer/DesignSystem/Tokens/typography.css'
-import { pickerValue } from '@renderer/DesignSystem/Elements/PickerControl'
 
 const c = colorVars.color
 
@@ -14,9 +13,6 @@ export const subLabel = style([text.body.emphasized, { color: c.label.secondary 
 
 /** KNOB — the hierarchy's disclosed sub-group chips render a step smaller than table chips. */
 export const subChip = style({ zoom: 0.85 })
-
-export const pickerTone = style({})
-globalStyle(`${pickerTone} ${pickerValue}${pickerValue}${pickerValue}`, { color: c.label.control })
 
 /** KNOB — the middle region's scroll ceiling. */
 const MIDDLE_MAX_HEIGHT = '280px'
