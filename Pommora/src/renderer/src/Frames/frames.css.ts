@@ -6,6 +6,7 @@ import {
   accessoryButton,
   flushAffordance,
   footing,
+  heading,
   rowBox,
   rowDragging,
 } from '@renderer/DesignSystem/Menus/menu-base.css'
@@ -97,13 +98,12 @@ export const allHighlight = style({
   borderRadius: `${SIZE.dragHighlightRadius}px`,
 })
 
-export const optionEditor = style({ display: 'flex', flexDirection: 'column' })
+const chipList = style({ display: 'flex', flexDirection: 'column', vars: { '--row-pad-y': '0px' } })
+globalStyle(`${chipList} ${heading}`, { paddingBlock: 0 })
 
-export const statusGroups = style({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: `${OPTION.groupGap}px`,
-})
+export const optionEditor = chipList
+
+export const statusGroups = style([chipList, { gap: `${OPTION.groupGap}px` }])
 export const statusGroup = style({ display: 'flex', flexDirection: 'column' })
 
 export const groupAdd = style([
