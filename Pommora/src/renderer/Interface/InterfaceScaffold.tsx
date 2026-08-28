@@ -3,7 +3,7 @@ import { Banner } from './Banner/Banner'
 import { isSurfaceKind, type BannerOwner } from './Scope'
 import { useSession } from '../store'
 import { navKey } from '../Navigation/navRecents'
-import { captureWarm, readWarm } from '../Tabs/warmCache'
+import { captureWarm, readWarm } from '../Store/TabState'
 
 export function InterfaceScaffold({
   owner,

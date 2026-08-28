@@ -13,7 +13,7 @@ export const content = style({
   alignItems: 'stretch',
   gap: GUTTER,
   padding: GUTTER,
-  width: '200px',
+  width: '210px',
   boxSizing: 'border-box',
 })
 
