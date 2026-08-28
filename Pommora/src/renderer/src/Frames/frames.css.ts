@@ -5,7 +5,7 @@ import type { IconSize } from '@renderer/DesignSystem/Tokens/size.css'
 import { duration, easing } from '@renderer/DesignSystem/Animation'
 import {
   accessoryButton,
-  bottomRow,
+  footing,
   footingLabel,
   rowDragging,
   titleText,
@@ -273,5 +273,5 @@ export const crumbRow = style([
 ])
 
 export const footerLock = style({
-  selectors: { [`${bottomRow} &`]: { color: c.label.tertiary } },
+  selectors: { [`${footing} &`]: { color: c.label.tertiary } },
 })

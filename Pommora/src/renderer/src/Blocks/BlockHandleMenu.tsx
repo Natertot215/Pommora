@@ -14,7 +14,7 @@ import { PickerMenu, PickerOption } from '@renderer/DesignSystem/Components/Pick
 import { PICKER_MAX_HEIGHT } from '@renderer/DesignSystem/Components/Pickers/PickerMenu/pickerMenu.css'
 import {
   FooterLockButton,
-  MenuBottomRow,
+  MenuFooting,
   MenuItem,
   MenuTopRow,
   MenuScrollFrame,
@@ -60,7 +60,7 @@ function DrillLevel({
         header={<MenuTopRow label={backLabel} current={title} onBack={onBack} />}
         footer={
           footerNodes.length ? (
-            <MenuBottomRow
+            <MenuFooting
               leading={footerNodes.map((n, i) => (
                 <Button
                   key={`${n.label}-${String(i)}`}
@@ -194,7 +194,7 @@ export function BlockHandleMenu({
     <div className={s.pane}>
       <MenuScrollFrame
         footer={
-          <MenuBottomRow
+          <MenuFooting
             leading={
               containerLocked ? (
                 <span className={`${footerLockAction} ${rowDisabled}`} title="Locked by the board">

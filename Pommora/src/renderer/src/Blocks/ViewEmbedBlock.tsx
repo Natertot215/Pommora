@@ -18,7 +18,7 @@ import { PickerMenu } from '@renderer/DesignSystem/Components/Pickers/PickerMenu
 import {
   AccessoryButton,
   Menu,
-  MenuBottomRow,
+  MenuFooting,
   MenuItem,
   MenuScrollFrame,
 } from '@renderer/DesignSystem/Menus'
@@ -52,9 +52,6 @@ import {
 } from '@renderer/Detail/ActionBand.css'
 import * as s from './viewEmbed.css'
 
-/** A foreign or malformed config degrades to the blank default (repair-not-reject), re-stamped
- *  with `fallbackId` — never the DEFAULT_VIEW_ID sentinel (keys viewOrders per-machine, would
- *  persist on the next edit) and never a random id (this runs per render). */
 function coerceConfig(raw: unknown, schema: PropertyDefinition[], fallbackId: string): SavedView {
   const v = raw as SavedView | null
   const shapeOk =
@@ -70,15 +67,11 @@ function coerceConfig(raw: unknown, schema: PropertyDefinition[], fallbackId: st
   return v.id === DEFAULT_VIEW_ID ? { ...v, id: fallbackId } : v
 }
 
-/** A shallow copy — callers can mutate then return it without touching the input. */
 const rawViews = (raw: Record<string, unknown>): unknown[] =>
   Array.isArray(raw.views) ? [...(raw.views as unknown[])] : []
 
-/** A view's leading glyph, falling back to the table icon when unset. */
 const viewIcon = (v: SavedView): string => iconNameOr(v.icon, 'table')
 
-/** A view's segment-stroke, as the style that carries it: its chip color at tint-primary, or
- *  nothing at all so the segment keeps the neutral hairline. */
 const strokeStyle = (v: SavedView): React.CSSProperties | undefined => {
   const key = labelColorFor(v.color)
   if (key === 'default') return undefined
@@ -86,9 +79,6 @@ const strokeStyle = (v: SavedView): React.CSSProperties | undefined => {
   return { '--segment-stroke': stroke } as React.CSSProperties
 }
 
-/** Sized by markdownPM's own `.md-h{level}` class so a title reads uniform with any heading.
- *  Editing happens in place via contentEditable — no input swap. Escape reverts; an empty commit
- *  clears back to the source. */
 function EmbedTitle({
   title,
   level,
@@ -97,7 +87,6 @@ function EmbedTitle({
 }: {
   title: string
   level: number
-  /** A locked tile's chrome is frozen — the title displays, never takes a caret. */
   editable: boolean
   onCommit: (next: string) => void
 }): React.JSX.Element {
@@ -105,7 +94,6 @@ function EmbedTitle({
   const ref = useRef<HTMLSpanElement>(null)
   const reverting = useRef(false) // Escape sets this so the blur it triggers doesn't commit
 
-  // On entering edit, focus and select the whole title so a first keystroke replaces it.
   useEffect(() => {
     const el = ref.current
     if (!editing || !el) return
@@ -213,7 +201,6 @@ function ViewPill({
   )
 }
 
-// Resolution reads the payload config; config writes land on it; data writes flow through to the source.
 export function ViewEmbedBlock({
   entry,
   mutateEntry,
@@ -224,8 +211,6 @@ export function ViewEmbedBlock({
     entryId: string,
     fn: (raw: Record<string, unknown>) => Record<string, unknown>,
   ) => void
-  /** A view has no text-edit mode, so any pointerdown inside is its "busy" signal — corner-scopes
-   *  its drag handle like an editor. */
   onActivate?: () => void
 }): React.JSX.Element {
   const tree = useSession((st) => st.tree)
@@ -234,11 +219,7 @@ export function ViewEmbedBlock({
   const [renaming, setRenaming] = useState<number | null>(null)
   const [iconFor, setIconFor] = useState<number | null>(null)
   const [colorFor, setColorFor] = useState<number | null>(null)
-  // The right-clicked segment/row — captured at menu time so every follow-up picker
-  // (icon, color) drops from the chip itself, never the embed. Element, not HTMLElement: the title
-  // row's anchor is the SVG icon glyph.
   const menuAnchorRef = useRef<Element | null>(null)
-  // The title row's leading glyph — the Edit Icon picker hangs off it, not the whole row.
   const titleIconRef = useRef<SVGSVGElement>(null)
   const [exitingId, setExitingId] = useState<string | null>(null)
   const [enteringIds, setEnteringIds] = useState<Set<string>>(() => new Set())
@@ -248,7 +229,6 @@ export function ViewEmbedBlock({
   const dropRef = useRef<HTMLButtonElement>(null)
 
   const index = Math.min(entry.active ?? 0, entry.views.length - 1)
-  // prevIndexRef holds the last-committed index so the slide offset reads at switch time, not after.
   const prevIndexRef = useRef(index)
   const slideFrom =
     index > prevIndexRef.current ? '24px' : index < prevIndexRef.current ? '-24px' : '0px'
@@ -270,7 +250,6 @@ export function ViewEmbedBlock({
   viewsRef.current = views
   const idKey = views.map((v) => v.id).join(',')
 
-  // entering is STATE, not derived — a derived flag would clear mid-animation on the next render.
   useEffect(() => {
     const prev = prevIdsRef.current
     const cur = new Set(viewsRef.current.map((v) => v.id))
@@ -291,9 +270,6 @@ export function ViewEmbedBlock({
   const dropdown = entry.view_style === 'dropdown'
 
   const locked = entry.locked ?? false
-  // Chrome defaults store as ABSENT keys (clearing a toggle deletes it). While locked this freezes
-  // all chrome — only the lock toggle and the active-view SWITCH still write, so a locked tile's
-  // presentation matches the handle menu's promise.
   const patchEntry = (patch: Record<string, unknown>): void => {
     if (locked && !('locked' in patch) && !('active' in patch)) return
     mutateEntry(entry.id, (raw) => {
@@ -305,9 +281,7 @@ export function ViewEmbedBlock({
       return next
     })
   }
-  // The lock toggle rides patchEntry's `locked` exemption above, so you can always unlock.
   const setLocked = (v: boolean): void => patchEntry({ locked: v ? true : undefined })
-  // Reached from both the area menu and a segment's own row menu — one command, two doors.
   const toggleTitles = (): void => patchEntry({ view_button: labeled ? 'icon' : undefined })
   const writeConfig = (i: number, config: SavedView): void => {
     mutateEntry(entry.id, (raw) => {
@@ -328,8 +302,6 @@ export function ViewEmbedBlock({
     const stored = views[i]
     if (stored) writeConfig(i, { ...stored, ...state })
   }
-  // Payload-local id takes the first free slot — deletes shift indexes, so a plain length-stamp
-  // could collide with a survivor (viewOrders keys on config id; two views must never share one).
   const addView = (): void => {
     if (locked) return
     mutateEntry(entry.id, (raw) => {
@@ -384,7 +356,6 @@ export function ViewEmbedBlock({
     patchEntry({ display_title: !t || t === source.title ? undefined : t })
   }
 
-  // Every chrome menu writes through the frozen patchEntry/persistConfig, so a locked tile opens none of them.
   const titleMenu = async (e: React.MouseEvent): Promise<void> => {
     e.preventDefault()
     if (locked) return
@@ -411,7 +382,6 @@ export function ViewEmbedBlock({
     else if (action === 'style-dropdown') patchEntry({ view_style: 'dropdown' })
     else if (action === 'style-toolbar') patchEntry({ view_style: undefined })
   }
-  // `animate` routes the pill's delete through the slide-out; the dropdown list removes in place.
   const rowMenu = async (i: number, e: React.MouseEvent, animate: boolean): Promise<void> => {
     e.preventDefault()
     e.stopPropagation() // the switcher row underneath owns the area menu
@@ -542,8 +512,6 @@ export function ViewEmbedBlock({
             {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
             <div className={s.titleRow} onContextMenu={(e) => void titleMenu(e)}>
               <span className={cx(s.titleSlide, !titleShown && s.titleSlideHidden)}>
-                {/* size omitted → Icon defaults to 1em; the .md-hN class sets the em base, so the
-                    icon scales with the title level in lockstep with the text. */}
                 <Icon
                   ref={titleIconRef}
                   name={viewIcon(view)}
@@ -583,8 +551,6 @@ export function ViewEmbedBlock({
             <ViewRenderer key={source.id} source={source} />
           </div>
         </div>
-        {/* PickerMenu owns the anchoring (scroll/resize re-measure, collision flip) — a hand-rolled
-            fixed portal detaches when the surface scrolls. */}
         <PickerMenu
           open={cfgOpen}
           onDismiss={() => setCfgOpen(false)}
@@ -594,12 +560,11 @@ export function ViewEmbedBlock({
         >
           <SettingsFrame />
         </PickerMenu>
-        {/* No edit chevrons — per-view editing lives behind the Settings affordance, not in the switcher. */}
         <PickerMenu open={listOpen} onDismiss={() => setListOpen(false)} triggerRef={dropRef}>
           <div className={s.listPane}>
             <MenuScrollFrame
               maxHeight={PICKER_MAX_HEIGHT}
-              footer={<MenuBottomRow leading={newViewButton} />}
+              footer={<MenuFooting leading={newViewButton} />}
             >
               <Menu>
                 {views.map((v, i) => (

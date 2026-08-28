@@ -7,7 +7,7 @@ import { Icon, iconNameOr } from '@renderer/DesignSystem/Symbols'
 import {
   Menu,
   MenuItem,
-  MenuBottomRow,
+  MenuFooting,
   MenuScrollFrame,
   AccessoryButton,
 } from '@renderer/DesignSystem/Menus'
@@ -25,8 +25,6 @@ import { useSession } from '../store'
 import { optionRing } from '@renderer/DesignSystem/Components/Pickers/PickerMenu/pickerMenu.css'
 import * as vd from './toolbarMenu.css'
 
-// Width/height floor — a sparse list reserves the square (footer pinned to bottom); rows fill
-// top-down and only grow the pane past it.
 const PANE_SQUARE = 225
 
 const viewSlot: typeof frameSlot = (rows, _byId, _regions, pointerY, draggedId) => {
@@ -42,8 +40,6 @@ const viewSlot: typeof frameSlot = (rows, _byId, _regions, pointerY, draggedId) 
   }
 }
 
-/** A pure reorder has no assign/hide zones, so both of the engine's region refs ride this one
- *  element — its snapshot needs both non-null even though `viewSlot` ignores their rects. */
 function DragRegion({ children }: { children: ReactNode }): React.JSX.Element {
   const { assignedRef, allRef } = useFrameRegions()
   const region = (el: HTMLElement | null): void => {
@@ -71,8 +67,6 @@ export function ViewFrame({
   const storedActive = useSession((s) => s.activeViews[node.id])
   const [editingId, setEditingId] = useState<string | null>(null)
   const [renamingId, setRenamingId] = useState<string | null>(null)
-  // Holds the view whose glyph is being picked, not a bare flag: the picker opens from a ROW's menu,
-  // and the pane's `editing` is the drill target — null whenever that list is on screen.
   const [iconFor, setIconFor] = useState<SavedView | null>(null)
   const [colorFor, setColorFor] = useState<SavedView | null>(null)
   const menuAnchorRef = useRef<HTMLElement | null>(null)
@@ -80,17 +74,10 @@ export function ViewFrame({
   // Never mounts inside a view embed until the payload switcher lands — CRUD here would bypass the scope.
   if (scope) return null
   const views = node.views ?? []
-  // During the entry-mint beat (a legacy container's first open, before refetch lands) shows the
-  // in-memory sentinel default — same as the button + table.
   const rows = views.length ? views : [mintDefaultView(schema)]
-  // Fallback to the first row keeps the outline on exactly one row even with a gone/unset pointer.
   const activeId = rows.some((v) => v.id === storedActive) ? storedActive : rows[0]?.id
-  // Re-derived from the live tree each render so an edit shows fresh, not stale; a deleted id
-  // collapses back to the list.
   const editing = editingId ? rows.find((v) => v.id === editingId) : undefined
 
-  // Selecting switches the active view but leaves the menu open, so you can see (and keep
-  // switching) which view you're in.
   const switchTo = (id: string): void => void setActiveView(node.id, id)
   const createView = async (): Promise<void> => {
     await window.nexus.views.save(node.path, node.kind, mintNewView('Untitled', schema))
@@ -114,7 +101,6 @@ export function ViewFrame({
   }
   const rowMenu = async (v: SavedView, e: React.MouseEvent): Promise<void> => {
     e.preventDefault()
-    // The row the menu opened from is what its color picker anchors against.
     menuAnchorRef.current = e.currentTarget as HTMLElement
     const action = await window.nexus.viewRowMenu({ deletable: views.length > 1 })
     switch (action) {
@@ -138,7 +124,7 @@ export function ViewFrame({
   const list = (
     <MenuScrollFrame
       footer={
-        <MenuBottomRow
+        <MenuFooting
           leading={
             <AccessoryButton
               icon="plus"
@@ -150,8 +136,6 @@ export function ViewFrame({
             />
           }
           trailing={
-            // Parked: the per-view actions menu hasn't landed. Inert rather than a live button
-            // that swallows its own click.
             <AccessoryButton
               icon="dots"
               size="control"

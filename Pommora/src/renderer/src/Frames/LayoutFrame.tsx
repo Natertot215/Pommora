@@ -14,7 +14,7 @@ import {
   MenuSeparator,
   MenuTopRow,
   MenuScrollFrame,
-  MenuBottomRow,
+  MenuFooting,
   AccessoryButton,
 } from '@renderer/DesignSystem/Menus'
 import {
@@ -167,7 +167,7 @@ export function LayoutFrame({
 
   const cardsFooting =
     view.type === 'cards' ? (
-      <MenuBottomRow>
+      <MenuFooting>
         {formatToggle('palette', 'Style')}
         <MenuItem
           className={flushTrailing}
@@ -208,7 +208,7 @@ export function LayoutFrame({
             readoutClassName={detail}
           />
         </div>
-      </MenuBottomRow>
+      </MenuFooting>
     ) : null
 
   const leafPane =

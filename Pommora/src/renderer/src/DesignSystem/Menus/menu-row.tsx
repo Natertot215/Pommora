@@ -128,7 +128,7 @@ export function MenuCaption({ children }: { children: ReactNode }): React.JSX.El
   return <div className={s.caption}>{children}</div>
 }
 
-export function MenuBottomRow({
+export function MenuFooting({
   leading,
   trailing,
   children,
@@ -138,10 +138,10 @@ export function MenuBottomRow({
   children?: ReactNode
 }): React.JSX.Element {
   return (
-    <div className={s.bottomBar}>
+    <div className={s.footingBar}>
       <MenuSeparator flush />
       {children ?? (
-        <div className={s.bottomRow}>
+        <div className={s.footing}>
           {leading}
           <span style={{ flex: '1 1 auto' }} />
           {trailing}
