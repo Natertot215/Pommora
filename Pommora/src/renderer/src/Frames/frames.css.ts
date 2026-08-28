@@ -8,9 +8,7 @@ import {
   footing,
   footingLabel,
   rowDragging,
-  titleText,
 } from '@renderer/DesignSystem/Menus/menu-base.css'
-import { surface } from '@renderer/DesignSystem/Menus/menu-surface.css'
 import { button as eyeToggleButton } from '@renderer/DesignSystem/Elements/EyeToggle/eyeToggle.css'
 import { menuAnchor } from '@renderer/DesignSystem/Menus/menu-anchor'
 import { stack } from '@renderer/DesignSystem/Tokens/stack'
@@ -102,23 +100,14 @@ export const allSpacer = style({
 })
 export const allSpacerCollapsed = style({ flexGrow: 0 })
 
-export const allHeadingRow = style({
-  vars: { '--drop-outline-beat': 'var(--duration-base)' },
-  display: 'flex',
-  alignItems: 'center',
-  gap: '4px',
+export const allHeading = style({
+  vars: { '--drop-outline-beat': 'var(--duration-base)', '--row-pad-lead': '0px' },
   width: '100%',
-  minHeight: '24px',
-  padding: '6px var(--row-width-standard)',
-  paddingLeft: 0,
   border: 'none',
   background: 'none',
-  cursor: 'default',
 })
 
 export const allRow = style({ color: c.label.secondary })
-
-globalStyle(`.${surface} .${allRow} .${titleText}`, { color: c.label.secondary })
 
 export const toggleRow = style({})
 
@@ -178,8 +167,6 @@ export const statusGroups = style({
   gap: `${OPTION.groupGap}px`,
 })
 export const statusGroup = style({ display: 'flex', flexDirection: 'column' })
-
-export const allPropertiesLabel = style([text.footnote.semibold, { color: c.label.secondary }])
 
 export const optionsAdd = accessoryButton
 

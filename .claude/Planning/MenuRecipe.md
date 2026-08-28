@@ -257,8 +257,8 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 - Control: `grep -rF "actionRow" src` → ≥ 2.
 
 **Steps:**
-- [ ] Rewrite; `propertyFrame.test.tsx` `rowFor('All Properties')` passes (label stays a leaf span inside a `role=button`).
-- [ ] Gates green; docs; commit `refactor(menus): the action row`.
+- [x] Rewrite; `propertyFrame.test.tsx` `rowFor('All Properties')` passes (label stays a leaf span inside a `role=button`).
+- [x] Gates green; docs; commit `refactor(menus): the action row`.
 
 #### Gate 1 — the recipe stands
 - [ ] The Loop, steps 3–5. Running surface: sidebar, Settings menu, a value picker, CardAddPicker, Calendar month list — rows 28 or 23, TopRows 18. FilterFrame deferred to Task 20 (hazard window).
@@ -653,6 +653,7 @@ Every phase runs the same loop. Nothing advances on a summary; every claim is re
 ### Deviations
 - Task 0: the parallel session's `Store/`, `Detail/Scope.ts`, and `Tabs/tabsModel.ts` had already landed (`af2442ab`), so typecheck was clean, not red. The tree committed was Nathan's 30-file CSS pass (comment trims, `navList.css` search row on `--surface-inset`, row pad 6). Two of its declarations had lost their semicolons — `tabBar.css:14` (`--tab-divider-w: var(--segment-width)`, circular with `.tab-divider`'s own `--segment-width`) and `DetailTitleHeader.css:40` (`line-height: var(--border-base)`, a color) — repaired to `var(--width-200)` and `1.15` so the gate passes; flagged to Nathan.
 - Task 1 (amended, Nathan 08-27): the `:root` block also declares `--row-pad-y` / `--row-pad-x` as the Standard tokens and `--row-size` / `--row-line` as the body ramp, and `rowBox` reads each once — `var(--row-pad-y)`, `var(--row-pad-lead, var(--row-pad-x))`, `var(--row-pad-trail, var(--row-pad-x))`, `var(--row-size)`, `var(--row-line)` — instead of nesting the fallback per read; `menuCompact` is unchanged. Landed as `refactor(menus): the row reads its chosen pad once`.
+- Task 6: a bare `<button className={actionRow}>` wears the UA button chrome and shrink-wraps, so `frames.css.ts` keeps `allHeading` — the button reset (`width: 100%`, no border, no background), `--row-pad-lead: 0px` for the flush chevron, and the `--drop-outline-beat` the old row carried so the chevron still turns on the spacer's beat. `footingLabel` composes `text.footnote.emphasized` directly (Task 4's rewrite named it; it landed here, before `actionRow` grew a box). The docs rows stay the closeout's, as recorded under Task 1.
 - Task 5: `MenuBottomRow` counted 29 at this task's open (the comment sweeps of Tasks 3 and 4 took two); the FilterFrame hazard window is open from this commit.
 - Task 4: `MenuTopRow` takes `className`, and CardAddPicker's flat header is `topRowFlat` (`vars: { '--row-pad-y': '0px' }`) in a recreated `Views/CardView/cardAddPicker.css.ts` — the one class that file now holds. `PickerMenu.tsx` was touched only to drop a comment naming `MenuFrameTopRow`, which brought it under the comment ruling. `MenuFrameTopRow` counted 31 at this task's open (Task 2's fold of its body onto one line took one).
 - Task 3: `allPropertiesLabel` outlives this task as `style([text.footnote.semibold, { color: c.label.secondary }])` — its one reader is `PropertyFrame.tsx:141`, which Task 6 rewrites, so Task 6 deletes it. The Showcase's heading specimens are two `<div className={heading}>`s, one carrying a trailing chevron. Per the comment ruling (Nathan, 08-27), every file a task edits keeps only `KNOB` markers, `biome-ignore` lines, and at most one why; `frames.css.ts`'s section banners stay as structure.
