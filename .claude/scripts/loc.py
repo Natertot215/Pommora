@@ -22,39 +22,36 @@ import tempfile
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SRC = "Pommora/src"
 
-# Ordered: the first matching prefix wins, so specific paths precede their parents.
+# Ordered: the first matching prefix wins, so specific paths precede their parents. Paths are
+# relative to Pommora/src with the renderer's old `renderer/src/` spelling folded into `renderer/`,
+# so one map measures every commit on the branch; folders that were renamed list both names.
 AREAS = [
-    ("Editor — MarkdownPM", ["renderer/src/MarkdownPM"]),
-    ("Design System", ["renderer/src/DesignSystem"]),
+    ("Editor — MarkdownPM", ["renderer/MarkdownPM"]),
+    ("Design System", ["renderer/DesignSystem"]),
     (
         "Surfaces & Embeds",
-        [
-            "renderer/src/SurfacePM",
-            "renderer/src/Blocks",
-            "renderer/src/PagePreview",
-            "renderer/src/Embeds",
-        ],
+        ["renderer/SurfacePM", "renderer/Blocks", "renderer/Embeds", "renderer/PagePreview"],
     ),
-    ("Views & Detail Pane", ["renderer/src/Detail", "renderer/src/Components"]),
     (
-        "App Chrome",
+        "Views & Properties",
         [
-            "renderer/src/Navigation",
-            "renderer/src/Sidebar",
-            "renderer/src/Tabs",
-            "renderer/src/Toolbar",
-            "renderer/src/NavWindow",
-            "renderer/src/Settings",
-            "renderer",
+            "renderer/Views",
+            "renderer/Tables",
+            "renderer/Cards",
+            "renderer/Properties",
+            "renderer/Frames",
+            "renderer/Components",
+            "renderer/Detail",
         ],
     ),
+    ("App Chrome", ["renderer"]),
     ("Main Process", ["main"]),
     ("Shared Contract", ["shared", "preload"]),
 ]
 
 # Stack order and swatch, bottom of the chart first.
 ORDER = [
-    "Views & Detail Pane",
+    "Views & Properties",
     "Main Process",
     "Editor — MarkdownPM",
     "Design System",
@@ -69,6 +66,8 @@ EXT = (".ts", ".tsx", ".css")
 
 
 def area_of(rel: str) -> str | None:
+    if rel.startswith("renderer/src/"):
+        rel = "renderer/" + rel[len("renderer/src/") :]
     for name, prefixes in AREAS:
         for p in prefixes:
             if rel == p or rel.startswith(p + "/"):
@@ -215,22 +214,34 @@ def update() -> str:
     payload["series"] = series
     payload["head"] = head
 
+    write_payload(payload)
+    return f"{date}  {head}  {sum(totals.values())} lines"
+
+
+def write_payload(payload: dict) -> None:
     blob = json.dumps(payload, ensure_ascii=False)
     with open(HISTORY_JSON, "w", encoding="utf-8") as fh:
         fh.write(blob + "\n")
-
     with open(LEDGER_HTML, encoding="utf-8") as fh:
         page = fh.read()
     if not DATA_TAG.search(page):
         raise SystemExit("Line-Ledger.html has no <script id=\"data\"> tag to fill")
-    page = DATA_TAG.sub(lambda m: m.group(1) + blob + m.group(2), page, count=1)
     with open(LEDGER_HTML, "w", encoding="utf-8") as fh:
-        fh.write(page)
-
-    return f"{date}  {head}  {sum(totals.values())} lines"
+        fh.write(DATA_TAG.sub(lambda m: m.group(1) + blob + m.group(2), page, count=1))
 
 
 if __name__ == "__main__":
+    if "--rebuild" in sys.argv:
+        write_payload(
+            {
+                "areas": ORDER,
+                "colors": COLORS,
+                "series": history(),
+                "head": git("rev-parse", "--short", "HEAD").strip(),
+            }
+        )
+        print("line ledger: rebuilt from the branch's history")
+        sys.exit(0)
     if "--update" in sys.argv:
         print(f"line ledger: {update()}")
         print(f"  republish {os.path.relpath(LEDGER_HTML, ROOT)} to {LEDGER_URL}")

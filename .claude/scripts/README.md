@@ -12,7 +12,11 @@ It reads the commit rather than the working tree, so uncommitted work is never c
 commit that doesn't contain it. A commit that moved no code leaves the page untouched, so the
 refresh itself does not dirty the tree.
 
-`post-commit` runs `--update` after every commit; `install-hooks.sh` copies it into `.git/hooks`,
+`loc.py --rebuild` re-walks the branch and rewrites both the JSON and the page from scratch — the run for when the area map changes.
+
+`check-atlas.mjs` verifies the token ledger: every `**SOURCE:**`-tagged table in `// Features` must agree with the code files its SOURCE line names — each backticked token in a row's second column and each literal value in its third must appear in those files. Exit 0 means the tables agree; drift is listed per table.
+
+`post-commit` runs `loc.py --update` and `check-atlas.mjs` after every commit; `install-hooks.sh` copies it into `.git/hooks`,
 which isn't versioned and so starts empty in a fresh clone.
 
 `Line-Ledger.html` reads that data and is published at
