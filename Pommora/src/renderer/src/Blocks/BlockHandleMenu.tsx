@@ -16,7 +16,7 @@ import {
   FooterLockButton,
   MenuBottomRow,
   MenuItem,
-  MenuFrameTopRow,
+  MenuTopRow,
   MenuScrollFrame,
   MenuSeparator,
 } from '@renderer/DesignSystem/Menus'
@@ -32,13 +32,9 @@ import { overScrollEllipsis } from '@renderer/DesignSystem/Interactions/OverScro
 import { ZOOM_STEPS, zoomStep } from './blockZoom'
 import * as s from './handleMenu.css'
 
-// Matches the SettingsFrame ladder's control-size rows.
 const GLYPH = 12
-// The title field's location sub-line rides a step smaller than its glyph.
 const LOC_GLYPH = 11
 
-/** A nested FrameSlide per depth so every push AND back slides — a flat content swap would
- *  animate neither. */
 function DrillLevel({
   nodes,
   title,
@@ -61,7 +57,7 @@ function DrillLevel({
     <div className={s.pane}>
       <MenuScrollFrame
         maxHeight={PICKER_MAX_HEIGHT}
-        header={<MenuFrameTopRow label={backLabel} current={title} onBack={onBack} />}
+        header={<MenuTopRow label={backLabel} current={title} onBack={onBack} />}
         footer={
           footerNodes.length ? (
             <MenuBottomRow
@@ -123,7 +119,6 @@ function DrillLevel({
   )
 }
 
-// Delete still confirms natively in main.
 export function BlockHandleMenu({
   open,
   entry,
@@ -144,7 +139,6 @@ export function BlockHandleMenu({
   onSetZoom,
   containerLocked = false,
 }: {
-  /** False plays the retract; the host keeps this mounted until it finishes. */
   open: boolean
   entry: BlockEntry
   anchor: HTMLElement
@@ -159,17 +153,12 @@ export function BlockHandleMenu({
   onDuplicate: () => void
   onRemove: () => void
   onToggleLock: () => void
-  /** Respects Open In — full-page for now. */
   onOpenPage: () => void
-  /** absent = 1.0. Markdown/page only. */
   zoom?: number
   onSetZoom?: (factor: number) => void
   containerLocked?: boolean
 }): React.JSX.Element {
   const [pane, setPane] = useState<'root' | 'style' | 'page' | 'view'>('root')
-  // An anchored menu (not an in-menu frame) — the scale menu stays put while steps drop over it.
-  // Dismissal is a document listener (the CalendarPicker idiom) that spares the scale menu +
-  // trigger and closes on any other pointerdown.
   const [scaleOpen, setScaleOpen] = useState(false)
   const scaleTriggerRef = useRef<HTMLButtonElement>(null)
   useEffect(() => {
@@ -193,8 +182,6 @@ export function BlockHandleMenu({
   }, [scaleOpen])
   const style: BlockStyle = entry.style === 'borderless' ? 'borderless' : 'bordered'
   const currentStep = zoomStep(zoom)
-  // A per-tile lock OR the host board lock dims + inerts every action, but the menu still opens
-  // (it just can't mutate). The per-tile Lock always toggles back; a board lock shows the inert "Locked".
   const locked = (entry.locked ?? false) || containerLocked
   const rowMute = locked ? rowDisabled : undefined
   const act = (fn: () => void) => () => {
@@ -222,7 +209,6 @@ export function BlockHandleMenu({
         }
       >
         {entry.type === 'page' && pageInfo && (
-          // Not muted by lock — opening is read-only.
           <button
             type="button"
             className={s.titleField}
@@ -280,8 +266,6 @@ export function BlockHandleMenu({
         >
           Style
         </MenuItem>
-        {/* Markdown/page tiles freeze-inset (only content + glyphs scale); a view tile scales as a
-            unit — the grid's own CSS zoom compounds with --block-zoom. */}
         <MenuItem
           className={rowMute}
           leading={<Icon name="scaling" size={GLYPH} />}
@@ -320,7 +304,7 @@ export function BlockHandleMenu({
 
   const stylePane = (
     <div className={s.pane}>
-      <MenuFrameTopRow label="Menu" current="Style" onBack={() => setPane('root')} />
+      <MenuTopRow label="Menu" current="Style" onBack={() => setPane('root')} />
       {(['bordered', 'borderless'] as const).map((v) => (
         <PickerOption
           key={v}
@@ -359,7 +343,6 @@ export function BlockHandleMenu({
       <PickerMenu open={open} onDismiss={onClose} triggerRef={{ current: anchor }} origin="center">
         <FrameSlide open={pane !== 'root'} root={root} detail={detail} />
       </PickerMenu>
-      {/* No onDismiss — the document listener above owns dismissal, so a pick can leave it open. */}
       <PickerMenu open={open && scaleOpen} triggerRef={scaleTriggerRef} solid>
         <div className={s.scaleMenu} data-scale-menu>
           {ZOOM_STEPS.map((st) => (
