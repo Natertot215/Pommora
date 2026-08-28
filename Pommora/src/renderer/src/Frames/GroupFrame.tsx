@@ -14,6 +14,7 @@ import { Icon, asRenderableIcon } from '@renderer/DesignSystem/Symbols'
 import {
   DisclosureRow,
   MenuItem,
+  MenuRowView,
   MenuSeparator,
   MenuTopRow,
   MenuScrollFrame,
@@ -42,8 +43,7 @@ import { nextOrder } from '@renderer/Sidebar/sidebarDndModel'
 import { EntityIcon } from '@renderer/Components/EntityIcon'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { useSession } from '../store'
-import { PickerControl, type PickerChoice } from '@renderer/DesignSystem/Elements/PickerControl'
-import { ValueRow } from '../Properties/ValueRow'
+import type { PickerChoice } from '@renderer/DesignSystem/Elements/PickerControl'
 import { propertyTypeIconName } from '../Properties/PropertyTypes'
 import { useGroupingListDrag, type GroupingDrop } from './groupDnd'
 import { hiddenRow, optionRow } from './frames.css'
@@ -181,27 +181,49 @@ export function GroupFrame({
       >
         <span className={footingLabel}>Hide Empty Groups</span>
       </MenuItem>
-      <FootingPick
-        icon="folder-minus"
-        label="Ungrouped"
-        value={view.ungrouped_placement ?? 'bottom'}
-        options={[
-          { value: 'top', label: 'Top' },
-          { value: 'bottom', label: 'Bottom' },
-        ]}
-        onPick={(v) => save({ ungrouped_placement: v })}
+      <MenuRowView
+        row={{
+          kind: 'item',
+          icon: (
+            <span className={footingSymbol}>
+              <Icon name="folder-minus" size="control" />
+            </span>
+          ),
+          label: <span className={footingLabel}>Ungrouped</span>,
+          trailing: {
+            kind: 'picker',
+            ariaLabel: 'Ungrouped',
+            value: view.ungrouped_placement ?? 'bottom',
+            options: [
+              { value: 'top', label: 'Top' },
+              { value: 'bottom', label: 'Bottom' },
+            ],
+            onPick: (v: 'top' | 'bottom') => save({ ungrouped_placement: v }),
+          },
+        }}
       />
       {dateHeadingProp &&
         NUMERIC_FORMATS.has(view.column_styles?.[dateHeadingProp]?.date_format ?? 'full') && (
-          <FootingPick
-            icon="type"
-            label="Separation"
-            value={view.date_separator ?? 'dash'}
-            options={[
-              { value: 'dash', label: 'Dash' },
-              { value: 'slash', label: 'Slash' },
-            ]}
-            onPick={(v) => save({ date_separator: v })}
+          <MenuRowView
+            row={{
+              kind: 'item',
+              icon: (
+                <span className={footingSymbol}>
+                  <Icon name="type" size="control" />
+                </span>
+              ),
+              label: <span className={footingLabel}>Separation</span>,
+              trailing: {
+                kind: 'picker',
+                ariaLabel: 'Separation',
+                value: view.date_separator ?? 'dash',
+                options: [
+                  { value: 'dash', label: 'Dash' },
+                  { value: 'slash', label: 'Slash' },
+                ],
+                onPick: (v: 'dash' | 'slash') => save({ date_separator: v }),
+              },
+            }}
           />
         )}
     </MenuFooting>
@@ -212,60 +234,102 @@ export function GroupFrame({
       header={<MenuTopRow label={label} current="Grouping" onBack={onBack} />}
       footer={footings}
     >
-      <ValueRow
-        icon="layers"
-        label="Group By"
-        value={groupByValue}
-        options={groupByOptions}
-        onPick={pickGroupByValue}
+      <MenuRowView
+        row={{
+          kind: 'item',
+          icon: <Icon name="layers" size="body" />,
+          label: 'Group By',
+          trailing: {
+            kind: 'picker',
+            ariaLabel: 'Group By',
+            value: groupByValue,
+            options: groupByOptions,
+            onPick: pickGroupByValue,
+          },
+        }}
       />
       {group.kind === 'property' && declaredType(group.property_id, schema) === 'datetime' && (
-        <ValueRow
-          icon="calendar"
-          label="Date By"
-          value={group.date_granularity ?? 'month'}
-          options={GRANULARITY}
-          onPick={(g) => saveGroup({ ...group, date_granularity: g })}
+        <MenuRowView
+          row={{
+            kind: 'item',
+            icon: <Icon name="calendar" size="body" />,
+            label: 'Date By',
+            trailing: {
+              kind: 'picker',
+              ariaLabel: 'Date By',
+              value: group.date_granularity ?? 'month',
+              options: GRANULARITY,
+              onPick: (g: DateGranularity) => saveGroup({ ...group, date_granularity: g }),
+            },
+          }}
         />
       )}
       {!structural && group.kind === 'property' ? (
-        <ValueRow
-          icon="arrow-up-down"
-          label="Order"
-          value={group.order_mode}
-          options={orderOptionsFor(declaredType(group.property_id, schema))}
-          onPick={(m) => saveGroup({ ...group, order_mode: m })}
+        <MenuRowView
+          row={{
+            kind: 'item',
+            icon: <Icon name="arrow-up-down" size="body" />,
+            label: 'Order',
+            trailing: {
+              kind: 'picker',
+              ariaLabel: 'Order',
+              value: group.order_mode,
+              options: orderOptionsFor(declaredType(group.property_id, schema)),
+              onPick: (m: GroupOrderMode) => saveGroup({ ...group, order_mode: m }),
+            },
+          }}
         />
       ) : (
-        <ValueRow
-          tier={subGroup ? 'sub' : 'primary'}
-          icon="arrow-up-down"
-          label="Order"
-          value={view.structural_order_mode ?? 'custom'}
-          options={STRUCTURAL_ORDER}
-          onPick={(m) => save({ structural_order_mode: m })}
+        <MenuRowView
+          row={{
+            kind: 'item',
+            icon: <Icon name="arrow-up-down" size="body" />,
+            label: subGroup ? <span className={gp.subLabel}>Order</span> : 'Order',
+            trailing: {
+              kind: 'picker',
+              ariaLabel: 'Order',
+              value: view.structural_order_mode ?? 'custom',
+              options: STRUCTURAL_ORDER,
+              onPick: (m: StructuralOrderMode) => save({ structural_order_mode: m }),
+            },
+            className: subGroup ? gp.subRow : undefined,
+          }}
         />
       )}
       {structural && subGrouping && (
         <>
           <SubGroupRow subGroup={subGroup} groupable={groupable} onSave={saveSub} />
           {subGroup && declaredType(subGroup.property_id, schema) === 'datetime' && (
-            <ValueRow
-              icon="calendar"
-              label="Date By"
-              value={subGroup.date_granularity ?? 'month'}
-              options={GRANULARITY}
-              onPick={(g) => saveSub({ ...subGroup, date_granularity: g })}
+            <MenuRowView
+              row={{
+                kind: 'item',
+                icon: <Icon name="calendar" size="body" />,
+                label: 'Date By',
+                trailing: {
+                  kind: 'picker',
+                  ariaLabel: 'Date By',
+                  value: subGroup.date_granularity ?? 'month',
+                  options: GRANULARITY,
+                  onPick: (g: DateGranularity) => saveSub({ ...subGroup, date_granularity: g }),
+                },
+              }}
             />
           )}
           {subGroup && (
-            <ValueRow
-              tier="sub"
-              icon="arrow-up-down"
-              label="Order"
-              value={subGroup.order_mode}
-              options={orderOptionsFor(declaredType(subGroup.property_id, schema))}
-              onPick={(m) => saveSub({ ...subGroup, order_mode: m })}
+            <MenuRowView
+              row={{
+                kind: 'item',
+                icon: <Icon name="arrow-up-down" size="body" />,
+                label: <span className={gp.subLabel}>Order</span>,
+                trailing: {
+                  kind: 'picker',
+                  ariaLabel: 'Order',
+                  value: subGroup.order_mode,
+                  options: orderOptionsFor(declaredType(subGroup.property_id, schema)),
+                  onPick: (m: GroupOrderMode) => saveSub({ ...subGroup, order_mode: m }),
+                },
+                className: gp.subRow,
+              }}
             />
           )}
         </>
@@ -311,34 +375,6 @@ export function GroupFrame({
         )}
       </div>
     </MenuScrollFrame>
-  )
-}
-
-function FootingPick<T extends string>({
-  icon,
-  label,
-  value,
-  options,
-  onPick,
-}: {
-  icon: React.ComponentProps<typeof Icon>['name']
-  label: string
-  value: T
-  options: PickerChoice<T>[]
-  onPick: (v: T) => void
-}): React.JSX.Element {
-  return (
-    <MenuItem
-      className={gp.pickerTone}
-      leading={
-        <span className={footingSymbol}>
-          <Icon name={icon} size="control" />
-        </span>
-      }
-      trailing={<PickerControl ariaLabel={label} value={value} options={options} onPick={onPick} />}
-    >
-      <span className={footingLabel}>{label}</span>
-    </MenuItem>
   )
 }
 
@@ -819,14 +855,20 @@ function SubGroupRow({
     })),
   ]
   return (
-    <ValueRow
-      icon="layers"
-      label="Sub-Group"
-      value={subGroup?.property_id ?? '_location'}
-      options={options}
-      onPick={(v) =>
-        onSave(v === '_location' ? undefined : { property_id: v, order_mode: 'configured' })
-      }
+    <MenuRowView
+      row={{
+        kind: 'item',
+        icon: <Icon name="layers" size="body" />,
+        label: 'Sub-Group',
+        trailing: {
+          kind: 'picker',
+          ariaLabel: 'Sub-Group',
+          value: subGroup?.property_id ?? '_location',
+          options: options,
+          onPick: (v) =>
+            onSave(v === '_location' ? undefined : { property_id: v, order_mode: 'configured' }),
+        },
+      }}
     />
   )
 }

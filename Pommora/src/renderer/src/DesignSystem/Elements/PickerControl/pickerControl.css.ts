@@ -9,7 +9,6 @@ const c = colorVars.color
  *  a stable box the PickerMenu can keep measuring while the trigger inside it is replaced. */
 export const host = style({ display: 'inline-flex' })
 
-/** The picker trigger — bare button; `&&` beats the toolbar/UA button tone. */
 export const trigger = style({
   display: 'inline-flex',
   alignItems: 'center',
@@ -23,14 +22,9 @@ export const trigger = style({
 
 export const value = style([
   text.control.standard,
-  { selectors: { '&&': { color: c.label.secondary } } },
+  { selectors: { '&&': { color: c.label.control } } },
 ])
 
-/** Field and unit as one word — the trigger's own gap would open between the digits and the mark
- *  they are counted in. */
 export const written = style({ display: 'inline-flex', alignItems: 'center' })
 
-/** What the value wears while it is being written rather than read — the UA's box stripped, sized to
- *  its text. Worn ALONGSIDE whichever value tone the trigger is already showing, so a footing picker
- *  keeps its own while editing rather than reverting to the standard one. */
 export const caretShape = style([base, { width: 'auto', minWidth: '12px' }])
