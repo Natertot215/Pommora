@@ -21,7 +21,7 @@
   position: relative;
   flex-shrink: 0;
   margin: 0;
-  padding: 0;
+  padding: 0 var(--navwindow-inset) 0 0;
 }
 /* The clear heading's own seam, inset to the rows. */
 .trash-frame .trash-head::after {
@@ -54,7 +54,7 @@
 }
 .trash-head-glyph {
   display: flex;
-  margin-right: 6px; /* the row's own glyph-to-title gap */
+  margin-right: 8px; /* the row's own glyph-to-title gap */
 }
 /* A column's glyph sits a step under its label, which is the relationship the table's own header
    icon already keeps against the same heading tone. */
