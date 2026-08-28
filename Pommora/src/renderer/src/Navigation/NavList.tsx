@@ -2,9 +2,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { text } from '@renderer/DesignSystem/Tokens'
-import { OverScroll } from '@renderer/DesignSystem/Interactions/OverScroll'
 import { NavTrail } from '@renderer/DesignSystem/Elements/NavTrail'
-import { onActivateKey } from '@renderer/DesignSystem/Interactions/activate'
+import { MenuItem } from '@renderer/DesignSystem/Menus'
+import { overlay, rowDragging } from '@renderer/DesignSystem/Menus/menu-base.css'
 import { TableRowDnd, useTableRowDrag } from '@renderer/Tables/tableDnd'
 import type { NavRef, SelectTarget } from '@shared/types'
 import { useSession } from '../store'
@@ -100,7 +100,7 @@ export function NavPinButton({
   className,
 }: {
   it: ResolvedNav
-  className: string
+  className?: string
 }): React.JSX.Element | null {
   const pinTarget = useSession((s) => s.pinTarget)
   const unpinTarget = useSession((s) => s.unpinTarget)
@@ -113,7 +113,7 @@ export function NavPinButton({
   return (
     <button
       type="button"
-      className={cx(className, it.pinned && 'is-pinned')}
+      className={cx(overlay, 'nav-pin', className, it.pinned && 'is-pinned')}
       onPointerDown={(e) => e.stopPropagation()}
       onClick={toggle}
       aria-label={pinLabel(it.pinned)}
@@ -139,31 +139,21 @@ function NavRow({
   onMenu: (it: ResolvedNav) => void
 }): React.JSX.Element {
   return (
-    // biome-ignore lint/a11y/useSemanticElements: a real <button> cannot host this surface — it doubles as a drag handle and wraps block content
-    <div
+    <MenuItem
       ref={drag?.ref}
-      role="button"
-      tabIndex={0}
-      onKeyDown={onActivateKey(() => onSelect(it.target))}
-      {...drag?.handle}
-      className={cx('nav-item', drag?.isDragging && 'is-dragging')}
+      className={cx(drag?.isDragging && rowDragging)}
+      leading={<EntityGlyph item={it} size="title3" />}
+      detail={<NavTrail segments={it.path} iconSize="control" className={text.caption.standard} />}
+      overlay={<NavPinButton it={it} />}
+      onPointerDown={drag?.handle.onPointerDown}
       onClick={() => onSelect(it.target)}
       onContextMenu={(e) => {
         e.preventDefault()
         onMenu(it)
       }}
     >
-      <NavPinButton it={it} className="nav-item-pin" />
-      <div className="nav-item-main">
-        <EntityGlyph item={it} size="title3" className="nav-item-lead" />
-        <OverScroll className="nav-item-title">{it.title}</OverScroll>
-        <NavTrail
-          segments={it.path}
-          iconSize="control"
-          className={cx('nav-item-path', text.caption.standard)}
-        />
-      </div>
-    </div>
+      {it.title}
+    </MenuItem>
   )
 }
 
@@ -239,10 +229,11 @@ export function NavList({
         ),
       )}
       {extras?.map((e) => (
-        <div key={e.key} className="nav-item nav-item-inert" title="This result can't be opened">
-          <OverScroll className="nav-item-title">{e.title}</OverScroll>
-          <OverScroll className={cx('nav-item-path', text.caption.standard)}>{e.kind}</OverScroll>
-        </div>
+        <MenuItem key={e.key} disabled detail={e.kind}>
+          <span title="This result can't be opened" style={{ pointerEvents: 'auto' }}>
+            {e.title}
+          </span>
+        </MenuItem>
       ))}
     </div>
   )
