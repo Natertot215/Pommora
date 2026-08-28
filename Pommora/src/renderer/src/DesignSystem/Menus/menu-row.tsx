@@ -58,6 +58,7 @@ type MenuItemProps = {
   overlay?: ReactNode
   selected?: boolean
   disabled?: boolean
+  inert?: boolean
   indent?: number
   onClick?: (e: React.MouseEvent) => void
   onContextMenu?: (e: MouseEvent) => void
@@ -77,6 +78,7 @@ export const MenuItem = forwardRef<HTMLDivElement, MenuItemProps>(function MenuI
     overlay,
     selected = false,
     disabled = false,
+    inert = false,
     indent = 0,
     onClick,
     onContextMenu,
@@ -92,12 +94,17 @@ export const MenuItem = forwardRef<HTMLDivElement, MenuItemProps>(function MenuI
     ...(trailing != null ? { '--row-pad-trail': '0px' } : undefined),
   } as CSSProperties
   const hasTrailing = value != null || detail != null || trailing != null
-  const act = disabled ? undefined : onClick
+  const act = disabled || inert ? undefined : onClick
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: the button role is applied conditionally on the click handler, which a static parse cannot see
     <div
       ref={ref}
-      className={cx(s.item, selected && s.itemSelected, disabled && s.rowDisabled, className)}
+      className={cx(
+        inert ? s.rowBox : s.item,
+        selected && s.itemSelected,
+        disabled && s.rowDisabled,
+        className,
+      )}
       style={rowStyle}
       role={act ? 'button' : undefined}
       tabIndex={act ? 0 : undefined}

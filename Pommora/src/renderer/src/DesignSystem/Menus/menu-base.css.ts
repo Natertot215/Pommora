@@ -210,6 +210,7 @@ export const footingSymbol = style({ display: 'inline-flex', color: c.label.seco
 export const accessoryButton = style({
   width: 'var(--accessory-box, 20px)',
   color: c.label.tertiary,
+  selectors: { '&&:disabled': { opacity: 'var(--state-ghost)' } },
 })
 
 export const value = style([text.control.standard, { color: c.label.control }])

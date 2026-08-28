@@ -36,6 +36,7 @@ const pickerToDecimals = (v: string): 'hidden' | number => (v === 'hidden' ? 'hi
 
 const row = (label: string, trailing: Trailing): MenuRow => ({
   kind: 'item',
+  inert: true,
   label,
   trailing,
   className: s.rowRhythm,
