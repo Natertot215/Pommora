@@ -398,8 +398,8 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 **Derivation:** `grep -rF "text.caption.standard" src | grep -i "trail\|crumb\|loc\|path"` → 4 at planning → 0. Control: `grep -rF "NavTrail" src` → ≥ 9.
 
 **Steps:**
-- [ ] Move the pair into `trail`; delete the four restatements; gates; running pass on a card's location zone, a nav row, a page embed's crumbs, the page window's tab crumbs.
-- [ ] Commit `refactor(navtrail): the trail owns its look`.
+- [x] Move the pair into `trail`; delete the four restatements; gates; running pass on a card's location zone, a nav row, a page embed's crumbs, the page window's tab crumbs.
+- [x] Commit `refactor(navtrail): the trail owns its look`.
 
 #### Task 12b: The Trash is a menu
 
@@ -626,7 +626,7 @@ Every phase runs the same loop. Nothing advances on a summary; every claim is re
   - [x] Task 10 — Settings rows
   - [x] Task 11 — value + the Scale row
   - [x] Task 12 — Autocomplete
-  - [ ] Task 12a — NavTrail owns its look
+  - [x] Task 12a — NavTrail owns its look
   - [ ] Task 12b — the Trash is a menu
 - [ ] **Phase 3** — The Index
   - [ ] Task 13 — `menu-index.tsx`
@@ -661,6 +661,8 @@ Every phase runs the same loop. Nothing advances on a summary; every claim is re
 - Task 9: the "today" figures in its prose predate Task 0's tree — `.nav-search-row` already pads `var(--surface-inset)`, `.nav-item-main` pads `6px` (rows likely 28 already), gap 6; the +2 / −10 / −12 search-edge offsets are stale. Re-read Task 9 against the live tree at Phase 2's open.
 
 ### Deviations
+- Task 12a. Today: `navTrail.trail` was a bare flex run; `Card.tsx`, `NavList.tsx`, `TrashFrame.tsx`, `PageEmbed.tsx`, and `PageWindow.tsx` each passed `text.caption.standard`, `cards.css` tinted `.card-loc` secondary and padded it 1px with the title, `SettingsFrame`'s footing trail wore `footingLabel` (footnote), and `.card-loc-zone` padded its top 6px. Becomes: `trail` composes caption.standard, secondary, and `paddingBlock: var(--trail-pad, 0px)`; the five restatements and `footingLabel` are gone; `.card-loc` keeps only its fixed-row flex and over-scroll fade; the zone sets `--trail-pad: 6px` (KNOB) so the crumbs clear the divider above and the card's edge below alike, and Compact's `--card-foot-h` reserve is the footing's real height (column gap 4 + divider 1.5 + 6 + caption line 14 + 6).
+  The uneven bottom padding, diagnosed: a locked card (`NavGallery` always, CardView's locked variant) fixes `.card-body`'s height with `overflow: hidden`, gives the cover `--thumb-share` 65%, and lets `.card-text` shrink (`min-height: 0`) while its children stay `flex: 0 0 auto` — so whenever title + rows + footing exceed the band under the cover (a gallery card at `--card-min` is ~9px short), the footing runs past the text box's 8px bottom pad and the body clips it by whatever the overflow is; wider cards have slack and keep the pad. Reflow cards never clip (`--card-body-min` plus `margin-top: auto` pins the footing on the pad). The fix at the cause is a chassis call — either the cover yields to the text (`.card.is-locked .card-thumb` shrinks, `.card-text` sized to content) or the text band takes a floor the cover pays for — and is left for Nathan as an Open Call; no padding was added.
 - Task 12 (ruling 08-28): rewritten in the Today → Becomes form above. `aliasPicker.test.tsx` reached rows through `.mdpm-ac-row` and the glyph through `.mdpm-ac-icon`; the same assertions now key on `[class*="item"]` and its leading `[class*="side"] svg` (the selectors changed, the assertions did not). The pane's scroll cap is the picker's own 240 rather than four rows — the standard picker cap, per the ruling.
 - Task 11. Today: `LayoutFrame`'s Style row and `SettingsFrame`'s Open In row each hand-built a `side` holding a `detail` span and a chevron; the Scale row was a raw `div` wearing `item` + `scaleRow` (`width: 100%`) with the slider as a direct child; `BlockHandleMenu`'s Scale trigger typed its value through `handleMenu.scaleValue` (footnote · secondary); `groupFrame.groupByValue` had no reader (GroupFrame's `groupByValue` is a local const). Becomes: `MenuItem` takes `value` (rendered first in the trailing cluster, before `detail` and `trailing`) on the recipe's `value` class (control.standard · label-control); the two toggle rows pass `value` + a chevron `trailing`; the Scale row is a `MenuItem` with the slider as `trailing`; the block menu's trigger keeps its button and types its value with the recipe's `value`; `scaleRow`, `scaleValue`, and `groupByValue` delete. Hazard Window 3 widens to this slider: its track has no width in the trailing cluster until Task 14.
 - Task 10 (ruling 08-28). Today: `.settings-window` declared `--settings-inset: 18px` for `.settings-body` alone, the body's top pad read the theme's `--close-clearance` (`CLOSE_CLEARANCE` 30, one reader), `.settings-heading` sat on the body's edge, `.settings-empty` was a tertiary `<p>`, and `.settings-wide` seated a slider or path field in a 260px box through `SettingsRow`'s `wide`. Becomes: the body pads `--surface-inset` with a `30px` `KNOB` for the × clearance (`--close-clearance` and `CLOSE_CLEARANCE` deleted with their one reader), `.settings-heading` pads `0 var(--row-pad-x) 10px` so it lands on the rows' text edge, the empty state is `MenuCaption`, `.settings-wide` and `wide` are gone and the slider and path field sit in the trailing cluster as every switch does. Hazard Window 3: the slider's track has no width of its own until Task 14's `--row-trailing-width` (the `Slider` root is `flex: 1` in a shrink-wrapped cluster).

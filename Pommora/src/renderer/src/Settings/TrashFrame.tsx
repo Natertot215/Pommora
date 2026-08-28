@@ -349,7 +349,7 @@ function TrashRowView({
             icon: crumb.kind && entityIcon(crumb.kind, undefined, defaultIcons),
           }))}
           iconSize="control"
-          className={cx(text.caption.standard, row.historical && 'is-historical')}
+          className={cx(row.historical && 'is-historical')}
         />
       }
       trailing={
