@@ -170,12 +170,12 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 - Modify: `DesignSystem/Menus/menu-base.css.ts` — sections in order: `// Shell` (`rowShell`) · `// TopRow` (`topRow`, `topRowPad` → folded into `topRow`, `topBarLeadingLabel`, `topBarLeadingSymbol`, `topBarTrailingLabel`, `topBarTrailingSymbol`, `paneSeparator`) · `// Heading` (`heading`) · `// Item` (`item`, `menuCompact`, `itemSelected`, `itemEmphasized`, `rowDisabled`, `side`, `titleWrap`, `titleText`, `titleInput`, `subLabel`, `flushAffordance`, `flushTrailing`) · `// ActionRow` (`actionRow`) · `// Separator` · `// Caption` · `// Footing` (`footing`, `footingLabel`, `footingSymbol`, `footerLockAction`, `lockIcon`, the two `globalStyle`s) · `// Trailing` (`accessoryButton`, `detail`) · `// Column` (`menu`, `MENU_MAX_HEIGHT`, `scrollFrame*`).
 - Modify: `DesignSystem/Menus/menu-row.tsx` — same order: `MenuTopRow` · `MenuItem` · `MenuSeparator` · `MenuCaption` · `MenuFooting` (Task 5) · `AccessoryButton`, `FooterLockButton`, `FooterMoreButton` · `Menu`, `MenuScrollFrame`.
 
-**Survivors:** `flushAffordance` moves to `// Shell` beside `rowShell`, so `topRow` and `footing` compose an already-declared class. Nothing else depends on order: every variant sets the vars `rowBox` reads (Forced By), so `// TopRow` sitting above `// Item` cannot let `item`'s padding win. Verify with the built CSS: a TopRow measures 18 (caption line 14 + 2·2) — its ramp is live for the first time; today's 20 was the body line winning.
+**Survivors:** `flushAffordance` moves to `// Shell` beside `rowShell`, so `topRow` and `footing` compose an already-declared class; its flush left edge and tight gap ride the vars `rowBox` reads (`--row-pad-lead: 0px`, `--row-gap: 4px`, the latter declared at `:root` as `8px`), since a property declared above `rowBox` loses to it. `topRow` absorbs `topRowPad` as `vars: { '--row-pad-y': 'var(--top-row-block, 2px)' }`. `actionRow` sits above `// TopRow` and the two `globalStyle`s at the end of `// Trailing` until Task 4 unwinds the label compositions — a `style([x])` reads `x` at module evaluation. Verify with the built CSS: `rowBox` reads `var(--row-gap)`, `flushAffordance` emits the two vars; a TopRow still measures 20 (body line 16 + 2·2) — its caption ramp goes live in Task 4.
 
 **Steps:**
-- [ ] Move declarations into sections; no value changes. `npx biome check` → clean.
-- [ ] Gates green; `git diff --stat` shows only the two files.
-- [ ] Commit `refactor(menus): the stylesheet reads top to bottom as a menu does`.
+- [x] Move declarations into sections; no value changes. `npx biome check` → clean.
+- [x] Gates green; `git diff --stat` shows only the two files.
+- [x] Commit `refactor(menus): the stylesheet reads top to bottom as a menu does`.
 
 #### Task 3: One heading
 
@@ -207,7 +207,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 **Why:** `MenuTopRow` has one caller — `MenuFrameTopRow` — and the split is a leftover of a bare form nothing uses. TopRow owns its rung, tone, padding, and its flush separator, and stops composing `actionRow`.
 
 **Files:**
-- Modify: `menu-base.css.ts` — `topRow = style([flushAffordance, { vars: { '--row-pad-y': '2px', '--row-size': font.scale.caption.size, '--row-line': font.scale.caption.line }, fontWeight: font.weight.emphasized, color: c.label.secondary }])` — vars, not properties, so it holds at 18 wherever it sits (absorbs `topRowPad`; the `--top-row-block` knob goes — `CardAddPicker.tsx:128`'s `0px` override becomes `vars: { '--row-pad-y': 0 }` passed as `className` on its `MenuTopRow` — the row element, never the pane, since every row reads `--row-pad-y`; `paneSeparator`'s margin bakes to `2px`); `topBarLeadingLabel = style([text.footnote.emphasized, { color: c.label.secondary }])`, `topBarTrailingLabel` likewise at tertiary — no `actionRow` composition.
+- Modify: `menu-base.css.ts` — `topRow = style([flushAffordance, { vars: { '--row-pad-y': '2px', '--row-size': font.scale.caption.size, '--row-line': font.scale.caption.line }, fontWeight: font.weight.emphasized, color: c.label.secondary }])` — vars, not properties, so it holds at 18 wherever it sits; its flush edge and 4px gap are `flushAffordance`'s `--row-pad-lead` / `--row-gap` (the `--top-row-block` knob goes — `CardAddPicker.tsx:128`'s `0px` override becomes `vars: { '--row-pad-y': 0 }` passed as `className` on its `MenuTopRow` — the row element, never the pane, since every row reads `--row-pad-y`; `paneSeparator`'s margin bakes to `2px`); `topBarLeadingLabel = style([text.footnote.emphasized, { color: c.label.secondary }])`, `topBarTrailingLabel` likewise at tertiary — no `actionRow` composition, so `actionRow` moves down into `// ActionRow` (Task 6 rewrites it there) and `footingLabel` composes `text.footnote.emphasized` directly.
 - Modify: `menu-row.tsx` — one `MenuTopRow({ label, onBack, trailing?, current? })` that renders the row and its flush `MenuSeparator`; delete `MenuFrameTopRow`; `index.ts` exports `MenuTopRow` only.
 - Modify the 12 `MenuFrameTopRow` files (Derivation) — rename to `MenuTopRow`; `CardAddPicker.tsx:41` local variable `topRow` renamed to avoid shadowing.
 
@@ -216,7 +216,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 - Control: `grep -rF "MenuTopRow" src` → ≥ 20 after.
 
 **Steps:**
-- [ ] Fold the component; delete `topRowPad`; repoint callers.
+- [ ] Fold the component; move `actionRow` into its section; repoint callers.
 - [ ] Gates green. Commit `refactor(menus): the TopRow defines itself`.
 
 #### Task 5: Footing
@@ -653,6 +653,7 @@ Every phase runs the same loop. Nothing advances on a summary; every claim is re
 ### Deviations
 - Task 0: the parallel session's `Store/`, `Detail/Scope.ts`, and `Tabs/tabsModel.ts` had already landed (`af2442ab`), so typecheck was clean, not red. The tree committed was Nathan's 30-file CSS pass (comment trims, `navList.css` search row on `--surface-inset`, row pad 6). Two of its declarations had lost their semicolons — `tabBar.css:14` (`--tab-divider-w: var(--segment-width)`, circular with `.tab-divider`'s own `--segment-width`) and `DetailTitleHeader.css:40` (`line-height: var(--border-base)`, a color) — repaired to `var(--width-200)` and `1.15` so the gate passes; flagged to Nathan.
 - Task 1 (amended, Nathan 08-27): the `:root` block also declares `--row-pad-y` / `--row-pad-x` as the Standard tokens and `--row-size` / `--row-line` as the body ramp, and `rowBox` reads each once — `var(--row-pad-y)`, `var(--row-pad-lead, var(--row-pad-x))`, `var(--row-pad-trail, var(--row-pad-x))`, `var(--row-size)`, `var(--row-line)` — instead of nesting the fallback per read; `menuCompact` is unchanged. Landed as `refactor(menus): the row reads its chosen pad once`.
+- Task 2: a pure move was not value-neutral — `flushAffordance`'s `paddingLeft: 0` and `gap: 4px` are properties, and above `rowBox` they lose to it (the TopRow would have gone to a 6px inset and an 8px gap). They now also set `--row-pad-lead: 0px` and `--row-gap: 4px`, `rowBox` reads `gap: var(--row-gap)` with `:root` at `8px`, and `topRow` carries `topRowPad`'s padding as `--row-pad-y: var(--top-row-block, 2px)`. `actionRow` stays above `// TopRow` and the two `globalStyle`s sit after `// Trailing` because a composition reads its class at module evaluation; Task 4 moves `actionRow` into its section. The TopRow measures 20 after this task and 18 after Task 4. The diff also carries the `heading` gap `4px → 0px` edited live on the tree during the task.
 - Task 1: the `--surface-inset` control is 9, not 8 — `MENU_GUTTER`'s one definition became two direct reads (`surface`, `hostedGutter`); every later control rewritten to 9. `calendarPicker.optionRow` survives as the geometry class its Files entry and F12 describe; only its `fontSize` and `color` deleted. The Docs bullets of Tasks 1 and 6 (`DesignSystemPM.md:197,221,364-366`, `RendererRefactor.md:20`) are the closeout's (Loop step 5): the executor stages no `.claude/` file but this one.
 ### Lessons
 ### Sequenced After
