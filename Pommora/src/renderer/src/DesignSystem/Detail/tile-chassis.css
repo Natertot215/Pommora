@@ -9,7 +9,7 @@
      host would erase it entirely). Host triggers outrank this at (0,2,0)+ on the same element. */
   --tile-border-color: var(--border-base);
   border: var(--tile-border) solid var(--tile-border-color);
-  border-radius: 16px;
+  border-radius: 12px;
 }
 
 .tile-chassis-body {

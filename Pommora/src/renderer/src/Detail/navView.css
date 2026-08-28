@@ -16,8 +16,7 @@
    add-banner hover strip (flow content), not padding. */
 .nav-view-head {
   flex-shrink: 0;
-  padding: 0 0 10px;
-  border-bottom: var(--width-100) solid var(--border-light);
+  border-bottom: var(--width-100) solid var(--border-base);
   margin: 0 calc(var(--inspector-clearance) + var(--content-edge)) 0
     calc(var(--sidebar-clearance) + var(--content-edge));
   transition:
@@ -26,7 +25,7 @@
 }
 .nav-view-search {
   width: 100%;
-  font-size: 16px;
+  font-size: var(--text-headline-size);
   line-height: 20px;
   font-weight: var(--weight-emphasized);
 }
@@ -62,5 +61,5 @@
 /* The pin marker rides the gutter to the LEFT of the content — otherwise, at the zeroed row inset, it
    lands on the lead glyph. */
 .nav-view .nav-item-pin {
-  left: calc(-1 * var(--nav-list-pin-gutter, 11px)); /* KNOB — pin's reach into the left gutter */
+  left: calc(-1 * var(--surface-inset)); /* KNOB — pin's reach into the left gutter */
 }

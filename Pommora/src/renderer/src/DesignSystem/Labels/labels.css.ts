@@ -19,7 +19,7 @@ const SIZE = {
   textMax: '85px',
 
   // Geometry for Checkbox properties.
-  boxSide: '17px',
+  boxSide: '16px',
   boxRadius: '5.5px',
   boxBorder: 'var(--width-150)',
 } as const

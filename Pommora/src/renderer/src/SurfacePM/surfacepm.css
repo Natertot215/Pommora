@@ -113,7 +113,7 @@
   background: var(--main-bg);
   opacity: 0;
   cursor: grab;
-  z-index: 3;
+  z-index: 4;
   transition: opacity var(--duration-slow) var(--ease-base);
 }
 /* The glyph paints on its own --grip-size box, centered on the chip — sizing it
@@ -222,11 +222,11 @@
 }
 
 .spm-edge-n {
-  top: -3px;
+  top: -4px;
 }
 
 .spm-edge-s {
-  bottom: -3px;
+  bottom: -4px;
 }
 
 .spm-edge-e,
@@ -238,11 +238,11 @@
 }
 
 .spm-edge-e {
-  right: -3px;
+  right: -4px;
 }
 
 .spm-edge-w {
-  left: -3px;
+  left: -4px;
 }
 
 .spm-edge-ne,
@@ -251,30 +251,30 @@
 .spm-edge-sw {
   width: 14px;
   height: 14px;
-  z-index: 3;
+  z-index: 4;
 }
 
 .spm-edge-ne {
-  top: -3px;
-  right: -3px;
+  top: -4px;
+  right: -4px;
   cursor: nesw-resize;
 }
 
 .spm-edge-sw {
-  bottom: -3px;
-  left: -3px;
+  bottom: -4px;
+  left: -4px;
   cursor: nesw-resize;
 }
 
 .spm-edge-nw {
-  top: -3px;
-  left: -3px;
+  top: -4px;
+  left: -4px;
   cursor: nwse-resize;
 }
 
 .spm-edge-se {
-  bottom: -3px;
-  right: -3px;
+  bottom: -4px;
+  right: -4px;
   cursor: nwse-resize;
 }
 
