@@ -52,6 +52,7 @@ export function MenuTopRow({
 type MenuItemProps = {
   leading?: ReactNode
   subLabel?: ReactNode
+  value?: ReactNode
   detail?: ReactNode
   trailing?: ReactNode
   overlay?: ReactNode
@@ -70,6 +71,7 @@ export const MenuItem = forwardRef<HTMLDivElement, MenuItemProps>(function MenuI
   {
     leading,
     subLabel,
+    value,
     detail,
     trailing,
     overlay,
@@ -88,7 +90,7 @@ export const MenuItem = forwardRef<HTMLDivElement, MenuItemProps>(function MenuI
   const rowStyle: CSSProperties | undefined = indent
     ? { paddingLeft: 8 + indent * DISCLOSURE_INDENT }
     : undefined
-  const hasTrailing = detail != null || trailing != null
+  const hasTrailing = value != null || detail != null || trailing != null
   const act = disabled ? undefined : onClick
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: the button role is applied conditionally on the click handler, which a static parse cannot see
@@ -111,6 +113,7 @@ export const MenuItem = forwardRef<HTMLDivElement, MenuItemProps>(function MenuI
       </span>
       {hasTrailing && (
         <span className={s.side}>
+          {value != null && <span className={s.value}>{value}</span>}
           {detail != null && <span className={s.detail}>{detail}</span>}
           {trailing}
         </span>

@@ -28,6 +28,7 @@ import {
   footingLabel,
   lockIcon,
   rowDisabled,
+  value,
 } from '@renderer/DesignSystem/Menus/menu-base.css'
 import { FrameSlide } from '@renderer/DesignSystem/Menus/frame-slide'
 import { cx } from '@renderer/DesignSystem/Util/cx'
@@ -279,7 +280,7 @@ export function BlockHandleMenu({
               className={s.scaleTrailing}
               onClick={locked ? undefined : () => setScaleOpen((o) => !o)}
             >
-              <span className={s.scaleValue}>{currentStep.inline}</span>
+              <span className={value}>{currentStep.inline}</span>
               <Icon name="chevrons-up-down" size={GLYPH} />
             </button>
           }
