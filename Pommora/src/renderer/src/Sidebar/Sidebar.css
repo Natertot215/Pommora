@@ -1,7 +1,3 @@
-/* Sidebar: the glass pane's LAYOUT (the MATERIAL lives in GlassPane / glass-base.tsx), its
-   content, collapse/expand + resize affordances, section headers, rows, and tree-drag styling. */
-
-/* Sidebar glass = LAYOUT only — a floating overlay inset from the window edge. */
 .surface-glass {
   position: absolute;
   top: var(--app-inset);
@@ -14,29 +10,18 @@
   -webkit-app-region: drag;
   transition: transform var(--duration-base) var(--ease-base);
 }
-/* Collapsed: slide the pane fully off the left edge — pure slide, no fade, so the motion reads
-   on the way OUT (not just in); the detail reclaims the gutter. */
 .shell.sidebar-hidden .surface-glass {
   transform: translateX(calc(-100% - var(--app-inset) - var(--park-clearance)));
   pointer-events: none;
 }
-/* During an edge-drag resize, track the cursor 1:1 (no easing lag). */
 .shell.is-resizing .surface-glass {
   transition: none;
 }
 
-/* --- sidebar ribbon --- */
-/* A fixed icon strip pinned to the pane's left edge, OUTSIDE the scrolling .sidebar so scroll can
-   neither move it nor cross its border. Needs its own no-drag (the .surface-glass parent is a
-   window-drag region) and its own traffic-light offset (it's a separate column from .sidebar). */
 .surface-glass {
   --ribbon-w: 44px;
-  /* Tunable: the divider's inset from the sidebar's bottom edge. */
   --ribbon-divider-bottom: 20px;
-  /* Tunable: extra left inset for the content (and its selection fill) off the ribbon, applied ONLY
-     when chevrons are hidden — the collapsed gutter otherwise lets the selection pill kiss the divider. */
   --sidebar-hidechevron-pad: 6px;
-  /* Tunable: the content's left inset once the ribbon is toggled away (⌘E) — mirrors the right pad. */
   --ribbon-hidden-inset: 10px;
 }
 .sidebar-ribbon {
@@ -54,15 +39,10 @@
   gap: 6px;
   transition: transform var(--duration-base) var(--ease-base);
 }
-/* ⌘E (settings.json commands.toggle-ribbon): slide the ribbon off the pane's left edge — same
-   motion as the sidebar's own collapse — while .sidebar's margin animates shut to reclaim the
-   column. The pane's overflow:hidden clips the strip as it exits. */
 .shell.ribbon-hidden .sidebar-ribbon {
   transform: translateX(calc(-100% - 2px));
   pointer-events: none;
 }
-/* The divider aligns with the top of the sidebar content; its bottom inset is a tunable knob. A
-   pseudo-element — a border can't be partial-height. */
 .sidebar-ribbon::after {
   content: "";
   position: absolute;
@@ -72,9 +52,6 @@
   width: var(--width-175);
   background: var(--border-faint);
 }
-/* The sidebar's icon buttons — a square button-large box, borderless over its own transparency,
-   the secondary tone lifting on hover. The ribbon's glyphs and the pane toggle share it; each keeps
-   only its own radius, cursor, and placement. */
 .ribbon-icon,
 .sidebar-toggle {
   -webkit-app-region: no-drag;
@@ -96,41 +73,25 @@
   background: var(--state-hover);
 }
 
-/* --- sidebar content --- */
 .sidebar {
   -webkit-app-region: no-drag;
-  /* left MARGIN (not padding) insets past the ribbon so the nav element doesn't extend under it —
-     an overlapping nav wins hit-testing and eats every ribbon click. Content sits against the
-     divider (rows carry their own pad); top clears the traffic lights. */
   margin-left: var(--ribbon-w);
   padding: 46px var(--surface-inset) 12px 0;
   transition: margin-left var(--duration-base) var(--ease-base);
-  /* The pane is a FIXED-width view: it scrolls vertically only. overflow-x:hidden caps the row track
-     at the visible width so long titles ellipsize at their row edge (and hover-scroll) instead of
-     widening the scroll-area — without it, overflow-y:auto computes overflow-x:auto and the whole
-     sidebar scrolls sideways while rows never truncate. */
   overflow-x: hidden;
   overflow-y: auto;
   height: 100%;
-  /* The scroll-edge fade rides the shared .over-scroll class (design-system) — the top fade
-     tucks inside the header padding, so the header stays crisp at rest. */
 }
 .shell.ribbon-hidden .sidebar {
   margin-left: var(--ribbon-hidden-inset);
 }
 
-/* --- sidebar modes --- */
-/* The stage hosts the active mode plus, during a ribbon switch, the outgoing one — relative so the
-   exit layer can overlay. Flex column so the mode keeps filling the scroll area (a percentage
-   min-height can't resolve against the stage's auto height). */
 .sidebar-mode-stage {
   position: relative;
   min-height: 100%;
   display: flex;
   flex-direction: column;
 }
-/* The active mode fills the scroll area; the inner body carries the slide and the empty-area
-   right-click target, so it must fill too. */
 .sidebar-mode {
   flex: 1 0 auto;
   display: flex;
@@ -140,11 +101,6 @@
   flex: 1 0 auto;
 }
 
-/* Ribbon-mode switch: the incoming mode sweeps in from the ribbon edge and OVERTAKES the sitting
-   content. Both layers are transparent glass, so a plain overlay would read as text-on-text —
-   instead two complementary clip sweeps tile the width at every frame (incoming visible left of
-   the edge, outgoing right of it), while an inner translate gives the incoming content its
-   rightward slide. Shell-move tokens (--duration-base / --ease-base), like every other slide. */
 .mode-exit {
   position: absolute;
   top: 0;
@@ -184,14 +140,11 @@
   }
 }
 
-/* --- agenda mode --- */
 .agenda-empty {
   padding: 8px var(--row-width-standard);
   color: var(--label-tertiary);
 }
 
-/* Sidebar collapse / expand toggle (log-out glyph — flipped = collapse, normal = expand).
-   Both no-drag + clickable; icon in label-secondary, lifting to primary on hover. */
 .sidebar-toggle {
   position: absolute;
   z-index: var(--z-sidebar-toggle);
@@ -205,11 +158,7 @@
 .sidebar-toggle .flip-x {
   transform: scaleX(-1);
 }
-/* Collapse — sidebar top-right corner; hidden until you hover the sidebar (uncluttered at rest),
-   then rides the sidebar off as it slides while the expand reveals at the top-left. */
 .sidebar-collapse {
-  /* Inside the glass, puts the button's center on the toolbar buttons' row (the glass top is already
-     inset by --app-inset; the toolbar sits an optical hair further in). */
   top: 1px;
   right: 10px;
   opacity: 0;
@@ -218,16 +167,10 @@
 .sidebar-collapse:focus-visible {
   opacity: 1;
 }
-/* Stay lit through the collapse slide — rides the pane off fully visible, hides at rest. */
 .shell.sidebar-hidden .sidebar-collapse {
   opacity: 1;
 }
-/* Expand — always mounted at the toggle spot, on top (above the z2 titlebar). Hidden behind the
-   open sidebar's collapse button; as the sidebar slides off it fades + eases in (revealed, close
-   tucking behind it), and fades back out as the sidebar slides in to overtake it. */
 .sidebar-expand {
-  /* Same row as the toolbar buttons, centered between the traffic lights and Back/Forward (which
-     reserves the matching right gap via the sidebar-hidden toolbar padding). */
   top: calc(var(--app-inset) + 1px);
   left: 96px;
   opacity: 0;
@@ -268,9 +211,6 @@
   min-width: 0;
   text-overflow: clip;
 }
-/* The Disclosure variant nests icon + input one span deeper; that span is a row-flex child and
-   takes the full track. (titleText itself sits in titleWrap's COLUMN flex — a basis there is a
-   height, so it keeps its default flex.) */
 .row [class*="titleText"] > span:has(.row-title-input) {
   flex: 1 1 0;
 }
@@ -282,14 +222,9 @@
   flex: none;
 }
 
-/* --- Sidebar drag: a page reorders / reparents; the row dims in place while a ghost rides the
-   cursor + an insertion line marks the drop (line + ghost live in sidebarDnd.tsx). No hover
-   affordance — rows keep the default cursor until a drag starts, then show `grabbing`. --- */
 .tree-item.dragging {
-  opacity: var(
-    --state-ghost
-  ); /* the shared row-drag ghost — same token as the table row + MarkdownPM line */
-  cursor: grabbing; /* the wrapper IS the pointer-capture target, so its cursor wins for the whole drag */
+  opacity: var(--state-ghost);
+  cursor: grabbing;
 }
 .tree-item.dragging .row {
   cursor: grabbing;
@@ -307,25 +242,16 @@
   width: var(--chevron-gutter);
   min-width: var(--chevron-gutter);
   overflow: hidden;
-  /* Absorbs the row's inset (below) on top of the gutter collapse, so the icon + title don't move. */
   margin-right: calc(var(--chevron-gutter) - 7.5px - var(--sidebar-hidechevron-pad));
 }
-/* Inset the row — and its FULLY-ROUNDED selection/hover fill — off the ribbon when chevrons are hidden.
-   A plain margin keeps the fill's corners at their true 8px radius (a transparent border would squash the
-   ribbon-side corner); the chevron slot's negative margin above cancels the shift so content stays put.
-   Manual knob → --sidebar-hidechevron-pad. */
 .hide-chevrons .row {
   margin-left: var(--sidebar-hidechevron-pad);
 }
 
-/* The left-edge fade a row's icon + title eclipse into the glass through — ~the icon-zone width.
-   The over-scroll engine holds it at rest on its own: at scroll 0 the leading edge is a no-op. */
 .sidebar [class*="titleText"] {
   --over-scroll-fade: var(--fade-heavy);
 }
 
-/* Matches the tone the design system's leading .side slot gives an icon — this row's icon sits inline
-   in the title's scroll box instead, so the tone is restated here explicitly; small gap to the title. */
 .row-icon {
   color: var(--label-secondary);
   vertical-align: middle;

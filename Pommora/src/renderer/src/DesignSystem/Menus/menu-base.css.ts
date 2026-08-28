@@ -23,8 +23,6 @@ globalStyle(':root', {
   },
 })
 
-// ── Shell ──
-
 export const rowShell = style({
   borderRadius: '8px',
   cursor: 'default',
@@ -45,8 +43,6 @@ export const flushAffordance = style({
   color: c.label.secondary,
 })
 
-// ── TopRow ──
-
 export const topRow = style([
   flushAffordance,
   {
@@ -66,8 +62,6 @@ export const topBarTrailingLabel = style([text.footnote.emphasized, { color: c.l
 export const topBarTrailingSymbol = style({ display: 'inline-flex', color: c.label.tertiary })
 export const paneSeparator = style({ marginBottom: '2px' })
 
-// ── Heading ──
-
 export const heading = style([
   text.footnote.emphasized,
   {
@@ -83,8 +77,6 @@ export const heading = style([
 ])
 
 export const headingCaps = style({ textTransform: 'uppercase', letterSpacing: '0.04em' })
-
-// ── Item ──
 
 export const rowBox = style([
   text.body.standard,
@@ -161,8 +153,6 @@ export const subLabel = style([text.caption.standard, { color: c.label.secondary
 
 export const flushTrailing = style({ paddingRight: 0 })
 
-// ── ActionRow ──
-
 export const actionRow = style([
   rowBox,
   {
@@ -171,8 +161,6 @@ export const actionRow = style([
     color: c.label.secondary,
   },
 ])
-
-// ── Separator ──
 
 export const separator = style({
   height: '11px',
@@ -187,14 +175,10 @@ export const separatorLine = style({
 })
 export const separatorFlush = style({ padding: 0 })
 
-// ── Caption ──
-
 export const caption = style([
   text.body.standard,
   { padding: '28px 8px', textAlign: 'center', color: c.label.secondary, userSelect: 'none' },
 ])
-
-// ── Footing ──
 
 export const footing = style([
   flushAffordance,
@@ -208,8 +192,6 @@ export const footerLockAction = style([footingLabel, { gap: '5px' }])
 export const lockIcon = style({ selectors: { '&&': { color: c.label.tertiary } } })
 export const footingSymbol = style({ display: 'inline-flex', color: c.label.secondary })
 
-// ── Trailing ──
-
 export const accessoryButton = style({
   width: 'var(--accessory-box, 20px)',
   color: c.label.tertiary,
@@ -219,8 +201,6 @@ export const detail = style([text.footnote.emphasized])
 
 globalStyle(`${footing} ${accessoryButton}`, { color: c.label.secondary })
 globalStyle(`${footingBar} ${detail}`, { color: c.label.secondary })
-
-// ── Column ──
 
 export const menu = style({ display: 'flex', flexDirection: 'column', padding: '6px 0' })
 
