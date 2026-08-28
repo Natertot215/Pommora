@@ -83,6 +83,9 @@
 .trash-check:focus-visible {
   opacity: 1;
 }
+.trash-frame .trash-trail {
+  padding-right: 6px; /* KNOB — with the cluster's 4px gap, mirrors --trash-date-inset across the divider */
+}
 .trash-date {
   flex: 0 0 var(--trash-date-lane);
   padding-left: var(--trash-date-inset);
