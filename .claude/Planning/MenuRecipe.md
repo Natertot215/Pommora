@@ -7,7 +7,7 @@
 
 `DesignSystem/Menus/menu-base.css.ts` names every menu row kind once, in the order the rows stack on screen, and every row-producing surface in the renderer composes those kinds instead of restating them. At the end: a row's height is never declared — it is the typography line plus one of two padding tokens; there are exactly two row sizes, chosen once per surface; `NavList` is a menu; the heading, the "All Properties" action row, the footing, and the trailing slot each exist in one place; and `Frames/frames.css.ts` holds geometry only.
 
-The shape: four tokens (`--row-height-standard` 6px, `--row-height-compact` 4px, `--row-width-standard` 6px, `--row-width-compact` 4px) declared in `menu-base.css.ts`, read by `item` and `itemCompact`; a surface wears `itemCompact`'s pair on itself and every row inside follows. Chosen over a declared `height` (a fixed 24/20 was proposed and rejected — a caption row must grow, and the numbers on disk are already line + pad) and over keeping `PickerMenu`'s font-only knob (it shrinks the text and leaves every surface to invent its own padding, which is the five-heights problem this closes). Ratified by Nathan: the token names, 4px Compact, "pane wins" inside a picker, NavWindow and NavView both Standard, Autocomplete Compact, heading on the row's horizontal inset.
+The shape: four tokens (`--row-height-standard` 6px, `--row-height-compact` 4px, `--row-width-standard` 6px, `--row-width-compact` 4px) declared in `menu-base.css.ts`, read by `item`; a surface wears `menuCompact` and every row inside follows. Chosen over a declared `height` (a fixed 24/20 was proposed and rejected — a caption row must grow, and the numbers on disk are already line + pad) and over keeping `PickerMenu`'s font-only knob (it shrinks the text and leaves every surface to invent its own padding, which is the five-heights problem this closes). Ratified by Nathan: the token names, 4px Compact, "pane wins" inside a picker, NavWindow and NavView both Standard, Autocomplete Compact, heading on the row's horizontal inset.
 
 Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40`'s literal `8`, `sidebarDnd.tsx:35`'s mirror, a future `--list-inset`) are **Part 2** — no task here touches them. Table rows, tabs, chips, cards, and grid cells are not rows. The Figma component follows the code and is not a task here.
 
@@ -22,7 +22,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 7. `MenuTopRow` and `MenuFrameTopRow` are one component.
 8. Every `PickerMenu` is Compact — every row inside, `PickerOption` and `MenuItem` alike; `option` keeps only its selection machinery.
 9. `NavList` renders `MenuItem` rows on the menu column; `navList.css` holds no row box; NavWindow, NavView, and Trash are Standard.
-10. `AutocompletePane` rows are `itemCompact`; the Cohesion ruling that exempted them is removed.
+10. `AutocompletePane` rows are `item` under a `menuCompact` pane; the Cohesion ruling that exempted them is removed.
 11. The trailing slot is one place: `chevron` · `value` + toggle · `switch` · `button` · `slider` · `field`; `detail` stays a separate passive text.
 12. `frames.css.ts` retains only geometry exports; the 14 restating exports are gone.
 13. `Frames/frames.css.ts` `COLOR` and the frame-local heading/tone consts are gone.
@@ -33,7 +33,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 
 - `PickerMenu.pane` is the only writer of the ramp vars and is applied even under `bareSurface` (`PickerMenu.tsx:404`) → the Compact pair rides `pane`; every host in a picker portal is Compact by that fact, which is the ruling.
 - `item` also serves the Sidebar (`Sidebar.tsx:140,270,412`), Settings, and every Frame → the base row cannot change class name; `[class*="item"]` at `propertyFrame.test.tsx:300,329` pins it; Compact is additive.
-- `PickerOption` is a `<button>` and three tests reach rows via `[data-picker-portal] button` → `option` stays a button wearing `item` + `itemCompact`.
+- `PickerOption` is a `<button>` and three tests reach rows via `[data-picker-portal] button` → `option` stays a button wearing `item` under the pane's `menuCompact`.
 - `optionRing`'s run-merging (`pickerMenu.css.ts:51-73`) needs adjacent siblings → `PickerOption` markup keeps rows as direct siblings.
 - `MenuTopRow` has one caller, `MenuFrameTopRow` (`menu-row.tsx`), and nothing passes `contentClassName` → the fold is consumer-invisible.
 - 12 of 13 `MenuBottomRow`s already pin through `MenuScrollFrame footer=` → `margin-top: auto` serves FilterFrame's locked branch alone; jsdom does no flex layout → the footer pin is verified running, not by test.
