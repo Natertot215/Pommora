@@ -66,7 +66,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 - `DesignSystem/Menus/menu-surface.css.ts` — `MENU_GUTTER`, the `surface` padding pair, `hostedGutter`, the `titleText` global at `:34`.
 - `DesignSystem/Components/Pickers/PickerMenu/{pickerMenu.css.ts,PickerMenu.tsx}` — `pane` vars, `option`, `optionRing`, `bareSurface`.
 - `DesignSystem/Elements/DropOutline/dropOutline.css.ts` — `ROW_INSET`, `RAIL_CENTER_X`.
-- `Navigation/{navList.css,NavList.tsx}`, `Windows/NavWindow.tsx`, `Detail/NavView.tsx`, `Settings/TrashFrame.tsx` — the hand-rolled list.
+- `Navigation/{navList.css,NavList.tsx}`, `Windows/NavWindow.tsx`, `Interface/NavView.tsx`, `Settings/TrashFrame.tsx` — the hand-rolled list.
 - `MarkdownPM/Styles.css` `.mdpm-ac`, `.mdpm-ac-row`; `MarkdownPM/AutocompletePane.tsx`.
 - `Frames/frames.css.ts`, `Frames/groupFrame.css.ts`, `Frames/filterFrame.css.ts`, `Frames/layoutFrame.css.ts`, `Views/CardView/cardAddPicker.css.ts`, `Properties/Editors/{dateTimeEditor,numberEditor}.css.ts`, `Settings/settingsWindow.css`, `Windows/pageWindow.css` — the row boxes.
 - `Settings/SettingsWindow.tsx` — the `Row` union and `RowControl` switch the index lifts.
@@ -316,9 +316,9 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 - Modify: `menu-base.css.ts` `detail` — `flex: '0 1 auto', minWidth: 0, maxWidth: '55%'` (today's `.nav-item-path` cap; a passive text never squeezes the title) and `titleText` gains `--over-scroll-fade: var(--fade-base)`.
 - Modify: `Navigation/NavList.tsx` — rows render `<MenuItem ref={drag?.ref} leading={icon} detail={<NavTrail …/>} overlay={<NavPinButton …/>} selected disabled className={dragging && rowDragging} onClick>`; the path is a trailing same-line `detail` (today's `.nav-item-path`: `margin-left: auto; max-width: 55%`), never a `subLabel`; the search header stays its own element.
 - Modify: `Navigation/navList.css` — delete `.nav-item`, `.nav-item-main`, `.nav-item-inert`, `.nav-item-title`, `.nav-item-path`, `.nav-item.is-dragging`; `.nav-list` (the column) sets `--row-pad-x: var(--navwindow-inset)` and, where a lead affordance lives, `--row-pad-lead` (NavWindow `--nav-list-lead` 20, Trash `--trash-lead` 34) so each surface's rows keep its gutter (NavWindow 20/12, Trash 34/14, NavView 0/0) and the divider, magnifier, and row edges stay aligned; `.nav-item-pin`'s absolute placement moves to the `overlay` element's own class.
-- Modify the other four files with `nav-item` rules: `Windows/navWindow.css:119-123` (`--nav-list-lead` pad → the column's `--row-pad-x`; pin offset → the overlay class), `Settings/trashFrame.css:83,102,115` (the sibling separator, the hover checkbox reveal, the historical dimming — re-keyed on the `MenuItem` row via a `trash-row` className), `Detail/navView.css:63` (pin offset), `Tabs/tabStrip.css` (grep hit; confirm and re-key).
+- Modify the other four files with `nav-item` rules: `Windows/navWindow.css:119-123` (`--nav-list-lead` pad → the column's `--row-pad-x`; pin offset → the overlay class), `Settings/trashFrame.css:83,102,115` (the sibling separator, the hover checkbox reveal, the historical dimming — re-keyed on the `MenuItem` row via a `trash-row` className), `Interface/navView.css:63` (pin offset), `Tabs/tabStrip.css` (grep hit; confirm and re-key).
 - Modify: `Settings/trashFrame.css:43` — `--trash-lead` is the Trash column's `--row-pad-x`.
-- Modify: `Windows/NavWindow.tsx`, `Detail/NavView.tsx`, `Settings/TrashFrame.tsx` — no size class (Standard).
+- Modify: `Windows/NavWindow.tsx`, `Interface/NavView.tsx`, `Settings/TrashFrame.tsx` — no size class (Standard).
 
 **Interfaces**
 - `NavList` rows keep their `data-*` hooks and aria; `NavTrail` stays an Element and rides `detail`. `MenuItem`'s `ref`, `onMouseDown`, and `overlay` are assumed by Task 12.
@@ -608,13 +608,13 @@ Every phase runs the same loop. Nothing advances on a summary; every claim is re
 ### Progress
 - [x] **Phase 0** — The Tree
   - [x] Task 0 — commit the working tree · `27c5171c`
-- [ ] **Phase 1** — The Recipe · base `27c5171c`
-  - [ ] Task 1 — the four row tokens, `item` and `menuCompact`
-  - [ ] Task 2 — stacking order
-  - [ ] Task 3 — one heading
-  - [ ] Task 4 — TopRow defines itself
-  - [ ] Task 5 — Footing
-  - [ ] Task 6 — ActionRow + docs
+- [ ] **Phase 1** — The Recipe · base `27c5171c` · executor `a1f3e2c5..bdf30002` · addenda `7cbb44ea` (heading gap 0, Nathan) · `faa7d3b0` (simplifier) · `4626e3a1` (comment-killer) · `72a867a4` (review: `rowBox` first, `footing` on it, `--row-gap` gone, `optionCheck` margin gone)
+  - [x] Task 1 — the four row tokens, `item` and `menuCompact` · `a1f3e2c5` + `370a167a`
+  - [x] Task 2 — stacking order · `5194820f`
+  - [x] Task 3 — one heading · `c857a3e4`
+  - [x] Task 4 — TopRow defines itself · `fb2f77d5`
+  - [x] Task 5 — Footing · `a6df3eed`
+  - [x] Task 6 — ActionRow · `bdf30002` (docs rows deferred to §Closeout)
 - [ ] **Phase 2** — The Surfaces
   - [ ] Task 7 — Frames + editors compose `item`
   - [ ] Task 8 — every PickerMenu host is Compact
@@ -651,6 +651,8 @@ Every phase runs the same loop. Nothing advances on a summary; every claim is re
 - Task 9: the "today" figures in its prose predate Task 0's tree — `.nav-search-row` already pads `var(--surface-inset)`, `.nav-item-main` pads `6px` (rows likely 28 already), gap 6; the +2 / −10 / −12 search-edge offsets are stale. Re-read Task 9 against the live tree at Phase 2's open.
 
 ### Deviations
+- Phase 1 review (orchestrator, 08-27): `rowBox` is declared in the Shell section ahead of everything that composes it, so a variant's own properties (TopRow's tone, `flushAffordance`'s gap) win by source order and no tone var is needed; the executor's `--row-gap` deleted (one writer, one reader — a literal `8px` / `4px`); `footing` composes `rowBox` and zeroes its pads through `--row-pad-y` / `--row-pad-trail`, so no row declares padding; `optionCheck`'s `marginLeft` gone (the row's gap already spaces the mark). Running pass at Gate 1 (CDP, screenshots in the session scratchpad): sidebar rows 6+16+6 = 28, page Settings → Properties frame: TopRow 18 (2+14+2), items 28, footing 20; the Compact hosts (value picker, CardAddPicker, Calendar) were not reachable from the open page and take their pass at Task 8.
+- Task 0's tree arrived after a parallel session landed `Detail/` → `Interface/` (`44366104`); every `Detail/navView.css` / `Detail/NavView.tsx` citation in this plan now reads `Interface/`.
 - Task 0: the parallel session's `Store/`, `Detail/Scope.ts`, and `Tabs/tabsModel.ts` had already landed (`af2442ab`), so typecheck was clean, not red. The tree committed was Nathan's 30-file CSS pass (comment trims, `navList.css` search row on `--surface-inset`, row pad 6). Two of its declarations had lost their semicolons — `tabBar.css:14` (`--tab-divider-w: var(--segment-width)`, circular with `.tab-divider`'s own `--segment-width`) and `DetailTitleHeader.css:40` (`line-height: var(--border-base)`, a color) — repaired to `var(--width-200)` and `1.15` so the gate passes; flagged to Nathan.
 - Task 1 (amended, Nathan 08-27): the `:root` block also declares `--row-pad-y` / `--row-pad-x` as the Standard tokens and `--row-size` / `--row-line` as the body ramp, and `rowBox` reads each once — `var(--row-pad-y)`, `var(--row-pad-lead, var(--row-pad-x))`, `var(--row-pad-trail, var(--row-pad-x))`, `var(--row-size)`, `var(--row-line)` — instead of nesting the fallback per read; `menuCompact` is unchanged. Landed as `refactor(menus): the row reads its chosen pad once`.
 - Task 6: a bare `<button className={actionRow}>` wears the UA button chrome and shrink-wraps, so `frames.css.ts` keeps `allHeading` — the button reset (`width: 100%`, no border, no background), `--row-pad-lead: 0px` for the flush chevron, and the `--drop-outline-beat` the old row carried so the chevron still turns on the spacer's beat. `footingLabel` composes `text.footnote.emphasized` directly (Task 4's rewrite named it; it landed here, before `actionRow` grew a box). The docs rows stay the closeout's, as recorded under Task 1.
@@ -660,6 +662,9 @@ Every phase runs the same loop. Nothing advances on a summary; every claim is re
 - Task 2: a pure move was not value-neutral — `flushAffordance`'s `paddingLeft: 0` and `gap: 4px` are properties, and above `rowBox` they lose to it (the TopRow would have gone to a 6px inset and an 8px gap). They now also set `--row-pad-lead: 0px` and `--row-gap: 4px`, `rowBox` reads `gap: var(--row-gap)` with `:root` at `8px`, and `topRow` carries `topRowPad`'s padding as `--row-pad-y: var(--top-row-block, 2px)`. `actionRow` stays above `// TopRow` and the two `globalStyle`s sit after `// Trailing` because a composition reads its class at module evaluation; Task 4 moves `actionRow` into its section. The TopRow measures 20 after this task and 18 after Task 4. The diff also carries the `heading` gap `4px → 0px` edited live on the tree during the task.
 - Task 1: the `--surface-inset` control is 9, not 8 — `MENU_GUTTER`'s one definition became two direct reads (`surface`, `hostedGutter`); every later control rewritten to 9. `calendarPicker.optionRow` survives as the geometry class its Files entry and F12 describe; only its `fontSize` and `color` deleted. The Docs bullets of Tasks 1 and 6 (`DesignSystemPM.md:197,221,364-366`, `RendererRefactor.md:20`) are the closeout's (Loop step 5): the executor stages no `.claude/` file but this one.
 ### Lessons
+- A "pure reorder" of vanilla-extract classes is never value-neutral when a class composed later sets a property the base also sets — declare the base first, and let variants set properties; reach for a var only when a surface (not a row) has to override it.
+- A var, export, or class with one writer and one reader is indirection: reorder, delete, or compose before minting (Nathan, 08-27).
+- The executor's brief must say "add no comments" outright and name the existing prose as cuttable, or a comment-sweep lands as a separate agent pass.
 ### Sequenced After
 - Part 2 — leading glyph size per variant; `--list-inset` for nested lists; `menu-row.tsx:40`'s indent base and `sidebarDnd.tsx:35`'s mirror. Its first step is unwinding the inline `paddingLeft` style, which beats every class and var.
 - The Figma `Menu Item` follows the code: Standard = body + 6, Compact = control + 4; `Menu Heading`, `Menu Footing`, `Menu TopRow` components.
