@@ -1,7 +1,5 @@
 .settings-window {
   padding: var(--app-inset);
-  /* KNOB — the frame's content inset. */
-  --settings-inset: 18px;
 }
 
 .settings-rail-list {
@@ -21,8 +19,8 @@
   min-height: 0;
   overflow-y: auto;
   scrollbar-width: none;
-  padding: var(--settings-inset);
-  padding-top: var(--close-clearance);
+  padding: var(--surface-inset);
+  padding-top: 30px; /* KNOB — clearance past the × floating over the corner */
 }
 .settings-heading {
   display: flex;
@@ -30,7 +28,7 @@
   gap: 8px;
   color: var(--label-primary);
   margin: 0 0 14px;
-  padding-bottom: 10px;
+  padding: 0 var(--row-pad-x) 10px;
   border-bottom: var(--width-100) solid var(--border-base);
 }
 .settings-heading-icon {
@@ -43,16 +41,4 @@
 }
 .settings-section + .settings-section {
   margin-top: 22px;
-}
-.settings-empty {
-  color: var(--label-tertiary);
-}
-
-/* A control with no width of its own — a slider, a path field — takes this seat in the row's
-   trailing slot. KNOB — the seat's width. */
-.settings-wide {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 260px;
 }

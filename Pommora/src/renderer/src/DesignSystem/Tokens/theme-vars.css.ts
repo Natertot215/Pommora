@@ -3,7 +3,6 @@ import { DEFAULT_ACCENT } from '@shared/types'
 import { BANNER_SHADOW, STATE_OPACITY, vars as colorVars } from './color.css'
 import { font } from './typography.css'
 import {
-  CLOSE_CLEARANCE,
   DISCLOSURE_INDENT,
   DROP_DOT_SIZE,
   DROP_LINE_INSET,
@@ -150,8 +149,6 @@ globalStyle(':root', {
     // How far past its own edge a floating pane travels to park fully off-screen — enough that its
     // shadow clears the window too, not just its box.
     '--park-clearance': `${PARK_CLEARANCE}px`,
-    // The top inset a floating window's content keeps so it clears the × floating over its corner.
-    '--close-clearance': `${CLOSE_CLEARANCE}px`,
     '--disclosure-indent': `${DISCLOSURE_INDENT}px`,
     // The fold/grip lane the editor, table views, block tiles, and embeds all carve from the content
     // inset.
