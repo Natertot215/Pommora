@@ -882,7 +882,7 @@
   --callout-bw: var(--width-150);
   --callout-radius: var(--md-box-radius);
   /* Slightly roomier inner gutter + head/foot so a fold chevron has space to live inside the box. */
-  --callout-pad: 15px;
+  --callout-pad: 16px;
   --callout-gap: var(--md-box-gap);
   --callout-inner-pad: 8px;
   --box-gap: var(--callout-gap);
@@ -942,7 +942,7 @@
 .mdpm-editor .cm-line.md-callout.md-bq-in {
   --nq-bar: 3px;
   --nq-bar-radius: 2px;
-  --nq-gap: 9px;
+  --nq-gap: 8px;
   --box-fill: var(--fill-tertiary);
   --box-inset: var(--callout-pad);
   --box-z: -1;

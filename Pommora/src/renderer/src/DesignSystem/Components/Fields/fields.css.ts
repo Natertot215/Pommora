@@ -51,7 +51,7 @@ export const borderedField = style([
   {
     flex: '0 0 auto',
     minWidth: 0,
-    padding: '3px 6px',
+    padding: '2px 6px',
     border: 'none',
     justifyContent: 'flex-start',
     textAlign: 'left',

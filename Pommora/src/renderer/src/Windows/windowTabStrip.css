@@ -61,7 +61,7 @@
   --tab-pref: 150px;
   --tab-max: 200px;
   --tab-pad-x: 10px;
-  --tab-gap: 5px;
+  --tab-gap: 6px;
   display: flex;
   align-items: center;
   width: max-content;

@@ -61,7 +61,7 @@
 /* A SIBLING pill (not a ::before) so the tab's overflow:hidden can't clip it as the tab collapses to 0.
    Width flows through --segment-width so it animates with the tab; is-closing zeroes it in step. */
 .tab-seg {
-  --segment-width: var(--tab-divider-w, 2px);
+  --segment-width: var(--width-200);
   height: var(--tab-divider-h, 16px);
   pointer-events: none;
   transition:
@@ -118,14 +118,14 @@
 .tab-x {
   position: absolute;
   right: calc(var(--tab-pad-x, 12px) - 6px);
-  border-radius: 5px;
+  border-radius: 6px;
   color: var(--label-secondary);
   transition:
     opacity var(--duration-fast) var(--ease-base),
     background var(--duration-fast) var(--ease-base);
 }
 .tab-x.tab-x {
-  padding: 3px;
+  padding: 4px;
 }
 .tab-x:hover {
   background: var(--state-hover);

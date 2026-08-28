@@ -77,7 +77,7 @@
 @keyframes window-out {
   to {
     opacity: 0;
-    transform: scale(0.95);
+    transform: scale(0.85);
   }
 }
 
@@ -92,7 +92,7 @@
   left: 0;
   right: 0;
   /* Above a side pane (z2): the buttons ride ON its glass, never under it. */
-  z-index: 3;
+  z-index: 4;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -128,7 +128,7 @@
   display: flex;
   align-items: center;
   gap: var(--window-trail-gap);
-  z-index: 3;
+  z-index: 4;
 }
 /* ---- side panes. Material and inner geometry come from the SidePane shell; only positioning and
    the slide live here. An OVERLAY pane rides the inset ring and is carried by its driver with no
@@ -175,10 +175,10 @@
   z-index: 4;
 }
 .window-side-right-overlay-resize {
-  right: calc(var(--window-side-inset) + var(--window-side-r-w) - 3px);
+  right: calc(var(--window-side-inset) + var(--window-side-r-w) - 4px);
 }
 .window-side-left-overlay-resize {
-  left: calc(var(--window-side-inset) + var(--window-side-l-w) - 3px);
+  left: calc(var(--window-side-inset) + var(--window-side-l-w) - 4px);
 }
 
 /* In-flow: a column in the body row. Closing FADES as it collapses — the glass material's border

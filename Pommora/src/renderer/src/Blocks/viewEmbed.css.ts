@@ -33,7 +33,7 @@ export const titleRow = style({
   display: 'flex',
   alignItems: 'center',
   gap: '8px',
-  padding: `13px ${HEAD_PAD_R} 8px ${HEAD_PAD_L}`,
+  padding: `12px ${HEAD_PAD_R} 8px ${HEAD_PAD_L}`,
   flex: 'none',
   fontSize: 'var(--editor-font-size, 15px)',
   position: 'relative',
