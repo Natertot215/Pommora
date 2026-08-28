@@ -1,6 +1,6 @@
 ## The Renderer Rework
 
-> **Status:** reconciled inventory, 08-28-2026 — awaiting Nathan's shaping; nothing executes from this document until the exploration has run and the framework is ratified · **Scope:** `Pommora/src/renderer` — its folders, names, tokens, stylesheets, recipes, and the boundaries between them · **Replaces:** the Renderer Atlas and the Renderer Refactor ledger, whose standing content is folded in below · **Beside it:** [[Tiles]] (its own ratified plan) and [[Codebase-Cleanup-Checklist]] (the behavioral half — correctness, performance, the process-side splits).
+> **Status:** shaped 08-28-2026 — the exploration is dispatched; nothing executes from this document until it has reported and the framework is ratified · **Scope:** `Pommora/src/renderer` whole — folders, names, tokens, stylesheets, recipes, boundaries, component APIs, and behavior where a perspective justifies it; the design system's pending items (an inactive label tone, the type gaps) ride it · **Replaces:** the Renderer Atlas, the Renderer Refactor ledger, and the abandoned Tiles plan, whose standing content is folded in below · **Beside it:** [[Codebase-Cleanup-Checklist]] (the process-side half — `persist()`, the view host, the `main/index.ts` split, the drag adapters).
 
 The renderer works. It is filed by the order things were built, styled in two forms with a rule that thirty sheets fail, and tokenized unevenly — motion and color are on their ladders, geometry is hundreds of bare pixel values with a handful of named insets. Two organizational passes (08-25 to 08-28) moved `Links/`, `Interface/`, the store, and landed the Menu recipe. What remains was carried in two documents as a ledger of moves and an atlas of evidence; this document is the one list of what is still proposed, why, and what each waits on — and the method for exploring the system whole — as consultants, not inspectors — before any of it is scheduled.
 
@@ -69,7 +69,7 @@ Each folder answers "what is this" in one word. A row marked NEW, MOVED, or RENA
 ├── // Showcase                         | • MOVED out of DesignSystem — a deployed site, not a piece
 ├── // Store                            | • The session's seven slices
 ├── // SurfacePM                        | • The tile layout engine; knows nothing of content
-├── // Tiles                            | • NEW — the tile world both hosts consume; the plan is [[Tiles]]
+├── // Tiles                            | • NEW — the tile world both hosts consume; the shape is the exploration's to propose
 │   ├── …                               | • MOVED from Blocks and Embeds — BlockSurface, the content kinds, tileWarm, webRetention, blockZoom
 │   ├── actionBand.css.ts               | • MOVED from Interface — the tiles are its only consumer
 │   └── tile-chassis.css                | • MOVED from DesignSystem/Detail
@@ -132,9 +132,9 @@ Every proposed move, grouped by kind. **Status** is one of: **ruled** (Nathan sa
 
 - [ ] **`Core/` for the root modules** — `store`, `treeIndex`, `assetUrl`, `pageMenuActions`, `selection`, `Commands`, `destinationTree`, `nativeMenus`, `nativeCaret`, and `Tabs/warmCache`. *Why:* R8 — twelve files at the root with no folder, every one read across folders. *Status:* ruled.
 - [ ] **`Navigation/` absorbs `Tabs/`** (`TabBar`, `tabsModel`). *Why:* per-tab history is navigation; `Tabs/` sits beside the folder that owns its concept. *Status:* ruled.
-- [ ] **`Embeds/ViewEmbedScope` → `Views/`; `Sidebar/sidebarDndModel` → `DesignSystem/Interactions/reorderModel`; `Settings/IconPicker` + `iconFavorites` → `Utilities/NexusIconPicker`.** *Why:* R2 — each has zero importers in its own folder. *Status:* the first is Tiles Task 2; the other two ruled.
+- [ ] **`Embeds/ViewEmbedScope` → `Views/`; `Sidebar/sidebarDndModel` → `DesignSystem/Interactions/reorderModel`; `Settings/IconPicker` + `iconFavorites` → `Utilities/NexusIconPicker`.** *Why:* R2 — each has zero importers in its own folder. *Status:* ruled.
 - [ ] **`Showcase/` out of `DesignSystem/`.** *Why:* Settled 21 — a deployed site, not a piece. *Status:* ruled.
-- [ ] **`Tiles/`** — `Blocks/` + the tile half of `Embeds/`, `tile-chassis.css` with it, `Components/` → `Utilities/`. *Why:* one folder answers "where does a tile live?" *Status:* its own ratified plan, [[Tiles]], awaiting Nathan's approval to execute; `block` → `tile` in identifiers follows it.
+- [ ] **The tile world** — `Blocks/` (SurfacePM's tile contents), the tile half of `Embeds/` (PageEmbed, WebpageEmbed, tileWarm, webRetention, `embeds.css`), `DesignSystem/Detail/tile-chassis.css`, and root `Components/` (three store-reading helpers under a name the design system also uses). *Why:* one folder should answer "where does a tile live?" and `Components/` fails R3. A plan (Tiles, 08-27) proposed root `Tiles/` + `Utilities/`, one `TileWriter` shell over one `TileSave`, and one `tile-base.css`; it was abandoned 08-28 for fresh perspectives. What it found and still stands: `PageEmbedBlock.tsx` is a 29-line pass-through; `MarkdownBlock` and `PageEmbed` are one click-to-edit shell over two data seams; `blocks.css` and `embeds.css` already share `:is(.blk-md, .pgembed)` selectors; `embedWidget` imports `blockZoom` statically, so a `Tiles/` barrel would close the `PageEmbed → MarkdownPM → embedWidget` cycle the lazy imports keep open. *Status:* audit decides — Architect and Reducer propose the shape.
 - [ ] **`Interface/` absorbing `Sidebar/` and `Toolbar/`.** *Why:* the same window's chrome, read by the same InterfacePM; two top-level folders disappear. *Status:* awaiting ruling (§3.3).
 - [ ] **The casing renames** — the lowercase subfolders under `MarkdownPM/` (`connections`, `decorations`, `detect`, `editor`, `input`, `parser`, `tokens`), `SurfacePM/` (`core`, `sensors`), `Views/pipeline/`, the Showcase's `lab/` and `leaves/`; stylesheets to lowerCamel beside their component (`Carets.css`, `Banner.css`, `DetailTitleHeader.css`, `Interface.css`, `Styles.css`, `Sidebar.css`, `Table.css`, `GroupBand.css`, `CardsView.css`, `TableView.css`, `surfacepm.css`); `Elements/Segment/` and `Elements/DropOutline/` folded into their one file. *Why:* R7. *Status:* ruled; mechanical.
 - [ ] **`Windows/` keeps `NavWindow`, or `Navigation/` takes it ungrouped.** *Status:* awaiting ruling (§3.4).
@@ -165,7 +165,7 @@ Every proposed move, grouped by kind. **Status** is one of: **ruled** (Nathan sa
 - [ ] **The Menu recipe, Part 2** — a leading glyph size per row variant (today every leading glyph is what its caller passes — `headline` 15 in the sidebar and Trash, `body` elsewhere; Compact wants `control`); `--list-inset` for nested lists, starting by unwinding `menu-row.tsx`'s inline `paddingLeft: 8 + indent * DISCLOSURE_INDENT` (it beats every class and var) and `sidebarDnd.tsx`'s mirror of the `8`; a footing row kind in the index (GroupFrame, LayoutFrame, PropertyFrame, FilterFrame still hand-build `footingSymbol` + `footingLabel` rows inside `MenuFooting`); the `action` kind's first production consumer (PropertyFrame's All Properties row with its disclosure beat). *Status:* ruled as the recipe's Sequenced After.
 - [ ] **The recipe's five Open Calls** — rows carrying a switch or eye measure 31–32 (the control is taller than the 16px line): a 16px control, or rows sized by their tallest child · locked cards clip their trail (the cover's 65% share vs the text band): the cover yields, or the band takes a floor · a Trash row with `onClick` is a `role=button` tab stop beside its checkbox's: a `MenuItem` opt-out, or drop the pointer convenience · Settings' section titles render as the index's `div`, leaving the window's heading outline: a `level` on the heading kind, or accept · the footing row kind (above). *Status:* awaiting ruling (§3.7).
 - [ ] **One checkbox recipe** — `Labels/checkboxBox` is the source and both `Controls/checkbox.css` and `Properties/Editing/checkboxLook` read it; what remains is naming where a checkbox's styling is defined so nobody asks again. *Status:* audit confirms; documentation.
-- [ ] **The floating identity label** — embed tiles reveal crumbs or a webpage title on hover, the Web Window shows domain › title always, the Page Window a trail in its tab strip; one design-system element, or NavTrail absorbing the webpage case. *Status:* parked by Tiles B-2; audit decides whether the three share enough chrome.
+- [ ] **The floating identity label** — embed tiles reveal crumbs or a webpage title on hover, the Web Window shows domain › title always, the Page Window a trail in its tab strip; one design-system element, or NavTrail absorbing the webpage case. *Status:* audit decides whether the three share enough chrome.
 - [ ] **Menu rows with horizontal property values** — multi-value rows land their values tight against the label; a pane-width-relative max-width for the value side has been tried and reverted several times. *Status:* audit decides (a known issue carried from ContextPM).
 - [ ] **`{ minWidth: 96, height: 24 }`** written byte-identically in `PropertyPicker.tsx:123` and `CardAddPicker.tsx:118` — one class. *Status:* ruled.
 
@@ -187,14 +187,15 @@ Every proposed move, grouped by kind. **Status** is one of: **ruled** (Nathan sa
 
 #### Behavior
 
-- [ ] **`Blocks/ViewEmbedBlock.tsx:78`** hand-rolls `tintAt(cellColor(key), 'primary')` where `cellRing(key)` exists — a view assigned a grey cell gets a chroma-less tint instead of its `GREY_OUTLINES` step. *Why:* the arc's one behavioral bug; one identifier. *Status:* ruled; Tiles Task 4 carries it.
-- [ ] **The pending DesignSystemPM items** — an inactive label tone (empty-state text between secondary and tertiary; interim consumers read tertiary); type gaps (no tracking scale, no Markdown element mapping, no multi-line clamp). *Status:* awaiting ruling on whether the rework takes them (§3.10).
+- [ ] **`Blocks/ViewEmbedBlock.tsx:78`** hand-rolls `tintAt(cellColor(key), 'primary')` where `cellRing(key)` exists — a view assigned a grey cell gets a chroma-less tint instead of its `GREY_OUTLINES` step. *Why:* a live behavioral bug; one identifier. *Status:* ruled; lands with whatever touches the file first.
+- [ ] **Prose tiles and the layout document lose edits** — `MarkdownBlock`'s private 400ms debounce and `useBlockDoc`'s 300ms layout writer flush on unmount only, with none of the nexus-adopt or `beforeunload` flush pages get through `Interface/pageFlush.ts`; a prose-tile edit or a drag inside the window is lost on window close, and at nexus switch `BlockSurface` unmounts after the root flips, so the flush lands in the new nexus. The abandoned Tiles plan proposed generalizing `pageFlush` from path-keyed to any key (`scheduleWrite(key, body, write)`, a drop marker at tile removal, one 400ms debounce app-wide — Nathan's ruling 08-28). *Why:* a data-loss hole, whatever shape the tile folder takes. *Status:* ruled as a defect; the shape is the exploration's.
+- [ ] **The pending DesignSystemPM items** — an inactive label tone (empty-state text between secondary and tertiary; interim consumers read tertiary); type gaps (no tracking scale, no Markdown element mapping, no multi-line clamp). *Status:* in scope (Nathan, 08-28); the exploration proposes each.
 
 ---
 
 ### 3. Open Rulings
 
-The calls only Nathan can make; each deletes a row above when taken. The exploration runs before these are needed — its findings will change some of them.
+The calls only Nathan can make; each deletes a row above when taken. **All ten are deferred (Nathan, 08-28) until the exploration reports** — the perspectives see every one as open and may argue any side; the consulting session takes them with the findings in hand. The orchestrator's own leans are recorded so the perspectives can argue against something: 1 defer to the Token Designer · 2 invert all three · 3 yes · 4 stays in `Windows/` · 5 lift the section · 6 take both · 7 a 16px control, the band takes a floor, the Trash row drops the pointer convenience, a heading `level`, the footing kind · 8 `default` except links · 9 "Window" · 10 everything in scope.
 
 1. **The zoom merge** — does `--page-scale` absorb `--mdpm-scale`, given the font-path rewiring it costs?
 2. **The design system's three reaches** — invert now through `Utilities/` wrappers, or leave under the lint's allowlist?
@@ -205,7 +206,7 @@ The calls only Nathan can make; each deletes a row above when taken. The explora
 7. **The Menu recipe's five Open Calls.**
 8. **The cursor convention** — `default` except links?
 9. **The three "preview" strings** — what word replaces it?
-10. **Scope of the rework itself** — behavior-zero as the old arc was, or allowed to change behavior where the audit justifies it? And do the DesignSystemPM pending items (inactive tone, type gaps) ride it?
+10. **Scope of the rework itself** — taken: everything is in scope, behavior included, the DesignSystemPM pending items with it.
 
 ---
 
@@ -226,13 +227,15 @@ What Nathan asked, and which perspectives answer them:
 7. **Confusing relations** — boundary crossings, cycles the lazy imports paper over, folders consumed from everywhere but their own. → Boundary, Newcomer.
 8. **What the CSS strategy should be** — two forms today with a rule thirty sheets fail; vanilla-extract's cost and reach; where plain CSS is honestly right; whether the bridge is the right token interface. → Stylist.
 9. **What the component API shape should be** — how a piece takes its data, how a recipe is worn, how a surface names itself. → Architect, Recipe.
+10. **What isn't needed at all** — the priority question, asked of everything the other nine touch. → Reducer, with every perspective feeding it.
 
 #### The Perspectives
 
-Each perspective is one agent with one question, a method, a guard list, and a return format. Agents read only. Every finding cites a file and line and is verified by the orchestrator at that line before it reaches Nathan; every recommendation carries its alternatives and their costs so the decision arrives shaped.
+Each perspective is one agent with one question, a method, a guard list, and a return format. The Reducer runs as the priority lens — every other perspective is asked to hand it what it noticed could go. Agents read only. Every finding cites a file and line and is verified by the orchestrator at that line before it reaches Nathan; every recommendation carries its alternatives and their costs so the decision arrives shaped.
 
 | Perspective | Question | Method | Returns |
 | --- | --- | --- | --- |
+| **Reducer** *(priority)* | What isn't needed? What could be reduced, removed, or eliminated outright — files, folders, layers, tokens, recipes, props, options, whole mechanisms? | Read every folder asking "what would be lost if this were gone" before asking what it does; for each mechanism, find the simpler thing it is standing in for; count what each abstraction buys against what it costs; treat a feature nobody has used as a candidate, not a fixture. | A ranked deletion list with the blast radius of each; the mechanisms that could collapse into a simpler one; the options and props that could go; a plain-prose estimate of how much smaller the renderer could be and where the bulk sits. |
 | **Cartographer** | What is each file, who consumes it, and does its folder agree? | Build the import graph over `src/renderer`; per file: importers, importing folders, own-folder importers; R2/R3; every folder-crossing edge by direction; cycles. | The graph as JSON; R2/R3 failures; lateral edges; cycles; split/merge candidates with the shape each would take. |
 | **Exports** | What does nothing read, and what does one thing read that could own it? | A `ts-prune`-class pass plus greps for what the typecheck can't see (CSS classes, vars, string keys, test-only exports); Settled 3, 4, 13 as guards. | Dead exports/classes/vars; test-only exports; one-reader exports ranked by how much indirection each buys. |
 | **Architect** | What should the layering be, and what would a clean-slate renderer of this app look like? | Read the tree against R1–R8 and against the app's real seams (main-owned data, per-window store, the five surface words); name the layers the code implies versus the ones the rules state; test each folder's one-word answer. | A proposed layer model with the folders under each; where today's tree disagrees and what the move costs; the abstractions that exist to be layers; two alternatives to the proposal, with why they lose. |
@@ -251,7 +254,7 @@ Each perspective is one agent with one question, a method, a guard list, and a r
 
 #### Sequencing
 
-1. **Nathan shapes the exploration** — which perspectives run, how deep, what's out of bounds, whether behavior is in scope (§3.10), and what he already suspects so a perspective can be aimed at it.
+1. **Nathan shapes the exploration** — taken 08-28: all twelve perspectives run, the Reducer as the priority, everything in scope, the ten rulings deferred, the Tiles plan abandoned so the tile world is seen fresh.
 2. **Dispatch** — the perspectives run read-only in parallel on one pinned commit; the Skeptic runs after them over their reports.
 3. **Verification** — the orchestrator opens every cited line; an unverified finding is dropped with a note, never passed through; recommendations are checked for the alternatives they owe.
 4. **The consulting session** — Nathan reads the verified catalog perspective by perspective; each recommendation becomes a checklist row (with its status), a Settled entry (with its reason), or a killed candidate — decided with him, in the order the Skeptic ranked them.
@@ -261,8 +264,7 @@ Each perspective is one agent with one question, a method, a guard list, and a r
 
 ### 5. Pointers
 
-- **[[Tiles]]** — the ratified plan for `Blocks/` + `Embeds/` → `Tiles/`, `Components/` → `Utilities/`, TileSave, TileWriter; its spec is [[Tiles — Decision Log]]. It executes on its own; this document carries one row for it.
-- **[[Codebase-Cleanup-Checklist]]** — the behavioral half: `persist()`, the view host, the `main/index.ts` split, the drag adapters' frame. Bundle 6 (the view host) waits until the value layer's folder stops moving.
+- **[[Codebase-Cleanup-Checklist]]** — the process-side half: `persist()`, the view host, the `main/index.ts` split, the drag adapters' frame. Bundle 6 (the view host) waits until the value layer's folder stops moving.
 - **[[MenuRecipe]]** — landed 08-28; its Open Calls and Sequenced After are rows above; the plan is history.
 - **[[DesignSystemPM]]** — the vocabulary and the token ledger; every token this document proposes to add, rename, or retire lands there in the same commit.
 - **[[Cohesion-Rulings]]** — what a code-level sweep re-derives wrongly; §The Design Layer points here.
