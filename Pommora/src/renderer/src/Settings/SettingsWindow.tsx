@@ -1,7 +1,14 @@
 import { useState } from 'react'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { Icon } from '@renderer/DesignSystem/Symbols'
-import { Menu, MenuItem, MenuSeparator, heading, headingCaps } from '@renderer/DesignSystem/Menus'
+import {
+  Menu,
+  MenuCaption,
+  MenuItem,
+  MenuSeparator,
+  heading,
+  headingCaps,
+} from '@renderer/DesignSystem/Menus'
 import { text } from '@renderer/DesignSystem/Tokens'
 import { DualSwitch } from '@renderer/DesignSystem/Components/Controls/Switches/DualSwitch'
 import { Slider } from '@renderer/DesignSystem/Components/Controls/Slider/Slider'
@@ -580,7 +587,7 @@ function FrameBody({ category }: { category: CategoryKey }): React.JSX.Element {
         {frame.label}
       </h2>
       {sections.length === 0 ? (
-        <p className={cx('settings-empty', text.body.standard)}>Nothing to set here yet.</p>
+        <MenuCaption>Nothing to set here yet.</MenuCaption>
       ) : (
         sections.map((section, i) => (
           <div key={section.title ?? i} className="settings-section">
@@ -719,7 +726,7 @@ function SliderRow({ row }: { row: RowOf<'slider'> }): React.JSX.Element {
   const value = useSession((s) => s.personalization[row.key] ?? 0)
   const setPersonalization = useSession((s) => s.setPersonalization)
   return (
-    <SettingsRow label={row.label} hint={row.hint} wide>
+    <SettingsRow label={row.label} hint={row.hint}>
       <Slider
         value={value}
         min={0}
