@@ -30,7 +30,6 @@ const OPTION = {
 }
 
 export const ICON = {
-  add: 'body',
   editorMenu: 'body',
   doc: 'control',
   rootEntry: 'headline',
