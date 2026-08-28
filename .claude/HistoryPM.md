@@ -129,8 +129,8 @@ The renderer store's page state moved from a single singleton describing the act
 
 **The split:** `store.ts` became a composition root over seven slice files in `Store/` — `NexusSlice`, `NavigationSlice`, `PreviewSlice`, `ChromeSlice`, `ConfigSlice`, `RenameSlice`, `CacheSlice` — each a `StateCreator` over the full `SessionState`, with the React hooks staying in the root. Boundaries follow the transactions: tabs, pages, selection, history, and the nav layer are one slice because `select`, the pin gestures, and the restore write across them. What crosses a boundary is a named action — `reconcileNavigation`, `reconcilePreview`, `restoreNavigation`, `patchPagesFor`, and a `reset*` per slice that a nexus switch calls — and `makeTabId`, `findContainer`, and `parentPathOf` moved to `tabsModel` and `Scope`. Every one of the 113 importers compiled unchanged. The thumbnail capture markers moved out of `useNavThumbnails` into the store-free `Navigation/thumbMarkers.ts` after vanilla-extract's stylesheet compile entered the store through `NavigationSlice` and found `createNavigationSlice` not yet defined; `PageView`'s warm-generation fence re-arms per commit, and `reloadPage` keeps the live buffer.
 
-- **Commits:** `f72d34de^..bd1a551f`
-- **Diff:** Net +56 | +1881 / −1825
+- **Commits:** `f72d34de^..73e22e91` · `af2442ab`
+- **Diff:** Net +61 | +1897 / −1836
 
 #### PM-115 || The ImagePicker
 
