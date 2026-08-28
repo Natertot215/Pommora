@@ -10,4 +10,5 @@ fi
 
 root=$(git rev-parse --show-toplevel)
 python3 "$root/.claude/scripts/loc.py" --update || echo "line ledger: skipped (loc.py --update failed)"
+node "$root/.claude/scripts/check-atlas.mjs" || echo "token ledger: drift above — the Features SOURCE tables disagree with the code"
 exit 0
