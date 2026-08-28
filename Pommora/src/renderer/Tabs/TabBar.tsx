@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
-import { Button } from '@renderer/DesignSystem/Controls/Button'
+import { Button } from '@renderer/DesignSystem/Buttons'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { OverScroll } from '@renderer/DesignSystem/Interactions/OverScroll'
@@ -12,10 +12,10 @@ import { onActivateKey } from '@renderer/DesignSystem/Interactions/activate'
 import { suppressNextClick } from '@renderer/DesignSystem/Interactions/shared'
 import type { Tab, TabTarget } from '@shared/types'
 import { useSession } from '../store'
-import { pageMoveContext, runPageSendAction } from '../pageMenuActions'
+import { pageMoveContext, runPageSendAction } from '@renderer/Actions/pageMenuActions'
 import { resolveWith, type ResolvedNav } from '../Navigation/navResolve'
 import { resolveIndexOf } from '../treeIndex'
-import { EntityGlyph } from '../Navigation/EntityGlyph'
+import { EntityIcon } from '@renderer/Utilities/EntityIcon'
 import { cycle } from './tabsModel'
 import './tabStrip.css'
 import './tabBar.css'
@@ -308,7 +308,7 @@ function PinnedTab({
       }}
       onContextMenu={onMenu}
     >
-      <EntityGlyph item={entry.res} size="body" className="tab-icon" />
+      <EntityIcon item={entry.res} size="body" className="tab-icon" />
     </div>
   )
 }
@@ -387,7 +387,7 @@ function UnpinnedTab({
             className={cx('tab-icon', slideClass)}
           />
         ) : (
-          <EntityGlyph item={entry.res} size="body" className={cx('tab-icon', slideClass)} />
+          <EntityIcon item={entry.res} size="body" className={cx('tab-icon', slideClass)} />
         )}
         <OverScroll className={cx('tab-label', slideClass)}>{title}</OverScroll>
       </Fragment>

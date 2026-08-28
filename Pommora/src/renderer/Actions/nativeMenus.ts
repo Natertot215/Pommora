@@ -2,7 +2,7 @@
 // The rows are the caller's model — a surface states what it offers, never how it crosses.
 
 import type { ActionItem } from '@shared/menuModel'
-import { useSession } from './store'
+import { useSession } from '@renderer/store'
 
 /** Whether this machine draws its list menus as the operating system's. */
 export function useNativeMenus(): boolean {

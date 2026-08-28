@@ -157,3 +157,12 @@ textarea,
   margin: 12px auto 0;
   color: var(--label-primary);
 }
+
+/* Title-area lift over a cover — one variable, text and icons owned on their own line. */
+.title-shadow {
+  text-shadow: var(--shadow-base);
+}
+.title-shadow .detail-title-icon,
+.title-shadow .banner-home-icon {
+  filter: drop-shadow(var(--shadow-base));
+}

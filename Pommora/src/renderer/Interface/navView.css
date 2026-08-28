@@ -26,7 +26,6 @@
 }
 .nav-view-banner .nav-view-search {
   color: var(--label-primary);
-  text-shadow: var(--banner-cast);
 }
 
 .nav-view-scroll {

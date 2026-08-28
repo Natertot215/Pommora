@@ -1,6 +1,6 @@
 import { globalStyle } from '@vanilla-extract/css'
 import { DEFAULT_ACCENT } from '@shared/types'
-import { BANNER_SHADOW, STATE_OPACITY, vars as colorVars } from './color.css'
+import { STATE_OPACITY, vars as colorVars } from './color.css'
 import { font } from './typography.css'
 import {
   DISCLOSURE_INDENT,
@@ -57,8 +57,6 @@ globalStyle(':root', {
     '--width-175': '1.75px',
     '--width-200': '2px',
     '--radius-full': RADIUS_FULL,
-    '--banner-shadow': BANNER_SHADOW,
-    '--banner-cast': '0 1px 4px var(--banner-shadow)',
     '--state-hover': colorVars.color.state.hover,
     '--state-selected': colorVars.color.state.selected,
     '--state-muted': colorVars.color.state.muted,

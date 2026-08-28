@@ -64,7 +64,7 @@ export function NavView(): React.JSX.Element {
           }}
         >
           <AssetImage value={ownBanner ?? homeBanner} className="banner-img" />
-          <div className="banner-title">{searchInput}</div>
+          <div className="banner-title title-shadow">{searchInput}</div>
           <ImagePicker
             open={editing}
             value={ownBanner ?? homeBanner ?? ''}

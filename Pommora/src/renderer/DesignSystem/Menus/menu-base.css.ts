@@ -85,7 +85,7 @@ export const heading = style([
     justifyContent: 'space-between',
     gap: 0,
     margin: 0,
-    padding: '6px var(--row-pad-x) 2px',
+    padding: 'var(--row-pad-x) 2px',
     color: c.label.tertiary,
     userSelect: 'none',
   },

@@ -4,7 +4,7 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { Button, Segmented } from './Button'
 import { segment } from '@renderer/DesignSystem/Elements/Segment/segment.css'
-import * as s from './button.css'
+import * as s from './button-base.css'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 let host: HTMLDivElement

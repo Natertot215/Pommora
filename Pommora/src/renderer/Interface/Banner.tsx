@@ -137,12 +137,15 @@ export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {
       />
       {owner.kind === 'homepage' ? (
         // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
-        <span className="banner-title" onContextMenu={(e) => void openHomeTitleMenu(e)}>
+        <span
+          className="banner-title title-shadow"
+          onContextMenu={(e) => void openHomeTitleMenu(e)}
+        >
           {homeIcon()}
           {homeTitle('banner-title-text')}
         </span>
       ) : (
-        <div className="banner-title">{titleHeader}</div>
+        <div className="banner-title title-shadow">{titleHeader}</div>
       )}
       {iconPicker}
     </div>

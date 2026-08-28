@@ -3,7 +3,7 @@
   align-items: center;
   margin: 0 var(--navwindow-inset);
   padding: var(--surface-inset) calc(var(--content-inset) - var(--navwindow-inset));
-  border-bottom: var(--width-100) solid var(--border-light);
+  border-bottom: var(--width-175) solid var(--border-base);
   flex-shrink: 0;
 }
 .nav-search-row input {
@@ -18,7 +18,6 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 1px;
 }
 .nav-pin {
   display: flex;

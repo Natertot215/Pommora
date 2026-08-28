@@ -24,7 +24,7 @@ import { buildPageIndex, type ConnPage, type PageIndex } from './MarkdownPM/conn
 import { navKey } from './Navigation/navRecents'
 import type { NavCore, ResolveIndex } from './Navigation/navResolve'
 import type { SearchEntry } from './Navigation/navSearch'
-import type { ReconcileIndex } from './selection'
+import type { ReconcileIndex } from '@renderer/Actions/selection'
 
 /** The `{id, title, path}` tuple is `EntityRecord`'s; `id` and `path` are '' for the folderless,
  *  id-less homepage singleton. `kind` stays local — the unions are disjoint (`homepage` here,

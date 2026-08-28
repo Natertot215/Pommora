@@ -29,7 +29,7 @@
   color: var(--label-primary);
   margin: 0 0 14px;
   padding: 0 var(--row-pad-x) 10px;
-  border-bottom: var(--width-100) solid var(--border-base);
+  border-bottom: var(--width-150) solid var(--border-base);
 }
 .settings-heading-icon {
   color: var(--label-secondary);

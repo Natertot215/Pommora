@@ -1,4 +1,4 @@
-import { Button, type ButtonType, type Segment, Segmented } from '../../Controls/Button'
+import { Button, type ButtonType, type Segment, Segmented } from '../../Buttons'
 import type { ButtonSize } from '../../Tokens'
 
 const TYPES: ButtonType[] = ['base', 'filled', 'tinted', 'solid', 'destructive']

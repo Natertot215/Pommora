@@ -41,7 +41,7 @@ import { formatBucketLabel, NUMERIC_FORMATS } from '@renderer/Properties/Editing
 import type { Band } from '@renderer/Views/bandDndModel'
 import { reparentFsOrder, structuralOrderAfterDrop } from '@renderer/Views/bandDndModel'
 import { nextOrder } from '@renderer/Sidebar/sidebarDndModel'
-import { EntityIcon } from '@renderer/Components/EntityIcon'
+import { EntityIcon } from '@renderer/Utilities/EntityIcon'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { useSession } from '../store'
 import type { PickerChoice } from '@renderer/DesignSystem/Elements/PickerControl'

@@ -1,6 +1,6 @@
 import { forwardRef, type ReactNode, type MouseEvent, type CSSProperties } from 'react'
 import { DISCLOSURE_INDENT, type IconSize } from '../Tokens/size.css'
-import { Button } from '../Controls/Button'
+import { Button } from '../Buttons'
 import { Icon, type IconName } from '../Symbols'
 import * as s from './menu-base.css'
 import { cx } from '../Util/cx'

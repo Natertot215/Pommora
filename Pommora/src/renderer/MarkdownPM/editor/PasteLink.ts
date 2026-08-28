@@ -4,7 +4,7 @@ import { pasteAsTarget, pasteAsWrite, type PasteAsForm } from '@shared/PasteAsMe
 import { DEFAULT_LINK_DISPLAY } from '@shared/properties'
 import { isInsideCode } from '@shared/markdownCode'
 import { linkDestinationAt } from '@shared/webpageEmbed'
-import { matchesCommand } from '../../Commands'
+import { matchesCommand } from '@renderer/Actions/Commands'
 import { useSession } from '../../store'
 import { docString } from './docCache'
 import { insertCitation } from './citationActions'

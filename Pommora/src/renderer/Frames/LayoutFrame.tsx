@@ -19,7 +19,7 @@ import {
   AccessoryButton,
 } from '@renderer/DesignSystem/Menus'
 import { footingLabel, footingSymbol } from '@renderer/DesignSystem/Menus/menu-base.css'
-import { PickerMenu } from '@renderer/DesignSystem/Pickers/PickerMenu'
+import { PickerMenu } from '@renderer/DesignSystem/Pickers/picker-base'
 import { Slider } from '@renderer/DesignSystem/Controls/Slider/Slider'
 import { useSession } from '../store'
 import { useSaveView } from '@renderer/Embeds/ViewEmbedScope'

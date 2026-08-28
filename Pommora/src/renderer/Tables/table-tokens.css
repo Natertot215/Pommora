@@ -29,9 +29,9 @@
        full-height hairlines). */
   --heading-fill: var(--fill-quinary);
   --heading-divider: var(--width-175) solid var(--border-base);
-  --heading-segment: var(--border-light);
+  --heading-segment: var(--border-base);
   --heading-segment-height: 16px; /* shorter than the row — reads like a segmented control */
-  --heading-segment-width: var(--width-150);
+  --heading-segment-width: var(--width-200);
   --heading-padding-y: 8px; /* clears the label off the top + bottom seams */
 
   /* — Group sections — the seam law's binding (GroupBand.css): the row rhythm is the shoulder;

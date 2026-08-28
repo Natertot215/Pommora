@@ -14,7 +14,7 @@ import type { NavRef } from '@shared/types'
 import { useSession } from '../store'
 import { navKey } from './navRecents'
 import type { ResolvedNav } from './navResolve'
-import { EntityGlyph } from './EntityGlyph'
+import { EntityIcon } from '@renderer/Utilities/EntityIcon'
 import { NavPinButton, NavRowMenu } from './NavList'
 import './navGallery.css'
 import { onActivateKey } from '@renderer/DesignSystem/Interactions/activate'
@@ -128,7 +128,7 @@ function GalleryCard({
         <CardThumb capture>
           {failed ? (
             <CardPlaceholder>
-              <EntityGlyph item={it} size="titleMedium" />
+              <EntityIcon item={it} size="titleMedium" />
             </CardPlaceholder>
           ) : (
             <img src={src} loading="lazy" alt="" onError={() => setFailed(true)} />
@@ -137,7 +137,7 @@ function GalleryCard({
         </CardThumb>
         <CardText>
           <CardTitle>
-            <EntityGlyph item={it} size="body" className="card-title-icon" />
+            <EntityIcon item={it} size="body" className="card-title-icon" />
             {it.title}
           </CardTitle>
           <CardTrail segments={it.path} />

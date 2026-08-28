@@ -13,4 +13,4 @@ export {
   tinted,
   type LabelColorName,
   type LabelShape,
-} from './labels.css'
+} from './label-base.css'

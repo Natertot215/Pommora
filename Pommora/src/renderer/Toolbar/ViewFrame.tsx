@@ -2,7 +2,7 @@ import { type ReactNode, useRef, useState } from 'react'
 import type { CollectionNode, SetNode } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
 import { mintDefaultView, mintNewView, type SavedView } from '@shared/views'
-import { Button } from '@renderer/DesignSystem/Controls/Button'
+import { Button } from '@renderer/DesignSystem/Buttons'
 import { Icon, iconNameOr } from '@renderer/DesignSystem/Symbols'
 import {
   Menu,
@@ -22,7 +22,7 @@ import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import { RenamableLabel } from '@renderer/DesignSystem/Fields'
 import { IconPicker } from '@renderer/Settings/IconPicker'
 import { useSession } from '../store'
-import { optionRing } from '@renderer/DesignSystem/Pickers/PickerMenu/pickerMenu.css'
+import { optionRing } from '@renderer/DesignSystem/Pickers/picker-base.css'
 import * as vd from './toolbarMenu.css'
 
 const PANE_SQUARE = 225

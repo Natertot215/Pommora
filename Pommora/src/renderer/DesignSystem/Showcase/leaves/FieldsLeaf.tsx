@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { base, field, borderedField, input, InputField, SearchField } from '../../Fields'
 import { FileLabel } from '../../Labels'
-import { Button } from '../../Controls/Button'
+import { Button } from '../../Buttons'
 import { NavTrail, pathSegments } from '../../Elements/NavTrail'
 import { Icon } from '../../Symbols'
 import { errorField, rows } from './fieldsLeaf.css'
