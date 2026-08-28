@@ -646,15 +646,15 @@ Every phase runs the same loop. Nothing advances on a summary; every claim is re
   - [x] Task 12 — Autocomplete · `da647e88`
   - [x] Task 12a — NavTrail owns its look · `0f6325c5`
   - [x] Task 12b — the Trash is a menu · `46aac3d1 + 659b25e2`
-- [ ] **Phase 3** — The Index · base `cffdd681`
-  - [ ] Task 13 — `menu-index.tsx`
-  - [ ] Task 14 — the trailing slot
-  - [ ] Task 15 — SettingsWindow
-  - [ ] Task 16 — LayoutToggles + CardsOptions
-  - [ ] Task 17 — SettingsFrame · LayoutFrame · SortFrame · HiddenFrame
-  - [ ] Task 18 — GroupFrame
-  - [ ] Task 19 — the property editors
-  - [ ] Task 20 — FilterFrame
+- [ ] **Phase 3** — The Index · base `cffdd681` · executor `71320620..3a6acd1d`
+  - [x] Task 13 — `menu-index.tsx` · `71320620`
+  - [x] Task 14 — the trailing slot · `f2a59d41`
+  - [x] Task 15 — SettingsWindow · `21322586`
+  - [x] Task 16 — LayoutToggles + CardsOptions · `8863c613`
+  - [x] Task 17 — SettingsFrame · LayoutFrame · SortFrame · HiddenFrame · `aa6dcaa7 · 1d442c25 · 3d619f98`
+  - [x] Task 18 — GroupFrame · `760352dd + 3a6acd1d`
+  - [x] Task 19 — the property editors · `1e3a5bd3`
+  - [x] Task 20 — FilterFrame · `05392979`
 - [ ] **Phase 4** — The Edges Found Alongside
   - [ ] Task 21 — the content edge is one token
   - [ ] Task 22 — IconPicker's cell wears the shell
