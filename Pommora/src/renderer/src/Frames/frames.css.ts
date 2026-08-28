@@ -81,8 +81,6 @@ export const allHeading = style([
 
 export const allRow = style({ color: c.label.secondary })
 
-export const toggleRow = style({})
-
 export { rowDragging }
 
 export const hiddenRow = style({

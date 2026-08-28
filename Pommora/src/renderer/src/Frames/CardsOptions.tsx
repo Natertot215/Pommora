@@ -1,10 +1,15 @@
 import type { CollectionNode, SetNode } from '@shared/types'
 import type { SavedView } from '@shared/views'
-import { Icon } from '@renderer/DesignSystem/Symbols'
-import { DualSwitch } from '@renderer/DesignSystem/Components/Controls/Switches/DualSwitch'
-import { MenuItem } from '@renderer/DesignSystem/Menus'
+import { MenuIndex } from '@renderer/DesignSystem/Menus'
 import { useSaveView } from '@renderer/Embeds/ViewEmbedScope'
-import { ICON, toggleRow } from './frames.css'
+import { switchRows, type SwitchEntry } from './switchRows'
+
+const SWITCHES: SwitchEntry[] = [
+  { icon: 'map', label: 'Hide Location', key: 'hide_location' },
+  { icon: 'wrap-text', label: 'Wrap Titles', key: 'wrap_titles' },
+  { icon: 'eye-off', label: 'Hide Icons', key: 'hide_page_icons' },
+  { icon: 'folder-closed', label: 'Set Cards', key: 'set_cards', defaultOn: true },
+]
 
 export function CardsOptions({
   source,
@@ -14,62 +19,8 @@ export function CardsOptions({
   view: SavedView
 }): React.JSX.Element {
   const saveView = useSaveView(source)
-  const write = (patch: Partial<SavedView>): void => void saveView({ ...view, ...patch })
 
   return (
-    <>
-      <MenuItem
-        className={toggleRow}
-        leading={<Icon name="map" size={ICON.rootEntry} />}
-        trailing={
-          <DualSwitch
-            checked={view.hide_location ?? false}
-            onChange={(next) => write({ hide_location: next })}
-            ariaLabel="Hide Location"
-          />
-        }
-      >
-        Hide Location
-      </MenuItem>
-      <MenuItem
-        className={toggleRow}
-        leading={<Icon name="wrap-text" size={ICON.rootEntry} />}
-        trailing={
-          <DualSwitch
-            checked={view.wrap_titles ?? false}
-            onChange={(next) => write({ wrap_titles: next })}
-            ariaLabel="Wrap Titles"
-          />
-        }
-      >
-        Wrap Titles
-      </MenuItem>
-      <MenuItem
-        className={toggleRow}
-        leading={<Icon name="eye-off" size={ICON.rootEntry} />}
-        trailing={
-          <DualSwitch
-            checked={view.hide_page_icons ?? false}
-            onChange={(next) => write({ hide_page_icons: next })}
-            ariaLabel="Hide Icons"
-          />
-        }
-      >
-        Hide Icons
-      </MenuItem>
-      <MenuItem
-        className={toggleRow}
-        leading={<Icon name="folder-closed" size={ICON.rootEntry} />}
-        trailing={
-          <DualSwitch
-            checked={view.set_cards ?? true}
-            onChange={(next) => write({ set_cards: next })}
-            ariaLabel="Set Cards"
-          />
-        }
-      >
-        Set Cards
-      </MenuItem>
-    </>
+    <MenuIndex sections={[{ rows: switchRows(SWITCHES, view, (next) => void saveView(next)) }]} />
   )
 }

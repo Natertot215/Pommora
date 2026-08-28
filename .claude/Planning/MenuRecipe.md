@@ -482,7 +482,7 @@ Every task below is written as **Today → Becomes**; line numbers are at `7f358
 **Derivation:** `grep -rF "toggleRow" src` → 10 → 0.
 
 **Steps:**
-- [ ] Migrate; gates; commit `refactor(frames): the toggles are a table`.
+- [x] Migrate; gates; commit `refactor(frames): the toggles are a table`.
 
 #### Task 17: SettingsFrame, LayoutFrame's `FRAME_ROWS`, SortFrame, HiddenFrame
 
@@ -682,6 +682,7 @@ Every phase runs the same loop. Nothing advances on a summary; every claim is re
 - Task 9: the "today" figures in its prose predate Task 0's tree — `.nav-search-row` already pads `var(--surface-inset)`, `.nav-item-main` pads `6px` (rows likely 28 already), gap 6; the +2 / −10 / −12 search-edge offsets are stale. Re-read Task 9 against the live tree at Phase 2's open.
 
 ### Deviations
+- Task 16: the two tables share one reader — `Frames/switchRows.tsx` turns a `SwitchEntry[]` into `switch` rows (the `checked`/`onChange` derivation written once, not once per file); each file keeps its own table.
 - Task 14: the flush rule keys on `trailing` (a control or glyph), not on the cluster — every `flushTrailing` site passed a `trailing`, and the rows carrying only `detail` (NavList's paths) were reviewed padded at Gate 2, so they keep their trail pad. The var rides the row's inline style beside the indent, no class. The five editors' `rowBox` + `configLabel` rows are `MenuItem`s with the control as `trailing` until Task 19 restructures them into indexes; `compactTitle` is the one class in a new `Properties/optionRow.css.ts`, geometry only (`nowrap`).
 - Gate 2 review (orchestrator, 08-28): `overlay` leaked onto NavGallery's card pin through `NavPinButton` — the class now rides the row's call site (`2be2609b`); `overlay`'s placement wraps in `&&` so a control's own `position: relative` (the checkbox) cannot pull it out of the lead inset (`96755197`); NavView's subfield List/Gallery toggle sits on the trail's edge (`paddingX="0"`, `51be26de`); a footing's `value` reads at the footing's footnote rung like its `detail` (Nathan: "the Style row is wrong"), and the Slider owns its width (`strip` 160 KNOB) with a readout that never shrinks — Hazard Window 3 closed here, not at Task 14 (`144b2c89`). Screenshots in the session scratchpad (`p2-*.png`): NavView list, Settings General / Files & Links / Interface, Trash (rest + hover), Ideas Status editor, the dashboard tile's hosted Settings and Layout (Compact 23, TopRow 18), card trail zones. Not reachable without typing into a page: the `[[` autocomplete — Nathan's list.
 - Task 12b. Today (after Task 9): the rows were already `MenuItem`s with the checkbox in the `overlay` slot; the head's name glyph kept the old row's 6px gap. Becomes: the head's cells already pad `--cell-padding-x` (rebound to `--navwindow-inset`, the value the rows' `--row-pad-x` resolves to) so its date lane sat where the rows' does once `.trash-date` lost its own right pad at Task 9 — the head keeps `padding: 0` — and its glyph takes the row's 8px gap, so both lanes align with the rows'; `trashFrame.test.tsx` mounts the frame and checks a row through its checkbox (`aria-checked` flips, `.has-checked` lands on the frame). The `checked` set, the batch arms, and the context menu's selection semantics are unchanged from Task 9's migration.
