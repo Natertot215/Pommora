@@ -16,8 +16,8 @@ const SKIP_IDENTS = new Set(['token', 'value', '—'])
 
 // The bridge is an implicit source for every `--var` handle — theme-vars republishes the hashed
 // tokens under stable names, and color.css.ts holds the few vars authored beside their tokens.
-const bridgeText = ['tokens/theme-vars.css.ts', 'tokens/color.css.ts']
-  .map((f) => readFileSync(join(repoRoot, 'Pommora/src/renderer/src/design-system', f), 'utf8'))
+const bridgeText = ['Tokens/theme-vars.css.ts', 'Tokens/color.css.ts']
+  .map((f) => readFileSync(join(repoRoot, 'Pommora/src/renderer/DesignSystem', f), 'utf8'))
   .join('\n')
 
 let failures = 0
@@ -42,8 +42,7 @@ for (const doc of readdirSync(featuresDir).filter((f) => f.endsWith('.md'))) {
             base.split('/src/')[0],
             'src',
             'renderer',
-            'src',
-            'design-system',
+            'DesignSystem',
             s,
           )
           if (existsSync(guess)) {

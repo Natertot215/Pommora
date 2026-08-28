@@ -1,6 +1,9 @@
 import { useState, type CSSProperties, type Dispatch, type SetStateAction } from 'react'
 import { Icon } from '../../Symbols'
 import { useIsCompact } from './helpers'
+import forest from '../surfaces/forest.jpg'
+import mac from '../surfaces/mac.png'
+import philly from '../surfaces/philly.jpg'
 
 type FrostParams = {
   blur: number
@@ -32,9 +35,9 @@ const FROST: FrostParams = {
 const PRESETS: Record<string, FrostParams> = { Window: FROST, Surface: FROST, Control: FROST }
 
 const SURFACES = [
-  { key: 'philly', img: '/surfaces/philly.jpg' },
-  { key: 'forest', img: '/surfaces/forest.jpg' },
-  { key: 'mac', img: '/surfaces/mac.png' },
+  { key: 'philly', img: philly },
+  { key: 'forest', img: forest },
+  { key: 'mac', img: mac },
   { key: 'app dark', img: '' },
 ] as const
 
