@@ -21,13 +21,10 @@ import {
 import { OptionSlot, type OptionStyle } from '../OptionRow'
 import { useStatusReorder } from '../useStatusReorder'
 import * as s from '../../Frames/frames.css'
+import { heading } from '@renderer/DesignSystem/Menus'
+import { text } from '@renderer/DesignSystem/Tokens'
 import { labelColor, shape } from '@renderer/DesignSystem/Labels'
 
-/**
- * Double-click a group heading to rename its label. The id underneath never changes — a calendar
- * bridge maps groups by id, and every stored value references one. Remove/Clear
- * cascade pages. Registry-only edits ride setStatusGroups, the page-touching ops their own IPC.
- */
 export function StatusEditor({
   groups,
   look,
@@ -43,17 +40,12 @@ export function StatusEditor({
   onRemoveOption: (value: string) => void
   onClearOption: (value: string) => void
 }): React.JSX.Element {
-  // The seat a new option is being named in: which group, and the index it will occupy — so it lands
-  // where the ghost that opened it stood rather than at the group's end.
   const [adding, setAdding] = useState<{ groupId: string; index: number } | null>(null)
   const [renamingGroup, setRenamingGroup] = useState<string | null>(null) // the group id being relabeled
   const [renaming, setRenaming] = useState<string | null>(null) // the option value being renamed
   const [coloring, setColoring] = useState<string | null>(null) // the option value being recolored
   const paletteBtnRef = useRef<HTMLButtonElement>(null)
-  // What a Compact chip resolves its group glyph against — the groups being edited, so the preview
-  // follows an option the moment it is dragged into another group.
   const def = useMemo(() => ({ status_groups: groups }), [groups])
-  // Identity-stable across the hook's own re-renders — its list-change invalidation keys on this.
   const statusOrder = useMemo(
     () => groups.map((g) => ({ id: g.id, values: g.options.map((o) => o.value) })),
     [groups],
@@ -95,8 +87,6 @@ export function StatusEditor({
     onSetGroups(recolorStatusOption(groups, value, color))
   }
 
-  /** The naming chip in its seat, or the ghost standing in that seat. A status option names itself in
-   *  its group's color, the way it will wear it once it exists. */
   const slotAt = (g: StatusGroup, index: number, anchorId: string): React.JSX.Element | null =>
     adding?.groupId === g.id && adding.index === index ? (
       <div className={s.optionRow}>
@@ -128,19 +118,17 @@ export function StatusEditor({
       <DragGhost x={reorder.ghost?.x ?? null} y={reorder.ghost?.y ?? null} label={draggedLabel()} />
       {groups.map((g) => (
         <div key={g.id} className={s.statusGroup}>
-          <div className={s.optionsRow}>
+          <div className={heading}>
             {renamingGroup === g.id ? (
               <OptionNameCaret
-                className={s.optionsLabel}
+                className={text.footnote.emphasized}
                 value={g.label}
                 onCommit={(raw) => commitGroupRename(g.id, raw)}
                 onCancel={() => setRenamingGroup(null)}
               />
             ) : (
               // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
-              <span className={s.optionsLabel} onDoubleClick={() => setRenamingGroup(g.id)}>
-                {g.label}
-              </span>
+              <span onDoubleClick={() => setRenamingGroup(g.id)}>{g.label}</span>
             )}
             <Button
               size="button-inline"

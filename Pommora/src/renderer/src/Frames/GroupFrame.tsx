@@ -19,6 +19,7 @@ import {
   MenuScrollFrame,
   MenuBottomRow,
   useDisclosureSet,
+  heading,
 } from '@renderer/DesignSystem/Menus'
 import {
   flushTrailing,
@@ -53,8 +54,6 @@ import { hiddenRow } from './frames.css'
 import * as gp from './groupFrame.css'
 import { OptionChip } from '@renderer/Properties/Editing/OptionChip'
 
-/** Checkbox is deliberately absent — the pipeline still renders it from a foreign sidecar; the
- *  frame never authors it. */
 const GROUPABLE_PANE = new Set(['select', 'status', 'datetime'])
 
 const STRUCTURAL_ORDER: PickerChoice<StructuralOrderMode>[] = [
@@ -91,9 +90,7 @@ export function GroupFrame({
   source: CollectionNode | SetNode
   view: SavedView
   schema: PropertyDefinition[]
-  /** The back-destination breadcrumb — 'Settings' from SettingsFrame, 'Views' from LayoutFrame. */
   label: string
-  /** Cards views drop Sub-Group entirely — same frame, no second grouping level. */
   subGrouping?: boolean
   onBack: () => void
 }): React.JSX.Element {
@@ -101,8 +98,6 @@ export function GroupFrame({
   const save = (patch: Partial<SavedView>): void => void saveView({ ...view, ...patch })
   const saveGroup = (group: GroupConfig): void => save({ group })
 
-  // Group hiding — one keyed list shared with collapse (option values, set ids, date bucket
-  // keys, sub/<value>); the pipeline drops what it names.
   const hiddenSet = new Set(view.hidden_groups ?? [])
   const toggleHidden = (key: string): void =>
     save({
@@ -112,15 +107,11 @@ export function GroupFrame({
     })
 
   const group = view.group ?? { kind: 'structural' as const }
-  // The pipeline's EFFECTIVE mode, not the raw kind — a dead-property grouping renders structurally
-  // in the table, so the frame shows the structural chrome for it too (never a phantom "Location"
-  // label over property rows).
   const structural = groupsStructurally(group, schema)
   const groupable = schema.filter((d) => GROUPABLE_PANE.has(declaredType(d.id, schema) ?? ''))
   const activeDef =
     group.kind === 'property' ? schema.find((d) => d.id === group.property_id) : undefined
   const subGroup = structural && subGrouping ? view.sub_group : undefined
-  // The Separation footing (below) appears only when this property wears a numeric date format.
   const dateHeadingProp =
     group.kind === 'property' && declaredType(group.property_id, schema) === 'datetime'
       ? group.property_id
@@ -128,17 +119,12 @@ export function GroupFrame({
         ? subGroup.property_id
         : undefined
 
-  // Preservation is free: structural_order_mode / sub_group are view-level, so switching the
-  // one group slot never touches them — flip back to Location and they're still in force.
   const pickGroupBy = (target: 'location' | 'none' | PropertyDefinition): void => {
     if (target === 'none') {
-      // Group By: None = the flat GroupConfig (cards render it as one headerless band).
       if (group.kind !== 'flat') saveGroup({ kind: 'flat' })
       return
     }
     if (target === 'location') {
-      // Keyed on the RAW kind: a dead-property config renders structurally but still sits on disk,
-      // and picking Location must heal it.
       if (group.kind !== 'structural') saveGroup({ kind: 'structural' })
       return
     }
@@ -152,9 +138,6 @@ export function GroupFrame({
     })
   }
 
-  // Group By reads as a value row like every other setting in the frame: the slot names its current
-  // grouping and picks a new one through the shared control, so the option list is stated once here
-  // rather than mirrored as an inline list.
   const groupByValue =
     group.kind === 'flat'
       ? 'none'
@@ -182,7 +165,6 @@ export function GroupFrame({
   }
 
   const saveSub = (sub: SubGroupConfig | undefined): void => save({ sub_group: sub })
-  // View-level with the property config's field as the pre-hoist fallback — resolveView's read.
   const hideEmpty = view.hide_empty_groups ?? (group.kind === 'property' && group.hide_empty_groups)
 
   const footings = (
@@ -371,14 +353,11 @@ export const optionsOf = (
 
 type PropertyGroupConfig = Extract<GroupConfig, { kind: 'property' }>
 
-/** The Grouping frame's per-row hide affordance — absent for the Sorting frame's usages. */
 interface HideControls {
   hiddenSet?: ReadonlySet<string>
   onToggleHidden?: (key: string) => void
 }
 
-/** A group row's trailing eye (always shown, ghosted at rest) — null when the host frame
- *  doesn't hide (Sorting). `hideKey` is what the toggle writes; hidden state reads the same key. */
 function rowEye(
   label: string,
   hideKey: string,
@@ -396,7 +375,6 @@ function rowEye(
   )
 }
 
-/** Shared with the Sorting frame's example order — `group` is just the ordering pair. */
 export function PropertyPreview({
   group,
   def,
@@ -421,7 +399,7 @@ export function PropertyPreview({
       <>
         {groups.map((g) => (
           <div key={g.id}>
-            <div className={gp.previewHeading}>{g.label}</div>
+            <div className={heading}>{g.label}</div>
             {(group.order_mode === 'reversed' ? [...g.options].reverse() : g.options).map((o) =>
               chip(o.color ? o : { ...o, color: g.color }),
             )}
@@ -436,7 +414,6 @@ export function PropertyPreview({
   return <>{ordered.flatMap((v) => (byValue.has(v) ? [chip(byValue.get(v)!)] : []))}</>
 }
 
-/** Shared with the Sorting frame's Custom order — the caller owns the write. */
 export function CustomList({
   group,
   def,
@@ -448,8 +425,6 @@ export function CustomList({
   def: PropertyDefinition | undefined
   onSave: (order: string[]) => void
 } & HideControls): React.JSX.Element | null {
-  // Identity-stable across the drag's own re-renders — a per-render rebuild would false-dirty the
-  // hook's snapshot on every pointermove.
   const { ordered, byValue, bands } = useMemo(() => {
     const all = optionsOf(def)
     const orderedValues = bucketOrder(group, def, new Set(all.map((o) => o.value)))
@@ -470,7 +445,7 @@ export function CustomList({
   const type = def.type === 'status' ? 'status' : 'select'
   return (
     <div ref={dnd.containerRef} className="drop-line-host">
-      <div className={gp.previewHeading}>Options</div>
+      <div className={heading}>Options</div>
       {ordered.flatMap((v) => {
         const o = byValue.get(v)
         if (!o) return []
@@ -502,8 +477,6 @@ export function CustomList({
   )
 }
 
-/** A hierarchy row that registers as a spring-open target while collapsed — a drag dwelling
- *  over it expands it, the disclose remeasure re-aiming the live drag. */
 function SpringableRow({
   collapsed,
   onExpand,
@@ -543,12 +516,8 @@ function SpringableRow({
   )
 }
 
-/** The band id a disclosed sub-group chip registers under — the registration and the row that
- *  spreads its handle must mint the same string, or the row drags nothing. */
 const subBandId = (setId: string, value: string): string => `sub:${setId}:${value}`
 
-/** Drags mirror the table band rules: sibling reorder writes view order in Custom / the
- *  filesystem in Location; a cross-nesting drop is always an fs reparent. */
 function LocationHierarchy({
   source,
   view,
@@ -567,7 +536,6 @@ function LocationHierarchy({
   const expanded = useDisclosureSet()
   const flat = subDef !== undefined
 
-  // The property sub-group's disclosed chips — the same value run under every top-level set.
   const subChips = useMemo(() => {
     if (!subDef) return []
     const subOptions = optionsOf(subDef)
@@ -582,8 +550,6 @@ function LocationHierarchy({
     })
   }, [subDef, view.sub_group])
 
-  // Identity-stable across the drag's own re-renders — a per-render rebuild would false-dirty the
-  // hook's snapshot on every pointermove.
   const { allIds, childIds, paths, bands, chipValueOf } = useMemo(() => {
     const allIds: string[] = []
     const childIds = new Map<string | null, string[]>()
@@ -610,8 +576,6 @@ function LocationHierarchy({
         paths.set(s.id, s.path)
         if (visible) {
           bands.push({ id: s.id, kind: 'set', depth, parentId })
-          // A disclosed chip run registers as property bands so the SAME gesture drags them (the
-          // frame's own drag surface) — the drop resolves back to the value through chipValueOf.
           if (flat && expanded.has(s.id)) {
             for (const o of subChips)
               bands.push({
@@ -630,8 +594,6 @@ function LocationHierarchy({
   }, [source.sets, flat, expanded, subChips])
 
   const onDrop = (draggedId: string, drop: GroupingDrop): void => {
-    // A chip drag is a GLOBAL sub-order write regardless of drop kind or target set; dragging
-    // also flips the sub-order to Custom (the first-UI-writer pattern).
     if (chipValueOf.has(draggedId)) {
       const value = chipValueOf.get(draggedId)
       const before = drop.beforeId === null ? null : (chipValueOf.get(drop.beforeId) ?? null)
@@ -720,8 +682,6 @@ function LocationHierarchy({
     )
   }
 
-  // The ROW discloses here, so the chevron is decorative and bows to the Hide Chevrons
-  // personalization; a leaf takes no spacer in its place.
   const renderSet = (s: SetNode): React.JSX.Element => {
     const body = flat ? subChips.map((o) => subChipRow(s.id, o)) : (s.sets ?? []).map(renderSet)
     const disclosable = body.length > 0
@@ -793,9 +753,6 @@ function LocationHierarchy({
   )
 }
 
-/** A date grouping's middle region — no finite option list, so the rows are the buckets the
- *  container's values actually produce (plus any hidden key whose bucket has since emptied, so
- *  it can still be unhidden), ordered exactly as the view orders its bands. */
 function DateBucketList({
   source,
   view,
@@ -849,8 +806,6 @@ function DateBucketList({
   )
 }
 
-/** Location CLEARS the view-level field; a property writes a fresh config — different enough
- *  to stay its own component. */
 function SubGroupRow({
   subGroup,
   groupable,

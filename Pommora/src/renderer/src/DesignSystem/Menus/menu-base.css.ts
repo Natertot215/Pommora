@@ -64,17 +64,20 @@ export const paneSeparator = style({ marginBottom: 'var(--top-row-block, 2px)' }
 // ── Heading ──
 
 export const heading = style([
-  text.headline.emphasized,
+  text.footnote.emphasized,
   {
     display: 'flex',
     alignItems: 'center',
-    gap: '0px',
-    minHeight: '24px',
-    padding: '0 8px',
-    color: c.label.secondary,
+    justifyContent: 'space-between',
+    gap: '4px',
+    margin: 0,
+    padding: '6px var(--row-pad-x) 2px',
+    color: c.label.tertiary,
     userSelect: 'none',
   },
 ])
+
+export const headingCaps = style({ textTransform: 'uppercase', letterSpacing: '0.04em' })
 
 // ── Item ──
 

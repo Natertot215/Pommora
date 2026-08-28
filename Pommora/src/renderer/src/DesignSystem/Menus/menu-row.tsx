@@ -126,26 +126,6 @@ export function MenuItem({
   )
 }
 
-export function MenuHeading({
-  leading,
-  detail,
-  children,
-}: {
-  leading?: ReactNode
-  detail?: ReactNode
-  children: ReactNode
-}): React.JSX.Element {
-  return (
-    <div className={s.heading}>
-      {leading != null && <span className={s.side}>{leading}</span>}
-      <span className={cx(s.titleText, overScrollEllipsis)} style={{ flex: '1 1 auto' }}>
-        {children}
-      </span>
-      {detail != null && <span className={cx(s.side, s.detail)}>{detail}</span>}
-    </div>
-  )
-}
-
 export function MenuSeparator({
   flush = false,
   className,
