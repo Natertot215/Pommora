@@ -167,6 +167,10 @@ export const actionRow = style([
   rowBox,
   {
     vars: { '--row-size': font.scale.footnote.size, '--row-line': font.scale.footnote.line },
+    width: '100%',
+    border: 'none',
+    background: 'none',
+    textAlign: 'left',
     fontWeight: font.weight.emphasized,
     color: c.label.secondary,
   },
