@@ -37,10 +37,6 @@ export const dropLineInset = style({ left: '8px', right: '8px' })
 
 export const ghosted = style({ opacity: 'var(--state-ghost)' })
 
-export const chipRow = style({ display: 'flex', alignItems: 'center', padding: '3px 8px' })
-
-export const eyeSlot = style({ marginLeft: 'auto', display: 'flex' })
-
 export const rowHoverScope = style({})
 
 export const revealEye = style({

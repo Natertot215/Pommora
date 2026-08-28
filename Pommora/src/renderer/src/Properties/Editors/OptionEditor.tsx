@@ -1,5 +1,4 @@
 import { Fragment, useMemo, useRef, useState } from 'react'
-import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
 import {
   addOption,
   recolorOption,
@@ -21,7 +20,7 @@ import { DropLine } from '@renderer/DesignSystem/Interactions/DropLine'
 import { OptionSlot, type OptionStyle } from '../OptionRow'
 import { useOptionReorder } from '../useOptionReorder'
 import * as s from '../../Frames/frames.css'
-import { heading } from '@renderer/DesignSystem/Menus'
+import { AccessoryButton, heading } from '@renderer/DesignSystem/Menus'
 import { labelColor, optionShapeFor, shape } from '@renderer/DesignSystem/Labels'
 
 const LIST_ANCHOR = 'options'
@@ -104,14 +103,11 @@ export function OptionEditor({
     <div className={s.optionEditor}>
       <div className={heading}>
         <span>Options</span>
-        <Button
-          size="button-inline"
-          paddingX="0"
+        <AccessoryButton
           icon="plus"
-          iconSize={s.ICON.optionsAdd}
-          className={s.optionsAdd}
-          data-create
-          aria-label="Add Option"
+          size={s.ICON.optionsAdd}
+          ariaLabel="Add Option"
+          create
           onClick={() => setAdding(options.length)}
         />
       </div>
