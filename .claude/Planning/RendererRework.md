@@ -23,7 +23,7 @@ A row that lands leaves this document; History carries what happened. A ruling t
 Eight statements that decide where anything goes. Each is testable with a grep; each files the next module when the tree is out of date.
 
 - **R1 — Reach decides the layer.** A module that imports `@renderer/store`, calls `window.nexus`, or imports `nativeMenus` is a *surface* or *glue* and lives in a feature folder. One that does none of those and knows no entity kind is a *piece* and may live in `DesignSystem/`. `DesignSystem/**` imports nothing from `@renderer/*` outside itself; its one sanctioned type-only reach is `Symbols/` reading `EntityIconKind` from `@shared`. *Test:* `grep -rl "@renderer/store\|window\.nexus\|@renderer/nativeMenus" DesignSystem/` returns nothing. *Today:* three files (`AssetImage`, `ImagePicker`, `PickerControl`).
-- **R2 — Consumers decide the folder.** A module consumed from three or more top-level folders with no plurality in any one is shared: a piece to `DesignSystem/`, a model or glue to `Core/`, an app-bound wrapper to `Utilities/`. A module with every consumer in one other folder belongs in that folder. *Test:* a file with zero importers in its own folder has failed this rule. *Today:* `Settings/IconPicker`, `Embeds/ViewEmbedScope`, `Tabs/warmCache`, `Links/connectionMenu`.
+- **R2 — Consumers decide the folder.** A module consumed from three or more top-level folders with no plurality in any one is shared: a piece to `DesignSystem/`, a model or glue to `Core/`, an app-bound wrapper to `Utilities/`. A module with every consumer in one other folder belongs in that folder. *Test:* a file with zero importers in its own folder has failed this rule. *Today:* `Settings/IconPicker`, `Embeds/ViewEmbedScope`, `Links/connectionMenu`.
 - **R3 — A folder is named for what it holds, and no name appears twice.** A folder holding one file is a file. *Test:* `find . -type d | xargs -n1 basename | sort | uniq -d` returns nothing under `renderer/`. *Today:* `Components` (root vs `DesignSystem/`), `Tables` (root vs `MarkdownPM/`).
 - **R4 — Properties is the value layer; Tables and Views import it downward.** `Properties/` holds the schema surface and the value vocabulary alike — resolution at its root, the formatters, cell, pickers, checkbox glyph, and column naming under `Editing/`, the per-type option editors under `Editors/`. `Tables/` is the tabular chrome and column mechanics; `Views/` the saved-view pipeline and renderers; `Cards/` the card chassis. *Test:* `grep -rl "@renderer/Views/\|@renderer/Tables/" Properties/` lists only `PropertyFrame.tsx` (the ruled Style-radio edge); `grep -rl "@renderer/Views/" Tables/ Cards/` returns nothing.
 - **R5 — A value read from two folders is a token, declared once.** Tokens in `DesignSystem/Tokens/`; the frost specular constants in `Glass/`; a per-surface tuning value is a `KNOB` with one owner. Spacing stays a literal on the even grid; a value outside the grid is what needs justifying. A var, export, class, or prop with one writer and one reader is indirection — a value set once and read once is a literal with a `KNOB`; a new `--var` needs two surfaces overriding it. *Test:* `grep -rh "^\s*--[a-z-]*:" --exclude-dir=Tokens --exclude-dir=Glass .` lists only `KNOB`-commented and component-scoped declarations.
@@ -40,7 +40,6 @@ Each folder answers "what is this" in one word. A row marked NEW, MOVED, or RENA
 ├── // Cards                            | • The card chassis the gallery and CardView wear
 ├── // Core                             | • NEW — the app-core modules the whole renderer reads
 │   ├── store.ts                        | • The barrel over Store/'s seven slices
-│   ├── warmCache.ts                    | • MOVED from Tabs — a cache, not a tab
 │   └── …                               | • Commands, assetUrl, destinationTree, nativeCaret, nativeMenus, pageMenuActions, selection, treeIndex
 ├── // DesignSystem                     | • The pieces; Detail/ leaves with Tiles, Showcase/ leaves as a site
 │   ├── // Components
@@ -68,6 +67,7 @@ Each folder answers "what is this" in one word. A row marked NEW, MOVED, or RENA
 ├── // Settings                         | • The Settings window alone
 ├── // Showcase                         | • MOVED out of DesignSystem — a deployed site, not a piece
 ├── // Store                            | • The session's seven slices
+│   └── TabState.ts                     | • Per-tab warm state and the page-detail cache
 ├── // SurfacePM                        | • The tile layout engine; knows nothing of content
 ├── // Tiles                            | • NEW — the tile world both hosts consume; the shape is the exploration's to propose
 │   ├── …                               | • MOVED from Blocks and Embeds — BlockSurface, the content kinds, tileWarm, webRetention, blockZoom
@@ -110,15 +110,14 @@ Rulings a sweep would otherwise re-derive. An audit agent may contradict one, bu
 16. **`SegmentRun` lives in `Fields/`** — a run of values is a field's content.
 17. **`Tables/` is a feature folder, not a design-system component.**
 18. **Design decisions are not bundled as tasks** — bundling forces them by default, which is how the drift accumulated.
-19. **Nothing in the design layer is an architectural error** — the instrument is `git mv` and a lint rule; net ≈ 0.
-20. **`--ppane-*` and `table-tokens.css`'s `.table`-scoped block stay** — correctly scoped contracts; the one var that leaked (`--cell-padding-x`) moves.
-21. **Showcase-only is a real consumer class** — it deploys from the same sources, so it cannot drift; which is why it must not live inside the tree it demonstrates.
-22. **Accepted, not defects:** dark-only theming · hidden scrollbars app-wide · Liquid Glass cannot be voided in place · no tracking scale · no inactive label tone yet.
-23. **Spacing stays literal, on the even grid** — no `--space-*` ladder. An odd value (`3/5/9px`) reconciles per consumer to the nearer even step when that consumer is next opened; `22px` is a step. Radius follows the same rule.
-24. **The toolbar's tone is the container's, not a `button` selector's** — `.app-toolbar` and `.ppane-toolbar` declare `color: var(--label-control)` and every glyph inherits it; the `&&` pins left in the tree armor against other rules and are judged on their own.
-25. **`Links/` holds the link cluster; `Detail/` is `Interface/`; `SurfacePM/` keeps its name; `Blocks/` becomes root `Tiles/`** — executed or ruled 08-27/08-28.
-26. **The menu row's box is declared once** (`rowBox`, first in `menu-base.css.ts`); a surface picks Standard or Compact on its pane, never per row.
-27. **The renderer is `src/renderer`, flat** — `index.html` beside the entries; the Showcase keeps its stage photos under `Showcase/surfaces/`.
+19. **`--ppane-*` and `table-tokens.css`'s `.table`-scoped block stay** — correctly scoped contracts; the one var that leaked (`--cell-padding-x`) moves.
+20. **Showcase-only is a real consumer class** — it deploys from the same sources, so it cannot drift; which is why it must not live inside the tree it demonstrates.
+21. **Accepted, not defects:** dark-only theming · hidden scrollbars app-wide · Liquid Glass cannot be voided in place · no tracking scale
+22. **Spacing stays literal, on the even grid** — no `--space-*` ladder. An odd value (`3/5/9px`) reconciles per consumer to the nearer even step when that consumer is next opened; `22px` is a step. Radius follows the same rule.
+23. **The toolbar's tone is the container's, not a `button` selector's** — `.app-toolbar` and `.ppane-toolbar` declare `color: var(--label-control)` and every glyph inherits it; the `&&` pins left in the tree armor against other rules and are judged on their own.
+24. **`Links/` holds the link cluster; `Detail/` is `Interface/`; `SurfacePM/` keeps its name; `Blocks/` becomes root `Tiles/`** — executed or ruled 08-27/08-28.
+25. **The menu row's box is declared once** (`rowBox`, first in `menu-base.css.ts`); a surface picks Standard or Compact on its pane, never per row.
+26. **The renderer is `src/renderer`, flat** — `index.html` beside the entries; the Showcase keeps its stage photos under `Showcase/surfaces/`.
 
 **Refuted, do not re-raise:** nexus/vault (zero identifiers), chip/label (chip is a recipe of Label — correct), pane/dropdown (`Toolbar/` runs a two-tier convention: a `*Menu` wraps a `*Frame`), select/option (layered correctly in `shared/properties.ts`), crumb/trail (split by layer). A `--space-*` ladder and a centralized radius scale were both refused with reasons.
 
@@ -130,7 +129,7 @@ Every proposed move, grouped by kind. **Status** is one of: **ruled** (Nathan sa
 
 #### Filing
 
-- [ ] **`Core/` for the root modules** — `store`, `treeIndex`, `assetUrl`, `pageMenuActions`, `selection`, `Commands`, `destinationTree`, `nativeMenus`, `nativeCaret`, and `Tabs/warmCache`. *Why:* R8 — twelve files at the root with no folder, every one read across folders. *Status:* ruled.
+- [ ] **`Core/` for the root modules** — `store`, `treeIndex`, `assetUrl`, `pageMenuActions`, `selection`, `Commands`, `destinationTree`, `nativeMenus`, `nativeCaret`. *Why:* R8 — the root holds only entries and global sheets. *Status:* ruled.
 - [ ] **`Navigation/` absorbs `Tabs/`** (`TabBar`, `tabsModel`). *Why:* per-tab history is navigation; `Tabs/` sits beside the folder that owns its concept. *Status:* ruled.
 - [ ] **`Embeds/ViewEmbedScope` → `Views/`; `Sidebar/sidebarDndModel` → `DesignSystem/Interactions/reorderModel`; `Settings/IconPicker` + `iconFavorites` → `Utilities/NexusIconPicker`.** *Why:* R2 — each has zero importers in its own folder. *Status:* ruled.
 - [ ] **`Showcase/` out of `DesignSystem/`.** *Why:* Settled 21 — a deployed site, not a piece. *Status:* ruled.
@@ -266,3 +265,13 @@ Each perspective is one agent with one question, a method, a guard list, and a r
 - **[[MenuRecipe]]** — landed 08-28; its Open Calls and Sequenced After are rows above; the plan is history.
 - **[[DesignSystemPM]]** — the vocabulary and the token ledger; every token this document proposes to add, rename, or retire lands there in the same commit.
 - **[[ContextPM]]** — Current Focus names which row is active; Immediate Work holds the rows in flight; nothing about the arc's scope lives outside these two.
+
+---
+
+### 6. Working Rules
+
+How this document is kept honest while it is executed. These bind every session touching the renderer, and they are not optional.
+
+- **Delete on landing — no tombstones.** The moment a checklist row is done it is deleted here, and the target tree in §1 is rewritten to the tree on disk. Never leave a "landed" note, a "moved from" trail, or a struck line — a done thing simply reads as the current state, as if it were always so. The tree on disk and the tree on the page never disagree across a commit.
+- **Report the line count.** Every change reports its code-only LOC delta in chat (comments, blanks, and tests excluded), the way `/closeout` does.
+- **No ambiguity about state.** Nothing here may leave a reader unsure what is done versus pending, or what is a critique versus a proposal. An open thing reads as open; an orchestrator's opinion is marked as an opinion, never as a decision taken; a finished thing is gone, not annotated.

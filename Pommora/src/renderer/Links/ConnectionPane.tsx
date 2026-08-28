@@ -10,7 +10,7 @@ import { HEADING_FOLD_LINE, toggleFoldAt } from '@renderer/MarkdownPM/editor/fol
 import { usePointerGesture } from '@renderer/DesignSystem/Interactions/gesture'
 import { WEB_PARTITION, type HoverCardSize } from '@shared/types'
 import { pageIndexOf } from '../treeIndex'
-import { fetchPageDetail, readPageDetail } from '../Tabs/warmCache'
+import { fetchPageDetail, readPageDetail } from '../Store/TabState'
 import { useSession } from '../store'
 import { PageEmbed } from '../Embeds/PageEmbed'
 import { CARD_MIN, hoverPaneSize, seedHoverCardSize, setHoverCardSize } from './hoverPaneSize'

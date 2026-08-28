@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cachePageDetail } from '../Tabs/warmCache'
+import { cachePageDetail } from '../Store/TabState'
 import { tileWarmSeam } from './tileWarm'
 
 const detail = (path: string, body: string) => ({

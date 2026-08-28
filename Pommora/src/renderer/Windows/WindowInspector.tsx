@@ -21,7 +21,7 @@ import { solidColorCss } from '@renderer/DesignSystem/Tokens/solidColor'
 import { PropertyPicker, syntheticContextDef } from '@renderer/Properties/Editing/PropertyPicker'
 import { DatetimeValuePicker } from '@renderer/Properties/Editing/DatetimeValuePicker'
 import { resolveFieldValue } from '@renderer/Properties/value'
-import { fetchPageDetail, readPageDetail } from '../Tabs/warmCache'
+import { fetchPageDetail, readPageDetail } from '../Store/TabState'
 import {
   propertyIcon,
   usePropertyRows,

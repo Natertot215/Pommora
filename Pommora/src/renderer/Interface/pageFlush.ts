@@ -4,7 +4,7 @@
 // the newest edit from ANY host owns the file's single pending write, and every teardown path (host
 // unmount, nexus adopt, window close) flushes here instead of each host re-implementing the machinery.
 
-import { writeThroughBody } from '../Tabs/warmCache'
+import { writeThroughBody } from '../Store/TabState'
 
 const SAVE_DEBOUNCE_MS = 400
 

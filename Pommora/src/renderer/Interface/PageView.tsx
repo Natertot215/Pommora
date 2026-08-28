@@ -10,7 +10,7 @@ import { hoverConnection, hoverWebsite } from '../Links/ConnectionPane'
 import { IconPicker } from '@renderer/Settings/IconPicker'
 import { entityIcon } from '@renderer/DesignSystem/Symbols'
 import { navKey } from '../Navigation/navRecents'
-import { captureWarm, readWarm, warmGeneration } from '../Tabs/warmCache'
+import { captureWarm, readWarm, warmGeneration } from '../Store/TabState'
 import { registerPageEditor } from './pageEditor'
 import { schedulePageSave } from './pageFlush'
 

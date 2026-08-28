@@ -13,7 +13,7 @@ import {
 } from './store'
 import { newTabTab } from './Tabs/tabsModel'
 import { navKey } from './Navigation/navRecents'
-import { clearWarm } from './Tabs/warmCache'
+import { clearWarm } from './Store/TabState'
 
 // Stub the narrow window.nexus surface the tab glue reaches (page fetch, recents save, tab persist,
 // the mutation gateway, the applyTree accent read) so it runs in isolation.

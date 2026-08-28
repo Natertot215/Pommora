@@ -1,5 +1,5 @@
 import type { WarmSeam } from '@renderer/MarkdownPM/warmSeam'
-import { readPageDetail } from '../Tabs/warmCache'
+import { readPageDetail } from '../Store/TabState'
 
 // The tile counterpart of the tab and preview warm caches: the outer editor tears a tile's DOM
 // down whenever it leaves the viewport or a rebuild drops the widget, and the nested editor
