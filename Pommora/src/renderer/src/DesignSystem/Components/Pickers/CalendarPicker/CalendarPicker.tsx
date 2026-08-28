@@ -10,6 +10,7 @@ import { useExitPresence } from '../../../Animation/useExitPresence'
 import { stack } from '../../../Tokens/stack'
 import { cx } from '../../../Util/cx'
 import { pad } from '../../../Util/pad'
+import { rowBox } from '../../../Menus/menu-base.css'
 import * as s from './calendarPicker.css'
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -721,7 +722,7 @@ export function CalendarPicker({
           them (an unmounting focused input never fires onBlur, so a live segEdit would otherwise
           resurrect stale on re-toggle). */}
         {range && (
-          <div className={s.switchRow}>
+          <div className={rowBox}>
             <span className={s.switchLabel}>End Date</span>
             <DualSwitch
               checked={endOn}
@@ -735,7 +736,7 @@ export function CalendarPicker({
             />
           </div>
         )}
-        <div className={s.switchRow}>
+        <div className={rowBox}>
           <span className={s.switchLabel}>Use Time</span>
           <DualSwitch
             checked={timeOn}
