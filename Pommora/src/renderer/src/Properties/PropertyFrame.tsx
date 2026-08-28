@@ -38,6 +38,7 @@ import {
   footingLabel,
   footingSymbol,
   titleInput,
+  actionRow,
 } from '@renderer/DesignSystem/Menus/menu-base.css'
 import { Reveal } from '@renderer/DesignSystem/Animation/Reveal'
 import { duration } from '@renderer/DesignSystem/Animation'
@@ -127,14 +128,14 @@ function ListGroups({
       </div>
       <div className={cx(s.allSpacer, allOpen && s.allSpacerCollapsed)} aria-hidden />
       <div data-group="all" ref={allRef} className={cx(allHighlighted && s.allHighlight)}>
-        <button type="button" className={s.allHeadingRow} onClick={onToggleAll}>
+        <button type="button" className={cx(actionRow, s.allHeading)} onClick={onToggleAll}>
           <Icon
             name="chevron-right"
             size={s.ICON.dropOutline}
             className={cx(dropOutline, allOpen && dropOutlineOpen)}
             data-drop-outline
           />
-          <span className={s.allPropertiesLabel}>All Properties</span>
+          <span>All Properties</span>
         </button>
         <Reveal open={allOpen} duration={duration.base}>
           <div>
