@@ -391,7 +391,7 @@ Base: `935bf031`. Baseline invariant carried through every task: `npx vitest run
 
 **Requirement:** 9
 
-**Files:** no History entry — refactor rows are recorded in the ledger and the atlas, and git carries the range; `ContextPM.md` (the `Tiles/` row closes; the `cellRing` row closes; Current Focus's tree paragraph names `Tiles/`, `Utilities/`, `Links/`); `RendererRefactor.md` (the `Tiles/` row and the `cellRing` row leave; `block` → `tile` identifiers gains its own row); `RendererAtlas.md` (Settled: `Tiles/` executed with the date; the tree rows present tense); `Guidelines/` (any lesson from the Log); `Tiles — Decision Log.md` Lessons filled.
+**Files:** no History entry — refactor rows are recorded in [[RendererRework]], and git carries the range; `ContextPM.md` (the `Tiles/` row closes; the `cellRing` row closes; Current Focus's tree paragraph names `Tiles/`, `Utilities/`, `Links/`); `RendererRefactor.md` (the `Tiles/` row and the `cellRing` row leave; `block` → `tile` identifiers gains its own row); `RendererAtlas.md` (Settled: `Tiles/` executed with the date; the tree rows present tense); `Guidelines/` (any lesson from the Log); `Tiles — Decision Log.md` Lessons filled.
 
 **Steps:**
 - [ ] `/closeout` discipline over the whole range: Delivery Claim written → neutral verifier (claim, spec, plan, range) → attack pass → interface pass against the running app (the Acceptance paragraph, performed literally).
