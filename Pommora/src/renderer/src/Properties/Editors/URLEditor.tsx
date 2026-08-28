@@ -1,11 +1,8 @@
 import type { CSSProperties } from 'react'
 import { resolveColor } from '@renderer/DesignSystem/Tokens/solidColor'
-import { DualSwitch } from '@renderer/DesignSystem/Components/Controls/Switches/DualSwitch'
 import type { LinkConfig, LinkDisplay } from '@shared/properties'
-import { ColorSwatch } from '@renderer/DesignSystem/Components/Controls/Switches/ColorSwatch'
-import { PickerControl } from '@renderer/DesignSystem/Elements/PickerControl'
+import { MenuIndex } from '@renderer/DesignSystem/Menus'
 import { LINK_FORMAT_OPTIONS } from '../LinkFormat'
-import { MenuItem } from '@renderer/DesignSystem/Menus'
 import * as s from '../../Frames/frames.css'
 
 /**
@@ -27,41 +24,46 @@ export function URLEditor({
 
   return (
     <div className={s.configEditor} style={{ '--accent': link.css } as CSSProperties}>
-      <MenuItem
-        trailing={
-          <DualSwitch
-            checked={underline}
-            onChange={(v) => onSetConfig({ link_underline: v })}
-            ariaLabel="Underline links"
-          />
-        }
-      >
-        Underline
-      </MenuItem>
-      <MenuItem
-        trailing={
-          <ColorSwatch
-            label="Color"
-            selected={link.name}
-            css={link.css}
-            onPick={(next) => onSetConfig({ link_color: next })}
-          />
-        }
-      >
-        Color
-      </MenuItem>
-      <MenuItem
-        trailing={
-          <PickerControl
-            ariaLabel="Link format"
-            value={display}
-            options={LINK_FORMAT_OPTIONS}
-            onPick={(v) => onSetConfig({ link_display: v })}
-          />
-        }
-      >
-        Format
-      </MenuItem>
+      <MenuIndex
+        sections={[
+          {
+            rows: [
+              {
+                kind: 'item',
+                label: 'Underline',
+                trailing: {
+                  kind: 'switch',
+                  checked: underline,
+                  onChange: (v) => onSetConfig({ link_underline: v }),
+                  ariaLabel: 'Underline links',
+                },
+              },
+              {
+                kind: 'item',
+                label: 'Color',
+                trailing: {
+                  kind: 'color',
+                  label: 'Color',
+                  selected: link.name,
+                  css: link.css,
+                  onPick: (next) => onSetConfig({ link_color: next }),
+                },
+              },
+              {
+                kind: 'item',
+                label: 'Format',
+                trailing: {
+                  kind: 'picker',
+                  ariaLabel: 'Link format',
+                  value: display,
+                  options: LINK_FORMAT_OPTIONS,
+                  onPick: (v: LinkDisplay) => onSetConfig({ link_display: v }),
+                },
+              },
+            ],
+          },
+        ]}
+      />
     </div>
   )
 }
