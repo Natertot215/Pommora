@@ -1,4 +1,4 @@
-import { style, styleVariants, type ComplexStyleRule } from '@vanilla-extract/css'
+import { globalStyle, style, styleVariants, type ComplexStyleRule } from '@vanilla-extract/css'
 import { RAMP_FAMILIES, RAMP_STEPS, cellColor, cellPaint, type CellKey } from '../Tokens/ramp'
 import { vars as colorVars } from '../Tokens/color.css'
 import { text } from '../Tokens/typography.css'
@@ -153,3 +153,6 @@ export const roomy = style({ height: SIZE.roomyHeight, vars: { '--label-pad-x': 
 /** The cap lives on the TEXT, not the label — a % width is unreliable in a shrink-to-fit flex box,
  *  and this way the truncation lands at the padding edge instead of floating mid-label. */
 export const textCap = style({ maxWidth: `var(--label-max, ${SIZE.textMax})` })
+
+// The gap between chips in a run — a Labels concern, so it lives here and every chip run reads it.
+globalStyle(':root', { vars: { '--labels-gap': '4px' } })

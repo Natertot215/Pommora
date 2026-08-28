@@ -90,9 +90,7 @@
 }
 .page-window-insp-value {
   /* Content-sized and pushed right: the value IS the field, so pickers anchor to it, never to the
-     row's empty middle. The chip run's spacing is the field's own — the cell renderer reads a gap
-     the table scopes to itself, so a field hosting those chips outside a table states the rhythm. */
-  --labels-gap: 4px;
+     row's empty middle. */
   margin-left: auto;
   flex: 0 1 auto;
   max-width: 65%;

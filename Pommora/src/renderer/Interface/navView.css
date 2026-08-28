@@ -19,9 +19,6 @@
 }
 .nav-view-search {
   width: 100%;
-  font-size: var(--text-headline-size);
-  line-height: 20px;
-  font-weight: var(--weight-emphasized);
 }
 .nav-view-banner .banner-title {
   pointer-events: auto;

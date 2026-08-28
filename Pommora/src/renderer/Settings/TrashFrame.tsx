@@ -229,7 +229,7 @@ export function TrashFrame(): React.JSX.Element {
         />
       </div>
 
-      <div className={cx('trash-head', 'table-head', text.caption.semibold)}>
+      <div className={cx('trash-head', 'table-head')}>
         <span className="trash-head-name col-header">
           <span className="trash-head-glyph">
             <PropertyTypeIcon type="title" size="body" />

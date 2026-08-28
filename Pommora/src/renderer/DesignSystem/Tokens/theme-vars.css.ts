@@ -103,6 +103,7 @@ globalStyle(':root', {
     '--text-headline-size': font.scale.headline.size,
     '--text-body-size': font.scale.body.size,
     '--text-callout-size': font.scale.callout.size,
+    '--text-callout-line': font.scale.callout.line,
     '--text-control-size': font.scale.control.size,
     '--text-caption-size': font.scale.caption.size,
     '--text-footnote-size': font.scale.footnote.size,

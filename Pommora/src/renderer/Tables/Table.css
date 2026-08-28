@@ -23,10 +23,13 @@
 }
 
 .table-head {
-  /* weight/size come from the text.callout.semibold alias on each .col-header — no raw font-weight here
-     (typography via aliases only). */
+  /* The one place a table heading's type is set — callout, emphasized, secondary ink — so what a
+     heading uses can't drift; TableView's .col-header and the Trash's head both inherit it. */
+  font-size: var(--text-callout-size);
+  line-height: var(--text-callout-line);
+  font-weight: var(--weight-emphasized);
   background: var(--heading-fill);
-  color: var(--heading-text);
+  color: var(--label-secondary);
   border-bottom: var(--heading-divider);
   user-select: none;
   /* Full-bleed the fill + seam to BOTH glass edges: the widened .table-view puts its padding box at the
