@@ -1,5 +1,6 @@
 import { PathField } from '@renderer/DesignSystem/Components/Fields'
 import { useSession } from '@renderer/store'
+import { rowBox } from '@renderer/DesignSystem/Menus/menu-base.css'
 import * as s from '../../Frames/frames.css'
 
 /** Where this property's uploads land — the asset directory itself by default, or a subfolder
@@ -23,7 +24,7 @@ export function FileEditor({
   const value = directory ?? ''
   return (
     <div className={s.configEditor}>
-      <div className={s.configRow}>
+      <div className={rowBox}>
         <span className={s.configLabel}>Directory</span>
         <PathField
           label="Directory"

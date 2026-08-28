@@ -25,6 +25,7 @@ import {
   flushTrailing,
   footingLabel,
   footingSymbol,
+  side,
 } from '@renderer/DesignSystem/Menus/menu-base.css'
 import { registerDiscloseTarget } from '@renderer/DesignSystem/Interactions/dragDisclose'
 import { DragGhost } from '@renderer/DesignSystem/Interactions/DragGhost'
@@ -50,7 +51,7 @@ import { PickerControl, type PickerChoice } from '@renderer/DesignSystem/Element
 import { ValueRow } from '../Properties/ValueRow'
 import { propertyTypeIconName } from '../Properties/PropertyTypes'
 import { useGroupingListDrag, type GroupingDrop } from './groupDnd'
-import { hiddenRow } from './frames.css'
+import { hiddenRow, optionRow } from './frames.css'
 import * as gp from './groupFrame.css'
 import { OptionChip } from '@renderer/Properties/Editing/OptionChip'
 
@@ -365,7 +366,7 @@ function rowEye(
 ): React.JSX.Element | null {
   if (!onToggleHidden) return null
   return (
-    <span className={gp.eyeSlot}>
+    <span className={side}>
       <EyeToggle
         hidden={hiddenSet?.has(hideKey) ?? false}
         name={label}
@@ -387,7 +388,7 @@ export function PropertyPreview({
   if (!def) return null
   const type = def.type === 'status' ? 'status' : 'select'
   const chip = (o: { value: string; label: string; color?: string }): React.JSX.Element => (
-    <div key={o.value} className={cx(gp.chipRow, hiddenSet?.has(o.value) && hiddenRow)}>
+    <div key={o.value} className={cx(optionRow, hiddenSet?.has(o.value) && hiddenRow)}>
       <OptionChip type={type} option={o} />
       {rowEye(o.label, o.value, { hiddenSet, onToggleHidden })}
     </div>
@@ -455,7 +456,7 @@ export function CustomList({
             ref={dnd.rowRef(v)}
             {...dnd.rowHandle(v)}
             className={cx(
-              gp.chipRow,
+              optionRow,
               hiddenSet?.has(v) && hiddenRow,
               dnd.draggingId === v && gp.ghosted,
             )}
@@ -670,7 +671,7 @@ function LocationHierarchy({
         ref={dnd.rowRef(id)}
         {...dnd.rowHandle(id)}
         className={cx(
-          gp.chipRow,
+          optionRow,
           gp.subChip,
           hiddenSet?.has(subHiddenKey(o.value)) && hiddenRow,
           dnd.draggingId === id && gp.ghosted,
@@ -796,7 +797,7 @@ function DateBucketList({
       {bucketOrder(group, def, present).map((key) => {
         const label = formatBucketLabel(key, granularity, dateFormat, view.date_separator ?? 'dash')
         return (
-          <div key={key} className={cx(gp.chipRow, hiddenSet?.has(key) && hiddenRow)}>
+          <div key={key} className={cx(optionRow, hiddenSet?.has(key) && hiddenRow)}>
             <span className={gp.subLabel}>{label}</span>
             {rowEye(label, key, { hiddenSet, onToggleHidden })}
           </div>

@@ -1,5 +1,4 @@
 import { useRef, useState, type ReactNode } from 'react'
-import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
 import { Icon, type IconName } from '@renderer/DesignSystem/Symbols'
 import type { IconSize } from '@renderer/DesignSystem/Tokens'
 import { useSession } from '../store'
@@ -149,18 +148,12 @@ function ListGroups({
                     onRowMenu(d, 'all')
                   }}
                   trailing={
-                    <Button
-                      size="button-inline"
-                      paddingX="0"
+                    <AccessoryButton
                       icon="plus"
-                      iconSize={s.ICON.rowPlus}
-                      className={s.rowPlus}
-                      data-create
-                      aria-label={`Assign ${d.name}`}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        onAssign(d.id)
-                      }}
+                      size={s.ICON.rowPlus}
+                      ariaLabel={`Assign ${d.name}`}
+                      create
+                      onClick={() => onAssign(d.id)}
                     />
                   }
                 >
@@ -228,17 +221,11 @@ export function PropertyFrame({
       label={label}
       onBack={onBackClick}
       trailing={
-        <Button
-          size="button-inline"
-          paddingX="0"
+        <AccessoryButton
           icon={action.icon}
-          iconSize={action.size}
-          className={s.topRowAction}
-          aria-label={action.ariaLabel}
-          onClick={(e) => {
-            e.stopPropagation()
-            action.onClick()
-          }}
+          size={action.size}
+          ariaLabel={action.ariaLabel}
+          onClick={action.onClick}
         />
       }
     />
