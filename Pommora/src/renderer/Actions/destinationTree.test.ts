@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { CollectionNode, NexusTree } from '@shared/types'
-import { containerTargets, contextTargets } from './destinationTree'
+import { containerTargets, contextTargets } from '@renderer/Actions/destinationTree'
 
 const collections = [
   {

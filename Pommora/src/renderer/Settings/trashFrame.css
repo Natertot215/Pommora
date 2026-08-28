@@ -26,7 +26,7 @@
   left: var(--navwindow-inset);
   right: var(--navwindow-inset);
   bottom: 0;
-  border-bottom: var(--width-100) solid var(--border-light);
+  border-bottom: var(--width-150) solid var(--border-base);
 }
 /* The table's leading bar marks its gutter↔Title junction; this strip has no gutter column, so the
    bar would sit alone at the edge bounding nothing. The divider BETWEEN the columns stays.*/

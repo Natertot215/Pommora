@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { ASSETS_DIR_REL } from '@shared/nexusPaths'
 import type { NexusTree, SelectionState } from '@shared/types'
-import { reconcileSelection } from './selection'
+import { reconcileSelection } from '@renderer/Actions/selection'
 
 function tree(pages: { id: string; path: string }[]): NexusTree {
   return {

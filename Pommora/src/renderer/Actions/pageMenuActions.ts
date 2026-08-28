@@ -5,8 +5,8 @@ import { titleFromPath } from '@shared/connections'
 import { pageLinkText, pagePathText, type PageMoveContext } from '@shared/pageMenu'
 import type { NexusTree } from '@shared/types'
 import { parentOf } from '@shared/treePatch'
-import { containerTargets } from './destinationTree'
-import { useSession } from './store'
+import { containerTargets } from '@renderer/Actions/destinationTree'
+import { useSession } from '@renderer/store'
 
 /** Where this page may be sent: every container in the nexus, with the one it already sits in
  *  named so the menu can show that destination disabled. */

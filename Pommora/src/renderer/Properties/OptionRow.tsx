@@ -1,5 +1,5 @@
 import { useRef, type PointerEvent as ReactPointerEvent } from 'react'
-import { Button } from '@renderer/DesignSystem/Controls/Button'
+import { Button } from '@renderer/DesignSystem/Buttons'
 
 import type { ColumnLook } from '@shared/columnStyles'
 import type { PropertyDefinition } from '@shared/properties'

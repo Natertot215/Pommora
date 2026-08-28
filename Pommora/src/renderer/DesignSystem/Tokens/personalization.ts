@@ -7,8 +7,8 @@ import {
   viewEmbedZoom,
 } from '@shared/types'
 import type { CellKey } from '@shared/theme'
-import { labelColorFor } from '../Tokens/colorMap'
-import { cellColor, cellPaint } from '../Tokens/ramp'
+import { labelColorFor } from './colorMap'
+import { cellColor, cellPaint } from './ramp'
 
 /** The ramp cell a color setting names, or null when it defers. Every sentinel — `accent`,
  *  `system`, `default` — and the absent key alike read as no cell, which `labelColorFor` already

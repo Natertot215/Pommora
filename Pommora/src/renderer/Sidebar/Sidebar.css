@@ -32,7 +32,7 @@
   bottom: 0;
   width: var(--ribbon-w);
   z-index: 0;
-  padding-top: 46px;
+  padding-top: 44px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -46,7 +46,7 @@
 .sidebar-ribbon::after {
   content: "";
   position: absolute;
-  top: 46px;
+  top: 44px;
   bottom: var(--ribbon-divider-bottom);
   right: 0px;
   width: var(--width-175);
@@ -76,7 +76,7 @@
 .sidebar {
   -webkit-app-region: no-drag;
   margin-left: var(--ribbon-w);
-  padding: 46px var(--surface-inset) 12px 0;
+  padding: 44px var(--surface-inset) 12px 0;
   transition: margin-left var(--duration-base) var(--ease-base);
   overflow-x: hidden;
   overflow-y: auto;
@@ -242,7 +242,7 @@
   width: var(--chevron-gutter);
   min-width: var(--chevron-gutter);
   overflow: hidden;
-  margin-right: calc(var(--chevron-gutter) - 7.5px - var(--sidebar-hidechevron-pad));
+  margin-right: calc(var(--chevron-gutter) - 8px - var(--sidebar-hidechevron-pad));
 }
 .hide-chevrons .row {
   margin-left: var(--sidebar-hidechevron-pad);

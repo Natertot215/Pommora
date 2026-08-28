@@ -139,13 +139,8 @@
   left: calc(var(--sidebar-clearance) + var(--content-inset));
   right: 28px;
 }
-.mdpm-banner-overlay .detail-title-text,
-.mdpm-banner-overlay .detail-title-input {
-  text-shadow: var(--banner-cast);
-}
 .mdpm-banner-overlay .detail-title-icon {
   color: var(--label-primary);
-  filter: drop-shadow(var(--banner-cast));
 }
 
 /* HEADING FOLD — the chevron is a masked ::before ANCHORED to the heading line in the content layer, NOT a

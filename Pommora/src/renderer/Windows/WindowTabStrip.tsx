@@ -6,7 +6,7 @@ import { SortableZone, useDragItem } from '@renderer/DesignSystem/Interactions/d
 import { DEFAULT_ENTITY_ICONS, Icon } from '@renderer/DesignSystem/Symbols'
 import { duration, ms } from '@renderer/DesignSystem/Animation'
 import { text } from '@renderer/DesignSystem/Tokens'
-import { EntityGlyph } from '../Navigation/EntityGlyph'
+import { EntityIcon } from '@renderer/Utilities/EntityIcon'
 import { resolveWith, type ResolveIndex, type ResolvedNav } from '../Navigation/navResolve'
 import { useExitPresence } from '@renderer/DesignSystem/Animation/useExitPresence'
 import { useSession } from '../store'
@@ -192,7 +192,7 @@ function PreviewTabItem({
       }}
     >
       {res ? (
-        <EntityGlyph item={res} size={TAB_ICON} className="tab-icon" />
+        <EntityIcon item={res} size={TAB_ICON} className="tab-icon" />
       ) : (
         <Icon name={isMap ? 'map' : 'file'} size={TAB_ICON} className="tab-icon" />
       )}

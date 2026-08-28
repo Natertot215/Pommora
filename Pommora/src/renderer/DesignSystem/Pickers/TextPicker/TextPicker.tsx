@@ -1,6 +1,6 @@
 import type { CSSProperties, RefObject } from 'react'
 import { EditableInput } from '@renderer/DesignSystem/Fields'
-import { PickerMenu } from '../PickerMenu/PickerMenu'
+import { PickerMenu } from '../picker-base'
 import * as s from './textPicker.css'
 
 /** The field grows with typing between a 100px floor and a 200px cap, then scrolls. Enter or

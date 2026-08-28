@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { Crop } from '@shared/schemas'
-import { useSession } from '../store'
+import { useSession } from '@renderer/store'
 
 /** A photo outranks a glyph in display; a glyph outranks the default placeholder. */
 export function useNexusIcon() {

@@ -98,10 +98,10 @@ import {
   orderAddableEntries,
   shownColumnsFor,
 } from '@renderer/Properties/Editing/cardValueInput'
-import { pageMoveContext, runPageSendAction } from '@renderer/pageMenuActions'
+import { pageMoveContext, runPageSendAction } from '@renderer/Actions/pageMenuActions'
 import { hideShown, unhide } from '@renderer/Frames/hiddenFrameModel'
 import { IconPicker } from '@renderer/Settings/IconPicker'
-import { RenamableTitle } from '@renderer/Components/RenamableTitle'
+import { RenamableTitle } from '@renderer/Actions/RenamableTitle'
 import { titleInput } from '@renderer/DesignSystem/Menus'
 import { isOpenInTabs } from '../../Tabs/tabsModel'
 import './CardsView.css'

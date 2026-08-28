@@ -179,7 +179,7 @@ function EmbedBanner({
       }}
     >
       <AssetImage value={cover} className="mdpm-banner-img" />
-      <div className="mdpm-banner-overlay">
+      <div className="mdpm-banner-overlay title-shadow">
         <span className="detail-title-text">{title}</span>
       </div>
       <ImagePicker

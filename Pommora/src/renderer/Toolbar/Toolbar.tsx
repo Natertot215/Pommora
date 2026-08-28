@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Segmented, type Segment } from '@renderer/DesignSystem/Controls/Button'
+import { Segmented, type Segment } from '@renderer/DesignSystem/Buttons'
 import { useDismiss } from '@renderer/DesignSystem/Interactions/useDismiss'
 import { ToolbarTrio } from './ToolbarTrio'
 import { ViewMenu } from './ViewMenu'

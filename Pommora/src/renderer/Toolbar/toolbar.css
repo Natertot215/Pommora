@@ -57,7 +57,7 @@
 .app-toolbar-right {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: 8px;
   pointer-events: none;
 }
 /* The trio slides by the shared --toolbar-swallow magnitude so it lands flush in the inspector's left

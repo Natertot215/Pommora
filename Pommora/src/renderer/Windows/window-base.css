@@ -12,7 +12,7 @@
   overflow: hidden;
   animation: window-in var(--duration-fast) var(--ease-base);
 
-  --window-toolbar-h: 34px; /* KNOB — toolbar strip height */
+  --window-toolbar-h: 36px; /* KNOB — toolbar strip height */
   /* KNOB — the ring side panes hold from the window edges. */
   --window-side-inset: var(--app-inset);
   --window-side-l-w: 200px;

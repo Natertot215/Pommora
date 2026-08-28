@@ -3,7 +3,7 @@
   /* KNOB — the pair sits further off the × here than in a toolbar band. */
   --window-trail-gap: 6px;
   /* KNOB — the shared content inset (search divider + rows align to this). */
-  --navwindow-inset: 12px;
+  --navwindow-inset: var(--surface-inset);
 }
 
 .navwindow .window-actions-flow {
@@ -23,7 +23,7 @@
 }
 
 .navwindow-tabs {
-  --navwindow-tabs-h: 30px; /* KNOB — the strip row's height */
+  --navwindow-tabs-h: 28px; /* KNOB — the strip row's height */
   height: 0;
   overflow: hidden;
   flex-shrink: 0;

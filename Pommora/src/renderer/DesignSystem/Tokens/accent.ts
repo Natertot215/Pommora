@@ -1,6 +1,6 @@
 import { DEFAULT_ACCENT, type AccentSetting } from '@shared/types'
-import { labelColorFor } from '../Tokens/colorMap'
-import { ANCHOR_CELLS, cellColor } from '../Tokens/ramp'
+import { labelColorFor } from './colorMap'
+import { ANCHOR_CELLS, cellColor } from './ramp'
 
 /** There is no separate "accent" color — it's always a cell of the ramp, resolved the same way a
  *  chip resolves one, so a legacy solid name and a stepped key both land on their own color. */

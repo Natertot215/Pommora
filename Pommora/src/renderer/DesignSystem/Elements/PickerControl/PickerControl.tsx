@@ -2,8 +2,8 @@ import { useRef, useState } from 'react'
 import { EditableInput } from '../../Fields'
 import { cx } from '../../Util/cx'
 import { Icon } from '../../Symbols'
-import { PickerMenu, PickerOption } from '../../Pickers/PickerMenu'
-import { popRowMenu, useNativeMenus } from '@renderer/nativeMenus'
+import { PickerMenu, PickerOption } from '../../Pickers/picker-base'
+import { popRowMenu, useNativeMenus } from '@renderer/Actions/nativeMenus'
 import * as s from './pickerControl.css'
 
 export type PickerChoice<T extends string> = {

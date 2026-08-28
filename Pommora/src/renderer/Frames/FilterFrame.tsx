@@ -1,12 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Button } from '@renderer/DesignSystem/Controls/Button'
+import { Button } from '@renderer/DesignSystem/Buttons'
 import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
 import type { FilterRule, SavedView } from '@shared/views'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { SegmentRun } from '@renderer/DesignSystem/Fields/SegmentRun'
 import * as sr from '@renderer/DesignSystem/Fields/segmentRun.css'
-import { EntityIcon } from '@renderer/Components/EntityIcon'
+import { EntityIcon } from '@renderer/Utilities/EntityIcon'
 import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import {
   DisclosureRow,
@@ -22,11 +22,8 @@ import {
   footingLabel,
   footingSymbol,
 } from '@renderer/DesignSystem/Menus/menu-base.css'
-import { PickerMenu, PickerOption } from '@renderer/DesignSystem/Pickers/PickerMenu'
-import {
-  PICKER_MAX_HEIGHT,
-  treePane,
-} from '@renderer/DesignSystem/Pickers/PickerMenu/pickerMenu.css'
+import { PickerMenu, PickerOption } from '@renderer/DesignSystem/Pickers/picker-base'
+import { PICKER_MAX_HEIGHT, treePane } from '@renderer/DesignSystem/Pickers/picker-base.css'
 import { OverScroll } from '@renderer/DesignSystem/Interactions/OverScroll'
 import { Reveal } from '@renderer/DesignSystem/Animation/Reveal'
 import { duration as motion, ms } from '@renderer/DesignSystem/Animation'

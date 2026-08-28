@@ -10,7 +10,7 @@ import {
   type Tab,
   toNavRef,
 } from '@shared/types'
-import { type ReconcileIndex, reconcileSelection, reconcileWith } from '../selection'
+import { type ReconcileIndex, reconcileSelection, reconcileWith } from '@renderer/Actions/selection'
 import { navKeysOf, reconcileIndexOf } from '../treeIndex'
 import {
   moveByKey,

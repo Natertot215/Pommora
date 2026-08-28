@@ -1,6 +1,6 @@
 import type { MutableKind, RenameHost } from '@shared/mutate'
 import { useEffect, useState } from 'react'
-import { useSession } from '../store'
+import { useSession } from '@renderer/store'
 import { RenamableLabel } from '@renderer/DesignSystem/Fields'
 
 /** `renamingPath` is set by the native context menu's Rename via `begin-rename`. Every host

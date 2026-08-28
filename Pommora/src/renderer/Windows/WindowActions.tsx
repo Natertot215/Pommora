@@ -1,4 +1,4 @@
-import { Button } from '@renderer/DesignSystem/Controls/Button'
+import { Button } from '@renderer/DesignSystem/Buttons'
 
 // The surface's swallow math sizes itself for exactly this pair — stays one component rather than
 // a shape each window re-declares.

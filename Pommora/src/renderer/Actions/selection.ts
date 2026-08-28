@@ -2,7 +2,7 @@
 // gone) or renamed/moved (its id survives but its path changed).
 
 import type { NexusTree, SelectionState } from '@shared/types'
-import { reconcileIndexOf } from './treeIndex'
+import { reconcileIndexOf } from '@renderer/treeIndex'
 
 /** Existence + live-path lookup per entity kind — projected from the tree's records once per push. */
 export interface ReconcileIndex {

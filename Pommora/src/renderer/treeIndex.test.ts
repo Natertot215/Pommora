@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { NexusTree } from '@shared/types'
 import { makeTree } from './Navigation/testTree'
-import { reconcileWith } from './selection'
+import { reconcileWith } from '@renderer/Actions/selection'
 import {
   containersByPathOf,
   navKeysOf,
