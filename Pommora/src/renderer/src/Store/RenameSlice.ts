@@ -2,7 +2,7 @@ import { DEFAULT_NEW_NAME, type MutableKind, type RenameHost } from '@shared/mut
 import { contextDirRel } from '@shared/nexusPaths'
 import { normalizePropertyName, wrapKey } from '@shared/governedKeys'
 import { orderWithSlot } from '../Views/creationOrder'
-import { findContainer, parentPathOf } from '../Detail/Scope'
+import { findContainer, parentPathOf } from '../Interface/Scope'
 import type { Slice } from './SessionState'
 
 interface RenameClaim {

@@ -28,7 +28,7 @@ import {
 } from '@renderer/Properties/Editing/filePick'
 import { useSession } from '../../store'
 import { pageMoveContext, runPageSendAction } from '../../pageMenuActions'
-import { findCollectionForSet } from '@renderer/Detail/Scope'
+import { findCollectionForSet } from '@renderer/Interface/Scope'
 import { isOpenInTabs } from '../../Tabs/tabsModel'
 import { useActiveView } from '../useActiveView'
 import { useViewOrders } from '../useViewOrders'
@@ -78,7 +78,7 @@ import {
 import { useViewCreation } from '../useViewCreation'
 import { TableRowDnd, useTableRowDrag } from '@renderer/Tables/tableDnd'
 import { solidColorCss } from '@renderer/DesignSystem/Tokens/solidColor'
-import { openWebLink } from '@renderer/openWebLink'
+import { openWebLink } from '@renderer/Links/openWebLink'
 import {
   linkAlias,
   linkEditText,
@@ -86,8 +86,8 @@ import {
   urlValueFromEdit,
   urlValueFromRename,
 } from '@shared/linkValue'
-import { resolveTitle, validateLink } from '@renderer/linkResolve'
-import { linkValueMenuTarget, showConnectionMenu } from '@renderer/Embeds/connectionMenu'
+import { resolveTitle, validateLink } from '@renderer/Links/linkResolve'
+import { linkValueMenuTarget, showConnectionMenu } from '@renderer/Links/connectionMenu'
 import { sameIds } from '../creationOrder'
 
 // ── TUNABLE ── how far past a column's edge the dragged column's center must travel before the slot

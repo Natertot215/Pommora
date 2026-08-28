@@ -14,7 +14,7 @@ import { DragGhost } from '@renderer/DesignSystem/Interactions/DragGhost'
 import { DropLine } from '@renderer/DesignSystem/Interactions/DropLine'
 import { armAutoScroll } from '@renderer/DesignSystem/Interactions/autoscroll'
 import { sectionEnd, type OutlineHeading } from '@renderer/MarkdownPM/editor/folding'
-import { moveHeadingSection } from '../Detail/pageEditor'
+import { moveHeadingSection } from '../Interface/pageEditor'
 
 // A flat insertion line marks the drop; levels never change, so no depth-indented line — the outline
 // re-nests the moved section by level once the document edit lands.

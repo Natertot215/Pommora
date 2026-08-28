@@ -3,8 +3,8 @@
 // resolver closed over a memoized render context would still deny it.
 
 import { isCommittableLink, type ResolveTitle } from '@shared/linkValue'
-import { useSession } from './store'
-import { resolveConnection } from './treeIndex'
+import { useSession } from '../store'
+import { resolveConnection } from '../treeIndex'
 
 export const resolveTitle: ResolveTitle = (rawTitle) =>
   resolveConnection(useSession.getState().tree, rawTitle)?.title ?? null

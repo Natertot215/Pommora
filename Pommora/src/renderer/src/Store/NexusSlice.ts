@@ -16,7 +16,7 @@ import { stabilize } from '@shared/treeStabilize'
 import { applyAccent, applySystemAccent } from '@renderer/DesignSystem/Theming/accent'
 import { applyPersonalization } from '@renderer/DesignSystem/Theming/personalization'
 import { reconcileIndexOf } from '../treeIndex'
-import { flushAllPageSaves } from '../Detail/pageFlush'
+import { flushAllPageSaves } from '../Interface/pageFlush'
 import type { Slice } from './SessionState'
 
 export interface NexusSlice {

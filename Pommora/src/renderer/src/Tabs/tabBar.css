@@ -11,7 +11,7 @@
   --tab-pinned-w: 34px; /* compact pinned tab (icon + accent) */
   --tab-pad-x: 12px;
   --tab-gap: 6px;
-  --tab-divider-w: var(--width-200);
+  --tab-divider-w: var(--segment-width);
   --tab-divider-h: 16px;
   --tab-over-scroll: var(--fade-base);
   --tab-plus-gutter: 28px; /* trailing room so the parked + clears the last tab's × */

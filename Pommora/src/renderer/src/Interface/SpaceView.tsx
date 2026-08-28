@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import type { NexusTree } from '@shared/types'
 import { BlockSurface } from '@renderer/Blocks/BlockSurface'
-import { DetailScaffold } from './DetailScaffold'
+import { InterfaceScaffold } from './InterfaceScaffold'
 import { findSpace } from './Scope'
 
 export function SpaceView({ tree, id }: { tree: NexusTree | null; id: string }): React.JSX.Element {
@@ -15,10 +15,10 @@ export function SpaceView({ tree, id }: { tree: NexusTree | null; id: string }):
       </div>
     )
   return (
-    <DetailScaffold owner={owner}>
+    <InterfaceScaffold owner={owner}>
       {/* Keyed per Space: the surface's debounced saves and editor session must never
           carry across an in-place host swap. */}
       <BlockSurface key={id} host={host} />
-    </DetailScaffold>
+    </InterfaceScaffold>
   )
 }

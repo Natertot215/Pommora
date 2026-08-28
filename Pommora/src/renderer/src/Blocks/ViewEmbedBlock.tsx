@@ -27,7 +27,7 @@ import { reorder, SortableZone, useDragItem } from '@renderer/DesignSystem/Inter
 import { optionRing } from '@renderer/DesignSystem/Components/Pickers/PickerMenu/pickerMenu.css'
 import { RenamableLabel } from '@renderer/DesignSystem/Components/Fields'
 import { IconPicker } from '@renderer/Settings/IconPicker'
-import { findCollection, findCollectionForSet, findSet } from '@renderer/Detail/Scope'
+import { findCollection, findCollectionForSet, findSet } from '@renderer/Interface/Scope'
 import { ViewRenderer } from '@renderer/Views/ViewRenderer'
 import { SettingsFrame } from '@renderer/Frames/SettingsFrame'
 import { hostedGutter } from '@renderer/DesignSystem/Menus/menu-surface.css'
@@ -49,7 +49,7 @@ import {
   segmentTrail,
   settingsBtn,
   settingsBtnActive,
-} from '@renderer/Detail/ActionBand.css'
+} from '@renderer/Interface/ActionBand.css'
 import * as s from './viewEmbed.css'
 
 function coerceConfig(raw: unknown, schema: PropertyDefinition[], fallbackId: string): SavedView {

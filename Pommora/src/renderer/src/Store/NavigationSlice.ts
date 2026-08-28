@@ -46,8 +46,8 @@ import {
   findSet,
   isDepth1Set,
   parentPathOf,
-} from '../Detail/Scope'
-import { crumbDepthFor } from '../Detail/Subfield/crumbs'
+} from '../Interface/Scope'
+import { crumbDepthFor } from '../Interface/Subfield/crumbs'
 import { ensureContainerView } from '../Views/viewMint'
 import type { SessionState, Slice } from './SessionState'
 

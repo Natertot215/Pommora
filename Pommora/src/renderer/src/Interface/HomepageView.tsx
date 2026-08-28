@@ -1,13 +1,13 @@
 import type { NexusTree } from '@shared/types'
 import { BlockSurface } from '@renderer/Blocks/BlockSurface'
-import { DetailScaffold } from './DetailScaffold'
+import { InterfaceScaffold } from './InterfaceScaffold'
 
 // Module-level: a fresh literal per render would churn every tile memo downstream.
 const HOMEPAGE_HOST = { kind: 'homepage' } as const
 
 export function HomepageView({ tree }: { tree: NexusTree | null }): React.JSX.Element {
   return (
-    <DetailScaffold
+    <InterfaceScaffold
       owner={{
         path: '',
         kind: 'homepage',
@@ -17,6 +17,6 @@ export function HomepageView({ tree }: { tree: NexusTree | null }): React.JSX.El
       }}
     >
       <BlockSurface host={HOMEPAGE_HOST} />
-    </DetailScaffold>
+    </InterfaceScaffold>
   )
 }

@@ -1,5 +1,5 @@
 import { useSession } from '../store'
-import { viewSettingsScope } from '../Detail/ViewSettingsScope'
+import { viewSettingsScope } from '../Interface/ViewSettingsScope'
 import { MenuSurface } from '@renderer/DesignSystem/Menus'
 import { SettingsFrame } from './SettingsFrame'
 import { PageMenu } from './PageMenu'
