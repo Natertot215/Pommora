@@ -26,6 +26,9 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 11. The trailing slot is one place: `chevron` · `value` + toggle · `switch` · `button` · `slider` · `field`; `detail` stays a separate passive text.
 12. `frames.css.ts` retains only geometry, drag-chrome, and roster exports; the 12 restating exports are gone.
 13. `Frames/frames.css.ts` `COLOR` and the frame-local heading/tone consts are gone.
+14. The search field in NavWindow, Trash, and NavView starts on the same left edge as its rows' icons; NavView's rows sit on the content edge its search, banner title, and subfield share.
+15. `NavTrail` owns its rung, tone, and vertical padding once; no consumer restates them; the Trash's checkboxes are gone and its actions are row-trailing buttons.
+16. The Settings window insets once — the body reads `--surface-inset`, rows read the row tokens — and a trailing field sits at the trailing edge like every other control.
 
 **Acceptance — the whole thing working:** with the app running, the sidebar, the toolbar Settings menu, a property-value picker, the NavWindow list, the Trash list, and the editor's `[[` autocomplete each show rows whose measured height is exactly `line-height + 2 × the surface's height token` (28 Standard, 23 Compact) with no per-surface override in the cascade, and `grep -rF -- "--row-inset" src` is zero while `grep -rF -- "--surface-inset" src` is not.
 
@@ -99,12 +102,22 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 
 - `MENU_GUTTER` → 0 (3) · `ROW_INSET` → 0 (4) · `--row-inset` → 0 (6) · `ROW_SIZE` → 0 (4) · `ROW_LINE` → 0 (4) · `--menu-row-size` → 0 (2) · `--menu-row-line` → 0 (2) · `ROW_GAP` → 0 (2) · `--top-row-block` → 0 (4) · `--bottom-row-block` → 0 (2)
 - `MenuFrameTopRow` → 0 (32) · `MenuBottomRow` → 0 (31) · `bottomBar` → 0 (3) · `MenuHeading` → 0 (7) · `compactRow` → 0 (3) · `optionsLabel` → 0 (10) · `allPropertiesLabel` → 0 (2) · `previewHeading` → 0 (3) · `configRow` → 0 (9) · `allHeadingRow` → 0 (2) · `mdpm-ac-row` → 0 (4) · `SettingsRow` → 0 (17) · `ValueRow` → 0 (15) · `FootingPick` → 0 (3)
-- `nav-item` → 0 (36 now, across seven files; `NavTrail` uses `nav-trail-*` and is untouched). `flushTrailing` → 0 (26). `settings-wide` → 0 (3).
+- `nav-item` → 0 (36 now, across seven files; `NavTrail` uses `nav-trail-*` and is untouched). `flushTrailing` → 0 (26). `settings-wide` → 0 (3). `trash-check` → 0. `--trash-lead` → 0. `--nav-list-lead` → 0 (the column's `--row-pad-lead` replaces it).
 - Control: `--surface-inset` → 8. Zero here means the sweep never ran.
 
 **Hazard Window:** Task 5 deletes `bottomBar`'s `margin-top: auto`; FilterFrame's locked branch is un-pinned from that commit until Task 20 lands its footer slot. No running-thing pass on FilterFrame between them; Gate 1's running pass records the deferral.
 
 ---
+
+### Phase 0 — The Tree
+
+#### Task 0: Commit the working tree
+
+**Requirement:** none — a precondition. The tree carries a parallel session's `Store/`, `Detail/Scope.ts`, and `Tabs/tabsModel.ts`; the plan's base commit must include them so every phase's `<base>..HEAD` is this work alone.
+
+**Steps:**
+- [ ] `git status --short` — list what's there; `npm run typecheck` — record its result in the Log (three `TS7006` errors sit in `Store/CacheSlice.ts` at planning time).
+- [ ] `git add -A Pommora/src && git commit -m "chore: the working tree before the menu recipe"`; record the hash as Phase 1's base.
 
 ### Phase 1 — The Recipe
 
@@ -322,7 +335,9 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 
 **Steps:**
 - [ ] Rewrite `NavList` rows; delete the classes; gates; `Navigation` tests pass.
-- [ ] Running pass: NavWindow list, NavView, Trash — rows 28, hover wash, selected pill, the pin in its gutter, the magnifier and row icons on one left edge, a pin reorder by drag lands.
+- [ ] `.nav-search-row` pads `var(--surface-inset)` block and `var(--row-pad-lead, var(--row-pad-x))` inline, on the same column that sets the rows' tokens, so the field's text origin is the rows' icon edge on every surface (today +2 / −10 / −12); its dead `gap` and `color` go (no magnifier is rendered — `SearchField` is a bare input).
+- [ ] `.nav-view` sets `--row-pad-x: 0` and its column pads `calc(var(--sidebar-clearance) + var(--content-edge))` — the one edge `.nav-view-head`, `.banner-title`, and `.subfield` already share — so NavView's rows stop sitting 12px inboard of the footer's trail; `navView.css:57-60`'s `--content-inset − --surface-lane` re-narrowing deletes.
+- [ ] Running pass: NavWindow list, NavView, Trash — rows 28, hover wash, selected pill, the pin in its gutter, the search text and row icons on one left edge, NavView rows on the subfield's edge, a pin reorder by drag lands.
 - [ ] Commit `refactor(navigation): NavList is a menu`.
 
 #### Task 10: Settings rows and the Settings window
@@ -331,7 +346,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 
 **Why:** `SettingsRow` is already a `MenuItem`; the window's `.settings-wide` seat and `.settings-empty` are the last Settings-local row chrome. Folds ahead of the roster (Task 15) so that task moves data, not styling.
 
-**Files:** `Settings/settingsWindow.css` — `.settings-empty` → `caption`; `.settings-wide` stays as the one width KNOB for a slider/path seat (mark it `KNOB`); `Settings/SettingsWindow.tsx` `RailTab` unchanged.
+**Files:** `Settings/settingsWindow.css` — `.settings-empty` → `caption`; the body's own padding and the rows' inset stack today (a double inset off the rail) — `.settings-body` pads `var(--surface-inset)` and nothing else, rows read the row tokens, `.settings-heading` and the section headings land on the rows' text edge; `.settings-wide`'s fixed 260px seat deletes — a trailing field or slider sits at the trailing edge like every switch (Task 14's `wide` gives it `--row-trailing-width` for the slider's track; a `PathField` hugs its content), so the asset-directory field stops sitting stranded mid-row; `Settings/SettingsWindow.tsx` `RailTab` unchanged.
 
 **Steps:**
 - [ ] Repoint; gates; commit `refactor(settings): the window's rows are the menu's`.
@@ -369,6 +384,40 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 **Steps:**
 - [ ] Rewrite; `MarkdownPM` autocomplete tests pass; running pass on `[[` in a page.
 - [ ] Commit `refactor(markdown): the autocomplete rows are the menu's`.
+
+#### Task 12a: `NavTrail` owns its look
+
+**Requirement:** 15
+
+**Why:** `NavTrail` supplies no rung, tone, or padding; nine consumers inject all three and four of them retype the same caption/secondary pair. The trail is one thing wherever it appears.
+
+**Files:**
+- Modify: `DesignSystem/Elements/NavTrail/navTrail.css.ts` — `trail` composes `text.caption.standard`, `color: c.label.secondary`, `paddingBlock: 'var(--trail-pad, 0px)'`; `emphasized`/`current` keep their tones.
+- Modify consumers to drop the restated pair: `Navigation/NavList.tsx` (`nav-item-path` → the `detail` slot, Task 9), `Settings/TrashFrame.tsx` (keeps `.is-historical` italic/tertiary as a state class on the trail), `Cards/Card.tsx` `card-loc` (`cards.css:170-172` deleted; `.card-loc-zone`'s `padding-top: 6px` KNOB becomes `--trail-pad` so the zone pads top and bottom alike), `Embeds/PageEmbed.tsx` `pgembed-crumbs`, `Windows/PageWindow.tsx` `page-window-crumbs`, `Frames/SettingsFrame.tsx` `crumbRow` (footnote → the trail's caption; a footing crumb reads as a trail).
+- Survivors: `Subfield` (`subline.emphasized` at `--label-control`, fixed 24px band — a different register by design), `PathField` (inherits its field's body rung).
+
+**Derivation:** `grep -rF "text.caption.standard" src | grep -i "trail\|crumb\|loc\|path"` → 4 at planning → 0. Control: `grep -rF "NavTrail" src` → ≥ 9.
+
+**Steps:**
+- [ ] Move the pair into `trail`; delete the four restatements; gates; running pass on a card's location zone, a nav row, a page embed's crumbs, the page window's tab crumbs.
+- [ ] Commit `refactor(navtrail): the trail owns its look`.
+
+#### Task 12b: The Trash is a menu
+
+**Requirement:** 15
+
+**Why:** The Trash's rows are `.nav-item`s with a checkbox that rewrites the pin's affordance (`trashFrame.css:92` says so) and a selection set only a native right-click can read. On the recipe, a row's actions are trailing `button`s, the head is the table's, and the checkbox and its 20px gutter delete.
+
+**Files:**
+- Modify: `Settings/TrashFrame.tsx` — rows through `MenuRowView` (`item`: lead icon, title, `detail` = the trail, a `trash-date` trailing text, trailing `button`s Restore ↺ and Delete Forever ✕ that act on the row); the `checked` set and `.has-checked` go; the context menu stays for Restore To; batch actions move to the head's trailing cluster acting on the filtered set ("Restore All" / "Delete All").
+- Modify: `Settings/trashFrame.css` — `--trash-gutter`, `--trash-lead`, `.trash-check`, `.has-checked` deleted; rows pad the column's `--row-pad-x` (= `--navwindow-inset` 14); the sibling separator re-keys on the row class; `.trash-head` keeps its two lanes and the shared 160px date lane, its name column padding reading the same `--row-pad-x`.
+- Test: `Settings/trashFrame.test.ts` (model) unchanged; add a render test that a row's Restore button calls `restore` with that row.
+
+**Failure half:** an empty trash → the caption line; a historical row → the trail italic/tertiary, its buttons still live; Delete Forever on a row that vanished underneath (an external `.trash` edit) → the existing refresh prunes it, the button's handler no-ops on a missing bundle.
+
+**Steps:**
+- [ ] Migrate; gates; running pass: rows 28 with the trail and date, buttons appear on hover and stay reachable, the head's lanes align with the rows', a batch action from the head.
+- [ ] Commit `refactor(trash): the Trash is a menu`.
 
 #### Gate 2 — every surface composes the recipe
 - [ ] Gates green; derivations re-run; `grep -rn "minHeight: '2[0-9]px'\|min-height: 2[0-9]px" src` → only `fields.css.ts` and non-row hits listed in the Log.
@@ -487,6 +536,8 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 ## Implementation Log
 
 ### Progress
+- [ ] **Phase 0** — The Tree
+  - [ ] Task 0 — commit the working tree
 - [ ] **Phase 1** — The Recipe · base `<commit>`
   - [ ] Task 1 — the four row tokens, `item` and `menuCompact`
   - [ ] Task 2 — stacking order
@@ -501,6 +552,8 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
   - [ ] Task 10 — Settings rows
   - [ ] Task 11 — value + the Scale row
   - [ ] Task 12 — Autocomplete
+  - [ ] Task 12a — NavTrail owns its look
+  - [ ] Task 12b — the Trash is a menu
 - [ ] **Phase 3** — The Roster
   - [ ] Task 13 — `menu-roster.tsx`
   - [ ] Task 14 — the trailing slot
@@ -520,6 +573,9 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 - Round 2 (build-breaking-agent, 08-27): 15 findings, all verified and folded — the TopRow's real height is 18 once its ramp is live (F1); `rowBox` takes `--row-pad-lead`/`--row-pad-trail` over `--row-pad-x` for the two asymmetric nav surfaces (F2); CardAddPicker's override rides the TopRow element (F3); the trailing cluster is flush by design and `flushTrailing` dies (F4); `wide` on the item (F5); `defaultOn` on the toggle tables (F6); Sort/Hidden render `MenuRowView` inside their drag shells (F7); `detail` caps at 55% (F8); WindowInspector's field box is not a row and leaves Task 8 (F9); `header` stays geometry (F10); `pickerControl.value` owns its tone (F11); `heading` reads `--row-pad-x` (F12); `.mdpm-ac` keeps its box (F13); counts 28 / 12 / calendar-only (F14); the inert row's tooltip on an inner span (F15). Latent: `rowDragging` declared twice — moves to the recipe in Task 1. Unknown carried into Task 1's steps: the composed `pane` under `:has()`.
 
 ### Open Against Later Tasks
+- Task 12b: "rail actions" read as row-trailing `button`s (Restore · Delete Forever) with batch actions in the head — awaiting Nathan's confirmation.
+- Task 12a: the trail's vertical padding rule (`--trail-pad`, set by the card zone only) — awaiting Nathan's confirmation.
+
 ### Deviations
 ### Lessons
 ### Sequenced After
