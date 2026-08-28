@@ -235,11 +235,6 @@ Where each goes: menu and sidebar rows → Body; menu headings → Headline / Em
 | GlassControls | `GlassControls` · `CONTROL_OPTICS`            | Liquid glass on the button controls.                                    |
 | GlassSegment  | `GlassSegment`                                | Liquid glass on the small on-control segments.                          |
 
-| Tier | Wearer |
-| ------------ | ------------------------------------------------------------------------------------------ |
-| GlassPane    | `InspectorPane`, `SidePane`, and `PickerMenu` with `glass="pane"` — `ConnectionPane`, `AutocompletePane` |
-| GlassSurface | `PickerMenu` by default, and `NotchedShell` beneath `MenuSurface`                          |
-| GlassWindow  | `WindowBase` and `ImagePicker`                                                          |
 
 | Visual | SURFACE_FROST | WINDOW_FROST         | GHOST_FROST |
 | ---------------- | ---------- | -------------------- | ----------- |
@@ -350,10 +345,10 @@ Where each goes: menu and sidebar rows → Body; menu headings → Headline / Em
 
 #### Windows
 
-| Title | Export | What it is |
-| ------------- | ------------------------------------- | ----------------------------------------------------- |
-| WindowBase | `WindowBase` | The floating window surface every in-app window mounts; its own dimensions — toolbar height, side-pane widths, footer height, the trailing-control slide — are custom properties in `window-base.css` a host may retune.[^1] |
-| SidePane | `SidePane` · `sidePaneWidth` | A pane carried on a window's edge by `--io`. |
+| Title      | Export                       | What it is                                                                                                                                                                                                                   |
+| ---------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| WindowBase | `WindowBase`                 | The floating window surface every in-app window mounts; its own dimensions — toolbar height, side-pane widths, footer height, the trailing-control slide — are custom properties in `window-base.css` a host may retune.[^1] |
+| SidePane   | `SidePane` · `sidePaneWidth` | A pane carried on a window's edge by `--io`.                                                                                                                                                                                 |
 
 ### Menus
 
