@@ -441,7 +441,7 @@ Every task below is written as **Today → Becomes**; line numbers are at `7f358
 **Failure half:** zero sections → an empty fragment; a section with `title` and zero rows → the heading alone (shown, so a data bug is visible); an unknown `trailing.kind` → a compile error (closed union).
 
 **Steps:**
-- [ ] Write the failing tests; implement; gates; commit `feat(menus): the index`.
+- [x] Write the failing tests; implement; gates; commit `feat(menus): the index`.
 
 #### Task 14: The trailing slot inside `MenuItem`
 
