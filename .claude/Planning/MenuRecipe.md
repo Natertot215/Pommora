@@ -567,6 +567,22 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 
 ---
 
+## Landing
+
+When Progress shows every task ticked with a hash and Gate 4 closed, the plan is not done — it is claimed. Landing is four dispatches and a record, in this order, and none is skipped.
+
+**1. The Delivery Claim.** Write it into the Log's Closeout as checkable assertions, each with its evidence: every numbered Requirement (1–16) traces to a landed task by hash; the Acceptance criterion held — name the six surfaces and the measured heights (28 / 23) and the two greps (`--row-inset` → 0, `--surface-inset` → 8); no new dependency; no mechanism declared twice (`rowDragging`, the content edge, the heading, the trail's look — one home each, grep-proven); nothing left with nothing to vary (the Dead Vocabulary sweep at 0 against its control, `frames.css.ts` at 28); no work added to a high-frequency path (no per-render row rebuilds — Settings' subscriptions stayed per row).
+
+**2. The neutral verifier — "Is this true?"** A `general-purpose` agent handed the Claim, the Requirements and Acceptance from this document's head, the Rulings, and the full range `<Task 0 hash>..HEAD` — and nothing else. It answers per assertion: holds, overstated, or missing, with file:line. It is not asked to attack. A "no" on any assertion is a fix and a re-claim before step 3.
+
+**3. The attack.** `build-breaking-agent` on the same range, briefed per *Briefing a Reviewer* with the Rulings as the do-not-re-raise list, asked for reachable defects only — what breaks, not what's missing. Every finding verified against the code by the orchestrator; fixed in an addendum commit or rejected with its reason in the Log. Three rounds maximum; past that, what's open goes to Nathan.
+
+**4. The running pass, Nathan's.** A named list of every user-visible surface the plan touched — the sidebar, each toolbar menu and frame, both FilterFrame branches, a value picker, CardAddPicker, the Calendar lists, NavWindow, NavView, the Trash (rows, overlay, search edge, head lanes), the Settings window (rail, every frame, the asset-directory field, a slider), the `[[` autocomplete, a card's trail zone, a page embed's crumbs, the icon picker — with what to look for at each (28 or 23, one left edge, flush trailing, TopRows at 18). He looks; what he flags is a Task, not a note.
+
+**5. The record.** Run the Dead Vocabulary sweep one last time against its control. Rewrite what the plan made false and hasn't yet: `DesignSystemPM.md` §Menus (the kinds, the tokens, the index), its `:221` sentence and `:364-366` rows, the Geometry table's row-token rows; `Cohesion-Rulings.md` (the autocomplete exemption gone, the "declared once, chosen per pane" ruling added); `InterfacePM.md` / `NavigationPM.md` where the Trash's checkboxes or NavList's own rows are described; `HandoffPM.md:49`. Draft the History entry in chat in plain language — what a row is now, what deleted, the visible changes, the commit range and the code-only line delta — and file it only on Nathan's word. Route Lessons to `.claude/Guidelines` (the vars-not-properties rule for vanilla-extract variants belongs in `Cohesion-Rulings.md`). Write Sequenced After as the Part 2 brief: leading glyph size per variant, `--list-inset`, the indent literal and its `sidebarDnd` mirror, the Figma components that follow (Menu Item at 28/23, Heading, TopRow, Footing, Separator). Update `RendererRefactor.md`'s Menu row to point at the History entry, `ContextPM.md`'s focus and Immediate Work, and run `/handoff`.
+
+**6. Commit and stop.** Everything above rides explicit-path commits on `main`; pushing to origin is Nathan's call. The plan's Status becomes "landed — <History entry>"; the file stays as the record.
+
 ## The Loop
 
 Every phase runs the same loop. Nothing advances on a summary; every claim is re-checked by the next hand.
