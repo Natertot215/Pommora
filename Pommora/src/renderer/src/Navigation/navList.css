@@ -1,13 +1,10 @@
-/* The search row every list-bearing surface wears. Everything aligns to --navwindow-inset: the
-   divider (via margin, not full-bleed), the magnifier, and the rows' icon + path edges — rows carry
-   the inset on nav-item-main, so the scroll box adds none. Border and outline are SearchField's. */
+/* The search row every list-bearing surface wears: its divider sits on --navwindow-inset and its text
+   on the rows' icon edge. Border and outline are SearchField's. */
 .nav-search-row {
   display: flex;
   align-items: center;
-  gap: 6px;
   margin: 0 var(--navwindow-inset);
-  padding: var(--surface-inset);
-  color: var(--label-tertiary);
+  padding: var(--surface-inset) calc(var(--content-inset) - var(--navwindow-inset));
   border-bottom: var(--width-100) solid var(--border-light);
   flex-shrink: 0;
 }
@@ -16,6 +13,8 @@
 }
 
 .nav-list {
+  --row-pad-x: var(--navwindow-inset);
+  --row-pad-lead: var(--content-inset);
   list-style: none;
   margin: 0;
   padding: 0;
@@ -23,82 +22,15 @@
   flex-direction: column;
   gap: 1px;
 }
-.nav-item {
-  position: relative;
-  display: flex;
-  align-items: center;
-  border-radius: 6px;
-  /* The hover fill fades in AND out on the pane's own open speed — symmetric (ease-in-out), never
-     a slow linger. */
-  transition: background var(--duration-fast) ease-in-out;
-}
-/* Pin toggle centered in the row's left inset gutter (absolute so it never shifts the row content out
-   of alignment with un-pinned rows). Shares the gallery's hover-reveal mechanism: fades in on the row
-   hover in label-tertiary to pin, holds solid in the accent once pinned. */
-.nav-item-pin {
-  position: absolute;
-  left: calc(var(--navwindow-inset, 12px) / 2);
-  top: 50%;
-  transform: translate(-50%, -50%);
+.nav-pin {
   display: flex;
   padding: 0;
   border: none;
   background: none;
   color: var(--label-tertiary);
   cursor: pointer;
-  opacity: 0;
-  transition: opacity var(--duration-base) var(--ease-base);
 }
-.nav-item:hover .nav-item-pin {
-  opacity: 1;
-}
-.nav-item-pin.is-pinned {
+.nav-pin.is-pinned {
   color: var(--accent);
   opacity: 1;
-}
-.nav-item:hover {
-  background: var(--state-hover);
-}
-.nav-item.is-dragging {
-  opacity: var(--state-ghost);
-}
-.nav-item-main {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  /* Content (icon + path edges) aligns to the pane's shared inset; the highlight spans full-width. */
-  padding: 6px var(--navwindow-inset, 8px);
-  min-width: 0;
-  text-align: left;
-  background: none;
-  border: none;
-  font: inherit;
-  color: inherit;
-  cursor: pointer;
-}
-.nav-item-lead {
-  flex: 0 0 auto;
-  color: var(--label-secondary);
-}
-.nav-item-title {
-  flex: 1 1 auto;
-  min-width: 0;
-  font-size: var(--text-body-size);
-  color: var(--label-primary);
-  --over-scroll-fade: var(--fade-base);
-}
-.nav-item-path {
-  flex: 0 1 auto;
-  min-width: 0;
-  max-width: 55%;
-  margin-left: auto;
-  color: var(--label-secondary);
-  --over-scroll-fade: var(--fade-base);
-}
-.nav-item-inert {
-  opacity: var(--state-inactive);
-  padding: 5px var(--navwindow-inset, 8px);
-  gap: 7px;
-  cursor: default;
 }

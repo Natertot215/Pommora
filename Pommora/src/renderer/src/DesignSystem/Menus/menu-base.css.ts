@@ -119,6 +119,16 @@ export const rowDisabled = style({
 
 export const rowDragging = style({ opacity: 'var(--state-ghost)' })
 
+export const overlay = style({
+  position: 'absolute',
+  left: 'calc(var(--row-pad-lead) / 2)',
+  top: '50%',
+  transform: 'translate(-50%, -50%)',
+  opacity: 0,
+  transition: 'opacity var(--duration-base) var(--ease-base)',
+  selectors: { [`${item}:hover &`]: { opacity: 1 } },
+})
+
 export const side = style({
   display: 'flex',
   alignItems: 'center',
@@ -136,7 +146,7 @@ export const titleWrap = style({
   gap: '2px',
 })
 
-export const titleText = style({})
+export const titleText = style({ vars: { '--over-scroll-fade': 'var(--fade-base)' } })
 
 export const titleInput = style([
   base,
@@ -196,8 +206,12 @@ export const accessoryButton = style({
   color: c.label.tertiary,
 })
 
-export const detail = style([text.footnote.emphasized])
+export const detail = style([
+  text.footnote.emphasized,
+  { flex: '0 1 auto', minWidth: 0, vars: { '--over-scroll-fade': 'var(--fade-base)' } },
+])
 
+globalStyle(`${side}:has(${detail})`, { flex: '0 1 auto', minWidth: 0, maxWidth: '55%' })
 globalStyle(`${footing} ${accessoryButton}`, { color: c.label.secondary })
 globalStyle(`${footingBar} ${detail}`, { color: c.label.secondary })
 

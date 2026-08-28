@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Checkbox } from '@renderer/DesignSystem/Components/Controls/Checkbox'
 import { SearchField } from '@renderer/DesignSystem/Components/Fields'
-import { OverScroll, overScrollEllipsis } from '@renderer/DesignSystem/Interactions/OverScroll'
+import { overScrollEllipsis } from '@renderer/DesignSystem/Interactions/OverScroll'
 import { NavTrail } from '@renderer/DesignSystem/Elements/NavTrail'
+import { MenuItem } from '@renderer/DesignSystem/Menus'
+import { overlay } from '@renderer/DesignSystem/Menus/menu-base.css'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { entityIcon, Icon } from '@renderer/DesignSystem/Symbols'
 import { text } from '@renderer/DesignSystem/Tokens'
@@ -337,35 +339,38 @@ function TrashRowView({
   defaultIcons: Personalization['defaultIcons']
 }): React.JSX.Element {
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: a pointer convenience over the checkbox inside it, which already carries the role, the tab stop and the keyboard — a second stop per row would say there were two things to reach
-    <div
-      className={cx('nav-item', row.historical && 'is-historical')}
-      onClick={onToggle}
-      onContextMenu={(e) => {
-        e.preventDefault()
-        onMenu()
-      }}
-    >
-      <Checkbox
-        className="trash-check"
-        small
-        state={checked}
-        onChange={onToggle}
-        ariaLabel={`Select ${row.title}`}
-      />
-      <div className="nav-item-main table-segment">
-        <Icon name={icon} size="title3" className="nav-item-lead" />
-        <OverScroll className="nav-item-title">{row.title}</OverScroll>
+    <MenuItem
+      className="trash-row table-segment"
+      leading={<Icon name={icon} size="title3" />}
+      detail={
         <NavTrail
           segments={row.crumbs.map((crumb) => ({
             title: crumb.title,
             icon: crumb.kind && entityIcon(crumb.kind, undefined, defaultIcons),
           }))}
           iconSize="control"
-          className={cx('nav-item-path', text.caption.standard)}
+          className={cx(text.caption.standard, row.historical && 'is-historical')}
         />
-      </div>
-      <span className={cx('trash-date', text.caption.standard, overScrollEllipsis)}>{when}</span>
-    </div>
+      }
+      trailing={
+        <span className={cx('trash-date', text.caption.standard, overScrollEllipsis)}>{when}</span>
+      }
+      overlay={
+        <Checkbox
+          className={cx(overlay, 'trash-check')}
+          small
+          state={checked}
+          onChange={onToggle}
+          ariaLabel={`Select ${row.title}`}
+        />
+      }
+      onClick={onToggle}
+      onContextMenu={(e) => {
+        e.preventDefault()
+        onMenu()
+      }}
+    >
+      {row.title}
+    </MenuItem>
   )
 }
