@@ -121,7 +121,7 @@ export function PageView({
     <>
       <MarkdownEditor
         key={pageDetail.path}
-        initialBody={pageDetail.body}
+        initialBody={slot.body}
         title={pageDetail.title}
         path={pageDetail.path}
         cover={
