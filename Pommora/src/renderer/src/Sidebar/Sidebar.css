@@ -204,21 +204,21 @@
    query hook only. While the input is mounted, its title box must lay out as a flex row with the
    ellipsis off: an atomic inline input that overflows an ellipsizing box is elided from paint
    entirely (the invisible-rename-field bug), so the input takes the remaining track instead. */
-.row [class*="titleText"]:has(.row-title-input),
-.row [class*="titleText"] > span:has(.row-title-input) {
+.row .over-scroll-ellipsis:has(.row-title-input),
+.row .over-scroll-ellipsis > span:has(.row-title-input) {
   display: flex;
   align-items: center;
   min-width: 0;
   text-overflow: clip;
 }
-.row [class*="titleText"] > span:has(.row-title-input) {
+.row .over-scroll-ellipsis > span:has(.row-title-input) {
   flex: 1 1 0;
 }
 .row .row-title-input {
   flex: 1 1 0;
   width: auto;
 }
-.row [class*="titleText"] .row-icon {
+.row .over-scroll-ellipsis .row-icon {
   flex: none;
 }
 
@@ -248,7 +248,7 @@
   margin-left: var(--sidebar-hidechevron-pad);
 }
 
-.sidebar [class*="titleText"] {
+.sidebar .over-scroll-ellipsis {
   --over-scroll-fade: var(--fade-heavy);
 }
 
