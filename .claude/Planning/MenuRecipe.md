@@ -24,7 +24,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 9. `NavList` renders `MenuItem` rows on the menu column; `navList.css` holds no row box; NavWindow, NavView, and Trash are Standard.
 10. `AutocompletePane` rows are `item` under a `menuCompact` pane; the Cohesion ruling that exempted them is removed.
 11. The trailing slot is one place: `chevron` · `value` + toggle · `switch` · `button` · `slider` · `field`; `detail` stays a separate passive text.
-12. `frames.css.ts` retains only geometry exports; the 14 restating exports are gone.
+12. `frames.css.ts` retains only geometry, drag-chrome, and roster exports; the 12 restating exports are gone.
 13. `Frames/frames.css.ts` `COLOR` and the frame-local heading/tone consts are gone.
 
 **Acceptance — the whole thing working:** with the app running, the sidebar, the toolbar Settings menu, a property-value picker, the NavWindow list, the Trash list, and the editor's `[[` autocomplete each show rows whose measured height is exactly `line-height + 2 × the surface's height token` (28 Standard, 23 Compact) with no per-surface override in the cascade, and `grep -rF -- "--row-inset" src` is zero while `grep -rF -- "--surface-inset" src` is not.
@@ -99,7 +99,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 
 - `MENU_GUTTER` → 0 (3) · `ROW_INSET` → 0 (4) · `--row-inset` → 0 (6) · `ROW_SIZE` → 0 (4) · `ROW_LINE` → 0 (4) · `--menu-row-size` → 0 (2) · `--menu-row-line` → 0 (2) · `ROW_GAP` → 0 (2) · `--top-row-block` → 0 (4) · `--bottom-row-block` → 0 (2)
 - `MenuFrameTopRow` → 0 (32) · `MenuBottomRow` → 0 (31) · `bottomBar` → 0 (3) · `MenuHeading` → 0 (7) · `compactRow` → 0 (3) · `optionsLabel` → 0 (10) · `allPropertiesLabel` → 0 (2) · `previewHeading` → 0 (3) · `configRow` → 0 (9) · `allHeadingRow` → 0 (2) · `mdpm-ac-row` → 0 (4) · `SettingsRow` → 0 (17) · `ValueRow` → 0 (15) · `FootingPick` → 0 (3)
-- `nav-item` → 0 (36 now, across seven files; `NavTrail` uses `nav-trail-*` and is untouched).
+- `nav-item` → 0 (36 now, across seven files; `NavTrail` uses `nav-trail-*` and is untouched). `flushTrailing` → 0 (26). `settings-wide` → 0 (3).
 - Control: `--surface-inset` → 8. Zero here means the sweep never ran.
 
 **Hazard Window:** Task 5 deletes `bottomBar`'s `margin-top: auto`; FilterFrame's locked branch is un-pinned from that commit until Task 20 lands its footer slot. No running-thing pass on FilterFrame between them; Gate 1's running pass records the deferral.
@@ -126,7 +126,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 - Docs: `DesignSystemPM.md:197` row → the four tokens; `RendererRefactor.md:20` → one line pointing here.
 
 **Interfaces**
-- Produces: `rowBox` (the box: padding, ramp, layout, color, `position: relative`), `item = [rowBox, rowShell]` (unchanged name), both reading `--row-pad-y` / `--row-pad-x` / `--row-size` / `--row-line` with Standard defaults; `menuCompact`, the surface class that sets the four to the Compact pair and the control ramp.
+- Produces: `rowBox` (the box: padding, ramp, layout, color, `position: relative`), `item = [rowBox, rowShell]` (unchanged name), both reading `--row-pad-y` / `--row-pad-x` (with `--row-pad-lead` / `--row-pad-trail` overriding one side) / `--row-size` / `--row-line` with Standard defaults; `rowDragging` moves here from `frames.css.ts:173` and `outlineMenu.css.ts:12`, which each declared it; `menuCompact`, the surface class that sets the four to the Compact pair and the control ramp.
 - Assumed by: every later task; `pickerMenu.css.ts pane` wears `menuCompact`.
 
 **Derivation**
@@ -137,13 +137,14 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 **Failure half:** a surface that sets neither pair → Standard (the `:root` tokens are the fallback, no `var()` default needed); a `MenuItem` with a `subLabel` → grows past 28, since nothing floors it; a picker with zero options → the pane's `surface` padding alone, no row.
 
 **Steps:**
-- [ ] In `menu-base.css.ts`, `globalStyle(':root', { vars: { '--row-height-standard': '6px', '--row-height-compact': '4px', '--row-width-standard': '6px', '--row-width-compact': '4px' } })`. `rowBox`: `padding: 'var(--row-pad-y, var(--row-height-standard)) var(--row-pad-x, var(--row-width-standard))'`, `fontSize: 'var(--row-size, ' + font.scale.body.size + ')'`, `lineHeight` likewise with body line, `position: 'relative'`, the flex/gap/color `item` has today; `item = style([rowBox, rowShell])`; delete `minHeight`, `ROW_SIZE`, `ROW_LINE`, `ROW_GAP` (inline `gap: '8px'`). Add `export const menuCompact = style({ vars: { '--row-pad-y': 'var(--row-height-compact)', '--row-pad-x': 'var(--row-width-compact)', '--row-size': font.scale.control.size, '--row-line': font.scale.control.line } })`.
+- [ ] In `menu-base.css.ts`, `globalStyle(':root', { vars: { '--row-height-standard': '6px', '--row-height-compact': '4px', '--row-width-standard': '6px', '--row-width-compact': '4px' } })`. `rowBox`: `paddingBlock: 'var(--row-pad-y, var(--row-height-standard))'`, `paddingLeft: 'var(--row-pad-lead, var(--row-pad-x, var(--row-width-standard)))'`, `paddingRight: 'var(--row-pad-trail, var(--row-pad-x, var(--row-width-standard)))'` — `--row-pad-x` is the one knob a symmetric surface sets; a surface holding an affordance in its lead gutter (NavWindow 20/12, Trash 34/14) names `--row-pad-lead` alone, `fontSize: 'var(--row-size, ' + font.scale.body.size + ')'`, `lineHeight` likewise with body line, `position: 'relative'`, the flex/gap/color `item` has today; `item = style([rowBox, rowShell])`; delete `minHeight`, `ROW_SIZE`, `ROW_LINE`, `ROW_GAP` (inline `gap: '8px'`). Add `export const menuCompact = style({ vars: { '--row-pad-y': 'var(--row-height-compact)', '--row-pad-x': 'var(--row-width-compact)', '--row-size': font.scale.control.size, '--row-line': font.scale.control.line } })`.
 - [ ] `pickerMenu.css.ts`: `pane` composes `menuCompact` and drops its `vars`; `option` = `style([item, { justifyContent: 'center', whiteSpace: 'nowrap', border: 'none', background: 'none' }])` — delete its `padding`, `fontSize`, `lineHeight`, `text.control.standard`, `color`. Run `npx vitest run src/renderer/src/DesignSystem/Components/Pickers` → pass.
 - [ ] `dropOutline.css.ts`: `const RAIL_CENTER_X = \`calc(var(--row-width-standard) + ${RAIL_W / 2}px)\``; delete `ROW_INSET`; `menu-base.css.ts` drops the import.
 - [ ] `menu-surface.css.ts`: delete `MENU_GUTTER`; both paddings read `var(--surface-inset)`.
 - [ ] Repoint the four `--row-inset` readers; delete `--row-inset` from `styles.css`.
 - [ ] Delete `cardAddPicker.css.ts` and its import + `compactRow` use; delete `calendarPicker.optionRow` and its use.
 - [ ] `npm run format`; gates green; `grep -rF -- "--row-inset" src` → 0; `grep -rF -- "--surface-inset" src` → 8.
+- [ ] `npm run build`; `grep -o '[^{}]*picker-checked[^{}]*{' out/renderer/assets/index-*.css | head -3` — one class immediately before `:has(`, since `pane` is composed for the first time.
 - [ ] Docs rows; commit `refactor(menus): the row is its line plus one of two padding tokens`.
 
 #### Task 2: Order the stylesheet and the row file as a menu stacks
@@ -156,7 +157,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 - Modify: `DesignSystem/Menus/menu-base.css.ts` — sections in order: `// Shell` (`rowShell`) · `// TopRow` (`topRow`, `topRowPad` → folded into `topRow`, `topBarLeadingLabel`, `topBarLeadingSymbol`, `topBarTrailingLabel`, `topBarTrailingSymbol`, `paneSeparator`) · `// Heading` (`heading`) · `// Item` (`item`, `menuCompact`, `itemSelected`, `itemEmphasized`, `rowDisabled`, `side`, `titleWrap`, `titleText`, `titleInput`, `subLabel`, `flushAffordance`, `flushTrailing`) · `// ActionRow` (`actionRow`) · `// Separator` · `// Caption` · `// Footing` (`footing`, `footingLabel`, `footingSymbol`, `footerLockAction`, `lockIcon`, the two `globalStyle`s) · `// Trailing` (`accessoryButton`, `detail`) · `// Column` (`menu`, `MENU_MAX_HEIGHT`, `scrollFrame*`).
 - Modify: `DesignSystem/Menus/menu-row.tsx` — same order: `MenuTopRow` · `MenuItem` · `MenuSeparator` · `MenuCaption` · `MenuFooting` (Task 5) · `AccessoryButton`, `FooterLockButton`, `FooterMoreButton` · `Menu`, `MenuScrollFrame`.
 
-**Survivors:** `flushAffordance` moves to `// Shell` beside `rowShell`, so `topRow` and `footing` compose an already-declared class. Nothing else depends on order: every variant sets the vars `rowBox` reads (Forced By), so `// TopRow` sitting above `// Item` cannot let `item`'s padding win. Verify with the built CSS: a TopRow measures 20, not 28.
+**Survivors:** `flushAffordance` moves to `// Shell` beside `rowShell`, so `topRow` and `footing` compose an already-declared class. Nothing else depends on order: every variant sets the vars `rowBox` reads (Forced By), so `// TopRow` sitting above `// Item` cannot let `item`'s padding win. Verify with the built CSS: a TopRow measures 18 (caption line 14 + 2·2) — its ramp is live for the first time; today's 20 was the body line winning.
 
 **Steps:**
 - [ ] Move declarations into sections; no value changes. `npx biome check` → clean.
@@ -170,7 +171,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 **Why:** Nine section titles in five classes at three rungs; the recipe's own `heading` has no production consumer. One class at footnote.emphasized · tertiary on the row's horizontal inset, and the frames stop deciding type.
 
 **Files:**
-- Modify: `menu-base.css.ts` — `heading = style([text.footnote.emphasized, { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px', margin: 0, padding: '6px var(--row-width-standard) 2px', color: c.label.tertiary, userSelect: 'none' }])` (the vertical pad is `previewHeading`'s, the only production heading that had one); add `headingCaps = style({ textTransform: 'uppercase', letterSpacing: '0.04em' })`; export both from `Menus/index.ts`.
+- Modify: `menu-base.css.ts` — `heading = style([text.footnote.emphasized, { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px', margin: 0, padding: '6px var(--row-pad-x, var(--row-width-standard)) 2px', color: c.label.tertiary, userSelect: 'none' }])` (the vertical pad is `previewHeading`'s, the only production heading that had one); add `headingCaps = style({ textTransform: 'uppercase', letterSpacing: '0.04em' })`; export both from `Menus/index.ts`.
 - Modify: `menu-row.tsx` — delete `MenuHeading`; `DesignSystem/Menus/index.ts` drops the export; `Showcase/leaves/MenuLeaf.tsx:69-79` becomes a `<div className={heading}>` specimen.
 - Modify: `Frames/frames.css.ts` — delete `optionsRow`, `optionsLabel`, `allPropertiesLabel`, `COLOR`; `Properties/Editors/{OptionEditor:112-113,StatusEditor:131-141,DateTimeEditor:63}` read `heading` on the wrapper (the "Options" row's trailing `+` sits inside it); StatusEditor's inline rename caret composes `text.footnote.emphasized` directly, not `heading`. `PropertyFrame.tsx:141` is Task 6's.
 - Modify: `Frames/groupFrame.css.ts` — delete `previewHeading`; `GroupFrame.tsx:424,473` read `heading`.
@@ -193,7 +194,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 **Why:** `MenuTopRow` has one caller — `MenuFrameTopRow` — and the split is a leftover of a bare form nothing uses. TopRow owns its rung, tone, padding, and its flush separator, and stops composing `actionRow`.
 
 **Files:**
-- Modify: `menu-base.css.ts` — `topRow = style([flushAffordance, { vars: { '--row-pad-y': '2px', '--row-size': font.scale.caption.size, '--row-line': font.scale.caption.line }, fontWeight: font.weight.emphasized, color: c.label.secondary }])` — vars, not properties, so it holds at 20 wherever it sits (absorbs `topRowPad`; the `--top-row-block` knob goes — `CardAddPicker.tsx:128`'s `0px` override becomes `vars: { '--row-pad-y': 0 }` on its own pane class); `topBarLeadingLabel = style([text.footnote.emphasized, { color: c.label.secondary }])`, `topBarTrailingLabel` likewise at tertiary — no `actionRow` composition.
+- Modify: `menu-base.css.ts` — `topRow = style([flushAffordance, { vars: { '--row-pad-y': '2px', '--row-size': font.scale.caption.size, '--row-line': font.scale.caption.line }, fontWeight: font.weight.emphasized, color: c.label.secondary }])` — vars, not properties, so it holds at 20 wherever it sits (absorbs `topRowPad`; the `--top-row-block` knob goes — `CardAddPicker.tsx:128`'s `0px` override becomes `vars: { '--row-pad-y': 0 }` passed as `className` on its `MenuTopRow` — the row element, never the pane, since every row reads `--row-pad-y`; `paneSeparator`'s margin bakes to `2px`); `topBarLeadingLabel = style([text.footnote.emphasized, { color: c.label.secondary }])`, `topBarTrailingLabel` likewise at tertiary — no `actionRow` composition.
 - Modify: `menu-row.tsx` — one `MenuTopRow({ label, onBack, trailing?, current? })` that renders the row and its flush `MenuSeparator`; delete `MenuFrameTopRow`; `index.ts` exports `MenuTopRow` only.
 - Modify the 12 `MenuFrameTopRow` files (Derivation) — rename to `MenuTopRow`; `CardAddPicker.tsx:41` local variable `topRow` renamed to avoid shadowing.
 
@@ -265,7 +266,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 **Why:** These are the 20 classes that restate the row's box; with `item` reading tokens they have nothing left to say. Deleting them is what gets `frames.css.ts` to geometry-only.
 
 **Files:**
-- `Frames/frames.css.ts`: delete `configRow`, `optionRow`, `ghostOptionRow` box props, `crumbRow` box props → `rowBox`; `header`'s asymmetric padding → `rowBox` (it hosts an editable title field and keeps its own `--field-ring`); `topRowAction`, `eyeInert`, `rowPlus`, `optionsAdd` → `accessoryButton`; `compactTitle`, `configLabel` → keep as trailing/leading text classes for now (Task 14 moves them).
+- `Frames/frames.css.ts`: delete `configRow`, `optionRow`, `ghostOptionRow` box props, `crumbRow` box props → `rowBox`; `header` stays a geometry export (its `2px 0 6px 2px` aligns the icon button's dash with the row-icon column, and it hosts a 28px title field); `topRowAction`, `eyeInert`, `rowPlus`, `optionsAdd` → `accessoryButton`; `compactTitle`, `configLabel` → keep as trailing/leading text classes for now (Task 14 moves them).
 - `Frames/groupFrame.css.ts`: delete `chipRow`, `eyeSlot`; `subRow` keeps `SUB_ORDER_GAP` (a tuck, not a box).
 - `Frames/filterFrame.css.ts`: `ruleRow` → `[rowBox, { gap: '6px', paddingLeft: 0 }]` (a builder row: no hover, and row 0's field stays flush at the gutter); `addRow` → `accessoryButton`; `leadGlyph` → `side`.
 - `Properties/Editors/dateTimeEditor.css.ts`: delete `row` (28 floor); rows are `rowBox` (label + control, not clickable). `numberEditor.css.ts`: `row` keeps `marginTop` only.
@@ -286,10 +287,10 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 
 **Why:** The pane already wears the ramp for everyone inside; giving it the padding pair too is the whole ruling. The hosts that were hybrids (hosted SettingsFrame, BlockHandleMenu, ViewEmbedBlock's list, LayoutFrame's ⋯ menu) become Compact by inheritance — no per-host class.
 
-**Files:** `Blocks/handleMenu.css.ts` (`titleFieldRow` box, host `padding: '3px 6px'` → `rowBox`), `Blocks/viewEmbed.css.ts` `listPane` (no row box), `Windows/pageWindow.css` `.page-window-insp-row` (min-height 22 → `rowBox`; the inspector is Standard, it is a window), `CalendarPicker` `switchRow` (28 floor → `rowBox`), `ImagePicker` `sliderRow` (→ `rowBox`).
+**Files:** `Blocks/handleMenu.css.ts` (`titleFieldRow` box, host `padding: '3px 6px'` → `rowBox`), `Blocks/viewEmbed.css.ts` `listPane` (no row box), `CalendarPicker` `switchRow` (28 floor → `rowBox`), `ImagePicker` `sliderRow` (→ `rowBox`).
 
 **Derivation**
-- `grep -rn "min-height" src/renderer/src/Windows/pageWindow.css` → 1 (`:82`) → 0. `grep -n "minHeight" src/renderer/src/DesignSystem/Components/Pickers/CalendarPicker/calendarPicker.css.ts` → 1 (`:244`) → 0.
+- `grep -n "minHeight" src/renderer/src/DesignSystem/Components/Pickers/CalendarPicker/calendarPicker.css.ts` → 1 (`:244`) → 0. (`pageWindow.css`'s `.page-window-insp-row` is a filled field box inside `.page-window-insp-rows`, not a menu row — it stays.)
 - Control: `grep -n "minHeight" src/renderer/src/DesignSystem/Components/Fields/fields.css.ts` → 1 (`:33`, the field's own floor, survives).
 
 **Steps:**
@@ -304,8 +305,9 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 
 **Files:**
 - Modify first: `DesignSystem/Menus/menu-row.tsx` — `MenuItem` becomes a `forwardRef<HTMLDivElement>`, gains `onMouseDown?` and `overlay?: ReactNode` (rendered as the row's last child, positioned by the caller; `rowBox`'s `position: relative` anchors it). Three additions, no behavior change for existing callers.
+- Modify: `menu-base.css.ts` `detail` — `flex: '0 1 auto', minWidth: 0, maxWidth: '55%'` (today's `.nav-item-path` cap; a passive text never squeezes the title) and `titleText` gains `--over-scroll-fade: var(--fade-base)`.
 - Modify: `Navigation/NavList.tsx` — rows render `<MenuItem ref={drag?.ref} leading={icon} detail={<NavTrail …/>} overlay={<NavPinButton …/>} selected disabled className={dragging && rowDragging} onClick>`; the path is a trailing same-line `detail` (today's `.nav-item-path`: `margin-left: auto; max-width: 55%`), never a `subLabel`; the search header stays its own element.
-- Modify: `Navigation/navList.css` — delete `.nav-item`, `.nav-item-main`, `.nav-item-inert`, `.nav-item-title`, `.nav-item-path`, `.nav-item.is-dragging`; `.nav-list` (the column) sets `--row-pad-x: var(--navwindow-inset)` so each surface's rows keep its gutter (NavWindow 12, Trash 14, NavView 0) and the divider, magnifier, and row edges stay aligned; `.nav-item-pin`'s absolute placement moves to the `overlay` element's own class.
+- Modify: `Navigation/navList.css` — delete `.nav-item`, `.nav-item-main`, `.nav-item-inert`, `.nav-item-title`, `.nav-item-path`, `.nav-item.is-dragging`; `.nav-list` (the column) sets `--row-pad-x: var(--navwindow-inset)` and, where a lead affordance lives, `--row-pad-lead` (NavWindow `--nav-list-lead` 20, Trash `--trash-lead` 34) so each surface's rows keep its gutter (NavWindow 20/12, Trash 34/14, NavView 0/0) and the divider, magnifier, and row edges stay aligned; `.nav-item-pin`'s absolute placement moves to the `overlay` element's own class.
 - Modify the other four files with `nav-item` rules: `Windows/navWindow.css:119-123` (`--nav-list-lead` pad → the column's `--row-pad-x`; pin offset → the overlay class), `Settings/trashFrame.css:83,102,115` (the sibling separator, the hover checkbox reveal, the historical dimming — re-keyed on the `MenuItem` row via a `trash-row` className), `Detail/navView.css:63` (pin offset), `Tabs/tabStrip.css` (grep hit; confirm and re-key).
 - Modify: `Settings/trashFrame.css:43` — `--trash-lead` is the Trash column's `--row-pad-x`.
 - Modify: `Windows/NavWindow.tsx`, `Detail/NavView.tsx`, `Settings/TrashFrame.tsx` — no size class (Standard).
@@ -316,7 +318,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 **Derivation**
 - `grep -rF "nav-item" src` → 36 across `navList.css`, `NavList.tsx`, `navWindow.css`, `trashFrame.css`, `TrashFrame.tsx`, `navView.css`, `tabStrip.css` → 0. Control: `grep -rF "nav-list" src` → ≥ 3.
 
-**Failure half:** an empty result list → the column's padding only; a row with no path → no `detail`, still 28; a disabled (inert) row → `rowDisabled`, unhittable; a drag → `registerRow` fires through the forwarded ref (verify by reordering a pin).
+**Failure half:** an empty result list → the column's padding only; a row with no path → no `detail`, still 28; a disabled (inert) row → `rowDisabled`, unhittable, with its `title` tooltip on an inner span so it still fires; a drag → `registerRow` fires through the forwarded ref (verify by reordering a pin).
 
 **Steps:**
 - [ ] Rewrite `NavList` rows; delete the classes; gates; `Navigation` tests pass.
@@ -357,7 +359,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 
 **Why:** The pane is a `PickerMenu` (`bareSurface`) with a fully hand-rolled 28px row, `--fill-quaternary` selection, and no hover. As `item` inside a Compact pane it is 23, hovers, selects with `itemSelected`, and the `.mdpm-ac` max-height stops hardcoding `28px`.
 
-**Files:** `MarkdownPM/AutocompletePane.tsx` (rows → `MenuItem` with `selected`, `onMouseDown={pick}` carrying the `preventDefault` and the `.mdpm-ac-forget` guard — never `onClick`, which would take focus and close the pane; the pane's `font-size` override deleted, so the text drops 15 → 12), `MarkdownPM/Styles.css` `.mdpm-ac`, `.mdpm-ac-row*` (deleted; max-height reads the row's computed height via `--ac-row-h` = 23 or measures), `.claude/Guidelines/Cohesion-Rulings.md:66` deleted.
+**Files:** `MarkdownPM/AutocompletePane.tsx` (rows → `MenuItem` with `selected`, `onMouseDown={pick}` carrying the `preventDefault` and the `.mdpm-ac-forget` guard — never `onClick`, which would take focus and close the pane; the pane's `font-size` override deleted, so the text drops 15 → 12), `MarkdownPM/Styles.css` — `.mdpm-ac` keeps its pane box (width floor/cap, `overflow-y`, `padding: 4px`) and only its `max-height` line changes to `calc(var(--ac-rows) * 23px + 8px)`; `.mdpm-ac-row*` deleted, `.claude/Guidelines/Cohesion-Rulings.md:66` deleted.
 
 **Derivation**
 - `grep -rF "mdpm-ac-row" src` → 4 → 0. Control: `grep -rF "mdpm-ac" src` → ≥ 2.
@@ -385,7 +387,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 **Why:** The trailing kinds are named in seven places today; naming them once as a `Trailing` union and one `MenuRowView` renderer is what lets a presentational frame be a list of sections. `SettingsWindow`'s `Row` union is a settings *schema* (each arm carries a store key, each control subscribes itself) — it keeps its union and its per-row subscriptions, and its `RowControl` renders through `MenuRowView`; the roster owns rendering, never state.
 
 **Files:**
-- Create: `DesignSystem/Menus/menu-roster.tsx` — `type Trailing = { kind: 'chevron' } | { kind: 'value'; value: ReactNode; onToggle: () => void } | { kind: 'switch'; checked; onChange; ariaLabel } | { kind: 'button'; icon; onClick; ariaLabel } | { kind: 'slider'; …Slider props } | { kind: 'field'; children: ReactNode }`; `type MenuRow = { kind: 'heading'; label; caps? } | { kind: 'separator' } | { kind: 'caption'; text } | { kind: 'action'; label; trailing?; onClick } | { kind: 'item'; icon?; label; caption?; trailing?; selected?; disabled?; onSelect? }`; `type MenuSection = { title?; caps?; rows: MenuRow[] }`; `MenuRowView({ row })` renders one row; `MenuRoster({ sections })` maps sections → rows → `MenuRowView`. `Trailing` also carries `{ kind: 'picker'; …PickerControl props }` and `{ kind: 'color'; …ColorSwatch props }` so Settings' picker and color rows are not laundered through `field`.
+- Create: `DesignSystem/Menus/menu-roster.tsx` — `type Trailing = { kind: 'chevron' } | { kind: 'value'; value: ReactNode; onToggle: () => void } | { kind: 'switch'; checked; onChange; ariaLabel } | { kind: 'button'; icon; onClick; ariaLabel } | { kind: 'slider'; …Slider props } | { kind: 'field'; children: ReactNode }`; `type MenuRow = { kind: 'heading'; label; caps? } | { kind: 'separator' } | { kind: 'caption'; text } | { kind: 'action'; label; trailing?; onClick } | { kind: 'item'; icon?: ReactNode; label; caption?; trailing?; wide?; selected?; disabled?; onSelect? }` (`icon` is a node, so a chip or a wrapped glyph rides it); `type MenuSection = { title?; caps?; rows: MenuRow[] }`; `MenuRowView({ row })` renders one row; `MenuRoster({ sections })` maps sections → rows → `MenuRowView`. `Trailing` also carries `{ kind: 'picker'; …PickerControl props }` and `{ kind: 'color'; …ColorSwatch props }` so Settings' picker and color rows are not laundered through `field`.
 - Test: `DesignSystem/Menus/menu-roster.test.tsx` — each kind renders its element; a `switch` trailing keeps its `aria-label` on the button; a `heading` with `caps` wears `headingCaps`; an empty section renders nothing.
 
 **Interfaces**
@@ -400,9 +402,9 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 
 **Requirement:** 11
 
-**Why:** `detail` and `trailing` share one span today; `value` joined in Task 11. This makes the slot explicit — leading · title · [value] · [detail] · [trailing] — so the roster's `Trailing` maps to markup once.
+**Why:** `detail` and `trailing` share one span today; `value` joined in Task 11. This makes the slot explicit — leading · title · [value] · [detail] · [trailing] — so the roster's `Trailing` maps to markup once. The trailing cluster is **flush by design**: 23 of the 58 `MenuItem` sites pass `flushTrailing` today and none pass the opposite, so `item`'s right padding applies to the title, the cluster sits at the gutter edge, and `flushTrailing` deletes (the roster then needs no `className`).
 
-**Files:** `menu-row.tsx` `MenuItem`; `menu-base.css.ts` `// Trailing` (`side` stays the cluster class; `value`, `detail`, `accessoryButton` its members); `frames.css.ts` `compactTitle`, `configLabel` → deleted (`configLabel` is the item's own title at control density — Compact handles it; `compactTitle` is the chip's name and moves to `OptionRow`'s own stylesheet as geometry).
+**Files:** `menu-row.tsx` `MenuItem` (gains `wide?: boolean` — the trailing seat takes `--row-trailing-width`, the one KNOB `.settings-wide` was); `menu-base.css.ts` `// Trailing` (`side` stays the cluster class; `value`, `detail`, `accessoryButton` its members; `flushTrailing` deleted, its 23 sites cleaned); `frames.css.ts` `compactTitle`, `configLabel` → deleted (`configLabel` is the item's own title at control density — Compact handles it; `compactTitle` is the chip's name and moves to `OptionRow`'s own stylesheet as geometry).
 
 **Steps:**
 - [ ] Rewrite the markup; `GroupFrame.test.tsx` aria lookups pass; gates; commit `refactor(menus): the trailing slot`.
@@ -422,7 +424,9 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 
 **Requirement:** 11
 
-**Files:** `Frames/LayoutToggles.tsx`, `Frames/CardsOptions.tsx` → one `{ icon, label, key, invert? }[]` each rendered by `MenuRoster` with `switch` trailings; `frames.css.ts` `toggleRow` deleted.
+**Files:** `Frames/LayoutToggles.tsx`, `Frames/CardsOptions.tsx` → one `{ icon, label, key, invert?, defaultOn? }[]` each rendered by `MenuRoster` with `switch` trailings — `defaultOn` because `hide_column_icons` reads `?? true` and `set_cards` reads `?? true` while the other five read `?? false`; `frames.css.ts` `toggleRow` deleted.
+
+**Negative control:** on a view with none of the seven keys set, Column Icons and Set Cards show ON, the other five OFF — and flipping `defaultOn` on either shows the opposite.
 
 **Steps:**
 - [ ] Migrate; gates; commit `refactor(frames): the toggles are a table`.
@@ -431,7 +435,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 
 **Requirement:** 11
 
-**Files:** `Frames/SettingsFrame.tsx` (`ENTRIES` → `item` rows with `chevron`), `Frames/LayoutFrame.tsx` (`FRAME_ROWS`), `Frames/SortFrame.tsx`, `Frames/HiddenFrame.tsx` (rosters; `frozen()` → `disabled`).
+**Files:** `Frames/SettingsFrame.tsx` (`ENTRIES` → `MenuRoster` `item` rows with `chevron`), `Frames/LayoutFrame.tsx` (`FRAME_ROWS` likewise), `Frames/SortFrame.tsx` and `Frames/HiddenFrame.tsx` (rows render through `MenuRowView` **inside** their existing `RowShell` and `useFrameRegions` region divs — the drag structure stays; `MenuRoster` is for frames without one; `frozen()` → `disabled`; `hiddenRow` and `gp.subRow` ride `className` on `MenuRowView`, which accepts one for exactly these state classes).
 
 **Steps:**
 - [ ] Migrate one file per commit; `SortFrame.test.tsx`, `HiddenFrame` model tests pass.
@@ -440,7 +444,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 
 **Requirement:** 11
 
-**Files:** `Frames/GroupFrame.tsx`, `Properties/ValueRow.tsx` (deleted), `Frames/groupFrame.css.ts` (`pickerTone` global deleted — tone is the kind's).
+**Files:** `Frames/GroupFrame.tsx`, `Properties/ValueRow.tsx` (deleted), `Frames/groupFrame.css.ts` (`pickerTone` global deleted; its `label.control` tone moves onto `pickerControl.value` itself, so a picker's value reads at full strength wherever it sits).
 
 **Derivation:** `grep -rF "ValueRow" src` → 15 → 0; `grep -rF "FootingPick" src` → 3 → 0.
 
@@ -472,7 +476,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 
 #### Gate 3 — the recipe is the only row writer
 - [ ] Gates green. Dead Vocabulary sweep: every token → 0; control `--surface-inset` → 8.
-- [ ] `frames.css.ts` exports counted: 40 → 26, and every survivor is geometry, drag chrome, or the `ICON` roster.
+- [ ] `frames.css.ts` exports counted: 40 → 28, and every survivor is geometry, drag chrome, or the `ICON` roster.
 - [ ] Simplification + review against `<base>..HEAD`; concerns fixed or ruled.
 - [ ] Running pass across every surface in the census.
 - [ ] Docs: `DesignSystemPM.md` §Menus rewritten to the kinds and the roster; `Cohesion-Rulings.md` gains the ruling "the menu row's box is declared once; a surface picks Standard or Compact on its pane".
@@ -512,6 +516,8 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 
 ### Review
 - Round 1 (build-breaking-agent, 08-27): 12 findings, all verified against the code and folded — variants set vars not properties (F1, F2); `MenuItem` gains `forwardRef`, `onMouseDown`, `overlay` before NavList (F3, F8); the nav path is `detail` (F4); the four other `nav-item` files and the per-surface `--row-pad-x` (F5); `rowBox` split from `item` (F6); `heading` declares `margin: 0` and the 6/2 vertical pad (F7, F9); `allRow` stays (F9); the roster renders, Settings keeps its subscriptions (F10); Task 20's control inverted (F11); Calendar's option alignment kept (F12). Cold-read fixes: the `--surface-inset` sentence, Task 8's derivation, Gate 3's export count, `nav-item`'s survivors, Task 3's StatusEditor caret, the Task 3/6 overlap on `PropertyFrame.tsx:141`.
+
+- Round 2 (build-breaking-agent, 08-27): 15 findings, all verified and folded — the TopRow's real height is 18 once its ramp is live (F1); `rowBox` takes `--row-pad-lead`/`--row-pad-trail` over `--row-pad-x` for the two asymmetric nav surfaces (F2); CardAddPicker's override rides the TopRow element (F3); the trailing cluster is flush by design and `flushTrailing` dies (F4); `wide` on the item (F5); `defaultOn` on the toggle tables (F6); Sort/Hidden render `MenuRowView` inside their drag shells (F7); `detail` caps at 55% (F8); WindowInspector's field box is not a row and leaves Task 8 (F9); `header` stays geometry (F10); `pickerControl.value` owns its tone (F11); `heading` reads `--row-pad-x` (F12); `.mdpm-ac` keeps its box (F13); counts 28 / 12 / calendar-only (F14); the inert row's tooltip on an inner span (F15). Latent: `rowDragging` declared twice — moves to the recipe in Task 1. Unknown carried into Task 1's steps: the composed `pane` under `:has()`.
 
 ### Open Against Later Tasks
 ### Deviations
