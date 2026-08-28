@@ -142,6 +142,7 @@ export const base = style({
 // § CONTENT
 
 export const placeholder = style({ color: c.label.tertiary })
+export const fieldTrail = style({ font: 'inherit', color: 'inherit' })
 
 const CONTENT_FADE = 'var(--fade-base)' // KNOB — the field content row's fade width
 

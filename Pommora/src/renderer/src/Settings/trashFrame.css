@@ -35,9 +35,10 @@
 }
 .trash-frame .trash-row {
   --segment-tone: var(--border-base);
+  --row-pad-trail: 0px;
 }
 .trash-frame .trash-row::after {
-  right: calc(var(--row-pad-x) + var(--trash-date-lane) + var(--trash-date-inset));
+  right: var(--trash-date-lane);
 }
 .trash-frame .trash-head-name {
   flex: 1;

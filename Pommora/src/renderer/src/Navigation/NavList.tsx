@@ -103,7 +103,7 @@ export function NavPinButton({
   return (
     <button
       type="button"
-      className={cx('nav-pin', className, it.pinned && 'is-pinned')}
+      className={cx(className, it.pinned && 'is-pinned')}
       onPointerDown={(e) => e.stopPropagation()}
       onClick={toggle}
       aria-label={pinLabel(it.pinned)}
@@ -132,7 +132,7 @@ function NavRow({
       className={cx(drag?.isDragging && rowDragging)}
       leading={<EntityGlyph item={it} size="title3" />}
       detail={<NavTrail segments={it.path} iconSize="control" />}
-      overlay={<NavPinButton it={it} className={overlay} />}
+      overlay={<NavPinButton it={it} className={cx(overlay, 'nav-pin')} />}
       onPointerDown={drag?.handle.onPointerDown}
       onClick={() => onSelect(it.target)}
       onContextMenu={(e) => {

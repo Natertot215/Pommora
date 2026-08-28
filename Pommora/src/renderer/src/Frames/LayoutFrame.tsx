@@ -18,7 +18,6 @@ import {
   AccessoryButton,
 } from '@renderer/DesignSystem/Menus'
 import {
-  detail,
   flushTrailing,
   footingLabel,
   footingSymbol,
@@ -202,7 +201,7 @@ export function LayoutFrame({
               onInput={(v) => scrubCardScale(v, view.id)}
               onCommit={(v) => write({ card_size: v })}
               format={(v) => `${v.toFixed(2)}x`}
-              readoutClassName={detail}
+              readoutClassName={footingLabel}
             />
           }
         >

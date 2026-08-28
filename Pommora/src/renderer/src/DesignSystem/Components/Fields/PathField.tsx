@@ -2,7 +2,7 @@ import { Button } from '../Controls/Button'
 import { NavTrail, pathSegments } from '../../Elements/NavTrail'
 import { Icon } from '../../Symbols'
 import { InputField } from './InputField'
-import { placeholder } from './fields.css'
+import { fieldTrail, placeholder } from './fields.css'
 
 export function BrowseButton({
   label,
@@ -50,7 +50,7 @@ export function PathField({
       trailing={<BrowseButton label={browseLabel} onBrowse={onBrowse} />}
     >
       {segments.length > 0 ? (
-        <NavTrail segments={segments} />
+        <NavTrail segments={segments} className={fieldTrail} />
       ) : (
         <span className={placeholder}>{empty}</span>
       )}
