@@ -655,10 +655,10 @@ Every phase runs the same loop. Nothing advances on a summary; every claim is re
   - [x] Task 18 — GroupFrame · `760352dd + 3a6acd1d`
   - [x] Task 19 — the property editors · `1e3a5bd3`
   - [x] Task 20 — FilterFrame · `05392979`
-- [ ] **Phase 4** — The Edges Found Alongside · base `a2369d4a`
-  - [ ] Task 21 — the content edge is one token
-  - [ ] Task 22 — IconPicker's cell wears the shell
-  - [ ] Task 23 — the icon ladder is named as the type ramp is
+- [ ] **Phase 4** — The Edges Found Alongside · base `a2369d4a` · executor `da851e1b..bedb2008`
+  - [x] Task 21 — the content edge is one token · `da851e1b`
+  - [x] Task 22 — IconPicker's cell wears the shell · `c67b36b8`
+  - [x] Task 23 — the icon ladder is named as the type ramp is · `bedb2008`
 
 ### Rulings
 - 08-28 (Nathan): the autocomplete is a standard Compact menu; nothing bespoke survives. Every task's text names what exists today and what it becomes; where the written task is vague, the executor writes that pair in before committing.
@@ -684,6 +684,7 @@ Every phase runs the same loop. Nothing advances on a summary; every claim is re
 - Task 9: the "today" figures in its prose predate Task 0's tree — `.nav-search-row` already pads `var(--surface-inset)`, `.nav-item-main` pads `6px` (rows likely 28 already), gap 6; the +2 / −10 / −12 search-edge offsets are stale. Re-read Task 9 against the live tree at Phase 2's open.
 
 ### Deviations
+- Gate 4 review (orchestrator, 08-28): measured live — `--content-start` resolves to 345 on the banner title, the subfield, NavView's head and its rows (one edge, nothing moved); the icon picker's cell is 34px on `rowShell` (radius 8, the hover wash, cursor default, a 17px `titleSmall` glyph). Screenshots `p4-*.png` in the session scratchpad.
 - Task 23: every reader file was touched only on its renamed literal (the `Symbols/index.tsx:230` doc line reads `headline`); the comment ruling's cut applies to the files a task reworks — `size.css.ts` and `theme-vars.css.ts` already sat at KNOBs + one why — not to the twenty rename-through files (`CardsView.tsx` alone carries 193 comment lines), which the phase's comment-killer pass reads.
 - Task 22: the cell's `cursor: pointer` is gone — it composes `rowShell` and inherits its `default`, the cursor convention (default everywhere but links); it also gains `rowShell`'s focus-visible ring. The cell keeps its 34px box. `iconPicker.css.ts` keeps one why (the grid's explicit width).
 - Task 21: the two Derivation greps land at 1, not 0 — the token's own declaration on `.shell` is the calc; control `--sidebar-clearance` 18 → 14 (five readers gone, one definition added), `--content-start` 9. `Banner.css` and `subfield.css` came under the comment ruling (one why each: the doubled empty-title selector, the footnotes toggle's inset).
