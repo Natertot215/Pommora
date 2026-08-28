@@ -425,20 +425,20 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 
 ### Phase 3 — The Index
 
+Every task below is written as **Today → Becomes**; line numbers are at `7f358d51` (Gate 2). The trailing cluster is flush by design and the index names the trailing kinds once.
+
 #### Task 13: `menu-index.tsx`
 
 **Requirement:** 11
 
-**Why:** The trailing kinds are named in seven places today; naming them once as a `Trailing` union and one `MenuRowView` renderer is what lets a presentational frame be a list of sections. `SettingsWindow`'s `Row` union is a settings *schema* (each arm carries a store key, each control subscribes itself) — it keeps its union and its per-row subscriptions, and its `RowControl` renders through `MenuRowView`; the index owns rendering, never state.
+**Why:** The trailing kinds are named in seven places today; naming them once as a `Trailing` union and one `MenuRowView` renderer is what lets a presentational frame be a list of sections. `SettingsWindow`'s `Row` union is a settings *schema* — it keeps its union and its per-row subscriptions, and its `RowControl` renders through `MenuRowView`; the index owns rendering, never state.
 
-**Files:**
-- Create: `DesignSystem/Menus/menu-index.tsx` — `type Trailing = { kind: 'chevron' } | { kind: 'value'; value: ReactNode; onToggle: () => void } | { kind: 'switch'; checked; onChange; ariaLabel } | { kind: 'button'; icon; onClick; ariaLabel } | { kind: 'slider'; …Slider props } | { kind: 'field'; children: ReactNode }`; `type MenuRow = { kind: 'heading'; label; caps? } | { kind: 'separator' } | { kind: 'caption'; text } | { kind: 'action'; label; trailing?; onClick } | { kind: 'item'; icon?: ReactNode; label; caption?; trailing?; wide?; selected?; disabled?; onSelect? }` (`icon` is a node, so a chip or a wrapped glyph rides it); `type MenuSection = { title?; caps?; rows: MenuRow[] }`; `MenuRowView({ row })` renders one row; `MenuIndex({ sections })` maps sections → rows → `MenuRowView`. `Trailing` also carries `{ kind: 'picker'; …PickerControl props }` and `{ kind: 'color'; …ColorSwatch props }` so Settings' picker and color rows are not laundered through `field`.
-- Test: `DesignSystem/Menus/menu-index.test.tsx` — each kind renders its element; a `switch` trailing keeps its `aria-label` on the button; a `heading` with `caps` wears `headingCaps`; an empty section renders nothing.
+**Today:** no index. `Settings/SettingsRow.tsx:8-16` is a `MenuItem` adapter (`subLabel={hint}`, `trailing={children}`); `Frames/LayoutToggles.tsx:25-55` and `Frames/CardsOptions.tsx:29-68` hand-build seven `MenuItem`s with `flushTrailing`+`toggleRow` and a `DualSwitch`; `Frames/SettingsFrame.tsx:158-164` maps `ENTRIES` to `MenuItem` + `chevron-right` + `rowDisabled`; `Frames/LayoutFrame.tsx:332` `leafRow` does the same over `FRAME_ROWS`; `Properties/ValueRow.tsx` and `Frames/GroupFrame.tsx` `FootingPick` wrap a `PickerControl` in `MenuItem` + `footingSymbol` + `footingLabel` + `gp.pickerTone`; the five editors put `configLabel` + a control into a bare `rowBox`.
 
-**Interfaces**
-- Produces: the types above, `MenuRowView`, and `MenuIndex`. Assumed by: Tasks 15–19.
+**Becomes:** `DesignSystem/Menus/menu-index.tsx` exporting `type Trailing = { kind: 'chevron' } | { kind: 'value'; value: ReactNode; onToggle?: () => void } | { kind: 'switch'; checked: boolean; onChange: (next: boolean) => void; ariaLabel: string } | { kind: 'button'; icon: IconName; onClick: () => void; ariaLabel: string; disabled?: boolean } | { kind: 'slider'; …Slider props } | { kind: 'picker'; …PickerControl props } | { kind: 'color'; …ColorSwatch props } | { kind: 'field'; children: ReactNode }`; `type MenuRow = { kind: 'heading'; label: string; caps?: boolean } | { kind: 'separator' } | { kind: 'caption'; text: ReactNode } | { kind: 'action'; label: string; trailing?: Trailing; onClick: () => void } | { kind: 'item'; icon?: ReactNode; label: ReactNode; caption?: ReactNode; trailing?: Trailing; selected?: boolean; disabled?: boolean; onSelect?: () => void; className?: string }`; `type MenuSection = { title?: string; caps?: boolean; rows: MenuRow[] }`; `MenuRowView({ row })` renders one row (`MenuItem` for `item`/`action`, `<div className={cx(heading, caps && headingCaps)}>` for `heading`, `MenuSeparator`, `MenuCaption`); `MenuIndex({ sections })` maps sections → rows. No `wide` — seat widths are ruled out (Task 10) and the Slider owns its width (`144b2c89`).
+- Test: `DesignSystem/Menus/menu-index.test.tsx` — each kind renders its element; a `switch` keeps its `aria-label` on the button; a `heading` with `caps` wears `headingCaps`; an empty section renders nothing; zero sections → empty fragment.
 
-**Failure half:** zero sections → an empty fragment; a section with `title` and zero rows → the heading alone (a design choice: shown, so a data bug is visible rather than silent); a `trailing` of an unknown kind → a compile error (closed union).
+**Failure half:** zero sections → an empty fragment; a section with `title` and zero rows → the heading alone (shown, so a data bug is visible); an unknown `trailing.kind` → a compile error (closed union).
 
 **Steps:**
 - [ ] Write the failing tests; implement; gates; commit `feat(menus): the index`.
@@ -447,31 +447,39 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 
 **Requirement:** 11
 
-**Why:** `detail` and `trailing` share one span today; `value` joined in Task 11. This makes the slot explicit — leading · title · [value] · [detail] · [trailing] — so the index's `Trailing` maps to markup once. The trailing cluster is **flush by design**: 23 of the 58 `MenuItem` sites pass `flushTrailing` today and none pass the opposite, so `item`'s right padding applies to the title, the cluster sits at the gutter edge, and `flushTrailing` deletes (the index then needs no `className`).
+**Today:** `menu-row.tsx` renders `value` · `detail` · `trailing` inside one `span.side` (`:113-118`); 39 sites pass `flushTrailing` (`paddingRight: 0`) and none pass the opposite; `frames.css.ts:194` `configLabel` (control.emphasized · primary, the editors' row label) and `:153` `compactTitle` (control.standard · label-control · nowrap, the Compact chip's name in `OptionRow`) restate title type.
 
-**Files:** `menu-row.tsx` `MenuItem` (gains `wide?: boolean` — the trailing seat takes `--row-trailing-width`, the one KNOB `.settings-wide` was); `menu-base.css.ts` `// Trailing` (`side` stays the cluster class; `value`, `detail`, `accessoryButton` its members; `flushTrailing` deleted, its 23 sites cleaned); `frames.css.ts` `compactTitle`, `configLabel` → deleted (`configLabel` is the item's own title at control density — Compact handles it; `compactTitle` is the chip's name and moves to `OptionRow`'s own stylesheet as geometry).
+**Becomes:** the trailing cluster is flush by design — `MenuItem` sets `--row-pad-trail: 0px` on the row when it has a trailing cluster (one var `rowBox` already reads; no new class), so `flushTrailing` deletes and its 39 sites are cleaned; `configLabel` deletes (the item's own title — `MenuRowView` `label` — at whatever density the pane sets); `compactTitle` moves to `Properties/OptionRow`'s own stylesheet as geometry. `MenuItem` gains no `wide`.
+
+**Derivation:** `grep -rF "flushTrailing" src` → 39 → 0. `grep -rF "configLabel" src` → 11 → 0. `grep -rF "compactTitle" src` → 4 → the OptionRow stylesheet's own. Control: `grep -rF "detail" src/renderer/src/DesignSystem/Menus/menu-row.tsx` ≥ 2.
 
 **Steps:**
-- [ ] Rewrite the markup; `GroupFrame.test.tsx` aria lookups pass; gates; commit `refactor(menus): the trailing slot`.
+- [ ] Rewrite; `GroupFrame.test.tsx` aria lookups pass; gates; commit `refactor(menus): the trailing slot`.
 
 #### Task 15: SettingsWindow renders through the index
 
 **Requirement:** 11
 
-**Files:** `Settings/SettingsWindow.tsx` (`Row` union and `FRAMES` unchanged; each `RowControl` arm keeps its subscription and returns `<MenuRowView row={{ kind: 'item', label, caption: hint, trailing: {…} }} />`), `Settings/SettingsRow.tsx` deleted, `HandoffPM.md:49` line removed.
+**Today:** `Settings/SettingsWindow.tsx:71` `Row` union, `:594` section title `<h3 className={cx(heading, headingCaps)}>`, `:607` `RowControl` switch whose arms return `<SettingsRow label hint>` + a control (`:633`, `:651`); `Settings/SettingsRow.tsx` the adapter.
 
-**Derivation:** `grep -rF "SettingsRow" src` → 17 → 0. Control: `grep -rF "MenuIndex" src` → ≥ 2.
+**Becomes:** each `RowControl` arm keeps its subscription and returns `<MenuRowView row={{ kind: 'item', label: row.label, caption: row.hint, trailing: { kind: 'switch' | 'picker' | 'color' | 'field' | 'slider' | 'button', … } }} />`; the section title renders `<MenuRowView row={{ kind: 'heading', label: section.title, caps: true }} />`; `SettingsRow.tsx` deletes; `HandoffPM.md:49` goes with `/handoff`.
+
+**Derivation:** `grep -rF "SettingsRow" src` → 17 → 0. Control: `grep -rF "MenuRowView" src` ≥ 2.
 
 **Steps:**
-- [ ] Migrate; running pass on every Settings frame; commit `refactor(settings): the window is an index`.
+- [ ] Migrate; gates; commit `refactor(settings): the window is an index`.
 
 #### Task 16: LayoutToggles + CardsOptions are one table
 
 **Requirement:** 11
 
-**Files:** `Frames/LayoutToggles.tsx`, `Frames/CardsOptions.tsx` → one `{ icon, label, key, invert?, defaultOn? }[]` each rendered by `MenuIndex` with `switch` trailings — `defaultOn` because `hide_column_icons` reads `?? true` and `set_cards` reads `?? true` while the other five read `?? false`; `frames.css.ts` `toggleRow` deleted.
+**Today:** `Frames/LayoutToggles.tsx` — Column Icons `checked={!(hide_column_icons ?? true)}` (OFF by default), Hide Borders `hide_borders ?? false` (OFF), Page Icons `checked={!(hide_page_icons ?? false)}` (ON); `Frames/CardsOptions.tsx` — Hide Location (OFF), Wrap Titles (OFF), Hide Page Icons (OFF), Set Cards `?? true` (ON); every row `cx(flushTrailing, toggleRow)` with `frames.css.ts:85` `toggleRow = style({})`.
 
-**Negative control:** on a view with none of the seven keys set, Column Icons and Set Cards show ON, the other five OFF — and flipping `defaultOn` on either shows the opposite.
+**Becomes:** one `{ icon, label, key, invert?, defaultOn? }[]` per file rendered by `MenuIndex` with `switch` trailings, `checked = invert ? !(view[key] ?? defaultOn) : (view[key] ?? defaultOn)`, `onChange` writing the key the same way each does today; `toggleRow` deletes.
+
+**Negative control:** with none of the seven keys set, Layout shows Page Icons ON and Column Icons + Hide Borders OFF; Cards shows Set Cards ON and the other three OFF — flipping any entry's `defaultOn` or `invert` flips exactly that row.
+
+**Derivation:** `grep -rF "toggleRow" src` → 10 → 0.
 
 **Steps:**
 - [ ] Migrate; gates; commit `refactor(frames): the toggles are a table`.
@@ -480,47 +488,55 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 
 **Requirement:** 11
 
-**Files:** `Frames/SettingsFrame.tsx` (`ENTRIES` → `MenuIndex` `item` rows with `chevron`), `Frames/LayoutFrame.tsx` (`FRAME_ROWS` likewise), `Frames/SortFrame.tsx` and `Frames/HiddenFrame.tsx` (rows render through `MenuRowView` **inside** their existing `RowShell` and `useFrameRegions` region divs — the drag structure stays; `MenuIndex` is for frames without one; `frozen()` → `disabled`; `hiddenRow` and `gp.subRow` ride `className` on `MenuRowView`, which accepts one for exactly these state classes).
+**Today:** `Frames/SettingsFrame.tsx:49` `ENTRIES`, `:98` `frozen`, `:158-164` the map to `MenuItem` + `chevron-right` + `rowDisabled`; `Frames/LayoutFrame.tsx:81` `FRAME_ROWS`, `:332` `leafRow`; `Frames/HiddenFrame.tsx:48-86` two `useFrameRegions` regions, each row `<RowShell id><MenuItem leading={rowIcon} trailing={eyeFor(id)} className={flushTrailing | +hiddenRow}>` with `:51` `eyeInert` for the Title row and `:55` `EyeToggle` (a `Button`); `Frames/SortFrame.tsx:166-213` five `ValueRow`s (folds in Task 18 — this task leaves SortFrame's rows to 18 and only confirms they still sit inside their `RowShell`s).
+
+**Becomes:** `SettingsFrame` and `LayoutFrame` root lists → `<MenuIndex sections={[{ rows: entries.map(e => ({ kind: 'item', icon: <Icon name={e.icon} size="title3" />, label: e.label, trailing: { kind: 'chevron' }, disabled: frozen(e.id), onSelect: () => open(e.id) })) }]} />`; HiddenFrame keeps `FrameDnd` + `RowShell` + `useFrameRegions` and renders `<MenuRowView row={{ kind: 'item', icon: rowIcon(id, schema), label: nameFor(id), trailing: { kind: 'button', icon: hidden ? 'eye' : 'eye-off', onClick, ariaLabel, disabled: id === title } , className: hidden && s.hiddenRow }} />` inside each `RowShell` — `EyeToggle` folds into the `button` trailing if its markup is only a `Button` + `Icon` (read `EyeToggle.tsx:8-34` first; if it carries the hover-swap glyph logic, keep it and pass it as `trailing: { kind: 'field', children: <EyeToggle …/> }`), `eyeInert` deletes (`disabled` on the button).
+
+**Derivation:** `grep -rF "leafRow" src` → 1 → 0; `grep -rF "eyeInert" src` → count → 0. Control: `grep -rF "RowShell" src` ≥ 4.
 
 **Steps:**
-- [ ] Migrate one file per commit; `SortFrame.test.tsx`, `HiddenFrame` model tests pass.
+- [ ] Migrate one file per commit; `HiddenFrame` model tests and `SortFrame.test.tsx` pass.
 
-#### Task 18: GroupFrame; `ValueRow` and `FootingPick` fold
+#### Task 18: GroupFrame and SortFrame; `ValueRow` and `FootingPick` fold
 
 **Requirement:** 11
 
-**Files:** `Frames/GroupFrame.tsx`, `Properties/ValueRow.tsx` (deleted), `Frames/groupFrame.css.ts` (`pickerTone` global deleted; its `label.control` tone moves onto `pickerControl.value` itself, so a picker's value reads at full strength wherever it sits).
+**Today:** `Properties/ValueRow.tsx:11-28` (`MenuItem` + `flushTrailing` + `gp.pickerTone` + `gp.subRow` tier + `PickerControl` trailing, `gp.subLabel` for the sub tier); `Frames/GroupFrame.tsx:190,202` `FootingPick`, `:221-268` six `ValueRow`s; `Frames/SortFrame.tsx:166-213` five `ValueRow`s; `Frames/groupFrame.css.ts:18-19` `pickerTone` + its `globalStyle` forcing `pickerValue` to `label.control`; `:11` `subRow`, `:13` `subLabel`.
 
-**Derivation:** `grep -rF "ValueRow" src` → 15 → 0; `grep -rF "FootingPick" src` → 3 → 0.
+**Becomes:** every `ValueRow`/`FootingPick` → `<MenuRowView row={{ kind: 'item', icon, label: tier === 'sub' ? <span className={gp.subLabel}>{label}</span> : label, trailing: { kind: 'picker', ariaLabel, value, options, onPick }, className: tier === 'sub' ? gp.subRow : undefined }} />` (the footing ones inside `MenuFooting` as today); `ValueRow.tsx` and `FootingPick` delete; `pickerTone` and its global delete and `pickerControl.value` carries `color: label.control` itself.
+
+**Derivation:** `grep -rF "ValueRow" src` → 15 → 0; `grep -rF "FootingPick" src` → 3 → 0; `grep -rF "pickerTone" src` → 4 → 0.
 
 **Steps:**
-- [ ] Migrate; `GroupFrame.test.tsx` passes; running pass; commit.
+- [ ] Migrate; `GroupFrame.test.tsx` and `SortFrame.test.tsx` pass; commit `refactor(frames): the value rows are index rows`.
 
 #### Task 19: The property editors
 
 **Requirement:** 11
 
-**Files:** `Properties/Editors/{URLEditor,CheckboxEditor,FileEditor,NumberEditor,DateTimeEditor}.tsx` → indexes (`switch`, `value`, `field`, `button` trailings); `numberEditor.css.ts` keeps `row`'s `marginTop` as `rowRhythm`.
+**Today:** `URLEditor.tsx:30-49` three `div.rowBox` + `configLabel` + `DualSwitch` / `ColorSwatch` / `PickerControl`; `CheckboxEditor.tsx:31-37` two (`ColorSwatch`, `PickerControl`); `FileEditor.tsx:21-23` one (`PathField`); `NumberEditor.tsx:42-43` `cx(rowBox, s.row)` + `configLabel`, `:60-78` its own `valueControl` button mirroring a `PickerControl` trigger, and `DualSwitch`/`PickerControl` rows; `DateTimeEditor.tsx:43-48` `rowBox` + `side` glyph + `configLabel` + `PickerControl` under the `:65` `heading` "Format"; `numberEditor.css.ts:14` `row` (`marginTop` rhythm), `:21` `valueControl`.
+
+**Becomes:** each editor renders `<MenuIndex sections={[…]} />` with `switch` / `color` / `picker` / `field` trailings (`NumberEditor`'s edit-in-place value rides `{ kind: 'field', children: <its button/input> }` — its `valueControl` stays as the field's own look); `numberEditor.css.ts` `row` → `rowRhythm` (`marginTop` only) passed as the row's `className`; `configLabel` is already gone (Task 14).
 
 **Steps:**
-- [ ] Migrate; editor tests pass; commit.
+- [ ] Migrate; editor tests pass; commit `refactor(properties): the editors are indexes`.
 
 #### Task 20: FilterFrame — the footer slot, the shell, the caption
 
-**Requirement:** 6, 11 — closes the hazard window.
+**Requirement:** 6, 11 — closes Hazard Window 1.
 
-**Why:** The one frame with no `MenuScrollFrame` and the one pane the auto-margin held up. Its rule rows are a builder, not a list, so they keep their logic on `item`'s shell; everything around them is recipe.
+**Today:** `Frames/FilterFrame.tsx:742-790` `div.fp.frame` > `MenuTopRow` > (locked: `div.fp.lockedCaption` + a Reset `MenuItem`) | (rows: `div.cx(gp.middle, fp.body, 'over-scroll')` > the rule list + an `accessoryButton` add) > `MenuFooting` (the Any/On pickers); `filterFrame.css.ts:28` `FILTER_MIN_HEIGHT = '245px'`, `:33-35` `frame` = `growToContent` + `minHeight`, `:40` `body` `flex: '1 0 auto'`, `:111` `lockedCaption`; `groupFrame.css.ts:24` `middle` (scroll ceiling KNOB).
 
-**Files:** `Frames/FilterFrame.tsx` (wrap in `MenuScrollFrame` with `footer={<MenuFooting …/>}`; `lockedCaption` → `caption`; `addRow` → `button`), `Frames/filterFrame.css.ts` (`frame` keeps `growToContent` + `minHeight: 245`; `body`'s `flex: '1 0 auto'` deleted; `gp.middle`'s nested scroll region removed from the rows branch), `menu-row.tsx` `MenuScrollFrame` gains `className`.
+**Becomes:** `<MenuScrollFrame className={fp.frame} header={<MenuTopRow …/>} footer={<MenuFooting …/>}>` wrapping both branches so the footer is pinned by the slot in each; the locked caption → `<MenuCaption>`; the rows branch drops `gp.middle` and `fp.body` (the scroll frame's body scrolls; `body` deletes); `fp.frame` keeps `growToContent` + `minHeight: 245`; `MenuScrollFrame` gains `className`; the add row → a `button` trailing or stays an `accessoryButton` row (reuse what Task 7 left).
 
-**Negative control:** keep the floor; in the locked branch the footer sits flush at the pane's bottom edge with the slot, and rises to the content with `footer=` removed (the slot pins; the floor only makes room). `MenuTopRow` rides the `header` slot. `lockedCaption` → `caption` changes the locked branch's text from footnote-left to body-centered — the kind's look, ruled.
+**Negative control:** keep the floor; in the locked branch the footer sits flush at the pane's bottom with the slot and rises to the content with `footer=` removed. `lockedCaption` → `caption` changes the locked text from footnote-left to body-centered — the kind's look, ruled.
 
 **Steps:**
-- [ ] Migrate; `FilterFrame.test.tsx` passes; running pass on both branches (locked + rows), footer flush at the bottom in each; the pane single-scrolls.
+- [ ] Migrate; `FilterFrame.test.tsx` passes; running pass on both branches, footer flush at the bottom in each; the pane single-scrolls.
 - [ ] Commit `refactor(filter): the footer rides the slot`.
 
 #### Gate 3 — the recipe is the only row writer
-- [ ] The Loop, steps 3–5. Dead Vocabulary sweep: every token → 0, control `--surface-inset` → 9. `frames.css.ts` exports 40 → 28, all geometry, drag chrome, or `ICON`. Running surface: every frame, both FilterFrame branches with the footer flush. Docs: `DesignSystemPM.md` §Menus to the kinds and the index; `Cohesion-Rulings.md` gains "the menu row's box is declared once; a surface picks Standard or Compact on its pane".
+- [ ] The Loop, steps 3–5. Dead Vocabulary sweep: every token → 0, control `--surface-inset` → 9. `frames.css.ts` exports counted, all geometry, drag chrome, or `ICON`. Screenshots: every frame, both FilterFrame branches with the footer flush, every Settings frame, every editor. Docs: deferred to §Closeout.
 
 ---
 
@@ -603,7 +619,7 @@ Every phase runs the same loop. Nothing advances on a summary; every claim is re
 
 **5. Close the phase.** Progress hashes filled in; Lessons written into the later tasks they change; the next phase's Derivations re-derived. Only then does step 1 open the next phase. The user-visible surfaces of a phase are Nathan's to see before the next phase starts when a running pass couldn't reach them.
 
-**Standards that hold at every step:** exit codes read directly, never through a pipe without `pipefail`; no "green" without the summary line quoted; no `DONE_WITH_CONCERNS` — a concern is a task; comments at one load-bearing why per file, every `KNOB` intact; explicit paths staged, never a directory; no two writers on the tree at once — the executor and the simplifier run in sequence, never in parallel.
+**Standards that hold at every step:** every surface a phase touches is screenshotted and read by the orchestrator before its gate closes (Nathan, 08-28); exit codes read directly, never through a pipe without `pipefail`; no "green" without the summary line quoted; no `DONE_WITH_CONCERNS` — a concern is a task; comments at one load-bearing why per file, every `KNOB` intact; explicit paths staged, never a directory; no two writers on the tree at once — the executor and the simplifier run in sequence, never in parallel.
 
 ---
 
