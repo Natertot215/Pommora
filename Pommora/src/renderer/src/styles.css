@@ -9,7 +9,6 @@
   --app-inset: 6px; /* gap from the window edges */
   --app-radius: 12px; /* matched to the macOS window corner (≈ window radius − inset) */
   --surface-inset: 10px; /* glass edge → content, inside any floating glass */
-  --row-inset: 6px; /* row edge → text, inside a row */
   --toolbar-h: 38px;
   --subfield-h: 24px;
   --content-edge: 12px; /* the band a banner title and the Subfield sit in, off the pane */ /* the Subfield bar; its riding toggle chevron and the window footer read it */

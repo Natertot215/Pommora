@@ -1,10 +1,9 @@
 import { globalStyle, style } from '@vanilla-extract/css'
 import { vars as colorVars } from '../../../Tokens/color.css'
-import { font, text } from '../../../Tokens/typography.css'
 import { stack } from '../../../Tokens/stack'
 import { menuAnchor } from '../../../Menus/menu-anchor'
 import { FIELD_RING_VAR, fieldRing, ROW_RING } from '../../Fields/fieldRing'
-import { rowShell, ROW_LINE, ROW_SIZE } from '../../../Menus/menu-base.css'
+import { item, menuCompact } from '../../../Menus/menu-base.css'
 
 const c = colorVars.color
 
@@ -98,19 +97,14 @@ export const PANE_RADIUS = 12
 
 /** The shape itself, worn by every pane including the bare ones — it rounds the frost, the
  *  material's own border, and the scrolled body in a single declaration. */
-export const pane = style({
-  position: 'relative',
-  zIndex: 0,
-  borderRadius: `${PANE_RADIUS}px`,
-  // A picker's rows are a control's options, not a menu's commands, so the whole family reads the
-  // control RAMP rather than the menu's body default. The tone stays the menu's: a row is still a
-  // row, and only its size marks it as belonging to a control. Set once on the pane — every row
-  // inside, the shared MenuItem included, inherits it, so no row states a ramp of its own.
-  vars: {
-    '--menu-row-size': font.scale.control.size,
-    '--menu-row-line': font.scale.control.line,
+export const pane = style([
+  menuCompact,
+  {
+    position: 'relative',
+    zIndex: 0,
+    borderRadius: `${PANE_RADIUS}px`,
   },
-})
+])
 
 /** The default gutter, for a pane that doesn't bring its own. */
 export const surface = style({
@@ -120,24 +114,9 @@ export const surface = style({
   gap: '0px',
 })
 
-// The portal escapes any label-tone context, so the option must set its OWN type + color (else it
-// falls to the UA default — black, unsized — and the pane wraps). Matches a menu row title: the
-// control scale at the control tone.
 export const option = style([
-  text.control.standard,
-  rowShell,
-  {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    whiteSpace: 'nowrap',
-    padding: '4px',
-    border: 'none',
-    background: 'none',
-    color: c.label.primary,
-    fontSize: ROW_SIZE,
-    lineHeight: ROW_LINE,
-  },
+  item,
+  { justifyContent: 'center', whiteSpace: 'nowrap', border: 'none', background: 'none' },
 ])
 
 /** A row's leading glyph — a step under its label, the menu row's leading-slot tone. An assigned

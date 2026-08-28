@@ -45,7 +45,7 @@
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  padding-left: var(--row-inset);
+  padding-left: var(--row-width-standard);
   /* KNOB — clearance past settings + X, plus the squeeze that stops the row at an open pane's
      leading edge; without the second term the tabs run under the pane. The squeeze carries its own
      motion through --io, so padding-right stays OUT of the transition list — transitioning it would

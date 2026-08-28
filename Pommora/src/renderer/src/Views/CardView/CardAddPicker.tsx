@@ -19,8 +19,6 @@ import {
   orderAddableEntries,
   parseEditorValue,
 } from '@renderer/Properties/Editing/cardValueInput'
-import { compactRow } from './cardAddPicker.css'
-import { cx } from '@renderer/DesignSystem/Util/cx'
 
 function ValuePane({
   def,
@@ -137,7 +135,7 @@ export function CardAddPicker({
               {orderAddableEntries(entries).map((e) => (
                 <MenuItem
                   key={e.id}
-                  className={cx(flushTrailing, compactRow)}
+                  className={flushTrailing}
                   leading={
                     <Icon name={propertyTypeIconName(e.type) ?? 'square-dashed'} size="body" />
                   }
