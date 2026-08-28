@@ -243,10 +243,10 @@ Each is written to be lintable, with its carve-out stated.
 
 **What to take first, by consumers fixed per edit.**
 
-| # | Edit | Lines | Fixes |
-| --- | --- | --- | --- |
-| 1 | `ViewEmbedBlock.tsx:88` → `cellRing(key)` | 1 | The only behavioral defect |
-| 2 | Mint the spacing scale | ~11 | ~480 literals; needs the sign-off above |
+| #   | Edit                                      | Lines | Fixes                                   |
+| --- | ----------------------------------------- | ----- | --------------------------------------- |
+| 1   | `ViewEmbedBlock.tsx:88` → `cellRing(key)` | 1     | The only behavioral defect              |
+| 2   | Mint the spacing scale                    | ~11   | ~480 literals; needs the sign-off above |
 
 #### Open Decisions — Tokens
 
