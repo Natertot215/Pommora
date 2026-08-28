@@ -1,28 +1,20 @@
-/* The Settings window. Shell, rail, and dismissal come from the WindowBase surface; what remains
-   here is the category rail's rows and the frame's own rhythm. */
-
 .settings-window {
-  /* Rings on the glass inset like the NavWindow rather than running edge-to-edge. */
   padding: var(--app-inset);
   /* KNOB — the frame's content inset. */
   --settings-inset: 18px;
 }
 
-/* ---- the category rail ---- */
 .settings-rail-list {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
 }
-/* The rail's foot. The list above takes the height, so this sits at the bottom for free; the
-   z-index keeps its corner clickable over the window's resize handles. */
 .settings-rail-foot {
   position: relative;
   z-index: 4;
   flex: 0 0 auto;
 }
 
-/* ---- the frame ---- */
 .settings-body {
   flex: 1;
   min-width: 0;
@@ -39,8 +31,6 @@
   color: var(--label-primary);
   margin: 0 0 14px;
   padding-bottom: 10px;
-  /* The frame's one rule — it separates the frame's title from its body, which is why the rows
-     beneath carry none of their own. */
   border-bottom: var(--width-100) solid var(--border-base);
 }
 .settings-heading-icon {
@@ -51,16 +41,8 @@
   display: flex;
   flex-direction: column;
 }
-/* A frame's groups breathe apart; the first sits flush under the frame heading. */
 .settings-section + .settings-section {
   margin-top: 22px;
-}
-.settings-section-title {
-  color: var(--label-secondary);
-  margin: 0 0 4px;
-  padding: 0 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 .settings-empty {
   color: var(--label-tertiary);

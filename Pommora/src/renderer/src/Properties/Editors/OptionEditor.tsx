@@ -21,13 +21,11 @@ import { DropLine } from '@renderer/DesignSystem/Interactions/DropLine'
 import { OptionSlot, type OptionStyle } from '../OptionRow'
 import { useOptionReorder } from '../useOptionReorder'
 import * as s from '../../Frames/frames.css'
+import { heading } from '@renderer/DesignSystem/Menus'
 import { labelColor, optionShapeFor, shape } from '@renderer/DesignSystem/Labels'
 
-/** A flat property owns one list, so its anchor needs no identity beyond being the only one. */
 const LIST_ANCHOR = 'options'
 
-/** The caller owns persistence: each callback maps to a `property.*Option` write (+ error
- *  surface + reload). Status layers grouping on top. */
 export function OptionEditor({
   type,
   options,
@@ -45,15 +43,11 @@ export function OptionEditor({
   onRemoveOption: (value: string) => void
   onClearOption: (value: string) => void
 }): React.JSX.Element {
-  // The seat a new option is being named in — the index it will occupy, so it lands where the ghost
-  // that opened it stood rather than at the end.
   const [adding, setAdding] = useState<number | null>(null)
   const [renaming, setRenaming] = useState<string | null>(null)
   const [coloring, setColoring] = useState<string | null>(null)
   const [iconEditing, setIconEditing] = useState<string | null>(null)
-  // The open row's recolor button — the ColorPicker measures + dismiss-exempts it (only one is open).
   const paletteBtnRef = useRef<HTMLButtonElement>(null)
-  // Identity-stable across the hook's own re-renders — its list-change invalidation keys on this.
   const optionOrder = useMemo(() => options.map((o) => o.value), [options])
   const reorder = useOptionReorder(optionOrder, (value, toIndex) =>
     onSetOptions(reorderOption(options, value, toIndex)),
@@ -68,7 +62,6 @@ export function OptionEditor({
     setAdding(null)
     onSetOptions(addOption(options, raw.trim() || fallbackTitle(type), undefined, at))
   }
-  /** The naming chip in its seat, or the ghost standing in that seat, or nothing. */
   const slotAt = (index: number, anchorId: string): React.JSX.Element | null =>
     adding === index ? (
       <div className={s.optionRow}>
@@ -109,8 +102,8 @@ export function OptionEditor({
 
   return (
     <div className={s.optionEditor}>
-      <div className={s.optionsRow}>
-        <span className={s.optionsLabel}>Options</span>
+      <div className={heading}>
+        <span>Options</span>
         <Button
           size="button-inline"
           paddingX="0"

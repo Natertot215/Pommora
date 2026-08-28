@@ -2,7 +2,7 @@ import type { ColumnStyle, DateFormat, TimeFormat, WeekdayFormat } from '@shared
 import { Icon, type IconName } from '@renderer/DesignSystem/Symbols'
 import { PickerControl } from '@renderer/DesignSystem/Elements/PickerControl'
 import { Reveal } from '@renderer/DesignSystem/Animation/Reveal'
-import { optionsLabel } from '../../Frames/frames.css'
+import { heading } from '@renderer/DesignSystem/Menus'
 import * as s from './dateTimeEditor.css'
 
 const DATE_OPTIONS: { value: DateFormat; label: string }[] = [
@@ -60,7 +60,7 @@ export function DateTimeEditor({
   const showDay = dateFmt === 'short' || dateFmt === 'full'
   return (
     <div className={s.section}>
-      <span className={optionsLabel}>Format</span>
+      <div className={heading}>Format</div>
       <PickerRow
         glyph="calendar-days"
         label="Date"
