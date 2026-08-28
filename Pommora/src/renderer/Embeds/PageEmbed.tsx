@@ -10,7 +10,7 @@ import { fetchPageDetail, readPageDetail } from '@renderer/Store/TabState'
 import { useAssetUrl, useEmbedScale, useSession } from '../store'
 import { AssetImage } from '@renderer/DesignSystem/Components/AssetImage/AssetImage'
 import { ImagePicker } from '@renderer/DesignSystem/Components/Pickers/ImagePicker/ImagePicker'
-import { useBannerMenu } from '../Interface/Banner/useBannerMenu'
+import { useBannerMenu } from '../Interface/useBannerMenu'
 import { NavTrail } from '@renderer/DesignSystem/Elements/NavTrail'
 import { ancestryOf } from '../treeIndex'
 

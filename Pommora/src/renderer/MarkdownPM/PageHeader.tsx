@@ -2,8 +2,8 @@ import { forwardRef, useRef } from 'react'
 import { useAssetUrl, useSession } from '../store'
 import { AssetImage } from '@renderer/DesignSystem/Components/AssetImage/AssetImage'
 import { ImagePicker } from '@renderer/DesignSystem/Components/Pickers/ImagePicker/ImagePicker'
-import { useBannerMenu } from '../Interface/Banner/useBannerMenu'
-import { AddBannerButton } from '../Interface/Banner/AddBannerButton'
+import { useBannerMenu } from '../Interface/useBannerMenu'
+import { AddBannerButton } from '../Interface/AddBannerButton'
 import { DetailTitleHeader } from '../Interface/DetailTitleHeader'
 
 /** What the header draws. Passed as one object rather than five props, so the surfaces that host an

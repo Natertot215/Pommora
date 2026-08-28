@@ -1,5 +1,5 @@
 import { type RefObject, useContext, useState } from 'react'
-import { useSession } from '../../store'
+import { useSession } from '../store'
 import type { BannerOwnerKind } from '@shared/mutate'
 import type { Crop } from '@shared/schemas'
 import { GhostSuppress } from '@renderer/DesignSystem/Interactions/ghostAnchor'

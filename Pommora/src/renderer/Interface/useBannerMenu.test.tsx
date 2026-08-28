@@ -4,7 +4,7 @@ import { act, useRef } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { useBannerMenu } from './useBannerMenu'
 import { GhostSuppress } from '@renderer/DesignSystem/Interactions/ghostAnchor'
-import { useSession } from '../../store'
+import { useSession } from '../store'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
