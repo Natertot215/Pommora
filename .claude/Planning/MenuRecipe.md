@@ -1,6 +1,6 @@
 ## The Menu Recipe — Implementation Plan
 
-> **Status:** written, pending review · Spec: this document's Goal, ratified in conversation on 08-27-2026 · Execute tasks in order.
+> **Status:** written, reviewed twice, pending approval · Execution follows **The Loop** (below the tasks) · Spec: this document's Goal, ratified in conversation on 08-27-2026 · Execute tasks in order.
 > Citations name files and symbols; re-derive before editing. Counts are whole-renderer (`Pommora/src/renderer/src`, Showcase included) unless a task says otherwise.
 
 **Goal**
@@ -24,7 +24,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 9. `NavList` renders `MenuItem` rows on the menu column; `navList.css` holds no row box; NavWindow, NavView, and Trash are Standard.
 10. `AutocompletePane` rows are `item` under a `menuCompact` pane; the Cohesion ruling that exempted them is removed.
 11. The trailing slot is one place: `chevron` · `value` + toggle · `switch` · `button` · `slider` · `field`; `detail` stays a separate passive text.
-12. `frames.css.ts` retains only geometry, drag-chrome, and roster exports; the 12 restating exports are gone.
+12. `frames.css.ts` retains only geometry, drag-chrome, and index exports; the 12 restating exports are gone.
 13. `Frames/frames.css.ts` `COLOR` and the frame-local heading/tone consts are gone.
 14. The search field in NavWindow, Trash, and NavView starts on the same left edge as its rows' icons; NavView's rows sit on the content edge its search, banner title, and subfield share.
 15. `NavTrail` owns its rung, tone, and vertical padding once; no consumer restates them; the Trash's checkboxes are gone and its actions are row-trailing buttons.
@@ -48,7 +48,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 - `item` bundles the box and the shell (`rowShell`: hover, focus ring, cursor) → boxes that are not clickable rows (a filter rule, an inspector row, a frame header) compose `rowBox` alone.
 - `MenuItem` forwards no ref and has no `onMouseDown` or overlay slot; `NavRow` passes `ref={drag.ref}` (`NavList.tsx:144`) and the pin is absolutely positioned; the autocomplete commits on `mousedown` + `preventDefault` (`AutocompletePane.tsx:44`) → Task 9 extends `MenuItem` first.
 - `styles.css` resets no `h1-h6` margin; `.settings-section-title`'s `margin: 0 0 4px` is what zeroes the `<h3>` → `heading` declares `margin: 0`.
-- `SettingsWindow`'s `Row` arms each carry a store key and `RowControl`'s components subscribe per row (`:658`) → the roster renders rows; it does not own subscriptions, and Settings keeps its union.
+- `SettingsWindow`'s `Row` arms each carry a store key and `RowControl`'s components subscribe per row (`:658`) → the index renders rows; it does not own subscriptions, and Settings keeps its union.
 
 **Inherited Reasoning**
 
@@ -69,10 +69,10 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 - `Navigation/{navList.css,NavList.tsx}`, `Windows/NavWindow.tsx`, `Detail/NavView.tsx`, `Settings/TrashFrame.tsx` — the hand-rolled list.
 - `MarkdownPM/Styles.css` `.mdpm-ac`, `.mdpm-ac-row`; `MarkdownPM/AutocompletePane.tsx`.
 - `Frames/frames.css.ts`, `Frames/groupFrame.css.ts`, `Frames/filterFrame.css.ts`, `Frames/layoutFrame.css.ts`, `Views/CardView/cardAddPicker.css.ts`, `Properties/Editors/{dateTimeEditor,numberEditor}.css.ts`, `Settings/settingsWindow.css`, `Windows/pageWindow.css` — the row boxes.
-- `Settings/SettingsWindow.tsx` — the `Row` union and `RowControl` switch the roster lifts.
+- `Settings/SettingsWindow.tsx` — the `Row` union and `RowControl` switch the index lifts.
 - `.claude/Guidelines/Cohesion-Rulings.md`, `.claude/Features/DesignSystemPM.md` §Menus (`:221`, `:364-366`).
 
-**Environment:** plan directory `.claude/Planning`; explorer = `Explore`; code reviewer = `feature-dev:code-reviewer`; attack reviewer = `build-breaking-agent`; neutral verifier = `general-purpose`; simplification = `code-simplifier` then `comment-killer-agent`; gates = `npm run typecheck`, `npx biome check`, `npx vitest run` (from `Pommora/`, exit codes read directly, `set -o pipefail` when piped); rules directory `.claude/Guidelines`.
+**Environment:** plan directory `.claude/Planning`; explorer = `Explore`; executor = `general-purpose` (one per phase, see The Loop); attack reviewer = `build-breaking-agent`; final reviewer = this session; neutral verifier at closeout = `general-purpose`; simplification = `code-simplifier` then `comment-killer-agent`; gates = `npm run typecheck`, `npx biome check`, `npx vitest run` (from `Pommora/`, exit codes read directly, `set -o pipefail` when piped); rules directory `.claude/Guidelines`.
 
 **Shapes:** refactor · removal · user-visible · fix (the FilterFrame footer pin).
 
@@ -91,7 +91,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 | Doc | The specific claim | What makes it false | Task |
 | --- | --- | --- | --- |
 | `DesignSystemPM.md:221` | "menu headings → Headline / Emphasized" · "settings section headings → Headline / Emphasized" · "chips and sidebar section headers → Control / Semibold" | heading is footnote.emphasized; the sidebar clause has no code | 6 |
-| `DesignSystemPM.md:364` | Menu row: `MenuHeading` in the roster | `MenuHeading` deleted | 6 |
+| `DesignSystemPM.md:364` | Menu row: `MenuHeading` in the index | `MenuHeading` deleted | 6 |
 | `DesignSystemPM.md:365` | Bars row: `MenuFrameTopRow`, `MenuBottomRow` | folded / renamed | 4, 5 |
 | `DesignSystemPM.md:197` | Row Inset: `--row-inset` · `ROW_INSET` · 6px | replaced by the four row tokens | 1 |
 | `Cohesion-Rulings.md:66` | "The autocomplete pane's row does not adopt the shared menu-row primitive." | it does | 12 |
@@ -261,12 +261,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 - [ ] Gates green; docs; commit `refactor(menus): the action row`.
 
 #### Gate 1 — the recipe stands
-- [ ] Gates green, exit codes read directly.
-- [ ] Derivations re-run against `--surface-inset` → 8.
-- [ ] Simplification (`code-simplifier`, then `comment-killer-agent`) and `feature-dev:code-reviewer` dispatched against `<base>..HEAD` scoped to `DesignSystem/Menus`, `Pickers/PickerMenu`, `Frames`, `Properties`, `Settings`.
-- [ ] Every concern fixed or ruled in the Log.
-- [ ] Running pass: sidebar, Settings menu, a value picker, CardAddPicker, Calendar month list — each row measures 28 or 23. FilterFrame deferred to Task 20 (hazard window).
-- [ ] Progress hashes filled in.
+- [ ] The Loop, steps 3–5. Running surface: sidebar, Settings menu, a value picker, CardAddPicker, Calendar month list — rows 28 or 23, TopRows 18. FilterFrame deferred to Task 20 (hazard window).
 
 ---
 
@@ -344,7 +339,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 
 **Requirement:** 1
 
-**Why:** `SettingsRow` is already a `MenuItem`; the window's `.settings-wide` seat and `.settings-empty` are the last Settings-local row chrome. Folds ahead of the roster (Task 15) so that task moves data, not styling.
+**Why:** `SettingsRow` is already a `MenuItem`; the window's `.settings-wide` seat and `.settings-empty` are the last Settings-local row chrome. Folds ahead of the index (Task 15) so that task moves data, not styling.
 
 **Files:** `Settings/settingsWindow.css` — `.settings-empty` → `caption`; the body's own padding and the rows' inset stack today (a double inset off the rail) — `.settings-body` pads `var(--surface-inset)` and nothing else, rows read the row tokens, `.settings-heading` and the section headings land on the rows' text edge; `.settings-wide`'s fixed 260px seat deletes — a trailing field or slider sits at the trailing edge like every switch (Task 14's `wide` gives it `--row-trailing-width` for the slider's track; a `PathField` hugs its content), so the asset-directory field stops sitting stranded mid-row; `Settings/SettingsWindow.tsx` `RailTab` unchanged.
 
@@ -355,13 +350,13 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 
 **Requirement:** 1, 11
 
-**Why:** The Scale row is a raw `div` wearing `item` and hand-building `side`/`footingSymbol`/`footingLabel`; the three `chevrons-up-down` rows each re-wrap `side` + `detail`. They are the trailing slot's first consumers and prove its shape before the roster generalizes it.
+**Why:** The Scale row is a raw `div` wearing `item` and hand-building `side`/`footingSymbol`/`footingLabel`; the three `chevrons-up-down` rows each re-wrap `side` + `detail`. They are the trailing slot's first consumers and prove its shape before the index generalizes it.
 
 **Files:** `Frames/LayoutFrame.tsx:157-222`, `Frames/SettingsFrame.tsx:148-155`, `Blocks/BlockHandleMenu.tsx:288-297`; `Frames/layoutFrame.css.ts` `scaleRow` deleted.
 
 **Interfaces**
 - Produces on `MenuItem`: `value?: ReactNode` (control.standard · label-control, rendered before `trailing` inside the trailing `side`); `detail` stays passive footnote.emphasized and renders in the same cluster after `value`.
-- Assumed by: Task 14 (the roster's `value` trailing).
+- Assumed by: Task 14 (the index's `value` trailing).
 
 **Steps:**
 - [ ] Add `value` to `MenuItem` + `menu-base.css.ts` `// Trailing` (`value = style([text.control.standard, { color: c.label.control }])`); migrate the four sites; delete `scaleRow`, `groupByValue`.
@@ -420,60 +415,57 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 - [ ] Commit `refactor(trash): the Trash is a menu`.
 
 #### Gate 2 — every surface composes the recipe
-- [ ] Gates green; derivations re-run; `grep -rn "minHeight: '2[0-9]px'\|min-height: 2[0-9]px" src` → only `fields.css.ts` and non-row hits listed in the Log.
-- [ ] Simplification + review against `<base>..HEAD` scoped to `Frames`, `Properties`, `Navigation`, `Settings`, `MarkdownPM`, `Blocks`, `Windows`, `Pickers`.
-- [ ] Running pass on every surface this phase touched.
-- [ ] Progress hashes.
+- [ ] The Loop, steps 3–5. `grep -rn "minHeight: '2[0-9]px'\|min-height: 2[0-9]px" src` → only `fields.css.ts` and the non-row hits listed in the Log. Running surface: every surface this phase touched, the search edge on all three lists, the Trash overlay, a card's trail zone.
 
 ---
 
-### Phase 3 — The Roster
+### Phase 3 — The Index
 
-#### Task 13: `menu-roster.tsx`
+#### Task 13: `menu-index.tsx`
 
 **Requirement:** 11
 
-**Why:** The trailing kinds are named in seven places today; naming them once as a `Trailing` union and one `MenuRowView` renderer is what lets a presentational frame be a list of sections. `SettingsWindow`'s `Row` union is a settings *schema* (each arm carries a store key, each control subscribes itself) — it keeps its union and its per-row subscriptions, and its `RowControl` renders through `MenuRowView`; the roster owns rendering, never state.
+**Why:** The trailing kinds are named in seven places today; naming them once as a `Trailing` union and one `MenuRowView` renderer is what lets a presentational frame be a list of sections. `SettingsWindow`'s `Row` union is a settings *schema* (each arm carries a store key, each control subscribes itself) — it keeps its union and its per-row subscriptions, and its `RowControl` renders through `MenuRowView`; the index owns rendering, never state.
 
 **Files:**
-- Create: `DesignSystem/Menus/menu-roster.tsx` — `type Trailing = { kind: 'chevron' } | { kind: 'value'; value: ReactNode; onToggle: () => void } | { kind: 'switch'; checked; onChange; ariaLabel } | { kind: 'button'; icon; onClick; ariaLabel } | { kind: 'slider'; …Slider props } | { kind: 'field'; children: ReactNode }`; `type MenuRow = { kind: 'heading'; label; caps? } | { kind: 'separator' } | { kind: 'caption'; text } | { kind: 'action'; label; trailing?; onClick } | { kind: 'item'; icon?: ReactNode; label; caption?; trailing?; wide?; selected?; disabled?; onSelect? }` (`icon` is a node, so a chip or a wrapped glyph rides it); `type MenuSection = { title?; caps?; rows: MenuRow[] }`; `MenuRowView({ row })` renders one row; `MenuRoster({ sections })` maps sections → rows → `MenuRowView`. `Trailing` also carries `{ kind: 'picker'; …PickerControl props }` and `{ kind: 'color'; …ColorSwatch props }` so Settings' picker and color rows are not laundered through `field`.
-- Test: `DesignSystem/Menus/menu-roster.test.tsx` — each kind renders its element; a `switch` trailing keeps its `aria-label` on the button; a `heading` with `caps` wears `headingCaps`; an empty section renders nothing.
+- Create: `DesignSystem/Menus/menu-index.tsx` — `type Trailing = { kind: 'chevron' } | { kind: 'value'; value: ReactNode; onToggle: () => void } | { kind: 'switch'; checked; onChange; ariaLabel } | { kind: 'button'; icon; onClick; ariaLabel } | { kind: 'slider'; …Slider props } | { kind: 'field'; children: ReactNode }`; `type MenuRow = { kind: 'heading'; label; caps? } | { kind: 'separator' } | { kind: 'caption'; text } | { kind: 'action'; label; trailing?; onClick } | { kind: 'item'; icon?: ReactNode; label; caption?; trailing?; wide?; selected?; disabled?; onSelect? }` (`icon` is a node, so a chip or a wrapped glyph rides it); `type MenuSection = { title?; caps?; rows: MenuRow[] }`; `MenuRowView({ row })` renders one row; `MenuIndex({ sections })` maps sections → rows → `MenuRowView`. `Trailing` also carries `{ kind: 'picker'; …PickerControl props }` and `{ kind: 'color'; …ColorSwatch props }` so Settings' picker and color rows are not laundered through `field`.
+- Test: `DesignSystem/Menus/menu-index.test.tsx` — each kind renders its element; a `switch` trailing keeps its `aria-label` on the button; a `heading` with `caps` wears `headingCaps`; an empty section renders nothing.
 
 **Interfaces**
-- Produces: the types above, `MenuRowView`, and `MenuRoster`. Assumed by: Tasks 15–19.
+- Produces: the types above, `MenuRowView`, and `MenuIndex`. Assumed by: Tasks 15–19.
 
 **Failure half:** zero sections → an empty fragment; a section with `title` and zero rows → the heading alone (a design choice: shown, so a data bug is visible rather than silent); a `trailing` of an unknown kind → a compile error (closed union).
 
 **Steps:**
-- [ ] Write the failing tests; implement; gates; commit `feat(menus): the roster`.
+- [ ] Write the failing tests; implement; gates; commit `feat(menus): the index`.
 
 #### Task 14: The trailing slot inside `MenuItem`
 
 **Requirement:** 11
 
-**Why:** `detail` and `trailing` share one span today; `value` joined in Task 11. This makes the slot explicit — leading · title · [value] · [detail] · [trailing] — so the roster's `Trailing` maps to markup once. The trailing cluster is **flush by design**: 23 of the 58 `MenuItem` sites pass `flushTrailing` today and none pass the opposite, so `item`'s right padding applies to the title, the cluster sits at the gutter edge, and `flushTrailing` deletes (the roster then needs no `className`).
+**Why:** `detail` and `trailing` share one span today; `value` joined in Task 11. This makes the slot explicit — leading · title · [value] · [detail] · [trailing] — so the index's `Trailing` maps to markup once. The trailing cluster is **flush by design**: 23 of the 58 `MenuItem` sites pass `flushTrailing` today and none pass the opposite, so `item`'s right padding applies to the title, the cluster sits at the gutter edge, and `flushTrailing` deletes (the index then needs no `className`).
 
 **Files:** `menu-row.tsx` `MenuItem` (gains `wide?: boolean` — the trailing seat takes `--row-trailing-width`, the one KNOB `.settings-wide` was); `menu-base.css.ts` `// Trailing` (`side` stays the cluster class; `value`, `detail`, `accessoryButton` its members; `flushTrailing` deleted, its 23 sites cleaned); `frames.css.ts` `compactTitle`, `configLabel` → deleted (`configLabel` is the item's own title at control density — Compact handles it; `compactTitle` is the chip's name and moves to `OptionRow`'s own stylesheet as geometry).
 
 **Steps:**
 - [ ] Rewrite the markup; `GroupFrame.test.tsx` aria lookups pass; gates; commit `refactor(menus): the trailing slot`.
 
-#### Task 15: SettingsWindow renders through the roster
+#### Task 15: SettingsWindow renders through the index
 
 **Requirement:** 11
 
 **Files:** `Settings/SettingsWindow.tsx` (`Row` union and `FRAMES` unchanged; each `RowControl` arm keeps its subscription and returns `<MenuRowView row={{ kind: 'item', label, caption: hint, trailing: {…} }} />`), `Settings/SettingsRow.tsx` deleted, `HandoffPM.md:49` line removed.
 
-**Derivation:** `grep -rF "SettingsRow" src` → 17 → 0. Control: `grep -rF "MenuRoster" src` → ≥ 2.
+**Derivation:** `grep -rF "SettingsRow" src` → 17 → 0. Control: `grep -rF "MenuIndex" src` → ≥ 2.
 
 **Steps:**
-- [ ] Migrate; running pass on every Settings frame; commit `refactor(settings): the window is a roster`.
+- [ ] Migrate; running pass on every Settings frame; commit `refactor(settings): the window is an index`.
 
 #### Task 16: LayoutToggles + CardsOptions are one table
 
 **Requirement:** 11
 
-**Files:** `Frames/LayoutToggles.tsx`, `Frames/CardsOptions.tsx` → one `{ icon, label, key, invert?, defaultOn? }[]` each rendered by `MenuRoster` with `switch` trailings — `defaultOn` because `hide_column_icons` reads `?? true` and `set_cards` reads `?? true` while the other five read `?? false`; `frames.css.ts` `toggleRow` deleted.
+**Files:** `Frames/LayoutToggles.tsx`, `Frames/CardsOptions.tsx` → one `{ icon, label, key, invert?, defaultOn? }[]` each rendered by `MenuIndex` with `switch` trailings — `defaultOn` because `hide_column_icons` reads `?? true` and `set_cards` reads `?? true` while the other five read `?? false`; `frames.css.ts` `toggleRow` deleted.
 
 **Negative control:** on a view with none of the seven keys set, Column Icons and Set Cards show ON, the other five OFF — and flipping `defaultOn` on either shows the opposite.
 
@@ -484,7 +476,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 
 **Requirement:** 11
 
-**Files:** `Frames/SettingsFrame.tsx` (`ENTRIES` → `MenuRoster` `item` rows with `chevron`), `Frames/LayoutFrame.tsx` (`FRAME_ROWS` likewise), `Frames/SortFrame.tsx` and `Frames/HiddenFrame.tsx` (rows render through `MenuRowView` **inside** their existing `RowShell` and `useFrameRegions` region divs — the drag structure stays; `MenuRoster` is for frames without one; `frozen()` → `disabled`; `hiddenRow` and `gp.subRow` ride `className` on `MenuRowView`, which accepts one for exactly these state classes).
+**Files:** `Frames/SettingsFrame.tsx` (`ENTRIES` → `MenuIndex` `item` rows with `chevron`), `Frames/LayoutFrame.tsx` (`FRAME_ROWS` likewise), `Frames/SortFrame.tsx` and `Frames/HiddenFrame.tsx` (rows render through `MenuRowView` **inside** their existing `RowShell` and `useFrameRegions` region divs — the drag structure stays; `MenuIndex` is for frames without one; `frozen()` → `disabled`; `hiddenRow` and `gp.subRow` ride `className` on `MenuRowView`, which accepts one for exactly these state classes).
 
 **Steps:**
 - [ ] Migrate one file per commit; `SortFrame.test.tsx`, `HiddenFrame` model tests pass.
@@ -504,7 +496,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 
 **Requirement:** 11
 
-**Files:** `Properties/Editors/{URLEditor,CheckboxEditor,FileEditor,NumberEditor,DateTimeEditor}.tsx` → rosters (`switch`, `value`, `field`, `button` trailings); `numberEditor.css.ts` keeps `row`'s `marginTop` as `rowRhythm`.
+**Files:** `Properties/Editors/{URLEditor,CheckboxEditor,FileEditor,NumberEditor,DateTimeEditor}.tsx` → indexes (`switch`, `value`, `field`, `button` trailings); `numberEditor.css.ts` keeps `row`'s `marginTop` as `rowRhythm`.
 
 **Steps:**
 - [ ] Migrate; editor tests pass; commit.
@@ -524,12 +516,74 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 - [ ] Commit `refactor(filter): the footer rides the slot`.
 
 #### Gate 3 — the recipe is the only row writer
-- [ ] Gates green. Dead Vocabulary sweep: every token → 0; control `--surface-inset` → 8.
-- [ ] `frames.css.ts` exports counted: 40 → 28, and every survivor is geometry, drag chrome, or the `ICON` roster.
-- [ ] Simplification + review against `<base>..HEAD`; concerns fixed or ruled.
-- [ ] Running pass across every surface in the census.
-- [ ] Docs: `DesignSystemPM.md` §Menus rewritten to the kinds and the roster; `Cohesion-Rulings.md` gains the ruling "the menu row's box is declared once; a surface picks Standard or Compact on its pane".
-- [ ] Progress hashes; Sequenced After written (Part 2: leading glyph sizes, `--list-inset`, the indent base).
+- [ ] The Loop, steps 3–5. Dead Vocabulary sweep: every token → 0, control `--surface-inset` → 8. `frames.css.ts` exports 40 → 28, all geometry, drag chrome, or `ICON`. Running surface: every frame, both FilterFrame branches with the footer flush. Docs: `DesignSystemPM.md` §Menus to the kinds and the index; `Cohesion-Rulings.md` gains "the menu row's box is declared once; a surface picks Standard or Compact on its pane".
+
+---
+
+### Phase 4 — The Edges Found Alongside
+
+#### Task 21: The content edge is one token
+
+**Requirement:** 14
+
+**Why:** `calc(var(--sidebar-clearance) + var(--content-edge))` is written out four times — `subfield.css:11`, `subfield.css:99` (the footnotes toggle), `Banner.css:33`, `navView.css:21` — and Task 9 adds a fifth on the NavView column. It is one edge: where a page's chrome starts. Named once, the five read it.
+
+**Files:** `styles.css` `.shell` — `--content-start: calc(var(--sidebar-clearance) + var(--content-edge))` and `--content-start-right` for the inspector side, declared beside the clearances; the five sites read them.
+
+**Derivation:** `grep -rF "var(--sidebar-clearance) + var(--content-edge)" src` → 4 (+1 after Task 9) → 0. Control: `grep -rF -- "--sidebar-clearance" src` → ≥ 3.
+
+**Steps:**
+- [ ] Mint; repoint; gates; running pass on the banner title, subfield, footnotes toggle, NavView head — nothing moves.
+- [ ] Commit `refactor(shell): the content edge is one token`.
+
+#### Task 22: IconPicker's cell wears the shell
+
+**Requirement:** 1
+
+**Why:** `iconPicker.css.ts:79-85` hand-rolls `rowShell`'s radius 8 + `state.hover` on a 34px cell. It is not a row, so it composes `rowShell` alone — the wash and radius from one place, its own size kept.
+
+**Files:** `DesignSystem/Components/Pickers/IconPicker/iconPicker.css.ts` `cell` → `style([rowShell, { width/height, …selected }])`.
+
+**Steps:**
+- [ ] Compose; gates; running pass on the icon picker — hover and selection unchanged.
+- [ ] Commit `refactor(iconpicker): the cell wears the shell`.
+
+#### Task 23: The icon ladder is named as the type ramp is
+
+**Requirement:** none of the numbered ones — a naming debt the Figma mirror surfaced.
+
+**Why:** `ICON_PX` in `Tokens/size.css.ts` says `largeTitle / title1 / title2 / title3` while the type ramp says Title Large / Medium / Small. Two ladders, one vocabulary; the Figma `Icons` collection mirrored the old names as-is.
+
+**Files:** `Tokens/size.css.ts` `ICON_PX` keys → `titleLarge`, `titleMedium`, `titleSmall` (a rung with no reader deletes — count first); every `size="title3"` / `'title1'` / `.icon.title2` read; the Figma `Icons` variables renamed to match; `DesignSystemPM.md` Geometry row.
+
+**Derivation:** `grep -rF "title3" src`, `grep -rF "title1" src`, `grep -rF "title2" src`, `grep -rF "largeTitle" src` — counts at execution, each → 0. Control: `grep -rF "ICON_PX" src` → ≥ 3.
+
+**Steps:**
+- [ ] Count each rung's readers; a rung with none deletes, said so in the Log.
+- [ ] Rename; gates; commit `refactor(tokens): the icon ladder is named as the type ramp is`.
+
+#### Gate 4 — the edges
+- [ ] The Loop, steps 3–5. Running surface: banner, subfield, NavView head, the icon picker.
+
+---
+
+## The Loop
+
+Every phase runs the same loop. Nothing advances on a summary; every claim is re-checked by the next hand.
+
+**1. Open — the orchestrator (this session).** Re-derive every Derivation in the phase against the live tree; a count that moved rewrites the task before anyone executes it. Record the base commit in Progress. Write the executor's brief: the phase's tasks verbatim, the Global Constraints, Inherited Reasoning, the Rulings, and a do-not list (the parallel session's files; anything ratified). Nothing else — no transcript.
+
+**2. Execute — one agent, one tree.** A `general-purpose` agent runs the phase's tasks in order, one commit per task, ticking each task's boxes inside its commit. Per task it reports, verbatim from the terminal: each gate's summary line, each Derivation's before/after count against its control, and every deviation from the task as written. If a task's real shape departs from its written one, it searches the plan for every later task that assumed the old shape, rewrites them, and records the divergence — before that task's commit. It never edits a gate, a test assertion, or a criterion to reach green; a task it cannot satisfy as written is reported as impossible and the loop stops there.
+
+**Found Along The Way.** A consumer, a duplicate, or a migration the task didn't name gets one of two dispositions, decided by a test the executor applies and states: **obviously correct** — the same mechanism the task is already replacing, in a file the task is already editing, requiring no decision the plan hasn't made, and the gate stays green — is folded into that task's commit and listed under the task's report as folded; anything else is listed with file:line and a proposed disposition and **left untouched**. The executor never widens scope on its own judgment beyond that test.
+
+**3. Simplify — one agent, the phase's range.** `code-simplifier` then `comment-killer-agent`, each against `<base>..HEAD` scoped to the phase's paths, each reporting what it cut with file:line. Behavior identical; the gates re-run after each and their summary lines are in the report. A simplification that would change behavior is reported, not applied.
+
+**4. Review — the orchestrator, then the attacker.** The orchestrator reads the phase's diff itself (`git diff <base>..HEAD` — the commits, not the reports), runs the three gates itself and reads the exit codes, re-runs every Derivation and the Dead Vocabulary sweep with its control, checks every Made False row whose task landed, and walks the running surface (screenshots where a pane can be reached; otherwise a named list for Nathan). Every Found item is adjudicated: folded now as an addendum commit if obviously correct on the orchestrator's own reading, routed to Open Against Later Tasks if a later task owns it, or to Sequenced After. Then `build-breaking-agent` on the phase's range with the brief in *Briefing a Reviewer*; every finding is verified against the code by the orchestrator before it is folded or rejected with its reason in the Log. **A concern is unfinished work** — it is fixed in an addendum commit or carries Nathan's ruling; nothing is deferred without one.
+
+**5. Close the phase.** Progress hashes filled in; Lessons written into the later tasks they change; the next phase's Derivations re-derived. Only then does step 1 open the next phase. The user-visible surfaces of a phase are Nathan's to see before the next phase starts when a running pass couldn't reach them.
+
+**Standards that hold at every step:** exit codes read directly, never through a pipe without `pipefail`; no "green" without the summary line quoted; no `DONE_WITH_CONCERNS` — a concern is a task; comments at one load-bearing why per file, every `KNOB` intact; explicit paths staged, never a directory; no two writers on the tree at once — the executor and the simplifier run in sequence, never in parallel.
 
 ---
 
@@ -554,8 +608,8 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
   - [ ] Task 12 — Autocomplete
   - [ ] Task 12a — NavTrail owns its look
   - [ ] Task 12b — the Trash is a menu
-- [ ] **Phase 3** — The Roster
-  - [ ] Task 13 — `menu-roster.tsx`
+- [ ] **Phase 3** — The Index
+  - [ ] Task 13 — `menu-index.tsx`
   - [ ] Task 14 — the trailing slot
   - [ ] Task 15 — SettingsWindow
   - [ ] Task 16 — LayoutToggles + CardsOptions
@@ -563,13 +617,17 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
   - [ ] Task 18 — GroupFrame
   - [ ] Task 19 — the property editors
   - [ ] Task 20 — FilterFrame
+- [ ] **Phase 4** — The Edges Found Alongside
+  - [ ] Task 21 — the content edge is one token
+  - [ ] Task 22 — IconPicker's cell wears the shell
+  - [ ] Task 23 — the icon ladder is named as the type ramp is
 
 ### Rulings
 - 08-27 (Nathan): the Trash's action works as the NavList pin does — an overlay glyph in the lead gutter; the checkboxes go. The trail pads through `--trail-pad`; the cards' uneven bottom padding is a defect to diagnose, not pad over.
 - 08-27 (Nathan): token names `--row-height-*` / `--row-width-*` are padding tokens, named so because a row's height is never declared. Compact pad 4. Pane wins inside a picker. NavWindow, NavView, Trash Standard. Autocomplete Compact. Heading on the row's horizontal inset. TopRow defines itself. `detail` = passive text, `value` = a control's value, both kept. Settings section titles keep uppercase. Leading-glyph sizes and nested-list insets are Part 2.
 
 ### Review
-- Round 1 (build-breaking-agent, 08-27): 12 findings, all verified against the code and folded — variants set vars not properties (F1, F2); `MenuItem` gains `forwardRef`, `onMouseDown`, `overlay` before NavList (F3, F8); the nav path is `detail` (F4); the four other `nav-item` files and the per-surface `--row-pad-x` (F5); `rowBox` split from `item` (F6); `heading` declares `margin: 0` and the 6/2 vertical pad (F7, F9); `allRow` stays (F9); the roster renders, Settings keeps its subscriptions (F10); Task 20's control inverted (F11); Calendar's option alignment kept (F12). Cold-read fixes: the `--surface-inset` sentence, Task 8's derivation, Gate 3's export count, `nav-item`'s survivors, Task 3's StatusEditor caret, the Task 3/6 overlap on `PropertyFrame.tsx:141`.
+- Round 1 (build-breaking-agent, 08-27): 12 findings, all verified against the code and folded — variants set vars not properties (F1, F2); `MenuItem` gains `forwardRef`, `onMouseDown`, `overlay` before NavList (F3, F8); the nav path is `detail` (F4); the four other `nav-item` files and the per-surface `--row-pad-x` (F5); `rowBox` split from `item` (F6); `heading` declares `margin: 0` and the 6/2 vertical pad (F7, F9); `allRow` stays (F9); the index renders, Settings keeps its subscriptions (F10); Task 20's control inverted (F11); Calendar's option alignment kept (F12). Cold-read fixes: the `--surface-inset` sentence, Task 8's derivation, Gate 3's export count, `nav-item`'s survivors, Task 3's StatusEditor caret, the Task 3/6 overlap on `PropertyFrame.tsx:141`.
 
 - Round 2 (build-breaking-agent, 08-27): 15 findings, all verified and folded — the TopRow's real height is 18 once its ramp is live (F1); `rowBox` takes `--row-pad-lead`/`--row-pad-trail` over `--row-pad-x` for the two asymmetric nav surfaces (F2); CardAddPicker's override rides the TopRow element (F3); the trailing cluster is flush by design and `flushTrailing` dies (F4); `wide` on the item (F5); `defaultOn` on the toggle tables (F6); Sort/Hidden render `MenuRowView` inside their drag shells (F7); `detail` caps at 55% (F8); WindowInspector's field box is not a row and leaves Task 8 (F9); `header` stays geometry (F10); `pickerControl.value` owns its tone (F11); `heading` reads `--row-pad-x` (F12); `.mdpm-ac` keeps its box (F13); counts 28 / 12 / calendar-only (F14); the inert row's tooltip on an inner span (F15). Latent: `rowDragging` declared twice — moves to the recipe in Task 1. Unknown carried into Task 1's steps: the composed `pane` under `:has()`.
 
