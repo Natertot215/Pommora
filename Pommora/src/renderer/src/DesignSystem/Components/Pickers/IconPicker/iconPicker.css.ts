@@ -77,4 +77,5 @@ export const cell = style([
 export const cellSelected = style({
   color: 'var(--accent)',
   background: 'var(--accent-fill)',
+  selectors: { '&:hover': { background: 'var(--accent-fill)' } },
 })
