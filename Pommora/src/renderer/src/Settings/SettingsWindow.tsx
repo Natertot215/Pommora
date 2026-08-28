@@ -5,19 +5,15 @@ import {
   Menu,
   MenuCaption,
   MenuItem,
+  MenuRowView,
   MenuSeparator,
-  heading,
-  headingCaps,
 } from '@renderer/DesignSystem/Menus'
 import { text } from '@renderer/DesignSystem/Tokens'
-import { DualSwitch } from '@renderer/DesignSystem/Components/Controls/Switches/DualSwitch'
-import { Slider } from '@renderer/DesignSystem/Components/Controls/Slider/Slider'
 import { WindowBase } from '@renderer/Windows/window-base'
 import type { FloatingBounds } from '@renderer/DesignSystem/Interactions/FloatingWindow'
 import type { SidePaneBounds } from '@renderer/DesignSystem/Components/SidePane/SidePane'
 import type { DevicePrefs } from '@shared/devicePrefs'
-import { PickerControl, type PickerChoice } from '@renderer/DesignSystem/Elements/PickerControl'
-import { ColorSwatch } from '@renderer/DesignSystem/Components/Controls/Switches/ColorSwatch'
+import type { PickerChoice } from '@renderer/DesignSystem/Elements/PickerControl'
 import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import { solidColorCss } from '@renderer/DesignSystem/Tokens/solidColor'
 import { LINK_FORMAT_OPTIONS } from '@renderer/Properties/LinkFormat'
@@ -42,7 +38,6 @@ import { DATE_FORMAT_LABELS, DATE_FORMATS, type DateFormat } from '@shared/colum
 import { useExitPresence } from '@renderer/DesignSystem/Animation/useExitPresence'
 import { useSession } from '../store'
 import { TrashFrame } from './TrashFrame'
-import { SettingsRow, type RowText } from './SettingsRow'
 import { AssetDirectoryRow } from './AssetDirectoryRow'
 import './settingsWindow.css'
 
@@ -58,6 +53,11 @@ const DRAG_SURFACES =
 type KeyOf<V> = {
   [K in keyof Personalization]-?: NonNullable<Personalization[K]> extends V ? K : never
 }[keyof Personalization]
+
+interface RowText {
+  label: string
+  hint: string
+}
 
 type PickerRow<T extends string> = RowText & {
   kind: 'picker'
@@ -591,7 +591,9 @@ function FrameBody({ category }: { category: CategoryKey }): React.JSX.Element {
       ) : (
         sections.map((section, i) => (
           <div key={section.title ?? i} className="settings-section">
-            {section.title && <h3 className={cx(heading, headingCaps)}>{section.title}</h3>}
+            {section.title && (
+              <MenuRowView row={{ kind: 'heading', label: section.title, caps: true }} />
+            )}
             {section.rows.map((row) => (
               // Keyed on the label: the one row writing a top-level settings key has no
               // personalization key to be identified by, and a label is unique within a section.
@@ -630,15 +632,21 @@ function ColorRow({ row }: { row: RowOf<'color'> }): React.JSX.Element {
   const inheriting = !value || value === row.inherits
 
   return (
-    <SettingsRow label={row.label} hint={row.hint}>
-      <ColorSwatch
-        label={row.label}
-        selected={inheriting ? 'default' : labelColorFor(value)}
-        css={inheriting ? row.inheritsVar : solidColorCss(value)}
-        greyscale={row.greyscale}
-        onPick={(next) => setPersonalization(row.key, (next ?? row.inherits) as never)}
-      />
-    </SettingsRow>
+    <MenuRowView
+      row={{
+        kind: 'item',
+        label: row.label,
+        caption: row.hint,
+        trailing: {
+          kind: 'color',
+          label: row.label,
+          selected: inheriting ? 'default' : labelColorFor(value),
+          css: inheriting ? row.inheritsVar : solidColorCss(value),
+          greyscale: row.greyscale,
+          onPick: (next) => setPersonalization(row.key, (next ?? row.inherits) as never),
+        },
+      }}
+    />
   )
 }
 
@@ -648,13 +656,19 @@ function ToggleRow({ row }: { row: RowOf<'toggle'> }): React.JSX.Element {
   const on = value ?? row.defaultOn ?? false
 
   return (
-    <SettingsRow label={row.label} hint={row.hint}>
-      <DualSwitch
-        checked={on}
-        ariaLabel={row.label}
-        onChange={(next) => setPersonalization(row.key, row.defaultOn && next ? undefined : next)}
-      />
-    </SettingsRow>
+    <MenuRowView
+      row={{
+        kind: 'item',
+        label: row.label,
+        caption: row.hint,
+        trailing: {
+          kind: 'switch',
+          checked: on,
+          ariaLabel: row.label,
+          onChange: (next) => setPersonalization(row.key, row.defaultOn && next ? undefined : next),
+        },
+      }}
+    />
   )
 }
 
@@ -662,13 +676,19 @@ function DeviceRow({ row }: { row: RowOf<'device'> }): React.JSX.Element {
   const on = useSession((s) => s.devicePrefs[row.key] ?? false)
   const setDevicePref = useSession((s) => s.setDevicePref)
   return (
-    <SettingsRow label={row.label} hint={row.hint}>
-      <DualSwitch
-        checked={on}
-        ariaLabel={row.label}
-        onChange={(next) => setDevicePref(row.key, next || undefined)}
-      />
-    </SettingsRow>
+    <MenuRowView
+      row={{
+        kind: 'item',
+        label: row.label,
+        caption: row.hint,
+        trailing: {
+          kind: 'switch',
+          checked: on,
+          ariaLabel: row.label,
+          onChange: (next) => setDevicePref(row.key, next || undefined),
+        },
+      }}
+    />
   )
 }
 
@@ -687,23 +707,29 @@ function ZoomRow({ row }: { row: RowOf<'zoom'> }): React.JSX.Element {
     steps.some((f) => f === stored) ? steps : [...steps, stored].sort((a, b) => a - b)
   ).map(zoomChoice)
   return (
-    <SettingsRow label={row.label} hint={row.hint}>
-      <PickerControl
-        ariaLabel={row.label}
-        value={String(stored)}
-        options={choices}
-        onPick={(v) => commit(Number(v))}
-        typeable={{
-          text: String(Math.round(stored * 100)),
-          suffix: '%',
-          onCommit: (written) => {
-            const percent = Number.parseFloat(written.replace('%', '').trim())
-            if (Number.isFinite(percent))
-              commit(Math.min(steps[steps.length - 1], Math.max(steps[0], percent / 100)))
+    <MenuRowView
+      row={{
+        kind: 'item',
+        label: row.label,
+        caption: row.hint,
+        trailing: {
+          kind: 'picker',
+          ariaLabel: row.label,
+          value: String(stored),
+          options: choices,
+          onPick: (v) => commit(Number(v)),
+          typeable: {
+            text: String(Math.round(stored * 100)),
+            suffix: '%',
+            onCommit: (written) => {
+              const percent = Number.parseFloat(written.replace('%', '').trim())
+              if (Number.isFinite(percent))
+                commit(Math.min(steps[steps.length - 1], Math.max(steps[0], percent / 100)))
+            },
           },
-        }}
-      />
-    </SettingsRow>
+        },
+      }}
+    />
   )
 }
 
@@ -711,14 +737,21 @@ function PickerRow({ row }: { row: RowOf<'picker'> }): React.JSX.Element {
   const stored = useSession((s) => s.personalization[row.key])
   const setPersonalization = useSession((s) => s.setPersonalization)
   return (
-    <SettingsRow label={row.label} hint={row.hint}>
-      <PickerControl
-        ariaLabel={row.label}
-        value={stored ?? row.fallback}
-        options={row.options}
-        onPick={(v) => setPersonalization(row.key, v === row.fallback ? undefined : v)}
-      />
-    </SettingsRow>
+    <MenuRowView
+      row={{
+        kind: 'item',
+        label: row.label,
+        caption: row.hint,
+        trailing: {
+          kind: 'picker',
+          ariaLabel: row.label,
+          value: stored ?? row.fallback,
+          options: row.options,
+          onPick: (v: typeof row.fallback) =>
+            setPersonalization(row.key, v === row.fallback ? undefined : v),
+        },
+      }}
+    />
   )
 }
 
@@ -726,16 +759,22 @@ function SliderRow({ row }: { row: RowOf<'slider'> }): React.JSX.Element {
   const value = useSession((s) => s.personalization[row.key] ?? 0)
   const setPersonalization = useSession((s) => s.setPersonalization)
   return (
-    <SettingsRow label={row.label} hint={row.hint}>
-      <Slider
-        value={value}
-        min={0}
-        max={row.max}
-        step={1}
-        ariaLabel={row.label}
-        format={row.format}
-        onCommit={(v) => setPersonalization(row.key, v > 0 ? Math.round(v) : undefined)}
-      />
-    </SettingsRow>
+    <MenuRowView
+      row={{
+        kind: 'item',
+        label: row.label,
+        caption: row.hint,
+        trailing: {
+          kind: 'slider',
+          value,
+          min: 0,
+          max: row.max,
+          step: 1,
+          ariaLabel: row.label,
+          format: row.format,
+          onCommit: (v) => setPersonalization(row.key, v > 0 ? Math.round(v) : undefined),
+        },
+      }}
+    />
   )
 }
