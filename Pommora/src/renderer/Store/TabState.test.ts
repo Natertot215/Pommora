@@ -8,7 +8,7 @@ import {
   fetchPageDetail,
   readPageDetail,
   readWarm,
-} from './warmCache'
+} from './TabState'
 
 beforeEach(() => clearWarm()) // module state — never leaks across tests
 

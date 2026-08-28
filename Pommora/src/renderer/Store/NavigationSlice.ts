@@ -38,7 +38,7 @@ import {
   sameTabs,
   tabKey,
 } from '../Tabs/tabsModel'
-import { clearWarm, dropPageDetail, dropWarmDetail, dropWarmTab, readWarm } from '../Tabs/warmCache'
+import { clearWarm, dropPageDetail, dropWarmDetail, dropWarmTab, readWarm } from './TabState'
 import {
   findCollection,
   findCollectionForSet,
