@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { ProgressBar } from '../../../Elements/ProgressBar/ProgressBar'
 import { GlassSegment } from '../../../Glass'
 import * as s from './slider.css'
+import { cx } from '../../../Util/cx'
 
 const decimalsOf = (step: number): number => {
   const str = String(step)
@@ -108,7 +109,7 @@ export function Slider({
           </GlassSegment>
         </div>
       </div>
-      {format && <span className={readoutClassName}>{format(v)}</span>}
+      {format && <span className={cx(s.readout, readoutClassName)}>{format(v)}</span>}
     </>
   )
 }

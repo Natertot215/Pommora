@@ -5,8 +5,7 @@ export const strip = style({
   position: 'relative',
   display: 'flex',
   alignItems: 'center',
-  flex: 1,
-  minWidth: 0,
+  width: 160, // KNOB
   padding: '6px 0',
   touchAction: 'none',
 })
@@ -30,3 +29,5 @@ export const knobFill = style({
   borderRadius: '9px',
   background: 'var(--label-control)',
 })
+
+export const readout = style({ flexShrink: 0 })
