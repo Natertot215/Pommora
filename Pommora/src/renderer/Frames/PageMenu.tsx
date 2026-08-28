@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
+import { Button } from '@renderer/DesignSystem/Controls/Button'
 import { entityIcon, Icon } from '@renderer/DesignSystem/Symbols'
 import { shownDetail, useSession } from '../store'
 import { footerLockAction, lockIcon } from '@renderer/DesignSystem/Menus/menu-base.css'

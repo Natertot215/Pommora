@@ -33,10 +33,10 @@ import {
   useGroupedDragItem,
 } from '@renderer/DesignSystem/Interactions/drag'
 import { cx } from '@renderer/DesignSystem/Util/cx'
-import { assetUrl } from '../../assetUrl'
+import { assetUrl } from '@renderer/Assets/assetUrl'
 import { useSession } from '../../store'
-import { AssetImage } from '@renderer/DesignSystem/Components/AssetImage/AssetImage'
-import { ImagePicker } from '@renderer/DesignSystem/Components/Pickers/ImagePicker/ImagePicker'
+import { AssetImage } from '@renderer/Assets/AssetImage'
+import { ImagePicker } from '@renderer/DesignSystem/Pickers/ImagePicker/ImagePicker'
 import { useBannerMenu } from '@renderer/Interface/useBannerMenu'
 import { byOrder, parentOf } from '@shared/treePatch'
 import { thumbKey, thumbRel } from '@shared/nexusPaths'

@@ -13,8 +13,8 @@ import { Icon, iconNameOr } from '@renderer/DesignSystem/Symbols'
 import { cellColor } from '@renderer/DesignSystem/Tokens/ramp'
 import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import { tintAt } from '@renderer/DesignSystem/Tokens/tint'
-import { ColorPicker } from '@renderer/DesignSystem/Components/Pickers/ColorPicker/ColorPicker'
-import { PickerMenu } from '@renderer/DesignSystem/Components/Pickers/PickerMenu'
+import { ColorPicker } from '@renderer/DesignSystem/Pickers/ColorPicker/ColorPicker'
+import { PickerMenu } from '@renderer/DesignSystem/Pickers/PickerMenu'
 import {
   AccessoryButton,
   Menu,
@@ -24,8 +24,8 @@ import {
 } from '@renderer/DesignSystem/Menus'
 import { titleInput as rowInput, rowDisabled } from '@renderer/DesignSystem/Menus/menu-base.css'
 import { reorder, SortableZone, useDragItem } from '@renderer/DesignSystem/Interactions/drag'
-import { optionRing } from '@renderer/DesignSystem/Components/Pickers/PickerMenu/pickerMenu.css'
-import { RenamableLabel } from '@renderer/DesignSystem/Components/Fields'
+import { optionRing } from '@renderer/DesignSystem/Pickers/PickerMenu/pickerMenu.css'
+import { RenamableLabel } from '@renderer/DesignSystem/Fields'
 import { IconPicker } from '@renderer/Settings/IconPicker'
 import { findCollection, findCollectionForSet, findSet } from '@renderer/Interface/Scope'
 import { ViewRenderer } from '@renderer/Views/ViewRenderer'
@@ -33,13 +33,13 @@ import { SettingsFrame } from '@renderer/Frames/SettingsFrame'
 import { hostedGutter } from '@renderer/DesignSystem/Menus/menu-surface.css'
 import { ViewEmbedScopeProvider } from '@renderer/Embeds/ViewEmbedScope'
 import { useSession } from '@renderer/store'
-import { PICKER_MAX_HEIGHT } from '@renderer/DesignSystem/Components/Pickers/PickerMenu/pickerMenu.css'
+import { PICKER_MAX_HEIGHT } from '@renderer/DesignSystem/Pickers/PickerMenu/pickerMenu.css'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import {
   labelSlot,
   labelSlotHidden,
   labelText,
-} from '@renderer/DesignSystem/Components/Controls/Button/button.css'
+} from '@renderer/DesignSystem/Controls/Button/button.css'
 import {
   SEGMENT_ICON,
   segment,

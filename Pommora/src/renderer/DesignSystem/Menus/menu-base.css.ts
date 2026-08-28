@@ -2,8 +2,8 @@ import { globalStyle, style, type StyleRule } from '@vanilla-extract/css'
 import { vars as colorVars } from '../Tokens/color.css'
 import { font, text } from '../Tokens/typography.css'
 import { tintAt } from '../Tokens/tint'
-import { fieldRing, ROW_RING } from '../Components/Fields/fieldRing'
-import { base } from '../Components/Fields/fields.css'
+import { fieldRing, ROW_RING } from '../Fields/fieldRing'
+import { base } from '../Fields/fields.css'
 
 const c = colorVars.color
 

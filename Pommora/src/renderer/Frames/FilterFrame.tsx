@@ -1,11 +1,11 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
+import { Button } from '@renderer/DesignSystem/Controls/Button'
 import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
 import type { FilterRule, SavedView } from '@shared/views'
 import { Icon } from '@renderer/DesignSystem/Symbols'
-import { SegmentRun } from '@renderer/DesignSystem/Components/Fields/SegmentRun'
-import * as sr from '@renderer/DesignSystem/Components/Fields/segmentRun.css'
+import { SegmentRun } from '@renderer/DesignSystem/Fields/SegmentRun'
+import * as sr from '@renderer/DesignSystem/Fields/segmentRun.css'
 import { EntityIcon } from '@renderer/Components/EntityIcon'
 import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import {
@@ -22,15 +22,15 @@ import {
   footingLabel,
   footingSymbol,
 } from '@renderer/DesignSystem/Menus/menu-base.css'
-import { PickerMenu, PickerOption } from '@renderer/DesignSystem/Components/Pickers/PickerMenu'
+import { PickerMenu, PickerOption } from '@renderer/DesignSystem/Pickers/PickerMenu'
 import {
   PICKER_MAX_HEIGHT,
   treePane,
-} from '@renderer/DesignSystem/Components/Pickers/PickerMenu/pickerMenu.css'
+} from '@renderer/DesignSystem/Pickers/PickerMenu/pickerMenu.css'
 import { OverScroll } from '@renderer/DesignSystem/Interactions/OverScroll'
 import { Reveal } from '@renderer/DesignSystem/Animation/Reveal'
 import { duration as motion, ms } from '@renderer/DesignSystem/Animation'
-import { CalendarPicker } from '@renderer/DesignSystem/Components/Pickers/CalendarPicker/CalendarPicker'
+import { CalendarPicker } from '@renderer/DesignSystem/Pickers/CalendarPicker/CalendarPicker'
 import { contextIdsOf, isContextColumnId } from '@renderer/Properties/contextIdentity'
 import { useStyleFor } from '@renderer/Tables/columnStyles'
 import { useSession } from '../store'

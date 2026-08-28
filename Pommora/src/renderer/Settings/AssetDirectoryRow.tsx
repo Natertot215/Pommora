@@ -1,4 +1,4 @@
-import { PathField } from '@renderer/DesignSystem/Components/Fields'
+import { PathField } from '@renderer/DesignSystem/Fields'
 import { MenuRowView } from '@renderer/DesignSystem/Menus'
 import { useSession } from '../store'
 

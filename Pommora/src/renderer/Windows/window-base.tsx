@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type Ref } from 'react'
-import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
+import { Button } from '@renderer/DesignSystem/Controls/Button'
 import { GlassWindow } from '@renderer/DesignSystem/Glass'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { cx } from '@renderer/DesignSystem/Util/cx'
@@ -13,7 +13,7 @@ import {
   SidePane,
   sidePaneWidth,
   type SidePaneBounds,
-} from '@renderer/DesignSystem/Components/SidePane/SidePane'
+} from '@renderer/DesignSystem/SidePane/SidePane'
 import './window-base.css'
 
 const BOUNDS: FloatingBounds = { minW: 360, minH: 280, defW: 850, defH: 600 }

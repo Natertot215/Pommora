@@ -1,7 +1,7 @@
 import { type Ref, useState } from 'react'
 import type { TitleMenuAction } from '@shared/identityMenus'
 import { Icon } from '@renderer/DesignSystem/Symbols'
-import { RenamableLabel, base } from '@renderer/DesignSystem/Components/Fields'
+import { RenamableLabel, base } from '@renderer/DesignSystem/Fields'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import './content-title.css'
 

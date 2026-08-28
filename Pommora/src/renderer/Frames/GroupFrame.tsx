@@ -27,7 +27,7 @@ import { footingLabel, footingSymbol, side } from '@renderer/DesignSystem/Menus/
 import { registerDiscloseTarget } from '@renderer/DesignSystem/Interactions/dragDisclose'
 import { DragGhost } from '@renderer/DesignSystem/Interactions/DragGhost'
 import { EyeToggle } from '@renderer/DesignSystem/Elements/EyeToggle'
-import { DualSwitch } from '@renderer/DesignSystem/Components/Controls/Switches/DualSwitch'
+import { DualSwitch } from '@renderer/DesignSystem/Controls/Switches/DualSwitch'
 import { useSaveView } from '@renderer/Embeds/ViewEmbedScope'
 import { declaredType } from '@renderer/Properties/value'
 import {

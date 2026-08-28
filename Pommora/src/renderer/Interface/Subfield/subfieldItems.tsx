@@ -1,5 +1,5 @@
 import type { SelectionState } from '@shared/types'
-import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
+import { Button } from '@renderer/DesignSystem/Controls/Button'
 import { containerCreators } from '@shared/mutate'
 import { type PageTarget, useSession } from '../../store'
 import { findCollection } from '../Scope'

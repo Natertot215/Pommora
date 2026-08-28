@@ -1,10 +1,7 @@
 import { style } from '@vanilla-extract/css'
 import { vars as colorVars } from '@renderer/DesignSystem/Tokens/color.css'
-import {
-  field as fieldBase,
-  borderedField,
-} from '@renderer/DesignSystem/Components/Fields/fields.css'
-import { focusRing } from '@renderer/DesignSystem/Components/Fields/fieldRing'
+import { field as fieldBase, borderedField } from '@renderer/DesignSystem/Fields/fields.css'
+import { focusRing } from '@renderer/DesignSystem/Fields/fieldRing'
 import { growToContent } from '@renderer/DesignSystem/Menus/frame-growth'
 import { rowBox, side } from '@renderer/DesignSystem/Menus/menu-base.css'
 
@@ -77,7 +74,7 @@ export const connector = style([
   },
 ])
 
-export { placeholder } from '@renderer/DesignSystem/Components/Fields/fields.css'
+export { placeholder } from '@renderer/DesignSystem/Fields/fields.css'
 
 export const blankWide = style({ minWidth: '58px' })
 export const blankNarrow = style({ minWidth: '34px', flex: '0 0 auto' })

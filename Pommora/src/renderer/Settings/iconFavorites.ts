@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import { useSession } from '@renderer/store'
-import type { IconFavorites } from '@renderer/DesignSystem/Components/Pickers/IconPicker/IconPicker'
+import type { IconFavorites } from '@renderer/DesignSystem/Pickers/IconPicker/IconPicker'
 
 const NONE: string[] = []
 

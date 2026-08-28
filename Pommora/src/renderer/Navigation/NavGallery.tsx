@@ -19,7 +19,7 @@ import { NavPinButton, NavRowMenu } from './NavList'
 import './navGallery.css'
 import { onActivateKey } from '@renderer/DesignSystem/Interactions/activate'
 import { thumbKey, thumbRel } from '@shared/nexusPaths'
-import { assetUrl } from '../assetUrl'
+import { assetUrl } from '@renderer/Assets/assetUrl'
 
 export function NavGallery({
   pins,

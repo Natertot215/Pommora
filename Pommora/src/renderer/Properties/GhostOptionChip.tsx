@@ -11,7 +11,7 @@ import {
   type GhostAnchor,
 } from '@renderer/DesignSystem/Interactions/ghostAnchor'
 import { cx } from '@renderer/DesignSystem/Util/cx'
-import { base, EditableInput } from '@renderer/DesignSystem/Components/Fields'
+import { base, EditableInput } from '@renderer/DesignSystem/Fields'
 import * as s from '../Frames/frames.css'
 import { Label, type LabelShape } from '@renderer/DesignSystem/Labels'
 
