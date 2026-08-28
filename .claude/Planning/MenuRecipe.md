@@ -103,7 +103,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 
 ### Phase 1 — The Recipe
 
-#### Task 1: The four row tokens, `item` and `itemCompact`
+#### Task 1: The four row tokens, `item` and `menuCompact`
 
 **Requirement:** 1, 2
 
@@ -111,7 +111,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 
 **Files:**
 - Modify: `DesignSystem/Menus/menu-base.css.ts` — declare the four tokens on `:root`; `item` pads and sizes through four per-surface vars that default to the Standard pair and the body ramp; add `menuCompact`, the class a surface wears to switch those vars to the Compact pair and the control ramp; delete `ROW_SIZE`, `ROW_LINE`, `ROW_GAP`, `minHeight: '24px'`.
-- Modify: `DesignSystem/Components/Pickers/PickerMenu/pickerMenu.css.ts` — `pane` drops the `--menu-row-*` vars; `option` composes `[item, itemCompact]` and keeps only `justifyContent`, `whiteSpace`, the button reset, and the selection classes.
+- Modify: `DesignSystem/Components/Pickers/PickerMenu/pickerMenu.css.ts` — `pane` drops the `--menu-row-*` vars; `option` composes `item` (the pane wears `menuCompact`) and keeps only `justifyContent`, `whiteSpace`, the button reset, and the selection classes.
 - Modify: `DesignSystem/Elements/DropOutline/dropOutline.css.ts` — `ROW_INSET` → read `var(--row-width-standard)` in `RAIL_CENTER_X`; the export goes.
 - Modify: `DesignSystem/Menus/menu-surface.css.ts` — `MENU_GUTTER` deleted; `surface` and `hostedGutter` pad `6px var(--surface-inset)` with the `paddingTop` calc on the same `6px`.
 - Modify: `styles.css` — `--row-inset` deleted.
@@ -122,7 +122,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 
 **Interfaces**
 - Produces: `item` (unchanged name) reading `--row-pad-y` / `--row-pad-x` / `--row-size` / `--row-line`, each defaulting to Standard; `menuCompact`, the surface class that sets the four to the Compact pair and the control ramp.
-- Assumed by: every later task; `pickerMenu.css.ts pane` wears `menuCompact`; Requirement 1's "itemCompact" is this pair.
+- Assumed by: every later task; `pickerMenu.css.ts pane` wears `menuCompact`.
 
 **Derivation**
 - `grep -rF -- "--row-inset" src` → 6. Legitimate hits after: none.
