@@ -542,48 +542,50 @@ Every task below is written as **Today → Becomes**; line numbers are at `7f358
 
 ### Phase 4 — The Edges Found Alongside
 
+Written as **Today → Becomes**; counts re-derived at Phase 4's open.
+
 #### Task 21: The content edge is one token
 
 **Requirement:** 14
 
-**Why:** `calc(var(--sidebar-clearance) + var(--content-edge))` is written out four times — `subfield.css:11`, `subfield.css:99` (the footnotes toggle), `Banner.css:33`, `navView.css:21` — and Task 9 adds a fifth on the NavView column. It is one edge: where a page's chrome starts. Named once, the five read it.
+**Today:** `calc(var(--sidebar-clearance) + var(--content-edge))` is written five times — `Interface/navView.css:21` (`.nav-view-head`'s left margin; its right margin is the inspector twin `calc(var(--inspector-clearance) + var(--content-edge))`), `Interface/Subfield/subfield.css:11` (`.subfield` padding-left), `:99` (the footnotes toggle), `Interface/Banner/Banner.css:33` (`.banner-title` left), `:119` — plus the NavView column Task 9 put on the same edge. `styles.css` `.shell` declares `--sidebar-clearance` / `--inspector-clearance` beside the layout block.
 
-**Files:** `styles.css` `.shell` — `--content-start: calc(var(--sidebar-clearance) + var(--content-edge))` and `--content-start-right` for the inspector side, declared beside the clearances; the five sites read them.
+**Becomes:** `.shell` declares `--content-start: calc(var(--sidebar-clearance) + var(--content-edge))` and `--content-start-right: calc(var(--inspector-clearance) + var(--content-edge))` once, beside the clearances; every left and right reader reads the token. Nothing moves on screen.
 
-**Derivation:** `grep -rF "var(--sidebar-clearance) + var(--content-edge)" src` → 4 (+1 after Task 9) → 0. Control: `grep -rF -- "--sidebar-clearance" src` → ≥ 3.
+**Derivation:** `grep -rF "var(--sidebar-clearance) + var(--content-edge)" src` → 5 (+1) → 0; `grep -rF "var(--inspector-clearance) + var(--content-edge)" src` → count at open → 0. Control: `grep -rF -- "--sidebar-clearance" src` ≥ 3.
 
 **Steps:**
-- [ ] Mint; repoint; gates; running pass on the banner title, subfield, footnotes toggle, NavView head — nothing moves.
+- [ ] Mint; repoint; gates; screenshots of the banner title, subfield, footnotes toggle, NavView head and list — nothing moves.
 - [ ] Commit `refactor(shell): the content edge is one token`.
 
 #### Task 22: IconPicker's cell wears the shell
 
 **Requirement:** 1
 
-**Why:** `iconPicker.css.ts:79-85` hand-rolls `rowShell`'s radius 8 + `state.hover` on a 34px cell. It is not a row, so it composes `rowShell` alone — the wash and radius from one place, its own size kept.
+**Today:** `DesignSystem/Components/Pickers/IconPicker/iconPicker.css.ts:75-90` `cell` — `flex 0 0 auto`, `display: grid`, `placeItems: center`, `border: none`, `background: transparent`, `borderRadius: 8`, `color: label.control`, `fontSize: vars.size.icon.title2`, `cursor: pointer`, `'&:hover': { background: state.hover }`; `cellSelected` the accent.
 
-**Files:** `DesignSystem/Components/Pickers/IconPicker/iconPicker.css.ts` `cell` → `style([rowShell, { width/height, …selected }])`.
+**Becomes:** `cell = style([rowShell, { flex, display: 'grid', placeItems, border, background, color, fontSize }])` — radius 8 and the hover wash from `rowShell`; the cell keeps its own size; `cursor` inherits `rowShell`'s `default` (the cursor convention: default everywhere but links — recorded in Deviations); `cellSelected` unchanged.
 
 **Steps:**
-- [ ] Compose; gates; running pass on the icon picker — hover and selection unchanged.
+- [ ] Compose; gates; screenshot the icon picker — hover and selection unchanged.
 - [ ] Commit `refactor(iconpicker): the cell wears the shell`.
 
 #### Task 23: The icon ladder is named as the type ramp is
 
 **Requirement:** none of the numbered ones — a naming debt the Figma mirror surfaced.
 
-**Why:** `ICON_PX` in `Tokens/size.css.ts` says `largeTitle / title1 / title2 / title3` while the type ramp says Title Large / Medium / Small. Two ladders, one vocabulary; the Figma `Icons` collection mirrored the old names as-is.
+**Today:** `Tokens/size.css.ts:6-18` `ICON_PX = { largeTitle: 26, title1: 22, title2: 17, title3: 15, headline: 13, body: 13, callout: 12, control: 12, caption: 11, footnote: 10, subline: 10 }`, `vars.size.icon.*` derived from it at `:22`; readers whole-renderer at Phase 2's open: `largeTitle` 3, `title1` 7, `title2` 7, `title3` 23 (definitions included).
 
-**Files:** `Tokens/size.css.ts` `ICON_PX` keys → `titleLarge`, `titleMedium`, `titleSmall` (a rung with no reader deletes — count first); every `size="title3"` / `'title1'` / `.icon.title2` read; the Figma `Icons` variables renamed to match; `DesignSystemPM.md` Geometry row.
+**Becomes:** four title rungs today against three type-ramp names — list each rung's readers first; a rung with no reader outside its definition deletes (said so in the Log); the survivors are renamed `titleLarge` / `titleMedium` / `titleSmall` in descending size, every `size="…"` / `vars.size.icon.…` read following; the Figma `Icons` variables are Part 2 (the file is out of scope for this run); `DesignSystemPM.md`'s row at closeout.
 
-**Derivation:** `grep -rF "title3" src`, `grep -rF "title1" src`, `grep -rF "title2" src`, `grep -rF "largeTitle" src` — counts at execution, each → 0. Control: `grep -rF "ICON_PX" src` → ≥ 3.
+**Derivation:** each old key → 0 after; control `grep -rF "ICON_PX" src` ≥ 3.
 
 **Steps:**
-- [ ] Count each rung's readers; a rung with none deletes, said so in the Log.
+- [ ] Count each rung's readers; a rung with none deletes.
 - [ ] Rename; gates; commit `refactor(tokens): the icon ladder is named as the type ramp is`.
 
 #### Gate 4 — the edges
-- [ ] The Loop, steps 3–5. Running surface: banner, subfield, NavView head, the icon picker.
+- [ ] The Loop, steps 3–5. Screenshots: banner, subfield, NavView head, the icon picker.
 
 ---
 
