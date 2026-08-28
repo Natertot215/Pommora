@@ -961,7 +961,7 @@ function GhostCard({
         {banner !== 'none' && (
           <CardThumb>
             <CardPlaceholder>
-              <Icon name={iconName} size="title1" />
+              <Icon name={iconName} size="titleMedium" />
             </CardPlaceholder>
           </CardThumb>
         )}
@@ -1036,7 +1036,7 @@ function SetCard({ set, drag }: { set: SetNode; drag?: DragItem }): React.JSX.El
             value={set.banner}
             fallback={
               <CardPlaceholder>
-                <Icon name={iconName} size="largeTitle" />
+                <Icon name={iconName} size="titleLarge" />
               </CardPlaceholder>
             }
           />
@@ -1240,7 +1240,7 @@ const CardFace = memo(function CardFace({
   )
   const ph = (
     <CardPlaceholder>
-      <Icon name={iconName} size="title1" />
+      <Icon name={iconName} size="titleMedium" />
     </CardPlaceholder>
   )
   return (

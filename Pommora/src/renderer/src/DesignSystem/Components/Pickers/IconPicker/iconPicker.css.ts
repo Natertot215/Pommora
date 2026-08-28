@@ -70,7 +70,7 @@ export const cell = style([
     border: 'none',
     background: 'transparent',
     color: vars.color.label.control,
-    fontSize: vars.size.icon.title2,
+    fontSize: vars.size.icon.titleSmall,
   },
 ])
 

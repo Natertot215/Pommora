@@ -303,7 +303,10 @@ function TreeNode({
         ) : (
           <span className="ix-caret-gap" />
         )}
-        <Icon name={kids ? (open ? 'folder-open' : 'folder-closed') : 'file-text'} size="title3" />
+        <Icon
+          name={kids ? (open ? 'folder-open' : 'folder-closed') : 'file-text'}
+          size="headline"
+        />
         <span>{node.label}</span>
       </div>
       {kids && (

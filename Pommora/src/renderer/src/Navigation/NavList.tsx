@@ -130,7 +130,7 @@ function NavRow({
     <MenuItem
       ref={drag?.ref}
       className={cx(drag?.isDragging && rowDragging)}
-      leading={<EntityGlyph item={it} size="title3" />}
+      leading={<EntityGlyph item={it} size="headline" />}
       detail={<NavTrail segments={it.path} iconSize="control" />}
       overlay={<NavPinButton it={it} className={cx(overlay, 'nav-pin')} />}
       onPointerDown={drag?.handle.onPointerDown}
