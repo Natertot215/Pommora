@@ -1,6 +1,7 @@
 import { style } from '@vanilla-extract/css'
 import { vars as colorVars } from '@renderer/DesignSystem/Tokens/color.css'
 import { font } from '@renderer/DesignSystem/Tokens/typography.css'
+import { item } from '@renderer/DesignSystem/Menus/menu-base.css'
 
 const c = colorVars.color
 
@@ -8,11 +9,8 @@ const c = colorVars.color
 // measured width, so unequal panes would shift the anchored picker on every slide;
 // locking every pane to one width kills the shift and sets the menu's footprint.
 export const PANE_W = 120
-// The stretch ceiling — a pane may grow to fit content up to this, then labels truncate.
-export const PANE_MAX_W = 180
+export const PANE_MAX_W = 180 // KNOB
 
-/** A column, so a pane's own rows fill its width: a `button` row sizes to fit-content in a block
- *  box, which strands a trailing chosen-mark against the label instead of the pane's edge. */
 export const pane = style({
   display: 'flex',
   flexDirection: 'column',
@@ -21,45 +19,24 @@ export const pane = style({
   boxSizing: 'border-box',
 })
 
-/** The page-embed title field — the source page's identity as a bordered "field" reading like an
- *  input but acting as a link: clicking it opens the page full-view. Its border wears the accent tint
- *  (accent @ tint-secondary), the same signal as the embed's own border on the surface, so the menu's
- *  "open the page" field reads as the embed it belongs to. A two-tier stack (page title over its
- *  location) with tight vertical rhythm; `textAlign: left` undoes the button's default centering; both
- *  labels ride the shared ellipsis-at-rest / scroll-on-hover mechanic. */
-export const titleField = style({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '1px',
-  width: '100%',
-  boxSizing: 'border-box',
-  margin: '0 0 3px',
-  padding: '3px 6px',
-  border: 'var(--width-100) solid var(--accent-stroke)',
-  borderRadius: '5px',
-  background: 'none',
-  textAlign: 'left',
-  cursor: 'pointer',
-  overflow: 'hidden',
-  selectors: { '&:hover': { background: c.state.hover } },
-})
-export const titleFieldRow = style({
-  display: 'flex',
-  alignItems: 'center',
-  gap: '6px',
-  overflow: 'hidden',
-})
-/** Page title — matches the menu's rows; the markup wears `overScrollEllipsis` for the cap. */
-export const titleFieldText = style([
+export const titleField = style([
+  item,
   {
-    flex: 1,
-    minWidth: 0,
-    fontSize: font.scale.control.size,
-    lineHeight: font.scale.control.line,
-    color: c.label.control,
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    gap: '1px',
+    width: '100%',
+    boxSizing: 'border-box',
+    margin: '0 0 3px',
+    border: 'var(--width-100) solid var(--accent-stroke)',
+    borderRadius: '5px',
+    background: 'none',
+    textAlign: 'left',
+    cursor: 'pointer',
+    overflow: 'hidden',
   },
 ])
-/** Location sub-line — a step under the title. */
+export const titleFieldText = style({ flex: 1, minWidth: 0, color: c.label.control })
 export const titleFieldLoc = style([
   {
     flex: 1,
@@ -72,11 +49,8 @@ export const titleFieldLoc = style([
 export const titleFieldIcon = style({ selectors: { '&&': { color: c.label.secondary } } })
 export const titleFieldLocIcon = style({ selectors: { '&&': { color: c.label.tertiary } } })
 
-/** The Scale dropdown body — a tight column of the five step rows (narrower than the menu's own pane). */
 export const scaleMenu = style({ minWidth: 58 })
 
-/** The Scale row's trailing value + double-chevron trigger — a bare button, mirroring titleFieldLoc;
- *  the chevron a step quieter than the value. */
 export const scaleTrailing = style({
   display: 'inline-flex',
   alignItems: 'center',
