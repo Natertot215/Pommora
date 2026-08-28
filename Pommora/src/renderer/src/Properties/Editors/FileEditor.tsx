@@ -1,6 +1,6 @@
 import { PathField } from '@renderer/DesignSystem/Components/Fields'
 import { useSession } from '@renderer/store'
-import { rowBox } from '@renderer/DesignSystem/Menus/menu-base.css'
+import { MenuItem } from '@renderer/DesignSystem/Menus'
 import * as s from '../../Frames/frames.css'
 
 /** The path is relative to the asset root rather than to the nexus, so re-pointing the root
@@ -18,16 +18,19 @@ export function FileEditor({
   const value = directory ?? ''
   return (
     <div className={s.configEditor}>
-      <div className={rowBox}>
-        <span className={s.configLabel}>Directory</span>
-        <PathField
-          label="Directory"
-          value={value}
-          empty={assetRoot}
-          onCommit={onSetDirectory}
-          onBrowse={onBrowse}
-        />
-      </div>
+      <MenuItem
+        trailing={
+          <PathField
+            label="Directory"
+            value={value}
+            empty={assetRoot}
+            onCommit={onSetDirectory}
+            onBrowse={onBrowse}
+          />
+        }
+      >
+        Directory
+      </MenuItem>
     </div>
   )
 }

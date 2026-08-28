@@ -11,6 +11,7 @@ import { IconPicker } from '@renderer/Settings/IconPicker'
 import { OptionNameCaret, ghostAnchorProps } from './GhostOptionChip'
 import type { GhostAnchor } from '@renderer/DesignSystem/Interactions/ghostAnchor'
 import * as s from '../Frames/frames.css'
+import { compactTitle } from './optionRow.css'
 import { labelColor, shape as labelShape, optionShapeFor } from '@renderer/DesignSystem/Labels'
 
 export type OptionStyle = Extract<ColumnLook, 'standard' | 'compact'>
@@ -20,13 +21,6 @@ export const OPTION_STYLE_OPTIONS = [
   { value: 'compact', label: 'Compact' },
 ] as const satisfies readonly { value: OptionStyle; label: string }[]
 
-/** One reorderable option, the same row in the Select editor and the Status editor. Everything that
- *  differs between them — where the list came from, whether a group's color stands in for an unset
- *  one — is resolved by the caller and arrives here already decided, so the row states the chip, the
- *  naming caret, the palette and its picker exactly once. The chip shape follows the property type.
- *
- *  The drag wiring stays with the caller: the row registers itself, but the gesture belongs to the
- *  list that owns the ordering. */
 export function OptionRow({
   type,
   look,
@@ -48,19 +42,14 @@ export function OptionRow({
   onCloseIcon,
 }: {
   type: string
-  /** The active view's look for this column — the row shows the option exactly as the view will. */
   look: OptionStyle
   value: string
   label: string
-  /** Already resolved — a Status option inherits its group's color, a Select option has only its own. */
   color: string | undefined
-  /** The option's own Compact glyph, if it carries one. */
   icon?: string
-  /** Status only: the groups the Compact glyph is resolved against. */
   def?: Pick<PropertyDefinition, 'status_groups'>
   renaming: boolean
   coloring: boolean
-  /** The Compact glyph editor is open on this option — it previews its icon-only variant. */
   iconEditing?: boolean
   paletteRef: React.RefObject<HTMLButtonElement | null>
   onCommitRename: (raw: string) => void
@@ -103,7 +92,7 @@ export function OptionRow({
     <>
       <span className={s.optionLead}>
         <OptionChip type={type} look={look} option={option} def={def} />
-        {look === 'compact' && <span className={s.compactTitle}>{label}</span>}
+        {look === 'compact' && <span className={compactTitle}>{label}</span>}
       </span>
       <span className={s.paletteAnchor}>
         <Button
@@ -129,17 +118,12 @@ export function OptionRow({
   )
 }
 
-/** What a row needs from whichever reorder hook the list is using — the flat one and the grouped one
- *  agree on exactly this much, which is why a row can be written once for both. */
 export interface RowDrag {
   registerRow: (value: string, el: HTMLElement | null) => void
   onRowPointerDown: (value: string, e: ReactPointerEvent) => void
   dragging: string | null
 }
 
-/** A row in its seat: the drag affordance, the hover anchor a ghost opens against, and the row
- *  itself. The gesture still belongs to the list that owns the ordering — the seat only hands each
- *  press to the handle it was given, the way the row only paints what it was told. */
 export function OptionSlot({
   drag,
   ghost,

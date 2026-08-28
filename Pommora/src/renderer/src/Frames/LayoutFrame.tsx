@@ -17,11 +17,7 @@ import {
   MenuFooting,
   AccessoryButton,
 } from '@renderer/DesignSystem/Menus'
-import {
-  flushTrailing,
-  footingLabel,
-  footingSymbol,
-} from '@renderer/DesignSystem/Menus/menu-base.css'
+import { footingLabel, footingSymbol } from '@renderer/DesignSystem/Menus/menu-base.css'
 import { PickerMenu } from '@renderer/DesignSystem/Components/Pickers/PickerMenu'
 import { Slider } from '@renderer/DesignSystem/Components/Controls/Slider/Slider'
 import { useSession } from '../store'
@@ -142,7 +138,6 @@ export function LayoutFrame({
 
   const formatToggle = (glyph: IconName, label: string): React.JSX.Element => (
     <MenuItem
-      className={flushTrailing}
       leading={
         <span className={footingSymbol}>
           <Icon name={glyph} size="control" />
@@ -165,7 +160,6 @@ export function LayoutFrame({
       <MenuFooting>
         {formatToggle('palette', 'Style')}
         <MenuItem
-          className={flushTrailing}
           leading={
             <span className={footingSymbol}>
               <Icon name="image" size="control" />
@@ -185,7 +179,6 @@ export function LayoutFrame({
           <span className={footingLabel}>Banner</span>
         </MenuItem>
         <MenuItem
-          className={flushTrailing}
           leading={
             <span className={footingSymbol}>
               <Icon name="scaling" size="control" />
@@ -331,7 +324,6 @@ export function LayoutFrame({
   const leafRow = (r: (typeof FRAME_ROWS)[number]): React.JSX.Element => (
     <MenuItem
       key={r.id}
-      className={flushTrailing}
       leading={<Icon name={r.icon} size="title3" />}
       trailing={<Icon name="chevron-right" />}
       onClick={() => setFrame(r.id)}

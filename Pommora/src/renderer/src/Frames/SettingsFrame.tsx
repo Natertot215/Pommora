@@ -3,7 +3,7 @@ import type { OpenIn } from '@shared/types'
 import { Icon, entityIcon, iconNameOr, type IconName } from '@renderer/DesignSystem/Symbols'
 import { NavTrail, type TrailSegment } from '@renderer/DesignSystem/Elements/NavTrail'
 import { ancestryOf } from '../treeIndex'
-import { flushTrailing, rowDisabled } from '@renderer/DesignSystem/Menus/menu-base.css'
+import { rowDisabled } from '@renderer/DesignSystem/Menus/menu-base.css'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { footerLock, ICON } from './frames.css'
 import { useSession } from '../store'
@@ -125,7 +125,6 @@ export function SettingsFrame(): React.JSX.Element | null {
     <>
       <MenuTopRow label="Settings" current="Configuration" onBack={back} />
       <MenuItem
-        className={flushTrailing}
         leading={<Icon name="layout-grid" size={ICON.rootEntry} />}
         value={openInValue === 'page-preview' ? 'Preview' : 'Full Page'}
         trailing={<Icon name="chevrons-up-down" size="control" />}
@@ -158,7 +157,7 @@ export function SettingsFrame(): React.JSX.Element | null {
       {entries.map((e) => (
         <MenuItem
           key={e.id}
-          className={cx(flushTrailing, frozen(e.id) && rowDisabled)}
+          className={cx(frozen(e.id) && rowDisabled)}
           leading={<Icon name={e.icon} size={ICON.rootEntry} />}
           trailing={<Icon name="chevron-right" />}
           onClick={frozen(e.id) ? undefined : () => open(e.id)}

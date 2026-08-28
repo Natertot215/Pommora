@@ -5,7 +5,6 @@ import type { SavedView } from '@shared/views'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { useSession } from '../store'
 import { MenuItem, MenuTopRow, MenuScrollFrame } from '@renderer/DesignSystem/Menus'
-import { flushTrailing } from '@renderer/DesignSystem/Menus/menu-base.css'
 import { resolveColumns } from '@renderer/Views/pipeline/columns'
 import { columnLabel } from '@renderer/Properties/Editing/columnLabel'
 import { useActiveView } from '@renderer/Views/useActiveView'
@@ -63,7 +62,7 @@ function VisibilityGroups({
       <div data-group="assigned" ref={assignedRef}>
         {shownIds.map((id) => (
           <RowShell key={id} id={id}>
-            <MenuItem className={flushTrailing} leading={rowIcon(id, schema)} trailing={eyeFor(id)}>
+            <MenuItem leading={rowIcon(id, schema)} trailing={eyeFor(id)}>
               {nameFor(id)}
             </MenuItem>
           </RowShell>
@@ -77,7 +76,7 @@ function VisibilityGroups({
         {hiddenIds.map((id) => (
           <RowShell key={id} id={id}>
             <MenuItem
-              className={cx(flushTrailing, s.hiddenRow)}
+              className={cx(s.hiddenRow)}
               leading={rowIcon(id, schema)}
               trailing={eyeFor(id)}
             >
