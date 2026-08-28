@@ -36,7 +36,7 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
 - Only the active tab ever fetches (every fetch runs through `select`) → one in-flight fence (`pageFetchSeq`) and one abandoned-slide fence (`coldStampSeq`) are correct and stay.
 - `graduatePinCovered` and `unpinTab` never shrink the set of pointed-at page ids (a pinned target is covered by `pinnedTabs`; an unpin replaces the pin with a tab on the same target) → the pruner runs in two places: the end of `select` and `applyTabResult`, which `closeTab` and `applyTree`'s dropped-tab loop both route through.
 - A rename's link cascade rewrites bodies nexus-wide, and today's `clearWarm()` is what tears parked editors down → the rename arm deletes every non-shown slot and reloads the shown one.
-- `Embeds/connectionMenu.ts` calls `deriveTarget(preview)?.id` → `deriveTarget` stays; it returns the active page tab's stored `target` (a `PageTarget` is a `PreviewTarget`), and the sentinel tab yields null so the NavWindow's map tab never reads as a page.
+- `Links/connectionMenu.ts` calls `deriveTarget(preview)?.id` → `deriveTarget` stays; it returns the active page tab's stored `target` (a `PageTarget` is a `PreviewTarget`), and the sentinel tab yields null so the NavWindow's map tab never reads as a page.
 - `PageEmbed` loads through the path-keyed detail cache, not the store → the preview's page is not a slot; the preview keeps its local body.
 - 113 files import from `../store` → `store.ts` stays the composition root and the import path.
 - The Renderer Refactor's `Core/` row is pending → `Store/` moves with `store.ts` when it lands.
@@ -59,8 +59,8 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
 - `Pommora/src/renderer/src/Detail/PageView.tsx` — the `detail` prop, the three conditional selectors, `registerPageEditor`, `pushLiveBody`, the `warm` seam.
 - `Pommora/src/renderer/src/Detail/Subfield/{Subfield,subfieldItems,CitationsToggle}.tsx` — `SubfieldScope`.
 - `Pommora/src/renderer/src/Windows/PageWindow.tsx` — `previewBody`, the `scope` memo.
-- `Pommora/src/renderer/src/Tabs/tabsModel.ts` (`pinTabId`, `openTab`, `derivePinnedTabs`), `Windows/windowTabs.ts` (`deriveTarget`), `selection.ts` (`reconcileWith`), `Embeds/connectionMenu.ts`.
-- The active-page readers: `Navigation/useNavThumbnails.ts`, `Toolbar/OutlineMenu.tsx`, `Frames/PageMenu.tsx`, `Properties/PageProperties.tsx`, `Embeds/connectionMenu.ts`.
+- `Pommora/src/renderer/src/Tabs/tabsModel.ts` (`pinTabId`, `openTab`, `derivePinnedTabs`), `Windows/windowTabs.ts` (`deriveTarget`), `selection.ts` (`reconcileWith`), `Links/connectionMenu.ts`.
+- The active-page readers: `Navigation/useNavThumbnails.ts`, `Toolbar/OutlineMenu.tsx`, `Frames/PageMenu.tsx`, `Properties/PageProperties.tsx`, `Links/connectionMenu.ts`.
 - `.claude/Planning/Codebase-Cleanup-Checklist.md` §Bundle 5; `Architecture Audit — Full-Codebase Report.md` §The Store; `RendererRefactor.md` the `Core/` row; `.claude/Guidelines/Cohesion-Rulings.md`; `.claude/Features/ArchitecturePM.md` §The Store, §Tabs, Warmth, and Navigation.
 
 **Environment**
@@ -123,7 +123,7 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
 - Modify: `Pommora/src/renderer/src/Detail/PageView.tsx` — props `{ tabId, pageId, parked }`; read `s.pages[pageId]`; `pushLiveBody` → `setPageBody(path, body)`; `warm.capture` reads the slot and tab id through refs and is gated on the mount-time generation.
 - Modify: `Pommora/src/renderer/src/MarkdownPM/index.tsx` — the cleanup comment about the capture identity moves out (the seam owns that fact now); no code change.
 - Modify: `Pommora/src/renderer/src/Detail/ContentView.tsx` — `useHosts`; `key={h.pageId}`; `frozen` reads `frozenOf`.
-- Modify: the active-page readers — `Toolbar/OutlineMenu.tsx`, `Frames/PageMenu.tsx`, `Properties/PageProperties.tsx`, `Embeds/connectionMenu.ts` read `shownDetail`; `Navigation/useNavThumbnails.ts` subscribes to `shownPage(s)?.status` and reads the body through `getState()` at capture time as today; `Detail/Subfield/subfieldItems.tsx`, `CitationsToggle.tsx` read `shownDetail` and `pageBody(shownPage(s))` — the `scope` mode is untouched here (Task 2).
+- Modify: the active-page readers — `Toolbar/OutlineMenu.tsx`, `Frames/PageMenu.tsx`, `Properties/PageProperties.tsx`, `Links/connectionMenu.ts` read `shownDetail`; `Navigation/useNavThumbnails.ts` subscribes to `shownPage(s)?.status` and reads the body through `getState()` at capture time as today; `Interface/Subfield/subfieldItems.tsx`, `CitationsToggle.tsx` read `shownDetail` and `pageBody(shownPage(s))` — the `scope` mode is untouched here (Task 2).
 - Test: `Pommora/src/renderer/src/store.test.tsx` — `seed` takes `pages`; expectations on `pageStatus`/`pageDetail` read the slot; the capture test seeds warm directly (the capture is now the surface's).
 
 **Derivation**

@@ -6,7 +6,7 @@
 
 **Where the tree stands.** The dependency order reads `DesignSystem ← Properties ← Tables ← Views`, with `Cards/`, `Windows/`, and `Frames/` standing on the design system alone; `DesignSystem/Glass/` is the material in four tiers and `DesignSystem/Menus/` the menu recipe in kebab parts. The five words — Window, Pane, Menu, Frame, Picker — name every floating or sliding surface. The rulings taken so far are in the atlas's Settled list.
 
-**What is next is to plan before moving again.** The ledger holds the rest in order: the Menu recipe and the side slot first, then the filing rows the atlas already rules, the token and scale rows behind them, and the one behavioral fix. Nathan is still weighing the token moves and the alias naming that the early commits made; the next session's first job is to recap what landed against the ledger, confirm the order, and settle the open rulings before any further row is executed. The Inline Page Properties work runs parallel on its own Decision Log. The Codebase Cleanup — the behavioral half — follows once the refactor stops moving its files.
+**What is next is to plan before moving again.** The ledger holds the rest in order: the Menu recipe and the side slot first, then the filing rows the atlas already rules, the token and scale rows behind them, and the one behavioral fix. Nathan is still weighing the token moves and the alias naming that the early commits made; the next session's first job is to recap what landed against the ledger, confirm the order, and settle the open rulings before any further row is executed. The Codebase Cleanup — the behavioral half — follows once the refactor stops moving its files.
 
 ### Immediate Work
 
