@@ -4,11 +4,9 @@ import { Icon, entityIcon, iconNameOr, type IconName } from '@renderer/DesignSys
 import { NavTrail, type TrailSegment } from '@renderer/DesignSystem/Elements/NavTrail'
 import { ancestryOf } from '../treeIndex'
 import {
-  detail as detailText,
   flushTrailing,
   footingLabel,
   rowDisabled,
-  side,
 } from '@renderer/DesignSystem/Menus/menu-base.css'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { footerLock, ICON } from './frames.css'
@@ -133,14 +131,8 @@ export function SettingsFrame(): React.JSX.Element | null {
       <MenuItem
         className={flushTrailing}
         leading={<Icon name="layout-grid" size={ICON.rootEntry} />}
-        trailing={
-          <span className={side}>
-            <span className={detailText}>
-              {openInValue === 'page-preview' ? 'Preview' : 'Full Page'}
-            </span>
-            <Icon name="chevrons-up-down" size="control" />
-          </span>
-        }
+        value={openInValue === 'page-preview' ? 'Preview' : 'Full Page'}
+        trailing={<Icon name="chevrons-up-down" size="control" />}
         onClick={toggleOpenIn}
       >
         Open In

@@ -38,7 +38,3 @@ export const tile = style({
 })
 
 export const tileSelected = style({ borderColor: 'var(--accent-stroke-hot)' })
-
-/** The Scale footing row — composed WITH the menu `item` class so it sits on the exact MenuItem
- *  chassis (inset, gap, height) the Style row above it uses; this only widens it to the bar. */
-export const scaleRow = style({ width: '100%' })

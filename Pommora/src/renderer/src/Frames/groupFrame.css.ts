@@ -15,11 +15,6 @@ export const subLabel = style([text.body.emphasized, { color: c.label.secondary 
 /** KNOB — the hierarchy's disclosed sub-group chips render a step smaller than table chips. */
 export const subChip = style({ zoom: 0.85 })
 
-export const groupByValue = style([
-  text.control.standard,
-  { color: c.label.control, display: 'inline-flex', alignItems: 'center', gap: '4px' },
-])
-
 export const pickerTone = style({})
 globalStyle(`${pickerTone} ${pickerValue}${pickerValue}${pickerValue}`, { color: c.label.control })
 
