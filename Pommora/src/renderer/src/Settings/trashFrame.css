@@ -1,6 +1,3 @@
-/* The Trash leaf — a clear-headed table (Tables) whose rows are the navigation list's, borrowed
-   whole, with one lane added for the deletion time. This file styles the frame, the lane, and the
-   tokens the leaf rebinds; the compound selector outranks the `.table` scope those tokens come from. */
 .trash-frame.table {
   --navwindow-inset: 14px; /* KNOB — the leaf's content inset, the rows' and the heading's alike */
   --trash-date-lane: 160px; /* KNOB — fixed, so the dates line up down the list */
@@ -23,7 +20,6 @@
   margin: 0;
   padding: 0;
 }
-/* The clear heading's own seam, inset to the rows. */
 .trash-frame .trash-head::after {
   content: "";
   position: absolute;
@@ -37,8 +33,6 @@
 .trash-head .col-header:first-child::before {
   content: none;
 }
-/* A row's segment bar reads as a separator, the heading's as heading chrome — one shape, two tones;
-   the row's sits where its date lane begins. */
 .trash-frame .trash-row {
   --segment-tone: var(--border-base);
 }
@@ -54,10 +48,8 @@
 }
 .trash-head-glyph {
   display: flex;
-  margin-right: 8px; /* the row's own glyph-to-title gap */
+  margin-right: 8px;
 }
-/* A column's glyph sits a step under its label, which is the relationship the table's own header
-   icon already keeps against the same heading tone. */
 .trash-frame .trash-head svg {
   color: var(--label-secondary);
 }
@@ -66,8 +58,6 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  /* One inset for both, so the label sits over its dates and neither crowds the column divider
-     that lands on the lane's edge. */
   padding-left: var(--trash-date-inset);
 }
 
@@ -79,8 +69,6 @@
   padding-bottom: 6px;
 }
 
-/* The table's row treatment: a line between rows rather than under each one, so a list has none
-   above its first nor below its last.*/
 .trash-frame .trash-row + .trash-row::before {
   content: "";
   position: absolute;
@@ -90,7 +78,6 @@
   border-top: var(--table-border);
 }
 
-/* A checked set holds every row's checkbox visible. */
 .trash-frame.has-checked .trash-check,
 .trash-check:focus-visible {
   opacity: 1;
@@ -101,7 +88,6 @@
   color: var(--label-secondary);
 }
 
-/* A location that no longer exists reads as a record of one. */
 .trash-frame .is-historical {
   font-style: italic;
   color: var(--label-tertiary);

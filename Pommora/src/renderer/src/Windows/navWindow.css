@@ -31,9 +31,7 @@
   align-items: center;
   padding-left: var(--row-width-standard);
   /* KNOB — clearance past settings + X, plus the squeeze that stops the row at an open pane's
-     leading edge; without the second term the tabs run under the pane. The squeeze carries its own
-     motion through --io, so padding-right stays OUT of the transition list — transitioning it would
-     retarget on every frame that --io advances. */
+     leading edge; without the second term the tabs run under the pane. */
   padding-right: calc(var(--app-inset) + 56px + var(--window-title-squeeze, 0px));
   transition:
     height var(--duration-base) var(--ease-base),

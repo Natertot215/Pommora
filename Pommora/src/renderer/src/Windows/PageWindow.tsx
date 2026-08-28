@@ -21,30 +21,21 @@ import { WindowTabStrip } from './WindowTabStrip'
 import { useWindowWarm } from './useWindowWarm'
 import './pageWindow.css'
 
-// The tab wrap's bare space moves too — a press on a .tab is not the wrap and never arms.
 const DRAG_SURFACES =
   '.page-window-body, .page-window-tabwrap, .page-window-tabscroll, .page-window-tabstrip'
 
-// The ContentView's view-slide value, on the preview's own stamp.
 const SLIDE_PX = 14
 
-// Mirrors PageView — edits coalesce before the count recomputes.
 const STATS_DEBOUNCE_MS = 120
 
-// The class tells the stylesheet to suppress the shell's default scale-out so one motion owns the
-// window; a plain dismiss keeps it.
 const EXIT_CLASS = { dismiss: '', engulf: 'engulfing', morph: 'morphing' } as const
 
 const NO_TRAIL: TrailSegment[] = []
 
 export function PageWindow(): React.JSX.Element | null {
-  // Keys on the PAGE flavor, not the derived target — the nav flavor renders in NavWindow's
-  // chrome, and its map tab nulls the target without closing anything.
   const open = useSession((s) => s.preview?.flavor === 'page')
   const target = useSession(previewTargetOf)
   const { mounted, closing } = useExitPresence(open)
-  // Held through the exit animation (the store nulls target at close). Not keyed by target — an
-  // overtake swaps contents in place, the window never jumps.
   const held = useRef(target)
   if (target) held.current = target
   if (!mounted || !held.current) return null
@@ -62,21 +53,16 @@ function PageWindowBody({
   const embedScale = useEmbedScale()
   const select = useSession((s) => s.select)
   const tree = useSession((s) => s.tree)
-  // The window root — the engulf FLIP and the tab-slide's pane push both measure from here.
   const rootRef = useRef<HTMLDivElement>(null)
 
-  // Fully editable via the seam's edit flip; a new target starts back at the read-only portal.
   const [editing, setEditing] = useState(false)
   useEffect(() => setEditing(false), [target.path])
 
-  // The window's page is not a store slot (the embed loads through the path-keyed detail cache),
-  // so its footer counts a local body.
   const [previewBody, setPreviewBody] = useState('')
   const statsTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const seededPath = useRef<string | null>(null)
   useEffect(() => {
     setPreviewBody('')
-    // Kill any pending debounced write from the outgoing page so it can't land as a stale count.
     clearTimeout(statsTimer.current)
   }, [target.path])
   useEffect(
@@ -98,10 +84,8 @@ function PageWindowBody({
     () => ({ target: { kind: 'page', id: target.id, path: target.path }, body: previewBody }),
     [target.id, target.path, previewBody],
   )
-  // Escape closes the inspector first, then the window.
   const [inspectorOpen, setInspectorOpen] = useState(false)
 
-  // ⌘-click (bypass) is ADDITIVE — a new app tab opens behind, the preview stays.
   const openPreviewTab = useSession((s) => s.openPreviewTab)
   const connections = useMemo<ConnectionsApi | undefined>(() => {
     if (!tree) return undefined
@@ -121,8 +105,6 @@ function PageWindowBody({
 
   const trail = (tree && ancestryOf(tree, { kind: 'page', id: target.id })) ?? NO_TRAIL
 
-  // The open inspector RIDES the same keyframes as the body — one motion, transform only, so the
-  // pane never blinks.
   const previewSlide = useSession((s) => s.previewSlide)
   const bodyRef = useRef<HTMLDivElement>(null)
   const prevPath = useRef(target.path)
@@ -149,7 +131,6 @@ function PageWindowBody({
 
   const warmSeam = useWindowWarm(bodyRef, target.path)
 
-  // Opens for real through the normal select; the window ENGULFS into the pane.
   const promote = (): void => {
     closePreview('engulf')
     void select({ kind: 'page', id: target.id, path: target.path })
@@ -188,7 +169,6 @@ function PageWindowBody({
       onEscape={() => (inspectorOpen ? setInspectorOpen(false) : closePreview())}
       dragSurfaces={DRAG_SURFACES}
       ariaLabel="Page Preview"
-      // --mdpm-scale mirrors the embed's so the footer aligns to its text column.
       style={{ '--mdpm-scale': embedScale, '--editor-scale': 1 } as React.CSSProperties}
       onScan={promote}
       title={

@@ -1,7 +1,3 @@
-/* ============================================================================
-   CARDS — the one card chassis every card surface wears: the Navigation gallery and the
-   Collection CardView. A card is a cover band over a title area.
-   ============================================================================ */
 :root {
   /* KNOB — the shared column-width floor. Bigger = fewer, larger columns that grow further before a
      new one snaps them back; smaller = more, tighter columns. `-base` is the unscaled value, so a
@@ -17,12 +13,8 @@
   --preview-zoom: 1.25; /* KNOB — captured previews zoom into the top; a user-cropped cover never does */
 }
 
-/* ── THE GRID ─────────────────────────────────────────────────────────────
-   auto-FIT: with no empty tracks to pad, cards STRETCH to fill the width, so a wider host grows
-   the cards rather than shrinking them — they only step down when there's room for another whole
-   column, then grow again from there. `is-fill` holds the empty tracks instead, so a sparse grid
-   keeps its cards card-sized rather than ballooning to fill the row.
-   ────────────────────────────────────────────────────────────────────────── */
+/* auto-fit stretches cards to fill the row (no empty tracks to pad); is-fill holds the empty
+   tracks instead, so a sparse grid keeps its cards card-sized rather than ballooning to fill it. */
 .card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(var(--card-min), 1fr));
@@ -32,12 +24,8 @@
   grid-template-columns: repeat(auto-fill, minmax(var(--card-min), 1fr));
 }
 
-/* ── THE CARD ─────────────────────────────────────────────────────────────
-   Root = drag shell (the engine owns its transform); body = the frame + hover-pop. A locked card
-   holds the aspect and lets its cover take a share; a reflow card fixes its cover and grows below.
-   ────────────────────────────────────────────────────────────────────────── */
 .card {
-  min-width: 0; /* a grid item sizes to its content by default — a long trail would widen the card past its track instead of clipping */
+  min-width: 0;
   text-align: left;
   cursor: pointer;
   border: none;
@@ -46,7 +34,7 @@
 }
 .card.is-locked {
   aspect-ratio: 125 / 90;
-  align-self: start; /* a taller row-sibling can't stretch it past its aspect height */
+  align-self: start;
 }
 .card.is-dragging {
   opacity: var(--state-drag);
@@ -65,7 +53,6 @@
     border-color var(--duration-base) var(--ease-base),
     transform var(--duration-slow) var(--ease-base);
 }
-/* The open entity — the same accent stroke an active embed wears. */
 .card.is-active .card-body {
   border-color: var(--accent-stroke);
 }
@@ -86,12 +73,12 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: top; /* a page's inline title banner sits at the top of the shot */
-  -webkit-user-drag: none; /* the image never drags on its own — the card owns the drag (or nothing) */
+  object-position: top;
+  -webkit-user-drag: none;
 }
 .card-thumb.is-capture img {
   transform: scale(var(--preview-zoom));
-  transform-origin: top left; /* anchor the zoom at the title / line-starts so it never clips them */
+  transform-origin: top left;
 }
 
 .card-ph {
@@ -104,7 +91,6 @@
   background: var(--fill-quaternary);
 }
 
-/* The pin — a surface opts in by mounting one inside the thumb. */
 .card-pin {
   position: absolute;
   top: 6px;
@@ -126,8 +112,6 @@
   opacity: 1;
 }
 
-/* The title area: a top-anchored column on a darker shelf. The title is pinned to the top, never
-   centered, so a card with no location keeps its title where one with a location does. */
 .card-text {
   flex: 1;
   display: flex;
@@ -140,11 +124,11 @@
   border-top: var(--width-150) solid var(--border-base);
 }
 .card.is-locked .card-text {
-  min-height: 0; /* the cover band decides; the text takes what's left */
+  min-height: 0;
 }
 
 .card-title {
-  flex: 0 0 auto; /* its own fixed row — the title never grows to fill / recenter */
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   min-width: 0;

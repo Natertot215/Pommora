@@ -16,11 +16,7 @@ import { stack } from '@renderer/DesignSystem/Tokens/stack'
 import { fieldRing } from '@renderer/DesignSystem/Components/Fields/fieldRing'
 const c = colorVars.color
 
-// ═══════════════════════════════════════════════════════════════════════════
-// KNOBS — every ViewFrame tunable, grouped by what it controls. Tune here;
-// the styles below (ordered top-to-bottom as the frame renders) only consume.
-// ═══════════════════════════════════════════════════════════════════════════
-
+// KNOBS — every ViewFrame tunable, grouped by what it controls.
 const SIZE = {
   iconPickerButton: 28,
   dragHighlightRadius: 6,
@@ -29,20 +25,20 @@ const SIZE = {
 const OPTION = {
   gapAroundLabel: 6, // "Options" → first chip (the gap ABOVE "Options" is the header's own bottom pad)
   gapBetweenChips: 6,
-  chipPadX: 6, // option chip horizontal padding — retunes the shared label default, this frame only
-  groupGap: 12, // status only: gap between one group's block (heading + chips) and the next
-  compactTitleGap: 8, // a Compact chip → the name standing beside it
+  chipPadX: 6,
+  groupGap: 12,
+  compactTitleGap: 8,
 }
 
 export const ICON = {
-  add: 'body', // the header ⊕ (square-plus) — sized to the back-row heading
-  editorMenu: 'body', // the editor header's ⋮ — sized to the back-row heading
-  doc: 'control', // the property-type icon on every row (assigned · registry · type picker)
-  rootEntry: 'title3', // the root menu's leading icons (Properties · Visibility · …)
-  dropOutline: 'control', // the All Properties disclosure chevron
-  rowPlus: 'control', // the registry row's + glyph
-  optionsAdd: 'control', // the option editor's "Options" + glyph
-  palette: 'body', // the option row's hover recolor glyph
+  add: 'body',
+  editorMenu: 'body',
+  doc: 'control',
+  rootEntry: 'title3',
+  dropOutline: 'control',
+  rowPlus: 'control',
+  optionsAdd: 'control',
+  palette: 'body',
 } satisfies Record<string, IconSize>
 
 export const anchor = style(menuAnchor('right', stack.local.lifted))

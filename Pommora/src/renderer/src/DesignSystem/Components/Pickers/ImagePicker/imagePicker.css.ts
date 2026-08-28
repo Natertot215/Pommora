@@ -5,7 +5,6 @@ import { accessoryButton, detail, rowBox } from '../../../Menus/menu-base.css'
 
 const c = vars.color
 
-// How far the corner glyphs sit in from the frame's edges — the same inset on all three sides.
 const CORNER_INSET = '8px'
 
 export const backdrop = style({
@@ -28,7 +27,6 @@ export const panel = style({
   border: `var(--width-100) solid ${c.border.base}`,
 })
 
-/** The frame the image is dragged inside — it holds the seat and the dimmed room around it. */
 export const viewport = style({
   position: 'relative',
   overflow: 'hidden',
@@ -40,7 +38,6 @@ export const viewport = style({
 })
 export const grabbing = style({ cursor: 'grabbing' })
 
-/** The whole image, dimmed and blurred — the part spilling past the seat, still in view. */
 export const dimImage = style({
   position: 'absolute',
   objectFit: 'fill',
@@ -48,8 +45,6 @@ export const dimImage = style({
   pointerEvents: 'none',
 })
 
-/** The seat itself — ringed and fixed. It clips the sharp image and paints the crop's own fill
- *  wherever the image doesn't reach. */
 export const seatBox = style({
   position: 'absolute',
   overflow: 'hidden',
@@ -57,13 +52,11 @@ export const seatBox = style({
   pointerEvents: 'none',
 })
 
-/** The bright image inside the seat, at the same rect as the dimmed one behind it. */
 export const seatImage = style({
   position: 'absolute',
   objectFit: 'fill',
 })
 
-/** The Reset / Background glyphs in the frame corners — label-secondary over the accessory look. */
 const cornerGlyph = style([
   accessoryButton,
   {

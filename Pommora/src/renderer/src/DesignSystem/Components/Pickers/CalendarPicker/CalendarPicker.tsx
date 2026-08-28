@@ -25,9 +25,6 @@ const rectOf = (el: HTMLElement): TriggerRect => {
   return { x: r.x, y: r.y, w: r.width, h: r.height }
 }
 
-/** Portals to body as a fixed phantom of the trigger box, so the menu escapes the calendar
- *  pane's clip-path while PickerMenu's anchor math still works unchanged. Pointer-inert — only
- *  the menu re-enables hits. */
 function PortalMenu({
   rect,
   children,
@@ -44,8 +41,6 @@ function PortalMenu({
         top: rect.y,
         width: rect.w,
         height: rect.h,
-        // Above the hosting picker pane AND its dismiss backdrop — below those, the month/year/time
-        // menus render behind the pane and their clicks hit the grid or the dismiss.
         zIndex: stack.top.menuOverlay,
         pointerEvents: 'none',
       }}
@@ -56,8 +51,6 @@ function PortalMenu({
   )
 }
 
-/** FrameSlide's animated-viewport half, single-slot: content size changes morph on the shared
- *  beat instead of snapping (the ViewFrame/menus feel). */
 function SizeMorph({ children }: { children: ReactNode }): React.JSX.Element {
   const ref = useRef<HTMLDivElement>(null)
   const [h, setH] = useState(0)
@@ -86,8 +79,6 @@ const keyOf = (d: Date): string => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-
  *  read as one title, so the pair sits a word-space apart rather than two pills apart. */
 const TITLE_PAD_X = '2px'
 
-/** Display formats are INJECTED so the owning property's config stays the boss; times are
- *  display-only until the entry UX is designed. */
 export function CalendarPicker({
   formatDateValue,
   timeFormat = 'twelveHour',
@@ -95,20 +86,14 @@ export function CalendarPicker({
   onChange,
   range = true,
 }: {
-  /** `condensed` set = the range layout asking for the picker-only short form (withYear when the
-   *  range spans years); absent = the property's own format, verbatim. */
   formatDateValue: (isoDate: string, condensed?: { withYear: boolean }) => string
   timeFormat?: 'twelveHour' | 'twentyFourHour'
-  /** Initializes the picker; uncontrolled after mount. */
   value?: string | null
-  /** Debounced single-value commits: the start date (+ time when Use Time), null on clear. */
   onChange?: (iso: string | null) => void
-  /** Set false for a single-valued mount (no End Date affordance). */
   range?: boolean
 }): React.JSX.Element {
   const twelve = timeFormat === 'twelveHour'
   const now = new Date()
-  // Per-render (never module-level) — a local-first app stays open across midnights.
   const todayKey = keyOf(now)
   const init = value && /^\d{4}-\d{2}-\d{2}/.test(value) ? value : null
   const initHasTime = init?.includes('T') ?? false
@@ -122,32 +107,23 @@ export function CalendarPicker({
   const [endOn, setEndOn] = useState(false)
   const [timeOn, setTimeOn] = useState(initHasTime)
   const [menu, setMenu] = useState<{ kind: 'month' | 'year'; rect: TriggerRect } | null>(null)
-  // Each segment opens its own upward PickerMenu (the fields sit at the pane's bottom).
   const [timeMenu, setTimeMenu] = useState<{
     which: 'start' | 'end'
     part: 'h' | 'm'
     rect: TriggerRect
   } | null>(null)
-  // Exit presence for BOTH sub-menus, so closing one Blooms out instead of hard-unmounting (the
-  // pickers' one motion law). The last non-null state renders through the closing frames.
   const menuPresence = useExitPresence(menu !== null)
   const timeMenuPresence = useExitPresence(timeMenu !== null)
   const lastMenu = useRef(menu)
   if (menu) lastMenu.current = menu
   const lastTimeMenu = useRef(timeMenu)
   if (timeMenu) lastTimeMenu.current = timeMenu
-  // Double-click a segment → caret editing in place (select-all drives replace-on-type, but the
-  // selection paints transparent — highlighting disabled by rule).
   const [segEdit, setSegEdit] = useState<{
     which: 'start' | 'end'
     part: 'h' | 'm'
     draft: string
   } | null>(null)
   const rootRef = useRef<HTMLDivElement>(null)
-  // Portal'd menus escape the root, so dismissal is a document listener that spares the root AND
-  // any [data-calmenu] portal (useDismiss's containment check can't see through the portal). The
-  // phantoms are frozen at open-time coordinates, so any outside scroll CLOSES them rather than
-  // letting them float away from their triggers.
   useEffect(() => {
     if (!menu && !timeMenu) return
     const close = (): void => {
@@ -160,11 +136,9 @@ export function CalendarPicker({
       close()
     }
     const onScroll = (e: Event): void => {
-      if ((e.target as HTMLElement)?.closest?.('[data-calmenu]')) return // the menu's own list scrolls freely
+      if ((e.target as HTMLElement)?.closest?.('[data-calmenu]')) return
       close()
     }
-    // Escape closes the innermost menu FIRST — capture + stopPropagation so a host picker's own Escape
-    // (a self-managed PickerMenu) doesn't also fire and tear down the whole pane in one keystroke.
     const onKey = (e: KeyboardEvent): void => {
       if (e.key !== 'Escape') return
       e.stopPropagation()
@@ -179,23 +153,16 @@ export function CalendarPicker({
       document.removeEventListener('keydown', onKey, true)
     }
   }, [menu, timeMenu])
-  // A press on a selected endpoint arms a drag that re-places it live (swapping roles if it
-  // crosses the other end); a no-move press falls through to the click (= remove).
   const drag = useRef<{ which: 'start' | 'end'; moved: boolean } | null>(null)
   const suppressClick = useRef(false)
   const [startMin, setStartMin] = useState(
     initHasTime && init ? Number(init.slice(11, 13)) * 60 + Number(init.slice(14, 16)) : 9 * 60,
   )
   const [endMin, setEndMin] = useState(17 * 60)
-  // The write seam: compose start (+ time) into ISO and emit debounced — one commit per settle,
-  // never per drag-move (fs-write spam); a pending emit flushes on unmount so a dismiss commits.
   const onChangeRef = useRef(onChange)
   onChangeRef.current = onChange
   const emitTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const pendingEmit = useRef<string | null | undefined>(undefined)
-  // Changed-state guard (not a consumed-once flag): emits only after state actually leaves its
-  // mount value. A once-flag breaks under StrictMode's dev remount — the second effect pass sees
-  // it consumed and debounce-writes the UNCHANGED state (a spurious commit on every open).
   const initial = useRef({ start, timeOn, startMin })
   const armed = useRef(false)
   useEffect(() => {
@@ -236,14 +203,12 @@ export function CalendarPicker({
 
   const nav = (dir: 1 | -1): void => {
     if (slide) return
-    // Sliding reflows the pane under any open phantom — close them with the move.
     setMenu(null)
     setTimeMenu(null)
     setSlide({ dir, from: cursor })
     setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + dir, 1))
   }
 
-  // YYYY-MM-DD keys compare lexicographically, so string < / > is date order.
   const pick = (k: string): void => {
     if (k === start) {
       setStart(end)
@@ -263,9 +228,6 @@ export function CalendarPicker({
     }
   }
 
-  // Trackpad swipe on the calendar area only: horizontal wheel deltas accumulate to one nav per
-  // gesture (natural direction). The accumulator resets on a direction flip or a wheel-idle gap; a
-  // post-nav cooldown holds through the momentum tail so one hard flick can't double-nav.
   const swipe = useRef(0)
   const swipeCooldown = useRef(false)
   const swipeIdle = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
@@ -290,8 +252,6 @@ export function CalendarPicker({
     document.elementFromPoint(x, y)?.closest('[data-k]')?.getAttribute('data-k') ?? null
 
   const onGridPointerDown = (e: React.PointerEvent<HTMLDivElement>): void => {
-    // A fresh press always re-arms clicking — the suppress flag must never outlive one gesture
-    // (a drag released off the grid otherwise strands it and eats the next legitimate click).
     suppressClick.current = false
     const k = (e.target as HTMLElement).closest('[data-k]')?.getAttribute('data-k')
     if (!k) return
@@ -304,7 +264,7 @@ export function CalendarPicker({
     if (!d) return
     const k = keyAtPoint(e.clientX, e.clientY)
     if (!k || k === (d.which === 'start' ? start : end)) return
-    if (k === (d.which === 'start' ? end : start)) return // never collapse onto the other endpoint
+    if (k === (d.which === 'start' ? end : start)) return
     d.moved = true
     if (d.which === 'start') {
       if (end !== null && k > end) {
@@ -326,10 +286,6 @@ export function CalendarPicker({
       suppressClick.current = true
       return
     }
-    // A no-move press on a selected endpoint IS the click-to-remove — but pointer-capturing the grid
-    // on pointerdown retargets the day button's `click` onto the grid, so its onClick never fires.
-    // Do it here (pointerup always fires on the captured grid), and suppress the click that may
-    // still land so it can't re-add the date.
     const k = d.which === 'start' ? start : end
     if (k) {
       suppressClick.current = true
@@ -337,7 +293,6 @@ export function CalendarPicker({
     }
   }
 
-  // Drives both the cell count below and the animated viewport height.
   const rowsFor = (month: Date): number => {
     const lead = new Date(month.getFullYear(), month.getMonth(), 1).getDay()
     return Math.ceil((lead + new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate()) / 7)
@@ -405,9 +360,6 @@ export function CalendarPicker({
       </OverScroll>
     </div>
   )
-  // The time reading follows the nexus-wide setting: twelveHour = (Hour):(Minutes)(PM), hour
-  // unpadded (4:20, never 04:20); twentyFourHour flattens to padded HH:MM with no meridiem.
-  // Commits preserve the meridiem in 12h mode.
   const hourShown = (mins: number): number =>
     twelve ? ((Math.floor(mins / 60) + 11) % 12) + 1 : Math.floor(mins / 60)
   const hourToMins = (v: number, mins: number): number =>
@@ -483,7 +435,7 @@ export function CalendarPicker({
         key={`${which}-${part}`}
         className={s.timeSeg}
         onClick={(e) => {
-          if (e.detail > 1) return // the double-click pair's 2nd click must not toggle the menu shut
+          if (e.detail > 1) return
           setTimeMenu(
             timeMenu?.which === which && timeMenu.part === part
               ? null
@@ -491,8 +443,6 @@ export function CalendarPicker({
           )
         }}
         onDoubleClick={() => {
-          // Enter empty — the current value shows as a placeholder you type over (blur/Enter with
-          // an empty draft keeps it, per segCommit).
           setTimeMenu(null)
           setSegEdit({ which, part, draft: '' })
         }}
@@ -504,8 +454,6 @@ export function CalendarPicker({
           timeOptions(which, part)}
       </button>
     )
-  // The meridiem segment — a plain click-toggle, no affordance glyph
-  // (two values never earn a menu either).
   const ampmSegment = (which: 'start' | 'end', mins: number): React.JSX.Element => {
     const setMins = setMinsFor(which)
     return (
@@ -542,21 +490,15 @@ export function CalendarPicker({
 
   const prevMonth = slide?.from ?? cursor
   const year = cursor.getFullYear()
-  // The grid viewport's height is COMPUTED from the target month's row count (geometry mirrors the
-  // css) the instant nav fires — SizeMorph then animates the delta on the same beat as the slide,
-  // so the resize FLOWS with the horizontal move instead of snapping after it.
   const gridHeight = rowsFor(cursor) * 24 + (rowsFor(cursor) - 1) * 2 + 2
   const jump = (y: number, m: number): void => {
     setCursor(new Date(y, m, 1))
     setMenu(null)
   }
-  // Years visible before the list scrolls (the menu's max-height caps it), centered on the cursor.
   const yearChoices = Array.from({ length: 21 }, (_, i) => year - 10 + i)
   const monthName = (m: number): string =>
     new Date(2026, m, 1).toLocaleDateString('en-US', { month: 'long' })
 
-  // The row's own mark is PickerOption's — it lays one out on every row and paints the chosen one,
-  // so the choice reads the way it does in every other picker.
   const optionRow = (label: string | number): React.JSX.Element => (
     <span className={s.optionRow}>{label}</span>
   )
@@ -689,7 +631,6 @@ export function CalendarPicker({
         </div>
         <div className={s.divider} />
         <div className={s.fields}>
-          {/* Equal sizing buys the AM/PM segment its room. */}
           {(() => {
             if (endOn) {
               const condensed = {
@@ -718,9 +659,6 @@ export function CalendarPicker({
             )
           })()}
         </div>
-        {/* Toggling unmounts field rows — any open segment menu or uncommitted caret edit dies with
-          them (an unmounting focused input never fires onBlur, so a live segEdit would otherwise
-          resurrect stale on re-toggle). */}
         {range && (
           <div className={rowBox}>
             <span className={s.switchLabel}>End Date</span>
