@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { Icon } from '@renderer/DesignSystem/Symbols'
-import { Menu, MenuItem, MenuSeparator } from '@renderer/DesignSystem/Menus'
+import { Menu, MenuItem, MenuSeparator, heading, headingCaps } from '@renderer/DesignSystem/Menus'
 import { text } from '@renderer/DesignSystem/Tokens'
 import { DualSwitch } from '@renderer/DesignSystem/Components/Controls/Switches/DualSwitch'
 import { Slider } from '@renderer/DesignSystem/Components/Controls/Slider/Slider'
@@ -45,38 +45,26 @@ import './settingsWindow.css'
 export const SETTINGS_WIN: FloatingBounds = { minW: 620, minH: 420, defW: 850, defH: 600 }
 export const SETTINGS_RAIL: SidePaneBounds = { min: 130, def: 170, max: 240 }
 
-// Matched against the press target itself, so a row, a control or a list never arms a window move.
-// A frame carrying a surface brings its own chrome, and that chrome drags the window as a toggle
-// frame's body does — its list and its empty state deliberately do not.
 const DRAG_SURFACES =
   '.settings-body, .settings-rail-list, .settings-section, .settings-heading, .trash-frame, .trash-head, .trash-head-name, .trash-head-date'
 
-/** The personalization keys a given control can actually write. Without this a toggle row could name
- *  the linger, compile, and then render a number as an unchecked switch. */
 type KeyOf<V> = {
   [K in keyof Personalization]-?: NonNullable<Personalization[K]> extends V ? K : never
 }[keyof Personalization]
 
-/** A picker row, parameterized by the vocabulary it writes — a second one naming a different enum
- *  joins the union rather than widening this. */
 type PickerRow<T extends string> = RowText & {
   kind: 'picker'
   key: KeyOf<T>
   options: readonly PickerChoice<T>[]
-  /** The value the picker shows when the key is absent, and the one that writes no key back. */
   fallback: T
 }
 
-/** Every sentinel a color setting can defer to. Keeping it a closed union is what stops a color row
- *  from naming an unrelated string key — `ColorSetting<string>` widens to plain `string`. */
 type InheritSentinel = 'system' | 'accent' | 'default'
 
-/** A row in a frame's section: the words, and the control that writes one key. */
 type Row =
   | (RowText & {
       kind: 'toggle'
       key: KeyOf<boolean>
-      /** Absent reads as ON for a few keys. */
       defaultOn?: boolean
     })
   | (RowText & {
@@ -90,18 +78,13 @@ type Row =
       key: keyof DevicePrefs
     })
   | (RowText & {
-      /** The one row writing a TOP-LEVEL `settings.json` key rather than a personalization one —
-       *  `asset_directory` sits beside `excluded_folders`, and the walk reads it as a tree frame. */
       kind: 'path'
     })
   | (RowText & {
       kind: 'color'
       key: KeyOf<ColorSetting<InheritSentinel>>
-      /** Written when the user clears the swatch — the sentinel naming what this color inherits. */
       inherits: InheritSentinel
-      /** The CSS var the cleared state resolves to, so the swatch shows what it is actually wearing. */
       inheritsVar: string
-      /** Offer the grey row — for a color resolved through the chip recipe rather than painted raw. */
       greyscale?: boolean
     })
   | PickerRow<LinkDisplay>
@@ -109,32 +92,23 @@ type Row =
   | PickerRow<TimeFormatSetting>
   | PickerRow<PickerSelection>
   | (RowText & {
-      /** A scale factor worn as a percent, stepping the row's own ramp or the shared one. */
       kind: 'zoom'
       key: KeyOf<number>
-      /** The factor the control clears back to — stored as no key at all. */
       fallback: number
       steps?: readonly number[]
     })
 
 type RowOf<K extends Row['kind']> = Extract<Row, { kind: K }>
 
-/** A named group of rows inside a frame. A section with no title renders as a plain list, which is
- *  what a frame holding a single group wants; a titled one is how a frame stays legible as it fills. */
 interface Section {
   title?: string
   rows: readonly Row[]
 }
 
-/** One frame: how the rail names it and what fills it. New frames register here and nowhere else —
- *  the rail reads this roster rather than a second list keyed by the same name. A frame fills with
- *  sections of rows, or brings a `Surface` that owns its own layout, scroller and fetched state —
- *  never both — the `never` on each arm is what makes a frame naming both fail to compile. */
 type Frame = {
   key: string
   label: string
   icon: string
-  /** Sits below the rail's separator rather than in the scrolling list. */
   foot?: boolean
 } & (
   | { sections: readonly Section[]; Surface?: never }
@@ -154,8 +128,6 @@ const timeFormatOptions: readonly PickerChoice<TimeFormatSetting>[] = TIME_FORMA
   (value) => ({ value, label: TIME_FORMAT_LABELS[value] }),
 )
 
-/** Keeps the rail's keys literal while reading every frame back as the wider `Frame` — so an untitled
- *  section still has a `title` to ask about, and a frame that declares no foot still has one to test. */
 const roster = <const T extends readonly Frame[]>(
   leaves: T,
 ): readonly (Frame & { key: T[number]['key'] })[] => leaves
@@ -520,7 +492,6 @@ const FRAMES = roster([
     key: 'trash',
     label: 'Trash',
     icon: 'trash',
-    // Anchored: the rail's list takes the height, so the foot sits at the bottom for free.
     foot: true,
     Surface: TrashFrame,
   },
@@ -598,8 +569,6 @@ function RailTab({
   )
 }
 
-/** A sections frame brings the frame's own heading and rhythm; a surface frame brings everything,
- *  because the frame hands its children no wrapper, no padding and no scroller. */
 function FrameBody({ category }: { category: CategoryKey }): React.JSX.Element {
   const frame = frameFor(category)
   if (frame.Surface) return <frame.Surface />
@@ -615,11 +584,7 @@ function FrameBody({ category }: { category: CategoryKey }): React.JSX.Element {
       ) : (
         sections.map((section, i) => (
           <div key={section.title ?? i} className="settings-section">
-            {section.title && (
-              <h3 className={cx('settings-section-title', text.footnote.emphasized)}>
-                {section.title}
-              </h3>
-            )}
+            {section.title && <h3 className={cx(heading, headingCaps)}>{section.title}</h3>}
             {section.rows.map((row) => (
               // Keyed on the label: the one row writing a top-level settings key has no
               // personalization key to be identified by, and a label is unique within a section.
@@ -651,9 +616,6 @@ function RowControl({ row }: { row: Row }): React.JSX.Element {
   }
 }
 
-/** A color row: the ramp grid, minus its greyscale families — a link or the accent painted from the
- *  window substrate would be invisible against it. Clearing the swatch writes the row's own
- *  inheritance sentinel rather than deleting the key, since absent and "follow the OS" differ. */
 function ColorRow({ row }: { row: RowOf<'color'> }): React.JSX.Element {
   const value = useSession((s) => s.personalization[row.key]) as string | undefined
   const setPersonalization = useSession((s) => s.setPersonalization)
@@ -683,15 +645,12 @@ function ToggleRow({ row }: { row: RowOf<'toggle'> }): React.JSX.Element {
       <DualSwitch
         checked={on}
         ariaLabel={row.label}
-        // Stores only the OFF state — an untouched nexus keeps a clean file (no-empties discipline).
         onChange={(next) => setPersonalization(row.key, row.defaultOn && next ? undefined : next)}
       />
     </SettingsRow>
   )
 }
 
-/** A machine-local row — same switch, a different store. It writes to nexus.db rather than to the
- *  nexus's own personalization, so one nexus can read differently on a different computer. */
 function DeviceRow({ row }: { row: RowOf<'device'> }): React.JSX.Element {
   const on = useSession((s) => s.devicePrefs[row.key] ?? false)
   const setDevicePref = useSession((s) => s.setDevicePref)
@@ -700,15 +659,12 @@ function DeviceRow({ row }: { row: RowOf<'device'> }): React.JSX.Element {
       <DualSwitch
         checked={on}
         ariaLabel={row.label}
-        // Off stores no key — the clean-file discipline every row follows.
         onChange={(next) => setDevicePref(row.key, next || undefined)}
       />
     </SettingsRow>
   )
 }
 
-/** The web-guest scale through the shared picker: numeric factors worn as percents, with the steps
- *  as the offered set and any scale typeable on a second press. The default stores no key. */
 const zoomPercent = (f: number): string => `${Math.round(f * 100)}%`
 const zoomChoice = (f: number): PickerChoice<string> => ({
   value: String(f),
@@ -720,8 +676,6 @@ function ZoomRow({ row }: { row: RowOf<'zoom'> }): React.JSX.Element {
   const steps = row.steps ?? SCALE_STEPS
   const commit = (factor: number): void =>
     setPersonalization(row.key, factor === row.fallback ? undefined : factor)
-  // A typed scale keeps its own place among the steps, so the control reads the real value rather
-  // than the step nearest it.
   const choices = (
     steps.some((f) => f === stored) ? steps : [...steps, stored].sort((a, b) => a - b)
   ).map(zoomChoice)
@@ -732,8 +686,6 @@ function ZoomRow({ row }: { row: RowOf<'zoom'> }): React.JSX.Element {
         value={String(stored)}
         options={choices}
         onPick={(v) => commit(Number(v))}
-        // The digits are the field and the percent sign stays beside it, so the value reads the same
-        // written as read. Anything unreadable as a number leaves the scale where it stood.
         typeable={{
           text: String(Math.round(stored * 100)),
           suffix: '%',
@@ -757,7 +709,6 @@ function PickerRow({ row }: { row: RowOf<'picker'> }): React.JSX.Element {
         ariaLabel={row.label}
         value={stored ?? row.fallback}
         options={row.options}
-        // The default stores no key — the clean-file discipline every row follows.
         onPick={(v) => setPersonalization(row.key, v === row.fallback ? undefined : v)}
       />
     </SettingsRow>
@@ -776,7 +727,6 @@ function SliderRow({ row }: { row: RowOf<'slider'> }): React.JSX.Element {
         step={1}
         ariaLabel={row.label}
         format={row.format}
-        // Zero stores no key — the clean-file discipline every default-valued row follows.
         onCommit={(v) => setPersonalization(row.key, v > 0 ? Math.round(v) : undefined)}
       />
     </SettingsRow>

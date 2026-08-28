@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Menu, MenuItem, MenuHeading, MenuSeparator } from '../../Menus'
+import { Menu, MenuItem, MenuSeparator, heading } from '../../Menus'
 import { Icon } from '../../Symbols'
 
 function Panel({ children }: { children: ReactNode }): React.JSX.Element {
@@ -69,11 +69,11 @@ export function MenuLeaf(): React.JSX.Element {
         <h2>Menu · Heading</h2>
         <Panel>
           <Menu>
-            <MenuHeading leading={dashed}>Heading</MenuHeading>
-            <MenuHeading leading={dashed} detail="Detail">
+            <div className={heading}>Heading</div>
+            <div className={heading}>
               Heading
-            </MenuHeading>
-            <MenuHeading>Heading</MenuHeading>
+              {chevron}
+            </div>
           </Menu>
         </Panel>
       </section>

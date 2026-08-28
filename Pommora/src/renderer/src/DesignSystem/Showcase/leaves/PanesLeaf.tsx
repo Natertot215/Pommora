@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Icon } from '../../Symbols'
 import { DualSwitch } from '../../Components/Controls/Switches/DualSwitch'
-import { Menu, MenuItem } from '../../Menus'
+import { Menu, MenuItem, heading, headingCaps } from '../../Menus'
 import { cx } from '../../Util/cx'
 import { text } from '../../Tokens'
 import { WindowBase, WINDOW_BASE_INSPECTOR } from '@renderer/Windows/window-base'
@@ -26,8 +26,6 @@ const ROWS = [
   ['Time Format', "The Nexus's clock, wherever a time renders."],
 ]
 
-/** Opening a side pane widens the window by that pane's width, so the space between
- *  them holds the width it had. */
 export function PanesLeaf(): React.JSX.Element {
   const [railOpen, setRailOpen] = useState(true)
   const [inspectorOpen, setInspectorOpen] = useState(false)
@@ -82,9 +80,7 @@ export function PanesLeaf(): React.JSX.Element {
             className: 'settings-rail',
             children: (
               <div className="settings-body panes-inspector">
-                <h3 className={cx('settings-section-title', text.footnote.emphasized)}>
-                  Inspector
-                </h3>
+                <h3 className={cx(heading, headingCaps)}>Inspector</h3>
                 <span className={cx(text.body.standard, 'panes-dim')}>dateFormat</span>
                 <span className={cx(text.body.standard, 'panes-dim')}>Full Date</span>
                 <span className={cx(text.body.standard, 'panes-dim')}>Nexus-wide</span>
