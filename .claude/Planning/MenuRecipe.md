@@ -610,14 +610,14 @@ Every phase runs the same loop. Nothing advances on a summary; every claim is re
 ### Progress
 - [x] **Phase 0** — The Tree
   - [x] Task 0 — commit the working tree · `27c5171c`
-- [ ] **Phase 1** — The Recipe · base `27c5171c` · executor `a1f3e2c5..bdf30002` · addenda `7cbb44ea` (heading gap 0, Nathan) · `faa7d3b0` (simplifier) · `4626e3a1` (comment-killer) · `72a867a4` (review: `rowBox` first, `footing` on it, `--row-gap` gone, `optionCheck` margin gone)
+- [x] **Phase 1** — The Recipe · base `27c5171c` · executor `a1f3e2c5..bdf30002` · addenda `7cbb44ea` (heading gap 0, Nathan) · `faa7d3b0` (simplifier) · `4626e3a1` (comment-killer) · `72a867a4` (review: `rowBox` first, `footing` on it, `--row-gap` gone, `optionCheck` margin gone) · `8fcb89bb` (breaker F2) · Gate 1 closed `7226d650`
   - [x] Task 1 — the four row tokens, `item` and `menuCompact` · `a1f3e2c5` + `370a167a`
   - [x] Task 2 — stacking order · `5194820f`
   - [x] Task 3 — one heading · `c857a3e4`
   - [x] Task 4 — TopRow defines itself · `fb2f77d5`
   - [x] Task 5 — Footing · `a6df3eed`
   - [x] Task 6 — ActionRow · `bdf30002` (docs rows deferred to §Closeout)
-- [ ] **Phase 2** — The Surfaces
+- [ ] **Phase 2** — The Surfaces · base `7226d650`
   - [ ] Task 7 — Frames + editors compose `item`
   - [ ] Task 8 — every PickerMenu host is Compact
   - [ ] Task 9 — NavList is a menu
@@ -677,7 +677,7 @@ Every phase runs the same loop. Nothing advances on a summary; every claim is re
 Ruled 08-27 (Nathan, before sleep): the plan runs to the end unattended — every phase through Gate 4, then §Landing — with nothing deferred and no cleanup postponed. The History entry is drafted in chat and not filed. Each box is ticked with its evidence beside it, in this document, as it is met.
 
 **Per phase (1–4) — none skipped**
-- [ ] Phase 1: executor commits · simplifier · comment-killer · orchestrator review (diff read, three gates, Derivations + Dead Vocabulary re-run against control 9, Made False rows) · breaker round(s), every finding verified · running pass (screenshots where reachable) · Progress hashes · Found items adjudicated
+- [x] Phase 1: executor commits · simplifier · comment-killer · orchestrator review (diff read, three gates, Derivations + Dead Vocabulary re-run against control 9, Made False rows) · breaker round(s), every finding verified · running pass (screenshots where reachable) · Progress hashes · Found items adjudicated — `27c5171c..7226d650`
 - [ ] Phase 2: the same
 - [ ] Phase 3: the same
 - [ ] Phase 4: the same
