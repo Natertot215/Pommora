@@ -415,8 +415,8 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 **Failure half:** an empty trash → the caption line; a historical row → the trail italic/tertiary, its checkbox still live; a restore on a row that vanished underneath (an external `.trash` edit) → the existing refresh prunes it and the handler no-ops on a missing bundle.
 
 **Steps:**
-- [ ] Align the head; the render test; gates; running pass: rows 28 with the trail and date, the checkbox in the lead inset revealed on hover and held while any is checked, the head's lanes align with the rows', a batch action from the head.
-- [ ] Commit `refactor(trash): the Trash is a menu`.
+- [x] Align the head; the render test; gates; running pass: rows 28 with the trail and date, the checkbox in the lead inset revealed on hover and held while any is checked, the head's lanes align with the rows', a batch action from the head.
+- [x] Commit `refactor(trash): the Trash is a menu`.
 
 #### Gate 2 — every surface composes the recipe
 - [ ] The Loop, steps 3–5. `grep -rn "minHeight: '2[0-9]px'\|min-height: 2[0-9]px" src` → only `fields.css.ts` and the non-row hits listed in the Log. Running surface: every surface this phase touched, the search edge on all three lists, the Trash overlay, a card's trail zone.
@@ -627,7 +627,7 @@ Every phase runs the same loop. Nothing advances on a summary; every claim is re
   - [x] Task 11 — value + the Scale row
   - [x] Task 12 — Autocomplete
   - [x] Task 12a — NavTrail owns its look
-  - [ ] Task 12b — the Trash is a menu
+  - [x] Task 12b — the Trash is a menu
 - [ ] **Phase 3** — The Index
   - [ ] Task 13 — `menu-index.tsx`
   - [ ] Task 14 — the trailing slot
@@ -661,6 +661,7 @@ Every phase runs the same loop. Nothing advances on a summary; every claim is re
 - Task 9: the "today" figures in its prose predate Task 0's tree — `.nav-search-row` already pads `var(--surface-inset)`, `.nav-item-main` pads `6px` (rows likely 28 already), gap 6; the +2 / −10 / −12 search-edge offsets are stale. Re-read Task 9 against the live tree at Phase 2's open.
 
 ### Deviations
+- Task 12b. Today (after Task 9): the rows were already `MenuItem`s with the checkbox in the `overlay` slot; `.trash-head` had no trailing pad, so its date lane sat 14px outboard of the rows' (the rows pad `--row-pad-x`), and its name glyph kept the old row's 6px gap. Becomes: the head pads its trailing edge `--navwindow-inset` (the value the rows' `--row-pad-x` resolves to; the head sits outside the column that sets it) and its glyph takes the row's 8px gap, so both lanes align with the rows'; `trashFrame.test.tsx` mounts the frame and checks a row through its checkbox (`aria-checked` flips, `.has-checked` lands on the frame). The `checked` set, the batch arms, and the context menu's selection semantics are unchanged from Task 9's migration.
 - Task 12a. Today: `navTrail.trail` was a bare flex run; `Card.tsx`, `NavList.tsx`, `TrashFrame.tsx`, `PageEmbed.tsx`, and `PageWindow.tsx` each passed `text.caption.standard`, `cards.css` tinted `.card-loc` secondary and padded it 1px with the title, `SettingsFrame`'s footing trail wore `footingLabel` (footnote), and `.card-loc-zone` padded its top 6px. Becomes: `trail` composes caption.standard, secondary, and `paddingBlock: var(--trail-pad, 0px)`; the five restatements and `footingLabel` are gone; `.card-loc` keeps only its fixed-row flex and over-scroll fade; the zone sets `--trail-pad: 6px` (KNOB) so the crumbs clear the divider above and the card's edge below alike, and Compact's `--card-foot-h` reserve is the footing's real height (column gap 4 + divider 1.5 + 6 + caption line 14 + 6).
   The uneven bottom padding, diagnosed: a locked card (`NavGallery` always, CardView's locked variant) fixes `.card-body`'s height with `overflow: hidden`, gives the cover `--thumb-share` 65%, and lets `.card-text` shrink (`min-height: 0`) while its children stay `flex: 0 0 auto` — so whenever title + rows + footing exceed the band under the cover (a gallery card at `--card-min` is ~9px short), the footing runs past the text box's 8px bottom pad and the body clips it by whatever the overflow is; wider cards have slack and keep the pad. Reflow cards never clip (`--card-body-min` plus `margin-top: auto` pins the footing on the pad). The fix at the cause is a chassis call — either the cover yields to the text (`.card.is-locked .card-thumb` shrinks, `.card-text` sized to content) or the text band takes a floor the cover pays for — and is left for Nathan as an Open Call; no padding was added.
 - Task 12 (ruling 08-28): rewritten in the Today → Becomes form above. `aliasPicker.test.tsx` reached rows through `.mdpm-ac-row` and the glyph through `.mdpm-ac-icon`; the same assertions now key on `[class*="item"]` and its leading `[class*="side"] svg` (the selectors changed, the assertions did not). The pane's scroll cap is the picker's own 240 rather than four rows — the standard picker cap, per the ruling.
