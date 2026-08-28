@@ -81,7 +81,6 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 │   │   └── [WebviewPM.md]               | • The web layer — webpage embeds, the browser, sessions, hover previews
 │   ├── // Guidelines                    | • Behavioral rules and hard-won traps, grouped by domain
 │   │   ├── [Build-Gotchas.md]           | • Environment and toolchain traps — read before launching the GUI
-│   │   ├── [Cohesion-Rulings.md]        | • What a sweep re-derives wrongly, and what to stop re-proposing
 │   │   ├── [Editor-Internals.md]        | • MarkdownPM's internal invariants — read before editing the editor
 │   │   ├── [Lint-And-Accessibility.md]  | • The lint floor and the three rules disabled on purpose
 │   │   └── [Web-Guests.md]              | • Webview guest traps — read before touching any web surface
