@@ -41,13 +41,13 @@ Every renderer also shares the **hover ghost** (`DesignSystem/Interactions/ghost
 
 ### The Pipeline
 
-`resolveView` in `src/renderer/src/Views/pipeline/` composes four pure stages — **columns → filter → group → sort** — over a view, its rows, its schema, and the container's set tree, knowing nothing about where they came from, so a full page and an embedded tile run the same code. Row frontmatter loads lazily per container over a batch IPC.
+`resolveView` in `src/renderer/Views/pipeline/` composes four pure stages — **columns → filter → group → sort** — over a view, its rows, its schema, and the container's set tree, knowing nothing about where they came from, so a full page and an embedded tile run the same code. Row frontmatter loads lazily per container over a batch IPC.
 
 #### II. Filter
 
 A filter is a recursive group of rules under a match mode — **All** (and) or **Any** (or) — evaluated at every depth. Negation lives on the per-rule operators (Isn't, Isn't Empty, Doesn't Contain), so "none of these" is spelled as an All of negated rules. Whether the filter runs at all is a separate axis, `filter_enabled`, so parking a filter keeps its rules and its mode. A rule the schema can't read — an unknown operator, a deleted property or Set, an operand not yet supplied — abstains rather than voting, and a filter that abstains in whole filters nothing; a row holding no value matches no positive comparison.
 
-The operator families are type-aware, defined in `src/renderer/src/Frames/filterModel.ts`:
+The operator families are type-aware, defined in `src/renderer/Frames/filterModel.ts`:
 
 | Type | Operators |
 | --- | --- |
@@ -88,7 +88,7 @@ The view's configuration is edited through a handful of panes, each reachable fr
 
 ### Table
 
-The Table renderer (`src/renderer/src/Views/TableView/`) draws a container's Pages as rows on a single CSS grid, wearing the shared Tables chrome ([[DesignSystemPM]]) — the column-header band, its segment bars, the hairlines, the borderless regime, and the cell renderers live in `src/renderer/src/Tables/`. It is presentation only: the pipeline hands it resolved groups and per-cell values, and the view owns the shell, the grid density, the grip gutter, and the band rhythm. The table's three creation triggers ride the shared act: the structural header's **+** creates at that Set's end and glides to the row; **New Page Above / Below** on the grip and title menus creates beside its anchor; and the hover ghost row creates below. 
+The Table renderer (`src/renderer/Views/TableView/`) draws a container's Pages as rows on a single CSS grid, wearing the shared Tables chrome ([[DesignSystemPM]]) — the column-header band, its segment bars, the hairlines, the borderless regime, and the cell renderers live in `src/renderer/Tables/`. It is presentation only: the pipeline hands it resolved groups and per-cell values, and the view owns the shell, the grid density, the grip gutter, and the band rhythm. The table's three creation triggers ride the shared act: the structural header's **+** creates at that Set's end and glides to the row; **New Page Above / Below** on the grip and title menus creates beside its anchor; and the hover ghost row creates below. 
 
 #### II. The Grid
 
@@ -106,7 +106,7 @@ A cell's content is type-aware — a page icon and title, chips, a checkbox or s
 
 The table's design vocabulary is a whole-file token sheet scoped to `.table`, the class every tabular surface wears ([[DesignSystemPM]] · Tables). A host rebinds what it needs in its own scope — the heading fill and divider, the cell padding — and states `is-clear` for a heading with no fill and no seam; the body hairline stays one width. TableView adds its own layer over it. Atlas convention per [[DesignSystemPM]].
 
-**SOURCE:** `Pommora/src/renderer/src/Tables/table-tokens.css` · `Pommora/src/renderer/src/Tables/Table.css` · `Pommora/src/renderer/src/Views/TableView/TableView.css`
+**SOURCE:** `Pommora/src/renderer/Tables/table-tokens.css` · `Pommora/src/renderer/Tables/Table.css` · `Pommora/src/renderer/Views/TableView/TableView.css`
 
 | Title | Token | Value |
 | --- | --- | --- |
@@ -133,7 +133,7 @@ The table's design vocabulary is a whole-file token sheet scoped to `.table`, th
 
 ### Cards
 
-The Cards renderer (`src/renderer/src/Views/CardView/`) draws Pages as a resizable card grid over the same pipeline, and draws the same inside a view embed at the embed's zoom. A card is an image band over a text area — title, then properties, then an optional location footing — with the image band a fixed height scaled by the card factor and every card in a row matching its tallest sibling. The grid is the shared card grid in its fill regime, and every card is the `src/Cards` chassis ([[DesignSystemPM]]): page cards reflow below a fixed image band, Set Cards are locked to the card aspect. **Scale** is a slider in LayoutFrame's footing, persisted as `card_size`. A per-view **Card Banner** chooses the image: **Cover** (the page's banner), **Preview** (the captured thumbnail), or **None** (imageless, compact cards); right-clicking the image band edits the page's banner through the page header's own flow. The layout is the view's `format` — **Standard** (title, then one labeled row per property) or **Compact** (label-less values packed in order) — shaped further by **Wrap Titles** and **Hide Icons**.
+The Cards renderer (`src/renderer/Views/CardView/`) draws Pages as a resizable card grid over the same pipeline, and draws the same inside a view embed at the embed's zoom. A card is an image band over a text area — title, then properties, then an optional location footing — with the image band a fixed height scaled by the card factor and every card in a row matching its tallest sibling. The grid is the shared card grid in its fill regime, and every card is the `src/Cards` chassis ([[DesignSystemPM]]): page cards reflow below a fixed image band, Set Cards are locked to the card aspect. **Scale** is a slider in LayoutFrame's footing, persisted as `card_size`. A per-view **Card Banner** chooses the image: **Cover** (the page's banner), **Preview** (the captured thumbnail), or **None** (imageless, compact cards); right-clicking the image band edits the page's banner through the page header's own flow. The layout is the view's `format` — **Standard** (title, then one labeled row per property) or **Compact** (label-less values packed in order) — shaped further by **Wrap Titles** and **Hide Icons**.
 
 #### II. Properties on Cards
 
@@ -151,7 +151,7 @@ Cards reorder within their band by displacement,[^7] writing the per-machine man
 
 The chassis tokens — the floor, gaps, thumb height and share, and preview zoom — live with the chassis in `src/Cards/cards.css` ([[DesignSystemPM]]); the renderer's own scope rescales the floors by the Scale factor and adds what only the collection layer needs. Atlas convention per [[DesignSystemPM]].
 
-**SOURCE:** `Pommora/src/renderer/src/Cards/cards.css` · `Pommora/src/renderer/src/Views/CardView/CardsView.css`
+**SOURCE:** `Pommora/src/renderer/Cards/cards.css` · `Pommora/src/renderer/Views/CardView/CardsView.css`
 
 | Title | Token | Value |
 | --- | --- | --- |

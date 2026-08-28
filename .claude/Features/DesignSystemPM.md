@@ -35,7 +35,7 @@ Design System
 └── Pending
 ```
 
-The Pommora design system — the code mirror of the Figma "Pommora - React" library, which is canonical for design values. It lives in `src/renderer/src/DesignSystem/`, and this document is its ledger: one section per folder, one row per thing, with *name · export · what it is*. Values live in the Token Atlas and in code; a subsystem with its own spec ([[InteractionPM]], [[PommoraDND]], [[SymbolsPM]]) keeps its depth there and is pointed at, never restated.
+The Pommora design system — the code mirror of the Figma "Pommora - React" library, which is canonical for design values. It lives in `src/renderer/DesignSystem/`, and this document is its ledger: one section per folder, one row per thing, with *name · export · what it is*. Values live in the Token Atlas and in code; a subsystem with its own spec ([[InteractionPM]], [[PommoraDND]], [[SymbolsPM]]) keeps its depth there and is pointed at, never restated.
 
 - **Tooling:** Token files are vanilla-extract `*.css.ts`, so a mistyped token is a compile error; `Tokens/theme-vars.css.ts` republishes every token under a stable `--name` for plain CSS, and a token without a bridged var is TS-only. Inter (variable) is the app font. The layer builds as the standalone showcase; a handful of components (`ImagePicker`, `AssetImage`) reach the store for the assets they draw. `Theming/` (`applyAccent` · `applyPersonalization`) and `Util/` (`cx` · `clamp` · `pad` · `moveItem`) are runtime homes with no catalog of their own.
 

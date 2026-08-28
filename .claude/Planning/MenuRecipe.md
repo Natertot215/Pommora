@@ -1,7 +1,7 @@
 ## The Menu Recipe — Implementation Plan
 
 > **Status:** landed 08-28-2026 — History entry drafted, filed on Nathan's word · Execution follows **The Loop** (below the tasks) · Spec: this document's Goal, ratified in conversation on 08-27-2026 · Execute tasks in order.
-> Citations name files and symbols; re-derive before editing. Counts are whole-renderer (`Pommora/src/renderer/src`, Showcase included) unless a task says otherwise.
+> Citations name files and symbols; re-derive before editing. Counts are whole-renderer (`Pommora/src/renderer`, Showcase included) unless a task says otherwise.
 
 **Goal**
 
@@ -153,7 +153,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 
 **Steps:**
 - [x] In `menu-base.css.ts`, `globalStyle(':root', { vars: { '--row-height-standard': '6px', '--row-height-compact': '4px', '--row-width-standard': '6px', '--row-width-compact': '4px' } })`. `rowBox`: `paddingBlock: 'var(--row-pad-y, var(--row-height-standard))'`, `paddingLeft: 'var(--row-pad-lead, var(--row-pad-x, var(--row-width-standard)))'`, `paddingRight: 'var(--row-pad-trail, var(--row-pad-x, var(--row-width-standard)))'` — `--row-pad-x` is the one knob a symmetric surface sets; a surface holding an affordance in its lead gutter (NavWindow 20/12, Trash 34/14) names `--row-pad-lead` alone, `fontSize: 'var(--row-size, ' + font.scale.body.size + ')'`, `lineHeight` likewise with body line, `position: 'relative'`, the flex/gap/color `item` has today; `item = style([rowBox, rowShell])`; delete `minHeight`, `ROW_SIZE`, `ROW_LINE`, `ROW_GAP` (inline `gap: '8px'`). Add `export const menuCompact = style({ vars: { '--row-pad-y': 'var(--row-height-compact)', '--row-pad-x': 'var(--row-width-compact)', '--row-size': font.scale.control.size, '--row-line': font.scale.control.line } })`.
-- [x] `pickerMenu.css.ts`: `pane` composes `menuCompact` and drops its `vars`; `option` = `style([item, { justifyContent: 'center', whiteSpace: 'nowrap', border: 'none', background: 'none' }])` — delete its `padding`, `fontSize`, `lineHeight`, `text.control.standard`, `color`. Run `npx vitest run src/renderer/src/DesignSystem/Components/Pickers` → pass.
+- [x] `pickerMenu.css.ts`: `pane` composes `menuCompact` and drops its `vars`; `option` = `style([item, { justifyContent: 'center', whiteSpace: 'nowrap', border: 'none', background: 'none' }])` — delete its `padding`, `fontSize`, `lineHeight`, `text.control.standard`, `color`. Run `npx vitest run src/renderer/DesignSystem/Components/Pickers` → pass.
 - [x] `dropOutline.css.ts`: `const RAIL_CENTER_X = \`calc(var(--row-width-standard) + ${RAIL_W / 2}px)\``; delete `ROW_INSET`; `menu-base.css.ts` drops the import.
 - [x] `menu-surface.css.ts`: delete `MENU_GUTTER`; both paddings read `var(--surface-inset)`.
 - [x] Repoint the four `--row-inset` readers; delete `--row-inset` from `styles.css`.
@@ -255,7 +255,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 - Docs: `DesignSystemPM.md:221` sentence rewritten to the kinds; `:364-366` table rows to `MenuTopRow · MenuItem · MenuSeparator · MenuCaption · MenuFooting`, heading and actionRow as classes.
 
 **Derivation**
-- `grep -rF "allHeadingRow" src` → 2 → 0. `grep -rF "titleText" src/renderer/src/DesignSystem/Menus/menu-surface.css.ts` → 1 → 0.
+- `grep -rF "allHeadingRow" src` → 2 → 0. `grep -rF "titleText" src/renderer/DesignSystem/Menus/menu-surface.css.ts` → 1 → 0.
 - Control: `grep -rF "actionRow" src` → ≥ 2.
 
 **Steps:**
@@ -300,8 +300,8 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 **Files:** `Blocks/handleMenu.css.ts` (`titleFieldRow` box, host `padding: '3px 6px'` → `rowBox`), `Blocks/viewEmbed.css.ts` `listPane` (no row box), `CalendarPicker` `switchRow` (28 floor → `rowBox`), `ImagePicker` `sliderRow` (→ `rowBox`).
 
 **Derivation**
-- `grep -n "minHeight" src/renderer/src/DesignSystem/Components/Pickers/CalendarPicker/calendarPicker.css.ts` → 1 (`:244`) → 0. (`pageWindow.css`'s `.page-window-insp-row` is a filled field box inside `.page-window-insp-rows`, not a menu row — it stays.)
-- Control: `grep -n "minHeight" src/renderer/src/DesignSystem/Components/Fields/fields.css.ts` → 1 (`:33`, the field's own floor, survives).
+- `grep -n "minHeight" src/renderer/DesignSystem/Components/Pickers/CalendarPicker/calendarPicker.css.ts` → 1 (`:244`) → 0. (`pageWindow.css`'s `.page-window-insp-row` is a filled field box inside `.page-window-insp-rows`, not a menu row — it stays.)
+- Control: `grep -n "minHeight" src/renderer/DesignSystem/Components/Fields/fields.css.ts` → 1 (`:33`, the field's own floor, survives).
 
 **Steps:**
 - [x] Delete each row box; gates; running pass on BlockHandleMenu root + style + scale panes, the view-embed list, a page window's inspector.
@@ -451,7 +451,7 @@ Every task below is written as **Today → Becomes**; line numbers are at `7f358
 
 **Becomes:** the trailing cluster is flush by design — `MenuItem` sets `--row-pad-trail: 0px` on the row when it has a `trailing` control (a `detail` or `value` alone keeps the trail pad — NavList's path rows) (one var `rowBox` already reads; no new class), so `flushTrailing` deletes and its 39 sites are cleaned; `configLabel` deletes (the item's own title — `MenuRowView` `label` — at whatever density the pane sets); `compactTitle` moves to `Properties/OptionRow`'s own stylesheet as geometry. `MenuItem` gains no `wide`.
 
-**Derivation:** `grep -rF "flushTrailing" src` → 39 → 0. `grep -rF "configLabel" src` → 11 → 0. `grep -rF "compactTitle" src` → 4 → the OptionRow stylesheet's own. Control: `grep -rF "detail" src/renderer/src/DesignSystem/Menus/menu-row.tsx` ≥ 2.
+**Derivation:** `grep -rF "flushTrailing" src` → 39 → 0. `grep -rF "configLabel" src` → 11 → 0. `grep -rF "compactTitle" src` → 4 → the OptionRow stylesheet's own. Control: `grep -rF "detail" src/renderer/DesignSystem/Menus/menu-row.tsx` ≥ 2.
 
 **Steps:**
 - [x] Rewrite; `GroupFrame.test.tsx` aria lookups pass; gates; commit `refactor(menus): the trailing slot`.

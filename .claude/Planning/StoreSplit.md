@@ -19,10 +19,10 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
 4. The Subfield and CitationsToggle take `page: SubfieldPage | null` from every host; the `scope` parameter and the store-reading mode are gone; only the two stats leaves subscribe to the live body.
 5. `captureOutgoingDetail` is gone with its four callers; a page's detail and live body reach the warm cache through `PageView`'s unmount capture, beside the editor state, under the tab id current at capture time, and only while the warm generation it mounted under holds.
 6. `pinnedTabs` has one writer; `previewTarget` is a selector; `deriveTarget` returns the stored target and stays the one definition.
-7. The store is slice files under `src/renderer/src/Store/`, each a `StateCreator` over the full state, composed in `store.ts`; every existing `useSession` importer compiles unchanged.
+7. The store is slice files under `src/renderer/Store/`, each a `StateCreator` over the full state, composed in `store.ts`; every existing `useSession` importer compiles unchanged.
 8. Behavior holds: every existing store test passes, rewritten only where it seeded the retired fields; the eight running-app checks in Acceptance are seen; typing does not re-render the content pane.
 
-**Acceptance — the whole thing working:** with four page tabs open (`WARM_TABS` is 2), type in tab A, visit B, C, D, return to A — A shows the typed text, `openPage` was not called, its scroll and undo history hold; cold-open a fifth page from A on a nexus where the fetch outlasts a frame — A holds frozen with no placeholder flash, and the slide plays once, on the new page; pin A's tab and unpin it — A's surface never remounts (an embedded webview keeps playing); rename a page linked from B while B is parked, return to B — B shows the healed link; open a page preview over B — the preview's Subfield count tracks the preview's body while the main pane's tracks B's; type a sentence with React DevTools profiling — `ContentView` does not commit; ⌘R — all tabs restore. And `rg -F pageDetail Pommora/src/renderer/src --glob '!*.test.*'` returns hits only at the allowlist in Dead Vocabulary.
+**Acceptance — the whole thing working:** with four page tabs open (`WARM_TABS` is 2), type in tab A, visit B, C, D, return to A — A shows the typed text, `openPage` was not called, its scroll and undo history hold; cold-open a fifth page from A on a nexus where the fetch outlasts a frame — A holds frozen with no placeholder flash, and the slide plays once, on the new page; pin A's tab and unpin it — A's surface never remounts (an embedded webview keeps playing); rename a page linked from B while B is parked, return to B — B shows the healed link; open a page preview over B — the preview's Subfield count tracks the preview's body while the main pane's tracks B's; type a sentence with React DevTools profiling — `ContentView` does not commit; ⌘R — all tabs restore. And `rg -F pageDetail Pommora/src/renderer --glob '!*.test.*'` returns hits only at the allowlist in Dead Vocabulary.
 
 **Forced By**
 
@@ -52,14 +52,14 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
 
 **Grounding**
 
-- `Pommora/src/renderer/src/store.ts` — whole; `select`, `syncActiveDetail`, `captureOutgoingDetail`, `applyTabResult`, `applyTree`, `resetNexusSession`, `mutate`.
-- `Pommora/src/renderer/src/store.test.tsx` — the cold-swap and warm-tab tests are the behavior contract.
-- `Pommora/src/renderer/src/Tabs/warmCache.ts`; `MarkdownPM/index.tsx` (the mount effect's cleanup and `warm.capture`).
-- `Pommora/src/renderer/src/Detail/ContentView.tsx` — `useHosts`, `WARM_TABS`, `is-frozen`, the slide effect, the footer fragment.
-- `Pommora/src/renderer/src/Detail/PageView.tsx` — the `detail` prop, the three conditional selectors, `registerPageEditor`, `pushLiveBody`, the `warm` seam.
-- `Pommora/src/renderer/src/Detail/Subfield/{Subfield,subfieldItems,CitationsToggle}.tsx` — `SubfieldScope`.
-- `Pommora/src/renderer/src/Windows/PageWindow.tsx` — `previewBody`, the `scope` memo.
-- `Pommora/src/renderer/src/Tabs/tabsModel.ts` (`pinTabId`, `openTab`, `derivePinnedTabs`), `Windows/windowTabs.ts` (`deriveTarget`), `selection.ts` (`reconcileWith`), `Links/connectionMenu.ts`.
+- `Pommora/src/renderer/store.ts` — whole; `select`, `syncActiveDetail`, `captureOutgoingDetail`, `applyTabResult`, `applyTree`, `resetNexusSession`, `mutate`.
+- `Pommora/src/renderer/store.test.tsx` — the cold-swap and warm-tab tests are the behavior contract.
+- `Pommora/src/renderer/Tabs/warmCache.ts`; `MarkdownPM/index.tsx` (the mount effect's cleanup and `warm.capture`).
+- `Pommora/src/renderer/Detail/ContentView.tsx` — `useHosts`, `WARM_TABS`, `is-frozen`, the slide effect, the footer fragment.
+- `Pommora/src/renderer/Detail/PageView.tsx` — the `detail` prop, the three conditional selectors, `registerPageEditor`, `pushLiveBody`, the `warm` seam.
+- `Pommora/src/renderer/Detail/Subfield/{Subfield,subfieldItems,CitationsToggle}.tsx` — `SubfieldScope`.
+- `Pommora/src/renderer/Windows/PageWindow.tsx` — `previewBody`, the `scope` memo.
+- `Pommora/src/renderer/Tabs/tabsModel.ts` (`pinTabId`, `openTab`, `derivePinnedTabs`), `Windows/windowTabs.ts` (`deriveTarget`), `selection.ts` (`reconcileWith`), `Links/connectionMenu.ts`.
 - The active-page readers: `Navigation/useNavThumbnails.ts`, `Toolbar/OutlineMenu.tsx`, `Frames/PageMenu.tsx`, `Properties/PageProperties.tsx`, `Links/connectionMenu.ts`.
 - `.claude/Planning/Codebase-Cleanup-Checklist.md` §Bundle 5; `Architecture Audit — Full-Codebase Report.md` §The Store; `RendererRefactor.md` the `Core/` row; `.claude/Guidelines/Cohesion-Rulings.md`; `.claude/Features/ArchitecturePM.md` §The Store, §Tabs, Warmth, and Navigation.
 
@@ -101,7 +101,7 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
 
 **Dead Vocabulary**
 
-- `pageStatus` · `pageError` · `pageFrozen` (as a field) · `liveBody` · `setLiveBody` · `captureOutgoingDetail` · `PAGE_CLEARED` · `PAGE_CLEARED_UNFROZEN` · `SubfieldScope` · `openPageBody` → expect 0 in `src/renderer/src` outside tests.
+- `pageStatus` · `pageError` · `pageFrozen` (as a field) · `liveBody` · `setLiveBody` · `captureOutgoingDetail` · `PAGE_CLEARED` · `PAGE_CLEARED_UNFROZEN` · `SubfieldScope` · `openPageBody` → expect 0 in `src/renderer` outside tests.
 - `pageDetail` → legitimate hits: `warmCache.ts` (the `WarmEntry.pageDetail` field) and its readers/writers (`select`'s (c), `PageView`'s `warm.restore`/`capture`, `PageEmbed`'s rehydration); as a local name for a slot's detail. Everything else converts.
 - Control: `useSession` → 113 files at planning. Zero means the sweep never ran.
 
@@ -118,20 +118,20 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
 **Why:** This is the re-key, and it is one commit because the singleton's writers (`select`, `syncActiveDetail`, `applyTree`, `resetNexusSession`, `reloadPage`, `mutate`) must move together — a store carrying both `pages` and `pageDetail` is two writers for one fact. The slot holds a page's detail and live body; `selection` keeps the pause; the fetch fence stays one module counter because only the shown tab fetches; the outgoing capture moves to the surface's unmount, where the editor already captures its state under the tab that mounted it. `PageView` reads its slot; `ContentView` builds hosts from two named facts (the shown selection, the tab targets) and keys them by page id, so becoming shown, being parked, and being pinned are class changes, never remounts.
 
 **Files:**
-- Modify: `Pommora/src/renderer/src/store.ts` — `SessionState` (the four fields, `setLiveBody`, `select`, `reloadPage`), `PAGE_CLEARED`/`PAGE_CLEARED_UNFROZEN`, `resetNexusSession`, `syncActiveDetail`, `captureOutgoingDetail` and its four callers (`activateTab`, `openNewTab`, `jumpActiveHistory`, `select`), `applyTabResult`, `applyTree` (the selection reconcile and the dropped-tab loop), `select`, `reloadPage`, `mutate` (`rename`, `delete`, `setIcon` arms), `openPageBody`.
-- Modify: `Pommora/src/renderer/src/Tabs/warmCache.ts` — `clearWarm` bumps a module generation; `warmGeneration()` exported.
-- Modify: `Pommora/src/renderer/src/Detail/PageView.tsx` — props `{ tabId, pageId, parked }`; read `s.pages[pageId]`; `pushLiveBody` → `setPageBody(path, body)`; `warm.capture` reads the slot and tab id through refs and is gated on the mount-time generation.
-- Modify: `Pommora/src/renderer/src/MarkdownPM/index.tsx` — the cleanup comment about the capture identity moves out (the seam owns that fact now); no code change.
-- Modify: `Pommora/src/renderer/src/Detail/ContentView.tsx` — `useHosts`; `key={h.pageId}`; `frozen` reads `frozenOf`.
+- Modify: `Pommora/src/renderer/store.ts` — `SessionState` (the four fields, `setLiveBody`, `select`, `reloadPage`), `PAGE_CLEARED`/`PAGE_CLEARED_UNFROZEN`, `resetNexusSession`, `syncActiveDetail`, `captureOutgoingDetail` and its four callers (`activateTab`, `openNewTab`, `jumpActiveHistory`, `select`), `applyTabResult`, `applyTree` (the selection reconcile and the dropped-tab loop), `select`, `reloadPage`, `mutate` (`rename`, `delete`, `setIcon` arms), `openPageBody`.
+- Modify: `Pommora/src/renderer/Tabs/warmCache.ts` — `clearWarm` bumps a module generation; `warmGeneration()` exported.
+- Modify: `Pommora/src/renderer/Detail/PageView.tsx` — props `{ tabId, pageId, parked }`; read `s.pages[pageId]`; `pushLiveBody` → `setPageBody(path, body)`; `warm.capture` reads the slot and tab id through refs and is gated on the mount-time generation.
+- Modify: `Pommora/src/renderer/MarkdownPM/index.tsx` — the cleanup comment about the capture identity moves out (the seam owns that fact now); no code change.
+- Modify: `Pommora/src/renderer/Detail/ContentView.tsx` — `useHosts`; `key={h.pageId}`; `frozen` reads `frozenOf`.
 - Modify: the active-page readers — `Toolbar/OutlineMenu.tsx`, `Frames/PageMenu.tsx`, `Properties/PageProperties.tsx`, `Links/connectionMenu.ts` read `shownDetail`; `Navigation/useNavThumbnails.ts` subscribes to `shownPage(s)?.status` and reads the body through `getState()` at capture time as today; `Interface/Subfield/subfieldItems.tsx`, `CitationsToggle.tsx` read `shownDetail` and `pageBody(shownPage(s))` — the `scope` mode is untouched here (Task 2).
-- Test: `Pommora/src/renderer/src/store.test.tsx` — `seed` takes `pages`; expectations on `pageStatus`/`pageDetail` read the slot; the capture test seeds warm directly (the capture is now the surface's).
+- Test: `Pommora/src/renderer/store.test.tsx` — `seed` takes `pages`; expectations on `pageStatus`/`pageDetail` read the slot; the capture test seeds warm directly (the capture is now the surface's).
 
 **Derivation**
-- `rg -F 'pageDetail' Pommora/src/renderer/src --glob '!*.test.*' --glob '!store.ts'` → 57 hits in 10 files at planning; re-run at execution; every hit outside the allowlist converts.
-- `rg -F 'liveBody' Pommora/src/renderer/src --glob '!*.test.*'` → 7 files at planning (two are comments in `PageEmbed.tsx` and `PageWindow.tsx`); all convert or are rewritten.
-- `rg -F 'pageFrozen' Pommora/src/renderer/src --glob '!*.test.*'` → `store.ts`, `ContentView.tsx` → 0 after.
-- `rg -F 'captureOutgoingDetail' Pommora/src/renderer/src/store.ts` → 5 (definition + four callers) → 0.
-- Control: `rg -F 'useSession' Pommora/src/renderer/src -l` → 113.
+- `rg -F 'pageDetail' Pommora/src/renderer --glob '!*.test.*' --glob '!store.ts'` → 57 hits in 10 files at planning; re-run at execution; every hit outside the allowlist converts.
+- `rg -F 'liveBody' Pommora/src/renderer --glob '!*.test.*'` → 7 files at planning (two are comments in `PageEmbed.tsx` and `PageWindow.tsx`); all convert or are rewritten.
+- `rg -F 'pageFrozen' Pommora/src/renderer --glob '!*.test.*'` → `store.ts`, `ContentView.tsx` → 0 after.
+- `rg -F 'captureOutgoingDetail' Pommora/src/renderer/store.ts` → 5 (definition + four callers) → 0.
+- Control: `rg -F 'useSession' Pommora/src/renderer -l` → 113.
 
 **Interfaces**
 - Produces, in `store.ts` (moved to `Store/NavigationSlice.ts` by Task 4):
@@ -176,14 +176,14 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
 **Why:** With the body in the slot, the main pane hands the Subfield `{ target, body }` exactly as the preview window does — one mode, no `scope`, no store-reading branch. The subscription to the body sits in the footer, not the pane: `ContentView`'s footer fragment becomes `ContentFooter`, the one component in the pane that reads `shownPage`, so typing re-renders the footer and nothing above it.
 
 **Files:**
-- Modify: `Pommora/src/renderer/src/Detail/Subfield/subfieldItems.tsx` — `SubfieldScope` becomes `SubfieldPage = { target: PageTarget; body: string }`; `PageStatsItem` reads its prop.
+- Modify: `Pommora/src/renderer/Detail/Subfield/subfieldItems.tsx` — `SubfieldScope` becomes `SubfieldPage = { target: PageTarget; body: string }`; `PageStatsItem` reads its prop.
 - Modify: `Subfield.tsx`, `CitationsToggle.tsx` — prop `page: SubfieldPage | null`; the crumb selection is `page?.target ?? selection`.
-- Modify: `Pommora/src/renderer/src/Detail/ContentView.tsx` — the `showSubfield && (…)` fragment moves into `ContentFooter`, which subscribes to `shownPage` and builds `page` memoized on the slot.
-- Modify: `Pommora/src/renderer/src/Windows/PageWindow.tsx` — the `scope` memo renames to `page`; `previewBody` stays.
+- Modify: `Pommora/src/renderer/Detail/ContentView.tsx` — the `showSubfield && (…)` fragment moves into `ContentFooter`, which subscribes to `shownPage` and builds `page` memoized on the slot.
+- Modify: `Pommora/src/renderer/Windows/PageWindow.tsx` — the `scope` memo renames to `page`; `previewBody` stays.
 
 **Derivation**
-- `rg -F 'scope' Pommora/src/renderer/src/Detail/Subfield Pommora/src/renderer/src/Windows/PageWindow.tsx` → count at execution; each hit converts or is an unrelated word.
-- Control: `rg -F 'Subfield' Pommora/src/renderer/src -l` → ≥ 6.
+- `rg -F 'scope' Pommora/src/renderer/Detail/Subfield Pommora/src/renderer/Windows/PageWindow.tsx` → count at execution; each hit converts or is an unrelated word.
+- Control: `rg -F 'Subfield' Pommora/src/renderer -l` → ≥ 6.
 
 **Interfaces**
 - Produces: `SubfieldPage`; `Subfield({ page })`, `CitationsToggle({ page })`; `ContentFooter` (module-private to `ContentView.tsx`).
@@ -202,16 +202,16 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
 **Why:** `pinnedTabs` has four writers each inlining `derivePinnedTabs(pinned, index)`; one `setPinned(pinned, index)` makes the invariant a fact of the helper. `previewTarget` is stored and written at seven sites; `deriveTarget` already answers the question and has a consumer outside the store (`connectionMenu`), so it becomes the one definition — returning the active page tab's stored `target` (never a fresh object), null for the sentinel — and `previewTargetOf(s) = deriveTarget(s.preview)` deletes the field and its seven writes.
 
 **Files:**
-- Modify: `Pommora/src/renderer/src/Windows/windowTabs.ts` — `deriveTarget` returns `active.target` when `kind === 'page'`, else null; its return type is `PageTarget | null`.
-- Modify: `Pommora/src/renderer/src/store.ts` — `setPinned`; the four writers; `previewTarget` field removed; `previewTargetOf` exported.
+- Modify: `Pommora/src/renderer/Windows/windowTabs.ts` — `deriveTarget` returns `active.target` when `kind === 'page'`, else null; its return type is `PageTarget | null`.
+- Modify: `Pommora/src/renderer/store.ts` — `setPinned`; the four writers; `previewTarget` field removed; `previewTargetOf` exported.
 - Modify: every `previewTarget` reader (Derivation).
 - Modify: `.claude/Planning/Codebase-Cleanup-Checklist.md` §Bundle 5 and the Audit §The Store — the claims in Made False rewritten.
 
 **Derivation**
-- `rg -F 'previewTarget' Pommora/src/renderer/src --glob '!*.test.*'` → count at execution; all convert. Legitimate hits after: the selector; `PreviewTarget` the type.
-- `rg -F 'deriveTarget' Pommora/src/renderer/src` → `windowTabs.ts`, `store.ts`, `connectionMenu.ts` at planning; unchanged set after. `windowTabs.test.ts` asserts on `previewTarget`'s shape and gains `kind: 'page'` in the same commit.
-- `rg -F 'derivePinnedTabs' Pommora/src/renderer/src/store.ts` → 4 → 1.
-- Control: `rg -F 'pinnedTabs' Pommora/src/renderer/src -l` → ≥ 3.
+- `rg -F 'previewTarget' Pommora/src/renderer --glob '!*.test.*'` → count at execution; all convert. Legitimate hits after: the selector; `PreviewTarget` the type.
+- `rg -F 'deriveTarget' Pommora/src/renderer` → `windowTabs.ts`, `store.ts`, `connectionMenu.ts` at planning; unchanged set after. `windowTabs.test.ts` asserts on `previewTarget`'s shape and gains `kind: 'page'` in the same commit.
+- `rg -F 'derivePinnedTabs' Pommora/src/renderer/store.ts` → 4 → 1.
+- Control: `rg -F 'pinnedTabs' Pommora/src/renderer -l` → ≥ 3.
 
 **Steps:**
 - [x] `deriveTarget`'s return; `setPinned`; convert the four; `previewTargetOf`; convert readers; gates green (`windowTabs.test.ts` may assert on a fresh object — invert it in the same commit).
@@ -238,7 +238,7 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
 **Why:** Nine domains sit in one file in three disjoint regions each. A slice file holds its state type, its initial state, its helpers, and its actions in one place, and its name is the answer. Boundaries follow the transactions, not the field names: tabs, pages, selection, history, pins, recents, and favorites are one slice because `select`, `graduatePinCovered`, `ensureLiveActive`, and `load`'s restore all write across them; the preview, browser, and nav window are one because `openNav` opens the nav preview and `closeNav` mirrors it; the nexus lifecycle owns `applyTree` and `mutate` because both are tree writers. Seven files, because a boundary that forces a helper into the public state to cross it is the wrong boundary. The three genuine cross-slice acts are named actions, and `applyTree` shrinks to stabilize-set-reconcile because each slice's reconcile moves home with its state.
 
 **Files:**
-- Create, under `Pommora/src/renderer/src/Store/`:
+- Create, under `Pommora/src/renderer/Store/`:
   - `SessionState.ts` — `export type SessionState = NexusSlice & NavigationSlice & PreviewSlice & ChromeSlice & ConfigSlice & RenameSlice & CacheSlice`; `export type Slice<T> = StateCreator<SessionState, [], [], T>`.
   - `NexusSlice.ts` — `status`, `tree`, `error`, `load`, `applyTree`, `choose`, `openDropped`, `mutate`, `resetNexusSession` (spreads every slice's exported `perNexusInitial`), `openVia`; the system-accent and device-prefs module state.
   - `NavigationSlice.ts` — `tabs`, `activeTabId`, `tabMru`, `pages`, `selection`, `crumbDepth`, `navSlide`, `recents`, `favorites`, `pinned`, `pinnedTabs`, `navBanner`, `thumbVersions`; every tab, page, history, pin, favorite, recent, and thumbnail action; `select`, `setPageBody`, `reloadPage`, `newPage`, `createFromMenu`, `newPageAdjacent`; `shownPage`, `shownDetail`, `pageBody`, `frozenOf`; `PageSlot`, `PageTarget`; `reconcileNavigation(index)` (today's pin, selection, tab, and slot reconcile inside `applyTree`) and `restoreNavigation(nav, tabs)` (today's first-load restore block).
@@ -247,13 +247,13 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
   - `ConfigSlice.ts` — `personalization`, `devicePrefs`, `citationsShown` and its three writers; `citationsVisible`, `useEmbedScale`.
   - `RenameSlice.ts` — the rename fence, `iconPath`, `renamingProperty`, `valuesEpoch`, `submitPropertyRename`; `RenameClaim`, `resolveRenameWinner`, the token and orphan timer.
   - `CacheSlice.ts` — `linkTitles`, `activeViews`, `pageAliases`, `hostLocks`, `assetMap` and their writers; `useAssetUrl`, `useAssetResolver`; the `wireViewAdopted` wiring.
-- Modify: `Pommora/src/renderer/src/store.ts` — the composition root: `create<SessionState>()((...a) => ({ ...createNexusSlice(...a), … }))` plus re-exports of every externally imported name (`useSession`, `SelectTarget`, `PreviewTarget`, `shownPage`, `shownDetail`, `pageBody`, `frozenOf`, `previewTargetOf`, `citationsVisible`, `useEmbedScale`, `useAssetUrl`, `PageSlot`, `PageTarget`, `SubfieldPage`).
+- Modify: `Pommora/src/renderer/store.ts` — the composition root: `create<SessionState>()((...a) => ({ ...createNexusSlice(...a), … }))` plus re-exports of every externally imported name (`useSession`, `SelectTarget`, `PreviewTarget`, `shownPage`, `shownDetail`, `pageBody`, `frozenOf`, `previewTargetOf`, `citationsVisible`, `useEmbedScale`, `useAssetUrl`, `PageSlot`, `PageTarget`, `SubfieldPage`).
 - Test: `store.test.tsx` — unchanged; it imports from `./store`.
 
 **Derivation**
-- Importers: `rg -l -F "store'" Pommora/src/renderer/src --glob '*.ts' --glob '*.tsx'` → 113 at planning; 113 after with zero edits in those files.
+- Importers: `rg -l -F "store'" Pommora/src/renderer --glob '*.ts' --glob '*.tsx'` → 113 at planning; 113 after with zero edits in those files.
 - Cross-slice census, run before the first file is created and recorded in the Log: for each of the closure helpers in `store.ts`, the returned actions that call it. A helper called only from one slice's actions moves with that slice; a pure function moves to a module (`makeTabId`, `toPreviewRecord`, `stampByOrder`, `findContainer`, `parentPathOf`); a helper called from two slices' actions is one of the three named actions. A fourth cross-slice helper is a plan defect: stop, record it in Deviations, and rule on it — the boundary is not redrawn mid-task.
-- Control: `rg -F 'create<SessionState>' Pommora/src/renderer/src` → 1.
+- Control: `rg -F 'create<SessionState>' Pommora/src/renderer` → 1.
 
 **Interfaces**
 - Produces: `Slice<T>`; one `createXSlice: Slice<XSlice>` per file; `perNexusInitial` from each slice holding per-nexus state (navigation, preview, cache, chrome's subfield and modes).

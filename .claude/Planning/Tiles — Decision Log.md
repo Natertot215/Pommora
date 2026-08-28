@@ -8,18 +8,18 @@
 
 ### Sources
 
-- `Pommora/src/renderer/src/Blocks/` — SurfacePM's tile contents (BlockSurface, MarkdownBlock, PageEmbedBlock, ViewEmbedBlock, BlockHandleMenu, blockZoom, useBlockDoc). MarkdownPM imports only `blockZoom` from here.
-- `Pommora/src/renderer/src/Embeds/` — mixed: tile-shaped (PageEmbed, WebpageEmbed, ViewEmbedScope, tileWarm, webRetention, embeds.css) and not (ConnectionPane, PanePresenter, hoverPaneSize = the hover pane; connectionMenu = link context-menu resolution).
-- `Pommora/src/renderer/src/Components/` — EntityIcon, useNexusIcon, RenamableTitle; all three read the store.
-- `Pommora/src/renderer/src/Embeds/embeds.css:109-124` — the hover-revealed identity exists only under `.mdpm-embed-tile:hover`; `.wpembed-title` is declared a second time at `:162-169` with `z-index: 4` over the shared block's 2, deliberately (the title rides above the webview guest and its catcher); `PageEmbed` renders crumbs only with `chrome='page'` (SurfacePM tiles pass none — the handle menu carries the location).
-- `Pommora/src/renderer/src/Windows/webWindow.css:21-45` + `WebWindow.tsx:129-135` — the Web Window's always-visible centered domain › title label.
-- `Pommora/src/renderer/src/Windows/PageWindow.tsx:199` — the Page Window's identity is a NavTrail inside the tab strip.
-- `Pommora/src/renderer/src/DesignSystem/Elements/NavTrail/NavTrail.tsx` — the trail element; hover-scrolls via OverScroll.
-- `Pommora/src/renderer/src/DesignSystem/Detail/tile-chassis.css` — the shared chassis both tile hosts wear.
-- `Pommora/src/renderer/src/DesignSystem/Components/{AssetImage,Pickers/ImagePicker}` — the design system already reads the store; a store-coupled move into it breaks no seam.
+- `Pommora/src/renderer/Blocks/` — SurfacePM's tile contents (BlockSurface, MarkdownBlock, PageEmbedBlock, ViewEmbedBlock, BlockHandleMenu, blockZoom, useBlockDoc). MarkdownPM imports only `blockZoom` from here.
+- `Pommora/src/renderer/Embeds/` — mixed: tile-shaped (PageEmbed, WebpageEmbed, ViewEmbedScope, tileWarm, webRetention, embeds.css) and not (ConnectionPane, PanePresenter, hoverPaneSize = the hover pane; connectionMenu = link context-menu resolution).
+- `Pommora/src/renderer/Components/` — EntityIcon, useNexusIcon, RenamableTitle; all three read the store.
+- `Pommora/src/renderer/Embeds/embeds.css:109-124` — the hover-revealed identity exists only under `.mdpm-embed-tile:hover`; `.wpembed-title` is declared a second time at `:162-169` with `z-index: 4` over the shared block's 2, deliberately (the title rides above the webview guest and its catcher); `PageEmbed` renders crumbs only with `chrome='page'` (SurfacePM tiles pass none — the handle menu carries the location).
+- `Pommora/src/renderer/Windows/webWindow.css:21-45` + `WebWindow.tsx:129-135` — the Web Window's always-visible centered domain › title label.
+- `Pommora/src/renderer/Windows/PageWindow.tsx:199` — the Page Window's identity is a NavTrail inside the tab strip.
+- `Pommora/src/renderer/DesignSystem/Elements/NavTrail/NavTrail.tsx` — the trail element; hover-scrolls via OverScroll.
+- `Pommora/src/renderer/DesignSystem/Detail/tile-chassis.css` — the shared chassis both tile hosts wear.
+- `Pommora/src/renderer/DesignSystem/Components/{AssetImage,Pickers/ImagePicker}` — the design system already reads the store; a store-coupled move into it breaks no seam.
 - [[SurfacePM]] :14 :34 :36 · [[MarkdownPM]] :75 · [[WebviewPM]] :24 · [[DesignSystemPM]] :27 :375-381 (the `Detail` tier) · `Guidelines/Cohesion-Rulings.md` :117 · the CLAUDE.md map — name `Blocks/` / `Embeds/` / `DesignSystem/Detail` paths. [[ArchitecturePM]] :124 describes the autosave registry as path-keyed, which TileSave makes false; [[InterfacePM]] is verify-only.
-- `Pommora/src/renderer/src/Blocks/useBlockDoc.ts:11,64-83` — the layout document's own 300ms debounce, flushed on unmount only; `Store/NexusSlice.ts:60-68` awaits `flushAllPageSaves` before the root flips, so a layout flush that fires at the tree replacement writes into the new nexus.
-- `Pommora/src/renderer/src/Interface/pageFlush.ts` — the path-keyed writer: write-through to the warm cache at schedule time (:16), requeue on a failed ack (:36), `beforeunload` flush (:50-53).
+- `Pommora/src/renderer/Blocks/useBlockDoc.ts:11,64-83` — the layout document's own 300ms debounce, flushed on unmount only; `Store/NexusSlice.ts:60-68` awaits `flushAllPageSaves` before the root flips, so a layout flush that fires at the tree replacement writes into the new nexus.
+- `Pommora/src/renderer/Interface/pageFlush.ts` — the path-keyed writer: write-through to the warm cache at schedule time (:16), requeue on a failed ack (:36), `beforeunload` flush (:50-53).
 
 ### Decisions
 

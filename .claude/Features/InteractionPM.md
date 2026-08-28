@@ -62,7 +62,7 @@ The interaction layer in `DesignSystem/Interactions/` and `Animation/`: content-
 
 One text-insertion identity for the whole app: every CodeMirror surface mounts the caret layer, and the same bar paints over the native text fields, the inline-rename inputs among them, from a global caret layer (`Carets.css`, `nativeCaret.ts`, `MarkdownPM/editor/caret.ts`). The drawn caret fades on a symmetric cycle via twin keyframes, swapped on selection change to restart the cycle without reflow; on a fresh focus the overlay settles by re-measuring each frame until the bar holds still.
 
-**SOURCE:** `Pommora/src/renderer/src/Carets.css`
+**SOURCE:** `Pommora/src/renderer/Carets.css`
 
 | Title | Token | Value |
 | --- | --- | --- |
@@ -76,7 +76,7 @@ One text-insertion identity for the whole app: every CodeMirror surface mounts t
 
 The overflow-fade mechanism behind every capped label: a label truncates at rest and scrolls under the pointer to reveal its full text, its hidden edge fading into the surface. Three registered properties, two axis classes, and three modifiers; `--over-scroll-fade` is non-inheriting, so the knob sits on the element carrying the class. An axis class carries the fade, `over-scroll-cap` adds a capped-label box beneath it, and a label that can't hover itself takes the scrolled state from an ancestor with `over-scroll-host`.
 
-**SOURCE:** `Pommora/src/renderer/src/DesignSystem/Interactions/OverScroll/`
+**SOURCE:** `Pommora/src/renderer/DesignSystem/Interactions/OverScroll/`
 
 | Title | Token | Value |
 | --- | --- | --- |
@@ -90,7 +90,7 @@ The overflow-fade mechanism behind every capped label: a label truncates at rest
 
 The hover-revealed remove ×, with the label-tail melt as an option: hovering a chip's right third reveals the × while the label's tail blurs into the fill beneath it.
 
-**SOURCE:** `Pommora/src/renderer/src/DesignSystem/Interactions/HoverRemove/`
+**SOURCE:** `Pommora/src/renderer/DesignSystem/Interactions/HoverRemove/`
 
 | Title | Token | Value |
 | --- | --- | --- |

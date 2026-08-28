@@ -4,7 +4,7 @@ The component-library showcase deploys to Vercel from this repo. It builds the *
 
 ### What Goes Live
 
-`design-system.html` → the data-driven showcase (`src/renderer/src/DesignSystem/Showcase/`): color tokens, the type ramp, chips, icons, glass materials, and a live accent picker. `vite build` emits it into `dist/`, served at `/`.
+`design-system.html` → the data-driven showcase (`src/renderer/DesignSystem/Showcase/`): color tokens, the type ramp, chips, icons, glass materials, and a live accent picker. `vite build` emits it into `dist/`, served at `/`.
 
 ### How the Pointing Works (post-consolidation)
 
@@ -33,5 +33,5 @@ Unchanged: **https://pommora-design-system.vercel.app**. The custom domain `pomm
 
 ### Assets + Gotchas
 
-- Glass-stage photos live in `Pommora/public/surfaces/`; `vite build` copies `public/` into `dist/` automatically — no action.
+- Glass-stage photos live in `Showcase/surfaces/` and are imported by `GlassLeaf.tsx`, so `vite build` hashes them into `dist/assets/` — no action.
 - The showcase is decoupled from Electron — `build:showcase` is plain `vite build` (via `vite.config.ts`), not `electron-vite`.

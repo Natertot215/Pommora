@@ -30,7 +30,7 @@ Clicking a Page opens it in the active tab, replacing that tab's selection, and 
 
 ### Outline
 
-A page's own table of contents, in the toolbar (`src/renderer/src/Toolbar/OutlineMenu.tsx`, built from the editor's heading fold model). It appears only when the detail pane contains a Page and occupies the Views button's slot, since a selection is either a container or a Page. Rows carry each heading's text with its markers stripped, nested by level and opened fully; levels may skip freely, so a heading attaches to the nearest shallower one above it, and a heading with nothing beneath it still appears. A row's chevron collapses a group in the menu only, without touching the page, and neither gesture dismisses the menu. Clicking a row scrolls the page to that heading, first opening any collapsed section that hides it, without moving the caret or editing the document.
+A page's own table of contents, in the toolbar (`src/renderer/Toolbar/OutlineMenu.tsx`, built from the editor's heading fold model). It appears only when the detail pane contains a Page and occupies the Views button's slot, since a selection is either a container or a Page. Rows carry each heading's text with its markers stripped, nested by level and opened fully; levels may skip freely, so a heading attaches to the nearest shallower one above it, and a heading with nothing beneath it still appears. A row's chevron collapses a group in the menu only, without touching the page, and neither gesture dismisses the menu. Clicking a row scrolls the page to that heading, first opening any collapsed section that hides it, without moving the caret or editing the document.
 
 ---
 

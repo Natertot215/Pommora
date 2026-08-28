@@ -5,7 +5,7 @@
 
 **Goal**
 
-One folder, `src/renderer/src/Tiles/`, holds everything a tile is — the chassis, the four content kinds, their plumbing, and the dashboard host — and both hosts consume it: MarkdownPM's `editor/embedWidget.tsx` and SurfacePM through `Tiles/BlockSurface.tsx`. `Blocks/`, `Embeds/`, root `Components/`, and `DesignSystem/Detail/` no longer exist. One editor shell, `TileWriter`, renders a prose tile and an embedded page; one writer, `TileSave`, debounces and flushes every tile-shaped save — page bodies, prose-tile bodies, dashboard layouts — with the same nexus-adopt and window-close guarantees pages have today.
+One folder, `src/renderer/Tiles/`, holds everything a tile is — the chassis, the four content kinds, their plumbing, and the dashboard host — and both hosts consume it: MarkdownPM's `editor/embedWidget.tsx` and SurfacePM through `Tiles/BlockSurface.tsx`. `Blocks/`, `Embeds/`, root `Components/`, and `DesignSystem/Detail/` no longer exist. One editor shell, `TileWriter`, renders a prose tile and an embedded page; one writer, `TileSave`, debounces and flushes every tile-shaped save — page bodies, prose-tile bodies, dashboard layouts — with the same nexus-adopt and window-close guarantees pages have today.
 
 The shape follows the consumers: tile content is imported by both hosts and by three Windows with no plurality, which is the atlas's own test for a shared root folder, so `Surface/Blocks/` (a subfolder of one host) was rejected and `SurfacePM/` keeps its name as the engine. The folds are the point, not a side effect — Nathan's mandate is a net code-line reduction against the 2546 baseline, and moves alone are zero-sum. `TileWriter` is justified by cohesion (one click-to-edit shell, one flush story) and is allowed to be line-neutral; `TileSave` is the cycle's one behavior change and closes a live hole where a prose-tile edit or a layout nudge inside the debounce is lost on window close and, at nexus switch, written into the wrong nexus.
 
@@ -23,7 +23,7 @@ Bounded by: no change to how a tile looks or behaves beyond the writer's flush g
 8. Net code LOC of `Tiles/` + `Utilities/` + `Views/ViewEmbedScope.tsx` is below **2680** — the 2546 baseline plus the three files that enter the measured set from outside it: `ActionBand.css.ts` 88, `tile-chassis.css` 17, `pageFlush.ts` 29. (A-6)
 9. Every document the move makes false is rewritten in the commit that falsifies it; the ledger and atlas name the tree on disk. (Made False)
 
-**Acceptance — the whole thing working:** With the app running against a nexus, a prose tile on the Homepage takes a keystroke and the window is closed within 400ms — on relaunch the keystroke is on disk. A page tile inside a Markdown document is edited, the page opens in the main pane and shows the edit. A dashboard tile is dragged and the window is closed within 300ms — on relaunch the tile is where it was dropped. `ls src/renderer/src` shows `Tiles/`, `Utilities/`, `Links/` and no `Blocks/`, `Embeds/`, `Components/`; `ls src/renderer/src/DesignSystem` shows no `Detail/`. The three gates are green, the LOC count reads below 2680, and the Dead Vocabulary sweep returns zero against its control.
+**Acceptance — the whole thing working:** With the app running against a nexus, a prose tile on the Homepage takes a keystroke and the window is closed within 400ms — on relaunch the keystroke is on disk. A page tile inside a Markdown document is edited, the page opens in the main pane and shows the edit. A dashboard tile is dragged and the window is closed within 300ms — on relaunch the tile is where it was dropped. `ls src/renderer` shows `Tiles/`, `Utilities/`, `Links/` and no `Blocks/`, `Embeds/`, `Components/`; `ls src/renderer/DesignSystem` shows no `Detail/`. The three gates are green, the LOC count reads below 2680, and the Dead Vocabulary sweep returns zero against its control.
 
 **Forced By**
 
@@ -78,7 +78,7 @@ Bounded by: no change to how a tile looks or behaves beyond the writer's flush g
 **Global Constraints (every task inherits these)**
 
 - Run from `Pommora/`. Gates, exit codes read directly, never piped: `npm run typecheck` → 0 · `npm run lint` → 0 · `npx vitest run` → 0 (297 files / 3671 tests at the base; the count may only rise by tests this plan adds). `npm run format` repairs a shell-driven write the hook didn't format.
-- LOC count, run from `Pommora/src/renderer/src`: `cat $(ls Tiles/* Utilities/* Views/ViewEmbedScope.tsx | grep -v test) | grep -v '^\s*$' | grep -v '^\s*//\|^\s*/\*\|^\s*\*' | wc -l` → below **2680** at Gate 3 and at closeout. Baseline at planning: `Blocks/` 1793 · `Embeds/` 634 · `Components/` 119 = 2546 (re-counted 08-28 at the Menu Recipe's landing, `935bf031`), plus the inbound movers `ActionBand.css.ts` 88 · `tile-chassis.css` 17 · `pageFlush.ts` 29 = 2680. The gate measures the folds, not the moves.
+- LOC count, run from `Pommora/src/renderer`: `cat $(ls Tiles/* Utilities/* Views/ViewEmbedScope.tsx | grep -v test) | grep -v '^\s*$' | grep -v '^\s*//\|^\s*/\*\|^\s*\*' | wc -l` → below **2680** at Gate 3 and at closeout. Baseline at planning: `Blocks/` 1793 · `Embeds/` 634 · `Components/` 119 = 2546 (re-counted 08-28 at the Menu Recipe's landing, `935bf031`), plus the inbound movers `ActionBand.css.ts` 88 · `tile-chassis.css` 17 · `pageFlush.ts` 29 = 2680. The gate measures the folds, not the moves.
 - Moves are `git mv`; import rewrites are explicit per-path `sed` on the alias and relative forms named in the task, never a bare folder-name substitution. KNOB comments and `(Nathan's call)` markers travel verbatim.
 - Stage explicit paths only (a parallel session may be live); never `git add -A` on a directory. Hook-pre-staged doc edits ride along. One commit per task, message `refactor(tiles): …` / `docs(tiles): …`.
 - No `Tiles/index.ts`. Deep imports only.
@@ -90,8 +90,8 @@ Bounded by: no change to how a tile looks or behaves beyond the writer's flush g
 | Doc | The specific claim | What makes it false | Task |
 | --- | --- | --- | --- |
 | `.claude/CLAUDE.md` map | rows `// Blocks`, `// Components`, `// Embeds`, `DesignSystem // Detail` | folders gone; `Tiles`, `Utilities` rows missing | 8 |
-| `Features/SurfacePM.md` :14 :34 :36 | `src/renderer/src/Blocks/`, `Embeds/`, `DesignSystem/Detail/tile-chassis.css` | moved to `Tiles/` | 8 |
-| `Features/MarkdownPM.md` :75 | `from src/renderer/src/Embeds/` | `Tiles/` | 8 |
+| `Features/SurfacePM.md` :14 :34 :36 | `src/renderer/Blocks/`, `Embeds/`, `DesignSystem/Detail/tile-chassis.css` | moved to `Tiles/` | 8 |
+| `Features/MarkdownPM.md` :75 | `from src/renderer/Embeds/` | `Tiles/` | 8 |
 | `Features/WebviewPM.md` :24 | `Embeds/webRetention.ts` | `Tiles/webRetention.ts` | 8 |
 | `Features/DesignSystemPM.md` :27 :375-381 | the `Detail` tier and its one table row | tier empty; chassis is `Tiles/tile-chassis.css` | 8 |
 | `Features/ArchitecturePM.md` :124 :192 | "one path-keyed flush registry … per page path" · "Pending page saves" | `TileSave` is key-keyed and carries tile bodies and layouts | 11 |
@@ -157,7 +157,7 @@ Base: `935bf031`. Baseline invariant carried through every task: `npx vitest run
 - Control: `rg -F "Views/viewMint" src` → nonzero.
 
 **Steps:**
-- [ ] `git mv`; rewrite the fourteen imports and the internal one; `ls src/renderer/src/Embeds` → no such directory.
+- [ ] `git mv`; rewrite the fourteen imports and the internal one; `ls src/renderer/Embeds` → no such directory.
 - [ ] Gates → 0, 3671 tests.
 - [ ] Commit: `refactor(views): ViewEmbedScope is view infrastructure`
 
@@ -172,7 +172,7 @@ Base: `935bf031`. Baseline invariant carried through every task: `npx vitest run
 - Modify (imports only): `Frames/FilterFrame.tsx:9`, `Frames/GroupFrame.tsx:46`, `MarkdownPM/AutocompletePane.tsx:2`, `Properties/Editing/Cell.tsx:5`, `Views/TableView/TableView.tsx:49`, `Views/GroupBand.tsx:1,13`, `Views/CardView/CardsView.tsx:105` — `@renderer/Components/` → `@renderer/Utilities/`; `Sidebar/Sidebar.tsx:41`, `Sidebar/NexusPhoto.tsx:6`, `Frames/SettingsScaffold.tsx:12` — `'../Components/` → `'../Utilities/`.
 
 **Derivation**
-- `rg -F "@renderer/Components/" src` → 8 at planning → 0 after. `rg -F "'../Components/" src --glob '!src/renderer/src/DesignSystem/**'` → 3 → 0 after.
+- `rg -F "@renderer/Components/" src` → 8 at planning → 0 after. `rg -F "'../Components/" src --glob '!src/renderer/DesignSystem/**'` → 3 → 0 after.
 - Control: `rg -F "@renderer/DesignSystem/Components/" src` → 60+ before and after, unchanged. A changed count here means the rename touched the design system — revert.
 
 **Steps:**
@@ -217,7 +217,7 @@ Base: `935bf031`. Baseline invariant carried through every task: `npx vitest run
 - Modify: `Tiles/BlockSurface.tsx:41`, `Tiles/PageEmbed.tsx:19`, `Tiles/WebEmbed.tsx:19` → `import './tile-base.css'`; `PageEmbed.tsx` **and** `WebEmbed.tsx` also `import './tile-title.css'` — they are separate lazy chunks (`embedWidget.tsx:106,357`), and a webpage tile mounted first must not render an unpositioned title.
 
 **Derivation**
-- `rg -F ".wpembed-title" src/renderer/src/Tiles/tile-title.css` → 4 selector lines (two declarations, two `:hover` rules) in authored order; `rg -F ".wpembed-title" src/renderer/src/Tiles/tile-base.css` → 0. `rg -F ".pgembed-crumbs" src/renderer/src/Tiles/tile-base.css` → 0.
+- `rg -F ".wpembed-title" src/renderer/Tiles/tile-title.css` → 4 selector lines (two declarations, two `:hover` rules) in authored order; `rg -F ".wpembed-title" src/renderer/Tiles/tile-base.css` → 0. `rg -F ".pgembed-crumbs" src/renderer/Tiles/tile-base.css` → 0.
 - Control: `rg -F ".pgembed-grows" src` → 3 (the definition plus `PageWindow`, `NavWindow`), unchanged.
 
 **Steps:**
@@ -341,7 +341,7 @@ Base: `935bf031`. Baseline invariant carried through every task: `npx vitest run
 
 #### Gate 2 — one writer, every tile-shaped save
 - [ ] Gates green; test count = 3657 + the tests Tasks 9-12 added.
-- [ ] `rg -F "SAVE_DEBOUNCE_MS" src` → 1 (TileSave). `rg -F "setTimeout" src/renderer/src/Tiles` → TileSave's, plus `WebEmbed.tsx`'s capture deadline (`CAPTURE_DEADLINE_MS`), a known non-debounce timer; any other is a regression.
+- [ ] `rg -F "SAVE_DEBOUNCE_MS" src` → 1 (TileSave). `rg -F "setTimeout" src/renderer/Tiles` → TileSave's, plus `WebEmbed.tsx`'s capture deadline (`CAPTURE_DEADLINE_MS`), a known non-debounce timer; any other is a regression.
 - [ ] Simplification and code review against `<base>..HEAD` scoped to `Tiles/TileSave.ts`, `MarkdownBlock.tsx`, `BlockSurface.tsx`, `useBlockDoc.ts`, `PageEmbed.tsx`, `Interface/PageView.tsx`, `Store/NexusSlice.ts`.
 - [ ] The running-thing pass is the four acceptance runs in Tasks 10 and 12, performed at this gate.
 - [ ] Every concern fixed or ruled; Progress hashes filled in.
@@ -368,7 +368,7 @@ Base: `935bf031`. Baseline invariant carried through every task: `npx vitest run
 **Survivors:** the bare `is-editing` class both shells emit today has no consumer anywhere in `src` (the live class is `.is-editing-tile`, set by the hosts) and is dropped in the fold. The two biome-ignore lines on the `div` travel to `TileWriter` once and leave both seams. The `pgembed-failed` and `body === null` early returns stay in `PageEmbed` above the shell; `MarkdownBlock`'s `body === null` blank stays likewise.
 
 **Steps:**
-- [ ] Create; replace both shells; `rg -F "nativeEditorMenu" src/renderer/src/Tiles` → 1. `Inline Page Properties — Decision Log.md:32` still names both components — verified, no edit.
+- [ ] Create; replace both shells; `rg -F "nativeEditorMenu" src/renderer/Tiles` → 1. `Inline Page Properties — Decision Log.md:32` still names both components — verified, no edit.
 - [ ] Gates → 0, test count unchanged. The running app: click-to-edit on a prose tile, a page tile on the dashboard, a page tile in a document, the Page Window, the NavWindow; a text selection ending in a click does not enter edit; a click on an embedded page's banner does not enter edit.
 - [ ] Commit: `refactor(tiles): one TileWriter shell under the prose tile and the page tile`
 

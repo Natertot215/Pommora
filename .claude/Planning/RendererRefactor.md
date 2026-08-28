@@ -1,6 +1,6 @@
 ## The Renderer Refactor
 
-**Started:** 08-25-2026 · **Scope:** `Pommora/src/renderer/src` — where things live, what they are called, and which tokens they read · **Sources:** [[RendererAtlas]] holds the evidence, the eight filing rules, the target tree, and the token verdicts; [[DesignSystemPM]] holds the vocabulary; this document is the ledger — what remains, in order, and the rulings it waits on. A row that lands leaves this document; History carries what happened.
+**Started:** 08-25-2026 · **Scope:** `Pommora/src/renderer` — where things live, what they are called, and which tokens they read · **Sources:** [[RendererAtlas]] holds the evidence, the eight filing rules, the target tree, and the token verdicts; [[DesignSystemPM]] holds the vocabulary; this document is the ledger — what remains, in order, and the rulings it waits on. A row that lands leaves this document; History carries what happened.
 
 The renderer works and is filed by the order things were built. The refactor moves and renames without changing behavior, so that every folder answers "what is this" in one word, every surface wears one of five vocabulary terms, and every value read from two places is a token declared once. It runs in single-session rows; any row can be taken alone, and the typecheck catches every miss. The Codebase Cleanup — correctness, performance, the store and `main/index.ts` splits — follows it, so that its files stop moving before that work begins.
 
@@ -17,7 +17,6 @@ The arc is finished when all of these hold at once:
 
 Ruled, with a plan on paper, and not yet executed.
 
-- [x] **The Menu recipe.** Landed 08-28-2026 through [[MenuRecipe]]: the row kinds named once in `Menus/menu-base.css.ts` in stacking order, two row sizes chosen per pane, `NavList` and the Trash as menus, `menu-index.tsx` rendering the Settings window and every frame, the frame stylesheets down to geometry. Part 2 — leading glyph sizes, `--list-inset`, the indent literal, a footing row kind — is the plan's Sequenced After.
 - [ ] **The side slot.** `SidePane` is the sliding slot — left or right, overlay or in-flow, remembered width, one driver var — and every Window mounts it; the main window's sidebar and inspector do not, driving `--io` / `--io-l` from `styles.css` on their own rules, which is why PaneSlide has three homes (`styles.css`, `window-base.css`, `Sidebar.css`). The main window mounts `SidePane` for both slots and PaneSlide becomes one motion in one file; `InspectorPane` and `WindowInspector` draw the same frontmatter surface with different chrome and are reconciled — one component or one name over two, measured by how much chrome they share; the store's `closePreview` / `settingsOpen` names follow the windows they open. The one behavior change in the vocabulary.
 - [ ] **The zoom family** — three renames (`--card-scale` → `--cards-scale`, `--zoom` and its embed feeders → `--view-scale`, `--block-zoom` → `--block-scale`) and one merge (`--editor-scale` + `--mdpm-scale` → `--page-scale`) that rewires the font path so an embed's font is not scaled twice; `--preview-zoom` renamed out of the family as a crop.
 - [ ] **Three strings still say "preview"** — the setting label "Open Connections In Preview", its hint, and one test title; UI copy waits on the wording.
@@ -44,13 +43,16 @@ Grouped by the atlas section that carries the evidence. Each row is a session or
 
 - [ ] `--labels-gap` absorbed into `Tokens/`; `--tab-min: 75px` so the floating tab strip is 5/6 of the main one.
 - [ ] Odd spacing values (`3` / `5` / `9px`) reconciled to the nearer even step per consumer, as each is opened; `Slider.tsx:106`'s radius `9` with them.
-- [ ] One checkbox recipe — `Labels/checkboxBox` as the source; `Controls/checkbox.css` and `Properties/Editing/checkboxLook` read its geometry.
 - [ ] The token ledger in [[DesignSystemPM]] carries the zoom composition (page → block → view, the card knob beside), the tint short-circuit note, and the five vocabulary terms.
+
+#### Menus
+
+- [ ] The Menu recipe's Part 2 — a leading glyph size per row variant, `--list-inset` and the indent literal in `menu-row.tsx`, a footing row kind in the index, the `action` kind's first production consumer; sequenced in [[MenuRecipe]] §Sequenced After.
 
 #### Styling
 
 - [ ] The 28 plain `.css` sheets for ordinary React components migrate to `.css.ts` as each is next opened, never as a sweep.
-- [ ] The inline-style rule (a `style` prop carries only a per-frame value or a custom-property assignment) as a lint; the fourteen static sites fixed.
+- [ ] The inline-style rule (a `style` prop carries only a per-frame value or a custom-property assignment) as a lint; the six static sites fixed.
 - [ ] The cursor convention — `default` everywhere except links, settled in the primitives.
 
 #### Behavior

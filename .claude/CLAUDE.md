@@ -108,38 +108,37 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 │   │   │   ├── result.ts                | • The Result envelope IPC returns instead of throwing
 │   │   │   └── schemas.ts               | • The zod schemas the on-disk format validates against
 │   │   └── // renderer                  | • The React renderer — it never touches Node
-│   │       └── // src
-│   │           ├── // Blocks            | • Tile content for the dashboard layer
-│   │           ├── // Cards             | • The card chassis — the gallery and CardView wear it
-│   │           ├── // Components        | • Shared components — the entity icon, the renamable title
-│   │           ├── // Embeds            | • The embed framework's consumers — page and webpage embeds, retention
-│   │           ├── // Frames            | • The frames a Menu or Window opens onto — filter, group, sort, layout, settings
-│   │           ├── // Interface         | • The main pane — routed views, inspector, subfield, banner
-│   │           ├── // Links             | • Everything that happens to a link — the hover pane, the link menu, resolution
-│   │           ├── // MarkdownPM        | • The editor — parser, tokens, decorations, input, tables
-│   │           ├── // Navigation        | • Tabs, history, breadcrumbs, search
-│   │           ├── // Properties       | • The property layer — value resolution, the editing surface, the panes
-│   │           ├── // Settings          | • The settings surface
-│   │           ├── // Sidebar           | • The ribbon and its content column
-│   │           ├── // SurfacePM         | • The tile-based dashboard engine
-│   │           ├── // Tables            | • The tabular chrome — TableView and the Trash wear it
-│   │           ├── // Tabs              | • The tabs + navigational overlays
-│   │           ├── // Toolbar           | • The window toolbar
-│   │           ├── // Views             | • The view pipeline and renderers — TableView, CardView, bands
-│   │           ├── // Windows           | • The floating windows — Page, Web, Nav — on one window-base, and their tab strips
-│   │           ├── // DesignSystem      | • The design system — DesignSystemPM is its ledger
-│   │           │   ├── // Tokens        | • Color, type, geometry — the token source of truth
-│   │           │   ├── // Glass         | • The material — one recipe, four tiers
-│   │           │   ├── // Labels        | • Labels and chips
-│   │           │   ├── // Elements      | • The atomic bits — outline, chevron, trail, segment
-│   │           │   ├── // Components    | • Controls, pickers, fields, the side pane
-│   │           │   ├── // Menus         | • The menu recipe — shell, rows, frame chassis, the frame slide
-│   │           │   ├── // Detail        | • The tile chassis
-│   │           │   ├── // Interactions  | • PommoraDND and the pointer/scroll layer
-│   │           │   ├── // Animation     | • Motion tokens, the feel, and the enter/exit primitives
-│   │           │   ├── // Symbols       | • The curated icon registry — the primary glyph source
-│   │           │   └── // Showcase      | • The deployed component-library site
-│   │           ├── // Store             | • The store's seven slices — nexus, navigation, preview, chrome, config, rename, cache
-│   │           ├── App.tsx              | • The shell — three panes and the routed surface
-│   │           └── store.ts             | • The composition root — one `useSession` over the slices, and the React hooks
+│   │       ├── // Blocks                | • Tile content for the dashboard layer
+│   │       ├── // Cards                 | • The card chassis — the gallery and CardView wear it
+│   │       ├── // Components            | • Shared components — the entity icon, the renamable title
+│   │       ├── // Embeds                | • The embed framework's consumers — page and webpage embeds, retention
+│   │       ├── // Frames                | • The frames a Menu or Window opens onto — filter, group, sort, layout, settings
+│   │       ├── // Interface             | • The main pane — routed views, inspector, subfield, banner
+│   │       ├── // Links                 | • Everything that happens to a link — the hover pane, the link menu, resolution
+│   │       ├── // MarkdownPM            | • The editor — parser, tokens, decorations, input, tables
+│   │       ├── // Navigation            | • Tabs, history, breadcrumbs, search
+│   │       ├── // Properties           | • The property layer — value resolution, the editing surface, the panes
+│   │       ├── // Settings              | • The settings surface
+│   │       ├── // Sidebar               | • The ribbon and its content column
+│   │       ├── // SurfacePM             | • The tile-based dashboard engine
+│   │       ├── // Tables                | • The tabular chrome — TableView and the Trash wear it
+│   │       ├── // Tabs                  | • The tabs + navigational overlays
+│   │       ├── // Toolbar               | • The window toolbar
+│   │       ├── // Views                 | • The view pipeline and renderers — TableView, CardView, bands
+│   │       ├── // Windows               | • The floating windows — Page, Web, Nav — on one window-base, and their tab strips
+│   │       ├── // DesignSystem          | • The design system — DesignSystemPM is its ledger
+│   │       │   ├── // Tokens            | • Color, type, geometry — the token source of truth
+│   │       │   ├── // Glass             | • The material — one recipe, four tiers
+│   │       │   ├── // Labels            | • Labels and chips
+│   │       │   ├── // Elements          | • The atomic bits — outline, chevron, trail, segment
+│   │       │   ├── // Components        | • Controls, pickers, fields, the side pane
+│   │       │   ├── // Menus             | • The menu recipe — shell, rows, frame chassis, the frame slide
+│   │       │   ├── // Detail            | • The tile chassis
+│   │       │   ├── // Interactions      | • PommoraDND and the pointer/scroll layer
+│   │       │   ├── // Animation         | • Motion tokens, the feel, and the enter/exit primitives
+│   │       │   ├── // Symbols           | • The curated icon registry — the primary glyph source
+│   │       │   └── // Showcase          | • The deployed component-library site
+│   │       ├── // Store                 | • The store's seven slices — nexus, navigation, preview, chrome, config, rename, cache
+│   │       ├── App.tsx                  | • The shell — three panes and the routed surface
+│   │       └── store.ts                 | • The composition root — one `useSession` over the slices, and the React hooks
 ```
