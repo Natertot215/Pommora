@@ -13,7 +13,7 @@ export const content = style({
   alignItems: 'stretch',
   gap: GUTTER,
   padding: GUTTER,
-  width: 'var(--icon-picker-w, 224px)',
+  width: '200px',
   boxSizing: 'border-box',
 })
 
@@ -48,7 +48,7 @@ export const grid = style({
   flexDirection: 'column',
   gap: 8,
   width: '100%',
-  height: 'var(--icon-picker-h, 204px)',
+  height: '225px',
   overflowY: 'auto',
   overflowX: 'hidden',
   scrollbarWidth: 'none',

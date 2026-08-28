@@ -45,7 +45,7 @@ export function NavView(): React.JSX.Element {
 
   const searchInput = (
     <SearchField
-      className={cx('nav-view-search', text.body.standard)}
+      className={cx('nav-view-search', text.headline.emphasized)}
       value={query}
       onValueChange={setQuery}
     />
