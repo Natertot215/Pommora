@@ -1,6 +1,6 @@
 ## The Menu Recipe — Implementation Plan
 
-> **Status:** ratified — in execution (approved 08-27-2026) · Execution follows **The Loop** (below the tasks) · Spec: this document's Goal, ratified in conversation on 08-27-2026 · Execute tasks in order.
+> **Status:** landed 08-28-2026 — History entry drafted, filed on Nathan's word · Execution follows **The Loop** (below the tasks) · Spec: this document's Goal, ratified in conversation on 08-27-2026 · Execute tasks in order.
 > Citations name files and symbols; re-derive before editing. Counts are whole-renderer (`Pommora/src/renderer/src`, Showcase included) unless a task says otherwise.
 
 **Goal**
@@ -118,8 +118,8 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 **Requirement:** none — a precondition. The tree carries a parallel session's `Store/`, `Detail/Scope.ts`, and `Tabs/tabsModel.ts`; the plan's base commit must include them so every phase's `<base>..HEAD` is this work alone.
 
 **Steps:**
-- [ ] `git status --short` — list what's there; `npm run typecheck` — record its result in the Log (three `TS7006` errors sit in `Store/CacheSlice.ts` at planning time).
-- [ ] `git add -A Pommora/src && git commit -m "chore: the working tree before the menu recipe"`; record the hash as Phase 1's base.
+- [x] `git status --short` — list what's there; `npm run typecheck` — record its result in the Log (three `TS7006` errors sit in `Store/CacheSlice.ts` at planning time).
+- [x] `git add -A Pommora/src && git commit -m "chore: the working tree before the menu recipe"`; record the hash as Phase 1's base.
 
 ### Phase 1 — The Recipe
 
@@ -263,7 +263,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 - [x] Gates green; docs; commit `refactor(menus): the action row`.
 
 #### Gate 1 — the recipe stands
-- [ ] The Loop, steps 3–5. Running surface: sidebar, Settings menu, a value picker, CardAddPicker, Calendar month list — rows 28 or 23, TopRows 18. FilterFrame deferred to Task 20 (hazard window).
+- [x] The Loop, steps 3–5. Running surface: sidebar, Settings menu, a value picker, CardAddPicker, Calendar month list — rows 28 or 23, TopRows 18. FilterFrame deferred to Task 20 (hazard window). *(The sidebar and the Settings menu walked at Gate 1; the Compact hosts measured at Gate 2 on the hosted view settings; CardAddPicker and the Calendar lists are live-only — Nathan's pass.)*
 
 ---
 
@@ -334,7 +334,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 - [x] Rewrite `NavList` rows; delete the classes; gates; `Navigation` tests pass.
 - [x] `.nav-search-row` pads `var(--surface-inset)` block and `calc(var(--content-inset) - var(--navwindow-inset))` inline — its divider keeps the `--navwindow-inset` margin, so the field's text origin lands on the rows' icon edge (`--content-inset`) on both surfaces that wear it; its dead `gap` and `color` go (no magnifier is rendered — `SearchField` is a bare input).
 - [x] `.nav-view`'s column pads `calc(var(--content-edge) - var(--surface-lane))` inside the scroll pane's own `sidebar-clearance + surface-lane`, so its rows start on the one edge `.nav-view-head`, `.banner-title`, and `.subfield` share; `--row-pad-x` is 0 there through `--navwindow-inset: 0`; `navView.css`'s `--content-inset − --surface-lane` re-narrowing deletes.
-- [ ] Running pass: NavWindow list, NavView, Trash — rows 28, hover wash, selected pill, the pin in its gutter, the search text and row icons on one left edge, NavView rows on the content edge, a pin reorder by drag lands.
+- [x] Running pass: NavWindow list, NavView, Trash — rows 28, hover wash, selected pill, the pin in its gutter, the search text and row icons on one left edge, NavView rows on the content edge. *(Walked at Gate 2 except the pin reorder by drag — live-only, Nathan's pass.)*
 - [x] Commit `refactor(navigation): NavList is a menu`.
 
 #### Task 10: Settings rows and the Settings window
@@ -362,7 +362,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 
 **Steps:**
 - [x] Add `value` to `MenuItem` + `menu-base.css.ts` `// Trailing` (`value = style([text.control.standard, { color: c.label.control }])`); migrate the four sites; delete `scaleRow`, `groupByValue`.
-- [ ] Gates; running pass on LayoutFrame's footing and Settings' format row.
+- [x] Gates; running pass on LayoutFrame's footing and Settings' format row. *(Walked at Gate 2 on the hosted Layout footing; the Settings format row at Gate 2's Settings walk.)*
 - [x] Commit `refactor(menus): value rides the trailing slot`.
 
 #### Task 12: Autocomplete rows are Compact menu rows
@@ -419,7 +419,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 - [x] Commit `refactor(trash): the Trash is a menu`.
 
 #### Gate 2 — every surface composes the recipe
-- [ ] The Loop, steps 3–5. `grep -rn "minHeight: '2[0-9]px'\|min-height: 2[0-9]px" src` → only `fields.css.ts` and the non-row hits listed in the Log. Running surface: every surface this phase touched, the search edge on all three lists, the Trash overlay, a card's trail zone.
+- [x] The Loop, steps 3–5. `grep -rn "minHeight: '2[0-9]px'\|min-height: 2[0-9]px" src` → only `fields.css.ts` and the non-row hits listed in the Log. Running surface: every surface this phase touched, the search edge on all three lists, the Trash overlay, a card's trail zone.
 
 ---
 
@@ -536,7 +536,7 @@ Every task below is written as **Today → Becomes**; line numbers are at `7f358
 - [x] Commit `refactor(filter): the footer rides the slot`.
 
 #### Gate 3 — the recipe is the only row writer
-- [ ] The Loop, steps 3–5. Dead Vocabulary sweep: every token → 0, control `--surface-inset` → 9. `frames.css.ts` exports counted, all geometry, drag chrome, or `ICON`. Screenshots: every frame, both FilterFrame branches with the footer flush, every Settings frame, every editor. Docs: deferred to §Closeout.
+- [x] The Loop, steps 3–5. Dead Vocabulary sweep: every token → 0, control `--surface-inset` → 9. `frames.css.ts` exports counted, all geometry, drag chrome, or `ICON`. Screenshots: every frame, both FilterFrame branches with the footer flush, every Settings frame, every editor. Docs: deferred to §Closeout.
 
 ---
 
@@ -744,28 +744,28 @@ Ruled 08-27 (Nathan, before sleep): the plan runs to the end unattended — ever
 - [x] Phase 4: the same — `a2369d4a..8e5a4645` (+ the icon cell's hover fill)
 
 **Landing (§Landing 1–6)**
-- [ ] Delivery Claim written below, each assertion with its evidence
-- [ ] Neutral verifier: every assertion holds (fix + re-claim on any no)
-- [ ] Breaker on `27c5171c..HEAD`: zero unaddressed findings, ≤3 rounds
-- [ ] Nathan's running-pass list written (surfaces × what to look for), with the orchestrator's own screenshots attached where taken
-- [ ] Dead Vocabulary sweep: every token 0, control `--surface-inset` ≥ 9
-- [ ] Acceptance greps: `--row-inset` → 0; `--surface-inset` → non-zero
-- [ ] `frames.css.ts` exports counted and all geometry / drag chrome / `ICON`
+- [x] Delivery Claim written below, each assertion with its evidence
+- [x] Neutral verifier: every assertion holds (fix + re-claim on any no)
+- [x] Breaker on `27c5171c..HEAD`: zero unaddressed findings, ≤3 rounds
+- [x] Nathan's running-pass list written (surfaces × what to look for), with the orchestrator's own screenshots attached where taken
+- [x] Dead Vocabulary sweep: every token 0, control `--surface-inset` ≥ 9
+- [x] Acceptance greps: `--row-inset` → 0; `--surface-inset` → non-zero
+- [x] `frames.css.ts` exports counted and all geometry / drag chrome / `ICON`
 
 **Docs — existing mentions only; nothing new that no doc already claims**
-- [ ] `DesignSystemPM.md` — Geometry rows `:196` (`MENU_GUTTER` gone) and `:197` (the four row tokens); `:221` sentence (heading = footnote.emphasized); §Menus table `:364-366` (`MenuTopRow · MenuItem · MenuSeparator · MenuCaption · MenuFooting`, `heading` / `actionRow` / `menuCompact` as classes, `MenuIndex` / `MenuRowView`); the `ICON_PX` Geometry row (Task 23)
-- [ ] `Cohesion-Rulings.md:66` — autocomplete exemption removed; "declared once, chosen per pane" and the vars-not-properties rule added
-- [ ] `InterfacePM.md` / `NavigationPM.md` — any line describing the Trash's checkboxes or NavList's own rows
-- [ ] `RendererRefactor.md:20` — the Menu row restated as landed (points at this document); `RendererAtlas.md:86` `menu-roster` → `menu-index`
-- [ ] `ContextPM.md:14` Immediate Work row and §Current Focus — a light restatement that fits the document
-- [ ] `HandoffPM.md` — rewritten by `/handoff`; `:49` (`SettingsRow`) gone with it
-- [ ] Lessons routed to `.claude/Guidelines`; Sequenced After written as the Part 2 brief
+- [x] `DesignSystemPM.md` — Geometry rows `:196` (`MENU_GUTTER` gone) and `:197` (the four row tokens); `:221` sentence (heading = footnote.emphasized); §Menus table `:364-366` (`MenuTopRow · MenuItem · MenuSeparator · MenuCaption · MenuFooting`, `heading` / `actionRow` / `menuCompact` as classes, `MenuIndex` / `MenuRowView`); the `ICON_PX` Geometry row (Task 23)
+- [x] `Cohesion-Rulings.md:66` — autocomplete exemption removed; "declared once, chosen per pane" and the vars-not-properties rule added
+- [x] `InterfacePM.md` / `NavigationPM.md` — neither describes the Trash's checkboxes or NavList's rows (grep-confirmed); nothing to change
+- [x] `RendererRefactor.md:20` — the Menu row restated as landed (points at this document); `RendererAtlas.md:86` `menu-roster` → `menu-index`
+- [x] `ContextPM.md:14` Immediate Work row and §Current Focus — a light restatement that fits the document
+- [x] `HandoffPM.md` — rewritten by `/handoff`; `:49` (`SettingsRow`) gone with it
+- [x] Lessons routed to `.claude/Guidelines`; Sequenced After written as the Part 2 brief
 
 **Close**
-- [ ] `/closeout` (verification only, no History filed) — change tree, code-only line delta, rules respected or named
-- [ ] `/handoff` — ContextPM swept and gated, HandoffPM rewritten
-- [ ] Every commit on explicit paths; `git status --short` shows only Nathan's own live edits, if any; Status header → "landed — <entry drafted in chat>"
-- [ ] History entry drafted in chat; not filed
+- [x] `/closeout` (verification only, no History filed) — change tree, code-only line delta, rules respected or named
+- [x] `/handoff` — ContextPM swept and gated, HandoffPM rewritten
+- [x] Every commit on explicit paths; `git status --short` shows only Nathan's own live edits, if any; Status header → "landed — <entry drafted in chat>"
+- [x] History entry drafted in chat; not filed
 
 **Delivery Claim** (at `8e5a4645`; range `27c5171c..HEAD` on `main`; neutral verifier 08-28: 21 holds · 3 restated below · 0 missing)
 

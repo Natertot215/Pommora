@@ -5,21 +5,23 @@
 #### Current Focus
 
 **Session ID:** 14cb88d4-ef66-4a6d-a7c7-18bd37efbbaa
-**Dates:** 08-25-2026 → 08-27
+**Dates:** 08-25-2026 → 08-28-2026
 **Model:** Opus 5 (1M context) → Fable 5
 
-**The Renderer Refactor, day one and the morning after.** The session opened on the atlas — seven lenses over 453 files, eight filing rules, a target tree — and then took its rows as they came: the token cleanups first (strays cleared, the `--width-*` and `--fade-*` names, the `--border-*` edge ladder composed at the consumer), then the structural moves (`Views/` to the root, `Cards/` as the one chassis, `Tables/` as the tabular chrome, `Properties/` as the value layer, the dependency order `DesignSystem ← Properties ← Tables ← Views`), then the day's second half: the Settings window onto the menu row primitive, the toolbar's tone moved from a `button` selector to the container with its ten specificity pins flattened, `--label-zoom` retired, and the Windows block — `src/Windows/` holding `PageWindow`, `WebWindow`, `NavWindow`; the chassis renamed; `DetailPane` → `ContentView`; `NavView` to `Detail/`; `NotchedPane` → `NotchedShell`. Then the vocabulary was ruled and applied in one pass: Window · Pane · Menu · Frame · Picker. `Materials/` became `DesignSystem/Glass/` (`glass-base`, `-window`, `-surface`, `-control`, `-pane`, with `GlassPane` and `GlassSurface` swapped to their meanings); `Components/Detail/` became `Frames/` with every `*Pane` a `*Frame`; `DesignSystem/Components/Menu/` became `DesignSystem/Menus/` in kebab parts with `FrameSlide`; `InspectorPane`, `ConnectionPane`, `AutocompletePane` on `glass-pane`; the toolbar's `*Menu`; `SettingsWindow`; the chassis is `Windows/window-base` — `WindowBase`. Nineteen commits sit on `main` past `origin/main`, each one green.
+**The Renderer Refactor's Menu Recipe — planned, ratified, and landed.** The session's first half built the inset family (`--app-inset` 6 · `--surface-inset` 10 · `--row-inset` 6 · `--content-inset` 24 · `--content-edge` 12 · `--rail-inset` · `--surface-lane` · the clearances) and seeded the Figma PommoraV2 file. Its second half wrote [[MenuRecipe]] through `/writing-plans-v2` — a 23-task plan in four phases with an execution loop (one executor per phase, then `code-simplifier`, then `comment-killer-agent`, then the orchestrator's own review with screenshots, then `build-breaking-agent`) and a landing procedure — and, once Nathan said "full plan, don't stop until it's done", ran it overnight unattended from Task 0 (`27c5171c`) to landing (`33b46163` code, `b3b0cd90` log).
 
-**Two regressions Nathan saw were not regressions.** The slider's lost track and the switch's lost on-fill were the dev server holding stale vanilla-extract hashes — deleting `label.quaternary` from `color.css.ts` shifted every var hash, and any `.css.ts` not recompiled since still named the old one. A dev-server restart cures it; ⌘R does not. That diagnosis came after a false fix: the `--tint-*` ladder was declared undefined on a literal-name grep and minted a second time, when `theme-vars.css.ts:37` had generated it from `TINT_STEPS` all along. The comment-killer caught the duplicate at closeout and it never landed. Build-Gotchas carries the trap.
+**What landed.** `Menus/menu-base.css.ts` names every row kind once in stacking order with the box declared first, so no row anywhere declares a height, floor, or padding; a row is its ramp's line plus one of two padding pairs (`--row-height/width-standard` 6/6, `-compact` 4/4) chosen per pane (`menuCompact`). `NavList` — NavWindow, NavView, the Trash — became `MenuItem` rows on a column padding its lead with `--content-inset`, the pin and the Trash's checkbox seated in that inset through the row's `overlay` slot. The `[[` autocomplete is a standard Compact menu. `NavTrail` owns its look. `menu-index.tsx` renders the Settings window, every frame, and the property editors from data; `frames.css.ts` went 40 → 28 exports, geometry only. `--content-start` is the content edge, the icon picker's cell wears the row shell, and the icon ladder is named as the type ramp is. Seven breaker rounds (two on the plan, four on the phases, one on the whole) and a neutral verification ran; every finding above Low was fixed in an addendum commit and recorded in the plan's Log with its round.
 
-**Vocabulary and the plan.** The vocabulary was ruled and applied: Window (floating windows) · Pane (a surface floating over another — sidebar, inspector, side slots, the hover preview, the autocomplete) · Menu (a dropdown surface on a trigger) · Frame (one page in a Menu's or Window's hierarchy) · Picker. PaneSlide is the sidebar/inspector in-out; FrameSlide the push/back between frames. Recipe families (`Glass/`, `Menus/`) name their parts in kebab by ruling. What the vocabulary still owes is design, not renames: the Menu recipe's row kinds and rosters, and the main window mounting `SidePane`. Rulings taken today are in the atlas's Settled list: spacing and radius literal on the even grid with odd values reconciling per consumer, the toolbar tone rule, `--tint-solid` kept, `subChip` kept. Nathan's four-var zoom scheme was evaluated against the evidence: three renames are clean; the `--page-scale` merge costs a font-path rewire. [[RendererRefactor]] now exists as the ledger — end goal, every row done, in flight, and pending, and the rulings it waits on — so the next session plans from it rather than continuing by feel.
+**Mid-run rulings Nathan gave by message, all folded:** the Trash keeps its checkboxes in the lead inset; NavList, Trash, and NavView pad their lead with `--content-inset` as TableView does; Settings' own tokens go — plain menu logic, no seat widths; the autocomplete is a standard Compact menu with nothing bespoke; every task's plan text is written Today → Becomes; each surface a phase touches is screenshotted before its gate closes; removing and reusing beats minting a var or export with one writer and one reader.
+
+**Verified vs assumed.** Gates green at HEAD (typecheck 0 · biome clean · vitest 297 / 3671); the Dead Vocabulary sweep at 0 against control `--surface-inset` 9; every surface below was screenshotted and measured over CDP on the live app (`p1-*`…`p4-*.png` in the session scratchpad). Not driven and left to Nathan: a pin reorder by drag, the packaged build's sidebar rename field (its five `Sidebar.css` rules were dead in production until `33b46163`), the FilterFrame locked branch, BlockHandleMenu, the Calendar lists.
 
 #### Completion Criteria
 
-- [ ] **The next session recaps before it moves** — the Done rows in [[RendererRefactor]] are confirmed against the tree, the Pending rows are ordered into sessions, and the Open Rulings that gate them are taken.
-- [ ] **The Menu recipe** — the row kinds named once, `menu-roster`, Sort and Hidden as rosters, the frame stylesheets down to geometry.
+- [x] **The Menu recipe** — the row kinds named once, `menu-index`, Sort and Hidden as index rows inside their drag shells, the frame stylesheets down to geometry.
+- [ ] **The next session recaps before it moves** — the Done rows in [[RendererRefactor]] confirmed against the tree, the Pending rows ordered, the Open Rulings taken.
 - [ ] **The side slot** — the main window mounts `SidePane`; PaneSlide is one motion.
-- [ ] **The filing rows are executed** — `Interface/`, `Core/`, `Connections/`, `Navigation/` absorbing `Tabs/`, the Showcase out, `Surface/`, the casing renames — and the atlas's eight rule greps return empty.
+- [ ] **The filing rows are executed** — `Core/`, `Navigation/` absorbing `Tabs/`, the Showcase out, `Surface/`, the casing renames — and the atlas's rule greps return empty.
 - [ ] **The token and scale rows are settled** — the zoom renames and merge, `--labels-gap`, the checkbox recipe.
 - [ ] **`ViewEmbedBlock.tsx:88` reads `cellRing(key)`.**
 - [ ] **The atlas's Open Decisions sections are empty**, each block deleted by a ruling.
@@ -27,84 +29,73 @@
 
 #### Next Session
 
-1. **Read [[RendererRefactor]] first, then this document, then the atlas's Settled list.** Confirm the Done rows hold on disk (`ls src/renderer/src` — `Cards`, `Tables`, `Views`, `Windows`, `Frames`, `Properties` at the root; no `PagePreview`, `NavWindow`, or `Components/Detail`; `DesignSystem/` holding `Glass/` and `Menus/`, no `Materials/`).
-2. **Plan, with Nathan.** Order the Pending rows into sessions; take the Open Rulings — the zoom merge, the three design-system reaches, `Interface/`'s scope, `NavWindow`'s home, the `PropertyFrame` edge, the three "preview" strings. Nathan is still weighing the token moves and alias naming from the early commits; that conversation belongs here, before any further row.
-3. **Then the Menu recipe** — the design session the ledger's In Flight row specifies: row kinds named once in `Menus/menu-base.css.ts`, `menu-roster`, `MenuDropdown` + `MenuSurface` → `Menu`, Sort and Hidden to rosters, `frames.css.ts` to geometry.
-4. **`cellRing(key)`** rides whichever session touches `Blocks/` first.
-5. **Inline Page Properties** runs parallel on its own Decision Log and shares no files with any of this.
+1. **Nathan's running pass** over the list in [[MenuRecipe]] §Closeout — what he flags is a Task; the five **Open Calls** there (rows with a switch or eye at 31–32; locked cards clipping their trail; the Trash row's second tab stop; Settings' section titles as `div`s; a footing row kind) each want a one-line ruling.
+2. **File the History entry** drafted in the closeout chat as PM-118 on Nathan's word; then Recent Work in Context.
+3. **Part 2** as written in [[MenuRecipe]] §Sequenced After — leading glyph sizes, `--list-inset` (starting from the inline indent style in `menu-row.tsx`), a footing row kind, the `action` kind's first consumer, the two remaining clearance pairings, and the Figma components that follow the code.
+4. **The Tiles session** is serialized behind this landing (Blocks/Embeds → Tiles/, Components/ → Utilities/) — ping it that the recipe is on `main`.
+5. **Then the ledger:** the side slot, and the filing rows.
 
 #### Feedback
 
-- "stop being lazy and find the fucking issue. there is no background here." — a claim of "no regression found" was not an answer; reading the dev server's compiled CSS found it in one request.
-- "there's no need to measure. My eyes work." — visual reports are facts; diagnose in code, don't re-verify the report.
-- "most of these open decisions cite things without actually including evidence." — every block rewritten today carries file:line and counts; the rest re-derive when ruled.
-- "Please make sure the atlas is properly reworded … flag moved stuff on the actual tree itself so what's already established isn't re-stated." — executed rows wear `✓` on the target tree; decision blocks that were ruled are deleted, not annotated.
-- "subChip stays." · "Glass as a 'Surface' type and material is just more confusing — forget that." · "Pane as the view stuff makes sense, and I retract earlier."
+- "Your idea sucks — `--row-height-standard` = +6px, `--row-height-compact` = +4px, no fixed 24 or 28; all consumers move." — a fixed height was the wrong model; padding tokens are the truth.
+- "removing and re-using is what Nathan would likely choose as opposed to just stacking new exports or variables that really only exist on one level, where a raw px value that's coherent would make more sense as a knob."
+- "make it clear that autocomplete becomes a standard compact menu; the plan is extremely vague on what to do versus what already exists across the entire plan." — every task rewritten Today → Becomes.
+- "each surface requires screenshot confirmation."
+- "checkbox needs to be a left inset action like pins are." · "navlist + trash must use the 24px inset token like tableview does btw with the pin or checkbox landing inside." · "setting tokens need to go; it's plain-old menu logic; no setting-width etc…"
+- "nav-view toggle in subfield must share the same inset the nav trail does, not seemingly extra." · "style row is wrong on the layout — slider has been broken. make sure these are fixed if the plan doesn't fit them in."
+- "cut the comments — tell the agents not to add comments unless absolutely necessary."
 
 #### Session Pointers
 
-- `.claude/Planning/RendererRefactor.md` — the ledger; read first.
-- `.claude/Planning/RendererAtlas.md` — §The Filing Rules for the eight greps; §The Target Tree with `✓` on executed rows; §Settled for every ruling; the Open Decisions blocks for what still needs one.
-- `Pommora/src/renderer/src/Windows/` — the floating family; `Windows/window-base.css` for the `.window-*` chassis and its `--window-*` knobs.
-- `Pommora/src/renderer/src/Settings/SettingsRow.tsx` — the `MenuItem` adapter; `settingsWindow.css` `.settings-wide` is the KNOB for a slider or path field's seat width.
-- `Pommora/src/renderer/src/Toolbar/toolbar.css` — `.app-toolbar { color: var(--label-control) }` is the toolbar's tone; the chassis toolbar carries the same line.
-- `Pommora/src/renderer/src/DesignSystem/Tokens/theme-vars.css.ts:37` — where the `--tint-*` ladder is generated from `TINT_STEPS`.
+- `.claude/Planning/MenuRecipe.md` — the plan and its Log: §Rulings, §Deviations (every mid-run change), seven review rounds, §Open Calls, §Lessons, §Sequenced After (the Part 2 brief), and the Delivery Claim with Nathan's running-pass list.
+- `Pommora/src/renderer/src/DesignSystem/Menus/menu-base.css.ts` — the recipe; `rowBox` first, the four tokens and the `--row-*` vars on `:root` at the top; `menuCompact`; the kinds in stacking order.
+- `DesignSystem/Menus/menu-index.tsx` — `Trailing` · `MenuRow` · `MenuSection` · `MenuRowView` · `MenuIndex`; `inert` for a box without the shell.
+- `DesignSystem/Menus/menu-row.tsx` — `MenuItem` (`forwardRef`, `value` · `detail` · `trailing` · `overlay`, the flush rule keyed on a trailing), `MenuTopRow`, `MenuFooting`, `MenuScrollFrame` with `header`/`footer` slots.
+- `Navigation/navList.css` — `.nav-list` sets `--row-pad-x: var(--navwindow-inset)` and `--row-pad-lead: var(--content-inset)`; `.nav-pin` and the Trash's `.trash-check` ride `overlay`.
+- `DesignSystem/Components/Controls/Slider/slider.css.ts` — `strip` `width: 160 // KNOB`; the readout never shrinks; ImagePicker's row overrides to `flex: 1`.
+- `Tokens/size.css.ts` — `ICON_PX` by the type ramp's names; only `--icon-body` survives as a CSS var.
+- The session scratchpad (`/private/tmp/claude-501/…/14cb88d4…/scratchpad`) — `cdp.mjs` (eval · shot with clip · mouse · type · key) and the `p1-`…`p4-*.png` screenshots.
 
 #### Working Notes
 
-- A `.css.ts` that has not changed since a token was removed from `color.css.ts` keeps its old var hash in the dev server; the built app is unaffected. Restart the dev server before diagnosing a "lost fill."
-- Before claiming a CSS var is undefined, grep its template form (`` `--tint-${ ``) — the families are generated from ladders — and read the compiled module from the dev server (`curl localhost:<port>/src/…/x.css.ts.vanilla.css`).
-- Nathan's editor overwrote the atlas mid-session with a buffer that predated an edit; when he is editing a Planning document, confirm the file on disk before writing to it.
-- A "one `--zoom` with natural compounding" is not available to custom properties — a var that reads itself on a descendant is a cycle. Only the `zoom` property compounds, and the editor and the card grid deliberately do not use it for structure.
-- `EntityGlyph` stays in `Navigation/`: three of five consumers are there and it reads `navResolve`'s `ResolvedNav`.
-- The Settings rows' hover wash and caption-ramp hints are the menu family's, not a bug; `MenuItem`'s sub-label wrapping had no production consumer before Settings.
+- A vanilla-extract variant composed onto a base sets properties only when it is declared after the base — `rowBox` is first in the file for that reason; a surface overriding every row inside it sets the `--row-*` vars instead.
+- A class moved "as geometry" must be diffed for the rung and tone it carried; a control's own `:disabled` can un-dim what its base dimmed; a class that gains a `:has()` layout rule stops being a typography prop; a width minted for one host lands on its siblings.
+- `Icon`'s `size` prop unions `IconSize` with lucide's `string | number`, so a stale size name is caught by grep, not by `tsc`.
+- The dev server's module graph goes stale on a deleted export mid-refactor; a blank React root after a rename is the dev server, not the code — restart it (`env -u ELECTRON_RUN_AS_NODE POMMORA_DEBUG_PORT=9333 npm run dev`).
+- Over CDP, assert `document.activeElement` before `Input.insertText` — a rect-derived click landed on a card, opened a page window, and typed into a real Nexus page (recovered with `git checkout` in `~/NexusOS`).
+- Plain-CSS selectors on vanilla-extract names by substring (`[class*="…"]`) match in dev and not in the production build; `grep -rn 'class\*=' src --include='*.css'` stays at zero.
 
 **FILES ADDED**
 
-- `.claude/Planning/RendererRefactor.md`
-- `Pommora/src/renderer/src/DesignSystem/Glass/` — the five tier files
-- `Pommora/src/renderer/src/Windows/window-base.tsx` · `window-base.css`
+- `Pommora/src/renderer/src/DesignSystem/Menus/menu-index.tsx` · `menu-index.test.tsx`
+- `Pommora/src/renderer/src/Frames/switchRows.tsx`
+- `Pommora/src/renderer/src/Properties/optionRow.css.ts`
+- `Pommora/src/renderer/src/Settings/trashFrame.test.tsx`
+- `Pommora/src/renderer/src/Views/CardView/cardAddPicker.css.ts` (deleted at Task 1, recreated at Task 4 as one class)
 
 **FILES MODIFIED**
 
-- `.claude/ContextPM.md` — Current Focus, Immediate Work, and Pending Focus Two restated for the refactor's day one
-- `.claude/Planning/RendererAtlas.md` — rulings into Settled, evidence into the zoom and glass blocks, `✓` on executed rows, the floating-family and toolbar blocks deleted
-- `.claude/Guidelines/Build-Gotchas.md` — the stale-hash trap
-- `.claude/CLAUDE.md` · fourteen Feature docs · `Cohesion-Rulings.md` — the Windows names
-- `Pommora/src/renderer/src/Settings/*`, `DesignSystem/Components/Menu/*`, `Toolbar/toolbar.css`, the flattened-pin stylesheets, `Labels/labels.css.ts`, `Views/CardView/CardsView.css`, `Detail/ContentView.tsx` and its readers, `shared/types.ts`, `main/index.ts`
-- `.claude/HandoffPM.md`
+- `.claude/Planning/MenuRecipe.md` — the plan, ratified, executed, and closed; `.claude/ContextPM.md` — Current Focus and the Immediate Work row; `.claude/Features/DesignSystemPM.md` (Geometry rows, the "where each goes" sentence, §Menus), `SymbolsPM.md` (the duplicate ladder table removed), `MarkdownPM.md:128`; `.claude/Guidelines/Cohesion-Rulings.md:66-67`; `.claude/Planning/RendererRefactor.md:20`, `RendererAtlas.md:76`
+- 96 files under `Pommora/src/renderer/src` — `DesignSystem/Menus/*`, `DesignSystem/Components/Pickers/{PickerMenu,CalendarPicker,ImagePicker,IconPicker}/*`, `DesignSystem/Elements/{NavTrail,DropOutline,PickerControl,EyeToggle}/*`, `DesignSystem/Components/{Controls/Slider,Fields}/*`, `DesignSystem/Tokens/{size,theme-vars}.css.ts`, `Frames/*`, `Properties/Editors/*` + `PropertyFrame.tsx` + `OptionRow.tsx`, `Navigation/{NavList.tsx,navList.css}`, `Windows/{NavWindow.tsx,navWindow.css}`, `Interface/{navView.css,Subfield/*,Banner/Banner.css}`, `Settings/*`, `MarkdownPM/{AutocompletePane.tsx,Styles.css}`, `Blocks/{BlockHandleMenu.tsx,handleMenu.css.ts}`, `Views/CardView/*`, `Cards/{Card.tsx,cards.css}`, `Sidebar/Sidebar.css`, `styles.css`, and the icon-rename readers
 
 **FILES REMOVED**
 
-- `.claude/Planning/DesignTermsV2.md` — folded into the ledger once its renames landed
-- `Pommora/src/renderer/src/PagePreview/` and `NavWindow/` — into `Windows/`
-- `Pommora/src/renderer/src/DesignSystem/Materials/` — into `Glass/`
-- `Pommora/src/renderer/src/Components/Detail/` — into `Frames/`
-- `Pommora/src/renderer/src/DesignSystem/Components/Menu/`, `PaneSlider/`, `WindowChassis/` — into `Menus/` and `Windows/`
-- `Pommora/src/renderer/src/DesignSystem/Detail/PreviewPane/` and `SidePane/` — into `DesignSystem/Components/`
-- `.claude/Planning/Documentation Audit — Report and Plan.md`
+- `Pommora/src/renderer/src/Properties/ValueRow.tsx`
+- `Pommora/src/renderer/src/Settings/SettingsRow.tsx`
 
 **COMMITS**
 
-- `8dba1ee5` — refactor(views): purge the toolbar ViewDropdown's inert View Style toggle
-- `19d71280` — refactor(design-system): read the tokens the system already had
-- `b9367907` — docs(atlas): regroup the renderer atlas by subject
-- `715bd9a3` — refactor(tokens): clear the strays, name the widths and fades
-- `ad385956` — refactor(tokens): a literal border ladder — widths and edge colors, composed
-- `a9d8b0ef` — refactor(views): Views leaves Detail for the renderer root
-- `51e737df` — refactor(cards): one card chassis in src/Cards — the gallery and CardView wear it
-- `cd1fcdff` — refactor(tables): the tabular chrome lives in src/Tables — TableView and the Trash wear it
-- `230290fc` — refactor(properties): the value layer is Properties' — Tables and Views import downward
-- `5bbd8a98` — refactor(renderer): one PathField, the simplification pass, and the closeout's repairs
-- `aec1137c` — refactor(settings): the Settings window wears the menu row primitive
-- `bdba9bdd` — refactor(toolbar): the tone is the container's, and the pins built against a button selector go
-- `77b8937e` — refactor(windows): the floating family is src/Windows, and the chassis is WindowBase
-- `cf7cfaa6` — chore(ledger): line counts through the Windows move
-- `162f80a5` — docs: the handoff for the refactor's first day
-- `00874fd7` — docs(prd): the floating page window by its name
-- `19254825` — refactor(vocabulary): Window, Pane, Menu, Frame, Picker — applied across the renderer
-- `9746d3af` — chore(ledger): line counts through the vocabulary pass
-- `d3dffe61` — docs: WindowBase by its name, and the handoff through the vocabulary pass
+- `27c5171c` — chore: the working tree before the menu recipe (Task 0)
+- `a1f3e2c5` · `370a167a` · `5194820f` · `c857a3e4` · `fb2f77d5` · `a6df3eed` · `bdf30002` — Phase 1, Tasks 1–6
+- `7cbb44ea` · `faa7d3b0` · `4626e3a1` · `72a867a4` · `8fcb89bb` — Gate 1 (Nathan's heading gap · simplifier · comment-killer · review · breaker)
+- `3d90741e` · `6724ba08` · `c21eb47d` · `90cbd682` · `be6381a5` · `da647e88` · `0f6325c5` · `46aac3d1` · `659b25e2` — Phase 2, Tasks 7–12b
+- `8aed8657` · `2be2609b` · `7f358d51` · `96755197` · `51be26de` · `144b2c89` · `cffdd681` — Gate 2 (simplifier · the overlay's home · comment-killer · the overlay's placement · the subfield toggle · the footing rung and the slider · the breaker's five)
+- `71320620` · `f2a59d41` · `21322586` · `8863c613` · `aa6dcaa7` · `1d442c25` · `3d619f98` · `760352dd` · `3a6acd1d` · `1e3a5bd3` · `05392979` — Phase 3, Tasks 13–20
+- `0bbf2865` · `3eeda281` · `4a173cfd` · `a2369d4a` — Gate 3 (simplifier · the action row · comment-killer · the breaker's four)
+- `da851e1b` · `c67b36b8` · `bedb2008` — Phase 4, Tasks 21–23
+- `ba4f18c9` · `8e5a4645` · `9d2826c0` · `33b46163` — Gate 4 and landing (simplifier · comments · the icon cell's fill · the sidebar's title rules)
+- `5c2cb807` · `a975b3a8` · `029783bc` · `d3d75a59` · `b3b0cd90` — the claim, the docs it made false, the verifier's restatements, the landing log
+- (the plan's own `docs(planning)` commits sit between the phases)
 
 #### Handoff Guidelines
 
