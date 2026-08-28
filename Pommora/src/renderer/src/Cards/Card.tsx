@@ -95,5 +95,5 @@ export function CardTitle({
 }
 
 export function CardTrail({ segments }: { segments: TrailSegment[] }): React.JSX.Element | null {
-  return <NavTrail segments={segments} className={cx('card-loc', text.caption.standard)} />
+  return <NavTrail segments={segments} className="card-loc" />
 }

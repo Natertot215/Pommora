@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { cx } from '@renderer/DesignSystem/Util/cx'
-import { text } from '@renderer/DesignSystem/Tokens'
 import { NavTrail } from '@renderer/DesignSystem/Elements/NavTrail'
 import { MenuItem } from '@renderer/DesignSystem/Menus'
 import { overlay, rowDragging } from '@renderer/DesignSystem/Menus/menu-base.css'
@@ -143,7 +142,7 @@ function NavRow({
       ref={drag?.ref}
       className={cx(drag?.isDragging && rowDragging)}
       leading={<EntityGlyph item={it} size="title3" />}
-      detail={<NavTrail segments={it.path} iconSize="control" className={text.caption.standard} />}
+      detail={<NavTrail segments={it.path} iconSize="control" />}
       overlay={<NavPinButton it={it} />}
       onPointerDown={drag?.handle.onPointerDown}
       onClick={() => onSelect(it.target)}

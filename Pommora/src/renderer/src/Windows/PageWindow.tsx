@@ -13,7 +13,6 @@ import { showConnectionMenu } from '../Links/connectionMenu'
 import { hoverConnection, hoverWebsite } from '../Links/ConnectionPane'
 import { getContentViewRect } from '../Interface/ContentView'
 import { NavTrail, type TrailSegment } from '@renderer/DesignSystem/Elements/NavTrail'
-import { text } from '@renderer/DesignSystem/Tokens'
 import { ancestryOf, pageIndexOf, resolveIndexOf } from '../treeIndex'
 import { previewTargetOf, useEmbedScale, useSession, type PreviewTarget } from '../store'
 import { WindowActions } from './WindowActions'
@@ -195,13 +194,7 @@ function PageWindowBody({
       title={
         <WindowTabStrip
           index={resolveIndex}
-          title={
-            <NavTrail
-              segments={trail}
-              emphasize
-              className={cx('page-window-crumbs', text.caption.standard)}
-            />
-          }
+          title={<NavTrail segments={trail} emphasize className="page-window-crumbs" />}
         />
       }
       actions={

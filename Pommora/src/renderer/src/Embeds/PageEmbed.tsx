@@ -12,8 +12,6 @@ import { AssetImage } from '@renderer/DesignSystem/Components/AssetImage/AssetIm
 import { ImagePicker } from '@renderer/DesignSystem/Components/Pickers/ImagePicker/ImagePicker'
 import { useBannerMenu } from '../Interface/Banner/useBannerMenu'
 import { NavTrail } from '@renderer/DesignSystem/Elements/NavTrail'
-import { text } from '@renderer/DesignSystem/Tokens'
-import { cx } from '@renderer/DesignSystem/Util/cx'
 import { ancestryOf } from '../treeIndex'
 
 import './embeds.css'
@@ -226,7 +224,5 @@ function EmbedCrumbs({ id }: { id: string }): React.JSX.Element | null {
   const tree = useSession((s) => s.tree)
   const trail = tree && ancestryOf(tree, { kind: 'page', id })
   if (!trail) return null
-  return (
-    <NavTrail segments={trail} emphasize className={cx('pgembed-crumbs', text.caption.standard)} />
-  )
+  return <NavTrail segments={trail} emphasize className="pgembed-crumbs" />
 }

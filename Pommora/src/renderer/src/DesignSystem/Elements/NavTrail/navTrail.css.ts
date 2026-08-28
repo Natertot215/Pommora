@@ -1,13 +1,19 @@
 import { style } from '@vanilla-extract/css'
 import { STATE_OPACITY, vars } from '../../Tokens/color.css'
+import { text } from '../../Tokens/typography.css'
 
 const c = vars.color
 
-export const trail = style({
-  display: 'flex',
-  alignItems: 'center',
-  minWidth: 0,
-})
+export const trail = style([
+  text.caption.standard,
+  {
+    display: 'flex',
+    alignItems: 'center',
+    minWidth: 0,
+    paddingBlock: 'var(--trail-pad, 0px)',
+    color: c.label.secondary,
+  },
+])
 
 export const segment = style({
   appearance: 'none',
