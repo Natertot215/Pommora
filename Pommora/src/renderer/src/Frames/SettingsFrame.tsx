@@ -18,7 +18,7 @@ import {
   AccessoryButton,
   MenuFooting,
   MenuIndex,
-  MenuItem,
+  MenuRowView,
   MenuScrollFrame,
   MenuSeparator,
   MenuCaption,
@@ -123,14 +123,18 @@ export function SettingsFrame(): React.JSX.Element | null {
   const configurationLeaf = (
     <>
       <MenuTopRow label="Settings" current="Configuration" onBack={back} />
-      <MenuItem
-        leading={<Icon name="layout-grid" size={ICON.rootEntry} />}
-        value={openInValue === 'page-preview' ? 'Preview' : 'Full Page'}
-        trailing={<Icon name="chevrons-up-down" size="control" />}
-        onClick={toggleOpenIn}
-      >
-        Open In
-      </MenuItem>
+      <MenuRowView
+        row={{
+          kind: 'item',
+          icon: <Icon name="layout-grid" size={ICON.rootEntry} />,
+          label: 'Open In',
+          trailing: {
+            kind: 'value',
+            value: openInValue === 'page-preview' ? 'Preview' : 'Full Page',
+            onToggle: toggleOpenIn,
+          },
+        }}
+      />
     </>
   )
 

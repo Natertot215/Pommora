@@ -139,7 +139,7 @@ function ListGroups({
             {unassigned.map((d) => (
               <RowShell key={d.id} id={d.id}>
                 <MenuItem
-                  className={cx(s.allRow)}
+                  className={s.allRow}
                   leading={<PropertyTypeIcon type={d.type} size={s.ICON.doc} />}
                   onContextMenu={(e) => {
                     e.preventDefault()
