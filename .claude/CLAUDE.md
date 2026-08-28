@@ -132,7 +132,6 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 │   │       │   ├── // Elements          | • The atomic bits — outline, chevron, trail, segment
 │   │       │   ├── // Components        | • Controls, pickers, fields, the side pane
 │   │       │   ├── // Menus             | • The menu recipe — shell, rows, frame chassis, the frame slide
-│   │       │   ├── // Detail            | • The tile chassis
 │   │       │   ├── // Interactions      | • PommoraDND and the pointer/scroll layer
 │   │       │   ├── // Animation         | • Motion tokens, the feel, and the enter/exit primitives
 │   │       │   ├── // Symbols           | • The curated icon registry — the primary glyph source

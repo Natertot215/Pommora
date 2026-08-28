@@ -41,7 +41,7 @@ Each folder answers "what is this" in one word. A row marked NEW, MOVED, or RENA
 ├── // Core                             | • NEW — the app-core modules the whole renderer reads
 │   ├── store.ts                        | • The barrel over Store/'s seven slices
 │   └── …                               | • Commands, assetUrl, destinationTree, nativeCaret, nativeMenus, pageMenuActions, selection, treeIndex
-├── // DesignSystem                     | • The pieces; Detail/ leaves with Tiles, Showcase/ leaves as a site
+├── // DesignSystem                     | • The pieces; Showcase/ leaves as a site
 │   ├── // Components
 │   │   ├── // Pickers                  | • Stays; PickerMenu is the most-composed primitive in the system
 │   │   └── // SidePane                 | • The sliding side slot
@@ -72,7 +72,7 @@ Each folder answers "what is this" in one word. A row marked NEW, MOVED, or RENA
 ├── // Tiles                            | • NEW — the tile world both hosts consume; the shape is the exploration's to propose
 │   ├── …                               | • MOVED from Blocks and Embeds — BlockSurface, the content kinds, tileWarm, webRetention, blockZoom
 │   ├── actionBand.css.ts               | • MOVED from Interface — the tiles are its only consumer
-│   └── tile-chassis.css                | • MOVED from DesignSystem/Detail
+│   └── tile-chassis.css                | • MOVED from Blocks — the shared tile frame
 ├── // Tables                           | • The tabular chrome TableView and the Trash wear
 ├── // Utilities                        | • RENAMED from Components — app-bound helpers and wrappers
 │   ├── NexusIconPicker.tsx             | • MOVED from Settings/IconPicker — binds this nexus's favorites
@@ -132,7 +132,7 @@ Every proposed move, grouped by kind. **Status** is one of: **ruled** (Nathan sa
 - [ ] **`Navigation/` absorbs `Tabs/`** (`TabBar`, `tabsModel`). *Why:* per-tab history is navigation; `Tabs/` sits beside the folder that owns its concept. *Status:* ruled.
 - [ ] **`Embeds/ViewEmbedScope` → `Views/`; `Sidebar/sidebarDndModel` → `DesignSystem/Interactions/reorderModel`; `Settings/IconPicker` + `iconFavorites` → `Utilities/NexusIconPicker`.** *Why:* R2 — each has zero importers in its own folder. *Status:* ruled.
 - [ ] **`Showcase/` out of `DesignSystem/`.** *Why:* Settled 21 — a deployed site, not a piece. *Status:* ruled.
-- [ ] **The tile world** — `Blocks/` (SurfacePM's tile contents), the tile half of `Embeds/` (PageEmbed, WebpageEmbed, tileWarm, webRetention, `embeds.css`), `DesignSystem/Detail/tile-chassis.css`, and root `Components/` (three store-reading helpers under a name the design system also uses). *Why:* one folder should answer "where does a tile live?" and `Components/` fails R3. A plan (Tiles, 08-27) proposed root `Tiles/` + `Utilities/`, one `TileWriter` shell over one `TileSave`, and one `tile-base.css`; it was abandoned 08-28 for fresh perspectives. What it found and still stands: `PageEmbedBlock.tsx` is a 29-line pass-through; `MarkdownBlock` and `PageEmbed` are one click-to-edit shell over two data seams; `blocks.css` and `embeds.css` already share `:is(.blk-md, .pgembed)` selectors; `embedWidget` imports `blockZoom` statically, so a `Tiles/` barrel would close the `PageEmbed → MarkdownPM → embedWidget` cycle the lazy imports keep open. *Status:* audit decides — Architect and Reducer propose the shape.
+- [ ] **The tile world** — `Blocks/` (SurfacePM's tile contents), the tile half of `Embeds/` (PageEmbed, WebpageEmbed, tileWarm, webRetention, `embeds.css`), `Blocks/tile-chassis.css`, and root `Components/` (three store-reading helpers under a name the design system also uses). *Why:* one folder should answer "where does a tile live?" and `Components/` fails R3. A plan (Tiles, 08-27) proposed root `Tiles/` + `Utilities/`, one `TileWriter` shell over one `TileSave`, and one `tile-base.css`; it was abandoned 08-28 for fresh perspectives. What it found and still stands: `PageEmbedBlock.tsx` is a 29-line pass-through; `MarkdownBlock` and `PageEmbed` are one click-to-edit shell over two data seams; `blocks.css` and `embeds.css` already share `:is(.blk-md, .pgembed)` selectors; `embedWidget` imports `blockZoom` statically, so a `Tiles/` barrel would close the `PageEmbed → MarkdownPM → embedWidget` cycle the lazy imports keep open. *Status:* audit decides — Architect and Reducer propose the shape.
 - [ ] **`Interface/` absorbing `Sidebar/` and `Toolbar/`.** *Why:* the same window's chrome, read by the same InterfacePM; two top-level folders disappear. *Status:* awaiting ruling (§3.3).
 - [ ] **The casing renames** — the lowercase subfolders under `MarkdownPM/` (`connections`, `decorations`, `detect`, `editor`, `input`, `parser`, `tokens`), `SurfacePM/` (`core`, `sensors`), `Views/pipeline/`, the Showcase's `lab/` and `leaves/`; stylesheets to lowerCamel beside their component (`Carets.css`, `Interface.css`, `Styles.css`, `Sidebar.css`, `Table.css`, `GroupBand.css`, `CardsView.css`, `TableView.css`, `surfacepm.css`); `Elements/Segment/` and `Elements/DropOutline/` folded into their one file. *Why:* R7. *Status:* ruled; mechanical.
 - [ ] **`Windows/` keeps `NavWindow`, or `Navigation/` takes it ungrouped.** *Status:* awaiting ruling (§3.4).
