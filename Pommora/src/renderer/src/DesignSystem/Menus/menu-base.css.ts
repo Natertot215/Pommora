@@ -120,13 +120,17 @@ export const rowDisabled = style({
 export const rowDragging = style({ opacity: 'var(--state-ghost)' })
 
 export const overlay = style({
-  position: 'absolute',
-  left: 'calc(var(--row-pad-lead) / 2)',
-  top: '50%',
-  transform: 'translate(-50%, -50%)',
   opacity: 0,
   transition: 'opacity var(--duration-base) var(--ease-base)',
-  selectors: { [`${item}:hover &`]: { opacity: 1 } },
+  selectors: {
+    '&&': {
+      position: 'absolute',
+      left: 'calc(var(--row-pad-lead) / 2)',
+      top: '50%',
+      transform: 'translate(-50%, -50%)',
+    },
+    [`${item}:hover &`]: { opacity: 1 },
+  },
 })
 
 export const side = style({
