@@ -393,7 +393,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 
 **Files:**
 - Modify: `DesignSystem/Elements/NavTrail/navTrail.css.ts` — `trail` composes `text.caption.standard`, `color: c.label.secondary`, `paddingBlock: 'var(--trail-pad, 0px)'`; `emphasized`/`current` keep their tones.
-- Modify consumers to drop the restated pair: `Navigation/NavList.tsx` (`nav-item-path` → the `detail` slot, Task 9), `Settings/TrashFrame.tsx` (keeps `.is-historical` italic/tertiary as a state class on the trail), `Cards/Card.tsx` `card-loc` (`cards.css:170-172` deleted; `.card-loc-zone`'s `padding-top: 6px` KNOB becomes `--trail-pad` so the zone pads top and bottom alike), `Embeds/PageEmbed.tsx` `pgembed-crumbs`, `Windows/PageWindow.tsx` `page-window-crumbs`, `Frames/SettingsFrame.tsx` `crumbRow` (footnote → the trail's caption; a footing crumb reads as a trail).
+- Modify consumers to drop the restated pair: `Navigation/NavList.tsx` (`nav-item-path` → the `detail` slot, Task 9), `Settings/TrashFrame.tsx` (keeps `.is-historical` italic/tertiary as a state class on the trail), `Cards/Card.tsx` `card-loc` (`cards.css:170-172` deleted; `.card-loc-zone`'s `padding-top: 6px` KNOB becomes `--trail-pad` so the zone pads top and bottom alike — **first** diagnose why some cards show bottom padding under the trail and some none: read `.card-loc-zone`'s `margin-top: auto` against `.card-text`'s `8px 8px` and the reserved `--card-foot-h` in `CardsView.css:29-33` per card variant (gallery / cards view / a card with no location), name the cause in the Log, and fix it at that cause rather than by padding), `Embeds/PageEmbed.tsx` `pgembed-crumbs`, `Windows/PageWindow.tsx` `page-window-crumbs`, `Frames/SettingsFrame.tsx` `crumbRow` (footnote → the trail's caption; a footing crumb reads as a trail).
 - Survivors: `Subfield` (`subline.emphasized` at `--label-control`, fixed 24px band — a different register by design), `PathField` (inherits its field's body rung).
 
 **Derivation:** `grep -rF "text.caption.standard" src | grep -i "trail\|crumb\|loc\|path"` → 4 at planning → 0. Control: `grep -rF "NavTrail" src` → ≥ 9.
@@ -409,11 +409,11 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 **Why:** The Trash's rows are `.nav-item`s with a checkbox that rewrites the pin's affordance (`trashFrame.css:92` says so) and a selection set only a native right-click can read. On the recipe, a row's actions are trailing `button`s, the head is the table's, and the checkbox and its 20px gutter delete.
 
 **Files:**
-- Modify: `Settings/TrashFrame.tsx` — rows through `MenuRowView` (`item`: lead icon, title, `detail` = the trail, a `trash-date` trailing text, trailing `button`s Restore ↺ and Delete Forever ✕ that act on the row); the `checked` set and `.has-checked` go; the context menu stays for Restore To; batch actions move to the head's trailing cluster acting on the filtered set ("Restore All" / "Delete All").
-- Modify: `Settings/trashFrame.css` — `--trash-gutter`, `--trash-lead`, `.trash-check`, `.has-checked` deleted; rows pad the column's `--row-pad-x` (= `--navwindow-inset` 14); the sibling separator re-keys on the row class; `.trash-head` keeps its two lanes and the shared 160px date lane, its name column padding reading the same `--row-pad-x`.
+- Modify: `Settings/TrashFrame.tsx` — rows through `MenuRowView` (`item`: lead icon, title, `detail` = the trail, a `trash-date` trailing text) with a Restore glyph in the `overlay` slot that works exactly as `NavList`'s pin does — absolute in the lead gutter, revealed on hover, one click restores that row; the `checked` set, `.has-checked`, and the batch arms go; the context menu keeps Restore To and Delete Forever for the row under the pointer.
+- Modify: `Settings/trashFrame.css` — `.trash-check`, `.has-checked` deleted; the column keeps a lead gutter for the overlay through `--row-pad-lead` (as NavWindow does for its pin) and `--row-pad-x` = `--navwindow-inset` 14; the sibling separator re-keys on the row class; `.trash-head` keeps its two lanes and the shared 160px date lane, its name column padding reading the same `--row-pad-x`.
 - Test: `Settings/trashFrame.test.ts` (model) unchanged; add a render test that a row's Restore button calls `restore` with that row.
 
-**Failure half:** an empty trash → the caption line; a historical row → the trail italic/tertiary, its buttons still live; Delete Forever on a row that vanished underneath (an external `.trash` edit) → the existing refresh prunes it, the button's handler no-ops on a missing bundle.
+**Failure half:** an empty trash → the caption line; a historical row → the trail italic/tertiary, its overlay still live; Restore on a row that vanished underneath (an external `.trash` edit) → the existing refresh prunes it and the handler no-ops on a missing bundle.
 
 **Steps:**
 - [ ] Migrate; gates; running pass: rows 28 with the trail and date, buttons appear on hover and stay reachable, the head's lanes align with the rows', a batch action from the head.
@@ -565,6 +565,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
   - [ ] Task 20 — FilterFrame
 
 ### Rulings
+- 08-27 (Nathan): the Trash's action works as the NavList pin does — an overlay glyph in the lead gutter; the checkboxes go. The trail pads through `--trail-pad`; the cards' uneven bottom padding is a defect to diagnose, not pad over.
 - 08-27 (Nathan): token names `--row-height-*` / `--row-width-*` are padding tokens, named so because a row's height is never declared. Compact pad 4. Pane wins inside a picker. NavWindow, NavView, Trash Standard. Autocomplete Compact. Heading on the row's horizontal inset. TopRow defines itself. `detail` = passive text, `value` = a control's value, both kept. Settings section titles keep uppercase. Leading-glyph sizes and nested-list insets are Part 2.
 
 ### Review
@@ -573,8 +574,6 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 - Round 2 (build-breaking-agent, 08-27): 15 findings, all verified and folded — the TopRow's real height is 18 once its ramp is live (F1); `rowBox` takes `--row-pad-lead`/`--row-pad-trail` over `--row-pad-x` for the two asymmetric nav surfaces (F2); CardAddPicker's override rides the TopRow element (F3); the trailing cluster is flush by design and `flushTrailing` dies (F4); `wide` on the item (F5); `defaultOn` on the toggle tables (F6); Sort/Hidden render `MenuRowView` inside their drag shells (F7); `detail` caps at 55% (F8); WindowInspector's field box is not a row and leaves Task 8 (F9); `header` stays geometry (F10); `pickerControl.value` owns its tone (F11); `heading` reads `--row-pad-x` (F12); `.mdpm-ac` keeps its box (F13); counts 28 / 12 / calendar-only (F14); the inert row's tooltip on an inner span (F15). Latent: `rowDragging` declared twice — moves to the recipe in Task 1. Unknown carried into Task 1's steps: the composed `pane` under `:has()`.
 
 ### Open Against Later Tasks
-- Task 12b: "rail actions" read as row-trailing `button`s (Restore · Delete Forever) with batch actions in the head — awaiting Nathan's confirmation.
-- Task 12a: the trail's vertical padding rule (`--trail-pad`, set by the card zone only) — awaiting Nathan's confirmation.
 
 ### Deviations
 ### Lessons
