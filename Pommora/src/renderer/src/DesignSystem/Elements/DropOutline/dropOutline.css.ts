@@ -1,8 +1,7 @@
 import { style } from '@vanilla-extract/css'
 
-export const ROW_INSET = 'var(--row-inset)'
 export const RAIL_W = 12
-const RAIL_CENTER_X = `calc(${ROW_INSET} + ${RAIL_W / 2}px)`
+const RAIL_CENTER_X = `calc(var(--row-width-standard) + ${RAIL_W / 2}px)`
 
 export const dropOutline = style({
   transition: 'transform var(--drop-outline-beat, var(--duration-fast)) var(--ease-base)',
