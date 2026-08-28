@@ -6,6 +6,10 @@
 .content-view {
   position: relative;
   height: 100%;
+  /* The surface banner's chrome, declared once for every routed view that wears one
+     (pages keep their own in MarkdownPM). */
+  --banner-h: 230px;
+  --banner-add-zone: 44px;
   display: flex;
   flex-direction: column;
 }

@@ -83,7 +83,7 @@
 }
 
 .mdpm-header:not(.has-banner) {
-  --add-banner-zone: 44px;
+  --banner-add-zone: 44px;
   padding-top: calc(var(--app-inset) + 1px + var(--toolbar-h));
 }
 .mdpm-header:not(.has-banner) .add-banner-strip {
