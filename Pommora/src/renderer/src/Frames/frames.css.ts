@@ -71,12 +71,7 @@ export const allSpacerCollapsed = style({ flexGrow: 0 })
 
 export const allHeading = style([
   flushAffordance,
-  {
-    vars: { '--drop-outline-beat': 'var(--duration-base)' },
-    width: '100%',
-    border: 'none',
-    background: 'none',
-  },
+  { vars: { '--drop-outline-beat': 'var(--duration-base)' } },
 ])
 
 export const allRow = style({ color: c.label.secondary })

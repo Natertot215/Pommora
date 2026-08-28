@@ -6,7 +6,7 @@ import { Slider } from '../Components/Controls/Slider/Slider'
 import { PickerControl } from '../Elements/PickerControl'
 import { cx } from '../Util/cx'
 import { AccessoryButton, MenuCaption, MenuItem, MenuSeparator } from './menu-row'
-import { actionRow, heading, headingCaps } from './menu-base.css'
+import { actionRow, heading, headingCaps, side, titleWrap } from './menu-base.css'
 
 export type Trailing =
   | { kind: 'chevron' }
@@ -85,13 +85,10 @@ export function MenuRowView({ row }: { row: MenuRow }): React.JSX.Element {
       return <MenuCaption>{row.text}</MenuCaption>
     case 'action':
       return (
-        <MenuItem
-          className={actionRow}
-          trailing={row.trailing && trailingNode(row.trailing)}
-          onClick={row.onClick}
-        >
-          {row.label}
-        </MenuItem>
+        <button type="button" className={actionRow} onClick={row.onClick}>
+          <span className={titleWrap}>{row.label}</span>
+          {row.trailing && <span className={side}>{trailingNode(row.trailing)}</span>}
+        </button>
       )
     case 'item': {
       const t = row.trailing

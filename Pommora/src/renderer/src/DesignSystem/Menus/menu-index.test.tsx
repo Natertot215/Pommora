@@ -59,7 +59,7 @@ describe('MenuRowView', () => {
   it('renders an action row on the action class', () => {
     const onClick = vi.fn()
     row({ kind: 'action', label: 'All Properties', onClick })
-    const el = host.querySelector('[role="button"]') as HTMLElement
+    const el = host.querySelector('button') as HTMLElement
     expect(el.className).toContain('actionRow')
     el.click()
     expect(onClick).toHaveBeenCalledOnce()

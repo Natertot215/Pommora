@@ -58,7 +58,7 @@ function VisibilityGroups({
                 ? {
                     kind: 'button',
                     icon: 'eye',
-                    ariaLabel: 'Always shown',
+                    ariaLabel: 'Always Shown',
                     disabled: true,
                     onClick: () => {},
                   }
