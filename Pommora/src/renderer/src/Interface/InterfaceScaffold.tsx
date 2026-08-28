@@ -5,7 +5,7 @@ import { useSession } from '../store'
 import { navKey } from '../Navigation/navRecents'
 import { captureWarm, readWarm } from '../Tabs/warmCache'
 
-export function DetailScaffold({
+export function InterfaceScaffold({
   owner,
   children,
 }: {

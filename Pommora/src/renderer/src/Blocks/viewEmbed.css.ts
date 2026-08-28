@@ -2,7 +2,7 @@ import { globalStyle, keyframes, style } from '@vanilla-extract/css'
 import { titleReveal } from '@renderer/DesignSystem/Animation/animations.css'
 import { vars as colorVars } from '@renderer/DesignSystem/Tokens/color.css'
 import { duration } from '@renderer/DesignSystem/Animation'
-import { SEGMENT_H, segmentRow, settingsBtn } from '../Detail/ActionBand.css'
+import { SEGMENT_H, segmentRow, settingsBtn } from '../Interface/ActionBand.css'
 import { EMBED_SCALE_DEFAULT, embedZoom, viewEmbedZoom } from '@shared/types'
 
 const c = colorVars.color

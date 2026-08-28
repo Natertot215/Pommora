@@ -28,13 +28,13 @@ Nineteen top-level folders hold 453 files and 64,412 lines. By kind: 160 models 
 
 **`Components/` is `Detail/`'s satellite, not a components folder.** Twenty-two of its twenty-five files sit under `Components/Detail/` and make twenty-six import edges into `Detail/`. `Components/Detail/settingsPane.css.ts` has 21 consumers, 10 of them the property editors under `Properties/`, which makes a stylesheet named after a pane the single largest lateral edge in the graph. The three genuinely app-shared files — `EntityIcon.tsx` (6 consumers, 4 folders), `RenamableTitle.tsx` (4, 3), `useNexusIcon.ts` — are the ones the folder's name describes.
 
-**The renderer root is an unnamed core folder.** Twelve modules beside the two entries and two global sheets, every one consumed across folders: `store.ts` (1,906 lines, 114 consumers, all sixteen folders), `treeIndex.ts` (21, 17 cross-folder), `assetUrl.ts`, `linkResolve.ts`, `pageMenuActions.ts`, `openWebLink.ts`, `selection.ts`, `Commands.ts`, `destinationTree.ts`, `nativeMenus.ts`, `nativeCaret.ts`. The codemap documents two of them.
+**The renderer root is an unnamed core folder.** Twelve modules beside the two entries and two global sheets, every one consumed across folders: `store.ts` (1,906 lines, 114 consumers, all sixteen folders), `treeIndex.ts` (21, 17 cross-folder), `assetUrl.ts`, `pageMenuActions.ts`, `selection.ts`, `Commands.ts`, `destinationTree.ts`, `nativeMenus.ts`, `nativeCaret.ts`. The codemap documents two of them.
 
 **The store is the composition root, not a leaf.** `store.ts:29-101` imports twelve feature modules and 114 files import it back, so every one of those folders is in a cycle with the store. This is a Cleanup-lane fact (the store split is Bundle 5), recorded because the target tree cannot make those folders independent while it holds, and the tree is honest about which edges the store keeps.
 
 **The value layer is `Properties/`, and the order is `DesignSystem ← Properties ← Tables ← Views`, with `Cards/` standing alone.** `Properties/Editing/` holds the shared property-value vocabulary — `formatValue`, `PropertyPicker`, `OptionChip`, `PropertyEditor`, `DatetimeValuePicker`, `Cell`, `checkboxLook`, `columnLabel`, `usePropertyRows` — and `Properties/` root the resolution modules (`value`, `contextIdentity`, `contextOptions`, `resolveContext`). `Tables/` imports it downward for the cell renderers; `Views/` imports both. One upward edge remains by ruling: `Properties/PropertiesPane.tsx` reads `useActiveView` (Views) and `useStyleFor` (Tables) for its per-column Style radios, which read and write the active view's `column_styles` — a view-settings section inside the Properties pane. `usePropertyRows.ts`'s two consumers, `Properties/PagePropertiesPane.tsx` and `PagePreview/PreviewInspector.tsx`, still share roughly 470 identical lines of row chrome.
 
-**Thirty files have no importer inside their own folder.** The worst: `Settings/IconPicker.tsx` (14 consumers, none in `Settings/`), `Embeds/ViewEmbedScope.tsx` (15, 14 outside — view infrastructure filed as an embed detail), `Tabs/warmCache.ts` (13, 12 outside — a cache, not a tab), `Embeds/connectionMenu.ts` (10, all outside), `Sidebar/sidebarDndModel.ts` (15, 11 outside — a generic reorder model), `Navigation/navRecents.ts` (15, 10 outside), `Tabs/tabsModel.ts` (12, 10 outside).
+**Thirty files have no importer inside their own folder.** The worst: `Settings/IconPicker.tsx` (14 consumers, none in `Settings/`), `Embeds/ViewEmbedScope.tsx` (15, 14 outside — view infrastructure filed as an embed detail), `Tabs/warmCache.ts` (13, 12 outside — a cache, not a tab), `connectionMenu.ts` (10, all outside; now `Links/`), `Sidebar/sidebarDndModel.ts` (15, 11 outside — a generic reorder model), `Navigation/navRecents.ts` (15, 10 outside), `Tabs/tabsModel.ts` (12, 10 outside).
 
 **The lateral graph.** The feature-to-feature edges that show which folders are really one domain: `Properties → Components` 12 (entirely `settingsPane.css.ts`), `Components → Detail` 9, `Components → Embeds` 8 (entirely `ViewEmbedScope`), `Components → Properties` 7, `MarkdownPM → Embeds` 7, `Components → Sidebar` 6 (entirely `sidebarDndModel`). `MarkdownPM/` (134 files, four outbound lateral edges) and `SurfacePM/` (zero outbound) are the boundaries that hold.
 
@@ -68,9 +68,8 @@ Each folder answers "what is this" in one word. A row marked NEW, MOVED, or RENA
 │   ├── PickerControl.tsx               | • NEW wrapper — binds the native row menu
 │   └── …                               | • EntityIcon, RenamableTitle, useNexusIcon, iconFavorites
 ├── // Cards                            | • The card chassis the gallery and CardView wear
-├── // Connections                      | • NEW — the connection pane and the link menu, with link resolution
-│   ├── linkResolve.ts · openWebLink.ts | • MOVED from the root
-│   └── …                               | • ConnectionHoverCard, HoverCardPresenter, connectionMenu, hoverCardSize
+├── // Links                            | • Everything that happens to a link — the hover pane, the link menu, resolution
+│   └── …                               | • ConnectionPane, PanePresenter, hoverPaneSize, connectionMenu, linkResolve, openWebLink
 ├── // Core                             | • NEW — the app-core modules the whole renderer reads
 │   ├── store.ts                        | • 1,906 lines; the split is Cleanup Bundle 5
 │   ├── warmCache.ts                    | • MOVED from Tabs — a cache, not a tab
@@ -86,14 +85,14 @@ Each folder answers "what is this" in one word. A row marked NEW, MOVED, or RENA
 │   ├── // Menus                        | • The menu recipe — menu-base, -row, -surface, -shell, -disclosure, -anchor, frame-slide, frame-growth; gains menu-roster
 │   ├── // Tokens                       | • Gains the shell geometry
 │   └── …                               | • Animation, Elements, Labels, Symbols, Theming, Util
-├── // Embeds                           | • The embed framework's consumers — page, webpage, retention
+├── // Embeds                           | • The embed framework's consumers — page, webpage, retention; folds into Tiles/
 ├── // Frames                           | • The frames a Menu or Window opens onto — filter, group, sort, hidden, layout, settings
-├── // Interface                        | • RENAMED from Detail — the main window's chrome and its routed pane
+├── // Interface                        | • The main window's chrome and its routed pane
 │   ├── // Banner · // Subfield
 │   ├── // InspectorPane                | • The inspector's side slot
 │   ├── // Sidebar · // Toolbar         | • MOVED from the root
 │   ├── NavView.tsx                     | • The fifth routed view, beside its four siblings
-│   └── …                               | • ContainerView, ContentView, DetailScaffold, HomepageView, PageView, SpaceView, scope
+│   └── …                               | • ContainerView, ContentView, InterfaceScaffold, HomepageView, PageView, SpaceView, scope
 ├── // MarkdownPM                       | • The editor; subfolders capitalize; otherwise untouched
 ├── // Navigation                       | • The nav layer — absorbs Tabs; NavWindow is a Window
 │   ├── TabBar.tsx · tabsModel.ts       | • MOVED from Tabs — per-tab history is navigation
@@ -101,10 +100,11 @@ Each folder answers "what is this" in one word. A row marked NEW, MOVED, or RENA
 ├── // Properties                       | • The value layer — resolution at the root, Editing/ and Editors/ beneath
 ├── // Settings                         | • The Settings window alone
 ├── // Showcase                         | • MOVED out of DesignSystem — a deployed site, not a piece
-├── // Surface                          | • RENAMED from SurfacePM; absorbs Blocks — the tile world in one folder
-│   ├── // Blocks                       | • Tile content; block becomes tile in identifiers
-│   ├── actionBand.css.ts               | • MOVED from Detail — Blocks is its only consumer
-│   └── tileChassis.css                 | • MOVED from DesignSystem/Detail
+├── // SurfacePM                        | • The tile layout engine; knows nothing of content
+├── // Tiles                            | • NEW — the tile world both hosts consume; the spec is the Tiles decision log
+│   ├── …                               | • MOVED from Blocks and Embeds — BlockSurface, the content kinds, tileWarm, webRetention, blockZoom
+│   ├── actionBand.css.ts               | • MOVED from Interface — the tiles are its only consumer
+│   └── tile-chassis.css                | • MOVED from DesignSystem/Detail
 ├── // Tables                           | • The tabular chrome TableView and the Trash wear
 ├── // Views                            | • Saved-view presentation; TableView/ and CardView/ hold only the view layer
 │   ├── ViewEmbedScope.tsx              | • MOVED from Embeds — view infrastructure, fourteen consumers outside Embeds
@@ -116,7 +116,7 @@ Each folder answers "what is this" in one word. A row marked NEW, MOVED, or RENA
 
 **What moves and what holds.** The remaining moves are mostly renames (casing, lowercase subfolders, stylesheets to lowerCamel) — mechanical and `git mv`-able in one commit — and the folders whose names do not describe them (R3) or whose consumers live elsewhere (R2). `MarkdownPM/` moves nothing but subfolder casing. `DesignSystem/Pickers/` stays: `PickerMenu` is the rectangle ~30 menus mount, and moving it would strand them on a feature-folder import.
 
-**What the tree does not do.** It does not split the store, unwrap IPC, or touch a line of behavior — those are edits, carried below as decisions. A session can execute any move in isolation; the typecheck catches every miss. The rules, not the tree, survive growth: a tree drawn for 453 files will be wrong in detail at 1,400, but the eight rules still file every new module. Three seats are built for that growth — `Core/` for the models every future feature reads, `Windows/` for the fourth and fifth floating windows, `Properties/Editing/` for every value renderer a new view type needs — and a new feature folder appears only when a domain has three or more surfaces of its own, the test `Connections/` is the first to pass.
+**What the tree does not do.** It does not split the store, unwrap IPC, or touch a line of behavior — those are edits, carried below as decisions. A session can execute any move in isolation; the typecheck catches every miss. The rules, not the tree, survive growth: a tree drawn for 453 files will be wrong in detail at 1,400, but the eight rules still file every new module. Three seats are built for that growth — `Core/` for the models every future feature reads, `Windows/` for the fourth and fifth floating windows, `Properties/Editing/` for every value renderer a new view type needs — and a new feature folder appears only when a domain has three or more surfaces of its own, the test `Links/` was the first to pass.
 
 #### Open Decisions — Structure
 
@@ -125,9 +125,8 @@ The eight that gate the tree's non-mechanical moves. Each is a fork the rules do
 - **The design system's three upward reaches.** `AssetImage` and `ImagePicker` read the store to draw data they are given no other way; `PickerControl` reaches for a menu the app can hand it. *Recommendation:* invert all three through the wrapper pattern `Settings/IconPicker` already uses — the design-system piece takes `src`/`crop` (or one `resolveAsset`), `onPasteImage`/`onPickFile`, and `onRowMenu` as props; three thin wrappers in `Components/` bind them once. Then the sanctioned reaches are exactly one, `Symbols/` reading a type, written into DesignSystemPM §Tooling in the same edit.
 - **Make the boundary a lint rule.** *Recommendation:* now, with an allowlist of the three files until the reaches close. Biome `noRestrictedImports` forbidding `@renderer/store`, `@renderer/nativeMenus`, `@renderer/assetUrl`, and `@renderer/<Feature>/**` from `DesignSystem/**`. Its value is refusing the *next* inversion.
 - **`Components/`'s strays and the `IconPicker` wrapper.** The 08-25 ruling keeps `Components/` for the genuinely shared strays. *Recommendation:* `Settings/IconPicker.tsx` and `iconFavorites.ts` join them — fourteen importers across eight folders with no plurality — and the file is renamed `NexusIconPicker.tsx` so it stops shadowing the design-system export it wraps.
-- **`Detail` → `Interface`'s scope.** Ruled for `Detail/`; the atlas extends it to `Toolbar/` and `Sidebar/`, the same window's chrome read by the same InterfacePM. *Recommendation:* take the extension — two more top-level folders disappear and `Interface/` becomes the one place the main window's shape is decided. If refused, they stay at the root under R3.
-- **`SurfacePM` → `Surface`, and `block` → `tile`.** `MarkdownPM` keeps its suffix as a product name; `SurfacePM` is a leftover that already lost its abbreviation in `surfacepm.css`. *Recommendation:* rename the folder, absorb `Blocks/` as `Surface/Blocks/`, and rename `block` → `tile` in identifiers — the engine's own model file already says tile, and it frees `block` for MarkdownPM.
-- **`Connections/`.** The hover card, its presenter and sizing, and the link menu are the ConnectionsPM domain with no renderer folder; today they sit in `Embeds/` with every consumer elsewhere. *Recommendation:* mint it, and move `linkResolve.ts` and `openWebLink.ts` in from the root — the one new feature folder the atlas creates on the three-surfaces test.
+- **`Interface/`'s scope.** `Detail/` is `Interface/`; the atlas extends it to `Toolbar/` and `Sidebar/`, the same window's chrome read by the same InterfacePM. *Recommendation:* take the extension — two more top-level folders disappear and `Interface/` becomes the one place the main window's shape is decided. If refused, they stay at the root under R3.
+- **`block` → `tile` in identifiers.** The engine's own model file already says tile; the rename frees `block` for MarkdownPM. It follows the `Tiles/` move, which [[Tiles — Decision Log]] specifies.
 
 ---
 
@@ -306,7 +305,10 @@ Rulings a sweep would otherwise re-derive wrongly, carried as current truth. Reo
 24. **Accepted, not defects:** dark-only theming · hidden scrollbars app-wide · Liquid Glass cannot be voided in place · no tracking scale · no inactive label tone yet.
 25. **Spacing stays literal, on the even grid** — no `--space-*` ladder. An odd value (`3/5/9px`, 24 + 20 + 8 sites) reconciles per consumer to the nearer even step when that consumer is next opened; `22px` is a step. Radius follows the same rule: an even literal is owned; `Slider.tsx:106`'s `9` is the one to reconcile.
 26. **The toolbar's tone is the container's, not a `button` selector's.** `.app-toolbar` and `.ppane-toolbar` declare `color: var(--label-control)` and every glyph inherits it through Button's `currentColor` ink; a dropdown surface restates its own ground (`menuSurface.css.ts`). The ten pins that existed only to outrank the old `.app-toolbar button` rule are gone; the thirteen `&&` pins left in the tree (`labels.css.ts`, `colorSwatch.css.ts`, `rowDisabled`, `lockIcon`, `pickerControl.css.ts`, `handleMenu.css.ts`, `numberEditor.css.ts`, `groupingPane.css.ts:70`) armor against other rules and are judged on their own.
+27. **`Links/` holds the link cluster** — the hover pane, its presenter and size, the link menu, `linkResolve`, `openWebLink`; named against `Embeds/`, where "Connections" also read as the pane's content kind. Executed 08-27-2026.
+28. **`Detail/` is `Interface/`** — the folder and `InterfaceScaffold`; whether `Sidebar/` and `Toolbar/` fold in is the open ruling, not the rename. Executed 08-27-2026.
+29. **`SurfacePM/` keeps its name**; `Blocks/` becomes root `Tiles/` shared by both hosts rather than `Surface/Blocks/` — its content has no plurality consumer, which is the atlas's own R2 test for a shared folder.
 
 **Process notes that outlive their documents.** A survey measuring two files against each other without accounting for what was already extracted beneath them overstates the duplication — the ~470-line twin figure is honest only because `usePropertyRows`, `PropertyEditor`, and `PropertyPicker` were counted out. A ruling bounds what it decided, not everything near it. Re-derive citations against the current code before editing; the tree moves. Restate rather than amend — a fixed item is deleted, a changed fact rewritten as currently true.
 
-**Where the surfaces live.** The property surface is `Properties/`; `EyeToggle` and `PickerControl` are `DesignSystem/Elements/`; `NavGallery` is `Navigation/`; `ImagePicker` is `DesignSystem/Components/Pickers/`; `SpaceSettings` is folded into `Toolbar/SpaceDropdown`. `Detail` → `Interface` is ruled; the moves the tree still marks are in [[RendererRefactor]].
+**Where the surfaces live.** The property surface is `Properties/`; `EyeToggle` and `PickerControl` are `DesignSystem/Elements/`; `NavGallery` is `Navigation/`; `ImagePicker` is `DesignSystem/Components/Pickers/`; `SpaceSettings` is folded into `Toolbar/SpaceDropdown`. `Detail/` is `Interface/`; the moves the tree still marks are in [[RendererRefactor]].

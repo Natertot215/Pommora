@@ -2,9 +2,9 @@ import { forwardRef, useRef } from 'react'
 import { useAssetUrl, useSession } from '../store'
 import { AssetImage } from '@renderer/DesignSystem/Components/AssetImage/AssetImage'
 import { ImagePicker } from '@renderer/DesignSystem/Components/Pickers/ImagePicker/ImagePicker'
-import { useBannerMenu } from '../Detail/Banner/useBannerMenu'
-import { AddBannerButton } from '../Detail/Banner/AddBannerButton'
-import { DetailTitleHeader } from '../Detail/DetailTitleHeader'
+import { useBannerMenu } from '../Interface/Banner/useBannerMenu'
+import { AddBannerButton } from '../Interface/Banner/AddBannerButton'
+import { DetailTitleHeader } from '../Interface/DetailTitleHeader'
 
 /** What the header draws. Passed as one object rather than five props, so the surfaces that host an
  *  editor — the page view, the floating preview, an embedded tile — hand over the page they are

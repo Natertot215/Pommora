@@ -5,7 +5,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { usePointerGesture } from '@renderer/DesignSystem/Interactions/gesture'
 import { resolveScroller, startAutoScroll } from '@renderer/DesignSystem/Interactions/autoscroll'
 import { Icon } from '@renderer/DesignSystem/Symbols'
-import { closeActiveHoverCard } from '@renderer/Embeds/PanePresenter'
+import { closeActiveHoverCard } from '@renderer/Links/PanePresenter'
 import type { Align, TableModel } from './model'
 import type { TableMenuContext } from '@shared/tableMenu'
 import { CellEditor } from './CellEditor'

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { tokenize, activeTokenIndices } from '../tokens'
-import { computeStats } from '@renderer/Detail/Subfield/subfieldStats'
+import { computeStats } from '@renderer/Interface/Subfield/subfieldStats'
 import {
   assembleLineIntents,
   decorationsFor,

@@ -1,0 +1,96 @@
+/* The connection hover card's body: a floating surface, so its scroll always contains — an
+   over-scroll must never reach the editor underneath (moving that editor detaches the card's
+   own anchor). */
+/* No overflow here: the pane's clip-path bounds the visuals and the pgembed owns the scroll,
+   while the resize strips straddle this box's edge — clipping would leave the visible border
+   inert under the pointer. */
+.conn-hover-body {
+  position: relative;
+}
+
+/* The website flavor: the guest owns the card's whole box; the shield above it keeps the card a
+   glance surface — pointer events land on the host, never the site.  */
+.conn-hover-web,
+.conn-hover-web-shield {
+  position: absolute;
+  inset: -4px;
+  border-radius: var(--app-radius);
+}
+.conn-hover-web {
+  display: flex;
+  overflow: hidden;
+}
+.conn-hover-web-shield {
+  background: var(--surface-primary);
+  transition: opacity var(--duration-base) var(--ease-base);
+}
+.conn-hover-web-shield.is-lifted {
+  opacity: 0;
+}
+
+.conn-hover-body .pgembed {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* Grip menus, fold chevrons, and gutter actions are inactive here — the card is scroll-only —
+     so the gutter lane reserves nothing. */
+  --rail-inset: 0px;
+}
+/* KNOB — the card's interior inset: no vertical padding (scroll-only chrome earns none),
+   symmetric sides. The caret never enters, so no I-beam either. */
+.conn-hover-body .pgembed .mdpm-editor .cm-content {
+  padding: 0 calc(14px * var(--mdpm-scale));
+  cursor: default;
+}
+/* No chevron in the card — with the caret disabled, clicking the heading itself is the fold
+   toggle, and the whole line signals it. */
+.conn-hover-body .mdpm-editor .cm-line.md-foldable::before {
+  display: none;
+}
+.conn-hover-body .mdpm-editor .cm-line.md-foldable {
+  cursor: pointer;
+}
+
+/* Resizing wears the hot accent stroke tiles and embeds use, set on the glass's own outline knob —
+   breathing in and out on the same beat as the tile border it mirrors — both passes together, since
+   a color easing in beside an edge that snapped is what flashed the stroke white for a frame. */
+[data-picker-portal] div:has(.conn-hover-body) {
+  transition:
+    border-color var(--duration-base) var(--ease-base),
+    box-shadow var(--duration-base) var(--ease-base);
+}
+[data-picker-portal] div:has(.conn-hover-resize-e:hover),
+[data-picker-portal] div:has(.conn-hover-resize-s:hover),
+[data-picker-portal] div:has(.conn-hover-resize-se:hover),
+[data-picker-portal] div:has(.conn-hover-body.is-resizing) {
+  --glass-outline: var(--accent-stroke-hot);
+}
+
+/* Free-edge resize strips — right, bottom, and their corner (the tile-edge treatment: a thin
+   band straddling the edge, inset clear of the pane's rounded corners). */
+.conn-hover-resize-e,
+.conn-hover-resize-s,
+.conn-hover-resize-se {
+  position: absolute;
+  z-index: 2;
+}
+.conn-hover-resize-e {
+  top: 10px;
+  bottom: 16px;
+  right: -6px;
+  width: 10px;
+  cursor: ew-resize;
+}
+.conn-hover-resize-s {
+  left: 10px;
+  right: 16px;
+  bottom: -6px;
+  height: 10px;
+  cursor: ns-resize;
+}
+.conn-hover-resize-se {
+  right: -6px;
+  bottom: -6px;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+}

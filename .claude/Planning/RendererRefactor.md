@@ -11,7 +11,7 @@ The arc is finished when all of these hold at once:
 - The eight rule greps in [[RendererAtlas]] §The Filing Rules return empty, and the target tree is the tree on disk.
 - Every floating or sliding surface wears one of the five words — Window, Pane, Menu, Frame, Picker — and the Menu recipe owns every row kind, so no frame declares type, tone, or padding of its own.
 - The token ledger in [[DesignSystemPM]] describes every var the renderer declares; the atlas's Open Decisions sections are empty because each block was ruled and executed.
-- `Detail`, `SurfacePM`, and the root-level app modules no longer exist as folders under those names.
+- The root-level app modules no longer sit loose at the root, and `DesignSystem/Detail` no longer exists under that name.
 
 ### In Flight
 
@@ -28,12 +28,11 @@ Grouped by the atlas section that carries the evidence. Each row is a session or
 
 #### Filing
 
-- [ ] `Detail/` → `Interface/`, absorbing `Sidebar/` and `Toolbar/`; `DetailScaffold` → `InterfaceScaffold`.
-- [ ] `Core/` for the root modules — `store`, `treeIndex`, `assetUrl`, `linkResolve`, `pageMenuActions`, `openWebLink`, `selection`, `Commands`, `destinationTree`, `nativeMenus`, `nativeCaret`, and `Tabs/warmCache`.
-- [ ] `Connections/` — the hover card, its presenter and sizing, the link menu, with `linkResolve` and `openWebLink` from the root.
+- [ ] `Interface/` absorbing `Sidebar/` and `Toolbar/` — waits on the ruling below.
+- [ ] `Core/` for the root modules — `store`, `treeIndex`, `assetUrl`, `pageMenuActions`, `selection`, `Commands`, `destinationTree`, `nativeMenus`, `nativeCaret`, and `Tabs/warmCache`.
 - [ ] `Navigation/` absorbs `Tabs/` (`TabBar`, `tabsModel`); `Embeds/ViewEmbedScope` → `Views/`; `Sidebar/sidebarDndModel` → `DesignSystem/Interactions/reorderModel`; `Settings/IconPicker` + `iconFavorites` → `Components/` as `NexusIconPicker`.
 - [ ] `Showcase/` out of `DesignSystem/`.
-- [ ] `SurfacePM/` → `Surface/`, absorbing `Blocks/`, `block` → `tile` in identifiers; `DesignSystem/Detail/tile-chassis.css` and `Detail/ActionBand.css.ts` move with it.
+- [ ] `Tiles/` — `Blocks/` and the tile half of `Embeds/` as one root folder both hosts consume, `DesignSystem/Detail/tile-chassis.css` with it; `SurfacePM/` keeps its name as the engine. The spec is [[Tiles — Decision Log]]; `block` → `tile` in identifiers follows it.
 - [ ] The casing renames — `Materials/glass-*.tsx` → `Glass*.tsx`, the lowercase subfolders under `MarkdownPM/` and `SurfacePM/` and `Views/pipeline/`, stylesheets to lowerCamel beside their component, `Segment/` and `DropOutline/` folded into their one file.
 
 #### Boundaries

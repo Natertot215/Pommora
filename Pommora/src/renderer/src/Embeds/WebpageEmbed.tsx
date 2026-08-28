@@ -14,7 +14,7 @@ import { WEB_PARTITION } from '@shared/types'
 import { webpageTileTitle } from '@shared/webpageEmbed'
 import { useDismiss } from '@renderer/DesignSystem/Components/useDismiss'
 import { useSession } from '../store'
-import { openWebLink } from '../openWebLink'
+import { openWebLink } from '../Links/openWebLink'
 import { webGuestRetention } from './webRetention'
 import './embeds.css'
 
