@@ -3,8 +3,8 @@ import { Icon } from '../Symbols'
 import { fileTypeIcon } from '../Symbols/fileTypes'
 import { cx } from '../Util/cx'
 import { Label, type LabelProps } from './Label'
-import type { LabelShape } from './labels.css'
-import { fileChip, fileChipIcon, fileChipUnresolved } from './recipes.css'
+import type { LabelShape } from './label-base.css'
+import { fileChip, fileChipIcon, fileChipUnresolved } from './label-recipes.css'
 
 type Recipe = Omit<LabelProps, 'shape'>
 

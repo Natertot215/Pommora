@@ -3,7 +3,7 @@
 // one webview owns the whole body on the shared partition. A summon while open retakes the window
 // in place; the singleton the page window also is.
 import { useEffect, useRef, useState } from 'react'
-import { Button } from '@renderer/DesignSystem/Controls/Button'
+import { Button } from '@renderer/DesignSystem/Buttons'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { overScrollEllipsis } from '@renderer/DesignSystem/Interactions/OverScroll'
 import { text } from '@renderer/DesignSystem/Tokens'

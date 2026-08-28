@@ -5,7 +5,7 @@ import type { NavRef, NewTabSentinel, SelectTarget, StoredTab, Tab, TabTarget } 
 import type { MutableKind } from '@shared/mutate'
 import { moveItem } from '@renderer/DesignSystem/Util/moveItem'
 import { navKey } from '../Navigation/navRecents'
-import { reconcileWith, type ReconcileIndex } from '../selection'
+import { reconcileWith, type ReconcileIndex } from '@renderer/Actions/selection'
 
 /** The new-tab sentinel value (maps to NavView / the `'none'` detail branch). */
 export const NEWTAB: TabTarget = { kind: 'newtab' }

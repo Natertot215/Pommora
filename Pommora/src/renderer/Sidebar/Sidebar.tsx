@@ -36,9 +36,9 @@ import { registerDiscloseTarget } from '@renderer/DesignSystem/Interactions/drag
 import { AgendaMode } from './AgendaMode'
 import { loadOpen, saveOpen } from './disclosureState'
 import { useSession } from '../store'
-import { pageMoveContext } from '../pageMenuActions'
+import { pageMoveContext } from '@renderer/Actions/pageMenuActions'
 import { contextTargetToSelect, isOpenInTabs } from '../Tabs/tabsModel'
-import { RenamableTitle } from '../Components/RenamableTitle'
+import { RenamableTitle } from '@renderer/Actions/RenamableTitle'
 import { IconPicker } from '@renderer/Settings/IconPicker'
 import {
   dropOutline,

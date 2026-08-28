@@ -1,5 +1,5 @@
 import type { RefObject } from 'react'
-import { PickerMenu } from '../PickerMenu/PickerMenu'
+import { PickerMenu } from '../picker-base'
 import type { LabelColorName } from '@renderer/DesignSystem/Labels'
 import {
   RAMP_FAMILIES,

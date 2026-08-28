@@ -5,7 +5,7 @@ import {
   type SelectTarget,
   toNavRef,
 } from '@shared/types'
-import { type ReconcileIndex, reconcileWith } from '../selection'
+import { type ReconcileIndex, reconcileWith } from '@renderer/Actions/selection'
 import { reconcileIndexOf } from '../treeIndex'
 import { liveTarget, makeTabId } from '../Tabs/tabsModel'
 import {

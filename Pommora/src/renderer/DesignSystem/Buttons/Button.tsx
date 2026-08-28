@@ -4,7 +4,7 @@ import { GlassControls } from '@renderer/DesignSystem/Glass'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { type ButtonSize, type IconSize, vars } from '@renderer/DesignSystem/Tokens'
 import { cx } from '@renderer/DesignSystem/Util/cx'
-import * as s from './button.css'
+import * as s from './button-base.css'
 
 export type ButtonType = keyof typeof s.type
 

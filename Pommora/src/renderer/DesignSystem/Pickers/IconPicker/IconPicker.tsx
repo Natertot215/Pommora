@@ -7,7 +7,7 @@ import {
   useState,
 } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { PickerMenu } from '../PickerMenu/PickerMenu'
+import { PickerMenu } from '../picker-base'
 import { SearchField } from '@renderer/DesignSystem/Fields'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { lucideGlyph, searchIcons, type IconEntry } from '@renderer/DesignSystem/Symbols/AllSymbols'

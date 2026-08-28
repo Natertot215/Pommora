@@ -1,10 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ConnectionsApi, ConnPage } from '@renderer/MarkdownPM/connections'
 import { LINK_RESOLVE_TIMEOUT_MS } from '@shared/links'
-import {
-  PickerMenu,
-  type PickerDirection,
-} from '@renderer/DesignSystem/Pickers/PickerMenu/PickerMenu'
+import { PickerMenu, type PickerDirection } from '@renderer/DesignSystem/Pickers/picker-base'
 import { EditorView } from '@codemirror/view'
 import { HEADING_FOLD_LINE, toggleFoldAt } from '@renderer/MarkdownPM/editor/folding'
 import { usePointerGesture } from '@renderer/DesignSystem/Interactions/gesture'

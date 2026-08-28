@@ -13,8 +13,8 @@ import {
   reorderTopInTree,
 } from '@shared/treePatch'
 import { stabilize } from '@shared/treeStabilize'
-import { applyAccent, applySystemAccent } from '@renderer/DesignSystem/Theming/accent'
-import { applyPersonalization } from '@renderer/DesignSystem/Theming/personalization'
+import { applyAccent, applySystemAccent } from '@renderer/DesignSystem/Tokens/accent'
+import { applyPersonalization } from '@renderer/DesignSystem/Tokens/personalization'
 import { reconcileIndexOf } from '../treeIndex'
 import { flushAllPageSaves } from '../Interface/pageFlush'
 import type { Slice } from './SessionState'

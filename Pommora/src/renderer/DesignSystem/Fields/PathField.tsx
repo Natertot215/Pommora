@@ -1,4 +1,4 @@
-import { Button } from '@renderer/DesignSystem/Controls/Button'
+import { Button } from '@renderer/DesignSystem/Buttons'
 import { NavTrail, pathSegments } from '@renderer/DesignSystem/Elements/NavTrail'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { InputField } from './InputField'

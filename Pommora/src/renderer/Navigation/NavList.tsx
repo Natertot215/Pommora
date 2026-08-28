@@ -7,12 +7,12 @@ import { overlay, rowDragging } from '@renderer/DesignSystem/Menus/menu-base.css
 import { TableRowDnd, useTableRowDrag } from '@renderer/Tables/tableDnd'
 import type { NavRef, SelectTarget } from '@shared/types'
 import { useSession } from '../store'
-import { pageMoveContext, runPageSendAction } from '../pageMenuActions'
+import { pageMoveContext, runPageSendAction } from '@renderer/Actions/pageMenuActions'
 import { isOpenInTabs, liveTarget } from '../Tabs/tabsModel'
 import { reconcileIndexOf } from '../treeIndex'
 import { navKey } from './navRecents'
 import type { ResolvedNav } from './navResolve'
-import { EntityGlyph } from './EntityGlyph'
+import { EntityIcon } from '@renderer/Utilities/EntityIcon'
 import './navList.css'
 import { pinLabel } from '@shared/toggleLabels'
 
@@ -130,7 +130,7 @@ function NavRow({
     <MenuItem
       ref={drag?.ref}
       className={cx(drag?.isDragging && rowDragging)}
-      leading={<EntityGlyph item={it} size="headline" />}
+      leading={<EntityIcon item={it} size="headline" />}
       detail={<NavTrail segments={it.path} iconSize="control" />}
       overlay={<NavPinButton it={it} className={cx(overlay, 'nav-pin')} />}
       onPointerDown={drag?.handle.onPointerDown}

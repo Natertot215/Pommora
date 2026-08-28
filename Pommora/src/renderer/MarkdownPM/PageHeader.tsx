@@ -80,7 +80,7 @@ export const PageHeader = forwardRef<HTMLDivElement, Props>(function PageHeader(
           }}
         >
           <AssetImage value={cover} className="mdpm-banner-img" />
-          <div className="mdpm-banner-overlay">{titleHeader}</div>
+          <div className="mdpm-banner-overlay title-shadow">{titleHeader}</div>
           <ImagePicker
             open={editing}
             value={cover ?? ''}

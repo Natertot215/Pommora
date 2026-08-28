@@ -26,7 +26,6 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  text-shadow: var(--banner-cast);
   pointer-events: none;
   transition: left var(--duration-base) var(--ease-base);
 }
@@ -48,7 +47,6 @@
 }
 .banner-title .detail-title-icon {
   color: var(--label-primary);
-  filter: drop-shadow(var(--banner-cast));
 }
 .banner-title .detail-title-text,
 .banner-title .detail-title-input {
@@ -66,7 +64,6 @@
   object-fit: cover;
   overflow: hidden;
   color: var(--label-primary);
-  filter: drop-shadow(var(--banner-cast));
   transition:
     max-width var(--duration-base) var(--ease-base),
     opacity var(--duration-base) var(--ease-base),

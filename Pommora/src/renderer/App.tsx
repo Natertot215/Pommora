@@ -19,9 +19,9 @@ import { SettingsWindow } from './Settings/SettingsWindow'
 import { ConnectionPane } from './Links/ConnectionPane'
 import { contextTargetToSelect } from './Tabs/tabsModel'
 import { useNavThumbnails } from './Navigation/useNavThumbnails'
-import { Button } from '@renderer/DesignSystem/Controls/Button'
+import { Button } from '@renderer/DesignSystem/Buttons'
 import { Icon } from '@renderer/DesignSystem/Symbols'
-import { matchesCommand } from './Commands'
+import { matchesCommand } from '@renderer/Actions/Commands'
 import { openWebLink } from './Links/openWebLink'
 
 export function App(): React.JSX.Element {

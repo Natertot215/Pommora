@@ -1,6 +1,6 @@
 import type { DevicePrefs } from '@shared/devicePrefs'
 import { DEFAULT_COMMANDS, type Personalization } from '@shared/types'
-import { applyPersonalizationKey } from '@renderer/DesignSystem/Theming/personalization'
+import { applyPersonalizationKey } from '@renderer/DesignSystem/Tokens/personalization'
 import type { Slice } from './SessionState'
 
 export interface ConfigSlice {

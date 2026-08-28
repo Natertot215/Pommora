@@ -17,7 +17,7 @@ import { markPickerOpen } from '@renderer/DesignSystem/Interactions/useDismiss'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { MENU_GAP as GAP } from '@renderer/DesignSystem/Menus/menu-anchor'
-import * as s from './pickerMenu.css'
+import * as s from './picker-base.css'
 
 const VIEWPORT_MARGIN = 8
 const CHECK = 12
