@@ -211,15 +211,8 @@ export const timeSegInput = style([
 ])
 export const timeColon = style({ color: c.label.secondary })
 
-export const switchRow = style({
-  display: 'flex',
-  alignItems: 'center',
-  minHeight: '28px',
-  padding: '0 4px',
-})
 export const switchLabel = style({
   flex: 1,
-  fontSize: font.scale.control.size,
   fontWeight: font.weight.emphasized,
   color: c.label.control,
 })

@@ -11,7 +11,10 @@ import type {
 } from '@shared/blocks'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { PickerMenu, PickerOption } from '@renderer/DesignSystem/Components/Pickers/PickerMenu'
-import { PICKER_MAX_HEIGHT } from '@renderer/DesignSystem/Components/Pickers/PickerMenu/pickerMenu.css'
+import {
+  leadingRow,
+  PICKER_MAX_HEIGHT,
+} from '@renderer/DesignSystem/Components/Pickers/PickerMenu/pickerMenu.css'
 import {
   FooterLockButton,
   MenuFooting,
@@ -217,12 +220,12 @@ export function BlockHandleMenu({
               onOpenPage()
             }}
           >
-            <span className={s.titleFieldRow}>
+            <span className={leadingRow}>
               <Icon name={pageInfo.icon} size={GLYPH} className={s.titleFieldIcon} />
               <span className={cx(s.titleFieldText, overScrollEllipsis)}>{pageInfo.title}</span>
             </span>
             {location && (
-              <span className={s.titleFieldRow}>
+              <span className={leadingRow}>
                 <Icon name={location.icon} size={LOC_GLYPH} className={s.titleFieldLocIcon} />
                 <span className={cx(s.titleFieldLoc, overScrollEllipsis)}>{location.title}</span>
               </span>

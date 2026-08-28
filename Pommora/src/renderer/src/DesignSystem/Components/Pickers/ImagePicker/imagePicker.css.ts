@@ -1,7 +1,7 @@
 import { style } from '@vanilla-extract/css'
 import { text, vars } from '../../../Tokens'
 import { stack } from '../../../Tokens/stack'
-import { accessoryButton, detail } from '../../../Menus/menu-base.css'
+import { accessoryButton, detail, rowBox } from '../../../Menus/menu-base.css'
 
 const c = vars.color
 
@@ -77,12 +77,7 @@ export const cornerGlyphEnd = style([cornerGlyph, { right: CORNER_INSET }])
 
 export const message = style([text.footnote.standard, { color: c.label.secondary }])
 
-/** The zoom row spans the frame width so the strip fills it, the readout riding at its end. */
-export const sliderRow = style({
-  display: 'flex',
-  alignItems: 'center',
-  gap: '10px',
-})
+export const sliderRow = style([rowBox, { gap: '10px', paddingInline: 0 }])
 
 export const zoomReadout = style([detail, { color: c.label.secondary }])
 
