@@ -168,7 +168,6 @@ export const icons = {
   'progress-check': ProgressCheck,
   'columns-3-cog': Columns3Cog,
   lock: LockSolid,
-  // The per-extension file glyphs, spread from one roster rather than listed here — see fileTypes.ts.
   ...fileTypeGlyphs,
 } satisfies Record<string, LucideIcon>
 
@@ -177,27 +176,18 @@ export type IconName = keyof typeof icons
 export const asIconName = (value: unknown): IconName | undefined =>
   typeof value === 'string' && value in icons ? (value as IconName) : undefined
 
-/** A stored icon id if it's RENDERABLE (curated OR any full-set Lucide id), else undefined — for the
- *  optional-icon sites that show nothing when unset (vs `iconNameOr`, which always resolves a fallback). */
 export const asRenderableIcon = (value: unknown): string | undefined =>
   typeof value === 'string' && (value in icons || lucideGlyph(value) !== undefined)
     ? value
     : undefined
 
-/** Resolve a stored icon to a renderable symbol id — kept if it's ANY Lucide id (curated OR the full
- *  set, so a user's arbitrary pick survives), else the fallback. Returns a bare string; `Icon` renders it. */
 export const iconNameOr = (value: unknown, fallback: IconName): string =>
   typeof value === 'string' && (value in icons || lucideGlyph(value) !== undefined)
     ? value
     : fallback
 
-/** The nexus's own glyph wherever it is drawn without a photo and without a chosen icon — the
- *  ribbon's homepage button, the homepage banner, the settings header and the navigation index all
- *  resolve here, so the nexus reads as one identity across every surface. */
 export const DEFAULT_NEXUS_ICON: IconName = 'orbit'
 
-/** The seed for `personalization.defaultIcons`. A nexus can override a kind's default; an
- *  entity's own `icon` overrides that in turn. */
 export const DEFAULT_ENTITY_ICONS: Record<EntityIconKind, IconName> = {
   collection: 'gallery-vertical-end',
   set: 'folder-closed',
@@ -206,10 +196,6 @@ export const DEFAULT_ENTITY_ICONS: Record<EntityIconKind, IconName> = {
   context: 'layout-grid',
 }
 
-/** An entity's glyph, resolved from its two facts: the user-assigned `own` icon when it's
- *  renderable, else the type's default — the nexus's `defaults` override when it names a
- *  curated icon, else the seed. Both facts are required arguments: a surface says
- *  `own: undefined` to mean "type-level glyph", never by omission. */
 export function entityIcon(
   kind: EntityIconKind,
   own: unknown,
@@ -221,18 +207,6 @@ export function entityIcon(
 const iconSizeVars = sizeTokens.icon
 const isIconSize = (v: unknown): v is IconSize => typeof v === 'string' && v in iconSizeVars
 
-/**
- * Render an icon by id: `<Icon name="folder-closed" />`. Resolves the CURATED registry first, then the
- * full Lucide set (a user's arbitrary pick), falling back to the dashed-square placeholder if neither
- * matches — so `name` is a bare `string`, not just a curated `IconName`.
- *
- * Size resolution:
- * - **Named step** (`size="headline"`) routes to the icon-size token — set as the glyph's
- *   `font-size` while lucide stays at `1em`, so one source (`size.icon.*`) drives it.
- * - **Default** (`1em`) follows the context font-size (the type scale).
- * - **Number / CSS length** (`size={18}`) passes straight through as an escape hatch.
- * Color follows `currentColor` in every case.
- */
 export const Icon = forwardRef<
   SVGSVGElement,
   { name: string; size?: IconSize | LucideProps['size'] } & Omit<LucideProps, 'size'>

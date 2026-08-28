@@ -13,8 +13,6 @@ const MODE_FOR: Partial<Record<RibbonKey, SidebarMode>> = {
   contexts: 'contexts',
   agenda: 'agenda',
 }
-// agenda/nav/settings have no entity kind, so their icons stay literal here; collections/contexts
-// track personalization overrides via iconFor.
 const STATIC_ICON: Record<'agenda' | 'navigation' | 'settings', string> = {
   agenda: 'calendar',
   navigation: 'map',
@@ -22,8 +20,6 @@ const STATIC_ICON: Record<'agenda' | 'navigation' | 'settings', string> = {
 }
 const DEFAULT_ORDER: RibbonKey[] = ['navigation', 'agenda', 'contexts', 'collections', 'settings']
 
-/** Resolve the display order from a persisted (possibly partial or stale) ribbonOrder, always
- *  ending with every known key so a newly-added icon never vanishes. */
 function resolveOrder(persisted: string[] | undefined): RibbonKey[] {
   const known = new Set<string>(DEFAULT_ORDER)
   const keys = (persisted ?? []).filter((k): k is RibbonKey => known.has(k))
@@ -55,8 +51,6 @@ export function Ribbon(): React.JSX.Element {
     else if (k === 'settings') toggleSettings()
   }
 
-  // Homepage stays pinned, outside the zone. The id-wrap mirrors the shared reorder helper's
-  // object contract.
   const reorderIcons = (activeId: string, overId: string): void => {
     const next = reorder(
       keys.map((id) => ({ id })),

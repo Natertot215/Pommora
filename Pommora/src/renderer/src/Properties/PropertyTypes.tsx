@@ -7,11 +7,6 @@ import {
   type IconName,
 } from '@renderer/DesignSystem/Symbols'
 
-/**
- * The single source for per-property-type presentation, cataloged in Features/SymbolsPM.md.
- * `context` backs Context columns only, and `last_edited_time` is auto-managed — neither is
- * `creatable`.
- */
 interface TypeMeta {
   label: string
   icon?: IconName
@@ -27,8 +22,6 @@ const PROPERTY_TYPES: Record<PropertyType, TypeMeta> = {
   status: { label: 'Status', icon: 'progress-check', creatable: true },
   url: { label: 'Link', icon: 'link', creatable: true },
   file: { label: 'File', icon: 'file-chart-column', creatable: true },
-  // The one type naming an entity kind rather than a value shape, so it draws the kind's glyph
-  // from where that is decided instead of restating it.
   context: { label: 'Context', icon: DEFAULT_ENTITY_ICONS.context },
   last_edited_time: { label: 'Last edited', icon: 'history' },
 }
@@ -57,8 +50,6 @@ export function PropertyTypeIcon({
   return <Icon name={name ?? 'square-dashed'} size={size} />
 }
 
-/** One shape for both Sort's What and Filter's What — the panes differ only in which defs
- *  qualify and which reserved entries lead. */
 export interface PaneTarget {
   id: string
   label: string

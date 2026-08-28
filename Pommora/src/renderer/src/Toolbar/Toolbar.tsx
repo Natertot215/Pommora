@@ -14,8 +14,6 @@ import { useExitPresence } from '@renderer/DesignSystem/Animation/useExitPresenc
 import './toolbar.css'
 
 type TrioPanel = 'navigation' | 'settings'
-/** Tagged by identity (not position) so inserting/reordering a button can't silently misaim its
- *  menu's beak. */
 type TrioSegment = Segment & { panel?: TrioPanel }
 
 export function Toolbar({
@@ -32,15 +30,10 @@ export function Toolbar({
   const navP = useExitPresence(panel === 'navigation')
   const settingsP = useExitPresence(panel === 'settings')
 
-  // Publishes the pill's width for the ride math in toolbar.css (offsetWidth ignores the ride
-  // transform). Also measures each button's center against the pill's right edge — that distance
-  // is the button's beak inset.
   useEffect(() => {
     const el = trioRef.current
     if (!el) return
     const apply = (): void => {
-      // Published on the whole toolbar, not the trio — CSS vars inherit downward, and both the
-      // right cluster's swallow transform and the tab-bar's condense need to read the one value.
       el.closest<HTMLElement>('.app-toolbar')?.style.setProperty('--trio-w', `${el.offsetWidth}px`)
       // Both rects carry the cluster's ride transform, so their difference cancels it out.
       // Measures the cover layer alone — the glass layer behind holds a hidden duplicate of every button.

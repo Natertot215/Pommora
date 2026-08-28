@@ -18,63 +18,44 @@ import './window-base.css'
 
 const BOUNDS: FloatingBounds = { minW: 360, minH: 280, defW: 850, defH: 600 }
 
-/** The shared inspector rail bounds — one remembered width across every window that hosts one. */
 export const WINDOW_BASE_INSPECTOR: SidePaneBounds = { min: 180, def: 260, max: 420 }
 
 export interface WindowBaseSide {
-  /** Panes sharing this id share one remembered width. */
   windowId: string
   bounds: SidePaneBounds
-  /** `overlay` slides over the body on its own driver (body pads aside for it); `inflow` takes a
-   *  column in the body row and collapses its width on close. */
   mode: 'overlay' | 'inflow'
-  /** Overlay panes toggle. An in-flow pane collapses to nothing when false. */
   open?: boolean
   className?: string
   children: ReactNode
 }
 
-/**
- * `band` — a full-width strip that is itself a window-move surface; content scrolls beneath it.
- * `floating` — no strip: action clusters pin to the top corners and everything between stays
- * clickable, so content reaching the top edge isn't covered.
- */
 export type WindowBaseToolbar = 'band' | 'floating'
 
 export interface WindowBaseProps {
-  /** Windows sharing this id share one stashed size slot. */
   id: string
   closing: boolean
   onClose: () => void
   onEscape?: () => void
-  /** Opening size + resize floor. Override per-surface instead of editing the shared default. */
   bounds?: FloatingBounds
   dragSurfaces?: string
   ariaLabel: string
   className?: string
   style?: CSSProperties
-  /** Hosts running a FLIP measure their rect from here. */
   rootRef?: Ref<HTMLDivElement>
   toolbar?: WindowBaseToolbar
   onScan?: () => void
   scanLabel?: string
-  /** The lead cluster's own controls, after the scan glyph when both are present. */
   lead?: ReactNode
-  /** `band` mode only — a `floating` toolbar is zero-height and pointer-inert, so a title there
-   *  is clipped away silently. */
   title?: ReactNode
-  /** Rides the swallow when a right overlay pane opens. */
   actions?: ReactNode
   left?: WindowBaseSide
   right?: WindowBaseSide
   footer?: ReactNode
   footerLabel?: (open: boolean) => string
-  /** A control riding the footer's reveal band, facing its collapse chevron across the bar. */
   footerLead?: ReactNode
   children: ReactNode
 }
 
-// The title is pointer-inert, so a press on it falls through to the toolbar and arms the move.
 const DRAG_SURFACES = '.window, .window-toolbar, .window-row'
 
 export function WindowBase({
@@ -117,17 +98,13 @@ export function WindowBase({
   const rightOpen = right ? right.open !== false : false
 
   const hasFooter = footer !== undefined && footer !== null && footer !== false
-  // Footer collapse is session-only — a floating surface never persists it.
   const [footerOpen, setFooterOpen] = useState(true)
   const reveal = useRevealNear()
-  // Anything that can move or resize the pane drops the cached geometry so the next move re-measures.
   const remeasure = reveal.remeasure
   useEffect(() => {
     remeasure()
   }, [remeasure, winStyle, leftOpen, rightOpen, leftW, rightW])
 
-  // Escape dismisses the LIVE window only — while the exit animation runs, or when a focused
-  // surface already handled the press, this stays out of the way.
   const dismiss = onEscape ?? onClose
   const escapeRef = useRef(dismiss)
   escapeRef.current = dismiss
@@ -209,8 +186,6 @@ export function WindowBase({
           )}
           {lead}
         </div>
-        {/* Rendered bare, not wrapped: a tab strip contributes its own flex child (and an
-            absolutely-positioned title beside it), which a wrapper would collapse into one box. */}
         {title}
         <div className="window-actions window-actions-trail">
           {actions && <div className="window-actions-flow">{actions}</div>}

@@ -206,7 +206,6 @@ export function ConstraintsSurface(): React.JSX.Element {
   const [asyncReject, setAsyncReject] = useState(false)
   const ids = items.map((i) => i.id)
 
-  // Rejects any drop into slot 0 after a simulated delay — exercises the engine's async decide-then-animate path.
   const canReorder = asyncReject
     ? (_a: string, o: string): Promise<boolean> =>
         new Promise((res) => window.setTimeout(() => res(ids.indexOf(o) !== 0), 300))
