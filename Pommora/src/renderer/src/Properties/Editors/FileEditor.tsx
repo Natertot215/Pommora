@@ -23,6 +23,7 @@ export function FileEditor({
             rows: [
               {
                 kind: 'item',
+                inert: true,
                 label: 'Directory',
                 trailing: {
                   kind: 'field',

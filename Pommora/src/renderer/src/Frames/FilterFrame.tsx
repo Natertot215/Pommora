@@ -746,7 +746,6 @@ export function FilterFrame({
           leading={
             decoded.kind === 'rows' ? (
               <PickerControl
-                footing
                 ariaLabel="Matches"
                 value={mode}
                 options={MATCH_OPTIONS}
@@ -756,7 +755,6 @@ export function FilterFrame({
           }
           trailing={
             <PickerControl
-              footing
               ariaLabel="Filter active"
               value={enabled ? 'on' : 'off'}
               options={ACTIVE_OPTIONS}

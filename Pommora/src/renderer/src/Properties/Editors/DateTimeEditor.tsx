@@ -31,6 +31,7 @@ const pickerRow = <T extends string>(
   onPick: (v: T) => void,
 ): MenuRow => ({
   kind: 'item',
+  inert: true,
   icon: <Icon name={glyph} size="title3" />,
   label,
   trailing: { kind: 'picker', ariaLabel, value, options, onPick },
