@@ -163,7 +163,14 @@ export const flushTrailing = style({ paddingRight: 0 })
 
 // ── ActionRow ──
 
-export const actionRow = style([text.footnote.emphasized, { color: c.label.secondary }])
+export const actionRow = style([
+  rowBox,
+  {
+    vars: { '--row-size': font.scale.footnote.size, '--row-line': font.scale.footnote.line },
+    fontWeight: font.weight.emphasized,
+    color: c.label.secondary,
+  },
+])
 
 // ── Separator ──
 
@@ -196,7 +203,7 @@ export const footing = style([
 
 export const footingBar = style({ display: 'flex', flexDirection: 'column' })
 
-export const footingLabel = style([actionRow])
+export const footingLabel = style([text.footnote.emphasized, { color: c.label.secondary }])
 export const footerLockAction = style([footingLabel, { gap: '5px' }])
 export const lockIcon = style({ selectors: { '&&': { color: c.label.tertiary } } })
 export const footingSymbol = style({ display: 'inline-flex', color: c.label.secondary })
