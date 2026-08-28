@@ -3,11 +3,7 @@ import type { OpenIn } from '@shared/types'
 import { Icon, entityIcon, iconNameOr, type IconName } from '@renderer/DesignSystem/Symbols'
 import { NavTrail, type TrailSegment } from '@renderer/DesignSystem/Elements/NavTrail'
 import { ancestryOf } from '../treeIndex'
-import {
-  flushTrailing,
-  footingLabel,
-  rowDisabled,
-} from '@renderer/DesignSystem/Menus/menu-base.css'
+import { flushTrailing, rowDisabled } from '@renderer/DesignSystem/Menus/menu-base.css'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { footerLock, ICON } from './frames.css'
 import { useSession } from '../store'
@@ -182,7 +178,6 @@ export function SettingsFrame(): React.JSX.Element | null {
               segments={(tree && ancestryOf(tree, node)) ?? NO_TRAIL}
               iconSize="control"
               overScroll={false}
-              className={footingLabel}
             />
           }
           trailing={

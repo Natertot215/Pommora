@@ -27,10 +27,12 @@
 .cards-view.is-compact {
   --card-row-h: 16px; /* KNOB — a compact property-value row */
   --card-foot-h: calc(
+    4px +
     1.5px +
     6px +
-    14px
-  ); /* the breadcrumb footing (divider + clearance + caption line) */
+    14px +
+    6px
+  ); /* the breadcrumb footing (column gap + divider + trail pad + caption line + trail pad) */
   --card-body-min: calc(16px + 18px + 4px + 4px + 2 * var(--card-row-h));
 }
 /* With the breadcrumb footing present, add its height so the 2-row reserve still sits ABOVE it. */
@@ -181,5 +183,5 @@
   min-width: 0;
   margin-top: auto;
   border-top: var(--width-150) solid var(--border-base);
-  padding-top: 6px; /* KNOB — divider-to-crumbs clearance */
+  --trail-pad: 6px; /* KNOB — the crumbs' clearance off the divider, and below */
 }

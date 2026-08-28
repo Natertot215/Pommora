@@ -143,16 +143,13 @@
   min-height: 0; /* the cover band decides; the text takes what's left */
 }
 
-.card-title,
-.card-loc {
-  flex: 0 0 auto; /* each is its own fixed row — the title never grows to fill / recenter */
+.card-title {
+  flex: 0 0 auto; /* its own fixed row — the title never grows to fill / recenter */
   display: flex;
   align-items: center;
   min-width: 0;
   --over-scroll-fade: var(--fade-base);
   padding-block: 1px;
-}
-.card-title {
   gap: 6px;
   color: var(--label-primary);
 }
@@ -168,5 +165,6 @@
   color: var(--label-secondary);
 }
 .card-loc {
-  color: var(--label-secondary);
+  flex: 0 0 auto;
+  --over-scroll-fade: var(--fade-base);
 }
