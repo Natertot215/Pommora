@@ -1,5 +1,4 @@
 import { cx } from '@renderer/DesignSystem/Util/cx'
-import { text } from '@renderer/DesignSystem/Tokens/typography.css'
 import { usePointerGesture } from '@renderer/DesignSystem/Interactions/gesture'
 import type { ColumnAlign } from '@shared/views'
 
@@ -68,7 +67,7 @@ export function ColumnHeader({
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
     <div
-      className={cx('col-header', text.callout.semibold, dragging && 'col-dragging')}
+      className={cx('col-header', dragging && 'col-dragging')}
       style={{ transform, textAlign: align }}
       onPointerDown={onDragStart}
       onContextMenu={onContextMenu}
