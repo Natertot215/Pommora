@@ -3,21 +3,15 @@ import { vars as colorVars } from '@renderer/DesignSystem/Tokens/color.css'
 import { font } from '@renderer/DesignSystem/Tokens/typography.css'
 import { base } from '@renderer/DesignSystem/Components/Fields/fields.css'
 
-/** The editor body — no flex `gap` (a collapsed Reveal would otherwise consume a phantom gap on each
- *  side, so hidden rows double the spacing around them); each Row carries its own top margin, which
- *  rides inside a Reveal and so collapses to nothing when the row is hidden. */
+/** No flex `gap`: a collapsed Reveal would still consume one on each side, so each row carries its
+ *  own top margin, which rides inside the Reveal and collapses with it. */
 export const section = style({ display: 'flex', flexDirection: 'column', paddingTop: '6px' })
 
-/** One row's spacing — the inter-row gap, applied per-row so a hidden Reveal contributes none. The
- *  first row takes none: the section's own top pad is the whole gap, so the pane opens level with
- *  the editors that lead with a config row rather than a heading. */
-export const row = style({
+export const rowRhythm = style({
   marginTop: '8px',
   selectors: { '&:first-child': { marginTop: 0 } },
 })
 
-/** The Value control — the value + double-chevron in one box, identical at rest and while editing so the
- *  number never shifts; editing just swaps the static value for an in-place caret. */
 export const valueControl = style({
   display: 'inline-flex',
   alignItems: 'center',
@@ -29,8 +23,6 @@ export const valueControl = style({
   selectors: { '&&': { color: colorVars.color.label.secondary } },
 })
 
-/** The in-place caret — bare, at the value's own control metrics so the caret is sized to the text (not
- *  the UA default), reading in the same tone as the resting value. */
 export const valueCaret = style([
   base,
   {
