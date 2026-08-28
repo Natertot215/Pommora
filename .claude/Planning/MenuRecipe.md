@@ -467,7 +467,7 @@ Every task below is written as **Today → Becomes**; line numbers are at `7f358
 **Derivation:** `grep -rF "SettingsRow" src` → 17 → 0. Control: `grep -rF "MenuRowView" src` ≥ 2.
 
 **Steps:**
-- [ ] Migrate; gates; commit `refactor(settings): the window is an index`.
+- [x] Migrate; gates; commit `refactor(settings): the window is an index`.
 
 #### Task 16: LayoutToggles + CardsOptions are one table
 
