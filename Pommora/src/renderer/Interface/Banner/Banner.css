@@ -1,8 +1,9 @@
 .banner {
   position: relative;
-  height: 230px;
+  height: var(--banner-h, 230px);
   --detail-title-size: var(--text-title-small-size);
-  border-bottom: var(--width-175) solid var(--border-base);
+  --detail-divider-width: var(--width-175);
+  border-bottom: var(--detail-divider-width) solid var(--border-base);
 }
 
 /* The empty-title class is doubled: the rename input wears it beside the family reset, whose
@@ -86,10 +87,10 @@
 }
 
 .banner-empty {
-  --add-banner-zone: 44px;
+  --detail-divider-width: var(--width-175);
   padding: calc(var(--app-inset) + 1px + var(--toolbar-h))
     calc(var(--inspector-clearance) + var(--content-inset)) 14px var(--content-start);
-  border-bottom: var(--width-175) solid var(--border-base);
+  border-bottom: var(--detail-divider-width) solid var(--border-base);
   transition:
     padding-left var(--duration-base) var(--ease-base),
     padding-right var(--duration-base) var(--ease-base);
@@ -116,7 +117,7 @@
 }
 
 .add-banner-strip {
-  height: var(--add-banner-zone, 44px);
+  height: var(--banner-add-zone, 44px);
   display: flex;
   align-items: center;
 }

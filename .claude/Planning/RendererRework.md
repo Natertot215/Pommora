@@ -103,21 +103,20 @@ Rulings a sweep would otherwise re-derive. An audit agent may contradict one, bu
 9. **Verified healthy:** Toolbar's dropdowns compose the menu shells · `RenamableTitle → RenamableLabel → EditableInput` · `fieldRing` (8 importers) · `OverScroll` (25) · no `backdrop-filter` outside `Glass/`.
 10. **`FileLabel` and `FileChip` are two recipes on purpose** — treatment over one shape.
 11. **`GlassWindow` / `GlassSurface` / `GlassControls` are semantic slots**, not duplication.
-12. **The 1px pane divider has one production consumer** — the other seven are the Interaction Lab.
-13. **Production-dead is not dead** — `Tables/codec.ts`'s `parseTable` is the reference `modelFromRegion` is pinned against.
-14. **No `assertNever` helper** — the house idiom is an inline `const _exhaustive: never = x`.
-15. **`EmbedTitle` and `PageHeader` stay apart.**
-16. **`SegmentRun` lives in `Fields/`** — a run of values is a field's content.
-17. **`Tables/` is a feature folder, not a design-system component.**
-18. **Design decisions are not bundled as tasks** — bundling forces them by default, which is how the drift accumulated.
-19. **`--ppane-*` and `table-tokens.css`'s `.table`-scoped block stay** — correctly scoped contracts; the one var that leaked (`--cell-padding-x`) moves.
-20. **Showcase-only is a real consumer class** — it deploys from the same sources, so it cannot drift; which is why it must not live inside the tree it demonstrates.
-21. **Accepted, not defects:** dark-only theming · hidden scrollbars app-wide · Liquid Glass cannot be voided in place · no tracking scale
-22. **Spacing stays literal, on the even grid** — no `--space-*` ladder. An odd value (`3/5/9px`) reconciles per consumer to the nearer even step when that consumer is next opened; `22px` is a step. Radius follows the same rule.
-23. **The toolbar's tone is the container's, not a `button` selector's** — `.app-toolbar` and `.ppane-toolbar` declare `color: var(--label-control)` and every glyph inherits it; the `&&` pins left in the tree armor against other rules and are judged on their own.
-24. **`Links/` holds the link cluster; `Detail/` is `Interface/`; `SurfacePM/` keeps its name; `Blocks/` becomes root `Tiles/`** — executed or ruled 08-27/08-28.
-25. **The menu row's box is declared once** (`rowBox`, first in `menu-base.css.ts`); a surface picks Standard or Compact on its pane, never per row.
-26. **The renderer is `src/renderer`, flat** — `index.html` beside the entries; the Showcase keeps its stage photos under `Showcase/surfaces/`.
+12. **Production-dead is not dead** — `Tables/codec.ts`'s `parseTable` is the reference `modelFromRegion` is pinned against.
+13. **No `assertNever` helper** — the house idiom is an inline `const _exhaustive: never = x`.
+14. **`EmbedTitle` and `PageHeader` stay apart.**
+15. **`SegmentRun` lives in `Fields/`** — a run of values is a field's content.
+16. **`Tables/` is a feature folder, not a design-system component.**
+17. **Design decisions are not bundled as tasks** — bundling forces them by default, which is how the drift accumulated.
+18. **`--ppane-*` and `table-tokens.css`'s `.table`-scoped block stay** — correctly scoped contracts; the one var that leaked (`--cell-padding-x`) moves.
+19. **Showcase-only is a real consumer class** — it deploys from the same sources, so it cannot drift; which is why it must not live inside the tree it demonstrates.
+20. **Accepted, not defects:** dark-only theming · hidden scrollbars app-wide · Liquid Glass cannot be voided in place · no tracking scale
+21. **Spacing stays literal, on the even grid** — no `--space-*` ladder. An odd value (`3/5/9px`) reconciles per consumer to the nearer even step when that consumer is next opened; `22px` is a step. Radius follows the same rule.
+22. **The toolbar's tone is the container's, not a `button` selector's** — `.app-toolbar` and `.ppane-toolbar` declare `color: var(--label-control)` and every glyph inherits it; the `&&` pins left in the tree armor against other rules and are judged on their own.
+23. **`Links/` holds the link cluster; `Detail/` is `Interface/`; `SurfacePM/` keeps its name; `Blocks/` becomes root `Tiles/`** — executed or ruled 08-27/08-28.
+24. **The menu row's box is declared once** (`rowBox`, first in `menu-base.css.ts`); a surface picks Standard or Compact on its pane, never per row.
+25. **The renderer is `src/renderer`, flat** — `index.html` beside the entries; the Showcase keeps its stage photos under `Showcase/surfaces/`.
 
 **Refuted, do not re-raise:** nexus/vault (zero identifiers), chip/label (chip is a recipe of Label — correct), pane/dropdown (`Toolbar/` runs a two-tier convention: a `*Menu` wraps a `*Frame`), select/option (layered correctly in `shared/properties.ts`), crumb/trail (split by layer). A `--space-*` ladder and a centralized radius scale were both refused with reasons.
 
