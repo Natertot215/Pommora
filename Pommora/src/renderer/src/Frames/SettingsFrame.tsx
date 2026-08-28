@@ -3,8 +3,6 @@ import type { OpenIn } from '@shared/types'
 import { Icon, entityIcon, iconNameOr, type IconName } from '@renderer/DesignSystem/Symbols'
 import { NavTrail, type TrailSegment } from '@renderer/DesignSystem/Elements/NavTrail'
 import { ancestryOf } from '../treeIndex'
-import { rowDisabled } from '@renderer/DesignSystem/Menus/menu-base.css'
-import { cx } from '@renderer/DesignSystem/Util/cx'
 import { footerLock, ICON } from './frames.css'
 import { useSession } from '../store'
 import { findCollection, findSet, findCollectionForSet } from '../Interface/Scope'
@@ -19,6 +17,7 @@ import { FrameSlide } from '@renderer/DesignSystem/Menus/frame-slide'
 import {
   AccessoryButton,
   MenuFooting,
+  MenuIndex,
   MenuItem,
   MenuScrollFrame,
   MenuSeparator,
@@ -154,17 +153,20 @@ export function SettingsFrame(): React.JSX.Element | null {
         }}
       />
       <MenuSeparator flush />
-      {entries.map((e) => (
-        <MenuItem
-          key={e.id}
-          className={cx(frozen(e.id) && rowDisabled)}
-          leading={<Icon name={e.icon} size={ICON.rootEntry} />}
-          trailing={<Icon name="chevron-right" />}
-          onClick={frozen(e.id) ? undefined : () => open(e.id)}
-        >
-          {e.label}
-        </MenuItem>
-      ))}
+      <MenuIndex
+        sections={[
+          {
+            rows: entries.map((e) => ({
+              kind: 'item',
+              icon: <Icon name={e.icon} size={ICON.rootEntry} />,
+              label: e.label,
+              trailing: { kind: 'chevron' },
+              disabled: frozen(e.id),
+              onSelect: () => open(e.id),
+            })),
+          },
+        ]}
+      />
     </>
   )
 
