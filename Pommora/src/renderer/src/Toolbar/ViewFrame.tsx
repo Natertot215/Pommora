@@ -155,12 +155,12 @@ export function ViewFrame({
               <RowShell key={v.id} id={v.id}>
                 <MenuItem
                   className={activeId === v.id ? optionRing : undefined}
-                  leading={<Icon name={iconNameOr(v.icon, 'table')} size="title3" />}
+                  leading={<Icon name={iconNameOr(v.icon, 'table')} size="headline" />}
                   trailing={
                     <Button
                       paddingX="0"
                       icon="chevron-right"
-                      iconSize="title3"
+                      iconSize="headline"
                       className={vd.chevronButton}
                       aria-label={`Edit ${v.name}`}
                       onClick={(e) => {

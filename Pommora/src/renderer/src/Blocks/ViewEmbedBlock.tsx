@@ -571,7 +571,7 @@ export function ViewEmbedBlock({
                   <MenuItem
                     key={v.id}
                     className={i === index ? optionRing : undefined}
-                    leading={<Icon name={viewIcon(v)} size="title3" />}
+                    leading={<Icon name={viewIcon(v)} size="headline" />}
                     onClick={renaming === i ? undefined : () => patchEntry({ active: i })}
                     onContextMenu={(e) => void rowMenu(i, e, false)}
                   >

@@ -262,7 +262,7 @@ export function LayoutFrame({
           aria-label={t}
           onClick={() => IMPLEMENTED.has(t) && setType(t)}
         >
-          <Icon name={TYPE_GLYPH[t]} size="title1" />
+          <Icon name={TYPE_GLYPH[t]} size="titleMedium" />
         </button>
       ))}
     </div>
@@ -332,7 +332,7 @@ export function LayoutFrame({
             {
               rows: FRAME_ROWS.map((r) => ({
                 kind: 'item',
-                icon: <Icon name={r.icon} size="title3" />,
+                icon: <Icon name={r.icon} size="headline" />,
                 label: r.label,
                 trailing: { kind: 'chevron' },
                 onSelect: () => setFrame(r.id),

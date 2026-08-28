@@ -1,11 +1,10 @@
 import { createGlobalTheme } from '@vanilla-extract/css'
 
 export const ICON_PX = {
-  largeTitle: 26,
-  title1: 22,
-  title2: 17,
-  title3: 15,
-  headline: 13,
+  titleLarge: 26,
+  titleMedium: 22,
+  titleSmall: 17,
+  headline: 15,
   body: 13,
   callout: 12,
   control: 12,
@@ -50,7 +49,7 @@ const controlScale = createGlobalTheme(':root', {
       radius: '10px',
       segmentRadius: '5px',
       dividerHeight: '18px',
-      icon: iconScale.icon.title3,
+      icon: iconScale.icon.headline,
     },
     'button-large': {
       height: '32px',
@@ -60,7 +59,7 @@ const controlScale = createGlobalTheme(':root', {
       radius: '12px',
       segmentRadius: '6px',
       dividerHeight: '14px',
-      icon: iconScale.icon.title3,
+      icon: iconScale.icon.headline,
     },
   },
 })

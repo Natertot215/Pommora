@@ -575,7 +575,7 @@ export function CalendarPicker({
               size="button-inline"
               paddingX="0"
               icon="chevron-left"
-              iconSize="title3"
+              iconSize="headline"
               className={s.navBtn}
               aria-label="Previous month"
               onClick={() => nav(-1)}
@@ -585,7 +585,7 @@ export function CalendarPicker({
               size="button-inline"
               paddingX="0"
               icon="chevron-right"
-              iconSize="title3"
+              iconSize="headline"
               className={s.navBtn}
               aria-label="Next month"
               onClick={() => nav(1)}
