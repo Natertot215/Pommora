@@ -2,7 +2,7 @@
 
 ### Current Focus
 
-**The Renderer Rework is being shaped.** The renderer works and is filed by the order things were built; the two organizational passes of 08-25 to 08-28 moved `Links/`, `Interface/`, the store, and landed the Menu recipe. One document now carries everything still proposed — [[RendererRework]]: the filing rules and target tree, the rulings a sweep must not re-derive, the checklist of moves by kind with what each waits on, the open rulings, and the multi-perspective exploration that runs before any of it is scheduled. Nothing executes from it until the exploration has reported and Nathan has ratified the framework it produces.
+**The Renderer Rework is active — the exploration reported, and execution is proceeding through directed cleanups.** [[RendererRework]] is the one document: filing rules, target tree, the rulings a sweep must not re-derive, the checklist of moves, the open rulings, and the exploration. Twelve read-only perspectives (Reducer priority) plus a Skeptic pass ran against the renderer 08-28; the load-bearing findings were verified at the line and captured in a synthesis (scratchpad `explore/`, and the published artifact). Rather than wait on a ratified framework, Nathan is directing targeted moves against the findings — dead vars to literals, one-place table-head type, `WarmCache`→`Store/TabState`, the banner/divider consolidation, `Interface/Banner/` dissolved (`content-banner.css` + `content-title.css`), `tile-chassis`→`Blocks/`, `AssetImage`+`assetUrl`→`Assets/`, and `DesignSystem/Components/` dissolved (Pickers/Controls/Fields/SidePane at the design system's top level, `useDismiss`→`Interactions/`). Each lands gated with its LOC and the map crossed off; §6 Working Rules governs the ledger.
 
 **Where the tree stands.** The dependency order reads `DesignSystem ← Properties ← Tables ← Views`, with `Cards/`, `Windows/`, and `Frames/` standing on the design system alone; `DesignSystem/Glass/` is the material in four tiers and `DesignSystem/Menus/` the menu recipe in kebab parts. The five words — Window, Pane, Menu, Frame, Picker — name every floating or sliding surface. The rulings taken so far are in the atlas's Settled list.
 
@@ -10,7 +10,7 @@
 
 ### Immediate Work
 
-- [ ] **The exploration** — twelve read-only perspectives dispatched 08-28 on [[RendererRework]] §4 (the Reducer as the priority); verify every cited line, hold the consulting session that turns findings into decisions, then rewrite §2 into the framework.
+- [ ] **The framework** — the exploration has reported; once the open forks are ruled (the CSS-form question, the masked-knob roster, the naming batches, the ten §3 rulings), rewrite [[RendererRework]] §2 into ordered phases with gates. Directed cleanups keep landing ahead of it.
 - [ ] **Where does the floating identity label live?** Embed tiles reveal crumbs or a webpage title on hover, the Web Window shows domain › title always, the Page Window a trail in its tab strip; one design-system element or NavTrail absorbing the webpage case.
 - [ ] **Eyeball the Space dropdown** — carried from 08-25: icon, editable title, lock footer, the two pickers, with the trio's Settings button blank behind it.
 

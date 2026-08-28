@@ -6,34 +6,33 @@
 
 **Session ID:** 14cb88d4-ef66-4a6d-a7c7-18bd37efbbaa
 **Dates:** 08-25-2026 → 08-28-2026
-**Model:** Opus 5 (1M context) → Fable 5
+**Model:** Opus 5 (1M context) → Fable 5 (continued through the exploration and directed cleanups)
 
-**The Renderer Refactor's Menu Recipe — planned, ratified, and landed.** The session's first half built the inset family (`--app-inset` 6 · `--surface-inset` 10 · `--row-inset` 6 · `--content-inset` 24 · `--content-edge` 12 · `--rail-inset` · `--surface-lane` · the clearances) and seeded the Figma PommoraV2 file. Its second half wrote [[MenuRecipe]] through `/writing-plans-v2` — a 23-task plan in four phases with an execution loop (one executor per phase, then `code-simplifier`, then `comment-killer-agent`, then the orchestrator's own review with screenshots, then `build-breaking-agent`) and a landing procedure — and, once Nathan said "full plan, don't stop until it's done", ran it overnight unattended from Task 0 (`27c5171c`) to landing (`33b46163` code, `b3b0cd90` log).
+**The Renderer Rework — the Menu Recipe landed, the planning was consolidated, the codebase was explored by twelve agents, and directed cleanups are landing against the findings.** Early in the session the Menu Recipe was ratified and run overnight to landing (`27c5171c`→`33b46163`). Then the scattered planning — the Renderer Atlas, the Refactor ledger, the abandoned Tiles plan, and Cohesion-Rulings — was retired into one document, [[RendererRework]]: the eight filing rules, the target tree, 27 do-not-re-derive rulings, the checklist of moves by kind, the open rulings, and §6 Working Rules (delete-on-landing, no tombstones, report LOC, no done-vs-open ambiguity).
 
-**What landed.** `Menus/menu-base.css.ts` names every row kind once in stacking order with the box declared first, so no row anywhere declares a height, floor, or padding; a row is its ramp's line plus one of two padding pairs (`--row-height/width-standard` 6/6, `-compact` 4/4) chosen per pane (`menuCompact`). `NavList` — NavWindow, NavView, the Trash — became `MenuItem` rows on a column padding its lead with `--content-inset`, the pin and the Trash's checkbox seated in that inset through the row's `overlay` slot. The `[[` autocomplete is a standard Compact menu. `NavTrail` owns its look. `menu-index.tsx` renders the Settings window, every frame, and the property editors from data; `frames.css.ts` went 40 → 28 exports, geometry only. `--content-start` is the content edge, the icon picker's cell wears the row shell, and the icon ladder is named as the type ramp is. Seven breaker rounds (two on the plan, four on the phases, one on the whole) and a neutral verification ran; every finding above Low was fixed in an addendum commit and recorded in the plan's Log with its round.
+**The exploration.** Twelve read-only perspectives (Reducer as the priority — Cartographer, Exports, Architect, Stylist, Token Designer, Recipe, Lexicographer, Boundary, Newcomer, Archivist) plus a Skeptic pass ran against `Pommora/src/renderer` at a pinned commit. Verdict: the renderer is structurally healthy — zero import cycles, ~no dead code, no hidden stylesheet twin; the real work is naming, filing, and stylesheet vars (Nathan's DRY worry, confirmed: ~237 non-token vars, 61 write-once-read-once, knobs masked by downstream overrides). The load-bearing findings were verified at the line by the orchestrator; the readable synthesis is the published artifact "What the Twelve Found" and the catalogs in the session scratchpad (`explore/`). A ruling was disproven (the PageCard `s.tree` subscription; Cohesion-Rulings:144 deleted) and the abandoned Tiles plan's "a barrel closes the cycle" premise was shown backwards.
 
-**Mid-run rulings Nathan gave by message, all folded:** the Trash keeps its checkboxes in the lead inset; NavList, Trash, and NavView pad their lead with `--content-inset` as TableView does; Settings' own tokens go — plain menu logic, no seat widths; the autocomplete is a standard Compact menu with nothing bespoke; every task's plan text is written Today → Becomes; each surface a phase touches is screenshotted before its gate closes; removing and reusing beats minting a var or export with one writer and one reader.
+**Directed execution.** Rather than wait on a ratified framework, Nathan directed targeted moves against the findings, each landed gated (typecheck 0 · biome clean · vitest 297/3671, builds green where relevant) with its LOC and the map crossed off: eight dead override hooks → literals; one-place table-head type (`.table-head` callout·emphasized·label-secondary); `--labels-gap`→`Labels/`; NavView search → headline; icon picker 210×225; `WarmCache`→`Store/TabState`; banner height + add-zone DRY'd, each surface's divider a local `--detail-divider-width` knob; `Interface/Banner/` dissolved to flat `Interface/` with `content-banner.css` + `content-title.css`; `tile-chassis`→`Blocks/` and `DesignSystem/Detail` removed; `AssetImage`+`assetUrl`+`imageAspect`→`renderer/Assets/`; and `DesignSystem/Components/` dissolved — Pickers, Controls, Fields, SidePane at the design system's top level, `useDismiss`→`Interactions/`. All pushed to origin.
 
-**Verified vs assumed.** Gates green at HEAD (typecheck 0 · biome clean · vitest 297 / 3671); the Dead Vocabulary sweep at 0 against control `--surface-inset` 9; every surface below was screenshotted and measured over CDP on the live app (`p1-*`…`p4-*.png` in the session scratchpad). Not driven and left to Nathan: a pin reorder by drag, the packaged build's sidebar rename field (its five `Sidebar.css` rules were dead in production until `33b46163`), the FilterFrame locked branch, BlockHandleMenu, the Calendar lists.
+**Where it stands.** Everything landed is gated and pushed; the renderer builds and the showcase deploys unchanged (vercel already points at the current Showcase source). What remains is the formalization: the open forks that gate the framework — the CSS-form question (keep `.css.ts` vs revert to plain CSS, the Stylist's contrarian call), the masked-knob roster (`--detail-title-size`'s 5-way override next), the naming batches, and the ten deferred §3 rulings — then [[RendererRework]] §2 becomes ordered phases with gates.
 
 #### Completion Criteria
 
-- [x] **The Menu recipe** — the row kinds named once, `menu-index`, Sort and Hidden as index rows inside their drag shells, the frame stylesheets down to geometry.
-- [ ] **The next session shapes the exploration** — [[RendererRework]] §3 and §4 read with Nathan, the perspectives dispatched, the consulting session held.
-- [ ] **The side slot** — the main window mounts `SidePane`; PaneSlide is one motion.
-- [ ] **The filing rows are executed** — `Core/`, `Navigation/` absorbing `Tabs/`, the Showcase out, `Surface/`, the casing renames — and the atlas's rule greps return empty.
-- [ ] **The token and scale rows are settled** — the zoom renames and merge, `--labels-gap`, the checkbox recipe.
-- [ ] **`ViewEmbedBlock.tsx:88` reads `cellRing(key)`.**
-- [ ] **The atlas's Open Decisions sections are empty**, each block deleted by a ruling.
+- [x] **The Menu recipe landed** — the row kinds named once, `menu-index`, the frame stylesheets down to geometry.
+- [x] **The planning is one document** — [[RendererRework]] replaced the Atlas, the Refactor ledger, the Tiles plan, and Cohesion-Rulings.
+- [x] **The exploration ran and was verified** — twelve perspectives + the Skeptic; the load-bearing findings opened at the line; the synthesis captured.
+- [ ] **The open forks are ruled** — the CSS-form question, the masked-knob roster, the naming batches, and the ten deferred §3 rulings.
+- [ ] **The framework is written** — [[RendererRework]] §2 rewritten into ordered phases with gates, then ratified.
+- [ ] **The filing and token rows are executed** — `Core/`, `Navigation/` absorbing `Tabs/`, the Showcase out, the casing renames, the zoom family; and R1/R3's greps return the target.
+- [ ] **`ViewEmbedBlock` reads `cellRing(key)`** — the one behavioral fix.
 - [ ] **The Space dropdown is eyeballed** — carried from 08-25.
 
 #### Next Session
 
-1. **Nathan's running pass** over the list in [[MenuRecipe]] §Closeout — what he flags is a Task; the five **Open Calls** there (rows with a switch or eye at 31–32; locked cards clipping their trail; the Trash row's second tab stop; Settings' section titles as `div`s; a footing row kind) each want a one-line ruling.
-2. **File the History entry** drafted in the closeout chat as PM-118 on Nathan's word; then Recent Work in Context.
-3. **Part 2** as written in [[MenuRecipe]] §Sequenced After — leading glyph sizes, `--list-inset` (starting from the inline indent style in `menu-row.tsx`), a footing row kind, the `action` kind's first consumer, the two remaining clearance pairings, and the Figma components that follow the code.
-4. **The Tiles session** is serialized behind this landing (Blocks/Embeds → Tiles/, Components/ → Utilities/) — ping it that the recipe is on `main`.
-5. **Then the ledger:** the side slot, and the filing rows.
+1. **Rule the open forks** — the CSS-form question (keep `.css.ts` vs revert to plain CSS, the Stylist's contrarian call), the masked-knob roster (`--detail-title-size`'s 5-way override is next), the naming batches, and the ten deferred §3 rulings. Each is a one-line call that unblocks a checklist row.
+2. **Write the framework** — once the forks are ruled, rewrite [[RendererRework]] §2 into ordered phases with gates and ratify it.
+3. **Continue the directed cleanups** in the meantime — they land gated, LOC-reported, map crossed off, per §6 Working Rules.
+4. **The Space dropdown** — carried from 08-25.
 
 #### Feedback
 
