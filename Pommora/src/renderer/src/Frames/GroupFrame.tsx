@@ -15,6 +15,7 @@ import {
   DisclosureRow,
   MenuItem,
   MenuRowView,
+  type MenuRow,
   MenuSeparator,
   MenuTopRow,
   MenuScrollFrame,
@@ -74,6 +75,21 @@ const GRANULARITY: PickerChoice<DateGranularity>[] = [
 
 const orderOptionsFor = (type: string | undefined): PickerChoice<GroupOrderMode>[] =>
   type === 'datetime' ? DATE_ORDER : OPTION_ORDER
+
+const pickerRow = <T extends string>(
+  glyph: string,
+  label: string,
+  value: T,
+  options: readonly PickerChoice<T>[],
+  onPick: (v: T) => void,
+  sub = false,
+): MenuRow => ({
+  kind: 'item',
+  icon: <Icon name={glyph} size="body" />,
+  label: sub ? <span className={gp.subLabel}>{label}</span> : label,
+  trailing: { kind: 'picker', ariaLabel: label, value, options, onPick },
+  className: sub ? gp.subRow : undefined,
+})
 
 export function GroupFrame({
   source,
@@ -235,65 +251,39 @@ export function GroupFrame({
       footer={footings}
     >
       <MenuRowView
-        row={{
-          kind: 'item',
-          icon: <Icon name="layers" size="body" />,
-          label: 'Group By',
-          trailing: {
-            kind: 'picker',
-            ariaLabel: 'Group By',
-            value: groupByValue,
-            options: groupByOptions,
-            onPick: pickGroupByValue,
-          },
-        }}
+        row={pickerRow('layers', 'Group By', groupByValue, groupByOptions, pickGroupByValue)}
       />
       {group.kind === 'property' && declaredType(group.property_id, schema) === 'datetime' && (
         <MenuRowView
-          row={{
-            kind: 'item',
-            icon: <Icon name="calendar" size="body" />,
-            label: 'Date By',
-            trailing: {
-              kind: 'picker',
-              ariaLabel: 'Date By',
-              value: group.date_granularity ?? 'month',
-              options: GRANULARITY,
-              onPick: (g: DateGranularity) => saveGroup({ ...group, date_granularity: g }),
-            },
-          }}
+          row={pickerRow(
+            'calendar',
+            'Date By',
+            group.date_granularity ?? 'month',
+            GRANULARITY,
+            (g) => saveGroup({ ...group, date_granularity: g }),
+          )}
         />
       )}
       {!structural && group.kind === 'property' ? (
         <MenuRowView
-          row={{
-            kind: 'item',
-            icon: <Icon name="arrow-up-down" size="body" />,
-            label: 'Order',
-            trailing: {
-              kind: 'picker',
-              ariaLabel: 'Order',
-              value: group.order_mode,
-              options: orderOptionsFor(declaredType(group.property_id, schema)),
-              onPick: (m: GroupOrderMode) => saveGroup({ ...group, order_mode: m }),
-            },
-          }}
+          row={pickerRow(
+            'arrow-up-down',
+            'Order',
+            group.order_mode,
+            orderOptionsFor(declaredType(group.property_id, schema)),
+            (m) => saveGroup({ ...group, order_mode: m }),
+          )}
         />
       ) : (
         <MenuRowView
-          row={{
-            kind: 'item',
-            icon: <Icon name="arrow-up-down" size="body" />,
-            label: subGroup ? <span className={gp.subLabel}>Order</span> : 'Order',
-            trailing: {
-              kind: 'picker',
-              ariaLabel: 'Order',
-              value: view.structural_order_mode ?? 'custom',
-              options: STRUCTURAL_ORDER,
-              onPick: (m: StructuralOrderMode) => save({ structural_order_mode: m }),
-            },
-            className: subGroup ? gp.subRow : undefined,
-          }}
+          row={pickerRow(
+            'arrow-up-down',
+            'Order',
+            view.structural_order_mode ?? 'custom',
+            STRUCTURAL_ORDER,
+            (m) => save({ structural_order_mode: m }),
+            Boolean(subGroup),
+          )}
         />
       )}
       {structural && subGrouping && (
@@ -301,35 +291,25 @@ export function GroupFrame({
           <SubGroupRow subGroup={subGroup} groupable={groupable} onSave={saveSub} />
           {subGroup && declaredType(subGroup.property_id, schema) === 'datetime' && (
             <MenuRowView
-              row={{
-                kind: 'item',
-                icon: <Icon name="calendar" size="body" />,
-                label: 'Date By',
-                trailing: {
-                  kind: 'picker',
-                  ariaLabel: 'Date By',
-                  value: subGroup.date_granularity ?? 'month',
-                  options: GRANULARITY,
-                  onPick: (g: DateGranularity) => saveSub({ ...subGroup, date_granularity: g }),
-                },
-              }}
+              row={pickerRow(
+                'calendar',
+                'Date By',
+                subGroup.date_granularity ?? 'month',
+                GRANULARITY,
+                (g) => saveSub({ ...subGroup, date_granularity: g }),
+              )}
             />
           )}
           {subGroup && (
             <MenuRowView
-              row={{
-                kind: 'item',
-                icon: <Icon name="arrow-up-down" size="body" />,
-                label: <span className={gp.subLabel}>Order</span>,
-                trailing: {
-                  kind: 'picker',
-                  ariaLabel: 'Order',
-                  value: subGroup.order_mode,
-                  options: orderOptionsFor(declaredType(subGroup.property_id, schema)),
-                  onPick: (m: GroupOrderMode) => saveSub({ ...subGroup, order_mode: m }),
-                },
-                className: gp.subRow,
-              }}
+              row={pickerRow(
+                'arrow-up-down',
+                'Order',
+                subGroup.order_mode,
+                orderOptionsFor(declaredType(subGroup.property_id, schema)),
+                (m) => saveSub({ ...subGroup, order_mode: m }),
+                true,
+              )}
             />
           )}
         </>
@@ -856,19 +836,9 @@ function SubGroupRow({
   ]
   return (
     <MenuRowView
-      row={{
-        kind: 'item',
-        icon: <Icon name="layers" size="body" />,
-        label: 'Sub-Group',
-        trailing: {
-          kind: 'picker',
-          ariaLabel: 'Sub-Group',
-          value: subGroup?.property_id ?? '_location',
-          options: options,
-          onPick: (v) =>
-            onSave(v === '_location' ? undefined : { property_id: v, order_mode: 'configured' }),
-        },
-      }}
+      row={pickerRow('layers', 'Sub-Group', subGroup?.property_id ?? '_location', options, (v) =>
+        onSave(v === '_location' ? undefined : { property_id: v, order_mode: 'configured' }),
+      )}
     />
   )
 }

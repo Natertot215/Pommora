@@ -137,29 +137,25 @@ export function LayoutFrame({
     onClose()
   }
 
-  const formatToggle = (glyph: IconName, label: string): React.JSX.Element => (
-    <MenuItem
-      leading={
-        <span className={footingSymbol}>
-          <Icon name={glyph} size="control" />
-        </span>
-      }
-      value={isCompact(view) ? 'Compact' : 'Standard'}
-      trailing={
-        <span className={footingSymbol}>
-          <Icon name="chevrons-up-down" size="control" />
-        </span>
-      }
-      onClick={toggleFormat}
-    >
-      <span className={footingLabel}>{label}</span>
-    </MenuItem>
-  )
-
   const cardsFooting =
     view.type === 'cards' ? (
       <MenuFooting>
-        {formatToggle('palette', 'Style')}
+        <MenuItem
+          leading={
+            <span className={footingSymbol}>
+              <Icon name="palette" size="control" />
+            </span>
+          }
+          value={isCompact(view) ? 'Compact' : 'Standard'}
+          trailing={
+            <span className={footingSymbol}>
+              <Icon name="chevrons-up-down" size="control" />
+            </span>
+          }
+          onClick={toggleFormat}
+        >
+          <span className={footingLabel}>Style</span>
+        </MenuItem>
         <MenuItem
           leading={
             <span className={footingSymbol}>
@@ -323,11 +319,7 @@ export function LayoutFrame({
     )
 
   const mainFrame = (
-    <MenuScrollFrame
-      header={header}
-      footer={view.type === 'cards' ? cardsFooting : null}
-      maxHeight={VIEWSETTINGS_MAX_HEIGHT}
-    >
+    <MenuScrollFrame header={header} footer={cardsFooting} maxHeight={VIEWSETTINGS_MAX_HEIGHT}>
       {door === 'full' && (
         <>
           {title}
