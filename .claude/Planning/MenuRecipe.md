@@ -664,3 +664,37 @@ Every phase runs the same loop. Nothing advances on a summary; every claim is re
 - Part 2 — leading glyph size per variant; `--list-inset` for nested lists; `menu-row.tsx:40`'s indent base and `sidebarDnd.tsx:35`'s mirror. Its first step is unwinding the inline `paddingLeft` style, which beats every class and var.
 - The Figma `Menu Item` follows the code: Standard = body + 6, Compact = control + 4; `Menu Heading`, `Menu Footing`, `Menu TopRow` components.
 ### Closeout
+
+Ruled 08-27 (Nathan, before sleep): the plan runs to the end unattended — every phase through Gate 4, then §Landing — with nothing deferred and no cleanup postponed. The History entry is drafted in chat and not filed. Each box is ticked with its evidence beside it, in this document, as it is met.
+
+**Per phase (1–4) — none skipped**
+- [ ] Phase 1: executor commits · simplifier · comment-killer · orchestrator review (diff read, three gates, Derivations + Dead Vocabulary re-run against control 9, Made False rows) · breaker round(s), every finding verified · running pass (screenshots where reachable) · Progress hashes · Found items adjudicated
+- [ ] Phase 2: the same
+- [ ] Phase 3: the same
+- [ ] Phase 4: the same
+
+**Landing (§Landing 1–6)**
+- [ ] Delivery Claim written below, each assertion with its evidence
+- [ ] Neutral verifier: every assertion holds (fix + re-claim on any no)
+- [ ] Breaker on `27c5171c..HEAD`: zero unaddressed findings, ≤3 rounds
+- [ ] Nathan's running-pass list written (surfaces × what to look for), with the orchestrator's own screenshots attached where taken
+- [ ] Dead Vocabulary sweep: every token 0, control `--surface-inset` ≥ 9
+- [ ] Acceptance greps: `--row-inset` → 0; `--surface-inset` → non-zero
+- [ ] `frames.css.ts` exports counted and all geometry / drag chrome / `ICON`
+
+**Docs — existing mentions only; nothing new that no doc already claims**
+- [ ] `DesignSystemPM.md` — Geometry rows `:196` (`MENU_GUTTER` gone) and `:197` (the four row tokens); `:221` sentence (heading = footnote.emphasized); §Menus table `:364-366` (`MenuTopRow · MenuItem · MenuSeparator · MenuCaption · MenuFooting`, `heading` / `actionRow` / `menuCompact` as classes, `MenuIndex` / `MenuRowView`); the `ICON_PX` Geometry row (Task 23)
+- [ ] `Cohesion-Rulings.md:66` — autocomplete exemption removed; "declared once, chosen per pane" and the vars-not-properties rule added
+- [ ] `InterfacePM.md` / `NavigationPM.md` — any line describing the Trash's checkboxes or NavList's own rows
+- [ ] `RendererRefactor.md:20` — the Menu row restated as landed (points at this document); `RendererAtlas.md:86` `menu-roster` → `menu-index`
+- [ ] `ContextPM.md:14` Immediate Work row and §Current Focus — a light restatement that fits the document
+- [ ] `HandoffPM.md` — rewritten by `/handoff`; `:49` (`SettingsRow`) gone with it
+- [ ] Lessons routed to `.claude/Guidelines`; Sequenced After written as the Part 2 brief
+
+**Close**
+- [ ] `/closeout` (verification only, no History filed) — change tree, code-only line delta, rules respected or named
+- [ ] `/handoff` — ContextPM swept and gated, HandoffPM rewritten
+- [ ] Every commit on explicit paths; `git status --short` shows only Nathan's own live edits, if any; Status header → "landed — <entry drafted in chat>"
+- [ ] History entry drafted in chat; not filed
+
+**Delivery Claim**
