@@ -532,8 +532,8 @@ Every task below is written as **Today → Becomes**; line numbers are at `7f358
 **Negative control:** keep the floor; in the locked branch the footer sits flush at the pane's bottom with the slot and rises to the content with `footer=` removed. `lockedCaption` → `caption` changes the locked text from footnote-left to body-centered — the kind's look, ruled.
 
 **Steps:**
-- [ ] Migrate; `FilterFrame.test.tsx` passes; running pass on both branches, footer flush at the bottom in each; the pane single-scrolls.
-- [ ] Commit `refactor(filter): the footer rides the slot`.
+- [x] Migrate; `FilterFrame.test.tsx` passes; running pass on both branches, footer flush at the bottom in each; the pane single-scrolls.
+- [x] Commit `refactor(filter): the footer rides the slot`.
 
 #### Gate 3 — the recipe is the only row writer
 - [ ] The Loop, steps 3–5. Dead Vocabulary sweep: every token → 0, control `--surface-inset` → 9. `frames.css.ts` exports counted, all geometry, drag chrome, or `ICON`. Screenshots: every frame, both FilterFrame branches with the footer flush, every Settings frame, every editor. Docs: deferred to §Closeout.

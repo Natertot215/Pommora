@@ -259,15 +259,17 @@ export function MenuScrollFrame({
   header,
   footer,
   maxHeight = s.MENU_MAX_HEIGHT,
+  className,
   children,
 }: {
   header?: ReactNode
   footer?: ReactNode
   maxHeight?: number
+  className?: string
   children: ReactNode
 }): React.JSX.Element {
   return (
-    <div className={s.scrollFrame} style={{ maxHeight }}>
+    <div className={cx(s.scrollFrame, className)} style={{ maxHeight }}>
       {header && <div className={s.scrollFrameEdge}>{header}</div>}
       <div className={cx(s.scrollFrameBody, 'over-scroll')}>{children}</div>
       {footer && <div className={s.scrollFrameEdge}>{footer}</div>}
