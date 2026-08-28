@@ -1,7 +1,3 @@
-/* The per-block Scale factor, registered so it's an ANIMATABLE number: a `.blk-zoom-*` class
-   change interpolates it over --duration-base (transition on .spm-tile), and everything reading it —
-   the .cm-content font, --glyph-scale — follows in lockstep, giving one smooth zoom in/out. inherits so
-   it cascades from the tile into the editor shell. */
 @property --block-zoom {
   syntax: "<number>";
   inherits: true;
@@ -9,55 +5,24 @@
 }
 
 :root {
-  /* --editor-scale: the nexus-wide Editor Scale, the one factor the reader sets. It moves the two
-     halves of a page's size together — the structural factor below and the body font — so the whole
-     surface grows as a piece rather than text drifting away from the chrome around it.
-     --mdpm-scale: the editor's SINGLE size factor — every px-fixed dimension
-     (glyphs, gutter, chrome) derives from it; a host scales the whole editor by
-     setting it on any ancestor (embeds pair it with the matching font zoom, and that
-     local value replaces this one rather than compounding with it).
-     Global default so a host's value inherits INTO the shell. */
   --editor-scale: 1;
   --mdpm-scale: var(--editor-scale);
-  /* The corner every boxed construct rounds to, and the breathing room each floats off its
-     neighbours by — the quote, the callout, the code block and the table. Each still names its own
-     knob below and can be retuned alone; these are what they agree on when nobody has.
-
-     The gap is scaled rather than fixed, so a page at 150% spaces its blocks as generously as it
-     sets its text. Only the base sits here: a custom property's var()s resolve where the property is
-     DECLARED, so a calc naming --glyph-scale would freeze at 1 up here and inherit down already
-     wrong. The multiply lives on .mdpm-shell, beside the scale it reads. */
   --md-box-radius: 6px;
   --md-box-gap-base: 6px; /* KNOB — the distance at 100% */
 }
 
 .mdpm-shell {
-  /* --rail-inset (the root design-system token) is the width of the left strip the fold chevron lives
-     in, carved from the content inset so the body still lands on it.
-     --fold-chevron-size: chevron glyph size (title3). (--label-control is the single global :root def.) */
-  /* Glyph scale = the structural px scale × the per-block Scale. Structural dims (gutter WIDTH,
-     content padding) stay on --mdpm-scale and never see --block-zoom; only glyphs read this. Absent
-     --block-zoom (full-page editor, or a 1.0 tile) makes this identical to --mdpm-scale. */
   --glyph-scale: calc(var(--mdpm-scale) * var(--block-zoom, 1));
-  /* Declared here, not at :root, so it resolves against THIS shell's scale — an embed states its
-     own, and spaces the blocks inside it by that one rather than by the page's. */
   --md-box-gap: calc(var(--md-box-gap-base) * var(--glyph-scale));
   --fold-chevron-size: calc(var(--text-headline-size) * var(--glyph-scale));
   position: relative;
-  /* Own stacking context, below the sidebar's step, so the absolutely-positioned banner header can
-     layer above the editor body WITHOUT its z-index escaping to cover the floating sidebar. */
   z-index: var(--z-content);
   height: 100%;
   overflow: hidden;
-  /* Hoist the scroll timeline defined on .cm-scroller so the sibling .mdpm-header can bind to it. */
   timeline-scope: --mdpm-scroll;
 }
 .mdpm-editor {
   height: 100%;
-  /* The page surface is full-bleed (banner edge-to-edge). The body inset is split: the editor reclaims
-     --rail-inset (scroller starts that far left of the content inset) and .cm-content re-adds it as padding,
-     leaving a --rail-inset strip at the scroller's left — inside its clip — for the fold chevron, while
-     text still lands on the content inset. (Always present, so no spacer is needed when a page has no folds.) */
   padding-left: calc(var(--sidebar-clearance) + var(--content-inset) - var(--rail-inset));
   padding-right: calc(var(--inspector-clearance) + var(--content-inset));
   transition:
@@ -70,8 +35,6 @@
 .mdpm-editor .cm-editor {
   height: 100%;
   background: transparent;
-  /* The shared marker↔text gap — ordered-list markers and the codeblock line count keep one
-     distance between a number and what follows it. */
   --list-gap: 4px;
 }
 .mdpm-editor .cm-editor.cm-focused {
@@ -81,9 +44,7 @@
   font-family: var(--font-family);
   line-height: 1.6;
   scrollbar-width: none;
-  /* The compositor scroll timeline the banner header binds to — parks the header as you scroll, no JS. */
   scroll-timeline: --mdpm-scroll block;
-  /* No rubber-band overscroll, so the parked header stays steady at the scroll extremes. */
   overscroll-behavior: none;
 }
 .mdpm-editor .cm-scroller::-webkit-scrollbar {
@@ -91,40 +52,25 @@
 }
 .mdpm-editor .cm-content {
   color: var(--label-primary);
-  /* The numeric hanging-indent column, read by an ordered list's marker and by a citation row —
-     one value, since the two are meant to sit on the same column. `em` resolves where it is used,
-     so each construct's own type size scales it. */
   --number-zone: 1.3em;
   --cite-divider-blur: 4px; /* KNOB: how softly the section's seam fades out as it closes */
   --cite-divider-gap: 14px; /* KNOB: the seam's breathing room, the title divider's own */
-  /* The drawn caret + I-beam cursor are app-wide — see Carets.css. */
-  /* Top reserves the header zone — set live from the header's measured height (index.tsx ResizeObserver).
-     Left re-adds the --rail-inset the editor reclaimed, so text lands on the content inset and the chevron
-     strip stays inside the scroller's clip. */
   padding: var(--header-zone, 90px) 0 90px var(--rail-inset);
-  /* The base is --editor-font-size (the editor `zoom` prop). --block-zoom applies the per-block Scale
-     LINEARLY here — NOT through the clamped zoom curve — so it stays locked to --glyph-scale (both are
-     × --block-zoom) and never floors. Absent --block-zoom ⇒ unchanged. em children ride this root. */
   font-size: calc(var(--editor-font-size, 15px) * var(--block-zoom, 1) * var(--editor-scale, 1));
 }
 
-/* Page header — scroll-tracks: translates up over its own height as you scroll (banner scrolls away). */
 .mdpm-header {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   z-index: 2;
-  /* Park the header on the compositor, tied 1:1 to the editor's scroll (no JS, no per-frame lag).
-     The distance + range track --header-zone, so toggling the banner re-syncs automatically. */
   will-change: transform;
   animation-name: mdpm-header-park;
   animation-timing-function: linear;
   animation-fill-mode: both;
   animation-timeline: --mdpm-scroll;
   animation-range: 0 var(--header-zone, 90px);
-  /* Gap below the divider / banner border before the first body line — in BOTH states (without it a banner
-     page reads jammed against its border). (offsetHeight feeds --header-zone → pushes the body down.) */
   padding-bottom: 16px;
 }
 @keyframes mdpm-header-park {
@@ -132,15 +78,10 @@
     transform: translateY(calc(-1 * var(--header-zone, 90px)));
   }
 }
-/* One title size in both states — a banner must not shrink the title. The title reads as the page's
-   first line rather than as chrome around it, so it takes the Editor Scale with the body. */
 .mdpm-header .detail-title {
   --detail-title-size: calc(var(--text-title-large-size) * var(--editor-scale, 1));
 }
 
-/* No-banner state: canonical .add-banner-strip / .add-banner-btn live in Banner.css. Top padding
-   clears the floating toolbar so the strip's zone starts at its bottom edge and the button centers
-   in the gap. */
 .mdpm-header:not(.has-banner) {
   --add-banner-zone: 44px;
   padding-top: calc(var(--app-inset) + 1px + var(--toolbar-h));
@@ -153,7 +94,6 @@
 }
 .mdpm-divider,
 .mdpm-editor .cm-line.md-cite-divider::after {
-  /* The shared heading↔body seam, worn as an inset rounded rule rather than a full-bleed border. */
   border-bottom: var(--width-175) solid var(--border-base);
   border-radius: var(--radius-full);
 }
@@ -161,10 +101,6 @@
   height: 0;
   margin: 0 var(--content-inset) 0 calc(var(--sidebar-clearance) + var(--content-inset));
 }
-/* The section's own seam. It takes the editor's text column rather than the header's insets, and it
-   blur-fades on the disclosure's beat instead of cutting — the rule reads as the boundary opening
-   and closing, not as a line appearing between two frames. Stamped while hidden as well, since a
-   removed class has nothing left to transition from. */
 .mdpm-editor .cm-line.md-cite-divider {
   position: relative;
   padding: var(--cite-divider-gap) 0;
@@ -176,14 +112,10 @@
 .mdpm-editor .cm-content.mdpm-cite-tail {
   padding-bottom: var(--cite-divider-gap);
 }
-/* Hidden, the seam still answers the pointer: a ghost of itself under the cursor is how someone
-   scrolled to the foot of a page finds the footnotes without knowing to look in the footer. */
 .mdpm-editor .cm-line.md-cite-divider-off:hover {
   opacity: var(--state-ghost);
   filter: none;
 }
-/* Drawn as a zero-height rule rather than the line's own border: a full radius on a box with real
-   height curves that border up its sides instead of capping its ends. */
 .mdpm-editor .cm-line.md-cite-divider::after {
   content: "";
   position: absolute;
@@ -199,7 +131,7 @@
 .mdpm-banner {
   position: relative;
   height: 230px;
-  border-bottom: var(--width-175) solid var(--border-base); /* the shared heading↔body seam (same token as the table heading + collection banner) */
+  border-bottom: var(--width-175) solid var(--border-base);
 }
 .mdpm-banner-overlay {
   position: absolute;
@@ -229,7 +161,6 @@
 .mdpm-editor .cm-line.md-foldable::before {
   content: "";
   position: absolute;
-  /* Centered in the gutter strip — the anchor self-adjusts to glyph + gutter size. */
   left: calc(-1 * var(--rail-inset) + (var(--rail-inset) - var(--fold-chevron-size)) / 2);
   top: 50%;
   width: var(--fold-chevron-size);
@@ -250,16 +181,12 @@
 .mdpm-editor .cm-line.md-fold-open:hover::before {
   opacity: 1;
 }
-/* A folded heading reads as collapsed via the control tint (no `…` placeholder). */
 .mdpm-editor .cm-line.md-fold-closed {
   color: var(--label-control);
 }
 
-/* BLOCK DRAG HANDLE — a grip on each draggable block's first line, content-anchored like the chevron (a
-   ::before on the line, so it can't drift below callouts/folds). Hover-revealed. Glyph mirrors the
-   table/callout grips (the shared --grip-glyph). KNOBS: --rail-inset (rail x) · --grip-top (first-line
-   offset — box blocks override it to drop the grip onto their padded first row, e.g. the code fence). */
-/* Shared masked-grip recipe (look only — each instance owns its own anchor below). */
+/* KNOBS: --rail-inset (rail x) · --grip-top (first-line offset — box blocks override it to drop the
+   grip onto their padded first row, e.g. the code fence). */
 .mdpm-editor .cm-line.md-block-handle::before,
 .mdpm-editor .cm-line.md-bq-first .md-bq-grip,
 .mdpm-editor .cm-line.md-callout-first::after {
@@ -275,12 +202,6 @@
 .mdpm-editor .cm-line.md-block-handle {
   position: relative;
 }
-/* Blockquote's gutter grip is a real element (the GripWidget — its line pseudos are taken by the bar
-   + fill) and the block handle's is a pseudo, but both hang in the same gutter slot on the same
-   first-visual-row centering, so a wrapped first line never drifts either one off its content.
-   A box's head padding is part of that seat — its first row starts below the gap and the inner pad,
-   which is the same figure the padding itself reads, so the grip lands on the fence rather than in
-   the air above it. --grip-top is the knob, and stating it replaces the whole seat. */
 .mdpm-editor .cm-line.md-block-handle::before,
 .mdpm-editor .cm-line.md-bq-first .md-bq-grip {
   content: "";
@@ -304,7 +225,6 @@
   opacity: 1;
 }
 
-/* The body collapses/expands on the sidebar's exact Reveal motion (grid 0fr↔1fr). */
 .mdpm-fold-reveal {
   display: grid;
   transition: grid-template-rows var(--duration-fast) var(--ease-base);
@@ -316,7 +236,6 @@
 
 .mdpm-editor .cm-line {
   padding-bottom: 0.3em;
-  /* Drop CM6's default left-padding so body text lines up with the title (list lines re-add via .md-li). */
   padding-left: 0;
 }
 .mdpm-editor .cm-line:has(.md-h1) {
@@ -337,9 +256,8 @@
 .mdpm-editor .cm-line:has(.md-h6) {
   padding-top: 0.15em;
 }
-/* A heading on the first body line has no preceding content, so its top padding would only double up
-   with the header's own gap below the divider/banner — stripped here for all levels, H1 included. */
-.mdpm-editor .cm-content
+.mdpm-editor
+  .cm-content
   > .cm-line:first-child:has(:is(.md-h1, .md-h2, .md-h3, .md-h4, .md-h5, .md-h6)) {
   padding-top: 0;
 }
@@ -353,10 +271,6 @@
 .md-strike {
   text-decoration: line-through;
 }
-/* `==highlight==` — a wash behind the words rather than a change to them, so the text keeps whatever
-   tone its construct gives it and stays readable at any color. The fill is the Highlight Color at
-   the tint the inline fills share; cleared, the var is unset and the accent answers. It rounds to
-   the same corner the boxed constructs do, since it is the smallest one of them. */
 .md-highlight {
   --highlight-bleed: 0.1em; /* KNOB — how far the wash carries past the words, half a character */
   background: color-mix(
@@ -380,10 +294,6 @@
   text-decoration: underline;
   cursor: pointer;
 }
-/* A link that leads nowhere — a malformed address, or a `[[Title]]` no page answers to. Both wear
-   the inactive state over ordinary label text: still here, not active. Their syntax stays visible
-   and reads as syntax. No pointer cursor: neither navigates, so neither advertises that it will.
-   The invalid link's `(url)` stays hidden at rest so it doesn't pollute the line. */
 .md-link-invalid,
 .md-connection-phantom {
   color: var(--label-primary);
@@ -396,12 +306,6 @@
 .md-phantom-syntax {
   color: var(--label-control);
 }
-/* Plain-syntax mode: an unresolved link stops announcing itself and reads as the prose it is
-   written as. A markdown link's brackets are structure the document always shows, so they stay
-   syntax; a connection's are its own raw text and go with it.
-   The setting governs page prose alone. A table cell and the fields outside a page body are read
-   rather than written, so a link that leads nowhere there stays legible as one — those wear
-   `md-unresolved-fixed` and sit out the flip. */
 :root.plain-unresolved .md-link-invalid:not(.md-unresolved-fixed),
 :root.plain-unresolved .md-connection-phantom:not(.md-unresolved-fixed) {
   color: inherit;
@@ -410,27 +314,20 @@
 :root.plain-unresolved .md-phantom-syntax:not(.md-unresolved-fixed) {
   color: inherit;
 }
-/* A valid link's revealed (url) — italic + underline signals validity; no link color. */
 .md-link-url {
   font-style: italic;
   text-decoration: underline;
 }
-/* Resolved connections wear the connection color; ambiguous reads muted. */
 .md-connection-resolved {
   color: var(--connection);
   cursor: pointer;
 }
-/* A connection the caret is inside is text being edited — it doesn't navigate, so it mustn't
-   advertise that it will. Its syntax is showing at the same time. */
 .md-connection-open {
   cursor: text;
 }
 .md-connection-ambiguous {
   color: var(--label-tertiary);
 }
-/* The `link-2` glyph in front of a revealed connection's target. It is the one part of the opened
-   syntax that says whether that target actually resolves, which is why it carries the color rather
-   than the title does: connection color means a page answers to it, muted means none does yet. */
 .md-conn-glyph {
   display: inline-block;
   width: 1em;
@@ -444,14 +341,10 @@
 .md-conn-glyph-resolved {
   background-color: var(--connection);
 }
-/* The target a revealed alias hides. It reads as the link's destination rather than as prose, and
-   the glyph beside it is what reports whether that destination exists. */
 .md-conn-target {
   color: var(--label-control);
 }
 
-/* A connection being typed, before any page answers to it. Same color as a resolved one — the
-   author is writing a link — with none of its behavior, since there is nothing yet to lead to. */
 .md-connection-typing {
   color: var(--connection);
 }
@@ -461,18 +354,14 @@
   color: var(--label-secondary);
 }
 
-/* The embedded-page tile — the shared chassis on a real .cm-line, gutter-width like the other box
-   constructs. */
 .mdpm-embed-tile {
   display: block;
   position: relative;
-  /* The height the widget also answers with; content past it rest-scrolls inside. */
   height: var(--tile-default-height);
   margin: var(--tile-gap) 0;
   cursor: default;
   user-select: none;
   -webkit-user-select: none;
-  /* Scale animates on the standard beat — the registered --block-zoom interpolates. */
   transition:
     border-color var(--duration-base) var(--ease-base),
     --block-zoom var(--duration-base) var(--ease-base);
@@ -481,18 +370,13 @@
 .mdpm-embed-tile.is-editing-tile {
   --tile-border-color: var(--accent-stroke);
 }
-/* Nested tiles are display-only — no edit, no menus, no click-through. */
 .mdpm-embed-tile.is-inert {
   pointer-events: none;
 }
-/* Mid-drag the border wears the stronger resize accent, matching SurfacePM's own. */
 .mdpm-embed-tile.is-resizing-tile {
   --tile-border-color: var(--accent-stroke-hot);
   cursor: ns-resize;
 }
-/* A tile's fencing blanks are mechanism, not content — the line keeps its seat and its deletion
-   refusal but renders closed, so the tile sits against its real neighbors. Typing there re-derives
-   the line as content and it opens back up. */
 .mdpm-editor .cm-line.mdpm-embed-fence {
   height: 0;
   line-height: 0;
@@ -500,10 +384,6 @@
   padding-bottom: 0;
   overflow: hidden;
 }
-/* The tile's own line sheds the text strut its line-height would reserve — the tile's margins are
-   the block's real spacing. The widget-buffer imgs CM parks beside a block widget are 1em tall and
-   would hold the line open on their own; their seats survive at zero height (the drawn caret floors
-   a collapsed seat back to a legible bar). */
 .mdpm-editor .cm-line.mdpm-embed-line {
   line-height: 0;
   padding-top: 0;
@@ -517,7 +397,6 @@
   height: 0;
 }
 
-/* A cycle renders as the inert dim token's text — a tile of an ancestor page cannot mount itself. */
 .mdpm-embed-cycle {
   color: var(--label-secondary);
 }
@@ -529,9 +408,6 @@
 .md-sym-bidir {
   display: inline-block;
   transform: scaleX(1.5);
-  /* The scale paints wider than the layout box — margin reserves that overflow so the glyph
-     breathes instead of crowding its neighbors. text-indent zeroed like .md-li-marker: an
-     inline-block inherits a list line's hanging indent and would paint over the preceding word. */
   margin-inline: 0.15em;
   text-indent: 0;
 }
@@ -552,12 +428,7 @@
   --bullet-zone: 16px;
   --task-zone: 1.8em;
   --bullet-size: 1.25em;
-  /* No wrap opportunities outside the content span: the marker zone is full of them (spaces, the
-     ordered period, CM's atomic widget-buffer imgs beside every replace), and any one of them drops a
-     long word below its marker. `pre` keeps source whitespace exact; md-li-text restores wrapping. */
   white-space: pre;
-  /* Writing-column origin: 0 at the page margin, the callout's inner edge inside a box (set by .md-callout).
-     Every list padding adds onto it, so a list indents from wherever its column starts — DRY, no special case. */
   --li-origin: 0px;
 
   --li-col: calc((var(--li-level, 0) + 1) * var(--list-indent));
@@ -565,9 +436,6 @@
   text-indent: calc(-1 * var(--bullet-zone));
 }
 
-/* "Outliner lines" personalization (class on <html>): a hairline guide down each nested list run. ONE rail per
-   ANCESTOR level — a side widget (.md-outliner-rail, emitted per nested list line in intent.ts), so a level-3
-   item shows three stacked guides.*/
 .md-outliner-rail {
   display: none;
 }
@@ -585,8 +453,6 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  /* Snap the left edge to a whole pixel (center − half-width). --outliner-color is translucent, so a sub-pixel
-     x anti-aliases it to a different apparent shade per type — round() keeps every rail one color. */
   left: round(
     calc(
       var(--li-origin, 0px) +
@@ -603,14 +469,12 @@
   pointer-events: none;
 }
 .outliner-lines .md-outliner-bullet {
-  --rail-x: calc(var(--bullet-size) / 4); /* • glyph center */
-  /* Small glyph → let the rail overshoot each end so the run doesn't read stubby. */
+  --rail-x: calc(var(--bullet-size) / 4);
   --outliner-gap-top: -2px;
   --outliner-gap-bottom: -2px;
 }
 .outliner-lines .md-outliner-task {
-  --rail-x: calc(8.5px * var(--glyph-scale)); /* checkbox box center, from boxGeometry */
-  /* The box rides low in its line (vertical-align), so its bottom cap reads longer — raise it to even the rail. */
+  --rail-x: calc(8.5px * var(--glyph-scale));
   --outliner-gap-bottom: 8px;
 }
 .outliner-lines .md-outliner-first {
@@ -627,18 +491,14 @@
 .md-bullet {
   color: var(--label-control);
   font-size: var(--bullet-size);
-  /* Cap the 1.25em glyph's leading so it never swells a wrapped bullet's first line box. */
   line-height: 1;
-  /* The marker-content gap: the widget swallows the source spaces, so the gap is this margin. */
   margin-right: var(--list-gap);
 }
 
-/* Literal-glyph markers (`→` / `+`) whose source gap is hidden — the visible gap is this margin. */
 .md-li-mark {
   margin-right: var(--list-gap);
 }
 
-/* The one region of a list line that wraps (see the `pre` on .md-li). */
 .mdpm-editor .cm-line.md-li .md-li-text,
 .mdpm-editor .cm-line:is(.md-cite, .md-cite-cont) .md-cite-text {
   white-space: break-spaces;
@@ -646,9 +506,6 @@
   word-break: normal;
 }
 
-/* Every list glyph (bullet / number / checkbox) is the drag handle for list reorder (see
-   editor/listDrag.ts): a grab cursor on hover, and non-selectable so highlighting the syntax can't
-   fight the drag. */
 .md-li-glyph {
   cursor: grab;
   user-select: none;
@@ -663,9 +520,6 @@
   padding-left: calc(var(--li-origin) + var(--li-col) + var(--number-zone));
   text-indent: calc(-1 * var(--number-zone));
 }
-/* The hanging numeric zone: a fixed-width column the number sits in, so its continuation rows land
-   under the content rather than under the digits. The ordered marker and the code block's line count
-   are the same figure in two zones. */
 .md-ol-marker,
 .md-cb-ln,
 .md-cite-num {
@@ -679,16 +533,10 @@
   min-width: var(--number-zone);
   text-align: right;
 }
-/* Zeroed like .md-li-marker and .md-cb-ln: an inline-block inherits its line's hanging indent, which
-   would drag the glyph's own digits back out of the column that indent just opened for them. The
-   ordered marker is left as it is — it is literal source text whose geometry is already settled. */
 .md-cite-num {
   text-indent: 0;
 }
 
-/* A body marker wears the accent itself. It never reveals its source and never dims with a reveal
-   state, so its color carries no caret-dependent step. `user-select` is inherited rather than set,
-   so a sweep across the line still takes it. */
 .md-cite-ref {
   color: var(--label-control); /* KNOB: the marker's ink */
   font-variant-numeric: tabular-nums;
@@ -697,9 +545,6 @@
   cursor: pointer;
 }
 
-/* CITATIONS — the rows of the footnotes section. A row's number is a positional ordinal computed
-   over hidden source, so its glyph shares the numeric-glyph rule with the ordered marker and the
-   code block's line count; it takes the ordered list's own zone so the two columns line up. */
 .mdpm-editor .cm-line:is(.md-cite, .md-cite-cont) {
   white-space: pre;
   color: var(--label-secondary);
@@ -712,8 +557,6 @@
 .mdpm-editor .cm-line.md-cite-dim {
   opacity: var(--state-inactive);
 }
-/* The row's number is the marker's counterpart and takes the same press, so it wears the same
-   pointer — an unbound row's dash included, since that press copies the reference. */
 .mdpm-editor .cm-line.md-cite .md-cite-num {
   cursor: pointer;
 }
@@ -722,20 +565,12 @@
   padding-left: calc(var(--li-origin) + var(--li-col) + var(--task-zone));
   text-indent: calc(-1 * var(--task-zone));
 }
-/* "Mute Checked Items" (class on <html>): a checked task reads as done — its words dimmed to the
-   inactive state and struck through in the secondary tone. Scoped to the item's own content span, so
-   the box beside it keeps its color and stays legible as the control it is. Drawn, never written:
-   the line on disk is the plain `- [x]` it always was. */
 :root.mute-checked .mdpm-editor .cm-line.md-li-done .md-li-text {
   opacity: var(--state-inactive);
   text-decoration: line-through;
   text-decoration-color: var(--label-secondary);
 }
 
-/* The task checkbox rides the shared fixed chip-box geometry, which the scale vars don't reach — so
-   at any scale but 1 it reads wrong against the text beside it. Zoom the whole widget (box + stroke
-   + checkmark) to --glyph-scale so it tracks the Editor Scale, an embed's base scale, and the
-   per-block Scale in lockstep with the glyphs. */
 .mdpm-editor .pm-checkbox {
   zoom: var(--glyph-scale);
 }
@@ -789,8 +624,6 @@
   border-radius: var(--radius-full);
 }
 
-/* BOX BASE — every box construct (quote, callout, code block, nested quote) is the same shape: a line
-   run that floats off its neighbors and rounds its ends. */
 .mdpm-editor .cm-line:is(.md-bq, .md-callout, .md-cb) {
   position: relative;
   isolation: isolate;
@@ -821,9 +654,8 @@
   border-bottom-right-radius: var(--box-radius-r);
 }
 
-/* BLOCKQUOTE — a tinted fill with a left bar. The bar covers the fill's left edge, so the fill rounds
-   only its right corners. KNOBS: --bar-width / --bar-color / --bar-radius (left bar) · --box-fill /
-   --box-radius-r (fill) · --box-gap (outer breathing room above the first line + below the last) */
+/* KNOBS: --bar-width / --bar-color / --bar-radius (left bar) · --box-fill / --box-radius-r (fill) ·
+   --box-gap (outer breathing room above the first line + below the last) */
 .mdpm-editor .cm-line.md-bq {
   --bar-width: 4px;
   --bar-color: var(--label-tertiary);
@@ -836,12 +668,10 @@
   --bq-gap: var(--md-box-gap);
   --box-gap: var(--bq-gap);
   --box-pad: 4px;
-  --li-origin: 16px; /* the quote's inner gutter — lists / code inside indent from it (matches padding-left) */
+  --li-origin: 16px;
   padding-right: 14px;
   color: var(--label-control);
 }
-/* Plain (non-list) quote lines take the gutter directly; a list inside a quote supplies its own via --li-origin
-   (else this padding-left would override the list indent and the bullet wouldn't indent). */
 .mdpm-editor .cm-line.md-bq:not(.md-li) {
   padding-left: 16px;
 }
@@ -865,23 +695,16 @@
   border-bottom-left-radius: var(--bar-radius);
   border-bottom-right-radius: var(--bar-radius);
 }
-/* Inline code inside a quote drops its own fill (the quote already provides one); text color stays. */
 .mdpm-editor .cm-line.md-bq .md-code {
   background: transparent;
 }
 
-/* CALLOUT — a `> [!callout]` blockquote rendered as a bordered, gutter-width box. The `[!callout]` tag is
-   hidden chrome (see intent.ts); the box is border-only (no fill) to read distinctly from a quote.
-   The border is a `::before` (NOT line borders) so it can inset top/bottom by --callout-gap — two stacked
-   callouts then sit apart, the way lists/headings space, without a caret-breaking margin.
-   --li-origin is the box's inner gutter; every inner construct (lists, code, plain text) indents from it. DRY.
-   KNOBS: --callout-border / --callout-bw / --callout-radius / --callout-pad (gutter) / --callout-gap
+/* KNOBS: --callout-border / --callout-bw / --callout-radius / --callout-pad (gutter) / --callout-gap
    (separation) / --callout-inner-pad (head/foot inner padding past the gap). */
 .mdpm-editor .cm-line.md-callout {
   --callout-border: var(--label-tertiary);
   --callout-bw: var(--width-150);
   --callout-radius: var(--md-box-radius);
-  /* Slightly roomier inner gutter + head/foot so a fold chevron has space to live inside the box. */
   --callout-pad: 16px;
   --callout-gap: var(--md-box-gap);
   --callout-inner-pad: 8px;
@@ -899,7 +722,6 @@
   pointer-events: none;
   z-index: -1;
 }
-/* Plain (non-list) box lines take the gutter directly; list lines supply their own via --li-origin. */
 .mdpm-editor .cm-line.md-callout:not(.md-li) {
   padding-left: var(--li-origin);
 }
@@ -918,27 +740,18 @@
   border-bottom-left-radius: var(--callout-radius);
   border-bottom-right-radius: var(--callout-radius);
 }
-/* A line the callout SHARES with a construct nested inside it still opens and closes the callout, and
-   the nested construct has already claimed the shared --box-* names on that line — so the callout's
-   own head and foot read its own measures, at a weight the inner override can't take. */
 .mdpm-editor .cm-line.md-callout.md-callout-first {
   padding-top: calc(var(--callout-gap) + var(--callout-inner-pad));
 }
 .mdpm-editor .cm-line.md-callout.md-callout-last {
   padding-bottom: calc(var(--callout-gap) + var(--callout-inner-pad));
 }
-/* First line of the page: drop the top separation — the title-bar header gap above already provides it
-   (mirrors the first-line heading rule above). */
 .mdpm-editor .cm-content > .cm-line:first-child.md-callout-first {
   padding-top: var(--callout-inner-pad);
 }
 .mdpm-editor .cm-content > .cm-line:first-child.md-callout-first::before {
   top: 0;
 }
-/* A blockquote nested inside a callout — a real `::after` tint fill (rounds its right corners like the nested code
-   block) with the bar as a SEPARATE element (`.md-bq-in-bar`, a side widget emitted per nested line) layered OVER
-   the fill, so the bar carries its own rounded caps and the fill's corner radius can never clip it — the third
-   paint layer a 2-pseudo line can't otherwise give. The callout border keeps `::before`, untouched. */
 .mdpm-editor .cm-line.md-callout.md-bq-in {
   --nq-bar: 3px;
   --nq-bar-radius: 2px;
@@ -948,7 +761,6 @@
   --box-z: -1;
   --box-radius-l: 0px;
   --box-radius-r: 5px;
-  /* Its own float off the callout's edges; the callout's own --callout-gap is untouched. */
   --nq-inset: 2px;
   --box-gap: var(--nq-inset);
   padding-left: calc(var(--callout-pad) + var(--nq-bar) + var(--nq-gap));
@@ -962,8 +774,6 @@
   background: var(--label-tertiary);
   pointer-events: none;
 }
-/* The bar rounds its own cap on the same float the base gives the fill. The block is never on the
-   callout's first line (that's the atomic head). */
 .mdpm-editor .cm-line.md-bq-in-first .md-bq-in-bar {
   top: var(--nq-inset);
   border-top-left-radius: var(--nq-bar-radius);
@@ -974,37 +784,25 @@
   border-bottom-left-radius: var(--nq-bar-radius);
   border-bottom-right-radius: var(--nq-bar-radius);
 }
-/* When the quote (or a code block) is the callout's LAST element, its last line carries the callout's bottom
-   padding (--callout-gap + --callout-inner-pad); pull the fill up by that so it ends inside the closing border
-   instead of hanging past it. */
 .mdpm-editor .cm-line.md-callout-last.md-bq-in-last::after,
 .mdpm-editor .cm-line.md-callout-last.md-cb::after,
 .mdpm-editor .cm-line.md-callout-last.md-bq-in-last .md-bq-in-bar {
   bottom: calc(var(--callout-gap) + var(--callout-inner-pad));
 }
-/* Declared AFTER the nested quote above it, and that order is load-bearing: both rules weigh the same,
-   and a code block sitting inside a nested quote is the innermost box on its line, so its measures have
-   to be the ones that land. Box rules run outermost-first for exactly this reason.*/
 .mdpm-editor .cm-line.md-callout.md-cb,
 .mdpm-editor .cm-line.md-bq-in.md-cb,
 .mdpm-editor .cm-line.md-bq.md-cb {
-  --cb-gap: 0px; /* a code block nested in a box floats off nothing — the box already owns the outer spacing */
+  --cb-gap: 0px;
   --cb-inset: var(--li-origin);
   --cb-pad: 10px;
-  /* Innermost wins the paint on the line it sits on: stated here rather than left to the block's own
-     rule, which an enclosing box outranks on a line the two share. */
   --box-gap: var(--cb-gap);
   --box-radius-l: var(--cb-radius);
   --box-radius-r: var(--cb-radius);
-  /* Restated, not inherited: the box's own gutter rule matches these lines just as specifically, so the
-     block's padding has to be declared at the box's weight to win it. */
   padding-left: calc(var(--cb-inset) + var(--cb-pad));
   padding-right: calc(var(--cb-inset) + var(--cb-pad));
 }
 
-/* DRAG HANDLE — a grip in the callout's top-left gutter that drags the whole box (shares the block-drag
-   gesture, gated on the head line). Revealed on GUTTER hover via `md-grip-hot` (the delegated mousemove in
-   blockHandles.ts), matching the rail grips. KNOBS: --grip-x (gutter offset) / --grip-y (top offset past the gap). */
+/* KNOBS: --grip-x (gutter offset) / --grip-y (top offset past the gap). */
 .mdpm-editor .cm-line.md-callout-first::after {
   --grip-x: -18px;
   --grip-y: 4px;
@@ -1013,18 +811,14 @@
   left: var(--grip-x);
   top: calc(var(--callout-gap) + var(--grip-y));
   transition: opacity var(--duration-fast) var(--ease-base, ease);
-  /* cursor:grab (shared) receives the press so the pseudo targets its line → the gesture fires. */
 }
 .mdpm-editor .cm-line.md-callout-first.md-grip-hot::after {
   opacity: 1;
 }
-/* First-line-of-page callout has its box top forced to 0, so pull the grip up to match. */
 .mdpm-editor .cm-content > .cm-line:first-child.md-callout-first::after {
   top: var(--grip-y);
 }
 
-/* Fill is an inset ::after (caret-safe — a pseudo, never a margin) so the first/last line can hold an OUTER
-   vertical gap above/below the block — the same float the blockquote + callout use. */
 .mdpm-editor .cm-line.md-cb {
   --cb-radius: var(--md-box-radius);
   --cb-size: 0.85em;
@@ -1046,15 +840,9 @@
   font-size: var(--cb-size);
   padding-left: calc(var(--cb-inset) + var(--cb-pad));
   padding-right: calc(var(--cb-inset) + var(--cb-pad));
-  /* Code wraps like an editor, never like prose: every row fills to the edge and breaks between
-     any two characters — a long token is never relocated whole to the next row. The line-count
-     numbers are what distinguish a fresh line from a wrap. */
   word-break: break-all;
 }
 
-/* CODE TOKENS — a typed fence's nested parse, colored as spectrum-solid pastels (each solid mixed
-   toward system-white). Scoped under .md-cb so a tag outside a fence colors nothing; a bare fence
-   has no nested parse and keeps the plain mono look.*/
 .mdpm-editor .md-cb :is(.tok-kw, .tok-str, .tok-num, .tok-prop, .tok-fn, .tok-type) {
   color: color-mix(in srgb, var(--tok-solid) var(--tok-tint), var(--label-primary));
 }
@@ -1076,44 +864,28 @@
 .mdpm-editor .md-cb .tok-type {
   --tok-solid: var(--solid-cyan);
 }
-/* The comment tone is a label step, not a spectrum pastel. */
 .mdpm-editor .md-cb .tok-com {
   color: var(--label-tertiary);
 }
 
-/* The language chrome — `</> TYPE` at the block's top right; the always-visible ``` keeps its
-   place, the raw info word hides beneath the glyph, and the caret on the line trades it back.
-   Icon rides currentColor a notch over text height; the whole glyph wears the code color. */
 .mdpm-editor .md-cb .md-cb-lang {
   position: absolute;
-  /* Rides the block's own inner edge, so a block nested in a box follows its fill in rather than
-     staying pinned to the line box and landing on the box's border. */
   right: calc(var(--cb-inset) + var(--cb-pad));
   display: inline-flex;
   align-items: center;
-  /* The name's own box hugs its text, so centering the two puts the mark on the words rather than
-     on the line box the editor's leading gives them. */
   line-height: 1;
   gap: 0.3em;
-  /* The name reads as the control text it is; the mark beside it sits a step up, so the pair reads
-     as one label with a glyph rather than as two things of equal weight. */
   color: var(--label-control);
-  /* The line-count hanging indent inherits — reset it or the chrome slides left by the zone. */
   text-indent: 0;
   user-select: none;
   cursor: default;
 }
-/* THE MARK SLOT — one fixed square the three marks stack in, so which of them shows is an opacity
-   and never a reflow. A language without a mark still reserves it, which is what keeps every block's
-   name the same distance from the block's right edge. */
 .mdpm-editor .md-cb .md-cb-lang .md-cb-slot {
   position: relative;
   flex: none;
   width: 1.15em; /* KNOB — the mark's size against its name */
   height: 1.15em;
 }
-/* The veil paints on a pseudo inset OUT of the slot rather than on the slot itself: the slot is the
-   mark's own bounding box, which the mark fills, leaving a 2.5% tint nothing to tint. */
 .mdpm-editor .md-cb .md-cb-lang .md-cb-slot::before {
   content: "";
   position: absolute;
@@ -1127,9 +899,6 @@
   opacity: 1;
 }
 .mdpm-editor .md-cb .md-cb-lang svg {
-  /* Block, so the glyph brings no inline baseline strut of its own — as an inline box it sits on
-     the text baseline and rides a few pixels low of the words it labels, which centering the flex
-     items cannot correct. */
   display: block;
   position: absolute;
   inset: 0;
@@ -1139,10 +908,6 @@
   opacity: 0;
   transition: opacity var(--duration-slow) var(--ease-base);
 }
-/* THE COPY AFFORDANCE — the tag is a button as much as a label, so every block can be taken whole
-   without selecting it. A language's own mark rests; the copy mark takes the slot under the pointer;
-   the check answers a press. One rule whatever the block named — a block naming none rests as
-   nothing and reveals the same way. */
 .mdpm-editor .md-cb .md-cb-lang .md-cb-mark,
 .mdpm-editor .md-cb .md-cb-lang:hover .md-cb-copy {
   opacity: 1;
@@ -1158,29 +923,17 @@
   opacity: 1;
   color: var(--accent);
 }
-/* A tag with nothing to say carries no word — and no gap where one would have been. It says
-   "Copied" for a beat after a press, which is the one thing every tag has to say. */
 .mdpm-editor .md-cb .md-cb-lang .md-cb-name:empty {
   display: none;
 }
-/* The copy mark reads a step under a language's own — it is an affordance rather than a label. Its
-   slot takes the standard hover veil, so the mark answers the pointer only when the pointer is
-   actually on it and not merely somewhere in the arc that armed it. */
 .mdpm-editor .md-cb .md-cb-lang .md-cb-copy {
   color: var(--label-tertiary);
 }
-/* The arc arms the mark; it doesn't advertise itself. Only the two things a press actually lands on
-   — the mark and the word — say so under the pointer. */
 .mdpm-editor .md-cb .md-cb-lang .md-cb-slot,
 .mdpm-editor .md-cb .md-cb-lang .md-cb-name {
   cursor: pointer;
 }
 
-/* THE REACH — the tag is a few characters in the corner, so the copy mark arms from a quarter-disc
-   reaching back into the block rather than from the glyph alone. Snug at the top and right where the
-   tag already is; the radius is what makes the far corner an arc instead of a square claim on the
-   block. It answers a press as the marks do, which is the cost of it: text under the arc selects by
-   dragging from outside it. */
 .mdpm-editor .cm-line.md-cb-first:has(.md-cb-lang) {
   z-index: 1;
 }
@@ -1191,10 +944,8 @@
   left: calc(-1 * var(--cb-copy-reach));
   bottom: calc(-1 * var(--cb-copy-reach));
   border-bottom-left-radius: var(--cb-copy-reach);
-  /* It stands in for the code it covers, so it reads as that code rather than as a control. */
   cursor: text;
 }
-/* LINE COUNT — the "Show Line Count In Code Blocks" setting. */
 .md-cb-ln {
   display: none;
 }
@@ -1211,8 +962,6 @@
   user-select: none;
 }
 
-/* The `[[` pane — a PickerMenu, which owns its placement, glass, gutter, and scroll cap; this is
-   only the pane's width. */
 .mdpm-ac {
   min-width: 180px; /* KNOB */
   max-width: 320px; /* KNOB */

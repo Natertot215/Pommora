@@ -1,68 +1,34 @@
-/* CardView — the Collection/Set cards renderer's own layer over the src/Cards chassis: the Scale
-   factor, the properties area, the location footing, the Set Cards row, and the band seams. The pane
-   insets live in Detail.css (the `:has(.cards-view)` body rule — the block-surface inset regime, no
-   views gutter); the embed zoom law rides here so a view embed scales the grid as a unit.
-   `.is-compact` = Card Banner: None — imageless cards. */
 .cards-view {
-  /* The shared floors × the Scale factor — the bases live with the chassis in src/Cards/cards.css. */
   --card-min: calc(var(--card-min-base) * var(--card-scale, 1));
   --set-card-min: calc(var(--card-min) * 1.5); /* KNOB — the Set Cards row's larger floor */
   --card-thumb-h: calc(var(--card-thumb-h-base) * var(--card-scale, 1));
-  /* KNOB — the body-area's reserved floor. An empty card keeps
-     that image:body proportion instead of collapsing to the title; a content-heavy card still grows
-     past it (no aspect clip). */
+  /* KNOB — the body-area's reserved floor. */
   --card-body-min: calc(var(--card-thumb-h) * 0.54);
-  /* The seam law's binding (GroupBand.css): the card rhythm is the shoulder; tune --card-gap-v, not
-     this. */
   --band-clearance: var(--card-gap-v);
-  /* ONE padding source for everything in a card's value flow: the chip tokens' own vars. Chips read
-     them natively; the text-shaped values (dates, numbers, links) are re-pointed at the same vars
-     below — so the tight packing is a single knob. */
   --label-pad-x: 4px; /* KNOB — horizontal padding of chips AND text values (tight) */
   zoom: calc(var(--zoom, 1) * var(--block-zoom, 1));
-  /* The leading band/row sits off the view's top edge (the embed's ActionBand line, the pane head)
-     by one shoulder — the same rhythm the rows keep between themselves. */
   padding-top: var(--band-clearance);
 }
 .cards-view.is-compact {
   --card-row-h: 16px; /* KNOB — a compact property-value row */
-  --card-foot-h: calc(
-    4px +
-    1.5px +
-    6px +
-    14px +
-    6px
-  ); /* the breadcrumb footing (column gap + divider + trail pad + caption line + trail pad) */
+  --card-foot-h: calc(4px + 1.5px + 6px + 14px + 6px);
   --card-body-min: calc(16px + 18px + 4px + 4px + 2 * var(--card-row-h));
 }
-/* With the breadcrumb footing present, add its height so the 2-row reserve still sits ABOVE it. */
 .cards-view.is-compact .card-text:has(.card-loc-zone) {
   min-height: calc(var(--card-body-min) + var(--card-foot-h));
 }
 
-/* ── The Set Cards row: larger, locked cards at a FIXED size — set-scale tracks (no stretch, unlike
-   the page grid's fill); they wrap left-aligned as rows fill. ── */
 .set-cards-row {
   display: grid;
   grid-template-columns: repeat(auto-fill, var(--set-card-min));
   gap: var(--card-gap-v) var(--card-gap-h);
 }
 
-/* ── Disclosure bands (shared GroupBand chrome): the heading over the band's card grid. The chrome,
-   glyph, and seam law resolve identically to the table's (GroupBand); cards scopes only the sibling
-   seam — lead-side, one rule for whatever precedes a band. The bands sit inside the band drag's
-   line host, so the Set Cards row above them is that host's sibling rather than theirs. ── */
 .cards-view .group-band + .group-band,
 .cards-view .set-cards-row + .drop-line-host > .group-band:first-child {
   margin-top: var(--band-gap);
 }
 
-/* The band grid wears the chassis grid in its fill regime: every band lays the same track set
-   regardless of how many cards it holds, so a 3-card band's cards stay the size of a full band's.
-   The grid IS the cross-band DragGroup's zone element, a <ul> — strip its list chrome. A floor so an
-   EMPTY band still presents a drop target (a card can be dragged into an empty group to reassign).
-   Page cards reflow: a fixed image band, title + properties + footing extending below, every card
-   stretched to its row's tallest sibling. */
 .cards-grid {
   list-style: none;
   margin: 0;
@@ -70,21 +36,14 @@
   min-height: 44px;
 }
 
-/* The drag ghost only — an opaque backing so the lifted card reads solid over the cards it floats
-   above (the real card body stays transparent, showing the page behind it). */
 .card-overlay .card-body {
   background: var(--bg-window);
 }
 
-/* The ghost's FLIP rides this wrapper — the root's transform belongs to the drag engine, and
-   the body is hover-pop's surface whose stylesheet transitions transform. */
 .card-displace {
   height: 100%;
 }
 
-/* The hover ghost card — the card's own skeleton (thumb placeholder, divider, title row,
-   property labels), its outer border heavier than a card's so the ghost reads. The dim rides the
-   body rather than the card, so the heavier outline holds while the skeleton inside it lifts. */
 .ghost-card .card-body {
   border-width: var(--width-200);
   animation: ghost-card-in var(--duration-base) var(--ease-base);
@@ -102,15 +61,10 @@
   border-top: none;
 }
 
-/* The naming session's field, inside the title row's static mode — never the truncating scroll box,
-   whose clip would hide the caret's travel. The glyph keeps its seat beside it. */
 .card-title-input {
   flex: 1;
   min-width: 0;
 }
-/* ── Properties: the card body between title and footing — rendered ONLY when the card
-   has values (an empty card shows no gap; its add trigger scopes to the breadcrumb). Empty
-   flow space inside stays the click surface for adding another. ── */
 .card-props {
   display: flex;
   flex-direction: column;
@@ -142,7 +96,6 @@
   flex: 0 0 auto;
   color: var(--label-secondary);
 }
-/* Chips inside a value keep their own hover-scroll/melt mechanics. */
 .card-value {
   display: inline-flex;
   align-items: center;
@@ -155,13 +108,9 @@
 .card-value .cell-control {
   padding: 0 var(--label-pad-x, 6px);
 }
-/* A checkbox/switch is a fixed-size control (internal padding would distort it), so its OUTER value cell
-   takes the chip-pad-x — it then sits at the same horizontal rhythm as the padded text/chip values. */
 .card-value:has(.cell-checkbox, .cell-switch) {
   padding-inline: var(--label-pad-x, 6px);
 }
-/* Bar takes the full row width: its ProgressBar track is width:100%, which would otherwise collapse to a
-   sliver inside the shrink-to-fit value (Compact breaks it onto its own line, Standard fills beside the label). */
 .card-props.is-flow > span:has(.cell-bar) {
   flex-basis: 100%;
 }
@@ -170,14 +119,10 @@
   width: 100%;
   overflow: visible;
 }
-/* A visible-but-empty property row's placeholder (Standard) — the properties pane's "—" fill-me affordance in the label's
-   own emphasized tone (it reads as the row's empty half); the whole .card-value stays the click target. */
 .card-value-empty {
   padding: 0 var(--label-pad-x, 6px);
 }
 
-/* The breadcrumb is ALWAYS the card's footing, unconditionally — independent of whether properties
-   sit above it. */
 .card-loc-zone {
   display: flex;
   min-width: 0;

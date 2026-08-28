@@ -10,9 +10,7 @@ const cardTitleType = text.body.emphasized
 
 type DivProps = React.HTMLAttributes<HTMLDivElement> & { ref?: React.Ref<HTMLDivElement> }
 
-/** The card's root — the drag shell. The engine owns this element's inline transform, so the frame
- *  and hover-pop live on the body inside. `locked` holds the 125/90 aspect (thumb as a share of the
- *  card); the default reflows — fixed thumb, content-grown text. */
+/** The engine owns this element's inline transform, so frame and hover-pop live on the body inside instead. */
 export function CardRoot({
   drag,
   active,
@@ -49,7 +47,6 @@ export function CardRoot({
   )
 }
 
-/** Pops on hover unless the caller says otherwise (a ghost or a drag overlay never pops). */
 export function CardBody({
   pop = true,
   className,
@@ -58,7 +55,6 @@ export function CardBody({
   return <div {...rest} className={cx('card-body', pop && 'hover-pop', className)} />
 }
 
-/** The image band. `capture` marks a captured page preview, which the shared preview zoom applies to. */
 export function CardThumb({
   capture,
   className,
@@ -75,8 +71,6 @@ export function CardText(props: DivProps): React.JSX.Element {
   return <div {...props} className={cx('card-text', props.className)} />
 }
 
-/** The title row: a truncating scroll box by default, a wrapping run, or a static row for a
- *  caller that mounts its own field inside. */
 export function CardTitle({
   mode = 'scroll',
   className,

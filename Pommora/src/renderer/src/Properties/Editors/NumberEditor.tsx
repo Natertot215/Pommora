@@ -28,7 +28,6 @@ const STYLE_OPTIONS: PickerChoice<NumberLook>[] = [
   { value: 'number', label: 'Number' },
   { value: 'bar', label: 'Bar' },
 ]
-// 'hidden' + 1..10, all as picker strings (PickerControl is <T extends string>).
 const DECIMAL_OPTIONS: PickerChoice<string>[] = [
   { value: 'hidden', label: 'Hidden' },
   ...Array.from({ length: 10 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) })),
@@ -47,8 +46,6 @@ function Row({ label, children }: { label: string; children: React.ReactNode }):
   )
 }
 
-/** Its rest-state button deliberately mirrors PickerControl's trigger, so it sits identically
- *  among the other rows. */
 function ValueField({
   value,
   onCommit,
@@ -85,8 +82,6 @@ function ValueField({
   )
 }
 
-/** Def-level fields write `onSetConfig` (the batched IPC); the look writes `onSetStyle`
- *  (the active view's column_styles). */
 export function NumberEditor({
   config,
   look,

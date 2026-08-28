@@ -52,7 +52,6 @@ describe('the picker offers what a page has been called before', () => {
     expect(aliasRows(index, 'Other', '')).toEqual([])
   })
 
-  // The memory is keyed by PageID, so a title naming no single page names no memory either.
   it('a phantom or ambiguous title offers nothing', () => {
     expect(aliasRows(index, 'No Such Page', '')).toEqual([])
     expect(aliasRows(duplicated, 'Beta', '')).toEqual([])
@@ -75,9 +74,6 @@ describe('the forget × is inert until it is revealed', () => {
     host = null
   })
 
-  // HoverRemove gates its own click on computed opacity, so the reveal is what makes the ×
-  // clickable at all. Opacity is set directly here rather than by hovering: jsdom applies no
-  // stylesheet, and the point being pinned is the gate, not the CSS that drives it.
   const onPick = vi.fn()
 
   const mountRow = async (forget: () => void): Promise<HTMLButtonElement> => {
@@ -103,8 +99,6 @@ describe('the forget × is inert until it is revealed', () => {
     return document.querySelector('.mdpm-ac-forget') as HTMLButtonElement
   }
 
-  /** The real sequence a pointer produces. Calling `click()` alone skips the mousedown, which is the
-   *  event the row picks on — and skipping it is what let a completely unreachable × look tested. */
   const press = async (el: HTMLElement): Promise<void> => {
     await act(async () => {
       el.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }))
@@ -134,8 +128,6 @@ describe('the forget × is inert until it is revealed', () => {
     expect(forget).toHaveBeenCalled()
   })
 
-  // The × is inside the row, and the row accepts a suggestion on mousedown. Pressing the × must not
-  // reach that handler, or the one gesture that forgets a suggestion writes it into the document.
   it('pressing the × never accepts the row it sits in', async () => {
     const forget = vi.fn()
     const btn = await mountRow(forget)
@@ -152,8 +144,6 @@ describe('the forget × is inert until it is revealed', () => {
   })
 })
 
-// One containment test behind all four callers, so they can't drift into disagreeing about which
-// link the caret is in.
 describe('linkAt is the one answer to which link holds an offset', () => {
   const line = 'see [[Q3 Plan|the plan]] and [[Other]] end'
 
@@ -164,11 +154,9 @@ describe('linkAt is the one answer to which link holds an offset', () => {
     expect(linkAt(line, 26)).toBeNull()
   })
 
-  // The caret being somewhere in a link is not the caret being in its alias — the whole reason the
-  // blur path needed the same guard the update listener already had.
   it('the alias span demands the caret be in the alias itself', () => {
-    expect(aliasSpanAt(line, 6)).toBeNull() // inside the title
-    expect(aliasSpanAt(line, 16)).toEqual([14, 22]) // inside the alias
+    expect(aliasSpanAt(line, 6)).toBeNull()
+    expect(aliasSpanAt(line, 16)).toEqual([14, 22])
   })
 
   it('an opened-but-empty alias reports its pipe and nothing else does', () => {

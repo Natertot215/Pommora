@@ -10,7 +10,7 @@ const GRID = {
   edgeY: 8,
   tileRadius: 8,
   tileBorder: 2,
-  tileAspect: 1.5, // wider than tall (the Figma proportion)
+  tileAspect: 1.5,
 }
 
 export const grid = style({
@@ -20,10 +20,8 @@ export const grid = style({
   padding: `${GRID.edgeY}px 0`,
 })
 
-/** One type tile — a rounded rect, wider than tall, holding only its type glyph over the glass. The glyph
- *  is opaque, not a white-alpha label tone: an alpha tone doubles where the glyph's own strokes overlap
- *  (the grid crossings, the bar edges) and its soft edges read as aliasing — an opaque hex composites
- *  clean. */
+/** The glyph is opaque, not a white-alpha label tone: an alpha tone doubles where the glyph's own
+ *  strokes overlap and its soft edges read as aliasing — an opaque hex composites clean. */
 export const tile = style({
   aspectRatio: `${GRID.tileAspect}`,
   display: 'flex',
