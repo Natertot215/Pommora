@@ -637,16 +637,16 @@ Every phase runs the same loop. Nothing advances on a summary; every claim is re
   - [x] Task 4 — TopRow defines itself · `fb2f77d5`
   - [x] Task 5 — Footing · `a6df3eed`
   - [x] Task 6 — ActionRow · `bdf30002` (docs rows deferred to §Closeout)
-- [ ] **Phase 2** — The Surfaces · base `7226d650`
-  - [x] Task 7 — Frames + editors compose `item`
-  - [x] Task 8 — every PickerMenu host is Compact
-  - [x] Task 9 — NavList is a menu
-  - [x] Task 10 — Settings rows
-  - [x] Task 11 — value + the Scale row
-  - [x] Task 12 — Autocomplete
-  - [x] Task 12a — NavTrail owns its look
-  - [x] Task 12b — the Trash is a menu
-- [ ] **Phase 3** — The Index
+- [x] **Phase 2** — The Surfaces · base `7226d650` · executor `3d90741e..659b25e2` · simplifier `8aed8657` · comment-killer `7f358d51` · review `2be2609b` `96755197` `51be26de` `144b2c89` · breaker `cffdd681` · Gate 2 closed
+  - [x] Task 7 — Frames + editors compose `item` · `3d90741e`
+  - [x] Task 8 — every PickerMenu host is Compact · `6724ba08`
+  - [x] Task 9 — NavList is a menu · `c21eb47d`
+  - [x] Task 10 — Settings rows · `90cbd682`
+  - [x] Task 11 — value + the Scale row · `be6381a5`
+  - [x] Task 12 — Autocomplete · `da647e88`
+  - [x] Task 12a — NavTrail owns its look · `0f6325c5`
+  - [x] Task 12b — the Trash is a menu · `46aac3d1 + 659b25e2`
+- [ ] **Phase 3** — The Index · base `cffdd681`
   - [ ] Task 13 — `menu-index.tsx`
   - [ ] Task 14 — the trailing slot
   - [ ] Task 15 — SettingsWindow
@@ -674,6 +674,8 @@ Every phase runs the same loop. Nothing advances on a summary; every claim is re
 - Round 2 (build-breaking-agent, 08-27): 15 findings, all verified and folded — the TopRow's real height is 18 once its ramp is live (F1); `rowBox` takes `--row-pad-lead`/`--row-pad-trail` over `--row-pad-x` for the two asymmetric nav surfaces (F2); CardAddPicker's override rides the TopRow element (F3); the trailing cluster is flush by design and `flushTrailing` dies (F4); `wide` on the item (F5); `defaultOn` on the toggle tables (F6); Sort/Hidden render `MenuRowView` inside their drag shells (F7); `detail` caps at 55% (F8); WindowInspector's field box is not a row and leaves Task 8 (F9); `header` stays geometry (F10); `pickerControl.value` owns its tone (F11); `heading` reads `--row-pad-x` (F12); `.mdpm-ac` keeps its box (F13); counts 28 / 12 / calendar-only (F14); the inert row's tooltip on an inner span (F15). Latent: `rowDragging` declared twice — moves to the recipe in Task 1. Unknown carried into Task 1's steps: the composed `pane` under `:has()`.
 
 - Round 3 (build-breaking-agent, Phase 1 range, 08-28): 2 findings, 17 kills. F1 — `heading` on the row token a phase ahead of the boxes it labels → registered as Hazard Window 2, closed by Task 7 (zero code). F2 — `allHeading` lost the old row's `gap: 4px` and rode `rowBox`'s 8 while `topRow`/`footing` sit at 4 → composes `flushAffordance` (its `--row-pad-lead` duplicate gone). Measured on the built CSS: Standard 28 · Compact 23 · TopRow 18 · `topRowFlat` 14; every composed `globalStyle` emits one class; the Showcase's row padding is now live (it read an undefined `--row-inset` before).
+
+- Round 4 (build-breaking-agent, Phase 2 range, 08-28): 7 findings, 14 kills. F1 `NavTrail` owning a rung re-registered the two ruled survivors (the Subfield's crumbs, a PathField's trail) → both keep their host's register with `font: inherit; color: inherit` on the consumer (`.subfield-crumbs`, `fields.fieldTrail`); F2 the ImagePicker's zoom strip stopped spanning its row → host-local `globalStyle(sliderRow strip)` flex 1; F3 the Trash's date lane sat 14px off the head → `.trash-row` zeroes `--row-pad-trail` and its bar sits at the lane; F4 the Scale readout wearing `detail` capped the cluster at 55% → it wears `footingLabel`; F5 `'nav-pin'` hard-coded like `overlay` was → the row's call site passes both. All in `cffdd681`. F6 — a Trash row with `onClick` is a `role=button` tab stop beside its checkbox's; the recipe ties role to `onClick` by construction and NavList rows carry the same two stops → an Open Call for Nathan (a `MenuItem` opt-out, or the row loses the pointer convenience). F7 — the Settings PathField hugs without a cap → rejected: the hug is ruled; at the default two-segment path the row is 44. Unknowns for Nathan's pass: a pin reorder by drag lands; the `[[` autocomplete measured live.
 
 ### Open Against Later Tasks
 - Task 14 (from Gate 2's running pass): Hazard Window 3 is real — the Settings sliders and LayoutFrame's Scale slider measure 0 wide inside the trailing cluster (`flex: 0 0 auto`). With seat widths ruled out (`.settings-wide` gone, no `--row-trailing-width`), the Slider takes its own track width as a literal `KNOB` in its own stylesheet — a control's width is the control's — and `wide` is dropped from `MenuItem` and the index.
@@ -713,7 +715,7 @@ Ruled 08-27 (Nathan, before sleep): the plan runs to the end unattended — ever
 
 **Per phase (1–4) — none skipped**
 - [x] Phase 1: executor commits · simplifier · comment-killer · orchestrator review (diff read, three gates, Derivations + Dead Vocabulary re-run against control 9, Made False rows) · breaker round(s), every finding verified · running pass (screenshots where reachable) · Progress hashes · Found items adjudicated — `27c5171c..7226d650`
-- [ ] Phase 2: the same
+- [x] Phase 2: the same — `7226d650..cffdd681`
 - [ ] Phase 3: the same
 - [ ] Phase 4: the same
 
