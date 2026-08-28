@@ -1,6 +1,6 @@
 import { PathField } from '@renderer/DesignSystem/Components/Fields'
 import { useSession } from '@renderer/store'
-import { MenuItem } from '@renderer/DesignSystem/Menus'
+import { MenuIndex } from '@renderer/DesignSystem/Menus'
 import * as s from '../../Frames/frames.css'
 
 /** The path is relative to the asset root rather than to the nexus, so re-pointing the root
@@ -15,22 +15,32 @@ export function FileEditor({
   onBrowse: () => void
 }): React.JSX.Element {
   const assetRoot = useSession((st) => st.tree?.assetDirectory ?? '')
-  const value = directory ?? ''
   return (
     <div className={s.configEditor}>
-      <MenuItem
-        trailing={
-          <PathField
-            label="Directory"
-            value={value}
-            empty={assetRoot}
-            onCommit={onSetDirectory}
-            onBrowse={onBrowse}
-          />
-        }
-      >
-        Directory
-      </MenuItem>
+      <MenuIndex
+        sections={[
+          {
+            rows: [
+              {
+                kind: 'item',
+                label: 'Directory',
+                trailing: {
+                  kind: 'field',
+                  children: (
+                    <PathField
+                      label="Directory"
+                      value={directory ?? ''}
+                      empty={assetRoot}
+                      onCommit={onSetDirectory}
+                      onBrowse={onBrowse}
+                    />
+                  ),
+                },
+              },
+            ],
+          },
+        ]}
+      />
     </div>
   )
 }

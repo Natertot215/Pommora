@@ -1,8 +1,7 @@
 import type { ColumnStyle, DateFormat, TimeFormat, WeekdayFormat } from '@shared/columnStyles'
 import { Icon, type IconName } from '@renderer/DesignSystem/Symbols'
-import { PickerControl } from '@renderer/DesignSystem/Elements/PickerControl'
 import { Reveal } from '@renderer/DesignSystem/Animation/Reveal'
-import { MenuItem, heading } from '@renderer/DesignSystem/Menus'
+import { MenuRowView, type MenuRow } from '@renderer/DesignSystem/Menus'
 import * as s from './dateTimeEditor.css'
 
 const DATE_OPTIONS: { value: DateFormat; label: string }[] = [
@@ -22,32 +21,20 @@ const TIME_OPTIONS: { value: TimeFormat; label: string }[] = [
   { value: 'twentyFourHour', label: '24 Hours' },
   { value: 'none', label: 'Hidden' },
 ]
-function PickerRow<T extends string>({
-  glyph,
+
+const pickerRow = <T extends string>(
+  glyph: IconName,
+  label: string,
+  ariaLabel: string,
+  value: T,
+  options: { value: T; label: string }[],
+  onPick: (v: T) => void,
+): MenuRow => ({
+  kind: 'item',
+  icon: <Icon name={glyph} size="title3" />,
   label,
-  ariaLabel,
-  value,
-  options,
-  onPick,
-}: {
-  glyph: IconName
-  label: string
-  ariaLabel: string
-  value: T
-  options: { value: T; label: string }[]
-  onPick: (v: T) => void
-}): React.JSX.Element {
-  return (
-    <MenuItem
-      leading={<Icon name={glyph} size="title3" />}
-      trailing={
-        <PickerControl ariaLabel={ariaLabel} value={value} options={options} onPick={onPick} />
-      }
-    >
-      {label}
-    </MenuItem>
-  )
-}
+  trailing: { kind: 'picker', ariaLabel, value, options, onPick },
+})
 
 /** Time stays visible under Relative — it still gates the "at <clock>" rendering. */
 export function DateTimeEditor({
@@ -61,32 +48,33 @@ export function DateTimeEditor({
   const showDay = dateFmt === 'short' || dateFmt === 'full'
   return (
     <div className={s.section}>
-      <div className={heading}>Format</div>
-      <PickerRow
-        glyph="calendar-days"
-        label="Date"
-        ariaLabel="Date format"
-        value={dateFmt}
-        options={DATE_OPTIONS}
-        onPick={(v) => onChange({ date_format: v })}
+      <MenuRowView row={{ kind: 'heading', label: 'Format' }} />
+      <MenuRowView
+        row={pickerRow('calendar-days', 'Date', 'Date format', dateFmt, DATE_OPTIONS, (v) =>
+          onChange({ date_format: v }),
+        )}
       />
       <Reveal open={showDay} fill>
-        <PickerRow
-          glyph="calendar"
-          label="Day"
-          ariaLabel="Weekday format"
-          value={style.weekday ?? 'none'}
-          options={WEEKDAY_OPTIONS}
-          onPick={(v) => onChange({ weekday: v })}
+        <MenuRowView
+          row={pickerRow(
+            'calendar',
+            'Day',
+            'Weekday format',
+            style.weekday ?? 'none',
+            WEEKDAY_OPTIONS,
+            (v) => onChange({ weekday: v }),
+          )}
         />
       </Reveal>
-      <PickerRow
-        glyph="clock"
-        label="Time"
-        ariaLabel="Time format"
-        value={style.time_format ?? 'none'}
-        options={TIME_OPTIONS}
-        onPick={(v) => onChange({ time_format: v })}
+      <MenuRowView
+        row={pickerRow(
+          'clock',
+          'Time',
+          'Time format',
+          style.time_format ?? 'none',
+          TIME_OPTIONS,
+          (v) => onChange({ time_format: v }),
+        )}
       />
     </div>
   )
