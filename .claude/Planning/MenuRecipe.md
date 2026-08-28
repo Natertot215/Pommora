@@ -16,7 +16,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 1. Four row tokens exist once, in `menu-base.css.ts`; `item` reads the Standard pair on the body ramp; a surface wearing `menuCompact` switches every `item` inside to the Compact pair on the control ramp; no row anywhere declares `height`, `minHeight`, or its own padding.
 2. `MENU_GUTTER`, `ROW_INSET`, `--row-inset`, `ROW_SIZE`, `ROW_LINE`, `--menu-row-size`, `--menu-row-line`, `ROW_GAP`, `--top-row-block`, `--bottom-row-block` are gone; the surface reads `--surface-inset` directly.
 3. `menu-base.css.ts` and `menu-row.tsx` are ordered as a menu stacks: Shell → TopRow → Heading → Item → ActionRow → Separator → Caption → Footing → Trailing → Column. TopRow defines itself.
-4. One `heading` (footnote.emphasized · tertiary · `0 var(--row-width-standard)`); Settings keeps an uppercase modifier on top of it; `MenuHeading` is gone.
+4. One `heading` (footnote.emphasized · tertiary · `6px var(--row-pad-x) 2px`, the horizontal inset the rows read); Settings keeps an uppercase modifier on top of it; `MenuHeading` is gone.
 5. `actionRow` is the "All Properties" row kind (footnote.emphasized · secondary, Item geometry, no hover).
 6. `MenuBottomRow` → `MenuFooting`, bordered top; `bottomBar`'s `margin-top: auto` is gone and FilterFrame pins its footer through `MenuScrollFrame`'s footer slot.
 7. `MenuTopRow` and `MenuFrameTopRow` are one component.
@@ -763,18 +763,18 @@ Ruled 08-27 (Nathan, before sleep): the plan runs to the end unattended — ever
 - [ ] Every commit on explicit paths; `git status --short` shows only Nathan's own live edits, if any; Status header → "landed — <entry drafted in chat>"
 - [ ] History entry drafted in chat; not filed
 
-**Delivery Claim** (at `8e5a4645`; range `27c5171c..HEAD` on `main`)
+**Delivery Claim** (at `8e5a4645`; range `27c5171c..HEAD` on `main`; neutral verifier 08-28: 21 holds · 3 restated below · 0 missing)
 
 Every assertion below is checkable; the evidence is named beside it.
 
 - **Requirements 1–16 trace to landed tasks by hash:** 1 → T1 `a1f3e2c5`+`370a167a`, T7 `3d90741e`, T8 `6724ba08`, review `72a867a4` (sweep `minHeight: '2Npx'` → only `fields.css.ts:33`, a field, and `pageWindow.css:82`, an inspector box); 2 → T1, T4 `fb2f77d5`, T5 `a6df3eed` (each token → 0); 3 → T2 `5194820f`, T4; 4 → T3 `c857a3e4`; 5 → T6 `bdf30002`, `8fcb89bb`, `3eeda281`; 6 → T5, T20 `05392979`; 7 → T4; 8 → T1 (`pane` composes `menuCompact`), T8; 9 → T9 `c21eb47d`, T12b `46aac3d1`; 10 → T12 `da647e88`; 11 → T11 `be6381a5`, T13 `71320620`, T14 `f2a59d41`, T15 `21322586`, T16 `8863c613`, T17 `aa6dcaa7`·`1d442c25`·`3d619f98`, T18 `760352dd`, T19 `1e3a5bd3`; 12 → T7, T14 (`frames.css.ts` exports 40 → 28: geometry, drag chrome, `ICON`, and the three ruled tone classes `allRow` · `hiddenRow` · `footerLock`); 13 → T3; 14 → T9 (ruled 08-28), T21 `da851e1b`; 15 → T12a `0f6325c5`, T12b (checkboxes kept in the lead inset by ruling); 16 → T10 `90cbd682`, T14, T15.
 - **Acceptance held, measured live over CDP** (screenshots `p1-*` · `p2-*` · `p3-*` · `p4-*` in the session scratchpad): sidebar rows 28 (6+16+6) · the Settings menu's rows 28, TopRows 18, headings 21, All Properties 25 · a hosted view-settings pane (Compact) 23 with its TopRow 18 · NavView's list 28 with the pin centered 12px into a 24px lead · the Trash 28 with its checkbox in the same inset and its date lane on the head's · the Settings window's rows 44 (title + hint) with the trailing cluster flush. `grep -rF -- "--row-inset" src` → 0; `grep -rF -- "--surface-inset" src` → 9. Not driven: NavWindow (its toolbar menu is a pre-existing blank placeholder) and the `[[` autocomplete — Nathan's list.
 - **No new dependency:** `git diff 27c5171c..HEAD -- Pommora/package.json` is empty.
-- **One home each, grep-proven:** `rowDragging` declared once (`menu-base.css.ts`); the content edge once (`--content-start` / `--content-start-right` on `.shell`, 0 raw calcs left); `heading` once; the trail's look once (`navTrail.css.ts`); the flush rule once (`MenuItem`, keyed on a trailing); the footing rung once (`footingBar` globals over `value`, `detail`, and the picker's value); the overlay once (`overlay`, `&&`).
+- **One home each, grep-proven:** `rowDragging` declared once (`menu-base.css.ts`); the content edge once (`--content-start` / `--content-start-right` on `.shell`, 0 raw calcs left); `heading` once; the trail's look once (`navTrail.css.ts`); the flush rule once (`MenuItem`, keyed on a trailing — `footing` and the Trash's column zero the same var for rows that have no cluster of their own); the footing rung once (`footingBar` globals over `value`, `detail`, and the picker's value); the overlay once (`overlay`, `&&`).
 - **Nothing left with nothing to vary:** the Dead Vocabulary sweep is 0 for every token against control `--surface-inset` = 9 (the one `nav-item` hit is a comment in Nathan's own `tabStrip.css`); `frames.css.ts` at 28 exports.
 - **No work added to a high-frequency path:** the Settings window's `useSession` count is 15 before and after — subscriptions stayed per row; the index renders only.
 - **Gates at HEAD, run by the orchestrator:** typecheck 0 · biome "Checked 967 files. No fixes applied." · vitest 297 files / 3671 tests.
-- **Code-only delta:** +2037 / −2358 = **−321** across `Pommora/src` (comment and blank lines excluded).
+- **Code-only delta:** +2037 / −2334…−2358 = **−297 to −321** across `Pommora/src` depending on the comment filter (−507 with tests excluded); the sign and scale hold under both.
 
 **Nathan's running pass — what to look at**
 - Sidebar rows (28, hover wash, the disclosure rail) — `p1-home.png`.
