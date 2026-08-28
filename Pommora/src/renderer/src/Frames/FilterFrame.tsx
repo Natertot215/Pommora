@@ -18,7 +18,6 @@ import {
 } from '@renderer/DesignSystem/Menus'
 import {
   accessoryButton,
-  flushTrailing,
   footingLabel,
   footingSymbol,
 } from '@renderer/DesignSystem/Menus/menu-base.css'
@@ -745,7 +744,6 @@ export function FilterFrame({
         <>
           <div className={fp.lockedCaption}>Hand-authored filter — edited outside the pane.</div>
           <MenuItem
-            className={flushTrailing}
             leading={
               <span className={footingSymbol}>
                 <Icon name="rotate-ccw" size="control" />

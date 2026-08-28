@@ -4,7 +4,6 @@ import type { PropertyValue } from '@shared/propertyValue'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { PickerMenu } from '@renderer/DesignSystem/Components/Pickers/PickerMenu/PickerMenu'
 import { MenuItem, MenuTopRow } from '@renderer/DesignSystem/Menus'
-import { flushTrailing } from '@renderer/DesignSystem/Menus/menu-base.css'
 import { topRowFlat } from './cardAddPicker.css'
 import { FrameSlide } from '@renderer/DesignSystem/Menus/frame-slide'
 import { propertyTypeIconName } from '@renderer/Properties/PropertyTypes'
@@ -122,7 +121,6 @@ export function CardAddPicker({
               {orderAddableEntries(entries).map((e) => (
                 <MenuItem
                   key={e.id}
-                  className={flushTrailing}
                   leading={
                     <Icon name={propertyTypeIconName(e.type) ?? 'square-dashed'} size="body" />
                   }

@@ -33,7 +33,6 @@ import {
   AccessoryButton,
 } from '@renderer/DesignSystem/Menus'
 import {
-  flushTrailing,
   footingLabel,
   footingSymbol,
   titleInput,
@@ -109,7 +108,6 @@ function ListGroups({
           assigned.map((d) => (
             <RowShell key={d.id} id={d.id}>
               <MenuItem
-                className={flushTrailing}
                 leading={<PropertyTypeIcon type={d.type} size={s.ICON.doc} />}
                 detail={propertyTypeLabel(d.type)}
                 trailing={<Icon name="chevron-right" />}
@@ -141,7 +139,7 @@ function ListGroups({
             {unassigned.map((d) => (
               <RowShell key={d.id} id={d.id}>
                 <MenuItem
-                  className={cx(s.allRow, flushTrailing)}
+                  className={cx(s.allRow)}
                   leading={<PropertyTypeIcon type={d.type} size={s.ICON.doc} />}
                   onContextMenu={(e) => {
                     e.preventDefault()
@@ -365,7 +363,6 @@ export function PropertyFrame({
       {CREATABLE_TYPES.map((type) => (
         <MenuItem
           key={type}
-          className={flushTrailing}
           leading={<PropertyTypeIcon type={type} size={s.ICON.doc} />}
           trailing={<Icon name="chevron-right" />}
           onClick={() => void create(type)}
@@ -392,7 +389,6 @@ export function PropertyFrame({
       hasSelectOptions(def.type) || def.type === 'status' ? (
         <MenuFooting>
           <MenuItem
-            className={flushTrailing}
             leading={
               <span className={footingSymbol}>
                 <Icon name="palette" size="control" />

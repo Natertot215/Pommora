@@ -30,7 +30,7 @@ export function MenuTopRow({
   return (
     <>
       <MenuItem
-        className={cx(s.topRow, right != null && s.flushTrailing, className)}
+        className={cx(s.topRow, className)}
         leading={
           <span className={s.topBarLeadingSymbol}>
             <Icon name="chevron-left" size={BAR_GLYPH} />
@@ -87,9 +87,10 @@ export const MenuItem = forwardRef<HTMLDivElement, MenuItemProps>(function MenuI
   },
   ref,
 ): React.JSX.Element {
-  const rowStyle: CSSProperties | undefined = indent
-    ? { paddingLeft: 8 + indent * DISCLOSURE_INDENT }
-    : undefined
+  const rowStyle = {
+    ...(indent ? { paddingLeft: 8 + indent * DISCLOSURE_INDENT } : undefined),
+    ...(trailing != null ? { '--row-pad-trail': '0px' } : undefined),
+  } as CSSProperties
   const hasTrailing = value != null || detail != null || trailing != null
   const act = disabled ? undefined : onClick
   return (

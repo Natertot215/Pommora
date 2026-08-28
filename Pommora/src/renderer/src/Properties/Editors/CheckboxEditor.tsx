@@ -1,7 +1,7 @@
 import { resolveColor } from '@renderer/DesignSystem/Tokens/solidColor'
 import { ColorSwatch } from '@renderer/DesignSystem/Components/Controls/Switches/ColorSwatch'
 import { PickerControl } from '@renderer/DesignSystem/Elements/PickerControl'
-import { rowBox } from '@renderer/DesignSystem/Menus/menu-base.css'
+import { MenuItem } from '@renderer/DesignSystem/Menus'
 import * as s from '../../Frames/frames.css'
 
 export type CheckboxLook = 'checkbox' | 'switch'
@@ -28,19 +28,25 @@ export function CheckboxEditor({
 
   return (
     <div className={s.configEditor}>
-      <div className={rowBox}>
-        <span className={s.configLabel}>Color</span>
-        <ColorSwatch label="Color" selected={chosen.name} css={chosen.css} onPick={onSetColor} />
-      </div>
-      <div className={rowBox}>
-        <span className={s.configLabel}>Style</span>
-        <PickerControl
-          ariaLabel="Checkbox style"
-          value={look}
-          options={STYLE_OPTIONS}
-          onPick={onSetStyle}
-        />
-      </div>
+      <MenuItem
+        trailing={
+          <ColorSwatch label="Color" selected={chosen.name} css={chosen.css} onPick={onSetColor} />
+        }
+      >
+        Color
+      </MenuItem>
+      <MenuItem
+        trailing={
+          <PickerControl
+            ariaLabel="Checkbox style"
+            value={look}
+            options={STYLE_OPTIONS}
+            onPick={onSetStyle}
+          />
+        }
+      >
+        Style
+      </MenuItem>
     </div>
   )
 }
