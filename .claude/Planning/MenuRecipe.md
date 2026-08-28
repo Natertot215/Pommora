@@ -555,8 +555,8 @@ Written as **Today → Becomes**; counts re-derived at Phase 4's open.
 **Derivation (at `6d651c19`):** `grep -rF "var(--sidebar-clearance) + var(--content-edge)" src` → 5 (`navView.css:16`, `subfield.css:11,101`, `Banner.css:33,119`) → 0; `grep -rF "var(--inspector-clearance) + var(--content-edge)" src` → 3 (`Banner.css:133`, `subfield.css:12`, `navView.css:15`) → 0. Control: `grep -rF -- "--sidebar-clearance" src` → 18.
 
 **Steps:**
-- [ ] Mint; repoint; gates; screenshots of the banner title, subfield, footnotes toggle, NavView head and list — nothing moves.
-- [ ] Commit `refactor(shell): the content edge is one token`.
+- [x] Mint; repoint; gates; screenshots of the banner title, subfield, footnotes toggle, NavView head and list — nothing moves. (Screenshots are Gate 4's running pass; the tokens resolve on `.shell`, whose `.sidebar-hidden` / `.inspector-open` overrides are the only other clearance declarations, so the substitution is the reader's own arithmetic.)
+- [x] Commit `refactor(shell): the content edge is one token`.
 
 #### Task 22: IconPicker's cell wears the shell
 
@@ -684,6 +684,7 @@ Every phase runs the same loop. Nothing advances on a summary; every claim is re
 - Task 9: the "today" figures in its prose predate Task 0's tree — `.nav-search-row` already pads `var(--surface-inset)`, `.nav-item-main` pads `6px` (rows likely 28 already), gap 6; the +2 / −10 / −12 search-edge offsets are stale. Re-read Task 9 against the live tree at Phase 2's open.
 
 ### Deviations
+- Task 21: the two Derivation greps land at 1, not 0 — the token's own declaration on `.shell` is the calc; control `--sidebar-clearance` 18 → 14 (five readers gone, one definition added), `--content-start` 9. `Banner.css` and `subfield.css` came under the comment ruling (one why each: the doubled empty-title selector, the footnotes toggle's inset).
 - Gate 3 review (orchestrator, 08-28): the index's `action` kind rendered through `MenuItem` and so carried the shell's hover Requirement 5 forbids → `actionRow` carries the button reset every action row needs (`width: 100%`, no border/background, left-aligned) and the kind renders a bare `<button>` with `titleWrap` + `side`; `frames.allHeading` keeps only `flushAffordance` and its beat var; the Filter footer's Matches / Filter-active pickers pass `footing` so their values read at the footing's rung; the Title row's eye is labeled "Always Shown" (`3eeda281`). Simplifier `0bbf2865` (−67: per-file `pickerRow` builders in GroupFrame/SortFrame, `settingsRow` in the window, SettingsFrame's Open In row through the `value` kind); comment-killer `4a173cfd`. Walked on a restarted dev server (the mid-refactor HMR graph had gone stale on `configLabel`): every Ideas frame (Configuration, Properties + the Status / Timeframe / Pinned editors, Visibility, Layout, Group, Filter, Sort) and every Settings window frame — items 28, TopRows 18, headings 21, All Properties 25, Settings rows 44 with the trailing cluster flush (`trailRight` 0), the Filter footer at the pane's bottom edge. `frames.css.ts` exports 40 → 28. Screenshots `p3-*.png` in the session scratchpad.
 - Task 18: `pickerControl.value` owning `label.control` carries the Number editor's edit-in-place caret with it (`numberEditor.css.ts` `valueCaret`), so the value reads one tone at rest and while written.
 - Task 19: `URLEditor`, `CheckboxEditor`, and `FileEditor` render one `MenuIndex`; `NumberEditor` and `DateTimeEditor` render `MenuRowView` per row because a `Reveal` wraps single rows, which a section cannot express — each keeps a local row builder (`row(label, trailing)`, `pickerRow(…)`) returning the `MenuRow` literal, with `rowRhythm` as the Number rows' `className`.

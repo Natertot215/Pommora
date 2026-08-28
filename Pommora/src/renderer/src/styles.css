@@ -83,6 +83,8 @@ textarea,
   --content-inset: 24px;
   --sidebar-clearance: calc(var(--app-inset) + var(--sidebar-width));
   --inspector-clearance: 0px;
+  --content-start: calc(var(--sidebar-clearance) + var(--content-edge));
+  --content-start-right: calc(var(--inspector-clearance) + var(--content-edge));
   --surface-lane: 8px;
 }
 .shell.sidebar-hidden {
