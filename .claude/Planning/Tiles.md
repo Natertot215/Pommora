@@ -395,7 +395,7 @@ Base: the Menu Recipe's final commit. Baseline invariant carried through every t
 
 **Requirement:** 9
 
-**Files:** `HistoryPM.md` (one entry, `PM-117 || Tiles`, with the commit range and the LOC diff from closeout; a **Links And Interface** sub-label records the 08-27 moves in `44366104` — the hover pane, link menu, and resolvers to `Links/`, `Detail/` → `Interface/` — since they carry no entry of their own); `ContextPM.md` (the `Tiles/` row closes; the `cellRing` row closes; Current Focus's tree paragraph names `Tiles/`, `Utilities/`, `Links/`); `RendererRefactor.md` (the `Tiles/` row and the `cellRing` row leave; `block` → `tile` identifiers gains its own row); `RendererAtlas.md` (Settled: `Tiles/` executed with the date; the tree rows present tense); `Guidelines/` (any lesson from the Log); `Tiles — Decision Log.md` Lessons filled.
+**Files:** `HistoryPM.md` (one entry, `PM-117 || Tiles`, with the commit range and the LOC diff from closeout); `ContextPM.md` (the `Tiles/` row closes; the `cellRing` row closes; Current Focus's tree paragraph names `Tiles/`, `Utilities/`, `Links/`); `RendererRefactor.md` (the `Tiles/` row and the `cellRing` row leave; `block` → `tile` identifiers gains its own row); `RendererAtlas.md` (Settled: `Tiles/` executed with the date; the tree rows present tense); `Guidelines/` (any lesson from the Log); `Tiles — Decision Log.md` Lessons filled.
 
 **Steps:**
 - [ ] `/closeout` discipline over the whole range: Delivery Claim written → neutral verifier (claim, spec, plan, range) → attack pass → interface pass against the running app (the Acceptance paragraph, performed literally).
