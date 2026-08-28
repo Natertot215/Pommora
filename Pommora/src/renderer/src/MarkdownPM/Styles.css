@@ -1211,48 +1211,12 @@
   user-select: none;
 }
 
-/* KNOB: --ac-rows (visible before scroll). The pane is a PickerMenu, which owns its placement, its
-   z rung, its glass and its radius; this is the panel's own sizing and gutter on top of that. */
+/* The `[[` pane — a PickerMenu, which owns its placement, glass, gutter, and scroll cap; this is
+   only the pane's width. */
 .mdpm-ac {
-  --ac-rows: 4;
-  min-width: 180px;
-  max-width: 320px;
-  max-height: calc(var(--ac-rows) * 28px + 8px);
-  overflow-y: auto;
-  padding: 4px;
-  font-size: var(--editor-font-size, 15px);
-}
-.mdpm-ac-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  height: 28px;
-  padding: 0 8px;
-  border-radius: 8px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.mdpm-ac-selected {
-  background: var(--fill-quaternary);
-}
-.mdpm-ac-icon {
-  flex: none;
-  color: var(--label-secondary);
-}
-.mdpm-ac-title {
-  color: var(--label-secondary);
+  min-width: 180px; /* KNOB */
+  max-width: 320px; /* KNOB */
 }
 .mdpm-ac-match {
-  color: var(--label-primary);
-}
-/* The forget affordance on a remembered alias. HoverRemove gates its own click on computed
-   opacity, so the reveal must move opacity and nothing else — a display or visibility switch leaves
-   the gate reading zero and the × does nothing when clicked. */
-.mdpm-ac-forget {
-  flex: none;
-  margin-left: auto;
-  color: var(--label-tertiary);
-}
-.mdpm-ac-forget:hover {
-  color: var(--label-primary);
+  font-weight: var(--weight-emphasized);
 }
