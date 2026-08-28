@@ -1,6 +1,6 @@
 ## The Menu Recipe — Implementation Plan
 
-> **Status:** written, reviewed twice, pending approval · Execution follows **The Loop** (below the tasks) · Spec: this document's Goal, ratified in conversation on 08-27-2026 · Execute tasks in order.
+> **Status:** ratified — in execution (approved 08-27-2026) · Execution follows **The Loop** (below the tasks) · Spec: this document's Goal, ratified in conversation on 08-27-2026 · Execute tasks in order.
 > Citations name files and symbols; re-derive before editing. Counts are whole-renderer (`Pommora/src/renderer/src`, Showcase included) unless a task says otherwise.
 
 **Goal**
@@ -606,9 +606,9 @@ Every phase runs the same loop. Nothing advances on a summary; every claim is re
 ## Implementation Log
 
 ### Progress
-- [ ] **Phase 0** — The Tree
-  - [ ] Task 0 — commit the working tree
-- [ ] **Phase 1** — The Recipe · base `<commit>`
+- [x] **Phase 0** — The Tree
+  - [x] Task 0 — commit the working tree · `27c5171c`
+- [ ] **Phase 1** — The Recipe · base `27c5171c`
   - [ ] Task 1 — the four row tokens, `item` and `menuCompact`
   - [ ] Task 2 — stacking order
   - [ ] Task 3 — one heading
@@ -650,6 +650,7 @@ Every phase runs the same loop. Nothing advances on a summary; every claim is re
 ### Open Against Later Tasks
 
 ### Deviations
+- Task 0: the parallel session's `Store/`, `Detail/Scope.ts`, and `Tabs/tabsModel.ts` had already landed (`af2442ab`), so typecheck was clean, not red. The tree committed was Nathan's 30-file CSS pass (comment trims, `navList.css` search row on `--surface-inset`, row pad 6). Two of its declarations had lost their semicolons — `tabBar.css:14` (`--tab-divider-w: var(--segment-width)`, circular with `.tab-divider`'s own `--segment-width`) and `DetailTitleHeader.css:40` (`line-height: var(--border-base)`, a color) — repaired to `var(--width-200)` and `1.15` so the gate passes; flagged to Nathan.
 ### Lessons
 ### Sequenced After
 - Part 2 — leading glyph size per variant; `--list-inset` for nested lists; `menu-row.tsx:40`'s indent base and `sidebarDnd.tsx:35`'s mirror. Its first step is unwinding the inline `paddingLeft` style, which beats every class and var.
