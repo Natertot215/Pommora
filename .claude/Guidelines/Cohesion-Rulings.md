@@ -150,7 +150,7 @@ re-deriving any of them is reading stale claims:
 
 ### The Design Layer
 
-The rulings about the renderer's organization, styling, and naming — what stays literal, which ladders are settled, which var families only look dead, which concept-name conflicts were refuted — are rostered in [[RendererAtlas]] §VI and are reopened the same way as everything here: with a reason. Two method notes the design sweeps earned belong beside the code-level ones above.
+The rulings about the renderer's organization, styling, and naming — what stays literal, which ladders are settled, which var families only look dead, which concept-name conflicts were refuted — are rostered in [[RendererRework]] §1 Settled and are reopened the same way as everything here: with a reason. Two method notes the design sweeps earned belong beside the code-level ones above.
 
 - A survey measuring two files against each other without accounting for what was already extracted beneath them will overstate the duplication. The option editors read as one component in two shells until the reorder implementation and the chip row already living below both were counted out.
 - Deferring to a prior ruling without checking what it actually covered is the opposite error: a decision bounds what it decided, not everything near it. The combinator ruling covers the IPC handlers, not the crud layer beneath them; the radius ruling covers feature sites picking from the set, not the set being declared six times.

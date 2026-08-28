@@ -2,21 +2,16 @@
 
 ### Current Focus
 
-**The Renderer Refactor is active, and it is one day in.** The renderer works and is filed by the order things were built; the arc moves and renames without changing behavior until every folder answers "what is this" in one word, every surface wears one of five vocabulary terms, and every value read from two places is a token declared once. Two documents carry it: [[RendererAtlas]] holds the evidence, the eight filing rules, the target tree, and the token verdicts; [[RendererRefactor]] is the ledger — what remains, in order, and the rulings it waits on. A session opens on the ledger, takes one row or a few that share files, and closes with `/closeout`.
+**The Renderer Rework is being shaped.** The renderer works and is filed by the order things were built; the two organizational passes of 08-25 to 08-28 moved `Links/`, `Interface/`, the store, and landed the Menu recipe. One document now carries everything still proposed — [[RendererRework]]: the filing rules and target tree, the rulings a sweep must not re-derive, the checklist of moves by kind with what each waits on, the open rulings, and the multi-perspective exploration that runs before any of it is scheduled. Nothing executes from it until the exploration has reported and Nathan has ratified the framework it produces.
 
 **Where the tree stands.** The dependency order reads `DesignSystem ← Properties ← Tables ← Views`, with `Cards/`, `Windows/`, and `Frames/` standing on the design system alone; `DesignSystem/Glass/` is the material in four tiers and `DesignSystem/Menus/` the menu recipe in kebab parts. The five words — Window, Pane, Menu, Frame, Picker — name every floating or sliding surface. The rulings taken so far are in the atlas's Settled list.
 
-**The Menu recipe landed 08-28-2026** through [[MenuRecipe]]: every row in the renderer is one recipe, two sizes chosen per pane, `NavList` and the Trash are menus, and the Settings window and every frame render through `menu-index.tsx`. The ledger holds the rest in order: the side slot next, then the filing rows the atlas already rules, the token and scale rows behind them, and the one behavioral fix. Nathan is still weighing the token moves and the alias naming that the early commits made; the next session's first job is to recap what landed against the ledger, confirm the order, and settle the open rulings before any further row is executed. The Codebase Cleanup — the behavioral half — follows once the refactor stops moving its files.
+**The Menu recipe landed 08-28-2026** through [[MenuRecipe]]: every row in the renderer is one recipe, two sizes chosen per pane, `NavList` and the Trash are menus, and the Settings window and every frame render through `menu-index.tsx`. The recipe's Open Calls and its Part 2 are rows in [[RendererRework]]. The Codebase Cleanup — the behavioral half — follows once the refactor stops moving its files.
 
 ### Immediate Work
 
-- [ ] **Recap and plan before the next move.** Read [[RendererRefactor]] against the tree, confirm the Done rows hold, order the Pending rows into sessions, and take the Open Rulings that gate them — the zoom merge, the three design-system reaches, `Interface/`'s scope, the side slot's name, the bare `Menu`, the two inspectors, the `PropertiesPane` edge, the three "preview" strings.
-- [ ] **The Menu Recipe's Open Calls** — five decisions in [[MenuRecipe]] §Open Calls (rows with a switch or eye at 31–32, locked cards clipping their trail, the Trash row's second tab stop, Settings' section titles as `div`s, a footing row kind) and its Part 2 brief under Sequenced After.
-- [ ] **The side slot** — the main window mounts `SidePane` and PaneSlide becomes one motion; the two inspectors reconciled.
+- [ ] **Shape the exploration.** Read [[RendererRework]] §3 and §4 with Nathan: which perspectives run, how deep, whether behavior is in scope; then dispatch, verify every cited line, and hold the consulting session that turns findings into the framework.
 - [ ] **Where does the floating identity label live?** Embed tiles reveal crumbs or a webpage title on hover, the Web Window shows domain › title always, the Page Window a trail in its tab strip; one design-system element or NavTrail absorbing the webpage case.
-- [ ] **The remaining filing rows** — `Core/`, `Navigation/` absorbing `Tabs/`, the Showcase out, the casing renames — each a session or a few folded into one. `Links/` and `Interface/` landed 08-27; `SurfacePM` keeps its name; `Blocks/` becomes `Tiles/` under [[Tiles — Decision Log]].
-- [ ] **The token and scale rows** — the three zoom renames and the `--page-scale` merge, `--labels-gap`, the checkbox recipe, the odd spacing values per consumer.
-- [ ] **`Blocks/ViewEmbedBlock.tsx:88` → `cellRing(key)`** — the arc's one behavioral fix; one identifier.
 - [ ] **Eyeball the Space dropdown** — carried from 08-25: icon, editable title, lock footer, the two pickers, with the trio's Settings button blank behind it.
 
 ### Pending Focuses
@@ -25,9 +20,9 @@
 
 - [ ] **A property surface attached to the page itself**, rather than only inside the Settings dropdown's Properties leaf, so a page's values are visible and editable where the page is. The frame, the sources, and the decisions taken so far are in `// Planning`'s Decision Log; it runs parallel to the two arcs below and shares no files with them.
 
-#### Two — The Renderer Refactor
+#### Two — The Renderer Rework
 
-The whole-renderer organizational arc, active — see §Current Focus. [[RendererRefactor]] is its ledger: the end goal, what is in flight and pending, and the rulings it waits on. [[RendererAtlas]] keeps the evidence and the filing rules; [[DesignSystemPM]] keeps the vocabulary. Nothing about the arc lives anywhere else.
+The whole-renderer organizational and stylistic arc, being shaped — see §Current Focus. [[RendererRework]] is its one document: the rules, the checklist, the open rulings, and the exploration; [[DesignSystemPM]] keeps the vocabulary. Nothing about the arc lives anywhere else.
 
 #### Three — The Codebase Cleanup
 
