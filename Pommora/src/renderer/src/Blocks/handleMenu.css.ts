@@ -37,15 +37,13 @@ export const titleField = style([
   },
 ])
 export const titleFieldText = style({ flex: 1, minWidth: 0, color: c.label.control })
-export const titleFieldLoc = style([
-  {
-    flex: 1,
-    minWidth: 0,
-    fontSize: font.scale.footnote.size,
-    lineHeight: font.scale.footnote.line,
-    color: c.label.secondary,
-  },
-])
+export const titleFieldLoc = style({
+  flex: 1,
+  minWidth: 0,
+  fontSize: font.scale.footnote.size,
+  lineHeight: font.scale.footnote.line,
+  color: c.label.secondary,
+})
 export const titleFieldIcon = style({ selectors: { '&&': { color: c.label.secondary } } })
 export const titleFieldLocIcon = style({ selectors: { '&&': { color: c.label.tertiary } } })
 
