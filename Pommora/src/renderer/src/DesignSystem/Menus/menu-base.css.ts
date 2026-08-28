@@ -19,7 +19,6 @@ globalStyle(':root', {
     '--row-pad-x': 'var(--row-width-standard)',
     '--row-size': font.scale.body.size,
     '--row-line': font.scale.body.line,
-    '--row-gap': '8px',
   },
 })
 
@@ -36,9 +35,25 @@ export const rowShell = style({
   },
 })
 
+export const rowBox = style([
+  text.body.standard,
+  {
+    position: 'relative',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    paddingBlock: 'var(--row-pad-y)',
+    paddingLeft: 'var(--row-pad-lead, var(--row-pad-x))',
+    paddingRight: 'var(--row-pad-trail, var(--row-pad-x))',
+    fontSize: 'var(--row-size)',
+    lineHeight: 'var(--row-line)',
+    color: c.label.primary,
+    userSelect: 'none',
+  },
+])
+
 export const flushAffordance = style({
-  vars: { '--row-pad-lead': '0px', '--row-gap': '4px' },
-  paddingLeft: 0,
+  vars: { '--row-pad-lead': '0px' },
   gap: '4px',
   color: c.label.secondary,
 })
@@ -77,23 +92,6 @@ export const heading = style([
 ])
 
 export const headingCaps = style({ textTransform: 'uppercase', letterSpacing: '0.04em' })
-
-export const rowBox = style([
-  text.body.standard,
-  {
-    position: 'relative',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 'var(--row-gap)',
-    paddingBlock: 'var(--row-pad-y)',
-    paddingLeft: 'var(--row-pad-lead, var(--row-pad-x))',
-    paddingRight: 'var(--row-pad-trail, var(--row-pad-x))',
-    fontSize: 'var(--row-size)',
-    lineHeight: 'var(--row-line)',
-    color: c.label.primary,
-    userSelect: 'none',
-  },
-])
 
 export const item = style([rowBox, rowShell])
 
@@ -181,8 +179,9 @@ export const caption = style([
 ])
 
 export const footing = style([
+  rowBox,
   flushAffordance,
-  { display: 'flex', alignItems: 'center', paddingRight: 0, paddingBlock: 0 },
+  { vars: { '--row-pad-y': '0px', '--row-pad-trail': '0px' } },
 ])
 
 export const footingBar = style({ display: 'flex', flexDirection: 'column' })

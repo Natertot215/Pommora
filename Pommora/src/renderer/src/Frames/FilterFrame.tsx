@@ -228,7 +228,7 @@ function ValueFieldShell({
   children: React.ReactNode
 }): React.JSX.Element {
   return (
-    // biome-ignore lint/a11y/useSemanticElements: see above — a native button breaks the nested removes
+    // biome-ignore lint/a11y/useSemanticElements: a native button cannot nest the remove buttons
     <div
       ref={hostRef}
       role="button"
