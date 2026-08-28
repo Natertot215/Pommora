@@ -74,7 +74,7 @@ export const heading = style([
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: '4px',
+    gap: 0,
     margin: 0,
     padding: '6px var(--row-pad-x) 2px',
     color: c.label.tertiary,
