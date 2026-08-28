@@ -45,15 +45,7 @@ export const ICON = {
   palette: 'body', // the option row's hover recolor glyph
 } satisfies Record<string, IconSize>
 
-// ═══════════════════════════════════════════════════════════════════════════
-// § SHELL — the menu anchor under the toolbar Settings button
-// ═══════════════════════════════════════════════════════════════════════════
-
 export const anchor = style(menuAnchor('right', stack.local.lifted))
-
-// ═══════════════════════════════════════════════════════════════════════════
-// § TITLE HEADER — the root menu's icon + inline-rename title row
-// ═══════════════════════════════════════════════════════════════════════════
 
 export const header = style({
   display: 'flex',
@@ -76,10 +68,6 @@ export const headerPhotoImg = style({
   borderRadius: '8px',
 })
 
-// ═══════════════════════════════════════════════════════════════════════════
-// § TOPROW — the ‹ back row + its trailing ⊕ / ⋮ action
-// ═══════════════════════════════════════════════════════════════════════════
-
 export const topRowAction = style([
   accessoryButton,
   {
@@ -89,10 +77,6 @@ export const topRowAction = style([
     color: c.label.secondary,
   },
 ])
-
-// ═══════════════════════════════════════════════════════════════════════════
-// § ALL PROPERTIES — the bottom-pinned disclosure block + its registry rows
-// ═══════════════════════════════════════════════════════════════════════════
 
 export const allSpacer = style({
   flex: '1 1 0px',
@@ -112,10 +96,6 @@ export const allRow = style({ color: c.label.secondary })
 export const toggleRow = style({})
 
 export const rowPlus = accessoryButton
-
-// ═══════════════════════════════════════════════════════════════════════════
-// § VISIBILITY (HiddenFrame) — the ghosted hidden zone + per-row eye toggle
-// ═══════════════════════════════════════════════════════════════════════════
 
 export { rowDragging }
 
@@ -140,10 +120,6 @@ export const eyeInert = style([
   },
 ])
 
-// ═══════════════════════════════════════════════════════════════════════════
-// § DRAG CHROME — the two-region drag's box, highlight, and source dim
-// ═══════════════════════════════════════════════════════════════════════════
-
 export const frameDnd = style({
   display: 'flex',
   flexDirection: 'column',
@@ -154,10 +130,6 @@ export const allHighlight = style({
   background: c.state.hover,
   borderRadius: `${SIZE.dragHighlightRadius}px`,
 })
-
-// ═══════════════════════════════════════════════════════════════════════════
-// § OPTION EDITOR — the Select / Multi-Select option list in a property's editor
-// ═══════════════════════════════════════════════════════════════════════════
 
 export const optionEditor = style({ display: 'flex', flexDirection: 'column' })
 
@@ -233,10 +205,6 @@ export const paletteButton = style([
     },
   },
 ])
-
-// ═══════════════════════════════════════════════════════════════════════════
-// § CONFIG ROWS — the shared property-editor rows (label left, control right),
-// ═══════════════════════════════════════════════════════════════════════════
 
 export const configEditor = style({
   display: 'flex',

@@ -1,8 +1,4 @@
-/* The NavWindow. Shell, toolbar, and side panes come from the WindowBase surface; what remains
-   here is this window's own interior — the rail's contents, the tab row, and the search list. */
-
 .navwindow {
-  /* The window rings on the glass inset rather than running edge-to-edge. */
   padding: var(--app-inset);
   /* KNOB — the pair sits further off the × here than in a toolbar band. */
   --window-trail-gap: 6px;
@@ -14,9 +10,6 @@
   --nav-list-lead: 20px;
 }
 
-/* The corner clusters exist only in the page-tab state — they fade in as a page tab activates and
-   out on the map return. The scan/Open shows on BOTH flavors (a page tab promotes that page, the
-   map flavor promotes the window into NavView), so only the trailing pair is page-tab-only. */
 .navwindow .window-actions-flow {
   opacity: 0;
   pointer-events: none;
@@ -33,11 +26,6 @@
   --window-flow-reveal: 0px;
 }
 
-/* The strip row exists only past one tab — height grows in on the standard ease, nudging the
-   search row down; a single-tab (map-only) window keeps today's exact layout. The strip lives in
-   the CONTENT COLUMN right of the rail (never above it), so the rail runs the window's full
-   height and the tabs start right of the sidebar, exactly like the app's tab bar — a page tab
-   sliding the rail away reflows them left for free. The right inset clears settings + X. */
 .navwindow-tabs {
   --navwindow-tabs-h: 30px; /* KNOB — the strip row's height */
   height: 0;
@@ -61,7 +49,6 @@
 .navwindow-tabs.has-tabs {
   height: var(--navwindow-tabs-h);
 }
-/* The map tab: icon-only + compact (the app pinned-tab look), the perma-pinned return. */
 .navwindow-tabs .tab-map {
   flex: 0 0 auto;
   min-width: 34px;
@@ -70,7 +57,6 @@
   padding: 0;
 }
 
-/* The right column beside the rail: strip row on top, then the map body or the page embed. */
 .navwindow-content {
   display: flex;
   flex-direction: column;
@@ -79,8 +65,6 @@
   min-height: 0;
 }
 
-/* The page tab's content: the body-owns-scroll model, same as the floating page window; the open
-   inspector squeezes it aside. */
 .navwindow-page {
   flex: 1;
   min-width: 0;
@@ -128,14 +112,10 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  /* Horizontal inset lives on the rows (nav-item-main) so the highlight spans full-width. */
   padding: 6px 0;
-  /* Zero the gallery's own vertical padding so this scroll's padding is the SOLE gap below the search
-     divider (the gallery mode matches the list rows' rhythm, not a doubled gap). */
   --navwindow-inset-v: 0;
 }
 
-/* The Style toggle — pinned to the rail's bottom-left; above the resize handles so its corner is clickable. */
 .navwindow-style-toggle {
   position: relative;
   z-index: 3;

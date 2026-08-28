@@ -92,7 +92,7 @@ function EmbedTitle({
 }): React.JSX.Element {
   const [editing, setEditing] = useState(false)
   const ref = useRef<HTMLSpanElement>(null)
-  const reverting = useRef(false) // Escape sets this so the blur it triggers doesn't commit
+  const reverting = useRef(false)
 
   useEffect(() => {
     const el = ref.current
@@ -260,12 +260,12 @@ export function ViewEmbedBlock({
     prevIdsRef.current = cur
   }, [idKey])
 
-  if (!embedded || !source || !tree) return <div className="blk-inert" /> // dead source — inert, space holds
+  if (!embedded || !source || !tree) return <div className="blk-inert" />
 
   const view = views[index]
   const titleShown = entry.title !== false
   const iconShown = entry.icon !== false
-  const titleLevel = entry.title_level ?? 4 // #### default
+  const titleLevel = entry.title_level ?? 4
   const labeled = (entry.view_button ?? 'labeled') === 'labeled'
   const dropdown = entry.view_style === 'dropdown'
 
@@ -293,7 +293,7 @@ export function ViewEmbedBlock({
     })
   }
   const persistConfig = (i: number, config: SavedView): void => {
-    if (locked) return // every config surface routes through here, so this one gate freezes them all
+    if (locked) return
     writeConfig(i, config)
   }
   // Folds onto the STORED view, never the caller's — the live overrides on a locked tile hold
@@ -319,10 +319,10 @@ export function ViewEmbedBlock({
     })
   }
   const deleteViewAt = (i: number): void => {
-    if (locked) return // the sink for BOTH paths (dropdown row menu = un-animated; pill = via finishExit)
+    if (locked) return
     mutateEntry(entry.id, (raw) => {
       const arr = rawViews(raw)
-      if (arr.length <= 1) return raw // the switcher never empties (views min(1))
+      if (arr.length <= 1) return raw
       arr.splice(i, 1)
       const cur = typeof raw.active === 'number' ? raw.active : 0
       return { ...raw, views: arr, active: Math.min(cur > i ? cur - 1 : cur, arr.length - 1) }
@@ -367,7 +367,7 @@ export function ViewEmbedBlock({
     } else if (action === 'hide-title') patchEntry({ title: false })
     else if (action?.startsWith('size-')) {
       const n = Number(action.slice(5))
-      patchEntry({ title_level: n === 4 ? undefined : n }) // default level stores absent
+      patchEntry({ title_level: n === 4 ? undefined : n })
     }
   }
   const areaMenu = async (e: React.MouseEvent): Promise<void> => {
@@ -384,7 +384,7 @@ export function ViewEmbedBlock({
   }
   const rowMenu = async (i: number, e: React.MouseEvent, animate: boolean): Promise<void> => {
     e.preventDefault()
-    e.stopPropagation() // the switcher row underneath owns the area menu
+    e.stopPropagation()
     if (locked) return
     menuAnchorRef.current = e.currentTarget as HTMLElement
     const action = await window.nexus.viewRowMenu({

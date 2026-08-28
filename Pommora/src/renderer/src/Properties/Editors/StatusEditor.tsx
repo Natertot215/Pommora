@@ -41,9 +41,9 @@ export function StatusEditor({
   onClearOption: (value: string) => void
 }): React.JSX.Element {
   const [adding, setAdding] = useState<{ groupId: string; index: number } | null>(null)
-  const [renamingGroup, setRenamingGroup] = useState<string | null>(null) // the group id being relabeled
-  const [renaming, setRenaming] = useState<string | null>(null) // the option value being renamed
-  const [coloring, setColoring] = useState<string | null>(null) // the option value being recolored
+  const [renamingGroup, setRenamingGroup] = useState<string | null>(null)
+  const [renaming, setRenaming] = useState<string | null>(null)
+  const [coloring, setColoring] = useState<string | null>(null)
   const paletteBtnRef = useRef<HTMLButtonElement>(null)
   const def = useMemo(() => ({ status_groups: groups }), [groups])
   const statusOrder = useMemo(

@@ -1,18 +1,11 @@
-/* Global app shell: design-token bridge, resets, the window frame (shell / titlebar / content
-   pane), and the open/loading/empty/error states. Per-area styles live co-located with their
-   components: Sidebar/Sidebar.css, Interface/Interface.css, Interface/Banner/Banner.css, Tables/Table.css. */
-
 :root {
-  --main-bg: var(
-    --bg-window
-  ); /* the background.window token via the theme-vars bridge — single source (@shared/theme) */
-  --app-inset: 6px; /* gap from the window edges */
-  --app-radius: 12px; /* matched to the macOS window corner (≈ window radius − inset) */
-  --surface-inset: 10px; /* glass edge → content, inside any floating glass */
+  --main-bg: var(--bg-window);
+  --app-inset: 6px;
+  --app-radius: 12px;
+  --surface-inset: 10px;
   --toolbar-h: 38px;
   --subfield-h: 24px;
-  --content-edge: 12px; /* the band a banner title and the Subfield sit in, off the pane */ /* the Subfield bar; its riding toggle chevron and the window footer read it */
-  /* iOS safe-area insets — inert on desktop (no cutouts); the mobile shell / drawers / bottom bar mount to these. */
+  --content-edge: 12px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -33,19 +26,14 @@ body,
 body {
   font-family: var(--font-family);
   font-size: var(--text-body-size);
-  /* A plain ratio, not the ramp's line height: the ramp's text.body is 13/16 (1.23), and snapping
-     the whole app's default leading to that would reflow every plain-CSS surface. */
   line-height: 1.4;
   color: var(--label-primary);
   background: var(--main-bg);
   -webkit-font-smoothing: antialiased;
-  /* App chrome isn't text-selectable (native feel) — rows, headers, labels don't highlight
-     on drag. Genuinely-editable content opts back in below. */
   -webkit-user-select: none;
   user-select: none;
 }
 
-/* Re-enable selection where the user is actually editing/reading text. */
 input,
 textarea,
 [contenteditable="true"] {
@@ -53,16 +41,10 @@ textarea,
   user-select: text;
 }
 
-/* No visible scrollbars anywhere — scrolling still works (trackpad / wheel). Electron's default
-   Chromium bar reads heavy and the native auto-hiding overlay isn't reliably available, so we hide
-   them app-wide rather than style an always-visible bar. */
 ::-webkit-scrollbar {
   display: none;
 }
 
-/* Hover "pop" — a slight scale-up emphasis on hover, ridden on the slow token so it swells rather
-   than flicks. Reusable: add `hover-pop` to any element you want to lift on hover; tune the swell
-   with --pop-scale.*/
 .hover-pop {
   position: relative;
   transition: transform var(--duration-slow) var(--ease-base);
@@ -73,23 +55,18 @@ textarea,
   z-index: 1;
 }
 
-/* Inspector openness, 0 (closed) → 1 (open) — one registered progress that the inspector slide, the
-   trio's ride, and the trio glass-fade all derive from, so they stay frame-perfectly in sync. */
 @property --io {
   syntax: "<number>";
   inherits: true;
   initial-value: 0;
 }
 
-/* The left-side twin, for a floating window that parks a pane on its leading edge. */
 @property --io-l {
   syntax: "<number>";
   inherits: true;
   initial-value: 0;
 }
 
-/* A floating window's trailing button pair composes two moves into ONE transform: this entry
-   nudge and the side-pane swallow derived from --io. . */
 @property --window-flow-reveal {
   syntax: "<length>";
   inherits: false;
@@ -104,12 +81,8 @@ textarea,
   overflow: clip;
   background: var(--main-bg);
   --content-inset: 24px;
-  /* The pane clearances: how far the floating sidebar / inspector reach in from the window edge;
-     0 when the pane is away; a consumer adds its gap to one of these. */
   --sidebar-clearance: calc(var(--app-inset) + var(--sidebar-width));
   --inspector-clearance: 0px;
-  /* Block-based views (homepage, contexts) run a tighter lane — their tile handles supply the
-     grip/chevron actions a page/table reserves the rail for. */
   --surface-lane: 8px;
 }
 .shell.sidebar-hidden {
@@ -119,13 +92,10 @@ textarea,
   --io: 1;
   --inspector-clearance: calc(var(--app-inset) + var(--inspector-width));
 }
-/* Edge-drag resize holds --io at its current value (no re-animate) so the pane tracks the cursor 1:1. */
 .shell.is-resizing {
   transition: none;
 }
 
-/* Draggable titlebar strip across the top of the frameless (hiddenInset) window — the whole top
-   edge moves the window; the native traffic lights stay clickable through it. */
 .titlebar {
   position: absolute;
   top: 0;
@@ -142,8 +112,6 @@ textarea,
   left: 0;
 }
 
-/* The sidebar's own drag strip — the .titlebar deliberately starts past the sidebar, and a drag region
-   can't live inside the frosted Surface, so this shell-level strip covers the sidebar's top band. */
 .sidebar-titlebar {
   position: absolute;
   top: 0;
@@ -157,14 +125,12 @@ textarea,
   transition: none;
 }
 
-/* Main view fills the whole window — the opaque window background the glass samples. */
 .content-pane {
   position: absolute;
   inset: 0;
   background: var(--main-bg);
 }
 
-/* Open/loading/empty/error states shown in the sidebar Surface before a nexus is ready. */
 .state {
   padding: 48px 16px;
   text-align: center;
@@ -184,7 +150,6 @@ textarea,
   opacity: var(--state-inactive);
 }
 
-/* no-drag: it sits in the draggable glass Surface, so it must opt out to receive clicks. */
 .open-btn {
   -webkit-app-region: no-drag;
   margin: 12px auto 0;
