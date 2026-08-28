@@ -22,8 +22,6 @@ import {
   flushTrailing,
   footingLabel,
   footingSymbol,
-  item,
-  side,
 } from '@renderer/DesignSystem/Menus/menu-base.css'
 import { PickerMenu } from '@renderer/DesignSystem/Components/Pickers/PickerMenu'
 import { Slider } from '@renderer/DesignSystem/Components/Controls/Slider/Slider'
@@ -151,12 +149,10 @@ export function LayoutFrame({
           <Icon name={glyph} size="control" />
         </span>
       }
+      value={isCompact(view) ? 'Compact' : 'Standard'}
       trailing={
-        <span className={side}>
-          <span className={detail}>{isCompact(view) ? 'Compact' : 'Standard'}</span>
-          <span className={footingSymbol}>
-            <Icon name="chevrons-up-down" size="control" />
-          </span>
+        <span className={footingSymbol}>
+          <Icon name="chevrons-up-down" size="control" />
         </span>
       }
       onClick={toggleFormat}
@@ -189,25 +185,29 @@ export function LayoutFrame({
         >
           <span className={footingLabel}>Banner</span>
         </MenuItem>
-        <div className={cx(item, flushTrailing, vs.scaleRow)}>
-          <span className={side}>
+        <MenuItem
+          className={flushTrailing}
+          leading={
             <span className={footingSymbol}>
               <Icon name="scaling" size="control" />
             </span>
-          </span>
+          }
+          trailing={
+            <Slider
+              value={view.card_size ?? 1}
+              min={SCALE_MIN}
+              max={SCALE_MAX}
+              step={0.05}
+              ariaLabel="Scale"
+              onInput={(v) => scrubCardScale(v, view.id)}
+              onCommit={(v) => write({ card_size: v })}
+              format={(v) => `${v.toFixed(2)}x`}
+              readoutClassName={detail}
+            />
+          }
+        >
           <span className={footingLabel}>Scale</span>
-          <Slider
-            value={view.card_size ?? 1}
-            min={SCALE_MIN}
-            max={SCALE_MAX}
-            step={0.05}
-            ariaLabel="Scale"
-            onInput={(v) => scrubCardScale(v, view.id)}
-            onCommit={(v) => write({ card_size: v })}
-            format={(v) => `${v.toFixed(2)}x`}
-            readoutClassName={detail}
-          />
-        </div>
+        </MenuItem>
       </MenuFooting>
     ) : null
 

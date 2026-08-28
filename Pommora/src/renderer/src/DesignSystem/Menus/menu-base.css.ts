@@ -206,6 +206,8 @@ export const accessoryButton = style({
   color: c.label.tertiary,
 })
 
+export const value = style([text.control.standard, { color: c.label.control }])
+
 export const detail = style([
   text.footnote.emphasized,
   { flex: '0 1 auto', minWidth: 0, vars: { '--over-scroll-fade': 'var(--fade-base)' } },

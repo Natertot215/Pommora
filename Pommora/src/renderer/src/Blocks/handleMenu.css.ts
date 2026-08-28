@@ -61,8 +61,3 @@ export const scaleTrailing = style({
   cursor: 'default',
   color: c.label.tertiary,
 })
-export const scaleValue = style({
-  fontSize: font.scale.footnote.size,
-  lineHeight: font.scale.footnote.line,
-  color: c.label.secondary,
-})
