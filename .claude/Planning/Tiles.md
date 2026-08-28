@@ -5,9 +5,9 @@
 
 **Goal**
 
-One folder, `src/renderer/src/Tiles/`, holds everything a tile is — the chassis, the four content kinds, their plumbing, and the dashboard host — and both hosts consume it: MarkdownPM's `editor/embedWidget.tsx` and SurfacePM through `Tiles/BlockSurface.tsx`. `Blocks/`, `Embeds/`, root `Components/`, and `DesignSystem/Detail/` no longer exist. One editor shell, `TileEditor`, renders a prose tile and an embedded page; one writer, `TileWriter`, debounces and flushes every tile-shaped save — page bodies, prose-tile bodies, dashboard layouts — with the same nexus-adopt and window-close guarantees pages have today.
+One folder, `src/renderer/src/Tiles/`, holds everything a tile is — the chassis, the four content kinds, their plumbing, and the dashboard host — and both hosts consume it: MarkdownPM's `editor/embedWidget.tsx` and SurfacePM through `Tiles/BlockSurface.tsx`. `Blocks/`, `Embeds/`, root `Components/`, and `DesignSystem/Detail/` no longer exist. One editor shell, `TileWriter`, renders a prose tile and an embedded page; one writer, `TileSave`, debounces and flushes every tile-shaped save — page bodies, prose-tile bodies, dashboard layouts — with the same nexus-adopt and window-close guarantees pages have today.
 
-The shape follows the consumers: tile content is imported by both hosts and by three Windows with no plurality, which is the atlas's own test for a shared root folder, so `Surface/Blocks/` (a subfolder of one host) was rejected and `SurfacePM/` keeps its name as the engine. The folds are the point, not a side effect — Nathan's mandate is a net code-line reduction against the 2565 baseline, and moves alone are zero-sum. `TileEditor` is justified by cohesion (one click-to-edit shell, one flush story) and is allowed to be line-neutral; `TileWriter` is the cycle's one behavior change and closes a live hole where a prose-tile edit or a layout nudge inside the debounce is lost on window close and, at nexus switch, written into the wrong nexus.
+The shape follows the consumers: tile content is imported by both hosts and by three Windows with no plurality, which is the atlas's own test for a shared root folder, so `Surface/Blocks/` (a subfolder of one host) was rejected and `SurfacePM/` keeps its name as the engine. The folds are the point, not a side effect — Nathan's mandate is a net code-line reduction against the 2565 baseline, and moves alone are zero-sum. `TileWriter` is justified by cohesion (one click-to-edit shell, one flush story) and is allowed to be line-neutral; `TileSave` is the cycle's one behavior change and closes a live hole where a prose-tile edit or a layout nudge inside the debounce is lost on window close and, at nexus switch, written into the wrong nexus.
 
 Bounded by: no change to how a tile looks or behaves beyond the writer's flush guarantees; no `block` → `tile` identifier rename (a Prospect); no webpage tile on the dashboard; the floating identity label stays four separate things (ContextPM open call); `Links/` untouched.
 
@@ -18,8 +18,8 @@ Bounded by: no change to how a tile looks or behaves beyond the writer's flush g
 3. Root `Components/` is `Utilities/`, same three files. (E-1)
 4. `Links/PanePresenter.ts` stays the leaf it is — the load-order cycle it holds open (`Guidelines/Editor-Internals.md:27`) is real, and `Links/` sits outside the LOC measurement. (C-2)
 5. `PageEmbedBlock.tsx` is deleted; `BlockSurface` renders `PageEmbed` directly. (D-1)
-6. `TileWriter` — `Interface/pageFlush.ts` generalized so the write function rides the schedule call (`scheduleWrite(key, body, write)`), with no registry and no mount-bound ownership; keeps the schedule-time warm-cache write-through for pages, the requeue gated on a drop marker, the adopt flush, and the `beforeunload` flush; `MarkdownBlock` and `useBlockDoc`'s layout debounce ride it. (D-3, D-6)
-7. `TileEditor` — one click-to-edit shell over `MarkdownEditor` that `MarkdownBlock` and `PageEmbed` both render. (D-2)
+6. `TileSave` — `Interface/pageFlush.ts` generalized so the write function rides the schedule call (`scheduleWrite(key, body, write)`), with no registry and no mount-bound ownership; keeps the schedule-time warm-cache write-through for pages, the requeue gated on a drop marker, the adopt flush, and the `beforeunload` flush; `MarkdownBlock` and `useBlockDoc`'s layout debounce ride it. (D-3, D-6)
+7. `TileWriter` — one click-to-edit shell over `MarkdownEditor` that `MarkdownBlock` and `PageEmbed` both render. (D-2)
 8. Net code LOC of `Tiles/` + `Utilities/` + `Views/ViewEmbedScope.tsx` is below **2699** — the 2565 baseline plus the three files that enter the measured set from outside it: `ActionBand.css.ts` 88, `tile-chassis.css` 17, `pageFlush.ts` 29. (A-6)
 9. Every document the move makes false is rewritten in the commit that falsifies it; the ledger and atlas name the tree on disk. (Made False)
 
@@ -36,7 +36,7 @@ Bounded by: no change to how a tile looks or behaves beyond the writer's flush g
 - `pageFlush.ts:36` requeues a failed ack when no newer edit owns the slot; `MarkdownBlock` has no requeue today → the requeue is gated on a *drop marker* set by tile removal, not on any registration — a removed tile's failed in-flight write must not resurrect the file, and an ordinary unmount's failed write must still retry as it does today.
 - `Interface/PageView.tsx:102-104`: a pending write survives the component without per-host machinery, and one path can be open in the main pane, a Page Window, the NavWindow, a dashboard tile, and the hover pane at once → the write function cannot be owned by a mount; it rides each schedule call, so N owners of one key never contend and closing one never silences another.
 - `Links/PanePresenter.ts:4-7` and `Editor-Internals.md:27`: `pointerPath.ts` → `ConnectionPane` → `PageEmbed` → `MarkdownPM/index` → `connections.ts:6` → `pointerPath.ts` is a cycle the runtime resolves by leaving one side's bindings uninitialized → `PanePresenter` stays a leaf; nothing in this plan imports `ConnectionPane` from inside MarkdownPM.
-- `Store/NexusSlice.ts:60` awaits `flushAllPageSaves` *before* the root flips; `BlockSurface` unmounts after → any writer outside TileWriter lands in the new nexus.
+- `Store/NexusSlice.ts:60` awaits `flushAllPageSaves` *before* the root flips; `BlockSurface` unmounts after → any writer outside TileSave lands in the new nexus.
 - Vitest, tsconfig, biome, vite, vercel, and the Showcase entries carry no path to any moved folder; the renderer has zero `vi.mock` calls → moves need no config edits, and the type gate enumerates every missed import.
 - `blocks.css` classes (`.blk-md`, `.blk-inert`) are consumed only by movers; `embeds.css` classes cross the boundary (`.pgembed` → `surfacepm.css:199,203`, `Links/connectionPane.css:31,40`; `.pgembed-grows` → `PageWindow.tsx:229`, `NavWindow.tsx:205`; `.tile-chassis(-body)` → `SurfaceView.tsx:133,185`, `embedWidget.tsx:130,243,389`, `embedResize.test.tsx:27`; `.mdpm-embed-tile` owned by `MarkdownPM/Styles.css`; `blk-zoom-*` styled by `surfacepm.css:38-56`) → class names are a contract; the merge renames files, never classes.
 - The Menu Recipe session owns `Embeds/PageEmbed.tsx`, `Blocks/handleMenu.css.ts`, `Blocks/viewEmbed.css.ts`, NavTrail, and the PageWindow crumbs until it lands → Phase 1's base commit is the recipe's final commit.
@@ -44,9 +44,9 @@ Bounded by: no change to how a tile looks or behaves beyond the writer's flush g
 **Inherited Reasoning**
 
 - `Surface/Blocks/` (the atlas row) rejected — content with no plurality consumer misfiles under one host. `TilesPM` rejected — the suffix marks a product-named engine. Dissolving `Components/` into the design system rejected — its files read the store, the reach the atlas is closing. `Connections/` rejected for the hover pane — it serves webpages too; the whole cluster became `Links/` on 08-27.
-- Folding `PanePresenter` into `ConnectionPane` rejected in review — it re-creates the table-mount crash `Editor-Internals.md:27` records, and a dev launch proves one module order out of three. A registry-based TileWriter (`registerWriter`/unregister per mount) rejected in review — the second owner of a path key silenced the first, and unregister-before-ack dropped the retry.
+- Folding `PanePresenter` into `ConnectionPane` rejected in review — it re-creates the table-mount crash `Editor-Internals.md:27` records, and a dev launch proves one module order out of three. A registry-based TileSave (`registerWriter`/unregister per mount) rejected in review — the second owner of a path key silenced the first, and unregister-before-ack dropped the retry.
 - A shared `TileBody` wrapper rejected — `mountTile` is an imperative CodeMirror root, `SurfaceView`'s is a React tree; the shared part is one `div`.
-- The baseline was first stated as 3138 and counted `Links/`'s 578 lines that had already left `Embeds/`; the true baseline is 2565 and the folds pay roughly 40-60 lines. `TileEditor` diverges in nine places and is line-neutral by design.
+- The baseline was first stated as 3138 and counted `Links/`'s 578 lines that had already left `Embeds/`; the true baseline is 2565 and the folds pay roughly 40-60 lines. `TileWriter` diverges in nine places and is line-neutral by design.
 - `SurfacePM/README.md` and `shared/blocks.ts` carry block vocabulary; the `block` → `tile` rename is a separate sweep once the folder holds still.
 
 **Grounding**
@@ -73,7 +73,7 @@ Bounded by: no change to how a tile looks or behaves beyond the writer's flush g
 - Plan directory: `.claude/Planning/`. Spec: the decision log. Explorer: `Explore` agent. Research: none needed. Code reviewer: `feature-dev:code-reviewer` (a general reviewer scoped to correctness; no project-designated correctness agent exists). Attack reviewer: `build-breaking-agent`. Neutral verifier: `general-purpose`, handed the claim, the spec, the plan, and the range. Simplification: `code-simplifier` + `comment-killer-agent`. Rules directory: `.claude/Guidelines/`.
 - Gate commands (from `Pommora/package.json`): `npm run typecheck` · `npm run lint` · `npx vitest run`. LOC gate: the count in Global Constraints.
 
-**Shapes:** refactor (moves, the fold) · removal (`PageEmbedBlock`, `Blocks/`, `Embeds/`, `Components/`, `DesignSystem/Detail/`) · fix (`TileWriter` closes a lost-write hole) · user-visible (the acceptance run) · live-data (a human decision — D-6 ratification).
+**Shapes:** refactor (moves, the fold) · removal (`PageEmbedBlock`, `Blocks/`, `Embeds/`, `Components/`, `DesignSystem/Detail/`) · fix (`TileSave` closes a lost-write hole) · user-visible (the acceptance run) · live-data (a human decision — D-6 ratification).
 
 **Global Constraints (every task inherits these)**
 
@@ -94,14 +94,14 @@ Bounded by: no change to how a tile looks or behaves beyond the writer's flush g
 | `Features/MarkdownPM.md` :75 | `from src/renderer/src/Embeds/` | `Tiles/` | 8 |
 | `Features/WebviewPM.md` :24 | `Embeds/webRetention.ts` | `Tiles/webRetention.ts` | 8 |
 | `Features/DesignSystemPM.md` :27 :375-381 | the `Detail` tier and its one table row | tier empty; chassis is `Tiles/tile-chassis.css` | 8 |
-| `Features/ArchitecturePM.md` :124 :192 | "one path-keyed flush registry … per page path" · "Pending page saves" | `TileWriter` is key-keyed and carries tile bodies and layouts | 11 |
+| `Features/ArchitecturePM.md` :124 :192 | "one path-keyed flush registry … per page path" · "Pending page saves" | `TileSave` is key-keyed and carries tile bodies and layouts | 11 |
 | `Guidelines/Cohesion-Rulings.md` :117 | `Blocks/ViewEmbedBlock.tsx:437` | `Tiles/ViewEmbedBlock.tsx` | 8 |
 | `ContextPM.md` :17 :19 | the `Tiles/` row; `Blocks/ViewEmbedBlock.tsx:88` | row lands; the site is `Tiles/ViewEmbedBlock.tsx:78` and Task 4 closes it | 8, 15 |
 | `RendererRefactor.md` :14 :33 :35 :40 :58 | `DesignSystem/Detail` line; `→ Components/ as NexusIconPicker`; the `Tiles/` row; "wrappers in `Components/`"; `Blocks/ViewEmbedBlock.tsx:88` | satisfied; `Utilities/`; row leaves; `Utilities/`; fixed in Task 4 (the site was `:78`) | 8, 15 |
 | `RendererAtlas.md` :37 :39 :64-73 :88 :105-110 :127 :139 :193 | `Embeds/ViewEmbedScope`; lateral edges by folder; root `Components/` rows; `// Embeds` row; MOVED rows; "keeps `Components/`"; "Four folder names mislead"; `Blocks/ViewEmbedBlock.tsx:88` | tree on disk; `Utilities/`; rows become present tense | 8, 15 |
 | `Planning/MenuRecipe.md` :298 :355 :391 | `Blocks/…`, `Embeds/PageEmbed.tsx` | a landed plan is history — allowlisted, not rewritten | — |
 | `Planning/RendererAtlas.md` :308 :310 | the Settled rows naming `Embeds/` and `Blocks/` | history, correct as written — allowlisted | — |
-| `Planning/Inline Page Properties — Decision Log.md` :32 | "`PageEmbed` and `MarkdownBlock` pass neither" | both still exist as components; `TileEditor` is beneath them — verify-only | 13 |
+| `Planning/Inline Page Properties — Decision Log.md` :32 | "`PageEmbed` and `MarkdownBlock` pass neither" | both still exist as components; `TileWriter` is beneath them — verify-only | 13 |
 | `HandoffPM.md` :33 | "rides whichever session touches `Blocks/` first" | Task 4 takes it; the line is rewritten in Task 4's second commit | 4 |
 
 **Dead Vocabulary**
@@ -258,18 +258,18 @@ Base: the Menu Recipe's final commit. Baseline invariant carried through every t
 
 ---
 
-### Phase 2 — TileWriter (the one behavior change)
+### Phase 2 — TileSave (the one behavior change)
 
-#### Task 9: `Tiles/TileWriter.ts` replaces `Interface/pageFlush.ts`
+#### Task 9: `Tiles/TileSave.ts` replaces `Interface/pageFlush.ts`
 
 **Requirement:** 6
 
 **Why:** `pageFlush` is already the right mechanism — one debounced writer per key, flushed on demand, at nexus-adopt, and at `beforeunload` — with the wrong key type and one write function baked in. The generalization keeps the shape `PageView.tsx:102-104` relies on: the pending write belongs to the *key*, never to a mount. The write function rides the schedule call, so a page open in five places schedules through one slot and closing any of them changes nothing; a prose tile and a layout doc schedule with their own functions and get the same guarantees. No registry exists to get out of sync.
 
 **Files:**
-- Create: `Tiles/TileWriter.ts` — from `pageFlush.ts` by `git mv` then edit, so history follows.
+- Create: `Tiles/TileSave.ts` — from `pageFlush.ts` by `git mv` then edit, so history follows.
 - Modify: `Interface/PageView.tsx:15,143`; `Tiles/PageEmbed.tsx:8,111-112,156`; `Store/NexusSlice.ts:19,60`.
-- Test: `Tiles/tileWriter.test.ts` (new).
+- Test: `Tiles/tileSave.test.ts` (new).
 
 **Interfaces**
 - Produces:
@@ -279,7 +279,7 @@ Base: the Menu Recipe's final commit. Baseline invariant carried through every t
   - `flushAllWrites(): Promise<void>` — as `flushAllPageSaves`.
   - `dropWrite(key: string): void` — clears the pending entry without writing and marks the key dropped until the next `scheduleWrite`.
   - `schedulePageWrite(path: string, body: string): void` — the page seam in the same file: `writeThroughBody(path, body)` then `scheduleWrite(path, body, (b) => window.nexus.updatePageBody(path, b))`. `SAVE_DEBOUNCE_MS = 400` stays; the `beforeunload` listener stays.
-- Assumed by: Task 10 (`MarkdownBlock` schedules with `(b) => window.nexus.blocks.writeMarkdown(host, tileId, b)`; removal calls `dropWrite`), Task 12 (`useBlockDoc` schedules the stringified layout), Task 13 (`TileEditor` takes `onChange` only).
+- Assumed by: Task 10 (`MarkdownBlock` schedules with `(b) => window.nexus.blocks.writeMarkdown(host, tileId, b)`; removal calls `dropWrite`), Task 12 (`useBlockDoc` schedules the stringified layout), Task 13 (`TileWriter` takes `onChange` only).
 
 **Failure half:** `flushWrite` on a key with nothing pending → resolves. A `write` rejecting (the envelope never rejects, but the fn is caller-supplied) → treated as `!ok`. `dropWrite` on a key with nothing pending → marks it dropped, harmless. A key dropped and then scheduled again (a tile removed and re-added with the same id in one session) → the marker clears on schedule.
 
@@ -288,29 +288,29 @@ Base: the Menu Recipe's final commit. Baseline invariant carried through every t
 **Negative control:** the requeue — a write returning `{ok:false}` on an undropped key re-schedules (a second call after 400ms); the same on a key dropped between schedule and ack does **not**. Disable the `dropped` check and the second assertion goes red. And the unmount retry: schedule, flush in flight, ack `{ok:false}` with no drop → requeued, as today.
 
 **Steps:**
-- [ ] Write `tileWriter.test.ts`: schedule + flush lands one write; two schedules coalesce to the newest body and write; flushAll awaits every key; the two Must-agree cases; requeue both halves; drop; `beforeunload` flushes (dispatch the event on `window`).
+- [ ] Write `tileSave.test.ts`: schedule + flush lands one write; two schedules coalesce to the newest body and write; flushAll awaits every key; the two Must-agree cases; requeue both halves; drop; `beforeunload` flushes (dispatch the event on `window`).
 - [ ] Run → failures, module not found.
-- [ ] `git mv Interface/pageFlush.ts Tiles/TileWriter.ts`; implement; re-run → pass.
+- [ ] `git mv Interface/pageFlush.ts Tiles/TileSave.ts`; implement; re-run → pass.
 - [ ] Repoint the three consumers (`schedulePageSave` → `schedulePageWrite`, `flushPageSave` → `flushWrite`, `flushAllPageSaves` → `flushAllWrites`); `rg -F "pageFlush" src` → 0; `rg -F "schedulePageSave" src` → 0.
-- [ ] Gates → 0. Commit: `refactor(tiles): TileWriter — one debounced writer per key, any key`
+- [ ] Gates → 0. Commit: `refactor(tiles): TileSave — one debounced writer per key, any key`
 
-#### Task 10: `MarkdownBlock` rides TileWriter
+#### Task 10: `MarkdownBlock` rides TileSave
 
 **Requirement:** 6
 
-**Why:** The prose tile's private debounce is the lost-write hole; scheduling its `writeMarkdown` through TileWriter closes it and deletes ~20 lines. `suppressFlush` becomes: on removal, `BlockSurface` calls `dropWrite(key)` before `blocks.removeTile`, so neither a pending nor a failed-ack write can land after the trash.
+**Why:** The prose tile's private debounce is the lost-write hole; scheduling its `writeMarkdown` through TileSave closes it and deletes ~20 lines. `suppressFlush` becomes: on removal, `BlockSurface` calls `dropWrite(key)` before `blocks.removeTile`, so neither a pending nor a failed-ack write can land after the trash.
 
 **Files:**
 - Modify: `Tiles/MarkdownBlock.tsx` — drop `pending`, `flush`, `flushRef`, `scheduleSave`, `SAVE_DEBOUNCE_MS`, `suppressFlush`; key = `` `${blockHostKey(host)}:${tileId}` ``; `onChange={(next) => scheduleWrite(key, next, (b) => window.nexus.blocks.writeMarkdown(host, tileId, b))}`; the edit-exit and unmount effects call `flushWrite(key)`, exactly `PageEmbed`'s shape at `:108-112`.
 - Modify: `Tiles/BlockSurface.tsx` — `removing` set and `suppressFlush` callback deleted; `removeBlock` (~:169-181) calls `dropWrite(key)` as its first line, before `commitLayout` — the order the function's comment names as load-bearing. `renderTile` no longer passes `suppressFlush`.
-- Test: extend `tileWriter.test.ts` with the drop case; `Tiles/markdownBlock.test.tsx` if one is needed to prove the edit-exit flush — check `rg -F "MarkdownBlock" src --glob '*.test.*'` first; none exists at planning.
+- Test: extend `tileSave.test.ts` with the drop case; `Tiles/markdownBlock.test.tsx` if one is needed to prove the edit-exit flush — check `rg -F "MarkdownBlock" src --glob '*.test.*'` first; none exists at planning.
 
 **Negative control:** the drop case — schedule, `dropWrite`, advance 400ms, assert zero writes; with `dropWrite` a no-op the assertion goes red. And the orphan case from the spec: schedule, flush (in flight), `dropWrite`, resolve the ack `{ok:false}` — zero further writes.
 
 **Steps:**
 - [ ] Tests first; red; implement; green.
 - [ ] Gates → 0. The running app: type in a prose tile, ⌘Q within 400ms, relaunch — the text is there. Type, then Remove the tile from its handle menu — no file returns.
-- [ ] Commit: `refactor(tiles): the prose tile writes through TileWriter`
+- [ ] Commit: `refactor(tiles): the prose tile writes through TileSave`
 
 #### Task 11: ArchitecturePM's autosave paragraph
 
@@ -323,7 +323,7 @@ Base: the Menu Recipe's final commit. Baseline invariant carried through every t
 **Steps:**
 - [ ] Rewrite; commit: `docs(architecture): autosave is one writer per key`
 
-#### Task 12: The layout document rides TileWriter — **needs Nathan's ratification (D-6)**
+#### Task 12: The layout document rides TileSave — **needs Nathan's ratification (D-6)**
 
 **Requirement:** 6
 
@@ -333,47 +333,47 @@ Base: the Menu Recipe's final commit. Baseline invariant carried through every t
 - Modify: `Tiles/useBlockDoc.ts` — `pending`, `flush`, `SAVE_DEBOUNCE_MS`, and the unmount effect go. Key = `blockHostKey(host)`. `setLayout` calls `scheduleWrite(key, JSON.stringify(layout), (json) => window.nexus.blocks.save(hostRef.current, { layout: JSON.parse(json) }))` — `encodeLayout` is already `JSON.parse(JSON.stringify(layout))` (`codec.ts:15-16`), so the string is the same work in a different order and `body` stays `string` everywhere. `commitLayout` schedules the same way and calls `flushWrite(key)` immediately. The unmount effect becomes `flushWrite(key)`.
 - Test: `Tiles/useBlockDoc.test.ts` if absent — `rg -F "useBlockDoc" src --glob '*.test.*'` → check; the debounce-then-flush and the adopt-order cases.
 
-**Must agree:** the 300ms debounce becomes 400ms — TileWriter has one constant; `commitLayout` still flushes at once. Nathan ratifies that with D-6.
+**Must agree:** the 300ms debounce becomes 400ms — TileSave has one constant; `commitLayout` still flushes at once. Nathan ratifies that with D-6.
 
-**If D-6 is declined:** Task 12 is skipped, Gate 2's `SAVE_DEBOUNCE_MS` sweep expects 2 (`TileWriter`, `useBlockDoc`), and the layout hole stays open — recorded as a Deviation with the ruling, and the ArchitecturePM paragraph (Task 11) says layouts keep their own writer.
+**If D-6 is declined:** Task 12 is skipped, Gate 2's `SAVE_DEBOUNCE_MS` sweep expects 2 (`TileSave`, `useBlockDoc`), and the layout hole stays open — recorded as a Deviation with the ruling, and the ArchitecturePM paragraph (Task 11) says layouts keep their own writer.
 
 **Steps:**
 - [ ] Ratification recorded in Rulings before any edit.
 - [ ] Tests; implement; gates → 0. The running app: drag a tile, ⌘Q within 400ms, relaunch — it stayed. Drag a tile, switch nexus immediately — the old nexus holds the new position, the new nexus is untouched.
-- [ ] Commit: `refactor(tiles): the layout document writes through TileWriter`
+- [ ] Commit: `refactor(tiles): the layout document writes through TileSave`
 
 #### Gate 2 — one writer, every tile-shaped save
 - [ ] Gates green; test count = 3657 + the tests Tasks 9-12 added.
-- [ ] `rg -F "SAVE_DEBOUNCE_MS" src` → 1 (TileWriter), or 2 if D-6 was declined. `rg -F "setTimeout" src/renderer/src/Tiles` → TileWriter's, plus `WebEmbed.tsx`'s capture deadline (`CAPTURE_DEADLINE_MS`), a known non-debounce timer, plus `useBlockDoc.ts`'s if D-6 was declined; any other is a regression.
-- [ ] Simplification and code review against `<base>..HEAD` scoped to `Tiles/TileWriter.ts`, `MarkdownBlock.tsx`, `BlockSurface.tsx`, `useBlockDoc.ts`, `PageEmbed.tsx`, `Interface/PageView.tsx`, `Store/NexusSlice.ts`.
+- [ ] `rg -F "SAVE_DEBOUNCE_MS" src` → 1 (TileSave), or 2 if D-6 was declined. `rg -F "setTimeout" src/renderer/src/Tiles` → TileSave's, plus `WebEmbed.tsx`'s capture deadline (`CAPTURE_DEADLINE_MS`), a known non-debounce timer, plus `useBlockDoc.ts`'s if D-6 was declined; any other is a regression.
+- [ ] Simplification and code review against `<base>..HEAD` scoped to `Tiles/TileSave.ts`, `MarkdownBlock.tsx`, `BlockSurface.tsx`, `useBlockDoc.ts`, `PageEmbed.tsx`, `Interface/PageView.tsx`, `Store/NexusSlice.ts`.
 - [ ] The running-thing pass is the four acceptance runs in Tasks 10 and 12, performed at this gate.
 - [ ] Every concern fixed or ruled; Progress hashes filled in.
 
 ---
 
-### Phase 3 — TileEditor
+### Phase 3 — TileWriter
 
-#### Task 13: `Tiles/TileEditor.tsx`
+#### Task 13: `Tiles/TileWriter.tsx`
 
 **Requirement:** 7
 
 **Why:** `MarkdownBlock.tsx:64-86` and `PageEmbed.tsx:137-167` are one click-to-edit shell written twice: the same `onClick` guard (`editing || locked` → return; a non-collapsed selection → return; else begin edit), the same `MarkdownEditor` with `nativeEditorMenu`, `readOnly={!editing}`, `autoFocus`, `edgeFade`. The nine divergences become props; the two seam components keep their data logic and render the shell. Line-neutral by design; justified by one shell and one flush story.
 
 **Files:**
-- Create: `Tiles/TileEditor.tsx`.
-- Modify: `Tiles/MarkdownBlock.tsx` — the shell lines replaced by `<TileEditor className="blk-md" editing={editing} locked={locked} onBeginEdit={() => onBeginEdit(tileId)} body={body} onChange={(next) => scheduleWrite(key, next, write)} connections={connections} />` (`write` is the tile's `writeMarkdown` closure from Task 10).
-- Modify: `Tiles/PageEmbed.tsx` — the shell lines replaced by `<TileEditor className={cx('pgembed', chrome === 'page' && entry?.cover && 'has-banner')} style={{ '--mdpm-scale': …, '--editor-scale': 1 }} clickGuard=".mdpm-banner" header={header} editing locked onBeginEdit body onChange={(next) => { onBodyRef.current?.(next); schedulePageWrite(path, next) }} connections zoom={embedZoom(embedScale)} warm={warm} pageId={entry?.id} embedAncestors={[...]} />`.
+- Create: `Tiles/TileWriter.tsx`.
+- Modify: `Tiles/MarkdownBlock.tsx` — the shell lines replaced by `<TileWriter className="blk-md" editing={editing} locked={locked} onBeginEdit={() => onBeginEdit(tileId)} body={body} onChange={(next) => scheduleWrite(key, next, write)} connections={connections} />` (`write` is the tile's `writeMarkdown` closure from Task 10).
+- Modify: `Tiles/PageEmbed.tsx` — the shell lines replaced by `<TileWriter className={cx('pgembed', chrome === 'page' && entry?.cover && 'has-banner')} style={{ '--mdpm-scale': …, '--editor-scale': 1 }} clickGuard=".mdpm-banner" header={header} editing locked onBeginEdit body onChange={(next) => { onBodyRef.current?.(next); schedulePageWrite(path, next) }} connections zoom={embedZoom(embedScale)} warm={warm} pageId={entry?.id} embedAncestors={[...]} />`.
 
 **Interfaces**
-- Produces: `TileEditor(props: { className: string; style?: CSSProperties; header?: ReactNode; clickGuard?: string; editing: boolean; locked: boolean; onBeginEdit: () => void; body: string; onChange: (next: string) => void; connections?: ConnectionsApi; zoom?: number; warm?: WarmSeam; pageId?: string; embedAncestors?: readonly string[] })` — renders the outer `div` with the click guard and the `MarkdownEditor`. Everything not listed keeps the value the two shells share today (`menu={nativeEditorMenu}`, `readOnly={!editing}`, `autoFocus`, `edgeFade`).
+- Produces: `TileWriter(props: { className: string; style?: CSSProperties; header?: ReactNode; clickGuard?: string; editing: boolean; locked: boolean; onBeginEdit: () => void; body: string; onChange: (next: string) => void; connections?: ConnectionsApi; zoom?: number; warm?: WarmSeam; pageId?: string; embedAncestors?: readonly string[] })` — renders the outer `div` with the click guard and the `MarkdownEditor`. Everything not listed keeps the value the two shells share today (`menu={nativeEditorMenu}`, `readOnly={!editing}`, `autoFocus`, `edgeFade`).
 - Assumed by: nothing later.
 
-**Survivors:** the bare `is-editing` class both shells emit today has no consumer anywhere in `src` (the live class is `.is-editing-tile`, set by the hosts) and is dropped in the fold. The two biome-ignore lines on the `div` travel to `TileEditor` once and leave both seams. The `pgembed-failed` and `body === null` early returns stay in `PageEmbed` above the shell; `MarkdownBlock`'s `body === null` blank stays likewise.
+**Survivors:** the bare `is-editing` class both shells emit today has no consumer anywhere in `src` (the live class is `.is-editing-tile`, set by the hosts) and is dropped in the fold. The two biome-ignore lines on the `div` travel to `TileWriter` once and leave both seams. The `pgembed-failed` and `body === null` early returns stay in `PageEmbed` above the shell; `MarkdownBlock`'s `body === null` blank stays likewise.
 
 **Steps:**
 - [ ] Create; replace both shells; `rg -F "nativeEditorMenu" src/renderer/src/Tiles` → 1. `Inline Page Properties — Decision Log.md:32` still names both components — verified, no edit.
 - [ ] Gates → 0, test count unchanged. The running app: click-to-edit on a prose tile, a page tile on the dashboard, a page tile in a document, the Page Window, the NavWindow; a text selection ending in a click does not enter edit; a click on an embedded page's banner does not enter edit.
-- [ ] Commit: `refactor(tiles): one TileEditor shell under the prose tile and the page tile`
+- [ ] Commit: `refactor(tiles): one TileWriter shell under the prose tile and the page tile`
 
 #### Task 14: LOC gate and the vocabulary sweep
 
@@ -417,13 +417,13 @@ Base: the Menu Recipe's final commit. Baseline invariant carried through every t
   - [ ] Task 6 — tile-base.css and tile-title.css · `<commit>`
   - [ ] Task 7 — LOC checkpoint · reading: `<n>`
   - [ ] Task 8 — the documents · `<commit>`
-- [ ] **Phase 2** — TileWriter · base `<commit>`
-  - [ ] Task 9 — TileWriter · `<commit>`
+- [ ] **Phase 2** — TileSave · base `<commit>`
+  - [ ] Task 9 — TileSave · `<commit>`
   - [ ] Task 10 — the prose tile · `<commit>`
   - [ ] Task 11 — ArchitecturePM · `<commit>`
   - [ ] Task 12 — the layout document · `<commit>` · ratified: `<date>`
-- [ ] **Phase 3** — TileEditor · base `<commit>`
-  - [ ] Task 13 — TileEditor · `<commit>`
+- [ ] **Phase 3** — TileWriter · base `<commit>`
+  - [ ] Task 13 — TileWriter · `<commit>`
   - [ ] Task 14 — LOC gate · reading: `<n>`
 - [ ] **Phase 4** — closeout · base `<commit>`
   - [ ] Task 15 — the record · `<commit>`
@@ -431,8 +431,8 @@ Base: the Menu Recipe's final commit. Baseline invariant carried through every t
 ### Rulings
 - D-6 (Task 12, the layout writer and the 300 → 400ms debounce): awaiting Nathan.
 - Consistency sweep after round 2 (08-28-2026): no gate carries 2565, no registry vocabulary survives outside the rejection record, every `scheduleWrite` call carries its write fn. Round 3 not run — round 2's findings were arithmetic propagation, not new defects.
-- Review round 2 (08-28-2026): two process gates carried the old 2565; Task 6's ranges started mid-comment; the declined-D-6 branch reached one sweep; `dropWrite` placement; Task 8's sweep gained its allowlist. Eight edits, none structural; the TileWriter shape survived every attack.
-- Review round 1 (08-27-2026): Task 5 withdrawn; TileWriter's registry replaced by a write-per-schedule interface; LOC rebaselined to 2699; `tile-title.css` takes the whole identity cluster; layout body stringified; nine citation corrections.
+- Review round 2 (08-28-2026): two process gates carried the old 2565; Task 6's ranges started mid-comment; the declined-D-6 branch reached one sweep; `dropWrite` placement; Task 8's sweep gained its allowlist. Eight edits, none structural; the TileSave shape survived every attack.
+- Review round 1 (08-27-2026): Task 5 withdrawn; TileSave's registry replaced by a write-per-schedule interface; LOC rebaselined to 2699; `tile-title.css` takes the whole identity cluster; layout body stringified; nine citation corrections.
 
 ### Open Against Later Tasks
 ### Deviations
