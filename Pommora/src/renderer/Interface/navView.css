@@ -11,7 +11,8 @@
 
 .nav-view-head {
   flex-shrink: 0;
-  border-bottom: var(--width-100) solid var(--border-base);
+  --detail-divider-width: var(--width-100);
+  border-bottom: var(--detail-divider-width) solid var(--border-base);
   margin: 0 var(--content-start-right) 0 var(--content-start);
   transition:
     margin-left var(--duration-base) var(--ease-base),
