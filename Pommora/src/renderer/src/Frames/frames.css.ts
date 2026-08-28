@@ -5,6 +5,7 @@ import type { IconSize } from '@renderer/DesignSystem/Tokens/size.css'
 import { duration, easing } from '@renderer/DesignSystem/Animation'
 import {
   accessoryButton,
+  flushAffordance,
   footing,
   footingLabel,
   rowDragging,
@@ -84,12 +85,15 @@ export const allSpacer = style({
 })
 export const allSpacerCollapsed = style({ flexGrow: 0 })
 
-export const allHeading = style({
-  vars: { '--drop-outline-beat': 'var(--duration-base)', '--row-pad-lead': '0px' },
-  width: '100%',
-  border: 'none',
-  background: 'none',
-})
+export const allHeading = style([
+  flushAffordance,
+  {
+    vars: { '--drop-outline-beat': 'var(--duration-base)' },
+    width: '100%',
+    border: 'none',
+    background: 'none',
+  },
+])
 
 export const allRow = style({ color: c.label.secondary })
 
