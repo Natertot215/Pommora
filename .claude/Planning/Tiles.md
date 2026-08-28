@@ -13,7 +13,7 @@ Bounded by: no change to how a tile looks or behaves beyond the writer's flush g
 
 **Requirements**
 
-1. `Tiles/` holds `BlockSurface`, `MarkdownBlock`, `ViewEmbedBlock`, `BlockHandleMenu`, `useBlockDoc`, `blockZoom`, `PageEmbed`, `WebpageEmbed`, `tileWarm`, `webRetention`, `tile-chassis.css`, `ActionBand.css.ts`, their tests, and `tiles.css` + `tile-title.css`. `Blocks/` and `Embeds/` are gone. (A-1, A-2, A-3, A-4)
+1. `Tiles/` holds `BlockSurface`, `MarkdownBlock`, `ViewEmbedBlock`, `BlockHandleMenu`, `useBlockDoc`, `blockZoom`, `PageEmbed`, `WebEmbed`, `tileWarm`, `webRetention`, `tile-chassis.css`, `ActionBand.css.ts`, their tests, and `tile-base.css` + `tile-title.css`. `Blocks/` and `Embeds/` are gone. (A-1, A-2, A-3, A-4)
 2. `ViewEmbedScope.tsx` and its test live in `Views/`. (A-5)
 3. Root `Components/` is `Utilities/`, same three files. (E-1)
 4. `Links/PanePresenter.ts` stays the leaf it is — the load-order cycle it holds open (`Guidelines/Editor-Internals.md:27`) is real, and `Links/` sits outside the LOC measurement. (C-2)
@@ -28,7 +28,7 @@ Bounded by: no change to how a tile looks or behaves beyond the writer's flush g
 **Forced By**
 
 - Both hosts and three Windows import `PageEmbed`; `embedWidget` imports `blockZoom` and `tileWarm` → tile content is a root folder, not a host's subfolder.
-- `embedWidget.tsx:106,357` reach `PageEmbed`/`WebpageEmbed` through `React.lazy` because `PageEmbed` mounts `MarkdownEditor`, which registers `embedWidget` → the cycle is open only through the lazy edge; **`Tiles/` never gets an `index.ts` barrel** — a barrel imported by `embedWidget` for `blockZoom` would pull `PageEmbed` in statically and close it.
+- `embedWidget.tsx:106,357` reach `PageEmbed`/`WebEmbed` through `React.lazy` because `PageEmbed` mounts `MarkdownEditor`, which registers `embedWidget` → the cycle is open only through the lazy edge; **`Tiles/` never gets an `index.ts` barrel** — a barrel imported by `embedWidget` for `blockZoom` would pull `PageEmbed` in statically and close it.
 - `DesignSystem/Components/` shares the word with root `Components/` and is reached by twenty relative and sixty-odd aliased imports → the rename rewrites the eleven explicit root sites only; no bare `Components/` substitution anywhere.
 - `hoverPaneSize.test.ts` calls `vi.resetModules()` and re-imports the module per case → `hoverPaneSize` stays its own module.
 - `.wpembed-title` is declared at `embeds.css:109-120` (`z-index: 2`, shared with `.pgembed-crumbs`) and again at `:162-169` (`z-index: 4`, deliberate — above the webview guest and its catcher) at equal specificity → both declarations land in the same file so source order stays authored, not import-graph-decided; `.pgembed-crumbs` has no rule of its own (`:109`, `:121` only, both in selector lists shared with `.wpembed-title`), so the identity file holds the whole cluster or nothing.
@@ -125,8 +125,9 @@ Base: the Menu Recipe's final commit. Baseline invariant carried through every t
 **Why:** The folder is the deliverable; everything else in this plan lands inside it. Moving first, with no fold, keeps the diff a pure rename the type gate can verify — a fold entangled with a move hides a broken import behind a changed line. Taking `ActionBand.css.ts` and `tile-chassis.css` in the same task means `Tiles/` is complete on the first commit rather than assembled over three.
 
 **Files:**
-- `git mv`: every file in `Blocks/` → `Tiles/`; `Embeds/PageEmbed.tsx`, `Embeds/WebpageEmbed.tsx`, `Embeds/tileWarm.ts`, `Embeds/tileWarm.test.ts`, `Embeds/webRetention.ts`, `Embeds/webRetention.test.ts`, `Embeds/embeds.css` → `Tiles/`; `DesignSystem/Detail/tile-chassis.css` → `Tiles/tile-chassis.css`; `Interface/ActionBand.css.ts` → `Tiles/ActionBand.css.ts`.
-- Modify (imports only): `Interface/HomepageView.tsx`, `Interface/SpaceView.tsx` (`@renderer/Blocks/BlockSurface`); `MarkdownPM/editor/embedWidget.tsx` (:32 chassis, :34 `blockZoom`, :38 `tileWarm`, :106 and :357 the two dynamic imports); `MarkdownPM/editor/gripMenu.ts:15`; `MarkdownPM/index.tsx:31` (`../Embeds/tileWarm`); `Windows/PageWindow.tsx:7`, `Windows/NavWindow.tsx:10`, `Links/ConnectionPane.tsx:15` (`../Embeds/PageEmbed`); `SurfacePM/SurfaceView.tsx:21` (chassis); `Tiles/viewEmbed.css.ts:5` (`../Interface/ActionBand.css` → `./ActionBand.css`); `Tiles/ViewEmbedBlock.tsx:52` (`@renderer/Interface/ActionBand.css` → `./ActionBand.css`); `Tiles/PageEmbedBlock.tsx:1` (`@renderer/Embeds/PageEmbed` → `./PageEmbed`); `MarkdownPM/useConnectionAutocomplete.ts:161` comment (`Embeds/tileWarm.ts` → `Tiles/tileWarm.ts`).
+- `git mv`: every file in `Blocks/` → `Tiles/`; `Embeds/PageEmbed.tsx`, `Embeds/WebpageEmbed.tsx` (renamed `Tiles/WebEmbed.tsx`, the component `WebEmbed`), `Embeds/tileWarm.ts`, `Embeds/tileWarm.test.ts`, `Embeds/webRetention.ts`, `Embeds/webRetention.test.ts`, `Embeds/embeds.css` → `Tiles/`; `DesignSystem/Detail/tile-chassis.css` → `Tiles/tile-chassis.css`; `Interface/ActionBand.css.ts` → `Tiles/ActionBand.css.ts`.
+- Modify (imports only): `Interface/HomepageView.tsx`, `Interface/SpaceView.tsx` (`@renderer/Blocks/BlockSurface`); `MarkdownPM/editor/embedWidget.tsx` (:32 chassis, :34 `blockZoom`, :38 `tileWarm`, :106 and :357 the two dynamic imports — the second becomes `import('@renderer/Tiles/WebEmbed').then((m) => ({ default: m.WebEmbed }))` and `LazyWebpageEmbed` → `LazyWebEmbed`); `MarkdownPM/editor/gripMenu.ts:15`; `MarkdownPM/index.tsx:31` (`../Embeds/tileWarm`); `Windows/PageWindow.tsx:7`, `Windows/NavWindow.tsx:10`, `Links/ConnectionPane.tsx:15` (`../Embeds/PageEmbed`); `SurfacePM/SurfaceView.tsx:21` (chassis); `Tiles/viewEmbed.css.ts:5` (`../Interface/ActionBand.css` → `./ActionBand.css`); `Tiles/ViewEmbedBlock.tsx:52` (`@renderer/Interface/ActionBand.css` → `./ActionBand.css`); `Tiles/PageEmbedBlock.tsx:1` (`@renderer/Embeds/PageEmbed` → `./PageEmbed`); `MarkdownPM/useConnectionAutocomplete.ts:161` comment (`Embeds/tileWarm.ts` → `Tiles/tileWarm.ts`).
+- Rename with the move: `WebpageEmbed.tsx` → `WebEmbed.tsx`, the export `WebpageEmbed` → `WebEmbed`, `useWebpageTitle` and the `.wpembed-*` classes and `@shared/webpageEmbed` untouched — the component name is what changes.
 - Delete: the empty `Blocks/`, `DesignSystem/Detail/` directories. `Embeds/` keeps `ViewEmbedScope.tsx` + test until Task 2.
 
 **Derivation**
@@ -203,7 +204,7 @@ Base: the Menu Recipe's final commit. Baseline invariant carried through every t
 
 `PanePresenter` stays. See Inherited Reasoning; Requirement 4 is satisfied by not touching it.
 
-#### Task 6: One `tiles.css`, and `tile-title.css`
+#### Task 6: One `tile-base.css`, and `tile-title.css`
 
 **Requirement:** 1
 
@@ -211,12 +212,12 @@ Base: the Menu Recipe's final commit. Baseline invariant carried through every t
 
 **Files:**
 - Create: `Tiles/tile-title.css` — the whole identity cluster: `embeds.css:107-124` (the comment, the shared geometry, and the hover reveal for `.pgembed-crumbs` and `.wpembed-title`) followed by `:160-172` (the comment, the `.wpembed-title` override, and its hover rule), in that order, comments verbatim. Both ranges open on a comment line; `npm run lint` parses the result.
-- Create: `Tiles/tiles.css` — `blocks.css` whole, then `embeds.css` minus the two ranges above.
+- Create: `Tiles/tile-base.css` — `blocks.css` whole, then `embeds.css` minus the two ranges above.
 - Delete: `Tiles/blocks.css`, `Tiles/embeds.css`.
-- Modify: `Tiles/BlockSurface.tsx:41`, `Tiles/PageEmbed.tsx:19`, `Tiles/WebpageEmbed.tsx:19` → `import './tiles.css'`; `PageEmbed.tsx` **and** `WebpageEmbed.tsx` also `import './tile-title.css'` — they are separate lazy chunks (`embedWidget.tsx:106,357`), and a webpage tile mounted first must not render an unpositioned title.
+- Modify: `Tiles/BlockSurface.tsx:41`, `Tiles/PageEmbed.tsx:19`, `Tiles/WebEmbed.tsx:19` → `import './tile-base.css'`; `PageEmbed.tsx` **and** `WebEmbed.tsx` also `import './tile-title.css'` — they are separate lazy chunks (`embedWidget.tsx:106,357`), and a webpage tile mounted first must not render an unpositioned title.
 
 **Derivation**
-- `rg -F ".wpembed-title" src/renderer/src/Tiles/tile-title.css` → 4 selector lines (two declarations, two `:hover` rules) in authored order; `rg -F ".wpembed-title" src/renderer/src/Tiles/tiles.css` → 0. `rg -F ".pgembed-crumbs" src/renderer/src/Tiles/tiles.css` → 0.
+- `rg -F ".wpembed-title" src/renderer/src/Tiles/tile-title.css` → 4 selector lines (two declarations, two `:hover` rules) in authored order; `rg -F ".wpembed-title" src/renderer/src/Tiles/tile-base.css` → 0. `rg -F ".pgembed-crumbs" src/renderer/src/Tiles/tile-base.css` → 0.
 - Control: `rg -F ".pgembed-grows" src` → 3 (the definition plus `PageWindow`, `NavWindow`), unchanged.
 
 **Steps:**
@@ -343,7 +344,7 @@ Base: the Menu Recipe's final commit. Baseline invariant carried through every t
 
 #### Gate 2 — one writer, every tile-shaped save
 - [ ] Gates green; test count = 3657 + the tests Tasks 9-12 added.
-- [ ] `rg -F "SAVE_DEBOUNCE_MS" src` → 1 (TileWriter), or 2 if D-6 was declined. `rg -F "setTimeout" src/renderer/src/Tiles` → TileWriter's, plus `WebpageEmbed.tsx`'s capture deadline (`CAPTURE_DEADLINE_MS`), a known non-debounce timer, plus `useBlockDoc.ts`'s if D-6 was declined; any other is a regression.
+- [ ] `rg -F "SAVE_DEBOUNCE_MS" src` → 1 (TileWriter), or 2 if D-6 was declined. `rg -F "setTimeout" src/renderer/src/Tiles` → TileWriter's, plus `WebEmbed.tsx`'s capture deadline (`CAPTURE_DEADLINE_MS`), a known non-debounce timer, plus `useBlockDoc.ts`'s if D-6 was declined; any other is a regression.
 - [ ] Simplification and code review against `<base>..HEAD` scoped to `Tiles/TileWriter.ts`, `MarkdownBlock.tsx`, `BlockSurface.tsx`, `useBlockDoc.ts`, `PageEmbed.tsx`, `Interface/PageView.tsx`, `Store/NexusSlice.ts`.
 - [ ] The running-thing pass is the four acceptance runs in Tasks 10 and 12, performed at this gate.
 - [ ] Every concern fixed or ruled; Progress hashes filled in.
@@ -413,7 +414,7 @@ Base: the Menu Recipe's final commit. Baseline invariant carried through every t
   - [ ] Task 3 — Components to Utilities · `<commit>`
   - [ ] Task 4 — PageEmbedBlock deleted; cellRing · `<commit>` `<commit>`
   - [ ] Task 5 — withdrawn
-  - [ ] Task 6 — tiles.css and tile-title.css · `<commit>`
+  - [ ] Task 6 — tile-base.css and tile-title.css · `<commit>`
   - [ ] Task 7 — LOC checkpoint · reading: `<n>`
   - [ ] Task 8 — the documents · `<commit>`
 - [ ] **Phase 2** — TileWriter · base `<commit>`
