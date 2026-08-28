@@ -2,9 +2,8 @@ import type { ReactNode } from 'react'
 import type { CollectionNode, SetNode } from '@shared/types'
 import { type PropertyDefinition, RESERVED_PROPERTY_ID } from '@shared/properties'
 import type { SavedView } from '@shared/views'
-import { Icon } from '@renderer/DesignSystem/Symbols'
 import { useSession } from '../store'
-import { MenuItem, MenuTopRow, MenuScrollFrame } from '@renderer/DesignSystem/Menus'
+import { MenuRowView, MenuTopRow, MenuScrollFrame } from '@renderer/DesignSystem/Menus'
 import { resolveColumns } from '@renderer/Views/pipeline/columns'
 import { columnLabel } from '@renderer/Properties/Editing/columnLabel'
 import { useActiveView } from '@renderer/Views/useActiveView'
@@ -13,7 +12,7 @@ import { FrameDnd, RowShell, useFrameRegions } from './frameDnd'
 import type { PaneDrop, FrameRow } from './frameDndModel'
 import { contextIdsOf, contextsByIdOf } from '@renderer/Properties/contextIdentity'
 import { hiddenListIds, hiddenPaneSlot, hideShown, placeInShown, unhide } from './hiddenFrameModel'
-import { EyeToggle, EYE_ICON } from '@renderer/DesignSystem/Elements/EyeToggle'
+import { EyeToggle } from '@renderer/DesignSystem/Elements/EyeToggle'
 import { PropertyTypeIcon } from '../Properties/PropertyTypes'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import * as s from './frames.css'
@@ -45,45 +44,51 @@ function VisibilityGroups({
   onToggle: (id: string, hidden: boolean) => void
 }): React.JSX.Element {
   const { assignedRef, allRef, allHighlighted } = useFrameRegions()
-  const eyeFor = (id: string): ReactNode =>
-    id === RESERVED_PROPERTY_ID.title ? (
-      <span className={s.eyeInert} aria-hidden>
-        <Icon name="eye" size={EYE_ICON} />
-      </span>
-    ) : (
-      <EyeToggle
-        hidden={hiddenSet.has(id)}
-        name={nameFor(id)}
-        onToggle={() => onToggle(id, hiddenSet.has(id))}
-      />
+  const row = (id: string): React.JSX.Element => {
+    const hidden = hiddenSet.has(id)
+    return (
+      <RowShell key={id} id={id}>
+        <MenuRowView
+          row={{
+            kind: 'item',
+            icon: rowIcon(id, schema),
+            label: nameFor(id),
+            trailing:
+              id === RESERVED_PROPERTY_ID.title
+                ? {
+                    kind: 'button',
+                    icon: 'eye',
+                    ariaLabel: 'Always shown',
+                    disabled: true,
+                    onClick: () => {},
+                  }
+                : {
+                    kind: 'field',
+                    children: (
+                      <EyeToggle
+                        hidden={hidden}
+                        name={nameFor(id)}
+                        onToggle={() => onToggle(id, hidden)}
+                      />
+                    ),
+                  },
+            className: hidden ? s.hiddenRow : undefined,
+          }}
+        />
+      </RowShell>
     )
+  }
   return (
     <>
       <div data-group="assigned" ref={assignedRef}>
-        {shownIds.map((id) => (
-          <RowShell key={id} id={id}>
-            <MenuItem leading={rowIcon(id, schema)} trailing={eyeFor(id)}>
-              {nameFor(id)}
-            </MenuItem>
-          </RowShell>
-        ))}
+        {shownIds.map(row)}
       </div>
       <div
         data-group="all"
         ref={allRef}
         className={cx(s.hiddenZone, allHighlighted && s.allHighlight)}
       >
-        {hiddenIds.map((id) => (
-          <RowShell key={id} id={id}>
-            <MenuItem
-              className={cx(s.hiddenRow)}
-              leading={rowIcon(id, schema)}
-              trailing={eyeFor(id)}
-            >
-              {nameFor(id)}
-            </MenuItem>
-          </RowShell>
-        ))}
+        {hiddenIds.map(row)}
       </div>
     </>
   )
