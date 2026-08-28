@@ -18,7 +18,7 @@ import { resolveFieldValue } from '@renderer/Properties/value'
 import { buildResolveContext, type ResolveContext } from '@renderer/Properties/resolveContext'
 import { sharedValueClickAction } from './valueClick'
 import { fileChipIndex, fileValueMenu, pickFileInto } from './filePick'
-import { linkValueMenuTarget, showConnectionMenu } from '@renderer/Embeds/connectionMenu'
+import { linkValueMenuTarget, showConnectionMenu } from '@renderer/Links/connectionMenu'
 
 // One home for both page-property surfaces — the Settings pane's Properties leaf and the floating
 // preview's inspector. What they share is everything about resolving a page into rows and writing a

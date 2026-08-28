@@ -12,7 +12,7 @@ import {
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { crumbRow, footerLock, ICON } from './frames.css'
 import { useSession } from '../store'
-import { findCollection, findSet, findCollectionForSet } from '../Detail/Scope'
+import { findCollection, findSet, findCollectionForSet } from '../Interface/Scope'
 import { pickView } from '@renderer/Views/pipeline/pickView'
 import { PropertyFrame } from '../Properties/PropertyFrame'
 import { HiddenFrame } from './HiddenFrame'

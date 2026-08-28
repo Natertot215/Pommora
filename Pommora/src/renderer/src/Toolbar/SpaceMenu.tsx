@@ -15,7 +15,7 @@ import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import { IconPicker } from '@renderer/Settings/IconPicker'
 import { ColorPicker } from '@renderer/DesignSystem/Components/Pickers/ColorPicker/ColorPicker'
 import { InlineEditHeader } from '../Frames/InlineEditHeader'
-import { findSpace } from '../Detail/Scope'
+import { findSpace } from '../Interface/Scope'
 import { useSession } from '../store'
 import * as s from './toolbarMenu.css'
 

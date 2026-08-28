@@ -12,9 +12,10 @@ import { WEB_PARTITION, type HoverCardSize } from '@shared/types'
 import { pageIndexOf } from '../treeIndex'
 import { fetchPageDetail, readPageDetail } from '../Tabs/warmCache'
 import { useSession } from '../store'
-import { PageEmbed } from './PageEmbed'
+import { PageEmbed } from '../Embeds/PageEmbed'
 import { CARD_MIN, hoverPaneSize, seedHoverCardSize, setHoverCardSize } from './hoverPaneSize'
 import { closeActiveHoverCard, presentHoverCard, setHoverCardPresenter } from './PanePresenter'
+import './connectionPane.css'
 
 export { closeActiveHoverCard }
 
