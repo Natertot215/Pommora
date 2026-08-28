@@ -6,7 +6,7 @@
   align-items: center;
   gap: 6px;
   margin: 0 var(--navwindow-inset);
-  padding: 9px 0;
+  padding: var(--surface-inset);
   color: var(--label-tertiary);
   border-bottom: var(--width-100) solid var(--border-light);
   flex-shrink: 0;
@@ -66,9 +66,9 @@
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   /* Content (icon + path edges) aligns to the pane's shared inset; the highlight spans full-width. */
-  padding: 5px var(--navwindow-inset, 8px);
+  padding: 6px var(--navwindow-inset, 8px);
   min-width: 0;
   text-align: left;
   background: none;

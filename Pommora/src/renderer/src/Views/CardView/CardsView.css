@@ -25,13 +25,13 @@
   padding-top: var(--band-clearance);
 }
 .cards-view.is-compact {
-  --card-row-h: 17px; /* KNOB — a compact property-value row */
+  --card-row-h: 16px; /* KNOB — a compact property-value row */
   --card-foot-h: calc(
     1.5px +
-    5px +
+    6px +
     14px
   ); /* the breadcrumb footing (divider + clearance + caption line) */
-  --card-body-min: calc(16px + 18px + 4px + 3px + 2 * var(--card-row-h));
+  --card-body-min: calc(16px + 18px + 4px + 4px + 2 * var(--card-row-h));
 }
 /* With the breadcrumb footing present, add its height so the 2-row reserve still sits ABOVE it. */
 .cards-view.is-compact .card-text:has(.card-loc-zone) {
@@ -84,7 +84,7 @@
    property labels), its outer border heavier than a card's so the ghost reads. The dim rides the
    body rather than the card, so the heavier outline holds while the skeleton inside it lifts. */
 .ghost-card .card-body {
-  border-width: 2px; /* KNOB */
+  border-width: var(--width-200);
   animation: ghost-card-in var(--duration-base) var(--ease-base);
 }
 @keyframes ghost-card-in {
@@ -112,14 +112,14 @@
 .card-props {
   display: flex;
   flex-direction: column;
-  gap: 3px; /* KNOB — Standard row rhythm */
+  gap: 4px; /* KNOB — Standard row rhythm */
   min-width: 0;
 }
 .card-props.is-flow {
   flex-direction: row;
   flex-wrap: wrap;
   align-items: center;
-  gap: 3px 4px; /* KNOB — Compact flow packing */
+  gap: 4px 4px; /* KNOB — Compact flow packing */
 }
 /* Each compact value is a bare <span> wrapper; make it a flex centerer so every property type — text,
    chips, AND the fixed checkbox box — shares one vertical band. Without this the box (no text, so its
@@ -181,5 +181,5 @@
   min-width: 0;
   margin-top: auto;
   border-top: var(--width-150) solid var(--border-base);
-  padding-top: 5px; /* KNOB — divider-to-crumbs clearance */
+  padding-top: 6px; /* KNOB — divider-to-crumbs clearance */
 }

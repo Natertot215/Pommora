@@ -29,7 +29,7 @@
       var(--io) *
       (var(--inspector-width) + var(--app-inset)) -
       var(--app-inset) -
-      var(--trio-w, 0px) -
+      var(--trio-w) -
       var(--trio-inset)
     )
   );

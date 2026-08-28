@@ -14,7 +14,7 @@
 .window-side-right-overlay-resize,
 .window-side-left-overlay-resize {
   position: absolute;
-  width: 9px;
+  width: 10px;
   cursor: col-resize;
   -webkit-app-region: no-drag;
 }
@@ -25,7 +25,7 @@
   position: absolute;
   left: 12px;
   right: 12px;
-  bottom: -3px;
+  bottom: -4px;
   height: 8px;
   cursor: ns-resize;
   z-index: 2;

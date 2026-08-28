@@ -19,7 +19,7 @@ export const segment = style({
   cursor: 'default',
   display: 'inline-flex',
   alignItems: 'center',
-  gap: '3px',
+  gap: '4px',
   // A segment never shrinks: the run overflows its cap as one row and the cap clips and fades it,
   // rather than each segment squeezing onto the next.
   flexShrink: 0,

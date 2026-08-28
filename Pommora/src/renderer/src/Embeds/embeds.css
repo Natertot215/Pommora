@@ -257,7 +257,7 @@
 /* The title rides above both the guest and its catcher, and takes the pointer once revealed, so it
    stays clickable whether or not the tile is engaged. */
 .wpembed-title {
-  z-index: 3;
+  z-index: 4;
   border: none;
   background: none;
   padding: 0;
