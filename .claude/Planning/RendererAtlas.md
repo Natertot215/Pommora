@@ -73,7 +73,7 @@ Each folder answers "what is this" in one word. A row marked NEW, MOVED, or RENA
 │   ├── // Interactions
 │   │   └── reorderModel.ts             | • MOVED from Sidebar/sidebarDndModel — a generic reorder model
 │   ├── // Glass                        | • The material — glass-base, -pane, -surface, -window, -control
-│   ├── // Menus                        | • The menu recipe — menu-base, -row, -surface, -shell, -disclosure, -anchor, frame-slide, frame-growth; gains menu-roster
+│   ├── // Menus                        | • The menu recipe — menu-base, -row, -surface, -shell, -disclosure, -anchor, frame-slide, frame-growth; menu-index
 │   ├── // Tokens                       | • Color, type, geometry, the bridge
 │   └── …                               | • Animation, Elements, Labels, Symbols, Theming, Util
 ├── // Embeds                           | • The embed framework's consumers — page, webpage, retention; folds into Tiles/

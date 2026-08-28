@@ -714,12 +714,21 @@ Every phase runs the same loop. Nothing advances on a summary; every claim is re
 - Task 2: a pure move was not value-neutral — `flushAffordance`'s `paddingLeft: 0` and `gap: 4px` are properties, and above `rowBox` they lose to it (the TopRow would have gone to a 6px inset and an 8px gap). They now also set `--row-pad-lead: 0px` and `--row-gap: 4px`, `rowBox` reads `gap: var(--row-gap)` with `:root` at `8px`, and `topRow` carries `topRowPad`'s padding as `--row-pad-y: var(--top-row-block, 2px)`. `actionRow` stays above `// TopRow` and the two `globalStyle`s sit after `// Trailing` because a composition reads its class at module evaluation; Task 4 moves `actionRow` into its section. The TopRow measures 20 after this task and 18 after Task 4. The diff also carries the `heading` gap `4px → 0px` edited live on the tree during the task.
 - Task 1: the `--surface-inset` control is 9, not 8 — `MENU_GUTTER`'s one definition became two direct reads (`surface`, `hostedGutter`); every later control rewritten to 9. `calendarPicker.optionRow` survives as the geometry class its Files entry and F12 describe; only its `fontSize` and `color` deleted. The Docs bullets of Tasks 1 and 6 (`DesignSystemPM.md:197,221,364-366`, `RendererRefactor.md:20`) are the closeout's (Loop step 5): the executor stages no `.claude/` file but this one.
 ### Lessons
+- A class moved "as geometry" must be diffed for the rung and tone it carried (Round 5 F1); a control's own `:disabled` can un-dim what its base dimmed (F2); a class that gains a `:has()` layout rule is no longer a typography prop (Round 4 F4); a value minted for one host lands on its siblings — census every reader of a class before giving it a width (Round 4 F2, F5).
+- Over CDP, assert `document.activeElement` before `Input.insertText` — a rect-derived click landed on a card, opened a page window, and typed into a real Nexus page (recovered by `git checkout`).
+- A mid-refactor HMR graph goes stale on a deleted export; a blank React root after a rename is the dev server, not the code — restart it before diagnosing.
 - A "pure reorder" of vanilla-extract classes is never value-neutral when a class composed later sets a property the base also sets — declare the base first, and let variants set properties; reach for a var only when a surface (not a row) has to override it.
 - A var, export, or class with one writer and one reader is indirection: reorder, delete, or compose before minting (Nathan, 08-27).
 - The executor's brief must say "add no comments" outright and name the existing prose as cuttable, or a comment-sweep lands as a separate agent pass.
+### Open Calls (Nathan)
+1. Rows carrying a switch or eye toggle measure 31–32 — the control is taller than the 16px line. A 16px control, or rows sized by their tallest child.
+2. Locked cards clip their trail (Task 12a's diagnosis: the cover's 65% share vs the text band). The cover yields, or the band takes a floor the cover pays for.
+3. A Trash row with `onClick` is a `role=button` tab stop beside its checkbox's (Round 4 F6). A `MenuItem` opt-out, or the row loses the pointer convenience.
+4. Settings' section titles render as the index's `div` heading, leaving the window's heading outline (Round 5 F5). A `level` on the heading kind, or accept.
+5. A footing row kind in the index — the footing rows in GroupFrame, LayoutFrame, PropertyFrame, and FilterFrame still hand-build `footingSymbol` + `footingLabel` `MenuItem`s inside `MenuFooting`.
+
 ### Sequenced After
-- Part 2 — leading glyph size per variant; `--list-inset` for nested lists; `menu-row.tsx:40`'s indent base and `sidebarDnd.tsx:35`'s mirror. Its first step is unwinding the inline `paddingLeft` style, which beats every class and var.
-- The Figma `Menu Item` follows the code: Standard = body + 6, Compact = control + 4; `Menu Heading`, `Menu Footing`, `Menu TopRow` components.
+**Part 2 — the brief.** Leading glyph size per variant (today every leading glyph is what its caller passes — `headline` 15 in the sidebar and Trash, `body` elsewhere; Compact wants a `control` glyph). `--list-inset` for nested lists, starting by unwinding `menu-row.tsx`'s inline `paddingLeft: 8 + indent * DISCLOSURE_INDENT` (it beats every class and var) and `sidebarDnd.tsx`'s mirror of the `8`. A footing row kind in the index (Open Call 5) and the `action` kind's first production consumer (PropertyFrame's All Properties row with its disclosure beat). Two more clearance pairings that repeat and could each be a token the way `--content-start` is — `calc(clearance + --content-inset)` (`Interface.css:26,59,75`, `MarkdownPM/Styles.css` ×5) and `calc(clearance + --surface-lane)` (`Interface.css:82,90`, `navView.css:38`) — different distances, so a decision each. The Figma `Menu Item` follows the code (Standard = body + 6, Compact = control + 4); `Menu Heading`, `Menu Footing`, `Menu TopRow`; the `Icons` variables renamed to the ladder (`titleLarge` · `titleMedium` · `titleSmall` · `headline` …).
 ### Closeout
 
 Ruled 08-27 (Nathan, before sleep): the plan runs to the end unattended — every phase through Gate 4, then §Landing — with nothing deferred and no cleanup postponed. The History entry is drafted in chat and not filed. Each box is ticked with its evidence beside it, in this document, as it is met.
@@ -754,4 +763,26 @@ Ruled 08-27 (Nathan, before sleep): the plan runs to the end unattended — ever
 - [ ] Every commit on explicit paths; `git status --short` shows only Nathan's own live edits, if any; Status header → "landed — <entry drafted in chat>"
 - [ ] History entry drafted in chat; not filed
 
-**Delivery Claim**
+**Delivery Claim** (at `8e5a4645`; range `27c5171c..HEAD` on `main`)
+
+Every assertion below is checkable; the evidence is named beside it.
+
+- **Requirements 1–16 trace to landed tasks by hash:** 1 → T1 `a1f3e2c5`+`370a167a`, T7 `3d90741e`, T8 `6724ba08`, review `72a867a4` (sweep `minHeight: '2Npx'` → only `fields.css.ts:33`, a field, and `pageWindow.css:82`, an inspector box); 2 → T1, T4 `fb2f77d5`, T5 `a6df3eed` (each token → 0); 3 → T2 `5194820f`, T4; 4 → T3 `c857a3e4`; 5 → T6 `bdf30002`, `8fcb89bb`, `3eeda281`; 6 → T5, T20 `05392979`; 7 → T4; 8 → T1 (`pane` composes `menuCompact`), T8; 9 → T9 `c21eb47d`, T12b `46aac3d1`; 10 → T12 `da647e88`; 11 → T11 `be6381a5`, T13 `71320620`, T14 `f2a59d41`, T15 `21322586`, T16 `8863c613`, T17 `aa6dcaa7`·`1d442c25`·`3d619f98`, T18 `760352dd`, T19 `1e3a5bd3`; 12 → T7, T14 (`frames.css.ts` exports 40 → 28: geometry, drag chrome, `ICON`, and the three ruled tone classes `allRow` · `hiddenRow` · `footerLock`); 13 → T3; 14 → T9 (ruled 08-28), T21 `da851e1b`; 15 → T12a `0f6325c5`, T12b (checkboxes kept in the lead inset by ruling); 16 → T10 `90cbd682`, T14, T15.
+- **Acceptance held, measured live over CDP** (screenshots `p1-*` · `p2-*` · `p3-*` · `p4-*` in the session scratchpad): sidebar rows 28 (6+16+6) · the Settings menu's rows 28, TopRows 18, headings 21, All Properties 25 · a hosted view-settings pane (Compact) 23 with its TopRow 18 · NavView's list 28 with the pin centered 12px into a 24px lead · the Trash 28 with its checkbox in the same inset and its date lane on the head's · the Settings window's rows 44 (title + hint) with the trailing cluster flush. `grep -rF -- "--row-inset" src` → 0; `grep -rF -- "--surface-inset" src` → 9. Not driven: NavWindow (its toolbar menu is a pre-existing blank placeholder) and the `[[` autocomplete — Nathan's list.
+- **No new dependency:** `git diff 27c5171c..HEAD -- Pommora/package.json` is empty.
+- **One home each, grep-proven:** `rowDragging` declared once (`menu-base.css.ts`); the content edge once (`--content-start` / `--content-start-right` on `.shell`, 0 raw calcs left); `heading` once; the trail's look once (`navTrail.css.ts`); the flush rule once (`MenuItem`, keyed on a trailing); the footing rung once (`footingBar` globals over `value`, `detail`, and the picker's value); the overlay once (`overlay`, `&&`).
+- **Nothing left with nothing to vary:** the Dead Vocabulary sweep is 0 for every token against control `--surface-inset` = 9 (the one `nav-item` hit is a comment in Nathan's own `tabStrip.css`); `frames.css.ts` at 28 exports.
+- **No work added to a high-frequency path:** the Settings window's `useSession` count is 15 before and after — subscriptions stayed per row; the index renders only.
+- **Gates at HEAD, run by the orchestrator:** typecheck 0 · biome "Checked 967 files. No fixes applied." · vitest 297 files / 3671 tests.
+- **Code-only delta:** +2037 / −2358 = **−321** across `Pommora/src` (comment and blank lines excluded).
+
+**Nathan's running pass — what to look at**
+- Sidebar rows (28, hover wash, the disclosure rail) — `p1-home.png`.
+- A page's Settings → Properties (TopRow 18 · Add Property · Lock footing) — `p1-props-frame.png`.
+- The Ideas view's Settings: root, Configuration, Properties with the Status / Timeframe / Pinned editors, Visibility, Layout, Group, Filter (rows branch, footer flush at the bottom), Sort — `p3-frame-*.png`, `p3-editor-*.png`.
+- A dashboard tile's hosted settings (Compact 23) and its Layout footing (Style · Banner · Scale slider with its readout) — `p2-tile-*.png`.
+- NavView gallery and list (rows 28, the pin in the inset, the search on the content edge, the List/Gallery toggle on the trail's edge) — `p2-navview*.png`, `p2-subfield-navview.png`.
+- The Settings window: General, Interface, Navigation (a slider), Appearance, Files & Links (the asset-directory field), Pages & Editor — `p2-settings-*.png`, `p3-settings-*.png`.
+- The Trash (rows 28, the checkbox in the lead inset on hover, lanes on the head's) — `p2-trash*.png`.
+- The banner title, subfield, NavView head on one edge; the icon picker's cells — `p4-*.png`.
+- **Yours alone, not driven:** the `[[` autocomplete (rows 23 in a `PickerMenu`, hover, `itemSelected`, the pane's 10px gutter); a pin reorder by drag in NavView; the FilterFrame locked branch (a hand-authored filter); the ImagePicker zoom strip spanning its row; the Calendar month/year lists (23); BlockHandleMenu; a page window's crumbs.

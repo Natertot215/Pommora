@@ -196,8 +196,10 @@ The over-scroll edge-dissolve widths a scrollable surface names on `--over-scrol
 | Pane Clearance    | `--sidebar-clearance` · `--inspector-clearance` | `--app-inset` + the pane's width, `0px` when the pane is away; a consumer pads `calc(clearance + gap)` with one of the three gaps above (`styles.css`) |
 | Shell Bands       | `--toolbar-h` · `--subfield-h`                 | `38px` · `24px` — the toolbar strip and the Subfield bar; the window footer reads the latter (`styles.css`) |
 | App Inset         | `--app-inset` · `--app-radius`                 | `6px` · `12px` — a floating glass pane's gap from the window edge, and its corner (`styles.css`) |
-| Surface Inset     | `--surface-inset` · `MENU_GUTTER`              | `10px` — glass edge → content, inside a menu, side pane, the inspector, or a window toolbar (`styles.css`) |
-| Row Inset         | `--row-inset` · `ROW_INSET`                    | `6px` — row edge → text, inside a menu row; the disclosure rail centers off it (`styles.css`) |
+| Surface Inset     | `--surface-inset`                              | `10px` — glass edge → content, inside a menu, side pane, the inspector, or a window toolbar (`styles.css`) |
+| Row Tokens        | `--row-height-standard` · `--row-height-compact` · `--row-width-standard` · `--row-width-compact` | `6px` · `4px` · `6px` · `4px` — a row's vertical and horizontal padding in its two sizes; a row's height is never declared, it is the ramp's line plus the pair (`Menus/menu-base.css.ts`) |
+| Row Vars          | `--row-pad-y` · `--row-pad-x` · `--row-pad-lead` · `--row-pad-trail` · `--row-size` · `--row-line` | what a surface sets to size every row inside it — `menuCompact` on a pane sets the Compact pair and the control ramp; a NavList column sets `--row-pad-lead: var(--content-inset)`; a row with a trailing cluster sets `--row-pad-trail: 0` |
+| Content Start     | `--content-start` · `--content-start-right`    | `calc(clearance + --content-edge)` on each side — where a page's chrome starts: the banner title, the Subfield, NavView's head and rows (`styles.css`) |
 | Rail Inset        | `RAIL_INSET` · `--rail-inset`              | `20px` — the grip / fold-chevron lane the editor, tables, and tiles share |
 | Drop Line         | `DROP_LINE_THICKNESS` · `DROP_DOT_SIZE` · `DROP_LINE_INSET` | `2px` · `7px` · `2px`                                |
 | List Outline      | `LIST_OUTLINE_WIDTH` · `LIST_OUTLINE_GAP` · `--list-outline-*` | `2px` · `3px` · segment tone · pill radius        |
@@ -221,7 +223,7 @@ The over-scroll edge-dissolve widths a scrollable surface names on `--over-scrol
 | Footnote    | `text.footnote`   | `10px` / `13px` | small detail                                         |
 | Subline     | `text.subline`    | `10px` / `12px` | footnote's size on a tighter line box                |
 
-Where each goes: menu and sidebar rows → Body; menu headings → Headline / Emphasized; row sub-label → Caption, trailing detail → Footnote / Emphasized; frame header → Callout / Emphasized; settings section headings → Headline / Emphasized; table column headers → Callout / Semibold; chips and sidebar section headers → Control / Semibold; on-control labels → Control / Emphasized; picker, segmented, and tab labels → Control; card titles → Body / Semibold; the Subfield → Subline / Emphasized. The [[MarkdownPM|Markdown editor]] scales from its own zoom root in `em` multiples, drawing weight from the shared ladder.
+Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, every row inside a picker pane); menu headings and settings section headings → Footnote / Emphasized · tertiary (uppercase in Settings); the "All Properties" action row → Footnote / Emphasized · secondary; the TopRow → Caption / Emphasized; row sub-label → Caption, trailing detail → Footnote / Emphasized, a control's value → Control (both at Footnote inside a footing); frame header → Callout / Emphasized; table column headers → Callout / Semibold; chips → Control / Semibold; on-control labels → Control / Emphasized; picker, segmented, and tab labels → Control; card titles → Body / Semibold; the Subfield → Subline / Emphasized; a NavTrail → Caption · secondary wherever it appears, except inside the Subfield and a path field, which keep their own register. The [[MarkdownPM|Markdown editor]] scales from its own zoom root in `em` multiples, drawing weight from the shared ladder.
 
 ### Glass
 
@@ -359,8 +361,9 @@ Where each goes: menu and sidebar rows → Body; menu headings → Headline / Em
 
 | Title | Export | What it is |
 | ------------ | ----------------------------------------------- | ----------------------------------------- |
-| Menu | `Menu` · `MenuItem` · `MenuHeading` · `MenuSeparator` · `MenuCaption` · `itemEmphasized` · `titleInput` | The row vocabulary, the emphasized row, and the flush inline-rename input. |
-| Bars | `MenuTopRow` · `MenuFrameTopRow` · `MenuBottomRow` · `FooterLockButton` · `FooterMoreButton` · `AccessoryButton` | The pinned header and footer tiers and their buttons. |
+| Menu | `Menu` · `MenuItem` · `MenuSeparator` · `MenuCaption` · `MenuTopRow` · `MenuFooting` | The row kinds, in the order a menu stacks: TopRow, heading, item, action row, separator, caption, footing. `MenuItem` carries `leading` · title · `subLabel` · `value` · `detail` · `trailing` · `overlay`, and `inert` for a box that is not clickable. |
+| Row classes | `rowBox` · `rowShell` · `item` · `menuCompact` · `heading` · `headingCaps` · `actionRow` · `topRow` · `footing` · `overlay` · `value` · `detail` · `rowDragging` · `AccessoryButton` · `FooterLockButton` · `FooterMoreButton` | The box every row wears (first in the stylesheet, so a variant's own properties win), the hover/focus shell, and the kinds as classes; `menuCompact` on a pane switches every row inside it; `overlay` seats a pin or checkbox in the lead inset. |
+| Index | `MenuIndex` · `MenuRowView` · `MenuRow` · `MenuSection` · `Trailing` | A menu as data — sections of rows, each row's trailing control named once (chevron · value · switch · button · slider · picker · color · field); the Settings window and every frame render through it. |
 | Scroll frame | `MenuScrollFrame` · `MENU_MAX_HEIGHT` | The one capped overflow region with its fade. |
 | DisclosureRow | `DisclosureRow` · `useDisclosureSet` · `DropOutlineKind` | A folding row on DropOutline. |
 | MenuSurface | `MenuSurface` | The beaked surface the large toolbar menu hangs off a button. |

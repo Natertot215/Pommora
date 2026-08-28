@@ -63,8 +63,8 @@ plausible from the outside. Reopen any of them with a reason, not with a fresh r
   ImagePicker's re-pick Save-hold waited for the `value` prop to advance; a dedup adopt of the
   already-set image writes the same value back, so the change never came and Save stranded. Any hold
   released only by an effect a no-op path can withhold is a latent deadlock.
-- The autocomplete pane's row does not adopt the shared menu-row primitive. Taking its metrics
-  changes how the pane looks, which is a design decision rather than a consolidation.
+- The menu row's box is declared once (`rowBox`, first in `Menus/menu-base.css.ts`), and a surface picks Standard or Compact on its pane — never per row. A vanilla-extract variant composed onto a base sets properties only when it is declared after the base; a surface that must override every row inside it sets the `--row-*` vars instead.
+- A var, export, class, or prop with one writer and one reader is indirection — reorder, delete, or compose first; a value set once and read once is a literal with a `KNOB`. A new `--var` needs two surfaces overriding it.
 - `PageHeader` stays driven rather than store-reading. A Page Window draws a page that is not
   the active one, so a header reading the active page would draw the wrong title.
 - The insert-an-id-at-an-index idiom stays written out. Its four sites differ in whether the id was
