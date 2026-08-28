@@ -47,7 +47,7 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
 - `8c7df3bc` put alias memory in its own slice inside the file; this plan makes that the file boundary.
 - `d0e1313e` reduced the page-state reset sites to two constants and ruled one blanket constant "would erase the reason." The reason was the singleton; a slot is deleted whole.
 - The Audit ruled the singleton blocks within-window ambition (`WARM_TABS`, split view), not the locked multi-window seam.
-- Cohesion-Rulings: "`PageHeader` stays driven rather than store-reading" — the Subfield joins it.
+- Ruled: `PageHeader` stays driven rather than store-reading (a Page Window draws a page that is not the active one) — the Subfield joins it.
 - Review round one: deriving `selection` and keying by tab id were attacked and fell. Round two: deleting the outgoing slot on "no tab points at it" kills the pause; capture inside `select` misses `activateTab` (which moves `activeTabId` first) and `openNewTab` (which never reaches `select`); a `loading` slot variant, a `NONE` constant, and a `frozenOf` read inside `select` were all found unnecessary. Round three: an unfenced unmount capture refills warm after a rename's `clearWarm()`; `applyTree`'s slot reconcile must spare the shown slot (Requirement 2); the seam's tab id goes stale without a remount. All folded; none re-litigated.
 
 **Grounding**
@@ -68,7 +68,7 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
 - Plan directory `.claude/Planning/`. Spec: the Checklist's Bundle 5 and the Audit's ruling, read whole.
 - Explorer `Explore` · code reviewer `feature-dev:code-reviewer` · attack reviewer `build-breaking-agent` · neutral verifier `general-purpose` handed the claim and the spec · simplification `code-simplifier` then `comment-killer-agent`.
 - Gates from `Pommora/`: `npm run typecheck` · `npm run test` · `npm run lint`, exit codes read directly. Baseline: all green; 294 test files, 3,653 tests; `store.ts` 1,620 code lines; the whole-diff code-line delta is the reported metric, with `store.ts`'s figure beside it.
-- Rules: `.claude/Guidelines/` (Cohesion-Rulings, Build-Gotchas, Lint-And-Accessibility read).
+- Rules: `.claude/Guidelines/` (Build-Gotchas, Lint-And-Accessibility read).
 
 **Shapes:** refactor (baseline 3,653 tests green; the eight running-app checks) · removal (inventory in Dead Vocabulary; deletion order is task order) · user-visible (tab flip, cold swap, pin/unpin, preview Subfield, restore, typing).
 
