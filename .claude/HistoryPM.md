@@ -2,7 +2,6 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
-| 08-27-2026              | PM-117 | Links And Interface |
 | 08-27-2026              | PM-116 | The Store Split |
 | 08-25-2026              | PM-115 | The ImagePicker                                      |
 | 08-22-2026              | PM-114 | File Properties                                      |
@@ -121,14 +120,6 @@
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
 
-
-#### PM-117 || Links And Interface
-**DATE:** 08-27-2026
-
-`Links/` holds everything that happens to a link: `ConnectionPane` with `PanePresenter` and `hoverPaneSize` from `Embeds/`, `connectionMenu` from `Embeds/`, and `linkResolve` and `openWebLink` from the renderer root; the pane's `conn-hover-*` rules left `embeds.css` for `Links/connectionPane.css`. The name was chosen against `Embeds/`, where "Connections" also read as the pane's content kind, and the pane serves webpage hovers as well as page hovers. `Detail/` was renamed `Interface/`, with `DetailScaffold` → `InterfaceScaffold` and `Detail.css` → `Interface.css`; whether `Sidebar/` and `Toolbar/` fold into it remains an open ruling in [[RendererRefactor]]. Both moves were made for filing; no behavior changed.
-
-- **Commits:** `44366104`
-- **Diff:** Net ±0 | moves only
 
 #### PM-116 || The Store Split
 
