@@ -7,7 +7,7 @@ export function AssetDirectoryRow({ label, hint }: RowText): React.JSX.Element {
   const setAssetDirectory = useSession((s) => s.setAssetDirectory)
 
   return (
-    <SettingsRow label={label} hint={hint} wide>
+    <SettingsRow label={label} hint={hint}>
       <PathField
         label={label}
         value={stored}

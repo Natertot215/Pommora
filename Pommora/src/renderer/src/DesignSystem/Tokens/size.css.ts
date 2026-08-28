@@ -104,7 +104,6 @@ export const DROP_DOT_SIZE = 7
 export const LIST_OUTLINE_WIDTH = 2
 export const LIST_OUTLINE_GAP = 3
 export const PARK_CLEARANCE = 14
-export const CLOSE_CLEARANCE = 30
 
 /** One token object: `size.icon.control`, `size.control['button-large'].height`, … */
 export const size = {
