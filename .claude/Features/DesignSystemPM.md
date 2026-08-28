@@ -125,8 +125,6 @@ An edge composes a width and a color — `var(--width-XXX) solid var(--border-YY
 | Width 150    | `--width-150`                       | `1.5px`             |
 | Width 175    | `--width-175`                       | `1.75px`            |
 | Width 200    | `--width-200`                       | `2px`               |
-| Banner Scrim | `BANNER_SHADOW` · `--banner-shadow` | `#0000008C`         |
-| Banner Cast  | `--banner-cast`                     | `0 1px 4px` of the scrim — the title's lift off a cover |
 
 #### Shadows
 
