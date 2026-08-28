@@ -88,7 +88,6 @@ export const optionGlyph = style({ display: 'inline-flex', color: c.label.second
 
 export const optionCheck = style({
   ...CHOSEN_MARK,
-  marginLeft: '6px',
   pointerEvents: 'none',
 })
 
