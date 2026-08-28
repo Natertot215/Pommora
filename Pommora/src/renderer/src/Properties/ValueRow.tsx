@@ -1,13 +1,9 @@
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { MenuItem } from '@renderer/DesignSystem/Menus'
-import { flushTrailing } from '@renderer/DesignSystem/Menus/menu-base.css'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { PickerControl, type PickerChoice } from '@renderer/DesignSystem/Elements/PickerControl'
 import * as gp from '../Frames/groupFrame.css'
 
-/** A settings-frame row that states one value and pops a picker to change it — the shape every
- *  Grouping and Sorting row takes. A `sub` row is the indented continuation of the row above it,
- *  so it wears the gap and the dimmer label rather than reading as another top-level choice. */
 export function ValueRow<T extends string>({
   tier = 'primary',
   icon,
@@ -25,7 +21,7 @@ export function ValueRow<T extends string>({
 }): React.JSX.Element {
   return (
     <MenuItem
-      className={cx(flushTrailing, gp.pickerTone, tier === 'sub' && gp.subRow)}
+      className={cx(gp.pickerTone, tier === 'sub' && gp.subRow)}
       leading={icon ? <Icon name={icon} size="body" /> : undefined}
       trailing={<PickerControl ariaLabel={label} value={value} options={options} onPick={onPick} />}
     >

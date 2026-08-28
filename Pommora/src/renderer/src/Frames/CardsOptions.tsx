@@ -3,12 +3,9 @@ import type { SavedView } from '@shared/views'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { DualSwitch } from '@renderer/DesignSystem/Components/Controls/Switches/DualSwitch'
 import { MenuItem } from '@renderer/DesignSystem/Menus'
-import { flushTrailing } from '@renderer/DesignSystem/Menus/menu-base.css'
-import { cx } from '@renderer/DesignSystem/Util/cx'
 import { useSaveView } from '@renderer/Embeds/ViewEmbedScope'
 import { ICON, toggleRow } from './frames.css'
 
-/** Style, Banner and Scale live in the LayoutFrame footing, not here. */
 export function CardsOptions({
   source,
   view,
@@ -22,7 +19,7 @@ export function CardsOptions({
   return (
     <>
       <MenuItem
-        className={cx(flushTrailing, toggleRow)}
+        className={toggleRow}
         leading={<Icon name="map" size={ICON.rootEntry} />}
         trailing={
           <DualSwitch
@@ -35,7 +32,7 @@ export function CardsOptions({
         Hide Location
       </MenuItem>
       <MenuItem
-        className={cx(flushTrailing, toggleRow)}
+        className={toggleRow}
         leading={<Icon name="wrap-text" size={ICON.rootEntry} />}
         trailing={
           <DualSwitch
@@ -48,7 +45,7 @@ export function CardsOptions({
         Wrap Titles
       </MenuItem>
       <MenuItem
-        className={cx(flushTrailing, toggleRow)}
+        className={toggleRow}
         leading={<Icon name="eye-off" size={ICON.rootEntry} />}
         trailing={
           <DualSwitch
@@ -61,7 +58,7 @@ export function CardsOptions({
         Hide Icons
       </MenuItem>
       <MenuItem
-        className={cx(flushTrailing, toggleRow)}
+        className={toggleRow}
         leading={<Icon name="folder-closed" size={ICON.rootEntry} />}
         trailing={
           <DualSwitch

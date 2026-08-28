@@ -3,8 +3,6 @@ import type { SavedView } from '@shared/views'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { DualSwitch } from '@renderer/DesignSystem/Components/Controls/Switches/DualSwitch'
 import { MenuItem, MenuSeparator } from '@renderer/DesignSystem/Menus'
-import { flushTrailing } from '@renderer/DesignSystem/Menus/menu-base.css'
-import { cx } from '@renderer/DesignSystem/Util/cx'
 import { useSaveView } from '@renderer/Embeds/ViewEmbedScope'
 import { ICON, toggleRow } from './frames.css'
 
@@ -22,7 +20,7 @@ export function LayoutToggles({
     <>
       <MenuSeparator flush />
       <MenuItem
-        className={cx(flushTrailing, toggleRow)}
+        className={toggleRow}
         leading={<Icon name="columns-3-cog" size={ICON.rootEntry} />}
         trailing={
           <DualSwitch
@@ -35,7 +33,7 @@ export function LayoutToggles({
         Column Icons
       </MenuItem>
       <MenuItem
-        className={cx(flushTrailing, toggleRow)}
+        className={toggleRow}
         leading={<Icon name="table" size={ICON.rootEntry} />}
         trailing={
           <DualSwitch
@@ -48,7 +46,7 @@ export function LayoutToggles({
         Hide Borders
       </MenuItem>
       <MenuItem
-        className={cx(flushTrailing, toggleRow)}
+        className={toggleRow}
         leading={<Icon name="file-text" size={ICON.rootEntry} />}
         trailing={
           <DualSwitch

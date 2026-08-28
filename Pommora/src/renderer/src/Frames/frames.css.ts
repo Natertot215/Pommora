@@ -1,6 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css'
 import { vars as colorVars } from '@renderer/DesignSystem/Tokens/color.css'
-import { text } from '@renderer/DesignSystem/Tokens/typography.css'
 import type { IconSize } from '@renderer/DesignSystem/Tokens/size.css'
 import { duration, easing } from '@renderer/DesignSystem/Animation'
 import {
@@ -150,11 +149,6 @@ export const optionLead = style({
   minWidth: 0,
 })
 
-export const compactTitle = style([
-  text.control.standard,
-  { color: c.label.control, whiteSpace: 'nowrap' },
-])
-
 export const ghostOptionRow = style([
   optionRow,
   {
@@ -190,11 +184,6 @@ export const configEditor = style({
   gap: '8px',
   paddingTop: `${OPTION.gapAroundLabel}px`,
 })
-
-export const configLabel = style([
-  text.control.emphasized,
-  { flex: '1 1 auto', color: c.label.primary },
-])
 
 export const footerLock = style({
   selectors: { [`${footing} &`]: { color: c.label.tertiary } },

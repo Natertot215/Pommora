@@ -5,11 +5,9 @@ import { DualSwitch } from '@renderer/DesignSystem/Components/Controls/Switches/
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { EditableInput } from '@renderer/DesignSystem/Components/Fields'
 import { numberDivisor } from '@renderer/Properties/Editing/formatValue'
-import { cx } from '@renderer/DesignSystem/Util/cx'
 import { PickerControl, type PickerChoice } from '@renderer/DesignSystem/Elements/PickerControl'
 import { Reveal } from '@renderer/DesignSystem/Animation/Reveal'
-import { rowBox } from '@renderer/DesignSystem/Menus/menu-base.css'
-import { configLabel } from '../../Frames/frames.css'
+import { MenuItem } from '@renderer/DesignSystem/Menus'
 import { pickerValue } from '@renderer/DesignSystem/Elements/PickerControl'
 import * as s from './numberEditor.css'
 
@@ -39,10 +37,9 @@ const pickerToDecimals = (v: string): 'hidden' | number => (v === 'hidden' ? 'hi
 
 function Row({ label, children }: { label: string; children: React.ReactNode }): React.JSX.Element {
   return (
-    <div className={cx(rowBox, s.row)}>
-      <span className={configLabel}>{label}</span>
-      {children}
-    </div>
+    <MenuItem className={s.row} trailing={children}>
+      {label}
+    </MenuItem>
   )
 }
 

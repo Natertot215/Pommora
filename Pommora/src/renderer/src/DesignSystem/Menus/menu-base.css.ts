@@ -163,8 +163,6 @@ export const titleInput = style([
 
 export const subLabel = style([text.caption.standard, { color: c.label.secondary }])
 
-export const flushTrailing = style({ paddingRight: 0 })
-
 export const actionRow = style([
   rowBox,
   {

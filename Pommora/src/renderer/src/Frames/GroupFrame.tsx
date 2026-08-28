@@ -21,12 +21,7 @@ import {
   useDisclosureSet,
   heading,
 } from '@renderer/DesignSystem/Menus'
-import {
-  flushTrailing,
-  footingLabel,
-  footingSymbol,
-  side,
-} from '@renderer/DesignSystem/Menus/menu-base.css'
+import { footingLabel, footingSymbol, side } from '@renderer/DesignSystem/Menus/menu-base.css'
 import { registerDiscloseTarget } from '@renderer/DesignSystem/Interactions/dragDisclose'
 import { DragGhost } from '@renderer/DesignSystem/Interactions/DragGhost'
 import { EyeToggle } from '@renderer/DesignSystem/Elements/EyeToggle'
@@ -171,7 +166,6 @@ export function GroupFrame({
   const footings = (
     <MenuFooting>
       <MenuItem
-        className={flushTrailing}
         leading={
           <span className={footingSymbol}>
             <Icon name="eye-off" size="control" />
@@ -335,7 +329,7 @@ function FootingPick<T extends string>({
 }): React.JSX.Element {
   return (
     <MenuItem
-      className={`${flushTrailing} ${gp.pickerTone}`}
+      className={gp.pickerTone}
       leading={
         <span className={footingSymbol}>
           <Icon name={icon} size="control" />
@@ -697,7 +691,7 @@ function LocationHierarchy({
         onToggle={() => expanded.toggle(s.id)}
         onClick={disclosable ? () => expanded.toggle(s.id) : undefined}
         selected={dnd.nestTarget === s.id}
-        className={cx(flushTrailing, isHidden && hiddenRow)}
+        className={cx(isHidden && hiddenRow)}
         trailing={
           onToggleHidden && (
             <EyeToggle

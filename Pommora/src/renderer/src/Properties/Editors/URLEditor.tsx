@@ -5,7 +5,7 @@ import type { LinkConfig, LinkDisplay } from '@shared/properties'
 import { ColorSwatch } from '@renderer/DesignSystem/Components/Controls/Switches/ColorSwatch'
 import { PickerControl } from '@renderer/DesignSystem/Elements/PickerControl'
 import { LINK_FORMAT_OPTIONS } from '../LinkFormat'
-import { rowBox } from '@renderer/DesignSystem/Menus/menu-base.css'
+import { MenuItem } from '@renderer/DesignSystem/Menus'
 import * as s from '../../Frames/frames.css'
 
 /**
@@ -27,32 +27,41 @@ export function URLEditor({
 
   return (
     <div className={s.configEditor} style={{ '--accent': link.css } as CSSProperties}>
-      <div className={rowBox}>
-        <span className={s.configLabel}>Underline</span>
-        <DualSwitch
-          checked={underline}
-          onChange={(v) => onSetConfig({ link_underline: v })}
-          ariaLabel="Underline links"
-        />
-      </div>
-      <div className={rowBox}>
-        <span className={s.configLabel}>Color</span>
-        <ColorSwatch
-          label="Color"
-          selected={link.name}
-          css={link.css}
-          onPick={(next) => onSetConfig({ link_color: next })}
-        />
-      </div>
-      <div className={rowBox}>
-        <span className={s.configLabel}>Format</span>
-        <PickerControl
-          ariaLabel="Link format"
-          value={display}
-          options={LINK_FORMAT_OPTIONS}
-          onPick={(v) => onSetConfig({ link_display: v })}
-        />
-      </div>
+      <MenuItem
+        trailing={
+          <DualSwitch
+            checked={underline}
+            onChange={(v) => onSetConfig({ link_underline: v })}
+            ariaLabel="Underline links"
+          />
+        }
+      >
+        Underline
+      </MenuItem>
+      <MenuItem
+        trailing={
+          <ColorSwatch
+            label="Color"
+            selected={link.name}
+            css={link.css}
+            onPick={(next) => onSetConfig({ link_color: next })}
+          />
+        }
+      >
+        Color
+      </MenuItem>
+      <MenuItem
+        trailing={
+          <PickerControl
+            ariaLabel="Link format"
+            value={display}
+            options={LINK_FORMAT_OPTIONS}
+            onPick={(v) => onSetConfig({ link_display: v })}
+          />
+        }
+      >
+        Format
+      </MenuItem>
     </div>
   )
 }
