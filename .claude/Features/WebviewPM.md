@@ -25,7 +25,7 @@ A live tile is inert until clicked in: wheel and pointer pass to the document, a
 
 ### Link Opening
 
-One renderer adjudicator, `src/renderer/src/openWebLink.ts`, decides where every external link opens — editor clicks, table cells, tile titles, and guest popups all route through it — honoring **Open Links In Pommora**: off opens the system browser, on summons the floating in-app browser.[^3] A guest's `window.open` never opens an OS window; main denies it and hands the address to the same adjudicator.
+One renderer adjudicator, `src/renderer/openWebLink.ts`, decides where every external link opens — editor clicks, table cells, tile titles, and guest popups all route through it — honoring **Open Links In Pommora**: off opens the system browser, on summons the floating in-app browser.[^3] A guest's `window.open` never opens an OS window; main denies it and hands the address to the same adjudicator.
 
 ### Web Sessions
 

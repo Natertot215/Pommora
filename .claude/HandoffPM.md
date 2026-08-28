@@ -48,7 +48,7 @@
 #### Session Pointers
 
 - `.claude/Planning/MenuRecipe.md` — the plan and its Log: §Rulings, §Deviations (every mid-run change), seven review rounds, §Open Calls, §Lessons, §Sequenced After (the Part 2 brief), and the Delivery Claim with Nathan's running-pass list.
-- `Pommora/src/renderer/src/DesignSystem/Menus/menu-base.css.ts` — the recipe; `rowBox` first, the four tokens and the `--row-*` vars on `:root` at the top; `menuCompact`; the kinds in stacking order.
+- `Pommora/src/renderer/DesignSystem/Menus/menu-base.css.ts` — the recipe; `rowBox` first, the four tokens and the `--row-*` vars on `:root` at the top; `menuCompact`; the kinds in stacking order.
 - `DesignSystem/Menus/menu-index.tsx` — `Trailing` · `MenuRow` · `MenuSection` · `MenuRowView` · `MenuIndex`; `inert` for a box without the shell.
 - `DesignSystem/Menus/menu-row.tsx` — `MenuItem` (`forwardRef`, `value` · `detail` · `trailing` · `overlay`, the flush rule keyed on a trailing), `MenuTopRow`, `MenuFooting`, `MenuScrollFrame` with `header`/`footer` slots.
 - `Navigation/navList.css` — `.nav-list` sets `--row-pad-x: var(--navwindow-inset)` and `--row-pad-lead: var(--content-inset)`; `.nav-pin` and the Trash's `.trash-check` ride `overlay`.
@@ -67,21 +67,21 @@
 
 **FILES ADDED**
 
-- `Pommora/src/renderer/src/DesignSystem/Menus/menu-index.tsx` · `menu-index.test.tsx`
-- `Pommora/src/renderer/src/Frames/switchRows.tsx`
-- `Pommora/src/renderer/src/Properties/optionRow.css.ts`
-- `Pommora/src/renderer/src/Settings/trashFrame.test.tsx`
-- `Pommora/src/renderer/src/Views/CardView/cardAddPicker.css.ts` (deleted at Task 1, recreated at Task 4 as one class)
+- `Pommora/src/renderer/DesignSystem/Menus/menu-index.tsx` · `menu-index.test.tsx`
+- `Pommora/src/renderer/Frames/switchRows.tsx`
+- `Pommora/src/renderer/Properties/optionRow.css.ts`
+- `Pommora/src/renderer/Settings/trashFrame.test.tsx`
+- `Pommora/src/renderer/Views/CardView/cardAddPicker.css.ts` (deleted at Task 1, recreated at Task 4 as one class)
 
 **FILES MODIFIED**
 
 - `.claude/Planning/MenuRecipe.md` — the plan, ratified, executed, and closed; `.claude/ContextPM.md` — Current Focus and the Immediate Work row; `.claude/Features/DesignSystemPM.md` (Geometry rows, the "where each goes" sentence, §Menus), `SymbolsPM.md` (the duplicate ladder table removed), `MarkdownPM.md:128`; `.claude/Guidelines/Cohesion-Rulings.md:66-67`; `.claude/Planning/RendererRefactor.md:20`, `RendererAtlas.md:76`
-- 96 files under `Pommora/src/renderer/src` — `DesignSystem/Menus/*`, `DesignSystem/Components/Pickers/{PickerMenu,CalendarPicker,ImagePicker,IconPicker}/*`, `DesignSystem/Elements/{NavTrail,DropOutline,PickerControl,EyeToggle}/*`, `DesignSystem/Components/{Controls/Slider,Fields}/*`, `DesignSystem/Tokens/{size,theme-vars}.css.ts`, `Frames/*`, `Properties/Editors/*` + `PropertyFrame.tsx` + `OptionRow.tsx`, `Navigation/{NavList.tsx,navList.css}`, `Windows/{NavWindow.tsx,navWindow.css}`, `Interface/{navView.css,Subfield/*,Banner/Banner.css}`, `Settings/*`, `MarkdownPM/{AutocompletePane.tsx,Styles.css}`, `Blocks/{BlockHandleMenu.tsx,handleMenu.css.ts}`, `Views/CardView/*`, `Cards/{Card.tsx,cards.css}`, `Sidebar/Sidebar.css`, `styles.css`, and the icon-rename readers
+- 96 files under `Pommora/src/renderer` — `DesignSystem/Menus/*`, `DesignSystem/Components/Pickers/{PickerMenu,CalendarPicker,ImagePicker,IconPicker}/*`, `DesignSystem/Elements/{NavTrail,DropOutline,PickerControl,EyeToggle}/*`, `DesignSystem/Components/{Controls/Slider,Fields}/*`, `DesignSystem/Tokens/{size,theme-vars}.css.ts`, `Frames/*`, `Properties/Editors/*` + `PropertyFrame.tsx` + `OptionRow.tsx`, `Navigation/{NavList.tsx,navList.css}`, `Windows/{NavWindow.tsx,navWindow.css}`, `Interface/{navView.css,Subfield/*,Banner/Banner.css}`, `Settings/*`, `MarkdownPM/{AutocompletePane.tsx,Styles.css}`, `Blocks/{BlockHandleMenu.tsx,handleMenu.css.ts}`, `Views/CardView/*`, `Cards/{Card.tsx,cards.css}`, `Sidebar/Sidebar.css`, `styles.css`, and the icon-rename readers
 
 **FILES REMOVED**
 
-- `Pommora/src/renderer/src/Properties/ValueRow.tsx`
-- `Pommora/src/renderer/src/Settings/SettingsRow.tsx`
+- `Pommora/src/renderer/Properties/ValueRow.tsx`
+- `Pommora/src/renderer/Settings/SettingsRow.tsx`
 
 **COMMITS**
 

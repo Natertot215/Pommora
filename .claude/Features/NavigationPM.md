@@ -11,7 +11,7 @@ Navigation
 └── Prospects
 ```
 
-How you get from where you are to where you want to be. A **toolbar tab bar** holds the open working set, each tab with its own history, over a shared **navigation layer** for the cross-tree jumps — recent, pinned, searched, favorited — that the sidebar tree alone can't serve. The main pane shows the active tab's entity; selecting one anywhere drives that tab, replacing its content on an unpinned tab and spawning a new one off a pinned tab. The code is `src/renderer/src/Navigation/` for the layer, `Tabs/` for the tab model and NavView, and `Windows/` for the window.
+How you get from where you are to where you want to be. A **toolbar tab bar** holds the open working set, each tab with its own history, over a shared **navigation layer** for the cross-tree jumps — recent, pinned, searched, favorited — that the sidebar tree alone can't serve. The main pane shows the active tab's entity; selecting one anywhere drives that tab, replacing its content on an unpinned tab and spawning a new one off a pinned tab. The code is `src/renderer/Navigation/` for the layer, `Tabs/` for the tab model and NavView, and `Windows/` for the window.
 
 ### The Navigation Layer
 

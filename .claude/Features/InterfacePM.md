@@ -15,7 +15,7 @@ Interface
 └── Pending
 ```
 
-The shell and the surfaces it is built from: the three-pane window, the toolbar, the sidebar, the footer bar under every content view, the floating windows, and the hover pane. Each is a surface that hosts content owned elsewhere — pages, views, the navigation layer — and this document describes the surfaces themselves: how they are laid out, what they show, and how you move between them. `App.tsx` composes them; the components live in `src/renderer/src/Sidebar/`, `Toolbar/`, `Interface/`, `Windows/`, and `Links/`.
+The shell and the surfaces it is built from: the three-pane window, the toolbar, the sidebar, the footer bar under every content view, the floating windows, and the hover pane. Each is a surface that hosts content owned elsewhere — pages, views, the navigation layer — and this document describes the surfaces themselves: how they are laid out, what they show, and how you move between them. `App.tsx` composes them; the components live in `src/renderer/Sidebar/`, `Toolbar/`, `Interface/`, `Windows/`, and `Links/`.
 
 ### The Shell
 

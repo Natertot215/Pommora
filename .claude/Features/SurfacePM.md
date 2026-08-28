@@ -11,7 +11,7 @@ SurfacePM
 └── Prospects
 ```
 
-Pommora's composable dashboard layer. Any **BlockHost** — an entity that owns a block document — renders a mosaic of draggable, resizable tiles holding real content: prose, a Page, or a view. Two hosts exist today, the Homepage and each Space. The layout engine beneath is `src/renderer/src/SurfacePM/`, a pure split-tree model with its own gestures, and the tile contents come from `src/renderer/src/Blocks/`; the engine knows nothing about what a tile holds or where the tree persists, and hosts supply both through one props seam.
+Pommora's composable dashboard layer. Any **BlockHost** — an entity that owns a block document — renders a mosaic of draggable, resizable tiles holding real content: prose, a Page, or a view. Two hosts exist today, the Homepage and each Space. The layout engine beneath is `src/renderer/SurfacePM/`, a pure split-tree model with its own gestures, and the tile contents come from `src/renderer/Blocks/`; the engine knows nothing about what a tile holds or where the tree persists, and hosts supply both through one props seam.
 
 ### The Block Surface
 
@@ -31,7 +31,7 @@ A markdown tile can be converted into a page or view embed from its handle menu,
 
 ### The Embed Framework
 
-One seam renders a Page inside any foreign surface: `PageEmbed` in `src/renderer/src/Embeds/`, used by dashboard tiles, MarkdownPM's `![[Title]]` widget, the Page Window, the NavWindow's page tabs, and the hover pane.[^1] The embed *is* a MarkdownPM view — a read-only editor at rest carrying every editor affordance, with editability flipped in place through a reconfigured compartment rather than a remount — so an edit made in an embed is a page edit flowing through the page's own debounced save. Its header follows the page: a configured banner renders as a band with the title as static text, and a coverless page carries no header, its location named by the handle menu instead.
+One seam renders a Page inside any foreign surface: `PageEmbed` in `src/renderer/Embeds/`, used by dashboard tiles, MarkdownPM's `![[Title]]` widget, the Page Window, the NavWindow's page tabs, and the hover pane.[^1] The embed *is* a MarkdownPM view — a read-only editor at rest carrying every editor affordance, with editability flipped in place through a reconfigured compartment rather than a remount — so an edit made in an embed is a page edit flowing through the page's own debounced save. Its header follows the page: a configured banner renders as a band with the title as static text, and a coverless page carries no header, its location named by the handle menu instead.
 
 Every tile uses the **tile chassis** (`DesignSystem/Detail/tile-chassis.css`), the one border-and-radius definition both hosts key onto, with an accent border that brightens under the pointer or while the caret is inside a page tile. Every tile also carries the **Scale ramp** (`SCALE_STEPS` in `src/shared/types.ts`, the same eight steps every zoom control in the app offers): a discrete factor set from the handle menu's Scale row, persisted on the entry, riding one inherited variable and animating on the standard beat, compounding the nexus-wide **Embed Scale** default.[^2] A page tile scales its text and editor glyphs while the tile-edge inset, the handle, and the resize edges hold fixed; a view tile scales its grid as a unit. Resizing a tile is a viewport change, never a scale change.
 
