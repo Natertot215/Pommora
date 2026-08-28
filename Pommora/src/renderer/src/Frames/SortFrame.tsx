@@ -1,10 +1,8 @@
-// The frame owns the sort slot WHOLESALE — every write is [primary], [primary, sub], or undefined;
-// a foreign 3+-key tail renders by its first two slots until the first write replaces the slot.
 import type { CollectionNode, SetNode } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
 import { RESERVED_PROPERTY_ID } from '@shared/properties'
 import { LOCATION_SORT, type SavedView, type SortCriterion } from '@shared/views'
-import { MenuFrameTopRow, MenuSeparator } from '@renderer/DesignSystem/Menus'
+import { MenuTopRow, MenuSeparator } from '@renderer/DesignSystem/Menus'
 import { useSaveView } from '@renderer/Embeds/ViewEmbedScope'
 import { declaredType } from '@renderer/Properties/value'
 import type { PickerChoice } from '@renderer/DesignSystem/Elements/PickerControl'
@@ -33,8 +31,6 @@ const OPTION_DIRECTIONS: PickerChoice<Direction>[] = [
   { value: 'ascending', label: 'Default' },
   { value: 'descending', label: 'Reversed' },
 ]
-/** The primary's option-type Order adds Custom (a draggable value order on the criterion) — the
- *  sub Order stays two-choice (no editing surface for a second custom list). */
 type OrderChoice = Direction | 'custom'
 const CUSTOM_OPTION_DIRECTIONS: PickerChoice<OrderChoice>[] = [
   ...OPTION_DIRECTIONS,
@@ -49,8 +45,6 @@ const TEXT_DIRECTIONS: PickerChoice<Direction>[] = [
   { value: 'descending', label: 'Z → A' },
 ]
 
-/** Per-type direction vocabulary: option-ordered types read Default/Reversed; temporal/numeric
- *  read Ascending/Descending; text reads A → Z. A dead def falls to the value labels. */
 function directionOptions(
   propertyId: string,
   schema: PropertyDefinition[],
@@ -76,7 +70,6 @@ interface SortTarget {
   icon: PickerChoice<string>['icon']
 }
 
-/** Title and Modified sort via buildCriterion's reserved-id branches, not through the schema. */
 function sortTargets(schema: PropertyDefinition[]): SortTarget[] {
   return [
     TITLE_TARGET,
@@ -95,7 +88,6 @@ export function SortFrame({
   source: CollectionNode | SetNode
   view: SavedView
   schema: PropertyDefinition[]
-  /** The back-destination breadcrumb — 'Settings' from SettingsFrame, 'Views' from LayoutFrame. */
   label: string
   onBack: () => void
 }): React.JSX.Element {
@@ -106,8 +98,6 @@ export function SortFrame({
   const sub = view.sort?.[1]
   const targets = sortTargets(schema)
   const targetById = new Map(targets.map((t) => [t.id, t]))
-  // A dead criterion (deleted def) renders by its raw id — the frame never silently drops
-  // config it didn't write; None clears it like any other. Location is the reserved cards sort.
   const nameOf = (c: SortCriterion): string =>
     c.property_id === LOCATION_SORT
       ? 'Location'
@@ -121,7 +111,6 @@ export function SortFrame({
     if (primary?.property_id === id) return
     const fresh: SortCriterion = { property_id: id, direction: 'ascending' }
     const next = sub && sub.property_id !== id ? [fresh, sub] : [fresh]
-    // Picking Location seeds its Order at Location (filesystem) — the flatten's default.
     if (id === LOCATION_SORT)
       void saveView({ ...view, sort: next, location_order_mode: 'location' })
     else save(next)
@@ -137,17 +126,13 @@ export function SortFrame({
     save([primary, { property_id: id, direction: 'ascending' }])
   }
 
-  // The example order: only a finite-ordered primary previews — the hasMiddle logic.
   const primaryType = primary ? declaredType(primary.property_id, schema) : undefined
   const finiteDef =
     primaryType === 'select' || primaryType === 'status'
       ? schema.find((d) => d.id === primary?.property_id)
       : undefined
 
-  /** A primary rewrite keeps the sub slot (wholesale two-slot ownership). */
   const savePrimary = (next: SortCriterion): void => save(sub ? [next, sub] : [next])
-  // Picking Custom snapshots the CURRENT effective sequence (the first-UI-writer pattern) so the
-  // list starts where the preview left off.
   const seededOrder = (): string[] =>
     bucketOrder(
       { order_mode: primary?.direction === 'descending' ? 'reversed' : 'configured' },
@@ -177,7 +162,7 @@ export function SortFrame({
 
   return (
     <>
-      <MenuFrameTopRow label={label} current="Sorting" onBack={onBack} />
+      <MenuTopRow label={label} current="Sorting" onBack={onBack} />
       <ValueRow
         icon="arrow-up-down"
         label="Sort By"
@@ -188,8 +173,6 @@ export function SortFrame({
       {primary && (
         <>
           {primary.property_id === LOCATION_SORT ? (
-            // The location sort ranks by the filesystem (Location) or the view's manual order
-            // (Custom). Its own key, so grouping structurally on the same view can't shadow it.
             <ValueRow<'location' | 'custom'>
               tier={sub ? 'sub' : 'primary'}
               icon="folder"

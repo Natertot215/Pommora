@@ -27,7 +27,7 @@ import { NumberEditor } from './Editors/NumberEditor'
 import {
   MenuItem,
   MenuCaption,
-  MenuFrameTopRow,
+  MenuTopRow,
   MenuScrollFrame,
   MenuBottomRow,
   MenuSeparator,
@@ -90,8 +90,6 @@ function ListGroups({
   onRenameCancel: () => void
 }): React.JSX.Element {
   const { assignedRef, allRef, allHighlighted } = useFrameRegions()
-  // The row title swaps to the inline rename input over the property-keyed channel
-  // (properties are registry ids, not paths).
   const title = (d: PropertyDefinition): ReactNode => (
     <RenamableLabel
       renames="row"
@@ -127,8 +125,6 @@ function ListGroups({
           ))
         )}
       </div>
-      {/* Closed, the elastic spacer holds the block at the frame's bottom; opening collapses it on
-          the same beat as the Reveal, so the heading RISES to meet the assigned rows. */}
       <div className={cx(s.allSpacer, allOpen && s.allSpacerCollapsed)} aria-hidden />
       <div data-group="all" ref={allRef} className={cx(allHighlighted && s.allHighlight)}>
         <button type="button" className={s.allHeadingRow} onClick={onToggleAll}>
@@ -178,12 +174,6 @@ function ListGroups({
   )
 }
 
-/**
- * A list of user-defined properties → a type picker for new ones → a per-property editor, riding
- * an inner FrameSlide nested in the ViewFrame's outer one. Writes route to the `schema:*` IPC; the
- * tree refresh after each write re-flows the live schema back in as `schema`, so the editor
- * re-reads the property by id.
- */
 export function PropertyFrame({
   collectionPath,
   schema,
@@ -218,13 +208,11 @@ export function PropertyFrame({
     lastDetail.current = v
     setView(v)
   }
-  // Slot B keeps rendering the last-opened detail while sliding back, so it doesn't blank mid-retract.
   const detailView = view.kind === 'list' ? lastDetail.current : view
 
   const backHeader = (label: string, onClick: () => void): React.JSX.Element => (
-    <MenuFrameTopRow label={label} onBack={onClick} />
+    <MenuTopRow label={label} onBack={onClick} />
   )
-  // stopPropagation keeps the action's click off the row's back-nav.
   const actionHeader = (
     label: string,
     onBackClick: () => void,
@@ -235,7 +223,7 @@ export function PropertyFrame({
       onClick: () => void
     },
   ): React.JSX.Element => (
-    <MenuFrameTopRow
+    <MenuTopRow
       label={label}
       onBack={onBackClick}
       trailing={
@@ -274,11 +262,7 @@ export function PropertyFrame({
     } else await window.nexus.showError(res.error.message)
   }
   const rename = async (id: string, name: string): Promise<void> => {
-    // The second of the two rename entry points; both must tell mounted views to refetch, or the
-    // renamed column reads blank until the container is switched.
     const before = registry.find((d) => d.id === id)?.name
-    // The epoch keys must name what main actually STORED, and main normalizes before it writes —
-    // an un-normalized key here re-keys nothing and blanks every touched row.
     const after = normalizePropertyName(name)
     if (await commit(await window.nexus.schema.rename(collectionPath, id, name)))
       if (before !== undefined && before !== after)
@@ -299,29 +283,18 @@ export function PropertyFrame({
   const saveLinkConfig = async (id: string, patch: LinkConfig): Promise<void> => {
     await commit(await window.nexus.property.setLinkConfig(id, patch))
   }
-  // A checkbox property's color is def-level (property-wide), unlike its per-view look — so it writes
-  // the nexus def through its own IPC, not the active view's column_styles.
   const saveCheckboxColor = async (id: string, color: string | undefined): Promise<void> => {
     await commit(await window.nexus.property.setCheckboxColor(id, color))
   }
-  // A number property's format is def-level (property-wide) — its own IPC, not the view's column_styles.
   const saveNumberFormat = async (id: string, patch: Partial<NumberConfig>): Promise<void> => {
     await commit(await window.nexus.property.setNumberFormat(id, patch))
   }
-  // Where a file property's uploads land is def-level (property-wide) — its own IPC. Main refuses
-  // a folder that escapes the asset root or that the map could never index; the field simply
-  // reverts, since the folder is not one this property accepts.
   const saveFileDirectory = async (id: string, dir: string): Promise<void> => {
     await commit(await window.nexus.property.setFileDirectory(id, { file_directory: dir }))
   }
-  // A property's icon is def-level (registry) — its own IPC, like the color/format config above.
   const savePropertyIcon = async (id: string, icon: string): Promise<void> => {
     await commit(await window.nexus.property.setIcon(id, icon))
   }
-  // The datetime display format is per-VIEW, not schema: it writes the active view's column_styles
-  // (through the one view writer), NOT the nexus property def. Merges per-key like the column menu.
-  // The refusal surfaces — this frame's other rows write the schema and land, so a silently-dropped
-  // style would read as the same success they give.
   const saveColumnStyle = async (propId: string, patch: Partial<ColumnStyle>): Promise<void> => {
     const next = { ...activeView.column_styles?.[propId], ...patch }
     const res = await saveView({
@@ -352,8 +325,6 @@ export function PropertyFrame({
   const clearStatusOption = async (id: string, value: string): Promise<void> => {
     await commit(await window.nexus.property.clearStatusOption(id, value))
   }
-  // The reorder-nexus branch translates the visible slot into the full registry's order
-  // index — assigned ids stay in it.
   const handleDrop = async (drop: PaneDrop): Promise<void> => {
     const r =
       drop.kind === 'reorder-assigned'
@@ -381,7 +352,6 @@ export function PropertyFrame({
   const nameFor = (id: string): string =>
     props.find((d) => d.id === id)?.name ?? unassigned.find((d) => d.id === id)?.name ?? ''
 
-  // The editor's ⋮: Remove, or the frame-gated Delete (main confirms before resolving).
   const editorMenu = async (def: PropertyDefinition): Promise<void> => {
     const action = await window.nexus.propertyMenu({ kind: 'editor', name: def.name })
     if (action === 'property:remove') await remove(def.id)
@@ -391,7 +361,6 @@ export function PropertyFrame({
     )
       backToList()
   }
-  // A row's right-click: Rename (both groups) · Remove (assigned only).
   const rowMenu = async (d: PropertyDefinition, group: 'assigned' | 'all'): Promise<void> => {
     const action = await window.nexus.propertyMenu({
       kind: group === 'assigned' ? 'assigned-row' : 'registry-row',
@@ -430,8 +399,6 @@ export function PropertyFrame({
       )
     }
     const columnStyle = styleFor(def.id, schema, activeView)
-    // Status and select/multi wear the Standard/Compact axis in the pinned footing, where it stays
-    // reachable past however far the option list runs.
     const optionLook: OptionStyle = columnStyle.look === 'compact' ? 'compact' : 'standard'
     const styleFooting =
       hasSelectOptions(def.type) || def.type === 'status' ? (
@@ -541,7 +508,6 @@ export function PropertyFrame({
             }}
           />
         ) : (
-          // Blank body until this type's options UI ships (Guidelines/UI-Copy.md).
           <div style={{ minHeight: 8 }} />
         )}
       </MenuScrollFrame>
@@ -550,7 +516,7 @@ export function PropertyFrame({
 
   const list = (
     <MenuScrollFrame
-      header={<MenuFrameTopRow label="Settings" current="Properties" onBack={onBack} />}
+      header={<MenuTopRow label="Settings" current="Properties" onBack={onBack} />}
       footer={
         <MenuBottomRow
           leading={

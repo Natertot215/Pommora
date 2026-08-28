@@ -1,10 +1,11 @@
-import { type CSSProperties, type RefObject, useEffect, useState } from 'react'
+import { type RefObject, useEffect, useState } from 'react'
 import type { PropertyDefinition } from '@shared/properties'
 import type { PropertyValue } from '@shared/propertyValue'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { PickerMenu } from '@renderer/DesignSystem/Components/Pickers/PickerMenu/PickerMenu'
-import { MenuItem, MenuFrameTopRow } from '@renderer/DesignSystem/Menus'
+import { MenuItem, MenuTopRow } from '@renderer/DesignSystem/Menus'
 import { flushTrailing } from '@renderer/DesignSystem/Menus/menu-base.css'
+import { topRowFlat } from './cardAddPicker.css'
 import { FrameSlide } from '@renderer/DesignSystem/Menus/frame-slide'
 import { propertyTypeIconName } from '@renderer/Properties/PropertyTypes'
 import {
@@ -30,19 +31,18 @@ function ValuePane({
 }: {
   def: PropertyDefinition
   current: PropertyValue | null
-  /** Context entries: the pickable contexts — flips pickSemantics into context mode. */
   contextOptions?: ContextOption[] | null
   onCommit: (value: PropertyValue | null) => void
   onDone: () => void
   onBack: () => void
 }): React.JSX.Element {
-  const topRow = <MenuFrameTopRow label="Properties" current={def.name} onBack={onBack} />
-  // datetime/url never frame — they're DEPENDENT menus (onPickDependent exits to the calendar /
-  // link menu); only number keeps an in-frame editor, chip kinds their option rows.
+  const header = (
+    <MenuTopRow label="Properties" current={def.name} onBack={onBack} className={topRowFlat} />
+  )
   if (def.type === 'number') {
     return (
       <>
-        {topRow}
+        {header}
         <PropertyEditor
           initial=""
           numeric
@@ -67,7 +67,7 @@ function ValuePane({
   )
   return (
     <>
-      {topRow}
+      {header}
       <PropertyOptionRows
         def={def}
         contextOptions={contextOptions ?? undefined}
@@ -79,8 +79,6 @@ function ValuePane({
   )
 }
 
-/** The card's two-stage add-property menu: a pane entry (a blank addable-type prop) slides into a
- *  value pane to set a value; a reveal-only entry just unhides on pick. */
 export function CardAddPicker({
   entries,
   currentOf,
@@ -101,14 +99,10 @@ export function CardAddPicker({
   initialEntry?: AddEntry | null
   onCommit: (entry: AddEntry, value: PropertyValue | null) => void
   onReveal: (entry: AddEntry) => void
-  /** A dependent-menu kind (datetime/url) picked in the list — the host exits this menu and
-   *  opens the value's own picker at the same anchor. */
   onPickDependent: (entry: AddEntry) => void
   onDismiss: () => void
 }): React.JSX.Element {
   const [picked, setPicked] = useState<AddEntry | null>(initialEntry ?? null)
-  // The picker mounts persistently (so the Bloom-out plays); each OPEN re-seeds the frame from
-  // initialEntry — the native Add Property ▸ jump — instead of relying on a fresh mount's initializer.
   useEffect(() => {
     if (open) setPicked(initialEntry ?? null)
   }, [open, initialEntry])
@@ -117,14 +111,7 @@ export function CardAddPicker({
     onDismiss()
   }
   return (
-    <PickerMenu
-      open={open}
-      onDismiss={dismiss}
-      triggerRef={anchorRef}
-      solid
-      // Tighten the "Properties" pane header for the add-picker's compact density.
-      style={{ '--top-row-block': '0px' } as CSSProperties}
-    >
+    <PickerMenu open={open} onDismiss={dismiss} triggerRef={anchorRef} solid>
       <FrameSlide
         open={picked !== null}
         root={

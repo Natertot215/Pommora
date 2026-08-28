@@ -7,7 +7,7 @@ import type { PageFrontmatter } from '@shared/schemas'
 import type { ResolvedColumn } from '@shared/types'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { PickerMenu, PickerOption } from '@renderer/DesignSystem/Components/Pickers/PickerMenu'
-import { MenuFrameTopRow, MenuScrollFrame } from '@renderer/DesignSystem/Menus'
+import { MenuTopRow, MenuScrollFrame } from '@renderer/DesignSystem/Menus'
 import { Cell } from '@renderer/Properties/Editing/Cell'
 import { linkAlias, linkEditText, urlValueFromEdit, urlValueFromRename } from '@shared/linkValue'
 import { resolveTitle, validateLink } from '@renderer/linkResolve'
@@ -28,14 +28,8 @@ import {
 import { shownDetail, useSession } from '../store'
 import * as s from './pageProperties.css'
 
-/** A row in either field block, its glyph already resolved — a Context carries no `def`. */
 type Field = { id: string; label: string; icon: string; def: PropertyDefinition | null }
 
-/**
- * The Page's values, as the Settings menu's Properties frame: Contexts in one field block,
- * properties in the next. Every value is entered through the same primitives the table, cards, and
- * preview inspector use, so this surface adds a shape, never a second way to write.
- */
 export function PageProperties({ onBack }: { onBack: () => void }): React.JSX.Element {
   const pageDetail = useSession(shownDetail)
   const tree = useSession((st) => st.tree)
@@ -45,17 +39,10 @@ export function PageProperties({ onBack }: { onBack: () => void }): React.JSX.El
   const addRef = useRef<HTMLButtonElement | null>(null)
 
   const stored = pageDetail?.frontmatter
-  // The optimistic overlay: a write patches here for the frame, and the reloaded page overwrites it
-  // the moment main answers — so the surface is never the authority on what's on disk.
   const [fm, setFm] = useState<PageFrontmatter | null>(null)
   useEffect(() => setFm((stored ?? null) as PageFrontmatter | null), [stored])
 
-  // A property with no key still shows once it's been added this session — session-only, because
-  // an empty row holds nothing on disk and that is what keeps an untouched Page untouched.
   const [revealed, setRevealed] = useState<ReadonlySet<string>>(new Set())
-  // Contexts are the mirror: they open as standing slots, and Remove sets one aside for the session
-  // until Add Property offers it back. Both sets are session-only — an empty row holds nothing on
-  // disk, which is what keeps an untouched Page untouched.
   const [setAside, setSetAside] = useState<ReadonlySet<string>>(new Set())
   // Keyed on the NEXUS, not the tree: both sets are about this session's reading of this nexus, and
   // a tree push means only that something on disk moved. Assigning a Space writes contextValues,
@@ -99,16 +86,11 @@ export function PageProperties({ onBack }: { onBack: () => void }): React.JSX.El
       from,
     )
 
-  // Clear empties the value and leaves the row to be refilled; Remove empties it and takes the row
-  // away, back into Add Property. Whether a row counts as filled is the house predicate's call — an
-  // empty multi-select or context array holds a value shape but nothing to clear.
   const emptyRow = (id: string, keep: boolean): void => {
     const context = isContextRow(id)
     if (context) commitContext(id, [])
     else commitValue(id, null)
     if (keep) {
-      // Emptying a value deletes its key, so a property row would stop being shown by the value it
-      // no longer holds. Revealing it is what keeps Clear a different act from Remove.
       if (!context) reveal(id)
       return
     }
@@ -125,9 +107,6 @@ export function PageProperties({ onBack }: { onBack: () => void }): React.JSX.El
       emptyRow(id, action === 'value:clear')
   }
 
-  // Revealing a row and then editing it is the ORDINARY click one frame later — the row mounts
-  // next frame, so its value field can only be anchored to after paint. It routes through the same
-  // `editRow` every other click takes, so a new type is taught to one place.
   const revealAndEdit = (def: PropertyDefinition): void => {
     setAddOpen(false)
     reveal(def.id)
@@ -139,7 +118,7 @@ export function PageProperties({ onBack }: { onBack: () => void }): React.JSX.El
     })
   }
 
-  const header = <MenuFrameTopRow label="Settings" current="Properties" onBack={onBack} />
+  const header = <MenuTopRow label="Settings" current="Properties" onBack={onBack} />
   const frame = (body: React.ReactNode): React.JSX.Element => (
     <div className={s.frame}>
       <MenuScrollFrame header={header}>{body}</MenuScrollFrame>
@@ -156,12 +135,6 @@ export function PageProperties({ onBack }: { onBack: () => void }): React.JSX.El
     (schema.find((d) => d.id === editing.id) ??
       (isContextRow(editing.id) ? syntheticContextDef(editing.id) : undefined))
 
-  // A property shows once it holds a key or was added this session; a Context shows unless it was
-  // set aside, so a Page states what it could be filed under before it is.
-  //
-  // That Context rule is a standing design decision, not drift: the preview inspector deliberately
-  // shows a Context only once it holds a value. This surface is where a Page gets filed, so its
-  // slots stand open; the inspector reads a page you are looking past, so it stays quiet.
   const isShown = (def: PropertyDefinition): boolean =>
     revealed.has(def.id) || (fm as Record<string, unknown>)[propertyKey(def)] !== undefined
   const hiddenProps = schema.filter((d) => !isShown(d))
@@ -252,8 +225,6 @@ export function PageProperties({ onBack }: { onBack: () => void }): React.JSX.El
                           ctx,
                           hideIcon: false,
                           style: { look: 'standard' },
-                          // The chip's hover × hands back what survives it — a Context keeps its
-                          // remaining Spaces, a property its remaining options.
                           remove: def
                             ? (next) => commitValue(id, next)
                             : (next) =>
