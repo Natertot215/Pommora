@@ -30,8 +30,8 @@
 - **A-3:** [confirmed] The tile identity styles (`embeds.css:109-124`) extract to `Tiles/tile-title.css`. Both `.wpembed-title` declarations travel together — the `z-index: 4` override at `:162-169` depends on source order against the shared block, and a split across two files hands that order to the import graph.
 - **A-4:** [confirmed] `tile-chassis.css` moves to `Tiles/` — the chassis both hosts wear.
 - **A-5:** [confirmed] `ViewEmbedScope` → `Views/`. Its one provider is `ViewEmbedBlock`, but its 14 outside consumers are the view pipeline (frames, toolbar, views), and it is the "a view hosted on a foreign surface — saves adopt" scope a future View Window would provide too. Nathan's rule: stays in Views if a View Window would use it.
-- **A-7:** [confirmed] Execution waits for the Menu Recipe ([[MenuRecipe]]) to land on `main` — that session owns `Embeds/PageEmbed.tsx`, `Blocks/handleMenu.css.ts`, `Blocks/viewEmbed.css.ts`, NavTrail, and the PageWindow crumbs until then; the plan's first phase starts from its final commit.
-- **A-6:** [confirmed] Net code LOC must fall. Baseline counted 08-27-2026 after the `Links/` move (code only — no tests, comments, blanks): `Blocks/` 1808 · `Embeds/` 638 · `Components/` 119 = 2565; the measured set also receives `ActionBand.css.ts` 88, `tile-chassis.css` 17, and `pageFlush.ts` 29 from outside those folders, so the gate is **2699**. The comparison is `Tiles/` + `Utilities/` + `Views/ViewEmbedScope.tsx` against it. Moves are zero-sum; the reduction comes from D-1, D-3, D-4, and D-6 — roughly 40-60 lines.
+- **A-7:** [confirmed] The Menu Recipe ([[MenuRecipe]]) landed on `main` at `935bf031` (08-28-2026); the plan's first phase starts from it.
+- **A-6:** [confirmed] Net code LOC must fall. Baseline counted 08-27-2026 after the `Links/` move (code only — no tests, comments, blanks): `Blocks/` 1793 · `Embeds/` 634 · `Components/` 119 = 2546 at the Menu Recipe's landing (`935bf031`); the measured set also receives `ActionBand.css.ts` 88, `tile-chassis.css` 17, and `pageFlush.ts` 29 from outside those folders, so the gate is **2680**. The comparison is `Tiles/` + `Utilities/` + `Views/ViewEmbedScope.tsx` against it. Moves are zero-sum; the reduction comes from D-1, D-3, D-4, and D-6 — roughly 40-60 lines.
 
 #### B — The Identity Label
 
@@ -59,7 +59,7 @@
 ### Core (must-have)
 - `Tiles/` on disk holding the chassis, PageEmbed, WebpageEmbed, the plumbing, the dashboard-only content, and BlockSurface; `Blocks/` and `Embeds/` gone; `ViewEmbedScope` in `Views/`.
 - One `TileWriter` shell over one `TileSave`; `PageEmbedBlock` gone; one `tile-base.css`; `tile-title.css` beside it.
-- Gates green; net code LOC below the 2699 gate (the 2565 baseline plus the three inbound movers); SurfacePM.md, MarkdownPM.md, ArchitecturePM.md, InterfacePM.md, WebviewPM.md, the CLAUDE.md map, RendererRefactor.md, and RendererAtlas.md name the tree on disk.
+- Gates green; net code LOC below the 2680 gate (the 2546 baseline plus the three inbound movers); SurfacePM.md, MarkdownPM.md, ArchitecturePM.md, InterfacePM.md, WebviewPM.md, the CLAUDE.md map, RendererRefactor.md, and RendererAtlas.md name the tree on disk.
 
 #### Prospects (allowed later, not now)
 

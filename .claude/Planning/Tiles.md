@@ -1,13 +1,13 @@
 ## Tiles — Implementation Plan
 
 > **Status:** reviewed — two attack rounds, findings folded; pending Nathan's approval · Spec: [[Tiles — Decision Log]] · Execute tasks in order.
-> Citations name files and symbols; re-derive before editing. Execution starts only after the Menu Recipe lands on `main` (A-7).
+> Citations name files and symbols; re-derive before editing. The Menu Recipe landed at `935bf031`; anchors re-derived against it.
 
 **Goal**
 
 One folder, `src/renderer/src/Tiles/`, holds everything a tile is — the chassis, the four content kinds, their plumbing, and the dashboard host — and both hosts consume it: MarkdownPM's `editor/embedWidget.tsx` and SurfacePM through `Tiles/BlockSurface.tsx`. `Blocks/`, `Embeds/`, root `Components/`, and `DesignSystem/Detail/` no longer exist. One editor shell, `TileWriter`, renders a prose tile and an embedded page; one writer, `TileSave`, debounces and flushes every tile-shaped save — page bodies, prose-tile bodies, dashboard layouts — with the same nexus-adopt and window-close guarantees pages have today.
 
-The shape follows the consumers: tile content is imported by both hosts and by three Windows with no plurality, which is the atlas's own test for a shared root folder, so `Surface/Blocks/` (a subfolder of one host) was rejected and `SurfacePM/` keeps its name as the engine. The folds are the point, not a side effect — Nathan's mandate is a net code-line reduction against the 2565 baseline, and moves alone are zero-sum. `TileWriter` is justified by cohesion (one click-to-edit shell, one flush story) and is allowed to be line-neutral; `TileSave` is the cycle's one behavior change and closes a live hole where a prose-tile edit or a layout nudge inside the debounce is lost on window close and, at nexus switch, written into the wrong nexus.
+The shape follows the consumers: tile content is imported by both hosts and by three Windows with no plurality, which is the atlas's own test for a shared root folder, so `Surface/Blocks/` (a subfolder of one host) was rejected and `SurfacePM/` keeps its name as the engine. The folds are the point, not a side effect — Nathan's mandate is a net code-line reduction against the 2546 baseline, and moves alone are zero-sum. `TileWriter` is justified by cohesion (one click-to-edit shell, one flush story) and is allowed to be line-neutral; `TileSave` is the cycle's one behavior change and closes a live hole where a prose-tile edit or a layout nudge inside the debounce is lost on window close and, at nexus switch, written into the wrong nexus.
 
 Bounded by: no change to how a tile looks or behaves beyond the writer's flush guarantees; no `block` → `tile` identifier rename (a Prospect); no webpage tile on the dashboard; the floating identity label stays four separate things (ContextPM open call); `Links/` untouched.
 
@@ -20,10 +20,10 @@ Bounded by: no change to how a tile looks or behaves beyond the writer's flush g
 5. `PageEmbedBlock.tsx` is deleted; `BlockSurface` renders `PageEmbed` directly. (D-1)
 6. `TileSave` — `Interface/pageFlush.ts` generalized so the write function rides the schedule call (`scheduleWrite(key, body, write)`), with no registry and no mount-bound ownership; keeps the schedule-time warm-cache write-through for pages, the requeue gated on a drop marker, the adopt flush, and the `beforeunload` flush; `MarkdownBlock` and `useBlockDoc`'s layout debounce ride it. (D-3, D-6)
 7. `TileWriter` — one click-to-edit shell over `MarkdownEditor` that `MarkdownBlock` and `PageEmbed` both render. (D-2)
-8. Net code LOC of `Tiles/` + `Utilities/` + `Views/ViewEmbedScope.tsx` is below **2699** — the 2565 baseline plus the three files that enter the measured set from outside it: `ActionBand.css.ts` 88, `tile-chassis.css` 17, `pageFlush.ts` 29. (A-6)
+8. Net code LOC of `Tiles/` + `Utilities/` + `Views/ViewEmbedScope.tsx` is below **2680** — the 2546 baseline plus the three files that enter the measured set from outside it: `ActionBand.css.ts` 88, `tile-chassis.css` 17, `pageFlush.ts` 29. (A-6)
 9. Every document the move makes false is rewritten in the commit that falsifies it; the ledger and atlas name the tree on disk. (Made False)
 
-**Acceptance — the whole thing working:** With the app running against a nexus, a prose tile on the Homepage takes a keystroke and the window is closed within 400ms — on relaunch the keystroke is on disk. A page tile inside a Markdown document is edited, the page opens in the main pane and shows the edit. A dashboard tile is dragged and the window is closed within 300ms — on relaunch the tile is where it was dropped. `ls src/renderer/src` shows `Tiles/`, `Utilities/`, `Links/` and no `Blocks/`, `Embeds/`, `Components/`; `ls src/renderer/src/DesignSystem` shows no `Detail/`. The three gates are green, the LOC count reads below 2699, and the Dead Vocabulary sweep returns zero against its control.
+**Acceptance — the whole thing working:** With the app running against a nexus, a prose tile on the Homepage takes a keystroke and the window is closed within 400ms — on relaunch the keystroke is on disk. A page tile inside a Markdown document is edited, the page opens in the main pane and shows the edit. A dashboard tile is dragged and the window is closed within 300ms — on relaunch the tile is where it was dropped. `ls src/renderer/src` shows `Tiles/`, `Utilities/`, `Links/` and no `Blocks/`, `Embeds/`, `Components/`; `ls src/renderer/src/DesignSystem` shows no `Detail/`. The three gates are green, the LOC count reads below 2680, and the Dead Vocabulary sweep returns zero against its control.
 
 **Forced By**
 
@@ -39,7 +39,7 @@ Bounded by: no change to how a tile looks or behaves beyond the writer's flush g
 - `Store/NexusSlice.ts:60` awaits `flushAllPageSaves` *before* the root flips; `BlockSurface` unmounts after → any writer outside TileSave lands in the new nexus.
 - Vitest, tsconfig, biome, vite, vercel, and the Showcase entries carry no path to any moved folder; the renderer has zero `vi.mock` calls → moves need no config edits, and the type gate enumerates every missed import.
 - `blocks.css` classes (`.blk-md`, `.blk-inert`) are consumed only by movers; `embeds.css` classes cross the boundary (`.pgembed` → `surfacepm.css:199,203`, `Links/connectionPane.css:31,40`; `.pgembed-grows` → `PageWindow.tsx:229`, `NavWindow.tsx:205`; `.tile-chassis(-body)` → `SurfaceView.tsx:133,185`, `embedWidget.tsx:130,243,389`, `embedResize.test.tsx:27`; `.mdpm-embed-tile` owned by `MarkdownPM/Styles.css`; `blk-zoom-*` styled by `surfacepm.css:38-56`) → class names are a contract; the merge renames files, never classes.
-- The Menu Recipe session owns `Embeds/PageEmbed.tsx`, `Blocks/handleMenu.css.ts`, `Blocks/viewEmbed.css.ts`, NavTrail, and the PageWindow crumbs until it lands → Phase 1's base commit is the recipe's final commit.
+- The Menu Recipe landed at `935bf031` (08-28): `PageEmbed`'s crumbs pass no type rung, `handleMenu.css.ts` and `viewEmbed.css.ts` sit on the recipe's `rowBox`, and every `size="title3"` is `size="headline"` → Phase 1's base is that commit, and the anchors above were re-derived against it.
 
 **Inherited Reasoning**
 
@@ -54,7 +54,7 @@ Bounded by: no change to how a tile looks or behaves beyond the writer's flush g
 - `Tiles — Decision Log.md` — the spec; every decision tagged.
 - `Blocks/BlockSurface.tsx` — the dashboard host; `renderTile` (~:318-358), `removing`/`suppressFlush` (:107-181), `tileClassName` (:270-285).
 - `Blocks/MarkdownBlock.tsx` — the prose tile: private 400ms debounce (:7,:32-62), `blocks.readMarkdown`/`writeMarkdown`, click-to-edit shell (:64-86).
-- `Embeds/PageEmbed.tsx` — the page tile: `pageFlush` at :8,:111-112,:156; the shell at :137-167; `chrome` header (:118-135); `EmbedCrumbs` (:223-232).
+- `Embeds/PageEmbed.tsx` — the page tile: `pageFlush` at :8,:90-91,:133; the shell at :116-146; `chrome` header (:96-113); `EmbedCrumbs` (:198-202).
 - `Interface/pageFlush.ts` — the path-keyed writer, whole file (53 lines). Consumers: `Interface/PageView.tsx:15,143`; `Embeds/PageEmbed.tsx`; `Store/NexusSlice.ts:19,60`.
 - `Blocks/useBlockDoc.ts` — `SAVE_DEBOUNCE_MS` (:11), `flush` (:64-69), unmount flush (:71), `setLayout` (:73-83), `commitLayout` (:88-97), `saveBlocks` (:112-117).
 - `Embeds/embeds.css` (193 lines) — `.pgembed-crumbs`/`.wpembed-title` at :109-124; second `.wpembed-title` at :162-169. `Blocks/blocks.css` (47 lines).
@@ -77,8 +77,8 @@ Bounded by: no change to how a tile looks or behaves beyond the writer's flush g
 
 **Global Constraints (every task inherits these)**
 
-- Run from `Pommora/`. Gates, exit codes read directly, never piped: `npm run typecheck` → 0 · `npm run lint` → 0 · `npx vitest run` → 0 (295 files / 3657 tests at planning time; the count may only rise by tests this plan adds). `npm run format` repairs a shell-driven write the hook didn't format.
-- LOC count, run from `Pommora/src/renderer/src`: `cat $(ls Tiles/* Utilities/* Views/ViewEmbedScope.tsx | grep -v test) | grep -v '^\s*$' | grep -v '^\s*//\|^\s*/\*\|^\s*\*' | wc -l` → below **2699** at Gate 3 and at closeout. Baseline at planning: `Blocks/` 1808 · `Embeds/` 638 · `Components/` 119 = 2565, plus the inbound movers `ActionBand.css.ts` 88 · `tile-chassis.css` 17 · `pageFlush.ts` 29 = 2699. The gate measures the folds, not the moves.
+- Run from `Pommora/`. Gates, exit codes read directly, never piped: `npm run typecheck` → 0 · `npm run lint` → 0 · `npx vitest run` → 0 (297 files / 3671 tests at the base; the count may only rise by tests this plan adds). `npm run format` repairs a shell-driven write the hook didn't format.
+- LOC count, run from `Pommora/src/renderer/src`: `cat $(ls Tiles/* Utilities/* Views/ViewEmbedScope.tsx | grep -v test) | grep -v '^\s*$' | grep -v '^\s*//\|^\s*/\*\|^\s*\*' | wc -l` → below **2680** at Gate 3 and at closeout. Baseline at planning: `Blocks/` 1793 · `Embeds/` 634 · `Components/` 119 = 2546 (re-counted 08-28 at the Menu Recipe's landing, `935bf031`), plus the inbound movers `ActionBand.css.ts` 88 · `tile-chassis.css` 17 · `pageFlush.ts` 29 = 2680. The gate measures the folds, not the moves.
 - Moves are `git mv`; import rewrites are explicit per-path `sed` on the alias and relative forms named in the task, never a bare folder-name substitution. KNOB comments and `(Nathan's call)` markers travel verbatim.
 - Stage explicit paths only (a parallel session may be live); never `git add -A` on a directory. Hook-pre-staged doc edits ride along. One commit per task, message `refactor(tiles): …` / `docs(tiles): …`.
 - No `Tiles/index.ts`. Deep imports only.
@@ -116,7 +116,7 @@ Bounded by: no change to how a tile looks or behaves beyond the writer's flush g
 
 ### Phase 1 — The tree on disk (behavior-zero)
 
-Base: the Menu Recipe's final commit. Baseline invariant carried through every task: `npx vitest run` test count 3657 (+ tests this plan adds), and the running app looks identical.
+Base: `935bf031`. Baseline invariant carried through every task: `npx vitest run` test count 3671 across 297 files (+ tests this plan adds), and the running app looks identical.
 
 #### Task 1: `Tiles/` from `Blocks/` and the tile half of `Embeds/`
 
@@ -138,7 +138,7 @@ Base: the Menu Recipe's final commit. Baseline invariant carried through every t
 - [ ] `git mv` the files above; confirm `Blocks/` and `DesignSystem/Detail/` are empty and remove them.
 - [ ] Rewrite the listed imports by explicit path; re-run each Derivation search — expect 0 in `src`.
 - [ ] `npm run typecheck` → 0. If it lists an import the Derivation missed, add it to this task's Files before fixing it.
-- [ ] `npm run lint` → 0; `npx vitest run` → 0, 3657 tests.
+- [ ] `npm run lint` → 0; `npx vitest run` → 0, 3671 tests.
 - [ ] Commit: `refactor(tiles): Tiles/ holds the tile world — Blocks, the embed tiles, the chassis, the action band`
 
 #### Task 2: `ViewEmbedScope` to `Views/`
@@ -158,7 +158,7 @@ Base: the Menu Recipe's final commit. Baseline invariant carried through every t
 
 **Steps:**
 - [ ] `git mv`; rewrite the fourteen imports and the internal one; `ls src/renderer/src/Embeds` → no such directory.
-- [ ] Gates → 0, 3657 tests.
+- [ ] Gates → 0, 3671 tests.
 - [ ] Commit: `refactor(views): ViewEmbedScope is view infrastructure`
 
 #### Task 3: `Components/` → `Utilities/`
@@ -177,7 +177,7 @@ Base: the Menu Recipe's final commit. Baseline invariant carried through every t
 
 **Steps:**
 - [ ] `git mv`; rewrite the eleven sites; run both Derivations and the control.
-- [ ] Gates → 0, 3657 tests.
+- [ ] Gates → 0, 3671 tests.
 - [ ] Commit: `refactor(renderer): Components/ is Utilities/`
 
 #### Task 4: `PageEmbedBlock` deleted; the `cellRing` identifier
@@ -229,10 +229,10 @@ Base: the Menu Recipe's final commit. Baseline invariant carried through every t
 
 **Requirement:** 8
 
-**Why:** Phase 1 is moves and one small deletion; the count should read 2699 − ~25 (`PageEmbedBlock`, the CSS header dedupe). A number far from that means a move dropped or duplicated something.
+**Why:** Phase 1 is moves and one small deletion; the count should read 2680 − ~25 (`PageEmbedBlock`, the CSS header dedupe). A number far from that means a move dropped or duplicated something.
 
 **Steps:**
-- [ ] Run the LOC count from Global Constraints — record the number in the Log. Expect 2665-2685.
+- [ ] Run the LOC count from Global Constraints — record the number in the Log. Expect 2646-2666.
 - [ ] Run every Dead Vocabulary token against `src` — `pageFlush`, `schedulePageSave`, `flushPageSave`, `flushAllPageSaves` are still live (Phase 2) and expected nonzero; every other token → 0. Control nonzero.
 - [ ] No commit; the numbers go in the Log at Gate 1.
 
@@ -249,7 +249,7 @@ Base: the Menu Recipe's final commit. Baseline invariant carried through every t
 - [ ] Commit: `docs(tiles): the tree on disk`
 
 #### Gate 1 — the tree on disk, behavior unmoved
-- [ ] Gate commands green, exit codes read directly; test count 3657.
+- [ ] Gate commands green, exit codes read directly; test count 3671.
 - [ ] Derivations re-run against their controls; counts matched, or the divergence rewrote the plan.
 - [ ] Simplification (`code-simplifier` then `comment-killer-agent`) and `feature-dev:code-reviewer` dispatched against `<base>..HEAD` scoped to `Tiles/`, `Views/ViewEmbedScope*`, `Utilities/`; reports cite files inside it.
 - [ ] Every concern fixed, or carrying an explicit user ruling in the Log.
@@ -268,7 +268,7 @@ Base: the Menu Recipe's final commit. Baseline invariant carried through every t
 
 **Files:**
 - Create: `Tiles/TileSave.ts` — from `pageFlush.ts` by `git mv` then edit, so history follows.
-- Modify: `Interface/PageView.tsx:15,143`; `Tiles/PageEmbed.tsx:8,111-112,156`; `Store/NexusSlice.ts:19,60`.
+- Modify: `Interface/PageView.tsx:15,143`; `Tiles/PageEmbed.tsx:8,90-91,133`; `Store/NexusSlice.ts:19,60`.
 - Test: `Tiles/tileSave.test.ts` (new).
 
 **Interfaces**
@@ -301,7 +301,7 @@ Base: the Menu Recipe's final commit. Baseline invariant carried through every t
 **Why:** The prose tile's private debounce is the lost-write hole; scheduling its `writeMarkdown` through TileSave closes it and deletes ~20 lines. `suppressFlush` becomes: on removal, `BlockSurface` calls `dropWrite(key)` before `blocks.removeTile`, so neither a pending nor a failed-ack write can land after the trash.
 
 **Files:**
-- Modify: `Tiles/MarkdownBlock.tsx` — drop `pending`, `flush`, `flushRef`, `scheduleSave`, `SAVE_DEBOUNCE_MS`, `suppressFlush`; key = `` `${blockHostKey(host)}:${tileId}` ``; `onChange={(next) => scheduleWrite(key, next, (b) => window.nexus.blocks.writeMarkdown(host, tileId, b))}`; the edit-exit and unmount effects call `flushWrite(key)`, exactly `PageEmbed`'s shape at `:108-112`.
+- Modify: `Tiles/MarkdownBlock.tsx` — drop `pending`, `flush`, `flushRef`, `scheduleSave`, `SAVE_DEBOUNCE_MS`, `suppressFlush`; key = `` `${blockHostKey(host)}:${tileId}` ``; `onChange={(next) => scheduleWrite(key, next, (b) => window.nexus.blocks.writeMarkdown(host, tileId, b))}`; the edit-exit and unmount effects call `flushWrite(key)`, exactly `PageEmbed`'s shape at `:88-91`.
 - Modify: `Tiles/BlockSurface.tsx` — `removing` set and `suppressFlush` callback deleted; `removeBlock` (~:169-181) calls `dropWrite(key)` as its first line, before `commitLayout` — the order the function's comment names as load-bearing. `renderTile` no longer passes `suppressFlush`.
 - Test: extend `tileSave.test.ts` with the drop case; `Tiles/markdownBlock.test.tsx` if one is needed to prove the edit-exit flush — check `rg -F "MarkdownBlock" src --glob '*.test.*'` first; none exists at planning.
 
@@ -354,7 +354,7 @@ Base: the Menu Recipe's final commit. Baseline invariant carried through every t
 
 **Requirement:** 7
 
-**Why:** `MarkdownBlock.tsx:64-86` and `PageEmbed.tsx:137-167` are one click-to-edit shell written twice: the same `onClick` guard (`editing || locked` → return; a non-collapsed selection → return; else begin edit), the same `MarkdownEditor` with `nativeEditorMenu`, `readOnly={!editing}`, `autoFocus`, `edgeFade`. The nine divergences become props; the two seam components keep their data logic and render the shell. Line-neutral by design; justified by one shell and one flush story.
+**Why:** `MarkdownBlock.tsx:64-86` and `PageEmbed.tsx:116-146` are one click-to-edit shell written twice: the same `onClick` guard (`editing || locked` → return; a non-collapsed selection → return; else begin edit), the same `MarkdownEditor` with `nativeEditorMenu`, `readOnly={!editing}`, `autoFocus`, `edgeFade`. The nine divergences become props; the two seam components keep their data logic and render the shell. Line-neutral by design; justified by one shell and one flush story.
 
 **Files:**
 - Create: `Tiles/TileWriter.tsx`.
@@ -377,11 +377,11 @@ Base: the Menu Recipe's final commit. Baseline invariant carried through every t
 **Requirement:** 8
 
 **Steps:**
-- [ ] LOC count → below 2699; record. Every Dead Vocabulary token → 0 in `src` and `.claude` (allowlist applies); control nonzero.
+- [ ] LOC count → below 2680; record. Every Dead Vocabulary token → 0 in `src` and `.claude` (allowlist applies); control nonzero.
 - [ ] No commit.
 
 #### Gate 3 — the folds
-- [ ] Gates green; LOC below 2699 recorded in the Log with the exact number.
+- [ ] Gates green; LOC below 2680 recorded in the Log with the exact number.
 - [ ] Simplification and code review against `<base>..HEAD` scoped to `Tiles/`.
 - [ ] Every concern fixed or ruled; the running-thing pass from Task 13 done at the gate; Progress hashes.
 
@@ -405,7 +405,7 @@ Base: the Menu Recipe's final commit. Baseline invariant carried through every t
 ## Implementation Log
 
 ### Progress
-- [ ] **Phase 1** — the tree on disk · base `<the Menu Recipe's final commit>`
+- [ ] **Phase 1** — the tree on disk · base `935bf031` (the Menu Recipe's landing)
   - [ ] Task 1 — Tiles/ from Blocks and the embed tiles · `<commit>`
   - [ ] Task 2 — ViewEmbedScope to Views · `<commit>`
   - [ ] Task 3 — Components to Utilities · `<commit>`
