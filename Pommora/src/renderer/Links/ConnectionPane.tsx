@@ -4,7 +4,7 @@ import { LINK_RESOLVE_TIMEOUT_MS } from '@shared/links'
 import {
   PickerMenu,
   type PickerDirection,
-} from '@renderer/DesignSystem/Components/Pickers/PickerMenu/PickerMenu'
+} from '@renderer/DesignSystem/Pickers/PickerMenu/PickerMenu'
 import { EditorView } from '@codemirror/view'
 import { HEADING_FOLD_LINE, toggleFoldAt } from '@renderer/MarkdownPM/editor/folding'
 import { usePointerGesture } from '@renderer/DesignSystem/Interactions/gesture'

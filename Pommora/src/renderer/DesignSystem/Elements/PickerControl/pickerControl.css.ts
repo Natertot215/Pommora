@@ -2,7 +2,7 @@ import { globalStyle, style } from '@vanilla-extract/css'
 import { vars as colorVars } from '../../Tokens/color.css'
 import { font, text } from '../../Tokens/typography.css'
 import { footingBar } from '../../Menus/menu-base.css'
-import { base } from '../../Components/Fields/fields.css'
+import { base } from '../../Fields/fields.css'
 
 const c = colorVars.color
 

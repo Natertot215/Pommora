@@ -1,7 +1,7 @@
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { ICON_PX, type IconSize } from '@renderer/DesignSystem/Tokens/size.css'
 import { cx } from '@renderer/DesignSystem/Util/cx'
-import { AssetImage } from '@renderer/DesignSystem/Components/AssetImage/AssetImage'
+import { AssetImage } from '@renderer/Assets/AssetImage'
 
 import { useAssetUrl, useSession } from '../store'
 import type { ResolvedNav } from './navResolve'

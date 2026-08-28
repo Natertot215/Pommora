@@ -1,6 +1,6 @@
 import { type Ref, useState } from 'react'
-import { InputField } from '@renderer/DesignSystem/Components/Fields'
-import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
+import { InputField } from '@renderer/DesignSystem/Fields'
+import { Button } from '@renderer/DesignSystem/Controls/Button'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import * as s from './frames.css'
 

@@ -1,6 +1,6 @@
 import type { ColumnStyle } from '@shared/columnStyles'
 import type { PropertyValue } from '@shared/propertyValue'
-import { CalendarPicker } from '@renderer/DesignSystem/Components/Pickers/CalendarPicker/CalendarPicker'
+import { CalendarPicker } from '@renderer/DesignSystem/Pickers/CalendarPicker/CalendarPicker'
 import { useSession } from '../../store'
 import { formatDate } from './formatValue'
 

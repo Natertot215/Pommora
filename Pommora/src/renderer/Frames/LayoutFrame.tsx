@@ -19,8 +19,8 @@ import {
   AccessoryButton,
 } from '@renderer/DesignSystem/Menus'
 import { footingLabel, footingSymbol } from '@renderer/DesignSystem/Menus/menu-base.css'
-import { PickerMenu } from '@renderer/DesignSystem/Components/Pickers/PickerMenu'
-import { Slider } from '@renderer/DesignSystem/Components/Controls/Slider/Slider'
+import { PickerMenu } from '@renderer/DesignSystem/Pickers/PickerMenu'
+import { Slider } from '@renderer/DesignSystem/Controls/Slider/Slider'
 import { useSession } from '../store'
 import { useSaveView } from '@renderer/Embeds/ViewEmbedScope'
 import { InlineEditHeader } from './InlineEditHeader'

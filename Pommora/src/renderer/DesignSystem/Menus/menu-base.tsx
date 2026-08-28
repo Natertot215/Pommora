@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
-import { Segmented, type Segment } from '../Components/Controls/Button'
-import { useDismiss } from '../Components/useDismiss'
+import { Segmented, type Segment } from '../Controls/Button'
+import { useDismiss } from '../Interactions/useDismiss'
 import { useExitPresence } from '../Animation/useExitPresence'
 import { MenuSurface } from './menu-surface'
 

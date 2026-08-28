@@ -1,4 +1,4 @@
-import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
+import { Button } from '@renderer/DesignSystem/Controls/Button'
 
 export function AddBannerButton({ onClick }: { onClick: () => void }): React.JSX.Element {
   return (

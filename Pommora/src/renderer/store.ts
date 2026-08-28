@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { EMBED_SCALE_DEFAULT, coerceScale } from '@shared/types'
-import { resolveAssetUrl } from './assetUrl'
+import { resolveAssetUrl } from './Assets/assetUrl'
 import { wireViewAdopted } from './Views/viewMint'
 import { createCacheSlice } from './Store/CacheSlice'
 import { createChromeSlice } from './Store/ChromeSlice'

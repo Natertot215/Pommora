@@ -1,7 +1,7 @@
 import { style } from '@vanilla-extract/css'
 import { vars as colorVars } from '@renderer/DesignSystem/Tokens/color.css'
 import { font } from '@renderer/DesignSystem/Tokens/typography.css'
-import { base } from '@renderer/DesignSystem/Components/Fields/fields.css'
+import { base } from '@renderer/DesignSystem/Fields/fields.css'
 
 /** No flex `gap`: a collapsed Reveal would still consume one on each side, so each row carries its
  *  own top margin, which rides inside the Reveal and collapses with it. */

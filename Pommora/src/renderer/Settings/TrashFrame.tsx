@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Checkbox } from '@renderer/DesignSystem/Components/Controls/Checkbox'
-import { SearchField } from '@renderer/DesignSystem/Components/Fields'
+import { Checkbox } from '@renderer/DesignSystem/Controls/Checkbox'
+import { SearchField } from '@renderer/DesignSystem/Fields'
 import { overScrollEllipsis } from '@renderer/DesignSystem/Interactions/OverScroll'
 import { NavTrail } from '@renderer/DesignSystem/Elements/NavTrail'
 import { MenuItem } from '@renderer/DesignSystem/Menus'

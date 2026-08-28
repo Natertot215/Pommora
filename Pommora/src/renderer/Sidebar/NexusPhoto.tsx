@@ -2,10 +2,10 @@ import { useRef } from 'react'
 import { DEFAULT_NEXUS_ICON, Icon } from '@renderer/DesignSystem/Symbols'
 import { ICON_PX, type IconSize } from '@renderer/DesignSystem/Tokens/size.css'
 import { IconPicker } from '@renderer/Settings/IconPicker'
-import { ImagePicker } from '@renderer/DesignSystem/Components/Pickers/ImagePicker/ImagePicker'
+import { ImagePicker } from '@renderer/DesignSystem/Pickers/ImagePicker/ImagePicker'
 import { useNexusIcon } from '../Components/useNexusIcon'
 import { useAssetUrl } from '../store'
-import { AssetImage } from '@renderer/DesignSystem/Components/AssetImage/AssetImage'
+import { AssetImage } from '@renderer/Assets/AssetImage'
 import * as s from './nexusHeader.css'
 
 /** Click (homepage select) is owned by the wrapping ribbon button, not here. Rename-nexus lives

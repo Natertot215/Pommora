@@ -1,0 +1,692 @@
+import { EmptyValue } from '@renderer/DesignSystem/Elements/EmptyValue/EmptyValue'
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { Button } from '@renderer/DesignSystem/Controls/Button'
+import { createPortal } from 'react-dom'
+import { Icon } from '@renderer/DesignSystem/Symbols'
+import { DualSwitch } from '@renderer/DesignSystem/Controls/Switches/DualSwitch'
+import { OverScroll } from '@renderer/DesignSystem/Interactions/OverScroll'
+import { PickerMenu, PickerOption } from '../PickerMenu/PickerMenu'
+import { useExitPresence } from '@renderer/DesignSystem/Animation/useExitPresence'
+import { stack } from '@renderer/DesignSystem/Tokens/stack'
+import { cx } from '@renderer/DesignSystem/Util/cx'
+import { pad } from '@renderer/DesignSystem/Util/pad'
+import { rowBox } from '@renderer/DesignSystem/Menus/menu-base.css'
+import * as s from './calendarPicker.css'
+
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
+const HOURS_12 = Array.from({ length: 12 }, (_, i) => i + 1)
+const HOURS_24 = Array.from({ length: 24 }, (_, h) => h)
+const MINUTES = Array.from({ length: 12 }, (_, i) => i * 5)
+
+type TriggerRect = { x: number; y: number; w: number; h: number }
+const rectOf = (el: HTMLElement): TriggerRect => {
+  const r = el.getBoundingClientRect()
+  return { x: r.x, y: r.y, w: r.width, h: r.height }
+}
+
+function PortalMenu({
+  rect,
+  children,
+}: {
+  rect: TriggerRect
+  children: ReactNode
+}): React.JSX.Element {
+  return createPortal(
+    <div
+      data-calmenu
+      style={{
+        position: 'fixed',
+        left: rect.x,
+        top: rect.y,
+        width: rect.w,
+        height: rect.h,
+        zIndex: stack.top.menuOverlay,
+        pointerEvents: 'none',
+      }}
+    >
+      {children}
+    </div>,
+    document.body,
+  )
+}
+
+function SizeMorph({ children }: { children: ReactNode }): React.JSX.Element {
+  const ref = useRef<HTMLDivElement>(null)
+  const [h, setH] = useState(0)
+  const [armed, setArmed] = useState(false)
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const measure = (): void => setH(el.offsetHeight)
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+  useEffect(() => setArmed(true), [])
+  return (
+    <div className={cx(s.morph, armed && s.morphAnimated)} style={{ height: h || undefined }}>
+      <div ref={ref}>{children}</div>
+    </div>
+  )
+}
+// Local YYYY-MM-DD key (never toISOString — a UTC key shifts the day west of Greenwich; the
+// formatters parse date-only strings as LOCAL midnight, so the key must be minted locally too).
+const keyOf = (d: Date): string => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+
+/** KNOB — the Month/Year buttons' own inset. The size token's label padding is a pill's; here the two
+ *  read as one title, so the pair sits a word-space apart rather than two pills apart. */
+const TITLE_PAD_X = '2px'
+
+export function CalendarPicker({
+  formatDateValue,
+  timeFormat = 'twelveHour',
+  value = null,
+  onChange,
+  range = true,
+}: {
+  formatDateValue: (isoDate: string, condensed?: { withYear: boolean }) => string
+  timeFormat?: 'twelveHour' | 'twentyFourHour'
+  value?: string | null
+  onChange?: (iso: string | null) => void
+  range?: boolean
+}): React.JSX.Element {
+  const twelve = timeFormat === 'twelveHour'
+  const now = new Date()
+  const todayKey = keyOf(now)
+  const init = value && /^\d{4}-\d{2}-\d{2}/.test(value) ? value : null
+  const initHasTime = init?.includes('T') ?? false
+  const [cursor, setCursor] = useState(() => {
+    const seed = init ? new Date(`${init.slice(0, 10)}T00:00:00`) : now
+    return new Date(seed.getFullYear(), seed.getMonth(), 1)
+  })
+  const [slide, setSlide] = useState<{ dir: 1 | -1; from: Date } | null>(null)
+  const [start, setStart] = useState<string | null>(init ? init.slice(0, 10) : null)
+  const [end, setEnd] = useState<string | null>(null)
+  const [endOn, setEndOn] = useState(false)
+  const [timeOn, setTimeOn] = useState(initHasTime)
+  const [menu, setMenu] = useState<{ kind: 'month' | 'year'; rect: TriggerRect } | null>(null)
+  const [timeMenu, setTimeMenu] = useState<{
+    which: 'start' | 'end'
+    part: 'h' | 'm'
+    rect: TriggerRect
+  } | null>(null)
+  const menuPresence = useExitPresence(menu !== null)
+  const timeMenuPresence = useExitPresence(timeMenu !== null)
+  const lastMenu = useRef(menu)
+  if (menu) lastMenu.current = menu
+  const lastTimeMenu = useRef(timeMenu)
+  if (timeMenu) lastTimeMenu.current = timeMenu
+  const [segEdit, setSegEdit] = useState<{
+    which: 'start' | 'end'
+    part: 'h' | 'm'
+    draft: string
+  } | null>(null)
+  const rootRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!menu && !timeMenu) return
+    const close = (): void => {
+      setMenu(null)
+      setTimeMenu(null)
+    }
+    const onDown = (e: PointerEvent): void => {
+      const t = e.target as HTMLElement
+      if (rootRef.current?.contains(t) || t.closest('[data-calmenu]')) return
+      close()
+    }
+    const onScroll = (e: Event): void => {
+      if ((e.target as HTMLElement)?.closest?.('[data-calmenu]')) return
+      close()
+    }
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key !== 'Escape') return
+      e.stopPropagation()
+      close()
+    }
+    document.addEventListener('pointerdown', onDown, true)
+    document.addEventListener('scroll', onScroll, true)
+    document.addEventListener('keydown', onKey, true)
+    return () => {
+      document.removeEventListener('pointerdown', onDown, true)
+      document.removeEventListener('scroll', onScroll, true)
+      document.removeEventListener('keydown', onKey, true)
+    }
+  }, [menu, timeMenu])
+  const drag = useRef<{ which: 'start' | 'end'; moved: boolean } | null>(null)
+  const suppressClick = useRef(false)
+  const [startMin, setStartMin] = useState(
+    initHasTime && init ? Number(init.slice(11, 13)) * 60 + Number(init.slice(14, 16)) : 9 * 60,
+  )
+  const [endMin, setEndMin] = useState(17 * 60)
+  const onChangeRef = useRef(onChange)
+  onChangeRef.current = onChange
+  const emitTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const pendingEmit = useRef<string | null | undefined>(undefined)
+  const initial = useRef({ start, timeOn, startMin })
+  const armed = useRef(false)
+  useEffect(() => {
+    if (!onChangeRef.current) return
+    if (
+      !armed.current &&
+      start === initial.current.start &&
+      timeOn === initial.current.timeOn &&
+      startMin === initial.current.startMin
+    ) {
+      return
+    }
+    armed.current = true
+    const iso = start
+      ? timeOn
+        ? `${start}T${pad(Math.floor(startMin / 60))}:${pad(startMin % 60)}:00`
+        : start
+      : null
+    pendingEmit.current = iso
+    clearTimeout(emitTimer.current)
+    emitTimer.current = setTimeout(() => {
+      pendingEmit.current = undefined
+      onChangeRef.current?.(iso)
+    }, 150)
+  }, [start, timeOn, startMin])
+  useEffect(
+    () => () => {
+      if (pendingEmit.current !== undefined) {
+        clearTimeout(emitTimer.current)
+        onChangeRef.current?.(pendingEmit.current)
+      }
+    },
+    [],
+  )
+  const minsOf = (which: 'start' | 'end'): number => (which === 'start' ? startMin : endMin)
+  const setMinsFor = (which: 'start' | 'end'): typeof setStartMin =>
+    which === 'start' ? setStartMin : setEndMin
+
+  const nav = (dir: 1 | -1): void => {
+    if (slide) return
+    setMenu(null)
+    setTimeMenu(null)
+    setSlide({ dir, from: cursor })
+    setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + dir, 1))
+  }
+
+  const pick = (k: string): void => {
+    if (k === start) {
+      setStart(end)
+      setEnd(null)
+    } else if (k === end) {
+      setEnd(null)
+    } else if (!start) {
+      setStart(k)
+    } else if (endOn && !end) {
+      if (k < start) {
+        setEnd(start)
+        setStart(k)
+      } else setEnd(k)
+    } else {
+      setStart(k)
+      setEnd(null)
+    }
+  }
+
+  const swipe = useRef(0)
+  const swipeCooldown = useRef(false)
+  const swipeIdle = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const onGridWheel = (e: React.WheelEvent): void => {
+    if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return
+    clearTimeout(swipeIdle.current)
+    swipeIdle.current = setTimeout(() => {
+      swipe.current = 0
+      swipeCooldown.current = false
+    }, 150)
+    if (slide || swipeCooldown.current) return
+    if (swipe.current !== 0 && Math.sign(e.deltaX) !== Math.sign(swipe.current)) swipe.current = 0
+    swipe.current += e.deltaX
+    if (Math.abs(swipe.current) > 60) {
+      nav(swipe.current > 0 ? 1 : -1)
+      swipe.current = 0
+      swipeCooldown.current = true
+    }
+  }
+
+  const keyAtPoint = (x: number, y: number): string | null =>
+    document.elementFromPoint(x, y)?.closest('[data-k]')?.getAttribute('data-k') ?? null
+
+  const onGridPointerDown = (e: React.PointerEvent<HTMLDivElement>): void => {
+    suppressClick.current = false
+    const k = (e.target as HTMLElement).closest('[data-k]')?.getAttribute('data-k')
+    if (!k) return
+    if (k === start) drag.current = { which: 'start', moved: false }
+    else if (k === end) drag.current = { which: 'end', moved: false }
+    if (drag.current) e.currentTarget.setPointerCapture(e.pointerId)
+  }
+  const onGridPointerMove = (e: React.PointerEvent<HTMLDivElement>): void => {
+    const d = drag.current
+    if (!d) return
+    const k = keyAtPoint(e.clientX, e.clientY)
+    if (!k || k === (d.which === 'start' ? start : end)) return
+    if (k === (d.which === 'start' ? end : start)) return
+    d.moved = true
+    if (d.which === 'start') {
+      if (end !== null && k > end) {
+        setStart(end)
+        setEnd(k)
+        d.which = 'end'
+      } else setStart(k)
+    } else if (start !== null && k < start) {
+      setEnd(start)
+      setStart(k)
+      d.which = 'start'
+    } else setEnd(k)
+  }
+  const onGridPointerUp = (): void => {
+    const d = drag.current
+    drag.current = null
+    if (!d) return
+    if (d.moved) {
+      suppressClick.current = true
+      return
+    }
+    const k = d.which === 'start' ? start : end
+    if (k) {
+      suppressClick.current = true
+      pick(k)
+    }
+  }
+
+  const rowsFor = (month: Date): number => {
+    const lead = new Date(month.getFullYear(), month.getMonth(), 1).getDay()
+    return Math.ceil((lead + new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate()) / 7)
+  }
+
+  const grid = (month: Date): React.JSX.Element => {
+    const y = month.getFullYear()
+    const m = month.getMonth()
+    const lead = new Date(y, m, 1).getDay()
+    const first = new Date(y, m, 1 - lead)
+    const cellCount = rowsFor(month) * 7
+    const ranged = start !== null && end !== null
+    return (
+      <div className={s.days} key={keyOf(month)}>
+        {Array.from({ length: cellCount }, (_, i) => {
+          const d = new Date(first.getFullYear(), first.getMonth(), first.getDate() + i)
+          const k = keyOf(d)
+          const sel = k === start || k === end
+          const mid = ranged && start !== null && end !== null && k > start && k < end
+          const col = i % 7
+          return (
+            <button
+              type="button"
+              key={k}
+              data-k={k}
+              className={cx(s.day, d.getMonth() !== m && s.dayOut, sel && s.daySelected)}
+              onClick={() => {
+                if (suppressClick.current) {
+                  suppressClick.current = false
+                  return
+                }
+                pick(k)
+              }}
+            >
+              {sel && ranged && (
+                <span className={cx(s.pill, k === start ? s.bandUnderStart : s.bandUnderEnd)} />
+              )}
+              <span
+                className={cx(
+                  s.pill,
+                  k === todayKey && !sel && !mid && s.pillToday,
+                  sel && s.pillSelected,
+                  mid && s.pillMid,
+                  mid && col === 0 && s.pillRowFirst,
+                  mid && col === 6 && s.pillRowLast,
+                )}
+              />
+              {d.getDate()}
+            </button>
+          )
+        })}
+      </div>
+    )
+  }
+
+  const dateField = (
+    k: string | null,
+    label: string,
+    condensed?: { withYear: boolean },
+  ): React.JSX.Element => (
+    <div className={s.field} key={label}>
+      <Icon name="calendar" size="body" className={s.fieldIcon} />
+      <OverScroll className={s.fieldValue}>
+        {k ? formatDateValue(k, condensed) : <EmptyValue />}
+      </OverScroll>
+    </div>
+  )
+  const hourShown = (mins: number): number =>
+    twelve ? ((Math.floor(mins / 60) + 11) % 12) + 1 : Math.floor(mins / 60)
+  const hourToMins = (v: number, mins: number): number =>
+    (twelve ? (v % 12) + (mins >= 720 ? 12 : 0) : v) * 60 + (mins % 60)
+  const hourText = (v: number): string => (twelve ? String(v) : pad(v))
+
+  const timeOptions = (which: 'start' | 'end', part: 'h' | 'm'): React.JSX.Element | null => {
+    if (!timeMenuPresence.mounted || !lastTimeMenu.current) return null
+    const mins = minsOf(which)
+    const setMins = setMinsFor(which)
+    const current = part === 'h' ? hourShown(mins) : mins % 60
+    const choose = (v: number): void => {
+      setMins(part === 'h' ? hourToMins(v, mins) : Math.floor(mins / 60) * 60 + v)
+      setTimeMenu(null)
+    }
+    return (
+      <PortalMenu rect={lastTimeMenu.current.rect}>
+        {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a bubble guard, not a control */}
+        <span
+          className={s.ddWrap}
+          style={timeMenuPresence.closing ? { pointerEvents: 'none' } : undefined}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <PickerMenu solid direction="up" closing={timeMenuPresence.closing}>
+            <div className={cx(s.menuList, 'over-scroll')}>
+              {(part === 'h' ? (twelve ? HOURS_12 : HOURS_24) : MINUTES).map((v) => (
+                <PickerOption key={v} selected={v === current} onClick={() => choose(v)}>
+                  {optionRow(part === 'h' ? hourText(v) : pad(v))}
+                </PickerOption>
+              ))}
+            </div>
+          </PickerMenu>
+        </span>
+      </PortalMenu>
+    )
+  }
+  const segCommit = (): void => {
+    if (!segEdit) return
+    const v = Number(segEdit.draft)
+    if (segEdit.draft !== '' && Number.isFinite(v)) {
+      const mins = minsOf(segEdit.which)
+      const setMins = setMinsFor(segEdit.which)
+      if (segEdit.part === 'h') {
+        const clamped = twelve ? Math.min(Math.max(v, 1), 12) : Math.min(v, 23)
+        setMins(hourToMins(clamped, mins))
+      } else setMins(Math.floor(mins / 60) * 60 + Math.min(v, 59))
+    }
+    setSegEdit(null)
+  }
+  const timeSegment = (which: 'start' | 'end', part: 'h' | 'm', mins: number): React.JSX.Element =>
+    segEdit?.which === which && segEdit.part === part ? (
+      <input
+        key={`${which}-${part}-edit`}
+        className={s.timeSegInput}
+        value={segEdit.draft}
+        placeholder={part === 'h' ? hourText(hourShown(mins)) : pad(mins % 60)}
+        // biome-ignore lint/a11y/noAutofocus: the surface exists to take focus the moment it opens; that IS the interaction
+        autoFocus
+        spellCheck={false}
+        onChange={(e) => {
+          const draft = e.target.value
+          if (/^\d{0,2}$/.test(draft)) setSegEdit({ which, part, draft })
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') segCommit()
+          else if (e.key === 'Escape') setSegEdit(null)
+        }}
+        onBlur={segCommit}
+      />
+    ) : (
+      <button
+        type="button"
+        key={`${which}-${part}`}
+        className={s.timeSeg}
+        onClick={(e) => {
+          if (e.detail > 1) return
+          setTimeMenu(
+            timeMenu?.which === which && timeMenu.part === part
+              ? null
+              : { which, part, rect: rectOf(e.currentTarget) },
+          )
+        }}
+        onDoubleClick={() => {
+          setTimeMenu(null)
+          setSegEdit({ which, part, draft: '' })
+        }}
+      >
+        {part === 'h' ? hourText(hourShown(mins)) : pad(mins % 60)}
+        {timeMenuPresence.mounted &&
+          lastTimeMenu.current?.which === which &&
+          lastTimeMenu.current.part === part &&
+          timeOptions(which, part)}
+      </button>
+    )
+  const ampmSegment = (which: 'start' | 'end', mins: number): React.JSX.Element => {
+    const setMins = setMinsFor(which)
+    return (
+      <button
+        type="button"
+        className={s.timeSeg}
+        onClick={() => setMins(mins >= 720 ? mins - 720 : mins + 720)}
+      >
+        {mins >= 720 ? 'PM' : 'AM'}
+      </button>
+    )
+  }
+  const timeField = (
+    mins: number | null,
+    label: string,
+    which: 'start' | 'end',
+  ): React.JSX.Element => (
+    <div className={cx(s.field, s.fieldTime)} key={label}>
+      <Icon name="clock" size="body" className={s.fieldIcon} />
+      {mins !== null ? (
+        <span className={s.timeSegs}>
+          <span className={s.hmGroup}>
+            {timeSegment(which, 'h', mins)}
+            <span className={s.timeColon}>:</span>
+            {timeSegment(which, 'm', mins)}
+          </span>
+          {twelve && ampmSegment(which, mins)}
+        </span>
+      ) : (
+        <EmptyValue className={s.fieldValue} />
+      )}
+    </div>
+  )
+
+  const prevMonth = slide?.from ?? cursor
+  const year = cursor.getFullYear()
+  const gridHeight = rowsFor(cursor) * 24 + (rowsFor(cursor) - 1) * 2 + 2
+  const jump = (y: number, m: number): void => {
+    setCursor(new Date(y, m, 1))
+    setMenu(null)
+  }
+  const yearChoices = Array.from({ length: 21 }, (_, i) => year - 10 + i)
+  const monthName = (m: number): string =>
+    new Date(2026, m, 1).toLocaleDateString('en-US', { month: 'long' })
+
+  const optionRow = (label: string | number): React.JSX.Element => (
+    <span className={s.optionRow}>{label}</span>
+  )
+  const selectionMenu = (kind: 'month' | 'year'): React.JSX.Element | null =>
+    menuPresence.mounted && lastMenu.current ? (
+      <PortalMenu rect={lastMenu.current.rect}>
+        {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a bubble guard, not a control */}
+        <span
+          className={s.ddWrap}
+          style={menuPresence.closing ? { pointerEvents: 'none' } : undefined}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <PickerMenu solid closing={menuPresence.closing}>
+            <div className={cx(s.menuList, 'over-scroll')}>
+              {kind === 'month'
+                ? Array.from({ length: 12 }, (_, m) => (
+                    <PickerOption
+                      key={monthName(m)}
+                      selected={m === cursor.getMonth()}
+                      onClick={() => jump(year, m)}
+                    >
+                      {optionRow(monthName(m))}
+                    </PickerOption>
+                  ))
+                : yearChoices.map((y) => (
+                    <PickerOption
+                      key={y}
+                      selected={y === year}
+                      onClick={() => jump(y, cursor.getMonth())}
+                    >
+                      {optionRow(y)}
+                    </PickerOption>
+                  ))}
+            </div>
+          </PickerMenu>
+        </span>
+      </PortalMenu>
+    ) : null
+
+  return (
+    <div className={s.root} ref={rootRef}>
+      <SizeMorph>
+        <div className={s.head}>
+          <span className={s.titleGroup}>
+            <Button
+              size="button-inline"
+              paddingX={TITLE_PAD_X}
+              className={s.titleBtn}
+              onClick={(e) =>
+                setMenu(
+                  menu?.kind === 'month' ? null : { kind: 'month', rect: rectOf(e.currentTarget) },
+                )
+              }
+            >
+              {cursor.toLocaleDateString('en-US', { month: 'long' })}
+              {menu?.kind === 'month' && selectionMenu('month')}
+            </Button>
+            <Button
+              size="button-inline"
+              paddingX={TITLE_PAD_X}
+              className={s.titleBtn}
+              onClick={(e) =>
+                setMenu(
+                  menu?.kind === 'year' ? null : { kind: 'year', rect: rectOf(e.currentTarget) },
+                )
+              }
+            >
+              {year}
+              {menu?.kind === 'year' && selectionMenu('year')}
+            </Button>
+          </span>
+          <span className={s.nav}>
+            <Button
+              size="button-inline"
+              paddingX="0"
+              icon="chevron-left"
+              iconSize="headline"
+              className={s.navBtn}
+              aria-label="Previous month"
+              onClick={() => nav(-1)}
+            />
+            <span className={s.navSegment} aria-hidden />
+            <Button
+              size="button-inline"
+              paddingX="0"
+              icon="chevron-right"
+              iconSize="headline"
+              className={s.navBtn}
+              aria-label="Next month"
+              onClick={() => nav(1)}
+            />
+          </span>
+        </div>
+        <div className={s.headDivider} />
+        <div className={s.weekRow}>
+          {WEEKDAYS.map((w) => (
+            <span key={w} className={s.weekday}>
+              {w}
+            </span>
+          ))}
+        </div>
+        <div className={s.viewport} style={{ height: gridHeight }} onWheel={onGridWheel}>
+          <div
+            className={cx(
+              s.track,
+              slide ? (slide.dir === 1 ? s.trackLeft : s.trackRight) : undefined,
+            )}
+            onAnimationEnd={() => setSlide(null)}
+            onPointerDown={onGridPointerDown}
+            onPointerMove={onGridPointerMove}
+            onPointerUp={onGridPointerUp}
+            onPointerCancel={onGridPointerUp}
+          >
+            {slide ? (
+              slide.dir === 1 ? (
+                <>
+                  {grid(prevMonth)}
+                  {grid(cursor)}
+                </>
+              ) : (
+                <>
+                  {grid(cursor)}
+                  {grid(prevMonth)}
+                </>
+              )
+            ) : (
+              grid(cursor)
+            )}
+          </div>
+        </div>
+        <div className={s.divider} />
+        <div className={s.fields}>
+          {(() => {
+            if (endOn) {
+              const condensed = {
+                withYear: start !== null && end !== null && start.slice(0, 4) !== end.slice(0, 4),
+              }
+              return (
+                <>
+                  <div className={s.fieldRow}>
+                    {dateField(start, 'start', condensed)}
+                    {dateField(end, 'end', condensed)}
+                  </div>
+                  {timeOn && (
+                    <div className={s.fieldRow}>
+                      {timeField(start ? startMin : null, 'start-t', 'start')}
+                      {timeField(end ? endMin : null, 'end-t', 'end')}
+                    </div>
+                  )}
+                </>
+              )
+            }
+            return (
+              <div className={s.fieldRow}>
+                {dateField(start, 'date')}
+                {timeOn && timeField(start ? startMin : null, 'time', 'start')}
+              </div>
+            )
+          })()}
+        </div>
+        {range && (
+          <div className={rowBox}>
+            <span className={s.switchLabel}>End Date</span>
+            <DualSwitch
+              checked={endOn}
+              ariaLabel="End Date"
+              onChange={(v) => {
+                setEndOn(v)
+                if (!v) setEnd(null)
+                setSegEdit(null)
+                setTimeMenu(null)
+              }}
+            />
+          </div>
+        )}
+        <div className={rowBox}>
+          <span className={s.switchLabel}>Use Time</span>
+          <DualSwitch
+            checked={timeOn}
+            ariaLabel="Use Time"
+            onChange={(v) => {
+              setTimeOn(v)
+              setSegEdit(null)
+              setTimeMenu(null)
+            }}
+          />
+        </div>
+      </SizeMorph>
+    </div>
+  )
+}

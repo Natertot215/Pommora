@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
+import { Button } from '@renderer/DesignSystem/Controls/Button'
 import { lockLabel } from '@shared/toggleLabels'
 import type {
   BlockEntry,
@@ -10,11 +10,11 @@ import type {
   ViewPickerItem,
 } from '@shared/blocks'
 import { Icon } from '@renderer/DesignSystem/Symbols'
-import { PickerMenu, PickerOption } from '@renderer/DesignSystem/Components/Pickers/PickerMenu'
+import { PickerMenu, PickerOption } from '@renderer/DesignSystem/Pickers/PickerMenu'
 import {
   leadingRow,
   PICKER_MAX_HEIGHT,
-} from '@renderer/DesignSystem/Components/Pickers/PickerMenu/pickerMenu.css'
+} from '@renderer/DesignSystem/Pickers/PickerMenu/pickerMenu.css'
 import {
   FooterLockButton,
   MenuFooting,
