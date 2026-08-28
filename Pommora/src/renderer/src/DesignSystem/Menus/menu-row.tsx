@@ -54,30 +54,37 @@ type MenuItemProps = {
   subLabel?: ReactNode
   detail?: ReactNode
   trailing?: ReactNode
+  overlay?: ReactNode
   selected?: boolean
   disabled?: boolean
   indent?: number
   onClick?: (e: React.MouseEvent) => void
   onContextMenu?: (e: MouseEvent) => void
   onPointerDown?: (e: React.PointerEvent) => void
+  onMouseDown?: (e: MouseEvent) => void
   className?: string
   children: ReactNode
 }
 
-export function MenuItem({
-  leading,
-  subLabel,
-  detail,
-  trailing,
-  selected = false,
-  disabled = false,
-  indent = 0,
-  onClick,
-  onContextMenu,
-  onPointerDown,
-  className,
-  children,
-}: MenuItemProps): React.JSX.Element {
+export const MenuItem = forwardRef<HTMLDivElement, MenuItemProps>(function MenuItem(
+  {
+    leading,
+    subLabel,
+    detail,
+    trailing,
+    overlay,
+    selected = false,
+    disabled = false,
+    indent = 0,
+    onClick,
+    onContextMenu,
+    onPointerDown,
+    onMouseDown,
+    className,
+    children,
+  },
+  ref,
+): React.JSX.Element {
   const rowStyle: CSSProperties | undefined = indent
     ? { paddingLeft: 8 + indent * DISCLOSURE_INDENT }
     : undefined
@@ -86,6 +93,7 @@ export function MenuItem({
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: the button role is applied conditionally on the click handler, which a static parse cannot see
     <div
+      ref={ref}
       className={cx(s.item, selected && s.itemSelected, disabled && s.rowDisabled, className)}
       style={rowStyle}
       role={act ? 'button' : undefined}
@@ -94,6 +102,7 @@ export function MenuItem({
       onKeyDown={act ? onActivateClick : undefined}
       onContextMenu={onContextMenu}
       onPointerDown={onPointerDown}
+      onMouseDown={onMouseDown}
     >
       {leading != null && <span className={s.side}>{leading}</span>}
       <span className={s.titleWrap}>
@@ -106,9 +115,10 @@ export function MenuItem({
           {trailing}
         </span>
       )}
+      {overlay}
     </div>
   )
-}
+})
 
 export function MenuSeparator({
   flush = false,

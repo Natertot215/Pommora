@@ -5,8 +5,6 @@
   --navwindow-inset: 14px; /* KNOB — the leaf's content inset, the rows' and the heading's alike */
   --trash-date-lane: 160px; /* KNOB — fixed, so the dates line up down the list */
   --trash-date-inset: 10px; /* KNOB — clears the column divider, heading and rows alike */
-  --trash-gutter: 20px; /* KNOB */
-  --trash-lead: calc(var(--navwindow-inset) + var(--trash-gutter));
   --cell-padding-x: var(--navwindow-inset);
   --heading-padding-y: 6px; /* KNOB */
   flex: 1;
@@ -39,17 +37,20 @@
 .trash-head .col-header:first-child::before {
   content: none;
 }
-/* A row's segment bar reads as a separator, the heading's as heading chrome — one shape, two tones. */
-.trash-frame .nav-item-main {
+/* A row's segment bar reads as a separator, the heading's as heading chrome — one shape, two tones;
+   the row's sits where its date lane begins. */
+.trash-frame .trash-row {
   --segment-tone: var(--border-base);
-  padding-left: var(--trash-lead);
+}
+.trash-frame .trash-row::after {
+  right: calc(var(--row-pad-x) + var(--trash-date-lane) + var(--trash-date-inset));
 }
 .trash-frame .trash-head-name {
   flex: 1;
   min-width: 0;
   display: flex;
   align-items: center;
-  padding-left: var(--trash-lead);
+  padding-left: var(--content-inset);
 }
 .trash-head-glyph {
   display: flex;
@@ -80,7 +81,7 @@
 
 /* The table's row treatment: a line between rows rather than under each one, so a list has none
    above its first nor below its last.*/
-.trash-frame .nav-item + .nav-item::before {
+.trash-frame .trash-row + .trash-row::before {
   content: "";
   position: absolute;
   left: var(--navwindow-inset);
@@ -89,17 +90,7 @@
   border-top: var(--table-border);
 }
 
-/* The pin's affordance exactly: a glyph in the row's left inset, absolute so it never shifts the
-   row's content, hidden until the row is hovered, and holding the accent once set. */
-.trash-check {
-  position: absolute;
-  left: calc(var(--navwindow-inset) + var(--trash-gutter) / 2);
-  top: 50%;
-  transform: translate(-50%, -50%);
-  opacity: 0;
-  transition: opacity var(--duration-base) var(--ease-base);
-}
-.nav-item:hover .trash-check,
+/* A checked set holds every row's checkbox visible. */
 .trash-frame.has-checked .trash-check,
 .trash-check:focus-visible {
   opacity: 1;
@@ -107,12 +98,11 @@
 .trash-date {
   flex: 0 0 var(--trash-date-lane);
   padding-left: var(--trash-date-inset);
-  padding-right: var(--cell-padding-x);
   color: var(--label-secondary);
 }
 
 /* A location that no longer exists reads as a record of one. */
-.trash-frame .is-historical .nav-item-path {
+.trash-frame .is-historical {
   font-style: italic;
   color: var(--label-tertiary);
 }
