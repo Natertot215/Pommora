@@ -1,6 +1,5 @@
 import { style } from '@vanilla-extract/css'
 import { vars as colorVars } from '@renderer/DesignSystem/Tokens/color.css'
-import { text } from '@renderer/DesignSystem/Tokens/typography.css'
 import {
   field as fieldBase,
   borderedField,
@@ -23,8 +22,7 @@ const LEAD_GAP = '6px'
  *  label and the field's edge. */
 const TRAILING_GAP = '2px'
 
-/** KNOB — the frame's height floor (matches the hosts' leaf slider floor) so the "+" footer pins
- *  to the bottom edge like every other frame's footing. */
+/** KNOB — the frame's height floor (matches the hosts' leaf slider floor). */
 const FILTER_MIN_HEIGHT = '245px'
 
 /** KNOB — the clear-×'s breathing room off the row's trailing edge. */
@@ -33,11 +31,7 @@ const REMOVE_INSET = '2px'
 export const frame = style({
   ...growToContent(FILTER_MAX_WIDTH),
   minHeight: FILTER_MIN_HEIGHT,
-  display: 'flex',
-  flexDirection: 'column',
 })
-
-export const body = style({ flex: '1 0 auto' })
 
 export const ruleList = style({
   display: 'flex',
@@ -107,11 +101,6 @@ export const removeButton = style({
   cursor: 'default',
   selectors: { '&:hover': { color: c.label.primary } },
 })
-
-export const lockedCaption = style([
-  text.footnote.standard,
-  { color: c.label.secondary, padding: '8px 10px 4px' },
-])
 
 export const cellInput = style([
   borderedField,

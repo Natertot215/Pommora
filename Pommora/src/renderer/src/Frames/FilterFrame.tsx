@@ -13,6 +13,7 @@ import {
   MenuFooting,
   MenuCaption,
   MenuItem,
+  MenuScrollFrame,
   MenuTopRow,
   useDisclosureSet,
 } from '@renderer/DesignSystem/Menus'
@@ -55,7 +56,6 @@ import {
   filterTargets,
   operatorsFor,
 } from './filterModel'
-import * as gp from './groupFrame.css'
 import * as fp from './filterFrame.css'
 import { SpaceChip } from '@renderer/DesignSystem/Labels'
 import { OptionChip } from '@renderer/Properties/Editing/OptionChip'
@@ -738,11 +738,35 @@ export function FilterFrame({
   )
 
   return (
-    <div className={fp.frame}>
-      <MenuTopRow label={label} current="Filtering" onBack={onBack} />
+    <MenuScrollFrame
+      className={fp.frame}
+      header={<MenuTopRow label={label} current="Filtering" onBack={onBack} />}
+      footer={
+        <MenuFooting
+          leading={
+            decoded.kind === 'rows' ? (
+              <PickerControl
+                ariaLabel="Matches"
+                value={mode}
+                options={MATCH_OPTIONS}
+                onPick={pickMatch}
+              />
+            ) : undefined
+          }
+          trailing={
+            <PickerControl
+              ariaLabel="Filter active"
+              value={enabled ? 'on' : 'off'}
+              options={ACTIVE_OPTIONS}
+              onPick={(v) => setEnabled(v === 'on')}
+            />
+          }
+        />
+      }
+    >
       {decoded.kind === 'locked' ? (
         <>
-          <div className={fp.lockedCaption}>Hand-authored filter — edited outside the pane.</div>
+          <MenuCaption>Hand-authored filter — edited outside the pane.</MenuCaption>
           <MenuItem
             leading={
               <span className={footingSymbol}>
@@ -755,45 +779,23 @@ export function FilterFrame({
           </MenuItem>
         </>
       ) : (
-        <div className={cx(gp.middle, fp.body, 'over-scroll')}>
-          <div className={fp.ruleList}>
-            {rows.map(ruleRow)}
-            {draftRow}
-            <Button
-              size="button-inline"
-              paddingX="0"
-              icon="plus"
-              iconSize="body"
-              className={accessoryButton}
-              data-create
-              aria-label="Add filter rule"
-              onClick={() =>
-                draft === false && setDraft(rows.length === 0 ? null : connectorFor(mode))
-              }
-            />
-          </div>
+        <div className={fp.ruleList}>
+          {rows.map(ruleRow)}
+          {draftRow}
+          <Button
+            size="button-inline"
+            paddingX="0"
+            icon="plus"
+            iconSize="body"
+            className={accessoryButton}
+            data-create
+            aria-label="Add filter rule"
+            onClick={() =>
+              draft === false && setDraft(rows.length === 0 ? null : connectorFor(mode))
+            }
+          />
         </div>
       )}
-      <MenuFooting
-        leading={
-          decoded.kind === 'rows' ? (
-            <PickerControl
-              ariaLabel="Matches"
-              value={mode}
-              options={MATCH_OPTIONS}
-              onPick={pickMatch}
-            />
-          ) : undefined
-        }
-        trailing={
-          <PickerControl
-            ariaLabel="Filter active"
-            value={enabled ? 'on' : 'off'}
-            options={ACTIVE_OPTIONS}
-            onPick={(v) => setEnabled(v === 'on')}
-          />
-        }
-      />
-    </div>
+    </MenuScrollFrame>
   )
 }
