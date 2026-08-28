@@ -121,7 +121,7 @@ export function SettingsFrame(): React.JSX.Element | null {
   const blankLeaf = <MenuTopRow label="Settings" current={CURRENT_LABEL[detailId]} onBack={back} />
   const schemaUnavailable = (
     <>
-      <MenuTopRow label="Settings" current={CURRENT_LABEL[detailId]} onBack={back} />
+      {blankLeaf}
       <MenuCaption>Schema unavailable.</MenuCaption>
     </>
   )
