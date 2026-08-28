@@ -5,7 +5,7 @@ import { entityIcon } from '@renderer/DesignSystem/Symbols'
 import {
   FooterLockButton,
   FooterMoreButton,
-  MenuBottomRow,
+  MenuFooting,
   MenuDropdown,
   MenuScrollFrame,
 } from '@renderer/DesignSystem/Menus'
@@ -19,7 +19,6 @@ import { findSpace } from '../Detail/Scope'
 import { useSession } from '../store'
 import * as s from './toolbarMenu.css'
 
-// Matches ViewFrame's footprint.
 const PANE_MIN_W = 225
 const PANE_MIN_H = 245
 
@@ -82,7 +81,7 @@ export function SpaceMenu(): React.JSX.Element | null {
         >
           <MenuScrollFrame
             footer={
-              <MenuBottomRow
+              <MenuFooting
                 leading={
                   <FooterLockButton
                     verb={lockLabel(locked)}
@@ -137,7 +136,6 @@ export function SpaceMenu(): React.JSX.Element | null {
   )
 }
 
-/** The Space's live chip color off the tree (the BannerOwner shape doesn't carry it). */
 function spaceColor(
   tree: ReturnType<typeof useSession.getState>['tree'],
   id: string,

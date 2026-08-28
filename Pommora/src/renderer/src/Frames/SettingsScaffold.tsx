@@ -6,7 +6,7 @@ import { Button } from '@renderer/DesignSystem/Components/Controls/Button'
 import { AssetImage } from '@renderer/DesignSystem/Components/AssetImage/AssetImage'
 import { ImagePicker } from '@renderer/DesignSystem/Components/Pickers/ImagePicker/ImagePicker'
 import { InputField } from '@renderer/DesignSystem/Components/Fields'
-import { MenuBottomRow, MenuScrollFrame } from '@renderer/DesignSystem/Menus'
+import { MenuFooting, MenuScrollFrame } from '@renderer/DesignSystem/Menus'
 import { FooterLockButton } from '@renderer/DesignSystem/Menus'
 import { IconPicker } from '@renderer/Settings/IconPicker'
 import { useNexusIcon } from '../Components/useNexusIcon'
@@ -16,8 +16,6 @@ import * as s from './frames.css'
 
 const HOMEPAGE_HOST: BlockHostRef = { kind: 'homepage' }
 
-/** Every other selection renders nothing here; Spaces edit their identity from the Contexts
- *  toolbar menu. */
 export function SettingsScaffold(): React.JSX.Element | null {
   const selection = useSession((st) => st.selection)
   const tree = useSession((st) => st.tree)
@@ -44,7 +42,7 @@ export function SettingsScaffold(): React.JSX.Element | null {
     <>
       <MenuScrollFrame
         footer={
-          <MenuBottomRow
+          <MenuFooting
             leading={
               <FooterLockButton
                 verb={lockLabel(locked)}

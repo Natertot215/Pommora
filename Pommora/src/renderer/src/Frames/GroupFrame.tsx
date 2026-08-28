@@ -17,7 +17,7 @@ import {
   MenuSeparator,
   MenuTopRow,
   MenuScrollFrame,
-  MenuBottomRow,
+  MenuFooting,
   useDisclosureSet,
   heading,
 } from '@renderer/DesignSystem/Menus'
@@ -168,7 +168,7 @@ export function GroupFrame({
   const hideEmpty = view.hide_empty_groups ?? (group.kind === 'property' && group.hide_empty_groups)
 
   const footings = (
-    <MenuBottomRow>
+    <MenuFooting>
       <MenuItem
         className={flushTrailing}
         leading={
@@ -209,7 +209,7 @@ export function GroupFrame({
             onPick={(v) => save({ date_separator: v })}
           />
         )}
-    </MenuBottomRow>
+    </MenuFooting>
   )
 
   return (

@@ -10,7 +10,7 @@ import { EntityIcon } from '@renderer/Components/EntityIcon'
 import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import {
   DisclosureRow,
-  MenuBottomRow,
+  MenuFooting,
   MenuCaption,
   MenuItem,
   MenuTopRow,
@@ -775,7 +775,7 @@ export function FilterFrame({
           </div>
         </div>
       )}
-      <MenuBottomRow
+      <MenuFooting
         leading={
           decoded.kind === 'rows' ? (
             <PickerControl

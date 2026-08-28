@@ -23,7 +23,7 @@ import { LayoutFrame } from './LayoutFrame'
 import { FrameSlide } from '@renderer/DesignSystem/Menus/frame-slide'
 import {
   AccessoryButton,
-  MenuBottomRow,
+  MenuFooting,
   MenuItem,
   MenuScrollFrame,
   MenuSeparator,
@@ -183,7 +183,7 @@ export function SettingsFrame(): React.JSX.Element | null {
   const scopedRoot = scope && schemaCollection && (
     <MenuScrollFrame
       footer={
-        <MenuBottomRow
+        <MenuFooting
           leading={
             <NavTrail
               segments={(tree && ancestryOf(tree, node)) ?? NO_TRAIL}

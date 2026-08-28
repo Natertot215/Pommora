@@ -9,7 +9,7 @@ import {
 } from '@renderer/DesignSystem/Menus/menu-base.css'
 import {
   FooterMoreButton,
-  MenuBottomRow,
+  MenuFooting,
   MenuItem,
   MenuScrollFrame,
   MenuSeparator,
@@ -21,13 +21,8 @@ import { FrameSlide } from '@renderer/DesignSystem/Menus/frame-slide'
 import { ICON } from './frames.css'
 import { pageLinkText } from '@shared/pageMenu'
 
-/** What the ellipsis offers today — a named slice of the page menu, so these four read and order
- *  themselves exactly as they do everywhere else a page is right-clicked. */
 const FOOTER_ACTIONS = ['title:rename', 'title:reveal', 'title:copylink', 'title:delete'] as const
 
-/** The Settings menu's page scope — the Page's identity, and the frames that configure it.
- *  Reads the shown page's detail, the same source the editor's header renders from, so the title
- *  and glyph here and on the page never disagree. */
 export function PageMenu(): React.JSX.Element | null {
   const pageDetail = useSession(shownDetail)
   const defaultIcons = useSession((st) => st.personalization.defaultIcons)
@@ -79,10 +74,8 @@ export function PageMenu(): React.JSX.Element | null {
     <>
       <MenuScrollFrame
         footer={
-          <MenuBottomRow
+          <MenuFooting
             leading={
-              // Parked: a page has no board to lock. Inert rather than a live button wired to a
-              // no-op, which reads as broken instead of pending.
               <Button size="button-inline" aria-label="Lock" className={footerLockAction} disabled>
                 <Icon name="lock" size="control" className={lockIcon} />
                 Lock
