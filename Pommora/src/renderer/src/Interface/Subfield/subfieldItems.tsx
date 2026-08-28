@@ -79,6 +79,7 @@ function ViewTypeItem(): React.JSX.Element {
       size="button-inline"
       icon="chevrons-up-down"
       iconSize="body"
+      paddingX="0"
       label={mode === 'list' ? 'List' : 'Gallery'}
       className="subfield-viewtype"
       onClick={() => setMode(mode === 'list' ? 'gallery' : 'list')}
