@@ -7,7 +7,7 @@ import { style } from '@vanilla-extract/css'
 import { segment as segmentHairline } from '../../Elements/Segment/segment.css'
 
 const SEGMENT_GAP = '4px' // KNOB
-const SEGMENT_DIVIDER_INSET = '2px' // KNOB
+const SEGMENT_DIVIDER_INSET = '4px' // KNOB
 
 /** KNOB — wide enough that the eclipse reads as a dissolve rather than a cut. */
 const SEGMENT_FADE = 'var(--fade-strong)'
