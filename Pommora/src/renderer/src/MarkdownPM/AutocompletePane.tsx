@@ -2,9 +2,9 @@ import { useRef } from 'react'
 import { EntityIcon } from '@renderer/Components/EntityIcon'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { PickerMenu } from '@renderer/DesignSystem/Components/Pickers/PickerMenu'
+import { PICKER_MAX_HEIGHT } from '@renderer/DesignSystem/Components/Pickers/PickerMenu/pickerMenu.css'
+import { MenuItem } from '@renderer/DesignSystem/Menus'
 import { HoverRemove, hoverRemoveHost } from '@renderer/DesignSystem/Interactions/HoverRemove'
-import { cx } from '@renderer/DesignSystem/Util/cx'
-import { overScrollEllipsis } from '@renderer/DesignSystem/Interactions/OverScroll'
 import type { AcRow } from './autocomplete'
 
 interface Props {
@@ -42,8 +42,9 @@ export function AutocompletePane({
   const matchLen = v.query.length
   return (
     // No `onDismiss` and no focus management, by contract: the editor's keymap owns arrows, Return
-    // and Escape, and the rows commit on mousedown with preventDefault so the caret never leaves the
-    // alias. A backdrop would eat the next click; taking focus would close the pane it belongs to.
+    // and Escape, and a row commits on mousedown with preventDefault so the caret never leaves the
+    // alias. The × guards itself on POINTERDOWN, a different event, so the mousedown checks for it —
+    // without that the press meant to forget a suggestion accepts it instead.
     <PickerMenu
       glass="pane"
       open={live}
@@ -53,43 +54,40 @@ export function AutocompletePane({
       bounds={v.bounds}
       origin="center"
       manageFocus={false}
-      bareSurface
+      maxHeight={PICKER_MAX_HEIGHT}
       contentClassName="mdpm-ac"
     >
       {v.candidates.map((row, i) => (
-        // biome-ignore lint/a11y/noStaticElementInteractions: a pointer shortcut for a pane the editor keymap already drives — arrows move the selection, Enter picks
-        <div
+        <MenuItem
           key={row.value}
-          className={cx('mdpm-ac-row', hoverRemoveHost, i === v.index && 'mdpm-ac-selected')}
+          className={hoverRemoveHost}
+          selected={i === v.index}
+          leading={
+            row.isPage ? (
+              <EntityIcon kind="page" size="body" />
+            ) : (
+              <Icon name="square-split-horizontal" size="body" />
+            )
+          }
+          trailing={
+            row.forget && (
+              <HoverRemove
+                reveal="host"
+                className="mdpm-ac-forget"
+                label={`Forget ${row.label}`}
+                onRemove={row.forget}
+              />
+            )
+          }
           onMouseDown={(e) => {
-            // preventDefault regardless: the press must not move focus out of the editor, or the
-            // caret leaves the alias and the pane closes before a click can land anywhere.
             e.preventDefault()
-            // The × sits inside the row and guards itself on POINTERDOWN — a different event from
-            // this one, which its stopPropagation therefore never reaches. Without this the press
-            // meant to forget a suggestion accepts it instead, and the gesture has no working path.
             if ((e.target as HTMLElement).closest?.('.mdpm-ac-forget')) return
             onPick(row)
           }}
         >
-          {row.isPage ? (
-            <EntityIcon kind="page" size="body" className="mdpm-ac-icon" />
-          ) : (
-            <Icon name="square-split-horizontal" size="body" className="mdpm-ac-icon" />
-          )}
-          <span className={cx('mdpm-ac-title', overScrollEllipsis)}>
-            <span className="mdpm-ac-match">{row.label.slice(0, matchLen)}</span>
-            {row.label.slice(matchLen)}
-          </span>
-          {row.forget && (
-            <HoverRemove
-              reveal="host"
-              className="mdpm-ac-forget"
-              label={`Forget ${row.label}`}
-              onRemove={row.forget}
-            />
-          )}
-        </div>
+          <span className="mdpm-ac-match">{row.label.slice(0, matchLen)}</span>
+          {row.label.slice(matchLen)}
+        </MenuItem>
       ))}
     </PickerMenu>
   )
