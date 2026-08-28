@@ -567,8 +567,8 @@ Written as **Today → Becomes**; counts re-derived at Phase 4's open.
 **Becomes:** `cell = style([rowShell, { flex, display: 'grid', placeItems, border, background, color, fontSize }])` — radius 8 and the hover wash from `rowShell`; the cell keeps its own size; `cursor` inherits `rowShell`'s `default` (the cursor convention: default everywhere but links — recorded in Deviations); `cellSelected` unchanged.
 
 **Steps:**
-- [ ] Compose; gates; screenshot the icon picker — hover and selection unchanged.
-- [ ] Commit `refactor(iconpicker): the cell wears the shell`.
+- [x] Compose; gates; screenshot the icon picker — hover and selection unchanged. (The screenshot is Gate 4's running pass; the hover wash and the selected fill sit at the same specificity as before — `rowShell`'s `&:hover` over the cell's transparent base, `cellSelected` declared after `cell`.)
+- [x] Commit `refactor(iconpicker): the cell wears the shell`.
 
 #### Task 23: The icon ladder is named as the type ramp is
 
@@ -684,6 +684,7 @@ Every phase runs the same loop. Nothing advances on a summary; every claim is re
 - Task 9: the "today" figures in its prose predate Task 0's tree — `.nav-search-row` already pads `var(--surface-inset)`, `.nav-item-main` pads `6px` (rows likely 28 already), gap 6; the +2 / −10 / −12 search-edge offsets are stale. Re-read Task 9 against the live tree at Phase 2's open.
 
 ### Deviations
+- Task 22: the cell's `cursor: pointer` is gone — it composes `rowShell` and inherits its `default`, the cursor convention (default everywhere but links); it also gains `rowShell`'s focus-visible ring. The cell keeps its 34px box. `iconPicker.css.ts` keeps one why (the grid's explicit width).
 - Task 21: the two Derivation greps land at 1, not 0 — the token's own declaration on `.shell` is the calc; control `--sidebar-clearance` 18 → 14 (five readers gone, one definition added), `--content-start` 9. `Banner.css` and `subfield.css` came under the comment ruling (one why each: the doubled empty-title selector, the footnotes toggle's inset).
 - Gate 3 review (orchestrator, 08-28): the index's `action` kind rendered through `MenuItem` and so carried the shell's hover Requirement 5 forbids → `actionRow` carries the button reset every action row needs (`width: 100%`, no border/background, left-aligned) and the kind renders a bare `<button>` with `titleWrap` + `side`; `frames.allHeading` keeps only `flushAffordance` and its beat var; the Filter footer's Matches / Filter-active pickers pass `footing` so their values read at the footing's rung; the Title row's eye is labeled "Always Shown" (`3eeda281`). Simplifier `0bbf2865` (−67: per-file `pickerRow` builders in GroupFrame/SortFrame, `settingsRow` in the window, SettingsFrame's Open In row through the `value` kind); comment-killer `4a173cfd`. Walked on a restarted dev server (the mid-refactor HMR graph had gone stale on `configLabel`): every Ideas frame (Configuration, Properties + the Status / Timeframe / Pinned editors, Visibility, Layout, Group, Filter, Sort) and every Settings window frame — items 28, TopRows 18, headings 21, All Properties 25, Settings rows 44 with the trailing cluster flush (`trailRight` 0), the Filter footer at the pane's bottom edge. `frames.css.ts` exports 40 → 28. Screenshots `p3-*.png` in the session scratchpad.
 - Task 18: `pickerControl.value` owning `label.control` carries the Number editor's edit-in-place caret with it (`numberEditor.css.ts` `valueCaret`), so the value reads one tone at rest and while written.
