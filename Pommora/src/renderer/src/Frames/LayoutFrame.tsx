@@ -12,7 +12,7 @@ import { Icon, type IconName } from '@renderer/DesignSystem/Symbols'
 import {
   MenuItem,
   MenuSeparator,
-  MenuFrameTopRow,
+  MenuTopRow,
   MenuScrollFrame,
   MenuBottomRow,
   AccessoryButton,
@@ -42,7 +42,6 @@ import { iconForTypeSwitch } from './viewIcon'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import * as vs from './layoutFrame.css'
 
-// Unimplemented types render at full weight but their tiles are inert.
 const TYPE_ORDER: ViewType[] = ['table', 'cards', 'list', 'gallery', 'calendar', 'timeline']
 const TYPE_GLYPH: Record<ViewType, IconName> = {
   table: 'table',
@@ -80,7 +79,6 @@ const VIEWSETTINGS_MAX_HEIGHT = 410
 const LEAF_MIN_WIDTH = 225
 const LEAF_MIN_HEIGHT = 245
 
-// So the view config is reachable without the menu (the future Toolbar mode).
 type Frame = 'layout' | 'group' | 'filter' | 'sort'
 const FRAME_ROWS: { id: Frame; label: string; icon: IconName }[] = [
   { id: 'layout', label: 'Layout', icon: 'layout-dashboard' },
@@ -94,11 +92,6 @@ const LEAF_CURRENT: Record<Exclude<Frame, 'layout'>, string> = {
   sort: 'Sorting',
 }
 
-/**
- * The full door (a ViewFrame row's chevron) carries the ⋮ (Duplicate/Delete) + the
- * Layout/Group/Filter/Sort frame rows; the flat door (SettingsFrame → Layout) drops the ⋮ and the
- * frame rows and reads `Settings · Layout`.
- */
 export function LayoutFrame({
   source,
   view,
@@ -128,12 +121,9 @@ export function LayoutFrame({
   }
   const setType = (type: ViewType): void => {
     if (type === view.type) return
-    // Re-icon to the new type's glyph only when the view still wears the old default;
-    // a custom icon is preserved.
     const icon = iconForTypeSwitch(view.icon, view.type, type, TYPE_GLYPH)
     write(icon ? { type, icon } : { type })
   }
-  // Two-option double-chevron = a direct toggle, never a menu (the Open In idiom).
   const toggleFormat = (): void => write({ format: isCompact(view) ? 'standard' : 'compact' })
 
   const duplicateView = async (): Promise<void> => {
@@ -221,12 +211,11 @@ export function LayoutFrame({
       </MenuBottomRow>
     ) : null
 
-  // Only mounted while a frame is open, so a push measures it before the flip.
   const leafPane =
     frame === 'layout' ? (
       view.type === 'cards' ? (
         <MenuScrollFrame
-          header={<MenuFrameTopRow label="Views" current="Layout" onBack={() => setFrame(null)} />}
+          header={<MenuTopRow label="Views" current="Layout" onBack={() => setFrame(null)} />}
           maxHeight={VIEWSETTINGS_MAX_HEIGHT}
         >
           <CardsOptions source={source} view={view} />
@@ -271,7 +260,7 @@ export function LayoutFrame({
         onBack={() => setFrame(null)}
       />
     ) : frame ? (
-      <MenuFrameTopRow label="Views" current={LEAF_CURRENT[frame]} onBack={() => setFrame(null)} />
+      <MenuTopRow label="Views" current={LEAF_CURRENT[frame]} onBack={() => setFrame(null)} />
     ) : null
 
   const title = <InlineEditHeader value={view.name} onCommit={rename} />
@@ -293,7 +282,7 @@ export function LayoutFrame({
 
   const header =
     door === 'full' ? (
-      <MenuFrameTopRow
+      <MenuTopRow
         label="Views"
         onBack={onBack}
         trailing={
@@ -322,7 +311,6 @@ export function LayoutFrame({
                 Duplicate
               </MenuItem>
               <MenuSeparator />
-              {/* Refusing the last view is the write path's rule; the row mirrors it. */}
               <MenuItem
                 disabled={!canDelete}
                 leading={<Icon name="trash" size="body" />}
@@ -338,7 +326,7 @@ export function LayoutFrame({
         }
       />
     ) : (
-      <MenuFrameTopRow label="Settings" current="Layout" onBack={onBack} />
+      <MenuTopRow label="Settings" current="Layout" onBack={onBack} />
     )
 
   const leafRow = (r: (typeof FRAME_ROWS)[number]): React.JSX.Element => (
@@ -358,8 +346,6 @@ export function LayoutFrame({
       footer={view.type === 'cards' ? cardsFooting : null}
       maxHeight={VIEWSETTINGS_MAX_HEIGHT}
     >
-      {/* The full door carries its own click-to-edit identity; the flat door (SettingsFrame → Layout)
-          drops it — the TopRow already names the view, so a second title + divider is redundant. */}
       {door === 'full' && (
         <>
           {title}
@@ -372,8 +358,6 @@ export function LayoutFrame({
       ) : view.type === 'table' ? (
         <LayoutToggles source={source} view={view} />
       ) : (
-        // The joint between the grid and the options is this composition's — CardsOptions
-        // renders bare so the Layout frame can sit it flush under the frame header's divider.
         <>
           <MenuSeparator flush />
           <CardsOptions source={source} view={view} />
@@ -382,8 +366,6 @@ export function LayoutFrame({
     </MenuScrollFrame>
   )
 
-  // Nested here so a full-door frame slides in over the editor instead of hard-swapping. The flat
-  // door never opens a frame, so this stays parked on the main frame.
   return (
     <FrameSlide
       open={frame !== null}

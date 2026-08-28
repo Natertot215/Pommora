@@ -4,7 +4,7 @@ import { type PropertyDefinition, RESERVED_PROPERTY_ID } from '@shared/propertie
 import type { SavedView } from '@shared/views'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { useSession } from '../store'
-import { MenuItem, MenuFrameTopRow, MenuScrollFrame } from '@renderer/DesignSystem/Menus'
+import { MenuItem, MenuTopRow, MenuScrollFrame } from '@renderer/DesignSystem/Menus'
 import { flushTrailing } from '@renderer/DesignSystem/Menus/menu-base.css'
 import { resolveColumns } from '@renderer/Views/pipeline/columns'
 import { columnLabel } from '@renderer/Properties/Editing/columnLabel'
@@ -69,8 +69,6 @@ function VisibilityGroups({
           </RowShell>
         ))}
       </div>
-      {/* No heading — the ghost IS the shown/hidden boundary. The zone grows into
-          the frame's slack so the hide-highlight reads even while nothing's hidden. */}
       <div
         data-group="all"
         ref={allRef}
@@ -92,12 +90,6 @@ function VisibilityGroups({
   )
 }
 
-/**
- * Title rides the list as a draggable anchor but never hides (its eye is inert), so a column
- * can be dragged before it — the reason it's listed at all. Into the hidden zone, the drop order
- * is derived rather than stored; hiding only flags `hidden_properties`, so an eye-unhide restores
- * the property to its remembered view slot — only a drag-in chooses a new one.
- */
 export function VisibilityList({
   source,
   schema,
@@ -113,11 +105,8 @@ export function VisibilityList({
   view: SavedView
   onBack: () => void
   footer?: ReactNode
-  /** TopRow back-label + right-side breadcrumb — the Visibility pane reads `Settings · Visibility`,
-   *  LayoutFrame reads `Views · Layout`. */
   label?: string
   current?: string
-  /** Height ceiling override — LayoutFrame passes its own max. */
   maxHeight?: number
 }): React.JSX.Element | null {
   const saveView = useSaveView(source)
@@ -134,8 +123,6 @@ export function VisibilityList({
     const res = await saveView({ ...view, ...patch })
     if (!res.ok) await window.nexus.showError(res.error.message)
   }
-  // The positional kinds are the ONE placeInShown write — a shown reorder and a drag-in unhide
-  // differ only in whether the hidden filter bites; the membership kind ('unassign') is a hide.
   const handleDrop = (drop: PaneDrop): void => {
     if (drop.kind === 'unassign') void save(hideShown(view, drop.propId))
     else if (drop.kind === 'reorder-assigned' || drop.kind === 'assign')
@@ -149,7 +136,7 @@ export function VisibilityList({
 
   return (
     <MenuScrollFrame
-      header={<MenuFrameTopRow label={label} current={current} onBack={onBack} />}
+      header={<MenuTopRow label={label} current={current} onBack={onBack} />}
       footer={footer}
       maxHeight={maxHeight}
     >

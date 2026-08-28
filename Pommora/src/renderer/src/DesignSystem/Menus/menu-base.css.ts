@@ -45,21 +45,26 @@ export const flushAffordance = style({
   color: c.label.secondary,
 })
 
-export const actionRow = style([text.footnote.emphasized, { color: c.label.secondary }])
-
 // ── TopRow ──
 
 export const topRow = style([
-  text.caption.emphasized,
   flushAffordance,
-  { vars: { '--row-pad-y': 'var(--top-row-block, 2px)' } },
+  {
+    vars: {
+      '--row-pad-y': '2px',
+      '--row-size': font.scale.caption.size,
+      '--row-line': font.scale.caption.line,
+    },
+    fontWeight: font.weight.emphasized,
+    color: c.label.secondary,
+  },
 ])
 
-export const topBarLeadingLabel = style([actionRow])
+export const topBarLeadingLabel = style([text.footnote.emphasized, { color: c.label.secondary }])
 export const topBarLeadingSymbol = style({ display: 'inline-flex', color: c.label.secondary })
-export const topBarTrailingLabel = style([actionRow, { color: c.label.tertiary }])
+export const topBarTrailingLabel = style([text.footnote.emphasized, { color: c.label.tertiary }])
 export const topBarTrailingSymbol = style({ display: 'inline-flex', color: c.label.tertiary })
-export const paneSeparator = style({ marginBottom: 'var(--top-row-block, 2px)' })
+export const paneSeparator = style({ marginBottom: '2px' })
 
 // ── Heading ──
 
@@ -155,6 +160,10 @@ export const titleInput = style([
 export const subLabel = style([text.caption.standard, { color: c.label.secondary }])
 
 export const flushTrailing = style({ paddingRight: 0 })
+
+// ── ActionRow ──
+
+export const actionRow = style([text.footnote.emphasized, { color: c.label.secondary }])
 
 // ── Separator ──
 

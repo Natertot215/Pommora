@@ -28,7 +28,7 @@ import {
   MenuScrollFrame,
   MenuSeparator,
   MenuCaption,
-  MenuFrameTopRow,
+  MenuTopRow,
 } from '@renderer/DesignSystem/Menus'
 import { IconPicker } from '@renderer/Settings/IconPicker'
 import { InlineEditHeader } from './InlineEditHeader'
@@ -61,7 +61,6 @@ const ENTRIES: MenuEntry[] = [
   { id: 'sort', label: 'Sort', icon: 'arrow-up-down' },
 ]
 
-// A detail frame's right-side breadcrumb — the entry label, but Group/Filter/Sort read the active tense.
 const CURRENT_LABEL: Record<FrameId, string> = {
   configuration: 'Configuration',
   properties: 'Properties',
@@ -72,8 +71,6 @@ const CURRENT_LABEL: Record<FrameId, string> = {
   sort: 'Sorting',
 }
 
-/** Layout opens the active view's LayoutFrame (the flat door); Configuration holds the
- *  collection's Open In. */
 export function SettingsFrame(): React.JSX.Element | null {
   const selection = useSession((st) => st.selection)
   const defaultIcons = useSession((st) => st.personalization.defaultIcons)
@@ -85,9 +82,6 @@ export function SettingsFrame(): React.JSX.Element | null {
   const [iconOpen, setIconOpen] = useState(false)
   const iconRef = useRef<HTMLButtonElement>(null)
 
-  // In a view embed the ENTIRE node derivation goes scope-first — the selection names
-  // whatever the sidebar has open, not the embed's source; and the pane is a view-config
-  // surface there: view-identity header, no Configuration frame, config writes → payload.
   const scope = useViewEmbedScope()
   const selectionNode =
     selection.kind === 'collection'
@@ -99,16 +93,12 @@ export function SettingsFrame(): React.JSX.Element | null {
   const activeViewId = useSession((st) => st.activeViews[node?.id ?? ''])
   if (!node) return null
 
-  // Schema lives only on the Collection; a Set inherits its ancestor Collection's schema.
   const schemaCollection = node.kind === 'collection' ? node : findCollectionForSet(tree, node.id)
   const schema = schemaCollection?.properties ?? []
   const view = scope?.view ?? pickView(node, activeViewId, schema)
   const entries = scope
     ? ENTRIES.filter((e) => e.id !== 'configuration' && e.id !== 'filter')
     : ENTRIES
-  // A locked tile freezes this view's config, so the leaves that write it don't open — shown,
-  // dimmed, inert, the treatment the handle menu already wears. Properties stays live: it writes the
-  // collection's schema, not this view's config (its one per-view control reports the refusal).
   const configLocked = scope?.locked ?? false
   const frozen = (id: FrameId): boolean => configLocked && id !== 'properties'
 
@@ -119,7 +109,6 @@ export function SettingsFrame(): React.JSX.Element | null {
   const back = (): void => setPane('root')
   const detailId = pane === 'root' ? lastDetail.current : pane
 
-  // Open In is Collection-owned: a Set writes to (and reads from) its ancestor Collection.
   const openInValue: OpenIn = schemaCollection?.openIn ?? 'full-page'
   const setOpenIn = async (v: OpenIn): Promise<void> => {
     if (!schemaCollection) return
@@ -129,19 +118,17 @@ export function SettingsFrame(): React.JSX.Element | null {
     void setOpenIn(openInValue === 'page-preview' ? 'full-page' : 'page-preview')
   }
 
-  const blankLeaf = (
-    <MenuFrameTopRow label="Settings" current={CURRENT_LABEL[detailId]} onBack={back} />
-  )
+  const blankLeaf = <MenuTopRow label="Settings" current={CURRENT_LABEL[detailId]} onBack={back} />
   const schemaUnavailable = (
     <>
-      <MenuFrameTopRow label="Settings" current={CURRENT_LABEL[detailId]} onBack={back} />
+      <MenuTopRow label="Settings" current={CURRENT_LABEL[detailId]} onBack={back} />
       <MenuCaption>Schema unavailable.</MenuCaption>
     </>
   )
 
   const configurationLeaf = (
     <>
-      <MenuFrameTopRow label="Settings" current="Configuration" onBack={back} />
+      <MenuTopRow label="Settings" current="Configuration" onBack={back} />
       <MenuItem
         className={flushTrailing}
         leading={<Icon name="layout-grid" size={ICON.rootEntry} />}

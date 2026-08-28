@@ -15,7 +15,7 @@ import {
   DisclosureRow,
   MenuItem,
   MenuSeparator,
-  MenuFrameTopRow,
+  MenuTopRow,
   MenuScrollFrame,
   MenuBottomRow,
   useDisclosureSet,
@@ -214,7 +214,7 @@ export function GroupFrame({
 
   return (
     <MenuScrollFrame
-      header={<MenuFrameTopRow label={label} current="Grouping" onBack={onBack} />}
+      header={<MenuTopRow label={label} current="Grouping" onBack={onBack} />}
       footer={footings}
     >
       <ValueRow

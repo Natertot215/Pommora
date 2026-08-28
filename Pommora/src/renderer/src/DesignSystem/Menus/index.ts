@@ -5,7 +5,6 @@ export {
   MenuTopRow,
   Menu,
   AccessoryButton,
-  MenuFrameTopRow,
   FooterLockButton,
   FooterMoreButton,
   MenuBottomRow,

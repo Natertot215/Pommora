@@ -11,46 +11,16 @@ const BAR_GLYPH = 12 // KNOB
 
 export function MenuTopRow({
   label,
-  onClick,
-  className,
-  trailing,
-}: {
-  label: string
-  onClick: () => void
-  className?: string
-  trailing?: ReactNode
-}): React.JSX.Element {
-  return (
-    <MenuItem
-      className={cx(s.topRow, trailing != null && s.flushTrailing, className)}
-      leading={
-        <span className={s.topBarLeadingSymbol}>
-          <Icon name="chevron-left" size={BAR_GLYPH} />
-        </span>
-      }
-      trailing={trailing}
-      onClick={onClick}
-      // A press must not steal focus: the value panes commit-on-blur, so an unguarded mousedown here
-      // would commit-and-dismiss before this row's click (Back) ever lands.
-      onPointerDown={(e) => e.preventDefault()}
-    >
-      <span className={s.topBarLeadingLabel}>{label}</span>
-    </MenuItem>
-  )
-}
-
-export function MenuFrameTopRow({
-  label,
   onBack,
   trailing,
   current,
-  contentClassName,
+  className,
 }: {
   label: string
   onBack: () => void
   trailing?: ReactNode
   current?: string
-  contentClassName?: string
+  className?: string
 }): React.JSX.Element {
   const right = trailing ? (
     <span className={s.topBarTrailingSymbol}>{trailing}</span>
@@ -59,7 +29,21 @@ export function MenuFrameTopRow({
   ) : undefined
   return (
     <>
-      <MenuTopRow label={label} onClick={onBack} className={contentClassName} trailing={right} />
+      <MenuItem
+        className={cx(s.topRow, right != null && s.flushTrailing, className)}
+        leading={
+          <span className={s.topBarLeadingSymbol}>
+            <Icon name="chevron-left" size={BAR_GLYPH} />
+          </span>
+        }
+        trailing={right}
+        onClick={onBack}
+        // A press must not steal focus: the value panes commit-on-blur, so an unguarded mousedown here
+        // would commit-and-dismiss before this row's click (Back) ever lands.
+        onPointerDown={(e) => e.preventDefault()}
+      >
+        <span className={s.topBarLeadingLabel}>{label}</span>
+      </MenuItem>
       <MenuSeparator flush className={s.paneSeparator} />
     </>
   )
