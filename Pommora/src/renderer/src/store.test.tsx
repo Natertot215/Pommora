@@ -157,6 +157,17 @@ const ready = (id: string): PageSlot => ({
   body: 'x',
 })
 
+/** Holds B's fetch open while A resolves at once; the returned resolver lands B's response. */
+const pauseFetchOfB = (): ((v: unknown) => void) => {
+  let resolveB!: (v: unknown) => void
+  ;(window.nexus.openPage as ReturnType<typeof vi.fn>).mockImplementation((path: string) =>
+    path === pg('b').path
+      ? new Promise((r) => (resolveB = r))
+      : Promise.resolve({ ok: true, value: detail('a') }),
+  )
+  return (v) => resolveB(v)
+}
+
 describe('store — warm tabs (B-2/B-3)', () => {
   it('a page keeps its slot while its tab is parked; switching back is instant — no fetch, no flash', () => {
     seed({
@@ -192,12 +203,7 @@ describe('store — warm tabs (B-2/B-3)', () => {
   it('a stale cold fetch resolving after a warm switch-back never clobbers the shown page', async () => {
     // Warm-instant finishes synchronously, so an earlier in-flight fetch resolves LAST — the fence
     // must drop it or the wrong file renders (and autosaves) under the wrong tab.
-    let resolveB!: (v: unknown) => void
-    ;(window.nexus.openPage as ReturnType<typeof vi.fn>).mockImplementation((path: string) =>
-      path === pg('b').path
-        ? new Promise((r) => (resolveB = r))
-        : Promise.resolve({ ok: true, value: detail('a') }),
-    )
+    const resolveB = pauseFetchOfB()
     seed({
       tabs: [uTab('t1', pg('a'), [pg('a')], 0), uTab('t2', pg('b'), [pg('b')], 0)],
       activeTabId: 't1',
@@ -216,12 +222,7 @@ describe('store — warm tabs (B-2/B-3)', () => {
   })
 
   it('a cold switch pauses on the outgoing view — no loading intermediate, one-commit swap', async () => {
-    let resolveB!: (v: unknown) => void
-    ;(window.nexus.openPage as ReturnType<typeof vi.fn>).mockImplementation((path: string) =>
-      path === pg('b').path
-        ? new Promise((r) => (resolveB = r))
-        : Promise.resolve({ ok: true, value: detail('a') }),
-    )
+    const resolveB = pauseFetchOfB()
     seed({
       tabs: [uTab('t1', pg('a'), [pg('a')], 0)],
       activeTabId: 't1',
@@ -243,12 +244,7 @@ describe('store — warm tabs (B-2/B-3)', () => {
   })
 
   it('a navigation mid-pause supersedes the fetch — the stale response never lands', async () => {
-    let resolveB!: (v: unknown) => void
-    ;(window.nexus.openPage as ReturnType<typeof vi.fn>).mockImplementation((path: string) =>
-      path === pg('b').path
-        ? new Promise((r) => (resolveB = r))
-        : Promise.resolve({ ok: true, value: detail('a') }),
-    )
+    const resolveB = pauseFetchOfB()
     seed({
       tabs: [uTab('t1', pg('a'), [pg('a')], 0)],
       activeTabId: 't1',
@@ -270,12 +266,7 @@ describe('store — warm tabs (B-2/B-3)', () => {
   it('a slow cold fetch falls back to the loading view at the deadline', async () => {
     vi.useFakeTimers()
     try {
-      let resolveB!: (v: unknown) => void
-      ;(window.nexus.openPage as ReturnType<typeof vi.fn>).mockImplementation((path: string) =>
-        path === pg('b').path
-          ? new Promise((r) => (resolveB = r))
-          : Promise.resolve({ ok: true, value: detail('a') }),
-      )
+      const resolveB = pauseFetchOfB()
       seed({
         tabs: [uTab('t1', pg('a'), [pg('a')], 0)],
         activeTabId: 't1',
