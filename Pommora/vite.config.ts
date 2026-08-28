@@ -10,7 +10,7 @@ export default defineConfig({
   plugins: [react(), vanillaExtractPlugin()],
   resolve: {
     alias: {
-      '@renderer': resolve('src/renderer/src'),
+      '@renderer': resolve('src/renderer'),
       '@shared': resolve('src/shared'),
     },
   },

@@ -15,12 +15,12 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
-    setupFiles: ['src/renderer/src/testing/setup.ts'],
+    setupFiles: ['src/renderer/testing/setup.ts'],
   },
   resolve: {
     alias: {
       '@shared': resolve(__dirname, 'src/shared'),
-      '@renderer': resolve(__dirname, 'src/renderer/src'),
+      '@renderer': resolve(__dirname, 'src/renderer'),
     },
   },
 })
