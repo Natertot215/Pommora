@@ -1,6 +1,6 @@
 ## Codebase-Cleanup Checklist
 
-The working checklist for the architecture-audit cleanup — every task verified in the code before it was written here, sized into session bundles, and carrying its own verification and documentation retirements. The evidence and reasoning behind each task is [[Architecture Audit — Full-Codebase Report]]; the line-count figures are code-only (comments, blanks, and tests excluded). The renderer's organization — folders, naming, tokens, and the design system's boundary — is [[RendererAtlas]]'s and is not scheduled here; this checklist is the behavioral half.
+The working checklist for the architecture-audit cleanup — every task verified in the code before it was written here, sized into session bundles, and carrying its own verification and documentation retirements. The evidence and reasoning behind each task is [[Architecture Audit — Full-Codebase Report]]; the line-count figures are code-only (comments, blanks, and tests excluded). The renderer's organization — folders, naming, tokens, and the design system's boundary — is [[RendererRework]]'s and is not scheduled here; this checklist is the behavioral half.
 
 **How to use this document:** a bundle is one session unless marked otherwise. Tasks inside a bundle are independent unless ordered; check each off as it lands. Every bundle runs the same cycle:
 
@@ -15,7 +15,7 @@ The working checklist for the architecture-audit cleanup — every task verified
 
 **Ordering constraints (the only hard ones):**
 
-- Bundle 6 (the view host) lands before any third view renderer is attempted, and after the value-rendering library has its own folder ([[RendererAtlas]] §III, `Views/Values/`) so the host seats imports at their final address.
+- Bundle 6 (the view host) lands before any third view renderer is attempted, and after the value layer's folder stops moving ([[RendererRework]] §2 Filing) so the host seats imports at their final address.
 - Bundle 5 is best taken immediately before the next store-heavy feature.
 
 ### Decided Rulings
@@ -127,4 +127,4 @@ Waiting on rulings; each is cheap once decided and wrong to guess at.
 
 ### I. When Everything Above Is Checked
 
-ContextPM's Boring Work section empties, its Debt reduces to the scroll-timer ruling and the virtualization ceiling, and its Known Issues reduce to the two CSS-polish items and the self-link autocomplete call — product questions, not debt. The audit report retires into this one; the organizational half of its findings already lives in [[RendererAtlas]]. Structurally: every fact has one home, the editor and view layers are closed architectural stories, and what remains — List/Gallery/Calendar/Timeline on the host's row model, virtualization in the same seat, the FTS index consumers, QuickCapture, split view on the tab-keyed store — is feature work landing on spines built to receive it. Net effect on size: roughly −650 lines, in a codebase whose health was never about shrinking.
+ContextPM's Boring Work section empties, its Debt reduces to the scroll-timer ruling and the virtualization ceiling, and its Known Issues reduce to the two CSS-polish items and the self-link autocomplete call — product questions, not debt. The audit report retires into this one; the organizational half of its findings already lives in [[RendererRework]]. Structurally: every fact has one home, the editor and view layers are closed architectural stories, and what remains — List/Gallery/Calendar/Timeline on the host's row model, virtualization in the same seat, the FTS index consumers, QuickCapture, split view on the tab-keyed store — is feature work landing on spines built to receive it. Net effect on size: roughly −650 lines, in a codebase whose health was never about shrinking.

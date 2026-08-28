@@ -337,7 +337,7 @@ Bounds. One `useSession`, field-by-field subscription, main owns the data — un
 ### Sequenced After
 - A reload of the shown page cannot reach the mounted editor (`MarkdownEditor` keys on path and binds `initialBody` at mount) — pre-existing; after a rename's cascade the pane keeps the pre-cascade document and the next keystroke saves it back. The subtractive fix is to drop the shown slot too and let the re-select remount through the pause; a product call on the flash, so it waits for Nathan.
 - `ContentFooter` subscribes to the slot, so `Subfield`'s crumb derivation now re-runs at typing cadence; if the profiler shows `NavTrail` committing at ~8 Hz, a `useMemo` on `crumbSelection` closes it.
-- The `Core/` filing row moves `store.ts` and `Store/` together (RendererRefactor).
+- The `Core/` filing row moves `store.ts` and `Store/` together (RendererRework).
 - Split view and a raised `WARM_TABS` land on `pages`; `registerPageEditor` (one published editor) and `ContentView`'s module-held `paneEl` are the two single-pane assumptions split view meets next.
 - The preview window's page as a slot, if `PageEmbed` ever loads through the store — today it owns its fetch, so the preview keeps a local body.
 ### Closeout

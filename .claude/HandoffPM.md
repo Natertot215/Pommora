@@ -19,7 +19,7 @@
 #### Completion Criteria
 
 - [x] **The Menu recipe** — the row kinds named once, `menu-index`, Sort and Hidden as index rows inside their drag shells, the frame stylesheets down to geometry.
-- [ ] **The next session recaps before it moves** — the Done rows in [[RendererRefactor]] confirmed against the tree, the Pending rows ordered, the Open Rulings taken.
+- [ ] **The next session shapes the exploration** — [[RendererRework]] §3 and §4 read with Nathan, the perspectives dispatched, the consulting session held.
 - [ ] **The side slot** — the main window mounts `SidePane`; PaneSlide is one motion.
 - [ ] **The filing rows are executed** — `Core/`, `Navigation/` absorbing `Tabs/`, the Showcase out, `Surface/`, the casing renames — and the atlas's rule greps return empty.
 - [ ] **The token and scale rows are settled** — the zoom renames and merge, `--labels-gap`, the checkbox recipe.
@@ -75,7 +75,7 @@
 
 **FILES MODIFIED**
 
-- `.claude/Planning/MenuRecipe.md` — the plan, ratified, executed, and closed; `.claude/ContextPM.md` — Current Focus and the Immediate Work row; `.claude/Features/DesignSystemPM.md` (Geometry rows, the "where each goes" sentence, §Menus), `SymbolsPM.md` (the duplicate ladder table removed), `MarkdownPM.md:128`; `.claude/Guidelines/Cohesion-Rulings.md:66-67`; `.claude/Planning/RendererRefactor.md:20`, `RendererAtlas.md:76`
+- `.claude/Planning/MenuRecipe.md` — the plan, ratified, executed, and closed; `.claude/ContextPM.md` — Current Focus and the Immediate Work row; `.claude/Features/DesignSystemPM.md` (Geometry rows, the "where each goes" sentence, §Menus), `SymbolsPM.md` (the duplicate ladder table removed), `MarkdownPM.md:128`; `.claude/Guidelines/Cohesion-Rulings.md:66-67`; `.claude/Planning/RendererRework.md` (which replaced `RendererRefactor.md` and `RendererAtlas.md`)
 - 96 files under `Pommora/src/renderer` — `DesignSystem/Menus/*`, `DesignSystem/Components/Pickers/{PickerMenu,CalendarPicker,ImagePicker,IconPicker}/*`, `DesignSystem/Elements/{NavTrail,DropOutline,PickerControl,EyeToggle}/*`, `DesignSystem/Components/{Controls/Slider,Fields}/*`, `DesignSystem/Tokens/{size,theme-vars}.css.ts`, `Frames/*`, `Properties/Editors/*` + `PropertyFrame.tsx` + `OptionRow.tsx`, `Navigation/{NavList.tsx,navList.css}`, `Windows/{NavWindow.tsx,navWindow.css}`, `Interface/{navView.css,Subfield/*,Banner/Banner.css}`, `Settings/*`, `MarkdownPM/{AutocompletePane.tsx,Styles.css}`, `Blocks/{BlockHandleMenu.tsx,handleMenu.css.ts}`, `Views/CardView/*`, `Cards/{Card.tsx,cards.css}`, `Sidebar/Sidebar.css`, `styles.css`, and the icon-rename readers
 
 **FILES REMOVED**

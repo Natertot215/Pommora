@@ -25,7 +25,7 @@
 
 #### A — The Tiles Folder
 
-- **A-1:** [confirmed] `SurfacePM/` stays as the engine under its name; `Blocks/` does not become a subfolder of it — it becomes root `Tiles/`. This replaces the [[RendererRefactor]] row "`SurfacePM/` → `Surface/`, absorbing `Blocks/`".
+- **A-1:** [confirmed] `SurfacePM/` stays as the engine under its name; `Blocks/` does not become a subfolder of it — it becomes root `Tiles/`. The [[RendererRework]] tree carries `Tiles/` as a root folder.
 - **A-2:** [confirmed] `Tiles/` holds what both hosts consume: all of `Blocks/`, plus PageEmbed, WebpageEmbed, tileWarm, webRetention, and the tile half of `embeds.css`.
 - **A-3:** [confirmed] The tile identity styles (`embeds.css:109-124`) extract to `Tiles/tile-title.css`. Both `.wpembed-title` declarations travel together — the `z-index: 4` override at `:162-169` depends on source order against the shared block, and a split across two files hands that order to the import graph.
 - **A-4:** [confirmed] `tile-chassis.css` moves to `Tiles/` — the chassis both hosts wear.
@@ -59,7 +59,7 @@
 ### Core (must-have)
 - `Tiles/` on disk holding the chassis, PageEmbed, WebpageEmbed, the plumbing, the dashboard-only content, and BlockSurface; `Blocks/` and `Embeds/` gone; `ViewEmbedScope` in `Views/`.
 - One `TileWriter` shell over one `TileSave`; `PageEmbedBlock` gone; one `tile-base.css`; `tile-title.css` beside it.
-- Gates green; net code LOC below the 2680 gate (the 2546 baseline plus the three inbound movers); SurfacePM.md, MarkdownPM.md, ArchitecturePM.md, InterfacePM.md, WebviewPM.md, the CLAUDE.md map, RendererRefactor.md, and RendererAtlas.md name the tree on disk.
+- Gates green; net code LOC below the 2680 gate (the 2546 baseline plus the three inbound movers); SurfacePM.md, MarkdownPM.md, ArchitecturePM.md, InterfacePM.md, WebviewPM.md, the CLAUDE.md map, and RendererRework.md name the tree on disk.
 
 #### Prospects (allowed later, not now)
 
