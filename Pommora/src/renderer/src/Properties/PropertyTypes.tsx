@@ -48,7 +48,7 @@ export const TITLE_META: TypeMeta = { label: 'Title', icon: 'text-align-justify'
 
 export function PropertyTypeIcon({
   type,
-  size = 'title3',
+  size = 'headline',
 }: {
   type: PropertyType | 'title'
   size?: React.ComponentProps<typeof Icon>['size']

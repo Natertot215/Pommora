@@ -101,7 +101,7 @@ export function Toolbar({
   return (
     <div className="app-toolbar">
       <div className="app-toolbar-cluster app-toolbar-cluster--nav">
-        <Segmented glass segments={backForward} paddingX="6px" iconSize="title2" />
+        <Segmented glass segments={backForward} paddingX="6px" iconSize="titleSmall" />
       </div>
       <TabBar />
       <div className="app-toolbar-right">

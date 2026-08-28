@@ -33,7 +33,7 @@ export const ICON = {
   add: 'body',
   editorMenu: 'body',
   doc: 'control',
-  rootEntry: 'title3',
+  rootEntry: 'headline',
   dropOutline: 'control',
   rowPlus: 'control',
   optionsAdd: 'control',

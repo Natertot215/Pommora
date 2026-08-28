@@ -32,7 +32,7 @@ const pickerRow = <T extends string>(
 ): MenuRow => ({
   kind: 'item',
   inert: true,
-  icon: <Icon name={glyph} size="title3" />,
+  icon: <Icon name={glyph} size="headline" />,
   label,
   trailing: { kind: 'picker', ariaLabel, value, options, onPick },
 })

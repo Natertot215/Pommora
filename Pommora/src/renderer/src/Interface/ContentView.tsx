@@ -211,7 +211,7 @@ function ContentFooter(): React.JSX.Element {
         aria-label={footerLabel(expanded)}
         title={footerLabel(expanded)}
       >
-        <Icon name={expanded ? 'chevron-down' : 'chevron-up'} size="title3" />
+        <Icon name={expanded ? 'chevron-down' : 'chevron-up'} size="headline" />
       </button>
       <CitationsToggle page={page} />
       <div className="subfield-reveal">

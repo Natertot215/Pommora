@@ -307,7 +307,7 @@ function TrashRowView({
   return (
     <MenuItem
       className="trash-row table-segment"
-      leading={<Icon name={icon} size="title3" />}
+      leading={<Icon name={icon} size="headline" />}
       detail={
         <NavTrail
           segments={row.crumbs.map((crumb) => ({

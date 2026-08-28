@@ -234,7 +234,7 @@ export function WindowBase({
             aria-label={footerLabel?.(footerOpen)}
             title={footerLabel?.(footerOpen)}
           >
-            <Icon name={footerOpen ? 'chevron-down' : 'chevron-up'} size="title3" />
+            <Icon name={footerOpen ? 'chevron-down' : 'chevron-up'} size="headline" />
           </button>
           {footerLead}
           <div className="window-footer">{footer}</div>

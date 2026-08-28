@@ -130,7 +130,7 @@ function GalleryCard({
         <CardThumb capture>
           {failed ? (
             <CardPlaceholder>
-              <EntityGlyph item={it} size="title1" />
+              <EntityGlyph item={it} size="titleMedium" />
             </CardPlaceholder>
           ) : (
             <img src={src} loading="lazy" alt="" onError={() => setFailed(true)} />

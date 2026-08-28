@@ -147,7 +147,7 @@ function Leaf({
         chevronSpace ? <span className={dropOutlineSpacer} data-drop-outline-spacer /> : null
       }
     >
-      <Icon name={icon} size="title3" className="row-icon" />
+      <Icon name={icon} size="headline" className="row-icon" />
       {rename ? <RowTitle path={rename.path} kind={rename.kind} title={title} /> : title}
     </MenuItem>
   )
@@ -285,7 +285,7 @@ function Disclosure({
     >
       {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: the surrounding row is the control; this narrows its hit area */}
       <span onClick={openView}>
-        <Icon name={open && openIcon ? openIcon : icon} size="title3" className="row-icon" />
+        <Icon name={open && openIcon ? openIcon : icon} size="headline" className="row-icon" />
         {rename ? <RowTitle path={rename.path} kind={rename.kind} title={title} /> : title}
       </span>
     </MenuItem>
@@ -416,7 +416,7 @@ function GhostLeaf({ depth }: { depth: number }): React.JSX.Element {
         >
           <Icon
             name={entityIcon('page', undefined, defaultIcons)}
-            size="title3"
+            size="headline"
             className="row-icon"
           />
           New Page
