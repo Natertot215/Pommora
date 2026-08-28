@@ -1,15 +1,11 @@
-/* The Subfield (footer): breadcrumb left, per-view items right. Type comes from the Subline scale
-   (text.subline.emphasized, applied in Subfield.tsx); text reads at one tone, glyphs (separators ·
-   bullets · the + icon) at a dimmer one, a touch larger. Fixed height so switching to a view with
-   fewer items (no word-count) never janks the bar. */
 .subfield {
   height: var(--subfield-h);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding-left: calc(var(--sidebar-clearance) + var(--content-edge));
-  padding-right: calc(var(--inspector-clearance) + var(--content-edge));
+  padding-left: var(--content-start);
+  padding-right: var(--content-start-right);
   color: var(--label-control);
   border-top: var(--width-175) solid var(--border-base);
   -webkit-app-region: no-drag;
@@ -20,9 +16,7 @@
 .shell.is-resizing .subfield {
   transition: none;
 }
-/* No breadcrumb (NavView) → the action leads on the left. It keeps the base subfield inset (so it lines
-   up with a page's breadcrumb, not indented past it) and just drops the flex gap the empty breadcrumb
-   would otherwise leave in front of it. */
+
 .subfield.subfield-lead {
   justify-content: flex-start;
   gap: 0;
@@ -37,7 +31,6 @@
   max-width: 220px;
 }
 
-/* The stats · bullet — dimmer, and one step larger than the Subline text so the glyph stays legible. */
 .subfield-sep {
   flex: none;
   font-size: var(--text-control-size);
@@ -73,7 +66,6 @@
   transition: none;
 }
 
-/* The near-region this toggle reveals from is tracked in ContentView (`.subfield-near`). */
 .subfield-toggle {
   right: 0;
   z-index: 2;
@@ -98,7 +90,7 @@
   left: 0;
   z-index: 2;
   height: var(--subfield-h);
-  padding: 0 0 0 calc(var(--sidebar-clearance) + var(--content-edge));
+  padding: 0 0 0 var(--content-start);
   justify-content: flex-start;
 }
 .content-view.subfield-open .footnotes-toggle {
