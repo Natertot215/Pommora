@@ -21,7 +21,7 @@
   position: relative;
   flex-shrink: 0;
   margin: 0;
-  padding: 0 var(--navwindow-inset) 0 0;
+  padding: 0;
 }
 /* The clear heading's own seam, inset to the rows. */
 .trash-frame .trash-head::after {
