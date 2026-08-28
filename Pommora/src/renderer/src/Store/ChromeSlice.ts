@@ -1,4 +1,4 @@
-import { DEFAULT_COMMANDS, type NavViewMode, type SelectionState } from '@shared/types'
+import type { NavViewMode, SelectionState } from '@shared/types'
 import type { Slice } from './SessionState'
 
 export interface ChromeSlice {
@@ -6,7 +6,6 @@ export interface ChromeSlice {
   toggleSidebar: () => void
   ribbonVisible: boolean
   toggleRibbon: () => void
-  commands: Record<string, string>
   sidebarWidth: number
   setSidebarWidth: (w: number) => void
   /** Called once on resize-release, never per pointermove — a synchronous localStorage write per
@@ -88,7 +87,6 @@ export const createChromeSlice: Slice<ChromeSlice> = (set, get) => {
     toggleSidebar: () => set((s) => ({ sidebarVisible: !s.sidebarVisible })),
     ribbonVisible: true,
     toggleRibbon: () => set((s) => ({ ribbonVisible: !s.ribbonVisible })),
-    commands: DEFAULT_COMMANDS,
 
     sidebarWidth: readStoredSidebarWidth(),
     setSidebarWidth: (w) => set({ sidebarWidth: clampSidebar(w) }),

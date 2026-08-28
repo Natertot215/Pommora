@@ -142,22 +142,22 @@ describe('store — tab wiring (Phase 0)', () => {
   })
 })
 
-describe('store — warm tabs (B-2/B-3)', () => {
-  const pg = (id: string): SelectTarget => ({ kind: 'page', id, path: `/${id}` })
-  const detail = (id: string): PageDetail => ({
-    id,
-    title: id.toUpperCase(),
-    path: `/${id}`,
-    frontmatter: {},
-    body: 'x',
-  })
-  const ready = (id: string): PageSlot => ({
-    status: 'ready',
-    target: { kind: 'page', id, path: `/${id}` },
-    detail: detail(id),
-    body: 'x',
-  })
+const pg = (id: string): PageTarget => ({ kind: 'page', id, path: `Notes/${id}.md` })
+const detail = (id: string, path = `Notes/${id}.md`): PageDetail => ({
+  id,
+  title: id.toUpperCase(),
+  path,
+  frontmatter: {},
+  body: 'x',
+})
+const ready = (id: string): PageSlot => ({
+  status: 'ready',
+  target: pg(id),
+  detail: detail(id),
+  body: 'x',
+})
 
+describe('store — warm tabs (B-2/B-3)', () => {
   it('a page keeps its slot while its tab is parked; switching back is instant — no fetch, no flash', () => {
     seed({
       tabs: [uTab('t1', pg('a'), [pg('a')], 0), uTab('t2', pg('b'), [pg('b')], 0)],
@@ -194,7 +194,7 @@ describe('store — warm tabs (B-2/B-3)', () => {
     // must drop it or the wrong file renders (and autosaves) under the wrong tab.
     let resolveB!: (v: unknown) => void
     ;(window.nexus.openPage as ReturnType<typeof vi.fn>).mockImplementation((path: string) =>
-      path === '/b'
+      path === pg('b').path
         ? new Promise((r) => (resolveB = r))
         : Promise.resolve({ ok: true, value: detail('a') }),
     )
@@ -218,7 +218,7 @@ describe('store — warm tabs (B-2/B-3)', () => {
   it('a cold switch pauses on the outgoing view — no loading intermediate, one-commit swap', async () => {
     let resolveB!: (v: unknown) => void
     ;(window.nexus.openPage as ReturnType<typeof vi.fn>).mockImplementation((path: string) =>
-      path === '/b'
+      path === pg('b').path
         ? new Promise((r) => (resolveB = r))
         : Promise.resolve({ ok: true, value: detail('a') }),
     )
@@ -245,7 +245,7 @@ describe('store — warm tabs (B-2/B-3)', () => {
   it('a navigation mid-pause supersedes the fetch — the stale response never lands', async () => {
     let resolveB!: (v: unknown) => void
     ;(window.nexus.openPage as ReturnType<typeof vi.fn>).mockImplementation((path: string) =>
-      path === '/b'
+      path === pg('b').path
         ? new Promise((r) => (resolveB = r))
         : Promise.resolve({ ok: true, value: detail('a') }),
     )
@@ -272,7 +272,7 @@ describe('store — warm tabs (B-2/B-3)', () => {
     try {
       let resolveB!: (v: unknown) => void
       ;(window.nexus.openPage as ReturnType<typeof vi.fn>).mockImplementation((path: string) =>
-        path === '/b'
+        path === pg('b').path
           ? new Promise((r) => (resolveB = r))
           : Promise.resolve({ ok: true, value: detail('a') }),
       )
@@ -300,20 +300,6 @@ describe('store — warm tabs (B-2/B-3)', () => {
 })
 
 describe('store — page slots', () => {
-  const pg = (id: string): PageTarget => ({ kind: 'page', id, path: `Notes/${id}.md` })
-  const detail = (id: string, path = `Notes/${id}.md`): PageDetail => ({
-    id,
-    title: id.toUpperCase(),
-    path,
-    frontmatter: {},
-    body: 'x',
-  })
-  const ready = (id: string): PageSlot => ({
-    status: 'ready',
-    target: pg(id),
-    detail: detail(id),
-    body: 'x',
-  })
   const openPage = (): ReturnType<typeof vi.fn> => window.nexus.openPage as ReturnType<typeof vi.fn>
 
   it('a slot outlives one tab while another points at its page, and dies with the last', () => {

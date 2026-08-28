@@ -1,11 +1,12 @@
 import type { DevicePrefs } from '@shared/devicePrefs'
-import type { Personalization } from '@shared/types'
+import { DEFAULT_COMMANDS, type Personalization } from '@shared/types'
 import { applyPersonalizationKey } from '@renderer/DesignSystem/Theming/personalization'
 import type { Slice } from './SessionState'
 
 export interface ConfigSlice {
   personalization: Personalization
   setPersonalization: <K extends keyof Personalization>(key: K, value: Personalization[K]) => void
+  commands: Record<string, string>
   /** Machine-local, not the Nexus's — loaded alongside it, saved to nexus.db. */
   devicePrefs: DevicePrefs
   setDevicePref: <K extends keyof DevicePrefs>(key: K, value: DevicePrefs[K]) => void
@@ -53,6 +54,8 @@ export const createConfigSlice: Slice<ConfigSlice> = (set, get) => ({
     applyPersonalizationKey(key, value)
     void window.nexus.personalization.set(key, value)
   },
+
+  commands: DEFAULT_COMMANDS,
 
   devicePrefs: {},
   setDevicePref: (key, value) => {

@@ -752,9 +752,11 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
           // restore would revive the pre-cascade body and the next keystroke would write it
           // back over the heal.
           clearWarm()
-          const shownId = shownPage(get())?.target.id
-          keepSlots((id) => id === shownId)
-          if (shownId) void get().reloadPage()
+          keepSlots(() => false)
+          // The shown page's editor binds its document at mount, so a healed body reaches it only
+          // through a remount — the cold re-select drops the slot out from under the surface.
+          const shown = get().selection
+          if (shown.kind === 'page') void get().select(shown, { record: false })
           break
         }
         case 'delete':
