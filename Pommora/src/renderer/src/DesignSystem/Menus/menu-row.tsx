@@ -7,6 +7,64 @@ import { cx } from '../Util/cx'
 import { overScrollEllipsis } from '../Interactions/OverScroll'
 import { onActivateClick } from '../Interactions/activate'
 
+const BAR_GLYPH = 12 // KNOB
+
+export function MenuTopRow({
+  label,
+  onClick,
+  className,
+  trailing,
+}: {
+  label: string
+  onClick: () => void
+  className?: string
+  trailing?: ReactNode
+}): React.JSX.Element {
+  return (
+    <MenuItem
+      className={cx(s.topRow, trailing != null && s.flushTrailing, className)}
+      leading={
+        <span className={s.topBarLeadingSymbol}>
+          <Icon name="chevron-left" size={BAR_GLYPH} />
+        </span>
+      }
+      trailing={trailing}
+      onClick={onClick}
+      // A press must not steal focus: the value panes commit-on-blur, so an unguarded mousedown here
+      // would commit-and-dismiss before this row's click (Back) ever lands.
+      onPointerDown={(e) => e.preventDefault()}
+    >
+      <span className={s.topBarLeadingLabel}>{label}</span>
+    </MenuItem>
+  )
+}
+
+export function MenuFrameTopRow({
+  label,
+  onBack,
+  trailing,
+  current,
+  contentClassName,
+}: {
+  label: string
+  onBack: () => void
+  trailing?: ReactNode
+  current?: string
+  contentClassName?: string
+}): React.JSX.Element {
+  const right = trailing ? (
+    <span className={s.topBarTrailingSymbol}>{trailing}</span>
+  ) : current ? (
+    <span className={s.topBarTrailingLabel}>{current}</span>
+  ) : undefined
+  return (
+    <>
+      <MenuTopRow label={label} onClick={onBack} className={contentClassName} trailing={right} />
+      <MenuSeparator flush className={s.paneSeparator} />
+    </>
+  )
+}
+
 type MenuItemProps = {
   leading?: ReactNode
   subLabel?: ReactNode
@@ -106,46 +164,27 @@ export function MenuCaption({ children }: { children: ReactNode }): React.JSX.El
   return <div className={s.caption}>{children}</div>
 }
 
-const BAR_GLYPH = 12 // KNOB
-
-export function MenuTopRow({
-  label,
-  onClick,
-  className,
+export function MenuBottomRow({
+  leading,
   trailing,
-}: {
-  label: string
-  onClick: () => void
-  className?: string
-  trailing?: ReactNode
-}): React.JSX.Element {
-  return (
-    <MenuItem
-      className={cx(s.topRow, trailing != null && s.flushTrailing, className)}
-      leading={
-        <span className={s.topBarLeadingSymbol}>
-          <Icon name="chevron-left" size={BAR_GLYPH} />
-        </span>
-      }
-      trailing={trailing}
-      onClick={onClick}
-      // A press must not steal focus: the value panes commit-on-blur, so an unguarded mousedown here
-      // would commit-and-dismiss before this row's click (Back) ever lands.
-      onPointerDown={(e) => e.preventDefault()}
-    >
-      <span className={s.topBarLeadingLabel}>{label}</span>
-    </MenuItem>
-  )
-}
-
-export function Menu({
-  className,
   children,
 }: {
-  className?: string
-  children: ReactNode
+  leading?: ReactNode
+  trailing?: ReactNode
+  children?: ReactNode
 }): React.JSX.Element {
-  return <div className={cx(s.menu, className)}>{children}</div>
+  return (
+    <div className={s.bottomBar}>
+      <MenuSeparator flush />
+      {children ?? (
+        <div className={s.bottomRow}>
+          {leading}
+          <span style={{ flex: '1 1 auto' }} />
+          {trailing}
+        </div>
+      )}
+    </div>
+  )
 }
 
 export const AccessoryButton = forwardRef<
@@ -185,37 +224,6 @@ export const AccessoryButton = forwardRef<
     />
   )
 })
-
-export function MenuFrameTopRow({
-  label,
-  onBack,
-  trailing,
-  current,
-  contentClassName,
-}: {
-  label: string
-  onBack: () => void
-  trailing?: ReactNode
-  current?: string
-  contentClassName?: string
-}): React.JSX.Element {
-  const right = trailing ? (
-    <span className={s.topBarTrailingSymbol}>{trailing}</span>
-  ) : current ? (
-    <span className={s.topBarTrailingLabel}>{current}</span>
-  ) : undefined
-  return (
-    <>
-      <MenuTopRow
-        label={label}
-        onClick={onBack}
-        className={cx(s.topRowPad, contentClassName)}
-        trailing={right}
-      />
-      <MenuSeparator flush className={s.paneSeparator} />
-    </>
-  )
-}
 
 export function FooterLockButton({
   verb,
@@ -259,27 +267,14 @@ export function FooterMoreButton({
   )
 }
 
-export function MenuBottomRow({
-  leading,
-  trailing,
+export function Menu({
+  className,
   children,
 }: {
-  leading?: ReactNode
-  trailing?: ReactNode
-  children?: ReactNode
+  className?: string
+  children: ReactNode
 }): React.JSX.Element {
-  return (
-    <div className={s.bottomBar}>
-      <MenuSeparator flush />
-      {children ?? (
-        <div className={s.bottomRow}>
-          {leading}
-          <span style={{ flex: '1 1 auto' }} />
-          {trailing}
-        </div>
-      )}
-    </div>
-  )
+  return <div className={cx(s.menu, className)}>{children}</div>
 }
 
 export function MenuScrollFrame({
