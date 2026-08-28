@@ -187,7 +187,7 @@ The over-scroll edge-dissolve widths a scrollable surface names on `--over-scrol
 
 | Title             | Token                                          | Value                                                             |
 | ----------------- | ---------------------------------------------- | ----------------------------------------------------------------- |
-| Icon Ladder       | `size.icon.*` · `--icon-*` · `ICON_PX`         | Eleven steps named for the type ramp — `largeTitle` `26px` → `subline` `10px` |
+| Icon Ladder       | `size.icon.*` · `ICON_PX` · `--icon-body`      | Ten steps named as the type ramp is — `titleLarge` `26px` · `titleMedium` `22px` · `titleSmall` `17px` · `headline` `15px` · `body` `13px` · `callout` `12px` · `control` `12px` · `caption` `11px` · `footnote` `10px` · `subline` `10px`; only the body step is also a CSS var, for the editor's glyphs |
 | Pill Radius       | `RADIUS_FULL` · `--radius-full`                | `999px`                                                           |
 | Disclosure Indent | `DISCLOSURE_INDENT` · `--disclosure-indent`    | `14px`                                                            |
 | Content Inset     | `--content-inset`                              | `24px` — the gutter page text keeps off a pane (`styles.css`) |
@@ -319,8 +319,8 @@ Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, 
 | ---------- | ------------------- | ----------------------------------------------------------------------- |
 | Inline | `size.control['button-inline']` | h `20px` · segment `18px` · padX `2px` · label padX `4px` · radius `6px` · icon `control` — the row affordances |
 | Small | `size.control['button-small']` | h `24px` · segment `20px` · padX `4px` · label padX `12px` · radius `8px` · icon `body` |
-| Medium | `size.control['button-medium']` | h `28px` · segment `24px` · padX `6px` · label padX `12px` · radius `10px` · icon `title3` |
-| Large | `size.control['button-large']` | h `32px` · segment `28px` · padX `8px` · label padX `12px` · radius `12px` · icon `title3` |
+| Medium | `size.control['button-medium']` | h `28px` · segment `24px` · padX `6px` · label padX `12px` · radius `10px` · icon `headline` |
+| Large | `size.control['button-large']` | h `32px` · segment `28px` · padX `8px` · label padX `12px` · radius `12px` · icon `headline` |
 
 #### Pickers
 
