@@ -8,7 +8,8 @@ import { numberDivisor } from '@renderer/Properties/Editing/formatValue'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { PickerControl, type PickerChoice } from '@renderer/DesignSystem/Elements/PickerControl'
 import { Reveal } from '@renderer/DesignSystem/Animation/Reveal'
-import { configLabel, configRow } from '../../Frames/frames.css'
+import { rowBox } from '@renderer/DesignSystem/Menus/menu-base.css'
+import { configLabel } from '../../Frames/frames.css'
 import { pickerValue } from '@renderer/DesignSystem/Elements/PickerControl'
 import * as s from './numberEditor.css'
 
@@ -39,7 +40,7 @@ const pickerToDecimals = (v: string): 'hidden' | number => (v === 'hidden' ? 'hi
 
 function Row({ label, children }: { label: string; children: React.ReactNode }): React.JSX.Element {
   return (
-    <div className={cx(configRow, s.row)}>
+    <div className={cx(rowBox, s.row)}>
       <span className={configLabel}>{label}</span>
       {children}
     </div>

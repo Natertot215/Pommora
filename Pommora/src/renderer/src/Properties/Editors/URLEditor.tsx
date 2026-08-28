@@ -5,6 +5,7 @@ import type { LinkConfig, LinkDisplay } from '@shared/properties'
 import { ColorSwatch } from '@renderer/DesignSystem/Components/Controls/Switches/ColorSwatch'
 import { PickerControl } from '@renderer/DesignSystem/Elements/PickerControl'
 import { LINK_FORMAT_OPTIONS } from '../LinkFormat'
+import { rowBox } from '@renderer/DesignSystem/Menus/menu-base.css'
 import * as s from '../../Frames/frames.css'
 
 /**
@@ -26,7 +27,7 @@ export function URLEditor({
 
   return (
     <div className={s.configEditor} style={{ '--accent': link.css } as CSSProperties}>
-      <div className={s.configRow}>
+      <div className={rowBox}>
         <span className={s.configLabel}>Underline</span>
         <DualSwitch
           checked={underline}
@@ -34,7 +35,7 @@ export function URLEditor({
           ariaLabel="Underline links"
         />
       </div>
-      <div className={s.configRow}>
+      <div className={rowBox}>
         <span className={s.configLabel}>Color</span>
         <ColorSwatch
           label="Color"
@@ -43,7 +44,7 @@ export function URLEditor({
           onPick={(next) => onSetConfig({ link_color: next })}
         />
       </div>
-      <div className={s.configRow}>
+      <div className={rowBox}>
         <span className={s.configLabel}>Format</span>
         <PickerControl
           ariaLabel="Link format"

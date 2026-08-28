@@ -287,9 +287,9 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 - Control: `grep -rF "frameDnd" src` → ≥ 2 (a geometry export that stays; `propertyFrame.test.tsx:236` pins it).
 
 **Steps:**
-- [ ] Per file, delete the box class and compose `item`; run that file's tests.
-- [ ] Gates green; `FilterFrame.test.tsx:376` `[class*="ruleRow"]` passes (the name survives as the gap override).
-- [ ] Commit `refactor(frames): the frames' rows are the menu's`.
+- [x] Per file, delete the box class and compose `item`; run that file's tests.
+- [x] Gates green; `FilterFrame.test.tsx:376` `[class*="ruleRow"]` passes (the name survives as the gap override).
+- [x] Commit `refactor(frames): the frames' rows are the menu's`.
 
 #### Task 8: Every `PickerMenu` host is Compact
 
@@ -390,7 +390,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 
 **Files:**
 - Modify: `DesignSystem/Elements/NavTrail/navTrail.css.ts` — `trail` composes `text.caption.standard`, `color: c.label.secondary`, `paddingBlock: 'var(--trail-pad, 0px)'`; `emphasized`/`current` keep their tones.
-- Modify consumers to drop the restated pair: `Navigation/NavList.tsx` (`nav-item-path` → the `detail` slot, Task 9), `Settings/TrashFrame.tsx` (keeps `.is-historical` italic/tertiary as a state class on the trail), `Cards/Card.tsx` `card-loc` (`cards.css:170-172` deleted; `.card-loc-zone`'s `padding-top: 6px` KNOB becomes `--trail-pad` so the zone pads top and bottom alike — **first** diagnose why some cards show bottom padding under the trail and some none: read `.card-loc-zone`'s `margin-top: auto` against `.card-text`'s `8px 8px` and the reserved `--card-foot-h` in `CardsView.css:29-33` per card variant (gallery / cards view / a card with no location), name the cause in the Log, and fix it at that cause rather than by padding), `Embeds/PageEmbed.tsx` `pgembed-crumbs`, `Windows/PageWindow.tsx` `page-window-crumbs`, `Frames/SettingsFrame.tsx` `crumbRow` (footnote → the trail's caption; a footing crumb reads as a trail).
+- Modify consumers to drop the restated pair: `Navigation/NavList.tsx` (`nav-item-path` → the `detail` slot, Task 9), `Settings/TrashFrame.tsx` (keeps `.is-historical` italic/tertiary as a state class on the trail), `Cards/Card.tsx` `card-loc` (`cards.css:170-172` deleted; `.card-loc-zone`'s `padding-top: 6px` KNOB becomes `--trail-pad` so the zone pads top and bottom alike — **first** diagnose why some cards show bottom padding under the trail and some none: read `.card-loc-zone`'s `margin-top: auto` against `.card-text`'s `8px 8px` and the reserved `--card-foot-h` in `CardsView.css:29-33` per card variant (gallery / cards view / a card with no location), name the cause in the Log, and fix it at that cause rather than by padding), `Embeds/PageEmbed.tsx` `pgembed-crumbs`, `Windows/PageWindow.tsx` `page-window-crumbs`, `Frames/SettingsFrame.tsx:192`'s `footingLabel` on the footing's `NavTrail` (footnote → the trail's caption; a footing crumb reads as a trail).
 - Survivors: `Subfield` (`subline.emphasized` at `--label-control`, fixed 24px band — a different register by design), `PathField` (inherits its field's body rung).
 
 **Derivation:** `grep -rF "text.caption.standard" src | grep -i "trail\|crumb\|loc\|path"` → 4 at planning → 0. Control: `grep -rF "NavTrail" src` → ≥ 9.
@@ -618,7 +618,7 @@ Every phase runs the same loop. Nothing advances on a summary; every claim is re
   - [x] Task 5 — Footing · `a6df3eed`
   - [x] Task 6 — ActionRow · `bdf30002` (docs rows deferred to §Closeout)
 - [ ] **Phase 2** — The Surfaces · base `7226d650`
-  - [ ] Task 7 — Frames + editors compose `item`
+  - [x] Task 7 — Frames + editors compose `item`
   - [ ] Task 8 — every PickerMenu host is Compact
   - [ ] Task 9 — NavList is a menu
   - [ ] Task 10 — Settings rows
@@ -655,6 +655,7 @@ Every phase runs the same loop. Nothing advances on a summary; every claim is re
 - Task 9: the "today" figures in its prose predate Task 0's tree — `.nav-search-row` already pads `var(--surface-inset)`, `.nav-item-main` pads `6px` (rows likely 28 already), gap 6; the +2 / −10 / −12 search-edge offsets are stale. Re-read Task 9 against the live tree at Phase 2's open.
 
 ### Deviations
+- Task 7: `crumbRow` lost its box props to `NavTrail`'s own `trail` (already flex · `minWidth: 0`) and was a one-reader alias of `footingLabel`, so it is deleted and `SettingsFrame.tsx:192` wears `footingLabel`; its extra `gap: 4px` is gone, so the Settings footing's trail spaces as every other trail does (Task 12a's Files entry rewritten). `leadGlyph` composes `side` but keeps `marginRight: LEAD_GAP` — a field has no gap and `side`'s gap is internal, so the KNOB is the only thing holding the glyph off its label. `optionRow` keeps `justifyContent: 'space-between'` as its own rule (a composition with no rule of its own collapses to `rowBox`'s class, and `paletteButton`'s hover selector keys on it); GroupFrame's four preview chip rows wear it instead of a second chip-and-eye box, the eye in `side`. `configLabel` grows (`flex: '1 1 auto'`) so each two-child config row trails its control without a box rule; `dateTimeEditor.css.ts`'s `row` / `leading` / `label` were the same three things and fold into `rowBox` / `side` / `configLabel`. The four `Button`s wearing `topRowAction` / `rowPlus` / `optionsAdd` render `AccessoryButton`.
 - Phase 1 review (orchestrator, 08-27): `rowBox` is declared in the Shell section ahead of everything that composes it, so a variant's own properties (TopRow's tone, `flushAffordance`'s gap) win by source order and no tone var is needed; the executor's `--row-gap` deleted (one writer, one reader — a literal `8px` / `4px`); `footing` composes `rowBox` and zeroes its pads through `--row-pad-y` / `--row-pad-trail`, so no row declares padding; `optionCheck`'s `marginLeft` gone (the row's gap already spaces the mark). Running pass at Gate 1 (CDP, screenshots in the session scratchpad): sidebar rows 6+16+6 = 28, page Settings → Properties frame: TopRow 18 (2+14+2), items 28, footing 20; the Ideas view's Settings menu walked whole (Configuration · Properties · Visibility · Layout · Group · Filter · Sort): root entries 28, every TopRow 18, items 28, the Group heading 21 (6+13+2), All Properties 25 (6+13+6), footings 15–20 (a flex row with no text is as tall as its controls). Rows carrying a switch or eye toggle measure 31–32 because the control is taller than the 16px line — pre-existing math, an Open Call for Nathan (a 16px control, or rows sized by their tallest child). The Compact hosts (value picker, CardAddPicker, Calendar) take their pass at Task 8.
 - Task 0's tree arrived after a parallel session landed `Detail/` → `Interface/` (`44366104`); every `Detail/navView.css` / `Detail/NavView.tsx` citation in this plan now reads `Interface/`.
 - Task 0: the parallel session's `Store/`, `Detail/Scope.ts`, and `Tabs/tabsModel.ts` had already landed (`af2442ab`), so typecheck was clean, not red. The tree committed was Nathan's 30-file CSS pass (comment trims, `navList.css` search row on `--surface-inset`, row pad 6). Two of its declarations had lost their semicolons — `tabBar.css:14` (`--tab-divider-w: var(--segment-width)`, circular with `.tab-divider`'s own `--segment-width`) and `DetailTitleHeader.css:40` (`line-height: var(--border-base)`, a color) — repaired to `var(--width-200)` and `1.15` so the gate passes; flagged to Nathan.

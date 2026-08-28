@@ -7,7 +7,7 @@ import {
   accessoryButton,
   flushAffordance,
   footing,
-  footingLabel,
+  rowBox,
   rowDragging,
 } from '@renderer/DesignSystem/Menus/menu-base.css'
 import { button as eyeToggleButton } from '@renderer/DesignSystem/Elements/EyeToggle/eyeToggle.css'
@@ -22,7 +22,6 @@ const c = colorVars.color
 // ═══════════════════════════════════════════════════════════════════════════
 
 const SIZE = {
-  topRowActionWidth: 20, // height hugs the glyph
   iconPickerButton: 28,
   dragHighlightRadius: 6,
 }
@@ -69,16 +68,6 @@ export const headerPhotoImg = style({
   borderRadius: '8px',
 })
 
-export const topRowAction = style([
-  accessoryButton,
-  {
-    flex: '0 0 auto',
-    width: `${SIZE.topRowActionWidth}px`,
-    justifyContent: 'flex-end',
-    color: c.label.secondary,
-  },
-])
-
 export const allSpacer = style({
   flex: '1 1 0px',
   transition: `flex-grow ${duration.base} ${easing.baseEase}`,
@@ -99,8 +88,6 @@ export const allRow = style({ color: c.label.secondary })
 
 export const toggleRow = style({})
 
-export const rowPlus = accessoryButton
-
 export { rowDragging }
 
 export const hiddenRow = style({
@@ -115,9 +102,7 @@ globalStyle(`${hiddenRow} ${eyeToggleButton}`, { color: c.label.tertiary, opacit
 export const eyeInert = style([
   accessoryButton,
   {
-    width: '20px',
-    height: '20px',
-    display: 'flex',
+    display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
     opacity: 'var(--state-ghost)',
@@ -144,10 +129,8 @@ export const statusGroups = style({
 })
 export const statusGroup = style({ display: 'flex', flexDirection: 'column' })
 
-export const optionsAdd = accessoryButton
-
 export const groupAdd = style([
-  optionsAdd,
+  accessoryButton,
   {
     opacity: 0,
     selectors: { [`${statusGroup}:hover &`]: { opacity: 1 } },
@@ -162,11 +145,7 @@ export const optionList = style({
   vars: { '--label-pad-x': `${OPTION.chipPadX}px` },
 })
 
-export const optionRow = style({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-})
+export const optionRow = style([rowBox, { justifyContent: 'space-between' }])
 
 export const optionLead = style({
   display: 'flex',
@@ -185,7 +164,6 @@ export const ghostOptionRow = style([
   {
     background: 'none',
     border: 'none',
-    padding: 0,
     font: 'inherit',
     textAlign: 'left',
   },
@@ -217,18 +195,9 @@ export const configEditor = style({
   paddingTop: `${OPTION.gapAroundLabel}px`,
 })
 
-export const configRow = style({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  minHeight: '24px',
-})
-
-export const configLabel = style([text.control.emphasized, { color: c.label.primary }])
-
-export const crumbRow = style([
-  footingLabel,
-  { display: 'inline-flex', alignItems: 'center', gap: '4px', minWidth: 0 },
+export const configLabel = style([
+  text.control.emphasized,
+  { flex: '1 1 auto', color: c.label.primary },
 ])
 
 export const footerLock = style({

@@ -17,6 +17,7 @@ import {
   useDisclosureSet,
 } from '@renderer/DesignSystem/Menus'
 import {
+  accessoryButton,
   flushTrailing,
   footingLabel,
   footingSymbol,
@@ -765,7 +766,7 @@ export function FilterFrame({
               paddingX="0"
               icon="plus"
               iconSize="body"
-              className={fp.addRow}
+              className={accessoryButton}
               data-create
               aria-label="Add filter rule"
               onClick={() =>

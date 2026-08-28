@@ -6,11 +6,12 @@ import { ancestryOf } from '../treeIndex'
 import {
   detail as detailText,
   flushTrailing,
+  footingLabel,
   rowDisabled,
   side,
 } from '@renderer/DesignSystem/Menus/menu-base.css'
 import { cx } from '@renderer/DesignSystem/Util/cx'
-import { crumbRow, footerLock, ICON } from './frames.css'
+import { footerLock, ICON } from './frames.css'
 import { useSession } from '../store'
 import { findCollection, findSet, findCollectionForSet } from '../Interface/Scope'
 import { pickView } from '@renderer/Views/pipeline/pickView'
@@ -189,7 +190,7 @@ export function SettingsFrame(): React.JSX.Element | null {
               segments={(tree && ancestryOf(tree, node)) ?? NO_TRAIL}
               iconSize="control"
               overScroll={false}
-              className={crumbRow}
+              className={footingLabel}
             />
           }
           trailing={

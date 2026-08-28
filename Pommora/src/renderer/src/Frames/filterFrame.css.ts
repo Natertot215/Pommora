@@ -7,6 +7,7 @@ import {
 } from '@renderer/DesignSystem/Components/Fields/fields.css'
 import { focusRing } from '@renderer/DesignSystem/Components/Fields/fieldRing'
 import { growToContent } from '@renderer/DesignSystem/Menus/frame-growth'
+import { rowBox, side } from '@renderer/DesignSystem/Menus/menu-base.css'
 
 const c = colorVars.color
 
@@ -45,11 +46,7 @@ export const ruleList = style({
   padding: '6px 0',
 })
 
-export const ruleRow = style({
-  display: 'flex',
-  alignItems: 'center',
-  gap: '6px',
-})
+export const ruleRow = style([rowBox, { gap: '6px', paddingLeft: 0 }])
 
 export const whatCell = style({
   display: 'flex',
@@ -69,13 +66,7 @@ export const fieldLabel = style({
 
 /** The margin lives on this WRAPPER rather than the glyph: the checkbox box carries a `zoom`,
  *  which would scale its own margin. */
-export const leadGlyph = style({
-  display: 'inline-flex',
-  alignItems: 'center',
-  marginRight: LEAD_GAP,
-  flexShrink: 0,
-  color: c.label.secondary,
-})
+export const leadGlyph = style([side, { marginRight: LEAD_GAP }])
 
 export const controlField = style([cellField, { flex: '0 0 auto' }])
 
@@ -143,11 +134,3 @@ export const chipRun = style({
 })
 
 export const controlFieldWide = style([cellField, { flex: '1 1 auto' }])
-
-export const addRow = style({
-  alignSelf: 'flex-start',
-  width: '20px',
-  marginTop: '2px',
-  color: c.label.tertiary,
-  selectors: { '&:hover': { color: c.label.secondary } },
-})
