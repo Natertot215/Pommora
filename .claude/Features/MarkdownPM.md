@@ -125,7 +125,7 @@ The root of everything: one size factor for structure, one derived factor for gl
 | Editor Size Factor | `--mdpm-scale` | `var(--editor-scale)` · `:root` (`--editor-scale: 1`, the Editor Scale setting) |
 | Per-Block Zoom | `@property --block-zoom` | `<number>`, inherits, initial `1` |
 | Glyph Scale | `--glyph-scale` | `calc(var(--mdpm-scale) * var(--block-zoom, 1))` · `.mdpm-shell` |
-| Fold Chevron Size | `--fold-chevron-size` | `calc(var(--text-title3-size) * var(--glyph-scale))` · `.mdpm-shell` |
+| Fold Chevron Size | `--fold-chevron-size` | `calc(var(--text-headline-size) * var(--glyph-scale))` · `.mdpm-shell` |
 
 #### II. Header, Banner & Title
 

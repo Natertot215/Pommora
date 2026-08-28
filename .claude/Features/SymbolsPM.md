@@ -23,21 +23,7 @@ Every glyph draws at a size from one ladder: a step sets the icon's `font-size` 
 
 #### II. Sizes
 
-The ladder is the design system's icon ladder,[^1] stated again here.
-
-| Step | Size |
-| --- | --- |
-| `largeTitle` | 26px |
-| `title1` | 22px |
-| `title2` | 17px |
-| `title3` | 15px |
-| `headline` | 13px |
-| `body` | 13px |
-| `callout` | 12px |
-| `control` | 12px |
-| `caption` | 11px |
-| `footnote` | 10px |
-| `subline` | 10px |
+The ladder is the design system's icon ladder,[^1] named as the type ramp is — `titleLarge` through `subline`.
 
 ### Assignments
 

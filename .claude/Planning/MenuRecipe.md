@@ -585,7 +585,7 @@ Written as **Today → Becomes**; counts re-derived at Phase 4's open.
 - [x] Gates; commit `refactor(tokens): the icon ladder is named as the type ramp is`.
 
 #### Gate 4 — the edges
-- [ ] The Loop, steps 3–5. Screenshots: banner, subfield, NavView head, the icon picker.
+- [x] The Loop, steps 3–5. Screenshots: banner, subfield, NavView head, the icon picker.
 
 ---
 
@@ -655,7 +655,7 @@ Every phase runs the same loop. Nothing advances on a summary; every claim is re
   - [x] Task 18 — GroupFrame · `760352dd + 3a6acd1d`
   - [x] Task 19 — the property editors · `1e3a5bd3`
   - [x] Task 20 — FilterFrame · `05392979`
-- [ ] **Phase 4** — The Edges Found Alongside · base `a2369d4a` · executor `da851e1b..bedb2008`
+- [x] **Phase 4** — The Edges Found Alongside · base `a2369d4a` · executor `da851e1b..bedb2008` · simplifier `ba4f18c9` · comment-killer `8e5a4645` · breaker fix in the landing commits · Gate 4 closed
   - [x] Task 21 — the content edge is one token · `da851e1b`
   - [x] Task 22 — IconPicker's cell wears the shell · `c67b36b8`
   - [x] Task 23 — the icon ladder is named as the type ramp is · `bedb2008`
@@ -678,6 +678,8 @@ Every phase runs the same loop. Nothing advances on a summary; every claim is re
 - Round 4 (build-breaking-agent, Phase 2 range, 08-28): 7 findings, 14 kills. F1 `NavTrail` owning a rung re-registered the two ruled survivors (the Subfield's crumbs, a PathField's trail) → both keep their host's register with `font: inherit; color: inherit` on the consumer (`.subfield-crumbs`, `fields.fieldTrail`); F2 the ImagePicker's zoom strip stopped spanning its row → host-local `globalStyle(sliderRow strip)` flex 1; F3 the Trash's date lane sat 14px off the head → `.trash-row` zeroes `--row-pad-trail` and its bar sits at the lane; F4 the Scale readout wearing `detail` capped the cluster at 55% → it wears `footingLabel`; F5 `'nav-pin'` hard-coded like `overlay` was → the row's call site passes both. All in `cffdd681`. F6 — a Trash row with `onClick` is a `role=button` tab stop beside its checkbox's; the recipe ties role to `onClick` by construction and NavList rows carry the same two stops → an Open Call for Nathan (a `MenuItem` opt-out, or the row loses the pointer convenience). F7 — the Settings PathField hugs without a cap → rejected: the hug is ruled; at the default two-segment path the row is 44. Unknowns for Nathan's pass: a pin reorder by drag lands; the `[[` autocomplete measured live.
 
 - Round 5 (build-breaking-agent, Phase 3 range, 08-28): 5 findings, 3 latents, 18 kills. F1 the Compact chip's name lost its control rung and tone when `compactTitle` moved "as geometry" → restored on `Properties/optionRow.css.ts`; F2 the Title row's inert eye rendered at full opacity as a disabled `AccessoryButton` (`type.base`'s `:disabled` un-dims) → `accessoryButton` ghosts on `&&:disabled`, which also ghosts the two other disabled accessory buttons; F3 sixteen non-clickable editor rows inherited the shell through the index's only item kind → `MenuItem` and the index take `inert`, composing `rowBox` alone with no role; F4 the footing rung landed on Filter's pickers but not Group's → `pickerControl.value` reads the footnote rung inside any `footingBar` through a global, and the hand-passed `footing` prop is deleted (four callers); a latent — `MenuIndex` keying rows by label — closed by keying on the ordinal. All in `a2369d4a`. F5 — Settings' section titles render as the index's `div` heading rather than an `<h3>`, leaving the window's document outline → an Open Call for Nathan (a `level` on the heading kind, or accept). Latents left: the `action` kind has no production consumer (PropertyFrame's All Properties row still hand-builds it with its beat var); a row with `onSelect` beside a `switch`/`color` trailing would fire both (no site does). Coverage note: the flush rule keys on any `trailing`, so 52 rows went flush, not the 39 the census named — the ruled behavior landing on every row that has a cluster.
+
+- Round 6 (build-breaking-agent, Phase 4 range, 08-28): 1 Medium, 1 Low, 11 kills; Task 21 proven arithmetic-identical on every emitted rule (1336 → 1335, eight intended deltas), Task 23 pixel-identical at 142 sites, the comment pass byte-identical at the compiler. F1 `SymbolsPM.md` §Sizes restated the ladder with the old names — the duplicate table deleted, the pointer to [[DesignSystemPM]] §Geometry kept. F2 (pre-existing) a selected icon cell lost its accent fill under the hover wash → `cellSelected` re-declares its hover the way `itemSelected` does. Observation folded: `MarkdownPM.md:128` cited `--text-title3-size` where the code reads `--text-headline-size`. Latent named: `Icon`'s `size` prop unions `IconSize` with lucide's `string | number`, so a stale size name is caught by grep, not by `tsc` — Part 2 (or a separate call) may narrow it.
 
 ### Open Against Later Tasks
 - Task 14 (from Gate 2's running pass): Hazard Window 3 is real — the Settings sliders and LayoutFrame's Scale slider measure 0 wide inside the trailing cluster (`flex: 0 0 auto`). With seat widths ruled out (`.settings-wide` gone, no `--row-trailing-width`), the Slider takes its own track width as a literal `KNOB` in its own stylesheet — a control's width is the control's — and `wide` is dropped from `MenuItem` and the index.
@@ -737,7 +739,7 @@ Ruled 08-27 (Nathan, before sleep): the plan runs to the end unattended — ever
 - [x] Phase 1: executor commits · simplifier · comment-killer · orchestrator review (diff read, three gates, Derivations + Dead Vocabulary re-run against control 9, Made False rows) · breaker round(s), every finding verified · running pass (screenshots where reachable) · Progress hashes · Found items adjudicated — `27c5171c..7226d650`
 - [x] Phase 2: the same — `7226d650..cffdd681`
 - [x] Phase 3: the same — `cffdd681..a2369d4a`
-- [ ] Phase 4: the same
+- [x] Phase 4: the same — `a2369d4a..8e5a4645` (+ the icon cell's hover fill)
 
 **Landing (§Landing 1–6)**
 - [ ] Delivery Claim written below, each assertion with its evidence
