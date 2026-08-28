@@ -107,6 +107,8 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 
 **Hazard Window:** Task 5 deletes `bottomBar`'s `margin-top: auto`; FilterFrame's locked branch is un-pinned from that commit until Task 20 lands its footer slot. No running-thing pass on FilterFrame between them; Gate 1's running pass records the deferral.
 
+**Hazard Window 2:** Task 3 puts `heading` on `--row-pad-x` (6px) while the boxes it labels — `frames.optionRow` (0), `dateTimeEditor.row` (0), `groupFrame.chipRow` (8) — keep their literals until Task 7 composes them onto `rowBox`; the Options / Format / Grouping-preview headings sit 2–6px off their rows between the two commits.
+
 ---
 
 ### Phase 0 — The Tree
@@ -646,6 +648,8 @@ Every phase runs the same loop. Nothing advances on a summary; every claim is re
 - Round 1 (build-breaking-agent, 08-27): 12 findings, all verified against the code and folded — variants set vars not properties (F1, F2); `MenuItem` gains `forwardRef`, `onMouseDown`, `overlay` before NavList (F3, F8); the nav path is `detail` (F4); the four other `nav-item` files and the per-surface `--row-pad-x` (F5); `rowBox` split from `item` (F6); `heading` declares `margin: 0` and the 6/2 vertical pad (F7, F9); `allRow` stays (F9); the index renders, Settings keeps its subscriptions (F10); Task 20's control inverted (F11); Calendar's option alignment kept (F12). Cold-read fixes: the `--surface-inset` sentence, Task 8's derivation, Gate 3's export count, `nav-item`'s survivors, Task 3's StatusEditor caret, the Task 3/6 overlap on `PropertyFrame.tsx:141`.
 
 - Round 2 (build-breaking-agent, 08-27): 15 findings, all verified and folded — the TopRow's real height is 18 once its ramp is live (F1); `rowBox` takes `--row-pad-lead`/`--row-pad-trail` over `--row-pad-x` for the two asymmetric nav surfaces (F2); CardAddPicker's override rides the TopRow element (F3); the trailing cluster is flush by design and `flushTrailing` dies (F4); `wide` on the item (F5); `defaultOn` on the toggle tables (F6); Sort/Hidden render `MenuRowView` inside their drag shells (F7); `detail` caps at 55% (F8); WindowInspector's field box is not a row and leaves Task 8 (F9); `header` stays geometry (F10); `pickerControl.value` owns its tone (F11); `heading` reads `--row-pad-x` (F12); `.mdpm-ac` keeps its box (F13); counts 28 / 12 / calendar-only (F14); the inert row's tooltip on an inner span (F15). Latent: `rowDragging` declared twice — moves to the recipe in Task 1. Unknown carried into Task 1's steps: the composed `pane` under `:has()`.
+
+- Round 3 (build-breaking-agent, Phase 1 range, 08-28): 2 findings, 17 kills. F1 — `heading` on the row token a phase ahead of the boxes it labels → registered as Hazard Window 2, closed by Task 7 (zero code). F2 — `allHeading` lost the old row's `gap: 4px` and rode `rowBox`'s 8 while `topRow`/`footing` sit at 4 → composes `flushAffordance` (its `--row-pad-lead` duplicate gone). Measured on the built CSS: Standard 28 · Compact 23 · TopRow 18 · `topRowFlat` 14; every composed `globalStyle` emits one class; the Showcase's row padding is now live (it read an undefined `--row-inset` before).
 
 ### Open Against Later Tasks
 - Task 9: the "today" figures in its prose predate Task 0's tree — `.nav-search-row` already pads `var(--surface-inset)`, `.nav-item-main` pads `6px` (rows likely 28 already), gap 6; the +2 / −10 / −12 search-edge offsets are stale. Re-read Task 9 against the live tree at Phase 2's open.
