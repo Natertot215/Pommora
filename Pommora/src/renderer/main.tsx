@@ -15,7 +15,7 @@ import './styles.css'
 import './Carets.css'
 import './Sidebar/Sidebar.css'
 import './Interface/Interface.css'
-import './Interface/Banner/Banner.css'
+import './Interface/content-banner.css'
 import './Tables/table-tokens.css'
 import './Tables/Table.css'
 

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { Banner } from './Banner/Banner'
+import { Banner } from './Banner'
 import { isSurfaceKind, type BannerOwner } from './Scope'
 import { useSession } from '../store'
 import { navKey } from '../Navigation/navRecents'

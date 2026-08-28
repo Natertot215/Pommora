@@ -3,7 +3,7 @@ import type { TitleMenuAction } from '@shared/identityMenus'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { RenamableLabel, base } from '@renderer/DesignSystem/Components/Fields'
 import { cx } from '@renderer/DesignSystem/Util/cx'
-import './DetailTitleHeader.css'
+import './content-title.css'
 
 interface Props {
   title: string
