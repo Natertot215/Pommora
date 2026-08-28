@@ -5,10 +5,7 @@ import { MenuIndex } from '@renderer/DesignSystem/Menus'
 import { LINK_FORMAT_OPTIONS } from '../LinkFormat'
 import * as s from '../../Frames/frames.css'
 
-/**
- * The chosen color themes the pane's own Switches via a scoped `--accent`. The alias (a per-value
- * Rename) overrides the chosen format at render time — it's not configured here.
- */
+/** The chosen color themes the pane's own Switches via a scoped `--accent`. */
 export function URLEditor({
   underline,
   display,
