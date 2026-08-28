@@ -20,10 +20,8 @@ import { useSession } from '../store'
 import '../Navigation/navList.css'
 import './trashFrame.css'
 
-/** Identity-stable, so a tree push with no collections can't re-run the destination walk. */
 const EMPTY_COLLECTIONS: CollectionNode[] = []
 
-/** The kinds a row can be, as plurals, for a report that can say what it acted on. */
 const PLURALS: Record<TrashRow['kind'], string> = {
   page: 'pages',
   collection: 'collections',
@@ -32,8 +30,6 @@ const PLURALS: Record<TrashRow['kind'], string> = {
   context: 'contexts',
 }
 
-/** "3 pages" when every row is one kind, "3 items" when they are not — the counts carry the
- *  meaning either way. */
 export function countPhrase(rows: TrashRow[]): string {
   const kinds = new Set(rows.map((r) => r.kind))
   const kind = kinds.size === 1 ? [...kinds][0] : null
@@ -41,14 +37,11 @@ export function countPhrase(rows: TrashRow[]): string {
   return `${rows.length} ${kind === null ? 'items' : PLURALS[kind]}`
 }
 
-/** A row an op refused, carrying the reason main gave for it. */
 interface Refusal {
   row: TrashRow
   why: string
 }
 
-/** Rows whose title or location answers the query, best first. Empty query keeps the list whole and
- *  in the order main sent it, which is newest first. */
 export function filterRows(rows: TrashRow[], query: string): TrashRow[] {
   const q = query.trim().toLowerCase()
   if (!q) return rows
@@ -66,9 +59,6 @@ export function filterRows(rows: TrashRow[], query: string): TrashRow[] {
 
 export function TrashFrame(): React.JSX.Element {
   const nexusClock = useSession((s) => s.personalization.timeFormat ?? DEFAULT_TIME_FORMAT)
-  // A deleted entity carries no column configuration to read a format from, so this column carries
-  // its own — chosen from its heading's menu and kept in personalization. Unchosen, it takes the
-  // same default a date column takes, computed through the same seam so the two cannot disagree.
   const nexusDateFormat = useSession((s) => s.personalization.dateFormat)
   const columnDefault: DateFormat =
     defaultStyleFor('datetime', undefined, nexusDateFormat).date_format ?? 'full'
@@ -85,9 +75,6 @@ export function TrashFrame(): React.JSX.Element {
   const [query, setQuery] = useState('')
   const [checked, setChecked] = useState<ReadonlySet<string>>(new Set())
 
-  // `.trash` is excluded from the watcher by design, so nothing is ever pushed: the list is asked
-  // for on open and again after every action this frame takes. A deletion made elsewhere while it
-  // is open leaves the list behind until it is reopened.
   const refresh = useCallback(async (): Promise<void> => {
     const res = await window.nexus.listTrash()
     if (!res.ok) {
@@ -115,15 +102,10 @@ export function TrashFrame(): React.JSX.Element {
       return next
     })
 
-  /** A single action rides the store's mutate: its refetch is what makes a restored entity
-   *  reachable without reloading the nexus, and its failure already reaches the user natively. */
   const one = async (req: MutateRequest): Promise<void> => {
     if (await mutate(req)) await refresh()
   }
 
-  /** A batch calls the channel directly. `store.mutate` re-walks the whole nexus after a restore,
-   *  so five restores would pay five whole-tree reads; this pays one at the end. What it gives up
-   *  is that action's free error dialog, so the report carries both halves itself. */
   const many = async (
     targets: TrashRow[],
     req: (row: TrashRow) => MutateRequest,
@@ -134,28 +116,20 @@ export function TrashFrame(): React.JSX.Element {
     for (const row of targets) {
       const res = await window.nexus.mutate(req(row))
       if (res.ok) done.push(row)
-      // Main already worked out why, and it is the only thing that can say so — a batch gave up
-      // that action's error dialog, so it carries the reason itself rather than guessing one.
       else refused.push({ row, why: res.error.message })
     }
-    // One refresh for the whole batch, and none at all when nothing landed.
     if (done.length > 0 && reloads) await load()
     await refresh()
     return { done, refused }
   }
 
   const restoreBatch = async (targets: TrashRow[]): Promise<void> => {
-    // A homeless member keeps its row and is named in the count; each is then answered through the
-    // picker it already has. A batch is a convenience over the single action, never a second one.
     const addressable = targets.filter((r) => r.homeResolves)
     const { done, refused } = await many(
       addressable,
       (row) => ({ op: 'restore', bundlePath: row.bundlePath }),
       true,
     )
-    // Two different populations, and only one of them is answered by choosing a destination: a
-    // homeless row was never attempted and its picker is waiting, where a refused one was attempted
-    // and main said why. Reporting them as one would send a user to a menu that cannot help.
     const homeless = targets.filter((r) => !r.homeResolves)
     void window.nexus.reportTrash(
       `Restored ${countPhrase(done)}.`,
@@ -171,7 +145,6 @@ export function TrashFrame(): React.JSX.Element {
 
   const emptyBatch = async (targets: TrashRow[]): Promise<void> => {
     if (!(await window.nexus.confirmEmptyTrash(targets.length))) return
-    // Emptying happens wholly inside `.trash`, which the tree does not see.
     const { done, refused } = await many(
       targets,
       (row) => ({ op: 'emptyBundle', bundlePath: row.bundlePath }),
@@ -185,13 +158,10 @@ export function TrashFrame(): React.JSX.Element {
     )
   }
 
-  /** The date column configures itself from its own heading — there is no view here to hold a
-   *  column style, so the two choices live in personalization beside the rest of the nexus's. */
   const openColumnMenu = async (): Promise<void> => {
     const action = await window.nexus.trashColumnMenu({ format: dateFormat, timeShown })
     if (!action) return
     if (action.kind === 'toggleTime')
-      // The default stores no key, which is the clean-file rule every other knob follows.
       setPersonalization('trashHideTime', timeShown ? true : undefined)
     else
       setPersonalization(
@@ -250,8 +220,6 @@ export function TrashFrame(): React.JSX.Element {
           className={text.body.standard}
           value={query}
           onValueChange={setQuery}
-          // Escape belongs to the field while it holds a query; the window's own listener stands
-          // down on a handled press, so clearing never also closes.
           onKeyDown={(e) => {
             if (e.key === 'Escape' && query) {
               e.preventDefault()
@@ -319,8 +287,6 @@ export function TrashFrame(): React.JSX.Element {
   )
 }
 
-/** A row wears its KIND's glyph rather than any icon the entity was decorated with, so what a row
- *  *is* can never be mistaken for how it was dressed. */
 function TrashRowView({
   row,
   checked,

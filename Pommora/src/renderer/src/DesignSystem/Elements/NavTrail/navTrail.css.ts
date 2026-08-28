@@ -26,8 +26,6 @@ export const segment = style({
   display: 'inline-flex',
   alignItems: 'center',
   gap: '4px',
-  // A segment never shrinks: the run overflows its cap as one row and the cap clips and fades it,
-  // rather than each segment squeezing onto the next.
   flexShrink: 0,
   selectors: {
     'button&:hover': { color: c.label.secondary },

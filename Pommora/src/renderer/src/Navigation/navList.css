@@ -1,5 +1,3 @@
-/* The search row every list-bearing surface wears: its divider sits on --navwindow-inset and its text
-   on the rows' icon edge. Border and outline are SearchField's. */
 .nav-search-row {
   display: flex;
   align-items: center;

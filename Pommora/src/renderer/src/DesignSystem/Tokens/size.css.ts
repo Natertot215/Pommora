@@ -1,8 +1,5 @@
 import { createGlobalTheme } from '@vanilla-extract/css'
 
-/** The glyph ladder as bare numbers — the one place the pixel values live. Consumers that set a
- *  font-size read the vars below; the few that size an element (a profile photo's width/height)
- *  read these. */
 export const ICON_PX = {
   largeTitle: 26,
   title1: 22,
@@ -17,15 +14,12 @@ export const ICON_PX = {
   subline: 10,
 } as const
 
-// The glyph ladder — its own theme so the control bundles can point at its vars.
 const iconScale = createGlobalTheme(':root', {
   icon: Object.fromEntries(Object.entries(ICON_PX).map(([k, v]) => [k, `${v}px`])) as {
     [K in keyof typeof ICON_PX]: string
   },
 })
 
-// Per-component size aliases. Keyed `button-*` so a call site reads `size="button-large"`;
-// `icon` references the ladder above (DRY linkage). Large is exact from Figma.
 const controlScale = createGlobalTheme(':root', {
   control: {
     'button-inline': {
@@ -71,23 +65,14 @@ const controlScale = createGlobalTheme(':root', {
   },
 })
 
-/** The one per-level inset every disclosure hierarchy steps by — the sidebar tree, table group
- *  nesting, and pane disclosure runs all derive from this single literal (theme-vars bridges it
- *  to `--disclosure-indent` for plain CSS).*/
 export const DISCLOSURE_INDENT = 14
 
-/** The shared left lane the fold chevron + block grips render in — one lane width agreed on by the
- *  editor, table views, block tiles, and embeds (theme-vars bridges it to `--rail-inset`; embeds
- *  override with the same base scaled by `--mdpm-scale`). */
 export const RAIL_INSET = 20
 
-/** Px an insertion line is pulled in from its surface's edges — the third dimension of the
- *  drop-line primitive (`--drop-line-thickness` / `--drop-dot-size` carry the other two). */
 export const DROP_LINE_INSET = 2
 
-/** The floor a resizable tile is never dragged below, on either axis — SurfacePM's blocks and
- *  MarkdownPM's embedded page tiles agree on one minimum, so a tile bottoms out the same wherever
- *  it can be grabbed. */
+/** SurfacePM's blocks and MarkdownPM's embedded page tiles agree on this one minimum, so a
+ *  resizable tile bottoms out the same wherever it can be grabbed. */
 export const TILE_MIN_PX = 64
 
 /** KNOB — the height a resizable tile reports and occupies before a persisted one exists.*/
@@ -105,14 +90,11 @@ export const LIST_OUTLINE_WIDTH = 2
 export const LIST_OUTLINE_GAP = 3
 export const PARK_CLEARANCE = 14
 
-/** One token object: `size.icon.control`, `size.control['button-large'].height`, … */
 export const size = {
   icon: iconScale.icon,
   control: controlScale.control,
 }
 
-/** Icon-ladder step names — the values `<Icon size="…" />` accepts. */
 export type IconSize = keyof typeof size.icon
 
-/** Button size aliases — the values a segmented control's `size` prop accepts. */
 export type ButtonSize = keyof typeof size.control

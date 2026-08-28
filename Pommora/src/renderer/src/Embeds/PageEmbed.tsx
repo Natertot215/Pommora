@@ -17,9 +17,6 @@ import { ancestryOf } from '../treeIndex'
 import './embeds.css'
 import { embedZoom } from '@shared/types'
 
-// Entering edit reconfigures the SAME CM6 view's editability — no remount, no jitter.
-
-/** What the tile keeps of a page. `body: null` is a failed open, never an empty page. */
 interface EmbedEntry {
   path: string
   body: string | null
@@ -55,26 +52,12 @@ export function PageEmbed({
   onBeginEdit: () => void
   connections?: ConnectionsApi
   locked?: boolean
-  /** The floating window counts its footer from the body this reports. */
   onBody?: (body: string) => void
-  /** A restored entry mounts synchronously (its doc IS the body — no fetch/blank frame); capture
-   *  fires at unmount. Block tiles ride the session tile cache (tileWarm), keyed by host chain. */
   warm?: WarmSeam
-  /** The embed-host chain above this page, cycle guard + nesting depth for the tiles inside it —
-   *  this embed appends its own path before handing down. Absent = a top-level embed host. */
   ancestors?: readonly string[]
-  /** 'page' renders the page-follows header rule: the banner with its static title when the page
-   *  has a cover, the centered hover breadcrumb otherwise. Hosts that carry the location
-   *  themselves (the preview's title, a SurfacePM tile's handle menu) stay 'none'. */
   chrome?: 'none' | 'page'
 }): React.JSX.Element {
-  // Bound to the path it was loaded FOR — an un-keyed host re-aiming `path` blanks and refetches
-  // exactly as a fresh mount would. A failed open is NOT an empty page: body stays null and the
-  // render shows the inert fallback.
   const [loaded, setLoaded] = useState<EmbedEntry | null>(() => {
-    // The path-keyed slot rehydrates a scrolled-back tile — no IPC round-trip, no blank frame,
-    // and its body is write-through-fresh from any host's pending edit. A warm doc overlays the
-    // slot's metadata (id, title, cover): the seam serializes editor state.
     const doc = (warm?.restore()?.editorState as { doc?: unknown } | undefined)?.doc
     const cached = readPageDetail(path)
     const slot = cached ? entryFrom(path, cached) : null
@@ -103,8 +86,6 @@ export function PageEmbed({
     }
   }, [path, entry])
 
-  // Writes are keyed to the path they were scheduled under (pageFlush) — a host re-aiming `path`
-  // can never land the old page's body on the new one.
   useEffect(() => {
     if (!editing) void flushPageSave(path)
     return () => void flushPageSave(path)
@@ -137,9 +118,7 @@ export function PageEmbed({
       className={`pgembed${editing ? ' is-editing' : ''}${chrome === 'page' && entry?.cover ? ' has-banner' : ''}`}
       style={{ '--mdpm-scale': embedScale, '--editor-scale': 1 } as React.CSSProperties}
       onClick={(e) => {
-        if (editing || locked) return // locked: no edit entry; selection still works
-        // The banner band is chrome with its own menu — a stray click on it must not put the
-        // caret one keystroke away from the embedded page's first line.
+        if (editing || locked) return
         if ((e.target as HTMLElement).closest?.('.mdpm-banner')) return
         const sel = window.getSelection()
         if (sel && !sel.isCollapsed) return
@@ -167,8 +146,6 @@ export function PageEmbed({
   )
 }
 
-/** The page's own banner with its title as static text — display-only chrome. The banner band keeps
- *  its change/remove context menu (the page-surface control); rename and add-banner stay behind. */
 function EmbedBanner({
   path,
   title,
@@ -218,8 +195,6 @@ function EmbedBanner({
   )
 }
 
-/** The coverless header: where the page lives, revealed on tile hover — Collection › Set › Page on
- *  the shared two-tone treatment. */
 function EmbedCrumbs({ id }: { id: string }): React.JSX.Element | null {
   const tree = useSession((s) => s.tree)
   const trail = tree && ancestryOf(tree, { kind: 'page', id })
