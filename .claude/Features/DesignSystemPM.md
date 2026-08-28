@@ -49,7 +49,7 @@ The Pommora design system — the code mirror of the Figma "Pommora - React" lib
 
 #### Primitives
 
-**SOURCE:** `Tokens/color.css.ts` · `Pommora/src/shared/theme.ts`
+**SOURCE:** `Pommora/src/renderer/DesignSystem/Tokens/color.css.ts` · `Pommora/src/shared/theme.ts`
 
 | Title             | Token                               | Value     |
 | ----------------- | ----------------------------------- | --------- |
@@ -100,7 +100,9 @@ Hover and selected paint behind content, muted over it; the three opacities are 
 
 #### Tints
 
-**SOURCE:** `Tokens/tint.ts` — `tintAt(base, step)` mixes a base toward transparent; `mixAt` toward anything. A consumer names a step rather than its percentage, and the mix reaches CSS carrying the step's var, so the ladder stays live: retuning a step here re-tints every surface that names it. 
+**SOURCE:** `Pommora/src/renderer/DesignSystem/Tokens/tint.ts`
+
+`tintAt(base, step)` mixes a base toward transparent; `mixAt` toward anything. A consumer names a step rather than its percentage, and the mix reaches CSS carrying the step's var, so the ladder stays live: retuning a step here re-tints every surface that names it. 
 
 | Title           | Token                                         | Value |
 | --------------- | --------------------------------------------- | ----- |
@@ -147,7 +149,9 @@ The over-scroll edge-dissolve widths a scrollable surface names on `--over-scrol
 
 #### Spectrum
 
-**SOURCE:** `Pommora/src/shared/theme.ts` — authored once, validated by main and renderer alike; the accent resolves from it (or the OS accent) at runtime. `DEFAULT_ACCENT` sits in `shared/types.ts`.
+**SOURCE:** `Pommora/src/shared/theme.ts` · `Pommora/src/shared/types.ts`
+
+Authored once, validated by main and renderer alike; the accent resolves from it (or the OS accent) at runtime. `DEFAULT_ACCENT` sits in `shared/types.ts`.
 
 | Title             | Token                                       | Value                                      |
 | ----------------- | ------------------------------------------- | ------------------------------------------ |
@@ -173,7 +177,9 @@ The over-scroll edge-dissolve widths a scrollable surface names on `--over-scrol
 
 #### Ramp
 
-**SOURCE:** `Tokens/ramp.ts` — eight families × eight steps, dark to light, each spectrum solid seated on an exact cell. The three constants below are the file's own, not exports; the ramp is read through `cellColor` / `cellPaint` / `cellRing`.
+**SOURCE:** `Pommora/src/renderer/DesignSystem/Tokens/ramp.ts`
+
+Eight families × eight steps, dark to light, each spectrum solid seated on an exact cell. The three constants below are the file's own, not exports; the ramp is read through `cellColor` / `cellPaint` / `cellRing`.
 
 | Title         | Token           | Value                                                  |
 | ------------- | --------------- | ------------------------------------------------------ |
@@ -183,7 +189,7 @@ The over-scroll edge-dissolve widths a scrollable surface names on `--over-scrol
 
 #### Geometry
 
-**SOURCE:** `Tokens/size.css.ts`
+**SOURCE:** `Pommora/src/renderer/DesignSystem/Tokens/size.css.ts` · `Pommora/src/renderer/styles.css` · `Pommora/src/renderer/DesignSystem/Menus/menu-base.css.ts`
 
 | Title             | Token                                          | Value                                                             |
 | ----------------- | ---------------------------------------------- | ----------------------------------------------------------------- |
@@ -208,7 +214,9 @@ The over-scroll edge-dissolve widths a scrollable surface names on `--over-scrol
 
 #### Typography
 
-**SOURCE:** `Tokens/typography.css.ts` — Inter, variable. `text.<style>.<variant>` composes size and line height from the style with weight from the variant: Standard `400` · Emphasized `500` · Semibold `600` · Bold `700`, tracking pinned to `0`. The body-and-down sizes follow the macOS AppKit scale drawn in Inter; the container-title family (`titleLarge`/`Medium`/`Small`) is Pommora's own. **Control** and **Subline** are renamed for what they drive here.
+**SOURCE:** `Pommora/src/renderer/DesignSystem/Tokens/typography.css.ts`
+
+Inter, variable. `text.<style>.<variant>` composes size and line height from the style with weight from the variant: Standard `400` · Emphasized `500` · Semibold `600` · Bold `700`, tracking pinned to `0`. The body-and-down sizes follow the macOS AppKit scale drawn in Inter; the container-title family (`titleLarge`/`Medium`/`Small`) is Pommora's own. **Control** and **Subline** are renamed for what they drive here.
 
 | Style       | Token             | Size / Line     | Character                                            |
 | ----------- | ----------------- | --------------- | ---------------------------------------------------- |

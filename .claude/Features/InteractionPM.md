@@ -76,7 +76,7 @@ One text-insertion identity for the whole app: every CodeMirror surface mounts t
 
 The overflow-fade mechanism behind every capped label: a label truncates at rest and scrolls under the pointer to reveal its full text, its hidden edge fading into the surface. Three registered properties, two axis classes, and three modifiers; `--over-scroll-fade` is non-inheriting, so the knob sits on the element carrying the class. An axis class carries the fade, `over-scroll-cap` adds a capped-label box beneath it, and a label that can't hover itself takes the scrolled state from an ancestor with `over-scroll-host`.
 
-**SOURCE:** `Pommora/src/renderer/DesignSystem/Interactions/OverScroll/`
+**SOURCE:** `Pommora/src/renderer/DesignSystem/Interactions/OverScroll/OverScroll.tsx` · `Pommora/src/renderer/DesignSystem/Interactions/OverScroll/overScroll.css`
 
 | Title | Token | Value |
 | --- | --- | --- |
@@ -90,7 +90,7 @@ The overflow-fade mechanism behind every capped label: a label truncates at rest
 
 The hover-revealed remove ×, with the label-tail melt as an option: hovering a chip's right third reveals the × while the label's tail blurs into the fill beneath it.
 
-**SOURCE:** `Pommora/src/renderer/DesignSystem/Interactions/HoverRemove/`
+**SOURCE:** `Pommora/src/renderer/DesignSystem/Interactions/HoverRemove/HoverRemove.tsx` · `Pommora/src/renderer/DesignSystem/Interactions/HoverRemove/hoverRemove.css.ts`
 
 | Title | Token | Value |
 | --- | --- | --- |
