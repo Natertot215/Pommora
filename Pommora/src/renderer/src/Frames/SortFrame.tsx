@@ -2,7 +2,7 @@ import type { CollectionNode, SetNode } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
 import { RESERVED_PROPERTY_ID } from '@shared/properties'
 import { LOCATION_SORT, type SavedView, type SortCriterion } from '@shared/views'
-import { MenuRowView, MenuTopRow, MenuSeparator } from '@renderer/DesignSystem/Menus'
+import { MenuRowView, MenuTopRow, MenuSeparator, type MenuRow } from '@renderer/DesignSystem/Menus'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { useSaveView } from '@renderer/Embeds/ViewEmbedScope'
 import { declaredType } from '@renderer/Properties/value'
@@ -36,6 +36,10 @@ const CUSTOM_OPTION_DIRECTIONS: PickerChoice<OrderChoice>[] = [
   ...OPTION_DIRECTIONS,
   { value: 'custom', label: 'Custom' },
 ]
+const LOCATION_ORDERS: PickerChoice<'location' | 'custom'>[] = [
+  { value: 'location', label: 'Location' },
+  { value: 'custom', label: 'Custom' },
+]
 const VALUE_DIRECTIONS: PickerChoice<Direction>[] = [
   { value: 'ascending', label: 'Ascending' },
   { value: 'descending', label: 'Descending' },
@@ -63,6 +67,21 @@ function directionOptions(
       return VALUE_DIRECTIONS
   }
 }
+
+const pickerRow = <T extends string>(
+  glyph: string,
+  label: string,
+  value: T,
+  options: readonly PickerChoice<T>[],
+  onPick: (v: T) => void,
+  sub = false,
+): MenuRow => ({
+  kind: 'item',
+  icon: <Icon name={glyph} size="body" />,
+  label: sub ? <span className={gp.subLabel}>{label}</span> : label,
+  trailing: { kind: 'picker', ariaLabel: label, value, options, onPick },
+  className: sub ? gp.subRow : undefined,
+})
 
 interface SortTarget {
   id: string
@@ -164,94 +183,65 @@ export function SortFrame({
     <>
       <MenuTopRow label={label} current="Sorting" onBack={onBack} />
       <MenuRowView
-        row={{
-          kind: 'item',
-          icon: <Icon name="arrow-up-down" size="body" />,
-          label: 'Sort By',
-          trailing: {
-            kind: 'picker',
-            ariaLabel: 'Sort By',
-            value: primary?.property_id ?? '_none',
-            options: sortByOptions,
-            onPick: (v) => pickPrimary(v === '_none' ? null : v),
-          },
-        }}
+        row={pickerRow(
+          'arrow-up-down',
+          'Sort By',
+          primary?.property_id ?? '_none',
+          sortByOptions,
+          (v) => pickPrimary(v === '_none' ? null : v),
+        )}
       />
       {primary && (
         <>
           {primary.property_id === LOCATION_SORT ? (
             <MenuRowView
-              row={{
-                kind: 'item',
-                icon: <Icon name="folder" size="body" />,
-                label: sub ? <span className={gp.subLabel}>Order</span> : 'Order',
-                trailing: {
-                  kind: 'picker',
-                  ariaLabel: 'Order',
-                  value: view.location_order_mode ?? 'location',
-                  options: [
-                    { value: 'location', label: 'Location' },
-                    { value: 'custom', label: 'Custom' },
-                  ],
-                  onPick: (v: 'location' | 'custom') =>
-                    void saveView({ ...view, location_order_mode: v }),
-                },
-                className: sub ? gp.subRow : undefined,
-              }}
+              row={pickerRow(
+                'folder',
+                'Order',
+                view.location_order_mode ?? 'location',
+                LOCATION_ORDERS,
+                (v) => void saveView({ ...view, location_order_mode: v }),
+                Boolean(sub),
+              )}
             />
           ) : (
             <MenuRowView
-              row={{
-                kind: 'item',
-                icon: <Icon name="arrow-down-up" size="body" />,
-                label: sub ? <span className={gp.subLabel}>Order</span> : 'Order',
-                trailing: {
-                  kind: 'picker',
-                  ariaLabel: 'Order',
-                  value: finiteDef && primary.order ? 'custom' : primary.direction,
-                  options: finiteDef
-                    ? CUSTOM_OPTION_DIRECTIONS
-                    : directionOptions(primary.property_id, schema),
-                  onPick: (v: OrderChoice) =>
-                    savePrimary(
-                      v === 'custom'
-                        ? { ...primary, order: seededOrder() }
-                        : { property_id: primary.property_id, direction: v },
-                    ),
-                },
-                className: sub ? gp.subRow : undefined,
-              }}
+              row={pickerRow(
+                'arrow-down-up',
+                'Order',
+                finiteDef && primary.order ? 'custom' : primary.direction,
+                finiteDef
+                  ? CUSTOM_OPTION_DIRECTIONS
+                  : directionOptions(primary.property_id, schema),
+                (v: OrderChoice) =>
+                  savePrimary(
+                    v === 'custom'
+                      ? { ...primary, order: seededOrder() }
+                      : { property_id: primary.property_id, direction: v },
+                  ),
+                Boolean(sub),
+              )}
             />
           )}
           <MenuRowView
-            row={{
-              kind: 'item',
-              icon: <Icon name="arrow-up-down" size="body" />,
-              label: 'Sub-Sort',
-              trailing: {
-                kind: 'picker',
-                ariaLabel: 'Sub-Sort',
-                value: sub?.property_id ?? '_none',
-                options: subOptions,
-                onPick: (v) => pickSub(v === '_none' ? null : v),
-              },
-            }}
+            row={pickerRow(
+              'arrow-up-down',
+              'Sub-Sort',
+              sub?.property_id ?? '_none',
+              subOptions,
+              (v) => pickSub(v === '_none' ? null : v),
+            )}
           />
           {sub && (
             <MenuRowView
-              row={{
-                kind: 'item',
-                icon: <Icon name="arrow-down-up" size="body" />,
-                label: <span className={gp.subLabel}>Order</span>,
-                trailing: {
-                  kind: 'picker',
-                  ariaLabel: 'Order',
-                  value: sub.direction,
-                  options: directionOptions(sub.property_id, schema),
-                  onPick: (d: Direction) => save([primary, { ...sub, direction: d }]),
-                },
-                className: gp.subRow,
-              }}
+              row={pickerRow(
+                'arrow-down-up',
+                'Order',
+                sub.direction,
+                directionOptions(sub.property_id, schema),
+                (d) => save([primary, { ...sub, direction: d }]),
+                true,
+              )}
             />
           )}
           {finiteDef && (
