@@ -37,14 +37,7 @@ for (const doc of readdirSync(featuresDir).filter((f) => f.endsWith('.md'))) {
       .map((s) => {
         if (existsSync(join(repoRoot, s))) return readFileSync(join(repoRoot, s), 'utf8')
         if (base) {
-          const guess = join(
-            repoRoot,
-            base.split('/src/')[0],
-            'src',
-            'renderer',
-            'DesignSystem',
-            s,
-          )
+          const guess = join(repoRoot, base.split('/src/')[0], 'src', 'renderer', 'DesignSystem', s)
           if (existsSync(guess)) {
             missingFiles.splice(missingFiles.indexOf(s), 1)
             return readFileSync(guess, 'utf8')
@@ -77,7 +70,11 @@ for (const doc of readdirSync(featuresDir).filter((f) => f.endsWith('.md'))) {
           const quoted = name.match(/\['([^']+)'\]/)
           const probe = quoted ? quoted[1] : name.includes('.') ? name.split('.').pop() : name
           const haystack = name.startsWith('--') ? text + bridgeText : text
-          if (probe.length > 2 && !haystack.includes(probe))
+          const generated =
+            probe.startsWith('--') &&
+            haystack.includes(probe.replace(/-([a-z]+)$/, '-${')) &&
+            haystack.includes(probe.slice(probe.lastIndexOf('-') + 1))
+          if (probe.length > 2 && !haystack.includes(probe) && !generated)
             problems.push(`token not in source: ${name}`)
         }
       }
