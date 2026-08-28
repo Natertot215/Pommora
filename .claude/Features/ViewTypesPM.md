@@ -117,7 +117,7 @@ The table's design vocabulary is a whole-file token sheet scoped to `.table`, th
 | Loose-Row Inset | `--loose-inset` | `8px` |
 | Hairline | `--table-border-width` / `--table-border` | → `var(--width-125)` / composed on `--border-base` |
 | Active Cell Radius | `--cell-active-radius` | `4px` |
-| Heading | `--heading-fill` / `--heading-text` / `--heading-divider` | → fill-quinary / label-control / `width-175` on `border-base` (host-bound) |
+| Heading | `--heading-fill` / `--heading-divider` | → fill-quinary / `width-175` on `border-base` (host-bound); heading text is `callout` · emphasized at `label-secondary`, set on `.table-head` |
 | Heading Segment | `--heading-segment` / `-height` / `-width` / `--segment-tone` | → border-light / `16px` / `width-150` / a `.table-segment`'s own tone |
 | Heading Padding | `--heading-padding-y` | `8px` |
 | Band Clearance | `--band-clearance` | → `var(--cell-padding-y)` (the seam rule's input) |
