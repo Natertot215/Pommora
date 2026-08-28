@@ -23,7 +23,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 8. Every `PickerMenu` is Compact — every row inside, `PickerOption` and `MenuItem` alike; `option` keeps only its selection machinery.
 9. `NavList` renders `MenuItem` rows on the menu column; `navList.css` holds no row box; NavWindow, NavView, and Trash are Standard.
 10. `AutocompletePane` rows are `item` under a `menuCompact` pane; the Cohesion ruling that exempted them is removed.
-11. The trailing slot is one place: `chevron` · `value` + toggle · `switch` · `button` · `slider` · `field`; `detail` stays a separate passive text.
+11. The trailing slot is one place: `chevron` · `value` + `toggle` · `switch` · `button` · `slider` · `field`; `detail` stays a separate passive text.
 12. `frames.css.ts` retains only geometry, drag-chrome, and index exports; the 12 restating exports are gone.
 13. `Frames/frames.css.ts` `COLOR` and the frame-local heading/tone consts are gone.
 14. The search field in NavWindow, Trash, and NavView starts on the same left edge as its rows' icons; NavView's rows sit on the content edge its search, banner title, and subfield share.

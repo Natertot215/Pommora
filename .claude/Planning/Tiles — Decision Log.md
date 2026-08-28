@@ -59,7 +59,7 @@
 ### Core (must-have)
 - `Tiles/` on disk holding the chassis, PageEmbed, WebpageEmbed, the plumbing, the dashboard-only content, and BlockSurface; `Blocks/` and `Embeds/` gone; `ViewEmbedScope` in `Views/`.
 - One `TileEditor` shell over one `TileWriter`; `PageEmbedBlock` gone; one `tiles.css`; `tile-title.css` beside it.
-- Gates green; net code LOC below the 2565 baseline; SurfacePM.md, MarkdownPM.md, ArchitecturePM.md, InterfacePM.md, WebviewPM.md, the CLAUDE.md map, RendererRefactor.md, and RendererAtlas.md name the tree on disk.
+- Gates green; net code LOC below the 2699 gate (the 2565 baseline plus the three inbound movers); SurfacePM.md, MarkdownPM.md, ArchitecturePM.md, InterfacePM.md, WebviewPM.md, the CLAUDE.md map, RendererRefactor.md, and RendererAtlas.md name the tree on disk.
 
 #### Prospects (allowed later, not now)
 

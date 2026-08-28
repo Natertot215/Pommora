@@ -1,6 +1,6 @@
 ## Tiles — Implementation Plan
 
-> **Status:** written, pending review · Spec: [[Tiles — Decision Log]] · Execute tasks in order.
+> **Status:** reviewed — two attack rounds, findings folded; pending Nathan's approval and the D-6 ruling · Spec: [[Tiles — Decision Log]] · Execute tasks in order.
 > Citations name files and symbols; re-derive before editing. Execution starts only after the Menu Recipe lands on `main` (A-7).
 
 **Goal**
@@ -99,9 +99,10 @@ Bounded by: no change to how a tile looks or behaves beyond the writer's flush g
 | `ContextPM.md` :17 :19 | the `Tiles/` row; `Blocks/ViewEmbedBlock.tsx:88` | row lands; the site is `Tiles/ViewEmbedBlock.tsx:78` and Task 4 closes it | 8, 15 |
 | `RendererRefactor.md` :14 :33 :35 :40 :58 | `DesignSystem/Detail` line; `→ Components/ as NexusIconPicker`; the `Tiles/` row; "wrappers in `Components/`"; `Blocks/ViewEmbedBlock.tsx:88` | satisfied; `Utilities/`; row leaves; `Utilities/`; fixed in Task 4 (the site was `:78`) | 8, 15 |
 | `RendererAtlas.md` :37 :39 :64-73 :88 :105-110 :127 :139 :193 | `Embeds/ViewEmbedScope`; lateral edges by folder; root `Components/` rows; `// Embeds` row; MOVED rows; "keeps `Components/`"; "Four folder names mislead"; `Blocks/ViewEmbedBlock.tsx:88` | tree on disk; `Utilities/`; rows become present tense | 8, 15 |
-| `Planning/MenuRecipe.md` :298 :355 | `Blocks/handleMenu.css.ts`, `Blocks/viewEmbed.css.ts`, `Blocks/BlockHandleMenu.tsx` | `Tiles/` — rewritten only if the recipe is still open at Task 8; else a landed plan is history | 8 |
+| `Planning/MenuRecipe.md` :298 :355 :391 | `Blocks/…`, `Embeds/PageEmbed.tsx` | a landed plan is history — allowlisted, not rewritten | — |
+| `Planning/RendererAtlas.md` :308 :310 | the Settled rows naming `Embeds/` and `Blocks/` | history, correct as written — allowlisted | — |
 | `Planning/Inline Page Properties — Decision Log.md` :32 | "`PageEmbed` and `MarkdownBlock` pass neither" | both still exist as components; `TileEditor` is beneath them — verify-only | 13 |
-| `HandoffPM.md` :33 | "rides whichever session touches `Blocks/` first" | Task 4 takes it | 4 |
+| `HandoffPM.md` :33 | "rides whichever session touches `Blocks/` first" | Task 4 takes it; the line is rewritten in Task 4's second commit | 4 |
 
 **Dead Vocabulary**
 
@@ -196,7 +197,7 @@ Base: the Menu Recipe's final commit. Baseline invariant carried through every t
 **Steps:**
 - [ ] Inline the render; delete the file; `rg -F "PageEmbedBlock" src` → 0.
 - [ ] Gates → 0. Commit: `refactor(tiles): BlockSurface renders PageEmbed directly`
-- [ ] `cellRing(key)`; gates → 0; run the app on a dashboard holding a view tile assigned a grey cell — the outline draws in the grey step. Commit: `fix(tiles): a grey-celled view tile draws its ramp outline`
+- [ ] `cellRing(key)`; `HandoffPM.md:33` restated as done; gates → 0; run the app on a dashboard holding a view tile assigned a grey cell — the outline draws in the grey step. Commit: `fix(tiles): a grey-celled view tile draws its ramp outline`
 
 #### Task 5: withdrawn
 
@@ -209,7 +210,7 @@ Base: the Menu Recipe's final commit. Baseline invariant carried through every t
 **Why:** `blocks.css` and `embeds.css` already share `:is(.blk-md, .pgembed)` selectors and describe one scroll model in two files. The identity label's rules get their own file so the ContextPM open call has one place to pull from. Class names are a cross-folder contract and do not change.
 
 **Files:**
-- Create: `Tiles/tile-title.css` — the whole identity cluster: `embeds.css:109-124` (the shared geometry and the hover reveal for `.pgembed-crumbs` and `.wpembed-title`) followed by `:161-172` (the `.wpembed-title` override and its hover rule), in that order, comments verbatim.
+- Create: `Tiles/tile-title.css` — the whole identity cluster: `embeds.css:107-124` (the comment, the shared geometry, and the hover reveal for `.pgembed-crumbs` and `.wpembed-title`) followed by `:160-172` (the comment, the `.wpembed-title` override, and its hover rule), in that order, comments verbatim. Both ranges open on a comment line; `npm run lint` parses the result.
 - Create: `Tiles/tiles.css` — `blocks.css` whole, then `embeds.css` minus the two ranges above.
 - Delete: `Tiles/blocks.css`, `Tiles/embeds.css`.
 - Modify: `Tiles/BlockSurface.tsx:41`, `Tiles/PageEmbed.tsx:19`, `Tiles/WebpageEmbed.tsx:19` → `import './tiles.css'`; `PageEmbed.tsx` **and** `WebpageEmbed.tsx` also `import './tile-title.css'` — they are separate lazy chunks (`embedWidget.tsx:106,357`), and a webpage tile mounted first must not render an unpositioned title.
@@ -243,7 +244,7 @@ Base: the Menu Recipe's final commit. Baseline invariant carried through every t
 **Files:** per the Made False table — `CLAUDE.md` (drop the four rows, add `// Tiles | • The tile world — chassis, the four content kinds, their plumbing, the dashboard host` and `// Utilities | • App-bound helpers — the entity icon, the renamable title, the nexus icon`), `SurfacePM.md`, `MarkdownPM.md`, `WebviewPM.md`, `DesignSystemPM.md` (the `Detail` tier removed from the tree at :27 and the section at :375-381; the chassis row moves under wherever DesignSystemPM lists app-owned surfaces by reference, or is dropped with a one-line note that the chassis lives in `Tiles/`), `Cohesion-Rulings.md:117`, `ContextPM.md:17,19`, `RendererRefactor.md` (:14 line satisfied → removed; :33 `Components/` → `Utilities/`; :35 row leaves; :40 `Utilities/`; :58 path), `RendererAtlas.md` (tree rows to present tense, root `Components` → `Utilities`, `// Embeds` row gone, :37 :39 :139 :193 restated as current), `MenuRecipe.md` if still open, `HandoffPM.md:33`.
 
 **Steps:**
-- [ ] Rewrite each; `rg -F "Blocks/" .claude --glob '!**/HistoryPM.md' --glob '!**/Sessions/**' --glob '!**/Tiles*'` → 0; same for `Embeds/` (allowing the decision log's history), `DesignSystem/Detail`, `@renderer/Components`.
+- [ ] Rewrite each; `rg -F "Blocks/" .claude --glob '!**/HistoryPM.md' --glob '!**/Sessions/**' --glob '!**/Tiles*' --glob '!**/MenuRecipe.md'` → the Settled rows in `RendererAtlas.md` only (history, correct as written); same for `Embeds/`, `DesignSystem/Detail`, `@renderer/Components`. A landed plan (`MenuRecipe.md`) is history and is never rewritten.
 - [ ] Commit: `docs(tiles): the tree on disk`
 
 #### Gate 1 — the tree on disk, behavior unmoved
@@ -300,7 +301,7 @@ Base: the Menu Recipe's final commit. Baseline invariant carried through every t
 
 **Files:**
 - Modify: `Tiles/MarkdownBlock.tsx` — drop `pending`, `flush`, `flushRef`, `scheduleSave`, `SAVE_DEBOUNCE_MS`, `suppressFlush`; key = `` `${blockHostKey(host)}:${tileId}` ``; `onChange={(next) => scheduleWrite(key, next, (b) => window.nexus.blocks.writeMarkdown(host, tileId, b))}`; the edit-exit and unmount effects call `flushWrite(key)`, exactly `PageEmbed`'s shape at `:108-112`.
-- Modify: `Tiles/BlockSurface.tsx` — `removing` set and `suppressFlush` callback deleted; `removeBlock` (~:169-181) calls `dropWrite(key)` before `blocks.removeTile`. `renderTile` no longer passes `suppressFlush`.
+- Modify: `Tiles/BlockSurface.tsx` — `removing` set and `suppressFlush` callback deleted; `removeBlock` (~:169-181) calls `dropWrite(key)` as its first line, before `commitLayout` — the order the function's comment names as load-bearing. `renderTile` no longer passes `suppressFlush`.
 - Test: extend `tileWriter.test.ts` with the drop case; `Tiles/markdownBlock.test.tsx` if one is needed to prove the edit-exit flush — check `rg -F "MarkdownBlock" src --glob '*.test.*'` first; none exists at planning.
 
 **Negative control:** the drop case — schedule, `dropWrite`, advance 400ms, assert zero writes; with `dropWrite` a no-op the assertion goes red. And the orphan case from the spec: schedule, flush (in flight), `dropWrite`, resolve the ack `{ok:false}` — zero further writes.
@@ -342,7 +343,7 @@ Base: the Menu Recipe's final commit. Baseline invariant carried through every t
 
 #### Gate 2 — one writer, every tile-shaped save
 - [ ] Gates green; test count = 3657 + the tests Tasks 9-12 added.
-- [ ] `rg -F "SAVE_DEBOUNCE_MS" src` → 1 (TileWriter), or 2 if D-6 was declined. `rg -F "setTimeout" src/renderer/src/Tiles` → TileWriter's, plus `WebpageEmbed.tsx`'s capture deadline (`CAPTURE_DEADLINE_MS`), a known non-debounce timer; any other is a regression.
+- [ ] `rg -F "SAVE_DEBOUNCE_MS" src` → 1 (TileWriter), or 2 if D-6 was declined. `rg -F "setTimeout" src/renderer/src/Tiles` → TileWriter's, plus `WebpageEmbed.tsx`'s capture deadline (`CAPTURE_DEADLINE_MS`), a known non-debounce timer, plus `useBlockDoc.ts`'s if D-6 was declined; any other is a regression.
 - [ ] Simplification and code review against `<base>..HEAD` scoped to `Tiles/TileWriter.ts`, `MarkdownBlock.tsx`, `BlockSurface.tsx`, `useBlockDoc.ts`, `PageEmbed.tsx`, `Interface/PageView.tsx`, `Store/NexusSlice.ts`.
 - [ ] The running-thing pass is the four acceptance runs in Tasks 10 and 12, performed at this gate.
 - [ ] Every concern fixed or ruled; Progress hashes filled in.
@@ -369,7 +370,7 @@ Base: the Menu Recipe's final commit. Baseline invariant carried through every t
 **Survivors:** the bare `is-editing` class both shells emit today has no consumer anywhere in `src` (the live class is `.is-editing-tile`, set by the hosts) and is dropped in the fold. The two biome-ignore lines on the `div` travel to `TileEditor` once and leave both seams. The `pgembed-failed` and `body === null` early returns stay in `PageEmbed` above the shell; `MarkdownBlock`'s `body === null` blank stays likewise.
 
 **Steps:**
-- [ ] Create; replace both shells; `rg -F "nativeEditorMenu" src/renderer/src/Tiles` → 1.
+- [ ] Create; replace both shells; `rg -F "nativeEditorMenu" src/renderer/src/Tiles` → 1. `Inline Page Properties — Decision Log.md:32` still names both components — verified, no edit.
 - [ ] Gates → 0, test count unchanged. The running app: click-to-edit on a prose tile, a page tile on the dashboard, a page tile in a document, the Page Window, the NavWindow; a text selection ending in a click does not enter edit; a click on an embedded page's banner does not enter edit.
 - [ ] Commit: `refactor(tiles): one TileEditor shell under the prose tile and the page tile`
 
@@ -378,11 +379,11 @@ Base: the Menu Recipe's final commit. Baseline invariant carried through every t
 **Requirement:** 8
 
 **Steps:**
-- [ ] LOC count → below 2565; record. Every Dead Vocabulary token → 0 in `src` and `.claude` (allowlist applies); control nonzero.
+- [ ] LOC count → below 2699; record. Every Dead Vocabulary token → 0 in `src` and `.claude` (allowlist applies); control nonzero.
 - [ ] No commit.
 
 #### Gate 3 — the folds
-- [ ] Gates green; LOC below 2565 recorded in the Log with the exact number.
+- [ ] Gates green; LOC below 2699 recorded in the Log with the exact number.
 - [ ] Simplification and code review against `<base>..HEAD` scoped to `Tiles/`.
 - [ ] Every concern fixed or ruled; the running-thing pass from Task 13 done at the gate; Progress hashes.
 
@@ -428,6 +429,7 @@ Base: the Menu Recipe's final commit. Baseline invariant carried through every t
 
 ### Rulings
 - D-6 (Task 12, the layout writer and the 300 → 400ms debounce): awaiting Nathan.
+- Review round 2 (08-28-2026): two process gates carried the old 2565; Task 6's ranges started mid-comment; the declined-D-6 branch reached one sweep; `dropWrite` placement; Task 8's sweep gained its allowlist. Eight edits, none structural; the TileWriter shape survived every attack.
 - Review round 1 (08-27-2026): Task 5 withdrawn; TileWriter's registry replaced by a write-per-schedule interface; LOC rebaselined to 2699; `tile-title.css` takes the whole identity cluster; layout body stringified; nine citation corrections.
 
 ### Open Against Later Tasks
