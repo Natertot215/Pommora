@@ -7,6 +7,7 @@ import {
   accessoryButton,
   bottomRow,
   footingLabel,
+  rowDragging,
   titleText,
 } from '@renderer/DesignSystem/Menus/menu-base.css'
 import { surface } from '@renderer/DesignSystem/Menus/menu-surface.css'
@@ -144,7 +145,7 @@ export const allHeadingRow = style({
   gap: '4px',
   width: '100%',
   minHeight: '24px',
-  padding: '6px var(--row-inset)',
+  padding: '6px var(--row-width-standard)',
   paddingLeft: 0,
   border: 'none',
   background: 'none',
@@ -168,9 +169,7 @@ export const rowPlus = accessoryButton
 // § VISIBILITY (HiddenFrame) — the ghosted hidden zone + per-row eye toggle
 // ═══════════════════════════════════════════════════════════════════════════
 
-/** The picked-up row fades to the ghost opacity — muted in place, never displaced. Shared by both
- *  frames' RowShell; declared here so the hidden-row ghost below can reference it (source order). */
-export const rowDragging = style({ opacity: 'var(--state-ghost)' })
+export { rowDragging }
 
 /** Hidden rows read de-emphasized via the shared ghost opacity (the drag-dim token:
  *  `--state-ghost`, not the muted veil). The ghost IS the shown/hidden boundary — no

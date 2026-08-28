@@ -8,5 +8,4 @@ export const pane = style({
   maxWidth: 'var(--menu-max)',
 })
 
-/** The dragged heading and its whole section dim while it's carried to its new slot. */
-export const rowDragging = style({ opacity: 'var(--state-ghost)' })
+export { rowDragging } from '@renderer/DesignSystem/Menus/menu-base.css'

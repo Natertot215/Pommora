@@ -1,6 +1,5 @@
 import { globalStyle, style, type StyleRule } from '@vanilla-extract/css'
 import { vars as colorVars } from '../Tokens/color.css'
-import { ROW_INSET } from '../Elements/DropOutline/dropOutline.css'
 import { font, text } from '../Tokens/typography.css'
 import { tintAt } from '../Tokens/tint'
 import { fieldRing, ROW_RING } from '../Components/Fields/fieldRing'
@@ -8,11 +7,16 @@ import { base } from '../Components/Fields/fields.css'
 
 const c = colorVars.color
 
-/**
- * Menu Item row — the menu / sidebar row primitive. Composes Body/Standard so
- * the title matches the macOS standard content size (NSFont.systemFontSize).
- */
-const ROW_GAP = 8
+// KNOB — a row's height is never declared: it is the ramp's line plus one of two padding pairs, so the
+// tokens are named for the axis they pad and a surface picks Standard or Compact once for every row.
+globalStyle(':root', {
+  vars: {
+    '--row-height-standard': '6px',
+    '--row-height-compact': '4px',
+    '--row-width-standard': '6px',
+    '--row-width-compact': '4px',
+  },
+})
 
 /** The interactive shell EVERY row in the menu family wears — its radius, its rest cursor, its hover
  *  wash and its keyboard-focus ring. Stated once because a row that highlights or focuses unlike the
@@ -31,28 +35,35 @@ export const rowShell = style({
   },
 })
 
-/** KNOBS — the ramp a row wears, so a surface can restate it once on itself instead of every row
- *  overriding the base by hand. The default is the menu family's: a menu row is body text. A picker
- *  drops to the control pair, because its rows are a control's options rather than a menu's commands.
- *  The TONE is not a knob — every row in the family reads primary, whatever its size. */
-export const ROW_SIZE = `var(--menu-row-size, ${font.scale.body.size})`
-export const ROW_LINE = `var(--menu-row-line, ${font.scale.body.line})`
-
-export const item = style([
+export const rowBox = style([
   text.body.standard,
-  rowShell,
   {
+    position: 'relative',
     display: 'flex',
     alignItems: 'center',
-    gap: `${ROW_GAP}px`,
-    minHeight: '24px',
-    padding: `6px ${ROW_INSET}`,
-    fontSize: ROW_SIZE,
-    lineHeight: ROW_LINE,
+    gap: '8px',
+    paddingBlock: 'var(--row-pad-y, var(--row-height-standard))',
+    paddingLeft: 'var(--row-pad-lead, var(--row-pad-x, var(--row-width-standard)))',
+    paddingRight: 'var(--row-pad-trail, var(--row-pad-x, var(--row-width-standard)))',
+    fontSize: `var(--row-size, ${font.scale.body.size})`,
+    lineHeight: `var(--row-line, ${font.scale.body.line})`,
     color: c.label.primary,
     userSelect: 'none',
   },
 ])
+
+export const item = style([rowBox, rowShell])
+
+export const menuCompact = style({
+  vars: {
+    '--row-pad-y': 'var(--row-height-compact)',
+    '--row-pad-x': 'var(--row-width-compact)',
+    '--row-size': font.scale.control.size,
+    '--row-line': font.scale.control.line,
+  },
+})
+
+export const rowDragging = style({ opacity: 'var(--state-ghost)' })
 
 /** Selected pill — holds under :hover so a selected row doesn't lighten further. */
 export const itemSelected = style({

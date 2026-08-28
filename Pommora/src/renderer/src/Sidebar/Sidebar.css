@@ -186,7 +186,7 @@
 
 /* --- agenda mode --- */
 .agenda-empty {
-  padding: 8px var(--row-inset);
+  padding: 8px var(--row-width-standard);
   color: var(--label-tertiary);
 }
 

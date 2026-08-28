@@ -103,7 +103,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 - `MENU_GUTTER` → 0 (3) · `ROW_INSET` → 0 (4) · `--row-inset` → 0 (6) · `ROW_SIZE` → 0 (4) · `ROW_LINE` → 0 (4) · `--menu-row-size` → 0 (2) · `--menu-row-line` → 0 (2) · `ROW_GAP` → 0 (2) · `--top-row-block` → 0 (4) · `--bottom-row-block` → 0 (2)
 - `MenuFrameTopRow` → 0 (32) · `MenuBottomRow` → 0 (31) · `bottomBar` → 0 (3) · `MenuHeading` → 0 (7) · `compactRow` → 0 (3) · `optionsLabel` → 0 (10) · `allPropertiesLabel` → 0 (2) · `previewHeading` → 0 (3) · `configRow` → 0 (9) · `allHeadingRow` → 0 (2) · `mdpm-ac-row` → 0 (4) · `SettingsRow` → 0 (17) · `ValueRow` → 0 (15) · `FootingPick` → 0 (3)
 - `nav-item` → 0 (36 now, across seven files; `NavTrail` uses `nav-trail-*` and is untouched). `flushTrailing` → 0 (26). `settings-wide` → 0 (3). `trash-check` → 0. `--trash-lead` → 0. `--nav-list-lead` → 0 (the column's `--row-pad-lead` replaces it).
-- Control: `--surface-inset` → 8. Zero here means the sweep never ran.
+- Control: `--surface-inset` → 9. Zero here means the sweep never ran.
 
 **Hazard Window:** Task 5 deletes `bottomBar`'s `margin-top: auto`; FilterFrame's locked branch is un-pinned from that commit until Task 20 lands its footer slot. No running-thing pass on FilterFrame between them; Gate 1's running pass records the deferral.
 
@@ -145,20 +145,20 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 **Derivation**
 - `grep -rF -- "--row-inset" src` → 6. Legitimate hits after: none.
 - `grep -rF "MENU_GUTTER" src` → 3 → 0. `grep -rF "ROW_SIZE" src` → 4 → 0. `grep -rF "ROW_LINE" src` → 4 → 0.
-- Control: `grep -rF -- "--surface-inset" src` → 8.
+- Control: `grep -rF -- "--surface-inset" src` → 9.
 
 **Failure half:** a surface that sets neither pair → Standard (the `:root` tokens are the fallback, no `var()` default needed); a `MenuItem` with a `subLabel` → grows past 28, since nothing floors it; a picker with zero options → the pane's `surface` padding alone, no row.
 
 **Steps:**
-- [ ] In `menu-base.css.ts`, `globalStyle(':root', { vars: { '--row-height-standard': '6px', '--row-height-compact': '4px', '--row-width-standard': '6px', '--row-width-compact': '4px' } })`. `rowBox`: `paddingBlock: 'var(--row-pad-y, var(--row-height-standard))'`, `paddingLeft: 'var(--row-pad-lead, var(--row-pad-x, var(--row-width-standard)))'`, `paddingRight: 'var(--row-pad-trail, var(--row-pad-x, var(--row-width-standard)))'` — `--row-pad-x` is the one knob a symmetric surface sets; a surface holding an affordance in its lead gutter (NavWindow 20/12, Trash 34/14) names `--row-pad-lead` alone, `fontSize: 'var(--row-size, ' + font.scale.body.size + ')'`, `lineHeight` likewise with body line, `position: 'relative'`, the flex/gap/color `item` has today; `item = style([rowBox, rowShell])`; delete `minHeight`, `ROW_SIZE`, `ROW_LINE`, `ROW_GAP` (inline `gap: '8px'`). Add `export const menuCompact = style({ vars: { '--row-pad-y': 'var(--row-height-compact)', '--row-pad-x': 'var(--row-width-compact)', '--row-size': font.scale.control.size, '--row-line': font.scale.control.line } })`.
-- [ ] `pickerMenu.css.ts`: `pane` composes `menuCompact` and drops its `vars`; `option` = `style([item, { justifyContent: 'center', whiteSpace: 'nowrap', border: 'none', background: 'none' }])` — delete its `padding`, `fontSize`, `lineHeight`, `text.control.standard`, `color`. Run `npx vitest run src/renderer/src/DesignSystem/Components/Pickers` → pass.
-- [ ] `dropOutline.css.ts`: `const RAIL_CENTER_X = \`calc(var(--row-width-standard) + ${RAIL_W / 2}px)\``; delete `ROW_INSET`; `menu-base.css.ts` drops the import.
-- [ ] `menu-surface.css.ts`: delete `MENU_GUTTER`; both paddings read `var(--surface-inset)`.
-- [ ] Repoint the four `--row-inset` readers; delete `--row-inset` from `styles.css`.
-- [ ] Delete `cardAddPicker.css.ts` and its import + `compactRow` use; delete `calendarPicker.optionRow` and its use.
-- [ ] `npm run format`; gates green; `grep -rF -- "--row-inset" src` → 0; `grep -rF -- "--surface-inset" src` → 8.
-- [ ] `npm run build`; `grep -o '[^{}]*picker-checked[^{}]*{' out/renderer/assets/index-*.css | head -3` — one class immediately before `:has(`, since `pane` is composed for the first time.
-- [ ] Docs rows; commit `refactor(menus): the row is its line plus one of two padding tokens`.
+- [x] In `menu-base.css.ts`, `globalStyle(':root', { vars: { '--row-height-standard': '6px', '--row-height-compact': '4px', '--row-width-standard': '6px', '--row-width-compact': '4px' } })`. `rowBox`: `paddingBlock: 'var(--row-pad-y, var(--row-height-standard))'`, `paddingLeft: 'var(--row-pad-lead, var(--row-pad-x, var(--row-width-standard)))'`, `paddingRight: 'var(--row-pad-trail, var(--row-pad-x, var(--row-width-standard)))'` — `--row-pad-x` is the one knob a symmetric surface sets; a surface holding an affordance in its lead gutter (NavWindow 20/12, Trash 34/14) names `--row-pad-lead` alone, `fontSize: 'var(--row-size, ' + font.scale.body.size + ')'`, `lineHeight` likewise with body line, `position: 'relative'`, the flex/gap/color `item` has today; `item = style([rowBox, rowShell])`; delete `minHeight`, `ROW_SIZE`, `ROW_LINE`, `ROW_GAP` (inline `gap: '8px'`). Add `export const menuCompact = style({ vars: { '--row-pad-y': 'var(--row-height-compact)', '--row-pad-x': 'var(--row-width-compact)', '--row-size': font.scale.control.size, '--row-line': font.scale.control.line } })`.
+- [x] `pickerMenu.css.ts`: `pane` composes `menuCompact` and drops its `vars`; `option` = `style([item, { justifyContent: 'center', whiteSpace: 'nowrap', border: 'none', background: 'none' }])` — delete its `padding`, `fontSize`, `lineHeight`, `text.control.standard`, `color`. Run `npx vitest run src/renderer/src/DesignSystem/Components/Pickers` → pass.
+- [x] `dropOutline.css.ts`: `const RAIL_CENTER_X = \`calc(var(--row-width-standard) + ${RAIL_W / 2}px)\``; delete `ROW_INSET`; `menu-base.css.ts` drops the import.
+- [x] `menu-surface.css.ts`: delete `MENU_GUTTER`; both paddings read `var(--surface-inset)`.
+- [x] Repoint the four `--row-inset` readers; delete `--row-inset` from `styles.css`.
+- [x] Delete `cardAddPicker.css.ts` and its import + `compactRow` use; delete `calendarPicker.optionRow` and its use.
+- [x] `npm run format`; gates green; `grep -rF -- "--row-inset" src` → 0; `grep -rF -- "--surface-inset" src` → 9.
+- [x] `npm run build`; `grep -o '[^{}]*picker-checked[^{}]*{' out/renderer/assets/index-*.css | head -3` — one class immediately before `:has(`, since `pane` is composed for the first time.
+- [x] Docs rows; commit `refactor(menus): the row is its line plus one of two padding tokens`.
 
 #### Task 2: Order the stylesheet and the row file as a menu stacks
 
@@ -516,7 +516,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 - [ ] Commit `refactor(filter): the footer rides the slot`.
 
 #### Gate 3 — the recipe is the only row writer
-- [ ] The Loop, steps 3–5. Dead Vocabulary sweep: every token → 0, control `--surface-inset` → 8. `frames.css.ts` exports 40 → 28, all geometry, drag chrome, or `ICON`. Running surface: every frame, both FilterFrame branches with the footer flush. Docs: `DesignSystemPM.md` §Menus to the kinds and the index; `Cohesion-Rulings.md` gains "the menu row's box is declared once; a surface picks Standard or Compact on its pane".
+- [ ] The Loop, steps 3–5. Dead Vocabulary sweep: every token → 0, control `--surface-inset` → 9. `frames.css.ts` exports 40 → 28, all geometry, drag chrome, or `ICON`. Running surface: every frame, both FilterFrame branches with the footer flush. Docs: `DesignSystemPM.md` §Menus to the kinds and the index; `Cohesion-Rulings.md` gains "the menu row's box is declared once; a surface picks Standard or Compact on its pane".
 
 ---
 
@@ -571,7 +571,7 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 
 When Progress shows every task ticked with a hash and Gate 4 closed, the plan is not done — it is claimed. Landing is four dispatches and a record, in this order, and none is skipped.
 
-**1. The Delivery Claim.** Write it into the Log's Closeout as checkable assertions, each with its evidence: every numbered Requirement (1–16) traces to a landed task by hash; the Acceptance criterion held — name the six surfaces and the measured heights (28 / 23) and the two greps (`--row-inset` → 0, `--surface-inset` → 8); no new dependency; no mechanism declared twice (`rowDragging`, the content edge, the heading, the trail's look — one home each, grep-proven); nothing left with nothing to vary (the Dead Vocabulary sweep at 0 against its control, `frames.css.ts` at 28); no work added to a high-frequency path (no per-render row rebuilds — Settings' subscriptions stayed per row).
+**1. The Delivery Claim.** Write it into the Log's Closeout as checkable assertions, each with its evidence: every numbered Requirement (1–16) traces to a landed task by hash; the Acceptance criterion held — name the six surfaces and the measured heights (28 / 23) and the two greps (`--row-inset` → 0, `--surface-inset` → 9); no new dependency; no mechanism declared twice (`rowDragging`, the content edge, the heading, the trail's look — one home each, grep-proven); nothing left with nothing to vary (the Dead Vocabulary sweep at 0 against its control, `frames.css.ts` at 28); no work added to a high-frequency path (no per-render row rebuilds — Settings' subscriptions stayed per row).
 
 **2. The neutral verifier — "Is this true?"** A `general-purpose` agent handed the Claim, the Requirements and Acceptance from this document's head, the Rulings, and the full range `<Task 0 hash>..HEAD` — and nothing else. It answers per assertion: holds, overstated, or missing, with file:line. It is not asked to attack. A "no" on any assertion is a fix and a re-claim before step 3.
 
@@ -652,6 +652,7 @@ Every phase runs the same loop. Nothing advances on a summary; every claim is re
 
 ### Deviations
 - Task 0: the parallel session's `Store/`, `Detail/Scope.ts`, and `Tabs/tabsModel.ts` had already landed (`af2442ab`), so typecheck was clean, not red. The tree committed was Nathan's 30-file CSS pass (comment trims, `navList.css` search row on `--surface-inset`, row pad 6). Two of its declarations had lost their semicolons — `tabBar.css:14` (`--tab-divider-w: var(--segment-width)`, circular with `.tab-divider`'s own `--segment-width`) and `DetailTitleHeader.css:40` (`line-height: var(--border-base)`, a color) — repaired to `var(--width-200)` and `1.15` so the gate passes; flagged to Nathan.
+- Task 1: the `--surface-inset` control is 9, not 8 — `MENU_GUTTER`'s one definition became two direct reads (`surface`, `hostedGutter`); every later control rewritten to 9. `calendarPicker.optionRow` survives as the geometry class its Files entry and F12 describe; only its `fontSize` and `color` deleted. The Docs bullets of Tasks 1 and 6 (`DesignSystemPM.md:197,221,364-366`, `RendererRefactor.md:20`) are the closeout's (Loop step 5): the executor stages no `.claude/` file but this one.
 ### Lessons
 ### Sequenced After
 - Part 2 — leading glyph size per variant; `--list-inset` for nested lists; `menu-row.tsx:40`'s indent base and `sidebarDnd.tsx:35`'s mirror. Its first step is unwinding the inline `paddingLeft` style, which beats every class and var.

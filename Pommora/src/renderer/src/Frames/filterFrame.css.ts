@@ -127,7 +127,7 @@ export const connector = style([
   {
     width: 'auto',
     flex: '0 0 auto',
-    padding: '0 var(--row-inset)',
+    padding: '0 var(--row-width-standard)',
     border: 'none',
     cursor: 'default',
     color: c.label.secondary,
