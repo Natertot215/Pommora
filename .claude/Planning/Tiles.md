@@ -1,6 +1,6 @@
 ## Tiles — Implementation Plan
 
-> **Status:** reviewed — two attack rounds, findings folded; pending Nathan's approval and the D-6 ruling · Spec: [[Tiles — Decision Log]] · Execute tasks in order.
+> **Status:** reviewed — two attack rounds, findings folded; pending Nathan's approval · Spec: [[Tiles — Decision Log]] · Execute tasks in order.
 > Citations name files and symbols; re-derive before editing. Execution starts only after the Menu Recipe lands on `main` (A-7).
 
 **Goal**
@@ -73,7 +73,7 @@ Bounded by: no change to how a tile looks or behaves beyond the writer's flush g
 - Plan directory: `.claude/Planning/`. Spec: the decision log. Explorer: `Explore` agent. Research: none needed. Code reviewer: `feature-dev:code-reviewer` (a general reviewer scoped to correctness; no project-designated correctness agent exists). Attack reviewer: `build-breaking-agent`. Neutral verifier: `general-purpose`, handed the claim, the spec, the plan, and the range. Simplification: `code-simplifier` + `comment-killer-agent`. Rules directory: `.claude/Guidelines/`.
 - Gate commands (from `Pommora/package.json`): `npm run typecheck` · `npm run lint` · `npx vitest run`. LOC gate: the count in Global Constraints.
 
-**Shapes:** refactor (moves, the fold) · removal (`PageEmbedBlock`, `Blocks/`, `Embeds/`, `Components/`, `DesignSystem/Detail/`) · fix (`TileSave` closes a lost-write hole) · user-visible (the acceptance run) · live-data (a human decision — D-6 ratification).
+**Shapes:** refactor (moves, the fold) · removal (`PageEmbedBlock`, `Blocks/`, `Embeds/`, `Components/`, `DesignSystem/Detail/`) · fix (`TileSave` closes a lost-write hole) · user-visible (the acceptance run).
 
 **Global Constraints (every task inherits these)**
 
@@ -323,7 +323,7 @@ Base: the Menu Recipe's final commit. Baseline invariant carried through every t
 **Steps:**
 - [ ] Rewrite; commit: `docs(architecture): autosave is one writer per key`
 
-#### Task 12: The layout document rides TileSave — **needs Nathan's ratification (D-6)**
+#### Task 12: The layout document rides TileSave
 
 **Requirement:** 6
 
@@ -333,18 +333,15 @@ Base: the Menu Recipe's final commit. Baseline invariant carried through every t
 - Modify: `Tiles/useBlockDoc.ts` — `pending`, `flush`, `SAVE_DEBOUNCE_MS`, and the unmount effect go. Key = `blockHostKey(host)`. `setLayout` calls `scheduleWrite(key, JSON.stringify(layout), (json) => window.nexus.blocks.save(hostRef.current, { layout: JSON.parse(json) }))` — `encodeLayout` is already `JSON.parse(JSON.stringify(layout))` (`codec.ts:15-16`), so the string is the same work in a different order and `body` stays `string` everywhere. `commitLayout` schedules the same way and calls `flushWrite(key)` immediately. The unmount effect becomes `flushWrite(key)`.
 - Test: `Tiles/useBlockDoc.test.ts` if absent — `rg -F "useBlockDoc" src --glob '*.test.*'` → check; the debounce-then-flush and the adopt-order cases.
 
-**Must agree:** the 300ms debounce becomes 400ms — TileSave has one constant; `commitLayout` still flushes at once. Nathan ratifies that with D-6.
-
-**If D-6 is declined:** Task 12 is skipped, Gate 2's `SAVE_DEBOUNCE_MS` sweep expects 2 (`TileSave`, `useBlockDoc`), and the layout hole stays open — recorded as a Deviation with the ruling, and the ArchitecturePM paragraph (Task 11) says layouts keep their own writer.
+**Must agree:** the 300ms debounce becomes 400ms — TileSave has one constant, ratified (D-6); `commitLayout` still flushes at once.
 
 **Steps:**
-- [ ] Ratification recorded in Rulings before any edit.
 - [ ] Tests; implement; gates → 0. The running app: drag a tile, ⌘Q within 400ms, relaunch — it stayed. Drag a tile, switch nexus immediately — the old nexus holds the new position, the new nexus is untouched.
 - [ ] Commit: `refactor(tiles): the layout document writes through TileSave`
 
 #### Gate 2 — one writer, every tile-shaped save
 - [ ] Gates green; test count = 3657 + the tests Tasks 9-12 added.
-- [ ] `rg -F "SAVE_DEBOUNCE_MS" src` → 1 (TileSave), or 2 if D-6 was declined. `rg -F "setTimeout" src/renderer/src/Tiles` → TileSave's, plus `WebEmbed.tsx`'s capture deadline (`CAPTURE_DEADLINE_MS`), a known non-debounce timer, plus `useBlockDoc.ts`'s if D-6 was declined; any other is a regression.
+- [ ] `rg -F "SAVE_DEBOUNCE_MS" src` → 1 (TileSave). `rg -F "setTimeout" src/renderer/src/Tiles` → TileSave's, plus `WebEmbed.tsx`'s capture deadline (`CAPTURE_DEADLINE_MS`), a known non-debounce timer; any other is a regression.
 - [ ] Simplification and code review against `<base>..HEAD` scoped to `Tiles/TileSave.ts`, `MarkdownBlock.tsx`, `BlockSurface.tsx`, `useBlockDoc.ts`, `PageEmbed.tsx`, `Interface/PageView.tsx`, `Store/NexusSlice.ts`.
 - [ ] The running-thing pass is the four acceptance runs in Tasks 10 and 12, performed at this gate.
 - [ ] Every concern fixed or ruled; Progress hashes filled in.
@@ -421,7 +418,7 @@ Base: the Menu Recipe's final commit. Baseline invariant carried through every t
   - [ ] Task 9 — TileSave · `<commit>`
   - [ ] Task 10 — the prose tile · `<commit>`
   - [ ] Task 11 — ArchitecturePM · `<commit>`
-  - [ ] Task 12 — the layout document · `<commit>` · ratified: `<date>`
+  - [ ] Task 12 — the layout document · `<commit>`
 - [ ] **Phase 3** — TileWriter · base `<commit>`
   - [ ] Task 13 — TileWriter · `<commit>`
   - [ ] Task 14 — LOC gate · reading: `<n>`
@@ -429,7 +426,7 @@ Base: the Menu Recipe's final commit. Baseline invariant carried through every t
   - [ ] Task 15 — the record · `<commit>`
 
 ### Rulings
-- D-6 (Task 12, the layout writer and the 300 → 400ms debounce): awaiting Nathan.
+- D-6 ratified by Nathan, 08-28-2026: one debounce, 400ms — every debounced save in the app goes through TileSave; the layout document joins it.
 - Consistency sweep after round 2 (08-28-2026): no gate carries 2565, no registry vocabulary survives outside the rejection record, every `scheduleWrite` call carries its write fn. Round 3 not run — round 2's findings were arithmetic propagation, not new defects.
 - Review round 2 (08-28-2026): two process gates carried the old 2565; Task 6's ranges started mid-comment; the declined-D-6 branch reached one sweep; `dropWrite` placement; Task 8's sweep gained its allowlist. Eight edits, none structural; the TileSave shape survived every attack.
 - Review round 1 (08-27-2026): Task 5 withdrawn; TileSave's registry replaced by a write-per-schedule interface; LOC rebaselined to 2699; `tile-title.css` takes the whole identity cluster; layout body stringified; nine citation corrections.
