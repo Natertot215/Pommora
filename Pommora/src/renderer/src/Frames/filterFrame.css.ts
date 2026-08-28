@@ -55,8 +55,6 @@ export const whatCell = style({
   flex: '0 0 auto',
 })
 
-const restRing = { vars: { '--field-ring': c.border.base } }
-
 export const cellField = style([borderedField, { width: 'auto', cursor: 'default' }])
 
 export const fieldLabel = style({
@@ -81,7 +79,7 @@ export const connector = style([
     border: 'none',
     cursor: 'default',
     color: c.label.secondary,
-    ...restRing,
+    vars: { '--field-ring': c.border.base },
   },
 ])
 
