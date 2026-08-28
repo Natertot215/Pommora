@@ -107,6 +107,7 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 │   │   │   ├── result.ts                | • The Result envelope IPC returns instead of throwing
 │   │   │   └── schemas.ts               | • The zod schemas the on-disk format validates against
 │   │   └── // renderer                  | • The React renderer — it never touches Node
+│   │       ├── // Assets                | • The asset layer — nexus-asset URL resolution and the crop-aware image
 │   │       ├── // Blocks                | • Tile content for the dashboard layer
 │   │       ├── // Cards                 | • The card chassis — the gallery and CardView wear it
 │   │       ├── // Components            | • Shared components — the entity icon, the renamable title
@@ -130,7 +131,10 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 │   │       │   ├── // Glass             | • The material — one recipe, four tiers
 │   │       │   ├── // Labels            | • Labels and chips
 │   │       │   ├── // Elements          | • The atomic bits — outline, chevron, trail, segment
-│   │       │   ├── // Components        | • Controls, pickers, fields, the side pane
+│   │       │   ├── // Controls          | • Buttons, switches, sliders, the color swatch
+│   │       │   ├── // Fields            | • Inputs and field runs
+│   │       │   ├── // Pickers           | • The picker family — menu, color, icon, calendar, image, text
+│   │       │   ├── // SidePane          | • The sliding side slot
 │   │       │   ├── // Menus             | • The menu recipe — shell, rows, frame chassis, the frame slide
 │   │       │   ├── // Interactions      | • PommoraDND and the pointer/scroll layer
 │   │       │   ├── // Animation         | • Motion tokens, the feel, and the enter/exit primitives

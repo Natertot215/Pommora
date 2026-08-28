@@ -22,9 +22,9 @@ A row that lands leaves this document; History carries what happened. A ruling t
 
 Eight statements that decide where anything goes. Each is testable with a grep; each files the next module when the tree is out of date.
 
-- **R1 — Reach decides the layer.** A module that imports `@renderer/store`, calls `window.nexus`, or imports `nativeMenus` is a *surface* or *glue* and lives in a feature folder. One that does none of those and knows no entity kind is a *piece* and may live in `DesignSystem/`. `DesignSystem/**` imports nothing from `@renderer/*` outside itself; its one sanctioned type-only reach is `Symbols/` reading `EntityIconKind` from `@shared`. *Test:* `grep -rl "@renderer/store\|window\.nexus\|@renderer/nativeMenus" DesignSystem/` returns nothing. *Today:* three files (`AssetImage`, `ImagePicker`, `PickerControl`).
+- **R1 — Reach decides the layer.** A module that imports `@renderer/store`, calls `window.nexus`, or imports `nativeMenus` is a *surface* or *glue* and lives in a feature folder. One that does none of those and knows no entity kind is a *piece* and may live in `DesignSystem/`. `DesignSystem/**` imports nothing from `@renderer/*` outside itself; its one sanctioned type-only reach is `Symbols/` reading `EntityIconKind` from `@shared`. *Test:* `grep -rl "@renderer/store\|window\.nexus\|@renderer/nativeMenus" DesignSystem/` returns nothing. *Today:* two files (`ImagePicker`, `PickerControl`).
 - **R2 — Consumers decide the folder.** A module consumed from three or more top-level folders with no plurality in any one is shared: a piece to `DesignSystem/`, a model or glue to `Core/`, an app-bound wrapper to `Utilities/`. A module with every consumer in one other folder belongs in that folder. *Test:* a file with zero importers in its own folder has failed this rule. *Today:* `Settings/IconPicker`, `Embeds/ViewEmbedScope`, `Links/connectionMenu`.
-- **R3 — A folder is named for what it holds, and no name appears twice.** A folder holding one file is a file, and a folder earns itself only when a domain has enough files to need one — flat until then, never a subfolder built ahead of the need. *Test:* `find . -type d | xargs -n1 basename | sort | uniq -d` returns nothing under `renderer/`. *Today:* `Components` (root vs `DesignSystem/`), `Tables` (root vs `MarkdownPM/`).
+- **R3 — A folder is named for what it holds, and no name appears twice.** A folder holding one file is a file, and a folder earns itself only when a domain has enough files to need one — flat until then, never a subfolder built ahead of the need. *Test:* `find . -type d | xargs -n1 basename | sort | uniq -d` returns nothing under `renderer/`. *Today:* `Tables` (root vs `MarkdownPM/`).
 - **R4 — Properties is the value layer; Tables and Views import it downward.** `Properties/` holds the schema surface and the value vocabulary alike — resolution at its root, the formatters, cell, pickers, checkbox glyph, and column naming under `Editing/`, the per-type option editors under `Editors/`. `Tables/` is the tabular chrome and column mechanics; `Views/` the saved-view pipeline and renderers; `Cards/` the card chassis. *Test:* `grep -rl "@renderer/Views/\|@renderer/Tables/" Properties/` lists only `PropertyFrame.tsx` (the ruled Style-radio edge); `grep -rl "@renderer/Views/" Tables/ Cards/` returns nothing.
 - **R5 — A value read from two folders is a token, declared once.** Tokens in `DesignSystem/Tokens/`; the frost specular constants in `Glass/`; a per-surface tuning value is a `KNOB` with one owner. Spacing stays a literal on the even grid; a value outside the grid is what needs justifying. A var, export, class, or prop with one writer and one reader is indirection — a value set once and read once is a literal with a `KNOB`; a new `--var` needs two surfaces overriding it. *Test:* `grep -rh "^\s*--[a-z-]*:" --exclude-dir=Tokens --exclude-dir=Glass .` lists only `KNOB`-commented and component-scoped declarations.
 - **R6 — The style form follows the class-name contract.** Plain `.css` is for a sheet that paints class names it does not emit — CodeMirror decorations, imperative DOM, a cross-module contract like the resize strips. Everything else is `.css.ts`. A `style` prop carries only a value computed this frame or a custom-property assignment. *Test:* `grep -rn "style={{" | grep -E "[0-9]+[,}]|'#|display:"` lists the six static sites and nothing else.
@@ -37,14 +37,14 @@ Each folder answers "what is this" in one word. A row marked NEW, MOVED, or RENA
 
 ```
 // src/renderer                         | • The React renderer — it never touches Node
+├── // Assets                           | • NEW — assetUrl + the crop-aware AssetImage, out of the design system
 ├── // Cards                            | • The card chassis the gallery and CardView wear
 ├── // Core                             | • NEW — the app-core modules the whole renderer reads
 │   ├── store.ts                        | • The barrel over Store/'s seven slices
-│   └── …                               | • Commands, assetUrl, destinationTree, nativeCaret, nativeMenus, pageMenuActions, selection, treeIndex
+│   └── …                               | • Commands, destinationTree, nativeCaret, nativeMenus, pageMenuActions, selection, treeIndex
 ├── // DesignSystem                     | • The pieces; Showcase/ leaves as a site
-│   ├── // Components
-│   │   ├── // Pickers                  | • Stays; PickerMenu is the most-composed primitive in the system
-│   │   └── // SidePane                 | • The sliding side slot
+│   ├── // Pickers                      | • The picker family — PickerMenu is the most-composed primitive in the system
+│   ├── // Controls · // Fields · // SidePane
 │   ├── // Interactions
 │   │   └── reorderModel.ts             | • MOVED from Sidebar/sidebarDndModel — a generic reorder model
 │   ├── // Glass                        | • The material — glass-base, -pane, -surface, -window, -control
@@ -76,7 +76,7 @@ Each folder answers "what is this" in one word. A row marked NEW, MOVED, or RENA
 ├── // Tables                           | • The tabular chrome TableView and the Trash wear
 ├── // Utilities                        | • RENAMED from Components — app-bound helpers and wrappers
 │   ├── NexusIconPicker.tsx             | • MOVED from Settings/IconPicker — binds this nexus's favorites
-│   ├── AssetImage.tsx · ImagePicker.tsx · PickerControl.tsx | • NEW wrappers — the three design-system reaches, inverted
+│   ├── ImagePicker.tsx · PickerControl.tsx | • NEW wrappers — the two design-system reaches, inverted
 │   └── …                               | • EntityIcon, RenamableTitle, useNexusIcon, iconFavorites
 ├── // Views                            | • Saved-view presentation; TableView/ and CardView/ hold only the view layer
 │   ├── ViewEmbedScope.tsx              | • MOVED from Embeds — view infrastructure, fourteen consumers outside Embeds
@@ -128,7 +128,7 @@ Every proposed move, grouped by kind. **Status** is one of: **ruled** (Nathan sa
 
 #### Filing
 
-- [ ] **`Core/` for the root modules** — `store`, `treeIndex`, `assetUrl`, `pageMenuActions`, `selection`, `Commands`, `destinationTree`, `nativeMenus`, `nativeCaret`. *Why:* R8 — the root holds only entries and global sheets. *Status:* ruled.
+- [ ] **`Core/` for the root modules** — `store`, `treeIndex`, `pageMenuActions`, `selection`, `Commands`, `destinationTree`, `nativeMenus`, `nativeCaret`. *Why:* R8 — the root holds only entries and global sheets. *Status:* ruled.
 - [ ] **`Navigation/` absorbs `Tabs/`** (`TabBar`, `tabsModel`). *Why:* per-tab history is navigation; `Tabs/` sits beside the folder that owns its concept. *Status:* ruled.
 - [ ] **`Embeds/ViewEmbedScope` → `Views/`; `Sidebar/sidebarDndModel` → `DesignSystem/Interactions/reorderModel`; `Settings/IconPicker` + `iconFavorites` → `Utilities/NexusIconPicker`.** *Why:* R2 — each has zero importers in its own folder. *Status:* ruled.
 - [ ] **`Showcase/` out of `DesignSystem/`.** *Why:* Settled 21 — a deployed site, not a piece. *Status:* ruled.
@@ -139,8 +139,8 @@ Every proposed move, grouped by kind. **Status** is one of: **ruled** (Nathan sa
 
 #### Boundaries
 
-- [ ] **The design system's three upward reaches** — `AssetImage` and `ImagePicker` read the store; `PickerControl` imports `nativeMenus`. Invert through wrappers in `Utilities/` (the pattern `Settings/IconPicker` already uses: the piece takes `src`/`crop`, `onPasteImage`/`onPickFile`, `onRowMenu` as props). *Why:* R1 — two components in the deployed library need a nexus store to render. *Status:* awaiting ruling (§3.2).
-- [ ] **The boundary as a lint** — Biome `noRestrictedImports` forbidding `@renderer/store`, `@renderer/nativeMenus`, `@renderer/assetUrl`, and `@renderer/<Feature>/**` from `DesignSystem/**`, with an allowlist of the three until they close. *Why:* its value is refusing the *next* inversion. *Status:* awaiting ruling (§3.2).
+- [ ] **The design system's two upward reaches** — `ImagePicker` reads the store; `PickerControl` imports `nativeMenus`. Invert through wrappers in `Utilities/` (the pattern `Settings/IconPicker` already uses). *Why:* R1 — a deployed-library component needing a nexus store to render. *Status:* awaiting ruling (§3.2).
+- [ ] **The boundary as a lint** — Biome `noRestrictedImports` forbidding `@renderer/store`, `@renderer/nativeMenus`, `@renderer/assetUrl`, and `@renderer/<Feature>/**` from `DesignSystem/**`, with an allowlist of the two until they close. *Why:* its value is refusing the *next* inversion. *Status:* awaiting ruling (§3.2).
 - [ ] **`PropertyFrame`'s per-column Style radios** — `Properties/PropertyFrame.tsx` reads `useActiveView` (Views) and `useStyleFor` (Tables): a view-settings section inside the Properties frame. Keep the ruled edge and name it, or lift the section beside the other panes. *Status:* awaiting ruling (§3.5).
 - [ ] **The side slot** — `SidePane` is the sliding slot every Window mounts; the main window's sidebar and inspector do not, driving `--io` / `--io-l` from `styles.css` on their own rules, which is why PaneSlide has three homes (`styles.css`, `window-base.css`, `Sidebar.css`). The main window mounts `SidePane` for both slots; PaneSlide becomes one motion in one file; `InspectorPane` and `WindowInspector` (same frontmatter surface, different chrome) reconcile — one component or one name over two, measured by shared chrome; the store's `closePreview` / `settingsOpen` names follow the windows they open. *Why:* one motion, one owner. *Status:* ruled; **the one behavior change in the vocabulary.**
 
@@ -194,7 +194,7 @@ Every proposed move, grouped by kind. **Status** is one of: **ruled** (Nathan sa
 The calls only Nathan can make; each deletes a row above when taken. **All ten are deferred (Nathan, 08-28) until the exploration reports** — the perspectives see every one as open and may argue any side; the consulting session takes them with the findings in hand. The orchestrator's own leans are recorded so the perspectives can argue against something: 1 defer to the Token Designer · 2 invert all three · 3 yes · 4 stays in `Windows/` · 5 lift the section · 6 take both · 7 a 16px control, the band takes a floor, the Trash row drops the pointer convenience, a heading `level`, the footing kind · 8 `default` except links · 9 "Window" · 10 everything in scope.
 
 1. **The zoom merge** — does `--page-scale` absorb `--mdpm-scale`, given the font-path rewiring it costs?
-2. **The design system's three reaches** — invert now through `Utilities/` wrappers, or leave under the lint's allowlist?
+2. **The design system's two reaches** — invert now through `Utilities/` wrappers, or leave under the lint's allowlist?
 3. **`Interface/`'s scope** — does it absorb `Sidebar/` and `Toolbar/`?
 4. **`NavWindow`** — stays in `Windows/`, or `Navigation/` takes it ungrouped?
 5. **The `PropertyFrame` Style-radio edge** — name and keep, or lift the section?
