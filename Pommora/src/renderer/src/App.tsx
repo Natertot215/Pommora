@@ -53,12 +53,10 @@ export function App(): React.JSX.Element {
   const beginIcon = useSession((s) => s.beginIcon)
   const newPageAdjacent = useSession((s) => s.newPageAdjacent)
   const select = useSession((s) => s.select)
-  useNavThumbnails() // capture-on-open content-view thumbnails for the gallery
+  useNavThumbnails()
 
   const [inspectorOpen, setInspectorOpen] = useState(false)
 
-  // `resizing` suspends the collapse transition so the pane tracks the cursor 1:1 during an
-  // edge-drag; the store clamps + persists.
   const [resizing, setResizing] = useState(false)
   const drag = useRef({ active: false, startX: 0, startW: 0 })
   const onResizeDown = (e: ReactPointerEvent<HTMLDivElement>): void => {
@@ -76,7 +74,6 @@ export function App(): React.JSX.Element {
     persistPaneWidths()
   }
 
-  // Mirror of the sidebar, but the left edge grows the pane as it's dragged leftward (delta subtracted).
   const inspectorDrag = useRef({ active: false, startX: 0, startW: 0 })
   const onInspectorResizeDown = (e: ReactPointerEvent<HTMLDivElement>): void => {
     inspectorDrag.current = { active: true, startX: e.clientX, startW: inspectorWidth }
@@ -111,7 +108,6 @@ export function App(): React.JSX.Element {
     )
   }, [newPageAdjacent])
 
-  // Dedup focuses an already-open tab instead of duplicating.
   useEffect(() => {
     return window.nexus.onOpenInNewTab((target) => {
       if (!target.id) return
@@ -128,28 +124,19 @@ export function App(): React.JSX.Element {
     })
   }, [openPreview])
 
-  // Single-window v1: main guards stale pushes by session root; a rare in-flight push during a
-  // nexus switch self-heals (the switch's own load() applies last).
   useEffect(() => {
     return window.nexus.onNexusChanged((next) => void applyTree(next))
   }, [applyTree])
 
-  // Refreshes nav state only — no tree walk.
   useEffect(() => {
     return window.nexus.onNavChanged((nav) => applyNavChanged(nav))
   }, [applyNavChanged])
 
-  // The asset root's listing: read once at mount, then kept current by the watcher's push. No
-  // tree walk on either path — a banner whose file arrives late repaints itself.
-  // Re-asked whenever the open nexus changes: a switch resets the map to empty, and main's held
-  // listing is pinned to the root it was taken from, so no push can arrive to refill it.
   useEffect(() => {
     void window.nexus.assetMap().then(applyAssetMap)
     return window.nexus.onAssetsChanged((map) => applyAssetMap(map))
   }, [applyAssetMap, nexusRoot])
 
-  // A guest's window.open lands here — the same adjudicator link clicks use, so popups and
-  // clicks can never open in different places.
   useEffect(() => {
     return window.nexus.onWebPopup((url) => openWebLink(url))
   }, [])
@@ -161,8 +148,6 @@ export function App(): React.JSX.Element {
           void choose()
           break
         case 'new-tab': {
-          // ⌘N is a NATIVE accelerator (menu.ts) — a renderer keydown can't intercept it, so
-          // the promote branch lives here.
           const s = useSession.getState()
           const p = s.preview
           const active =
@@ -191,7 +176,6 @@ export function App(): React.JSX.Element {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
-      // A focused surface that claimed the chord keeps it (the editor's Mod-e = inline code).
       if (e.defaultPrevented) return
       if (matchesCommand(commands['toggle-ribbon'], e)) {
         e.preventDefault()
@@ -205,9 +189,6 @@ export function App(): React.JSX.Element {
     return () => window.removeEventListener('keydown', onKey)
   }, [commands, toggleRibbon, toggleNav])
 
-  // The sidebar only "hides" when a nexus is open (its content is the tree). With
-  // nothing open, the pane is the Open-Folder prompt — keep it visible so toggling
-  // off an empty window can't strand the user with no on-screen affordance.
   const sidebarHidden = status === 'ready' && !sidebarVisible
 
   return (
@@ -243,8 +224,6 @@ export function App(): React.JSX.Element {
       <main className="content-pane">
         <ContentView />
       </main>
-      {/* Always mounted so collapse/expand animates (slides) instead of snapping —
-          .shell.sidebar-hidden translates it off. */}
       <Surface>
         {status === 'ready' && tree && <Ribbon />}
         <Button
@@ -272,9 +251,6 @@ export function App(): React.JSX.Element {
         )}
         {status === 'ready' && tree && <Sidebar tree={tree} />}
       </Surface>
-      {/* A child of the frosted Surface can't carry a drag region (backdrop-filter swallows it),
-          and draggable regions resolve in PAINT order, so the handle lives at shell level AFTER
-          the Surface. */}
       {status === 'ready' && !sidebarHidden && <div className="sidebar-titlebar" />}
       {!sidebarHidden && (
         <div
@@ -287,7 +263,6 @@ export function App(): React.JSX.Element {
           aria-hidden="true"
         />
       )}
-      {/* Always mounted (never conditionally rendered) so there's no in/out snap as the sidebar slides. */}
       <Button
         size="button-large"
         paddingX="0"

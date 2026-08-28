@@ -20,8 +20,6 @@ function DetailView(): React.JSX.Element | null {
 
   switch (selection.kind) {
     case 'none':
-      // The empty state IS NavView — a NavView tab routes here via `selection: none`. With no
-      // nexus open there's nothing to browse, so the pane stays blank (App shows the open prompt).
       return tree ? (
         <NavView />
       ) : (
@@ -32,7 +30,6 @@ function DetailView(): React.JSX.Element | null {
     case 'homepage':
       return <HomepageView tree={tree} />
     case 'context':
-      // A Context is a disclosure, not a destination — nothing renders for it.
       return <div className="detail" />
     case 'space':
       return <SpaceView tree={tree} id={selection.id} />
@@ -57,37 +54,25 @@ function DetailView(): React.JSX.Element | null {
       )
     }
     case 'page':
-      // The page surfaces are hosted per tab below, so the routed view stands down for them —
-      // rendering nothing rather than an empty box, which would stack its own full height
-      // against the host's inside the pane.
       return null
   }
 }
 
 // KNOB — how many recently-visited page tabs keep their surface parked behind the shown one.
-// Each costs a live editor's DOM; what it buys is a tab flip that resumes rather than reloads.
 const WARM_TABS = 2
 
 type Host = { tabId: string; pageId: string }
 
-/** The page surfaces to hold open: the shown one first, then the most recently visited page tabs
- *  behind it. Keyed by page, so becoming shown, being parked, or the tab being pinned is a class
- *  change rather than a remount — which is the whole point, since a remount reloads every embedded
- *  site. One surface per page, however many tabs point at it. */
 function useHosts(): Host[] {
   const selection = useSession((s) => s.selection)
   const tabs = useSession((s) => s.tabs)
   const tabMru = useSession((s) => s.tabMru)
   const activeTabId = useSession((s) => s.activeTabId)
-  // WHICH pages are loaded, never the record itself — a slot re-identifies at every keystroke, so
-  // holding `pages` here would commit the whole pane on every one.
   const readyIds = useSession(readyPageIds)
   return useMemo(() => {
     const ready = new Set(readyIds.split(','))
     const hosts: Host[] = []
     if (selection.kind === 'page') hosts.push({ tabId: activeTabId, pageId: selection.id })
-    // The budget counts parked surfaces alone, so the knob means the same number whether or not
-    // the shown surface is itself a page.
     let parked = 0
     for (const id of tabMru) {
       if (parked >= WARM_TABS || id === activeTabId) continue
@@ -105,8 +90,6 @@ function useHosts(): Host[] {
 
 const VIEW_SLIDE_PX = 14
 
-// The preview's engulf target: this view's live rect, read once at promote time —
-// module-held so the floating window needs no prop threading across trees.
 let paneEl: HTMLElement | null = null
 export const getContentViewRect = (): DOMRect | null => paneEl?.getBoundingClientRect() ?? null
 
@@ -114,17 +97,12 @@ export function ContentView(): React.JSX.Element {
   const selection = useSession((s) => s.selection)
   const selectionKind = selection.kind
   const tree = useSession((s) => s.tree)
-  // Cold-switch pause: the outgoing view holds as its last frame, input-frozen, until the incoming
-  // page's fetch lands (or the deadline drops to the loading view) — see store.select's page case.
   const frozen = useSession(frozenOf)
   const navSlide = useSession((s) => s.navSlide)
   const expanded = useSession((s) => s.subfieldExpanded)
   const activeTabId = useSession((s) => s.activeTabId)
   const hosts = useHosts()
 
-  // Directional view slide: when a stamped navigation's swap commits, the incoming view slides in
-  // via WAAPI on the wrapper (no remount) — `seq` guards against replay, and a plain sidebar select
-  // (no stamp) swaps without motion.
   const viewRef = useRef<HTMLDivElement>(null)
   const prevSelection = useRef(selection)
   const playedSeq = useRef(0)
@@ -142,9 +120,6 @@ export function ContentView(): React.JSX.Element {
       { duration: ms(duration.fast), easing: easing.baseEase },
     )
   }, [selection, navSlide])
-  // Cursor in a band control's general area — one region per end of the bar, so approaching the
-  // chevron never lights the footnotes disclosure and the other way around. Tracked here rather than
-  // with giant invisible buttons so the reveal zones never block clicks beneath them.
   const reveal = useRevealNear()
 
   const showSubfield =
@@ -192,8 +167,6 @@ export function ContentView(): React.JSX.Element {
   )
 }
 
-/** The pane's footer, and the one thing in the pane that follows the shown page's live body — so
- *  typing re-renders the footer and nothing above it. */
 function ContentFooter(): React.JSX.Element {
   const expanded = useSession((s) => s.subfieldExpanded)
   const setExpanded = useSession((s) => s.setSubfieldExpanded)
