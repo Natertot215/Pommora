@@ -1,6 +1,7 @@
 .banner {
   position: relative;
-  height: var(--banner-h, 230px);
+  --banner-h: 230px;
+  height: var(--banner-h);
   --detail-title-size: var(--text-title-small-size);
   --detail-divider-width: var(--width-175);
   border-bottom: var(--detail-divider-width) solid var(--border-base);
@@ -87,6 +88,7 @@
 }
 
 .banner-empty {
+  --banner-add-zone: 44px;
   --detail-divider-width: var(--width-175);
   padding: calc(var(--app-inset) + 1px + var(--toolbar-h))
     calc(var(--inspector-clearance) + var(--content-inset)) 14px var(--content-start);
@@ -117,7 +119,7 @@
 }
 
 .add-banner-strip {
-  height: var(--banner-add-zone, 44px);
+  height: var(--banner-add-zone);
   display: flex;
   align-items: center;
 }
