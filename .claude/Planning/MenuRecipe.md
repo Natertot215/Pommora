@@ -238,8 +238,8 @@ Bounds: the leading-glyph size question and nested-list insets (`menu-row.tsx:40
 **Hazard:** opens the window — FilterFrame's locked branch is un-pinned until Task 20.
 
 **Steps:**
-- [ ] Rename; delete the auto-margin and the dead knob; repoint callers.
-- [ ] Gates green. Commit `refactor(menus): the footing`.
+- [x] Rename; delete the auto-margin and the dead knob; repoint callers.
+- [x] Gates green. Commit `refactor(menus): the footing`.
 
 #### Task 6: ActionRow, and the docs the recipe made false
 
@@ -653,6 +653,7 @@ Every phase runs the same loop. Nothing advances on a summary; every claim is re
 ### Deviations
 - Task 0: the parallel session's `Store/`, `Detail/Scope.ts`, and `Tabs/tabsModel.ts` had already landed (`af2442ab`), so typecheck was clean, not red. The tree committed was Nathan's 30-file CSS pass (comment trims, `navList.css` search row on `--surface-inset`, row pad 6). Two of its declarations had lost their semicolons — `tabBar.css:14` (`--tab-divider-w: var(--segment-width)`, circular with `.tab-divider`'s own `--segment-width`) and `DetailTitleHeader.css:40` (`line-height: var(--border-base)`, a color) — repaired to `var(--width-200)` and `1.15` so the gate passes; flagged to Nathan.
 - Task 1 (amended, Nathan 08-27): the `:root` block also declares `--row-pad-y` / `--row-pad-x` as the Standard tokens and `--row-size` / `--row-line` as the body ramp, and `rowBox` reads each once — `var(--row-pad-y)`, `var(--row-pad-lead, var(--row-pad-x))`, `var(--row-pad-trail, var(--row-pad-x))`, `var(--row-size)`, `var(--row-line)` — instead of nesting the fallback per read; `menuCompact` is unchanged. Landed as `refactor(menus): the row reads its chosen pad once`.
+- Task 5: `MenuBottomRow` counted 29 at this task's open (the comment sweeps of Tasks 3 and 4 took two); the FilterFrame hazard window is open from this commit.
 - Task 4: `MenuTopRow` takes `className`, and CardAddPicker's flat header is `topRowFlat` (`vars: { '--row-pad-y': '0px' }`) in a recreated `Views/CardView/cardAddPicker.css.ts` — the one class that file now holds. `PickerMenu.tsx` was touched only to drop a comment naming `MenuFrameTopRow`, which brought it under the comment ruling. `MenuFrameTopRow` counted 31 at this task's open (Task 2's fold of its body onto one line took one).
 - Task 3: `allPropertiesLabel` outlives this task as `style([text.footnote.semibold, { color: c.label.secondary }])` — its one reader is `PropertyFrame.tsx:141`, which Task 6 rewrites, so Task 6 deletes it. The Showcase's heading specimens are two `<div className={heading}>`s, one carrying a trailing chevron. Per the comment ruling (Nathan, 08-27), every file a task edits keeps only `KNOB` markers, `biome-ignore` lines, and at most one why; `frames.css.ts`'s section banners stay as structure.
 - Task 2: a pure move was not value-neutral — `flushAffordance`'s `paddingLeft: 0` and `gap: 4px` are properties, and above `rowBox` they lose to it (the TopRow would have gone to a 6px inset and an 8px gap). They now also set `--row-pad-lead: 0px` and `--row-gap: 4px`, `rowBox` reads `gap: var(--row-gap)` with `:root` at `8px`, and `topRow` carries `topRowPad`'s padding as `--row-pad-y: var(--top-row-block, 2px)`. `actionRow` stays above `// TopRow` and the two `globalStyle`s sit after `// Trailing` because a composition reads its class at module evaluation; Task 4 moves `actionRow` into its section. The TopRow measures 20 after this task and 18 after Task 4. The diff also carries the `heading` gap `4px → 0px` edited live on the tree during the task.

@@ -7,7 +7,7 @@ export {
   AccessoryButton,
   FooterLockButton,
   FooterMoreButton,
-  MenuBottomRow,
+  MenuFooting,
   MenuScrollFrame,
 } from './menu-row'
 export { DisclosureRow, useDisclosureSet, type DropOutlineKind } from './menu-disclosure'

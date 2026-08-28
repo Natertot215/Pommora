@@ -29,7 +29,7 @@ import {
   MenuCaption,
   MenuTopRow,
   MenuScrollFrame,
-  MenuBottomRow,
+  MenuFooting,
   MenuSeparator,
   AccessoryButton,
 } from '@renderer/DesignSystem/Menus'
@@ -402,7 +402,7 @@ export function PropertyFrame({
     const optionLook: OptionStyle = columnStyle.look === 'compact' ? 'compact' : 'standard'
     const styleFooting =
       hasSelectOptions(def.type) || def.type === 'status' ? (
-        <MenuBottomRow>
+        <MenuFooting>
           <MenuItem
             className={flushTrailing}
             leading={
@@ -423,7 +423,7 @@ export function PropertyFrame({
           >
             <span className={footingLabel}>Style</span>
           </MenuItem>
-        </MenuBottomRow>
+        </MenuFooting>
       ) : undefined
     return (
       <MenuScrollFrame
@@ -518,7 +518,7 @@ export function PropertyFrame({
     <MenuScrollFrame
       header={<MenuTopRow label="Settings" current="Properties" onBack={onBack} />}
       footer={
-        <MenuBottomRow
+        <MenuFooting
           leading={
             <AccessoryButton
               icon="plus"

@@ -189,17 +189,12 @@ export const caption = style([
 
 // ── Footing ──
 
-export const bottomRow = style([
+export const footing = style([
   flushAffordance,
-  {
-    display: 'flex',
-    alignItems: 'center',
-    paddingRight: 0,
-    paddingBlock: 'var(--bottom-row-block, 0px)',
-  },
+  { display: 'flex', alignItems: 'center', paddingRight: 0, paddingBlock: 0 },
 ])
 
-export const bottomBar = style({ marginTop: 'auto' })
+export const footingBar = style({ display: 'flex', flexDirection: 'column' })
 
 export const footingLabel = style([actionRow])
 export const footerLockAction = style([footingLabel, { gap: '5px' }])
@@ -215,8 +210,8 @@ export const accessoryButton = style({
 
 export const detail = style([text.footnote.emphasized])
 
-globalStyle(`${bottomRow} ${accessoryButton}`, { color: c.label.secondary })
-globalStyle(`${bottomBar} ${detail}`, { color: c.label.secondary })
+globalStyle(`${footing} ${accessoryButton}`, { color: c.label.secondary })
+globalStyle(`${footingBar} ${detail}`, { color: c.label.secondary })
 
 // ── Column ──
 
