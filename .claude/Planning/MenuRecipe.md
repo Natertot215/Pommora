@@ -495,7 +495,7 @@ Every task below is written as **Today → Becomes**; line numbers are at `7f358
 **Derivation:** `grep -rF "leafRow" src` → 1 → 0; `grep -rF "eyeInert" src` → count → 0. Control: `grep -rF "RowShell" src` ≥ 4.
 
 **Steps:**
-- [ ] Migrate one file per commit; `HiddenFrame` model tests and `SortFrame.test.tsx` pass.
+- [x] Migrate one file per commit; `HiddenFrame` model tests and `SortFrame.test.tsx` pass.
 
 #### Task 18: GroupFrame and SortFrame; `ValueRow` and `FootingPick` fold
 
