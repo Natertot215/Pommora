@@ -10,7 +10,7 @@
 
 ### Immediate Work
 
-- [ ] **Shape the exploration.** Read [[RendererRework]] §3 and §4 with Nathan: which perspectives run, how deep, whether behavior is in scope; then dispatch, verify every cited line, and hold the consulting session that turns findings into the framework.
+- [ ] **The exploration** — twelve read-only perspectives dispatched 08-28 on [[RendererRework]] §4 (the Reducer as the priority); verify every cited line, hold the consulting session that turns findings into decisions, then rewrite §2 into the framework.
 - [ ] **Where does the floating identity label live?** Embed tiles reveal crumbs or a webpage title on hover, the Web Window shows domain › title always, the Page Window a trail in its tab strip; one design-system element or NavTrail absorbing the webpage case.
 - [ ] **Eyeball the Space dropdown** — carried from 08-25: icon, editable title, lock footer, the two pickers, with the trio's Settings button blank behind it.
 
