@@ -658,6 +658,7 @@ Every phase runs the same loop. Nothing advances on a summary; every claim is re
 - Round 3 (build-breaking-agent, Phase 1 range, 08-28): 2 findings, 17 kills. F1 — `heading` on the row token a phase ahead of the boxes it labels → registered as Hazard Window 2, closed by Task 7 (zero code). F2 — `allHeading` lost the old row's `gap: 4px` and rode `rowBox`'s 8 while `topRow`/`footing` sit at 4 → composes `flushAffordance` (its `--row-pad-lead` duplicate gone). Measured on the built CSS: Standard 28 · Compact 23 · TopRow 18 · `topRowFlat` 14; every composed `globalStyle` emits one class; the Showcase's row padding is now live (it read an undefined `--row-inset` before).
 
 ### Open Against Later Tasks
+- Task 14 (from Gate 2's running pass): Hazard Window 3 is real — the Settings sliders and LayoutFrame's Scale slider measure 0 wide inside the trailing cluster (`flex: 0 0 auto`). With seat widths ruled out (`.settings-wide` gone, no `--row-trailing-width`), the Slider takes its own track width as a literal `KNOB` in its own stylesheet — a control's width is the control's — and `wide` is dropped from `MenuItem` and the index.
 - Task 9: the "today" figures in its prose predate Task 0's tree — `.nav-search-row` already pads `var(--surface-inset)`, `.nav-item-main` pads `6px` (rows likely 28 already), gap 6; the +2 / −10 / −12 search-edge offsets are stale. Re-read Task 9 against the live tree at Phase 2's open.
 
 ### Deviations
