@@ -46,8 +46,6 @@ import {
   dropOutlineSpacer,
 } from '@renderer/DesignSystem/Elements/DropOutline/dropOutline.css'
 
-/** Every PathNode carries kind/id/path/title; code-keyed saved rows don't, so they never wire
- *  this. Tab membership rides along so the menu's open item reads stateful. */
 function showContextFor(node: {
   kind: MutableKind
   id: string
@@ -56,7 +54,6 @@ function showContextFor(node: {
 }): Promise<void> {
   const { tabs, pinned, tree } = useSession.getState()
   const alreadyOpen = isOpenInTabs(tabs, pinned, contextTargetToSelect(node))
-  // Resolves on the menu's dismissal — callers holding the ghost down ride the promise.
   return window.nexus.contextMenu({
     kind: node.kind,
     id: node.id,
@@ -77,7 +74,6 @@ function ctxHandler(cb?: () => void): ((e: React.MouseEvent) => void) | undefine
     : undefined
 }
 
-/** Addresses a row for inline rename — its path + kind, handed to the mutate op on commit. */
 type RenameTarget = { path: string; kind: MutableKind }
 
 function RowTitle({
@@ -126,16 +122,11 @@ function Leaf({
   title: string
   depth: number
   selected?: boolean
-  // Reserve the disclosure-chevron column so the icon lines up under expandable
-  // rows. Top-level shortcuts (the Saved strip) opt out and sit flush.
   chevronSpace?: boolean
-  /** Receives the click (MenuItem passes it through) — page rows read ⌘ for the bypass. */
   onSelect?: (e: React.MouseEvent) => void
   onContextMenu?: () => void
   rename?: RenameTarget
 }): React.JSX.Element {
-  // The row icon rides INSIDE the title's scroll box (not the fixed leading slot), so it scrolls
-  // as one unit with the title.
   return (
     <MenuItem
       className="row"
@@ -153,7 +144,6 @@ function Leaf({
   )
 }
 
-// Its rect feeds the insertion-line hit-testing, so it must wrap ONLY the row itself — never a subtree.
 function DragRow({
   id,
   springOpen,
@@ -162,7 +152,6 @@ function DragRow({
   children,
 }: {
   id: string
-  /** A collapsed container registers as a spring-open target — a drag dwelling over it expands it. */
   springOpen?: { collapsed: boolean; onExpand: () => void }
   onPointerEnter?: () => void
   onPointerLeave?: () => void
@@ -214,17 +203,12 @@ function Disclosure({
   title: string
   depth: number
   defaultOpen?: boolean
-  // Stable identity for persisting open/collapse across sessions (entity id, or a `context:*` key
-  // for the structural Context groups). Omitted → ephemeral (resets to `defaultOpen` each mount).
   persistKey?: string
   selected?: boolean
   onSelect?: () => void
   onContextMenu?: () => void
   rename?: RenameTarget
-  // Omitted for structural disclosures (the Context groups) — they aren't entities, so never
-  // draggable or drop targets.
   dragId?: string
-  /** Right-click on the body's empty space (a row's own menu wins — it preventDefaults first). */
   onBodyContextMenu?: () => void
   children: React.ReactNode
 }): React.JSX.Element {
@@ -235,8 +219,6 @@ function Disclosure({
     setOpen(next)
     if (persistKey) saveOpen(window.localStorage, persistKey, next)
   }
-  // A click that settles an inline rename (blur-commit) must not also toggle the disclosure —
-  // renamingPath clears before the click lands, so state is captured at pointerdown instead.
   const settleClick = useRef(false)
   const onHeaderPointerDown = rename
     ? (): void => {
@@ -250,16 +232,12 @@ function Disclosure({
     }
     setAndSave(!open)
   }
-  // A child entering rename forces this (possibly collapsed) ancestor open, so a fresh entity
-  // never lands invisible.
   const renamingChild = useSession((s) =>
     rename ? s.renamingPath?.startsWith(`${rename.path}/`) === true : false,
   )
   useEffect(() => {
     if (renamingChild && !open) setAndSave(true)
   }, [renamingChild, open])
-  // Clicking the icon/title opens the view; the rest of the row toggles. Rows with no onSelect
-  // have no select zone, so a click anywhere toggles.
   const openView = onSelect
     ? (e: React.MouseEvent): void => {
         e.stopPropagation()
@@ -335,8 +313,6 @@ function PageRow({
   const ghost = useContext(SidebarGhost)
   const api = useContext(SidebarGhostApi)
   const holdGhost = useContext(GhostSuppress)
-  // Edit Icon arrives from the native menu as a path; the row that owns it opens the picker
-  // against its own glyph, so the surface the gesture happened on is the one that answers.
   const iconPath = useSession((s) => s.iconPath)
   const endIcon = useSession((s) => s.endIcon)
   const mutate = useSession((s) => s.mutate)
@@ -372,17 +348,11 @@ function PageRow({
   )
 }
 
-// ── TUNABLE ── the sidebar ghost's pacing: the sidebar is a transit surface the pointer crosses
-// constantly, so its dwell runs meaningfully longer than the views'; the ghost sits flush below
-// its anchor row, so the leave can close immediately.
 const SIDEBAR_GHOST_DWELL_MS = 2500 // KNOB
 const SIDEBAR_GHOST_GRACE_MS = 0 // KNOB
 
 const NO_GHOST: { anchorId: string | null; closing: boolean } = { anchorId: null, closing: false }
 
-/** The shown ghost anchor + its exit state, by context — the rows sit levels down a recursive
- *  render, and each reads the value to know whether IT hosts the ghost (so ghost transitions
- *  re-render the rows; the API context just keeps the handlers out of that churn). */
 const SidebarGhost = createContext(NO_GHOST)
 const SidebarGhostApi = createContext<{
   onHover: (id: string, entering: boolean) => void
@@ -392,9 +362,6 @@ const SidebarGhostApi = createContext<{
   closed: () => void
 } | null>(null)
 
-/** The ghost "New Page" row — the anchor row's own chrome at the inactive dim, entering and
- *  leaving on its own Reveal (the sidebar has no per-row motion to conflict with). Never a drag
- *  member, never disclose-registered. */
 function GhostLeaf({ depth }: { depth: number }): React.JSX.Element {
   const api = useContext(SidebarGhostApi)
   const closing = useContext(SidebarGhost).closing
@@ -465,8 +432,6 @@ function ContainerRow({
   )
 }
 
-// A full folder↔page interleave is the eventual model; this top/bottom flag is the interim —
-// folders stay a block, just relocatable.
 function placeChildren(
   folders: React.JSX.Element[],
   pages: React.JSX.Element[],
@@ -475,7 +440,6 @@ function placeChildren(
   return placement === 'bottom' ? [...pages, ...folders] : [...folders, ...pages]
 }
 
-// Only depth-1 Sets (selectable) open a view; deeper Sub-Sets are expand-only organizing folders.
 function SetRow({
   set,
   depth,
@@ -607,7 +571,6 @@ function ContextGroupDisclosure({ group }: { group: ContextGroup }): React.JSX.E
       persistKey={`context:${group.def.id}`}
       dragId={group.def.id}
       onContextMenu={() =>
-        // No id → no Open item: a group has no destination view (Spaces do).
         void window.nexus.contextMenu({
           kind: 'context',
           path,
@@ -648,8 +611,6 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
     void select({ kind: 'set', id: set.id, path: set.path })
   }
   const onSelectPage = (page: PageNode, e?: React.MouseEvent): void => {
-    // A page in a page-preview Collection opens the floating preview (resolved by path prefix —
-    // the sidebar has no source prop); ⌘-click is the explicit full-page bypass.
     const owner = tree.collections.find((c) => page.path.startsWith(`${c.path}/`))
     if (owner?.openIn === 'page-preview') {
       if (e?.metaKey) void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true })
@@ -659,7 +620,6 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
     void select({ kind: 'page', id: page.id, path: page.path })
   }
 
-  // A drop resolves to a MutateRequest; the store's one write path applies it (refetch on ok).
   const onCommit = (req: MutateRequest): void => void mutate(req)
 
   const newContextMenu = (): void => {
@@ -690,13 +650,8 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
 
   const navRef = useRef<HTMLElement>(null)
 
-  // One index serves both layers — during the mode cross-fade both are mounted, and each building
-  // its own full-tree index would double the work per tree change.
   const dndIndex = useMemo(() => buildIndex(tree), [tree])
 
-  // The hover ghost on the shared mechanism — collections mode only (the other modes have no
-  // page rows, and the cross-fade unmounts without a transition, which would strand a closing
-  // ghost). A naming session suppresses the dwell, re-read at fire time.
   const ghostApi = useGhostAnchor({
     dwellMs: SIDEBAR_GHOST_DWELL_MS,
     graceMs: SIDEBAR_GHOST_GRACE_MS,
@@ -704,9 +659,6 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
   })
   const dndIndexRef = useRef(dndIndex)
   dndIndexRef.current = dndIndex
-  // The hook's handlers are identity-stable, so they pass straight into deps and build the
-  // context value once — only `create` needs a wrapper of its own, to read the live index at
-  // click time.
   const { onHover, onGhostEnter, onGhostLeave, closed, take, clear: clearGhost } = ghostApi
   useEffect(() => {
     if (mode !== 'collections') clearGhost()
@@ -754,8 +706,6 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
     )),
   )
 
-  // Fires only on the bare layer surface (e.target === e.currentTarget), so a row's own context
-  // menu still wins.
   const modeCtx =
     (cb?: () => void) =>
     (e: React.MouseEvent): void => {
@@ -772,10 +722,6 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
   const onCreate =
     mode === 'contexts' ? newContextMenu : mode === 'agenda' ? undefined : newCollectionMenu
 
-  // Hold the outgoing mode as a clipped exit overlay while the incoming sweeps over it
-  // (Sidebar.css). The exit layer counter-translates by the captured scroll so its visible window
-  // holds still while overtaken. The epoch keys it so a mid-transition switch remounts (restarting
-  // the sweep) instead of swapping content under a half-run animation.
   const [exit, setExit] = useState<{ mode: SidebarMode; scroll: number; epoch: number } | null>(
     null,
   )
@@ -808,8 +754,6 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
                 </div>
               )}
               <div key={mode} className={cx('sidebar-mode', exit !== null && 'mode-enter')}>
-                {/* Permanent (class-only toggle) — swapping the element shape at animation end would
-              remount the whole mode tree. */}
                 {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
                 <div
                   className={cx('mode-body', exit !== null && 'mode-enter-slide')}

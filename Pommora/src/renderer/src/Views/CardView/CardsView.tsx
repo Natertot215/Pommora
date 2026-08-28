@@ -87,7 +87,6 @@ import { buildResolveContext, type ResolveContext } from '@renderer/Properties/r
 import type { TrailSegment } from '@renderer/DesignSystem/Elements/NavTrail'
 import { ancestryOf } from '../../treeIndex'
 
-/** One identity for "no location trail", so a trail-less card's CardFace can still compare equal. */
 const NO_TRAIL: TrailSegment[] = []
 import { type AddPickerRequest, CardPickerHost, type ValuePickerRequest } from './CardPickerHost'
 import { CardValue } from './CardValue'
@@ -110,18 +109,11 @@ import './CardsView.css'
 const thumbSrc = (nexusId: string, pageId: string, v: number): string =>
   `${assetUrl(thumbRel(nexusId, thumbKey(navKey({ kind: 'page', id: pageId }))))}?v=${v}`
 
-// Frontmatter is untyped on disk — anything but a string on the key is not a cover.
 const coverOf = (row: ViewRow): string | undefined =>
   typeof row.frontmatter.cover === 'string' ? row.frontmatter.cover : undefined
 
-// ── TUNABLE ── how long a left ghost card survives before it collapses — unlike the table's
-// flush ghost, the pointer must cross the grid gap to reach it, so zero would kill it mid-travel.
-// The dwell is the shared GHOST_DWELL_MS in useGhostAnchor.
 const CARDS_GHOST_GRACE_MS = 200 // KNOB
 
-/** The Cards renderer — the container's Pages as a resizable card grid over the same pipeline the
- *  table reads. Cards never indent — descendants roll up under their top-level band; ungrouped
- *  pages band under the container's own heading. */
 export function CardsView({ source }: { source: CollectionNode | SetNode }): React.JSX.Element {
   const tree = useSession((s) => s.tree)
   const assetMap = useSession((s) => s.assetMap)
@@ -130,7 +122,6 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   const nexusId = useSession((s) => s.tree?.nexus.id ?? '')
   const [values, setValues] = useState<Record<string, PageFrontmatter>>({})
 
-  // Lazy value load on container open — the same batch IPC the table rides.
   useEffect(() => {
     let canceled = false
     setValueOverride(null)
@@ -144,13 +135,10 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
 
   const schema = useMemo(() => (tree ? resolveContainerSchema(tree, source) : []), [tree, source])
   const { view } = useActiveView(source, schema)
-  // The band drop's optimistic order, on the layer both views share.
   const { bandPatch, commitBand, resetBand } = useBandOrdering(
     (patch) => persistView(patch),
     groupingKeyOf(view),
   )
-  // The Style menu's optimistic layer (the table's pattern): the patch shows the moment it is
-  // chosen, and the confirming push lands the same values underneath it.
   const [stylePatch, setStylePatch] = useState<Record<string, ColumnStyle> | null>(null)
   useEffect(() => setStylePatch(null), [source.path, view.id])
   const liveView = useMemo(() => {
@@ -162,8 +150,6 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   const saveView = useSaveView(source)
   const mutate = useSession((s) => s.mutate)
 
-  // Optimistic property patches keyed by page id (the table's pattern): loadValues never re-reads
-  // mid-session, so an add-picker commit re-renders only because this patch feeds the pipeline.
   const [valueOverride, setValueOverride] = useState<Record<string, PageFrontmatter> | null>(null)
   useValuesEpoch(source.path, setValues, setValueOverride)
   const effectiveValues = useMemo(
@@ -201,13 +187,9 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     if (column.kind !== 'context' || !tree) return null
     return contextOptionsForSpaces(column.id, tree)
   }
-  // Every view write goes out over the LIVE view, so one persist can't fold a band drop's unsaved
-  // order back to what disk still says (the table's law).
   const persistView = (patch: Partial<SavedView>, opts?: { viewState?: boolean }): void => {
     void saveView({ ...liveView, ...patch }, opts)
   }
-  // One card-value Style key — applies live via the patch, persists per-key into column_styles;
-  // the explicit patch carries the not-yet-committed value so a state-batch can't drop it.
   const setColumnStyle = (colId: string, key: keyof ColumnStyle & string, value: string): void => {
     const merged = { ...stylePatch?.[colId], [key]: value } as ColumnStyle
     setStylePatch((prev) => ({ ...prev, [colId]: merged }))
@@ -215,9 +197,6 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
       column_styles: mergeStyleRecords(view.column_styles, { ...stylePatch, [colId]: merged }),
     })
   }
-  // Adding a property from a card reveals it (place in order + clear the hidden flag), else the allowlist
-  // keeps it hidden and the value the user just set never shows. Dedup a reveal already in flight — a
-  // multi-select fills per toggle, and the view is stale until the first refetch, so each would re-walk.
   const revealingRef = useRef<Set<string>>(new Set())
   const revealProperty = (id: string): void => {
     if (revealingRef.current.has(id)) return
@@ -227,34 +206,20 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
       revealingRef.current.delete(id),
     )
   }
-  // Right-click ▸ Remove on a card value — drop the property from this view (its property_order slot
-  // stays as a remembered spot, so a later reveal restores it in place). The inverse of revealProperty.
   const hideProperty = (id: string): void => {
     if (view.hidden_properties.includes(id)) return
     persistView(hideShown(view, id))
   }
 
-  // Manual card order — the per-machine viewOrders tiebreaker the table's sorter reads; the
-  // override gives instant feedback on a drop. Two+ effective sort criteria retire the drag, the
-  // table's law.
   const { viewOrders, persistViewOrder } = useViewOrders(source.path, view.id)
   const [manualOverride, setManualOverride] = useState<string[] | null>(null)
-  // The set-cards row's twin of manualOverride — a confirmed tree carries the canonical
-  // set_order, so a fresh `source` identity drops it.
   const [setOrderOverride, setSetOrderOverride] = useState<string[] | null>(null)
   useEffect(() => setSetOrderOverride(null), [source])
   useEffect(() => setManualOverride(null), [source.path])
   const sortKeys = useMemo(() => resolvedSortCount(view.sort, schema), [view.sort, schema])
   const sortedOrGrouped = sortKeys > 0 || view.group != null
   const groupPropId = view.group?.kind === 'property' ? view.group.property_id : undefined
-  // Structural is the table's law: with no property grouping and no sort the pipeline paints tree
-  // order, so a reorder must write its page_order slot — viewOrders is only the sorted tiebreaker.
   const structuralOrder = groupPropId === undefined && sortKeys === 0
-  // Sort By: Location on its Location order is a computed filesystem order (drag off); Custom falls to
-  // the manual order (drag on). In Location order the per-machine manual order must NOT feed the sorter,
-  // or a prior Custom drag persists as the shown order and filesystem order never appears. A held
-  // viewOrder mask never feeds a structural paint either — it interleaves locations, and the drag
-  // boundary only exists over contiguous runs.
   const locationFsOrder = isLocationFsOrder(view)
   const manualOrder = locationFsOrder
     ? undefined
@@ -281,9 +246,6 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     }
   }, [source, effectiveValues, liveView, schema, manualOrder, contextIds])
 
-  // Set-Card reorder — writes the container's set_order via moveSet (the sidebar's mechanism); the
-  // dragged set stays under the same parent (a pure reorder, not a reparent), and the store's
-  // moveSet arm shows the new order optimistically until the confirm walk lands.
   const reorderSets = (activeId: string, overId: string): void => {
     const order = reorderIds(
       sets.map((s) => s.id),
@@ -292,10 +254,6 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     )
     const moved = sets.find((s) => s.id === activeId)
     if (!moved) return
-    // Synchronous — the zone's shift transforms release on this very render, and the tree patch
-    // waits on the IPC reply; without the override the row snaps back for the gap between them.
-    // A failed write clears only ITS OWN order — a stale failure must not wipe a newer drag's
-    // optimistic paint.
     setSetOrderOverride(order)
     void mutate({ op: 'moveSet', path: moved.path, newParentPath: source.path, order }).then(
       (ok) => {
@@ -308,19 +266,13 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   const setIcons = useMemo(() => buildSetIcons(source), [source])
   const ctx = useMemo(
     () => (tree ? buildResolveContext(tree, schema, assetMap) : null),
-    // buildResolveContext reads only contexts and the asset map — keying on those slices keeps ctx identity across unrelated tree pushes, so memoized cards hold.
     [tree?.contexts, schema, assetMap],
   )
-  // Raw `view`: resolveColumns never reads column_styles, and liveView identity would break the
-  // per-card memo on every band drop.
   const columns = useMemo(
     () => resolveColumns(view, schema, contextIds),
     [view, schema, contextIds],
   )
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
-  // Under location (structural) grouping the band header IS the top-level set, so the breadcrumb
-  // drops that leading crumb and starts at the next set down — the band already shows it.
-  // Property/flat grouping keeps the full chain (the band is a bucket, not a location).
   const structural = useMemo(() => groupsStructurally(view.group, schema), [view.group, schema])
   const flatMode = view.group?.kind === 'flat'
 
@@ -329,9 +281,6 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   )
   useEffect(() => {
     setCollapsed(new Set(view.collapsed_groups ?? []))
-    // Two cards views on one container share this instance (keyed by source.id), so the [source.path]
-    // reset above never fires on a cards→cards switch — drop the drag override here too, or view B
-    // renders in view A's manual order (the table resets manualOverride on its own [view.id] effect).
     setManualOverride(null)
     resetBand()
   }, [view.id, resetBand])
@@ -340,7 +289,6 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     if (next.has(key)) next.delete(key)
     else next.add(key)
     setCollapsed(next)
-    // The local `collapsed` state already shows the toggle — skip the refetch's redundant full walk.
     persistView({ collapsed_groups: [...next] }, { viewState: true })
   }
 
@@ -352,8 +300,6 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   )
   const showSetCards = (view.set_cards ?? true) && sets.length > 0
   const hideLocation = view.hide_location ?? false
-  // A page card honors the Collection's Open In (like the table's title-click): a page-preview owner
-  // opens the floating preview; ⌘ (or a full-page owner) routes to a tab. Sets always open the set.
   const owner =
     source.kind === 'collection' ? source : tree ? findCollectionForSet(tree, source.id) : undefined
   const openPage = (row: ViewRow, newTab: boolean): void => {
@@ -361,13 +307,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     else void select({ kind: 'page', id: row.id, path: row.path }, { newTab })
   }
 
-  // Card handlers handed to memoized cards as ONE identity-stable object (the table's cellApi idiom):
-  // a ref carries the live closures, the memo wrapper never changes reference. So a card bails on a
-  // parent re-render that leaves its own inputs untouched — chiefly a band collapse in a large
-  // container, which then repaints its header, not every card.
   const openValuePicker = (req: ValuePickerRequest): void => setValuePicker(req)
-  // A native Add Property ▸ pick of a DEPENDENT kind (datetime/url) routes straight to the value's
-  // own menu — the add menu is never opened just to exit it.
   const openAddPicker = (req: AddPickerRequest): void => {
     const t = req.initialEntry?.def?.type
     if (req.initialEntry && !req.initialEntry.revealOnly && (t === 'datetime' || t === 'url')) {
@@ -382,22 +322,14 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     }
     setAddPicker(req)
   }
-  // Re-pull the value batch (a cover write lands in page frontmatter, which loadValues never re-reads
-  // mid-session — without this the card's thumb waits for a container reopen).
   const refreshValues = (): void => {
     void window.nexus.loadValues(source.path).then((v) => setValues(v))
   }
-  // The hover ghost card on the shared mechanism — a naming session or an open picker
-  // (the grid-level pair and any card's icon picker alike) suppresses the dwell, re-read at
-  // fire time.
   const pickersOpenRef = useRef(false)
   const iconPickersOpen = useRef(0)
   const holdForIconPicker = (open: boolean): void => {
     iconPickersOpen.current += open ? 1 : -1
   }
-  // A ghost that wrapped onto the next grid row is reached by crossing that row's other cards —
-  // those row-mates are travel territory, not rival anchors. Geometric: grid row-mates share a
-  // top edge. One rect read per card-enter, never per pointer-move.
   const ghostRowmate = (enteringId: string): boolean => {
     const root = rootRef.current
     const ghostEl = root?.querySelector('.ghost-card')
@@ -415,8 +347,6 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
       useSession.getState().renamingPath !== null,
     travelHold: { inZone: ghostRowmate, holdMs: GHOST_TRAVEL_HOLD_MS },
   })
-  // The shared creation engine. The config getter runs only at gesture time, so it may close
-  // over consts declared further down.
   const beginRename = useSession((s) => s.beginRename)
   const { bandAdd, createAfter } = useViewCreation(() => ({
     source,
@@ -439,8 +369,6 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     toggleCollapse,
     viewRootRef: rootRef,
     onCreated: (created) => {
-      // Runs ahead of the optimistic tree apply — the seat release, the order splice, and the
-      // naming state all land in the commit that mounts the newborn.
       setPendingSeat(null)
       beginRename(created.path, true, 'detail')
     },
@@ -473,15 +401,11 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
       onOpenAddPicker: (req: AddPickerRequest) => handlersRef.current.openAddPicker(req),
       onRefreshValues: () => handlersRef.current.refreshValues(),
       onNewBelow: (row: ViewRow) => handlersRef.current.newPageBelow(row),
-      // Identity-stable straight off the hook — no ref detour needed.
       onHover: ghostApi.onHover,
       onIconPicker: holdForIconPicker,
     }),
     [],
   )
-  // Per-card location trail, resolved ONCE per grouping/location change — built as a map (not
-  // called inline), since chain.slice allocates and a fresh array per render would defeat each
-  // card's memo.
   const locByRow = useMemo(() => {
     const m = new Map<string, TrailSegment[]>()
     if (hideLocation || !tree) return m
@@ -493,14 +417,9 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     return m
   }, [groups, tree, structural, hideLocation])
 
-  // The grid-level picker requests — ONE host owns the portal pickers so card remounts (regroup,
-  // re-sort, collapse) can never tear an open picker out mid-flight (CardPickerHost).
   const [valuePicker, setValuePicker] = useState<ValuePickerRequest | null>(null)
   const [addPicker, setAddPicker] = useState<AddPickerRequest | null>(null)
   pickersOpenRef.current = valuePicker !== null || addPicker !== null
-  // One walk fills both: row id → row, and row id → TOP band key (the creation engine's
-  // group-seed source — Cards flattens its groups, so no per-row group index exists elsewhere).
-  // Per top-level group, so a sub-grouped descendant still reports the band it lives under.
   const { rowById, rowBand } = useMemo(() => {
     const byId = new Map<string, ViewRow>()
     const band = new Map<string, string>()
@@ -512,12 +431,6 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     return { rowById: byId, rowBand: band }
   }, [groups])
 
-  // ── The ghost card's entry/exit displacement: neighbors make room on the cards' own move
-  // feel. Two-phase commit — snapshot the displacement wrappers BEFORE the ghost enters or
-  // leaves the grid, insert/remove it on the next commit, then animate each element from its
-  // old seat (FLIP, deltas in local px — the grid lives under a CSS zoom). The layout read is
-  // dwell-gated, never per-pointer-move; a create skips the exit animation outright, since the
-  // real card takes the ghost's seat frames later.
   const feel = DEFAULT_FEEL
   const anyNaming = useSession((s) => s.renamingPath !== null)
   const flipPrev = useRef<Map<Element, DOMRect> | null>(null)
@@ -527,10 +440,6 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   useLayoutEffect(() => {
     if (ghostLiveId === ghostShown) return
     const root = rootRef.current
-    // A hard-gone ghost (take() creating, a pointerdown clear ahead of a drag) skips the exit
-    // animation outright — the real card takes the seat, or the drag engine measures a grid
-    // that must already be still. Only a graceful close (the hook still holds `closing`) and
-    // the entry animate.
     const hardGone = ghostShown !== null && ghostApi.ghost === null
     if (root && !hardGone) {
       const m = new Map<Element, DOMRect>()
@@ -562,9 +471,6 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     if (ghostApi.ghost?.closing && ghostShown === null) ghostApi.closed()
   }, [ghostShown])
   useClearStrandedGhost(ghostApi, rowBand)
-  // The seat held across the create's round trip — take() empties the hook's ghost, but the
-  // skeleton stays mounted on this id so the grid never closes the gap and reopens it; the
-  // newborn replaces the skeleton in place, in the very commit that mounts it.
   const [pendingSeat, setPendingSeat] = useState<string | null>(null)
   const ghostCreate = (): void => {
     const anchorId = ghostApi.take()
@@ -576,18 +482,12 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     })
   }
 
-  // Cross-band card drag → property reassignment. Only a status/select/checkbox property grouping
-  // maps a band key back to a settable value; a cross-band drop there reassigns the property. Under
-  // LOCATION grouping the bands are folders, so a cross-band drop MOVES the page into that Set.
-  // Within-band reorder holds whenever the order is manually meaningful.
   const groupPropType = groupPropId ? declaredType(groupPropId, schema) : undefined
   const canReassign = groupPropType !== undefined && REASSIGNABLE_GROUP_TYPES.has(groupPropType)
   const canRelocate = structural
   const setPaths = useMemo(() => buildSetPaths(source), [source])
   const canReorderWithin = sortKeys < 2 && !locationFsOrder
 
-  // The band list Cards hit-tests: one flat level, since a top set's whole subtree rolls into a
-  // single band here. Flat mode's one headless band has no header to grab, so it offers none.
   const bands = useMemo(
     () => (flatMode ? [] : flattenBands(groups, collapsed)),
     [flatMode, groups, collapsed],
@@ -596,10 +496,6 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     const g = groups.find((x) => x.key === id)
     return g && ctx ? resolveBandHead(g, liveView, ctx, setNames, setIcons, source).label : id
   }
-  // A band drop on one flat level is always a reorder. What it writes turns on the GROUPING's own
-  // order mode, never the sort's — the table's law: under Location the filesystem is the order, so
-  // the container's set_order takes the write; anywhere else the view's band order does, and a
-  // write to the wrong one of the two is discarded by the resolver that ignores it.
   const onBandDrop = (draggedId: string, drop: BandDrop): void => {
     if (drop.kind !== 'reorder') return
     const dragged = bands.find((b) => b.id === draggedId)
@@ -627,12 +523,8 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     if (patch) commitBand(patch)
   }
   const cardDragEnabled = canReorderWithin || canReassign || canRelocate
-  // The band as the drag sees it — the landing index the resolver ranges over and the one the
-  // reorder splices against are both indices into THIS list.
   const bandRowsWithout = (bandKey: string, activeId: string): ViewRow[] =>
     flattenGroups(groups.filter((g) => g.key === bandKey)).filter((r) => r.id !== activeId)
-  // A band rolls whole subtrees flat, so structurally a card ranks only among its own folder's direct
-  // children — a landing among another location's cards is refused. Cross-band stays a relocate.
   const structuralSlotFor = (zoneId: string, index: number, activeId: string): number | null => {
     if (!structuralOrder) return index
     if (rowBand.get(activeId) !== zoneId) return index
@@ -650,8 +542,6 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     if (first < 0) return null
     return index >= first && index <= first + count ? index : null
   }
-  // Move the dragged card to `toIndex` within its band — the group engine reports a landing index,
-  // not an over-id. Writes the full flattened order so the manual order stays one coherent global list.
   const reorderInBandByIndex = (bandKey: string, activeId: string, toIndex: number): void => {
     const full: string[] = []
     for (const g of groups) {
@@ -665,8 +555,6 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
       full.push(...without.slice(0, at), activeId, ...without.slice(at))
     }
     if (structuralOrder) {
-      // The canonical write ranks over FULL membership — hidden rows keep their page_order rank. A
-      // held viewOrder mask is what paints, so the drag maintains it too or the file re-ranks unseen.
       const painted = flattenGroups(groups).map((r) => r.id)
       if (sameIds(full, painted)) return
       const row = rowById.get(activeId)
@@ -695,30 +583,17 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
       return
     }
     if (canRelocate) {
-      // A cross-band drop under location grouping moves the page into that band's Set (root → the
-      // container). The order carries the landing: the destination's FULL membership (hidden rows
-      // keep their rank) with the drop spliced before the visible card it landed on.
       const row = rowById.get(activeId)
       const destPath = toZone === UNGROUPED ? source.path : setPaths.get(toZone)
       if (row && destPath && destPath !== parentOf(row.path)) {
-        // A row page_order can actually rank against: a direct child of the destination that
-        // isn't the card being moved.
         const isDestSibling = (r: ViewRow): boolean =>
           parentOf(r.path) === destPath && r.id !== activeId
         const all = flattenContainer(source, effectiveValues).rows
         const destIds = all.filter(isDestSibling).map((r) => r.id)
         const bandRows = flattenGroups(groups.filter((g) => g.key === toZone))
-        // The visual landing row — any card in the band, rolled-up descendants included.
         const beforeId = bandRows[toIndex]?.id ?? null
-        // A rolled-up descendant as the landing degrades to append on the canonical channel —
-        // walk forward to the first true sibling so the write lands as close to the drop slot
-        // as page_order can express.
         const sibBefore = bandRows.slice(toIndex).find(isDestSibling)?.id ?? null
         const order = spliceBeside(destIds, sibBefore, activeId, 'above')
-        // The live arrays hold the moved card's OLD rank as the sole comparator on a grouped
-        // view, and nothing re-emits them on a tree push — splice them in the drop's own act
-        // (the creation settle's law), rebuilt over full membership so a landing row a stale
-        // array never listed still anchors the slot instead of degrading to append.
         const allIds = all.map((r) => r.id)
         const spliceLive = (existing: string[] | undefined): string[] =>
           tieOrderWith(existing, allIds, activeId, beforeId, 'above')
@@ -733,8 +608,6 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     if (row) setProperty(row, groupPropId, groupKeyToValue(toZone, groupPropType))
   }
 
-  // The grid's EFFECTIVE zoom (embed zoom × block-zoom; 1 full-screen) — chips scale with it, not with
-  // card_size, so the ×-drop gate keys on it. Measured off computed style; RO catches block-zoom steps.
   const rootRef = useRef<HTMLDivElement>(null)
   const [effectiveZoom, setEffectiveZoom] = useState(1)
   useEffect(() => {
@@ -750,8 +623,6 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   }, [])
 
   return (
-    // The suppress handle travels by context — the memoized cards pop native menus themselves,
-    // where caller-side wrapping can't reach.
     <GhostSuppress.Provider value={ghostApi.suppressWrap}>
       <div
         ref={rootRef}
@@ -773,16 +644,10 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
             </SortableZone>
           </div>
         )}
-        {/* One DragGroup spans every band so a card can be dragged ACROSS bands. The lifted card floats
-          as a portal overlay while the columns reflow to show its landing. */}
         <DragGroup
           onCommit={onCardDrop}
           crossZone={canReassign || canRelocate}
           resolveIndex={structuralSlotFor}
-          // The lifted card IS the whole card (the nav-gallery drag look), not a partial glyph — the same
-          // CardFace the live card renders, at is-dragging opacity, floating under the pointer while its
-          // slot reflows to show the landing. The `.cards-view` carrier re-declares the knob vars +
-          // view zoom that the body-portaled overlay would otherwise lose (thumb/scale/compact reserve).
           renderOverlay={(id) => {
             const r = rowById.get(id)
             if (!r || !ctx) return null
@@ -831,8 +696,6 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
           <BandDnd bands={bands} labelFor={bandLabel} onDrop={onBandDrop} nestable={false}>
             {groups.map((g) => {
               const rows = flattenGroups([g])
-              // Group By: None is one headerless, force-open band — a stale collapse from another grouping
-              // would otherwise hide every card with no head to toggle.
               const isCollapsed = !flatMode && collapsed.has(g.key)
               return (
                 <ViewGroupBand
@@ -924,11 +787,6 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   )
 }
 
-/** The hover ghost card — the card's own skeleton at the inactive dim: the unloaded-cover
- *  placeholder in the image band, the card's image-to-text divider, an (icon)(New Page) title
- *  row, and — in a Standard layout with visible properties — their ghosted label rows. Pure
- *  chrome: no page until the click, which runs the same immediate-create act as the card
- *  menu's New Page. Never a drag member. */
 function GhostCard({
   banner,
   view,
@@ -1081,13 +939,9 @@ interface PageCardProps {
   onHover: (id: string, entering: boolean) => void
   onIconPicker: (open: boolean) => void
   draggable: boolean
-  /** False when the embed zoom shrinks chips too far — drops multi-select's inline ×. */
   allowInlineRemove: boolean
 }
 
-/** The card's property body: the visible, non-blank columns (`shown`), each an interactive
- *  CardValue. Only rendered when there ARE properties (no empty reserve gap) — an empty card's
- *  add-input is the breadcrumb instead. Clicking the flow's empty space adds another. */
 function CardProperties({
   row,
   view,
@@ -1116,8 +970,6 @@ function CardProperties({
   const styleFor = useStyleFor()
   if (!ctx) return null
   const compact = isCompact(view)
-  // The RESOLVED style (type defaults under the saved entry) — the table's shared resolver, so the
-  // Style menu's checked radio reflects what actually renders (a raw entry leaves defaults unchecked).
   const style = (id: string): ColumnStyle => styleFor(id, ctx.schema, view)
   const zoneClick = (e: React.MouseEvent): void => {
     if (e.target === e.currentTarget) onZoneClick(e)
@@ -1159,12 +1011,8 @@ function CardProperties({
   )
 }
 
-// A no-op for the drag-ghost's inert handlers (the overlay is pointer-events:none, so nothing fires).
 const NOOP = (): void => {}
 
-/** The card's inner face — the image band + the title/property/breadcrumb column. ONE source
- *  shared by the live PageCard and the drag-ghost overlay, so the lifted card is the whole faithful
- *  card, not a hand-built partial. Memoized so the per-move overlay re-render is a no-op. */
 const CardFace = memo(function CardFace({
   row,
   view,
@@ -1194,7 +1042,6 @@ const CardFace = memo(function CardFace({
   ctx: ResolveContext | null
   crumbs: TrailSegment[]
   src: string | undefined
-  /** The page's `cover` value — Cover mode frames it through AssetImage; Preview uses `src`. */
   cover?: string
   iconName: string
   columns: ResolvedColumn[]
@@ -1203,7 +1050,6 @@ const CardFace = memo(function CardFace({
   textRef?: React.Ref<HTMLDivElement>
   thumbRef?: React.Ref<HTMLDivElement>
   onThumbContextMenu?: (e: React.MouseEvent) => void
-  /** The add-property action (empty-flow / breadcrumb / text-zone empty space). Absent on the ghost. */
   onZoneClick?: (e: React.MouseEvent) => void
   onCommitValue: (row: ViewRow, column: ResolvedColumn, value: PropertyValue | null) => void
   onStyle: (colId: string, key: keyof ColumnStyle & string, value: string) => void
@@ -1223,9 +1069,6 @@ const CardFace = memo(function CardFace({
       <span>{row.title}</span>
     </CardTitle>
   )
-  // While this card is the naming target the whole title row swaps for the fenced field —
-  // outside the OverScroll clip, the glyph staying put, pointerdown stopped against the
-  // whole-surface drag handle.
   const namingRow = naming && (
     <CardTitle mode="static" onPointerDown={(e) => e.stopPropagation()}>
       {titleIcon}
@@ -1296,10 +1139,6 @@ const CardFace = memo(function CardFace({
   )
 })
 
-// One card into its band's SortableZone — the drag shell rides the card root (NavGallery's DraggableCard
-// split: the engine owns the root's transform; hover-pop lives on the body inside). Memoized (the table's
-// DataRow idiom) so a card bails on a parent re-render its inputs didn't touch; the drag hook lives inside,
-// so the dragging band still repaints per frame via its Zone.
 const PageCard = memo(function PageCard({
   row,
   view,
@@ -1322,9 +1161,6 @@ const PageCard = memo(function PageCard({
   draggable,
   allowInlineRemove,
 }: PageCardProps): React.JSX.Element {
-  // The card is a member of the grid-level DragGroup (cross-band). `draggable` is off when neither
-  // within-band reorder nor cross-band reassign applies (a multi-key sort, computed location order),
-  // so the card renders inert — no handle armed.
   const gdrag = useGroupedDragItem(row.id)
   const drag = draggable ? gdrag : null
   // The boolean, not the object: `gdrag` is a fresh object per slot flip, so a handler keyed on it
@@ -1333,43 +1169,27 @@ const PageCard = memo(function PageCard({
   const version = useSession((s) => s.thumbVersions[`page:${row.id}`] ?? 0)
   const tree = useSession((s) => s.tree)
   const [failed, setFailed] = useState(false)
-  // A broken image latches `failed` — a cover change must retry the NEW src, not keep the placeholder.
   const lastSrc = useRef<string | undefined>(undefined)
 
-  // This card's text-area ref anchors the add-picker for both the property zone's empty space
-  // and the location row.
   const textRef = useRef<HTMLDivElement>(null)
-  // Built where it's read — both consumers are event handlers, and computing it in render walked
-  // the schema per card for a list only a click ever looks at. The grid-level host builds its own.
   const addableNow = (): AddEntry[] => (ctx ? addEntriesFor(row, view, ctx, columns, tree) : [])
   const openAdd = useCallback(
     (e: React.MouseEvent): void => {
       e.stopPropagation()
-      // Nothing addable → don't pop a dead-end empty picker (the native menu already omits its submenu).
       if (!isDragging && addableNow().length > 0 && textRef.current)
         onOpenAddPicker({ rowId: row.id, anchor: textRef.current, initialEntry: null })
     },
     [isDragging, onOpenAddPicker, row, ctx, view, columns, tree],
   )
   const mutate = useSession((s) => s.mutate)
-  // The card is the live naming target — creation and menu Rename both open the fenced inline
-  // field (cards were the odd surface out; the popover rename retired with it). A session the
-  // gesture declared for the sidebar stays the sidebar's: the card keeps its title row and its
-  // click-to-open rather than swapping in a field the fence will never award it.
   const naming = useSession((s) => s.renamingPath === row.path && s.renamingHost !== 'sidebar')
-  // The view's ghost stands down while any of this card's native menus own the pointer.
   const holdGhost = useContext(GhostSuppress)
   const [iconOpen, setIconOpen] = useState(false)
-  // The icon picker holds the dwell for its whole life (the menus above only cover their own
-  // pop) — effect-paired so an unmount with the picker open can never leak the hold.
   useEffect(() => {
     if (!iconOpen) return
     onIconPicker(true)
     return () => onIconPicker(false)
   }, [iconOpen, onIconPicker])
-  // The card's native right-click menu handles page meta + an Add Property ▸ submenu — the add
-  // path for cards with no in-body add surface. A value right-click is caught by CardValue's own
-  // menu (it stops propagation), so this handles the empty/title/thumb.
   const onCardContextMenu = async (e: React.MouseEvent): Promise<void> => {
     e.preventDefault()
     e.stopPropagation()
@@ -1407,9 +1227,6 @@ const PageCard = memo(function PageCard({
   const cover = coverOf(row)
   const onImgError = useCallback(() => setFailed(true), [])
   const thumbRef = useRef<HTMLDivElement>(null)
-  // The image band's banner menu (the PageHeader flow), worded for the view's display config —
-  // Cover mode says Cover, Preview says Banner (both edit the page's one settable image; a Preview
-  // thumb is a capture, not a pickable file). Edit joins it; onSave frames the cover.
   const {
     openMenu: openBannerMenu,
     editing,
@@ -1425,7 +1242,6 @@ const PageCard = memo(function PageCard({
     onDone: onRefreshValues,
     autoEdit: true,
   })
-  // Only Preview's capture thumbnail rides `src`; a Cover is framed by AssetImage from `cover`.
   const src = banner === 'preview' ? thumbSrc(nexusId, row.id, version) : undefined
   if (src !== lastSrc.current) {
     lastSrc.current = src
@@ -1435,8 +1251,6 @@ const PageCard = memo(function PageCard({
   const active = useSession((s) => s.selection.kind === 'page' && s.selection.id === row.id)
   const iconName = entityIcon('page', row.icon, defaultIcons)
 
-  // The drag engine fires a synthesized click after a pointer drag — a reorder-drop must not
-  // navigate (NavGallery's `!isDragging` guard).
   return (
     <CardRoot
       drag={drag}
@@ -1446,19 +1260,12 @@ const PageCard = memo(function PageCard({
       onPointerLeave={() => onHover(row.id, false)}
       onClick={(e) => {
         if (drag?.isDragging || naming) return
-        // Only the title + banner open the page. A click landing anywhere else — a value's picker that
-        // just dismissed, the reflowed compact flow, the close-animation window — must not navigate.
-        // elementFromPoint reads the real element under the pointer, robust to whatever moved between
-        // press and release (a value's own click stops propagation, so it never reaches here).
         const hit = document.elementFromPoint(e.clientX, e.clientY)
         if (hit && e.currentTarget.contains(hit) && hit.closest('.card-title, .card-thumb'))
           onOpen(row, e.metaKey)
       }}
       onContextMenu={onCardContextMenu}
     >
-      {/* The displacement wrapper — the ghost's FLIP rides it: the root's transform belongs to
-          the drag engine, and the body is hover-pop's surface whose stylesheet transitions
-          transform (an inverse transform there would animate — a wrong-direction hop). */}
       <div className="card-displace">
         <CardBody>
           <CardFace
@@ -1489,8 +1296,6 @@ const PageCard = memo(function PageCard({
           />
         </CardBody>
       </div>
-      {/* A persistent mount riding `open` — the Bloom-out plays on dismiss (a conditional mount
-          tears the instance out mid-exit). The add-picker lives at the grid-level host, not here. */}
       <IconPicker
         open={iconOpen}
         triggerRef={textRef}

@@ -38,7 +38,6 @@ export function NavGallery({
 }): React.JSX.Element {
   const reorderPin = useSession((s) => s.reorderPin)
   const reorderRecentStore = useSession((s) => s.reorderRecent)
-  // NavWindow overrides to also rewrite its frozen snapshot; NavView uses the store directly.
   const reorderRecent = onReorderRecent ?? reorderRecentStore
   const nexusId = useSession((s) => s.tree?.nexus.id ?? '')
   const [menu, setMenu] = useState<{ item: ResolvedNav } | null>(null)
@@ -50,7 +49,6 @@ export function NavGallery({
   const card = (it: ResolvedNav): React.JSX.Element => (
     <DraggableCard key={it.key} it={it} nexusId={nexusId} onSelect={onSelect} onMenu={openMenu} />
   )
-  // Search results render static — dragging a filtered view would rewrite the recents order out from under the query.
   return (
     <div className="nav-gallery">
       <div className={cx('card-grid', frozenLayout && 'is-fill')}>
