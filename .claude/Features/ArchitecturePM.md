@@ -125,7 +125,7 @@ Autosave belongs to one path-keyed flush registry shared by every editor host: e
 
 #### II. The Device-Local Database
 
-**SOURCE:** `src/main/db/schema.ts` · `src/main/db/localState.ts` · `src/main/indexSeed.ts`
+**SOURCE:** `Pommora/src/main/db/schema.ts` · `Pommora/src/main/db/localState.ts` · `Pommora/src/main/indexSeed.ts`
 
 `nexus.db` lives inside the Nexus, so a moved or renamed folder keeps it, but it never syncs: it holds what is true of this computer's session rather than of the content. It has two roles. **Operational state** is a keyed store (`local_state`) of per-machine chrome — folds, the active view and manual order per container, heading columns and the header icon, footnotes overrides, embed heights and zooms, aliases, fetched link titles, block documents, the tab set, the window tab sets, the recents stream, the record baseline, the hover pane size, and device preferences — each change a single-row upsert, an empty value deleting its key. **The content index** (`mentions`, `page_values`, `indexed_files`) records which pages mention which titles and which governed keys and values each page carries. It is derived state, disposable by construction: the open-time seed rebuilds it from the corpus, reading only files whose mtime or size moved since they were last indexed, over the same set of files the sweeps rewrite (`corpusFiles`), so "indexed" and "rewritable" name one set. A query answers null when there is no index and its caller falls back to a full scan.
 
