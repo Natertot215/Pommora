@@ -92,16 +92,6 @@ export const hiddenZone = style({ flex: '1 1 auto' })
 
 globalStyle(`${hiddenRow} ${eyeToggleButton}`, { color: c.label.tertiary, opacity: 1 })
 
-export const eyeInert = style([
-  accessoryButton,
-  {
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    opacity: 'var(--state-ghost)',
-  },
-])
-
 export const frameDnd = style({
   display: 'flex',
   flexDirection: 'column',
