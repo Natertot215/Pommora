@@ -1,19 +1,10 @@
-/* Banner: a full-bleed cover behind the glass that scrolls with content, plus the no-banner
-   hover-revealed "Add Banner" affordance. */
-
 .banner {
   position: relative;
   height: 230px;
-  /* The banner title's type size — the identity icon beside it is sized to match, so both read the
-     one declaration rather than each restating the number. */
   --detail-title-size: var(--text-title-small-size);
-  border-bottom: var(--width-175) solid var(--border-base); /* the shared heading↔body seam (same token as the table heading) */
+  border-bottom: var(--width-175) solid var(--border-base);
 }
-/* The name sits at the content's left margin (clear of the sidebar), not the full-bleed image
-   edge — so it reads on the visible part of the banner. */
-/* One container-title size for the banner overlay AND the banner-less header (DRY) — a
-   non-banner view's title must not differ in size from a banner view's, and collections + sets
-   (same Banner) stay identical. */
+
 /* The empty-title class is doubled: the rename input wears it beside the family reset, whose
    `font` shorthand sits at the same weight — the title's scale must win on specificity. */
 .banner-title,
@@ -28,13 +19,11 @@
 .banner-title {
   position: absolute;
   bottom: 12px;
-  /* Every banner title sits on the tight --content-edge, content and surface views alike — the
-     title hugs the block gutter even when the body carries the wider detail lane. */
-  left: calc(var(--sidebar-clearance) + var(--content-edge));
+  left: var(--content-start);
   right: 28px;
   display: flex;
   align-items: center;
-  gap: 8px; /* the shared detail-title icon gap */
+  gap: 8px;
   text-shadow: var(--banner-cast);
   pointer-events: none;
   transition: left var(--duration-base) var(--ease-base);
@@ -45,13 +34,8 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-/* Non-homepage banners host the shared DetailTitleHeader (right-click → Rename / Edit Icon,
-   inline rename). The banner overlay is pointer-inert; only the header's icon + text re-enable
-   hits, so a right-click on empty overlay width still reaches the banner's Change/Remove menu.
-   Size/weight/color re-skin the header to the banner-title look via its own surface knob. */
+
 .banner-title .detail-title {
-  /* Stated on the element, not inherited: DetailTitleHeader sets its own default on this same
-     class, and a property set on the element beats one coming down from the banner. */
   --detail-title-size: var(--text-title-small-size);
   min-width: 0;
 }
@@ -69,9 +53,7 @@
   font-weight: var(--weight-semibold);
   color: var(--label-primary);
 }
-/* The homepage identity icon leads its title (photo or glyph), sized to the title glyph. It and the
-   title re-enable pointer hits (the overlay is otherwise inert) so their right-click reaches the
-   Hide/Show-Icon menu and the title's double-click rename fires. */
+
 .banner-home-icon {
   width: var(--detail-title-size);
   height: var(--detail-title-size);
@@ -83,8 +65,6 @@
   overflow: hidden;
   color: var(--label-primary);
   filter: drop-shadow(var(--banner-cast));
-  /* Hide/show slides the icon in/out on the slide token (--duration-base) — max-width collapses the
-     space, the translate carries it, and the negative margin swallows the banner-title gap. */
   transition:
     max-width var(--duration-base) var(--ease-base),
     opacity var(--duration-base) var(--ease-base),
@@ -105,20 +85,10 @@
   transition: none;
 }
 
-/* No-banner header — the title always shows (a banner-less view still names itself), with the
-   hover Add-Banner strip above it. Self-pads (clears the floating toolbar + content insets) since
-   it sits as the view's header, not inside the padded body. */
 .banner-empty {
-  /* The Add-Banner zone (--add-banner-zone) opens below the floating toolbar; the title follows it.
-     Top pad clears the toolbar (app-inset + 1px optical + toolbar-h) so the zone starts exactly at
-     the toolbar's bottom edge, and the button centers vertically inside that zone (see .add-banner-strip). */
   --add-banner-zone: 44px;
-  /* Title on the unified surface inset (matches the banner-image header's title). */
   padding: calc(var(--app-inset) + 1px + var(--toolbar-h))
-    calc(var(--inspector-clearance) + var(--content-inset)) 14px
-    calc(var(--sidebar-clearance) + var(--content-edge));
-  /* Full-width divider below the title — content-views always carry it (banner or not), unlike
-     pages' inset divider. The shared heading↔body seam, same as the banner image's bottom. */
+    calc(var(--inspector-clearance) + var(--content-inset)) 14px var(--content-start);
   border-bottom: var(--width-175) solid var(--border-base);
   transition:
     padding-left var(--duration-base) var(--ease-base),
@@ -127,16 +97,14 @@
 .shell.is-resizing .banner-empty {
   transition: none;
 }
-/* A banner-less block surface tightens its header's RIGHT edge to match (the title's left is already the
-   unified surface inset; page/table headers keep the standard right). */
+
 .banner-empty.is-surface {
-  padding-right: calc(var(--inspector-clearance) + var(--content-edge));
+  padding-right: var(--content-start-right);
 }
 .banner-empty-title {
   line-height: 1.2;
 }
-/* The banner-less header hosts the same DetailTitleHeader as the banner overlay — re-skin it to
-   the shared container-title size (no shadow/pointer tricks: there's no image underneath). */
+
 .banner-empty-title .detail-title {
   --detail-title-size: var(--text-title-small-size);
   min-width: 0;
@@ -147,9 +115,6 @@
   color: var(--label-primary);
 }
 
-/* The hover-revealed Add-Banner button. The strip is a
-   fixed-height zone between the floating toolbar and the title; the button sits centered within it so
-   the affordance reads in the gap, not jammed under the toolbar. (--add-banner-zone set by the header.) */
 .add-banner-strip {
   height: var(--add-banner-zone, 44px);
   display: flex;

@@ -12,8 +12,7 @@
 .nav-view-head {
   flex-shrink: 0;
   border-bottom: var(--width-100) solid var(--border-base);
-  margin: 0 calc(var(--inspector-clearance) + var(--content-edge)) 0
-    calc(var(--sidebar-clearance) + var(--content-edge));
+  margin: 0 var(--content-start-right) 0 var(--content-start);
   transition:
     margin-left var(--duration-base) var(--ease-base),
     margin-right var(--duration-base) var(--ease-base);
