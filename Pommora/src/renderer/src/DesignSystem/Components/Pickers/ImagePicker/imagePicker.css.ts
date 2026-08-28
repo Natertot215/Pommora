@@ -1,4 +1,5 @@
-import { style } from '@vanilla-extract/css'
+import { globalStyle, style } from '@vanilla-extract/css'
+import { strip } from '../../Controls/Slider/slider.css'
 import { text, vars } from '../../../Tokens'
 import { stack } from '../../../Tokens/stack'
 import { accessoryButton, detail, rowBox } from '../../../Menus/menu-base.css'
@@ -71,6 +72,7 @@ export const cornerGlyphEnd = style([cornerGlyph, { right: CORNER_INSET }])
 export const message = style([text.footnote.standard, { color: c.label.secondary }])
 
 export const sliderRow = style([rowBox, { gap: '10px', paddingInline: 0 }])
+globalStyle(`${sliderRow} ${strip}`, { flex: 1, width: 'auto' })
 
 export const zoomReadout = style([detail, { color: c.label.secondary }])
 
