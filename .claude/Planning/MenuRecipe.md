@@ -646,7 +646,7 @@ Every phase runs the same loop. Nothing advances on a summary; every claim is re
   - [x] Task 12 — Autocomplete · `da647e88`
   - [x] Task 12a — NavTrail owns its look · `0f6325c5`
   - [x] Task 12b — the Trash is a menu · `46aac3d1 + 659b25e2`
-- [ ] **Phase 3** — The Index · base `cffdd681` · executor `71320620..3a6acd1d`
+- [x] **Phase 3** — The Index · base `cffdd681` · executor `71320620..3a6acd1d` · simplifier `0bbf2865` · review `3eeda281` · comment-killer `4a173cfd` · breaker `a2369d4a` · Gate 3 closed
   - [x] Task 13 — `menu-index.tsx` · `71320620`
   - [x] Task 14 — the trailing slot · `f2a59d41`
   - [x] Task 15 — SettingsWindow · `21322586`
@@ -655,7 +655,7 @@ Every phase runs the same loop. Nothing advances on a summary; every claim is re
   - [x] Task 18 — GroupFrame · `760352dd + 3a6acd1d`
   - [x] Task 19 — the property editors · `1e3a5bd3`
   - [x] Task 20 — FilterFrame · `05392979`
-- [ ] **Phase 4** — The Edges Found Alongside
+- [ ] **Phase 4** — The Edges Found Alongside · base `a2369d4a`
   - [ ] Task 21 — the content edge is one token
   - [ ] Task 22 — IconPicker's cell wears the shell
   - [ ] Task 23 — the icon ladder is named as the type ramp is
@@ -676,6 +676,8 @@ Every phase runs the same loop. Nothing advances on a summary; every claim is re
 - Round 3 (build-breaking-agent, Phase 1 range, 08-28): 2 findings, 17 kills. F1 — `heading` on the row token a phase ahead of the boxes it labels → registered as Hazard Window 2, closed by Task 7 (zero code). F2 — `allHeading` lost the old row's `gap: 4px` and rode `rowBox`'s 8 while `topRow`/`footing` sit at 4 → composes `flushAffordance` (its `--row-pad-lead` duplicate gone). Measured on the built CSS: Standard 28 · Compact 23 · TopRow 18 · `topRowFlat` 14; every composed `globalStyle` emits one class; the Showcase's row padding is now live (it read an undefined `--row-inset` before).
 
 - Round 4 (build-breaking-agent, Phase 2 range, 08-28): 7 findings, 14 kills. F1 `NavTrail` owning a rung re-registered the two ruled survivors (the Subfield's crumbs, a PathField's trail) → both keep their host's register with `font: inherit; color: inherit` on the consumer (`.subfield-crumbs`, `fields.fieldTrail`); F2 the ImagePicker's zoom strip stopped spanning its row → host-local `globalStyle(sliderRow strip)` flex 1; F3 the Trash's date lane sat 14px off the head → `.trash-row` zeroes `--row-pad-trail` and its bar sits at the lane; F4 the Scale readout wearing `detail` capped the cluster at 55% → it wears `footingLabel`; F5 `'nav-pin'` hard-coded like `overlay` was → the row's call site passes both. All in `cffdd681`. F6 — a Trash row with `onClick` is a `role=button` tab stop beside its checkbox's; the recipe ties role to `onClick` by construction and NavList rows carry the same two stops → an Open Call for Nathan (a `MenuItem` opt-out, or the row loses the pointer convenience). F7 — the Settings PathField hugs without a cap → rejected: the hug is ruled; at the default two-segment path the row is 44. Unknowns for Nathan's pass: a pin reorder by drag lands; the `[[` autocomplete measured live.
+
+- Round 5 (build-breaking-agent, Phase 3 range, 08-28): 5 findings, 3 latents, 18 kills. F1 the Compact chip's name lost its control rung and tone when `compactTitle` moved "as geometry" → restored on `Properties/optionRow.css.ts`; F2 the Title row's inert eye rendered at full opacity as a disabled `AccessoryButton` (`type.base`'s `:disabled` un-dims) → `accessoryButton` ghosts on `&&:disabled`, which also ghosts the two other disabled accessory buttons; F3 sixteen non-clickable editor rows inherited the shell through the index's only item kind → `MenuItem` and the index take `inert`, composing `rowBox` alone with no role; F4 the footing rung landed on Filter's pickers but not Group's → `pickerControl.value` reads the footnote rung inside any `footingBar` through a global, and the hand-passed `footing` prop is deleted (four callers); a latent — `MenuIndex` keying rows by label — closed by keying on the ordinal. All in `a2369d4a`. F5 — Settings' section titles render as the index's `div` heading rather than an `<h3>`, leaving the window's document outline → an Open Call for Nathan (a `level` on the heading kind, or accept). Latents left: the `action` kind has no production consumer (PropertyFrame's All Properties row still hand-builds it with its beat var); a row with `onSelect` beside a `switch`/`color` trailing would fire both (no site does). Coverage note: the flush rule keys on any `trailing`, so 52 rows went flush, not the 39 the census named — the ruled behavior landing on every row that has a cluster.
 
 ### Open Against Later Tasks
 - Task 14 (from Gate 2's running pass): Hazard Window 3 is real — the Settings sliders and LayoutFrame's Scale slider measure 0 wide inside the trailing cluster (`flex: 0 0 auto`). With seat widths ruled out (`.settings-wide` gone, no `--row-trailing-width`), the Slider takes its own track width as a literal `KNOB` in its own stylesheet — a control's width is the control's — and `wide` is dropped from `MenuItem` and the index.
@@ -721,7 +723,7 @@ Ruled 08-27 (Nathan, before sleep): the plan runs to the end unattended — ever
 **Per phase (1–4) — none skipped**
 - [x] Phase 1: executor commits · simplifier · comment-killer · orchestrator review (diff read, three gates, Derivations + Dead Vocabulary re-run against control 9, Made False rows) · breaker round(s), every finding verified · running pass (screenshots where reachable) · Progress hashes · Found items adjudicated — `27c5171c..7226d650`
 - [x] Phase 2: the same — `7226d650..cffdd681`
-- [ ] Phase 3: the same
+- [x] Phase 3: the same — `cffdd681..a2369d4a`
 - [ ] Phase 4: the same
 
 **Landing (§Landing 1–6)**
