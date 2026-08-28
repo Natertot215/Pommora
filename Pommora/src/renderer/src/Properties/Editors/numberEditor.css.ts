@@ -31,6 +31,6 @@ export const valueCaret = style([
     minWidth: '12px',
     width: 'auto',
     fieldSizing: 'content',
-    color: colorVars.color.label.secondary,
+    color: colorVars.color.label.control,
   },
 ])
