@@ -10,6 +10,7 @@ import {
 } from '@shared/views'
 import { Icon, type IconName } from '@renderer/DesignSystem/Symbols'
 import {
+  MenuIndex,
   MenuItem,
   MenuSeparator,
   MenuTopRow,
@@ -321,16 +322,6 @@ export function LayoutFrame({
       <MenuTopRow label="Settings" current="Layout" onBack={onBack} />
     )
 
-  const leafRow = (r: (typeof FRAME_ROWS)[number]): React.JSX.Element => (
-    <MenuItem
-      key={r.id}
-      leading={<Icon name={r.icon} size="title3" />}
-      trailing={<Icon name="chevron-right" />}
-      onClick={() => setFrame(r.id)}
-    >
-      {r.label}
-    </MenuItem>
-  )
   const mainFrame = (
     <MenuScrollFrame
       header={header}
@@ -345,7 +336,19 @@ export function LayoutFrame({
       )}
       {grid}
       {door === 'full' ? (
-        FRAME_ROWS.map(leafRow)
+        <MenuIndex
+          sections={[
+            {
+              rows: FRAME_ROWS.map((r) => ({
+                kind: 'item',
+                icon: <Icon name={r.icon} size="title3" />,
+                label: r.label,
+                trailing: { kind: 'chevron' },
+                onSelect: () => setFrame(r.id),
+              })),
+            },
+          ]}
+        />
       ) : view.type === 'table' ? (
         <LayoutToggles source={source} view={view} />
       ) : (
