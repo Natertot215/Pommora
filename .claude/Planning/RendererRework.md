@@ -1,6 +1,6 @@
 ## The Renderer Rework
 
-> **Status:** in directed cleanup, 08-28-2026 — the twelve-perspective exploration reported and its verified findings are folded into §2 and §Settled; Nathan is now landing directed cleanups against them (the design-system filing + glue split of `f756824b`; the title-shadow; the menu-heading compaction; the window-base/toolbar/inset consolidation), each `/closeout`-gated. The framework (§2 rewritten into phases) is not yet written. · **Scope:** `Pommora/src/renderer` whole — folders, names, tokens, stylesheets, recipes, boundaries, component APIs, and behavior where a perspective justifies it; the design system's pending items (an inactive label tone, the type gaps) ride it · **Replaces:** the Renderer Atlas, the Renderer Refactor ledger, and the abandoned Tiles plan, whose standing content is folded in below · **Beside it:** [[Codebase-Cleanup-Checklist]] (the process-side half — `persist()`, the view host, the `main/index.ts` split, the drag adapters).
+> **Status:** shaped 08-28-2026 — the exploration is dispatched; nothing executes from this document until it has reported and the framework is ratified · **Scope:** `Pommora/src/renderer` whole — folders, names, tokens, stylesheets, recipes, boundaries, component APIs, and behavior where a perspective justifies it; the design system's pending items (an inactive label tone, the type gaps) ride it · **Replaces:** the Renderer Atlas, the Renderer Refactor ledger, and the abandoned Tiles plan, whose standing content is folded in below · **Beside it:** [[Codebase-Cleanup-Checklist]] (the process-side half — `persist()`, the view host, the `main/index.ts` split, the drag adapters).
 
 The renderer works. It is filed by the order things were built, styled in two forms with a rule that thirty sheets fail, and tokenized unevenly — motion and color are on their ladders, geometry is hundreds of bare pixel values with a handful of named insets. Two organizational passes (08-25 to 08-28) moved `Links/`, `Interface/`, the store, and landed the Menu recipe. What remains was carried in two documents as a ledger of moves and an atlas of evidence; this document is the one list of what is still proposed, why, and what each waits on — and the method for exploring the system whole — as consultants, not inspectors — before any of it is scheduled.
 
@@ -9,7 +9,7 @@ The renderer works. It is filed by the order things were built, styled in two fo
 1. **The rules that survive** — the eight filing rules, the target tree, and the rulings a sweep must not re-derive.
 2. **The checklist** — every proposed move, grouped by kind, each with its why and what it waits on.
 3. **The open rulings** — the calls only Nathan can make.
-4. **The exploration** — reported; its verdict, what's landed since, and what's next.
+4. **The exploration** — the perspectives, their briefs, and how findings and recommendations return.
 5. **Pointers** — what lives elsewhere and where.
 
 A row that lands leaves this document; History carries what happened. A ruling taken moves from §Open Rulings into §Settled and deletes the row it answered.
@@ -188,13 +188,55 @@ The calls only Nathan can make; each deletes a row above when taken. **All are d
 
 ---
 
-### 4. The Exploration — reported
+### 4. The Exploration
 
-The twelve-perspective exploration ran 08-28 (the Reducer as the priority lens, plus Cartographer, Exports, Architect, Stylist, Token Designer, Recipe, Lexicographer, Boundary, Newcomer, Archivist, and a Skeptic over their reports). Its verdict: the renderer is structurally healthy — zero import cycles, near-zero dead code — and the real work is naming, filing, and the stylesheet vars. Nathan's DRY worry was confirmed and bounded (~237 non-token vars, ~61 write-once-read-once), and the fix is to apply R5 at each sheet the rework opens, never a sweep. Every verified finding became a row in §2, a §Settled entry, or a killed candidate; the full per-perspective reports and the synthesis live in `scratchpad/explore/`.
+The two documents this one replaces were produced by seven read-only lenses over one weekend, asking "is the tree filed correctly." They found "no dead code, no wrong architecture, one behavioral bug." This exploration asks a wider question of every layer — *is this the system we want, and what would it be instead* — and its agents are consultants, not inspectors: each one explores a perspective, forms an opinion, and returns findings **with** a recommendation, the alternatives it weighed, and what each costs. Nothing is filtered for politeness or for agreement with a standing ruling; a consultant who thinks a Settled row is wrong says so by number, with the new reason.
 
-**Landed since (each `/closeout`-gated):** R1's boundary mandate rescinded; the design-system filing + `Actions/`/`Utilities/` glue split (`f756824b`); the title-shadow chain collapsed to one `.title-shadow` on `--shadow-base`; the menu heading compacted at its source; the window-base body/toolbar/inset consolidation (shared `.window-body`, `.window-pane-scroll`, `.window-toolbar-title`; content reads `--surface-inset`/`--content-inset`; the title falls under the inspector); the Trash inset alignment.
+#### The Questions
 
-**Next:** rule the open forks in §3, then write the framework — §2 rewritten into ordered phases with gates, ratified, executed one phase per session.
+What Nathan asked, and which perspectives answer them:
+
+1. **Unused and under-used exports** — what nothing imports; what one file imports and could own. → Cartographer, Exports.
+2. **Unneeded abstraction** — vars, classes, props, hooks, components with one writer and one reader; wrappers that only forward; layers that exist to be layers. → Exports, Architect.
+3. **Tokens where a raw value would be better**, and raw values where a token exists — both directions, per family. → Token Designer.
+4. **Shared-recipe opportunities** — surfaces built alike by hand that could wear one recipe. → Recipe.
+5. **Split, merge, delete** — files or folders holding two things, two holding one, anything holding nothing. → Cartographer, Architect.
+6. **Conflicting naming** — two spellings for one concept, one word for two, names that say what a thing was. → Lexicographer, Newcomer.
+7. **Confusing relations** — boundary crossings, cycles the lazy imports paper over, folders consumed from everywhere but their own. → Boundary, Newcomer.
+8. **What the CSS strategy should be** — vanilla-extract stays (Settled 5); within that, where plain CSS is honestly right under R6, and whether the bridge is the right token interface. → Stylist.
+9. **What the component API shape should be** — how a piece takes its data, how a recipe is worn, how a surface names itself. → Architect, Recipe.
+10. **What isn't needed at all** — the priority question, asked of everything the other nine touch. → Reducer, with every perspective feeding it.
+
+#### The Perspectives
+
+Each perspective is one agent with one question, a method, a guard list, and a return format. The Reducer runs as the priority lens — every other perspective is asked to hand it what it noticed could go. Agents read only. Every finding cites a file and line and is verified by the orchestrator at that line before it reaches Nathan; every recommendation carries its alternatives and their costs so the decision arrives shaped.
+
+| Perspective | Question | Method | Returns |
+| --- | --- | --- | --- |
+| **Reducer** *(priority)* | What isn't needed? What could be reduced, removed, or eliminated outright — files, folders, layers, tokens, recipes, props, options, whole mechanisms? | Read every folder asking "what would be lost if this were gone" before asking what it does; for each mechanism, find the simpler thing it is standing in for; count what each abstraction buys against what it costs; treat a feature nobody has used as a candidate, not a fixture. | A ranked deletion list with the blast radius of each; the mechanisms that could collapse into a simpler one; the options and props that could go; a plain-prose estimate of how much smaller the renderer could be and where the bulk sits. |
+| **Cartographer** | What is each file, who consumes it, and does its folder agree? | Build the import graph over `src/renderer`; per file: importers, importing folders, own-folder importers; R2/R3; every folder-crossing edge by direction; cycles. | The graph as JSON; R2/R3 failures; lateral edges; cycles; split/merge candidates with the shape each would take. |
+| **Exports** | What does nothing read, and what does one thing read that could own it? | A `ts-prune`-class pass plus greps for what the typecheck can't see (CSS classes, vars, string keys, test-only exports); Settled 3, 4, 13 as guards. | Dead exports/classes/vars; test-only exports; one-reader exports ranked by how much indirection each buys. |
+| **Architect** | What should the layering be, and what would a clean-slate renderer of this app look like? | Read the tree against R1–R8 and against the app's real seams (main-owned data, per-window store, the five surface words); name the layers the code implies versus the ones the rules state; test each folder's one-word answer. | A proposed layer model with the folders under each; where today's tree disagrees and what the move costs; the abstractions that exist to be layers; two alternatives to the proposal, with why they lose. |
+| **Stylist** | Within vanilla-extract (Settled 5), where is plain CSS honestly right and is the bridge the right token interface? | Inventory every stylesheet by form, size, class-name contract, global vs scoped load, and who emits its class names; measure the bridge, the `&&` pins, and the `globalStyle` escapes; find where plain `.css` is honestly correct under R6. | The exceptions to `.css.ts` named against R6; the migration order and cost; whether the bridge stays the token interface; the specificity armor roster and what would let each pin go. |
+| **Token Designer** | Is every value read for what its token is for, and is every token worth its name? | Per family (color, type, geometry, motion, stack, tint): every read classified correct / wrong token / literal-where-token / token-where-literal; per token: reader count and whether readers agree with the definition; the `KNOB` roster; the vars declared outside `Tokens/`. | Both-direction misreads with counts; tokens to retire, rename, mint, or demote to a `KNOB`; the zoom family's composition rule as a proposal; the geometry ladder question answered with evidence rather than the standing ruling. |
+| **Recipe** | What is built alike by hand more than once, and what recipe would it wear? | Fingerprint every `.css.ts`/`.css` declaration block and every component's JSX shape; cluster near-identical members across files; for each cluster, diff the members. | Clusters with member sites and diffs; a named recipe each would wear, with the API it would need; the ones not worth a recipe and why. |
+| **Lexicographer** | Do names say what things are? | The concept table (tile/block, View/Renderer, icon/glyph, zoom/scale, band ×3, Choice/Option, Editing/Editors, crumb/trail, warm/cache) with counts; PascalCase-iff-component; stylesheet-beside-component; folder casing; names that describe a former state. | Conflicts with counts and a winner each; R7 failures; the rename sweeps as ordered batches with their blast radius. |
+| **Boundary** | What crosses a line the rules forbid, and what would a lint refuse? | R1 and R4 greps with control tokens; `DesignSystem/**` outbound edges; `Properties → Views/Tables`; `window.nexus` sites per folder; the store's readers per folder. | Every crossing with its reason (sanctioned / unsanctioned / unknown); the lint as a Biome config block; the inversions ranked by cost. |
+| **Newcomer** | Where would an engineer new to this codebase get lost, and what would they misfile? | Read the tree cold — folder names, file names, the barrels, the docs' map — before reading any ruling; write down every "why is this here" and every wrong guess; then read the rulings and record which ones a newcomer couldn't have derived. | The confusion list with the rule or rename that would have prevented each; the rulings that need to be structural (a folder, a lint) rather than documentary. |
+| **Archivist** | What was already ruled, and does the code still match? | Every Settled row against today's code; every Features doc claim about the renderer against the file it names. | Rulings the code has drifted from; rulings the code has outgrown; false doc claims. |
+| **Skeptic** | What in the above is wrong, and what did nobody ask? | Runs last over every report: contradictions between perspectives; findings that re-derive a Settled row without a new reason; the questions no perspective asked; the recommendations whose cost was understated. | A contradictions list; a "what nobody asked" list; a severity re-ranking of the whole with the reasons. |
+
+**Guards every perspective carries:** §Settled and §Refuted by number (contradict by citation, never silently); no edits, no comments, no "fixes" — findings and recommendations only; a count is not debt (find what chooses between the options before calling a spread a problem); a survey measuring two files against each other must count out what was already extracted beneath them; every grep names its control token; a recommendation without its alternatives and their cost is unfinished.
+
+**Return format (all perspectives):** a numbered catalog, each entry `severity · surface · file:line · mechanism · verification · the rule or ruling it bears on · recommendation · alternatives and cost`; then "what held" (negative results, so nobody re-runs them); then "killed candidates" (what looked like a finding and wasn't, with why); then a closing opinion in plain prose — what this perspective would do if it owned the renderer for a week.
+
+#### Sequencing
+
+1. **Nathan shapes the exploration** — taken 08-28: all twelve perspectives run, the Reducer as the priority, everything in scope, the ten rulings deferred, the Tiles plan abandoned so the tile world is seen fresh.
+2. **Dispatch** — the perspectives run read-only in parallel on one pinned commit; the Skeptic runs after them over their reports.
+3. **Verification** — the orchestrator opens every cited line; an unverified finding is dropped with a note, never passed through; recommendations are checked for the alternatives they owe.
+4. **The consulting session** — Nathan reads the verified catalog perspective by perspective; each recommendation becomes a checklist row (with its status), a Settled entry (with its reason), or a killed candidate — decided with him, in the order the Skeptic ranked them.
+5. **The framework** — this document's §2 rewritten from the decisions into phases with gates, in the plan form the Menu recipe used; ratified; executed one phase per session with `/closeout`. The framework is the document Nathan reads, the orchestrator edits, and a session follows.
 
 ---
 

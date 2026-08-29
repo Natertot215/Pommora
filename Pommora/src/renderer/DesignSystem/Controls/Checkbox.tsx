@@ -1,24 +1,52 @@
-import { boxGeometry } from '@renderer/DesignSystem/Labels'
+import type { CSSProperties } from 'react'
+import { solidColorCss } from '@renderer/DesignSystem/Tokens/solidColor'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import './checkbox.css'
 
-/** The editor's task marker as a real control. The look is shared with it down to the class; what
- *  this adds is the semantics a CodeMirror widget deliberately has none of — a role, a label, and
- *  keyboard activation. */
+export type CheckboxSize = 'standard' | 'compact'
+
+/** The app's one checkbox. Interactive by default — a role, a label, and keyboard activation the
+ *  editor's raw widget deliberately has none of; `readOnly` renders the same look as a plain value
+ *  glyph the row around it toggles. `filled` gives the empty box a resting wash, and `color`
+ *  overrides the accent the checked box tints from. */
 export function Checkbox({
   state,
   onChange,
   ariaLabel,
   className,
-  small,
+  size = 'standard',
+  filled,
+  color,
+  readOnly,
 }: {
   state: boolean
-  onChange: (next: boolean) => void
-  ariaLabel: string
+  onChange?: (next: boolean) => void
+  ariaLabel?: string
   className?: string
-  small?: boolean
+  size?: CheckboxSize
+  filled?: boolean
+  color?: string
+  readOnly?: boolean
 }): React.JSX.Element {
-  const mark = small ? 9 : 12
+  const compact = size === 'compact'
+  const cls = cx(
+    'checkbox',
+    compact && 'checkbox-compact',
+    filled && 'checkbox-filled',
+    state && 'checkbox-checked',
+    readOnly && 'checkbox-static',
+    className,
+  )
+  const style = color ? ({ '--checkbox-base': solidColorCss(color) } as CSSProperties) : undefined
+  const mark = state ? <CheckMark size={compact ? 9 : 12} /> : null
+
+  if (readOnly) {
+    return (
+      <span className={cls} style={style} aria-hidden="true">
+        {mark}
+      </span>
+    )
+  }
   return (
     // biome-ignore lint/a11y/useSemanticElements: the rule's element is a void one — it cannot hold the centered mark this look is drawn from, and its indeterminate state is a DOM property no attribute sets; role="checkbox" on a focusable element is the pattern
     <button
@@ -26,27 +54,22 @@ export function Checkbox({
       role="checkbox"
       aria-checked={state}
       aria-label={ariaLabel}
-      className={cx(
-        boxGeometry,
-        'pm-checkbox',
-        small && 'pm-checkbox-small',
-        state && 'pm-checkbox-checked',
-        className,
-      )}
+      className={cls}
+      style={style}
       // The row underneath is the checkbox's own larger target, so the press must not reach it
       // twice — and a press on a control never arms whatever gesture the row carries.
       onPointerDown={(e) => e.stopPropagation()}
       onClick={(e) => {
         e.stopPropagation()
-        onChange(!state)
+        onChange?.(!state)
       }}
     >
-      {state ? <CheckMark size={mark} /> : null}
+      {mark}
     </button>
   )
 }
 
-// Drawn rather than drawn from the registry: these ride inside a 17px box at a stroke the icon
+// Drawn rather than drawn from the registry: these ride inside a 16px box at a stroke the icon
 // components don't offer, and the editor's widget emits the identical markup as a raw string.
 const CheckMark = ({ size }: { size: number }): React.JSX.Element => (
   <svg

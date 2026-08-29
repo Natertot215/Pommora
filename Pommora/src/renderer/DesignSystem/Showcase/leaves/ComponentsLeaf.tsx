@@ -6,6 +6,7 @@ import { CalendarPicker } from '../../Pickers/CalendarPicker/CalendarPicker'
 import { ImagePicker } from '../../Pickers/ImagePicker/ImagePicker'
 import { PickerMenu, PickerOption } from '../../Pickers/picker-base'
 import { MenuSurface } from '../../Menus'
+import { Checkbox } from '../../Controls/Checkbox'
 import { condensedDate, formatDate } from '@renderer/Properties/Editing/formatValue'
 import { Label } from '../../Labels'
 
@@ -113,9 +114,31 @@ export function ComponentsLeaf(): React.JSX.Element {
           </PopupButton>
         </div>
       </section>
+      <section className="ds-section">
+        <h2>Checkboxes</h2>
+        <CheckboxDemo />
+      </section>
       <FieldsLeaf />
       <LabelsLeaf />
       <MenuLeaf />
+    </div>
+  )
+}
+
+/** The one checkbox at both sizes, empty and filled, plain and per-color. */
+function CheckboxDemo(): React.JSX.Element {
+  const [a, setA] = useState(false)
+  const [b, setB] = useState(true)
+  const [c, setC] = useState(false)
+  const [d, setD] = useState(true)
+  const [e, setE] = useState(true)
+  return (
+    <div className="ds-chip-row-items">
+      <Checkbox state={a} onChange={setA} ariaLabel="Standard" />
+      <Checkbox size="compact" state={b} onChange={setB} ariaLabel="Compact" />
+      <Checkbox filled state={c} onChange={setC} ariaLabel="Filled, empty" />
+      <Checkbox filled state={d} onChange={setD} ariaLabel="Filled, checked" />
+      <Checkbox filled color="blue" state={e} onChange={setE} ariaLabel="Filled, blue" />
     </div>
   )
 }

@@ -650,8 +650,3 @@ code {
   left: 0;
   z-index: 30;
 }
-.ds-checkbox-demo {
-  appearance: none;
-  font: inherit;
-  cursor: pointer;
-}

@@ -17,11 +17,6 @@ const SIZE = {
   pillRadius: '10px',
   tagRadius: '6px',
   textMax: '85px',
-
-  // Geometry for Checkbox properties.
-  boxSide: '16px',
-  boxRadius: '5.5px',
-  boxBorder: 'var(--width-150)',
 } as const
 
 const labelBase = style([
@@ -36,18 +31,6 @@ const labelBase = style([
     whiteSpace: 'nowrap',
   },
 ])
-
-/** Dimensions without the base, for a surface drawing its own frame (`pm-checkbox`). */
-export const boxGeometry = style({
-  width: SIZE.boxSide,
-  height: SIZE.boxSide,
-  padding: 0,
-  borderRadius: SIZE.boxRadius,
-  borderWidth: SIZE.boxBorder,
-})
-
-/** The task checkbox's box. */
-export const checkboxBox = style([labelBase, boxGeometry])
 
 // Geometry for the [Compact] style; same property assignment as [Standard].
 const chip = (radius: string): ComplexStyleRule => [
