@@ -190,7 +190,7 @@ function PageWindowBody({
         open: inspectorOpen,
         className: 'page-window-inspector',
         children: (
-          <div className="page-window-inspector-body">
+          <div className="window-pane-scroll">
             {inspectorOpen && <WindowInspector target={target} />}
           </div>
         ),
@@ -199,7 +199,7 @@ function PageWindowBody({
       footerLabel={footerLabel}
       footerLead={<CitationsToggle page={page} />}
     >
-      <div className="page-window-body over-scroll pgembed-grows" ref={bodyRef}>
+      <div className="window-body page-window-body over-scroll pgembed-grows" ref={bodyRef}>
         <PageEmbed
           key={target.path}
           path={target.path}

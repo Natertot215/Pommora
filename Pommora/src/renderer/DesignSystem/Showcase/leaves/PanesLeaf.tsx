@@ -79,7 +79,7 @@ export function PanesLeaf(): React.JSX.Element {
             open: inspectorOpen,
             className: 'settings-rail',
             children: (
-              <div className="settings-body panes-inspector">
+              <div className="window-body settings-body panes-inspector">
                 <h3 className={cx(heading, headingCaps)}>Inspector</h3>
                 <span className={cx(text.body.standard, 'panes-dim')}>dateFormat</span>
                 <span className={cx(text.body.standard, 'panes-dim')}>Full Date</span>
@@ -88,7 +88,7 @@ export function PanesLeaf(): React.JSX.Element {
             ),
           }}
         >
-          <div className="settings-body over-scroll">
+          <div className="window-body settings-body over-scroll">
             <h2 className={cx('settings-heading', text.headline.emphasized)}>General</h2>
             <div className="settings-section">
               {ROWS.map(([label, hint]) => (

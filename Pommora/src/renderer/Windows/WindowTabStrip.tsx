@@ -97,7 +97,13 @@ export function WindowTabStrip({
   return (
     <>
       {titlePresence.mounted && (
-        <div className={cx('page-window-title', titlePresence.closing && 'is-collapsing')}>
+        <div
+          className={cx(
+            'window-toolbar-title',
+            'page-window-title',
+            titlePresence.closing && 'is-collapsing',
+          )}
+        >
           {titlePresence.closing ? heldTitle.current : title}
         </div>
       )}

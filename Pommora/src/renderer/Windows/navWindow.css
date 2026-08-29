@@ -1,9 +1,5 @@
 .navwindow {
   padding: var(--app-inset);
-  /* KNOB — the pair sits further off the × here than in a toolbar band. */
-  --window-trail-gap: 6px;
-  /* KNOB — the shared content inset (search divider + rows align to this). */
-  --navwindow-inset: var(--surface-inset);
 }
 
 .navwindow .window-actions-flow {
@@ -59,28 +55,6 @@
   min-height: 0;
 }
 
-.navwindow-page {
-  flex: 1;
-  min-width: 0;
-  min-height: 0;
-  overflow-y: auto;
-  scrollbar-width: none;
-  transition: padding-right var(--duration-base) var(--ease-base);
-}
-.window.is-side-right-open .navwindow-page {
-  padding-right: calc(var(--window-side-r-w) + var(--window-side-inset));
-}
-.window.is-resizing .navwindow-page {
-  transition: none;
-}
-
-.navwindow-inspector-body {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  scrollbar-width: none;
-}
-
 .navwindow-rail-list {
   flex: 1;
   min-height: 0;
@@ -99,7 +73,6 @@
   min-height: 0;
   overflow-y: auto;
   padding: 6px 0;
-  --navwindow-inset-v: 0;
 }
 
 .navwindow-style-toggle {

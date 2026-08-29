@@ -16,7 +16,6 @@ export function WindowActions({
         size="button-inline"
         icon="sliders-horizontal"
         iconSize="body"
-        className="window-action"
         title="Settings"
         disabled
       />
@@ -24,7 +23,6 @@ export function WindowActions({
         size="button-inline"
         icon="panel-right"
         iconSize="body"
-        className="window-action"
         title="Inspector"
         aria-pressed={inspectorOpen}
         onClick={onToggleInspector}
