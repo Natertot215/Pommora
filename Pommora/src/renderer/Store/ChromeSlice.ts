@@ -25,6 +25,11 @@ export interface ChromeSlice {
   openSettings: () => void
   closeSettings: () => void
   toggleSettings: () => void
+  /** The iteration window — a blank floating surface for previewing a component in isolation,
+   *  summoned by its chord (App.tsx). */
+  iterationOpen: boolean
+  closeIteration: () => void
+  toggleIteration: () => void
   /** The per-nexus furniture back to its defaults, so a nexus without the setting can't inherit
    *  the previous one's. */
   resetChrome: () => void
@@ -123,6 +128,10 @@ export const createChromeSlice: Slice<ChromeSlice> = (set, get) => {
     openSettings: () => set({ settingsOpen: true }),
     closeSettings: () => set({ settingsOpen: false }),
     toggleSettings: () => set((s) => ({ settingsOpen: !s.settingsOpen })),
+
+    iterationOpen: false,
+    closeIteration: () => set({ iterationOpen: false }),
+    toggleIteration: () => set((s) => ({ iterationOpen: !s.iterationOpen })),
 
     resetChrome: () => set(PER_NEXUS),
   }
