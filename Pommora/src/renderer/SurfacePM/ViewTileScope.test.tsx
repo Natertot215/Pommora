@@ -9,6 +9,7 @@ import { useSession } from '@renderer/store'
 import { GroupFrame } from '@renderer/Frames/GroupFrame'
 import { SettingsFrame } from '@renderer/Frames/SettingsFrame'
 import {
+  resolveViewWrite,
   useSaveView,
   VIEW_CONFIG_LOCKED,
   ViewTileScopeProvider,
@@ -206,5 +207,23 @@ describe('a locked view-embed scope', () => {
     )
     await clickRow('Group')
     expect(texts()).toContain('Group By')
+  })
+})
+
+describe('resolveViewWrite — the one lock-write gate', () => {
+  it('writes the whole view when unlocked', () => {
+    expect(resolveViewWrite(false, view)).toEqual({ kind: 'config', view })
+  })
+  it('refuses a config write while locked', () => {
+    expect(resolveViewWrite(true, view)).toEqual({ kind: 'refused' })
+  })
+  it('folds a state-only write while locked, dropping config keys like name', () => {
+    const edited: SavedView = { ...view, name: 'Renamed', collapsed_groups: ['Done'] }
+    const write = resolveViewWrite(true, edited, { viewState: true })
+    expect(write.kind).toBe('state')
+    if (write.kind === 'state') {
+      expect('name' in write.state).toBe(false)
+      expect(write.state.collapsed_groups).toEqual(['Done'])
+    }
   })
 })
