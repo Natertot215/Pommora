@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
-import { Menu, MenuItem, MenuSeparator, heading } from '../../Menus'
-import { Icon } from '../../Symbols'
+import { Menu, MenuItem, MenuSeparator, heading } from '@renderer/DesignSystem/Menus'
+import { Icon } from '@renderer/DesignSystem/Symbols'
 
 function Panel({ children }: { children: ReactNode }): React.JSX.Element {
   return (

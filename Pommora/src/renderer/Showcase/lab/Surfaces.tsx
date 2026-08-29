@@ -1,7 +1,13 @@
 import { useState, type ReactNode } from 'react'
-import { Icon } from '../../Symbols'
-import { SortableZone, useDragItem, reorder, arraySwap, type Row } from '../../Interactions/drag'
-import { onActivateKey } from '../../Interactions/activate'
+import { Icon } from '@renderer/DesignSystem/Symbols'
+import {
+  SortableZone,
+  useDragItem,
+  reorder,
+  arraySwap,
+  type Row,
+} from '@renderer/DesignSystem/Interactions/drag'
+import { onActivateKey } from '@renderer/DesignSystem/Interactions/activate'
 
 const mk = (labels: string[], p = ''): Row[] =>
   labels.map((l, i) => ({ id: `${p}${i}-${l}`, label: l }))

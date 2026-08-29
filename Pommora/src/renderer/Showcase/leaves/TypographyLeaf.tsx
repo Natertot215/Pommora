@@ -1,4 +1,4 @@
-import { text } from '../../Tokens'
+import { text } from '@renderer/DesignSystem/Tokens'
 import { humanize, useComputedStyleText } from './helpers'
 
 type RampStyle = { standard: string; emphasized: string }

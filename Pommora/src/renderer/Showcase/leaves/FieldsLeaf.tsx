@@ -1,9 +1,16 @@
 import { useState } from 'react'
-import { base, field, borderedField, input, InputField, SearchField } from '../../Fields'
-import { FileLabel } from '../../Labels'
-import { Button } from '../../Buttons'
-import { NavTrail, pathSegments } from '../../Elements/NavTrail'
-import { Icon } from '../../Symbols'
+import {
+  base,
+  field,
+  borderedField,
+  input,
+  InputField,
+  SearchField,
+} from '@renderer/DesignSystem/Fields'
+import { FileLabel } from '@renderer/DesignSystem/Labels'
+import { Button } from '@renderer/DesignSystem/Buttons'
+import { NavTrail, pathSegments } from '@renderer/DesignSystem/Elements/NavTrail'
+import { Icon } from '@renderer/DesignSystem/Symbols'
 import { errorField, rows } from './fieldsLeaf.css'
 
 export function FieldsLeaf(): React.JSX.Element {
