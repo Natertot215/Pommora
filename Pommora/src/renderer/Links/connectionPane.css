@@ -1,7 +1,7 @@
 /* The connection hover card's body: a floating surface, so its scroll always contains — an
    over-scroll must never reach the editor underneath (moving that editor detaches the card's
    own anchor). */
-/* No overflow here: the pane's clip-path bounds the visuals and the pgembed owns the scroll,
+/* No overflow here: the pane's clip-path bounds the visuals and the page-tile owns the scroll,
    while the resize strips straddle this box's edge — clipping would leave the visible border
    inert under the pointer. */
 .conn-hover-body {
@@ -28,7 +28,7 @@
   opacity: 0;
 }
 
-.conn-hover-body .pgembed {
+.conn-hover-body .page-tile {
   overflow-y: auto;
   overscroll-behavior: contain;
   /* Grip menus, fold chevrons, and gutter actions are inactive here — the card is scroll-only —
@@ -37,7 +37,7 @@
 }
 /* KNOB — the card's interior inset: no vertical padding (scroll-only chrome earns none),
    symmetric sides. The caret never enters, so no I-beam either. */
-.conn-hover-body .pgembed .mdpm-editor .cm-content {
+.conn-hover-body .page-tile .mdpm-editor .cm-content {
   padding: 0 calc(14px * var(--mdpm-scale));
   cursor: default;
 }

@@ -38,7 +38,7 @@ import { TileHandleMenu } from './TileHandleMenu'
 import { ViewTile } from './ViewTile'
 import { PageTile } from './PageTile'
 import { useTileDoc } from './UseTileDoc'
-import './blocks.css'
+import './block-tile-base.css'
 
 function pagePickerItems(
   tree: NexusTree,
@@ -333,7 +333,7 @@ export function TileSurface({ host }: { host: BlockHostRef }): React.JSX.Element
         )
       if (entry?.type === 'page') {
         const page = pagesById.get(entry.page_id)
-        if (!page) return <div className="blk-inert" /> // dead reference — inert, space holds
+        if (!page) return <div className="tile-inert" /> // dead reference — inert, space holds
         return (
           <PageTile
             path={page.path}
@@ -352,7 +352,7 @@ export function TileSurface({ host }: { host: BlockHostRef }): React.JSX.Element
             onActivate={() => setEditingId(id)}
           />
         )
-      return <div className="blk-inert" /> // no/foreign/unknown entry — space holds, nothing breaks
+      return <div className="tile-inert" /> // no/foreign/unknown entry — space holds, nothing breaks
     },
     [entries, editingId, connections, suppressFlush, pagesById, host, mutateViewEntry],
   )

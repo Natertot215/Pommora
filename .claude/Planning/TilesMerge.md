@@ -102,6 +102,9 @@ Each phase ends green on all three gates (`npm run typecheck` · `npm run test` 
 - *(P2)* `PageTileWrite.ts` (the `createBodyWriter` factory) lives in `SurfacePM/`; `Interface/pageFlush` re-bases onto it (the Interface→SurfacePM dependency already exists via `TileSurface`). Markdown-tile saves gain retry-on-fail and a beforeunload flush from the shared factory — strict improvements over the old silent-drop, not regressions.
 - *(P2)* The page-save `writeThroughBody` re-assert on a failed-write requeue lands at the retry's flush (≤400ms later) rather than failure-immediate as before — a self-correcting sub-400ms transient on the disk-error path only. Left as-is: closing it would add a requeue hook to the generic factory, complicating it for a negligible case.
 
+- *(P4)* Phase 4's simplification is the manual CSS merge-dedup (the two shared `:is(.markdown-tile, .page-tile)` rules and the combined `.page-tile` block), done during composition before the attack — so simplify-before-review held. The code-simplifier agent was not run separately: it does not analyze CSS-selector merging, and running it post-attack would invert the order and reopen cascade questions the attack verified closed (declaration parity 52/52, cross-file consumers all higher-specificity). Whole-range TS simplification lands in Phase 6.
+- *(P4)* `.blk-surface` (the surface container) and `.blk-zoom-*` / `--block-zoom` / `--view-embed-zoom` (the zoom ramps) keep their names — not tile-kind classes; the four content families (`markdown-tile`, `page-tile`, `web-tile`) plus the `tile-inert` placeholder are the whole rename.
+
 **Invariants to protect**
 - *(P2)* The requeue-after-cancel path is safe **only because** `removing` (TileSurface — the `suppressFlush` source) is permanent-once-set (`.add`/`.has`, never `.delete`). If that ever gains a reset, a cancelled markdown write's requeue could resurrect a trashed tile's file; a write-time guard would have to be re-added.
 

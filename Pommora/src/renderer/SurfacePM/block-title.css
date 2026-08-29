@@ -1,7 +1,7 @@
 /* The tile's hover-revealed identity, one treatment for both tile kinds: centered at the top,
    hidden until the tile is hovered. The embedded page shows its breadcrumb, a webpage its title. */
-.pgembed-crumbs,
-.wpembed-title {
+.page-tile-crumbs,
+.web-tile-title {
   position: absolute;
   top: calc(8px * var(--mdpm-scale));
   left: 50%;
@@ -12,14 +12,14 @@
   pointer-events: none;
   transition: opacity var(--duration-base) var(--ease-base);
 }
-.mdpm-embed-tile:hover .pgembed-crumbs,
-.mdpm-embed-tile:hover .wpembed-title {
+.mdpm-embed-tile:hover .page-tile-crumbs,
+.mdpm-embed-tile:hover .web-tile-title {
   opacity: 1;
 }
 
 /* The title rides above both the guest and its catcher, and takes the pointer once revealed, so it
    stays clickable whether or not the tile is engaged. */
-.wpembed-title {
+.web-tile-title {
   z-index: 4;
   border: none;
   background: none;
@@ -27,6 +27,6 @@
   cursor: pointer;
   color: var(--label-secondary);
 }
-.mdpm-embed-tile:hover .wpembed-title {
+.mdpm-embed-tile:hover .web-tile-title {
   pointer-events: auto;
 }

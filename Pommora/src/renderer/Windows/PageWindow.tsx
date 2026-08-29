@@ -199,7 +199,7 @@ function PageWindowBody({
       footerLabel={footerLabel}
       footerLead={<CitationsToggle page={page} />}
     >
-      <div className="window-body page-window-body over-scroll pgembed-grows" ref={bodyRef}>
+      <div className="window-body page-window-body over-scroll page-tile-grows" ref={bodyRef}>
         <PageTile
           key={target.path}
           path={target.path}
