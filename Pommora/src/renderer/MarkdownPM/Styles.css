@@ -566,8 +566,10 @@
   text-decoration-color: var(--label-secondary);
 }
 
-.mdpm-editor .pm-checkbox {
+.mdpm-editor .checkbox {
   zoom: var(--glyph-scale);
+  /* Sits the box on the text baseline — a line the box carries only where it rides inside prose. */
+  vertical-align: -0.18em;
 }
 
 .md-li-marker {
