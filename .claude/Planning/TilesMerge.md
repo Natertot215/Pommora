@@ -92,6 +92,22 @@ Each phase ends green on all three gates (`npm run typecheck` · `npm run test` 
 
 - **`PageTileWrite` vs `pageFlush` direction** — generalize `pageFlush` in place and have markdown adopt it, or a new `PageTileWrite` both re-base onto. Resolved by reading `pageFlush`'s non-tile callers in Phase 2; flagged here so the answer is deliberate.
 
+### Delivery Claim
+
+The Tiles Merge is delivered across six commits, `cc1474ad`…`4c4b8ddd` on base `b5597a5f`. Against the plan's Goal — fold `Blocks/` + `Embeds/` into `SurfacePM/` by move/merge with minimal creation:
+
+- **`Blocks/` and `Embeds/` are gone**; every tile file lives in `SurfacePM/` under the tile vocabulary (PageTile, WebTile, ViewTile, MarkdownTile, TileSurface, TileHandleMenu, ViewTileScope, UseTileDoc, TileCache, WebRetention, TileZoom), logic files PascalCased.
+- **`PageEmbedBlock` folded** into TileSurface's renderTile (adapter deleted).
+- **One shared body writer** (`PageTileWrite.ts`, the only net-new file) — pageFlush and MarkdownTile both re-based; the second debounce is gone.
+- **One lock-write gate** (`resolveViewWrite`, a function in ViewTileScope) — the duplicated `locked` check removed; pinned by a three-way negative-control test.
+- **One tile stylesheet** (`block-tile-base.css`, from three) + the class rename to the `*-tile` scheme; `surfacepm.css`→`tile-surface.css`.
+- **`Tile.tsx` dispatcher not created** — the existing renderTile/embedWidget switches already dispatch. **Phase 5 (webpage dashboard-tile parity) cut** — net-new capability, out of a pure refactor's scope; the code-level unification is complete.
+- **Block-doc data model kept its "block" names** (`@shared/blocks`, `MarkdownBlockEntry`, `loneWebpageEmbed`, `BlockHostRef`).
+
+**Verification.** Every phase gated green read directly (never piped): `typecheck` 0, `biome` clean, `vitest` 3672→3675 (the +3 are the lock-gate control), `check-atlas` 15/15. Each phase ran a simplification pass then a build-breaking attack — **all five phase attacks plus a whole-arc integration attack returned 0 findings**; the two behavior narrowings the Phase 2 simplifier caught were fixed at source, and the Phase 2 concurrency Unknown is closed as unreachable in this single-window build. A whole-range simplification found nothing further; the comment pass trimmed one disallowed "for now" label (an over-strip of `tile-surface.css` was caught and reverted). Five Feature docs reconciled; behavior preserved throughout (no user-visible change — Phase 5's would-be exception was cut).
+
+**Honest line count.** Actionable code this pass is ≈ net-neutral (`src` +30 / non-test +11), **not** the plan's optimistic "−350": the folder move is renames (zero-line), and the new shared seams (`PageTileWrite`, `resolveViewWrite`) add code that offsets the fold + CSS dedup — the dedup-of-mechanism-grows-files pattern the Cleanup Checklist itself records. The −500–1k reduction was always Bundle 9's (the deferred `ViewTile` rebuild); the win here is structural — two folders to one, four duplications removed, one vocabulary.
+
 ### Log
 
 **Base:** `b5597a5f`. **Phase 1:** `cc1474ad`. **Phase 2:** (this commit).
