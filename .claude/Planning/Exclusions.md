@@ -19,7 +19,7 @@ Not solved here: globbing or negation in exclusion patterns, per-folder Clear, a
 2. The Manage pane: one editable path field per exclusion with a browse action and a remove `×`, an **Add Exclusion** button below the last field, min and max width knobs, field rows inset by `--surface-inset`, and dismissal on Escape or a re-click of Manage only — never on an outside click, a path commit, or a returning folder dialog.
 3. Exclusions persist to `excluded_folders` in `.nexus/settings.json`. Adding one removes the folder from the tree and the index without a restart; removing one re-indexes it.
 4. A typed path and a browsed path cross the same validator, which is also the refusal a hand-edited `settings.json` meets.
-5. A **Clear Exclusion Cache** row with a destructive button behind a native confirmation that, across every excluded folder, deletes container sidecars and Pommora's own frontmatter bookkeeping.
+5. A **Clear Exclusion Cache** row with a destructive button behind a native confirmation that, across every excluded folder, deletes **container** sidecars — `_pagecollection.json` and `_pageset.json` only — and Pommora's own frontmatter bookkeeping. Pages the sweep cannot admit are left byte-identical and reported, never silently skipped.
 6. A **Preserve Properties On Clear** toggle, default on: governed `<Property>` and `(Context)` keys are unwrapped to bare keys rather than deleted.
 7. The documentation claiming exclusions are hand-edited only is rewritten in the commits that falsify it.
 
@@ -33,7 +33,10 @@ With the app running and a folder of pages visible in the sidebar: open Settings
 - `corpusFilesUnder` and `shouldSkipDir` both prune exactly the folders Clear targets, and `listFilesRecursive` has no skip logic at all → Clear needs its own enumerator that deliberately enters an excluded folder. **Task 6.**
 - `readNexus.ts` reads the list through `asStringArray`, which is all-or-nothing: one non-string element discards the entire exclusion list → a UI that writes this key must first make the read per-element, as `ribbonOrder` and `favoriteIcons` already are. **Task 1.**
 - `sweepGovernedRoots` already carries a `rewriteText` option whose doc comment describes key renaming as its reason for existing → the unwrap needs no new sweep machinery. **Task 6.**
-- A self-managed `PickerMenu` registers Escape and nothing else — it has no outside-click backdrop (`picker-base.tsx`, the `onDismiss` effect) → Requirement 2's dismissal rule is satisfied by not adding `useDismiss`, not by suppressing it. **Task 4.**
+- `PickerMenu` gates BOTH its Escape handler and its click-catching backdrop on the same `onDismiss` prop (`picker-base.tsx:255-263` and `:355-364`) → Escape-without-outside-click is not reachable through the current API, so Requirement 2 costs a design-system change: a `dismissOnOutside` prop that gates the backdrop alone, borrowing `MenuDropdown`'s existing name for the same behavior. **Task 4.**
+- `SIDECARS` (`src/main/paths.ts`) holds five filenames, two of which are the Agenda singletons' configs, and an unlinked `_taskconfig.json` has no repair path — `reHomeRegistered` needs a sidecar id to match and `seedAgendaSingletons` never retro-seeds → Clear deletes a container-only set, never `SIDECARS`. **Task 6.**
+- `sweepGovernedRoots` refuses a file `sweepAdmits` rejects before `rewriteText` is consulted (`governedSweep.ts:121-125`), and `sweepAdmits` asks `admitContentFile(fm, 'page')` → a Task or Event page in an excluded folder reads `contradicting` and is refused, so Clear cannot strip it → the refused count is reported rather than the gap being hidden. **Tasks 6, 7.**
+- `renameFrontmatterKey`'s `KeyCollision` is `'prefer-new' | 'merge'` only, and `foldValues` returns early unless both values are sequences while the caller drops the rival unconditionally (`pageFile.ts:118-137`) → every collision between a governed key and an existing bare key of the same name loses one real value, so the unwrap refuses those keys rather than choosing a casualty. **Task 6.**
 - `MenuDropdown`'s trigger is hardwired to a `Segmented` glass button → it cannot wear a settings-row button, so the pane is a `PickerMenu` anchored to a `triggerRef`. **Task 4.**
 - `resolveFolderKind` returns `'collection'` for a root folder only when `_pagecollection.json` exists (`sidecarMode` is true for any nexus whose `nexus.json` carries an id) → deleting a top-level sidecar makes that Collection invisible until the next nexus open re-stamps it. **Task 7**, in the confirm copy.
 - A `.md` with no identity key is admitted and wears a path-derived synthetic id (`readPageRecord`) → cleared pages reappear immediately on un-exclusion rather than vanishing. **Task 7**, in the confirm copy.
@@ -42,7 +45,7 @@ With the app running and a folder of pages visible in the sidebar: open Settings
 **Inherited Reasoning**
 
 - Exclusion by prefix match on normalized segments, root-anchored, no globbing, is settled and pinned by `src/main/exclusion.test.ts`. A pattern language is not in scope.
-- The asset root is a separate skip axis that outranks exclusion and stays watched. Nothing here changes that.
+- The asset root is a separate skip axis that outranks exclusion and stays watched. Clear is the one exception, and it is an explicit one: a nexus may legitimately name its asset root in `excluded_folders` (`watchPatch.test.ts:295` pins that configuration, and the live nexus uses it), so `excludedArtifacts` takes the asset directory and steps around it rather than inheriting the exclusion list's reach.
 - Destructive confirmation is native (`dialog.showMessageBox`) throughout this codebase. A React confirmation surface was considered and rejected — building the first one for this feature would be a parallel mechanism.
 - Counting *files* under exclusion was considered and rejected by the user in favor of counting folders: the file count needs a recursive walk of arbitrarily large folders and cannot come from the index, which has already forgotten excluded paths.
 
@@ -93,15 +96,16 @@ With the app running and a folder of pages visible in the sidebar: open Settings
 | `ArchitecturePM.md:93` | §II Folder Exclusion describes exclusion as total and read-only | Clear reaches into excluded folders deliberately; the section owes that exception. | 6 |
 | `ConfigurationPM.md` §Personalization | The roster of personalization keys | `preservePropertiesOnClear` joins it. | 5 |
 | `DesignSystemPM.md` Components | The `destructive` Button variant has no consumer | The Clear row is its first. | 7 |
+| `DesignSystemPM.md` / `InteractionPM.md` | `PickerMenu`'s dismissal, wherever it is described as outside-click-and-Escape | `dismissOnOutside` makes the backdrop optional. | 4 |
 
 **Dead Vocabulary**
 
 - `hand-edited` / `hand-set` as applied to exclusions → expect 0 across `.claude/Features`. Legitimate hits: `commands` and the placement keys, which stay hand-set.
-- Control: `excluded_folders` across `.claude/Features` → 2. Zero here means the sweep never ran.
+- Control: `asset_directory` across `.claude/Features` → 1. Chosen because no task in this plan moves it; `excluded_folders` (3 hits today) is edited by Tasks 4 and 6 and so cannot serve as its own control. Zero here means the sweep never ran.
 
 **Hazard Window**
 
-Task 6 lands `clearExclusionData` before Task 7 gives it a confirmation dialog. While it is open, the function must have no caller outside its own tests — an unconfirmed reachable path to an irreversible whole-folder rewrite is the one defect this plan cannot ship. Task 7 closes it.
+Task 6 lands `clearExclusionData` before Task 7 gives it a confirmation dialog. What makes it unreachable meanwhile is the absence of a bridge entry — a main-process function with no channel has no caller surface — so the check is on `src/shared/bridge.ts`, not on a symbol count that cannot go red. While the window is open, `exclusions:clear` must not be declared. Task 7 declares it and its dialog in the same commit; the two may not be split.
 
 ---
 
@@ -237,7 +241,10 @@ chooseExclusion: ask('exclusions:choose'),
 // src/main/index.ts
 'exclusions:set': { kind: 'envelope', ... }
 // non-array → fail · each entry trimmed through excludedFolderRefusal, first refusal returned
-// duplicates (after normalization) collapse · then writeExcludedFolders, then the manual chain:
+// duplicates collapse on the CASE-FOLDED form the matcher compares (normalizeSeg), storing the
+//   spelling the user gave — the volume is case-insensitive, so `archive` and `Archive` are one
+//   folder and storing both would double every count and every enumeration
+// then writeExcludedFolders, then the manual chain:
 // confirmSettingsWrite → refreshAfterWrite → seedContentIndex → push nexus:changed → startWatcher
 'exclusions:choose': { kind: 'window', ... }
 // showOpenDialog({ properties: ['openDirectory'], defaultPath: root,
@@ -282,21 +289,32 @@ setExclusions: (folders: string[]) => Promise<Result<string[]>>
 case 'path': return <AssetDirectoryRow label={row.label} hint={row.hint} />
 
 // src/renderer/Frames/filterFrame.css.ts — ruleList / ruleRow / removeButton
-// src/renderer/DesignSystem/Pickers/picker-base.tsx — self-managed PickerMenu:
-//   Escape is its ONLY registered dismissal; there is no outside-click backdrop.
 // src/renderer/styles.css:5 — --surface-inset: 10px
+
+// src/renderer/DesignSystem/Pickers/picker-base.tsx — ONE prop gates both dismissals:
+{onDismiss && !closing ? <div className={s.backdrop} ... onClick={onDismiss} /> : null}  // :355
+// and the Escape effect at :255 is gated on `onDismiss` too — so today a pane either
+// dismisses on outside click AND Escape, or on neither.
+
+// src/renderer/DesignSystem/Menus/menu-base.tsx — the name already in the vocabulary
+dismissOnOutside = true,   // MenuDropdown; false = Esc + re-click only (OutlineMenu uses it)
 ```
 
-**Becomes** — a new keyless row kind, a new bespoke component, a new section:
+**Becomes** — one design-system prop, a new keyless row kind, a new bespoke component, a new section:
 
 ```tsx
+// src/renderer/DesignSystem/Pickers/picker-base.tsx — the backdrop alone becomes optional,
+// under the name MenuDropdown already uses for exactly this behavior. Escape is untouched.
+dismissOnOutside?: boolean   // default true — every existing caller keeps its behavior
+{onDismiss && !closing && dismissOnOutside ? <div className={s.backdrop} ... /> : null}
+
 // src/renderer/Settings/ExclusionRows.tsx (new) + exclusions.css.ts (new)
 export function ExcludedDirectoriesRow({ label, hint }: RowProps): React.JSX.Element
 // trailing: { kind: 'field' } holding the count of tree.excluded and a Manage <Button>.
 // Manage toggles `open`; the pane is a self-managed PickerMenu on the button's triggerRef,
-// bareSurface, style={{ minWidth: PANE_MIN_W, maxWidth: PANE_MAX_W }}.
-// No useDismiss: Escape and the Manage button are the only ways out, so a path commit,
-// an Add press and a returning folder dialog all leave it open.
+// bareSurface, dismissOnOutside={false}, style={{ minWidth: PANE_MIN_W, maxWidth: PANE_MAX_W }}.
+// Escape and the Manage button are the only ways out, so a path commit, an Add press and a
+// returning folder dialog all leave it open.
 const PANE_MIN_W = 260 // KNOB — the pane's floor
 const PANE_MAX_W = 420 // KNOB — where a long path stops widening it
 // rows: one PathField per entry (browse → chooseExclusion) + a removeButton ×,
@@ -316,7 +334,9 @@ case 'exclusions': return <ExcludedDirectoriesRow label={row.label} hint={row.hi
 **Verify — automated**
 
 - [ ] Red first in `src/renderer/Settings/ExclusionRows.test.tsx` — the row renders the count from a stubbed `tree.excluded`; Manage toggles the pane; a committed path calls `setExclusions` with the whole list; `×` removes one entry; Add appends a blank row.
-- [ ] A dismissal test that is the requirement: with the pane open, a `pointerdown` on `document.body` leaves it mounted, and an `Escape` closes it. Add a `useDismiss` call and the first assertion goes red.
+- [ ] A dismissal test that is the requirement, driving a real `click` and not a bare `pointerdown` — the backdrop stops pointerdown and dismisses on click, so a pointerdown-only test passes over an unmet requirement. With the pane open: a full click outside leaves it mounted, `Escape` closes it, and a second Manage press closes it. Flip `dismissOnOutside` to `true` and the first assertion goes red.
+- [ ] Every existing `PickerMenu` caller still dismisses on an outside click — the new prop defaults to `true`, so the design-system suites are the control. `rg -F "PickerMenu" src/renderer` → re-derive; none may need editing.
+- [ ] A blank row added by **Add Exclusion** survives a sibling field's commit. That commit pushes `nexus:changed`, which re-renders the pane from `tree.excluded`; a draft row held only in the tree's shape would vanish under the user's cursor.
 - [ ] `npm run typecheck` — the `Row` switch is exhaustive with no `default`, so a missing case is a compile error.
 - [ ] Full gate green, `npm run lint` clean (the new `.css.ts` included).
 - [ ] Docs: `ConfigurationPM.md:179`, `:189` and `ArchitecturePM.md:231` rewritten in this commit. Sweep `rg -n "hand-edited|hand-set" .claude/Features` and confirm no surviving hit refers to exclusions. Control: `rg -F "excluded_folders" .claude/Features` → 2.
@@ -346,7 +366,7 @@ case 'exclusions': return <ExcludedDirectoriesRow label={row.label} hint={row.hi
 
 #### Task 5: The Preserve Properties On Clear toggle
 
-**Requirement:** 6
+**Requirement:** 6, 7
 
 **Why:** Task 6's rewrite branches on this, and it is the cheapest row the codebase has — a personalization key needs no channel, no handler and no store action. Landing it first means Task 6 has a real value to read rather than a hardcoded default to replace.
 
@@ -432,37 +452,56 @@ renameFrontmatterKey(content, oldKey, newKey, collision)  // in place, comments 
  *  enters what the walk, the corpus and the watcher all prune. Convention skips still apply:
  *  a `.git` or `node_modules` under an excluded folder is not ours to touch. */
 export async function excludedArtifacts(
-  root: string, excluded: string[],
+  root: string, excluded: string[], assetDir: string,
 ): Promise<{ pages: string[]; sidecars: string[] }>
 // nexus-relative POSIX · dot- and underscore-prefixed dirs and node_modules skipped
 // `_`-prefixed .md files ARE pages (the corpus admits them) · `.nexus`/`.trash` never entered
+// the asset root is stepped around even when it is itself excluded — a supported configuration
+//   the live nexus uses, and the one place Clear must not inherit the exclusion list's reach
+// sidecars: `_pagecollection.json` and `_pageset.json` ONLY. Never the SIDECARS set — it also
+//   holds `_taskconfig.json` and `_eventconfig.json`, and an unlinked agenda config strands the
+//   id in nexus.json with no in-app repair (reHomeRegistered needs a sidecar; seeding is
+//   creation-only, deliberately). `_space.json` lives under `.nexus` and is never reached.
 // an entry naming a folder that no longer exists contributes nothing, never throws
 
 /** Strip Pommora's bookkeeping from the excluded folders. Sidecars are deleted; a page loses its
  *  identity and modeled keys, and its governed keys either unwrap to bare names or go. */
 export async function clearExclusionData(
-  root: string, excluded: string[], preserveProperties: boolean,
-): Promise<Result<{ pages: number; sidecars: number }>>
-// pages: sweepGovernedRoots(root, { kind: 'files', files }, () => null,
-//          { stamp: false, rewriteText })   // stamp:false — modified_at is itself being removed
-//   rewriteText deletes PageID/TaskID/EventID + icon/created_at/modified_at/cover, then for each
-//   governed key: preserve → renameFrontmatterKey(key, parseGovernedKey(key).name, 'prefer-old'),
-//   otherwise omit it from the merge. A page holding a bare rival key folds rather than clobbers.
-// sidecars: every SIDECARS filename found, unlinked. A missing one is done, not an error.
-// returns counts; a page the sweep refused is counted in neither and reported by the sweep.
+  root: string, excluded: string[], assetDir: string, preserveProperties: boolean,
+): Promise<Result<{ pages: number; sidecars: number; refused: number; collided: string[] }>>
+// pages: sweepGovernedRoots(root, { kind: 'files', files }, () => null, { rewriteText })
+//   — the raw Rewrite is never called on the rewriteText branch, and `stamp` is never read on it
+//     either, so neither is passed. { kind: 'files' } reaches no sidecars; they are unlinked here.
+//   rewriteText deletes PageID/TaskID/EventID + icon/created_at/modified_at/cover, then per key:
+//     selector — parseGovernedKey(key) names it; a key isGovernedKey accepts but parseGovernedKey
+//       cannot (`<Status`, `<>`) is Pommora-shaped garbage and is deleted outright, never renamed
+//     preserve on  → renameFrontmatterKey(content, key, name, 'merge')
+//     preserve off → omit the key from the merge
+//   COLLISION: if the page already holds a bare key of that name, the governed key is LEFT ALONE
+//     and the page is reported in `collided`. Neither KeyCollision mode is lossless here — 'merge'
+//     folds only when both values are sequences and drops the rival regardless, 'prefer-new'
+//     always discards the governed value — so Clear refuses rather than picking a casualty.
+// refused: SweepResult.refused, surfaced rather than swallowed. A Task or Event page reads
+//   `contradicting` through sweepAdmits and is never rewritten; the caller must be able to say so.
+// sidecars: the container filenames found, unlinked. A missing one is done, not an error.
 ```
 
 **Assumed by:** Task 7 (the handler calls `clearExclusionData` and reports its counts).
 
 **Verify — automated**
 
-- [ ] Red first in `src/main/exclusionScan.test.ts` against a temp nexus: a Collection with a sidecar, two pages (one with `<Status>: Doing` and a comment above it, one with `(Projects): [Alpha]`), a nested Set, a nested `node_modules` and a nested `.git`.
-- [ ] `excludedArtifacts` finds both pages and both sidecars, and finds nothing inside `node_modules` or `.git`. A crossing test: every path it returns is one `shouldSkipDir` would have pruned — the two predicates must disagree exactly here and nowhere else.
-- [ ] Preserve on: `<Status>: Doing` becomes `Status: Doing`, the comment above it survives, key order is unchanged, and `PageID` is gone. Preserve off: the `Status` line is gone entirely and `PageID` is still gone.
+- [ ] Red first in `src/main/exclusionScan.test.ts` against a temp nexus holding, under one excluded root: a Collection with `_pagecollection.json`, a nested Set with `_pageset.json`, **a root folder with `_taskconfig.json` registered in `nexus.json`**, a page with `<Status>: Doing` carrying a comment above it, a page with `(Projects): [Alpha]`, **a page holding both `<Status>: open` and a bare `Status: [Revisit]`**, a page with `TaskID`, a page with a malformed `<Status` key, a nested `node_modules` and a nested `.git`, and an `asset_directory` that is itself in the exclusion list.
+- [ ] **The agenda config survives.** `_taskconfig.json` is untouched and the folder still resolves through `resolveFolderKind` afterward. Point the deletion at `SIDECARS` instead of the container pair and this goes red — the test corpus exists to make that mistake fail.
+- [ ] **The collision page is untouched and reported.** Both `<Status>` and `Status` still hold their own values, and the page appears in `collided`. Substitute either `KeyCollision` mode and this goes red.
+- [ ] The asset root is walked past: nothing under it appears in either list, even though it is excluded.
+- [ ] `excludedArtifacts` finds the two pages and the two container sidecars, and nothing inside `node_modules`, `.git`, or `.nexus`.
+- [ ] A crossing test that can actually fail: **assert the file sets, not the predicate**. Every `.md` under the excluded root that `corpusFilesUnder` would have returned had the folder not been excluded appears in `pages` — run it once with the folder excluded and once without, and compare. Asserting only that `shouldSkipDir` would have pruned each path is vacuous, since the exclusion matcher prunes everything under the root regardless of the skip set.
+- [ ] Preserve on: `<Status>: Doing` becomes `Status: Doing`, the comment above it survives, key order is unchanged, `PageID` is gone. Preserve off: the `Status` line is gone entirely.
+- [ ] The malformed `<Status` key is deleted, not renamed, and nothing throws — `parseGovernedKey` returns null there and an unguarded deref would abort the sweep half-applied.
+- [ ] The `TaskID` page is left byte-identical and counted in `refused`.
 - [ ] Idempotence: a second run over the same folder changes no bytes and reports zero pages touched. A migration that double-applies is the defect this catches.
-- [ ] Degenerate cases: an empty exclusion list touches nothing; a folder with no sidecar and no frontmatter is left byte-identical; a page whose frontmatter has a syntax error is *refused*, not corrupted, and is reported as refused.
-- [ ] Collision: a page holding both `<Status>` and a bare `Status` folds rather than losing a value.
-- [ ] **Hazard check:** `rg -F "clearExclusionData" src` → 2 (the definition and its test). Any third hit before Task 7 is the window left open. Control: `rg -F "excludedArtifacts" src` → 3.
+- [ ] Degenerate cases: an empty exclusion list touches nothing; a folder with no sidecar and no frontmatter is left byte-identical; a page whose frontmatter has a syntax error is refused, not corrupted.
+- [ ] **Hazard check:** `rg -F "exclusions:clear" src/shared/bridge.ts` → 0. The channel is what makes the function reachable; a symbol count cannot go red here.
 - [ ] Full gate green.
 - [ ] Docs: `ArchitecturePM.md:93` §Folder Exclusion gains the one exception in this commit — exclusion is total for reading, and Clear is the deliberate reach past it.
 
@@ -496,25 +535,34 @@ destructive: { vars: { '--button-fill': tintAt(error, 'tertiary'), ... } }
 // src/shared/bridge.ts
 // Confirmation and action are one channel: an unconfirmed reach into a user's folders should
 // not be expressible, and a separate confirm channel would make it so.
-'exclusions:clear': { args: []; reply: Result<{ pages: number; sidecars: number } | null> }
+'exclusions:clear': { args: []; reply: Result<ClearReport | null> }
+// ClearReport = { pages: number; sidecars: number; refused: number; collided: string[] }
 // ok(null) is a cancelled dialog, not a failure.
 
 // src/main/index.ts
 'exclusions:clear': { kind: 'window', ... }
-// no excluded folders → ok(null) without a dialog · reads tree.excluded and the toggle
+// no excluded folders → ok(null) without a dialog · reads tree.excluded, assetDirectory, the toggle
 // buttons: ['Clear', 'Cancel'], defaultId: 1, cancelId: 1     // Cancel defaults, as trash does
 // message: `Clear Pommora's data from ${n} excluded folder(s)?`
-// detail names, in plain words: folder icons, banners, manual ordering and saved views are
-// removed for good; a folder returns as a new one after the next launch; and either that
-// property values are kept as ordinary frontmatter, or that they are removed — read from
-// the toggle at the moment of asking, never assumed.
-// on confirm → clearExclusionData(...); no refresh follows — every path it touched is already
-// outside the tree, the index and the watcher.
+// detail names, in plain words: the folder's icon, banner, manual ordering, saved views AND the
+//   properties it assigns are removed for good; the folder returns as a new one after the next
+//   launch; and either that property values are kept as ordinary frontmatter, or that they are
+//   removed — read from the toggle at the moment of asking, never assumed.
+// on confirm → clearExclusionData(...), then seedContentIndex(root): the sweep re-indexes every
+//   page it writes (governedSweep calls indexWrittenPage, and relCorpusPath does not consult the
+//   exclusion list — Clear is the first pen to write inside an excluded folder), so the seed's
+//   prune is what puts those rows back out. No tree refresh: nothing it touched is in the tree.
+// the reply carries refused and collided so the row can say the sweep was thin rather than
+//   reporting a clean scrub it did not perform.
 
 // src/renderer/Settings/ExclusionRows.tsx
 export function ClearExclusionsRow({ label, hint }: RowProps): React.JSX.Element
 // trailing: { kind: 'field' } holding <Button type="destructive" label="Clear" />,
-// disabled when tree.excluded is empty.
+// disabled when tree.excluded is empty, and while a sweep is in flight — the Manage pane
+// does not dismiss on confirm by design, so without this a `×` pressed mid-sweep would
+// re-admit a half-stripped folder to the tree while the sweep is still stripping it.
+// A returned report naming refused or collided pages is surfaced through 'error:show'
+// rather than being dropped on the floor.
 
 // src/renderer/Settings/SettingsWindow.tsx — the Exclusions section, in order:
 // Excluded Directories · Clear Exclusion Cache · Preserve Properties On Clear
@@ -536,7 +584,7 @@ export function ClearExclusionsRow({ label, hint }: RowProps): React.JSX.Element
 - [ ] The dialog's wording on a real nexus — does it say plainly what is lost and what survives, and does it change when the toggle flips?
 - [ ] Clear a real excluded folder with Preserve **on**: sidecars gone, `PageID` gone, `Status:` values intact as plain frontmatter, comments and key order intact.
 - [ ] Clear with Preserve **off** on a scratch folder: the property lines are gone.
-- [ ] Un-exclude a cleared folder — pages reappear immediately; the Collection returns after the next launch.
+- [ ] Un-exclude a cleared folder. A top-level Collection whose sidecar was deleted stays invisible until the next launch — its pages included, since nothing renders under a folder that resolves Unknown. After relaunch it returns as a new Collection. Confirm that reads as acceptable rather than as a bug.
 - [ ] The destructive button's tone against the rest of the Settings window — this is its first appearance anywhere.
 
 #### Gate 2 — Clear ships behind a confirmation
@@ -547,7 +595,8 @@ export function ClearExclusionsRow({ label, hint }: RowProps): React.JSX.Element
 - [ ] Every task that diverged had its dependents re-derived and rewritten.
 - [ ] `code-simplifier` then `feature-dev:code-reviewer` dispatched against `<base>..HEAD`; the reports cite files inside it.
 - [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
-- [ ] **Hazard window closed:** `clearExclusionData` has exactly one non-test caller, and it sits behind the confirmation.
+- [ ] **Hazard window closed:** `exclusions:clear` is declared, and its handler runs the dialog before `clearExclusionData` in the same commit that declared it.
+- [ ] The Agenda singletons survive a Clear over a folder holding one — checked against a real `_taskconfig.json`, not only in the temp-nexus suite.
 - [ ] Progress hashes filled in; lessons written into the later tasks they change.
 - [ ] **Declared stop.** Execution halts until the user closes this phase's **Verify — user** boxes.
 
@@ -620,6 +669,8 @@ Everything else is the standard below.
 - [ ] The acceptance criterion observed running, clause by clause.
 - [ ] Clear is unreachable except through its confirmation, and idempotent when re-run.
 - [ ] No fourth skip predicate was added: `exclusion.ts`'s matching rule is unchanged, and `exclusionScan.ts` is the only deliberate reach past it.
+- [ ] Clear destroyed nothing it did not name: the Agenda configs survive, no collision lost a value, and every page the sweep would not admit was reported rather than counted as scrubbed.
+- [ ] `dismissOnOutside` defaults true and no existing `PickerMenu` caller changed behavior.
 
 **The passes**
 

@@ -127,7 +127,6 @@ Every proposed move, grouped by kind. **Status** is one of: **ruled** (Nathan sa
 - [ ] **`--tab-min: 75px`** so the floating tab strip is 5/6 of the main one (today 90 vs 70; the strip's other four values are already 5/6). *Status:* ruled.
 - [ ] **Two clearance pairings that repeat** — `calc(clearance + --content-inset)` (`Interface.css` ×3, `MarkdownPM/Styles.css` ×5) and `calc(clearance + --surface-lane)` (`Interface.css` ×2, `navView.css`) — each could be a token the way `--content-start` is; different distances, so a decision each. *Status:* audit decides (count the readers).
 - [ ] **`--main-bg` → `--bg-window`** — a pure alias with five reads. *Status:* ruled; one edit.
-- [ ] **Odd spacing values** (`3/5/9px`) reconciled to the nearer even step per consumer as each is opened; `Slider.tsx:107`'s radius `9` with them. *Status:* ruled by Settled 23; never a sweep.
 - [ ] **Sibling drift** — `Frames/groupFrame.css.ts:12`'s `subLabel` (`body.emphasized`) against `Menus/menu-base.css.ts:164`'s `subLabel` (`caption.standard`) — same export name, 13px against 11px. A shared class name is not a shared type decision. *Status:* audit decides which wins.
 - [ ] **Two token verdicts** — `text.callout` redefined as the table/column-header step (one read; its ledger assignment "frame header" has no referent); `surface.primary/secondary/tertiary` moved beside Ramp as the opaque grey ladder (2·1·1 reads). *Status:* awaiting ruling (§3.5).
 - [ ] **`ColorSwatch.tsx:48`** hand-rolls half of `cellPaint` inline. *Status:* ruled; one line.
