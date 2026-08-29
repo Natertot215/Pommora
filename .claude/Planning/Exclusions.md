@@ -494,8 +494,8 @@ On a confirmed clear the handler awaits `clearExclusionData` and then runs `seed
 
 ### Progress
 
-- [ ] **Phase 1** — Exclusions can be set from the app · base `<commit>`
-  - [ ] Task 1 — The refusal and the hardened read · `<commit>`
+- [ ] **Phase 1** — Exclusions can be set from the app · base `ce72c989`
+  - [x] Task 1 — The refusal and the hardened read · `<commit>`
   - [ ] Task 2 — The settings writer · `<commit>`
   - [ ] Task 3 — The set and choose channels · `<commit>`
   - [ ] Task 4 — The row and the Manage pane · `<commit>`
@@ -506,6 +506,7 @@ On a confirmed clear the handler awaits `clearExclusionData` and then runs `seed
 
 ### Rulings
 
+- **Task 1 — `excludedFolderRefusal` shares one rule with `assetDirRefusal`.** The two are byte-identical (a valid, writable, nexus-relative folder path that is not app-owned), so the shape rule is extracted once as `nexusFolderRefusal` and both names alias it; the DRY rule forbids the verbatim twin the plan's fences implied. `assetDirRefusal`'s two consumers are untouched. Either alias can be promoted to its own function if the domains ever diverge.
 - **Round-2 attack, Finding 1 (Medium) — folded into Task 7.** The sweep's `indexWrittenPage` re-inserts every page Clear rewrites, and the watcher never corrects an excluded folder, so Clear's handler re-seeds the index after `clearExclusionData`. Mirrors Task 3's re-arm; only the index is stale, so the full scope chain is not owed.
 - **Round-2 attack, Finding 2 (Medium) — folded into Task 6's crossing test.** `corpusFilesUnder` is agenda-blind, so the file-set identity holds only over an agenda-free excluded root; the crossing test names that constraint.
 - **Round-2 attack, Finding 3 (Low) — accepted and documented in Task 6.** Two same-named keys under different sigils flatten to one bare key and one value drops; no clean auto-resolution exists and the precondition is uncommon. Documented as a known property, on the same footing as the flow-reflow. Reversible if the user rejects it.
