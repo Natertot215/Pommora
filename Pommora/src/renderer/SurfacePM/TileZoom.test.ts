@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_ZOOM, ZOOM_STEPS, zoomStep } from './TileZoom'
 
-describe('blockZoom', () => {
+describe('tileZoom', () => {
   it('offers the shared ramp, high to low', () => {
     expect(ZOOM_STEPS.map((s) => s.factor)).toEqual([1.5, 1.25, 1.1, 1, 0.9, 0.75, 0.65, 0.5])
   })
