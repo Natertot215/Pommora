@@ -28,15 +28,14 @@ Design System
 ├── Interactions
 ├── Animation
 ├── Symbols
-├── Theming & Util
-├── Showcase
+├── Util
 ├── Known Issues
 └── Pending
 ```
 
-The Pommora design system — the code mirror of the Figma "Pommora - React" library, which is canonical for design values. It lives in `src/renderer/DesignSystem/`, and this document is its ledger: one section per folder, one row per thing, with *name · export · what it is*. Values live in the Token Atlas and in code; a subsystem with its own spec ([[InteractionPM]], [[PommoraDND]], [[SymbolsPM]]) keeps its depth there and is pointed at, never restated.
+The Pommora design system — the code counterpart of the Figma "Pommora - React" library, which leads on design values; synchronization is intended, not guaranteed. It lives in `src/renderer/DesignSystem/`, and this document is its ledger: one section per folder, one row per thing, with *name · export · what it is*. Values live in the Token Atlas and in code; a subsystem with its own spec ([[InteractionPM]], [[PommoraDND]], [[SymbolsPM]]) keeps its depth there and is pointed at, never restated.
 
-- **Tooling:** Token files are vanilla-extract `*.css.ts`, so a mistyped token is a compile error; `Tokens/theme-vars.css.ts` republishes every token under a stable `--name` for plain CSS, and a token without a bridged var is TS-only. Inter (variable) is the app font. The layer builds as the standalone showcase; a handful of components (`ImagePicker`, `AssetImage`) reach the store for the assets they draw. `Theming/` (`applyAccent` · `applyPersonalization`) and `Util/` (`cx` · `clamp` · `pad` · `moveItem`) are runtime homes with no catalog of their own.
+- **Tooling:** Token files are vanilla-extract `*.css.ts`, so a mistyped token is a compile error; `Tokens/theme-vars.css.ts` republishes every token under a stable `--name` for plain CSS, and a token without a bridged var is TS-only. Inter (variable) is the app font. The layer builds as the standalone showcase; a handful of components (`ImagePicker`, `AssetImage`) reach the store for the assets they draw. `Util/` (`cx` · `clamp` · `pad` · `moveItem`) is a runtime home with no catalog of its own.
 
 - **Conventions:** Pommora heavily *prefers* even-factored scaling for all geometrical applications(2px -> 4px... 12px -> 14px... 20px -> 22px...), while typography scaling is purposefully independent of such convention. 
 
@@ -44,7 +43,7 @@ The Pommora design system — the code mirror of the Figma "Pommora - React" lib
 
 ### Token Atlas
 
-`Tokens/` — the value source. `color.css.ts` (`vars`), `size.css.ts` (`size`, `ICON_PX`, the geometry consts), `typography.css.ts` (`font`, `text`), `stack.ts` (`stack`), `tint.ts` (`tintAt`, `mixAt`, `TINT_STEPS`), `ramp.ts` (`cellColor`, `cellPaint`, `cellRing`, `ANCHOR_CELLS`, the `RAMP_*` re-exports), `colorMap.ts` (`labelColorFor`), `solidColor.ts` (`solidColorCss`, `resolveColor`), and the `theme-vars.css.ts` bridge. `index.ts` is the barrel.
+`Tokens/` — the value source. `color.css.ts` (`vars`), `size.css.ts` (`size`, `ICON_PX`, the geometry consts), `typography.css.ts` (`font`, `text`), `stack.ts` (`stack`), `tint.ts` (`tintAt`, `mixAt`, `TINT_STEPS`), `ramp.ts` (`cellColor`, `cellPaint`, `cellRing`, `ANCHOR_CELLS`, the `RAMP_*` re-exports), `colorMap.ts` (`labelColorFor`), `solidColor.ts` (`solidColorCss`, `resolveColor`), `accent.ts` (`applyAccent`), `personalization.ts` (`applyPersonalization`), and the `theme-vars.css.ts` bridge. `index.ts` is the barrel.
 
 #### Primitives
 
@@ -262,13 +261,12 @@ Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, 
 
 ### Labels & Chips
 
-`Labels/` — `Label.tsx`, `labels.css.ts` (the axes), `recipes.tsx` and `recipes.css.ts`.
+`Labels/` — `Label.tsx`, `label-base.css.ts` (the axes), `recipes.tsx` and `label-recipes.css.ts`.
 
 | Title      | Export                       | What it is                                                              |
 | ---------- | ---------------------------- | ----------------------------------------------------------------------- |
 | Label      | `Label`                      | The axis-composed primitive every named label is a recipe over.         |
 | Shapes     | `shape.pill/tag` · `optionShapeFor` | Rounded status default · squared value, resolved per type. Compact is either rendered icon-only. |
-| Checkbox | `checkboxBox` · `boxGeometry` | The task checkbox's `16px` square, outside the shape roster; `Controls/checkbox.css` wears the same geometry. |
 | Tint       | `tinted`                     | Fill, outline and text mixed off `--label-base` — a surface wanting a color chip sets that one var. |
 | Treatments | `fill` · `outline`           | Named only where a label differs from its tint.                         |
 | Palette    | `labelColor.*`               | One variant per ramp cell naming its base, plus `default` and `accent`. |
@@ -289,7 +287,7 @@ Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, 
 | ProgressBar | `ProgressBar` | A determinate bar on the accent. |
 | PickerControl | `PickerControl` · `labelOf` · `PickerChoice` · `pickerValue` | The double-chevron picker: two options toggle in place; three or more pop a PickerMenu; right-clicks write values into the field. |
 | EyeToggle | `EyeToggle` · `EYE_ICON` | The visibility eye — the current state's glyph at rest, the toggle previewed on hover. |
-| EmptyValue | `EmptyValue` | The one "nothing here yet" mark a value slot shows — a property row, a card value, a date field — a tertiary `—`; the host sets the type size. |
+| EmptyValue | `EmptyValue` | The one "nothing here yet" mark for value slots. |
 
 ### Components
 
@@ -297,13 +295,13 @@ Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, 
 
 #### Controls
 
-`Controls/` — the atomic interactive pieces. `Button` is the recipe; the rest are the single-purpose controls beside it, the two switches under `Switches/`, and `checkbox.css` the Checkbox's chrome.
+`Controls/` — the atomic interactive pieces beside the `Button` recipe, which lives in the sibling `Buttons/` folder: the single-purpose controls, the two switches under `Switches/`, and `checkbox.css` the Checkbox's chrome.
 
 | Title | Export | What it is |
 | --------- | ------------ | ------------------------------------------------------------------------------- |
 | Button | `Button` | `type` × `size` × content (icon · icon + label · label), with `outline` as an inset ring and the `revealOnHover` / `ghostRest` modifiers; hover on every button, and `pressed` for a toggle whose menu is open. |
 | Segmented | `Segmented` | N Buttons of one type divided by `segment`; `glass` for the toolbar. |
-| Checkbox | `Checkbox` | The box, on the accent or a chosen cell. |
+| Checkbox | `Checkbox` | The app's one checkbox — `size` (standard/compact), a `filled` wash, a `color` override, and a `readOnly` glyph form; on the accent or a chosen cell. |
 | DualSwitch | `DualSwitch` | A boolean toggle with a sliding glass segment. |
 | ColorSwatch | `ColorSwatch` | The switch shape holding a color, anchoring a ColorPicker. |
 | Slider | `Slider` | Sliding number selection. |
@@ -318,14 +316,14 @@ Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, 
 | Filled      | `--fill-tertiary`             | `--label-primary`             |
 | Destructive | `--error` @ `--tint-tertiary` | `--error` @ `--tint-primary`  |
 
-**Button Sizes** — `size.control` in `Tokens/size.css.ts`; icon-only buttons take the ladder, labeled buttons take the bundle's label inset.
+**Button Sizes** — the `SIZE` scale in `Buttons/button-base.css.ts`, worn as the `size` class's `--btn-*` bundle; icon-only buttons take the ladder, labeled buttons take the bundle's label inset.
 
-| Title | Token | Value |
+| Title | Key | Value |
 | ---------- | ------------------- | ----------------------------------------------------------------------- |
-| Inline | `size.control['button-inline']` | h `20px` · segment `18px` · padX `2px` · label padX `4px` · radius `6px` · icon `control` — the row affordances |
-| Small | `size.control['button-small']` | h `24px` · segment `20px` · padX `4px` · label padX `12px` · radius `8px` · icon `body` |
-| Medium | `size.control['button-medium']` | h `28px` · segment `24px` · padX `6px` · label padX `12px` · radius `10px` · icon `headline` |
-| Large | `size.control['button-large']` | h `32px` · segment `28px` · padX `8px` · label padX `12px` · radius `12px` · icon `headline` |
+| Inline | `button-inline` | h `20px` · segment `18px` · padX `2px` · label padX `4px` · radius `4px` · icon `control` — the row affordances |
+| Small | `button-small` | h `24px` · segment `20px` · padX `4px` · label padX `12px` · radius `6px` · icon `body` |
+| Medium | `button-medium` | h `28px` · segment `24px` · padX `6px` · label padX `10px` · radius `10px` · icon `headline` |
+| Large | `button-large` | h `32px` · segment `28px` · padX `8px` · label padX `12px` · radius `12px` · icon `headline` |
 
 #### Pickers
 
@@ -429,15 +427,9 @@ Composite, feature-facing shells listed by reference; their code stays in the ap
 
 `Symbols/` — `Icon` and the curated registry (`icons`, `IconName`, `entityIcon`), `AllSymbols.ts` (`searchIcons`), `fileTypes.ts` (`fileTypeIcon`), `customGlyphs.tsx`, `masks.ts` (the grip, fold-chevron, and link glyphs as CSS masks), and the name helpers `asIconName` · `asRenderableIcon` · `iconNameOr` with the `DEFAULT_NEXUS_ICON` / `DEFAULT_ENTITY_ICONS` defaults.[^2]
 
-### Theming & Util
+### Util
 
-`Theming/` — `accent.ts` (`applyAccent`) and `personalization.ts` (`applyPersonalization`) write the runtime accent and the personalization vars onto the root. `Util/` — `cx` · `clamp` · `pad` · `moveItem`. Neither has a catalog beyond this line.
-
-### Showcase
-
-`Showcase/` — the data-driven component-library site, deployed at https://pommora-design-system.vercel.app from the same sources the app builds from, so it can't drift. `npm run showcase` serves it and `npm run build:showcase` builds it; `Showcase/leaves/registry.tsx` registers nine leaves across four sections — foundations, components, materials (the Glass tiers, under the section's older name), interactions — with the fields, labels, and menu leaves rendered inside the components leaf; plus the `lab/` sandbox and the SurfacePM stress harness.
-
----
+`accent.ts` (`applyAccent`) and `personalization.ts` (`applyPersonalization`) — under `Tokens/` — write the runtime accent and the personalization vars onto the root. `Util/` — `cx` · `clamp` · `pad` · `moveItem`. Neither has a catalog beyond this line.
 
 #### Known Issues
 
@@ -446,7 +438,7 @@ Composite, feature-facing shells listed by reference; their code stays in the ap
 
 #### Pending
 
-- **Spacing and radius** — spacing stays literal on the even grid by ruling; radius has `--radius-full` and `--app-radius`, and the button ladder's `6/8/10/12` in `size.control`; a feature site picks from that set.
+- **Spacing and radius** — spacing stays literal on the even grid by ruling; radius has `--radius-full` and `--app-radius`, and the button ladder's `4/6/10/12` in `Buttons/button-base.css.ts`; a feature site picks from that set.
 - **Light/dark theming** — the system is dark-only.
 - **An inactive label tone** — the empty-state text color between secondary and tertiary; interim consumers read tertiary. (The `--state-inactive` opacity above is a different thing.)
 - **Type** — no tracking scale, no Markdown element mapping, no multi-line clamp.

@@ -1,6 +1,6 @@
 ## The Renderer Rework
 
-> **Status:** shaped 08-28-2026 — the exploration is dispatched; nothing executes from this document until it has reported and the framework is ratified · **Scope:** `Pommora/src/renderer` whole — folders, names, tokens, stylesheets, recipes, boundaries, component APIs, and behavior where a perspective justifies it; the design system's pending items (an inactive label tone, the type gaps) ride it · **Replaces:** the Renderer Atlas, the Renderer Refactor ledger, and the abandoned Tiles plan, whose standing content is folded in below · **Beside it:** [[Codebase-Cleanup-Checklist]] (the process-side half — `persist()`, the view host, the `main/index.ts` split, the drag adapters).
+> **Status:** in directed cleanup, 08-28-2026 — the exploration reported; its verified findings are the §2 checklist, and cleanup rows land directly as they're taken. The value editing and visual tuning are mostly done; what's left is the larger folder moves and the collapse/split rows, then the framework (§4) rewriting §2 into ratified phases. · **Scope:** `Pommora/src/renderer` whole — folders, names, tokens, stylesheets, recipes, boundaries, component APIs, and behavior where a finding justifies it; the design system's pending items (an inactive label tone, the type gaps) ride it · **Replaces:** the Renderer Atlas, the Renderer Refactor ledger, and the abandoned Tiles plan, whose standing content is folded in below · **Beside it:** [[Codebase-Cleanup-Checklist]] (the process-side half — `persist()`, the view host, the `main/index.ts` split, the drag adapters).
 
 The renderer works. It is filed by the order things were built, styled in two forms with a rule that thirty sheets fail, and tokenized unevenly — motion and color are on their ladders, geometry is hundreds of bare pixel values with a handful of named insets. Two organizational passes (08-25 to 08-28) moved `Links/`, `Interface/`, the store, and landed the Menu recipe. What remains was carried in two documents as a ledger of moves and an atlas of evidence; this document is the one list of what is still proposed, why, and what each waits on — and the method for exploring the system whole — as consultants, not inspectors — before any of it is scheduled.
 
@@ -9,7 +9,7 @@ The renderer works. It is filed by the order things were built, styled in two fo
 1. **The rules that survive** — the eight filing rules, the target tree, and the rulings a sweep must not re-derive.
 2. **The checklist** — every proposed move, grouped by kind, each with its why and what it waits on.
 3. **The open rulings** — the calls only Nathan can make.
-4. **The exploration** — the perspectives, their briefs, and how findings and recommendations return.
+4. **The framework** — the exploration in one line, and the phased plan its findings become next.
 5. **Pointers** — what lives elsewhere and where.
 
 A row that lands leaves this document; History carries what happened. A ruling taken moves from §Open Rulings into §Settled and deletes the row it answered.
@@ -40,7 +40,7 @@ Each folder answers "what is this" in one word. A row marked NEW, MOVED, or RENA
 ├── // Assets                           | • NEW — assetUrl + the crop-aware AssetImage, out of the design system
 ├── // Cards                            | • The card chassis the gallery and CardView wear
 ├── // Actions                          | • The verbs — selection, pageMenuActions, nativeMenus, Commands, RenamableTitle, destinationTree
-├── // DesignSystem                     | • The pieces; Showcase/ leaves as a site
+├── // DesignSystem                     | • The pieces of the design system
 │   ├── // Pickers                      | • The picker family — picker-base is the most-composed primitive in the system
 │   ├── // Buttons · // Controls · // Fields · // SidePane
 │   ├── // Interactions
@@ -62,7 +62,7 @@ Each folder answers "what is this" in one word. A row marked NEW, MOVED, or RENA
 │   └── …
 ├── // Properties                       | • The value layer — resolution at the root, Editing/ and Editors/ beneath
 ├── // Settings                         | • The Settings window alone
-├── // Showcase                         | • MOVED out of DesignSystem — a deployed site, not a piece
+├── // Showcase                         | • A deployed site, not a piece
 ├── // Store                            | • The session's seven slices
 │   └── TabState.ts                     | • Per-tab warm state and the page-detail cache
 ├── // SurfacePM                        | • The tile layout engine; knows nothing of content
@@ -89,7 +89,7 @@ The tree is drawn for today's ~500 files and will be wrong in detail at 1,400; t
 Rulings a sweep would otherwise re-derive. An audit agent may contradict one, but must say so by number and give the new reason; it is reported to Nathan, never folded and never dropped.
 
 1. **Radius literals stay literal** at feature sites — a fourth value outside `6/8/10/12` is the reportable defect.
-2. **Both ladders are settled** — `ICON_PX`/`size.icon` absorbs every icon size; `size.control`'s four bundles are the button ladder; 13px is a real step.
+2. **Both ladders are settled** — `ICON_PX`/`size.icon` absorbs every icon size; the four button bundles are the button ladder (Settled 26); 13px is a real step.
 3. **Bridge completeness is deliberate** — unread members of a fully-bridged ramp are not orphans; the bridge is the primary token interface for every plain stylesheet.
 4. **Three var families look dead and are not** — bridge-completeness vars, fallback-only tuning hooks, `Glass/`'s specular whites; `--safe-*` are forward declarations for the mobile shell.
 5. **Vanilla-extract stays; `.css` vs `.css.ts` tracks module type** — the form question is closed, no reversal to plain CSS; no blanket migration either, and the thirty plain-CSS exceptions fail the test rather than disproving it.
@@ -108,6 +108,8 @@ Rulings a sweep would otherwise re-derive. An audit agent may contradict one, bu
 22. **The toolbar's tone is the container's, not a `button` selector's** — `.app-toolbar` and `.ppane-toolbar` declare `color: var(--label-control)` and every glyph inherits it; the `&&` pins left in the tree armor against other rules and are judged on their own.
 23. **`Links/` holds the link cluster; `Detail/` is `Interface/`; `SurfacePM/` keeps its name; `Blocks/` becomes root `Tiles/`** — executed or ruled 08-27/08-28.
 24. **The menu row's box is declared once** (`rowBox`, first in `menu-base.css.ts`); a surface picks Standard or Compact on its pane, never per row.
+25. **One checkbox recipe landed (08-28)** — `Controls/checkbox.css`'s `.checkbox` owns its own geometry and the `size`/`filled`/`color`/`readOnly` axes; the property glyph and the editor's task widget both wear it. `Labels/checkboxBox`/`boxGeometry` are retired and the checkbox is out of the Labels domain.
+26. **The button size scale lives with the button (08-28)** — `Buttons/button-base.css.ts`'s `SIZE`, worn as the `size` class's `--btn-*` bundle; `size.control` is retired. Segmented runs square their inner corners (one clipped pill); the toolbar trio owns `--trio-radius`.
 
 **Refuted, do not re-raise:** nexus/vault (zero identifiers), chip/label (chip is a recipe of Label — correct), pane/dropdown (`Toolbar/` runs a two-tier convention: a `*Menu` wraps a `*Frame`), select/option (layered correctly in `shared/properties.ts`), crumb/trail (split by layer). **Toolbar and Tabs stay root** — neither folds into `Interface/` or `Navigation/`. A `--space-*` ladder and a centralized radius scale were both refused with reasons.
 
@@ -120,7 +122,6 @@ Every proposed move, grouped by kind. **Status** is one of: **ruled** (Nathan sa
 #### Filing
 
 - [ ] **`Embeds/ViewEmbedScope` → `Views/`; `Sidebar/sidebarDndModel` → `DesignSystem/Interactions/reorderModel`; `Settings/IconPicker` + `iconFavorites` → `Utilities/NexusIconPicker`.** *Why:* R2 — each has zero importers in its own folder. *Status:* ruled.
-- [ ] **`Showcase/` out of `DesignSystem/`.** *Why:* Settled 21 — a deployed site, not a piece. *Status:* ruled.
 - [ ] **The tile world** — `Blocks/` (SurfacePM's tile contents), the tile half of `Embeds/` (PageEmbed, WebpageEmbed, tileWarm, webRetention, `embeds.css`), `Blocks/tile-chassis.css`, and root `Components/` (three store-reading helpers under a name the design system also uses). *Why:* one folder should answer "where does a tile live?" and `Components/` fails R3. A plan (Tiles, 08-27) proposed root `Tiles/` + `Utilities/`, one `TileWriter` shell over one `TileSave`, and one `tile-base.css`; it was abandoned 08-28 for fresh perspectives. What it found and still stands: `PageEmbedBlock.tsx` is a 29-line pass-through; `MarkdownBlock` and `PageEmbed` are one click-to-edit shell over two data seams; `blocks.css` and `embeds.css` already share `:is(.blk-md, .pgembed)` selectors; `embedWidget` imports `blockZoom` statically, so a `Tiles/` barrel would close the `PageEmbed → MarkdownPM → embedWidget` cycle the lazy imports keep open. *Status:* audit decides — Architect and Reducer propose the shape.
 - [ ] **`Interface/` absorbing `Sidebar/`.** *Why:* the same window's chrome, read by the same InterfacePM; one top-level folder disappears. *Status:* awaiting ruling (§3.2).
 - [ ] **The casing renames** — the lowercase subfolders under `MarkdownPM/` (`connections`, `decorations`, `detect`, `editor`, `input`, `parser`, `tokens`), `SurfacePM/` (`core`, `sensors`), `Views/pipeline/`, the Showcase's `lab/` and `leaves/`; stylesheets and lowerCamel operation files to kebab-case beside their component (`Carets.css`, `Interface.css`, `Styles.css`, `Sidebar.css`, `Table.css`, `GroupBand.css`, `CardsView.css`, `TableView.css`, `surfacepm.css`; `tabsModel`, `treeIndex`, `reorderModel`, and their siblings); `Elements/Segment/` and `Elements/DropOutline/` folded into their one file. *Why:* R7. *Status:* ruled; mechanical.
@@ -145,7 +146,6 @@ Every proposed move, grouped by kind. **Status** is one of: **ruled** (Nathan sa
 
 - [ ] **The Menu recipe, Part 2** — a leading glyph size per row variant (today every leading glyph is what its caller passes — `headline` 15 in the sidebar and Trash, `body` elsewhere; Compact wants `control`); `--list-inset` for nested lists, starting by unwinding `menu-row.tsx`'s inline `paddingLeft: 8 + indent * DISCLOSURE_INDENT` (it beats every class and var) and `sidebarDnd.tsx`'s mirror of the `8`; a footing row kind in the index (GroupFrame, LayoutFrame, PropertyFrame, FilterFrame still hand-build `footingSymbol` + `footingLabel` rows inside `MenuFooting`); the `action` kind's first production consumer (PropertyFrame's All Properties row with its disclosure beat). *Status:* ruled as the recipe's Sequenced After.
 - [ ] **The recipe's five Open Calls** — rows carrying a switch or eye measure 31–32 (the control is taller than the 16px line): a 16px control, or rows sized by their tallest child · locked cards clip their trail (the cover's 65% share vs the text band): the cover yields, or the band takes a floor · a Trash row with `onClick` is a `role=button` tab stop beside its checkbox's: a `MenuItem` opt-out, or drop the pointer convenience · Settings' section titles render as the index's `div`, leaving the window's heading outline: a `level` on the heading kind, or accept · the footing row kind (above). *Status:* awaiting ruling (§3.6).
-- [ ] **One checkbox recipe** — `Labels/checkboxBox` is the source and both `Controls/checkbox.css` and `Properties/Editing/checkboxLook` read it; what remains is naming where a checkbox's styling is defined so nobody asks again. *Status:* audit confirms; documentation.
 - [ ] **The floating identity label** — embed tiles reveal crumbs or a webpage title on hover, the Web Window shows domain › title always, the Page Window a trail in its tab strip; one design-system element, or NavTrail absorbing the webpage case. *Status:* audit decides whether the three share enough chrome.
 - [ ] **Menu rows with horizontal property values** — multi-value rows land their values tight against the label; a pane-width-relative max-width for the value side has been tried and reverted several times. *Status:* audit decides (a known issue carried from ContextPM).
 - [ ] **`{ minWidth: 96, height: 24 }`** written byte-identically in `PropertyPicker.tsx:123` and `CardAddPicker.tsx:118` — one class. *Status:* ruled.
@@ -175,7 +175,7 @@ Every proposed move, grouped by kind. **Status** is one of: **ruled** (Nathan sa
 
 ### 3. Open Rulings
 
-The calls only Nathan can make; each deletes a row above when taken. **All are deferred (Nathan, 08-28) until the exploration reports** — the perspectives see every one as open and may argue any side; the consulting session takes them with the findings in hand. The orchestrator's own leans are recorded so the perspectives can argue against something: 1 defer to the Token Designer · 2 yes · 3 stays in `Windows/` · 4 lift the section · 5 take both · 6 a 16px control, the band takes a floor, the Trash row drops the pointer convenience, a heading `level`, the footing kind · 7 `default` except links · 8 "Window" · 9 everything in scope.
+The calls only Nathan can make; each deletes a row above when taken, and is taken with the exploration's findings in hand as the framework's phases are written. The orchestrator's own leans, to argue against: 1 defer to the Token Designer · 2 yes · 3 stays in `Windows/` · 4 lift the section · 5 take both · 6 a 16px control, the band takes a floor, the Trash row drops the pointer convenience, a heading `level`, the footing kind · 7 `default` except links · 8 "Window" · 9 everything in scope.
 
 1. **The zoom merge** — does `--page-scale` absorb `--mdpm-scale`, given the font-path rewiring it costs?
 2. **`Interface/`'s scope** — does it absorb `Sidebar/`?
@@ -188,55 +188,11 @@ The calls only Nathan can make; each deletes a row above when taken. **All are d
 
 ---
 
-### 4. The Exploration
+### 4. The Framework
 
-The two documents this one replaces were produced by seven read-only lenses over one weekend, asking "is the tree filed correctly." They found "no dead code, no wrong architecture, one behavioral bug." This exploration asks a wider question of every layer — *is this the system we want, and what would it be instead* — and its agents are consultants, not inspectors: each one explores a perspective, forms an opinion, and returns findings **with** a recommendation, the alternatives it weighed, and what each costs. Nothing is filtered for politeness or for agreement with a standing ruling; a consultant who thinks a Settled row is wrong says so by number, with the new reason.
+The exploration ran — twelve read-only perspectives over the renderer whole (the Reducer as the priority lens), each returning findings with a recommendation, the alternatives it weighed, and each one's cost. Its verified findings are the §2 checklist and the §1 Settled entries; killed candidates and negative results stayed out.
 
-#### The Questions
-
-What Nathan asked, and which perspectives answer them:
-
-1. **Unused and under-used exports** — what nothing imports; what one file imports and could own. → Cartographer, Exports.
-2. **Unneeded abstraction** — vars, classes, props, hooks, components with one writer and one reader; wrappers that only forward; layers that exist to be layers. → Exports, Architect.
-3. **Tokens where a raw value would be better**, and raw values where a token exists — both directions, per family. → Token Designer.
-4. **Shared-recipe opportunities** — surfaces built alike by hand that could wear one recipe. → Recipe.
-5. **Split, merge, delete** — files or folders holding two things, two holding one, anything holding nothing. → Cartographer, Architect.
-6. **Conflicting naming** — two spellings for one concept, one word for two, names that say what a thing was. → Lexicographer, Newcomer.
-7. **Confusing relations** — boundary crossings, cycles the lazy imports paper over, folders consumed from everywhere but their own. → Boundary, Newcomer.
-8. **What the CSS strategy should be** — vanilla-extract stays (Settled 5); within that, where plain CSS is honestly right under R6, and whether the bridge is the right token interface. → Stylist.
-9. **What the component API shape should be** — how a piece takes its data, how a recipe is worn, how a surface names itself. → Architect, Recipe.
-10. **What isn't needed at all** — the priority question, asked of everything the other nine touch. → Reducer, with every perspective feeding it.
-
-#### The Perspectives
-
-Each perspective is one agent with one question, a method, a guard list, and a return format. The Reducer runs as the priority lens — every other perspective is asked to hand it what it noticed could go. Agents read only. Every finding cites a file and line and is verified by the orchestrator at that line before it reaches Nathan; every recommendation carries its alternatives and their costs so the decision arrives shaped.
-
-| Perspective | Question | Method | Returns |
-| --- | --- | --- | --- |
-| **Reducer** *(priority)* | What isn't needed? What could be reduced, removed, or eliminated outright — files, folders, layers, tokens, recipes, props, options, whole mechanisms? | Read every folder asking "what would be lost if this were gone" before asking what it does; for each mechanism, find the simpler thing it is standing in for; count what each abstraction buys against what it costs; treat a feature nobody has used as a candidate, not a fixture. | A ranked deletion list with the blast radius of each; the mechanisms that could collapse into a simpler one; the options and props that could go; a plain-prose estimate of how much smaller the renderer could be and where the bulk sits. |
-| **Cartographer** | What is each file, who consumes it, and does its folder agree? | Build the import graph over `src/renderer`; per file: importers, importing folders, own-folder importers; R2/R3; every folder-crossing edge by direction; cycles. | The graph as JSON; R2/R3 failures; lateral edges; cycles; split/merge candidates with the shape each would take. |
-| **Exports** | What does nothing read, and what does one thing read that could own it? | A `ts-prune`-class pass plus greps for what the typecheck can't see (CSS classes, vars, string keys, test-only exports); Settled 3, 4, 13 as guards. | Dead exports/classes/vars; test-only exports; one-reader exports ranked by how much indirection each buys. |
-| **Architect** | What should the layering be, and what would a clean-slate renderer of this app look like? | Read the tree against R1–R8 and against the app's real seams (main-owned data, per-window store, the five surface words); name the layers the code implies versus the ones the rules state; test each folder's one-word answer. | A proposed layer model with the folders under each; where today's tree disagrees and what the move costs; the abstractions that exist to be layers; two alternatives to the proposal, with why they lose. |
-| **Stylist** | Within vanilla-extract (Settled 5), where is plain CSS honestly right and is the bridge the right token interface? | Inventory every stylesheet by form, size, class-name contract, global vs scoped load, and who emits its class names; measure the bridge, the `&&` pins, and the `globalStyle` escapes; find where plain `.css` is honestly correct under R6. | The exceptions to `.css.ts` named against R6; the migration order and cost; whether the bridge stays the token interface; the specificity armor roster and what would let each pin go. |
-| **Token Designer** | Is every value read for what its token is for, and is every token worth its name? | Per family (color, type, geometry, motion, stack, tint): every read classified correct / wrong token / literal-where-token / token-where-literal; per token: reader count and whether readers agree with the definition; the `KNOB` roster; the vars declared outside `Tokens/`. | Both-direction misreads with counts; tokens to retire, rename, mint, or demote to a `KNOB`; the zoom family's composition rule as a proposal; the geometry ladder question answered with evidence rather than the standing ruling. |
-| **Recipe** | What is built alike by hand more than once, and what recipe would it wear? | Fingerprint every `.css.ts`/`.css` declaration block and every component's JSX shape; cluster near-identical members across files; for each cluster, diff the members. | Clusters with member sites and diffs; a named recipe each would wear, with the API it would need; the ones not worth a recipe and why. |
-| **Lexicographer** | Do names say what things are? | The concept table (tile/block, View/Renderer, icon/glyph, zoom/scale, band ×3, Choice/Option, Editing/Editors, crumb/trail, warm/cache) with counts; PascalCase-iff-component; stylesheet-beside-component; folder casing; names that describe a former state. | Conflicts with counts and a winner each; R7 failures; the rename sweeps as ordered batches with their blast radius. |
-| **Boundary** | What crosses a line the rules forbid, and what would a lint refuse? | R1 and R4 greps with control tokens; `DesignSystem/**` outbound edges; `Properties → Views/Tables`; `window.nexus` sites per folder; the store's readers per folder. | Every crossing with its reason (sanctioned / unsanctioned / unknown); the lint as a Biome config block; the inversions ranked by cost. |
-| **Newcomer** | Where would an engineer new to this codebase get lost, and what would they misfile? | Read the tree cold — folder names, file names, the barrels, the docs' map — before reading any ruling; write down every "why is this here" and every wrong guess; then read the rulings and record which ones a newcomer couldn't have derived. | The confusion list with the rule or rename that would have prevented each; the rulings that need to be structural (a folder, a lint) rather than documentary. |
-| **Archivist** | What was already ruled, and does the code still match? | Every Settled row against today's code; every Features doc claim about the renderer against the file it names. | Rulings the code has drifted from; rulings the code has outgrown; false doc claims. |
-| **Skeptic** | What in the above is wrong, and what did nobody ask? | Runs last over every report: contradictions between perspectives; findings that re-derive a Settled row without a new reason; the questions no perspective asked; the recommendations whose cost was understated. | A contradictions list; a "what nobody asked" list; a severity re-ranking of the whole with the reasons. |
-
-**Guards every perspective carries:** §Settled and §Refuted by number (contradict by citation, never silently); no edits, no comments, no "fixes" — findings and recommendations only; a count is not debt (find what chooses between the options before calling a spread a problem); a survey measuring two files against each other must count out what was already extracted beneath them; every grep names its control token; a recommendation without its alternatives and their cost is unfinished.
-
-**Return format (all perspectives):** a numbered catalog, each entry `severity · surface · file:line · mechanism · verification · the rule or ruling it bears on · recommendation · alternatives and cost`; then "what held" (negative results, so nobody re-runs them); then "killed candidates" (what looked like a finding and wasn't, with why); then a closing opinion in plain prose — what this perspective would do if it owned the renderer for a week.
-
-#### Sequencing
-
-1. **Nathan shapes the exploration** — taken 08-28: all twelve perspectives run, the Reducer as the priority, everything in scope, the ten rulings deferred, the Tiles plan abandoned so the tile world is seen fresh.
-2. **Dispatch** — the perspectives run read-only in parallel on one pinned commit; the Skeptic runs after them over their reports.
-3. **Verification** — the orchestrator opens every cited line; an unverified finding is dropped with a note, never passed through; recommendations are checked for the alternatives they owe.
-4. **The consulting session** — Nathan reads the verified catalog perspective by perspective; each recommendation becomes a checklist row (with its status), a Settled entry (with its reason), or a killed candidate — decided with him, in the order the Skeptic ranked them.
-5. **The framework** — this document's §2 rewritten from the decisions into phases with gates, in the plan form the Menu recipe used; ratified; executed one phase per session with `/closeout`. The framework is the document Nathan reads, the orchestrator edits, and a session follows.
+What's left of the method is the **framework**: §2 rewritten from the decisions into ordered phases with gates, in the plan form the Menu recipe used — ratified, then executed one phase per session with `/closeout`. The framework is the document Nathan reads, the orchestrator edits, and a session follows. The §3 rulings are taken with the findings in hand as each phase is written.
 
 ---
 

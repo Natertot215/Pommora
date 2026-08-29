@@ -37,3 +37,4 @@ graphify-out/
 # own folder. The link is machine-local by construction — committed, it dangles on
 # every other checkout — so it stays out of the tree.
 .claude/commands
+.claude/Sessions

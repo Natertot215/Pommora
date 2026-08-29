@@ -14,7 +14,9 @@
 
 **Directed execution.** Rather than wait on a ratified framework, Nathan directed targeted moves against the findings, each landed gated (typecheck 0 · biome clean · vitest 297/3671, builds green where relevant) with its LOC and the map crossed off: eight dead override hooks → literals; one-place table-head type (`.table-head` callout·emphasized·label-secondary); `--labels-gap`→`Labels/`; NavView search → headline; icon picker 210×225; `WarmCache`→`Store/TabState`; banner height + add-zone DRY'd, each surface's divider a local `--detail-divider-width` knob; `Interface/Banner/` dissolved to flat `Interface/` with `content-banner.css` + `content-title.css`; `tile-chassis`→`Blocks/` and `DesignSystem/Detail` removed; `AssetImage`+`assetUrl`+`imageAspect`→`renderer/Assets/`; and `DesignSystem/Components/` dissolved — Pickers, Controls, Fields, SidePane at the design system's top level, `useDismiss`→`Interactions/`. All pushed to origin.
 
-**Where it stands.** Everything landed is gated and pushed; the renderer builds and the showcase deploys unchanged (vercel already points at the current Showcase source). What remains is the formalization: the open forks that gate the framework — the CSS-form question (keep `.css.ts` vs revert to plain CSS, the Stylist's contrarian call), the masked-knob roster (`--detail-title-size`'s 5-way override next), the naming batches, and the ten deferred §3 rulings — then [[RendererRework]] §2 becomes ordered phases with gates.
+**This session's landings.** The design-system consolidations continued: one shared checkbox (`Controls/checkbox.css` owns `.checkbox` and its own geometry, out of the Labels domain, carrying `size`/`filled`/`color`/`readOnly`; the property glyph and the editor's task widget wear it), and the button size scale brought home (`Buttons/button-base.css.ts`'s `SIZE` as the `size` class's `--btn-*` bundle, `size.control` retired; segmented runs square to one clipped pill; the toolbar trio owns `--trio-radius`). A dev scratchpad landed — `Utilities/iteration-window`, a blank floating surface opened by ⌘⇧T. Then the doc infrastructure: the four commits since origin were reconciled against the Feature docs (dead names, moved folders, the Figma "mirror" softened to intended-not-guaranteed, the windows section tightened); CLAUDE.md gained a **Testing Conventions** section (the scratchpad + full-permission-on-live-instances rules, a copy-paste launch command, the gates) and shed its Electron-generic restatements; `DesignSystem/Showcase` moved to `renderer/Showcase` (deploy follows via the html entry); the Resources folder was dismantled into `Showcase/README` + `Guidelines/Dependencies`; and Guidelines collapsed to four (`Development-Environment` folding Build-Gotchas + Lint-And-Accessibility + Data-Layer's unique traps, beside Web-Guests, Editor-Internals, Dependencies). [[RendererRework]] was reduced to what's left; the feature docs were stripped of the session's own code creep.
+
+**Where it stands.** The value editing and visual tuning are mostly done and landed — the design-system consolidations (checkbox, button, menu heading, title-shadow, banner) are in, gated and (for the earlier batch) pushed. What remains on the rework is the larger folder moves (`Core/`, `Interface` absorbing `Sidebar`, the tile world, the casing renames) and the collapse/split rows, then the framework — [[RendererRework]] §2 into ordered phases with gates. The doc infrastructure is laid and the plan reduced. Next session can start fresh: continue the larger moves, or pivot to the next feature — Nathan's lean is next feature asap.
 
 #### Completion Criteria
 
@@ -23,15 +25,15 @@
 - [x] **The exploration ran and was verified** — twelve perspectives + the Skeptic; the load-bearing findings opened at the line; the synthesis captured.
 - [ ] **The open forks are ruled** — the CSS-form question, the masked-knob roster, the naming batches, and the ten deferred §3 rulings.
 - [ ] **The framework is written** — [[RendererRework]] §2 rewritten into ordered phases with gates, then ratified.
-- [ ] **The filing and token rows are executed** — `Core/`, `Navigation/` absorbing `Tabs/`, the Showcase out, the casing renames, the zoom family; and R1/R3's greps return the target.
+- [ ] **The filing and token rows are executed** — `Core/`, `Interface/` absorbing `Sidebar/`, the tile world, the casing renames, the zoom family; and R1/R3's greps return the target. (The Showcase is out ✓; the checkbox and button consolidations are in ✓.)
 - [ ] **`ViewEmbedBlock` reads `cellRing(key)`** — the one behavioral fix.
 - [ ] **The Space dropdown is eyeballed** — carried from 08-25.
 
 #### Next Session
 
-1. **Rule the open forks** — the CSS-form question (keep `.css.ts` vs revert to plain CSS, the Stylist's contrarian call), the masked-knob roster (`--detail-title-size`'s 5-way override is next), the naming batches, and the ten deferred §3 rulings. Each is a one-line call that unblocks a checklist row.
-2. **Write the framework** — once the forks are ruled, rewrite [[RendererRework]] §2 into ordered phases with gates and ratify it.
-3. **Continue the directed cleanups** in the meantime — they land gated, LOC-reported, map crossed off, per §6 Working Rules.
+1. **The next feature, or the larger moves** — the value/visual rework is mostly done; Nathan's lean is starting the next feature asap. The rework's remaining work below is resumable at any point.
+2. **The larger folder moves + collapse/split** — `Core/`, `Interface/` absorbing `Sidebar/`, the tile world, the casing renames, the zoom family. These are the structural rows the small consolidations were clearing the way for.
+3. **Rule the open forks, then write the framework** — the CSS-form question, the masked-knob roster (`--detail-title-size`'s 5-way override), the naming batches, and the ten §3 rulings; then [[RendererRework]] §2 into ordered phases with gates.
 4. **The Space dropdown** — carried from 08-25.
 
 #### Feedback
