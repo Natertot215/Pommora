@@ -158,11 +158,11 @@ Authored once, validated by main and renderer alike; the accent resolves from it
 | Light Blue        | `SPECTRUM.lightBlue` · `--solid-light-blue` | `#7EC8E3`                                  |
 | Cyan              | `SPECTRUM.cyan` · `--solid-cyan`            | `#41959F`                                  |
 | Blue              | `SPECTRUM.blue` · `--solid-blue`            | `#0A84FF`                                  |
-| Purple            | `SPECTRUM.purple` · `--solid-purple`        | `#BF5AF2`                                  |
+| Purple            | `SPECTRUM.purple` · `--solid-purple`        | `#7852EE`                                  |
 | Lavender          | `SPECTRUM.lavender` · `--solid-lavender`    | `#A78BCC`                                  |
 | Grey              | `SPECTRUM.grey` · `--solid-grey`            | `#8E8E93`                                  |
 | Default           | `GREY_DEFAULT`                              | `#48484A`                                  |
-| Pink              | `PINK`                                      | `#DC519F`                                  |
+| Pink              | `PINK`                                      | `#EF7697`                                  |
 | Default Accent    | `DEFAULT_ACCENT`                            | `cyan`                                     |
 | Accent            | `--accent`                                  | `applyAccent`                              |
 | Accent Fill       | `--accent-fill`                             | accent @ 15%                               |
