@@ -25,7 +25,7 @@ const SIZE: Record<ButtonSize, SizeSpec> = {
     padX: '2px',
     labelPadX: '4px',
     radius: '4px',
-    dividerH: '12px',
+    dividerH: '10px',
     icon: icon.control,
   },
   'button-small': {
@@ -34,7 +34,7 @@ const SIZE: Record<ButtonSize, SizeSpec> = {
     padX: '4px',
     labelPadX: '12px',
     radius: '6px',
-    dividerH: '14px',
+    dividerH: '12px',
     icon: icon.body,
   },
   'button-medium': {
@@ -43,7 +43,7 @@ const SIZE: Record<ButtonSize, SizeSpec> = {
     padX: '6px',
     labelPadX: '10px',
     radius: '10px',
-    dividerH: '18px',
+    dividerH: '14px',
     icon: icon.headline,
   },
   'button-large': {
@@ -52,7 +52,7 @@ const SIZE: Record<ButtonSize, SizeSpec> = {
     padX: '8px',
     labelPadX: '12px',
     radius: '12px',
-    dividerH: '14px',
+    dividerH: '16px',
     icon: icon.headline,
   },
 }
