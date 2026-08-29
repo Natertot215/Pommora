@@ -8,10 +8,9 @@ const icon = vars.size.icon
 const OUTLINE_W = 'var(--width-125)'
 
 // § SIZE — every button dimension, one place. A `size` class sets the --btn-* bundle; `.button`, the
-// run container, and the divider read it. `inRun` swaps the pill geometry for the segment's.
+// run container, and the divider read it. `inRun` squares the pill's corners.
 type SizeSpec = {
   height: string
-  segHeight: string
   padX: string
   labelPadX: string
   radius: string
@@ -21,38 +20,34 @@ type SizeSpec = {
 const SIZE: Record<ButtonSize, SizeSpec> = {
   'button-inline': {
     height: '20px',
-    segHeight: '18px',
     padX: '2px',
     labelPadX: '4px',
     radius: '6px',
-    dividerH: '10px',
+    dividerH: '14px',
     icon: icon.control,
   },
   'button-small': {
     height: '24px',
-    segHeight: '20px',
     padX: '8px',
     labelPadX: '12px',
     radius: '6px',
-    dividerH: '12px',
+    dividerH: '16px',
     icon: icon.body,
   },
   'button-medium': {
     height: '28px',
-    segHeight: '24px',
     padX: '6px',
     labelPadX: '10px',
-    radius: '12px',
-    dividerH: '14px',
+    radius: '10px',
+    dividerH: '18px',
     icon: icon.headline,
   },
   'button-large': {
     height: '32px',
-    segHeight: '28px',
     padX: '8px',
     labelPadX: '12px',
     radius: '14px',
-    dividerH: '16px',
+    dividerH: '20px',
     icon: icon.headline,
   },
 }
@@ -97,7 +92,6 @@ export const button = style({
 export const size = styleVariants(SIZE, (s) => ({
   vars: {
     '--btn-h': s.height,
-    '--btn-seg-h': s.segHeight,
     '--btn-pad': s.padX,
     '--btn-label-pad': s.labelPadX,
     '--btn-radius': s.radius,
@@ -106,13 +100,10 @@ export const size = styleVariants(SIZE, (s) => ({
   },
 }))
 
-/** A button inside a Segmented run takes the segment's tighter height and squares its corners — the
- *  run reads as one pill (the container clips the outer corners) split by dividers, not a row of
- *  separate rounded boxes. Defined AFTER `size` so the border-radius wins the cascade tie. */
-export const inRun = style({
-  vars: { '--btn-h': 'var(--btn-seg-h)' },
-  borderRadius: 0,
-})
+/** A button inside a Segmented run squares its corners — the run reads as one pill (the container
+ *  clips the outer corners) split by dividers, not a row of separate rounded boxes. Defined AFTER
+ *  `size` so the border-radius wins the cascade tie. */
+export const inRun = style({ borderRadius: 0 })
 
 /** A labeled button pads wider than a bare icon. */
 export const labeled = style({ vars: { '--btn-pad': 'var(--btn-label-pad)' } })
