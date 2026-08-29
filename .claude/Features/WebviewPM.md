@@ -21,7 +21,7 @@ A guest is live only while its tile is fully visible in the scrollport, since a 
 
 ### Engagement & Retention
 
-A live tile is inert until clicked in: wheel and pointer pass to the document, and one click engages the site, after which interaction belongs to the page until a click lands outside the tile, Escape is pressed, or the tile scrolls out. Guests that scroll out of view hide rather than unmount, keeping the site's state alive under a capped least-recently-hidden retention (`Embeds/webRetention.ts`); the cap's eviction tears the oldest hidden guest down and its tile reloads fresh on its next entry. Retention carries across tab switches for the page tabs that stay parked, so a site resumes with its session, scroll, and playing media; a tab beyond that reach rebuilds and its sites load fresh.[^2]
+A live tile is inert until clicked in: wheel and pointer pass to the document, and one click engages the site, after which interaction belongs to the page until a click lands outside the tile, Escape is pressed, or the tile scrolls out. Guests that scroll out of view hide rather than unmount, keeping the site's state alive under a capped least-recently-hidden retention (`SurfacePM/WebRetention.ts`); the cap's eviction tears the oldest hidden guest down and its tile reloads fresh on its next entry. Retention carries across tab switches for the page tabs that stay parked, so a site resumes with its session, scroll, and playing media; a tab beyond that reach rebuilds and its sites load fresh.[^2]
 
 ### Link Opening
 
