@@ -17,6 +17,7 @@ The working checklist for the architecture-audit cleanup — every task verified
 
 - Bundle 6 (the view host) lands before any third view renderer is attempted, and after the value layer's folder stops moving ([[RendererRework]] §2 Filing) so the host seats imports at their final address.
 - Bundle 5 is best taken immediately before the next store-heavy feature.
+- Bundle 9 (the `ViewTile` rebuild) lands after the Tiles merge (Blocks + Embeds → `SurfacePM/`, [[RendererRework]]) seats the file at its final address.
 
 ### Decided Rulings
 
@@ -115,6 +116,16 @@ Chrome is produced in two stages, and only the second was scoped. The **derivati
 - [ ] **`useInsertionDrag` over `usePointerGesture`** owns point tracking, ghost position, autoscroll arm/teardown, snapshot invalidation, and announcements; the eight adapters (`paneDnd`, `BandDnd`, `tableDnd`, `OutlineDnd`, `groupingDnd`, `sidebarDnd`, `useOptionReorder`, `useStatusReorder`) pass their drop model and wording, one adapter at a time with the app open.
 
 **Verification:** every gesture driven live — sidebar reorder and reparent, table row and column, band, outline, pane rows, option and status reorder — with edge-autoscroll and announcement checked on each.
+**Retires:** nothing listed.
+
+#### II. Bundle 9 — `ViewTile` Light Rebuild · one session, app open · net ≈ −300
+
+Deferred out of the Tiles merge ([[RendererRework]] §Tiles), which relocated the file move-only. At 607 lines it is the subsystem's largest, carrying its own title row, view-pill / dropdown switcher, and per-view config / icon / color / rename menus inline.
+
+- [ ] **Lift the chrome into shared pieces.** Break the title row, the switcher, and the picker menus into small components the other tiles seat where they overlap; let the consolidated `ViewTileLock` / `ViewTileScope` gate thin the persist arms. Behavior preserved — this is simplification, not a feature.
+
+**Blocked by:** the Tiles merge landing first, so the file sits at its final address (`SurfacePM/ViewTile.tsx`) with the lock gate already extracted.
+**Verification:** app open — a view tile's title edit, view switch, add / remove / reorder view, per-view config and style, lock; grouped and ungrouped.
 **Retires:** nothing listed.
 
 ### I. Open Questions — Not Scheduled
