@@ -17,6 +17,7 @@ import { useSession } from '../store'
 import { openWebLink } from '../Links/openWebLink'
 import { webGuestRetention } from './webRetention'
 import './embeds.css'
+import '@renderer/Blocks/block-title.css'
 
 /** What the guest element answers with once attached — the parting frame's only surface. */
 type CapturableGuest = HTMLElement & { capturePage?: () => Promise<{ toDataURL(): string }> }
