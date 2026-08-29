@@ -92,6 +92,19 @@ Each phase ends green on all three gates (`npm run typecheck` · `npm run test` 
 
 - **`PageTileWrite` vs `pageFlush` direction** — generalize `pageFlush` in place and have markdown adopt it, or a new `PageTileWrite` both re-base onto. Resolved by reading `pageFlush`'s non-tile callers in Phase 2; flagged here so the answer is deliberate.
 
+### Log
+
+**Base:** `b5597a5f`. **Phase 1:** `cc1474ad`. **Phase 2:** (this commit).
+
+**Rulings**
+- *(P1)* The **UI layer** becomes "tile" (components, hooks, classes); the **block-doc data model stays "block"** — `@shared/blocks`, `nexus.blocks`, `MarkdownBlockEntry`, `BlockHostRef`, and the shared webpage embed-syntax detection (`loneWebpageEmbed`, `composeWebpageEmbedLine`) keep their names. A blanket rename had reached into these; reverted (caught by the Phase 1 attack).
+- *(P1)* Comment-stripping of the moved files' inherited Blocks/Embeds-era prose is deferred to the Phase 6 whole-range pass, per the standard's framing of it as the post-plan review — not done per-phase.
+- *(P2)* `PageTileWrite.ts` (the `createBodyWriter` factory) lives in `SurfacePM/`; `Interface/pageFlush` re-bases onto it (the Interface→SurfacePM dependency already exists via `TileSurface`). Markdown-tile saves gain retry-on-fail and a beforeunload flush from the shared factory — strict improvements over the old silent-drop, not regressions.
+- *(P2)* The page-save `writeThroughBody` re-assert on a failed-write requeue lands at the retry's flush (≤400ms later) rather than failure-immediate as before — a self-correcting sub-400ms transient on the disk-error path only. Left as-is: closing it would add a requeue hook to the generic factory, complicating it for a negligible case.
+
+**Invariants to protect**
+- *(P2)* The requeue-after-cancel path is safe **only because** `removing` (TileSurface — the `suppressFlush` source) is permanent-once-set (`.add`/`.has`, never `.delete`). If that ever gains a reset, a cancelled markdown write's requeue could resurrect a trashed tile's file; a write-time guard would have to be re-added.
+
 ### Downstream, not in this plan
 
 - **Bundle 9** (Codebase-Cleanup Checklist) — the `ViewTile` light rebuild, blocked on this merge seating the file at `SurfacePM/ViewTile.tsx`.
