@@ -11,22 +11,22 @@ import { basename, dirname, extname, join, relative, sep } from 'node:path'
 import { readFile, realpath } from 'node:fs/promises'
 import { sessionRoot } from './session'
 import { resolveUnderRoot } from './pathSafety'
-import { createPage, renamePage, movePage, updatePageProperty } from './crud/page'
-import { setChildOrder, setStateOrder } from './crud/reorder'
-import { createFolderEntity, renameFolderEntity, moveFolderEntity } from './crud/folderEntity'
+import { createPage, renamePage, movePage, updatePageProperty } from './CRUD/page'
+import { setChildOrder, setStateOrder } from './CRUD/reorder'
+import { createFolderEntity, renameFolderEntity, moveFolderEntity } from './CRUD/folderEntity'
 import {
   createContextGroup,
   createSpace,
   loadContextWorld,
   setContextOnPath,
   setSpaceColor,
-} from './crud/contextWrite'
+} from './CRUD/contextWrite'
 import {
   renameContextOp,
   renameSpaceOp,
   unlinkContextKey,
   unlinkSpaceValue,
-} from './crud/contextCascade'
+} from './CRUD/contextCascade'
 import { mutateRegistryFile, readRegistryStrict } from './contextsRegistry'
 import {
   buildContextRecord,
@@ -38,8 +38,8 @@ import {
   restoreArtifact,
   writeRecord,
 } from './provenance'
-import { setSpaceOrder } from './crud/reorder'
-import { renameCascade } from './crud/cascade'
+import { setSpaceOrder } from './CRUD/reorder'
+import { renameCascade } from './CRUD/cascade'
 import { rewriteBlockConnections } from './blocks'
 import {
   mintBundle,
@@ -48,9 +48,9 @@ import {
   readJsonObject,
   rmwJsonStrict,
   atomicWriteFile,
-} from './io/atomicWrite'
-import { recordWrite } from './io/writeEcho'
-import { readNavigationFile, writeNavigationState } from './io/navigationFile'
+} from './IO/atomicWrite'
+import { recordWrite } from './IO/writeEcho'
+import { readNavigationFile, writeNavigationState } from './IO/navigationFile'
 import {
   assetFilePath,
   assetFileToDelete,
@@ -60,8 +60,8 @@ import {
 } from './assetRoots'
 import { createDisambiguated } from './disambiguate'
 import { writeAssetFile } from './assetWrite'
-import { serializeOnFile } from './io/fileLock'
-import { splitEnvelope, mergeFrontmatter, readFrontmatterFields } from './io/pageFile'
+import { serializeOnFile } from './IO/fileLock'
+import { splitEnvelope, mergeFrontmatter, readFrontmatterFields } from './IO/pageFile'
 import { basenameNoMd } from './coerce'
 import { nexusConfig, relPosix, sidecarPath, NEXUS_CONFIG_FILES } from './paths'
 import { resolveFolderKind } from './folderKind'
@@ -74,7 +74,7 @@ import type { PropertyDefinition } from '@shared/properties'
 import type { PropertyValue } from '@shared/propertyValue'
 import { NO_NEXUS } from './ipc'
 import type { TrashMode } from './appConfig'
-import { readRegistry } from './io/propertiesRegistry'
+import { readRegistry } from './IO/propertiesRegistry'
 import { deindexPath, indexWrittenPage, moveIndexPaths, seedContentIndex } from './indexSeed'
 import { HTTP_URL, NON_CORPUS_TOP, TRASH_DIR, assetSubRoot, cropKeyFor } from '@shared/nexusPaths'
 import { clampZoom } from '@shared/cropGeometry'

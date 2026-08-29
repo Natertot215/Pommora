@@ -4,7 +4,7 @@
 // re-runs; a walk whose slot was dropped or superseded installs nothing.
 
 import type { NexusTree } from '@shared/types'
-import { pathExists } from './io/atomicWrite'
+import { pathExists } from './IO/atomicWrite'
 import { readNexus } from './readNexus'
 
 interface WalkSlot {

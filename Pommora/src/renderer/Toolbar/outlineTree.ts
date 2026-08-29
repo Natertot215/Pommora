@@ -1,4 +1,4 @@
-import type { OutlineHeading } from '../MarkdownPM/editor/folding'
+import type { OutlineHeading } from '../MarkdownPM/Editor/folding'
 
 export interface OutlineNode extends OutlineHeading {
   children: OutlineNode[]

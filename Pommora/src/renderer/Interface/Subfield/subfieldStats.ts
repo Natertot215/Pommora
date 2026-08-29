@@ -1,7 +1,7 @@
 import { markdownLinkRegex } from '@shared/links'
 import { loneWebpageEmbed } from '@shared/webpageEmbed'
-import { lineIndexAt, type DocScan } from '@renderer/MarkdownPM/decorations/intent'
-import { perText, scanOf } from '@renderer/MarkdownPM/editor/docCache'
+import { lineIndexAt, type DocScan } from '@renderer/MarkdownPM/Decorations/intent'
+import { perText, scanOf } from '@renderer/MarkdownPM/Editor/docCache'
 import {
   blockquotePrefixRe,
   calloutHeadPrefixLen,
@@ -12,7 +12,7 @@ import {
   loneEmbedTitle,
   markerRegex,
   parseListMarker,
-} from '@renderer/MarkdownPM/detect'
+} from '@renderer/MarkdownPM/Detect'
 
 /** Page document stats for the Subfield. `lines` counts source lines the document actually holds;
  *  `words`/`characters` count the prose the editor actually draws (so `## **Bold**` is one word,

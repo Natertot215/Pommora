@@ -11,11 +11,11 @@ import type { TableMenuContext } from '@shared/tableMenu'
 import { CellEditor } from './CellEditor'
 import { StaticCell } from './cellStatic'
 import { cellToDisplay } from './codec'
-import { foldLabel } from '../detect'
+import { foldLabel } from '../Detect'
 import { clamp } from '@renderer/DesignSystem/Util/clamp'
 import { nextCell, type NavDir } from './navigate'
-import type { ConnectionsApi } from '../connections'
-import { hoverIntent } from '../editor/pointerPath'
+import type { ConnectionsApi } from '../Connections'
+import { hoverIntent } from '../Editor/pointerPath'
 
 function alignClass(align: Align): string {
   return `mdpm-tbl-align-${align ?? 'left'}`

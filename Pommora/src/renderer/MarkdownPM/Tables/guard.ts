@@ -1,6 +1,6 @@
 import { EditorState } from '@codemirror/state'
-import type { DocScan } from '../decorations/intent'
-import { docScan } from '../editor/docCache'
+import type { DocScan } from '../Decorations/intent'
+import { docScan } from '../Editor/docCache'
 import { parseDelimiter } from './codec'
 import { tableSelfEdit } from './sync'
 

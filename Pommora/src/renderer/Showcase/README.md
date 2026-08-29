@@ -33,4 +33,4 @@ The Pommora app is a subfolder of the `Project Pommora` monorepo, so the repo ca
 
 ## Assets
 
-Glass-stage photos live in `Showcase/surfaces/` and are imported by `leaves/GlassLeaf.tsx`, so `vite build` hashes them into `dist/assets/` — no action needed.
+Glass-stage photos live in `Showcase/Surfaces/` and are imported by `Leaves/GlassLeaf.tsx`, so `vite build` hashes them into `dist/assets/` — no action needed.

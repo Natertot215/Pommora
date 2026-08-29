@@ -17,14 +17,14 @@ import {
   type BlockDocPatch,
   type BlockHostRef,
 } from '@shared/blocks'
-import { readKey, writeKey } from './db/localState'
+import { readKey, writeKey } from './Database/localState'
 import { normalizeTitle } from '@shared/connections'
-import { mentionsTitle } from './connections/scan'
-import { rewriteConnections } from './connections/rewrite'
+import { mentionsTitle } from './Connections/scan'
+import { rewriteConnections } from './Connections/rewrite'
 import { newId } from './ids'
-import { atomicWriteFile, pathExists, trashFileFlat } from './io/atomicWrite'
-import { serializeOnFile } from './io/fileLock'
-import { loadContextWorld } from './crud/contextWrite'
+import { atomicWriteFile, pathExists, trashFileFlat } from './IO/atomicWrite'
+import { serializeOnFile } from './IO/fileLock'
+import { loadContextWorld } from './CRUD/contextWrite'
 import { getLiveTree } from './liveTree'
 import { blockHostDir } from './paths'
 

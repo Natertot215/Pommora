@@ -1,9 +1,9 @@
 import { Decoration, type DecorationSet, EditorView, WidgetType } from '@codemirror/view'
-import { docScan } from '../editor/docCache'
-import { foldLabel } from '../detect'
-import type { DocScan } from '../decorations/intent'
-import { focusAt } from '../editor/caretSeat'
-import { travelToCitation } from '../editor/citationActions'
+import { docScan } from '../Editor/docCache'
+import { foldLabel } from '../Detect'
+import type { DocScan } from '../Decorations/intent'
+import { focusAt } from '../Editor/caretSeat'
+import { travelToCitation } from '../Editor/citationActions'
 import {
   Facet,
   StateField,
@@ -18,7 +18,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { modelFromRegion } from './regions'
 import { parseDelimiter } from './codec'
 import { cellCommitChange, structuralEditChange, tableSelfEdit } from './sync'
-import { startBlockDrag } from '../editor/blockDrag'
+import { startBlockDrag } from '../Editor/blockDrag'
 import {
   moveColumn,
   moveRow,
@@ -33,7 +33,7 @@ import {
 } from './operations'
 import { tableMergeGuard } from './guard'
 import type { TableModel } from './model'
-import type { ConnectionsApi } from '../connections'
+import type { ConnectionsApi } from '../Connections'
 import type { TableMenuAction, TableMenuContext } from '@shared/tableMenu'
 
 type ConnGetter = () => ConnectionsApi | undefined

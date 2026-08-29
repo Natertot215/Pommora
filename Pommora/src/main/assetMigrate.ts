@@ -14,18 +14,18 @@ import { readFile, rm } from 'node:fs/promises'
 import { createHash } from 'node:crypto'
 import { parseConnectionText } from '@shared/connections'
 import { ASSETS_DIR_REL, TRASH_DIR } from '@shared/nexusPaths'
-import { splitEnvelope, mergeFrontmatter, readFrontmatterFields } from './io/pageFile'
+import { splitEnvelope, mergeFrontmatter, readFrontmatterFields } from './IO/pageFile'
 import {
   readJsonObject,
   rewritePageSerialized,
   rmwJsonStrict,
   trashFileFlat,
-} from './io/atomicWrite'
-import { evictThumbnails } from './io/thumbnails'
-import { readNavigationFile, writeNavigationState } from './io/navigationFile'
+} from './IO/atomicWrite'
+import { evictThumbnails } from './IO/thumbnails'
+import { readNavigationFile, writeNavigationState } from './IO/navigationFile'
 import { AMBIGUOUS, buildAssetMap, refreshAssetMap, resolveAssetName } from './assetMap'
 import { writeAssetFile } from './assetWrite'
-import { corpusFiles, listEntries, listFilesRecursive } from './io/walk'
+import { corpusFiles, listEntries, listFilesRecursive } from './IO/walk'
 import { NEXUS_CONFIG_FILES, SIDECARS, assetsDir, nexusConfig, relPosix } from './paths'
 import { readWatchScope, updateCrops, updateSettings } from './settings'
 import { assetFilePath } from './assetRoots'

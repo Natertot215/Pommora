@@ -7,8 +7,8 @@ import { readFile, stat } from 'node:fs/promises'
 import { isAbsolute, join, relative, sep } from 'node:path'
 import { isGovernedKey } from '@shared/governedKeys'
 import { errText } from '@shared/result'
-import { extractMentions, frontmatterMentions } from './connections/scan'
-import { sweepAdmitsBody } from './crud/util'
+import { extractMentions, frontmatterMentions } from './Connections/scan'
+import { sweepAdmitsBody } from './CRUD/util'
 import {
   markIndexReady,
   readIndexedStat,
@@ -20,9 +20,9 @@ import {
   upsertPageIndex,
   type IndexedStat,
   type PageIndexEntry,
-} from './db/contentIndex'
-import { splitEnvelope } from './io/pageFile'
-import { corpusFiles, corpusFilesUnder, isMarkdownFile } from './io/walk'
+} from './Database/contentIndex'
+import { splitEnvelope } from './IO/pageFile'
+import { corpusFiles, corpusFilesUnder, isMarkdownFile } from './IO/walk'
 import { NON_CORPUS_TOP } from '@shared/nexusPaths'
 import { splitFrontmatter } from './readNexus'
 import { readWatchScope } from './settings'

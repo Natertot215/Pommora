@@ -13,7 +13,7 @@ import { EDITABLE_TARGETS } from '@renderer/DesignSystem/Interactions/shared'
 import { DragGhost } from '@renderer/DesignSystem/Interactions/DragGhost'
 import { DropLine } from '@renderer/DesignSystem/Interactions/DropLine'
 import { armAutoScroll } from '@renderer/DesignSystem/Interactions/autoscroll'
-import { sectionEnd, type OutlineHeading } from '@renderer/MarkdownPM/editor/folding'
+import { sectionEnd, type OutlineHeading } from '@renderer/MarkdownPM/Editor/folding'
 import { moveHeadingSection } from '../Interface/pageEditor'
 
 // A flat insertion line marks the drop; levels never change, so no depth-indented line — the outline

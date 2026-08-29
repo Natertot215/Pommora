@@ -1,19 +1,19 @@
 import { Fragment, memo, useRef } from 'react'
-import { linkTarget, tokenize, type Token } from '../tokens'
-import { MD_LINK_CLASS } from '../editor/decorations'
-import { CONTENT_CLASS } from '../decorations/intent'
+import { linkTarget, tokenize, type Token } from '../Tokens'
+import { MD_LINK_CLASS } from '../Editor/decorations'
+import { CONTENT_CLASS } from '../Decorations/intent'
 import {
   resolveMdTarget,
   type ConnectionsApi,
   type ConnMenuTarget,
   type MdTarget,
-} from '../connections'
+} from '../Connections'
 import { titleOf } from '@shared/connections'
-import { linkActionText, linkHalves } from '../editor/linkFormat'
-import { wikiAuthorTarget } from '../editor/linkEdit'
-import { dwellTarget, followTarget } from '../editor/links'
+import { linkActionText, linkHalves } from '../Editor/linkFormat'
+import { wikiAuthorTarget } from '../Editor/linkEdit'
+import { dwellTarget, followTarget } from '../Editor/links'
 import { useSession } from '../../store'
-import { CITE_GLYPH } from '../editor/citationPointer'
+import { CITE_GLYPH } from '../Editor/citationPointer'
 
 // A cell's resting render WITHOUT a CodeMirror instance: inline marks styled + markers hidden +
 // connections colored by status, matching the nested editor's look. Only the focused cell mounts a

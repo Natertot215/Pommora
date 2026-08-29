@@ -1,6 +1,6 @@
-import { parse } from '../parser'
+import { parse } from '../Parser'
 import { codeMask, type CodeMask } from '@shared/markdownCode'
-import type { DocLines } from '../detect'
+import type { DocLines } from '../Detect'
 import { normalize, type Column, type TableModel } from './model'
 import { splitRow, parseDelimiter, type CellSpan } from './codec'
 

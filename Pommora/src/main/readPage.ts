@@ -7,7 +7,7 @@ import { basename, join } from 'node:path'
 import { contentId } from '@shared/identity'
 import type { PageDetail } from '@shared/types'
 import { splitFrontmatter } from './readNexus'
-import { splitEnvelope } from './io/pageFile'
+import { splitEnvelope } from './IO/pageFile'
 import { basenameNoMd } from './coerce'
 import { adoptedId } from './ids'
 

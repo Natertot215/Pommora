@@ -3,7 +3,7 @@ import type { CollectionNode, SetNode } from '@shared/types'
 import { useSession } from '../store'
 import { useActiveView } from './useActiveView'
 import { TableView } from './TableView/TableView'
-import { resolveContainerSchema } from './pipeline/pickView'
+import { resolveContainerSchema } from './Pipeline/pickView'
 import { CardsView } from './CardView/CardsView'
 
 export function ViewRenderer({ source }: { source: CollectionNode | SetNode }): React.JSX.Element {

@@ -4,7 +4,7 @@ import { type PropertyDefinition, RESERVED_PROPERTY_ID } from '@shared/propertie
 import type { SavedView } from '@shared/views'
 import { useSession } from '../store'
 import { MenuRowView, MenuTopRow, MenuScrollFrame } from '@renderer/DesignSystem/Menus'
-import { resolveColumns } from '@renderer/Views/pipeline/columns'
+import { resolveColumns } from '@renderer/Views/Pipeline/columns'
 import { columnLabel } from '@renderer/Properties/Editing/columnLabel'
 import { useActiveView } from '@renderer/Views/useActiveView'
 import { useSaveView } from '@renderer/Embeds/ViewEmbedScope'

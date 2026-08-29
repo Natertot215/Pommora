@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useState } from 'react'
-import type { SurfaceLayout } from './core/model'
-import { tileIds } from './core/model'
-import type { Rect } from './core/rects'
-import { insertBand, splitAtTile } from './core/ops'
+import type { SurfaceLayout } from './Core/model'
+import { tileIds } from './Core/model'
+import type { Rect } from './Core/rects'
+import { insertBand, splitAtTile } from './Core/ops'
 import { SurfaceView } from './SurfaceView'
 
 // SurfacePM's lab — dummy numbered tiles over the live engine, for driving the
