@@ -28,22 +28,38 @@ const Ctx = createContext<ViewTileScopeValue | null>(null)
 export const ViewTileScopeProvider = Ctx.Provider
 export const useViewTileScope = (): ViewTileScopeValue | null => useContext(Ctx)
 
+export type ViewWrite =
+  | { kind: 'config'; view: SavedView }
+  | { kind: 'state'; state: ViewState }
+  | { kind: 'refused' }
+
+/** THE lock-write rule for a view tile, in one place: unlocked writes the whole view; a locked tile
+ *  refuses a config write but still folds a state-only one (`opts.viewState`), so a refused config
+ *  override can't ride in on the state it's allowed. Both the scope's `useSaveView` and the tile's own
+ *  config edits route through this — the gate is defined once, not re-checked against the raw entry. */
+export function resolveViewWrite(
+  locked: boolean,
+  view: SavedView,
+  opts?: { viewState?: boolean },
+): ViewWrite {
+  if (!locked) return { kind: 'config', view }
+  if (opts?.viewState) return { kind: 'state', state: pickViewState(view) }
+  return { kind: 'refused' }
+}
+
 /** In scope, the write is a payload update — or a refusal envelope while locked. Callers still
- *  pass the FULL next view (as to saveViewAdopting): the scope's `view` may be stale mid-gesture.
- *  `viewState` survives the lock but narrows to the state keys; an unlocked write stays whole. */
+ *  pass the FULL next view (as to saveViewAdopting): the scope's `view` may be stale mid-gesture. */
 export function useSaveView(
   source: CollectionNode | SetNode,
 ): (view: SavedView, opts?: { viewState?: boolean }) => Promise<Result<{ id: string }>> {
   const scope = useViewTileScope()
   if (scope) {
-    // An embed re-renders off its own tile payload — persistConfig updates it in place.
     return (view, opts) => {
-      if (scope.locked) {
-        if (!opts?.viewState) return Promise.resolve(fail('operation-failed', VIEW_CONFIG_LOCKED))
-        scope.persistState(pickViewState(view))
-        return Promise.resolve(ok({ id: view.id }))
-      }
-      scope.persistConfig(view)
+      const write = resolveViewWrite(scope.locked, view, opts)
+      if (write.kind === 'refused')
+        return Promise.resolve(fail('operation-failed', VIEW_CONFIG_LOCKED))
+      if (write.kind === 'state') scope.persistState(write.state)
+      else scope.persistConfig(write.view)
       return Promise.resolve(ok({ id: view.id }))
     }
   }

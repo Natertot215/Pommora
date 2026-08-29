@@ -31,7 +31,7 @@ import { findCollection, findCollectionForSet, findSet } from '@renderer/Interfa
 import { ViewRenderer } from '@renderer/Views/ViewRenderer'
 import { SettingsFrame } from '@renderer/Frames/SettingsFrame'
 import { hostedGutter } from '@renderer/DesignSystem/Menus/menu-surface.css'
-import { ViewTileScopeProvider } from '@renderer/SurfacePM/ViewTileScope'
+import { resolveViewWrite, ViewTileScopeProvider } from '@renderer/SurfacePM/ViewTileScope'
 import { useSession } from '@renderer/store'
 import { PICKER_MAX_HEIGHT } from '@renderer/DesignSystem/Pickers/picker-base.css'
 import { cx } from '@renderer/DesignSystem/Util/cx'
@@ -293,8 +293,7 @@ export function ViewTile({
     })
   }
   const persistConfig = (i: number, config: SavedView): void => {
-    if (locked) return
-    writeConfig(i, config)
+    if (resolveViewWrite(locked, config).kind === 'config') writeConfig(i, config)
   }
   // Folds onto the STORED view, never the caller's — the live overrides on a locked tile hold
   // gestures the lock already refused, and folding those in would smuggle them past it.
