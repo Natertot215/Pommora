@@ -191,7 +191,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
         open: inspectorOpen && pageTarget !== null,
         className: 'navwindow-inspector',
         children: (
-          <div className="navwindow-inspector-body">
+          <div className="window-pane-scroll">
             {inspectorOpen && pageTarget && <WindowInspector target={pageTarget} />}
           </div>
         ),
@@ -202,7 +202,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
           <WindowTabStrip index={resolveIndex} title={null} />
         </div>
         {pageTarget ? (
-          <div className="navwindow-page over-scroll pgembed-grows" ref={pageScrollRef}>
+          <div className="window-body navwindow-page over-scroll pgembed-grows" ref={pageScrollRef}>
             <PageEmbed
               key={pageTarget.path}
               path={pageTarget.path}

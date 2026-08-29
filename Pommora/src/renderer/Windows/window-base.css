@@ -35,19 +35,12 @@
     var(--window-flow-w) -
     var(--window-flow-inset)
   );
-  /* KNOB — the trailing cluster's rendered width (the pair, its gap, and the ×). */
-  --window-trail-w: 62px;
   /* THE right squeeze a wide title (a tab strip) takes so it stops AT an open pane's leading edge.
      Not the pair's travel: the pair lands INSIDE the pane's corner, so a title that only cleared
      the pair would still lay a sliver of itself over the pane. The window insets cancel — the gap
-     is the pane's width less the toolbar's own right padding and the trailing cluster. */
-  --window-title-squeeze: max(
-    0px,
-    var(--io) *
-    var(--window-side-r-w) -
-    6px -
-    var(--window-trail-w)
-  );
+     is the pane's width less the toolbar's own right padding and the trailing cluster (the pair,
+     its gap, and the ×: 62px). */
+  --window-title-squeeze: max(0px, var(--io) * var(--window-side-r-w) - 6px - 62px);
 
   /* The side-pane open/close drivers, declared HERE so the app-level --io (styles.css, an
      inheriting registered property driving the main inspector) can never leak into a floating
@@ -91,8 +84,9 @@
   top: 0;
   left: 0;
   right: 0;
-  /* Above a side pane (z2): the buttons ride ON its glass, never under it. */
-  z-index: 4;
+  /* No stacking context of its own: the buttons carry their own z (.window-actions, z4) so they
+     ride ON an open side pane, while the centered title stays z-auto and fades UNDER the pane when
+     a wide/hovered title would otherwise overlap it. */
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -113,6 +107,8 @@
   position: absolute;
   top: calc(var(--window-side-inset) + 4px);
   pointer-events: auto;
+  /* The pair sits further off the × when it floats the corner than in a toolbar band. */
+  --window-trail-gap: 6px;
   /* Corner-pinned: children hang from the cluster's top edge, so a taller × never nudges its
      neighbors off that line. */
   align-items: flex-start;
@@ -130,6 +126,40 @@
   gap: var(--window-trail-gap);
   z-index: 4;
 }
+
+/* ---- the content region every window scrolls: the scroll core plus the right-pane squeeze. Each
+   window adds its own top clearance (a band's height, a floating cluster's landing). ---- */
+.window-body {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+  transition: padding-right var(--duration-base) var(--ease-base);
+}
+.window.is-side-right-open .window-body {
+  padding-right: calc(var(--window-side-r-w) + var(--window-side-inset));
+}
+.window.is-resizing .window-body {
+  transition: none;
+}
+/* A side-pane's own scroller (the inspector rows). */
+.window-pane-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+/* The centered title slot both the web link and the page tab-strip title wear. */
+.window-toolbar-title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  max-width: 60%;
+}
+
 /* ---- side panes. Material and inner geometry come from the SidePane shell; only positioning and
    the slide live here. An OVERLAY pane rides the inset ring and is carried by its driver with no
    transition of its own; an IN-FLOW pane takes a column in the body row. ---- */

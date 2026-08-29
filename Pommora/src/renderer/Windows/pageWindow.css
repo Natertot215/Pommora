@@ -17,21 +17,10 @@
 /* ---- body: the embedded page, bare on the window glass. The top padding clears the floating
    toolbar at rest, then content scrolls under it. ---- */
 .page-window-body {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  scrollbar-width: none;
   padding-top: var(--window-toolbar-h);
   /* Scrolled content dissolves under the floating toolbar (the shared scroll-edge fade); the fade
      width matches the toolbar strip so nothing hard-clips behind it. */
   --over-scroll-fade: var(--window-toolbar-h);
-  transition: padding-right var(--duration-base) var(--ease-base);
-}
-.window.is-side-right-open .page-window-body {
-  padding-right: calc(var(--window-side-r-w) + var(--window-side-inset));
-}
-.window.is-resizing .page-window-body {
-  transition: none;
 }
 
 /* Align the footer content with the embed's text column — its left/right insets scale off the same
@@ -43,12 +32,6 @@
 
 /* ---- the front-matter inspector rows: property label + icon left, value hugging the right
    edge — properties only, no title/banner rows. ---- */
-.page-window-inspector-body {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  scrollbar-width: none;
-}
 .page-window-insp {
   display: flex;
   flex-direction: column;

@@ -94,7 +94,7 @@
 }
 .mdpm-divider,
 .mdpm-editor .cm-line.md-cite-divider::after {
-  border-bottom: var(--width-175) solid var(--border-base);
+  border-bottom: var(--width-200) solid var(--border-base);
   border-radius: var(--radius-full);
 }
 .mdpm-divider {

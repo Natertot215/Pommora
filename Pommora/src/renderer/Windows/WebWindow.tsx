@@ -107,7 +107,6 @@ function WebWindowBody({
             size="button-inline"
             icon="chevron-left"
             iconSize="body"
-            className="window-action"
             title="Back"
             disabled={!nav.back}
             onClick={() => ref.current?.goBack()}
@@ -116,7 +115,6 @@ function WebWindowBody({
             size="button-inline"
             icon="chevron-right"
             iconSize="body"
-            className="window-action"
             title="Forward"
             disabled={!nav.forward}
             onClick={() => ref.current?.goForward()}
@@ -126,7 +124,7 @@ function WebWindowBody({
       title={
         <button
           type="button"
-          className={cx('wbrowser-title', text.footnote.standard)}
+          className={cx('window-toolbar-title', 'wbrowser-title', text.footnote.standard)}
           title="Open in system browser"
           onClick={() => void window.nexus.openExternal(current)}
         >

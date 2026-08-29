@@ -590,7 +590,7 @@ function FrameBody({ category }: { category: CategoryKey }): React.JSX.Element {
   if (frame.Surface) return <frame.Surface />
   const { sections } = frame
   return (
-    <div className="settings-body over-scroll">
+    <div className="window-body settings-body over-scroll">
       <h2 className={cx('settings-heading', text.headline.emphasized)}>
         <Icon name={frame.icon} className="settings-heading-icon" />
         {frame.label}

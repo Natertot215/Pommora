@@ -1,8 +1,7 @@
 .trash-frame.table {
-  --navwindow-inset: 14px; /* KNOB — the leaf's content inset, the rows' and the heading's alike */
-  --trash-date-lane: 160px; /* KNOB — fixed, so the dates line up down the list */
-  --trash-date-inset: 10px; /* KNOB — clears the column divider, heading and rows alike */
-  --cell-padding-x: var(--navwindow-inset);
+  --trash-date-lane: 140px; /* KNOB — fixed, so the dates line up down the list */
+  --trash-date-inset: 8px; /* KNOB — clears the column divider, heading and rows alike */
+  --cell-padding-x: var(--surface-inset);
   --heading-padding-y: 6px; /* KNOB */
   flex: 1;
   min-width: 0;
@@ -23,8 +22,8 @@
 .trash-frame .trash-head::after {
   content: "";
   position: absolute;
-  left: var(--navwindow-inset);
-  right: var(--navwindow-inset);
+  left: var(--surface-inset);
+  right: var(--surface-inset);
   bottom: 0;
   border-bottom: var(--width-150) solid var(--border-base);
 }
@@ -45,7 +44,6 @@
   min-width: 0;
   display: flex;
   align-items: center;
-  padding-left: var(--content-inset);
 }
 .trash-head-glyph {
   display: flex;
@@ -73,8 +71,8 @@
 .trash-frame .trash-row + .trash-row::before {
   content: "";
   position: absolute;
-  left: var(--navwindow-inset);
-  right: var(--navwindow-inset);
+  left: var(--surface-inset);
+  right: var(--surface-inset);
   top: 0;
   border-top: var(--table-border);
 }
@@ -84,7 +82,7 @@
   opacity: 1;
 }
 .trash-frame .trash-trail {
-  padding-right: 6px; /* KNOB — with the cluster's 4px gap, mirrors --trash-date-inset across the divider */
+  padding-right: 8px; /* KNOB — with the cluster's 4px gap, mirrors --trash-date-inset across the divider */
 }
 .trash-date {
   flex: 0 0 var(--trash-date-lane);

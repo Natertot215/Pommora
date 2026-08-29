@@ -23,7 +23,7 @@
   appearance: none;
   border: 0;
   background: none;
-  border-radius: 5px;
+  border-radius: 4px;
   color: var(--label-secondary);
   cursor: default;
   opacity: 0;

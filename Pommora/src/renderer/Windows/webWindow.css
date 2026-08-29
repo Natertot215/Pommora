@@ -19,11 +19,6 @@
 /* Centered in the strip, two-tone like the page window's crumb: the domain stands back, the page
    title carries. Ellipsized from the middle out so a long title never crowds the clusters. */
 .wbrowser-title {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  max-width: 65%;
-  display: flex;
   align-items: center;
   gap: 6px;
   border: none;
