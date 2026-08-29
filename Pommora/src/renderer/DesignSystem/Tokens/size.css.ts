@@ -19,51 +19,6 @@ const iconScale = createGlobalTheme(':root', {
   },
 })
 
-const controlScale = createGlobalTheme(':root', {
-  control: {
-    'button-inline': {
-      height: '20px',
-      segmentHeight: '18px',
-      paddingX: '2px',
-      labelPaddingX: '4px',
-      radius: '6px',
-      segmentRadius: '4px',
-      dividerHeight: '12px',
-      icon: iconScale.icon.control,
-    },
-    'button-small': {
-      height: '24px',
-      segmentHeight: '20px',
-      paddingX: '4px',
-      labelPaddingX: '12px',
-      radius: '8px',
-      segmentRadius: '4px',
-      dividerHeight: '14px',
-      icon: iconScale.icon.body,
-    },
-    'button-medium': {
-      height: '28px',
-      segmentHeight: '24px',
-      paddingX: '6px',
-      labelPaddingX: '12px',
-      radius: '10px',
-      segmentRadius: '5px',
-      dividerHeight: '18px',
-      icon: iconScale.icon.headline,
-    },
-    'button-large': {
-      height: '32px',
-      segmentHeight: '28px',
-      paddingX: '8px',
-      labelPaddingX: '12px',
-      radius: '12px',
-      segmentRadius: '6px',
-      dividerHeight: '14px',
-      icon: iconScale.icon.headline,
-    },
-  },
-})
-
 export const DISCLOSURE_INDENT = 14
 
 export const RAIL_INSET = 20
@@ -91,9 +46,10 @@ export const PARK_CLEARANCE = 14
 
 export const size = {
   icon: iconScale.icon,
-  control: controlScale.control,
 }
 
 export type IconSize = keyof typeof size.icon
 
-export type ButtonSize = keyof typeof size.control
+/** The button geometry scale. The names are the public knob (a caller picks `size="button-large"`);
+ *  the numbers behind each live with the button, in button-base.css.ts. */
+export type ButtonSize = 'button-inline' | 'button-small' | 'button-medium' | 'button-large'

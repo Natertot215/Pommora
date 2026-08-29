@@ -74,6 +74,7 @@
 .toolbar-trio {
   position: relative;
   width: fit-content;
+  --trio-radius: 12px; /* KNOB — the trio pill's own corner, independent of any button size */
 }
 .toolbar-trio-glass {
   opacity: clamp(0, calc((0.3 - var(--io)) / 0.3), 1);
