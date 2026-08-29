@@ -80,10 +80,6 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 │   │   ├── [ViewTypesPM.md]             | • Saved presentations of a Collection — the pipeline and each view type
 │   │   └── [WebviewPM.md]               | • The web layer — webpage embeds, the browser, sessions, hover previews
 │   ├── // Guidelines                    | • Behavioral rules and hard-won traps, grouped by domain
-│   │   ├── [Build-Gotchas.md]           | • Environment and toolchain traps — read before launching the GUI
-│   │   ├── [Editor-Internals.md]        | • MarkdownPM's internal invariants — read before editing the editor
-│   │   ├── [Lint-And-Accessibility.md]  | • The lint floor and the three rules disabled on purpose
-│   │   └── [Web-Guests.md]              | • Webview guest traps — read before touching any web surface
 │   ├── // Mobile                        | • The companion iPhone build — specs, architecture, sync
 │   ├── // Resources                     | • Reference of external resources; both in-use and future prospectives.
 │   ├── // Planning                      | • Plans and temporary specifications; contents are transient
@@ -117,7 +113,7 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 │   │       ├── // Links                 | • Everything that happens to a link — the hover pane, the link menu, resolution
 │   │       ├── // MarkdownPM            | • The editor — parser, tokens, decorations, input, tables
 │   │       ├── // Navigation            | • Tabs, history, breadcrumbs, search
-│   │       ├── // Properties           | • The property layer — value resolution, the editing surface, the panes
+│   │       ├── // Properties            | • The property layer — value resolution, the editing surface, the panes
 │   │       ├── // Settings              | • The settings surface
 │   │       ├── // Sidebar               | • The ribbon and its content column
 │   │       ├── // SurfacePM             | • The tile-based dashboard engine
