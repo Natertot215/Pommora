@@ -26,7 +26,7 @@ import {
 } from '@renderer/DesignSystem/Menus'
 import { IconPicker } from '@renderer/Settings/IconPicker'
 import { InlineEditHeader } from './InlineEditHeader'
-import { useViewEmbedScope } from '@renderer/Embeds/ViewEmbedScope'
+import { useViewTileScope } from '@renderer/SurfacePM/ViewTileScope'
 import { lockLabel } from '@shared/toggleLabels'
 
 const NO_TRAIL: TrailSegment[] = []
@@ -76,7 +76,7 @@ export function SettingsFrame(): React.JSX.Element | null {
   const [iconOpen, setIconOpen] = useState(false)
   const iconRef = useRef<HTMLButtonElement>(null)
 
-  const scope = useViewEmbedScope()
+  const scope = useViewTileScope()
   const selectionNode =
     selection.kind === 'collection'
       ? findCollection(tree, selection.id)

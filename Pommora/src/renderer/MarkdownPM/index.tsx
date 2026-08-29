@@ -28,7 +28,7 @@ import {
 import { embeddable } from './Editor/embedRanges'
 import { customCaret } from './Editor/caret'
 import { codeHighlight, codeLanguages } from './Editor/codeHighlight'
-import { registerScrollHeal } from '../Embeds/tileWarm'
+import { registerScrollHeal } from '../SurfacePM/TileCache'
 import { calloutAtomic } from './Editor/calloutAtomic'
 import { calloutGuard } from './Editor/calloutGuard'
 import { citationGuard } from './Editor/citationGuard'

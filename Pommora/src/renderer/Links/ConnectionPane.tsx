@@ -9,7 +9,7 @@ import { WEB_PARTITION, type HoverCardSize } from '@shared/types'
 import { pageIndexOf } from '../treeIndex'
 import { fetchPageDetail, readPageDetail } from '../Store/TabState'
 import { useSession } from '../store'
-import { PageEmbed } from '../Embeds/PageEmbed'
+import { PageTile } from '../SurfacePM/PageTile'
 import { CARD_MIN, hoverPaneSize, seedHoverCardSize, setHoverCardSize } from './hoverPaneSize'
 import { closeActiveHoverCard, presentHoverCard, setHoverCardPresenter } from './PanePresenter'
 import './connectionPane.css'
@@ -392,7 +392,7 @@ export function ConnectionPane(): React.JSX.Element {
         }}
       >
         {held?.kind === 'page' && (
-          <PageEmbed
+          <PageTile
             key={held.page.path}
             path={held.page.path}
             editing={false}

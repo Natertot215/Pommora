@@ -15,7 +15,7 @@ import { NavTrail } from '@renderer/DesignSystem/Elements/NavTrail'
 import { ancestryOf } from '../treeIndex'
 
 import './embeds.css'
-import '@renderer/Blocks/block-title.css'
+import '@renderer/SurfacePM/block-title.css'
 import { embedZoom } from '@shared/types'
 
 interface EmbedEntry {
@@ -37,7 +37,7 @@ const entryFrom = (path: string, detail: PageDetail): EmbedEntry => ({
   cover: coverOf(detail),
 })
 
-export function PageEmbed({
+export function PageTile({
   path,
   editing,
   onBeginEdit,

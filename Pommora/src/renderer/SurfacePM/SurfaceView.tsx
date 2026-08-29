@@ -18,7 +18,7 @@ import {
 import { computeGeometry, type Rect, type SurfaceGeometry } from './Core/rects'
 import { snapAxis, xCandidates, yCandidates } from './Core/snap'
 import { startPointerDrag } from './Sensors/pointerDrag'
-import '@renderer/Blocks/tile-chassis.css'
+import '@renderer/SurfacePM/tile-chassis.css'
 import './surfacepm.css'
 
 // Moving a block lifts THE BLOCK ITSELF under the pointer (shadowed, 1:1, no ghost) while its

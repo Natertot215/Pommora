@@ -29,13 +29,13 @@ import { usePointerGesture } from '@renderer/DesignSystem/Interactions/gesture'
 import { clamp } from '@renderer/DesignSystem/Util/clamp'
 import { TILE_DEFAULT_PX, TILE_GAP_PX, TILE_MIN_PX } from '@renderer/DesignSystem/Tokens/size.css'
 import { normalizeTitle, pageEmbedText, titleFromPath } from '@shared/connections'
-import '@renderer/Blocks/tile-chassis.css'
+import '@renderer/SurfacePM/tile-chassis.css'
 import { loneWebpageEmbed } from '@shared/webpageEmbed'
-import { DEFAULT_ZOOM, zoomStep } from '@renderer/Blocks/blockZoom'
+import { DEFAULT_ZOOM, zoomStep } from '@renderer/SurfacePM/TileZoom'
 import { docScan } from './docCache'
 import { loneEmbedTitle } from '../Detect'
 import { claimedEmbeds } from './embedRanges'
-import { healTileScrolls, tileWarmSeam } from '@renderer/Embeds/tileWarm'
+import { healTileScrolls, tileWarmSeam } from '@renderer/SurfacePM/TileCache'
 import type { ConnectionsApi } from '../Connections'
 
 export interface EmbedHost {
@@ -99,11 +99,11 @@ interface EmbedTiles {
   unformed: number
 }
 
-// PageEmbed mounts MarkdownEditor, which registers this extension — a static import would be the
+// PageTile mounts MarkdownEditor, which registers this extension — a static import would be the
 // cycle. React.lazy owns the load-order problem the manual then-capture pattern mishandles under
 // async module graphs; Suspense's null fallback is the loading frame estimatedHeight covers.
-const LazyPageEmbed = lazy(() =>
-  import('@renderer/Embeds/PageEmbed').then((m) => ({ default: m.PageEmbed })),
+const LazyPageTile = lazy(() =>
+  import('@renderer/SurfacePM/PageTile').then((m) => ({ default: m.PageTile })),
 )
 
 interface TileDom extends HTMLElement {
@@ -251,7 +251,7 @@ class EmbedTileWidget extends WidgetType {
     const host = view.state.facet(embedHost)
     mountTile(
       dom,
-      createElement(LazyPageEmbed, {
+      createElement(LazyPageTile, {
         path: this.path,
         editing: this.editing,
         onBeginEdit: () => {
@@ -353,8 +353,8 @@ function observersFor(view: EditorView): WebObservers {
   return o
 }
 
-const LazyWebpageEmbed = lazy(() =>
-  import('@renderer/Embeds/WebpageEmbed').then((m) => ({ default: m.WebpageEmbed })),
+const LazyWebTile = lazy(() =>
+  import('@renderer/SurfacePM/WebTile').then((m) => ({ default: m.WebTile })),
 )
 
 class WebpageTileWidget extends WidgetType {
@@ -401,7 +401,7 @@ class WebpageTileWidget extends WidgetType {
     const host = view.state.facet(embedHost)
     mountTile(
       dom,
-      createElement(LazyWebpageEmbed, {
+      createElement(LazyWebTile, {
         url: this.url,
         label: this.label,
         visible: this.pageSurface && dom._visible === true,
@@ -686,7 +686,7 @@ const embedAtomic = EditorView.atomicRanges.of((view) => {
   return b.finish()
 })
 
-// Click-out + Escape end the live edit — the same pair BlockSurface owns for SurfacePM tiles.
+// Click-out + Escape end the live edit — the same pair TileSurface owns for SurfacePM tiles.
 // Capture-phase so nothing inside the editor can swallow the exit; Escape yields to a consumer
 // that already handled it (the autocomplete panel eats the first Esc).
 const editingExit = ViewPlugin.fromClass(

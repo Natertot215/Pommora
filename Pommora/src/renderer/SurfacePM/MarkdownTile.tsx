@@ -9,7 +9,7 @@ const SAVE_DEBOUNCE_MS = 400
 // Editability reconfigures the SAME CM6 view in place while this tile is the surface's single
 // live editor — no remount, no jitter.
 
-export function MarkdownBlock({
+export function MarkdownTile({
   host,
   tileId,
   editing,
