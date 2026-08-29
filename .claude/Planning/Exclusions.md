@@ -19,7 +19,7 @@ Not solved here: globbing or negation in exclusion patterns, per-folder Clear, a
 2. The Manage pane: one editable path field per exclusion with a browse action and a remove `×`, an **Add Exclusion** button below the last field, min and max width knobs, field rows inset by `--surface-inset`, and dismissal on Escape or a re-click of Manage only — never on an outside click, a path commit, or a returning folder dialog.
 3. Exclusions persist to `excluded_folders` in `.nexus/settings.json`. Adding one removes the folder from the tree and the index without a restart; removing one re-indexes it.
 4. A typed path and a browsed path cross the same validator, which is also the refusal a hand-edited `settings.json` meets.
-5. A **Clear Exclusion Cache** row with a destructive button behind a native confirmation that, across every excluded folder, deletes **container** sidecars — `_pagecollection.json` and `_pageset.json` only — and Pommora's own frontmatter bookkeeping from every content file, Tasks and Events included. Only a file whose frontmatter cannot round-trip is left byte-identical, and it is reported rather than counted as scrubbed.
+5. A **Clear Exclusion Cache** row with a destructive button behind a native confirmation that, across every excluded folder, deletes **container** sidecars — `_pagecollection.json` and `_pageset.json` only — and Pommora's own frontmatter bookkeeping from the pages inside them. The Agenda layer is out of scope entirely: a folder carrying a Task or Event config is skipped whole, configs and pages alike. A file the sweep cannot admit is left byte-identical and reported rather than counted as scrubbed.
 6. A **Preserve Properties On Clear** toggle, default on: keys wrapped in `<>` or `()` are unwrapped to bare keys rather than deleted. The scan is by shape alone — the contents are never inspected, so no registry lookup and no name parsing is involved.
 7. The documentation claiming exclusions are hand-edited only is rewritten in the commits that falsify it.
 
@@ -35,7 +35,7 @@ With the app running and a folder of pages visible in the sidebar: open Settings
 - `sweepGovernedRoots` already carries a `rewriteText` option whose doc comment describes key renaming as its reason for existing → the unwrap needs no new sweep machinery. **Task 6.**
 - `PickerMenu` gates BOTH its Escape handler and its click-catching backdrop on the same `onDismiss` prop (`picker-base.tsx:255-263` and `:355-364`) → Escape-without-outside-click is not reachable through the current API, so Requirement 2 costs a design-system change: a `dismissOnOutside` prop that gates the backdrop alone, borrowing `MenuDropdown`'s existing name for the same behavior. **Task 4.**
 - `SIDECARS` (`src/main/paths.ts`) holds five filenames, two of which are the Agenda singletons' configs, and an unlinked `_taskconfig.json` has no repair path — `reHomeRegistered` needs a sidecar id to match and `seedAgendaSingletons` never retro-seeds → Clear deletes a container-only set, never `SIDECARS`. **Task 6.**
-- `sweepAdmits` asks `admitContentFile(fm, 'page')`, so a `TaskID` page reads `contradicting` and `sweepGovernedRoots` refuses it before `rewriteText` runs (`governedSweep.ts:121-125`) → Clear must reach Tasks and Events, so `SweepOptions` gains an `admits` override defaulting to `sweepAdmits`, and Clear passes `frontmatterWritable`. Identity gates every other sweep because those hand a value back to the layer that governs it; Clear removes identity itself, so the only question left is whether the frontmatter round-trips. **Task 6.**
+- The Agenda layer stays out of Clear entirely — its configs, its folders and its Task and Event pages → `excludedArtifacts` skips a folder carrying `_taskconfig.json` or `_eventconfig.json` outright, so those pages never enter the sweep's file list and never read as refused. `sweepAdmits`'s existing `admitContentFile(fm, 'page')` gate refuses a stray `TaskID` page anyway, so the policy holds at two levels and `SweepOptions` needs no change. **Task 6.**
 - `renameFrontmatterKey`'s `KeyCollision` is `'prefer-new' | 'merge'` only (`pageFile.ts:118-124`) → the unwrap passes `'prefer-new'`: where a page already holds a plain key of that name, Pommora's wrapped one drops rather than overwriting what another tool wrote into a folder that is leaving Pommora. **Task 6.**
 - `MenuDropdown`'s trigger is hardwired to a `Segmented` glass button → it cannot wear a settings-row button, so the pane is a `PickerMenu` anchored to a `triggerRef`. **Task 4.**
 - `resolveFolderKind` returns `'collection'` for a root folder only when `_pagecollection.json` exists (`sidecarMode` is true for any nexus whose `nexus.json` carries an id) → deleting a top-level sidecar makes that Collection invisible until the next nexus open re-stamps it. **Task 7**, in the confirm copy.
@@ -120,29 +120,22 @@ Task 6 lands `clearExclusionData` before Task 7 gives it a confirmation dialog. 
 **Now** — `rg -F "excluded_folders" src` → 18. Control: `rg -F "excludedMatcher" src` → 13.
 
 ```ts
-// src/main/readNexus.ts — inside readSettingsLeaves
 excluded: asStringArray(settings.excluded_folders) ?? [],
-// asStringArray (src/main/coerce.ts) returns undefined unless EVERY element is a string
 
-// src/main/readNexus.ts — the shape to mirror, immediately above
 export function assetDirRefusal(raw: string): string | null
 ```
 
 **Becomes** — a sibling refusal, and a per-element read:
 
 ```ts
-// src/main/readNexus.ts
-/** Why an exclusion path cannot be written as one, or null. The same refusal the dialog, the
- *  typed field and a hand-edited settings.json all meet. */
 export function excludedFolderRefusal(raw: string): string | null
-// empty / leading '/' / contains '\' / a '.' or '..' segment → refused
-// first segment is .nexus or .trash → refused ("that folder belongs to the app")
-// a folder that holds pages is ACCEPTED — unlike the asset root, that is the point
 
-// inside readSettingsLeaves — one bad element drops itself, not the list
 excluded: readExcludedLeaf(settings.excluded_folders),
-// non-array → [] · each element trimmed, refused ones dropped, survivors as rootSegs().join('/')
 ```
+
+The refusal rejects an empty string, a leading `/`, a backslash anywhere, and any `.` or `..` segment, and rejects a first segment of `.nexus` or `.trash` as belonging to the app. A folder that holds pages is **accepted** — unlike the asset root, that is the whole point.
+
+`readExcludedLeaf` answers `[]` for a non-array, and otherwise trims each element, drops the refused ones individually, and stores each survivor as `rootSegs().join('/')`.
 
 **Assumed by:** Task 2 (writes what this accepts), Task 3 (returns this refusal's message as the channel's error).
 
@@ -166,7 +159,6 @@ excluded: readExcludedLeaf(settings.excluded_folders),
 **Now** — `rg -F "writeAssetDirectory" src` → 3 (definition, handler, test). The one root-level settings writer:
 
 ```ts
-// src/main/settings.ts
 export function writeAssetDirectory(root: string, dir: string): Promise<void> {
   return updateSettings(root, ({ asset_directory: _drop, ...rest }) =>
     dir ? { ...rest, asset_directory: dir } : rest,
@@ -177,12 +169,10 @@ export function writeAssetDirectory(root: string, dir: string): Promise<void> {
 **Becomes** — its sibling, same delete-on-empty contract:
 
 ```ts
-// src/main/settings.ts
-/** The user's excluded folders. An emptied list deletes the key rather than storing `[]` —
- *  absent is what "nothing excluded" means, and the reader answers it either way. */
 export function writeExcludedFolders(root: string, folders: string[]): Promise<void>
-// [] → the key is removed · otherwise the list is stored as given (Task 3 validated it)
 ```
+
+An empty list removes the key rather than storing `[]` — absent is what "nothing excluded" means, and the reader answers it either way. Anything else is stored as given, Task 3 having validated it.
 
 **Assumed by:** Task 3.
 
@@ -202,59 +192,44 @@ export function writeExcludedFolders(root: string, folders: string[]): Promise<v
 
 **Why:** The pane needs a way to commit a list and a way to open a folder dialog, and the app's own write cannot rely on the watcher to notice — the re-index and re-arm this requirement promises have to be performed by the handler.
 
-**Now** — the pair to copy, and the trap stated in its own comment:
+**Now** — the pair to copy, in `bridge.ts`, `preload/index.ts`, `main/index.ts` and `CacheSlice.ts`:
 
 ```ts
-// src/shared/bridge.ts
 'assets:chooseDir': { args: [scope?: 'nexus' | 'property', at?: string]; reply: Result<string | null> }
 'assets:setDir': { args: [dir: string]; reply: Result<string> }
 
-// src/preload/index.ts
 chooseAssetDir: ask('assets:chooseDir'),
 setAssetDir: ask('assets:setDir'),
 
-// src/main/index.ts — 'assets:setDir' tail, the chain an in-app scope write owes
 await confirmSettingsWrite()
 const tree = await refreshAfterWrite(root)
 await seedContentIndex(root)
-// ... push('nexus:changed', tree); await startWatcher(root, mainWindow)
+push(mainWindow, 'nexus:changed', tree)
+await startWatcher(root, mainWindow)
 
-// src/renderer/Store/CacheSlice.ts
 setAssetDirectory: async (dir) => { await window.nexus.setAssetDir(dir) },
 ```
+
+That tail is the chain an in-app scope write owes, and the handler's own comment says why it cannot be skipped.
 
 **Becomes** — two channels, two dialers, one store action:
 
 ```ts
-// src/shared/bridge.ts
-// The whole list crosses at once: the pane edits a list, so add and remove are the same write
-// and no ordering question exists between two half-applied edits.
 'exclusions:set': { args: [folders: string[]]; reply: Result<string[]> }
-// A folder picked from the native dialog, validated by the same refusal a typed path meets.
-// `null` is a cancelled dialog, not a failure.
 'exclusions:choose': { args: []; reply: Result<string | null> }
 
-// src/preload/index.ts
 setExclusions: ask('exclusions:set'),
 chooseExclusion: ask('exclusions:choose'),
 
-// src/main/index.ts
 'exclusions:set': { kind: 'envelope', ... }
-// non-array → fail · each entry trimmed through excludedFolderRefusal, first refusal returned
-// duplicates collapse on the CASE-FOLDED form the matcher compares (normalizeSeg), storing the
-//   spelling the user gave — the volume is case-insensitive, so `archive` and `Archive` are one
-//   folder and storing both would double every count and every enumeration
-// then writeExcludedFolders, then the manual chain:
-// confirmSettingsWrite → refreshAfterWrite → seedContentIndex → push nexus:changed → startWatcher
 'exclusions:choose': { kind: 'window', ... }
-// showOpenDialog({ properties: ['openDirectory'], defaultPath: root,
-//                  message: 'Choose a folder to exclude' })
-// cancelled → ok(null) · outside the root → the refusal's message
 
-// src/renderer/Store/CacheSlice.ts — the tree leaf is what the pane reads, and main patches it
-// on the write's own confirm, so a refusal needs no local rollback.
 setExclusions: (folders: string[]) => Promise<Result<string[]>>
 ```
+
+The whole list crosses at once, so add and remove are the same write and no ordering question exists between two half-applied edits. `set` refuses a non-array outright, puts every entry through `excludedFolderRefusal` and returns the first refusal, and collapses duplicates on the case-folded form `normalizeSeg` compares while storing the spelling the user typed — the volume is case-insensitive, so `archive` and `Archive` are one folder, and storing both would double every count and every enumeration. It then calls `writeExcludedFolders` and runs the chain above by hand.
+
+`choose` opens `showOpenDialog` with `properties: ['openDirectory']` and `defaultPath: root`, answering `ok(null)` on cancel and the refusal's own message for a pick outside the root. The store action only awaits the channel: the tree leaf is what the pane reads, and main patches it on the write's own confirm, so a refusal needs no local rollback.
 
 **Assumed by:** Task 4 (calls both), Task 7 (reads `tree.excluded` for Clear's scope).
 
@@ -276,58 +251,42 @@ setExclusions: (folders: string[]) => Promise<Result<string[]>>
 
 **Why:** This is the feature's whole interaction surface and the reason the three tasks before it exist. It is also the phase's declared stop: its geometry and dismissal behavior are the user's to redirect.
 
-**Now** — the row template, the registry's dispatch, and the repeatable-list precedent:
+**Now** — the row template in `AssetDirectoryRow.tsx`, the registry's dispatch in `SettingsWindow.tsx`, and `PickerMenu`'s dismissal at `picker-base.tsx:255` and `:355`:
 
 ```tsx
-// src/renderer/Settings/AssetDirectoryRow.tsx — the bespoke-row shape, in full
 <MenuRowView row={{ kind: 'item', label, caption: hint, trailing: { kind: 'field', children:
   <PathField label={label} value={stored} empty="No folder"
     onCommit={...} onBrowse={...} /> } }} />
 
-// src/renderer/Settings/SettingsWindow.tsx — the Row union (7 kinds) and its exhaustive switch
-| (RowText & { kind: 'path' })          // keyless: writes a top-level settings key
+| (RowText & { kind: 'path' })
 case 'path': return <AssetDirectoryRow label={row.label} hint={row.hint} />
 
-// src/renderer/Frames/filterFrame.css.ts — ruleList / ruleRow / removeButton
-// src/renderer/styles.css:5 — --surface-inset: 10px
+{onDismiss && !closing ? <div className={s.backdrop} ... onClick={onDismiss} /> : null}
 
-// src/renderer/DesignSystem/Pickers/picker-base.tsx — ONE prop gates both dismissals:
-{onDismiss && !closing ? <div className={s.backdrop} ... onClick={onDismiss} /> : null}  // :355
-// and the Escape effect at :255 is gated on `onDismiss` too — so today a pane either
-// dismisses on outside click AND Escape, or on neither.
-
-// src/renderer/DesignSystem/Menus/menu-base.tsx — the name already in the vocabulary
-dismissOnOutside = true,   // MenuDropdown; false = Esc + re-click only (OutlineMenu uses it)
+dismissOnOutside = true,
 ```
+
+`kind: 'path'` is the keyless row that writes a top-level settings key; the `Row` union holds 7 kinds behind an exhaustive switch. The Escape effect is gated on `onDismiss` too, so today a pane dismisses on outside click *and* Escape, or on neither. The last line is `MenuDropdown`'s prop — the name already in the vocabulary for this exact behavior, which `OutlineMenu` uses. `FilterFrame`'s `ruleList` / `ruleRow` / `removeButton` are the repeatable-list precedent, and `--surface-inset` is 10px at `styles.css:5`.
 
 **Becomes** — one design-system prop, a new keyless row kind, a new bespoke component, a new section:
 
 ```tsx
-// src/renderer/DesignSystem/Pickers/picker-base.tsx — the backdrop alone becomes optional,
-// under the name MenuDropdown already uses for exactly this behavior. Escape is untouched.
-dismissOnOutside?: boolean   // default true — every existing caller keeps its behavior
+dismissOnOutside?: boolean
 {onDismiss && !closing && dismissOnOutside ? <div className={s.backdrop} ... /> : null}
 
-// src/renderer/Settings/ExclusionRows.tsx (new) + exclusions.css.ts (new)
+const PANE_MIN_W = 260
+const PANE_MAX_W = 420
 export function ExcludedDirectoriesRow({ label, hint }: RowProps): React.JSX.Element
-// trailing: { kind: 'field' } holding the count of tree.excluded and a Manage <Button>.
-// Manage toggles `open`; the pane is a self-managed PickerMenu on the button's triggerRef,
-// bareSurface, dismissOnOutside={false}, style={{ minWidth: PANE_MIN_W, maxWidth: PANE_MAX_W }}.
-// Escape and the Manage button are the only ways out, so a path commit, an Add press and a
-// returning folder dialog all leave it open.
-const PANE_MIN_W = 260 // KNOB — the pane's floor
-const PANE_MAX_W = 420 // KNOB — where a long path stops widening it
-// rows: one PathField per entry (browse → chooseExclusion) + a removeButton ×,
-// laid out in a column at padding: var(--surface-inset); an "Add Exclusion" button below the
-// last field appends a blank row that commits on its first non-empty value.
 
-// src/renderer/Settings/SettingsWindow.tsx
-| (RowText & { kind: 'exclusions' })    // keyless, like 'path'
+| (RowText & { kind: 'exclusions' })
 case 'exclusions': return <ExcludedDirectoriesRow label={row.label} hint={row.hint} />
-// and, appended to the `files` frame's sections:
 { title: 'Exclusions', rows: [{ kind: 'exclusions', label: 'Excluded Directories',
   hint: 'Excluded folders will not be recognized by the app; removing a folder from exclusion will re-index.' }] }
 ```
+
+`dismissOnOutside` defaults to `true`, so every existing caller keeps its behavior, and it gates the backdrop alone — Escape is untouched.
+
+The row's trailing slot is a `kind: 'field'` holding the count of `tree.excluded` and a Manage `<Button>`. Manage toggles `open`; the pane is a self-managed `PickerMenu` on the button's `triggerRef`, `bareSurface`, `dismissOnOutside={false}`, sized by the two knobs. Escape and the Manage button are the only ways out, so a path commit, an Add press and a returning folder dialog all leave it open. Its rows are one `PathField` per entry with a `removeButton` ×, in a column at `padding: var(--surface-inset)`, with an Add Exclusion button below the last field that appends a blank row committing on its first non-empty value. The new row kind is keyless like `'path'`.
 
 **Assumed by:** Task 7 (adds the Clear row to this same section).
 
@@ -373,34 +332,24 @@ case 'exclusions': return <ExcludedDirectoriesRow label={row.label} hint={row.hi
 **Now** — the three edits a boolean setting costs, as `permanentDelete` already demonstrates:
 
 ```ts
-// src/shared/types.ts — the Personalization interface
 permanentDelete?: boolean
-
-// src/main/readNexus.ts — readPersonalization
 permanentDelete: bool(p.permanentDelete),
-
-// src/renderer/Settings/SettingsWindow.tsx — a row, no key plumbing
-{ kind: 'toggle', key: 'permanentDelete', label: 'Permanently Delete Files', hint: '...' }
+{ kind: 'toggle', key: 'permanentDelete', label: '...' }
 ```
 
 **Becomes** — the same three, defaulting on:
 
 ```ts
-// src/shared/types.ts
-/** Whether clearing an excluded folder keeps its property and Context values by unwrapping their
- *  keys — `<Status>` becomes `Status` — rather than removing the lines outright. Absent = keeps. */
 preservePropertiesOnClear?: boolean
 
-// src/main/readNexus.ts
 preservePropertiesOnClear: bool(p.preservePropertiesOnClear),
 
-// src/renderer/Settings/SettingsWindow.tsx — in the Exclusions section, below Clear
 { kind: 'toggle', key: 'preservePropertiesOnClear', defaultOn: true,
   label: 'Preserve Properties On Clear',
   hint: 'Clearing keeps the values a page holds, writing them as ordinary frontmatter instead of removing them.' }
-// defaultOn: true means returning to the default writes `undefined`, which JSON omits —
-// so main reads absent as preserve: `personalization.preservePropertiesOnClear !== false`.
 ```
+
+The row sits in the Exclusions section below Clear. `defaultOn: true` means returning to the default writes `undefined`, which JSON omits, so main reads absent as preserve: `personalization.preservePropertiesOnClear !== false`.
 
 **Assumed by:** Task 6 (branches on it), Task 7 (the handler reads it).
 
@@ -418,89 +367,45 @@ preservePropertiesOnClear: bool(p.preservePropertiesOnClear),
 
 **Requirement:** 5, 6, 7
 
-**Why:** This is the only code in the app that deliberately reads inside an excluded folder, and isolating it in one module is what keeps that exception legible. It also holds the codebase's first sidecar deletion, and widens the shared sweep's admission gate by one optional field so Clear can reach Tasks and Events.
+**Why:** This is the only code in the app that deliberately reads inside an excluded folder, and isolating it in one module is what keeps that exception legible. It also holds the codebase's first sidecar deletion.
 
 **Now** — the three enumerators, none of them usable as-is, and the sweep that is:
 
 ```ts
-// src/main/IO/walk.ts
-corpusFilesUnder(root, absDir, scope)   // prunes via excludedMatcher — prunes our targets
-listFilesRecursive(dir)                 // no skip logic at all — would enumerate .git, node_modules
+corpusFilesUnder(root, absDir, scope)
+listFilesRecursive(dir)
 
-// src/main/exclusion.ts
-shouldSkipDir(name, relPath, scope)     // the walk's predicate — also prunes our targets
+shouldSkipDir(name, relPath, scope)
 
-// src/main/CRUD/governedSweep.ts — the machinery that IS reusable
 export async function sweepGovernedRoots<C>(
   root: string, scope: SweepScope, rewrite: Rewrite<C>, opts: SweepOptions = {},
-): Promise<SweepResult<C>>          // touched / skipped / refused, kept apart
+): Promise<SweepResult<C>>
 export interface SweepOptions { stamp?: boolean; rewriteText?: RewriteText }
-// rewriteText exists precisely because renaming a key in place needs the file's bytes.
 
-// src/main/IO/pageFile.ts
-mergeFrontmatter(content, modeled, modeledKeys, body)  // omission from `modeled` = delete
-renameFrontmatterKey(content, oldKey, newKey, collision)  // in place, comments and order kept
+mergeFrontmatter(content, modeled, modeledKeys, body)
+renameFrontmatterKey(content, oldKey, newKey, collision)
 
-// Nothing in src/main deletes a sidecar. This task is the first.
 ```
 
-**Becomes** — one widened seam on the shared sweep, and one module holding the exception:
+**Becomes** — one module holding the exception; no shared machinery changes:
 
 ```ts
-// src/main/CRUD/governedSweep.ts — SweepOptions gains a third field
-/** Which files this sweep may rewrite. Defaults to `sweepAdmits`, which gates on identity
- *  because every ordinary sweep hands a value back to the layer that governs it. A sweep
- *  REMOVING identity has nothing to hand back, so it widens this to the only question left. */
-admits?: (content: string) => boolean
-// read where sweepAdmits is called today (governedSweep.ts:121): (opts.admits ?? sweepAdmits)(content)
-
-// src/main/exclusionScan.ts (new)
-/** Every page and sidecar beneath the excluded folders — the one enumeration that deliberately
- *  enters what the walk, the corpus and the watcher all prune. Convention skips still apply:
- *  a `.git` or `node_modules` under an excluded folder is not ours to touch. */
 export async function excludedArtifacts(
   root: string, excluded: string[], assetDir: string,
 ): Promise<{ pages: string[]; sidecars: string[] }>
-// nexus-relative POSIX · dot- and underscore-prefixed dirs and node_modules skipped
-// `_`-prefixed .md files ARE pages (the corpus admits them) · `.nexus`/`.trash` never entered
-// the asset root is stepped around even when it is itself excluded — a supported configuration
-//   the live nexus uses, and the one place Clear must not inherit the exclusion list's reach
-// sidecars: `_pagecollection.json` and `_pageset.json` ONLY. Never the SIDECARS set — it also
-//   holds `_taskconfig.json` and `_eventconfig.json`, and an unlinked agenda config strands the
-//   id in nexus.json with no in-app repair (reHomeRegistered needs a sidecar; seeding is
-//   creation-only, deliberately). `_space.json` lives under `.nexus` and is never reached.
-// an entry naming a folder that no longer exists contributes nothing, never throws
 
-/** Strip Pommora's bookkeeping from the excluded folders. Sidecars are deleted; a page loses its
- *  identity and modeled keys, and its governed keys either unwrap to bare names or go. */
 export async function clearExclusionData(
   root: string, excluded: string[], assetDir: string, preserveProperties: boolean,
 ): Promise<Result<{ pages: number; sidecars: number; refused: number }>>
-// pages: sweepGovernedRoots(root, { kind: 'files', files }, () => null,
-//          { rewriteText, admits: frontmatterWritable })
-//   — the raw Rewrite is never called on the rewriteText branch, and `stamp` is never read on it
-//     either, so neither is passed. { kind: 'files' } reaches no sidecars; they are unlinked here.
-//   — `admits` is the new SweepOptions override (Task 6 adds it, defaulting to sweepAdmits so no
-//     existing caller moves). Clear passes frontmatterWritable, which admits a Task, an Event, a
-//     page with a mangled id and a page carrying two identity keys — every one of which the
-//     default gate refuses as Unknown, and every one of which is exactly what Clear is here to
-//     strip. Nothing is handed back to a layer afterward, so identity has nothing left to gate.
-//   rewriteText deletes PageID/TaskID/EventID + icon/created_at/modified_at/cover, then takes
-//   every key BY SHAPE — `<…>` or `(…)`, first and last character stripped, contents never
-//   inspected. No registry lookup, no parseGovernedKey: a key is wrapped or it isn't, so a
-//   half-written `<Status` is simply not that shape and is left where it sits.
-//     preserve on  → renameFrontmatterKey(content, key, stripped, 'prefer-new')
-//                    a page already holding the plain key keeps it; the wrapped one drops
-//     preserve off → omit the key from the merge
-// refused: SweepResult.refused, surfaced rather than swallowed. Under `frontmatterWritable` the
-//   only refusal left is frontmatter that cannot round-trip; the caller must be able to say so
-//   rather than reporting a clean scrub it did not perform.
-// sidecars: the container filenames found, unlinked. A missing one is done, not an error.
-//   `_taskconfig.json` and `_eventconfig.json` are NOT deleted even though their pages are
-//   stripped: unlinking one strands its id in nexus.json with no in-app repair, and the two
-//   questions are separate — a Task's own bookkeeping is Clear's business, the Agenda
-//   singleton's registration is not.
 ```
+
+`excludedArtifacts` answers nexus-relative POSIX paths. It skips dot- and underscore-prefixed directories and `node_modules`, never enters `.nexus` or `.trash`, and steps around the asset root even when that root is itself excluded — a supported configuration the live nexus uses, and the one place Clear must not inherit the exclusion list's reach. A folder carrying `_taskconfig.json` or `_eventconfig.json` is skipped whole rather than descended: the Agenda layer is not Clear's business, and an unlinked agenda config would strand its id in `nexus.json` with no in-app repair besides. `_`-prefixed `.md` files *are* pages, since the corpus admits them. The sidecars it collects are `_pagecollection.json` and `_pageset.json` only — never the `SIDECARS` set, which also holds the two agenda configs; `_space.json` lives under `.nexus` and is never reached. An entry naming a folder that no longer exists contributes nothing and never throws.
+
+`clearExclusionData` sweeps pages through `sweepGovernedRoots(root, { kind: 'files', files }, () => null, { rewriteText })`. The raw `Rewrite` is never called on the `rewriteText` branch and `stamp` is never read on it, so neither is passed; `{ kind: 'files' }` reaches no sidecars, which are unlinked here instead. The default `sweepAdmits` gate stands, refusing a Task or Event page as contradicting — the policy this task wants rather than a limitation it works around.
+
+`rewriteText` deletes `PageID`, `TaskID`, `EventID`, `icon`, `created_at`, `modified_at` and `cover`, then takes every key **by shape**: `<…>` or `(…)`, first and last character stripped, contents never inspected. No registry lookup and no `parseGovernedKey`, so a half-written `<Status` is simply not that shape and stays where it sits. With preserve on it calls `renameFrontmatterKey(content, key, stripped, 'prefer-new')`, which leaves a page already holding the plain key alone and drops the wrapped one; with preserve off it omits the key from the merge.
+
+`refused` carries `SweepResult.refused` rather than swallowing it — frontmatter that cannot round-trip, and any identity-contradicting file the folder skip missed — so the caller can say the sweep was thin instead of reporting a clean scrub. A missing sidecar is done, not an error.
 
 **A known property, not a defect:** the sweep re-serializes each file's frontmatter through `doc.toString({ lineWidth: 0 })`, which rewrites an inline flow collection (`Tags: [x, y]` → `Tags: [ x, y ]`) on keys it never touched. This is how every existing sweep already behaves, and zero of the 122 `.md` files under the live nexus's exclusions use flow syntax. It is not in scope to change.
 
@@ -516,9 +421,8 @@ export async function clearExclusionData(
 - [ ] A crossing test that can actually fail: **assert the file sets, not the predicate**. Every `.md` under the excluded root that `corpusFilesUnder` would have returned had the folder not been excluded appears in `pages` — run it once with the folder excluded and once without, and compare. Asserting only that `shouldSkipDir` would have pruned each path is vacuous, since the exclusion matcher prunes everything under the root regardless of the skip set.
 - [ ] Preserve on: `<Status>: Doing` becomes `Status: Doing`, the comment above it survives, key order is unchanged, `PageID` is gone. Preserve off: the `Status` line is gone entirely.
 - [ ] The malformed `<Status` key is left exactly as it was — it is not `<…>`-shaped, and a shape scan has no opinion about it.
-- [ ] **The `TaskID` page is stripped like any other**, and so is a page carrying both `PageID` and `TaskID`. Drop the `admits` override and both go red as refused — that default gate is what this task exists to widen.
-- [ ] Every existing `sweepGovernedRoots` caller is unmoved: `admits` defaults to `sweepAdmits`, so `deleteProperty`, `removeProperty` and the Context cascade suites are the control and none may need editing.
-- [ ] The agenda configs survive while their pages are stripped — `_taskconfig.json` is byte-identical afterward and the folder still resolves through `resolveFolderKind`.
+- [ ] **The Agenda folder is untouched end to end.** `_taskconfig.json` is byte-identical, the `TaskID` page inside it is byte-identical, neither appears in `pages` or `sidecars`, and the folder still resolves through `resolveFolderKind`. Remove the folder skip and the config assertion goes red.
+- [ ] `sweepGovernedRoots` is called exactly as its existing callers call it — no new option, no change to `CRUD/governedSweep.ts`. `git diff --stat` for this task names no file under `CRUD/`.
 - [ ] A file whose frontmatter cannot round-trip is left byte-identical and counted in `refused`.
 - [ ] Idempotence: a second run over the same folder changes no bytes and reports zero pages touched. A migration that double-applies is the defect this catches.
 - [ ] Degenerate cases: an empty exclusion list touches nothing; a folder with no sidecar and no frontmatter is left byte-identical; a page whose frontmatter has a syntax error is refused, not corrupted.
@@ -539,57 +443,35 @@ export async function clearExclusionData(
 **Now** — the confirm pattern, and the button variant with no consumer:
 
 ```ts
-// src/main/index.ts — 'trash:confirmEmpty', the Cancel-default precedent
 const { response } = await dialog.showMessageBox(win, {
   type: 'warning', buttons: ['Delete', 'Cancel'], defaultId: 1, cancelId: 1,
   message: ..., detail: ...,
 })
 return response === 0
 
-// src/renderer/DesignSystem/Buttons/button-base.css.ts — defined, 0 production uses
 destructive: { vars: { '--button-fill': tintAt(error, 'tertiary'), ... } }
 ```
 
 **Becomes** — one `window` handler that confirms and acts, and the row that calls it:
 
 ```ts
-// src/shared/bridge.ts
-// Confirmation and action are one channel: an unconfirmed reach into a user's folders should
-// not be expressible, and a separate confirm channel would make it so.
 'exclusions:clear': { args: []; reply: Result<ClearReport | null> }
-// ClearReport = { pages: number; sidecars: number; refused: number }
-// ok(null) is a cancelled dialog, not a failure.
 
-// src/main/index.ts
 'exclusions:clear': { kind: 'window', ... }
-// no excluded folders → ok(null) without a dialog · reads tree.excluded, assetDirectory, the toggle
-// buttons: ['Clear', 'Cancel'], defaultId: 1, cancelId: 1     // Cancel defaults, as trash does
-// message: `Clear Pommora's data from ${n} excluded folder(s)?`
-// detail names, in plain words: the folder's icon, banner, manual ordering, saved views AND the
-//   properties it assigns are removed for good; the folder returns as a new one after the next
-//   launch; and either that property values are kept as ordinary frontmatter, or that they are
-//   removed — read from the toggle at the moment of asking, never assumed.
-// on confirm → clearExclusionData(...), then seedContentIndex(root): the sweep re-indexes every
-//   page it writes (governedSweep calls indexWrittenPage, and relCorpusPath does not consult the
-//   exclusion list — Clear is the first pen to write inside an excluded folder), so the seed's
-//   prune is what puts those rows back out. No tree refresh: nothing it touched is in the tree.
-// the reply carries the refused count so the row can say the sweep was thin rather than
-//   reporting a clean scrub it did not perform.
 
-// src/renderer/Settings/ExclusionRows.tsx
 export function ClearExclusionsRow({ label, hint }: RowProps): React.JSX.Element
-// trailing: { kind: 'field' } holding <Button type="destructive" label="Clear" />,
-// disabled when tree.excluded is empty, and while a sweep is in flight — the Manage pane
-// does not dismiss on confirm by design, so without this a `×` pressed mid-sweep would
-// re-admit a half-stripped folder to the tree while the sweep is still stripping it.
-// A returned report naming refused pages is surfaced through 'error:show'
-// rather than being dropped on the floor.
 
-// src/renderer/Settings/SettingsWindow.tsx — the Exclusions section, in order:
-// Excluded Directories · Clear Exclusion Cache · Preserve Properties On Clear
 { kind: 'clear-exclusions', label: 'Clear Exclusion Cache',
   hint: 'Remove existing app data that may have been written onto previously indexed folders.' }
 ```
+
+`ClearReport` is `{ pages: number; sidecars: number; refused: number }`, and `ok(null)` is a cancelled dialog rather than a failure. Confirmation and action share one channel deliberately: an unconfirmed reach into a user's folders should not be expressible, and a separate confirm channel would make it so.
+
+The handler answers `ok(null)` without a dialog when nothing is excluded. Otherwise it reads `tree.excluded`, `assetDirectory` and the toggle, then puts up `buttons: ['Clear', 'Cancel']` with `defaultId: 1` and `cancelId: 1` — Cancel defaults, as emptying the trash does. The detail names, in plain words, that the folder's icon, banner, manual ordering, saved views and the properties it assigns are removed for good; that the folder returns as a new one after the next launch; and either that property values are kept as ordinary frontmatter or that they are removed, read from the toggle at the moment of asking rather than assumed.
+
+On confirm it calls `clearExclusionData`, then `seedContentIndex(root)`. The sweep re-indexes every page it writes — `governedSweep` calls `indexWrittenPage`, and `relCorpusPath` does not consult the exclusion list, Clear being the first pen to write inside an excluded folder — so the seed's prune is what puts those rows back out. No tree refresh follows: nothing it touched is in the tree.
+
+The row's trailing slot holds a `<Button type="destructive" label="Clear" />`, disabled when `tree.excluded` is empty and while a sweep is in flight. The Manage pane does not dismiss on confirm by design, so without that second guard a `×` pressed mid-sweep would re-admit a half-stripped folder to the tree while the sweep is still stripping it. A report naming refused pages is surfaced through `error:show` rather than dropped. The section's final order is Excluded Directories, Clear Exclusion Cache, Preserve Properties On Clear.
 
 **Verify — automated**
 
@@ -617,7 +499,7 @@ export function ClearExclusionsRow({ label, hint }: RowProps): React.JSX.Element
 - [ ] `code-simplifier` then `feature-dev:code-reviewer` dispatched against `<base>..HEAD`; the reports cite files inside it.
 - [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
 - [ ] **Hazard window closed:** `exclusions:clear` is declared, and its handler runs the dialog before `clearExclusionData` in the same commit that declared it.
-- [ ] The Agenda singletons survive a Clear over a folder holding one, while their Task and Event pages are stripped — checked against a real `_taskconfig.json`, not only in the temp-nexus suite.
+- [ ] The Agenda layer survives a Clear over a folder holding it — config and pages both — checked against a real `_taskconfig.json`, not only in the temp-nexus suite.
 - [ ] Progress hashes filled in; lessons written into the later tasks they change.
 - [ ] **Declared stop.** Execution halts until the user closes this phase's **Verify — user** boxes.
 
@@ -690,7 +572,7 @@ Everything else is the standard below.
 - [ ] The acceptance criterion observed running, clause by clause.
 - [ ] Clear is unreachable except through its confirmation, and idempotent when re-run.
 - [ ] No fourth skip predicate was added: `exclusion.ts`'s matching rule is unchanged, and `exclusionScan.ts` is the only deliberate reach past it.
-- [ ] Clear destroyed nothing it did not name: the Agenda configs survive, every collision left the plain key standing, and the only files left untouched were those whose frontmatter cannot round-trip — reported, never counted as scrubbed.
+- [ ] Clear destroyed nothing it did not name: the Agenda layer is untouched end to end, every collision left the plain key standing, and files the sweep could not admit were reported rather than counted as scrubbed.
 - [ ] `dismissOnOutside` defaults true and no existing `PickerMenu` caller changed behavior.
 
 **The passes**
