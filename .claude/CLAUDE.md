@@ -18,22 +18,16 @@ Pommora is Nathan’s main project — a personal management and all-in-one prod
 
 ### Codebase Information
 
-Pommora is an **Electron** desktop app — a **React + TypeScript** renderer over a Node main process that owns the filesystem. electron-vite · Electron 42 · React 19 · TypeScript 6 · Vite 7 + `@vitejs/plugin-react` 5  · Zustand · TanStack Virtual · `eemeli/yaml` · `lucide-react` (the curated icon registry — `DesignSystem/Symbols`; `@tabler/icons-react` stays installed as a second source to pull from per-icon) · Vitest. Editor: **MarkdownPM** — a CodeMirror 6 custom-build Markdown editor on the Pommora monorepo. 
+Pommora is an **Electron** desktop app. electron-vite · Electron 42 · React 19 · TypeScript 6 · Vite 7 + `@vitejs/plugin-react` 5  · Zustand · TanStack Virtual · `eemeli/yaml` · `lucide-react` (the curated icon registry — `DesignSystem/Symbols`; `@tabler/icons-react` stays installed as a second source to pull from per-icon) · Vitest. Editor: **MarkdownPM** — a CodeMirror 6 custom-build Markdown editor on the Pommora monorepo. 
 
 - **No dependency lock-in.** Every library sits behind a thin seam (SQLite behind `db//driver.ts`, YAML behind `pageFile.ts`, IDs behind `ids.ts`, glass behind `Surface`) so it's swappable without touching callers. Version numbers are compatibility pins, not endorsements.
-- **The Figma Library** (https://www.figma.com/file/fYZ5oiK7stC3diRhaBHl1r) is used for designing; the live showcase deploys from `Pommora/` to https://pommora-design-system.vercel.app.
-- **Gates.** `npm run typecheck` is the *only* type gate — the build strips types unchecked — and it covers both `tsconfig` projects. `npm run test` is Vitest; `npm run lint` is `biome check` — the linter AND the formatter — and runs clean, so a change that adds a diagnostic or leaves a file unformatted isn't done → [[Lint-And-Accessibility]]. Formatting is Biome's (a PostToolUse hook formats every TS/CSS/JSON write; single-quote, no semicolons): never hand-align — an Edit failing on whitespace means Biome reformatted, so re-read and retry. A write that bypasses the hook (a shell-driven edit) bypasses the formatter, which is why the gate checks it; `npm run format` repairs one.
-- **CommonJS main/preload** (package is NOT `type: module`) — Electron's `require('electron')` fails on ESM named imports; CJS also lets the preload stay sandboxed. **`sandbox: true` + `contextIsolation: true` + `nodeIntegration: false`.**
+- **The [Figma Library](https://www.figma.com/file/fYZ5oiK7stC3diRhaBHl1r)** is where the design iteration happens beforehand, and codebase synchronization is intended but not guaranteed. The showcase website at [pommora-design-system](https://pommora-design-system.vercel.app) deploys from `Pommora/` (`npm run build:showcase`) via `vercel.json`; it's the origin-synced showcase of the design system.
 - **TS-native on-disk format:** bare, natively typed values under wrapped title keys, zod-validated.
-
-**Read Before Launching:** The GUI only launches with `ELECTRON_RUN_AS_NODE` **unset** (this env has it set to 1, which makes Electron run as plain Node → `require('electron')` returns a path string and the app crashes). Launch: `env -u ELECTRON_RUN_AS_NODE npm run dev` (HMR), or `… ./node_modules/.bin/electron .` after `npm run build`. `TEST_NEXUS_PATH` only steers tests, never the running app.
-
-**Worktree Electron binary:** a worktree's `node_modules` is typically installed for the Vitest/Node gate only and **omits the Electron binary**, so the first `dev`/launch dies with `Error: Electron uninstall`. Fix: run `./node_modules/.bin/electron --version` once (downloads the binary), then relaunch. Kill any test instances once you're done with them — don't leave them running.
 
 ### Hard Rules
 
-- **Main owns the filesystem.** All fs/Node lives in `src/main`, exposed to the renderer only through a **narrow typed IPC** bridge in `src/preload` (contextBridge). The renderer never touches `fs`/Node.
-- **`src/shared/types.ts` is the cross-process contract.** No fs, no React there. Both sides import it.
+- **Main owns the filesystem.** All fs/Node lives in `src/main`, reached from the renderer only through the **narrow typed IPC** bridge in `src/preload` (contextBridge).
+- **`src/shared/types.ts` is the cross-process contract.** No fs, no React there.
 - **IPC never throws across the boundary** — data channels return the shared `Result` envelope (`{ ok: true, value } | { ok: false, error }`, the error structured with a code) and every channel is declared once in `src/shared/bridge.ts`; both sides derive from that map, so adding a channel is one entry and a mismatched end is a compile error.
 - **Read and write are cleanly separable.** The read path is read-only by construction; mutations are additive, never woven into reads.
 - **Condensed control flow / DRY / simplicity-first** — model finite states as unions + switch; hoist shared logic; never allow two writers or definitions for the same thing; anything that does this and is found must be reported. 
@@ -41,6 +35,18 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 - **Placeholders** never display build-status or meta text — an unbuilt surface is simply blank.
 - **Ask before designing.** Stop to disclose assumptions and clarify direction before any design or interaction-based decision — don't guess at how something looks or behaves; the codebase usually describes something that already exists. Any in-flight decisions must be disclosed as they’re being made.
 - **Most recent wins** is the primary philosophy around handling concurrency, cross-device, and external editing conflicts.
+
+#### Testing Conventions
+
+- **The visual iteration scratchpad** — `renderer/Utilities/iteration-window`, opened by ⌘⇧T — is for rapid iteration of an otherwise-scoped asset.
+- **Live instances are yours to drive.** Kill and manipulate Nathan's running instances freely — scratch pages, data manipulation, and the rest are accepted, and the preferred verification when Nathan can't visually confirm; the one requirement is that any change made is reverted when done.
+- **Gates.** `npm run typecheck` is the *only* type gate — the build strips types unchecked — and it covers both `tsconfig` projects. `npm run test` is Vitest; `npm run lint` is `biome check` — the linter AND the formatter — and runs clean, so a change that adds a diagnostic or leaves a file unformatted isn't done → [[Development-Environment]]. Formatting is Biome's (a PostToolUse hook formats every TS/CSS/JSON write; single-quote, no semicolons): never hand-align — an Edit failing on whitespace means Biome reformatted, so re-read and retry. A write that bypasses the hook (a shell-driven edit) bypasses the formatter, which is why the gate checks it; `npm run format` repairs one.
+- **Launch the GUI** — copy-paste, run from `Pommora/` (HMR + CDP armed on `9333`):
+  ```
+  env -u ELECTRON_RUN_AS_NODE npm run dev -- --remote-debugging-port=9333
+  ```
+  The `env -u` is mandatory: this environment sets `ELECTRON_RUN_AS_NODE=1`, which makes Electron run as plain Node → `require('electron')` returns a path string and the app crashes. After `npm run build`, `env -u ELECTRON_RUN_AS_NODE ./node_modules/.bin/electron .` runs the built binary instead. `TEST_NEXUS_PATH` only steers tests, never the running app.
+- **Worktree Electron binary:** a worktree's `node_modules` is typically installed for the Vitest/Node gate only and **omits the Electron binary**, so the first `dev`/launch dies with `Error: Electron uninstall`. Fix: run `./node_modules/.bin/electron --version` once (downloads the binary), then relaunch. Kill any test instances once you're done with them — don't leave them running.
 
 ### Locked Decisions
 
@@ -81,7 +87,6 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 │   │   └── [WebviewPM.md]               | • The web layer — webpage embeds, the browser, sessions, hover previews
 │   ├── // Guidelines                    | • Behavioral rules and hard-won traps, grouped by domain
 │   ├── // Mobile                        | • The companion iPhone build — specs, architecture, sync
-│   ├── // Resources                     | • Reference of external resources; both in-use and future prospectives.
 │   ├── // Planning                      | • Plans and temporary specifications; contents are transient
 │   └── // Sessions                      | • Session transcripts — filled by /handoff retirement or /transcribe
 ├── // Pommora                           | • The app — the codebase proper
@@ -103,10 +108,10 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 │   │   │   ├── result.ts                | • The Result envelope IPC returns instead of throwing
 │   │   │   └── schemas.ts               | • The zod schemas the on-disk format validates against
 │   │   └── // renderer                  | • The React renderer — it never touches Node
+│   │       ├── // Actions               | • Renderer glue — selection, page/native menus, commands, destination tree, renamable title
 │   │       ├── // Assets                | • The asset layer — nexus-asset URL resolution and the crop-aware image
 │   │       ├── // Blocks                | • Tile content for the dashboard layer
 │   │       ├── // Cards                 | • The card chassis — the gallery and CardView wear it
-│   │       ├── // Components            | • Shared components — the entity icon, the renamable title
 │   │       ├── // Embeds                | • The embed framework's consumers — page and webpage embeds, retention
 │   │       ├── // Frames                | • The frames a Menu or Window opens onto — filter, group, sort, layout, settings
 │   │       ├── // Interface             | • The main pane — routed views, inspector, subfield, banner
@@ -115,19 +120,22 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 │   │       ├── // Navigation            | • Tabs, history, breadcrumbs, search
 │   │       ├── // Properties            | • The property layer — value resolution, the editing surface, the panes
 │   │       ├── // Settings              | • The settings surface
+│   │       ├── // Showcase              | • The deployed design-system showcase site (builds standalone)
 │   │       ├── // Sidebar               | • The ribbon and its content column
 │   │       ├── // SurfacePM             | • The tile-based dashboard engine
 │   │       ├── // Tables                | • The tabular chrome — TableView and the Trash wear it
 │   │       ├── // Tabs                  | • The tabs + navigational overlays
 │   │       ├── // Toolbar               | • The window toolbar
+│   │       ├── // Utilities             | • Shared helpers — the entity icon, the nexus-icon hook, the iteration scratchpad
 │   │       ├── // Views                 | • The view pipeline and renderers — TableView, CardView, bands
 │   │       ├── // Windows               | • The floating windows — Page, Web, Nav — on one window-base, and their tab strips
 │   │       ├── // DesignSystem          | • The design system — DesignSystemPM is its ledger
-│   │       │   ├── // Tokens            | • Color, type, geometry — the token source of truth
+│   │       │   ├── // Tokens            | • Color, type, geometry — the token source of truth, plus the runtime accent/personalization writers
 │   │       │   ├── // Glass             | • The material — one recipe, four tiers
 │   │       │   ├── // Labels            | • Labels and chips
 │   │       │   ├── // Elements          | • The atomic bits — outline, chevron, trail, segment
-│   │       │   ├── // Controls          | • Buttons, switches, sliders, the color swatch
+│   │       │   ├── // Buttons           | • The button primitive and its recipe
+│   │       │   ├── // Controls          | • Checkbox, switches, sliders, the color swatch
 │   │       │   ├── // Fields            | • Inputs and field runs
 │   │       │   ├── // Pickers           | • The picker family — menu, color, icon, calendar, image, text
 │   │       │   ├── // SidePane          | • The sliding side slot
@@ -135,7 +143,7 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 │   │       │   ├── // Interactions      | • PommoraDND and the pointer/scroll layer
 │   │       │   ├── // Animation         | • Motion tokens, the feel, and the enter/exit primitives
 │   │       │   ├── // Symbols           | • The curated icon registry — the primary glyph source
-│   │       │   └── // Showcase          | • The deployed component-library site
+│   │       │   └── // Util              | • Runtime helpers — cx, clamp, pad, moveItem
 │   │       ├── // Store                 | • The store's seven slices — nexus, navigation, preview, chrome, config, rename, cache
 │   │       ├── App.tsx                  | • The shell — three panes and the routed surface
 │   │       └── store.ts                 | • The composition root — one `useSession` over the slices, and the React hooks
