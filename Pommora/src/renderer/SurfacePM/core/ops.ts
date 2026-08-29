@@ -27,7 +27,7 @@ function replaceAt(node: LayoutNode, path: number[], next: LayoutNode): LayoutNo
 
 /** Place a leaf against the target tile's `edge`. Row placements take `share` of
  *  the target's width; column placements stack — nobody's height changes but the
- *  newcomer's own. Same-direction parents splice (no degenerate nesting). */
+ *  newcomer's own.*/
 function placeLeaf(
   layout: SurfaceLayout,
   targetId: string,
