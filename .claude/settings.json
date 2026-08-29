@@ -1,3 +1,17 @@
 {
-  "autoMemoryDirectory": "~/.claude/memory/pommora"
+  "autoMemoryDirectory": "~/.claude/memory/pommora",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/line-ledger.mjs\"",
+            "statusMessage": "Refreshing the line ledger"
+          }
+        ]
+      }
+    ]
+  }
 }
