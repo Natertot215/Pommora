@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { autocompleteQuery, commitEdit, connectionInsert } from './autocomplete'
-import { tokenize } from './tokens'
+import { tokenize } from './Tokens'
 
 const tokenizeHasLink = (text: string): boolean => tokenize(text).some((t) => t.kind === 'link')
 

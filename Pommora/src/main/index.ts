@@ -59,7 +59,7 @@ import {
   type BlockDocPatch,
   type BlockHostRef,
 } from '@shared/blocks'
-import { pathExists } from './io/atomicWrite'
+import { pathExists } from './IO/atomicWrite'
 import { readAppConfig, updateAppConfig, addRecent, DEFAULT_TRASH_MODE } from './appConfig'
 import { liveAssetMap, refreshAssetMap, takeAssetMapPush } from './assetMap'
 import { migrateAssets } from './assetMigrate'
@@ -91,33 +91,33 @@ import {
 } from './settings'
 import { startWatcher, stopWatcher } from './watcher'
 import { resolveUnderRoot } from './pathSafety'
-import { updatePageBody } from './crud/page'
+import { updatePageBody } from './CRUD/page'
 import { listBundles } from './provenance'
-import { trashRows } from './crud/trashRows'
-import { replayPendingRename } from './crud/contextCascade'
-import { replaySchemaCascade } from './crud/replaySchemaCascade'
+import { trashRows } from './CRUD/trashRows'
+import { replayPendingRename } from './CRUD/contextCascade'
+import { replaySchemaCascade } from './CRUD/replaySchemaCascade'
 import {
   flushNavigation,
   hasPendingNavigation,
   readNavigationState,
   writeNavigationState,
-} from './io/navigationFile'
-import { readTabsState, sanitizeTabSet, writeTabsState } from './io/tabsState'
-import { readValue, writeValue } from './db/localState'
-import { readPreviewsState, sanitizePreviews, writePreviewsState } from './io/previewState'
-import { captureThumbnail, evictThumbnails } from './io/thumbnails'
-import { saveView, reorderViews, deleteView } from './crud/views'
-import { setContainerConfig, type ContainerConfigPatch } from './crud/containerConfig'
-import { loadValues } from './crud/loadValues'
+} from './IO/navigationFile'
+import { readTabsState, sanitizeTabSet, writeTabsState } from './IO/tabsState'
+import { readValue, writeValue } from './Database/localState'
+import { readPreviewsState, sanitizePreviews, writePreviewsState } from './IO/previewState'
+import { captureThumbnail, evictThumbnails } from './IO/thumbnails'
+import { saveView, reorderViews, deleteView } from './CRUD/views'
+import { setContainerConfig, type ContainerConfigPatch } from './CRUD/containerConfig'
+import { loadValues } from './CRUD/loadValues'
 import {
   createProperty,
   editProperty,
   removeFromRegistry,
   reorderRegistry,
-} from './crud/registryProperty'
-import { assignProperty, assignPropertyAt, reorderAssignment } from './crud/assignment'
-import { removeProperty } from './crud/removeProperty'
-import { deleteProperty as deletePropertyGlobal } from './crud/deleteProperty'
+} from './CRUD/registryProperty'
+import { assignProperty, assignPropertyAt, reorderAssignment } from './CRUD/assignment'
+import { removeProperty } from './CRUD/removeProperty'
+import { deleteProperty as deletePropertyGlobal } from './CRUD/deleteProperty'
 import {
   setOptions,
   setStatusGroups,
@@ -127,7 +127,7 @@ import {
   renameStatusOption,
   removeStatusOption,
   clearStatusOption,
-} from './crud/optionOps'
+} from './CRUD/optionOps'
 import type { FileConfig, LinkConfig, NumberConfig, StatusGroup } from '@shared/properties'
 import type { Option } from '@shared/optionModel'
 import { savedView } from '@shared/views'

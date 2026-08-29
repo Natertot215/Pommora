@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, readdir, readFile, rename, rm, writeFile } from 'node:f
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { pathExists } from './io/atomicWrite'
+import { pathExists } from './IO/atomicWrite'
 import { handleMutate, type MutateDeps } from './mutate'
 import { contextsDir, contextsRegistryFile } from './paths'
 import {

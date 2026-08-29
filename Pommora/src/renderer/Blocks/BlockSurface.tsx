@@ -11,7 +11,7 @@ import {
   type ViewPickerItem,
 } from '@shared/blocks'
 import { GLIDE_FEEL } from '@renderer/DesignSystem/Animation/feel'
-import type { ConnPage, ConnectionsApi } from '@renderer/MarkdownPM/connections'
+import type { ConnPage, ConnectionsApi } from '@renderer/MarkdownPM/Connections'
 import {
   containersByPathOf,
   pageIndexOf,
@@ -20,8 +20,8 @@ import {
 } from '@renderer/treeIndex'
 import { showConnectionMenu } from '@renderer/Links/connectionMenu'
 import { hoverConnection, hoverWebsite } from '@renderer/Links/ConnectionPane'
-import { attachBelow, insertBand, removeTile as removeLeaf } from '@renderer/SurfacePM/core/ops'
-import { getTile } from '@renderer/SurfacePM/core/model'
+import { attachBelow, insertBand, removeTile as removeLeaf } from '@renderer/SurfacePM/Core/ops'
+import { getTile } from '@renderer/SurfacePM/Core/model'
 import { SurfaceView, type BackdropTarget } from '@renderer/SurfacePM/SurfaceView'
 import { entityIcon, iconNameOr } from '@renderer/DesignSystem/Symbols'
 import type { EntityIconKind } from '@shared/types'

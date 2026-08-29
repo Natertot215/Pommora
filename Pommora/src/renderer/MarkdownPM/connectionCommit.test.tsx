@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
-import { buildPageIndex, type ConnectionsApi } from '@renderer/MarkdownPM/connections'
+import { buildPageIndex, type ConnectionsApi } from '@renderer/MarkdownPM/Connections'
 import { useSession } from '@renderer/store'
-import { cleanupEditor, mountEditor, stubEditorBridge } from '@renderer/testing/editorHarness'
+import { cleanupEditor, mountEditor, stubEditorBridge } from '@renderer/Testing/editorHarness'
 
 class ResizeObserverStub {
   observe(): void {}

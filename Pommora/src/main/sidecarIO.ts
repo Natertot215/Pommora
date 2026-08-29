@@ -7,8 +7,8 @@
 import { readFile } from 'node:fs/promises'
 import type { z } from 'zod'
 import { sidecarPath, type SidecarKind } from './paths'
-import { writeJson } from './io/atomicWrite'
-import { serializeOnFile } from './io/fileLock'
+import { writeJson } from './IO/atomicWrite'
+import { serializeOnFile } from './IO/fileLock'
 
 /** Run a sidecar read-modify-write under that sidecar's own lock, reading FRESH inside it.
  *  Views, container config, within-folder orders, property assignment and the Remove cache all

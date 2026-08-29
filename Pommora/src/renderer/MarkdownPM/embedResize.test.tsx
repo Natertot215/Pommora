@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest'
 import type { EditorView } from '@codemirror/view'
-import { buildPageIndex, type ConnectionsApi } from '@renderer/MarkdownPM/connections'
-import { embedField, setEmbedHeights } from '@renderer/MarkdownPM/editor/embedWidget'
-import { cleanupEditor, mountEditor, stubEditorBridge } from '@renderer/testing/editorHarness'
+import { buildPageIndex, type ConnectionsApi } from '@renderer/MarkdownPM/Connections'
+import { embedField, setEmbedHeights } from '@renderer/MarkdownPM/Editor/embedWidget'
+import { cleanupEditor, mountEditor, stubEditorBridge } from '@renderer/Testing/editorHarness'
 
 stubEditorBridge()
 afterEach(cleanupEditor)

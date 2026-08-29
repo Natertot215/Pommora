@@ -1,7 +1,7 @@
 import { BrowserWindow, ipcMain } from 'electron'
 import type { Asks, Pushes, Tells } from '@shared/bridge'
 import { errText, fail, ok, type Result } from '@shared/result'
-import { readScope, writeKey, type Scope } from './db/localState'
+import { readScope, writeKey, type Scope } from './Database/localState'
 
 /** THE two session refusals — one spelling, one code, everywhere. A handler refuses through
  *  these or not at all. */

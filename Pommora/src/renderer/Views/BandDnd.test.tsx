@@ -10,7 +10,7 @@ import {
   pressEscape,
   stubPointerCapture,
   stubRect,
-} from '@renderer/testing/pointerHarness'
+} from '@renderer/Testing/pointerHarness'
 import type { Band } from './bandDndModel'
 import { BandDnd, useBandDrag, type BandDrop } from './BandDnd'
 import { ViewGroupBand } from './ViewGroupBand'

@@ -5,7 +5,7 @@
 
 import { contextsRegistry, seededRegistry, type ContextsRegistry } from '@shared/contexts'
 import { fail, ok, type Result } from '@shared/result'
-import { readJsonStrict, rmwJsonStrict, writeJson } from './io/atomicWrite'
+import { readJsonStrict, rmwJsonStrict, writeJson } from './IO/atomicWrite'
 import { newId } from './ids'
 import { contextsRegistryFile } from './paths'
 

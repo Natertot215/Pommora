@@ -1,4 +1,4 @@
-import { parse } from '../parser'
+import { parse } from '../Parser'
 import type { Align, Column, TableModel } from './model'
 import { normalize } from './model'
 

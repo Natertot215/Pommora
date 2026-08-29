@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { EditorState } from '@codemirror/state'
 import { type DecorationSet, EditorView } from '@codemirror/view'
 import { buildWidgetDecorations, refreshTableEffect, tableWidgetExtension } from './widget'
-import { scanDoc } from '../decorations/intent'
+import { scanDoc } from '../Decorations/intent'
 import { cellCommitChange as cellCommitIn, tableSelfEdit } from './sync'
 
 const cellCommitChange = (

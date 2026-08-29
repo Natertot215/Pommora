@@ -7,10 +7,10 @@ import {
   type AcQuery,
   type AutocompleteQuery,
 } from './autocomplete'
-import { docString } from './editor/docCache'
+import { docString } from './Editor/docCache'
 import { normalizeTitle, pageLinkPattern } from '@shared/connections'
 import { useSession } from '../store'
-import { restedOnLink } from './editor/linkGestures'
+import { restedOnLink } from './Editor/linkGestures'
 
 export interface AcState extends AutocompleteQuery {
   /** The caret's x — what the panel centers on, not where its edge lands. */

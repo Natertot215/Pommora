@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { ASSETS_DIR_REL } from '@shared/nexusPaths'
 import { assetFileToDelete, assetSubfolder, underAssetRoot, validPropertyDir } from './assetRoots'
-import { isAssetPath } from './io/navigationFile'
+import { isAssetPath } from './IO/navigationFile'
 
 describe('underAssetRoot', () => {
   const dir = 'file-assets'

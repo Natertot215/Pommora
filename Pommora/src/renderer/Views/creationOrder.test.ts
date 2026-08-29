@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { NEW_PAGE_SLOT } from '@shared/mutate'
 import { orderWithSlot, spliceBeside, tieOrderWith } from './creationOrder'
-import { makeSorter, resolveManualOrder } from './pipeline/sort'
+import { makeSorter, resolveManualOrder } from './Pipeline/sort'
 import type { ViewRow } from '@shared/types'
 
 describe('orderWithSlot', () => {

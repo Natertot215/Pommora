@@ -3,7 +3,7 @@ import { mkdtemp, rm, mkdir, writeFile, readFile, readdir, chmod } from 'node:fs
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { openSession, closeSession, sessionRoot } from './session'
-import { pathExists } from './io/atomicWrite'
+import { pathExists } from './IO/atomicWrite'
 import { migrateAssets } from './assetMigrate'
 import { liveAssetMap, resolveAssetName } from './assetMap'
 import { parseConnectionText } from '@shared/connections'

@@ -7,7 +7,7 @@ import type { CollectionNode } from '@shared/types'
 import { useSession } from '../../store'
 import { PropertyPicker } from '@renderer/Properties/Editing/PropertyPicker'
 import { TableView } from './TableView'
-import { propsAtRoot } from '@renderer/testing/propsAtRoot'
+import { propsAtRoot } from '@renderer/Testing/propsAtRoot'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 

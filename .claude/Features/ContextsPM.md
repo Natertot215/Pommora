@@ -26,7 +26,7 @@ Context identity lives in one file, `.nexus/contexts.json`, modeled by `contexts
 
 ### Writes
 
-Every Context write runs through `src/main/crud/contextWrite.ts` and `contextCascade.ts`, serialized on the registry file's own lock and under per-file locks for each root it rewrites.
+Every Context write runs through `src/main/CRUD/contextWrite.ts` and `contextCascade.ts`, serialized on the registry file's own lock and under per-file locks for each root it rewrites.
 
 - **Membership** — one write per entity kind (a content file, or a Space's sidecar), reconciling the whole root it rewrites. Space-to-Space links take the same shape: a Space tags other Spaces through its own sidecar keys, in its own Context or another.
 - **Renames** are journaled and cascade the title across every context-bearing root — each page's frontmatter and each Space's sidecar — with the registry committed last, so a crash replays forward on the next open and a failed commit reverses the cascade.[^2] The key is renamed where it sits, keeping its position and any comment attached to it.

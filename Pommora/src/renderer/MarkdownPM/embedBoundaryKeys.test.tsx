@@ -2,8 +2,8 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { EditorSelection } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
-import { buildPageIndex, type ConnectionsApi } from '@renderer/MarkdownPM/connections'
-import { cleanupEditor, mountEditor, stubEditorBridge } from '@renderer/testing/editorHarness'
+import { buildPageIndex, type ConnectionsApi } from '@renderer/MarkdownPM/Connections'
+import { cleanupEditor, mountEditor, stubEditorBridge } from '@renderer/Testing/editorHarness'
 
 stubEditorBridge()
 afterEach(cleanupEditor)

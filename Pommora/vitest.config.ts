@@ -15,7 +15,7 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
-    setupFiles: ['src/renderer/testing/setup.ts'],
+    setupFiles: ['src/renderer/Testing/setup.ts'],
   },
   resolve: {
     alias: {

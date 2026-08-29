@@ -3,7 +3,7 @@ import { PAGE_ID_KEY } from '@shared/identity'
 import type { ViewRow } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
 import { declaredType, fileName, resolveFieldValue } from './value'
-import { propsAtRoot } from '@renderer/testing/propsAtRoot'
+import { propsAtRoot } from '@renderer/Testing/propsAtRoot'
 
 const schema: PropertyDefinition[] = [
   { id: 'prop_status', name: 'Status', type: 'status' },

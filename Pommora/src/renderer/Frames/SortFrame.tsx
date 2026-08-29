@@ -8,7 +8,7 @@ import { useSaveView } from '@renderer/Embeds/ViewEmbedScope'
 import { declaredType } from '@renderer/Properties/value'
 import type { PickerChoice } from '@renderer/DesignSystem/Elements/PickerControl'
 import { CustomList, PropertyPreview, optionsOf } from './GroupFrame'
-import { bucketOrder } from '@renderer/Views/pipeline/group'
+import { bucketOrder } from '@renderer/Views/Pipeline/group'
 import { MODIFIED_TARGET, schemaTargets, TITLE_TARGET } from '../Properties/PropertyTypes'
 import * as gp from './groupFrame.css'
 

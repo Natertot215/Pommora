@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { defaultStatusSeed, type PropertyDefinition } from '@shared/properties'
-import { firePointer, stubPointerCapture, stubRect } from '@renderer/testing/pointerHarness'
+import { firePointer, stubPointerCapture, stubRect } from '@renderer/Testing/pointerHarness'
 import { useSession } from '../store'
 import { PropertyFrame } from './PropertyFrame'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true

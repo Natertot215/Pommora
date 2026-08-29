@@ -1,8 +1,8 @@
 import { linkAt, normalizeTitle, pageEmbedText } from '@shared/connections'
 import { decodeLinkTarget, encodeLinkTarget, escapeAlias } from '@shared/links'
 import { codeMask } from '@shared/markdownCode'
-import { lineStartAt, lineEndAt } from './input'
-import type { ConnPage, PageIndex } from './connections'
+import { lineStartAt, lineEndAt } from './Input'
+import type { ConnPage, PageIndex } from './Connections'
 import { useSession } from '../store'
 
 /** What the picker is filling in: a `[[Title]]` connection, a `![[Title]]` embed, the alias half of

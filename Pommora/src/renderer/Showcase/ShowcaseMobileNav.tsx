@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { paneMaterial } from '@renderer/DesignSystem/Glass'
 import { Icon } from '@renderer/DesignSystem/Symbols'
-import { leafById } from './leaves/registry'
+import { leafById } from './Leaves/registry'
 import { NavSections } from './NavSections'
 
 // CSS hides this above the breakpoint and hides the sidebar below it, so the two never show at once.

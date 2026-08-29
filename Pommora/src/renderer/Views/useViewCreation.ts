@@ -18,8 +18,8 @@ import {
 } from '@renderer/DesignSystem/Interactions/autoscroll'
 import { useSession } from '../store'
 import { declaredType, resolveFieldValue } from '@renderer/Properties/value'
-import { filterSeeds } from './pipeline/creationSeeds'
-import { flattenContainer } from './pipeline/group'
+import { filterSeeds } from './Pipeline/creationSeeds'
+import { flattenContainer } from './Pipeline/group'
 import { orderWithSlot, tieOrderWith } from './creationOrder'
 import { groupKeyToValue } from './TableView/reassign'
 

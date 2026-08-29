@@ -3,8 +3,8 @@
 // handle means every operational store no-ops and the session runs without persisted chrome.
 
 import { errText } from '@shared/result'
-import { openNexusDb } from './db/open'
-import type { Db } from './db/driver'
+import { openNexusDb } from './Database/open'
+import type { Db } from './Database/driver'
 
 let db: Db | null = null
 

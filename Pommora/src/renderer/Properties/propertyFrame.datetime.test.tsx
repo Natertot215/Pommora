@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { stubPointerCapture } from '@renderer/testing/pointerHarness'
+import { stubPointerCapture } from '@renderer/Testing/pointerHarness'
 import type { PropertyDefinition } from '@shared/properties'
 import { useSession } from '../store'
 import { PropertyFrame } from './PropertyFrame'

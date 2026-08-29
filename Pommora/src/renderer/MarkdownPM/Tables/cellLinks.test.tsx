@@ -11,7 +11,7 @@ import {
   type ConnectionsApi,
   type ConnMenuTarget,
   type ConnPage,
-} from '../connections'
+} from '../Connections'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 if (!('ResizeObserver' in globalThis)) {

@@ -3,10 +3,10 @@ import { findScroller, startAutoScroll } from '@renderer/DesignSystem/Interactio
 import { DEFAULT_FEEL, type Feel } from '@renderer/DesignSystem/Animation/feel'
 import { SETTLE_FALLBACK } from '@renderer/DesignSystem/Interactions/shared'
 import { TILE_MIN_PX } from '@renderer/DesignSystem/Tokens/size.css'
-import { findTile } from './core/model'
-import type { DividerRef, Edge, SurfaceLayout } from './core/model'
-import { resolveEdge } from './core/edges'
-import { hitTest, type DropTarget } from './core/hitTest'
+import { findTile } from './Core/model'
+import type { DividerRef, Edge, SurfaceLayout } from './Core/model'
+import { resolveEdge } from './Core/edges'
+import { hitTest, type DropTarget } from './Core/hitTest'
 import {
   moveTile,
   moveTileToBand,
@@ -14,10 +14,10 @@ import {
   resizeDivider,
   resizeStackPair,
   stretchTileHeight,
-} from './core/ops'
-import { computeGeometry, type Rect, type SurfaceGeometry } from './core/rects'
-import { snapAxis, xCandidates, yCandidates } from './core/snap'
-import { startPointerDrag } from './sensors/pointerDrag'
+} from './Core/ops'
+import { computeGeometry, type Rect, type SurfaceGeometry } from './Core/rects'
+import { snapAxis, xCandidates, yCandidates } from './Core/snap'
+import { startPointerDrag } from './Sensors/pointerDrag'
 import '@renderer/Blocks/tile-chassis.css'
 import './surfacepm.css'
 

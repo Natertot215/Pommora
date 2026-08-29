@@ -7,9 +7,9 @@ import {
   buildPageIndex,
   type ConnectionsApi,
   type ConnPage,
-} from '@renderer/MarkdownPM/connections'
+} from '@renderer/MarkdownPM/Connections'
 import { renderCellContent } from '@renderer/MarkdownPM/Tables/cellStatic'
-import { cleanupEditor, mountEditor, stubEditorBridge } from '@renderer/testing/editorHarness'
+import { cleanupEditor, mountEditor, stubEditorBridge } from '@renderer/Testing/editorHarness'
 
 class ResizeObserverStub {
   observe(): void {}

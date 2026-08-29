@@ -41,7 +41,7 @@ Every renderer also shares the **hover ghost** (`DesignSystem/Interactions/ghost
 
 ### The Pipeline
 
-`resolveView` in `src/renderer/Views/pipeline/` composes four pure stages — **columns → filter → group → sort** — over a view, its rows, its schema, and the container's set tree, knowing nothing about where they came from, so a full page and an embedded tile run the same code. Row frontmatter loads lazily per container over a batch IPC.
+`resolveView` in `src/renderer/Views/Pipeline/` composes four pure stages — **columns → filter → group → sort** — over a view, its rows, its schema, and the container's set tree, knowing nothing about where they came from, so a full page and an embedded tile run the same code. Row frontmatter loads lazily per container over a batch IPC.
 
 #### II. Filter
 

@@ -20,7 +20,7 @@ Pommora is Nathan’s main project — a personal management and all-in-one prod
 
 Pommora is an **Electron** desktop app. electron-vite · Electron 42 · React 19 · TypeScript 6 · Vite 7 + `@vitejs/plugin-react` 5  · Zustand · TanStack Virtual · `eemeli/yaml` · `lucide-react` (the curated icon registry — `DesignSystem/Symbols`; `@tabler/icons-react` stays installed as a second source to pull from per-icon) · Vitest. Editor: **MarkdownPM** — a CodeMirror 6 custom-build Markdown editor on the Pommora monorepo. 
 
-- **No dependency lock-in.** Every library sits behind a thin seam (SQLite behind `db//driver.ts`, YAML behind `pageFile.ts`, IDs behind `ids.ts`, glass behind `Surface`) so it's swappable without touching callers. Version numbers are compatibility pins, not endorsements.
+- **No dependency lock-in.** Every library sits behind a thin seam (SQLite behind `Database//driver.ts`, YAML behind `pageFile.ts`, IDs behind `ids.ts`, glass behind `Surface`) so it's swappable without touching callers. Version numbers are compatibility pins, not endorsements.
 - **The [Figma Library](https://www.figma.com/file/fYZ5oiK7stC3diRhaBHl1r)** is where the design iteration happens beforehand, and codebase synchronization is intended but not guaranteed. The showcase website at [pommora-design-system](https://pommora-design-system.vercel.app) deploys from `Pommora/` (`npm run build:showcase`) via `vercel.json`; it's the origin-synced showcase of the design system.
 - **TS-native on-disk format:** bare, natively typed values under wrapped title keys, zod-validated.
 
@@ -92,11 +92,11 @@ Pommora is an **Electron** desktop app. electron-vite · Electron 42 · React 19
 ├── // Pommora                           | • The app — the codebase proper
 │   ├── // src
 │   │   ├── // main                      | • The Node main process — it alone touches the filesystem
-│   │   │   ├── // connections           | • Link scanning, and rewriting them on rename
-│   │   │   ├── // crud                  | • Mutations — writes, cascades, governed keys, options
-│   │   │   ├── // db                    | • nexus.db — the driver seam, schema, device-local state
-│   │   │   ├── // io                    | • Atomic writes, file locks, page and sidecar files, the walk
-│   │   │   ├── // properties            | • The property registry's schema
+│   │   │   ├── // Connections           | • Link scanning, and rewriting them on rename
+│   │   │   ├── // CRUD                  | • Mutations — writes, cascades, governed keys, options
+│   │   │   ├── // Database              | • nexus.db — the driver seam, schema, device-local state
+│   │   │   ├── // IO                    | • Atomic writes, file locks, page and sidecar files, the walk
+│   │   │   ├── // Properties            | • The property registry's schema
 │   │   │   ├── index.ts                 | • Main entry — window creation and app lifecycle
 │   │   │   ├── ipc.ts                   | • The channel handlers sitting behind the bridge
 │   │   │   ├── ids.ts                   | • The ULID seam

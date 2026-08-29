@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { scanDoc } from './decorations/intent'
-import { autoPair } from './input'
-import { refusedInAlias } from './editor/input'
+import { scanDoc } from './Decorations/intent'
+import { autoPair } from './Input'
+import { refusedInAlias } from './Editor/input'
 
 // An alias is delimited by the link's own `]]`, so a `]` typed inside one truncates the link the
 // caret is sitting in. The refusal belongs to the alias rather than to any one editor: the page

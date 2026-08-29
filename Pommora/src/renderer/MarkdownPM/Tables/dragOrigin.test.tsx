@@ -4,7 +4,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { createElement, act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { firePointer, stubPointerCapture, stubRect } from '@renderer/testing/pointerHarness'
+import { firePointer, stubPointerCapture, stubRect } from '@renderer/Testing/pointerHarness'
 import { TableView } from './TableView'
 import type { TableModel } from './model'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true

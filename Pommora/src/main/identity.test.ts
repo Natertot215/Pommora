@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { ensureIdentity } from './identity'
 import { isUlid } from './ids'
-import { pathExists } from './io/atomicWrite'
+import { pathExists } from './IO/atomicWrite'
 import { nexusDir, nexusConfig, NEXUS_CONFIG_FILES, SIDECAR_FILENAME } from './paths'
 
 let root: string
