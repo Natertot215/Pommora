@@ -1,6 +1,6 @@
 ## Exclusions — Implementation Plan
 
-> **Status:** written, pending review · Spec: this session's design pass · Execute tasks in order.
+> **Status:** ratified — in execution · Spec: this session's design pass · Execute tasks in order.
 > Citations name files and symbols; re-derive before editing.
 
 **Goal**
@@ -41,6 +41,7 @@ With the app running and a folder of pages visible in the sidebar: open Settings
 - `resolveFolderKind` returns `'collection'` for a root folder only when `_pagecollection.json` exists (`sidecarMode` is true for any nexus whose `nexus.json` carries an id) → deleting a top-level sidecar makes that Collection invisible until the next nexus open re-stamps it. **Task 7**, in the confirm copy.
 - A `.md` with no identity key is admitted and wears a path-derived synthetic id (`readPageRecord`) → cleared pages reappear immediately on un-exclusion rather than vanishing. **Task 7**, in the confirm copy.
 - `PageID` is a durable pointer — surface tiles store `page_id`, and `nexus.db` keys folds, aliases, per-page zoom and citations by it → Clear orphans that state. **Task 7**, in the confirm copy.
+- `sweepGovernedRoots` re-indexes each rewritten page through `indexWrittenPage`, whose `relCorpusPath` gate honors only `NON_CORPUS_TOP` and not the exclusion list — its comment states the app's pens never write into excluded folders, which Clear is the first code to falsify → the cleared pages land back in the content index, and the watcher never reconciles them because excluded folders are unwatched. Clear's handler must re-seed the index after the sweep, exactly as Task 3's set handler does. **Task 7.**
 
 **Inherited Reasoning**
 
@@ -395,18 +396,21 @@ export async function clearExclusionData(
 
 **A known property, not a defect:** the sweep re-serializes each file's frontmatter through `doc.toString({ lineWidth: 0 })`, which rewrites an inline flow collection (`Tags: [x, y]` → `Tags: [ x, y ]`) on keys it never touched. This is how every existing sweep already behaves, and zero of the 122 `.md` files under the live nexus's exclusions use flow syntax. It is not in scope to change.
 
+**A second known property:** unwrapping flattens the property sigil `<>` and the context sigil `()` into one bare namespace, so a page carrying the same inner name under both — `<Status>` the property and `(Status)` the Context group — resolves both to bare `Status`, and the second unwrap meets a rival and drops one value (`renameFrontmatterKey`'s `'prefer-new'`, `pageFile.ts:166`). No clean automatic resolution exists: the two values may be different types, so `'merge'` cannot fold a scalar into a sequence either. The precondition is a user naming a Context group identically to a property and holding both on one page — legal but uncommon, and none of the seeded defaults collide. The values that survive are whichever unwrapped first. Accepted rather than solved, on the same footing as the reflow.
+
 **Assumed by:** Task 7 (the handler calls `clearExclusionData` and reports its counts).
 
 **Verify — automated**
 
-- [ ] Red first in `src/main/exclusionScan.test.ts` against a temp nexus holding, under one excluded root: a Collection with `_pagecollection.json`, a nested Set with `_pageset.json`, **a root folder with `_taskconfig.json` registered in `nexus.json`**, a page with `<Status>: Doing` carrying a comment above it, a page with `(Projects): [Alpha]`, **a page holding both `<Status>: open` and a bare `Status: [Revisit]`**, a page with `TaskID`, a page with a malformed `<Status` key, a nested `node_modules` and a nested `.git`, and an `asset_directory` that is itself in the exclusion list.
+- [ ] Red first in `src/main/exclusionScan.test.ts` against a temp nexus holding, under one excluded root: a Collection with `_pagecollection.json`, a nested Set with `_pageset.json`, **a root folder with `_taskconfig.json` registered in `nexus.json`**, a page with `<Status>: Doing` carrying a comment above it, a page with `(Projects): [Alpha]`, **a page holding both `<Status>: open` and a bare `Status: [Revisit]`**, a page holding both `<Status>: open` and `(Status): [Home]` (same name, both sigils), a page with `TaskID`, a page with a malformed `<Status` key, a nested `node_modules` and a nested `.git`, and an `asset_directory` that is itself in the exclusion list.
 - [ ] **The agenda config survives.** `_taskconfig.json` is untouched and the folder still resolves through `resolveFolderKind` afterward. Point the deletion at `SIDECARS` instead of the container pair and this goes red — the test corpus exists to make that mistake fail.
 - [ ] **The collision page keeps its plain key.** `Status: [Revisit]` survives untouched and `<Status>: open` is gone. Swap the mode to `'merge'` and this goes red — merge drops the plain key instead.
 - [ ] The asset root is walked past: nothing under it appears in either list, even though it is excluded.
 - [ ] `excludedArtifacts` finds the two pages and the two container sidecars, and nothing inside `node_modules`, `.git`, or `.nexus`.
-- [ ] A crossing test that can actually fail: **assert the file sets, not the predicate**. Every `.md` under the excluded root that `corpusFilesUnder` would have returned had the folder not been excluded appears in `pages` — run it once with the folder excluded and once without, and compare. Asserting only that `shouldSkipDir` would have pruned each path is vacuous, since the exclusion matcher prunes everything under the root regardless of the skip set.
+- [ ] A crossing test that can actually fail: **assert the file sets, not the predicate**. Over an **agenda-free** excluded root, every `.md` that `corpusFilesUnder` would have returned had the folder not been excluded appears in `pages` — run it once with the folder excluded and once without, and compare. The root must be agenda-free because `corpusFilesUnder` is agenda-blind (it prunes only `NON_CORPUS_TOP`, asset and excluded, never a `_taskconfig.json` folder), while `excludedArtifacts` withholds agenda pages by design — comparing the two over the agenda root would fail the identity for a correct implementation. Asserting only that `shouldSkipDir` would have pruned each path is vacuous, since the exclusion matcher prunes everything under the root regardless of the skip set.
 - [ ] Preserve on: `<Status>: Doing` becomes `Status: Doing`, the comment above it survives, key order is unchanged, `PageID` is gone. Preserve off: the `Status` line is gone entirely.
 - [ ] The malformed `<Status` key is left exactly as it was — it is not `<…>`-shaped, and a shape scan has no opinion about it.
+- [ ] The same-name-both-sigils page does not crash the sweep and ends with exactly one bare `Status` key — the documented drop, locked so it can't silently become a crash or a doubled key.
 - [ ] **The Agenda folder is untouched end to end.** `_taskconfig.json` is byte-identical, the `TaskID` page inside it is byte-identical, neither appears in `pages` or `sidecars`, and the folder still resolves through `resolveFolderKind`. Remove the folder skip and the config assertion goes red.
 - [ ] `sweepGovernedRoots` is called exactly as its existing callers call it — no new option, no change to `CRUD/governedSweep.ts`. `git diff --stat` for this task names no file under `CRUD/`.
 - [ ] A file whose frontmatter cannot round-trip is left byte-identical and counted in `refused`.
@@ -451,9 +455,12 @@ export function ClearExclusionsRow({ label, hint }: RowProps): React.JSX.Element
   hint: 'Remove existing app data that may have been written onto previously indexed folders.' }
 ```
 
+On a confirmed clear the handler awaits `clearExclusionData` and then runs `seedContentIndex(root)`, because the sweep re-indexes every page it rewrites (`indexWrittenPage` cannot tell an excluded path from a corpus one) and the watcher never corrects it — the re-seed drops the cleared pages back out of the index in the same act, so the row's promise that excluded folders are not recognized holds without a relaunch. This mirrors the re-arm Task 3 already performs; the index is the only stale surface, so the full scope chain is not owed.
+
 **Verify — automated**
 
 - [ ] Red first: the handler returns `ok(null)` with an empty exclusion list and never opens a dialog; a cancelled dialog returns `ok(null)` and writes nothing; a confirmed one calls through and reports counts.
+- [ ] After a confirmed clear the index holds no row under the cleared folder's prefix. Remove the `seedContentIndex(root)` call and this goes red — the sweep's own `indexWrittenPage` re-inserts the rows it just rewrote.
 - [ ] The detail string is built from the toggle read at call time — flip the toggle between two invocations and the two strings differ. A dialog that describes the other branch is the failure this catches.
 - [ ] `npm run typecheck` — the channel and the `Row` switch both fail closed.
 - [ ] **Hazard closed:** `rg -F "clearExclusionData" src` → 3 (definition, test, handler), and the only non-test caller is behind the confirm. Control: `rg -F "excludedArtifacts" src` → 3.
@@ -498,6 +505,10 @@ export function ClearExclusionsRow({ label, hint }: RowProps): React.JSX.Element
   - [ ] Task 7 — The Clear row and its confirmation · `<commit>`
 
 ### Rulings
+
+- **Round-2 attack, Finding 1 (Medium) — folded into Task 7.** The sweep's `indexWrittenPage` re-inserts every page Clear rewrites, and the watcher never corrects an excluded folder, so Clear's handler re-seeds the index after `clearExclusionData`. Mirrors Task 3's re-arm; only the index is stale, so the full scope chain is not owed.
+- **Round-2 attack, Finding 2 (Medium) — folded into Task 6's crossing test.** `corpusFilesUnder` is agenda-blind, so the file-set identity holds only over an agenda-free excluded root; the crossing test names that constraint.
+- **Round-2 attack, Finding 3 (Low) — accepted and documented in Task 6.** Two same-named keys under different sigils flatten to one bare key and one value drops; no clean auto-resolution exists and the precondition is uncommon. Documented as a known property, on the same footing as the flow-reflow. Reversible if the user rejects it.
 
 ### Open Against Later Tasks
 
