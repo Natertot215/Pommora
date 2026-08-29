@@ -2,7 +2,6 @@ import { useState, type ReactNode } from 'react'
 import { vars } from '../../Tokens'
 import {
   SpaceChip,
-  checkboxBox,
   FileChip,
   FileLabel,
   fill,
@@ -13,7 +12,6 @@ import {
   textCap,
 } from '../../Labels'
 import { DualSwitch } from '../../Controls/Switches/DualSwitch'
-import { Icon } from '../../Symbols'
 import { SortableZone, useDragItem, reorder } from '../../Interactions/drag'
 import type { LabelColorName } from '../../Labels'
 import { ANCHOR_CELLS, cellColor } from '../../Tokens/ramp'
@@ -171,20 +169,6 @@ function SwitchDemo({ color }: { color: LabelColorName }): React.JSX.Element {
   )
 }
 
-function CheckboxDemo({ color }: { color: LabelColorName }): React.JSX.Element {
-  const [on, setOn] = useState(true)
-  return (
-    <button
-      type="button"
-      className={cx(checkboxBox, labelColor[color], 'ds-checkbox-demo')}
-      title={color}
-      onClick={() => setOn((x) => !x)}
-    >
-      {on ? <Icon name="check" size={12} strokeWidth={3} /> : null}
-    </button>
-  )
-}
-
 const PENDING = ['Separator', 'Row']
 
 /** The two colorless shapes, which the shape rows can't show: those fan a shape across every chip
@@ -250,15 +234,6 @@ export function LabelsLeaf(): React.JSX.Element {
         <div className="ds-chip-row-items">
           {CHIP_COLORS.map((c) => (
             <SwitchDemo key={c} color={c} />
-          ))}
-        </div>
-      </section>
-
-      <section className="ds-section">
-        <h2>Checkboxes</h2>
-        <div className="ds-chip-row-items">
-          {CHIP_COLORS.map((c) => (
-            <CheckboxDemo key={c} color={c} />
           ))}
         </div>
       </section>

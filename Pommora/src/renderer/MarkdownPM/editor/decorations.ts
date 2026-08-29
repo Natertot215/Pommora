@@ -34,7 +34,6 @@ import {
 } from '../decorations/intent'
 import { resolveMdTarget, type ConnectionsApi } from '../connections'
 import type { LinkStatus } from '@shared/connections'
-import { boxGeometry } from '@renderer/DesignSystem/Labels'
 
 /** The class a valid external link wears — the hover gate reads the same constant, so the
  *  decorator and the arming selector cannot drift. */
@@ -112,7 +111,7 @@ class CheckboxWidget extends WidgetType {
     const zone = document.createElement('span')
     zone.className = `md-li-marker ${GLYPH_CLASS}`
     const box = document.createElement('span')
-    box.className = `${boxGeometry} pm-checkbox${this.checked ? ' pm-checkbox-checked' : ''}`
+    box.className = `checkbox${this.checked ? ' checkbox-checked' : ''}`
     if (this.checked) {
       box.innerHTML =
         '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>'

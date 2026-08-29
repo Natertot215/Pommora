@@ -324,7 +324,7 @@ function TrashRowView({
       overlay={
         <Checkbox
           className={cx(overlay, 'trash-check')}
-          small
+          size="compact"
           state={checked}
           onChange={onToggle}
           ariaLabel={`Select ${row.title}`}

@@ -1,14 +1,18 @@
-/* The app's one checkbox look. Two consumers wear it: the editor's task marker, which is a
-   CodeMirror widget building raw DOM, and the React `Checkbox`. Plain CSS rather than a `.css.ts`
-   so the widget can name the class without importing a build artifact.
+/* The app's one checkbox look. Three consumers wear it: the editor's task marker (a CodeMirror
+   widget building raw DOM), the React `Checkbox` control, and the property value glyph. Plain CSS
+   rather than a `.css.ts` so the widget can name the class without importing a build artifact.
 
    inline-block (content-independent baseline) so toggling doesn't shift the box; the mark is
-   absolutely centered. Geometry is boxGeometry's, worn alongside. */
-.pm-checkbox {
+   absolutely centered. The box owns its own geometry — no borrowed frame. */
+.checkbox {
   box-sizing: border-box;
   display: inline-block;
   position: relative;
-  vertical-align: -0.18em;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border-radius: 5.5px;
+  border-width: var(--width-150);
   border-style: solid;
   border-color: var(--border-base);
   background: transparent;
@@ -18,19 +22,42 @@
   color: var(--checkbox-mark);
   cursor: pointer;
 }
-.pm-checkbox svg {
+.checkbox svg {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
 }
-.pm-checkbox-checked {
+
+/* Filled-when-empty: a resting wash for a value that reads as unset rather than absent. A checked
+   box's own fill overrides it. */
+.checkbox-filled {
+  background: var(--fill-tertiary);
+}
+.checkbox-checked {
   background: var(--checkbox-fill);
   border-color: var(--checkbox-border);
 }
 
-/* The smaller variant; overrides boxGeometry rather than forking it, so the two stay one shape at two sizes. */
-.pm-checkbox-small {
+/* Hover rides the interactive forms only; the static value glyph leaves its row's hover to speak.
+   The checked box holds its fill through hover rather than washing it out. */
+.checkbox:not(.checkbox-static):hover {
+  background: var(--state-hover);
+}
+.checkbox-checked:not(.checkbox-static):hover {
+  background: var(--checkbox-fill);
+}
+
+/* The presentational value glyph: no pointer of its own, pinned to the text middle so toggling a
+   cell never shifts the row. */
+.checkbox-static {
+  vertical-align: middle;
+  cursor: default;
+}
+
+/* The compact size; overrides the standard box rather than forking it, so the two stay one shape at
+   two sizes. */
+.checkbox-compact {
   width: 12px;
   height: 12px;
   border-radius: 4px;

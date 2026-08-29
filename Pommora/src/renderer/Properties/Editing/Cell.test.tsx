@@ -10,7 +10,6 @@ import { EMPTY_ASSET_MAP } from '@shared/types'
 import { Cell } from '@renderer/Properties/Editing/Cell'
 import type { ResolveContext } from '@renderer/Properties/resolveContext'
 import { propsAtRoot } from '@renderer/testing/propsAtRoot'
-import { labelColor } from '@renderer/DesignSystem/Labels'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -127,25 +126,25 @@ describe('checkbox looks', () => {
     expect(host.querySelector('[role="switch"]')?.getAttribute('aria-checked')).toBe('false')
   })
 
-  it('checked box tints the property color, check at label-control', () => {
+  it('checked box tints from the property color via --checkbox-base', () => {
     mount(rowWith({ prop_pin: true }), 'prop_pin', { look: 'checkbox' })
     const box = host.querySelector('span')
-    expect(box?.style.getPropertyValue('--label-base')).not.toBe('') // tinted, not the grey default
-    expect(box?.className).not.toContain(labelColor.default)
-    expect(box?.style.color).toBe('var(--label-control)')
+    expect(box?.style.getPropertyValue('--checkbox-base')).not.toBe('') // a chosen color to tint from
+    expect(box?.className).toContain('checkbox-checked')
   })
 
-  it('unchecked box is the neutral grey default, untinted', () => {
+  it('unchecked box is filled and untinted', () => {
     mount(rowWith({}), 'prop_pin', { look: 'checkbox' })
     const box = host.querySelector('span')
-    expect(box?.className).toContain(labelColor.default)
-    expect(box?.style.getPropertyValue('--label-base')).toBe('')
+    expect(box?.className).toContain('checkbox-filled')
+    expect(box?.className).not.toContain('checkbox-checked')
   })
 
-  it('a colorless checked box tints the configured accent via var(--accent), matching the switch', () => {
+  it('a colorless checked box leaves --checkbox-base unset so it follows the accent recipe', () => {
     mount(rowWith({ prop_done: true }), 'prop_done', { look: 'checkbox' }) // prop_done has no checkbox_color
     const box = host.querySelector('span')
-    expect(box?.style.getPropertyValue('--label-base')).toBe('var(--accent)')
+    expect(box?.className).toContain('checkbox-checked')
+    expect(box?.style.getPropertyValue('--checkbox-base')).toBe('')
   })
 
   it('scopes --accent to the property color so the switch on-track tints', () => {
