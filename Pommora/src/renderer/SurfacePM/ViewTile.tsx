@@ -31,7 +31,7 @@ import { findCollection, findCollectionForSet, findSet } from '@renderer/Interfa
 import { ViewRenderer } from '@renderer/Views/ViewRenderer'
 import { SettingsFrame } from '@renderer/Frames/SettingsFrame'
 import { hostedGutter } from '@renderer/DesignSystem/Menus/menu-surface.css'
-import { ViewEmbedScopeProvider } from '@renderer/Embeds/ViewEmbedScope'
+import { ViewTileScopeProvider } from '@renderer/SurfacePM/ViewTileScope'
 import { useSession } from '@renderer/store'
 import { PICKER_MAX_HEIGHT } from '@renderer/DesignSystem/Pickers/picker-base.css'
 import { cx } from '@renderer/DesignSystem/Util/cx'
@@ -50,7 +50,7 @@ import {
   settingsBtn,
   settingsBtnActive,
 } from '@renderer/Interface/ActionBand.css'
-import * as s from './viewEmbed.css'
+import * as s from './viewTile.css'
 
 function coerceConfig(raw: unknown, schema: PropertyDefinition[], fallbackId: string): SavedView {
   const v = raw as SavedView | null
@@ -201,7 +201,7 @@ function ViewPill({
   )
 }
 
-export function ViewEmbedBlock({
+export function ViewTile({
   entry,
   mutateEntry,
   onActivate,
@@ -496,7 +496,7 @@ export function ViewEmbedBlock({
   )
 
   return (
-    <ViewEmbedScopeProvider
+    <ViewTileScopeProvider
       value={{
         source,
         view,
@@ -602,6 +602,6 @@ export function ViewEmbedBlock({
           triggerRef={menuAnchorRef}
         />
       </div>
-    </ViewEmbedScopeProvider>
+    </ViewTileScopeProvider>
   )
 }

@@ -11,9 +11,9 @@ import { SettingsFrame } from '@renderer/Frames/SettingsFrame'
 import {
   useSaveView,
   VIEW_CONFIG_LOCKED,
-  ViewEmbedScopeProvider,
-  type ViewEmbedScopeValue,
-} from './ViewEmbedScope'
+  ViewTileScopeProvider,
+  type ViewTileScopeValue,
+} from './ViewTileScope'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 class ResizeObserverStub {
@@ -62,7 +62,7 @@ let persistConfig: Mock<(next: SavedView) => void>
 let persistState: Mock<(next: ViewState) => void>
 let sourceSave: Mock
 
-const scope = (locked: boolean): ViewEmbedScopeValue => ({
+const scope = (locked: boolean): ViewTileScopeValue => ({
   source,
   view,
   persistConfig,
@@ -127,9 +127,9 @@ describe('a locked view-embed scope', () => {
   it('answers the write with a refusal instead of a fake success', async () => {
     const results: unknown[] = []
     await render(
-      <ViewEmbedScopeProvider value={scope(true)}>
+      <ViewTileScopeProvider value={scope(true)}>
         <Probe onResult={(r) => results.push(r)} />
-      </ViewEmbedScopeProvider>,
+      </ViewTileScopeProvider>,
     )
     expect(results).toEqual([
       { ok: false, error: { code: 'operation-failed', message: VIEW_CONFIG_LOCKED } },
@@ -140,9 +140,9 @@ describe('a locked view-embed scope', () => {
   it('persists through the payload writer when unlocked', async () => {
     const results: unknown[] = []
     await render(
-      <ViewEmbedScopeProvider value={scope(false)}>
+      <ViewTileScopeProvider value={scope(false)}>
         <Probe onResult={(r) => results.push(r)} />
-      </ViewEmbedScopeProvider>,
+      </ViewTileScopeProvider>,
     )
     expect(results).toEqual([{ ok: true, value: { id: view.id } }])
     expect(persistConfig).toHaveBeenCalledWith({ ...view, name: 'Renamed' })
@@ -151,9 +151,9 @@ describe('a locked view-embed scope', () => {
   it('lets a collapse through — the lock freezes config, not how you are reading the tile', async () => {
     const results: unknown[] = []
     await render(
-      <ViewEmbedScopeProvider value={scope(true)}>
+      <ViewTileScopeProvider value={scope(true)}>
         <StateProbe onResult={(r) => results.push(r)} />
-      </ViewEmbedScopeProvider>,
+      </ViewTileScopeProvider>,
     )
     expect(results).toEqual([{ ok: true, value: { id: view.id } }])
     expect(persistState).toHaveBeenCalledWith({ collapsed_groups: ['Done'] })
@@ -161,9 +161,9 @@ describe('a locked view-embed scope', () => {
 
   it('narrows a state write to the state keys, so a refused override cannot ride along', async () => {
     await render(
-      <ViewEmbedScopeProvider value={scope(true)}>
+      <ViewTileScopeProvider value={scope(true)}>
         <StateProbe onResult={() => {}} />
-      </ViewEmbedScopeProvider>,
+      </ViewTileScopeProvider>,
     )
     expect(persistState).toHaveBeenCalledWith({ collapsed_groups: ['Done'] })
     expect(persistConfig).not.toHaveBeenCalled()
@@ -171,7 +171,7 @@ describe('a locked view-embed scope', () => {
 
   it('drops nothing to the source container either', async () => {
     await render(
-      <ViewEmbedScopeProvider value={scope(true)}>
+      <ViewTileScopeProvider value={scope(true)}>
         <GroupFrame
           source={source}
           view={view}
@@ -180,7 +180,7 @@ describe('a locked view-embed scope', () => {
           subGrouping
           onBack={() => {}}
         />
-      </ViewEmbedScopeProvider>,
+      </ViewTileScopeProvider>,
     )
     await clickRow('Group By')
     await clickRow('Status', 'last')
@@ -190,9 +190,9 @@ describe('a locked view-embed scope', () => {
 
   it('closes the config leaves in the settings pane, so there is nothing to author into', async () => {
     await render(
-      <ViewEmbedScopeProvider value={scope(true)}>
+      <ViewTileScopeProvider value={scope(true)}>
         <SettingsFrame />
-      </ViewEmbedScopeProvider>,
+      </ViewTileScopeProvider>,
     )
     await clickRow('Group')
     expect(texts()).not.toContain('Group By')
@@ -200,9 +200,9 @@ describe('a locked view-embed scope', () => {
 
   it('opens them when unlocked', async () => {
     await render(
-      <ViewEmbedScopeProvider value={scope(false)}>
+      <ViewTileScopeProvider value={scope(false)}>
         <SettingsFrame />
-      </ViewEmbedScopeProvider>,
+      </ViewTileScopeProvider>,
     )
     await clickRow('Group')
     expect(texts()).toContain('Group By')

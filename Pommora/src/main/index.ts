@@ -44,13 +44,13 @@ import { readPage } from './readPage'
 import {
   convertTileToPage,
   convertTileToView,
-  createMarkdownBlock,
+  createMarkdownTile,
   duplicateBlockTile,
   readBlockDoc,
-  readMarkdownBlock,
+  readMarkdownTile,
   removeBlockTile,
   writeBlockDoc,
-  writeMarkdownBlock,
+  writeMarkdownTile,
 } from './blocks'
 import { isUlid } from './ids'
 import {
@@ -1508,7 +1508,7 @@ serveBridge(
       fn: async (host: unknown) => {
         const ctx = blockHostAnd(host)
         if (!ctx.ok) return ctx
-        return ok({ id: await createMarkdownBlock(ctx.value.root, ctx.value.h) })
+        return ok({ id: await createMarkdownTile(ctx.value.root, ctx.value.h) })
       },
     },
     'blocks:removeTile': {
@@ -1525,7 +1525,7 @@ serveBridge(
       fn: async (host: unknown, tileId: unknown) => {
         const ctx = blockHostAnd(host, tileId)
         if (!ctx.ok) return ctx
-        const body = await readMarkdownBlock(ctx.value.root, ctx.value.h, tileId as string)
+        const body = await readMarkdownTile(ctx.value.root, ctx.value.h, tileId as string)
         return body === null ? fail('not-found', 'Block file not found.') : ok({ body })
       },
     },
@@ -1535,7 +1535,7 @@ serveBridge(
         const ctx = blockHostAnd(host, tileId)
         if (!ctx.ok) return ctx
         if (typeof body !== 'string') return fail('operation-failed', 'Body must be a string.')
-        await writeMarkdownBlock(ctx.value.root, ctx.value.h, tileId as string, body)
+        await writeMarkdownTile(ctx.value.root, ctx.value.h, tileId as string, body)
         return ok(null)
       },
     },

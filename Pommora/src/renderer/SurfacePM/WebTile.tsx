@@ -15,9 +15,9 @@ import { webpageTileTitle } from '@shared/webpageEmbed'
 import { useDismiss } from '@renderer/DesignSystem/Interactions/useDismiss'
 import { useSession } from '../store'
 import { openWebLink } from '../Links/openWebLink'
-import { webGuestRetention } from './webRetention'
+import { webGuestRetention } from './WebRetention'
 import './embeds.css'
-import '@renderer/Blocks/block-title.css'
+import '@renderer/SurfacePM/block-title.css'
 
 /** What the guest element answers with once attached — the parting frame's only surface. */
 type CapturableGuest = HTMLElement & { capturePage?: () => Promise<{ toDataURL(): string }> }
@@ -39,7 +39,7 @@ export function useWebpageTitle(label: string, url: string): string {
   return webpageTileTitle(label, url, display, title)
 }
 
-export function WebpageEmbed({
+export function WebTile({
   url,
   label = '',
   visible,

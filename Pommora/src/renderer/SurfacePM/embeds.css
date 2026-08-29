@@ -11,7 +11,7 @@
   height: 100%;
   overflow: hidden;
   /* The portal pads like the embed, not a page — MarkdownPM's page-level insets don't apply inside
-     a foreign surface. The detail lane scales off --mdpm-scale (set inline by PageEmbed from its single
+     a foreign surface. The detail lane scales off --mdpm-scale (set inline by PageTile from its single
      Embed Scale setting), so the whole embed's geometry follows one variable. */
   --rail-inset: calc(var(--rail-inset-base) * var(--mdpm-scale));
 }

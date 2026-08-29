@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_ZOOM, ZOOM_STEPS, zoomStep } from './blockZoom'
+import { DEFAULT_ZOOM, ZOOM_STEPS, zoomStep } from './TileZoom'
 
 describe('blockZoom', () => {
   it('offers the shared ramp, high to low', () => {

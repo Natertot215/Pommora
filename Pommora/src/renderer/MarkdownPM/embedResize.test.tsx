@@ -19,7 +19,7 @@ const hosted = {
   embedHeights: { load: async () => ({ p1: 480 }), save: () => {} },
 }
 
-/** PageEmbed loads through React.lazy, so a fresh tile holds only the Suspense frame — its body and
+/** PageTile loads through React.lazy, so a fresh tile holds only the Suspense frame — its body and
  *  the resize strip enter the DOM together, once that chunk lands. Every assertion reads the tile. */
 async function mount(props: Parameters<typeof mountEditor>[0]): Promise<EditorView> {
   const view = await mountEditor(props)

@@ -1,5 +1,5 @@
 // jsdom mounting for MarkdownPM's component suites — one React root per test, torn down through
-// `cleanupEditor`. A claimed embed line mounts a real tile whose PageEmbed fetches through the
+// `cleanupEditor`. A claimed embed line mounts a real tile whose PageTile fetches through the
 // bridge, so the read channel is stubbed here; a suite driving its own channels passes them in.
 // Geometry truth stays with the CDP passes, never jsdom (every rect measures zero).
 import { act, createElement } from 'react'

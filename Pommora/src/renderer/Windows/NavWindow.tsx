@@ -7,7 +7,7 @@ import { WINDOW_BASE_INSPECTOR, WindowBase } from './window-base'
 import { SearchField } from '@renderer/DesignSystem/Fields'
 import type { NavRef } from '@shared/types'
 import { useExitPresence } from '@renderer/DesignSystem/Animation/useExitPresence'
-import { PageEmbed } from '../Embeds/PageEmbed'
+import { PageTile } from '../SurfacePM/PageTile'
 import type { ConnectionsApi } from '../MarkdownPM/Connections'
 import { showConnectionMenu } from '../Links/connectionMenu'
 import { hoverConnection, hoverWebsite } from '../Links/ConnectionPane'
@@ -203,7 +203,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
         </div>
         {pageTarget ? (
           <div className="window-body navwindow-page over-scroll pgembed-grows" ref={pageScrollRef}>
-            <PageEmbed
+            <PageTile
               key={pageTarget.path}
               path={pageTarget.path}
               editing={editing}
