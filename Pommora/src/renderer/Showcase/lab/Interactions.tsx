@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import { DEFAULT_FEEL } from '../../Animation/feel'
+import { DEFAULT_FEEL } from '@renderer/DesignSystem/Animation/feel'
 import {
   ListSurface,
   GridSurface,

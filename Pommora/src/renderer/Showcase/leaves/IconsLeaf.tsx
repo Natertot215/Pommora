@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Icon, icons, type IconName } from '../../Symbols'
-import { SortableZone, useDragItem, reorder } from '../../Interactions/drag'
+import { Icon, icons, type IconName } from '@renderer/DesignSystem/Symbols'
+import { SortableZone, useDragItem, reorder } from '@renderer/DesignSystem/Interactions/drag'
 import { useIsCompact } from './helpers'
 
 function IconCell({ name }: { name: IconName }): React.JSX.Element {

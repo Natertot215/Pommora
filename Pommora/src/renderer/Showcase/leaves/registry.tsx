@@ -1,4 +1,4 @@
-import type { IconName } from '../../Symbols'
+import type { IconName } from '@renderer/DesignSystem/Symbols'
 import { ColorsLeaf } from './ColorsLeaf'
 import { TypographyLeaf } from './TypographyLeaf'
 import { IconsLeaf } from './IconsLeaf'

@@ -1,5 +1,10 @@
 import { useState } from 'react'
-import { DragGroup, SortableZone, useGroupedDragItem, type Row } from '../../Interactions/drag'
+import {
+  DragGroup,
+  SortableZone,
+  useGroupedDragItem,
+  type Row,
+} from '@renderer/DesignSystem/Interactions/drag'
 
 const COLS = ['Todo', 'Doing', 'Done']
 const mk = (labels: string[], p: string): Row[] =>

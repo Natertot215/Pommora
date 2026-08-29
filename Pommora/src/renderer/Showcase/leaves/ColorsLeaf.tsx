@@ -1,11 +1,11 @@
 import { useState, type CSSProperties } from 'react'
-import { vars, tintAt, TINT_STEPS } from '../../Tokens'
-import { shape, tinted } from '../../Labels'
-import { cx } from '../../Util/cx'
-import { SortableZone, useDragItem, reorder } from '../../Interactions/drag'
-import { applyAccent, readCssAccentColor } from '../../Tokens/accent'
+import { vars, tintAt, TINT_STEPS } from '@renderer/DesignSystem/Tokens'
+import { shape, tinted } from '@renderer/DesignSystem/Labels'
+import { cx } from '@renderer/DesignSystem/Util/cx'
+import { SortableZone, useDragItem, reorder } from '@renderer/DesignSystem/Interactions/drag'
+import { applyAccent, readCssAccentColor } from '@renderer/DesignSystem/Tokens/accent'
 import { SOLID_COLORS, type AccentSetting } from '@shared/types'
-import { accentValue } from '../../Tokens/accent'
+import { accentValue } from '@renderer/DesignSystem/Tokens/accent'
 import { humanize, formatColor, useComputedStyleText, useIsCompact } from './helpers'
 
 const ACCENT_CHIP = { '--label-base': 'var(--accent)' } as CSSProperties
