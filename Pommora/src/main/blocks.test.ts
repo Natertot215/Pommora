@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { BlockHostRef } from '@shared/blocks'
-import { pathExists } from './io/atomicWrite'
+import { pathExists } from './IO/atomicWrite'
 import { openSessionDb, closeSessionDb } from './sessionDb'
 import {
   blockFilePath,

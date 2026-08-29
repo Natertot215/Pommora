@@ -12,7 +12,7 @@ import { ASSETS_DIR_REL, THUMBNAILS_SEGMENT } from '@shared/nexusPaths'
 import type { AssetMap } from '@shared/types'
 import { neverWatched, rootSegs } from './exclusion'
 import { assetsDir, relPosix } from './paths'
-import { listFilesRecursive } from './io/walk'
+import { listFilesRecursive } from './IO/walk'
 import { readWatchScope } from './settings'
 import type { WatchEventName } from './watchPatch'
 

@@ -6,7 +6,7 @@ import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promis
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { pathExists } from './io/atomicWrite'
+import { pathExists } from './IO/atomicWrite'
 import { handleMutate, type MutateDeps } from './mutate'
 import { contextsDir, contextsRegistryFile } from './paths'
 import { listBundles } from './provenance'
@@ -37,8 +37,8 @@ async function firstRecordUnder(dir: string): Promise<unknown> {
 /** The one record under .trash, whatever bundle holds it. */
 const anyRecord = (): Promise<unknown> => firstRecordUnder(join(root, '.trash'))
 
-vi.mock('./crud/contextCascade', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('./crud/contextCascade')>()
+vi.mock('./CRUD/contextCascade', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./CRUD/contextCascade')>()
   return {
     ...actual,
     unlinkSpaceValue: async (...args: Parameters<typeof actual.unlinkSpaceValue>) => {
@@ -52,8 +52,8 @@ vi.mock('./crud/contextCascade', async (importOriginal) => {
   }
 })
 
-vi.mock('./io/atomicWrite', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('./io/atomicWrite')>()
+vi.mock('./IO/atomicWrite', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./IO/atomicWrite')>()
   return {
     ...actual,
     settleBundle: async (bundleDir: string, absPath: string) => {

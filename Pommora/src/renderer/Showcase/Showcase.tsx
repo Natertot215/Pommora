@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { useHashRoute, setHashRoute } from './useHashRoute'
-import { LEAVES, leafById } from './leaves/registry'
+import { LEAVES, leafById } from './Leaves/registry'
 import { ShowcaseSidebar } from './ShowcaseSidebar'
 import { ShowcaseMobileNav } from './ShowcaseMobileNav'
 

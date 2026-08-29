@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest'
-import { buildPageIndex, type ConnectionsApi } from '@renderer/MarkdownPM/connections'
+import { buildPageIndex, type ConnectionsApi } from '@renderer/MarkdownPM/Connections'
 import {
   cleanupEditor,
   editorContainer,
   mountEditor,
   stubEditorBridge,
-} from '@renderer/testing/editorHarness'
+} from '@renderer/Testing/editorHarness'
 
 stubEditorBridge()
 afterEach(cleanupEditor)

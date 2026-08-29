@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { scanDoc } from '../decorations/intent'
+import { scanDoc } from '../Decorations/intent'
 import { cellCommitChange as cellCommitIn, structuralEditChange as structuralEditIn } from './sync'
 
 const cellCommitChange = (

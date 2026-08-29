@@ -19,7 +19,7 @@ import {
   reorderTopInTree,
 } from '@shared/treePatch'
 import { isAdoptedId } from './ids'
-import { orderedDefs, readRegistry } from './io/propertiesRegistry'
+import { orderedDefs, readRegistry } from './IO/propertiesRegistry'
 import { dropLiveTree, getLiveTree, refreshAfterWrite } from './liveTree'
 import {
   applyPatch,

@@ -1,5 +1,5 @@
 import { Annotation } from '@codemirror/state'
-import type { DocScan } from '../decorations/intent'
+import type { DocScan } from '../Decorations/intent'
 import { modelFromRegion } from './regions'
 import { cellToSource, serialize } from './codec'
 import type { TableModel } from './model'

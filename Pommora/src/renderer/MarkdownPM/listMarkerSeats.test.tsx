@@ -7,7 +7,7 @@ import {
   editorContainer,
   mountEditor,
   stubEditorBridge,
-} from '@renderer/testing/editorHarness'
+} from '@renderer/Testing/editorHarness'
 
 stubEditorBridge()
 afterEach(cleanupEditor)

@@ -4,9 +4,9 @@ import { EditorSelection } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
 import * as commands from '@codemirror/commands'
 import { defaultKeymap, historyKeymap } from '@codemirror/commands'
-import { buildPageIndex, type ConnectionsApi } from '@renderer/MarkdownPM/connections'
-import { embedTileRanges } from '@renderer/MarkdownPM/editor/embedWidget'
-import { cleanupEditor, mountEditor, stubEditorBridge } from '@renderer/testing/editorHarness'
+import { buildPageIndex, type ConnectionsApi } from '@renderer/MarkdownPM/Connections'
+import { embedTileRanges } from '@renderer/MarkdownPM/Editor/embedWidget'
+import { cleanupEditor, mountEditor, stubEditorBridge } from '@renderer/Testing/editorHarness'
 
 stubEditorBridge()
 afterEach(cleanupEditor)

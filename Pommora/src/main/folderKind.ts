@@ -8,8 +8,8 @@
 
 import { join } from 'node:path'
 import { baseSidecar } from '@shared/schemas'
-import { pathExists } from './io/atomicWrite'
-import { listEntries } from './io/walk'
+import { pathExists } from './IO/atomicWrite'
+import { listEntries } from './IO/walk'
 import { SIDECAR_FILENAME, type SidecarKind } from './paths'
 import { readSidecar } from './sidecarIO'
 

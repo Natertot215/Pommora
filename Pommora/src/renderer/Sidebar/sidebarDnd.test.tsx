@@ -10,7 +10,7 @@ import {
   pressEscape,
   stubPointerCapture,
   stubRect,
-} from '@renderer/testing/pointerHarness'
+} from '@renderer/Testing/pointerHarness'
 import { SidebarDnd, useSidebarDrag } from './sidebarDnd'
 import { buildIndex } from './sidebarDndModel'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true

@@ -1,20 +1,20 @@
 import { useEffect, useRef } from 'react'
-import { docString } from './editor/docCache'
+import { docString } from './Editor/docCache'
 import { EditorView, keymap } from '@codemirror/view'
 import { Compartment, EditorState, Prec } from '@codemirror/state'
 import { history, historyField, historyKeymap, defaultKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
-import { markdownDecorations } from './editor/decorations'
-import { markdownInput } from './editor/input'
+import { markdownDecorations } from './Editor/decorations'
+import { markdownInput } from './Editor/input'
 import { tableWidgetExtension, applySavedHeadingCols, type TableHeadingColsApi } from './Tables'
-import { listDragExtension } from './editor/listDrag'
-import { blockHandles, blockGripHover } from './editor/blockHandles'
+import { listDragExtension } from './Editor/listDrag'
+import { blockHandles, blockGripHover } from './Editor/blockHandles'
 import {
   blockDragExtension,
   blockquoteDragExtension,
   calloutDragExtension,
-} from './editor/blockDrag'
-import { HOT_MENU_LINES, gripMenu } from './editor/gripMenu'
+} from './Editor/blockDrag'
+import { HOT_MENU_LINES, gripMenu } from './Editor/gripMenu'
 import {
   type EmbedHeightsApi,
   embedExclusions,
@@ -24,38 +24,38 @@ import {
   resolutionNudge,
   setEmbedHeights,
   setEmbedZooms,
-} from './editor/embedWidget'
-import { embeddable } from './editor/embedRanges'
-import { customCaret } from './editor/caret'
-import { codeHighlight, codeLanguages } from './editor/codeHighlight'
+} from './Editor/embedWidget'
+import { embeddable } from './Editor/embedRanges'
+import { customCaret } from './Editor/caret'
+import { codeHighlight, codeLanguages } from './Editor/codeHighlight'
 import { registerScrollHeal } from '../Embeds/tileWarm'
-import { calloutAtomic } from './editor/calloutAtomic'
-import { calloutGuard } from './editor/calloutGuard'
-import { citationGuard } from './editor/citationGuard'
-import { citationHost, citationOrder, citationSeatAt } from './editor/citationActions'
-import { citationPointer, citationRowMenu, citationRowPointer } from './editor/citationPointer'
-import { connectionClicks } from './editor/connections'
-import { markdownLinkClicks } from './editor/links'
-import { pasteLink } from './editor/PasteLink'
-import { pendingTitle } from './editor/PendingTitle'
-import { aliasOnLeave } from './editor/linkEdit'
-import { linkRest, linkTyping } from './editor/linkGestures'
+import { calloutAtomic } from './Editor/calloutAtomic'
+import { calloutGuard } from './Editor/calloutGuard'
+import { citationGuard } from './Editor/citationGuard'
+import { citationHost, citationOrder, citationSeatAt } from './Editor/citationActions'
+import { citationPointer, citationRowMenu, citationRowPointer } from './Editor/citationPointer'
+import { connectionClicks } from './Editor/connections'
+import { markdownLinkClicks } from './Editor/links'
+import { pasteLink } from './Editor/PasteLink'
+import { pendingTitle } from './Editor/PendingTitle'
+import { aliasOnLeave } from './Editor/linkEdit'
+import { linkRest, linkTyping } from './Editor/linkGestures'
 import {
   markdownFolding,
   applySavedFolds,
   applyCitationsVisibility,
   type FoldsApi,
-} from './editor/folding'
+} from './Editor/folding'
 import {
   applyEditorAction,
   claimEditorMenu,
   ownsEditorMenu,
   releaseEditorMenu,
   type EditorMenuApi,
-} from './editor/menu'
-import { formatKeymap } from './editor/formatKeymap'
-import { embedSeatAt } from './editor/embedInsert'
-import { readFormatState } from './editor/formatState'
+} from './Editor/menu'
+import { formatKeymap } from './Editor/formatKeymap'
+import { embedSeatAt } from './Editor/embedInsert'
+import { readFormatState } from './Editor/formatState'
 import type { FormatState } from '@shared/editorMenu'
 import { AC_MAX, aliasRows, pageRow } from './autocomplete'
 import {
@@ -65,7 +65,7 @@ import {
 } from './useConnectionAutocomplete'
 import { AutocompletePane } from './AutocompletePane'
 import { citationsVisible, useSession } from '../store'
-import type { ConnectionsApi } from './connections'
+import type { ConnectionsApi } from './Connections'
 import { PageHeader } from './PageHeader'
 import { ZOOM_DEFAULT, zoomFontSize } from './zoom'
 import type { WarmSeam } from './warmSeam'

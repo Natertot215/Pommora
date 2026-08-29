@@ -1,8 +1,8 @@
 import type { EditorView } from '@codemirror/view'
-import { headingOutline, sectionEnd } from '@renderer/MarkdownPM/editor/folding'
-import { travelTo } from '@renderer/MarkdownPM/editor/travel'
-import { blockMoveChanges } from '@renderer/MarkdownPM/editor/listDragModel'
-import { headingParts } from '@renderer/MarkdownPM/detect'
+import { headingOutline, sectionEnd } from '@renderer/MarkdownPM/Editor/folding'
+import { travelTo } from '@renderer/MarkdownPM/Editor/travel'
+import { blockMoveChanges } from '@renderer/MarkdownPM/Editor/listDragModel'
+import { headingParts } from '@renderer/MarkdownPM/Detect'
 
 // The open page's live editor — registered by the page surface at mount, so an embedded tile's
 // editor or the floating preview's can never be picked up instead.

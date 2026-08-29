@@ -15,10 +15,10 @@ import {
   pressEscape,
   stubPointerCapture,
   stubRect,
-} from '@renderer/testing/pointerHarness'
+} from '@renderer/Testing/pointerHarness'
 import { useSession } from '../../store'
 import { TableView } from './TableView'
-import { propsAtRoot } from '@renderer/testing/propsAtRoot'
+import { propsAtRoot } from '@renderer/Testing/propsAtRoot'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 

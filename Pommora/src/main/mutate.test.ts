@@ -14,8 +14,8 @@ const B_ID = '01KVGMT8BFG350FZZXAMG1QDRB'
 const G_ID = '01KVGMT8BFG350FZZXAMG1QDRG'
 import { openSession, closeSession, sessionRoot } from './session'
 import { splitFrontmatter, readNexus } from './readNexus'
-import { pathExists } from './io/atomicWrite'
-import { createProperty } from './crud/registryProperty'
+import { pathExists } from './IO/atomicWrite'
+import { createProperty } from './CRUD/registryProperty'
 import { liveAssetMap, resolveAssetName, takeAssetMapPush } from './assetMap'
 
 let root: string

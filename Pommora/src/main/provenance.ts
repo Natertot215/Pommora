@@ -21,11 +21,11 @@ import { errText, fail, ok, type Result } from '@shared/result'
 import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
 import { ensureFolderId } from './adopt'
 import { mutateRegistryFile } from './contextsRegistry'
-import type { SweepCapture, UnlinkOutcome } from './crud/contextCascade'
-import { reconcile } from './crud/reconcile'
-import { restoreProperty } from './crud/restoreProperty'
-import { scrubReturning } from './crud/restoreScrub'
-import { sweepAdmits } from './crud/util'
+import type { SweepCapture, UnlinkOutcome } from './CRUD/contextCascade'
+import { reconcile } from './CRUD/reconcile'
+import { restoreProperty } from './CRUD/restoreProperty'
+import { scrubReturning } from './CRUD/restoreScrub'
+import { sweepAdmits } from './CRUD/util'
 import { hiddenName } from './exclusion'
 import {
   BUNDLE_SUFFIX,
@@ -34,11 +34,11 @@ import {
   readJsonObject,
   rewritePageSerialized,
   writeJson,
-} from './io/atomicWrite'
-import { listEntries } from './io/walk'
-import { serializeOnFile } from './io/fileLock'
-import { mergeFrontmatter, splitEnvelope } from './io/pageFile'
-import { recordWrite } from './io/writeEcho'
+} from './IO/atomicWrite'
+import { listEntries } from './IO/walk'
+import { serializeOnFile } from './IO/fileLock'
+import { mergeFrontmatter, splitEnvelope } from './IO/pageFile'
+import { recordWrite } from './IO/writeEcho'
 import { SIDECAR_FILENAME, SPACE_SIDECAR } from './paths'
 import { refreshTree } from './liveTree'
 import { splitFrontmatter } from './readNexus'

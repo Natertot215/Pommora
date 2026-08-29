@@ -9,7 +9,7 @@ import type { ResolvedColumn, ViewRow } from '@shared/types'
 import { EMPTY_ASSET_MAP } from '@shared/types'
 import { Cell } from '@renderer/Properties/Editing/Cell'
 import type { ResolveContext } from '@renderer/Properties/resolveContext'
-import { propsAtRoot } from '@renderer/testing/propsAtRoot'
+import { propsAtRoot } from '@renderer/Testing/propsAtRoot'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 

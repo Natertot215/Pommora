@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { EditorState } from '@codemirror/state'
-import { scanDoc } from '../decorations/intent'
+import { scanDoc } from '../Decorations/intent'
 import { fusedTableCount as fusedIn, tableMergeGuard } from './guard'
 
 const fusedTableCount = (doc: string): number => fusedIn(scanDoc(doc))

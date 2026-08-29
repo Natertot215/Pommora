@@ -14,9 +14,9 @@ import {
   type WatchScope,
 } from './exclusion'
 import { getHeldAssetMap, refreshAssetMap } from './assetMap'
-import { readNavigationFile } from './io/navigationFile'
-import { isRecentWrite } from './io/writeEcho'
-import { isMarkdownFile } from './io/walk'
+import { readNavigationFile } from './IO/navigationFile'
+import { isRecentWrite } from './IO/writeEcho'
+import { isMarkdownFile } from './IO/walk'
 import { HOMEPAGE_HOST_DIRNAME, NEXUS_CONFIG_FILES } from './paths'
 import { push as pushToWindow } from './ipc'
 import { seedContentIndex } from './indexSeed'

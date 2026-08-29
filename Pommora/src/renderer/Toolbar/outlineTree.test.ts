@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { headingOutline } from '../MarkdownPM/editor/folding'
+import { headingOutline } from '../MarkdownPM/Editor/folding'
 import { outlineTree, type OutlineNode } from './outlineTree'
 
 const shape = (nodes: OutlineNode[]): unknown =>

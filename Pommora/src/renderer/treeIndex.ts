@@ -20,7 +20,7 @@ import {
   toNavRef,
 } from '@shared/types'
 import { DEFAULT_NEXUS_ICON, entityIcon, iconNameOr } from '@renderer/DesignSystem/Symbols'
-import { buildPageIndex, type ConnPage, type PageIndex } from './MarkdownPM/connections'
+import { buildPageIndex, type ConnPage, type PageIndex } from './MarkdownPM/Connections'
 import { navKey } from './Navigation/navRecents'
 import type { NavCore, ResolveIndex } from './Navigation/navResolve'
 import type { SearchEntry } from './Navigation/navSearch'

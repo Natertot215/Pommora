@@ -11,7 +11,7 @@ import {
   splitFrontmatter,
 } from './readNexus'
 import { ASSETS_DIR_REL } from '@shared/nexusPaths'
-import { corpusFiles } from './io/walk'
+import { corpusFiles } from './IO/walk'
 import { DEFAULT_ACCENT, DEFAULT_COMMANDS } from '@shared/types'
 
 const PAGE_A = '01KVGMT8BFG350FZZXAMG1QDRP'

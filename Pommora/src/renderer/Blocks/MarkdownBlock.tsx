@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import type { BlockHostRef } from '@shared/blocks'
 import { MarkdownEditor } from '@renderer/MarkdownPM'
-import type { ConnectionsApi } from '@renderer/MarkdownPM/connections'
-import { nativeEditorMenu } from '@renderer/MarkdownPM/editor/menu'
+import type { ConnectionsApi } from '@renderer/MarkdownPM/Connections'
+import { nativeEditorMenu } from '@renderer/MarkdownPM/Editor/menu'
 
 const SAVE_DEBOUNCE_MS = 400
 

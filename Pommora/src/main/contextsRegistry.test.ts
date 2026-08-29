@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { ensureContextsRegistry, mutateRegistryFile, readRegistry } from './contextsRegistry'
 import { contextsRegistryFile, nexusDir } from './paths'
-import { readJsonStrict, rmwJsonStrict } from './io/atomicWrite'
+import { readJsonStrict, rmwJsonStrict } from './IO/atomicWrite'
 
 let root: string
 beforeEach(async () => {

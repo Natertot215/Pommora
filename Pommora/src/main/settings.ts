@@ -10,7 +10,7 @@ import {
   type SubfieldConfig,
 } from '@shared/types'
 import type { WatchScope } from './exclusion'
-import { readJsonObject, rmwJsonStrict } from './io/atomicWrite'
+import { readJsonObject, rmwJsonStrict } from './IO/atomicWrite'
 import { getLiveTree } from './liveTree'
 import { nexusConfig, NEXUS_CONFIG_FILES } from './paths'
 import { readSettingsLeaves, scopeOf, type SettingsLeaves } from './readNexus'

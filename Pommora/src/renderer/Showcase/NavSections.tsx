@@ -1,5 +1,5 @@
 import { Icon } from '@renderer/DesignSystem/Symbols'
-import { SECTIONS, LEAVES } from './leaves/registry'
+import { SECTIONS, LEAVES } from './Leaves/registry'
 
 export function NavSections({
   activeId,

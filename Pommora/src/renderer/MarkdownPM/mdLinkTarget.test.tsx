@@ -4,12 +4,12 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { encodeLinkTarget } from '@shared/links'
 import { autocompleteQuery, commitEdit } from './autocomplete'
-import { activeTokenIndices, tokenize } from './tokens'
-import { CONN_HOVER_INTENT_MS } from './editor/pointerPath'
-import { MD_LINK_CLASS } from './editor/decorations'
-import { buildPageIndex, resolveMdTarget, type ConnectionsApi, type ConnPage } from './connections'
+import { activeTokenIndices, tokenize } from './Tokens'
+import { CONN_HOVER_INTENT_MS } from './Editor/pointerPath'
+import { MD_LINK_CLASS } from './Editor/decorations'
+import { buildPageIndex, resolveMdTarget, type ConnectionsApi, type ConnPage } from './Connections'
 import { renderCellContent } from './Tables/cellStatic'
-import { cleanupEditor, mountEditor, stubEditorBridge } from '@renderer/testing/editorHarness'
+import { cleanupEditor, mountEditor, stubEditorBridge } from '@renderer/Testing/editorHarness'
 
 class ResizeObserverStub {
   observe(): void {}

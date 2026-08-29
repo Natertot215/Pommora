@@ -36,7 +36,7 @@ import {
   flattenContainer,
   groupsStructurally,
   subHiddenKey,
-} from '@renderer/Views/pipeline/group'
+} from '@renderer/Views/Pipeline/group'
 import { formatBucketLabel, NUMERIC_FORMATS } from '@renderer/Properties/Editing/formatValue'
 import type { Band } from '@renderer/Views/bandDndModel'
 import { reparentFsOrder, structuralOrderAfterDrop } from '@renderer/Views/bandDndModel'

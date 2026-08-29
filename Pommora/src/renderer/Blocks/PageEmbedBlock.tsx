@@ -1,5 +1,5 @@
 import { PageEmbed } from '@renderer/Embeds/PageEmbed'
-import type { ConnPage, ConnectionsApi } from '@renderer/MarkdownPM/connections'
+import type { ConnPage, ConnectionsApi } from '@renderer/MarkdownPM/Connections'
 
 // The page is resolved by the surface's ONE shared id→page map — never a per-embed tree walk.
 export function PageEmbedBlock({

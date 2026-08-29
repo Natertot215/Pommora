@@ -5,7 +5,7 @@
 // pure Node and unit-testable without booting Electron.
 
 import { join } from 'node:path'
-import { readJsonObject, rmwJsonStrict } from './io/atomicWrite'
+import { readJsonObject, rmwJsonStrict } from './IO/atomicWrite'
 
 /** Where a delete sends the entity: the in-nexus `.trash` (portable, index-aware) or the
  *  macOS system Trash (Finder-recoverable). Device-level — system Trash isn't portable

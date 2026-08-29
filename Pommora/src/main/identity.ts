@@ -4,11 +4,11 @@
 
 import { mkdir } from 'node:fs/promises'
 import { newId } from './ids'
-import { nowIso } from './crud/util'
-import { readJsonStrict, writeJson } from './io/atomicWrite'
+import { nowIso } from './CRUD/util'
+import { readJsonStrict, writeJson } from './IO/atomicWrite'
 import { asString } from './coerce'
 import { nexusDir, nexusConfig, NEXUS_CONFIG_FILES } from './paths'
-import { createFolderEntity } from './crud/folderEntity'
+import { createFolderEntity } from './CRUD/folderEntity'
 import { AGENDA_SLOTS, type AgendaRegistration } from './folderKind'
 
 /** Ensure `.nexus/nexus.json` exists and carries an id. Absent → mint a fresh identity.

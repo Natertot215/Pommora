@@ -11,7 +11,7 @@ import type { NexusTree } from '@shared/types'
 import type { Icon } from '@renderer/DesignSystem/Symbols'
 import { contextsByIdOf } from '@renderer/Properties/contextIdentity'
 import { declaredType } from '@renderer/Properties/value'
-import { FILTER_OPS } from '@renderer/Views/pipeline/filter'
+import { FILTER_OPS } from '@renderer/Views/Pipeline/filter'
 import { MODIFIED_TARGET, schemaTargets, TITLE_TARGET } from '../Properties/PropertyTypes'
 
 export type Connector = 'and' | 'or'

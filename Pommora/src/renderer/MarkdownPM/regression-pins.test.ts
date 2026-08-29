@@ -3,7 +3,7 @@
 import { describe, it, expect } from 'vitest'
 import { codeMask, codeMaskOf, isInsideCode } from '@shared/markdownCode'
 import { splitRow } from './Tables/codec'
-import { tokenize } from './tokens'
+import { tokenize } from './Tokens'
 import {
   autoPair,
   dashArrow,
@@ -11,15 +11,15 @@ import {
   continueListOnEnter,
   continueBlockquoteOnEnter,
   outdentListOnShiftTab,
-} from './input'
-import { setHeading, setList } from './input/format'
-import { subBlockAt, renumberOrderedRun } from './editor/listDragModel'
-import { calloutDeleteVerdict } from './editor/calloutGuard'
-import { headingSections } from './editor/folding'
-import { headingSrc } from './editor/headingScan'
-import { fenceRangesOf } from './detect'
-import { inCodeAt, scanDoc } from './decorations/intent'
-import { sliceStartLine } from './editor/decorations'
+} from './Input'
+import { setHeading, setList } from './Input/format'
+import { subBlockAt, renumberOrderedRun } from './Editor/listDragModel'
+import { calloutDeleteVerdict } from './Editor/calloutGuard'
+import { headingSections } from './Editor/folding'
+import { headingSrc } from './Editor/headingScan'
+import { fenceRangesOf } from './Detect'
+import { inCodeAt, scanDoc } from './Decorations/intent'
+import { sliceStartLine } from './Editor/decorations'
 
 describe('isInsideCode — tilde fences + inline spans', () => {
   it('treats ~~~ fences as code', () => {

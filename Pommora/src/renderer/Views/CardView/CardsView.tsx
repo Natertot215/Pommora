@@ -45,13 +45,13 @@ import { findCollectionForSet } from '@renderer/Interface/Scope'
 import { useSaveView } from '@renderer/Embeds/ViewEmbedScope'
 import { sameIds, spliceBeside, tieOrderWith } from '../creationOrder'
 import { mergeStyleRecords } from '../TableView/viewMerge'
-import { resolveColumns } from '../pipeline/columns'
+import { resolveColumns } from '../Pipeline/columns'
 import {
   contextOptionsFor as contextOptionsForSpaces,
   type ContextOption,
 } from '@renderer/Properties/contextOptions'
-import { flattenContainer, groupsStructurally, subtreeIds } from '../pipeline/group'
-import { resolvedSortCount, resolveManualOrder } from '../pipeline/sort'
+import { flattenContainer, groupsStructurally, subtreeIds } from '../Pipeline/group'
+import { resolvedSortCount, resolveManualOrder } from '../Pipeline/sort'
 import {
   GHOST_DWELL_MS,
   GHOST_TRAVEL_HOLD_MS,
@@ -62,13 +62,13 @@ import {
 import { DEFAULT_FEEL } from '@renderer/DesignSystem/Animation/feel'
 import { useViewCreation } from '../useViewCreation'
 import { declaredType } from '@renderer/Properties/value'
-import { resolveView } from '../pipeline/resolveView'
+import { resolveView } from '../Pipeline/resolveView'
 import { useValuesEpoch } from '../useValuesEpoch'
 import { useActiveView } from '../useActiveView'
 import { useViewOrders } from '../useViewOrders'
 import { columnLabel } from '@renderer/Properties/Editing/columnLabel'
 import { contextIdsOf } from '@renderer/Properties/contextIdentity'
-import { resolveContainerSchema } from '../pipeline/pickView'
+import { resolveContainerSchema } from '../Pipeline/pickView'
 import { useStyleFor } from '@renderer/Tables/columnStyles'
 import { writeContextValue } from '../contextCellWrite'
 import { groupKeyToValue, REASSIGNABLE_GROUP_TYPES } from '../TableView/reassign'
