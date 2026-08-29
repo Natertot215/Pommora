@@ -3,6 +3,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync } from 'node:
 import { tmpdir, homedir } from 'node:os'
 import { join } from 'node:path'
 import {
+  excludedFolderRefusal,
   readCommands,
   readNexus,
   readPersonalization,
@@ -76,6 +77,36 @@ describe('readSettingsLeaves: asset_directory', () => {
     expect(dir('.Nexus')).toBe(ASSETS_DIR_REL)
     expect(dir('.NEXUS/Contexts')).toBe(ASSETS_DIR_REL)
     expect(dir('.Nexus/Assets')).toBe(ASSETS_DIR_REL)
+  })
+})
+
+describe('excludedFolderRefusal', () => {
+  it('refuses an empty, absolute, backslash, escaping, or app-owned path', () => {
+    expect(excludedFolderRefusal('')).not.toBeNull()
+    expect(excludedFolderRefusal('/Archive')).not.toBeNull()
+    expect(excludedFolderRefusal('Archive\\Old')).not.toBeNull()
+    expect(excludedFolderRefusal('../Escape')).not.toBeNull()
+    expect(excludedFolderRefusal('.nexus')).not.toBeNull()
+  })
+  it('accepts a nested path and a plain content folder', () => {
+    expect(excludedFolderRefusal('Archive/Old')).toBeNull()
+    expect(excludedFolderRefusal('Vault A')).toBeNull()
+  })
+})
+
+describe('readSettingsLeaves: excluded_folders', () => {
+  const read = (excluded_folders: unknown): string[] =>
+    readSettingsLeaves({ excluded_folders } as never).excluded
+
+  it('drops a non-string element instead of discarding the whole list', () => {
+    expect(read(['Archive', 42, 'Vault A'])).toEqual(['Archive', 'Vault A'])
+  })
+  it('drops a refused element and normalizes a trailing slash off', () => {
+    expect(read(['Archive/', '/bad', 'Vault A'])).toEqual(['Archive', 'Vault A'])
+  })
+  it('is empty for a non-array or an absent key', () => {
+    expect(read('Archive')).toEqual([])
+    expect(readSettingsLeaves({} as never).excluded).toEqual([])
   })
 })
 
