@@ -15,6 +15,7 @@ import { NavTrail } from '@renderer/DesignSystem/Elements/NavTrail'
 import { ancestryOf } from '../treeIndex'
 
 import './embeds.css'
+import '@renderer/Blocks/block-title.css'
 import { embedZoom } from '@shared/types'
 
 interface EmbedEntry {
