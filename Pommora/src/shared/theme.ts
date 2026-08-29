@@ -19,7 +19,7 @@ export const SPECTRUM = {
   lightBlue: '#7EC8E3',
   cyan: '#41959F',
   blue: '#0A84FF',
-  purple: '#BF5AF2',
+  purple: '#7852EE',
   lavender: '#A78BCC',
   grey: '#8E8E93',
 } as const
@@ -30,7 +30,7 @@ export const GREY_DEFAULT = '#48484A'
 
 /** The purple row's light seat. A palette value beside SPECTRUM rather than inside it — pink is a
  *  ramp cell, never a selectable accent or Space color. */
-export const PINK = '#DC519F'
+export const PINK = '#EF7697'
 
 // The color-ramp vocabulary: the grammar a stored color key is written in. Main validates a stored
 // Space color against these keys and cannot read a renderer token, so the KEY SET lives here while
