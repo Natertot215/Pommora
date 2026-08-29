@@ -3,11 +3,12 @@ import type { BlockHostRef } from '@shared/blocks'
 import { MarkdownEditor } from '@renderer/MarkdownPM'
 import type { ConnectionsApi } from '@renderer/MarkdownPM/Connections'
 import { nativeEditorMenu } from '@renderer/MarkdownPM/Editor/menu'
+import { createBodyWriter } from './PageTileWrite'
 
-const SAVE_DEBOUNCE_MS = 400
-
-// Editability reconfigures the SAME CM6 view in place while this tile is the surface's single
-// live editor — no remount, no jitter.
+// The markdown tile's body shares the page autosave's debounce machinery; a tile's id (a ULID) keys
+// its pending write. Editability reconfigures the SAME CM6 view in place while this tile is the
+// surface's single live editor — no remount, no jitter.
+const saves = createBodyWriter()
 
 export function MarkdownTile({
   host,
@@ -29,7 +30,6 @@ export function MarkdownTile({
   locked?: boolean
 }): React.JSX.Element {
   const [body, setBody] = useState<string | null>(null)
-  const pending = useRef<{ timer: ReturnType<typeof setTimeout>; body: string } | null>(null)
 
   useEffect(() => {
     let live = true
@@ -41,25 +41,27 @@ export function MarkdownTile({
     }
   }, [tileId])
 
-  const flush = (): void => {
-    const p = pending.current
-    if (!p) return
-    clearTimeout(p.timer)
-    pending.current = null
-    if (suppressFlush?.(tileId)) return
-    void window.nexus.blocks.writeMarkdown(host, tileId, p.body)
+  // On removal the pending write is dropped, not landed — a write after the trash would resurrect the
+  // file as an entry-less orphan. The guard rides both the settle paths and the debounced write
+  // itself, so a timer firing mid-removal can't slip a write through.
+  const suppressRef = useRef(suppressFlush)
+  suppressRef.current = suppressFlush
+  const settleRef = useRef<() => void>(() => {})
+  settleRef.current = () => {
+    if (suppressRef.current?.(tileId)) saves.cancel(tileId)
+    else void saves.flush(tileId)
   }
-  const flushRef = useRef(flush)
-  flushRef.current = flush
-  useEffect(() => () => flushRef.current(), [])
+  useEffect(() => () => settleRef.current(), [])
   useEffect(() => {
-    if (!editing) flushRef.current()
+    if (!editing) settleRef.current()
   }, [editing])
 
-  const scheduleSave = (next: string): void => {
-    if (pending.current) clearTimeout(pending.current.timer)
-    pending.current = { body: next, timer: setTimeout(() => flushRef.current(), SAVE_DEBOUNCE_MS) }
-  }
+  const scheduleSave = (next: string): void =>
+    saves.schedule(tileId, next, () =>
+      suppressRef.current?.(tileId)
+        ? Promise.resolve({ ok: true })
+        : window.nexus.blocks.writeMarkdown(host, tileId, next),
+    )
 
   if (body === null) return <div className="blk-md" />
   return (
