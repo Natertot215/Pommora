@@ -5,12 +5,7 @@ import { Reveal } from '../Animation/Reveal'
 import { MenuItem } from './menu-row'
 import { PickerOption } from '../Pickers/picker-base'
 import { side } from './menu-base.css'
-import {
-  railRow,
-  dropOutline,
-  dropOutlineOpen,
-  dropOutlineSpacer,
-} from '../Elements/DropOutline/dropOutline.css'
+import { railRow, dropOutline, dropOutlineOpen, dropOutlineSpacer } from './listed-outline.css'
 
 /** Which nodes are disclosed. The set holds the EXCEPTIONS to `defaultOpen`, never the open nodes
  *  themselves — so a default-open tree needs no seed and stays right as nodes appear and vanish

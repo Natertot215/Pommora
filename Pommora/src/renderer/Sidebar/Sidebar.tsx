@@ -44,7 +44,7 @@ import {
   dropOutline,
   dropOutlineOpen,
   dropOutlineSpacer,
-} from '@renderer/DesignSystem/Elements/DropOutline/dropOutline.css'
+} from '@renderer/DesignSystem/Menus/listed-outline.css'
 
 function showContextFor(node: {
   kind: MutableKind
