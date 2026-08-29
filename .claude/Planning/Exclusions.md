@@ -20,7 +20,7 @@ Not solved here: globbing or negation in exclusion patterns, per-folder Clear, a
 3. Exclusions persist to `excluded_folders` in `.nexus/settings.json`. Adding one removes the folder from the tree and the index without a restart; removing one re-indexes it.
 4. A typed path and a browsed path cross the same validator, which is also the refusal a hand-edited `settings.json` meets.
 5. A **Clear Exclusion Cache** row with a destructive button behind a native confirmation that, across every excluded folder, deletes **container** sidecars — `_pagecollection.json` and `_pageset.json` only — and Pommora's own frontmatter bookkeeping. Pages the sweep cannot admit are left byte-identical and reported, never silently skipped.
-6. A **Preserve Properties On Clear** toggle, default on: governed `<Property>` and `(Context)` keys are unwrapped to bare keys rather than deleted.
+6. A **Preserve Properties On Clear** toggle, default on: keys wrapped in `<>` or `()` are unwrapped to bare keys rather than deleted. The scan is by shape alone — the contents are never inspected, so no registry lookup and no name parsing is involved.
 7. The documentation claiming exclusions are hand-edited only is rewritten in the commits that falsify it.
 
 **Acceptance — the whole thing working**
@@ -36,7 +36,7 @@ With the app running and a folder of pages visible in the sidebar: open Settings
 - `PickerMenu` gates BOTH its Escape handler and its click-catching backdrop on the same `onDismiss` prop (`picker-base.tsx:255-263` and `:355-364`) → Escape-without-outside-click is not reachable through the current API, so Requirement 2 costs a design-system change: a `dismissOnOutside` prop that gates the backdrop alone, borrowing `MenuDropdown`'s existing name for the same behavior. **Task 4.**
 - `SIDECARS` (`src/main/paths.ts`) holds five filenames, two of which are the Agenda singletons' configs, and an unlinked `_taskconfig.json` has no repair path — `reHomeRegistered` needs a sidecar id to match and `seedAgendaSingletons` never retro-seeds → Clear deletes a container-only set, never `SIDECARS`. **Task 6.**
 - `sweepGovernedRoots` refuses a file `sweepAdmits` rejects before `rewriteText` is consulted (`governedSweep.ts:121-125`), and `sweepAdmits` asks `admitContentFile(fm, 'page')` → a Task or Event page in an excluded folder reads `contradicting` and is refused, so Clear cannot strip it → the refused count is reported rather than the gap being hidden. **Tasks 6, 7.**
-- `renameFrontmatterKey`'s `KeyCollision` is `'prefer-new' | 'merge'` only, and `foldValues` returns early unless both values are sequences while the caller drops the rival unconditionally (`pageFile.ts:118-137`) → every collision between a governed key and an existing bare key of the same name loses one real value, so the unwrap refuses those keys rather than choosing a casualty. **Task 6.**
+- `renameFrontmatterKey`'s `KeyCollision` is `'prefer-new' | 'merge'` only (`pageFile.ts:118-124`) → the unwrap passes `'prefer-new'`: where a page already holds a plain key of that name, Pommora's wrapped one drops rather than overwriting what another tool wrote into a folder that is leaving Pommora. **Task 6.**
 - `MenuDropdown`'s trigger is hardwired to a `Segmented` glass button → it cannot wear a settings-row button, so the pane is a `PickerMenu` anchored to a `triggerRef`. **Task 4.**
 - `resolveFolderKind` returns `'collection'` for a root folder only when `_pagecollection.json` exists (`sidecarMode` is true for any nexus whose `nexus.json` carries an id) → deleting a top-level sidecar makes that Collection invisible until the next nexus open re-stamps it. **Task 7**, in the confirm copy.
 - A `.md` with no identity key is admitted and wears a path-derived synthetic id (`readPageRecord`) → cleared pages reappear immediately on un-exclusion rather than vanishing. **Task 7**, in the confirm copy.
@@ -468,19 +468,17 @@ export async function excludedArtifacts(
  *  identity and modeled keys, and its governed keys either unwrap to bare names or go. */
 export async function clearExclusionData(
   root: string, excluded: string[], assetDir: string, preserveProperties: boolean,
-): Promise<Result<{ pages: number; sidecars: number; refused: number; collided: string[] }>>
+): Promise<Result<{ pages: number; sidecars: number; refused: number }>>
 // pages: sweepGovernedRoots(root, { kind: 'files', files }, () => null, { rewriteText })
 //   — the raw Rewrite is never called on the rewriteText branch, and `stamp` is never read on it
 //     either, so neither is passed. { kind: 'files' } reaches no sidecars; they are unlinked here.
-//   rewriteText deletes PageID/TaskID/EventID + icon/created_at/modified_at/cover, then per key:
-//     selector — parseGovernedKey(key) names it; a key isGovernedKey accepts but parseGovernedKey
-//       cannot (`<Status`, `<>`) is Pommora-shaped garbage and is deleted outright, never renamed
-//     preserve on  → renameFrontmatterKey(content, key, name, 'merge')
+//   rewriteText deletes PageID/TaskID/EventID + icon/created_at/modified_at/cover, then takes
+//   every key BY SHAPE — `<…>` or `(…)`, first and last character stripped, contents never
+//   inspected. No registry lookup, no parseGovernedKey: a key is wrapped or it isn't, so a
+//   half-written `<Status` is simply not that shape and is left where it sits.
+//     preserve on  → renameFrontmatterKey(content, key, stripped, 'prefer-new')
+//                    a page already holding the plain key keeps it; the wrapped one drops
 //     preserve off → omit the key from the merge
-//   COLLISION: if the page already holds a bare key of that name, the governed key is LEFT ALONE
-//     and the page is reported in `collided`. Neither KeyCollision mode is lossless here — 'merge'
-//     folds only when both values are sequences and drops the rival regardless, 'prefer-new'
-//     always discards the governed value — so Clear refuses rather than picking a casualty.
 // refused: SweepResult.refused, surfaced rather than swallowed. A Task or Event page reads
 //   `contradicting` through sweepAdmits and is never rewritten; the caller must be able to say so.
 // sidecars: the container filenames found, unlinked. A missing one is done, not an error.
@@ -492,12 +490,12 @@ export async function clearExclusionData(
 
 - [ ] Red first in `src/main/exclusionScan.test.ts` against a temp nexus holding, under one excluded root: a Collection with `_pagecollection.json`, a nested Set with `_pageset.json`, **a root folder with `_taskconfig.json` registered in `nexus.json`**, a page with `<Status>: Doing` carrying a comment above it, a page with `(Projects): [Alpha]`, **a page holding both `<Status>: open` and a bare `Status: [Revisit]`**, a page with `TaskID`, a page with a malformed `<Status` key, a nested `node_modules` and a nested `.git`, and an `asset_directory` that is itself in the exclusion list.
 - [ ] **The agenda config survives.** `_taskconfig.json` is untouched and the folder still resolves through `resolveFolderKind` afterward. Point the deletion at `SIDECARS` instead of the container pair and this goes red — the test corpus exists to make that mistake fail.
-- [ ] **The collision page is untouched and reported.** Both `<Status>` and `Status` still hold their own values, and the page appears in `collided`. Substitute either `KeyCollision` mode and this goes red.
+- [ ] **The collision page keeps its plain key.** `Status: [Revisit]` survives untouched and `<Status>: open` is gone. Swap the mode to `'merge'` and this goes red — merge drops the plain key instead.
 - [ ] The asset root is walked past: nothing under it appears in either list, even though it is excluded.
 - [ ] `excludedArtifacts` finds the two pages and the two container sidecars, and nothing inside `node_modules`, `.git`, or `.nexus`.
 - [ ] A crossing test that can actually fail: **assert the file sets, not the predicate**. Every `.md` under the excluded root that `corpusFilesUnder` would have returned had the folder not been excluded appears in `pages` — run it once with the folder excluded and once without, and compare. Asserting only that `shouldSkipDir` would have pruned each path is vacuous, since the exclusion matcher prunes everything under the root regardless of the skip set.
 - [ ] Preserve on: `<Status>: Doing` becomes `Status: Doing`, the comment above it survives, key order is unchanged, `PageID` is gone. Preserve off: the `Status` line is gone entirely.
-- [ ] The malformed `<Status` key is deleted, not renamed, and nothing throws — `parseGovernedKey` returns null there and an unguarded deref would abort the sweep half-applied.
+- [ ] The malformed `<Status` key is left exactly as it was — it is not `<…>`-shaped, and a shape scan has no opinion about it.
 - [ ] The `TaskID` page is left byte-identical and counted in `refused`.
 - [ ] Idempotence: a second run over the same folder changes no bytes and reports zero pages touched. A migration that double-applies is the defect this catches.
 - [ ] Degenerate cases: an empty exclusion list touches nothing; a folder with no sidecar and no frontmatter is left byte-identical; a page whose frontmatter has a syntax error is refused, not corrupted.
@@ -536,7 +534,7 @@ destructive: { vars: { '--button-fill': tintAt(error, 'tertiary'), ... } }
 // Confirmation and action are one channel: an unconfirmed reach into a user's folders should
 // not be expressible, and a separate confirm channel would make it so.
 'exclusions:clear': { args: []; reply: Result<ClearReport | null> }
-// ClearReport = { pages: number; sidecars: number; refused: number; collided: string[] }
+// ClearReport = { pages: number; sidecars: number; refused: number }
 // ok(null) is a cancelled dialog, not a failure.
 
 // src/main/index.ts
@@ -552,7 +550,7 @@ destructive: { vars: { '--button-fill': tintAt(error, 'tertiary'), ... } }
 //   page it writes (governedSweep calls indexWrittenPage, and relCorpusPath does not consult the
 //   exclusion list — Clear is the first pen to write inside an excluded folder), so the seed's
 //   prune is what puts those rows back out. No tree refresh: nothing it touched is in the tree.
-// the reply carries refused and collided so the row can say the sweep was thin rather than
+// the reply carries the refused count so the row can say the sweep was thin rather than
 //   reporting a clean scrub it did not perform.
 
 // src/renderer/Settings/ExclusionRows.tsx
@@ -561,7 +559,7 @@ export function ClearExclusionsRow({ label, hint }: RowProps): React.JSX.Element
 // disabled when tree.excluded is empty, and while a sweep is in flight — the Manage pane
 // does not dismiss on confirm by design, so without this a `×` pressed mid-sweep would
 // re-admit a half-stripped folder to the tree while the sweep is still stripping it.
-// A returned report naming refused or collided pages is surfaced through 'error:show'
+// A returned report naming refused pages is surfaced through 'error:show'
 // rather than being dropped on the floor.
 
 // src/renderer/Settings/SettingsWindow.tsx — the Exclusions section, in order:
@@ -669,7 +667,7 @@ Everything else is the standard below.
 - [ ] The acceptance criterion observed running, clause by clause.
 - [ ] Clear is unreachable except through its confirmation, and idempotent when re-run.
 - [ ] No fourth skip predicate was added: `exclusion.ts`'s matching rule is unchanged, and `exclusionScan.ts` is the only deliberate reach past it.
-- [ ] Clear destroyed nothing it did not name: the Agenda configs survive, no collision lost a value, and every page the sweep would not admit was reported rather than counted as scrubbed.
+- [ ] Clear destroyed nothing it did not name: the Agenda configs survive, every collision left the plain key standing, and every page the sweep would not admit was reported rather than counted as scrubbed.
 - [ ] `dismissOnOutside` defaults true and no existing `PickerMenu` caller changed behavior.
 
 **The passes**
