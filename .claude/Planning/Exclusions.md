@@ -133,10 +133,6 @@ export function excludedFolderRefusal(raw: string): string | null
 excluded: readExcludedLeaf(settings.excluded_folders),
 ```
 
-The refusal rejects an empty string, a leading `/`, a backslash anywhere, and any `.` or `..` segment, and rejects a first segment of `.nexus` or `.trash` as belonging to the app. A folder that holds pages is **accepted** — unlike the asset root, that is the whole point.
-
-`readExcludedLeaf` answers `[]` for a non-array, and otherwise trims each element, drops the refused ones individually, and stores each survivor as `rootSegs().join('/')`.
-
 **Assumed by:** Task 2 (writes what this accepts), Task 3 (returns this refusal's message as the channel's error).
 
 **Verify — automated**
@@ -171,8 +167,6 @@ export function writeAssetDirectory(root: string, dir: string): Promise<void> {
 ```ts
 export function writeExcludedFolders(root: string, folders: string[]): Promise<void>
 ```
-
-An empty list removes the key rather than storing `[]` — absent is what "nothing excluded" means, and the reader answers it either way. Anything else is stored as given, Task 3 having validated it.
 
 **Assumed by:** Task 3.
 
@@ -274,8 +268,8 @@ dismissOnOutside = true,
 dismissOnOutside?: boolean
 {onDismiss && !closing && dismissOnOutside ? <div className={s.backdrop} ... /> : null}
 
-const PANE_MIN_W = 260
-const PANE_MAX_W = 420
+const PANE_MIN_W = 250
+const PANE_MAX_W = 500
 export function ExcludedDirectoriesRow({ label, hint }: RowProps): React.JSX.Element
 
 | (RowText & { kind: 'exclusions' })
@@ -399,14 +393,6 @@ export async function clearExclusionData(
 ): Promise<Result<{ pages: number; sidecars: number; refused: number }>>
 ```
 
-`excludedArtifacts` answers nexus-relative POSIX paths. It skips dot- and underscore-prefixed directories and `node_modules`, never enters `.nexus` or `.trash`, and steps around the asset root even when that root is itself excluded — a supported configuration the live nexus uses, and the one place Clear must not inherit the exclusion list's reach. A folder carrying `_taskconfig.json` or `_eventconfig.json` is skipped whole rather than descended: the Agenda layer is not Clear's business, and an unlinked agenda config would strand its id in `nexus.json` with no in-app repair besides. `_`-prefixed `.md` files *are* pages, since the corpus admits them. The sidecars it collects are `_pagecollection.json` and `_pageset.json` only — never the `SIDECARS` set, which also holds the two agenda configs; `_space.json` lives under `.nexus` and is never reached. An entry naming a folder that no longer exists contributes nothing and never throws.
-
-`clearExclusionData` sweeps pages through `sweepGovernedRoots(root, { kind: 'files', files }, () => null, { rewriteText })`. The raw `Rewrite` is never called on the `rewriteText` branch and `stamp` is never read on it, so neither is passed; `{ kind: 'files' }` reaches no sidecars, which are unlinked here instead. The default `sweepAdmits` gate stands, refusing a Task or Event page as contradicting — the policy this task wants rather than a limitation it works around.
-
-`rewriteText` deletes `PageID`, `TaskID`, `EventID`, `icon`, `created_at`, `modified_at` and `cover`, then takes every key **by shape**: `<…>` or `(…)`, first and last character stripped, contents never inspected. No registry lookup and no `parseGovernedKey`, so a half-written `<Status` is simply not that shape and stays where it sits. With preserve on it calls `renameFrontmatterKey(content, key, stripped, 'prefer-new')`, which leaves a page already holding the plain key alone and drops the wrapped one; with preserve off it omits the key from the merge.
-
-`refused` carries `SweepResult.refused` rather than swallowing it — frontmatter that cannot round-trip, and any identity-contradicting file the folder skip missed — so the caller can say the sweep was thin instead of reporting a clean scrub. A missing sidecar is done, not an error.
-
 **A known property, not a defect:** the sweep re-serializes each file's frontmatter through `doc.toString({ lineWidth: 0 })`, which rewrites an inline flow collection (`Tags: [x, y]` → `Tags: [ x, y ]`) on keys it never touched. This is how every existing sweep already behaves, and zero of the 122 `.md` files under the live nexus's exclusions use flow syntax. It is not in scope to change.
 
 **Assumed by:** Task 7 (the handler calls `clearExclusionData` and reports its counts).
@@ -464,14 +450,6 @@ export function ClearExclusionsRow({ label, hint }: RowProps): React.JSX.Element
 { kind: 'clear-exclusions', label: 'Clear Exclusion Cache',
   hint: 'Remove existing app data that may have been written onto previously indexed folders.' }
 ```
-
-`ClearReport` is `{ pages: number; sidecars: number; refused: number }`, and `ok(null)` is a cancelled dialog rather than a failure. Confirmation and action share one channel deliberately: an unconfirmed reach into a user's folders should not be expressible, and a separate confirm channel would make it so.
-
-The handler answers `ok(null)` without a dialog when nothing is excluded. Otherwise it reads `tree.excluded`, `assetDirectory` and the toggle, then puts up `buttons: ['Clear', 'Cancel']` with `defaultId: 1` and `cancelId: 1` — Cancel defaults, as emptying the trash does. The detail names, in plain words, that the folder's icon, banner, manual ordering, saved views and the properties it assigns are removed for good; that the folder returns as a new one after the next launch; and either that property values are kept as ordinary frontmatter or that they are removed, read from the toggle at the moment of asking rather than assumed.
-
-On confirm it calls `clearExclusionData`, then `seedContentIndex(root)`. The sweep re-indexes every page it writes — `governedSweep` calls `indexWrittenPage`, and `relCorpusPath` does not consult the exclusion list, Clear being the first pen to write inside an excluded folder — so the seed's prune is what puts those rows back out. No tree refresh follows: nothing it touched is in the tree.
-
-The row's trailing slot holds a `<Button type="destructive" label="Clear" />`, disabled when `tree.excluded` is empty and while a sweep is in flight. The Manage pane does not dismiss on confirm by design, so without that second guard a `×` pressed mid-sweep would re-admit a half-stripped folder to the tree while the sweep is still stripping it. A report naming refused pages is surfaced through `error:show` rather than dropped. The section's final order is Excluded Directories, Clear Exclusion Cache, Preserve Properties On Clear.
 
 **Verify — automated**
 
@@ -540,18 +518,44 @@ The row's trailing slot holds a `<Button type="destructive" label="Clear" />`, d
 
 *(Written at ratification, ticked at the end. It stands alone — handed to an executing agent with the plan, it is the whole brief.)*
 
-**The directive** *(filled in from this plan; the user copies it and sends it)*
+**The directive** *(paste-ready; assumes no prior session context)*
 
 ```
-Execute .claude/Planning/Exclusions.md. <Unattended overnight | live>.
-Live-verify: the Manage pane's geometry and dismissal (Phase 1), and the Clear dialog's
-  wording plus one real cleared folder in both toggle positions (Phase 2)
-Screenshots: Phase 1 — the Exclusions section and the open Manage pane at a short and a
-  deeply nested path. Phase 2 — the confirmation dialog in both toggle positions.
-Pings: at each phase's declared stop
-Record: History arc "Exclusions"
-Also: <anything true for this run only>
-Everything else is the standard below.
+Execute the Exclusions plan at .claude/Planning/Exclusions.md, in the Project Pommora repo.
+Read it whole before touching anything — it is written to be picked up cold, and its
+Global Constraints and Completion Criteria are the brief.
+
+Status: ratified. Begin at Phase 1, Task 1.
+
+Before Task 1, run one attack round on the plan itself (build-breaking-agent, plan-review
+mode, briefed with the plan's Inherited Reasoning as the do-not-re-raise list). One round
+already ran and its findings are folded; this one covers the revisions made after it.
+Verify every finding against the code yourself before folding it, present anything that
+changes the work, then proceed.
+
+Gates, from Pommora/, exit codes read directly and never through a pipe:
+  npm run typecheck · npm run test · npm run lint
+
+Declared stops — execution HALTS at both, and no agent ticks a Verify — user box:
+  Phase 1 gate: the Manage pane is the feature's whole interaction surface.
+  Phase 2 gate: Clear rewrites real files with no undo.
+
+Live-verify (mine alone):
+  Phase 1 — the pane's min/max width at a short and a deeply nested path, the
+    --surface-inset gutter against a MenuSurface elsewhere, dismissal on Escape and a
+    re-click of Manage only, and adding/removing a real folder with no restart.
+  Phase 2 — the confirm dialog's wording in both toggle positions, one real folder cleared
+    with Preserve on and with Preserve off, and the destructive button's tone (its first
+    appearance in the app).
+
+Screenshots:
+  Phase 1 — the Exclusions section, and the open Manage pane at a short and a nested path.
+  Phase 2 — the confirmation dialog in both toggle positions.
+
+Pings: at each declared stop.
+Record: History arc "Exclusions"; reconcile Context and Handoff at closeout.
+
+Everything else is the Standard in the plan's Completion Criteria.
 ```
 
 **The Standard**
