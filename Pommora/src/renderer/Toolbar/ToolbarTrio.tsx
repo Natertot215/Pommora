@@ -13,10 +13,10 @@ export function ToolbarTrio({ segments }: { segments: Segment[] }): React.JSX.El
   return (
     <div className="toolbar-trio">
       <div className="toolbar-trio-glass" aria-hidden inert>
-        <Segmented glass segments={segments} />
+        <Segmented glass radius="var(--trio-radius)" segments={segments} />
       </div>
       <div className="toolbar-trio-cover">
-        <Segmented segments={segments} />
+        <Segmented radius="var(--trio-radius)" segments={segments} />
       </div>
     </div>
   )
