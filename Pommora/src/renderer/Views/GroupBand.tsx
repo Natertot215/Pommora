@@ -18,10 +18,7 @@ import { formatBucketLabel } from '@renderer/Properties/Editing/formatValue'
 import type { ResolveContext } from '@renderer/Properties/resolveContext'
 import './GroupBand.css'
 import { onActivateKey } from '@renderer/DesignSystem/Interactions/activate'
-import {
-  dropOutline,
-  dropOutlineOpen,
-} from '@renderer/DesignSystem/Elements/DropOutline/dropOutline.css'
+import { dropOutline, dropOutlineOpen } from '@renderer/DesignSystem/Menus/listed-outline.css'
 import { SpaceChip } from '@renderer/DesignSystem/Labels'
 import { OptionChip } from '@renderer/Properties/Editing/OptionChip'
 

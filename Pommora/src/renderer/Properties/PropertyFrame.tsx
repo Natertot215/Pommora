@@ -54,10 +54,7 @@ import { nexusReorderIndex, type PaneDrop, type FrameRow } from '../Frames/frame
 import { CREATABLE_TYPES, PropertyTypeIcon, propertyTypeLabel } from './PropertyTypes'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import * as s from '../Frames/frames.css'
-import {
-  dropOutline,
-  dropOutlineOpen,
-} from '@renderer/DesignSystem/Elements/DropOutline/dropOutline.css'
+import { dropOutline, dropOutlineOpen } from '@renderer/DesignSystem/Menus/listed-outline.css'
 import { normalizePropertyName, wrapKey } from '@shared/governedKeys'
 
 type DetailView = { kind: 'type' } | { kind: 'edit'; id: string }
