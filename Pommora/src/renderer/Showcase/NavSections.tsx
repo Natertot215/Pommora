@@ -1,4 +1,4 @@
-import { Icon } from '../Symbols'
+import { Icon } from '@renderer/DesignSystem/Symbols'
 import { SECTIONS, LEAVES } from './leaves/registry'
 
 export function NavSections({

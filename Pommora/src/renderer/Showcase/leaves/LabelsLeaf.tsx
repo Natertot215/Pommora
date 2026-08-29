@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { vars } from '../../Tokens'
+import { vars } from '@renderer/DesignSystem/Tokens'
 import {
   SpaceChip,
   FileChip,
@@ -10,13 +10,13 @@ import {
   roomy,
   shape,
   textCap,
-} from '../../Labels'
-import { DualSwitch } from '../../Controls/Switches/DualSwitch'
-import { SortableZone, useDragItem, reorder } from '../../Interactions/drag'
-import type { LabelColorName } from '../../Labels'
-import { ANCHOR_CELLS, cellColor } from '../../Tokens/ramp'
-import { cx } from '../../Util/cx'
-import { overScrollUnmasked } from '../../Interactions/OverScroll'
+} from '@renderer/DesignSystem/Labels'
+import { DualSwitch } from '@renderer/DesignSystem/Controls/Switches/DualSwitch'
+import { SortableZone, useDragItem, reorder } from '@renderer/DesignSystem/Interactions/drag'
+import type { LabelColorName } from '@renderer/DesignSystem/Labels'
+import { ANCHOR_CELLS, cellColor } from '@renderer/DesignSystem/Tokens/ramp'
+import { cx } from '@renderer/DesignSystem/Util/cx'
+import { overScrollUnmasked } from '@renderer/DesignSystem/Interactions/OverScroll'
 import { humanize, useIsCompact } from './helpers'
 
 // The demo rows show one chip per SPECTRUM anchor rather than all 64 cells — the ramp's shape is the

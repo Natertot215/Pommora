@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Icon } from '../Symbols'
+import { Icon } from '@renderer/DesignSystem/Symbols'
 import { useHashRoute, setHashRoute } from './useHashRoute'
 import { LEAVES, leafById } from './leaves/registry'
 import { ShowcaseSidebar } from './ShowcaseSidebar'

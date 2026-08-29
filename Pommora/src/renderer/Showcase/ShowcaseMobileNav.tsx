@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { paneMaterial } from '../Glass'
-import { Icon } from '../Symbols'
+import { paneMaterial } from '@renderer/DesignSystem/Glass'
+import { Icon } from '@renderer/DesignSystem/Symbols'
 import { leafById } from './leaves/registry'
 import { NavSections } from './NavSections'
 

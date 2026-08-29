@@ -1,5 +1,5 @@
-import { Button, type ButtonType, type Segment, Segmented } from '../../Buttons'
-import type { ButtonSize } from '../../Tokens'
+import { Button, type ButtonType, type Segment, Segmented } from '@renderer/DesignSystem/Buttons'
+import type { ButtonSize } from '@renderer/DesignSystem/Tokens'
 
 const TYPES: ButtonType[] = ['base', 'filled', 'tinted', 'solid', 'destructive']
 const SIZES: ButtonSize[] = ['button-small', 'button-medium', 'button-large']

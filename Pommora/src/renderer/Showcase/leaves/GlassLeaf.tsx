@@ -1,5 +1,5 @@
 import { useState, type CSSProperties, type Dispatch, type SetStateAction } from 'react'
-import { Icon } from '../../Symbols'
+import { Icon } from '@renderer/DesignSystem/Symbols'
 import { useIsCompact } from './helpers'
 import forest from '../surfaces/forest.jpg'
 import mac from '../surfaces/mac.png'

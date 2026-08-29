@@ -1,7 +1,7 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import '@fontsource-variable/inter'
-import '../../Tokens'
+import '@renderer/DesignSystem/Tokens'
 import '../showcase.css'
 import { Interactions } from './Interactions'
 

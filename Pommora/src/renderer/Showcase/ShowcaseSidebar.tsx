@@ -1,5 +1,5 @@
-import { GlassPane } from '../Glass'
-import { Icon } from '../Symbols'
+import { GlassPane } from '@renderer/DesignSystem/Glass'
+import { Icon } from '@renderer/DesignSystem/Symbols'
 import { NavSections } from './NavSections'
 
 export function ShowcaseSidebar({
