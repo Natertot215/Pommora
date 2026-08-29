@@ -16,8 +16,12 @@ refresh itself does not dirty the tree.
 
 `check-atlas.mjs` verifies the token ledger: every `**SOURCE:**`-tagged table in `// Features` must agree with the code files its SOURCE line names — each backticked token in a row's second column and each literal value in its third must appear in those files. Exit 0 means the tables agree; drift is listed per table.
 
-`post-commit` runs `loc.py --update` and `check-atlas.mjs` after every commit; `install-hooks.sh` copies it into `.git/hooks`,
-which isn't versioned and so starts empty in a fresh clone.
+Both run automatically after each commit through the checked-in Claude Code hook
+`../hooks/line-ledger.mjs`, wired as a `PostToolUse` hook on the Bash tool in `../settings.json`: it
+reads the tool payload, and when the command was a `git commit` it runs `loc.py --update` and
+`check-atlas.mjs`. Being versioned and settings-declared, it needs no per-clone install step — but
+it only sees commits Claude itself makes through the Bash tool, not ones run straight from a
+terminal.
 
 `Line-Ledger.html` reads that data and is published at
 https://claude.ai/code/artifact/9172cda5-707d-4b69-aaed-d154dd2dd485. The hook keeps the local file
