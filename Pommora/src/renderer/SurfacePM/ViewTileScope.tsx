@@ -12,7 +12,7 @@ import { saveViewAdopting } from '@renderer/Views/viewMint'
  *  is the bug this guards against. */
 export const VIEW_CONFIG_LOCKED = 'The view configuration is locked on this embed.'
 
-export interface ViewEmbedScopeValue {
+export interface ViewTileScopeValue {
   source: CollectionNode | SetNode
   view: SavedView
   /** Refuses while `locked` — every config surface routes through here, so one gate freezes them all. */
@@ -24,9 +24,9 @@ export interface ViewEmbedScopeValue {
   setLocked: (locked: boolean) => void
 }
 
-const Ctx = createContext<ViewEmbedScopeValue | null>(null)
-export const ViewEmbedScopeProvider = Ctx.Provider
-export const useViewEmbedScope = (): ViewEmbedScopeValue | null => useContext(Ctx)
+const Ctx = createContext<ViewTileScopeValue | null>(null)
+export const ViewTileScopeProvider = Ctx.Provider
+export const useViewTileScope = (): ViewTileScopeValue | null => useContext(Ctx)
 
 /** In scope, the write is a payload update — or a refusal envelope while locked. Callers still
  *  pass the FULL next view (as to saveViewAdopting): the scope's `view` may be stale mid-gesture.
@@ -34,7 +34,7 @@ export const useViewEmbedScope = (): ViewEmbedScopeValue | null => useContext(Ct
 export function useSaveView(
   source: CollectionNode | SetNode,
 ): (view: SavedView, opts?: { viewState?: boolean }) => Promise<Result<{ id: string }>> {
-  const scope = useViewEmbedScope()
+  const scope = useViewTileScope()
   if (scope) {
     // An embed re-renders off its own tile payload — persistConfig updates it in place.
     return (view, opts) => {

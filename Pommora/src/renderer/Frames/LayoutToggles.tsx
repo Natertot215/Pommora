@@ -1,7 +1,7 @@
 import type { CollectionNode, SetNode } from '@shared/types'
 import type { SavedView } from '@shared/views'
 import { MenuIndex, MenuSeparator } from '@renderer/DesignSystem/Menus'
-import { useSaveView } from '@renderer/Embeds/ViewEmbedScope'
+import { useSaveView } from '@renderer/SurfacePM/ViewTileScope'
 import { switchRows, type SwitchEntry } from './switchRows'
 
 const SWITCHES: SwitchEntry[] = [

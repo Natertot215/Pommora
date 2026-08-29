@@ -382,7 +382,7 @@ export interface NexusTree {
   }
   /** Homepage singleton (`.nexus/homepage.json`) — its optional banner and whether its heading
    *  icon is hidden. The block doc's heavy layout/blocks stay off the walk, loaded lazily by
-   *  useBlockDoc. */
+   *  useTileDoc. */
   homepage: { banner?: string; headingIconHidden: boolean }
   /** Per-image framing from `.nexus/crops.json`, keyed by the image (nexus-relative path or raw
    *  web address). Absent key ⇒ the seat draws its plain image. */

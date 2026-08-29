@@ -23,7 +23,7 @@ export interface BlockDocSession extends BlockDocState {
   saveBlocks: (update: unknown[] | ((cur: unknown[]) => unknown[])) => void
 }
 
-export function useBlockDoc(host: BlockHostRef): BlockDocSession {
+export function useTileDoc(host: BlockHostRef): BlockDocSession {
   const [state, setState] = useState<BlockDocState>({
     layout: emptyLayout(),
     blocks: [],

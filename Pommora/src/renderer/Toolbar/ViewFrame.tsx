@@ -16,7 +16,7 @@ import { FrameSlide } from '@renderer/DesignSystem/Menus/frame-slide'
 import { LayoutFrame } from '../Frames/LayoutFrame'
 import { FrameDnd, RowShell, useFrameRegions } from '../Frames/frameDnd'
 import type { PaneDrop, FrameRow, frameSlot } from '../Frames/frameDndModel'
-import { useSaveView, useViewEmbedScope } from '@renderer/Embeds/ViewEmbedScope'
+import { useSaveView, useViewTileScope } from '@renderer/SurfacePM/ViewTileScope'
 import { ColorPicker } from '@renderer/DesignSystem/Pickers/ColorPicker/ColorPicker'
 import { labelColorFor } from '@renderer/DesignSystem/Tokens/colorMap'
 import { RenamableLabel } from '@renderer/DesignSystem/Fields'
@@ -70,7 +70,7 @@ export function ViewFrame({
   const [iconFor, setIconFor] = useState<SavedView | null>(null)
   const [colorFor, setColorFor] = useState<SavedView | null>(null)
   const menuAnchorRef = useRef<HTMLElement | null>(null)
-  const scope = useViewEmbedScope()
+  const scope = useViewTileScope()
   // Never mounts inside a view embed until the payload switcher lands — CRUD here would bypass the scope.
   if (scope) return null
   const views = node.views ?? []

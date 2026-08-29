@@ -30,7 +30,7 @@ import {
 import { FrameSlide } from '@renderer/DesignSystem/Menus/frame-slide'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { overScrollEllipsis } from '@renderer/DesignSystem/Interactions/OverScroll'
-import { ZOOM_STEPS, zoomStep } from './blockZoom'
+import { ZOOM_STEPS, zoomStep } from './TileZoom'
 import * as s from './handleMenu.css'
 
 const GLYPH = 12
@@ -120,7 +120,7 @@ function DrillLevel({
   )
 }
 
-export function BlockHandleMenu({
+export function TileHandleMenu({
   open,
   entry,
   anchor,

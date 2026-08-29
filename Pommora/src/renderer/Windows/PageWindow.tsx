@@ -4,7 +4,7 @@ import { cx } from '@renderer/DesignSystem/Util/cx'
 import { duration, easing, ms } from '@renderer/DesignSystem/Animation'
 import { WINDOW_BASE_INSPECTOR, WindowBase } from './window-base'
 import { useExitPresence } from '@renderer/DesignSystem/Animation/useExitPresence'
-import { PageEmbed } from '../Embeds/PageEmbed'
+import { PageTile } from '../SurfacePM/PageTile'
 import { Subfield } from '../Interface/Subfield/Subfield'
 import { CitationsToggle } from '../Interface/Subfield/CitationsToggle'
 import type { SubfieldPage } from '../Interface/Subfield/subfieldItems'
@@ -200,7 +200,7 @@ function PageWindowBody({
       footerLead={<CitationsToggle page={page} />}
     >
       <div className="window-body page-window-body over-scroll pgembed-grows" ref={bodyRef}>
-        <PageEmbed
+        <PageTile
           key={target.path}
           path={target.path}
           editing={editing}

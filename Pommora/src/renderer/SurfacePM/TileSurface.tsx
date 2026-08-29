@@ -32,12 +32,12 @@ import { useHeld } from '@renderer/DesignSystem/Interactions/useHeld'
 import { findCollection, findCollectionForSet, findSet } from '@renderer/Interface/Scope'
 import { mintDefaultView } from '@shared/views'
 import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
-import { ZOOM_STEPS, zoomStep } from './blockZoom'
-import { MarkdownBlock } from './MarkdownBlock'
-import { BlockHandleMenu } from './BlockHandleMenu'
-import { ViewEmbedBlock } from './ViewEmbedBlock'
-import { PageEmbedBlock } from './PageEmbedBlock'
-import { useBlockDoc } from './useBlockDoc'
+import { ZOOM_STEPS, zoomStep } from './TileZoom'
+import { MarkdownTile } from './MarkdownTile'
+import { TileHandleMenu } from './TileHandleMenu'
+import { ViewTile } from './ViewTile'
+import { PageTile } from './PageTile'
+import { useTileDoc } from './UseTileDoc'
 import './blocks.css'
 
 function pagePickerItems(
@@ -98,9 +98,9 @@ const NO_CONTAINERS: ReadonlyMap<string, ContainerCore> = new Map()
 // A leaf whose id has no entry — or an entry this build doesn't know — renders inert and keeps
 // its space, never crashes the host.
 
-export function BlockSurface({ host }: { host: BlockHostRef }): React.JSX.Element | null {
+export function TileSurface({ host }: { host: BlockHostRef }): React.JSX.Element | null {
   const { layout, blocks, ready, setLayout, commitLayout, refreshEntries, saveBlocks } =
-    useBlockDoc(host)
+    useTileDoc(host)
   const [editingId, setEditingId] = useState<string | null>(null)
   // Tiles mid-removal: their editor's flush-on-unmount must NOT run — the write
   // would land after the trash and resurrect the file as an entry-less orphan.
@@ -321,7 +321,7 @@ export function BlockSurface({ host }: { host: BlockHostRef }): React.JSX.Elemen
       const entry = entries.get(id)
       if (entry?.type === 'markdown')
         return (
-          <MarkdownBlock
+          <MarkdownTile
             host={host}
             tileId={id}
             editing={editingId === id}
@@ -335,11 +335,10 @@ export function BlockSurface({ host }: { host: BlockHostRef }): React.JSX.Elemen
         const page = pagesById.get(entry.page_id)
         if (!page) return <div className="blk-inert" /> // dead reference — inert, space holds
         return (
-          <PageEmbedBlock
-            page={page}
-            entryId={entry.id}
+          <PageTile
+            path={page.path}
             editing={editingId === id}
-            onBeginEdit={setEditingId}
+            onBeginEdit={() => setEditingId(entry.id)}
             connections={connections}
             locked={entry.locked ?? false}
           />
@@ -347,7 +346,7 @@ export function BlockSurface({ host }: { host: BlockHostRef }): React.JSX.Elemen
       }
       if (entry?.type === 'view')
         return (
-          <ViewEmbedBlock
+          <ViewTile
             entry={entry}
             mutateEntry={mutateViewEntry}
             onActivate={() => setEditingId(id)}
@@ -445,7 +444,7 @@ export function BlockSurface({ host }: { host: BlockHostRef }): React.JSX.Elemen
         onBackdrop={onBackdrop}
       />
       {menu && entries.get(menu.id) && tree && (
-        <BlockHandleMenu
+        <TileHandleMenu
           open={handleMenu !== null}
           entry={entries.get(menu.id) as BlockEntry}
           anchor={menu.el}

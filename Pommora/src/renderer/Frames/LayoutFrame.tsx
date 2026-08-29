@@ -22,7 +22,7 @@ import { footingLabel, footingSymbol } from '@renderer/DesignSystem/Menus/menu-b
 import { PickerMenu } from '@renderer/DesignSystem/Pickers/picker-base'
 import { Slider } from '@renderer/DesignSystem/Controls/Slider/Slider'
 import { useSession } from '../store'
-import { useSaveView } from '@renderer/Embeds/ViewEmbedScope'
+import { useSaveView } from '@renderer/SurfacePM/ViewTileScope'
 import { InlineEditHeader } from './InlineEditHeader'
 import { VisibilityList } from './HiddenFrame'
 import { LayoutToggles } from './LayoutToggles'

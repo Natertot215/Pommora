@@ -9,13 +9,13 @@ import {
   blockFilePath,
   convertTileToView,
   duplicateBlockTile,
-  createMarkdownBlock,
+  createMarkdownTile,
   readBlockDoc,
-  readMarkdownBlock,
+  readMarkdownTile,
   removeBlockTile,
   rewriteBlockConnections,
   writeBlockDoc,
-  writeMarkdownBlock,
+  writeMarkdownTile,
 } from './blocks'
 
 const HOST = { kind: 'homepage' } as const
@@ -94,25 +94,25 @@ describe('the document', () => {
 
 describe('markdown block lifecycle', () => {
   it('create mints the dir + empty file + entry; the body round-trips pure (no frontmatter)', async () => {
-    const id = await createMarkdownBlock(root, HOST)
+    const id = await createMarkdownTile(root, HOST)
     expect(await pathExists(await blockFilePath(root, HOST, id))).toBe(true)
     expect(entries()).toEqual([{ id, type: 'markdown' }])
 
-    await writeMarkdownBlock(root, HOST, id, '# Hi\n\n[[Some Page]]\n')
-    expect(await readMarkdownBlock(root, HOST, id)).toBe('# Hi\n\n[[Some Page]]\n')
+    await writeMarkdownTile(root, HOST, id, '# Hi\n\n[[Some Page]]\n')
+    expect(await readMarkdownTile(root, HOST, id)).toBe('# Hi\n\n[[Some Page]]\n')
     expect(await readFile(await blockFilePath(root, HOST, id), 'utf8')).not.toContain('---')
   })
 
   it('a markdown tile mints its file inside the Space folder', async () => {
-    const id = await createMarkdownBlock(root, SPACE_HOST)
+    const id = await createMarkdownTile(root, SPACE_HOST)
     expect(await pathExists(join(spaceDir(), `${id}.md`))).toBe(true)
-    await writeMarkdownBlock(root, SPACE_HOST, id, 'body')
-    expect(await readMarkdownBlock(root, SPACE_HOST, id)).toBe('body')
+    await writeMarkdownTile(root, SPACE_HOST, id, 'body')
+    expect(await readMarkdownTile(root, SPACE_HOST, id)).toBe('body')
   })
 
   it('remove drops the entry and trashes the file; foreign entries survive', async () => {
     writeBlockDoc(HOST, { blocks: [{ id: 'alien', type: 'widget', keep: true }] })
-    const id = await createMarkdownBlock(root, HOST)
+    const id = await createMarkdownTile(root, HOST)
     await removeBlockTile(root, HOST, id)
     expect(entries()).toEqual([{ id: 'alien', type: 'widget', keep: true }])
     expect(await pathExists(await blockFilePath(root, HOST, id))).toBe(false)
@@ -122,14 +122,14 @@ describe('markdown block lifecycle', () => {
 
   it('an entry op leaves the layout and lock alone', async () => {
     writeBlockDoc(HOST, { layout: { bands: [] }, locked: true })
-    await createMarkdownBlock(root, HOST)
+    await createMarkdownTile(root, HOST)
     const doc = readBlockDoc(HOST)
     expect(doc.layout).toEqual({ bands: [] })
     expect(doc.locked).toBe(true)
   })
 
   it('convert to view stamps a payload-local config id and trashes the markdown file', async () => {
-    const id = await createMarkdownBlock(root, HOST)
+    const id = await createMarkdownTile(root, HOST)
     writeBlockDoc(HOST, {
       blocks: [{ id, type: 'markdown', style: 'borderless', outside_key: 1 }],
     })
@@ -151,12 +151,12 @@ describe('markdown block lifecycle', () => {
   })
 
   it('duplicate copies the raw entry + file; a view copy re-mints its config ids', async () => {
-    const id = await createMarkdownBlock(root, HOST)
-    await writeMarkdownBlock(root, HOST, id, 'body text')
+    const id = await createMarkdownTile(root, HOST)
+    await writeMarkdownTile(root, HOST, id, 'body text')
     writeBlockDoc(HOST, { blocks: [{ id, type: 'markdown', style: 'borderless', alien: 1 }] })
     const dupId = await duplicateBlockTile(root, HOST, id)
     expect(dupId).toBeTruthy()
-    expect(await readMarkdownBlock(root, HOST, dupId as string)).toBe('body text')
+    expect(await readMarkdownTile(root, HOST, dupId as string)).toBe('body text')
     expect(entries().find((b) => b.id === dupId)).toMatchObject({
       type: 'markdown',
       style: 'borderless',
@@ -190,16 +190,16 @@ describe('markdown block lifecycle', () => {
 
 describe('rewriteBlockConnections', () => {
   it('rewrites [[oldTitle]] → [[newTitle]] in block bodies, leaving non-matches untouched', async () => {
-    const id = await createMarkdownBlock(root, HOST)
-    await writeMarkdownBlock(root, HOST, id, 'see [[Target]] and [[Other]]')
+    const id = await createMarkdownTile(root, HOST)
+    await writeMarkdownTile(root, HOST, id, 'see [[Target]] and [[Other]]')
     await rewriteBlockConnections(root, 'Target', 'Renamed')
-    expect(await readMarkdownBlock(root, HOST, id)).toBe('see [[Renamed]] and [[Other]]')
+    expect(await readMarkdownTile(root, HOST, id)).toBe('see [[Renamed]] and [[Other]]')
   })
 
   it('leaves a body without the old title byte-identical (no needless write)', async () => {
-    const id = await createMarkdownBlock(root, HOST)
-    await writeMarkdownBlock(root, HOST, id, 'see [[Other]]')
+    const id = await createMarkdownTile(root, HOST)
+    await writeMarkdownTile(root, HOST, id, 'see [[Other]]')
     await rewriteBlockConnections(root, 'Target', 'Renamed')
-    expect(await readMarkdownBlock(root, HOST, id)).toBe('see [[Other]]')
+    expect(await readMarkdownTile(root, HOST, id)).toBe('see [[Other]]')
   })
 })

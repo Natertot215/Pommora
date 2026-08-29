@@ -92,7 +92,7 @@ function setBlocks(host: BlockHostRef, update: (blocks: unknown[]) => unknown[])
 /** Mint a markdown block: host dir, an empty `<ulid>.md`, then the `blocks[]` entry —
  *  in that order, so a crash leaks at worst an orphan file, never an entry without one.
  *  The renderer splices the layout leaf afterward. */
-export async function createMarkdownBlock(root: string, host: BlockHostRef): Promise<string> {
+export async function createMarkdownTile(root: string, host: BlockHostRef): Promise<string> {
   const id = newId()
   await mkdir(await hostDir(root, host), { recursive: true })
   await atomicWriteFile(await blockFilePath(root, host, id), '')
@@ -197,7 +197,7 @@ export async function duplicateBlockTile(
   if (!src || !entry) return null
   const id = newId()
   if (entry.type === 'markdown') {
-    const body = (await readMarkdownBlock(root, host, tileId)) ?? ''
+    const body = (await readMarkdownTile(root, host, tileId)) ?? ''
     await mkdir(await hostDir(root, host), { recursive: true })
     await atomicWriteFile(await blockFilePath(root, host, id), body)
   }
@@ -209,7 +209,7 @@ export async function duplicateBlockTile(
   return id
 }
 
-export async function readMarkdownBlock(
+export async function readMarkdownTile(
   root: string,
   host: BlockHostRef,
   tileId: string,
@@ -223,7 +223,7 @@ export async function readMarkdownBlock(
 
 /** Pure body write — no frontmatter envelope, no stamp (block files stay bare).
  *  Locked on the file so a future rename-cascade rewrite can't clobber a live edit. */
-export async function writeMarkdownBlock(
+export async function writeMarkdownTile(
   root: string,
   host: BlockHostRef,
   tileId: string,

@@ -142,7 +142,7 @@ function WebWindowBody({
           }}
           src={url}
           partition={WEB_PARTITION}
-          // The empty-string form, cast past React's boolean typing — see WebpageEmbed.
+          // The empty-string form, cast past React's boolean typing — see WebTile.
           allowpopups={'' as unknown as boolean}
         />
       </div>
