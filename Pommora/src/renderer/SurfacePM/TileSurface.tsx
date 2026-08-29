@@ -357,8 +357,8 @@ export function TileSurface({ host }: { host: BlockHostRef }): React.JSX.Element
     [entries, editingId, connections, suppressFlush, pagesById, host, mutateViewEntry],
   )
 
-  // Menu-less for now. Updater form — a gesture committing during the IPC await must not be
-  // overwritten by a render-captured layout.
+  // Updater form — a gesture committing during the IPC await must not be overwritten by a
+  // render-captured layout.
   const onBackdrop = useCallback(
     (target: BackdropTarget) => {
       void window.nexus.blocks.createMarkdown(host).then((r) => {
