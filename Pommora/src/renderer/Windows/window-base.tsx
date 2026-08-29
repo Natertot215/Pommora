@@ -179,7 +179,6 @@ export function WindowBase({
               size="button-inline"
               icon="scan"
               iconSize="body"
-              className="window-action"
               title={scanLabel}
               onClick={onScan}
             />
@@ -189,14 +188,7 @@ export function WindowBase({
         {title}
         <div className="window-actions window-actions-trail">
           {actions && <div className="window-actions-flow">{actions}</div>}
-          <Button
-            size="button-inline"
-            icon="x"
-            iconSize="body"
-            className="window-action"
-            title="Close"
-            onClick={onClose}
-          />
+          <Button size="button-inline" icon="x" iconSize="body" title="Close" onClick={onClose} />
         </div>
       </div>
       {body}

@@ -14,13 +14,8 @@
 }
 
 .settings-body {
-  flex: 1;
-  min-width: 0;
-  min-height: 0;
-  overflow-y: auto;
-  scrollbar-width: none;
   padding: var(--surface-inset);
-  padding-top: 30px; /* KNOB — clearance past the × floating over the corner */
+  padding-top: 28px; /* KNOB — clearance past the × floating over the corner */
 }
 .settings-heading {
   display: flex;

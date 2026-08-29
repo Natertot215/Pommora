@@ -1,8 +1,8 @@
 .nav-search-row {
   display: flex;
   align-items: center;
-  margin: 0 var(--navwindow-inset);
-  padding: var(--surface-inset) calc(var(--content-inset) - var(--navwindow-inset));
+  margin: 0 var(--surface-inset);
+  padding: var(--surface-inset) 0;
   border-bottom: var(--width-175) solid var(--border-base);
   flex-shrink: 0;
 }
@@ -11,7 +11,7 @@
 }
 
 .nav-list {
-  --row-pad-x: var(--navwindow-inset);
+  --row-pad-x: var(--surface-inset);
   --row-pad-lead: var(--content-inset);
   list-style: none;
   margin: 0;

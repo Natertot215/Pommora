@@ -6,7 +6,6 @@ import {
   accessoryButton,
   flushAffordance,
   footing,
-  heading,
   rowBox,
   rowDragging,
 } from '@renderer/DesignSystem/Menus/menu-base.css'
@@ -99,7 +98,6 @@ export const allHighlight = style({
 })
 
 const chipList = style({ display: 'flex', flexDirection: 'column', vars: { '--row-pad-y': '0px' } })
-globalStyle(`${chipList} ${heading}`, { paddingBlock: 0 })
 
 export const optionEditor = chipList
 
