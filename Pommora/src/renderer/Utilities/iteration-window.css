@@ -1,0 +1,10 @@
+.iteration-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--window-toolbar-h) var(--app-inset) var(--app-inset);
+  overflow: auto;
+  scrollbar-width: none;
+}

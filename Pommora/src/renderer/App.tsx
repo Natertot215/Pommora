@@ -16,6 +16,7 @@ import { NavWindow } from './Windows/NavWindow'
 import { PageWindow } from './Windows/PageWindow'
 import { WebWindow } from './Windows/WebWindow'
 import { SettingsWindow } from './Settings/SettingsWindow'
+import { IterationWindow } from './Utilities/iteration-window'
 import { ConnectionPane } from './Links/ConnectionPane'
 import { contextTargetToSelect } from './Tabs/tabsModel'
 import { useNavThumbnails } from './Navigation/useNavThumbnails'
@@ -45,6 +46,7 @@ export function App(): React.JSX.Element {
   const toggleSidebar = useSession((s) => s.toggleSidebar)
   const ribbonVisible = useSession((s) => s.ribbonVisible)
   const toggleRibbon = useSession((s) => s.toggleRibbon)
+  const toggleIteration = useSession((s) => s.toggleIteration)
   const toggleNav = useSession((s) => s.toggleNav)
   const commands = useSession((s) => s.commands)
   const newPage = useSession((s) => s.newPage)
@@ -183,11 +185,14 @@ export function App(): React.JSX.Element {
       } else if (matchesCommand(commands['toggle-nav'], e)) {
         e.preventDefault()
         toggleNav()
+      } else if (matchesCommand('cmd+shift+t', e)) {
+        e.preventDefault()
+        toggleIteration()
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [commands, toggleRibbon, toggleNav])
+  }, [commands, toggleRibbon, toggleNav, toggleIteration])
 
   const sidebarHidden = status === 'ready' && !sidebarVisible
 
@@ -278,6 +283,7 @@ export function App(): React.JSX.Element {
       {status === 'ready' && <PageWindow />}
       {status === 'ready' && <WebWindow />}
       {status === 'ready' && <SettingsWindow />}
+      {status === 'ready' && <IterationWindow />}
       {status === 'ready' && <ConnectionPane />}
       {status === 'ready' && inspectorOpen && (
         <div
