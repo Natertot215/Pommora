@@ -260,7 +260,7 @@ export function ViewTile({
     prevIdsRef.current = cur
   }, [idKey])
 
-  if (!embedded || !source || !tree) return <div className="blk-inert" />
+  if (!embedded || !source || !tree) return <div className="tile-inert" />
 
   const view = views[index]
   const titleShown = entry.title !== false

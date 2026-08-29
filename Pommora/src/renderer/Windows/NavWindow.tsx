@@ -202,7 +202,10 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
           <WindowTabStrip index={resolveIndex} title={null} />
         </div>
         {pageTarget ? (
-          <div className="window-body navwindow-page over-scroll pgembed-grows" ref={pageScrollRef}>
+          <div
+            className="window-body navwindow-page over-scroll page-tile-grows"
+            ref={pageScrollRef}
+          >
             <PageTile
               key={pageTarget.path}
               path={pageTarget.path}
