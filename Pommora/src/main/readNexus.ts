@@ -186,18 +186,13 @@ export interface SettingsLeaves {
   profileSubtitle: string
 }
 
-/** The asset root, nexus-relative POSIX. A malformed value takes the default rather than
- *  narrowing the walk or widening the protocol handler's containment check on bad input: an
- *  escaping or absolute path, a root-wide one (which would classify the whole nexus as asset),
- *  and anything inside the two folders the app owns whole — `.nexus/contexts` would drop every
- *  Space from the walk, `.nexus/settings.json` events would be swallowed as assets, and nothing
- *  under `.trash` is watched at all. The default is the one place inside them that is an asset
- *  root by definition. Compared case-folded, because every downstream matcher is.
- *
- *  Stated as a refusal so the folder chooser can report the same rule the reader enforces: a
- *  value one of them would coerce to the default and the other would store is the disagreement
- *  `readNexus.ts` exists to prevent. */
-export function assetDirRefusal(raw: string): string | null {
+/** The shape a nexus-relative folder path must have to be written into settings: non-empty, no
+ *  leading slash, no backslash, no `.` or `..` segment, and a first segment that is not a folder
+ *  the app owns whole. Both scope keys are folder paths under this one rule — the asset root and
+ *  each exclusion entry — so a value one reader would coerce and another would store is the
+ *  disagreement this rule prevents. The app-owned check is case-folded, as every matcher is, and
+ *  the rule is stated as a refusal so a folder chooser reports exactly what a reader enforces. */
+export function nexusFolderRefusal(raw: string): string | null {
   const segs = rootSegs(raw)
   if (
     !raw ||
@@ -206,16 +201,37 @@ export function assetDirRefusal(raw: string): string | null {
     segs.some((s) => s === '.' || s === '..')
   )
     return 'That folder’s name can’t be written as a nexus path.'
-  // Inside an app-owned folder every value resolves to the default: either it already IS the
-  // default, in which case the canonical spelling replaces whatever casing was written, or it
-  // is refused.
   if (NON_CORPUS_TOP.has(normalizeSeg(segs[0]))) return 'That folder belongs to the app.'
   return null
 }
 
+/** The asset root's refusal. A refused value takes the default rather than narrowing the walk or
+ *  widening the protocol handler's containment check: `.nexus/contexts` would drop every Space
+ *  from the walk, a root-wide value would classify the whole nexus as asset, and nothing under
+ *  `.trash` is watched at all. */
+export const assetDirRefusal = nexusFolderRefusal
+
+/** An exclusion entry's refusal. A hand-edited entry that fails it is dropped from the list
+ *  rather than taking the whole list down with it. */
+export const excludedFolderRefusal = nexusFolderRefusal
+
 function readAssetDirectoryLeaf(v: unknown): string {
   const raw = asString(v)?.trim() ?? ''
   return assetDirRefusal(raw) ? ASSETS_DIR_REL : rootSegs(raw).join('/')
+}
+
+/** Each exclusion entry read on its own: a non-string or refused element is dropped rather than
+ *  discarding the whole list, and a kept one is normalized to the spelling the matcher compares. */
+function readExcludedLeaf(v: unknown): string[] {
+  if (!Array.isArray(v)) return []
+  const out: string[] = []
+  for (const item of v) {
+    if (typeof item !== 'string') continue
+    const raw = item.trim()
+    if (!raw || excludedFolderRefusal(raw)) continue
+    out.push(rootSegs(raw).join('/'))
+  }
+  return out
 }
 
 export function readSettingsLeaves(settings: Json): SettingsLeaves {
@@ -227,7 +243,7 @@ export function readSettingsLeaves(settings: Json): SettingsLeaves {
       : {}
   const personalization = readPersonalization(rawPersonalization)
   return {
-    excluded: asStringArray(settings.excluded_folders) ?? [],
+    excluded: readExcludedLeaf(settings.excluded_folders),
     assetDirectory: readAssetDirectoryLeaf(settings.asset_directory),
     accent: personalization.accent ?? DEFAULT_ACCENT,
     personalization,
