@@ -280,7 +280,6 @@ Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, 
 
 | Title | Export | What it is |
 | --------------- | -------------------------------- | ----------------------------------------------------- |
-| DropOutline | `dropOutline` · `dropOutlineOpen` · `dropOutlineSpacer` · `railRow` | The fold chevron and the rail that descends from its center, on `--disclosure-rail-x`. |
 | PathChevron | `PathChevron` | The `›` between path segments; `tone` and `size` knobs. |
 | NavTrail | `NavTrail` · `NavTrailProps` · `TrailSegment` · `pathSegments` | An entity's location as a chevron-divided run of icon + title segments — inert, selectable, or a navigable path with a dimmed ghost tail; `emphasize` lifts the current stop. |
 | Segment | `segment` | The between-values pill — `--segment-width` / `--segment-color` override it. |
@@ -360,7 +359,7 @@ Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, 
 
 ### Menus
 
-`Menus/` — the menu recipe: the shell a trigger hangs, the rows inside it, the frame chassis, and the slide between frames. `menu-base.tsx` is the trigger shell, `menu-surface.tsx` and `menu-shell.tsx` the beaked surface, `menu-row.tsx` the rows, `menu-disclosure.tsx` the folding row, `menu-anchor.ts` the placement, `frame-growth.ts` and `frame-slide.tsx` the frame chassis; each carries its `.css.ts` beside it, and `menu-base.css.ts` holds the row vocabulary's styles.
+`Menus/` — the menu recipe: the shell a trigger hangs, the rows inside it, the frame chassis, and the slide between frames. `menu-base.tsx` is the trigger shell, `menu-surface.tsx` and `menu-shell.tsx` the beaked surface, `menu-row.tsx` the rows, `menu-disclosure.tsx` the folding row over `listed-outline.css.ts`'s chevron-and-rail styles, `menu-anchor.ts` the placement, `frame-growth.ts` and `frame-slide.tsx` the frame chassis; each carries its `.css.ts` beside it, and `menu-base.css.ts` holds the row vocabulary's styles.
 
 | Title | Export | What it is |
 | ------------ | ----------------------------------------------- | ----------------------------------------- |
@@ -368,7 +367,8 @@ Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, 
 | Row classes | `rowBox` · `rowShell` · `item` · `menuCompact` · `heading` · `headingCaps` · `actionRow` · `topRow` · `footing` · `overlay` · `value` · `detail` · `rowDragging` · `AccessoryButton` · `FooterLockButton` · `FooterMoreButton` | The box every row wears (first in the stylesheet, so a variant's own properties win), the hover/focus shell, and the kinds as classes; `menuCompact` on a pane switches every row inside it; `overlay` seats a pin or checkbox in the lead inset. |
 | Index | `MenuIndex` · `MenuRowView` · `MenuRow` · `MenuSection` · `Trailing` | A menu as data — sections of rows, each row's trailing control named once (chevron · value · switch · button · slider · picker · color · field); the Settings window and every frame render through it. |
 | Scroll frame | `MenuScrollFrame` · `MENU_MAX_HEIGHT` | The one capped overflow region with its fade. |
-| DisclosureRow | `DisclosureRow` · `useDisclosureSet` · `DropOutlineKind` | A folding row on DropOutline. |
+| Listed outline | `dropOutline` · `dropOutlineOpen` · `dropOutlineSpacer` · `railRow` | The fold chevron and the rail that descends from its center, on `--disclosure-rail-x` (`listed-outline.css.ts`). |
+| DisclosureRow | `DisclosureRow` · `useDisclosureSet` · `DropOutlineKind` | A folding row on the listed outline. |
 | MenuSurface | `MenuSurface` | The beaked surface the large toolbar menu hangs off a button. |
 | MenuDropdown | `MenuDropdown` | The shell around a trigger — open state, dismiss, growth bound. |
 | NotchedShell | `NotchedShell` | The beaked frost shell MenuSurface composes. |
