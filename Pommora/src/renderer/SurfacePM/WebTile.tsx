@@ -16,7 +16,7 @@ import { useDismiss } from '@renderer/DesignSystem/Interactions/useDismiss'
 import { useSession } from '../store'
 import { openWebLink } from '../Links/openWebLink'
 import { webGuestRetention } from './WebRetention'
-import './embeds.css'
+import './block-tile-base.css'
 import '@renderer/SurfacePM/block-title.css'
 
 /** What the guest element answers with once attached — the parting frame's only surface. */
@@ -210,7 +210,7 @@ export function WebTile({
   const onScreen = visible || parting
   const shown = live && onScreen
   return (
-    <div className="wpembed" ref={rootRef}>
+    <div className="web-tile" ref={rootRef}>
       {live ? (
         <webview
           ref={(el) => {
@@ -226,20 +226,20 @@ export function WebTile({
         />
       ) : null}
       {!shown ? (
-        <div className="wpembed-face">
+        <div className="web-tile-face">
           {failed ? (
-            <span className={cx('wpembed-face-domain', text.footnote.standard)}>
+            <span className={cx('web-tile-face-domain', text.footnote.standard)}>
               {linkDomain(url)}
             </span>
           ) : snap ? (
-            <img className="wpembed-face-snap" src={snap} alt="" />
+            <img className="web-tile-face-snap" src={snap} alt="" />
           ) : null}
         </div>
       ) : null}
       {shown && !engaged ? (
         // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: a click-to-engage shield over the guest, not a control — the site behind it carries its own semantics
         <div
-          className="wpembed-catcher"
+          className="web-tile-catcher"
           onClick={() => {
             // Mid-load, the catcher stays: interaction is handed over only to a settled guest.
             if (loaded) setEngaged(true)
@@ -248,7 +248,7 @@ export function WebTile({
       ) : null}
       <button
         type="button"
-        className={cx('wpembed-title', text.footnote.standard, overScrollEllipsis)}
+        className={cx('web-tile-title', text.footnote.standard, overScrollEllipsis)}
         onClick={() => openWebLink(url)}
       >
         {title}

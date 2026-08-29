@@ -14,7 +14,7 @@ import { useBannerMenu } from '../Interface/useBannerMenu'
 import { NavTrail } from '@renderer/DesignSystem/Elements/NavTrail'
 import { ancestryOf } from '../treeIndex'
 
-import './embeds.css'
+import './block-tile-base.css'
 import '@renderer/SurfacePM/block-title.css'
 import { embedZoom } from '@shared/types'
 
@@ -92,8 +92,8 @@ export function PageTile({
     return () => void flushPageSave(path)
   }, [editing, path])
 
-  if (failed) return <div className="pgembed pgembed-failed">{titleFromPath(path)}</div>
-  if (body === null) return <div className="pgembed" />
+  if (failed) return <div className="page-tile page-tile-failed">{titleFromPath(path)}</div>
+  if (body === null) return <div className="page-tile" />
   const header =
     chrome === 'page' ? (
       entry?.cover ? (
@@ -116,7 +116,7 @@ export function PageTile({
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a click-to-edit surface over a contenteditable that is already keyboard-reachable
     <div
-      className={`pgembed${editing ? ' is-editing' : ''}${chrome === 'page' && entry?.cover ? ' has-banner' : ''}`}
+      className={`page-tile${editing ? ' is-editing' : ''}${chrome === 'page' && entry?.cover ? ' has-banner' : ''}`}
       style={{ '--mdpm-scale': embedScale, '--editor-scale': 1 } as React.CSSProperties}
       onClick={(e) => {
         if (editing || locked) return
@@ -200,5 +200,5 @@ function EmbedCrumbs({ id }: { id: string }): React.JSX.Element | null {
   const tree = useSession((s) => s.tree)
   const trail = tree && ancestryOf(tree, { kind: 'page', id })
   if (!trail) return null
-  return <NavTrail segments={trail} emphasize className="pgembed-crumbs" />
+  return <NavTrail segments={trail} emphasize className="page-tile-crumbs" />
 }

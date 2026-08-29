@@ -196,11 +196,11 @@
    .spm-tile outranks the borderless-hide rule (equal base specificity) so a borderless embed still
    shows the accent on hover, independent of source order. */
 .blk-surface:not(.is-host-locked)
-.spm-tile.spm-tile:not(.is-locked):has(.pgembed):hover:not(.is-resizing):not(
+.spm-tile.spm-tile:not(.is-locked):has(.page-tile):hover:not(.is-resizing):not(
   :has(> .spm-edge:hover)
 ),
 .blk-surface:not(.is-host-locked)
-  .spm-tile.spm-tile:not(.is-locked):has(.pgembed).is-editing-tile:not(.is-resizing):not(
+  .spm-tile.spm-tile:not(.is-locked):has(.page-tile).is-editing-tile:not(.is-resizing):not(
     :has(> .spm-edge:hover)
   ) {
   --tile-border-color: var(--accent-stroke);

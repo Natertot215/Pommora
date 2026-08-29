@@ -18,8 +18,8 @@ import {
 import { computeGeometry, type Rect, type SurfaceGeometry } from './Core/rects'
 import { snapAxis, xCandidates, yCandidates } from './Core/snap'
 import { startPointerDrag } from './Sensors/pointerDrag'
-import '@renderer/SurfacePM/tile-chassis.css'
-import './surfacepm.css'
+import '@renderer/SurfacePM/block-tile-base.css'
+import './tile-surface.css'
 
 // Moving a block lifts THE BLOCK ITSELF under the pointer (shadowed, 1:1, no ghost) while its
 // siblings reflow through the shared Feel transition; releasing settles it into its slot as an

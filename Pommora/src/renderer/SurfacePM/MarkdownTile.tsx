@@ -63,11 +63,11 @@ export function MarkdownTile({
         : window.nexus.blocks.writeMarkdown(host, tileId, next),
     )
 
-  if (body === null) return <div className="blk-md" />
+  if (body === null) return <div className="markdown-tile" />
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a click-to-edit surface over a contenteditable that is already keyboard-reachable
     <div
-      className={`blk-md${editing ? ' is-editing' : ''}`}
+      className={`markdown-tile${editing ? ' is-editing' : ''}`}
       onClick={() => {
         if (editing || locked) return // locked: no edit entry; selection (portal is read-only) still works
         // Selecting rendered text to copy ends in a click — that's a copy, not an edit.
