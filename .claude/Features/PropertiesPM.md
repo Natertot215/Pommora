@@ -127,7 +127,7 @@ What holds across every type: the assign surface, the mutations and their safety
 
 **The Property Frame.** The Properties frame of the toolbar's Settings menu (`src/renderer/Properties/PropertyFrame.tsx`) is the assign surface for a Collection: the assigned properties on top, each opening its per-type editor, and an **All Properties** disclosure pinned to the bottom listing every unassigned registry definition in the nexus order, each promotable by its `+` or by dragging into the assigned group. Dragging within a group reorders it — the Collection's order above, the nexus order below — and dragging an assigned row out removes it. The frame's `+` creates: it mints into the registry, seeds per-type options, and assigns here. Renames, type changes, and option edits change the global definition for every assigner. The global Delete lives only inside a property's own editor frame, behind its ⋮ menu and a native confirm.
 
-**Schema Mutations.** The registry mutations live in `src/main/crud/registryProperty.ts` and its siblings; their entry points serialize on one chain, and every operation that writes both the registry and pages states its intent in a journal first so a crash replays forward on the next open.[^8]
+**Schema Mutations.** The registry mutations live in `src/main/CRUD/registryProperty.ts` and its siblings; their entry points serialize on one chain, and every operation that writes both the registry and pages states its intent in a journal first so a crash replays forward on the next open.[^8]
 
 | Mutation | Effect on Existing Values |
 | --- | --- |

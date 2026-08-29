@@ -32,7 +32,7 @@ Every title the scanner finds is looked up in an in-memory map built from the pa
 
 ### The Rename Cascade
 
-Because a connection's identity is its title, renaming a page rewrites every body that names the old title. `src/main/connections/rewrite.ts` is the primitive — one pure pass over three patterns (wikilink, page embed, markdown link) plus the Link property values in frontmatter — and the cascade runs it over every file the content index says mentions the title, confirming each under its own lock, with assigned aliases also using the same cascading mechanism; Connections inside code syntax aren't cascaded. A File property's `[[Basename.ext]]` values are in a different domain and are left alone.[^2] Anything inside a code span or fence is a sample and is never rewritten.
+Because a connection's identity is its title, renaming a page rewrites every body that names the old title. `src/main/Connections/rewrite.ts` is the primitive — one pure pass over three patterns (wikilink, page embed, markdown link) plus the Link property values in frontmatter — and the cascade runs it over every file the content index says mentions the title, confirming each under its own lock, with assigned aliases also using the same cascading mechanism; Connections inside code syntax aren't cascaded. A File property's `[[Basename.ext]]` values are in a different domain and are left alone.[^2] Anything inside a code span or fence is a sample and is never rewritten.
 
 ### Rendering
 

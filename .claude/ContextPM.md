@@ -14,7 +14,6 @@
 
 - [ ] **The framework** — the exploration has reported; once the open forks are ruled (the CSS-form question, the masked-knob roster, the naming batches, the ten §3 rulings), rewrite [[RendererRework]] §2 into ordered phases with gates. Directed cleanups keep landing ahead of it.
 - [ ] **Where does the floating identity label live?** Embed tiles reveal crumbs or a webpage title on hover, the Web Window shows domain › title always, the Page Window a trail in its tab strip; one design-system element or NavTrail absorbing the webpage case.
-- [ ] **Eyeball the Space dropdown** — carried from 08-25: icon, editable title, lock footer, the two pickers, with the trio's Settings button blank behind it.
 
 ### Pending Focuses
 
