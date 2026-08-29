@@ -1,6 +1,5 @@
 /* The app's one checkbox look. Three consumers wear it: the editor's task marker (a CodeMirror
-   widget building raw DOM), the React `Checkbox` control, and the property value glyph. Plain CSS
-   rather than a `.css.ts` so the widget can name the class without importing a build artifact.
+   widget building raw DOM), the React `Checkbox` control, and the property value glyph.
 
    inline-block (content-independent baseline) so toggling doesn't shift the box; the mark is
    absolutely centered. The box owns its own geometry — no borrowed frame. */
@@ -16,9 +15,7 @@
   border-style: solid;
   border-color: var(--border-base);
   background: transparent;
-  /* The three parts a chosen cell resolves through the ramp — its fill, its outline and its mark.
-     A cleared checkbox drops its override and inherits the accent recipe from :root, so it keeps
-     following the accent live rather than freezing a copy. */
+  /* The three parts a chosen cell resolves through the ramp — its fill, its outline and its mark.*/
   color: var(--checkbox-mark);
   cursor: pointer;
 }
