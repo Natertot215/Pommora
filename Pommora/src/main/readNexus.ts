@@ -225,12 +225,17 @@ function readAssetDirectoryLeaf(v: unknown): string {
  *  discarding the whole list, and a kept one is normalized to the spelling the matcher compares. */
 function readExcludedLeaf(v: unknown): string[] {
   if (!Array.isArray(v)) return []
+  const seen = new Set<string>()
   const out: string[] = []
   for (const item of v) {
     if (typeof item !== 'string') continue
     const raw = item.trim()
     if (!raw || excludedFolderRefusal(raw)) continue
-    out.push(rootSegs(raw).join('/'))
+    const segs = rootSegs(raw)
+    const key = segs.map(normalizeSeg).join('/')
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push(segs.join('/'))
   }
   return out
 }

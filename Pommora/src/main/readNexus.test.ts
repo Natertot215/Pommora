@@ -104,6 +104,9 @@ describe('readSettingsLeaves: excluded_folders', () => {
   it('drops a refused element and normalizes a trailing slash off', () => {
     expect(read(['Archive/', '/bad', 'Vault A'])).toEqual(['Archive', 'Vault A'])
   })
+  it('collapses a case-folded duplicate a hand-edit could leave', () => {
+    expect(read(['Archive', 'archive', 'Vault A'])).toEqual(['Archive', 'Vault A'])
+  })
   it('is empty for a non-array or an absent key', () => {
     expect(read('Archive')).toEqual([])
     expect(readSettingsLeaves({} as never).excluded).toEqual([])
