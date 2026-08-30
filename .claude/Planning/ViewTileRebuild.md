@@ -1,6 +1,6 @@
 ## ViewTile Rebuild — Draft (Bundle 9)
 
-> **Status:** draft — pending review. The plan is the single **After** codeblock in §3; the review runs against it. Nothing here is ratified.
+> **Status:** landed 08-29-2026 in `be45b52d` — behavior and appearance held identical. The simplification and build-breaking passes folded before commit; the build-breaker's Finding 2 (partial `.catch` coverage on `savedView`) stands open as a shared-codec call, [[Configuration]]-adjacent, not a `ViewTile` change.
 
 Bundle 9 of the Codebase-Cleanup Checklist: rebuild `renderer/SurfacePM/ViewTile.tsx` (605 lines) into a set of cohesive files that mount shared primitives, with its behavior and appearance held identical. The merge parked the file at its permanent home; this is the slim-down it was sequenced before.
 
