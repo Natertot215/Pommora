@@ -304,14 +304,14 @@ The row's trailing slot is a `kind: 'field'` holding the count of `tree.excluded
 
 #### Gate 1 — exclusions are writable from the app
 
-- [ ] Gate commands green, exit codes read directly.
-- [ ] Every task's **Verify — automated** list ticked, each against a result just watched.
-- [ ] `rg -F "excluded_folders" src` re-run against its control; count matched or the divergence rewrote the plan.
-- [ ] Every task that diverged had its dependents re-derived and rewritten.
-- [ ] `code-simplifier` then `feature-dev:code-reviewer` dispatched against `<base>..HEAD` scoped to this phase's paths; the reports cite files inside it.
-- [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
-- [ ] No hazard window opened by this phase.
-- [ ] Progress hashes filled in; lessons written into the later tasks they change.
+- [x] Gate commands green, exit codes read directly. (typecheck · 3697 tests · lint, all clean)
+- [x] Every task's **Verify — automated** list ticked, each against a result just watched.
+- [x] `rg -F "excluded_folders" src` re-run against its control; count matched or the divergence rewrote the plan.
+- [x] Every task that diverged had its dependents re-derived and rewritten.
+- [x] `code-simplifier` then `feature-dev:code-reviewer` dispatched against `ce72c989..HEAD` scoped to this phase's paths; the reports cite files inside it.
+- [x] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
+- [x] No hazard window opened by this phase.
+- [x] Progress hashes filled in; lessons written into the later tasks they change.
 - [ ] **Declared stop.** Execution halts until the user closes this phase's **Verify — user** boxes.
 
 ---
