@@ -1037,30 +1037,34 @@ serveBridge(
       },
     },
 
-    // Confirms, then acts: the destructive act is unreachable without the dialog because the two
-    // share one handler. On a confirmed clear the index is re-seeded — the sweep re-indexes every
-    // page it rewrites, and the watcher never corrects an excluded folder, so without this the
-    // cleared pages linger in the index until the next launch.
+    // Re-seed after a confirmed clear: the sweep re-indexes every page it rewrites and the watcher
+    // never corrects an excluded folder, so the cleared pages would otherwise linger in the index.
     'exclusions:clear': {
+      // A `window` handler has no envelope net, so this wraps its own throws — the destructive
+      // filesystem work must never reject across the boundary.
       kind: 'window',
       fn: async (win: BrowserWindow | null) => {
         const root = sessionRoot()
         if (root === null) return NO_NEXUS
-        const { excluded, assetDir } = await readWatchScope(root)
-        if (excluded.length === 0 || !win) return ok(null)
-        const preserve = (await readLivePersonalization(root)).preservePropertiesOnClear !== false
-        const { response } = await dialog.showMessageBox(win, {
-          type: 'warning',
-          buttons: ['Clear', 'Cancel'],
-          defaultId: 1,
-          cancelId: 1,
-          ...clearConfirmCopy(excluded.length, preserve),
-        })
-        if (response !== 0) return ok(null)
-        const result = await clearExclusionData(root, excluded, assetDir, preserve)
-        if (!result.ok) return result
-        await seedContentIndex(root)
-        return ok(result.value)
+        try {
+          const { excluded, assetDir } = await readWatchScope(root)
+          if (excluded.length === 0 || !win) return ok(null)
+          const preserve = (await readLivePersonalization(root)).preservePropertiesOnClear !== false
+          const { response } = await dialog.showMessageBox(win, {
+            type: 'warning',
+            buttons: ['Clear', 'Cancel'],
+            defaultId: 1,
+            cancelId: 1,
+            ...clearConfirmCopy(excluded.length, preserve),
+          })
+          if (response !== 0) return ok(null)
+          const result = await clearExclusionData(root, excluded, assetDir, preserve)
+          if (!result.ok) return result
+          await seedContentIndex(root)
+          return ok(result.value)
+        } catch (e) {
+          return fail('operation-failed', errText(e))
+        }
       },
     },
 

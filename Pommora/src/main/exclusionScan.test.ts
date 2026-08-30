@@ -67,7 +67,6 @@ describe('excludedArtifacts', () => {
     expect(sidecars.map(rel).sort()).toEqual(
       ['Archive/_pagecollection.json', 'Archive/Set/_pageset.json'].sort(),
     )
-    // Agenda, dependency, VCS, and asset trees contribute nothing.
     expect(
       p.some((x) => x.includes('Tasks') || x.includes('node_modules') || x.includes('.git')),
     ).toBe(false)
@@ -75,7 +74,6 @@ describe('excludedArtifacts', () => {
   })
 
   it('matches what corpusFilesUnder would return over an agenda-free root, exclusion aside', async () => {
-    // Crossing test: over a root with no agenda config, every .md the corpus would reach appears.
     await d('Plain/Sub')
     await w('Plain/a.md', page('01LLLLLLLLLLLLLLLLLLLLLLLL', ''))
     await w('Plain/Sub/b.md', page('01MMMMMMMMMMMMMMMMMMMMMMMM', ''))
@@ -104,16 +102,12 @@ describe('clearExclusionData — preserve properties on', () => {
     expect(note).not.toContain('PageID')
 
     expect(await read('Archive/proj.md')).toContain('Projects:')
-    // Collision: the plain key already present wins, the wrapped one drops. (Flow collections
-    // reflow to `[ Revisit ]` under lineWidth:0 — a documented sweep-wide property.)
     const collide = await read('Archive/collide.md')
     expect(collide).toContain('Revisit')
     expect(collide).not.toContain('open')
     expect(collide).not.toContain('<Status>')
-    // Same name under both sigils: no crash, exactly one bare Status remains.
     const both = await read('Archive/both.md')
     expect(both.match(/^Status:/gm)?.length).toBe(1)
-    // A malformed, unclosed key is not <…>-shaped and is left exactly as it was.
     expect((await read('Archive/malformed.md')).includes('<Status: broken')).toBe(
       before.includes('<Status: broken'),
     )

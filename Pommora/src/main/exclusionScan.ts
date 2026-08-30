@@ -1,7 +1,6 @@
-// The one place in the app that deliberately reads inside an excluded folder. Every other
-// enumerator prunes exclusions; Clear reaches past them to scrub what Pommora wrote, so that
-// exception lives here alone. The Agenda layer is out of scope: a folder carrying a Task or Event
-// config is skipped whole, configs and pages alike.
+// The one place in the app that deliberately reads inside an excluded folder — every other
+// enumerator prunes them. The Agenda layer stays out: a folder carrying a Task or Event config is
+// skipped whole.
 
 import { rm } from 'node:fs/promises'
 import { join } from 'node:path'
@@ -27,9 +26,6 @@ const AGENDA_CONFIGS: readonly string[] = [
 ]
 const IDENTITY_KEYS: readonly string[] = Object.values(KIND_ID_KEY)
 
-/** Every page and container sidecar under the excluded folders — the reach Clear rewrites. Steps
- *  around the asset root even when it is itself excluded, skips `.`-dirs and `node_modules`, and
- *  skips an Agenda-config folder whole so no Task or Event file ever enters the list. */
 export async function excludedArtifacts(
   root: string,
   excluded: string[],
@@ -67,31 +63,28 @@ export async function excludedArtifacts(
   return { pages, sidecars }
 }
 
-/** A page decision as text: unwrap `<>`/`()` keys to bare frontmatter (or drop them), and always
- *  drop the identity key. Governance is by shape — a malformed, unclosed key is not `<…>`-shaped,
- *  so `parseGovernedKey` returns null and it is left exactly as it was. */
+// Governance is by shape: a malformed, unclosed key is not `<…>`-shaped, so it is left untouched.
 function clearRewrite(preserveProperties: boolean): RewriteText {
   return (content) => {
     const keys = Object.keys(readFrontmatterFields(content))
-    const governed = keys.filter((k) => parseGovernedKey(k) !== null)
+    const governed = keys.flatMap((k) => {
+      const parsed = parseGovernedKey(k)
+      return parsed ? [{ key: k, name: parsed.name }] : []
+    })
     const identity = keys.filter((k) => IDENTITY_KEYS.includes(k))
     let text = content
     if (preserveProperties) {
-      for (const k of governed) {
-        const parsed = parseGovernedKey(k)
-        if (!parsed) continue
-        const renamed = renameFrontmatterKey(text, k, parsed.name, 'prefer-new')
+      for (const { key, name } of governed) {
+        const renamed = renameFrontmatterKey(text, key, name, 'prefer-new')
         if (renamed !== null) text = renamed
       }
     }
-    const remove = preserveProperties ? identity : [...identity, ...governed]
+    const remove = preserveProperties ? identity : [...identity, ...governed.map((g) => g.key)]
     if (remove.length > 0) text = mergeFrontmatter(text, {}, remove, splitEnvelope(text).body)
     return text === content ? null : text
   }
 }
 
-/** The confirmation wording, which turns on the Preserve toggle read at call time — kept here,
- *  and pure, so a fresh reviewer can see the two branches say different things. */
 export function clearConfirmCopy(
   folderCount: number,
   preserveProperties: boolean,
@@ -105,10 +98,6 @@ export function clearConfirmCopy(
   }
 }
 
-/** Remove Pommora's bookkeeping from every excluded folder: delete the container sidecars, and
- *  strip each page's identity key and — unless Preserve Properties is on — its property and
- *  Context values, unwrapping them to plain frontmatter otherwise. A page the sweep cannot admit
- *  is left byte-identical and counted as refused rather than scrubbed. */
 export async function clearExclusionData(
   root: string,
   excluded: string[],
@@ -116,13 +105,18 @@ export async function clearExclusionData(
   preserveProperties: boolean,
 ): Promise<Result<ClearReport>> {
   const { pages, sidecars } = await excludedArtifacts(root, excluded, assetDir)
-  for (const sidecar of sidecars) await rm(sidecar, { force: true })
+  // Best-effort: a sidecar that won't delete (locked, permission-denied, a sync placeholder) is
+  // skipped so the page sweep still runs, rather than aborting the whole pass mid-way.
+  let removed = 0
+  for (const sidecar of sidecars) {
+    const gone = await rm(sidecar, { force: true }).then(
+      () => true,
+      () => false,
+    )
+    if (gone) removed++
+  }
   const swept = await sweepGovernedRoots(root, { kind: 'files', files: pages }, () => null, {
     rewriteText: clearRewrite(preserveProperties),
   })
-  return ok({
-    pages: swept.touched.length,
-    sidecars: sidecars.length,
-    refused: swept.refused.length,
-  })
+  return ok({ pages: swept.touched.length, sidecars: removed, refused: swept.refused.length })
 }
