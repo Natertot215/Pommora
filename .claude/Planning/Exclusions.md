@@ -499,8 +499,8 @@ On a confirmed clear the handler awaits `clearExclusionData` and then runs `seed
   - [x] Task 3 — The set and choose channels · `0e6caac4`
   - [x] Task 4 — The row and the Manage pane · `63908f1c` (+ Gate 1 `092aff56`, live-verify `a25ab028` `26cad679` `94ea5116`)
 - [ ] **Phase 2** — Clear removes what Pommora wrote · base `94ea5116`
-  - [x] Task 5 — The Preserve Properties toggle · `<commit>`
-  - [ ] Task 6 — The enumerator and the strip · `<commit>`
+  - [x] Task 5 — The Preserve Properties toggle · `bb51bc91`
+  - [x] Task 6 — The enumerator and the strip · `<commit>` (hazard window OPEN until Task 7)
   - [ ] Task 7 — The Clear row and its confirmation · `<commit>`
 
 ### Rulings

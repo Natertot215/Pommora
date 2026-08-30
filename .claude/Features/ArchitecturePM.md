@@ -90,7 +90,7 @@ Agenda items carry no content model yet: no fields, no create path, no read surf
 
 #### II. Folder Exclusion
 
-`excluded_folders` in `settings.json` takes anchored Nexus-relative paths, and exclusion is total. One predicate (`src/main/exclusion.ts`) is honored by the read walk, the adoption pass, the watcher, the content index's corpus, and every cascade, so nothing under an excluded folder is read, shown, indexed, swept, or rewritten, and no enumeration descends into one. Un-adopted folders are a different case: they stay outside the tree but are fully indexed and cascade-reachable.
+`excluded_folders` in `settings.json` takes anchored Nexus-relative paths, and exclusion is total for reading. One predicate (`src/main/exclusion.ts`) is honored by the read walk, the adoption pass, the watcher, the content index's corpus, and every cascade, so nothing under an excluded folder is read, shown, indexed, swept, or rewritten, and no enumeration descends into one. The single deliberate reach past it is Clear Exclusion Cache (`src/main/exclusionScan.ts`), which enters an excluded folder to remove Pommora's own bookkeeping — container sidecars and per-page identity and property keys — stepping around the asset root and skipping the Agenda layer whole. Un-adopted folders are a different case: they stay outside the tree but are fully indexed and cascade-reachable.
 
 #### II. The Asset Directory
 
