@@ -45,14 +45,14 @@ Creation is right-click-first. A mode's empty area pops its native New menu — 
 
 A page row's menu is the **page menu** (`src/shared/pageMenu.ts`), the same rows in the same order wherever a page can be right-clicked — a sidebar row, a table row, a card, a row grip, a tab:
 
-| Group | Rows |
-| --- | --- |
-| Open | Open Preview · Open New Tab (reads *Open* where the page already holds a tab) |
-| Identity | Rename · Edit Icon |
-| Create | New Page Above · New Page Below (a sibling at that slot in the manual order) |
-| Send | Move To ▸ (every Collection and its Sets, the page's own disabled) · Copy Link (`[[Title]]`) · Copy Path |
-| Locate | Reveal Location |
-| Remove | Delete |
+| Group    | Rows                                                                                                     |
+| -------- | -------------------------------------------------------------------------------------------------------- |
+| Open     | Open Preview · Open New Tab (reads *Open* where the page already holds a tab)                            |
+| Identity | Rename · Edit Icon                                                                                       |
+| Create   | New Page Above · New Page Below (a sibling at that slot in the manual order)                             |
+| Send     | Move To ▸ (every Collection and its Sets, the page's own disabled) · Copy Link (`[[Title]]`) · Copy Path |
+| Locate   | Reveal Location                                                                                          |
+| Remove   | Delete                                                                                                   |
 
 ### The Subfield
 
