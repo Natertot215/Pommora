@@ -134,7 +134,7 @@ A card's location trail moved onto the card chassis. `CardTrail` renders its own
 
 **The Landing Slot:** The drop preview a dragged card lands on was a rect the cross-list engine painted inline, absent from every zone the single-zone engine serves. `.drop-slot` in `dropChrome.css` is now the one rect, filled by `--drop-slot-fill` at accent's tertiary tint and rounded through `--drop-slot-radius`; `group.tsx` and SurfacePM's `.spm-placement` both wear it, SurfacePM keeping the tile corner. `engine.tsx` surfaces the landing box it already held as `useDropSlot`, and the card chassis paints it through `CardDropSlot`, which the NavGallery's two zones and the Set Cards row render — the affordance belongs to cards rather than to every zone the engine serves. `dropChrome.css` moved from `main.tsx` onto `DropLine.tsx` and the `drag.tsx` seam, which is what carries it into the showcase build.
 
-- **Commits:** `%%HASH%%`
+- **Commits:** `ae397a0f`
 - **Diff:** Net +41 | +91 / −50
 
 #### PM-118 || The Disclosure Lock
