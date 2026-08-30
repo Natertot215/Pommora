@@ -18,13 +18,18 @@ describe('NavTrail', () => {
     expect(html.match(/<button/g)?.length).toBe(1)
   })
 
-  it('emphasizes the last segment that is not a ghost', () => {
-    const html = renderToStaticMarkup(<NavTrail segments={three} emphasize />)
-    const cur = html.indexOf(s.current)
-    expect(cur).toBeGreaterThan(-1)
-    expect(html.indexOf('>B<')).toBeGreaterThan(cur)
+  it('brightens the whole trail as an option, not a location', () => {
+    const html = renderToStaticMarkup(<NavTrail segments={three} variant="option" />)
+    expect(html).toContain(s.option)
+  })
+
+  it('pops the last non-ghost stop to the option tone when selected', () => {
+    const html = renderToStaticMarkup(<NavTrail segments={three} selected />)
+    const leaf = html.indexOf(s.option)
+    expect(leaf).toBeGreaterThan(-1)
+    expect(html.indexOf('>B<')).toBeGreaterThan(leaf)
     expect(html.indexOf('>C<')).toBeGreaterThan(html.indexOf('>B<'))
-    expect(html.indexOf(s.current, cur + 1)).toBe(-1)
+    expect(html.indexOf(s.option, leaf + 1)).toBe(-1)
   })
 
   it('renders nothing for an empty trail', () => {

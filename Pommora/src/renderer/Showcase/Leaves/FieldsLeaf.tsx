@@ -44,7 +44,7 @@ export function FieldsLeaf(): React.JSX.Element {
             />
           }
         >
-          <NavTrail segments={pathSegments(path)} />
+          <NavTrail segments={pathSegments(path)} variant="option" />
         </InputField>
         <InputField capped>
           <FileLabel name="Drafts" />

@@ -3,7 +3,6 @@ import { OverScroll } from '../../Interactions/OverScroll'
 import { Icon } from '../../Symbols'
 import type { IconSize } from '../../Tokens/size.css'
 import { cx } from '../../Util/cx'
-import { PathChevron } from '../PathChevron/PathChevron'
 import * as s from './navTrail.css'
 
 /** One stop on a location trail. `onSelect` makes it a button; `ghost` dims a stop past the current
@@ -19,9 +18,8 @@ export interface NavTrailProps {
   segments: readonly TrailSegment[]
   iconSize?: IconSize
   chevronSize?: 'control' | 'caption'
-  /** The trail reads a step dimmer and the current stop — the last one that isn't a ghost — reads
-   *  in the control tone. */
-  emphasize?: boolean
+  variant?: 'path' | 'option'
+  selected?: boolean
   /** Hover-scrolls the run as one; off, each segment truncates on its own. */
   overScroll?: boolean
   className?: string
@@ -32,25 +30,26 @@ export function NavTrail({
   segments,
   iconSize = 'caption',
   chevronSize = 'caption',
-  emphasize = false,
+  variant = 'path',
+  selected = false,
   overScroll = true,
   className,
   segmentClassName,
 }: NavTrailProps): React.JSX.Element | null {
   if (segments.length === 0) return null
-  let currentIndex = -1
-  if (emphasize) {
-    currentIndex = segments.length - 1
-    while (currentIndex >= 0 && segments[currentIndex].ghost) currentIndex--
+  let leafIndex = -1
+  if (selected) {
+    leafIndex = segments.length - 1
+    while (leafIndex >= 0 && segments[leafIndex].ghost) leafIndex--
   }
   const Host = overScroll ? OverScroll : 'div'
   return (
-    <Host className={cx(s.trail, emphasize && s.emphasized, className)}>
+    <Host className={cx(s.trail, variant === 'option' && s.option, className)}>
       {segments.map((seg, i) => {
         const cls = cx(
           s.segment,
           seg.ghost && s.ghost,
-          i === currentIndex && s.current,
+          i === leafIndex && s.option,
           segmentClassName,
         )
         const body = (
@@ -62,7 +61,14 @@ export function NavTrail({
         return (
           // biome-ignore lint/suspicious/noArrayIndexKey: a trail is strictly positional and never reorders
           <Fragment key={i}>
-            {i > 0 && <PathChevron size={chevronSize} className={s.chevron} />}
+            {i > 0 && (
+              <span
+                aria-hidden
+                className={cx(s.chevron, chevronSize === 'caption' && s.chevronSmall)}
+              >
+                ›
+              </span>
+            )}
             {seg.onSelect ? (
               <button type="button" className={cls} onClick={seg.onSelect}>
                 {body}
