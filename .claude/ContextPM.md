@@ -14,6 +14,7 @@
 
 - [ ] **The framework** — the exploration has reported; once the open forks are ruled (the CSS-form question, the masked-knob roster, the naming batches, the ten §3 rulings), rewrite [[RendererRework]] §2 into ordered phases with gates. Directed cleanups keep landing ahead of it.
 - [ ] **Where does the floating identity label live?** Embed tiles reveal crumbs or a webpage title on hover, the Web Window shows domain › title always, the Page Window a trail in its tab strip; one design-system element or NavTrail absorbing the webpage case.
+- [ ] **A shared list-removal collapse motion.** The exclusion pane's Manage rows are the seed: a row reveals in on add and collapses out on delete through `Reveal` (`open={!closing}`, the write deferred to `onCollapsed`, a closing-set that prunes on data change and batches concurrent removals off a ref). It lives inline in `ExcludedDirectoriesRow` for now and belongs in `DesignSystem/Animation` as a `useListRemoval` hook — every editable list should delete this way. Adopt it there and in `FilterFrame`'s rule rows, which animate reveal-in only and delete instantly today. (Deliberately seeded in one place, not a stray one-off.)
 
 ### Pending Focuses
 

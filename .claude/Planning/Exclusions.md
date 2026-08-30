@@ -543,6 +543,7 @@ Ran after both gates; adversarial frontmatter and trees came back clean under ex
 
 - **A file count beside the folder count.** Ruled out for this plan: it needs a recursive walk of arbitrarily large folders and cannot come from the index, which has already forgotten excluded paths. `excludedArtifacts` makes it a one-line addition if the folder count proves uninformative in use.
 - **Per-folder Clear.** The pane's rows are the natural home for it once the global Clear has been used on a real nexus.
+- **A shared `useListRemoval` collapse motion.** The Manage pane's reveal-in / collapse-out delete (write deferred to `onCollapsed`, closing-set + prune + batch) is the seed; it belongs in `DesignSystem/Animation` and should be adopted by every editable list (FilterFrame's rule rows first — reveal-in only today). Logged as Immediate Work in ContextPM so it isn't read as a one-off. The `×` never dims and an emptied field is accepted (not a delete) — invariants the shared version keeps.
 
 ### Closeout
 
