@@ -6,6 +6,7 @@ import {
   DEFAULT_VIEW_ID,
   mintDefaultView,
   mintNewView,
+  savedView,
   type SavedView,
   type ViewState,
 } from '@shared/views'
@@ -26,7 +27,8 @@ import { reorder, SortableZone, useDragItem } from '@renderer/DesignSystem/Inter
 import { optionRing } from '@renderer/DesignSystem/Pickers/picker-base.css'
 import { RenamableLabel } from '@renderer/DesignSystem/Fields'
 import { IconPicker } from '@renderer/Settings/IconPicker'
-import { findCollection, findCollectionForSet, findSet } from '@renderer/Interface/Scope'
+import { findCollection, findSet } from '@renderer/Interface/Scope'
+import { resolveContainerSchema } from '@renderer/Views/Pipeline/pickView'
 import { ViewRenderer } from '@renderer/Views/ViewRenderer'
 import { SettingsFrame } from '@renderer/Frames/SettingsFrame'
 import { hostedGutter } from '@renderer/DesignSystem/Menus/menu-surface.css'
@@ -51,19 +53,50 @@ import {
 } from '@renderer/Interface/ActionBand.css'
 import * as s from './viewTile.css'
 
-function coerceConfig(raw: unknown, schema: PropertyDefinition[], fallbackId: string): SavedView {
-  const v = raw as SavedView | null
-  const shapeOk =
-    typeof v === 'object' &&
-    v !== null &&
-    typeof v.id === 'string' &&
-    typeof v.name === 'string' &&
-    typeof v.type === 'string' &&
-    (['property_order', 'hidden_properties', 'sort'] as const).every(
-      (k) => v[k] === undefined || Array.isArray(v[k]),
-    )
-  if (!shapeOk) return { ...mintDefaultView(schema), id: fallbackId }
-  return v.id === DEFAULT_VIEW_ID ? { ...v, id: fallbackId } : v
+function coerceEmbeddedView(
+  raw: unknown,
+  schema: PropertyDefinition[],
+  fallbackId: string,
+): SavedView {
+  const r = savedView.safeParse(raw ?? {})
+  if (r.success && r.data.id && r.data.id !== DEFAULT_VIEW_ID) return r.data
+  return { ...mintDefaultView(schema), id: fallbackId }
+}
+
+function usePillPresence(views: SavedView[]): {
+  entering: Set<string>
+  exiting: string | null
+  beginExit: (id: string) => void
+  onAnimEnd: (id: string, commitDelete: () => void) => void
+} {
+  const [exiting, setExiting] = useState<string | null>(null)
+  const [entering, setEntering] = useState<Set<string>>(() => new Set())
+  const prevIdsRef = useRef<Set<string> | null>(null)
+  const ids = views.map((v) => v.id)
+  const idKey = ids.join(',')
+  const idsRef = useRef(ids)
+  idsRef.current = ids
+
+  useEffect(() => {
+    const prev = prevIdsRef.current
+    const cur = new Set(idsRef.current)
+    if (prev) {
+      const added = [...cur].filter((id) => !prev.has(id))
+      if (added.length) setEntering((s0) => new Set([...s0, ...added]))
+    }
+    prevIdsRef.current = cur
+  }, [idKey])
+
+  const beginExit = (id: string): void => setExiting(id)
+  const onAnimEnd = (id: string, commitDelete: () => void): void => {
+    if (exiting === id) {
+      commitDelete()
+      setExiting(null)
+    } else if (entering.has(id)) {
+      setEntering((s0) => (s0.has(id) ? new Set([...s0].filter((x) => x !== id)) : s0))
+    }
+  }
+  return { entering, exiting, beginExit, onAnimEnd }
 }
 
 const rawViews = (raw: Record<string, unknown>): unknown[] =>
@@ -220,10 +253,6 @@ export function ViewTile({
   const [colorFor, setColorFor] = useState<number | null>(null)
   const menuAnchorRef = useRef<Element | null>(null)
   const titleIconRef = useRef<SVGSVGElement>(null)
-  const [exitingId, setExitingId] = useState<string | null>(null)
-  const [enteringIds, setEnteringIds] = useState<Set<string>>(() => new Set())
-  const prevIdsRef = useRef<Set<string> | null>(null)
-  const viewsRef = useRef<SavedView[]>([])
   const btnRef = useRef<HTMLButtonElement>(null)
   const dropRef = useRef<HTMLButtonElement>(null)
 
@@ -240,24 +269,11 @@ export function ViewTile({
       ? (findCollection(tree, embedded.source_id) ?? findSet(tree, embedded.source_id))
       : undefined
 
-  const schemaCollection =
-    source && source.kind !== 'collection' ? findCollectionForSet(tree, source.id) : source
-  const schema = (schemaCollection as CollectionNode | undefined)?.properties ?? []
+  const schema = source && tree ? resolveContainerSchema(tree, source) : []
   const views = source
-    ? entry.views.map((v, i) => coerceConfig(v.config, schema, `embed:${entry.id}:${i}`))
+    ? entry.views.map((v, i) => coerceEmbeddedView(v.config, schema, `embed:${entry.id}:${i}`))
     : []
-  viewsRef.current = views
-  const idKey = views.map((v) => v.id).join(',')
-
-  useEffect(() => {
-    const prev = prevIdsRef.current
-    const cur = new Set(viewsRef.current.map((v) => v.id))
-    if (prev) {
-      const added = [...cur].filter((id) => !prev.has(id))
-      if (added.length) setEnteringIds((s0) => new Set([...s0, ...added]))
-    }
-    prevIdsRef.current = cur
-  }, [idKey])
+  const presence = usePillPresence(views)
 
   if (!embedded || !source || !tree) return <div className="tile-inert" />
 
@@ -316,8 +332,10 @@ export function ViewTile({
       return { ...raw, views: arr, active: arr.length - 1 }
     })
   }
-  const deleteViewAt = (i: number): void => {
+  const deleteView = (id: string): void => {
     if (locked) return
+    const i = views.findIndex((v) => v.id === id)
+    if (i < 0) return
     mutateEntry(entry.id, (raw) => {
       const arr = rawViews(raw)
       if (arr.length <= 1) return raw
@@ -326,21 +344,12 @@ export function ViewTile({
       return { ...raw, views: arr, active: Math.min(cur > i ? cur - 1 : cur, arr.length - 1) }
     })
   }
-  const beginDeleteView = (i: number): void => {
-    if (locked || entry.views.length <= 1) return
-    setExitingId(views[i].id)
-  }
-  const finishExit = (id: string): void => {
-    const i = viewsRef.current.findIndex((v) => v.id === id)
-    if (i >= 0) deleteViewAt(i)
-    setExitingId(null)
-  }
   const reorderViews = (activeId: string, overId: string): void => {
     if (locked) return
     mutateEntry(entry.id, (raw) => {
       const arr = rawViews(raw)
       const seq = reorder(
-        viewsRef.current.map((v, i) => ({ id: v.id, i })),
+        views.map((v, i) => ({ id: v.id, i })),
         activeId,
         overId,
       )
@@ -399,15 +408,10 @@ export function ViewTile({
       case 'titles':
         return toggleTitles()
       case 'delete':
-        return (animate ? beginDeleteView : deleteViewAt)(i)
+        return animate ? presence.beginExit(views[i].id) : deleteView(views[i].id)
       default:
         return
     }
-  }
-  const pillAnimEnd = (id: string): void => {
-    if (exitingId === id) finishExit(id)
-    else if (enteringIds.has(id))
-      setEnteringIds((s0) => (s0.has(id) ? new Set([...s0].filter((x) => x !== id)) : s0))
   }
 
   const renameField = (i: number): React.JSX.Element => (
@@ -479,13 +483,13 @@ export function ViewTile({
             id={v.id}
             view={v}
             active={i === index}
-            entering={enteringIds.has(v.id)}
-            exiting={exitingId === v.id}
+            entering={presence.entering.has(v.id)}
+            exiting={presence.exiting === v.id}
             labeled={labeled}
             renameNode={renaming === i ? renameField(i) : null}
             onSwitch={() => patchEntry({ active: i })}
             onMenu={(e) => void rowMenu(i, e, true)}
-            onAnimEnd={() => pillAnimEnd(v.id)}
+            onAnimEnd={() => presence.onAnimEnd(v.id, () => deleteView(v.id))}
           />
         ))}
       </SortableZone>
