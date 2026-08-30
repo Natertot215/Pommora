@@ -1,6 +1,6 @@
 ## The Renderer Rework
 
-> **Status:** in directed cleanup, 08-28-2026 — the exploration reported; its verified findings are the §2 checklist, and cleanup rows land directly as they're taken. The value editing and visual tuning are mostly done; what's left is the remaining folder moves and the collapse/split rows, then the framework (§4) rewriting §2 into ratified phases. · **Scope:** `Pommora/src/renderer` whole — folders, names, tokens, stylesheets, recipes, boundaries, component APIs, and behavior where a finding justifies it; the design system's pending items (an inactive label tone, the type gaps) ride it.**Beside it:** [[Codebase-Cleanup-Checklist]] (the process-side half — `persist()`, the view host, the `main/index.ts` split, the drag adapters).
+> **Status:** in directed cleanup, 08-28-2026 — the exploration reported; its verified findings are the §2 checklist, and cleanup rows land directly as they're taken. The value editing and visual tuning are mostly done; what's left is the remaining folder moves and the collapse/split rows, then the framework (§4) rewriting §2 into ratified phases. · **Scope:** `Pommora/src/renderer` whole — folders, names, tokens, stylesheets, recipes, boundaries, component APIs, and behavior where a finding justifies it; the design system's pending items (an inactive label tone, the type gaps) ride it. **Beside it:** [[Codebase-Cleanup-Checklist]] (the process-side half — `persist()`, the view host, the `main/index.ts` split, the drag adapters).
 
 The renderer works. It is filed by the order things were built, styled in two forms with a rule that thirty sheets fail, and tokenized unevenly — motion and color are on their ladders, geometry is hundreds of bare pixel values with a handful of named insets. Two organizational passes (08-25 to 08-28) moved `Links/`, `Interface/`, the store, and landed the Menu recipe. What remains was carried in two documents as a ledger of moves and an atlas of evidence; this document is the one list of what is still proposed, why, and what each waits on — and the method for exploring the system whole — as consultants, not inspectors — before any of it is scheduled.
 
@@ -52,7 +52,7 @@ Each folder answers "what is this" in one word. A row marked NEW, MOVED, or RENA
 ├── // Interface                        | • The main window's chrome and its routed pane
 │   ├── // Subfield                     | • The subfield; Banner and the title sheets sit flat in Interface/
 │   ├── // InspectorPane                | • The inspector's side slot
-│   ├── // Sidebar                       | • MOVED from the root — waits on the ruling
+│   ├── // Sidebar                      | • MOVED from the root — waits on the ruling
 │   ├── NavView.tsx                     | • The fifth routed view, beside its four siblings
 │   └── …                               | • ContainerView, ContentView, InterfaceScaffold, HomepageView, PageView, SpaceView, Scope
 ├── // Links                            | • Everything that happens to a link — the hover pane, the link menu, resolution

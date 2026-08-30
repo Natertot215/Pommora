@@ -26,87 +26,12 @@ The appearance does not change: the switcher stays a horizontal **pill** run, no
 
 ### 3. The Plan — the After
 
+The After draws only the lines that change; everything in §4's "preserved as-is" list keeps its current body verbatim inside the same `ViewTile.tsx`. The changes are the two borrows (`resolveContainerSchema`, `coerceEmbeddedView`), the `usePillPresence` extraction, and the pill's deferred delete committing by id:
+
 ```tsx
-export function ViewTile({ entry, mutateEntry, onActivate }: {
-  entry: ViewBlockEntry
-  mutateEntry: (entryId: string, fn: (raw: Record<string, unknown>) => Record<string, unknown>) => void
-  onActivate?: () => void
-}): React.JSX.Element {
-  const tree = useSession((s) => s.tree)
-  const [cfgOpen, setCfgOpen] = useState(false)
-  const [listOpen, setListOpen] = useState(false)
-  const [renaming, setRenaming] = useState<number | null>(null)
-  const [iconFor, setIconFor] = useState<number | null>(null)
-  const [colorFor, setColorFor] = useState<number | null>(null)
-  const menuAnchorRef = useRef<Element | null>(null)
-  const titleIconRef = useRef<SVGSVGElement>(null)
-  const dropRef = useRef<HTMLButtonElement>(null)
-
-  const index = clampActive(entry)
-  const embedded = entry.views[index]
-  const source = embedded && resolveSource(tree, embedded.source_id)
-  const schema = source && resolveContainerSchema(tree, source)
-  const views = entry.views.map((ev, i) => coerceEmbeddedView(ev.config, schema, embedSlotId(entry.id, i)))
-  const view = views[index]
-  const locked = entry.locked ?? false
-  const dropdown = entry.view_style === 'dropdown'
-  const presence = usePillPresence(views)
-
-  if (!embedded || !source || !tree) return <div className="tile-inert" />
-
-  const persistConfig = (i: number, config: SavedView) => {
-    if (resolveViewWrite(locked, config).kind === 'config') writeConfig(i, config)
-  }
-  const persistState = (i: number, state: ViewState) =>
-    writeConfig(i, { ...views[i], ...pickViewState({ ...views[i], ...state }) })
-
-  return (
-    <ViewTileScopeProvider value={{ source, view, persistConfig: (c) => persistConfig(index, c),
-                                    persistState: (st) => persistState(index, st), locked, setLocked }}>
-      <div className={s.tile} onPointerDownCapture={onActivate}>
-        {titleShown && (
-          <EmbedTitle title={entry.display_title ?? source.title} level={entry.title_level ?? 4}
-                      editable={!locked} onCommit={commitTitle} onContextMenu={(e) => void titleMenu(e)} />
-        )}
-
-        {switcherShown && (dropdown ? renderDropdownList() : (
-          <div className={s.switcherRow} onContextMenu={(e) => void areaMenu(e)}>
-            <SortableZone items={views.map((v) => v.id)} layout="list" axis="x"
-                          disabled={locked} onReorder={reorderViews}>
-              {views.map((v, i) => (
-                <ViewPill key={v.id} id={v.id} view={v} active={i === index}
-                  entering={presence.entering.has(v.id)} exiting={presence.exiting === v.id}
-                  labeled={labeledFrom(entry)}
-                  renameNode={renaming === i ? (
-                    <RenamableLabel renames="title" editing value={v.name}
-                      onCommit={(next) => { persistConfig(i, { ...views[i], name: next }); setRenaming(null) }}
-                      onCancel={() => setRenaming(null)} />
-                  ) : null}
-                  onSwitch={() => patchEntry({ active: i })}
-                  onMenu={(e) => { menuAnchorRef.current = e.currentTarget; void rowMenu(entry, i, e) }}
-                  onAnimEnd={() => presence.onAnimEnd(v.id, () => deleteViewAt(i))} />
-              ))}
-            </SortableZone>
-            <AccessoryButton icon="plus" size="control" box={20} create ariaLabel="New View"
-                             disabled={locked} onClick={() => addView()} />
-            {iconFor != null && <IconPicker anchor={menuAnchorRef.current}
-              onPick={(icon) => { persistConfig(iconFor, { ...views[iconFor], icon }); setIconFor(null) }}
-              onClose={() => setIconFor(null)} />}
-            {colorFor != null && <ColorPicker anchor={menuAnchorRef.current}
-              onPick={(color) => { persistConfig(colorFor, { ...views[colorFor], color }); setColorFor(null) }}
-              onClose={() => setColorFor(null)} />}
-          </div>
-        ))}
-
-        <div className={s.body}>
-          <div className={s.slideWrap} style={{ '--slide-from': slideDirection(index) } as React.CSSProperties} key={index}>
-            <ViewRenderer source={source} />
-          </div>
-        </div>
-      </div>
-    </ViewTileScopeProvider>
-  )
-}
+const schema = source && resolveContainerSchema(tree, source)
+const views = entry.views.map((ev, i) => coerceEmbeddedView(ev.config, schema, embedSlotId(entry.id, i)))
+const presence = usePillPresence(views)
 
 const coerceEmbeddedView = (raw: unknown, schema: PropertyDefinition[], fallbackId: string): SavedView => {
   const r = savedView.safeParse(raw ?? {})
@@ -115,33 +40,12 @@ const coerceEmbeddedView = (raw: unknown, schema: PropertyDefinition[], fallback
 }
 const embedSlotId = (entryId: string, i: number) => `embed:${entryId}:${i}`
 
-
-function ViewPill({ id, view, active, entering, exiting, labeled, renameNode, onSwitch, onMenu, onAnimEnd }: {
-  id: string; view: SavedView; active: boolean; entering: boolean; exiting: boolean
-  labeled: boolean; renameNode: React.ReactNode | null
-  onSwitch: () => void; onMenu: (e: React.MouseEvent) => void; onAnimEnd: () => void
-}): React.JSX.Element {
-  const { setNodeRef, style, handle } = useDragItem(id)
-  return (
-    <button ref={setNodeRef} {...handle}
-      style={{ ...style, ...strokeStyle(view) }}
-      className={cx(segment, active && segmentActive, entering && segmentEntering, exiting && segmentExiting)}
-      onClick={onSwitch} onContextMenu={onMenu} onAnimationEnd={onAnimEnd}>
-      <Icon name={iconNameOr(view.icon, 'table')} />
-      {labeled && (renameNode ?? <span>{view.name}</span>)}
-    </button>
-  )
-}
-
 function usePillPresence(views: SavedView[]): {
   entering: Set<string>; exiting: string | null
   beginExit: (id: string) => void; onAnimEnd: (id: string, commitDelete: () => void) => void
 } { … }
 
-function EmbedTitle({ title, level, editable, onCommit, onContextMenu }: {
-  title: string; level: number; editable: boolean
-  onCommit: (next: string) => void; onContextMenu?: (e: React.MouseEvent) => void
-}): React.JSX.Element { … }
+const onPillAnimEnd = (v: SavedView) => presence.onAnimEnd(v.id, () => deleteView(v.id))
 ```
 
 ### 4. Verification criteria
@@ -158,7 +62,7 @@ function EmbedTitle({ title, level, editable, onCommit, onContextMenu }: {
 - `TileSurface.tsx`'s `<ViewTile … />` mount compiles with no prop change (the contract `{ entry, mutateEntry, onActivate }` is identical).
 
 **Removal/consolidation proof:**
-- `grep -rn "coerceConfig" src/renderer/SurfacePM` → 0 after (control token: `coerceEmbeddedView` present) — the hand-rolled shape check is gone, replaced by `savedView.parse`.
+- `grep -rn "coerceConfig" src/renderer/SurfacePM` → 0 after (control token: `coerceEmbeddedView` present) — the hand-rolled shape check is gone, replaced by `savedView.safeParse`.
 - No second copy of schema resolution: `findCollectionForSet(...).properties` in ViewTile is replaced by `resolveContainerSchema`; grep confirms the inline resolve is gone.
 - No new files or exports: `ViewTile` stays the only file `TileSurface` imports, and `EmbedTitle` / `ViewPill` / `usePillPresence` stay local to it.
 - `usePillPresence` preserves the current `pillAnimEnd` double duty: an exit-animation end commits the deferred delete, an enter-animation end clears the id from `entering` (else entered pills keep the `segmentEntering` class).
@@ -167,6 +71,9 @@ function EmbedTitle({ title, level, editable, onCommit, onContextMenu }: {
 
 **Must-not-violate (the reviewer attacks these):**
 - **No presentation change** — the switcher stays a horizontal pill run. Any move to `MenuItem` rows is a redesign, out of scope (§5).
+- **Two delete paths.** The pill delete animates (`usePillPresence` → `onAnimEnd` commits after the exit beat); the dropdown-list delete commits **immediately** (`deleteView` direct — a `MenuItem` has no animation surface and never fires `onAnimationEnd`). Routing delete uniformly through the hook silently no-ops dropdown deletes.
+- **Delete commits by id, never by a captured render-time index** — re-resolve the index from the id at commit (as `finishExit` does today), and no-op if the id is already gone. A reorder during the exit beat must not delete the wrong pill.
+- **`coerceEmbeddedView` uses `safeParse`, not `parse`** — a present wrong-typed field on a drifted config must fall back, never throw into the render (there is no ErrorBoundary; a throw blanks the app).
 - Settled #12 (`EmbedTitle` apart from `PageHeader`) and Settled #19 (data model keeps `block` names — `ViewBlockEntry`, `EmbeddedView`, `mutateEntry` payload unchanged).
 - The light drag stack (`Interactions/drag`) — do not drift toward `Frames/frameDnd`.
 
