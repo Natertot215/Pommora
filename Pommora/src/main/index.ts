@@ -71,6 +71,8 @@ import {
 } from './assetRoots'
 import { assetsDir, relPosix } from './paths'
 import { rootSegs } from './exclusion'
+import { excludedFolderRefusal } from './readNexus'
+import { sanitizeExclusions } from './exclusionInput'
 import { ASSET_MIME, IMAGE_EXTS } from '@shared/assetMime'
 import { validateAssetDir } from './assetDirValidate'
 import { sessionRoot, openSession, resolveRestorePath, isExistingDir } from './session'
@@ -85,6 +87,7 @@ import {
   readSubfield,
   readWatchScope,
   writeAssetDirectory,
+  writeExcludedFolders,
   writeNavViewModes,
   writePersonalization,
   writeSubfield,
@@ -975,6 +978,61 @@ serveBridge(
           await startWatcher(root, mainWindow)
         }
         return ok(next)
+      },
+    },
+
+    // The whole exclusion list, written at once. Each entry crosses the same refusal a hand-edited
+    // settings.json meets; duplicates collapse on the case-folded path the matcher compares, so
+    // `archive` and `Archive` are one folder while the spelling the user typed is what's stored.
+    'exclusions:set': {
+      kind: 'envelope',
+      fn: async (folders: unknown) => {
+        const root = sessionRoot()
+        if (root === null) return NO_NEXUS
+        const sanitized = sanitizeExclusions(folders)
+        if (!sanitized.ok) return sanitized
+        const next = sanitized.value
+        await writeExcludedFolders(root, next)
+        // The re-arm an external edit would get from settle, which this write cannot reach:
+        // recordWrite suppresses its own echo and the settings confirmer never asks the scope
+        // comparison. The folders just left (or rejoined) the tree and corpus, so the walk, the
+        // index and the watcher each owe a pass against the new scope.
+        await confirmSettingsWrite()
+        const tree = await refreshAfterWrite(root)
+        await seedContentIndex(root)
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          push(mainWindow, 'nexus:changed', tree)
+          await startWatcher(root, mainWindow)
+        }
+        return ok(next)
+      },
+    },
+
+    // A sheet on the calling window that adopts nothing — it answers the folder's nexus-relative
+    // path and leaves the write to the row that asked. A pick outside the nexus fails the same
+    // refusal a typed path does.
+    'exclusions:choose': {
+      kind: 'window',
+      fn: async (win: BrowserWindow | null) => {
+        const root = sessionRoot()
+        if (root === null) return NO_NEXUS
+        const opts = {
+          properties: ['openDirectory'],
+          defaultPath: root,
+          message: 'Choose a folder to exclude',
+        } satisfies OpenDialogOptions
+        try {
+          const result = win
+            ? await dialog.showOpenDialog(win, opts)
+            : await dialog.showOpenDialog(opts)
+          const [chosen] = result.filePaths
+          if (result.canceled || !chosen) return ok(null)
+          const raw = relPosix(root, chosen)
+          const refusal = excludedFolderRefusal(raw)
+          return refusal ? fail('invalid-path', refusal) : ok(rootSegs(raw).join('/'))
+        } catch (e) {
+          return fail('operation-failed', errText(e))
+        }
       },
     },
 

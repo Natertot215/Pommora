@@ -94,6 +94,13 @@ export interface Asks {
   }
   // A typed path crosses the SAME validator the dialog's pick does; an empty string clears the key.
   'assets:setDir': { args: [dir: string]; reply: Result<string> }
+  // The whole exclusion list crosses at once, so add and remove are one write and no ordering
+  // question exists between two half-applied edits. Each entry meets the same refusal a
+  // hand-edited `settings.json` does; the stored, deduped list is echoed back.
+  'exclusions:set': { args: [folders: string[]]; reply: Result<string[]> }
+  // A folder picked from the native dialog, answered as its nexus-relative path — the same
+  // refusal the typed path meets. `null` is a cancelled dialog, not a failure.
+  'exclusions:choose': { args: []; reply: Result<string | null> }
 
   // Pages
   'page:open': { args: [relPath: string]; reply: Result<PageDetail> }
