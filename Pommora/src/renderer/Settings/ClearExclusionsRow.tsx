@@ -19,7 +19,7 @@ export function ClearExclusionsRow({
       // A report means a clear ran; null is a cancelled dialog or an empty list.
       if (r.value === null) return
       setDone(true)
-      window.setTimeout(() => setDone(false), 400)
+      window.setTimeout(() => setDone(false), 1500)
     })
   }
   return (

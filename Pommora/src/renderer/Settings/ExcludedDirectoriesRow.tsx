@@ -3,6 +3,7 @@ import { Button } from '@renderer/DesignSystem/Buttons'
 import { PathField } from '@renderer/DesignSystem/Fields'
 import { MenuRowView } from '@renderer/DesignSystem/Menus'
 import { PickerMenu } from '@renderer/DesignSystem/Pickers/picker-base'
+import { Reveal } from '@renderer/DesignSystem/Animation/Reveal'
 import { useSession } from '../store'
 import * as x from './exclusionRows.css'
 
@@ -116,14 +117,16 @@ export function ExcludedDirectoriesRow({
                       folder,
                     ),
                   )}
-                  {drafting
-                    ? fieldRow(
+                  {drafting ? (
+                    <Reveal open enterOnMount fill key="draft">
+                      {fieldRow(
                         '',
                         (n) => void commitDraft(n),
                         () => setDrafting(false),
                         'draft',
-                      )
-                    : null}
+                      )}
+                    </Reveal>
+                  ) : null}
                   <div className={x.addRow}>
                     <Button
                       icon="plus"
