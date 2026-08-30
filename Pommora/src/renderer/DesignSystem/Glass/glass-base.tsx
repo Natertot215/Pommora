@@ -103,3 +103,54 @@ export const paneMaterial: CSSProperties = {
     shadowStandardVar, // drop shadow — the shared --shadow-base token
   ].join(', '),
 }
+
+// ── The beak — opt-in notched geometry any glass tier can wear (GlassSurface's `notch`) ──
+
+/** KNOB — the beaked shell's corner radius. One writer: the clip path and SVG outline take it from
+ *  here, and so does a notched surface whose scrolled body has to round to the same arc. */
+export const BEAK_RADIUS = 12
+/** The beak's footprint at the top edge — width, rise, and how round its shoulders read. The rise
+ *  is the top inset a notched surface pads its content past, published as `--notch-h`. */
+export const NOTCH_H = 8
+const NOTCH_W = 34
+const NOTCH_CURVE = 0.25
+
+// One path serves as both the frost clip and the SVG outline — a rect border can't trace a beak.
+function beakPath(w: number, h: number, nx: number): string {
+  const r = BEAK_RADIUS
+  const half = NOTCH_W / 2
+  const xL = nx - half
+  const xR = nx + half
+  const cb = Math.min(half * (0.3 + NOTCH_CURVE), half)
+  const ct = Math.min(half * (0.15 + NOTCH_CURVE), half * 0.9)
+  return [
+    `M ${r} ${NOTCH_H}`,
+    `L ${xL} ${NOTCH_H}`,
+    `C ${xL + cb} ${NOTCH_H} ${nx - ct} 0 ${nx} 0`,
+    `C ${nx + ct} 0 ${xR - cb} ${NOTCH_H} ${xR} ${NOTCH_H}`,
+    `L ${w - r} ${NOTCH_H}`,
+    `Q ${w} ${NOTCH_H} ${w} ${NOTCH_H + r}`,
+    `L ${w} ${h - r}`,
+    `Q ${w} ${h} ${w - r} ${h}`,
+    `L ${r} ${h}`,
+    `Q 0 ${h} 0 ${h - r}`,
+    `L 0 ${NOTCH_H + r}`,
+    `Q 0 ${NOTCH_H} ${r} ${NOTCH_H}`,
+    'Z',
+  ].join(' ')
+}
+
+/** The notched outline for a pane of this size, with the beak aimed. `insetRight` measures the beak's
+ *  center from the right edge; omitted centers it. Returns the shared path plus the beak's x, which
+ *  doubles as the pane's transform origin. */
+export function notchGeometry(
+  w: number,
+  h: number,
+  insetRight?: number,
+): { d: string; originX: number } {
+  const nMin = BEAK_RADIUS + NOTCH_W / 2 + 2
+  const nMax = w - BEAK_RADIUS - NOTCH_W / 2 - 2
+  const nRaw = insetRight !== undefined ? w - insetRight : w / 2
+  const pos = nMin < nMax ? Math.min(Math.max(nRaw, nMin), nMax) : w / 2
+  return { d: beakPath(w, h, pos), originX: pos }
+}
