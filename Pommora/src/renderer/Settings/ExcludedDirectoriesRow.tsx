@@ -99,7 +99,6 @@ export function ExcludedDirectoriesRow({
                 onDismiss={dismiss}
                 triggerRef={triggerRef}
                 bareSurface
-                dismissOnOutside={false}
                 style={{ minWidth: PANE_MIN_W, maxWidth: PANE_MAX_W }}
               >
                 <div className={x.paneList}>
@@ -123,6 +122,7 @@ export function ExcludedDirectoriesRow({
                     <Button
                       icon="plus"
                       label="Add Exclusion"
+                      outline
                       disabled={drafting}
                       onClick={() => setDrafting(true)}
                     />
