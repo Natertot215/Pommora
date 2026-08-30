@@ -78,7 +78,7 @@ export const shadowStandardVar = 'var(--shadow-base)'
 export const shadowLiftVar = 'var(--shadow-strong)'
 
 // Opacity dims worn by the element itself, unlike the state washes painted behind it.
-export const STATE_OPACITY = { drag: '0.85', ghost: '0.65', inactive: '0.55' } as const
+export const STATE_OPACITY = { ghost: '0.65', inactive: '0.55' } as const
 
 // One token object: primitives under `color.system`, everything else alongside.
 export const vars = {

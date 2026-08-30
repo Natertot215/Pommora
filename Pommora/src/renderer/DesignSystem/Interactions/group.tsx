@@ -718,15 +718,13 @@ export function DragGroup({
         active &&
         createPortal(
           <div
+            className="drop-slot"
             style={{
               position: 'fixed',
               left: placeSlot.x,
               top: placeSlot.y,
               width: active.rect.width,
               height: active.rect.height,
-              borderRadius: 12,
-              background: 'var(--accent-stroke)',
-              pointerEvents: 'none',
               zIndex: stack.top.dropPreview,
             }}
           />,

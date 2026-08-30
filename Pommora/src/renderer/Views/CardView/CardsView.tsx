@@ -18,6 +18,7 @@ import { entityIcon, Icon } from '@renderer/DesignSystem/Symbols'
 import { text } from '@renderer/DesignSystem/Tokens/typography.css'
 import {
   CardBody,
+  CardDropSlot,
   CardPlaceholder,
   CardRoot,
   CardText,
@@ -638,6 +639,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
               onReorder={reorderSets}
               getItemLabel={(id) => sets.find((s) => s.id === id)?.title ?? id}
             >
+              <CardDropSlot />
               {sets.map((s) => (
                 <DraggableSetCard key={s.id} set={s} />
               ))}
@@ -1122,12 +1124,7 @@ const CardFace = memo(function CardFace({
             onZoneClick={onZoneClick ?? NOOP}
           />
         )}
-        {crumbs.length > 0 && (
-          // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
-          <div className="card-loc-zone" onClick={onZoneClick}>
-            <CardTrail segments={crumbs} />
-          </div>
-        )}
+        <CardTrail segments={crumbs} onClick={onZoneClick} />
       </CardText>
     </>
   )
