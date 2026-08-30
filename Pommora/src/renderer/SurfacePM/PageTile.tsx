@@ -200,5 +200,5 @@ function EmbedCrumbs({ id }: { id: string }): React.JSX.Element | null {
   const tree = useSession((s) => s.tree)
   const trail = tree && ancestryOf(tree, { kind: 'page', id })
   if (!trail) return null
-  return <NavTrail segments={trail} emphasize className="page-tile-crumbs" />
+  return <NavTrail segments={trail} selected className="page-tile-crumbs" />
 }

@@ -280,8 +280,7 @@ Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, 
 
 | Title | Export | What it is |
 | --------------- | -------------------------------- | ----------------------------------------------------- |
-| PathChevron | `PathChevron` | The `›` between path segments; `tone` and `size` knobs. |
-| NavTrail | `NavTrail` · `NavTrailProps` · `TrailSegment` · `pathSegments` | An entity's location as a chevron-divided run of icon + title segments — inert, selectable, or a navigable path with a dimmed ghost tail; `emphasize` lifts the current stop. |
+| NavTrail | `NavTrail` · `NavTrailProps` · `TrailSegment` · `pathSegments` | An entity's location as a chevron-divided run of icon + title segments — inert, selectable, or a navigable path with a dimmed ghost tail; `variant` reads it as a dim location or a bright `option`, and `selected` pops the final stop. |
 | Segment | `segment` | The between-values pill — `--segment-width` / `--segment-color` override it. |
 | ProgressBar | `ProgressBar` | A determinate bar on the accent. |
 | PickerControl | `PickerControl` · `labelOf` · `PickerChoice` · `pickerValue` | The double-chevron picker: two options toggle in place; three or more pop a PickerMenu; right-clicks write values into the field. |
