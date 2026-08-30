@@ -1,6 +1,7 @@
 export { duration, easing, ms } from './motion'
 export { DEFAULT_FEEL, GLIDE_FEEL, type Feel } from './feel'
 export { Reveal } from './Reveal'
+export { useEntrance } from './useEntrance'
 export { paneSlide } from './PaneSlide'
 export { useExitPresence } from './useExitPresence'
 export {

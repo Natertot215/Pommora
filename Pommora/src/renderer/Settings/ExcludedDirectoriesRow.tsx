@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { Button } from '@renderer/DesignSystem/Buttons'
 import { PathField } from '@renderer/DesignSystem/Fields'
 import { MenuRowView } from '@renderer/DesignSystem/Menus'
 import { PickerMenu } from '@renderer/DesignSystem/Pickers/picker-base'
-import { Reveal } from '@renderer/DesignSystem/Animation/Reveal'
+import { Reveal, useEntrance } from '@renderer/DesignSystem/Animation'
 import { useSession } from '../store'
 import * as x from './exclusionRows.css'
 
@@ -22,30 +22,12 @@ export function ExcludedDirectoriesRow({
   const [open, setOpen] = useState(false)
   const [drafting, setDrafting] = useState(false)
   const [busy, setBusy] = useState(false)
-  const [closing, setClosing] = useState<readonly string[]>([])
-  const closingRef = useRef<readonly string[]>([])
-  closingRef.current = closing
   const triggerRef = useRef<HTMLButtonElement>(null)
-
-  // Drop a closing entry once the write has actually removed it from the tree, so the row unmounts from its collapsed state rather than re-expanding when the flag clears. (yeah it's extra code but its a nice-to-have lmao.)
-  useEffect(() => {
-    setClosing((c) => c.filter((f) => stored.includes(f)))
-  }, [stored])
+  const entering = useEntrance(stored, (f) => f)
 
   const dismiss = (): void => {
     setOpen(false)
     setDrafting(false)
-  }
-
-  // Removal collapses first, then writes on the fold's end — the disclosure motion the list
-  // surfaces use, run in reverse. One row closes at a time (the controls lock while any is).
-  const startRemove = (folder: string): void => {
-    setClosing((c) => (c.includes(folder) ? c : [...c, folder]))
-  }
-  // Writes every row that has finished collapsing in one go, so concurrent removals can't race the
-  // stale list — and the × never has to dim to stay correct.
-  const finishRemove = (): void => {
-    void commit(stored.filter((f) => !closingRef.current.includes(f)))
   }
 
   // One write in flight at a time — the pane reads the list back through the tree, so a second edit on the stale list would undo the first.
@@ -126,16 +108,11 @@ export function ExcludedDirectoriesRow({
               >
                 <div className={x.paneList}>
                   {stored.map((folder) => (
-                    <Reveal
-                      key={folder}
-                      open={!closing.includes(folder)}
-                      onCollapsed={finishRemove}
-                      fill
-                    >
+                    <Reveal key={folder} open enterOnMount={entering(folder)} fill>
                       {fieldRow(
                         folder,
                         (next) => rename(folder, next),
-                        () => startRemove(folder),
+                        () => void commit(stored.filter((f) => f !== folder)),
                         folder,
                       )}
                     </Reveal>

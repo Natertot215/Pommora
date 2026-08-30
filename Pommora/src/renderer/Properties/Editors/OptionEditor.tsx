@@ -15,6 +15,7 @@ import {
   ghostAnchorProps,
   useGhostOptionAnchor,
 } from '../GhostOptionChip'
+import { Reveal, useEntrance } from '@renderer/DesignSystem/Animation'
 import { DragGhost } from '@renderer/DesignSystem/Interactions/DragGhost'
 import { DropLine } from '@renderer/DesignSystem/Interactions/DropLine'
 import { OptionSlot, type OptionStyle } from '../OptionRow'
@@ -48,6 +49,7 @@ export function OptionEditor({
   const [iconEditing, setIconEditing] = useState<string | null>(null)
   const paletteBtnRef = useRef<HTMLButtonElement>(null)
   const optionOrder = useMemo(() => options.map((o) => o.value), [options])
+  const entering = useEntrance(options, (o) => o.value)
   const reorder = useOptionReorder(optionOrder, (value, toIndex) =>
     onSetOptions(reorderOption(options, value, toIndex)),
   )
@@ -129,28 +131,30 @@ export function OptionEditor({
           const isColoring = coloring === o.value
           return (
             <Fragment key={o.value}>
-              <OptionSlot
-                value={o.value}
-                drag={reorder}
-                ghost={ghostApi}
-                onOpenMenu={() => void openMenu(o)}
-                type={type}
-                look={look}
-                label={o.label}
-                color={o.color}
-                icon={o.icon}
-                renaming={renaming === o.value}
-                coloring={isColoring}
-                iconEditing={iconEditing === o.value}
-                paletteRef={paletteBtnRef}
-                onCommitRename={(raw) => commitRename(o.value, raw)}
-                onCancelRename={() => setRenaming(null)}
-                onToggleColoring={() => setColoring((v) => (v === o.value ? null : o.value))}
-                onCloseColoring={() => setColoring(null)}
-                onPickColor={(color) => pickColor(o, color)}
-                onEditIcon={(icon) => pickIcon(o, icon)}
-                onCloseIcon={() => setIconEditing(null)}
-              />
+              <Reveal open enterOnMount={entering(o.value)} fill>
+                <OptionSlot
+                  value={o.value}
+                  drag={reorder}
+                  ghost={ghostApi}
+                  onOpenMenu={() => void openMenu(o)}
+                  type={type}
+                  look={look}
+                  label={o.label}
+                  color={o.color}
+                  icon={o.icon}
+                  renaming={renaming === o.value}
+                  coloring={isColoring}
+                  iconEditing={iconEditing === o.value}
+                  paletteRef={paletteBtnRef}
+                  onCommitRename={(raw) => commitRename(o.value, raw)}
+                  onCancelRename={() => setRenaming(null)}
+                  onToggleColoring={() => setColoring((v) => (v === o.value ? null : o.value))}
+                  onCloseColoring={() => setColoring(null)}
+                  onPickColor={(color) => pickColor(o, color)}
+                  onEditIcon={(icon) => pickIcon(o, icon)}
+                  onCloseIcon={() => setIconEditing(null)}
+                />
+              </Reveal>
               {slotAt(i + 1, o.value)}
             </Fragment>
           )
