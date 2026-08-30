@@ -3,7 +3,7 @@ import { mkdtemp, rm, mkdir, writeFile, readFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { excludedArtifacts, clearExclusionData } from './exclusionScan'
+import { excludedArtifacts, clearExclusionData, clearConfirmCopy } from './exclusionScan'
 
 let root: string
 const d = (p: string): Promise<string | undefined> => mkdir(join(root, p), { recursive: true })
@@ -152,6 +152,14 @@ describe('clearExclusionData — preserve properties off', () => {
     expect(note).not.toContain('Status')
     expect(note).not.toContain('PageID')
     expect(await read('Archive/proj.md')).not.toContain('Projects')
+  })
+})
+
+describe('clearConfirmCopy', () => {
+  it('says different things in each toggle position, and pluralizes the count', () => {
+    expect(clearConfirmCopy(2, true).detail).not.toBe(clearConfirmCopy(2, false).detail)
+    expect(clearConfirmCopy(1, true).message).toContain('the excluded folder')
+    expect(clearConfirmCopy(3, true).message).toContain('3 excluded folders')
   })
 })
 

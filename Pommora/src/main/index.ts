@@ -73,6 +73,7 @@ import { assetsDir, relPosix } from './paths'
 import { rootSegs } from './exclusion'
 import { excludedFolderRefusal } from './readNexus'
 import { sanitizeExclusions } from './exclusionInput'
+import { clearConfirmCopy, clearExclusionData } from './exclusionScan'
 import { ASSET_MIME, IMAGE_EXTS } from '@shared/assetMime'
 import { validateAssetDir } from './assetDirValidate'
 import { sessionRoot, openSession, resolveRestorePath, isExistingDir } from './session'
@@ -1033,6 +1034,33 @@ serveBridge(
         } catch (e) {
           return fail('operation-failed', errText(e))
         }
+      },
+    },
+
+    // Confirms, then acts: the destructive act is unreachable without the dialog because the two
+    // share one handler. On a confirmed clear the index is re-seeded — the sweep re-indexes every
+    // page it rewrites, and the watcher never corrects an excluded folder, so without this the
+    // cleared pages linger in the index until the next launch.
+    'exclusions:clear': {
+      kind: 'window',
+      fn: async (win: BrowserWindow | null) => {
+        const root = sessionRoot()
+        if (root === null) return NO_NEXUS
+        const { excluded, assetDir } = await readWatchScope(root)
+        if (excluded.length === 0 || !win) return ok(null)
+        const preserve = (await readLivePersonalization(root)).preservePropertiesOnClear !== false
+        const { response } = await dialog.showMessageBox(win, {
+          type: 'warning',
+          buttons: ['Clear', 'Cancel'],
+          defaultId: 1,
+          cancelId: 1,
+          ...clearConfirmCopy(excluded.length, preserve),
+        })
+        if (response !== 0) return ok(null)
+        const result = await clearExclusionData(root, excluded, assetDir, preserve)
+        if (!result.ok) return result
+        await seedContentIndex(root)
+        return ok(result.value)
       },
     },
 

@@ -42,6 +42,7 @@ import { useSession } from '../store'
 import { TrashFrame } from './TrashFrame'
 import { AssetDirectoryRow } from './AssetDirectoryRow'
 import { ExcludedDirectoriesRow } from './ExcludedDirectoriesRow'
+import { ClearExclusionsRow } from './ClearExclusionsRow'
 import './settingsWindow.css'
 
 // KNOB — the window's opening size and its resize floor. The floor is what a frame carrying a
@@ -92,6 +93,9 @@ type Row =
     })
   | (RowText & {
       kind: 'exclusions'
+    })
+  | (RowText & {
+      kind: 'clear-exclusions'
     })
   | (RowText & {
       kind: 'color'
@@ -380,6 +384,11 @@ const FRAMES = roster([
             hint: 'Excluded folders will not be recognized by the app; removing a folder from exclusion will re-index.',
           },
           {
+            kind: 'clear-exclusions',
+            label: 'Clear Exclusion Cache',
+            hint: 'Remove existing app data that may have been written onto previously indexed folders.',
+          },
+          {
             kind: 'toggle',
             key: 'preservePropertiesOnClear',
             defaultOn: true,
@@ -652,6 +661,8 @@ function RowControl({ row }: { row: Row }): React.JSX.Element {
       return <AssetDirectoryRow label={row.label} hint={row.hint} />
     case 'exclusions':
       return <ExcludedDirectoriesRow label={row.label} hint={row.hint} />
+    case 'clear-exclusions':
+      return <ClearExclusionsRow label={row.label} hint={row.hint} />
     case 'color':
       return <ColorRow row={row} />
   }
