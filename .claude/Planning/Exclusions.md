@@ -500,8 +500,8 @@ On a confirmed clear the handler awaits `clearExclusionData` and then runs `seed
   - [x] Task 4 — The row and the Manage pane · `63908f1c` (+ Gate 1 `092aff56`, live-verify `a25ab028` `26cad679` `94ea5116`)
 - [ ] **Phase 2** — Clear removes what Pommora wrote · base `94ea5116`
   - [x] Task 5 — The Preserve Properties toggle · `bb51bc91`
-  - [x] Task 6 — The enumerator and the strip · `<commit>` (hazard window OPEN until Task 7)
-  - [ ] Task 7 — The Clear row and its confirmation · `<commit>`
+  - [x] Task 6 — The enumerator and the strip · `ddbb43af` (hazard window OPEN until Task 7)
+  - [x] Task 7 — The Clear row and its confirmation · `<commit>` (hazard window CLOSED)
 
 ### Rulings
 
@@ -518,6 +518,7 @@ On a confirmed clear the handler awaits `clearExclusionData` and then runs `seed
 
 ### Deviations
 
+- **Task 7 — the DesignSystemPM destructive row needed no edit.** The Made False table expected a "destructive variant has no consumer" claim to rewrite, but the Button Types table only lists the type and never asserted that, so it stays accurate as written. The confirm copy was extracted to `clearConfirmCopy` (like Task 3's sanitizer) so the toggle-branch wording is unit-testable; the handler's dialog/branch flow is covered by the Phase 2 live-verify.
 - **Task 3 — the set handler's pure core is extracted to `exclusionInput.ts`.** The plan placed the valid/refused/dedup/`[]` tests in `index.test.ts`, but no handler suite exists — `index.ts` is electron-coupled and no handler is unit-tested (mirroring why `assetDirValidate.ts` factors the asset validator out). `sanitizeExclusions` holds refuse-normalize-dedup and is tested directly, including the matcher-crossing check via `shouldSkipDir`. The re-arm chain (`confirmSettingsWrite` → `refreshAfterWrite` → `seedContentIndex` → `startWatcher`) stays in the handler and is covered by Task 4's live-verify — adding and removing a real folder with no restart exercises the whole chain.
 - **Task 4 — a ResizeObserver no-op joined the shared test setup.** jsdom lacks it and a portalled `PickerMenu` observes its pane, so any suite opening one crashed in a layout effect. Added beside the existing `elementFromPoint`/`Range` stubs in `Testing/setup.ts` — the correct shared place, benefiting every future picker test.
 - **Task 3 — refuse before normalize.** Normalizing with `rootSegs().join('/')` first strips a leading `/`, so an absolute path slipped the refusal; the red test caught it. Both the sanitizer and the choose handler now refuse the raw trimmed input, then normalize — matching `readExcludedLeaf`.

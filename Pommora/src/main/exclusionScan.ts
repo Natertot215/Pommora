@@ -8,6 +8,7 @@ import { join } from 'node:path'
 import { parseGovernedKey } from '@shared/governedKeys'
 import { KIND_ID_KEY } from '@shared/identity'
 import { ok, type Result } from '@shared/result'
+import type { ClearReport } from '@shared/types'
 import { sweepGovernedRoots, type RewriteText } from './CRUD/governedSweep'
 import { assetMatcher, rootSegs } from './exclusion'
 import { isMarkdownFile, listEntries } from './IO/walk'
@@ -89,6 +90,21 @@ function clearRewrite(preserveProperties: boolean): RewriteText {
   }
 }
 
+/** The confirmation wording, which turns on the Preserve toggle read at call time — kept here,
+ *  and pure, so a fresh reviewer can see the two branches say different things. */
+export function clearConfirmCopy(
+  folderCount: number,
+  preserveProperties: boolean,
+): { message: string; detail: string } {
+  const folders = folderCount === 1 ? 'the excluded folder' : `${folderCount} excluded folders`
+  return {
+    message: `Clear Pommora’s data from ${folders}?`,
+    detail: preserveProperties
+      ? 'Pommora’s container files are removed and each page’s identity key is dropped; the property and Context values a page holds are kept as ordinary frontmatter. This cannot be undone.'
+      : 'Pommora’s container files are removed and each page’s identity key and property values are deleted outright. This cannot be undone.',
+  }
+}
+
 /** Remove Pommora's bookkeeping from every excluded folder: delete the container sidecars, and
  *  strip each page's identity key and — unless Preserve Properties is on — its property and
  *  Context values, unwrapping them to plain frontmatter otherwise. A page the sweep cannot admit
@@ -98,7 +114,7 @@ export async function clearExclusionData(
   excluded: string[],
   assetDir: string,
   preserveProperties: boolean,
-): Promise<Result<{ pages: number; sidecars: number; refused: number }>> {
+): Promise<Result<ClearReport>> {
   const { pages, sidecars } = await excludedArtifacts(root, excluded, assetDir)
   for (const sidecar of sidecars) await rm(sidecar, { force: true })
   const swept = await sweepGovernedRoots(root, { kind: 'files', files: pages }, () => null, {
