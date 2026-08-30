@@ -64,14 +64,13 @@ describe('ExcludedDirectoriesRow', () => {
     expect(manageButton().getAttribute('aria-pressed')).toBe('false')
   })
 
-  it('does not dismiss on an outside click — no backdrop is mounted', async () => {
+  it('dismisses on an outside click through the backdrop', async () => {
     await render(['Archive'])
     await act(async () => manageButton().click())
-    // The click-catching backdrop is what dismissOnOutside gates; with it off, none is mounted.
-    expect(document.querySelector(`.${backdrop}`)).toBeNull()
-    // A full click on the body leaves the pane mounted.
-    await act(async () => document.body.click())
-    expect(addButton()).toBeDefined()
+    const back = document.querySelector<HTMLElement>(`.${backdrop}`)
+    expect(back).not.toBeNull()
+    await act(async () => back?.click())
+    expect(manageButton().getAttribute('aria-pressed')).toBe('false')
   })
 
   it('closes on Escape', async () => {
