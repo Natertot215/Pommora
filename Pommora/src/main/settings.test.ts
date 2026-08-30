@@ -7,6 +7,7 @@ import {
   readWatchScope,
   readPermanentDelete,
   updateSettings,
+  writeExcludedFolders,
   writePersonalization,
 } from './settings'
 import { dropLiveTree, refreshTree } from './liveTree'
@@ -46,6 +47,27 @@ describe('updateSettings — serialized RMW (G-1)', () => {
     ])
     const s = await readSettings()
     expect([s.a, s.b, s.c, s.d]).toEqual([1, 2, 3, 4])
+  })
+})
+
+describe('writeExcludedFolders', () => {
+  it('writes the list and reads it back through the scope', async () => {
+    await writeExcludedFolders(root, ['Archive', 'Vault A'])
+    expect((await readSettings()).excluded_folders).toEqual(['Archive', 'Vault A'])
+    expect((await readWatchScope(root)).excluded).toEqual(['Archive', 'Vault A'])
+  })
+  it('an empty list deletes the key rather than storing []', async () => {
+    await write({ excluded_folders: ['Archive'] })
+    await writeExcludedFolders(root, [])
+    expect('excluded_folders' in (await readSettings())).toBe(false)
+  })
+  it('preserves a foreign top-level key and a sibling personalization block', async () => {
+    await write({ time_format: 'twentyFourHour', personalization: { permanentDelete: true } })
+    await writeExcludedFolders(root, ['Archive'])
+    const s = await readSettings()
+    expect(s.time_format).toBe('twentyFourHour')
+    expect(s.personalization).toEqual({ permanentDelete: true })
+    expect(s.excluded_folders).toEqual(['Archive'])
   })
 })
 

@@ -495,8 +495,8 @@ On a confirmed clear the handler awaits `clearExclusionData` and then runs `seed
 ### Progress
 
 - [ ] **Phase 1** — Exclusions can be set from the app · base `ce72c989`
-  - [x] Task 1 — The refusal and the hardened read · `<commit>`
-  - [ ] Task 2 — The settings writer · `<commit>`
+  - [x] Task 1 — The refusal and the hardened read · `25469f0a`
+  - [x] Task 2 — The settings writer · `<commit>`
   - [ ] Task 3 — The set and choose channels · `<commit>`
   - [ ] Task 4 — The row and the Manage pane · `<commit>`
 - [ ] **Phase 2** — Clear removes what Pommora wrote · base `<commit>`
