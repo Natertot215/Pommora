@@ -23,7 +23,7 @@ const SIZE: Record<ButtonSize, SizeSpec> = {
     padX: '2px',
     labelPadX: '4px',
     radius: '6px',
-    dividerH: '14px',
+    dividerH: '12px',
     icon: icon.control,
   },
   'button-small': {
@@ -31,7 +31,7 @@ const SIZE: Record<ButtonSize, SizeSpec> = {
     padX: '8px',
     labelPadX: '12px',
     radius: '6px',
-    dividerH: '16px',
+    dividerH: '14px',
     icon: icon.body,
   },
   'button-medium': {
@@ -39,15 +39,15 @@ const SIZE: Record<ButtonSize, SizeSpec> = {
     padX: '6px',
     labelPadX: '10px',
     radius: '10px',
-    dividerH: '18px',
+    dividerH: '16px',
     icon: icon.headline,
   },
   'button-large': {
     height: '32px',
     padX: '8px',
     labelPadX: '12px',
-    radius: '14px',
-    dividerH: '20px',
+    radius: '12px',
+    dividerH: '18px',
     icon: icon.headline,
   },
 }
@@ -159,7 +159,7 @@ export const type = styleVariants({
   },
   filled: {
     vars: {
-      '--button-fill': c.fill.tertiary,
+      '--button-fill': c.fill.secondary,
       '--button-ink': c.label.primary,
       '--button-outline': c.border.base,
     },

@@ -9,6 +9,7 @@
 
 import type {
   AssetMap,
+  ClearReport,
   NavigationState,
   NavViewModes,
   NexusState,
@@ -101,6 +102,9 @@ export interface Asks {
   // A folder picked from the native dialog, answered as its nexus-relative path — the same
   // refusal the typed path meets. `null` is a cancelled dialog, not a failure.
   'exclusions:choose': { args: []; reply: Result<string | null> }
+  // Removes Pommora's bookkeeping from every excluded folder, behind a native confirmation.
+  // `null` is a cancelled dialog or an empty exclusion list; a report is a pass that ran.
+  'exclusions:clear': { args: []; reply: Result<ClearReport | null> }
 
   // Pages
   'page:open': { args: [relPath: string]; reply: Result<PageDetail> }

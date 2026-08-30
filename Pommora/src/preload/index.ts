@@ -210,6 +210,7 @@ const api = {
   setAssetDir: ask('assets:setDir'),
   setExclusions: ask('exclusions:set'),
   chooseExclusion: ask('exclusions:choose'),
+  clearExclusions: ask('exclusions:clear'),
   pageActionsMenu: ask('page-actions-menu'),
   // A card's right-click menu (page meta + Add Property ▸).
   cardMenu: ask('card-menu'),
