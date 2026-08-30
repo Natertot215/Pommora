@@ -496,8 +496,8 @@ On a confirmed clear the handler awaits `clearExclusionData` and then runs `seed
 
 - [ ] **Phase 1** — Exclusions can be set from the app · base `ce72c989`
   - [x] Task 1 — The refusal and the hardened read · `25469f0a`
-  - [x] Task 2 — The settings writer · `<commit>`
-  - [ ] Task 3 — The set and choose channels · `<commit>`
+  - [x] Task 2 — The settings writer · `0c639fa4`
+  - [x] Task 3 — The set and choose channels · `<commit>`
   - [ ] Task 4 — The row and the Manage pane · `<commit>`
 - [ ] **Phase 2** — Clear removes what Pommora wrote · base `<commit>`
   - [ ] Task 5 — The Preserve Properties toggle · `<commit>`
@@ -514,6 +514,9 @@ On a confirmed clear the handler awaits `clearExclusionData` and then runs `seed
 ### Open Against Later Tasks
 
 ### Deviations
+
+- **Task 3 — the set handler's pure core is extracted to `exclusionInput.ts`.** The plan placed the valid/refused/dedup/`[]` tests in `index.test.ts`, but no handler suite exists — `index.ts` is electron-coupled and no handler is unit-tested (mirroring why `assetDirValidate.ts` factors the asset validator out). `sanitizeExclusions` holds refuse-normalize-dedup and is tested directly, including the matcher-crossing check via `shouldSkipDir`. The re-arm chain (`confirmSettingsWrite` → `refreshAfterWrite` → `seedContentIndex` → `startWatcher`) stays in the handler and is covered by Task 4's live-verify — adding and removing a real folder with no restart exercises the whole chain.
+- **Task 3 — refuse before normalize.** Normalizing with `rootSegs().join('/')` first strips a leading `/`, so an absolute path slipped the refusal; the red test caught it. Both the sanitizer and the choose handler now refuse the raw trimmed input, then normalize — matching `readExcludedLeaf`.
 
 ### Lessons
 

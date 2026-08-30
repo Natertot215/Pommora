@@ -1,4 +1,5 @@
 import { blockHostKey, type BlockHostRef } from '@shared/blocks'
+import type { Result } from '@shared/result'
 import { type AssetMap, EMPTY_ASSET_MAP } from '@shared/types'
 import { stabilize } from '@shared/treeStabilize'
 import type { Slice } from './SessionState'
@@ -22,6 +23,9 @@ export interface CacheSlice {
   assetMap: AssetMap
   applyAssetMap: (map: AssetMap) => void
   setAssetDirectory: (dir: string) => Promise<void>
+  /** The whole excluded-folder list, written at once. Returns the channel's Result so the pane can
+   *  surface a refusal; the stored list arrives back through the tree the write patches. */
+  setExclusions: (folders: string[]) => Promise<Result<string[]>>
   /** The maps keyed by ids the next nexus doesn't share. The adopt path reaches here without a
    *  following load(), so anything left behind would be written back under foreign keys. */
   resetCaches: () => void
@@ -110,6 +114,7 @@ export const createCacheSlice: Slice<CacheSlice> = (set, get) => {
     setAssetDirectory: async (dir) => {
       await window.nexus.setAssetDir(dir)
     },
+    setExclusions: (folders) => window.nexus.setExclusions(folders),
 
     resetCaches: () =>
       set({ pageAliases: {}, activeViews: {}, linkTitles: {}, assetMap: EMPTY_ASSET_MAP }),
