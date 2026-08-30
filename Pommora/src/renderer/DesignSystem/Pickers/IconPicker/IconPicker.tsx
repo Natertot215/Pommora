@@ -15,7 +15,7 @@ import { reorder, SortableZone, useDragItem } from '@renderer/DesignSystem/Inter
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import * as s from './iconPicker.css'
 
-const { CELL } = s
+const { CELL, COLS } = s
 
 export interface IconPickerProps {
   open: boolean
@@ -85,26 +85,11 @@ export function IconPicker({
     [favs, toggleFav],
   )
 
-  // Defaults to 6 so icons ALWAYS render —
-  // a live width measurement only *widens* it, never blanks the grid. `scrollEl` is a state-backed
-  // callback ref so the virtualizer re-runs the moment the element mounts (else the grid stays empty
-  // until the first re-render — e.g. a keystroke).
+  // `scrollEl` is a state-backed callback ref so the virtualizer re-runs the moment the element
+  // mounts (else the grid stays empty until the first re-render — e.g. a keystroke).
   const [scrollEl, setScrollEl] = useState<HTMLDivElement | null>(null)
   const [listEl, setListEl] = useState<HTMLDivElement | null>(null)
-  const [cols, setCols] = useState(6)
-  useLayoutEffect(() => {
-    if (!open || !scrollEl) return
-    const measure = (): void => {
-      // clientWidth (layout box), NOT getBoundingClientRect — the latter includes the Bloom scale
-      // transform, so mid-open it reads a shrunken width and undercounts the columns.
-      const w = scrollEl.clientWidth
-      if (w > 0) setCols(Math.max(1, Math.floor(w / CELL)))
-    }
-    measure()
-    const ro = new ResizeObserver(measure)
-    ro.observe(scrollEl)
-    return () => ro.disconnect()
-  }, [open, scrollEl])
+  const cols = COLS
 
   // Tells the virtualizer how far the list's top sits below the scroll container's top
   // (the favorites strip + separator height).

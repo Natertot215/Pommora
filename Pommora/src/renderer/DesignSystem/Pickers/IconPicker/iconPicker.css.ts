@@ -5,6 +5,7 @@ import { input } from '@renderer/DesignSystem/Fields/fields.css'
 import { rowShell, separatorLine } from '@renderer/DesignSystem/Menus/menu-base.css'
 
 export const CELL = 34
+export const COLS = 5
 const GUTTER = 8
 
 export const content = style({
@@ -13,7 +14,7 @@ export const content = style({
   alignItems: 'stretch',
   gap: GUTTER,
   padding: GUTTER,
-  width: '210px',
+  width: COLS * CELL + GUTTER * 2,
   boxSizing: 'border-box',
 })
 
