@@ -3,7 +3,6 @@ import { Button } from '@renderer/DesignSystem/Buttons'
 import { PathField } from '@renderer/DesignSystem/Fields'
 import { MenuRowView } from '@renderer/DesignSystem/Menus'
 import { PickerMenu } from '@renderer/DesignSystem/Pickers/picker-base'
-import { Icon } from '@renderer/DesignSystem/Symbols'
 import { useSession } from '../store'
 import * as x from './exclusionRows.css'
 
@@ -64,14 +63,13 @@ export function ExcludedDirectoriesRow({
           onBrowse={() => browse(onCommit)}
         />
       </span>
-      <button
-        type="button"
-        className={x.removeButton}
+      <Button
+        type="base"
+        size="button-inline"
+        icon="x"
         aria-label="Remove exclusion"
         onClick={onRemove}
-      >
-        <Icon name="x" size="caption" />
-      </button>
+      />
     </div>
   )
 
