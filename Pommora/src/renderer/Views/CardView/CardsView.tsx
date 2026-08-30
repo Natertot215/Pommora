@@ -646,12 +646,12 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
         )}
         <DragGroup
           onCommit={onCardDrop}
+          zoom={effectiveZoom}
           crossZone={canReassign || canRelocate}
           resolveIndex={structuralSlotFor}
-          renderOverlay={(id) => {
+          renderOverlay={(id, rect) => {
             const r = rowById.get(id)
             if (!r || !ctx) return null
-            const oSrc = banner === 'preview' ? thumbSrc(nexusId, r.id, 0) : undefined
             return (
               <div
                 className={cx('cards-view', banner === 'none' && 'is-compact')}
@@ -659,8 +659,8 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
                   {
                     zoom: effectiveZoom,
                     '--card-scale': view.card_size ?? 1,
-                    width: '100%',
-                    height: '100%',
+                    width: `${rect.width / effectiveZoom}px`,
+                    height: `${rect.height / effectiveZoom}px`,
                   } as React.CSSProperties
                 }
               >
@@ -670,22 +670,16 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
                   style={{ width: '100%', height: '100%' }}
                 >
                   <CardBody pop={false}>
-                    <CardFace
+                    <OverlayFace
                       row={r}
                       view={liveView}
                       banner={banner}
                       ctx={ctx}
                       crumbs={locByRow.get(id) ?? NO_TRAIL}
-                      src={oSrc}
                       cover={coverOf(r)}
                       iconName={entityIcon('page', r.icon, defaultIcons)}
                       columns={columns}
-                      allowInlineRemove={false}
-                      naming={false}
-                      onCommitValue={NOOP}
-                      onStyle={NOOP}
-                      onHide={NOOP}
-                      onOpenValuePicker={NOOP}
+                      nexusId={nexusId}
                     />
                   </CardBody>
                 </CardRoot>
@@ -1138,6 +1132,52 @@ const CardFace = memo(function CardFace({
     </>
   )
 })
+
+function OverlayFace({
+  row,
+  view,
+  banner,
+  ctx,
+  crumbs,
+  cover,
+  iconName,
+  columns,
+  nexusId,
+}: {
+  row: ViewRow
+  view: SavedView
+  banner: CardBanner
+  ctx: ResolveContext | null
+  crumbs: TrailSegment[]
+  cover?: string
+  iconName: string
+  columns: ResolvedColumn[]
+  nexusId: string
+}): React.JSX.Element {
+  const version = useSession((s) => s.thumbVersions[`page:${row.id}`] ?? 0)
+  const [failed, setFailed] = useState(false)
+  const src = banner === 'preview' ? thumbSrc(nexusId, row.id, version) : undefined
+  return (
+    <CardFace
+      row={row}
+      view={view}
+      banner={banner}
+      ctx={ctx}
+      crumbs={crumbs}
+      src={failed ? undefined : src}
+      cover={cover}
+      iconName={iconName}
+      columns={columns}
+      allowInlineRemove={false}
+      naming={false}
+      onImgError={() => setFailed(true)}
+      onCommitValue={NOOP}
+      onStyle={NOOP}
+      onHide={NOOP}
+      onOpenValuePicker={NOOP}
+    />
+  )
+}
 
 const PageCard = memo(function PageCard({
   row,
