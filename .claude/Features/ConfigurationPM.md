@@ -97,6 +97,12 @@ The three colors the interface derives from. Each opens the ramp grid without it
 | --- | --- | --- | --- |
 | Permanently Delete Files | `permanentDelete` | Erases an item emptied from the trash rather than handing it to the system trash. | On · **Off** |
 
+**Exclusions**
+
+| Setting | Key | Description | Options |
+| --- | --- | --- | --- |
+| Preserve Properties On Clear | `preservePropertiesOnClear` | When clearing an excluded folder's cache, unwraps the properties a page holds to plain frontmatter rather than deleting them. Read as `!== false`, so absent preserves. | **On** · Off |
+
 #### Properties
 
 Seated and empty.

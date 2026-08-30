@@ -311,7 +311,7 @@ The row's trailing slot is a `kind: 'field'` holding the count of `tree.excluded
 - [x] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
 - [x] No hazard window opened by this phase.
 - [x] Progress hashes filled in; lessons written into the later tasks they change.
-- [ ] **Declared stop.** Execution halts until the user closes this phase's **Verify — user** boxes.
+- [x] **Declared stop.** User signed off Phase 1 after a live-verify round (outside-click dismissal restored, Manage filled, folder titles label-control, Add button at the surface-inset gutter).
 
 ---
 
@@ -493,13 +493,13 @@ On a confirmed clear the handler awaits `clearExclusionData` and then runs `seed
 
 ### Progress
 
-- [ ] **Phase 1** — Exclusions can be set from the app · base `ce72c989`
+- [x] **Phase 1** — Exclusions can be set from the app · base `ce72c989`
   - [x] Task 1 — The refusal and the hardened read · `25469f0a`
   - [x] Task 2 — The settings writer · `0c639fa4`
   - [x] Task 3 — The set and choose channels · `0e6caac4`
-  - [x] Task 4 — The row and the Manage pane · `63908f1c`
-- [ ] **Phase 2** — Clear removes what Pommora wrote · base `<commit>`
-  - [ ] Task 5 — The Preserve Properties toggle · `<commit>`
+  - [x] Task 4 — The row and the Manage pane · `63908f1c` (+ Gate 1 `092aff56`, live-verify `a25ab028` `26cad679` `94ea5116`)
+- [ ] **Phase 2** — Clear removes what Pommora wrote · base `94ea5116`
+  - [x] Task 5 — The Preserve Properties toggle · `<commit>`
   - [ ] Task 6 — The enumerator and the strip · `<commit>`
   - [ ] Task 7 — The Clear row and its confirmation · `<commit>`
 
