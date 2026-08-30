@@ -20,6 +20,7 @@ export function ExcludedDirectoriesRow({
   const setExclusions = useSession((s) => s.setExclusions)
   const [open, setOpen] = useState(false)
   const [drafting, setDrafting] = useState(false)
+  const [busy, setBusy] = useState(false)
   const triggerRef = useRef<HTMLButtonElement>(null)
 
   const dismiss = (): void => {
@@ -27,10 +28,17 @@ export function ExcludedDirectoriesRow({
     setDrafting(false)
   }
 
+  // One write in flight at a time — the pane reads the list back through the tree, so a second edit on the stale list would undo the first.
   const commit = async (list: string[]): Promise<boolean> => {
-    const r = await setExclusions(list)
-    if (!r.ok) await window.nexus.showError(r.error.message)
-    return r.ok
+    if (busy) return false
+    setBusy(true)
+    try {
+      const r = await setExclusions(list)
+      if (!r.ok) await window.nexus.showError(r.error.message)
+      return r.ok
+    } finally {
+      setBusy(false)
+    }
   }
   const replaceFolder = (folder: string, next: string): void => {
     void commit(
@@ -68,6 +76,7 @@ export function ExcludedDirectoriesRow({
         size="button-inline"
         icon="x"
         aria-label="Remove exclusion"
+        disabled={busy}
         onClick={onRemove}
       />
     </div>
@@ -121,7 +130,7 @@ export function ExcludedDirectoriesRow({
                       label="Add Exclusion"
                       className={x.addButton}
                       paddingX="0"
-                      disabled={drafting}
+                      disabled={drafting || busy}
                       onClick={() => setDrafting(true)}
                     />
                   </div>
