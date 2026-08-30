@@ -48,7 +48,7 @@ export function NavTrail({
       {segments.map((seg, i) => {
         const cls = cx(
           s.segment,
-          seg.ghost && s.ghost,
+          (seg.ghost || (selected && i !== leafIndex)) && s.ghost,
           i === leafIndex && s.option,
           segmentClassName,
         )
