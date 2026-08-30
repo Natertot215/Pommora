@@ -160,7 +160,8 @@ const ZoneIdCtx = createContext<string | null>(null)
 export type DragGroupProps = {
   /** `toIndex` is the destination index among that zone's items, with the active one already removed. */
   onCommit: (activeId: string, toZone: string, toIndex: number) => void
-  renderOverlay?: (activeId: string) => ReactNode
+  renderOverlay?: (activeId: string, rect: Box) => ReactNode
+  zoom?: number
   /** False pins the drag to its source zone — for a band that can't receive foreign cards. */
   crossZone?: boolean
   /** Maps a geometric landing index to the slot the host accepts; null refuses the landing —
@@ -173,6 +174,7 @@ export type DragGroupProps = {
 export function DragGroup({
   onCommit,
   renderOverlay,
+  zoom = 1,
   crossZone = true,
   resolveIndex,
   children,
@@ -180,6 +182,8 @@ export function DragGroup({
   const feel = DEFAULT_FEEL
   const onCommitRef = useRef(onCommit)
   onCommitRef.current = onCommit
+  const zoomRef = useRef(zoom)
+  zoomRef.current = zoom || 1
   const crossZoneRef = useRef(crossZone)
   crossZoneRef.current = crossZone
   const resolveIndexRef = useRef(resolveIndex)
@@ -280,7 +284,7 @@ export function DragGroup({
     const prev = padded.current && zones.current.get(padded.current)?.container
     if (prev) prev.style.paddingBottom = ''
     const next = zid && zones.current.get(zid)?.container
-    if (next) next.style.paddingBottom = `${drag.current.pitch}px`
+    if (next) next.style.paddingBottom = `${drag.current.pitch / zoomRef.current}px`
     padded.current = zid
   }
   const zoneWidth = (zid: string): number => {
@@ -649,8 +653,9 @@ export function DragGroup({
     const slot = order.indexOf(id)
     const base = rects[oi]
     const tgt = cellAt(rects, slot, active.pitch, zoneWidth(zoneId))
+    const zf = zoomRef.current
     return {
-      transform: `translate3d(${px(tgt.x - base.left)}, ${px(tgt.y - base.top)}, 0)`,
+      transform: `translate3d(${px((tgt.x - base.left) / zf)}, ${px((tgt.y - base.top) / zf)}, 0)`,
       hidden: false,
       animate: dropState !== 'idle',
     }
@@ -736,7 +741,7 @@ export function DragGroup({
               if (e.propertyName === 'transform' && dropState === 'dropping') commitRef.current?.()
             }}
           >
-            {renderOverlay?.(active.id)}
+            {renderOverlay?.(active.id, active.rect)}
           </div>,
           document.body,
         )}
