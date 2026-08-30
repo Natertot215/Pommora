@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
-import { Zone, useZoneItem } from './engine'
+import { Zone, useDropSlot, useZoneItem } from './engine'
+import './dropChrome.css'
 import { DragGroup, GroupZone, useGroupedDragItem, type DragGroupProps } from './group'
 import type { DragItem, DragNotify, Modifier } from './shared'
 import { moveItem } from '../Util/moveItem'
@@ -9,7 +10,7 @@ import { moveItem } from '../Util/moveItem'
 export type Row = { id: string; label: string }
 export type Layout = 'list' | 'grid' | 'table'
 export type { DragItem, DragNotify, DragGroupProps, Modifier }
-export { DragGroup, useGroupedDragItem }
+export { DragGroup, useGroupedDragItem, useDropSlot }
 
 /** Reorder a list from the (activeId, overId) a zone reports — for shift-mode zones. */
 export function reorder<T extends { id: string }>(

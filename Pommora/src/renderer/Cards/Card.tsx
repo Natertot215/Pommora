@@ -1,8 +1,10 @@
 import type { ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { cx } from '@renderer/DesignSystem/Util/cx'
 import { text } from '@renderer/DesignSystem/Tokens/typography.css'
 import { OverScroll } from '@renderer/DesignSystem/Interactions/OverScroll'
-import type { DragItem } from '@renderer/DesignSystem/Interactions/drag'
+import { useDropSlot, type DragItem } from '@renderer/DesignSystem/Interactions/drag'
+import { stack } from '@renderer/DesignSystem/Tokens/stack'
 import { NavTrail, type TrailSegment } from '@renderer/DesignSystem/Elements/NavTrail'
 import './cards.css'
 
@@ -88,6 +90,38 @@ export function CardTitle({
   )
 }
 
-export function CardTrail({ segments }: { segments: TrailSegment[] }): React.JSX.Element | null {
-  return <NavTrail segments={segments} className="card-loc" />
+/** The landing slot a card grid paints while one of its cards is in flight. Renders inside a
+ *  standalone zone; the grouped engine draws its own across zones. */
+export function CardDropSlot(): React.JSX.Element | null {
+  const slot = useDropSlot()
+  if (!slot) return null
+  return createPortal(
+    <div
+      className="drop-slot"
+      style={{
+        position: 'fixed',
+        left: slot.left,
+        top: slot.top,
+        width: slot.width,
+        height: slot.height,
+        zIndex: stack.top.dropPreview,
+      }}
+    />,
+    document.body,
+  )
+}
+
+export function CardTrail({
+  segments,
+  onClick,
+}: {
+  segments: TrailSegment[]
+  onClick?: React.MouseEventHandler<HTMLDivElement>
+}): React.JSX.Element {
+  return (
+    // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
+    <div className="card-trail" onClick={onClick}>
+      <NavTrail segments={segments} className="card-loc" />
+    </div>
+  )
 }

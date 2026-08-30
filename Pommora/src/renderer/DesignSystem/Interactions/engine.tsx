@@ -489,6 +489,13 @@ export function reflow(rects: Box[], overIndex: number, activeIdx: number, index
   return moveItem(rects, overIndex, activeIdx)[index] ?? rects[index]
 }
 
+/** The box the lifted item will land in, for a surface that wants to paint the slot. */
+export function useDropSlot(): Box | null {
+  const ctx = useContext(ZoneCtx)
+  if (ctx?.dropState !== 'dragging') return null
+  return ctx.rects[ctx.overIndex] ?? null
+}
+
 export function useZoneItem(id: string): DragItem {
   const ctx = useContext(ZoneCtx)
   if (!ctx) throw new Error('useDragItem must be used inside a <SortableZone>')

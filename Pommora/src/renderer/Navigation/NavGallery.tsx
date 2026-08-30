@@ -3,6 +3,7 @@ import { cx } from '@renderer/DesignSystem/Util/cx'
 import { SortableZone, useDragItem, type DragItem } from '@renderer/DesignSystem/Interactions/drag'
 import {
   CardBody,
+  CardDropSlot,
   CardPlaceholder,
   CardRoot,
   CardText,
@@ -54,6 +55,7 @@ export function NavGallery({
       <div className={cx('card-grid', frozenLayout && 'is-fill')}>
         {pins.length > 0 && (
           <SortableZone items={pins.map((p) => p.key)} layout="grid" onReorder={reorderPin}>
+            <CardDropSlot />
             {pins.map(card)}
           </SortableZone>
         )}
@@ -69,6 +71,7 @@ export function NavGallery({
           ))
         ) : (
           <SortableZone items={items.map((r) => r.key)} layout="grid" onReorder={reorderRecent}>
+            <CardDropSlot />
             {items.map(card)}
           </SortableZone>
         )}

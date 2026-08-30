@@ -78,16 +78,10 @@
   border-width: var(--tile-border-hot, var(--tile-border));
 }
 
-/* The placement preview — where the lifted block will land: accent at the
-   secondary tint, under every tile. */
+/* Under every tile, and on the tile corner rather than the card one. */
 .spm-placement {
-  position: absolute;
-  top: 0;
-  left: 0;
   z-index: 0;
-  pointer-events: none;
-  border-radius: 16px;
-  background: var(--accent-stroke);
+  --drop-slot-radius: 16px;
 }
 
 /* The block drag handle — a bordered chip NOTCHED into the left border: its own
