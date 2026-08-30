@@ -410,7 +410,7 @@ Composite, feature-facing shells listed by reference; their code stays in the ap
 
 ### Animation
 
-`Animation/` — the one motion source: the ladder, the two curves, the drag feel, the Bloom keyframes, and the enter/exit primitives. [[InteractionPM]] describes the named motions.
+`Animation/` — the one motion source: the ladder, the two curves, the drag feel, the Bloom keyframes, the enter/exit primitives, and the side-pane slide. [[InteractionPM]] describes the named motions.
 
 | Title     | Export                                    | What it is                                                              |
 | --------- | ----------------------------------------- | ----------------------------------------------------------------------- |
@@ -420,6 +420,7 @@ Composite, feature-facing shells listed by reference; their code stays in the ap
 | Feel      | `DEFAULT_FEEL` · `GLIDE_FEEL`             | Duration + snap as numbers for the drag engine — the `menu` and `slow` rungs. |
 | Bloom     | `menuBloom` · `menuBloomClosing` · `bloomOpen` · `bloomClose` · `titleReveal` | The menu open/close keyframes at the `slow` and `menu` rungs. |
 | Reveal    | `Reveal`                                  | The `0fr ↔ 1fr` body open/close on the `fast` rung.                     |
+| PaneSlide | `paneSlide`                               | A docked pane's in-out motion — the `--io` overlay park or the in-flow reflow, by side and mode. |
 | Exit      | `useExitPresence`                         | Keeps a surface mounted through its close.                              |
 
 ### Symbols
