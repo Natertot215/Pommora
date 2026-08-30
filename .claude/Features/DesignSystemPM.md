@@ -328,7 +328,7 @@ Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, 
 
 | Title          | Export                                      | What it is                                                                                                           |
 | -------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| PickerMenu     | `PickerMenu` · `PointMenu` · `PickerOption` | The rectangle every menu and picker mounts — anchoring to an element or a bare point, the collision flip decided once per open, dismissal, focus, the scroll cap. The wikilink autocomplete and the hover pane ride it too, on pane glass. |
+| PickerMenu     | `PickerMenu` · `PointMenu` · `PickerOption` | The rectangle every menu and picker mounts — anchoring to an element or a bare point, the collision flip decided once per open, focus, the scroll cap, and dismissal: Escape always, outside-click when `dismissOnOutside` (default on). The wikilink autocomplete and the hover pane ride it too, on pane glass. |
 | CalendarPicker | `CalendarPicker`                            | Date and time selection.                                                                                             |
 | ColorPicker    | `ColorPicker`                               | The 8×8 ramp grid; clicking the selected cell clears.                                                                |
 | IconPicker     | `IconPicker` · `IconFavorites`              | The searchable glyph grid with a reorderable favorites strip; the app binds favorites through `Settings/IconPicker`. |

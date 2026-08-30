@@ -228,7 +228,6 @@ Deliberately never kept: the window opens at one size every launch, and floating
 
 #### Pending
 
-- **Folder-exclusion editing UI** — `excluded_folders` is hand-edited; its Settings surface is deferred.
 - **Index consumers** — Linked-From, backlinks, ContextView membership, and full-text search each ride the content index as their own arcs; the FTS table is the one piece of schema still unwritten.
 - **Agenda** — the item format, the field vocabulary, ordering, and every surface, under the four decisions in §The Agenda Singletons.
 
