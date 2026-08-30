@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 08-29-2026              | PM-117 | Index Exclusion Interface                            |
 | 08-27-2026              | PM-116 | The Store Split |
 | 08-25-2026              | PM-115 | The ImagePicker                                      |
 | 08-22-2026              | PM-114 | File Properties                                      |
@@ -120,6 +121,15 @@
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
 
+
+#### PM-117 || Index Exclusion Interface
+
+**DATE:** 08-29-2026
+
+Excluded folders became editable from the app. Settings › Files & Links gained an Exclusions section: an Excluded Directories row carrying the folder count and a Manage button that opens a PickerMenu of path fields — one per exclusion with a browse action and a remove ×, an Add Exclusion row below — writing `excluded_folders` through the new `exclusions:set` / `exclusions:choose` channels, which perform by hand the re-index and watcher re-arm an in-app settings write owes because `recordWrite` hides it from the watcher. The whole feature drives the existing `exclusion.ts` matcher rather than adding a fourth skip predicate: only a writer (`writeExcludedFolders`), a validator (`nexusFolderRefusal`, shared with the asset root), a per-element read that survives one bad entry, and the surface were new. A Clear Exclusion Cache row, behind a native confirmation, removes Pommora's bookkeeping from every excluded folder — `exclusionScan.ts` is the one module that deliberately reads inside an excluded folder, deleting container sidecars and either unwrapping each page's `<>` / `()` keys to plain frontmatter (the default, Preserve Properties On Clear) or deleting them, always dropping the identity key, stepping around the asset root and skipping the Agenda layer whole; the sweep re-seeds the index so cleared pages leave search without a relaunch.
+
+- **Commits:** `25469f0a..9056f88f`
+- **Diff:** Net +991 | +1083 / −92
 
 #### PM-116 || The Store Split
 
