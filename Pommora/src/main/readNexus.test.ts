@@ -128,6 +128,15 @@ describe('readPersonalization: ribbon knobs', () => {
   })
 })
 
+describe('readPersonalization: preservePropertiesOnClear', () => {
+  it('round-trips false and leaves an absent key undefined, not false', () => {
+    expect(
+      readPersonalization({ preservePropertiesOnClear: false }).preservePropertiesOnClear,
+    ).toBe(false)
+    expect(readPersonalization({}).preservePropertiesOnClear).toBeUndefined()
+  })
+})
+
 describe('readPersonalization: picker selection', () => {
   it('reads the stored mode back so a set survives the next tree push', () => {
     expect(readPersonalization({ pickerSelection: 'checked' }).pickerSelection).toBe('checked')

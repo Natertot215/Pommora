@@ -379,6 +379,13 @@ const FRAMES = roster([
             label: 'Excluded Directories',
             hint: 'Excluded folders will not be recognized by the app; removing a folder from exclusion will re-index.',
           },
+          {
+            kind: 'toggle',
+            key: 'preservePropertiesOnClear',
+            defaultOn: true,
+            label: 'Preserve Properties On Clear',
+            hint: 'Clearing keeps the values a page holds, writing them as ordinary frontmatter instead of removing them.',
+          },
         ],
       },
       {
