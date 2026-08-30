@@ -7,7 +7,6 @@ import { Icon } from '@renderer/DesignSystem/Symbols'
 import { useSession } from '../store'
 import * as x from './exclusionRows.css'
 
-// KNOB — the Manage pane's width floor and ceiling.
 const PANE_MIN_W = 250
 const PANE_MAX_W = 500
 
@@ -34,7 +33,6 @@ export function ExcludedDirectoriesRow({
     if (!r.ok) await window.nexus.showError(r.error.message)
     return r.ok
   }
-  // Keyed by folder, not index, so a concurrent list reorder can't land a commit against a neighbor.
   const replaceFolder = (folder: string, next: string): void => {
     void commit(
       next ? stored.map((f) => (f === folder ? next : f)) : stored.filter((f) => f !== folder),
@@ -90,6 +88,7 @@ export function ExcludedDirectoriesRow({
               <span className={x.count}>{stored.length}</span>
               <Button
                 ref={triggerRef}
+                type="filled"
                 label="Manage"
                 pressed={open}
                 onClick={() => setOpen((o) => !o)}
@@ -122,7 +121,7 @@ export function ExcludedDirectoriesRow({
                     <Button
                       icon="plus"
                       label="Add Exclusion"
-                      outline
+                      className={x.addButton}
                       disabled={drafting}
                       onClick={() => setDrafting(true)}
                     />

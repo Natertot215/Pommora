@@ -1,7 +1,10 @@
-import { style } from '@vanilla-extract/css'
+import { globalStyle, style } from '@vanilla-extract/css'
+import { segment as navTrailSegment } from '@renderer/DesignSystem/Elements/NavTrail/navTrail.css'
 import { vars as colorVars } from '@renderer/DesignSystem/Tokens/color.css'
 
 const c = colorVars.color
+
+const ADD_INDENT = '25px'
 
 export const manageCluster = style({
   display: 'inline-flex',
@@ -49,4 +52,9 @@ export const removeButton = style({
 export const addRow = style({
   display: 'flex',
   paddingTop: '2px',
+  paddingLeft: ADD_INDENT,
 })
+
+export const addButton = style({ color: c.label.secondary })
+
+globalStyle(`${paneRow} ${navTrailSegment}`, { color: c.label.control })
