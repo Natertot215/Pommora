@@ -3,6 +3,7 @@ import { Button } from '@renderer/DesignSystem/Buttons'
 import { GlassWindow } from '@renderer/DesignSystem/Glass'
 import { Icon } from '@renderer/DesignSystem/Symbols'
 import { cx } from '@renderer/DesignSystem/Util/cx'
+import { paneSlide } from '@renderer/DesignSystem/Animation'
 import { useRevealNear } from '@renderer/DesignSystem/Interactions/revealBar'
 import {
   FloatingResizeCorners,
@@ -117,20 +118,27 @@ export function WindowBase({
     return () => window.removeEventListener('keydown', onKey)
   }, [closing])
 
-  const pane = (side: WindowBaseSide, which: 'left' | 'right'): React.JSX.Element => (
-    <SidePane
-      windowId={side.windowId}
-      side={which}
-      bounds={side.bounds}
-      open={side.open !== false}
-      className={cx(`window-side window-side-${which}-${side.mode}`, side.className)}
-      resizeClassName={`window-side-${which}-${side.mode}-resize`}
-      onWidthChange={which === 'left' ? setLeftW : setRightW}
-      onResizingChange={setResizing}
-    >
-      {side.children}
-    </SidePane>
-  )
+  const pane = (side: WindowBaseSide, which: 'left' | 'right'): React.JSX.Element => {
+    const open = side.open !== false
+    return (
+      <SidePane
+        windowId={side.windowId}
+        side={which}
+        bounds={side.bounds}
+        open={open}
+        className={cx(
+          `window-side window-side-${which}-${side.mode}`,
+          paneSlide({ side: which, mode: side.mode, open }),
+          side.className,
+        )}
+        resizeClassName={`window-side-${which}-${side.mode}-resize`}
+        onWidthChange={which === 'left' ? setLeftW : setRightW}
+        onResizingChange={setResizing}
+      >
+        {side.children}
+      </SidePane>
+    )
+  }
 
   const inflow = left?.mode === 'inflow' || right?.mode === 'inflow'
   const body = inflow ? (

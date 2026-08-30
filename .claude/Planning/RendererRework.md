@@ -1,6 +1,6 @@
 ## The Renderer Rework
 
-> **Status:** in directed cleanup, 08-28-2026 — the exploration reported; its verified findings are the §2 checklist, and cleanup rows land directly as they're taken. The value editing and visual tuning are mostly done; what's left is the remaining folder moves and the collapse/split rows, then the framework (§4) rewriting §2 into ratified phases. · **Scope:** `Pommora/src/renderer` whole — folders, names, tokens, stylesheets, recipes, boundaries, component APIs, and behavior where a finding justifies it; the design system's pending items (an inactive label tone, the type gaps) ride it. **Beside it:** [[Codebase-Cleanup-Checklist]] (the process-side half — `persist()`, the view host, the `main/index.ts` split, the drag adapters).
+> **Status:** in directed cleanup, 08-30-2026 — the exploration reported; its verified findings are the §2 checklist, and cleanup rows land directly as they're taken. The value editing and visual tuning are mostly done; what's left is the remaining folder moves and the collapse/split rows, then the framework (§4) rewriting §2 into ratified phases. · **Scope:** `Pommora/src/renderer` whole — folders, names, tokens, stylesheets, recipes, boundaries, component APIs, and behavior where a finding justifies it; the design system's pending items (an inactive label tone, the type gaps) ride it. **Beside it:** [[Codebase-Cleanup-Checklist]] (the process-side half — `persist()`, the view host, the `main/index.ts` split, the drag adapters).
 
 The renderer works. It is filed by the order things were built, styled in two forms with a rule that thirty sheets fail, and tokenized unevenly — motion and color are on their ladders, geometry is hundreds of bare pixel values with a handful of named insets. Two organizational passes (08-25 to 08-28) moved `Links/`, `Interface/`, the store, and landed the Menu recipe. What remains was carried in two documents as a ledger of moves and an atlas of evidence; this document is the one list of what is still proposed, why, and what each waits on — and the method for exploring the system whole — as consultants, not inspectors — before any of it is scheduled.
 
@@ -45,7 +45,7 @@ Each folder answers "what is this" in one word. A row marked NEW, MOVED, or RENA
 │   ├── // Interactions
 │   │   └── reorderModel.ts             | • MOVED from Sidebar/sidebarDndModel — a generic reorder model
 │   ├── // Glass                        | • The material — glass-base, -pane, -surface, -window, -control
-│   ├── // Menus                        | • The menu recipe — menu-base, -row, -surface, -shell, -disclosure, -anchor, frame-slide, frame-growth; menu-index
+│   ├── // Menus                        | • The menu recipe — menu-base, -row, -surface, -disclosure, -anchor, frame-slide, frame-growth; menu-index
 │   ├── // Tokens                       | • Color, type, geometry, the bridge; accent + personalization
 │   └── …                               | • Animation, Elements, Labels, Symbols, Util
 ├── // Frames                           | • The frames a Menu or Window opens onto — filter, group, sort, hidden, layout, settings
@@ -119,7 +119,7 @@ Every proposed move, grouped by kind. **Status** is one of: **ruled** (Nathan sa
 #### Boundaries
 
 - [ ] **`PropertyFrame`'s per-column Style radios** — `Properties/PropertyFrame.tsx` reads `useActiveView` (Views) and `useStyleFor` (Tables): a view-settings section inside the Properties frame. Keep the ruled edge and name it, or lift the section beside the other panes. *Status:* awaiting ruling (§3.4).
-- [ ] **The side slot** — `SidePane` is the sliding slot every Window mounts; the main window's sidebar and inspector do not, driving `--io` / `--io-l` from `styles.css` on their own rules, which is why PaneSlide has three homes (`styles.css`, `window-base.css`, `Sidebar.css`). The main window mounts `SidePane` for both slots; PaneSlide becomes one motion in one file; `InspectorPane` and `WindowInspector` (same frontmatter surface, different chrome) reconcile — one component or one name over two, measured by shared chrome; the store's `closePreview` / `settingsOpen` names follow the windows they open. *Why:* one motion, one owner. *Status:* ruled; **the one behavior change in the vocabulary.**
+- [ ] **The side slot** — `SidePane` is the sliding slot every Window mounts; the main window's sidebar and inspector do not. The overlay park and the in-flow reflow are one motion, `Animation/PaneSlide.css.ts`, consumed by the inspector and the windows; the `--io` / `--io-l` driver stays a home per host (`styles.css`, `window-base.css`) so the toolbar swallow and the content gutter read the same interpolation, and the `Sidebar` keeps its own static slide. What's left: the main window mounts `SidePane` for both slots; `InspectorPane` and `WindowInspector` (same frontmatter surface, different chrome) reconcile — one component or one name over two, measured by shared chrome; the `Sidebar`'s slide folds onto `PaneSlide`; the store's `closePreview` / `settingsOpen` names follow the windows they open. *Why:* one motion, one owner. *Status:* ruled; the motion unified, the SidePane-mount and reconcile parked; **the one behavior change in the vocabulary.**
 
 #### Tokens & Geometry
 
@@ -129,7 +129,6 @@ Every proposed move, grouped by kind. **Status** is one of: **ruled** (Nathan sa
 - [ ] **`--main-bg` → `--bg-window`** — a pure alias with five reads. *Status:* ruled; one edit.
 - [ ] **Sibling drift** — `Frames/groupFrame.css.ts:12`'s `subLabel` (`body.emphasized`) against `Menus/menu-base.css.ts:164`'s `subLabel` (`caption.standard`) — same export name, 13px against 11px. A shared class name is not a shared type decision. *Status:* audit decides which wins.
 - [ ] **Two token verdicts** — `text.callout` redefined as the table/column-header step (one read; its ledger assignment "frame header" has no referent); `surface.primary/secondary/tertiary` moved beside Ramp as the opaque grey ladder (2·1·1 reads). *Status:* awaiting ruling (§3.5).
-- [ ] **`ColorSwatch.tsx:48`** hand-rolls half of `cellPaint` inline. *Status:* ruled; one line.
 
 #### Recipes
 
