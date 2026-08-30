@@ -12,3 +12,14 @@ if (typeof Range !== 'undefined' && !Range.prototype.getClientRects) {
   Range.prototype.getClientRects = () => [] as unknown as DOMRectList
   Range.prototype.getBoundingClientRect = () => new DOMRect()
 }
+
+// jsdom has no ResizeObserver; a portalled PickerMenu observes its pane to keep it positioned, so a
+// suite that opens one takes an uncaught ReferenceError out of a layout effect. A no-op suffices —
+// there is no layout to report.
+if (typeof globalThis !== 'undefined' && !('ResizeObserver' in globalThis)) {
+  ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = class {
+    observe(): void {}
+    unobserve(): void {}
+    disconnect(): void {}
+  }
+}
