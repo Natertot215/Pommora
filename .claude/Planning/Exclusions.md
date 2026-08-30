@@ -535,6 +535,22 @@ On a confirmed clear the handler awaits `clearExclusionData` and then runs `seed
 
 ### Closeout
 
+**Delivery claim** *(range `25469f0a..9056f88f`; to be checked by a neutral verifier against Requirements)*
+
+1. **Excluded Directories row** — a new Exclusions section in Files & Links shows the folder count and a Manage button (`ExcludedDirectoriesRow`, `SettingsWindow` `'exclusions'` row).
+2. **The Manage pane** — a `PickerMenu` of `PathField` rows, each with browse + remove ×, an Add Exclusion button, min/max width (250/500), rows at `--surface-inset`. Dismissal reverted per live-verify to Escape / re-click / outside click; commits, Add, and the folder dialog keep it open.
+3. **Persistence + live re-index** — `writeExcludedFolders` writes `excluded_folders`; the `exclusions:set` handler runs `confirmSettingsWrite → refreshAfterWrite → seedContentIndex → push → startWatcher` by hand, so adding removes the folder without a restart and removing re-indexes it.
+4. **One validator** — `nexusFolderRefusal` (aliased as `excludedFolderRefusal`) is met by a typed path (`sanitizeExclusions`), a browsed path (`exclusions:choose`), and a hand-edited file (`readExcludedLeaf`, per-element).
+5. **Clear Exclusion Cache** — the row + native confirm (`clearConfirmCopy`) delete container sidecars only (`_pagecollection.json` / `_pageset.json`) and strip page bookkeeping; the Agenda layer is skipped whole; an un-admittable file is reported, not scrubbed.
+6. **Preserve Properties On Clear** — a personalization toggle, default on; the scan is by shape (`parseGovernedKey`), unwrapping `<>`/`()` to bare keys or, off, deleting them.
+7. **Docs made false rewritten** — ConfigurationPM (×3 incl. the personalization roster), ArchitecturePM (§II + the removed Pending item), DesignSystemPM (PickerMenu row); the DesignSystemPM destructive row needed no change (never claimed no consumer).
+
+**Adjudicated exceptions:** the wrapped-vs-wrapped same-name key collision (documented known property); a cleared top-level Collection invisible until relaunch; nexus.db state orphaned by dropped PageIDs — all disclosed in the plan and the confirm copy, none in scope to solve.
+
+**Passes run:** attack round (pre-Task-1, 3 findings folded) · Gate 1 simplify + review (2 criticals fixed) · Gate 2 simplify + comment pass + review (1 critical fixed) · closing dead-vocab sweep clean (`asset_directory` = 1; no `hand-edited`/`hand-set` on exclusions). Closeout delivery-claim verify + final attack review dispatched.
+
+**Hand-rolled-behavior sweep (closeout directive):** the remove × was a raw `<button>` with a hand-rolled `:hover { background: state.hover }` — exactly `Button`'s built-in hover — now a `base` `Button`; `removeButton` CSS deleted. No other production parallel to button/menu behavior remained.
+
 ---
 
 ## Completion Criteria
