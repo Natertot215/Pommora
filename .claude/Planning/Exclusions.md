@@ -16,7 +16,7 @@ Not solved here: globbing or negation in exclusion patterns, per-folder Clear, a
 **Requirements**
 
 1. An **Excluded Directories** row in a new **Exclusions** section of Files & Links, showing the number of excluded folders and a **Manage** button.
-2. The Manage pane: one editable path field per exclusion with a browse action and a remove `×`, an **Add Exclusion** button below the last field, min and max width knobs, field rows inset by `--surface-inset`, and dismissal on Escape or a re-click of Manage only — never on an outside click, a path commit, or a returning folder dialog.
+2. The Manage pane: one editable path field per exclusion with a browse action and a remove `×`, an **Add Exclusion** button below the last field, min and max width knobs, and field rows inset by `--surface-inset`. It dismisses on Escape, a re-click of Manage, or a click outside — but not on a path commit, an Add, or a returning folder dialog, which are actions inside the pane.
 3. Exclusions persist to `excluded_folders` in `.nexus/settings.json`. Adding one removes the folder from the tree and the index without a restart; removing one re-indexes it.
 4. A typed path and a browsed path cross the same validator, which is also the refusal a hand-edited `settings.json` meets.
 5. A **Clear Exclusion Cache** row with a destructive button behind a native confirmation that, across every excluded folder, deletes **container** sidecars — `_pagecollection.json` and `_pageset.json` only — and Pommora's own frontmatter bookkeeping from the pages inside them. The Agenda layer is out of scope entirely: a folder carrying a Task or Event config is skipped whole, configs and pages alike. A file the sweep cannot admit is left byte-identical and reported rather than counted as scrubbed.
@@ -33,7 +33,7 @@ With the app running and a folder of pages visible in the sidebar: open Settings
 - `corpusFilesUnder` and `shouldSkipDir` both prune exactly the folders Clear targets, and `listFilesRecursive` has no skip logic at all → Clear needs its own enumerator that deliberately enters an excluded folder. **Task 6.**
 - `readNexus.ts` reads the list through `asStringArray`, which is all-or-nothing: one non-string element discards the entire exclusion list → a UI that writes this key must first make the read per-element, as `ribbonOrder` and `favoriteIcons` already are. **Task 1.**
 - `sweepGovernedRoots` already carries a `rewriteText` option whose doc comment describes key renaming as its reason for existing → the unwrap needs no new sweep machinery. **Task 6.**
-- `PickerMenu` gates BOTH its Escape handler and its click-catching backdrop on the same `onDismiss` prop (`picker-base.tsx:255-263` and `:355-364`) → Escape-without-outside-click is not reachable through the current API, so Requirement 2 costs a design-system change: a `dismissOnOutside` prop that gates the backdrop alone, borrowing `MenuDropdown`'s existing name for the same behavior. **Task 4.**
+- `PickerMenu` dismisses on Escape and an outside click through one `onDismiss` prop → the pane wears it as-is; Requirement 2's dismissal is the default and costs no design-system change. **Task 4.**
 - `SIDECARS` (`src/main/paths.ts`) holds five filenames, two of which are the Agenda singletons' configs, and an unlinked `_taskconfig.json` has no repair path — `reHomeRegistered` needs a sidecar id to match and `seedAgendaSingletons` never retro-seeds → Clear deletes a container-only set, never `SIDECARS`. **Task 6.**
 - The Agenda layer stays out of Clear entirely — its configs, its folders and its Task and Event pages → `excludedArtifacts` skips a folder carrying `_taskconfig.json` or `_eventconfig.json` outright, so those pages never enter the sweep's file list and never read as refused. `sweepAdmits`'s existing `admitContentFile(fm, 'page')` gate refuses a stray `TaskID` page anyway, so the policy holds at two levels and `SweepOptions` needs no change. **Task 6.**
 - `renameFrontmatterKey`'s `KeyCollision` is `'prefer-new' | 'merge'` only (`pageFile.ts:118-124`) → the unwrap passes `'prefer-new'`: where a page already holds a plain key of that name, Pommora's wrapped one drops rather than overwriting what another tool wrote into a folder that is leaving Pommora. **Task 6.**
@@ -97,7 +97,6 @@ With the app running and a folder of pages visible in the sidebar: open Settings
 | `ArchitecturePM.md:93` | §II Folder Exclusion describes exclusion as total and read-only | Clear reaches into excluded folders deliberately; the section owes that exception. | 6 |
 | `ConfigurationPM.md` §Personalization | The roster of personalization keys | `preservePropertiesOnClear` joins it. | 5 |
 | `DesignSystemPM.md` Components | The `destructive` Button variant has no consumer | The Clear row is its first. | 7 |
-| `DesignSystemPM.md` / `InteractionPM.md` | `PickerMenu`'s dismissal, wherever it is described as outside-click-and-Escape | `dismissOnOutside` makes the backdrop optional. | 4 |
 
 **Dead Vocabulary**
 
@@ -288,8 +287,8 @@ The row's trailing slot is a `kind: 'field'` holding the count of `tree.excluded
 **Verify — automated**
 
 - [ ] Red first in `src/renderer/Settings/ExclusionRows.test.tsx` — the row renders the count from a stubbed `tree.excluded`; Manage toggles the pane; a committed path calls `setExclusions` with the whole list; `×` removes one entry; Add appends a blank row.
-- [ ] A dismissal test that is the requirement, driving a real `click` and not a bare `pointerdown` — the backdrop stops pointerdown and dismisses on click, so a pointerdown-only test passes over an unmet requirement. With the pane open: a full click outside leaves it mounted, `Escape` closes it, and a second Manage press closes it. Flip `dismissOnOutside` to `true` and the first assertion goes red.
-- [ ] Every existing `PickerMenu` caller still dismisses on an outside click — the new prop defaults to `true`, so the design-system suites are the control. `rg -F "PickerMenu" src/renderer` → re-derive; none may need editing.
+- [ ] A dismissal test driving a real `click`: with the pane open, a click on the backdrop dismisses it, `Escape` dismisses it, and a second Manage press dismisses it — each read through the trigger's `aria-pressed`, since the pane rides a Bloom-out exit before it unmounts.
+- [ ] No existing `PickerMenu` caller changed behavior — the pane adds no prop. `rg -F "PickerMenu" src/renderer` → re-derive; none needed editing.
 - [ ] A blank row added by **Add Exclusion** survives a sibling field's commit. That commit pushes `nexus:changed`, which re-renders the pane from `tree.excluded`; a draft row held only in the tree's shape would vanish under the user's cursor.
 - [ ] `npm run typecheck` — the `Row` switch is exhaustive with no `default`, so a missing case is a compile error.
 - [ ] Full gate green, `npm run lint` clean (the new `.css.ts` included).
@@ -300,7 +299,7 @@ The row's trailing slot is a `kind: 'field'` holding the count of `tree.excluded
 - [ ] The pane's width at one short path and at one deeply nested path — does the min/max pair hold, and does a long path scroll rather than widen past the max?
 - [ ] The field rows' inset against a `MenuSurface` elsewhere in the app — the same `--surface-inset` should read as the same gutter.
 - [ ] Add a real folder by browsing and confirm it and its pages leave the sidebar with no restart; remove it and confirm they return.
-- [ ] The pane stays open through a commit, an Add, and a returning folder dialog; closes on Escape and on a second Manage press.
+- [ ] The pane stays open through a commit, an Add, and a returning folder dialog; closes on Escape, a second Manage press, and an outside click.
 
 #### Gate 1 — exclusions are writable from the app
 
@@ -509,6 +508,7 @@ On a confirmed clear the handler awaits `clearExclusionData` and then runs `seed
 - **Task 1 — `excludedFolderRefusal` shares one rule with `assetDirRefusal`.** The two are byte-identical (a valid, writable, nexus-relative folder path that is not app-owned), so the shape rule is extracted once as `nexusFolderRefusal` and both names alias it; the DRY rule forbids the verbatim twin the plan's fences implied. `assetDirRefusal`'s two consumers are untouched. Either alias can be promoted to its own function if the domains ever diverge.
 - **Round-2 attack, Finding 1 (Medium) — folded into Task 7.** The sweep's `indexWrittenPage` re-inserts every page Clear rewrites, and the watcher never corrects an excluded folder, so Clear's handler re-seeds the index after `clearExclusionData`. Mirrors Task 3's re-arm; only the index is stale, so the full scope chain is not owed.
 - **Round-2 attack, Finding 2 (Medium) — folded into Task 6's crossing test.** `corpusFilesUnder` is agenda-blind, so the file-set identity holds only over an agenda-free excluded root; the crossing test names that constraint.
+- **Phase 1 live-verify — outside-click dismissal restored (reverses the original spec).** The user asked that a click outside the pane also dismiss it. That is `PickerMenu`'s default, so the `dismissOnOutside` prop added in Task 4 is removed entirely — no caller needs it, and a dead prop is worse than none. The pane now closes on Escape, a re-click of Manage, or an outside click; a path commit, an Add, and a returning folder dialog are actions inside the pane and leave it open. The `DesignSystemPM` note and the Made False row for it are reverted with the code.
 - **Gate 1 review, Critical 1 — fixed.** The Manage pane was mounted conditionally (`open ? <PickerMenu> : null`), which skips PickerMenu's Bloom-out exit and trips its DEV guard. Now mounted persistently and rides `open`, as the primitive requires.
 - **Gate 1 review, Critical 2 — fixed.** The row discarded the `setExclusions` Result, so a typed path the validator refused vanished with no feedback and the draft row closed anyway. Now surfaces the refusal via `window.nexus.showError` (the `RenameSlice` pattern) and keeps the draft open on failure.
 - **Gate 1 review, below-bar race — fixed preemptively.** Rows are keyed and edited by folder value, not row index, so a concurrent list reorder can't land a commit against a neighbor. Cheap and closes the race.
@@ -596,7 +596,7 @@ Everything else is the Standard in the plan's Completion Criteria.
 - [ ] Clear is unreachable except through its confirmation, and idempotent when re-run.
 - [ ] No fourth skip predicate was added: `exclusion.ts`'s matching rule is unchanged, and `exclusionScan.ts` is the only deliberate reach past it.
 - [ ] Clear destroyed nothing it did not name: the Agenda layer is untouched end to end, every collision left the plain key standing, and files the sweep could not admit were reported rather than counted as scrubbed.
-- [ ] `dismissOnOutside` defaults true and no existing `PickerMenu` caller changed behavior.
+- [ ] No existing `PickerMenu` caller changed behavior; the pane rides the default dismissal.
 
 **The passes**
 
@@ -608,7 +608,7 @@ Everything else is the Standard in the plan's Completion Criteria.
 
 **The user's own pass** *(the only thing allowed to be outstanding)*
 
-- [ ] The Manage pane: min/max width at a short and a nested path, the `--surface-inset` gutter against a MenuSurface elsewhere, and dismissal on Escape and re-click only.
+- [ ] The Manage pane: min/max width at a short and a nested path, the `--surface-inset` gutter against a MenuSurface elsewhere, and dismissal on Escape, a re-click, and an outside click.
 - [ ] Adding and removing a real folder, with the sidebar updating and no restart.
 - [ ] The Clear dialog's wording in both toggle positions.
 - [ ] A real folder cleared with Preserve on and with Preserve off, and the un-exclusion that follows.
