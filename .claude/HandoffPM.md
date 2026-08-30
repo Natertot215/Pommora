@@ -18,7 +18,8 @@
 
 - [x] **Exclusions Phase 1** — the row, the Manage pane, the set/choose channels, the validator + hardened read; live-verified and signed off.
 - [x] **Exclusions Phase 2** — the Preserve toggle, the enumerate + strip, the Clear row + native confirmation; hazard window closed in one commit.
-- [x] **Both gates + closeout passes** — attack fold, two review rounds (three criticals fixed), simplify + comment passes, dead-vocab sweep clean, the hand-rolled-hover parallel removed. Delivery-claim verify + final attack review dispatched at closeout.
+- [x] **Both gates + closeout passes** — attack fold, three review rounds (four criticals fixed), simplify + comment passes, dead-vocab sweep clean, the hand-rolled-hover parallel removed. Delivery-claim verify (all 7 MET) + final attack review folded.
+- [x] **Post-signoff polish** — the count takes the trailing-value size; the Manage button is filled; the Clear button flashes "Cleared" (1500ms) on success; the Add-created row reveals in and a removed row collapses out (Reveal), the × never dims, an emptied field is accepted not a delete. The collapse-delete motion is logged in ContextPM as the seed for a shared `useListRemoval` hook.
 - [ ] **Phase 2 live pass** — the confirm wording in both toggle positions, a real folder cleared with Preserve on and off, the un-exclusion after, the destructive button's tone. The one thing outstanding.
 
 #### Next Session
