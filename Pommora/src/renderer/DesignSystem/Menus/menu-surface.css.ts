@@ -1,6 +1,6 @@
 import { style } from '@vanilla-extract/css'
 import { vars as colorVars } from '../Tokens/color.css'
-import { BEAK_RADIUS } from './menu-shell.css'
+import { BEAK_RADIUS } from '../Glass/glass-base'
 
 const c = colorVars.color
 

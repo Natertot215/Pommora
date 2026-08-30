@@ -237,10 +237,11 @@ Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, 
 | ------------- | --------------------------------------------- | ----------------------------------------------------------------------- |
 | GlassPane     | `GlassPane` · `paneMaterial`                  | The clear chrome-pane tier — the sidebar, the inspector, the side slots, and the anchored surfaces (the hover pane, the autocomplete). |
 | Surface       | `Surface`                                     | GlassPane as the app root, the floating overlay over the main view.     |
-| GlassSurface  | `GlassSurface` · `SURFACE_FROST`              | A Menu floating over a pane, a step dimmer — menus, pickers; `solid` when it opens over another surface. |
+| GlassSurface  | `GlassSurface` · `SURFACE_FROST`              | A Menu floating over a pane, a step dimmer — menus, pickers; `solid` when it opens over another surface, and opt-in `notch` for the beaked dropdown geometry. |
 | GlassWindow   | `GlassWindow` · `WINDOW_FROST`                | That surface carrying the 90% `--bg-window` body — every floating window and the image picker. |
 | Ghost         | `GHOST_FROST`                                 | The edge-free frost the drag chip wears.                                |
 | Frost engine  | `frostStyle` · `SOLID_FILL` · `OUTLINE_INSET` | The recipe itself, the window fill share, and the acted-on edge inset.  |
+| Beak geometry | `notchGeometry` · `BEAK_RADIUS`               | The opt-in notched outline `GlassSurface`'s `notch` clips and strokes.   |
 | GlassControls | `GlassControls` · `CONTROL_OPTICS`            | Liquid glass on the button controls.                                    |
 | GlassSegment  | `GlassSegment`                                | Liquid glass on the small on-control segments.                          |
 
@@ -358,7 +359,7 @@ Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, 
 
 ### Menus
 
-`Menus/` — the menu recipe: the shell a trigger hangs, the rows inside it, the frame chassis, and the slide between frames. `menu-base.tsx` is the trigger shell, `menu-surface.tsx` and `menu-shell.tsx` the beaked surface, `menu-row.tsx` the rows, `menu-disclosure.tsx` the folding row over `listed-outline.css.ts`'s chevron-and-rail styles, `menu-anchor.ts` the placement, `frame-growth.ts` and `frame-slide.tsx` the frame chassis; each carries its `.css.ts` beside it, and `menu-base.css.ts` holds the row vocabulary's styles.
+`Menus/` — the menu recipe: the shell a trigger hangs, the rows inside it, the frame chassis, and the slide between frames. `menu-base.tsx` is the trigger shell, `menu-surface.tsx` a thin pass-through onto `GlassSurface`'s `notch` opt-in for the beaked surface, `menu-row.tsx` the rows, `menu-disclosure.tsx` the folding row over `listed-outline.css.ts`'s chevron-and-rail styles, `menu-anchor.ts` the placement, `frame-growth.ts` and `frame-slide.tsx` the frame chassis; each carries its `.css.ts` beside it, and `menu-base.css.ts` holds the row vocabulary's styles.
 
 | Title | Export | What it is |
 | ------------ | ----------------------------------------------- | ----------------------------------------- |
@@ -370,7 +371,6 @@ Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, 
 | DisclosureRow | `DisclosureRow` · `useDisclosureSet` · `DropOutlineKind` | A folding row on the listed outline. |
 | MenuSurface | `MenuSurface` | The beaked surface the large toolbar menu hangs off a button. |
 | MenuDropdown | `MenuDropdown` | The shell around a trigger — open state, dismiss, growth bound. |
-| NotchedShell | `NotchedShell` | The beaked frost shell MenuSurface composes. |
 | Anchor | `menuAnchor` · `MenuPlacement` · `MENU_GAP` | Where a menu sits against its trigger. |
 | Growth | `growToContent` | The measured height a menu grows to. |
 | FrameSlide | `FrameSlide` | The two-slot push and back between a menu's frames. |
