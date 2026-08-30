@@ -476,15 +476,15 @@ On a confirmed clear the handler awaits `clearExclusionData` and then runs `seed
 
 #### Gate 2 — Clear ships behind a confirmation
 
-- [ ] Gate commands green, exit codes read directly.
-- [ ] Every task's **Verify — automated** list ticked, each against a result just watched.
-- [ ] Every Now count re-run against its control; counts matched or the divergence rewrote the plan.
-- [ ] Every task that diverged had its dependents re-derived and rewritten.
-- [ ] `code-simplifier` then `feature-dev:code-reviewer` dispatched against `<base>..HEAD`; the reports cite files inside it.
-- [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
-- [ ] **Hazard window closed:** `exclusions:clear` is declared, and its handler runs the dialog before `clearExclusionData` in the same commit that declared it.
-- [ ] The Agenda layer survives a Clear over a folder holding it — config and pages both — checked against a real `_taskconfig.json`, not only in the temp-nexus suite.
-- [ ] Progress hashes filled in; lessons written into the later tasks they change.
+- [x] Gate commands green, exit codes read directly. (typecheck · 3707 tests · lint)
+- [x] Every task's **Verify — automated** list ticked, each against a result just watched.
+- [x] Every Now count re-run against its control; counts matched or the divergence rewrote the plan.
+- [x] Every task that diverged had its dependents re-derived and rewritten.
+- [x] `code-simplifier` then `comment-killer-agent` then `feature-dev:code-reviewer` dispatched against `94ea5116..HEAD`; the reports cite files inside it.
+- [x] Every concern fixed (Gate 2 review Critical folded), or carrying an explicit user ruling recorded in the Log.
+- [x] **Hazard window closed:** `exclusions:clear` is declared, and its handler runs the dialog before `clearExclusionData` in the same commit (`912b853f`) that declared it.
+- [x] The Agenda layer survives a Clear over a folder holding it — config and pages both — checked against a real `_taskconfig.json` in the temp-nexus suite. (The real-nexus pass is a Verify — user box.)
+- [x] Progress hashes filled in; lessons written into the later tasks they change.
 - [ ] **Declared stop.** Execution halts until the user closes this phase's **Verify — user** boxes.
 
 ---
@@ -501,13 +501,16 @@ On a confirmed clear the handler awaits `clearExclusionData` and then runs `seed
 - [ ] **Phase 2** — Clear removes what Pommora wrote · base `94ea5116`
   - [x] Task 5 — The Preserve Properties toggle · `bb51bc91`
   - [x] Task 6 — The enumerator and the strip · `ddbb43af` (hazard window OPEN until Task 7)
-  - [x] Task 7 — The Clear row and its confirmation · `<commit>` (hazard window CLOSED)
+  - [x] Task 7 — The Clear row and its confirmation · `912b853f` (hazard window CLOSED)
 
 ### Rulings
 
 - **Task 1 — `excludedFolderRefusal` shares one rule with `assetDirRefusal`.** The two are byte-identical (a valid, writable, nexus-relative folder path that is not app-owned), so the shape rule is extracted once as `nexusFolderRefusal` and both names alias it; the DRY rule forbids the verbatim twin the plan's fences implied. `assetDirRefusal`'s two consumers are untouched. Either alias can be promoted to its own function if the domains ever diverge.
 - **Round-2 attack, Finding 1 (Medium) — folded into Task 7.** The sweep's `indexWrittenPage` re-inserts every page Clear rewrites, and the watcher never corrects an excluded folder, so Clear's handler re-seeds the index after `clearExclusionData`. Mirrors Task 3's re-arm; only the index is stale, so the full scope chain is not owed.
 - **Round-2 attack, Finding 2 (Medium) — folded into Task 6's crossing test.** `corpusFilesUnder` is agenda-blind, so the file-set identity holds only over an agenda-free excluded root; the crossing test names that constraint.
+- **Gate 2 review, Critical (IPC throw on the destructive path) — fixed.** `exclusions:clear` is a `window` handler, which `ipc.ts` does not wrap in the throw-to-`fail` net (only `envelope` is), so an unguarded `rm`/`seedContentIndex` throw would reject across the boundary — the "IPC never throws" hard rule. Fixed both layers: the handler body is wrapped in try/catch → `fail(errText)`, matching sibling `exclusions:choose`, and the sidecar `rm` is now best-effort (a locked or sync-placeholder sidecar is skipped and counted out, so the page sweep still runs rather than aborting the pass).
+- **Gate 2 simplify — two changes, verified.** `clearRewrite` parses each governed key once via `flatMap`, and a doc-comment the `ClearReport` insertion had orphaned was reattached to `TrashRow`.
+- **Gate 2 comment pass.** exclusionScan.ts trimmed to the header (sole-reach + Agenda-out) and the one shape-governance why; the handler keeps only the re-seed rationale; test narration cut to zero.
 - **Phase 1 live-verify — outside-click dismissal restored (reverses the original spec).** The user asked that a click outside the pane also dismiss it. That is `PickerMenu`'s default, so the `dismissOnOutside` prop added in Task 4 is removed entirely — no caller needs it, and a dead prop is worse than none. The pane now closes on Escape, a re-click of Manage, or an outside click; a path commit, an Add, and a returning folder dialog are actions inside the pane and leave it open. The `DesignSystemPM` note and the Made False row for it are reverted with the code.
 - **Gate 1 review, Critical 1 — fixed.** The Manage pane was mounted conditionally (`open ? <PickerMenu> : null`), which skips PickerMenu's Bloom-out exit and trips its DEV guard. Now mounted persistently and rides `open`, as the primitive requires.
 - **Gate 1 review, Critical 2 — fixed.** The row discarded the `setExclusions` Result, so a typed path the validator refused vanished with no feedback and the draft row closed anyway. Now surfaces the refusal via `window.nexus.showError` (the `RenameSlice` pattern) and keeps the draft open on failure.
